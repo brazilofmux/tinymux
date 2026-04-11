@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-"""Generate auto-discovered smoke suite list overrides.
+"""Generate auto-discovered smoke suite list overrides and cleanup hooks.
 
 Reads top-level `testcases/*.mux` files, excludes harness/setup files that are
 not themselves smoke tests, and emits formatted MUX commands that override
-`&suite.list.1` / `&suite.list.2` on the `smoke` object.
+`&suite.list.1` / `&suite.list.2` plus per-test `&suite.cleanup.<name>` attrs
+on the `smoke` object.
 """
 
 from pathlib import Path
+import re
 import sys
 
 
 EXCLUDED = {"0upload.mux", "smoke.mux"}
+CREATE_RE = re.compile(r"@create\s+([A-Za-z0-9_]+)(?:=\S+)?(?=[;\s]|$)")
+CCREATE_RE = re.compile(r"@ccreate\s+([A-Za-z0-9_]+)(?=[;\s]|$)")
+DIG_RE = re.compile(r"@dig\s+([A-Za-z0-9_]+)(?:=\S+)?(?=[;\s]|$)")
+OPEN_RE = re.compile(r"@open\s+([A-Za-z0-9_]+)=")
+ATTRIB_SET_RE = re.compile(r"attrib_set\((test_[A-Za-z0-9_]+)/([A-Za-z0-9_]+)\s*,")
 
 
 def discover_names(tc_dir: Path):
@@ -45,6 +52,61 @@ def emit_suite_attr(attr_name, names):
     print("-")
 
 
+def unique_reversed(items):
+    seen = set()
+    result = []
+    for item in reversed(items):
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+def collect_cleanup_manifest(tc_dir: Path, test_name: str):
+    path = tc_dir / f"{test_name}.mux"
+    main_obj = f"test_{test_name}"
+    literal_objects = []
+    literal_channels = []
+    stored_dbref_attrs = []
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line.startswith("#"):
+            continue
+
+        for name in CREATE_RE.findall(raw_line):
+            if name not in {main_obj, "smoke"}:
+                literal_objects.append(name)
+
+        literal_channels.extend(CCREATE_RE.findall(raw_line))
+
+        literal_objects.extend(DIG_RE.findall(raw_line))
+
+        literal_objects.extend(OPEN_RE.findall(raw_line))
+
+        for owner, attr in ATTRIB_SET_RE.findall(raw_line):
+            if owner == main_obj:
+                stored_dbref_attrs.append(attr)
+
+    commands = []
+    for attr in unique_reversed(stored_dbref_attrs):
+        commands.append(f"@destroy/override [get({main_obj}/{attr})]")
+    for name in unique_reversed(literal_objects):
+        commands.append(f"@destroy/override {name}")
+    for name in unique_reversed(literal_channels):
+        commands.append(f"@cdestroy {name}")
+    return commands
+
+
+def emit_cleanup_attr(test_name: str, commands):
+    print(f"&suite.cleanup.{test_name} smoke=")
+    if commands:
+        for command in commands[:-1]:
+            print(f"  {command};")
+        print(f"  {commands[-1]}")
+    print("-")
+
+
 def main() -> int:
     tc_dir = Path(__file__).resolve().parent.parent
     discovered = discover_names(tc_dir)
@@ -72,6 +134,8 @@ def main() -> int:
     print("#")
     emit_suite_attr("suite.list.1", first)
     emit_suite_attr("suite.list.2", second)
+    for name in names:
+        emit_cleanup_attr(name, collect_cleanup_manifest(tc_dir, name))
     return 0
 
 

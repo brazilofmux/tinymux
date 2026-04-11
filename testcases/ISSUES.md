@@ -1,6 +1,6 @@
 # Test Infrastructure — Open Issues
 
-Updated: 2026-04-01
+Updated: 2026-04-10
 
 ## Testing Levels
 
@@ -57,9 +57,10 @@ The project now has two complementary testing tiers:
 - `testcases/tools/Makesmoke` now accepts optional test names and passes them through to `generate_smoke_suite.py`, so you can build a smoke database for a single testcase or selected subset (`./tools/Makesmoke abs_fn`, etc.). That closes the "cannot run in isolation" part of this item.
 - **Remaining:** the smoke harness still executes the selected suite sequentially inside one database, so parallel execution/isolation between multiple tests is still not implemented.
 
-### No cleanup of orphaned test objects
+### ~~No cleanup of orphaned test objects~~ FIXED
 
-- **Issue:** Every test file does `@create test_<name>` and `drop test_<name>`. If a test is interrupted or the drop fails, test objects accumulate in the database.
+- `testcases/tools/generate_smoke_suite.py` now emits per-test `&suite.cleanup.<name>` hooks that destroy named helper fixtures, stored dbref fixtures, and transient channels both before and after each smoke test. `testcases/smoke.mux` runs those hooks around every testcase, so interrupted reruns no longer inherit stale route rooms/exits, search fixtures, temporary channels, or similar leftovers from prior attempts.
+- Remaining runtime-only leaks are handled at the testcase level where needed; `clone_fn.mux` now destroys the cloned thing it creates during assertion.
 
 ## Medium — Script Reliability (New, 2026-04-04)
 

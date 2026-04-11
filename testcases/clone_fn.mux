@@ -31,7 +31,8 @@
   },
   {
     @log smoke=TC001: clone basic thing. Failed (type=[type(%q1)] name=[name(%q1)] attr=[get(%q1/TESTATTR)]).
-  }
+  };
+  @destroy/override %q1
 -
 #
 # Test Case #2 - Clone with a second argument.
@@ -51,7 +52,8 @@
   },
   {
     @log smoke=TC002: clone with new name. Failed (%q0).
-  }
+  };
+  @destroy/override %q1
 -
 #
 # Test Case #3 - Clone a non-existent object returns error.
