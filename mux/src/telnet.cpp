@@ -1490,7 +1490,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         vend++;
                                     }
                                     size_t nClient = static_cast<size_t>(vend - found);
-                                    if (nClient > 0 && nClient < SBUF_SIZE)
+                                    if (nClient > 0 && nClient < TELNET_OPTION_SIZE)
                                     {
                                         if (nullptr != d->ttype)
                                         {
