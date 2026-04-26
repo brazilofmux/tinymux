@@ -16,23 +16,29 @@ class TimerEngine {
 
     func add(name: String, command: String, intervalSeconds: Double, shots: Int = -1) {
         remove(name)
-        var timer = MudTimer(name: name, command: command,
-                             intervalSeconds: intervalSeconds, shotsRemaining: shots)
+        let initial = MudTimer(name: name, command: command,
+                               intervalSeconds: intervalSeconds, shotsRemaining: shots)
         let task = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(intervalSeconds))
                 guard !Task.isCancelled else { break }
-                self?.onFire?(name, command)
-                if timer.shotsRemaining > 0 {
-                    timer.shotsRemaining -= 1
-                    if timer.shotsRemaining == 0 {
-                        self?.timers.removeValue(forKey: name)
+                guard let self else { break }
+                self.onFire?(name, command)
+                // The dict is the source of truth: mutate the stored copy so
+                // list() reflects the decremented shotsRemaining.
+                guard var entry = self.timers[name] else { break }
+                if entry.0.shotsRemaining > 0 {
+                    entry.0.shotsRemaining -= 1
+                    if entry.0.shotsRemaining == 0 {
+                        self.timers.removeValue(forKey: name)
                         break
+                    } else {
+                        self.timers[name] = entry
                     }
                 }
             }
         }
-        timers[name] = (timer, task)
+        timers[name] = (initial, task)
     }
 
     @discardableResult
