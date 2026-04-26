@@ -4,51 +4,87 @@
 # This catches the common mistake of editing generated output instead of the
 # real source (e.g., editing art_scan.cpp instead of art_scan.rl).
 #
+# Uses parallel arrays (not associative arrays) for bash 3.2 compatibility,
+# since macOS still ships /bin/bash as 3.2.
 
-# Map: generated-file → source-file (or source-prefix for directory matches)
-declare -A GENERATED=(
+# Generated file (index N) maps to source file at GENERATED_SRCS[N].
+# Use "NEVER_EDIT" for third-party vendored files that should not be edited.
+GENERATED_GENS=(
     # Ragel scanners
-    ["mux/modules/engine/art_scan.cpp"]="mux/modules/engine/art_scan.rl"
-    ["mux/modules/engine/ast_scan.cpp"]="mux/modules/engine/ast_scan.rl"
-    ["mux/lib/color_ops.c"]="mux/lib/color_ops.rl"
-    ["mux/muxescape/muxescape.cpp"]="mux/muxescape/muxescape.rl"
+    "mux/modules/engine/art_scan.cpp"
+    "mux/modules/engine/ast_scan.cpp"
+    "mux/lib/color_ops.c"
+    "mux/muxescape/muxescape.cpp"
 
     # Unicode tables (source is the utf/ pipeline, not a single file)
-    ["mux/include/utf8tables.h"]="utf/"
-    ["mux/lib/utf8tables.cpp"]="utf/"
-    ["mux/include/unicode_tables_c.h"]="utf/"
-    ["mux/lib/unicode_tables.c"]="utf/"
-    ["mux/include/ducet_cetable.h"]="utf/"
-    ["mux/rv64/src/unicode_tables.c"]="utf/"
+    "mux/include/utf8tables.h"
+    "mux/lib/utf8tables.cpp"
+    "mux/include/unicode_tables_c.h"
+    "mux/lib/unicode_tables.c"
+    "mux/include/ducet_cetable.h"
+    "mux/rv64/src/unicode_tables.c"
 
     # Autoconf
-    ["mux/configure"]="mux/configure.ac"
-    ["mux/aclocal.m4"]="mux/configure.ac"
+    "mux/configure"
+    "mux/aclocal.m4"
 
     # Protocol Buffers
-    ["client/console/src/hydra.pb.h"]="mux/proxy/hydra.proto"
-    ["client/console/src/hydra.pb.cc"]="mux/proxy/hydra.proto"
-    ["client/console/src/hydra.grpc.pb.h"]="mux/proxy/hydra.proto"
-    ["client/console/src/hydra.grpc.pb.cc"]="mux/proxy/hydra.proto"
-    ["client/win32gui/src/hydra.pb.h"]="mux/proxy/hydra.proto"
-    ["client/win32gui/src/hydra.pb.cc"]="mux/proxy/hydra.proto"
-    ["client/win32gui/src/hydra.grpc.pb.h"]="mux/proxy/hydra.proto"
-    ["client/win32gui/src/hydra.grpc.pb.cc"]="mux/proxy/hydra.proto"
-    ["client/tf/src/proto/hydra.pb.h"]="mux/proxy/hydra.proto"
-    ["client/tf/src/proto/hydra.pb.cc"]="mux/proxy/hydra.proto"
-    ["client/tf/src/proto/hydra.grpc.pb.h"]="mux/proxy/hydra.proto"
-    ["client/tf/src/proto/hydra.grpc.pb.cc"]="mux/proxy/hydra.proto"
+    "client/console/src/hydra.pb.h"
+    "client/console/src/hydra.pb.cc"
+    "client/console/src/hydra.grpc.pb.h"
+    "client/console/src/hydra.grpc.pb.cc"
+    "client/win32gui/src/hydra.pb.h"
+    "client/win32gui/src/hydra.pb.cc"
+    "client/win32gui/src/hydra.grpc.pb.h"
+    "client/win32gui/src/hydra.grpc.pb.cc"
+    "client/tf/src/proto/hydra.pb.h"
+    "client/tf/src/proto/hydra.pb.cc"
+    "client/tf/src/proto/hydra.grpc.pb.h"
+    "client/tf/src/proto/hydra.grpc.pb.cc"
 
     # SQLite amalgamation (third-party)
-    ["mux/sqlite/sqlite3.c"]="NEVER_EDIT"
-    ["mux/sqlite/sqlite3.h"]="NEVER_EDIT"
+    "mux/sqlite/sqlite3.c"
+    "mux/sqlite/sqlite3.h"
+)
+GENERATED_SRCS=(
+    "mux/modules/engine/art_scan.rl"
+    "mux/modules/engine/ast_scan.rl"
+    "mux/lib/color_ops.rl"
+    "mux/muxescape/muxescape.rl"
+
+    "utf/"
+    "utf/"
+    "utf/"
+    "utf/"
+    "utf/"
+    "utf/"
+
+    "mux/configure.ac"
+    "mux/configure.ac"
+
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+    "mux/proxy/hydra.proto"
+
+    "NEVER_EDIT"
+    "NEVER_EDIT"
 )
 
 staged=$(git diff --cached --name-only)
 warnings=""
 
-for gen in "${!GENERATED[@]}"; do
-    src="${GENERATED[$gen]}"
+for i in "${!GENERATED_GENS[@]}"; do
+    gen="${GENERATED_GENS[$i]}"
+    src="${GENERATED_SRCS[$i]}"
     if echo "$staged" | grep -qx "$gen"; then
         if [ "$src" = "NEVER_EDIT" ]; then
             # Third-party vendored file — should never be hand-edited
