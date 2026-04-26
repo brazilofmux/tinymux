@@ -1,82 +1,72 @@
 # Test Infrastructure — Open Issues
 
-Updated: 2026-04-25
+Updated: 2026-04-26
 
-## Open — Cross-Platform Investigation Needed (2026-04-25)
+## Open — JIT vs no-JIT eval path divergence on `{}` args
 
-### `isjson({"a":1})` returns 0 on macOS arm64; reportedly 1 on x86-64 Ubuntu
+### `isjson({"a":1})` returns 1 with `--enable-jit`, 0 without — both platforms
 
-- **Symptom:** On `aarch64-apple-darwin25.4.0` (PR #705 build, no
-  `--enable-jit`), Smoke reports two failures:
+**Cross-platform investigation resolved 2026-04-26.** Not a Mac-specific
+bug; the divergence is between the JIT and non-JIT eval paths. macOS
+reproduces what x86-64 Linux also does without `--enable-jit`.
+
+- **Probe results** (instrumentation just before `JsonValidator jv;` in
+  `mux/modules/engine/funcweb.cpp::fun_isjson`, logging `fargs[0]`):
+
+  | Build | Smoke | `fargs[0]` for `isjson({"a":1})` |
+  | --- | --- | --- |
+  | Linux x86-64, `--enable-jit` | 925/925 pass | `<{"a":1}>` (braces preserved) |
+  | Linux x86-64, no JIT | TC001/TC003 fail | `<"a":1>` (braces stripped) |
+  | macOS arm64, no JIT | TC001/TC003 fail | `<"a":1>` (braces stripped) |
+
+  Linux without JIT and macOS produce identical probe output — so the
+  Mac failure is not platform-specific. Hypothesis 2 (host-conditional
+  `#ifdef`) and Hypothesis 3 (test never passed on Linux) are ruled out.
+  Hypothesis 1 is confirmed: `--enable-jit` swaps the eval path, and the
+  JIT/AST path preserves `{}` while the legacy non-JIT path strips them.
+
+- **Failing assertions** (both no-JIT builds):
   - `TC001: isjson valid. Failed (obj=0 array=0 str=1 num=1 true=1 false=1 null=1).`
   - `TC003: isjson type check. Failed (obj=0 obj_as_array=0 array=0 str=1 num=1 num_as_str=0 true=1 false=1 null=1).`
-- The only failing assertions are `q0` in each case: `isjson({"a":1})` and
-  `isjson({"a":1},object)` return 0 instead of 1. All other q-values match
-  expectations (including the deliberate `array=0` from `[1,2,3]` which MUX
-  evaluates rather than passes literally).
-- The `isjson_fn.mux` smoke is reportedly green on x86-64 Ubuntu with
-  `--enable-jit` (Build.sh's default).
 
-- **Mac instrumentation (just before `JsonValidator jv;` in
-  `mux/modules/engine/funcweb.cpp::fun_isjson`):**
-  ```cpp
-  {
-      FILE *f = fopen("isjson_probe.log", "a");
-      if (f) { fprintf(f, "fargs[0]=<%s>\n",
-          reinterpret_cast<const char *>(fargs[0])); fclose(f); }
-  }
-  ```
-  Mac result, running `cd testcases && ./tools/Smoke`:
-  ```
-  fargs[0]=<"a":1>     ← from isjson({"a":1})   — 5 chars, NO braces
-  fargs[0]=<1,2,3>     ← from isjson([1,2,3])
-  fargs[0]=<"hello">   ← from isjson("hello")   — 7 chars (correct)
-  fargs[0]=<42>        ← from isjson(42)
-  fargs[0]=<"a":1>     ← from isjson({"a":1},object)
-  ```
-  So on Mac, the `{` and `}` are stripped before reaching the function,
-  and `JsonValidator` correctly rejects `"a":1` as not-valid-JSON.
+  The only failing q-values are the `{"a":1}` cases. `[1,2,3]` is
+  evaluated rather than passed literally (deliberate, see below).
 
-- **Probable site of divergence:** `EV_STRIP_CURLY` handling. Either
-  `parse_to` in `mux/modules/engine/eval.cpp` (the legacy path) or
-  `AST_BRACEGROUP` in `mux/modules/engine/ast.cpp:2336` (the AST path)
-  or both. Both are platform-agnostic C++ — yet behavior diverges.
+- **Site of divergence:** `EV_STRIP_CURLY` handling. The JIT-driven path
+  (`AST_BRACEGROUP` in `mux/modules/engine/ast.cpp:2336`) keeps the
+  braces when the entire arg is `{…}`; the legacy `parse_to` in
+  `mux/modules/engine/eval.cpp` strips them. Both are platform-agnostic
+  C++; the divergence is purely which path runs, not which host runs it.
 
-- **Hypotheses (in priority order):**
-  1. `--enable-jit` swaps the eval path. JIT/AST may preserve `{}` while
-     the no-JIT interpreter strips them. Mac currently can't build with
-     `--enable-jit` (DBT AArch64-Apple backend missing — `docs/DBT-PORTABILITY.md`).
-  2. A `#ifdef` somewhere in eval changes behavior by host. Grep for
-     `__APPLE__`, `__aarch64__`, etc. in `mux/modules/engine/{eval,ast}.cpp`.
-  3. The test never actually passed on x86-64 Ubuntu either (recollection
-     bug). In which case the test or the function is the bug, not the
-     platform.
+- **PR #705 portability changes:** confirmed clean on x86-64 Linux
+  with `--enable-jit` (925/925 smoke pass). The new configure
+  substitutions (`LIBMUX_SONAME_FLAG`, `ENGINE_SONAME_FLAG`,
+  `LD_NOUNDEFINED`, `LD_RPATH_ORIGIN`, `LD_HARDENING`) produce
+  byte-identical link lines to the previous hardcoded GNU-ld flags;
+  `readelf -d` on `libmux.so`, `engine.so`, and `netmux` shows the same
+  SONAME and `RUNPATH=$ORIGIN:…` as before the PR.
 
-- **Ask of the x86-64 Ubuntu side:** apply the same one-shot probe above,
-  rebuild with the project's default `Build.sh` flags (which include
-  `--enable-jit`), run `./testcases/tools/Smoke`, and report what
-  `testcases/isjson_probe.log` contains for the `isjson({"a":1})` call.
-  - If it reads `fargs[0]=<{"a":1}>` (braces preserved), hypothesis 1 or 2
-    is confirmed. Next step: bisect which path keeps them — try also with
-    `Build.sh --enable-realitylvls --enable-wodrealms` (no JIT) on Linux
-    and see if it now matches Mac.
-  - If it reads `fargs[0]=<"a":1>` (braces stripped, same as Mac), the
-    test/function relationship is broken everywhere and the smoke
-    expectation is the actual bug to fix.
+- **Open question — which side is the bug?** Two candidates:
+  1. **Non-JIT path is wrong.** A bare `{"a":1}` passed to `isjson` is a
+     single brace-grouped arg; stripping the braces before the function
+     sees them changes the semantic content (`{"a":1}` → `"a":1`).
+     Other functions that take JSON-like args may be silently broken
+     under no-JIT in the same way. Fix: make `parse_to`'s
+     `EV_STRIP_CURLY` not strip when the brace-group is the entire arg
+     value, matching `AST_BRACEGROUP`'s behavior.
+  2. **Test was JIT-coupled.** The smoke expectation was written against
+     the JIT path's behavior without realising the no-JIT path differed.
+     Fix: rewrite the test to avoid bare `{}` in `isjson(...)` calls.
+
+  (1) is the better target — JIT becoming mandatory in 1-2 years means
+  the non-JIT path is a deprecation path, but until then it should match
+  the JIT path's semantics, not silently miscompile JSON-shaped args.
 
 - **Cross-link:** macOS arm64 build PR is
-  https://github.com/brazilofmux/tinymux/pull/705 — that PR is unrelated
-  to the isjson behavior (it's purely build/linker portability), but it's
-  what made the failure visible on Mac for the first time.
-
-- **Also for the x86-64 side:** PR #705 reworks linker flags through new
-  configure substitutions (`LIBMUX_SONAME_FLAG`, `ENGINE_SONAME_FLAG`,
-  `LD_NOUNDEFINED`, `LD_RPATH_ORIGIN`, `LD_HARDENING`). On Linux the
-  substituted values are byte-identical to the original hardcoded ones,
-  but worth confirming end-to-end: build `Build.sh` (default `--enable-jit`)
-  and `./testcases/tools/Smoke` on x86-64 Ubuntu against the
-  `macos-arm64-support` branch, watch for any regression vs. master. Pass
-  results back; Mac side will iterate.
+  https://github.com/brazilofmux/tinymux/pull/705 — landed at
+  `bad833cbf` on master 2026-04-26; the failure was first visible on
+  Mac because Mac currently can't build with `--enable-jit` (DBT
+  AArch64-Apple backend missing — `docs/DBT-PORTABILITY.md`).
 
 ## Testing Levels
 
