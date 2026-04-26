@@ -277,7 +277,11 @@ struct ContentView: View {
         let lineHeight = max(fontSize * 1.2, 1)
         let cols = max(40, min(200, Int(size.width / charWidth)))
         let rows = max(10, min(80, Int(size.height / lineHeight)))
+        #if canImport(GRPC)
         state.activeTab?.hydraConnection?.updateTerminalSize(width: cols, height: rows)
+        #else
+        _ = (cols, rows)
+        #endif
     }
 
     // MARK: - Input Bar
@@ -292,11 +296,13 @@ struct ContentView: View {
                 .onSubmit { handleInput() }
                 .onKeyPress(.upArrow) { historyBack(); return .handled }
                 .onKeyPress(.downArrow) { historyForward(); return .handled }
-                .onKeyPress(characters: "f", modifiers: .command) {
-                    state.showFindBar.toggle(); return .handled
-                }
-                .onKeyPress(characters: "l", modifiers: .command) {
-                    state.activeTab?.lines.removeAll(); return .handled
+                .onKeyPress { keyPress in
+                    guard keyPress.modifiers.contains(.command) else { return .ignored }
+                    switch keyPress.key {
+                    case "f": state.showFindBar.toggle(); return .handled
+                    case "l": state.activeTab?.lines.removeAll(); return .handled
+                    default:  return .ignored
+                    }
                 }
             toolbarButton("Send") { handleInput() }
         }
