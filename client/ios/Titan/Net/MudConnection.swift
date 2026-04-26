@@ -191,9 +191,3 @@ class MudConnection: ObservableObject {
     }
 }
 
-// Make TelnetParser.send accessible for initial negotiations
-extension TelnetParser {
-    func send(command: TelnetCommand, option: UInt8) {
-        sendRaw?(Data([TelnetCommand.iac.rawValue, command.rawValue, option]))
-    }
-}

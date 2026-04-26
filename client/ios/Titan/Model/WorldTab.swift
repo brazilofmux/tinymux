@@ -43,9 +43,10 @@ class WorldTab: Identifiable {
         touchActivity()
         if let conn = connection, conn.connected {
             conn.sendLine(text)
+            return
         }
         #if canImport(GRPC)
-        else if let hconn = hydraConnection, hconn.connected {
+        if let hconn = hydraConnection, hconn.connected {
             hconn.sendLine(text)
         }
         #endif

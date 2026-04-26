@@ -111,7 +111,7 @@ struct EditTriggerView: View {
 
     @State private var name = ""
     @State private var pattern = ""
-    @State private var body = ""
+    @State private var commandBody = ""
     @State private var priority = "0"
     @State private var shots = "-1"
     @State private var gag = false
@@ -137,7 +137,7 @@ struct EditTriggerView: View {
                     }
                 }
                 Section("Action") {
-                    TextField("Command to send", text: $body)
+                    TextField("Command to send", text: $commandBody)
                         .font(.system(.body, design: .monospaced))
                     HStack {
                         TextField("Priority", text: $priority)
@@ -163,7 +163,7 @@ struct EditTriggerView: View {
                         let trigger = Trigger(
                             name: name.trimmingCharacters(in: .whitespaces),
                             pattern: pattern.trimmingCharacters(in: .whitespaces),
-                            body: body.trimmingCharacters(in: .whitespaces),
+                            body: commandBody.trimmingCharacters(in: .whitespaces),
                             priority: Int(priority) ?? 0,
                             shots: Int(shots) ?? -1,
                             gag: gag,
@@ -176,7 +176,7 @@ struct EditTriggerView: View {
             }
             .onAppear {
                 if let t = initial {
-                    name = t.name; pattern = t.pattern; body = t.body
+                    name = t.name; pattern = t.pattern; commandBody = t.body
                     priority = String(t.priority); shots = String(t.shots)
                     gag = t.gag; hilite = t.hilite
                 }

@@ -252,7 +252,7 @@ struct TelnetParser {
 
     // MARK: - Send helpers
 
-    private func send(command: TelnetCommand, option: UInt8) {
+    func send(command: TelnetCommand, option: UInt8) {
         sendRaw?(Data([TelnetCommand.iac.rawValue, command.rawValue, option]))
     }
 

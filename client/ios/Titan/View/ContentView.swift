@@ -325,7 +325,7 @@ struct ContentView: View {
             if !conn.connected { s += " (disconnected)" }
         }
         #if canImport(GRPC)
-        else if let hconn = tab.hydraConnection {
+        if tab.connection == nil, let hconn = tab.hydraConnection {
             if hconn.useTls { s += " [ssl]" }
             if !hconn.connected { s += " (disconnected)" }
         }
