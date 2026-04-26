@@ -10,7 +10,7 @@ struct ConditionContext {
 
 // MARK: - Trigger Condition
 
-enum TriggerCondition: Codable {
+indirect enum TriggerCondition: Codable {
     case stringMatch(pattern: String, negate: Bool = false)
     case worldConnected(negate: Bool = false)
     case worldIdle(seconds: Int, negate: Bool = false)

@@ -77,7 +77,7 @@ class VariableStore {
     func expand(_ text: String, worldName: String = "", character: String = "",
                 host: String = "", port: Int = 0, connected: Bool = false,
                 eventLine: String = "", eventCause: String = "line") -> String {
-        text.replacing(/\$([a-zA-Z_][a-zA-Z0-9_.]+)/) { match in
+        text.replacing(#/\$([a-zA-Z_][a-zA-Z0-9_.]+)/#) { match in
             resolve(String(match.output.1), worldName: worldName, character: character,
                     host: host, port: port, connected: connected,
                     eventLine: eventLine, eventCause: eventCause) ?? String(match.output.0)
