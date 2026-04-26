@@ -11,7 +11,7 @@ bin_PROGRAMS = muxscript
 
 muxscript_SOURCES = mux_main.cpp
 muxscript_CXXFLAGS = $(AM_CXXFLAGS) -fPIC
-muxscript_LDFLAGS = -L$(top_builddir)/lib -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib
+muxscript_LDFLAGS = -L$(top_builddir)/lib $(LD_RPATH_ORIGIN) -Wl,-rpath,$(abs_top_builddir)/lib
 muxscript_LDADD = -lmux $(LIBS)
 
 # Installation

@@ -205,6 +205,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENGINE_SONAME_FLAG = @ENGINE_SONAME_FLAG@
 ETAGS = @ETAGS@
 EXEEXT = @EXEEXT@
 GREP = @GREP@
@@ -220,6 +221,10 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LD_HARDENING = @LD_HARDENING@
+LD_NOUNDEFINED = @LD_NOUNDEFINED@
+LD_RPATH_ORIGIN = @LD_RPATH_ORIGIN@
+LIBMUX_SONAME_FLAG = @LIBMUX_SONAME_FLAG@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LN_S = @LN_S@
@@ -317,7 +322,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
 
 muxscript_SOURCES = mux_main.cpp
 muxscript_CXXFLAGS = $(AM_CXXFLAGS) -fPIC
-muxscript_LDFLAGS = -L$(top_builddir)/lib -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib
+muxscript_LDFLAGS = -L$(top_builddir)/lib $(LD_RPATH_ORIGIN) -Wl,-rpath,$(abs_top_builddir)/lib
 muxscript_LDADD = -lmux $(LIBS)
 all: all-am
 

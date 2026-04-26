@@ -24,7 +24,7 @@ endif
 # abs_builddir covers running from the build tree before install.
 netmux_SOURCES = $(DRIVER_SRC) version.cpp
 netmux_CXXFLAGS = $(AM_CXXFLAGS) -fPIC
-netmux_LDFLAGS = -L$(top_builddir)/lib -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib -pie
+netmux_LDFLAGS = -L$(top_builddir)/lib $(LD_RPATH_ORIGIN) -Wl,-rpath,$(abs_top_builddir)/lib -pie
 netmux_LDADD = -lmux $(top_builddir)/ganl/libganl.a \
     $(LIBS) $(SQL_LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
@@ -34,7 +34,7 @@ slave_LDADD = $(LIBS)
 
 # stubslave program
 stubslave_SOURCES = stubslave.cpp
-stubslave_LDFLAGS = -L$(top_builddir)/lib -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib
+stubslave_LDFLAGS = -L$(top_builddir)/lib $(LD_RPATH_ORIGIN) -Wl,-rpath,$(abs_top_builddir)/lib
 stubslave_LDADD = -lmux $(LIBS) $(STUBLIBS)
 
 # Installation

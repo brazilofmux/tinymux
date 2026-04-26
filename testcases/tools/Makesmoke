@@ -52,6 +52,18 @@ BIN="$REPO_ROOT/mux/game/bin"
 DATA=./$GAMENAME.d
 SQLITE_BASE=$DATA/$GAMENAME
 TMP_FILES=()
+
+# GNU `timeout` is `timeout` on Linux/BSD/Cygwin and `gtimeout` from
+# Homebrew coreutils on macOS (which doesn't ship a native one).
+if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=timeout
+elif command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=gtimeout
+else
+    echo "ERROR: neither 'timeout' nor 'gtimeout' found." >&2
+    echo "  On macOS: brew install coreutils" >&2
+    exit 1
+fi
 if [ -n "$OUTPUT_FLAT" ]; then
     case "$OUTPUT_FLAT" in
         /*) ;;
@@ -139,7 +151,7 @@ _EOF
 # ---------------------------------------------------------------------------
 
 echo "Unformatting .mux test files..."
-python3 "$SCRIPT_DIR/generate_smoke_suite.py" "${TEST_NAMES[@]}" > "$SUITE_TMP"
+python3 "$SCRIPT_DIR/generate_smoke_suite.py" ${TEST_NAMES[@]+"${TEST_NAMES[@]}"} > "$SUITE_TMP"
 "$SCRIPT_DIR/unformat" "$TC"/*.mux "$SUITE_TMP" > "$TMP"
 if [ ! -s "$TMP" ]; then
     echo "ERROR: unformat produced no output."
@@ -164,7 +176,7 @@ export LD_LIBRARY_PATH
 # (upload.tcl used to send @shutdown after seeing "Uploaded.")
 echo "@shutdown" >> "$TMP"
 
-if ! timeout 120 "$BIN/muxscript" -g . -c smoke.conf < "$TMP" > netmux.log 2>&1; then
+if ! "$TIMEOUT_CMD" 120 "$BIN/muxscript" -g . -c smoke.conf < "$TMP" > netmux.log 2>&1; then
     echo "ERROR: muxscript failed or timed out."
     EXIT_CODE=1
 fi

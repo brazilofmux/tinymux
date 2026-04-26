@@ -44,9 +44,9 @@ all-local: engine.so
 -include $(ENGINE_CXX_OBJS:.eo=.d)
 
 engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/lua54/liblua54.a $(top_builddir)/lib/libmux.so
-	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,--no-undefined \
-	    -Wl,-soname,engine.so \
-	    -Wl,-rpath,'$$ORIGIN' -Wl,-rpath,$(abs_top_builddir)/lib \
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) $(LD_NOUNDEFINED) \
+	    $(ENGINE_SONAME_FLAG) \
+	    $(LD_RPATH_ORIGIN) -Wl,-rpath,$(abs_top_builddir)/lib \
 	    -o $@ $(ENGINE_CXX_OBJS) \
 	    $(top_builddir)/sqlite/libsqlite3.a \
 	    $(top_builddir)/lua54/liblua54.a \

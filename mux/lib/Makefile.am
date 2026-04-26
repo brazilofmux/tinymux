@@ -44,7 +44,7 @@ color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
 	chmod a-w $@
 
 libmux.so: $(LIBMUX_OBJS)
-	$(CXX) $(CXXFLAGS) $(DYNAMICLIB_CXXFLAGS) -Wl,-soname,libmux.so -o $@ $(LIBMUX_OBJS) $(LIBS) $(DL_LIB) $(SQL_LIBS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) $(LIBMUX_SONAME_FLAG) -o $@ $(LIBMUX_OBJS) $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 BUILT_SOURCES = color_ops.c
 

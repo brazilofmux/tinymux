@@ -310,21 +310,41 @@ LIBS=$LIBS_SAVE
 case "$host" in
 *darwin*) DYNAMICLIB_EXT="so"
           DYNAMICLIB_TARGET="libmux.so"
-          DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
+          DYNAMICLIB_CXXFLAGS="-dynamiclib -fPIC -undefined dynamic_lookup"
+          LIBMUX_SONAME_FLAG="-Wl,-install_name,@rpath/libmux.so"
+          ENGINE_SONAME_FLAG="-Wl,-install_name,@rpath/engine.so"
+          LD_NOUNDEFINED=""
+          LD_RPATH_ORIGIN="-Wl,-rpath,@loader_path"
+          LD_HARDENING=""
           ;;
 *cygwin*) DYNAMICLIB_EXT="dll"
           DYNAMICLIB_TARGET="libmux.dll"
           DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          LIBMUX_SONAME_FLAG=""
+          ENGINE_SONAME_FLAG=""
+          LD_NOUNDEFINED=""
+          LD_RPATH_ORIGIN=""
+          LD_HARDENING=""
           ;;
 *)        DYNAMICLIB_EXT="so"
           DYNAMICLIB_TARGET="libmux.so"
           DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          LIBMUX_SONAME_FLAG="-Wl,-soname,libmux.so"
+          ENGINE_SONAME_FLAG="-Wl,-soname,engine.so"
+          LD_NOUNDEFINED="-Wl,--no-undefined"
+          LD_RPATH_ORIGIN="-Wl,-rpath,'\$\$ORIGIN'"
+          LD_HARDENING="-Wl,-z,relro,-z,now"
           ;;
 esac
 MUX_LIBS="-lmux"
 AC_SUBST(DYNAMICLIB_EXT)
 AC_SUBST(DYNAMICLIB_CXXFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)
+AC_SUBST(LIBMUX_SONAME_FLAG)
+AC_SUBST(ENGINE_SONAME_FLAG)
+AC_SUBST(LD_NOUNDEFINED)
+AC_SUBST(LD_RPATH_ORIGIN)
+AC_SUBST(LD_HARDENING)
 AC_SUBST(MUX_LIBS)
 AC_SUBST(SQL_LIBS)
 AC_SUBST(DL_LIB)
