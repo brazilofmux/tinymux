@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test hooks
+.PHONY: all install clean realclean test test-ios hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -31,6 +31,16 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install
+test: install test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
+
+# Headless iOS Titan parser/model tests via SPM. Skipped off Darwin
+# or when swift is unavailable.
+test-ios:
+	@if [ "$$(uname -s)" = "Darwin" ] && command -v swift >/dev/null 2>&1; then \
+	    echo "==> Running iOS Titan parser/model tests"; \
+	    cd client/ios && swift test; \
+	else \
+	    echo "==> Skipping iOS tests (not on Darwin or no swift available)"; \
+	fi
