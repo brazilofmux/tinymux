@@ -1,6 +1,82 @@
 # Test Infrastructure — Open Issues
 
-Updated: 2026-04-10
+Updated: 2026-04-25
+
+## Open — Cross-Platform Investigation Needed (2026-04-25)
+
+### `isjson({"a":1})` returns 0 on macOS arm64; reportedly 1 on x86-64 Ubuntu
+
+- **Symptom:** On `aarch64-apple-darwin25.4.0` (PR #705 build, no
+  `--enable-jit`), Smoke reports two failures:
+  - `TC001: isjson valid. Failed (obj=0 array=0 str=1 num=1 true=1 false=1 null=1).`
+  - `TC003: isjson type check. Failed (obj=0 obj_as_array=0 array=0 str=1 num=1 num_as_str=0 true=1 false=1 null=1).`
+- The only failing assertions are `q0` in each case: `isjson({"a":1})` and
+  `isjson({"a":1},object)` return 0 instead of 1. All other q-values match
+  expectations (including the deliberate `array=0` from `[1,2,3]` which MUX
+  evaluates rather than passes literally).
+- The `isjson_fn.mux` smoke is reportedly green on x86-64 Ubuntu with
+  `--enable-jit` (Build.sh's default).
+
+- **Mac instrumentation (just before `JsonValidator jv;` in
+  `mux/modules/engine/funcweb.cpp::fun_isjson`):**
+  ```cpp
+  {
+      FILE *f = fopen("isjson_probe.log", "a");
+      if (f) { fprintf(f, "fargs[0]=<%s>\n",
+          reinterpret_cast<const char *>(fargs[0])); fclose(f); }
+  }
+  ```
+  Mac result, running `cd testcases && ./tools/Smoke`:
+  ```
+  fargs[0]=<"a":1>     ← from isjson({"a":1})   — 5 chars, NO braces
+  fargs[0]=<1,2,3>     ← from isjson([1,2,3])
+  fargs[0]=<"hello">   ← from isjson("hello")   — 7 chars (correct)
+  fargs[0]=<42>        ← from isjson(42)
+  fargs[0]=<"a":1>     ← from isjson({"a":1},object)
+  ```
+  So on Mac, the `{` and `}` are stripped before reaching the function,
+  and `JsonValidator` correctly rejects `"a":1` as not-valid-JSON.
+
+- **Probable site of divergence:** `EV_STRIP_CURLY` handling. Either
+  `parse_to` in `mux/modules/engine/eval.cpp` (the legacy path) or
+  `AST_BRACEGROUP` in `mux/modules/engine/ast.cpp:2336` (the AST path)
+  or both. Both are platform-agnostic C++ — yet behavior diverges.
+
+- **Hypotheses (in priority order):**
+  1. `--enable-jit` swaps the eval path. JIT/AST may preserve `{}` while
+     the no-JIT interpreter strips them. Mac currently can't build with
+     `--enable-jit` (DBT AArch64-Apple backend missing — `docs/DBT-PORTABILITY.md`).
+  2. A `#ifdef` somewhere in eval changes behavior by host. Grep for
+     `__APPLE__`, `__aarch64__`, etc. in `mux/modules/engine/{eval,ast}.cpp`.
+  3. The test never actually passed on x86-64 Ubuntu either (recollection
+     bug). In which case the test or the function is the bug, not the
+     platform.
+
+- **Ask of the x86-64 Ubuntu side:** apply the same one-shot probe above,
+  rebuild with the project's default `Build.sh` flags (which include
+  `--enable-jit`), run `./testcases/tools/Smoke`, and report what
+  `testcases/isjson_probe.log` contains for the `isjson({"a":1})` call.
+  - If it reads `fargs[0]=<{"a":1}>` (braces preserved), hypothesis 1 or 2
+    is confirmed. Next step: bisect which path keeps them — try also with
+    `Build.sh --enable-realitylvls --enable-wodrealms` (no JIT) on Linux
+    and see if it now matches Mac.
+  - If it reads `fargs[0]=<"a":1>` (braces stripped, same as Mac), the
+    test/function relationship is broken everywhere and the smoke
+    expectation is the actual bug to fix.
+
+- **Cross-link:** macOS arm64 build PR is
+  https://github.com/brazilofmux/tinymux/pull/705 — that PR is unrelated
+  to the isjson behavior (it's purely build/linker portability), but it's
+  what made the failure visible on Mac for the first time.
+
+- **Also for the x86-64 side:** PR #705 reworks linker flags through new
+  configure substitutions (`LIBMUX_SONAME_FLAG`, `ENGINE_SONAME_FLAG`,
+  `LD_NOUNDEFINED`, `LD_RPATH_ORIGIN`, `LD_HARDENING`). On Linux the
+  substituted values are byte-identical to the original hardcoded ones,
+  but worth confirming end-to-end: build `Build.sh` (default `--enable-jit`)
+  and `./testcases/tools/Smoke` on x86-64 Ubuntu against the
+  `macos-arm64-support` branch, watch for any regression vs. master. Pass
+  results back; Mac side will iterate.
 
 ## Testing Levels
 
