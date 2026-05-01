@@ -123,10 +123,23 @@ mux/proxy/hydra
 mux/proxy/.deps/
 mux/proxy/Makefile
 mux/proxy/*.o
+mux/proxy/.*.stamp
 mux/proxy/hydra.conf
 mux/proxy/hydra.log
 mux/proxy/hydra.sqlite
 mux/game/bin/hydra
+
+# Ragel test-harness build artifacts
+ragel/color_ops.c
+ragel/*.o
+ragel/test_harness
+ragel/test_trigger_bin
+
+# Color-ops standalone test harness build artifacts
+tests/color_ops/*.o
+tests/color_ops/tables_ascii.c
+tests/color_ops/tables_extra.c
+tests/color_ops/test_color_ops
 
 # External project symlinks
 riscv
