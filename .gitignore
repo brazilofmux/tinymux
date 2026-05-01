@@ -39,6 +39,11 @@ mux/game/*.pem
 mux/game/*.pfx
 
 # Release/patch archives and reference directories
+mux-*.tar.gz
+mux-*.tar.bz2
+mux-*.patch.gz
+*.sha256
+*.asc
 mux2.13/
 mux2.13_*/
 patches_src/
@@ -48,9 +53,22 @@ patches_bin/
 get_patch.bat
 get_xdelta3.bat
 
-# Test output
+# Test output and runtime
 testcases/smoke.log
+testcases/smoke.fail/
+testcases/alias.conf
+testcases/compat.conf
+testcases/smoke.conf
+testcases/netmux.log
+testcases/netmux.pid
+testcases/shutdown.status
+testcases/smoke.pid
+testcases/smoke.d/
+testcases/text/
+testcases/bin
 testcases/tools/smoke.conf
+testcases/tools/reformat
+testcases/tools/unformat
 
 # Claude Code
 .claude/
