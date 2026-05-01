@@ -1,6 +1,6 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: March 28, 2026
+date: May 1, 2026
 author:
  - Brazil
 ---
