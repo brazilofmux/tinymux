@@ -17,24 +17,34 @@ struct SettingsView: View {
                 Section("Font") {
                     HStack {
                         TextField("Portrait size", text: $fontSize)
+                            #if os(iOS)
                             .keyboardType(.numberPad)
+                            #endif
                         TextField("Landscape size", text: $fontSizeLand)
+                            #if os(iOS)
                             .keyboardType(.numberPad)
+                            #endif
                     }
                 }
                 Section("Display") {
                     TextField("Scrollback lines", text: $scrollback)
+                        #if os(iOS)
                         .keyboardType(.numberPad)
+                        #endif
                     Toggle("Keep screen on", isOn: $keepScreenOn)
                 }
                 Section("Connection Defaults") {
                     TextField("Default port", text: $defaultPort)
+                        #if os(iOS)
                         .keyboardType(.numberPad)
+                        #endif
                     Toggle("Default SSL/TLS", isOn: $defaultSsl)
                 }
             }
             .navigationTitle("Settings")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

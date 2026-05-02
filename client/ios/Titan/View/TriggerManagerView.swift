@@ -30,7 +30,9 @@ struct TriggerManagerView: View {
                 }
             }
             .navigationTitle("Triggers")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -126,7 +128,9 @@ struct EditTriggerView: View {
                     TextField("Pattern (regex)", text: $pattern)
                         .font(.system(.body, design: .monospaced))
                         .autocorrectionDisabled()
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .onChange(of: pattern) { _, newValue in
                             validatePattern(newValue)
                         }
@@ -141,9 +145,13 @@ struct EditTriggerView: View {
                         .font(.system(.body, design: .monospaced))
                     HStack {
                         TextField("Priority", text: $priority)
+                            #if os(iOS)
                             .keyboardType(.numbersAndPunctuation)
+                            #endif
                         TextField("Shots (-1=inf)", text: $shots)
+                            #if os(iOS)
                             .keyboardType(.numbersAndPunctuation)
+                            #endif
                     }
                 }
                 Section("Flags") {
@@ -152,7 +160,9 @@ struct EditTriggerView: View {
                 }
             }
             .navigationTitle(title)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

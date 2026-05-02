@@ -41,7 +41,9 @@ struct CertVerifySheet: View {
                 .padding(.vertical)
             }
             .navigationTitle(certInfo.savedFingerprint != nil ? "Certificate Changed!" : "Unknown Certificate")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Reject") { onReject() }

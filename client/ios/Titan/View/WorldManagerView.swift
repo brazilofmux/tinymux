@@ -31,7 +31,9 @@ struct WorldManagerView: View {
                 }
             }
             .navigationTitle("Worlds")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -113,9 +115,13 @@ struct EditWorldView: View {
                     TextField("Name", text: $name)
                     TextField("Host", text: $host)
                         .autocorrectionDisabled()
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
+                        #endif
                     TextField("Port", text: $port)
+                        #if os(iOS)
                         .keyboardType(.numberPad)
+                        #endif
                     Toggle("SSL/TLS", isOn: $ssl)
                 }
                 Section("Character") {
@@ -133,7 +139,9 @@ struct EditWorldView: View {
                 }
             }
             .navigationTitle(title)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

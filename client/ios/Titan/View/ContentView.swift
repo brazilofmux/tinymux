@@ -50,7 +50,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $state.showWorldManager) {
             WorldManagerView(worldRepo: worldRepo) { world in
-                #if canImport(GRPC)
+                #if canImport(GRPCCore)
                 if world.useHydra {
                     connectHydra(name: world.name, host: world.host, port: world.port,
                                  hydraUser: world.hydraUser, hydraPass: world.hydraPass,
@@ -277,7 +277,7 @@ struct ContentView: View {
         let lineHeight = max(fontSize * 1.2, 1)
         let cols = max(40, min(200, Int(size.width / charWidth)))
         let rows = max(10, min(80, Int(size.height / lineHeight)))
-        #if canImport(GRPC)
+        #if canImport(GRPCCore)
         state.activeTab?.hydraConnection?.updateTerminalSize(width: cols, height: rows)
         #else
         _ = (cols, rows)
@@ -330,7 +330,7 @@ struct ContentView: View {
             if conn.useSsl { s += " [ssl]" }
             if !conn.connected { s += " (disconnected)" }
         }
-        #if canImport(GRPC)
+        #if canImport(GRPCCore)
         if tab.connection == nil, let hconn = tab.hydraConnection {
             if hconn.useTls { s += " [ssl]" }
             if !hconn.connected { s += " (disconnected)" }
@@ -410,7 +410,7 @@ struct ContentView: View {
         conn.connect()
     }
 
-    #if canImport(GRPC)
+    #if canImport(GRPCCore)
     func connectHydra(name: String, host: String, port: Int,
                       hydraUser: String, hydraPass: String, hydraGame: String) {
         let tab = WorldTab(name: name)
@@ -508,7 +508,7 @@ struct ContentView: View {
                 let ssl = parts.contains { $0.lowercased() == "ssl" || $0.lowercased() == "tls" }
                 connectWorld(name: "\(host):\(port)", host: host, port: port, ssl: ssl)
             }
-        #if canImport(GRPC)
+        #if canImport(GRPCCore)
         case "hydra":
             let parts = args.split(separator: " ")
             if parts.count < 5 {
@@ -866,13 +866,19 @@ struct ConnectSheet: View {
             Form {
                 TextField("Host", text: $host)
                     .autocorrectionDisabled()
+                    #if os(iOS)
                     .textInputAutocapitalization(.never)
+                    #endif
                 TextField("Port", text: $port)
+                    #if os(iOS)
                     .keyboardType(.numberPad)
+                    #endif
                 Toggle("SSL/TLS", isOn: $ssl)
             }
             .navigationTitle("Connect")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { isPresented = false }

@@ -1,14 +1,13 @@
 import Foundation
 
-#if canImport(GRPC)
-import GRPC
-import NIOCore
-import NIOPosix
-import SwiftProtobuf
+#if canImport(GRPCCore)
+import GRPCCore
+import GRPCNIOTransportHTTP2Posix
 
 /// A connection to a game server via Hydra's gRPC GameSession bidi stream.
 /// Presents the same callback interface as MudConnection so ContentView can
 /// use either transport interchangeably.
+@available(iOS 18.0, macOS 15.0, *)
 @MainActor
 class HydraConnection: ObservableObject {
     let name: String
@@ -24,10 +23,9 @@ class HydraConnection: ObservableObject {
     @Published var connected = false
     private var intentionalDisconnect = false
     private var sessionId = ""
-    private var eventLoopGroup: EventLoopGroup?
-    private var channel: GRPCChannel?
-    private var stub: Hydra_HydraServiceAsyncClient?
-    private var streamTask: Task<Void, Never>?
+    private var grpcClient: GRPCClient<HTTP2ClientTransport.Posix>?
+    private var clientRunTask: Task<Void, Never>?
+    private var sessionTask: Task<Void, Never>?
     private var inputContinuation: AsyncStream<Hydra_ClientMessage>.Continuation?
     private var outputBuffer = ""
     private(set) var lastActivityAt = Date()
@@ -65,31 +63,29 @@ class HydraConnection: ObservableObject {
     func connect() {
         intentionalDisconnect = false
 
-        streamTask = Task {
+        sessionTask = Task {
             do {
-                // Create gRPC channel (reuse or create EventLoopGroup)
-                let group: EventLoopGroup
-                if let existing = self.eventLoopGroup {
-                    group = existing
-                } else {
-                    group = PlatformSupport.makeEventLoopGroup(loopCount: 1)
-                    self.eventLoopGroup = group
-                }
-                let builder = useTls
-                    ? ClientConnection.usingTLSBackedByNIOSSL(on: group)
-                    : ClientConnection.insecure(group: group)
-                let conn = builder.connect(host: host, port: port)
-                channel = conn
-                stub = Hydra_HydraServiceAsyncClient(channel: conn)
+                let security: HTTP2ClientTransport.Posix.TransportSecurity = useTls
+                    ? .tls
+                    : .plaintext
+                let transport = try HTTP2ClientTransport.Posix(
+                    target: .dns(host: host, port: port),
+                    transportSecurity: security
+                )
+                let client = GRPCClient(transport: transport)
+                grpcClient = client
 
-                guard let stub = stub else { return }
+                clientRunTask = Task {
+                    try? await client.runConnections()
+                }
+
+                let hydra = Hydra_HydraService.Client(wrapping: client)
                 outputBuffer.removeAll(keepingCapacity: true)
 
-                // Authenticate
                 var authReq = Hydra_AuthRequest()
                 authReq.username = username
                 authReq.password = password
-                let authResp = try await stub.authenticate(authReq)
+                let authResp = try await hydra.authenticate(authReq)
 
                 guard authResp.success else {
                     let err = authResp.error.isEmpty ? "Authentication failed" : authResp.error
@@ -98,13 +94,11 @@ class HydraConnection: ObservableObject {
                 }
                 sessionId = authResp.sessionID
 
-                // Connect to game
                 if !gameName.isEmpty {
                     var connReq = Hydra_ConnectRequest()
                     connReq.sessionID = sessionId
                     connReq.gameName = gameName
-                    let options = CallOptions(customMetadata: ["authorization": sessionId])
-                    let connResp = try await stub.connect(connReq, callOptions: options)
+                    let connResp = try await hydra.connect(connReq, metadata: authMetadata())
                     if connResp.success {
                         pushLine("[Hydra] Connected to \(gameName) (link \(connResp.linkNumber))")
                     } else {
@@ -117,12 +111,10 @@ class HydraConnection: ObservableObject {
                 pushLine("[Hydra] Session established (\(String(sessionId.prefix(8)))...)")
                 onConnect?()
 
-                // Open bidi GameSession stream
-                await runGameSession(stub: stub)
+                await runGameSession(hydra: hydra)
 
-                // Stream ended — try reconnect
                 if !intentionalDisconnect {
-                    await attemptReconnect(stub: stub)
+                    await attemptReconnect(hydra: hydra)
                 }
 
             } catch {
@@ -130,8 +122,9 @@ class HydraConnection: ObservableObject {
             }
 
             connected = false
-            try? await channel?.close().get()
-            channel = nil
+            grpcClient?.beginGracefulShutdown()
+            clientRunTask = nil
+            grpcClient = nil
             if !intentionalDisconnect {
                 onDisconnect?()
             }
@@ -142,12 +135,9 @@ class HydraConnection: ObservableObject {
         intentionalDisconnect = true
         connected = false
         inputContinuation?.finish()
-        streamTask?.cancel()
-        try? channel?.close().wait()
-        channel = nil
+        sessionTask?.cancel()
+        grpcClient?.beginGracefulShutdown()
         outputBuffer.removeAll(keepingCapacity: true)
-        try? eventLoopGroup?.syncShutdownGracefully()
-        eventLoopGroup = nil
     }
 
     func sendLine(_ text: String) {
@@ -178,14 +168,11 @@ class HydraConnection: ObservableObject {
 
     // MARK: - GameSession Stream
 
-    private func runGameSession(stub: Hydra_HydraServiceAsyncClient,
+    private func runGameSession(hydra: Hydra_HydraService.Client<HTTP2ClientTransport.Posix>,
                                 fetchScrollbackOnOpen: Bool = false) async {
-        let options = CallOptions(customMetadata: ["authorization": sessionId])
-
         let (inputStream, continuation) = AsyncStream<Hydra_ClientMessage>.makeStream()
         inputContinuation = continuation
 
-        // Send initial preferences as first message on the stream.
         var prefs = Hydra_SetPreferences()
         prefs.colorFormat = .ansiTruecolor
         prefs.terminalWidth = UInt32(termWidth)
@@ -195,7 +182,6 @@ class HydraConnection: ObservableObject {
         prefsMsg.preferences = prefs
         continuation.yield(prefsMsg)
 
-        // Periodic pings
         let pingTask = Task {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 60_000_000_000)
@@ -207,13 +193,19 @@ class HydraConnection: ObservableObject {
             }
         }
 
+        if fetchScrollbackOnOpen {
+            await fetchScrollBack(hydra: hydra)
+        }
+
         do {
-            let stream = stub.gameSession(inputStream, callOptions: options)
-            if fetchScrollbackOnOpen {
-                await fetchScrollBack(stub: stub)
-            }
-            for try await msg in stream {
-                dispatchServerMessage(msg)
+            try await hydra.gameSession(metadata: authMetadata()) { writer in
+                for await msg in inputStream {
+                    try await writer.write(msg)
+                }
+            } onResponse: { [weak self] response in
+                for try await msg in response.messages {
+                    await self?.dispatchServerMessage(msg)
+                }
             }
         } catch {
             if !intentionalDisconnect {
@@ -225,7 +217,7 @@ class HydraConnection: ObservableObject {
         connected = false
     }
 
-    private func attemptReconnect(stub: Hydra_HydraServiceAsyncClient) async {
+    private func attemptReconnect(hydra: Hydra_HydraService.Client<HTTP2ClientTransport.Posix>) async {
         guard !intentionalDisconnect, !sessionId.isEmpty else { return }
 
         for attempt in 1...Self.maxReconnectAttempts {
@@ -237,7 +229,7 @@ class HydraConnection: ObservableObject {
             connected = true
             outputBuffer.removeAll(keepingCapacity: true)
             markActivity()
-            await runGameSession(stub: stub, fetchScrollbackOnOpen: true)
+            await runGameSession(hydra: hydra, fetchScrollbackOnOpen: true)
 
             if intentionalDisconnect { return }
             connected = false
@@ -289,13 +281,13 @@ class HydraConnection: ObservableObject {
     // MARK: - Hydra Session RPCs
 
     func rpcConnectGame(_ gameName: String) async -> String {
-        guard let stub = stub else { return "[Hydra] Not connected." }
+        guard let client = grpcClient else { return "[Hydra] Not connected." }
+        let hydra = Hydra_HydraService.Client(wrapping: client)
         do {
             var req = Hydra_ConnectRequest()
             req.sessionID = sessionId
             req.gameName = gameName
-            let options = CallOptions(customMetadata: ["authorization": sessionId])
-            let resp = try await stub.connect(req, callOptions: options)
+            let resp = try await hydra.connect(req, metadata: authMetadata())
             return resp.success
                 ? "[Hydra] Connected to \(gameName) (link \(resp.linkNumber))"
                 : "[Hydra] Connect failed: \(resp.error)"
@@ -303,13 +295,13 @@ class HydraConnection: ObservableObject {
     }
 
     func rpcSwitchLink(_ linkNumber: Int32) async -> String {
-        guard let stub = stub else { return "[Hydra] Not connected." }
+        guard let client = grpcClient else { return "[Hydra] Not connected." }
+        let hydra = Hydra_HydraService.Client(wrapping: client)
         do {
             var req = Hydra_SwitchRequest()
             req.sessionID = sessionId
             req.linkNumber = linkNumber
-            let options = CallOptions(customMetadata: ["authorization": sessionId])
-            let resp = try await stub.switchLink(req, callOptions: options)
+            let resp = try await hydra.switchLink(req, metadata: authMetadata())
             return resp.success
                 ? "[Hydra] Switched to link \(linkNumber)"
                 : "[Hydra] Switch failed: \(resp.error)"
@@ -317,12 +309,12 @@ class HydraConnection: ObservableObject {
     }
 
     func rpcListLinks() async -> [String] {
-        guard let stub = stub else { return ["[Hydra] Not connected."] }
+        guard let client = grpcClient else { return ["[Hydra] Not connected."] }
+        let hydra = Hydra_HydraService.Client(wrapping: client)
         do {
             var req = Hydra_SessionRequest()
             req.sessionID = sessionId
-            let options = CallOptions(customMetadata: ["authorization": sessionId])
-            let resp = try await stub.listLinks(req, callOptions: options)
+            let resp = try await hydra.listLinks(req, metadata: authMetadata())
             if resp.links.isEmpty { return ["[Hydra] No active links."] }
             var lines = ["[Hydra] Active links:"]
             for li in resp.links {
@@ -336,13 +328,13 @@ class HydraConnection: ObservableObject {
     }
 
     func rpcDisconnectLink(_ linkNumber: Int32) async -> String {
-        guard let stub = stub else { return "[Hydra] Not connected." }
+        guard let client = grpcClient else { return "[Hydra] Not connected." }
+        let hydra = Hydra_HydraService.Client(wrapping: client)
         do {
             var req = Hydra_DisconnectRequest()
             req.sessionID = sessionId
             req.linkNumber = linkNumber
-            let options = CallOptions(customMetadata: ["authorization": sessionId])
-            let resp = try await stub.disconnectLink(req, callOptions: options)
+            let resp = try await hydra.disconnectLink(req, metadata: authMetadata())
             return resp.success
                 ? "[Hydra] Disconnected link \(linkNumber)"
                 : "[Hydra] Disconnect failed: \(resp.error)"
@@ -350,12 +342,12 @@ class HydraConnection: ObservableObject {
     }
 
     func rpcGetSession() async -> [String] {
-        guard let stub = stub else { return ["[Hydra] Not connected."] }
+        guard let client = grpcClient else { return ["[Hydra] Not connected."] }
+        let hydra = Hydra_HydraService.Client(wrapping: client)
         do {
             var req = Hydra_SessionRequest()
             req.sessionID = sessionId
-            let options = CallOptions(customMetadata: ["authorization": sessionId])
-            let resp = try await stub.getSession(req, callOptions: options)
+            let resp = try await hydra.getSession(req, metadata: authMetadata())
             return [
                 "[Hydra] Session \(String(resp.sessionID.prefix(8)))...",
                 "  User: \(resp.username)",
@@ -368,12 +360,12 @@ class HydraConnection: ObservableObject {
     }
 
     func rpcDetachSession() async -> String {
-        guard let stub = stub else { return "[Hydra] Not connected." }
+        guard let client = grpcClient else { return "[Hydra] Not connected." }
+        let hydra = Hydra_HydraService.Client(wrapping: client)
         do {
             var req = Hydra_SessionRequest()
             req.sessionID = sessionId
-            let options = CallOptions(customMetadata: ["authorization": sessionId])
-            _ = try await stub.detachSession(req, callOptions: options)
+            _ = try await hydra.detachSession(req, metadata: authMetadata())
             connected = false
             return "[Hydra] Session detached. Reconnect to resume."
         } catch { return "[Hydra] Error: \(error.localizedDescription)" }
@@ -381,14 +373,19 @@ class HydraConnection: ObservableObject {
 
     // MARK: - Helpers
 
-    private func fetchScrollBack(stub: Hydra_HydraServiceAsyncClient) async {
+    private func authMetadata() -> Metadata {
+        var metadata = Metadata()
+        metadata.addString(sessionId, forKey: "authorization")
+        return metadata
+    }
+
+    private func fetchScrollBack(hydra: Hydra_HydraService.Client<HTTP2ClientTransport.Posix>) async {
         do {
             var req = Hydra_ScrollBackRequest()
             req.sessionID = sessionId
             req.maxLines = 200
             req.colorFormat = .ansiTruecolor
-            let options = CallOptions(customMetadata: ["authorization": sessionId])
-            let resp = try await stub.getScrollBack(req, callOptions: options)
+            let resp = try await hydra.getScrollBack(req, metadata: authMetadata())
             if !resp.lines.isEmpty {
                 pushLine("-- scroll-back (\(resp.lines.count) lines) --")
                 for line in resp.lines {
@@ -439,4 +436,4 @@ class HydraConnection: ObservableObject {
     }
 }
 
-#endif // canImport(GRPC)
+#endif // canImport(GRPCCore)

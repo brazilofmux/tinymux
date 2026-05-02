@@ -17,7 +17,9 @@ struct McpEditorSheet: View {
                 .foregroundColor(.white)
                 .padding(4)
                 .navigationTitle("Edit: \(name)")
+                #if os(iOS)
                 .navigationBarTitleDisplayMode(.inline)
+                #endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") { onDismiss() }
