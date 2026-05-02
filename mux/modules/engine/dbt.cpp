@@ -192,6 +192,7 @@ int dbt_init(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     }
 
     // Emit trampoline at the start of the code buffer.
+    jit_write_begin();
     dbt_backend_emit_trampoline(dbt);
     dbt_flush_code(dbt, 0);
 
@@ -225,6 +226,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
         // program code.  On x86-64, each NOP is 1 byte (0x90).
         // On AArch64, NOPs are 4 bytes so N is rounded up to a
         // multiple of 4.
+        jit_write_begin();
         {
             static int pad = -1;
             if (pad < 0) {
@@ -262,6 +264,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
         dbt->patches.clear();
         dbt->pending_patch_targets.clear();
         dbt->code_used = 0;
+        jit_write_begin();
         dbt_backend_emit_trampoline(dbt);
         dbt->num_intrinsics = 0;
         memset(dbt->intrinsics, 0, sizeof(dbt->intrinsics));
@@ -409,16 +412,20 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
         }
 
         // Translate if not already cached.
+        // Brackets are per-iteration so dbt_pretranslate's recursion
+        // (function-call discovery) doesn't nest write-mode toggles.
         if (!dbt_cache_lookup(dbt, pc)) {
+            jit_write_begin();
             uint8_t *code = dbt_backend_translate_block(dbt, pc);
-            if (!code) continue;
+            if (!code) {
+                dbt_flush_code(dbt, dbt->code_used);
+                continue;
+            }
             dbt_cache_insert(dbt, pc, code);
             dbt_backpatch_chains(dbt, pc, code);
+            dbt_flush_code(dbt, static_cast<uint32_t>(code - dbt->code_buf));
         }
     }
-
-    // Flush I-cache for all code generated during blob pretranslation.
-    dbt_flush_code(dbt, 0);
 }
 
 void dbt_resolve_chains(dbt_state_t *dbt) {
@@ -431,6 +438,7 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
     uint32_t resolved = 0;
     uint32_t already_ok = 0;
     uint32_t unresolvable = 0;
+    jit_write_begin();
     for (size_t i = 0; i < dbt->patches.size(); i++) {
         uint64_t target = dbt->patches[i].target_pc;
         if (target == 0) continue;
@@ -465,10 +473,10 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
                         resolved, already_ok, unresolvable,
                         static_cast<unsigned>(dbt->patches.size()));
 
-    // Flush I-cache for any backpatched JMP targets.
-    if (resolved > 0) {
-        dbt_flush_code(dbt, 0);
-    }
+    // Flush I-cache for any backpatched JMP targets, and balance the
+    // jit_write_begin above (always required so write protection is
+    // restored on Apple Silicon even when no patches resolved).
+    dbt_flush_code(dbt, resolved > 0 ? 0 : dbt->code_used);
 }
 
 int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
@@ -530,8 +538,10 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
                         static_cast<unsigned long long>(pc));
             }
         } else {
+            jit_write_begin();
             code = dbt_backend_translate_block(dbt, pc);
             if (!code) {
+                dbt_flush_code(dbt, dbt->code_used);
                 dbt->dispatch_count = dispatch_count;
                 return -1;  // code buffer full
             }
@@ -613,8 +623,10 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
                         static_cast<unsigned long long>(pc));
             }
         } else {
+            jit_write_begin();
             code = dbt_backend_translate_block(dbt, pc);
             if (!code) {
+                dbt_flush_code(dbt, dbt->code_used);
                 dbt->dispatch_count = dispatch_count;
                 return -1;  // code buffer full
             }

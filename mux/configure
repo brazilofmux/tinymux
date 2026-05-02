@@ -6712,10 +6712,7 @@ printf %s "checking DBT backend for host platform... " >&6; }
           DBT_BACKEND="dbt_x64_sysv" ;;
       esac ;;
     aarch64|arm64)
-      case "$host_os" in
-        darwin*) as_fn_error $? "JIT not yet implemented for AArch64 macOS (Apple W^X backend needed)" "$LINENO" 5 ;;
-        *)       DBT_BACKEND="dbt_a64_sysv" ;;
-      esac ;;
+      DBT_BACKEND="dbt_a64_sysv" ;;
     riscv64)
       as_fn_error $? "JIT not yet implemented for native RV64 (backend needed)" "$LINENO" 5 ;;
     *)

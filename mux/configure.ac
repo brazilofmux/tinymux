@@ -242,10 +242,7 @@ if test "x$jit_enabled" = "xyes"; then
           DBT_BACKEND="dbt_x64_sysv" ;;
       esac ;;
     aarch64|arm64)
-      case "$host_os" in
-        darwin*) AC_MSG_ERROR([JIT not yet implemented for AArch64 macOS (Apple W^X backend needed)]) ;;
-        *)       DBT_BACKEND="dbt_a64_sysv" ;;
-      esac ;;
+      DBT_BACKEND="dbt_a64_sysv" ;;
     riscv64)
       AC_MSG_ERROR([JIT not yet implemented for native RV64 (backend needed)]) ;;
     *)
