@@ -1,6 +1,6 @@
 # libmux (`mux/lib/`) — Open Issues
 
-Created: 2026-04-10.
+Created: 2026-04-10.  Refreshed: 2026-05-22.
 
 `mux/lib/` is the libmux shared library — stringutil, mathutil, alloc,
 hash, SHA1, UTF-8, color primitives, and the Ragel date scanner. Issues

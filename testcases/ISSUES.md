@@ -1,6 +1,6 @@
 # Test Infrastructure — Open Issues
 
-Updated: 2026-04-26
+Updated: 2026-05-22 (Apple Silicon JIT now enabled; re-verify divergence on Mac+JIT)
 
 ## Open — JIT vs no-JIT eval path divergence on `{}` args
 
@@ -17,13 +17,14 @@ reproduces what x86-64 Linux also does without `--enable-jit`.
   | --- | --- | --- |
   | Linux x86-64, `--enable-jit` | 925/925 pass | `<{"a":1}>` (braces preserved) |
   | Linux x86-64, no JIT | TC001/TC003 fail | `<"a":1>` (braces stripped) |
+  | macOS arm64, `--enable-jit` (post 2a1776e27) | *expected pass* | `<{"a":1}>` (should match Linux JIT) |
   | macOS arm64, no JIT | TC001/TC003 fail | `<"a":1>` (braces stripped) |
 
-  Linux without JIT and macOS produce identical probe output — so the
-  Mac failure is not platform-specific. Hypothesis 2 (host-conditional
-  `#ifdef`) and Hypothesis 3 (test never passed on Linux) are ruled out.
-  Hypothesis 1 is confirmed: `--enable-jit` swaps the eval path, and the
-  JIT/AST path preserves `{}` while the legacy non-JIT path strips them.
+  Linux (no JIT) and macOS (no JIT) produce identical probe output, ruling
+  out host-specific causes. With Apple Silicon JIT now enabled, macOS +JIT
+  is expected to match the Linux +JIT result (braces preserved). Hypothesis 1
+  stands: the divergence is purely JIT/AST path vs. legacy `parse_to`
+  `EV_STRIP_CURLY` handling.
 
 - **Failing assertions** (both no-JIT builds):
   - `TC001: isjson valid. Failed (obj=0 array=0 str=1 num=1 true=1 false=1 null=1).`
@@ -64,9 +65,13 @@ reproduces what x86-64 Linux also does without `--enable-jit`.
 
 - **Cross-link:** macOS arm64 build PR is
   https://github.com/brazilofmux/tinymux/pull/705 — landed at
-  `bad833cbf` on master 2026-04-26; the failure was first visible on
-  Mac because Mac currently can't build with `--enable-jit` (DBT
-  AArch64-Apple backend missing — `docs/DBT-PORTABILITY.md`).
+  `bad833cbf` on master 2026-04-26. As of commit `2a1776e27` (2026-05-02,
+  "Enable DBT JIT on Apple Silicon"), `--enable-jit` now works on
+  darwin+aarch64; the old configure error and "Mac can't JIT" note are
+  obsolete. Re-run the `isjson` probe + full smoke on a Mac+JIT build to
+  confirm the JIT path (`<{"a":1}>`) now passes there too (it should,
+  per Linux x86-64 +JIT results). The core open question (which eval path
+  is correct for bare brace-group args) remains.
 
 ## Testing Levels
 

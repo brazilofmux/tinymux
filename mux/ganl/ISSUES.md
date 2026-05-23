@@ -1,6 +1,6 @@
 # GANL (Global Adaptive Network Layer) — Open Issues
 
-Updated: 2026-04-04
+Updated: 2026-05-22 (post Apple Silicon JIT; CHARSET TODO noted)
 
 ## High — Implementation Gaps
 
@@ -101,3 +101,8 @@ Updated: 2026-04-04
 ### No CA validation configured after `SSL_CTX_use_certificate_chain_file`
 - **File:** `mux/ganl/src/openssl_transport.cpp:93-113` (approximate)
 - **Issue:** The server certificate is loaded but no trust store is configured and no verify flags are set. STARTTLS peers are never validated. When `verifyPeer` is false this is silent — no log line indicates that peer validation was requested-but-bypassed. Log a warning when `verifyPeer` is requested but `SSL_CTX_set_verify()` defaults to `SSL_VERIFY_NONE`.
+
+### CHARSET subnegotiation does not yet parse client's requested list
+- **File:** `mux/ganl/src/telnet_protocol_handler.cpp:1510`
+- **Issue:** On IAC SB CHARSET ... the handler currently hard-assumes UTF-8 support and never parses the client's offered list (the TODO notes "Add parsing of client's requested list if needed"). A client that offers only legacy charsets (or a preferred non-UTF8) will still be answered with UTF-8.
+- **Impact:** Low for modern clients; keeps the door open for explicit CHARSET negotiation policy later.

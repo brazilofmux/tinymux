@@ -1,6 +1,6 @@
 # SQLSlave Module (`mux/modules/sqlslave/`) — Open Issues
 
-Created: 2026-04-10.
+Created: 2026-04-10.  Refreshed: 2026-05-22.
 
 The SQLSlave module is an optional helper module that proxies SQL
 queries to a MySQL backend. It is loaded via `MODULE_PATH` in the

@@ -1,6 +1,6 @@
 # MUX Core Server (mux/src/) — Open Issues
 
-Updated: 2026-03-27
+Updated: 2026-05-22 (Apple Silicon DBT JIT landed; Windows TODO unchanged)
 
 ## ~~Critical — Buffer Overflows & Memory Safety~~ FIXED
 

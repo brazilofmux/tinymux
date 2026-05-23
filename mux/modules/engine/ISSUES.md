@@ -1,6 +1,6 @@
 # Core Engine (mux/modules/engine/) — Open Issues
 
-Updated: 2026-04-04
+Updated: 2026-05-22 (post Apple Silicon JIT)
 
 ## High — AST/JIT Safety & Performance
 
@@ -134,3 +134,8 @@ Updated: 2026-04-04
 - **Issue:** `while ((b & 0x80) == 0)` loops over varint bytes accumulating into `size_t`. A malformed bytecode with >10 continuation bytes can overflow `size_t` before the caller's bounds check catches the resulting length. Cap iterations at `sizeof(size_t) * 8 / 7 + 1`.
 
 ## Low — Technical Debt
+
+### 9-digit threshold for integer fast-path in HIR lowering (interpreter parity)
+- **File:** `mux/modules/engine/hir_lower.cpp:2537`
+- **Issue:** The fast integer path for ADD/SUB only kicks in for constants with <=9 digits (32-bit long legacy). Larger constants fall to double via mux_atof even if they would fit int64. The TODO notes that 64-bit int math could be used up to 18 digits in both interpreter and JIT, but would change observable results for [1e9, 1e18] values — requires coordinated change.
+- **Opportunity:** Track as future numeric parity / precision work once the current critical JIT safety items are closed.

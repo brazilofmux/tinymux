@@ -6,18 +6,18 @@ context; this file only summarises what is still open. When a tracker
 lists zero open items, the file is kept as a historical record of the
 audit passes that closed it.
 
-Last refreshed: 2026-04-10.
+Last refreshed: 2026-05-22 (post Apple Silicon JIT enablement and April 2026 safety audits).
 
 ## Trackers With Open Items
 
 | Tracker | Open | Summary |
 |---|---|---|
-| [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 16 | Windows console signal-handler TODO; `Stub_PipePump` data loss; `slave.cpp` overflow; `SBUF_SIZE` limits; `netaddr.cpp` UB/overflow *and* critical broken-hex IPv4 parse; websocket snprintf/RFC 6455 gaps; `platform.cpp` `PanicRestart` argv UB. |
-| [libmux (`mux/lib/`)](mux/lib/ISSUES.md) | 8 | Ragel date scanner: digit-token overflow, narrowing year cast, time lower bounds, "12:30 AM", week-date 0, sub-second narrowing, TZ sign fragility. |
-| [Engine Module](mux/modules/engine/ISSUES.md) | 15 | `alloc_lbuf` RAII migration remainder; dynamic-cargs `ulambda` JIT; JIT JAL offset overflow (critical); HIR bounds checks; attr-cache leak on invalidation; Lua refcount/Alloc bugs; SQLite error-path hygiene. |
-| [GANL Networking](mux/ganl/ISSUES.md) | 8 | OpenSSL lifetime races; `recv()==0` handling; setsockopt return codes; telnet subnegotiation timeout gap; STARTTLS CA trust. |
-| [SQLSlave Module](mux/modules/sqlslave/ISSUES.md) | 8 | Non-atomic refcount; unchecked `m_pServer`; ownership contract on `Connect()`; MySQL error propagation. |
-| [Test Infrastructure](testcases/ISSUES.md) | 3 | SHA1→semantic migration still in progress; edge-case coverage gaps; single-test-per-function norm. |
+| [Core Server (`mux/src/`)](mux/src/ISSUES.md) | 1 | Windows console `SetConsoleCtrlHandler` TODO (platform.cpp:142). All April 2026 buffer/UB/signal/WebSocket/netaddr/Stub_PipePump/PanicRestart criticals documented as FIXED in sub-tracker. |
+| [libmux (`mux/lib/`)](mux/lib/ISSUES.md) | 10 | Ragel `date_scan.rl`: 8 bugs (32-bit digit overflow, `int→short` year narrowing, negative time-of-day fields, "12:30 AM" rejection, `iWeekOfYear==0` week-date, sub-second narrowing loss, TZ sign fragility) + 2 opportunities (dedicated fuzz tests; ZWJ emoji clusters). |
+| [Engine Module](mux/modules/engine/ISSUES.md) | ~17 | `alloc_lbuf` RAII remainder (~90 sites); dynamic `cargs` for `ulambda` JIT; critical RV64 JAL 21-bit offset overflow + HIR `iv.value` bounds; attr-cache stale-code leak (unbounded heap growth); Lua `m_cRef` non-atomic + `s_next_key` + `LuaAlloc` drift + snprintf cast; 5+ SQLite hygiene (null blobs, reset ordering, WAL BUSY, ROLLBACK, LoadAllAttrNames); numeric 9-digit threshold TODO. |
+| [GANL Networking](mux/ganl/ISSUES.md) | 9 | OpenSSL session ptr deref outside lock + `sslObjectsToFree` drain race; `recv()==0` / EOF mishandled (no Closing state); setsockopt (REUSE*, IPV6_V6ONLY, nonblock) return codes ignored; telnet subnegotiation stall on missing IAC SE + IAC IAC drop on full buf; no CA trust logging for STARTTLS. (Plus minor CHARSET client-list TODO.) |
+| [SQLSlave Module](mux/modules/sqlslave/ISSUES.md) | 9 | Non-atomic `m_cRef`/`g_c*` counters; `ConnectionHelper` derefs `m_pServer` w/o nullcheck; `Connect()` delete[] ownership contract (ABI hazard for out-of-proc); MySQL errors silent (`real_connect`, `next_result`, options); reconnect hook empty; broad `catch(...)`. |
+| [Test Infrastructure](testcases/ISSUES.md) | 5 | `isjson({"a":1})` JIT (preserves brace-group) vs legacy `parse_to` (strips) divergence — open which is "correct" (non-JIT path is the semantic bug per investigation); 84% SHA1 hash snapshots (brittle); edge/unicode/permission/overflow coverage gaps; single happy-path case per function norm. (Apple Silicon JIT now enabled 2026-05-02; re-probe recommended.) |
 
 ## Fully Closed Trackers (history preserved)
 
