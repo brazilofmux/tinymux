@@ -717,7 +717,8 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     bool self_loop = false;
     {
         uint64_t scan_pc = guest_pc;
-        int used[32] = {0};
+        int used[32] = {0};        // sources read early — preload candidates
+        int referenced[32] = {0};  // sources + destinations — slot pressure
         bool past_first_branch = false;
         for (int i = 0; i < MAX_BLOCK_INSNS && scan_pc + 4 <= dbt->memory_size; i++) {
             uint32_t w;
@@ -725,9 +726,8 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             rv64_insn_t si;
             rv64_decode(w, &si);
             if (!past_first_branch) {
-                if (si.rs1) used[si.rs1] = 1;
-                if ((si.opcode == OP_REG || si.opcode == OP_BRANCH || si.opcode == OP_STORE) && si.rs2)
-                    used[si.rs2] = 1;
+                rc_mark_used(si, used);
+                rc_mark_referenced(si, referenced);
             }
             if (si.opcode == OP_BRANCH) {
                 uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
@@ -763,29 +763,10 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             if (si.opcode == OP_SYSTEM) break;
             scan_pc += 4;
         }
-        // A warm-loop superblock keeps the loop body's registers resident in
-        // host registers across the back-edge (warm_entry).  The cache only
-        // has (RC_NUM_SLOTS - RC_NUM_PINNED) free slots for non-pinned guest
-        // registers; if the loop references more than that, the cache cannot
-        // hold a consistent mapping across iterations.  Loop-invariant, never-
-        // dirty registers then get evicted without being reloaded at the back-
-        // edge, corrupting later iterations (e.g. a magic-reciprocal divisor in
-        // an itoa loop).  When the loop over-commits, fall back to ordinary
-        // per-iteration dispatch, which flushes and reloads through ctx and is
-        // always correct.
-        if (self_loop) {
-            const int free_slots = RC_NUM_SLOTS - RC_NUM_PINNED;
-            int nonpinned_used = 0;
-            for (int r = 1; r < 32; r++) {
-                if (!used[r]) continue;
-                bool pinned = false;
-                for (int p = 0; p < RC_NUM_PINNED; p++)
-                    if (rc_pinned_guest[p] == r) { pinned = true; break; }
-                if (!pinned) nonpinned_used++;
-            }
-            if (nonpinned_used > free_slots) {
-                self_loop = false;
-            }
+        // If the loop over-commits the register cache, fall back to ordinary
+        // per-iteration dispatch (see rc_loop_overcommits in dbt_internal.h).
+        if (self_loop && rc_loop_overcommits(referenced, rc_pinned_guest, RC_NUM_PINNED)) {
+            self_loop = false;
         }
         if (self_loop) {
             // Pre-load frequently used registers into the cache.

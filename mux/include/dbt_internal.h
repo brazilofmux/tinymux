@@ -35,6 +35,78 @@ struct reg_cache_t {
 };
 
 // ---------------------------------------------------------------
+// Warm-loop register-pressure analysis (shared by all backends)
+// ---------------------------------------------------------------
+//
+// A "warm-loop" superblock keeps the loop body's guest registers resident
+// in host registers across the back-edge (warm_entry) instead of flushing
+// and reloading through ctx every iteration.  The register cache has only
+// (RC_NUM_SLOTS - RC_NUM_PINNED) free slots for non-pinned guest registers
+// (a0-a3 are pinned).  If a loop references more non-pinned registers than
+// that, the cache cannot hold a consistent guest->host mapping across
+// iterations: a loop-invariant, never-dirty register (e.g. the magic
+// reciprocal divisor in an itoa /10 loop) is pre-loaded, read at the top
+// with no reload, then evicted mid-body.  rc_flush at the back-edge saves
+// only dirty registers, so later iterations read a stale host register and
+// corrupt the result.  When the loop over-commits, the backend falls back
+// to ordinary per-iteration dispatch, which is always correct.
+//
+// These helpers live in the shared header so every backend computes the
+// preload set, the referenced-register set, and the over-commit decision
+// identically — the guard was originally added to only one backend and
+// silently missing from the others (see ISSUES.md /
+// dbt_test.cpp::test_selfloop_register_pressure).
+
+// Mark the guest source registers (rs1/rs2) read by one instruction in
+// used[1..31].  This set drives the warm-loop preload: the registers worth
+// pre-loading at warm_entry are the ones *read* early in the loop, so it
+// must track sources only.  Marking destinations here would preload
+// write-only registers and skew the warm cache layout.
+static inline void rc_mark_used(const rv64_insn_t &si, int used[32]) {
+    if (si.rs1) used[si.rs1] = 1;
+    if ((si.opcode == OP_REG || si.opcode == OP_BRANCH || si.opcode == OP_STORE)
+        && si.rs2)
+        used[si.rs2] = 1;
+}
+
+// Mark every guest register one instruction references — sources AND the
+// integer destination — in referenced[1..31].  This drives the over-commit
+// guard, which must count a cache slot for each distinct register the loop
+// touches: a destination-only register still occupies a slot, so omitting it
+// under-counts the loop's register pressure.  rd is taken only for opcodes
+// that actually write an integer register — for STORE/BRANCH/SYSTEM the rd
+// field holds immediate bits, not a destination.
+static inline void rc_mark_referenced(const rv64_insn_t &si, int referenced[32]) {
+    rc_mark_used(si, referenced);
+    switch (si.opcode) {
+    case OP_LUI: case OP_AUIPC: case OP_JAL: case OP_JALR:
+    case OP_LOAD: case OP_IMM: case OP_REG: case OP_IMM32: case OP_REG32:
+        if (si.rd) referenced[si.rd] = 1;
+        break;
+    default:
+        break;
+    }
+}
+
+// Return true if a self-loop body whose referenced registers are recorded
+// in referenced[1..31] needs more non-pinned cache slots than are free,
+// meaning a warm superblock would over-commit the cache.
+static inline bool rc_loop_overcommits(const int referenced[32],
+                                       const int *pinned_guest,
+                                       int num_pinned) {
+    const int free_slots = RC_NUM_SLOTS - num_pinned;
+    int nonpinned_used = 0;
+    for (int r = 1; r < 32; r++) {
+        if (!referenced[r]) continue;
+        bool pinned = false;
+        for (int p = 0; p < num_pinned; p++)
+            if (pinned_guest[p] == r) { pinned = true; break; }
+        if (!pinned) nonpinned_used++;
+    }
+    return nonpinned_used > free_slots;
+}
+
+// ---------------------------------------------------------------
 // FP register cache
 // ---------------------------------------------------------------
 

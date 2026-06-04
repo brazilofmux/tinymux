@@ -1,8 +1,10 @@
 /*! \file dbt_test.cpp
  * \brief Standalone test harness for the RV64IMD interpreter and DBT.
  *
- * Compile (dbt.cpp + dbt_a64_sysv.cpp are needed for the differential
- * interpreter-vs-translator tests):
+ * Compile (dbt.cpp + the backend that matches the build host are needed for
+ * the differential interpreter-vs-translator tests).  Use the same backend
+ * configure would pick for this host: dbt_a64_sysv.cpp on AArch64,
+ * dbt_x64_sysv.cpp on x86-64 SysV, dbt_x64_win64.cpp on Win64:
  *   g++ -std=c++17 -O2 -I../../include -o dbt_test \
  *       dbt_test.cpp dbt_interp.cpp dbt_elf64.cpp dbt.cpp dbt_a64_sysv.cpp
  *

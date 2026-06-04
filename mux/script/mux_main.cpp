@@ -1283,6 +1283,21 @@ static int scheduler_timeout_ms(bool eof_seen)
     return eof_seen ? -2 : -1;  // -2 = no tasks + eof = exit
 }
 
+// Helper: once stdin is exhausted, the script loop should finish as soon as
+// no real user work remains.  Recurring system tasks (dumps, idle checks,
+// keepalives) would otherwise keep the scheduler non-empty forever; delayed
+// @wait tasks still count as user work, so they are honored before exit.
+//
+static bool script_should_exit_on_eof(bool eof_seen)
+{
+    if (!eof_seen)
+    {
+        return false;
+    }
+    bool bPending = false;
+    return MUX_FAILED(g_pEngine->HasPendingUserTasks(&bPending)) || !bPending;
+}
+
 #if defined(WIN32)
 
 static void script_loop(FILE *input)
@@ -1366,19 +1381,9 @@ static void script_loop(FILE *input)
             }
         }
 
-        // Once stdin is exhausted, finish as soon as no real user work
-        // remains.  Recurring system tasks (dumps, idle checks, keepalives)
-        // would otherwise keep the scheduler non-empty forever; delayed
-        // @wait tasks still count, so they are honored before exit.
-        //
-        if (eof_seen)
+        if (script_should_exit_on_eof(eof_seen))
         {
-            bool bPending = false;
-            if (  MUX_FAILED(g_pEngine->HasPendingUserTasks(&bPending))
-               || !bPending)
-            {
-                break;
-            }
+            break;
         }
     }
 }
@@ -1515,19 +1520,9 @@ static void script_loop(FILE *input)
             }
         }
 
-        // Once stdin is exhausted, finish as soon as no real user work
-        // remains.  Recurring system tasks (dumps, idle checks, keepalives)
-        // would otherwise keep the scheduler non-empty forever; delayed
-        // @wait tasks still count, so they are honored before exit.
-        //
-        if (eof_seen)
+        if (script_should_exit_on_eof(eof_seen))
         {
-            bool bPending = false;
-            if (  MUX_FAILED(g_pEngine->HasPendingUserTasks(&bPending))
-               || !bPending)
-            {
-                break;
-            }
+            break;
         }
     }
 }
