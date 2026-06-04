@@ -763,6 +763,30 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             if (si.opcode == OP_SYSTEM) break;
             scan_pc += 4;
         }
+        // A warm-loop superblock keeps the loop body's registers resident in
+        // host registers across the back-edge (warm_entry).  The cache only
+        // has (RC_NUM_SLOTS - RC_NUM_PINNED) free slots for non-pinned guest
+        // registers; if the loop references more than that, the cache cannot
+        // hold a consistent mapping across iterations.  Loop-invariant, never-
+        // dirty registers then get evicted without being reloaded at the back-
+        // edge, corrupting later iterations (e.g. a magic-reciprocal divisor in
+        // an itoa loop).  When the loop over-commits, fall back to ordinary
+        // per-iteration dispatch, which flushes and reloads through ctx and is
+        // always correct.
+        if (self_loop) {
+            const int free_slots = RC_NUM_SLOTS - RC_NUM_PINNED;
+            int nonpinned_used = 0;
+            for (int r = 1; r < 32; r++) {
+                if (!used[r]) continue;
+                bool pinned = false;
+                for (int p = 0; p < RC_NUM_PINNED; p++)
+                    if (rc_pinned_guest[p] == r) { pinned = true; break; }
+                if (!pinned) nonpinned_used++;
+            }
+            if (nonpinned_used > free_slots) {
+                self_loop = false;
+            }
+        }
         if (self_loop) {
             // Pre-load frequently used registers into the cache.
             int loaded = 0;

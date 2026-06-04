@@ -67,6 +67,11 @@ Updated: 2026-05-22 (post Apple Silicon JIT)
 - **File:** `mux/modules/engine/hir_codegen.cpp:696, 954, 968`
 - **Issue:** The linear-scan allocator writes `result.addr[iv.value]`, `result.reg[iv.value]`, and `result.spill_slot[iv.value]` without checking `iv.value < HIR_MAX_INSNS`. `iv.value` is a HIR instruction index and is normally bounded by the HIR builder, but any later pass that synthesizes extra virtuals (e.g., PHI rewrites, HIR_FCALL expansion) could push past `HIR_MAX_INSNS` and corrupt the adjacent allocator state. Add an explicit bounds assertion.
 
+### ~~a64 warm-loop superblock corrupts registers when it over-commits the cache~~ FIXED (2026-06-04)
+- **File:** `mux/modules/engine/dbt_a64_sysv.cpp` (self-loop detection / pre-load).
+- **Issue:** When the RV64→ARM64 translator detects a self-loop it forms a "warm-loop" superblock that keeps the loop body's registers resident across the back-edge (`warm_entry`). The register cache has only `RC_NUM_SLOTS - RC_NUM_PINNED` = 4 free slots (a0–a3 are pinned). A loop that references more than 4 non-pinned registers cannot hold a consistent mapping across `warm_entry`: a loop-invariant, never-dirty register (e.g. the ÷10 magic-reciprocal divisor in itoa) gets pre-loaded and read at the loop top with no reload, then evicted mid-body for a working register; `rc_flush` at the back-edge only saves *dirty* registers, so on later iterations `warm_entry` reads a stale host register. Surfaced as `strlen()`/`add()` etc. producing garbage for ≥4-digit values when the rv64 softlib was built with a newer GCC (15.2) whose codegen used >4 live registers in the itoa ÷10 loop. The interpreter (`dbt_interp`) ran the identical machine code correctly, proving a translator bug, not a GCC bug.
+- **Fix:** Disable the warm-loop superblock when the loop's non-pinned `used` register count exceeds the free slots; fall back to per-iteration dispatch (flush/reload through ctx), which is always correct. Regression test: `dbt_test.cpp::test_selfloop_register_pressure` (differential interpreter-vs-translator on a ÷10 self-loop).
+
 ## Medium — JIT Memory & Offset Hygiene (New, 2026-04-10)
 
 ### Stale compiled entry leaked on `persistent_vm_t::attr_cache` replacement

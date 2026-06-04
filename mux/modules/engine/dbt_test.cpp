@@ -1,8 +1,10 @@
 /*! \file dbt_test.cpp
- * \brief Standalone test harness for the RV64IMD interpreter.
+ * \brief Standalone test harness for the RV64IMD interpreter and DBT.
  *
- * Compile:
- *   g++ -std=c++17 -O2 -I../../include -o dbt_test dbt_test.cpp dbt_interp.cpp dbt_elf64.cpp
+ * Compile (dbt.cpp + dbt_a64_sysv.cpp are needed for the differential
+ * interpreter-vs-translator tests):
+ *   g++ -std=c++17 -O2 -I../../include -o dbt_test \
+ *       dbt_test.cpp dbt_interp.cpp dbt_elf64.cpp dbt.cpp dbt_a64_sysv.cpp
  *
  * Run:
  *   ./dbt_test                          # hand-assembled tests only
@@ -10,7 +12,9 @@
  *
  * Tests hand-assembled RV64IMD instruction sequences against expected
  * results.  Each test allocates a small memory buffer, writes machine
- * code, runs the interpreter, and checks register values.
+ * code, runs the interpreter, and checks register values.  Some tests also
+ * run the same code through the host DBT translator and check that it
+ * agrees with the interpreter (run_code_dbt).
  */
 
 #include "dbt_interp.h"
@@ -258,6 +262,34 @@ static TestResult run_code(const std::vector<uint32_t>& code,
     result.exit_code = rc;
     result.state = state;
     return result;
+}
+
+// Run a code sequence through the host DBT translator and return guest
+// register `reg`.  Used to differential-test the translator against the
+// reference interpreter (run_code).  The code must set up its own registers
+// (dbt_run zeroes the guest context on entry) and end with ECALL.
+//
+static rv64_ctx_t g_dbt_exit_ctx;
+static int dbt_test_ecall2(rv64_ctx_t *ctx, void *) {
+    g_dbt_exit_ctx = *ctx;
+    return 0; // halt
+}
+
+static uint64_t run_code_dbt(const std::vector<uint32_t>& code, int reg) {
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        return ~0ULL;
+    }
+    dbt.max_dispatch = 1000000;
+    dbt_run(&dbt, 0, MEM_SIZE - 16);
+    dbt_cleanup(&dbt);
+    return g_dbt_exit_ctx.x[reg];
 }
 
 // ---------------------------------------------------------------
@@ -1303,6 +1335,55 @@ static bool run_dbt_elf_test(const char *path) {
 // Main
 // ---------------------------------------------------------------
 
+// Self-loop with more live non-pinned registers than the a64 register
+// cache has free slots.  The translator forms a "warm-loop" superblock that
+// keeps the loop body resident across the back-edge; with a0-a3 pinned, only
+// 4 slots are free, but this loop reads 5 loop-invariant registers (t1-t5).
+// A buggy translator evicts an invariant without reloading it at the back-
+// edge, corrupting later iterations.  This was observed as itoa() producing
+// garbage digits for >=4-digit values (the ÷10 magic-reciprocal divisor was
+// the evicted invariant).  Differential-tested against the interpreter.
+//
+static void test_selfloop_register_pressure() {
+    printf("test_selfloop_register_pressure...\n");
+    // Reproduces the warm-loop register-eviction bug exactly as itoa hit it:
+    // a self-loop that divides by 10 via a magic-reciprocal multiply.  The
+    // divisor magic lives in a high-numbered, loop-invariant register (t5/x30)
+    // so it survives the warm_entry pre-load and is read at the loop top with
+    // no reload — but it is then evicted mid-body for a working register.  A
+    // translator that doesn't reconcile the cache at the back-edge reads a
+    // stale host register for the magic on later iterations, corrupting the
+    // quotient.  Here we sum the decimal digits of a1 (>=4 digits to get
+    // enough iterations) and differential-test against the interpreter.
+    //
+    // x30 = 0xCCCCCCCCCCCCCCCD (the /10 magic), x28 = digit sum.
+    const int A1 = 11, Q = 5, T = 6, R = 7, SUM = 28, M = 30;
+    auto MULHU = [](int rd, int rs1, int rs2) {
+        return r_type(OP_REG, rd, 3, rs1, rs2, 0x01);
+    };
+    std::vector<uint32_t> code = {
+        // a1 = 123456  (0x1E000 + 576)
+        LUI(A1, 0x1E000), ADDI(A1, A1, 576),
+        // M = 0xCCCCCCCCCCCCCCCD
+        LUI(M, 0xCCCCD000), ADDI(M, M, -819),  // M = 0xFFFFFFFFCCCCCCCD
+        SLLI(Q, M, 32), ADD(M, Q, M),          // M = 0xCCCCCCCCCCCCCCCD
+        ADDI(SUM, 0, 0),                       // sum = 0
+        // loop (self-loop back-edge below):
+        MULHU(Q, A1, M),       // q = high64(a1 * magic)
+        SRLI(Q, Q, 3),         // q = a1 / 10
+        SLLI(T, Q, 2), ADD(T, T, Q), SLLI(T, T, 1),  // t = q * 10
+        SUB(R, A1, T),         // r = a1 - q*10  (low digit)
+        ADD(SUM, SUM, R),      // sum += digit
+        ADD(A1, Q, 0),         // a1 = q
+        BNE(A1, 0, -32),       // while a1 != 0  (8 instrs back = -32)
+        ECALL(),
+    };
+    uint64_t interp = run_code(code).state.x[SUM];
+    uint64_t dbt    = run_code_dbt(code, SUM);
+    CHECK_EQ("self-loop regpressure: interpreter", interp, 21);  // 1+2+3+4+5+6
+    CHECK_EQ("self-loop regpressure: DBT matches interpreter", dbt, interp);
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -1339,6 +1420,7 @@ int main(int argc, char *argv[]) {
     test_fp_fma();
     test_fp_fclass();
     test_fp_fmv_dx();
+    test_selfloop_register_pressure();
 
     printf("\n==============================\n");
     printf("Hand-assembled: %d run, %d passed, %d failed\n",
