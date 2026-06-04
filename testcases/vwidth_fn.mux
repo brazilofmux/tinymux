@@ -1,0 +1,85 @@
+#
+# vwidth_fn.mux - Test Cases for vwidth().
+#
+# vwidth() returns the display (console) column width of a string: color
+# codes are zero-width, wide (East Asian) characters count as two columns,
+# and combining marks count as zero.  Contrast strlen() (grapheme count).
+#
+@create test_vwidth_fn
+-
+@set test_vwidth_fn=INHERIT QUIET
+-
+&tr.tc000 test_vwidth_fn=
+  @log smoke=Beginning vwidth() test cases.
+-
+#
+# Test Case #1 - Plain ASCII: vwidth == strlen.
+#
+&tr.tc001 test_vwidth_fn=
+  @if cand(
+        eq(vwidth(Hello world),11),
+        eq(vwidth(Hello world),strlen(Hello world))
+      )=
+  {
+    @log smoke=TC001: ascii width. Succeeded.
+  },
+  {
+    @log smoke=TC001: ascii width. Failed (vwidth=[vwidth(Hello world)]).
+  }
+-
+#
+# Test Case #2 - Color is zero-width: 16-color, 256-color, and truecolor.
+#
+&tr.tc002 test_vwidth_fn=
+  @if cand(
+        eq(vwidth(%xrHello%xn),5),
+        eq(vwidth(ansi(<#FF8040>,Hello)),5),
+        eq(vwidth(ansi(<#FF8040>/<#800080>,Hello)),5)
+      )=
+  {
+    @log smoke=TC002: color is zero-width. Succeeded.
+  },
+  {
+    @log smoke=TC002: color is zero-width. Failed (plain=[vwidth(%xrHello%xn)] tc=[vwidth(ansi(<#FF8040>,Hello))]).
+  }
+-
+#
+# Test Case #3 - Wide (East Asian) characters count as two columns, while
+# strlen() counts them as one grapheme each.
+#
+&tr.tc003 test_vwidth_fn=
+  @if cand(
+        eq(vwidth([chr(19990)][chr(30028)]),4),
+        eq(vwidth(Hi[chr(19990)]),4),
+        eq(vwidth([chr(20013)][chr(19990)][chr(30028)]),6)
+      )=
+  {
+    @log smoke=TC003: wide characters. Succeeded.
+  },
+  {
+    @log smoke=TC003: wide characters. Failed (cjk2=[vwidth([chr(19990)][chr(30028)])] cjk3=[vwidth([chr(20013)][chr(19990)][chr(30028)])]).
+  }
+-
+#
+# Test Case #4 - Empty string is zero width.
+#
+&tr.tc004 test_vwidth_fn=
+  @if eq(vwidth(),0)=
+  {
+    @log smoke=TC004: empty string. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: empty string. Failed ([vwidth()]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vwidth_fn=
+  @log smoke=End vwidth() test cases.;
+  @notify smoke
+-
+drop test_vwidth_fn
+-
+#
+# End of Test Cases
+#

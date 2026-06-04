@@ -15587,7 +15587,8 @@ STRLEN()
   may consist of one or more Unicode code points (such as a base letter
   with combining accents). ANSI color codes do not count.
 
-  Use strmem() to get the number of bytes instead.
+  Use strmem() to get the number of bytes instead, or vwidth() to get the
+  display width in console columns (where wide characters count as two).
 
   Example:
     > say strlen(This is a test)
@@ -15597,7 +15598,7 @@ STRLEN()
     > say strlen([chr(233)])
     You say, "1"
 
-  Related Topics: strmem(), UNICODE.
+  Related Topics: strmem(), vwidth(), UNICODE.
 
 & STRDISTANCE()
 STRDISTANCE()
@@ -17104,6 +17105,31 @@ VUNIT()
 
   Related Topics: vdim(), vmag().
 
+& VWIDTH()
+VWIDTH()
+
+  FUNCTION: vwidth(<string>)
+
+  Returns the display width of <string> in console columns.  ANSI color
+  codes (including 24-bit truecolor) are zero-width, wide (East Asian)
+  characters such as CJK ideographs count as two columns, and combining
+  marks count as zero.
+
+  This is the measure used internally by the formatting functions (such
+  as wrap(), center(), and ljust()) to align text.  Contrast strlen(),
+  which counts grapheme clusters, and width(), which reports a client's
+  screen width.
+
+  Examples:
+    > say vwidth(Hello)
+    You say, "5"
+    > say vwidth(ansi(<#FF8040>,Hello))
+    You say, "5"
+    > say vwidth([chr(19990)][chr(30028)])
+    You say, "4"
+
+  Related Topics: strlen(), width(), wrap(), UNICODE.
+
 & WHERE()
 WHERE()
 
@@ -17172,7 +17198,7 @@ WIDTH()
     > say width(me)
     You say, "122"
 
-  Related Topics: colordepth(), height(), terminfo().
+  Related Topics: colordepth(), height(), terminfo(), vwidth().
 
 & WIPE()
 WIPE()

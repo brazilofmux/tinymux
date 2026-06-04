@@ -48,11 +48,50 @@
         859B45C2E5BBDE3E6F35F4564F1EA9ABA55F7BDA
       )=
   {
-    @log smoke=TC002: Regressions. Succeeded.;
+    @log smoke=TC002: Regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: Regressions. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - Truecolor (24-bit) color is zero-width: wrapping colored
+# text must produce the same wrap points as the identical plain text.
+# Guards against PUA color bytes being miscounted as visible columns
+# (regression from the old narrow SMP color range in the wrap helpers).
+#
+&tr.tc003 test_wrap_fn=
+  @if strmatch(
+        stripansi(wrap([ansi(<#FF8040>,alpha)] [ansi(<#40FF80>,bravo)] [ansi(<#8040FF>,charlie)] [ansi(<#FF4080>,delta)] [ansi(<#80FF40>,echo)] [ansi(<#40FFFF>,foxtrot)],20,left,,,,~)),
+        wrap(alpha bravo charlie delta echo foxtrot,20,left,,,,~)
+      )=
+  {
+    @log smoke=TC003: truecolor width parity. Succeeded.
+  },
+  {
+    @log smoke=TC003: truecolor width parity. Failed.
+  }
+-
+#
+# Test Case #4 - Wide (East Asian, 2-column) characters must count as their
+# display width so a right-side wall stays flush.  This is the bug class
+# reported against 2.13 (Unicode symbols rippling the <righttxt> wall).
+#
+&tr.tc004 test_wrap_fn=
+  @if strmatch(
+        setr(0,setunion(
+            iter(
+              wrap(Hello [chr(19990)][chr(30028)] there friend how are you today,12,left,>%b,%b<,,~),
+              vwidth(##),~,%b),
+          )),
+        16
+      )=
+  {
+    @log smoke=TC004: wide-char wall flush. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: Regressions. Failed (%q0).;
+    @log smoke=TC004: wide-char wall flush. Failed (%q0).;
     @trig me/tr.done
   }
 -

@@ -1524,11 +1524,10 @@ static size_t pua_advance_columns(const UTF8 *p, size_t len,
             continue;
         }
 
-        // Skip SMP PUA color (4 bytes: 0xF3 0xB0 0x80..0x97 xx).
+        // Skip SMP PUA color (4 bytes: 0xF3 0xB0..0xB3 xx xx).
         //
         if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] == 0xB0
-            && p[2] >= 0x80 && p[2] <= 0x97)
+            && p[1] >= 0xB0 && p[1] <= 0xB3)
         {
             p += 4;
             continue;
@@ -1580,8 +1579,7 @@ static size_t pua_back_one(const UTF8 *base, size_t off)
         return pua_back_one(base, pos);
     }
     if (base[pos] == 0xF3 && (pos + 3) < off
-        && base[pos + 1] == 0xB0
-        && base[pos + 2] >= 0x80 && base[pos + 2] <= 0x97)
+        && base[pos + 1] >= 0xB0 && base[pos + 1] <= 0xB3)
     {
         return pua_back_one(base, pos);
     }
@@ -1632,8 +1630,7 @@ static size_t expand_tabs(const UTF8 *src, size_t src_len,
             // Skip SMP PUA color (4 bytes).
             //
             if (sp[0] == 0xF3 && (sp + 3) < spe
-                && sp[1] == 0xB0
-                && sp[2] >= 0x80 && sp[2] <= 0x97)
+                && sp[1] >= 0xB0 && sp[1] <= 0xB3)
             {
                 if (wp + 4 <= wpe) { wp[0]=sp[0]; wp[1]=sp[1]; wp[2]=sp[2]; wp[3]=sp[3]; wp += 4; }
                 sp += 4;
@@ -3834,6 +3831,29 @@ static FUNCTION(fun_strlen)
         size_t nBytes = 0;
         UTF8 *pStripped = strip_color(fargs[0], &nBytes, nullptr);
         n = utf8_cluster_count(pStripped, nBytes);
+    }
+    safe_ltoa(static_cast<long>(n), buff, bufc);
+}
+
+// fun_vwidth: Display (console) width of a string in columns.  Color codes
+// are zero-width; wide (East Asian) characters count as two columns and
+// combining marks as zero.  Contrast with strlen() (grapheme count) and
+// width() (the enactor's screen width).
+//
+static FUNCTION(fun_vwidth)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    size_t n = 0;
+    if (nfargs >= 1)
+    {
+        n = co_visual_width(reinterpret_cast<const unsigned char *>(fargs[0]),
+                            strlen(reinterpret_cast<char *>(fargs[0])));
     }
     safe_ltoa(static_cast<long>(n), buff, bufc);
 }
@@ -15307,6 +15327,7 @@ static FUN builtin_function_list[] =
     {T("VMUL"),        fun_vmul,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("VSUB"),        fun_vsub,       MAX_ARG, 2,       4,         0, CA_PUBLIC},
     {T("VUNIT"),       fun_vunit,      MAX_ARG, 1,       2,         0, CA_PUBLIC},
+    {T("VWIDTH"),      fun_vwidth,           1, 0,       1,         0, CA_PUBLIC},
     {T("WHERE"),       fun_where,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("WIDTH"),       fun_width,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("WIPE"),        fun_wipe,       MAX_ARG, 1,       1,         0, CA_PUBLIC},
