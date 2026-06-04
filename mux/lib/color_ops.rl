@@ -63,7 +63,12 @@ static int run_dfa(const unsigned char *itt, const unsigned short *sot,
                    const unsigned char *pEnd)
 {
     int iState = start;
-    while (p < pEnd) {
+    /* Stop at the first accepting state.  The table builder (utf/integers)
+     * prunes any state whose paths all converge into that accepting state, so
+     * acceptance can occur before the final byte of a code point; reading on
+     * would transition into an unrelated state (e.g. a CJK ideograph misread
+     * as Extend).  Mirrors the fixed readers in utf8_grapheme.cpp. */
+    while (p < pEnd && iState < accept_start) {
         int iCol = itt[*p++];
         int iOff = sot[iState];
         for (;;) {

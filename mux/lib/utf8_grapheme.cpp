@@ -49,7 +49,16 @@ static int RunIntegerDFA_GCB(
     const UTF8 *pEnd)
 {
     int iState = start_state;
-    while (p < pEnd)
+
+    // Stop at the first accepting state.  The table builder (utf/integers)
+    // prunes any state whose paths all lead to a single accepting value into
+    // that accepting state directly, so an accepting state can be reached
+    // before the final byte of a code point.  Reading the remaining bytes
+    // would transition back out of the accepting state into an unrelated one,
+    // yielding a wrong property (e.g. a CJK ideograph misread as Extend).
+    // This mirrors ConsoleWidth(), which consumes the same table correctly.
+    //
+    while (p < pEnd && iState < accepting_start)
     {
         unsigned char ch = *p++;
         int iColumn = itt[ch];
@@ -106,7 +115,11 @@ static int GetGCB(const UTF8 *p, const UTF8 *pEnd)
 static bool IsExtPict(const UTF8 *p, const UTF8 *pEnd)
 {
     unsigned short iState = CL_EXTPICT_START_STATE;
-    while (p < pEnd)
+    // Stop at the first accepting state: the pruned table can accept before
+    // the final byte of a code point, and reading on would transition into an
+    // unrelated state.  See the note in RunIntegerDFA_GCB above.
+    //
+    while (p < pEnd && iState < CL_EXTPICT_ACCEPTING_STATES_START)
     {
         unsigned char ch = *p++;
         int iColumn = cl_extpict_itt[ch];

@@ -58,7 +58,11 @@
 static int GetDUCET(const UTF8 *p, const UTF8 *pEnd)
 {
     int iState = TR_DUCET_START_STATE;
-    while (p < pEnd)
+    // Stop at the first accepting state: the pruned table can accept before
+    // the final byte of a code point, and reading on would transition into an
+    // unrelated state, yielding a wrong collation weight.
+    //
+    while (p < pEnd && iState < TR_DUCET_ACCEPTING_STATES_START)
     {
         unsigned char ch = *p++;
         int iColumn = tr_ducet_itt[ch];
