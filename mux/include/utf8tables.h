@@ -274,14 +274,14 @@ extern LIBMUX_API const UTF32 tr_nfc_compose_nfc_compose_result[965];
 
 // utf/tr_gcb.txt
 //
-// 17602 code points.
-// 208 states, 92 columns, 3594 bytes
+// 18060 code points.
+// 207 states, 92 columns, 3584 bytes
 //
 #define TR_GCB_START_STATE (0)
-#define TR_GCB_ACCEPTING_STATES_START (208)
+#define TR_GCB_ACCEPTING_STATES_START (207)
 extern LIBMUX_API const unsigned char tr_gcb_itt[256];
-extern LIBMUX_API const unsigned short tr_gcb_sot[208];
-extern LIBMUX_API const unsigned char tr_gcb_sbt[2922];
+extern LIBMUX_API const unsigned short tr_gcb_sot[207];
+extern LIBMUX_API const unsigned char tr_gcb_sbt[2914];
 
 // utf/cl_ExtPict.txt
 //

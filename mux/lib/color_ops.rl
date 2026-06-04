@@ -24,16 +24,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* ---- Grapheme Cluster Break (GCB) DFA tables from utf8tables ---- */
+/* ---- Grapheme Cluster Break (GCB) DFA tables from utf8tables ----
+ *
+ * These dimensions and the ACCEPTING_STATES_START offset MUST match the
+ * generated tr_gcb table (see TR_GCB_* in mux/include/utf8tables.h).  They
+ * are duplicated here rather than included because this file is also built
+ * freestanding for the rv64 JIT.  Update them whenever the utf tables are
+ * regenerated (an off-by-one here corrupts every grapheme lookup). */
 
 #define TR_GCB_START_STATE (0)
-#define TR_GCB_ACCEPTING_STATES_START (208)
+#define TR_GCB_ACCEPTING_STATES_START (207)
 #define CL_EXTPICT_START_STATE (0)
 #define CL_EXTPICT_ACCEPTING_STATES_START (44)
 
 extern const unsigned char tr_gcb_itt[256];
-extern const unsigned short tr_gcb_sot[208];
-extern const unsigned char tr_gcb_sbt[2922];
+extern const unsigned short tr_gcb_sot[207];
+extern const unsigned char tr_gcb_sbt[2914];
 extern const unsigned char cl_extpict_itt[256];
 extern const unsigned short cl_extpict_sot[44];
 extern const unsigned char cl_extpict_sbt[510];

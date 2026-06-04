@@ -55,8 +55,12 @@ strings: strings.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 pairs: pairs.cpp ConvertUTF.cpp ConvertUTF.h smutil.cpp smutil.h
 	g++ -O3 -g -o pairs pairs.cpp ConvertUTF.cpp smutil.cpp
 
+# iconv lives in libc on glibc systems but is a separate library on
+# macOS/BSD.  Probe for -liconv so buildFiles links on both.
+ICONV_LIB := $(shell printf 'int main(){}\n' | g++ -x c++ - -liconv -o /dev/null 2>/dev/null && echo -liconv)
+
 buildFiles: buildFiles.cpp smutil.cpp smutil.h
-	g++ -O3 -g -o buildFiles buildFiles.cpp smutil.cpp
+	g++ -O3 -g -o buildFiles buildFiles.cpp smutil.cpp $(ICONV_LIB)
 
 # Perl-generated intermediate data files from Unicode source data.
 #
