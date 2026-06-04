@@ -435,6 +435,18 @@ bool CScheduler::WhenNext(CLinearTimeAbsolute  *ltaWhen)
     return false;
 }
 
+bool CScheduler::HasPendingUserTasks(void)
+{
+    // "User work" is any queued or timed task with a priority above system
+    // maintenance (dumps, idle checks, keepalives — which recur forever) and
+    // below the suspended band (semaphore-parked entries, which never wake
+    // without an external notify).  A CLI run is finished once only those two
+    // classes remain, even though delayed @wait tasks must still be honored.
+    //
+    return 0 < m_WhenHeap.CountInPriorityRange(PRIORITY_SYSTEM, PRIORITY_SUSPEND)
+        || 0 < m_PriorityHeap.CountInPriorityRange(PRIORITY_SYSTEM, PRIORITY_SUSPEND);
+}
+
 void CScheduler::TraverseUnordered(SCHLOOK *pfLook)
 {
     if (m_WhenHeap.TraverseUnordered(pfLook))

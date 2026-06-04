@@ -1470,6 +1470,25 @@ public:
         return true;
     }
 
+    // Count live (non-cancelled) tasks whose priority lies strictly between
+    // iLo and iHi.  Used to tell real user work apart from recurring system
+    // maintenance and parked semaphore entries.
+    //
+    int CountInPriorityRange(int iLo, int iHi) const
+    {
+        int n = 0;
+        for (auto p : m_Heap)
+        {
+            if (  nullptr != p->fpTask
+               && iLo < p->iPriority
+               && p->iPriority < iHi)
+            {
+                n++;
+            }
+        }
+        return n;
+    }
+
     PTASK_RECORD PeekAtTopmost(void)
     {
         if (m_Heap.empty())
@@ -1585,6 +1604,7 @@ public:
     void DeferTask(const CLinearTimeAbsolute& ltWhen, int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
     void DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
     bool WhenNext(CLinearTimeAbsolute *);
+    bool HasPendingUserTasks(void);
     int  RunTasks(int iCount);
     int  RunAllTasks(void);
     int  RunTasks(const CLinearTimeAbsolute& tNow);

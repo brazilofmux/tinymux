@@ -1365,6 +1365,21 @@ static void script_loop(FILE *input)
                 break;
             }
         }
+
+        // Once stdin is exhausted, finish as soon as no real user work
+        // remains.  Recurring system tasks (dumps, idle checks, keepalives)
+        // would otherwise keep the scheduler non-empty forever; delayed
+        // @wait tasks still count, so they are honored before exit.
+        //
+        if (eof_seen)
+        {
+            bool bPending = false;
+            if (  MUX_FAILED(g_pEngine->HasPendingUserTasks(&bPending))
+               || !bPending)
+            {
+                break;
+            }
+        }
     }
 }
 
@@ -1407,9 +1422,13 @@ static void script_loop(FILE *input)
                 break;
             }
 
-            // Read available bytes and process complete lines.
+            // Read available bytes and process complete lines.  We attempt
+            // the read regardless of what poll() reported: on macOS poll()
+            // does not flag /dev/null (or some regular files) as readable, so
+            // gating the read on poll's verdict would miss input and never
+            // detect EOF.  The descriptor is non-blocking, so a read with no
+            // data simply returns EAGAIN and we fall through.
             //
-            if (found > 0 && (pfd.revents & (POLLIN | POLLHUP)))
             {
                 for (;;)
                 {
@@ -1493,6 +1512,21 @@ static void script_loop(FILE *input)
             if (ltaCheck > ltaNow2)
             {
                 break;  // Next task is in the future.
+            }
+        }
+
+        // Once stdin is exhausted, finish as soon as no real user work
+        // remains.  Recurring system tasks (dumps, idle checks, keepalives)
+        // would otherwise keep the scheduler non-empty forever; delayed
+        // @wait tasks still count, so they are honored before exit.
+        //
+        if (eof_seen)
+        {
+            bool bPending = false;
+            if (  MUX_FAILED(g_pEngine->HasPendingUserTasks(&bPending))
+               || !bPending)
+            {
+                break;
             }
         }
     }

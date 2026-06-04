@@ -243,6 +243,37 @@ if [ -n "$HANG_TYPE" ]; then
     echo "  Hang:      $HANG_TYPE"
 fi
 echo "  Log lines: $(wc -l < smoke.log)"
+
+# ---------------------------------------------------------------------------
+# Completeness: every test the harness intends to run must dispatch from the
+# semaphore chain, and the chain must reach its final link (Ending SmokeMUX).
+# Without this check a stalled chain or an early muxscript exit silently drops
+# the tail of the suite and still reports "all passed."
+# ---------------------------------------------------------------------------
+
+EXPECTED=$(grep -oE 'SUITE-EXPECTED: [0-9]+' smoke.log | grep -oE '[0-9]+' | head -1)
+DISPATCHED=$(grep -c 'SUITE-DISPATCH:' smoke.log || true)
+ENDED=$(grep -c 'Ending SmokeMUX' smoke.log || true)
+: "${EXPECTED:=0}" "${DISPATCHED:=0}" "${ENDED:=0}"
+
+echo "  Dispatched: $DISPATCHED / $EXPECTED expected"
+
+INCOMPLETE=false
+if [ "$EXPECTED" -gt 0 ] && [ "$DISPATCHED" -lt "$EXPECTED" ]; then INCOMPLETE=true; fi
+if [ "$ENDED" -eq 0 ]; then INCOMPLETE=true; fi
+
+if $INCOMPLETE; then
+    echo "  INCOMPLETE: the suite did not run every test (chain stalled or"
+    echo "              muxscript exited before the queue drained)."
+    if [ -r "$TC/smoke.mux" ]; then
+        awk '/&suite.list.[12] smoke=/{grab=1;next} /^-/{grab=0} grab{gsub(/\\/,"");print}' \
+            "$TC/smoke.mux" | tr ' ' '\n' | grep -v '^$' | sort -u > "smoke.expected.$$"
+        grep -oE 'SUITE-DISPATCH: [^ ]+' smoke.log | awk '{print $2}' | sort -u > "smoke.dispatched.$$"
+        MISSING=$(comm -23 "smoke.expected.$$" "smoke.dispatched.$$" | tr '\n' ' ')
+        rm -f "smoke.expected.$$" "smoke.dispatched.$$"
+        [ -n "$MISSING" ] && echo "  Never dispatched: $MISSING"
+    fi
+fi
 echo ""
 
 # Show failures if any.
@@ -261,6 +292,7 @@ if [ "$FAILED" -gt 0 ]; then ALL_PASS=false; fi
 if [ "$CRASHES" -gt 0 ]; then ALL_PASS=false; fi
 if [ -n "$HANG_TYPE" ]; then ALL_PASS=false; fi
 if [ "$SUCCEEDED" -eq 0 ]; then ALL_PASS=false; fi
+if $INCOMPLETE; then ALL_PASS=false; fi
 
 # ---------------------------------------------------------------------------
 # Failure artifact collection.

@@ -2605,6 +2605,7 @@ public:
     virtual MUX_RESULT UpdateQuotas(CLinearTimeAbsolute &ltaLast,
         const CLinearTimeAbsolute &ltaCurrent);
     virtual MUX_RESULT WhenNext(CLinearTimeAbsolute *pltaWhen);
+    virtual MUX_RESULT HasPendingUserTasks(bool *pbResult);
     virtual MUX_RESULT DumpDatabase(void);
     virtual MUX_RESULT Shutdown(void);
     virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
@@ -3122,7 +3123,27 @@ MUX_RESULT CGameEngine::WhenNext(CLinearTimeAbsolute *pltaWhen)
     {
         return MUX_E_INVALIDARG;
     }
-    scheduler.WhenNext(pltaWhen);
+
+    // Propagate whether a next task exists.  When the scheduler is empty,
+    // scheduler.WhenNext() returns false and leaves *pltaWhen untouched, so
+    // we must report failure rather than success-with-garbage.  Callers
+    // (muxscript's loop, the netmux idle loop) branch on MUX_FAILED to mean
+    // "no task scheduled."
+    //
+    if (!scheduler.WhenNext(pltaWhen))
+    {
+        return MUX_E_NOTFOUND;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CGameEngine::HasPendingUserTasks(bool *pbResult)
+{
+    if (nullptr == pbResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pbResult = scheduler.HasPendingUserTasks();
     return MUX_S_OK;
 }
 

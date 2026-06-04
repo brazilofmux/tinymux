@@ -825,6 +825,12 @@ public:
     //
     virtual MUX_RESULT WhenNext(CLinearTimeAbsolute *pltaWhen) = 0;
 
+    // Report whether any real user work (queued or delayed) is still pending,
+    // ignoring recurring system maintenance and parked semaphore entries.  A
+    // CLI driver uses this to decide when a stdin-EOF run is truly finished.
+    //
+    virtual MUX_RESULT HasPendingUserTasks(bool *pbResult) = 0;
+
     // Save the game database (WAL checkpoint in SQLite mode).
     //
     virtual MUX_RESULT DumpDatabase(void) = 0;

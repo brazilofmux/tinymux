@@ -8,10 +8,16 @@
 #
 # Beginning of Test Cases
 #
+#
+# This is the last link in the serial test chain.  Under CLI muxscript no
+# @shutdown is needed: once this final test completes and the command queue
+# drains, muxscript exits on its own (EOF + no scheduled tasks).  @shutdown
+# was only required for the historical networked test runs, where it raced
+# the queue and silently dropped still-pending test tasks.
+#
 &tr.tc000 test_shutdown=
   @log smoke=Ending SmokeMUX;
-  @notify smoke;
-  @shutdown
+  @notify smoke
 -
 drop test_shutdown
 -
