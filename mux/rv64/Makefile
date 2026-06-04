@@ -11,7 +11,10 @@ CFLAGS  = -march=rv64imd -mabi=lp64d -O2 -fno-builtin -ffreestanding -nostdlib \
           -ffunction-sections -fdata-sections \
           -DLBUF_SIZE=32768
 INCLUDES = -isystem src/include -I../include
-LDFLAGS = -nostdlib -Wl,--gc-sections -T src/softlib.ld
+# -melf64lriscv pins the 64-bit RISC-V emulation.  A riscv64-only ld
+# defaults to it, but a multilib riscv-none-elf ld (e.g. the xPack
+# toolchain on macOS) defaults to elf32 and the link fails otherwise.
+LDFLAGS = -nostdlib -Wl,--gc-sections -Wl,-melf64lriscv -T src/softlib.ld
 STRIP   = ../src/tools/rv64strip
 
 OBJS    = src/softlib.o src/color_ops.o src/unicode_tables.o
