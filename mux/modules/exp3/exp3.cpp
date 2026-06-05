@@ -426,19 +426,18 @@ MUX_RESULT CExp3::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CExp3::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return m_cRef.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 uint32_t CExp3::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    uint32_t prev = m_cRef.fetch_sub(1, std::memory_order_acq_rel);
+    if (1 == prev)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return prev - 1;
 }
 
 void CExp3::Unregistering(void)
@@ -831,19 +830,18 @@ MUX_RESULT CExp3Factory::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CExp3Factory::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return m_cRef.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 uint32_t CExp3Factory::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    uint32_t prev = m_cRef.fetch_sub(1, std::memory_order_acq_rel);
+    if (1 == prev)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return prev - 1;
 }
 
 MUX_RESULT CExp3Factory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)

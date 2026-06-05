@@ -9,6 +9,8 @@
 #ifndef EXP3_H
 #define EXP3_H
 
+#include <atomic>
+
 const MUX_CID CID_Exp3 = UINT64_C(0x00000002A1B2C3D4);
 
 interface mux_IExp3SinkControl : public mux_IUnknown
@@ -50,7 +52,7 @@ public:
     virtual ~CExp3();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
 };
 
 class CExp3Factory : public mux_IClassFactory
@@ -67,7 +69,7 @@ public:
     virtual ~CExp3Factory();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
 };
 
 #endif // EXP3_H
