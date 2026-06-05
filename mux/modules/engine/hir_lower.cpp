@@ -1127,10 +1127,47 @@ static int hir_lower_trimmed(hir_program &h, rv_compiler &rc,
     return hir_lower_node(h, rc, inner);
 }
 
+// True if the argument has a brace group at its own top level — i.e. the
+// argument is itself a brace group, or a sequence one of whose direct
+// children is a brace group.  Brace groups nested inside sub-expressions
+// (function calls, eval brackets) belong to those contexts and are not
+// considered here.
+static bool arg_has_toplevel_bracegroup(const ASTNode *child) {
+    if (child->type == AST_BRACEGROUP) {
+        return true;
+    }
+    if (child->type == AST_SEQUENCE) {
+        for (const auto &c : child->children) {
+            if (c->type == AST_BRACEGROUP) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // Lower a normal function argument, trimming only top-level surrounding
 // spaces to match parse_arglist()/parse_to() comma argument handling.
 static int hir_lower_argument(hir_program &h, rv_compiler &rc,
                               const ASTNode *child) {
+    // A brace group at the top level of a normal (non-NOEVAL) function
+    // argument must have its outer braces stripped, with the contents
+    // passed as un-function-checked literal text — the classic
+    // EV_STRIP_CURLY behavior that the AST evaluator implements in its
+    // AST_BRACEGROUP handling.  The JIT emits brace groups as literal
+    // "{...}" (hir_lower_node/AST_BRACEGROUP), which would diverge: e.g.
+    // isjson({"a":1}) or add({1},{2}) would see the braces under the JIT
+    // but not under the AST evaluator.  Rather than replicate the
+    // stripping in the JIT, bail the compile so the whole expression is
+    // evaluated by the AST path, which strips correctly.  NOEVAL handlers
+    // (if/switch/iter/...) take their own hir_lower_trimmed() path and are
+    // unaffected.
+    if (arg_has_toplevel_bracegroup(child)) {
+        rc.out_exhausted = true;  // force AST fallback (brace stripping)
+        uint64_t addr = rc.pool_str("");
+        return h.emit_sconst(addr, "");
+    }
+
     if (  child->type == AST_SEQUENCE
        && !child->children.empty()
        && mudconf.space_compress

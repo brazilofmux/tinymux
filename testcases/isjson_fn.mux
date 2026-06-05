@@ -14,8 +14,15 @@
 #
 # Test Case #1 - Valid JSON values.
 #
+# A JSON object is built with [chr(123)]...[chr(125)] rather than a bare
+# {...} literal.  Bare braces are a softcode brace-group: the evaluator
+# strips them (EV_STRIP_CURLY) before isjson() ever sees them, so
+# isjson({"a":1}) tests "a":1, not {"a":1}.  Constructing the braces from
+# their codepoints yields literal { } characters in the argument and
+# behaves identically under the AST evaluator and the JIT.
+#
 &tr.tc001 test_isjson_fn=
-  think setq(0,isjson({"a":1}));
+  think setq(0,isjson([chr(123)]"a":1[chr(125)]));
   think setq(1,isjson([1,2,3]));
   think setq(2,isjson("hello"));
   think setq(3,isjson(42));
@@ -38,20 +45,21 @@
   think setq(1,isjson({bad}));
   think setq(2,isjson());
   think setq(3,isjson([1,]));
-  @if cand(eq(%q0,0),eq(%q1,0),eq(%q2,0),eq(%q3,0))=
+  think setq(4,isjson({"a":1}));
+  @if cand(eq(%q0,0),eq(%q1,0),eq(%q2,0),eq(%q3,0),eq(%q4,0))=
   {
     @log smoke=TC002: isjson invalid. Succeeded.;
   },
   {
-    @log smoke=TC002: isjson invalid. Failed (plain=%q0 badobj=%q1 empty=%q2 trailing=%q3).;
+    @log smoke=TC002: isjson invalid. Failed (plain=%q0 badobj=%q1 empty=%q2 trailing=%q3 stripped=%q4).;
   }
 -
 #
 # Test Case #3 - Type checking.
 #
 &tr.tc003 test_isjson_fn=
-  think setq(0,isjson({"a":1},object));
-  think setq(1,isjson({"a":1},array));
+  think setq(0,isjson([chr(123)]"a":1[chr(125)],object));
+  think setq(1,isjson([chr(123)]"a":1[chr(125)],array));
   think setq(2,isjson([1],array));
   think setq(3,isjson("hi",string));
   think setq(4,isjson(42,number));
