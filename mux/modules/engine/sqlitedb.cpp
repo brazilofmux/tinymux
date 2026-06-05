@@ -353,7 +353,20 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
         fprintf(stderr, "CSQLiteDB::MigrateSchema v%d: %s\n",
             target_version, errmsg ? errmsg : "unknown error");
         sqlite3_free(errmsg);
-        sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, nullptr);
+
+        char *rb_errmsg = nullptr;
+        int rb_rc = sqlite3_exec(db, "ROLLBACK", nullptr, nullptr, &rb_errmsg);
+        if (SQLITE_OK != rb_rc)
+        {
+            // ROLLBACK itself failed (busy, I/O error, ...). The connection is
+            // left in an indeterminate transaction state; surface it loudly
+            // rather than dropping it on the floor. The migration aborts either
+            // way via the false return below.
+            fprintf(stderr, "CSQLiteDB::MigrateSchema v%d: ROLLBACK failed (%d): %s\n",
+                target_version, rb_rc, rb_errmsg ? rb_errmsg : "unknown error");
+        }
+        sqlite3_free(rb_errmsg);
+
         sqlite3_exec(db, "PRAGMA foreign_keys=ON", nullptr, nullptr, nullptr);
         return false;
     }
@@ -1364,11 +1377,26 @@ bool CSQLiteDB::GetAttribute(dbref obj, int attrnum, UTF8 *buf, size_t buflen,
         const void *blob = sqlite3_column_blob(m_stmtAttrGet, 0);
         size_t blobLen = static_cast<size_t>(sqlite3_column_bytes(m_stmtAttrGet, 0));
 
+        // sqlite3_column_blob() can return NULL with bytes > 0 only under OOM.
+        // Treat that as "not found" rather than memcpy'ing from NULL. A genuine
+        // zero-length attribute returns NULL with blobLen == 0 and is valid.
+        if (NULL == blob && 0 != blobLen)
+        {
+            sqlite3_reset(m_stmtAttrGet);
+            *pLen = 0;
+            if (owner) *owner = NOTHING;
+            if (flags) *flags = 0;
+            return false;
+        }
+
         if (blobLen > buflen)
         {
             blobLen = buflen;
         }
-        memcpy(buf, blob, blobLen);
+        if (0 != blobLen)
+        {
+            memcpy(buf, blob, blobLen);
+        }
         *pLen = blobLen;
         if (owner) *owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGet, 1));
         if (flags) *flags = sqlite3_column_int(m_stmtAttrGet, 2);
@@ -1564,6 +1592,13 @@ bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
         dbref owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGetObj, 2));
         int flags = sqlite3_column_int(m_stmtAttrGetObj, 3);
 
+        // sqlite3_column_blob() returns NULL with bytes > 0 only under OOM; skip
+        // such a row rather than handing the consumer a NULL it will dereference.
+        if (NULL == value && 0 != len)
+        {
+            continue;
+        }
+
         cb(attrnum, value, len, owner, flags);
     }
 
@@ -1595,6 +1630,13 @@ bool CSQLiteDB::GetBuiltinAttributes(dbref obj, AttrCallback cb)
         size_t len = static_cast<size_t>(sqlite3_column_bytes(m_stmtAttrGetBuiltin, 1));
         dbref owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGetBuiltin, 2));
         int flags = sqlite3_column_int(m_stmtAttrGetBuiltin, 3);
+
+        // sqlite3_column_blob() returns NULL with bytes > 0 only under OOM; skip
+        // such a row rather than handing the consumer a NULL it will dereference.
+        if (NULL == value && 0 != len)
+        {
+            continue;
+        }
 
         cb(attrnum, value, len, owner, flags);
     }
@@ -1655,6 +1697,13 @@ bool CSQLiteDB::LoadAllAttrNames(AttrNameCallback cb)
         const char *name = reinterpret_cast<const char *>(
             sqlite3_column_text(m_stmtAttrNameLoadAll, 1));
         int flags = sqlite3_column_int(m_stmtAttrNameLoadAll, 2);
+
+        // The consumer treats name as a valid C string; a NULL text column
+        // (OOM, or an unexpected NULL row) would crash it. Skip such rows.
+        if (NULL == name)
+        {
+            continue;
+        }
 
         cb(attrnum, name, flags);
     }
@@ -1969,8 +2018,11 @@ bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
 
 bool CSQLiteDB::CodeCacheFlush()
 {
+    // Reset *after* stepping so an error return (SQLITE_IOERR, SQLITE_FULL, ...)
+    // does not leave the statement holding error/lock state for the next use.
+    int rc = sqlite3_step(m_stmtCodeCacheFlush);
     sqlite3_reset(m_stmtCodeCacheFlush);
-    return SQLITE_DONE == sqlite3_step(m_stmtCodeCacheFlush);
+    return SQLITE_DONE == rc;
 }
 
 void CSQLiteDB::CodeCacheReset()
@@ -2113,8 +2165,29 @@ bool CSQLiteDB::SearchByFlags(FLAG f1, FLAG f2, FLAG f3,
 
 bool CSQLiteDB::Checkpoint()
 {
-    int rc = sqlite3_wal_checkpoint_v2(m_db, nullptr,
-        SQLITE_CHECKPOINT_TRUNCATE, nullptr, nullptr);
+    // sqlite3_wal_checkpoint_v2() returns SQLITE_BUSY immediately if a reader
+    // (e.g. another connection under dbconvert -m) holds the WAL. Without a
+    // retry @dump would report success while the WAL keeps growing. The engine
+    // is single-threaded so contention is rare; a few short backoffs clear it.
+    const int kMaxAttempts = 5;
+    int rc = SQLITE_OK;
+    for (int attempt = 0; attempt < kMaxAttempts; ++attempt)
+    {
+        rc = sqlite3_wal_checkpoint_v2(m_db, nullptr,
+            SQLITE_CHECKPOINT_TRUNCATE, nullptr, nullptr);
+        if (SQLITE_BUSY != rc)
+        {
+            break;
+        }
+        if (attempt + 1 < kMaxAttempts)
+        {
+            sqlite3_sleep(10 * (attempt + 1)); // 10, 20, 30, 40 ms backoff
+        }
+    }
+    if (SQLITE_OK != rc)
+    {
+        fprintf(stderr, "CSQLiteDB::Checkpoint: %s\n", sqlite3_errmsg(m_db));
+    }
     return SQLITE_OK == rc;
 }
 
