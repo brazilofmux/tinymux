@@ -6,6 +6,8 @@
 #ifndef SQL_H
 #define SQL_H
 
+#include <atomic>
+
 class CQueryServerFactory : public mux_IClassFactory
 {
 public:
@@ -24,7 +26,7 @@ public:
     virtual ~CQueryServerFactory();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
 };
 
 #endif // SQL_H

@@ -13,6 +13,9 @@
 #endif // HAVE_MYSQL_H
 #include "sql.h"
 
+#include <atomic>
+#include <string>
+
 class CQueryServer : public mux_IQueryControl
 {
 public:
@@ -33,21 +36,25 @@ public:
     virtual ~CQueryServer();
 
 private:
-    uint32_t          m_cRef;
+    std::atomic<uint32_t> m_cRef;
     mux_IQuerySink *m_pIQuerySink;
 #if defined(HAVE_MYSQL)
     MYSQL          *m_database;
 #endif // HAVE_MYSQL
-    const UTF8     *m_pServer;
-    const UTF8     *m_pDatabase;
-    const UTF8     *m_pUser;
-    const UTF8     *m_pPassword;
+    // Module-owned copies of the connection parameters.  The caller retains
+    // ownership of the buffers it passes to Connect(), so we must not alias or
+    // free them here.
+    //
+    std::string     m_sServer;
+    std::string     m_sDatabase;
+    std::string     m_sUser;
+    std::string     m_sPassword;
 
     void ConnectionHelper();
 };
 
-static int32_t g_cComponents  = 0;
-static int32_t g_cServerLocks = 0;
+static std::atomic<int32_t> g_cComponents(0);
+static std::atomic<int32_t> g_cServerLocks(0);
 
 #define NUM_CLASSES 1
 static MUX_CLASS_INFO sum_classes[NUM_CLASSES] =
@@ -129,10 +136,6 @@ CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL)
 #if defined(HAVE_MYSQL)
     m_database = NULL;
 #endif // HAVE_MYSQL
-    m_pServer = NULL;
-    m_pDatabase = NULL;
-    m_pUser = NULL;
-    m_pPassword = NULL;
 
     g_cComponents++;
 }
@@ -157,14 +160,6 @@ CQueryServer::~CQueryServer()
         mysql_close(m_database);
         m_database = NULL;
     }
-    delete [] m_pServer;
-    m_pServer = NULL;
-    delete [] m_pDatabase;
-    m_pDatabase = NULL;
-    delete [] m_pUser;
-    m_pUser = NULL;
-    delete [] m_pPassword;
-    m_pPassword = NULL;
 #endif // HAVE_MYSQL
 
     g_cComponents--;
@@ -191,40 +186,42 @@ MUX_RESULT CQueryServer::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CQueryServer::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return m_cRef.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 uint32_t CQueryServer::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    uint32_t prev = m_cRef.fetch_sub(1, std::memory_order_acq_rel);
+    if (1 == prev)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return prev - 1;
 }
 
 MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, const UTF8 *pUser, const UTF8 *pPassword)
 {
-    // Free any previous Server/Database/User/Password values.
+    // mysql_real_connect() dereferences each of these, and ConnectionHelper()
+    // inspects pServer[0].  Reject null arguments rather than crash later.
     //
-    delete [] m_pServer;
-    m_pServer = NULL;
-    delete [] m_pDatabase;
-    m_pDatabase = NULL;
-    delete [] m_pUser;
-    m_pUser = NULL;
-    delete [] m_pPassword;
-    m_pPassword = NULL;
+    if (  NULL == pServer
+       || NULL == pDatabase
+       || NULL == pUser
+       || NULL == pPassword)
+    {
+        return MUX_E_INVALIDARG;
+    }
 
-    // Save new Server/Database/User/Password values.  These are used later if reconnection is necessary.
+    // Save copies of the new Server/Database/User/Password values.  These are
+    // used later if reconnection is necessary.  We must copy rather than alias
+    // the caller's buffers: in-process the caller retains ownership, and across
+    // the proxy/stub boundary these arrive in transient (often stack) storage.
     //
-    m_pServer = pServer;
-    m_pDatabase = pDatabase;
-    m_pUser = pUser;
-    m_pPassword = pPassword;
+    m_sServer.assign(reinterpret_cast<const char *>(pServer));
+    m_sDatabase.assign(reinterpret_cast<const char *>(pDatabase));
+    m_sUser.assign(reinterpret_cast<const char *>(pUser));
+    m_sPassword.assign(reinterpret_cast<const char *>(pPassword));
 
 #if defined(HAVE_MYSQL)
     // Close any existing session.
@@ -248,7 +245,7 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
 void CQueryServer::ConnectionHelper()
 {
 #if defined(HAVE_MYSQL)
-    if ('\0' != m_pServer[0])
+    if (!m_sServer.empty())
     {
 #ifdef MYSQL_OPT_RECONNECT
         // As of MySQL 5.0.3, the default is no longer to reconnect.
@@ -258,8 +255,8 @@ void CQueryServer::ConnectionHelper()
 #endif
         mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
 
-        if (mysql_real_connect(m_database, reinterpret_cast<char *>(m_pServer), reinterpret_cast<char *>(m_pUser),
-             reinterpret_cast<char *>(m_pPassword), reinterpret_cast<char *>(m_pDatabase), 0, NULL, 0) != 0)
+        if (mysql_real_connect(m_database, m_sServer.c_str(), m_sUser.c_str(),
+             m_sPassword.c_str(), m_sDatabase.c_str(), 0, NULL, 0) != 0)
         {
 #ifdef MYSQL_OPT_RECONNECT
             // Before MySQL 5.0.19, mysql_real_connect sets the option
@@ -333,7 +330,7 @@ MUX_RESULT CQueryServer::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName,
     }
 
     if (  QS_SUCCESS == iError
-       && mysql_real_query(m_database, reinterpret_cast<char *>(pQuery), strlen(reinterpret_cast<char *>(pQuery))) != 0)
+       && mysql_real_query(m_database, reinterpret_cast<const char *>(pQuery), strlen(reinterpret_cast<const char *>(pQuery))) != 0)
     {
         iError = QS_QUERY_ERROR;
     }
@@ -434,19 +431,18 @@ MUX_RESULT CQueryServerFactory::QueryInterface(MUX_IID iid, void **ppv)
 
 uint32_t CQueryServerFactory::AddRef(void)
 {
-    m_cRef++;
-    return m_cRef;
+    return m_cRef.fetch_add(1, std::memory_order_relaxed) + 1;
 }
 
 uint32_t CQueryServerFactory::Release(void)
 {
-    m_cRef--;
-    if (0 == m_cRef)
+    uint32_t prev = m_cRef.fetch_sub(1, std::memory_order_acq_rel);
+    if (1 == prev)
     {
         delete this;
         return 0;
     }
-    return m_cRef;
+    return prev - 1;
 }
 
 MUX_RESULT CQueryServerFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
