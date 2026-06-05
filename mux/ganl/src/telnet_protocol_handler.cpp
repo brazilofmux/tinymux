@@ -36,6 +36,63 @@ namespace ganl {
             return upper;
         }
 
+        // Case-insensitive comparison of a charset name against a literal. RFC
+        // 2066 / RFC 2278 charset names are case-insensitive.
+        bool charsetNameEquals(const std::string& a, const char* b) {
+            size_t i = 0;
+            for (; i < a.size() && b[i] != '\0'; ++i) {
+                if (std::tolower(static_cast<unsigned char>(a[i])) !=
+                    std::tolower(static_cast<unsigned char>(b[i]))) {
+                    return false;
+                }
+            }
+            return i == a.size() && b[i] == '\0';
+        }
+
+        // Parse an RFC 2066 CHARSET REQUEST payload (buffer[0] == 1/REQUEST) into
+        // the list of offered charset names, in offer order. Wire format:
+        //   REQUEST [ "[TTABLE]" <version-octet> ] <sep> <name> [ <sep> <name> ]...
+        // where <sep> is a single octet chosen by the client. Returns empty if
+        // the payload is malformed or carries no charset list.
+        std::vector<std::string> parseCharsetRequest(const std::vector<char>& buffer) {
+            std::vector<std::string> names;
+            if (buffer.size() < 2 || static_cast<unsigned char>(buffer[0]) != 1) {
+                return names;
+            }
+
+            size_t pos = 1;
+            static const char kTTable[] = "[TTABLE]";
+            const size_t kTTableLen = sizeof(kTTable) - 1;
+            if (buffer.size() - pos >= kTTableLen &&
+                std::equal(kTTable, kTTable + kTTableLen, buffer.begin() + pos)) {
+                pos += kTTableLen;
+                if (pos < buffer.size()) {
+                    pos += 1; // skip the version octet that follows [TTABLE]
+                }
+            }
+            if (pos >= buffer.size()) {
+                return names; // separator / charset list missing
+            }
+
+            const char sep = buffer[pos];
+            ++pos;
+            std::string current;
+            for (size_t i = pos; i < buffer.size(); ++i) {
+                if (buffer[i] == sep) {
+                    if (!current.empty()) {
+                        names.push_back(current);
+                        current.clear();
+                    }
+                } else {
+                    current.push_back(buffer[i]);
+                }
+            }
+            if (!current.empty()) {
+                names.push_back(current);
+            }
+            return names;
+        }
+
         bool parseUint16InRange(const std::string& value, uint16_t& out) {
             if (value.empty()) {
                 return false;
@@ -1520,18 +1577,39 @@ namespace ganl {
                     break;
                 }
 
-                // --- Simple Policy: Always try to accept UTF-8 if offered ---
-                // A more complex policy would parse buffer[1] (separators) and
-                // the list of charsets starting from buffer[2], checking against
-                // a list of supported charsets on the server.
+                // Parse the client's offered charset list (RFC 2066) and pick the
+                // most capable one we support, rather than blindly answering
+                // UTF-8 even when the client never offered it.
+                std::vector<std::string> offered = parseCharsetRequest(buffer);
+                if (offered.empty()) {
+                    GANL_TELNET_DEBUG(conn, "CHARSET REQUEST had no parseable charset list.");
+                }
 
-                // For now, let's assume we always support and prefer UTF-8
-                // TODO: Add parsing of client's requested list if needed.
-                bool weSupportUtf8 = true; // Assume server supports UTF-8
+                // Server preference order, most capable first. Names compared
+                // case-insensitively; on accept we echo the client's exact token.
+                static const struct { const char* name; EncodingType encoding; } kSupportedCharsets[] = {
+                    { "UTF-8",      EncodingType::Utf8 },
+                    { "ISO-8859-1", EncodingType::Latin1 },
+                    { "US-ASCII",   EncodingType::Ascii },
+                };
 
-                if (weSupportUtf8) {
-                    const char* acceptedCharset = "UTF-8";
-                    GANL_TELNET_DEBUG(conn, "Responding CHARSET ACCEPTED " << acceptedCharset);
+                const std::string* chosen = nullptr;
+                EncodingType chosenEncoding = EncodingType::Ascii;
+                for (const auto& supported : kSupportedCharsets) {
+                    for (const auto& candidate : offered) {
+                        if (charsetNameEquals(candidate, supported.name)) {
+                            chosen = &candidate;
+                            chosenEncoding = supported.encoding;
+                            break;
+                        }
+                    }
+                    if (chosen != nullptr) {
+                        break;
+                    }
+                }
+
+                if (chosen != nullptr) {
+                    GANL_TELNET_DEBUG(conn, "Responding CHARSET ACCEPTED " << *chosen);
 
                     // Construct the response: IAC SB CHARSET ACCEPTED <charset> IAC SE
                     char sb_start[] = {
@@ -1545,20 +1623,17 @@ namespace ganl {
                         static_cast<char>(TelnetCommand::SE)
                     };
 
-                    // --- Fill in the append calls ---
                     telnet_responses_out.append(sb_start, sizeof(sb_start));
-                    telnet_responses_out.append(acceptedCharset, strlen(acceptedCharset));
+                    telnet_responses_out.append(chosen->data(), chosen->size());
                     telnet_responses_out.append(sb_end, sizeof(sb_end));
-                    // --- End of filled-in part ---
 
                     // Update context encoding using its own method
-                    context.setEncoding(EncodingType::Utf8);
+                    context.setEncoding(chosenEncoding);
                     context.charsetDataReceived = true; // Mark settled
-
                 }
                 else {
-                    // We don't support any requested charset (or just rejecting)
-                    GANL_TELNET_DEBUG(conn, "Responding CHARSET REJECTED");
+                    // None of the client's offered charsets are supported.
+                    GANL_TELNET_DEBUG(conn, "No offered CHARSET supported; responding CHARSET REJECTED");
 
                     // Construct the response: IAC SB CHARSET REJECTED IAC SE
                     char sb_reject[] = {

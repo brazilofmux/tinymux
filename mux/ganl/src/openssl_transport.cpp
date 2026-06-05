@@ -117,6 +117,19 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
          // Allow initialization to succeed, but connections will fail handshake later.
     }
 
+    // Peer (client-certificate) verification. This transport configures no trust
+    // store and leaves the context at OpenSSL's default of SSL_VERIFY_NONE, so
+    // STARTTLS peers are never authenticated. If the caller asked for it, make
+    // the (non-)policy explicit and warn loudly rather than silently bypassing
+    // it — a deployment expecting peer validation must not be misled into
+    // believing it is happening.
+    SSL_CTX_set_verify(ctx_, SSL_VERIFY_NONE, nullptr);
+    if (config.verifyPeer) {
+        std::cerr << "[OpenSSL:Global] WARNING: verifyPeer was requested but no trust store "
+                     "is configured; peer certificate validation is DISABLED (SSL_VERIFY_NONE)."
+                  << std::endl;
+    }
+
     GANL_SSL_DEBUG(0, "OpenSSLTransport initialized successfully.");
     return true;
 }
