@@ -103,6 +103,11 @@ namespace ganl {
     private:
         static constexpr size_t kMaxInputBufferBytes = 8192;
         static constexpr size_t kMaxSubnegotiationBufferBytes = 4096;
+        // A well-behaved client closes a subnegotiation (IAC SE) within a single
+        // message. Bound it by wall-clock time as well as by buffer size so a
+        // client that opens "IAC SB ... " and dribbles bytes without ever
+        // sending IAC SE cannot pin the parser in the Subnegotiation state.
+        static constexpr std::chrono::seconds kMaxSubnegotiationDuration{ 30 };
         static constexpr uint16_t kDefaultTerminalWidth = 80;
         static constexpr uint16_t kDefaultTerminalHeight = 24;
         static constexpr uint16_t kMaxTerminalDimension = 1000;
@@ -125,6 +130,9 @@ namespace ganl {
             TelnetOption lastOpt{ TelnetOption::UNKNOWN };
 
             std::vector<char> subnegotiationBuffer;
+            // Set when the parser enters ParserState::Subnegotiation; used to
+            // enforce kMaxSubnegotiationDuration.
+            std::chrono::steady_clock::time_point subnegotiationStartTime;
 
             NegotiationStatus currentNegotiationStatus{ NegotiationStatus::InProgress };
             bool negotiationTimedOut{ false };

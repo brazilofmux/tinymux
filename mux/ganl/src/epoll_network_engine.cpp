@@ -171,7 +171,15 @@ ListenerHandle EpollNetworkEngine::createListener(const std::string& host, uint1
 
         if (ai->ai_family == AF_INET6) {
             int disable = 0;
-            setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
+            if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable)) == -1) {
+                // Non-fatal: dual-stack was requested but the kernel refused it
+                // (e.g. FreeBSD with net.inet6.ip6.v6only=1). The listener still
+                // binds, but IPv6-only. Warn so the lost IPv4 reachability is
+                // diagnosable rather than silent.
+                int v6Err = errno;
+                std::cerr << "[Epoll:" << fd << "] WARNING: setsockopt(IPV6_V6ONLY=0) failed; "
+                          << "listener will accept IPv6 only: " << strerror(v6Err) << std::endl;
+            }
         }
 
         if (bind(fd, ai->ai_addr, static_cast<socklen_t>(ai->ai_addrlen)) == -1) {
@@ -1129,9 +1137,23 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
     socklen_t clientLen = sizeof(clientAddr);
     error = 0;
 
-    // Use accept4 for SOCK_NONBLOCK | SOCK_CLOEXEC if available (Linux specific)
-    // int clientFd = accept4(listenerFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+    // accept4() makes the new fd non-blocking and close-on-exec in the same
+    // syscall, closing the window where the accepted fd is briefly observable
+    // in its default blocking, inheritable state by a signal handler or a
+    // concurrent operation before we could set those flags ourselves.
+    bool nonBlockingApplied = false;
+#if defined(__linux__) && defined(SOCK_NONBLOCK) && defined(SOCK_CLOEXEC)
+    int clientFd = accept4(listenerFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen,
+                           SOCK_NONBLOCK | SOCK_CLOEXEC);
+    if (clientFd != -1) {
+        nonBlockingApplied = true;
+    } else if (errno == ENOSYS) {
+        // Kernel predates accept4(); fall back to accept() + setNonBlocking().
+        clientFd = accept(listenerFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
+    }
+#else
     int clientFd = accept(listenerFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
+#endif
 
     if (clientFd == -1) {
         error = errno;
@@ -1148,8 +1170,8 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
     NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
     GANL_EPOLL_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
 
-    // Set non-blocking for the new socket
-    if (!setNonBlocking(clientFd, error)) {
+    // Set non-blocking for the new socket (unless accept4() already did it).
+    if (!nonBlockingApplied && !setNonBlocking(clientFd, error)) {
         GANL_EPOLL_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << strerror(error));
         close(clientFd);
         return InvalidConnectionHandle;

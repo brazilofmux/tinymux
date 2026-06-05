@@ -211,7 +211,15 @@ ListenerHandle SelectNetworkEngine::createListener(const std::string& host, uint
 
         if (ai->ai_family == AF_INET6) {
             int disable = 0;
-            ::setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
+            if (::setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable)) == -1) {
+                // Non-fatal: dual-stack was requested but the kernel refused it
+                // (e.g. FreeBSD with net.inet6.ip6.v6only=1). The listener still
+                // binds, but IPv6-only. Warn so the lost IPv4 reachability is
+                // diagnosable rather than silent.
+                ErrorCode v6Error = getLastError();
+                std::cerr << "[Select:" << fd << "] WARNING: setsockopt(IPV6_V6ONLY=0) failed; "
+                          << "listener will accept IPv6 only: " << getErrorString(v6Error) << std::endl;
+            }
         }
 
         if (!setNonBlocking(fd, error)) {
@@ -871,8 +879,24 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
     socklen_t clientLen = sizeof(clientAddr);
     error = 0;
 
-    // Perform accept syscall outside lock
+    // Perform accept syscall outside lock.
+    bool nonBlockingApplied = false;
+#if defined(__linux__) && defined(SOCK_NONBLOCK) && defined(SOCK_CLOEXEC)
+    // accept4() makes the new fd non-blocking and close-on-exec in the same
+    // syscall, closing the window where the accepted fd is briefly observable
+    // in its default blocking, inheritable state by a signal handler or a
+    // concurrent operation before we could set those flags ourselves.
+    SocketFD clientFd = ::accept4(listenerFd, reinterpret_cast<sockaddr*>(&clientAddr),
+                                  &clientLen, SOCK_NONBLOCK | SOCK_CLOEXEC);
+    if (clientFd != INVALID_SOCKET_FD) {
+        nonBlockingApplied = true;
+    } else if (errno == ENOSYS) {
+        // Kernel predates accept4(); fall back to accept() + setNonBlocking().
+        clientFd = ::accept(listenerFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
+    }
+#else
     SocketFD clientFd = ::accept(listenerFd, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
+#endif
 
     if (clientFd == INVALID_SOCKET_FD) {
         error = getLastError();
@@ -884,8 +908,8 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
     NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
     GANL_SELECT_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
 
-    // Perform non-blocking set outside lock
-    if (!setNonBlocking(clientFd, error)) {
+    // Perform non-blocking set outside lock (unless accept4() already did it).
+    if (!nonBlockingApplied && !setNonBlocking(clientFd, error)) {
         GANL_SELECT_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << getErrorString(error));
         closeSocket(clientFd);
         return InvalidConnectionHandle;

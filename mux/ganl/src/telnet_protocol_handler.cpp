@@ -529,7 +529,13 @@ namespace ganl {
         bool processedOk = true;
         size_t totalConsumed = 0;
 
-        while (totalConsumed < initialReadable) {
+        // Stop at the first protocol error (buffer overflow, bad subnegotiation,
+        // etc.) instead of draining the rest of the input. processedOk == false
+        // means the caller will close the connection; continuing to parse past
+        // the fault only risks dropping or mangling the bytes that follow — e.g.
+        // a literal 0xFF correctly escaped as IAC IAC arriving after the input
+        // buffer filled. Let the overflow close the connection cleanly.
+        while (totalConsumed < initialReadable && processedOk) {
             const char* current = decrypted_in.readPtr();
             if (!current) break; // Should not happen if readableBytes > 0
             unsigned char uc = static_cast<unsigned char>(*current);
@@ -664,6 +670,7 @@ namespace ganl {
                 if (context.lastCmd == TelnetCommand::SB) {
                     context.parserState = ParserState::Subnegotiation;
                     context.subnegotiationBuffer.clear();
+                    context.subnegotiationStartTime = std::chrono::steady_clock::now();
                 }
                 else {
                     handleTelnetOptionNegotiation(conn, context.lastCmd, context.lastOpt, telnet_responses_out);
@@ -686,6 +693,12 @@ namespace ganl {
                         processedOk = false;
                         break;
                     }
+                    if (std::chrono::steady_clock::now() - context.subnegotiationStartTime > kMaxSubnegotiationDuration) {
+                        GANL_TELNET_DEBUG(conn, "Error: subnegotiation exceeded time limit of " << kMaxSubnegotiationDuration.count() << "s without IAC SE.");
+                        context.lastError = "Telnet subnegotiation timed out";
+                        processedOk = false;
+                        break;
+                    }
                     context.subnegotiationBuffer.push_back(static_cast<char>(uc));
                 }
                 break;
@@ -704,6 +717,12 @@ namespace ganl {
                     if (context.subnegotiationBuffer.size() >= kMaxSubnegotiationBufferBytes) {
                         GANL_TELNET_DEBUG(conn, "Error: subnegotiationBuffer exceeded limit of " << kMaxSubnegotiationBufferBytes << " bytes while escaping IAC.");
                         context.lastError = "Telnet subnegotiation buffer exceeded limit";
+                        processedOk = false;
+                        break;
+                    }
+                    if (std::chrono::steady_clock::now() - context.subnegotiationStartTime > kMaxSubnegotiationDuration) {
+                        GANL_TELNET_DEBUG(conn, "Error: subnegotiation exceeded time limit of " << kMaxSubnegotiationDuration.count() << "s without IAC SE.");
+                        context.lastError = "Telnet subnegotiation timed out";
                         processedOk = false;
                         break;
                     }
