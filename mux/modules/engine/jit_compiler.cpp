@@ -1044,6 +1044,13 @@ struct persistent_vm_t {
     bool dbt_ready;
     uint32_t run_count;
 
+    // Re-entrancy guard for the code arena. compile_attr() may only reclaim
+    // (reset) the arena when no compiled code from it is on the call stack,
+    // i.e. exec_depth == 0. Pressure detected mid-run is deferred via
+    // reset_pending and serviced when the outermost run() unwinds.
+    int exec_depth;
+    bool reset_pending;
+
     // Code heap: bump allocator for code sections.
     uint64_t code_heap_next;
 
@@ -1074,6 +1081,7 @@ struct persistent_vm_t {
     persistent_vm_t()
         : memory(rv_compiler::MEM_SIZE, 0),
           dbt_ready(false), run_count(0),
+          exec_depth(0), reset_pending(false),
           code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
           str_pool_next(rv_compiler::STR_BASE),
           fargs_pool_next(rv_compiler::FARGS_BASE),
@@ -1136,8 +1144,24 @@ struct persistent_vm_t {
             return {it->second.entry_pc, it->second.out_addr,
                     it->second.needs_jit};
         }
-        // Stale or missing — (stale code heap space is leaked; future:
-        // reclaim).
+        // Stale or missing. The previous compilation of this attribute (if
+        // any) leaves its code/string/fargs regions stranded — recompiling
+        // bump-allocates fresh space and never reclaims the old region. Before
+        // that pushes the arena toward exhaustion (after which the JIT bails
+        // for good), reclaim it wholesale: immediately if nothing is executing
+        // on this VM, otherwise defer to the next safe point (the outermost
+        // run() unwind) via reset_pending.
+        if (arena_nearly_full())
+        {
+            if (0 == exec_depth)
+            {
+                reset_arena();
+            }
+            else
+            {
+                reset_pending = true;
+            }
+        }
 
         // Compile.
         compile_result cr = compile(body, body_len, eval);
@@ -1201,14 +1225,60 @@ struct persistent_vm_t {
     // First call uses dbt_run (zeroes ctx); subsequent use dbt_resume.
     //
     int run(uint64_t entry_pc) {
+        // Track that compiled code from this arena is on the stack so a
+        // re-entrant compile_attr() does not reclaim the arena out from under
+        // a running program. A reclaim requested mid-run is serviced once the
+        // outermost run() unwinds (exec_depth back to 0).
+        exec_depth++;
         dbt_rerun(&dbt, poc_ecall, &dbt);
+        int rc;
         if (run_count == 0) {
             run_count++;
-            return dbt_run(&dbt, entry_pc, rv_compiler::STACK_TOP);
+            rc = dbt_run(&dbt, entry_pc, rv_compiler::STACK_TOP);
+        } else {
+            dbt.ctx.x[2] = rv_compiler::STACK_TOP;
+            run_count++;
+            rc = dbt_resume(&dbt, entry_pc);
         }
-        dbt.ctx.x[2] = rv_compiler::STACK_TOP;
-        run_count++;
-        return dbt_resume(&dbt, entry_pc);
+        exec_depth--;
+        if (0 == exec_depth && reset_pending) {
+            reset_arena();
+        }
+        return rc;
+    }
+
+    // True when any arena pool has crossed a 7/8 high-water mark and should be
+    // reclaimed before it exhausts.
+    bool arena_nearly_full() const {
+        uint64_t code_used  = code_heap_next - 0x0004;
+        uint64_t code_cap   = rv_compiler::BLOB_BASE - 0x0004;
+        uint64_t str_used   = str_pool_next - rv_compiler::STR_BASE;
+        uint64_t str_cap    = rv_compiler::STR_LIMIT - rv_compiler::STR_BASE;
+        uint64_t fargs_used = fargs_pool_next - rv_compiler::FARGS_BASE;
+        uint64_t fargs_cap  = rv_compiler::FARGS_LIMIT - rv_compiler::FARGS_BASE;
+        return code_used  * 8 >= code_cap  * 7
+            || str_used   * 8 >= str_cap   * 7
+            || fargs_used * 8 >= fargs_cap * 7;
+    }
+
+    // Reclaim the code arena wholesale. Safe ONLY when exec_depth == 0 (no
+    // compiled code from this arena is executing): it rewinds the bump
+    // allocators and drops every cached compilation, so all attributes are
+    // recompiled lazily on next use. The reused code-heap PCs would otherwise
+    // hit stale entries in the DBT block cache, so dbt_reset() evicts the
+    // program-code translations (blob translations are preserved) and the
+    // run sequence restarts from dbt_run.
+    void reset_arena() {
+        attr_cache.clear();
+        code_heap_next  = 0x0004;
+        str_pool_next   = rv_compiler::STR_BASE;
+        fargs_pool_next = rv_compiler::FARGS_BASE;
+        worst_out_pool  = rv_compiler::STACK_TOP - 8;
+        reset_pending   = false;
+        if (dbt_ready) {
+            dbt_reset(&dbt, memory.data(), memory.size(), poc_ecall, &dbt);
+            run_count = 0;
+        }
     }
 
     // Reset blob BSS between function runs (Tier 2 writable data).
