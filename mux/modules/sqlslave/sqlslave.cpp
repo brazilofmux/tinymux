@@ -14,6 +14,7 @@
 #include "sql.h"
 
 #include <atomic>
+#include <new>
 #include <string>
 
 class CQueryServer : public mux_IQueryControl
@@ -38,6 +39,7 @@ public:
 private:
     std::atomic<uint32_t> m_cRef;
     mux_IQuerySink *m_pIQuerySink;
+    mux_ILog       *m_pILog;
 #if defined(HAVE_MYSQL)
     MYSQL          *m_database;
 #endif // HAVE_MYSQL
@@ -50,7 +52,14 @@ private:
     std::string     m_sUser;
     std::string     m_sPassword;
 
-    void ConnectionHelper();
+    // Returns true if a live MySQL session is established.
+    //
+    bool ConnectionHelper();
+
+    // Best-effort logging of a MySQL error.  Silently does nothing if no log
+    // interface is available (e.g. when running in the slave process).
+    //
+    void LogError(const UTF8 *pContext);
 };
 
 static std::atomic<int32_t> g_cComponents(0);
@@ -88,9 +97,9 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID
         {
             pQueryServerFactory = new CQueryServerFactory;
         }
-        catch (...)
+        catch (const std::bad_alloc &)
         {
-            ; // Nothing.
+            ; // Handled by the NULL check below.
         }
 
         if (NULL == pQueryServerFactory)
@@ -131,7 +140,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 
 // QueryServer component which is not directly accessible.
 //
-CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL)
+CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL), m_pILog(NULL)
 {
 #if defined(HAVE_MYSQL)
     m_database = NULL;
@@ -142,8 +151,15 @@ CQueryServer::CQueryServer(void) : m_cRef(1), m_pIQuerySink(NULL)
 
 MUX_RESULT CQueryServer::FinalConstruct(void)
 {
-    MUX_RESULT mr = MUX_S_OK;
-    return mr;
+    // Acquire a logging interface on a best-effort basis.  CID_Log is provided
+    // by the engine in the main process; when this component runs in the slave
+    // process the interface may be unavailable, in which case we simply do not
+    // log.  Failure here must not prevent the component from being created.
+    //
+    mux_CreateInstance(CID_Log, NULL, UseSameProcess, IID_ILog,
+                       reinterpret_cast<void **>(&m_pILog));
+
+    return MUX_S_OK;
 }
 
 CQueryServer::~CQueryServer()
@@ -152,6 +168,12 @@ CQueryServer::~CQueryServer()
     {
         m_pIQuerySink->Release();
         m_pIQuerySink = NULL;
+    }
+
+    if (NULL != m_pILog)
+    {
+        m_pILog->Release();
+        m_pILog = NULL;
     }
 
 #if defined(HAVE_MYSQL)
@@ -242,30 +264,71 @@ MUX_RESULT CQueryServer::Connect(const UTF8 *pServer, const UTF8 *pDatabase, con
     return MUX_S_OK;
 }
 
-void CQueryServer::ConnectionHelper()
+void CQueryServer::LogError(const UTF8 *pContext)
 {
 #if defined(HAVE_MYSQL)
-    if (!m_sServer.empty())
+    if (  NULL != m_pILog
+       && NULL != m_database)
     {
-#ifdef MYSQL_OPT_RECONNECT
-        // As of MySQL 5.0.3, the default is no longer to reconnect.
-        //
-        my_bool reconnect = 1;
-        mysql_options(m_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect));
-#endif
-        mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
-
-        if (mysql_real_connect(m_database, m_sServer.c_str(), m_sUser.c_str(),
-             m_sPassword.c_str(), m_sDatabase.c_str(), 0, NULL, 0) != 0)
+        bool fStarted = false;
+        if (  MUX_SUCCEEDED(m_pILog->start_log(&fStarted, LOG_ALWAYS, T("SQL"), T("ERR")))
+           && fStarted)
         {
-#ifdef MYSQL_OPT_RECONNECT
-            // Before MySQL 5.0.19, mysql_real_connect sets the option
-            // back to default, so we set it again.
-            //
-            mysql_options(m_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect));
-#endif
+            m_pILog->log_text(pContext);
+            m_pILog->log_text(T(": "));
+            m_pILog->log_text(reinterpret_cast<const UTF8 *>(mysql_error(m_database)));
+            m_pILog->end_log();
         }
     }
+#else
+    UNUSED_PARAMETER(pContext);
+#endif
+}
+
+bool CQueryServer::ConnectionHelper()
+{
+#if defined(HAVE_MYSQL)
+    if (m_sServer.empty())
+    {
+        return false;
+    }
+
+#ifdef MYSQL_OPT_RECONNECT
+    // As of MySQL 5.0.3, the default is no longer to reconnect.
+    //
+    my_bool reconnect = 1;
+    if (0 != mysql_options(m_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect)))
+    {
+        LogError(T("mysql_options(MYSQL_OPT_RECONNECT)"));
+    }
+#endif
+    if (0 != mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8"))
+    {
+        LogError(T("mysql_options(MYSQL_SET_CHARSET_NAME)"));
+    }
+
+    if (mysql_real_connect(m_database, m_sServer.c_str(), m_sUser.c_str(),
+         m_sPassword.c_str(), m_sDatabase.c_str(), 0, NULL, 0) != 0)
+    {
+#ifdef MYSQL_OPT_RECONNECT
+        // Before MySQL 5.0.19, mysql_real_connect sets the option
+        // back to default, so we set it again.
+        //
+        if (0 != mysql_options(m_database, MYSQL_OPT_RECONNECT, reinterpret_cast<const char *>(&reconnect)))
+        {
+            LogError(T("mysql_options(MYSQL_OPT_RECONNECT)"));
+        }
+#endif
+        return true;
+    }
+
+    // The connection attempt failed.  Surface the reason rather than leaving
+    // m_database silently unconnected.
+    //
+    LogError(T("mysql_real_connect"));
+    return false;
+#else
+    return false;
 #endif
 }
 
@@ -305,33 +368,26 @@ MUX_RESULT CQueryServer::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName,
     {
         iError = QS_NO_SESSION;
     }
-    else
+    else if (mysql_ping(m_database) != 0)
     {
-        unsigned long lThreadId_before = mysql_thread_id(m_database);
-        if (mysql_ping(m_database) != 0)
+        // The session is gone.  Attempt our own reconnection and distinguish a
+        // failed connection (bad credentials, missing database) from a server
+        // that is simply unreachable, so softcode can tell them apart.
+        //
+        if (!ConnectionHelper())
         {
-            // Attempt our own reconnection.
-            //
-            ConnectionHelper();
-            if (mysql_ping(m_database) != 0)
-            {
-                iError = QS_SQL_UNAVAILABLE;
-            }
+            iError = QS_CONNECT_FAILED;
         }
-        else
+        else if (mysql_ping(m_database) != 0)
         {
-            unsigned long lThreadId_after = mysql_thread_id(m_database);
-            if (lThreadId_before != lThreadId_after)
-            {
-                // Respond to detected reconnection.
-                //
-            }
+            iError = QS_SQL_UNAVAILABLE;
         }
     }
 
     if (  QS_SUCCESS == iError
        && mysql_real_query(m_database, reinterpret_cast<const char *>(pQuery), strlen(reinterpret_cast<const char *>(pQuery))) != 0)
     {
+        LogError(T("mysql_real_query"));
         iError = QS_QUERY_ERROR;
     }
 
@@ -381,14 +437,25 @@ MUX_RESULT CQueryServer::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName,
         }
 
         // Drain any remaining result sets from stored procedures.
+        // mysql_next_result() returns 0 for another result set, -1 when there
+        // are no more, and a positive value on error.
         //
-        while (mysql_next_result(m_database) == 0)
+        int iNext;
+        while (0 == (iNext = mysql_next_result(m_database)))
         {
             MYSQL_RES *extra = mysql_store_result(m_database);
             if (extra)
             {
                 mysql_free_result(extra);
             }
+        }
+        if (0 < iNext)
+        {
+            // A later statement (e.g. inside a stored procedure) failed.  Do
+            // not let it masquerade as overall success.
+            //
+            LogError(T("mysql_next_result"));
+            iError = QS_QUERY_ERROR;
         }
     }
 #else // HAVE_MYSQL
@@ -459,9 +526,9 @@ MUX_RESULT CQueryServerFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_
     {
         pQueryServer = new CQueryServer;
     }
-    catch (...)
+    catch (const std::bad_alloc &)
     {
-        ; // Nothing.
+        ; // Handled by the NULL check below.
     }
 
     MUX_RESULT mr;

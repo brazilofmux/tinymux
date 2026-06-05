@@ -233,6 +233,7 @@ extern void final_modules(void);
 #define QS_NO_SESSION      (1)
 #define QS_SQL_UNAVAILABLE (2)
 #define QS_QUERY_ERROR     (3)
+#define QS_CONNECT_FAILED  (4)
 
 #define RS_TOP             (0)
 

@@ -10768,6 +10768,10 @@ static FUNCTION(fun_rserror)
         case QS_QUERY_ERROR:
             safe_str(T("#-4 QUERY_ERROR"), buff, bufc);
             break;
+
+        case QS_CONNECT_FAILED:
+            safe_str(T("#-5 CONNECT_FAILED"), buff, bufc);
+            break;
         }
     }
     else
