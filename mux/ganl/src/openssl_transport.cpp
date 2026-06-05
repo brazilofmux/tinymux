@@ -124,7 +124,7 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
 void OpenSSLTransport::shutdown() {
     // Using the revised shutdown logic which avoids re-locking
     GANL_SSL_DEBUG(0, "Shutting down (Revised)...");
-    std::vector<SSL*> sslObjectsToFree;
+    std::vector<std::shared_ptr<SSLContext>> sessionsToFree;
     SSL_CTX* ctxToFree = nullptr; // Renamed from ctxToFreeRevised for clarity
 
     { // --- Lock Scope Start ---
@@ -133,29 +133,32 @@ void OpenSSLTransport::shutdown() {
              GANL_SSL_DEBUG(0, "Already shut down.");
              return;
         }
-        sslObjectsToFree.reserve(sessions_.size());
-        GANL_SSL_DEBUG(0, "Gathering " << sessions_.size() << " SSL objects to free...");
-        // Iterate and move SSL pointers out of the map contexts
+        sessionsToFree.reserve(sessions_.size());
+        GANL_SSL_DEBUG(0, "Gathering " << sessions_.size() << " SSL sessions to release...");
+        // Move the owning handles out of the map so the map can be cleared
+        // while we still hold a reference to each session.
         for (auto& pair : sessions_) {
-            if (pair.second.ssl) {
-                sslObjectsToFree.push_back(pair.second.ssl);
-                pair.second.ssl = nullptr; // Null out pointer in map context
-                pair.second.readBio = nullptr;
-                pair.second.writeBio = nullptr;
+            if (pair.second) {
+                sessionsToFree.push_back(std::move(pair.second));
             }
         }
-        sessions_.clear(); // Clear map *after* extracting pointers
+        sessions_.clear(); // Clear map *after* extracting handles
 
         ctxToFree = ctx_; // Copy global context pointer
         ctx_ = nullptr;  // Null out global context pointer
         keyPassword_.clear();
     } // --- Lock Scope End ---
 
-    // --- Perform freeing outside the lock ---
-    GANL_SSL_DEBUG(0, "Freeing " << sslObjectsToFree.size() << " SSL objects (outside lock)...");
-    for (SSL* ssl : sslObjectsToFree) {
-        SSL_free(ssl); // This also frees associated BIOs
-    }
+    // --- Release the sessions outside the lock ---
+    // Dropping these handles runs ~SSLContext()/SSL_free() for any session no
+    // longer referenced by an in-flight operation. A session still borrowed by
+    // another thread (e.g. inside processIncoming after it dropped the lock)
+    // survives until that operation releases its own handle, so SSL_free never
+    // races a live SSL_* call. Each surviving SSL also holds a reference on the
+    // SSL_CTX, so SSL_CTX_free below merely decrements it; the context is not
+    // actually torn down until the last session is gone.
+    GANL_SSL_DEBUG(0, "Releasing " << sessionsToFree.size() << " SSL sessions (outside lock)...");
+    sessionsToFree.clear();
 
     if (ctxToFree) {
         GANL_SSL_DEBUG(0, "Freeing SSL_CTX (outside lock).");
@@ -171,7 +174,7 @@ void OpenSSLTransport::shutdown() {
 bool OpenSSLTransport::createSessionContext(ConnectionHandle conn, bool isServer) {
     GANL_SSL_DEBUG(conn, "Creating session context. isServer=" << isServer);
 
-    SSLContext context; // Create context locally first
+    auto context = std::make_shared<SSLContext>(); // Create context on the heap first
     SSL_CTX* localCtx = nullptr;
 
     // --- Check prerequisites under lock ---
@@ -191,38 +194,40 @@ bool OpenSSLTransport::createSessionContext(ConnectionHandle conn, bool isServer
 
     // --- Perform OpenSSL operations outside the lock ---
     GANL_SSL_DEBUG(conn, "Creating SSL object...");
-    context.ssl = SSL_new(localCtx);
-    if (!context.ssl) {
-        context.lastError = "SSL_new failed: " + getOpenSSLErrorString(conn);
-        GANL_SSL_DEBUG(conn, "Error: " << context.lastError);
-        return false;
+    context->ssl = SSL_new(localCtx);
+    if (!context->ssl) {
+        context->lastError = "SSL_new failed: " + getOpenSSLErrorString(conn);
+        GANL_SSL_DEBUG(conn, "Error: " << context->lastError);
+        return false; // ~SSLContext() has nothing to free (ssl is null)
     }
 
     GANL_SSL_DEBUG(conn, "Creating memory BIOs...");
-    context.readBio = BIO_new(BIO_s_mem());
-    context.writeBio = BIO_new(BIO_s_mem());
-    if (!context.readBio || !context.writeBio) {
-        context.lastError = "BIO_new failed: " + getOpenSSLErrorString(conn);
-        GANL_SSL_DEBUG(conn, "Error: " << context.lastError);
-        // Cleanup locally created resources
-        if (context.readBio) BIO_free(context.readBio);
-        if (context.writeBio) BIO_free(context.writeBio);
-        SSL_free(context.ssl); // context.ssl is guaranteed non-null here
+    context->readBio = BIO_new(BIO_s_mem());
+    context->writeBio = BIO_new(BIO_s_mem());
+    if (!context->readBio || !context->writeBio) {
+        context->lastError = "BIO_new failed: " + getOpenSSLErrorString(conn);
+        GANL_SSL_DEBUG(conn, "Error: " << context->lastError);
+        // BIOs are not yet owned by the SSL object, so free them here and clear
+        // the fields; ~SSLContext() then frees the SSL object on return.
+        if (context->readBio) BIO_free(context->readBio);
+        if (context->writeBio) BIO_free(context->writeBio);
+        context->readBio = nullptr;
+        context->writeBio = nullptr;
         return false;
     }
 
-    BIO_set_mem_eof_return(context.readBio, -1);
-    BIO_set_mem_eof_return(context.writeBio, -1);
+    BIO_set_mem_eof_return(context->readBio, -1);
+    BIO_set_mem_eof_return(context->writeBio, -1);
 
     GANL_SSL_DEBUG(conn, "Setting BIOs for SSL object...");
-    SSL_set_bio(context.ssl, context.readBio, context.writeBio); // SSL takes ownership of BIOs here
+    SSL_set_bio(context->ssl, context->readBio, context->writeBio); // SSL takes ownership of BIOs here
 
     if (isServer) {
         GANL_SSL_DEBUG(conn, "Setting SSL accept state.");
-        SSL_set_accept_state(context.ssl);
+        SSL_set_accept_state(context->ssl);
     } else {
         GANL_SSL_DEBUG(conn, "Setting SSL connect state.");
-        SSL_set_connect_state(context.ssl);
+        SSL_set_connect_state(context->ssl);
     }
     // --- End OpenSSL operations ---
 
@@ -232,10 +237,9 @@ bool OpenSSLTransport::createSessionContext(ConnectionHandle conn, bool isServer
         // Double-check for concurrent creation before inserting
         if (sessions_.count(conn)) {
              GANL_SSL_DEBUG(conn, "Error: Session context created concurrently. Cleaning up.");
-             SSL_free(context.ssl); // Frees BIOs too
-             return false;
+             return false; // ~SSLContext() frees the SSL object (and its BIOs)
         }
-        // Move the fully prepared local context into the map
+        // Move the fully prepared handle into the map
         sessions_.emplace(conn, std::move(context));
     } // --- Lock released ---
 
@@ -245,16 +249,15 @@ bool OpenSSLTransport::createSessionContext(ConnectionHandle conn, bool isServer
 
 void OpenSSLTransport::destroySessionContext(ConnectionHandle conn) {
     GANL_SSL_DEBUG(conn, "Destroying session context...");
-    SSL* sslToFree = nullptr;
+    std::shared_ptr<SSLContext> sessionToFree;
 
     // --- Find and remove from map under lock ---
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = sessions_.find(conn);
         if (it != sessions_.end()) {
-            // Extract SSL pointer before erasing
-            sslToFree = it->second.ssl;
-            it->second.ssl = nullptr; // Prevent potential double-free in SSLContext destructor if it existed
+            // Take ownership of the handle, then drop the map entry.
+            sessionToFree = std::move(it->second);
             sessions_.erase(it);
             GANL_SSL_DEBUG(conn, "Session context removed from map.");
         } else {
@@ -263,11 +266,13 @@ void OpenSSLTransport::destroySessionContext(ConnectionHandle conn) {
         }
     } // --- Lock released ---
 
-    // --- Free SSL object outside lock ---
-    if (sslToFree) {
-        GANL_SSL_DEBUG(conn, "Freeing SSL object (outside lock).");
-        SSL_free(sslToFree); // Frees associated BIOs as well
-    }
+    // --- Release the handle outside the lock ---
+    // If another thread still holds a reference (it borrowed the handle from a
+    // processIncoming/Outgoing/shutdownSession call before this erase), the SSL
+    // object stays alive until that operation finishes; only the last reference
+    // runs SSL_free(), so this never frees memory out from under a live call.
+    GANL_SSL_DEBUG(conn, "Releasing session handle (outside lock).");
+    sessionToFree.reset();
     // --- End free ---
     GANL_SSL_DEBUG(conn, "Session context destroyed.");
 }
@@ -287,9 +292,9 @@ void OpenSSLTransport::destroySessionContext(ConnectionHandle conn) {
 TlsResult OpenSSLTransport::processIncoming(ConnectionHandle conn, IoBuffer& encrypted_in,
                                            IoBuffer& decrypted_out, IoBuffer& encrypted_out,
                                            bool consumeInput) {
-    SSLContext* contextPtr = nullptr;
+    std::shared_ptr<SSLContext> contextHolder;
 
-    // --- Get context pointer under lock ---
+    // --- Get an owning handle under lock ---
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = sessions_.find(conn);
@@ -300,15 +305,15 @@ TlsResult OpenSSLTransport::processIncoming(ConnectionHandle conn, IoBuffer& enc
             return TlsResult::Error;
         }
         // Check if SSL object is valid (might have been nulled during concurrent shutdown/destroy)
-        if (!it->second.ssl) {
+        if (!it->second->ssl) {
              GANL_SSL_DEBUG(conn, "Error: SSL object is null (likely destroyed).");
              return TlsResult::Error; // Or Closed? Error seems safer.
         }
-        contextPtr = &it->second;
+        contextHolder = it->second; // copy the handle so the session outlives the unlocked work
     } // --- Lock released ---
 
-    // --- Operate on contextPtr outside lock ---
-    SSLContext& context = *contextPtr; // Use reference
+    // --- Operate on the borrowed handle outside lock ---
+    SSLContext& context = *contextHolder; // Use reference
     TlsResult finalResult = TlsResult::Success; // Default assumption
 
     GANL_SSL_DEBUG(conn, "Processing Incoming. EncryptedIn=" << encrypted_in.readableBytes()
@@ -432,8 +437,8 @@ TlsResult OpenSSLTransport::processIncoming(ConnectionHandle conn, IoBuffer& enc
 
 TlsResult OpenSSLTransport::processOutgoing(ConnectionHandle conn, IoBuffer& plain_in,
                                            IoBuffer& encrypted_out, bool consumeInput) {
-    SSLContext* contextPtr = nullptr;
-    // --- Get context pointer under lock ---
+    std::shared_ptr<SSLContext> contextHolder;
+    // --- Get an owning handle under lock ---
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = sessions_.find(conn);
@@ -442,14 +447,14 @@ TlsResult OpenSSLTransport::processOutgoing(ConnectionHandle conn, IoBuffer& pla
             GANL_SSL_DEBUG(conn, "Error: " << lastGlobalError_);
             return TlsResult::Error;
         }
-         if (!it->second.ssl) { // Check for null SSL*
+         if (!it->second->ssl) { // Check for null SSL*
              GANL_SSL_DEBUG(conn, "Error: SSL object is null (likely destroyed).");
              return TlsResult::Error;
         }
-        contextPtr = &it->second;
+        contextHolder = it->second; // copy the handle so the session outlives the unlocked work
     } // --- Lock released ---
 
-    SSLContext& context = *contextPtr;
+    SSLContext& context = *contextHolder;
     TlsResult finalResult = TlsResult::Success;
 
     GANL_SSL_DEBUG(conn, "Processing Outgoing. PlainIn=" << plain_in.readableBytes()
@@ -524,8 +529,8 @@ TlsResult OpenSSLTransport::processOutgoing(ConnectionHandle conn, IoBuffer& pla
 }
 
 TlsResult OpenSSLTransport::shutdownSession(ConnectionHandle conn, IoBuffer& encrypted_out) {
-    SSLContext* contextPtr = nullptr;
-    // --- Get context pointer under lock ---
+    std::shared_ptr<SSLContext> contextHolder;
+    // --- Get an owning handle under lock ---
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = sessions_.find(conn);
@@ -534,14 +539,14 @@ TlsResult OpenSSLTransport::shutdownSession(ConnectionHandle conn, IoBuffer& enc
             GANL_SSL_DEBUG(conn, "Error: " << lastGlobalError_);
             return TlsResult::Error;
         }
-        if (!it->second.ssl) { // Check for null SSL*
+        if (!it->second->ssl) { // Check for null SSL*
              GANL_SSL_DEBUG(conn, "Error: SSL object is null (likely destroyed).");
              return TlsResult::Error;
         }
-        contextPtr = &it->second;
+        contextHolder = it->second; // copy the handle so the session outlives the unlocked work
     } // --- Lock released ---
 
-    SSLContext& context = *contextPtr;
+    SSLContext& context = *contextHolder;
     TlsResult finalResult = TlsResult::Closed; // Assume complete unless I/O needed
 
     GANL_SSL_DEBUG(conn, "Initiating SSL shutdown. Current SSL shutdown state: " << SSL_get_shutdown(context.ssl));
@@ -604,29 +609,29 @@ bool OpenSSLTransport::isEstablished(ConnectionHandle conn) {
     std::lock_guard<std::mutex> lock(mutex_); // Lock for map access
     auto it = sessions_.find(conn);
     // Use SSL_is_init_finished for more accurate state check
-    return (it != sessions_.end() && it->second.established && it->second.ssl && SSL_is_init_finished(it->second.ssl));
+    return (it != sessions_.end() && it->second->established && it->second->ssl && SSL_is_init_finished(it->second->ssl));
 }
 
 bool OpenSSLTransport::needsNetworkRead(ConnectionHandle conn) {
     std::lock_guard<std::mutex> lock(mutex_); // Lock for map access
     auto it = sessions_.find(conn);
-    if (it == sessions_.end() || !it->second.ssl) {
+    if (it == sessions_.end() || !it->second->ssl) {
         return false;
     }
     // Check if SSL wants read AND the read BIO is empty
-    bool ssl_wants_read = (SSL_want_read(it->second.ssl) != 0);
-    bool bio_has_data = (BIO_ctrl_pending(it->second.readBio) > 0);
+    bool ssl_wants_read = (SSL_want_read(it->second->ssl) != 0);
+    bool bio_has_data = (BIO_ctrl_pending(it->second->readBio) > 0);
     return ssl_wants_read && !bio_has_data;
 }
 
 bool OpenSSLTransport::needsNetworkWrite(ConnectionHandle conn) {
     std::lock_guard<std::mutex> lock(mutex_); // Lock for map access
     auto it = sessions_.find(conn);
-    if (it == sessions_.end() || !it->second.writeBio) {
+    if (it == sessions_.end() || !it->second->writeBio) {
         return false;
     }
     // Check if write BIO has pending data
-    return (BIO_ctrl_pending(it->second.writeBio) > 0);
+    return (BIO_ctrl_pending(it->second->writeBio) > 0);
 }
 
 std::string OpenSSLTransport::getLastTlsErrorString(ConnectionHandle conn) {
@@ -639,7 +644,7 @@ std::string OpenSSLTransport::getLastTlsErrorString(ConnectionHandle conn) {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = sessions_.find(conn);
         if (it != sessions_.end()) {
-             sessionError = it->second.lastError;
+             sessionError = it->second->lastError;
              foundSession = true;
         }
         globalError = lastGlobalError_;

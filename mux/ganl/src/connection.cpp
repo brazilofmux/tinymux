@@ -1020,6 +1020,9 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
             totalBytesReadInCall += bytesReadThisOp;
         }
         else if (bytesReadThisOp == 0) {
+            // read()/recv() returning 0 is EOF (peer closed), distinct from
+            // EAGAIN below. Flag it and stop reading; the post-loop logic
+            // transitions the connection into Closing.
             potentialEOF = true;
             break;
         }
@@ -1035,24 +1038,29 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
             else { lastErrorString = "::read failed: " + std::string(strerror(errno)); readError = true; break; }
 #endif
         }
+    } // End Readiness read loop
 
-        GANL_CONN_DEBUG(handle_, "Readiness read loop finished. Total read: " << totalBytesReadInCall
-            << ", EOF=" << potentialEOF << ", Error=" << readError);
+    // Evaluate the outcome once the loop has stopped. This must live OUTSIDE the
+    // loop: every terminating path above (EOF, error, EAGAIN) uses break, so
+    // running this inside the loop skipped it on exactly the iterations that
+    // matter — leaving an EOF or error connection half-open with the
+    // negotiation-timeout timer still armed and postWrite() still reachable.
+    GANL_CONN_DEBUG(handle_, "Readiness read loop finished. Total read: " << totalBytesReadInCall
+        << ", EOF=" << potentialEOF << ", Error=" << readError);
 
-        if (readError) {
-            needsClose = true;
-            closeReason = DisconnectReason::NetworkError;
-            success = false;
-        }
-        else if (potentialEOF) {
-            needsClose = true;
-            closeReason = DisconnectReason::UserQuit;
-            success = true; // EOF is not a processing error itself
-        }
-        else {
-            success = true; // Read attempts finished normally (hit EAGAIN or read some data)
-        }
-    } // End Readiness Logic
+    if (readError) {
+        needsClose = true;
+        closeReason = DisconnectReason::NetworkError;
+        success = false;
+    }
+    else if (potentialEOF) {
+        needsClose = true;
+        closeReason = DisconnectReason::UserQuit;
+        success = true; // EOF is not a processing error itself
+    }
+    else {
+        success = true; // Read attempts finished normally (hit EAGAIN or read some data)
+    }
 
     // --- Common Processing After Read Attempt ---
     if (needsClose) {

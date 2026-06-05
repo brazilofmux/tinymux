@@ -4,6 +4,7 @@
 #include <secure_transport.h>
 #include <mutex>
 #include <map>
+#include <memory>
 #include <string>
 #include <openssl/ssl.h>
 
@@ -40,40 +41,29 @@ private:
         bool established{false};
         std::string lastError;
 
-        // Add move constructor/assignment for map insertion
-        SSLContext() = default; // Needed for map default construction before move
-        SSLContext(SSLContext&& other) noexcept
-            : ssl(other.ssl), readBio(other.readBio), writeBio(other.writeBio),
-              established(other.established), lastError(std::move(other.lastError)) {
-            other.ssl = nullptr;
-            other.readBio = nullptr;
-            other.writeBio = nullptr;
+        SSLContext() = default;
+        // RAII: the owning handle (a shared_ptr held in sessions_ and by any
+        // in-flight operation) frees the SSL object — and, via SSL_set_bio,
+        // its attached BIOs — when the last reference goes away. This is what
+        // makes it safe for processIncoming/Outgoing/shutdownSession to keep
+        // operating on a borrowed handle after dropping mutex_, even if
+        // destroySessionContext()/shutdown() removes the map entry meanwhile.
+        ~SSLContext() {
+            if (ssl) SSL_free(ssl);
         }
-        SSLContext& operator=(SSLContext&& other) noexcept {
-            if (this != &other) {
-                // Clean up existing resources if any (shouldn't happen with unique_ptr pattern, but safe)
-                if (ssl) SSL_free(ssl);
-
-                ssl = other.ssl;
-                readBio = other.readBio;
-                writeBio = other.writeBio;
-                established = other.established;
-                lastError = std::move(other.lastError);
-
-                other.ssl = nullptr;
-                other.readBio = nullptr;
-                other.writeBio = nullptr;
-            }
-            return *this;
-        }
-        // Prevent copying
+        // Sessions are heap-allocated and shared, never copied or moved.
         SSLContext(const SSLContext&) = delete;
         SSLContext& operator=(const SSLContext&) = delete;
+        SSLContext(SSLContext&&) = delete;
+        SSLContext& operator=(SSLContext&&) = delete;
     };
 
     std::mutex mutex_;
     SSL_CTX* ctx_{nullptr};
-    std::map<ConnectionHandle, SSLContext> sessions_;
+    // Owning handles. A lookup copies the shared_ptr out under mutex_, giving
+    // the caller a reference that keeps the session alive across the unlocked
+    // OpenSSL call even if it is concurrently destroyed.
+    std::map<ConnectionHandle, std::shared_ptr<SSLContext>> sessions_;
 
     std::string lastGlobalError_;
     std::string keyPassword_;
