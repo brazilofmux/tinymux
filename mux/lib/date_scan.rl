@@ -14,6 +14,7 @@
 #include "core.h"
 #include "timeutil.h"
 
+#include <climits>
 #include <cstring>
 
 // -----------------------------------------------------------------------
@@ -243,11 +244,23 @@ static int classify_tz(const UTF8 *ts, const UTF8 *te)
 
         digit+ => {
             int ndig = (int)(te - ts);
-            int val = 0;
+            // Accumulate in 64 bits and saturate to INT_MAX so an over-long
+            // digit run cannot wrap a 32-bit int into a small or negative
+            // value that then slips past downstream range checks (e.g. a
+            // 10-digit "year" wrapping into a plausible one).
+            int64_t acc = 0;
             for (const UTF8 *d = ts; d < te; d++)
-                val = val * 10 + (*d - '0');
+            {
+                acc = acc * 10 + (*d - '0');
+                if (acc > INT_MAX)
+                {
+                    acc = INT_MAX;
+                    break;
+                }
+            }
+            if (ndig > 255) ndig = 255;  // nDigits is stored in a byte
             if (ntok < DATE_MAX_TOKENS)
-                toks[ntok++] = { DTT_NUM, (unsigned char)ndig, val };
+                toks[ntok++] = { DTT_NUM, (unsigned char)ndig, (int)acc };
         };
 
         /[Zz]/ => { if (ntok < DATE_MAX_TOKENS) toks[ntok++] = { DTT_Z, 0, 0 }; };
@@ -1135,6 +1148,17 @@ bool ParseDate
     //
     FIELDEDTIME ft;
     memset(&ft, 0, sizeof(ft));
+
+    // Reject years outside the range timeutil accepts (see isValidDate)
+    // *before* narrowing to short.  Otherwise an out-of-range year wraps
+    // silently into a plausible one — e.g. 67536 -> 2000 — and is accepted
+    // as the wrong date.  This guards every conversion branch below,
+    // including the week-date and ordinal paths that bypass
+    // FieldedTimeToLinearTime's own year check.
+    if (dr.iYear < -27256 || 30826 < dr.iYear)
+    {
+        return false;
+    }
 
     ft.iYear = static_cast<short>(dr.iYear);
 

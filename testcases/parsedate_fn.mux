@@ -481,6 +481,58 @@
   },
   {
     @log smoke=TC030: ISO date-only. Failed (%q0).
+  }
+-
+#
+# Test Case #31 - 10-digit year overflows a 32-bit accumulator.
+#                  Must be rejected, not wrapped into a bogus year (#707).
+#
+&tr.tc031 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(9999999999-01-01)),
+        #-1 INVALID DATE
+      )=
+  {
+    @log smoke=TC031: 10-digit overflow year rejected. Succeeded.
+  },
+  {
+    @log smoke=TC031: 10-digit overflow year rejected. Failed (%q0).
+  }
+-
+#
+# Test Case #32 - Out-of-range year that would narrow into a valid one
+#                  (67536 -> (short)2000). Must be rejected, not silently
+#                  accepted as the wrong year (#708).
+#
+&tr.tc032 test_parsedate_fn=
+  @if strmatch(
+        setr(0,convtime(67536-01-01)),
+        #-1 INVALID DATE
+      )=
+  {
+    @log smoke=TC032: Year narrowing rejected. Succeeded.
+  },
+  {
+    @log smoke=TC032: Year narrowing rejected. Failed (%q0).
+  }
+-
+#
+# Test Case #33 - Boundary year 30826 (the highest timeutil accepts) must
+#                  still parse — guards the year check against off-by-one
+#                  over-rejection (#708).
+#
+&tr.tc033 test_parsedate_fn=
+  @if not(
+        strmatch(
+          setr(0,convtime(30826-06-15,utc)),
+          #-1 INVALID DATE
+        )
+      )=
+  {
+    @log smoke=TC033: Boundary year parses. Succeeded.
+  },
+  {
+    @log smoke=TC033: Boundary year parses. Failed (%q0).
   };
   @trig me/tr.done
 -

@@ -6733,7 +6733,13 @@
 >314
 "@if not(strmatch(setr(0,convtime(23456W12-1T123456T)),#-1 INVALID DATE))={@log smoke=TC029: Large year parse. Succeeded.},{@log smoke=TC029: Large year parse. Failed (%q0).}"
 >315
-"@if not(strmatch(setr(0,convtime(2026-04-06,utc)),#-1 INVALID DATE))={@log smoke=TC030: ISO date-only. Succeeded.},{@log smoke=TC030: ISO date-only. Failed (%q0).};@trig me/tr.done"
+"@if not(strmatch(setr(0,convtime(2026-04-06,utc)),#-1 INVALID DATE))={@log smoke=TC030: ISO date-only. Succeeded.},{@log smoke=TC030: ISO date-only. Failed (%q0).}"
+>316
+"@if strmatch(setr(0,convtime(9999999999-01-01)),#-1 INVALID DATE)={@log smoke=TC031: 10-digit overflow year rejected. Succeeded.},{@log smoke=TC031: 10-digit overflow year rejected. Failed (%q0).}"
+>317
+"@if strmatch(setr(0,convtime(67536-01-01)),#-1 INVALID DATE)={@log smoke=TC032: Year narrowing rejected. Succeeded.},{@log smoke=TC032: Year narrowing rejected. Failed (%q0).}"
+>318
+"@if not(strmatch(setr(0,convtime(30826-06-15,utc)),#-1 INVALID DATE))={@log smoke=TC033: Boundary year parses. Succeeded.},{@log smoke=TC033: Boundary year parses. Failed (%q0).};@trig me/tr.done"
 <
 !169
 "test_parser_fn"
