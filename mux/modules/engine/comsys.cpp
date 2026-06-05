@@ -1282,13 +1282,13 @@ static UTF8 *call_mogrifier
         return nullptr;
     }
 
-    UTF8 *result = alloc_lbuf("call_mogrifier");
+    LBufPtr result = LBufPtr_Src("call_mogrifier");
     UTF8 *bp = result;
     mux_exec(atext, LBUF_SIZE-1, result, &bp, chan_obj, chan_obj, executor,
         AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
         args, nargs);
     *bp = '\0';
-    return result;
+    return result.release();
 }
 
 static void BuildChannelMessage

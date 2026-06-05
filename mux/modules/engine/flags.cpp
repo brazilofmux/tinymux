@@ -1034,7 +1034,7 @@ UTF8 *flag_description(dbref player, dbref target)
 
 UTF8 *unparse_object_numonly(dbref target)
 {
-    UTF8 *buf = alloc_lbuf("unparse_object_numonly");
+    LBuf buf = LBuf_Src("unparse_object_numonly");
     if (target < 0)
     {
         mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
@@ -1047,7 +1047,7 @@ UTF8 *unparse_object_numonly(dbref target)
     {
         mux_sprintf(buf, LBUF_SIZE, T("%s(#%d)"), PureName(target), target);
     }
-    return buf;
+    return buf.release();
 }
 
 /*
@@ -1056,7 +1056,7 @@ UTF8 *unparse_object_numonly(dbref target)
  */
 UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic)
 {
-    UTF8 *buf = alloc_lbuf("unparse_object");
+    LBuf buf = LBuf_Src("unparse_object");
     if (NOPERM <= target && target < 0)
     {
         mux_strncpy(buf, aszSpecialDBRefNames[-target], LBUF_SIZE-1);
@@ -1101,7 +1101,7 @@ UTF8 *unparse_object(dbref player, dbref target, bool obey_myopic)
         }
         *bp = '\0';
     }
-    return buf;
+    return buf.release();
 }
 
 

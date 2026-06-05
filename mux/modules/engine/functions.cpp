@@ -8668,13 +8668,15 @@ static void switch_handler
 {
     // Evaluate the target in fargs[0].
     //
-    UTF8 *mbuff = alloc_lbuf("fun_switch");
+    LBuf mbuff_buf = LBuf_Src("fun_switch");
+    UTF8 *mbuff = mbuff_buf;
     UTF8 *bp = mbuff;
     mux_exec(fargs[0], LBUF_SIZE-1, mbuff, &bp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
-    UTF8 *tbuff = alloc_lbuf("fun_switch.2");
+    LBuf tbuff_buf = LBuf_Src("fun_switch.2");
+    UTF8 *tbuff = tbuff_buf;
 
     // Loop through the patterns looking for a match.
     //
@@ -8691,17 +8693,14 @@ static void switch_handler
 
         if (bSwitch ? wild_match(tbuff, mbuff) : strcmp(reinterpret_cast<char *>(tbuff), reinterpret_cast<char *>(mbuff)) == 0)
         {
-            free_lbuf(tbuff);
             const UTF8 *save_switch = mudstate.switch_token;
             mudstate.switch_token = mbuff;
             mux_exec(fargs[i+1], LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
                 eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
             mudstate.switch_token = save_switch;
-            free_lbuf(mbuff);
-            return;
+            return;  // mbuff_buf / tbuff_buf freed by RAII on scope exit
         }
     }
-    free_lbuf(tbuff);
 
     // Nope, return the default if there is one.
     //
@@ -8714,7 +8713,6 @@ static void switch_handler
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         mudstate.switch_token = save_switch;
     }
-    free_lbuf(mbuff);
 }
 
 /* ---------------------------------------------------------------------------
@@ -8760,13 +8758,15 @@ static void switchall_handler
 {
     // Evaluate the target in fargs[0].
     //
-    UTF8 *mbuff = alloc_lbuf("fun_switchall");
+    LBuf mbuff_buf = LBuf_Src("fun_switchall");
+    UTF8 *mbuff = mbuff_buf;
     UTF8 *bp = mbuff;
     mux_exec(fargs[0], LBUF_SIZE-1, mbuff, &bp, executor, caller, enactor,
         eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
     *bp = '\0';
 
-    UTF8 *tbuff = alloc_lbuf("fun_switchall.2");
+    LBuf tbuff_buf = LBuf_Src("fun_switchall.2");
+    UTF8 *tbuff = tbuff_buf;
 
     // Loop through all patterns, evaluating every match.
     //
@@ -8792,7 +8792,6 @@ static void switchall_handler
             mudstate.switch_token = save_switch;
         }
     }
-    free_lbuf(tbuff);
 
     // If nothing matched, return the default if there is one.
     //
@@ -8806,8 +8805,7 @@ static void switchall_handler
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         mudstate.switch_token = save_switch;
     }
-    free_lbuf(mbuff);
-}
+}  // mbuff_buf / tbuff_buf freed by RAII on scope exit
 
 static FUNCTION(fun_switchall)
 {

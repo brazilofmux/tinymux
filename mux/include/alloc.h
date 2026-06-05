@@ -135,6 +135,17 @@ public:
         return LBuf(buf, file, line, adopt_tag{});
     }
 
+    // Relinquish ownership and return the raw buffer; the caller becomes
+    // responsible for freeing it (e.g. a producer that returns an lbuf for the
+    // caller to adopt). After release() the LBuf is empty and frees nothing.
+    UTF8 *release() { UTF8 *b = m_buf; m_buf = nullptr; return b; }
+
+    // Free the held buffer now and become empty (idempotent).
+    void reset() {
+        if (m_buf) pool_free_lbuf(m_buf, m_file, m_line);
+        m_buf = nullptr;
+    }
+
     UTF8 *get() { return m_buf; }
     const UTF8 *get() const { return m_buf; }
     operator UTF8 *() { return m_buf; }
@@ -145,6 +156,87 @@ public:
 
 #define LBuf_Src(tag) LBuf(T(tag), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 #define LBuf_Adopt(expr) LBuf::adopt((expr), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+
+//! \class LBufPtr
+// Owning, nullable, movable handle for a pool lbuf.
+//
+// LBuf always allocates in its constructor and is the right tool for a scoped
+// scratch buffer. LBufPtr differs in being default-constructible to empty,
+// reseatable, and able to release() its ownership. That makes it suitable for:
+//   - conditional ownership (own a buffer on some paths, borrow on others),
+//   - holding an lbuf in a struct/queue entry across function boundaries,
+//   - a producer that hands the buffer back to its caller (construct, fill,
+//     release() at the single success return — early/error returns free it).
+//
+// Usage:
+//   LBufPtr buf;                          // empty
+//   buf = LBufPtr_Src("producer");        // allocate
+//   ... fill buf ...
+//   return buf.release();                 // caller now owns it
+//
+//   LBufPtr held = LBufPtr_Adopt(atr_pget(...));  // adopt caller-owned buffer
+//
+class LBufPtr {
+    UTF8 *m_buf;
+    const UTF8 *m_file;
+    int m_line;
+
+    struct adopt_tag {};
+
+    LBufPtr(UTF8 *buf, const UTF8 *file, int line, adopt_tag)
+        : m_buf(buf), m_file(file), m_line(line) {}
+
+public:
+    LBufPtr() : m_buf(nullptr), m_file(nullptr), m_line(0) {}
+
+    LBufPtr(const UTF8 *tag, const UTF8 *file, int line)
+        : m_buf(pool_alloc_lbuf(tag, file, line)),
+          m_file(file), m_line(line) {}
+
+    ~LBufPtr() { if (m_buf) pool_free_lbuf(m_buf, m_file, m_line); }
+
+    LBufPtr(const LBufPtr &) = delete;
+    LBufPtr &operator=(const LBufPtr &) = delete;
+
+    LBufPtr(LBufPtr &&other) noexcept
+        : m_buf(other.m_buf), m_file(other.m_file), m_line(other.m_line)
+    { other.m_buf = nullptr; }
+
+    LBufPtr &operator=(LBufPtr &&other) noexcept {
+        if (this != &other) {
+            if (m_buf) pool_free_lbuf(m_buf, m_file, m_line);
+            m_buf = other.m_buf;
+            m_file = other.m_file;
+            m_line = other.m_line;
+            other.m_buf = nullptr;
+        }
+        return *this;
+    }
+
+    static LBufPtr adopt(UTF8 *buf, const UTF8 *file, int line) {
+        return LBufPtr(buf, file, line, adopt_tag{});
+    }
+
+    // Relinquish ownership; caller becomes responsible for freeing.
+    UTF8 *release() { UTF8 *b = m_buf; m_buf = nullptr; return b; }
+
+    // Free the held buffer now and become empty (idempotent).
+    void reset() {
+        if (m_buf) pool_free_lbuf(m_buf, m_file, m_line);
+        m_buf = nullptr;
+    }
+
+    UTF8 *get() { return m_buf; }
+    const UTF8 *get() const { return m_buf; }
+    operator UTF8 *() { return m_buf; }
+    operator const UTF8 *() const { return m_buf; }
+    UTF8 &operator[](size_t i) { return m_buf[i]; }
+    const UTF8 &operator[](size_t i) const { return m_buf[i]; }
+    explicit operator bool() const { return m_buf != nullptr; }
+};
+
+#define LBufPtr_Src(tag) LBufPtr(T(tag), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
+#define LBufPtr_Adopt(expr) LBufPtr::adopt((expr), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 
 #include <memory>
 
