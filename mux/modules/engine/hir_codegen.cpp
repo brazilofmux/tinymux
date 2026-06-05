@@ -136,6 +136,32 @@ static uint32_t rv_JAL(uint8_t rd, int32_t imm) {
          | (((u >> 20) & 1) << 31);
 }
 
+// Range checks for PC-relative immediates.  The B-type and J-type encoders
+// silently drop bits that do not fit, so callers must verify the byte
+// offset is representable before emitting.  Both immediates are even (the
+// implicit low bit is 0): JAL is 21-bit signed ([-2^20, +2^20-2]) and the
+// B-type branch is 13-bit signed ([-2^12, +2^12-2]).
+//
+static inline bool rv_jal_offset_ok(int32_t off) {
+    return off >= -(1 << 20) && off <= ((1 << 20) - 2);
+}
+static inline bool rv_branch_offset_ok(int32_t off) {
+    return off >= -(1 << 12) && off <= ((1 << 12) - 2);
+}
+
+// Emit a JAL, or mark the compilation out-of-range (forcing the AST
+// evaluator to handle the expression) if the byte offset does not fit
+// RV64's 21-bit signed immediate.  A placeholder is still pushed so the
+// surrounding code layout is unchanged; the whole blob is discarded once
+// rc.out_exhausted is observed by the compiler driver.
+//
+static void rv_push_jal(rv_compiler &rc, uint8_t rd, int32_t off) {
+    if (!rv_jal_offset_ok(off)) {
+        rc.out_exhausted = true;
+    }
+    rc.code.push_back(rv_JAL(rd, off));
+}
+
 // Inline string copy: copy NUL-terminated string from src_reg to dest_reg.
 // Clobbers t0 (x5).  5 instructions (byte-by-byte loop).
 //
@@ -575,7 +601,7 @@ static void rv_emit_tier2_call(rv_compiler &rc,
     // JAL ra, target — offset relative to current PC.
     uint64_t cur_pc = rc.current_pc();
     int32_t offset = static_cast<int32_t>(func_guest_addr - cur_pc);
-    rc.code.push_back(rv_JAL(1, offset));                // JAL ra, blob_func
+    rv_push_jal(rc, 1, offset);                          // JAL ra, blob_func
 }
 
 // ---------------------------------------------------------------
@@ -677,6 +703,15 @@ static output_alloc_result allocate_output_buffers(rv_compiler &rc,
     std::vector<uint64_t> free_pool;
 
     for (auto &iv : intervals) {
+        // Defensive: every result.* array is sized HIR_MAX_INSNS and
+        // indexed by the HIR value number.  The HIR builder caps n_insns
+        // at HIR_MAX_INSNS, so this never fires today, but a future pass
+        // that synthesizes virtuals out of band must not silently corrupt
+        // adjacent allocator state — bail the compile instead.
+        if (iv.value < 0 || iv.value >= HIR_MAX_INSNS) {
+            rc.out_exhausted = true;
+            continue;
+        }
         size_t j = 0;
         while (j < active.size()) {
             if (active[j].end >= iv.start) break;
@@ -907,7 +942,8 @@ static void compute_live_ranges(hir_program &h,
 
 // Poletto-Sarkar linear scan register allocation.
 //
-static reg_alloc_result linear_scan(std::vector<live_interval> &intervals) {
+static reg_alloc_result linear_scan(rv_compiler &rc,
+                                    std::vector<live_interval> &intervals) {
     reg_alloc_result result;
     memset(result.reg, 0, sizeof(result.reg));
     memset(result.spill_slot, -1, sizeof(result.spill_slot));
@@ -938,6 +974,12 @@ static reg_alloc_result linear_scan(std::vector<live_interval> &intervals) {
     std::vector<active_entry> active;
 
     for (auto &iv : intervals) {
+        // Defensive bounds check: result.reg[]/spill_slot[] are sized
+        // HIR_MAX_INSNS and indexed by iv.value.  See allocate_output_buffers.
+        if (iv.value < 0 || iv.value >= HIR_MAX_INSNS) {
+            rc.out_exhausted = true;
+            continue;
+        }
         // ExpireOldIntervals: remove intervals that ended before iv.start.
         size_t j = 0;
         while (j < active.size()) {
@@ -1117,7 +1159,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     // 1. Run register allocation for integers.
     std::vector<live_interval> int_intervals;
     compute_live_ranges(h, int_intervals, needs_int_reg);
-    reg_alloc_result int_alloc = linear_scan(int_intervals);
+    reg_alloc_result int_alloc = linear_scan(rc, int_intervals);
     rc.spills = int_alloc.n_spill_slots;
 
     // 2. Run liveness-based allocation for output buffers.
@@ -1724,7 +1766,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                     // JAL to rv64_strtod — result in fa0.
                     uint64_t pc = rc.current_pc();
                     int32_t offset = static_cast<int32_t>(blob_addr - pc);
-                    rc.code.push_back(rv_JAL(1, offset));
+                    rv_push_jal(rc, 1, offset);
                 } else {
                     // ECALL fallback.
                     rv_load_val(rc.code, 17, 0x141);        // a7 = ECALL_ATOF
@@ -1748,7 +1790,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 // JAL to blob function.
                 uint64_t pc = rc.current_pc();
                 int32_t offset = static_cast<int32_t>(func_addr - pc);
-                rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
+                rv_push_jal(rc, 1, offset);                    // JAL ra, func
                 // Store result from fa0 to FP slot.
                 rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0));  // *dst = fa0
@@ -1770,7 +1812,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 // JAL to blob function.
                 uint64_t pc = rc.current_pc();
                 int32_t offset = static_cast<int32_t>(func_addr - pc);
-                rc.code.push_back(rv_JAL(1, offset));          // JAL ra, func
+                rv_push_jal(rc, 1, offset);                    // JAL ra, func
                 // Store result from fa0 to FP slot.
                 rv_load_guest_addr(rc.code, RA_SCRATCH, dst);
                 rc.code.push_back(rv_FSD(RA_SCRATCH, 10, 0));  // *dst = fa0
@@ -1956,13 +1998,22 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
         uint32_t insn = rc.code[branch_off];
         uint8_t opcode = insn & 0x7F;
         if (opcode == OP_BRANCH) {
-            // B-type: re-encode with correct offset.
+            // B-type: re-encode with correct offset.  Bail if the branch
+            // target is beyond the 13-bit signed reach rather than emit a
+            // truncated (wrong) offset.
+            if (!rv_branch_offset_ok(rel)) {
+                rc.out_exhausted = true;
+            }
             uint8_t funct3 = (insn >> 12) & 7;
             uint8_t rs1 = (insn >> 15) & 0x1F;
             uint8_t rs2 = (insn >> 20) & 0x1F;
             rc.code[branch_off] = rv_b_type(funct3, rs1, rs2, rel);
         } else if (opcode == OP_JAL) {
-            // J-type: re-encode with correct offset.
+            // J-type: re-encode with correct offset.  Bail if beyond the
+            // 21-bit signed reach.
+            if (!rv_jal_offset_ok(rel)) {
+                rc.out_exhausted = true;
+            }
             uint8_t rd = (insn >> 7) & 0x1F;
             rc.code[branch_off] = rv_JAL(rd, rel);
         }
