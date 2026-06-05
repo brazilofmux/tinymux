@@ -15,6 +15,7 @@
 #include "lua_bytecode.h"
 #include "hir_lower_lua.h"
 
+#include <atomic>
 #include <cstring>
 #include <cstdio>
 #include <unordered_map>
@@ -26,7 +27,7 @@
 // ---------------------------------------------------------------
 
 static std::unordered_map<uint64_t, compiled_program> s_lua_cache;
-static uint64_t s_next_key = 1;
+static std::atomic<uint64_t> s_next_key{1};
 
 // ---------------------------------------------------------------
 // Statistics
@@ -165,7 +166,7 @@ public:
             jit_compact_program(prog);
         }
 
-        uint64_t key = s_next_key++;
+        uint64_t key = s_next_key.fetch_add(1, std::memory_order_relaxed);
         s_lua_cache[key] = std::move(prog);
         *pKey = key;
         s_lua_jit_stats.compile_ok++;

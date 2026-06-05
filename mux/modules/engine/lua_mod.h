@@ -17,6 +17,7 @@
 #ifndef LUA_MOD_H
 #define LUA_MOD_H
 
+#include <atomic>
 #include <unordered_map>
 #include <list>
 #include <string>
@@ -156,7 +157,7 @@ public:
     virtual ~CLuaMod();
 
 private:
-    uint32_t m_cRef;
+    std::atomic<uint32_t> m_cRef;
 };
 
 // Factory function for engine_com.cpp registration.
