@@ -1,6 +1,9 @@
 #
 # digittime_fn.mux - Test Cases for digittime().
 #
+# digittime() renders a number of seconds as a digital HH:MM clock (seconds are
+# dropped), with a "Nd " prefix once the duration reaches a full day.
+#
 @create test_digittime_fn
 -
 @set test_digittime_fn=INHERIT QUIET
@@ -12,23 +15,66 @@
   @log smoke=Beginning digittime() test cases.
 -
 #
-# Test Case #1 - Basic digittime operations.
+# Test Case #1 - Anything under a minute reads 00:00 (seconds are not shown).
 #
 &tr.tc001 test_digittime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [digittime(3661)]
-            [digittime(0)]
-          )
-        ),
-        1EBB873C74A9937B73EBDCC1F7948C890E78BE6E
+  @if cand(
+        strmatch(digittime(0), 00:00),
+        strmatch(digittime(59), 00:00),
+        strmatch(digittime(60), 00:01)
       )=
   {
-    @log smoke=TC001: digittime basic operations. Succeeded.;
+    @log smoke=TC001: digittime sub-minute. Succeeded.
+  },
+  {
+    @log smoke=TC001: digittime sub-minute. Failed (0=[digittime(0)] 59=[digittime(59)] 60=[digittime(60)]).
+  }
+-
+#
+# Test Case #2 - Hours and minutes fill the HH:MM fields.
+#
+&tr.tc002 test_digittime_fn=
+  @if cand(
+        strmatch(digittime(3600), 01:00),
+        strmatch(digittime(3661), 01:01)
+      )=
+  {
+    @log smoke=TC002: digittime hours and minutes. Succeeded.
+  },
+  {
+    @log smoke=TC002: digittime hours and minutes. Failed (1h=[digittime(3600)] 1h1m=[digittime(3661)]).
+  }
+-
+#
+# Test Case #3 - A full day adds an "Nd " prefix; weeks render as days.
+#
+&tr.tc003 test_digittime_fn=
+  @if cand(
+        strmatch(digittime(86400), 1d 00:00),
+        strmatch(digittime(90061), 1d 01:01),
+        strmatch(digittime(604800), 7d 00:00)
+      )=
+  {
+    @log smoke=TC003: digittime day prefix. Succeeded.
+  },
+  {
+    @log smoke=TC003: digittime day prefix. Failed (1d=[digittime(86400)] mix=[digittime(90061)] 7d=[digittime(604800)]).
+  }
+-
+#
+# Test Case #4 - Negative and non-numeric inputs coerce to 00:00.
+#
+&tr.tc004 test_digittime_fn=
+  @if cand(
+        strmatch(digittime(-5), 00:00),
+        strmatch(digittime(abc), 00:00)
+      )=
+  {
+    @log smoke=TC004: digittime edge cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: digittime basic operations. Failed (%q0).;
+    @log smoke=TC004: digittime edge cases. Failed (neg=[digittime(-5)] nan=[digittime(abc)]).;
     @trig me/tr.done
   }
 -

@@ -1,6 +1,9 @@
 #
 # singletime_fn.mux - Test Cases for singletime().
 #
+# singletime() renders a number of seconds as its single largest unit only
+# (weeks, days, hours, minutes, or seconds).
+#
 @create test_singletime_fn
 -
 @set test_singletime_fn=INHERIT QUIET
@@ -12,23 +15,66 @@
   @log smoke=Beginning singletime() test cases.
 -
 #
-# Test Case #1 - Basic singletime operations.
+# Test Case #1 - Sub-minute durations report seconds.
 #
 &tr.tc001 test_singletime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [singletime(3661)]
-            [singletime(86400)]
-          )
-        ),
-        83C560906CDE029162678346EB560D71810907F9
+  @if cand(
+        strmatch(singletime(0), 0s),
+        strmatch(singletime(1), 1s),
+        strmatch(singletime(59), 59s)
       )=
   {
-    @log smoke=TC001: singletime basic operations. Succeeded.;
+    @log smoke=TC001: singletime seconds. Succeeded.
+  },
+  {
+    @log smoke=TC001: singletime seconds. Failed (0=[singletime(0)] 1=[singletime(1)] 59=[singletime(59)]).
+  }
+-
+#
+# Test Case #2 - Only the single largest unit is shown; smaller units drop.
+#
+&tr.tc002 test_singletime_fn=
+  @if cand(
+        strmatch(singletime(61), 1m),
+        strmatch(singletime(3661), 1h),
+        strmatch(singletime(90061), 1d)
+      )=
+  {
+    @log smoke=TC002: singletime largest unit only. Succeeded.
+  },
+  {
+    @log smoke=TC002: singletime largest unit only. Failed (1m=[singletime(61)] 1h=[singletime(3661)] 1d=[singletime(90061)]).
+  }
+-
+#
+# Test Case #3 - Day and week thresholds.
+#
+&tr.tc003 test_singletime_fn=
+  @if cand(
+        strmatch(singletime(86400), 1d),
+        strmatch(singletime(604800), 1w)
+      )=
+  {
+    @log smoke=TC003: singletime day/week. Succeeded.
+  },
+  {
+    @log smoke=TC003: singletime day/week. Failed (1d=[singletime(86400)] 1w=[singletime(604800)]).
+  }
+-
+#
+# Test Case #4 - Negative and non-numeric inputs coerce to zero seconds.
+#
+&tr.tc004 test_singletime_fn=
+  @if cand(
+        strmatch(singletime(-5), 0s),
+        strmatch(singletime(abc), 0s)
+      )=
+  {
+    @log smoke=TC004: singletime edge cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: singletime basic operations. Failed (%q0).;
+    @log smoke=TC004: singletime edge cases. Failed (neg=[singletime(-5)] nan=[singletime(abc)]).;
     @trig me/tr.done
   }
 -

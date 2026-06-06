@@ -1,6 +1,9 @@
 #
 # exptime_fn.mux - Test Cases for exptime().
 #
+# exptime() renders a number of seconds as an expanded duration listing every
+# non-zero unit (weeks, days, hours, minutes) and always a seconds field.
+#
 @create test_exptime_fn
 -
 @set test_exptime_fn=INHERIT QUIET
@@ -12,23 +15,68 @@
   @log smoke=Beginning exptime() test cases.
 -
 #
-# Test Case #1 - Basic exptime operations.
+# Test Case #1 - Sub-minute durations report only seconds.
 #
 &tr.tc001 test_exptime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [exptime(3661)]
-            [exptime(86400)]
-          )
-        ),
-        3A8B7F011F10D47E72AF96576D4874F51C8B75A8
+  @if cand(
+        strmatch(exptime(0), 0s),
+        strmatch(exptime(1), 1s),
+        strmatch(exptime(59), 59s)
       )=
   {
-    @log smoke=TC001: exptime basic operations. Succeeded.;
+    @log smoke=TC001: exptime sub-minute. Succeeded.
+  },
+  {
+    @log smoke=TC001: exptime sub-minute. Failed (0=[exptime(0)] 1=[exptime(1)] 59=[exptime(59)]).
+  }
+-
+#
+# Test Case #2 - Minute and hour boundaries; the seconds field is always shown.
+#
+&tr.tc002 test_exptime_fn=
+  @if cand(
+        strmatch(exptime(60), 1m 0s),
+        strmatch(exptime(61), 1m 1s),
+        strmatch(exptime(3600), 1h 0s),
+        strmatch(exptime(3661), 1h 1m 1s)
+      )=
+  {
+    @log smoke=TC002: exptime minute/hour boundaries. Succeeded.
+  },
+  {
+    @log smoke=TC002: exptime minute/hour boundaries. Failed (60=[exptime(60)] 3600=[exptime(3600)] 3661=[exptime(3661)]).
+  }
+-
+#
+# Test Case #3 - Day and week units; zero intermediate units are omitted.
+#
+&tr.tc003 test_exptime_fn=
+  @if cand(
+        strmatch(exptime(86400), 1d 0s),
+        strmatch(exptime(90061), 1d 1h 1m 1s),
+        strmatch(exptime(604800), 1w 0s)
+      )=
+  {
+    @log smoke=TC003: exptime day/week units. Succeeded.
+  },
+  {
+    @log smoke=TC003: exptime day/week units. Failed (1d=[exptime(86400)] mix=[exptime(90061)] 1w=[exptime(604800)]).
+  }
+-
+#
+# Test Case #4 - Negative and non-numeric inputs coerce to zero seconds.
+#
+&tr.tc004 test_exptime_fn=
+  @if cand(
+        strmatch(exptime(-5), 0s),
+        strmatch(exptime(abc), 0s)
+      )=
+  {
+    @log smoke=TC004: exptime edge cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: exptime basic operations. Failed (%q0).;
+    @log smoke=TC004: exptime edge cases. Failed (neg=[exptime(-5)] nan=[exptime(abc)]).;
     @trig me/tr.done
   }
 -
