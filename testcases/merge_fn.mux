@@ -17,19 +17,15 @@
 # Test Case #1 - Verify that examples work.
 #
 &tr.tc001 test_merge_fn=
-  @if strmatch(
-        setr(0,sha1(
-            merge(AB--EF,abcdef,-)
-            [merge(AB[space(2)]EF,abcdef,)]
-          )
-        ),
-        39309B3557549C45DC2C3C651D3FFE8AAF59615A
+  @if cand(
+        strmatch(merge(AB--EF,abcdef,-), ABcdEF),
+        strmatch(merge(AB[space(2)]EF,abcdef,), ABcdEF)
       )=
   {
     @log smoke=TC001: Examples in help. Succeeded.
   },
   {
-    @log smoke=TC001: Examples in help. Failed (%q0).
+    @log smoke=TC001: Examples in help. Failed (hyphen=[merge(AB--EF,abcdef,-)] space=[merge(AB[space(2)]EF,abcdef,)]).
   }
 -
 #
@@ -367,11 +363,31 @@
     },
     {
       @log smoke=TC013: Vary length of run over 5 character Unicode string with color. Failed (%q0).
-    };
+    }
+  },
+  {
+    @log smoke=TC013: Unicode is not supported on this version with color. Okay.
+  }
+-
+#
+# Test Case #14 - Behavior and edge cases: replace at every matching position,
+# at a single position, a no-op when the merge character is absent, and the
+# equal-length requirement.
+#
+&tr.tc014 test_merge_fn=
+  @if cand(
+        strmatch(merge(00000,abcde,0), abcde),
+        strmatch(merge(01234,abcde,0), a1234),
+        strmatch(merge(abcde,XXXXX,c), abXde),
+        strmatch(merge(a,b,x), a),
+        strmatch(merge(abc,de,a), #-1*)
+      )=
+  {
+    @log smoke=TC014: merge behavior and edge cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC013: Unicode is not supported on this version with color. Okay.;
+    @log smoke=TC014: merge behavior and edge cases. Failed (all=[merge(00000,abcde,0)] one=[merge(01234,abcde,0)] mid=[merge(abcde,XXXXX,c)] noop=[merge(a,b,x)] err=[merge(abc,de,a)]).;
     @trig me/tr.done
   }
 -

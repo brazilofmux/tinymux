@@ -238,8 +238,44 @@
   },
   {
     @log smoke=TC007: At least one day in 1 B.C. failed (%q0).
-  };
-  @trig me/tr.done
+  }
+-
+#
+# Test Case #8 - Readable UTC date/time -> epoch anchors, complementing the
+#                exhaustive year sweeps above: the Unix epoch, Y2K, the leap
+#                day Feb 29 2000, and one second before the epoch.
+#
+&tr.tc008 test_convtime_fn=
+  @if cand(
+        eq(convtime(Thu Jan 01 00:00:00 1970,utc), 0),
+        eq(convtime(jan 1 00:00:00 2000,utc), 946684800),
+        eq(convtime(feb 29 00:00:00 2000,utc), 951782400),
+        eq(convtime(dec 31 23:59:59 1969,utc), -1)
+      )=
+  {
+    @log smoke=TC008: convtime epoch anchors. Succeeded.
+  },
+  {
+    @log smoke=TC008: convtime epoch anchors. Failed (epoch=[convtime(Thu Jan 01 00:00:00 1970,utc)] y2k=[convtime(jan 1 00:00:00 2000,utc)] leap=[convtime(feb 29 00:00:00 2000,utc)] pre=[convtime(dec 31 23:59:59 1969,utc)]).
+  }
+-
+#
+# Test Case #9 - convtime()/convsecs() round-trip and invalid-date handling.
+#
+&tr.tc009 test_convtime_fn=
+  @if cand(
+        eq(convtime(convsecs(946684800,utc),utc), 946684800),
+        strmatch(convsecs(0,utc), Thu Jan 01 00:00:00 1970),
+        strmatch(convtime(not a date,utc), #-1*)
+      )=
+  {
+    @log smoke=TC009: convtime/convsecs round-trip and invalid date. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC009: convtime/convsecs round-trip and invalid date. Failed (rt=[convtime(convsecs(946684800,utc),utc)] cs=[convsecs(0,utc)] inv=[convtime(not a date,utc)]).;
+    @trig me/tr.done
+  }
 -
 &tr.done test_convtime_fn=
   @log smoke=End convtime() test cases.;
