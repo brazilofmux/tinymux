@@ -12,81 +12,117 @@
   @log smoke=Beginning sort() test cases.
 -
 #
-# Test Case #1 - Basic sort operations.
-# sort(3 1 4 1 5) => "1 1 3 4 5"
-# sort(c a b d) => "a b c d"
+# Test Case #1 - Basic ascending sort of numbers and letters.
 #
 &tr.tc001 test_sort_fn=
   @if cand(
         strmatch(sort(3 1 4 1 5), 1 1 3 4 5),
-        strmatch(sort(c a b d), a b c d)
+        strmatch(sort(c a b d), a b c d),
+        strmatch(sort(5), 5)
       )=
   {
     @log smoke=TC001: sort basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: sort basic operations. Failed (s1=[sort(3 1 4 1 5)] s2=[sort(c a b d)]).
+    @log smoke=TC001: sort basic operations. Failed (s1=[sort(3 1 4 1 5)] s2=[sort(c a b d)] s3=[sort(5)]).
   }
 -
 #
-# Test Case #2 - Sort accented variants of 'e'.
-# Under DUCET: acute < grave < circumflex at secondary weight (0024 < 0025 < 0027).
-# chr(234)=e-circumflex, chr(232)=e-grave, chr(233)=e-acute.
-# Expected order: chr(233) chr(232) chr(234) (e-acute e-grave e-circumflex).
+# Test Case #2 - Default sort auto-detects all-numeric lists and sorts them
+# numerically (2 9 10 100), not lexically (which would be 10 100 2 9).  An
+# explicit numeric type ("n") gives the same result.
 #
 &tr.tc002 test_sort_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort([chr(234)] [chr(232)] [chr(233)])]
-          )
-        ),
-        B619597A2BA548F50575C8B19865961A1741D8E1
+  @if cand(
+        strmatch(sort(10 9 100 2), 2 9 10 100),
+        strmatch(sort(3 1 2,n), 1 2 3)
       )=
   {
-    @log smoke=TC002: sort accented variants. Succeeded.
+    @log smoke=TC002: sort numeric ordering. Succeeded.
   },
   {
-    @log smoke=TC002: sort accented variants. Failed (%q0).
+    @log smoke=TC002: sort numeric ordering. Failed (def=[sort(10 9 100 2)] n=[sort(3 1 2,n)]).
   }
 -
 #
-# Test Case #3 - Sort mix of ASCII and accented characters.
-# Under DUCET, accented 'e' variants sort with primary weight of 'e',
-# so they should sort between 'd' and 'f'.
+# Test Case #3 - Accented variants of 'e' under DUCET: at the secondary weight
+# acute < grave < circumflex (0024 < 0025 < 0027).
+# chr(233)=e-acute, chr(232)=e-grave, chr(234)=e-circumflex.
 #
 &tr.tc003 test_sort_fn=
   @if strmatch(
-        setr(0,sha1(
-            [sort(f [chr(233)] a d [chr(232)] b)]
-          )
-        ),
-        9F207825A8D1AC79FE86F43772C4B70952CC53D0
+        sort([chr(234)] [chr(232)] [chr(233)]),
+        [chr(233)] [chr(232)] [chr(234)]
       )=
   {
-    @log smoke=TC003: sort ASCII and accented mix. Succeeded.
+    @log smoke=TC003: sort accented variants of e. Succeeded.
   },
   {
-    @log smoke=TC003: sort ASCII and accented mix. Failed (%q0).
+    @log smoke=TC003: sort accented variants of e. Failed ([sort([chr(234)] [chr(232)] [chr(233)])]).
   }
 -
 #
-# Test Case #4 - Sort fullwidth digits (U+FF10..U+FF14).
-# These should sort by their Unicode collation weights.
+# Test Case #4 - Accented 'e' variants share the primary weight of 'e', so a
+# mix of ASCII and accented characters sorts them between 'd' and 'f'.
 #
 &tr.tc004 test_sort_fn=
   @if strmatch(
-        setr(0,sha1(
-            [sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)])]
-          )
-        ),
-        73FF5FDF8DAE86FC0DB756FA38C021BC87501FD3
+        sort(f [chr(233)] a d [chr(232)] b),
+        a b d [chr(233)] [chr(232)] f
       )=
   {
-    @log smoke=TC004: sort fullwidth digits. Succeeded.;
+    @log smoke=TC004: sort ASCII and accented mix. Succeeded.
+  },
+  {
+    @log smoke=TC004: sort ASCII and accented mix. Failed ([sort(f [chr(233)] a d [chr(232)] b)]).
+  }
+-
+#
+# Test Case #5 - Fullwidth digits (U+FF10..U+FF14) sort by their collation
+# weights, i.e. ascending numeric order.
+#
+&tr.tc005 test_sort_fn=
+  @if strmatch(
+        sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)]),
+        [chr(65296)] [chr(65297)] [chr(65298)] [chr(65299)] [chr(65300)]
+      )=
+  {
+    @log smoke=TC005: sort fullwidth digits. Succeeded.
+  },
+  {
+    @log smoke=TC005: sort fullwidth digits. Failed ([sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)])]).
+  }
+-
+#
+# Test Case #6 - Custom input delimiter (3rd arg) and output delimiter (4th arg).
+#
+&tr.tc006 test_sort_fn=
+  @if cand(
+        strmatch(sort(c|a|b,,|), a|b|c),
+        strmatch(sort(z a m,,%b,d), admdz)
+      )=
+  {
+    @log smoke=TC006: sort custom delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC006: sort custom delimiters. Failed (idelim=[sort(c|a|b,,|)] odelim=[sort(z a m,,%b,d)]).
+  }
+-
+#
+# Test Case #7 - Edge cases: no arguments raises an arity error, and a mixed
+# case list collates case-insensitively (a A b B).
+#
+&tr.tc007 test_sort_fn=
+  @if cand(
+        strmatch(sort(), #-1*),
+        strmatch(sort(b B a A), a A b B)
+      )=
+  {
+    @log smoke=TC007: sort edge cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: sort fullwidth digits. Failed (%q0).;
+    @log smoke=TC007: sort edge cases. Failed (noargs=[sort()] case=[sort(b B a A)]).;
     @trig me/tr.done
   }
 -
