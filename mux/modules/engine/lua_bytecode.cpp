@@ -56,10 +56,16 @@ struct bc_reader {
     // lundump.c LoadUnsigned: accumulate 7-bit groups, high bit = more.
     //
     size_t read_size() {
+        // A size_t needs at most ceil(bits/7) base-128 groups; cap the byte
+        // count so a malformed stream (continuation bytes that never set the
+        // terminator high bit) cannot shift x past size_t and wrap to a small
+        // bogus length before the caller's bounds check runs.
+        const int kMaxBytes = static_cast<int>(sizeof(size_t) * 8 / 7 + 1);
         size_t x = 0;
         int b = read_byte();
         if (!ok) return 0;
-        while ((b & 0x80) == 0) {
+        for (int count = 1; (b & 0x80) == 0; count++) {
+            if (count >= kMaxBytes) { ok = false; return 0; }
             x = (x << 7) | b;
             b = read_byte();
             if (!ok) return 0;
