@@ -2571,11 +2571,20 @@ general_lowering:
     // args are small enough.  Runtime-valued args whose magnitude is
     // unknown fall through to ECALL to match interpreter behavior.
     //
-    // TODO: the 9-digit threshold dates from 32-bit long.  Both the
-    // interpreter and JIT could safely use 64-bit integer math for
-    // values up to 18 digits, but that would change observable output
-    // for values in [10^9, 10^18] and should be done as a coordinated
-    // interpreter+JIT change.
+    // Do NOT widen the 9-digit threshold.  It looks like a stale 32-bit-long
+    // artifact, but it is actually the range in which exact integer math still
+    // reproduces add()/sub()'s floating-point result bit-for-bit, which is the
+    // whole contract: these functions must behave AS IF floating-point.  The
+    // binding limit is not 2^53 (the double's exact-integer range) but the
+    // precision of mux_atof(), the parser the double path uses, which is exact
+    // only to ~15 significant digits.  A coordinated interpreter+JIT extension
+    // to int64 was prototyped and measured against the engine: results match
+    // through 14-digit operands but diverge at 15, e.g.
+    //   add(999999999999999, 999999999999999)
+    //     -> 1999999999999998 (exact int)  vs  1999999999999997 (as-if-float)
+    // so widening silently changes observable output.  Softcoders who want
+    // exact wide-integer math use iadd()/isub() instead (no cap, full int64).
+    // See issue #734.
     //
     // Note: mul() always uses doubles in the interpreter.  Only imul()
     // does integer multiply.  So mul() is NOT handled here — it falls
