@@ -844,7 +844,7 @@ public:
     //
     virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
-        const UTF8 *comsys_file, const UTF8 *mail_file) = 0;
+        const UTF8 *comsys_file, const UTF8 *mail_file, bool bForce) = 0;
 
     // Query the static configuration basket.  The driver calls this once
     // after LoadGame to get a snapshot of mudconf values it needs.

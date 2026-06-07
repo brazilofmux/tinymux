@@ -2610,7 +2610,7 @@ public:
     virtual MUX_RESULT Shutdown(void);
     virtual MUX_RESULT DbConvert(const UTF8 *infile, const UTF8 *outfile,
         const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
-        const UTF8 *comsys_file, const UTF8 *mail_file);
+        const UTF8 *comsys_file, const UTF8 *mail_file, bool bForce);
     virtual MUX_RESULT GetConfig(DRIVER_CONFIG *pConfig);
     virtual MUX_RESULT MarkConnected(dbref player);
     virtual MUX_RESULT DumpChildExited(int child_pid);
@@ -2984,6 +2984,16 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                 //
                 bDoFlatfileLoad = false;
                 bLoadedGameFromSQLite = true;
+
+                // Make the precedence visible: a populated SQLite database
+                // shadows the configured flatfile, so a freshly dropped-in
+                // flatfile would otherwise appear to be silently ignored.
+                //
+                STARTLOG(LOG_ALWAYS, "INI", "LOAD")
+                log_text(T("Warm-started from SQLite database; the flatfile "));
+                log_text(mudconf.indb);
+                log_text(T(" was not consulted. Remove the SQLite database to reload from a flatfile."));
+                ENDLOG
             }
             else if (sqlite_load_rc < 0)
             {
@@ -3660,7 +3670,7 @@ static void dbconvert_info(int fmt, int flags, int ver)
 
 MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
     const UTF8 *basename, bool bCheck, bool bLoad, bool bUnload,
-    const UTF8 *comsys_file, const UTF8 *mail_file)
+    const UTF8 *comsys_file, const UTF8 *mail_file, bool bForce)
 {
     int setflags, clrflags, ver;
     int db_ver, db_format, db_flags;
@@ -3709,11 +3719,30 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         mux_fprintf(stderr, T("Can\xE2\x80\x99t open SQLite database.\n"));
         return MUX_E_FAIL;
     }
-    else if (cc == HF_OPEN_STATUS_OLD)
+
+    // Report exactly which file we opened so it is never a mystery where the
+    // database lives relative to the server's configured input_database.
+    //
+    const char *pDbPath = g_pSQLiteBackend->GetDB().GetPath();
+    mux_fprintf(stderr, T("Database file: %s\n"),
+        (nullptr != pDbPath && '\0' != pDbPath[0]) ? pDbPath : "(unknown)");
+
+    if (cc == HF_OPEN_STATUS_OLD)
     {
-        if (setflags == OUTPUT_FLAGS)
+        if (setflags == OUTPUT_FLAGS && !bForce)
         {
-            mux_fprintf(stderr, T("Would overwrite existing SQLite database.\n"));
+            // The target SQLite database already holds a game.  Loading would
+            // replace it, so refuse unless the caller explicitly forces it.
+            // Name the file and spell out both ways forward rather than
+            // leaving a dead-end that tempts running from the wrong directory.
+            //
+            mux_fprintf(stderr,
+                T("Refusing to overwrite the existing SQLite database:\n"
+                  "    %s\n"
+                  "That file already contains a game.  To replace it, either:\n"
+                  "  * remove the file shown above and re-run, or\n"
+                  "  * re-run this load with the -f (force) option.\n"),
+                (nullptr != pDbPath && '\0' != pDbPath[0]) ? pDbPath : "(unknown)");
             CLOSE;
             return MUX_E_FAIL;
         }
