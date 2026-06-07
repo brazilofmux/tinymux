@@ -65,8 +65,9 @@ size_t co_setdiff(unsigned char *out, const unsigned char *a, size_t alen,
 size_t co_setinter(unsigned char *out, const unsigned char *a, size_t alen,
                    const unsigned char *b, size_t blen,
                    unsigned char delim, unsigned char osep, char sort_type);
-size_t co_delete(unsigned char *out, const unsigned char *list, size_t llen,
-                 size_t pos, unsigned char delim, unsigned char osep);
+size_t co_delete_at(unsigned char *out, const unsigned char *list, size_t llen,
+                    int *positions, int nPositions,
+                    unsigned char delim, unsigned char osep);
 size_t co_splice(unsigned char *out,
                  const unsigned char *list1, size_t len1,
                  const unsigned char *list2, size_t len2,
@@ -612,20 +613,29 @@ char *co_setinter_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* decode_positions is defined just below; ldelete needs it too. */
+static int decode_positions(const char *str, int *ai, int max_n);
+
+/* ldelete(list, positions[, delim][, osep]) — delete word(s) at the given
+ * 1-based positions.  Mirrors the interpreter's fun_ldelete (do_itemfuns
+ * IF_DELETE): a space-separated position list, not a single position. */
 char *co_ldelete_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) {
         if (nfargs >= 1) rv64_scopy(out, fargs[0]);
         else out[0] = '\0';
         return out;
     }
-    int pos = satoi(fargs[1]);
     unsigned char delim = get_delim(fargs, nfargs, 2);
     unsigned char osep = get_osep(fargs, nfargs, 3, delim);
-    if (pos < 1) { rv64_scopy(out, fargs[0]); return out; }
-    size_t n = co_delete((unsigned char *)out,
-                         (const unsigned char *)fargs[0],
-                         rv64_slen(fargs[0]),
-                         (size_t)pos, delim, osep);
+
+    int positions[LBUF_SIZE / 2];
+    int npos = decode_positions(fargs[1], positions, LBUF_SIZE / 2);
+
+    size_t n = co_delete_at((unsigned char *)out,
+                            (const unsigned char *)fargs[0],
+                            rv64_slen(fargs[0]),
+                            positions, npos,
+                            delim, osep);
     out[n] = '\0';
     return out;
 }

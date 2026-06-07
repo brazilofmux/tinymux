@@ -166,11 +166,8 @@ static bool tier2_allowed(const std::string &mux_name) {
         "LEFT",
         "RIGHT",
         "LPOS",
-        // "LDELETE" — disabled: co_ldelete_wrap calls co_delete() with the
-        // wrong signature (co_delete is a visible-codepoint range delete, not
-        // a word-list delete), so JIT-compiled ldelete() is corrupt.  Falls
-        // back to the interpreter's fun_ldelete until a word-based delete
-        // primitive exists in the rv64 softlib.  See issue #768.
+        "LDELETE",      // co_ldelete_wrap → co_delete_at (word-list delete,
+                        // mirrors co_replace_at/co_insert_at).  See #768.
         "REPLACE",
         "INSERT",
         "LJUST",
