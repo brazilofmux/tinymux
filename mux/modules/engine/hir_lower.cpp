@@ -612,7 +612,12 @@ static bool try_fold(const std::string &func_name,
     }
 
     // --- EXTRACT(list, first, count[, delim[, osep]]) ---
-    if (upper == "EXTRACT" && nargs >= 3 && nargs <= 5) {
+    // Multi-char delim/osep can't be represented in the single-byte co_extract
+    // fast path; skip folding so the general lowering falls back to the
+    // interpreter (matches fun_extract).  (#768 audit sibling.)
+    if (upper == "EXTRACT" && nargs >= 3 && nargs <= 5
+        && (nargs < 4 || args[3].size() <= 1)
+        && (nargs < 5 || args[4].size() <= 1)) {
         int iFirst = static_cast<int>(mux_atol(u8(args[1])));
         int nWords = static_cast<int>(mux_atol(u8(args[2])));
         if (iFirst < 1 || nWords < 1) {
@@ -3296,15 +3301,22 @@ literal_strcat:
             } else if ((upper == "REPLACE" || upper == "INSERT"
                         || upper == "SPLICE") && nargs >= 4) {
                 delim_idx = 3;
+            } else if (upper == "LDELETE" && nargs >= 3) {
+                delim_idx = 2;
+            } else if (upper == "EXTRACT" && nargs >= 4) {
+                delim_idx = 3;
             }
-            // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4])
-            // are also single-byte only.
+            // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4]),
+            // LDELETE osep (arg[3]), EXTRACT osep (arg[4]) are single-byte
+            // only; multi-char separators must fall back to the interpreter.
             {
                 int osep_idx = -1;
                 if (upper == "ELEMENTS" && nargs >= 4) osep_idx = 3;
                 else if (upper == "REMOVE" && nargs >= 4) osep_idx = 3;
                 else if ((upper == "REPLACE" || upper == "INSERT"
                           || upper == "SPLICE") && nargs >= 5) osep_idx = 4;
+                else if (upper == "LDELETE" && nargs >= 4) osep_idx = 3;
+                else if (upper == "EXTRACT" && nargs >= 5) osep_idx = 4;
                 if (osep_idx >= 0) {
                     if (!h.is_const(args[osep_idx])) {
                         t2addr = 0;

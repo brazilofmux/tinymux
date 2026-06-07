@@ -65,8 +65,9 @@ size_t co_setdiff(unsigned char *out, const unsigned char *a, size_t alen,
 size_t co_setinter(unsigned char *out, const unsigned char *a, size_t alen,
                    const unsigned char *b, size_t blen,
                    unsigned char delim, unsigned char osep, char sort_type);
-size_t co_delete(unsigned char *out, const unsigned char *list, size_t llen,
-                 size_t pos, unsigned char delim, unsigned char osep);
+size_t co_delete_at(unsigned char *out, const unsigned char *list, size_t llen,
+                    int *positions, int nPositions,
+                    unsigned char delim, unsigned char osep);
 size_t co_splice(unsigned char *out,
                  const unsigned char *list1, size_t len1,
                  const unsigned char *list2, size_t len2,
@@ -612,20 +613,29 @@ char *co_setinter_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* decode_positions is defined just below; ldelete needs it too. */
+static int decode_positions(const char *str, int *ai, int max_n);
+
+/* ldelete(list, positions[, delim][, osep]) — delete word(s) at the given
+ * 1-based positions.  Mirrors the interpreter's fun_ldelete (do_itemfuns
+ * IF_DELETE): a space-separated position list, not a single position. */
 char *co_ldelete_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) {
         if (nfargs >= 1) rv64_scopy(out, fargs[0]);
         else out[0] = '\0';
         return out;
     }
-    int pos = satoi(fargs[1]);
     unsigned char delim = get_delim(fargs, nfargs, 2);
     unsigned char osep = get_osep(fargs, nfargs, 3, delim);
-    if (pos < 1) { rv64_scopy(out, fargs[0]); return out; }
-    size_t n = co_delete((unsigned char *)out,
-                         (const unsigned char *)fargs[0],
-                         rv64_slen(fargs[0]),
-                         (size_t)pos, delim, osep);
+
+    int positions[LBUF_SIZE / 2];
+    int npos = decode_positions(fargs[1], positions, LBUF_SIZE / 2);
+
+    size_t n = co_delete_at((unsigned char *)out,
+                            (const unsigned char *)fargs[0],
+                            rv64_slen(fargs[0]),
+                            positions, npos,
+                            delim, osep);
     out[n] = '\0';
     return out;
 }
@@ -833,6 +843,10 @@ size_t co_totitle(unsigned char *out, const unsigned char *data, size_t len);
 size_t co_strip_color(unsigned char *out, const unsigned char *data,
                       size_t len);
 size_t co_visible_length(const unsigned char *data, size_t len);
+size_t co_split_words(const unsigned char *data, size_t len,
+                      const unsigned char *sep, size_t sep_len,
+                      size_t *word_starts, size_t *word_ends,
+                      size_t max_words);
 
 /* ljust(string, width[, fill]) */
 char *co_ljust_wrap(char *out, const char **fargs, int nfargs) {
@@ -1442,28 +1456,52 @@ char *rv64_hex2dec(char *out, const char **fargs, int nfargs) {
  * --------------------------------------------------------------- */
 
 /* wordpos(string, word[, delim]) — position of exact word in string */
+/* wordpos(<string>, <char position>[, <delim>]) — returns the 1-based
+ * number of the word that the given 1-based CHARACTER position falls
+ * within.  This mirrors the interpreter's fun_wordpos: color is stripped,
+ * the position is bounded against the visible code-point count, and the
+ * word index is found by walking word boundaries until one ends past the
+ * target byte offset.  Out-of-range positions yield #-1. */
 char *rv64_wordpos(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
-    unsigned char delim = ' ';
-    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
-    const unsigned char *word = (const unsigned char *)fargs[1];
-    size_t wlen = rv64_slen(fargs[1]);
-    const unsigned char *p = (const unsigned char *)fargs[0];
-    int pos = 1;
-    while (*p) {
-        if (delim == ' ') while (*p == ' ') p++;
-        if (*p == '\0') break;
-        const unsigned char *start = p;
-        while (*p && *p != delim) p++;
-        size_t elen = (size_t)(p - start);
-        if (elen == wlen && memcmp(start, word, wlen) == 0) {
-            sitoa(out, pos);
+    if (nfargs < 2) { rv64_scopy(out, "#-1"); return out; }
+
+    /* Strip color: charpos indexes into the visible (stripped) string,
+     * and fun_wordpos uses cp[charpos-1] — a byte index. */
+    unsigned char stripped[LBUF_SIZE];
+    size_t slen = co_strip_color(stripped,
+                                 (const unsigned char *)fargs[0],
+                                 rv64_slen(fargs[0]));
+
+    /* Bound charpos against the visible code-point count
+     * (fun_wordpos: charpos > 0 && charpos <= ncp). */
+    size_t ncp = co_visible_length(stripped, slen);
+    int charpos = satoi(fargs[1]);
+    if (charpos < 1 || (size_t)charpos > ncp) {
+        rv64_scopy(out, "#-1");
+        return out;
+    }
+    size_t tp = (size_t)(charpos - 1);
+
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    unsigned char sep[1];
+    sep[0] = delim;
+
+    size_t wstarts[LBUF_SIZE / 2];
+    size_t wends[LBUF_SIZE / 2];
+    size_t nWords = co_split_words(stripped, slen, sep, 1,
+                                   wstarts, wends, LBUF_SIZE / 2);
+
+    /* Return the 1-based word whose end byte-offset passes tp; if tp is
+     * past the last word (e.g. in a trailing separator), return nWords+1,
+     * matching the fun_wordpos split_token walk. */
+    size_t i;
+    for (i = 0; i < nWords; i++) {
+        if (tp < wends[i]) {
+            sitoa(out, (int)(i + 1));
             return out;
         }
-        if (*p == delim) p++;
-        pos++;
     }
-    out[0] = '0'; out[1] = '\0';
+    sitoa(out, (int)(nWords + 1));
     return out;
 }
 

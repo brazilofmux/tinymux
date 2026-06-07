@@ -516,6 +516,19 @@ LIBMUX_API size_t co_insert_at(unsigned char *out,
                     unsigned char delim, unsigned char osep);
 
 /*
+ * co_delete_at — Delete words at given positions from a word list.
+ *
+ * Matches do_itemfuns IF_DELETE semantics: positions are 1-based,
+ * negative wraps from end (+nWords).  Out-of-range positions are
+ * ignored.  Duplicate positions are collapsed.  The positions array
+ * is modified (sorted in place).  Returns bytes written to out.
+ */
+LIBMUX_API size_t co_delete_at(unsigned char *out,
+                    const unsigned char *list, size_t llen,
+                    int *positions, int nPositions,
+                    unsigned char delim, unsigned char osep);
+
+/*
  * co_sort_words — Sort a word list, preserving color per-word.
  *
  * sort_type: 'a' = ASCII, 'i' = case-insensitive ASCII,
