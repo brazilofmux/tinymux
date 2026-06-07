@@ -40,7 +40,27 @@ static void bind_and_process(dbref executor, dbref caller, dbref enactor,
         mudstate.inum[mudstate.in_loop] = number;
     }
     mudstate.in_loop++;
-    process_command(executor, caller, enactor, eval, false, action, cargs, ncargs);
+
+    // Execute the body as an action list: split on ';' and run each command
+    // inline, honoring @break/@assert (break_called).  parse_to() rewrites its
+    // buffer in place, so work on a private copy — do_dolist reuses the same
+    // 'action' buffer for every iteration.  Mirrors do_include().
+    //
+    LBuf tbuf = LBuf_Src("dolist.now");
+    mux_strncpy(tbuf, action, LBUF_SIZE - 1);
+    UTF8 *command = tbuf.get();
+    while (  command
+          && !break_called)
+    {
+        UTF8 *cp = parse_to(&command, ';', EV_STRIP_AROUND);
+        if (  cp
+           && *cp)
+        {
+            process_command(executor, caller, enactor, eval, false, cp,
+                cargs, ncargs);
+        }
+    }
+
     mudstate.in_loop--;
     if (bLoopInBounds)
     {
@@ -79,6 +99,33 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
         delimiter = *tempstr;
     }
+
+    // Inline (/now) bodies run synchronously and may mutate the executor's
+    // own attributes, which can free the lbufs that 'list' and 'command' (the
+    // @dolist arguments) point into and corrupt our walk.  Iterate over
+    // private copies so body execution cannot pull the rug out from under us.
+    // (The queued path is immune — wait_que() copies the body — but copying
+    // for both keeps the loop uniform and an lbuf alloc is a freelist pop.)
+    //
+    LBuf listcopy = LBuf_Src("dolist.list");
+    LBuf cmdcopy = LBuf_Src("dolist.cmd");
+    mux_strncpy(listcopy, curr, LBUF_SIZE - 1);
+    curr = listcopy.get();
+    if (nullptr != command)
+    {
+        mux_strncpy(cmdcopy, command, LBUF_SIZE - 1);
+        command = cmdcopy.get();
+    }
+
+    // For inline (/now) iteration, isolate @break/@assert to the loop: save
+    // and clear break_called so a break inside the body stops the dolist
+    // without leaking to the surrounding command list, then restore it.
+    //
+    bool save_break = break_called;
+    if (key & DOLIST_NOW)
+    {
+        break_called = false;
+    }
     while (curr && *curr)
     {
         while (*curr == delimiter)
@@ -93,6 +140,12 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
             {
                 bind_and_process(executor, caller, enactor, eval, command,
                     objstring, cargs, ncargs, number);
+                if (break_called)
+                {
+                    // @break/@assert fired inside the body; stop the loop.
+                    //
+                    break;
+                }
             }
             else
             {
@@ -100,6 +153,10 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
                     objstring, cargs, ncargs, number);
             }
         }
+    }
+    if (key & DOLIST_NOW)
+    {
+        break_called = save_break;
     }
 
     if (key & DOLIST_NOTIFY)

@@ -90,11 +90,72 @@
   {
     @if strmatch(setr(0,trim(get(me/tc004_result))),a c)=
     {
-      @log smoke=TC004: assert false skips matched element. Succeeded.;
+      @log smoke=TC004: assert false skips matched element. Succeeded.
+    },
+    {
+      @log smoke=TC004: assert false skips matched element. Failed (%q0).
+    }
+  }
+-
+#
+# Inline (@dolist/now) cases: @break/@assert stop the whole loop, not just
+# the current element.  break on 'b' -> only 'a' recorded.
+#
+# Test Case #5 - @break true stops the inline loop ('b' onward dropped).
+#
+&tr.tc005 test_assert_cmd=
+  &tc005_result me=;
+  @dolist/now a b c=
+    {@break/inline strmatch(##,b);&tc005_result me=[get(me/tc005_result)] ##};
+  @wait 0.5=
+  {
+    @if strmatch(setr(0,trim(get(me/tc005_result))),a)=
+    {
+      @log smoke=TC005: break stops inline dolist. Succeeded.
+    },
+    {
+      @log smoke=TC005: break stops inline dolist. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #6 - @break false never fires; inline loop records every element.
+#                (Regression guard: inline iteration must not stop early.)
+#
+&tr.tc006 test_assert_cmd=
+  &tc006_result me=;
+  @dolist/now a b c=
+    {@break/inline 0;&tc006_result me=[get(me/tc006_result)] ##};
+  @wait 0.5=
+  {
+    @if strmatch(setr(0,trim(get(me/tc006_result))),a b c)=
+    {
+      @log smoke=TC006: inline dolist records all. Succeeded.
+    },
+    {
+      @log smoke=TC006: inline dolist records all. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #7 - inline break stops the loop but stays contained: a command
+#                after the @dolist/now in the same list still runs.
+#
+&tr.tc007 test_assert_cmd=
+  &tc007_result me=;
+  &tc007_after me=;
+  @dolist/now a b c=
+    {@break/inline strmatch(##,b);&tc007_result me=[get(me/tc007_result)] ##};
+  &tc007_after me=DONE;
+  @wait 0.5=
+  {
+    @if and(strmatch(trim(get(me/tc007_result)),a),strmatch(get(me/tc007_after),DONE))=
+    {
+      @log smoke=TC007: inline break is contained. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC004: assert false skips matched element. Failed (%q0).;
+      @log smoke=TC007: inline break is contained. Failed (r=[trim(get(me/tc007_result))] after=[get(me/tc007_after)]).;
       @trig me/tr.done
     }
   }
