@@ -592,7 +592,9 @@ static bool try_fold(const std::string &func_name,
             args[1].size(),
             reinterpret_cast<const unsigned char *>(args[0].data()),
             args[0].size());
-        result = format_long(static_cast<long>(n));
+        // co_pos returns 0 for "not found"; fun_pos returns the string "#-1".
+        // Match the interpreter so @if pos(...) truthiness agrees.
+        result = (0 == n) ? "#-1" : format_long(static_cast<long>(n));
         return true;
     }
 
