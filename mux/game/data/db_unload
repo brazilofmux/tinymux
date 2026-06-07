@@ -7,22 +7,60 @@
 #   Example: db_unload netmux netmux.flat
 #            db_unload netmux netmux.flat -C comsys.db -m mail.db
 #
+#   The SQLite database (<basename>.sqlite) is always read from next to this
+#   script, i.e. from the game's data/ directory, so it matches the server's
+#   configured input_database no matter which directory you run this from.
+#   Output flatfile arguments are resolved relative to your current directory.
+#
 #   Note: The server should not be running during export.
 #
 
-BIN=../bin
+# Directory this script lives in (the game's data/ directory).
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
-LD_LIBRARY_PATH=$BIN; export LD_LIBRARY_PATH
-DYLD_LIBRARY_PATH=$BIN; export DYLD_LIBRARY_PATH
+# Directory the caller invoked us from, for resolving relative file arguments.
+INVOKE_DIR=$(pwd)
 
-case $# in
-    2)  $BIN/dbconvert -d "$1" -u -o "$2" ;;
-    4)  $BIN/dbconvert -d "$1" -u -o "$2" $3 "$4" ;;
-    6)  $BIN/dbconvert -d "$1" -u -o "$2" $3 "$4" $5 "$6" ;;
-    *)  echo "Usage: $0 <basename> <flatfile> [-C <comsys.db>] [-m <mail.db>]"
-        echo "  e.g. $0 netmux netmux.flat"
-        echo "       $0 netmux netmux.flat -C comsys.db -m mail.db"
-        exit 1 ;;
-esac
+abspath() {
+    case "$1" in
+        /*) printf '%s\n' "$1" ;;
+        *)  printf '%s\n' "$INVOKE_DIR/$1" ;;
+    esac
+}
 
-exit 0
+usage() {
+    echo "Usage: $0 <basename> <flatfile> [-C <comsys.db>] [-m <mail.db>]"
+    echo "  e.g. $0 netmux netmux.flat"
+    echo "       $0 netmux netmux.flat -C comsys.db -m mail.db"
+    exit 1
+}
+
+[ $# -ge 2 ] || usage
+BASENAME="$1"
+FLATFILE=$(abspath "$2")
+shift 2
+
+COMSYS=
+MAIL=
+while [ $# -ge 1 ]; do
+    case "$1" in
+        -C) [ $# -ge 2 ] || usage; COMSYS=$(abspath "$2"); shift 2 ;;
+        -m) [ $# -ge 2 ] || usage; MAIL=$(abspath "$2");   shift 2 ;;
+        *)  usage ;;
+    esac
+done
+
+BIN="$SCRIPT_DIR/../bin"
+LD_LIBRARY_PATH="$BIN"; export LD_LIBRARY_PATH
+DYLD_LIBRARY_PATH="$BIN"; export DYLD_LIBRARY_PATH
+
+cd "$SCRIPT_DIR" || exit 1
+
+echo "Exporting from: $SCRIPT_DIR/$BASENAME.sqlite"
+
+set -- -d "$BASENAME" -u -o "$FLATFILE"
+[ -n "$COMSYS" ] && set -- "$@" -C "$COMSYS"
+[ -n "$MAIL" ]   && set -- "$@" -m "$MAIL"
+
+"$BIN/dbconvert" "$@"
+exit $?

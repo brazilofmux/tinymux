@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <string>
 
 // When building the standalone test harness, define TINYMUX_TYPES_DEFINED
 // via compiler flags and provide these types. When building inside TinyMUX,
@@ -39,6 +40,10 @@ public:
     bool Open(const char *path);
     void Close();
     bool IsOpen() const { return nullptr != m_db; }
+
+    // Path of the currently-open database file (empty when closed).
+    //
+    const char *GetPath() const { return m_path.c_str(); }
 
     // Object metadata operations.
     // These correspond to the db[] array and s_Location() etc.
@@ -293,6 +298,10 @@ public:
 
 private:
     sqlite3 *m_db;
+
+    // Path of the open database file, for diagnostics.
+    //
+    std::string m_path;
 
     // Object metadata statements.
     //

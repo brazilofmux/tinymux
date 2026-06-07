@@ -37,6 +37,7 @@ static bool standalone_load = false;
 static bool standalone_unload = false;
 static const UTF8 *standalone_comsys_file = nullptr;
 static const UTF8 *standalone_mail_file = nullptr;
+static bool standalone_force = false;
 
 // dbconvert delegates to engine via mux_IGameEngine::DbConvert.
 //
@@ -61,7 +62,8 @@ static void dbconvert(void)
 
     mr = pEngine->DbConvert(standalone_infile, standalone_outfile,
         standalone_basename, standalone_check, standalone_load,
-        standalone_unload, standalone_comsys_file, standalone_mail_file);
+        standalone_unload, standalone_comsys_file, standalone_mail_file,
+        standalone_force);
     pEngine->Release();
     exit(MUX_SUCCEEDED(mr) ? 0 : 1);
 }
@@ -157,6 +159,7 @@ void init_sql(void)
 #define CLI_DO_ERRORPATH   CLI_USER+11
 #define CLI_DO_COMSYS_FILE CLI_USER+12
 #define CLI_DO_MAIL_FILE   CLI_USER+13
+#define CLI_DO_FORCE       CLI_USER+14
 
 static bool bMinDB = false;
 static bool bSyntaxError = false;
@@ -182,7 +185,8 @@ static CLI_OptionEntry OptionTable[] =
     { "C", CLI_REQUIRED, CLI_DO_COMSYS_FILE },
     { "m", CLI_REQUIRED, CLI_DO_MAIL_FILE   },
     { "p", CLI_REQUIRED, CLI_DO_PID_FILE    },
-    { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   }
+    { "e", CLI_REQUIRED, CLI_DO_ERRORPATH   },
+    { "f", CLI_NONE,     CLI_DO_FORCE       }
 };
 
 static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
@@ -254,6 +258,11 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
         case CLI_DO_MAIL_FILE:
             g_bStandAlone = true;
             standalone_mail_file = reinterpret_cast<const UTF8 *>(pValue);
+            break;
+
+        case CLI_DO_FORCE:
+            g_bStandAlone = true;
+            standalone_force = true;
             break;
 
         case CLI_DO_USAGE:
@@ -346,13 +355,14 @@ int DCL_CDECL main(int argc, char *argv[])
         mux_fprintf(stderr, T("Version: %s" ENDLINE), g_version);
         if (g_bStandAlone)
         {
-            mux_fprintf(stderr, T("Usage: %s -d <dbname> [-i <infile>] [-o <outfile>] [-l|-u|-k] [-C <comsys>] [-m <mail>]" ENDLINE), pProg);
-            mux_fprintf(stderr, T("  -d  Basename." ENDLINE));
+            mux_fprintf(stderr, T("Usage: %s -d <dbname> [-i <infile>] [-o <outfile>] [-l|-u|-k] [-f] [-C <comsys>] [-m <mail>]" ENDLINE), pProg);
+            mux_fprintf(stderr, T("  -d  Basename (the SQLite file is <basename>.sqlite, relative to the current directory)." ENDLINE));
             mux_fprintf(stderr, T("  -i  Input file." ENDLINE));
             mux_fprintf(stderr, T("  -k  Check." ENDLINE));
             mux_fprintf(stderr, T("  -l  Load (import flatfile into SQLite)." ENDLINE));
             mux_fprintf(stderr, T("  -o  Output file." ENDLINE));
             mux_fprintf(stderr, T("  -u  Unload (export SQLite to flatfile)." ENDLINE));
+            mux_fprintf(stderr, T("  -f  Force load over an existing SQLite database (replaces it)." ENDLINE));
             mux_fprintf(stderr, T("  -C  Comsys flatfile (import/export)." ENDLINE));
             mux_fprintf(stderr, T("  -m  Mail flatfile (import/export)." ENDLINE));
         }

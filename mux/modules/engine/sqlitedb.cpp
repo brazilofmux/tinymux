@@ -132,6 +132,14 @@ bool CSQLiteDB::Open(const char *path)
         return false;
     }
 
+    // Remember the path we opened so callers can report exactly which file
+    // backs the database.
+    //
+    if (nullptr != path)
+    {
+        m_path.assign(path);
+    }
+
     return true;
 }
 
@@ -143,6 +151,7 @@ void CSQLiteDB::Close()
         sqlite3_close(m_db);
         m_db = nullptr;
     }
+    m_path.clear();
 }
 
 bool CSQLiteDB::ConfigurePragmas()
