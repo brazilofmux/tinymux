@@ -12,27 +12,27 @@
   @log smoke=Beginning wordpos() test cases.
 -
 #
-# Test Case #1 - Basic wordpos operations.
+# Test Case #1 - wordpos(<string>, <char position>) returns the number of the
+# word that the given 1-based CHARACTER position falls within (not a word
+# search).  "This is a test": chars 1-4 = word 1, 6-7 = word 2, 9 = word 3,
+# 11-14 = word 4; positions <1 or past the end are invalid (#-1).
 #
 &tr.tc001 test_wordpos_fn=
-  @if strmatch(wordpos(This is a test,is), #-1*)=
+  @if cand(
+        eq(wordpos(This is a test,1), 1),
+        eq(wordpos(This is a test,6), 2),
+        eq(wordpos(This is a test,9), 3),
+        eq(wordpos(This is a test,14), 4),
+        strmatch(wordpos(This is a test,0), #-1*),
+        strmatch(wordpos(This is a test,99), #-1*)
+      )=
   {
-    @log smoke=TC001: wordpos not available. Okay.;
+    @log smoke=TC001: wordpos char-position mapping. Succeeded.;
     @trig me/tr.done
   },
   {
-    @if cand(
-          eq(wordpos(This is a test,is), 2),
-          eq(wordpos(This is a test,missing), 0)
-        )=
-    {
-      @log smoke=TC001: wordpos basic operations. Succeeded.;
-      @trig me/tr.done
-    },
-    {
-      @log smoke=TC001: wordpos basic operations. Failed (wordpos(is)=[wordpos(This is a test,is)] wordpos(missing)=[wordpos(This is a test,missing)]).;
-      @trig me/tr.done
-    }
+    @log smoke=TC001: wordpos char-position mapping. Failed (p1=[wordpos(This is a test,1)] p6=[wordpos(This is a test,6)] p9=[wordpos(This is a test,9)] p14=[wordpos(This is a test,14)] p0=[wordpos(This is a test,0)] p99=[wordpos(This is a test,99)]).;
+    @trig me/tr.done
   }
 -
 &tr.done test_wordpos_fn=

@@ -215,7 +215,11 @@ static bool tier2_allowed(const std::string &mux_name) {
         // Tier 2 list/string ops — parity-tested via smoke suite.
         //
         "BEFORE", "AFTER",
-        "DELETE", "ELEMENTS", "WORDPOS", "REMOVE",
+        // "WORDPOS" — disabled: rv64_wordpos implements the wrong semantics.
+        // It searches for an exact *word* match of fargs[1], but wordpos(str,N)
+        // returns the word number that *character position* N falls within, so
+        // the JIT version always returns 0.  Falls back to fun_wordpos.  #768.
+        "DELETE", "ELEMENTS", "REMOVE",
         "REVWORDS",
         "LNUM",
         "LADD", "LMAX", "LMIN", "LAND", "LOR",
