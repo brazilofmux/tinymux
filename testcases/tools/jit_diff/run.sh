@@ -78,10 +78,19 @@ status=0
 for tag in LOGIC COLOR MISSING; do
     ids=$(awk -v t="$tag" '$1==t{print $2}' "$WORK/verdict.txt")
     [ -z "$ids" ] && continue
-    [ "$tag" = LOGIC ] && status=1
-    echo "=== $tag ==="
-    for id in $ids; do
-        awk -F'\t' -v i="$id" '$1==i{print i": "$2}' "$WORK/manifest.txt"
-    done
+    if [ "$tag" = LOGIC ]; then
+        status=1
+        n=$(printf '%s\n' "$ids" | wc -l | tr -d ' ')
+        echo "=== LOGIC ($n divergent expressions; minimizing) ==="
+        for id in $ids; do
+            awk -F'\t' -v i="$id" '$1==i{print $2}' "$WORK/manifest.txt"
+        done | JITDIFF_WORK="$WORK" JITDIFF_MUX="$TIMEOUT $BIN/muxscript" \
+            python3 "$SCRIPT_DIR/minimize.py"
+    else
+        echo "=== $tag ==="
+        for id in $ids; do
+            awk -F'\t' -v i="$id" '$1==i{print i": "$2}' "$WORK/manifest.txt"
+        done
+    fi
 done
 exit $status

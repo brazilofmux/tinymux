@@ -93,8 +93,48 @@ def gen(t, depth, colored):
     return f"{fn}({','.join(gen(a, depth - 1, colored) for a in args)})"
 
 
+# Single-char delimiters and output separators (incl. multi-char osep, the
+# class where ldelete/extract had bugs).  All parser-safe — no ;[]%(){}, or space.
+DELIMS = ["-", "|", "@", ".", ":", "/"]
+OSEPS = ["<>", "::", "%b~%b", "==", "-+-"]
+
+
+def delim_list(d):
+    return d.join(random.choice(WORDS) for _ in range(random.randint(2, 5)))
+
+
+def gen_delim_test():
+    """Single-call delim/osep exerciser with leaf lists built using the
+    chosen delimiter (kept flat so the list/delimiter stay consistent)."""
+    d = random.choice(DELIMS)
+    lst = delim_list(d)
+    pos = str(random.choice([1, 2, 3, -1, 0, 9]))
+    w = leaf_word()
+    osep = random.choice(OSEPS)
+    fn = random.choice([
+        f"ldelete({lst},{pos},{d})",
+        f"ldelete({lst},{pos},{d},{osep})",
+        f"replace({lst},{pos},{w},{d})",
+        f"replace({lst},{pos},{w},{d},{osep})",
+        f"insert({lst},{pos},{w},{d},{osep})",
+        f"extract({lst},{pos},2,{d})",
+        f"extract({lst},{pos},2,{d},{osep})",
+        f"elements({lst},1 -1,{d},{osep})",
+        f"remove({lst},{w},{d})",
+        f"first({lst},{d})", f"rest({lst},{d})", f"last({lst},{d})",
+        f"member({lst},{w},{d})",
+        f"setunion({lst},{delim_list(d)},{d})",
+        f"setdiff({lst},{delim_list(d)},{d},{osep})",
+        f"setinter({lst},{delim_list(d)},{d})",
+    ])
+    return fn
+
+
 def gen_root(colored):
-    # Force the root to be a function call (depth>=1, S/L return type).
+    # ~25% of roots exercise custom delimiters / output separators.
+    if random.random() < 0.25:
+        return gen_delim_test()
+    # Otherwise force the root to be a (possibly nested) function call.
     while True:
         e = gen(random.choice(["S", "L"]), random.randint(1, 4), colored)
         if "(" in e:        # ensure it is actually a call, not a bare leaf
