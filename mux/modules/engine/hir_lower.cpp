@@ -3305,6 +3305,9 @@ literal_strcat:
                 delim_idx = 2;
             } else if (upper == "EXTRACT" && nargs >= 4) {
                 delim_idx = 3;
+            } else if ((upper == "SETUNION" || upper == "SETDIFF"
+                        || upper == "SETINTER") && nargs >= 3) {
+                delim_idx = 2;
             }
             // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4]),
             // LDELETE osep (arg[3]), EXTRACT osep (arg[4]) are single-byte
@@ -3317,6 +3320,8 @@ literal_strcat:
                           || upper == "SPLICE") && nargs >= 5) osep_idx = 4;
                 else if (upper == "LDELETE" && nargs >= 4) osep_idx = 3;
                 else if (upper == "EXTRACT" && nargs >= 5) osep_idx = 4;
+                else if ((upper == "SETUNION" || upper == "SETDIFF"
+                          || upper == "SETINTER") && nargs >= 4) osep_idx = 3;
                 if (osep_idx >= 0) {
                     if (!h.is_const(args[osep_idx])) {
                         t2addr = 0;
