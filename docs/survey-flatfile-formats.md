@@ -83,22 +83,42 @@ The current server defines (`mux/include/config.h`):
 #define OUTPUT_VERSION        5     // what a fresh export writes today
 ```
 
-| Ver | Encoding | What changed at this version | TinyMUX line |
-|-----|----------|------------------------------|--------------|
-| **1** | Latin-1 | Earliest `+X` MUX flatfile the modern reader accepts. Mandatory flags already include `V_LINK V_PARENT V_XFLAGS V_ZONE V_POWERS V_3FLAGS V_QUOTED` (i.e. `MANDFLAGS_V2` minus `V_ATRKEY`). | early 2.x |
-| **2** | Latin-1 | Adds `V_ATRKEY` — locks become an attribute rather than a header field. | 2.x up to **2.6** |
-| **3** | **UTF-8** | **The big one.** Strings convert Latin-1 → UTF-8; attribute *names* become UTF-8; the default lock is folded into attribute `A_LOCK`. This is the **2.6 → 2.7** boundary. | **2.7** onward |
-| **4** | UTF-8 | Version-number bump; same mandatory flags as v3. (Carrier for later encoding work.) | later 2.x |
-| **5** | UTF-8 | 24-bit / 256-color encoding in the Private-Use Area was **redesigned** (per-channel deltas → fixed two-code-point form). Reader auto-migrates v≤4 color on load. | **2.14** (Mar 2026) |
+| Ver | Text encoding | Color representation | What changed at this version | TinyMUX line |
+|-----|----------|----------|------------------------------|--------------|
+| **1** | Latin-1 | raw ANSI escapes | Earliest `+X` MUX flatfile the modern reader accepts. Mandatory flags already include `V_LINK V_PARENT V_XFLAGS V_ZONE V_POWERS V_3FLAGS V_QUOTED` (i.e. `MANDFLAGS_V2` minus `V_ATRKEY`). | early 2.x |
+| **2** | Latin-1 | raw ANSI escapes | Adds `V_ATRKEY` — locks become an attribute rather than a header field. | 2.x up to **2.6** |
+| **3** | **UTF-8** | **PUA code points** | **The big one.** Three changes at once: text converts Latin-1 → UTF-8; **raw ANSI escape sequences (`ESC [ … m`) become Private-Use-Area color code points**; attribute *names* become UTF-8; and the default lock is folded into attribute `A_LOCK`. This is the **2.6 → 2.7** boundary. | **2.7** onward |
+| **4** | UTF-8 | PUA code points (v1 form) | Version-number bump; same mandatory flags as v3. (Carrier for later encoding work.) | later 2.x |
+| **5** | UTF-8 | PUA code points (v2 form) | The 24-bit / 256-color PUA encoding was **redesigned** (per-channel deltas → fixed two-code-point form). Reader auto-migrates v≤4 color on load. | **2.14** (Mar 2026) |
 
 Two transitions matter most when diagnosing an old file:
 
-1. **v2 → v3 = Latin-1 → UTF-8 = TinyMUX 2.6 → 2.7.** A v1/v2 file is in Latin-1;
-   the reader transcodes it on import (`g_version <= 2` branch in `db_read`).
-   Omega notes this explicitly: its only charset conversion is "between TinyMUX
-   2.6 and TinyMUX 2.7."
-2. **v4 → v5 = color re-encoding = the 2.14 era.** Loading a pre-v5 file logs
-   "Migrating V4 24-bit color encoding to V5".
+1. **v2 → v3 = TinyMUX 2.6 → 2.7.** This is more than a charset change. A v1/v2
+   file is Latin-1 *and* stores color as **raw ANSI escape sequences** embedded
+   in attribute values; on import the `g_version <= 2` branch in `db_read`
+   transcodes text Latin-1 → UTF-8 **and** parses those `ESC [ … m` sequences,
+   replacing them with PUA color code points (see `ConvertToUTF8` in
+   `mux/lib/stringutil.cpp`). Omega performs the same conversion and notes its
+   only charset conversion is "between TinyMUX 2.6 and TinyMUX 2.7."
+2. **v4 → v5 = the 2.14 era.** Both store color as PUA code points; only the
+   *encoding* of 24-bit/256 color within the PUA changed. Loading a pre-v5 file
+   logs "Migrating V4 24-bit color encoding to V5".
+
+### The color-representation lineage
+
+Color is worth calling out separately because it changed *twice*, on different
+boundaries than text encoding:
+
+| Era | How color lives in the flatfile |
+|-----|---------------------------------|
+| **≤ 2.6** (v1/v2) | Raw terminal **ANSI escape sequences** (`ESC [ 1;31 m`, …) sit directly in attribute values. Only the classic 8/16-color + attribute codes exist — there is no 24-bit color in this era. |
+| **2.7 – 2.13** (v3/v4) | Color is normalized to **Private-Use-Area code points**. The 2.6→2.7 import parses the old ANSI sequences into this form. 24-bit/256-color is encoded with the original (v1) PUA scheme. |
+| **2.14+** (v5) | Same PUA approach, but the 24-bit/256-color encoding is **redesigned** to a fixed two-code-point form. |
+
+Practical consequence: a pre-2.7 flatfile carries human-readable `ESC[…m`
+escapes in its attribute text; a 2.7+ flatfile carries UTF-8 PUA code points that
+look like multi-byte gibberish in a plain text editor. Both render as color in
+the game — they are just different on-disk representations.
 
 The version/flag *consistency* is asserted on read: for v1/v2 the file must carry
 `MANDFLAGS_V2`, for v3+ it must carry `MANDFLAGS_V3` (which adds `V_ATRKEY`).
@@ -172,5 +192,8 @@ Example: `+X996099` → `0xF3303` → version **3**, flags `0xF3300`
   `MIN/MAX_SUPPORTED_VERSION`, `UNLOAD_FLAGS`.
 - `mux/modules/engine/db_rw.cpp` — `db_read()`/`db_write()`; the Latin-1→UTF-8
   (`g_version <= 2`) and V4→V5 color (`g_version <= 4`) migration branches.
+- `mux/lib/stringutil.cpp` — `ConvertToUTF8()`: the v2→v3 routine that both
+  transcodes Latin-1 → UTF-8 *and* parses raw `ESC [ … m` ANSI sequences into
+  PUA color code points (mirrored in `mux/convert/t5xgame.cpp`).
 - `mux/convert/` — Omega and the `t5x`/`t6h`/`p6h`/`r7h` converters; see its
   `README` for the cross-codebase conversion matrix and the 2.6↔2.7 charset note.
