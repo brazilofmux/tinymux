@@ -1028,7 +1028,17 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Year
     //
-    ft->iYear = static_cast<short>(mux_atol(p));
+    // Reject years outside the range timeutil accepts (see isValidDate)
+    // *before* narrowing to short.  Otherwise an out-of-range year wraps
+    // silently into a plausible one -- e.g. 9999999999 -> -7169 -- and is
+    // accepted as the wrong date.  This mirrors the same guard in
+    // ParseDate() (#708); do_convtime() is the conversion branch it missed.
+    long iYearLong = mux_atol(p);
+    if (iYearLong < -27256 || 30826 < iYearLong)
+    {
+        return false;
+    }
+    ft->iYear = static_cast<short>(iYearLong);
     while (mux_isdigit(*p))
     {
         p++;

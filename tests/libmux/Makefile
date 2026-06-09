@@ -21,8 +21,11 @@ test_libmux.o: test_libmux.cpp
 $(TARGET): test_libmux.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmux -Wl,-rpath,$(LIBDIR)
 
+# Prepend LIBDIR so we load the freshly-built libmux.so here and not a stale
+# copy that an ambient LD_LIBRARY_PATH (e.g. ~/lib) might otherwise shadow:
+# DT_RUNPATH from -rpath loses to LD_LIBRARY_PATH, so make ours win.
 test: $(TARGET)
-	./$(TARGET)
+	LD_LIBRARY_PATH=$(LIBDIR):$$LD_LIBRARY_PATH ./$(TARGET)
 
 clean:
 	rm -f *.o $(TARGET)

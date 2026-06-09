@@ -44,6 +44,20 @@ UTF8  *mux_i64toa_t(int64_t val);
 void   safe_ltoa(long val, UTF8 *buff, UTF8 **bufc);
 void   safe_i64toa(int64_t val, UTF8 *buff, UTF8 **bufc);
 
+// timeutil.h date-parser API (#715).  Unlike the stringutil/mathutil
+// prototypes above, the date parser needs the CLinearTimeAbsolute class and
+// FIELDEDTIME struct, so we include the real header.  It is self-contained
+// given UTF8 + <cstdint> plus these two macros.  I64BUF_SIZE only sizes a
+// private static that is defined inside libmux and never touched here, so a
+// local value is harmless.
+#ifndef LIBMUX_API
+#define LIBMUX_API __attribute__((visibility("default")))
+#endif
+#ifndef I64BUF_SIZE
+#define I64BUF_SIZE 24
+#endif
+#include "timeutil.h"
+
 // alloc.h
 #define MEMALLOC(n)  malloc((n))
 #define MEMFREE(p)   free((p))
@@ -372,6 +386,208 @@ static void test_mux_strncpy_truncate()
 // Main
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Date parser (#715): adversarial / boundary coverage for the scanner behind
+// ParseDate(), do_convtime(), and ParseFractionalSecondsString().  The smoke
+// tests (convtime_fn.mux, parsedate_fn.mux) cover happy paths; these hit the
+// overflow / narrowing / truncation corners that have historically slipped
+// through (#707, #708, and the do_convtime year-narrowing fixed alongside).
+// ---------------------------------------------------------------------------
+
+// Parse via ParseDate; optionally read back the fielded result.  Returns the
+// accept/reject boolean.
+static bool pd(const char *s, FIELDEDTIME *ft = nullptr, bool *zone = nullptr)
+{
+    CLinearTimeAbsolute lta;
+    UTF8 buf[256];
+    size_t i = 0;
+    for (; s[i] && i < sizeof(buf) - 1; i++) buf[i] = static_cast<UTF8>(s[i]);
+    buf[i] = '\0';
+    bool z = false;
+    bool ok = ParseDate(lta, buf, &z);
+    if (zone) *zone = z;
+    if (ok && ft) lta.ReturnFields(ft);
+    return ok;
+}
+
+static bool ct(const char *s, FIELDEDTIME *ft = nullptr)
+{
+    FIELDEDTIME tmp;
+    if (!ft) ft = &tmp;
+    return do_convtime(reinterpret_cast<const UTF8 *>(s), ft);
+}
+
+static bool frac(const char *s, int64_t *v = nullptr)
+{
+    int64_t tmp = 0;
+    if (!v) v = &tmp;
+    *v = 0;
+    return ParseFractionalSecondsString(*v, reinterpret_cast<const UTF8 *>(s));
+}
+
+// --- ParseDate: valid forms parse to the expected fields ---
+static void test_parsedate_valid_iso_date()
+{
+    FIELDEDTIME ft;
+    ASSERT_TRUE(pd("2026-06-09", &ft));
+    ASSERT_EQ(ft.iYear, 2026);
+    ASSERT_EQ(ft.iMonth, 6);
+    ASSERT_EQ(ft.iDayOfMonth, 9);
+}
+
+static void test_parsedate_valid_iso_datetime()
+{
+    FIELDEDTIME ft;
+    ASSERT_TRUE(pd("2026-06-09T12:34:56", &ft));
+    ASSERT_EQ(ft.iHour, 12);
+    ASSERT_EQ(ft.iMinute, 34);
+    ASSERT_EQ(ft.iSecond, 56);
+}
+
+static void test_parsedate_zone_flag()
+{
+    bool zone = false;
+    ASSERT_TRUE(pd("2026-06-09T12:34:56Z", nullptr, &zone));
+    ASSERT_TRUE(zone);
+    zone = true;
+    ASSERT_TRUE(pd("2026-06-09T12:34:56", nullptr, &zone));
+    ASSERT_TRUE(!zone);
+}
+
+// --- ParseDate: empty / garbage rejected ---
+static void test_parsedate_empty_and_garbage()
+{
+    ASSERT_TRUE(!pd(""));
+    ASSERT_TRUE(!pd(" "));
+    ASSERT_TRUE(!pd("abc"));
+    ASSERT_TRUE(!pd("!!!"));
+    ASSERT_TRUE(!pd("-1"));
+    ASSERT_TRUE(!pd("2026--06-09"));
+}
+
+// --- ParseDate: year overflow rejected, not silently wrapped (#707) ---
+static void test_parsedate_year_overflow_rejected()
+{
+    // A 10-digit run overflows a 32-bit accumulator if unguarded.  Both the
+    // bare number and the ISO-dashed form must be rejected, not wrapped.
+    ASSERT_TRUE(!pd("9999999999"));
+    ASSERT_TRUE(!pd("9999999999-01-01"));
+}
+
+// --- ParseDate: out-of-range year rejected before narrowing (#708) ---
+static void test_parsedate_year_narrowing_rejected()
+{
+    // 67536 narrows to (short)2000 if cast before range-checking; must reject.
+    ASSERT_TRUE(!pd("67536-01-01"));
+}
+
+// --- ParseDate: exact accepted-year boundaries (timeutil [-27256, 30826]) ---
+static void test_parsedate_year_boundaries()
+{
+    ASSERT_TRUE(pd("30826-01-01"));    // latest accepted
+    ASSERT_TRUE(!pd("30827-01-01"));   // one past
+    ASSERT_TRUE(pd("-27256-01-01"));   // earliest accepted
+    ASSERT_TRUE(!pd("-27257-01-01"));  // one before
+}
+
+// --- ParseDate: truncated ISO forms ---
+static void test_parsedate_truncated_iso()
+{
+    FIELDEDTIME ft;
+    ASSERT_TRUE(!pd("2026-"));
+    ASSERT_TRUE(!pd("2026-06-"));
+    // Year-month with no day is accepted and defaults the day to 1.
+    ASSERT_TRUE(pd("2026-06", &ft));
+    ASSERT_EQ(ft.iMonth, 6);
+    ASSERT_EQ(ft.iDayOfMonth, 1);
+}
+
+// --- ParseDate: invalid calendar components ---
+static void test_parsedate_invalid_components()
+{
+    ASSERT_TRUE(!pd("2026-13-01"));   // month 13
+    ASSERT_TRUE(!pd("2026-00-01"));   // month 0
+    ASSERT_TRUE(!pd("2026-06-00"));   // day 0
+    ASSERT_TRUE(!pd("2026-06-31"));   // June has 30 days
+    ASSERT_TRUE(!pd("2026-02-29"));   // 2026 is not a leap year
+    ASSERT_TRUE(pd("2024-02-29"));    // 2024 is
+}
+
+// --- ParseDate: invalid time-of-day ---
+static void test_parsedate_invalid_time()
+{
+    ASSERT_TRUE(!pd("2026-06-09T99:99:99"));
+    ASSERT_TRUE(!pd("2026-06-09T24:00:00"));
+    ASSERT_TRUE(!pd("2026-06-09T23:59:60"));
+}
+
+// --- ParseDate: ordinal (day-of-year) dates ---
+static void test_parsedate_ordinal()
+{
+    FIELDEDTIME ft;
+    ASSERT_TRUE(pd("2026-001", &ft));   // Jan 1
+    ASSERT_EQ(ft.iMonth, 1);
+    ASSERT_EQ(ft.iDayOfMonth, 1);
+    ASSERT_TRUE(!pd("2026-000"));       // ordinal 0
+    ASSERT_TRUE(!pd("2026-367"));       // past end of (non-leap) year
+}
+
+// --- do_convtime: happy path + the year-narrowing fix ---
+static void test_convtime_valid()
+{
+    FIELDEDTIME ft;
+    ASSERT_TRUE(ct("Sat Jun  7 12:34:56 2026", &ft));
+    ASSERT_EQ(ft.iYear, 2026);
+    ASSERT_EQ(ft.iMonth, 6);
+    ASSERT_EQ(ft.iDayOfMonth, 7);
+    ASSERT_EQ(ft.iHour, 12);
+    ASSERT_EQ(ft.iSecond, 56);
+}
+
+static void test_convtime_year_overflow_rejected()
+{
+    // do_convtime narrowed the year to short with no range check, so
+    // "...9999999999" wrapped to (short)-7169 and was accepted.  Must reject.
+    ASSERT_TRUE(!ct("Sat Jun  7 12:34:56 9999999999"));
+}
+
+static void test_convtime_invalid_fields()
+{
+    ASSERT_TRUE(!ct(""));
+    ASSERT_TRUE(!ct("Sat Jun 32 12:34:56 2026"));  // day 32
+    ASSERT_TRUE(!ct("Sat Jun  7 99:99:99 2026"));  // bad time
+}
+
+// --- ParseFractionalSecondsString ---
+static void test_frac_basic()
+{
+    int64_t v = 0;
+    ASSERT_TRUE(frac("1", &v));
+    ASSERT_EQ(v, INT64_C(10000000));     // 1 second in 100ns units
+    ASSERT_TRUE(frac("1.5", &v));
+    ASSERT_EQ(v, INT64_C(15000000));
+    ASSERT_TRUE(frac("0.000001", &v));
+    ASSERT_EQ(v, INT64_C(10));           // 1 microsecond
+}
+
+static void test_frac_signs_and_edges()
+{
+    int64_t v = 0;
+    ASSERT_TRUE(frac("-1.5", &v));
+    ASSERT_EQ(v, INT64_C(-15000000));
+    ASSERT_TRUE(frac("1.", &v));         // trailing dot
+    ASSERT_EQ(v, INT64_C(10000000));
+    ASSERT_TRUE(frac(".5", &v));         // leading dot
+    ASSERT_EQ(v, INT64_C(5000000));
+}
+
+static void test_frac_rejects_garbage()
+{
+    int64_t v = -1;
+    ASSERT_TRUE(!frac("", &v));
+    ASSERT_TRUE(!frac("abc", &v));
+}
+
 int main()
 {
     printf("libmux Unit Tests\n");
@@ -423,6 +639,29 @@ int main()
     printf("\n--- mux_strncpy ---\n");
     RUN_TEST(test_mux_strncpy_basic);
     RUN_TEST(test_mux_strncpy_truncate);
+
+    printf("\n--- ParseDate ---\n");
+    RUN_TEST(test_parsedate_valid_iso_date);
+    RUN_TEST(test_parsedate_valid_iso_datetime);
+    RUN_TEST(test_parsedate_zone_flag);
+    RUN_TEST(test_parsedate_empty_and_garbage);
+    RUN_TEST(test_parsedate_year_overflow_rejected);
+    RUN_TEST(test_parsedate_year_narrowing_rejected);
+    RUN_TEST(test_parsedate_year_boundaries);
+    RUN_TEST(test_parsedate_truncated_iso);
+    RUN_TEST(test_parsedate_invalid_components);
+    RUN_TEST(test_parsedate_invalid_time);
+    RUN_TEST(test_parsedate_ordinal);
+
+    printf("\n--- do_convtime ---\n");
+    RUN_TEST(test_convtime_valid);
+    RUN_TEST(test_convtime_year_overflow_rejected);
+    RUN_TEST(test_convtime_invalid_fields);
+
+    printf("\n--- ParseFractionalSecondsString ---\n");
+    RUN_TEST(test_frac_basic);
+    RUN_TEST(test_frac_signs_and_edges);
+    RUN_TEST(test_frac_rejects_garbage);
 
     printf("\n=================\n");
     printf("Results: %d passed, %d failed\n", g_pass, g_fail);
