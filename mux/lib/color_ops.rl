@@ -1802,31 +1802,61 @@ size_t co_member(const unsigned char *target, size_t tlen,
 /* ---- column-width helpers ---- */
 
 /*
+ * cluster_console_width — display column width of one grapheme cluster.
+ *
+ * A cluster occupies one glyph cell on screen even when built from several
+ * code points: combining marks (width 0), ZWJ-joined emoji (GB11) and emoji
+ * skin-tone / variation modifiers all fold into the base glyph.  Its width is
+ * therefore the widest of its code points, not their sum — so a "family" ZWJ
+ * sequence or a modified emoji counts as one wide glyph (2) rather than 4–6.
+ *
+ * The one exception is a Regional Indicator pair (GB12/13): two RI code
+ * points, each East-Asian-Width Neutral (1), render together as a single
+ * double-wide flag, so the pair is forced to width 2.
+ *
+ * `cb` is the cluster's byte length as returned by next_grapheme_plain().
+ */
+static size_t cluster_console_width(const unsigned char *p, size_t cb)
+{
+    const unsigned char *pe = p + cb;
+    const unsigned char *q = p;
+    int baseGCB = -1;
+    size_t nCp = 0;
+    int wMax = 0;
+    while (q < pe) {
+        const unsigned char *qn = utf8_cp_advance(q, pe);
+        if (baseGCB < 0) baseGCB = gcb_get(q, qn);
+        int w = co_console_width(q);
+        if (w > wMax) wMax = w;
+        nCp++;
+        q = qn;
+    }
+    if (GCB_Regional_Indicator == baseGCB && nCp >= 2) {
+        return 2;
+    }
+    return (size_t)wMax;
+}
+
+/*
  * co_visual_width — Total display column width, skipping PUA color.
+ *
+ * Width is measured per grapheme cluster (see cluster_console_width), not per
+ * code point, so ZWJ emoji sequences, skin-tone-modified emoji and flags each
+ * count as a single glyph.
  */
 size_t co_visual_width(const unsigned char *p, size_t len)
 {
-    const unsigned char *pe = p + len;
+    /* Strip color so grapheme segmentation sees plain text. */
+    unsigned char plain[LBUF_SIZE];
+    size_t plen = co_strip_color(plain, p, len);
+
     size_t cols = 0;
-    while (p < pe) {
-        /* Skip PUA color codes. */
-        if (p[0] == 0xEF && (p + 2) < pe
-            && p[1] >= 0x94 && p[1] <= 0x9F) {
-            p += 3;
-            continue;
-        }
-        if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] >= 0xB0 && p[1] <= 0xB3) {
-            p += 4;
-            continue;
-        }
-        /* Visible code point — get column width. */
-        cols += (size_t)co_console_width(p);
-        /* Advance past UTF-8 sequence. */
-        if (*p < 0x80)      p += 1;
-        else if (*p < 0xE0) p += 2;
-        else if (*p < 0xF0) p += 3;
-        else                p += 4;
+    size_t nConsumed = 0;
+    while (nConsumed < plen) {
+        size_t cb = next_grapheme_plain(plain + nConsumed, plen - nConsumed);
+        if (0 == cb) break;
+        cols += cluster_console_width(plain + nConsumed, cb);
+        nConsumed += cb;
     }
     return cols;
 }
@@ -1865,22 +1895,21 @@ size_t co_copy_columns(unsigned char *out, const unsigned char *p,
             continue;
         }
 
-        /* Visible code point. */
-        int w = co_console_width(p);
-        if (cols_emitted + (size_t)w > ncols) break;
+        /* Visible code point — start of a grapheme cluster.  Copy the whole
+         * cluster atomically so truncation never splits one, and charge it a
+         * single glyph's width (see cluster_console_width). */
+        size_t cplen = next_grapheme_plain(p, (size_t)(pe - p));
+        if (0 == cplen) break;
 
-        size_t cplen;
-        if (*p < 0x80)      cplen = 1;
-        else if (*p < 0xE0) cplen = 2;
-        else if (*p < 0xF0) cplen = 3;
-        else                cplen = 4;
+        size_t w = cluster_console_width(p, cplen);
+        if (cols_emitted + w > ncols) break;
 
         if (wp + cplen > wp_end) break;
         for (size_t i = 0; i < cplen && p + i < pe; i++)
             wp[i] = p[i];
         wp += cplen;
         p += cplen;
-        cols_emitted += (size_t)w;
+        cols_emitted += w;
     }
 
     *wp = '\0';

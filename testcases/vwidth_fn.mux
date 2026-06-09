@@ -66,11 +66,33 @@
 &tr.tc004 test_vwidth_fn=
   @if eq(vwidth(),0)=
   {
-    @log smoke=TC004: empty string. Succeeded.;
+    @log smoke=TC004: empty string. Succeeded.
+  },
+  {
+    @log smoke=TC004: empty string. Failed ([vwidth()]).
+  }
+-
+#
+# Test Case #5 - Emoji grapheme clusters are one wide glyph (width 2), not
+# the sum of their code points.  A skin-tone modified emoji (joined Extend)
+# and a flag (a Regional Indicator pair, GB12/13) each occupy two columns,
+# matching one wide cell on screen; two flags occupy four.  (The GB11 ZWJ
+# case cannot be built here because chr() rejects U+200D as unprintable -- it
+# is covered in tests/libmux instead.)
+#
+&tr.tc005 test_vwidth_fn=
+  @if cand(
+        eq(vwidth([chr(128077)][chr(127997)]),2),
+        eq(vwidth([chr(127482)][chr(127480)]),2),
+        eq(vwidth([chr(127482)][chr(127480)][chr(127467)][chr(127479)]),4),
+        eq(vwidth([chr(127482)][chr(127480)]ok),4)
+      )=
+  {
+    @log smoke=TC005: emoji clusters. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: empty string. Failed ([vwidth()]).;
+    @log smoke=TC005: emoji clusters. Failed (tone=[vwidth([chr(128077)][chr(127997)])] flag=[vwidth([chr(127482)][chr(127480)])] twoflag=[vwidth([chr(127482)][chr(127480)][chr(127467)][chr(127479)])]).;
     @trig me/tr.done
   }
 -

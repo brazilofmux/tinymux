@@ -36,6 +36,15 @@ UTF8 *mux_strupr(const UTF8 *a, size_t &n);
 UTF8 *mux_strlwr(const UTF8 *a, size_t &n);
 void  mux_strncpy(UTF8 *dest, const UTF8 *src, size_t length_to_copy);
 
+// Grapheme-cluster / display-width exports.  utf8_cluster_count() lives in
+// utf8_grapheme.cpp (C++ linkage); co_visual_width() is in the Ragel-generated
+// color_ops.c (C linkage).  Together they exercise UAX #29 segmentation —
+// including GB11 (ZWJ emoji) and GB12/13 (Regional Indicator flags) — which a
+// ZWJ sequence cannot reach from softcode because chr() rejects U+200D as
+// unprintable.
+size_t utf8_cluster_count(const UTF8 *src, size_t nSrc);
+extern "C" size_t co_visual_width(const unsigned char *p, size_t len);
+
 // mathutil.h exports
 long   mux_atol(const UTF8 *pString);
 double mux_atof(const UTF8 *szString, bool bStrict = true);
@@ -588,6 +597,86 @@ static void test_frac_rejects_garbage()
     ASSERT_TRUE(!frac("abc", &v));
 }
 
+// ---------------------------------------------------------------------------
+// Grapheme clusters (UAX #29) and display width
+//
+// Emoji built from several code points must segment as ONE grapheme cluster
+// and occupy ONE glyph cell.  These cases — especially the GB11 ZWJ sequences
+// — cannot be constructed in softcode (chr() rejects U+200D), so they are
+// covered here at the libmux layer.
+// ---------------------------------------------------------------------------
+
+#define E_MAN   "\xF0\x9F\x91\xA8"      // U+1F468 man              (wide, ExtPict)
+#define E_WOMAN "\xF0\x9F\x91\xA9"      // U+1F469 woman            (wide, ExtPict)
+#define E_GIRL  "\xF0\x9F\x91\xA7"      // U+1F467 girl             (wide, ExtPict)
+#define E_ZWJ   "\xE2\x80\x8D"          // U+200D  zero-width joiner
+#define E_THUMB "\xF0\x9F\x91\x8D"      // U+1F44D thumbs up        (wide, ExtPict)
+#define E_TONE  "\xF0\x9F\x8F\xBD"      // U+1F3FD medium skin tone (Extend)
+#define E_RI_U  "\xF0\x9F\x87\xBA"      // U+1F1FA regional ind. U  (Neutral width)
+#define E_RI_S  "\xF0\x9F\x87\xB8"      // U+1F1F8 regional ind. S
+#define E_ACUTE "\xCC\x81"              // U+0301  combining acute  (zero width)
+
+// "family": man ZWJ woman ZWJ girl — 5 code points, GB11, one cluster.
+#define E_FAMILY E_MAN E_ZWJ E_WOMAN E_ZWJ E_GIRL
+
+static size_t clusters(const char *s)
+{
+    return utf8_cluster_count(U(s), strlen(s));
+}
+static size_t vwidth(const char *s)
+{
+    return co_visual_width(reinterpret_cast<const unsigned char *>(s), strlen(s));
+}
+
+static void test_grapheme_gb11_zwj_family()
+{
+    // GB11: ExtPict (Extend* ZWJ ExtPict)+ is a single cluster, one wide glyph.
+    ASSERT_EQ(clusters(E_FAMILY), (size_t)1);
+    ASSERT_EQ(vwidth(E_FAMILY),   (size_t)2);
+    // Two families back-to-back: two clusters, four columns.
+    ASSERT_EQ(clusters(E_FAMILY E_FAMILY), (size_t)2);
+    ASSERT_EQ(vwidth(E_FAMILY E_FAMILY),   (size_t)4);
+}
+
+static void test_grapheme_skin_tone_modifier()
+{
+    // Emoji + skin-tone modifier joins via Extend (GB9): one cluster.  Both
+    // code points are wide, so a naive per-code-point sum would yield 4.
+    ASSERT_EQ(clusters(E_THUMB E_TONE), (size_t)1);
+    ASSERT_EQ(vwidth(E_THUMB E_TONE),   (size_t)2);
+}
+
+static void test_grapheme_regional_indicator_flag()
+{
+    // GB12/13: a Regional Indicator pair is one flag cluster.  Each RI is
+    // East-Asian-Width Neutral (1), but the pair renders as one wide glyph.
+    ASSERT_EQ(clusters(E_RI_U E_RI_S), (size_t)1);
+    ASSERT_EQ(vwidth(E_RI_U E_RI_S),   (size_t)2);
+    // Four RIs = two flags = two clusters, four columns.
+    ASSERT_EQ(clusters(E_RI_U E_RI_S E_RI_U E_RI_S), (size_t)2);
+    ASSERT_EQ(vwidth(E_RI_U E_RI_S E_RI_U E_RI_S),   (size_t)4);
+    // A lone RI is its own cluster, width 1.
+    ASSERT_EQ(clusters(E_RI_U), (size_t)1);
+    ASSERT_EQ(vwidth(E_RI_U),   (size_t)1);
+}
+
+static void test_grapheme_baselines()
+{
+    // Plain text, combining marks and wide CJK are unchanged by clustering.
+    ASSERT_EQ(clusters("hello"), (size_t)5);
+    ASSERT_EQ(vwidth("hello"),   (size_t)5);
+    ASSERT_EQ(vwidth(""),        (size_t)0);
+    // e + combining acute: one cluster, one column.
+    ASSERT_EQ(clusters("e" E_ACUTE), (size_t)1);
+    ASSERT_EQ(vwidth("e" E_ACUTE),   (size_t)1);
+    // CJK 你好: two clusters, four columns (wide).
+    ASSERT_EQ(clusters("\xE4\xBD\xA0\xE5\xA5\xBD"), (size_t)2);
+    ASSERT_EQ(vwidth("\xE4\xBD\xA0\xE5\xA5\xBD"),   (size_t)4);
+    // A single man emoji: one cluster, two columns.
+    ASSERT_EQ(clusters(E_MAN), (size_t)1);
+    ASSERT_EQ(vwidth(E_MAN),   (size_t)2);
+}
+
 int main()
 {
     printf("libmux Unit Tests\n");
@@ -662,6 +751,12 @@ int main()
     RUN_TEST(test_frac_basic);
     RUN_TEST(test_frac_signs_and_edges);
     RUN_TEST(test_frac_rejects_garbage);
+
+    printf("\n--- grapheme clusters / display width ---\n");
+    RUN_TEST(test_grapheme_gb11_zwj_family);
+    RUN_TEST(test_grapheme_skin_tone_modifier);
+    RUN_TEST(test_grapheme_regional_indicator_flag);
+    RUN_TEST(test_grapheme_baselines);
 
     printf("\n=================\n");
     printf("Results: %d passed, %d failed\n", g_pass, g_fail);
