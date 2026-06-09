@@ -20,11 +20,45 @@
         strmatch(setdiff(a|b|c|d,b|d,|), a|c)
       )=
   {
-    @log smoke=TC001: setdiff basic operations. Succeeded.;
+    @log smoke=TC001: setdiff basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: setdiff basic operations. Failed (setdiff=[setdiff(a b c d,b d)] setdiff|=[setdiff(a|b|c|d,b|d,|)]).
+  }
+-
+#
+# Test Case #2 - Set difference (list1 minus list2).  An empty list2 leaves
+# list1 (sorted, de-duplicated); an empty list1, or removing everything,
+# yields the empty set.
+#
+&tr.tc002 test_setdiff_fn=
+  @if cand(
+        strmatch(setdiff(a b c,), a b c),
+        eq(strlen(setdiff(,a b)), 0),
+        eq(strlen(setdiff(a b,a b)), 0)
+      )=
+  {
+    @log smoke=TC002: setdiff empty operands. Succeeded.
+  },
+  {
+    @log smoke=TC002: setdiff empty operands. Failed (l2empty=[setdiff(a b c,)] l1empty=[setdiff(,a b)] allgone=[setdiff(a b,a b)]).
+  }
+-
+#
+# Test Case #3 - Duplicates in list1 collapse to one; the kept elements come
+# out in ASCII sort order (so "10" precedes "2").
+#
+&tr.tc003 test_setdiff_fn=
+  @if cand(
+        strmatch(setdiff(a a b c d,b d), a c),
+        strmatch(setdiff(2 10 1,1), 10 2)
+      )=
+  {
+    @log smoke=TC003: setdiff duplicates and sort. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: setdiff basic operations. Failed (setdiff=[setdiff(a b c d,b d)] setdiff|=[setdiff(a|b|c|d,b|d,|)]).;
+    @log smoke=TC003: setdiff duplicates and sort. Failed (dups=[setdiff(a a b c d,b d)] sort=[setdiff(2 10 1,1)]).;
     @trig me/tr.done
   }
 -

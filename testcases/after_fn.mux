@@ -20,11 +20,47 @@
         eq(strlen(after(foobar,-)), 0)
       )=
   {
-    @log smoke=TC001: after basic operations. Succeeded.;
+    @log smoke=TC001: after basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: after basic operations. Failed (after(foo-bar%,-)=[after(foo-bar,-)] after(foobar%,-)=[after(foobar,-)]).
+  }
+-
+#
+# Test Case #2 - Separator position.  after() returns text following the
+# FIRST occurrence: the whole tail when the separator leads, empty when it
+# trails, and the remainder after the first match when the separator repeats.
+# A separator that is not present yields the empty string.
+#
+&tr.tc002 test_after_fn=
+  @if cand(
+        strmatch(after(-foobar,-), foobar),
+        eq(strlen(after(foobar-,-)), 0),
+        strmatch(after(a-b-c,-), b-c),
+        eq(strlen(after(abc,xyz)), 0)
+      )=
+  {
+    @log smoke=TC002: after separator position. Succeeded.
+  },
+  {
+    @log smoke=TC002: after separator position. Failed (lead=[after(-foobar,-)] trail=[after(foobar-,-)] first=[after(a-b-c,-)] none=[after(abc,xyz)]).
+  }
+-
+#
+# Test Case #3 - An empty separator defaults to a single space (and the
+# string is space-trimmed); multi-character separators are matched whole.
+#
+&tr.tc003 test_after_fn=
+  @if cand(
+        strmatch(after(hello world,), world),
+        strmatch(after(foo::bar,::), bar)
+      )=
+  {
+    @log smoke=TC003: after default and multichar. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: after basic operations. Failed (after(foo-bar%,-)=[after(foo-bar,-)] after(foobar%,-)=[after(foobar,-)]).;
+    @log smoke=TC003: after default and multichar. Failed (dflt=[after(hello world,)] multi=[after(foo::bar,::)]).;
     @trig me/tr.done
   }
 -
