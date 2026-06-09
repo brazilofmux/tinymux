@@ -20,11 +20,45 @@
         strmatch(before(foobar,-), foobar)
       )=
   {
-    @log smoke=TC001: before basic operations. Succeeded.;
+    @log smoke=TC001: before basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: before basic operations. Failed (before(foo-bar%,-)=[before(foo-bar,-)] before(foobar%,-)=[before(foobar,-)]).
+  }
+-
+#
+# Test Case #2 - Separator position.  before() returns text up to the FIRST
+# occurrence: empty when the separator leads, the whole head when it trails,
+# and only the first segment when the separator repeats.
+#
+&tr.tc002 test_before_fn=
+  @if cand(
+        eq(strlen(before(-foobar,-)), 0),
+        strmatch(before(foobar-,-), foobar),
+        strmatch(before(a-b-c,-), a)
+      )=
+  {
+    @log smoke=TC002: before separator position. Succeeded.
+  },
+  {
+    @log smoke=TC002: before separator position. Failed (lead=[before(-foobar,-)] trail=[before(foobar-,-)] first=[before(a-b-c,-)]).
+  }
+-
+#
+# Test Case #3 - An empty separator defaults to a single space (and the
+# string is space-trimmed); multi-character separators are matched whole.
+#
+&tr.tc003 test_before_fn=
+  @if cand(
+        strmatch(before(hello world,), hello),
+        strmatch(before(foo::bar,::), foo)
+      )=
+  {
+    @log smoke=TC003: before default and multichar. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: before basic operations. Failed (before(foo-bar%,-)=[before(foo-bar,-)] before(foobar%,-)=[before(foobar,-)]).;
+    @log smoke=TC003: before default and multichar. Failed (dflt=[before(hello world,)] multi=[before(foo::bar,::)]).;
     @trig me/tr.done
   }
 -

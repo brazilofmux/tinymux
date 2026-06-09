@@ -20,11 +20,61 @@
         strmatch(setunion(a|b|c,b|c|d,|), a|b|c|d)
       )=
   {
-    @log smoke=TC001: setunion basic operations. Succeeded.;
+    @log smoke=TC001: setunion basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: setunion basic operations. Failed (setunion=[setunion(a b c,b c d)] setunion|=[setunion(a|b|c,b|c|d,|)]).
+  }
+-
+#
+# Test Case #2 - Empty inputs.  An empty operand contributes nothing; the
+# result is the sorted, de-duplicated other list (or empty when both are).
+#
+&tr.tc002 test_setunion_fn=
+  @if cand(
+        strmatch(setunion(,a b c), a b c),
+        strmatch(setunion(a b c,), a b c),
+        eq(strlen(setunion(,)), 0)
+      )=
+  {
+    @log smoke=TC002: setunion empty inputs. Succeeded.
+  },
+  {
+    @log smoke=TC002: setunion empty inputs. Failed (l1empty=[setunion(,a b c)] l2empty=[setunion(a b c,)] both=[setunion(,)]).
+  }
+-
+#
+# Test Case #3 - Duplicates are removed, within and across both lists; two
+# identical single-element lists collapse to one element.
+#
+&tr.tc003 test_setunion_fn=
+  @if cand(
+        strmatch(setunion(c a b a,b c), a b c),
+        strmatch(setunion(a,a), a)
+      )=
+  {
+    @log smoke=TC003: setunion duplicates. Succeeded.
+  },
+  {
+    @log smoke=TC003: setunion duplicates. Failed (dups=[setunion(c a b a,b c)] same=[setunion(a,a)]).
+  }
+-
+#
+# Test Case #4 - Default sort is ASCII (so "10" precedes "2"); the fifth arg
+# selects numeric sort; the fourth arg overrides the output separator.
+#
+&tr.tc004 test_setunion_fn=
+  @if cand(
+        strmatch(setunion(2 10 1,3), 1 10 2 3),
+        strmatch(setunion(2 10 1,3,,,n), 1 2 3 10),
+        strmatch(setunion(a b,c d,%b,-), a-b-c-d)
+      )=
+  {
+    @log smoke=TC004: setunion sort and osep. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: setunion basic operations. Failed (setunion=[setunion(a b c,b c d)] setunion|=[setunion(a|b|c,b|c|d,|)]).;
+    @log smoke=TC004: setunion sort and osep. Failed (ascii=[setunion(2 10 1,3)] numeric=[setunion(2 10 1,3,,,n)] osep=[setunion(a b,c d,%b,-)]).;
     @trig me/tr.done
   }
 -

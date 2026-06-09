@@ -20,11 +20,44 @@
         strmatch(setinter(a|b|c,b|c|d,|), b|c)
       )=
   {
-    @log smoke=TC001: setinter basic operations. Succeeded.;
+    @log smoke=TC001: setinter basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: setinter basic operations. Failed (setinter=[setinter(a b c,b c d)] setinter|=[setinter(a|b|c,b|c|d,|)]).
+  }
+-
+#
+# Test Case #2 - Disjoint lists and an empty operand yield the empty set; two
+# equal lists intersect to themselves (sorted, de-duplicated).
+#
+&tr.tc002 test_setinter_fn=
+  @if cand(
+        eq(strlen(setinter(a b,c d)), 0),
+        eq(strlen(setinter(,a b)), 0),
+        strmatch(setinter(a b c,a b c), a b c)
+      )=
+  {
+    @log smoke=TC002: setinter disjoint and empty. Succeeded.
+  },
+  {
+    @log smoke=TC002: setinter disjoint and empty. Failed (disjoint=[setinter(a b,c d)] empty=[setinter(,a b)] full=[setinter(a b c,a b c)]).
+  }
+-
+#
+# Test Case #3 - Duplicates collapse to one; the common elements come out
+# in ASCII sort order (so "10" precedes "2").
+#
+&tr.tc003 test_setinter_fn=
+  @if cand(
+        strmatch(setinter(a a b c,a b b), a b),
+        strmatch(setinter(2 10 1,1 2 10), 1 10 2)
+      )=
+  {
+    @log smoke=TC003: setinter duplicates and sort. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: setinter basic operations. Failed (setinter=[setinter(a b c,b c d)] setinter|=[setinter(a|b|c,b|c|d,|)]).;
+    @log smoke=TC003: setinter duplicates and sort. Failed (dups=[setinter(a a b c,a b b)] sort=[setinter(2 10 1,1 2 10)]).;
     @trig me/tr.done
   }
 -
