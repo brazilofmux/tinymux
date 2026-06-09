@@ -94,11 +94,30 @@
         strmatch(center(X,7,-+), -+-X-+-)
       )=
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
+    @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.
+  },
+  {
+    @log smoke=TC005: Vary string and width with '-+' fill. Failed (c2=[center(X,5,-+)] c3=[center(X,7,-+)]).
+  }
+-
+#
+# Test Case #6 - Truncation when width < content (#772).  fun_center passes
+# bTrunc=true, so a too-wide string is truncated; width 0 and non-integer
+# width collapse to empty.  Previously untested.  On the JIT/DBT blob
+# backend this also guards co_center_wrap.
+#
+&tr.tc006 test_center_fn=
+  @if cand(
+        strmatch(center(abcdef,3), abc),
+        eq(strlen(center(abcdef,0)), 0),
+        eq(strlen(center(abcdef,xyz)), 0)
+      )=
+  {
+    @log smoke=TC006: center truncation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Failed (c2=[center(X,5,-+)] c3=[center(X,7,-+)]).;
+    @log smoke=TC006: center truncation. Failed (t=[center(abcdef,3)] w0=[center(abcdef,0)] wx=[center(abcdef,xyz)]).;
     @trig me/tr.done
   }
 -

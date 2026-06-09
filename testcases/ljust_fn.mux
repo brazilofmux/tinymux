@@ -90,11 +90,30 @@
         eq(strlen(ljust(123,11,-+)), 11)
       )=
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
+    @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.
+  },
+  {
+    @log smoke=TC005: Vary string and width with '-+' fill. Failed.
+  }
+-
+#
+# Test Case #6 - Truncation when width < content (#772).  fun_ljust passes
+# bTrunc=true, so a too-wide string is truncated; width 0 and non-integer
+# width collapse to empty.  Previously untested.  On the JIT/DBT blob
+# backend this also guards co_ljust_wrap, which was the divergent path.
+#
+&tr.tc006 test_ljust_fn=
+  @if cand(
+        strmatch(ljust(abcdef,3), abc),
+        eq(strlen(ljust(abcdef,0)), 0),
+        eq(strlen(ljust(abcdef,xyz)), 0)
+      )=
+  {
+    @log smoke=TC006: ljust truncation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Failed.;
+    @log smoke=TC006: ljust truncation. Failed (t=[ljust(abcdef,3)] w0=[ljust(abcdef,0)] wx=[ljust(abcdef,xyz)]).;
     @trig me/tr.done
   }
 -
