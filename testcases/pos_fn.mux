@@ -12,12 +12,14 @@
   @log smoke=Beginning pos() test cases.
 -
 #
-# Test Case #1 - Basic substring position.
+# Test Case #1 - Basic substring position.  Not-found returns #-1 (matching
+# the interpreter's fun_pos), NOT 0.  Constant args exercise the JIT
+# constant-fold path.
 #
 &tr.tc001 test_pos_fn=
   @if cand(
         eq(pos(cd,abcdef), 3),
-        eq(pos(xy,abcdef), 0)
+        strmatch(pos(xy,abcdef), #-1)
       )=
   {
     @log smoke=TC001: pos basic operations. Succeeded.

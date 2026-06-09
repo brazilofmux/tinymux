@@ -536,9 +536,14 @@ char *co_pos_wrap(char *out, const char **fargs, int nfargs) {
                         rv64_slen(fargs[1]),
                         (const unsigned char *)fargs[0],
                         rv64_slen(fargs[0]));
-    /* co_pos returns 0 for not found, 1-based position otherwise. */
-    /* MUX match() returns #-1 for not found... but strmatch/pos
-     * returns a number. Let's return the raw position. */
+    /* co_pos returns 0 for not found, 1-based position otherwise.  The
+     * interpreter's fun_pos returns the string "#-1" for not found (via
+     * safe_nothing), so match it here — otherwise @if pos(...) and #-1
+     * comparisons flip truthiness on the blob/DBT runtime path.  See #770. */
+    if (pos == 0) {
+        rv64_scopy(out, "#-1");
+        return out;
+    }
     sitoa(out, (int)pos);
     return out;
 }
