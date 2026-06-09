@@ -40,11 +40,33 @@
         eq(strdistance(,), 0)
       )=
   {
-    @log smoke=TC002: strdistance single ops. Succeeded.;
+    @log smoke=TC002: strdistance single ops. Succeeded.
+  },
+  {
+    @log smoke=TC002: strdistance single ops. Failed (a-b=[strdistance(a, b)] ab-a=[strdistance(ab, a)]).
+  }
+-
+#
+# Test Case #3 - Edit distance is measured in grapheme clusters, not code
+# points.  A flag (2 Regional Indicators, GB12/13) and a skin-tone modified
+# emoji (Extend join) each count as one character: deleting one costs 1, two
+# distinct one-cluster emoji are one substitution apart, and inserting a flag
+# costs 1.  (The GB11 ZWJ family cannot be built here -- chr() rejects U+200D
+# -- so its segmentation is verified in tests/libmux instead.)
+#
+&tr.tc003 test_strdistance_fn=
+  @if cand(
+        eq(strdistance([chr(127482)][chr(127480)],), 1),
+        eq(strdistance([chr(128077)][chr(127997)],), 1),
+        eq(strdistance([chr(128104)],[chr(128105)]), 1),
+        eq(strdistance(a[chr(127482)][chr(127480)]b, ab), 1)
+      )=
+  {
+    @log smoke=TC003: strdistance clusters. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: strdistance single ops. Failed (a-b=[strdistance(a, b)] ab-a=[strdistance(ab, a)]).;
+    @log smoke=TC003: strdistance clusters. Failed (flag-del=[strdistance([chr(127482)][chr(127480)],)] tone-del=[strdistance([chr(128077)][chr(127997)],)] sub=[strdistance([chr(128104)],[chr(128105)])]).;
     @trig me/tr.done
   }
 -

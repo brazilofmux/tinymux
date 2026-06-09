@@ -54,11 +54,32 @@
         eq(strlen(A[chr(101 769)]B), 3)
       )=
   {
-    @log smoke=TC003: strlen combining cluster. Succeeded.;
+    @log smoke=TC003: strlen combining cluster. Succeeded.
+  },
+  {
+    @log smoke=TC003: strlen combining cluster. Failed (comb=[strlen(chr(101 769))] mixed=[strlen(A[chr(101 769)]B)]).
+  }
+-
+#
+# Test Case #4 - Emoji grapheme clusters count as one character each.
+# A skin-tone modified emoji (Extend join) and a flag (2 Regional Indicators,
+# GB12/13) are each a single grapheme cluster; two flags are two.  (The GB11
+# ZWJ case cannot be built here -- chr() rejects U+200D -- so it is covered in
+# tests/libmux instead.)
+#
+&tr.tc004 test_strlen_fn=
+  @if cand(
+        eq(strlen([chr(128077)][chr(127997)]), 1),
+        eq(strlen([chr(127482)][chr(127480)]), 1),
+        eq(strlen([chr(127482)][chr(127480)][chr(127467)][chr(127479)]), 2),
+        eq(strlen(A[chr(127482)][chr(127480)]B), 3)
+      )=
+  {
+    @log smoke=TC004: strlen emoji clusters. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: strlen combining cluster. Failed (comb=[strlen(chr(101 769))] mixed=[strlen(A[chr(101 769)]B)]).;
+    @log smoke=TC004: strlen emoji clusters. Failed (tone=[strlen([chr(128077)][chr(127997)])] flag=[strlen([chr(127482)][chr(127480)])] twoflag=[strlen([chr(127482)][chr(127480)][chr(127467)][chr(127479)])]).;
     @trig me/tr.done
   }
 -

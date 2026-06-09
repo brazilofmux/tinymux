@@ -12463,7 +12463,9 @@ static FUNCTION(fun_graphemes)
 // ---------------------------------------------------------------------------
 // strdistance: Levenshtein edit distance between two strings.
 //
-// Operates on Unicode codepoints (not bytes).
+// Operates on grapheme clusters, not code points: a cluster is one edit unit
+// and two clusters are equal when their bytes match.  A ZWJ emoji sequence
+// (GB11) or a flag (GB12/13) therefore counts as a single character.
 //
 static FUNCTION(fun_strdistance)
 {
@@ -12475,28 +12477,26 @@ static FUNCTION(fun_strdistance)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    const UTF8 *s = fargs[0];
-    const UTF8 *t = fargs[1];
-
-    // Decode both strings to codepoint arrays.
+    // Split each string into grapheme clusters (byte spans into fargs[]).
     //
-    UTF32 sCp[LBUF_SIZE], tCp[LBUF_SIZE];
-    size_t sLen = 0, tLen = 0;
+    struct GSpan { const UTF8 *p; size_t n; };
+    std::vector<GSpan> sC, tC;
 
-    while (*s && sLen < LBUF_SIZE - 1)
+    const UTF8 *args[2] = { fargs[0], fargs[1] };
+    std::vector<GSpan> *out[2] = { &sC, &tC };
+    for (int k = 0; k < 2; k++)
     {
-        UTF32 ch = ConvertFromUTF8(s);
-        if (UNI_EOF == ch) break;
-        sCp[sLen++] = ch;
-        s += utf8_FirstByte[static_cast<unsigned char>(*s)];
+        size_t nBytes = strlen(reinterpret_cast<const char *>(args[k]));
+        for (size_t off = 0; off < nBytes; )
+        {
+            mux_cursor c = utf8_next_grapheme(args[k] + off, nBytes - off);
+            if (0 == c.m_byte) break;
+            out[k]->push_back({ args[k] + off, static_cast<size_t>(c.m_byte) });
+            off += c.m_byte;
+        }
     }
-    while (*t && tLen < LBUF_SIZE - 1)
-    {
-        UTF32 ch = ConvertFromUTF8(t);
-        if (UNI_EOF == ch) break;
-        tCp[tLen++] = ch;
-        t += utf8_FirstByte[static_cast<unsigned char>(*t)];
-    }
+
+    size_t sLen = sC.size(), tLen = tC.size();
 
     // Single-row DP: prev[j] holds dist(s[0..i-1], t[0..j]).
     //
@@ -12518,7 +12518,10 @@ static FUNCTION(fun_strdistance)
         prev[0] = i;
         for (size_t j = 1; j <= tLen; j++)
         {
-            size_t cost = (sCp[i-1] == tCp[j-1]) ? 0 : 1;
+            const GSpan &a = sC[i-1];
+            const GSpan &b = tC[j-1];
+            bool bEqual = (a.n == b.n) && (0 == memcmp(a.p, b.p, a.n));
+            size_t cost = bEqual ? 0 : 1;
             size_t val = prevDiag + cost;
             if (prev[j] + 1 < val) val = prev[j] + 1;
             if (prev[j-1] + 1 < val) val = prev[j-1] + 1;
