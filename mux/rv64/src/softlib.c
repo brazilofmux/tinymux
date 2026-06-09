@@ -865,9 +865,12 @@ char *co_ljust_wrap(char *out, const char **fargs, int nfargs) {
         fill = (const unsigned char *)fargs[2];
         fill_len = rv64_slen(fargs[2]);
     }
+    /* bTrunc=1: fun_ljust truncates when width < content (centerjustcombo
+     * passes bTrunc=true).  satoi→0 for width 0 / non-integer then truncates
+     * to "", matching the interpreter's empty returns.  See #772. */
     size_t n = co_ljust((unsigned char *)out,
                         (const unsigned char *)fargs[0], len,
-                        (size_t)width, fill, fill_len, 0);
+                        (size_t)width, fill, fill_len, 1);
     out[n] = '\0';
     return out;
 }
@@ -884,9 +887,10 @@ char *co_rjust_wrap(char *out, const char **fargs, int nfargs) {
         fill = (const unsigned char *)fargs[2];
         fill_len = rv64_slen(fargs[2]);
     }
+    /* bTrunc=1: see co_ljust_wrap above (#772). */
     size_t n = co_rjust((unsigned char *)out,
                         (const unsigned char *)fargs[0], len,
-                        (size_t)width, fill, fill_len, 0);
+                        (size_t)width, fill, fill_len, 1);
     out[n] = '\0';
     return out;
 }
@@ -903,9 +907,10 @@ char *co_center_wrap(char *out, const char **fargs, int nfargs) {
         fill = (const unsigned char *)fargs[2];
         fill_len = rv64_slen(fargs[2]);
     }
+    /* bTrunc=1: see co_ljust_wrap above (#772). */
     size_t n = co_center((unsigned char *)out,
                          (const unsigned char *)fargs[0], len,
-                         (size_t)width, fill, fill_len, 0);
+                         (size_t)width, fill, fill_len, 1);
     out[n] = '\0';
     return out;
 }

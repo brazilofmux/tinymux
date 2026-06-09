@@ -90,11 +90,30 @@
         eq(strlen(rjust(123,11,-+)), 11)
       )=
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;
+    @log smoke=TC005: Vary string and width with '-+' fill. Succeeded.
+  },
+  {
+    @log smoke=TC005: Vary string and width with '-+' fill. Failed.
+  }
+-
+#
+# Test Case #6 - Truncation when width < content (#772).  fun_rjust passes
+# bTrunc=true, so a too-wide string is truncated (to the leading chars);
+# width 0 and non-integer width collapse to empty.  Previously untested.
+# On the JIT/DBT blob backend this also guards co_rjust_wrap.
+#
+&tr.tc006 test_rjust_fn=
+  @if cand(
+        strmatch(rjust(abcdef,3), abc),
+        eq(strlen(rjust(abcdef,0)), 0),
+        eq(strlen(rjust(abcdef,xyz)), 0)
+      )=
+  {
+    @log smoke=TC006: rjust truncation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: Vary string and width with '-+' fill. Failed.;
+    @log smoke=TC006: rjust truncation. Failed (t=[rjust(abcdef,3)] w0=[rjust(abcdef,0)] wx=[rjust(abcdef,xyz)]).;
     @trig me/tr.done
   }
 -
