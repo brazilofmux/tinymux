@@ -1866,7 +1866,27 @@ void GanlAdapter::run_main_loop() {
                 if (conn) {
                     // Event context should be the ConnectionBase* itself
                     if (events[i].context == conn.get()) {
-                        conn->handleNetworkEvent(events[i]);
+                        // Exception barrier (#794).  A throw from the per-
+                        // connection I/O path (IoBuffer accounting throws
+                        // out_of_range, ensureWritable's resize throws
+                        // bad_alloc, ...) must be contained to this connection,
+                        // not abort the whole server.  Unlike send_data, it IS
+                        // safe to close here: conn is a local shared_ptr that
+                        // outlives close(), and we touch neither conn nor
+                        // events[i] afterward.
+                        try {
+                            conn->handleNetworkEvent(events[i]);
+                        } catch (const std::exception& e) {
+                            g_pILog->WriteString(tprintf(
+                                T("GANL: exception in event handler for handle %llu (%s); closing.\n"),
+                                static_cast<unsigned long long>(events[i].connection), e.what()));
+                            conn->close(ganl::DisconnectReason::NetworkError);
+                        } catch (...) {
+                            g_pILog->WriteString(tprintf(
+                                T("GANL: unknown exception in event handler for handle %llu; closing.\n"),
+                                static_cast<unsigned long long>(events[i].connection)));
+                            conn->close(ganl::DisconnectReason::NetworkError);
+                        }
                     }
                     else {
                         g_pILog->WriteString(tprintf(T("GANL: Mismatched context for event on handle %llu\n"),
@@ -3156,9 +3176,50 @@ MUX_RESULT GanlAdapter::pump_stubslave()
 void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {
     if (!d) return;
     std::shared_ptr<ganl::ConnectionBase> conn = get_connection(d);
-    if (conn) {
-        // Convert char* to std::string for ConnectionBase interface
+    if (!conn) {
+        return;
+    }
+
+    // Output backpressure / high-water mark (#794).  process_output() drains
+    // the bounded MUX output_queue straight into GANL's encryptedOutput_,
+    // which has no size cap of its own.  A client that stops reading (TCP
+    // window full) therefore makes that buffer grow without bound until
+    // IoBuffer::ensureWritable's resize throws std::bad_alloc — and with no
+    // exception barrier in the dispatch chain that abort takes down the whole
+    // server, not just the one connection.
+    //
+    // Cap the per-connection backlog.  When it is reached, drop this whole
+    // write rather than append: output_queue entries are complete lines /
+    // complete WebSocket frames, so dropping at this granularity keeps the
+    // stream aligned for both telnet and WS, and mirrors the existing MUX
+    // output-overflow policy (account it to output_lost).  A genuinely dead
+    // client is then reaped by the idle timeout or the next write error.  We
+    // must NOT close here: send_data runs inside process_output's
+    // output_queue drain loop, and close() synchronously frees d.
+    const size_t perFlush = (g_dc.output_limit > 0)
+        ? static_cast<size_t>(g_dc.output_limit)
+        : static_cast<size_t>(2 * LBUF_SIZE);
+    const size_t backlogLimit = std::max<size_t>(perFlush * 16,
+                                                 static_cast<size_t>(1) << 20);
+    if (conn->pendingOutputBytes() + len > backlogLimit) {
+        d->output_lost += len;
+        return;
+    }
+
+    // Last-resort barrier: a throw from the send path (e.g. bad_alloc under
+    // extreme memory pressure) must never propagate to the main loop and abort
+    // the server.  We cannot safely close d from here (re-entrant free during
+    // process_output), so drop the write and let the idle/write-error paths
+    // reap the connection; the high-water mark above keeps memory bounded.
+    try {
         conn->sendDataToClient(std::string(data, len));
+    } catch (const std::exception& e) {
+        d->output_lost += len;
+        g_pILog->WriteString(tprintf(T("GANL: send dropped on handle %llu (%s)\n"),
+            static_cast<unsigned long long>(get_handle(d)), e.what()));
+    } catch (...) {
+        d->output_lost += len;
+        g_pILog->WriteString(T("GANL: send dropped (unknown exception)\n"));
     }
 }
 

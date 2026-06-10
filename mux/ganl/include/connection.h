@@ -102,6 +102,15 @@ public:
     ConnectionState getState() const { return state_; }
 
     /**
+     * Bytes currently queued for transmission to the client (formatted/
+     * encrypted output not yet written to the socket).  Read-only; used for
+     * output backpressure / high-water enforcement (#794).
+     *
+     * @return Pending outbound byte count
+     */
+    size_t pendingOutputBytes() const { return encryptedOutput_.readableBytes(); }
+
+    /**
      * Get remote address
      *
      * @return Remote address string
