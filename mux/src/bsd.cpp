@@ -306,6 +306,15 @@ void shutdownsock(DESC *d, int reason)
         g_descriptors_list.erase(it->second);
         g_descriptors_map.erase(it);
 
+        // Drop any GANL handle->DESC mapping before the DESC is freed.
+        // A stale mapping outliving the DESC is the use-after-free class
+        // fixed in e876ffe9f: a later GANL event on the same handle would
+        // resolve to this freed pointer.  remove_mapping() is a no-op when
+        // d is unmapped, so this is safe on every path -- it is currently
+        // load-bearing only if a caller other than load_restart_db's
+        // post-restart cull (the sole caller today) ever reaches here.
+        g_GanlAdapter.remove_mapping(d);
+
         // If we don't have queued IOs, then we can free these, now.
         //
         freeqs(d);

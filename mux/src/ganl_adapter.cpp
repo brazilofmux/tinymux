@@ -3211,6 +3211,33 @@ void GanlAdapter::close_connection(DESC* d, ganl::DisconnectReason reason) {
             d->flags &= ~DS_CONNECTED;
         }
         drv_CancelTask(Task_ProcessCommand, d, 0);
+
+        // This branch frees a DESC that GANL has no live connection for.
+        // Mirror onConnectionClose's teardown so the freed pointer cannot
+        // linger anywhere: drop the dbref index, the descriptor list/map,
+        // and any stale handle mapping before freeing.  Each step is a
+        // no-op when the entry is absent, so this is safe even though the
+        // common path (a mapped DESC) goes through conn->close() above.
+        if (d->player != NOTHING)
+        {
+            const auto range = g_dbref_to_descriptors_map.equal_range(d->player);
+            for (auto itPlayer = range.first; itPlayer != range.second; ++itPlayer)
+            {
+                if (itPlayer->second == d)
+                {
+                    g_dbref_to_descriptors_map.erase(itPlayer);
+                    break;
+                }
+            }
+        }
+        auto mapIt = g_descriptors_map.find(d);
+        if (mapIt != g_descriptors_map.end())
+        {
+            g_descriptors_list.erase(mapIt->second);
+            g_descriptors_map.erase(mapIt);
+        }
+        remove_mapping(d);
+
         destroy_desc(d);
         free_desc(d); // Free DESC if GANL doesn't know about it
     }
