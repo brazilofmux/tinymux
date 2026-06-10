@@ -1502,7 +1502,14 @@ Related Topics: @name.
     /notify  - Queues a '@notify' after all commands in the list.
     /now     - (Wizard-only) Execute each iteration inline instead of
                enqueuing it. Guarantees all iterations complete before
-               the next command in the action list. See also: @break.
+               the next command in the action list. <action> may be a
+               semicolon-separated command list; it is split exactly like
+               a queued action list. An @break inside the body stops the
+               remaining iterations of this @dolist/now, but is contained
+               there: it does not abort the enclosing command list. (In
+               the queued form, @break instead aborts the rest of the
+               current iteration's own command list; the loop itself
+               always runs every element.) See also: @break.
 
   This command is particularly handy with lcon() and lexits(). A few examples:
 

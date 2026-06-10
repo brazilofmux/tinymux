@@ -85,8 +85,8 @@ The current server defines (`mux/include/config.h`):
 
 | Ver | Text encoding | Color representation | What changed at this version | TinyMUX line |
 |-----|----------|----------|------------------------------|--------------|
-| **1** | Latin-1 | raw ANSI escapes | Earliest `+X` MUX flatfile the modern reader accepts. Mandatory flags already include `V_LINK V_PARENT V_XFLAGS V_ZONE V_POWERS V_3FLAGS V_QUOTED` (i.e. `MANDFLAGS_V2` minus `V_ATRKEY`). | early 2.x |
-| **2** | Latin-1 | raw ANSI escapes | Adds `V_ATRKEY` — locks become an attribute rather than a header field. | 2.x up to **2.6** |
+| **1** | Latin-1 | raw ANSI escapes | Earliest `+X` MUX flatfile the modern reader accepts. Mandatory flags are `V_LINK V_PARENT V_XFLAGS V_ZONE V_POWERS V_3FLAGS V_QUOTED` (`MANDFLAGS_V2`); `V_ATRKEY` (locks stored as an attribute) is *optional* here (`OFLAGS_V2`). | early 2.x |
+| **2** | Latin-1 | raw ANSI escapes | Same mandatory flags as v1 — the reader's version/flag assert treats v1 and v2 identically. `V_ATRKEY` remains optional; it becomes mandatory only at v3 (`MANDFLAGS_V3`). | 2.x up to **2.6** |
 | **3** | **UTF-8** | **PUA code points** | **The big one.** Three changes at once: text converts Latin-1 → UTF-8; **raw ANSI escape sequences (`ESC [ … m`) become Private-Use-Area color code points**; attribute *names* become UTF-8; and the default lock is folded into attribute `A_LOCK`. This is the **2.6 → 2.7** boundary. | **2.7** onward |
 | **4** | UTF-8 | PUA code points (v1 form) | Version-number bump; same mandatory flags as v3. (Carrier for later encoding work.) | later 2.x |
 | **5** | UTF-8 | PUA code points (v2 form) | The 24-bit / 256-color PUA encoding was **redesigned** (per-channel deltas → fixed two-code-point form). Reader auto-migrates v≤4 color on load. | **2.14** (Mar 2026) |
