@@ -145,10 +145,36 @@
       )=
   {
     @log smoke=TC006: empty-element split_token parity. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC006: empty-element split_token parity. Failed (words=[words(a||b,|)] mem1=[member(a||b,,|)] mem2=[member(a|,,|)] match1=[match(a|,,|)] match2=[match(,)] graball=[graball(a|,*,|)] rev1=[revwords(a|,|)] rev2=[revwords(|a,|)] elem=[words(elements(a||b|,2 4,|),|)] rm1=[remove(cd|x|gh|,x,|)] rm2=[remove(gh..ab..,x,.)]).;
+  }
+-
+#
+# Test Case #7 - color-encoding byte parity.  encode64() makes raw PUA
+# color bytes assertable.  A no-op item edit (out-of-range position)
+# must return the list byte-identical, including its leading color-on
+# code (co_split_words used to exclude the color prefix from word 1's
+# range, so the rebuild dropped it).  setunion tie-breaking: identical
+# single-element lists keep LIST1's copy (handle_sets special case);
+# the general merge keeps LIST2's.  mid() excludes color codes outside
+# the copied cluster range.
+#
+&tr.tc007 test_delim_parity_fn=
+  @if cand(
+        strmatch(encode64(ldelete(ansi(h,ab cd),3)), encode64(ansi(h,ab cd))),
+        strmatch(encode64(replace(ansi(rh,ij cd kl),0,x)), encode64(ansi(rh,ij cd kl))),
+        strmatch(encode64(insert(ansi(c,zzz gh),0,gh)), encode64(ansi(c,zzz gh))),
+        strmatch(encode64(setunion(kl,ansi(m,kl))), encode64(kl)),
+        strmatch(encode64(setunion(kl x,strcat(ansi(m,kl),%bx))), encode64(strcat(ansi(m,kl),%bx))),
+        strmatch(encode64(mid(ansi(g,ab cd),3,99)), encode64(cd))
+      )=
+  {
+    @log smoke=TC007: color-encoding byte parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: color-encoding byte parity. Failed (del=[encode64(ldelete(ansi(h,ab cd),3))] rep=[encode64(replace(ansi(rh,ij cd kl),0,x))] ins=[encode64(insert(ansi(c,zzz gh),0,gh))] su1=[encode64(setunion(kl,ansi(m,kl)))] su2=[encode64(setunion(kl x,strcat(ansi(m,kl),%bx)))] mid=[encode64(mid(ansi(g,ab cd),3,99))]).;
     @trig me/tr.done
   }
 -

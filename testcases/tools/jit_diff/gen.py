@@ -105,7 +105,10 @@ def delim_list(d):
     # walkers historically collapsed them.
     def elem():
         return "" if random.random() < 0.3 else random.choice(WORDS)
-    return d.join(elem() for _ in range(random.randint(2, 5)))
+    # 1-element lists included: handle_sets special-cases two identical
+    # single-element lists (it emits LIST1's copy; the general merge tie
+    # takes LIST2's), which 2+-element lists can never reach.
+    return d.join(elem() for _ in range(random.randint(1, 5)))
 
 
 def gen_delim_test():

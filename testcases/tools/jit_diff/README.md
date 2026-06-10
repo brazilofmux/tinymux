@@ -57,9 +57,17 @@ single `ansi(<color>,<words>)` call wrapping the whole list. Keep it that way.
 ## Known divergences
 
 - **#772** (fixed) — `ljust`/`rjust`/`center` didn't truncate when
-  `width < content`; the rv64 wrappers now pass `bTrunc=1`. LOGIC should be
-  empty on a clean run (COLOR may remain — the nested-color encoding
-  difference is unfiled and benign-looking).
+  `width < content`; the rv64 wrappers now pass `bTrunc=1`.
+- **COLOR class** (fixed) — the recurring COLOR reports came from three
+  real raw-byte divergences, all closed: `co_split_words` excluded a
+  word's leading color codes from its range (so item-function rebuilds
+  dropped them — a no-op `ldelete(ansi(h,ab cd),99)` lost the
+  highlight), the blob's `co_mid_wrap` used code-point `co_mid` instead
+  of `co_mid_cluster` (kept trailing color the interpreter excludes),
+  and `co_setunion` took LIST1's copy on ties where `handle_sets` takes
+  LIST2's (except the identical 1×1 special case, which keeps LIST1's).
+  A clean run should now report **0 LOGIC and 0 COLOR**; treat any COLOR
+  report as a real finding, not noise.
 
 ## Known limitations
 
