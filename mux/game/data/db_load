@@ -54,6 +54,7 @@ while [ $# -ge 1 ]; do
     case "$1" in
         -C) [ $# -ge 2 ] || usage; COMSYS=$(abspath "$2"); shift 2 ;;
         -m) [ $# -ge 2 ] || usage; MAIL=$(abspath "$2");   shift 2 ;;
+        -f) FORCE=-f; shift ;;
         *)  usage ;;
     esac
 done

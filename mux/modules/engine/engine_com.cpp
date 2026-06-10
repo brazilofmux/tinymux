@@ -2992,7 +2992,8 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                 STARTLOG(LOG_ALWAYS, "INI", "LOAD")
                 log_text(T("Warm-started from SQLite database; the flatfile "));
                 log_text(mudconf.indb);
-                log_text(T(" was not consulted. Remove the SQLite database to reload from a flatfile."));
+                log_text(T(" was not consulted. The SQLite database is authoritative; to rebase"
+                           " on a flatfile, export current state with db_unload first, then db_load -f."));
                 ENDLOG
             }
             else if (sqlite_load_rc < 0)
@@ -3731,20 +3732,34 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
     {
         if (setflags == OUTPUT_FLAGS && !bForce)
         {
-            // The target SQLite database already holds a game.  Loading would
-            // replace it, so refuse unless the caller explicitly forces it.
-            // Name the file and spell out both ways forward rather than
-            // leaving a dead-end that tempts running from the wrong directory.
+            // HF_OPEN_STATUS_OLD only means the FILE existed.  An empty
+            // shell (e.g. created as a side effect of running db_unload
+            // against a never-imported game) holds no game, so loading
+            // into it is not destructive -- don't refuse with a false
+            // "already contains a game" claim (#783).
             //
-            mux_fprintf(stderr,
-                T("Refusing to overwrite the existing SQLite database:\n"
-                  "    %s\n"
-                  "That file already contains a game.  To replace it, either:\n"
-                  "  * remove the file shown above and re-run, or\n"
-                  "  * re-run this load with the -f (force) option.\n"),
-                (nullptr != pDbPath && '\0' != pDbPath[0]) ? pDbPath : "(unknown)");
-            CLOSE;
-            return MUX_E_FAIL;
+            int db_top_val = 0;
+            bool bHasGame =
+                   g_pSQLiteBackend->GetDB().GetMeta("db_top", &db_top_val)
+                && 0 < db_top_val;
+            if (bHasGame)
+            {
+                // The target SQLite database already holds a game.  Loading
+                // would replace it, so refuse unless the caller explicitly
+                // forces it.  Name the file and spell out both ways forward
+                // rather than leaving a dead-end that tempts running from
+                // the wrong directory.
+                //
+                mux_fprintf(stderr,
+                    T("Refusing to overwrite the existing SQLite database:\n"
+                      "    %s\n"
+                      "That file already contains a game.  To replace it, either:\n"
+                      "  * remove the file shown above and re-run, or\n"
+                      "  * re-run this load with the -f (force) option.\n"),
+                    (nullptr != pDbPath && '\0' != pDbPath[0]) ? pDbPath : "(unknown)");
+                CLOSE;
+                return MUX_E_FAIL;
+            }
         }
     }
     else if (cc == HF_OPEN_STATUS_NEW)
@@ -3831,6 +3846,29 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
             do_dbck(NOTHING, NOTHING, NOTHING, 0, DBCK_FULL);
         }
         mux_fclose(fpIn);
+    }
+
+    // A flatfile game load replaces the database's game, so channel and
+    // mail rows referencing the OLD game's dbrefs must not survive into
+    // the new one (#783).  Clear both table sets; the -C/-m imports
+    // below repopulate them when flatfiles are supplied.  (The pre-force
+    // workflow -- deleting the whole .sqlite -- removed them too.)
+    //
+    if (bLoad && !bLoadedFromSQLite)
+    {
+        CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+        if (  !sqldb.Begin()
+           || !sqldb.ClearComsysTables()
+           || !sqldb.ClearMailTables()
+           || !sqldb.Commit())
+        {
+            sqldb.Rollback();
+            mux_fprintf(stderr,
+                T("SQLite comsys/mail clear failed after game load.\n"));
+            return MUX_E_FAIL;
+        }
+        mux_fprintf(stderr,
+            T("Cleared comsys and mail tables (game replaced).\n"));
     }
 
     // Import comsys from flatfile into SQLite.
