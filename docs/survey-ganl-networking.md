@@ -303,9 +303,20 @@ token (harmless, in-bounds). DNS slave SIGCHLD counter is a racy non-atomic RMW
 (slave.cpp, robustness only, MAX_CHILDREN=20 caps it); the slave child pid isn't
 tracked by the parent (generic reaper still collects it — no zombie).
 
-## Survey status: COMPLETE
+## Survey status: COMPLETE — fix pass underway
 
 All six sub-parts surveyed (bridge, engines, protocol parsers, TLS, buffer+
 connection core, address/DNS). Issues filed: **#790–#801**. The TLS sub-part
 (earlier parallel survey) remains as verify-then-file candidates in the TLS
-section above. Next phase per the project plan: the fix pass.
+section above.
+
+**Fix pass:**
+- **#794 — FIXED (df9f5de02):** per-connection output high-water mark in
+  `GanlAdapter::send_data` (drop whole writes past 16× output_limit / ≥1 MB,
+  charged to `output_lost`; no synchronous close — send_data runs inside
+  process_output's drain loop) + exception barrier at the run_main_loop event
+  dispatch and in send_data. New `ConnectionBase::pendingOutputBytes()`.
+  No-op on the normal path; verified no regression + server survives a
+  non-reading flood.
+- Suggested next: #799/#800 (the two access-control bypasses — small surgical
+  fixes with clear regression tests).
