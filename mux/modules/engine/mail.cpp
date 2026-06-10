@@ -138,6 +138,17 @@ static void sqlite_wt_mail_body(int number, const UTF8 *message)
     {
         Log.tinyprintf(T("mail sqlite_wt_mail_body failed for body=%d" ENDLINE), number);
     }
+
+    // Keep the loader's gate current: sqlite_load_mail() only reads the
+    // mail tables when the mail_db_top meta exists (it sizes the body
+    // array), but until now only a DbConvert -m import set it -- mail
+    // sent in-game wrote through to the tables and was then ignored on
+    // the next boot (fallback to the legacy mail.db flatfile).  (#783)
+    //
+    if (!sqldb.PutMeta("mail_db_top", mudstate.mail_db_top))
+    {
+        Log.tinyprintf(T("mail sqlite_wt_mail_body: mail_db_top meta update failed" ENDLINE));
+    }
 }
 
 static void sqlite_wt_delete_mail_body(int number)

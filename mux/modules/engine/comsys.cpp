@@ -41,6 +41,18 @@ static void sqlite_wt_channel(struct channel *ch)
     {
         Log.tinyprintf(T("comsys sqlite_wt_channel failed for %s" ENDLINE), ch->name);
     }
+
+    // Keep the loader's gate current: sqlite_load_comsys() (warm boot
+    // and db_unload -C) only reads the channel tables when has_comsys
+    // is set, but until now ONLY a DbConvert -C import set it -- a
+    // channel created in-game wrote through to the tables and was then
+    // ignored forever (the boot fell back to the legacy comsys.db
+    // flatfile).  (#783)
+    //
+    if (!sqldb.PutMeta("has_comsys", 1))
+    {
+        Log.tinyprintf(T("comsys sqlite_wt_channel: has_comsys meta update failed" ENDLINE));
+    }
 }
 
 static void sqlite_wt_delete_channel(const UTF8 *name)
