@@ -103,8 +103,8 @@ for tag in LOGIC COLOR MISSING; do
         echo "=== LOGIC ($n divergent expressions; minimizing) ==="
         for id in $ids; do
             awk -F'\t' -v i="$id" '$1==i{print $2}' "$WORK/manifest.txt"
-        done | JITDIFF_WORK="$WORK" JITDIFF_MUX="$TIMEOUT $BIN/muxscript" \
-            python3 "$SCRIPT_DIR/minimize.py"
+        done | JITDIFF_WORK="$WORK" JITDIFF_MUX_BIN="$BIN/muxscript" \
+            JITDIFF_TIMEOUT=90 python3 "$SCRIPT_DIR/minimize.py"
     else
         echo "=== $tag ==="
         for id in $ids; do
@@ -112,4 +112,11 @@ for tag in LOGIC COLOR MISSING; do
         done
     fi
 done
+if [ "$status" -ne 0 ]; then
+    # Keep the work dir: STATE-DEPENDENT findings reproduce only by
+    # replaying the original fuzz batch (b*.txt), and the manifest maps
+    # ids to expressions.
+    trap - EXIT
+    echo "Work dir preserved for replay: $WORK" >&2
+fi
 exit $status

@@ -69,8 +69,12 @@ single `ansi(<color>,<words>)` call wrapping the whole list. Keep it that way.
   A clean run should now report **0 LOGIC and 0 COLOR**; treat any COLOR
   report as a real finding, not noise.
 
-## Known limitations
+## Minimizer isolation discipline (#784)
 
-- The minimizer re-tests candidates in a shared muxscript process and never
-  re-verifies the original or the minimal form in isolation, so an
-  order/state-dependent divergence (the #778 class) can minimize misleadingly.
+The minimizer screens candidates in shared batches (50 per fresh muxscript
+process) for speed, but every **accepted** reduction is confirmed standalone
+in its own process, and the original expression is confirmed in isolation
+before shrinking. An expression that diverges only alongside its fuzz batch
+(order/state-dependent, the #778 class) is reported as **STATE-DEPENDENT**
+with its original form; `run.sh` preserves the work dir on failure so the
+batch (`b*.txt`) can be replayed.
