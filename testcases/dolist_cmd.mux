@@ -63,11 +63,33 @@
           118C356BCDC3DDACE50F4E53B5DA57A3DE365805
         )=
     {
-      @log smoke=TC002: dolist itext in queued switch default. Succeeded.;
+      @log smoke=TC002: dolist itext in queued switch default. Succeeded.
+    },
+    {
+      @log smoke=TC002: dolist itext in queued switch default. Failed (%q0).
+    }
+  }
+-
+#
+# Test Case #3 - ;| piping inside a @dolist/now body (#788): the queued
+#                runner has always supported ;| (%| carries the previous
+#                command's output); the inline runner must too.
+#
+&tr.tc003 test_dolist_cmd=
+  &tc003_result me=;
+  @dolist/now P Q=
+  {
+    think VAL-##;|&tc003_result me=[get(me/tc003_result)] [before(%|,%r)]
+  };
+  @wait 0.5=
+  {
+    @if strmatch(setr(0,trim(get(me/tc003_result))),VAL-P VAL-Q)=
+    {
+      @log smoke=TC003: pipe inside inline dolist. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC002: dolist itext in queued switch default. Failed (%q0).;
+      @log smoke=TC003: pipe inside inline dolist. Failed (%q0).;
       @trig me/tr.done
     }
   }

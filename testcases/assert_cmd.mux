@@ -151,11 +151,39 @@
   {
     @if and(strmatch(trim(get(me/tc007_result)),a),strmatch(get(me/tc007_after),DONE))=
     {
-      @log smoke=TC007: inline break is contained. Succeeded.;
+      @log smoke=TC007: inline break is contained. Succeeded.
+    },
+    {
+      @log smoke=TC007: inline break is contained. Failed (r=[trim(get(me/tc007_result))] after=[get(me/tc007_after)]).
+    }
+  }
+-
+#
+# Test Case #8 - @dolist/now/break: an inner @break stops the loop AND
+#                propagates to the enclosing command list (#788), so the
+#                command after the @dolist never runs.  The breaking
+#                @dolist lives in its own triggered attribute because the
+#                propagated break aborts THAT list -- the verification
+#                must live outside it.
+#
+&tc008_body test_assert_cmd=
+  @dolist/now/break a b c=
+    {@break/inline strmatch(##,b);&tc008_result me=[get(me/tc008_result)] ##};
+  &tc008_after me=DONE
+-
+&tr.tc008 test_assert_cmd=
+  &tc008_result me=;
+  &tc008_after me=NOTRUN;
+  @trig me/tc008_body;
+  @wait 0.5=
+  {
+    @if and(strmatch(trim(get(me/tc008_result)),a),strmatch(get(me/tc008_after),NOTRUN))=
+    {
+      @log smoke=TC008: dolist/now/break propagates. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC007: inline break is contained. Failed (r=[trim(get(me/tc007_result))] after=[get(me/tc007_after)]).;
+      @log smoke=TC008: dolist/now/break propagates. Failed (r=[trim(get(me/tc008_result))] after=[get(me/tc008_after)]).;
       @trig me/tr.done
     }
   }

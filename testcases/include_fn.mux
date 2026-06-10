@@ -229,12 +229,31 @@
         00F554D678F26112AAD9D51D7A8D2D590EB74801
       )=
   {
-    @log smoke=TC009: clearregs switch. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC009: clearregs switch. Succeeded.
   },
   {
-    @log smoke=TC009: clearregs switch. Failed (%q9).;
-    @trig me/tr.done
+    @log smoke=TC009: clearregs switch. Failed (%q9).
+  }
+-
+#
+# Test Case #10 - ;| piping inside an @include body (#788).
+#
+&fn_pipe test_include_fn=think INCVAL;|&tc010_result me=[before(%|,%r)]
+-
+&tr.tc010 test_include_fn=
+  &tc010_result me=;
+  @include me/fn_pipe;
+  @wait 0.5=
+  {
+    @if strmatch(setr(9,get(me/tc010_result)),INCVAL)=
+    {
+      @log smoke=TC010: pipe inside include. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC010: pipe inside include. Failed (%q9).;
+      @trig me/tr.done
+    }
   }
 -
 &tr.done test_include_fn=
