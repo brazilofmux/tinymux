@@ -1745,17 +1745,31 @@ static void ast_noeval_ulambda(const ASTNode *node,
         return;
     }
 
-    // Evaluate the body with fargs[1]... as %0, %1, ...
+    // Mirror do_ufun (fun_u): a NO_EVAL attribute or a NO_EVAL object
+    // returns the attribute text literally instead of evaluating it
+    // (#786).  This branch was the one piece of do_ufun the ulambda
+    // route was missing.
     //
-    // Use mux_exec so the body JIT-compiles, mirroring do_ufun (fun_u).
-    // The cargs we pass here (&fargs[1]) populate %0-%9 correctly: a
-    // depth-1 run_cached_program reads them from CARGS_BASE.  This was
-    // previously routed through ast_exec to dodge a blob-internal float
-    // intrinsic bug (#778); now that #778 is fixed, the JIT path is safe.
-    //
-    mux_exec(atext, LBUF_SIZE - 1, buff, bufc, thing, executor, enactor,
-        AttrTrace(aflags, EV_FCHECK | EV_EVAL),
-        const_cast<const UTF8 **>(&fargs[1]), real_nfargs - 1);
+    if ((aflags & AF_NOEVAL) || NoEval(thing))
+    {
+        size_t nLen = strlen(reinterpret_cast<const char *>(atext));
+        safe_copy_buf(atext, nLen, buff, bufc);
+    }
+    else
+    {
+        // Evaluate the body with fargs[1]... as %0, %1, ...
+        //
+        // Use mux_exec so the body JIT-compiles, mirroring do_ufun
+        // (fun_u).  The cargs we pass here (&fargs[1]) populate %0-%9
+        // correctly: a depth-1 run_cached_program reads them from
+        // CARGS_BASE.  This was previously routed through ast_exec to
+        // dodge a blob-internal float intrinsic bug (#778); now that
+        // #778 is fixed, the JIT path is safe.
+        //
+        mux_exec(atext, LBUF_SIZE - 1, buff, bufc, thing, executor, enactor,
+            AttrTrace(aflags, EV_FCHECK | EV_EVAL),
+            const_cast<const UTF8 **>(&fargs[1]), real_nfargs - 1);
+    }
     free_lbuf(atext);
     for (int i = 1; i < real_nfargs; i++) free_lbuf(fargs[i]);
 }
