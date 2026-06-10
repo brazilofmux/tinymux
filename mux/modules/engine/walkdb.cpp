@@ -42,24 +42,14 @@ static void bind_and_process(dbref executor, dbref caller, dbref enactor,
     mudstate.in_loop++;
 
     // Execute the body as an action list: split on ';' and run each command
-    // inline, honoring @break/@assert (break_called).  parse_to() rewrites its
-    // buffer in place, so work on a private copy — do_dolist reuses the same
-    // 'action' buffer for every iteration.  Mirrors do_include().
+    // inline, honoring @break/@assert and ;| piping (#788).  parse_to()
+    // rewrites its buffer in place, so work on a private copy — do_dolist
+    // reuses the same 'action' buffer for every iteration.
     //
     LBuf tbuf = LBuf_Src("dolist.now");
     mux_strncpy(tbuf, action, LBUF_SIZE - 1);
-    UTF8 *command = tbuf.get();
-    while (  command
-          && !break_called)
-    {
-        UTF8 *cp = parse_to(&command, ';', EV_STRIP_AROUND);
-        if (  cp
-           && *cp)
-        {
-            process_command(executor, caller, enactor, eval, false, cp,
-                cargs, ncargs);
-        }
-    }
+    process_command_list_inline(executor, caller, enactor, eval, tbuf.get(),
+        cargs, ncargs);
 
     mudstate.in_loop--;
     if (bLoopInBounds)
@@ -156,7 +146,19 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
     if (key & DOLIST_NOW)
     {
-        break_called = save_break;
+        // Default: contain @break to the loop (it stopped the loop above
+        // but the enclosing action list continues).  With /break, an
+        // inner @break also propagates outward and aborts the rest of
+        // the enclosing list, like @include's default (#788).
+        if (  (key & DOLIST_BREAK)
+           && break_called)
+        {
+            // Leave break_called set.
+        }
+        else
+        {
+            break_called = save_break;
+        }
     }
 
     if (key & DOLIST_NOTIFY)

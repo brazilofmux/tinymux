@@ -781,6 +781,8 @@ bool check_access(dbref player, int mask);
 void cache_prefix_cmds(void);
 UTF8 *process_command(dbref executor, dbref caller, dbref enactor, int, bool,
     UTF8 *, const UTF8 *[], int);
+void process_command_list_inline(dbref executor, dbref caller, dbref enactor,
+    int eval, UTF8 *clist, const UTF8 *cargs[], int ncargs);
 // LeftJustifyString and RightJustifyNumber are declared in stringutil.h
 // with LIBMUX_API linkage.  Do not redeclare here.
 
@@ -902,6 +904,7 @@ extern int anum_alc_top;
 #define DOLIST_DELIMIT  1   /* expect custom delimiter */
 #define DOLIST_NOTIFY   2   /* Send an @notify after the @dolist is completed */
 #define DOLIST_NOW      4   /* Execute iterations inline instead of enqueuing */
+#define DOLIST_BREAK    8   /* With /now: propagate @break to the enclosing list */
 #define DOING_MESSAGE   0   /* Set my DOING message */
 #define DOING_HEADER    1   /* Set the DOING header */
 #define DOING_POLL      2   /* List DOING header */

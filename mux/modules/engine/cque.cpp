@@ -77,6 +77,103 @@ static bool add_to(const dbref executor, const int am, int attrnum, int *pnum)
     return true;
 }
 
+// process_command_list_inline: run a semicolon-separated command list
+// synchronously, honoring @break/@assert (the loop stops when
+// break_called fires) and ;| piping (%|), exactly like the queued
+// runner below.  Used by @dolist/now and @include (#788).
+//
+// The list is its own pipe domain, like a fresh queue entry: the
+// enclosing pipe context is saved and restored, so an inline list can
+// itself run inside a piped segment without corrupting the outer
+// capture, and pipes inside the list behave as they would queued.
+//
+// parse_to() rewrites the buffer in place; callers pass a private copy.
+//
+void process_command_list_inline(dbref executor, dbref caller, dbref enactor,
+                                 int eval, UTF8 *clist,
+                                 const UTF8 *cargs[], int ncargs)
+{
+    UTF8 *save_pout     = mudstate.pout;
+    UTF8 *save_poutnew  = mudstate.poutnew;
+    UTF8 *save_poutbufc = mudstate.poutbufc;
+    dbref save_poutobj  = mudstate.poutobj;
+    bool  save_inpipe   = mudstate.inpipe;
+    int   save_nest     = mudstate.pipe_nest_lev;
+    mudstate.pout          = nullptr;
+    mudstate.poutnew       = nullptr;
+    mudstate.poutbufc      = nullptr;
+    mudstate.poutobj       = NOTHING;
+    mudstate.inpipe        = false;
+    mudstate.pipe_nest_lev = 0;
+
+    while (  clist
+          && !break_called)
+    {
+        UTF8 *cp = parse_to(&clist, ';', EV_STRIP_AROUND);
+        if (  cp
+           && *cp)
+        {
+            // Will this command be piped into the next?
+            //
+            if (  clist
+               && *clist == '|'
+               && mudstate.pipe_nest_lev < mudconf.ntfy_nest_lim)
+            {
+                clist++;
+                mudstate.pipe_nest_lev++;
+                mudstate.inpipe = true;
+
+                mudstate.poutnew  = alloc_lbuf("inline_list.pipe");
+                mudstate.poutbufc = mudstate.poutnew;
+                mudstate.poutobj  = executor;
+            }
+            else
+            {
+                mudstate.inpipe = false;
+                mudstate.poutobj = NOTHING;
+            }
+
+            process_command(executor, caller, enactor, eval, false, cp,
+                cargs, ncargs);
+
+            // Transition %| value.
+            //
+            if (mudstate.pout)
+            {
+                free_lbuf(mudstate.pout);
+                mudstate.pout = nullptr;
+            }
+            if (mudstate.poutnew)
+            {
+                *mudstate.poutbufc = '\0';
+                mudstate.pout = mudstate.poutnew;
+                mudstate.poutnew  = nullptr;
+                mudstate.poutbufc = nullptr;
+            }
+        }
+    }
+
+    // Clean up this list's %| and restore the enclosing pipe context.
+    //
+    if (mudstate.pout)
+    {
+        free_lbuf(mudstate.pout);
+        mudstate.pout = nullptr;
+    }
+    if (mudstate.poutnew)
+    {
+        free_lbuf(mudstate.poutnew);
+        mudstate.poutnew = nullptr;
+        mudstate.poutbufc = nullptr;
+    }
+    mudstate.pout          = save_pout;
+    mudstate.poutnew       = save_poutnew;
+    mudstate.poutbufc      = save_poutbufc;
+    mudstate.poutobj       = save_poutobj;
+    mudstate.inpipe        = save_inpipe;
+    mudstate.pipe_nest_lev = save_nest;
+}
+
 // This Task assumes that pEntry is already unlinked from any lists it may
 // have been related to.
 //

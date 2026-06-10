@@ -2349,20 +2349,11 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 
     // Walk the included text, splitting on semicolons and executing
-    // each command inline.
+    // each command inline, with ;| piping honored like the queued
+    // runner (#788).
     //
-    UTF8 *command = body;
-    while (  command
-          && !break_called)
-    {
-        UTF8 *cp = parse_to(&command, ';', EV_STRIP_AROUND);
-        if (  cp
-           && *cp)
-        {
-            process_command(thing, caller, enactor,
-                AttrTrace(aflags, 0), false, cp, env, nenv);
-        }
-    }
+    process_command_list_inline(thing, caller, enactor,
+        AttrTrace(aflags, 0), body, env, nenv);
 
     // Restore break state for /nobreak.
     //

@@ -142,6 +142,7 @@ static NAMETAB doing_sw[] =
 
 static NAMETAB dolist_sw[] =
 {
+    {T("break"),           1,  CA_PUBLIC,  DOLIST_BREAK|SW_MULTIPLE},
     {T("delimit"),         1,  CA_PUBLIC,  DOLIST_DELIMIT},
     {T("notify"),          1,  CA_PUBLIC,  DOLIST_NOTIFY|SW_MULTIPLE},
     {T("now"),             1,  CA_WIZARD,  DOLIST_NOW|SW_MULTIPLE},

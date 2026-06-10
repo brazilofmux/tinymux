@@ -1503,13 +1503,19 @@ Related Topics: @name.
     /now     - (Wizard-only) Execute each iteration inline instead of
                enqueuing it. Guarantees all iterations complete before
                the next command in the action list. <action> may be a
-               semicolon-separated command list; it is split exactly like
-               a queued action list. An @break inside the body stops the
-               remaining iterations of this @dolist/now, but is contained
-               there: it does not abort the enclosing command list. (In
-               the queued form, @break instead aborts the rest of the
-               current iteration's own command list; the loop itself
-               always runs every element.) See also: @break.
+               semicolon-separated command list, split exactly like a
+               queued action list, including ;| piping (%|). An @break
+               inside the body stops the remaining iterations of this
+               @dolist/now, but is contained there: it does not abort
+               the enclosing command list. (In the queued form, @break
+               instead aborts the rest of the current iteration's own
+               command list; the loop itself always runs every
+               element.) See also: @break.
+    /break   - With /now: an @break inside the body also propagates to
+               the enclosing command list after stopping the loop,
+               aborting the commands after the @dolist. This matches
+               @include's default behavior (which offers /nobreak for
+               the opposite). Ignored without /now.
 
   This command is particularly handy with lcon() and lexits(). A few examples:
 
