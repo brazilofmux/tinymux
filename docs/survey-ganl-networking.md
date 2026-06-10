@@ -325,6 +325,15 @@ section above.
   (siteinfo only checks live connection addresses; a compare_to unit test needs
   a netmux-side C++ harness that pulls in the driver) — the missing subnet-tree
   test infra is a worthwhile follow-up.
-- Suggested next: #800 (v4-mapped IPv6 canonicalization — also small and surgical;
-  testable via SITEINFO since it checks a live connection's address, and a
-  loopback IPv4 client arrives as ::ffff:127.0.0.1 over the dual-stack listener).
+- **#800 — FIXED (d841f7a36):** `CanonicalizeMappedV4()` rewrites an inbound
+  `::ffff:a.b.c.d` to native AF_INET in `onConnectionOpen` before access
+  control/display/logging, so a single IPv4 ban covers both wire forms.
+  No-op for native v4 / genuine v6. Verified by build + smoke + native-v4
+  regression + code reasoning; NOTE the v4-mapped positive demo was
+  environment-blocked (this sandbox binds the listener v4-only and
+  `ip_address ::` didn't override it, so no mapped connection occurs locally
+  — reproduce on a dual-stack-binding host).
+- Remaining access-control / lifetime items, suggested order: #795 (plaintext
+  close data-loss — small, live), #798 (Closing-state guard consistency),
+  #797 (session-manager hygiene), #790 (handle truncation). Then the
+  Windows-only (#796) and the engine/TLS candidates catalogued above.
