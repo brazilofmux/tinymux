@@ -607,6 +607,31 @@ void ConnectionBase::close(DisconnectReason reason) {
         }
         // If result is Success or Closed, TLS shutdown is done or already happened.
     }
+    else if (encryptedOutput_.readableBytes() > 0)
+    {
+        // Plaintext (or TLS-not-established) connection with output still
+        // queued.  Drain it before closing the socket rather than dropping it
+        // (#795): the TLS branch above already defers for its close_notify,
+        // but a plaintext close used to skip straight to closeConnection()
+        // below, losing any final line / disconnect message queued just
+        // before close.  Mirror the TLS deferral: arm closeAfterWriteDrain_,
+        // post the write, and let handleWrite -> closeNetworkAfterDrain()
+        // finish the close once the buffer empties.
+        GANL_CONN_DEBUG(handle_, "Deferring network close until "
+            << encryptedOutput_.readableBytes() << " queued bytes drain.");
+        closeAfterWriteDrain_ = true;
+        if (!pendingWrite_ && !postWrite())
+        {
+            // Couldn't post the drain write -- fall through to immediate close.
+            GANL_CONN_DEBUG(handle_, "Failed to post drain write; closing now.");
+            closeAfterWriteDrain_ = false;
+        }
+        else
+        {
+            // Write posted (or already pending): defer.
+            return;
+        }
+    }
 
     // 3. Request network layer to close the connection if not already closed
     if (!socketClosed_) {
