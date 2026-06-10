@@ -195,11 +195,34 @@
         DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
       )=
   {
-    @log smoke=TC010: lambda empty body. Succeeded.;
+    @log smoke=TC010: lambda empty body. Succeeded.
+  },
+  {
+    @log smoke=TC010: lambda empty body. Failed (%q0).
+  }
+-
+#
+# Test Case #11 - ulambda bodies JIT-compile via mux_exec (#718), including
+# the runtime-arg float paths through the tier2 blob (#778).  ulambda() is
+# now routed through mux_exec instead of ast_exec, so cargs (%0,%1,...) feed
+# the JIT-compiled body.  Semantic checks cover int, float (sub/fdiv/sqrt),
+# and a nested body so a regression in either the route flip or the blob
+# float intrinsics shows up as a wrong value, not an opaque hash.
+#
+&tr.tc011 test_lambda_fn=
+  @if cand(
+        strmatch(ulambda(#lambda/mul(\%0,\%1),6,7),42),
+        strmatch(ulambda(#lambda/sub(\%0,\%1),3.5,1.25),2.25),
+        strmatch(ulambda(#lambda/fdiv(\%0,\%1),20,8),2.5),
+        strmatch(ulambda(#lambda/sqrt(\%0),16),4),
+        strmatch(ulambda(#lambda/mul(add(\%0,\%1),\%2),2,3,4),20)
+      )=
+  {
+    @log smoke=TC011: ulambda JIT cargs float math. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC010: lambda empty body. Failed (%q0).;
+    @log smoke=TC011: ulambda JIT cargs float math. Failed (mul=[ulambda(#lambda/mul(\%0,\%1),6,7)] sub=[ulambda(#lambda/sub(\%0,\%1),3.5,1.25)] fdiv=[ulambda(#lambda/fdiv(\%0,\%1),20,8)] sqrt=[ulambda(#lambda/sqrt(\%0),16)] nest=[ulambda(#lambda/mul(add(\%0,\%1),\%2),2,3,4)]).;
     @trig me/tr.done
   }
 -
