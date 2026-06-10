@@ -11,10 +11,16 @@ through nested width args.
 ## Usage
 
 ```sh
-make install          # from repo root — needs mux/game/bin/{muxscript,engine.so}
+cd mux && ./configure --enable-jit ...   # REQUIRED: --enable-jit is off by default
+make clean install    # from repo root — needs mux/game/bin/{muxscript,engine.so}
 testcases/tools/jit_diff/run.sh [count] [batch]   # defaults: 200, 50
 SEED=7 testcases/tools/jit_diff/run.sh 400         # vary the corpus
 ```
+
+The tree **must** be configured with `--enable-jit` (and cleanly rebuilt):
+without it the entire JIT path is compiled out and both sides would run the
+interpreter. `run.sh` probes for this (via `jitstats()`) and exits 2 rather
+than report a meaningless pass.
 
 Exit status: `0` no logic divergence, `1` divergences found, `2` setup error.
 This is a developer tool, not part of `make test`.
@@ -50,7 +56,13 @@ single `ansi(<color>,<words>)` call wrapping the whole list. Keep it that way.
 
 ## Known divergences
 
-- **#772** — `ljust`/`rjust`/`center` don't truncate when `width < content`
-  (the rv64 wrappers pass `bTrunc=0`). Until that lands, every run reports
-  these as LOGIC. Once fixed, LOGIC should be empty (COLOR may remain — the
-  nested-color encoding difference is unfiled and benign-looking).
+- **#772** (fixed) — `ljust`/`rjust`/`center` didn't truncate when
+  `width < content`; the rv64 wrappers now pass `bTrunc=1`. LOGIC should be
+  empty on a clean run (COLOR may remain — the nested-color encoding
+  difference is unfiled and benign-looking).
+
+## Known limitations
+
+- The minimizer re-tests candidates in a shared muxscript process and never
+  re-verifies the original or the minimal form in isolation, so an
+  order/state-dependent divergence (the #778 class) can minimize misleadingly.

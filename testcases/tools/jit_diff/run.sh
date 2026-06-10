@@ -44,6 +44,20 @@ printf 'input_database\tdata/exp.db\noutput_database\tdata/exp.db.new\n' > "$WOR
 DYLD_LIBRARY_PATH="$BIN"; export DYLD_LIBRARY_PATH
 LD_LIBRARY_PATH="$BIN";   export LD_LIBRARY_PATH
 
+# Probe that the build actually has the JIT.  --enable-jit is off by default,
+# and on a non-JIT build both sides run the AST interpreter, so "no logic
+# divergence" would be meaningless.  jitstats() is only registered under
+# TINYMUX_JIT; on a JIT build it returns a key=value list.
+rm -f "$WORK"/data/exp.sqlite*
+printf '@pemit #1=JITPROBE~[jitstats()]~\n' > "$WORK/probe.txt"
+$TIMEOUT "$BIN/muxscript" -g "$WORK" -c exp.conf < "$WORK/probe.txt" > "$WORK/probe.log" 2>&1
+if ! grep -a "JITPROBE~" "$WORK/probe.log" | grep -q "="; then
+    echo "ERROR: this build has no JIT (jitstats() missing) — a differential" >&2
+    echo "run would compare the interpreter against itself.  Reconfigure with" >&2
+    echo "  cd mux && ./configure --enable-jit ... && make clean install" >&2
+    exit 2
+fi
+
 python3 "$SCRIPT_DIR/gen.py" "$COUNT" "$BATCH" "$WORK" || exit 2
 
 : > "$WORK/results.txt"
@@ -59,17 +73,22 @@ done
 # Compare. Fields: side~id~rawsha~strippedsha
 # LOGIC   = stripped shas differ (real semantic divergence)
 # COLOR   = raw differ but stripped match (internal color-encoding only)
-awk -F'~' '
+awk -F'~' -v count="$COUNT" '
     $1=="J" { jr[$2]=$3; js[$2]=$4; seen[$2]=1 }
     $1=="I" { ir[$2]=$3; is[$2]=$4; seen[$2]=1 }
     END {
-        for (id in seen) {
-            if (jr[id]=="" || ir[id]=="") { print "MISSING " id; miss++; continue }
+        # Iterate ids 0..count-1, not just the ids that produced output:
+        # if a whole batch crashes or times out, its ids never appear in
+        # results.txt and must show up as MISSING, not vanish silently.
+        for (id = 0; id < count; id++) {
+            if (!(id in seen) || jr[id]=="" || ir[id]=="") {
+                print "MISSING " id; miss++; continue
+            }
             if (js[id] != is[id])      { print "LOGIC " id; logic++ }
             else if (jr[id] != ir[id]) { print "COLOR " id; color++ }
         }
         printf "----\n%d compared, %d LOGIC, %d COLOR-encoding, %d missing\n",
-               length(seen), logic+0, color+0, miss+0 > "/dev/stderr"
+               count - miss, logic+0, color+0, miss+0 > "/dev/stderr"
     }
 ' "$WORK/results.txt" | sort > "$WORK/verdict.txt"
 
