@@ -2883,7 +2883,9 @@
 >261
 "@if cand(strmatch(ldelete(a b c d,3-1), a b d),strmatch(ldelete(a b c d,x 2), a c d),strmatch(ldelete(a b c,-1), a b),strmatch(lnum(-2,1), -2 -1 0 1),eq(wordpos(a b c,+2), 2))={@log smoke=TC004: number parsing parity. Succeeded.;},{@log smoke=TC004: number parsing parity. Failed (dash=[ldelete(a b c d,3-1)] tok=[ldelete(a b c d,x 2)] neg=[ldelete(a b c,-1)] lnum=[lnum(-2,1)] wp=[wordpos(a b c,+2)]).;}"
 >262
-"@if cand(strmatch(mid(ab cd,#-1,-1), a),strmatch(mid(abcd,-1,3), ab),eq(member(,), 1),eq(words(setunion(lnum(1,300),lnum(200,400))), 400),strmatch(setdiff(a b c d,b d), a c))={@log smoke=TC005: mid/member/set-op parity. Succeeded.;@trig me/tr.done},{@log smoke=TC005: mid/member/set-op parity. Failed (mid1=[mid(ab cd,#-1,-1)] mid2=[mid(abcd,-1,3)] member=[member(,)] union=[words(setunion(lnum(1,300),lnum(200,400)))] diff=[setdiff(a b c d,b d)]).;@trig me/tr.done}"
+"@if cand(strmatch(mid(ab cd,#-1,-1), a),strmatch(mid(abcd,-1,3), ab),eq(member(,), 1),eq(words(setunion(lnum(1,300),lnum(200,400))), 400),strmatch(setdiff(a b c d,b d), a c))={@log smoke=TC005: mid/member/set-op parity. Succeeded.;},{@log smoke=TC005: mid/member/set-op parity. Failed (mid1=[mid(ab cd,#-1,-1)] mid2=[mid(abcd,-1,3)] member=[member(,)] union=[words(setunion(lnum(1,300),lnum(200,400)))] diff=[setdiff(a b c d,b d)]).;}"
+>263
+"@if cand(eq(words(a||b,|), 3),eq(member(a||b,,|), 2),eq(member(a|,,|), 2),eq(match(a|,,|), 2),eq(match(,), 1),strmatch(graball(a|,*,|), a|),strmatch(revwords(a|,|), |a),strmatch(revwords(|a,|), a|),eq(words(elements(a||b|,2 4,|),|), 2),strmatch(remove(cd|x|gh|,x,|), cd|gh|),strmatch(remove(gh..ab..,x,.), gh..ab..))={@log smoke=TC006: empty-element split_token parity. Succeeded.;@trig me/tr.done},{@log smoke=TC006: empty-element split_token parity. Failed (words=[words(a||b,|)] mem1=[member(a||b,,|)] mem2=[member(a|,,|)] match1=[match(a|,,|)] match2=[match(,)] graball=[graball(a|,*,|)] rev1=[revwords(a|,|)] rev2=[revwords(|a,|)] elem=[words(elements(a||b|,2 4,|),|)] rm1=[remove(cd|x|gh|,x,|)] rm2=[remove(gh..ab..,x,.)]).;@trig me/tr.done}"
 <
 !63
 "test_digest_fn"

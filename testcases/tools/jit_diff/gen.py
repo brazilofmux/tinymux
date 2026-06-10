@@ -100,7 +100,12 @@ OSEPS = ["<>", "::", "%b~%b", "==", "-+-"]
 
 
 def delim_list(d):
-    return d.join(random.choice(WORDS) for _ in range(random.randint(2, 5)))
+    # ~30% of elements are EMPTY: for a non-space delimiter, empty list
+    # elements are real words (split_token semantics, #789) and several
+    # walkers historically collapsed them.
+    def elem():
+        return "" if random.random() < 0.3 else random.choice(WORDS)
+    return d.join(elem() for _ in range(random.randint(2, 5)))
 
 
 def gen_delim_test():

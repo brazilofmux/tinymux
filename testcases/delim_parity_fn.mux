@@ -118,10 +118,37 @@
       )=
   {
     @log smoke=TC005: mid/member/set-op parity. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC005: mid/member/set-op parity. Failed (mid1=[mid(ab cd,#-1,-1)] mid2=[mid(abcd,-1,3)] member=[member(,)] union=[words(setunion(lnum(1,300),lnum(200,400)))] diff=[setdiff(a b c d,b d)]).;
+  }
+-
+#
+# Test Case #6 - empty list elements with non-space delimiters (#789):
+# split_token treats EVERY non-space delimiter occurrence as a word
+# boundary, so a||b is three words, a trailing delimiter yields a
+# trailing empty word, and the empty list is ONE empty word.
+#
+&tr.tc006 test_delim_parity_fn=
+  @if cand(
+        eq(words(a||b,|), 3),
+        eq(member(a||b,,|), 2),
+        eq(member(a|,,|), 2),
+        eq(match(a|,,|), 2),
+        eq(match(,), 1),
+        strmatch(graball(a|,*,|), a|),
+        strmatch(revwords(a|,|), |a),
+        strmatch(revwords(|a,|), a|),
+        eq(words(elements(a||b|,2 4,|),|), 2),
+        strmatch(remove(cd|x|gh|,x,|), cd|gh|),
+        strmatch(remove(gh..ab..,x,.), gh..ab..)
+      )=
+  {
+    @log smoke=TC006: empty-element split_token parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: empty-element split_token parity. Failed (words=[words(a||b,|)] mem1=[member(a||b,,|)] mem2=[member(a|,,|)] match1=[match(a|,,|)] match2=[match(,)] graball=[graball(a|,*,|)] rev1=[revwords(a|,|)] rev2=[revwords(|a,|)] elem=[words(elements(a||b|,2 4,|),|)] rm1=[remove(cd|x|gh|,x,|)] rm2=[remove(gh..ab..,x,.)]).;
     @trig me/tr.done
   }
 -
