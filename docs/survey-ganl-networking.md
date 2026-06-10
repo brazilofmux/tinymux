@@ -248,8 +248,64 @@ from the connection survey — not yet filed:**
   have no overflow guard (defensive only; no data path produces a multi-GB
   `required` — websocket caps at WS_MAX_PAYLOAD, telnet SB at 4096, reads ~16KB).
 
-## Sub-parts not yet surveyed
+## Sub-part 6 — address / DNS (surveyed 2026-06-10)
 
-- **Address/DNS** (`netaddr.cpp`, `network_address.cpp`, `slave_spawn_posix.cpp`)
-  — the `getaddrinfo` trailing-newline bug lived here; subnet `operator==`/`<`
-  history.
+`netaddr.cpp` (subnet matching = access control), the DNS slave (`slave.cpp` +
+`slave_spawn_posix.cpp` + the adapter DNS channel). The two access-control
+bypasses here are the strongest findings of the whole GANL survey.
+
+✅ **ISSUE #799 (HIGH, access-control bypass): subnet containment inversion.**
+`mux_subnet::compare_to` (netaddr.cpp:408-442) uses strict `<` on both bounds in
+the kContains branch, so a wider subnet sharing a base/end address with a
+narrower one (10.0.0.0/8 ⊃ 10.0.0.0/24 — the common nested-CIDR case) is
+misclassified as kContainedBy. This inverts the access-control subnet tree: a
+`forbid 10.0.0.0/8` silently stops applying after any rule on 10.0.0.0/24 is
+added → a banned host is let in. Reachable through normal `@admin site` usage;
+distinct from the historically-fixed subnet bugs. Verified by reading compare_to.
+
+✅ **ISSUE #800 (HIGH, access-control bypass): IPv4-mapped IPv6 not
+canonicalized.** Listeners are dual-stack (`IPV6_V6ONLY=0`, epoll:174/kqueue:178/
+select:214), so an IPv4 client arrives as `::ffff:a.b.c.d`, and
+`compare_to(MUX_SOCKADDR*)` (netaddr.cpp:459-466) builds a pure `mux_in6_addr`
+with no v4-mapped → v4 normalization. A `forbid 1.2.3.4` rule (AF_INET) never
+matches the mapped form → IPv4 ban bypassed by connecting over the v6 socket.
+Verified.
+
+✅ **ISSUE #801 (moderate, integrity): reverse-DNS hostname unsanitized +
+slave protocol has no per-record validation.** The PTR hostname (client controls
+their own record) is forwarded verbatim by the slave (slave.cpp:84,125) and
+stored unfiltered into `A_LASTSITE`/`A_LASTIP` and `%s` log lines
+(apply_reverse_dns_result, ganl_adapter.cpp:2339; net.cpp:1484). Control
+chars/ANSI reach wizard-visible site displays. The newline-delimited slave→parent
+protocol applies any well-formed line to an arbitrary numeric with no
+query/response correlation — a cross-connection audit-spoof if the resolver ever
+emits an unescaped newline (modern glibc escapes them; not guaranteed). Plus
+uncapped `readBuffer`/`pendingWrites` (low DoS).
+
+✅ **VERIFIED SAFE / FIXED (recorded so they aren't re-audited):**
+- Access control uses the binary sockaddr (`isForbid(&d->address)`,
+  ganl_adapter.cpp:615 / net.cpp:3011), NOT the reverse-DNS hostname — a spoofed
+  PTR cannot bypass bans.
+- The historically-fixed subnet bugs are all still correct: `mux_in6_addr`
+  `operator==`/`<` compare contents via `memcmp(...,16)` (netaddr.cpp:1378/1368);
+  `mux_sockaddr::operator==` IPv6 uses the 16-byte size (:1272); the subnet tree
+  `reset` assigns the `remove()` return (net.cpp:2921), `remove` kContainedBy/
+  kEqual detach siblings/children before delete (:2812-2847); `DecodeN` overflow/
+  shift/hex handling correct.
+- The getaddrinfo trailing-newline history is fixed (slave.cpp:220 strips
+  `\n`/`\r`/space before the lookup); slave fork/exec fd hygiene (CLOEXEC, child
+  cleanup on adopt failure) is correct.
+
+🔶 **NITs (docs only):** `parse_subnet` leaks a partially-built mask on a
+malformed-family mask (netaddr.cpp:559, error-path cosmetic leak); the
+leading-zero strip loops (netaddr.cpp:91/139) read the separator/NUL one past the
+token (harmless, in-bounds). DNS slave SIGCHLD counter is a racy non-atomic RMW
+(slave.cpp, robustness only, MAX_CHILDREN=20 caps it); the slave child pid isn't
+tracked by the parent (generic reaper still collects it — no zombie).
+
+## Survey status: COMPLETE
+
+All six sub-parts surveyed (bridge, engines, protocol parsers, TLS, buffer+
+connection core, address/DNS). Issues filed: **#790–#801**. The TLS sub-part
+(earlier parallel survey) remains as verify-then-file candidates in the TLS
+section above. Next phase per the project plan: the fix pass.
