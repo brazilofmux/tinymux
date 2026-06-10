@@ -473,7 +473,8 @@ static bool try_fold(const std::string &func_name,
     // to the server by construction (same Ragel source).
     // Default delimiter is space (0x20).
 
-    if (upper == "WORDS" && (nargs == 1 || nargs == 2)) {
+    if (upper == "WORDS" && (nargs == 1 || nargs == 2)
+        && (nargs == 1 || args[1].size() <= 1)) {
         unsigned char delim = (nargs == 2 && !args[1].empty())
             ? static_cast<unsigned char>(args[1][0]) : ' ';
         size_t n = co_words_count(
@@ -483,7 +484,8 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
-    if (upper == "FIRST" && (nargs == 1 || nargs == 2)) {
+    if (upper == "FIRST" && (nargs == 1 || nargs == 2)
+        && (nargs == 1 || args[1].size() <= 1)) {
         unsigned char delim = (nargs == 2 && !args[1].empty())
             ? static_cast<unsigned char>(args[1][0]) : ' ';
         LBuf out = LBuf_Src("hir_first");
@@ -599,7 +601,8 @@ static bool try_fold(const std::string &func_name,
     }
 
     // --- MEMBER(list, target[, delim]) ---
-    if (upper == "MEMBER" && (nargs == 2 || nargs == 3)) {
+    if (upper == "MEMBER" && (nargs == 2 || nargs == 3)
+        && (nargs == 2 || args[2].size() <= 1)) {
         unsigned char delim = (nargs == 3 && !args[2].empty())
             ? static_cast<unsigned char>(args[2][0]) : ' ';
         size_t n = co_member(
@@ -828,10 +831,11 @@ static bool try_fold(const std::string &func_name,
 // ---------------------------------------------------------------
 
 // Functions known to always return integer strings.
+// POS is excluded: not-found yields the string "#-1" (#770).
 //
 bool returns_int(const std::string &upper) {
     return upper == "RAND" || upper == "STRLEN" || upper == "WORDS"
-        || upper == "POS" || upper == "EQ" || upper == "NEQ"
+        || upper == "EQ" || upper == "NEQ"
         || upper == "GT" || upper == "GTE" || upper == "LT" || upper == "LTE"
         || upper == "NOT" || upper == "T" || upper == "COMP"
         || upper == "INC" || upper == "DEC" || upper == "SIGN"
@@ -3292,8 +3296,10 @@ literal_strcat:
         {
             int delim_idx = -1;
             if ((upper == "FIRST" || upper == "REST" || upper == "LAST"
-                 || upper == "SQUISH") && nargs >= 2) {
+                 || upper == "SQUISH" || upper == "WORDS") && nargs >= 2) {
                 delim_idx = 1;
+            } else if (upper == "MEMBER" && nargs >= 3) {
+                delim_idx = 2;
             } else if (upper == "ELEMENTS" && nargs >= 3) {
                 delim_idx = 2;
             } else if (upper == "REMOVE" && nargs >= 3) {
@@ -3307,6 +3313,8 @@ literal_strcat:
                 delim_idx = 3;
             } else if ((upper == "SETUNION" || upper == "SETDIFF"
                         || upper == "SETINTER") && nargs >= 3) {
+                delim_idx = 2;
+            } else if (upper == "WORDPOS" && nargs >= 3) {
                 delim_idx = 2;
             }
             // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4]),

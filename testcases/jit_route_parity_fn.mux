@@ -212,9 +212,9 @@
 # Tier 2 blob wrappers (#778).  u() runs the attribute body through the
 # JIT-compiled program, so mul/fdiv/sub/sqrt with non-constant (carg)
 # operands take the blob's float path (rv64_strtod/rv64_fval intrinsics).
-# A regression here returns empty instead of the product/quotient.  The
-# ulambda() route deliberately uses the AST evaluator and would NOT catch
-# this, so the check is u()-specific.
+# A regression here returns empty instead of the product/quotient.
+# (ulambda() also routes through mux_exec/the JIT since #718; its blob
+# float coverage lives in lambda_fn.mux TC011.)
 #
 &fn.mul test_jit_route_parity_fn=mul(%0,%1)
 -
