@@ -3257,16 +3257,21 @@ size_t co_member(const unsigned char *target, size_t tlen,
 
     const unsigned char *pe = list + llen;
     const unsigned char *p = list;
-    size_t word_num = 0;
     unsigned char wplain[LBUF_SIZE];
 
-    while (p < pe) {
-        /* Skip leading delimiters. */
-        p = co_skip_color(p, pe);
-        if (p >= pe) break;
-        if (*p == delim) { p++; continue; }
+    /* Mirror fun_member's trim_space_sep + split_token walk.  For the
+     * space delimiter, leading/trailing spaces are trimmed and runs of
+     * spaces collapse.  For any other delimiter, EVERY occurrence is a
+     * word boundary and empty words are real words (#789):
+     * member(a||b,,|) is 2.  Note split_token always yields at least
+     * one (possibly empty) word, so member(,) is 1, not 0. */
+    if (delim == ' ') {
+        while (p < pe && *p == ' ') p++;
+        while (pe > p && pe[-1] == ' ') pe--;
+    }
 
-        /* Found start of a word. */
+    size_t word_num = 0;
+    for (;;) {
         word_num++;
         const unsigned char *word_start = p;
 
@@ -3283,13 +3288,9 @@ size_t co_member(const unsigned char *target, size_t tlen,
 
         if (!d) break;
         p = d + 1;
-    }
-
-    /* fun_member splits with split_token, so an empty list (or one
-     * that trims/skips to nothing) still yields ONE empty word: an
-     * empty target matches it at position 1.  member(,) is 1, not 0. */
-    if (word_num == 0 && tp_len == 0) {
-        return 1;
+        if (delim == ' ') {
+            while (p < pe && *p == ' ') p++;
+        }
     }
 
     return 0;  /* not found */
@@ -5348,13 +5349,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5141 "color_ops.c"
+#line 5142 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3881 "color_ops.rl"
+#line 3882 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5368,21 +5369,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5157 "color_ops.c"
+#line 5158 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3894 "color_ops.rl"
+#line 3895 "color_ops.rl"
     
-#line 5160 "color_ops.c"
+#line 5161 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3866 "color_ops.rl"
+#line 3867 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5396,9 +5397,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3865 "color_ops.rl"
-	{ mark = p; }
 #line 3866 "color_ops.rl"
+	{ mark = p; }
+#line 3867 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5415,7 +5416,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5196 "color_ops.c"
+#line 5197 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5444,62 +5445,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5230 "color_ops.c"
+#line 5231 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5240 "color_ops.c"
+#line 5241 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5250 "color_ops.c"
+#line 5251 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5260 "color_ops.c"
+#line 5261 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5270 "color_ops.c"
+#line 5271 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5517,38 +5518,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5293 "color_ops.c"
+#line 5294 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5303 "color_ops.c"
+#line 5304 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5313 "color_ops.c"
+#line 5314 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5566,14 +5567,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3865 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5336 "color_ops.c"
+#line 5337 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5595,7 +5596,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3895 "color_ops.rl"
+#line 3896 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);

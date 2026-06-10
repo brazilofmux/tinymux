@@ -958,10 +958,12 @@ char *co_center_wrap(char *out, const char **fargs, int nfargs) {
 char *co_edit_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
 
-    /* Use two alternating buffers like the interpreter. */
-    unsigned char bufA[8000], bufB[8000];
+    /* Use two alternating buffers like the interpreter.  Sized
+     * LBUF_SIZE: co_edit() writes up to LBUF_SIZE-1 bytes into the
+     * destination, so anything smaller is a stack overflow. */
+    unsigned char bufA[LBUF_SIZE], bufB[LBUF_SIZE];
     size_t nLen = rv64_slen(fargs[0]);
-    if (nLen > 7999) nLen = 7999;
+    if (nLen > LBUF_SIZE - 1) nLen = LBUF_SIZE - 1;
     { size_t ci; for (ci = 0; ci < nLen; ci++) bufA[ci] = (unsigned char)fargs[0][ci]; }
     bufA[nLen] = '\0';
 
@@ -976,8 +978,8 @@ char *co_edit_wrap(char *out, const char **fargs, int nfargs) {
         if (fLen == 1 && pFrom[0] == '^') {
             /* Prepend 'to' to string. */
             size_t nTotal = tLen + nLen;
-            if (nTotal > 7999) nTotal = 7999;
-            size_t nToCopy = (tLen < 7999) ? tLen : 7999;
+            if (nTotal > LBUF_SIZE - 1) nTotal = LBUF_SIZE - 1;
+            size_t nToCopy = (tLen < LBUF_SIZE - 1) ? tLen : LBUF_SIZE - 1;
             { size_t ci; for (ci = 0; ci < nToCopy; ci++) pDst[ci] = pTo[ci]; }
             size_t nRemain = (nTotal > nToCopy) ? nTotal - nToCopy : 0;
             if (nRemain > 0) {
@@ -988,7 +990,7 @@ char *co_edit_wrap(char *out, const char **fargs, int nfargs) {
         } else if (fLen == 1 && pFrom[0] == '$') {
             /* Append 'to' to string. */
             size_t nTotal = nLen + tLen;
-            if (nTotal > 7999) nTotal = 7999;
+            if (nTotal > LBUF_SIZE - 1) nTotal = LBUF_SIZE - 1;
             { size_t ci; for (ci = 0; ci < nLen; ci++) pDst[ci] = pSrc[ci]; }
             size_t nAppend = nTotal - nLen;
             if (nAppend > 0) {
@@ -1170,7 +1172,7 @@ char *rv64_elements(char *out, const char **fargs, int nfargs) {
     /* Parse position list. */
     const unsigned char *pos_list = (const unsigned char *)fargs[1];
     unsigned char *op = (unsigned char *)out;
-    unsigned char *end = op + 7999;
+    unsigned char *end = op + LBUF_SIZE - 1;
     int first_output = 1;
     while (*pos_list) {
         /* Parse next number.  Skip non-numeric tokens to match
@@ -1210,7 +1212,11 @@ char *rv64_elements(char *out, const char **fargs, int nfargs) {
                 cur++;
             }
         }
-        if (cur == pos && p < pe) {
+        /* Emit even when p == pe: a trailing delimiter yields a
+         * trailing EMPTY word at position cur (#789) — it still
+         * participates in osep joining (elements(a||b|,2 4,|) is "|").
+         * Positions past the last word leave cur < pos above. */
+        if (cur == pos) {
             if (!first_output && !osep_null && op < end) *op++ = osep;
             first_output = 0;
             while (p < pe && *p != delim && op < end) *op++ = *p++;
@@ -1255,20 +1261,31 @@ char *rv64_match(char *out, const char **fargs, int nfargs) {
     unsigned char delim = ' ';
     if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
     const unsigned char *p = (const unsigned char *)fargs[0];
-    unsigned char elem[8192];
+    const unsigned char *pe = p + rv64_slen(fargs[0]);
+    /* split_token walk (#789): for space, trim and collapse runs; for
+     * any other delimiter EVERY occurrence is a boundary, so a trailing
+     * delimiter yields a trailing empty word.  The walk always yields
+     * at least one (possibly empty) word: match(,) is 1, not 0. */
+    if (delim == ' ') {
+        while (p < pe && *p == ' ') p++;
+        while (pe > p && pe[-1] == ' ') pe--;
+    }
+    unsigned char elem[LBUF_SIZE];
     int pos = 1;
-    while (*p) {
-        if (delim == ' ') while (*p == ' ') p++;
-        if (*p == '\0') break;
-        unsigned char *ep = elem;
-        while (*p && *p != delim && ep < elem + sizeof(elem) - 1)
-            *ep++ = *p++;
-        *ep = '\0';
+    for (;;) {
+        const unsigned char *start = p;
+        while (p < pe && *p != delim) p++;
+        size_t elen = (size_t)(p - start);
+        if (elen >= sizeof(elem)) elen = sizeof(elem) - 1;
+        memcpy(elem, start, elen);
+        elem[elen] = '\0';
         if (ecall2(0x163, (long)fargs[1], (long)elem)) {
             sitoa(out, pos);
             return out;
         }
-        if (*p == delim) p++;
+        if (p >= pe) break;
+        p++;
+        if (delim == ' ') while (p < pe && *p == ' ') p++;
         pos++;
     }
     out[0] = '0'; out[1] = '\0';
@@ -1281,13 +1298,17 @@ char *rv64_grab(char *out, const char **fargs, int nfargs) {
     unsigned char delim = ' ';
     if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
     const unsigned char *p = (const unsigned char *)fargs[0];
-    while (*p) {
-        if (delim == ' ') while (*p == ' ') p++;
-        if (*p == '\0') break;
+    const unsigned char *pe = p + rv64_slen(fargs[0]);
+    /* split_token walk: see rv64_match (#789). */
+    if (delim == ' ') {
+        while (p < pe && *p == ' ') p++;
+        while (pe > p && pe[-1] == ' ') pe--;
+    }
+    for (;;) {
         const unsigned char *start = p;
-        while (*p && *p != delim) p++;
+        while (p < pe && *p != delim) p++;
         size_t elen = (size_t)(p - start);
-        unsigned char elem[8192];
+        unsigned char elem[LBUF_SIZE];
         if (elen >= sizeof(elem)) elen = sizeof(elem) - 1;
         memcpy(elem, start, elen);
         elem[elen] = '\0';
@@ -1296,7 +1317,9 @@ char *rv64_grab(char *out, const char **fargs, int nfargs) {
             out[elen] = '\0';
             return out;
         }
-        if (*p == delim) p++;
+        if (p >= pe) break;
+        p++;
+        if (delim == ' ') while (p < pe && *p == ' ') p++;
     }
     out[0] = '\0';
     return out;
@@ -1309,16 +1332,20 @@ char *rv64_graball(char *out, const char **fargs, int nfargs) {
     /* Absent osep defaults to the delimiter (DELIM_INIT parity, #782). */
     unsigned char osep = get_osep(fargs, nfargs, 3, delim);
     const unsigned char *p = (const unsigned char *)fargs[0];
+    const unsigned char *pe = p + rv64_slen(fargs[0]);
+    /* split_token walk: see rv64_match (#789). */
+    if (delim == ' ') {
+        while (p < pe && *p == ' ') p++;
+        while (pe > p && pe[-1] == ' ') pe--;
+    }
     unsigned char *op = (unsigned char *)out;
-    unsigned char *end = op + 7999;
+    unsigned char *end = op + LBUF_SIZE - 1;
     int first = 1;
-    while (*p) {
-        if (delim == ' ') while (*p == ' ') p++;
-        if (*p == '\0') break;
+    for (;;) {
         const unsigned char *start = p;
-        while (*p && *p != delim) p++;
+        while (p < pe && *p != delim) p++;
         size_t elen = (size_t)(p - start);
-        unsigned char elem[8192];
+        unsigned char elem[LBUF_SIZE];
         if (elen >= sizeof(elem)) elen = sizeof(elem) - 1;
         memcpy(elem, start, elen);
         elem[elen] = '\0';
@@ -1330,7 +1357,9 @@ char *rv64_graball(char *out, const char **fargs, int nfargs) {
             memcpy(op, start, copy);
             op += copy;
         }
-        if (*p == delim) p++;
+        if (p >= pe) break;
+        p++;
+        if (delim == ' ') while (p < pe && *p == ' ') p++;
     }
     *op = '\0';
     return out;
@@ -1361,7 +1390,7 @@ char *rv64_lnum(char *out, const char **fargs, int nfargs) {
     }
     if (start > end_val && step > 0) step = -step;
     char *op = out;
-    char *end = out + 7999;
+    char *end = out + LBUF_SIZE - 1;
     int first = 1;
     int i = start;
     for (;;) {
@@ -1579,7 +1608,7 @@ char *rv64_remove(char *out, const char **fargs, int nfargs) {
     }
 
     /* Strip color from the target word for comparison. */
-    unsigned char wordPlain[8000];
+    unsigned char wordPlain[LBUF_SIZE];
     size_t nWordPlain = co_strip_color(wordPlain, word, wlen);
 
     /* For space delimiter, trim leading/trailing spaces. */
@@ -1593,46 +1622,47 @@ char *rv64_remove(char *out, const char **fargs, int nfargs) {
     const unsigned char *p = data;
     const unsigned char *pe = data + dlen;
     unsigned char *op = (unsigned char *)out;
-    unsigned char *end = op + 7999;
+    unsigned char *end = op + LBUF_SIZE - 1;
     int first = 1;
     int removed = 0;
 
-    while (p < pe) {
-        /* For space delimiter, skip consecutive spaces. */
-        if (delim == ' ') while (p < pe && *p == ' ') p++;
-        if (p >= pe) break;
+    /* split_token walk: for a non-space delimiter, EVERY occurrence is
+     * a word boundary and empty words are real -- in particular a
+     * trailing delimiter yields a trailing empty word, which the old
+     * while(p < pe) loop silently dropped (#789).  For space, runs
+     * collapse and the input is already trimmed. */
+    for (;;) {
+        if (delim == ' ' && p >= pe) break;
         const unsigned char *start = p;
         while (p < pe && *p != delim) p++;
         size_t elen = (size_t)(p - start);
+        int matched = 0;
 
         if (!removed) {
             /* Strip color from this word for comparison. */
-            unsigned char wPlain[8000];
+            unsigned char wPlain[LBUF_SIZE];
             size_t nwp = co_strip_color(wPlain, start, elen);
             if (nwp == nWordPlain && memcmp(wPlain, wordPlain, nwp) == 0) {
                 removed = 1;
-                if (p < pe && *p == delim) {
-                    p++;
-                    if (delim == ' ') while (p < pe && *p == ' ') p++;
-                }
-                continue;
+                matched = 1;
             }
         }
 
-        if (!first && !osep_null && op < end) *op++ = osep;
-        first = 0;
-        size_t copy = elen;
-        if (op + copy > end) copy = (size_t)(end - op);
-        {
-            size_t ci;
-            for (ci = 0; ci < copy; ci++) op[ci] = start[ci];
+        if (!matched) {
+            if (!first && !osep_null && op < end) *op++ = osep;
+            first = 0;
+            size_t copy = elen;
+            if (op + copy > end) copy = (size_t)(end - op);
+            {
+                size_t ci;
+                for (ci = 0; ci < copy; ci++) op[ci] = start[ci];
+            }
+            op += copy;
         }
-        op += copy;
 
-        if (p < pe && *p == delim) {
-            p++;
-            if (delim == ' ') while (p < pe && *p == ' ') p++;
-        }
+        if (p >= pe) break;
+        p++;
+        if (delim == ' ') while (p < pe && *p == ' ') p++;
     }
     *op = '\0';
     return out;
@@ -1765,23 +1795,31 @@ char *rv64_revwords(char *out, const char **fargs, int nfargs) {
     unsigned char delim = get_delim(fargs, nfargs, 1);
     /* Absent osep defaults to the delimiter (DELIM_INIT parity, #782). */
     unsigned char osep = get_osep(fargs, nfargs, 2, delim);
-    /* Split into element start/len pairs. */
+    /* Split into element start/len pairs.  split_token walk: see
+     * rv64_match (#789) — a trailing delimiter yields a trailing
+     * empty word, so revwords(a|,|) is |a. */
     const unsigned char *p = (const unsigned char *)fargs[0];
-    const unsigned char *starts[4096];
-    size_t lens[4096];
+    const unsigned char *pe = p + rv64_slen(fargs[0]);
+    if (delim == ' ') {
+        while (p < pe && *p == ' ') p++;
+        while (pe > p && pe[-1] == ' ') pe--;
+    }
+    const unsigned char *starts[LBUF_SIZE / 2];
+    size_t lens[LBUF_SIZE / 2];
     int count = 0;
-    while (*p && count < 4096) {
-        if (delim == ' ') while (*p == ' ') p++;
-        if (*p == '\0') break;
+    for (;;) {
+        if (count >= LBUF_SIZE / 2) break;
         starts[count] = p;
-        while (*p && *p != delim) p++;
+        while (p < pe && *p != delim) p++;
         lens[count] = (size_t)(p - starts[count]);
         count++;
-        if (*p == delim) p++;
+        if (p >= pe) break;
+        p++;
+        if (delim == ' ') while (p < pe && *p == ' ') p++;
     }
     /* Output in reverse. */
     unsigned char *op = (unsigned char *)out;
-    unsigned char *end = op + 7999;
+    unsigned char *end = op + LBUF_SIZE - 1;
     for (int i = count - 1; i >= 0; i--) {
         if (i < count - 1 && op < end) *op++ = osep;
         size_t copy = lens[i];

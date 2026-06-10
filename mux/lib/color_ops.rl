@@ -1768,16 +1768,21 @@ size_t co_member(const unsigned char *target, size_t tlen,
 
     const unsigned char *pe = list + llen;
     const unsigned char *p = list;
-    size_t word_num = 0;
     unsigned char wplain[LBUF_SIZE];
 
-    while (p < pe) {
-        /* Skip leading delimiters. */
-        p = co_skip_color(p, pe);
-        if (p >= pe) break;
-        if (*p == delim) { p++; continue; }
+    /* Mirror fun_member's trim_space_sep + split_token walk.  For the
+     * space delimiter, leading/trailing spaces are trimmed and runs of
+     * spaces collapse.  For any other delimiter, EVERY occurrence is a
+     * word boundary and empty words are real words (#789):
+     * member(a||b,,|) is 2.  Note split_token always yields at least
+     * one (possibly empty) word, so member(,) is 1, not 0. */
+    if (delim == ' ') {
+        while (p < pe && *p == ' ') p++;
+        while (pe > p && pe[-1] == ' ') pe--;
+    }
 
-        /* Found start of a word. */
+    size_t word_num = 0;
+    for (;;) {
         word_num++;
         const unsigned char *word_start = p;
 
@@ -1794,13 +1799,9 @@ size_t co_member(const unsigned char *target, size_t tlen,
 
         if (!d) break;
         p = d + 1;
-    }
-
-    /* fun_member splits with split_token, so an empty list (or one
-     * that trims/skips to nothing) still yields ONE empty word: an
-     * empty target matches it at position 1.  member(,) is 1, not 0. */
-    if (word_num == 0 && tp_len == 0) {
-        return 1;
+        if (delim == ' ') {
+            while (p < pe && *p == ' ') p++;
+        }
     }
 
     return 0;  /* not found */
