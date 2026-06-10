@@ -1,6 +1,6 @@
 +X996101
 +S310
-+N721
++N722
 -R0
 +A256
 "1:TR.TC000"
@@ -181,756 +181,758 @@
 +A344
 "1:FN.SQRT"
 +A345
-"1:LUA_ADD"
+"1:FN.NOEV"
 +A346
-"1:LUA_HELLO"
+"1:LUA_ADD"
 +A347
-"1:LUA_CAT"
+"1:LUA_HELLO"
 +A348
-"1:LUA_NIL"
+"1:LUA_CAT"
 +A349
-"1:LUA_BOOL"
+"1:LUA_NIL"
 +A350
-"1:LUA_OS"
+"1:LUA_BOOL"
 +A351
-"1:LUA_IO"
+"1:LUA_OS"
 +A352
-"1:LUA_LOAD"
+"1:LUA_IO"
 +A353
-"1:LUA_LOOP"
+"1:LUA_LOAD"
 +A354
-"1:LUA_MATH"
+"1:LUA_LOOP"
 +A355
-"1:LUA_STR"
+"1:LUA_MATH"
 +A356
-"1:LUA_TBL"
+"1:LUA_STR"
 +A357
-"1:LUA_NAME"
+"1:LUA_TBL"
 +A358
-"1:LUA_EVAL"
+"1:LUA_NAME"
 +A359
-"1:LUA_BAD"
+"1:LUA_EVAL"
 +A360
-"1:LUA_EMPTY"
+"1:LUA_BAD"
 +A361
-"1:LUA_FORLOOP"
+"1:LUA_EMPTY"
 +A362
-"1:LUA_NARGS"
+"1:LUA_FORLOOP"
 +A363
-"1:LUA_SUB"
+"1:LUA_NARGS"
 +A364
-"1:LUA_MULCHAIN"
+"1:LUA_SUB"
 +A365
-"1:LUA_DIVMOD"
+"1:LUA_MULCHAIN"
 +A366
-"1:LUA_NEGATE"
+"1:LUA_DIVMOD"
 +A367
-"1:LUA_ARITH_ARGS"
+"1:LUA_NEGATE"
 +A368
-"1:LUA_SUM100"
+"1:LUA_ARITH_ARGS"
 +A369
-"1:LUA_ODDS"
+"1:LUA_SUM100"
 +A370
-"1:LUA_FIB"
+"1:LUA_ODDS"
 +A371
-"1:LUA_COND"
+"1:LUA_FIB"
 +A372
-"1:LUA_STRFALL"
+"1:LUA_COND"
 +A373
-"1:LUA_TBLFALL"
+"1:LUA_STRFALL"
 +A374
-"1:LUA_BIGLOOP"
+"1:LUA_TBLFALL"
 +A375
-"1:LUA_FDIV"
+"1:LUA_BIGLOOP"
 +A376
-"1:LUA_FCONST"
+"1:LUA_FDIV"
 +A377
-"1:LUA_MIXED"
+"1:LUA_FCONST"
 +A378
-"1:LUA_FNEG"
+"1:LUA_MIXED"
 +A379
-"1:LUA_CONCAT"
+"1:LUA_FNEG"
 +A380
-"1:LUA_CONCATI"
+"1:LUA_CONCAT"
 +A381
-"1:LUA_SLEN"
+"1:LUA_CONCATI"
 +A382
-"1:LUA_NOT"
+"1:LUA_SLEN"
 +A383
-"1:LUA_TBLSUM"
+"1:LUA_NOT"
 +A384
-"1:LUA_TBLSTR"
+"1:LUA_TBLSUM"
 +A385
-"1:LUA_MATHFLOOR"
+"1:LUA_TBLSTR"
 +A386
-"1:LUA_STRUPPER"
+"1:LUA_MATHFLOOR"
 +A387
-"1:LUA_TOSTR"
+"1:LUA_STRUPPER"
 +A388
-"1:LUA_MATHSQRT"
+"1:LUA_TOSTR"
 +A389
-"1:LUA_SUB_ARGS"
+"1:LUA_MATHSQRT"
 +A390
-"1:LUA_ADD_IMM"
+"1:LUA_SUB_ARGS"
 +A391
-"1:LUA_NEG_ARG"
+"1:LUA_ADD_IMM"
 +A392
-"1:LUA_CMP_ARGS"
+"1:LUA_NEG_ARG"
 +A393
-"1:LUA_IDIV_ARGS"
+"1:LUA_CMP_ARGS"
 +A394
-"1:TR.TC051"
+"1:LUA_IDIV_ARGS"
 +A395
-"1:LUA_MOD_ARGS"
+"1:TR.TC051"
 +A396
-"1:TR.TC052"
+"1:LUA_MOD_ARGS"
 +A397
-"1:LUA_STREQ"
+"1:TR.TC052"
 +A398
-"1:TR.TC053"
+"1:LUA_STREQ"
 +A399
-"1:TR.TC054"
+"1:TR.TC053"
 +A400
-"1:LUA_STREQ_NUM"
+"1:TR.TC054"
 +A401
-"1:TR.TC055"
+"1:LUA_STREQ_NUM"
 +A402
-"1:LUA_TBLINT"
+"1:TR.TC055"
 +A403
-"1:TR.TC056"
+"1:LUA_TBLINT"
 +A404
-"1:LUA_TBLLOOP"
+"1:TR.TC056"
 +A405
-"1:TR.TC057"
+"1:LUA_TBLLOOP"
 +A406
-"1:LUA_TBLIDX"
+"1:TR.TC057"
 +A407
-"1:TR.TC058"
+"1:LUA_TBLIDX"
 +A408
-"1:ALPHA"
+"1:TR.TC058"
 +A409
-"1:ALPHA_ONE"
+"1:ALPHA"
 +A410
-"1:ALPHA_TWO"
+"1:ALPHA_ONE"
 +A411
-"1:BETA"
+"1:ALPHA_TWO"
 +A412
-"1:BETA_ONE"
+"1:BETA"
 +A413
-"1:GAMMA"
+"1:BETA_ONE"
 +A414
-"1:ROOM_A"
+"1:GAMMA"
 +A415
-"1:ROOM_B"
+"1:ROOM_A"
 +A416
-"1:ROOM_C"
+"1:ROOM_B"
 +A417
-"1:ROOM_D"
+"1:ROOM_C"
 +A418
-"1:ROOM_E"
+"1:ROOM_D"
 +A419
-"1:ROOM_PARENT"
+"1:ROOM_E"
 +A420
-"1:ROOM_CHILD"
+"1:ROOM_PARENT"
 +A421
-"1:EXIT_AB"
+"1:ROOM_CHILD"
 +A422
-"1:EXIT_BC"
+"1:EXIT_AB"
 +A423
-"1:EXIT_PARENT_TO_C"
+"1:EXIT_BC"
 +A424
-"1:ZONE_X"
+"1:EXIT_PARENT_TO_C"
 +A425
-"1:ZONE_Y"
+"1:ZONE_X"
 +A426
-"1:ZONE_P"
+"1:ZONE_Y"
 +A427
-"1:ZONE_Q"
+"1:ZONE_P"
 +A428
-"1:ZONE_R"
+"1:ZONE_Q"
 +A429
-"1:ROOM_X1"
+"1:ZONE_R"
 +A430
-"1:ROOM_X2"
+"1:ROOM_X1"
 +A431
-"1:ROOM_Y1"
+"1:ROOM_X2"
 +A432
-"1:ROOM_Y2"
+"1:ROOM_Y1"
 +A433
-"1:ROOM_P1"
+"1:ROOM_Y2"
 +A434
-"1:ROOM_P2"
+"1:ROOM_P1"
 +A435
-"1:ROOM_PDEAD"
+"1:ROOM_P2"
 +A436
-"1:ROOM_Q1"
+"1:ROOM_PDEAD"
 +A437
-"1:ROOM_R1"
+"1:ROOM_Q1"
 +A438
-"1:EXIT_X12"
+"1:ROOM_R1"
 +A439
-"1:EXIT_X2Y1"
+"1:EXIT_X12"
 +A440
-"1:EXIT_Y12"
+"1:EXIT_X2Y1"
 +A441
-"1:EXIT_P12"
+"1:EXIT_Y12"
 +A442
-"1:EXIT_P2R1"
+"1:EXIT_P12"
 +A443
-"1:EXIT_PDEAD_Q1"
+"1:EXIT_P2R1"
 +A444
-"1:EXIT_R1Q1"
+"1:EXIT_PDEAD_Q1"
 +A445
-"1:MARKER"
+"1:EXIT_R1Q1"
 +A446
-"1:SEARCHME"
+"1:MARKER"
 +A447
-"1:FLAVOR"
+"1:SEARCHME"
 +A448
-"1:TAG"
+"1:FLAVOR"
 +A449
-"1:SCORE"
+"1:TAG"
 +A450
-"1:COLOR"
+"1:SCORE"
 +A451
-"1:SHAPE"
+"1:COLOR"
 +A452
-"1:EPHEMERAL"
+"1:SHAPE"
 +A453
-"1:SUITE.LIST.1"
+"1:EPHEMERAL"
 +A454
-"1:SUITE.LIST.2"
+"1:SUITE.LIST.1"
 +A455
-"1:SUITE.TR"
+"1:SUITE.LIST.2"
 +A456
-"1:FN_STRLEN"
+"1:SUITE.TR"
 +A457
-"1:FN_NEG"
+"1:FN_STRLEN"
 +A458
-"1:FN_IDENT"
+"1:FN_NEG"
 +A459
-"1:FN_DOUBLE"
+"1:FN_IDENT"
 +A460
-"1:FN_GT10"
+"1:FN_DOUBLE"
 +A461
-"1:FN_IDENTITY"
+"1:FN_GT10"
 +A462
-"1:SUITE.CLEANUP.ABS_FN"
+"1:FN_IDENTITY"
 +A463
-"1:SUITE.CLEANUP.ACCENT_FN"
+"1:SUITE.CLEANUP.ABS_FN"
 +A464
-"1:SUITE.CLEANUP.ACOS_FN"
+"1:SUITE.CLEANUP.ACCENT_FN"
 +A465
-"1:SUITE.CLEANUP.ADD_FN"
+"1:SUITE.CLEANUP.ACOS_FN"
 +A466
-"1:SUITE.CLEANUP.AFTER_FN"
+"1:SUITE.CLEANUP.ADD_FN"
 +A467
-"1:SUITE.CLEANUP.ALPHAMAX_FN"
+"1:SUITE.CLEANUP.AFTER_FN"
 +A468
-"1:SUITE.CLEANUP.ALPHAMIN_FN"
+"1:SUITE.CLEANUP.ALPHAMAX_FN"
 +A469
-"1:SUITE.CLEANUP.AND_FN"
+"1:SUITE.CLEANUP.ALPHAMIN_FN"
 +A470
-"1:SUITE.CLEANUP.ANDBOOL_FN"
+"1:SUITE.CLEANUP.AND_FN"
 +A471
-"1:SUITE.CLEANUP.ASIN_FN"
+"1:SUITE.CLEANUP.ANDBOOL_FN"
 +A472
-"1:SUITE.CLEANUP.ASSERT_CMD"
+"1:SUITE.CLEANUP.ASIN_FN"
 +A473
-"1:SUITE.CLEANUP.ATAN2_FN"
+"1:SUITE.CLEANUP.ASSERT_CMD"
 +A474
-"1:SUITE.CLEANUP.ATAN_FN"
+"1:SUITE.CLEANUP.ATAN2_FN"
 +A475
-"1:SUITE.CLEANUP.ATTRIB_SET_FN"
+"1:SUITE.CLEANUP.ATAN_FN"
 +A476
-"1:SUITE.CLEANUP.BAND_FN"
+"1:SUITE.CLEANUP.ATTRIB_SET_FN"
 +A477
-"1:SUITE.CLEANUP.BASECONV_FN"
+"1:SUITE.CLEANUP.BAND_FN"
 +A478
-"1:SUITE.CLEANUP.BEFORE_FN"
+"1:SUITE.CLEANUP.BASECONV_FN"
 +A479
-"1:SUITE.CLEANUP.BENCHMARK_FN"
+"1:SUITE.CLEANUP.BEFORE_FN"
 +A480
-"1:SUITE.CLEANUP.BETWEEN_FN"
+"1:SUITE.CLEANUP.BENCHMARK_FN"
 +A481
-"1:SUITE.CLEANUP.BNAND_FN"
+"1:SUITE.CLEANUP.BETWEEN_FN"
 +A482
-"1:SUITE.CLEANUP.BOR_FN"
+"1:SUITE.CLEANUP.BNAND_FN"
 +A483
-"1:SUITE.CLEANUP.BOUND_FN"
+"1:SUITE.CLEANUP.BOR_FN"
 +A484
-"1:SUITE.CLEANUP.BUTLAST_FN"
+"1:SUITE.CLEANUP.BOUND_FN"
 +A485
-"1:SUITE.CLEANUP.BXOR_FN"
+"1:SUITE.CLEANUP.BUTLAST_FN"
 +A486
-"1:SUITE.CLEANUP.CACHESTATS_FN"
+"1:SUITE.CLEANUP.BXOR_FN"
 +A487
-"1:SUITE.CLEANUP.CAND_FN"
+"1:SUITE.CLEANUP.CACHESTATS_FN"
 +A488
-"1:SUITE.CLEANUP.CANDBOOL_FN"
+"1:SUITE.CLEANUP.CAND_FN"
 +A489
-"1:SUITE.CLEANUP.CAPLIST_FN"
+"1:SUITE.CLEANUP.CANDBOOL_FN"
 +A490
-"1:SUITE.CLEANUP.CAPSTR_FN"
+"1:SUITE.CLEANUP.CAPLIST_FN"
 +A491
-"1:SUITE.CLEANUP.CASE_FN"
+"1:SUITE.CLEANUP.CAPSTR_FN"
 +A492
-"1:SUITE.CLEANUP.CAT_FN"
+"1:SUITE.CLEANUP.CASE_FN"
 +A493
-"1:SUITE.CLEANUP.CEIL_FN"
+"1:SUITE.CLEANUP.CAT_FN"
 +A494
-"1:SUITE.CLEANUP.CENTER_FN"
+"1:SUITE.CLEANUP.CEIL_FN"
 +A495
-"1:SUITE.CLEANUP.CHANINFO_FN"
+"1:SUITE.CLEANUP.CENTER_FN"
 +A496
-"1:SUITE.CLEANUP.CHANUSER_FN"
+"1:SUITE.CLEANUP.CHANINFO_FN"
 +A497
-"1:SUITE.CLEANUP.CHANUSERS_FN"
+"1:SUITE.CLEANUP.CHANUSER_FN"
 +A498
-"1:SUITE.CLEANUP.CHOOSE_FN"
+"1:SUITE.CLEANUP.CHANUSERS_FN"
 +A499
-"1:SUITE.CLEANUP.CHR_FN"
+"1:SUITE.CLEANUP.CHOOSE_FN"
 +A500
-"1:SUITE.CLEANUP.CITER_FN"
+"1:SUITE.CLEANUP.CHR_FN"
 +A501
-"1:SUITE.CLEANUP.CLONE_FN"
+"1:SUITE.CLEANUP.CITER_FN"
 +A502
-"1:SUITE.CLEANUP.CMD_SAY"
+"1:SUITE.CLEANUP.CLONE_FN"
 +A503
-"1:SUITE.CLEANUP.CMOGRIFIER_FN"
+"1:SUITE.CLEANUP.CMD_SAY"
 +A504
-"1:SUITE.CLEANUP.COLUMNS_FN"
+"1:SUITE.CLEANUP.CMOGRIFIER_FN"
 +A505
-"1:SUITE.CLEANUP.COMP_FN"
+"1:SUITE.CLEANUP.COLUMNS_FN"
 +A506
-"1:SUITE.CLEANUP.CONNLOG_FN"
+"1:SUITE.CLEANUP.COMP_FN"
 +A507
-"1:SUITE.CLEANUP.CONVTIME_FN"
+"1:SUITE.CLEANUP.CONNLOG_FN"
 +A508
-"1:SUITE.CLEANUP.COR_FN"
+"1:SUITE.CLEANUP.CONVTIME_FN"
 +A509
-"1:SUITE.CLEANUP.CORBOOL_FN"
+"1:SUITE.CLEANUP.COR_FN"
 +A510
-"1:SUITE.CLEANUP.COS_FN"
+"1:SUITE.CLEANUP.CORBOOL_FN"
 +A511
-"1:SUITE.CLEANUP.CPAD_FN"
+"1:SUITE.CLEANUP.COS_FN"
 +A512
-"1:SUITE.CLEANUP.CRC32_FN"
+"1:SUITE.CLEANUP.CPAD_FN"
 +A513
-"1:SUITE.CLEANUP.CRC32OBJ_FN"
+"1:SUITE.CLEANUP.CRC32_FN"
 +A514
-"1:SUITE.CLEANUP.CRON_FN"
+"1:SUITE.CLEANUP.CRC32OBJ_FN"
 +A515
-"1:SUITE.CLEANUP.CTU_FN"
+"1:SUITE.CLEANUP.CRON_FN"
 +A516
-"1:SUITE.CLEANUP.DEC_FN"
+"1:SUITE.CLEANUP.CTU_FN"
 +A517
-"1:SUITE.CLEANUP.DELETE_FN"
+"1:SUITE.CLEANUP.DEC_FN"
 +A518
-"1:SUITE.CLEANUP.DELEXTRACT_FN"
+"1:SUITE.CLEANUP.DELETE_FN"
 +A519
-"1:SUITE.CLEANUP.DELIM_PARITY_FN"
+"1:SUITE.CLEANUP.DELEXTRACT_FN"
 +A520
-"1:SUITE.CLEANUP.DIGEST_FN"
+"1:SUITE.CLEANUP.DELIM_PARITY_FN"
 +A521
-"1:SUITE.CLEANUP.DIGITTIME_FN"
+"1:SUITE.CLEANUP.DIGEST_FN"
 +A522
-"1:SUITE.CLEANUP.DIST2D_FN"
+"1:SUITE.CLEANUP.DIGITTIME_FN"
 +A523
-"1:SUITE.CLEANUP.DIST3D_FN"
+"1:SUITE.CLEANUP.DIST2D_FN"
 +A524
-"1:SUITE.CLEANUP.DOLIST_CMD"
+"1:SUITE.CLEANUP.DIST3D_FN"
 +A525
-"1:SUITE.CLEANUP.DYNHELP_FN"
+"1:SUITE.CLEANUP.DOLIST_CMD"
 +A526
-"1:SUITE.CLEANUP.E_FN"
+"1:SUITE.CLEANUP.DYNHELP_FN"
 +A527
-"1:SUITE.CLEANUP.EDIT_FN"
+"1:SUITE.CLEANUP.E_FN"
 +A528
-"1:SUITE.CLEANUP.ELEMENTS_FN"
+"1:SUITE.CLEANUP.EDIT_FN"
 +A529
-"1:SUITE.CLEANUP.ENCODE64_FN"
+"1:SUITE.CLEANUP.ELEMENTS_FN"
 +A530
-"1:SUITE.CLEANUP.EQ_FN"
+"1:SUITE.CLEANUP.ENCODE64_FN"
 +A531
-"1:SUITE.CLEANUP.ESCAPE_FN"
+"1:SUITE.CLEANUP.EQ_FN"
 +A532
-"1:SUITE.CLEANUP.EXP3_FN"
+"1:SUITE.CLEANUP.ESCAPE_FN"
 +A533
-"1:SUITE.CLEANUP.EXP_FN"
+"1:SUITE.CLEANUP.EXP3_FN"
 +A534
-"1:SUITE.CLEANUP.EXPTIME_FN"
+"1:SUITE.CLEANUP.EXP_FN"
 +A535
-"1:SUITE.CLEANUP.EXTRACT_FN"
+"1:SUITE.CLEANUP.EXPTIME_FN"
 +A536
-"1:SUITE.CLEANUP.FDIV_FN"
+"1:SUITE.CLEANUP.EXTRACT_FN"
 +A537
-"1:SUITE.CLEANUP.FIRST_FN"
+"1:SUITE.CLEANUP.FDIV_FN"
 +A538
-"1:SUITE.CLEANUP.FIRSTOF_FN"
+"1:SUITE.CLEANUP.FIRST_FN"
 +A539
-"1:SUITE.CLEANUP.FLOOR_FN"
+"1:SUITE.CLEANUP.FIRSTOF_FN"
 +A540
-"1:SUITE.CLEANUP.FLOORDIV_FN"
+"1:SUITE.CLEANUP.FLOOR_FN"
 +A541
-"1:SUITE.CLEANUP.FMOD_FN"
+"1:SUITE.CLEANUP.FLOORDIV_FN"
 +A542
-"1:SUITE.CLEANUP.FPPROP_FN"
+"1:SUITE.CLEANUP.FMOD_FN"
 +A543
-"1:SUITE.CLEANUP.GRAB_FN"
+"1:SUITE.CLEANUP.FPPROP_FN"
 +A544
-"1:SUITE.CLEANUP.GRABALL_FN"
+"1:SUITE.CLEANUP.GRAB_FN"
 +A545
-"1:SUITE.CLEANUP.GRAPHEMES_FN"
+"1:SUITE.CLEANUP.GRABALL_FN"
 +A546
-"1:SUITE.CLEANUP.GT_FN"
+"1:SUITE.CLEANUP.GRAPHEMES_FN"
 +A547
-"1:SUITE.CLEANUP.GTE_FN"
+"1:SUITE.CLEANUP.GT_FN"
 +A548
-"1:SUITE.CLEANUP.HMAC_FN"
+"1:SUITE.CLEANUP.GTE_FN"
 +A549
-"1:SUITE.CLEANUP.IABS_FN"
+"1:SUITE.CLEANUP.HMAC_FN"
 +A550
-"1:SUITE.CLEANUP.IADD_FN"
+"1:SUITE.CLEANUP.IABS_FN"
 +A551
-"1:SUITE.CLEANUP.IDIV_FN"
+"1:SUITE.CLEANUP.IADD_FN"
 +A552
-"1:SUITE.CLEANUP.IF_CMD"
+"1:SUITE.CLEANUP.IDIV_FN"
 +A553
-"1:SUITE.CLEANUP.IMUL_FN"
+"1:SUITE.CLEANUP.IF_CMD"
 +A554
-"1:SUITE.CLEANUP.INC_FN"
+"1:SUITE.CLEANUP.IMUL_FN"
 +A555
-"1:SUITE.CLEANUP.INCLUDE_FN"
+"1:SUITE.CLEANUP.INC_FN"
 +A556
-"1:SUITE.CLEANUP.INDEX_FN"
+"1:SUITE.CLEANUP.INCLUDE_FN"
 +A557
-"1:SUITE.CLEANUP.INSERT_FN"
+"1:SUITE.CLEANUP.INDEX_FN"
 +A558
-"1:SUITE.CLEANUP.ISALPHA_FN"
+"1:SUITE.CLEANUP.INSERT_FN"
 +A559
-"1:SUITE.CLEANUP.ISDBREF_FN"
+"1:SUITE.CLEANUP.ISALPHA_FN"
 +A560
-"1:SUITE.CLEANUP.ISIGN_FN"
+"1:SUITE.CLEANUP.ISDBREF_FN"
 +A561
-"1:SUITE.CLEANUP.ISINT_FN"
+"1:SUITE.CLEANUP.ISIGN_FN"
 +A562
-"1:SUITE.CLEANUP.ISJSON_FN"
+"1:SUITE.CLEANUP.ISINT_FN"
 +A563
-"1:SUITE.CLEANUP.ISNUM_FN"
+"1:SUITE.CLEANUP.ISJSON_FN"
 +A564
-"1:SUITE.CLEANUP.ISRAT_FN"
+"1:SUITE.CLEANUP.ISNUM_FN"
 +A565
-"1:SUITE.CLEANUP.ISUB_FN"
+"1:SUITE.CLEANUP.ISRAT_FN"
 +A566
-"1:SUITE.CLEANUP.ISWORD_FN"
+"1:SUITE.CLEANUP.ISUB_FN"
 +A567
-"1:SUITE.CLEANUP.ITEMIZE_FN"
+"1:SUITE.CLEANUP.ISWORD_FN"
 +A568
-"1:SUITE.CLEANUP.JIT_COVERAGE_FN"
+"1:SUITE.CLEANUP.ITEMIZE_FN"
 +A569
-"1:SUITE.CLEANUP.JIT_FOLD_PARITY_FN"
+"1:SUITE.CLEANUP.JIT_COVERAGE_FN"
 +A570
-"1:SUITE.CLEANUP.JIT_PARITY_FN"
+"1:SUITE.CLEANUP.JIT_FOLD_PARITY_FN"
 +A571
-"1:SUITE.CLEANUP.JIT_ROUTE_PARITY_FN"
+"1:SUITE.CLEANUP.JIT_PARITY_FN"
 +A572
-"1:SUITE.CLEANUP.JITSTATS_FN"
+"1:SUITE.CLEANUP.JIT_ROUTE_PARITY_FN"
 +A573
-"1:SUITE.CLEANUP.JSON_FN"
+"1:SUITE.CLEANUP.JITSTATS_FN"
 +A574
-"1:SUITE.CLEANUP.LADD_FN"
+"1:SUITE.CLEANUP.JSON_FN"
 +A575
-"1:SUITE.CLEANUP.LAMBDA_FN"
+"1:SUITE.CLEANUP.LADD_FN"
 +A576
-"1:SUITE.CLEANUP.LAND_FN"
+"1:SUITE.CLEANUP.LAMBDA_FN"
 +A577
-"1:SUITE.CLEANUP.LAST_FN"
+"1:SUITE.CLEANUP.LAND_FN"
 +A578
-"1:SUITE.CLEANUP.LBAND_FN"
+"1:SUITE.CLEANUP.LAST_FN"
 +A579
-"1:SUITE.CLEANUP.LCSTR_FN"
+"1:SUITE.CLEANUP.LBAND_FN"
 +A580
-"1:SUITE.CLEANUP.LDELETE_FN"
+"1:SUITE.CLEANUP.LCSTR_FN"
 +A581
-"1:SUITE.CLEANUP.LETQ_FN"
+"1:SUITE.CLEANUP.LDELETE_FN"
 +A582
-"1:SUITE.CLEANUP.LIMATH_FN"
+"1:SUITE.CLEANUP.LETQ_FN"
 +A583
-"1:SUITE.CLEANUP.LINSERT_FN"
+"1:SUITE.CLEANUP.LIMATH_FN"
 +A584
-"1:SUITE.CLEANUP.LJUST_FN"
+"1:SUITE.CLEANUP.LINSERT_FN"
 +A585
-"1:SUITE.CLEANUP.LMAX_FN"
+"1:SUITE.CLEANUP.LJUST_FN"
 +A586
-"1:SUITE.CLEANUP.LMIN_FN"
+"1:SUITE.CLEANUP.LMAX_FN"
 +A587
-"1:SUITE.CLEANUP.LN_FN"
+"1:SUITE.CLEANUP.LMIN_FN"
 +A588
-"1:SUITE.CLEANUP.LNUM_FN"
+"1:SUITE.CLEANUP.LN_FN"
 +A589
-"1:SUITE.CLEANUP.LOCATE_POSS"
+"1:SUITE.CLEANUP.LNUM_FN"
 +A590
-"1:SUITE.CLEANUP.LOCK_FN"
+"1:SUITE.CLEANUP.LOCATE_POSS"
 +A591
-"1:SUITE.CLEANUP.LOCKENCODE_FN"
+"1:SUITE.CLEANUP.LOCK_FN"
 +A592
-"1:SUITE.CLEANUP.LOG_FN"
+"1:SUITE.CLEANUP.LOCKENCODE_FN"
 +A593
-"1:SUITE.CLEANUP.LOR_FN"
+"1:SUITE.CLEANUP.LOG_FN"
 +A594
-"1:SUITE.CLEANUP.LPAD_FN"
+"1:SUITE.CLEANUP.LOR_FN"
 +A595
-"1:SUITE.CLEANUP.LPOS_FN"
+"1:SUITE.CLEANUP.LPAD_FN"
 +A596
-"1:SUITE.CLEANUP.LT_FN"
+"1:SUITE.CLEANUP.LPOS_FN"
 +A597
-"1:SUITE.CLEANUP.LTE_FN"
+"1:SUITE.CLEANUP.LT_FN"
 +A598
-"1:SUITE.CLEANUP.LUA_FN"
+"1:SUITE.CLEANUP.LTE_FN"
 +A599
-"1:SUITE.CLEANUP.LXOR_FN"
+"1:SUITE.CLEANUP.LUA_FN"
 +A600
-"1:SUITE.CLEANUP.MAILINFO_FN"
+"1:SUITE.CLEANUP.LXOR_FN"
 +A601
-"1:SUITE.CLEANUP.MAILSEND_FN"
+"1:SUITE.CLEANUP.MAILINFO_FN"
 +A602
-"1:SUITE.CLEANUP.MATCH_FN"
+"1:SUITE.CLEANUP.MAILSEND_FN"
 +A603
-"1:SUITE.CLEANUP.MATCHALL_FN"
+"1:SUITE.CLEANUP.MATCH_FN"
 +A604
-"1:SUITE.CLEANUP.MAX_FN"
+"1:SUITE.CLEANUP.MATCHALL_FN"
 +A605
-"1:SUITE.CLEANUP.MEAN_FN"
+"1:SUITE.CLEANUP.MAX_FN"
 +A606
-"1:SUITE.CLEANUP.MEDIAN_FN"
+"1:SUITE.CLEANUP.MEAN_FN"
 +A607
-"1:SUITE.CLEANUP.MEMBER_FN"
+"1:SUITE.CLEANUP.MEDIAN_FN"
 +A608
-"1:SUITE.CLEANUP.MERGE_FN"
+"1:SUITE.CLEANUP.MEMBER_FN"
 +A609
-"1:SUITE.CLEANUP.MID_FN"
+"1:SUITE.CLEANUP.MERGE_FN"
 +A610
-"1:SUITE.CLEANUP.MIN_FN"
+"1:SUITE.CLEANUP.MID_FN"
 +A611
-"1:SUITE.CLEANUP.MOD_FN"
+"1:SUITE.CLEANUP.MIN_FN"
 +A612
-"1:SUITE.CLEANUP.MOON_FN"
+"1:SUITE.CLEANUP.MOD_FN"
 +A613
-"1:SUITE.CLEANUP.MUL_FN"
+"1:SUITE.CLEANUP.MOON_FN"
 +A614
-"1:SUITE.CLEANUP.NCON_FN"
+"1:SUITE.CLEANUP.MUL_FN"
 +A615
-"1:SUITE.CLEANUP.NEQ_FN"
+"1:SUITE.CLEANUP.NCON_FN"
 +A616
-"1:SUITE.CLEANUP.NOEVAL_FN"
+"1:SUITE.CLEANUP.NEQ_FN"
 +A617
-"1:SUITE.CLEANUP.NOT_FN"
+"1:SUITE.CLEANUP.NOEVAL_FN"
 +A618
-"1:SUITE.CLEANUP.OBJID_FN"
+"1:SUITE.CLEANUP.NOT_FN"
 +A619
-"1:SUITE.CLEANUP.OEMIT_FN"
+"1:SUITE.CLEANUP.OBJID_FN"
 +A620
-"1:SUITE.CLEANUP.OR_FN"
+"1:SUITE.CLEANUP.OEMIT_FN"
 +A621
-"1:SUITE.CLEANUP.ORBOOL_FN"
+"1:SUITE.CLEANUP.OR_FN"
 +A622
-"1:SUITE.CLEANUP.ORD_FN"
+"1:SUITE.CLEANUP.ORBOOL_FN"
 +A623
-"1:SUITE.CLEANUP.OVERFLOW_INJECT_FN"
+"1:SUITE.CLEANUP.ORD_FN"
 +A624
-"1:SUITE.CLEANUP.PAGINATE_FN"
+"1:SUITE.CLEANUP.OVERFLOW_INJECT_FN"
 +A625
-"1:SUITE.CLEANUP.PARENMATCH_FN"
+"1:SUITE.CLEANUP.PAGINATE_FN"
 +A626
-"1:SUITE.CLEANUP.PARSEDATE_FN"
+"1:SUITE.CLEANUP.PARENMATCH_FN"
 +A627
-"1:SUITE.CLEANUP.PARSER_FN"
+"1:SUITE.CLEANUP.PARSEDATE_FN"
 +A628
-"1:SUITE.CLEANUP.PI_FN"
+"1:SUITE.CLEANUP.PARSER_FN"
 +A629
-"1:SUITE.CLEANUP.PICKRAND_FN"
+"1:SUITE.CLEANUP.PI_FN"
 +A630
-"1:SUITE.CLEANUP.POCVM2_FN"
+"1:SUITE.CLEANUP.PICKRAND_FN"
 +A631
-"1:SUITE.CLEANUP.POS_FN"
+"1:SUITE.CLEANUP.POCVM2_FN"
 +A632
-"1:SUITE.CLEANUP.POSN_FN"
+"1:SUITE.CLEANUP.POS_FN"
 +A633
-"1:SUITE.CLEANUP.POWER_FN"
+"1:SUITE.CLEANUP.POSN_FN"
 +A634
-"1:SUITE.CLEANUP.PRINTF_FN"
+"1:SUITE.CLEANUP.POWER_FN"
 +A635
-"1:SUITE.CLEANUP.PROTECT_FN"
+"1:SUITE.CLEANUP.PRINTF_FN"
 +A636
-"1:SUITE.CLEANUP.REGLATTR_FN"
+"1:SUITE.CLEANUP.PROTECT_FN"
 +A637
-"1:SUITE.CLEANUP.REMAINDER_FN"
+"1:SUITE.CLEANUP.REGLATTR_FN"
 +A638
-"1:SUITE.CLEANUP.REMOVE_FN"
+"1:SUITE.CLEANUP.REMAINDER_FN"
 +A639
-"1:SUITE.CLEANUP.REPEAT_FN"
+"1:SUITE.CLEANUP.REMOVE_FN"
 +A640
-"1:SUITE.CLEANUP.REPLACE_FN"
+"1:SUITE.CLEANUP.REPEAT_FN"
 +A641
-"1:SUITE.CLEANUP.REST_FN"
+"1:SUITE.CLEANUP.REPLACE_FN"
 +A642
-"1:SUITE.CLEANUP.REVERSE_FN"
+"1:SUITE.CLEANUP.REST_FN"
 +A643
-"1:SUITE.CLEANUP.REVWORDS_FN"
+"1:SUITE.CLEANUP.REVERSE_FN"
 +A644
-"1:SUITE.CLEANUP.RIGHT_FN"
+"1:SUITE.CLEANUP.REVWORDS_FN"
 +A645
-"1:SUITE.CLEANUP.RJUST_FN"
+"1:SUITE.CLEANUP.RIGHT_FN"
 +A646
-"1:SUITE.CLEANUP.ROMAN_FN"
+"1:SUITE.CLEANUP.RJUST_FN"
 +A647
-"1:SUITE.CLEANUP.ROUND_FN"
+"1:SUITE.CLEANUP.ROMAN_FN"
 +A648
-"1:SUITE.CLEANUP.ROUTE_FN"
+"1:SUITE.CLEANUP.ROUND_FN"
 +A649
-"1:SUITE.CLEANUP.RPAD_FN"
+"1:SUITE.CLEANUP.ROUTE_FN"
 +A650
-"1:SUITE.CLEANUP.RVBENCH_FN"
+"1:SUITE.CLEANUP.RPAD_FN"
 +A651
-"1:SUITE.CLEANUP.SANDBOX_FN"
+"1:SUITE.CLEANUP.RVBENCH_FN"
 +A652
-"1:SUITE.CLEANUP.SEARCH_EVAL_FN"
+"1:SUITE.CLEANUP.SANDBOX_FN"
 +A653
-"1:SUITE.CLEANUP.SECURE_FN"
+"1:SUITE.CLEANUP.SEARCH_EVAL_FN"
 +A654
-"1:SUITE.CLEANUP.SETDIFF_FN"
+"1:SUITE.CLEANUP.SECURE_FN"
 +A655
-"1:SUITE.CLEANUP.SETINTER_FN"
+"1:SUITE.CLEANUP.SETDIFF_FN"
 +A656
-"1:SUITE.CLEANUP.SETUNION_FN"
+"1:SUITE.CLEANUP.SETINTER_FN"
 +A657
-"1:SUITE.CLEANUP.SHA1_FN"
+"1:SUITE.CLEANUP.SETUNION_FN"
 +A658
-"1:SUITE.CLEANUP.SHL_FN"
+"1:SUITE.CLEANUP.SHA1_FN"
 +A659
-"1:SUITE.CLEANUP.SHR_FN"
+"1:SUITE.CLEANUP.SHL_FN"
 +A660
-"1:SUITE.CLEANUP.SHUFFLE_FN"
+"1:SUITE.CLEANUP.SHR_FN"
 +A661
-"1:SUITE.CLEANUP.SHUTDOWN"
+"1:SUITE.CLEANUP.SHUFFLE_FN"
 +A662
-"1:SUITE.CLEANUP.SIGN_FN"
+"1:SUITE.CLEANUP.SHUTDOWN"
 +A663
-"1:SUITE.CLEANUP.SIN_FN"
+"1:SUITE.CLEANUP.SIGN_FN"
 +A664
-"1:SUITE.CLEANUP.SINGLETIME_FN"
+"1:SUITE.CLEANUP.SIN_FN"
 +A665
-"1:SUITE.CLEANUP.SORT_FN"
+"1:SUITE.CLEANUP.SINGLETIME_FN"
 +A666
-"1:SUITE.CLEANUP.SORTKEY_FN"
+"1:SUITE.CLEANUP.SORT_FN"
 +A667
-"1:SUITE.CLEANUP.SOUNDEX_FN"
+"1:SUITE.CLEANUP.SORTKEY_FN"
 +A668
-"1:SUITE.CLEANUP.SPACE_FN"
+"1:SUITE.CLEANUP.SOUNDEX_FN"
 +A669
-"1:SUITE.CLEANUP.SPELLNUM_FN"
+"1:SUITE.CLEANUP.SPACE_FN"
 +A670
-"1:SUITE.CLEANUP.SPLICE_FN"
+"1:SUITE.CLEANUP.SPELLNUM_FN"
 +A671
-"1:SUITE.CLEANUP.SQRT_FN"
+"1:SUITE.CLEANUP.SPLICE_FN"
 +A672
-"1:SUITE.CLEANUP.SQUISH_FN"
+"1:SUITE.CLEANUP.SQRT_FN"
 +A673
-"1:SUITE.CLEANUP.STDDEV_FN"
+"1:SUITE.CLEANUP.SQUISH_FN"
 +A674
-"1:SUITE.CLEANUP.STRCAT_FN"
+"1:SUITE.CLEANUP.STDDEV_FN"
 +A675
-"1:SUITE.CLEANUP.STRDELETE_FN"
+"1:SUITE.CLEANUP.STRCAT_FN"
 +A676
-"1:SUITE.CLEANUP.STRDISTANCE_FN"
+"1:SUITE.CLEANUP.STRDELETE_FN"
 +A677
-"1:SUITE.CLEANUP.STRIP_FN"
+"1:SUITE.CLEANUP.STRDISTANCE_FN"
 +A678
-"1:SUITE.CLEANUP.STRIPANSI_FN"
+"1:SUITE.CLEANUP.STRIP_FN"
 +A679
-"1:SUITE.CLEANUP.STRLEN_FN"
+"1:SUITE.CLEANUP.STRIPANSI_FN"
 +A680
-"1:SUITE.CLEANUP.STRMATCH_FN"
+"1:SUITE.CLEANUP.STRLEN_FN"
 +A681
-"1:SUITE.CLEANUP.STRMEM_FN"
+"1:SUITE.CLEANUP.STRMATCH_FN"
 +A682
-"1:SUITE.CLEANUP.STRSET_FN"
+"1:SUITE.CLEANUP.STRMEM_FN"
 +A683
-"1:SUITE.CLEANUP.STRSORT_FN"
+"1:SUITE.CLEANUP.STRSET_FN"
 +A684
-"1:SUITE.CLEANUP.STRTRUNC_FN"
+"1:SUITE.CLEANUP.STRSORT_FN"
 +A685
-"1:SUITE.CLEANUP.SUB_FN"
+"1:SUITE.CLEANUP.STRTRUNC_FN"
 +A686
-"1:SUITE.CLEANUP.SUBNETMATCH_FN"
+"1:SUITE.CLEANUP.SUB_FN"
 +A687
-"1:SUITE.CLEANUP.SWITCH_CMD"
+"1:SUITE.CLEANUP.SUBNETMATCH_FN"
 +A688
-"1:SUITE.CLEANUP.SWITCH_FN"
+"1:SUITE.CLEANUP.SWITCH_CMD"
 +A689
-"1:SUITE.CLEANUP.T_FN"
+"1:SUITE.CLEANUP.SWITCH_FN"
 +A690
-"1:SUITE.CLEANUP.TABLE_FN"
+"1:SUITE.CLEANUP.T_FN"
 +A691
-"1:SUITE.CLEANUP.TAN_FN"
+"1:SUITE.CLEANUP.TABLE_FN"
 +A692
-"1:SUITE.CLEANUP.TIER2_PARITY_FN"
+"1:SUITE.CLEANUP.TAN_FN"
 +A693
-"1:SUITE.CLEANUP.TR_FN"
+"1:SUITE.CLEANUP.TIER2_PARITY_FN"
 +A694
-"1:SUITE.CLEANUP.TRANSLATE_FN"
+"1:SUITE.CLEANUP.TR_FN"
 +A695
-"1:SUITE.CLEANUP.TRIGGER_CMD"
+"1:SUITE.CLEANUP.TRANSLATE_FN"
 +A696
-"1:SUITE.CLEANUP.TRIM_FN"
+"1:SUITE.CLEANUP.TRIGGER_CMD"
 +A697
-"1:SUITE.CLEANUP.TRUNC_FN"
+"1:SUITE.CLEANUP.TRIM_FN"
 +A698
-"1:SUITE.CLEANUP.UCSTR_FN"
+"1:SUITE.CLEANUP.TRUNC_FN"
 +A699
-"1:SUITE.CLEANUP.UNIQUE_FN"
+"1:SUITE.CLEANUP.UCSTR_FN"
 +A700
-"1:SUITE.CLEANUP.UNSETQ_FN"
+"1:SUITE.CLEANUP.UNIQUE_FN"
 +A701
-"1:SUITE.CLEANUP.URL_ESCAPE_FN"
+"1:SUITE.CLEANUP.UNSETQ_FN"
 +A702
-"1:SUITE.CLEANUP.VADD_FN"
+"1:SUITE.CLEANUP.URL_ESCAPE_FN"
 +A703
-"1:SUITE.CLEANUP.VCROSS_FN"
+"1:SUITE.CLEANUP.VADD_FN"
 +A704
-"1:SUITE.CLEANUP.VDOT_FN"
+"1:SUITE.CLEANUP.VCROSS_FN"
 +A705
-"1:SUITE.CLEANUP.VISUAL_WIDTH_FN"
+"1:SUITE.CLEANUP.VDOT_FN"
 +A706
-"1:SUITE.CLEANUP.VMAG_FN"
+"1:SUITE.CLEANUP.VISUAL_WIDTH_FN"
 +A707
-"1:SUITE.CLEANUP.VMUL_FN"
+"1:SUITE.CLEANUP.VMAG_FN"
 +A708
-"1:SUITE.CLEANUP.VSUB_FN"
+"1:SUITE.CLEANUP.VMUL_FN"
 +A709
-"1:SUITE.CLEANUP.VUNIT_FN"
+"1:SUITE.CLEANUP.VSUB_FN"
 +A710
-"1:SUITE.CLEANUP.VWIDTH_FN"
+"1:SUITE.CLEANUP.VUNIT_FN"
 +A711
-"1:SUITE.CLEANUP.WAIT_CMD"
+"1:SUITE.CLEANUP.VWIDTH_FN"
 +A712
-"1:SUITE.CLEANUP.WHILE_FN"
+"1:SUITE.CLEANUP.WAIT_CMD"
 +A713
-"1:SUITE.CLEANUP.WORDEND_FN"
+"1:SUITE.CLEANUP.WHILE_FN"
 +A714
-"1:SUITE.CLEANUP.WORDPOS_FN"
+"1:SUITE.CLEANUP.WORDEND_FN"
 +A715
-"1:SUITE.CLEANUP.WORDS_FN"
+"1:SUITE.CLEANUP.WORDPOS_FN"
 +A716
-"1:SUITE.CLEANUP.WORDSTART_FN"
+"1:SUITE.CLEANUP.WORDS_FN"
 +A717
-"1:SUITE.CLEANUP.WRAP_FN"
+"1:SUITE.CLEANUP.WORDSTART_FN"
 +A718
-"1:SUITE.CLEANUP.WRAPCOLUMNS_FN"
+"1:SUITE.CLEANUP.WRAP_FN"
 +A719
-"1:SUITE.CLEANUP.XOR_FN"
+"1:SUITE.CLEANUP.WRAPCOLUMNS_FN"
 +A720
+"1:SUITE.CLEANUP.XOR_FN"
++A721
 "1:SUITE.CLEANUP.ZIP_FN"
 !0
 "Limbo"
@@ -4857,7 +4859,11 @@
 >273
 "@if strmatch(setr(0,sha1([u(#lambda/, 5)])),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC010: lambda empty body. Succeeded.},{@log smoke=TC010: lambda empty body. Failed (%q0).}"
 >274
-"@if cand(strmatch(ulambda(#lambda/mul(\\%0,\\%1),6,7),42),strmatch(ulambda(#lambda/sub(\\%0,\\%1),3.5,1.25),2.25),strmatch(ulambda(#lambda/fdiv(\\%0,\\%1),20,8),2.5),strmatch(ulambda(#lambda/sqrt(\\%0),16),4),strmatch(ulambda(#lambda/mul(add(\\%0,\\%1),\\%2),2,3,4),20))={@log smoke=TC011: ulambda JIT cargs float math. Succeeded.;@trig me/tr.done},{@log smoke=TC011: ulambda JIT cargs float math. Failed (mul=[ulambda(#lambda/mul(\\%0,\\%1),6,7)] sub=[ulambda(#lambda/sub(\\%0,\\%1),3.5,1.25)] fdiv=[ulambda(#lambda/fdiv(\\%0,\\%1),20,8)] sqrt=[ulambda(#lambda/sqrt(\\%0),16)] nest=[ulambda(#lambda/mul(add(\\%0,\\%1),\\%2),2,3,4)]).;@trig me/tr.done}"
+"@if cand(strmatch(ulambda(#lambda/mul(\\%0,\\%1),6,7),42),strmatch(ulambda(#lambda/sub(\\%0,\\%1),3.5,1.25),2.25),strmatch(ulambda(#lambda/fdiv(\\%0,\\%1),20,8),2.5),strmatch(ulambda(#lambda/sqrt(\\%0),16),4),strmatch(ulambda(#lambda/mul(add(\\%0,\\%1),\\%2),2,3,4),20))={@log smoke=TC011: ulambda JIT cargs float math. Succeeded.;},{@log smoke=TC011: ulambda JIT cargs float math. Failed (mul=[ulambda(#lambda/mul(\\%0,\\%1),6,7)] sub=[ulambda(#lambda/sub(\\%0,\\%1),3.5,1.25)] fdiv=[ulambda(#lambda/fdiv(\\%0,\\%1),20,8)] sqrt=[ulambda(#lambda/sqrt(\\%0),16)] nest=[ulambda(#lambda/mul(add(\\%0,\\%1),\\%2),2,3,4)]).;}"
+>275
+"@if cand(strmatch(u(me/fn.noev,2,3), add\\(*\\)),strmatch(ulambda(me/fn.noev,2,3), add\\(*\\)),strmatch(ulambda(me/fn.noev,2,3), u(me/fn.noev,2,3)),strmatch(ulambda(#lambda/add(\\%0,\\%1),2,3), 5))={@log smoke=TC012: ulambda AF_NOEVAL parity. Succeeded.;@trig me/tr.done},{@log smoke=TC012: ulambda AF_NOEVAL parity. Failed (u=[u(me/fn.noev,2,3)] ulambda=[ulambda(me/fn.noev,2,3)] plain=[ulambda(#lambda/add(\\%0,\\%1),2,3)]).;@trig me/tr.done}"
+>345
+"1:1048576:add(%0,%1)"
 <
 !119
 "test_land_fn"
@@ -5721,129 +5727,129 @@
 "@if strmatch(setr(0,lua(me/LUA_NEG_ARG,42)),-42)={@log smoke=TC049: lua string-arg negation. Succeeded.},{@log smoke=TC049: lua string-arg negation. Failed (%q0).}"
 >332
 "@if strmatch(setr(0,lua(me/LUA_CMP_ARGS,20,5)),yes)={@log smoke=TC050: lua string-arg comparison. Succeeded.},{@log smoke=TC050: lua string-arg comparison. Failed (%q0).}"
->345
-"return mux.args[1] + mux.args[2]"
 >346
-"return \"hello world\""
+"return mux.args[1] + mux.args[2]"
 >347
-"return mux.args[1] .. \" \" .. mux.args[2]"
+"return \"hello world\""
 >348
-"return nil"
+"return mux.args[1] .. \" \" .. mux.args[2]"
 >349
-"return true"
+"return nil"
 >350
-"return os.execute(\"echo pwned\")"
+"return true"
 >351
-"return io.open(\"/etc/passwd\")"
+"return os.execute(\"echo pwned\")"
 >352
-"return load(\"return 42\")()"
+"return io.open(\"/etc/passwd\")"
 >353
-"while true do end"
+"return load(\"return 42\")()"
 >354
-"return math.floor(math.sqrt(144))"
+"while true do end"
 >355
-"return string.upper(\"hello\")"
+"return math.floor(math.sqrt(144))"
 >356
-"local t = {3,1,2} table.sort(t) return t[1]..t[2]..t[3]"
->357
-"return mux.name(1)"
->358
-"return mux.eval(\"add(10,20)\")"
->359
-"this is not valid lua!!!!"
->361
-"local s=0 for i=1,100 do s=s+i end return s"
->362
-"return #mux.args"
->363
-"return 100 - 37"
->364
-"return 3 * 4 * 5"
->365
-"return (17 // 5) * 10 + (17 % 5)"
->366
-"return -(42)"
->367
-"return mux.args[1] * mux.args[2] + mux.args[3]"
->368
-"local s=0 for i=1,100 do s=s+i end return s"
->369
-"local s=0 for i=1,99,2 do s=s+i end return s"
->370
-"local a,b=1,1 for i=1,10 do local c=a+b a=b b=c end return b"
->371
-"if mux.args[1] + 0 > 10 then return \"big\" else return \"small\" end"
->372
-"return string.rep(\"ab\", 3)"
->373
-"local t={10,20,30} return t[1]+t[2]+t[3]"
->374
-"local s=0 for i=1,10000 do s=s+i end return s"
->375
-"return 10 / 3"
->376
-"return 1.5 + 2.5"
->377
-"return 3 + 1.5"
->378
-"return -(3.14)"
->379
-"return \"hello\" .. \" \" .. \"world\""
->380
-"return \"count: \" .. 42"
->381
-"return #\"hello\""
->382
-"if not false then return \"yes\" else return \"no\" end"
->383
-"local t={10,20,30} return t[1]+t[2]+t[3]"
->384
-"local t={\"hello\",\"world\"} return t[1] .. \" \" .. t[2]"
->385
-"return math.floor(3.7)"
->386
 "return string.upper(\"hello\")"
+>357
+"local t = {3,1,2} table.sort(t) return t[1]..t[2]..t[3]"
+>358
+"return mux.name(1)"
+>359
+"return mux.eval(\"add(10,20)\")"
+>360
+"this is not valid lua!!!!"
+>362
+"local s=0 for i=1,100 do s=s+i end return s"
+>363
+"return #mux.args"
+>364
+"return 100 - 37"
+>365
+"return 3 * 4 * 5"
+>366
+"return (17 // 5) * 10 + (17 % 5)"
+>367
+"return -(42)"
+>368
+"return mux.args[1] * mux.args[2] + mux.args[3]"
+>369
+"local s=0 for i=1,100 do s=s+i end return s"
+>370
+"local s=0 for i=1,99,2 do s=s+i end return s"
+>371
+"local a,b=1,1 for i=1,10 do local c=a+b a=b b=c end return b"
+>372
+"if mux.args[1] + 0 > 10 then return \"big\" else return \"small\" end"
+>373
+"return string.rep(\"ab\", 3)"
+>374
+"local t={10,20,30} return t[1]+t[2]+t[3]"
+>375
+"local s=0 for i=1,10000 do s=s+i end return s"
+>376
+"return 10 / 3"
+>377
+"return 1.5 + 2.5"
+>378
+"return 3 + 1.5"
+>379
+"return -(3.14)"
+>380
+"return \"hello\" .. \" \" .. \"world\""
+>381
+"return \"count: \" .. 42"
+>382
+"return #\"hello\""
+>383
+"if not false then return \"yes\" else return \"no\" end"
+>384
+"local t={10,20,30} return t[1]+t[2]+t[3]"
+>385
+"local t={\"hello\",\"world\"} return t[1] .. \" \" .. t[2]"
+>386
+"return math.floor(3.7)"
 >387
-"return tostring(42)"
+"return string.upper(\"hello\")"
 >388
-"return math.sqrt(144)"
+"return tostring(42)"
 >389
-"return mux.args[1] - mux.args[2]"
+"return math.sqrt(144)"
 >390
-"return mux.args[1] + 10"
+"return mux.args[1] - mux.args[2]"
 >391
-"return -mux.args[1]"
+"return mux.args[1] + 10"
 >392
-"if mux.args[1] + 0 > mux.args[2] + 0 then return \"yes\" else return \"no\" end"
+"return -mux.args[1]"
 >393
-"return mux.args[1] // mux.args[2]"
+"if mux.args[1] + 0 > mux.args[2] + 0 then return \"yes\" else return \"no\" end"
 >394
-"@if strmatch(setr(0,lua(me/LUA_IDIV_ARGS,17,5)),3)={@log smoke=TC051: lua string-arg integer division. Succeeded.},{@log smoke=TC051: lua string-arg integer division. Failed (%q0).}"
+"return mux.args[1] // mux.args[2]"
 >395
-"return mux.args[1] % mux.args[2]"
+"@if strmatch(setr(0,lua(me/LUA_IDIV_ARGS,17,5)),3)={@log smoke=TC051: lua string-arg integer division. Succeeded.},{@log smoke=TC051: lua string-arg integer division. Failed (%q0).}"
 >396
-"@if strmatch(setr(0,lua(me/LUA_MOD_ARGS,17,5)),2)={@log smoke=TC052: lua string-arg modulo. Succeeded.},{@log smoke=TC052: lua string-arg modulo. Failed (%q0).}"
+"return mux.args[1] % mux.args[2]"
 >397
-"if mux.args[1] == \"hello\" then return \"yes\" else return \"no\" end"
+"@if strmatch(setr(0,lua(me/LUA_MOD_ARGS,17,5)),2)={@log smoke=TC052: lua string-arg modulo. Succeeded.},{@log smoke=TC052: lua string-arg modulo. Failed (%q0).}"
 >398
-"@if strmatch(setr(0,lua(me/LUA_STREQ,hello)),yes)={@log smoke=TC053: lua string equality match. Succeeded.},{@log smoke=TC053: lua string equality match. Failed (%q0).}"
+"if mux.args[1] == \"hello\" then return \"yes\" else return \"no\" end"
 >399
-"@if strmatch(setr(0,lua(me/LUA_STREQ,world)),no)={@log smoke=TC054: lua string inequality. Succeeded.},{@log smoke=TC054: lua string inequality. Failed (%q0).}"
+"@if strmatch(setr(0,lua(me/LUA_STREQ,hello)),yes)={@log smoke=TC053: lua string equality match. Succeeded.},{@log smoke=TC053: lua string equality match. Failed (%q0).}"
 >400
-"if mux.args[1] == \"5\" then return \"str\" else return \"other\" end"
+"@if strmatch(setr(0,lua(me/LUA_STREQ,world)),no)={@log smoke=TC054: lua string inequality. Succeeded.},{@log smoke=TC054: lua string inequality. Failed (%q0).}"
 >401
-"@if strmatch(setr(0,lua(me/LUA_STREQ_NUM,5)),str)={@log smoke=TC055: lua string equality numeric. Succeeded.},{@log smoke=TC055: lua string equality numeric. Failed (%q0).}"
+"if mux.args[1] == \"5\" then return \"str\" else return \"other\" end"
 >402
-"local t = {10, 20, 30} return t[1] + t[2] + t[3]"
+"@if strmatch(setr(0,lua(me/LUA_STREQ_NUM,5)),str)={@log smoke=TC055: lua string equality numeric. Succeeded.},{@log smoke=TC055: lua string equality numeric. Failed (%q0).}"
 >403
-"@if strmatch(setr(0,lua(me/LUA_TBLINT)),60)={@log smoke=TC056: lua integer table sum. Succeeded.},{@log smoke=TC056: lua integer table sum. Failed (%q0).}"
+"local t = {10, 20, 30} return t[1] + t[2] + t[3]"
 >404
-"local t = {10, 20, 30, 40, 50} local s = 0 for i = 1, 5 do s = s + t[i] end return s"
+"@if strmatch(setr(0,lua(me/LUA_TBLINT)),60)={@log smoke=TC056: lua integer table sum. Succeeded.},{@log smoke=TC056: lua integer table sum. Failed (%q0).}"
 >405
-"@if strmatch(setr(0,lua(me/LUA_TBLLOOP)),150)={@log smoke=TC057: lua for-loop table sum. Succeeded.},{@log smoke=TC057: lua for-loop table sum. Failed (%q0).}"
+"local t = {10, 20, 30, 40, 50} local s = 0 for i = 1, 5 do s = s + t[i] end return s"
 >406
-"local t = {1, 2, 3, 4, 5} local s = 0 for i = 1, 5 do s = s + t[i] * i end return s"
+"@if strmatch(setr(0,lua(me/LUA_TBLLOOP)),150)={@log smoke=TC057: lua for-loop table sum. Succeeded.},{@log smoke=TC057: lua for-loop table sum. Failed (%q0).}"
 >407
+"local t = {1, 2, 3, 4, 5} local s = 0 for i = 1, 5 do s = s + t[i] * i end return s"
+>408
 "@if strmatch(setr(0,lua(me/LUA_TBLIDX)),55)={@log smoke=TC058: lua for-loop table index arithmetic. Succeeded.;@trig me/tr.done},{@log smoke=TC058: lua for-loop table index arithmetic. Failed (%q0).;@trig me/tr.done}"
 <
 !142
@@ -6956,9 +6962,9 @@
 "@if strmatch(setr(0,sha1([eval({A%x<bad(]tail})])),setr(1,sha1([eval({A%x<bad(]tail})])))={@log smoke=TC049: edge pct-x mixed closer tail parity. Succeeded.},{@log smoke=TC049: edge pct-x mixed closer tail parity. Failed (%q0 vs %q1).}"
 >332
 "@if strmatch(setr(0,sha1([eval({A%=<bad(name>;tail})])),setr(1,sha1([eval({A%=<bad(name>;tail})])))={@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Succeeded.},{@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Failed (%q0 vs %q1).}"
->394
+>395
 "@if strmatch(setr(0,sha1([setr(1,TAIL)][eval({%q<bad;[add(1,2)]%q1})])),setr(1,sha1([setr(1,TAIL)][eval({%q<bad;[add(1,2)]%q1})])))={@log smoke=TC051: edge malformed pct-q then valid tail parity. Succeeded.},{@log smoke=TC051: edge malformed pct-q then valid tail parity. Failed (%q0 vs %q1).}"
->396
+>397
 "@if strmatch(setr(0,sha1([setr(2,POST)][eval({pre%q<bad;mid%q2post})])),setr(1,sha1([setr(2,POST)][eval({pre%q<bad;mid%q2post})])))={@log smoke=TC052: edge malformed pct-q then later substitution parity. Succeeded.;@trig me/tr.done},{@log smoke=TC052: edge malformed pct-q then later substitution parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
 <
 !171
@@ -7259,17 +7265,17 @@
 "@if strmatch(setr(0,reglattr(me,\\[invalid)),#-1 REGEXP ERROR*)={@log smoke=TC007: reglattr bad regex. Succeeded.},{@log smoke=TC007: reglattr bad regex. Failed (%q0).}"
 >271
 "@if strmatch(sort(reglattr(me,_ONE$)), ALPHA_ONE BETA_ONE)={@log smoke=TC008: reglattr _ONE suffix. Succeeded.;@trig me/tr.done},{@log smoke=TC008: reglattr _ONE suffix. Failed (reglattr=[sort(reglattr(me,_ONE$))]).;@trig me/tr.done}"
->408
-"1"
 >409
-"2"
+"1"
 >410
-"3"
+"2"
 >411
-"4"
+"3"
 >412
-"5"
+"4"
 >413
+"5"
+>414
 "6"
 <
 !180
@@ -7683,28 +7689,26 @@
 "@if strmatch(route(v(room_a), v(room_c), locked path),[v(exit_ab)] [v(exit_bc)])={@log smoke=TC022: route locked path. Succeeded.},{@log smoke=TC022: route locked path. Failed ([route(v(room_a), v(room_c), locked path)]).}"
 >305
 "@if strmatch(route(v(room_a), v(room_b), locked rebuild),v(exit_ab))={@log smoke=TC023: route locked rebuild. Succeeded.;@trig me/tr.done},{@log smoke=TC023: route locked rebuild. Failed ([route(v(room_a), v(room_b), locked rebuild)]).;@trig me/tr.done}"
->414
-"#192"
 >415
-"#193"
+"#192"
 >416
-"#194"
+"#193"
 >417
-"#195"
+"#194"
 >418
-"#196"
+"#195"
 >419
-"#197"
+"#196"
 >420
-"#198"
+"#197"
 >421
-"#199"
+"#198"
 >422
-"#200"
+"#199"
 >423
-"#201"
+"#200"
 >424
-"#-1 FUNCTION (CREATE) EXPECTS 2 OR 3 ARGUMENTS"
+"#201"
 >425
 "#-1 FUNCTION (CREATE) EXPECTS 2 OR 3 ARGUMENTS"
 >426
@@ -7714,36 +7718,38 @@
 >428
 "#-1 FUNCTION (CREATE) EXPECTS 2 OR 3 ARGUMENTS"
 >429
-"#202"
+"#-1 FUNCTION (CREATE) EXPECTS 2 OR 3 ARGUMENTS"
 >430
-"#203"
+"#202"
 >431
-"#204"
+"#203"
 >432
-"#205"
+"#204"
 >433
-"#206"
+"#205"
 >434
-"#207"
+"#206"
 >435
-"#208"
+"#207"
 >436
-"#209"
+"#208"
 >437
-"#210"
+"#209"
 >438
-"#211"
+"#210"
 >439
-"#212"
+"#211"
 >440
-"#213"
+"#212"
 >441
-"#214"
+"#213"
 >442
-"#215"
+"#214"
 >443
-"#216"
+"#215"
 >444
+"#216"
+>445
 "#217"
 <
 !192
@@ -8451,15 +8457,15 @@
 "@log smoke=BENCH049:[rvbench(before(cat(rand(10),|,rand(10)),|),10000)]"
 >332
 "@log smoke=BENCH050:[rvbench(after(cat(rand(10),|,rand(10)),|),10000)]"
->394
+>395
 "@log smoke=BENCH051:[rvbench(ldelete(cat(rand(10),rand(10),rand(10),rand(10)),2),10000)]"
->396
+>397
 "@log smoke=BENCH052:[rvbench(replace(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]"
->398
-"@log smoke=BENCH053:[rvbench(insert(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]"
 >399
+"@log smoke=BENCH053:[rvbench(insert(cat(rand(10),rand(10),rand(10)),2,ZZZ),10000)]"
+>400
 "@log smoke=BENCH054:[rvbench(first(rest(cat(rand(10),rand(10),rand(10),rand(10)))),10000)]"
->401
+>402
 "@log smoke=BENCH055:[rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\\,|)),10000)];@trig me/tr.done"
 <
 !220
@@ -8554,7 +8560,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->445
+>446
 "apple"
 <
 !223
@@ -8577,7 +8583,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->445
+>446
 "apple"
 <
 !224
@@ -8600,7 +8606,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->445
+>446
 "banana"
 <
 !225
@@ -8623,7 +8629,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->446
+>447
 "yes"
 <
 !226
@@ -8646,7 +8652,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->446
+>447
 "yes"
 <
 !227
@@ -8690,7 +8696,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->447
+>448
 "vanilla"
 <
 !229
@@ -8713,7 +8719,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->447
+>448
 "chocolate"
 <
 !230
@@ -8736,7 +8742,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->448
+>449
 "color:red"
 <
 !231
@@ -8759,7 +8765,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->448
+>449
 "color:blue"
 <
 !232
@@ -8782,7 +8788,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->448
+>449
 "size:large"
 <
 !233
@@ -8805,7 +8811,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->449
+>450
 "50"
 <
 !234
@@ -8828,7 +8834,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->449
+>450
 "150"
 <
 !235
@@ -8851,7 +8857,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->449
+>450
 "200"
 <
 !236
@@ -8874,9 +8880,9 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->450
-"red"
 >451
+"red"
+>452
 "circle"
 <
 !237
@@ -8899,9 +8905,9 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->450
-"red"
 >451
+"red"
+>452
 "square"
 <
 !238
@@ -8924,9 +8930,9 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->450
-"blue"
 >451
+"blue"
+>452
 "circle"
 <
 !239
@@ -8970,7 +8976,7 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->452
+>453
 "present"
 <
 !241
@@ -9369,33 +9375,33 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->453
-"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn assert_cmd atan2_fn atan_fn attrib_set_fn band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn butlast_fn bxor_fn cachestats_fn cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn chaninfo_fn chanuser_fn chanusers_fn choose_fn chr_fn citer_fn clone_fn cmd_say cmogrifier_fn columns_fn comp_fn connlog_fn convtime_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn dec_fn delete_fn delextract_fn delim_parity_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn grab_fn graball_fn graphemes_fn gt_fn gte_fn hmac_fn iabs_fn iadd_fn idiv_fn if_cmd imul_fn inc_fn include_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn jit_coverage_fn jit_fold_parity_fn jit_parity_fn jit_route_parity_fn jitstats_fn json_fn ladd_fn lambda_fn land_fn last_fn lband_fn lcstr_fn ldelete_fn letq_fn limath_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn"
 >454
-"log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn lua_fn lxor_fn mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn overflow_inject_fn paginate_fn parenmatch_fn parsedate_fn parser_fn pi_fn pickrand_fn pocvm2_fn pos_fn posn_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn route_fn rpad_fn rvbench_fn sandbox_fn search_eval_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn shutdown sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strdistance_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strset_fn strsort_fn strtrunc_fn sub_fn subnetmatch_fn switch_cmd switch_fn t_fn table_fn tan_fn tier2_parity_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn visual_width_fn vmag_fn vmul_fn vsub_fn vunit_fn vwidth_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn"
+"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn assert_cmd atan2_fn atan_fn attrib_set_fn band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn butlast_fn bxor_fn cachestats_fn cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn chaninfo_fn chanuser_fn chanusers_fn choose_fn chr_fn citer_fn clone_fn cmd_say cmogrifier_fn columns_fn comp_fn connlog_fn convtime_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn dec_fn delete_fn delextract_fn delim_parity_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn grab_fn graball_fn graphemes_fn gt_fn gte_fn hmac_fn iabs_fn iadd_fn idiv_fn if_cmd imul_fn inc_fn include_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn jit_coverage_fn jit_fold_parity_fn jit_parity_fn jit_route_parity_fn jitstats_fn json_fn ladd_fn lambda_fn land_fn last_fn lband_fn lcstr_fn ldelete_fn letq_fn limath_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn"
 >455
+"log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn lua_fn lxor_fn mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn overflow_inject_fn paginate_fn parenmatch_fn parsedate_fn parser_fn pi_fn pickrand_fn pocvm2_fn pos_fn posn_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn route_fn rpad_fn rvbench_fn sandbox_fn search_eval_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn shutdown sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strdistance_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strset_fn strsort_fn strtrunc_fn sub_fn subnetmatch_fn switch_cmd switch_fn t_fn table_fn tan_fn tier2_parity_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn visual_width_fn vmag_fn vmul_fn vsub_fn vunit_fn vwidth_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn"
+>456
 "@wait me={@log smoke=SUITE-DISPATCH: %0 tcs=[words(lattr(test_%0/tr.tc*))];@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
->495
-"@cdestroy cipriv;@cdestroy citest"
 >496
-"@cdestroy chutest"
+"@cdestroy cipriv;@cdestroy citest"
 >497
+"@cdestroy chutest"
+>498
 "@cdestroy cutest"
->501
+>502
 "@destroy/override CloneSource"
->503
+>504
 "@destroy/override mogobj;@cdestroy mogtest2;@cdestroy mogtest"
->513
+>514
 "@destroy/override crctest"
->589
+>590
 "@destroy/override test_lp_gem;@destroy/override test_lp_box"
->616
+>617
 "@destroy/override test_noeval_tgt3;@destroy/override test_noeval_tgt2;@destroy/override test_noeval_tgt"
->624
+>625
 "@cdestroy pgtest"
->648
+>649
 "@destroy/override [get(test_route_fn/exit_r1q1)];@destroy/override [get(test_route_fn/exit_pdead_q1)];@destroy/override [get(test_route_fn/exit_p2r1)];@destroy/override [get(test_route_fn/exit_p12)];@destroy/override [get(test_route_fn/exit_y12)];@destroy/override [get(test_route_fn/exit_x2y1)];@destroy/override [get(test_route_fn/exit_x12)];@destroy/override [get(test_route_fn/room_r1)];@destroy/override [get(test_route_fn/room_q1)];@destroy/override [get(test_route_fn/room_pdead)];@destroy/override [get(test_route_fn/room_p2)];@destroy/override [get(test_route_fn/room_p1)];@destroy/override [get(test_route_fn/room_y2)];@destroy/override [get(test_route_fn/room_y1)];@destroy/override [get(test_route_fn/room_x2)];@destroy/override [get(test_route_fn/room_x1)];@destroy/override [get(test_route_fn/zone_r)];@destroy/override [get(test_route_fn/zone_q)];@destroy/override [get(test_route_fn/zone_p)];@destroy/override [get(test_route_fn/zone_y)];@destroy/override [get(test_route_fn/zone_x)];@destroy/override [get(test_route_fn/exit_parent_to_c)];@destroy/override [get(test_route_fn/exit_bc)];@destroy/override [get(test_route_fn/exit_ab)];@destroy/override [get(test_route_fn/room_child)];@destroy/override [get(test_route_fn/room_parent)];@destroy/override [get(test_route_fn/room_e)];@destroy/override [get(test_route_fn/room_d)];@destroy/override [get(test_route_fn/room_c)];@destroy/override [get(test_route_fn/room_b)];@destroy/override [get(test_route_fn/room_a)];@destroy/override route_exit_r1q1;@destroy/override route_exit_pdead_q1;@destroy/override route_exit_p2r1;@destroy/override route_exit_p12;@destroy/override route_exit_y12;@destroy/override route_exit_x2y1;@destroy/override route_exit_x12;@destroy/override route_exit_parent_to_c;@destroy/override route_exit_bc;@destroy/override route_exit_ab"
->652
+>653
 "@destroy/override se_clear2;@destroy/override se_clear1;@destroy/override se_multi3;@destroy/override se_multi2;@destroy/override se_multi1;@destroy/override se_num3;@destroy/override se_num2;@destroy/override se_num1;@destroy/override se_wild3;@destroy/override se_wild2;@destroy/override se_wild1;@destroy/override se_neg2;@destroy/override se_neg1;@destroy/override se_untagged;@destroy/override se_tagged2;@destroy/override se_tagged1;@destroy/override se_nonapple;@destroy/override se_apple2;@destroy/override se_apple1"
 <
 !254
@@ -9473,11 +9479,11 @@
 "@if eq(strlen(sortkey(me/fn_ident,)),0)={@log smoke=TC005: sortkey empty list. Succeeded.},{@log smoke=TC005: sortkey empty list. Failed (sortkey=[sortkey(me/fn_ident,)]).}"
 >263
 "@if strmatch(sortkey(me/fn_ident,only), only)={@log smoke=TC006: sortkey single element. Succeeded.;@trig me/tr.done},{@log smoke=TC006: sortkey single element. Failed (sortkey=[sortkey(me/fn_ident,only)]).;@trig me/tr.done}"
->456
-"strlen(%0)"
 >457
-"mul(%0,-1)"
+"strlen(%0)"
 >458
+"mul(%0,-1)"
+>459
 "%0"
 <
 !256
@@ -10899,11 +10905,11 @@
 "@if strmatch(while(me/fn_identity,me/fn_identity,a b c d e,c),a b c)={@log smoke=TC003: while same-attr optimization. Succeeded.;@trig me/tr.done},{@log smoke=TC003: while same-attr optimization. Failed (while=[while(me/fn_identity,me/fn_identity,a b c d e,c)]).;@trig me/tr.done}"
 >260
 "@log smoke=End while() test cases.;@notify smoke"
->459
-"mul(%0,2)"
 >460
-"gt(%0,10)"
+"mul(%0,2)"
 >461
+"gt(%0,10)"
+>462
 "%0"
 <
 !302
