@@ -40,10 +40,27 @@
       )=
   {
     @log smoke=TC002: pos Unicode. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC002: pos Unicode. Failed (pos(B)=[pos(B,A[chr(233)]B[chr(65296)]C)] pos(C)=[pos(C,A[chr(233)]B[chr(65296)]C)]).;
+  }
+-
+#
+# Test Case #3 - positions count grapheme CLUSTERS (#787).  A skin-tone
+# emoji (base + modifier, two code points) before the match is ONE
+# position; counting code points gave 4.
+#
+&tr.tc003 test_pos_fn=
+  @if cand(
+        eq(pos(b,[chr(128075)][chr(127995)]ab), 3),
+        strmatch(pos(zz,[chr(128075)][chr(127995)]ab), #-1*)
+      )=
+  {
+    @log smoke=TC003: pos cluster counting. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: pos cluster counting. Failed (pos=[pos(b,[chr(128075)][chr(127995)]ab)] nf=[pos(zz,[chr(128075)][chr(127995)]ab)]).;
     @trig me/tr.done
   }
 -

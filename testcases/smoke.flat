@@ -5212,7 +5212,9 @@
 >262
 "@if cand(strmatch(ljust(1,1,-+), 1),eq(strlen(ljust(1,3,-+)), 3),eq(strlen(ljust(1,5,-+)), 5),eq(strlen(ljust(123,11,-+)), 11))={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.},{@log smoke=TC005: Vary string and width with '-+' fill. Failed.}"
 >263
-"@if cand(strmatch(ljust(abcdef,3), abc),eq(strlen(ljust(abcdef,0)), 0),eq(strlen(ljust(abcdef,xyz)), 0))={@log smoke=TC006: ljust truncation. Succeeded.;@trig me/tr.done},{@log smoke=TC006: ljust truncation. Failed (t=[ljust(abcdef,3)] w0=[ljust(abcdef,0)] wx=[ljust(abcdef,xyz)]).;@trig me/tr.done}"
+"@if cand(strmatch(ljust(abcdef,3), abc),eq(strlen(ljust(abcdef,0)), 0),eq(strlen(ljust(abcdef,xyz)), 0))={@log smoke=TC006: ljust truncation. Succeeded.;},{@log smoke=TC006: ljust truncation. Failed (t=[ljust(abcdef,3)] w0=[ljust(abcdef,0)] wx=[ljust(abcdef,xyz)]).;}"
+>264
+"@if cand(strmatch(encode64(stripansi(ljust([chr(128075)][chr(127995)]ab,3))),encode64(stripansi(ljust(strcat(ansi(r,chr(128075)),chr(127995),ab),3)))),eq(vwidth(strcat(ansi(r,chr(128075)),chr(127995))), 2),eq(vwidth([chr(128075)][chr(127995)]), 2))={@log smoke=TC007: color inside cluster truncation. Succeeded.;@trig me/tr.done},{@log smoke=TC007: color inside cluster truncation. Failed (plain=[encode64(stripansi(ljust([chr(128075)][chr(127995)]ab,3)))] col=[encode64(stripansi(ljust(strcat(ansi(r,chr(128075)),chr(127995),ab),3)))] vw=[vwidth(strcat(ansi(r,chr(128075)),chr(127995)))]).;@trig me/tr.done}"
 <
 !128
 "test_lmax_fn"
@@ -7093,7 +7095,9 @@
 >257
 "@if cand(eq(pos(cd,abcdef), 3),strmatch(pos(xy,abcdef), #-1))={@log smoke=TC001: pos basic operations. Succeeded.},{@log smoke=TC001: pos basic operations. Failed (pos(cd)=[pos(cd,abcdef)] pos(xy)=[pos(xy,abcdef)]).}"
 >258
-"@if cand(eq(pos(B,A[chr(233)]B[chr(65296)]C), 3),eq(pos(C,A[chr(233)]B[chr(65296)]C), 5))={@log smoke=TC002: pos Unicode. Succeeded.;@trig me/tr.done},{@log smoke=TC002: pos Unicode. Failed (pos(B)=[pos(B,A[chr(233)]B[chr(65296)]C)] pos(C)=[pos(C,A[chr(233)]B[chr(65296)]C)]).;@trig me/tr.done}"
+"@if cand(eq(pos(B,A[chr(233)]B[chr(65296)]C), 3),eq(pos(C,A[chr(233)]B[chr(65296)]C), 5))={@log smoke=TC002: pos Unicode. Succeeded.;},{@log smoke=TC002: pos Unicode. Failed (pos(B)=[pos(B,A[chr(233)]B[chr(65296)]C)] pos(C)=[pos(C,A[chr(233)]B[chr(65296)]C)]).;}"
+>259
+"@if cand(eq(pos(b,[chr(128075)][chr(127995)]ab), 3),strmatch(pos(zz,[chr(128075)][chr(127995)]ab), #-1*))={@log smoke=TC003: pos cluster counting. Succeeded.;@trig me/tr.done},{@log smoke=TC003: pos cluster counting. Failed (pos=[pos(b,[chr(128075)][chr(127995)]ab)] nf=[pos(zz,[chr(128075)][chr(127995)]ab)]).;@trig me/tr.done}"
 >260
 "@log smoke=End pos() test cases.;@notify smoke"
 <

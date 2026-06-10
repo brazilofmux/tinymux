@@ -44,6 +44,8 @@ void  mux_strncpy(UTF8 *dest, const UTF8 *src, size_t length_to_copy);
 // unprintable.
 size_t utf8_cluster_count(const UTF8 *src, size_t nSrc);
 extern "C" size_t co_visual_width(const unsigned char *p, size_t len);
+extern "C" size_t co_copy_columns(unsigned char *out, const unsigned char *p,
+                                  const unsigned char *pe, size_t ncols);
 
 // mathutil.h exports
 long   mux_atol(const UTF8 *pString);
@@ -660,6 +662,49 @@ static void test_grapheme_regional_indicator_flag()
     ASSERT_EQ(vwidth(E_RI_U),   (size_t)1);
 }
 
+// PUA color codes as the engine stores them (ansi() output).
+#define C_GREEN "\xEF\x98\x82"        // green foreground on
+#define C_RESET "\xEF\x94\x80"        // color reset
+
+static void test_copy_columns_color_inside_cluster()
+{
+    // A color reset between an emoji base and its skin-tone modifier is
+    // exactly what strcat(ansi(c,base),tone) produces.  Stripped, this
+    // is ONE cluster of width 2; co_copy_columns must keep or drop it
+    // atomically -- segmenting the raw buffer used to split it, charge
+    // 4 columns, and truncate between base and modifier (#787).
+    static const char s[] = C_GREEN E_THUMB C_RESET E_TONE;
+    const size_t len = sizeof(s) - 1;
+    unsigned char out[256];
+
+    // Fits at 2 columns: every byte copied, color codes in place.
+    size_t n = co_copy_columns(out, (const unsigned char *)s,
+                               (const unsigned char *)s + len, 2);
+    ASSERT_EQ(n, len);
+    ASSERT_TRUE(memcmp(out, s, len) == 0);
+
+    // At 1 column the 2-wide cluster does not fit: nothing visible is
+    // emitted, only the leading color code passes through.
+    n = co_copy_columns(out, (const unsigned char *)s,
+                        (const unsigned char *)s + len, 1);
+    ASSERT_EQ(n, (size_t)3);
+    ASSERT_TRUE(memcmp(out, C_GREEN, 3) == 0);
+
+    // GB11 family with a color flip inside the ZWJ sequence: still one
+    // cluster, charged 2 columns once.  At 3 columns the family and the
+    // following 'a' fit; 'b' is truncated.
+    static const char fam[] = E_MAN C_RESET E_ZWJ E_WOMAN E_ZWJ E_GIRL "ab";
+    const size_t flen = sizeof(fam) - 1;
+    n = co_copy_columns(out, (const unsigned char *)fam,
+                        (const unsigned char *)fam + flen, 3);
+    ASSERT_EQ(n, flen - 1);
+    ASSERT_TRUE(memcmp(out, fam, flen - 1) == 0);
+
+    // Agreement with co_visual_width: the colored skin-tone string
+    // measures 2 columns, same as its stripped form.
+    ASSERT_EQ(co_visual_width((const unsigned char *)s, len), (size_t)2);
+}
+
 static void test_grapheme_baselines()
 {
     // Plain text, combining marks and wide CJK are unchanged by clustering.
@@ -756,6 +801,7 @@ int main()
     RUN_TEST(test_grapheme_gb11_zwj_family);
     RUN_TEST(test_grapheme_skin_tone_modifier);
     RUN_TEST(test_grapheme_regional_indicator_flag);
+    RUN_TEST(test_copy_columns_color_inside_cluster);
     RUN_TEST(test_grapheme_baselines);
 
     printf("\n=================\n");
