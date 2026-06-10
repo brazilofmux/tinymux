@@ -1747,12 +1747,13 @@ static void ast_noeval_ulambda(const ASTNode *node,
 
     // Evaluate the body with fargs[1]... as %0, %1, ...
     //
-    // Use ast_exec (not mux_exec) to bypass the JIT compiler.
-    // The JIT does not currently support dynamically-provided cargs
-    // from ulambda — it compiles with the cargs from the outer
-    // expression, not the ones we pass here.
+    // Use mux_exec so the body JIT-compiles, mirroring do_ufun (fun_u).
+    // The cargs we pass here (&fargs[1]) populate %0-%9 correctly: a
+    // depth-1 run_cached_program reads them from CARGS_BASE.  This was
+    // previously routed through ast_exec to dodge a blob-internal float
+    // intrinsic bug (#778); now that #778 is fixed, the JIT path is safe.
     //
-    ast_exec(atext, LBUF_SIZE - 1, buff, bufc, thing, executor, enactor,
+    mux_exec(atext, LBUF_SIZE - 1, buff, bufc, thing, executor, enactor,
         AttrTrace(aflags, EV_FCHECK | EV_EVAL),
         const_cast<const UTF8 **>(&fargs[1]), real_nfargs - 1);
     free_lbuf(atext);
