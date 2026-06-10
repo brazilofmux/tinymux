@@ -1713,16 +1713,12 @@ size_t co_pos(const unsigned char *haystack, size_t hlen,
     const unsigned char *found = co_search(haystack, hlen, needle, nlen);
     if (!found) return 0;
 
-    /* Count visible code points before the match to get 1-based index. */
-    size_t vis_before = 0;
-    const unsigned char *p = haystack;
-    while (p < found) {
-        p = co_skip_color(p, haystack + hlen);
-        if (p >= found) break;
-        p = co_visible_advance(p, haystack + hlen, 1, NULL);
-        vis_before++;
-    }
-    return vis_before + 1;  /* 1-based */
+    /* Count grapheme CLUSTERS before the match, exactly like fun_pos
+     * (#787): a multi-code-point cluster (skin-tone emoji, ZWJ
+     * sequence) preceding the match is ONE position, not several.
+     * Counting visible code points here made the fold/blob paths
+     * disagree with the interpreter. */
+    return co_cluster_count(haystack, (size_t)(found - haystack)) + 1;
 }
 
 /* ---- co_lpos ---- */
@@ -1883,45 +1879,62 @@ size_t co_visual_width(const unsigned char *p, size_t len)
 size_t co_copy_columns(unsigned char *out, const unsigned char *p,
                        const unsigned char *pe, size_t ncols)
 {
+    /* Segment graphemes on the STRIPPED text so a color code inside a
+     * cluster (e.g. an ansi() reset between an emoji base and its
+     * skin-tone modifier) cannot split it (#787).  Segmenting the raw
+     * buffer saw such a cluster as two, double-charged its width, and
+     * could truncate between base and modifier -- visibly changing the
+     * glyph.  Stripping first keeps this function in exact agreement
+     * with co_visual_width.  Bytes are still copied from the original
+     * buffer, with interleaved color codes passed through. */
+    unsigned char plain[LBUF_SIZE];
+    size_t plen = co_strip_color(plain, p, (size_t)(pe - p));
+
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t cols_emitted = 0;
+    size_t pn = 0;
 
     while (p < pe && wp < wp_end) {
-        /* Copy PUA color codes transparently. */
-        if (p[0] == 0xEF && (p + 2) < pe
-            && p[1] >= 0x94 && p[1] <= 0x9F) {
-            if (wp + 3 <= wp_end) {
-                wp[0] = p[0]; wp[1] = p[1]; wp[2] = p[2];
-                wp += 3;
-            }
-            p += 3;
-            continue;
-        }
-        if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] >= 0xB0 && p[1] <= 0xB3) {
-            if (wp + 4 <= wp_end) {
-                wp[0] = p[0]; wp[1] = p[1]; wp[2] = p[2]; wp[3] = p[3];
-                wp += 4;
-            }
-            p += 4;
+        /* Copy color codes transparently (zero width). */
+        const unsigned char *q = co_skip_color(p, pe);
+        if (q != p) {
+            size_t cb = (size_t)(q - p);
+            if (wp + cb > wp_end) break;
+            memcpy(wp, p, cb);
+            wp += cb;
+            p = q;
             continue;
         }
 
-        /* Visible code point — start of a grapheme cluster.  Copy the whole
-         * cluster atomically so truncation never splits one, and charge it a
-         * single glyph's width (see cluster_console_width). */
-        size_t cplen = next_grapheme_plain(p, (size_t)(pe - p));
+        /* Visible byte: it begins the next cluster of the stripped
+         * text.  Width-check the WHOLE cluster before copying any of
+         * it, so truncation never splits a cluster. */
+        if (pn >= plen) break;
+        size_t cplen = next_grapheme_plain(plain + pn, plen - pn);
         if (0 == cplen) break;
 
-        size_t w = cluster_console_width(p, cplen);
+        size_t w = cluster_console_width(plain + pn, cplen);
         if (cols_emitted + w > ncols) break;
 
-        if (wp + cplen > wp_end) break;
-        for (size_t i = 0; i < cplen && p + i < pe; i++)
-            wp[i] = p[i];
-        wp += cplen;
-        p += cplen;
+        /* Copy cplen visible bytes from the original buffer, passing
+         * any color codes interleaved within the cluster through. */
+        size_t copied = 0;
+        while (copied < cplen && p < pe) {
+            q = co_skip_color(p, pe);
+            if (q != p) {
+                size_t cb = (size_t)(q - p);
+                if (wp + cb > wp_end) { p = pe; break; }
+                memcpy(wp, p, cb);
+                wp += cb;
+                p = q;
+                continue;
+            }
+            if (wp >= wp_end) { p = pe; break; }
+            *wp++ = *p++;
+            copied++;
+        }
+        pn += cplen;
         cols_emitted += w;
     }
 

@@ -3202,16 +3202,12 @@ size_t co_pos(const unsigned char *haystack, size_t hlen,
     const unsigned char *found = co_search(haystack, hlen, needle, nlen);
     if (!found) return 0;
 
-    /* Count visible code points before the match to get 1-based index. */
-    size_t vis_before = 0;
-    const unsigned char *p = haystack;
-    while (p < found) {
-        p = co_skip_color(p, haystack + hlen);
-        if (p >= found) break;
-        p = co_visible_advance(p, haystack + hlen, 1, NULL);
-        vis_before++;
-    }
-    return vis_before + 1;  /* 1-based */
+    /* Count grapheme CLUSTERS before the match, exactly like fun_pos
+     * (#787): a multi-code-point cluster (skin-tone emoji, ZWJ
+     * sequence) preceding the match is ONE position, not several.
+     * Counting visible code points here made the fold/blob paths
+     * disagree with the interpreter. */
+    return co_cluster_count(haystack, (size_t)(found - haystack)) + 1;
 }
 
 /* ---- co_lpos ---- */
@@ -3372,45 +3368,62 @@ size_t co_visual_width(const unsigned char *p, size_t len)
 size_t co_copy_columns(unsigned char *out, const unsigned char *p,
                        const unsigned char *pe, size_t ncols)
 {
+    /* Segment graphemes on the STRIPPED text so a color code inside a
+     * cluster (e.g. an ansi() reset between an emoji base and its
+     * skin-tone modifier) cannot split it (#787).  Segmenting the raw
+     * buffer saw such a cluster as two, double-charged its width, and
+     * could truncate between base and modifier -- visibly changing the
+     * glyph.  Stripping first keeps this function in exact agreement
+     * with co_visual_width.  Bytes are still copied from the original
+     * buffer, with interleaved color codes passed through. */
+    unsigned char plain[LBUF_SIZE];
+    size_t plen = co_strip_color(plain, p, (size_t)(pe - p));
+
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t cols_emitted = 0;
+    size_t pn = 0;
 
     while (p < pe && wp < wp_end) {
-        /* Copy PUA color codes transparently. */
-        if (p[0] == 0xEF && (p + 2) < pe
-            && p[1] >= 0x94 && p[1] <= 0x9F) {
-            if (wp + 3 <= wp_end) {
-                wp[0] = p[0]; wp[1] = p[1]; wp[2] = p[2];
-                wp += 3;
-            }
-            p += 3;
-            continue;
-        }
-        if (p[0] == 0xF3 && (p + 3) < pe
-            && p[1] >= 0xB0 && p[1] <= 0xB3) {
-            if (wp + 4 <= wp_end) {
-                wp[0] = p[0]; wp[1] = p[1]; wp[2] = p[2]; wp[3] = p[3];
-                wp += 4;
-            }
-            p += 4;
+        /* Copy color codes transparently (zero width). */
+        const unsigned char *q = co_skip_color(p, pe);
+        if (q != p) {
+            size_t cb = (size_t)(q - p);
+            if (wp + cb > wp_end) break;
+            memcpy(wp, p, cb);
+            wp += cb;
+            p = q;
             continue;
         }
 
-        /* Visible code point — start of a grapheme cluster.  Copy the whole
-         * cluster atomically so truncation never splits one, and charge it a
-         * single glyph's width (see cluster_console_width). */
-        size_t cplen = next_grapheme_plain(p, (size_t)(pe - p));
+        /* Visible byte: it begins the next cluster of the stripped
+         * text.  Width-check the WHOLE cluster before copying any of
+         * it, so truncation never splits a cluster. */
+        if (pn >= plen) break;
+        size_t cplen = next_grapheme_plain(plain + pn, plen - pn);
         if (0 == cplen) break;
 
-        size_t w = cluster_console_width(p, cplen);
+        size_t w = cluster_console_width(plain + pn, cplen);
         if (cols_emitted + w > ncols) break;
 
-        if (wp + cplen > wp_end) break;
-        for (size_t i = 0; i < cplen && p + i < pe; i++)
-            wp[i] = p[i];
-        wp += cplen;
-        p += cplen;
+        /* Copy cplen visible bytes from the original buffer, passing
+         * any color codes interleaved within the cluster through. */
+        size_t copied = 0;
+        while (copied < cplen && p < pe) {
+            q = co_skip_color(p, pe);
+            if (q != p) {
+                size_t cb = (size_t)(q - p);
+                if (wp + cb > wp_end) { p = pe; break; }
+                memcpy(wp, p, cb);
+                wp += cb;
+                p = q;
+                continue;
+            }
+            if (wp >= wp_end) { p = pe; break; }
+            *wp++ = *p++;
+            copied++;
+        }
+        pn += cplen;
         cols_emitted += w;
     }
 
@@ -5369,13 +5382,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5162 "color_ops.c"
+#line 5175 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3902 "color_ops.rl"
+#line 3915 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5389,21 +5402,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5178 "color_ops.c"
+#line 5191 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3915 "color_ops.rl"
+#line 3928 "color_ops.rl"
     
-#line 5181 "color_ops.c"
+#line 5194 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3887 "color_ops.rl"
+#line 3900 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5417,9 +5430,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
-#line 3887 "color_ops.rl"
+#line 3900 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5436,7 +5449,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5217 "color_ops.c"
+#line 5230 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5465,62 +5478,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5251 "color_ops.c"
+#line 5264 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5261 "color_ops.c"
+#line 5274 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5271 "color_ops.c"
+#line 5284 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5281 "color_ops.c"
+#line 5294 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5291 "color_ops.c"
+#line 5304 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5538,38 +5551,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5314 "color_ops.c"
+#line 5327 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5324 "color_ops.c"
+#line 5337 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5334 "color_ops.c"
+#line 5347 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5587,14 +5600,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3886 "color_ops.rl"
+#line 3899 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5357 "color_ops.c"
+#line 5370 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5616,7 +5629,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3916 "color_ops.rl"
+#line 3929 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
