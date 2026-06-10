@@ -409,23 +409,27 @@ mux_subnet::SubnetComparison mux_subnet::compare_to(mux_subnet *t) const
 {
     if (*(t->m_iaEnd) < *m_iaBase)
     {
-        // this > t
+        // this entirely above t (disjoint).
         //
         return SubnetComparison::kGreaterThan;
     }
     else if (*m_iaEnd < *(t->m_iaBase))
     {
-        // this < t
+        // this entirely below t (disjoint).
         //
         return SubnetComparison::kLessThan;
     }
-    else if (  *m_iaBase < *(t->m_iaBase)
-            && *(t->m_iaEnd) < *m_iaEnd)
-    {
-        // this contains t
-        //
-        return SubnetComparison::kContains;
-    }
+    // The ranges overlap.  CIDR subnets cannot partially overlap, so this and
+    // t are either equal or one nests inside the other.  Test equality first,
+    // then containment with INCLUSIVE bounds: a wider subnet that shares its
+    // base address (e.g. 10.0.0.0/8 vs 10.0.0.0/24) or its end address (e.g.
+    // 0.0.0.0/1 vs 127.0.0.0/8) still contains the narrower one.  The previous
+    // strict '<' on both bounds skipped those shared-bound cases and fell
+    // through to kContainedBy, inverting the access-control subnet tree (#799)
+    // so a /8 ban silently stopped applying once a same-base /24 rule was
+    // added.  (m_iaBase/m_iaEnd expose only operator< and operator==, so the
+    // inclusive bounds are written as !(b < a) for a <= b.)
+    //
     else if (  *m_iaBase == *(t->m_iaBase)
             && m_iLeadingBits == t->m_iLeadingBits)
     {
@@ -433,9 +437,16 @@ mux_subnet::SubnetComparison mux_subnet::compare_to(mux_subnet *t) const
         //
         return SubnetComparison::kEqual;
     }
+    else if (  !(*(t->m_iaBase) < *m_iaBase)   // m_iaBase <= t->m_iaBase
+            && !(*m_iaEnd < *(t->m_iaEnd)))     // t->m_iaEnd <= m_iaEnd
+    {
+        // this contains t (this is the wider subnet).
+        //
+        return SubnetComparison::kContains;
+    }
     else
     {
-        // this is contained by t
+        // this is contained by t.
         //
         return SubnetComparison::kContainedBy;
     }
