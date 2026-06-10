@@ -31,6 +31,8 @@ void *memset(void *dst, int c, size_t n);
 void  memswap(void *a, void *b, size_t n);
 
 /* Forward declarations for co_* functions (in color_ops.o). */
+size_t co_mid_cluster(unsigned char *out, const unsigned char *data,
+                      size_t len, size_t iStart, size_t nCount);
 size_t co_first(unsigned char *out, const unsigned char *p, size_t len,
                 unsigned char delim);
 size_t co_rest(unsigned char *out, const unsigned char *p, size_t len,
@@ -2059,22 +2061,40 @@ char *rv64_after(char *out, const char **fargs, int nfargs) {
  * ---------------------------------------------------------------
  */
 
-double sin(double x)   { return x; }
-double cos(double x)   { return x; }
-double tan(double x)   { return x; }
-double asin(double x)  { return x; }
-double acos(double x)  { return x; }
-double atan(double x)  { return x; }
-double exp(double x)   { return x; }
-double log(double x)   { return x; }
-double log10(double x) { return x; }
-double ceil(double x)  { return x; }
-double floor(double x) { return x; }
-double fabs(double x)  { return x; }
+/* __attribute__((noipa)) on every stub (#785): the bodies are wrong by
+ * design (they exist only so the linker emits symbols for the DBT to
+ * intercept), so -O2 interprocedural optimization must never inline or
+ * constprop-clone them into a caller -- a clone's guest address is not
+ * in the intrinsic table, so the wrong body would actually run.  This
+ * is the same hazard that broke the FP-conversion stubs in #778; until
+ * now these relied on the toolchain merely happening not to inline.
+ *
+ * The bodies return NaN rather than a plausible value: if interception
+ * ever fails (dropped registration, unexpected clone), results read
+ * "NaN" instead of being subtly wrong, and the smoke suite fails
+ * loudly. */
+static double stub_nan(void) {
+    union { unsigned long long u; double d; } v;
+    v.u = 0x7FF8000000000000ULL;  /* quiet NaN */
+    return v.d;
+}
 
-double pow(double x, double y)   { (void)y; return x; }
-double atan2(double y, double x) { (void)x; return y; }
-double fmod(double x, double y)  { (void)y; return x; }
+__attribute__((noipa)) double sin(double x)   { (void)x; return stub_nan(); }
+__attribute__((noipa)) double cos(double x)   { (void)x; return stub_nan(); }
+__attribute__((noipa)) double tan(double x)   { (void)x; return stub_nan(); }
+__attribute__((noipa)) double asin(double x)  { (void)x; return stub_nan(); }
+__attribute__((noipa)) double acos(double x)  { (void)x; return stub_nan(); }
+__attribute__((noipa)) double atan(double x)  { (void)x; return stub_nan(); }
+__attribute__((noipa)) double exp(double x)   { (void)x; return stub_nan(); }
+__attribute__((noipa)) double log(double x)   { (void)x; return stub_nan(); }
+__attribute__((noipa)) double log10(double x) { (void)x; return stub_nan(); }
+__attribute__((noipa)) double ceil(double x)  { (void)x; return stub_nan(); }
+__attribute__((noipa)) double floor(double x) { (void)x; return stub_nan(); }
+__attribute__((noipa)) double fabs(double x)  { (void)x; return stub_nan(); }
+
+__attribute__((noipa)) double pow(double x, double y)   { (void)x; (void)y; return stub_nan(); }
+__attribute__((noipa)) double atan2(double y, double x) { (void)x; (void)y; return stub_nan(); }
+__attribute__((noipa)) double fmod(double x, double y)  { (void)x; (void)y; return stub_nan(); }
 
 /* ---------------------------------------------------------------
  * String↔double conversion — DBT intrinsic targets.
