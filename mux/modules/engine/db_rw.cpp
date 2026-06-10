@@ -1012,6 +1012,8 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
     {
         UTF8 buf[SBUF_SIZE];
         buf[0] = '>';
+        UTF8 *abuf = alloc_lbuf("db_write_object.attr");
+        UTF8 *ebuf = alloc_lbuf("db_write_object.enc");
         unsigned char *as;
         for (ca = atr_head(i, &as); ca; ca = atr_next(&as))
         {
@@ -1047,12 +1049,36 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
 
             // Format is: ">%d\n", j
             //
-            const UTF8 *p = atr_get_raw(i, j);
+            // atr_get_raw() returns the attribute text with the
+            // \x01owner:flags: prefix already stripped by the cache
+            // layer, so per-attribute owner overrides and flags
+            // (AF_NOEVAL, AF_LOCK, ...) must be re-encoded here or a
+            // flatfile export silently loses them.
+            //
+            dbref aowner;
+            int aflags;
+            size_t nText;
+            atr_get_str_LEN(abuf, i, j, &aowner, &aflags, &nText);
             size_t n = mux_ltoa(j, buf+1) + 1;
             buf[n++] = '\n';
             fwrite(buf, sizeof(UTF8), n, f);
-            putstring(f, p);
+            if (((aowner == Owner(i)) || (aowner == NOTHING)) && !aflags)
+            {
+                putstring(f, abuf);
+            }
+            else
+            {
+                if (aowner == NOTHING)
+                {
+                    aowner = Owner(i);
+                }
+                mux_sprintf(ebuf, LBUF_SIZE, T("%c%d:%d:%s"), ATR_INFO_CHAR,
+                    aowner, aflags, abuf);
+                putstring(f, ebuf);
+            }
         }
+        free_lbuf(abuf);
+        free_lbuf(ebuf);
         fwrite("<\n", sizeof(UTF8), 2, f);
     }
     return false;
