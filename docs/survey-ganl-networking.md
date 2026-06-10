@@ -178,12 +178,78 @@ real HTTP (won't TCP-split inside the first 4 bytes), but a telnet user whose
 first input is literally `"GET "` is misrouted to the WS handshake (then
 dropped). UX edge, not security.
 
+## Sub-part 5 — buffer + connection core (surveyed 2026-06-10)
+
+`io_buffer.cpp` (341), `connection.cpp` (1386), `session_manager` (interface
+only — no .cpp; the impl is `GanlTinyMuxSessionManager` in ganl_adapter.cpp).
+Five issues filed; the headline is a live-path remote DoS.
+
+✅ **ISSUE #794 (live, remote DoS — headline): no backpressure + throwing
+buffer ops + no exception barrier → whole-server crash.** Three verified facts
+combine: (1) `sendDataToClient` appends to `encryptedOutput_` with no high-water
+mark (connection.cpp:299/308), so a never-reading client grows it without
+bound; (2) `IoBuffer::ensureWritable`'s `buffer_.resize` throws `std::bad_alloc`
+(io_buffer.cpp:138); (3) **zero try/catch** in connection.cpp / io_buffer.cpp /
+the engines / `run_main_loop` — so the throw propagates to `std::terminate()`,
+aborting the whole process. A condition that should drop one connection crashes
+the server. Two independent fixes: a high-water disconnect (root) and an
+exception barrier around per-connection dispatch (restores isolation for any
+future accounting bug). Current `commitWrite`/`consumeRead` sites are provably
+consistent, so `bad_alloc` is the reachable throw today.
+
+✅ **ISSUE #795 (live, data-loss): plaintext `close()` drops queued output.**
+Drain-before-close (`closeAfterWriteDrain_`) is armed only in the TLS branch
+(connection.cpp:585-609); a plaintext `close()` goes straight to
+`closeConnection(handle_)` at :614 with bytes still in `encryptedOutput_`. A
+final line / boot message queued right before close on a write-blocked socket is
+lost. `closeNetworkAfterDrain()` (:509) exists but isn't armed for plaintext.
+
+✅ **ISSUE #796 (Windows/IOCP, memory-safety): WSASend reads `readPtr()` across
+the async boundary while a concurrent append reallocates.** `postWrite` hands
+`encryptedOutput_.readPtr()` to an overlapped WSASend (iocp_network_engine.cpp:
+574); a concurrent `sendDataToClient` append (connection.cpp:299/308) can
+`compact()`/resize the vector → UAF. The `lockForReuse` guard exists but is
+never used on the write path. Readiness engines are safe (synchronous `::write`
+from `readPtr()` in `handleWrite`). Windows-only; not on the Linux path.
+
+✅ **ISSUE #797 (low/hygiene): session-manager grab-bag.** `session_errors_`
+accumulates stale entries on failed `onConnectionOpen` (never cleared because
+`onConnectionClose` is skipped for `InvalidSessionId`; connection.cpp:937) —
+bounded by fd-table size (keyed by fd), not unbounded, and the whole error
+channel is dead (`getLastSessionErrorString` has zero callers). Plus
+`getConnectionHandle` returns a stale fabricated handle for closed sessions
+(no `get_desc` check, asymmetric with siblings), and the `isAddress*` methods
+are always-true/false stubs (latent bypass if ever wired).
+
+✅ **ISSUE #798 (correctness/latent-UAF): inconsistent Closing-state guards.**
+`handleNetworkEvent` (:189) and `postWrite` (:883) guard on `== Closed` while
+`postRead` (:839) and `sendDataToClient` (:246) use `isClosingOrClosed()`. A
+queued event in `Closing` state runs the pipeline on the TLS/protocol contexts
+that `close()` already destroyed (:621). Includes the reason-specific
+destructor re-entrancy workaround (ganl_adapter.cpp:799) and the missing
+`return` after `close()` in IOCP `handleWrite` (:1351).
+
+🔶 **Candidates for the fix pass (lower confidence / need cross-file checks),
+from the connection survey — not yet filed:**
+- F2: TLS-path partial write — `sendDataToClient` does `formattedOutput_.clear()`
+  unconditionally (:266) and consumes `applicationOutput_`; if TLS
+  `processOutgoing` returns WantRead/WantWrite having buffered the plaintext
+  internally, the formatted bytes may be unrecoverable. Needs verification
+  against `openssl_transport.cpp` `processOutgoing` buffering semantics.
+- F8: `continueTlsHandshake` returns `decryptedInput_.readableBytes()==0` (:708)
+  — i.e. returns false when there IS early app data; works only because
+  `handleRead` recomputes `tlsProducedData` (:1081). Fragile to refactor.
+- F9: on TLS `WantRead`, readiness `handleRead` doesn't `postRead()` at the end
+  (:977-1116) — relies on level-triggered re-fire; could stall under edge-
+  triggered epoll. Needs verification against the epoll engine's trigger mode.
+- F5: `handleNetworkEvent` read-overflow path calls `handleError(event.error)`
+  with a Read event's typically-zero error (:204) → "error 0" close.
+- io_buffer NIT: `ensureWritable` `writePos_ + required` / `buffer_.size()*3`
+  have no overflow guard (defensive only; no data path produces a multi-GB
+  `required` — websocket caps at WS_MAX_PAYLOAD, telnet SB at 4096, reads ~16KB).
+
 ## Sub-parts not yet surveyed
 
-- **Buffer + connection core** (`io_buffer.cpp`, `connection.cpp`,
-  `session_manager`) — partial I/O, backpressure, drain-on-close, queue lifetime.
-  Note `io_buffer.cpp ensureWritable` computes `writePos_ + required` with no
-  overflow check (theoretical, multi-GB only) — flagged by the handler survey.
 - **Address/DNS** (`netaddr.cpp`, `network_address.cpp`, `slave_spawn_posix.cpp`)
   — the `getaddrinfo` trailing-newline bug lived here; subnet `operator==`/`<`
   history.
