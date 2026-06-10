@@ -318,5 +318,13 @@ section above.
   dispatch and in send_data. New `ConnectionBase::pendingOutputBytes()`.
   No-op on the normal path; verified no regression + server survives a
   non-reading flood.
-- Suggested next: #799/#800 (the two access-control bypasses — small surgical
-  fixes with clear regression tests).
+- **#799 — FIXED (b7eace169):** `mux_subnet::compare_to` containment now uses
+  inclusive bounds (kEqual checked first, then `!(b<a)` on both ends), so
+  same-base/same-end nested CIDRs classify correctly. Pure improvement, verified
+  by case analysis + smoke. NOTE: no automated end-to-end test is reachable
+  (siteinfo only checks live connection addresses; a compare_to unit test needs
+  a netmux-side C++ harness that pulls in the driver) — the missing subnet-tree
+  test infra is a worthwhile follow-up.
+- Suggested next: #800 (v4-mapped IPv6 canonicalization — also small and surgical;
+  testable via SITEINFO since it checks a live connection's address, and a
+  loopback IPv4 client arrives as ::ffff:127.0.0.1 over the dual-stack listener).
