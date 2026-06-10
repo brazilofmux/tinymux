@@ -183,6 +183,44 @@ namespace
         return true;
     }
 
+    // Canonicalize an IPv4-mapped IPv6 address (::ffff:a.b.c.d) to its native
+    // AF_INET form.  The GANL listeners are dual-stack (IPV6_V6ONLY=0), so an
+    // inbound IPv4 connection is delivered as a sockaddr_in6 holding
+    // ::ffff:a.b.c.d.  Left as-is, d->address stays AF_INET6 and an IPv4
+    // `forbid a.b.c.d` rule (stored AF_INET) never matches it -- the ban is
+    // bypassed simply by connecting IPv4 to the v6 socket (#800).  It also
+    // makes the displayed/logged address the natural a.b.c.d rather than the
+    // ::ffff: form.  Genuine IPv6 addresses are untouched.
+    void CanonicalizeMappedV4(MUX_SOCKADDR& addr)
+    {
+#if defined(HAVE_SOCKADDR_IN6) && defined(HAVE_SOCKADDR_IN)
+        if (AF_INET6 != addr.Family())
+        {
+            return;
+        }
+        const struct sockaddr_in6* sin6 =
+            reinterpret_cast<const struct sockaddr_in6*>(addr.saro());
+        if (nullptr == sin6 || !IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr))
+        {
+            return;
+        }
+
+        struct sockaddr_in sin;
+        std::memset(&sin, 0, sizeof(sin));
+        sin.sin_family = AF_INET;
+        // The embedded IPv4 is the trailing 4 bytes of the v4-mapped address.
+        std::memcpy(&sin.sin_addr, sin6->sin6_addr.s6_addr + 12,
+                    sizeof(sin.sin_addr));
+        sin.sin_port = sin6->sin6_port;
+
+        // Reassign from the fresh sockaddr_in (the ctor zero-inits its union),
+        // so no stale sockaddr_in6 bytes linger behind the AF_INET form.
+        addr = MUX_SOCKADDR(reinterpret_cast<const struct sockaddr*>(&sin));
+#else
+        UNUSED_PARAMETER(addr);
+#endif
+    }
+
     int MapGanlReasonToMux(ganl::DisconnectReason reason)
     {
         switch (reason)
@@ -591,6 +629,14 @@ public:
         }
         if (!haveSockAddr) {
             std::memset(d->address.sa(), 0, d->address.maxaddrlen());
+        }
+
+        // Normalize an IPv4-mapped IPv6 source to native AF_INET before the
+        // address is used for access control (isForbid below), display, or
+        // logging (#800).  Covers both the GANL sockaddr and the parsed-host
+        // fallback above.
+        if (haveSockAddr) {
+            CanonicalizeMappedV4(d->address);
         }
 
         if (haveSockAddr) {
