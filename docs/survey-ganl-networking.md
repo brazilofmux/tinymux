@@ -131,14 +131,59 @@ From a sub-survey; **not yet independently verified** — confirm before filing.
 - TLS 1.2 only, no 1.3 (OpenSSL build negotiates 1.3) — cross-platform
   divergence.
 
+## Sub-part 4 — protocol parsers (surveyed 2026-06-10)
+
+**Routing fact (✅ verified, decides everything):** the live untrusted-input
+telnet parser is `mux/src/telnet.cpp::process_input_helper`, invoked directly by
+`ganl_adapter.cpp onDataReceived` (:750). The GANL-layer handler installed is
+`RawPassthroughHandler` (ganl_adapter.cpp:1191/1325) — a no-op. WebSocket input
+goes through `ws_process_input` in `mux/src/websocket.cpp`.
+
+✅ **VERIFIED CLEAN — `mux/src/telnet.cpp::process_input_helper`.** The live
+telnet parser is thoroughly hardened; the historical fixes are all present and
+correct. SB accumulation is bounded by `qend = aOption + TELNET_OPTION_SIZE-1`
+(case 17, :1047); the completed-SB dispatch length-gates every parser
+(`5 == m` for NAWS :1064; `2 <= m` + `TELNETSB_IS` for TTYPE :1072; `envPtr <
+&aOption[m]` walks for NEW-ENVIRON :1119; exact-length memcmp for CHARSET
+:1254); outbound `send_sb` IAC-doubling math is exactly `6 + 2*nPayload`
+(:121, no overflow); the UTF-8 / Latin1 / Latin2 emit paths bounds-check against
+`pend` (`p < pend`, `p + nUTF <= pend`) with correct back-out; `nOption`
+persists safely across reads (:1582). **No memory-safety bug.** Recorded so a
+future audit doesn't re-plow it.
+
+✅ **ISSUE #793: `telnet_protocol_handler.cpp` (1699 lines) is dead code.**
+Compiled into libganl but never instantiated — written for an external "Hydra"
+telnet *client*. Reasonably hardened internally (bounded SB cap 4096 + 30s
+guard, correct NEW-ENVIRON ESC bounds) but a maintenance/audit hazard: looks
+live, isn't. Latent gaps if activated (GMCP/MSSP/MXP SB unhandled →
+default :1682; loose CHARSET `[TTABLE]` framing :66-77, bounds-guarded).
+
+✅ **ISSUE #792: WebSocket RFC 6455 conformance (`websocket.cpp`).** Memory-safe
+(length bounds, mask XOR, partial frames, `ws_state` lifetime all correct;
+control-frame cap :449 and 64-bit bound :501 already hardened). Remaining gaps,
+all bounded/low-severity:
+- F1 CLOSE echoed but connection never terminated (:646 — keeps parsing frames).
+- F2 fragmentation state unvalidated — 2nd non-FIN TEXT overwrites `frag_buf`
+  (:609); CONTINUATION with no fragmentation in progress is delivered (:613).
+- F3 RSV1/2/3 bits not rejected (:432).
+- F4 no UTF-8 validation on TEXT frames (§8.1).
+- F5 64-bit extended length truncates on the shipped Win32 (ILP32) build —
+  `size_t` accumulation (:493-498) drops the high 4 bytes before the
+  `> WS_MAX_PAYLOAD` check (:501) → protocol desync (not an over-read).
+
+🔶 **NIT: protocol detection sniffs only the first packet.**
+`ws_is_upgrade_request` (:132) checks for `"GET "` in the first 4 bytes; the
+`DS_NEED_PROTO` decision in `onDataReceived` is locked on first data. Robust for
+real HTTP (won't TCP-split inside the first 4 bytes), but a telnet user whose
+first input is literally `"GET "` is misrouted to the WS handshake (then
+dropped). UX edge, not security.
+
 ## Sub-parts not yet surveyed
 
 - **Buffer + connection core** (`io_buffer.cpp`, `connection.cpp`,
   `session_manager`) — partial I/O, backpressure, drain-on-close, queue lifetime.
-- **Protocol parsers** (`telnet.cpp` + `telnet_protocol_handler.cpp`,
-  `websocket.cpp`) — untrusted-input parsing: option negotiation, frame
-  length/mask, UTF-8 boundaries. WebSocket and the newest telnet-option parsers
-  (NEW-ENVIRON, MXP, CHARSET-list) are the freshest, least-settled surface.
+  Note `io_buffer.cpp ensureWritable` computes `writePos_ + required` with no
+  overflow check (theoretical, multi-GB only) — flagged by the handler survey.
 - **Address/DNS** (`netaddr.cpp`, `network_address.cpp`, `slave_spawn_posix.cpp`)
   — the `getaddrinfo` trailing-newline bug lived here; subnet `operator==`/`<`
   history.
