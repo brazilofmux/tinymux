@@ -2322,9 +2322,13 @@ no_addr_fusion:
                     if (insn.funct7 == 0x20) {
                         // SUB (non-commutative)
                         if (rd_rs2_alias) {
-                            emit_mov_r64(&e, X64_RAX, rs2);
+                            // Temp must not be RAX: rs1 IS RAX when the
+                            // guest rs1 is x0 (rc_read materializes the
+                            // zero there), so an RAX temp clobbered it and
+                            // neg rd,rd computed rd-rd = 0 (#782).
+                            emit_mov_r64(&e, X64_RDX, rs2);
                             emit_mov_r64(&e, rd, rs1);
-                            emit_sub_r64(&e, rd, X64_RAX);
+                            emit_sub_r64(&e, rd, X64_RDX);
                         } else {
                             emit_mov_r64(&e, rd, rs1);
                             emit_sub_r64(&e, rd, rs2);
@@ -2495,9 +2499,11 @@ no_addr_fusion:
                     if (insn.funct7 == 0x20) {
                         // SUBW (non-commutative)
                         if (rd_rs2_alias_w) {
-                            emit_mov_r64(&e, X64_RAX, rs2);
+                            // Temp must not be RAX: see the SUB case above
+                            // (negw rd,rd computed rd-rd = 0, #782).
+                            emit_mov_r64(&e, X64_RDX, rs2);
                             emit_mov_r64(&e, rd, rs1);
-                            emit_sub_r32(&e, rd, X64_RAX);
+                            emit_sub_r32(&e, rd, X64_RDX);
                         } else {
                             emit_mov_r64(&e, rd, rs1);
                             emit_sub_r32(&e, rd, rs2);
