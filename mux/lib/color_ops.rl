@@ -924,12 +924,16 @@ size_t co_split_words(const unsigned char *data, size_t len,
     const unsigned char *p = data;
 
     if (is_space) {
-        /* Space-compress mode: skip leading spaces. */
+        /* Space-compress mode: skip leading spaces.  Color codes that
+         * precede the first visible character stay attached to the
+         * first word (do NOT advance p past them): consumers like
+         * do_itemfuns rebuild the list from these ranges, and skipping
+         * the color prefix silently dropped it -- a no-op
+         * ldelete(ansi(h,ab cd),99) lost the highlight. */
         while (p < pe) {
             const unsigned char *q = co_skip_color(p, pe);
             if (q >= pe) { p = pe; break; }
             if (*q == ' ') { p = q + 1; continue; }
-            p = q;
             break;
         }
 
@@ -950,12 +954,13 @@ size_t co_split_words(const unsigned char *data, size_t len,
             word_ends[nWords] = (size_t)(dp - data);
             nWords++;
 
-            /* Skip past consecutive spaces. */
+            /* Skip past consecutive spaces.  As above, color codes
+             * between the space run and the next visible character
+             * belong to the NEXT word's range. */
             while (dp < pe) {
                 const unsigned char *q = co_skip_color(dp, pe);
                 if (q >= pe) { dp = pe; break; }
                 if (*q == ' ') { dp = q + 1; continue; }
-                dp = q;
                 break;
             }
             p = dp;
@@ -3002,6 +3007,17 @@ size_t co_setunion(unsigned char *out,
     qsort(e1, n1, sizeof(sort_elem_t), cmp);
     qsort(e2, n2, sizeof(sort_elem_t), cmp);
 
+    /* handle_sets special-cases two identical single-element lists and
+     * emits LIST1's copy there -- the opposite of the general merge's
+     * tie rule below, which takes LIST2's.  The copies can differ in
+     * color even when the comparison keys are equal. */
+    if (n1 == 1 && n2 == 1 && cmp(&e1[0], &e2[0]) == 0) {
+        size_t n = emit_sorted(out, e1, 1, osep);
+        CO_BIG_FREE(e1);
+        CO_BIG_FREE(w1);
+        return n;
+    }
+
     /* Merge sorted arrays, skipping duplicates. */
     size_t nm = 0;
     size_t i = 0, j = 0;
@@ -3017,8 +3033,12 @@ size_t co_setunion(unsigned char *out,
                 merged[nm++] = e2[j];
             j++;
         } else {
-            if (nm == 0 || !elems_equal(&merged[nm-1], &e1[i], cmp))
-                merged[nm++] = e1[i];
+            /* Equal: emit LIST2's copy.  handle_sets' SET_UNION takes
+             * sc2 on ties (its `< 0` test sends equals to the else
+             * branch), and the copies can differ in color even when
+             * the stripped comparison keys are equal. */
+            if (nm == 0 || !elems_equal(&merged[nm-1], &e2[j], cmp))
+                merged[nm++] = e2[j];
             i++;
             j++;
         }

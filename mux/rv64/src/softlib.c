@@ -532,10 +532,13 @@ char *co_mid_wrap(char *out, const char **fargs, int nfargs) {
         start = 0;
     }
     if (count <= 0) { out[0] = '\0'; return out; }
-    size_t n = co_mid((unsigned char *)out,
-                      (const unsigned char *)fargs[0],
-                      rv64_slen(fargs[0]),
-                      (size_t)start, (size_t)count);
+    /* co_mid_cluster, not co_mid: fun_mid counts grapheme clusters and
+     * excludes color codes trailing the last copied cluster; the
+     * code-point-based co_mid included them, a raw-byte divergence. */
+    size_t n = co_mid_cluster((unsigned char *)out,
+                              (const unsigned char *)fargs[0],
+                              rv64_slen(fargs[0]),
+                              (size_t)start, (size_t)count);
     out[n] = '\0';
     return out;
 }
