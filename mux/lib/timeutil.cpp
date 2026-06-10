@@ -1033,6 +1033,22 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
     // silently into a plausible one -- e.g. 9999999999 -> -7169 -- and is
     // accepted as the wrong date.  This mirrors the same guard in
     // ParseDate() (#708); do_convtime() is the conversion branch it missed.
+    //
+    // Cap the digit count before parsing: mux_atol() accumulates without
+    // overflow detection, so a long-enough year string wraps the long and
+    // can land back inside the valid range (e.g. 2^32+2000 -> 2000 where
+    // long is 32-bit).  Valid years have at most 5 digits.
+    {
+        size_t nYearDigits = 0;
+        while (mux_isdigit(p[nYearDigits]))
+        {
+            nYearDigits++;
+        }
+        if (5 < nYearDigits)
+        {
+            return false;
+        }
+    }
     long iYearLong = mux_atol(p);
     if (iYearLong < -27256 || 30826 < iYearLong)
     {

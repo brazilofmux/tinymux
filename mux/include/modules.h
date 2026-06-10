@@ -798,7 +798,10 @@ extern LIBMUX_API const UTF8 *g_debug_cmd;
 // mux_CreateInstance(CID_GameEngine) to get the engine's front door.
 //
 const MUX_CID CID_GameEngine           = UINT64_C(0x00000002D4E5F6A7);
-const MUX_IID IID_IGameEngine          = UINT64_C(0x0000000247B8C9D1);
+// IID history: ...C9D1 was the original; bumped to ...C9D2 when DbConvert()
+// gained bForce (a vtable signature change), so a stale engine.so and a new
+// driver fail QueryInterface instead of silently mismatching.
+const MUX_IID IID_IGameEngine          = UINT64_C(0x0000000247B8C9D2);
 
 interface mux_IGameEngine : public mux_IUnknown
 {

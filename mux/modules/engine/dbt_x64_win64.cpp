@@ -972,7 +972,17 @@ static generic_emitter_fn s_emitter_table[] = {
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
                              dbt_emitter_id emitter_id, void *host_fn) {
-    if (dbt->num_intrinsics >= dbt_state_t::MAX_INTRINSICS) return;
+    if (dbt->num_intrinsics >= dbt_state_t::MAX_INTRINSICS) {
+        // A silent drop here disabled the FP-conversion intrinsics and
+        // surfaced as "all float math returns empty" (#778).  The
+        // registration count is fixed at build time (pretranslate_tier2),
+        // so overflow is a developer error: fail loudly at startup
+        // instead of miscompiling every affected function.
+        fprintf(stderr, "dbt_register_intrinsic: intrinsic table overflow "
+                "(MAX_INTRINSICS=%d); raise the cap in dbt.h\n",
+                dbt_state_t::MAX_INTRINSICS);
+        abort();
+    }
     if (!guest_addr) return;
 
     auto &slot = dbt->intrinsics[dbt->num_intrinsics++];
