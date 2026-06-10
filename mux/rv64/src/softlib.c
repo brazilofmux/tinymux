@@ -322,6 +322,8 @@ size_t strlen(const char *s) {
 /* Forward declarations for helpers defined below. */
 static int sitoa(char *buf, int val);
 static int satoi(const char *s);
+static int sisspace(char c);
+static int sis_integer(const char *s);
 
 /* ECALL helpers — invoke host syscall from guest code.
  * a7 = syscall number, a0..a2 = args.  Returns a0.
@@ -518,6 +520,17 @@ char *co_mid_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
     int start = satoi(fargs[1]);
     int count = satoi(fargs[2]);
+    /* fun_mid negative normalization (mirrors the interpreter and the
+     * host-side MID fold): a negative count selects before the start
+     * position; a negative start eats into the count (#782). */
+    if (count < 0) {
+        start += 1 + count;
+        count = -count;
+    }
+    if (start < 0) {
+        count += start;
+        start = 0;
+    }
     if (count <= 0) { out[0] = '\0'; return out; }
     size_t n = co_mid((unsigned char *)out,
                       (const unsigned char *)fargs[0],
@@ -646,29 +659,31 @@ char *co_ldelete_wrap(char *out, const char **fargs, int nfargs) {
 }
 
 /* Helper: parse a space-separated list of integers from a string.
- * Matches DecodeListOfIntegers in the interpreter. */
+ * Matches DecodeListOfIntegers in the interpreter: split on spaces,
+ * mux_atol() each token.  mux_atol stops at the first non-digit, so a
+ * token's trailing garbage is ignored ("3-1" is ONE position, 3, not
+ * [3,-1]), and a non-numeric token contributes 0 rather than being
+ * skipped (#782). */
 static int decode_positions(const char *str, int *ai, int max_n) {
     int n = 0;
     const char *p = str;
+    while (*p == ' ') p++;
     while (*p && n < max_n) {
-        while (*p == ' ') p++;
-        if (*p == '\0') break;
+        /* One token: mux_atol semantics. */
+        const char *q = p;
+        while (sisspace(*q)) q++;
         int sign = 1;
-        if (*p == '+') { p++; }
-        else if (*p == '-') { sign = -1; p++; }
+        if (*q == '+') { q++; }
+        else if (*q == '-') { sign = -1; q++; }
         int val = 0;
-        int got_digit = 0;
-        while (*p >= '0' && *p <= '9') {
-            val = val * 10 + (*p - '0');
-            p++;
-            got_digit = 1;
+        while (*q >= '0' && *q <= '9') {
+            val = val * 10 + (*q - '0');
+            q++;
         }
-        if (got_digit) {
-            ai[n++] = val * sign;
-        } else {
-            /* Non-numeric: skip to next space. */
-            while (*p && *p != ' ') p++;
-        }
+        ai[n++] = val * sign;
+        /* Skip the rest of the token, then the separator run. */
+        while (*p && *p != ' ') p++;
+        while (*p == ' ') p++;
     }
     return n;
 }
@@ -853,12 +868,26 @@ size_t co_split_words(const unsigned char *data, size_t len,
                       size_t *word_starts, size_t *word_ends,
                       size_t max_words);
 
+/* centerjustcombo width parity (#782): "" for a non-integer or zero
+ * width; the value is parsed with mux_atol semantics and narrowed
+ * through LBUF_OFFSET (uint16), so negative widths wrap; widths at or
+ * past LBUF_SIZE are a range error.  Returns -1 for "emit nothing",
+ * -2 for "emit #-1 OUT OF RANGE", else the width. */
+static long parse_justify_width(const char *s) {
+    if (!sis_integer(s)) return -1;
+    unsigned short w = (unsigned short)satoi(s);
+    if (w == 0) return -1;
+    if (w >= LBUF_SIZE) return -2;
+    return (long)w;
+}
+
 /* ljust(string, width[, fill]) */
 char *co_ljust_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
     size_t len = rv64_slen(fargs[0]);
-    int width = satoi(fargs[1]);
-    if (width < 0) width = 0;
+    long width = parse_justify_width(fargs[1]);
+    if (width == -1) { out[0] = '\0'; return out; }
+    if (width == -2) { rv64_scopy(out, "#-1 OUT OF RANGE"); return out; }
     const unsigned char *fill = (const unsigned char *)" ";
     size_t fill_len = 1;
     if (nfargs >= 3 && fargs[2][0] != '\0') {
@@ -866,8 +895,7 @@ char *co_ljust_wrap(char *out, const char **fargs, int nfargs) {
         fill_len = rv64_slen(fargs[2]);
     }
     /* bTrunc=1: fun_ljust truncates when width < content (centerjustcombo
-     * passes bTrunc=true).  satoi→0 for width 0 / non-integer then truncates
-     * to "", matching the interpreter's empty returns.  See #772. */
+     * passes bTrunc=true).  See #772. */
     size_t n = co_ljust((unsigned char *)out,
                         (const unsigned char *)fargs[0], len,
                         (size_t)width, fill, fill_len, 1);
@@ -879,8 +907,9 @@ char *co_ljust_wrap(char *out, const char **fargs, int nfargs) {
 char *co_rjust_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
     size_t len = rv64_slen(fargs[0]);
-    int width = satoi(fargs[1]);
-    if (width < 0) width = 0;
+    long width = parse_justify_width(fargs[1]);
+    if (width == -1) { out[0] = '\0'; return out; }
+    if (width == -2) { rv64_scopy(out, "#-1 OUT OF RANGE"); return out; }
     const unsigned char *fill = (const unsigned char *)" ";
     size_t fill_len = 1;
     if (nfargs >= 3 && fargs[2][0] != '\0') {
@@ -899,8 +928,9 @@ char *co_rjust_wrap(char *out, const char **fargs, int nfargs) {
 char *co_center_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
     size_t len = rv64_slen(fargs[0]);
-    int width = satoi(fargs[1]);
-    if (width < 0) width = 0;
+    long width = parse_justify_width(fargs[1]);
+    if (width == -1) { out[0] = '\0'; return out; }
+    if (width == -2) { rv64_scopy(out, "#-1 OUT OF RANGE"); return out; }
     const unsigned char *fill = (const unsigned char *)" ";
     size_t fill_len = 1;
     if (nfargs >= 3 && fargs[2][0] != '\0') {
@@ -1275,10 +1305,9 @@ char *rv64_grab(char *out, const char **fargs, int nfargs) {
 /* graball(list, pattern[, delim][, osep]) — all matching elements */
 char *rv64_graball(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
-    unsigned char delim = ' ';
-    unsigned char osep = ' ';
-    if (nfargs >= 3 && fargs[2][0] != '\0') delim = (unsigned char)fargs[2][0];
-    if (nfargs >= 4 && fargs[3][0] != '\0') osep = (unsigned char)fargs[3][0];
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    /* Absent osep defaults to the delimiter (DELIM_INIT parity, #782). */
+    unsigned char osep = get_osep(fargs, nfargs, 3, delim);
     const unsigned char *p = (const unsigned char *)fargs[0];
     unsigned char *op = (unsigned char *)out;
     unsigned char *end = op + 7999;
@@ -1733,10 +1762,9 @@ char *rv64_lor(char *out, const char **fargs, int nfargs) {
 /* flip/revwords(list[, delim][, osep]) — reverse element order */
 char *rv64_revwords(char *out, const char **fargs, int nfargs) {
     if (nfargs < 1) { out[0] = '\0'; return out; }
-    unsigned char delim = ' ';
-    unsigned char osep = ' ';
-    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
-    if (nfargs >= 3 && fargs[2][0] != '\0') osep = (unsigned char)fargs[2][0];
+    unsigned char delim = get_delim(fargs, nfargs, 1);
+    /* Absent osep defaults to the delimiter (DELIM_INIT parity, #782). */
+    unsigned char osep = get_osep(fargs, nfargs, 2, delim);
     /* Split into element start/len pairs. */
     const unsigned char *p = (const unsigned char *)fargs[0];
     const unsigned char *starts[4096];
@@ -1847,17 +1875,43 @@ char *rv64_strcat(char *out, const char **fargs, int nfargs) {
 
 /* ---------------------------------------------------------------
  * Helper: inline atoi (no libc dependency).
+ *
+ * Mirrors mux_atol(): skip leading whitespace, then an optional
+ * '+' or '-', then digits.  The interpreter parses every numeric
+ * function argument through mux_atol, so accepting "+3" and " 3"
+ * here is required for parity (#782).
  * --------------------------------------------------------------- */
+
+static int sisspace(char c) {
+    return c == ' ' || c == '\t' || c == '\n'
+        || c == '\v' || c == '\f' || c == '\r';
+}
 
 static int satoi(const char *s) {
     int v = 0;
     int neg = 0;
-    if (*s == '-') { neg = 1; s++; }
+    while (sisspace(*s)) s++;
+    if (*s == '+') { s++; }
+    else if (*s == '-') { neg = 1; s++; }
     while (*s >= '0' && *s <= '9') {
         v = v * 10 + (*s - '0');
         s++;
     }
     return neg ? -v : v;
+}
+
+/* Mirrors is_integer(): optional leading whitespace, optional sign,
+ * at least one digit, optional trailing whitespace, end of string. */
+static int sis_integer(const char *s) {
+    while (sisspace(*s)) s++;
+    if (*s == '-' || *s == '+') {
+        s++;
+        if (*s == '\0') return 0;
+    }
+    if (!(*s >= '0' && *s <= '9')) return 0;
+    while (*s >= '0' && *s <= '9') s++;
+    while (sisspace(*s)) s++;
+    return *s == '\0';
 }
 
 /* rv64_extract, rv64_words, rv64_split_token, rv64_first, rv64_rest,

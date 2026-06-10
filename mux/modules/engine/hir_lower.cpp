@@ -629,8 +629,11 @@ static bool try_fold(const std::string &func_name,
         }
         unsigned char delim = (nargs >= 4 && !args[3].empty())
             ? static_cast<unsigned char>(args[3][0]) : ' ';
-        unsigned char osep = (nargs >= 5 && !args[4].empty())
-            ? static_cast<unsigned char>(args[4][0]) : delim;
+        // Absent osep defaults to the delimiter (DELIM_INIT), but an
+        // explicit-empty osep means SPACE (delim_check tlen==0).
+        unsigned char osep = (nargs >= 5)
+            ? (!args[4].empty() ? static_cast<unsigned char>(args[4][0]) : ' ')
+            : delim;
         LBuf out = LBuf_Src("hir_extract");
         size_t n = co_extract(reinterpret_cast<unsigned char *>(out.get()),
             reinterpret_cast<const unsigned char *>(args[0].data()),
@@ -3296,7 +3299,10 @@ literal_strcat:
         {
             int delim_idx = -1;
             if ((upper == "FIRST" || upper == "REST" || upper == "LAST"
-                 || upper == "SQUISH" || upper == "WORDS") && nargs >= 2) {
+                 || upper == "SQUISH" || upper == "WORDS"
+                 || upper == "REVWORDS" || upper == "LADD"
+                 || upper == "LMAX" || upper == "LMIN"
+                 || upper == "LAND" || upper == "LOR") && nargs >= 2) {
                 delim_idx = 1;
             } else if (upper == "MEMBER" && nargs >= 3) {
                 delim_idx = 2;
@@ -3314,7 +3320,14 @@ literal_strcat:
             } else if ((upper == "SETUNION" || upper == "SETDIFF"
                         || upper == "SETINTER") && nargs >= 3) {
                 delim_idx = 2;
-            } else if (upper == "WORDPOS" && nargs >= 3) {
+            } else if ((upper == "WORDPOS" || upper == "MATCH"
+                        || upper == "GRAB" || upper == "GRABALL"
+                        || upper == "SORT") && nargs >= 3) {
+                delim_idx = 2;
+            } else if (upper == "TRIM" && nargs >= 3) {
+                // arg[2] is the trim character set, not a list delimiter,
+                // but the same single-byte wrapper limitation applies: the
+                // interpreter handles multi-char sets via co_trim_pattern.
                 delim_idx = 2;
             }
             // ELEMENTS osep (arg[3]), REPLACE/INSERT osep (arg[4]),
@@ -3330,12 +3343,20 @@ literal_strcat:
                 else if (upper == "EXTRACT" && nargs >= 5) osep_idx = 4;
                 else if ((upper == "SETUNION" || upper == "SETDIFF"
                           || upper == "SETINTER") && nargs >= 4) osep_idx = 3;
+                else if ((upper == "REVWORDS" || upper == "LNUM")
+                         && nargs >= 3) osep_idx = 2;
+                else if ((upper == "GRABALL" || upper == "SORT")
+                         && nargs >= 4) osep_idx = 3;
                 if (osep_idx >= 0) {
                     if (!h.is_const(args[osep_idx])) {
                         t2addr = 0;
                     } else {
                         std::string ostr = h.const_str(args[osep_idx]);
-                        if (ostr.size() > 1) {
+                        // != 1, not > 1: an explicit-empty osep means
+                        // SPACE in the interpreter (delim_check tlen==0),
+                        // but the blob wrappers default it to the
+                        // delimiter -- fall back for that case too.
+                        if (ostr.size() != 1) {
                             t2addr = 0;
                         }
                     }
