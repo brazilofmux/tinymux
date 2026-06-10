@@ -3285,6 +3285,13 @@ size_t co_member(const unsigned char *target, size_t tlen,
         p = d + 1;
     }
 
+    /* fun_member splits with split_token, so an empty list (or one
+     * that trims/skips to nothing) still yields ONE empty word: an
+     * empty target matches it at position 1.  member(,) is 1, not 0. */
+    if (word_num == 0 && tp_len == 0) {
+        return 1;
+    }
+
     return 0;  /* not found */
 }
 
@@ -4358,9 +4365,16 @@ static size_t build_sort_elems(sort_elem_t *elems,
     for (size_t i = 0; i < nWords; i++) {
         elems[i].start = words[i].start;
         elems[i].end = words[i].end;
+        /* plain[] is 256 bytes but co_strip_color clamps at LBUF_SIZE-1.
+         * Stripping never grows output, so capping the INPUT at
+         * sizeof(plain)-1 bounds the output (plus NUL) to the buffer.
+         * Words longer than 255 bytes compare by their prefix. */
+        size_t cb = (size_t)(words[i].end - words[i].start);
+        if (cb > sizeof(elems[i].plain) - 1) {
+            cb = sizeof(elems[i].plain) - 1;
+        }
         elems[i].plain_len = co_strip_color(
-            elems[i].plain, words[i].start,
-            (size_t)(words[i].end - words[i].start));
+            elems[i].plain, words[i].start, cb);
     }
     return nWords;
 }
@@ -4381,6 +4395,25 @@ static size_t emit_sorted(unsigned char *out,
     return (size_t)(wp - out);
 }
 
+/* ---- large scratch allocation ----
+ *
+ * sort_elem_t embeds a 256-byte comparison key, so the sort/set-op
+ * scratch arrays are megabytes at LBUF_SIZE 32768 — far too large for
+ * stack frames (they overflowed the thread stack once LBUF_SIZE grew
+ * past the old 8000).  Allocate them from the heap on hosted builds.
+ * The freestanding RV64 blob has no malloc, but never executes these
+ * functions — its tier2 wrappers ECALL straight to the host
+ * implementations — so returning empty on a NULL allocation is safe
+ * there.
+ */
+#if defined(__STDC_HOSTED__) && __STDC_HOSTED__
+#define CO_BIG_ALLOC(n) malloc(n)
+#define CO_BIG_FREE(p)  free(p)
+#else
+#define CO_BIG_ALLOC(n) ((void *)0)
+#define CO_BIG_FREE(p)  ((void)(p))
+#endif
+
 /* ---- co_sort_words ---- */
 
 size_t co_sort_words(unsigned char *out,
@@ -4388,27 +4421,35 @@ size_t co_sort_words(unsigned char *out,
                      unsigned char delim, unsigned char osep,
                      char sort_type)
 {
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    const size_t nw_max = LBUF_SIZE / 2;
+    word_range_t *words =
+        (word_range_t *)CO_BIG_ALLOC(nw_max * sizeof(word_range_t));
+    if (!words) { out[0] = '\0'; return 0; }
+    size_t nWords = split_words(list, llen, delim, words, nw_max);
 
     if (nWords <= 1) {
+        size_t cb = 0;
         if (nWords == 1) {
-            size_t cb = (size_t)(words[0].end - words[0].start);
+            cb = (size_t)(words[0].end - words[0].start);
             if (cb > LBUF_SIZE - 1) cb = LBUF_SIZE - 1;
             memcpy(out, words[0].start, cb);
-            out[cb] = '\0';
-            return cb;
         }
-        out[0] = '\0';
-        return 0;
+        out[cb] = '\0';
+        CO_BIG_FREE(words);
+        return cb;
     }
 
-    sort_elem_t elems[LBUF_SIZE / 2];
+    sort_elem_t *elems =
+        (sort_elem_t *)CO_BIG_ALLOC(nWords * sizeof(sort_elem_t));
+    if (!elems) { out[0] = '\0'; CO_BIG_FREE(words); return 0; }
     build_sort_elems(elems, words, nWords);
 
     qsort(elems, nWords, sizeof(sort_elem_t), get_cmp(sort_type));
 
-    return emit_sorted(out, elems, nWords, osep);
+    size_t n = emit_sorted(out, elems, nWords, osep);
+    CO_BIG_FREE(elems);
+    CO_BIG_FREE(words);
+    return n;
 }
 
 /* ---- set operation helpers ---- */
@@ -4427,11 +4468,21 @@ size_t co_setunion(unsigned char *out,
                    unsigned char delim, unsigned char osep,
                    char sort_type)
 {
-    word_range_t w1[LBUF_SIZE / 2], w2[LBUF_SIZE / 2];
-    size_t n1 = split_words(list1, len1, delim, w1, LBUF_SIZE / 2);
-    size_t n2 = split_words(list2, len2, delim, w2, LBUF_SIZE / 2);
+    const size_t nw_max = LBUF_SIZE / 2;
+    word_range_t *w1 =
+        (word_range_t *)CO_BIG_ALLOC(2 * nw_max * sizeof(word_range_t));
+    if (!w1) { out[0] = '\0'; return 0; }
+    word_range_t *w2 = w1 + nw_max;
+    size_t n1 = split_words(list1, len1, delim, w1, nw_max);
+    size_t n2 = split_words(list2, len2, delim, w2, nw_max);
 
-    sort_elem_t e1[LBUF_SIZE / 2], e2[LBUF_SIZE / 2];
+    /* One block: e1[n1] + e2[n2] + merged[n1+n2]. */
+    size_t total = n1 + n2;
+    sort_elem_t *e1 = (sort_elem_t *)CO_BIG_ALLOC(
+        (total ? 2 * total : 1) * sizeof(sort_elem_t));
+    if (!e1) { out[0] = '\0'; CO_BIG_FREE(w1); return 0; }
+    sort_elem_t *e2 = e1 + n1;
+    sort_elem_t *merged = e1 + total;
     build_sort_elems(e1, w1, n1);
     build_sort_elems(e2, w2, n2);
 
@@ -4440,7 +4491,6 @@ size_t co_setunion(unsigned char *out,
     qsort(e2, n2, sizeof(sort_elem_t), cmp);
 
     /* Merge sorted arrays, skipping duplicates. */
-    sort_elem_t merged[LBUF_SIZE];
     size_t nm = 0;
     size_t i = 0, j = 0;
 
@@ -4472,7 +4522,10 @@ size_t co_setunion(unsigned char *out,
         j++;
     }
 
-    return emit_sorted(out, merged, nm, osep);
+    size_t n = emit_sorted(out, merged, nm, osep);
+    CO_BIG_FREE(e1);
+    CO_BIG_FREE(w1);
+    return n;
 }
 
 /* ---- co_setdiff ---- */
@@ -4483,11 +4536,21 @@ size_t co_setdiff(unsigned char *out,
                   unsigned char delim, unsigned char osep,
                   char sort_type)
 {
-    word_range_t w1[LBUF_SIZE / 2], w2[LBUF_SIZE / 2];
-    size_t n1 = split_words(list1, len1, delim, w1, LBUF_SIZE / 2);
-    size_t n2 = split_words(list2, len2, delim, w2, LBUF_SIZE / 2);
+    const size_t nw_max = LBUF_SIZE / 2;
+    word_range_t *w1 =
+        (word_range_t *)CO_BIG_ALLOC(2 * nw_max * sizeof(word_range_t));
+    if (!w1) { out[0] = '\0'; return 0; }
+    word_range_t *w2 = w1 + nw_max;
+    size_t n1 = split_words(list1, len1, delim, w1, nw_max);
+    size_t n2 = split_words(list2, len2, delim, w2, nw_max);
 
-    sort_elem_t e1[LBUF_SIZE / 2], e2[LBUF_SIZE / 2];
+    /* One block: e1[n1] + e2[n2] + result[n1]. */
+    size_t nelem = 2 * n1 + n2;
+    sort_elem_t *e1 = (sort_elem_t *)CO_BIG_ALLOC(
+        (nelem ? nelem : 1) * sizeof(sort_elem_t));
+    if (!e1) { out[0] = '\0'; CO_BIG_FREE(w1); return 0; }
+    sort_elem_t *e2 = e1 + n1;
+    sort_elem_t *result = e1 + n1 + n2;
     build_sort_elems(e1, w1, n1);
     build_sort_elems(e2, w2, n2);
 
@@ -4496,7 +4559,6 @@ size_t co_setdiff(unsigned char *out,
     qsort(e2, n2, sizeof(sort_elem_t), cmp);
 
     /* Emit elements from e1 that are NOT in e2, skip duplicates. */
-    sort_elem_t result[LBUF_SIZE / 2];
     size_t nr = 0;
     size_t i = 0, j = 0;
 
@@ -4519,7 +4581,10 @@ size_t co_setdiff(unsigned char *out,
         }
     }
 
-    return emit_sorted(out, result, nr, osep);
+    size_t n = emit_sorted(out, result, nr, osep);
+    CO_BIG_FREE(e1);
+    CO_BIG_FREE(w1);
+    return n;
 }
 
 /* ---- co_setinter ---- */
@@ -4530,11 +4595,21 @@ size_t co_setinter(unsigned char *out,
                    unsigned char delim, unsigned char osep,
                    char sort_type)
 {
-    word_range_t w1[LBUF_SIZE / 2], w2[LBUF_SIZE / 2];
-    size_t n1 = split_words(list1, len1, delim, w1, LBUF_SIZE / 2);
-    size_t n2 = split_words(list2, len2, delim, w2, LBUF_SIZE / 2);
+    const size_t nw_max = LBUF_SIZE / 2;
+    word_range_t *w1 =
+        (word_range_t *)CO_BIG_ALLOC(2 * nw_max * sizeof(word_range_t));
+    if (!w1) { out[0] = '\0'; return 0; }
+    word_range_t *w2 = w1 + nw_max;
+    size_t n1 = split_words(list1, len1, delim, w1, nw_max);
+    size_t n2 = split_words(list2, len2, delim, w2, nw_max);
 
-    sort_elem_t e1[LBUF_SIZE / 2], e2[LBUF_SIZE / 2];
+    /* One block: e1[n1] + e2[n2] + result[n1]. */
+    size_t nelem = 2 * n1 + n2;
+    sort_elem_t *e1 = (sort_elem_t *)CO_BIG_ALLOC(
+        (nelem ? nelem : 1) * sizeof(sort_elem_t));
+    if (!e1) { out[0] = '\0'; CO_BIG_FREE(w1); return 0; }
+    sort_elem_t *e2 = e1 + n1;
+    sort_elem_t *result = e1 + n1 + n2;
     build_sort_elems(e1, w1, n1);
     build_sort_elems(e2, w2, n2);
 
@@ -4543,7 +4618,6 @@ size_t co_setinter(unsigned char *out,
     qsort(e2, n2, sizeof(sort_elem_t), cmp);
 
     /* Emit elements present in both, skip duplicates. */
-    sort_elem_t result[LBUF_SIZE / 2];
     size_t nr = 0;
     size_t i = 0, j = 0;
 
@@ -4561,7 +4635,10 @@ size_t co_setinter(unsigned char *out,
         }
     }
 
-    return emit_sorted(out, result, nr, osep);
+    size_t n = emit_sorted(out, result, nr, osep);
+    CO_BIG_FREE(e1);
+    CO_BIG_FREE(w1);
+    return n;
 }
 
 /* ================================================================
@@ -5271,13 +5348,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5064 "color_ops.c"
+#line 5141 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3804 "color_ops.rl"
+#line 3881 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5291,21 +5368,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5080 "color_ops.c"
+#line 5157 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3817 "color_ops.rl"
+#line 3894 "color_ops.rl"
     
-#line 5083 "color_ops.c"
+#line 5160 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3789 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5319,9 +5396,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
-#line 3789 "color_ops.rl"
+#line 3866 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5338,7 +5415,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5119 "color_ops.c"
+#line 5196 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5367,62 +5444,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5153 "color_ops.c"
+#line 5230 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5163 "color_ops.c"
+#line 5240 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5173 "color_ops.c"
+#line 5250 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5183 "color_ops.c"
+#line 5260 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5193 "color_ops.c"
+#line 5270 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5440,38 +5517,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5216 "color_ops.c"
+#line 5293 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5226 "color_ops.c"
+#line 5303 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5236 "color_ops.c"
+#line 5313 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5489,14 +5566,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3788 "color_ops.rl"
+#line 3865 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5259 "color_ops.c"
+#line 5336 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5518,7 +5595,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3818 "color_ops.rl"
+#line 3895 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);

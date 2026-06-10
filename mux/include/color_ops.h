@@ -50,9 +50,13 @@
 extern "C" {
 #endif
 
-/* LBUF_SIZE is defined in alloc.h; use it from there. */
+/* LBUF_SIZE is defined in alloc.h; use it from there.  This fallback
+ * exists for TUs that compile color_ops without alloc.h (the libmux C
+ * build of color_ops.c) and MUST match alloc.h and the rv64 Makefile's
+ * -DLBUF_SIZE.  It was 8000 for a long time, which silently capped
+ * every co_* result at 7999 bytes while the engine believed in 32K. */
 #ifndef LBUF_SIZE
-#define LBUF_SIZE 8000
+#define LBUF_SIZE 32768
 #endif
 
 /*
