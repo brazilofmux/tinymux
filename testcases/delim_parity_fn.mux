@@ -1,0 +1,136 @@
+#
+# delim_parity_fn.mux - JIT/interpreter parity for delimiter, separator,
+# and number-argument edge cases (#782).
+#
+# Under --enable-jit the @if conditions compile through the JIT, so each
+# case asserts that the tier2/blob path (or its guard fallback) agrees
+# with the interpreter's literal expected value.  On a non-JIT build the
+# same assertions hold trivially — fail-closed either way.
+#
+@create test_delim_parity_fn
+-
+@set test_delim_parity_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_delim_parity_fn=
+  @log smoke=Beginning delim parity test cases.
+-
+#
+# Test Case #1 - multi-char DELIM_STRING delimiters must fall back to the
+# interpreter (hir_lower guard): a "~~" separator that does not occur in
+# the list means the whole list is one element, not split on '~'.
+#
+&tr.tc001 test_delim_parity_fn=
+  @if cand(
+        eq(match(a~xb,*x*,~~), 1),
+        strmatch(grab(a~xb,*x*,~~), a~xb),
+        strmatch(sort(c~~a~~b,a,~~), a~~b~~c),
+        strmatch(trim(xyabcyx,b,xy), abcyx),
+        eq(ladd(1~~2~~3,~~), 6),
+        strmatch(revwords(a|b|c,|,~~), c~~b~~a),
+        strmatch(lnum(1,3,~~), 1~~2~~3)
+      )=
+  {
+    @log smoke=TC001: multi-char delim guard parity. Succeeded.;
+  },
+  {
+    @log smoke=TC001: multi-char delim guard parity. Failed (match=[match(a~xb,*x*,~~)] grab=[grab(a~xb,*x*,~~)] sort=[sort(c~~a~~b,a,~~)] trim=[trim(xyabcyx,b,xy)] ladd=[ladd(1~~2~~3,~~)] revwords=[revwords(a|b|c,|,~~)] lnum=[lnum(1,3,~~)]).;
+  }
+-
+#
+# Test Case #2 - output separator defaults: an ABSENT osep defaults to
+# the delimiter (DELIM_INIT); an explicit EMPTY osep means SPACE
+# (delim_check tlen==0), never the delimiter.
+#
+&tr.tc002 test_delim_parity_fn=
+  @if cand(
+        strmatch(graball(a|b|c,*,|), a|b|c),
+        strmatch(revwords(a|b|c,|), c|b|a),
+        strmatch(extract(a|b|c,1,2,|,), a b),
+        strmatch(ldelete(a|b|c,2,|,), a c)
+      )=
+  {
+    @log smoke=TC002: osep default parity. Succeeded.;
+  },
+  {
+    @log smoke=TC002: osep default parity. Failed (graball=[graball(a|b|c,*,|)] revwords=[revwords(a|b|c,|)] extract=[extract(a|b|c,1,2,|,)] ldelete=[ldelete(a|b|c,2,|,)]).;
+  }
+-
+#
+# Test Case #3 - ljust/rjust/center width parsing parity (centerjustcombo):
+# "+3" is a valid integer (mux_atol), "3.5" is not (is_integer) and emits
+# nothing, widths at or past LBUF_SIZE are a range error, and a negative
+# width wraps through LBUF_OFFSET (uint16) — -1 wraps to 65535 (range
+# error), -40000 wraps to 25536 columns of padding.  The 25536 case also
+# guards the LBUF_SIZE=32768 libmux build and DBT NEGW correctness.
+#
+&tr.tc003 test_delim_parity_fn=
+  @if cand(
+        strmatch(ljust(abcdef,+3), abc),
+        eq(strlen(ljust(abcdef,3.5)), 0),
+        strmatch(ljust(abc,40000), #-1 OUT OF RANGE),
+        strmatch(rjust(abc,-1), #-1 OUT OF RANGE),
+        eq(strlen(rjust(abc,-40000)), 25536)
+      )=
+  {
+    @log smoke=TC003: justify width parity. Succeeded.;
+  },
+  {
+    @log smoke=TC003: justify width parity. Failed (plus=[ljust(abcdef,+3)] float=[ljust(abcdef,3.5)] big=[ljust(abc,40000)] neg1=[rjust(abc,-1)] wraplen=[strlen(rjust(abc,-40000))]).;
+  }
+-
+#
+# Test Case #4 - number-argument parsing parity: position lists tokenize
+# on spaces with mux_atol per token ("3-1" is one position, a non-numeric
+# token contributes 0), and negative values survive the JIT (lnum(-2,1)
+# regressed to "0 1" when DBT NEGW computed 0).
+#
+&tr.tc004 test_delim_parity_fn=
+  @if cand(
+        strmatch(ldelete(a b c d,3-1), a b d),
+        strmatch(ldelete(a b c d,x 2), a c d),
+        strmatch(ldelete(a b c,-1), a b),
+        strmatch(lnum(-2,1), -2 -1 0 1),
+        eq(wordpos(a b c,+2), 2)
+      )=
+  {
+    @log smoke=TC004: number parsing parity. Succeeded.;
+  },
+  {
+    @log smoke=TC004: number parsing parity. Failed (dash=[ldelete(a b c d,3-1)] tok=[ldelete(a b c d,x 2)] neg=[ldelete(a b c,-1)] lnum=[lnum(-2,1)] wp=[wordpos(a b c,+2)]).;
+  }
+-
+#
+# Test Case #5 - mid() negative normalization, member() of empties, and
+# set-op liveness (the sort/set-op scratch arrays moved to the heap when
+# LBUF_SIZE grew to 32768 — a stack-overflow regression here kills the
+# whole suite, which is the point).
+#
+&tr.tc005 test_delim_parity_fn=
+  @if cand(
+        strmatch(mid(ab cd,#-1,-1), a),
+        strmatch(mid(abcd,-1,3), ab),
+        eq(member(,), 1),
+        eq(words(setunion(lnum(1,300),lnum(200,400))), 400),
+        strmatch(setdiff(a b c d,b d), a c)
+      )=
+  {
+    @log smoke=TC005: mid/member/set-op parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: mid/member/set-op parity. Failed (mid1=[mid(ab cd,#-1,-1)] mid2=[mid(abcd,-1,3)] member=[member(,)] union=[words(setunion(lnum(1,300),lnum(200,400)))] diff=[setdiff(a b c d,b d)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_delim_parity_fn=
+  @log smoke=End delim parity test cases.;
+  @notify smoke
+-
+drop test_delim_parity_fn
+-
+#
+# End of Test Cases
+#
