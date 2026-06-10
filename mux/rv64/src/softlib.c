@@ -1992,15 +1992,22 @@ double fmod(double x, double y)  { (void)y; return x; }
  * ---------------------------------------------------------------
  */
 
-double rv64_strtod(const char *s) { (void)s; return 0.0; }
-int rv64_fval(char *buf, double val) { (void)buf; (void)val; return 0; }
-double rv64_nearest_pretty(double val) { return val; }  /* intrinsic → host NearestPretty */
+/* These stubs ignore their arguments and return constants, so -O2
+ * interprocedural constant propagation would clone them (e.g.
+ * rv64_strtod.constprop.0).  A blob-internal caller would then JAL the
+ * clone, whose guest address is NOT in the DBT intrinsic table, so the
+ * stub body runs and returns 0/empty.  __attribute__((noipa)) keeps the
+ * canonical symbol the sole call target so the DBT can intercept it.
+ */
+__attribute__((noipa)) double rv64_strtod(const char *s) { (void)s; return 0.0; }
+__attribute__((noipa)) int rv64_fval(char *buf, double val) { (void)buf; (void)val; return 0; }
+__attribute__((noipa)) double rv64_nearest_pretty(double val) { return val; }  /* intrinsic → host NearestPretty */
 
 /* rv64_ftoa_round: format double with rounding to frac digits.
  * Intrinsic → host mux_ftoa(val, true, frac) + FP class handling.
  * a0 = output buffer, fa0 = val, a1 = frac.  Returns length in a0.
  */
-int rv64_ftoa_round(char *buf, double val, int frac) {
+__attribute__((noipa)) int rv64_ftoa_round(char *buf, double val, int frac) {
     (void)buf; (void)val; (void)frac; return 0;
 }
 
