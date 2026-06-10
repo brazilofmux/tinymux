@@ -135,6 +135,21 @@ static void fc_flush(emit_t *e, fp_cache_t *fc) {
             emit_store_fp_d(e, fc->slots[i].guest_freg, fc_host_xmm[i]);
 }
 
+// Invalidate all FP cache slots after a native CALL.  The callee may have
+// modified any guest FP register, and the FP intrinsic stubs (rv64_strtod,
+// rv64_fval, rv64_nearest_pretty, rv64_ftoa_round) write their double result
+// directly to ctx.f[], so any cached value is now stale.  No FP registers are
+// pinned across blocks, so we drop every slot; subsequent fc_read() reloads
+// from ctx on demand.  Mirrors rc_invalidate_reload() for the integer side.
+static void fc_invalidate(fp_cache_t *fc) {
+    for (int i = 0; i < FC_NUM_SLOTS; i++) {
+        fc->slots[i].guest_freg = -1;
+        fc->slots[i].dirty = 0;
+        fc->slots[i].last_use = 0;
+    }
+    fc->clock = 0;
+}
+
 static void rc_init(reg_cache_t *rc) {
     for (int i = 0; i < RC_NUM_SLOTS; i++) {
         rc->slots[i].guest_reg = -1;
@@ -646,8 +661,11 @@ static bool try_emit_inline_call(emit_t *e, reg_cache_t *rc, fp_cache_t *fc,
     uint32_t bne_cold = emit_b_cond(e, A64_COND_NE, 0);
 
     // Hot path: callee returned normally.  Invalidate register cache
-    // since the callee may have modified any guest register.
+    // since the callee may have modified any guest register.  The FP cache
+    // must likewise be invalidated so the caller reloads FP results (e.g. an
+    // intrinsic's double return in fa0) from ctx instead of stale vector regs.
     rc_invalidate_reload(e, rc);
+    fc_invalidate(fc);
 
     side_exits[*num_side_exits].jcc_patch = bne_cold;
     side_exits[*num_side_exits].target_pc = 0;  // sentinel: cold exit

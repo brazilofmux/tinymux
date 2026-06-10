@@ -138,7 +138,15 @@ struct dbt_state_t {
     // Intrinsics: guest addresses the DBT replaces with native x86-64.
     // Data-driven table — each entry maps a guest address to an emitter.
     //
-    static constexpr int MAX_INTRINSICS = 48;
+    // NOTE: pretranslate_tier2() registers ~52 intrinsics, with the four
+    // string<->double conversion intrinsics (rv64_strtod, rv64_fval,
+    // rv64_nearest_pretty, rv64_ftoa_round) registered LAST.  This bound
+    // must stay comfortably above that count: dbt_register_intrinsic()
+    // silently drops registrations once the table is full, and an overflow
+    // here previously dropped exactly those four FP intrinsics — their guest
+    // blocks then fell through to the RV64 stub bodies (return 0), so all
+    // runtime-arg float arithmetic via the blob returned empty (#778).
+    static constexpr int MAX_INTRINSICS = 64;
 
     struct intrinsic_slot_t {
         uint64_t guest_addr;                       // 0 = empty slot
