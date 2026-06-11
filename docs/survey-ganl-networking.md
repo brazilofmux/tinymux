@@ -399,11 +399,20 @@ section above.
   instantiated (live handler is `RawPassthroughHandler` → `mux/src/telnet.cpp::
   process_input_helper`). Dropped from Makefile.am, regenerated Makefile.in,
   clean rebuild, smoke 1115/1115. User chose deletion over banner/build-gate.
-- Remaining, suggested order: #792 (WebSocket conformance), the Windows-only
-  #796, and the engine/TLS candidates above. NOTE the socket-buffer-edge fixes
+- **#792 — FIXED (83615e880):** five RFC 6455 conformance gaps in the live WS
+  parser (no memory-safety bug). New `ws_fail()` (Close + flush + close, safe
+  from inside the parser via the dispatch shared_ptr). F1 received-CLOSE now
+  terminates; F2 fragmentation state validated (orphan CONTINUATION / mid-frag
+  TEXT → 1002); F3 RSV bits → 1002; F4 strict RFC 3629 UTF-8 check on TEXT →
+  1007; F5 64-bit length accumulated into uint64_t before the narrowing bound
+  check (was truncating on 32-bit Win32). Live-tested with a raw masked WS
+  client (F1–F4 bitten; valid multibyte accepted); F5 correct-by-construction
+  (32-bit-only). Smoke 1115/1115.
+- Remaining: the Windows-only #796 (IOCP UAF — not live-testable on this Linux
+  host), and the engine/TLS candidates above. NOTE the socket-buffer-edge fixes
   (#794/#795/#798) want the stress/unit harness follow-up (not live-testable
   here — kernel SNDBUF autotunes to 4MB).
-  DONE this pass: #790, #791, #793, #801, #802.
+  DONE this pass: #790, #791, #792, #793, #801, #802.
 - **Test infra — STARTED (bb2cb8f84):** `tests/netaddr/` now unit-tests
   `mux_subnet::compare_to(mux_subnet*)` by linking `netmux-netaddr.o` against
   libmux with three driver-global stubs (`g_bStandAlone`, `g_pILog`,
