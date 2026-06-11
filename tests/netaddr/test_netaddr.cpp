@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
+#include <arpa/inet.h>   // inet_pton, for building test sockaddrs
 
 #include "autoconf.h"
 #include "config.h"
@@ -85,6 +86,56 @@ static void expect(const char *a, const char *b, SC want)
     delete sb;
 }
 
+// --- address-vs-subnet (compare_to(MUX_SOCKADDR*)) helpers ----------------
+// Build a MUX_SOCKADDR for a native IPv4 dotted address.
+static MUX_SOCKADDR sockaddr_v4(const char *ip)
+{
+    struct sockaddr_in sin;
+    std::memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    inet_pton(AF_INET, ip, &sin.sin_addr);
+    return MUX_SOCKADDR(reinterpret_cast<const struct sockaddr *>(&sin));
+}
+
+// Build a MUX_SOCKADDR for an IPv6 address (string form, may be ::ffff:a.b.c.d).
+static MUX_SOCKADDR sockaddr_v6(const char *ip)
+{
+    struct sockaddr_in6 sin6;
+    std::memset(&sin6, 0, sizeof(sin6));
+    sin6.sin6_family = AF_INET6;
+    inet_pton(AF_INET6, ip, &sin6.sin6_addr);
+    return MUX_SOCKADDR(reinterpret_cast<const struct sockaddr *>(&sin6));
+}
+
+// Assert compare_to(addr) for a subnet == want.  `inside` true => the address
+// is expected to be within the subnet (kContains).
+static void expect_addr(const char *subnet, MUX_SOCKADDR addr, bool inside,
+                        const char *label)
+{
+    mux_subnet *sn = make_subnet(subnet);
+    if (nullptr == sn)
+    {
+        g_fail++;
+        printf("FAIL: parse_subnet failed for \"%s\"\n", subnet);
+        return;
+    }
+    SC got = sn->compare_to(&addr);
+    bool isInside = (SC::kContains == got);
+    if (isInside == inside)
+    {
+        g_pass++;
+    }
+    else
+    {
+        g_fail++;
+        printf("FAIL: %-28s vs %-16s = %-13s (%s) want %s\n",
+               label, subnet, scname(got),
+               isInside ? "inside" : "outside",
+               inside ? "inside" : "outside");
+    }
+    delete sn;
+}
+
 int main()
 {
     pool_init(POOL_LBUF, LBUF_SIZE);
@@ -117,6 +168,27 @@ int main()
     expect("2001:db8::/32","2001:db8::/48", SC::kContains);
     expect("2001:db8::/48","2001:db8::/32", SC::kContainedBy);
     expect("2001:db8::/32","2001:db8::/32", SC::kEqual);
+
+    // --- address-vs-subnet, including the #800 IPv4-mapped IPv6 case --------
+    // Native IPv4 inside / outside a v4 subnet.
+    expect_addr("1.2.3.0/24", sockaddr_v4("1.2.3.4"),  true,  "v4 1.2.3.4");
+    expect_addr("1.2.3.0/24", sockaddr_v4("1.2.4.4"),  false, "v4 1.2.4.4");
+
+    // #800: an IPv4-mapped IPv6 source (::ffff:1.2.3.4 -- what a dual-stack
+    // listener delivers for an inbound IPv4 connection) must match the v4 rule
+    // exactly as the native form does.  Without canonicalization the
+    // cross-family compare sorts it past every v4 subnet (kLessThan) and the
+    // ban is bypassed -- this case fails if the v4-mapped handling is removed.
+    expect_addr("1.2.3.0/24", sockaddr_v6("::ffff:1.2.3.4"), true,
+                "v4-mapped ::ffff:1.2.3.4");
+    expect_addr("1.2.4.0/24", sockaddr_v6("::ffff:1.2.3.4"), false,
+                "v4-mapped ::ffff:1.2.3.4 (outside)");
+
+    // A genuine (non-mapped) IPv6 address still matches v6 rules and not v4.
+    expect_addr("2001:db8::/32", sockaddr_v6("2001:db8::1"), true,
+                "v6 2001:db8::1");
+    expect_addr("1.2.3.0/24",    sockaddr_v6("2001:db8::1"), false,
+                "v6 2001:db8::1 (vs v4 rule)");
 
     printf("\n=== netaddr compare_to: %d passed, %d failed ===\n",
            g_pass, g_fail);

@@ -472,7 +472,26 @@ mux_subnet::SubnetComparison mux_subnet::compare_to(MUX_SOCKADDR *msa) const
         {
             struct in6_addr ia6{};
             msa->get_address(&ia6);
-            ma = static_cast<mux_addr *>(new mux_in6_addr(&ia6));
+#if defined(HAVE_IN_ADDR) && defined(IN6_IS_ADDR_V4MAPPED)
+            if (IN6_IS_ADDR_V4MAPPED(&ia6))
+            {
+                // An IPv4-mapped IPv6 address (::ffff:a.b.c.d), as delivered by
+                // a dual-stack listener for an inbound IPv4 connection, is
+                // semantically IPv4.  Compare it as native AF_INET so a v4
+                // access rule matches it -- otherwise the cross-family compare
+                // sorts it past every v4 subnet and the rule is bypassed
+                // (#800).  The adapter also canonicalizes d->address at ingress;
+                // doing it here too makes the access decision correct for any
+                // caller, independent of how the sockaddr was populated.
+                struct in_addr ia{};
+                memcpy(&ia, ia6.s6_addr + 12, sizeof(ia));
+                ma = static_cast<mux_addr *>(new mux_in_addr(&ia));
+            }
+            else
+#endif
+            {
+                ma = static_cast<mux_addr *>(new mux_in6_addr(&ia6));
+            }
         }
         break;
 #endif
