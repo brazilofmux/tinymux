@@ -13,6 +13,7 @@
 
 #include "interface.h"
 #include "websocket.h"
+#include "ganl_adapter.h"  // ganl_close_connection (RFC 6455 close handling)
 #include "sha1.h"
 
 #include <cstring>
@@ -408,6 +409,71 @@ enum {
     WS_PARSE_PAYLOAD       // reading payload bytes
 };
 
+// Fail the connection per RFC 6455 §7.1.7: send a Close frame with the given
+// status code, flush it toward the client, then close the connection.  Every
+// caller MUST return from ws_process_input immediately afterward without
+// touching d or ws: closing is safe here because the GANL event-dispatch loop
+// holds a shared_ptr that outlives close() (ganl_adapter.cpp), but the close
+// path can free d / d->ws synchronously, so the parser must not continue.
+//
+static void ws_fail(DESC *d, uint16_t code)
+{
+    ws_send_close(d, code);
+    process_output(d, false);
+    ganl_close_connection(d, R_QUIT);
+}
+
+// Strict UTF-8 well-formedness check (RFC 3629) for RFC 6455 §8.1 TEXT-frame
+// validation.  Rejects overlong encodings, surrogates, code points above
+// U+10FFFF, stray/short continuation bytes, and invalid lead bytes.  The whole
+// assembled message is validated at once, so a multibyte sequence split across
+// fragments (already concatenated into frag_buf before this runs) validates
+// correctly.
+//
+static bool ws_utf8_valid(const char *s, size_t n)
+{
+    size_t i = 0;
+    while (i < n)
+    {
+        unsigned char c = static_cast<unsigned char>(s[i]);
+        size_t extra;
+        unsigned int cp;
+        unsigned int lo;
+
+        if (c < 0x80)
+        {
+            i++;
+            continue;
+        }
+        else if ((c & 0xE0) == 0xC0) { extra = 1; cp = c & 0x1F; lo = 0x80; }
+        else if ((c & 0xF0) == 0xE0) { extra = 2; cp = c & 0x0F; lo = 0x800; }
+        else if ((c & 0xF8) == 0xF0) { extra = 3; cp = c & 0x07; lo = 0x10000; }
+        else { return false; } // stray continuation byte or invalid lead
+
+        if (i + extra >= n)
+        {
+            return false; // truncated multibyte sequence
+        }
+        for (size_t k = 1; k <= extra; k++)
+        {
+            unsigned char cc = static_cast<unsigned char>(s[i + k]);
+            if ((cc & 0xC0) != 0x80)
+            {
+                return false; // not a continuation byte
+            }
+            cp = (cp << 6) | (cc & 0x3F);
+        }
+        if (  cp < lo                          // overlong
+           || cp > 0x10FFFF                    // out of range
+           || (cp >= 0xD800 && cp <= 0xDFFF))  // UTF-16 surrogate
+        {
+            return false;
+        }
+        i += extra + 1;
+    }
+    return true;
+}
+
 void ws_process_input(DESC *d, const char *data, size_t len)
 {
     ws_state *ws = d->ws;
@@ -436,6 +502,16 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                 uint8_t lenByte = b1 & 0x7F;
                 ws->frame_buf.clear();
 
+                // RFC 6455 §5.2: the reserved bits RSV1/2/3 MUST be 0 unless an
+                // extension that defines them has been negotiated.  We negotiate
+                // no extensions, so any set reserved bit fails the connection.
+                //
+                if ((b0 & 0x70) != 0)
+                {
+                    ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
+                    return;
+                }
+
                 // RFC 6455 §5.5: control frames (opcodes 0x8-0xF)
                 // MUST have FIN=1 and payload length ≤ 125. Enforce
                 // before entering any extended-length state so an
@@ -448,7 +524,7 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                 const bool isControl = (ws->frame_opcode & 0x08) != 0;
                 if (isControl && (!ws->frame_fin || lenByte >= 126))
                 {
-                    ws_send_close(d, WS_CLOSE_PROTOCOL_ERR);
+                    ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
                     return;
                 }
 
@@ -490,19 +566,27 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                 {
                     continue;
                 }
-                ws->frame_expected = 0;
+                // Accumulate into an explicit uint64_t and bound-check BEFORE
+                // narrowing to frame_expected (size_t).  On a 32-bit build
+                // size_t is 32 bits, so shifting all 8 bytes through it would
+                // discard the top 4 bytes first: a length like
+                // 0x0000000100000005 would truncate to 5, pass the cap, and the
+                // parser would mis-frame the rest of the stream (F5).
+                //
+                uint64_t len64 = 0;
                 for (int i = 0; i < 8; i++)
                 {
-                    ws->frame_expected = (ws->frame_expected << 8) |
-                        static_cast<size_t>(static_cast<uint8_t>(ws->frame_buf[i]));
+                    len64 = (len64 << 8) |
+                        static_cast<uint64_t>(static_cast<uint8_t>(ws->frame_buf[i]));
                 }
                 ws->frame_buf.clear();
 
-                if (ws->frame_expected > WS_MAX_PAYLOAD)
+                if (len64 > WS_MAX_PAYLOAD)
                 {
-                    ws_send_close(d, WS_CLOSE_PROTOCOL_ERR);
+                    ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
                     return;
                 }
+                ws->frame_expected = static_cast<size_t>(len64);
                 ws->parse_state = ws->frame_masked ? WS_PARSE_MASK : WS_PARSE_PAYLOAD;
             }
             break;
@@ -549,12 +633,6 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     }
                 }
 
-                // Dispatch by opcode. The CONTINUATION case is
-                // handled directly — it appends to frag_buf and
-                // dispatches on FIN, and save_command does not
-                // distinguish text from binary — so there is no
-                // need to substitute frag_opcode here.
-                //
                 // Bound assembled fragmented messages at
                 // WS_MAX_PAYLOAD. Each individual frame is already
                 // capped there, but without this check a client
@@ -570,40 +648,38 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                 {
                 case WS_OPCODE_TEXT:
                 case WS_OPCODE_BINARY:
+                    // RFC 6455 §5.4: a TEXT/BINARY frame begins a new message,
+                    // so receiving one while a fragmented message is still in
+                    // progress is a protocol error — the continuation must use
+                    // opcode 0.  Validate the state rather than silently
+                    // discarding the in-progress fragment (F2).
+                    //
+                    if (0 != ws->frag_opcode)
+                    {
+                        ws->frag_buf.clear();
+                        ws->frag_opcode = 0;
+                        ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
+                        return;
+                    }
                     if (ws->frame_fin)
                     {
-                        if (!ws->frag_buf.empty())
+                        // Complete single-frame message.  RFC 6455 §8.1: a TEXT
+                        // message must be valid UTF-8 (F4); BINARY is exempt.
+                        //
+                        if (  WS_OPCODE_TEXT == ws->frame_opcode
+                           && !ws_utf8_valid(ws->frame_buf.c_str(), ws->frame_buf.size()))
                         {
-                            // Final fragment of a fragmented message.
-                            //
-                            if (frag_would_overflow(ws->frame_buf.size()))
-                            {
-                                ws->frag_buf.clear();
-                                ws->frag_opcode = 0;
-                                ws_send_close(d, WS_CLOSE_MESSAGE_TOO_BIG);
-                                return;
-                            }
-                            ws->frag_buf.append(ws->frame_buf);
-                            save_command(d,
-                                reinterpret_cast<const UTF8 *>(ws->frag_buf.c_str()),
-                                ws->frag_buf.size());
-                            ws->frag_buf.clear();
-                            ws->frag_opcode = 0;
+                            ws_fail(d, WS_CLOSE_BAD_DATA);
+                            return;
                         }
-                        else
-                        {
-                            // Complete single-frame message.
-                            //
-                            save_command(d,
-                                reinterpret_cast<const UTF8 *>(ws->frame_buf.c_str()),
-                                ws->frame_buf.size());
-                        }
+                        save_command(d,
+                            reinterpret_cast<const UTF8 *>(ws->frame_buf.c_str()),
+                            ws->frame_buf.size());
                     }
                     else
                     {
-                        // First fragment. frame_buf is already
-                        // bounded to WS_MAX_PAYLOAD by the header
-                        // parser, so the assignment is safe.
+                        // First fragment. frame_buf is already bounded to
+                        // WS_MAX_PAYLOAD by the header parser, so this is safe.
                         //
                         ws->frag_opcode = ws->frame_opcode;
                         ws->frag_buf = ws->frame_buf;
@@ -611,16 +687,37 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     break;
 
                 case WS_OPCODE_CONTINUATION:
+                    // RFC 6455 §5.4: a CONTINUATION frame is only valid while a
+                    // fragmented message is in progress (F2).
+                    //
+                    if (0 == ws->frag_opcode)
+                    {
+                        ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
+                        return;
+                    }
                     if (frag_would_overflow(ws->frame_buf.size()))
                     {
                         ws->frag_buf.clear();
                         ws->frag_opcode = 0;
-                        ws_send_close(d, WS_CLOSE_MESSAGE_TOO_BIG);
+                        ws_fail(d, WS_CLOSE_MESSAGE_TOO_BIG);
                         return;
                     }
                     ws->frag_buf.append(ws->frame_buf);
                     if (ws->frame_fin)
                     {
+                        // §8.1: validate the assembled message if it began as a
+                        // TEXT message (F4).  The whole frag_buf is checked at
+                        // once, so a multibyte sequence split across fragments
+                        // validates correctly.
+                        //
+                        if (  WS_OPCODE_TEXT == ws->frag_opcode
+                           && !ws_utf8_valid(ws->frag_buf.c_str(), ws->frag_buf.size()))
+                        {
+                            ws->frag_buf.clear();
+                            ws->frag_opcode = 0;
+                            ws_fail(d, WS_CLOSE_BAD_DATA);
+                            return;
+                        }
                         save_command(d,
                             reinterpret_cast<const UTF8 *>(ws->frag_buf.c_str()),
                             ws->frag_buf.size());
@@ -644,19 +741,27 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     break;
 
                 case WS_OPCODE_CLOSE:
-                    // Echo the close frame back.
+                    // RFC 6455 §5.5.1: respond to the client's Close with a
+                    // Close frame, then close the connection — do not keep
+                    // processing subsequent frames (F1).  Echo the received
+                    // close payload (status code + optional reason), already
+                    // bounded to <=125 bytes by the control-frame check.  Safe
+                    // to close here (see ws_fail): return immediately and touch
+                    // neither d nor ws afterward.
                     //
                     ws_queue_frame(d,
                         reinterpret_cast<const uint8_t *>(ws->frame_buf.c_str()),
                         ws->frame_buf.size(),
                         WS_OPCODE_CLOSE);
-                    break;
+                    process_output(d, false);
+                    ganl_close_connection(d, R_QUIT);
+                    return;
 
                 default:
                     // Unknown opcode — protocol error.
                     //
-                    ws_send_close(d, WS_CLOSE_PROTOCOL_ERR);
-                    break;
+                    ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
+                    return;
                 }
 
                 // Reset for next frame.
