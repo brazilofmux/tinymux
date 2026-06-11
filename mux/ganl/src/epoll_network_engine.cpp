@@ -837,9 +837,23 @@ bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size
 // --- Event Processing ---
 
 int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEvents) {
-    // ... (epoll_wait call as before) ...
     int nfds = epoll_wait(epollFd_, epollEvents_.data(), epollEvents_.size(), timeoutMs);
-    // ... (error handling for nfds == -1 as before) ...
+
+    if (nfds < 0) {
+        if (errno == EINTR) {
+            // Interrupted by a signal — not an error.  Report "no events" so
+            // the caller re-polls; do NOT run the negotiation-timeout sweep
+            // (that belongs to a genuine idle timeout, nfds == 0).
+            GANL_EPOLL_DEBUG(epollFd_, "epoll_wait() interrupted by signal (EINTR).");
+            return 0;
+        }
+        // Real error (EBADF/EINVAL — e.g. a corrupted epoll fd).  Surface it to
+        // the caller per the NetworkEngine contract instead of spinning at 100%
+        // CPU by silently returning 0 and being re-polled with no delay.
+        std::cerr << "[Epoll:CTL] CRITICAL: epoll_wait() failed: "
+                  << strerror(errno) << std::endl;
+        return -1;
+    }
 
     if (nfds == 0) {
         std::vector<ConnectionBase*> connections;
