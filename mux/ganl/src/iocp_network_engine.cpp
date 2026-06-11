@@ -56,9 +56,26 @@ void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
 
     // Constructor for Write operations with user context
     PerIoData::PerIoData(OpType type, ConnectionHandle conn, char* buf, size_t size, void* context, IocpNetworkEngine* eng)
-        : opType(type), connection(conn), buffer(buf), bufferSize(size), engine(eng),
+        : opType(type), connection(conn), buffer(nullptr), bufferSize(size), engine(eng),
           acceptSocket(INVALID_SOCKET), userContext(context) {
         ZeroMemory(&overlapped, sizeof(OVERLAPPED));
+
+        // Own the outbound bytes (#796).  WSASend reads wsaBuf.buf
+        // *asynchronously*, after postWrite() returns.  `buf` points into the
+        // connection's encryptedOutput_ IoBuffer, and while the send is in
+        // flight the application can append to that buffer
+        // (sendDataToClient -> ensureWritable), which may compact() (memmove)
+        // or resize() the underlying std::vector — relocating or freeing the
+        // very bytes the in-flight WSASend is reading (use-after-free /
+        // corruption / info-leak).  Copy into a PerIoData-owned buffer so the
+        // send reads memory this object owns for its whole lifetime;
+        // ~PerIoData frees it once the completion has been dequeued.  A zero-
+        // length write (write-interest registration) keeps buffer == nullptr,
+        // matching the prior behaviour.
+        if (nullptr != buf && 0 != size) {
+            ownedBuffer.assign(buf, buf + size);
+            buffer = ownedBuffer.data();
+        }
         wsaBuf.buf = buffer;
         wsaBuf.len = static_cast<ULONG>(bufferSize);
         GANL_IOCP_DEBUG(conn, "PerIoData created for Write operation with context, buffer="

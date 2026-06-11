@@ -27,6 +27,7 @@ struct PerIoData {
     IocpNetworkEngine* engine;
     IoBuffer* ioBuffer{nullptr}; // Reference to IoBuffer for memory-managed operations
     void* userContext{nullptr};  // User-provided context for Write operations
+    std::vector<char> ownedBuffer; // Owned copy of outbound bytes for async WSASend (#796)
 
     // --- Accept specific fields ---
     SOCKET acceptSocket;
