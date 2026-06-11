@@ -364,10 +364,16 @@ section above.
   another user's (`farm`) netmux; a same-port test server silently fails to bind
   and clients hit the wrong server. Always start test instances on a free port
   (e.g. 7860) and confirm ownership with `ss -ltnp` / `pgrep -u sdennis netmux`.
-- Remaining, suggested order: #790 (handle truncation), #791 (epoll
-  error-path placeholder), #792 (WebSocket conformance), #802 (destructor
-  guard), the Windows-only #796, #793 (dead parser), #801 (DNS hardening), and
-  the engine/TLS candidates above.
+- **#790 — FIXED (7ede66556):** guard at onConnectionOpen refuses a
+  connection handle outside SOCKET range (fail loud vs silent aliasing into
+  `d->socket`); `d->socket` casts int→SOCKET for consistency. No-op for real
+  fds (listener handle is 1); build + smoke + live.
+- Remaining, suggested order: #791 (epoll error-path placeholder), #792
+  (WebSocket conformance), #802 (destructor guard), the Windows-only #796,
+  #793 (dead parser), #801 (DNS hardening), and the engine/TLS candidates
+  above. NOTE the socket-buffer-edge fixes (#794/#795/#798) want the
+  stress/unit harness follow-up (not live-testable here — kernel SNDBUF
+  autotunes to 4MB).
 - **Test infra — STARTED (bb2cb8f84):** `tests/netaddr/` now unit-tests
   `mux_subnet::compare_to(mux_subnet*)` by linking `netmux-netaddr.o` against
   libmux with three driver-global stubs (`g_bStandAlone`, `g_pILog`,
