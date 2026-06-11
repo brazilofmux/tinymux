@@ -185,7 +185,20 @@ void ConnectionBase::handleNetworkEvent(const IoEvent& event) {
     GANL_CONN_DEBUG(handle_, "Received Network Event: Type=" << static_cast<int>(event.type)
               << ", Bytes=" << event.bytesTransferred << ", Error=" << event.error);
 
-    // If we are already closed, ignore stray events (except maybe Error?)
+    // Once closing or closed, do not feed inbound data back through the
+    // protocol/TLS pipeline (#798): a non-deferred close() runs
+    // cleanupResources() synchronously, destroying the per-connection
+    // protocol and TLS contexts, so a still-queued Read event would call
+    // handleRead -> processSecureData / processProtocolData on torn-down
+    // state.  Write events are deliberately still processed so a deferred
+    // close can drain its remaining output (closeAfterWriteDrain_, #795),
+    // and Close/Error events still finalize the teardown.
+    if (isClosingOrClosed() && event.type == IoEventType::Read) {
+         GANL_CONN_DEBUG(handle_, "Ignoring Read event on closing/closed connection.");
+         return;
+    }
+
+    // Once fully closed, ignore all remaining stray events except Error.
     if (getState() == ConnectionState::Closed && event.type != IoEventType::Error) {
          GANL_CONN_DEBUG(handle_, "Ignoring event, connection already closed.");
          return;
@@ -905,8 +918,12 @@ bool ConnectionBase::postWrite() {
          return false;
     }
 
+    // Intentionally gated on Closed, NOT isClosingOrClosed(): a connection in
+    // the Closing state must still be able to post writes to drain its
+    // remaining output before the socket is closed (closeAfterWriteDrain_ in
+    // close()/handleWrite, #795).  Only a fully Closed connection refuses.
     if (getState() == ConnectionState::Closed) {
-        GANL_CONN_DEBUG(handle_, "postWrite called, but connection closing/closed. Ignoring.");
+        GANL_CONN_DEBUG(handle_, "postWrite called, but connection fully closed. Ignoring.");
         return false;
     }
 
@@ -1376,7 +1393,9 @@ void CompletionConnection::handleWrite(size_t bytesTransferred)
         if (!postWrite()) {
             GANL_CONN_DEBUG(handle_, "IOCP: Failed to post subsequent write. Closing.");
             close(DisconnectReason::NetworkError);
-            // Return? Error event should handle close.
+            // Return after close() so nothing added later runs post-teardown
+            // on this connection (#798).
+            return;
         }
     }
     else {
