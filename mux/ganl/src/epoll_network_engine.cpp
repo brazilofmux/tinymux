@@ -918,18 +918,42 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                           // Populate the remoteAddress field directly from the socket
                           ev.remoteAddress = getRemoteNetworkAddress(newConn);
                      } else {
-                          // ... (handle acceptError EAGAIN/EWOULDBLOCK or real error as before) ...
+                          // Invalid handle: either the accept queue is drained
+                          // (EAGAIN/EWOULDBLOCK — normal under edge-triggered
+                          // epoll) or a genuine accept() failure (EMFILE, etc.).
+                          // Either way we stop draining; log only the real error
+                          // so resource exhaustion is not silent.
+                          if (acceptError != 0
+                              && acceptError != EAGAIN
+                              && acceptError != EWOULDBLOCK) {
+                              std::cerr << "[Epoll:CTL] accept() on listener fd "
+                                        << fd << " failed: "
+                                        << strerror(acceptError) << std::endl;
+                          }
                           break;
                      }
                  }
             }
             if (revents & (EPOLLERR | EPOLLHUP)) {
-                 // ... (handle listener error as before, using socketInfoCopy.context) ...
+                 // Surface a listener-level error to the caller.  Populate every
+                 // field — `events` is a caller-owned array reused across
+                 // processEvents() calls, so leaving fields unset would leak
+                 // stale data from a previous event into this one.
                  if (eventCount < maxEvents) {
+                     int sockerr = 0;
+                     socklen_t errlen = sizeof(sockerr);
+                     getsockopt(fd, SOL_SOCKET, SO_ERROR,
+                                reinterpret_cast<char*>(&sockerr), &errlen);
+
                      IoEvent& ev = events[eventCount++];
                      ev.type = IoEventType::Error;
                      ev.listener = fd;
-                     // ... rest of error event population using socketInfoCopy.context ...
+                     ev.connection = InvalidConnectionHandle;
+                     ev.context = socketInfoCopy.context;
+                     ev.error = (sockerr != 0) ? sockerr : ECONNABORTED;
+                     ev.bytesTransferred = 0;
+                     ev.buffer = nullptr;
+                     ev.remoteAddress = NetworkAddress();
                  }
             }
             continue; // Done processing listener event
