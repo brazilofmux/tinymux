@@ -199,7 +199,9 @@ void hir_const_fold(hir_program &h) {
                     && h.kind[s1] == HIR_ICONST && h.kind[s2] == HIR_ICONST
                     && h.val[s2] != 0) {
                     h.kind[i] = HIR_ICONST;
-                    h.val[i] = h.val[s1] % h.val[s2];
+                    // Guard INT64_MIN % -1 — UB that traps on x86 (#805).
+                    h.val[i] = (h.val[s1] == INT64_MIN && h.val[s2] == -1)
+                               ? 0 : h.val[s1] % h.val[s2];
                     h.src1[i] = h.src2[i] = -1;
                     changed = true;
                 }
@@ -209,7 +211,9 @@ void hir_const_fold(hir_program &h) {
                     && h.kind[s1] == HIR_ICONST && h.kind[s2] == HIR_ICONST
                     && h.val[s2] != 0) {
                     h.kind[i] = HIR_ICONST;
-                    h.val[i] = h.val[s1] / h.val[s2];
+                    // Guard INT64_MIN / -1 — UB that traps on x86 (#805).
+                    h.val[i] = (h.val[s1] == INT64_MIN && h.val[s2] == -1)
+                               ? INT64_MIN : h.val[s1] / h.val[s2];
                     h.src1[i] = h.src2[i] = -1;
                     changed = true;
                 }

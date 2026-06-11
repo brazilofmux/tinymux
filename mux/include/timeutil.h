@@ -285,15 +285,20 @@ namespace TimezoneCache {
     LIBMUX_API CLinearTimeDelta getCurrentLocalOffset(bool* is_dst);
 }
 
+// Each inline guards the INT64_MIN/-1 overflow (#805): on two's-complement
+// hosts INT64_MIN / -1 is undefined and traps (#DE/SIGFPE) on x86, so a single
+// softcode idiv()/mod()/remainder() would crash the whole server. Return the
+// two's-complement-wrap result (INT64_MIN for division, 0 for remainder),
+// matching the already-guarded out-of-line i64Mod/i64Remainder.
 #ifdef SMALLEST_INT_GTE_NEG_QUOTIENT
 LIBMUX_API int64_t i64Mod(int64_t x, int64_t y);
 LIBMUX_API int64_t i64FloorDivision(int64_t x, int64_t y);
-inline int64_t i64Division(int64_t x, int64_t y) { return x / y; }
-inline int64_t i64Remainder(int64_t x, int64_t y) { return x % y; }
+inline int64_t i64Division(int64_t x, int64_t y) { return (INT64_MIN == x && -1 == y) ? INT64_MIN : x / y; }
+inline int64_t i64Remainder(int64_t x, int64_t y) { return (INT64_MIN == x && -1 == y) ? 0 : x % y; }
 LIBMUX_API int iFloorDivisionMod(int x, int y, int *piMod);
 #else // SMALLEST_INT_GTE_NEG_QUOTIENT
-inline int64_t i64Mod(int64_t x, int64_t y) { return x % y; }
-inline int64_t i64FloorDivision(int64_t x, int64_t y) { return x / y; }
+inline int64_t i64Mod(int64_t x, int64_t y) { return (INT64_MIN == x && -1 == y) ? 0 : x % y; }
+inline int64_t i64FloorDivision(int64_t x, int64_t y) { return (INT64_MIN == x && -1 == y) ? INT64_MIN : x / y; }
 LIBMUX_API int64_t i64Division(int64_t x, int64_t y);
 LIBMUX_API int64_t i64Remainder(int64_t x, int64_t y);
 inline int iFloorDivisionMod(int x, int y, int *piMod) \

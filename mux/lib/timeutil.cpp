@@ -184,6 +184,11 @@ int iFloorDivision(int x, int y)
 
 int64_t i64FloorDivision(int64_t x, int64_t y)
 {
+    // INT64_MIN / -1 overflows and traps (#DE/SIGFPE) on x86 — guard it (#805).
+    if (INT64_MIN == x && -1 == y)
+    {
+        return INT64_MIN;
+    }
     if (y < 0)
     {
         if (x <= 0)
@@ -387,6 +392,11 @@ int iDivision(int x, int y)
 
 int64_t i64Division(int64_t x, int64_t y)
 {
+    // INT64_MIN / -1 overflows and traps (#DE/SIGFPE) on x86 — guard it (#805).
+    if (INT64_MIN == x && -1 == y)
+    {
+        return INT64_MIN;
+    }
     if (y < 0)
     {
         if (x <= 0)
