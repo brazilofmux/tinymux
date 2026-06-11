@@ -352,9 +352,17 @@ section above.
   error-path placeholder), #792 (WebSocket conformance), #802 (destructor
   guard), the Windows-only #796, #793 (dead parser), #801 (DNS hardening), and
   the engine/TLS candidates above.
-- **Test-infra gap (now the priority):** the access-control fixes (#799/#800)
-  and the connection/output fixes (#794/#795/#798) are all verified by
-  reasoning + regression rather than a bite-then-not-bite demo, because there
-  is no unit harness for `compare_to`/the subnet tree and no known login
-  credential for live large-output demos. A small netmux-side C++ test harness
-  is the highest-leverage next investment.
+- **Test infra — STARTED (bb2cb8f84):** `tests/netaddr/` now unit-tests
+  `mux_subnet::compare_to(mux_subnet*)` by linking `netmux-netaddr.o` against
+  libmux with three driver-global stubs (`g_bStandAlone`, `g_pILog`,
+  `g_pINotify`) + `pool_init(POOL_LBUF, ...)`. 14 cases; **bug-catch verified**
+  (reverting compare_to to the strict-`<` logic fails exactly the 4 shared-bound
+  cases). This is the mechanical lock #799 was missing, and the pattern (a
+  netmux-side object + libmux + a few stubs) generalizes to other netmux-only
+  code that was previously untestable. Future extensions: address-vs-subnet
+  (`compare_to(MUX_SOCKADDR*)`) and a v4-mapped case toward #800 (whose fix is
+  adapter-side, so it needs the adapter or a refactor to reach).
+- Still reasoning-only (no mechanical lock yet): the connection/output fixes
+  (#794/#795/#798) — they need either a known login credential for live
+  large-output demos or a connection-level test harness (heavier: connection.cpp
+  pulls in the engines).
