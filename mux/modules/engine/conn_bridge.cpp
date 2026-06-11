@@ -75,6 +75,19 @@ void request_shutdown(void)
 
 int site_update(const UTF8 *subnetStr, dbref player, UTF8 *cmd, int operation)
 {
+    if (nullptr == g_pDriverCtl)
+    {
+        // Config-file site directives (forbid_site, register_site, ...) are
+        // processed by cf_read() during LoadGame(), which runs BEFORE
+        // Startup()'s conn_bridge_init() creates the driver-control bridge.
+        // Without this, g_pDriverCtl is null at config-read time and every
+        // such rule is silently dropped -- config-file site bans never take
+        // effect (#803).  Bring the bridge up on demand: conn_bridge_init()
+        // is idempotent, and init_modules() has already registered
+        // CID_DriverControl before config load, so the instance can be
+        // created here and the rule actually reaches the access list.
+        conn_bridge_init();
+    }
     if (g_pDriverCtl)
     {
         MUX_RESULT mr = g_pDriverCtl->SiteUpdate(subnetStr, player, cmd, operation);
