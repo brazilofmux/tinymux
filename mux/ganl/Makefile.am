@@ -15,8 +15,7 @@ libganl_a_SOURCES = \
     src/openssl_transport.cpp \
     src/secure_transport_factory.cpp \
     src/select_network_engine.cpp \
-    src/slave_spawn_posix.cpp \
-    src/telnet_protocol_handler.cpp
+    src/slave_spawn_posix.cpp
 
 # Platform-specific source files
 if HAVE_EPOLL
@@ -42,5 +41,4 @@ noinst_HEADERS = \
     include/secure_transport.h \
     include/select_network_engine.h \
     include/session_manager.h \
-    include/slave_spawn_posix.h \
-    include/telnet_protocol_handler.h
+    include/slave_spawn_posix.h
