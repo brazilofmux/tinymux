@@ -39,6 +39,34 @@ and the precompiled `softlib.rv64` Tier-2 blob run via the DBT.
   (`:967-998`); list/output walkers use `end = op + LBUF_SIZE - 1` guards
   (`:1180,1347,1398,1630,1827`). No overflow found on the size-driven paths.
 
+### 🔴 Verified bug — LIVE player-reachable DoS (SIGFPE server crash)
+- **`idiv(-9223372036854775808,-1)` crashes the whole server** (and
+  `remainder(-9223372036854775808,-1)`). `INT64_MIN / -1` overflows; on x86 the
+  `idiv` instruction traps (`#DE` → SIGFPE). **Reproduced live**: a single
+  `think [idiv(-9223372036854775808,-1)]` from a logged-in Wizard on a
+  verified-alive netmux killed the process (empty response, process gone, log
+  truncated mid-eval, no clean shutdown). Any connected player can do this.
+- **Root cause (base MUX helper, NOT JIT-specific):** `i64Division`
+  (`mux/lib/timeutil.cpp:388` out-of-line AND `mux/include/timeutil.h:291`
+  inline) and `i64Remainder` (`timeutil.h:292` inline) perform raw `x/y` / `x%y`
+  with **no `INT64_MIN/-1` guard**. `i64Mod` (`timeutil.cpp`) DOES guard it
+  (`if (INT64_MIN==x && -1==y) return 0;`) — classic incomplete hardening:
+  mod was fixed, division/remainder were missed.
+- **Reachable from multiple layers:** the interpreter `fun_idiv`
+  (`funmath.cpp:1075` → `i64Division`) and `remainder` (`:1145` →
+  `i64Remainder`); the JIT `try_fold` IDIV (`hir_lower.cpp:206` → `i64Division`);
+  and the JIT `hir_opt` HIR_DIV/HIR_REM folds (`hir_opt.cpp:207-216,197-206`)
+  which use raw C++ `/` and `%` with only a `!=0` guard, never an INT_MIN/-1
+  guard. (My live repro hit the JIT try_fold path at compile time; the
+  interpreter path crashes identically at run time.)
+- **Fix direction:** add the INT_MIN/-1 guard to `i64Division` and
+  `i64Remainder` (mirror `i64Mod`: return `INT64_MIN` for the division — the
+  two's-complement-wrap value — and `0` for the remainder), and add the same
+  guard to the two hir_opt folds (or route them through the fixed helpers).
+  Verify the runtime DBT DIV/REM emit (`dbt_x64_sysv.cpp:2292,2305`) matches
+  RISC-V's no-trap semantics so the non-constant path
+  (`idiv(%q-holding-INT_MIN,-1)`) is also safe.
+
 ### 🐛 Verified bug — latent, non-production backend
 - **a64 LOAD/STORE with `rs1==x0` and nonzero `imm` computes `2*imm`**
   (`dbt_a64_sysv.cpp:1420-1423` LOAD, `1449-1452` STORE). `rc_read(x0)` returns
@@ -71,13 +99,17 @@ and the precompiled `softlib.rv64` Tier-2 blob run via the DBT.
   (`deps_are_fresh`) before reuse — a cached program is only run for the exact
   expression + blob version that produced it.
 
-## Preliminary conclusion (production x64 path)
-The production x86-64 JIT/DBT path is **well-hardened** on every memory-safety
-surface checked: instruction-fetch bounds, tier-2 DELIM guards, size-driven blob
-output bounding, code-buffer overflow, emit-primitive bounds, and code-cache
-keying. The parallel-agent leads were mostly false positives ruled out by
-reading. Net yield so far: one latent **a64** miscompile (non-production
-backend) + one defense-in-depth note (unmasked guest LOAD/STORE).
+## Preliminary conclusion
+The JIT/DBT *memory-safety* surfaces (instruction-fetch bounds, tier-2 DELIM
+guards, size-driven blob output bounding, code-buffer overflow, emit-primitive
+bounds, code-cache keying) are **well-hardened** — the parallel-agent leads
+there were mostly false positives ruled out by reading. **But auditing the
+hir_opt arithmetic folding surfaced a live, player-reachable DoS (#805):**
+`idiv(-9223372036854775808,-1)` (and `remainder(...)`) crash the server with
+SIGFPE via the unguarded `i64Division`/`i64Remainder` (a base MUX helper bug
+reachable from both the interpreter and the JIT fold). **Reproduced live.**
+Net verified yield: #805 (high-severity DoS), #804 (latent a64 miscompile),
+plus a defense-in-depth note (unmasked guest LOAD/STORE).
 
 ## Areas still to audit (next passes)
 - [ ] SSA construction + linear-scan register allocation correctness (the
