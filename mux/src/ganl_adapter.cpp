@@ -24,6 +24,7 @@
 #include <ws2tcpip.h>
 #else
 #include <netdb.h>
+#include <arpa/inet.h>   // inet_pton
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -502,16 +503,26 @@ namespace
 class GanlTinyMuxSessionManager : public ganl::SessionManager {
 private:
     GanlAdapter& adapter_;
-    std::map<ganl::SessionId, std::string> session_errors_;
 
-    void setSessionError(ganl::SessionId sid, const std::string& err) {
-        if (sid != ganl::InvalidSessionId) {
-            session_errors_[sid] = err;
+    // Parse a numeric IPv4/IPv6 address string into a MUX_SOCKADDR for the
+    // address-check methods.  Returns false if the string is not a valid
+    // numeric address.
+    static bool ParseAddress(const std::string& address, MUX_SOCKADDR& out) {
+        struct sockaddr_in sin;
+        std::memset(&sin, 0, sizeof(sin));
+        if (1 == inet_pton(AF_INET, address.c_str(), &sin.sin_addr)) {
+            sin.sin_family = AF_INET;
+            out = MUX_SOCKADDR(reinterpret_cast<const struct sockaddr*>(&sin));
+            return true;
         }
-    }
-
-    void clearSessionError(ganl::SessionId sid) {
-        session_errors_.erase(sid);
+        struct sockaddr_in6 sin6;
+        std::memset(&sin6, 0, sizeof(sin6));
+        if (1 == inet_pton(AF_INET6, address.c_str(), &sin6.sin6_addr)) {
+            sin6.sin6_family = AF_INET6;
+            out = MUX_SOCKADDR(reinterpret_cast<const struct sockaddr*>(&sin6));
+            return true;
+        }
+        return false;
     }
 
 public:
@@ -519,7 +530,7 @@ public:
     ~GanlTinyMuxSessionManager() override = default;
 
     bool initialize() override { return true; }
-    void shutdown() override { session_errors_.clear(); }
+    void shutdown() override { }
 
 
     ganl::SessionId onConnectionOpen(ganl::ConnectionHandle handle, const std::string& remoteAddress) override {
@@ -569,7 +580,6 @@ public:
         if (!conn) {
             g_pILog->WriteString(tprintf(T("GANL: Missing ConnectionBase for handle %llu\n"),
                 static_cast<unsigned long long>(handle)));
-            setSessionError(static_cast<ganl::SessionId>(handle), "Missing ConnectionBase");
             return ganl::InvalidSessionId;
         }
 
@@ -577,7 +587,6 @@ public:
         if (!d) {
             g_pILog->WriteString(tprintf(T("GANL: Failed to allocate DESC for handle %llu\n"),
                 static_cast<unsigned long long>(handle)));
-            setSessionError(static_cast<ganl::SessionId>(handle), "Failed to allocate descriptor");
             return ganl::InvalidSessionId;
         }
 
@@ -677,7 +686,6 @@ public:
             fcache_rawdump(static_cast<SOCKET>(d->socket), FC_CONN_SITE);
 
             adapter_.free_desc2(d);
-            setSessionError(static_cast<ganl::SessionId>(handle), "Connection refused (forbidden site)");
             return ganl::InvalidSessionId;
         }
 
@@ -916,7 +924,6 @@ public:
         freeqs(d);
         adapter_.free_desc2(d);
 
-        clearSessionError(sessionId);
     }
 
     bool sendToSession(ganl::SessionId sessionId, const std::string& message) override {
@@ -1199,33 +1206,42 @@ public:
     }
 
     ganl::ConnectionHandle getConnectionHandle(ganl::SessionId sessionId) override {
-        // Simple mapping: Session ID is the Connection Handle
-        return static_cast<ganl::ConnectionHandle>(sessionId);
+        // SessionId === ConnectionHandle for a live session (onConnectionOpen),
+        // but return one only if it still maps to a live DESC: a closed or
+        // unknown session must report InvalidConnectionHandle, not a stale,
+        // plausible-looking handle (#797).
+        const ganl::ConnectionHandle handle =
+            static_cast<ganl::ConnectionHandle>(sessionId);
+        return adapter_.get_desc(handle) ? handle : ganl::InvalidConnectionHandle;
     }
 
-    // --- Address Checks (delegate to TinyMUX) ---
-    bool isAddressAllowed(const std::string& address) override {
-        // Rework: Need NetworkAddress
-        // ganl::NetworkAddress netAddr = ... ; // How to construct from string? Needs helper
-        // return !g_access_list.isForbid(&netAddr);
-        return true; // Placeholder
+    // --- Address Checks (delegate to the TinyMUX access list) ---
+    // Previously these were always-true/false placeholders, which would have
+    // silently bypassed forbidden-site filtering if ever wired in (#797).
+    // Parse the numeric address and route through g_access_list.  An
+    // unparseable address is treated as not-allowed / not-flagged.
+    bool isAddressForbidden(const std::string& address) override {
+        MUX_SOCKADDR msa;
+        return ParseAddress(address, msa) && g_access_list.isForbid(&msa);
     }
     bool isAddressRegistered(const std::string& address) override {
-        // Rework needed
-        return false; // Placeholder
-    }
-    bool isAddressForbidden(const std::string& address) override {
-        // Rework needed
-        return false; // Placeholder
+        MUX_SOCKADDR msa;
+        return ParseAddress(address, msa) && g_access_list.isRegistered(&msa);
     }
     bool isAddressSuspect(const std::string& address) override {
-        // Rework needed
-        return false; // Placeholder
+        MUX_SOCKADDR msa;
+        return ParseAddress(address, msa) && g_access_list.isSuspect(&msa);
+    }
+    bool isAddressAllowed(const std::string& address) override {
+        MUX_SOCKADDR msa;
+        return ParseAddress(address, msa) && !g_access_list.isForbid(&msa);
     }
 
-    std::string getLastSessionErrorString(ganl::SessionId sessionId) override {
-        auto it = session_errors_.find(sessionId);
-        return (it != session_errors_.end()) ? it->second : std::string();
+    std::string getLastSessionErrorString(ganl::SessionId) override {
+        // The error channel was write-only (no readers) and leaked map
+        // entries on failed onConnectionOpen, so it was removed (#797).  The
+        // interface method remains; it now reports no error.
+        return std::string();
     }
 };
 
