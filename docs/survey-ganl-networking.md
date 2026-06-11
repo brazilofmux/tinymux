@@ -351,6 +351,18 @@ section above.
   Split the destructor re-entrancy remainder out to **#802** (reason-based vs
   state-based guard). Verified by build + smoke + live native-IPv4 regression
   incl. a data-then-QUIT drain.
+- **#802 — FIXED (a808e9310):** the onConnectionClose skip-process_output guard
+  was `reason != ServerShutdown`, inferring destructor teardown from the
+  disconnect reason; `~ConnectionBase` can reach `cleanupResources` with any
+  reason. Now state-based: `ConnectionBase::inTeardown_` (set in the destructor
+  before `cleanupResources`, exposed as `isTearingDown()`), and onConnectionClose
+  flushes only when the connection is still live (`get_connection(d)` non-null
+  and `!isTearingDown()`). Key invariant: the map's shared_ptr is released
+  *before* `~ConnectionBase` runs (that release drops the refcount to zero), so
+  `get_connection()` returns null during teardown for any reason — the correct
+  reason-independent signal. `send_data` also gained an `isTearingDown()`
+  backstop at the `sendDataToClient()` chokepoint. Live-tested: logged-in QUIT
+  flushes + clean NET/DISC, no pure-virtual abort; smoke 1115/1115.
 - **#797 — FIXED (6f6b71dff):** session-manager hygiene — removed the
   write-only `session_errors_` channel (leak); `getConnectionHandle` gates on
   `get_desc`; `isAddress*` now route through `g_access_list` instead of
@@ -372,12 +384,11 @@ section above.
   connection handle outside SOCKET range (fail loud vs silent aliasing into
   `d->socket`); `d->socket` casts int→SOCKET for consistency. No-op for real
   fds (listener handle is 1); build + smoke + live.
-- Remaining, suggested order: #791 (epoll error-path placeholder), #792
-  (WebSocket conformance), #802 (destructor guard), the Windows-only #796,
-  #793 (dead parser), #801 (DNS hardening), and the engine/TLS candidates
-  above. NOTE the socket-buffer-edge fixes (#794/#795/#798) want the
+- Remaining, suggested order: #801 (DNS hardening), #793 (dead parser removal),
+  #792 (WebSocket conformance), the Windows-only #796, and the engine/TLS
+  candidates above. NOTE the socket-buffer-edge fixes (#794/#795/#798) want the
   stress/unit harness follow-up (not live-testable here — kernel SNDBUF
-  autotunes to 4MB).
+  autotunes to 4MB). DONE this pass: #790, #791, #802.
 - **Test infra — STARTED (bb2cb8f84):** `tests/netaddr/` now unit-tests
   `mux_subnet::compare_to(mux_subnet*)` by linking `netmux-netaddr.o` against
   libmux with three driver-global stubs (`g_bStandAlone`, `g_pILog`,
