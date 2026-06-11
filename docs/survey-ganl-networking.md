@@ -339,9 +339,22 @@ section above.
   empty-buffer common path. Verified by build + smoke + native close
   regression; queued-output positive demo needs a logged-in large-output
   session (no starter-DB credential here).
-- Remaining, suggested order: #798 (Closing-state guard consistency — small,
-  fixable), #797 (session-manager hygiene), #790 (handle truncation). Then
-  #791 (epoll error-path placeholder), #792 (WebSocket conformance), the
-  Windows-only #796, #793 (dead parser), #801 (DNS hardening), and the
-  engine/TLS candidates catalogued above. The two reasoning-only access-control
-  fixes (#799/#800) still want a subnet-tree C++ test harness as a follow-up.
+- **#798 — FIXED (19d5354f3):** `handleNetworkEvent` now ignores Read events
+  when `isClosingOrClosed()` (don't reprocess input on torn-down TLS/protocol
+  contexts), keeping Write (for the #795 drain) and Close/Error. `postWrite`
+  intentionally stays `== Closed` (the drain needs Closing writes) — corrected
+  its debug string. Also fixed the IOCP handleWrite post-close fall-through.
+  Split the destructor re-entrancy remainder out to **#802** (reason-based vs
+  state-based guard). Verified by build + smoke + live native-IPv4 regression
+  incl. a data-then-QUIT drain.
+- Remaining, suggested order: #797 (session-manager hygiene — bounded leak +
+  stale handle + stub checks), #790 (handle truncation), #791 (epoll
+  error-path placeholder), #792 (WebSocket conformance), #802 (destructor
+  guard), the Windows-only #796, #793 (dead parser), #801 (DNS hardening), and
+  the engine/TLS candidates above.
+- **Test-infra gap (now the priority):** the access-control fixes (#799/#800)
+  and the connection/output fixes (#794/#795/#798) are all verified by
+  reasoning + regression rather than a bite-then-not-bite demo, because there
+  is no unit harness for `compare_to`/the subnet tree and no known login
+  credential for live large-output demos. A small netmux-side C++ test harness
+  is the highest-leverage next investment.
