@@ -384,11 +384,21 @@ section above.
   connection handle outside SOCKET range (fail loud vs silent aliasing into
   `d->socket`); `d->socket` casts int→SOCKET for consistency. No-op for real
   fds (listener handle is 1); build + smoke + live.
-- Remaining, suggested order: #801 (DNS hardening), #793 (dead parser removal),
-  #792 (WebSocket conformance), the Windows-only #796, and the engine/TLS
-  candidates above. NOTE the socket-buffer-edge fixes (#794/#795/#798) want the
-  stress/unit harness follow-up (not live-testable here — kernel SNDBUF
-  autotunes to 4MB). DONE this pass: #790, #791, #802.
+- **#801 — FIXED (43edaf7e5):** reverse-DNS hostname (attacker-controlled PTR)
+  flowed verbatim into A_LASTSITE/A_LASTIP, WHO/site display, and %s logs, and
+  an embedded newline could split one slave response into multiple parsed
+  records (forging another connection's audit entry). Now sanitized to the
+  LDH-plus-dot/underscore charset in `slave.cpp query()` (at the source, kills
+  the wire-injection vector) and defensively again in `apply_reverse_dns_result`
+  (covers the Windows worker path). Slave protocol buffers bounded: readBuffer
+  drops the slave past 64 KiB undelimited; pendingWrites caps at 4096. Filter
+  unit-tested; live loopback still resolves 127.0.0.1 → localhost; smoke
+  1115/1115. Not a ban bypass (access control uses the binary sockaddr).
+- Remaining, suggested order: #793 (dead parser removal), #792 (WebSocket
+  conformance), the Windows-only #796, and the engine/TLS candidates above.
+  NOTE the socket-buffer-edge fixes (#794/#795/#798) want the stress/unit
+  harness follow-up (not live-testable here — kernel SNDBUF autotunes to 4MB).
+  DONE this pass: #790, #791, #801, #802.
 - **Test infra — STARTED (bb2cb8f84):** `tests/netaddr/` now unit-tests
   `mux_subnet::compare_to(mux_subnet*)` by linking `netmux-netaddr.o` against
   libmux with three driver-global stubs (`g_bStandAlone`, `g_pILog`,
