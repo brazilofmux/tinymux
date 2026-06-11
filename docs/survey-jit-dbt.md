@@ -31,6 +31,14 @@ and the precompiled `softlib.rv64` Tier-2 blob run via the DBT.
   they need no fold guard — the runtime single-byte-delim guard covers them.
 - `while(*p)` aggregators (LADD/LMAX/LMIN/LAND/LOR, `softlib.c`) are correct for
   scalar numeric semantics (empty/trailing words are no-ops).
+- **Eval/JIT DoS robustness (live-tested, all safe):** deep nesting is bounded
+  by `func_nest_lim`=500 (`conf.cpp:272`) + the LBUF input cap — `add(1,add(1,
+  …×2000…))` evaluates (capped) without stack overflow. Wide expressions are
+  bounded by the ~100 function-arg cap (`add(1,…×12000)` silently truncates to
+  ~100 args, returns 99/100, no crash). HIR overflow is bounded: `hir.emit()`
+  checks `n_insns >= HIR_MAX_INSNS (4096)` and returns -1
+  (`hir.h:309`); a nested-wide `add(add(1,…×99),…×99)` that would build ~9801
+  HIR nodes returns the correct `9801` (graceful fallback), no overflow/crash.
 - Player-controlled sizes in the blob are bounded: `LBUF_SIZE` is **32768**,
   consistent across `alloc.h:18` and `mux/rv64/Makefile:12` (the cross-file
   agreement prior work flagged). `rv64_space` clamps `n` to `[0,8000]` →
@@ -47,14 +55,17 @@ out-of-line `i64Remainder` were already guarded — incomplete hardening. Verifi
 live: the exact repro now returns `-9223372036854775808`; mod/remainder return
 0; runtime paths (interpreter, attr reads, JIT `u()` stack-arg divisors) handle
 div-by-zero and INT_MIN/-1 without crashing. Smoke 1115/1115.
-**Latent follow-up:** the DBT DIV/REM emit (`dbt_x64_sysv.cpp:2292-2310`) is a
-raw x86 `idiv` that does NOT implement RISC-V's no-trap DIV/REM semantics
-(div-by-zero → -1, overflow → INT_MIN). Not reachable with bad divisors in any
-test constructed (the adversarial cases fall back to the now-fixed interpreter;
-`hir_lower` only guards the *constant* divisor-0 case at `:2782`), but if a
-future lowering ever emits RV64 DIV/REM with a runtime-0 or INT_MIN/-1 divisor
-on a path that stays in the JIT, it would trap. Worth hardening the DBT emit
-(or emitting a divisor guard in hir_codegen) as defense-in-depth.
+**DBT emit note (verified NOT reachable):** the DBT DIV/REM emit
+(`dbt_x64_sysv.cpp:2292-2310`) is a raw x86 `idiv` that does not implement
+RISC-V's no-trap semantics in isolation. But the JIT layer guards the divisor
+*before* it: tested the strongest JIT path — `iter()` bodies are compiled to
+RV64 (per the design doc) — and `iter(2 0 4,idiv(100,%i0))` returns
+`50 #-1 DIVIDE BY ZERO 25` (the MUX div-by-zero string, not a crash and not
+RISC-V's -1) and `iter(...,idiv(%i0,-1))` with INT_MIN returns INT_MIN. So the
+JIT idiv lowering emits a runtime divisor guard producing MUX semantics; the
+raw DBT idiv only ever runs on divisors the JIT has proven safe. Hardening the
+DBT emit to RISC-V semantics would be pure defense-in-depth with no reachable
+trigger — deprioritized.
 
 ### (historical) original report — LIVE player-reachable DoS (SIGFPE server crash)
 - **`idiv(-9223372036854775808,-1)` crashed the whole server** (and
