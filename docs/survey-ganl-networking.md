@@ -362,6 +362,11 @@ section above.
   code that was previously untestable. Future extensions: address-vs-subnet
   (`compare_to(MUX_SOCKADDR*)`) and a v4-mapped case toward #800 (whose fix is
   adapter-side, so it needs the adapter or a refactor to reach).
+- **#800 — now also locked (a4a00fa8b):** added v4-mapped canonicalization to
+  `compare_to(MUX_SOCKADDR*)` itself (defense-in-depth at the access decision,
+  complementing the adapter ingress fix) + 6 address-vs-subnet harness cases
+  incl. the `::ffff:a.b.c.d` case. Bug-catch verified (removing the branch
+  fails exactly that case). The harness is now 20 cases.
 - Still reasoning-only (no mechanical lock yet): the connection/output fixes
   (#794/#795/#798) — they need either a known login credential for live
   large-output demos or a connection-level test harness (heavier: connection.cpp
