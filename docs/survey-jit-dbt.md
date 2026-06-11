@@ -39,8 +39,25 @@ and the precompiled `softlib.rv64` Tier-2 blob run via the DBT.
   (`:967-998`); list/output walkers use `end = op + LBUF_SIZE - 1` guards
   (`:1180,1347,1398,1630,1827`). No overflow found on the size-driven paths.
 
-### 🔴 Verified bug — LIVE player-reachable DoS (SIGFPE server crash)
-- **`idiv(-9223372036854775808,-1)` crashes the whole server** (and
+### ✅ FIXED (f2cdde9c8) — was a LIVE player-reachable DoS (SIGFPE crash) — #805
+Guarded `INT64_MIN/-1` in `i64Division`/`i64FloorDivision` (timeutil.cpp) + all
+four inline header variants (`i64Division`/`i64Remainder`/`i64Mod`/
+`i64FloorDivision`) + the two `hir_opt` HIR_DIV/HIR_REM folds. `i64Mod` and the
+out-of-line `i64Remainder` were already guarded — incomplete hardening. Verified
+live: the exact repro now returns `-9223372036854775808`; mod/remainder return
+0; runtime paths (interpreter, attr reads, JIT `u()` stack-arg divisors) handle
+div-by-zero and INT_MIN/-1 without crashing. Smoke 1115/1115.
+**Latent follow-up:** the DBT DIV/REM emit (`dbt_x64_sysv.cpp:2292-2310`) is a
+raw x86 `idiv` that does NOT implement RISC-V's no-trap DIV/REM semantics
+(div-by-zero → -1, overflow → INT_MIN). Not reachable with bad divisors in any
+test constructed (the adversarial cases fall back to the now-fixed interpreter;
+`hir_lower` only guards the *constant* divisor-0 case at `:2782`), but if a
+future lowering ever emits RV64 DIV/REM with a runtime-0 or INT_MIN/-1 divisor
+on a path that stays in the JIT, it would trap. Worth hardening the DBT emit
+(or emitting a divisor guard in hir_codegen) as defense-in-depth.
+
+### (historical) original report — LIVE player-reachable DoS (SIGFPE server crash)
+- **`idiv(-9223372036854775808,-1)` crashed the whole server** (and
   `remainder(-9223372036854775808,-1)`). `INT64_MIN / -1` overflows; on x86 the
   `idiv` instruction traps (`#DE` → SIGFPE). **Reproduced live**: a single
   `think [idiv(-9223372036854775808,-1)]` from a logged-in Wizard on a
