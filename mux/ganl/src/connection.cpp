@@ -111,6 +111,12 @@ ConnectionBase::~ConnectionBase() {
 
         // Perform resource cleanup if not already done
         if (!resourcesCleanedUp_) {
+            // Mark destructor-driven teardown BEFORE cleanupResources runs.
+            // cleanupResources -> sessionManager_.onConnectionClose can re-enter
+            // the adapter's send path; the flag lets that path detect it is
+            // operating on an object whose destructor is in progress and skip
+            // the work (#802), independent of which disconnect reason we use.
+            inTeardown_ = true;
             // Use ServerShutdown as the reason for this unexpected/forced closure if no reason set
             if (disconnectReason_ == DisconnectReason::Unknown) {
                 disconnectReason_ = DisconnectReason::ServerShutdown;

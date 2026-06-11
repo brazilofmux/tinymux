@@ -863,11 +863,21 @@ public:
         }
 
         // Cleanup TinyMUX resources associated with the DESC.
-        // Skip process_output during destructor-driven cleanup
-        // (ServerShutdown) — the socket is already closed, and calling
-        // send_data here acquires a shared_ptr to the connection being
-        // destroyed, causing a re-entrant destructor → pure virtual call.
-        if (reason != ganl::DisconnectReason::ServerShutdown) {
+        //
+        // Flush any final queued output to the socket — but only if the
+        // connection is still live.  This used to be gated on
+        // `reason != ServerShutdown`, inferring destructor-driven teardown
+        // from the disconnect reason (#802).  That is fragile: ~ConnectionBase
+        // can reach cleanupResources with any reason.  Gate on actual state
+        // instead.  During teardown the connection's shared_ptr has already
+        // been released from handle_to_conn_ (that release is what dropped the
+        // refcount to zero and ran ~ConnectionBase), so get_connection()
+        // returns null; and even if a future ownership change kept it
+        // reachable, isTearingDown() catches it.  Either way we must not
+        // synthesize a send into a half-destroyed object (re-entrant
+        // destructor / pure-virtual call).
+        std::shared_ptr<ganl::ConnectionBase> conn = adapter_.get_connection(d);
+        if (conn && !conn->isTearingDown()) {
             process_output(d, false);
         }
         clearstrings(d);
@@ -3256,6 +3266,17 @@ void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {
     if (!d) return;
     std::shared_ptr<ganl::ConnectionBase> conn = get_connection(d);
     if (!conn) {
+        return;
+    }
+
+    // Hard backstop against a re-entrant destructor (#802): if this connection
+    // is in destructor-driven teardown, sendDataToClient() below is a virtual
+    // call on a half-destroyed object (pure-virtual call / UB).  In the current
+    // ownership model get_connection() already returns null during teardown
+    // (the map release is what triggers ~ConnectionBase), so this never fires;
+    // it future-proofs the chokepoint against an ownership change that keeps the
+    // object reachable while it is being destroyed.
+    if (conn->isTearingDown()) {
         return;
     }
 

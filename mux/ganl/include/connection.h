@@ -102,6 +102,18 @@ public:
     ConnectionState getState() const { return state_; }
 
     /**
+     * True once ~ConnectionBase has begun destructor-driven teardown (it sets
+     * this before invoking cleanupResources()).  State-based replacement for
+     * inferring teardown from the disconnect *reason* (#802): a caller that
+     * might be re-entered from cleanupResources -> onConnectionClose (e.g. the
+     * adapter's send path) can hard-skip any work that would touch this object,
+     * avoiding a re-entrant destructor / pure-virtual call.  Distinct from
+     * isClosingOrClosed(): a connection in Closing state is still alive and may
+     * legitimately drain final output; one tearing down is not.
+     */
+    bool isTearingDown() const { return inTeardown_; }
+
+    /**
      * Bytes currently queued for transmission to the client (formatted/
      * encrypted output not yet written to the socket).  Read-only; used for
      * output backpressure / high-water enforcement (#794).
@@ -189,6 +201,7 @@ private:
     // Cleanup state tracking
     bool resourcesCleanedUp_{ false };  // Track if resources have been cleaned up
     bool socketClosed_{ false };        // Track if socket has been closed
+    bool inTeardown_{ false };          // Set in ~ConnectionBase before cleanupResources (#802)
     bool closeAfterWriteDrain_{ false }; // Wait for pending output (for example TLS close_notify)
 
     // Configuration flags
