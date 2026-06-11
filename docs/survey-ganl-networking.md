@@ -73,11 +73,15 @@ but the asymmetry is worth keeping in mind for outbound-connection reuse.
 From a sub-survey; the epoll error-path item was independently verified.
 
 ✅ **ISSUE #791: epoll `processEvents` never handles `epoll_wait() == -1`.**
-Literal placeholder (`// ... error handling for nfds == -1 as before ...`,
-`epoll_network_engine.cpp:841`). Returns 0 on error → caller re-polls
-immediately → CPU spin on a real error (EBADF/EINVAL); EINTR is mis-read as a
-timeout. Production Linux path. Several sibling placeholders in the same file
-(listener-error ~912, accept-error ~906) need the same sweep.
+FIXED (a3032e249 + 9ac20a8f1). Literal placeholder (`// ... error handling for
+nfds == -1 as before ...`, `epoll_network_engine.cpp:841`) returned 0 on error
+→ caller re-polled immediately → CPU spin on a real error (EBADF/EINVAL); EINTR
+mis-read as a timeout. Production Linux path. Now mirrors the select/kqueue
+contract: EINTR → return 0 (no timeout sweep); other errno → log + return -1.
+The two sibling placeholders in the same file were swept in the follow-up
+commit: accept-error (~906) now logs a real failure (EMFILE etc.) before
+breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
+(was leaking stale fields from the caller-reused `events[]` slot).
 
 📝 **Candidates pending verification** (file individually after confirming):
 - epoll: immediate-connect path arms for an `EPOLLOUT` it never registers
