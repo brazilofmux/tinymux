@@ -537,7 +537,7 @@ public:
         // During @restart, DESCs already exist — just wire up the mappings.
         if (adapter_.restarting_) {
             for (DESC* d : g_descriptors_list) {
-                if (d && d->socket == static_cast<int>(handle)) {
+                if (d && d->socket == static_cast<SOCKET>(handle)) {
                     std::shared_ptr<ganl::ConnectionBase> conn;
                     auto it = adapter_.handle_to_conn_.find(handle);
                     if (it != adapter_.handle_to_conn_.end()) {
@@ -583,6 +583,23 @@ public:
             return ganl::InvalidSessionId;
         }
 
+        // d->socket (SOCKET) carries the connection handle for the @restart
+        // re-wire (match above) and the get_desc/get_handle descriptor lookups.
+        // On POSIX SOCKET is int, so a handle outside int range would truncate
+        // and two handles differing only in their high bits would alias to the
+        // same d->socket -- silently corrupting the descriptor map.  The POSIX
+        // engines hand back small fds so this never happens today; guard it so
+        // a future engine returning a wider (e.g. pointer-valued) handle fails
+        // loudly here instead of aliasing (#790).
+        if (handle > static_cast<ganl::ConnectionHandle>(
+                         (std::numeric_limits<SOCKET>::max)())) {
+            g_pILog->WriteString(tprintf(
+                T("GANL: connection handle %llu exceeds SOCKET range; refusing.\n"),
+                static_cast<unsigned long long>(handle)));
+            conn->close(ganl::DisconnectReason::NetworkError);
+            return ganl::InvalidSessionId;
+        }
+
         DESC* d = adapter_.allocate_desc();
         if (!d) {
             g_pILog->WriteString(tprintf(T("GANL: Failed to allocate DESC for handle %llu\n"),
@@ -590,7 +607,7 @@ public:
             return ganl::InvalidSessionId;
         }
 
-        d->socket = static_cast<int>(handle);
+        d->socket = static_cast<SOCKET>(handle);
         d->flags = 0;
         d->connected_at.GetUTC();
         d->last_time = d->connected_at;
@@ -3380,8 +3397,9 @@ std::string GanlAdapter::get_remote_address(DESC* d) {
 
 int GanlAdapter::get_socket_descriptor(DESC* d) {
     if (!d) return -1;
-    // Return the ConnectionHandle cast to int as a pseudo-descriptor
-    // This is risky if handles exceed int range, but needed for some legacy funcs.
+    // Return the ConnectionHandle as an int pseudo-descriptor for legacy funcs.
+    // Safe because onConnectionOpen refuses any handle outside SOCKET (int on
+    // POSIX) range, so the value round-trips without truncation (#790).
     return static_cast<int>(get_handle(d));
 }
 
