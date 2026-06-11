@@ -394,11 +394,16 @@ section above.
   drops the slave past 64 KiB undelimited; pendingWrites caps at 4096. Filter
   unit-tested; live loopback still resolves 127.0.0.1 → localhost; smoke
   1115/1115. Not a ban bypass (access control uses the binary sockaddr).
-- Remaining, suggested order: #793 (dead parser removal), #792 (WebSocket
-  conformance), the Windows-only #796, and the engine/TLS candidates above.
-  NOTE the socket-buffer-edge fixes (#794/#795/#798) want the stress/unit
-  harness follow-up (not live-testable here — kernel SNDBUF autotunes to 4MB).
-  DONE this pass: #790, #791, #801, #802.
+- **#793 — FIXED (537b155a2):** removed the dead `telnet_protocol_handler.{cpp,h}`
+  (1699-line Hydra telnet-*client* parser) from libganl — compiled but never
+  instantiated (live handler is `RawPassthroughHandler` → `mux/src/telnet.cpp::
+  process_input_helper`). Dropped from Makefile.am, regenerated Makefile.in,
+  clean rebuild, smoke 1115/1115. User chose deletion over banner/build-gate.
+- Remaining, suggested order: #792 (WebSocket conformance), the Windows-only
+  #796, and the engine/TLS candidates above. NOTE the socket-buffer-edge fixes
+  (#794/#795/#798) want the stress/unit harness follow-up (not live-testable
+  here — kernel SNDBUF autotunes to 4MB).
+  DONE this pass: #790, #791, #793, #801, #802.
 - **Test infra — STARTED (bb2cb8f84):** `tests/netaddr/` now unit-tests
   `mux_subnet::compare_to(mux_subnet*)` by linking `netmux-netaddr.o` against
   libmux with three driver-global stubs (`g_bStandAlone`, `g_pILog`,
