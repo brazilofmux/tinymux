@@ -347,8 +347,24 @@ section above.
   Split the destructor re-entrancy remainder out to **#802** (reason-based vs
   state-based guard). Verified by build + smoke + live native-IPv4 regression
   incl. a data-then-QUIT drain.
-- Remaining, suggested order: #797 (session-manager hygiene — bounded leak +
-  stale handle + stub checks), #790 (handle truncation), #791 (epoll
+- **#797 — FIXED (6f6b71dff):** session-manager hygiene — removed the
+  write-only `session_errors_` channel (leak); `getConnectionHandle` gates on
+  `get_desc`; `isAddress*` now route through `g_access_list` instead of
+  always-true/false placeholders. Build + smoke.
+- **#803 — FIXED (4f73b5463), found during this fix pass — config-file site
+  rules never loaded.** `cf_read()` (in LoadGame) runs before
+  `conn_bridge_init()` (in Startup) creates `g_pDriverCtl`, so every
+  `forbid_site`/`register_site`/… was silently dropped — site bans via config
+  did nothing. Fix: `site_update` brings the bridge up on demand. **First
+  GANL-area fix with a full live bite-then-not-bite demo** (pre-fix: empty
+  `@list`, loopback "Connection opened"; post-fix: rules in `@list`, loopback
+  "Connection refused"). This was more fundamental than #799/#800 — those fixed
+  the matcher; this is why rules never reached it.
+- **Live-test gotcha (cost real time):** port 2860 on this host is held by
+  another user's (`farm`) netmux; a same-port test server silently fails to bind
+  and clients hit the wrong server. Always start test instances on a free port
+  (e.g. 7860) and confirm ownership with `ss -ltnp` / `pgrep -u sdennis netmux`.
+- Remaining, suggested order: #790 (handle truncation), #791 (epoll
   error-path placeholder), #792 (WebSocket conformance), #802 (destructor
   guard), the Windows-only #796, #793 (dead parser), #801 (DNS hardening), and
   the engine/TLS candidates above.
