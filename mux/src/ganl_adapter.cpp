@@ -2297,6 +2297,16 @@ void GanlAdapter::queue_dns_lookup(const UTF8* numericAddress) {
         return;
     }
 
+    // Bound the outbound queue (#801).  pendingWrites grows one entry per
+    // accepted connection while the slave's pipe write stays blocked; a wedged
+    // slave under a connection flood would otherwise let it grow without limit.
+    // Past the cap, drop this lookup -- the connection simply shows its numeric
+    // address -- rather than queue unboundedly.
+    constexpr size_t kDnsSlavePendingCap = 4096;
+    if (dns_slave_->pendingWrites.size() >= kDnsSlavePendingCap) {
+        return;
+    }
+
     dns_slave_->pendingWrites.emplace_back(reinterpret_cast<const char*>(numericAddress));
     dns_slave_->pendingWrites.back().push_back('\n');
     bool needShutdown = !flush_dns_slave_writes_locked();
@@ -2373,6 +2383,17 @@ bool GanlAdapter::process_dns_slave_read_locked() {
             if (!hostname.empty()) {
                 apply_reverse_dns_result(numeric, hostname);
             }
+        }
+
+        // Bound the reassembly buffer (#801).  A well-behaved slave emits short
+        // newline-terminated records, so after draining every complete line
+        // only a partial line can remain.  If that partial has grown past a
+        // sane cap the slave is stuck or misbehaving (streaming bytes with no
+        // delimiter); drop it rather than let readBuffer grow without limit.
+        constexpr size_t kDnsSlaveReadCap = 64 * 1024;
+        if (dns_slave_->readBuffer.size() > kDnsSlaveReadCap) {
+            g_pILog->WriteString(T("GANL: DNS slave response exceeded buffer cap; dropping slave.\n"));
+            return false;
         }
         return true;
     }
@@ -2453,6 +2474,34 @@ void GanlAdapter::apply_reverse_dns_result(const std::string& numericAddress, co
     numericBuffer[sizeof(numericBuffer) - 1] = '\0';
     std::strncpy(reinterpret_cast<char*>(hostBuffer), hostname.c_str(), sizeof(hostBuffer) - 1);
     hostBuffer[sizeof(hostBuffer) - 1] = '\0';
+
+    // Defensively sanitize the hostname before it reaches d->addr, the
+    // A_LASTSITE / A_LASTIP attributes, the WHO / site display, and the %s log
+    // lines (#801).  The POSIX slave already filters this at the source, but
+    // the Windows worker path (dns_worker_func -> getnameinfo) and any
+    // alternate resolver reach here without that pass, so enforce the
+    // LDH-plus-dot/underscore host charset here too.  Compact in place (the
+    // writer never overtakes the reader), and if nothing survives leave the
+    // numeric address rather than publishing an empty hostname.
+    {
+        char* w = reinterpret_cast<char*>(hostBuffer);
+        const char* r = reinterpret_cast<const char*>(hostBuffer);
+        size_t kept = 0;
+        for (; '\0' != *r && kept < 255; ++r) {
+            unsigned char c = static_cast<unsigned char>(*r);
+            if (  (c >= 'a' && c <= 'z')
+               || (c >= 'A' && c <= 'Z')
+               || (c >= '0' && c <= '9')
+               || '.' == c || '-' == c || '_' == c) {
+                *w++ = static_cast<char>(c);
+                ++kept;
+            }
+        }
+        *w = '\0';
+        if (0 == kept) {
+            return;
+        }
+    }
 
     for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); ++it) {
         DESC* d = *it;

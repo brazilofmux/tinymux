@@ -122,7 +122,30 @@ int query(char *ip)
     char buf[MAX_STRING * 2 + 3];
     char *p = mux_stpcpy(buf, ip);
     *p++ = ' ';
-    p = mux_stpcpy(p, pHName);
+
+    // Sanitize the reverse-DNS hostname before it crosses the slave->parent
+    // pipe (#801).  A client controls its own PTR record, so this name is
+    // attacker-influenced.  Restrict it to the LDH-plus-dot/underscore host
+    // charset, dropping every other byte and capping the length.  This strips
+    // control characters, ANSI escapes, and spaces before they can reach the
+    // parent's logs / A_LASTSITE attribute / WHO display, and -- critically --
+    // removes any embedded newline, which would otherwise split one slave
+    // response into multiple parsed records on the parent side and let an
+    // attacker forge another connection's audit entry.
+    size_t hostLen = 0;
+    for (const char *s = pHName; '\0' != *s && hostLen < 255; s++)
+    {
+        unsigned char c = static_cast<unsigned char>(*s);
+        if (  (c >= 'a' && c <= 'z')
+           || (c >= 'A' && c <= 'Z')
+           || (c >= '0' && c <= '9')
+           || '.' == c || '-' == c || '_' == c)
+        {
+            *p++ = static_cast<char>(c);
+            hostLen++;
+        }
+    }
+
     *p++ = '\n';
     *p++ = '\0';
 
