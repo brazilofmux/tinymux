@@ -408,11 +408,21 @@ section above.
   check (was truncating on 32-bit Win32). Live-tested with a raw masked WS
   client (F1–F4 bitten; valid multibyte accepted); F5 correct-by-construction
   (32-bit-only). Smoke 1115/1115.
-- Remaining: the Windows-only #796 (IOCP UAF — not live-testable on this Linux
-  host), and the engine/TLS candidates above. NOTE the socket-buffer-edge fixes
-  (#794/#795/#798) want the stress/unit harness follow-up (not live-testable
-  here — kernel SNDBUF autotunes to 4MB).
-  DONE this pass: #790, #791, #792, #793, #801, #802.
+- **#796 — FIXED (f768ef58b):** Windows/IOCP-only UAF — `postWrite` aliased
+  `encryptedOutput_.readPtr()` into the overlapped `WSASend`, so a concurrent
+  `sendDataToClient` → `ensureWritable` compact/resize could relocate/free the
+  bytes the async send was reading. Fix (copy option): the Write `PerIoData`
+  now owns a `std::vector<char>` copy of the outbound bytes; `wsaBuf.buf` points
+  into it, freed by `~PerIoData` after the completion. Fixed by construction —
+  `_WIN32`-only, not in the POSIX build, so not compiled/live-tested here; Linux
+  build clean, smoke 1115/1115.
+- **GANL filed-issue backlog CLEARED this pass: #790, #791, #792, #793, #796,
+  #801, #802.** Remaining follow-ups are not filed issues: the engine/TLS
+  candidates listed above (epoll immediate-connect EPOLLOUT, lost write-wakeup
+  at maxEvents, HUP-before-payload, FD_SETSIZE bound, cross-engine close
+  divergences, negotiation-timeout-only-on-idle), and the socket-buffer-edge
+  fixes (#794/#795/#798) which want the stress/unit harness follow-up (not
+  live-testable here — kernel SNDBUF autotunes to 4MB).
 - **Test infra — STARTED (bb2cb8f84):** `tests/netaddr/` now unit-tests
   `mux_subnet::compare_to(mux_subnet*)` by linking `netmux-netaddr.o` against
   libmux with three driver-global stubs (`g_bStandAlone`, `g_pILog`,
