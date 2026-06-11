@@ -333,7 +333,15 @@ section above.
   environment-blocked (this sandbox binds the listener v4-only and
   `ip_address ::` didn't override it, so no mapped connection occurs locally
   — reproduce on a dual-stack-binding host).
-- Remaining access-control / lifetime items, suggested order: #795 (plaintext
-  close data-loss — small, live), #798 (Closing-state guard consistency),
-  #797 (session-manager hygiene), #790 (handle truncation). Then the
-  Windows-only (#796) and the engine/TLS candidates catalogued above.
+- **#795 — FIXED (469c23fd4):** `close()` now drains queued plaintext output
+  before closing the socket (else-if branch mirroring the TLS deferral via
+  `closeAfterWriteDrain_`/`handleWrite`/`closeNetworkAfterDrain`). Inert on the
+  empty-buffer common path. Verified by build + smoke + native close
+  regression; queued-output positive demo needs a logged-in large-output
+  session (no starter-DB credential here).
+- Remaining, suggested order: #798 (Closing-state guard consistency — small,
+  fixable), #797 (session-manager hygiene), #790 (handle truncation). Then
+  #791 (epoll error-path placeholder), #792 (WebSocket conformance), the
+  Windows-only #796, #793 (dead parser), #801 (DNS hardening), and the
+  engine/TLS candidates catalogued above. The two reasoning-only access-control
+  fixes (#799/#800) still want a subnet-tree C++ test harness as a follow-up.
