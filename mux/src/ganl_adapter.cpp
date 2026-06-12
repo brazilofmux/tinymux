@@ -771,13 +771,20 @@ public:
 
         // WebSocket: if handshake is in progress, continue it.
         //
+        // Clear the handshake flag BEFORE the call: on completion,
+        // ws_process_handshake feeds any trailing bytes to the frame
+        // parser, which can fail the connection and free d
+        // synchronously, so d must not be touched after a true
+        // return.  A false return means the handshake needs more
+        // header bytes and cannot have closed the connection —
+        // restoring the flag is safe.
+        //
         if (d->flags & DS_WEBSOCKET_HS)
         {
-            if (ws_process_handshake(d, data.data(), data.size()))
+            d->flags &= ~DS_WEBSOCKET_HS;
+            if (!ws_process_handshake(d, data.data(), data.size()))
             {
-                // Handshake complete (success or failure).
-                //
-                d->flags &= ~DS_WEBSOCKET_HS;
+                d->flags |= DS_WEBSOCKET_HS;
             }
             return;
         }
@@ -802,10 +809,12 @@ public:
             if (ws_is_upgrade_request(data.data(), data.size()))
             {
                 d->ws = new ws_state();
-                d->flags |= DS_WEBSOCKET_HS;
-                if (ws_process_handshake(d, data.data(), data.size()))
+                // Set the handshake flag only on a false (need more
+                // data) return — same d-freed-after-true hazard as
+                // the in-progress branch above.
+                if (!ws_process_handshake(d, data.data(), data.size()))
                 {
-                    d->flags &= ~DS_WEBSOCKET_HS;
+                    d->flags |= DS_WEBSOCKET_HS;
                 }
                 return;
             }
