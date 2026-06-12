@@ -102,10 +102,25 @@ check, runtime `@lock` nest limit, `atr_num` read check, `i64Mod`) while the
 sibling path (flatfile dbref, `getboolexp1` import recursion, `anum_set` write,
 `i64Division`) was left unguarded.
 
-## Areas still to audit
-- [ ] Other `getref`-derived field values (location/contents/exits/owner/parent)
-      — validated by `db_check` before use as indices during gameplay? (No
-      `db_check` found in the engine; these rely on `Good_obj` guards at use.)
+### ✅ FIXED (#810) — object field dbrefs unvalidated on load → DOLIST chain-walk OOB
+No `db_check` existed; `db_read` clamped only `zone`, `sqlite_load_game` clamped
+nothing. `DOLIST` (`db.h:218`) walks `contents`/`exits` via `Next(thing)` =
+`db[thing].next` guarding only NOTHING/self-loops, so a wild `next` from a
+malformed DB → `db[wild].next` OOB read. Fix: new `db_validate_refs()`
+(`db.cpp`) called once after load (`engine_com.cpp` LoadGame; both warm/cold
+paths) clamps `location/contents/exits/next/parent/zone` → real-or-NOTHING,
+`link` → +HOME, wild `owner` → GOD. No-op for valid DBs. Verified live: server
+loaded from SQLite with `next=999999999` on #0 starts clean + logs the clamp;
+smoke 1115/1115.
+
+## DB-layer audit — complete
+Four memory-safety bugs found and fixed, all incomplete-hardening, all
+live-verified: **#806** (object dbref OOB), **#807** (lock-parser recursion),
+**#808** (attr-number OOB), **#810** (field dbref OOB). The remaining surfaces
+were verified safe: `attrcache` (hashtable + length-clamped vectors, no fixed
+index), attribute storage (keyed by `makekey`, sparse-safe), `getstring_noalloc`
+(invariant-bounded), `db_write` durability (SQLite-backed transactions). The
+JIT-side a64 **#804** was fixed upstream by the maintainer.
 - [ ] The `getref`-derived field values (location/contents/exits/owner/parent) —
       validated by `db_check` before use as indices during gameplay?
 - [ ] `attrcache.cpp` — attribute load/evict bounds.
