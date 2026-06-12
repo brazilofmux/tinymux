@@ -224,7 +224,9 @@ static bool tier2_allowed(const std::string &mux_name) {
         "LMAX", "LMIN", "LAND", "LOR",
         "ISNUM", "ISINT",
         "DEC2HEX", "HEX2DEC",
-        "ISDBREF",
+        // ISDBREF is deliberately absent: parse_dbref accepts the objid
+        // #<dbref>:<timestamp> form, validated against the object's
+        // creation_seconds — engine state the blob cannot reach.
         "CHR", "ORD",
         "SECURE", "SQUISH",
         "TRANSLATE",
@@ -364,7 +366,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "LOR",         "rv64_lor" },
     { "REVWORDS",    "rv64_revwords" },
     { "FLIP",        "rv64_revwords" },   // alias
-    { "ISDBREF",     "rv64_isdbref" },
+    // (no ISDBREF: objid colon form needs creation_seconds; always ECALLs)
 
     // --- Batch 8: math via intrinsics (string↔double + platform libm) ---
     { "SIN",         "rv64_sin" },

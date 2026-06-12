@@ -1916,31 +1916,12 @@ char *rv64_revwords(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
-/* isdbref(string) — parse #<digits>, validate via ECALL_GOOD_OBJ */
-char *rv64_isdbref(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
-    const char *p = fargs[0];
-    /* Skip leading spaces. */
-    while (*p == ' ') p++;
-    if (*p != '#') { out[0] = '0'; out[1] = '\0'; return out; }
-    p++;
-    /* Must start with a digit (no negative dbrefs). */
-    if (*p < '0' || *p > '9') { out[0] = '0'; out[1] = '\0'; return out; }
-    /* Parse integer. */
-    long val = 0;
-    while (*p >= '0' && *p <= '9') {
-        val = val * 10 + (*p - '0');
-        p++;
-    }
-    /* Skip trailing spaces. */
-    while (*p == ' ') p++;
-    if (*p != '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    /* ECALL_GOOD_OBJ = 0x150 */
-    long ok = ecall1(0x150, val);
-    out[0] = ok ? '1' : '0';
-    out[1] = '\0';
-    return out;
-}
+/* isdbref() is NOT implemented here: parse_dbref accepts the objid
+ * #<dbref>:<timestamp> form, validated against the object's
+ * creation_seconds — engine state this blob cannot reach (a compiled
+ * isdbref(objid(me)) returned 0 where the interpreter returns 1).
+ * ISDBREF is not in the tier2 map (jit_compiler.cpp) and always
+ * ECALLs the interpreter. */
 
 static int sitoa(char *buf, int val) {
     if (val == 0) {
