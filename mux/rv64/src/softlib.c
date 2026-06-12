@@ -1109,14 +1109,18 @@ char *co_vislen_wrap(char *out, const char **fargs, int nfargs) {
  * Batch 4 wrappers: space, secure, squish, delete, elements.
  * --------------------------------------------------------------- */
 
-/* space(n) — generate N spaces */
+/* space(n) — generate N spaces.
+ * fun_space parity: no argument, an empty argument, or a non-integer
+ * argument means ONE space; an explicit integer zero (0, 00, ...)
+ * means none; negatives clamp to zero. */
 char *rv64_space(char *out, const char **fargs, int nfargs) {
     int n = 1;
     if (nfargs >= 1 && fargs[0][0] != '\0') {
         n = satoi(fargs[0]);
+        if (n == 0 && !sis_integer(fargs[0])) n = 1;
+        if (n < 0) n = 0;
     }
-    if (n < 0) n = 0;
-    if (n > 8000) n = 8000;
+    if (n > LBUF_SIZE - 1) n = LBUF_SIZE - 1;
     memset(out, ' ', (size_t)n);
     out[n] = '\0';
     return out;
@@ -1383,22 +1387,29 @@ char *rv64_graball(char *out, const char **fargs, int nfargs) {
  * Batch 6: lnum, isnum, isint, chr, ord, dec2hex, hex2dec, baseconv.
  * --------------------------------------------------------------- */
 
-/* lnum(count) or lnum(start, end[, osep[, step]]) — generate number list */
+/* lnum(count) or lnum(start, end[, osep[, step]]) — generate number list.
+ * fun_lnum parity: the one-argument form returns empty for counts
+ * below 1 (lnum(0), lnum(-3), lnum(foo)); step is clamped to >= 1 and
+ * the direction comes only from start/end.  Multi-char oseps never
+ * reach here (hir_lower falls back to ECALL for them). */
 char *rv64_lnum(char *out, const char **fargs, int nfargs) {
     int start = 0, end_val = 0, step = 1;
     unsigned char osep = ' ';
+    out[0] = '\0';
+    if (nfargs < 1) return out;
     if (nfargs == 1) {
         end_val = satoi(fargs[0]) - 1;
-    } else if (nfargs >= 2) {
+        if (end_val < 0) return out;
+    } else {
         start = satoi(fargs[0]);
         end_val = satoi(fargs[1]);
+        if (nfargs >= 4) {
+            step = satoi(fargs[3]);
+            if (step < 1) step = 1;
+        }
     }
     if (nfargs >= 3 && fargs[2][0] != '\0') osep = (unsigned char)fargs[2][0];
-    if (nfargs >= 4) {
-        step = satoi(fargs[3]);
-        if (step == 0) step = 1;
-    }
-    if (start > end_val && step > 0) step = -step;
+    if (start > end_val) step = -step;
     char *op = out;
     char *end = out + LBUF_SIZE - 1;
     int first = 1;
@@ -1408,8 +1419,10 @@ char *rv64_lnum(char *out, const char **fargs, int nfargs) {
         if (step < 0 && i < end_val) break;
         if (!first && op < end) *op++ = (char)osep;
         first = 0;
-        int n = sitoa(op, i);
-        op += n;
+        {
+            int n = sitoa(op, i);
+            op += n;
+        }
         if (op >= end) break;
         i += step;
     }
