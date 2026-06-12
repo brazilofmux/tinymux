@@ -73,11 +73,22 @@ the load (return -1, the existing error path at `db_rw.cpp` already rolls back
 the SQLite import) for `i < 0` or `i` above a sane ceiling. The dbref also feeds
 `+`/other entry types via `getref`; audit those for the same index use.
 
+### ✅ FIXED (67604c756) — getboolexp1 unbounded recursion + assert error paths (#807)
+The v1/v2 flatfile inline-lock parser `getboolexp1` (reached when `read_key` is
+set) recursed with no depth bound, and every error path was `mux_assert(0)`.
+**Live bug-catch:** a lock of `(`×500000 → stack overflow / SIGSEGV; a truncated
+lock → SIGABRT — both on the old build; cleanly rejected (exit 1) on the fixed
+build. Root cause: the runtime `@lock` parser caps nesting at `lock_nest_lim`
+(20), but this import path was unguarded (incomplete hardening, sibling of
+#806). Fix: thread a `depth` arg, bound at `BOOLEXP_LOAD_NEST_MAX = 1024`, and
+convert the asserts to a `s_boolexp_corrupt` flag → clean `return -1` rollback.
+Smoke 1115/1115.
+
 ## Areas still to audit
-- [ ] `sqlite_load_game` (`db.cpp:3596`) — does it validate object row dbrefs
-      before `db[i] = …` (`db.cpp:3742`)? Same OOB class from a malicious SQLite DB?
-- [ ] `getboolexp1` recursion (`db_rw.cpp:207`) — deeply-nested lock expression in
-      a malformed DB → unbounded recursion / stack overflow?
+- [x] `sqlite_load_game` (`db.cpp:3690-3748`) — **validates** `i<0||i>=top`
+      before `db[i]=…` (this is the guard the flatfile path was missing in #806).
+- [ ] Other `getref`-derived field values (location/contents/exits/owner/parent)
+      — validated by `db_check` before use as indices during gameplay?
 - [ ] The `getref`-derived field values (location/contents/exits/owner/parent) —
       validated by `db_check` before use as indices during gameplay?
 - [ ] `attrcache.cpp` — attribute load/evict bounds.
