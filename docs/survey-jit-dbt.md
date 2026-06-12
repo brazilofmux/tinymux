@@ -80,17 +80,29 @@ out-of-line `i64Remainder` were already guarded — incomplete hardening. Verifi
 live: the exact repro now returns `-9223372036854775808`; mod/remainder return
 0; runtime paths (interpreter, attr reads, JIT `u()` stack-arg divisors) handle
 div-by-zero and INT_MIN/-1 without crashing. Smoke 1115/1115.
-**DBT emit note (verified NOT reachable):** the DBT DIV/REM emit
-(`dbt_x64_sysv.cpp:2292-2310`) is a raw x86 `idiv` that does not implement
-RISC-V's no-trap semantics in isolation. But the JIT layer guards the divisor
-*before* it: tested the strongest JIT path — `iter()` bodies are compiled to
-RV64 (per the design doc) — and `iter(2 0 4,idiv(100,%i0))` returns
-`50 #-1 DIVIDE BY ZERO 25` (the MUX div-by-zero string, not a crash and not
-RISC-V's -1) and `iter(...,idiv(%i0,-1))` with INT_MIN returns INT_MIN. So the
-JIT idiv lowering emits a runtime divisor guard producing MUX semantics; the
-raw DBT idiv only ever runs on divisors the JIT has proven safe. Hardening the
-DBT emit to RISC-V semantics would be pure defense-in-depth with no reachable
-trigger — deprioritized.
+**DBT emit gap (FILED as #811 — earlier "not reachable" call was wrong):** the
+DBT DIV/REM emit (`dbt_x64_sysv.cpp:2292,2305,2453,2475`; same in
+`dbt_x64_win64.cpp:2304,2317,2465,2487`) is a raw x86 `idiv` with no guard, so
+it traps (`#DE`→SIGFPE) on a zero divisor AND on `INT64_MIN/-1`. The earlier
+survey entry claimed this was unreachable because `iter(2 0 4,idiv(100,%i0))`
+returned `50 #-1 DIVIDE BY ZERO 25` — but that result actually *disproves* the
+claim: the compiled RV64 `DIV` (and the a64/interp backends) produce RISC-V's
+`-1` on div-by-zero, not the MUX `#-1 DIVIDE BY ZERO` string. Getting the MUX
+string means that case was **constant-folded** (`hir_lower.cpp:2783` emits the
+error sconst only for a *compile-time-constant* zero divisor) or interpreted —
+so the test only ever exercised the constant path and never reached the bare
+`idiv` with a runtime divisor. A genuine runtime divisor — `idiv(5,v(attr))`,
+`idiv(5,sub(x,x))` — lowers to a bare `rv_DIV` (`hir_codegen.cpp:1395`, no
+guard) → the unguarded x86 `idiv`. The interpreter (`dbt_interp.cpp:387`) and
+a64 (`dbt_a64_sysv.cpp:1588`, CBZ + non-trapping SDIV) backends both handle it
+correctly; only the x86 backends do not — a real DBT parity bug and a
+player-reachable crash on x86-64 (the production platform). #805 closed the
+softcode-interpreter and constant-fold paths; JIT compilation routes around
+both. NOT caught earlier because #805 was verified on this AArch64 host, where
+the a64 guards mask it. Reachability of a runtime zero/`INT_MIN` divisor (vs. an
+`eval_bailout` to the interpreter) is the one piece left to confirm on an x86-64
+build; the static gap and parity divergence are certain. See #811 for the fix
+plan (mirror the a64 guards in both x86 backends across all 8 div/rem forms).
 
 ### (historical) original report — LIVE player-reachable DoS (SIGFPE server crash)
 - **`idiv(-9223372036854775808,-1)` crashed the whole server** (and
@@ -118,7 +130,9 @@ trigger — deprioritized.
   guard to the two hir_opt folds (or route them through the fixed helpers).
   Verify the runtime DBT DIV/REM emit (`dbt_x64_sysv.cpp:2292,2305`) matches
   RISC-V's no-trap semantics so the non-constant path
-  (`idiv(%q-holding-INT_MIN,-1)`) is also safe.
+  (`idiv(%q-holding-INT_MIN,-1)`) is also safe. **[Update: this is the
+  still-open hole — filed as #811. #805 fixed only the interpreter + constant
+  folds; the x86 DBT emit remains unguarded for runtime divisors.]**
 
 ### 🐛 Verified bug — latent, non-production backend
 - **a64 LOAD/STORE with `rs1==x0` and nonzero `imm` computes `2*imm`**
