@@ -20,11 +20,66 @@
         strmatch(spellnum(0),zero)
       )=
   {
-    @log smoke=TC001: spellnum() basic operations. Succeeded.;
+    @log smoke=TC001: spellnum() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: spellnum() basic operations. Failed (spellnum(42)=[spellnum(42)] spellnum(0)=[spellnum(0)]).
+  }
+-
+#
+# Test Case #2 - Magnitudes, negatives, leading zeros.
+# Four-digit numbers with a nonzero hundreds digit use the colloquial
+# "twelve hundred" form; with a zero hundreds digit they use
+# "one thousand".
+#
+&tr.tc002 test_spellnum_fn=
+  @if cand(
+        strmatch(spellnum(100), one hundred),
+        strmatch(spellnum(-5), negative five),
+        strmatch(spellnum(007), seven),
+        strmatch(spellnum(1234), twelve hundred thirty-four),
+        strmatch(spellnum(1034), one thousand thirty-four),
+        strmatch(spellnum(1000000), one million)
+      )=
+  {
+    @log smoke=TC002: spellnum() magnitudes and negatives. Succeeded.
+  },
+  {
+    @log smoke=TC002: spellnum() magnitudes and negatives. Failed (spellnum(100)=[spellnum(100)] spellnum(-5)=[spellnum(-5)] spellnum(007)=[spellnum(007)] spellnum(1234)=[spellnum(1234)] spellnum(1034)=[spellnum(1034)] spellnum(1000000)=[spellnum(1000000)]).
+  }
+-
+#
+# Test Case #3 - Decimal fractions.
+#
+&tr.tc003 test_spellnum_fn=
+  @if cand(
+        strmatch(spellnum(0.5), five tenths),
+        strmatch(spellnum(0.1), one tenth),
+        strmatch(spellnum(1.5), one and five tenths),
+        strmatch(spellnum(2.25), two and twenty-five hundredths)
+      )=
+  {
+    @log smoke=TC003: spellnum() decimal fractions. Succeeded.
+  },
+  {
+    @log smoke=TC003: spellnum() decimal fractions. Failed (spellnum(0.5)=[spellnum(0.5)] spellnum(0.1)=[spellnum(0.1)] spellnum(1.5)=[spellnum(1.5)] spellnum(2.25)=[spellnum(2.25)]).
+  }
+-
+#
+# Test Case #4 - Non-numbers and over-long digit strings are rejected.
+#
+&tr.tc004 test_spellnum_fn=
+  @if cand(
+        strmatch(spellnum(foo), #-1 ARGUMENT MUST BE A NUMBER),
+        strmatch(spellnum(1.2.3), #-1 ARGUMENT MUST BE A NUMBER),
+        strmatch(spellnum(1234567890123456), #-1 ARGUMENT MUST BE A NUMBER)
+      )=
+  {
+    @log smoke=TC004: spellnum() invalid arguments. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: spellnum() basic operations. Failed (spellnum(42)=[spellnum(42)] spellnum(0)=[spellnum(0)]).;
+    @log smoke=TC004: spellnum() invalid arguments. Failed (spellnum(foo)=[spellnum(foo)] spellnum(1.2.3)=[spellnum(1.2.3)] spellnum(16digits)=[spellnum(1234567890123456)]).;
     @trig me/tr.done
   }
 -

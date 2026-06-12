@@ -23,11 +23,55 @@
         strmatch(roman(1999), mcmxcix)
       )=
   {
-    @log smoke=TC001: roman basic conversions. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: roman basic conversions. Succeeded.
   },
   {
     @log smoke=TC001: roman basic conversions. Failed (roman(1)=[roman(1)] roman(4)=[roman(4)] roman(42)=[roman(42)] roman(1999)=[roman(1999)]).;
+  }
+-
+#
+# Test Case #2 - Subtractive pairs, range boundaries, uppercase output.
+# comp() pins the uppercase result exactly; strmatch() is
+# case-insensitive.
+#
+&tr.tc002 test_roman_fn=
+  @if cand(
+        strmatch(roman(40), xl),
+        strmatch(roman(90), xc),
+        strmatch(roman(400), cd),
+        strmatch(roman(900), cm),
+        strmatch(roman(3999), mmmcmxcix),
+        strmatch(roman(2024), mmxxiv),
+        eq(comp(roman(14), XIV), 0)
+      )=
+  {
+    @log smoke=TC002: roman subtractive pairs and boundaries. Succeeded.
+  },
+  {
+    @log smoke=TC002: roman subtractive pairs and boundaries. Failed (roman(40)=[roman(40)] roman(90)=[roman(90)] roman(400)=[roman(400)] roman(900)=[roman(900)] roman(3999)=[roman(3999)] roman(2024)=[roman(2024)] roman(14)=[roman(14)]).
+  }
+-
+#
+# Test Case #3 - Leading zeros accepted; range and validity errors.
+# Valid range is 1-3999: zero and negatives are not positive numbers,
+# 4000+ is out of range.
+#
+&tr.tc003 test_roman_fn=
+  @if cand(
+        strmatch(roman(0042), xlii),
+        strmatch(roman(0), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),
+        strmatch(roman(-3), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),
+        strmatch(roman(3.5), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),
+        strmatch(roman(foo), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),
+        strmatch(roman(4000), #-1 OUT OF RANGE),
+        strmatch(roman(12345), #-1 OUT OF RANGE)
+      )=
+  {
+    @log smoke=TC003: roman range and validity errors. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: roman range and validity errors. Failed (roman(0042)=[roman(0042)] roman(0)=[roman(0)] roman(-3)=[roman(-3)] roman(3.5)=[roman(3.5)] roman(foo)=[roman(foo)] roman(4000)=[roman(4000)] roman(12345)=[roman(12345)]).;
     @trig me/tr.done
   }
 -

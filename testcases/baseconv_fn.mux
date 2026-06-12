@@ -20,11 +20,65 @@
         eq(baseconv(ff,16,10),255)
       )=
   {
-    @log smoke=TC001: baseconv() basic operations. Succeeded.;
+    @log smoke=TC001: baseconv() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: baseconv() basic operations. Failed (baseconv(255%,10%,16)=[baseconv(255,10,16)] baseconv(ff%,16%,10)=[baseconv(ff,16,10)]).
+  }
+-
+#
+# Test Case #2 - Binary, octal, base-36, identity, negatives.
+#
+&tr.tc002 test_baseconv_fn=
+  @if cand(
+        eq(baseconv(11111111,2,10), 255),
+        strmatch(baseconv(255,10,2), 11111111),
+        eq(baseconv(777,8,10), 511),
+        eq(baseconv(z,36,10), 35),
+        strmatch(baseconv(35,10,36), z),
+        eq(baseconv(100,10,10), 100),
+        eq(baseconv(-ff,16,10), -255)
+      )=
+  {
+    @log smoke=TC002: baseconv() radix conversions. Succeeded.
+  },
+  {
+    @log smoke=TC002: baseconv() radix conversions. Failed (bin=[baseconv(11111111,2,10)] tobin=[baseconv(255,10,2)] oct=[baseconv(777,8,10)] z36=[baseconv(z,36,10)] to36=[baseconv(35,10,36)] ident=[baseconv(100,10,10)] neg=[baseconv(-ff,16,10)]).
+  }
+-
+#
+# Test Case #3 - Digits invalid for the input radix.
+# A base-10 input radix is special-cased through mux_atoi64 and
+# coerces atol-style instead of erroring: baseconv(ff,10,16) is 0.
+#
+&tr.tc003 test_baseconv_fn=
+  @if cand(
+        strmatch(baseconv(2,2,10), #-1 NUMBER IS NOT VALID FOR INPUT RADIX),
+        strmatch(baseconv(19,8,10), #-1 NUMBER IS NOT VALID FOR INPUT RADIX),
+        eq(baseconv(ff,10,16), 0)
+      )=
+  {
+    @log smoke=TC003: baseconv() invalid digits. Succeeded.
+  },
+  {
+    @log smoke=TC003: baseconv() invalid digits. Failed (baseconv(2%,2%,10)=[baseconv(2,2,10)] baseconv(19%,8%,10)=[baseconv(19,8,10)] baseconv(ff%,10%,16)=[baseconv(ff,10,16)]).
+  }
+-
+#
+# Test Case #4 - Radix range and type validation.
+#
+&tr.tc004 test_baseconv_fn=
+  @if cand(
+        strmatch(baseconv(10,1,10), #-1 INPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64),
+        strmatch(baseconv(10,10,65), #-1 OUTPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64),
+        strmatch(baseconv(10,foo,10), #-1 ARGUMENTS MUST BE NUMBERS)
+      )=
+  {
+    @log smoke=TC004: baseconv() radix validation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: baseconv() basic operations. Failed (baseconv(255%,10%,16)=[baseconv(255,10,16)] baseconv(ff%,16%,10)=[baseconv(ff,16,10)]).;
+    @log smoke=TC004: baseconv() radix validation. Failed (baseconv(10%,1%,10)=[baseconv(10,1,10)] baseconv(10%,10%,65)=[baseconv(10,10,65)] baseconv(10%,foo%,10)=[baseconv(10,foo,10)]).;
     @trig me/tr.done
   }
 -

@@ -20,11 +20,48 @@
         strmatch(soundex(Smith),S530)
       )=
   {
-    @log smoke=TC001: soundex() basic operations. Succeeded.;
+    @log smoke=TC001: soundex() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: soundex() basic operations. Failed (soundex(Robert)=[soundex(Robert)] soundex(Smith)=[soundex(Smith)]).
+  }
+-
+#
+# Test Case #2 - Classic vectors: equal encodings, repeats, padding.
+# Rupert encodes the same as Robert; doubled/adjacent same-code letters
+# collapse (Pfister, Tymczak); short names zero-pad (a -> A000).
+# comp() pins the capitalized result; strmatch() is case-insensitive.
+#
+&tr.tc002 test_soundex_fn=
+  @if cand(
+        strmatch(soundex(Rupert), R163),
+        strmatch(soundex(Tymczak), T522),
+        strmatch(soundex(Pfister), P236),
+        strmatch(soundex(Honeyman), H555),
+        strmatch(soundex(a), A000),
+        eq(comp(soundex(robert), R163), 0)
+      )=
+  {
+    @log smoke=TC002: soundex() classic vectors. Succeeded.
+  },
+  {
+    @log smoke=TC002: soundex() classic vectors. Failed (Rupert=[soundex(Rupert)] Tymczak=[soundex(Tymczak)] Pfister=[soundex(Pfister)] Honeyman=[soundex(Honeyman)] a=[soundex(a)] robert=[soundex(robert)]).
+  }
+-
+#
+# Test Case #3 - Single-word validation.
+#
+&tr.tc003 test_soundex_fn=
+  @if cand(
+        strmatch(soundex(two words), #-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT),
+        strmatch(soundex(4ever), #-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT)
+      )=
+  {
+    @log smoke=TC003: soundex() single-word validation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: soundex() basic operations. Failed (soundex(Robert)=[soundex(Robert)] soundex(Smith)=[soundex(Smith)]).;
+    @log smoke=TC003: soundex() single-word validation. Failed (soundex(two words)=[soundex(two words)] soundex(4ever)=[soundex(4ever)]).;
     @trig me/tr.done
   }
 -

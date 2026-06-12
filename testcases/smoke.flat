@@ -1464,9 +1464,15 @@
 >256
 "@log smoke=Beginning baseconv() test cases."
 >257
-"@if cand(strmatch(baseconv(255,10,16),ff),eq(baseconv(ff,16,10),255))={@log smoke=TC001: baseconv() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: baseconv() basic operations. Failed (baseconv(255%,10%,16)=[baseconv(255,10,16)] baseconv(ff%,16%,10)=[baseconv(ff,16,10)]).;@trig me/tr.done}"
+"@if cand(strmatch(baseconv(255,10,16),ff),eq(baseconv(ff,16,10),255))={@log smoke=TC001: baseconv() basic operations. Succeeded.},{@log smoke=TC001: baseconv() basic operations. Failed (baseconv(255%,10%,16)=[baseconv(255,10,16)] baseconv(ff%,16%,10)=[baseconv(ff,16,10)]).}"
+>258
+"@if cand(eq(baseconv(11111111,2,10), 255),strmatch(baseconv(255,10,2), 11111111),eq(baseconv(777,8,10), 511),eq(baseconv(z,36,10), 35),strmatch(baseconv(35,10,36), z),eq(baseconv(100,10,10), 100),eq(baseconv(-ff,16,10), -255))={@log smoke=TC002: baseconv() radix conversions. Succeeded.},{@log smoke=TC002: baseconv() radix conversions. Failed (bin=[baseconv(11111111,2,10)] tobin=[baseconv(255,10,2)] oct=[baseconv(777,8,10)] z36=[baseconv(z,36,10)] to36=[baseconv(35,10,36)] ident=[baseconv(100,10,10)] neg=[baseconv(-ff,16,10)]).}"
+>259
+"@if cand(strmatch(baseconv(2,2,10), #-1 NUMBER IS NOT VALID FOR INPUT RADIX),strmatch(baseconv(19,8,10), #-1 NUMBER IS NOT VALID FOR INPUT RADIX),eq(baseconv(ff,10,16), 0))={@log smoke=TC003: baseconv() invalid digits. Succeeded.},{@log smoke=TC003: baseconv() invalid digits. Failed (baseconv(2%,2%,10)=[baseconv(2,2,10)] baseconv(19%,8%,10)=[baseconv(19,8,10)] baseconv(ff%,10%,16)=[baseconv(ff,10,16)]).}"
 >260
 "@log smoke=End baseconv() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(baseconv(10,1,10), #-1 INPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64),strmatch(baseconv(10,10,65), #-1 OUTPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64),strmatch(baseconv(10,foo,10), #-1 ARGUMENTS MUST BE NUMBERS))={@log smoke=TC004: baseconv() radix validation. Succeeded.;@trig me/tr.done},{@log smoke=TC004: baseconv() radix validation. Failed (baseconv(10%,1%,10)=[baseconv(10,1,10)] baseconv(10%,10%,65)=[baseconv(10,10,65)] baseconv(10%,foo%,10)=[baseconv(10,foo,10)]).;@trig me/tr.done}"
 <
 !18
 "test_before_fn"
@@ -7722,7 +7728,11 @@
 >256
 "@log smoke=Beginning roman() test cases."
 >257
-"@if cand(strmatch(roman(1), i),strmatch(roman(4), iv),strmatch(roman(9), ix),strmatch(roman(42), xlii),strmatch(roman(1999), mcmxcix))={@log smoke=TC001: roman basic conversions. Succeeded.;@trig me/tr.done},{@log smoke=TC001: roman basic conversions. Failed (roman(1)=[roman(1)] roman(4)=[roman(4)] roman(42)=[roman(42)] roman(1999)=[roman(1999)]).;@trig me/tr.done}"
+"@if cand(strmatch(roman(1), i),strmatch(roman(4), iv),strmatch(roman(9), ix),strmatch(roman(42), xlii),strmatch(roman(1999), mcmxcix))={@log smoke=TC001: roman basic conversions. Succeeded.},{@log smoke=TC001: roman basic conversions. Failed (roman(1)=[roman(1)] roman(4)=[roman(4)] roman(42)=[roman(42)] roman(1999)=[roman(1999)]).;}"
+>258
+"@if cand(strmatch(roman(40), xl),strmatch(roman(90), xc),strmatch(roman(400), cd),strmatch(roman(900), cm),strmatch(roman(3999), mmmcmxcix),strmatch(roman(2024), mmxxiv),eq(comp(roman(14), XIV), 0))={@log smoke=TC002: roman subtractive pairs and boundaries. Succeeded.},{@log smoke=TC002: roman subtractive pairs and boundaries. Failed (roman(40)=[roman(40)] roman(90)=[roman(90)] roman(400)=[roman(400)] roman(900)=[roman(900)] roman(3999)=[roman(3999)] roman(2024)=[roman(2024)] roman(14)=[roman(14)]).}"
+>259
+"@if cand(strmatch(roman(0042), xlii),strmatch(roman(0), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),strmatch(roman(-3), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),strmatch(roman(3.5), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),strmatch(roman(foo), #-1 ARGUMENT MUST BE A POSITIVE NUMBER),strmatch(roman(4000), #-1 OUT OF RANGE),strmatch(roman(12345), #-1 OUT OF RANGE))={@log smoke=TC003: roman range and validity errors. Succeeded.;@trig me/tr.done},{@log smoke=TC003: roman range and validity errors. Failed (roman(0042)=[roman(0042)] roman(0)=[roman(0)] roman(-3)=[roman(-3)] roman(3.5)=[roman(3.5)] roman(foo)=[roman(foo)] roman(4000)=[roman(4000)] roman(12345)=[roman(12345)]).;@trig me/tr.done}"
 >260
 "@log smoke=End roman() test cases.;@notify smoke"
 <
@@ -9657,7 +9667,11 @@
 >256
 "@log smoke=Beginning soundex() test cases."
 >257
-"@if cand(strmatch(soundex(Robert),R163),strmatch(soundex(Smith),S530))={@log smoke=TC001: soundex() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: soundex() basic operations. Failed (soundex(Robert)=[soundex(Robert)] soundex(Smith)=[soundex(Smith)]).;@trig me/tr.done}"
+"@if cand(strmatch(soundex(Robert),R163),strmatch(soundex(Smith),S530))={@log smoke=TC001: soundex() basic operations. Succeeded.},{@log smoke=TC001: soundex() basic operations. Failed (soundex(Robert)=[soundex(Robert)] soundex(Smith)=[soundex(Smith)]).}"
+>258
+"@if cand(strmatch(soundex(Rupert), R163),strmatch(soundex(Tymczak), T522),strmatch(soundex(Pfister), P236),strmatch(soundex(Honeyman), H555),strmatch(soundex(a), A000),eq(comp(soundex(robert), R163), 0))={@log smoke=TC002: soundex() classic vectors. Succeeded.},{@log smoke=TC002: soundex() classic vectors. Failed (Rupert=[soundex(Rupert)] Tymczak=[soundex(Tymczak)] Pfister=[soundex(Pfister)] Honeyman=[soundex(Honeyman)] a=[soundex(a)] robert=[soundex(robert)]).}"
+>259
+"@if cand(strmatch(soundex(two words), #-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT),strmatch(soundex(4ever), #-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT))={@log smoke=TC003: soundex() single-word validation. Succeeded.;@trig me/tr.done},{@log smoke=TC003: soundex() single-word validation. Failed (soundex(two words)=[soundex(two words)] soundex(4ever)=[soundex(4ever)]).;@trig me/tr.done}"
 >260
 "@log smoke=End soundex() test cases.;@notify smoke"
 <
@@ -9711,9 +9725,15 @@
 >256
 "@log smoke=Beginning spellnum() test cases."
 >257
-"@if cand(strmatch(spellnum(42),forty-two),strmatch(spellnum(0),zero))={@log smoke=TC001: spellnum() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: spellnum() basic operations. Failed (spellnum(42)=[spellnum(42)] spellnum(0)=[spellnum(0)]).;@trig me/tr.done}"
+"@if cand(strmatch(spellnum(42),forty-two),strmatch(spellnum(0),zero))={@log smoke=TC001: spellnum() basic operations. Succeeded.},{@log smoke=TC001: spellnum() basic operations. Failed (spellnum(42)=[spellnum(42)] spellnum(0)=[spellnum(0)]).}"
+>258
+"@if cand(strmatch(spellnum(100), one hundred),strmatch(spellnum(-5), negative five),strmatch(spellnum(007), seven),strmatch(spellnum(1234), twelve hundred thirty-four),strmatch(spellnum(1034), one thousand thirty-four),strmatch(spellnum(1000000), one million))={@log smoke=TC002: spellnum() magnitudes and negatives. Succeeded.},{@log smoke=TC002: spellnum() magnitudes and negatives. Failed (spellnum(100)=[spellnum(100)] spellnum(-5)=[spellnum(-5)] spellnum(007)=[spellnum(007)] spellnum(1234)=[spellnum(1234)] spellnum(1034)=[spellnum(1034)] spellnum(1000000)=[spellnum(1000000)]).}"
+>259
+"@if cand(strmatch(spellnum(0.5), five tenths),strmatch(spellnum(0.1), one tenth),strmatch(spellnum(1.5), one and five tenths),strmatch(spellnum(2.25), two and twenty-five hundredths))={@log smoke=TC003: spellnum() decimal fractions. Succeeded.},{@log smoke=TC003: spellnum() decimal fractions. Failed (spellnum(0.5)=[spellnum(0.5)] spellnum(0.1)=[spellnum(0.1)] spellnum(1.5)=[spellnum(1.5)] spellnum(2.25)=[spellnum(2.25)]).}"
 >260
 "@log smoke=End spellnum() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(spellnum(foo), #-1 ARGUMENT MUST BE A NUMBER),strmatch(spellnum(1.2.3), #-1 ARGUMENT MUST BE A NUMBER),strmatch(spellnum(1234567890123456), #-1 ARGUMENT MUST BE A NUMBER))={@log smoke=TC004: spellnum() invalid arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: spellnum() invalid arguments. Failed (spellnum(foo)=[spellnum(foo)] spellnum(1.2.3)=[spellnum(1.2.3)] spellnum(16digits)=[spellnum(1234567890123456)]).;@trig me/tr.done}"
 <
 !261
 "test_splice_fn"
