@@ -20,11 +20,30 @@
         strmatch(itemize(a|b|c|d,|,or),a%, b%, c%, or d)
       )=
   {
-    @log smoke=TC001: itemize() basic operations. Succeeded.;
+    @log smoke=TC001: itemize() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: itemize() basic operations. Failed (itemize(a b c)=[itemize(a b c)] itemize(|%,or)=[itemize(a|b|c|d,|,or)]).
+  }
+-
+#
+# Test Case #2 - Short lists and custom punctuation.
+# Two items take no comma (a and b); one item is returned as-is; an
+# empty list is empty; the fourth argument replaces the comma.
+#
+&tr.tc002 test_itemize_fn=
+  @if cand(
+        strmatch(itemize(a b), a and b),
+        strmatch(itemize(apple), apple),
+        eq(strlen(itemize(%b)), 0),
+        strmatch(itemize(a b c,,or,;), a; b; or c)
+      )=
+  {
+    @log smoke=TC002: itemize() short lists and punctuation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: itemize() basic operations. Failed (itemize(a b c)=[itemize(a b c)] itemize(|%,or)=[itemize(a|b|c|d,|,or)]).;
+    @log smoke=TC002: itemize() short lists and punctuation. Failed (itemize(a b)=[itemize(a b)] itemize(apple)=[itemize(apple)] itemize(sp)=.[itemize(%b)]. itemize(a b c%,%,or%,;)=[itemize(a b c,,or,;)]).;
     @trig me/tr.done
   }
 -

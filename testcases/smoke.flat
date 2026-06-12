@@ -2681,7 +2681,9 @@
 >256
 "@log smoke=Beginning crc32() test cases."
 >257
-"@if cand(eq(crc32(Hello),4157704578),eq(crc32(abc),891568578))={@log smoke=TC001: crc32() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: crc32() basic operations. Failed (crc32(Hello)=[crc32(Hello)] crc32(abc)=[crc32(abc)]).;@trig me/tr.done}"
+"@if cand(eq(crc32(Hello),4157704578),eq(crc32(abc),891568578))={@log smoke=TC001: crc32() basic operations. Succeeded.},{@log smoke=TC001: crc32() basic operations. Failed (crc32(Hello)=[crc32(Hello)] crc32(abc)=[crc32(abc)]).}"
+>258
+"@if cand(eq(crc32(123456789), 3421780262),eq(crc32(Hel,lo), crc32(Hello)),eq(eq(crc32(hello), crc32(Hello)), 0),eq(crc32(), 0))={@log smoke=TC002: crc32() check value and concatenation. Succeeded.;@trig me/tr.done},{@log smoke=TC002: crc32() check value and concatenation. Failed (check=[crc32(123456789)] concat=[crc32(Hel,lo)] vs [crc32(Hello)] case=[crc32(hello)] vs [crc32(Hello)] empty=[crc32()]).;@trig me/tr.done}"
 >260
 "@log smoke=End crc32() test cases.;@notify smoke"
 <
@@ -2801,7 +2803,9 @@
 >256
 "@log smoke=Beginning ctu() test cases."
 >257
-"@if cand(eq(round(ctu(180,d,r),6), 3.141593),eq(round(ctu(pi(),r,d),6), 180))={@log smoke=TC001: ctu basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: ctu basic operations. Failed (ctu1=[round(ctu(180,d,r),6)] ctu2=[round(ctu(pi(),r,d),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(ctu(180,d,r),6), 3.141593),eq(round(ctu(pi(),r,d),6), 180))={@log smoke=TC001: ctu basic operations. Succeeded.},{@log smoke=TC001: ctu basic operations. Failed (ctu1=[round(ctu(180,d,r),6)] ctu2=[round(ctu(pi(),r,d),6)]).}"
+>258
+"@if cand(eq(round(ctu(200,g,d),6), 180),eq(round(ctu(100,g,r),6), 1.570796),eq(round(ctu(90,d,g),6), 100),eq(round(ctu(5,d,d),6), 5),eq(ctu(2,x,z), 2))={@log smoke=TC002: ctu gradians and identity. Succeeded.;@trig me/tr.done},{@log smoke=TC002: ctu gradians and identity. Failed (ctu(200%,g%,d)=[round(ctu(200,g,d),6)] ctu(100%,g%,r)=[round(ctu(100,g,r),6)] ctu(90%,d%,g)=[round(ctu(90,d,g),6)] ctu(5%,d%,d)=[round(ctu(5,d,d),6)] ctu(2%,x%,z)=[ctu(2,x,z)]).;@trig me/tr.done}"
 >260
 "@log smoke=End ctu() test cases.;@notify smoke"
 <
@@ -4329,7 +4333,9 @@
 >256
 "@log smoke=Beginning isdbref() test cases."
 >257
-"@if cand(eq(isdbref(#0), 1),eq(isdbref(#-1), 0),eq(isdbref(foo), 0),eq(isdbref(), 0),eq(isdbref(%b#0), 1),eq(isdbref(#0%b), 1),eq(isdbref(%b#0%b), 1),eq(isdbref(%b%b#0%b%b), 1))={@log smoke=TC001: isdbref basic and whitespace. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isdbref basic and whitespace. Failed (#0=[isdbref(#0)] #-1=[isdbref(#-1)] foo=[isdbref(foo)] empty=[isdbref()] sp#0=[isdbref(%b#0)]).;@trig me/tr.done}"
+"@if cand(eq(isdbref(#0), 1),eq(isdbref(#-1), 0),eq(isdbref(foo), 0),eq(isdbref(), 0),eq(isdbref(%b#0), 1),eq(isdbref(#0%b), 1),eq(isdbref(%b#0%b), 1),eq(isdbref(%b%b#0%b%b), 1))={@log smoke=TC001: isdbref basic and whitespace. Succeeded.},{@log smoke=TC001: isdbref basic and whitespace. Failed (#0=[isdbref(#0)] #-1=[isdbref(#-1)] foo=[isdbref(foo)] empty=[isdbref()] sp#0=[isdbref(%b#0)]).}"
+>258
+"@if cand(eq(isdbref(objid(me)), 1),eq(isdbref(#0:99), 0),eq(isdbref(#999999), 0),eq(isdbref(#0foo), 0),eq(isdbref(#), 0),eq(isdbref(%t#0), 1))={@log smoke=TC002: isdbref objid form and range. Succeeded.;@trig me/tr.done},{@log smoke=TC002: isdbref objid form and range. Failed (objid=[isdbref(objid(me))] wrongts=[isdbref(#0:99)] range=[isdbref(#999999)] garbage=[isdbref(#0foo)] bare=[isdbref(#)] tab=[isdbref(%t#0)]).;@trig me/tr.done}"
 >260
 "@log smoke=End isdbref() test cases.;@notify smoke"
 <
@@ -4356,7 +4362,9 @@
 >256
 "@log smoke=Beginning isign() test cases."
 >257
-"@if cand(eq(isign(-5), -1),eq(isign(0), 0),eq(isign(5), 1))={@log smoke=TC001: isign() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: isign() basic operations. Failed (isign(-5)=[isign(-5)] isign(0)=[isign(0)] isign(5)=[isign(5)]).;@trig me/tr.done}"
+"@if cand(eq(isign(-5), -1),eq(isign(0), 0),eq(isign(5), 1))={@log smoke=TC001: isign() basic operations. Succeeded.},{@log smoke=TC001: isign() basic operations. Failed (isign(-5)=[isign(-5)] isign(0)=[isign(0)] isign(5)=[isign(5)]).}"
+>258
+"@if cand(eq(isign(2.9), 1),eq(isign(-2.9), -1),eq(isign(0.5), 0),eq(isign(-0.5), 0),eq(isign(foo), 0),eq(isign(+7), 1),eq(isign(-9999999999), -1))={@log smoke=TC002: isign() truncation and coercion. Succeeded.;@trig me/tr.done},{@log smoke=TC002: isign() truncation and coercion. Failed (isign(2.9)=[isign(2.9)] isign(-2.9)=[isign(-2.9)] isign(0.5)=[isign(0.5)] isign(-0.5)=[isign(-0.5)] isign(foo)=[isign(foo)] isign(+7)=[isign(+7)] isign(-9999999999)=[isign(-9999999999)]).;@trig me/tr.done}"
 >260
 "@log smoke=End isign() test cases.;@notify smoke"
 <
@@ -4557,7 +4565,9 @@
 >256
 "@log smoke=Beginning itemize() test cases."
 >257
-"@if cand(strmatch(itemize(a b c),a%, b%, and c),strmatch(itemize(a|b|c|d,|,or),a%, b%, c%, or d))={@log smoke=TC001: itemize() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: itemize() basic operations. Failed (itemize(a b c)=[itemize(a b c)] itemize(|%,or)=[itemize(a|b|c|d,|,or)]).;@trig me/tr.done}"
+"@if cand(strmatch(itemize(a b c),a%, b%, and c),strmatch(itemize(a|b|c|d,|,or),a%, b%, c%, or d))={@log smoke=TC001: itemize() basic operations. Succeeded.},{@log smoke=TC001: itemize() basic operations. Failed (itemize(a b c)=[itemize(a b c)] itemize(|%,or)=[itemize(a|b|c|d,|,or)]).}"
+>258
+"@if cand(strmatch(itemize(a b), a and b),strmatch(itemize(apple), apple),eq(strlen(itemize(%b)), 0),strmatch(itemize(a b c,,or,;), a; b; or c))={@log smoke=TC002: itemize() short lists and punctuation. Succeeded.;@trig me/tr.done},{@log smoke=TC002: itemize() short lists and punctuation. Failed (itemize(a b)=[itemize(a b)] itemize(apple)=[itemize(apple)] itemize(sp)=.[itemize(%b)]. itemize(a b c%,%,or%,;)=[itemize(a b c,,or,;)]).;@trig me/tr.done}"
 >260
 "@log smoke=End itemize() test cases.;@notify smoke"
 <

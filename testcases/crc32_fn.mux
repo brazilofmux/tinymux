@@ -20,11 +20,30 @@
         eq(crc32(abc),891568578)
       )=
   {
-    @log smoke=TC001: crc32() basic operations. Succeeded.;
+    @log smoke=TC001: crc32() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: crc32() basic operations. Failed (crc32(Hello)=[crc32(Hello)] crc32(abc)=[crc32(abc)]).
+  }
+-
+#
+# Test Case #2 - Check value, concatenation, case, empty input.
+# crc32(123456789) is the standard CRC-32 check value 0xCBF43926;
+# multiple arguments hash as their concatenation.
+#
+&tr.tc002 test_crc32_fn=
+  @if cand(
+        eq(crc32(123456789), 3421780262),
+        eq(crc32(Hel,lo), crc32(Hello)),
+        eq(eq(crc32(hello), crc32(Hello)), 0),
+        eq(crc32(), 0)
+      )=
+  {
+    @log smoke=TC002: crc32() check value and concatenation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: crc32() basic operations. Failed (crc32(Hello)=[crc32(Hello)] crc32(abc)=[crc32(abc)]).;
+    @log smoke=TC002: crc32() check value and concatenation. Failed (check=[crc32(123456789)] concat=[crc32(Hel,lo)] vs [crc32(Hello)] case=[crc32(hello)] vs [crc32(Hello)] empty=[crc32()]).;
     @trig me/tr.done
   }
 -

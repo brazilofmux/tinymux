@@ -21,11 +21,32 @@
         eq(isign(5), 1)
       )=
   {
-    @log smoke=TC001: isign() basic operations. Succeeded.;
+    @log smoke=TC001: isign() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: isign() basic operations. Failed (isign(-5)=[isign(-5)] isign(0)=[isign(0)] isign(5)=[isign(5)]).
+  }
+-
+#
+# Test Case #2 - Integer truncation, coercion, 64-bit values.
+# isign() truncates the integer part first, so any |x| < 1 is 0.
+#
+&tr.tc002 test_isign_fn=
+  @if cand(
+        eq(isign(2.9), 1),
+        eq(isign(-2.9), -1),
+        eq(isign(0.5), 0),
+        eq(isign(-0.5), 0),
+        eq(isign(foo), 0),
+        eq(isign(+7), 1),
+        eq(isign(-9999999999), -1)
+      )=
+  {
+    @log smoke=TC002: isign() truncation and coercion. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: isign() basic operations. Failed (isign(-5)=[isign(-5)] isign(0)=[isign(0)] isign(5)=[isign(5)]).;
+    @log smoke=TC002: isign() truncation and coercion. Failed (isign(2.9)=[isign(2.9)] isign(-2.9)=[isign(-2.9)] isign(0.5)=[isign(0.5)] isign(-0.5)=[isign(-0.5)] isign(foo)=[isign(foo)] isign(+7)=[isign(+7)] isign(-9999999999)=[isign(-9999999999)]).;
     @trig me/tr.done
   }
 -

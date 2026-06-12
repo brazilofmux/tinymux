@@ -22,11 +22,30 @@
         eq(round(ctu(pi(),r,d),6), 180)
       )=
   {
-    @log smoke=TC001: ctu basic operations. Succeeded.;
+    @log smoke=TC001: ctu basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: ctu basic operations. Failed (ctu1=[round(ctu(180,d,r),6)] ctu2=[round(ctu(pi(),r,d),6)]).
+  }
+-
+#
+# Test Case #2 - Gradians, identity, and unknown units.
+# Unknown unit letters mean radians (no conversion either way).
+#
+&tr.tc002 test_ctu_fn=
+  @if cand(
+        eq(round(ctu(200,g,d),6), 180),
+        eq(round(ctu(100,g,r),6), 1.570796),
+        eq(round(ctu(90,d,g),6), 100),
+        eq(round(ctu(5,d,d),6), 5),
+        eq(ctu(2,x,z), 2)
+      )=
+  {
+    @log smoke=TC002: ctu gradians and identity. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: ctu basic operations. Failed (ctu1=[round(ctu(180,d,r),6)] ctu2=[round(ctu(pi(),r,d),6)]).;
+    @log smoke=TC002: ctu gradians and identity. Failed (ctu(200%,g%,d)=[round(ctu(200,g,d),6)] ctu(100%,g%,r)=[round(ctu(100,g,r),6)] ctu(90%,d%,g)=[round(ctu(90,d,g),6)] ctu(5%,d%,d)=[round(ctu(5,d,d),6)] ctu(2%,x%,z)=[ctu(2,x,z)]).;
     @trig me/tr.done
   }
 -
