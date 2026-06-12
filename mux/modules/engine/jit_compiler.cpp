@@ -218,7 +218,10 @@ static bool tier2_allowed(const std::string &mux_name) {
         "DELETE", "ELEMENTS", "REMOVE",
         "REVWORDS",
         "LNUM",
-        "LADD", "LMAX", "LMIN", "LAND", "LOR",
+        // LADD is deliberately absent: fun_ladd sums via AddDoubles
+        // (|x|-sorted, error-compensated, NearestPretty), which the blob
+        // cannot reproduce; it always ECALLs the interpreter.
+        "LMAX", "LMIN", "LAND", "LOR",
         "ISNUM", "ISINT",
         "DEC2HEX", "HEX2DEC",
         "ISDBREF",
@@ -354,7 +357,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "REMOVE",      "rv64_remove" },
 
     // --- Batch 8: list aggregation, reversal, type checks ---
-    { "LADD",        "rv64_ladd" },
+    // (no LADD: AddDoubles semantics are not reproducible in the blob)
     { "LMAX",        "rv64_lmax" },
     { "LMIN",        "rv64_lmin" },
     { "LAND",        "rv64_land" },

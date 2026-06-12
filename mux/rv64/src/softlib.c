@@ -327,6 +327,11 @@ static int satoi(const char *s);
 static int sisspace(char c);
 static int sis_integer(const char *s);
 
+/* String<->double intrinsic stubs (defined near the math wrappers;
+ * the DBT replaces them with host mux_atof / fval). */
+double rv64_strtod(const char *s);
+int rv64_fval(char *buf, double val);
+
 /* ECALL helpers — invoke host syscall from guest code.
  * a7 = syscall number, a0..a2 = args.  Returns a0.
  */
@@ -1687,110 +1692,172 @@ char *rv64_null(char *out, const char **fargs, int nfargs) {
  * Batch 8: list aggregation, list reversal, type checks.
  * --------------------------------------------------------------- */
 
-/* ladd(list[, delim]) — sum of all numbers in list */
-char *rv64_ladd(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
-    unsigned char delim = ' ';
-    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
-    const char *p = fargs[0];
-    long long sum = 0;
-    while (*p) {
-        while (*p == (char)delim) p++;
-        if (*p == '\0') break;
-        int neg = 0;
-        if (*p == '-') { neg = 1; p++; }
-        long long val = 0;
-        while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
-        if (neg) val = -val;
-        sum += val;
-        while (*p && *p != (char)delim) p++;
-    }
-    /* Format result. */
-    char *op = out;
-    if (sum < 0) { *op++ = '-'; sum = -sum; }
-    if (sum == 0) { out[0] = '0'; out[1] = '\0'; return out; }
-    char tmp[20]; int pos = 0;
-    while (sum > 0) { tmp[pos++] = '0' + (int)(sum % 10); sum /= 10; }
-    for (int i = pos - 1; i >= 0; i--) *op++ = tmp[i];
-    *op = '\0';
-    return out;
+/* ladd() is NOT implemented here: fun_ladd sums via AddDoubles
+ * (|x|-sorted, error-compensated, NearestPretty), which a sequential
+ * guest-side sum cannot reproduce — cancellation-heavy lists such as
+ * ladd(1e20 1 -1e20) print differently.  LADD is not in the tier2
+ * map (jit_compiler.cpp) and always ECALLs the interpreter. */
+
+/* Copy one delimiter-bounded token into a NUL-terminated buffer so
+ * number parsing sees exactly the token.  Parsing in place would
+ * mis-read tokens when the delimiter is a character a number parser
+ * consumes ('.', '-', a digit, 'e').  The caller provides an
+ * LBUF_SIZE stack buffer (the blob has no .bss for statics; see
+ * softlib.ld and the rv64_remove wPlain precedent). */
+static const char *tok_to_buf(char *buf, const unsigned char *start, size_t elen) {
+    size_t i;
+    if (elen >= (size_t)LBUF_SIZE) elen = (size_t)LBUF_SIZE - 1;
+    for (i = 0; i < elen; i++) buf[i] = (char)start[i];
+    buf[elen] = '\0';
+    return buf;
 }
 
-/* lmax(list[, delim]) — maximum number in list */
+/* satoll: like satoi but 64-bit, for mux_atol parity (long is 64-bit
+ * on the host) — land(4294967296) must be true, not a wrapped 0. */
+static long long satoll(const char *s) {
+    long long v = 0;
+    int neg = 0;
+    while (sisspace(*s)) s++;
+    if (*s == '+') { s++; }
+    else if (*s == '-') { neg = 1; s++; }
+    while (*s >= '0' && *s <= '9') {
+        v = v * 10 + (*s - '0');
+        s++;
+    }
+    return neg ? -v : v;
+}
+
+/* lmax(list[, delim]) — maximum number in list.
+ * Doubles via rv64_strtod/rv64_fval for fun_lmax parity (mux_atof +
+ * fval): the old integer parse truncated decimals ("1.5" read as 1)
+ * and the (int) output cast wrapped 64-bit values.  split_token walk
+ * per rv64_match (#789): for a non-space delimiter, empty words are
+ * real and contribute a 0 candidate. */
 char *rv64_lmax(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    unsigned char delim = ' ';
-    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
-    const char *p = fargs[0];
-    long long best = -9999999999LL;
-    int found = 0;
-    while (*p) {
-        while (*p == (char)delim) p++;
-        if (*p == '\0') break;
-        long long val = 0; int neg = 0;
-        if (*p == '-') { neg = 1; p++; }
-        while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
-        if (neg) val = -val;
-        if (!found || val > best) { best = val; found = 1; }
-        while (*p && *p != (char)delim) p++;
+    double best = 0.0;
+    if (nfargs >= 1) {
+        char tok[LBUF_SIZE];
+        unsigned char delim = ' ';
+        const unsigned char *p = (const unsigned char *)fargs[0];
+        const unsigned char *pe = p + rv64_slen(fargs[0]);
+        int found = 0;
+        if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+        if (delim == ' ') {
+            while (p < pe && *p == ' ') p++;
+            while (pe > p && pe[-1] == ' ') pe--;
+        }
+        for (;;) {
+            if (delim == ' ' && p >= pe) break;
+            const unsigned char *start = p;
+            while (p < pe && *p != delim) p++;
+            {
+                double v = rv64_strtod(tok_to_buf(tok, start, (size_t)(p - start)));
+                if (!found || v > best) { best = v; found = 1; }
+            }
+            if (p >= pe) break;
+            p++;
+            if (delim == ' ') while (p < pe && *p == ' ') p++;
+        }
     }
-    sitoa(out, (int)best);
+    {
+        int n = rv64_fval(out, best);
+        out[n] = '\0';
+    }
     return out;
 }
 
-/* lmin(list[, delim]) — minimum number in list */
+/* lmin(list[, delim]) — minimum number in list.  See rv64_lmax. */
 char *rv64_lmin(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    unsigned char delim = ' ';
-    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
-    const char *p = fargs[0];
-    long long best = 9999999999LL;
-    int found = 0;
-    while (*p) {
-        while (*p == (char)delim) p++;
-        if (*p == '\0') break;
-        long long val = 0; int neg = 0;
-        if (*p == '-') { neg = 1; p++; }
-        while (*p >= '0' && *p <= '9') { val = val * 10 + (*p - '0'); p++; }
-        if (neg) val = -val;
-        if (!found || val < best) { best = val; found = 1; }
-        while (*p && *p != (char)delim) p++;
+    double best = 0.0;
+    if (nfargs >= 1) {
+        char tok[LBUF_SIZE];
+        unsigned char delim = ' ';
+        const unsigned char *p = (const unsigned char *)fargs[0];
+        const unsigned char *pe = p + rv64_slen(fargs[0]);
+        int found = 0;
+        if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+        if (delim == ' ') {
+            while (p < pe && *p == ' ') p++;
+            while (pe > p && pe[-1] == ' ') pe--;
+        }
+        for (;;) {
+            if (delim == ' ' && p >= pe) break;
+            const unsigned char *start = p;
+            while (p < pe && *p != delim) p++;
+            {
+                double v = rv64_strtod(tok_to_buf(tok, start, (size_t)(p - start)));
+                if (!found || v < best) { best = v; found = 1; }
+            }
+            if (p >= pe) break;
+            p++;
+            if (delim == ' ') while (p < pe && *p == ' ') p++;
+        }
     }
-    sitoa(out, (int)best);
+    {
+        int n = rv64_fval(out, best);
+        out[n] = '\0';
+    }
     return out;
 }
 
-/* land(list[, delim]) — logical AND: 1 if all nonzero, else 0 */
+/* land(list[, delim]) — 1 if every word is true, else 0.
+ * fun_land parity: isTRUE(mux_atol(word)).  Zero arguments are
+ * vacuously true; an empty or all-spaces list is ONE empty word and
+ * therefore false; empty words from a non-space delimiter (#789
+ * walk) parse as 0 and falsify: land(1||1,|) is 0. */
 char *rv64_land(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    unsigned char delim = ' ';
-    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
-    const char *p = fargs[0];
-    while (*p) {
-        while (*p == (char)delim) p++;
-        if (*p == '\0') break;
-        int val = satoi(p);
-        if (val == 0) { out[0] = '0'; out[1] = '\0'; return out; }
-        while (*p && *p != (char)delim) p++;
+    int result = 1;
+    if (nfargs >= 1) {
+        char tok[LBUF_SIZE];
+        unsigned char delim = ' ';
+        const unsigned char *p = (const unsigned char *)fargs[0];
+        const unsigned char *pe = p + rv64_slen(fargs[0]);
+        if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+        if (delim == ' ') {
+            while (p < pe && *p == ' ') p++;
+            while (pe > p && pe[-1] == ' ') pe--;
+            if (p >= pe) result = 0;   /* one empty word */
+        }
+        while (result) {
+            if (delim == ' ' && p >= pe) break;
+            const unsigned char *start = p;
+            while (p < pe && *p != delim) p++;
+            if (satoll(tok_to_buf(tok, start, (size_t)(p - start))) == 0) result = 0;
+            if (p >= pe) break;
+            p++;
+            if (delim == ' ') while (p < pe && *p == ' ') p++;
+        }
     }
-    out[0] = '1'; out[1] = '\0';
+    out[0] = result ? '1' : '0'; out[1] = '\0';
     return out;
 }
 
-/* lor(list[, delim]) — logical OR: 1 if any nonzero, else 0 */
+/* lor(list[, delim]) — 1 if any word is true, else 0.
+ * fun_lor parity: zero arguments and empty/all-empty-word lists are
+ * false; the walk matches rv64_land. */
 char *rv64_lor(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    unsigned char delim = ' ';
-    if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
-    const char *p = fargs[0];
-    while (*p) {
-        while (*p == (char)delim) p++;
-        if (*p == '\0') break;
-        int val = satoi(p);
-        if (val != 0) { out[0] = '1'; out[1] = '\0'; return out; }
-        while (*p && *p != (char)delim) p++;
+    int result = 0;
+    if (nfargs >= 1) {
+        char tok[LBUF_SIZE];
+        unsigned char delim = ' ';
+        const unsigned char *p = (const unsigned char *)fargs[0];
+        const unsigned char *pe = p + rv64_slen(fargs[0]);
+        if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+        if (delim == ' ') {
+            while (p < pe && *p == ' ') p++;
+            while (pe > p && pe[-1] == ' ') pe--;
+        }
+        while (!result) {
+            if (delim == ' ' && p >= pe) break;
+            const unsigned char *start = p;
+            while (p < pe && *p != delim) p++;
+            if (satoll(tok_to_buf(tok, start, (size_t)(p - start))) != 0) result = 1;
+            if (p >= pe) break;
+            p++;
+            if (delim == ' ') while (p < pe && *p == ' ') p++;
+        }
     }
-    out[0] = '0'; out[1] = '\0';
+    out[0] = result ? '1' : '0'; out[1] = '\0';
     return out;
 }
 

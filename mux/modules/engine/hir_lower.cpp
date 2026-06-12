@@ -3300,7 +3300,7 @@ literal_strcat:
             int delim_idx = -1;
             if ((upper == "FIRST" || upper == "REST" || upper == "LAST"
                  || upper == "SQUISH" || upper == "WORDS"
-                 || upper == "REVWORDS" || upper == "LADD"
+                 || upper == "REVWORDS"
                  || upper == "LMAX" || upper == "LMIN"
                  || upper == "LAND" || upper == "LOR") && nargs >= 2) {
                 delim_idx = 1;
