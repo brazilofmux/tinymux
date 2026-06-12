@@ -19,11 +19,46 @@
         strmatch(revwords(a b c d), d c b a)
       )=
   {
-    @log smoke=TC001: revwords() basic operations. Succeeded.;
+    @log smoke=TC001: revwords() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: revwords() basic operations. Failed (revwords=[revwords(a b c d)]).
+  }
+-
+#
+# Test Case #2 - Custom delimiters, output separator, single word.
+#
+&tr.tc002 test_revwords_fn=
+  @if cand(
+        strmatch(revwords(a|b|c,|), c|b|a),
+        strmatch(revwords(a|b|c,|,~), c~b~a),
+        strmatch(revwords(hello), hello),
+        strmatch(revwords(a%b%b%bb), b a)
+      )=
+  {
+    @log smoke=TC002: revwords() delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC002: revwords() delimiters. Failed (revwords(a|b|c%,|)=[revwords(a|b|c,|)] revwords(a|b|c%,|%,~)=[revwords(a|b|c,|,~)] revwords(hello)=[revwords(hello)] revwords(a   b)=[revwords(a%b%b%bb)]).
+  }
+-
+#
+# Test Case #3 - Empty words are preserved; multi-char delimiter.
+# With a non-space delimiter a trailing delimiter is a trailing empty
+# word, which reversal moves to the front: revwords(a|,|) is |a.
+#
+&tr.tc003 test_revwords_fn=
+  @if cand(
+        strmatch(revwords(a|,|), |a),
+        strmatch(revwords(aXXbXXc,XX), cXXbXXa),
+        eq(strlen(revwords(%b)), 0)
+      )=
+  {
+    @log smoke=TC003: revwords() empty words and string delims. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: revwords() basic operations. Failed (revwords=[revwords(a b c d)]).;
+    @log smoke=TC003: revwords() empty words and string delims. Failed (revwords(a|%,|)=.[revwords(a|,|)]. revwords(aXXbXXc%,XX)=[revwords(aXXbXXc,XX)] revwords(sp)=.[revwords(%b)].).;
     @trig me/tr.done
   }
 -

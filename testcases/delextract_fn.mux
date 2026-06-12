@@ -23,11 +23,31 @@
         strmatch(delextract(a b c,1,0),a b c)
       )=
   {
-    @log smoke=TC001: delextract() basic operations. Succeeded.;
+    @log smoke=TC001: delextract() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: delextract() basic operations. Failed (delextract(2%,2)=[delextract(a b c d e,2,2)] delextract(1%,1)=[delextract(a b c d e,1,1)] delextract(5%,1)=[delextract(a b c d e,5,1)] delextract(3%,10)=[delextract(a b c d e,3,10)] delextract(1%,0)=[delextract(a b c,1,0)]).
+  }
+-
+#
+# Test Case #2 - Custom delimiter, position clamping, coercion.
+# A first position below 1 clamps to 1; a count below 1 returns the
+# whole list; non-numeric positions coerce to 0 and clamp.
+#
+&tr.tc002 test_delextract_fn=
+  @if cand(
+        strmatch(delextract(a|b|c|d,2,2,|), a|d),
+        strmatch(delextract(a b c,0,1), b c),
+        strmatch(delextract(a b c,-2,1), b c),
+        strmatch(delextract(a b c,2,-5), a b c),
+        strmatch(delextract(a b c,foo,1), b c)
+      )=
+  {
+    @log smoke=TC002: delextract() clamping and delimiters. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: delextract() basic operations. Failed (delextract(2%,2)=[delextract(a b c d e,2,2)] delextract(1%,1)=[delextract(a b c d e,1,1)] delextract(5%,1)=[delextract(a b c d e,5,1)] delextract(3%,10)=[delextract(a b c d e,3,10)] delextract(1%,0)=[delextract(a b c,1,0)]).;
+    @log smoke=TC002: delextract() clamping and delimiters. Failed (delextract(a|b|c|d%,2%,2%,|)=[delextract(a|b|c|d,2,2,|)] delextract(0%,1)=[delextract(a b c,0,1)] delextract(-2%,1)=[delextract(a b c,-2,1)] delextract(2%,-5)=[delextract(a b c,2,-5)] delextract(foo%,1)=[delextract(a b c,foo,1)]).;
     @trig me/tr.done
   }
 -

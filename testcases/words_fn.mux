@@ -20,11 +20,47 @@
         eq(words(a|b|c,|), 3)
       )=
   {
-    @log smoke=TC001: words basic operations. Succeeded.;
+    @log smoke=TC001: words basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: words basic operations. Failed (words(a b c d)=[words(a b c d)] words(a|b|c%,|)=[words(a|b|c,|)]).
+  }
+-
+#
+# Test Case #2 - Empty input, space collapsing, empty words.
+# Spaces collapse (multiple spaces are one separator), but with a
+# non-space delimiter a trailing delimiter makes a real empty word.
+#
+&tr.tc002 test_words_fn=
+  @if cand(
+        eq(words(), 0),
+        eq(words(%b), 0),
+        eq(words(,|), 0),
+        eq(words(a%b%b%bb), 2),
+        eq(words(a|,|), 2),
+        eq(words(a||b,|), 3)
+      )=
+  {
+    @log smoke=TC002: words empty and collapse cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: words empty and collapse cases. Failed (words()=[words()] words(sp)=[words(%b)] words(%,|)=[words(,|)] words(a   b)=[words(a%b%b%bb)] words(a|%,|)=[words(a|,|)] words(a||b%,|)=[words(a||b,|)]).
+  }
+-
+#
+# Test Case #3 - Multi-character string delimiter.
+#
+&tr.tc003 test_words_fn=
+  @if cand(
+        eq(words(aXXbXXc,XX), 3),
+        eq(words(one--two--three,--), 3)
+      )=
+  {
+    @log smoke=TC003: words multi-char delimiter. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: words basic operations. Failed (words(a b c d)=[words(a b c d)] words(a|b|c%,|)=[words(a|b|c,|)]).;
+    @log smoke=TC003: words multi-char delimiter. Failed (words(aXXbXXc%,XX)=[words(aXXbXXc,XX)] words(one--two--three%,--)=[words(one--two--three,--)]).;
     @trig me/tr.done
   }
 -

@@ -20,11 +20,32 @@
         eq(strlen(space(0)), 0)
       )=
   {
-    @log smoke=TC001: space basic operations. Succeeded.;
+    @log smoke=TC001: space basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: space basic operations. Failed (space(5) len=[strlen(space(5))] space(0) len=[strlen(space(0))]).
+  }
+-
+#
+# Test Case #2 - Defaults, clamps, and coercion.
+# No argument and non-integer arguments give one space; an explicit
+# integer zero (including 00) gives none; negatives clamp to zero;
+# decimals truncate.
+#
+&tr.tc002 test_space_fn=
+  @if cand(
+        eq(strlen(space()), 1),
+        eq(strlen(space(foo)), 1),
+        eq(strlen(space(00)), 0),
+        eq(strlen(space(-5)), 0),
+        eq(strlen(space(3.5)), 3)
+      )=
+  {
+    @log smoke=TC002: space defaults and clamps. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: space basic operations. Failed (space(5) len=[strlen(space(5))] space(0) len=[strlen(space(0))]).;
+    @log smoke=TC002: space defaults and clamps. Failed (space()=[strlen(space())] space(foo)=[strlen(space(foo))] space(00)=[strlen(space(00))] space(-5)=[strlen(space(-5))] space(3.5)=[strlen(space(3.5))]).;
     @trig me/tr.done
   }
 -

@@ -20,11 +20,62 @@
         strmatch(lnum(3,7),3 4 5 6 7)
       )=
   {
-    @log smoke=TC001: lnum() basic operations. Succeeded.;
+    @log smoke=TC001: lnum() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: lnum() basic operations. Failed (lnum(5)=[lnum(5)] lnum(3%,7)=[lnum(3,7)]).
+  }
+-
+#
+# Test Case #2 - Descending ranges, equal endpoints, negatives.
+#
+&tr.tc002 test_lnum_fn=
+  @if cand(
+        strmatch(lnum(7,3), 7 6 5 4 3),
+        strmatch(lnum(5,5), 5),
+        strmatch(lnum(-2,2), -2 -1 0 1 2)
+      )=
+  {
+    @log smoke=TC002: lnum() descending and negative ranges. Succeeded.
+  },
+  {
+    @log smoke=TC002: lnum() descending and negative ranges. Failed (lnum(7%,3)=[lnum(7,3)] lnum(5%,5)=[lnum(5,5)] lnum(-2%,2)=[lnum(-2,2)]).
+  }
+-
+#
+# Test Case #3 - Output separator and step.
+# A step below 1 is clamped to 1.
+#
+&tr.tc003 test_lnum_fn=
+  @if cand(
+        strmatch(lnum(1,5,|), 1|2|3|4|5),
+        strmatch(lnum(1,9,|,3), 1|4|7),
+        strmatch(lnum(9,1,%b,3), 9 6 3),
+        strmatch(lnum(1,3,|,0), 1|2|3)
+      )=
+  {
+    @log smoke=TC003: lnum() separator and step. Succeeded.
+  },
+  {
+    @log smoke=TC003: lnum() separator and step. Failed (lnum(1%,5%,|)=[lnum(1,5,|)] lnum(1%,9%,|%,3)=[lnum(1,9,|,3)] lnum(9%,1%,sp%,3)=[lnum(9,1,%b,3)] lnum(1%,3%,|%,0)=[lnum(1,3,|,0)]).
+  }
+-
+#
+# Test Case #4 - Degenerate counts return empty.
+#
+&tr.tc004 test_lnum_fn=
+  @if cand(
+        eq(strlen(lnum(0)), 0),
+        eq(strlen(lnum(-3)), 0),
+        strmatch(lnum(1), 0),
+        eq(strlen(lnum(foo)), 0)
+      )=
+  {
+    @log smoke=TC004: lnum() degenerate counts. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lnum() basic operations. Failed (lnum(5)=[lnum(5)] lnum(3%,7)=[lnum(3,7)]).;
+    @log smoke=TC004: lnum() degenerate counts. Failed (lnum(0)=[lnum(0)] lnum(-3)=[lnum(-3)] lnum(1)=[lnum(1)] lnum(foo)=[lnum(foo)]).;
     @trig me/tr.done
   }
 -
