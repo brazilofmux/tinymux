@@ -204,11 +204,34 @@ static bool mux_AttrNameInitialSet_latin1[256] =
  * This is only used to import v2 flatfiles.
  */
 
-static BOOLEXP *getboolexp1(FILE *f)
+// Set true when getboolexp1() hits a malformed/over-nested lock while importing
+// a v1/v2 flatfile.  Lets the recursion unwind without crashing and lets the
+// caller (db_read) abort the load cleanly (#806 sibling): the runtime @lock
+// parser caps nesting at lock_nest_lim, but this import path was unguarded, so a
+// corrupt/malicious v2 flatfile could blow the stack (deeply-nested lock ->
+// SIGSEGV) or trip a mux_assert (truncated/garbage lock -> SIGABRT).
+//
+static bool s_boolexp_corrupt = false;
+
+// Recursion bound for the import-time lock parser.  Far above any legitimate
+// lock (the runtime parser caps nesting at lock_nest_lim, default 20) yet far
+// below the depth that would overflow the stack.
+//
+static const int BOOLEXP_LOAD_NEST_MAX = 1024;
+
+static BOOLEXP *getboolexp1(FILE *f, int depth)
 {
     BOOLEXP *b;
     UTF8 *s;
     int d;
+
+    if (depth > BOOLEXP_LOAD_NEST_MAX)
+    {
+        // Over-nested lock: stop recursing before the stack overflows.
+        //
+        s_boolexp_corrupt = true;
+        return TRUE_BOOLEXP;
+    }
 
     int c = getc(f);
     switch (c)
@@ -221,8 +244,7 @@ static BOOLEXP *getboolexp1(FILE *f)
 
         // Unexpected EOF in boolexp.
         //
-        mux_assert(0);
-        break;
+        goto error;
 
     case '(':
         b = alloc_bool("getboolexp1.openparen");
@@ -230,32 +252,32 @@ static BOOLEXP *getboolexp1(FILE *f)
         {
         case NOT_TOKEN:
             b->type = BOOLEXP_NOT;
-            b->sub1 = getboolexp1(f);
+            b->sub1 = getboolexp1(f, depth + 1);
             break;
 
         case INDIR_TOKEN:
             b->type = BOOLEXP_INDIR;
-            b->sub1 = getboolexp1(f);
+            b->sub1 = getboolexp1(f, depth + 1);
             break;
 
         case IS_TOKEN:
             b->type = BOOLEXP_IS;
-            b->sub1 = getboolexp1(f);
+            b->sub1 = getboolexp1(f, depth + 1);
             break;
 
         case CARRY_TOKEN:
             b->type = BOOLEXP_CARRY;
-            b->sub1 = getboolexp1(f);
+            b->sub1 = getboolexp1(f, depth + 1);
             break;
 
         case OWNER_TOKEN:
             b->type = BOOLEXP_OWNER;
-            b->sub1 = getboolexp1(f);
+            b->sub1 = getboolexp1(f, depth + 1);
             break;
 
         default:
             ungetc(c, f);
-            b->sub1 = getboolexp1(f);
+            b->sub1 = getboolexp1(f, depth + 1);
             if ('\n' == (c = getc(f)))
             {
                 c = getc(f);
@@ -273,7 +295,7 @@ static BOOLEXP *getboolexp1(FILE *f)
             default:
                 goto error;
             }
-            b->sub2 = getboolexp1(f);
+            b->sub2 = getboolexp1(f, depth + 1);
         }
 
         if ('\n' == (d = getc(f)))
@@ -385,9 +407,11 @@ static BOOLEXP *getboolexp1(FILE *f)
 
 error:
 
-    // Bomb Out.
+    // Malformed lock (EOF mid-expression, bad syntax, or over-nesting).  Flag
+    // the corruption and unwind without crashing; getboolexp()/db_read abort
+    // the load cleanly instead of mux_assert-ing.
     //
-    mux_assert(0);
+    s_boolexp_corrupt = true;
     return TRUE_BOOLEXP;
 }
 
@@ -399,9 +423,15 @@ error:
 
 static BOOLEXP *getboolexp(FILE *f)
 {
-    BOOLEXP *b = getboolexp1(f);
+    s_boolexp_corrupt = false;
+    BOOLEXP *b = getboolexp1(f, 0);
     int c = getc(f);
-    mux_assert(c == '\n');
+    if (c != '\n')
+    {
+        // Malformed lock: the expression was not terminated by a newline.
+        //
+        s_boolexp_corrupt = true;
+    }
 
     if ((c = getc(f)) != '\n')
     {
@@ -787,6 +817,15 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // Only used when reading v2 format.
                 //
                 tempbool = getboolexp(f);
+                if (s_boolexp_corrupt)
+                {
+                    // Malformed / over-nested lock in the flatfile (#806
+                    // sibling): abort the load cleanly rather than crash.
+                    //
+                    free_boolexp(tempbool);
+                    Log.tinyprintf(T(ENDLINE "db_read: malformed or over-nested lock for object #%d; aborting load of a corrupt or malicious flatfile." ENDLINE), i);
+                    return -1;
+                }
                 if (!atr_add_raw(i, A_LOCK, unparse_boolexp_quiet(1, tempbool)))
                 {
                     free_boolexp(tempbool);
