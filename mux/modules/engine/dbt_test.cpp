@@ -1386,6 +1386,40 @@ static void test_selfloop_register_pressure() {
     CHECK_EQ("self-loop regpressure: DBT matches interpreter", dbt, interp);
 }
 
+// Load/store with rs1 == x0 and a nonzero immediate (absolute small-address
+// access).  The a64 backend's rc_read(x0) returns scratch X0; materializing
+// the offset into X0 before the address add clobbered the base, computing
+// 2*imm instead of imm.  Each access pairs an x0-base op with a register-base
+// op at the same address so a wrong address can't cancel out in a roundtrip.
+// Differential-tested against the interpreter (issue #804).
+//
+static void test_x0_base_load_store() {
+    printf("test_x0_base_load_store...\n");
+
+    std::vector<uint32_t> code = {
+        ADDI(1, 0, 0x100),                     // x1 = 0x100
+        ADDI(4, 0, 0x55),                      // x4 = 0x55
+        SD(1, 4, 0),                           // mem[0x100] = 0x55 (reg base)
+        LD(5, 0, 0x100),                       // x5 = mem[0x100]   (x0 base)
+        ADDI(6, 0, 0x77),                      // x6 = 0x77
+        s_type(OP_STORE, ST_SD, 0, 6, 0x108),  // mem[0x108] = 0x77 (x0 base)
+        LD(7, 1, 8),                           // x7 = mem[0x108]   (reg base)
+        i_type(OP_FP_LOAD, 1, 3, 0, 0x100),    // FLD f1, 0x100(x0)
+        s_type(OP_FP_STORE, 3, 0, 1, 0x110),   // FSD f1, 0x110(x0)
+        LD(8, 1, 0x10),                        // x8 = mem[0x110]   (reg base)
+        ECALL(),
+    };
+
+    auto r = run_code(code);
+    CHECK_EQ("LD imm(x0): interpreter", r.state.x[5], 0x55ULL);
+    CHECK_EQ("SD imm(x0): interpreter", r.state.x[7], 0x77ULL);
+    CHECK_EQ("FLD/FSD imm(x0): interpreter", r.state.x[8], 0x55ULL);
+
+    CHECK_EQ("LD imm(x0): DBT", run_code_dbt(code, 5), 0x55ULL);
+    CHECK_EQ("SD imm(x0): DBT", run_code_dbt(code, 7), 0x77ULL);
+    CHECK_EQ("FLD/FSD imm(x0): DBT", run_code_dbt(code, 8), 0x55ULL);
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -1423,6 +1457,7 @@ int main(int argc, char *argv[]) {
     test_fp_fclass();
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
+    test_x0_base_load_store();
 
     printf("\n==============================\n");
     printf("Hand-assembled: %d run, %d passed, %d failed\n",

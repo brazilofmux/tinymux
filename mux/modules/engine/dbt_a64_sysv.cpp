@@ -258,6 +258,20 @@ static void rc_invalidate_reload(emit_t *e, reg_cache_t *rc) {
     }
 }
 
+// Compute a load/store guest address into X0: X0 = rs1 + imm.
+// Move rs1 first, then add the immediate — rc_read for guest x0
+// returns A64_X0, so materializing imm into X0 before a register
+// add would clobber rs1 (yielding 2*imm).  Load/store offsets are
+// 12-bit signed, so |imm| <= 2048 always fits in imm12.
+static void emit_addr_x0(emit_t *e, int rs1, int32_t imm) {
+    emit_mov_r64(e, A64_X0, rs1);
+    if (imm > 0) {
+        emit_add_r64_imm(e, A64_X0, A64_X0, imm);
+    } else if (imm < 0) {
+        emit_sub_r64_imm(e, A64_X0, A64_X0, -imm);
+    }
+}
+
 // Forward declaration.
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt, uint64_t target_pc);
 
@@ -1416,14 +1430,7 @@ no_addr_fusion:
         // -- LOAD --
         case OP_LOAD: {
             int rs1 = rc_read(&e, &rc, insn.rs1);
-            // Compute address: X0 = rs1 + imm
-            if (insn.imm) {
-                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
-                    static_cast<int64_t>(insn.imm)));
-                emit_add_r64(&e, A64_X0, rs1, A64_X0);
-            } else {
-                emit_mov_r64(&e, A64_X0, rs1);
-            }
+            emit_addr_x0(&e, rs1, insn.imm);
             int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
             switch (insn.funct3) {
             case LD_LB:  emit_load_mem8s(&e, rd, A64_X0);  break;
@@ -1445,14 +1452,7 @@ no_addr_fusion:
             // Move value to X1 first — rc_read for x0 returns A64_X0,
             // which would be clobbered by the address calculation below.
             emit_mov_r64(&e, A64_X1, rs2);
-            // Address: X0 = rs1 + imm
-            if (insn.imm) {
-                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
-                    static_cast<int64_t>(insn.imm)));
-                emit_add_r64(&e, A64_X0, rs1, A64_X0);
-            } else {
-                emit_mov_r64(&e, A64_X0, rs1);
-            }
+            emit_addr_x0(&e, rs1, insn.imm);
             switch (insn.funct3) {
             case ST_SB: emit_store_mem8(&e, A64_X0, A64_X1);  break;
             case ST_SH: emit_store_mem16(&e, A64_X0, A64_X1); break;
@@ -1773,14 +1773,7 @@ no_addr_fusion:
         // -- FP LOAD (FLD) --
         case OP_FP_LOAD: {
             int rs1 = rc_read(&e, &rc, insn.rs1);
-            // Address: X0 = rs1 + imm
-            if (insn.imm) {
-                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
-                    static_cast<int64_t>(insn.imm)));
-                emit_add_r64(&e, A64_X0, rs1, A64_X0);
-            } else {
-                emit_mov_r64(&e, A64_X0, rs1);
-            }
+            emit_addr_x0(&e, rs1, insn.imm);
             int fd = fc_write(&e, &fc, insn.rd);
             emit_load_mem_f64(&e, fd, A64_X0);
             pc += 4;
@@ -1791,13 +1784,7 @@ no_addr_fusion:
         case OP_FP_STORE: {
             int rs1 = rc_read(&e, &rc, insn.rs1);
             int fs2 = fc_read(&e, &fc, insn.rs2);
-            if (insn.imm) {
-                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
-                    static_cast<int64_t>(insn.imm)));
-                emit_add_r64(&e, A64_X0, rs1, A64_X0);
-            } else {
-                emit_mov_r64(&e, A64_X0, rs1);
-            }
+            emit_addr_x0(&e, rs1, insn.imm);
             emit_store_mem_f64(&e, A64_X0, fs2);
             pc += 4;
             continue;
