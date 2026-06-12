@@ -17,11 +17,58 @@
 &tr.tc001 test_vsub_fn=
   @if strmatch(vsub(4 5 6,1 2 3), 3 3 3)=
   {
-    @log smoke=TC001: vsub basic operations. Succeeded.;
+    @log smoke=TC001: vsub basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: vsub basic operations. Failed (vsub=[vsub(4 5 6,1 2 3)]).
+  }
+-
+#
+# Test Case #2 - Scalar broadcast on either side and negative results.
+#
+&tr.tc002 test_vsub_fn=
+  @if cand(
+        strmatch(vsub(10,1 2 3), 9 8 7),
+        strmatch(vsub(1 2 3,1), 0 1 2),
+        strmatch(vsub(1 2 3,4 6 8), -3 -4 -5)
+      )=
+  {
+    @log smoke=TC002: vsub scalar broadcast and negatives. Succeeded.
+  },
+  {
+    @log smoke=TC002: vsub scalar broadcast and negatives. Failed (vsub(10%,1 2 3)=[vsub(10,1 2 3)] vsub(1 2 3%,1)=[vsub(1 2 3,1)] vsub(1 2 3%,4 6 8)=[vsub(1 2 3,4 6 8)]).
+  }
+-
+#
+# Test Case #3 - Custom input and output delimiters.
+#
+&tr.tc003 test_vsub_fn=
+  @if cand(
+        strmatch(vsub(4|5|6,1|2|3,|), 3|3|3),
+        strmatch(vsub(4|5|6,1|2|3,|,~), 3~3~3)
+      )=
+  {
+    @log smoke=TC003: vsub custom delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC003: vsub custom delimiters. Failed (vsub(4|5|6%,1|2|3%,|)=[vsub(4|5|6,1|2|3,|)] vsub(4|5|6%,1|2|3%,|%,~)=[vsub(4|5|6,1|2|3,|,~)]).
+  }
+-
+#
+# Test Case #4 - Dimension mismatch and empty arguments.
+#
+&tr.tc004 test_vsub_fn=
+  @if cand(
+        strmatch(vsub(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),
+        eq(strlen(vsub(,1 2 3)), 0),
+        eq(strlen(vsub(1 2 3,)), 0)
+      )=
+  {
+    @log smoke=TC004: vsub mismatch and empty arguments. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vsub basic operations. Failed (vsub=[vsub(4 5 6,1 2 3)]).;
+    @log smoke=TC004: vsub mismatch and empty arguments. Failed (vsub(1 2%,1 2 3)=[vsub(1 2,1 2 3)] vsub(%,1 2 3)=[vsub(,1 2 3)] vsub(1 2 3%,)=[vsub(1 2 3,)]).;
     @trig me/tr.done
   }
 -

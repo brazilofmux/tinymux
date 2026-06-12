@@ -21,11 +21,43 @@
         eq(vmag(1 2 2), 3)
       )=
   {
-    @log smoke=TC001: vmag basic operations. Succeeded.;
+    @log smoke=TC001: vmag basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: vmag basic operations. Failed (vmag(3 4)=[vmag(3 4)] vmag(1 2 2)=[vmag(1 2 2)]).
+  }
+-
+#
+# Test Case #2 - Zero vector, negatives, decimals, single element.
+#
+&tr.tc002 test_vmag_fn=
+  @if cand(
+        eq(vmag(0 0 0), 0),
+        eq(vmag(-5), 5),
+        eq(vmag(0.6 0.8), 1),
+        eq(vmag(2 3 6), 7)
+      )=
+  {
+    @log smoke=TC002: vmag zero/negative/decimal vectors. Succeeded.
+  },
+  {
+    @log smoke=TC002: vmag zero/negative/decimal vectors. Failed (vmag(0 0 0)=[vmag(0 0 0)] vmag(-5)=[vmag(-5)] vmag(0.6 0.8)=[vmag(0.6 0.8)] vmag(2 3 6)=[vmag(2 3 6)]).
+  }
+-
+#
+# Test Case #3 - Custom delimiter and empty argument.
+#
+&tr.tc003 test_vmag_fn=
+  @if cand(
+        eq(vmag(3|4,|), 5),
+        eq(strlen(vmag(,|)), 0)
+      )=
+  {
+    @log smoke=TC003: vmag custom delimiter and empty argument. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vmag basic operations. Failed (vmag(3 4)=[vmag(3 4)] vmag(1 2 2)=[vmag(1 2 2)]).;
+    @log smoke=TC003: vmag custom delimiter and empty argument. Failed (vmag(3|4%,|)=[vmag(3|4,|)] vmag(%,|)=[vmag(,|)]).;
     @trig me/tr.done
   }
 -

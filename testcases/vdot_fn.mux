@@ -18,11 +18,57 @@
 &tr.tc001 test_vdot_fn=
   @if eq(vdot(1 2 3,4 5 6), 32)=
   {
-    @log smoke=TC001: vdot basic operations. Succeeded.;
+    @log smoke=TC001: vdot basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: vdot basic operations. Failed (vdot=[vdot(1 2 3,4 5 6)]).
+  }
+-
+#
+# Test Case #2 - Orthogonal, negative, one-dimensional, and decimal inputs.
+#
+&tr.tc002 test_vdot_fn=
+  @if cand(
+        eq(vdot(1 0,0 1), 0),
+        eq(vdot(1 2 3,-1 -2 -3), -14),
+        eq(vdot(3,4), 12),
+        eq(vdot(0.5 0.5,2 2), 2)
+      )=
+  {
+    @log smoke=TC002: vdot orthogonal and negative cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: vdot orthogonal and negative cases. Failed (vdot(1 0%,0 1)=[vdot(1 0,0 1)] vdot(1 2 3%,-1 -2 -3)=[vdot(1 2 3,-1 -2 -3)] vdot(3%,4)=[vdot(3,4)] vdot(0.5 0.5%,2 2)=[vdot(0.5 0.5,2 2)]).
+  }
+-
+#
+# Test Case #3 - Custom input delimiter.
+#
+&tr.tc003 test_vdot_fn=
+  @if eq(vdot(1|2|3,4|5|6,|), 32)=
+  {
+    @log smoke=TC003: vdot custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC003: vdot custom delimiter. Failed (vdot(1|2|3%,4|5|6%,|)=[vdot(1|2|3,4|5|6,|)]).
+  }
+-
+#
+# Test Case #4 - Dimension mismatch and empty arguments.
+#
+&tr.tc004 test_vdot_fn=
+  @if cand(
+        strmatch(vdot(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),
+        strmatch(vdot(1,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),
+        eq(strlen(vdot(,1 2 3)), 0),
+        eq(strlen(vdot(1 2 3,)), 0)
+      )=
+  {
+    @log smoke=TC004: vdot mismatch and empty arguments. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vdot basic operations. Failed (vdot=[vdot(1 2 3,4 5 6)]).;
+    @log smoke=TC004: vdot mismatch and empty arguments. Failed (vdot(1 2%,1 2 3)=[vdot(1 2,1 2 3)] vdot(1%,1 2 3)=[vdot(1,1 2 3)] vdot(%,1 2 3)=[vdot(,1 2 3)] vdot(1 2 3%,)=[vdot(1 2 3,)]).;
     @trig me/tr.done
   }
 -

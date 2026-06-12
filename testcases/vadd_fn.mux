@@ -17,11 +17,59 @@
 &tr.tc001 test_vadd_fn=
   @if strmatch(vadd(1 2 3,4 5 6), 5 7 9)=
   {
-    @log smoke=TC001: vadd basic operations. Succeeded.;
+    @log smoke=TC001: vadd basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: vadd basic operations. Failed (vadd=[vadd(1 2 3,4 5 6)]).
+  }
+-
+#
+# Test Case #2 - Scalar broadcast, negatives, and decimals.
+#
+&tr.tc002 test_vadd_fn=
+  @if cand(
+        strmatch(vadd(1 2 3,10), 11 12 13),
+        strmatch(vadd(10,1 2 3), 11 12 13),
+        strmatch(vadd(1 2 3,-1 -2 -3), 0 0 0),
+        strmatch(vadd(1.5 2.5,0.5), 2 3)
+      )=
+  {
+    @log smoke=TC002: vadd scalar broadcast and decimals. Succeeded.
+  },
+  {
+    @log smoke=TC002: vadd scalar broadcast and decimals. Failed (vadd(1 2 3%,10)=[vadd(1 2 3,10)] vadd(10%,1 2 3)=[vadd(10,1 2 3)] vadd(1 2 3%,-1 -2 -3)=[vadd(1 2 3,-1 -2 -3)] vadd(1.5 2.5%,0.5)=[vadd(1.5 2.5,0.5)]).
+  }
+-
+#
+# Test Case #3 - Custom input and output delimiters.
+#
+&tr.tc003 test_vadd_fn=
+  @if cand(
+        strmatch(vadd(1|2|3,4|5|6,|), 5|7|9),
+        strmatch(vadd(1|2|3,4|5|6,|,~), 5~7~9)
+      )=
+  {
+    @log smoke=TC003: vadd custom delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC003: vadd custom delimiters. Failed (vadd(1|2|3%,4|5|6%,|)=[vadd(1|2|3,4|5|6,|)] vadd(1|2|3%,4|5|6%,|%,~)=[vadd(1|2|3,4|5|6,|,~)]).
+  }
+-
+#
+# Test Case #4 - Dimension mismatch and empty arguments.
+#
+&tr.tc004 test_vadd_fn=
+  @if cand(
+        strmatch(vadd(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),
+        eq(strlen(vadd(,1 2 3)), 0),
+        eq(strlen(vadd(1 2 3,)), 0)
+      )=
+  {
+    @log smoke=TC004: vadd mismatch and empty arguments. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vadd basic operations. Failed (vadd=[vadd(1 2 3,4 5 6)]).;
+    @log smoke=TC004: vadd mismatch and empty arguments. Failed (vadd(1 2%,1 2 3)=[vadd(1 2,1 2 3)] vadd(%,1 2 3)=[vadd(,1 2 3)] vadd(1 2 3%,)=[vadd(1 2 3,)]).;
     @trig me/tr.done
   }
 -

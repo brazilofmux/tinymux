@@ -10706,9 +10706,15 @@
 >256
 "@log smoke=Beginning vadd() test cases."
 >257
-"@if strmatch(vadd(1 2 3,4 5 6), 5 7 9)={@log smoke=TC001: vadd basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vadd basic operations. Failed (vadd=[vadd(1 2 3,4 5 6)]).;@trig me/tr.done}"
+"@if strmatch(vadd(1 2 3,4 5 6), 5 7 9)={@log smoke=TC001: vadd basic operations. Succeeded.},{@log smoke=TC001: vadd basic operations. Failed (vadd=[vadd(1 2 3,4 5 6)]).}"
+>258
+"@if cand(strmatch(vadd(1 2 3,10), 11 12 13),strmatch(vadd(10,1 2 3), 11 12 13),strmatch(vadd(1 2 3,-1 -2 -3), 0 0 0),strmatch(vadd(1.5 2.5,0.5), 2 3))={@log smoke=TC002: vadd scalar broadcast and decimals. Succeeded.},{@log smoke=TC002: vadd scalar broadcast and decimals. Failed (vadd(1 2 3%,10)=[vadd(1 2 3,10)] vadd(10%,1 2 3)=[vadd(10,1 2 3)] vadd(1 2 3%,-1 -2 -3)=[vadd(1 2 3,-1 -2 -3)] vadd(1.5 2.5%,0.5)=[vadd(1.5 2.5,0.5)]).}"
+>259
+"@if cand(strmatch(vadd(1|2|3,4|5|6,|), 5|7|9),strmatch(vadd(1|2|3,4|5|6,|,~), 5~7~9))={@log smoke=TC003: vadd custom delimiters. Succeeded.},{@log smoke=TC003: vadd custom delimiters. Failed (vadd(1|2|3%,4|5|6%,|)=[vadd(1|2|3,4|5|6,|)] vadd(1|2|3%,4|5|6%,|%,~)=[vadd(1|2|3,4|5|6,|,~)]).}"
 >260
 "@log smoke=End vadd() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(vadd(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vadd(,1 2 3)), 0),eq(strlen(vadd(1 2 3,)), 0))={@log smoke=TC004: vadd mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vadd mismatch and empty arguments. Failed (vadd(1 2%,1 2 3)=[vadd(1 2,1 2 3)] vadd(%,1 2 3)=[vadd(,1 2 3)] vadd(1 2 3%,)=[vadd(1 2 3,)]).;@trig me/tr.done}"
 <
 !294
 "test_vcross_fn"
@@ -10733,9 +10739,15 @@
 >256
 "@log smoke=Beginning vcross() test cases."
 >257
-"@if cand(strmatch(vcross(1 0 0,0 1 0), 0 0 1),strmatch(vcross(1 2 3,4 5 6), -3 6 -3))={@log smoke=TC001: vcross basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vcross basic operations. Failed (vcross(i%,j)=[vcross(1 0 0,0 1 0)] vcross(123%,456)=[vcross(1 2 3,4 5 6)]).;@trig me/tr.done}"
+"@if cand(strmatch(vcross(1 0 0,0 1 0), 0 0 1),strmatch(vcross(1 2 3,4 5 6), -3 6 -3))={@log smoke=TC001: vcross basic operations. Succeeded.},{@log smoke=TC001: vcross basic operations. Failed (vcross(i%,j)=[vcross(1 0 0,0 1 0)] vcross(123%,456)=[vcross(1 2 3,4 5 6)]).}"
+>258
+"@if cand(strmatch(vcross(0 1 0,1 0 0), 0 0 -1),strmatch(vcross(2 4 6,1 2 3), 0 0 0))={@log smoke=TC002: vcross anti-commutativity and parallel. Succeeded.},{@log smoke=TC002: vcross anti-commutativity and parallel. Failed (vcross(0 1 0%,1 0 0)=[vcross(0 1 0,1 0 0)] vcross(2 4 6%,1 2 3)=[vcross(2 4 6,1 2 3)]).}"
+>259
+"@if cand(strmatch(vcross(1|0|0,0|1|0,|), 0|0|1),strmatch(vcross(1|0|0,0|1|0,|,~), 0~0~1))={@log smoke=TC003: vcross custom delimiters. Succeeded.},{@log smoke=TC003: vcross custom delimiters. Failed (vcross(1|0|0%,0|1|0%,|)=[vcross(1|0|0,0|1|0,|)] vcross(1|0|0%,0|1|0%,|%,~)=[vcross(1|0|0,0|1|0,|,~)]).}"
 >260
 "@log smoke=End vcross() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(vcross(1 2,3 4), #-1 VECTORS MUST BE DIMENSION OF 3),strmatch(vcross(1 2 3,4 5), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vcross(,1 2 3)), 0),eq(strlen(vcross(1 2 3,)), 0))={@log smoke=TC004: vcross dimension errors and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vcross dimension errors and empty arguments. Failed (vcross(1 2%,3 4)=[vcross(1 2,3 4)] vcross(1 2 3%,4 5)=[vcross(1 2 3,4 5)] vcross(%,1 2 3)=[vcross(,1 2 3)] vcross(1 2 3%,)=[vcross(1 2 3,)]).;@trig me/tr.done}"
 <
 !295
 "test_vdot_fn"
@@ -10760,9 +10772,15 @@
 >256
 "@log smoke=Beginning vdot() test cases."
 >257
-"@if eq(vdot(1 2 3,4 5 6), 32)={@log smoke=TC001: vdot basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vdot basic operations. Failed (vdot=[vdot(1 2 3,4 5 6)]).;@trig me/tr.done}"
+"@if eq(vdot(1 2 3,4 5 6), 32)={@log smoke=TC001: vdot basic operations. Succeeded.},{@log smoke=TC001: vdot basic operations. Failed (vdot=[vdot(1 2 3,4 5 6)]).}"
+>258
+"@if cand(eq(vdot(1 0,0 1), 0),eq(vdot(1 2 3,-1 -2 -3), -14),eq(vdot(3,4), 12),eq(vdot(0.5 0.5,2 2), 2))={@log smoke=TC002: vdot orthogonal and negative cases. Succeeded.},{@log smoke=TC002: vdot orthogonal and negative cases. Failed (vdot(1 0%,0 1)=[vdot(1 0,0 1)] vdot(1 2 3%,-1 -2 -3)=[vdot(1 2 3,-1 -2 -3)] vdot(3%,4)=[vdot(3,4)] vdot(0.5 0.5%,2 2)=[vdot(0.5 0.5,2 2)]).}"
+>259
+"@if eq(vdot(1|2|3,4|5|6,|), 32)={@log smoke=TC003: vdot custom delimiter. Succeeded.},{@log smoke=TC003: vdot custom delimiter. Failed (vdot(1|2|3%,4|5|6%,|)=[vdot(1|2|3,4|5|6,|)]).}"
 >260
 "@log smoke=End vdot() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(vdot(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),strmatch(vdot(1,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vdot(,1 2 3)), 0),eq(strlen(vdot(1 2 3,)), 0))={@log smoke=TC004: vdot mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vdot mismatch and empty arguments. Failed (vdot(1 2%,1 2 3)=[vdot(1 2,1 2 3)] vdot(1%,1 2 3)=[vdot(1,1 2 3)] vdot(%,1 2 3)=[vdot(,1 2 3)] vdot(1 2 3%,)=[vdot(1 2 3,)]).;@trig me/tr.done}"
 <
 !296
 "test_visual_width_fn"
@@ -10820,7 +10838,11 @@
 >256
 "@log smoke=Beginning vmag() test cases."
 >257
-"@if cand(eq(vmag(3 4), 5),eq(vmag(1 2 2), 3))={@log smoke=TC001: vmag basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vmag basic operations. Failed (vmag(3 4)=[vmag(3 4)] vmag(1 2 2)=[vmag(1 2 2)]).;@trig me/tr.done}"
+"@if cand(eq(vmag(3 4), 5),eq(vmag(1 2 2), 3))={@log smoke=TC001: vmag basic operations. Succeeded.},{@log smoke=TC001: vmag basic operations. Failed (vmag(3 4)=[vmag(3 4)] vmag(1 2 2)=[vmag(1 2 2)]).}"
+>258
+"@if cand(eq(vmag(0 0 0), 0),eq(vmag(-5), 5),eq(vmag(0.6 0.8), 1),eq(vmag(2 3 6), 7))={@log smoke=TC002: vmag zero/negative/decimal vectors. Succeeded.},{@log smoke=TC002: vmag zero/negative/decimal vectors. Failed (vmag(0 0 0)=[vmag(0 0 0)] vmag(-5)=[vmag(-5)] vmag(0.6 0.8)=[vmag(0.6 0.8)] vmag(2 3 6)=[vmag(2 3 6)]).}"
+>259
+"@if cand(eq(vmag(3|4,|), 5),eq(strlen(vmag(,|)), 0))={@log smoke=TC003: vmag custom delimiter and empty argument. Succeeded.;@trig me/tr.done},{@log smoke=TC003: vmag custom delimiter and empty argument. Failed (vmag(3|4%,|)=[vmag(3|4,|)] vmag(%,|)=[vmag(,|)]).;@trig me/tr.done}"
 >260
 "@log smoke=End vmag() test cases.;@notify smoke"
 <
@@ -10847,9 +10869,15 @@
 >256
 "@log smoke=Beginning vmul() test cases."
 >257
-"@if cand(strmatch(vmul(1 2 3,2), 2 4 6),strmatch(vmul(0 0 0,5), 0 0 0))={@log smoke=TC001: vmul basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vmul basic operations. Failed (vmul(1 2 3%,2)=[vmul(1 2 3,2)] vmul(0 0 0%,5)=[vmul(0 0 0,5)]).;@trig me/tr.done}"
+"@if cand(strmatch(vmul(1 2 3,2), 2 4 6),strmatch(vmul(0 0 0,5), 0 0 0))={@log smoke=TC001: vmul basic operations. Succeeded.},{@log smoke=TC001: vmul basic operations. Failed (vmul(1 2 3%,2)=[vmul(1 2 3,2)] vmul(0 0 0%,5)=[vmul(0 0 0,5)]).}"
+>258
+"@if cand(strmatch(vmul(1 2 3,4 5 6), 4 10 18),strmatch(vmul(2,1 2 3), 2 4 6),strmatch(vmul(1 2 3,-1), -1 -2 -3),strmatch(vmul(2 4 6,0.5), 1 2 3))={@log smoke=TC002: vmul element-wise and scalar forms. Succeeded.},{@log smoke=TC002: vmul element-wise and scalar forms. Failed (vmul(1 2 3%,4 5 6)=[vmul(1 2 3,4 5 6)] vmul(2%,1 2 3)=[vmul(2,1 2 3)] vmul(1 2 3%,-1)=[vmul(1 2 3,-1)] vmul(2 4 6%,0.5)=[vmul(2 4 6,0.5)]).}"
+>259
+"@if cand(strmatch(vmul(1|2|3,2,|), 2|4|6),strmatch(vmul(1|2|3,2,|,~), 2~4~6))={@log smoke=TC003: vmul custom delimiters. Succeeded.},{@log smoke=TC003: vmul custom delimiters. Failed (vmul(1|2|3%,2%,|)=[vmul(1|2|3,2,|)] vmul(1|2|3%,2%,|%,~)=[vmul(1|2|3,2,|,~)]).}"
 >260
 "@log smoke=End vmul() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(vmul(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vmul(,1 2 3)), 0),eq(strlen(vmul(1 2 3,)), 0))={@log smoke=TC004: vmul mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vmul mismatch and empty arguments. Failed (vmul(1 2%,1 2 3)=[vmul(1 2,1 2 3)] vmul(%,1 2 3)=[vmul(,1 2 3)] vmul(1 2 3%,)=[vmul(1 2 3,)]).;@trig me/tr.done}"
 <
 !299
 "test_vsub_fn"
@@ -10874,9 +10902,15 @@
 >256
 "@log smoke=Beginning vsub() test cases."
 >257
-"@if strmatch(vsub(4 5 6,1 2 3), 3 3 3)={@log smoke=TC001: vsub basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vsub basic operations. Failed (vsub=[vsub(4 5 6,1 2 3)]).;@trig me/tr.done}"
+"@if strmatch(vsub(4 5 6,1 2 3), 3 3 3)={@log smoke=TC001: vsub basic operations. Succeeded.},{@log smoke=TC001: vsub basic operations. Failed (vsub=[vsub(4 5 6,1 2 3)]).}"
+>258
+"@if cand(strmatch(vsub(10,1 2 3), 9 8 7),strmatch(vsub(1 2 3,1), 0 1 2),strmatch(vsub(1 2 3,4 6 8), -3 -4 -5))={@log smoke=TC002: vsub scalar broadcast and negatives. Succeeded.},{@log smoke=TC002: vsub scalar broadcast and negatives. Failed (vsub(10%,1 2 3)=[vsub(10,1 2 3)] vsub(1 2 3%,1)=[vsub(1 2 3,1)] vsub(1 2 3%,4 6 8)=[vsub(1 2 3,4 6 8)]).}"
+>259
+"@if cand(strmatch(vsub(4|5|6,1|2|3,|), 3|3|3),strmatch(vsub(4|5|6,1|2|3,|,~), 3~3~3))={@log smoke=TC003: vsub custom delimiters. Succeeded.},{@log smoke=TC003: vsub custom delimiters. Failed (vsub(4|5|6%,1|2|3%,|)=[vsub(4|5|6,1|2|3,|)] vsub(4|5|6%,1|2|3%,|%,~)=[vsub(4|5|6,1|2|3,|,~)]).}"
 >260
 "@log smoke=End vsub() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(vsub(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vsub(,1 2 3)), 0),eq(strlen(vsub(1 2 3,)), 0))={@log smoke=TC004: vsub mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vsub mismatch and empty arguments. Failed (vsub(1 2%,1 2 3)=[vsub(1 2,1 2 3)] vsub(%,1 2 3)=[vsub(,1 2 3)] vsub(1 2 3%,)=[vsub(1 2 3,)]).;@trig me/tr.done}"
 <
 !300
 "test_vunit_fn"
@@ -10901,9 +10935,15 @@
 >256
 "@log smoke=Beginning vunit() test cases."
 >257
-"@if cand(strmatch(vunit(3 4), 0.6 0.8),strmatch(vunit(0 0 1), 0 0 1))={@log smoke=TC001: vunit basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: vunit basic operations. Failed (vunit(3 4)=[vunit(3 4)] vunit(0 0 1)=[vunit(0 0 1)]).;@trig me/tr.done}"
+"@if cand(strmatch(vunit(3 4), 0.6 0.8),strmatch(vunit(0 0 1), 0 0 1))={@log smoke=TC001: vunit basic operations. Succeeded.},{@log smoke=TC001: vunit basic operations. Failed (vunit(3 4)=[vunit(3 4)] vunit(0 0 1)=[vunit(0 0 1)]).}"
+>258
+"@if cand(strmatch(vunit(-3 4), -0.6 0.8),strmatch(vunit(0 -2 0), 0 -1 0),strmatch(vunit(5), 1),strmatch(vunit(7 0 0), 1 0 0))={@log smoke=TC002: vunit negative and single-element vectors. Succeeded.},{@log smoke=TC002: vunit negative and single-element vectors. Failed (vunit(-3 4)=[vunit(-3 4)] vunit(0 -2 0)=[vunit(0 -2 0)] vunit(5)=[vunit(5)] vunit(7 0 0)=[vunit(7 0 0)]).}"
+>259
+"@if strmatch(vunit(3|4,|), 0.6|0.8)={@log smoke=TC003: vunit custom delimiter. Succeeded.},{@log smoke=TC003: vunit custom delimiter. Failed (vunit(3|4%,|)=[vunit(3|4,|)]).}"
 >260
 "@log smoke=End vunit() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(vunit(0 0 0), #-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR),eq(strlen(vunit(,|)), 0))={@log smoke=TC004: vunit zero-length rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vunit zero-length rejection. Failed (vunit(0 0 0)=[vunit(0 0 0)] vunit(%,|)=[vunit(,|)]).;@trig me/tr.done}"
 <
 !301
 "test_vwidth_fn"

@@ -20,11 +20,59 @@
         strmatch(vmul(0 0 0,5), 0 0 0)
       )=
   {
-    @log smoke=TC001: vmul basic operations. Succeeded.;
+    @log smoke=TC001: vmul basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: vmul basic operations. Failed (vmul(1 2 3%,2)=[vmul(1 2 3,2)] vmul(0 0 0%,5)=[vmul(0 0 0,5)]).
+  }
+-
+#
+# Test Case #2 - Element-wise product, scalar on either side, decimals.
+#
+&tr.tc002 test_vmul_fn=
+  @if cand(
+        strmatch(vmul(1 2 3,4 5 6), 4 10 18),
+        strmatch(vmul(2,1 2 3), 2 4 6),
+        strmatch(vmul(1 2 3,-1), -1 -2 -3),
+        strmatch(vmul(2 4 6,0.5), 1 2 3)
+      )=
+  {
+    @log smoke=TC002: vmul element-wise and scalar forms. Succeeded.
+  },
+  {
+    @log smoke=TC002: vmul element-wise and scalar forms. Failed (vmul(1 2 3%,4 5 6)=[vmul(1 2 3,4 5 6)] vmul(2%,1 2 3)=[vmul(2,1 2 3)] vmul(1 2 3%,-1)=[vmul(1 2 3,-1)] vmul(2 4 6%,0.5)=[vmul(2 4 6,0.5)]).
+  }
+-
+#
+# Test Case #3 - Custom input and output delimiters.
+#
+&tr.tc003 test_vmul_fn=
+  @if cand(
+        strmatch(vmul(1|2|3,2,|), 2|4|6),
+        strmatch(vmul(1|2|3,2,|,~), 2~4~6)
+      )=
+  {
+    @log smoke=TC003: vmul custom delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC003: vmul custom delimiters. Failed (vmul(1|2|3%,2%,|)=[vmul(1|2|3,2,|)] vmul(1|2|3%,2%,|%,~)=[vmul(1|2|3,2,|,~)]).
+  }
+-
+#
+# Test Case #4 - Dimension mismatch and empty arguments.
+#
+&tr.tc004 test_vmul_fn=
+  @if cand(
+        strmatch(vmul(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),
+        eq(strlen(vmul(,1 2 3)), 0),
+        eq(strlen(vmul(1 2 3,)), 0)
+      )=
+  {
+    @log smoke=TC004: vmul mismatch and empty arguments. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vmul basic operations. Failed (vmul(1 2 3%,2)=[vmul(1 2 3,2)] vmul(0 0 0%,5)=[vmul(0 0 0,5)]).;
+    @log smoke=TC004: vmul mismatch and empty arguments. Failed (vmul(1 2%,1 2 3)=[vmul(1 2,1 2 3)] vmul(%,1 2 3)=[vmul(,1 2 3)] vmul(1 2 3%,)=[vmul(1 2 3,)]).;
     @trig me/tr.done
   }
 -

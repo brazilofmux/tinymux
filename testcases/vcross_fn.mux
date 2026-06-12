@@ -22,11 +22,59 @@
         strmatch(vcross(1 2 3,4 5 6), -3 6 -3)
       )=
   {
-    @log smoke=TC001: vcross basic operations. Succeeded.;
+    @log smoke=TC001: vcross basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: vcross basic operations. Failed (vcross(i%,j)=[vcross(1 0 0,0 1 0)] vcross(123%,456)=[vcross(1 2 3,4 5 6)]).
+  }
+-
+#
+# Test Case #2 - Anti-commutativity and parallel vectors.
+# (0,1,0) x (1,0,0) = (0,0,-1); parallel vectors cross to zero.
+#
+&tr.tc002 test_vcross_fn=
+  @if cand(
+        strmatch(vcross(0 1 0,1 0 0), 0 0 -1),
+        strmatch(vcross(2 4 6,1 2 3), 0 0 0)
+      )=
+  {
+    @log smoke=TC002: vcross anti-commutativity and parallel. Succeeded.
+  },
+  {
+    @log smoke=TC002: vcross anti-commutativity and parallel. Failed (vcross(0 1 0%,1 0 0)=[vcross(0 1 0,1 0 0)] vcross(2 4 6%,1 2 3)=[vcross(2 4 6,1 2 3)]).
+  }
+-
+#
+# Test Case #3 - Custom input and output delimiters.
+#
+&tr.tc003 test_vcross_fn=
+  @if cand(
+        strmatch(vcross(1|0|0,0|1|0,|), 0|0|1),
+        strmatch(vcross(1|0|0,0|1|0,|,~), 0~0~1)
+      )=
+  {
+    @log smoke=TC003: vcross custom delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC003: vcross custom delimiters. Failed (vcross(1|0|0%,0|1|0%,|)=[vcross(1|0|0,0|1|0,|)] vcross(1|0|0%,0|1|0%,|%,~)=[vcross(1|0|0,0|1|0,|,~)]).
+  }
+-
+#
+# Test Case #4 - Dimension errors and empty arguments.
+#
+&tr.tc004 test_vcross_fn=
+  @if cand(
+        strmatch(vcross(1 2,3 4), #-1 VECTORS MUST BE DIMENSION OF 3),
+        strmatch(vcross(1 2 3,4 5), #-1 VECTORS MUST BE SAME DIMENSIONS),
+        eq(strlen(vcross(,1 2 3)), 0),
+        eq(strlen(vcross(1 2 3,)), 0)
+      )=
+  {
+    @log smoke=TC004: vcross dimension errors and empty arguments. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vcross basic operations. Failed (vcross(i%,j)=[vcross(1 0 0,0 1 0)] vcross(123%,456)=[vcross(1 2 3,4 5 6)]).;
+    @log smoke=TC004: vcross dimension errors and empty arguments. Failed (vcross(1 2%,3 4)=[vcross(1 2,3 4)] vcross(1 2 3%,4 5)=[vcross(1 2 3,4 5)] vcross(%,1 2 3)=[vcross(,1 2 3)] vcross(1 2 3%,)=[vcross(1 2 3,)]).;
     @trig me/tr.done
   }
 -

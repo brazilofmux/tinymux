@@ -21,11 +21,55 @@
         strmatch(vunit(0 0 1), 0 0 1)
       )=
   {
-    @log smoke=TC001: vunit basic operations. Succeeded.;
+    @log smoke=TC001: vunit basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: vunit basic operations. Failed (vunit(3 4)=[vunit(3 4)] vunit(0 0 1)=[vunit(0 0 1)]).
+  }
+-
+#
+# Test Case #2 - Negative components and single-element vectors.
+#
+&tr.tc002 test_vunit_fn=
+  @if cand(
+        strmatch(vunit(-3 4), -0.6 0.8),
+        strmatch(vunit(0 -2 0), 0 -1 0),
+        strmatch(vunit(5), 1),
+        strmatch(vunit(7 0 0), 1 0 0)
+      )=
+  {
+    @log smoke=TC002: vunit negative and single-element vectors. Succeeded.
+  },
+  {
+    @log smoke=TC002: vunit negative and single-element vectors. Failed (vunit(-3 4)=[vunit(-3 4)] vunit(0 -2 0)=[vunit(0 -2 0)] vunit(5)=[vunit(5)] vunit(7 0 0)=[vunit(7 0 0)]).
+  }
+-
+#
+# Test Case #3 - Custom delimiter.
+#
+&tr.tc003 test_vunit_fn=
+  @if strmatch(vunit(3|4,|), 0.6|0.8)=
+  {
+    @log smoke=TC003: vunit custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC003: vunit custom delimiter. Failed (vunit(3|4%,|)=[vunit(3|4,|)]).
+  }
+-
+#
+# Test Case #4 - Zero-length vector and empty argument.
+#
+&tr.tc004 test_vunit_fn=
+  @if cand(
+        strmatch(vunit(0 0 0), #-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR),
+        eq(strlen(vunit(,|)), 0)
+      )=
+  {
+    @log smoke=TC004: vunit zero-length rejection. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: vunit basic operations. Failed (vunit(3 4)=[vunit(3 4)] vunit(0 0 1)=[vunit(0 0 1)]).;
+    @log smoke=TC004: vunit zero-length rejection. Failed (vunit(0 0 0)=[vunit(0 0 0)] vunit(%,|)=[vunit(,|)]).;
     @trig me/tr.done
   }
 -
