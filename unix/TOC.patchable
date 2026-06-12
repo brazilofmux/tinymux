@@ -80,7 +80,6 @@ ganl/include/secure_transport_factory.h
 ganl/include/select_network_engine.h
 ganl/include/session_manager.h
 ganl/include/slave_spawn_posix.h
-ganl/include/telnet_protocol_handler.h
 ganl/include/wselect_network_engine.h
 ganl/Makefile.am
 ganl/Makefile.in
@@ -96,7 +95,6 @@ ganl/src/schannel_transport.cpp
 ganl/src/secure_transport_factory.cpp
 ganl/src/select_network_engine.cpp
 ganl/src/slave_spawn_posix.cpp
-ganl/src/telnet_protocol_handler.cpp
 ganl/src/wselect_network_engine.cpp
 include/alloc.h
 include/ansi.h

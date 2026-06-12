@@ -32,9 +32,6 @@
     <ClCompile Include="src\secure_transport_factory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\telnet_protocol_handler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\wselect_network_engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -86,9 +83,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\slave_spawn_posix.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\telnet_protocol_handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\wselect_network_engine.h">

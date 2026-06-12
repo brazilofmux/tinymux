@@ -78,6 +78,7 @@ src/ganl/include/select_network_engine.h
 src/ganl/include/session_manager.h
 src/ganl/include/slave_spawn_posix.h
 src/ganl/include/telnet_protocol_handler.h
+ganl/include/telnet_protocol_handler.h
 src/ganl/include/wselect_network_engine.h
 src/ganl/src/connection.cpp
 src/ganl/src/epoll_network_engine.cpp
@@ -92,6 +93,7 @@ src/ganl/src/secure_transport_factory.cpp
 src/ganl/src/select_network_engine.cpp
 src/ganl/src/slave_spawn_posix.cpp
 src/ganl/src/telnet_protocol_handler.cpp
+ganl/src/telnet_protocol_handler.cpp
 src/ganl/src/wselect_network_engine.cpp
 src/ganl_adapter.h
 src/help.cpp
