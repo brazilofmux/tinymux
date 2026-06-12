@@ -81,7 +81,11 @@ int query(char *ip)
     {
         for (struct addrinfo *p = servinfo; nullptr != p; p = p->ai_next)
         {
-            if (0 == getnameinfo(p->ai_addr, p->ai_addrlen, host, sizeof(host), nullptr, 0, NI_NUMERICSERV))
+            // NI_NAMEREQD: fail instead of returning the numeric
+            // address when there is no PTR record, so a numeric form
+            // can never pose as the hostname below.
+            //
+            if (0 == getnameinfo(p->ai_addr, p->ai_addrlen, host, sizeof(host), nullptr, 0, NI_NUMERICSERV | NI_NAMEREQD))
             {
                 pHName = host;
                 break;
@@ -119,6 +123,19 @@ int query(char *ip)
     // one byte in the worst case. Add three bytes of headroom for
     // the separator, newline, and terminator.
     //
+    // No reverse name resolved (pHName still points at the numeric
+    // address, either because getaddrinfo/getnameinfo failed or because
+    // NI_NAMEREQD found no PTR record).  Send an empty hostname so the
+    // parent keeps the numeric form: the LDH sanitizer below strips ':',
+    // so a numeric IPv6 address allowed to pose as a hostname would be
+    // mangled ("2001:db8::1" -> "2001db81") and then published to WHO,
+    // the logs, and A_LASTSITE (#801).
+    //
+    if (0 == strcmp(pHName, ip))
+    {
+        pHName = "";
+    }
+
     char buf[MAX_STRING * 2 + 3];
     char *p = mux_stpcpy(buf, ip);
     *p++ = ' ';
