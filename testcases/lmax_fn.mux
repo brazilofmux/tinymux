@@ -20,11 +20,44 @@
         eq(lmax(3|1|4,|),4)
       )=
   {
-    @log smoke=TC001: lmax() basic operations. Succeeded.;
+    @log smoke=TC001: lmax() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: lmax() basic operations. Failed (lmax(3 1 4 1 5)=[lmax(3 1 4 1 5)] lmax(3|1|4)=[lmax(3|1|4,|)]).
+  }
+-
+#
+# Test Case #2 - All-negative lists, decimals, single element.
+#
+&tr.tc002 test_lmax_fn=
+  @if cand(
+        eq(lmax(-3 -1 -2), -1),
+        eq(lmax(1.25 1.5 0.75), 1.5),
+        eq(lmax(7), 7)
+      )=
+  {
+    @log smoke=TC002: lmax() negatives and decimals. Succeeded.
+  },
+  {
+    @log smoke=TC002: lmax() negatives and decimals. Failed (lmax(-3 -1 -2)=[lmax(-3 -1 -2)] lmax(1.25 1.5 0.75)=[lmax(1.25 1.5 0.75)] lmax(7)=[lmax(7)]).
+  }
+-
+#
+# Test Case #3 - Empty input and non-numeric coercion to zero.
+# A non-numeric word coerces to 0, which can become the maximum.
+#
+&tr.tc003 test_lmax_fn=
+  @if cand(
+        eq(lmax(), 0),
+        eq(lmax(,|), 0),
+        eq(lmax(-5 foo), 0)
+      )=
+  {
+    @log smoke=TC003: lmax() empty input and coercion. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lmax() basic operations. Failed (lmax(3 1 4 1 5)=[lmax(3 1 4 1 5)] lmax(3|1|4)=[lmax(3|1|4,|)]).;
+    @log smoke=TC003: lmax() empty input and coercion. Failed (lmax()=[lmax()] lmax(%,|)=[lmax(,|)] lmax(-5 foo)=[lmax(-5 foo)]).;
     @trig me/tr.done
   }
 -

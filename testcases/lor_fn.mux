@@ -20,11 +20,10 @@
         eq(lor(0 1 0),1)
       )=
   {
-    @log smoke=TC001: lor() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: lor() basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: lor() basic operations. Failed (lor(0 0 0)=[lor(0 0 0)] lor(0 1 0)=[lor(0 1 0)]).;
+    @log smoke=TC001: lor() basic operations. Failed (lor(0 0 0)=[lor(0 0 0)] lor(0 1 0)=[lor(0 1 0)]).
   }
 -
 #
@@ -42,11 +41,30 @@
         eq(%q3,0)
       )=
   {
-    @log smoke=TC002: lor() delimiter and coercion cases. Succeeded.;
+    @log smoke=TC002: lor() delimiter and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: lor() delimiter and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 lor()=[lor()] lor(0|0|5%,|)=[lor(0|0|5,|)] lor(0|-2|0%,|)=[lor(0|-2|0,|)] lor(foo% 0)=[lor(foo 0)]).
+  }
+-
+#
+# Test Case #3 - Empty words are real and false.
+# Consecutive delimiters produce empty (false) words; a true word
+# elsewhere in the list still wins; an all-spaces list is one empty
+# word and stays false.
+#
+&tr.tc003 test_lor_fn=
+  @if cand(
+        eq(lor(0||0,|), 0),
+        eq(lor(|1,|), 1),
+        eq(lor(%b), 0)
+      )=
+  {
+    @log smoke=TC003: lor() empty-word semantics. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: lor() delimiter and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 lor()=[lor()] lor(0|0|5%,|)=[lor(0|0|5,|)] lor(0|-2|0%,|)=[lor(0|-2|0,|)] lor(foo% 0)=[lor(foo 0)]).;
+    @log smoke=TC003: lor() empty-word semantics. Failed (lor(0||0%,|)=[lor(0||0,|)] lor(|1%,|)=[lor(|1,|)] lor(sp)=[lor(%b)]).;
     @trig me/tr.done
   }
 -

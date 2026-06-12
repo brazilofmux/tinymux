@@ -20,11 +20,44 @@
         eq(lmin(3|1|4,|),1)
       )=
   {
-    @log smoke=TC001: lmin() basic operations. Succeeded.;
+    @log smoke=TC001: lmin() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: lmin() basic operations. Failed (lmin(3 1 4 1 5)=[lmin(3 1 4 1 5)] lmin(3|1|4)=[lmin(3|1|4,|)]).
+  }
+-
+#
+# Test Case #2 - All-negative lists, decimals, single element.
+#
+&tr.tc002 test_lmin_fn=
+  @if cand(
+        eq(lmin(-3 -1 -2), -3),
+        eq(lmin(1.25 1.5 0.75), 0.75),
+        eq(lmin(7), 7)
+      )=
+  {
+    @log smoke=TC002: lmin() negatives and decimals. Succeeded.
+  },
+  {
+    @log smoke=TC002: lmin() negatives and decimals. Failed (lmin(-3 -1 -2)=[lmin(-3 -1 -2)] lmin(1.25 1.5 0.75)=[lmin(1.25 1.5 0.75)] lmin(7)=[lmin(7)]).
+  }
+-
+#
+# Test Case #3 - Empty input and non-numeric coercion to zero.
+# A non-numeric word coerces to 0, which can become the minimum.
+#
+&tr.tc003 test_lmin_fn=
+  @if cand(
+        eq(lmin(), 0),
+        eq(lmin(,|), 0),
+        eq(lmin(5 foo), 0)
+      )=
+  {
+    @log smoke=TC003: lmin() empty input and coercion. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lmin() basic operations. Failed (lmin(3 1 4 1 5)=[lmin(3 1 4 1 5)] lmin(3|1|4)=[lmin(3|1|4,|)]).;
+    @log smoke=TC003: lmin() empty input and coercion. Failed (lmin()=[lmin()] lmin(%,|)=[lmin(,|)] lmin(5 foo)=[lmin(5 foo)]).;
     @trig me/tr.done
   }
 -

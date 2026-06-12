@@ -20,11 +20,43 @@
         eq(ladd(1|2|3,|),6)
       )=
   {
-    @log smoke=TC001: ladd() basic operations. Succeeded.;
+    @log smoke=TC001: ladd() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: ladd() basic operations. Failed (ladd(1 2 3)=[ladd(1 2 3)] ladd(1|2|3)=[ladd(1|2|3,|)]).
+  }
+-
+#
+# Test Case #2 - Negatives, decimals, and non-numeric coercion to zero.
+#
+&tr.tc002 test_ladd_fn=
+  @if cand(
+        eq(ladd(1.5 2.5 -1), 3),
+        eq(ladd(-1 -2 -3), -6),
+        eq(ladd(1 foo 2), 3)
+      )=
+  {
+    @log smoke=TC002: ladd() negatives and coercion. Succeeded.
+  },
+  {
+    @log smoke=TC002: ladd() negatives and coercion. Failed (ladd(1.5 2.5 -1)=[ladd(1.5 2.5 -1)] ladd(-1 -2 -3)=[ladd(-1 -2 -3)] ladd(1 foo 2)=[ladd(1 foo 2)]).
+  }
+-
+#
+# Test Case #3 - Zero arguments, empty list, and single element.
+#
+&tr.tc003 test_ladd_fn=
+  @if cand(
+        eq(ladd(), 0),
+        eq(ladd(,|), 0),
+        eq(ladd(42), 42)
+      )=
+  {
+    @log smoke=TC003: ladd() empty and single-element lists. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: ladd() basic operations. Failed (ladd(1 2 3)=[ladd(1 2 3)] ladd(1|2|3)=[ladd(1|2|3,|)]).;
+    @log smoke=TC003: ladd() empty and single-element lists. Failed (ladd()=[ladd()] ladd(%,|)=[ladd(,|)] ladd(42)=[ladd(42)]).;
     @trig me/tr.done
   }
 -

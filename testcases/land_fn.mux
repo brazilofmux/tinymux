@@ -20,11 +20,10 @@
         eq(land(1 0 1),0)
       )=
   {
-    @log smoke=TC001: land() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: land() basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: land() basic operations. Failed (land(1 1 1)=[land(1 1 1)] land(1 0 1)=[land(1 0 1)]).;
+    @log smoke=TC001: land() basic operations. Failed (land(1 1 1)=[land(1 1 1)] land(1 0 1)=[land(1 0 1)]).
   }
 -
 #
@@ -42,11 +41,30 @@
         eq(%q3,0)
       )=
   {
-    @log smoke=TC002: land() delimiter and coercion cases. Succeeded.;
+    @log smoke=TC002: land() delimiter and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: land() delimiter and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 land()=[land()] land(1|2|-3%,|)=[land(1|2|-3,|)] land(1|0|3%,|)=[land(1|0|3,|)] land(foo% 1)=[land(foo 1)]).
+  }
+-
+#
+# Test Case #3 - Empty words are real and false.
+# With a non-space delimiter, consecutive or trailing delimiters
+# produce empty words, which coerce to 0 and falsify; an all-spaces
+# list is one empty word.
+#
+&tr.tc003 test_land_fn=
+  @if cand(
+        eq(land(1||1,|), 0),
+        eq(land(1|,|), 0),
+        eq(land(%b), 0)
+      )=
+  {
+    @log smoke=TC003: land() empty-word semantics. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: land() delimiter and coercion cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3 land()=[land()] land(1|2|-3%,|)=[land(1|2|-3,|)] land(1|0|3%,|)=[land(1|0|3,|)] land(foo% 1)=[land(foo 1)]).;
+    @log smoke=TC003: land() empty-word semantics. Failed (land(1||1%,|)=[land(1||1,|)] land(1|%,|)=[land(1|,|)] land(sp)=[land(%b)]).;
     @trig me/tr.done
   }
 -
