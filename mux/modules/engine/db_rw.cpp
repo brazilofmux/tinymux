@@ -710,6 +710,30 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
 
         case '!':   // MUX entry
             i = getref(f);
+
+            // Validate the object dbref before using it to index db[] or to
+            // size db_grow() (#806).  getref() returns an unchecked mux_atol()
+            // result, and s_Name()/s_Location()/etc. write db[i] with no bounds
+            // check (SIZE_HACK == 1, so only db[-1] is valid).  A corrupt or
+            // malicious flatfile can therefore carry a negative dbref (OOB write
+            // into db[] -> SIGSEGV / heap corruption) or an enormous one
+            // (db_grow's MEMALLOC fails -> mux_assert abort).  The SQLite load
+            // path already validates this (sqlite_load_game, db.cpp); mirror it
+            // here.  DB_LOAD_MAX_DBREF is far above any real game (init_size
+            // defaults to 1000; the largest MUX databases are a few million
+            // objects), so a legitimate flatfile never trips it, while a
+            // clearly-garbage dbref aborts the load cleanly (return -1; the
+            // caller rolls back the in-progress SQLite import).
+            //
+            {
+                const dbref DB_LOAD_MAX_DBREF = 0x10000000; // 268,435,456
+                if (i < 0 || i > DB_LOAD_MAX_DBREF)
+                {
+                    Log.tinyprintf(T(ENDLINE "db_read: object dbref #%d is out of range; aborting load of a corrupt or malicious flatfile." ENDLINE), i);
+                    return -1;
+                }
+            }
+
             db_grow(i + 1);
 
             if (read_name)
