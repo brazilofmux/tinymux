@@ -17,11 +17,44 @@
 &tr.tc001 test_right_fn=
   @if strmatch(right(abcdefgh,3), fgh)=
   {
-    @log smoke=TC001: right basic operations. Succeeded.;
+    @log smoke=TC001: right basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: right basic operations. Failed (right(abcdefgh%,3)=[right(abcdefgh,3)]).
+  }
+-
+#
+# Test Case #2 - Boundary lengths: zero, exact, and past the end.
+#
+&tr.tc002 test_right_fn=
+  @if cand(
+        eq(strlen(right(abc,0)), 0),
+        strmatch(right(abc,3), abc),
+        strmatch(right(abc,5), abc),
+        strmatch(right(abcdefgh,1), h)
+      )=
+  {
+    @log smoke=TC002: right boundary lengths. Succeeded.
+  },
+  {
+    @log smoke=TC002: right boundary lengths. Failed (right(abc%,0)=[right(abc,0)] right(abc%,3)=[right(abc,3)] right(abc%,5)=[right(abc,5)] right(abcdefgh%,1)=[right(abcdefgh,1)]).
+  }
+-
+#
+# Test Case #3 - Negative count errors; non-numeric coerces to zero.
+#
+&tr.tc003 test_right_fn=
+  @if cand(
+        strmatch(right(abc,-1), #-1 OUT OF RANGE),
+        eq(strlen(right(abc,foo)), 0),
+        eq(strlen(right(,3)), 0)
+      )=
+  {
+    @log smoke=TC003: right invalid counts. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: right basic operations. Failed (right(abcdefgh%,3)=[right(abcdefgh,3)]).;
+    @log smoke=TC003: right invalid counts. Failed (right(abc%,-1)=[right(abc,-1)] right(abc%,foo)=[right(abc,foo)] right(%,3)=[right(,3)]).;
     @trig me/tr.done
   }
 -

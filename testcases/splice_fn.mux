@@ -12,17 +12,65 @@
   @log smoke=Beginning splice() test cases.
 -
 #
-# Test Case #1 - Basic splice operations.
-# splice(list, old, new) replaces matching words.
+# Test Case #1 - Unequal list lengths error.
+# splice(list1, list2, word) replaces each word of list1 equal to word
+# with the corresponding word of list2; the lists must be the same
+# length.
 #
 &tr.tc001 test_splice_fn=
   @if strmatch(splice(a b c d e,c,X), #-1*)=
   {
-    @log smoke=TC001: splice unequal lists error. Succeeded.;
+    @log smoke=TC001: splice unequal lists error. Succeeded.
+  },
+  {
+    @log smoke=TC001: splice unequal lists error. Failed (splice=[splice(a b c d e,c,X)]).
+  }
+-
+#
+# Test Case #2 - Positive replacement path.
+#
+&tr.tc002 test_splice_fn=
+  @if cand(
+        strmatch(splice(a b c,1 2 3,b), a 2 c),
+        strmatch(splice(x y x,1 2 3,x), 1 y 3),
+        strmatch(splice(a b c,1 2 3,q), a b c)
+      )=
+  {
+    @log smoke=TC002: splice replacement. Succeeded.
+  },
+  {
+    @log smoke=TC002: splice replacement. Failed (splice(a b c%,1 2 3%,b)=[splice(a b c,1 2 3,b)] splice(x y x%,1 2 3%,x)=[splice(x y x,1 2 3,x)] splice(a b c%,1 2 3%,q)=[splice(a b c,1 2 3,q)]).
+  }
+-
+#
+# Test Case #3 - Custom input and output delimiters.
+#
+&tr.tc003 test_splice_fn=
+  @if cand(
+        strmatch(splice(a|b|c,1|2|3,b,|), a|2|c),
+        strmatch(splice(a|b|c,1|2|3,b,|,~), a~2~c)
+      )=
+  {
+    @log smoke=TC003: splice custom delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC003: splice custom delimiters. Failed (splice(a|b|c%,1|2|3%,b%,|)=[splice(a|b|c,1|2|3,b,|)] splice(a|b|c%,1|2|3%,b%,|%,~)=[splice(a|b|c,1|2|3,b,|,~)]).
+  }
+-
+#
+# Test Case #4 - Multi-word search word errors; empty lists are equal.
+#
+&tr.tc004 test_splice_fn=
+  @if cand(
+        strmatch(splice(a b,1 2,x y), #-1 TOO MANY WORDS),
+        eq(strlen(splice(,,x)), 0)
+      )=
+  {
+    @log smoke=TC004: splice search-word and empty-list cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: splice unequal lists error. Failed (splice=[splice(a b c d e,c,X)]).;
+    @log smoke=TC004: splice search-word and empty-list cases. Failed (splice(a b%,1 2%,x y)=[splice(a b,1 2,x y)] splice(%,%,x)=[splice(,,x)]).;
     @trig me/tr.done
   }
 -

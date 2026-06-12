@@ -7654,7 +7654,11 @@
 >256
 "@log smoke=Beginning right() test cases."
 >257
-"@if strmatch(right(abcdefgh,3), fgh)={@log smoke=TC001: right basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: right basic operations. Failed (right(abcdefgh%,3)=[right(abcdefgh,3)]).;@trig me/tr.done}"
+"@if strmatch(right(abcdefgh,3), fgh)={@log smoke=TC001: right basic operations. Succeeded.},{@log smoke=TC001: right basic operations. Failed (right(abcdefgh%,3)=[right(abcdefgh,3)]).}"
+>258
+"@if cand(eq(strlen(right(abc,0)), 0),strmatch(right(abc,3), abc),strmatch(right(abc,5), abc),strmatch(right(abcdefgh,1), h))={@log smoke=TC002: right boundary lengths. Succeeded.},{@log smoke=TC002: right boundary lengths. Failed (right(abc%,0)=[right(abc,0)] right(abc%,3)=[right(abc,3)] right(abc%,5)=[right(abc,5)] right(abcdefgh%,1)=[right(abcdefgh,1)]).}"
+>259
+"@if cand(strmatch(right(abc,-1), #-1 OUT OF RANGE),eq(strlen(right(abc,foo)), 0),eq(strlen(right(,3)), 0))={@log smoke=TC003: right invalid counts. Succeeded.;@trig me/tr.done},{@log smoke=TC003: right invalid counts. Failed (right(abc%,-1)=[right(abc,-1)] right(abc%,foo)=[right(abc,foo)] right(%,3)=[right(,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End right() test cases.;@notify smoke"
 <
@@ -9734,9 +9738,15 @@
 >256
 "@log smoke=Beginning splice() test cases."
 >257
-"@if strmatch(splice(a b c d e,c,X), #-1*)={@log smoke=TC001: splice unequal lists error. Succeeded.;@trig me/tr.done},{@log smoke=TC001: splice unequal lists error. Failed (splice=[splice(a b c d e,c,X)]).;@trig me/tr.done}"
+"@if strmatch(splice(a b c d e,c,X), #-1*)={@log smoke=TC001: splice unequal lists error. Succeeded.},{@log smoke=TC001: splice unequal lists error. Failed (splice=[splice(a b c d e,c,X)]).}"
+>258
+"@if cand(strmatch(splice(a b c,1 2 3,b), a 2 c),strmatch(splice(x y x,1 2 3,x), 1 y 3),strmatch(splice(a b c,1 2 3,q), a b c))={@log smoke=TC002: splice replacement. Succeeded.},{@log smoke=TC002: splice replacement. Failed (splice(a b c%,1 2 3%,b)=[splice(a b c,1 2 3,b)] splice(x y x%,1 2 3%,x)=[splice(x y x,1 2 3,x)] splice(a b c%,1 2 3%,q)=[splice(a b c,1 2 3,q)]).}"
+>259
+"@if cand(strmatch(splice(a|b|c,1|2|3,b,|), a|2|c),strmatch(splice(a|b|c,1|2|3,b,|,~), a~2~c))={@log smoke=TC003: splice custom delimiters. Succeeded.},{@log smoke=TC003: splice custom delimiters. Failed (splice(a|b|c%,1|2|3%,b%,|)=[splice(a|b|c,1|2|3,b,|)] splice(a|b|c%,1|2|3%,b%,|%,~)=[splice(a|b|c,1|2|3,b,|,~)]).}"
 >260
 "@log smoke=End splice() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(splice(a b,1 2,x y), #-1 TOO MANY WORDS),eq(strlen(splice(,,x)), 0))={@log smoke=TC004: splice search-word and empty-list cases. Succeeded.;@trig me/tr.done},{@log smoke=TC004: splice search-word and empty-list cases. Failed (splice(a b%,1 2%,x y)=[splice(a b,1 2,x y)] splice(%,%,x)=[splice(,,x)]).;@trig me/tr.done}"
 <
 !262
 "test_sqrt_fn"
@@ -9968,7 +9978,11 @@
 >256
 "@log smoke=Beginning strip() test cases."
 >257
-"@if cand(strmatch(strip(hello,lo), he),strmatch(strip(abcabc,ac), bb))={@log smoke=TC001: strip basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: strip basic operations. Failed (strip(hello%,lo)=[strip(hello,lo)] strip(abcabc%,ac)=[strip(abcabc,ac)]).;@trig me/tr.done}"
+"@if cand(strmatch(strip(hello,lo), he),strmatch(strip(abcabc,ac), bb))={@log smoke=TC001: strip basic operations. Succeeded.},{@log smoke=TC001: strip basic operations. Failed (strip(hello%,lo)=[strip(hello,lo)] strip(abcabc%,ac)=[strip(abcabc,ac)]).}"
+>258
+"@if cand(strmatch(strip(a-b-c,-), abc),strmatch(strip(hello world,lo%b), hewrd),eq(comp(strip(aAbB,ab), AB), 0))={@log smoke=TC002: strip sets and case. Succeeded.},{@log smoke=TC002: strip sets and case. Failed (strip(a-b-c%,-)=[strip(a-b-c,-)] strip(hello world%,lo )=[strip(hello world,lo%b)] strip(aAbB%,ab)=[strip(aAbB,ab)]).}"
+>259
+"@if cand(strmatch(strip(hello), hello),eq(strlen(strip(aaa,a)), 0),eq(strlen(strip(,x)), 0))={@log smoke=TC003: strip pass-through and empty cases. Succeeded.;@trig me/tr.done},{@log smoke=TC003: strip pass-through and empty cases. Failed (strip(hello)=[strip(hello)] strip(aaa%,a)=[strip(aaa,a)] strip(%,x)=[strip(,x)]).;@trig me/tr.done}"
 >260
 "@log smoke=End strip() test cases.;@notify smoke"
 <
@@ -10582,7 +10596,11 @@
 >256
 "@log smoke=Beginning trim() test cases."
 >257
-"@if cand(strmatch(trim(%b%bhello%b%b), hello),strmatch(trim(xxhelloxx,b,x), hello))={@log smoke=TC001: trim basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: trim basic operations. Failed (trim spaces=.[trim(%b%bhello%b%b)]. trim x=.[trim(xxhelloxx,b,x)].).;@trig me/tr.done}"
+"@if cand(strmatch(trim(%b%bhello%b%b), hello),strmatch(trim(xxhelloxx,b,x), hello))={@log smoke=TC001: trim basic operations. Succeeded.},{@log smoke=TC001: trim basic operations. Failed (trim spaces=.[trim(%b%bhello%b%b)]. trim x=.[trim(xxhelloxx,b,x)].).}"
+>258
+"@if cand(eq(strlen(trim(%b%bhi%b%b,l)), 4),eq(strlen(trim(%b%bhi%b%b,r)), 4),eq(strlen(trim(%b%bhi%b%b)), 2),strmatch(trim(xxhix,l,x), hix),strmatch(trim(xxhixx,r,x), xxhi))={@log smoke=TC002: trim left/right flags. Succeeded.},{@log smoke=TC002: trim left/right flags. Failed (l=.[trim(%b%bhi%b%b,l)]. r=.[trim(%b%bhi%b%b,r)]. b=.[trim(%b%bhi%b%b)]. lx=[trim(xxhix,l,x)] rx=[trim(xxhixx,r,x)]).}"
+>259
+"@if cand(strmatch(trim(ababHIabab,b,ab), HI),strmatch(trim(abcabcXabc,b,abc), X),strmatch(trim(ababX,l,ab), X),eq(strlen(trim(%b)), 0))={@log smoke=TC003: trim pattern trim. Succeeded.;@trig me/tr.done},{@log smoke=TC003: trim pattern trim. Failed (trim(ababHIabab%,b%,ab)=[trim(ababHIabab,b,ab)] trim(abcabcXabc%,b%,abc)=[trim(abcabcXabc,b,abc)] trim(ababX%,l%,ab)=[trim(ababX,l,ab)] trim(sp)=.[trim(%b)].).;@trig me/tr.done}"
 >260
 "@log smoke=End trim() test cases.;@notify smoke"
 <
@@ -10667,7 +10685,11 @@
 >256
 "@log smoke=Beginning unique() test cases."
 >257
-"@if cand(strmatch(unique(a b c b a), a b c),strmatch(unique(1|2|3|2|1,,|), 1|2|3),strmatch(unique(x), x),strmatch(unique(a a a), a))={@log smoke=TC001: unique basic. Succeeded.;@trig me/tr.done},{@log smoke=TC001: unique basic. Failed (unique(a b c b a)=[unique(a b c b a)] unique(1|..|1)=[unique(1|2|3|2|1,,|)] unique(x)=[unique(x)] unique(a a a)=[unique(a a a)]).;@trig me/tr.done}"
+"@if cand(strmatch(unique(a b c b a), a b c),strmatch(unique(1|2|3|2|1,,|), 1|2|3),strmatch(unique(x), x),strmatch(unique(a a a), a))={@log smoke=TC001: unique basic. Succeeded.},{@log smoke=TC001: unique basic. Failed (unique(a b c b a)=[unique(a b c b a)] unique(1|..|1)=[unique(1|2|3|2|1,,|)] unique(x)=[unique(x)] unique(a a a)=[unique(a a a)]).}"
+>258
+"@if cand(eq(comp(unique(a A a), a A), 0),strmatch(unique(b a b c a), b a c),strmatch(unique(1|2|2|3,,|,~), 1~2~3))={@log smoke=TC002: unique case and ordering. Succeeded.},{@log smoke=TC002: unique case and ordering. Failed (unique(a A a)=[unique(a A a)] unique(b a b c a)=[unique(b a b c a)] unique(1|2|2|3%,%,|%,~)=[unique(1|2|2|3,,|,~)]).}"
+>259
+"@if cand(eq(words(unique(a%b%b%ba a)), 1),eq(strlen(unique(,,|)), 0))={@log smoke=TC003: unique whitespace and empty input. Succeeded.;@trig me/tr.done},{@log smoke=TC003: unique whitespace and empty input. Failed (unique(a-sp-a a)=[unique(a%b%b%ba a)] unique(%,%,|)=[unique(,,|)]).;@trig me/tr.done}"
 >260
 "@log smoke=End unique() test cases.;@notify smoke"
 <

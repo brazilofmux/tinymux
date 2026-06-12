@@ -20,11 +20,45 @@
         strmatch(strip(abcabc,ac), bb)
       )=
   {
-    @log smoke=TC001: strip basic operations. Succeeded.;
+    @log smoke=TC001: strip basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: strip basic operations. Failed (strip(hello%,lo)=[strip(hello,lo)] strip(abcabc%,ac)=[strip(abcabc,ac)]).
+  }
+-
+#
+# Test Case #2 - Punctuation, spaces in the set, case sensitivity.
+# comp() is used where strmatch()'s case-insensitivity would mask a
+# wrong-case result.
+#
+&tr.tc002 test_strip_fn=
+  @if cand(
+        strmatch(strip(a-b-c,-), abc),
+        strmatch(strip(hello world,lo%b), hewrd),
+        eq(comp(strip(aAbB,ab), AB), 0)
+      )=
+  {
+    @log smoke=TC002: strip sets and case. Succeeded.
+  },
+  {
+    @log smoke=TC002: strip sets and case. Failed (strip(a-b-c%,-)=[strip(a-b-c,-)] strip(hello world%,lo )=[strip(hello world,lo%b)] strip(aAbB%,ab)=[strip(aAbB,ab)]).
+  }
+-
+#
+# Test Case #3 - No set passes through; strip-all and empty input.
+#
+&tr.tc003 test_strip_fn=
+  @if cand(
+        strmatch(strip(hello), hello),
+        eq(strlen(strip(aaa,a)), 0),
+        eq(strlen(strip(,x)), 0)
+      )=
+  {
+    @log smoke=TC003: strip pass-through and empty cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: strip basic operations. Failed (strip(hello%,lo)=[strip(hello,lo)] strip(abcabc%,ac)=[strip(abcabc,ac)]).;
+    @log smoke=TC003: strip pass-through and empty cases. Failed (strip(hello)=[strip(hello)] strip(aaa%,a)=[strip(aaa,a)] strip(%,x)=[strip(,x)]).;
     @trig me/tr.done
   }
 -

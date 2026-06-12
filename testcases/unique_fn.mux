@@ -22,11 +22,44 @@
         strmatch(unique(a a a), a)
       )=
   {
-    @log smoke=TC001: unique basic. Succeeded.;
+    @log smoke=TC001: unique basic. Succeeded.
+  },
+  {
+    @log smoke=TC001: unique basic. Failed (unique(a b c b a)=[unique(a b c b a)] unique(1|..|1)=[unique(1|2|3|2|1,,|)] unique(x)=[unique(x)] unique(a a a)=[unique(a a a)]).
+  }
+-
+#
+# Test Case #2 - Case sensitivity, first-occurrence order, output sep.
+# comp() asserts the case-sensitive result exactly; strmatch() would
+# also accept a wrong-case answer.
+#
+&tr.tc002 test_unique_fn=
+  @if cand(
+        eq(comp(unique(a A a), a A), 0),
+        strmatch(unique(b a b c a), b a c),
+        strmatch(unique(1|2|2|3,,|,~), 1~2~3)
+      )=
+  {
+    @log smoke=TC002: unique case and ordering. Succeeded.
+  },
+  {
+    @log smoke=TC002: unique case and ordering. Failed (unique(a A a)=[unique(a A a)] unique(b a b c a)=[unique(b a b c a)] unique(1|2|2|3%,%,|%,~)=[unique(1|2|2|3,,|,~)]).
+  }
+-
+#
+# Test Case #3 - Whitespace normalization and empty input.
+#
+&tr.tc003 test_unique_fn=
+  @if cand(
+        eq(words(unique(a%b%b%ba a)), 1),
+        eq(strlen(unique(,,|)), 0)
+      )=
+  {
+    @log smoke=TC003: unique whitespace and empty input. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: unique basic. Failed (unique(a b c b a)=[unique(a b c b a)] unique(1|..|1)=[unique(1|2|3|2|1,,|)] unique(x)=[unique(x)] unique(a a a)=[unique(a a a)]).;
+    @log smoke=TC003: unique whitespace and empty input. Failed (unique(a-sp-a a)=[unique(a%b%b%ba a)] unique(%,%,|)=[unique(,,|)]).;
     @trig me/tr.done
   }
 -
