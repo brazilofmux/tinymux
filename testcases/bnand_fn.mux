@@ -20,11 +20,44 @@
         eq(bnand(255,0), 255)
       )=
   {
-    @log smoke=TC001: bnand() basic operations. Succeeded.;
+    @log smoke=TC001: bnand() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: bnand() basic operations. Failed (bnand(12%,10)=[bnand(12,10)] bnand(255%,0)=[bnand(255,0)]).
+  }
+-
+#
+# Test Case #2 - Mask clearing and negative operands.
+#
+&tr.tc002 test_bnand_fn=
+  @if cand(
+        eq(bnand(255,15), 240),
+        eq(bnand(15,255), 0),
+        eq(bnand(0,255), 0),
+        eq(bnand(-1,255), -256),
+        eq(bnand(-1,-1), 0)
+      )=
+  {
+    @log smoke=TC002: bnand() mask clearing and negatives. Succeeded.
+  },
+  {
+    @log smoke=TC002: bnand() mask clearing and negatives. Failed (bnand(255%,15)=[bnand(255,15)] bnand(15%,255)=[bnand(15,255)] bnand(0%,255)=[bnand(0,255)] bnand(-1%,255)=[bnand(-1,255)] bnand(-1%,-1)=[bnand(-1,-1)]).
+  }
+-
+#
+# Test Case #3 - Non-integer arguments are rejected.
+#
+&tr.tc003 test_bnand_fn=
+  @if cand(
+        strmatch(bnand(foo,1), #-1 ARGUMENTS MUST BE INTEGERS),
+        strmatch(bnand(1,2.5), #-1 ARGUMENTS MUST BE INTEGERS)
+      )=
+  {
+    @log smoke=TC003: bnand() non-integer rejection. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: bnand() basic operations. Failed (bnand(12%,10)=[bnand(12,10)] bnand(255%,0)=[bnand(255,0)]).;
+    @log smoke=TC003: bnand() non-integer rejection. Failed (bnand(foo%,1)=[bnand(foo,1)] bnand(1%,2.5)=[bnand(1,2.5)]).;
     @trig me/tr.done
   }
 -

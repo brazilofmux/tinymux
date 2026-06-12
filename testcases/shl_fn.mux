@@ -49,11 +49,44 @@
 &tr.tc003 test_shl_fn=
   @if strmatch([shl(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER)=
   {
-    @log smoke=TC003: shl doesn't allow a negative shift. Succeeded.;
+    @log smoke=TC003: shl doesn't allow a negative shift. Succeeded.
+  },
+  {
+    @log smoke=TC003: shl allows negative shift. Legacy behavior.
+  }
+-
+#
+# Test Case #4 - 64-bit range, zero, and negative operands.
+#
+&tr.tc004 test_shl_fn=
+  @if cand(
+        eq(shl(1,32), 4294967296),
+        eq(shl(1,62), 4611686018427387904),
+        eq(shl(-2,1), -4),
+        eq(shl(0,10), 0)
+      )=
+  {
+    @log smoke=TC004: shl 64-bit range and negative operands. Succeeded.
+  },
+  {
+    @log smoke=TC004: shl 64-bit range and negative operands. Failed (shl(1%,32)=[shl(1,32)] shl(1%,62)=[shl(1,62)] shl(-2%,1)=[shl(-2,1)] shl(0%,10)=[shl(0,10)]).
+  }
+-
+#
+# Test Case #5 - Non-integer arguments are rejected.
+#
+&tr.tc005 test_shl_fn=
+  @if cand(
+        strmatch(shl(1.5,2), #-1 ARGUMENTS MUST BE INTEGERS),
+        strmatch(shl(foo,2), #-1 ARGUMENTS MUST BE INTEGERS),
+        strmatch(shl(1,bar), #-1 ARGUMENTS MUST BE INTEGERS)
+      )=
+  {
+    @log smoke=TC005: shl non-integer rejection. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: shl allows negative shift. Legacy behavior.;
+    @log smoke=TC005: shl non-integer rejection. Failed (shl(1.5%,2)=[shl(1.5,2)] shl(foo%,2)=[shl(foo,2)] shl(1%,bar)=[shl(1,bar)]).;
     @trig me/tr.done
   }
 -

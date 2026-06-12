@@ -20,11 +20,59 @@
         eq(band(255,15), 15)
       )=
   {
-    @log smoke=TC001: band() basic operations. Succeeded.;
+    @log smoke=TC001: band() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: band() basic operations. Failed (band(12%,10)=[band(12,10)] band(255%,15)=[band(255,15)]).
+  }
+-
+#
+# Test Case #2 - Single, multiple, and negative arguments.
+#
+&tr.tc002 test_band_fn=
+  @if cand(
+        eq(band(7), 7),
+        eq(band(12,10,6), 0),
+        eq(band(255,15,7,3), 3),
+        eq(band(-1,255), 255),
+        eq(band(-1,-1), -1)
+      )=
+  {
+    @log smoke=TC002: band() argument counts and negatives. Succeeded.
+  },
+  {
+    @log smoke=TC002: band() argument counts and negatives. Failed (band(7)=[band(7)] band(12%,10%,6)=[band(12,10,6)] band(255%,15%,7%,3)=[band(255,15,7,3)] band(-1%,255)=[band(-1,255)] band(-1%,-1)=[band(-1,-1)]).
+  }
+-
+#
+# Test Case #3 - Full 64-bit operand width.
+#
+&tr.tc003 test_band_fn=
+  @if cand(
+        eq(band(4611686018427387904,4611686018427387904), 4611686018427387904),
+        eq(band(4611686018427387905,1), 1)
+      )=
+  {
+    @log smoke=TC003: band() 64-bit operands. Succeeded.
+  },
+  {
+    @log smoke=TC003: band() 64-bit operands. Failed (band(2^62%,2^62)=[band(4611686018427387904,4611686018427387904)] band(2^62+1%,1)=[band(4611686018427387905,1)]).
+  }
+-
+#
+# Test Case #4 - Non-integer arguments are rejected.
+#
+&tr.tc004 test_band_fn=
+  @if cand(
+        strmatch(band(foo,3), #-1 ARGUMENTS MUST BE INTEGERS),
+        strmatch(band(5.5,1), #-1 ARGUMENTS MUST BE INTEGERS)
+      )=
+  {
+    @log smoke=TC004: band() non-integer rejection. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: band() basic operations. Failed (band(12%,10)=[band(12,10)] band(255%,15)=[band(255,15)]).;
+    @log smoke=TC004: band() non-integer rejection. Failed (band(foo%,3)=[band(foo,3)] band(5.5%,1)=[band(5.5,1)]).;
     @trig me/tr.done
   }
 -

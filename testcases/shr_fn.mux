@@ -20,11 +20,60 @@
         eq(shr(255,4), 15)
       )=
   {
-    @log smoke=TC001: shr() basic operations. Succeeded.;
+    @log smoke=TC001: shr() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: shr() basic operations. Failed (shr(8%,2)=[shr(8,2)] shr(255%,4)=[shr(255,4)]).
+  }
+-
+#
+# Test Case #2 - Truncation, zero shift, and 64-bit range.
+#
+&tr.tc002 test_shr_fn=
+  @if cand(
+        eq(shr(17,2), 4),
+        eq(shr(1,0), 1),
+        eq(shr(1,1), 0),
+        eq(shr(4294967296,32), 1),
+        eq(shr(4611686018427387904,62), 1)
+      )=
+  {
+    @log smoke=TC002: shr() truncation and 64-bit range. Succeeded.
+  },
+  {
+    @log smoke=TC002: shr() truncation and 64-bit range. Failed (shr(17%,2)=[shr(17,2)] shr(1%,0)=[shr(1,0)] shr(1%,1)=[shr(1,1)] shr(2^32%,32)=[shr(4294967296,32)] shr(2^62%,62)=[shr(4611686018427387904,62)]).
+  }
+-
+#
+# Test Case #3 - Negative operand keeps its sign (arithmetic shift).
+#
+&tr.tc003 test_shr_fn=
+  @if cand(
+        eq(shr(-8,1), -4),
+        eq(shr(-1,1), -1)
+      )=
+  {
+    @log smoke=TC003: shr() arithmetic shift of negatives. Succeeded.
+  },
+  {
+    @log smoke=TC003: shr() arithmetic shift of negatives. Failed (shr(-8%,1)=[shr(-8,1)] shr(-1%,1)=[shr(-1,1)]).
+  }
+-
+#
+# Test Case #4 - Negative shift and non-integer arguments are rejected.
+#
+&tr.tc004 test_shr_fn=
+  @if cand(
+        strmatch([shr(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER),
+        strmatch(shr(1.5,2), #-1 ARGUMENTS MUST BE INTEGERS),
+        strmatch(shr(foo,2), #-1 ARGUMENTS MUST BE INTEGERS)
+      )=
+  {
+    @log smoke=TC004: shr() argument rejection. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: shr() basic operations. Failed (shr(8%,2)=[shr(8,2)] shr(255%,4)=[shr(255,4)]).;
+    @log smoke=TC004: shr() argument rejection. Failed (shr(1%,-1)=[shr(1,-1)] shr(1.5%,2)=[shr(1.5,2)] shr(foo%,2)=[shr(foo,2)]).;
     @trig me/tr.done
   }
 -

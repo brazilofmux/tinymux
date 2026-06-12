@@ -20,11 +20,58 @@
         eq(bor(0,0), 0)
       )=
   {
-    @log smoke=TC001: bor() basic operations. Succeeded.;
+    @log smoke=TC001: bor() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: bor() basic operations. Failed (bor(12%,10)=[bor(12,10)] bor(0%,0)=[bor(0,0)]).
+  }
+-
+#
+# Test Case #2 - Single, multiple, and negative arguments.
+#
+&tr.tc002 test_bor_fn=
+  @if cand(
+        eq(bor(9), 9),
+        eq(bor(1,2,4,8), 15),
+        eq(bor(-16,1), -15),
+        eq(bor(-1,255), -1)
+      )=
+  {
+    @log smoke=TC002: bor() argument counts and negatives. Succeeded.
+  },
+  {
+    @log smoke=TC002: bor() argument counts and negatives. Failed (bor(9)=[bor(9)] bor(1%,2%,4%,8)=[bor(1,2,4,8)] bor(-16%,1)=[bor(-16,1)] bor(-1%,255)=[bor(-1,255)]).
+  }
+-
+#
+# Test Case #3 - Full 64-bit operand width.
+#
+&tr.tc003 test_bor_fn=
+  @if cand(
+        eq(bor(4294967296,1), 4294967297),
+        eq(bor(4611686018427387904,1), 4611686018427387905)
+      )=
+  {
+    @log smoke=TC003: bor() 64-bit operands. Succeeded.
+  },
+  {
+    @log smoke=TC003: bor() 64-bit operands. Failed (bor(2^32%,1)=[bor(4294967296,1)] bor(2^62%,1)=[bor(4611686018427387904,1)]).
+  }
+-
+#
+# Test Case #4 - Non-integer arguments are rejected.
+#
+&tr.tc004 test_bor_fn=
+  @if cand(
+        strmatch(bor(foo,1), #-1 ARGUMENTS MUST BE INTEGERS),
+        strmatch(bor(1.5,1), #-1 ARGUMENTS MUST BE INTEGERS)
+      )=
+  {
+    @log smoke=TC004: bor() non-integer rejection. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: bor() basic operations. Failed (bor(12%,10)=[bor(12,10)] bor(0%,0)=[bor(0,0)]).;
+    @log smoke=TC004: bor() non-integer rejection. Failed (bor(foo%,1)=[bor(foo,1)] bor(1.5%,1)=[bor(1.5,1)]).;
     @trig me/tr.done
   }
 -

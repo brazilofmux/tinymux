@@ -1431,9 +1431,15 @@
 >256
 "@log smoke=Beginning band() test cases."
 >257
-"@if cand(eq(band(12,10), 8),eq(band(255,15), 15))={@log smoke=TC001: band() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: band() basic operations. Failed (band(12%,10)=[band(12,10)] band(255%,15)=[band(255,15)]).;@trig me/tr.done}"
+"@if cand(eq(band(12,10), 8),eq(band(255,15), 15))={@log smoke=TC001: band() basic operations. Succeeded.},{@log smoke=TC001: band() basic operations. Failed (band(12%,10)=[band(12,10)] band(255%,15)=[band(255,15)]).}"
+>258
+"@if cand(eq(band(7), 7),eq(band(12,10,6), 0),eq(band(255,15,7,3), 3),eq(band(-1,255), 255),eq(band(-1,-1), -1))={@log smoke=TC002: band() argument counts and negatives. Succeeded.},{@log smoke=TC002: band() argument counts and negatives. Failed (band(7)=[band(7)] band(12%,10%,6)=[band(12,10,6)] band(255%,15%,7%,3)=[band(255,15,7,3)] band(-1%,255)=[band(-1,255)] band(-1%,-1)=[band(-1,-1)]).}"
+>259
+"@if cand(eq(band(4611686018427387904,4611686018427387904), 4611686018427387904),eq(band(4611686018427387905,1), 1))={@log smoke=TC003: band() 64-bit operands. Succeeded.},{@log smoke=TC003: band() 64-bit operands. Failed (band(2^62%,2^62)=[band(4611686018427387904,4611686018427387904)] band(2^62+1%,1)=[band(4611686018427387905,1)]).}"
 >260
 "@log smoke=End band() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(band(foo,3), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(band(5.5,1), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC004: band() non-integer rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC004: band() non-integer rejection. Failed (band(foo%,3)=[band(foo,3)] band(5.5%,1)=[band(5.5,1)]).;@trig me/tr.done}"
 <
 !17
 "test_baseconv_fn"
@@ -1574,7 +1580,11 @@
 >256
 "@log smoke=Beginning bnand() test cases."
 >257
-"@if cand(eq(bnand(12,10), 4),eq(bnand(255,0), 255))={@log smoke=TC001: bnand() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: bnand() basic operations. Failed (bnand(12%,10)=[bnand(12,10)] bnand(255%,0)=[bnand(255,0)]).;@trig me/tr.done}"
+"@if cand(eq(bnand(12,10), 4),eq(bnand(255,0), 255))={@log smoke=TC001: bnand() basic operations. Succeeded.},{@log smoke=TC001: bnand() basic operations. Failed (bnand(12%,10)=[bnand(12,10)] bnand(255%,0)=[bnand(255,0)]).}"
+>258
+"@if cand(eq(bnand(255,15), 240),eq(bnand(15,255), 0),eq(bnand(0,255), 0),eq(bnand(-1,255), -256),eq(bnand(-1,-1), 0))={@log smoke=TC002: bnand() mask clearing and negatives. Succeeded.},{@log smoke=TC002: bnand() mask clearing and negatives. Failed (bnand(255%,15)=[bnand(255,15)] bnand(15%,255)=[bnand(15,255)] bnand(0%,255)=[bnand(0,255)] bnand(-1%,255)=[bnand(-1,255)] bnand(-1%,-1)=[bnand(-1,-1)]).}"
+>259
+"@if cand(strmatch(bnand(foo,1), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(bnand(1,2.5), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC003: bnand() non-integer rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC003: bnand() non-integer rejection. Failed (bnand(foo%,1)=[bnand(foo,1)] bnand(1%,2.5)=[bnand(1,2.5)]).;@trig me/tr.done}"
 >260
 "@log smoke=End bnand() test cases.;@notify smoke"
 <
@@ -1601,9 +1611,15 @@
 >256
 "@log smoke=Beginning bor() test cases."
 >257
-"@if cand(eq(bor(12,10), 14),eq(bor(0,0), 0))={@log smoke=TC001: bor() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: bor() basic operations. Failed (bor(12%,10)=[bor(12,10)] bor(0%,0)=[bor(0,0)]).;@trig me/tr.done}"
+"@if cand(eq(bor(12,10), 14),eq(bor(0,0), 0))={@log smoke=TC001: bor() basic operations. Succeeded.},{@log smoke=TC001: bor() basic operations. Failed (bor(12%,10)=[bor(12,10)] bor(0%,0)=[bor(0,0)]).}"
+>258
+"@if cand(eq(bor(9), 9),eq(bor(1,2,4,8), 15),eq(bor(-16,1), -15),eq(bor(-1,255), -1))={@log smoke=TC002: bor() argument counts and negatives. Succeeded.},{@log smoke=TC002: bor() argument counts and negatives. Failed (bor(9)=[bor(9)] bor(1%,2%,4%,8)=[bor(1,2,4,8)] bor(-16%,1)=[bor(-16,1)] bor(-1%,255)=[bor(-1,255)]).}"
+>259
+"@if cand(eq(bor(4294967296,1), 4294967297),eq(bor(4611686018427387904,1), 4611686018427387905))={@log smoke=TC003: bor() 64-bit operands. Succeeded.},{@log smoke=TC003: bor() 64-bit operands. Failed (bor(2^32%,1)=[bor(4294967296,1)] bor(2^62%,1)=[bor(4611686018427387904,1)]).}"
 >260
 "@log smoke=End bor() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(bor(foo,1), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(bor(1.5,1), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC004: bor() non-integer rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC004: bor() non-integer rejection. Failed (bor(foo%,1)=[bor(foo,1)] bor(1.5%,1)=[bor(1.5,1)]).;@trig me/tr.done}"
 <
 !23
 "test_bound_fn"
@@ -1698,9 +1714,15 @@
 >256
 "@log smoke=Beginning bxor() test cases."
 >257
-"@if cand(eq(bxor(12,10), 6),eq(bxor(255,255), 0))={@log smoke=TC001: bxor() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: bxor() basic operations. Failed (bxor(12%,10)=[bxor(12,10)] bxor(255%,255)=[bxor(255,255)]).;@trig me/tr.done}"
+"@if cand(eq(bxor(12,10), 6),eq(bxor(255,255), 0))={@log smoke=TC001: bxor() basic operations. Succeeded.},{@log smoke=TC001: bxor() basic operations. Failed (bxor(12%,10)=[bxor(12,10)] bxor(255%,255)=[bxor(255,255)]).}"
+>258
+"@if cand(eq(bxor(5), 5),eq(bxor(1,2,4), 7),eq(bxor(7,7,7), 7),eq(bxor(-1,255), -256),eq(bxor(0,0), 0))={@log smoke=TC002: bxor() argument counts and negatives. Succeeded.},{@log smoke=TC002: bxor() argument counts and negatives. Failed (bxor(5)=[bxor(5)] bxor(1%,2%,4)=[bxor(1,2,4)] bxor(7%,7%,7)=[bxor(7,7,7)] bxor(-1%,255)=[bxor(-1,255)] bxor(0%,0)=[bxor(0,0)]).}"
+>259
+"@if cand(eq(bxor(4611686018427387905,1), 4611686018427387904),eq(bxor(4294967296,4294967296), 0))={@log smoke=TC003: bxor() 64-bit operands. Succeeded.},{@log smoke=TC003: bxor() 64-bit operands. Failed (bxor(2^62+1%,1)=[bxor(4611686018427387905,1)] bxor(2^32%,2^32)=[bxor(4294967296,4294967296)]).}"
 >260
 "@log smoke=End bxor() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(bxor(foo,1), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(bxor(1,0.5), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC004: bxor() non-integer rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC004: bxor() non-integer rejection. Failed (bxor(foo%,1)=[bxor(foo,1)] bxor(1%,0.5)=[bxor(1,0.5)]).;@trig me/tr.done}"
 <
 !26
 "test_cachestats_fn"
@@ -9233,9 +9255,13 @@
 >258
 "@if cand(eq(shl(3,0), 3),eq(shl(3,1), 6),eq(shl(3,4), 48),eq(shl(3,10), 3072),eq(shl(1,0), 1),eq(shl(1,1), 2),eq(shl(1,16), 65536))={@log smoke=TC002: shl vary shifts. Succeeded.},{@log smoke=TC002: shl vary shifts. Failed (shl(3%,0)=[shl(3,0)] shl(3%,1)=[shl(3,1)] shl(3%,4)=[shl(3,4)]).}"
 >259
-"@if strmatch([shl(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER)={@log smoke=TC003: shl doesn't allow a negative shift. Succeeded.;@trig me/tr.done},{@log smoke=TC003: shl allows negative shift. Legacy behavior.;@trig me/tr.done}"
+"@if strmatch([shl(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER)={@log smoke=TC003: shl doesn't allow a negative shift. Succeeded.},{@log smoke=TC003: shl allows negative shift. Legacy behavior.}"
 >260
 "@log smoke=End shl() test cases.;@notify smoke"
+>261
+"@if cand(eq(shl(1,32), 4294967296),eq(shl(1,62), 4611686018427387904),eq(shl(-2,1), -4),eq(shl(0,10), 0))={@log smoke=TC004: shl 64-bit range and negative operands. Succeeded.},{@log smoke=TC004: shl 64-bit range and negative operands. Failed (shl(1%,32)=[shl(1,32)] shl(1%,62)=[shl(1,62)] shl(-2%,1)=[shl(-2,1)] shl(0%,10)=[shl(0,10)]).}"
+>262
+"@if cand(strmatch(shl(1.5,2), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(shl(foo,2), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(shl(1,bar), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC005: shl non-integer rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC005: shl non-integer rejection. Failed (shl(1.5%,2)=[shl(1.5,2)] shl(foo%,2)=[shl(foo,2)] shl(1%,bar)=[shl(1,bar)]).;@trig me/tr.done}"
 <
 !249
 "test_shr_fn"
@@ -9260,9 +9286,15 @@
 >256
 "@log smoke=Beginning shr() test cases."
 >257
-"@if cand(eq(shr(8,2), 2),eq(shr(255,4), 15))={@log smoke=TC001: shr() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: shr() basic operations. Failed (shr(8%,2)=[shr(8,2)] shr(255%,4)=[shr(255,4)]).;@trig me/tr.done}"
+"@if cand(eq(shr(8,2), 2),eq(shr(255,4), 15))={@log smoke=TC001: shr() basic operations. Succeeded.},{@log smoke=TC001: shr() basic operations. Failed (shr(8%,2)=[shr(8,2)] shr(255%,4)=[shr(255,4)]).}"
+>258
+"@if cand(eq(shr(17,2), 4),eq(shr(1,0), 1),eq(shr(1,1), 0),eq(shr(4294967296,32), 1),eq(shr(4611686018427387904,62), 1))={@log smoke=TC002: shr() truncation and 64-bit range. Succeeded.},{@log smoke=TC002: shr() truncation and 64-bit range. Failed (shr(17%,2)=[shr(17,2)] shr(1%,0)=[shr(1,0)] shr(1%,1)=[shr(1,1)] shr(2^32%,32)=[shr(4294967296,32)] shr(2^62%,62)=[shr(4611686018427387904,62)]).}"
+>259
+"@if cand(eq(shr(-8,1), -4),eq(shr(-1,1), -1))={@log smoke=TC003: shr() arithmetic shift of negatives. Succeeded.},{@log smoke=TC003: shr() arithmetic shift of negatives. Failed (shr(-8%,1)=[shr(-8,1)] shr(-1%,1)=[shr(-1,1)]).}"
 >260
 "@log smoke=End shr() test cases.;@notify smoke"
+>261
+"@if cand(strmatch([shr(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER),strmatch(shr(1.5,2), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(shr(foo,2), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC004: shr() argument rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC004: shr() argument rejection. Failed (shr(1%,-1)=[shr(1,-1)] shr(1.5%,2)=[shr(1.5,2)] shr(foo%,2)=[shr(foo,2)]).;@trig me/tr.done}"
 <
 !250
 "test_shuffle_fn"
