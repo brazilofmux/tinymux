@@ -84,11 +84,28 @@ build. Root cause: the runtime `@lock` parser caps nesting at `lock_nest_lim`
 convert the asserts to a `s_boolexp_corrupt` flag → clean `return -1` rollback.
 Smoke 1115/1115.
 
+### ✅ FIXED (7e3da01e3) — unvalidated user-attribute number → anum_table OOB / OOM (#808)
+The attribute number from a `+A` flatfile record (`getref`) or a SQLite
+attr-name row indexes `anum_table` via `anum_set` (bare `anum_table[x]=v` macro)
++ `anum_extend` (dense `(x+1)` alloc) with no validation. **Live bug-catch:**
+`+A-10000000` → `anum_table[-10000000]` write → SIGSEGV; `+A-5` (novel name) →
+silent heap corruption; `+A999999999` → ~8 GB alloc → OOM kill. The *read* path
+`atr_num` validates `anum<0||>top`; the *write* path (`vattr_define_LEN`) didn't
+(4th incomplete-hardening case). Fix: `A_USER_MAX` (16M) constant in `attrs.h`;
+`vattr_define_LEN` rejects `< A_USER_START || > A_USER_MAX` (central backstop);
+the `+A` handler and SQLite attr-name callback skip bad records. Smoke 1115/1115.
+
+## Recurring theme
+All four DB / load-path bugs this audit (#806, #807, #808) plus the JIT #805 are
+**incomplete hardening**: a validation/guard added to one path (SQLite dbref
+check, runtime `@lock` nest limit, `atr_num` read check, `i64Mod`) while the
+sibling path (flatfile dbref, `getboolexp1` import recursion, `anum_set` write,
+`i64Division`) was left unguarded.
+
 ## Areas still to audit
-- [x] `sqlite_load_game` (`db.cpp:3690-3748`) — **validates** `i<0||i>=top`
-      before `db[i]=…` (this is the guard the flatfile path was missing in #806).
 - [ ] Other `getref`-derived field values (location/contents/exits/owner/parent)
-      — validated by `db_check` before use as indices during gameplay?
+      — validated by `db_check` before use as indices during gameplay? (No
+      `db_check` found in the engine; these rely on `Good_obj` guards at use.)
 - [ ] The `getref`-derived field values (location/contents/exits/owner/parent) —
       validated by `db_check` before use as indices during gameplay?
 - [ ] `attrcache.cpp` — attribute load/evict bounds.
