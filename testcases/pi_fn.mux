@@ -19,11 +19,27 @@
         strmatch(round(pi(),6),3.141593)
       )=
   {
-    @log smoke=TC001: pi() basic operations. Succeeded.;
+    @log smoke=TC001: pi() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: pi() basic operations. Failed (pi()=[round(pi(),6)]).
+  }
+-
+#
+# Test Case #2 - Full-precision literal and trig identities.
+#
+&tr.tc002 test_pi_fn=
+  @if cand(
+        eq(comp(pi(), 3.141592653589793), 0),
+        eq(round(sin(pi()),6), 0),
+        eq(round(cos(pi()),6), -1)
+      )=
+  {
+    @log smoke=TC002: pi() precision and identities. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: pi() basic operations. Failed (pi()=[round(pi(),6)]).;
+    @log smoke=TC002: pi() precision and identities. Failed (pi()=[pi()] sin(pi)=[round(sin(pi()),6)] cos(pi)=[round(cos(pi()),6)]).;
     @trig me/tr.done
   }
 -

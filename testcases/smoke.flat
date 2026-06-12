@@ -1344,7 +1344,9 @@
 >256
 "@log smoke=Beginning atan2() test cases."
 >257
-"@if strmatch([atan2()],*NOT FOUND)={@log smoke=TC001: ATAN2() is not supported on this version. Okay.;@trig me/tr.done},{@if cand(eq(round(atan2(1,1),6), 0.785398),eq(round(atan2(0,0),6), 0),eq(round(atan2(-1,-1),6), -2.356194))={@log smoke=TC001: atan2 examples. Succeeded.},{@log smoke=TC001: atan2 examples. Failed (atan2(1%,1)=[round(atan2(1,1),6)] atan2(0%,0)=[round(atan2(0,0),6)] atan2(-1%,-1)=[round(atan2(-1,-1),6)]).};@if cand(eq(round(atan2(1,1,d),6), 45),eq(round(atan2(1,0,d),6), 90),eq(round(atan2(1,1,g),4), 50))={@log smoke=TC002: atan2 angle units. Succeeded.;@trig me/tr.done},{@log smoke=TC002: atan2 angle units. Failed (atan2(1%,1%,d)=[round(atan2(1,1,d),6)] atan2(1%,0%,d)=[round(atan2(1,0,d),6)] atan2(1%,1%,g)=[round(atan2(1,1,g),4)]).;@trig me/tr.done}}"
+"@if strmatch([atan2()],*NOT FOUND)={@log smoke=TC001: ATAN2() is not supported on this version. Okay.},{@if cand(eq(round(atan2(1,1),6), 0.785398),eq(round(atan2(0,0),6), 0),eq(round(atan2(-1,-1),6), -2.356194))={@log smoke=TC001: atan2 examples. Succeeded.},{@log smoke=TC001: atan2 examples. Failed (atan2(1%,1)=[round(atan2(1,1),6)] atan2(0%,0)=[round(atan2(0,0),6)] atan2(-1%,-1)=[round(atan2(-1,-1),6)]).};@if cand(eq(round(atan2(1,1,d),6), 45),eq(round(atan2(1,0,d),6), 90),eq(round(atan2(1,1,g),4), 50))={@log smoke=TC002: atan2 angle units. Succeeded.},{@log smoke=TC002: atan2 angle units. Failed (atan2(1%,1%,d)=[round(atan2(1,1,d),6)] atan2(1%,0%,d)=[round(atan2(1,0,d),6)] atan2(1%,1%,g)=[round(atan2(1,1,g),4)]).}}"
+>259
+"@if cand(eq(round(atan2(0,1),6), 0),eq(round(atan2(1,0),6), 1.570796),eq(round(atan2(0,-1),6), 3.141593),eq(round(atan2(1,-1),6), 2.356194),eq(round(atan2(-1,1),6), -0.785398))={@log smoke=TC003: atan2 quadrants. Succeeded.;@trig me/tr.done},{@log smoke=TC003: atan2 quadrants. Failed (atan2(0%,1)=[round(atan2(0,1),6)] atan2(1%,0)=[round(atan2(1,0),6)] atan2(0%,-1)=[round(atan2(0,-1),6)] atan2(1%,-1)=[round(atan2(1,-1),6)] atan2(-1%,1)=[round(atan2(-1,1),6)]).;@trig me/tr.done}"
 >260
 "@log smoke=End atan2() test cases.;@notify smoke"
 <
@@ -3241,7 +3243,9 @@
 >256
 "@log smoke=Beginning e() test cases."
 >257
-"@if cand(strmatch(round(e(),6),2.718282))={@log smoke=TC001: e() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: e() basic operations. Failed (e()=[round(e(),6)]).;@trig me/tr.done}"
+"@if cand(strmatch(round(e(),6),2.718282))={@log smoke=TC001: e() basic operations. Succeeded.},{@log smoke=TC001: e() basic operations. Failed (e()=[round(e(),6)]).}"
+>258
+"@if cand(eq(comp(e(), 2.718281828459045), 0),eq(round(ln(e()),6), 1),eq(round(exp(1),6), round(e(),6)))={@log smoke=TC002: e() precision and identities. Succeeded.;@trig me/tr.done},{@log smoke=TC002: e() precision and identities. Failed (e()=[e()] ln(e)=[round(ln(e()),6)] exp(1)=[round(exp(1),6)]).;@trig me/tr.done}"
 >260
 "@log smoke=End e() test cases.;@notify smoke"
 <
@@ -3453,7 +3457,9 @@
 >256
 "@log smoke=Beginning exp() test cases."
 >257
-"@if cand(eq(round(exp(0),6), 1),eq(round(exp(1),6), 2.718282),eq(round(exp(-1),6), 0.367879))={@log smoke=TC001: exp basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: exp basic operations. Failed (exp(0)=[round(exp(0),6)] exp(1)=[round(exp(1),6)] exp(-1)=[round(exp(-1),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(exp(0),6), 1),eq(round(exp(1),6), 2.718282),eq(round(exp(-1),6), 0.367879))={@log smoke=TC001: exp basic operations. Succeeded.},{@log smoke=TC001: exp basic operations. Failed (exp(0)=[round(exp(0),6)] exp(1)=[round(exp(1),6)] exp(-1)=[round(exp(-1),6)]).}"
+>258
+"@if cand(eq(round(exp(ln(7)),6), 7),strmatch(exp(1000), +Inf),eq(exp(foo), 1))={@log smoke=TC002: exp inverse and overflow. Succeeded.;@trig me/tr.done},{@log smoke=TC002: exp inverse and overflow. Failed (exp(ln(7))=[round(exp(ln(7)),6)] exp(1000)=[exp(1000)] exp(foo)=[exp(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End exp() test cases.;@notify smoke"
 <
@@ -5417,7 +5423,9 @@
 >256
 "@log smoke=Beginning ln() test cases."
 >257
-"@if cand(eq(round(ln(1),6), 0),eq(round(ln(e()),6), 1))={@log smoke=TC001: ln basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: ln basic operations. Failed (ln(1)=[round(ln(1),6)] ln(e)=[round(ln(e()),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(ln(1),6), 0),eq(round(ln(e()),6), 1))={@log smoke=TC001: ln basic operations. Succeeded.},{@log smoke=TC001: ln basic operations. Failed (ln(1)=[round(ln(1),6)] ln(e)=[round(ln(e()),6)]).}"
+>258
+"@if cand(eq(round(ln(exp(5)),6), 5),strmatch(ln(0), -Inf),strmatch(ln(-1), Ind),strmatch(ln(foo), -Inf))={@log smoke=TC002: ln domain edges. Succeeded.;@trig me/tr.done},{@log smoke=TC002: ln domain edges. Failed (ln(exp(5))=[round(ln(exp(5)),6)] ln(0)=[ln(0)] ln(-1)=[ln(-1)] ln(foo)=[ln(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End ln() test cases.;@notify smoke"
 <
@@ -7167,7 +7175,9 @@
 >256
 "@log smoke=Beginning pi() test cases."
 >257
-"@if cand(strmatch(round(pi(),6),3.141593))={@log smoke=TC001: pi() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: pi() basic operations. Failed (pi()=[round(pi(),6)]).;@trig me/tr.done}"
+"@if cand(strmatch(round(pi(),6),3.141593))={@log smoke=TC001: pi() basic operations. Succeeded.},{@log smoke=TC001: pi() basic operations. Failed (pi()=[round(pi(),6)]).}"
+>258
+"@if cand(eq(comp(pi(), 3.141592653589793), 0),eq(round(sin(pi()),6), 0),eq(round(cos(pi()),6), -1))={@log smoke=TC002: pi() precision and identities. Succeeded.;@trig me/tr.done},{@log smoke=TC002: pi() precision and identities. Failed (pi()=[pi()] sin(pi)=[round(sin(pi()),6)] cos(pi)=[round(cos(pi()),6)]).;@trig me/tr.done}"
 >260
 "@log smoke=End pi() test cases.;@notify smoke"
 <
@@ -7297,7 +7307,9 @@
 >256
 "@log smoke=Beginning power() test cases."
 >257
-"@if cand(eq(power(2,10), 1024),eq(power(3,3), 27))={@log smoke=TC001: power basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: power basic operations. Failed (power(2%,10)=[power(2,10)] power(3%,3)=[power(3,3)]).;@trig me/tr.done}"
+"@if cand(eq(power(2,10), 1024),eq(power(3,3), 27))={@log smoke=TC001: power basic operations. Succeeded.},{@log smoke=TC001: power basic operations. Failed (power(2%,10)=[power(2,10)] power(3%,3)=[power(3,3)]).}"
+>258
+"@if cand(eq(power(2,-1), 0.5),eq(power(-2,3), -8),eq(power(9,0.5), 3),eq(power(0,0), 1),strmatch(power(-2,0.5), Ind))={@log smoke=TC002: power exponent edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: power exponent edge cases. Failed (power(2%,-1)=[power(2,-1)] power(-2%,3)=[power(-2,3)] power(9%,0.5)=[power(9,0.5)] power(0%,0)=[power(0,0)] power(-2%,0.5)=[power(-2,0.5)]).;@trig me/tr.done}"
 >260
 "@log smoke=End power() test cases.;@notify smoke"
 <
@@ -9472,7 +9484,9 @@
 >256
 "@log smoke=Beginning sin() test cases."
 >257
-"@if cand(eq(round(sin(270,d),6), -1),eq(round(sin(fdiv(pi(),2)),6), 1),eq(round(sin(fdiv(pi(),4)),6), 0.707107),eq(round(sin(fdiv(pi(),6)),6), 0.5))={@log smoke=TC001: sin examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sin examples. Failed (sin(270d)=[round(sin(270,d),6)] sin(pi/2)=[round(sin(fdiv(pi(),2)),6)] sin(pi/6)=[round(sin(fdiv(pi(),6)),6)]).;@trig me/tr.done}"
+"@if cand(eq(round(sin(270,d),6), -1),eq(round(sin(fdiv(pi(),2)),6), 1),eq(round(sin(fdiv(pi(),4)),6), 0.707107),eq(round(sin(fdiv(pi(),6)),6), 0.5))={@log smoke=TC001: sin examples. Succeeded.},{@log smoke=TC001: sin examples. Failed (sin(270d)=[round(sin(270,d),6)] sin(pi/2)=[round(sin(fdiv(pi(),2)),6)] sin(pi/6)=[round(sin(fdiv(pi(),6)),6)]).}"
+>258
+"@if cand(eq(sin(0), 0),eq(round(sin(100,g),6), 1),eq(round(sin(30,d),6), 0.5),eq(round(add(sin(0.5),sin(-0.5)),6), 0))={@log smoke=TC002: sin units and symmetry. Succeeded.;@trig me/tr.done},{@log smoke=TC002: sin units and symmetry. Failed (sin(0)=[sin(0)] sin(100%,g)=[round(sin(100,g),6)] sin(30%,d)=[round(sin(30,d),6)] sym=[round(add(sin(0.5),sin(-0.5)),6)]).;@trig me/tr.done}"
 >260
 "@log smoke=End sin() test cases.;@notify smoke"
 <
@@ -9791,7 +9805,9 @@
 >256
 "@log smoke=Beginning sqrt() test cases."
 >257
-"@if cand(strmatch(round(sqrt(2),6), 1.414214),strmatch(round(sqrt(100),6), 10.000000),strmatch(round(sqrt(0),6), 0.000000),strmatch(sqrt(-1), Ind))={@log smoke=TC001: sqrt examples. Succeeded.;@trig me/tr.done},{@log smoke=TC001: sqrt examples. Failed (sqrt(2)=[round(sqrt(2),6)] sqrt(100)=[round(sqrt(100),6)] sqrt(0)=[round(sqrt(0),6)] sqrt(-1)=[sqrt(-1)]).;@trig me/tr.done}"
+"@if cand(strmatch(round(sqrt(2),6), 1.414214),strmatch(round(sqrt(100),6), 10.000000),strmatch(round(sqrt(0),6), 0.000000),strmatch(sqrt(-1), Ind))={@log smoke=TC001: sqrt examples. Succeeded.},{@log smoke=TC001: sqrt examples. Failed (sqrt(2)=[round(sqrt(2),6)] sqrt(100)=[round(sqrt(100),6)] sqrt(0)=[round(sqrt(0),6)] sqrt(-1)=[sqrt(-1)]).}"
+>258
+"@if cand(eq(sqrt(0.25), 0.5),eq(sqrt(1000000), 1000),eq(round(power(sqrt(2),2),6), 2),eq(sqrt(foo), 0))={@log smoke=TC002: sqrt decimals and round trip. Succeeded.;@trig me/tr.done},{@log smoke=TC002: sqrt decimals and round trip. Failed (sqrt(0.25)=[sqrt(0.25)] sqrt(1000000)=[sqrt(1000000)] roundtrip=[round(power(sqrt(2),2),6)] sqrt(foo)=[sqrt(foo)]).;@trig me/tr.done}"
 >260
 "@log smoke=End sqrt() test cases.;@notify smoke"
 <

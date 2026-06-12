@@ -20,11 +20,30 @@
         eq(round(ln(e()),6), 1)
       )=
   {
-    @log smoke=TC001: ln basic operations. Succeeded.;
+    @log smoke=TC001: ln basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: ln basic operations. Failed (ln(1)=[round(ln(1),6)] ln(e)=[round(ln(e()),6)]).
+  }
+-
+#
+# Test Case #2 - Inverse of exp; zero and negative domain edges.
+# ln(0) is -Inf; ln of a negative is Ind; non-numeric input coerces
+# to 0 and therefore also gives -Inf.
+#
+&tr.tc002 test_ln_fn=
+  @if cand(
+        eq(round(ln(exp(5)),6), 5),
+        strmatch(ln(0), -Inf),
+        strmatch(ln(-1), Ind),
+        strmatch(ln(foo), -Inf)
+      )=
+  {
+    @log smoke=TC002: ln domain edges. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: ln basic operations. Failed (ln(1)=[round(ln(1),6)] ln(e)=[round(ln(e()),6)]).;
+    @log smoke=TC002: ln domain edges. Failed (ln(exp(5))=[round(ln(exp(5)),6)] ln(0)=[ln(0)] ln(-1)=[ln(-1)] ln(foo)=[ln(foo)]).;
     @trig me/tr.done
   }
 -

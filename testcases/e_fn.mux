@@ -19,11 +19,27 @@
         strmatch(round(e(),6),2.718282)
       )=
   {
-    @log smoke=TC001: e() basic operations. Succeeded.;
+    @log smoke=TC001: e() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: e() basic operations. Failed (e()=[round(e(),6)]).
+  }
+-
+#
+# Test Case #2 - Full-precision literal and exp/ln identities.
+#
+&tr.tc002 test_e_fn=
+  @if cand(
+        eq(comp(e(), 2.718281828459045), 0),
+        eq(round(ln(e()),6), 1),
+        eq(round(exp(1),6), round(e(),6))
+      )=
+  {
+    @log smoke=TC002: e() precision and identities. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: e() basic operations. Failed (e()=[round(e(),6)]).;
+    @log smoke=TC002: e() precision and identities. Failed (e()=[e()] ln(e)=[round(ln(e()),6)] exp(1)=[round(exp(1),6)]).;
     @trig me/tr.done
   }
 -

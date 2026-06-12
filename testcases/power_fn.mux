@@ -20,11 +20,31 @@
         eq(power(3,3), 27)
       )=
   {
-    @log smoke=TC001: power basic operations. Succeeded.;
+    @log smoke=TC001: power basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: power basic operations. Failed (power(2%,10)=[power(2,10)] power(3%,3)=[power(3,3)]).
+  }
+-
+#
+# Test Case #2 - Negative exponents and bases, fractional exponents.
+# A negative base with an integer exponent is defined (-8); with a
+# fractional exponent the result is indeterminate (Ind).
+#
+&tr.tc002 test_power_fn=
+  @if cand(
+        eq(power(2,-1), 0.5),
+        eq(power(-2,3), -8),
+        eq(power(9,0.5), 3),
+        eq(power(0,0), 1),
+        strmatch(power(-2,0.5), Ind)
+      )=
+  {
+    @log smoke=TC002: power exponent edge cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: power basic operations. Failed (power(2%,10)=[power(2,10)] power(3%,3)=[power(3,3)]).;
+    @log smoke=TC002: power exponent edge cases. Failed (power(2%,-1)=[power(2,-1)] power(-2%,3)=[power(-2,3)] power(9%,0.5)=[power(9,0.5)] power(0%,0)=[power(0,0)] power(-2%,0.5)=[power(-2,0.5)]).;
     @trig me/tr.done
   }
 -

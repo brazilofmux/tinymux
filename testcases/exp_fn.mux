@@ -21,11 +21,27 @@
         eq(round(exp(-1),6), 0.367879)
       )=
   {
-    @log smoke=TC001: exp basic operations. Succeeded.;
+    @log smoke=TC001: exp basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: exp basic operations. Failed (exp(0)=[round(exp(0),6)] exp(1)=[round(exp(1),6)] exp(-1)=[round(exp(-1),6)]).
+  }
+-
+#
+# Test Case #2 - Inverse of ln, overflow to +Inf, coercion.
+#
+&tr.tc002 test_exp_fn=
+  @if cand(
+        eq(round(exp(ln(7)),6), 7),
+        strmatch(exp(1000), +Inf),
+        eq(exp(foo), 1)
+      )=
+  {
+    @log smoke=TC002: exp inverse and overflow. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: exp basic operations. Failed (exp(0)=[round(exp(0),6)] exp(1)=[round(exp(1),6)] exp(-1)=[round(exp(-1),6)]).;
+    @log smoke=TC002: exp inverse and overflow. Failed (exp(ln(7))=[round(exp(ln(7)),6)] exp(1000)=[exp(1000)] exp(foo)=[exp(foo)]).;
     @trig me/tr.done
   }
 -

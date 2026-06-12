@@ -22,11 +22,28 @@
         eq(round(sin(fdiv(pi(),6)),6), 0.5)
       )=
   {
-    @log smoke=TC001: sin examples. Succeeded.;
+    @log smoke=TC001: sin examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: sin examples. Failed (sin(270d)=[round(sin(270,d),6)] sin(pi/2)=[round(sin(fdiv(pi(),2)),6)] sin(pi/6)=[round(sin(fdiv(pi(),6)),6)]).
+  }
+-
+#
+# Test Case #2 - Zero, gradians, degree units, odd symmetry.
+#
+&tr.tc002 test_sin_fn=
+  @if cand(
+        eq(sin(0), 0),
+        eq(round(sin(100,g),6), 1),
+        eq(round(sin(30,d),6), 0.5),
+        eq(round(add(sin(0.5),sin(-0.5)),6), 0)
+      )=
+  {
+    @log smoke=TC002: sin units and symmetry. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: sin examples. Failed (sin(270d)=[round(sin(270,d),6)] sin(pi/2)=[round(sin(fdiv(pi(),2)),6)] sin(pi/6)=[round(sin(fdiv(pi(),6)),6)]).;
+    @log smoke=TC002: sin units and symmetry. Failed (sin(0)=[sin(0)] sin(100%,g)=[round(sin(100,g),6)] sin(30%,d)=[round(sin(30,d),6)] sym=[round(add(sin(0.5),sin(-0.5)),6)]).;
     @trig me/tr.done
   }
 -

@@ -17,8 +17,7 @@
 &tr.tc001 test_atan2_fn=
   @if strmatch([atan2()],*NOT FOUND)=
   {
-    @log smoke=TC001: ATAN2() is not supported on this version. Okay.;
-    @trig me/tr.done
+    @log smoke=TC001: ATAN2() is not supported on this version. Okay.
   },
   {
     @if cand(
@@ -38,13 +37,33 @@
           eq(round(atan2(1,1,g),4), 50)
         )=
     {
-      @log smoke=TC002: atan2 angle units. Succeeded.;
-      @trig me/tr.done
+      @log smoke=TC002: atan2 angle units. Succeeded.
     },
     {
-      @log smoke=TC002: atan2 angle units. Failed (atan2(1%,1%,d)=[round(atan2(1,1,d),6)] atan2(1%,0%,d)=[round(atan2(1,0,d),6)] atan2(1%,1%,g)=[round(atan2(1,1,g),4)]).;
-      @trig me/tr.done
+      @log smoke=TC002: atan2 angle units. Failed (atan2(1%,1%,d)=[round(atan2(1,1,d),6)] atan2(1%,0%,d)=[round(atan2(1,0,d),6)] atan2(1%,1%,g)=[round(atan2(1,1,g),4)]).
     }
+  }
+-
+#
+# Test Case #3 - Axis directions and quadrant signs.
+# atan2(y,x): +x axis is 0, +y axis is pi/2, -x axis is pi; the
+# second quadrant is positive, the third negative.
+#
+&tr.tc003 test_atan2_fn=
+  @if cand(
+        eq(round(atan2(0,1),6), 0),
+        eq(round(atan2(1,0),6), 1.570796),
+        eq(round(atan2(0,-1),6), 3.141593),
+        eq(round(atan2(1,-1),6), 2.356194),
+        eq(round(atan2(-1,1),6), -0.785398)
+      )=
+  {
+    @log smoke=TC003: atan2 quadrants. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: atan2 quadrants. Failed (atan2(0%,1)=[round(atan2(0,1),6)] atan2(1%,0)=[round(atan2(1,0),6)] atan2(0%,-1)=[round(atan2(0,-1),6)] atan2(1%,-1)=[round(atan2(1,-1),6)] atan2(-1%,1)=[round(atan2(-1,1),6)]).;
+    @trig me/tr.done
   }
 -
 &tr.done test_atan2_fn=

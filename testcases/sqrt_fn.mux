@@ -22,11 +22,28 @@
         strmatch(sqrt(-1), Ind)
       )=
   {
-    @log smoke=TC001: sqrt examples. Succeeded.;
+    @log smoke=TC001: sqrt examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: sqrt examples. Failed (sqrt(2)=[round(sqrt(2),6)] sqrt(100)=[round(sqrt(100),6)] sqrt(0)=[round(sqrt(0),6)] sqrt(-1)=[sqrt(-1)]).
+  }
+-
+#
+# Test Case #2 - Decimals, large values, round trip, coercion.
+#
+&tr.tc002 test_sqrt_fn=
+  @if cand(
+        eq(sqrt(0.25), 0.5),
+        eq(sqrt(1000000), 1000),
+        eq(round(power(sqrt(2),2),6), 2),
+        eq(sqrt(foo), 0)
+      )=
+  {
+    @log smoke=TC002: sqrt decimals and round trip. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: sqrt examples. Failed (sqrt(2)=[round(sqrt(2),6)] sqrt(100)=[round(sqrt(100),6)] sqrt(0)=[round(sqrt(0),6)] sqrt(-1)=[sqrt(-1)]).;
+    @log smoke=TC002: sqrt decimals and round trip. Failed (sqrt(0.25)=[sqrt(0.25)] sqrt(1000000)=[sqrt(1000000)] roundtrip=[round(power(sqrt(2),2),6)] sqrt(foo)=[sqrt(foo)]).;
     @trig me/tr.done
   }
 -
