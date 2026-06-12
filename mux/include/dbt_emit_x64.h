@@ -773,6 +773,191 @@ static inline void emit_cmp_ctx_imm32(emit_t *e, int ctx_offset, int32_t imm) {
 }
 
 // ---------------------------------------------------------------
+// RV64 M-extension division with RISC-V semantics (#811)
+//
+// x86 idiv/div raise #DE (-> SIGFPE) on a zero divisor, and idiv
+// also on INT64_MIN / -1.  RV64 defines all of these without
+// trapping: division by zero yields all ones (quotient) or the
+// dividend (remainder); signed overflow yields INT64_MIN (quotient)
+// or 0 (remainder).  Guarding on the divisor alone covers both trap
+// cases: for divisor -1 the quotient is neg(dividend), which wraps
+// INT64_MIN to INT64_MIN exactly as the spec requires, and the
+// remainder is 0 for every dividend.
+//
+// Caller contract: dividend in RAX, divisor in RCX (scratch, never
+// a cache slot).  RDX is clobbered.  Quotient forms leave the result
+// in RAX, remainder forms in RDX; W forms sign-extend the result.
+// ---------------------------------------------------------------
+
+// 32-bit (no REX.W) operand primitives for the W forms.
+
+// test r32, r32
+static inline void emit_test_r32(emit_t *e, int r1, int r2) {
+    if (reg_hi(r1) || reg_hi(r2))
+        emit_byte(e, rex(0, reg_hi(r2), 0, reg_hi(r1)));
+    emit_byte(e, 0x85);
+    emit_byte(e, modrm(0x03, r2, r1));
+}
+
+// cmp r32, imm8 (sign-extended)
+static inline void emit_cmp_r32_imm8(emit_t *e, int reg, int8_t imm) {
+    if (reg_hi(reg))
+        emit_byte(e, rex(0, 0, 0, reg_hi(reg)));
+    emit_byte(e, 0x83);
+    emit_byte(e, modrm(0x03, 7, reg));
+    emit_byte(e, static_cast<uint8_t>(imm));
+}
+
+// neg r32
+static inline void emit_neg_r32(emit_t *e, int reg) {
+    if (reg_hi(reg))
+        emit_byte(e, rex(0, 0, 0, reg_hi(reg)));
+    emit_byte(e, 0xF7);
+    emit_byte(e, modrm(0x03, 3, reg));
+}
+
+// cdq (sign-extend EAX into EDX)
+static inline void emit_cdq(emit_t *e) {
+    emit_byte(e, 0x99);
+}
+
+// idiv r32 — EDX:EAX / reg
+static inline void emit_idiv_r32(emit_t *e, int reg) {
+    if (reg_hi(reg))
+        emit_byte(e, rex(0, 0, 0, reg_hi(reg)));
+    emit_byte(e, 0xF7);
+    emit_byte(e, modrm(0x03, 7, reg));
+}
+
+// div r32 — unsigned EDX:EAX / reg
+static inline void emit_div_r32(emit_t *e, int reg) {
+    if (reg_hi(reg))
+        emit_byte(e, rex(0, 0, 0, reg_hi(reg)));
+    emit_byte(e, 0xF7);
+    emit_byte(e, modrm(0x03, 6, reg));
+}
+
+// DIV — quotient in RAX.
+static inline void emit_rv_div64(emit_t *e) {
+    emit_test_r64(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_cmp_r64_imm(e, X64_RCX, -1);
+    uint32_t jne = emit_jcc_rel32(e, JCC_NE);
+    emit_neg_r64(e, X64_RAX);              // x / -1 = -x (INT64_MIN wraps)
+    uint32_t jdone1 = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jne, emit_pos(e));
+    emit_cqo(e);
+    emit_idiv_r64(e, X64_RCX);
+    uint32_t jdone2 = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jz, emit_pos(e));
+    emit_mov_r64_imm32(e, X64_RAX, -1);    // div-by-zero -> all ones
+    emit_patch_rel32(e, jdone1, emit_pos(e));
+    emit_patch_rel32(e, jdone2, emit_pos(e));
+}
+
+// DIVU — quotient in RAX.
+static inline void emit_rv_divu64(emit_t *e) {
+    emit_test_r64(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_xor_r64(e, X64_RDX, X64_RDX);
+    emit_div_r64(e, X64_RCX);
+    uint32_t jdone = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jz, emit_pos(e));
+    emit_mov_r64_imm32(e, X64_RAX, -1);    // divu-by-zero -> UINT64_MAX
+    emit_patch_rel32(e, jdone, emit_pos(e));
+}
+
+// REM — remainder in RDX.
+static inline void emit_rv_rem64(emit_t *e) {
+    emit_mov_r64(e, X64_RDX, X64_RAX);     // rem-by-zero -> dividend
+    emit_test_r64(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_cmp_r64_imm(e, X64_RCX, -1);
+    uint32_t jneg1 = emit_jcc_rel32(e, JCC_E);
+    emit_cqo(e);
+    emit_idiv_r64(e, X64_RCX);
+    uint32_t jdone = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jneg1, emit_pos(e));
+    emit_xor_r64(e, X64_RDX, X64_RDX);     // x % -1 = 0 (INT64_MIN included)
+    emit_patch_rel32(e, jdone, emit_pos(e));
+    emit_patch_rel32(e, jz, emit_pos(e));
+}
+
+// REMU — remainder in RDX.
+static inline void emit_rv_remu64(emit_t *e) {
+    emit_mov_r64(e, X64_RDX, X64_RAX);     // remu-by-zero -> dividend
+    emit_test_r64(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_xor_r64(e, X64_RDX, X64_RDX);
+    emit_div_r64(e, X64_RCX);
+    emit_patch_rel32(e, jz, emit_pos(e));
+}
+
+// DIVW — sign-extended 32-bit quotient in RAX.
+static inline void emit_rv_divw(emit_t *e) {
+    emit_test_r32(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_cmp_r32_imm8(e, X64_RCX, -1);
+    uint32_t jne = emit_jcc_rel32(e, JCC_NE);
+    emit_neg_r32(e, X64_RAX);              // x / -1 = -x (INT32_MIN wraps)
+    uint32_t jsext = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jne, emit_pos(e));
+    emit_cdq(e);
+    emit_idiv_r32(e, X64_RCX);
+    emit_patch_rel32(e, jsext, emit_pos(e));
+    emit_movsxd(e, X64_RAX, X64_RAX);
+    uint32_t jdone = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jz, emit_pos(e));
+    emit_mov_r64_imm32(e, X64_RAX, -1);    // sext(UINT32_MAX)
+    emit_patch_rel32(e, jdone, emit_pos(e));
+}
+
+// DIVUW — sign-extended 32-bit quotient in RAX.
+static inline void emit_rv_divuw(emit_t *e) {
+    emit_test_r32(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_xor_r64(e, X64_RDX, X64_RDX);
+    emit_div_r32(e, X64_RCX);
+    emit_movsxd(e, X64_RAX, X64_RAX);
+    uint32_t jdone = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jz, emit_pos(e));
+    emit_mov_r64_imm32(e, X64_RAX, -1);    // sext(UINT32_MAX)
+    emit_patch_rel32(e, jdone, emit_pos(e));
+}
+
+// REMW — sign-extended 32-bit remainder in RDX.
+static inline void emit_rv_remw(emit_t *e) {
+    emit_test_r32(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_cmp_r32_imm8(e, X64_RCX, -1);
+    uint32_t jneg1 = emit_jcc_rel32(e, JCC_E);
+    emit_cdq(e);
+    emit_idiv_r32(e, X64_RCX);
+    emit_movsxd(e, X64_RDX, X64_RDX);
+    uint32_t jdone1 = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jneg1, emit_pos(e));
+    emit_xor_r64(e, X64_RDX, X64_RDX);     // x % -1 = 0
+    uint32_t jdone2 = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jz, emit_pos(e));
+    emit_movsxd(e, X64_RDX, X64_RAX);      // remw-by-zero -> sext(dividend32)
+    emit_patch_rel32(e, jdone1, emit_pos(e));
+    emit_patch_rel32(e, jdone2, emit_pos(e));
+}
+
+// REMUW — sign-extended 32-bit remainder in RDX.
+static inline void emit_rv_remuw(emit_t *e) {
+    emit_test_r32(e, X64_RCX, X64_RCX);
+    uint32_t jz = emit_jcc_rel32(e, JCC_E);
+    emit_xor_r64(e, X64_RDX, X64_RDX);
+    emit_div_r32(e, X64_RCX);
+    emit_movsxd(e, X64_RDX, X64_RDX);
+    uint32_t jdone = emit_jmp_rel32(e);
+    emit_patch_rel32(e, jz, emit_pos(e));
+    emit_movsxd(e, X64_RDX, X64_RAX);      // remu-by-zero -> sext(dividend32)
+    emit_patch_rel32(e, jdone, emit_pos(e));
+}
+
+// ---------------------------------------------------------------
 // Block exit helpers
 // ---------------------------------------------------------------
 

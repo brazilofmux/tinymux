@@ -2301,29 +2301,33 @@ no_addr_fusion:
                     emit_mul_r64(&e, rs2);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
+                // DIV/DIVU/REM/REMU: a bare idiv/div traps (#DE -> SIGFPE)
+                // on a zero divisor and on INT64_MIN / -1, but RV64 defines
+                // both cases (#811) — emit_rv_*64 guard them.  Copy the
+                // divisor to scratch RCX before the dividend load clobbers
+                // RAX: rs2 IS RAX when guest rs2 is x0.
                 case 4: // DIV
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_cqo(&e);
-                    emit_idiv_r64(&e, rs2);
+                    emit_rv_div64(&e);
                     rc_store(&e, &rc, insn.rd, X64_RAX);
                     break;
                 case 5: // DIVU
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    // xor rdx, rdx for unsigned
-                    emit_xor_r64(&e, X64_RDX, X64_RDX);
-                    emit_div_r64(&e, rs2);
+                    emit_rv_divu64(&e);
                     rc_store(&e, &rc, insn.rd, X64_RAX);
                     break;
                 case 6: // REM
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_cqo(&e);
-                    emit_idiv_r64(&e, rs2);
+                    emit_rv_rem64(&e);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
                 case 7: // REMU
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_xor_r64(&e, X64_RDX, X64_RDX);
-                    emit_div_r64(&e, rs2);
+                    emit_rv_remu64(&e);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
                 }
@@ -2462,46 +2466,32 @@ no_addr_fusion:
                     }
                     emit_movsxd(&e, rd, rd);
                     break;
+                // DIVW/DIVUW/REMW/REMUW: guarded like DIV/REM above (#811),
+                // testing the low 32 bits of the divisor.  Divisor goes to
+                // scratch RCX before RAX is clobbered (rs2 IS RAX when
+                // guest rs2 is x0).
                 case 4: // DIVW
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    // cdq for 32-bit sign extension
-                    emit_byte(&e, 0x99); // CDQ (not CQO)
-                    // Need 32-bit idiv
-                    if (reg_hi(rs2))
-                        emit_byte(&e, rex(0, 0, 0, reg_hi(rs2)));
-                    emit_byte(&e, 0xF7);
-                    emit_byte(&e, modrm(0x03, 7, rs2));
-                    emit_movsxd(&e, X64_RAX, X64_RAX);
+                    emit_rv_divw(&e);
                     rc_store(&e, &rc, insn.rd, X64_RAX);
                     break;
                 case 5: // DIVUW
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_xor_r64(&e, X64_RDX, X64_RDX);
-                    if (reg_hi(rs2))
-                        emit_byte(&e, rex(0, 0, 0, reg_hi(rs2)));
-                    emit_byte(&e, 0xF7);
-                    emit_byte(&e, modrm(0x03, 6, rs2));
-                    emit_movsxd(&e, X64_RAX, X64_RAX);
+                    emit_rv_divuw(&e);
                     rc_store(&e, &rc, insn.rd, X64_RAX);
                     break;
                 case 6: // REMW
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_byte(&e, 0x99); // CDQ
-                    if (reg_hi(rs2))
-                        emit_byte(&e, rex(0, 0, 0, reg_hi(rs2)));
-                    emit_byte(&e, 0xF7);
-                    emit_byte(&e, modrm(0x03, 7, rs2));
-                    emit_movsxd(&e, X64_RDX, X64_RDX);
+                    emit_rv_remw(&e);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
                 case 7: // REMUW
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_xor_r64(&e, X64_RDX, X64_RDX);
-                    if (reg_hi(rs2))
-                        emit_byte(&e, rex(0, 0, 0, reg_hi(rs2)));
-                    emit_byte(&e, 0xF7);
-                    emit_byte(&e, modrm(0x03, 6, rs2));
-                    emit_movsxd(&e, X64_RDX, X64_RDX);
+                    emit_rv_remuw(&e);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
                 }

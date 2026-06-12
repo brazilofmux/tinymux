@@ -167,6 +167,16 @@ static uint32_t REM(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return r_type(OP_REG, rd, 6, rs1, rs2, 0x01);
 }
 
+// Convenience: DIVU rd, rs1, rs2
+static uint32_t DIVU(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return r_type(OP_REG, rd, 5, rs1, rs2, 0x01);
+}
+
+// Convenience: REMU rd, rs1, rs2
+static uint32_t REMU(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return r_type(OP_REG, rd, 7, rs1, rs2, 0x01);
+}
+
 // Convenience: SLLI rd, rs1, shamt (64-bit)
 static uint32_t SLLI(uint8_t rd, uint8_t rs1, int shamt) {
     return i_type(OP_IMM, rd, ALU_SLLI, rs1, shamt & 0x3F);
@@ -225,6 +235,20 @@ static uint32_t SUBW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
 // Convenience: MULW rd, rs1, rs2
 static uint32_t MULW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return r_type(OP_REG32, rd, 0, rs1, rs2, 0x01);
+}
+
+// Convenience: DIVW / DIVUW / REMW / REMUW rd, rs1, rs2
+static uint32_t DIVW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return r_type(OP_REG32, rd, 4, rs1, rs2, 0x01);
+}
+static uint32_t DIVUW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return r_type(OP_REG32, rd, 5, rs1, rs2, 0x01);
+}
+static uint32_t REMW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return r_type(OP_REG32, rd, 6, rs1, rs2, 0x01);
+}
+static uint32_t REMUW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
+    return r_type(OP_REG32, rd, 7, rs1, rs2, 0x01);
 }
 
 // Run a code sequence, return exit code.
@@ -1559,6 +1583,92 @@ static void test_mulhsu_aliasing() {
     CHECK_EQ("mulhsu rd==rs2: DBT", run_code_dbt(code, 16), ~0ULL);
 }
 
+// M-extension div/rem edge cases, differential against the interpreter
+// (issue #811).  x86 idiv/div raise #DE (SIGFPE) on a zero divisor, and
+// idiv also on INT_MIN / -1; RV64 defines non-trapping results for all
+// of these (div-by-zero -> all ones / dividend, signed overflow ->
+// INT_MIN / 0).  The unguarded x64 backends crashed the whole process
+// here.  Covers all eight forms at both trap points, a divisor of x0
+// (whose host register aliases scratch RAX), a W-form divisor whose low
+// 32 bits are zero but whose full 64 bits are not, and ordinary
+// quotients to confirm the guarded sequences still divide correctly.
+//
+static void test_div_rem_edge_cases() {
+    printf("test_div_rem_edge_cases...\n");
+
+    std::vector<uint32_t> code = {
+        ADDI(1, 0, 1),  SLLI(1, 1, 63),   // x1 = INT64_MIN
+        ADDI(2, 0, -1),                   // x2 = -1
+        ADDI(3, 0, 0),                    // x3 = 0 (runtime zero divisor)
+        ADDI(4, 0, 42),                   // x4 = 42
+        ADDI(5, 0, 7),                    // x5 = 7
+        ADDI(6, 0, -100),                 // x6 = -100
+        ADDI(7, 0, 1),  SLLI(7, 7, 32),   // x7 = 1<<32 (low 32 bits zero)
+        ADDI(8, 0, 1),  SLLI(8, 8, 31),   // x8 = 1<<31 (low 32 = INT32_MIN)
+
+        // 64-bit forms, zero divisor.
+        DIV(9, 4, 3), DIVU(10, 4, 3), REM(11, 4, 3), REMU(12, 4, 3),
+        // 64-bit signed overflow: INT64_MIN / -1.
+        DIV(13, 1, 2), REM(14, 1, 2),
+        // Divisor is x0 itself.
+        DIV(15, 4, 0), REM(16, 4, 0),
+        // W forms, zero divisor.
+        DIVW(17, 4, 3), DIVUW(18, 4, 3), REMW(19, 4, 3), REMUW(20, 4, 3),
+        // W-form signed overflow: INT32_MIN / -1.
+        DIVW(21, 8, 2), REMW(22, 8, 2),
+        // W-form divisor with zero low 32 bits but nonzero upper bits.
+        DIVW(23, 4, 7), REMW(24, 4, 7),
+        // Ordinary divisions through the guarded sequences.
+        DIV(25, 4, 5), REM(26, 6, 5), DIV(27, 6, 5),
+        DIVU(28, 2, 5), REMU(29, 2, 5),
+        DIVW(30, 6, 5), REMUW(31, 2, 5),
+        ECALL(),
+    };
+
+    static const struct { const char *name; int reg; uint64_t expect; }
+    cases[] = {
+        { "div 42/0",            9, UINT64_MAX },
+        { "divu 42/0",          10, UINT64_MAX },
+        { "rem 42%0",           11, 42 },
+        { "remu 42%0",          12, 42 },
+        { "div MIN/-1",         13, 0x8000000000000000ULL },
+        { "rem MIN%-1",         14, 0 },
+        { "div 42/x0",          15, UINT64_MAX },
+        { "rem 42%x0",          16, 42 },
+        { "divw 42/0",          17, UINT64_MAX },
+        { "divuw 42/0",         18, UINT64_MAX },
+        { "remw 42%0",          19, 42 },
+        { "remuw 42%0",         20, 42 },
+        { "divw MIN32/-1",      21, 0xFFFFFFFF80000000ULL },
+        { "remw MIN32%-1",      22, 0 },
+        { "divw 42/(1<<32)",    23, UINT64_MAX },
+        { "remw 42%(1<<32)",    24, 42 },
+        { "div 42/7",           25, 6 },
+        { "rem -100%7",         26, static_cast<uint64_t>(-2LL) },
+        { "div -100/7",         27, static_cast<uint64_t>(-14LL) },
+        { "divu MAX/7",         28, 0x2492492492492492ULL },
+        { "remu MAX%7",         29, 1 },
+        { "divw -100/7",        30, static_cast<uint64_t>(-14LL) },
+        { "remuw 0xFFFFFFFF%7", 31, 3 },
+    };
+
+    auto r = run_code(code);
+    for (const auto& c : cases) {
+        char desc[64];
+        snprintf(desc, sizeof(desc), "%s: interp", c.name);
+        CHECK_EQ(desc, r.state.x[c.reg], c.expect);
+    }
+
+    // One DBT run translates the whole sequence; pre-#811 the first
+    // unguarded idiv took the process down with SIGFPE right here.
+    run_code_dbt(code, 0);
+    for (const auto& c : cases) {
+        char desc[64];
+        snprintf(desc, sizeof(desc), "%s: DBT", c.name);
+        CHECK_EQ(desc, g_dbt_exit_ctx.x[c.reg], c.expect);
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -1600,6 +1710,7 @@ int main(int argc, char *argv[]) {
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
     test_mulhsu_aliasing();
+    test_div_rem_edge_cases();
 
     printf("\n==============================\n");
     printf("Hand-assembled: %d run, %d passed, %d failed\n",
