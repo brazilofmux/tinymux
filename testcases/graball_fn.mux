@@ -20,11 +20,56 @@
         strmatch(graball(foo bar baz,*oo),foo)
       )=
   {
-    @log smoke=TC001: graball() basic operations. Succeeded.;
+    @log smoke=TC001: graball() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: graball() basic operations. Failed (graball(b*)=[graball(foo bar baz,b*)] graball(*oo)=[graball(foo bar baz,*oo)]).
+  }
+-
+#
+# Test Case #2 - Order preserved, case-insensitive matching, ? wildcard.
+#
+&tr.tc002 test_graball_fn=
+  @if cand(
+        strmatch(graball(Apple banana apricot,a*), Apple apricot),
+        strmatch(graball(x ax bx cx,?x), ax bx cx)
+      )=
+  {
+    @log smoke=TC002: graball() order and case handling. Succeeded.
+  },
+  {
+    @log smoke=TC002: graball() order and case handling. Failed (graball(Apple banana apricot%,a*)=[graball(Apple banana apricot,a*)] graball(x ax bx cx%,?x)=[graball(x ax bx cx,?x)]).
+  }
+-
+#
+# Test Case #3 - Custom input and output delimiters.
+#
+&tr.tc003 test_graball_fn=
+  @if cand(
+        strmatch(graball(a-1+b-2+a-3,a*,+), a-1+a-3),
+        strmatch(graball(a-1+b-2+a-3,a*,+,~), a-1~a-3)
+      )=
+  {
+    @log smoke=TC003: graball() custom delimiters. Succeeded.
+  },
+  {
+    @log smoke=TC003: graball() custom delimiters. Failed (graball(a-1+b-2+a-3%,a*%,+)=[graball(a-1+b-2+a-3,a*,+)] graball(a-1+b-2+a-3%,a*%,+%,~)=[graball(a-1+b-2+a-3,a*,+,~)]).
+  }
+-
+#
+# Test Case #4 - No match and empty list return empty.
+#
+&tr.tc004 test_graball_fn=
+  @if cand(
+        eq(strlen(graball(foo bar,q*)), 0),
+        eq(strlen(graball(,q*)), 0)
+      )=
+  {
+    @log smoke=TC004: graball() no-match cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: graball() basic operations. Failed (graball(b*)=[graball(foo bar baz,b*)] graball(*oo)=[graball(foo bar baz,*oo)]).;
+    @log smoke=TC004: graball() no-match cases. Failed (graball(foo bar%,q*)=[graball(foo bar,q*)] graball(%,q*)=[graball(,q*)]).;
     @trig me/tr.done
   }
 -

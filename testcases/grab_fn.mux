@@ -20,11 +20,58 @@
         strmatch(grab(one two three,t*),two)
       )=
   {
-    @log smoke=TC001: grab() basic operations. Succeeded.;
+    @log smoke=TC001: grab() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: grab() basic operations. Failed (grab(b*)=[grab(foo bar baz,b*)] grab(t*)=[grab(one two three,t*)]).
+  }
+-
+#
+# Test Case #2 - First match only, ? wildcard, case-insensitive match.
+#
+&tr.tc002 test_grab_fn=
+  @if cand(
+        strmatch(grab(ab abc abcd,a?c), abc),
+        strmatch(grab(foo bar baz,*a*), bar),
+        strmatch(grab(FOO bar,f*), FOO),
+        strmatch(grab(foo bar,bar), bar)
+      )=
+  {
+    @log smoke=TC002: grab() wildcard and first-match semantics. Succeeded.
+  },
+  {
+    @log smoke=TC002: grab() wildcard and first-match semantics. Failed (grab(ab abc abcd%,a?c)=[grab(ab abc abcd,a?c)] grab(foo bar baz%,*a*)=[grab(foo bar baz,*a*)] grab(FOO bar%,f*)=[grab(FOO bar,f*)] grab(foo bar%,bar)=[grab(foo bar,bar)]).
+  }
+-
+#
+# Test Case #3 - Custom delimiter.
+#
+&tr.tc003 test_grab_fn=
+  @if cand(
+        strmatch(grab(Test-1+Ack-2+Foof-3,*o*,+), Foof-3),
+        strmatch(grab(a:1|b:2,b*,|), b:2)
+      )=
+  {
+    @log smoke=TC003: grab() custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC003: grab() custom delimiter. Failed (grab(Test-1+Ack-2+Foof-3%,*o*%,+)=[grab(Test-1+Ack-2+Foof-3,*o*,+)] grab(a:1|b:2%,b*%,|)=[grab(a:1|b:2,b*,|)]).
+  }
+-
+#
+# Test Case #4 - No match and empty list return empty.
+#
+&tr.tc004 test_grab_fn=
+  @if cand(
+        eq(strlen(grab(foo bar,q*)), 0),
+        eq(strlen(grab(,q*)), 0)
+      )=
+  {
+    @log smoke=TC004: grab() no-match cases. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: grab() basic operations. Failed (grab(b*)=[grab(foo bar baz,b*)] grab(t*)=[grab(one two three,t*)]).;
+    @log smoke=TC004: grab() no-match cases. Failed (grab(foo bar%,q*)=[grab(foo bar,q*)] grab(%,q*)=[grab(,q*)]).;
     @trig me/tr.done
   }
 -

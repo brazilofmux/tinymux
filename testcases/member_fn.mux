@@ -20,11 +20,44 @@
         eq(member(a b c d,x), 0)
       )=
   {
-    @log smoke=TC001: member basic operations. Succeeded.;
+    @log smoke=TC001: member basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: member basic operations. Failed (member(c)=[member(a b c d,c)] member(x)=[member(a b c d,x)]).
+  }
+-
+#
+# Test Case #2 - Exact comparison: case-sensitive, no wildcards, first hit.
+#
+&tr.tc002 test_member_fn=
+  @if cand(
+        eq(member(a B c,b), 0),
+        eq(member(a B c,B), 2),
+        eq(member(foo bar,b*), 0),
+        eq(member(a b a,a), 1)
+      )=
+  {
+    @log smoke=TC002: member exact-match semantics. Succeeded.
+  },
+  {
+    @log smoke=TC002: member exact-match semantics. Failed (member(a B c%,b)=[member(a B c,b)] member(a B c%,B)=[member(a B c,B)] member(foo bar%,b*)=[member(foo bar,b*)] member(a b a%,a)=[member(a b a,a)]).
+  }
+-
+#
+# Test Case #3 - Custom delimiter and empty target word.
+#
+&tr.tc003 test_member_fn=
+  @if cand(
+        eq(member(a|b|c,b,|), 2),
+        eq(member(a:1|b:2|c:3,c:3,|), 3),
+        eq(member(a b c,), 0)
+      )=
+  {
+    @log smoke=TC003: member custom delimiter. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: member basic operations. Failed (member(c)=[member(a b c d,c)] member(x)=[member(a b c d,x)]).;
+    @log smoke=TC003: member custom delimiter. Failed (member(a|b|c%,b%,|)=[member(a|b|c,b,|)] member(a:1|b:2|c:3%,c:3%,|)=[member(a:1|b:2|c:3,c:3,|)] member(a b c%,empty)=[member(a b c,)]).;
     @trig me/tr.done
   }
 -

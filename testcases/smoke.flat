@@ -3763,9 +3763,15 @@
 >256
 "@log smoke=Beginning graball() test cases."
 >257
-"@if cand(strmatch(graball(foo bar baz,b*),bar baz),strmatch(graball(foo bar baz,*oo),foo))={@log smoke=TC001: graball() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: graball() basic operations. Failed (graball(b*)=[graball(foo bar baz,b*)] graball(*oo)=[graball(foo bar baz,*oo)]).;@trig me/tr.done}"
+"@if cand(strmatch(graball(foo bar baz,b*),bar baz),strmatch(graball(foo bar baz,*oo),foo))={@log smoke=TC001: graball() basic operations. Succeeded.},{@log smoke=TC001: graball() basic operations. Failed (graball(b*)=[graball(foo bar baz,b*)] graball(*oo)=[graball(foo bar baz,*oo)]).}"
+>258
+"@if cand(strmatch(graball(Apple banana apricot,a*), Apple apricot),strmatch(graball(x ax bx cx,?x), ax bx cx))={@log smoke=TC002: graball() order and case handling. Succeeded.},{@log smoke=TC002: graball() order and case handling. Failed (graball(Apple banana apricot%,a*)=[graball(Apple banana apricot,a*)] graball(x ax bx cx%,?x)=[graball(x ax bx cx,?x)]).}"
+>259
+"@if cand(strmatch(graball(a-1+b-2+a-3,a*,+), a-1+a-3),strmatch(graball(a-1+b-2+a-3,a*,+,~), a-1~a-3))={@log smoke=TC003: graball() custom delimiters. Succeeded.},{@log smoke=TC003: graball() custom delimiters. Failed (graball(a-1+b-2+a-3%,a*%,+)=[graball(a-1+b-2+a-3,a*,+)] graball(a-1+b-2+a-3%,a*%,+%,~)=[graball(a-1+b-2+a-3,a*,+,~)]).}"
 >260
 "@log smoke=End graball() test cases.;@notify smoke"
+>261
+"@if cand(eq(strlen(graball(foo bar,q*)), 0),eq(strlen(graball(,q*)), 0))={@log smoke=TC004: graball() no-match cases. Succeeded.;@trig me/tr.done},{@log smoke=TC004: graball() no-match cases. Failed (graball(foo bar%,q*)=[graball(foo bar,q*)] graball(%,q*)=[graball(,q*)]).;@trig me/tr.done}"
 <
 !89
 "test_grab_fn"
@@ -3790,9 +3796,15 @@
 >256
 "@log smoke=Beginning grab() test cases."
 >257
-"@if cand(strmatch(grab(foo bar baz,b*),bar),strmatch(grab(one two three,t*),two))={@log smoke=TC001: grab() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: grab() basic operations. Failed (grab(b*)=[grab(foo bar baz,b*)] grab(t*)=[grab(one two three,t*)]).;@trig me/tr.done}"
+"@if cand(strmatch(grab(foo bar baz,b*),bar),strmatch(grab(one two three,t*),two))={@log smoke=TC001: grab() basic operations. Succeeded.},{@log smoke=TC001: grab() basic operations. Failed (grab(b*)=[grab(foo bar baz,b*)] grab(t*)=[grab(one two three,t*)]).}"
+>258
+"@if cand(strmatch(grab(ab abc abcd,a?c), abc),strmatch(grab(foo bar baz,*a*), bar),strmatch(grab(FOO bar,f*), FOO),strmatch(grab(foo bar,bar), bar))={@log smoke=TC002: grab() wildcard and first-match semantics. Succeeded.},{@log smoke=TC002: grab() wildcard and first-match semantics. Failed (grab(ab abc abcd%,a?c)=[grab(ab abc abcd,a?c)] grab(foo bar baz%,*a*)=[grab(foo bar baz,*a*)] grab(FOO bar%,f*)=[grab(FOO bar,f*)] grab(foo bar%,bar)=[grab(foo bar,bar)]).}"
+>259
+"@if cand(strmatch(grab(Test-1+Ack-2+Foof-3,*o*,+), Foof-3),strmatch(grab(a:1|b:2,b*,|), b:2))={@log smoke=TC003: grab() custom delimiter. Succeeded.},{@log smoke=TC003: grab() custom delimiter. Failed (grab(Test-1+Ack-2+Foof-3%,*o*%,+)=[grab(Test-1+Ack-2+Foof-3,*o*,+)] grab(a:1|b:2%,b*%,|)=[grab(a:1|b:2,b*,|)]).}"
 >260
 "@log smoke=End grab() test cases.;@notify smoke"
+>261
+"@if cand(eq(strlen(grab(foo bar,q*)), 0),eq(strlen(grab(,q*)), 0))={@log smoke=TC004: grab() no-match cases. Succeeded.;@trig me/tr.done},{@log smoke=TC004: grab() no-match cases. Failed (grab(foo bar%,q*)=[grab(foo bar,q*)] grab(%,q*)=[grab(,q*)]).;@trig me/tr.done}"
 <
 !90
 "test_graphemes_fn"
@@ -4202,9 +4214,15 @@
 >256
 "@log smoke=Beginning index() test cases."
 >257
-"@if eq(strlen(index(a:b|c:d|e:f,|,:,2)), 0)={@log smoke=TC001: index basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: index basic operations. Failed (index=[index(a:b|c:d|e:f,|,:,2)]).;@trig me/tr.done}"
+"@if eq(strlen(index(a:b|c:d|e:f,|,:,2)), 0)={@log smoke=TC001: index basic operations. Succeeded.},{@log smoke=TC001: index basic operations. Failed (index=[index(a:b|c:d|e:f,|,:,2)]).}"
+>258
+"@if cand(strmatch(index(a:b:c:d,:,1,1), a),strmatch(index(a:b:c:d,:,2,1), b),strmatch(index(a:b:c:d,:,2,2), b:c))={@log smoke=TC002: index item extraction. Succeeded.},{@log smoke=TC002: index item extraction. Failed (index(a:b:c:d%,:%,1%,1)=[index(a:b:c:d,:,1,1)] index(a:b:c:d%,:%,2%,1)=[index(a:b:c:d,:,2,1)] index(a:b:c:d%,:%,2%,2)=[index(a:b:c:d,:,2,2)]).}"
+>259
+"@if cand(strmatch(index(a:b:c:d,:,3,99), c:d),strmatch(index(a: b :c,:,2,1), b),strmatch(index(a b c d,,2,2), b c))={@log smoke=TC003: index boundary handling. Succeeded.},{@log smoke=TC003: index boundary handling. Failed (index(a:b:c:d%,:%,3%,99)=[index(a:b:c:d,:,3,99)] index(a: b :c%,:%,2%,1)=[index(a: b :c,:,2,1)] index(a b c d%,%,2%,2)=[index(a b c d,,2,2)]).}"
 >260
 "@log smoke=End index() test cases.;@notify smoke"
+>261
+"@if cand(eq(strlen(index(a:b:c,:,0,1)), 0),eq(strlen(index(a:b:c,:,1,0)), 0),eq(strlen(index(a:b,:,5,1)), 0),eq(strlen(index(,:,1,1)), 0))={@log smoke=TC004: index invalid bounds. Succeeded.;@trig me/tr.done},{@log smoke=TC004: index invalid bounds. Failed (index(a:b:c%,:%,0%,1)=[index(a:b:c,:,0,1)] index(a:b:c%,:%,1%,0)=[index(a:b:c,:,1,0)] index(a:b%,:%,5%,1)=[index(a:b,:,5,1)] index(%,:%,1%,1)=[index(,:,1,1)]).;@trig me/tr.done}"
 <
 !102
 "test_insert_fn"
@@ -5629,7 +5647,11 @@
 >256
 "@log smoke=Beginning lpos() test cases."
 >257
-"@if cand(strmatch(lpos(a b c a b c,a), 0 6),eq(strlen(lpos(a b c a b c,d)), 0))={@log smoke=TC001: lpos basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: lpos basic operations. Failed (lpos(a)=[lpos(a b c a b c,a)] lpos(d)=[lpos(a b c a b c,d)]).;@trig me/tr.done}"
+"@if cand(strmatch(lpos(a b c a b c,a), 0 6),eq(strlen(lpos(a b c a b c,d)), 0))={@log smoke=TC001: lpos basic operations. Succeeded.},{@log smoke=TC001: lpos basic operations. Failed (lpos(a)=[lpos(a b c a b c,a)] lpos(d)=[lpos(a b c a b c,d)]).}"
+>258
+"@if cand(strmatch(lpos(a-b-c,-), 1 3),strmatch(lpos(abcabc,bc), 1 4),strmatch(lpos(a b c,), 1 3))={@log smoke=TC002: lpos patterns and defaults. Succeeded.},{@log smoke=TC002: lpos patterns and defaults. Failed (lpos(a-b-c%,-)=[lpos(a-b-c,-)] lpos(abcabc%,bc)=[lpos(abcabc,bc)] lpos(a b c%,empty)=[lpos(a b c,)]).}"
+>259
+"@if cand(strmatch(lpos(xyx,x), 0 2),eq(strlen(lpos(,a)), 0))={@log smoke=TC003: lpos position zero and empty string. Succeeded.;@trig me/tr.done},{@log smoke=TC003: lpos position zero and empty string. Failed (lpos(xyx%,x)=[lpos(xyx,x)] lpos(%,a)=[lpos(,a)]).;@trig me/tr.done}"
 >260
 "@log smoke=End lpos() test cases.;@notify smoke"
 <
@@ -6239,7 +6261,11 @@
 >256
 "@log smoke=Beginning member() test cases."
 >257
-"@if cand(eq(member(a b c d,c), 3),eq(member(a b c d,x), 0))={@log smoke=TC001: member basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: member basic operations. Failed (member(c)=[member(a b c d,c)] member(x)=[member(a b c d,x)]).;@trig me/tr.done}"
+"@if cand(eq(member(a b c d,c), 3),eq(member(a b c d,x), 0))={@log smoke=TC001: member basic operations. Succeeded.},{@log smoke=TC001: member basic operations. Failed (member(c)=[member(a b c d,c)] member(x)=[member(a b c d,x)]).}"
+>258
+"@if cand(eq(member(a B c,b), 0),eq(member(a B c,B), 2),eq(member(foo bar,b*), 0),eq(member(a b a,a), 1))={@log smoke=TC002: member exact-match semantics. Succeeded.},{@log smoke=TC002: member exact-match semantics. Failed (member(a B c%,b)=[member(a B c,b)] member(a B c%,B)=[member(a B c,B)] member(foo bar%,b*)=[member(foo bar,b*)] member(a b a%,a)=[member(a b a,a)]).}"
+>259
+"@if cand(eq(member(a|b|c,b,|), 2),eq(member(a:1|b:2|c:3,c:3,|), 3),eq(member(a b c,), 0))={@log smoke=TC003: member custom delimiter. Succeeded.;@trig me/tr.done},{@log smoke=TC003: member custom delimiter. Failed (member(a|b|c%,b%,|)=[member(a|b|c,b,|)] member(a:1|b:2|c:3%,c:3%,|)=[member(a:1|b:2|c:3,c:3,|)] member(a b c%,empty)=[member(a b c,)]).;@trig me/tr.done}"
 >260
 "@log smoke=End member() test cases.;@notify smoke"
 <
@@ -11116,7 +11142,9 @@
 >256
 "@log smoke=Beginning wordpos() test cases."
 >257
-"@if cand(eq(wordpos(This is a test,1), 1),eq(wordpos(This is a test,6), 2),eq(wordpos(This is a test,9), 3),eq(wordpos(This is a test,14), 4),strmatch(wordpos(This is a test,0), #-1*),strmatch(wordpos(This is a test,99), #-1*))={@log smoke=TC001: wordpos char-position mapping. Succeeded.;@trig me/tr.done},{@log smoke=TC001: wordpos char-position mapping. Failed (p1=[wordpos(This is a test,1)] p6=[wordpos(This is a test,6)] p9=[wordpos(This is a test,9)] p14=[wordpos(This is a test,14)] p0=[wordpos(This is a test,0)] p99=[wordpos(This is a test,99)]).;@trig me/tr.done}"
+"@if cand(eq(wordpos(This is a test,1), 1),eq(wordpos(This is a test,6), 2),eq(wordpos(This is a test,9), 3),eq(wordpos(This is a test,14), 4),strmatch(wordpos(This is a test,0), #-1*),strmatch(wordpos(This is a test,99), #-1*))={@log smoke=TC001: wordpos char-position mapping. Succeeded.},{@log smoke=TC001: wordpos char-position mapping. Failed (p1=[wordpos(This is a test,1)] p6=[wordpos(This is a test,6)] p9=[wordpos(This is a test,9)] p14=[wordpos(This is a test,14)] p0=[wordpos(This is a test,0)] p99=[wordpos(This is a test,99)]).}"
+>258
+"@if cand(eq(wordpos(This is a test,5), 2),eq(wordpos(a|bb|ccc,6,|), 3),eq(wordpos(a|bb|ccc,3,|), 2))={@log smoke=TC002: wordpos separators and custom delimiter. Succeeded.;@trig me/tr.done},{@log smoke=TC002: wordpos separators and custom delimiter. Failed (p5=[wordpos(This is a test,5)] p6|=[wordpos(a|bb|ccc,6,|)] p3|=[wordpos(a|bb|ccc,3,|)]).;@trig me/tr.done}"
 >260
 "@log smoke=End wordpos() test cases.;@notify smoke"
 <

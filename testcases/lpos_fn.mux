@@ -21,11 +21,43 @@
         eq(strlen(lpos(a b c a b c,d)), 0)
       )=
   {
-    @log smoke=TC001: lpos basic operations. Succeeded.;
+    @log smoke=TC001: lpos basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: lpos basic operations. Failed (lpos(a)=[lpos(a b c a b c,a)] lpos(d)=[lpos(a b c a b c,d)]).
+  }
+-
+#
+# Test Case #2 - Other characters, multi-char patterns, empty pattern.
+# Positions are 0-based; an empty pattern defaults to space.
+#
+&tr.tc002 test_lpos_fn=
+  @if cand(
+        strmatch(lpos(a-b-c,-), 1 3),
+        strmatch(lpos(abcabc,bc), 1 4),
+        strmatch(lpos(a b c,), 1 3)
+      )=
+  {
+    @log smoke=TC002: lpos patterns and defaults. Succeeded.
+  },
+  {
+    @log smoke=TC002: lpos patterns and defaults. Failed (lpos(a-b-c%,-)=[lpos(a-b-c,-)] lpos(abcabc%,bc)=[lpos(abcabc,bc)] lpos(a b c%,empty)=[lpos(a b c,)]).
+  }
+-
+#
+# Test Case #3 - Match at position zero and empty string.
+#
+&tr.tc003 test_lpos_fn=
+  @if cand(
+        strmatch(lpos(xyx,x), 0 2),
+        eq(strlen(lpos(,a)), 0)
+      )=
+  {
+    @log smoke=TC003: lpos position zero and empty string. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: lpos basic operations. Failed (lpos(a)=[lpos(a b c a b c,a)] lpos(d)=[lpos(a b c a b c,d)]).;
+    @log smoke=TC003: lpos position zero and empty string. Failed (lpos(xyx%,x)=[lpos(xyx,x)] lpos(%,a)=[lpos(,a)]).;
     @trig me/tr.done
   }
 -

@@ -19,11 +19,60 @@
 &tr.tc001 test_index_fn=
   @if eq(strlen(index(a:b|c:d|e:f,|,:,2)), 0)=
   {
-    @log smoke=TC001: index basic operations. Succeeded.;
+    @log smoke=TC001: index basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: index basic operations. Failed (index=[index(a:b|c:d|e:f,|,:,2)]).
+  }
+-
+#
+# Test Case #2 - Item extraction: index(text, char, start, count).
+#
+&tr.tc002 test_index_fn=
+  @if cand(
+        strmatch(index(a:b:c:d,:,1,1), a),
+        strmatch(index(a:b:c:d,:,2,1), b),
+        strmatch(index(a:b:c:d,:,2,2), b:c)
+      )=
+  {
+    @log smoke=TC002: index item extraction. Succeeded.
+  },
+  {
+    @log smoke=TC002: index item extraction. Failed (index(a:b:c:d%,:%,1%,1)=[index(a:b:c:d,:,1,1)] index(a:b:c:d%,:%,2%,1)=[index(a:b:c:d,:,2,1)] index(a:b:c:d%,:%,2%,2)=[index(a:b:c:d,:,2,2)]).
+  }
+-
+#
+# Test Case #3 - Run off the end, space trimming, empty char means space.
+#
+&tr.tc003 test_index_fn=
+  @if cand(
+        strmatch(index(a:b:c:d,:,3,99), c:d),
+        strmatch(index(a: b :c,:,2,1), b),
+        strmatch(index(a b c d,,2,2), b c)
+      )=
+  {
+    @log smoke=TC003: index boundary handling. Succeeded.
+  },
+  {
+    @log smoke=TC003: index boundary handling. Failed (index(a:b:c:d%,:%,3%,99)=[index(a:b:c:d,:,3,99)] index(a: b :c%,:%,2%,1)=[index(a: b :c,:,2,1)] index(a b c d%,%,2%,2)=[index(a b c d,,2,2)]).
+  }
+-
+#
+# Test Case #4 - Invalid bounds and empty input return empty.
+#
+&tr.tc004 test_index_fn=
+  @if cand(
+        eq(strlen(index(a:b:c,:,0,1)), 0),
+        eq(strlen(index(a:b:c,:,1,0)), 0),
+        eq(strlen(index(a:b,:,5,1)), 0),
+        eq(strlen(index(,:,1,1)), 0)
+      )=
+  {
+    @log smoke=TC004: index invalid bounds. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: index basic operations. Failed (index=[index(a:b|c:d|e:f,|,:,2)]).;
+    @log smoke=TC004: index invalid bounds. Failed (index(a:b:c%,:%,0%,1)=[index(a:b:c,:,0,1)] index(a:b:c%,:%,1%,0)=[index(a:b:c,:,1,0)] index(a:b%,:%,5%,1)=[index(a:b,:,5,1)] index(%,:%,1%,1)=[index(,:,1,1)]).;
     @trig me/tr.done
   }
 -
