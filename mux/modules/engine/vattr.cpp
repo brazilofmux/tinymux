@@ -43,6 +43,18 @@ ATTR *vattr_alloc_LEN(const UTF8 *pName, size_t nName, int flags)
 
 ATTR *vattr_define_LEN(const UTF8 *pName, size_t nName, int number, int flags)
 {
+    // Validate the attribute number before it reaches anum_extend()/anum_set()
+    // (#808).  User attribute numbers are always in [A_USER_START, A_USER_MAX];
+    // the read path (atr_num) already validates this range, but this write path
+    // did not, so a negative number would OOB-write anum_table and a huge one
+    // would allocate a giant table.
+    //
+    if (  number < A_USER_START
+       || number > A_USER_MAX)
+    {
+        return nullptr;
+    }
+
     ATTR *vp = vattr_find_LEN(pName, nName);
     if (vp)
     {

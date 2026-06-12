@@ -239,6 +239,15 @@ constexpr int A_TEMP      = 255;
 
 constexpr int A_USER_START    = 256;     // Start of user-named attributes.
 
+// Largest attribute number we will index anum_table[] with (#808).  anum_set is
+// a bare `anum_table[x] = v` macro and anum_extend allocates a dense table of
+// (x + 1) pointers, so a number from a corrupt/malicious flatfile (+A record)
+// or SQLite attr-name row must be range-checked first: a negative one writes
+// out of bounds, an enormous one allocates a giant table (OOM).  16M is ~1000x
+// any real game's attribute count yet caps the table at 128 MB.
+//
+constexpr int A_USER_MAX      = 0x01000000; // 16,777,216
+
 constexpr int ATR_BUF_CHUNK   = 100; /* Min size to allocate for attribute buffer */
 constexpr int ATR_BUF_INCR    = 6;   /* Max size of one attribute */
 

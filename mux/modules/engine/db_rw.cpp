@@ -607,6 +607,26 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
                 // USER-NAMED ATTRIBUTE
                 //
                 anum = getref(f);
+
+                // Validate the user-attribute number before it reaches
+                // g_max_nam_atr (which seeds attr_next) or vattr_define_LEN ->
+                // anum_set/anum_extend (#808).  A negative number from a
+                // corrupt/malicious flatfile would OOB-write anum_table; a huge
+                // one would set attr_next enormous (runtime OOM) and make
+                // anum_extend allocate a giant table.  User attribute numbers
+                // are always >= A_USER_START.  Skip the bad record (still drain
+                // its value string) so the load degrades gracefully rather than
+                // corrupting memory.
+                //
+                if (  anum < A_USER_START
+                   || anum > A_USER_MAX)
+                {
+                    Log.tinyprintf(T(ENDLINE "db_read: user-attribute number #%d is out of range; skipping a corrupt flatfile +A record." ENDLINE), anum);
+                    size_t nUnused;
+                    (void)getstring_noalloc(f, true, &nUnused);
+                    break;
+                }
+
                 tstr = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBuffer));
                 if (mux_isdigit(*tstr))
                 {

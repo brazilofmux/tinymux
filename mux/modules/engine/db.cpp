@@ -3623,6 +3623,18 @@ int sqlite_load_game(void)
     if (!sqldb.LoadAllAttrNames(
         [&max_attrnum_loaded](int attrnum, const char *name, int flags)
         {
+            // Validate before anum_extend()/anum_set()/max tracking (#808).  A
+            // negative attrnum from a tampered SQLite DB would OOB-write
+            // anum_table; a huge one would make anum_extend allocate a giant
+            // table and seed attr_next enormous (runtime OOM).  User attribute
+            // numbers are always in [A_USER_START, 0x01000000]; skip anything
+            // else so a corrupt row degrades gracefully.
+            //
+            if (  attrnum < A_USER_START
+               || attrnum > A_USER_MAX)
+            {
+                return;
+            }
             anum_extend(attrnum);
             vattr_define_LEN(
                 reinterpret_cast<const UTF8 *>(name),
