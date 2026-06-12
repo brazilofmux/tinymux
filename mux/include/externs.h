@@ -1675,6 +1675,7 @@ class CSQLiteBackend;
 extern CSQLiteBackend *g_pSQLiteBackend;
 bool sqlite_sync_runtime(void);
 int sqlite_load_game(void);
+void db_validate_refs(void);
 bool sqlite_sync_comsys(void);
 int sqlite_load_comsys(void);
 bool sqlite_sync_mail(void);

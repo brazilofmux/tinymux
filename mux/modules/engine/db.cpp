@@ -3587,6 +3587,46 @@ bool sqlite_sync_runtime(void)
     return true;
 }
 
+// db_validate_refs — clamp object field dbrefs to the legal range after a load
+// (#809).  db_read()/sqlite_load_game() store the dbref *values* (location,
+// contents, exits, next, link, owner, parent, zone) straight from the DB.  The
+// object indices are validated (#806), but the field values are not, and a
+// corrupt/malicious DB can carry wild values that crash at use: the chain
+// pointers (contents/exits/next) are walked by DOLIST, which only guards
+// against NOTHING and self-loops, so a wild `next` -> db[wild].next is an OOB
+// read; location/parent/zone/owner index db[] in many places too.  For a valid
+// database every field is already in range, so this is a no-op there; only a
+// corrupt database is repaired (wild -> NOTHING; a wild owner defaults to GOD;
+// link additionally permits the HOME sentinel).
+//
+void db_validate_refs(void)
+{
+    const dbref top = mudstate.db_top;
+    auto objref = [top](dbref r) -> dbref
+    {
+        return (NOTHING == r || (0 <= r && r < top)) ? r : NOTHING;
+    };
+    int nFixed = 0;
+    for (dbref i = 0; i < top; i++)
+    {
+        dbref b;
+        b = db[i].location; db[i].location = objref(b); if (db[i].location != b) nFixed++;
+        b = db[i].contents; db[i].contents = objref(b); if (db[i].contents != b) nFixed++;
+        b = db[i].exits;    db[i].exits    = objref(b); if (db[i].exits    != b) nFixed++;
+        b = db[i].next;     db[i].next     = objref(b); if (db[i].next     != b) nFixed++;
+        b = db[i].parent;   db[i].parent   = objref(b); if (db[i].parent   != b) nFixed++;
+        b = db[i].zone;     db[i].zone     = objref(b); if (db[i].zone     != b) nFixed++;
+        b = db[i].link;     db[i].link     = (HOME == b) ? HOME : objref(b); if (db[i].link != b) nFixed++;
+        b = db[i].owner;    db[i].owner    = (0 <= b && b < top) ? b : GOD;  if (db[i].owner != b) nFixed++;
+    }
+    if (0 < nFixed)
+    {
+        STARTLOG(LOG_STARTUP, "DB", "REFS")
+        log_printf(T("db_validate_refs: clamped %d out-of-range object reference(s) from the loaded database."), nFixed);
+        ENDLOG
+    }
+}
+
 // Load game state from SQLite (warm start).
 // Returns:
 //   1  if SQLite had data and we loaded successfully,
