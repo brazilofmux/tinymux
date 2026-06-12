@@ -26,7 +26,12 @@ should fail cleanly, not corrupt memory or crash.
 
 ## Findings inventory
 
-### 🔴 db_read does not validate the object dbref — OOB write / crash on malformed flatfile (LIVE-VERIFIED)
+### ✅ FIXED (f3c96dc82) — was OOB write / crash on malformed flatfile (#806, LIVE-VERIFIED)
+`db_read`'s `!` case now validates `i < 0 || i > DB_LOAD_MAX_DBREF` (268M) and
+returns -1 (clean rollback) before `db_grow`/`s_*`. Re-ran the bite: `!-5` and
+`!999999999` now abort the load cleanly (exit 1, no SIGSEGV/SIGABRT); valid
+flatfile still imports; smoke 1115/1115.
+
 **Reproduced live** via the standard flatfile import (`dbconvert -l -i <flat>`,
 i.e. `db_load`): taking the stock `netmux.db` and changing one object header
 `!2` →
