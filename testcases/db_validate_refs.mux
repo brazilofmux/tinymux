@@ -1,0 +1,43 @@
+#
+# db_validate_refs.mux - Regression tests for db_validate_refs() (#810).
+#
+# The post-load dbref clamp must repair only wild values; legal sentinels
+# must survive a database round-trip.  An exit linked to home stores the
+# HOME sentinel (#-3) in its location field — the clamp must not rewrite
+# it to NOTHING.
+#
+@open smoke_home_exit=home
+-
+@create test_db_validate_refs
+-
+@set test_db_validate_refs=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_db_validate_refs=
+  @log smoke=Beginning db_validate_refs() test cases.
+-
+#
+# Test Case #1 - Home-linked exit keeps its HOME destination across a load.
+#
+&tr.tc001 test_db_validate_refs=
+  @if strmatch(loc(smoke_home_exit), #-3)=
+  {
+    @log smoke=TC001: home-linked exit survives load. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: home-linked exit survives load. Failed (loc=[loc(smoke_home_exit)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_db_validate_refs=
+  @log smoke=End db_validate_refs() test cases.;
+  @notify smoke
+-
+drop test_db_validate_refs
+-
+#
+# End of Test Cases
+#

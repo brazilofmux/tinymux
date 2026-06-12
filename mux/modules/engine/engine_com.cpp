@@ -3040,7 +3040,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     }
 
     // Repair any out-of-range object field dbrefs from the loaded database
-    // (#809).  No-op for a valid DB; prevents OOB at use (e.g. DOLIST chain
+    // (#810).  No-op for a valid DB; prevents OOB at use (e.g. DOLIST chain
     // walks) for a corrupt/malicious one.  Covers both the warm (SQLite) and
     // cold (flatfile) load paths, which both leave db[] populated here.
     //

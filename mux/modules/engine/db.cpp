@@ -3588,7 +3588,7 @@ bool sqlite_sync_runtime(void)
 }
 
 // db_validate_refs — clamp object field dbrefs to the legal range after a load
-// (#809).  db_read()/sqlite_load_game() store the dbref *values* (location,
+// (#810).  db_read()/sqlite_load_game() store the dbref *values* (location,
 // contents, exits, next, link, owner, parent, zone) straight from the DB.  The
 // object indices are validated (#806), but the field values are not, and a
 // corrupt/malicious DB can carry wild values that crash at use: the chain
@@ -3597,7 +3597,8 @@ bool sqlite_sync_runtime(void)
 // read; location/parent/zone/owner index db[] in many places too.  For a valid
 // database every field is already in range, so this is a no-op there; only a
 // corrupt database is repaired (wild -> NOTHING; a wild owner defaults to GOD;
-// link additionally permits the HOME sentinel).
+// link and location additionally permit the HOME sentinel — for an exit,
+// location holds the destination, and @link exit=home stores HOME there).
 //
 void db_validate_refs(void)
 {
@@ -3610,7 +3611,7 @@ void db_validate_refs(void)
     for (dbref i = 0; i < top; i++)
     {
         dbref b;
-        b = db[i].location; db[i].location = objref(b); if (db[i].location != b) nFixed++;
+        b = db[i].location; db[i].location = (HOME == b) ? HOME : objref(b); if (db[i].location != b) nFixed++;
         b = db[i].contents; db[i].contents = objref(b); if (db[i].contents != b) nFixed++;
         b = db[i].exits;    db[i].exits    = objref(b); if (db[i].exits    != b) nFixed++;
         b = db[i].next;     db[i].next     = objref(b); if (db[i].next     != b) nFixed++;
