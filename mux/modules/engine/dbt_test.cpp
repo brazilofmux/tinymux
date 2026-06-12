@@ -1420,6 +1420,145 @@ static void test_x0_base_load_store() {
     CHECK_EQ("FLD/FSD imm(x0): DBT", run_code_dbt(code, 8), 0x55ULL);
 }
 
+// OP_IMM with rs1 == x0 (issue #809).  The a64 backend's rc_read(x0)
+// returns scratch X0; materializing the immediate into X0 clobbered the
+// x0 operand, so SLTI/SLTIU compared imm against itself and the
+// XORI/ORI/ANDI logical-immediate fallback computed imm OP imm.
+//
+static void test_x0_operand_alu() {
+    printf("test_x0_operand_alu...\n");
+
+    std::vector<uint32_t> code = {
+        i_type(OP_IMM, 5, ALU_SLTI, 0, 5),    // slti  x5, x0, 5   = 1
+        i_type(OP_IMM, 6, ALU_SLTI, 0, -5),   // slti  x6, x0, -5  = 0
+        i_type(OP_IMM, 7, ALU_SLTIU, 0, 1),   // seqz  x7, x0      = 1
+        i_type(OP_IMM, 8, ALU_XORI, 0, -1),   // not   x8, x0      = -1
+        i_type(OP_IMM, 9, ALU_ANDI, 0, -1),   // andi  x9, x0, -1  = 0
+        i_type(OP_IMM, 11, ALU_ORI, 0, 5),    // ori   x11, x0, 5  = 5
+        i_type(OP_IMM, 12, ALU_XORI, 0, 5),   // xori  x12, x0, 5  = 5
+        ECALL(),
+    };
+
+    auto r = run_code(code);
+    CHECK_EQ("slti x0,5: interp", r.state.x[5], 1ULL);
+    CHECK_EQ("slti x0,-5: interp", r.state.x[6], 0ULL);
+    CHECK_EQ("seqz x0: interp", r.state.x[7], 1ULL);
+    CHECK_EQ("not x0: interp", r.state.x[8], ~0ULL);
+    CHECK_EQ("andi x0,-1: interp", r.state.x[9], 0ULL);
+    CHECK_EQ("ori x0,5: interp", r.state.x[11], 5ULL);
+    CHECK_EQ("xori x0,5: interp", r.state.x[12], 5ULL);
+
+    CHECK_EQ("slti x0,5: DBT", run_code_dbt(code, 5), 1ULL);
+    CHECK_EQ("slti x0,-5: DBT", run_code_dbt(code, 6), 0ULL);
+    CHECK_EQ("seqz x0: DBT", run_code_dbt(code, 7), 1ULL);
+    CHECK_EQ("not x0: DBT", run_code_dbt(code, 8), ~0ULL);
+    CHECK_EQ("andi x0,-1: DBT", run_code_dbt(code, 9), 0ULL);
+    CHECK_EQ("ori x0,5: DBT", run_code_dbt(code, 11), 5ULL);
+    CHECK_EQ("xori x0,5: DBT", run_code_dbt(code, 12), 5ULL);
+}
+
+// SLT+branch fusion paths with x0 operands (issue #809).
+// (a) slti rs1==x0 + branch over TWO insns: the fused compare itself
+//     must not clobber the x0 operand.
+// (b) slti rs1==x0 + branch over ONE insn (CSEL diamond), not taken:
+//     re-emitting the compare must not wipe the predicated result in
+//     X0 (rc_read(x0) emits MOV X0, XZR) before the CSEL consumes it.
+// (c) diamond whose skipped insn is `add rd, rs1, x0`: the predicated
+//     OP_REG path must not clobber the zero rs2 while staging rs1.
+//
+static void test_slt_branch_fusion_x0() {
+    printf("test_slt_branch_fusion_x0...\n");
+
+    // (a) slti x5, x0, 5 = 1 → bne taken → both ADDIs skipped.
+    std::vector<uint32_t> code_a = {
+        i_type(OP_IMM, 5, ALU_SLTI, 0, 5),
+        BNE(5, 0, 12),
+        ADDI(6, 0, 111),
+        ADDI(7, 0, 222),
+        ADDI(8, 0, 99),
+        ECALL(),
+    };
+    auto ra = run_code(code_a);
+    CHECK_EQ("fused slti x0 taken: interp x6", ra.state.x[6], 0ULL);
+    CHECK_EQ("fused slti x0 taken: interp x8", ra.state.x[8], 99ULL);
+    CHECK_EQ("fused slti x0 taken: DBT x6", run_code_dbt(code_a, 6), 0ULL);
+    CHECK_EQ("fused slti x0 taken: DBT x7", run_code_dbt(code_a, 7), 0ULL);
+    CHECK_EQ("fused slti x0 taken: DBT x8", run_code_dbt(code_a, 8), 99ULL);
+
+    // (b) slti x5, x0, -5 = 0 → bne not taken → ADDI executes; the
+    // diamond CSEL must select the new value still held in X0.
+    std::vector<uint32_t> code_b = {
+        i_type(OP_IMM, 5, ALU_SLTI, 0, -5),
+        BNE(5, 0, 8),
+        ADDI(6, 0, 111),
+        ECALL(),
+    };
+    auto rb = run_code(code_b);
+    CHECK_EQ("diamond slti x0 not-taken: interp x6", rb.state.x[6], 111ULL);
+    CHECK_EQ("diamond slti x0 not-taken: DBT x5", run_code_dbt(code_b, 5), 0ULL);
+    CHECK_EQ("diamond slti x0 not-taken: DBT x6", run_code_dbt(code_b, 6), 111ULL);
+
+    // (c) skipped insn is `add x10, x9, x0` — must yield x9, not 2*x9.
+    std::vector<uint32_t> code_c = {
+        ADDI(9, 0, 7),
+        i_type(OP_IMM, 5, ALU_SLTI, 9, 100),   // x5 = (7 < 100) = 1
+        BEQ(5, 0, 8),                           // not taken
+        ADD(10, 9, 0),                          // x10 = x9 + x0 = 7
+        ECALL(),
+    };
+    auto rc = run_code(code_c);
+    CHECK_EQ("diamond add rs2==x0: interp", rc.state.x[10], 7ULL);
+    CHECK_EQ("diamond add rs2==x0: DBT", run_code_dbt(code_c, 10), 7ULL);
+
+    // (d) taken diamond (no x0 operands): the CSEL must KEEP the old
+    // value when the branch is taken and the insn is skipped.
+    std::vector<uint32_t> code_d = {
+        ADDI(9, 0, 7),
+        i_type(OP_IMM, 5, ALU_SLTI, 9, 100),   // x5 = 1
+        BNE(5, 0, 8),                           // taken → skip
+        ADDI(10, 0, 111),                       // skipped → x10 stays 0
+        ECALL(),
+    };
+    auto rd = run_code(code_d);
+    CHECK_EQ("diamond taken keeps old: interp", rd.state.x[10], 0ULL);
+    CHECK_EQ("diamond taken keeps old: DBT", run_code_dbt(code_d, 10), 0ULL);
+}
+
+// MULHSU sign-correction hazards (found with issue #809).  The
+// correction term must be computed from the ORIGINAL rs1/rs2: with
+// rs1 == x0 the AND self-aliased scratch X0, and with rd aliasing
+// rs1/rs2 the SMULH overwrote an input the correction still needed.
+//
+static void test_mulhsu_aliasing() {
+    printf("test_mulhsu_aliasing...\n");
+
+    auto MULHSU = [](int rd, int rs1, int rs2) {
+        return r_type(OP_REG, rd, ALU_SLT, rs1, rs2, 0x01);
+    };
+
+    std::vector<uint32_t> code = {
+        ADDI(11, 0, -1),         // x11 = all-ones (unsigned 2^64-1)
+        MULHSU(12, 0, 11),       // x12 = high(0 × 2^64-1) = 0
+        ADDI(13, 0, 3),
+        ADDI(14, 0, -1),
+        MULHSU(13, 13, 14),      // rd==rs1: high(3 × 2^64-1) = 2
+        ADDI(15, 0, -1),
+        ADDI(16, 0, 1),
+        SLLI(16, 16, 63),        // x16 = 2^63 (sign bit set)
+        MULHSU(16, 15, 16),      // rd==rs2: high(-1 × 2^63) = -1
+        ECALL(),
+    };
+
+    auto r = run_code(code);
+    CHECK_EQ("mulhsu rs1==x0: interp", r.state.x[12], 0ULL);
+    CHECK_EQ("mulhsu rd==rs1: interp", r.state.x[13], 2ULL);
+    CHECK_EQ("mulhsu rd==rs2: interp", r.state.x[16], ~0ULL);
+
+    CHECK_EQ("mulhsu rs1==x0: DBT", run_code_dbt(code, 12), 0ULL);
+    CHECK_EQ("mulhsu rd==rs1: DBT", run_code_dbt(code, 13), 2ULL);
+    CHECK_EQ("mulhsu rd==rs2: DBT", run_code_dbt(code, 16), ~0ULL);
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -1458,6 +1597,9 @@ int main(int argc, char *argv[]) {
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
     test_x0_base_load_store();
+    test_x0_operand_alu();
+    test_slt_branch_fusion_x0();
+    test_mulhsu_aliasing();
 
     printf("\n==============================\n");
     printf("Hand-assembled: %d run, %d passed, %d failed\n",

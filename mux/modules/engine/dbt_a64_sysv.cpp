@@ -886,9 +886,11 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 emit_cmp_r64(&e, rs1, rs2);
             } else {
                 int rs1 = rc_read(&e, &rc, insn.rs1);
-                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                // Immediate goes in X1 — rc_read for x0 returns
+                // scratch X0, which a mov-imm to X0 would clobber.
+                emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                     static_cast<int64_t>(insn.imm)));
-                emit_cmp_r64(&e, rs1, A64_X0);
+                emit_cmp_r64(&e, rs1, A64_X1);
             }
 
             // Preserve the SLT result in rd if needed.
@@ -914,9 +916,10 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 rv64_insn_t skip;
                 rv64_decode(skip_word, &skip);
 
-                // Invert condition for CSEL: if branch IS taken, skip
-                // the instruction, so CSEL selects the old value.
-                uint8_t csel_cond = cond ^ 1;
+                // CSEL Xd, Xn, Xm, c is Xd = c ? Xn : Xm.  Old value
+                // goes in Xn, so select on the branch-TAKEN condition:
+                // taken → skip the instruction → keep the old value.
+                uint8_t csel_cond = cond;
 
                 bool can_predicate = false;
                 if (skip.opcode == OP_IMM && skip.rd != 0
@@ -983,7 +986,10 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                         }
                     } else { // OP_REG
                         int hr_s1 = rc_read(&e, &rc, skip.rs1);
-                        int hr_s2 = rc_read(&e, &rc, skip.rs2);
+                        // rc_read for x0 returns scratch X0, which the
+                        // mov below clobbers — use XZR for a zero rs2.
+                        int hr_s2 = skip.rs2
+                            ? rc_read(&e, &rc, skip.rs2) : A64_XZR;
                         emit_mov_r64(&e, A64_X0, hr_s1);
                         switch (skip.funct3) {
                         case ALU_ADD:
@@ -1006,13 +1012,19 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                     }
 
                     // Re-emit the comparison (skip instruction may have
-                    // clobbered flags via ADD/SUB).
+                    // clobbered flags via ADD/SUB).  X0 holds the
+                    // predicated result for the CSEL below — rc_read
+                    // for x0 would emit MOV X0, XZR and wipe it, so
+                    // use XZR directly for zero operands.
                     if (insn.opcode == OP_REG) {
-                        int rs1 = rc_read(&e, &rc, insn.rs1);
-                        int rs2 = rc_read(&e, &rc, insn.rs2);
+                        int rs1 = insn.rs1
+                            ? rc_read(&e, &rc, insn.rs1) : A64_XZR;
+                        int rs2 = insn.rs2
+                            ? rc_read(&e, &rc, insn.rs2) : A64_XZR;
                         emit_cmp_r64(&e, rs1, rs2);
                     } else {
-                        int rs1 = rc_read(&e, &rc, insn.rs1);
+                        int rs1 = insn.rs1
+                            ? rc_read(&e, &rc, insn.rs1) : A64_XZR;
                         emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                             static_cast<int64_t>(insn.imm)));
                         emit_cmp_r64(&e, rs1, A64_X1);
@@ -1468,6 +1480,9 @@ no_addr_fusion:
             int rs1 = rc_read(&e, &rc, insn.rs1);
             int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
 
+            // Immediates are materialized into X1, not X0 — rc_read
+            // for guest x0 returns scratch X0, so a mov-imm to X0
+            // would clobber rs1 before the operation reads it.
             switch (insn.funct3) {
             case ALU_ADDI:
                 if (insn.imm >= 0 && insn.imm < 4096) {
@@ -1475,45 +1490,45 @@ no_addr_fusion:
                 } else if (insn.imm < 0 && insn.imm > -4096) {
                     emit_sub_r64_imm(&e, rd, rs1, -insn.imm);
                 } else {
-                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                         static_cast<int64_t>(insn.imm)));
-                    emit_add_r64(&e, rd, rs1, A64_X0);
+                    emit_add_r64(&e, rd, rs1, A64_X1);
                 }
                 break;
             case ALU_SLTI:
-                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                     static_cast<int64_t>(insn.imm)));
-                emit_cmp_r64(&e, rs1, A64_X0);
+                emit_cmp_r64(&e, rs1, A64_X1);
                 emit_cset(&e, rd, A64_COND_LT);
                 break;
             case ALU_SLTIU:
-                emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                     static_cast<int64_t>(insn.imm)));
-                emit_cmp_r64(&e, rs1, A64_X0);
+                emit_cmp_r64(&e, rs1, A64_X1);
                 emit_cset(&e, rd, A64_COND_CC);  // unsigned <
                 break;
             case ALU_XORI:
                 if (!emit_eor_r64_imm(&e, rd, rs1, static_cast<uint64_t>(
                         static_cast<int64_t>(insn.imm)))) {
-                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                         static_cast<int64_t>(insn.imm)));
-                    emit_eor_r64(&e, rd, rs1, A64_X0);
+                    emit_eor_r64(&e, rd, rs1, A64_X1);
                 }
                 break;
             case ALU_ORI:
                 if (!emit_orr_r64_imm(&e, rd, rs1, static_cast<uint64_t>(
                         static_cast<int64_t>(insn.imm)))) {
-                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                         static_cast<int64_t>(insn.imm)));
-                    emit_orr_r64(&e, rd, rs1, A64_X0);
+                    emit_orr_r64(&e, rd, rs1, A64_X1);
                 }
                 break;
             case ALU_ANDI:
                 if (!emit_and_r64_imm(&e, rd, rs1, static_cast<uint64_t>(
                         static_cast<int64_t>(insn.imm)))) {
-                    emit_mov_r64_imm64(&e, A64_X0, static_cast<uint64_t>(
+                    emit_mov_r64_imm64(&e, A64_X1, static_cast<uint64_t>(
                         static_cast<int64_t>(insn.imm)));
-                    emit_and_r64(&e, rd, rs1, A64_X0);
+                    emit_and_r64(&e, rd, rs1, A64_X1);
                 }
                 break;
             case ALU_SLLI:
@@ -1555,13 +1570,16 @@ no_addr_fusion:
                     // signed interpretation, but the unsigned interpretation
                     // of rs2 differs when rs2 >= 2^63, which is the case
                     // above. Net: MULHSU = SMULH(rs1,rs2) + (rs2<0 ? rs1 : 0)
+                    // Compute the correction into X1 BEFORE the SMULH:
+                    // rd may alias rs1/rs2, and X1 (not X0) because
+                    // rc_read for guest x0 returns scratch X0.
+                    // ASR X1, rs2, #63 → 0 if rs2 positive, -1 if negative
+                    emit_inst(&e, 0x937FFC00 | (rs2 << 5) | A64_X1);
+                    // AND X1, X1, rs1 → rs1 if rs2 was negative, 0 otherwise
+                    emit_inst(&e, 0x8A000000 | (rs1 << 16) | (A64_X1 << 5) | A64_X1);
                     emit_smulh(&e, rd, rs1, rs2);
-                    // ASR X0, rs2, #63 → 0 if rs2 positive, -1 if negative
-                    emit_inst(&e, 0x937FFC00 | (rs2 << 5) | A64_X0);
-                    // AND X0, X0, rs1 → rs1 if rs2 was negative, 0 otherwise
-                    emit_inst(&e, 0x8A000000 | (rs1 << 16) | (A64_X0 << 5) | A64_X0);
-                    // ADD rd, rd, X0
-                    emit_add_r64(&e, rd, rd, A64_X0);
+                    // ADD rd, rd, X1
+                    emit_add_r64(&e, rd, rd, A64_X1);
                     break;
                 }
                 case 3: // MULHU
@@ -1662,8 +1680,8 @@ no_addr_fusion:
                     emit_inst(&e, 0x51000000 | (((-insn.imm) & 0xFFF) << 10)
                               | (rs1 << 5) | rd);  // SUB Wd, Wn, #imm
                 } else {
-                    emit_mov_r64_imm32(&e, A64_X0, insn.imm);
-                    emit_add_r32(&e, rd, rs1, A64_X0);
+                    emit_mov_r64_imm32(&e, A64_X1, insn.imm);
+                    emit_add_r32(&e, rd, rs1, A64_X1);
                 }
                 emit_sxtw(&e, rd, rd);
                 break;
