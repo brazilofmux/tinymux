@@ -20,6 +20,31 @@ and the precompiled `softlib.rv64` Tier-2 blob run via the DBT.
 
 ## Findings inventory
 
+### ✅ JIT/interpreter parity — verified solid (no divergence found)
+Swept ~70 functions (string/list/float/math) with edge-case inputs comparing
+JIT vs the AST interpreter; **zero real divergences**. Consistent with the 1115
+passing smoke tests (themselves a parity gate vs recorded output).
+
+**Oracle methodology (important — `asteval()` is NOT a clean oracle):**
+`fun_asteval` (`ast.cpp:2702`) re-parses and re-evaluates its argument — but
+the argument was *already* evaluated (via the JIT) before asteval received it.
+So `[asteval(X)]` = `AST_eval(JIT_eval(X))` — a **double evaluation**. For X
+whose output contains eval-significant bytes (backslashes from `escape`, runs of
+spaces from `space`/`delete`), the second eval mutates the result, producing
+*false* JIT-vs-AST "mismatches" (e.g. `escape(abc)` → `\abc` then re-eval → `abc`;
+`space(3)` → 3 spaces then re-eval → 1). Numbers are idempotent under re-eval,
+so an asteval comparison is only valid for numeric output.
+
+**Clean oracle (no rebuild needed):** store the expression *literally* in an
+attribute (`&C me=<expr>` does not evaluate), then compare
+`[<expr>]` (single JIT eval) against `[asteval(get(me/C))]` (`get` returns the
+literal code, `asteval` evaluates it once via AST). Both evaluate the same
+source exactly once, on different engines. Under this oracle, every former
+"mismatch" matched. A `co_delete_cluster` source read (`color_ops.rl:3805`)
+independently confirmed `delete()` is a clean copy-skip-copy identical to the
+JIT blob `rv64_delete` — the earlier `a c d` vs `a  c d` "bug" was an asteval
+artifact.
+
 ### ✅ Verified — production x64 path is well-hardened (NOT bugs)
 - Instruction fetch in the production translator is bounded against
   `memory_size` at every site (`dbt_x64_sysv.cpp:1279,1316,1394,1414,1478,2010`).
