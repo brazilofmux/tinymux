@@ -480,7 +480,21 @@ void ws_process_input(DESC *d, const char *data, size_t len)
     const uint8_t *p = reinterpret_cast<const uint8_t *>(data);
     const uint8_t *end = p + len;
 
-    while (p < end)
+    // A frame transitions into WS_PARSE_PAYLOAD on the same iteration that
+    // consumes its last header/length/mask byte.  A zero-length payload
+    // needs no further input, but with a plain `p < end` loop it is only
+    // dispatched on the *next* iteration — which never comes if the frame
+    // ended exactly at the read boundary (p == end).  A zero-payload CLOSE
+    // (or PING) would then stall: the client waits for our echo while we
+    // wait for bytes that never arrive.  Keep looping while the current
+    // payload is already complete so the trailing zero-length frame is
+    // dispatched.  This is a no-op for non-empty payloads (their completing
+    // iteration consumes bytes and dispatches in the same pass) and cannot
+    // spin: dispatch resets parse_state to WS_PARSE_HEADER1.
+    //
+    while (p < end
+           || (WS_PARSE_PAYLOAD == ws->parse_state
+               && ws->frame_buf.size() >= ws->frame_expected))
     {
         switch (ws->parse_state)
         {
