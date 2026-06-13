@@ -1976,6 +1976,18 @@ typedef struct {
 } fill_char_t;
 
 /*
+ * Maximum distinct fill characters parsed from a fill pattern.  The fill
+ * is the cyclic pad argument to center()/ljust()/rjust(), almost always a
+ * handful of characters, so one fill_char_t per LBUF byte was a ~1.25 MB
+ * stack frame for nothing (#818 — instant stack overflow on Windows's
+ * 1 MB default reserve).  A pattern with more than this many visible
+ * characters repeats from the start at this boundary.  color_ops.c is
+ * compiled into the freestanding rv64 blob, so this must be a stack
+ * array, not a heap or static allocation.
+ */
+#define CO_FILL_CHARS_MAX 256
+
+/*
  * parse_fill_chars — Pre-process fill pattern into per-character colors.
  *
  * Walks the PUA-encoded fill string, absorbing PUA codes into a running
@@ -2167,9 +2179,9 @@ size_t co_center(unsigned char *out,
     }
 
     /* Parse fill into per-character colors. */
-    fill_char_t fchars[LBUF_SIZE];
+    fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
                                       &fill_width);
     if (fill_width == 0) {
         /* Default to space fill. */
@@ -2242,9 +2254,9 @@ size_t co_ljust(unsigned char *out,
     }
 
     /* Parse fill into per-character colors. */
-    fill_char_t fchars[LBUF_SIZE];
+    fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
                                       &fill_width);
     if (fill_width == 0) {
         fchars[0].bytes[0] = ' ';
@@ -2308,9 +2320,9 @@ size_t co_rjust(unsigned char *out,
     }
 
     /* Parse fill into per-character colors. */
-    fill_char_t fchars[LBUF_SIZE];
+    fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
                                       &fill_width);
     if (fill_width == 0) {
         fchars[0].bytes[0] = ' ';

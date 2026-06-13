@@ -3465,6 +3465,18 @@ typedef struct {
 } fill_char_t;
 
 /*
+ * Maximum distinct fill characters parsed from a fill pattern.  The fill
+ * is the cyclic pad argument to center()/ljust()/rjust(), almost always a
+ * handful of characters, so one fill_char_t per LBUF byte was a ~1.25 MB
+ * stack frame for nothing (#818 — instant stack overflow on Windows's
+ * 1 MB default reserve).  A pattern with more than this many visible
+ * characters repeats from the start at this boundary.  color_ops.c is
+ * compiled into the freestanding rv64 blob, so this must be a stack
+ * array, not a heap or static allocation.
+ */
+#define CO_FILL_CHARS_MAX 256
+
+/*
  * parse_fill_chars — Pre-process fill pattern into per-character colors.
  *
  * Walks the PUA-encoded fill string, absorbing PUA codes into a running
@@ -3656,9 +3668,9 @@ size_t co_center(unsigned char *out,
     }
 
     /* Parse fill into per-character colors. */
-    fill_char_t fchars[LBUF_SIZE];
+    fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
                                       &fill_width);
     if (fill_width == 0) {
         /* Default to space fill. */
@@ -3731,9 +3743,9 @@ size_t co_ljust(unsigned char *out,
     }
 
     /* Parse fill into per-character colors. */
-    fill_char_t fchars[LBUF_SIZE];
+    fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
                                       &fill_width);
     if (fill_width == 0) {
         fchars[0].bytes[0] = ' ';
@@ -3797,9 +3809,9 @@ size_t co_rjust(unsigned char *out,
     }
 
     /* Parse fill into per-character colors. */
-    fill_char_t fchars[LBUF_SIZE];
+    fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, LBUF_SIZE, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
                                       &fill_width);
     if (fill_width == 0) {
         fchars[0].bytes[0] = ' ';
@@ -5382,13 +5394,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5175 "color_ops.c"
+#line 5187 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3915 "color_ops.rl"
+#line 3927 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5402,21 +5414,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5191 "color_ops.c"
+#line 5203 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3928 "color_ops.rl"
+#line 3940 "color_ops.rl"
     
-#line 5194 "color_ops.c"
+#line 5206 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3900 "color_ops.rl"
+#line 3912 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5430,9 +5442,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
-#line 3900 "color_ops.rl"
+#line 3912 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5449,7 +5461,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5230 "color_ops.c"
+#line 5242 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5478,62 +5490,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5264 "color_ops.c"
+#line 5276 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5274 "color_ops.c"
+#line 5286 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5284 "color_ops.c"
+#line 5296 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5294 "color_ops.c"
+#line 5306 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5304 "color_ops.c"
+#line 5316 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5551,38 +5563,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5327 "color_ops.c"
+#line 5339 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5337 "color_ops.c"
+#line 5349 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5347 "color_ops.c"
+#line 5359 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5600,14 +5612,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3899 "color_ops.rl"
+#line 3911 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5370 "color_ops.c"
+#line 5382 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5629,7 +5641,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3929 "color_ops.rl"
+#line 3941 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);

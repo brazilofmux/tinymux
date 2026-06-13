@@ -113,11 +113,30 @@
         eq(strlen(center(abcdef,xyz)), 0)
       )=
   {
-    @log smoke=TC006: center truncation. Succeeded.;
+    @log smoke=TC006: center truncation. Succeeded.
+  },
+  {
+    @log smoke=TC006: center truncation. Failed (t=[center(abcdef,3)] w0=[center(abcdef,0)] wx=[center(abcdef,xyz)]).
+  }
+-
+#
+# Test Case #7 - Over-cap fill pattern.  The fill array is capped at
+# CO_FILL_CHARS_MAX (256) visible characters to avoid a ~1.25 MB stack
+# frame (#818).  A longer fill must still produce correct-width output
+# without crashing - center/ljust/rjust here use a 400-character fill.
+#
+&tr.tc007 test_center_fn=
+  @if cand(
+        eq(vwidth(center(X,50,[repeat(ab,200)])), 50),
+        eq(vwidth(ljust(X,50,[repeat(ab,200)])), 50),
+        eq(vwidth(rjust(X,50,[repeat(ab,200)])), 50)
+      )=
+  {
+    @log smoke=TC007: justify over-cap fill width. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC006: center truncation. Failed (t=[center(abcdef,3)] w0=[center(abcdef,0)] wx=[center(abcdef,xyz)]).;
+    @log smoke=TC007: justify over-cap fill width. Failed (c=[vwidth(center(X,50,[repeat(ab,200)]))] l=[vwidth(ljust(X,50,[repeat(ab,200)]))] r=[vwidth(rjust(X,50,[repeat(ab,200)]))]).;
     @trig me/tr.done
   }
 -
