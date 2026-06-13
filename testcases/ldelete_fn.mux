@@ -32,22 +32,24 @@
 # Test Case #2 - Regressions.
 #
 &tr.tc002 test_ldelete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ldelete(%bThis is not a test,3)]]
-          )
-        ),
-        44C72B112A8E0D9E04A5E625DEA442B6DA99FB6C
+  @if cand(
+        strmatch(.[ldelete(%bThis is not a test,3)]., .This%bis%ba%btest.)
       )=
   {
     @log smoke=TC002: ldelete regressions. Succeeded.
+  },
+  {
+    @log smoke=TC002: ldelete regressions. Failed.;
+    @log smoke=TC002 actual L0 .[ldelete(%bThis is not a test,3)].
   },
   {
     @log smoke=TC002: ldelete regressions. Failed (%q0).
   }
 -
 #
-# Test Case #3 - Vary number of arguments.
+# Test Case #3 - Vary positions over lists of varying length.
+# Positions are 1-based; 0 and out-of-range positions delete nothing;
+# negative positions count from the end (-1 is the last element).
 #
 # On 2.10 and later, space-delimited lists are always cleaned up.
 #
@@ -58,53 +60,64 @@
 # ldelete(%b%ba%b,2) --> '  a'  '  a '   'a'
 #
 &tr.tc003 test_ldelete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(-1 0 1,ldelete(,##,|))]
-            [iter(2 1 0 -1 -2,ldelete(a,##,|))]
-            [iter(3 2 1 0 -1 -2 -3,ldelete(a|a,##,|))]
-            [iter(4 3 2 1 0 -1 -2 -3 -4,ldelete(a|a|a|a,##,|))]
-            [iter(1 0 -1,ldelete(,##))]
-            [iter(0 -1,ldelete(%b,##))]
-            [iter(2 1 0 -1 -2,ldelete(a,##))]
-            [iter(3 2 1 0 -1 -2,ldelete(a b,##))]
-            [iter(4 3 2 1 0 -1 -2,ldelete(a b c,##))]
-            [iter(5 4 3 2 1 0 -1 -2 -3,ldelete(a b c d,##))]
-            [iter(6 5 4 3 2 1 0 -1 -2 -3 -4,ldelete(a b c d e,##))]
-            [iter(7 6 5 4 3 2 1 0 -1 -2 -3 -4 -5,ldelete(a b c d e f,##))]
-          )
-        ),
-        2AF65D030FF814EF45DACA493104E36AE7D14550
+  @if cand(
+        strmatch(.[iter(-1 0 1,ldelete(,##,|))]., .%b%b.),
+        strmatch(.[iter(2 1 0 -1 -2,ldelete(a,##,|))]., .a%b%ba%b%ba.),
+        strmatch(.[iter(3 2 1 0 -1 -2 -3,ldelete(a|a,##,|))]., .a|a%ba%ba%ba|a%ba%ba%ba|a.),
+        strmatch(.[iter(4 3 2 1 0 -1 -2 -3 -4,ldelete(a|a|a|a,##,|))]., .a|a|a%ba|a|a%ba|a|a%ba|a|a%ba|a|a|a%ba|a|a%ba|a|a%ba|a|a%ba|a|a.),
+        strmatch(.[iter(1 0 -1,ldelete(,##))]., .%b%b.),
+        strmatch(.[iter(0 -1,ldelete(%b,##))]., .%b.),
+        strmatch(.[iter(2 1 0 -1 -2,ldelete(a,##))]., .a%b%ba%b%ba.),
+        strmatch(.[iter(3 2 1 0 -1 -2,ldelete(a b,##))]., .a%bb%ba%bb%ba%bb%ba%bb.),
+        strmatch(.[iter(4 3 2 1 0 -1 -2,ldelete(a b c,##))]., .a%bb%bc%ba%bb%ba%bc%bb%bc%ba%bb%bc%ba%bb%ba%bc.),
+        strmatch(.[iter(5 4 3 2 1 0 -1 -2 -3,ldelete(a b c d,##))]., .a%bb%bc%bd%ba%bb%bc%ba%bb%bd%ba%bc%bd%bb%bc%bd%ba%bb%bc%bd%ba%bb%bc%ba%bb%bd%ba%bc%bd.),
+        strmatch(.[iter(6 5 4 3 2 1 0 -1 -2 -3 -4,ldelete(a b c d e,##))]., .a%bb%bc%bd%be%ba%bb%bc%bd%ba%bb%bc%be%ba%bb%bd%be%ba%bc%bd%be%bb%bc%bd%be%ba%bb%bc%bd%be%ba%bb%bc%bd%ba%bb%bc%be%ba%bb%bd%be%ba%bc%bd%be.),
+        strmatch(.[iter(7 6 5 4 3 2 1 0 -1 -2 -3 -4 -5,ldelete(a b c d e f,##))]., .a%bb%bc%bd%be%bf%ba%bb%bc%bd%be%ba%bb%bc%bd%bf%ba%bb%bc%be%bf%ba%bb%bd%be%bf%ba%bc%bd%be%bf%bb%bc%bd%be%bf%ba%bb%bc%bd%be%bf%ba%bb%bc%bd%be%ba%bb%bc%bd%bf%ba%bb%bc%be%bf%ba%bb%bd%be%bf%ba%bc%bd%be%bf.)
       )=
   {
     @log smoke=TC003: Vary number of arguments. Succeeded.
   },
   {
-    @log smoke=TC003: Vary number of arguments. Failed (%q0).
+    @log smoke=TC003: Vary number of arguments. Failed.;
+    @log smoke=TC003 actual L0 .[iter(-1 0 1,ldelete(,##,|))].;
+    @log smoke=TC003 actual L1 .[iter(2 1 0 -1 -2,ldelete(a,##,|))].;
+    @log smoke=TC003 actual L2 .[iter(3 2 1 0 -1 -2 -3,ldelete(a|a,##,|))].;
+    @log smoke=TC003 actual L3 .[iter(4 3 2 1 0 -1 -2 -3 -4,ldelete(a|a|a|a,##,|))].;
+    @log smoke=TC003 actual L4 .[iter(1 0 -1,ldelete(,##))].;
+    @log smoke=TC003 actual L5 .[iter(0 -1,ldelete(%b,##))].;
+    @log smoke=TC003 actual L6 .[iter(2 1 0 -1 -2,ldelete(a,##))].;
+    @log smoke=TC003 actual L7 .[iter(3 2 1 0 -1 -2,ldelete(a b,##))].;
+    @log smoke=TC003 actual L8 .[iter(4 3 2 1 0 -1 -2,ldelete(a b c,##))].;
+    @log smoke=TC003 actual L9 .[iter(5 4 3 2 1 0 -1 -2 -3,ldelete(a b c d,##))].;
+    @log smoke=TC003 actual L10 .[iter(6 5 4 3 2 1 0 -1 -2 -3 -4,ldelete(a b c d e,##))].;
+    @log smoke=TC003 actual L11 .[iter(7 6 5 4 3 2 1 0 -1 -2 -3 -4 -5,ldelete(a b c d e f,##))].
   }
 -
 #
 # Test Case #4 - Walk two elements through whitespace.
 #
 &tr.tc004 test_ldelete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(-2 -1 1 2 0,ldelete(%b%b%b,##))]
-            [iter(-2 -1 1 2 0,ldelete(b%b%b%b,##))]
-            [iter(-2 -1 1 2 0,ldelete(%bb%b%b,##))]
-            [iter(-2 -1 1 2 0,ldelete(a%b%bb%b,##))]
-            [iter(-2 -1 1 2 0,ldelete(%ba%b%bb,##))]
-            [iter(-2 -1 1 2 0,ldelete(%b%ba%b,##))]
-            [iter(-2 -1 1 2 0,ldelete(%b%b%ba,##))]
-          )
-        ),
-        28AE513FCB71725FC9EAD7619E781F652A45CDD5
+  @if cand(
+        strmatch(.[iter(-2 -1 1 2 0,ldelete(%b%b%b,##))]., .%b%b%b%b.),
+        strmatch(.[iter(-2 -1 1 2 0,ldelete(b%b%b%b,##))]., .b%b%b%bb%bb.),
+        strmatch(.[iter(-2 -1 1 2 0,ldelete(%bb%b%b,##))]., .b%b%b%bb%bb.),
+        strmatch(.[iter(-2 -1 1 2 0,ldelete(a%b%bb%b,##))]., .b%ba%bb%ba%ba%bb.),
+        strmatch(.[iter(-2 -1 1 2 0,ldelete(%ba%b%bb,##))]., .b%ba%bb%ba%ba%bb.),
+        strmatch(.[iter(-2 -1 1 2 0,ldelete(%b%ba%b,##))]., .a%b%b%ba%ba.),
+        strmatch(.[iter(-2 -1 1 2 0,ldelete(%b%b%ba,##))]., .a%b%b%ba%ba.)
       )=
   {
     @log smoke=TC004: ldelete walk two elements through whitespace. Succeeded.
   },
   {
-    @log smoke=TC004: ldelete walk two elements through whitespace. Failed (%q0).
+    @log smoke=TC004: ldelete walk two elements through whitespace. Failed.;
+    @log smoke=TC004 actual L0 .[iter(-2 -1 1 2 0,ldelete(%b%b%b,##))].;
+    @log smoke=TC004 actual L1 .[iter(-2 -1 1 2 0,ldelete(b%b%b%b,##))].;
+    @log smoke=TC004 actual L2 .[iter(-2 -1 1 2 0,ldelete(%bb%b%b,##))].;
+    @log smoke=TC004 actual L3 .[iter(-2 -1 1 2 0,ldelete(a%b%bb%b,##))].;
+    @log smoke=TC004 actual L4 .[iter(-2 -1 1 2 0,ldelete(%ba%b%bb,##))].;
+    @log smoke=TC004 actual L5 .[iter(-2 -1 1 2 0,ldelete(%b%ba%b,##))].;
+    @log smoke=TC004 actual L6 .[iter(-2 -1 1 2 0,ldelete(%b%b%ba,##))].
   }
 -
 #
@@ -115,123 +128,162 @@
 # 2.7 passes the list through unchanged.
 #
 &tr.tc005 test_ldelete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(1 2 3 8 -1 6 0 9 5 4 7,ldelete(a b c d e f g h,##))]
-            [iter(5 0 -1 8 1 3 4 2 9 7 6,ldelete(%ba b c d e f g h,##))]
-            [iter(5 2 7 4 0 -1 9 8 1 6 3,ldelete(a%bb c d e f g h,##))]
-            [iter(5 1 4 8 3 9 -1 6 0 7 2,ldelete(a b%bc d e f g h,##))]
-            [iter(0 6 3 -1 5 1 2 4 8 9 7,ldelete(a b c%bd e f g h,##))]
-            [iter(-1 2 9 8 3 1 5 4 7 6 0,ldelete(a b c d%be f g h,##))]
-            [iter(6 0 9 5 4 8 2 -1 3 1 7,ldelete(a b c d e%bf g h,##))]
-            [iter(4 7 2 1 0 9 -1 8 6 5 3,ldelete(a b c d e f%bg h,##))]
-            [iter(-1 4 1 6 3 7 9 8 0 2 5,ldelete(a b c d e f g%bh,##))]
-            [iter(-1 4 5 0 3 9 1 6 7 2 8,ldelete(a b c d e f g h%b,##))]
-            [iter(1 7 6 2 3 4 0 -1 5 8 9,ldelete(%b%ba b c d e f g h,##))]
-            [iter(2 6 1 -1 0 5 7 9 4 8 3,ldelete(a%b%bb c d e f g h,##))]
-            [iter(5 7 1 4 6 9 0 3 -1 2 8,ldelete(a b%b%bc d e f g h,##))]
-            [iter(6 -1 8 5 0 2 4 3 1 7 9,ldelete(a b c%b%bd e f g h,##))]
-            [iter(4 -1 2 5 6 7 8 1 0 9 3,ldelete(a b c d%b%be f g h,##))]
-            [iter(1 9 6 8 2 -1 7 3 0 5 4,ldelete(a b c d e%b%bf g h,##))]
-            [iter(6 7 2 5 1 -1 3 8 0 9 4,ldelete(a b c d e f%b%bg h,##))]
-            [iter(1 -1 3 2 7 4 9 8 5 0 6,ldelete(a b c d e f g%b%bh,##))]
-            [iter(3 0 7 2 8 4 1 6 9 5 -1,ldelete(a b c d e f g h%b%b,##))]
-          )
-        ),
-        06BC0B2C4498251DCB66906151E5045D529F357C
+  @if cand(
+        strmatch(.[iter(1 2 3 8 -1 6 0 9 5 4 7,ldelete(a b c d e f g h,##))]., .b%bc%bd%be%bf%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh.),
+        strmatch(.[iter(5 0 -1 8 1 3 4 2 9 7 6,ldelete(%ba b c d e f g h,##))]., .a%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%bb%bc%bd%be%bf%bg%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%bd%be%bg%bh.),
+        strmatch(.[iter(5 2 7 4 0 -1 9 8 1 6 3,ldelete(a%bb c d e f g h,##))]., .a%bb%bc%bd%bf%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bd%be%bf%bg%bh.),
+        strmatch(.[iter(5 1 4 8 3 9 -1 6 0 7 2,ldelete(a b%bc d e f g h,##))]., .a%bb%bc%bd%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bc%bd%be%bf%bg%bh.),
+        strmatch(.[iter(0 6 3 -1 5 1 2 4 8 9 7,ldelete(a b c%bd e f g h,##))]., .a%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh.),
+        strmatch(.[iter(-1 2 9 8 3 1 5 4 7 6 0,ldelete(a b c d%be f g h,##))]., .a%bb%bc%bd%be%bf%bg%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bd%be%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[iter(6 0 9 5 4 8 2 -1 3 1 7,ldelete(a b c d e%bf g h,##))]., .a%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bd%be%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh.),
+        strmatch(.[iter(4 7 2 1 0 9 -1 8 6 5 3,ldelete(a b c d e f%bg h,##))]., .a%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bc%bd%be%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bd%be%bf%bg%bh.),
+        strmatch(.[iter(-1 4 1 6 3 7 9 8 0 2 5,ldelete(a b c d e f g%bh,##))]., .a%bb%bc%bd%be%bf%bg%ba%bb%bc%be%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh.),
+        strmatch(.[iter(-1 4 5 0 3 9 1 6 7 2 8,ldelete(a b c d e f g h%b,##))]., .a%bb%bc%bd%be%bf%bg%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg.),
+        strmatch(.[iter(1 7 6 2 3 4 0 -1 5 8 9,ldelete(%b%ba b c d e f g h,##))]., .b%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%bd%be%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[iter(2 6 1 -1 0 5 7 9 4 8 3,ldelete(a%b%bb c d e f g h,##))]., .a%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bd%be%bf%bg%bh.),
+        strmatch(.[iter(5 7 1 4 6 9 0 3 -1 2 8,ldelete(a b%b%bc d e f g h,##))]., .a%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg.),
+        strmatch(.[iter(6 -1 8 5 0 2 4 3 1 7 9,ldelete(a b c%b%bd e f g h,##))]., .a%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bd%be%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[iter(4 -1 2 5 6 7 8 1 0 9 3,ldelete(a b c d%b%be f g h,##))]., .a%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%bd%be%bf%bg%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bd%be%bf%bg%bh.),
+        strmatch(.[iter(1 9 6 8 2 -1 7 3 0 5 4,ldelete(a b c d e%b%bf g h,##))]., .b%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bh%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%be%bf%bg%bh.),
+        strmatch(.[iter(6 7 2 5 1 -1 3 8 0 9 4,ldelete(a b c d e f%b%bg h,##))]., .a%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%be%bf%bg%bh.),
+        strmatch(.[iter(1 -1 3 2 7 4 9 8 5 0 6,ldelete(a b c d e f g%b%bh,##))]., .b%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bd%be%bf%bg%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bb%bc%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh.),
+        strmatch(.[iter(3 0 7 2 8 4 1 6 9 5 -1,ldelete(a b c d e f g h%b%b,##))]., .a%bb%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bh%ba%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bf%bg%ba%bb%bc%be%bf%bg%bh%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%be%bg%bh%ba%bb%bc%bd%be%bf%bg%bh%ba%bb%bc%bd%bf%bg%bh%ba%bb%bc%bd%be%bf%bg.)
       )=
   {
     @log smoke=TC005: ldelete walk whitespace through elements. Succeeded.
   },
   {
-    @log smoke=TC005: ldelete walk whitespace through elements. Failed (%q0).
+    @log smoke=TC005: ldelete walk whitespace through elements. Failed.;
+    @log smoke=TC005 actual L0 .[iter(1 2 3 8 -1 6 0 9 5 4 7,ldelete(a b c d e f g h,##))].;
+    @log smoke=TC005 actual L1 .[iter(5 0 -1 8 1 3 4 2 9 7 6,ldelete(%ba b c d e f g h,##))].;
+    @log smoke=TC005 actual L2 .[iter(5 2 7 4 0 -1 9 8 1 6 3,ldelete(a%bb c d e f g h,##))].;
+    @log smoke=TC005 actual L3 .[iter(5 1 4 8 3 9 -1 6 0 7 2,ldelete(a b%bc d e f g h,##))].;
+    @log smoke=TC005 actual L4 .[iter(0 6 3 -1 5 1 2 4 8 9 7,ldelete(a b c%bd e f g h,##))].;
+    @log smoke=TC005 actual L5 .[iter(-1 2 9 8 3 1 5 4 7 6 0,ldelete(a b c d%be f g h,##))].;
+    @log smoke=TC005 actual L6 .[iter(6 0 9 5 4 8 2 -1 3 1 7,ldelete(a b c d e%bf g h,##))].;
+    @log smoke=TC005 actual L7 .[iter(4 7 2 1 0 9 -1 8 6 5 3,ldelete(a b c d e f%bg h,##))].;
+    @log smoke=TC005 actual L8 .[iter(-1 4 1 6 3 7 9 8 0 2 5,ldelete(a b c d e f g%bh,##))].;
+    @log smoke=TC005 actual L9 .[iter(-1 4 5 0 3 9 1 6 7 2 8,ldelete(a b c d e f g h%b,##))].;
+    @log smoke=TC005 actual L10 .[iter(1 7 6 2 3 4 0 -1 5 8 9,ldelete(%b%ba b c d e f g h,##))].;
+    @log smoke=TC005 actual L11 .[iter(2 6 1 -1 0 5 7 9 4 8 3,ldelete(a%b%bb c d e f g h,##))].;
+    @log smoke=TC005 actual L12 .[iter(5 7 1 4 6 9 0 3 -1 2 8,ldelete(a b%b%bc d e f g h,##))].;
+    @log smoke=TC005 actual L13 .[iter(6 -1 8 5 0 2 4 3 1 7 9,ldelete(a b c%b%bd e f g h,##))].;
+    @log smoke=TC005 actual L14 .[iter(4 -1 2 5 6 7 8 1 0 9 3,ldelete(a b c d%b%be f g h,##))].;
+    @log smoke=TC005 actual L15 .[iter(1 9 6 8 2 -1 7 3 0 5 4,ldelete(a b c d e%b%bf g h,##))].;
+    @log smoke=TC005 actual L16 .[iter(6 7 2 5 1 -1 3 8 0 9 4,ldelete(a b c d e f%b%bg h,##))].;
+    @log smoke=TC005 actual L17 .[iter(1 -1 3 2 7 4 9 8 5 0 6,ldelete(a b c d e f g%b%bh,##))].;
+    @log smoke=TC005 actual L18 .[iter(3 0 7 2 8 4 1 6 9 5 -1,ldelete(a b c d e f g h%b%b,##))].
   }
 -
 #
 # Test Case #6 - Vary number of elements with single hyphen delimiter.
 #
 &tr.tc006 test_ldelete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(1 0 -1,ldelete(,##,-))]
-            [iter(1 -1 0,ldelete(-,##,-))]
-            [iter(-1 0 1 2,ldelete(a,##,-))]
-            [iter(3 -1 1 0 2,ldelete(a-b,##,-))]
-            [iter(3 -1 1 0 2 4,ldelete(a-b-c,##,-))]
-            [iter(4 5 0 3 -1 2 1,ldelete(a-b-c-d,##,-))]
-            [iter(1 5 0 -1 2 4 6 3,ldelete(a-b-c-d-e,##,-))]
-            [iter(6 5 1 7 -1 4 3 2 0,ldelete(a-b-c-d-e-f,##,-))]
-            [iter(7 1 2 3 4 6 -1 0 8 5,ldelete(a-b-c-d-e-f-g,##,-))]
-            [iter(2 7 6 9 3 8 -1 4 5 0 1,ldelete(a-b-c-d-e-f-g-h,##,-))]
-          )
-        ),
-        48F51941BB8D591C5EB0A65335EFA50CA2C89E00
+  @if cand(
+        strmatch(.[iter(1 0 -1,ldelete(,##,-))]., .%b%b.),
+        strmatch(.[iter(1 -1 0,ldelete(-,##,-))]., .%b%b-.),
+        strmatch(.[iter(-1 0 1 2,ldelete(a,##,-))]., .%ba%b%ba.),
+        strmatch(.[iter(3 -1 1 0 2,ldelete(a-b,##,-))]., .a-b%ba%bb%ba-b%ba.),
+        strmatch(.[iter(3 -1 1 0 2 4,ldelete(a-b-c,##,-))]., .a-b%ba-b%bb-c%ba-b-c%ba-c%ba-b-c.),
+        strmatch(.[iter(4 5 0 3 -1 2 1,ldelete(a-b-c-d,##,-))]., .a-b-c%ba-b-c-d%ba-b-c-d%ba-b-d%ba-b-c%ba-c-d%bb-c-d.),
+        strmatch(.[iter(1 5 0 -1 2 4 6 3,ldelete(a-b-c-d-e,##,-))]., .b-c-d-e%ba-b-c-d%ba-b-c-d-e%ba-b-c-d%ba-c-d-e%ba-b-c-e%ba-b-c-d-e%ba-b-d-e.),
+        strmatch(.[iter(6 5 1 7 -1 4 3 2 0,ldelete(a-b-c-d-e-f,##,-))]., .a-b-c-d-e%ba-b-c-d-f%bb-c-d-e-f%ba-b-c-d-e-f%ba-b-c-d-e%ba-b-c-e-f%ba-b-d-e-f%ba-c-d-e-f%ba-b-c-d-e-f.),
+        strmatch(.[iter(7 1 2 3 4 6 -1 0 8 5,ldelete(a-b-c-d-e-f-g,##,-))]., .a-b-c-d-e-f%bb-c-d-e-f-g%ba-c-d-e-f-g%ba-b-d-e-f-g%ba-b-c-e-f-g%ba-b-c-d-e-g%ba-b-c-d-e-f%ba-b-c-d-e-f-g%ba-b-c-d-e-f-g%ba-b-c-d-f-g.),
+        strmatch(.[iter(2 7 6 9 3 8 -1 4 5 0 1,ldelete(a-b-c-d-e-f-g-h,##,-))]., .a-c-d-e-f-g-h%ba-b-c-d-e-f-h%ba-b-c-d-e-g-h%ba-b-c-d-e-f-g-h%ba-b-d-e-f-g-h%ba-b-c-d-e-f-g%ba-b-c-d-e-f-g%ba-b-c-e-f-g-h%ba-b-c-d-f-g-h%ba-b-c-d-e-f-g-h%bb-c-d-e-f-g-h.)
       )=
   {
     @log smoke=TC006: ldelete vary elements with single-hyphen delimiter. Succeeded.
   },
   {
-    @log smoke=TC006: ldelete vary elements with single-hypehn delimiter. Failed (%q0).
+    @log smoke=TC006: ldelete vary elements with single-hyphen delimiter. Failed.;
+    @log smoke=TC006 actual L0 .[iter(1 0 -1,ldelete(,##,-))].;
+    @log smoke=TC006 actual L1 .[iter(1 -1 0,ldelete(-,##,-))].;
+    @log smoke=TC006 actual L2 .[iter(-1 0 1 2,ldelete(a,##,-))].;
+    @log smoke=TC006 actual L3 .[iter(3 -1 1 0 2,ldelete(a-b,##,-))].;
+    @log smoke=TC006 actual L4 .[iter(3 -1 1 0 2 4,ldelete(a-b-c,##,-))].;
+    @log smoke=TC006 actual L5 .[iter(4 5 0 3 -1 2 1,ldelete(a-b-c-d,##,-))].;
+    @log smoke=TC006 actual L6 .[iter(1 5 0 -1 2 4 6 3,ldelete(a-b-c-d-e,##,-))].;
+    @log smoke=TC006 actual L7 .[iter(6 5 1 7 -1 4 3 2 0,ldelete(a-b-c-d-e-f,##,-))].;
+    @log smoke=TC006 actual L8 .[iter(7 1 2 3 4 6 -1 0 8 5,ldelete(a-b-c-d-e-f-g,##,-))].;
+    @log smoke=TC006 actual L9 .[iter(2 7 6 9 3 8 -1 4 5 0 1,ldelete(a-b-c-d-e-f-g-h,##,-))].
   }
 -
 #
 # Test Case #7 - Walk two elements through single-hyphens.
 #
 &tr.tc007 test_ldelete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(-1 0 1,ldelete(---,##,-))]
-            [iter(2 0 -1 1,ldelete(b---,##,-))]
-            [iter(0 -1 1 2,ldelete(-b--,##,-))]
-            [iter(0 2 3 -1 1,ldelete(a--b-,##,-))]
-            [iter(1 2 3 0 -1,ldelete(-a--b,##,-))]
-            [iter(1 -1 0 2,ldelete(--a-,##,-))]
-            [iter(-1 2 0 1,ldelete(---a,##,-))]
-          )
-        ),
-        97B65A9B641B88CFED417E9597E03470B2F4E213
+  @if cand(
+        strmatch(.[iter(-1 0 1,ldelete(---,##,-))]., .--%b---%b--.),
+        strmatch(.[iter(2 0 -1 1,ldelete(b---,##,-))]., .b--%bb---%bb--%b--.),
+        strmatch(.[iter(0 -1 1 2,ldelete(-b--,##,-))]., .-b--%b-b-%bb--%b--.),
+        strmatch(.[iter(0 2 3 -1 1,ldelete(a--b-,##,-))]., .a--b-%ba-b-%ba--%ba--b%b-b-.),
+        strmatch(.[iter(1 2 3 0 -1,ldelete(-a--b,##,-))]., .a--b%b--b%b-a-b%b-a--b%b-a-.),
+        strmatch(.[iter(1 -1 0 2,ldelete(--a-,##,-))]., .-a-%b--a%b--a-%b-a-.),
+        strmatch(.[iter(-1 2 0 1,ldelete(---a,##,-))]., .--%b--a%b---a%b--a.)
       )=
   {
     @log smoke=TC007: ldelete walk two elements through single-hyphens. Succeeded.
   },
   {
-    @log smoke=TC007: ldelete walk two elements through single-hyphens. Failed (%q0).
+    @log smoke=TC007: ldelete walk two elements through single-hyphens. Failed.;
+    @log smoke=TC007 actual L0 .[iter(-1 0 1,ldelete(---,##,-))].;
+    @log smoke=TC007 actual L1 .[iter(2 0 -1 1,ldelete(b---,##,-))].;
+    @log smoke=TC007 actual L2 .[iter(0 -1 1 2,ldelete(-b--,##,-))].;
+    @log smoke=TC007 actual L3 .[iter(0 2 3 -1 1,ldelete(a--b-,##,-))].;
+    @log smoke=TC007 actual L4 .[iter(1 2 3 0 -1,ldelete(-a--b,##,-))].;
+    @log smoke=TC007 actual L5 .[iter(1 -1 0 2,ldelete(--a-,##,-))].;
+    @log smoke=TC007 actual L6 .[iter(-1 2 0 1,ldelete(---a,##,-))].
   }
 -
 #
 # Test Case #8 - Walk single-hyphens through elements
 #
 &tr.tc008 test_ldelete_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [iter(1 2 9 3 4 6 0 5 -1 7 8,ldelete(a-b-c-d-e-f-g-h,##,-))]
-            [iter(4 0 6 7 8 3 -1 9 1 2 5,ldelete(-a-b-c-d-e-f-g-h,##,-))]
-            [iter(3 5 -1 7 8 2 0 1 9 4 6,ldelete(a--b-c-d-e-f-g-h,##,-))]
-            [iter(4 -1 0 6 7 3 8 5 2 1 9,ldelete(a-b--c-d-e-f-g-h,##,-))]
-            [iter(9 5 1 3 7 2 8 0 6 4 -1,ldelete(a-b-c--d-e-f-g-h,##,-))]
-            [iter(7 3 8 5 -1 9 0 4 6 2 1,ldelete(a-b-c-d--e-f-g-h,##,-))]
-            [iter(0 7 4 9 2 5 3 6 8 1 -1,ldelete(a-b-c-d-e--f-g-h,##,-))]
-            [iter(4 9 2 8 3 7 0 5 -1 6 1,ldelete(a-b-c-d-e-f--g-h,##,-))]
-            [iter(9 7 4 5 6 0 3 -1 2 1 8,ldelete(a-b-c-d-e-f-g--h,##,-))]
-            [iter(8 9 3 5 1 7 6 2 0 -1 4,ldelete(a-b-c-d-e-f-g-h-,##,-))]
-            [iter(4 7 6 0 2 5 1 8 -1 3 9,ldelete(--a-b-c-d-e-f-g-h,##,-))]
-            [iter(6 2 -1 9 0 8 3 1 4 5 7,ldelete(a---b-c-d-e-f-g-h,##,-))]
-            [iter(1 -1 6 5 0 9 8 7 2 3 4,ldelete(a-b---c-d-e-f-g-h,##,-))]
-            [iter(-1 0 4 1 5 8 9 3 6 7 2,ldelete(a-b-c---d-e-f-g-h,##,-))]
-            [iter(2 -1 4 5 9 8 6 7 1 3 0,ldelete(a-b-c-d---e-f-g-h,##,-))]
-            [iter(2 1 4 8 7 -1 5 3 0 6 9,ldelete(a-b-c-d-e---f-g-h,##,-))]
-            [iter(3 0 7 8 6 9 4 1 5 -1 2,ldelete(a-b-c-d-e-f---g-h,##,-))]
-            [iter(4 3 8 5 2 7 1 9 0 6 -1,ldelete(a-b-c-d-e-f-g---h,##,-))]
-            [iter(3 0 8 1 4 7 6 2 9 -1 5,ldelete(a-b-c-d-e-f-g-h--,##,-))]
-          )
-        ),
-        48AEAD4CD8ECAA70EEBA372761EF1F331E622124
+  @if cand(
+        strmatch(.[iter(1 2 9 3 4 6 0 5 -1 7 8,ldelete(a-b-c-d-e-f-g-h,##,-))]., .b-c-d-e-f-g-h%ba-c-d-e-f-g-h%ba-b-c-d-e-f-g-h%ba-b-d-e-f-g-h%ba-b-c-e-f-g-h%ba-b-c-d-e-g-h%ba-b-c-d-e-f-g-h%ba-b-c-d-f-g-h%ba-b-c-d-e-f-g%ba-b-c-d-e-f-h%ba-b-c-d-e-f-g.),
+        strmatch(.[iter(4 0 6 7 8 3 -1 9 1 2 5,ldelete(-a-b-c-d-e-f-g-h,##,-))]., .-a-b-d-e-f-g-h%b-a-b-c-d-e-f-g-h%b-a-b-c-d-f-g-h%b-a-b-c-d-e-g-h%b-a-b-c-d-e-f-h%b-a-c-d-e-f-g-h%b-a-b-c-d-e-f-g%b-a-b-c-d-e-f-g%ba-b-c-d-e-f-g-h%b-b-c-d-e-f-g-h%b-a-b-c-e-f-g-h.),
+        strmatch(.[iter(3 5 -1 7 8 2 0 1 9 4 6,ldelete(a--b-c-d-e-f-g-h,##,-))]., .a--c-d-e-f-g-h%ba--b-c-e-f-g-h%ba--b-c-d-e-f-g%ba--b-c-d-e-g-h%ba--b-c-d-e-f-h%ba-b-c-d-e-f-g-h%ba--b-c-d-e-f-g-h%b-b-c-d-e-f-g-h%ba--b-c-d-e-f-g%ba--b-d-e-f-g-h%ba--b-c-d-f-g-h.),
+        strmatch(.[iter(4 -1 0 6 7 3 8 5 2 1 9,ldelete(a-b--c-d-e-f-g-h,##,-))]., .a-b--d-e-f-g-h%ba-b--c-d-e-f-g%ba-b--c-d-e-f-g-h%ba-b--c-d-f-g-h%ba-b--c-d-e-g-h%ba-b-c-d-e-f-g-h%ba-b--c-d-e-f-h%ba-b--c-e-f-g-h%ba--c-d-e-f-g-h%bb--c-d-e-f-g-h%ba-b--c-d-e-f-g.),
+        strmatch(.[iter(9 5 1 3 7 2 8 0 6 4 -1,ldelete(a-b-c--d-e-f-g-h,##,-))]., .a-b-c--d-e-f-g%ba-b-c--e-f-g-h%bb-c--d-e-f-g-h%ba-b--d-e-f-g-h%ba-b-c--d-e-g-h%ba-c--d-e-f-g-h%ba-b-c--d-e-f-h%ba-b-c--d-e-f-g-h%ba-b-c--d-f-g-h%ba-b-c-d-e-f-g-h%ba-b-c--d-e-f-g.),
+        strmatch(.[iter(7 3 8 5 -1 9 0 4 6 2 1,ldelete(a-b-c-d--e-f-g-h,##,-))]., .a-b-c-d--e-g-h%ba-b-d--e-f-g-h%ba-b-c-d--e-f-h%ba-b-c-d-e-f-g-h%ba-b-c-d--e-f-g%ba-b-c-d--e-f-g%ba-b-c-d--e-f-g-h%ba-b-c--e-f-g-h%ba-b-c-d--f-g-h%ba-c-d--e-f-g-h%bb-c-d--e-f-g-h.),
+        strmatch(.[iter(0 7 4 9 2 5 3 6 8 1 -1,ldelete(a-b-c-d-e--f-g-h,##,-))]., .a-b-c-d-e--f-g-h%ba-b-c-d-e--g-h%ba-b-c-e--f-g-h%ba-b-c-d-e--f-g%ba-c-d-e--f-g-h%ba-b-c-d--f-g-h%ba-b-d-e--f-g-h%ba-b-c-d-e-f-g-h%ba-b-c-d-e--f-h%bb-c-d-e--f-g-h%ba-b-c-d-e--f-g.),
+        strmatch(.[iter(4 9 2 8 3 7 0 5 -1 6 1,ldelete(a-b-c-d-e-f--g-h,##,-))]., .a-b-c-e-f--g-h%ba-b-c-d-e-f--g%ba-c-d-e-f--g-h%ba-b-c-d-e-f--h%ba-b-d-e-f--g-h%ba-b-c-d-e-f-g-h%ba-b-c-d-e-f--g-h%ba-b-c-d-f--g-h%ba-b-c-d-e-f--g%ba-b-c-d-e--g-h%bb-c-d-e-f--g-h.),
+        strmatch(.[iter(9 7 4 5 6 0 3 -1 2 1 8,ldelete(a-b-c-d-e-f-g--h,##,-))]., .a-b-c-d-e-f-g-%ba-b-c-d-e-f--h%ba-b-c-e-f-g--h%ba-b-c-d-f-g--h%ba-b-c-d-e-g--h%ba-b-c-d-e-f-g--h%ba-b-d-e-f-g--h%ba-b-c-d-e-f-g-%ba-c-d-e-f-g--h%bb-c-d-e-f-g--h%ba-b-c-d-e-f-g-h.),
+        strmatch(.[iter(8 9 3 5 1 7 6 2 0 -1 4,ldelete(a-b-c-d-e-f-g-h-,##,-))]., .a-b-c-d-e-f-g-%ba-b-c-d-e-f-g-h%ba-b-d-e-f-g-h-%ba-b-c-d-f-g-h-%bb-c-d-e-f-g-h-%ba-b-c-d-e-f-h-%ba-b-c-d-e-g-h-%ba-c-d-e-f-g-h-%ba-b-c-d-e-f-g-h-%ba-b-c-d-e-f-g-h%ba-b-c-e-f-g-h-.),
+        strmatch(.[iter(4 7 6 0 2 5 1 8 -1 3 9,ldelete(--a-b-c-d-e-f-g-h,##,-))]., .--a-c-d-e-f-g-h%b--a-b-c-d-f-g-h%b--a-b-c-e-f-g-h%b--a-b-c-d-e-f-g-h%b-a-b-c-d-e-f-g-h%b--a-b-d-e-f-g-h%b-a-b-c-d-e-f-g-h%b--a-b-c-d-e-g-h%b--a-b-c-d-e-f-g%b--b-c-d-e-f-g-h%b--a-b-c-d-e-f-h.),
+        strmatch(.[iter(6 2 -1 9 0 8 3 1 4 5 7,ldelete(a---b-c-d-e-f-g-h,##,-))]., .a---b-c-e-f-g-h%ba--b-c-d-e-f-g-h%ba---b-c-d-e-f-g%ba---b-c-d-e-f-h%ba---b-c-d-e-f-g-h%ba---b-c-d-e-g-h%ba--b-c-d-e-f-g-h%b--b-c-d-e-f-g-h%ba---c-d-e-f-g-h%ba---b-d-e-f-g-h%ba---b-c-d-f-g-h.),
+        strmatch(.[iter(1 -1 6 5 0 9 8 7 2 3 4,ldelete(a-b---c-d-e-f-g-h,##,-))]., .b---c-d-e-f-g-h%ba-b---c-d-e-f-g%ba-b---c-e-f-g-h%ba-b---d-e-f-g-h%ba-b---c-d-e-f-g-h%ba-b---c-d-e-f-h%ba-b---c-d-e-g-h%ba-b---c-d-f-g-h%ba---c-d-e-f-g-h%ba-b--c-d-e-f-g-h%ba-b--c-d-e-f-g-h.),
+        strmatch(.[iter(-1 0 4 1 5 8 9 3 6 7 2,ldelete(a-b-c---d-e-f-g-h,##,-))]., .a-b-c---d-e-f-g%ba-b-c---d-e-f-g-h%ba-b-c--d-e-f-g-h%bb-c---d-e-f-g-h%ba-b-c--d-e-f-g-h%ba-b-c---d-e-g-h%ba-b-c---d-e-f-h%ba-b---d-e-f-g-h%ba-b-c---e-f-g-h%ba-b-c---d-f-g-h%ba-c---d-e-f-g-h.),
+        strmatch(.[iter(2 -1 4 5 9 8 6 7 1 3 0,ldelete(a-b-c-d---e-f-g-h,##,-))]., .a-c-d---e-f-g-h%ba-b-c-d---e-f-g%ba-b-c---e-f-g-h%ba-b-c-d--e-f-g-h%ba-b-c-d---e-f-h%ba-b-c-d---e-g-h%ba-b-c-d--e-f-g-h%ba-b-c-d---f-g-h%bb-c-d---e-f-g-h%ba-b-d---e-f-g-h%ba-b-c-d---e-f-g-h.),
+        strmatch(.[iter(2 1 4 8 7 -1 5 3 0 6 9,ldelete(a-b-c-d-e---f-g-h,##,-))]., .a-c-d-e---f-g-h%bb-c-d-e---f-g-h%ba-b-c-e---f-g-h%ba-b-c-d-e---g-h%ba-b-c-d-e--f-g-h%ba-b-c-d-e---f-g%ba-b-c-d---f-g-h%ba-b-d-e---f-g-h%ba-b-c-d-e---f-g-h%ba-b-c-d-e--f-g-h%ba-b-c-d-e---f-h.),
+        strmatch(.[iter(3 0 7 8 6 9 4 1 5 -1 2,ldelete(a-b-c-d-e-f---g-h,##,-))]., .a-b-d-e-f---g-h%ba-b-c-d-e-f---g-h%ba-b-c-d-e-f--g-h%ba-b-c-d-e-f--g-h%ba-b-c-d-e---g-h%ba-b-c-d-e-f---h%ba-b-c-e-f---g-h%bb-c-d-e-f---g-h%ba-b-c-d-f---g-h%ba-b-c-d-e-f---g%ba-c-d-e-f---g-h.),
+        strmatch(.[iter(4 3 8 5 2 7 1 9 0 6 -1,ldelete(a-b-c-d-e-f-g---h,##,-))]., .a-b-c-e-f-g---h%ba-b-d-e-f-g---h%ba-b-c-d-e-f-g--h%ba-b-c-d-f-g---h%ba-c-d-e-f-g---h%ba-b-c-d-e-f---h%bb-c-d-e-f-g---h%ba-b-c-d-e-f-g--h%ba-b-c-d-e-f-g---h%ba-b-c-d-e-g---h%ba-b-c-d-e-f-g--.),
+        strmatch(.[iter(3 0 8 1 4 7 6 2 9 -1 5,ldelete(a-b-c-d-e-f-g-h--,##,-))]., .a-b-d-e-f-g-h--%ba-b-c-d-e-f-g-h--%ba-b-c-d-e-f-g--%bb-c-d-e-f-g-h--%ba-b-c-e-f-g-h--%ba-b-c-d-e-f-h--%ba-b-c-d-e-g-h--%ba-c-d-e-f-g-h--%ba-b-c-d-e-f-g-h-%ba-b-c-d-e-f-g-h-%ba-b-c-d-f-g-h--.)
       )=
   {
     @log smoke=TC008: ldelete walk single-hypens through elements. Succeeded.
   },
   {
-    @log smoke=TC008: ldelete walk single-hypens through elements. Failed (%q0).
+    @log smoke=TC008: ldelete walk single-hypens through elements. Failed.;
+    @log smoke=TC008-ECHO-L0 .[iter(1 2 9 3 4 6 0 5 -1 7 8,ldelete(a-b-c-d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L1 .[iter(4 0 6 7 8 3 -1 9 1 2 5,ldelete(-a-b-c-d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L2 .[iter(3 5 -1 7 8 2 0 1 9 4 6,ldelete(a--b-c-d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L3 .[iter(4 -1 0 6 7 3 8 5 2 1 9,ldelete(a-b--c-d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L4 .[iter(9 5 1 3 7 2 8 0 6 4 -1,ldelete(a-b-c--d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L5 .[iter(7 3 8 5 -1 9 0 4 6 2 1,ldelete(a-b-c-d--e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L6 .[iter(0 7 4 9 2 5 3 6 8 1 -1,ldelete(a-b-c-d-e--f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L7 .[iter(4 9 2 8 3 7 0 5 -1 6 1,ldelete(a-b-c-d-e-f--g-h,##,-))].;
+    @log smoke=TC008-ECHO-L8 .[iter(9 7 4 5 6 0 3 -1 2 1 8,ldelete(a-b-c-d-e-f-g--h,##,-))].;
+    @log smoke=TC008-ECHO-L9 .[iter(8 9 3 5 1 7 6 2 0 -1 4,ldelete(a-b-c-d-e-f-g-h-,##,-))].;
+    @log smoke=TC008-ECHO-L10 .[iter(4 7 6 0 2 5 1 8 -1 3 9,ldelete(--a-b-c-d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L11 .[iter(6 2 -1 9 0 8 3 1 4 5 7,ldelete(a---b-c-d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L12 .[iter(1 -1 6 5 0 9 8 7 2 3 4,ldelete(a-b---c-d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L13 .[iter(-1 0 4 1 5 8 9 3 6 7 2,ldelete(a-b-c---d-e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L14 .[iter(2 -1 4 5 9 8 6 7 1 3 0,ldelete(a-b-c-d---e-f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L15 .[iter(2 1 4 8 7 -1 5 3 0 6 9,ldelete(a-b-c-d-e---f-g-h,##,-))].;
+    @log smoke=TC008-ECHO-L16 .[iter(3 0 7 8 6 9 4 1 5 -1 2,ldelete(a-b-c-d-e-f---g-h,##,-))].;
+    @log smoke=TC008-ECHO-L17 .[iter(4 3 8 5 2 7 1 9 0 6 -1,ldelete(a-b-c-d-e-f-g---h,##,-))].;
+    @log smoke=TC008-ECHO-L18 .[iter(3 0 8 1 4 7 6 2 9 -1 5,ldelete(a-b-c-d-e-f-g-h--,##,-))].
   }
 -
 #
