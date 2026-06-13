@@ -1617,6 +1617,10 @@ static void test_div_rem_edge_cases() {
         // W-form signed overflow: INT32_MIN / -1.
         DIVW(21, 8, 2), REMW(22, 8, 2),
         // W-form divisor with zero low 32 bits but nonzero upper bits.
+        // This also guards the AArch64 div-by-zero "-1" encoding: it must be
+        // ORN Xd,XZR,XZR (Rm=31), not Rm=0 (= ~X0).  The preceding INT32_MIN
+        // /-1 leaves 0x80000000 in the X0 scratch, so a wrong Rm yields
+        // ~0x...80000000 = 0x7FFFFFFF instead of -1.
         DIVW(23, 4, 7), REMW(24, 4, 7),
         // Ordinary divisions through the guarded sequences.
         DIV(25, 4, 5), REM(26, 6, 5), DIV(27, 6, 5),

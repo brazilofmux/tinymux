@@ -1612,7 +1612,7 @@ no_addr_fusion:
                     uint32_t done = emit_b(&e, 0);
                     // .zero: rd = -1 via ORN Xd, XZR, XZR
                     emit_patch_b19(&e, zchk, emit_pos(&e));
-                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR
+                    emit_inst(&e, 0xAA3F03E0 | rd);  // ORN Xd, XZR, XZR = -1 (Rm=XZR=31)
                     emit_patch_b26(&e, done, emit_pos(&e));
                     break;
                 }
@@ -1621,7 +1621,7 @@ no_addr_fusion:
                     emit_udiv_r64(&e, rd, rs1, rs2);
                     uint32_t done = emit_b(&e, 0);
                     emit_patch_b19(&e, zchk, emit_pos(&e));
-                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR
+                    emit_inst(&e, 0xAA3F03E0 | rd);  // ORN Xd, XZR, XZR = -1 (Rm=XZR=31)
                     emit_patch_b26(&e, done, emit_pos(&e));
                     break;
                 }
@@ -1744,7 +1744,7 @@ no_addr_fusion:
                     emit_sdiv_r32(&e, rd, rs1, rs2);
                     uint32_t done = emit_b(&e, 0);
                     emit_patch_b19(&e, zchk, emit_pos(&e));
-                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR = -1
+                    emit_inst(&e, 0xAA3F03E0 | rd);  // ORN Xd, XZR, XZR = -1 (Rm=XZR=31)
                     emit_patch_b26(&e, done, emit_pos(&e));
                     break;
                 }
@@ -1754,7 +1754,7 @@ no_addr_fusion:
                     emit_udiv_r32(&e, rd, rs1, rs2);
                     uint32_t done = emit_b(&e, 0);
                     emit_patch_b19(&e, zchk, emit_pos(&e));
-                    emit_inst(&e, 0xAA2003E0 | rd);  // ORN Xd, XZR, XZR
+                    emit_inst(&e, 0xAA3F03E0 | rd);  // ORN Xd, XZR, XZR = -1 (Rm=XZR=31)
                     emit_patch_b26(&e, done, emit_pos(&e));
                     break;
                 }
