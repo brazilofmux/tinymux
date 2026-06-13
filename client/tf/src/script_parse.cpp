@@ -832,12 +832,36 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             app->open_files.erase(it);
             return Value::make_int(1);
         }}},
-        {"tfread", {2, 2, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // tfread(handle, varname) — read one line into variable, returns 1 or 0 at EOF
+        {"tfread", {1, 2, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
+            // tfread(handle, varname) — read one line from a file handle into
+            //   a variable; returns 1, or 0 at EOF / on error.
+            // tfread(varname) or tfread("tfin"|"-", varname) — read one line
+            //   from the keyboard (the macro pauses for user input); returns
+            //   1, or 0 on EOF (stdin closed / interrupt) or when no
+            //   interactive read is available.
             App* app = env.app();
             if (!app) return Value::make_int(0);
-            std::string handle = a[0].as_str();
-            std::string varname = a[1].as_str();
+
+            std::string handle, varname;
+            bool keyboard;
+            if (a.size() == 1) {
+                keyboard = true;
+                varname = a[0].as_str();
+            } else {
+                handle = a[0].as_str();
+                varname = a[1].as_str();
+                keyboard = (handle == "tfin" || handle == "-");
+            }
+
+            if (keyboard) {
+                if (!app->read_line_fn) return Value::make_int(0);
+                bool eof = false;
+                std::string line = app->read_line_fn(std::string(), eof);
+                if (eof) return Value::make_int(0);
+                env.set(varname, Value::make_str(line));
+                return Value::make_int(1);
+            }
+
             auto it = app->open_files.find(handle);
             if (it == app->open_files.end()) return Value::make_int(0);
             char buf[8192];
@@ -888,8 +912,15 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
             return Value::make_int(1);
         }}},
         {"read", {0, 1, [](ScriptEnv& env, const std::vector<Value>& a) -> Value {
-            // read() — read a line from stdin (not useful in ncurses mode, stub)
-            return Value::make_str("");
+            // read([prompt]) — pause the macro and read one line from the
+            // keyboard, returning it.  The optional argument is shown as a
+            // prompt on the input line.  Returns "" if no interactive read is
+            // available (e.g. during startup) or on EOF/interrupt.
+            App* app = env.app();
+            if (!app || !app->read_line_fn) return Value::make_str("");
+            std::string prompt = a.empty() ? std::string() : a[0].as_str();
+            bool eof = false;
+            return Value::make_str(app->read_line_fn(prompt, eof));
         }}},
         {"filename", {1, 1, [](ScriptEnv&, const std::vector<Value>& a) -> Value {
             // filename(path) — expand ~ and return absolute path

@@ -34,6 +34,7 @@ public:
     void print_system(const std::string& msg);
     void set_prompt(const std::string& prompt);
     void clear_prompt();
+    const std::string& prompt_text() const { return prompt_text_; }
     void set_input_text(const std::string& text);
     const std::string& input_text() const { return editor_.text(); }
     size_t cursor_pos() const { return editor_.cursor(); }

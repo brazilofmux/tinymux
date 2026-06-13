@@ -402,8 +402,106 @@ static void handle_input_line(App& app, const std::string& line) {
     }
 }
 
+// Modal keyboard line read used by the read()/tfread() scripting functions.
+//
+// A macro that calls read() must pause until the user types a line.  The
+// client is a single-threaded poll() loop with synchronous script execution,
+// so we satisfy this with a nested input pump rather than a coroutine: save
+// the in-progress input line, show the prompt, then drain keyboard input into
+// the editor until Enter (SUBMIT) or EOF.
+//
+// The pump deliberately processes ONLY keyboard input — not network sockets,
+// shell pipes, or timers.  Re-entering those here would fire triggers/hooks
+// recursively while an outer script is mid-evaluation, exactly the reentrancy
+// that has produced use-after-free bugs elsewhere in this codebase.  Incoming
+// MUD output and timers therefore wait until the read completes; this is the
+// expected "macro pauses for user input" semantics.  It uses its own
+// InputLexer so it never disturbs the outer loop's in-flight event iteration.
+static std::string modal_read_line(App& app, const std::string& prompt,
+                                   bool& eof) {
+    eof = false;
+
+    // Preserve the user's in-progress input line and any active prompt; the
+    // read borrows the input line and restores it on completion.
+    std::string saved_text   = app.terminal.input_text();
+    size_t      saved_cursor = app.terminal.cursor_pos();
+    std::string saved_prompt = app.terminal.prompt_text();
+
+    app.terminal.set_input_text("");
+    app.terminal.set_cursor_pos(0);
+    app.terminal.set_prompt(prompt);     // empty prompt clears the prompt area
+    app.terminal.status_read_depth++;
+    app.terminal.update_status();
+    app.terminal.refresh();
+
+    InputLexer lexer;
+    std::string result;
+    bool done = false;
+
+    while (app.running && !done) {
+        // Honor terminating signals so a read can never trap the client.
+        if (got_sigterm) { app.running = false; eof = true; break; }
+        if (got_sigint)  { got_sigint = 0; eof = true; break; }
+        if (got_sigwinch) {
+            got_sigwinch = 0;
+            app.terminal.handle_resize();
+            app.terminal.refresh();
+        }
+
+        struct pollfd pfd { STDIN_FILENO, POLLIN, 0 };
+        int timeout_ms = lexer.has_pending_esc() ? 25 : -1;
+        int ready = poll(&pfd, 1, timeout_ms);
+
+        if (ready > 0 && (pfd.revents & POLLIN)) {
+            unsigned char buf[4096];
+            ssize_t n = read(STDIN_FILENO, buf, sizeof(buf));
+            if (n > 0) {
+                lexer.feed(buf, (size_t)n);
+            } else if (n == 0) {
+                eof = true;  // stdin closed
+                break;
+            }
+        } else if (ready == 0 && lexer.has_pending_esc()) {
+            lexer.flush_pending_esc();
+        }
+
+        for (auto& ev : lexer.events()) {
+            // Ctrl-D on an empty line means EOF for a read (handle_key would
+            // otherwise turn it into a "/quit" line).
+            if (ev.key == Key::CTRL_D && app.terminal.input_text().empty()) {
+                eof = true;
+                done = true;
+                break;
+            }
+            std::string line;
+            if (app.terminal.handle_key(ev, line)) {
+                result = line;
+                done = true;
+                break;
+            }
+        }
+        lexer.clear_events();
+        app.terminal.refresh();
+    }
+
+    // Restore depth, the prior prompt, and the in-progress input line.
+    if (app.terminal.status_read_depth > 0) app.terminal.status_read_depth--;
+    app.terminal.set_prompt(saved_prompt);
+    app.terminal.set_input_text(saved_text);
+    app.terminal.set_cursor_pos(saved_cursor);
+    app.terminal.update_status();
+    app.terminal.refresh();
+
+    return result;
+}
+
 static void run(App& app) {
     InputLexer lexer;
+
+    // Install the modal keyboard-read hook used by read()/tfread().
+    app.read_line_fn = [&app](const std::string& prompt, bool& eof) {
+        return modal_read_line(app, prompt, eof);
+    };
 
     // Set stdin non-blocking for read() in the event loop
     int stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);

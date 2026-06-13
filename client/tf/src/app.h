@@ -14,6 +14,7 @@
 #include <unordered_set>
 #include <memory>
 #include <vector>
+#include <functional>
 #include <sys/types.h>
 
 class ScriptEnv;
@@ -51,6 +52,13 @@ struct App {
     ScriptEnv*                                     current_env = nullptr;
     std::unordered_set<std::string>                active_worlds;  // worlds with unread bg activity
     FILE*                                          debug_keys_fp = nullptr;  // --debug-keys log
+
+    // Modal keyboard line read, installed by the event loop (main.cpp run()).
+    // Pauses the running macro, reads one line from the keyboard, and returns
+    // it.  `prompt` is shown on the input line for the duration of the read;
+    // `eof` is set if stdin closed or the read was interrupted.  Empty when no
+    // interactive read is available (e.g. during startup config evaluation).
+    std::function<std::string(const std::string& prompt, bool& eof)> read_line_fn;
 
     ~App() {
         for (auto& [h, fp] : open_files) if (fp) fclose(fp);
