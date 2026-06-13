@@ -435,6 +435,17 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     // Read code section directly into the install image.
     s_tier2.code_size = hdr.code_size;
     s_tier2.bss_size = (hdr.version >= 2) ? hdr.bss_size : 0;
+
+    // The blob (code + rodata + data + BSS) is mapped at BLOB_BASE and must
+    // fit within the blob window; otherwise it would overflow into the
+    // string pool.  tier2_install only checks against the full MEM_SIZE, so
+    // enforce the tighter window bound here at load time.
+    if (s_tier2.code_size + s_tier2.bss_size
+        > rv_compiler::BLOB_LIMIT - rv_compiler::BLOB_BASE) {
+        fclose(f);
+        return false;
+    }
+
     s_tier2.image.resize(hdr.code_size + s_tier2.bss_size, 0);
     fseek(f, hdr.code_offset, SEEK_SET);
     if (fread(s_tier2.image.data(), hdr.code_size, 1, f) != 1) {
@@ -539,6 +550,28 @@ static void reg_intrinsic(dbt_state_t *dbt, const char *blob_name,
 //
 static double host_strtod(const char *s) {
     return mux_atof(reinterpret_cast<const UTF8 *>(s));
+}
+
+// Guest heap bump cursor and the rv64_alloc intrinsic backing it.
+//
+// The heap is a per-evaluation arena: the guest bump-allocates scratch via
+// rv64_alloc and never frees; the cursor is reset to HEAP_BASE before each
+// evaluation (alongside the blob .data/.bss reset).  host_alloc returns a
+// *guest* address (offset into the guest image), not a host pointer, so the
+// DBT stub must not host<->guest convert the return (DBT_EMIT_ALLOC uses
+// ptr_mask=0).  0 is returned on exhaustion → the guest sees NULL.
+//
+static uint64_t s_heap_next = rv_compiler::HEAP_BASE;
+
+static uint64_t host_alloc(uint64_t size) {
+    uint64_t aligned = (size + 15) & ~15ULL;
+    uint64_t addr = s_heap_next;
+    if (aligned > rv_compiler::HEAP_LIMIT - rv_compiler::HEAP_BASE
+        || addr + aligned > rv_compiler::HEAP_LIMIT) {
+        return 0;  // out of heap → guest NULL
+    }
+    s_heap_next = addr + aligned;
+    return addr;
 }
 
 static int host_fval(char *buf, double val) {
@@ -684,6 +717,7 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     //
     reg_intrinsic(dbt, "rv64_strtod", DBT_EMIT_STRTOD, reinterpret_cast<void *>(host_strtod));
     reg_intrinsic(dbt, "rv64_fval",   DBT_EMIT_FVAL,   reinterpret_cast<void *>(host_fval));
+    reg_intrinsic(dbt, "rv64_alloc",  DBT_EMIT_ALLOC,  reinterpret_cast<void *>(host_alloc));
 
     // Round-to-precision intrinsic.
     reg_intrinsic(dbt, "rv64_ftoa_round", DBT_EMIT_FTOA_ROUND,
@@ -1228,6 +1262,7 @@ struct persistent_vm_t {
         if (s_tier2.loaded) {
             tier2_reset_writable(memory, rv_compiler::BLOB_BASE);
         }
+        s_heap_next = rv_compiler::HEAP_BASE;  // reset per-eval heap arena
     }
 
     // Run a compiled function.  Returns 0 on success.
@@ -2018,8 +2053,9 @@ struct shared_heap_t {
             dbt.blob_code_end = dbt.code_used;
         }
 
-        // Reset writable blob state.
+        // Reset writable blob state and the per-eval heap arena.
         tier2_reset_writable(memory, rv_compiler::BLOB_BASE);
+        s_heap_next = rv_compiler::HEAP_BASE;
 
         // NUL-sentinel output slots.
         {

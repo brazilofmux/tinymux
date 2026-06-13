@@ -550,6 +550,10 @@ DEFINE_CO_EMITTER(co_6pp, 6, 0x03)
 DEFINE_CO_EMITTER(co_7pp, 7, 0x03)
 DEFINE_CO_EMITTER(co_8ppp, 8, 0x0B)
 
+// rv64_alloc(size): 1 integer arg, integer (guest offset) return.
+// ptr_mask=0 so neither the arg nor the return is host<->guest converted.
+DEFINE_CO_EMITTER(alloc, 1, 0x00)
+
 static void emit_stub_slen_w(void *ev, void *) { emit_stub_slen(static_cast<emit_t *>(ev)); }
 static void emit_stub_scopy_w(void *ev, void *) { emit_stub_scopy(static_cast<emit_t *>(ev)); }
 static void emit_stub_memcpy_w(void *ev, void *) { emit_stub_memcpy(static_cast<emit_t *>(ev)); }
@@ -606,6 +610,7 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_strtod,      // DBT_EMIT_STRTOD
     emit_stub_fval,        // DBT_EMIT_FVAL
     emit_stub_ftoa_round,  // DBT_EMIT_FTOA_ROUND
+    emit_stub_alloc,       // DBT_EMIT_ALLOC
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

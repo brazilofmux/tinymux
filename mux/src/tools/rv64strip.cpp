@@ -93,6 +93,8 @@ struct flat_image {
     uint64_t total_size;        // base_vaddr to end of highest section
     uint64_t init_size;         // bytes of CONTENTS data (code+rodata+data)
     uint64_t bss_size;          // bytes to zero-fill after init_size
+    uint64_t wr_off;            // offset of writable init (.data) within image
+    uint64_t wr_size;           // bytes of writable init data (0 if none)
 };
 
 static bool build_flat_image(const std::vector<uint8_t> &elf,
@@ -108,6 +110,7 @@ static bool build_flat_image(const std::vector<uint8_t> &elf,
     // Find extent of all ALLOC sections.
     uint64_t lo = UINT64_MAX, hi = 0;
     uint64_t init_hi = 0;  // highest end of CONTENTS sections
+    uint64_t wr_lo = UINT64_MAX, wr_hi = 0;  // writable CONTENTS span (.data)
     for (int i = 0; i < eh->e_shnum; i++) {
         const Elf64_Shdr *sh = reinterpret_cast<const Elf64_Shdr *>(
             elf.data() + eh->e_shoff + i * eh->e_shentsize);
@@ -117,6 +120,13 @@ static bool build_flat_image(const std::vector<uint8_t> &elf,
         uint64_t end = sh->sh_addr + sh->sh_size;
         if (end > hi) hi = end;
         if (sh->sh_type != SHT_NOBITS && end > init_hi) init_hi = end;
+        // Writable initialized data (.sdata/.data): the loader restores
+        // this range before every evaluation so a mutated static reverts
+        // to its initial value.  NOBITS (.bss) is handled separately.
+        if (sh->sh_type != SHT_NOBITS && (sh->sh_flags & SHF_WRITE)) {
+            if (sh->sh_addr < wr_lo) wr_lo = sh->sh_addr;
+            if (end > wr_hi) wr_hi = end;
+        }
     }
     if (lo >= hi) return false;
 
@@ -125,6 +135,13 @@ static bool build_flat_image(const std::vector<uint8_t> &elf,
     out.total_size = hi - lo;
     out.init_size = init_hi - lo;
     out.bss_size = hi - init_hi;
+    if (wr_lo < wr_hi) {
+        out.wr_off = wr_lo - lo;
+        out.wr_size = wr_hi - wr_lo;
+    } else {
+        out.wr_off = 0;
+        out.wr_size = 0;
+    }
     out.data.resize(static_cast<size_t>(out.init_size), 0);
 
     // Copy each CONTENTS section at its correct offset.
@@ -253,8 +270,11 @@ int main(int argc, char *argv[]) {
     hdr.rodata_size = 0;
     hdr.entry_offset = entry_off;
     hdr.entry_count = entry_count;
-    hdr.data_offset = 0;             // v2: not used separately
-    hdr.data_size = 0;
+    // Writable initialized data (.data/.sdata) is part of the flat image
+    // (within code_size); data_offset/data_size mark its sub-range so the
+    // loader can restore it before each evaluation.  Zero when absent.
+    hdr.data_offset = img.wr_size ? (image_off + static_cast<uint32_t>(img.wr_off)) : 0;
+    hdr.data_size = static_cast<uint32_t>(img.wr_size);
     hdr.bss_size = static_cast<uint32_t>(img.bss_size);
     hdr.reserved = 0;
 
@@ -289,6 +309,8 @@ int main(int argc, char *argv[]) {
     printf("  image:  %u bytes (init) + %u bytes (bss) = %lu total\n",
            image_sz, (uint32_t)img.bss_size,
            (unsigned long)img.total_size);
+    printf("  data:   %u bytes writable @ off 0x%x\n",
+           hdr.data_size, hdr.data_offset);
     printf("  entries: %u\n", entry_count);
     for (uint32_t i = 0; i < entry_count; i++) {
         printf("    [%u] %s @ 0x%x\n", i, entries[i].name, entries[i].code_off);

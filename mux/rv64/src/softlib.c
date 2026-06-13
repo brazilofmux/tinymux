@@ -332,6 +332,9 @@ static int sis_integer(const char *s);
 double rv64_strtod(const char *s);
 int rv64_fval(char *buf, double val);
 
+/* Per-evaluation guest heap allocator (intrinsic → host_alloc). */
+void *rv64_alloc(unsigned long n);
+
 /* ECALL helpers — invoke host syscall from guest code.
  * a7 = syscall number, a0..a2 = args.  Returns a0.
  */
@@ -2187,6 +2190,13 @@ __attribute__((noipa)) int rv64_ftoa_round(char *buf, double val, int frac) {
     (void)buf; (void)val; (void)frac; return 0;
 }
 
+/* rv64_alloc: bump-allocate `n` bytes from the per-evaluation guest heap
+ * arena.  Intrinsic → host_alloc, which returns a guest address (or 0 on
+ * exhaustion → NULL).  Never freed; the host resets the arena before each
+ * evaluation.  Stub body never runs (DBT intercepts).
+ */
+__attribute__((noipa)) void *rv64_alloc(unsigned long n) { (void)n; return (void *)0; }
+
 /* ---------------------------------------------------------------
  * Tier 2 math wrappers — softcode function entry points.
  *
@@ -2331,6 +2341,59 @@ static int rv64_i64toa(char *buf, long long val) {
     while (i > 0) buf[len++] = tmp[--i];
     buf[len] = '\0';
     return len;
+}
+
+/* ---------------------------------------------------------------
+ * rv64_memself — self-test of the guest memory environment.
+ *
+ * Exercises all three writable-storage capabilities the blob now has:
+ *   - .bss   : g_memself_bss (zero-initialized; reset to zero each eval)
+ *   - .data  : g_memself_seed (initialized writable; restored each eval)
+ *   - heap   : rv64_alloc (per-eval bump arena)
+ *
+ * Returns a deterministic checksum as a decimal string.  Because the
+ * host zero-fills .bss, restores .data, and resets the heap before every
+ * evaluation, the checksum is identical on every run — a differing value
+ * across runs means a reset path is broken.
+ *
+ * It also forces .bss/.data to be non-empty in the linked blob, so the
+ * softlib.ld + rv64strip writable/bss pipeline is exercised by the build.
+ * Follows the standard Tier 2 wrapper ABI but is not mapped to any
+ * softcode function name.
+ * --------------------------------------------------------------- */
+static unsigned char g_memself_bss[1024];          /* .bss  (zero-init) */
+static unsigned int  g_memself_seed = 0x1234567u;  /* .data (writable)  */
+
+char *rv64_memself(char *out, const char **fargs, int nfargs) {
+    unsigned long long sum = 0;
+    int i;
+    (void)fargs; (void)nfargs;
+
+    /* .bss must read as zero on entry; then write a pattern and read it. */
+    for (i = 0; i < (int)sizeof(g_memself_bss); i++) {
+        sum += g_memself_bss[i];                 /* 0 if BSS truly zeroed */
+        g_memself_bss[i] = (unsigned char)(i * 7 + 1);
+    }
+    for (i = 0; i < (int)sizeof(g_memself_bss); i++) {
+        sum += g_memself_bss[i];
+    }
+
+    /* .data: fold in the seed, then mutate it.  A correct per-eval reset
+     * restores g_memself_seed so the next run folds the same value. */
+    sum += g_memself_seed;
+    g_memself_seed += 1;
+
+    /* heap: two allocations must be valid and distinct; write+read back. */
+    unsigned char *a = (unsigned char *)rv64_alloc(512);
+    unsigned char *b = (unsigned char *)rv64_alloc(512);
+    if (a && b && a != b) {
+        for (i = 0; i < 512; i++) { a[i] = (unsigned char)i; b[i] = (unsigned char)(255 - i); }
+        for (i = 0; i < 512; i++) { sum += a[i] + b[i]; }
+        sum += 1;  /* heap-OK marker */
+    }
+
+    rv64_i64toa(out, (long long)sum);
+    return out;
 }
 
 char *rv64_round(char *out, const char **fargs, int nfargs) {

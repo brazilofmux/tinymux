@@ -208,7 +208,7 @@ struct rv_compiler {
     int spills;             // register allocator spill slots used
     bool needs_jit;         // true if any runtime code was emitted
 
-    static constexpr size_t MEM_SIZE     = 4 * 1024 * 1024;  // 4 MB
+    static constexpr size_t MEM_SIZE     = 5 * 1024 * 1024;  // 5 MB (4 MB map + 1 MB heap)
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
     static constexpr uint64_t STR_BASE   = 0x1000;
@@ -267,6 +267,15 @@ struct rv_compiler {
     static constexpr uint64_t DMA_DESC_BASE    = 0x80000; // descriptor rings (4KB)
 
     static constexpr uint64_t STACK_TOP  = 0x3FFFF0;    // top of 4MB space
+
+    // Guest heap — bump-allocated arena placed ABOVE STACK_TOP, so it can
+    // never collide with the downward-growing guest stack/output region.
+    // The host rv64_alloc intrinsic hands out [HEAP_BASE, HEAP_LIMIT) and
+    // the cursor is reset to HEAP_BASE before every evaluation (same
+    // per-eval lifecycle as blob .data/.bss).  Addresses stay far below the
+    // OUT_FRAME_TAG bit-30 boundary, so RV64 LUI sign-extension is unaffected.
+    static constexpr uint64_t HEAP_BASE  = 0x400000;
+    static constexpr uint64_t HEAP_LIMIT = 0x500000;    // 1 MB == MEM_SIZE top
 
     // Number of output slots allocated (for prologue frame size).
     int n_output_slots;

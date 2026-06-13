@@ -1669,6 +1669,80 @@ static void test_div_rem_edge_cases() {
     }
 }
 
+// ---------------------------------------------------------------
+// rv64_alloc intrinsic emitter (DBT_EMIT_ALLOC).
+//
+// The guest passes a size in a0 and gets back a *guest* address in a0.
+// The emitter must NOT host<->guest convert either the argument or the
+// return (ptr_mask=0): the host bump-allocator returns a guest offset
+// the guest then dereferences directly.  This test registers a stub
+// allocator at a guest address, JALs to it twice, and verifies the
+// returned offsets are passed through verbatim, advance by the aligned
+// size, and are usable as guest pointers (store/load round-trip).
+// ---------------------------------------------------------------
+
+static uint64_t g_test_alloc_cursor;
+static uint64_t test_host_alloc(uint64_t size) {
+    uint64_t a = g_test_alloc_cursor;
+    g_test_alloc_cursor += (size + 15) & ~15ULL;  // 16-byte align
+    return a;                                      // guest offset, not a host ptr
+}
+
+static void test_intrinsic_alloc() {
+    printf("test_intrinsic_alloc...\n");
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+
+    const uint32_t ALLOC_ADDR = 0x400;   // intrinsic stub guest PC (no real code)
+    g_test_alloc_cursor = 0x2000;        // test heap region inside guest memory
+
+    // J-type JAL encoder: imm[20|10:1|11|19:12].
+    auto JAL = [](uint8_t rd, uint32_t pc, uint32_t target) -> uint32_t {
+        uint32_t i = static_cast<uint32_t>(
+            static_cast<int32_t>(target) - static_cast<int32_t>(pc));
+        return OP_JAL | (rd << 7)
+            | (((i >> 12) & 0xFF) << 12)
+            | (((i >> 11) & 1) << 20)
+            | (((i >> 1) & 0x3FF) << 21)
+            | (((i >> 20) & 1) << 31);
+    };
+
+    std::vector<uint32_t> code = {
+        ADDI(10, 0, 48),         //  0: a0 = 48
+        JAL(1, 4, ALLOC_ADDR),   //  4: a0 = alloc(48)  -> 0x2000
+        ADDI(8, 10, 0),          //  8: s0 = ptr1
+        ADDI(10, 0, 16),         // 12: a0 = 16
+        JAL(1, 16, ALLOC_ADDR),  // 16: a0 = alloc(16)  -> 0x2030 (48->aligned)
+        ADDI(9, 10, 0),          // 20: s1 = ptr2
+        ADDI(5, 0, 0x5A),        // 24: t0 = 0x5A
+        SD(8, 5, 0),             // 28: mem[s0] = t0
+        LD(6, 8, 0),             // 32: t1 = mem[s0]
+        ADDI(17, 0, 93),         // 36: a7 = 93 (exit)
+        ADDI(10, 0, 0),          // 40: a0 = 0
+        ECALL(),                 // 44
+    };
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++; g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_intrinsic_alloc: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 1000000;
+    dbt_register_intrinsic(&dbt, ALLOC_ADDR, DBT_EMIT_ALLOC,
+                           reinterpret_cast<void *>(test_host_alloc));
+    dbt_run(&dbt, 0, MEM_SIZE - 16);
+    dbt_cleanup(&dbt);
+
+    CHECK_EQ("alloc: ptr1 returned verbatim", g_dbt_exit_ctx.x[8], 0x2000ULL);
+    CHECK_EQ("alloc: ptr2 advanced by aligned size", g_dbt_exit_ctx.x[9], 0x2030ULL);
+    CHECK_EQ("alloc: guest ptr store/load round-trip", g_dbt_exit_ctx.x[6], 0x5AULL);
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -1711,6 +1785,7 @@ int main(int argc, char *argv[]) {
     test_slt_branch_fusion_x0();
     test_mulhsu_aliasing();
     test_div_rem_edge_cases();
+    test_intrinsic_alloc();
 
     printf("\n==============================\n");
     printf("Hand-assembled: %d run, %d passed, %d failed\n",
