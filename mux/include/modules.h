@@ -1010,7 +1010,8 @@ public:
 // the engine acquires it via mux_CreateInstance(CID_DriverControl).
 //
 const MUX_CID CID_DriverControl        = UINT64_C(0x00000002E4A5B6C7);
-const MUX_IID IID_IDriverControl       = UINT64_C(0x00000002F2E3D4C5);
+// IID bumped from ...F2E3D4C5 when GetVersionStrings was added (#817).
+const MUX_IID IID_IDriverControl       = UINT64_C(0x00000002F2E3D4D6);
 
 interface mux_IDriverControl : public mux_IUnknown
 {
@@ -1074,6 +1075,15 @@ public:
     // Display the site access list to a player.
     //
     virtual MUX_RESULT ListSiteInfo(dbref player) = 0;
+
+    // Version strings owned by the driver (g_version / g_short_ver).
+    // The engine caches these into mudstate at startup so version() and
+    // the JIT VERSION constant resolve; mudstate.version was orphaned
+    // when the live copy moved driver-local in fa8761bee (#817).  The
+    // returned pointers are stable for the process lifetime.
+    //
+    virtual MUX_RESULT GetVersionStrings(const UTF8 **ppVersion,
+        const UTF8 **ppShortVer) = 0;
 };
 
 // Connection manager — the interface the engine uses to interact with

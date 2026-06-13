@@ -753,6 +753,8 @@ public:
     virtual MUX_RESULT StartEmailSend(dbref executor, const UTF8 *recipient,
         const UTF8 *subject, const UTF8 *body, bool *pResult);
     virtual MUX_RESULT ListSiteInfo(dbref player);
+    virtual MUX_RESULT GetVersionStrings(const UTF8 **ppVersion,
+        const UTF8 **ppShortVer);
 
     CScriptDriverControl(void);
     virtual ~CScriptDriverControl();
@@ -947,6 +949,42 @@ MUX_RESULT CScriptDriverControl::ListSiteInfo(dbref player)
 {
     UNUSED_PARAMETER(player);
     return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CScriptDriverControl::GetVersionStrings(const UTF8 **ppVersion,
+    const UTF8 **ppShortVer)
+{
+    if (nullptr == ppVersion || nullptr == ppShortVer)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // Script mode does not link the driver's version.cpp (it pulls in
+    // g_pILog and notify), so build the strings here from the version
+    // macros, mirroring build_version()'s Unix form, so that version()
+    // resolves under muxscript too (#817).
+    //
+    static UTF8 s_version[128];
+    static UTF8 s_short_ver[64];
+    if ('\0' == s_version[0])
+    {
+        char *pv = reinterpret_cast<char *>(s_version);
+        char *ps = reinterpret_cast<char *>(s_short_ver);
+#if defined(ALPHA)
+        snprintf(pv, sizeof(s_version), "MUX %s [ALPHA]", MUX_VERSION);
+        snprintf(ps, sizeof(s_short_ver), "MUX %s Alpha", MUX_VERSION);
+#elif defined(BETA)
+        snprintf(pv, sizeof(s_version), "MUX %s [BETA]", MUX_VERSION);
+        snprintf(ps, sizeof(s_short_ver), "MUX %s Beta", MUX_VERSION);
+#else
+        snprintf(pv, sizeof(s_version), "MUX %s [%s]", MUX_VERSION,
+            MUX_RELEASE_DATE);
+        snprintf(ps, sizeof(s_short_ver), "MUX %s", MUX_VERSION);
+#endif
+    }
+    *ppVersion = s_version;
+    *ppShortVer = s_short_ver;
+    return MUX_S_OK;
 }
 
 // ---------------------------------------------------------------------------

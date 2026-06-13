@@ -1,0 +1,61 @@
+#
+# version_fn.mux - Test Cases for version().
+#
+# Regression guard for #817: version() returned an empty string after
+# fa8761bee moved the live version copy driver-local, orphaning
+# mudstate.version (which both fun_version and the JIT VERSION constant
+# read).  These assert behavior, not the exact version number, which
+# changes every release.
+#
+@create test_version_fn
+-
+@set test_version_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_version_fn=
+  @log smoke=Beginning version() test cases.
+-
+#
+# Test Case #1 - version() returns a non-empty MUX version string.
+#
+&tr.tc001 test_version_fn=
+  @if cand(
+        gt(strlen(version()), 0),
+        strmatch(version(), MUX *)
+      )=
+  {
+    @log smoke=TC001: version() non-empty MUX string. Succeeded.
+  },
+  {
+    @log smoke=TC001: version() non-empty MUX string. Failed (len=[strlen(version())] val=.[version()].).
+  }
+-
+#
+# Test Case #2 - The JIT-lowered path agrees with the interpreter.
+# asteval({...}) routes version() through the JIT VERSION constant
+# (hir_lower); the brace-deferred call must match the direct
+# interpreter call.  Both read mudstate.version, so this also guards
+# the JIT half of #817.
+#
+&tr.tc002 test_version_fn=
+  @if eq(comp(version(), asteval({version()})), 0)=
+  {
+    @log smoke=TC002: version() interpreter/JIT parity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: version() interpreter/JIT parity. Failed (direct=.[version()]. ast=.[asteval({version()})].).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_version_fn=
+  @log smoke=End version() test cases.;
+  @notify smoke
+-
+drop test_version_fn
+-
+#
+# End of Test Cases
+#

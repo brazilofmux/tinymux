@@ -872,6 +872,8 @@ public:
     virtual MUX_RESULT StartEmailSend(dbref executor, const UTF8 *recipient,
         const UTF8 *subject, const UTF8 *body, bool *pResult);
     virtual MUX_RESULT ListSiteInfo(dbref player);
+    virtual MUX_RESULT GetVersionStrings(const UTF8 **ppVersion,
+        const UTF8 **ppShortVer);
 
     CDriverControl(void);
     virtual ~CDriverControl();
@@ -1079,6 +1081,18 @@ MUX_RESULT CDriverControl::StartEmailSend(dbref executor,
 MUX_RESULT CDriverControl::ListSiteInfo(dbref player)
 {
     g_access_list.listinfo(player);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::GetVersionStrings(const UTF8 **ppVersion,
+    const UTF8 **ppShortVer)
+{
+    if (nullptr == ppVersion || nullptr == ppShortVer)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *ppVersion = g_version;
+    *ppShortVer = g_short_ver;
     return MUX_S_OK;
 }
 

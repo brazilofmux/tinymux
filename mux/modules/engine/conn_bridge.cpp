@@ -48,6 +48,30 @@ void conn_bridge_init(void)
         {
             g_pDriverCtl = nullptr;
         }
+        else
+        {
+            // Cache the driver's version strings into mudstate so that
+            // version() and the JIT VERSION constant resolve.  The live
+            // copy moved driver-local (g_version) in fa8761bee, leaving
+            // mudstate.version orphaned (#817).
+            //
+            const UTF8 *pVersion = nullptr;
+            const UTF8 *pShortVer = nullptr;
+            if (MUX_SUCCEEDED(g_pDriverCtl->GetVersionStrings(&pVersion,
+                    &pShortVer)))
+            {
+                if (nullptr != pVersion)
+                {
+                    mux_strncpy(mudstate.version, pVersion,
+                        sizeof(mudstate.version) - 1);
+                }
+                if (nullptr != pShortVer)
+                {
+                    mux_strncpy(mudstate.short_ver, pShortVer,
+                        sizeof(mudstate.short_ver) - 1);
+                }
+            }
+        }
     }
 }
 
