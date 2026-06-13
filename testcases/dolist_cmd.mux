@@ -29,18 +29,12 @@
   };
   @wait 1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [trim(get(me/tc001_result))]
-            )
-          ),
-          76D63D69376D5B05ACC20970061C40762E5CA049
-        )=
+    @if strmatch([trim(get(me/tc001_result))], alpha bravo charlie)=
     {
       @log smoke=TC001: dolist itext in queued switch body. Succeeded.
     },
     {
-      @log smoke=TC001: dolist itext in queued switch body. Failed (%q0).
+      @log smoke=TC001: dolist itext in queued switch body. Failed (actual=.[trim(get(me/tc001_result))].).
     }
   }
 -
@@ -55,18 +49,12 @@
   };
   @wait 1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [trim(get(me/tc002_result))]
-            )
-          ),
-          118C356BCDC3DDACE50F4E53B5DA57A3DE365805
-        )=
+    @if strmatch([trim(get(me/tc002_result))], X Y Z)=
     {
       @log smoke=TC002: dolist itext in queued switch default. Succeeded.
     },
     {
-      @log smoke=TC002: dolist itext in queued switch default. Failed (%q0).
+      @log smoke=TC002: dolist itext in queued switch default. Failed (actual=.[trim(get(me/tc002_result))].).
     }
   }
 -
@@ -89,7 +77,7 @@
       @trig me/tr.done
     },
     {
-      @log smoke=TC003: pipe inside inline dolist. Failed (%q0).;
+      @log smoke=TC003: pipe inside inline dolist. Failed (actual=.[trim(get(me/tc002_result))].).;
       @trig me/tr.done
     }
   }

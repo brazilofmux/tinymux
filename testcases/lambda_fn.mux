@@ -16,18 +16,12 @@
 # map(#lambda/add(\%0,1), 1 2 3 4 5) => 2 3 4 5 6
 #
 &tr.tc001 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [map(#lambda/add(\%0,1), 1 2 3 4 5)]
-          )
-        ),
-        0B5997B45E4E6DC526F6D97B1F6B8DB511C9845A
-      )=
+  @if strmatch([map(#lambda/add(\%0,1), 1 2 3 4 5)], 2 3 4 5 6)=
   {
     @log smoke=TC001: map with lambda. Succeeded.
   },
   {
-    @log smoke=TC001: map with lambda. Failed (%q0).
+    @log smoke=TC001: map with lambda. Failed (actual=.[map(#lambda/add(\%0,1), 1 2 3 4 5)].).
   }
 -
 #
@@ -35,18 +29,12 @@
 # filter(#lambda/gt(\%0,3), 1 2 3 4 5) => 4 5
 #
 &tr.tc002 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [filter(#lambda/gt(\%0,3), 1 2 3 4 5)]
-          )
-        ),
-        3F05851FF78D92913A4ECD2BA44C4EC5AB245BDF
-      )=
+  @if strmatch([filter(#lambda/gt(\%0,3), 1 2 3 4 5)], 4 5)=
   {
     @log smoke=TC002: filter with lambda. Succeeded.
   },
   {
-    @log smoke=TC002: filter with lambda. Failed (%q0).
+    @log smoke=TC002: filter with lambda. Failed (actual=.[filter(#lambda/gt(\%0,3), 1 2 3 4 5)].).
   }
 -
 #
@@ -54,18 +42,12 @@
 # fold(#lambda/add(\%0,\%1), 1 2 3 4 5) => 15
 #
 &tr.tc003 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [fold(#lambda/add(\%0,\%1), 1 2 3 4 5)]
-          )
-        ),
-        F1ABD670358E036C31296E66B3B66C382AC00812
-      )=
+  @if strmatch([fold(#lambda/add(\%0,\%1), 1 2 3 4 5)], 15)=
   {
     @log smoke=TC003: fold with lambda. Succeeded.
   },
   {
-    @log smoke=TC003: fold with lambda. Failed (%q0).
+    @log smoke=TC003: fold with lambda. Failed (actual=.[fold(#lambda/add(\%0,\%1), 1 2 3 4 5)].).
   }
 -
 #
@@ -73,18 +55,12 @@
 # ulambda(#lambda/mul(\%0,\%1), 6, 7) => 42
 #
 &tr.tc004 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [ulambda(#lambda/mul(\%0,\%1), 6, 7)]
-          )
-        ),
-        92CFCEB39D57D914ED8B14D0E37643DE0797AE56
-      )=
+  @if strmatch([ulambda(#lambda/mul(\%0,\%1), 6, 7)], 42)=
   {
     @log smoke=TC004: ulambda with lambda. Succeeded.
   },
   {
-    @log smoke=TC004: ulambda with lambda. Failed (%q0).
+    @log smoke=TC004: ulambda with lambda. Failed (actual=.[ulambda(#lambda/mul(\%0,\%1), 6, 7)].).
   }
 -
 #
@@ -92,18 +68,12 @@
 # map(#apply/strlen, foo bar quux) => 3 3 4
 #
 &tr.tc005 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [map(#apply/strlen, foo bar quux)]
-          )
-        ),
-        79DDCB27BAA52105DCE6A602159525DA092D5E07
-      )=
+  @if strmatch([map(#apply/strlen, foo bar quux)], 3 3 4)=
   {
     @log smoke=TC005: apply with map. Succeeded.
   },
   {
-    @log smoke=TC005: apply with map. Failed (%q0).
+    @log smoke=TC005: apply with map. Failed (actual=.[map(#apply/strlen, foo bar quux)].).
   }
 -
 #
@@ -111,18 +81,12 @@
 # mix(#apply2/add, 1 2 3, 4 5 6) => 5 7 9
 #
 &tr.tc006 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [mix(#apply2/add, 1 2 3, 4 5 6)]
-          )
-        ),
-        8624F757FF1E0A8D0E74163D35A15824F72BDD9C
-      )=
+  @if strmatch([mix(#apply2/add, 1 2 3, 4 5 6)], 5 7 9)=
   {
     @log smoke=TC006: apply2 with mix. Succeeded.
   },
   {
-    @log smoke=TC006: apply2 with mix. Failed (%q0).
+    @log smoke=TC006: apply2 with mix. Failed (actual=.[map(#apply/strlen, foo bar quux)].).
   }
 -
 #
@@ -130,18 +94,12 @@
 # map(#LAMBDA/add(\%0,10), 1 2 3) => 11 12 13
 #
 &tr.tc007 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [map(#LAMBDA/add(\%0,10), 1 2 3)]
-          )
-        ),
-        E7D0B89EC7E026A0E45A11F67E5783D9E83B93C9
-      )=
+  @if strmatch([map(#LAMBDA/add(\%0,10), 1 2 3)], 11 12 13)=
   {
     @log smoke=TC007: lambda case insensitivity. Succeeded.
   },
   {
-    @log smoke=TC007: lambda case insensitivity. Failed (%q0).
+    @log smoke=TC007: lambda case insensitivity. Failed (actual=.[map(#apply/strlen, foo bar quux)].).
   }
 -
 #
@@ -149,18 +107,12 @@
 # sortby(#lambda/sub(\%1,\%0), 5 3 1 4 2) => 1 2 3 4 5
 #
 &tr.tc008 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sortby(#lambda/sub(\%1,\%0), 5 3 1 4 2)]
-          )
-        ),
-        5B88DE9CB8CD4D2EA8AC027B11C9DCCDFFA4AC19
-      )=
+  @if strmatch([sortby(#lambda/sub(\%1,\%0), 5 3 1 4 2)], 5 4 3 2 1)=
   {
     @log smoke=TC008: sortby with lambda. Succeeded.
   },
   {
-    @log smoke=TC008: sortby with lambda. Failed (%q0).
+    @log smoke=TC008: sortby with lambda. Failed (actual=.[map(#apply/strlen, foo bar quux)].).
   }
 -
 #
@@ -168,18 +120,12 @@
 # u(#apply/inc, 41) => 42
 #
 &tr.tc009 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [u(#apply/inc, 41)]
-          )
-        ),
-        92CFCEB39D57D914ED8B14D0E37643DE0797AE56
-      )=
+  @if strmatch([u(#apply/inc, 41)], 42)=
   {
     @log smoke=TC009: apply with u. Succeeded.
   },
   {
-    @log smoke=TC009: apply with u. Failed (%q0).
+    @log smoke=TC009: apply with u. Failed (actual=.[u(#apply/inc, 41)].).
   }
 -
 #
@@ -187,18 +133,12 @@
 # u(#lambda/, 5) => (empty)
 #
 &tr.tc010 test_lambda_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [u(#lambda/, 5)]
-          )
-        ),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
-      )=
+  @if eq(strlen(u(#lambda/, 5)), 0)=
   {
     @log smoke=TC010: lambda empty body. Succeeded.
   },
   {
-    @log smoke=TC010: lambda empty body. Failed (%q0).
+    @log smoke=TC010: lambda empty body. Failed (actual=.[u(#lambda/, 5)].).
   }
 -
 #

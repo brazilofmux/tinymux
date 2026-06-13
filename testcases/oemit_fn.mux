@@ -15,35 +15,25 @@
 # Test Case #1 - Single target (existing behavior).
 #
 &tr.tc001 test_oemit_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [oemit(me,Test single target)]
-          )),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
-      )=
+  @if eq(strlen(oemit(me,Test single target)), 0)=
   {
     @log smoke=TC001: oemit single target. Succeeded.
   },
   {
-    @log smoke=TC001: oemit single target. Failed (%q0).
+    @log smoke=TC001: oemit single target. Failed (actual=.[oemit(me,Test single target)].).
   }
 -
 #
 # Test Case #2 - List of targets.
 #
 &tr.tc002 test_oemit_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [oemit(me %#,Test list of targets)]
-          )),
-        DA39A3EE5E6B4B0D3255BFEF95601890AFD80709
-      )=
+  @if eq(strlen(oemit(me %#,Test list of targets)), 0)=
   {
     @log smoke=TC002: oemit list of targets. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: oemit list of targets. Failed (%q0).;
+    @log smoke=TC002: oemit list of targets. Failed (actual=.[oemit(me %#,Test list of targets)].).;
     @trig me/tr.done
   }
 -

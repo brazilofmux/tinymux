@@ -21,18 +21,12 @@
     bar, {&tc001_result me=wrong};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc001_result)]
-            )
-          ),
-          D010685FC836384D78AC35EA6590BF2C53E4247F
-        )=
+    @if strmatch([get(me/tc001_result)], matched)=
     {
       @log smoke=TC001: switch first match. Succeeded.
     },
     {
-      @log smoke=TC001: switch first match. Failed (%q0).
+      @log smoke=TC001: switch first match. Failed (actual=.[get(me/tc001_result)].).
     }
   }
 -
@@ -46,18 +40,12 @@
     bar, {&tc002_result me=matched};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc002_result)]
-            )
-          ),
-          D010685FC836384D78AC35EA6590BF2C53E4247F
-        )=
+    @if strmatch([get(me/tc002_result)], matched)=
     {
       @log smoke=TC002: switch second match. Succeeded.
     },
     {
-      @log smoke=TC002: switch second match. Failed (%q0).
+      @log smoke=TC002: switch second match. Failed (actual=.[get(me/tc002_result)].).
     }
   }
 -
@@ -71,18 +59,12 @@
     foobar, {&tc003_result me=exact};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc003_result)]
-            )
-          ),
-          B55E22FE7830E8FE49F48F834B913EF8618F0521
-        )=
+    @if strmatch([get(me/tc003_result)], exact)=
     {
       @log smoke=TC003: switch wildcard. Succeeded.
     },
     {
-      @log smoke=TC003: switch wildcard. Failed (%q0).
+      @log smoke=TC003: switch wildcard. Failed (actual=.[get(me/tc003_result)].).
     }
   }
 -
@@ -97,18 +79,12 @@
     {&tc004_result me=default};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc004_result)]
-            )
-          ),
-          7505D64A54E061B7ACD54CCD58B49DC43500B635
-        )=
+    @if strmatch([get(me/tc004_result)], default)=
     {
       @log smoke=TC004: switch default case. Succeeded.
     },
     {
-      @log smoke=TC004: switch default case. Failed (%q0).
+      @log smoke=TC004: switch default case. Failed (actual=.[get(me/tc004_result)].).
     }
   }
 -
@@ -123,18 +99,12 @@
     bar, {&tc005_result me=[get(me/tc005_result)]C};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc005_result)]
-            )
-          ),
-          06D945942AA26A61BE18C3E22BF19BBCA8DD2B5D
-        )=
+    @if strmatch([get(me/tc005_result)], AB)=
     {
       @log smoke=TC005: switch/all multiple matches. Succeeded.
     },
     {
-      @log smoke=TC005: switch/all multiple matches. Failed (%q0).
+      @log smoke=TC005: switch/all multiple matches. Failed (actual=.[get(me/tc005_result)].).
     }
   }
 -
@@ -148,18 +118,12 @@
     foo, {&tc006_result me=[get(me/tc006_result)]B};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc006_result)]
-            )
-          ),
-          06D945942AA26A61BE18C3E22BF19BBCA8DD2B5D
-        )=
+    @if strmatch([get(me/tc006_result)], AB)=
     {
       @log smoke=TC006: switch/first stops at first. Succeeded.
     },
     {
-      @log smoke=TC006: switch/first stops at first. Failed (%q0).
+      @log smoke=TC006: switch/first stops at first. Failed (actual=.[get(me/tc006_result)].).
     }
   }
 -
@@ -173,18 +137,12 @@
     bar, {&tc007_result me=wrong};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc007_result)]
-            )
-          ),
-          5B173D20202F7D77027ABF335F1AD47844E20292
-        )=
+    @if strmatch([get(me/tc007_result)], untouched)=
     {
       @log smoke=TC007: switch no match no default. Succeeded.
     },
     {
-      @log smoke=TC007: switch no match no default. Failed (%q0).
+      @log smoke=TC007: switch no match no default. Failed (actual=.[get(me/tc006_result)].).
     }
   }
 -
@@ -197,19 +155,13 @@
     Hello*, {&tc008_result me=#$};
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc008_result)]
-            )
-          ),
-          0A4D55A8D778E5022FAB701977C5D840BBC486D0
-        )=
+    @if strmatch([get(me/tc008_result)], Hello World)=
     {
       @log smoke=TC008: switch #$ substitution. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC008: switch #$ substitution. Failed (%q0).;
+      @log smoke=TC008: switch #$ substitution. Failed (actual=.[get(me/tc008_result)].).;
       @trig me/tr.done
     }
   }

@@ -24,18 +24,12 @@
   };
   @wait 0.5=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc001_result)]
-            )
-          ),
-          128DF232B97C2E76F97B9184A2D9659ADB239D4E
-        )=
+    @if strmatch([get(me/tc001_result)], delayed)=
     {
       @log smoke=TC001: wait timed delay. Succeeded.
     },
     {
-      @log smoke=TC001: wait timed delay. Failed (%q0).
+      @log smoke=TC001: wait timed delay. Failed (actual=.[get(me/tc001_result)].).
     }
   }
 -
@@ -51,18 +45,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc002_result)]
-            )
-          ),
-          405906C9D5BE6AE5393CA65FB0E7C38E0D585ECB
-        )=
+    @if strmatch([get(me/tc002_result)], after)=
     {
       @log smoke=TC002: wait 0 defers. Succeeded.
     },
     {
-      @log smoke=TC002: wait 0 defers. Failed (%q0).
+      @log smoke=TC002: wait 0 defers. Failed (actual=.[get(me/tc002_result)].).
     }
   }
 -
@@ -81,18 +69,12 @@
   };
   @wait 0.5=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc003_result)]
-            )
-          ),
-          DD3B33DE7CDEA375A34C8FB99B4B8F67D11CF30C
-        )=
+    @if strmatch([get(me/tc003_result)], signaled)=
     {
       @log smoke=TC003: semaphore wait/notify. Succeeded.
     },
     {
-      @log smoke=TC003: semaphore wait/notify. Failed (%q0).
+      @log smoke=TC003: semaphore wait/notify. Failed (actual=.[get(me/tc003_result)].).
     }
   }
 -
@@ -115,18 +97,12 @@
   };
   @wait 0.5=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc004_result)]
-            )
-          ),
-          06D945942AA26A61BE18C3E22BF19BBCA8DD2B5D
-        )=
+    @if strmatch([get(me/tc004_result)], AB)=
     {
       @log smoke=TC004: notify/all drains. Succeeded.
     },
     {
-      @log smoke=TC004: notify/all drains. Failed (%q0).
+      @log smoke=TC004: notify/all drains. Failed (actual=.[get(me/tc004_result)].).
     }
   }
 -
@@ -143,18 +119,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc005_result)]
-            )
-          ),
-          F1D16437085AE1E36539A5328125CEC05A91BADA
-        )=
+    @if strmatch([get(me/tc005_result)], immediate)=
     {
       @log smoke=TC005: pre-notify runs wait immediately. Succeeded.
     },
     {
-      @log smoke=TC005: pre-notify runs wait immediately. Failed (%q0).
+      @log smoke=TC005: pre-notify runs wait immediately. Failed (actual=.[get(me/tc004_result)].).
     }
   }
 -
@@ -173,19 +143,13 @@
   };
   @wait 0.5=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc006_result)]
-            )
-          ),
-          5B173D20202F7D77027ABF335F1AD47844E20292
-        )=
+    @if strmatch([get(me/tc006_result)], untouched)=
     {
       @log smoke=TC006: drain clears waiters. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC006: drain clears waiters. Failed (%q0).;
+      @log smoke=TC006: drain clears waiters. Failed (actual=.[get(me/tc004_result)].).;
       @trig me/tr.done
     }
   }

@@ -25,18 +25,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc001_result)]
-            )
-          ),
-          5FFE533B830F08A0326348A9160AFAFC8ADA44DB
-        )=
+    @if strmatch([get(me/tc001_result)], true)=
     {
       @log smoke=TC001: if true branch. Succeeded.
     },
     {
-      @log smoke=TC001: if true branch. Failed (%q0).
+      @log smoke=TC001: if true branch. Failed (actual=.[get(me/tc001_result)].).
     }
   }
 -
@@ -54,18 +48,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc002_result)]
-            )
-          ),
-          7CB6EFB98BA5972A9B5090DC2E517FE14D12CB04
-        )=
+    @if strmatch([get(me/tc002_result)], false)=
     {
       @log smoke=TC002: if false branch. Succeeded.
     },
     {
-      @log smoke=TC002: if false branch. Failed (%q0).
+      @log smoke=TC002: if false branch. Failed (actual=.[get(me/tc002_result)].).
     }
   }
 -
@@ -80,18 +68,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc003_result)]
-            )
-          ),
-          24765B4C90FC2E23473C676AE4ED89A28C4ECF1E
-        )=
+    @if strmatch([get(me/tc003_result)], ran)=
     {
       @log smoke=TC003: if true no false branch. Succeeded.
     },
     {
-      @log smoke=TC003: if true no false branch. Failed (%q0).
+      @log smoke=TC003: if true no false branch. Failed (actual=.[get(me/tc002_result)].).
     }
   }
 -
@@ -106,18 +88,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc004_result)]
-            )
-          ),
-          5B173D20202F7D77027ABF335F1AD47844E20292
-        )=
+    @if strmatch([get(me/tc004_result)], untouched)=
     {
       @log smoke=TC004: if false no false branch. Succeeded.
     },
     {
-      @log smoke=TC004: if false no false branch. Failed (%q0).
+      @log smoke=TC004: if false no false branch. Failed (actual=.[get(me/tc002_result)].).
     }
   }
 -
@@ -135,18 +111,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc005_result)]
-            )
-          ),
-          FB360F9C09AC8C5EDB2F18BE5DE4E80EA4C430D0
-        )=
+    @if strmatch([get(me/tc005_result)], yes)=
     {
       @log smoke=TC005: if expression eval. Succeeded.
     },
     {
-      @log smoke=TC005: if expression eval. Failed (%q0).
+      @log smoke=TC005: if expression eval. Failed (actual=.[get(me/tc005_result)].).
     }
   }
 -
@@ -164,18 +134,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc006_result)]
-            )
-          ),
-          7CB6EFB98BA5972A9B5090DC2E517FE14D12CB04
-        )=
+    @if strmatch([get(me/tc006_result)], false)=
     {
       @log smoke=TC006: if empty expr is false. Succeeded.
     },
     {
-      @log smoke=TC006: if empty expr is false. Failed (%q0).
+      @log smoke=TC006: if empty expr is false. Failed (actual=.[get(me/tc006_result)].).
     }
   }
 -
@@ -190,18 +154,12 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc007_result)]
-            )
-          ),
-          AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D
-        )=
+    @if strmatch([get(me/tc007_result)], hello)=
     {
       @log smoke=TC007: if preserves qregs. Succeeded.
     },
     {
-      @log smoke=TC007: if preserves qregs. Failed (%q0).
+      @log smoke=TC007: if preserves qregs. Failed (actual=.[get(me/tc007_result)].).
     }
   }
 -
@@ -219,19 +177,13 @@
   };
   @wait 0.1=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [get(me/tc008_result)]
-            )
-          ),
-          5FFE533B830F08A0326348A9160AFAFC8ADA44DB
-        )=
+    @if strmatch([get(me/tc008_result)], true)=
     {
       @log smoke=TC008: if string expr is true. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC008: if string expr is true. Failed (%q0).;
+      @log smoke=TC008: if string expr is true. Failed (actual=.[get(me/tc008_result)].).;
       @trig me/tr.done
     }
   }
