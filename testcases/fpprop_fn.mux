@@ -21,45 +21,68 @@
 # arithmetic, and deep int-to-fp chains.
 #
 &tr.tc001 test_fpprop_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [fdiv(3,2)]
-            [fdiv(7,3)]
-            [fdiv(1,3)]
-            [fdiv(22,7)]
-            [sin(fdiv(pi(),2))]
-            [cos(fdiv(pi(),4))]
-            [sin(fdiv(pi(),6))]
-            [sin(3.14)]
-            [cos(1.57)]
-            [sqrt(2.0)]
-            [power(2.5,3.0)]
-            [atan2(1.0,1.0)]
-            [fmod(7.5,2.5)]
-            [add(1.5,2.5)]
-            [sub(10.0,3.7)]
-            [mul(2.5,4.0)]
-            [sin(add(mul(2,3),1))]
-            [eq(1.5,1.5)]
-            [eq(1.5,2.5)]
-            [neq(1.5,2.5)]
-            [gt(2.5,1.5)]
-            [gt(1.5,2.5)]
-            [gte(2.5,2.5)]
-            [lt(1.5,2.5)]
-            [lte(2.5,2.5)]
-            [gt(fdiv(3,2),1.0)]
-            [if(gt(fdiv(7,3),2.0),yes,no)]
-          )
-        ),
-        8F8D5F78E10AA72511602D306B730051FDF5378C
+  @if cand(
+        strmatch(.[fdiv(3,2)]., .1.5.),
+        strmatch(.[fdiv(7,3)]., .2.3333333333333335.),
+        strmatch(.[fdiv(1,3)]., .0.3333333333333333.),
+        strmatch(.[fdiv(22,7)]., .3.142857142857143.),
+        strmatch(.[sin(fdiv(pi(),2))]., .1.),
+        strmatch(.[cos(fdiv(pi(),4))]., .0.7071067811865476.),
+        strmatch(.[sin(fdiv(pi(),6))]., .0.49999999999999994.),
+        strmatch(.[sin(3.14)]., .0.0015926529164868282.),
+        strmatch(.[cos(1.57)]., .0.0007963267107332633.),
+        strmatch(.[sqrt(2.0)]., .1.4142135623730951.),
+        strmatch(.[power(2.5,3.0)]., .15.625.),
+        strmatch(.[atan2(1.0,1.0)]., .0.7853981633974483.),
+        strmatch(.[fmod(7.5,2.5)]., .0.),
+        strmatch(.[add(1.5,2.5)]., .4.),
+        strmatch(.[sub(10.0,3.7)]., .6.3.),
+        strmatch(.[mul(2.5,4.0)]., .10.),
+        strmatch(.[sin(add(mul(2,3),1))]., .0.6569865987187891.),
+        strmatch(.[eq(1.5,1.5)]., .1.),
+        strmatch(.[eq(1.5,2.5)]., .0.),
+        strmatch(.[neq(1.5,2.5)]., .1.),
+        strmatch(.[gt(2.5,1.5)]., .1.),
+        strmatch(.[gt(1.5,2.5)]., .0.),
+        strmatch(.[gte(2.5,2.5)]., .1.),
+        strmatch(.[lt(1.5,2.5)]., .1.),
+        strmatch(.[lte(2.5,2.5)]., .1.),
+        strmatch(.[gt(fdiv(3,2),1.0)]., .1.),
+        strmatch(.[if(gt(fdiv(7,3),2.0),yes,no)]., .yes.)
       )=
   {
     @log smoke=TC001: fp type propagation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: fp type propagation. Failed (%q0).;
+    @log smoke=TC001: fp type propagation Failed.;
+    @log smoke=TC001 actual L0 =.[fdiv(3,2)]=.;
+    @log smoke=TC001 actual L1 =.[fdiv(7,3)]=.;
+    @log smoke=TC001 actual L2 =.[fdiv(1,3)]=.;
+    @log smoke=TC001 actual L3 =.[fdiv(22,7)]=.;
+    @log smoke=TC001 actual L4 =.[sin(fdiv(pi(),2))]=.;
+    @log smoke=TC001 actual L5 =.[cos(fdiv(pi(),4))]=.;
+    @log smoke=TC001 actual L6 =.[sin(fdiv(pi(),6))]=.;
+    @log smoke=TC001 actual L7 =.[sin(3.14)]=.;
+    @log smoke=TC001 actual L8 =.[cos(1.57)]=.;
+    @log smoke=TC001 actual L9 =.[sqrt(2.0)]=.;
+    @log smoke=TC001 actual L10 =.[power(2.5,3.0)]=.;
+    @log smoke=TC001 actual L11 =.[atan2(1.0,1.0)]=.;
+    @log smoke=TC001 actual L12 =.[fmod(7.5,2.5)]=.;
+    @log smoke=TC001 actual L13 =.[add(1.5,2.5)]=.;
+    @log smoke=TC001 actual L14 =.[sub(10.0,3.7)]=.;
+    @log smoke=TC001 actual L15 =.[mul(2.5,4.0)]=.;
+    @log smoke=TC001 actual L16 =.[sin(add(mul(2,3),1))]=.;
+    @log smoke=TC001 actual L17 =.[eq(1.5,1.5)]=.;
+    @log smoke=TC001 actual L18 =.[eq(1.5,2.5)]=.;
+    @log smoke=TC001 actual L19 =.[neq(1.5,2.5)]=.;
+    @log smoke=TC001 actual L20 =.[gt(2.5,1.5)]=.;
+    @log smoke=TC001 actual L21 =.[gt(1.5,2.5)]=.;
+    @log smoke=TC001 actual L22 =.[gte(2.5,2.5)]=.;
+    @log smoke=TC001 actual L23 =.[lt(1.5,2.5)]=.;
+    @log smoke=TC001 actual L24 =.[lte(2.5,2.5)]=.;
+    @log smoke=TC001 actual L25 =.[gt(fdiv(3,2),1.0)]=.;
+    @log smoke=TC001 actual L26 =.[if(gt(fdiv(7,3),2.0),yes,no)]=.;
     @trig me/tr.done
   }
 -

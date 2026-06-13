@@ -17,61 +17,49 @@
 # Test Case #1 - Test that help topic examples work.
 #
 &tr.tc001 test_sha1_fn=
-  @if strmatch(
-        setr(0,sha1(
-            sha1(abc)
-            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)]
-          )
-        ),
-        9F469F9ACBAAE1FED8A8CA59EDD81646E9164B93
+  @if cand(
+        strmatch([sha1(abc)], A9993E364706816ABA3E25717850C26C9CD0D89D),
+        strmatch([sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)], 84983E441C3BD26EBAAE4AA1F95129E5E54670F1)
       )=
   {
     @log smoke=TC001: Examples. Succeeded.
   },
   {
-    @log smoke=TC001: Examples. Failed (%q0).
+    @log smoke=TC001: Examples. Failed (h0=.[sha1(abc)]. h1=.[sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)].).
   }
 -
 #
 # Test Case #2 - Try standard test vectors from sha1.cpp.
 #
 &tr.tc002 test_sha1_fn=
-  @if strmatch(
-        setr(0,sha1(
-            sha1(abc)
-            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
-            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
-            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)]
-            [sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)]
-          )
-        ),
-        FBED900C606159E86C5970A5F88915B52716C445
+  @if cand(
+        strmatch([sha1(abc)], A9993E364706816ABA3E25717850C26C9CD0D89D),
+        strmatch([sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)], 47B172810795699FE739197D1A1F5960700242F1),
+        strmatch([sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)], 47B172810795699FE739197D1A1F5960700242F1),
+        strmatch([sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)], 55A0C42A00BD4B496A16D1AC32E20B5A7FA3E087),
+        strmatch([sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)], 9EF5C682D93914E77A5D345ABB957436445A6FB6)
       )=
   {
     @log smoke=TC002: Standard test vectors. Succeeded.
   },
   {
-    @log smoke=TC002: Standard test vectors. Failed (%q0).
+    @log smoke=TC002: Standard test vectors. Failed (h0=.[sha1(abc)]. h1=.[sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]. h2=.[sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]. h3=.[sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)]. h4=.[sha1(abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)].).
   }
 -
 #
 # Test Case #3 - Try parser-related tests.
 #
 &tr.tc003 test_sha1_fn=
-  @if strmatch(
-        setr(0,sha1(
-            sha1()
-            [sha1(abc,def)]
-          )
-        ),
-        4551A9972114A4E299759843141C00FEF391C9B9
+  @if cand(
+        strmatch([sha1()], DA39A3EE5E6B4B0D3255BFEF95601890AFD80709),
+        strmatch([sha1(abc,def)], B9C58B99E102D8B50B76D23E71E9C155E5C3195F)
       )=
   {
     @log smoke=TC003: Parser-related tests. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: Parser-related tests. Failed (%q0).;
+    @log smoke=TC003: Parser-related tests. Failed (h0=.[sha1()]. h1=.[sha1(abc,def)].).;
     @trig me/tr.done
   }
 -

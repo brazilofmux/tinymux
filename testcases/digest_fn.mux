@@ -22,19 +22,15 @@
     @log smoke=TC001: DIGEST() is not supported on this version. Okay.
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              digest(sha1,abc)
-              [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)]
-            )
-          ),
-          9F469F9ACBAAE1FED8A8CA59EDD81646E9164B93
-        )=
+    @if cand(
+        strmatch([digest(sha1,abc)], A9993E364706816ABA3E25717850C26C9CD0D89D),
+        strmatch([digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)], 84983E441C3BD26EBAAE4AA1F95129E5E54670F1)
+      )=
     {
       @log smoke=TC001: Examples. Succeeded.
     },
     {
-      @log smoke=TC001: Examples. Failed (%q0).
+      @log smoke=TC001: Examples. Failed (h0=.[digest(sha1,abc)]. h1=.[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq)].).
     }
   }
 -
@@ -47,22 +43,18 @@
     @log smoke=TC002: DIGEST() is not supported on this version. Okay.
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              digest(sha1,abc)
-              [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
-              [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]
-              [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)]
-              [digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)]
-            )
-          ),
-          FBED900C606159E86C5970A5F88915B52716C445
-        )=
+    @if cand(
+        strmatch([digest(sha1,abc)], A9993E364706816ABA3E25717850C26C9CD0D89D),
+        strmatch([digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)], 47B172810795699FE739197D1A1F5960700242F1),
+        strmatch([digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)], 47B172810795699FE739197D1A1F5960700242F1),
+        strmatch([digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)], 55A0C42A00BD4B496A16D1AC32E20B5A7FA3E087),
+        strmatch([digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)], 9EF5C682D93914E77A5D345ABB957436445A6FB6)
+      )=
     {
       @log smoke=TC002: Standard test vectors. Succeeded.
     },
     {
-      @log smoke=TC002: Standard test vectors. Failed (%q0).
+      @log smoke=TC002: Standard test vectors. Failed (h0=.[digest(sha1,abc)]. h1=.[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]. h2=.[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnop)]. h3=.[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq1234567)]. h4=.[digest(sha1,abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq12345678)].).
     }
   }
 -
@@ -75,20 +67,16 @@
     @log smoke=TC003: DIGEST() is not supported on this version. Okay.
   },
   {
-    @if strmatch(
-          setr(0,sha1(
-              digest(sha1)
-              [digest(sha1,)]
-              [digest(sha1,abc,def)]
-            )
-          ),
-          48DF4575AECAEC5B934FBECAF5854D3F2A561F88
-        )=
+    @if cand(
+        strmatch([digest(sha1)], DA39A3EE5E6B4B0D3255BFEF95601890AFD80709),
+        strmatch([digest(sha1,)], DA39A3EE5E6B4B0D3255BFEF95601890AFD80709),
+        strmatch([digest(sha1,abc,def)], B9C58B99E102D8B50B76D23E71E9C155E5C3195F)
+      )=
     {
       @log smoke=TC003: Parser-related tests. Succeeded.
     },
     {
-      @log smoke=TC003: Parser-related tests. Failed (%q0).
+      @log smoke=TC003: Parser-related tests. Failed (h0=.[digest(sha1)]. h1=.[digest(sha1,)]. h2=.[digest(sha1,abc,def)].).
     }
   }
 -
@@ -104,25 +92,21 @@
   {
     @if digest(md5)=
     {
-      @if strmatch(
-            setr(0,sha1(
-                digest(md5,)
-                [digest(md5,a)]
-                [digest(md5,abc)]
-                [digest(md5,message digest)]
-                [digest(md5,abcdefghijklmnopqrstuvwxyz)]
-                [digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)]
-                [digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)]
-              )
-            ),
-            1D8FA29F6663DE476736B2D75991D96C346F881C
-          )=
+      @if cand(
+        strmatch([digest(md5,)], D41D8CD98F00B204E9800998ECF8427E),
+        strmatch([digest(md5,a)], 0CC175B9C0F1B6A831C399E269772661),
+        strmatch([digest(md5,abc)], 900150983CD24FB0D6963F7D28E17F72),
+        strmatch([digest(md5,message digest)], F96B697D7CB7938D525A2F31AAF161D0),
+        strmatch([digest(md5,abcdefghijklmnopqrstuvwxyz)], C3FCD3D76192E4007DFB496CCA67E13B),
+        strmatch([digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)], D174AB98D277D9F5A5611C2C9F419D9F),
+        strmatch([digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)], 57EDF4A22BE3C955AC49DA2E2107B67A)
+      )=
       {
         @log smoke=TC004: MD5 test vectors. Succeeded.;
         @trig me/tr.done
       },
       {
-        @log smoke=TC004: MD5 test vectors. Failed (%q0).;
+        @log smoke=TC004: MD5 test vectors. Failed (h0=.[digest(md5,)]. h1=.[digest(md5,a)]. h2=.[digest(md5,abc)]. h3=.[digest(md5,message digest)]. h4=.[digest(md5,abcdefghijklmnopqrstuvwxyz)]. h5=.[digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)]. h6=.[digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)].).;
         @trig me/tr.done
       }
     },

@@ -36,24 +36,27 @@
   &TESTATTR test_noeval_tgt3=[add(1,2)];
   @wait 0=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [u(test_noeval_tgt/TESTATTR)]
-              [u(test_noeval_tgt2/TESTATTR)]
-              [get_eval(test_noeval_tgt/TESTATTR)]
-              [get(test_noeval_tgt/TESTATTR)]
-              [hasflag(test_noeval_tgt/TESTATTR,no_eval)]
-              [hasflag(test_noeval_tgt2,NOEVAL)]
-              [u(test_noeval_tgt3/TESTATTR)]
-            )
-          ),
-          EDBF1A113545E1AB8AE20F6574BE7157DA8EA52D
-        )=
+    @if cand(
+        strmatch(.[u(test_noeval_tgt/TESTATTR)]., .3.),
+        strmatch(.[u(test_noeval_tgt2/TESTATTR)]., .3.),
+        strmatch(.[get_eval(test_noeval_tgt/TESTATTR)]., .3.),
+        strmatch(.[get(test_noeval_tgt/TESTATTR)]., .3.),
+        strmatch(.[hasflag(test_noeval_tgt/TESTATTR,no_eval)]., .1.),
+        strmatch(.[hasflag(test_noeval_tgt2,NOEVAL)]., .1.),
+        strmatch(.[u(test_noeval_tgt3/TESTATTR)]., .3.)
+      )=
     {
       @log smoke=TC001: noeval flag and attr flag. Succeeded.
     },
     {
-      @log smoke=TC001: noeval flag and attr flag. Failed (%q0).
+      @log smoke=TC001: noeval flag and attr flag Failed.;
+    @log smoke=TC001 actual L0 =.[u(test_noeval_tgt/TESTATTR)]=.;
+    @log smoke=TC001 actual L1 =.[u(test_noeval_tgt2/TESTATTR)]=.;
+    @log smoke=TC001 actual L2 =.[get_eval(test_noeval_tgt/TESTATTR)]=.;
+    @log smoke=TC001 actual L3 =.[get(test_noeval_tgt/TESTATTR)]=.;
+    @log smoke=TC001 actual L4 =.[hasflag(test_noeval_tgt/TESTATTR,no_eval)]=.;
+    @log smoke=TC001 actual L5 =.[hasflag(test_noeval_tgt2,NOEVAL)]=.;
+    @log smoke=TC001 actual L6 =.[u(test_noeval_tgt3/TESTATTR)]=.
     };
     @destroy/override test_noeval_tgt;
     @destroy/override test_noeval_tgt2;

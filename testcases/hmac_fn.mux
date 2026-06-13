@@ -15,55 +15,43 @@
 # Test Case #1 - HMAC-SHA256 basic.
 #
 &tr.tc001 test_hmac_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [hmac(hello,secret)]
-          )
-        ),
-        975305EE513E641C3FA23A6C17F58487389538AF
+  @if cand(
+        strmatch([hmac(hello,secret)], 88AAB3EDE8D3ADF94D26AB90D3BAFD4A2083070C3BCCE9C014EE04A443847C0B)
       )=
   {
     @log smoke=TC001: hmac sha256 basic. Succeeded.;
   },
   {
-    @log smoke=TC001: hmac sha256 basic. Failed (%q0).;
+    @log smoke=TC001: hmac sha256 basic. Failed (h0=.[hmac(hello,secret)].).;
   }
 -
 #
 # Test Case #2 - HMAC-SHA1 explicit algorithm.
 #
 &tr.tc002 test_hmac_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [hmac(hello,secret,sha1)]
-          )
-        ),
-        5FB65A0CA350F0C283CDE7AA3FA2A9AD41F4DC0F
+  @if cand(
+        strmatch([hmac(hello,secret,sha1)], 5112055C05F944F85755EFC5CD8970E194E9F45B)
       )=
   {
     @log smoke=TC002: hmac sha1 explicit. Succeeded.;
   },
   {
-    @log smoke=TC002: hmac sha1 explicit. Failed (%q0).;
+    @log smoke=TC002: hmac sha1 explicit. Failed (h0=.[hmac(hello,secret,sha1)].).;
   }
 -
 #
 # Test Case #3 - HMAC with invalid algorithm.
 #
 &tr.tc003 test_hmac_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [hmac(hello,secret,bogus)]
-          )
-        ),
-        755CD8293F0BFDEB77F8F15DE8F7046759BD6FD2
+  @if cand(
+        strmatch([hmac(hello,secret,bogus)], #-1%bUNSUPPORTED%bDIGEST%bTYPE)
       )=
   {
     @log smoke=TC003: hmac invalid algo. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: hmac invalid algo. Failed (%q0).;
+    @log smoke=TC003: hmac invalid algo. Failed (h0=.[hmac(hello,secret,bogus)].).;
     @trig me/tr.done
   }
 -

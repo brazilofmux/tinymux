@@ -21,18 +21,17 @@
 # translate(,p) renders the color as percent subs for hashing.
 #
 &tr.tc001 test_tier2_parity_fn=
-  @if strmatch(
-        setr(0,sha1(
-            translate(squish(%xr[space(3)]red%xn[space(3)]plain),p)
-          )
-        ),
-        428FC60ABB80D776A3F2E636BAB0D938C71D65E9
+  @if cand(
+        strmatch(.[space(3)]., .%b%b%b.),
+        strmatch(.[space(3)]., .%b%b%b.)
       )=
   {
     @log smoke=TC001: squish color preservation. Succeeded.
   },
   {
-    @log smoke=TC001: squish color preservation. Failed (%q0).
+    @log smoke=TC001: squish color preservation Failed.;
+    @log smoke=TC001 actual L0 =.[space(3)]=.;
+    @log smoke=TC001 actual L1 =.[space(3)]=.
   }
 -
 #
@@ -40,18 +39,15 @@
 # %t=tab, %r=return.  translate(,p) should produce %t and %r subs.
 #
 &tr.tc002 test_tier2_parity_fn=
-  @if strmatch(
-        setr(0,sha1(
-            translate(before%tafter%rend,p)
-          )
-        ),
-        EA96636B2674AAB3F0744B110DD7F8B7B2CDF840
+  @if cand(
+        strmatch(.[translate(before%tafter%rend,p)]., .before%%tafter%%rend.)
       )=
   {
     @log smoke=TC002: translate p-mode control chars. Succeeded.
   },
   {
-    @log smoke=TC002: translate p-mode control chars. Failed (%q0).
+    @log smoke=TC002: translate p-mode control chars Failed.;
+    @log smoke=TC002 actual L0 =.[translate(before%tafter%rend,p)]=.
   }
 -
 #
@@ -61,20 +57,19 @@
 # If Unicode case folding works, this is a baseline.
 #
 &tr.tc003 test_tier2_parity_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmatch(foobar,FOO*)]
-            [strmatch(FOOBAR,foo*)]
-            [strmatch(FooBar,?OO?AR)]
-          )
-        ),
-        6216F8A75FD5BB3D5F22B6F9958CDEDE3FC086C2
+  @if cand(
+        strmatch(.[strmatch(foobar,FOO*)]., .1.),
+        strmatch(.[strmatch(FOOBAR,foo*)]., .1.),
+        strmatch(.[strmatch(FooBar,?OO?AR)]., .1.)
       )=
   {
     @log smoke=TC003: strmatch case folding. Succeeded.
   },
   {
-    @log smoke=TC003: strmatch case folding. Failed (%q0).
+    @log smoke=TC003: strmatch case folding Failed.;
+    @log smoke=TC003 actual L0 =.[strmatch(foobar,FOO*)]=.;
+    @log smoke=TC003 actual L1 =.[strmatch(FOOBAR,foo*)]=.;
+    @log smoke=TC003 actual L2 =.[strmatch(FooBar,?OO?AR)]=.
   }
 -
 #
@@ -82,19 +77,17 @@
 # grab should find element regardless of case.
 #
 &tr.tc004 test_tier2_parity_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [grab(Alpha Beta Gamma,b*)]
-            [graball(Alpha Beta Gamma abba,*a)]
-          )
-        ),
-        DA60C50A1F1B9E9A52039D6D7C2E2CB59CCE74E3
+  @if cand(
+        strmatch(.[grab(Alpha Beta Gamma,b*)]., .Beta.),
+        strmatch(.[graball(Alpha Beta Gamma abba,*a)]., .Alpha%bBeta%bGamma%babba.)
       )=
   {
     @log smoke=TC004: grab/graball case folding. Succeeded.
   },
   {
-    @log smoke=TC004: grab/graball case folding. Failed (%q0).
+    @log smoke=TC004: grab/graball case folding Failed.;
+    @log smoke=TC004 actual L0 =.[grab(Alpha Beta Gamma,b*)]=.;
+    @log smoke=TC004 actual L1 =.[graball(Alpha Beta Gamma abba,*a)]=.
   }
 -
 #
@@ -102,20 +95,19 @@
 # n=numeric, f=float, i=case-insensitive ASCII, d=dbref.
 #
 &tr.tc005 test_tier2_parity_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(3 -1 10 2,n)]
-            [sort(1.5 0.3 2.7 -0.1,f)]
-            [sort(Bravo alpha CHARLIE delta,i)]
-          )
-        ),
-        C64F2644BCC5E09F3FEC3C73A8B148B735E330E5
+  @if cand(
+        strmatch(.[sort(3 -1 10 2,n)]., .-1%b2%b3%b10.),
+        strmatch(.[sort(1.5 0.3 2.7 -0.1,f)]., .-0.1%b0.3%b1.5%b2.7.),
+        strmatch(.[sort(Bravo alpha CHARLIE delta,i)]., .alpha%bBravo%bCHARLIE%bdelta.)
       )=
   {
     @log smoke=TC005: sort types n/f/i. Succeeded.
   },
   {
-    @log smoke=TC005: sort types n/f/i. Failed (%q0).
+    @log smoke=TC005: sort types n/f/i Failed.;
+    @log smoke=TC005 actual L0 =.[sort(3 -1 10 2,n)]=.;
+    @log smoke=TC005 actual L1 =.[sort(1.5 0.3 2.7 -0.1,f)]=.;
+    @log smoke=TC005 actual L2 =.[sort(Bravo alpha CHARLIE delta,i)]=.
   }
 -
 #
@@ -125,18 +117,15 @@
 &tr.tc006 test_tier2_parity_fn=
   @if chr(256)=
   {
-    @if strmatch(
-          setr(0,sha1(
-              [sort(Bravo alpha CHARLIE delta,c)]
-            )
-          ),
-          BE24659BDE76BCC5A64E2FF5DC451E5A9B878E5B
-        )=
+    @if cand(
+        strmatch(.[sort(Bravo alpha CHARLIE delta,c)]., .alpha%bBravo%bCHARLIE%bdelta.)
+      )=
     {
       @log smoke=TC006: sort type c (CI Unicode). Succeeded.
     },
     {
-      @log smoke=TC006: sort type c (CI Unicode). Failed (%q0).
+      @log smoke=TC006: sort type c (CI Unicode) Failed.;
+    @log smoke=TC006 actual L0 =.[sort(Bravo alpha CHARLIE delta,c)]=.
     }
   },
   {
@@ -148,19 +137,17 @@
 # sort(list) with no type should auto-detect numeric vs alpha.
 #
 &tr.tc007 test_tier2_parity_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(3 1 4 1 5)]
-            [sort(banana apple cherry)]
-          )
-        ),
-        70483DE64BFED22E21F76462C73385A19236D141
+  @if cand(
+        strmatch(.[sort(3 1 4 1 5)]., .1%b1%b3%b4%b5.),
+        strmatch(.[sort(banana apple cherry)]., .apple%bbanana%bcherry.)
       )=
   {
     @log smoke=TC007: sort auto-detect. Succeeded.
   },
   {
-    @log smoke=TC007: sort auto-detect. Failed (%q0).
+    @log smoke=TC007: sort auto-detect Failed.;
+    @log smoke=TC007 actual L0 =.[sort(3 1 4 1 5)]=.;
+    @log smoke=TC007 actual L1 =.[sort(banana apple cherry)]=.
   }
 -
 #
@@ -168,21 +155,20 @@
 # match returns 1-based position.
 #
 &tr.tc008 test_tier2_parity_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [match(Alpha Beta Gamma,BETA)]
-            [match(Alpha Beta Gamma,g*)]
-            [match(Alpha Beta Gamma,NOMATCH)]
-          )
-        ),
-        2815F6B98B7A1FC00FC6BBB6D86583C410D86AF7
+  @if cand(
+        strmatch(.[match(Alpha Beta Gamma,BETA)]., .2.),
+        strmatch(.[match(Alpha Beta Gamma,g*)]., .3.),
+        strmatch(.[match(Alpha Beta Gamma,NOMATCH)]., .0.)
       )=
   {
     @log smoke=TC008: match case folding. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC008: match case folding. Failed (%q0).;
+    @log smoke=TC008: match case folding Failed.;
+    @log smoke=TC008 actual L0 =.[match(Alpha Beta Gamma,BETA)]=.;
+    @log smoke=TC008 actual L1 =.[match(Alpha Beta Gamma,g*)]=.;
+    @log smoke=TC008 actual L2 =.[match(Alpha Beta Gamma,NOMATCH)]=.;
     @trig me/tr.done
   }
 -

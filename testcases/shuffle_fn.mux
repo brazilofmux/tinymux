@@ -15,242 +15,292 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            sort(shuffle(foo bar baz gleep),a)
-          )
-        ),
-        E781E4DEE8517047FDA699DA1855EBE9C8FF19E0
+  @if cand(
+        strmatch(.[sort(shuffle(foo bar baz gleep),a)]., .bar%bbaz%bfoo%bgleep.)
       )=
   {
     @log smoke=TC001: Help file examples. Succeeded.
   },
   {
-    @log smoke=TC001: Help file examples. Failed (%q0).
+    @log smoke=TC001: Help file examples Failed.;
+    @log smoke=TC001 actual L0 =.[sort(shuffle(foo bar baz gleep),a)]=.
   }
 -
 #
 # Test Case #2 - Regressions.
 #
 &tr.tc002 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(shuffle(%ba%b%bb%bc%b,%b),a)]
-          )
-        ),
-        6B3F339C67BB03D57A7195CF43ED86B12BFDD347
+  @if cand(
+        strmatch(.[sort(shuffle(%ba%b%bb%bc%b,%b),a)]., .a%bb%bc.)
       )=
   {
     @log smoke=TC002: shuffle regressions. Succeeded.
   },
   {
-    @log smoke=TC002: shuffle regressions. Failed (%q0).
+    @log smoke=TC002: shuffle regressions Failed.;
+    @log smoke=TC002 actual L0 =.[sort(shuffle(%ba%b%bb%bc%b,%b),a)]=.
   }
 -
 #
 # Test Case #3 - Exercise input and output delimiters.
 #
 &tr.tc003 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            shuffle(a a a a,,)
-            [shuffle(a a a a,,%b)]
-            [shuffle(a a a a,,-)]
-            [shuffle(a a a a,%b,)]
-            [shuffle(a a a a,%b,%b)]
-            [shuffle(a a a a,%b,-)]
-            [shuffle(a|a|a|a,|,)]
-            [shuffle(a|a|a|a,|,%b)]
-            [shuffle(a|a|a|a,|,-)]
-          )
-        ),
-        8E1A8CDF4A722DB1A45A9E4D02754357F9541315
+  @if cand(
+        strmatch(.[shuffle(a a a a,,%b)]., .a%ba%ba%ba.),
+        strmatch(.[shuffle(a a a a,,-)]., .a-a-a-a.),
+        strmatch(.[shuffle(a a a a,%b,)]., .a%ba%ba%ba.),
+        strmatch(.[shuffle(a a a a,%b,%b)]., .a%ba%ba%ba.),
+        strmatch(.[shuffle(a a a a,%b,-)]., .a-a-a-a.),
+        strmatch(.[shuffle(a|a|a|a,|,)]., .a%ba%ba%ba.),
+        strmatch(.[shuffle(a|a|a|a,|,%b)]., .a%ba%ba%ba.),
+        strmatch(.[shuffle(a|a|a|a,|,-)]., .a-a-a-a.)
       )=
   {
     @log smoke=TC003: Input and output delimiters. Succeeded.
   },
   {
-    @log smoke=TC003: Input and output delimiters. Failed (%q0).
+    @log smoke=TC003: Input and output delimiters Failed.;
+    @log smoke=TC003 actual L0 =.[shuffle(a a a a,,%b)]=.;
+    @log smoke=TC003 actual L1 =.[shuffle(a a a a,,-)]=.;
+    @log smoke=TC003 actual L2 =.[shuffle(a a a a,%b,)]=.;
+    @log smoke=TC003 actual L3 =.[shuffle(a a a a,%b,%b)]=.;
+    @log smoke=TC003 actual L4 =.[shuffle(a a a a,%b,-)]=.;
+    @log smoke=TC003 actual L5 =.[shuffle(a|a|a|a,|,)]=.;
+    @log smoke=TC003 actual L6 =.[shuffle(a|a|a|a,|,%b)]=.;
+    @log smoke=TC003 actual L7 =.[shuffle(a|a|a|a,|,-)]=.
   }
 -
 #
 # Test Case #4 - Vary number of arguments.
 #
 &tr.tc004 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [shuffle(,|)]
-            [shuffle(a,|)]
-            [shuffle(a|a,|)]
-            [shuffle(a|a|a,|)]
-            [shuffle(a|a|a|a,|)]
-            [shuffle()]
-            [shuffle(%b)]
-            [sort(shuffle(a),a)]
-            [sort(shuffle(a b),a)]
-            [sort(shuffle(a b c),a)]
-            [sort(shuffle(a b c d),a)]
-            [sort(shuffle(a b c d e),a)]
-            [sort(shuffle(a b c d e f),a)]
-            [sort(shuffle(a b c d e f g),a)]
-            [sort(shuffle(a b c d e f g h),a)]
-          )
-        ),
-        57D4E671DBE939E8AF2ADBA9F10E8A569B85F837
+  @if cand(
+        strmatch(.[shuffle(,|)]., ..),
+        strmatch(.[shuffle(a,|)]., .a.),
+        strmatch(.[shuffle(a|a,|)]., .a|a.),
+        strmatch(.[shuffle(a|a|a,|)]., .a|a|a.),
+        strmatch(.[shuffle(a|a|a|a,|)]., .a|a|a|a.),
+        strmatch(.[shuffle()]., .#-1%bFUNCTION%b(SHUFFLE)%bEXPECTS%bBETWEEN%b1%bAND%b3%bARGUMENTS.),
+        strmatch(.[shuffle(%b)]., ..),
+        strmatch(.[sort(shuffle(a),a)]., .a.),
+        strmatch(.[sort(shuffle(a b),a)]., .a%bb.),
+        strmatch(.[sort(shuffle(a b c),a)]., .a%bb%bc.),
+        strmatch(.[sort(shuffle(a b c d),a)]., .a%bb%bc%bd.),
+        strmatch(.[sort(shuffle(a b c d e),a)]., .a%bb%bc%bd%be.),
+        strmatch(.[sort(shuffle(a b c d e f),a)]., .a%bb%bc%bd%be%bf.),
+        strmatch(.[sort(shuffle(a b c d e f g),a)]., .a%bb%bc%bd%be%bf%bg.),
+        strmatch(.[sort(shuffle(a b c d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.)
       )=
   {
     @log smoke=TC004: Vary number of arguments. Succeeded.
   },
   {
-    @log smoke=TC004: Vary number of arguments. Failed (%q0).
+    @log smoke=TC004: Vary number of arguments Failed.;
+    @log smoke=TC004 actual L0 =.[shuffle(,|)]=.;
+    @log smoke=TC004 actual L1 =.[shuffle(a,|)]=.;
+    @log smoke=TC004 actual L2 =.[shuffle(a|a,|)]=.;
+    @log smoke=TC004 actual L3 =.[shuffle(a|a|a,|)]=.;
+    @log smoke=TC004 actual L4 =.[shuffle(a|a|a|a,|)]=.;
+    @log smoke=TC004 actual L5 =.[shuffle()]=.;
+    @log smoke=TC004 actual L6 =.[shuffle(%b)]=.;
+    @log smoke=TC004 actual L7 =.[sort(shuffle(a),a)]=.;
+    @log smoke=TC004 actual L8 =.[sort(shuffle(a b),a)]=.;
+    @log smoke=TC004 actual L9 =.[sort(shuffle(a b c),a)]=.;
+    @log smoke=TC004 actual L10 =.[sort(shuffle(a b c d),a)]=.;
+    @log smoke=TC004 actual L11 =.[sort(shuffle(a b c d e),a)]=.;
+    @log smoke=TC004 actual L12 =.[sort(shuffle(a b c d e f),a)]=.;
+    @log smoke=TC004 actual L13 =.[sort(shuffle(a b c d e f g),a)]=.;
+    @log smoke=TC004 actual L14 =.[sort(shuffle(a b c d e f g h),a)]=.
   }
 -
 #
 # Test Case #5 - Walk two elements through whitespace.
 #
 &tr.tc005 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(shuffle(%b%b%b),a)]
-            [sort(shuffle(b%b%b%b),a)]
-            [sort(shuffle(%bb%b%b),a)]
-            [sort(shuffle(a%b%bb%b),a)]
-            [sort(shuffle(%ba%b%bb),a)]
-            [sort(shuffle(%b%ba%b),a)]
-            [sort(shuffle(%b%b%ba),a)]
-          )
-        ),
-        5FA05DE12E35ED6C53A9E13B96F14DB89F597339
+  @if cand(
+        strmatch(.[sort(shuffle(%b%b%b),a)]., ..),
+        strmatch(.[sort(shuffle(b%b%b%b),a)]., .b.),
+        strmatch(.[sort(shuffle(%bb%b%b),a)]., .b.),
+        strmatch(.[sort(shuffle(a%b%bb%b),a)]., .a%bb.),
+        strmatch(.[sort(shuffle(%ba%b%bb),a)]., .a%bb.),
+        strmatch(.[sort(shuffle(%b%ba%b),a)]., .a.),
+        strmatch(.[sort(shuffle(%b%b%ba),a)]., .a.)
       )=
   {
     @log smoke=TC005: shuffle walk two elements through whitespace. Succeeded.
   },
   {
-    @log smoke=TC005: shuffle walk two elements through whitespace. Failed (%q0).
+    @log smoke=TC005: shuffle walk two elements through whitespace Failed.;
+    @log smoke=TC005 actual L0 =.[sort(shuffle(%b%b%b),a)]=.;
+    @log smoke=TC005 actual L1 =.[sort(shuffle(b%b%b%b),a)]=.;
+    @log smoke=TC005 actual L2 =.[sort(shuffle(%bb%b%b),a)]=.;
+    @log smoke=TC005 actual L3 =.[sort(shuffle(a%b%bb%b),a)]=.;
+    @log smoke=TC005 actual L4 =.[sort(shuffle(%ba%b%bb),a)]=.;
+    @log smoke=TC005 actual L5 =.[sort(shuffle(%b%ba%b),a)]=.;
+    @log smoke=TC005 actual L6 =.[sort(shuffle(%b%b%ba),a)]=.
   }
 -
 #
 # Test Case #6 - Walk whitespace through elements
 #
 &tr.tc006 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(shuffle(a b c d e f g h),a)]
-            [sort(shuffle(%ba b c d e f g h),a)]
-            [sort(shuffle(a%bb c d e f g h),a)]
-            [sort(shuffle(a b%bc d e f g h),a)]
-            [sort(shuffle(a b c%bd e f g h),a)]
-            [sort(shuffle(a b c d%be f g h),a)]
-            [sort(shuffle(a b c d e%bf g h),a)]
-            [sort(shuffle(a b c d e f%bg h),a)]
-            [sort(shuffle(a b c d e f g%bh),a)]
-            [sort(shuffle(a b c d e f g h%b),a)]
-            [sort(shuffle(%b%ba b c d e f g h),a)]
-            [sort(shuffle(a%b%bb c d e f g h),a)]
-            [sort(shuffle(a b%b%bc d e f g h),a)]
-            [sort(shuffle(a b c%b%bd e f g h),a)]
-            [sort(shuffle(a b c d%b%be f g h),a)]
-            [sort(shuffle(a b c d e%b%bf g h),a)]
-            [sort(shuffle(a b c d e f%b%bg h),a)]
-            [sort(shuffle(a b c d e f g%b%bh),a)]
-            [sort(shuffle(a b c d e f g h%b%b),a)]
-          )
-        ),
-        0DF50C53FA1DD20FEA99BACB5C61724CFA4807CC
+  @if cand(
+        strmatch(.[sort(shuffle(a b c d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(%ba b c d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a%bb c d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b%bc d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c%bd e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d%be f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e%bf g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e f%bg h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e f g%bh),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e f g h%b),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(%b%ba b c d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a%b%bb c d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b%b%bc d e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c%b%bd e f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d%b%be f g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e%b%bf g h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e f%b%bg h),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e f g%b%bh),a)]., .a%bb%bc%bd%be%bf%bg%bh.),
+        strmatch(.[sort(shuffle(a b c d e f g h%b%b),a)]., .a%bb%bc%bd%be%bf%bg%bh.)
       )=
   {
     @log smoke=TC006: shuffle walk whitespace through elements. Succeeded.
   },
   {
-    @log smoke=TC006: shuffle walk whitespace through elements. Failed (%q0).
+    @log smoke=TC006: shuffle walk whitespace through elements Failed.;
+    @log smoke=TC006 actual L0 =.[sort(shuffle(a b c d e f g h),a)]=.;
+    @log smoke=TC006 actual L1 =.[sort(shuffle(%ba b c d e f g h),a)]=.;
+    @log smoke=TC006 actual L2 =.[sort(shuffle(a%bb c d e f g h),a)]=.;
+    @log smoke=TC006 actual L3 =.[sort(shuffle(a b%bc d e f g h),a)]=.;
+    @log smoke=TC006 actual L4 =.[sort(shuffle(a b c%bd e f g h),a)]=.;
+    @log smoke=TC006 actual L5 =.[sort(shuffle(a b c d%be f g h),a)]=.;
+    @log smoke=TC006 actual L6 =.[sort(shuffle(a b c d e%bf g h),a)]=.;
+    @log smoke=TC006 actual L7 =.[sort(shuffle(a b c d e f%bg h),a)]=.;
+    @log smoke=TC006 actual L8 =.[sort(shuffle(a b c d e f g%bh),a)]=.;
+    @log smoke=TC006 actual L9 =.[sort(shuffle(a b c d e f g h%b),a)]=.;
+    @log smoke=TC006 actual L10 =.[sort(shuffle(%b%ba b c d e f g h),a)]=.;
+    @log smoke=TC006 actual L11 =.[sort(shuffle(a%b%bb c d e f g h),a)]=.;
+    @log smoke=TC006 actual L12 =.[sort(shuffle(a b%b%bc d e f g h),a)]=.;
+    @log smoke=TC006 actual L13 =.[sort(shuffle(a b c%b%bd e f g h),a)]=.;
+    @log smoke=TC006 actual L14 =.[sort(shuffle(a b c d%b%be f g h),a)]=.;
+    @log smoke=TC006 actual L15 =.[sort(shuffle(a b c d e%b%bf g h),a)]=.;
+    @log smoke=TC006 actual L16 =.[sort(shuffle(a b c d e f%b%bg h),a)]=.;
+    @log smoke=TC006 actual L17 =.[sort(shuffle(a b c d e f g%b%bh),a)]=.;
+    @log smoke=TC006 actual L18 =.[sort(shuffle(a b c d e f g h%b%b),a)]=.
   }
 -
 #
 # Test Case #7 - Vary number of elements with single hyphen delimiter.
 #
 &tr.tc007 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(shuffle(,-),a,-)]
-            [sort(shuffle(-,-),a,-)]
-            [sort(shuffle(a,-),a,-)]
-            [sort(shuffle(a-b,-),a,-)]
-            [sort(shuffle(a-b-c,-),a,-)]
-            [sort(shuffle(a-b-c-d,-),a,-)]
-            [sort(shuffle(a-b-c-d-e,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f-g,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]
-          )
-        ),
-        83944F822FC3420BDFADC68E12B5B28222501DEE
+  @if cand(
+        strmatch(.[sort(shuffle(,-),a,-)]., ..),
+        strmatch(.[sort(shuffle(-,-),a,-)]., .-.),
+        strmatch(.[sort(shuffle(a,-),a,-)]., .a.),
+        strmatch(.[sort(shuffle(a-b,-),a,-)]., .a-b.),
+        strmatch(.[sort(shuffle(a-b-c,-),a,-)]., .a-b-c.),
+        strmatch(.[sort(shuffle(a-b-c-d,-),a,-)]., .a-b-c-d.),
+        strmatch(.[sort(shuffle(a-b-c-d-e,-),a,-)]., .a-b-c-d-e.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f,-),a,-)]., .a-b-c-d-e-f.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f-g,-),a,-)]., .a-b-c-d-e-f-g.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]., .a-b-c-d-e-f-g-h.)
       )=
   {
     @log smoke=TC007: shuffle vary elements with single-hyphen delimiter. Succeeded.
   },
   {
-    @log smoke=TC007: shuffle vary elements with single-hypehn delimiter. Failed (%q0).
+    @log smoke=TC007: shuffle vary elements with single-hypehn delimiter Failed.;
+    @log smoke=TC007 actual L0 =.[sort(shuffle(,-),a,-)]=.;
+    @log smoke=TC007 actual L1 =.[sort(shuffle(-,-),a,-)]=.;
+    @log smoke=TC007 actual L2 =.[sort(shuffle(a,-),a,-)]=.;
+    @log smoke=TC007 actual L3 =.[sort(shuffle(a-b,-),a,-)]=.;
+    @log smoke=TC007 actual L4 =.[sort(shuffle(a-b-c,-),a,-)]=.;
+    @log smoke=TC007 actual L5 =.[sort(shuffle(a-b-c-d,-),a,-)]=.;
+    @log smoke=TC007 actual L6 =.[sort(shuffle(a-b-c-d-e,-),a,-)]=.;
+    @log smoke=TC007 actual L7 =.[sort(shuffle(a-b-c-d-e-f,-),a,-)]=.;
+    @log smoke=TC007 actual L8 =.[sort(shuffle(a-b-c-d-e-f-g,-),a,-)]=.;
+    @log smoke=TC007 actual L9 =.[sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]=.
   }
 -
 #
 # Test Case #8 - Walk two elements through single-hyphens.
 #
 &tr.tc008 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(shuffle(---,-),a,-)]
-            [sort(shuffle(b---,-),a,-)]
-            [sort(shuffle(-b--,-),a,-)]
-            [sort(shuffle(a--b-,-),a,-)]
-            [sort(shuffle(-a--b,-),a,-)]
-            [sort(shuffle(--a-,-),a,-)]
-            [sort(shuffle(---a,-),a,-)]
-          )
-        ),
-        DB238978516966D4C581F89065AF22313D63BCE5
+  @if cand(
+        strmatch(.[sort(shuffle(---,-),a,-)]., .---.),
+        strmatch(.[sort(shuffle(b---,-),a,-)]., .---b.),
+        strmatch(.[sort(shuffle(-b--,-),a,-)]., .---b.),
+        strmatch(.[sort(shuffle(a--b-,-),a,-)]., .--a-b.),
+        strmatch(.[sort(shuffle(-a--b,-),a,-)]., .--a-b.),
+        strmatch(.[sort(shuffle(--a-,-),a,-)]., .---a.),
+        strmatch(.[sort(shuffle(---a,-),a,-)]., .---a.)
       )=
   {
     @log smoke=TC008: shuffle walk two elements through single-hyphens. Succeeded.
   },
   {
-    @log smoke=TC008: shuffle walk two elements through single-hyphens. Failed (%q0).
+    @log smoke=TC008: shuffle walk two elements through single-hyphens Failed.;
+    @log smoke=TC008 actual L0 =.[sort(shuffle(---,-),a,-)]=.;
+    @log smoke=TC008 actual L1 =.[sort(shuffle(b---,-),a,-)]=.;
+    @log smoke=TC008 actual L2 =.[sort(shuffle(-b--,-),a,-)]=.;
+    @log smoke=TC008 actual L3 =.[sort(shuffle(a--b-,-),a,-)]=.;
+    @log smoke=TC008 actual L4 =.[sort(shuffle(-a--b,-),a,-)]=.;
+    @log smoke=TC008 actual L5 =.[sort(shuffle(--a-,-),a,-)]=.;
+    @log smoke=TC008 actual L6 =.[sort(shuffle(---a,-),a,-)]=.
   }
 -
 #
 # Test Case #9 - Walk single-hyphens through elements
 #
 &tr.tc009 test_shuffle_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]
-            [sort(shuffle(-a-b-c-d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a--b-c-d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b--c-d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c--d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d--e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e--f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f--g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f-g--h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f-g-h-,-),a,-)]
-            [sort(shuffle(--a-b-c-d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a---b-c-d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b---c-d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c---d-e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d---e-f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e---f-g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f---g-h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f-g---h,-),a,-)]
-            [sort(shuffle(a-b-c-d-e-f-g-h--,-),a,-)]
-          )
-        ),
-        4E248BE30EA69551056C53F958E81F5E35269C53
+  @if cand(
+        strmatch(.[sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]., .a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(-a-b-c-d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a--b-c-d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b--c-d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c--d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d--e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e--f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f--g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f-g--h,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f-g-h-,-),a,-)]., .-a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(--a-b-c-d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a---b-c-d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b---c-d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c---d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d---e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e---f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f---g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f-g---h,-),a,-)]., .--a-b-c-d-e-f-g-h.),
+        strmatch(.[sort(shuffle(a-b-c-d-e-f-g-h--,-),a,-)]., .--a-b-c-d-e-f-g-h.)
       )=
   {
     @log smoke=TC009: shuffle walk single-hypens through elements. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC009: shuffle walk single-hypens through elements. Failed (%q0).;
+    @log smoke=TC009: shuffle walk single-hypens through elements Failed.;
+    @log smoke=TC009 actual L0 =.[sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L1 =.[sort(shuffle(-a-b-c-d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L2 =.[sort(shuffle(a--b-c-d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L3 =.[sort(shuffle(a-b--c-d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L4 =.[sort(shuffle(a-b-c--d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L5 =.[sort(shuffle(a-b-c-d--e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L6 =.[sort(shuffle(a-b-c-d-e--f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L7 =.[sort(shuffle(a-b-c-d-e-f--g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L8 =.[sort(shuffle(a-b-c-d-e-f-g--h,-),a,-)]=.;
+    @log smoke=TC009 actual L9 =.[sort(shuffle(a-b-c-d-e-f-g-h-,-),a,-)]=.;
+    @log smoke=TC009 actual L10 =.[sort(shuffle(--a-b-c-d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L11 =.[sort(shuffle(a---b-c-d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L12 =.[sort(shuffle(a-b---c-d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L13 =.[sort(shuffle(a-b-c---d-e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L14 =.[sort(shuffle(a-b-c-d---e-f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L15 =.[sort(shuffle(a-b-c-d-e---f-g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L16 =.[sort(shuffle(a-b-c-d-e-f---g-h,-),a,-)]=.;
+    @log smoke=TC009 actual L17 =.[sort(shuffle(a-b-c-d-e-f-g---h,-),a,-)]=.;
+    @log smoke=TC009 actual L18 =.[sort(shuffle(a-b-c-d-e-f-g-h--,-),a,-)]=.;
     @trig me/tr.done
   }
 -

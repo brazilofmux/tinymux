@@ -15,21 +15,38 @@
 # Test Case #1 - Basic choose operations.
 #
 &tr.tc001 test_choose_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [choose(2,a b c)]
-            [choose(1,x|y|z,|)]
-          )
-        ),
-        131B277CBE1A009BE71C183279AE649F8AEA6B10
+  @if cand(
+        strmatch(.[choose(a b c,0 0 1)]., .c.),
+        strmatch(.[choose(a b,1 0)]., .a.),
+        strmatch(.[choose(x|y|z,0 1 0,|)]., .y.),
+        strmatch(.[choose(a,5)]., .a.),
+        eq(words(choose(a b c,1 1 1)), 1),
+        eq(t(member(a b c,choose(a b c,1 1 1))), 1)
       )=
   {
-    @log smoke=TC001: choose basic operations. Succeeded.;
+    @log smoke=TC001: choose weighted selection. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: choose basic operations. Failed (%q0).;
+    @log smoke=TC001: choose weighted selection. Failed (w001=.[choose(a b c,0 0 1)]. w10=.[choose(a b,1 0)]. ydelim=.[choose(x|y|z,0 1 0,|)]. single=.[choose(a,5)]. eqwt=.[choose(a b c,1 1 1)].);
     @trig me/tr.done
+  }
+-
+#
+# Test Case #2 - Error and arity paths.
+# choose(<items>,<weights>): the lists must be the same length, and the
+# function takes 2 or 3 arguments.
+#
+&tr.tc002 test_choose_fn=
+  @if cand(
+        strmatch(.[choose(2,a b c)]., .#-1%bLISTS%bMUST%bBE%bOF%bEQUAL%bSIZE.),
+        strmatch(.[choose(a b c)]., .#-1%bFUNCTION%b(CHOOSE)%bEXPECTS%b2%bOR%b3%bARGUMENTS.)
+      )=
+  {
+    @log smoke=TC002: choose error and arity paths. Succeeded.
+  },
+  {
+    @log smoke=TC002: choose error and arity paths. Failed (unequal=.[choose(2,a b c)]. arity=.[choose(a b c)].)
   }
 -
 &tr.done test_choose_fn=
