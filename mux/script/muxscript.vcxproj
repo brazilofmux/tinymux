@@ -59,6 +59,7 @@
       <AdditionalDependencies>libmux.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\bin_debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
+      <StackReserveSize>8388608</StackReserveSize>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -81,6 +82,7 @@
       <AdditionalLibraryDirectories>..\bin_release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <Version>2.14</Version>
       <SubSystem>Console</SubSystem>
+      <StackReserveSize>8388608</StackReserveSize>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
