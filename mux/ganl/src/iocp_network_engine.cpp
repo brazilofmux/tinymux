@@ -1289,7 +1289,12 @@ void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
         // If WSARecv returns SOCKET_ERROR and error is WSA_IO_PENDING, that's normal for async operation
         if (result == SOCKET_ERROR && (error = WSAGetLastError()) != ERROR_IO_PENDING) {
             GANL_IOCP_DEBUG(socket, "WSARecv failed: " << getErrorString(error));
-            delete perIoData; // Clean up on immediate failure
+            // Do NOT delete perIoData here: it is borrowed (the caller, postRead,
+            // owns it via std::unique_ptr and frees it on this false return).
+            // Deleting it here double-freed it (heap corruption on an immediate
+            // WSARecv failure such as a reset connection).  No IOCP completion
+            // is queued on immediate failure, so the caller's owner is the sole
+            // and correct deleter.
             return false;
         }
 
@@ -1314,7 +1319,12 @@ void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
         // If WSASend returns SOCKET_ERROR and error is WSA_IO_PENDING, that's normal for async operation
         if (result == SOCKET_ERROR && (error = WSAGetLastError()) != ERROR_IO_PENDING) {
             GANL_IOCP_DEBUG(socket, "WSASend failed: " << getErrorString(error));
-            delete perIoData; // Clean up on immediate failure
+            // Do NOT delete perIoData here: it is borrowed (the caller, postWrite,
+            // owns it via std::unique_ptr and frees it on this false return).
+            // Deleting it here double-freed it (heap corruption on an immediate
+            // WSASend failure such as WSAENOBUFS or a reset connection).  No IOCP
+            // completion is queued on immediate failure, so the caller's owner is
+            // the sole and correct deleter.
             return false;
         }
 
