@@ -18,127 +18,85 @@
 # Test Case #1 - chanusers() returns at least one dbref.
 #
 &tr.tc001 test_chanusers_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isdbref(first(chanusers(cutest)))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if isdbref(first(chanusers(cutest)))=
   {
     @log smoke=TC001: chanusers returns dbrefs. Succeeded.
   },
   {
-    @log smoke=TC001: chanusers returns dbrefs. Failed (%q0).
+    @log smoke=TC001: chanusers returns dbrefs. Failed (first=[first(chanusers(cutest))]).
   }
 -
 #
 # Test Case #2 - chanusers() has exactly one subscriber.
 #
 &tr.tc002 test_chanusers_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [words(chanusers(cutest))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if eq(words(chanusers(cutest)), 1)=
   {
     @log smoke=TC002: chanusers one subscriber. Succeeded.
   },
   {
-    @log smoke=TC002: chanusers one subscriber. Failed (%q0).
+    @log smoke=TC002: chanusers one subscriber. Failed (users=[chanusers(cutest)]).
   }
 -
 #
 # Test Case #3 - chanusers(bogus) returns #-1 CHANNEL NOT FOUND.
 #
 &tr.tc003 test_chanusers_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chanusers(nosuch)]
-          )
-        ),
-        770632F3C8D766298FD8123A49357D082D5A4672
-      )=
+  @if strmatch(chanusers(nosuch), #-1 CHANNEL NOT FOUND)=
   {
     @log smoke=TC003: chanusers not found. Succeeded.
   },
   {
-    @log smoke=TC003: chanusers not found. Failed (%q0).
+    @log smoke=TC003: chanusers not found. Failed (notfound=[chanusers(nosuch)]).
   }
 -
 #
 # Test Case #4 - chanusers() count matches chaninfo(users).
 #
 &tr.tc004 test_chanusers_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [eq(words(chanusers(cutest)),chaninfo(cutest,users))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if eq(words(chanusers(cutest)), chaninfo(cutest,users))=
   {
     @log smoke=TC004: chanusers count matches chaninfo. Succeeded.
   },
   {
-    @log smoke=TC004: chanusers count matches chaninfo. Failed (%q0).
+    @log smoke=TC004: chanusers count matches chaninfo. Failed (users=[words(chanusers(cutest))] info=[chaninfo(cutest,users)]).
   }
 -
 #
-# Test Case #5 - chanusers(chan, |, name) returns player names.
+# Test Case #5 - chanusers(chan, sep, name) returns player names.
 #
 &tr.tc005 test_chanusers_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [t(strlen(chanusers(cutest,%b,name)))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if t(strlen(chanusers(cutest,%b,name)))=
   {
     @log smoke=TC005: chanusers name field. Succeeded.
   },
   {
-    @log smoke=TC005: chanusers name field. Failed (%q0).
+    @log smoke=TC005: chanusers name field. Failed (names=[chanusers(cutest,%b,name)]).
   }
 -
 #
-# Test Case #6 - chanusers(chan, |, status) returns On/Off.
+# Test Case #6 - chanusers(chan, sep, status) returns On/Off.
 #
 &tr.tc006 test_chanusers_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmatch(chanusers(cutest,%b,status),*On*)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if strmatch(chanusers(cutest,%b,status), *On*)=
   {
     @log smoke=TC006: chanusers status field. Succeeded.
   },
   {
-    @log smoke=TC006: chanusers status field. Failed (%q0).
+    @log smoke=TC006: chanusers status field. Failed (status=[chanusers(cutest,%b,status)]).
   }
 -
 #
-# Test Case #7 - chanusers(chan, |, badfield) returns #-1 INVALID FIELD.
+# Test Case #7 - chanusers(chan, sep, badfield) returns #-1 INVALID FIELD.
 #
 &tr.tc007 test_chanusers_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmatch(chanusers(cutest,%b,badfield),#-1 INVALID FIELD)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if strmatch(chanusers(cutest,%b,badfield), #-1 INVALID FIELD)=
   {
     @log smoke=TC007: chanusers invalid field. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC007: chanusers invalid field. Failed (%q0).;
+    @log smoke=TC007: chanusers invalid field. Failed (badfield=[chanusers(cutest,%b,badfield)]).;
     @trig me/tr.done
   }
 -

@@ -2097,21 +2097,21 @@
 >256
 "@log smoke=Beginning chanuser test cases.;@ccreate chutest;@cset/public chutest=on;addcom chu=chutest;comtitle chu=Tester"
 >257
-"@if strmatch(setr(0,sha1([chanuser(chutest,first(chanusers(chutest)),alias)])),2D34AEBD561E246EC7786C4DE2C2D252D0156982)={@log smoke=TC001: chanuser alias. Succeeded.},{@log smoke=TC001: chanuser alias. Failed (%q0).}"
+"@if strmatch(chanuser(chutest,first(chanusers(chutest)),alias), chu)={@log smoke=TC001: chanuser alias. Succeeded.},{@log smoke=TC001: chanuser alias. Failed (alias=[chanuser(chutest,first(chanusers(chutest)),alias)]).}"
 >258
-"@if strmatch(setr(0,sha1([chanuser(chutest,first(chanusers(chutest)),title)])),9264A677DDFA1B311D09C5D2427B23A3A2A79015)={@log smoke=TC002: chanuser title. Succeeded.},{@log smoke=TC002: chanuser title. Failed (%q0).}"
+"@if strmatch(chanuser(chutest,first(chanusers(chutest)),title), Tester)={@log smoke=TC002: chanuser title. Succeeded.},{@log smoke=TC002: chanuser title. Failed (title=[chanuser(chutest,first(chanusers(chutest)),title)]).}"
 >259
-"@if strmatch(setr(0,sha1([chanuser(chutest,first(chanusers(chutest)),status)])),E0049A66519CAE71159800BB77A35007BC2D76D3)={@log smoke=TC003: chanuser status. Succeeded.},{@log smoke=TC003: chanuser status. Failed (%q0).}"
+"@if strmatch(chanuser(chutest,first(chanusers(chutest)),status), On)={@log smoke=TC003: chanuser status. Succeeded.},{@log smoke=TC003: chanuser status. Failed (status=[chanuser(chutest,first(chanusers(chutest)),status)]).}"
 >260
 "@log smoke=End chanuser test cases.;@notify smoke"
 >261
-"@if strmatch(setr(0,sha1([chanuser(chutest,first(chanusers(chutest)),gagjoin)])),B6589FC6AB0DC82CF12099D1C2D40AB994E8410C)={@log smoke=TC004: chanuser gagjoin. Succeeded.},{@log smoke=TC004: chanuser gagjoin. Failed (%q0).}"
+"@if eq(chanuser(chutest,first(chanusers(chutest)),gagjoin), 0)={@log smoke=TC004: chanuser gagjoin. Succeeded.},{@log smoke=TC004: chanuser gagjoin. Failed (gagjoin=[chanuser(chutest,first(chanusers(chutest)),gagjoin)]).}"
 >262
-"@if strmatch(setr(0,sha1([chanuser(chutest,first(chanusers(chutest)),comtitles)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC005: chanuser comtitles. Succeeded.},{@log smoke=TC005: chanuser comtitles. Failed (%q0).}"
+"@if eq(chanuser(chutest,first(chanusers(chutest)),comtitles), 1)={@log smoke=TC005: chanuser comtitles. Succeeded.},{@log smoke=TC005: chanuser comtitles. Failed (comtitles=[chanuser(chutest,first(chanusers(chutest)),comtitles)]).}"
 >263
-"@if strmatch(setr(0,sha1([strmatch(chanuser(chutest,nosuch,title),#-1*)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC006: chanuser bad player. Succeeded.},{@log smoke=TC006: chanuser bad player. Failed (%q0).}"
+"@if strmatch(chanuser(chutest,nosuch,title), #-1*)={@log smoke=TC006: chanuser bad player. Succeeded.},{@log smoke=TC006: chanuser bad player. Failed (bad=[chanuser(chutest,nosuch,title)]).}"
 >264
-"@if strmatch(setr(0,sha1([strmatch(chanuser(chutest,first(chanusers(chutest)),badfield),#-1 INVALID FIELD)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC007: chanuser invalid field. Succeeded.;@trig me/tr.done},{@log smoke=TC007: chanuser invalid field. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(chanuser(chutest,first(chanusers(chutest)),badfield), #-1 INVALID FIELD)={@log smoke=TC007: chanuser invalid field. Succeeded.;@trig me/tr.done},{@log smoke=TC007: chanuser invalid field. Failed (badfield=[chanuser(chutest,first(chanusers(chutest)),badfield)]).;@trig me/tr.done}"
 <
 !37
 "test_chanusers_fn"
@@ -2136,21 +2136,21 @@
 >256
 "@log smoke=Beginning chanusers test cases.;@ccreate cutest;@cset/public cutest=on;addcom cut=cutest"
 >257
-"@if strmatch(setr(0,sha1([isdbref(first(chanusers(cutest)))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC001: chanusers returns dbrefs. Succeeded.},{@log smoke=TC001: chanusers returns dbrefs. Failed (%q0).}"
+"@if isdbref(first(chanusers(cutest)))={@log smoke=TC001: chanusers returns dbrefs. Succeeded.},{@log smoke=TC001: chanusers returns dbrefs. Failed (first=[first(chanusers(cutest))]).}"
 >258
-"@if strmatch(setr(0,sha1([words(chanusers(cutest))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC002: chanusers one subscriber. Succeeded.},{@log smoke=TC002: chanusers one subscriber. Failed (%q0).}"
+"@if eq(words(chanusers(cutest)), 1)={@log smoke=TC002: chanusers one subscriber. Succeeded.},{@log smoke=TC002: chanusers one subscriber. Failed (users=[chanusers(cutest)]).}"
 >259
-"@if strmatch(setr(0,sha1([chanusers(nosuch)])),770632F3C8D766298FD8123A49357D082D5A4672)={@log smoke=TC003: chanusers not found. Succeeded.},{@log smoke=TC003: chanusers not found. Failed (%q0).}"
+"@if strmatch(chanusers(nosuch), #-1 CHANNEL NOT FOUND)={@log smoke=TC003: chanusers not found. Succeeded.},{@log smoke=TC003: chanusers not found. Failed (notfound=[chanusers(nosuch)]).}"
 >260
 "@log smoke=End chanusers test cases.;@notify smoke"
 >261
-"@if strmatch(setr(0,sha1([eq(words(chanusers(cutest)),chaninfo(cutest,users))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC004: chanusers count matches chaninfo. Succeeded.},{@log smoke=TC004: chanusers count matches chaninfo. Failed (%q0).}"
+"@if eq(words(chanusers(cutest)), chaninfo(cutest,users))={@log smoke=TC004: chanusers count matches chaninfo. Succeeded.},{@log smoke=TC004: chanusers count matches chaninfo. Failed (users=[words(chanusers(cutest))] info=[chaninfo(cutest,users)]).}"
 >262
-"@if strmatch(setr(0,sha1([t(strlen(chanusers(cutest,%b,name)))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC005: chanusers name field. Succeeded.},{@log smoke=TC005: chanusers name field. Failed (%q0).}"
+"@if t(strlen(chanusers(cutest,%b,name)))={@log smoke=TC005: chanusers name field. Succeeded.},{@log smoke=TC005: chanusers name field. Failed (names=[chanusers(cutest,%b,name)]).}"
 >263
-"@if strmatch(setr(0,sha1([strmatch(chanusers(cutest,%b,status),*On*)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC006: chanusers status field. Succeeded.},{@log smoke=TC006: chanusers status field. Failed (%q0).}"
+"@if strmatch(chanusers(cutest,%b,status), *On*)={@log smoke=TC006: chanusers status field. Succeeded.},{@log smoke=TC006: chanusers status field. Failed (status=[chanusers(cutest,%b,status)]).}"
 >264
-"@if strmatch(setr(0,sha1([strmatch(chanusers(cutest,%b,badfield),#-1 INVALID FIELD)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC007: chanusers invalid field. Succeeded.;@trig me/tr.done},{@log smoke=TC007: chanusers invalid field. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(chanusers(cutest,%b,badfield), #-1 INVALID FIELD)={@log smoke=TC007: chanusers invalid field. Succeeded.;@trig me/tr.done},{@log smoke=TC007: chanusers invalid field. Failed (badfield=[chanusers(cutest,%b,badfield)]).;@trig me/tr.done}"
 <
 !38
 "test_choose_fn"
@@ -6076,33 +6076,33 @@
 >256
 "@log smoke=Beginning mailinfo test cases.;@if t(mailsend(Wizard,MailInfo Test,This is a test body.))={@log smoke=TC000: mailsend for testing. Sent.},{@log smoke=TC000: mailsend for testing. FAILED to send.}"
 >257
-"@if strmatch(setr(0,sha1([gte(mailcount(#1),1)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC001: mailcount. Succeeded.},{@log smoke=TC001: mailcount. Failed (%q0).}"
+"@if gte(mailcount(#1), 1)={@log smoke=TC001: mailcount. Succeeded.},{@log smoke=TC001: mailcount. Failed (count=[mailcount(#1)]).}"
 >258
-"@if strmatch(setr(0,sha1([eq(words(mailstats(#1)),3)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC002: mailstats. Succeeded.},{@log smoke=TC002: mailstats. Failed (%q0).}"
+"@if eq(words(mailstats(#1)), 3)={@log smoke=TC002: mailstats. Succeeded.},{@log smoke=TC002: mailstats. Failed (stats=[mailstats(#1)]).}"
 >259
-"@if strmatch(setr(0,sha1([gte(words(maillist(#1)),1)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC003: maillist. Succeeded.},{@log smoke=TC003: maillist. Failed (%q0).}"
+"@if gte(words(maillist(#1)), 1)={@log smoke=TC003: maillist. Succeeded.},{@log smoke=TC003: maillist. Failed (list=[maillist(#1)]).}"
 >260
 "@log smoke=End mailinfo test cases.;@notify smoke"
 >261
-"@if strmatch(setr(0,sha1([eq(mailcount(#1),words(maillist(#1)))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC004: mailcount matches maillist. Succeeded.},{@log smoke=TC004: mailcount matches maillist. Failed (%q0).}"
+"@if eq(mailcount(#1), words(maillist(#1)))={@log smoke=TC004: mailcount matches maillist. Succeeded.},{@log smoke=TC004: mailcount matches maillist. Failed (count=[mailcount(#1)] list=[maillist(#1)]).}"
 >262
-"@if strmatch(setr(0,sha1([isdbref(mailinfo(last(maillist(#1)),from,#1))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC005: mailinfo from. Succeeded.},{@log smoke=TC005: mailinfo from. Failed (%q0).}"
+"@if isdbref(mailinfo(last(maillist(#1)),from,#1))={@log smoke=TC005: mailinfo from. Succeeded.},{@log smoke=TC005: mailinfo from. Failed (from=[mailinfo(last(maillist(#1)),from,#1)]).}"
 >263
-"@if strmatch(setr(0,sha1([mailinfo(last(maillist(#1)),subject,#1)])),352B1213CAD09731F90C66FE64E914CE8DBD735A)={@log smoke=TC006: mailinfo subject. Succeeded.},{@log smoke=TC006: mailinfo subject. Failed (%q0).}"
+"@if strmatch(mailinfo(last(maillist(#1)),subject,#1), MailInfo Test)={@log smoke=TC006: mailinfo subject. Succeeded.},{@log smoke=TC006: mailinfo subject. Failed (subject=[mailinfo(last(maillist(#1)),subject,#1)]).}"
 >264
-"@if strmatch(setr(0,sha1([t(strlen(mailinfo(last(maillist(#1)),time,#1)))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC007: mailinfo time. Succeeded.},{@log smoke=TC007: mailinfo time. Failed (%q0).}"
+"@if t(strlen(mailinfo(last(maillist(#1)),time,#1)))={@log smoke=TC007: mailinfo time. Succeeded.},{@log smoke=TC007: mailinfo time. Failed (time=[mailinfo(last(maillist(#1)),time,#1)]).}"
 >266
-"@if strmatch(setr(0,sha1([gt(mailinfo(last(maillist(#1)),size,#1),0)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC008: mailinfo size. Succeeded.},{@log smoke=TC008: mailinfo size. Failed (%q0).}"
+"@if gt(mailinfo(last(maillist(#1)),size,#1), 0)={@log smoke=TC008: mailinfo size. Succeeded.},{@log smoke=TC008: mailinfo size. Failed (size=[mailinfo(last(maillist(#1)),size,#1)]).}"
 >273
-"@if strmatch(setr(0,sha1([mailinfo(last(maillist(#1)),read,#1)])),B6589FC6AB0DC82CF12099D1C2D40AB994E8410C)={@log smoke=TC009: mailinfo read. Succeeded.},{@log smoke=TC009: mailinfo read. Failed (%q0).}"
+"@if eq(mailinfo(last(maillist(#1)),read,#1), 0)={@log smoke=TC009: mailinfo read. Succeeded.},{@log smoke=TC009: mailinfo read. Failed (read=[mailinfo(last(maillist(#1)),read,#1)]).}"
 >274
-"@if strmatch(setr(0,sha1([not(strmatch(mailflags(last(maillist(#1)),#1),#-1*))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC010: mailflags. Succeeded.},{@log smoke=TC010: mailflags. Failed (%q0).}"
+"@if not(strmatch(mailflags(last(maillist(#1)),#1), #-1*))={@log smoke=TC010: mailflags. Succeeded.},{@log smoke=TC010: mailflags. Failed (flags=[mailflags(last(maillist(#1)),#1)]).}"
 >275
-"@if strmatch(setr(0,sha1([mailinfo(99999,from,#1)])),F03CC4F0B40CA2E45C0846FEDC1BA910D4326C07)={@log smoke=TC011: mailinfo bad msg. Succeeded.},{@log smoke=TC011: mailinfo bad msg. Failed (%q0).}"
+"@if strmatch(mailinfo(99999,from,#1), #-1 NO SUCH MESSAGE)={@log smoke=TC011: mailinfo bad msg. Succeeded.},{@log smoke=TC011: mailinfo bad msg. Failed (bad=[mailinfo(99999,from,#1)]).}"
 >276
-"@if strmatch(setr(0,sha1([strmatch(mailinfo(last(maillist(#1)),badfield,#1),#-1 INVALID FIELD)])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC012: mailinfo invalid field. Succeeded.},{@log smoke=TC012: mailinfo invalid field. Failed (%q0).}"
+"@if strmatch(mailinfo(last(maillist(#1)),badfield,#1), #-1 INVALID FIELD)={@log smoke=TC012: mailinfo invalid field. Succeeded.},{@log smoke=TC012: mailinfo invalid field. Failed (badfield=[mailinfo(last(maillist(#1)),badfield,#1)]).}"
 >277
-"@if strmatch(setr(0,sha1([t(strlen(mailinfo(last(maillist(#1)),tolist,#1)))])),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC013: mailinfo tolist. Succeeded.;@trig me/tr.done},{@log smoke=TC013: mailinfo tolist. Failed (%q0).;@trig me/tr.done}"
+"@if t(strlen(mailinfo(last(maillist(#1)),tolist,#1)))={@log smoke=TC013: mailinfo tolist. Succeeded.;@trig me/tr.done},{@log smoke=TC013: mailinfo tolist. Failed (tolist=[mailinfo(last(maillist(#1)),tolist,#1)]).;@trig me/tr.done}"
 <
 !146
 "test_mailsend_fn"
