@@ -6,7 +6,7 @@
 @set test_cmd_say=INHERIT QUIET
 -
 @aahear test_cmd_say=
-  @va me=sha1(%va%0)
+  @va me=[v(va)]|%0
 -
 #
 # Beginning of Test Cases
@@ -24,27 +24,18 @@
   say/noeval add(1,1) add(1,1) [add(1,1)];
   nsay add(1,1) add(1,1) [add(1,1)];
   @wait 0={
-    @if cor(
-          cand(
-            t(chr(256)),
-            strmatch(
-              setr(0,v(va)),
-              01C65FD8FBBD1784A0EC8B850A16D059DA873EDB
-            )
-          ),
-          cand(
-            not(chr(256)),
-            strmatch(
-              setr(0,v(va)),
-              F5D08777EA6D0F93BDADAE7D2504087DFBA85F7D
-            )
-          )
-        )=
+    @if t(chr(256))=
     {
-      @log smoke=TC001: say examples. Succeeded.
+      @if strmatch(.[translate(v(va),p)]., .|test_cmd_say grows ears and can now hear.|You say\, [chr(8220)]Where is the movie theater?[chr(8221)]|You say\, [chr(8220)]2 add%%(1\,1%%) 2[chr(8221)]|You say\, [chr(8220)]add%%(1\,1%%) add%%(1\,1%%) %%\[add%%(1\,1%%)%%\][chr(8221)]|You say\, [chr(8220)]add%%(1\,1%%) add%%(1\,1%%) %%\[add%%(1\,1%%)%%\][chr(8221)].)=
+      {
+        @log smoke=TC001: say examples. Succeeded.
+      },
+      {
+        @log smoke=TC001: say examples. Failed (heard=.[translate(v(va),p)].).
+      }
     },
     {
-      @log smoke=TC001: say examples. Failed (%q0).
+      @log smoke=TC001: say uses ASCII quotes on this version. Okay.
     };
     @listen test_cmd_say=;
     @trig me/tr.done

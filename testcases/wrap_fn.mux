@@ -18,40 +18,40 @@
 # Test Case #1 - Help file examples.
 #
 &tr.tc001 test_wrap_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [wrap(Hi there. How are you?, 10, right, |%b, %b|)]
-            [wrap(You see before you a stranger., 10, left,,,6)]
-          )
-        ),
-        C50CE42A68B71A06A8D1C4E4BD8245A670E1234E
+  @if cand(
+        strmatch(.[wrap(Hi there. How are you?, 10, right, |%b, %b|)]., .|%b%bHi%bthere.%b|%r|%b%b%b%bHow%bare%b|%r|%b%b%b%b%b%b%byou?%b|.),
+        strmatch(.[wrap(You see before you a stranger., 10, left,,,6)]., .You%bsee%b%b%b%r%b%b%b%b%b%bbefore%byou%r%b%b%b%b%b%ba%b%b%b%b%b%b%b%b%b%r%b%b%b%b%b%bstranger.%b.)
       )=
+
   {
     @log smoke=TC001: wrap examples. Succeeded.
   },
   {
-    @log smoke=TC001: wrap examples. Failed (%q0).
+    @log smoke=TC001: wrap examples Failed.;
+    @log smoke=TC001 actual L0 =.[wrap(Hi there. How are you?, 10, right, |%b, %b|)]=.;
+    @log smoke=TC001 actual L1 =.[wrap(You see before you a stranger., 10, left,,,6)]=.
   }
 -
 #
 # Test Case #2 - Regressions.
 #
 &tr.tc002 test_wrap_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [wrap(Test%rTest,10,c,>,<)]
-            [wrap(Test1%r%rTest2,11,c)]
-            [wrap(This is some test text to demonstrate the leading space issue that is occurring,69)]
-            [wrap(%rth,10,left,|,|,2)]
-          )
-        ),
-        859B45C2E5BBDE3E6F35F4564F1EA9ABA55F7BDA
+  @if cand(
+        strmatch(.[wrap(Test%rTest,10,c,>,<)]., .>%b%b%bTest%b%b%b<%r>%b%b%bTest%b%b%b<.),
+        strmatch(.[wrap(Test1%r%rTest2,11,c)]., .%b%b%bTest1%b%b%b%r%b%b%b%b%b%b%b%b%b%b%b%r%b%b%bTest2%b%b%b.),
+        strmatch(.[wrap(This is some test text to demonstrate the leading space issue that is occurring,69)]., .This%bis%bsome%btest%btext%bto%bdemonstrate%bthe%bleading%bspace%bissue%bthat%bis%roccurring%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b%b.),
+        strmatch(.[wrap(%rth,10,left,|,|,2)]., .|%b%b%b%b%b%b%b%b%b%b|%r%b%b|th%b%b%b%b%b%b%b%b|.)
       )=
+
   {
     @log smoke=TC002: Regressions. Succeeded.
   },
   {
-    @log smoke=TC002: Regressions. Failed (%q0).
+    @log smoke=TC002: Regressions Failed.;
+    @log smoke=TC002 actual L0 =.[wrap(Test%rTest,10,c,>,<)]=.;
+    @log smoke=TC002 actual L1 =.[wrap(Test1%r%rTest2,11,c)]=.;
+    @log smoke=TC002 actual L2 =.[wrap(This is some test text to demonstrate the leading space issue that is occurring,69)]=.;
+    @log smoke=TC002 actual L3 =.[wrap(%rth,10,left,|,|,2)]=.
   }
 -
 #

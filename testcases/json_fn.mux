@@ -15,127 +15,133 @@
 # Test Case #1 - json() construction.
 #
 &tr.tc001 test_json_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [json(string,Hello World)]
-            [json(number,42)]
-            [json(boolean,1)]
-            [json(boolean,0)]
-            [json(null)]
-          )
-        ),
-        557C2F1F7E467CB4566594B50918D91811AC79C3
+  @if cand(
+        strmatch(.[json(string,Hello World)]., ."Hello%bWorld".),
+        strmatch(.[json(number,42)]., .42.),
+        strmatch(.[json(boolean,1)]., .true.),
+        strmatch(.[json(boolean,0)]., .false.),
+        strmatch(.[json(null)]., .null.)
       )=
+
   {
     @log smoke=TC001: json construction. Succeeded.;
   },
   {
-    @log smoke=TC001: json construction. Failed (%q0).;
+    @log smoke=TC001: json construction Failed.;
+    @log smoke=TC001 actual L0 =.[json(string,Hello World)]=.;
+    @log smoke=TC001 actual L1 =.[json(number,42)]=.;
+    @log smoke=TC001 actual L2 =.[json(boolean,1)]=.;
+    @log smoke=TC001 actual L3 =.[json(boolean,0)]=.;
+    @log smoke=TC001 actual L4 =.[json(null)]=.;
   }
 -
 #
 # Test Case #2 - json_query() type.
 #
 &tr.tc002 test_json_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [json_query({"a":1})]
-            [json_query([1,2,3])]
-            [json_query("hello")]
-            [json_query(42)]
-            [json_query(true)]
-            [json_query(null)]
-          )
-        ),
-        EE241811877D969257E4846E9ABCE91D02D208BB
+  @if cand(
+        strmatch(.[json_query(\{"a":1\})]., .object.),
+        strmatch(.[json_query(\[1\,2\,3\])]., .array.),
+        strmatch(.[json_query("hello")]., .text.),
+        strmatch(.[json_query(42)]., .integer.),
+        strmatch(.[json_query(true)]., .true.),
+        strmatch(.[json_query(null)]., .null.)
       )=
+
   {
     @log smoke=TC002: json_query type. Succeeded.;
   },
   {
-    @log smoke=TC002: json_query type. Failed (%q0).;
+    @log smoke=TC002: json_query type Failed.;
+    @log smoke=TC002 actual L0 =.[json_query(\{"a":1\})]=.;
+    @log smoke=TC002 actual L1 =.[json_query(\[1\,2\,3\])]=.;
+    @log smoke=TC002 actual L2 =.[json_query("hello")]=.;
+    @log smoke=TC002 actual L3 =.[json_query(42)]=.;
+    @log smoke=TC002 actual L4 =.[json_query(true)]=.;
+    @log smoke=TC002 actual L5 =.[json_query(null)]=.;
   }
 -
 #
 # Test Case #3 - json_query() get and size.
 #
 &tr.tc003 test_json_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [json_query({"name":"Bob","age":30},get,$.name)]
-            [json_query({"name":"Bob","age":30},get,$.age)]
-            [json_query([10,20,30],size)]
-            [json_query({"a":1,"b":2},size)]
-          )
-        ),
-        8357B685620ADF1C8B0689B11BE6D75D82CD84B6
+  @if cand(
+        strmatch(.[json_query(\{"name":"Bob"\,"age":30\},get,$.name)]., .Bob.),
+        strmatch(.[json_query(\{"name":"Bob"\,"age":30\},get,$.age)]., .30.),
+        strmatch(.[json_query(\[10\,20\,30\],size)]., .3.),
+        strmatch(.[json_query(\{"a":1\,"b":2\},size)]., .2.)
       )=
+
   {
     @log smoke=TC003: json_query get/size. Succeeded.;
   },
   {
-    @log smoke=TC003: json_query get/size. Failed (%q0).;
+    @log smoke=TC003: json_query get/size Failed.;
+    @log smoke=TC003 actual L0 =.[json_query(\{"name":"Bob"\,"age":30\},get,$.name)]=.;
+    @log smoke=TC003 actual L1 =.[json_query(\{"name":"Bob"\,"age":30\},get,$.age)]=.;
+    @log smoke=TC003 actual L2 =.[json_query(\[10\,20\,30\],size)]=.;
+    @log smoke=TC003 actual L3 =.[json_query(\{"a":1\,"b":2\},size)]=.;
   }
 -
 #
 # Test Case #4 - json_query() keys and exists.
 #
 &tr.tc004 test_json_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [json_query({"a":1,"b":2},keys)]
-            [json_query({"a":1},exists,$.a)]
-            [json_query({"a":1},exists,$.z)]
-          )
-        ),
-        89F13B6196C7B63997CB2833E242BCAA957FEA61
+  @if cand(
+        strmatch(.[json_query(\{"a":1\,"b":2\},keys)]., .a%bb.),
+        strmatch(.[json_query(\{"a":1\},exists,$.a)]., .1.),
+        strmatch(.[json_query(\{"a":1\},exists,$.z)]., .0.)
       )=
+
   {
     @log smoke=TC004: json_query keys/exists. Succeeded.;
   },
   {
-    @log smoke=TC004: json_query keys/exists. Failed (%q0).;
+    @log smoke=TC004: json_query keys/exists Failed.;
+    @log smoke=TC004 actual L0 =.[json_query(\{"a":1\,"b":2\},keys)]=.;
+    @log smoke=TC004 actual L1 =.[json_query(\{"a":1\},exists,$.a)]=.;
+    @log smoke=TC004 actual L2 =.[json_query(\{"a":1\},exists,$.z)]=.;
   }
 -
 #
 # Test Case #5 - json_mod() set/remove.
 #
 &tr.tc005 test_json_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [json_mod({"a":1},set,$.b,2)]
-            [json_mod({"a":1,"b":2},remove,$.b)]
-          )
-        ),
-        9CC0807747A2FFB05FFBAD51A9A0F9570571DB58
+  @if cand(
+        strmatch(.[json_mod(\{"a":1\},set,$.b,2)]., .\{"a":1\,"b":2\}.),
+        strmatch(.[json_mod(\{"a":1\,"b":2\},remove,$.b)]., .\{"a":1\}.)
       )=
+
   {
     @log smoke=TC005: json_mod set/remove. Succeeded.;
   },
   {
-    @log smoke=TC005: json_mod set/remove. Failed (%q0).;
+    @log smoke=TC005: json_mod set/remove Failed.;
+    @log smoke=TC005 actual L0 =.[json_mod(\{"a":1\},set,$.b,2)]=.;
+    @log smoke=TC005 actual L1 =.[json_mod(\{"a":1\,"b":2\},remove,$.b)]=.;
   }
 -
 #
 # Test Case #6 - json_mod() insert/replace.
 #
 &tr.tc006 test_json_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [json_mod({"a":1},insert,$.b,2)]
-            [json_mod({"a":1},insert,$.a,99)]
-            [json_mod({"a":1},replace,$.a,99)]
-            [json_mod({"a":1},replace,$.z,99)]
-          )
-        ),
-        8357B685620ADF1C8B0689B11BE6D75D82CD84B6
+  @if cand(
+        strmatch(.[json_mod(\{"a":1\},insert,$.b,2)]., .\{"a":1\,"b":2\}.),
+        strmatch(.[json_mod(\{"a":1\},insert,$.a,99)]., .\{"a":1\}.),
+        strmatch(.[json_mod(\{"a":1\},replace,$.a,99)]., .\{"a":99\}.),
+        strmatch(.[json_mod(\{"a":1\},replace,$.z,99)]., .\{"a":1\}.)
       )=
+
   {
     @log smoke=TC006: json_mod insert/replace. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC006: json_mod insert/replace. Failed (%q0).;
+    @log smoke=TC006: json_mod insert/replace Failed.;
+    @log smoke=TC006 actual L0 =.[json_mod(\{"a":1\},insert,$.b,2)]=.;
+    @log smoke=TC006 actual L1 =.[json_mod(\{"a":1\},insert,$.a,99)]=.;
+    @log smoke=TC006 actual L2 =.[json_mod(\{"a":1\},replace,$.a,99)]=.;
+    @log smoke=TC006 actual L3 =.[json_mod(\{"a":1\},replace,$.z,99)]=.;
     @trig me/tr.done
   }
 -

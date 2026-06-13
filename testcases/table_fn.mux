@@ -15,19 +15,17 @@
 # Test Case #1 - Basic table formatting.
 #
 &tr.tc001 test_table_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [table(a b c d e f,2)]
-          )
-        ),
-        0A22A353B58BFDB91D6925AC0066D8E90DD7D0D7
+  @if cand(
+        strmatch(.[table(a b c d e f,2)]., .a%b%bb%b%bc%b%bd%b%be%b%bf%b.)
       )=
+
   {
     @log smoke=TC001: table basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: table basic operations. Failed (%q0).;
+    @log smoke=TC001: table basic operations Failed.;
+    @log smoke=TC001 actual L0 =.[table(a b c d e f,2)]=.;
     @trig me/tr.done
   }
 -

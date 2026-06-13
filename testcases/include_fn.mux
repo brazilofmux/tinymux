@@ -36,18 +36,16 @@
 &tr.tc001 test_include_fn=
   @eval setq(0,UNSET);
   @include me/fn_add1=5;
-  @if strmatch(
-        setr(9,sha1(
-            %q0
-          )
-        ),
-        C1DFD96EEA8CC2B62785275BCA38AC261256E278
+  @if cand(
+        strmatch(.%q0., .6.)
       )=
+
   {
     @log smoke=TC001: basic include with args. Succeeded.
   },
   {
-    @log smoke=TC001: basic include with args. Failed (%q9).
+    @log smoke=TC001: basic include with args Failed.;
+    @log smoke=TC001 actual L0 =.%q0=.
   }
 -
 #
@@ -58,18 +56,16 @@
   @eval setq(0,UNSET);
   @eval setq(1,UNSET);
   @include me/fn_multi;
-  @if strmatch(
-        setr(9,sha1(
-            %q0 %q1
-          )
-        ),
-        2AAE6C35C94FCFB415DBE95F408B9CE91EE846ED
+  @if cand(
+        strmatch(.%q0 %q1., .hello%bworld.)
       )=
+
   {
     @log smoke=TC002: multi-command include. Succeeded.
   },
   {
-    @log smoke=TC002: multi-command include. Failed (%q9).
+    @log smoke=TC002: multi-command include Failed.;
+    @log smoke=TC002 actual L0 =.%q0 %q1=.
   }
 -
 #
@@ -90,18 +86,16 @@
 -
 &tr.tc003 test_include_fn=
   @include/nobreak me/fn_tc003_inner;
-  @if strmatch(
-        setr(9,sha1(
-            %q0
-          )
-        ),
-        51DE2B835BD35A67EB32DBCD3D77D4B96E5AA39D
+  @if cand(
+        strmatch(.%q0., .before.)
       )=
+
   {
     @log smoke=TC003: break propagation. Succeeded.
   },
   {
-    @log smoke=TC003: break propagation. Failed (%q9).
+    @log smoke=TC003: break propagation Failed.;
+    @log smoke=TC003 actual L0 =.%q0=.
   }
 -
 #
@@ -115,18 +109,16 @@
   @eval setq(0,before);
   @include/nobreak me/fn_tc004_break;
   @eval setq(0,after_nobreak);
-  @if strmatch(
-        setr(9,sha1(
-            %q0
-          )
-        ),
-        2208FE2F3E8DF235E8EC24735B03F0A17FBEACD3
+  @if cand(
+        strmatch(.%q0., .after_nobreak.)
       )=
+
   {
     @log smoke=TC004: nobreak switch. Succeeded.
   },
   {
-    @log smoke=TC004: nobreak switch. Failed (%q9).
+    @log smoke=TC004: nobreak switch Failed.;
+    @log smoke=TC004 actual L0 =.%q0=.
   }
 -
 #
@@ -136,18 +128,16 @@
 &tr.tc005 test_include_fn=
   @eval setq(5,original);
   @include/localize me/fn_setq;
-  @if strmatch(
-        setr(9,sha1(
-            %q5
-          )
-        ),
-        D73EF92426F2B11DFC4AED4D4BFC41C49EE1087C
+  @if cand(
+        strmatch(.%q5., .original.)
       )=
+
   {
     @log smoke=TC005: localize switch. Succeeded.
   },
   {
-    @log smoke=TC005: localize switch. Failed (%q9).
+    @log smoke=TC005: localize switch Failed.;
+    @log smoke=TC005 actual L0 =.%q5=.
   }
 -
 #
@@ -157,18 +147,16 @@
 &tr.tc006 test_include_fn=
   @eval setq(5,original);
   @include me/fn_setq;
-  @if strmatch(
-        setr(9,sha1(
-            %q5
-          )
-        ),
-        00F554D678F26112AAD9D51D7A8D2D590EB74801
+  @if cand(
+        strmatch(.%q5., .included.)
       )=
+
   {
     @log smoke=TC006: register leakage without localize. Succeeded.
   },
   {
-    @log smoke=TC006: register leakage without localize. Failed (%q9).
+    @log smoke=TC006: register leakage without localize Failed.;
+    @log smoke=TC006 actual L0 =.%q5=.
   }
 -
 #
@@ -178,18 +166,16 @@
 &tr.tc007 test_include_fn=
   @eval setq(0,UNSET);
   @include me/fn_passthru=aaa,bbb;
-  @if strmatch(
-        setr(9,sha1(
-            %q0
-          )
-        ),
-        196BD4CF38EFB68D07681953A3A62BF7FF13A19E
+  @if cand(
+        strmatch(.%q0., .aaa-bbb.)
       )=
+
   {
     @log smoke=TC007: include with explicit args. Succeeded.
   },
   {
-    @log smoke=TC007: include with explicit args. Failed (%q9).
+    @log smoke=TC007: include with explicit args Failed.;
+    @log smoke=TC007 actual L0 =.%q0=.
   }
 -
 #
@@ -199,18 +185,16 @@
 &tr.tc008 test_include_fn=
   @eval setq(0,UNSET);
   @include me/fn_cmdprefix=hello;
-  @if strmatch(
-        setr(9,sha1(
-            %q0
-          )
-        ),
-        228D6DDD54EA9EB59E222D5DD3FA6D3221BE892A
+  @if cand(
+        strmatch(.%q0., .body_hello.)
       )=
+
   {
     @log smoke=TC008: strip command prefix. Succeeded.
   },
   {
-    @log smoke=TC008: strip command prefix. Failed (%q9).
+    @log smoke=TC008: strip command prefix Failed.;
+    @log smoke=TC008 actual L0 =.%q0=.
   }
 -
 #
@@ -221,18 +205,16 @@
 &tr.tc009 test_include_fn=
   @eval setq(5,before_clear);
   @include/clearregs me/fn_setq;
-  @if strmatch(
-        setr(9,sha1(
-            %q5
-          )
-        ),
-        00F554D678F26112AAD9D51D7A8D2D590EB74801
+  @if cand(
+        strmatch(.%q5., .included.)
       )=
+
   {
     @log smoke=TC009: clearregs switch. Succeeded.
   },
   {
-    @log smoke=TC009: clearregs switch. Failed (%q9).
+    @log smoke=TC009: clearregs switch Failed.;
+    @log smoke=TC009 actual L0 =.%q5=.
   }
 -
 #
