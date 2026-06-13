@@ -24,289 +24,193 @@
 # Test Case #1 - chaninfo(chan, name) returns channel name.
 #
 &tr.tc001 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chaninfo(citest,name)]
-          )
-        ),
-        9ADE11C4AAEE2535DE766CE2F62FC25585457BA5
-      )=
+  @if strmatch(chaninfo(citest,name), citest)=
   {
     @log smoke=TC001: chaninfo name. Succeeded.
   },
   {
-    @log smoke=TC001: chaninfo name. Failed (%q0).
+    @log smoke=TC001: chaninfo name. Failed (name=[chaninfo(citest,name)]).
   }
 -
 #
 # Test Case #2 - chaninfo(chan, header) returns channel header.
 #
 &tr.tc002 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chaninfo(citest,header)]
-          )
-        ),
-        E5012BA9BFE508F51887FFD5C21FAC70AF87EEBB
-      )=
+  @if strmatch(chaninfo(citest,header), <CI>)=
   {
     @log smoke=TC002: chaninfo header. Succeeded.
   },
   {
-    @log smoke=TC002: chaninfo header. Failed (%q0).
+    @log smoke=TC002: chaninfo header. Failed (header=[chaninfo(citest,header)]).
   }
 -
 #
 # Test Case #3 - chaninfo(chan, owner) returns a dbref.
 #
 &tr.tc003 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isdbref(chaninfo(citest,owner))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if isdbref(chaninfo(citest,owner))=
   {
     @log smoke=TC003: chaninfo owner. Succeeded.
   },
   {
-    @log smoke=TC003: chaninfo owner. Failed (%q0).
+    @log smoke=TC003: chaninfo owner. Failed (owner=[chaninfo(citest,owner)]).
   }
 -
 #
 # Test Case #4 - chaninfo(chan, type) returns an integer.
 #
 &tr.tc004 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isint(chaninfo(citest,type))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if isint(chaninfo(citest,type))=
   {
     @log smoke=TC004: chaninfo type. Succeeded.
   },
   {
-    @log smoke=TC004: chaninfo type. Failed (%q0).
+    @log smoke=TC004: chaninfo type. Failed (type=[chaninfo(citest,type)]).
   }
 -
 #
 # Test Case #5 - chaninfo(chan, flags) includes P for public channel.
 #
 &tr.tc005 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmatch(chaninfo(citest,flags),*P*)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if strmatch(chaninfo(citest,flags), *P*)=
   {
     @log smoke=TC005: chaninfo flags. Succeeded.
   },
   {
-    @log smoke=TC005: chaninfo flags. Failed (%q0).
+    @log smoke=TC005: chaninfo flags. Failed (flags=[chaninfo(citest,flags)]).
   }
 -
 #
 # Test Case #6 - chaninfo(chan, charge) returns 0.
 #
 &tr.tc006 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chaninfo(citest,charge)]
-          )
-        ),
-        B6589FC6AB0DC82CF12099D1C2D40AB994E8410C
-      )=
+  @if eq(chaninfo(citest,charge), 0)=
   {
     @log smoke=TC006: chaninfo charge. Succeeded.
   },
   {
-    @log smoke=TC006: chaninfo charge. Failed (%q0).
+    @log smoke=TC006: chaninfo charge. Failed (charge=[chaninfo(citest,charge)]).
   }
 -
 #
 # Test Case #7 - chaninfo(chan, users) returns at least 1.
 #
 &tr.tc007 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [gte(chaninfo(citest,users),1)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if gte(chaninfo(citest,users), 1)=
   {
     @log smoke=TC007: chaninfo users. Succeeded.
   },
   {
-    @log smoke=TC007: chaninfo users. Failed (%q0).
+    @log smoke=TC007: chaninfo users. Failed (users=[chaninfo(citest,users)]).
   }
 -
 #
 # Test Case #8 - chaninfo(chan, msgs) returns an integer.
 #
 &tr.tc008 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [isint(chaninfo(citest,msgs))]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if isint(chaninfo(citest,msgs))=
   {
     @log smoke=TC008: chaninfo msgs. Succeeded.
   },
   {
-    @log smoke=TC008: chaninfo msgs. Failed (%q0).
+    @log smoke=TC008: chaninfo msgs. Failed (msgs=[chaninfo(citest,msgs)]).
   }
 -
 #
 # Test Case #9 - chaninfo(bogus, name) returns #-1 CHANNEL NOT FOUND.
 #
 &tr.tc009 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chaninfo(nosuch,name)]
-          )
-        ),
-        770632F3C8D766298FD8123A49357D082D5A4672
-      )=
+  @if strmatch(chaninfo(nosuch,name), #-1 CHANNEL NOT FOUND)=
   {
     @log smoke=TC009: chaninfo not found. Succeeded.
   },
   {
-    @log smoke=TC009: chaninfo not found. Failed (%q0).
+    @log smoke=TC009: chaninfo not found. Failed (notfound=[chaninfo(nosuch,name)]).
   }
 -
 #
 # Test Case #10 - chaninfo(chan, badfield) returns #-1 INVALID FIELD.
 #
 &tr.tc010 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmatch(chaninfo(citest,badfield),#-1 INVALID FIELD)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if strmatch(chaninfo(citest,badfield), #-1 INVALID FIELD)=
   {
     @log smoke=TC010: chaninfo invalid field. Succeeded.
   },
   {
-    @log smoke=TC010: chaninfo invalid field. Failed (%q0).
+    @log smoke=TC010: chaninfo invalid field. Failed (badfield=[chaninfo(citest,badfield)]).
   }
 -
 #
 # Test Case #11 - chaninfo on subscriber's private channel works.
 #
 &tr.tc011 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [strmatch(chaninfo(cipriv,name),cipriv)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if strmatch(chaninfo(cipriv,name), cipriv)=
   {
     @log smoke=TC011: chaninfo private subscriber. Succeeded.
   },
   {
-    @log smoke=TC011: chaninfo private subscriber. Failed (%q0).
+    @log smoke=TC011: chaninfo private subscriber. Failed (priv=[chaninfo(cipriv,name)]).
   }
 -
 #
 # Test Case #12 - chaninfo(chan, canjoin) returns 1 for public channel.
 #
 &tr.tc012 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chaninfo(citest,canjoin)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if eq(chaninfo(citest,canjoin), 1)=
   {
     @log smoke=TC012: chaninfo canjoin. Succeeded.
   },
   {
-    @log smoke=TC012: chaninfo canjoin. Failed (%q0).
+    @log smoke=TC012: chaninfo canjoin. Failed (canjoin=[chaninfo(citest,canjoin)]).
   }
 -
 #
 # Test Case #13 - chaninfo(chan, cantransmit) returns 1.
 #
 &tr.tc013 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chaninfo(citest,cantransmit)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if eq(chaninfo(citest,cantransmit), 1)=
   {
     @log smoke=TC013: chaninfo cantransmit. Succeeded.
   },
   {
-    @log smoke=TC013: chaninfo cantransmit. Failed (%q0).
+    @log smoke=TC013: chaninfo cantransmit. Failed (cantransmit=[chaninfo(citest,cantransmit)]).
   }
 -
 #
 # Test Case #14 - chaninfo(chan, canreceive) returns 1.
 #
 &tr.tc014 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chaninfo(citest,canreceive)]
-          )
-        ),
-        356A192B7913B04C54574D18C28D46E6395428AB
-      )=
+  @if eq(chaninfo(citest,canreceive), 1)=
   {
     @log smoke=TC014: chaninfo canreceive. Succeeded.
   },
   {
-    @log smoke=TC014: chaninfo canreceive. Failed (%q0).
+    @log smoke=TC014: chaninfo canreceive. Failed (canreceive=[chaninfo(citest,canreceive)]).
   }
 -
 #
 # Test Case #15 - chanfind(header) returns channel name.
 #
 &tr.tc015 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chanfind(<CI>)]
-          )
-        ),
-        9ADE11C4AAEE2535DE766CE2F62FC25585457BA5
-      )=
+  @if strmatch(chanfind(<CI>), citest)=
   {
     @log smoke=TC015: chanfind by header. Succeeded.
   },
   {
-    @log smoke=TC015: chanfind by header. Failed (%q0).
+    @log smoke=TC015: chanfind by header. Failed (find=[chanfind(<CI>)]).
   }
 -
 #
 # Test Case #16 - chanfind(bogus) returns #-1 CHANNEL NOT FOUND.
 #
 &tr.tc016 test_chaninfo_fn=
-  @if strmatch(
-        setr(0,sha1(
-            [chanfind(nosuchheader)]
-          )
-        ),
-        770632F3C8D766298FD8123A49357D082D5A4672
-      )=
+  @if strmatch(chanfind(nosuchheader), #-1 CHANNEL NOT FOUND)=
   {
     @log smoke=TC016: chanfind not found. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC016: chanfind not found. Failed (%q0).;
+    @log smoke=TC016: chanfind not found. Failed (find=[chanfind(nosuchheader)]).;
     @trig me/tr.done
   }
 -

@@ -31,213 +31,213 @@
   @log smoke=Beginning convtime() test cases.
 -
 #
-# Test Case #1 - Leaving the timezone code paths out of the mix, test that
-#                every day in 2006 produces the correct UTC time stamp.
+# Test Case #1 - Calendar invariants for 2006: the Jan 1 anchor
+# epoch, every month-boundary delta (Feb has 28 days), the one-day
+# step, and an exact interior timestamp.
 #
 &tr.tc001 test_convtime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            iter(lnum(1,31),convtime(jan ## 00:00:00 2006,utc)) 
-           [iter(lnum(1,28),convtime(feb ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,31),convtime(mar ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,30),convtime(apr ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,31),convtime(may ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,30),convtime(jun ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,31),convtime(jul ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,31),convtime(aug ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,30),convtime(sep ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,31),convtime(oct ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,30),convtime(nov ## 00:00:00 2006,utc))] 
-           [iter(lnum(1,31),convtime(dec ## 00:00:00 2006,utc))] 
-          )
-        ),
-        9FE8D9AAA0AB16874BD7216A1C691186575C31CF
+  @if cand(
+        eq(convtime(jan 1 00:00:00 2006,utc), 1136073600),
+        eq(sub(convtime(feb 1 00:00:00 2006,utc), convtime(jan 1 00:00:00 2006,utc)), 2678400),
+        eq(sub(convtime(mar 1 00:00:00 2006,utc), convtime(feb 1 00:00:00 2006,utc)), 2419200),
+        eq(sub(convtime(apr 1 00:00:00 2006,utc), convtime(mar 1 00:00:00 2006,utc)), 2678400),
+        eq(sub(convtime(may 1 00:00:00 2006,utc), convtime(apr 1 00:00:00 2006,utc)), 2592000),
+        eq(sub(convtime(jun 1 00:00:00 2006,utc), convtime(may 1 00:00:00 2006,utc)), 2678400),
+        eq(sub(convtime(jul 1 00:00:00 2006,utc), convtime(jun 1 00:00:00 2006,utc)), 2592000),
+        eq(sub(convtime(aug 1 00:00:00 2006,utc), convtime(jul 1 00:00:00 2006,utc)), 2678400),
+        eq(sub(convtime(sep 1 00:00:00 2006,utc), convtime(aug 1 00:00:00 2006,utc)), 2678400),
+        eq(sub(convtime(oct 1 00:00:00 2006,utc), convtime(sep 1 00:00:00 2006,utc)), 2592000),
+        eq(sub(convtime(nov 1 00:00:00 2006,utc), convtime(oct 1 00:00:00 2006,utc)), 2678400),
+        eq(sub(convtime(dec 1 00:00:00 2006,utc), convtime(nov 1 00:00:00 2006,utc)), 2592000),
+        eq(sub(convtime(jan 1 00:00:00 2007,utc), convtime(dec 1 00:00:00 2006,utc)), 2678400),
+        eq(sub(convtime(jan 2 00:00:00 2006,utc), convtime(jan 1 00:00:00 2006,utc)), 86400),
+        eq(convtime(jul 15 12:30:45 2006,utc), 1152966645)
       )=
   {
-    @log smoke=TC001: Every day in 2006 Succeeded.
+    @log smoke=TC001: convtime invariants for 2006. Succeeded.
   },
   {
-    @log smoke=TC001: At least one day in 2006 failed (%q0).
+    @log smoke=TC001: convtime invariants for 2006. Failed (anchor=[convtime(jan 1 00:00:00 2006,utc)] feb=[convtime(feb 1 00:00:00 2006,utc)] mar=[convtime(mar 1 00:00:00 2006,utc)] jul15=[convtime(jul 15 12:30:45 2006,utc)] nextjan=[convtime(jan 1 00:00:00 2007,utc)]).
   }
 -
 #
-# Test Case #2 - Leaving out timezone conversions, test that every day in 1970
-#                produces the correct UTC time stamp.
+# Test Case #2 - Calendar invariants for 1970: the Jan 1 anchor
+# epoch, every month-boundary delta (Feb has 28 days), the one-day
+# step, and an exact interior timestamp.
 #
 &tr.tc002 test_convtime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            iter(lnum(1,31),convtime(jan ## 00:00:00 1970,utc)) 
-           [iter(lnum(1,28),convtime(feb ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,31),convtime(mar ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,30),convtime(apr ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,31),convtime(may ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,30),convtime(jun ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,31),convtime(jul ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,31),convtime(aug ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,30),convtime(sep ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,31),convtime(oct ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,30),convtime(nov ## 00:00:00 1970,utc))] 
-           [iter(lnum(1,31),convtime(dec ## 00:00:00 1970,utc))] 
-          )
-        ),
-        BCCFCB1C5A25BE1A50E7579A2F28ACF4E34799B6
+  @if cand(
+        eq(convtime(jan 1 00:00:00 1970,utc), 0),
+        eq(sub(convtime(feb 1 00:00:00 1970,utc), convtime(jan 1 00:00:00 1970,utc)), 2678400),
+        eq(sub(convtime(mar 1 00:00:00 1970,utc), convtime(feb 1 00:00:00 1970,utc)), 2419200),
+        eq(sub(convtime(apr 1 00:00:00 1970,utc), convtime(mar 1 00:00:00 1970,utc)), 2678400),
+        eq(sub(convtime(may 1 00:00:00 1970,utc), convtime(apr 1 00:00:00 1970,utc)), 2592000),
+        eq(sub(convtime(jun 1 00:00:00 1970,utc), convtime(may 1 00:00:00 1970,utc)), 2678400),
+        eq(sub(convtime(jul 1 00:00:00 1970,utc), convtime(jun 1 00:00:00 1970,utc)), 2592000),
+        eq(sub(convtime(aug 1 00:00:00 1970,utc), convtime(jul 1 00:00:00 1970,utc)), 2678400),
+        eq(sub(convtime(sep 1 00:00:00 1970,utc), convtime(aug 1 00:00:00 1970,utc)), 2678400),
+        eq(sub(convtime(oct 1 00:00:00 1970,utc), convtime(sep 1 00:00:00 1970,utc)), 2592000),
+        eq(sub(convtime(nov 1 00:00:00 1970,utc), convtime(oct 1 00:00:00 1970,utc)), 2678400),
+        eq(sub(convtime(dec 1 00:00:00 1970,utc), convtime(nov 1 00:00:00 1970,utc)), 2592000),
+        eq(sub(convtime(jan 1 00:00:00 1971,utc), convtime(dec 1 00:00:00 1970,utc)), 2678400),
+        eq(sub(convtime(jan 2 00:00:00 1970,utc), convtime(jan 1 00:00:00 1970,utc)), 86400),
+        eq(convtime(jul 15 12:30:45 1970,utc), 16893045)
       )=
   {
-    @log smoke=TC002: Every day in 1970 Succeeded.
+    @log smoke=TC002: convtime invariants for 1970. Succeeded.
   },
   {
-    @log smoke=TC002: At least one day in 1970 failed (%q0).
+    @log smoke=TC002: convtime invariants for 1970. Failed (anchor=[convtime(jan 1 00:00:00 1970,utc)] feb=[convtime(feb 1 00:00:00 1970,utc)] mar=[convtime(mar 1 00:00:00 1970,utc)] jul15=[convtime(jul 15 12:30:45 1970,utc)] nextjan=[convtime(jan 1 00:00:00 1971,utc)]).
   }
 -
 #
-# Test Case #3 - Leaving out timezone conversions, test that every day in 1969
-#                produces the correct UTC time stamp.
+# Test Case #3 - Calendar invariants for 1969: the Jan 1 anchor
+# epoch, every month-boundary delta (Feb has 28 days), the one-day
+# step, and an exact interior timestamp.
 #
 &tr.tc003 test_convtime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            iter(lnum(1,31),convtime(jan ## 00:00:00 1969,utc)) 
-           [iter(lnum(1,28),convtime(feb ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,31),convtime(mar ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,30),convtime(apr ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,31),convtime(may ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,30),convtime(jun ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,31),convtime(jul ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,31),convtime(aug ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,30),convtime(sep ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,31),convtime(oct ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,30),convtime(nov ## 00:00:00 1969,utc))] 
-           [iter(lnum(1,31),convtime(dec ## 00:00:00 1969,utc))] 
-          )
-        ),
-        095DE0A215B35BEC232FB806D3743EE3FB597AF4
+  @if cand(
+        eq(convtime(jan 1 00:00:00 1969,utc), -31536000),
+        eq(sub(convtime(feb 1 00:00:00 1969,utc), convtime(jan 1 00:00:00 1969,utc)), 2678400),
+        eq(sub(convtime(mar 1 00:00:00 1969,utc), convtime(feb 1 00:00:00 1969,utc)), 2419200),
+        eq(sub(convtime(apr 1 00:00:00 1969,utc), convtime(mar 1 00:00:00 1969,utc)), 2678400),
+        eq(sub(convtime(may 1 00:00:00 1969,utc), convtime(apr 1 00:00:00 1969,utc)), 2592000),
+        eq(sub(convtime(jun 1 00:00:00 1969,utc), convtime(may 1 00:00:00 1969,utc)), 2678400),
+        eq(sub(convtime(jul 1 00:00:00 1969,utc), convtime(jun 1 00:00:00 1969,utc)), 2592000),
+        eq(sub(convtime(aug 1 00:00:00 1969,utc), convtime(jul 1 00:00:00 1969,utc)), 2678400),
+        eq(sub(convtime(sep 1 00:00:00 1969,utc), convtime(aug 1 00:00:00 1969,utc)), 2678400),
+        eq(sub(convtime(oct 1 00:00:00 1969,utc), convtime(sep 1 00:00:00 1969,utc)), 2592000),
+        eq(sub(convtime(nov 1 00:00:00 1969,utc), convtime(oct 1 00:00:00 1969,utc)), 2678400),
+        eq(sub(convtime(dec 1 00:00:00 1969,utc), convtime(nov 1 00:00:00 1969,utc)), 2592000),
+        eq(sub(convtime(jan 1 00:00:00 1970,utc), convtime(dec 1 00:00:00 1969,utc)), 2678400),
+        eq(sub(convtime(jan 2 00:00:00 1969,utc), convtime(jan 1 00:00:00 1969,utc)), 86400),
+        eq(convtime(jul 15 12:30:45 1969,utc), -14642955)
       )=
   {
-    @log smoke=TC003: Every day in 1969 Succeeded.
+    @log smoke=TC003: convtime invariants for 1969. Succeeded.
   },
   {
-    @log smoke=TC003: At least one day in 1969 failed (%q0).
+    @log smoke=TC003: convtime invariants for 1969. Failed (anchor=[convtime(jan 1 00:00:00 1969,utc)] feb=[convtime(feb 1 00:00:00 1969,utc)] mar=[convtime(mar 1 00:00:00 1969,utc)] jul15=[convtime(jul 15 12:30:45 1969,utc)] nextjan=[convtime(jan 1 00:00:00 1970,utc)]).
   }
 -
 #
-# Test Case #4 - Leaving out timezone conversions, test that every day in 1601
-#                produces the correct UTC time stamp.
+# Test Case #4 - Calendar invariants for 1601: the Jan 1 anchor
+# epoch, every month-boundary delta (Feb has 28 days), the one-day
+# step, and an exact interior timestamp.
 #
 &tr.tc004 test_convtime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            iter(lnum(1,31),convtime(jan ## 00:00:00 1601,utc)) 
-           [iter(lnum(1,28),convtime(feb ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,31),convtime(mar ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,30),convtime(apr ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,31),convtime(may ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,30),convtime(jun ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,31),convtime(jul ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,31),convtime(aug ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,30),convtime(sep ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,31),convtime(oct ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,30),convtime(nov ## 00:00:00 1601,utc))] 
-           [iter(lnum(1,31),convtime(dec ## 00:00:00 1601,utc))] 
-          )
-        ),
-        CF81EFE3EFA928E4D36D3574F2094A0D25274681
+  @if cand(
+        eq(convtime(jan 1 00:00:00 1601,utc), -11644473600),
+        eq(sub(convtime(feb 1 00:00:00 1601,utc), convtime(jan 1 00:00:00 1601,utc)), 2678400),
+        eq(sub(convtime(mar 1 00:00:00 1601,utc), convtime(feb 1 00:00:00 1601,utc)), 2419200),
+        eq(sub(convtime(apr 1 00:00:00 1601,utc), convtime(mar 1 00:00:00 1601,utc)), 2678400),
+        eq(sub(convtime(may 1 00:00:00 1601,utc), convtime(apr 1 00:00:00 1601,utc)), 2592000),
+        eq(sub(convtime(jun 1 00:00:00 1601,utc), convtime(may 1 00:00:00 1601,utc)), 2678400),
+        eq(sub(convtime(jul 1 00:00:00 1601,utc), convtime(jun 1 00:00:00 1601,utc)), 2592000),
+        eq(sub(convtime(aug 1 00:00:00 1601,utc), convtime(jul 1 00:00:00 1601,utc)), 2678400),
+        eq(sub(convtime(sep 1 00:00:00 1601,utc), convtime(aug 1 00:00:00 1601,utc)), 2678400),
+        eq(sub(convtime(oct 1 00:00:00 1601,utc), convtime(sep 1 00:00:00 1601,utc)), 2592000),
+        eq(sub(convtime(nov 1 00:00:00 1601,utc), convtime(oct 1 00:00:00 1601,utc)), 2678400),
+        eq(sub(convtime(dec 1 00:00:00 1601,utc), convtime(nov 1 00:00:00 1601,utc)), 2592000),
+        eq(sub(convtime(jan 1 00:00:00 1602,utc), convtime(dec 1 00:00:00 1601,utc)), 2678400),
+        eq(sub(convtime(jan 2 00:00:00 1601,utc), convtime(jan 1 00:00:00 1601,utc)), 86400),
+        eq(convtime(jul 15 12:30:45 1601,utc), -11627580555)
       )=
   {
-    @log smoke=TC004: Every day in 1601 Succeeded.
+    @log smoke=TC004: convtime invariants for 1601. Succeeded.
   },
   {
-    @log smoke=TC004: At least one day in 1601 failed (%q0).
+    @log smoke=TC004: convtime invariants for 1601. Failed (anchor=[convtime(jan 1 00:00:00 1601,utc)] feb=[convtime(feb 1 00:00:00 1601,utc)] mar=[convtime(mar 1 00:00:00 1601,utc)] jul15=[convtime(jul 15 12:30:45 1601,utc)] nextjan=[convtime(jan 1 00:00:00 1602,utc)]).
   }
 -
 #
-# Test Case #5 - Leaving out timezone conversions, test that every day in 1600
-#                produces the correct UTC time stamp.
+# Test Case #5 - Calendar invariants for 1600 (leap): the Jan 1 anchor
+# epoch, every month-boundary delta (Feb has 29 days), the one-day
+# step, and an exact interior timestamp.
 #
 &tr.tc005 test_convtime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            iter(lnum(1,31),convtime(jan ## 00:00:00 1600,utc)) 
-           [iter(lnum(1,28),convtime(feb ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,31),convtime(mar ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,30),convtime(apr ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,31),convtime(may ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,30),convtime(jun ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,31),convtime(jul ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,31),convtime(aug ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,30),convtime(sep ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,31),convtime(oct ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,30),convtime(nov ## 00:00:00 1600,utc))] 
-           [iter(lnum(1,31),convtime(dec ## 00:00:00 1600,utc))] 
-          )
-        ),
-        603B4DF3A3F0289928666DEDC9ACC952A9E400A4
+  @if cand(
+        eq(convtime(jan 1 00:00:00 1600,utc), -11676096000),
+        eq(sub(convtime(feb 1 00:00:00 1600,utc), convtime(jan 1 00:00:00 1600,utc)), 2678400),
+        eq(sub(convtime(mar 1 00:00:00 1600,utc), convtime(feb 1 00:00:00 1600,utc)), 2505600),
+        eq(sub(convtime(apr 1 00:00:00 1600,utc), convtime(mar 1 00:00:00 1600,utc)), 2678400),
+        eq(sub(convtime(may 1 00:00:00 1600,utc), convtime(apr 1 00:00:00 1600,utc)), 2592000),
+        eq(sub(convtime(jun 1 00:00:00 1600,utc), convtime(may 1 00:00:00 1600,utc)), 2678400),
+        eq(sub(convtime(jul 1 00:00:00 1600,utc), convtime(jun 1 00:00:00 1600,utc)), 2592000),
+        eq(sub(convtime(aug 1 00:00:00 1600,utc), convtime(jul 1 00:00:00 1600,utc)), 2678400),
+        eq(sub(convtime(sep 1 00:00:00 1600,utc), convtime(aug 1 00:00:00 1600,utc)), 2678400),
+        eq(sub(convtime(oct 1 00:00:00 1600,utc), convtime(sep 1 00:00:00 1600,utc)), 2592000),
+        eq(sub(convtime(nov 1 00:00:00 1600,utc), convtime(oct 1 00:00:00 1600,utc)), 2678400),
+        eq(sub(convtime(dec 1 00:00:00 1600,utc), convtime(nov 1 00:00:00 1600,utc)), 2592000),
+        eq(sub(convtime(jan 1 00:00:00 1601,utc), convtime(dec 1 00:00:00 1600,utc)), 2678400),
+        eq(sub(convtime(jan 2 00:00:00 1600,utc), convtime(jan 1 00:00:00 1600,utc)), 86400),
+        eq(convtime(jul 15 12:30:45 1600,utc), -11659116555)
       )=
   {
-    @log smoke=TC005: Every day in 1600 Succeeded.
+    @log smoke=TC005: convtime invariants for 1600 (leap). Succeeded.
   },
   {
-    @log smoke=TC005: At least one day in 1600 failed (%q0).
+    @log smoke=TC005: convtime invariants for 1600 (leap). Failed (anchor=[convtime(jan 1 00:00:00 1600,utc)] feb=[convtime(feb 1 00:00:00 1600,utc)] mar=[convtime(mar 1 00:00:00 1600,utc)] jul15=[convtime(jul 15 12:30:45 1600,utc)] nextjan=[convtime(jan 1 00:00:00 1601,utc)]).
   }
 -
 #
-# Test Case #6 - Leaving out timezone conversions, test that every day in year
-#                1 A.D. produces the correct UTC time stamp.
+# Test Case #6 - Calendar invariants for year 1: the Jan 1 anchor
+# epoch, every month-boundary delta (Feb has 28 days), the one-day
+# step, and an exact interior timestamp.
 #
 &tr.tc006 test_convtime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            iter(lnum(1,31),convtime(jan ## 00:00:00 1,utc)) 
-           [iter(lnum(1,28),convtime(feb ## 00:00:00 1,utc))] 
-           [iter(lnum(1,31),convtime(mar ## 00:00:00 1,utc))] 
-           [iter(lnum(1,30),convtime(apr ## 00:00:00 1,utc))] 
-           [iter(lnum(1,31),convtime(may ## 00:00:00 1,utc))] 
-           [iter(lnum(1,30),convtime(jun ## 00:00:00 1,utc))] 
-           [iter(lnum(1,31),convtime(jul ## 00:00:00 1,utc))] 
-           [iter(lnum(1,31),convtime(aug ## 00:00:00 1,utc))] 
-           [iter(lnum(1,30),convtime(sep ## 00:00:00 1,utc))] 
-           [iter(lnum(1,31),convtime(oct ## 00:00:00 1,utc))] 
-           [iter(lnum(1,30),convtime(nov ## 00:00:00 1,utc))] 
-           [iter(lnum(1,31),convtime(dec ## 00:00:00 1,utc))] 
-          )
-        ),
-        D62426344636E8D947A7153C1E5F682104853197
+  @if cand(
+        eq(convtime(jan 1 00:00:00 1,utc), -62135596800),
+        eq(sub(convtime(feb 1 00:00:00 1,utc), convtime(jan 1 00:00:00 1,utc)), 2678400),
+        eq(sub(convtime(mar 1 00:00:00 1,utc), convtime(feb 1 00:00:00 1,utc)), 2419200),
+        eq(sub(convtime(apr 1 00:00:00 1,utc), convtime(mar 1 00:00:00 1,utc)), 2678400),
+        eq(sub(convtime(may 1 00:00:00 1,utc), convtime(apr 1 00:00:00 1,utc)), 2592000),
+        eq(sub(convtime(jun 1 00:00:00 1,utc), convtime(may 1 00:00:00 1,utc)), 2678400),
+        eq(sub(convtime(jul 1 00:00:00 1,utc), convtime(jun 1 00:00:00 1,utc)), 2592000),
+        eq(sub(convtime(aug 1 00:00:00 1,utc), convtime(jul 1 00:00:00 1,utc)), 2678400),
+        eq(sub(convtime(sep 1 00:00:00 1,utc), convtime(aug 1 00:00:00 1,utc)), 2678400),
+        eq(sub(convtime(oct 1 00:00:00 1,utc), convtime(sep 1 00:00:00 1,utc)), 2592000),
+        eq(sub(convtime(nov 1 00:00:00 1,utc), convtime(oct 1 00:00:00 1,utc)), 2678400),
+        eq(sub(convtime(dec 1 00:00:00 1,utc), convtime(nov 1 00:00:00 1,utc)), 2592000),
+        eq(sub(convtime(jan 1 00:00:00 2,utc), convtime(dec 1 00:00:00 1,utc)), 2678400),
+        eq(sub(convtime(jan 2 00:00:00 1,utc), convtime(jan 1 00:00:00 1,utc)), 86400),
+        eq(convtime(jul 15 12:30:45 1,utc), -62118703755)
       )=
   {
-    @log smoke=TC006: Every day in 1 A.D. Succeeded.
+    @log smoke=TC006: convtime invariants for year 1. Succeeded.
   },
   {
-    @log smoke=TC006: At least one day in 1 A.D. failed (%q0).
+    @log smoke=TC006: convtime invariants for year 1. Failed (anchor=[convtime(jan 1 00:00:00 1,utc)] feb=[convtime(feb 1 00:00:00 1,utc)] mar=[convtime(mar 1 00:00:00 1,utc)] jul15=[convtime(jul 15 12:30:45 1,utc)] nextjan=[convtime(jan 1 00:00:00 2,utc)]).
   }
 -
 #
-# Test Case #7 - Leaving out timezone conversions, test that every day in year
-#                1 B.C. produces the correct UTC time stamp.
+# Test Case #7 - Calendar invariants for 1 B.C. (year 0, leap): the Jan 1 anchor
+# epoch, every month-boundary delta (Feb has 29 days), the one-day
+# step, and an exact interior timestamp.
 #
 &tr.tc007 test_convtime_fn=
-  @if strmatch(
-        setr(0,sha1(
-            iter(lnum(1,31),convtime(jan ## 00:00:00 0,utc)) 
-           [iter(lnum(1,28),convtime(feb ## 00:00:00 0,utc))] 
-           [iter(lnum(1,31),convtime(mar ## 00:00:00 0,utc))] 
-           [iter(lnum(1,30),convtime(apr ## 00:00:00 0,utc))] 
-           [iter(lnum(1,31),convtime(may ## 00:00:00 0,utc))] 
-           [iter(lnum(1,30),convtime(jun ## 00:00:00 0,utc))] 
-           [iter(lnum(1,31),convtime(jul ## 00:00:00 0,utc))] 
-           [iter(lnum(1,31),convtime(aug ## 00:00:00 0,utc))] 
-           [iter(lnum(1,30),convtime(sep ## 00:00:00 0,utc))] 
-           [iter(lnum(1,31),convtime(oct ## 00:00:00 0,utc))] 
-           [iter(lnum(1,30),convtime(nov ## 00:00:00 0,utc))] 
-           [iter(lnum(1,31),convtime(dec ## 00:00:00 0,utc))] 
-          )
-        ),
-        F82F361B6C7D954AA4D86F964C10342E89D08F9F
+  @if cand(
+        eq(convtime(jan 1 00:00:00 0,utc), -62167219200),
+        eq(sub(convtime(feb 1 00:00:00 0,utc), convtime(jan 1 00:00:00 0,utc)), 2678400),
+        eq(sub(convtime(mar 1 00:00:00 0,utc), convtime(feb 1 00:00:00 0,utc)), 2505600),
+        eq(sub(convtime(apr 1 00:00:00 0,utc), convtime(mar 1 00:00:00 0,utc)), 2678400),
+        eq(sub(convtime(may 1 00:00:00 0,utc), convtime(apr 1 00:00:00 0,utc)), 2592000),
+        eq(sub(convtime(jun 1 00:00:00 0,utc), convtime(may 1 00:00:00 0,utc)), 2678400),
+        eq(sub(convtime(jul 1 00:00:00 0,utc), convtime(jun 1 00:00:00 0,utc)), 2592000),
+        eq(sub(convtime(aug 1 00:00:00 0,utc), convtime(jul 1 00:00:00 0,utc)), 2678400),
+        eq(sub(convtime(sep 1 00:00:00 0,utc), convtime(aug 1 00:00:00 0,utc)), 2678400),
+        eq(sub(convtime(oct 1 00:00:00 0,utc), convtime(sep 1 00:00:00 0,utc)), 2592000),
+        eq(sub(convtime(nov 1 00:00:00 0,utc), convtime(oct 1 00:00:00 0,utc)), 2678400),
+        eq(sub(convtime(dec 1 00:00:00 0,utc), convtime(nov 1 00:00:00 0,utc)), 2592000),
+        eq(sub(convtime(jan 1 00:00:00 1,utc), convtime(dec 1 00:00:00 0,utc)), 2678400),
+        eq(sub(convtime(jan 2 00:00:00 0,utc), convtime(jan 1 00:00:00 0,utc)), 86400),
+        eq(convtime(jul 15 12:30:45 0,utc), -62150239755)
       )=
   {
-    @log smoke=TC007: Every day in 1 B.C. Succeeded.
+    @log smoke=TC007: convtime invariants for 1 B.C. (year 0, leap). Succeeded.
   },
   {
-    @log smoke=TC007: At least one day in 1 B.C. failed (%q0).
+    @log smoke=TC007: convtime invariants for 1 B.C. (year 0, leap). Failed (anchor=[convtime(jan 1 00:00:00 0,utc)] feb=[convtime(feb 1 00:00:00 0,utc)] mar=[convtime(mar 1 00:00:00 0,utc)] jul15=[convtime(jul 15 12:30:45 0,utc)] nextjan=[convtime(jan 1 00:00:00 1,utc)]).
   }
 -
 #
