@@ -500,6 +500,20 @@ static void emit_stub_ftoa_round(void *ev, void *fn) {
     emit_intrinsic_return(e);
 }
 
+// double rv64_add_doubles(double *vals, int n): a0=ptr (guest→host), a1=n,
+// result in fa0.
+static void emit_stub_add_doubles(void *ev, void *fn) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+    emit_load_ctx_reg(e, A64_X0, 10);    // a0 = vals (guest ptr)
+    emit_guest_to_host(e, A64_X0);
+    emit_load_ctx_reg(e, A64_X1, 11);    // a1 = n
+    emit_call_host(e, fn);
+    emit_store_ctx_fp(e, CTX_FA0_OFF, 0);  // double result → fa0
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
 // ---- Generic co_* stub emitter ----
 
 static void emit_stub_co_generic(void *ev, void *fn,
@@ -611,6 +625,7 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_fval,        // DBT_EMIT_FVAL
     emit_stub_ftoa_round,  // DBT_EMIT_FTOA_ROUND
     emit_stub_alloc,       // DBT_EMIT_ALLOC
+    emit_stub_add_doubles, // DBT_EMIT_ADD_DOUBLES
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

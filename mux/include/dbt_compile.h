@@ -208,7 +208,7 @@ struct rv_compiler {
     int spills;             // register allocator spill slots used
     bool needs_jit;         // true if any runtime code was emitted
 
-    static constexpr size_t MEM_SIZE     = 5 * 1024 * 1024;  // 5 MB (4 MB map + 1 MB heap)
+    static constexpr size_t MEM_SIZE     = 0x540000;  // 4 MB map + 1 MB heap + 256 KB doubles scratch
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
     static constexpr uint64_t STR_BASE   = 0x1000;
@@ -275,7 +275,18 @@ struct rv_compiler {
     // per-eval lifecycle as blob .data/.bss).  Addresses stay far below the
     // OUT_FRAME_TAG bit-30 boundary, so RV64 LUI sign-extension is unaffected.
     static constexpr uint64_t HEAP_BASE  = 0x400000;
-    static constexpr uint64_t HEAP_LIMIT = 0x500000;    // 1 MB == MEM_SIZE top
+    static constexpr uint64_t HEAP_LIMIT = 0x500000;    // 1 MB heap
+
+    // Tier 2 doubles scratch — a fixed, per-call-reusable buffer mirroring
+    // the host's static g_aDoubles[MAX_WORDS] (funmath.cpp).  rv64_ladd
+    // fills it with parsed doubles, then rv64_add_doubles sums it via the
+    // host AddDoubles.  Fixed (not heap-allocated) so it has no cumulative
+    // per-eval limit — fun_ladd reuses one static array every call, so
+    // exact parity requires the same reuse semantics, not a bump arena.
+    // 256 KB == MAX_WORDS (== LBUF_SIZE 32768) * sizeof(double).
+    // MUST match RV64_DSCRATCH_ADDR in mux/rv64/src/softlib.c.
+    static constexpr uint64_t DSCRATCH_BASE  = 0x500000;
+    static constexpr uint64_t DSCRATCH_LIMIT = 0x540000;
 
     // Number of output slots allocated (for prologue frame size).
     int n_output_slots;

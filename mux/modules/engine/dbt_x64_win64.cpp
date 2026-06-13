@@ -736,6 +736,25 @@ static void emit_stub_ftoa_round(void *ev, void *fn) {
     emit_intrinsic_return(e);
 }
 
+// double rv64_add_doubles(double *vals, int n): a0=ptr (guest→host), a1=n,
+// result in xmm0 → guest fa0.
+static void emit_stub_add_doubles(void *ev, void *fn) {
+    emit_t *e = static_cast<emit_t *>(ev);
+    emit_stub_prologue(e);
+
+    // rcx = host pointer to vals (Win64 arg position 0)
+    emit_load_ctx_reg(e, X64_RCX, 10);   // guest a0 → rcx
+    emit_guest_to_host(e, X64_RCX);
+    // rdx = n (Win64 arg position 1)
+    emit_load_ctx_reg(e, X64_RDX, 11);   // guest a1 → rdx
+    emit_call_host(e, fn);
+    // Result in xmm0 → store to guest fa0
+    emit_store_ctx_fp(e, CTX_FA0_OFF, 0);
+
+    emit_stub_epilogue(e);
+    emit_intrinsic_return(e);
+}
+
 // ---- Generic co_* intrinsic stub emitter ----
 //
 // Emits a native CALL to the host co_* function.  Arguments are in
@@ -973,6 +992,7 @@ static generic_emitter_fn s_emitter_table[] = {
     emit_stub_fval,        // DBT_EMIT_FVAL
     emit_stub_ftoa_round,  // DBT_EMIT_FTOA_ROUND
     emit_stub_alloc,       // DBT_EMIT_ALLOC
+    emit_stub_add_doubles, // DBT_EMIT_ADD_DOUBLES
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

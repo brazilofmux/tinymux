@@ -4784,7 +4784,9 @@
 >264
 "@if strmatch(setr(0,[ord(chr(101 769))]),setr(1,[asteval({ord(chr(101 769))})]))={@log smoke=TC007: ord(chr()) grapheme parity. Succeeded.},{@log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).}"
 >266
-"@if strmatch(setr(0,sha1([cat(sin(1),sin(2),sin(3))])),setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})])))={@log smoke=TC008: cat() runtime float parity. Succeeded.;@trig me/tr.done},{@log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([cat(sin(1),sin(2),sin(3))])),setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})])))={@log smoke=TC008: cat() runtime float parity. Succeeded.},{@log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).}"
+>273
+"@if strmatch(setr(0,[ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]),setr(1,[asteval({ladd(1e20 1 -1e20)})]:[asteval({ladd(0.1 0.2)})]:[asteval({ladd(1|2|3,|)})]))={@log smoke=TC009: ladd() AddDoubles parity. Succeeded.;@trig me/tr.done},{@log smoke=TC009: ladd() AddDoubles parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
 <
 !116
 "test_jit_route_parity_fn"
@@ -4948,9 +4950,11 @@
 >258
 "@if cand(eq(ladd(1.5 2.5 -1), 3),eq(ladd(-1 -2 -3), -6),eq(ladd(1 foo 2), 3))={@log smoke=TC002: ladd() negatives and coercion. Succeeded.},{@log smoke=TC002: ladd() negatives and coercion. Failed (ladd(1.5 2.5 -1)=[ladd(1.5 2.5 -1)] ladd(-1 -2 -3)=[ladd(-1 -2 -3)] ladd(1 foo 2)=[ladd(1 foo 2)]).}"
 >259
-"@if cand(eq(ladd(), 0),eq(ladd(,|), 0),eq(ladd(42), 42))={@log smoke=TC003: ladd() empty and single-element lists. Succeeded.;@trig me/tr.done},{@log smoke=TC003: ladd() empty and single-element lists. Failed (ladd()=[ladd()] ladd(%,|)=[ladd(,|)] ladd(42)=[ladd(42)]).;@trig me/tr.done}"
+"@if cand(eq(ladd(), 0),eq(ladd(,|), 0),eq(ladd(42), 42))={@log smoke=TC003: ladd() empty and single-element lists. Succeeded.},{@log smoke=TC003: ladd() empty and single-element lists. Failed (ladd()=[ladd()] ladd(%,|)=[ladd(,|)] ladd(42)=[ladd(42)]).}"
 >260
 "@log smoke=End ladd() test cases.;@notify smoke"
+>261
+"@if cand(eq(ladd(1e20 1 -1e20), 1),eq(ladd(-1e20 1 1e20), 1),eq(ladd(1e16 1 -1e16), 1),eq(ladd(0.1 0.2), 0.3))={@log smoke=TC004: ladd() error-compensated cancellation. Succeeded.;@trig me/tr.done},{@log smoke=TC004: ladd() error-compensated cancellation. Failed (ladd(1e20 1 -1e20)=[ladd(1e20 1 -1e20)] ladd(-1e20 1 1e20)=[ladd(-1e20 1 1e20)] ladd(1e16 1 -1e16)=[ladd(1e16 1 -1e16)] ladd(0.1 0.2)=[ladd(0.1 0.2)]).;@trig me/tr.done}"
 <
 !120
 "test_lambda_fn"

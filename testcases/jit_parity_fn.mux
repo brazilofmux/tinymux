@@ -129,11 +129,29 @@
         setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})]))
       )=
   {
-    @log smoke=TC008: cat() runtime float parity. Succeeded.;
+    @log smoke=TC008: cat() runtime float parity. Succeeded.
+  },
+  {
+    @log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #9 - ladd() error-compensated sum (AddDoubles) must match the
+# AST evaluator on cancellation-heavy lists.  The Tier 2 rv64_ladd path
+# routes the order-sensitive sum to the host AddDoubles intrinsic, so
+# ladd(1e20 1 -1e20) is 1 (compensated), not 0 (naive).  See #813.
+#
+&tr.tc009 test_jit_parity_fn=
+  @if strmatch(
+        setr(0,[ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]),
+        setr(1,[asteval({ladd(1e20 1 -1e20)})]:[asteval({ladd(0.1 0.2)})]:[asteval({ladd(1|2|3,|)})])
+      )=
+  {
+    @log smoke=TC009: ladd() AddDoubles parity. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).;
+    @log smoke=TC009: ladd() AddDoubles parity. Failed (%q0 vs %q1).;
     @trig me/tr.done
   }
 -

@@ -335,6 +335,9 @@ int rv64_fval(char *buf, double val);
 /* Per-evaluation guest heap allocator (intrinsic → host_alloc). */
 void *rv64_alloc(unsigned long n);
 
+/* Error-compensated list sum (intrinsic → host AddDoubles + NearestPretty). */
+double rv64_add_doubles(double *vals, int n);
+
 /* ECALL helpers — invoke host syscall from guest code.
  * a7 = syscall number, a0..a2 = args.  Returns a0.
  */
@@ -1743,6 +1746,59 @@ static long long satoll(const char *s) {
     return neg ? -v : v;
 }
 
+/* Tier 2 doubles scratch — fixed guest address mirroring the host's
+ * static g_aDoubles[MAX_WORDS].  MUST match rv_compiler::DSCRATCH_BASE in
+ * mux/include/dbt_compile.h.  Reused per call (no cumulative limit), so
+ * ladd has the same storage semantics as fun_ladd's single static array. */
+#define RV64_DSCRATCH_ADDR 0x500000UL
+
+/* fun_ladd caps the word count at MAX_WORDS == LBUF_SIZE (stringutil.h). */
+#ifndef MAX_WORDS
+#define MAX_WORDS LBUF_SIZE
+#endif
+
+/* ladd(list[, delim]) — error-compensated sum of the numbers in list.
+ * fun_ladd parity: trim_space_sep + split_token walk (same as rv64_lmax),
+ * mux_atof per word capped at MAX_WORDS, then AddDoubles (|x|-sorted,
+ * error-compensated, NearestPretty).  The order-sensitive arithmetic runs
+ * host-side via rv64_add_doubles, so the result is byte-identical to
+ * fun_ladd by construction (a naive sequential sum diverges on
+ * cancellation-heavy lists, e.g. ladd(1e20 1 -1e20) is 1, not 0).  See #813. */
+char *rv64_ladd(char *out, const char **fargs, int nfargs) {
+    double *vals = (double *)RV64_DSCRATCH_ADDR;
+    int n = 0;
+    if (nfargs >= 1) {
+        char tok[LBUF_SIZE];
+        unsigned char delim = ' ';
+        const unsigned char *p = (const unsigned char *)fargs[0];
+        const unsigned char *pe = p + rv64_slen(fargs[0]);
+        if (nfargs >= 2 && fargs[1][0] != '\0') delim = (unsigned char)fargs[1][0];
+        if (delim == ' ') {
+            while (p < pe && *p == ' ') p++;
+            while (pe > p && pe[-1] == ' ') pe--;
+        }
+        for (;;) {
+            if (delim == ' ' && p >= pe) break;
+            const unsigned char *start = p;
+            while (p < pe && *p != delim) p++;
+            if (n < MAX_WORDS) {
+                vals[n++] = rv64_strtod(tok_to_buf(tok, start, (size_t)(p - start)));
+            } else {
+                break;  /* fun_ladd stops reading after MAX_WORDS words */
+            }
+            if (p >= pe) break;
+            p++;
+            if (delim == ' ') while (p < pe && *p == ' ') p++;
+        }
+    }
+    {
+        double result = rv64_add_doubles(vals, n);  /* AddDoubles + NearestPretty */
+        int k = rv64_fval(out, result);
+        out[k] = '\0';
+    }
+    return out;
+}
+
 /* lmax(list[, delim]) — maximum number in list.
  * Doubles via rv64_strtod/rv64_fval for fun_lmax parity (mux_atof +
  * fval): the old integer parse truncated decimals ("1.5" read as 1)
@@ -2196,6 +2252,14 @@ __attribute__((noipa)) int rv64_ftoa_round(char *buf, double val, int frac) {
  * evaluation.  Stub body never runs (DBT intercepts).
  */
 __attribute__((noipa)) void *rv64_alloc(unsigned long n) { (void)n; return (void *)0; }
+
+/* rv64_add_doubles: sum n doubles with fun_ladd's error-compensated
+ * algorithm.  Intrinsic → host AddDoubles(n, vals) (|x|-sorted qsort,
+ * TwoSum chain, NearestPretty).  Stub body never runs (DBT intercepts).
+ */
+__attribute__((noipa)) double rv64_add_doubles(double *vals, int n) {
+    (void)vals; (void)n; return 0.0;
+}
 
 /* ---------------------------------------------------------------
  * Tier 2 math wrappers — softcode function entry points.

@@ -52,11 +52,31 @@
         eq(ladd(42), 42)
       )=
   {
-    @log smoke=TC003: ladd() empty and single-element lists. Succeeded.;
+    @log smoke=TC003: ladd() empty and single-element lists. Succeeded.
+  },
+  {
+    @log smoke=TC003: ladd() empty and single-element lists. Failed (ladd()=[ladd()] ladd(%,|)=[ladd(,|)] ladd(42)=[ladd(42)]).
+  }
+-
+#
+# Test Case #4 - Cancellation-heavy lists.  fun_ladd sums via AddDoubles
+# (|x|-sorted, error-compensated), so catastrophic cancellation yields the
+# compensated result, not a naive sequential sum: ladd(1e20 1 -1e20) is 1,
+# not 0.  A non-parity JIT implementation (naive sum) fails here.  See #813.
+#
+&tr.tc004 test_ladd_fn=
+  @if cand(
+        eq(ladd(1e20 1 -1e20), 1),
+        eq(ladd(-1e20 1 1e20), 1),
+        eq(ladd(1e16 1 -1e16), 1),
+        eq(ladd(0.1 0.2), 0.3)
+      )=
+  {
+    @log smoke=TC004: ladd() error-compensated cancellation. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: ladd() empty and single-element lists. Failed (ladd()=[ladd()] ladd(%,|)=[ladd(,|)] ladd(42)=[ladd(42)]).;
+    @log smoke=TC004: ladd() error-compensated cancellation. Failed (ladd(1e20 1 -1e20)=[ladd(1e20 1 -1e20)] ladd(-1e20 1 1e20)=[ladd(-1e20 1 1e20)] ladd(1e16 1 -1e16)=[ladd(1e16 1 -1e16)] ladd(0.1 0.2)=[ladd(0.1 0.2)]).;
     @trig me/tr.done
   }
 -

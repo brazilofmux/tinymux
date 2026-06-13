@@ -234,6 +234,7 @@ enum dbt_emitter_id {
     DBT_EMIT_FTOA_ROUND,    // int rv64_ftoa_round(char *buf, double val, int frac): a0=ptr, fa0=double, a1=frac → a0=len
 
     DBT_EMIT_ALLOC,          // void *rv64_alloc(uintptr size): a0=size → a0=guest addr (0=NULL). No ptr conversion: the return is already a guest offset.
+    DBT_EMIT_ADD_DOUBLES,    // double rv64_add_doubles(double *vals, int n): a0=ptr, a1=n → fa0=double (host AddDoubles + NearestPretty).
 };
 
 void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,

@@ -218,9 +218,10 @@ static bool tier2_allowed(const std::string &mux_name) {
         "DELETE", "ELEMENTS", "REMOVE",
         "REVWORDS",
         "LNUM",
-        // LADD is deliberately absent: fun_ladd sums via AddDoubles
-        // (|x|-sorted, error-compensated, NearestPretty), which the blob
-        // cannot reproduce; it always ECALLs the interpreter.
+        // LADD reproduces fun_ladd's AddDoubles (|x|-sorted, error-
+        // compensated, NearestPretty) via the rv64_add_doubles host
+        // intrinsic — exact parity by construction.  See #813.
+        "LADD",
         "LMAX", "LMIN", "LAND", "LOR",
         "ISNUM", "ISINT",
         "DEC2HEX", "HEX2DEC",
@@ -359,7 +360,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "REMOVE",      "rv64_remove" },
 
     // --- Batch 8: list aggregation, reversal, type checks ---
-    // (no LADD: AddDoubles semantics are not reproducible in the blob)
+    { "LADD",        "rv64_ladd" },   // sum via rv64_add_doubles intrinsic (#813)
     { "LMAX",        "rv64_lmax" },
     { "LMIN",        "rv64_lmin" },
     { "LAND",        "rv64_land" },
@@ -574,6 +575,17 @@ static uint64_t host_alloc(uint64_t size) {
     return addr;
 }
 
+// rv64_add_doubles intrinsic — error-compensated list sum for fun_ladd
+// parity.  The guest fills a doubles array (the fixed DSCRATCH region) and
+// calls this; the host does the order-sensitive arithmetic (|x|-sorted
+// qsort, TwoSum chain, NearestPretty) so the result is byte-identical to
+// fun_ladd by construction.  AddDoubles already applies NearestPretty and
+// sorts vals[] in place (harmless — it is throwaway scratch).
+//
+static double host_add_doubles(double *vals, int n) {
+    return AddDoubles(n, vals);
+}
+
 static int host_fval(char *buf, double val) {
     UTF8 *bufc = reinterpret_cast<UTF8 *>(buf);
     UTF8 *start = bufc;
@@ -718,6 +730,8 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "rv64_strtod", DBT_EMIT_STRTOD, reinterpret_cast<void *>(host_strtod));
     reg_intrinsic(dbt, "rv64_fval",   DBT_EMIT_FVAL,   reinterpret_cast<void *>(host_fval));
     reg_intrinsic(dbt, "rv64_alloc",  DBT_EMIT_ALLOC,  reinterpret_cast<void *>(host_alloc));
+    reg_intrinsic(dbt, "rv64_add_doubles", DBT_EMIT_ADD_DOUBLES,
+                  reinterpret_cast<void *>(host_add_doubles));
 
     // Round-to-precision intrinsic.
     reg_intrinsic(dbt, "rv64_ftoa_round", DBT_EMIT_FTOA_ROUND,
