@@ -7025,109 +7025,109 @@
 >256
 "@log smoke=Beginning parser test cases."
 >257
-"@if strmatch(setr(0,sha1([eval(hello world)][eval(ABCDEFG)][eval(1234567890)])),setr(1,sha1(hello worldABCDEFG1234567890)))={@log smoke=TC001: parser literal text. Succeeded.},{@log smoke=TC001: parser literal text. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(hello world)][eval(ABCDEFG)][eval(1234567890)]), setr(1,hello worldABCDEFG1234567890)), 0)={@log smoke=TC001: parser literal text. Succeeded.},{@log smoke=TC001: parser literal text. Failed (%q0 vs %q1).}"
 >258
-"@if strmatch(setr(0,sha1([eval(a b)][eval(a b)][eval(a b)])),setr(1,sha1(a ba ba b)))={@log smoke=TC002: parser space compression. Succeeded.},{@log smoke=TC002: parser space compression. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(a b)][eval(a b)][eval(a b)]), setr(1,a ba ba b)), 0)={@log smoke=TC002: parser space compression. Succeeded.},{@log smoke=TC002: parser space compression. Failed (%q0 vs %q1).}"
 >259
-"@if strmatch(setr(0,sha1([eval(a%bb)][eval(a%rb)][eval(a%tb)])),setr(1,sha1(a%bba%rba%tb)))={@log smoke=TC003: parser pct-subst b/r/t. Succeeded.},{@log smoke=TC003: parser pct-subst b/r/t. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(a%bb)][eval(a%rb)][eval(a%tb)]), setr(1,a%bba%rba%tb)), 0)={@log smoke=TC003: parser pct-subst b/r/t. Succeeded.},{@log smoke=TC003: parser pct-subst b/r/t. Failed (%q0 vs %q1).}"
 >260
 "@log smoke=End parser test cases.;@notify smoke"
 >261
-"@if strmatch(setr(0,sha1([eval(enactor=%#)][eval(executor=%!)])),setr(1,sha1(enactor=%#executor=%!)))={@log smoke=TC004: parser pct-subst enactor/executor. Succeeded.},{@log smoke=TC004: parser pct-subst enactor/executor. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(enactor=%#)][eval(executor=%!)]), setr(1,enactor=%#executor=%!)), 0)={@log smoke=TC004: parser pct-subst enactor/executor. Succeeded.},{@log smoke=TC004: parser pct-subst enactor/executor. Failed (%q0 vs %q1).}"
 >262
-"@if strmatch(setr(0,sha1([setr(1,apple)][setr(2,banana)][eval(%q1-%q2)])),setr(3,sha1([setr(1,apple)][setr(2,banana)]%q1-%q2)))={@log smoke=TC005: parser pct-subst registers. Succeeded.},{@log smoke=TC005: parser pct-subst registers. Failed (%q0 vs %q3).}"
+"@if eq(comp(setr(0,[setr(1,apple)][setr(2,banana)][eval(%q1-%q2)]), setr(3,[setr(1,apple)][setr(2,banana)]%q1-%q2)), 0)={@log smoke=TC005: parser pct-subst registers. Succeeded.},{@log smoke=TC005: parser pct-subst registers. Failed (%q0 vs %q3).}"
 >263
-"@if strmatch(setr(0,sha1([eval(\\[add(1,2)\\])][eval(\\[mul(3,4)\\])][eval(x\\[add(5,6)\\]y)])),setr(1,sha1([add(1,2)][mul(3,4)]x[add(5,6)]y)))={@log smoke=TC006: parser eval brackets. Succeeded.},{@log smoke=TC006: parser eval brackets. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(\\[add(1,2)\\])][eval(\\[mul(3,4)\\])][eval(x\\[add(5,6)\\]y)]), setr(1,312x11y)), 0)={@log smoke=TC006: parser eval brackets. Succeeded.},{@log smoke=TC006: parser eval brackets. Failed (%q0 vs %q1).}"
 >264
-"@if strmatch(setr(0,sha1([eval(\\[add(1,1)\\]\\[add(2,2)\\]\\[add(3,3)\\])])),setr(1,sha1([add(1,1)][add(2,2)][add(3,3)])))={@log smoke=TC007: parser adjacent eval brackets. Succeeded.},{@log smoke=TC007: parser adjacent eval brackets. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(\\[add(1,1)\\]\\[add(2,2)\\]\\[add(3,3)\\])]), setr(1,[add(1,1)][add(2,2)][add(3,3)])), 0)={@log smoke=TC007: parser adjacent eval brackets. Succeeded.},{@log smoke=TC007: parser adjacent eval brackets. Failed (%q0 vs %q1).}"
 >266
-"@if strmatch(setr(0,sha1([eval(if(1,{hello},{goodbye}))][eval(if(0,{hello},{goodbye}))][eval(switch(b,a,{alpha},b,{beta},*,{other}))])),setr(1,sha1([if(1,{hello},{goodbye})][if(0,{hello},{goodbye})][switch(b,a,{alpha},b,{beta},*,{other})])))={@log smoke=TC008: parser brace groups. Succeeded.},{@log smoke=TC008: parser brace groups. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(if(1,{hello},{goodbye}))][eval(if(0,{hello},{goodbye}))][eval(switch(b,a,{alpha},b,{beta},*,{other}))]), setr(1,[if(1,{hello},{goodbye})][if(0,{hello},{goodbye})][switch(b,a,{alpha},b,{beta},*,{other})])), 0)={@log smoke=TC008: parser brace groups. Succeeded.},{@log smoke=TC008: parser brace groups. Failed (%q0 vs %q1).}"
 >273
-"@if strmatch(setr(0,sha1([eval(switch(a,a,{result,with,commas},*,other))][eval(if(1,{x,y,z}))])),setr(1,sha1([switch(a,a,{result,with,commas},*,other)][if(1,{x,y,z})])))={@log smoke=TC009: parser braces protect commas. Succeeded.},{@log smoke=TC009: parser braces protect commas. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(switch(a,a,{result,with,commas},*,other))][eval(if(1,{x,y,z}))]), setr(1,[switch(a,a,{result,with,commas},*,other)][if(1,{x,y,z})])), 0)={@log smoke=TC009: parser braces protect commas. Succeeded.},{@log smoke=TC009: parser braces protect commas. Failed (%q0 vs %q1).}"
 >274
-"@if cand(strmatch(setr(0,sha1([eval(if(1,{outer {inner} text}))])),84523E0A869449C01525577B22DD2B5CBA57138B),strmatch(setr(1,sha1([if(1,{outer {inner} text})])),84523E0A869449C01525577B22DD2B5CBA57138B))={@log smoke=TC010: parser nested braces. Succeeded.},{@log smoke=TC010: parser nested braces. Failed (eval=%q0 direct=%q1 expected=84523E0A869449C01525577B22DD2B5CBA57138B).}"
+"@if cand(strmatch(.[eval(if(1,{outer {inner} text}))]., .outer%b\\{inner\\}%btext.),strmatch(.[if(1,{outer {inner} text})]., .outer%b\\{inner\\}%btext.))={@log smoke=TC010: parser nested braces. Succeeded.},{@log smoke=TC010: parser nested braces. Failed.;@log smoke=XP tc010 0 =.[eval(if(1,{outer {inner} text}))]=.;@log smoke=XP tc010 1 =.[if(1,{outer {inner} text})]=.}"
 >275
-"@if strmatch(setr(0,sha1([eval(add(1,2))][eval(add(1,mul(2,3)))][eval(pi())][eval(e())])),setr(1,sha1([add(1,2)][add(1,mul(2,3))][pi()][e()])))={@log smoke=TC011: parser function calls. Succeeded.},{@log smoke=TC011: parser function calls. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(add(1,2))][eval(add(1,mul(2,3)))][eval(pi())][eval(e())]), setr(1,[add(1,2)][add(1,mul(2,3))][pi()][e()])), 0)={@log smoke=TC011: parser function calls. Succeeded.},{@log smoke=TC011: parser function calls. Failed (%q0 vs %q1).}"
 >276
-"@if strmatch(setr(0,sha1([eval(add(1,add(2,add(3,add(4,5)))))][eval(strlen(ucstr(lcstr(mid(hello world,0,5)))))])),setr(1,sha1([add(1,add(2,add(3,add(4,5))))][strlen(ucstr(lcstr(mid(hello world,0,5))))])))={@log smoke=TC012: parser deep nesting. Succeeded.},{@log smoke=TC012: parser deep nesting. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(add(1,add(2,add(3,add(4,5)))))][eval(strlen(ucstr(lcstr(mid(hello world,0,5)))))]), setr(1,[add(1,add(2,add(3,add(4,5))))][strlen(ucstr(lcstr(mid(hello world,0,5))))])), 0)={@log smoke=TC012: parser deep nesting. Succeeded.},{@log smoke=TC012: parser deep nesting. Failed (%q0 vs %q1).}"
 >278
-"@if strmatch(setr(0,sha1([eval(if(,yes,no))][eval(add(,1))][eval(strlen(cat(a,,b)))])),setr(1,sha1([if(,yes,no)][add(,1)][strlen(cat(a,,b))])))={@log smoke=TC014: parser empty args. Succeeded.},{@log smoke=TC014: parser empty args. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(if(,yes,no))][eval(add(,1))][eval(strlen(cat(a,,b)))]), setr(1,[if(,yes,no)][add(,1)][strlen(cat(a,,b))])), 0)={@log smoke=TC014: parser empty args. Succeeded.},{@log smoke=TC014: parser empty args. Failed (%q0 vs %q1).}"
 >279
-"@if strmatch(setr(0,sha1([eval(sha1(hello,world))][eval(sha1(a,b,c))])),setr(1,sha1([sha1(hello,world)][sha1(a,b,c)])))={@log smoke=TC015: parser maxArgsParsed. Succeeded.},{@log smoke=TC015: parser maxArgsParsed. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(sha1(hello,world))][eval(sha1(a,b,c))]), setr(1,[sha1(hello,world)][sha1(a,b,c)])), 0)={@log smoke=TC015: parser maxArgsParsed. Succeeded.},{@log smoke=TC015: parser maxArgsParsed. Failed (%q0 vs %q1).}"
 >280
-"@if strmatch(setr(0,sha1([eval(notafunc(x))][eval(xyzzy(1,2,3))])),setr(1,sha1(notafunc(x)xyzzy(1,2,3))))={@log smoke=TC016: parser unknown function. Succeeded.},{@log smoke=TC016: parser unknown function. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(notafunc(x))][eval(xyzzy(1,2,3))]), setr(1,notafunc(x)xyzzy(1,2,3))), 0)={@log smoke=TC016: parser unknown function. Succeeded.},{@log smoke=TC016: parser unknown function. Failed (%q0 vs %q1).}"
 >301
-"@if strmatch(setr(0,sha1([eval(if(1,{[add(1,2)]},{[mul(3,4)]}))][eval(switch(a,a,{[ucstr(hello)]},*,{none}))])),setr(1,sha1([if(1,{[add(1,2)]},{[mul(3,4)]})][switch(a,a,{[ucstr(hello)]},*,{none})])))={@log smoke=TC017: parser mixed nesting. Succeeded.},{@log smoke=TC017: parser mixed nesting. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(if(1,{[add(1,2)]},{[mul(3,4)]}))][eval(switch(a,a,{[ucstr(hello)]},*,{none}))]), setr(1,[if(1,{[add(1,2)]},{[mul(3,4)]})][switch(a,a,{[ucstr(hello)]},*,{none})])), 0)={@log smoke=TC017: parser mixed nesting. Succeeded.},{@log smoke=TC017: parser mixed nesting. Failed (%q0 vs %q1).}"
 >302
-"@if strmatch(setr(0,sha1([eval(@@(this is a comment))][eval(hello[@@(invisible)]world)])),setr(1,sha1([@@(this is a comment)]hello[@@(invisible)]world)))={@log smoke=TC018: parser @@ comment. Succeeded.},{@log smoke=TC018: parser @@ comment. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(@@(this is a comment))][eval(hello[@@(invisible)]world)]), setr(1,[@@(this is a comment)]hello[@@(invisible)]world)), 0)={@log smoke=TC018: parser @@ comment. Succeeded.},{@log smoke=TC018: parser @@ comment. Failed (%q0 vs %q1).}"
 >303
-"@if strmatch(setr(0,sha1([eval(switchall(a,a,first,a,second,*,star))][eval(caseall(a,a,first,a,second,*,star))])),setr(1,sha1([switchall(a,a,first,a,second,*,star)][caseall(a,a,first,a,second,*,star)])))={@log smoke=TC019: parser switchall/caseall. Succeeded.},{@log smoke=TC019: parser switchall/caseall. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval(switchall(a,a,first,a,second,*,star))][eval(caseall(a,a,first,a,second,*,star))]), setr(1,[switchall(a,a,first,a,second,*,star)][caseall(a,a,first,a,second,*,star)])), 0)={@log smoke=TC019: parser switchall/caseall. Succeeded.},{@log smoke=TC019: parser switchall/caseall. Failed (%q0 vs %q1).}"
 >304
-"@if strmatch(setr(0,sha1([eval(iter(X Y Z,%i0))][eval(iter(10 20 30,[add(%i0,1)]))])),setr(1,sha1([iter(X Y Z,%i0)][iter(10 20 30,[add(%i0,1)])])))={@log smoke=TC020: parser iter with pct-subst. Succeeded.;},{@log smoke=TC020: parser iter with pct-subst. Failed (%q0 vs %q1).;}"
+"@if eq(comp(setr(0,[eval(iter(X Y Z,%i0))][eval(iter(10 20 30,[add(%i0,1)]))]), setr(1,[iter(X Y Z,%i0)][iter(10 20 30,[add(%i0,1)])])), 0)={@log smoke=TC020: parser iter with pct-subst. Succeeded.;},{@log smoke=TC020: parser iter with pct-subst. Failed (%q0 vs %q1).;}"
 >305
-"@if strmatch(setr(0,sha1([setr(9,EDGE)][eval({notafunc(%q9})])),D1CA511E282F982BB9FB5557A7BE19D2A0E0A547)={@log smoke=TC021: edge unterminated func-call parity. Succeeded.},{@log smoke=TC021: edge unterminated func-call parity. Failed (%q0).}"
+"@if strmatch(.[setr(9,EDGE)][eval({notafunc(%q9})]., .EDGEnotafunc\\(EDGE).)={@log smoke=TC021: edge unterminated func-call parity. Succeeded.},{@log smoke=TC021: edge unterminated func-call parity. Failed.;@log smoke=XP tc021 0 =.[setr(9,EDGE)][eval({notafunc(%q9})]=.}"
 >306
-"@if strmatch(setr(0,sha1([eval({%q<missing})][eval({%x<blue})][eval({%=<attr})])),setr(1,sha1(%q<missing%x<blue%=<attr)))={@log smoke=TC022: edge unterminated angled %-subst parity. Succeeded (possibly fixed).;},{@log smoke=TC022: edge unterminated angled %-subst divergence observed (%q0 vs %q1).;}"
+"@if eq(comp(setr(0,[eval({%q<missing})][eval({%x<blue})][eval({%=<attr})]), setr(1,%q<missing%x<blue%=<attr)), 0)={@log smoke=TC022: edge unterminated angled %-subst parity. Succeeded (possibly fixed).;},{@log smoke=TC022: edge unterminated angled %-subst divergence observed (%q0 vs %q1).;}"
 >307
-"@if strmatch(setr(0,sha1([eval({A%x?B})][eval({A%c?B})])),setr(1,sha1(A%x?BA%c?B)))={@log smoke=TC023: edge unknown color fallback parity. Succeeded (possibly fixed).;},{@log smoke=TC023: edge unknown color fallback divergence observed (%q0 vs %q1).;}"
+"@if eq(comp(setr(0,[eval({A%x?B})][eval({A%c?B})]), setr(1,A%x?BA%c?B)), 0)={@log smoke=TC023: edge unknown color fallback parity. Succeeded (possibly fixed).;},{@log smoke=TC023: edge unknown color fallback divergence observed (%q0 vs %q1).;}"
 >308
-"@if strmatch(setr(0,sha1([eval({prefix [add(1,2)] %q<oops suffix})])),5BC915E1A1836B6B2A5D86314A1DD90848D1F581)={@log smoke=TC024: edge malformed mixed context. Succeeded.},{@log smoke=TC024: edge malformed mixed context. Failed (%q0).}"
+"@if cand(strmatch(.[eval({prefix [add(1,2)] %q<oops suffix})]., .prefix%b3.))={@log smoke=TC024: edge malformed mixed context. Succeeded.},{@log smoke=TC024: edge malformed mixed context Failed.;@log smoke=XP tc024 0 =.[eval({prefix [add(1,2)] %q<oops suffix})]=.}"
 >309
-"@if strmatch(setr(0,sha1([eval({notafunc([add(1,2)]})])),320AFE3C83E91C94CA68B8FC478F95DD8F59ED81)={@log smoke=TC025: edge unterminated call + bracket eval parity. Succeeded.},{@log smoke=TC025: edge unterminated call + bracket eval parity. Failed (%q0).}"
+"@if cand(strmatch(.[eval({notafunc([add(1,2)]})]., .notafunc(3).))={@log smoke=TC025: edge unterminated call + bracket eval parity. Succeeded.},{@log smoke=TC025: edge unterminated call + bracket eval parity Failed.;@log smoke=XP tc025 0 =.[eval({notafunc([add(1,2)]})]=.}"
 >310
-"@if strmatch(setr(0,sha1([eval({notafunc(foo(bar(1)})])),0A72419F0727120131B818813AC604EF2B6B4402)={@log smoke=TC026: edge unterminated call + nested parens parity. Succeeded.},{@log smoke=TC026: edge unterminated call + nested parens parity. Failed (%q0).}"
+"@if cand(strmatch(.[eval({notafunc(foo(bar(1)})]., .notafunc(foo(bar(1))).))={@log smoke=TC026: edge unterminated call + nested parens parity. Succeeded.},{@log smoke=TC026: edge unterminated call + nested parens parity Failed.;@log smoke=XP tc026 0 =.[eval({notafunc(foo(bar(1)})]=.}"
 >311
-"@if strmatch(setr(0,sha1([eval({notafunc(a,b,c})])),8FE475F218B6252E71BEE7369015D0A79294D478)={@log smoke=TC027: edge unterminated call comma handling parity. Succeeded.},{@log smoke=TC027: edge unterminated call comma handling parity. Failed (%q0).}"
+"@if cand(strmatch(.[eval({notafunc(a,b,c})]., .notafunc(a\\,b\\,c).))={@log smoke=TC027: edge unterminated call comma handling parity. Succeeded.},{@log smoke=TC027: edge unterminated call comma handling parity Failed.;@log smoke=XP tc027 0 =.[eval({notafunc(a,b,c})]=.}"
 >312
-"@if strmatch(setr(0,sha1([eval({%q<>})][eval({%q<0>})][eval({%q<name>>})])),091385BE99B45F459A231582D583EC9F3FA3D194)={@log smoke=TC028: edge malformed pct-q angle forms. Succeeded.},{@log smoke=TC028: edge malformed pct-q angle forms. Failed (%q0).}"
+"@if cand(strmatch(.[eval({%q<>})]., ..),strmatch(.[eval({%q<0>})]., ..),strmatch(.[eval({%q<name>>})]., .>.))={@log smoke=TC028: edge malformed pct-q angle forms. Succeeded.},{@log smoke=TC028: edge malformed pct-q angle forms Failed.;@log smoke=XP tc028 0 =.[eval({%q<>})]=.;@log smoke=XP tc028 1 =.[eval({%q<0>})]=.;@log smoke=XP tc028 2 =.[eval({%q<name>>})]=.}"
 >313
-"@if strmatch(setr(0,sha1([eval({A%xB})][eval({A%x<})][eval({A%x<noend})][eval({A%c?B})])),70F4EE65FC0681ECD6A5ABC1AC443741AAEC44D5)={@log smoke=TC029: edge malformed color escapes. Succeeded.},{@log smoke=TC029: edge malformed color escapes. Failed (%q0).}"
+"@if cand(strmatch(.[stripansi(eval({A%xB}))]., .A.),strmatch(.[eval({A%x<})]., .A%%x<.),strmatch(.[eval({A%x<noend})]., .A%%x<noend.),strmatch(.[eval({A%c?B})]., .A?B.))={@log smoke=TC029: edge malformed color escapes. Succeeded.},{@log smoke=TC029: edge malformed color escapes Failed.;@log smoke=XP tc029 0 =.[eval({A%xB})]=.;@log smoke=XP tc029 1 =.[eval({A%x<})]=.;@log smoke=XP tc029 2 =.[eval({A%x<noend})]=.;@log smoke=XP tc029 3 =.[eval({A%c?B})]=.}"
 >314
-"@if strmatch(setr(0,sha1([eval({%=})][eval({%=<})][eval({%=<0})][eval({%=<9999>})][eval({%=<bad attr>})])),setr(1,sha1(%=%=<>%=<0%=<9999>%=<bad attr>)))={@log smoke=TC030: edge malformed %= forms parity. Succeeded (possibly fixed).;},{@log smoke=TC030: edge malformed %= forms divergence observed (%q0 vs %q1).;}"
+"@if eq(comp(setr(0,[eval({%=})][eval({%=<})][eval({%=<0})][eval({%=<9999>})][eval({%=<bad attr>})]), setr(1,%=%=<>%=<0%=<9999>%=<bad attr>)), 0)={@log smoke=TC030: edge malformed %= forms parity. Succeeded (possibly fixed).;},{@log smoke=TC030: edge malformed %= forms divergence observed (%q0 vs %q1).;}"
 >315
-"@if strmatch(setr(0,sha1([setr(3,MIX)][eval({%q<bad notafunc(%q3 [add(2,2)]})])),4D88B5947E35FE822E2FEE43C2B5635A3EEBF68E)={@log smoke=TC031: edge mixed malformed sequence parity. Succeeded.},{@log smoke=TC031: edge mixed malformed sequence parity. Failed (%q0).}"
+"@if cand(strmatch(.[setr(3,MIX)][eval({%q<bad notafunc(%q3 [add(2,2)]})]., .MIX%%q<bad%bnotafunc\\(%%q3%b4.))={@log smoke=TC031: edge mixed malformed sequence parity. Succeeded.},{@log smoke=TC031: edge mixed malformed sequence parity. Failed.;@log smoke=XP tc031 0 =.[setr(3,MIX)][eval({%q<bad notafunc(%q3 [add(2,2)]})]=.}"
 >316
 "@if strmatch(setr(0,sha1([eval({{foo(bar},baz)})])),setr(1,sha1({foo(bar},baz))))={@log smoke=TC032: edge deep brace/paren mismatch parity. Succeeded (possibly fixed).;},{@log smoke=TC032: edge deep brace/paren mismatch divergence observed (%q0 vs %q1).;}"
 >317
-"@if strmatch(setr(0,sha1([eval({A%q<bad;next})])),setr(1,sha1([eval({A%q<bad;next})])))={@log smoke=TC033: edge malformed pct-q + semicolon parity. Succeeded.},{@log smoke=TC033: edge malformed pct-q + semicolon parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad;next})]), setr(1,[eval({A%q<bad;next})])), 0)={@log smoke=TC033: edge malformed pct-q + semicolon parity. Succeeded.},{@log smoke=TC033: edge malformed pct-q + semicolon parity. Failed (%q0 vs %q1).}"
 >318
-"@if strmatch(setr(0,sha1([eval({A%x<bad;next})])),setr(1,sha1([eval({A%x<bad;next})])))={@log smoke=TC034: edge malformed pct-x + semicolon parity. Succeeded.},{@log smoke=TC034: edge malformed pct-x + semicolon parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%x<bad;next})]), setr(1,[eval({A%x<bad;next})])), 0)={@log smoke=TC034: edge malformed pct-x + semicolon parity. Succeeded.},{@log smoke=TC034: edge malformed pct-x + semicolon parity. Failed (%q0 vs %q1).}"
 >319
-"@if strmatch(setr(0,sha1([eval({A%=<bad;next})])),setr(1,sha1([eval({A%=<bad;next})])))={@log smoke=TC035: edge malformed pct-equals + semicolon parity. Succeeded.},{@log smoke=TC035: edge malformed pct-equals + semicolon parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%=<bad;next})]), setr(1,[eval({A%=<bad;next})])), 0)={@log smoke=TC035: edge malformed pct-equals + semicolon parity. Succeeded.},{@log smoke=TC035: edge malformed pct-equals + semicolon parity. Failed (%q0 vs %q1).}"
 >320
-"@if strmatch(setr(0,sha1([eval({A%q<bad(foo})])),setr(1,sha1([eval({A%q<bad(foo})])))={@log smoke=TC036: edge malformed pct-q + open paren parity. Succeeded.},{@log smoke=TC036: edge malformed pct-q + open paren parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad(foo})]), setr(1,[eval({A%q<bad(foo})])), 0)={@log smoke=TC036: edge malformed pct-q + open paren parity. Succeeded.},{@log smoke=TC036: edge malformed pct-q + open paren parity. Failed (%q0 vs %q1).}"
 >321
-"@if strmatch(setr(0,sha1([eval({A%q<bad\\escape})])),setr(1,sha1([eval({A%q<bad\\escape})])))={@log smoke=TC037: edge malformed pct-q + backslash parity. Succeeded.},{@log smoke=TC037: edge malformed pct-q + backslash parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad\\escape})]), setr(1,[eval({A%q<bad\\escape})])), 0)={@log smoke=TC037: edge malformed pct-q + backslash parity. Succeeded.},{@log smoke=TC037: edge malformed pct-q + backslash parity. Failed (%q0 vs %q1).}"
 >322
-"@if strmatch(setr(0,sha1([setr(4,NEST)][eval({A%q<bad%q4})])),setr(1,sha1([setr(4,NEST)][eval({A%q<bad%q4})])))={@log smoke=TC038: edge malformed pct-q + nested percent parity. Succeeded.},{@log smoke=TC038: edge malformed pct-q + nested percent parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[setr(4,NEST)][eval({A%q<bad%q4})]), setr(1,[setr(4,NEST)][eval({A%q<bad%q4})])), 0)={@log smoke=TC038: edge malformed pct-q + nested percent parity. Succeeded.},{@log smoke=TC038: edge malformed pct-q + nested percent parity. Failed (%q0 vs %q1).}"
 >323
-"@if strmatch(setr(0,sha1([eval({A%q<bad]tail})][eval({A%q<bad}tail})])),setr(1,sha1([eval({A%q<bad]tail})][eval({A%q<bad}tail})])))={@log smoke=TC039: edge malformed pct-q + close delimiters parity. Succeeded.},{@log smoke=TC039: edge malformed pct-q + close delimiters parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad]tail})][eval({A%q<bad}tail})]), setr(1,[eval({A%q<bad]tail})][eval({A%q<bad}tail})])), 0)={@log smoke=TC039: edge malformed pct-q + close delimiters parity. Succeeded.},{@log smoke=TC039: edge malformed pct-q + close delimiters parity. Failed (%q0 vs %q1).}"
 >324
-"@if strmatch(setr(0,sha1([eval({A%q<bad;B[add(1,2)]C})])),setr(1,sha1([eval({A%q<bad;B[add(1,2)]C})])))={@log smoke=TC040: edge malformed angle + bracket expression parity. Succeeded.},{@log smoke=TC040: edge malformed angle + bracket expression parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad;B[add(1,2)]C})]), setr(1,[eval({A%q<bad;B[add(1,2)]C})])), 0)={@log smoke=TC040: edge malformed angle + bracket expression parity. Succeeded.},{@log smoke=TC040: edge malformed angle + bracket expression parity. Failed (%q0 vs %q1).}"
 >325
-"@if strmatch(setr(0,sha1([eval({A%=<bad;name>})][eval({A%=<bad(name>})])),setr(1,sha1([eval({A%=<bad;name>})][eval({A%=<bad(name>})])))={@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Succeeded.},{@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%=<bad;name>})][eval({A%=<bad(name>})]), setr(1,[eval({A%=<bad;name>})][eval({A%=<bad(name>})])), 0)={@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Succeeded.},{@log smoke=TC041: edge malformed pct-equals semicolon/paren parity. Failed (%q0 vs %q1).}"
 >326
-"@if strmatch(setr(0,sha1([eval({%q<bad;[add(1,2)]})][eval({%x<bad;[mul(2,3)]})])),setr(1,sha1([eval({%q<bad;[add(1,2)]})][eval({%x<bad;[mul(2,3)]})])))={@log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.;},{@log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).;}"
+"@if eq(comp(setr(0,[eval({%q<bad;[add(1,2)]})][eval({%x<bad;[mul(2,3)]})]), setr(1,[eval({%q<bad;[add(1,2)]})][eval({%x<bad;[mul(2,3)]})])), 0)={@log smoke=TC042: edge malformed angle + valid function tail parity. Succeeded.;},{@log smoke=TC042: edge malformed angle + valid function tail parity. Failed (%q0 vs %q1).;}"
 >327
-"@if strmatch(setr(0,sha1([eval({A%q<bad;[add(1,2)]})])),setr(1,sha1([eval({A%q<bad;[add(1,2)]})])))={@log smoke=TC043: edge pct-q semicolon + bracket tail parity. Succeeded.},{@log smoke=TC043: edge pct-q semicolon + bracket tail parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad;[add(1,2)]})]), setr(1,[eval({A%q<bad;[add(1,2)]})])), 0)={@log smoke=TC043: edge pct-q semicolon + bracket tail parity. Succeeded.},{@log smoke=TC043: edge pct-q semicolon + bracket tail parity. Failed (%q0 vs %q1).}"
 >328
-"@if strmatch(setr(0,sha1([eval({A%q<bad(foo[add(1,2)]})])),setr(1,sha1([eval({A%q<bad(foo[add(1,2)]})])))={@log smoke=TC044: edge pct-q open paren + function tail parity. Succeeded.},{@log smoke=TC044: edge pct-q open paren + function tail parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad(foo[add(1,2)]})]), setr(1,[eval({A%q<bad(foo[add(1,2)]})])), 0)={@log smoke=TC044: edge pct-q open paren + function tail parity. Succeeded.},{@log smoke=TC044: edge pct-q open paren + function tail parity. Failed (%q0 vs %q1).}"
 >329
-"@if strmatch(setr(0,sha1([eval({A%x<bad;[mul(2,3)]})])),setr(1,sha1([eval({A%x<bad;[mul(2,3)]})])))={@log smoke=TC045: edge pct-x semicolon + function tail parity. Succeeded.},{@log smoke=TC045: edge pct-x semicolon + function tail parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%x<bad;[mul(2,3)]})]), setr(1,[eval({A%x<bad;[mul(2,3)]})])), 0)={@log smoke=TC045: edge pct-x semicolon + function tail parity. Succeeded.},{@log smoke=TC045: edge pct-x semicolon + function tail parity. Failed (%q0 vs %q1).}"
 >330
-"@if strmatch(setr(0,sha1([eval({A%=<bad;[strcat(x,y)]})])),setr(1,sha1([eval({A%=<bad;[strcat(x,y)]})])))={@log smoke=TC046: edge pct-equals semicolon + function tail parity. Succeeded.},{@log smoke=TC046: edge pct-equals semicolon + function tail parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%=<bad;[strcat(x,y)]})]), setr(1,[eval({A%=<bad;[strcat(x,y)]})])), 0)={@log smoke=TC046: edge pct-equals semicolon + function tail parity. Succeeded.},{@log smoke=TC046: edge pct-equals semicolon + function tail parity. Failed (%q0 vs %q1).}"
 >331
-"@if strmatch(setr(0,sha1([setr(0,QQ)][eval({A%q<bad(%q0)tail})])),setr(1,sha1([setr(0,QQ)][eval({A%q<bad(%q0)tail})])))={@log smoke=TC047: edge pct-q nested percent + parens parity. Succeeded.},{@log smoke=TC047: edge pct-q nested percent + parens parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[setr(0,QQ)][eval({A%q<bad(%q0)tail})]), setr(1,[setr(0,QQ)][eval({A%q<bad(%q0)tail})])), 0)={@log smoke=TC047: edge pct-q nested percent + parens parity. Succeeded.},{@log smoke=TC047: edge pct-q nested percent + parens parity. Failed (%q0 vs %q1).}"
 >332
-"@if strmatch(setr(0,sha1([eval({A%q<bad;next;more})])),setr(1,sha1([eval({A%q<bad;next;more})])))={@log smoke=TC048: edge pct-q multiple semicolons parity. Succeeded.},{@log smoke=TC048: edge pct-q multiple semicolons parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%q<bad;next;more})]), setr(1,[eval({A%q<bad;next;more})])), 0)={@log smoke=TC048: edge pct-q multiple semicolons parity. Succeeded.},{@log smoke=TC048: edge pct-q multiple semicolons parity. Failed (%q0 vs %q1).}"
 >333
-"@if strmatch(setr(0,sha1([eval({A%x<bad(]tail})])),setr(1,sha1([eval({A%x<bad(]tail})])))={@log smoke=TC049: edge pct-x mixed closer tail parity. Succeeded.},{@log smoke=TC049: edge pct-x mixed closer tail parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%x<bad(]tail})]), setr(1,[eval({A%x<bad(]tail})])), 0)={@log smoke=TC049: edge pct-x mixed closer tail parity. Succeeded.},{@log smoke=TC049: edge pct-x mixed closer tail parity. Failed (%q0 vs %q1).}"
 >334
-"@if strmatch(setr(0,sha1([eval({A%=<bad(name>;tail})])),setr(1,sha1([eval({A%=<bad(name>;tail})])))={@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Succeeded.},{@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[eval({A%=<bad(name>;tail})]), setr(1,[eval({A%=<bad(name>;tail})])), 0)={@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Succeeded.},{@log smoke=TC050: edge pct-equals malformed name + semicolon parity. Failed (%q0 vs %q1).}"
 >397
-"@if strmatch(setr(0,sha1([setr(1,TAIL)][eval({%q<bad;[add(1,2)]%q1})])),setr(1,sha1([setr(1,TAIL)][eval({%q<bad;[add(1,2)]%q1})])))={@log smoke=TC051: edge malformed pct-q then valid tail parity. Succeeded.},{@log smoke=TC051: edge malformed pct-q then valid tail parity. Failed (%q0 vs %q1).}"
+"@if eq(comp(setr(0,[setr(1,TAIL)][eval({%q<bad;[add(1,2)]%q1})]), setr(1,[setr(1,TAIL)][eval({%q<bad;[add(1,2)]%q1})])), 0)={@log smoke=TC051: edge malformed pct-q then valid tail parity. Succeeded.},{@log smoke=TC051: edge malformed pct-q then valid tail parity. Failed (%q0 vs %q1).}"
 >399
-"@if strmatch(setr(0,sha1([setr(2,POST)][eval({pre%q<bad;mid%q2post})])),setr(1,sha1([setr(2,POST)][eval({pre%q<bad;mid%q2post})])))={@log smoke=TC052: edge malformed pct-q then later substitution parity. Succeeded.;@trig me/tr.done},{@log smoke=TC052: edge malformed pct-q then later substitution parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
+"@if eq(comp(setr(0,[setr(2,POST)][eval({pre%q<bad;mid%q2post})]), setr(1,[setr(2,POST)][eval({pre%q<bad;mid%q2post})])), 0)={@log smoke=TC052: edge malformed pct-q then later substitution parity. Succeeded.;@trig me/tr.done},{@log smoke=TC052: edge malformed pct-q then later substitution parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
 <
 !173
 "test_pickrand_fn"
