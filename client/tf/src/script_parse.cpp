@@ -1122,11 +1122,51 @@ static const std::unordered_map<std::string, FuncDef>& builtin_funcs() {
 
 // ---- Public API ----
 
-Value eval_expr(const std::string& expr, ScriptEnv& env) {
+// Number of expression parses currently in progress.  A Parser holds a
+// reference into the token cache for its whole lifetime, so the cache may
+// only be cleared while no parse is active — otherwise a reentrant eval()
+// (eval() -> eval_expr) could dangle an outer parse's token reference.
+static int g_eval_depth = 0;
+
+// Tokenizing an expression is a pure function of its text, so the token
+// stream can be cached and reused.  Variable references resolve at parse
+// time against the live ScriptEnv (they are never baked into tokens), so a
+// cached token vector stays correct across calls even as values change.
+// This matters for status-bar format variables (status_int_*/status_var_*),
+// which are re-evaluated on every redraw (see #761).  The cache is keyed by
+// the exact expression text and bounded to avoid unbounded growth if a
+// script generates many distinct expression strings (e.g. eval() on
+// runtime-built strings).
+//
+// unordered_map guarantees references to elements survive insertion/rehash,
+// so a held token reference only dangles on erase/clear — which we gate on
+// g_eval_depth == 0 (no parse in flight).
+static const std::vector<Token>& cached_tokenize(const std::string& expr) {
+    static std::unordered_map<std::string, std::vector<Token>> cache;
+    constexpr size_t kMaxEntries = 256;
+
+    auto it = cache.find(expr);
+    if (it != cache.end()) return it->second;
+
+    if (cache.size() >= kMaxEntries && g_eval_depth == 0) cache.clear();
+
     ScriptLexer lexer;
     lexer.tokenize(expr);
-    Parser parser(lexer.tokens(), env);
-    return parser.parse_expr();
+    auto res = cache.emplace(expr, lexer.tokens());
+    return res.first->second;
+}
+
+Value eval_expr(const std::string& expr, ScriptEnv& env) {
+    // Resolve tokens before bumping the depth guard: at the top level
+    // (depth 0) cached_tokenize is free to evict, since no reference is
+    // live yet.  Once we hold a reference, depth > 0 blocks eviction for
+    // the duration of this parse and any nested eval().
+    const std::vector<Token>& tokens = cached_tokenize(expr);
+    ++g_eval_depth;
+    Parser parser(tokens, env);
+    Value v = parser.parse_expr();
+    --g_eval_depth;
+    return v;
 }
 
 // ---- Substitution expansion ----
