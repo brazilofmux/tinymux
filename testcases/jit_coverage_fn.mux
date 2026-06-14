@@ -182,11 +182,34 @@
         eq(add(bound(%q0,1,9),0), 2.5)
       )=
   {
-    @log smoke=TC009: float fn result feeding native int op. Succeeded.;
+    @log smoke=TC009: float fn result feeding native int op. Succeeded.
+  },
+  {
+    @log smoke=TC009: float fn result feeding native int op. Failed (abs=[add(abs(%q0),1)] max=[add(max(%q0,%q1),1)] min=[add(min(%q0,%q1),1)] bound=[add(bound(%q0,1,9),0)]).
+  }
+-
+#
+# TC010: trunc() through the tier2 blob must match the interpreter.  The %q
+# value is set at runtime so trunc() routes to the blob (rv64_trunc) rather
+# than constant-folding.  Regression for #827: the old rv64_trunc used
+# (val>=0)?floor():ceil(), which GCC inlined to a DBT-mistranslated fcvt and
+# rounded AWAY from zero (trunc(2.5)->3, trunc(-2.5)->-3); it now calls libm
+# ::trunc via the MATH_WRAP intrinsic.  Truncation is toward zero.
+#
+&tr.tc010 test_jit_coverage_fn=
+  @log smoke=TC010 setup [setq(0,2.5)][setq(1,-2.5)][setq(2,99.9)];
+  @if cand(
+        eq(trunc(%q0), 2),
+        eq(trunc(%q1), -2),
+        eq(trunc(%q2), 99),
+        eq(trunc(add(%q0,0.4)), 2)
+      )=
+  {
+    @log smoke=TC010: trunc() tier2 blob parity. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC009: float fn result feeding native int op. Failed (abs=[add(abs(%q0),1)] max=[add(max(%q0,%q1),1)] min=[add(min(%q0,%q1),1)] bound=[add(bound(%q0,1,9),0)]).;
+    @log smoke=TC010: trunc() tier2 blob parity. Failed (t2.5=[trunc(%q0)] t-2.5=[trunc(%q1)] t99.9=[trunc(%q2)] t2.9=[trunc(add(%q0,0.4))]).;
     @trig me/tr.done
   }
 -

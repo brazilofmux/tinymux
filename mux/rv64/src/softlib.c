@@ -2211,6 +2211,7 @@ __attribute__((noipa)) double log10(double x) { (void)x; return stub_nan(); }
 __attribute__((noipa)) double ceil(double x)  { (void)x; return stub_nan(); }
 __attribute__((noipa)) double floor(double x) { (void)x; return stub_nan(); }
 __attribute__((noipa)) double fabs(double x)  { (void)x; return stub_nan(); }
+__attribute__((noipa)) double trunc(double x) { (void)x; return stub_nan(); }
 
 __attribute__((noipa)) double pow(double x, double y)   { (void)x; (void)y; return stub_nan(); }
 __attribute__((noipa)) double atan2(double y, double x) { (void)x; (void)y; return stub_nan(); }
@@ -2302,6 +2303,10 @@ MATH_WRAP_1(ceil,  ceil)
 MATH_WRAP_1(floor, floor)
 MATH_WRAP_1(fabs,  fabs)
 MATH_WRAP_1(sqrt,  sqrt)
+/* trunc via libm ::trunc (truncate toward zero), as a single intercepted
+ * call — NOT (val>=0)?floor():ceil(), which GCC pattern-matches into an inline
+ * fcvt-with-rounding the DBT mistranslates (rounded away from zero, #827). */
+MATH_WRAP_1(trunc, trunc)
 
 MATH_WRAP_2(power, pow)
 MATH_WRAP_2(atan2, atan2)
@@ -2475,16 +2480,6 @@ char *rv64_fdiv(char *out, const char **fargs, int nfargs) {
     double bot = rv64_strtod(fargs[1]);
     /* IEEE 754: top/0.0 produces +Inf/-Inf/NaN — fval handles it. */
     int n = rv64_fval(out, top / bot);
-    out[n] = '\0';
-    return out;
-}
-
-char *rv64_trunc(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
-    double val = rv64_strtod(fargs[0]);
-    /* Truncate toward zero: use floor/ceil (intrinsics). */
-    double ipart = (val >= 0.0) ? floor(val) : ceil(val);
-    int n = rv64_fval(out, ipart);
     out[n] = '\0';
     return out;
 }

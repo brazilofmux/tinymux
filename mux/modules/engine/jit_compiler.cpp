@@ -206,7 +206,9 @@ static bool tier2_allowed(const std::string &mux_name) {
         "SIGN",         // rv64_sign: -1/0/1
         "MIN", "MAX",   // rv64_min/max: strtod compare → fval
         "INC", "DEC",   // rv64_inc/dec: atoi64 ± 1
-        "TRUNC",        // rv64_trunc: modf → fval
+        "TRUNC",        // rv64_trunc: MATH_WRAP via libm ::trunc (#827 — the
+                        // old (val>=0)?floor():ceil() pattern got inlined to a
+                        // DBT-mistranslated fcvt and rounded away from zero)
         "ROUND",        // rv64_round: ftoa_round intrinsic
 
         // Tier 2 list/string ops — parity-tested via smoke suite.
@@ -713,6 +715,7 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "ceil",  DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::ceil)));
     reg_intrinsic(dbt, "floor", DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::floor)));
     reg_intrinsic(dbt, "fabs",  DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::fabs)));
+    reg_intrinsic(dbt, "trunc", DBT_EMIT_FP_D_D,  reinterpret_cast<void *>(static_cast<fn_d_d>(::trunc)));
 
     // FP math intrinsics — (double,double)→double via platform libm.
     //
