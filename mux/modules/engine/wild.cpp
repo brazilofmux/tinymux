@@ -17,18 +17,16 @@
 #include "config.h"
 #include "externs.h"
 
-// The pattern is pre-lowercased by the caller (mux_strlwr, Unicode-aware) at
-// the entry points.  The non-capturing matcher quick_wild_impl() folds the data
-// side per character too (wild_lit_eq → mux_tolower), so it is fully Unicode
-// case-insensitive from either side.  The capturing matcher wild1() still uses
-// the byte-wise EQUAL/NOTEQUAL below, which fold only ASCII in the data — a
-// documented limitation for non-ASCII letters in $-command / ^-listen literals
-// (see docs/survey-wild-matching.md; making wild1 character-oriented while
-// preserving original-case captures is a tracked follow-up).
+// The pattern is pre-lowercased by the caller (mux_strlwr, Unicode-aware) at the
+// entry points.  Both matchers — quick_wild_impl() (non-capturing) and wild1()
+// (capturing) — fold the data side per character too, via wild_lit_eq() →
+// mux_tolower(), so wildcard matching is fully Unicode case-insensitive from
+// either side.  wild1() captures original-case bytes: only its literal
+// comparisons fold; the '*'/'?' capture spans copy from the unmodified data.
+// (Historically the data side folded only ASCII via mux_tolower_ascii, so e.g.
+// strmatch(CAFÉ,café) and $café matching CAFÉ both failed — see
+// docs/survey-wild-matching.md, #835/#836/#837.)
 //
-#define EQUAL(a,b) (mux_tolower_ascii(a) == (b))
-#define NOTEQUAL(a,b) (mux_tolower_ascii(a) != (b))
-
 // Argument return space and size.
 //
 static UTF8 **arglist;
@@ -285,27 +283,15 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
 
     while (*tstr != '*')
     {
-        switch (*tstr)
+        if ('?' == *tstr)
         {
-        case '?':
-
-            // Single character match.  Return false if at end of data.
+            // Single character match: capture one whole UTF-8 character.
+            // Return false at end of data or on a malformed character.
             //
-            size_t t;
-            if (  '\0' == dstr[0]
-               || UTF8_CONTINUE <= (t = utf8_FirstByte[*dstr]))
+            size_t t = wild_char_len(dstr);
+            if (0 == t)
             {
                 return false;
-            }
-
-            size_t j;
-            for (j = 1; j < t; j++)
-            {
-                if (  '\0' == dstr[j]
-                   || UTF8_CONTINUE != utf8_FirstByte[dstr[j]])
-                {
-                    return false;
-                }
             }
 
             memcpy(arglist[arg], dstr, t);
@@ -319,34 +305,32 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
                 return quick_wild_impl(tstr + 1, dstr + t);
             }
             dstr += t;
-            break;
+            tstr++;
+            continue;
+        }
 
-        case '\\':
-
+        if ('\\' == *tstr)
+        {
             // Escape character.  Move up, and force literal match of next
             // character.
             //
             tstr++;
-
-            // FALL THROUGH
-
-        default:
-
-            // Literal character.  Check for a match. If matching end of data,
-            // return true.
-            //
-            if (NOTEQUAL(*dstr, *tstr))
-            {
-                return false;
-            }
-            if (!*dstr)
-            {
-                return true;
-            }
-            dstr++;
-            break;
         }
-        tstr++;
+
+        // Literal character.  Check for a (case-insensitive, whole-character)
+        // match.  If matching end of data, return true.
+        //
+        size_t dlen, tlen;
+        if (!wild_lit_eq(tstr, dstr, &dlen, &tlen))
+        {
+            return false;
+        }
+        if (!*dstr)
+        {
+            return true;
+        }
+        dstr += dlen;
+        tstr += tlen;
     }
 
     // If at end of pattern, slurp the rest, and leave.
@@ -430,19 +414,22 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
     // Check for possible matches.  This loop terminates either at end of data
     // (resulting in failure), or at a successful match.
     //
+    size_t anchor_dlen = 0, anchor_tlen = 0;
     for (;;)
     {
-        // Scan forward until first character matches.
+        // Scan forward until the literal anchor matches (case-insensitively, on
+        // whole-character boundaries).
         //
         if (*tstr)
         {
-            while (NOTEQUAL(*dstr, *tstr))
+            while (!wild_lit_eq(tstr, dstr, &anchor_dlen, &anchor_tlen))
             {
                 if (!*dstr)
                 {
                     return false;
                 }
-                dstr++;
+                size_t t = wild_char_len(dstr);
+                dstr += (0 != t) ? t : 1;
             }
         }
         else
@@ -453,12 +440,12 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
             }
         }
 
-        // The first character matches, now.  Check if the rest does, using
-        // the fastest method, as usual.
+        // The anchor matches, now.  Check if the rest does, using the fastest
+        // method, as usual.
         //
         if (  !*dstr
-           || ((arg < numargs) ? wild1(tstr + 1, dstr + 1, arg)
-                               : quick_wild_impl(tstr + 1, dstr + 1)))
+           || ((arg < numargs) ? wild1(tstr + anchor_tlen, dstr + anchor_dlen, arg)
+                               : quick_wild_impl(tstr + anchor_tlen, dstr + anchor_dlen)))
         {
             // Found a match!  Fill in all remaining arguments. First do the
             // '*'...
@@ -488,7 +475,11 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
         }
         else
         {
-            dstr++;
+            // Anchor matched but the rest didn't — advance past this whole
+            // data character and keep scanning.
+            //
+            size_t t = wild_char_len(dstr);
+            dstr += (0 != t) ? t : 1;
         }
     }
 }
@@ -534,7 +525,8 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
         {
             lt++;
         }
-        if (NOTEQUAL(*dstr, *lt))
+        size_t dlen, tlen;
+        if (!wild_lit_eq(lt, dstr, &dlen, &tlen))
         {
             return false;
         }
@@ -542,8 +534,8 @@ bool wild(UTF8 *tstr, UTF8 *dstr, UTF8 *args[], int nargs)
         {
             return true;
         }
-        lt++;
-        dstr++;
+        lt += tlen;
+        dstr += dlen;
     }
 
     // Allocate space for the return args.

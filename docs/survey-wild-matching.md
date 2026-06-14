@@ -68,19 +68,28 @@ like É→é are XOR transforms, `89^A9=0x20`) — the folded byte is
 `original ^ mask`, not `d->p` directly. Verified with a 21-case `muxscript -e`
 matrix + `strmatch_fn.mux` TC004; smoke 1254/1254.
 
-**#837 (deferred): capturing path (wild1).** `wild1()` — behind `$`-command /
-`^`-listen wildcard captures (`%0..%9`) via `wild()` — still folds only ASCII in
-its literals (`EQUAL`/`NOTEQUAL`). A full char-oriented rework was prototyped
-(ASCII-identical, reuses the proven helpers; captures copy original-case bytes
-from the data span) but **held back because it can't be verified**: muxscript's
-REPL drives neither `$`-commands nor `^`-listens, and the smoke suite has no
-capture coverage, so `wild()` captures can't be exercised by the available
-tooling. Needs a dedicated unit harness (link libmux + `unicode_tables_c.h`,
-`pool_init`, stub `mudstate`/`mudconf`, call `wild()` directly, assert captures).
-Also note a pre-existing separate bug: `wild1`'s post-`*` trailing-`?`
-(`numextra`) handling is byte-wise (1 byte per `?`), unlike its char-aware
-standalone `?` — a `*?literal` pattern can split a multibyte character into a
-capture.
+**#837 (LANDED): capturing path (wild1).** `wild1()` and `wild()`'s
+literal-prefix fast-match now fold the data side per character via the same
+`wild_lit_eq()` helper, so `$`-command / `^`-listen wildcard captures match
+case-insensitively for non-ASCII too. Captures stay original-case: only the
+literal comparisons fold; the `*`/`?` capture spans copy from the unmodified
+data. `EQUAL`/`NOTEQUAL` are gone (no remaining byte-wise comparisons).
+
+Verified with a dedicated unit harness, **`wild_test.cpp`** (committed; compile
+command in its header) — it links the real `wild.eo` against libmux, supplies
+the `mudstate`/`mudconf` globals + `pool_init`, and calls `wild()`/`quick_wild()`
+directly, asserting both match results and `%0..%9` capture contents. 20 cases
+(ASCII + UTF-8, captures + spans) all pass; the harness was first run against the
+byte-wise `wild1` to confirm it caught the bug (`wild("café *","CAFÉ münchen")`
+→ no-match) before the fix flipped it green. This is the only coverage of the
+capture path — muxscript's REPL drives neither `$`-commands nor `^`-listens, and
+the smoke suite has no capture tests.
+
+**Still open (pre-existing, separate from case folding):** `wild1`'s post-`*`
+trailing-`?` (`numextra`) handling is byte-wise (1 byte per `?`), unlike its
+char-aware standalone `?` — a `*?literal` pattern can split a multibyte character
+into a capture. Not addressed here (it's a `?`/capture-boundary bug, not a fold
+bug); a candidate for a follow-up using the same harness.
 
 ## Test technique
 
