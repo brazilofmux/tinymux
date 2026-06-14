@@ -164,6 +164,35 @@ static const std::string *ast_call_raw_arg(const ASTNode *call, int argIndex)
     return nullptr;
 }
 
+// Hard cap on AST *parser* recursion depth, mirroring the evaluator's
+// AST_EVAL_MAX_DEPTH (below).  parseSequence/parseEvalBracket/parseBraceGroup/
+// parseFunctionCall are mutually recursive on the nesting of [], {}, and () in
+// the (LBUF-bounded) input.  On a default 8 MiB stack the LBUF cap already keeps
+// even maximally nested input ("[[[[...]]]]") from overflowing, but — like the
+// evaluator's cap — this bounds adversarial deep nesting independently of stack
+// size (the evaluator's comment notes platforms with smaller stack defaults).
+// The counter is thread_local so it also bounds the nested re-parse of NOEVAL
+// structural arguments (ast_parse_region in parser_apply_structural_arg_policy).
+//
+// Over the cap, parseSequence returns its (empty) node without recursing; the
+// enclosing parseEvalBracket/etc. still consumed their opening token, so m_pos
+// always advances and parsing terminates.  Real softcode nests a few levels;
+// 1000 is far beyond legitimate use and well under the evaluator's reach.
+//
+static constexpr int AST_PARSE_MAX_DEPTH = 1000;
+static thread_local int s_ast_parse_depth = 0;
+
+namespace
+{
+    class AstParseDepthGuard
+    {
+    public:
+        AstParseDepthGuard()  { ++s_ast_parse_depth; }
+        ~AstParseDepthGuard() { --s_ast_parse_depth; }
+        bool overflow() const { return s_ast_parse_depth > AST_PARSE_MAX_DEPTH; }
+    };
+}
+
 class ASTParser {
 public:
     ASTParser(const std::vector<ASTToken> &tokens)
@@ -275,7 +304,14 @@ private:
     std::unique_ptr<ASTNode> parseSequence(
         bool stopRP, bool stopRB, bool stopRC, bool stopCM)
     {
+        // Bound parser recursion: every []/{}/() nesting level re-enters here.
+        //
+        AstParseDepthGuard depth_guard;
         auto seq = std::make_unique<ASTNode>(AST_SEQUENCE);
+        if (depth_guard.overflow())
+        {
+            return seq;
+        }
         while (!atEnd())
         {
             ASTTokenType t = peek().type;
