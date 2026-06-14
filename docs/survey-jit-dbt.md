@@ -182,8 +182,17 @@ plus a defense-in-depth note (unmasked guest LOAD/STORE).
 - [ ] SSA construction + linear-scan register allocation correctness (the
       warm-loop register-pressure class — `dbt_internal.h` history shows it was
       a real divergence bug; re-verify the SSA/spill logic, not just the guard).
-- [ ] Emitter immediate encoding (x64 rel32/disp32 truncation on large
-      offsets, side-exit `jcc_patch` rel32 range, block chaining backpatch).
+- [x] Emitter immediate encoding — AUDITED (#830, 0c8d6507f). rel32/disp32
+      truncation is a NON-issue: CODE_BUF_SIZE (1 MB) and MEM_SIZE (~5.5 MB) keep
+      every code-relative rel32 and guest-memory disp32 far inside range. But the
+      OVERFLOW path was unsafe: emit_byte/emit_bytes skip writes past capacity yet
+      emit_pos keeps advancing, and emit_patch_rel32 then did an UNGUARDED memcpy
+      → rel32 patches written out of bounds past the 1 MB code buffer once
+      code_used neared full (75% reached in a short smoke run; the bail is
+      post-hoc). Fixed: bounds-guard the patch write (also a64 emit_patch_b26/
+      b19). Follow-up (perf, not safety): code_used grows ~monotonically and only
+      dbt_reset reclaims it, so the JIT degrades to interpreter once the buffer
+      fills — a reset-when-near-full (exec_depth==0) would keep it working.
 - [x] HIR optimizer (`hir_opt.cpp`) — AUDITED. Found #828 (faa795243): mux
       `mod()` is floor-mod (i64Mod) but the JIT mapped it to truncate-`%` on its
       runtime paths (blob `rv64_mod` + native MOD→HIR_REM); `mod(-7,3)`→-1 vs 2.
