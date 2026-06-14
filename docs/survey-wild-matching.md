@@ -85,11 +85,19 @@ byte-wise `wild1` to confirm it caught the bug (`wild("café *","CAFÉ münchen"
 capture path — muxscript's REPL drives neither `$`-commands nor `^`-listens, and
 the smoke suite has no capture tests.
 
-**Still open (pre-existing, separate from case folding):** `wild1`'s post-`*`
-trailing-`?` (`numextra`) handling is byte-wise (1 byte per `?`), unlike its
-char-aware standalone `?` — a `*?literal` pattern can split a multibyte character
-into a capture. Not addressed here (it's a `?`/capture-boundary bug, not a fold
-bug); a candidate for a follow-up using the same harness.
+**#838 (FIXED): `numextra` (`?` immediately after `*`).** `wild1`'s post-`*`
+`?` handling advanced and captured one byte per `?` (the do-while skip and both
+capture-fill sites), splitting multibyte characters — `wild("*?x","éx")` gave
+`%0="\xC3" %1="\xA9"` instead of `%0="" %1="é"`. Fixed by making the three sites
+character-oriented: `wild_char_len` skip, `wild_capture_char` fill, and
+`wild_step_back` (walk back `numextra` whole characters from the anchor) for the
+`*` span. `datapos` became `const`. `wild_test.cpp` extended to 28 cases
+(8 `*?`-adjacency, ASCII + UTF-8); ASCII unchanged, UTF-8 captures whole chars.
+
+The wild.cpp matcher is now fully UTF-8-correct: `?` matches one character,
+literals fold case from either side (non-capturing and capturing), and captures
+copy whole original-case characters — verified by `wild_test.cpp` (28 cases) and
+the smoke suite.
 
 ## Test technique
 
