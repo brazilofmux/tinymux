@@ -93,28 +93,41 @@ static bool fold_cmp2(const std::vector<std::string> &args,
 }
 
 // Helper: xlate() equivalent for constant strings.
-// Matches the real xlate() logic: #-xxx=false, #xxx=true,
-// number=nonzero, empty=false, other=true.
+//
+// This MUST match the real xlate() (functions.cpp) exactly, including for
+// every zero-valued numeric form (0.000, 00000.0, 0E+100, ...), so the JIT's
+// constant fold of t()/not() agrees with the interpreter.  An earlier version
+// approximated with mux_atof plus a tiny hardcoded zero list ({0,0.0,+0,-0})
+// and wrongly returned true for any other float zero such as "0.000" (#824).
+// Use ParseFloat, exactly as xlate() does.
 //
 static bool const_xlate(const std::string &s) {
-    if (s.empty()) return false;
-    if (s[0] == '#') {
-        return !(s.size() > 1 && s[1] == '-');
+    const UTF8 *p = u8(s);
+    if (p[0] == '#') {
+        // '#-...' is false; any other '#...' is true.
+        return p[1] != '-';
     }
-    // Try as number: zero is false, nonzero is true.
-    int nDigits;
-    if (is_integer(u8(s), &nDigits)) {
-        return mux_atol(u8(s)) != 0;
+    PARSE_FLOAT_RESULT pfr;
+    if (ParseFloat(&pfr, p)) {
+        if (pfr.iString) {
+            // NaN, +Inf, -Inf, Ind.
+            return false;
+        }
+        // A number is false only if every mantissa digit (before and
+        // after the decimal point) is '0'.
+        for (size_t i = 0; i < pfr.nDigitsA; i++) {
+            if (pfr.pDigitsA[i] != '0') return true;
+        }
+        for (size_t i = 0; i < pfr.nDigitsB; i++) {
+            if (pfr.pDigitsB[i] != '0') return true;
+        }
+        return false;
     }
-    double d = mux_atof(u8(s));
-    if (d != 0.0) return true;
-    // If it parsed as a float zero, it's false.  If it didn't
-    // parse as a number at all, it's true (non-empty string).
-    // The real xlate uses ParseFloat — we approximate: if
-    // mux_atof returns 0 and string isn't "0"-like, it's true.
-    if (s == "0" || s == "0.0" || s == "+0" || s == "-0") return false;
-    // Non-numeric non-empty string.
-    return true;
+    // Not a number: true unless it is empty / whitespace-only.
+    while (mux_isspace(*p)) {
+        p++;
+    }
+    return p[0] != '\0';
 }
 
 static bool try_fold(const std::string &func_name,

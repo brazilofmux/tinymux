@@ -10503,15 +10503,15 @@
 >256
 "@log smoke=Beginning t() test cases."
 >257
-"@if [cand(eq(t(1), 1),eq(t(0), 0),eq(t(abc), 1),eq(t(), 0))]={@log smoke=TC001: t() basic operations. Succeeded.},{@log smoke=TC001: t() basic operations. Failed (t(1)=[t(1)] t(0)=[t(0)] t(abc)=[t(abc)] t()=[t()]).}"
+"@if cand(eq(t(1), 1),eq(t(0), 0),eq(t(abc), 1),eq(t(), 0))={@log smoke=TC001: t() basic operations. Succeeded.},{@log smoke=TC001: t() basic operations. Failed (t(1)=[t(1)] t(0)=[t(0)] t(abc)=[t(abc)] t()=[t()]).}"
 >258
-"@if [cand(eq(t(0.0), 0),eq(t(00000), 0),eq(t(-0), 0),eq(t(0.000), 0))]={@log smoke=TC002: t() zero-valued numbers. Succeeded.},{@log smoke=TC002: t() zero-valued numbers. Failed (t(0.0)=[t(0.0)] t(00000)=[t(00000)] t(-0)=[t(-0)] t(0.000)=[t(0.000)]).}"
+"@if cand(eq(t(0.0), 0),eq(t(00000), 0),eq(t(-0), 0),eq(t(0.000), 0))={@log smoke=TC002: t() zero-valued numbers. Succeeded.},{@log smoke=TC002: t() zero-valued numbers. Failed (t(0.0)=[t(0.0)] t(00000)=[t(00000)] t(-0)=[t(-0)] t(0.000)=[t(0.000)]).}"
 >259
-"@if [cand(eq(t(0.1), 1),eq(t(-5), 1),eq(t(01), 1))]={@log smoke=TC003: t() non-zero numbers. Succeeded.},{@log smoke=TC003: t() non-zero numbers. Failed (t(0.1)=[t(0.1)] t(-5)=[t(-5)] t(01)=[t(01)]).}"
+"@if cand(eq(t(0.1), 1),eq(t(-5), 1),eq(t(01), 1))={@log smoke=TC003: t() non-zero numbers. Succeeded.},{@log smoke=TC003: t() non-zero numbers. Failed (t(0.1)=[t(0.1)] t(-5)=[t(-5)] t(01)=[t(01)]).}"
 >260
 "@log smoke=End t() test cases.;@notify smoke"
 >261
-"@if [cand(eq(t(#0), 1),eq(t(#-1), 0),eq(t(%b), 0),eq(t(false), 1))]={@log smoke=TC004: t() dbref and whitespace rules. Succeeded.;@trig me/tr.done},{@log smoke=TC004: t() dbref and whitespace rules. Failed (t(#0)=[t(#0)] t(#-1)=[t(#-1)] t(space)=[t(%b)] t(false)=[t(false)]).;@trig me/tr.done}"
+"@if cand(eq(t(#0), 1),eq(t(#-1), 0),eq(t(%b), 0),eq(t(false), 1))={@log smoke=TC004: t() dbref and whitespace rules. Succeeded.;@trig me/tr.done},{@log smoke=TC004: t() dbref and whitespace rules. Failed (t(#0)=[t(#0)] t(#-1)=[t(#-1)] t(space)=[t(%b)] t(false)=[t(false)]).;@trig me/tr.done}"
 <
 !283
 "test_tier2_parity_fn"
