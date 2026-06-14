@@ -222,5 +222,20 @@ plus a defense-in-depth note (unmasked guest LOAD/STORE).
       rv64_add_doubles host intrinsic (stack vals[], not the strtod-clobbered
       DSCRATCH); native float ADD/SUB lowering removed.
 - [ ] `hir_lower_lua.cpp` — the Lua lowering path (separate from softcode).
-- [ ] `reconstruct_from_cache` — does it validate record sizes/offsets before
-      use (corrupted/truncated SQLite blob robustness)?
+- [x] `reconstruct_from_cache` — AUDITED. Mostly well-hardened: blob lengths
+      (`code_len`/`str_len`/`fargs_len`/`deps_len`) come from
+      `sqlite3_column_bytes`, so the `assign` counts can't desync from the blob;
+      the stored int64 fields (`entry_pc`/`code_size`/`str_pool_end`/
+      `fargs_pool_end`/`out_pool_end`) are all range-checked against the guest
+      layout before any blob is copied, and `materialize_program`'s memcpy
+      destinations are bounded by those validated pool ends. ONE gap found+fixed
+      (#831, a9b701e42): `out_addr` was the lone unvalidated record field — the
+      folded-result extraction did an unbounded `std::string = const char*`
+      (strlen) guarded only by `out_addr < buffer.size()`, so a corrupt row
+      pointing `out_addr` into the high buffer (e.g. the non-NUL DSCRATCH
+      doubles area) walked the strlen past the 4MB runtime buffer (OOB read).
+      Fixed: a folded `final_out` is always a str-pool address (hir_codegen
+      `pool_str`/interned, "so it survives SQLite cache persistence"), so reject
+      any record whose resolved `out_addr` is outside `[STR_BASE, str_pool_end)`
+      and bound the NUL scan to that region with `memchr`. Low severity
+      (internal cache DB, corruption-only); same hardening class as #830.
