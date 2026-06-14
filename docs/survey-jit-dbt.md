@@ -221,7 +221,26 @@ plus a defense-in-depth note (unmasked guest LOAD/STORE).
       0.30000000000000004 vs 0.3 — no NearestPretty). Fixed: blob calls the
       rv64_add_doubles host intrinsic (stack vals[], not the strtod-clobbered
       DSCRATCH); native float ADD/SUB lowering removed.
-- [ ] `hir_lower_lua.cpp` — the Lua lowering path (separate from softcode).
+- [x] `hir_lower_lua.cpp` — AUDITED (Lua 5.4 bytecode → HIR). Index handling is
+      mostly solid: every `proto->constants[kidx]` access validates `kidx`
+      against `constants.size()`, jump targets are range-checked
+      (`find_block_starts` + `target < n` guards), and `pc+1` EXTRAARG reads are
+      bounded. THREAT MODEL: the bytecode is always the trusted Lua compiler's
+      output — the sandbox nils out `load`/`loadfile`/`dofile`/`require`
+      (lua_mod.cpp) and compiles `LUA_*` source TEXT-ONLY
+      (`luaL_loadbufferx(..., "t")`), so a player can't inject crafted binary
+      bytecode; eligibility also rejects `maxstacksize > 64`. ONE gap
+      found+fixed (#832, 7441d5144): the register map `int lua_reg[256]` was
+      indexed by composite `A + offset` (LOADNIL `R(A)..R(A+B)`, CONCAT/SETLIST/
+      CALL arg+result runs, TFOR `R(A+4+r)`) with no bound — crafted operands
+      reach ~`R(A+513)`, an OOB read/write (LOADNIL/CALL-results/TFORCALL write
+      HIR value numbers past the stack array). Latent only (no injection path
+      today); fix adds `lua_reg_in_range()` and guards every composite access
+      (fail → VM fallback), completing the bounds-checking the constant/jump
+      indices already had. Behavior-identical for valid bytecode (registers
+      always < 64). FOLLOW-UP noted: the undumper `lua_bc_load`/`load_proto`
+      (lua_bytecode.cpp) is the other deserialization boundary — a separate pass
+      should confirm it can't OOB-read a truncated/malformed dump.
 - [x] `reconstruct_from_cache` — AUDITED. Mostly well-hardened: blob lengths
       (`code_len`/`str_len`/`fargs_len`/`deps_len`) come from
       `sqlite3_column_bytes`, so the `assign` counts can't desync from the blob;
