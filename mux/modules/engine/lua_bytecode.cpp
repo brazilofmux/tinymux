@@ -18,6 +18,14 @@ static constexpr uint8_t LUAC_FORMAT  = 0;
 static constexpr int64_t  LUAC_INT    = 0x5678;
 static constexpr double    LUAC_NUM   = 370.5;
 
+// Maximum nested-proto recursion depth.  load_proto() recurses through
+// load_protos() for each function's nested closures; a malformed dump with
+// pathological nesting would otherwise overflow the C stack before the
+// caller's eligibility check (which rejects nested protos) ever runs.  Real
+// Lua compiler output nests far below this (the parser caps it well under
+// 200), so this only bounds malformed input.
+static constexpr int MAX_PROTO_DEPTH = 200;
+
 // ---------------------------------------------------------------
 // Reader helper — a simple cursor over a byte buffer.
 // ---------------------------------------------------------------
@@ -31,7 +39,12 @@ struct bc_reader {
     bc_reader(const uint8_t *d, size_t l)
         : data(d), len(l), pos(0), ok(true) {}
 
-    bool has(size_t n) const { return pos + n <= len; }
+    // Overflow-safe: compute the remaining bytes (pos <= len is an
+    // invariant — every advance passes through a has() check first — so
+    // len - pos never underflows) instead of pos + n, which would wrap when
+    // a malformed stream supplies a near-2^64 size (e.g. via read_string's
+    // read_size()) and falsely pass the bound, enabling an OOB read.
+    bool has(size_t n) const { return n <= len - pos; }
 
     uint8_t read_byte() {
         if (!has(1)) { ok = false; return 0; }
@@ -110,7 +123,8 @@ struct bc_reader {
 // Proto loader (recursive).
 // ---------------------------------------------------------------
 
-static bool load_proto(bc_reader &r, lua_bc_proto *p, const std::string &parent_source);
+static bool load_proto(bc_reader &r, lua_bc_proto *p,
+                       const std::string &parent_source, int depth);
 
 static bool load_constants(bc_reader &r, lua_bc_proto *p) {
     size_t n = r.read_size();
@@ -160,12 +174,12 @@ static bool load_upvalues(bc_reader &r, lua_bc_proto *p) {
 }
 
 static bool load_protos(bc_reader &r, lua_bc_proto *p,
-                         const std::string &parent_source) {
+                         const std::string &parent_source, int depth) {
     size_t n = r.read_size();
     if (!r.ok || n > 1000000) return false;
     p->protos.resize(n);
     for (size_t i = 0; i < n; i++) {
-        if (!load_proto(r, &p->protos[i], parent_source))
+        if (!load_proto(r, &p->protos[i], parent_source, depth))
             return false;
     }
     return true;
@@ -212,7 +226,9 @@ static bool skip_debug(bc_reader &r, lua_bc_proto *p) {
 }
 
 static bool load_proto(bc_reader &r, lua_bc_proto *p,
-                        const std::string &parent_source) {
+                        const std::string &parent_source, int depth) {
+    if (depth > MAX_PROTO_DEPTH) return false;
+
     // Source name.
     p->source = r.read_string();
     if (!r.ok) return false;
@@ -243,7 +259,7 @@ static bool load_proto(bc_reader &r, lua_bc_proto *p,
     if (!load_upvalues(r, p)) return false;
 
     // Nested protos.
-    if (!load_protos(r, p, p->source)) return false;
+    if (!load_protos(r, p, p->source, depth + 1)) return false;
 
     // Debug info (skip).
     if (!skip_debug(r, p)) return false;
@@ -296,7 +312,7 @@ bool lua_bc_load(const uint8_t *data, size_t len, lua_bc_chunk *out) {
     if (!r.ok) return false;
 
     // Load main proto.
-    if (!load_proto(r, &out->main, "")) return false;
+    if (!load_proto(r, &out->main, "", 0)) return false;
 
     return r.ok;
 }
