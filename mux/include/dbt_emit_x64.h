@@ -56,6 +56,15 @@ static inline uint32_t emit_pos(emit_t *e) {
 
 static inline void emit_patch_rel32(emit_t *e, uint32_t patch_offset,
                                      uint32_t target_offset) {
+    // Bounds-guard, like emit_byte/emit_bytes.  When a block overflows the
+    // remaining code buffer, emit_bytes skips the out-of-range placeholder
+    // writes but `offset` (and thus emit_pos) keeps advancing past capacity, so
+    // a branch patch site can land beyond the buffer.  Without this guard the
+    // memcpy wrote rel32 patches out of bounds past the 1 MB code buffer once
+    // code_used neared full (#830) -- translate_block's offset>capacity bail is
+    // post-hoc and the overflowed block is discarded anyway, so skipping the
+    // patch is correct.
+    if (patch_offset + 4 > e->capacity) return;
     int32_t disp = static_cast<int32_t>(target_offset - (patch_offset + 4));
     memcpy(e->buf + patch_offset, &disp, 4);
 }

@@ -658,6 +658,9 @@ static inline void emit_nop(emit_t *e) {
 //
 static inline void emit_patch_b26(emit_t *e, uint32_t patch_offset,
                                    uint32_t target_offset) {
+    // Bounds-guard: an overflowed block can leave a patch site past capacity
+    // (see emit_patch_rel32 in dbt_emit_x64.h, #830).
+    if (patch_offset + 4 > e->capacity) return;
     int32_t byte_diff = static_cast<int32_t>(target_offset - patch_offset);
     int32_t imm26 = byte_diff >> 2;
     uint32_t inst = 0x14000000 | (imm26 & 0x03FFFFFF);
@@ -669,6 +672,9 @@ static inline void emit_patch_b26(emit_t *e, uint32_t patch_offset,
 //
 static inline void emit_patch_b19(emit_t *e, uint32_t patch_offset,
                                    uint32_t target_offset) {
+    // Bounds-guard before the read-modify-write below (an unguarded
+    // patch site past capacity would be an OOB read AND write, #830).
+    if (patch_offset + 4 > e->capacity) return;
     int32_t byte_diff = static_cast<int32_t>(target_offset - patch_offset);
     int32_t imm19 = byte_diff >> 2;
     uint32_t orig;
