@@ -184,8 +184,21 @@ plus a defense-in-depth note (unmasked guest LOAD/STORE).
       a real divergence bug; re-verify the SSA/spill logic, not just the guard).
 - [ ] Emitter immediate encoding (x64 rel32/disp32 truncation on large
       offsets, side-exit `jcc_patch` rel32 range, block chaining backpatch).
-- [ ] HIR optimizer (`hir_opt.cpp`) — constant folding / strength reduction
-      correctness on player-controlled constants (div-by-zero, INT_MIN/-1).
+- [x] HIR optimizer (`hir_opt.cpp`) — AUDITED. Found #828 (faa795243): mux
+      `mod()` is floor-mod (i64Mod) but the JIT mapped it to truncate-`%` on its
+      runtime paths (blob `rv64_mod` + native MOD→HIR_REM); `mod(-7,3)`→-1 vs 2.
+      Fixed (floor-mod blob + drop native lowering). Everything else sound: int
+      const-folds mirror native int64 incl. INT64_MIN/-1 guards; float folds are
+      plain IEEE matching native/libm; peephole strength-reduction is
+      algebraically correct and correctly does NOT invert float comparisons
+      (NaN); GVN/CSE only numbers pure deterministic ops, normalizes only truly
+      commutative ops (FADD/FMUL incl.), excludes FCALL1/FSQRT (func_idx not in
+      key), and the dominator-scope restore is correct.
+- [ ] Follow-up from the hir_opt pass: the native multi-arg FLOAT `add()`
+      lowering (hir_lower) chains sequential `HIR_FADD`; the interpreter uses
+      `AddDoubles` (error-compensated, |x|-sorted). Diverges for 3+ runtime
+      float args with catastrophic cancellation (e.g. add(1e20,1,-1e20)). Low
+      reachability; verify and fix if real.
 - [ ] `hir_lower_lua.cpp` — the Lua lowering path (separate from softcode).
 - [ ] `reconstruct_from_cache` — does it validate record sizes/offsets before
       use (corrupted/truncated SQLite blob robustness)?
