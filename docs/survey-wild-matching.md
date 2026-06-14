@@ -54,14 +54,39 @@ UTF-8-aware but `quick_wild_impl`'s was not. Fixed with a shared
 Verified with `muxscript -e` (9 cases) and `strmatch_fn.mux` TC003; smoke
 1253/1253.
 
-## Remaining: open rework opportunity (NOT a memory-safety issue)
+## Unicode case folding — non-capturing path FIXED, capturing path deferred
 
-**Non-ASCII case-insensitivity is a documented limitation.** The pattern side is
-lowered with Unicode-aware `mux_strlwr`, but the **data** side folds with
-`mux_tolower_ascii` (identity for non-ASCII bytes), and literal comparison is
-byte-wise with ASCII-only folding. So `É`/`é` (and the ~24 rare literal
-case-transforms that change byte count) don't fold — e.g. `strmatch(CAFÉ,café)`
-fails on the `É`. The file header documents this. A fuller character-oriented
-rework (Unicode case folding on both sides, decode-once char iteration) would
-close it, at the cost of touching a hot, mature primitive — a deliberate,
-separate effort, not required for the `?` correctness fix above.
+**#836 (d492e670a): quick_wild data-side case folding.** The pattern is
+pre-lowered with Unicode-aware `mux_strlwr`, but the data side folded only with
+`mux_tolower_ascii` (identity for non-ASCII), so case-insensitive matching worked
+when the uppercase was in the pattern but not the data: `strmatch(café,CAFÉ)=1`
+yet `strmatch(CAFÉ,café)=0`. `quick_wild_impl` (behind `strmatch`/`quick_wild`/
+`wild_match` → name/attr/channel/help/lock matching) now folds each data
+character on the fly with `mux_tolower()` via a new `wild_lit_eq()` helper. Key
+subtlety: `mux_tolower` returns an **XOR mask** when `bXor` is set (Latin-1 folds
+like É→é are XOR transforms, `89^A9=0x20`) — the folded byte is
+`original ^ mask`, not `d->p` directly. Verified with a 21-case `muxscript -e`
+matrix + `strmatch_fn.mux` TC004; smoke 1254/1254.
+
+**#837 (deferred): capturing path (wild1).** `wild1()` — behind `$`-command /
+`^`-listen wildcard captures (`%0..%9`) via `wild()` — still folds only ASCII in
+its literals (`EQUAL`/`NOTEQUAL`). A full char-oriented rework was prototyped
+(ASCII-identical, reuses the proven helpers; captures copy original-case bytes
+from the data span) but **held back because it can't be verified**: muxscript's
+REPL drives neither `$`-commands nor `^`-listens, and the smoke suite has no
+capture coverage, so `wild()` captures can't be exercised by the available
+tooling. Needs a dedicated unit harness (link libmux + `unicode_tables_c.h`,
+`pool_init`, stub `mudstate`/`mudconf`, call `wild()` directly, assert captures).
+Also note a pre-existing separate bug: `wild1`'s post-`*` trailing-`?`
+(`numextra`) handling is byte-wise (1 byte per `?`), unlike its char-aware
+standalone `?` — a `*?literal` pattern can split a multibyte character into a
+capture.
+
+## Test technique
+
+`muxscript -e 'think <expr>'` (from `mux/game`, `LD_LIBRARY_PATH=mux/lib`)
+evaluates one softcode expression — ideal for `strmatch`/interpreter-side
+verification. `-e` runs its arg as a command, so wrap in `think`. NOTE: muxscript
+does **not** match user `$`-commands / `^`-listens (the minimal script driver
+doesn't wire `match_mine`/listen plumbing), so `wild()` captures are not
+reachable through it.
