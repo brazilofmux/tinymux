@@ -200,9 +200,19 @@ plus a defense-in-depth note (unmasked guest LOAD/STORE).
       → rel32 patches written out of bounds past the 1 MB code buffer once
       code_used neared full (75% reached in a short smoke run; the bail is
       post-hoc). Fixed: bounds-guard the patch write (also a64 emit_patch_b26/
-      b19). Follow-up (perf, not safety): code_used grows ~monotonically and only
-      dbt_reset reclaims it, so the JIT degrades to interpreter once the buffer
-      fills — a reset-when-near-full (exec_depth==0) would keep it working.
+      b19). Follow-up (perf, not safety) — RESOLVED (#834, d0e8baf2c): code_used
+      grew ~monotonically and only dbt_reset reclaimed it, so the JIT degraded to
+      interpreter once the buffer filled. Root cause: persistent_vm_t never
+      monitored the DBT x86 buffer directly — arena_nearly_full() checks only the
+      guest RV64 pools and runs only in compile_attr(); once attrs are cached, new
+      guest blocks keep translating at RUN time (data-dependent paths) with
+      nothing checking code_used. Fix: at the safe exec_depth==0 unwind in run(),
+      dbt_buffer_nearly_full() (7/8 high-water + anti-thrash guards) triggers
+      reset_dbt_buffer() — a targeted dbt_reset that rewinds code_used to
+      blob_code_end while keeping the guest arena + attr cache (programs
+      re-translate lazily). Verified: blob_code_end≈783KB (tier2 blob eagerly
+      pretranslated, ~75% of the 1MB buffer), 6 resets fired mid-smoke at the safe
+      point with recovery each cycle, smoke 1252/1252 across resets.
 - [x] HIR optimizer (`hir_opt.cpp`) — AUDITED. Found #828 (faa795243): mux
       `mod()` is floor-mod (i64Mod) but the JIT mapped it to truncate-`%` on its
       runtime paths (blob `rv64_mod` + native MOD→HIR_REM); `mod(-7,3)`→-1 vs 2.
