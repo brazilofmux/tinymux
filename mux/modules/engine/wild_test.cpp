@@ -133,6 +133,20 @@ int main()
     tcap("* CAFÉ", "münchen café", true, "<münchen>"); // case-insensitive UTF-8 anchor (#837)
     tcap("pre * post", "pre ñoño post", true, "<ñoño>");
 
+    // '?' immediately after '*' (numextra path).  Empty captures are freed to
+    // nullptr by wild(), so they do not appear in the joined output.
+    printf("\n=== wild (capturing) — '*?' adjacency (numextra), ASCII ===\n");
+    tcap("*?", "abc", true, "<ab><c>");
+    tcap("*?x", "abx", true, "<a><b>");
+    tcap("*??", "abcd", true, "<ab><c><d>");
+    tcap("*?*", "abc", true, "<a><bc>");          // empty '*' dropped
+
+    printf("\n=== wild (capturing) — '*?' adjacency (numextra), UTF-8 ===\n");
+    tcap("*?x", "éx", true, "<é>");                // empty '*' dropped; '?' = é
+    tcap("*?", "aé", true, "<a><é>");
+    tcap("*??", "éàx", true, "<é><à><x>");
+    tcap("*?*", "éàx", true, "<é><àx>");           // empty '*' dropped
+
     printf("\n=== %d passed, %d failed ===\n", g_pass, g_fail);
     return g_fail ? 1 : 0;
 }

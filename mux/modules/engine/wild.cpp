@@ -145,6 +145,42 @@ static bool wild_lit_eq(const UTF8 *tstr, const UTF8 *dstr,
     return true;
 }
 
+// Step back over n complete UTF-8 characters from p, not crossing below lo.
+// Used by wild1() to locate the start of the trailing-'?' region (the last n
+// whole characters before a matched literal anchor) so a '?' immediately after
+// a '*' captures a whole character rather than a single byte.
+//
+static const UTF8 *wild_step_back(const UTF8 *p, int n, const UTF8 *lo)
+{
+    while (n > 0 && p > lo)
+    {
+        p--;
+        while (  p > lo
+              && UTF8_CONTINUE == utf8_FirstByte[*p])
+        {
+            p--;
+        }
+        n--;
+    }
+    return p;
+}
+
+// Copy the one whole UTF-8 character at *pp into dst (NUL-terminated) and
+// advance *pp past it.  Fills a '?' capture slot in wild1().
+//
+static void wild_capture_char(UTF8 *dst, const UTF8 **pp)
+{
+    const UTF8 *p = *pp;
+    size_t t = utf8_FirstByte[*p];
+    if (UTF8_CONTINUE <= t)
+    {
+        t = 1;          // malformed lead byte: take one byte defensively
+    }
+    memcpy(dst, p, t);
+    dst[t] = '\0';
+    *pp += t;
+}
+
 //
 // ---------------------------------------------------------------------------
 // quick_wild_impl: INTERNAL: do a wildcard match, without remembering the
@@ -278,7 +314,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
     }
     mudstate.wild_invk_ctr++;
 
-    UTF8 *datapos;
+    const UTF8 *datapos;
     int argpos, numextra;
 
     while (*tstr != '*')
@@ -365,13 +401,11 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
                 return quick_wild_impl(tstr, dstr);
             }
 
-            // Fill in any intervening '?'s
+            // Fill in any intervening '?'s (one whole character each).
             //
             while (argpos < arg)
             {
-                arglist[argpos][0] = *datapos;
-                arglist[argpos][1] = '\0';
-                datapos++;
+                wild_capture_char(arglist[argpos], &datapos);
                 argpos++;
 
                 // Jump to the fast routine if we can.
@@ -388,17 +422,19 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
         tstr++;
         arg++;
 
-        // Skip over '?'s for now...
+        // Skip over '?'s for now...  Each '?' consumes one whole UTF-8
+        // character of the data.
         //
         numextra = 0;
         while (*tstr == '?')
         {
-            if (!*dstr)
+            size_t t = wild_char_len(dstr);
+            if (0 == t)
             {
                 return false;
             }
             tstr++;
-            dstr++;
+            dstr += t;
             arg++;
             numextra++;
         }
@@ -447,14 +483,16 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
            || ((arg < numargs) ? wild1(tstr + anchor_tlen, dstr + anchor_dlen, arg)
                                : quick_wild_impl(tstr + anchor_tlen, dstr + anchor_dlen)))
         {
-            // Found a match!  Fill in all remaining arguments. First do the
-            // '*'...
+            // Found a match!  Fill in all remaining arguments.  The trailing
+            // '?'s matched the last numextra whole characters before the
+            // anchor; the '*' matched everything before those.
             //
-            mux_strncpy(arglist[argpos], datapos, (dstr - datapos) - numextra);
-            datapos = dstr - numextra;
+            const UTF8 *qstart = wild_step_back(dstr, numextra, datapos);
+            mux_strncpy(arglist[argpos], datapos, qstart - datapos);
+            datapos = qstart;
             argpos++;
 
-            // Fill in any trailing '?'s that are left.
+            // Fill in any trailing '?'s that are left (one character each).
             //
             while (numextra)
             {
@@ -462,9 +500,7 @@ static bool wild1(UTF8 *tstr, UTF8 *dstr, int arg)
                 {
                     return true;
                 }
-                arglist[argpos][0] = *datapos;
-                arglist[argpos][1] = '\0';
-                datapos++;
+                wild_capture_char(arglist[argpos], &datapos);
                 argpos++;
                 numextra--;
             }
