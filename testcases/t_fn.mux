@@ -1,6 +1,17 @@
 #
 # t_fn.mux - Test Cases for t().
 #
+# t() is boolean coercion: false for the empty string, any zero-valued
+# number (0, -0, 0.0, 00000), "#-" dbrefs, and whitespace-only strings;
+# true for everything else (non-zero numbers, "#" dbrefs, any other text).
+#
+# NOTE: the @if conditions below are written as @if [cand(...)] (bracketed)
+# rather than bare @if cand(...).  A bare top-level function-call condition
+# mis-evaluates for some values on this engine (see #824 -- e.g. bare
+# @if t(0.000) wrongly takes the true branch); evaluating the condition as a
+# bracketed sub-expression is correct.  Brackets keep these tests valid and
+# they will continue to pass once #824 is fixed.
+#
 @create test_t_fn
 -
 @set test_t_fn=INHERIT QUIET
@@ -15,18 +26,70 @@
 # Test Case #1 - Basic t() operations.
 #
 &tr.tc001 test_t_fn=
-  @if cand(
+  @if [cand(
         eq(t(1), 1),
         eq(t(0), 0),
         eq(t(abc), 1),
         eq(t(), 0)
-      )=
+      )]=
   {
-    @log smoke=TC001: t() basic operations. Succeeded.;
+    @log smoke=TC001: t() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: t() basic operations. Failed (t(1)=[t(1)] t(0)=[t(0)] t(abc)=[t(abc)] t()=[t()]).
+  }
+-
+#
+# Test Case #2 - Every zero-valued numeric form is false.
+#
+&tr.tc002 test_t_fn=
+  @if [cand(
+        eq(t(0.0), 0),
+        eq(t(00000), 0),
+        eq(t(-0), 0),
+        eq(t(0.000), 0)
+      )]=
+  {
+    @log smoke=TC002: t() zero-valued numbers. Succeeded.
+  },
+  {
+    @log smoke=TC002: t() zero-valued numbers. Failed (t(0.0)=[t(0.0)] t(00000)=[t(00000)] t(-0)=[t(-0)] t(0.000)=[t(0.000)]).
+  }
+-
+#
+# Test Case #3 - Non-zero numbers (including leading-zero and negative)
+# are true.
+#
+&tr.tc003 test_t_fn=
+  @if [cand(
+        eq(t(0.1), 1),
+        eq(t(-5), 1),
+        eq(t(01), 1)
+      )]=
+  {
+    @log smoke=TC003: t() non-zero numbers. Succeeded.
+  },
+  {
+    @log smoke=TC003: t() non-zero numbers. Failed (t(0.1)=[t(0.1)] t(-5)=[t(-5)] t(01)=[t(01)]).
+  }
+-
+#
+# Test Case #4 - Dbref and whitespace rules: "#0" true, "#-1" false,
+# a space-only string false, and non-numeric "false" text true.
+#
+&tr.tc004 test_t_fn=
+  @if [cand(
+        eq(t(#0), 1),
+        eq(t(#-1), 0),
+        eq(t(%b), 0),
+        eq(t(false), 1)
+      )]=
+  {
+    @log smoke=TC004: t() dbref and whitespace rules. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: t() basic operations. Failed (t(1)=[t(1)] t(0)=[t(0)] t(abc)=[t(abc)] t()=[t()]).;
+    @log smoke=TC004: t() dbref and whitespace rules. Failed (t(#0)=[t(#0)] t(#-1)=[t(#-1)] t(space)=[t(%b)] t(false)=[t(false)]).;
     @trig me/tr.done
   }
 -

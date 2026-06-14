@@ -1162,9 +1162,15 @@
 >256
 "@log smoke=Beginning alphamax() test cases."
 >257
-"@if cand(strmatch(alphamax(foo,bar,baz),foo),strmatch(alphamax(abc,xyz,mno),xyz))={@log smoke=TC001: alphamax() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: alphamax() basic operations. Failed (alphamax(foo%,bar%,baz)=[alphamax(foo,bar,baz)] alphamax(abc%,xyz%,mno)=[alphamax(abc,xyz,mno)]).;@trig me/tr.done}"
+"@if cand(strmatch(alphamax(foo,bar,baz),foo),strmatch(alphamax(abc,xyz,mno),xyz))={@log smoke=TC001: alphamax() basic operations. Succeeded.},{@log smoke=TC001: alphamax() basic operations. Failed (alphamax(foo%,bar%,baz)=[alphamax(foo,bar,baz)] alphamax(abc%,xyz%,mno)=[alphamax(abc,xyz,mno)]).}"
+>258
+"@if cand(eq(comp(alphamax(Apple,apple),apple),0),eq(comp(alphamax(Zebra,apple),apple),0))={@log smoke=TC002: alphamax() case sensitivity. Succeeded.},{@log smoke=TC002: alphamax() case sensitivity. Failed (alphamax(Apple%,apple)=[alphamax(Apple,apple)] alphamax(Zebra%,apple)=[alphamax(Zebra,apple)]).}"
+>259
+"@if cand(eq(comp(alphamax(9,10,2),9),0),eq(comp(alphamax(solo),solo),0))={@log smoke=TC003: alphamax() lexicographic and single arg. Succeeded.},{@log smoke=TC003: alphamax() lexicographic and single arg. Failed (alphamax(9%,10%,2)=[alphamax(9,10,2)] alphamax(solo)=[alphamax(solo)]).}"
 >260
 "@log smoke=End alphamax() test cases.;@notify smoke"
+>261
+"@if cand(eq(comp(alphamax(same,same),same),0),strmatch(alphamax(a,b,c,d),d))={@log smoke=TC004: alphamax() equal args and four-way max. Succeeded.;@trig me/tr.done},{@log smoke=TC004: alphamax() equal args and four-way max. Failed (alphamax(same%,same)=[alphamax(same,same)] alphamax(a%,b%,c%,d)=[alphamax(a,b,c,d)]).;@trig me/tr.done}"
 <
 !8
 "test_alphamin_fn"
@@ -1189,9 +1195,15 @@
 >256
 "@log smoke=Beginning alphamin() test cases."
 >257
-"@if cand(strmatch(alphamin(foo,bar,baz),bar),strmatch(alphamin(abc,xyz,mno),abc))={@log smoke=TC001: alphamin() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: alphamin() basic operations. Failed (alphamin(foo%,bar%,baz)=[alphamin(foo,bar,baz)] alphamin(abc%,xyz%,mno)=[alphamin(abc,xyz,mno)]).;@trig me/tr.done}"
+"@if cand(strmatch(alphamin(foo,bar,baz),bar),strmatch(alphamin(abc,xyz,mno),abc))={@log smoke=TC001: alphamin() basic operations. Succeeded.},{@log smoke=TC001: alphamin() basic operations. Failed (alphamin(foo%,bar%,baz)=[alphamin(foo,bar,baz)] alphamin(abc%,xyz%,mno)=[alphamin(abc,xyz,mno)]).}"
+>258
+"@if cand(eq(comp(alphamin(Apple,apple),Apple),0),eq(comp(alphamin(Zebra,apple),Zebra),0))={@log smoke=TC002: alphamin() case sensitivity. Succeeded.},{@log smoke=TC002: alphamin() case sensitivity. Failed (alphamin(Apple%,apple)=[alphamin(Apple,apple)] alphamin(Zebra%,apple)=[alphamin(Zebra,apple)]).}"
+>259
+"@if cand(eq(comp(alphamin(9,10,2),10),0),eq(comp(alphamin(solo),solo),0))={@log smoke=TC003: alphamin() lexicographic and single arg. Succeeded.},{@log smoke=TC003: alphamin() lexicographic and single arg. Failed (alphamin(9%,10%,2)=[alphamin(9,10,2)] alphamin(solo)=[alphamin(solo)]).}"
 >260
 "@log smoke=End alphamin() test cases.;@notify smoke"
+>261
+"@if cand(eq(comp(alphamin(same,same),same),0),strmatch(alphamin(d,c,b,a),a))={@log smoke=TC004: alphamin() equal args and four-way min. Succeeded.;@trig me/tr.done},{@log smoke=TC004: alphamin() equal args and four-way min. Failed (alphamin(same%,same)=[alphamin(same,same)] alphamin(d%,c%,b%,a)=[alphamin(d,c,b,a)]).;@trig me/tr.done}"
 <
 !9
 "test_andbool_fn"
@@ -1864,9 +1876,15 @@
 >256
 "@log smoke=Beginning caplist() test cases."
 >257
-"@if cand(strmatch(caplist(the lord of the rings),The Lord Of The Rings),strmatch(caplist(a tale of two cities),A Tale Of Two Cities),strmatch(caplist(war and peace),War And Peace))={@log smoke=TC001: caplist() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: caplist() basic operations. Failed (caplist1=[caplist(the lord of the rings)] caplist2=[caplist(a tale of two cities)] caplist3=[caplist(war and peace)]).;@trig me/tr.done}"
+"@if cand(eq(comp(caplist(the lord of the rings),The Lord of the Rings),0),eq(comp(caplist(a tale of two cities),A Tale of Two Cities),0),eq(comp(caplist(war and peace),War and Peace),0))={@log smoke=TC001: caplist() small-word handling. Succeeded.},{@log smoke=TC001: caplist() small-word handling. Failed (c1=[caplist(the lord of the rings)] c2=[caplist(a tale of two cities)] c3=[caplist(war and peace)]).}"
+>258
+"@if cand(eq(comp(caplist(iPhone),IPhone),0),eq(comp(caplist(of mice and men),Of Mice and Men),0))={@log smoke=TC002: caplist() first-letter-only and edge small words. Succeeded.},{@log smoke=TC002: caplist() first-letter-only and edge small words. Failed (c1=[caplist(iPhone)] c2=[caplist(of mice and men)]).}"
+>259
+"@if cand(eq(comp(caplist(123 abc),123 Abc),0),eq(comp(caplist(a|the|z,|),A|the|Z),0))={@log smoke=TC003: caplist() non-letter word and custom delimiter. Succeeded.},{@log smoke=TC003: caplist() non-letter word and custom delimiter. Failed (c1=[caplist(123 abc)] c2=[caplist(a|the|z,|)]).}"
 >260
 "@log smoke=End caplist() test cases.;@notify smoke"
+>261
+"@if cand(eq(comp(caplist(a b c,%b,-),A-B-C),0),eq(comp(caplist(hello),Hello),0))={@log smoke=TC004: caplist() custom output delimiter and single word. Succeeded.;@trig me/tr.done},{@log smoke=TC004: caplist() custom output delimiter and single word. Failed (c1=[caplist(a b c,%b,-)] c2=[caplist(hello)]).;@trig me/tr.done}"
 <
 !30
 "test_capstr_fn"
@@ -10021,9 +10039,15 @@
 >256
 "@log smoke=Beginning stripansi() test cases."
 >257
-"@if cand(strmatch(stripansi(%xrHello%xn), Hello),strmatch(stripansi(NoAnsi), NoAnsi))={@log smoke=TC001: stripansi basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: stripansi basic operations. Failed (stripansi=%xrHello%xn)=[stripansi(%xrHello%xn)] stripansi(NoAnsi)=[stripansi(NoAnsi)]).;@trig me/tr.done}"
+"@if cand(eq(comp(stripansi(%xrHello%xn),Hello),0),eq(comp(stripansi(NoAnsi),NoAnsi),0))={@log smoke=TC001: stripansi() basic operations. Succeeded.},{@log smoke=TC001: stripansi() basic operations. Failed (s1=[stripansi(%xrHello%xn)] s2=[stripansi(NoAnsi)]).}"
+>258
+"@if cand(eq(comp(stripansi(%xr%xgHi%xn),Hi),0),eq(strlen(stripansi(%xrHello%xn)),5))={@log smoke=TC002: stripansi() multiple colors and length. Succeeded.},{@log smoke=TC002: stripansi() multiple colors and length. Failed (s1=[stripansi(%xr%xgHi%xn)] len=[strlen(stripansi(%xrHello%xn))]).}"
+>259
+"@if cand(eq(comp(stripansi(%xr%xn),),0),eq(comp(stripansi(plain),plain),0))={@log smoke=TC003: stripansi() color-only and plain passthrough. Succeeded.},{@log smoke=TC003: stripansi() color-only and plain passthrough. Failed (s1=[stripansi(%xr%xn)] s2=[stripansi(plain)]).}"
 >260
 "@log smoke=End stripansi() test cases.;@notify smoke"
+>261
+"@if cand(eq(comp(stripansi(a%xrb%xnc),abc),0),eq(strlen(stripansi(%xrtest%xn)),4))={@log smoke=TC004: stripansi() embedded color. Succeeded.;@trig me/tr.done},{@log smoke=TC004: stripansi() embedded color. Failed (s1=[stripansi(a%xrb%xnc)] len=[strlen(stripansi(%xrtest%xn))]).;@trig me/tr.done}"
 <
 !269
 "test_strip_fn"
@@ -10141,9 +10165,15 @@
 >256
 "@log smoke=Beginning strmem() test cases."
 >257
-"@if cand(eq(strmem(hello), 5),eq(strmem(), 0))={@log smoke=TC001: strmem() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: strmem() basic operations. Failed (strmem(hello)=[strmem(hello)] strmem()=[strmem()]).;@trig me/tr.done}"
+"@if cand(eq(strmem(hello), 5),eq(strmem(), 0))={@log smoke=TC001: strmem() basic operations. Succeeded.},{@log smoke=TC001: strmem() basic operations. Failed (strmem(hello)=[strmem(hello)] strmem()=[strmem()]).}"
+>258
+"@if cand(eq(strmem(hello world), 11),eq(strmem(%b%bhi%b), 5))={@log smoke=TC002: strmem() counts spaces. Succeeded.},{@log smoke=TC002: strmem() counts spaces. Failed (strmem(hello world)=[strmem(hello world)] strmem(%b%bhi%b)=[strmem(%b%bhi%b)]).}"
+>259
+"@if cand(gt(strmem(%xrHello%xn), 5),eq(strlen(%xrHello%xn), 5))={@log smoke=TC003: strmem() counts color bytes. Succeeded.},{@log smoke=TC003: strmem() counts color bytes. Failed (strmem=[strmem(%xrHello%xn)] strlen=[strlen(%xrHello%xn)]).}"
 >260
 "@log smoke=End strmem() test cases.;@notify smoke"
+>261
+"@if cand(eq(strmem(x), 1),eq(strmem(abcdefghij), 10))={@log smoke=TC004: strmem() single char and long string. Succeeded.;@trig me/tr.done},{@log smoke=TC004: strmem() single char and long string. Failed (strmem(x)=[strmem(x)] strmem(abcdefghij)=[strmem(abcdefghij)]).;@trig me/tr.done}"
 <
 !273
 "test_strset_fn"
@@ -10473,9 +10503,15 @@
 >256
 "@log smoke=Beginning t() test cases."
 >257
-"@if cand(eq(t(1), 1),eq(t(0), 0),eq(t(abc), 1),eq(t(), 0))={@log smoke=TC001: t() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: t() basic operations. Failed (t(1)=[t(1)] t(0)=[t(0)] t(abc)=[t(abc)] t()=[t()]).;@trig me/tr.done}"
+"@if [cand(eq(t(1), 1),eq(t(0), 0),eq(t(abc), 1),eq(t(), 0))]={@log smoke=TC001: t() basic operations. Succeeded.},{@log smoke=TC001: t() basic operations. Failed (t(1)=[t(1)] t(0)=[t(0)] t(abc)=[t(abc)] t()=[t()]).}"
+>258
+"@if [cand(eq(t(0.0), 0),eq(t(00000), 0),eq(t(-0), 0),eq(t(0.000), 0))]={@log smoke=TC002: t() zero-valued numbers. Succeeded.},{@log smoke=TC002: t() zero-valued numbers. Failed (t(0.0)=[t(0.0)] t(00000)=[t(00000)] t(-0)=[t(-0)] t(0.000)=[t(0.000)]).}"
+>259
+"@if [cand(eq(t(0.1), 1),eq(t(-5), 1),eq(t(01), 1))]={@log smoke=TC003: t() non-zero numbers. Succeeded.},{@log smoke=TC003: t() non-zero numbers. Failed (t(0.1)=[t(0.1)] t(-5)=[t(-5)] t(01)=[t(01)]).}"
 >260
 "@log smoke=End t() test cases.;@notify smoke"
+>261
+"@if [cand(eq(t(#0), 1),eq(t(#-1), 0),eq(t(%b), 0),eq(t(false), 1))]={@log smoke=TC004: t() dbref and whitespace rules. Succeeded.;@trig me/tr.done},{@log smoke=TC004: t() dbref and whitespace rules. Failed (t(#0)=[t(#0)] t(#-1)=[t(#-1)] t(space)=[t(%b)] t(false)=[t(false)]).;@trig me/tr.done}"
 <
 !283
 "test_tier2_parity_fn"
@@ -10541,9 +10577,15 @@
 >256
 "@log smoke=Beginning translate() test cases."
 >257
-"@if strmatch(translate(hello,0), hello)={@log smoke=TC001: translate basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: translate basic operations. Failed (translate=[translate(hello,0)]).;@trig me/tr.done}"
+"@if cand(eq(comp(translate(hello,0), hello),0),eq(comp(translate(hello world,p), hello world),0))={@log smoke=TC001: translate() plain-text identity. Succeeded.},{@log smoke=TC001: translate() plain-text identity. Failed (t0=[translate(hello,0)] tp=[translate(hello world,p)]).}"
+>258
+"@if cand(eq(comp(translate(%t,p), %%t),0),eq(comp(translate(%t,0), %t),0))={@log smoke=TC002: translate() tab handling. Succeeded.},{@log smoke=TC002: translate() tab handling. Failed (tp=[translate(%t,p)] t0=[translate(%t,0)]).}"
+>259
+"@if cand(eq(comp(translate(%%,p), %%%%),0),eq(comp(translate(%xrhi%xn,0), hi),0))={@log smoke=TC003: translate() percent and color. Succeeded.},{@log smoke=TC003: translate() percent and color. Failed (tp=[translate(%%,p)] t0=[translate(%xrhi%xn,0)]).}"
 >260
 "@log smoke=End translate() test cases.;@notify smoke"
+>261
+"@if cand(eq(comp(translate(%r,p), %%r),0),eq(comp(translate(12345,p), 12345),0))={@log smoke=TC004: translate() newline and digits. Succeeded.;@trig me/tr.done},{@log smoke=TC004: translate() newline and digits. Failed (tp=[translate(%r,p)] td=[translate(12345,p)]).;@trig me/tr.done}"
 <
 !285
 "test_tr_fn"

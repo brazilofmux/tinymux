@@ -16,15 +16,60 @@
 #
 &tr.tc001 test_stripansi_fn=
   @if cand(
-        strmatch(stripansi(%xrHello%xn), Hello),
-        strmatch(stripansi(NoAnsi), NoAnsi)
+        eq(comp(stripansi(%xrHello%xn),Hello),0),
+        eq(comp(stripansi(NoAnsi),NoAnsi),0)
       )=
   {
-    @log smoke=TC001: stripansi basic operations. Succeeded.;
+    @log smoke=TC001: stripansi() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: stripansi() basic operations. Failed (s1=[stripansi(%xrHello%xn)] s2=[stripansi(NoAnsi)]).
+  }
+-
+#
+# Test Case #2 - Multiple color codes removed; display length preserved.
+#
+&tr.tc002 test_stripansi_fn=
+  @if cand(
+        eq(comp(stripansi(%xr%xgHi%xn),Hi),0),
+        eq(strlen(stripansi(%xrHello%xn)),5)
+      )=
+  {
+    @log smoke=TC002: stripansi() multiple colors and length. Succeeded.
+  },
+  {
+    @log smoke=TC002: stripansi() multiple colors and length. Failed (s1=[stripansi(%xr%xgHi%xn)] len=[strlen(stripansi(%xrHello%xn))]).
+  }
+-
+#
+# Test Case #3 - Color-only input strips to empty; plain text untouched.
+#
+&tr.tc003 test_stripansi_fn=
+  @if cand(
+        eq(comp(stripansi(%xr%xn),),0),
+        eq(comp(stripansi(plain),plain),0)
+      )=
+  {
+    @log smoke=TC003: stripansi() color-only and plain passthrough. Succeeded.
+  },
+  {
+    @log smoke=TC003: stripansi() color-only and plain passthrough. Failed (s1=[stripansi(%xr%xn)] s2=[stripansi(plain)]).
+  }
+-
+#
+# Test Case #4 - Color embedded mid-string; surrounding text preserved.
+#
+&tr.tc004 test_stripansi_fn=
+  @if cand(
+        eq(comp(stripansi(a%xrb%xnc),abc),0),
+        eq(strlen(stripansi(%xrtest%xn)),4)
+      )=
+  {
+    @log smoke=TC004: stripansi() embedded color. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: stripansi basic operations. Failed (stripansi=%xrHello%xn)=[stripansi(%xrHello%xn)] stripansi(NoAnsi)=[stripansi(NoAnsi)]).;
+    @log smoke=TC004: stripansi() embedded color. Failed (s1=[stripansi(a%xrb%xnc)] len=[strlen(stripansi(%xrtest%xn))]).;
     @trig me/tr.done
   }
 -

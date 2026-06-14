@@ -1,6 +1,14 @@
 #
 # caplist_fn.mux - Test Cases for caplist().
 #
+# caplist(list[, isep, osep]) title-cases a word list: it capitalizes the
+# first letter of each word and leaves the rest untouched, EXCEPT interior
+# "small" words (a an the and or but for nor of in on at to by is as if it
+# so vs via) which are forced lowercase.  The first and last words are
+# always capitalized even if they are small words.  These tests use comp()
+# (case-sensitive) rather than strmatch() so the small-word lowercasing is
+# actually verified.
+#
 @create test_caplist_fn
 -
 @set test_caplist_fn=INHERIT QUIET
@@ -12,20 +20,67 @@
   @log smoke=Beginning caplist() test cases.
 -
 #
-# Test Case #1 - Basic caplist() operations.
+# Test Case #1 - Interior small words stay lowercase; others capitalized.
 #
 &tr.tc001 test_caplist_fn=
   @if cand(
-        strmatch(caplist(the lord of the rings),The Lord Of The Rings),
-        strmatch(caplist(a tale of two cities),A Tale Of Two Cities),
-        strmatch(caplist(war and peace),War And Peace)
+        eq(comp(caplist(the lord of the rings),The Lord of the Rings),0),
+        eq(comp(caplist(a tale of two cities),A Tale of Two Cities),0),
+        eq(comp(caplist(war and peace),War and Peace),0)
       )=
   {
-    @log smoke=TC001: caplist() basic operations. Succeeded.;
+    @log smoke=TC001: caplist() small-word handling. Succeeded.
+  },
+  {
+    @log smoke=TC001: caplist() small-word handling. Failed (c1=[caplist(the lord of the rings)] c2=[caplist(a tale of two cities)] c3=[caplist(war and peace)]).
+  }
+-
+#
+# Test Case #2 - Only the first letter changes (rest left intact); a small
+# word that is the first or last word is still capitalized.
+#
+&tr.tc002 test_caplist_fn=
+  @if cand(
+        eq(comp(caplist(iPhone),IPhone),0),
+        eq(comp(caplist(of mice and men),Of Mice and Men),0)
+      )=
+  {
+    @log smoke=TC002: caplist() first-letter-only and edge small words. Succeeded.
+  },
+  {
+    @log smoke=TC002: caplist() first-letter-only and edge small words. Failed (c1=[caplist(iPhone)] c2=[caplist(of mice and men)]).
+  }
+-
+#
+# Test Case #3 - Word starting with a non-letter passes through unchanged;
+# custom input delimiter.
+#
+&tr.tc003 test_caplist_fn=
+  @if cand(
+        eq(comp(caplist(123 abc),123 Abc),0),
+        eq(comp(caplist(a|the|z,|),A|the|Z),0)
+      )=
+  {
+    @log smoke=TC003: caplist() non-letter word and custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC003: caplist() non-letter word and custom delimiter. Failed (c1=[caplist(123 abc)] c2=[caplist(a|the|z,|)]).
+  }
+-
+#
+# Test Case #4 - Custom output delimiter and single-word input.
+#
+&tr.tc004 test_caplist_fn=
+  @if cand(
+        eq(comp(caplist(a b c,%b,-),A-B-C),0),
+        eq(comp(caplist(hello),Hello),0)
+      )=
+  {
+    @log smoke=TC004: caplist() custom output delimiter and single word. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: caplist() basic operations. Failed (caplist1=[caplist(the lord of the rings)] caplist2=[caplist(a tale of two cities)] caplist3=[caplist(war and peace)]).;
+    @log smoke=TC004: caplist() custom output delimiter and single word. Failed (c1=[caplist(a b c,%b,-)] c2=[caplist(hello)]).;
     @trig me/tr.done
   }
 -

@@ -1,6 +1,9 @@
 #
 # strmem_fn.mux - Test Cases for strmem().
 #
+# strmem() returns the raw byte length of its argument (plain strlen), in
+# contrast to strlen() which reports display width with color stripped.
+#
 @create test_strmem_fn
 -
 @set test_strmem_fn=INHERIT QUIET
@@ -20,11 +23,57 @@
         eq(strmem(), 0)
       )=
   {
-    @log smoke=TC001: strmem() basic operations. Succeeded.;
+    @log smoke=TC001: strmem() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: strmem() basic operations. Failed (strmem(hello)=[strmem(hello)] strmem()=[strmem()]).
+  }
+-
+#
+# Test Case #2 - Embedded and leading/trailing spaces are counted.
+#
+&tr.tc002 test_strmem_fn=
+  @if cand(
+        eq(strmem(hello world), 11),
+        eq(strmem(%b%bhi%b), 5)
+      )=
+  {
+    @log smoke=TC002: strmem() counts spaces. Succeeded.
+  },
+  {
+    @log smoke=TC002: strmem() counts spaces. Failed (strmem(hello world)=[strmem(hello world)] strmem(%b%bhi%b)=[strmem(%b%bhi%b)]).
+  }
+-
+#
+# Test Case #3 - Color bytes are counted (raw), so strmem of a colored
+# string exceeds strlen's color-stripped display width.
+#
+&tr.tc003 test_strmem_fn=
+  @if cand(
+        gt(strmem(%xrHello%xn), 5),
+        eq(strlen(%xrHello%xn), 5)
+      )=
+  {
+    @log smoke=TC003: strmem() counts color bytes. Succeeded.
+  },
+  {
+    @log smoke=TC003: strmem() counts color bytes. Failed (strmem=[strmem(%xrHello%xn)] strlen=[strlen(%xrHello%xn)]).
+  }
+-
+#
+# Test Case #4 - Single character and longer ASCII string.
+#
+&tr.tc004 test_strmem_fn=
+  @if cand(
+        eq(strmem(x), 1),
+        eq(strmem(abcdefghij), 10)
+      )=
+  {
+    @log smoke=TC004: strmem() single char and long string. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: strmem() basic operations. Failed (strmem(hello)=[strmem(hello)] strmem()=[strmem()]).;
+    @log smoke=TC004: strmem() single char and long string. Failed (strmem(x)=[strmem(x)] strmem(abcdefghij)=[strmem(abcdefghij)]).;
     @trig me/tr.done
   }
 -

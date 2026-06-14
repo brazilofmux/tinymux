@@ -20,11 +20,58 @@
         strmatch(alphamin(abc,xyz,mno),abc)
       )=
   {
-    @log smoke=TC001: alphamin() basic operations. Succeeded.;
+    @log smoke=TC001: alphamin() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: alphamin() basic operations. Failed (alphamin(foo%,bar%,baz)=[alphamin(foo,bar,baz)] alphamin(abc%,xyz%,mno)=[alphamin(abc,xyz,mno)]).
+  }
+-
+#
+# Test Case #2 - Case-sensitive strcmp: uppercase (65-90) sorts BEFORE
+# lowercase (97-122), so an uppercase letter outranks any lowercase letter.
+#
+&tr.tc002 test_alphamin_fn=
+  @if cand(
+        eq(comp(alphamin(Apple,apple),Apple),0),
+        eq(comp(alphamin(Zebra,apple),Zebra),0)
+      )=
+  {
+    @log smoke=TC002: alphamin() case sensitivity. Succeeded.
+  },
+  {
+    @log smoke=TC002: alphamin() case sensitivity. Failed (alphamin(Apple%,apple)=[alphamin(Apple,apple)] alphamin(Zebra%,apple)=[alphamin(Zebra,apple)]).
+  }
+-
+#
+# Test Case #3 - Lexicographic (not numeric) comparison and single arg.
+# "10" sorts below "2" because '1' < '2' byte-wise.
+#
+&tr.tc003 test_alphamin_fn=
+  @if cand(
+        eq(comp(alphamin(9,10,2),10),0),
+        eq(comp(alphamin(solo),solo),0)
+      )=
+  {
+    @log smoke=TC003: alphamin() lexicographic and single arg. Succeeded.
+  },
+  {
+    @log smoke=TC003: alphamin() lexicographic and single arg. Failed (alphamin(9%,10%,2)=[alphamin(9,10,2)] alphamin(solo)=[alphamin(solo)]).
+  }
+-
+#
+# Test Case #4 - Equal arguments and a four-way minimum.
+#
+&tr.tc004 test_alphamin_fn=
+  @if cand(
+        eq(comp(alphamin(same,same),same),0),
+        strmatch(alphamin(d,c,b,a),a)
+      )=
+  {
+    @log smoke=TC004: alphamin() equal args and four-way min. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: alphamin() basic operations. Failed (alphamin(foo%,bar%,baz)=[alphamin(foo,bar,baz)] alphamin(abc%,xyz%,mno)=[alphamin(abc,xyz,mno)]).;
+    @log smoke=TC004: alphamin() equal args and four-way min. Failed (alphamin(same%,same)=[alphamin(same,same)] alphamin(d%,c%,b%,a)=[alphamin(d,c,b,a)]).;
     @trig me/tr.done
   }
 -

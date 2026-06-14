@@ -1,6 +1,11 @@
 #
 # translate_fn.mux - Test Cases for translate().
 #
+# translate(string, mode): mode 'p' or '1' converts raw control characters
+# and color into MUX %-substitutions; any other mode (e.g. '0', 's') strips
+# control characters/color instead.  Plain alphanumeric text is unchanged in
+# both modes.
+#
 @create test_translate_fn
 -
 @set test_translate_fn=INHERIT QUIET
@@ -12,17 +17,67 @@
   @log smoke=Beginning translate() test cases.
 -
 #
-# Test Case #1 - Basic translate operations.
-# translate(hello,0) with mode 0 (no ANSI substitution) returns input unchanged.
+# Test Case #1 - Plain text is unchanged in both strip (0) and convert (p)
+# modes.
 #
 &tr.tc001 test_translate_fn=
-  @if strmatch(translate(hello,0), hello)=
+  @if cand(
+        eq(comp(translate(hello,0), hello),0),
+        eq(comp(translate(hello world,p), hello world),0)
+      )=
   {
-    @log smoke=TC001: translate basic operations. Succeeded.;
+    @log smoke=TC001: translate() plain-text identity. Succeeded.
+  },
+  {
+    @log smoke=TC001: translate() plain-text identity. Failed (t0=[translate(hello,0)] tp=[translate(hello world,p)]).
+  }
+-
+#
+# Test Case #2 - A tab is converted to %t in mode p but passes through as a
+# raw tab in mode 0.
+#
+&tr.tc002 test_translate_fn=
+  @if cand(
+        eq(comp(translate(%t,p), %%t),0),
+        eq(comp(translate(%t,0), %t),0)
+      )=
+  {
+    @log smoke=TC002: translate() tab handling. Succeeded.
+  },
+  {
+    @log smoke=TC002: translate() tab handling. Failed (tp=[translate(%t,p)] t0=[translate(%t,0)]).
+  }
+-
+#
+# Test Case #3 - A literal percent is doubled in mode p; color is stripped
+# in mode 0.
+#
+&tr.tc003 test_translate_fn=
+  @if cand(
+        eq(comp(translate(%%,p), %%%%),0),
+        eq(comp(translate(%xrhi%xn,0), hi),0)
+      )=
+  {
+    @log smoke=TC003: translate() percent and color. Succeeded.
+  },
+  {
+    @log smoke=TC003: translate() percent and color. Failed (tp=[translate(%%,p)] t0=[translate(%xrhi%xn,0)]).
+  }
+-
+#
+# Test Case #4 - A newline becomes %r in mode p; digits are untouched.
+#
+&tr.tc004 test_translate_fn=
+  @if cand(
+        eq(comp(translate(%r,p), %%r),0),
+        eq(comp(translate(12345,p), 12345),0)
+      )=
+  {
+    @log smoke=TC004: translate() newline and digits. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: translate basic operations. Failed (translate=[translate(hello,0)]).;
+    @log smoke=TC004: translate() newline and digits. Failed (tp=[translate(%r,p)] td=[translate(12345,p)]).;
     @trig me/tr.done
   }
 -

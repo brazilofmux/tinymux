@@ -20,11 +20,58 @@
         strmatch(alphamax(abc,xyz,mno),xyz)
       )=
   {
-    @log smoke=TC001: alphamax() basic operations. Succeeded.;
+    @log smoke=TC001: alphamax() basic operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: alphamax() basic operations. Failed (alphamax(foo%,bar%,baz)=[alphamax(foo,bar,baz)] alphamax(abc%,xyz%,mno)=[alphamax(abc,xyz,mno)]).
+  }
+-
+#
+# Test Case #2 - Case-sensitive strcmp: lowercase (97-122) sorts AFTER
+# uppercase (65-90), so a lowercase letter outranks any uppercase letter.
+#
+&tr.tc002 test_alphamax_fn=
+  @if cand(
+        eq(comp(alphamax(Apple,apple),apple),0),
+        eq(comp(alphamax(Zebra,apple),apple),0)
+      )=
+  {
+    @log smoke=TC002: alphamax() case sensitivity. Succeeded.
+  },
+  {
+    @log smoke=TC002: alphamax() case sensitivity. Failed (alphamax(Apple%,apple)=[alphamax(Apple,apple)] alphamax(Zebra%,apple)=[alphamax(Zebra,apple)]).
+  }
+-
+#
+# Test Case #3 - Lexicographic (not numeric) comparison and single arg.
+# "9" outranks "10" because '9' > '1' byte-wise.
+#
+&tr.tc003 test_alphamax_fn=
+  @if cand(
+        eq(comp(alphamax(9,10,2),9),0),
+        eq(comp(alphamax(solo),solo),0)
+      )=
+  {
+    @log smoke=TC003: alphamax() lexicographic and single arg. Succeeded.
+  },
+  {
+    @log smoke=TC003: alphamax() lexicographic and single arg. Failed (alphamax(9%,10%,2)=[alphamax(9,10,2)] alphamax(solo)=[alphamax(solo)]).
+  }
+-
+#
+# Test Case #4 - Equal arguments and a four-way maximum.
+#
+&tr.tc004 test_alphamax_fn=
+  @if cand(
+        eq(comp(alphamax(same,same),same),0),
+        strmatch(alphamax(a,b,c,d),d)
+      )=
+  {
+    @log smoke=TC004: alphamax() equal args and four-way max. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: alphamax() basic operations. Failed (alphamax(foo%,bar%,baz)=[alphamax(foo,bar,baz)] alphamax(abc%,xyz%,mno)=[alphamax(abc,xyz,mno)]).;
+    @log smoke=TC004: alphamax() equal args and four-way max. Failed (alphamax(same%,same)=[alphamax(same,same)] alphamax(a%,b%,c%,d)=[alphamax(a,b,c,d)]).;
     @trig me/tr.done
   }
 -
