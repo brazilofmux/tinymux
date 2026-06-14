@@ -467,6 +467,21 @@ static int emit_cmp_branch(hir_program &h, int cmp, int k_bit,
 // Pass 2: emit HIR
 // ---------------------------------------------------------------
 
+// Defensive bound for composite register indices (A + offset).  Bare A/B/C
+// operands are 8-bit (< MAX_LUA_REGS == 256) and always index lua_reg[]
+// safely, but ranges — LOADNIL's R(A)..R(A+B), CONCAT/SETLIST/CALL argument
+// and result runs, and the TFOR result registers R(A+4)..R(A+3+C) — can
+// reach ~R(A+4+255) with crafted operands, past the end of lua_reg[].
+// Well-formed Lua 5.4 compiler output keeps every register < maxstacksize
+// (<= MAX_LUA_STACK == 64), so this guard only fires on malformed bytecode;
+// bail to the Lua VM (return -1) rather than overrun the map.  (Crafted
+// bytecode can't reach this lowering through the text-only sandbox today,
+// but the translation must stay memory-safe regardless.)
+//
+static inline bool lua_reg_in_range(int idx) {
+    return idx >= 0 && idx < MAX_LUA_REGS;
+}
+
 int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         const lua_bc_proto *proto) {
     if (nullptr == proto) return -1;
@@ -588,6 +603,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         case OP_LUA_LOADNIL:
             for (int i = A; i <= A + insn.B(); i++) {
+                if (!lua_reg_in_range(i)) return -1;
                 lua_reg[i] = h.emit_sconst(rc.pool_str("", 0), "");
                 if (lua_reg[i] < 0) return -1;
             }
@@ -844,6 +860,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // Convert all operands to strings, then emit HIR_STRCAT.
             std::vector<int> str_args;
             for (int j = 0; j < nvals; j++) {
+                if (!lua_reg_in_range(A + j)) return -1;
                 int rv = lua_reg[A + j];
                 if (rv < 0) return -1;
                 if (h.ty[rv] == TY_INT) {
@@ -948,6 +965,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             }
 
             for (int j = 1; j <= nvals; j++) {
+                if (!lua_reg_in_range(A + j)) return -1;
                 int val = lua_reg[A + j];
                 if (val < 0) return -1;
                 if (h.ty[val] == TY_INT) {
@@ -1450,6 +1468,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         case OP_LUA_FORPREP: {
             if (!multi_block) return -1;
+            if (!lua_reg_in_range(A + 3)) return -1;
             if (lua_reg[A] < 0 || lua_reg[A + 1] < 0 || lua_reg[A + 2] < 0)
                 return -1;
 
@@ -1519,6 +1538,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         case OP_LUA_FORLOOP: {
             if (!multi_block) return -1;
+            if (!lua_reg_in_range(A + 3)) return -1;
             int step = lua_reg[A + 2];
             int limit = lua_reg[A + 1];
             if (step < 0 || limit < 0) return -1;
@@ -1696,6 +1716,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         // SELF: A = dest, B = table register, C = method key constant.
         // R(A+1) := R(B); R(A) := R(B)[K(C)]
         case OP_LUA_SELF: {
+            if (!lua_reg_in_range(A + 1)) return -1;
             int tbl = lua_reg[insn.B()];
             if (tbl < 0) return -1;
             // Copy table to R(A+1) for method call.
@@ -1735,6 +1756,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // Convert arguments to strings.
             std::vector<int> args;
             for (int i = 0; i < nargs; i++) {
+                if (!lua_reg_in_range(A + 1 + i)) return -1;
                 int areg = lua_reg[A + 1 + i];
                 if (areg < 0) return -1;
                 if (h.ty[areg] == TY_INT) {
@@ -1789,6 +1811,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // from the Lua stack via __lua_get_result.
             if (!is_bridge && nresults > 1) {
                 for (int r = 1; r < nresults; r++) {
+                    if (!lua_reg_in_range(A + r)) return -1;
                     int ridx = h.emit_iconst(r + 1);
                     if (ridx < 0) return -1;
                     std::string rname("__lua_get_result");
@@ -1823,6 +1846,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         case OP_LUA_TFORCALL: {
             // Call iterator: R(A+4),...,R(A+3+C) = R(A)(R(A+1), R(A+2))
+            if (!lua_reg_in_range(A + 4)) return -1;
             int iter_func = lua_reg[A];
             int iter_state = lua_reg[A + 1];
             int iter_control = lua_reg[A + 2];
@@ -1859,6 +1883,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
             // Fetch additional results.
             for (int r = 1; r < nresults_c; r++) {
+                if (!lua_reg_in_range(A + 4 + r)) return -1;
                 int ridx = h.emit_iconst(r + 1);
                 if (ridx < 0) return -1;
                 std::string rname("__lua_get_result");
@@ -1874,6 +1899,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_TFORLOOP: {
             // if R(A+4) ~= nil then R(A+2) = R(A+4); jump back
             if (!multi_block) return -1;
+            if (!lua_reg_in_range(A + 4)) return -1;
             int first_result = lua_reg[A + 4];
             if (first_result < 0) return -1;
 
