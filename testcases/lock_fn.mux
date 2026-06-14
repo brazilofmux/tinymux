@@ -50,11 +50,30 @@
   think >>> lock clear: [lock(me,)];
   @if eq(strlen(lock(me)), 0)=
   {
-    @log smoke=TC003: lock clear. Succeeded.;
+    @log smoke=TC003: lock clear. Succeeded.
+  },
+  {
+    @log smoke=TC003: lock clear. Failed (lock=[lock(me)]).
+  }
+-
+#
+# Test Case #4 - A pathologically deep lock must not crash the parser.
+# Setting a lock of ~2000 nested '!' operators used to overflow the C stack
+# (parse_boolexp recursion had no depth limit), SIGSEGV'ing the whole server.
+# The parser now caps recursion depth, so the deep lock is bounded and the
+# server keeps running; we prove survival by reading and re-setting a normal
+# lock afterward.
+#
+&tr.tc004 test_lock_fn=
+  think >>> deep lock survived: [lock(me,[repeat(!,2000)]#1)];
+  think >>> reset lock: [lock(me,me)];
+  @if strmatch(lock(me),[num(me)])=
+  {
+    @log smoke=TC004: deep lock recursion bounded (no crash). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: lock clear. Failed (lock=[lock(me)]).;
+    @log smoke=TC004: deep lock recursion bounded (no crash). Failed (lock=[lock(me)] expected=[num(me)]).;
     @trig me/tr.done
   }
 -

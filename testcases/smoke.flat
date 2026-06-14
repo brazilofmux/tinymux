@@ -5609,9 +5609,11 @@
 >258
 "think >>> lock set: [lock(me,me)];@if strmatch(lock(me),[num(me)])={@log smoke=TC002: lock set. Succeeded.},{@log smoke=TC002: lock set. Failed(read=[lock(me)] expected=[num(me)]).}"
 >259
-"think >>> lock clear: [lock(me,)];@if eq(strlen(lock(me)), 0)={@log smoke=TC003: lock clear. Succeeded.;@trig me/tr.done},{@log smoke=TC003: lock clear. Failed (lock=[lock(me)]).;@trig me/tr.done}"
+"think >>> lock clear: [lock(me,)];@if eq(strlen(lock(me)), 0)={@log smoke=TC003: lock clear. Succeeded.},{@log smoke=TC003: lock clear. Failed (lock=[lock(me)]).}"
 >260
 "@log smoke=End lock() test cases.;@notify smoke"
+>261
+"think >>> deep lock survived: [lock(me,[repeat(!,2000)]#1)];think >>> reset lock: [lock(me,me)];@if strmatch(lock(me),[num(me)])={@log smoke=TC004: deep lock recursion bounded (no crash). Succeeded.;@trig me/tr.done},{@log smoke=TC004: deep lock recursion bounded (no crash). Failed (lock=[lock(me)] expected=[num(me)]).;@trig me/tr.done}"
 <
 !137
 "test_log_fn"

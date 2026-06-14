@@ -14,6 +14,29 @@
 
 static bool parsing_internal = false;
 
+// Bound parser recursion.  parse_boolexp_E/T/F/L are mutually recursive on
+// attacker-controlled @lock input, with no depth limit of their own — the
+// existing mudconf.lock_nest_lim guards only the *evaluator's* indirect-lock
+// recursion.  A deeply nested lock such as "!!!!...#1" or "((((...#1" therefore
+// overflows the C stack and crashes the server.  Real locks nest a handful of
+// levels; this cap is far beyond any legitimate use yet well within the stack
+// (parse_boolexp_F's scratch buffer is heap-allocated, below, so each frame is
+// small).  Tripping it yields TRUE_BOOLEXP, the same sentinel the parser already
+// returns for any malformed lock.
+//
+static constexpr int LOCK_PARSE_MAX_DEPTH = 1024;
+static thread_local int s_parse_depth = 0;
+
+namespace
+{
+    class ParseDepthGuard
+    {
+    public:
+        ParseDepthGuard()  { ++s_parse_depth; }
+        ~ParseDepthGuard() { --s_parse_depth; }
+    };
+}
+
 /* ---------------------------------------------------------------------------
  * check_attr: indicate if attribute ATTR on player passes key when checked by
  * the object lockobj
@@ -496,6 +519,16 @@ static BOOLEXP *parse_boolexp_L(void)
 //
 static BOOLEXP *parse_boolexp_F(void)
 {
+    // Every parser recursion cycle (NOT's F->F, AND's T->F, OR's E->T->F,
+    // parens' L->E->T->F) passes through here, so bounding depth at this one
+    // point bounds all of them.
+    //
+    ParseDepthGuard depth_guard;
+    if (s_parse_depth > LOCK_PARSE_MAX_DEPTH)
+    {
+        return TRUE_BOOLEXP;
+    }
+
     BOOLEXP *b2;
 
     skip_whitespace();
@@ -570,10 +603,13 @@ static BOOLEXP *parse_boolexp_F(void)
                 // name that follows the '/'.
                 //
                 size_t objlen = static_cast<size_t>(slash - parsebuf);
-                char objbuf[LBUF_SIZE];
-                if (objlen >= sizeof(objbuf))
+                // Heap-allocated (not a 32 KB stack array) so that deep parser
+                // recursion does not balloon the stack frame.
+                LBuf objbuf_lbuf = LBuf_Src("parse_boolexp_F.objbuf");
+                char *objbuf = reinterpret_cast<char *>(objbuf_lbuf.get());
+                if (objlen >= LBUF_SIZE)
                 {
-                    objlen = sizeof(objbuf) - 1;
+                    objlen = LBUF_SIZE - 1;
                 }
                 memcpy(objbuf, parsebuf, objlen);
                 objbuf[objlen] = '\0';
@@ -803,6 +839,7 @@ BOOLEXP *parse_boolexp(dbref player, const UTF8 *buf, bool internal)
     memcpy(parsestore, buf, n+1);
     parsebuf = parsestore;
     parse_player = player;
+    s_parse_depth = 0;
     if (!mudstate.bStandAlone)
     {
         parsing_internal = internal;
