@@ -4638,7 +4638,9 @@
 >264
 "@if u(me/tr.has_jit)={@if gt(setr(0,after(grab(jitstats(),compile_ok=*),=)),0)={@log smoke=TC007: %q0 successful compilations. Succeeded.},{@log smoke=TC007: %q0 successful compilations. Failed.}},{@log smoke=TC007: Compile coverage. Skipped (JIT not enabled).}"
 >266
-"@if u(me/tr.has_jit)={@log smoke=TC008: Coverage stats:[jitstats()]. Succeeded.;@trig me/tr.done},{@log smoke=TC008: Coverage stats. Skipped (JIT not enabled).;@trig me/tr.done}"
+"@if u(me/tr.has_jit)={@log smoke=TC008: Coverage stats:[jitstats()]. Succeeded.},{@log smoke=TC008: Coverage stats. Skipped (JIT not enabled).}"
+>273
+"@log smoke=TC009 setup [setq(0,2.5)][setq(1,1.5)];@if cand(eq(add(abs(%q0),1), 3.5),eq(add(max(%q0,%q1),1), 3.5),eq(add(min(%q0,%q1),1), 2.5),eq(add(bound(%q0,1,9),0), 2.5))={@log smoke=TC009: float fn result feeding native int op. Succeeded.;@trig me/tr.done},{@log smoke=TC009: float fn result feeding native int op. Failed (abs=[add(abs(%q0),1)] max=[add(max(%q0,%q1),1)] min=[add(min(%q0,%q1),1)] bound=[add(bound(%q0,1,9),0)]).;@trig me/tr.done}"
 >300
 "[strmatch(jitstats(),*eval_attempts=*)]"
 <

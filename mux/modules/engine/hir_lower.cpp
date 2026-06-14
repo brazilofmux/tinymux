@@ -871,6 +871,10 @@ static bool try_fold(const std::string &func_name,
 
 // Functions known to always return integer strings.
 // POS is excluded: not-found yields the string "#-1" (#770).
+// ABS/MAX/MIN/BOUND are NOT here: they are the float variants
+// (fun_abs/fun_max/fun_min/fun_bound use mux_atof + fval), so e.g.
+// abs(2.5)=2.5 — marking them known_int caused a downstream native int op
+// to ATOI-truncate the float (#826).  They live in returns_float instead.
 //
 bool returns_int(const std::string &upper) {
     return upper == "RAND" || upper == "STRLEN" || upper == "WORDS"
@@ -878,12 +882,14 @@ bool returns_int(const std::string &upper) {
         || upper == "GT" || upper == "GTE" || upper == "LT" || upper == "LTE"
         || upper == "NOT" || upper == "T" || upper == "COMP"
         || upper == "INC" || upper == "DEC" || upper == "SIGN"
-        || upper == "MOD" || upper == "ABS" || upper == "MAX"
-        || upper == "MIN" || upper == "BOUND" || upper == "IDIV"
+        || upper == "MOD" || upper == "IDIV"
         || upper == "STRMATCH" || upper == "MEMBER";
 }
 
 // Functions known to always return floating-point strings.
+// (Marking an integer-valued result as float is harmless — float ops format
+// whole numbers identically — but marking a float result as int truncates,
+// so the float-capable abs/max/min/bound belong here.)
 //
 static bool returns_float(const std::string &upper) {
     return upper == "SIN" || upper == "COS" || upper == "TAN"
@@ -896,7 +902,9 @@ static bool returns_float(const std::string &upper) {
         || upper == "PI" || upper == "E"
         || upper == "DIST2D" || upper == "DIST3D"
         || upper == "CTU"
-        || upper == "MEAN" || upper == "MEDIAN" || upper == "STDDEV";
+        || upper == "MEAN" || upper == "MEDIAN" || upper == "STDDEV"
+        || upper == "ABS" || upper == "MAX" || upper == "MIN"
+        || upper == "BOUND";
 }
 
 // Unary FP math functions: map MUX name → blob symbol name.
