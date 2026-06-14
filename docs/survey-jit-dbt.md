@@ -194,11 +194,14 @@ plus a defense-in-depth note (unmasked guest LOAD/STORE).
       (NaN); GVN/CSE only numbers pure deterministic ops, normalizes only truly
       commutative ops (FADD/FMUL incl.), excludes FCALL1/FSQRT (func_idx not in
       key), and the dominator-scope restore is correct.
-- [ ] Follow-up from the hir_opt pass: the native multi-arg FLOAT `add()`
-      lowering (hir_lower) chains sequential `HIR_FADD`; the interpreter uses
-      `AddDoubles` (error-compensated, |x|-sorted). Diverges for 3+ runtime
-      float args with catastrophic cancellation (e.g. add(1e20,1,-1e20)). Low
-      reachability; verify and fix if real.
+- [x] Follow-up from the hir_opt pass: float `add()`/`sub()` AddDoubles parity —
+      VERIFIED REAL and broader than flagged (#829, 29abb9a9a). Both the tier2
+      blob (rv64_add/rv64_sub) and the native float FADD/FSUB chain did a raw
+      sequential sum, so runtime float add/sub diverged not just on cancellation
+      (add(1e20,1,-1e20)=0 vs 1) but on ORDINARY decimals (add(0.1,0.2)=
+      0.30000000000000004 vs 0.3 — no NearestPretty). Fixed: blob calls the
+      rv64_add_doubles host intrinsic (stack vals[], not the strtod-clobbered
+      DSCRATCH); native float ADD/SUB lowering removed.
 - [ ] `hir_lower_lua.cpp` — the Lua lowering path (separate from softcode).
 - [ ] `reconstruct_from_cache` — does it validate record sizes/offsets before
       use (corrupted/truncated SQLite blob robustness)?
