@@ -2848,20 +2848,12 @@ general_lowering:
     // to string at the boundary where it escapes to non-math context.
     // ---------------------------------------------------------------
 
-    // ADD / SUB with float args: promote to double, emit FADD/FSUB.
-    if ((upper == "ADD" || upper == "SUB") && nargs >= 2
-        && all_numeric() && any_float()) {
-        bool is_add = (upper == "ADD");
-        int acc = ensure_float(args[0]);
-        for (int i = 1; i < nargs; i++) {
-            int b = ensure_float(args[i]);
-            hir_kind op = (is_add || i > 1) ? HIR_FADD : HIR_FSUB;
-            acc = h.emit(op, TY_FLOAT, acc, b);
-        }
-        h.native_ops++;
-        h.needs_jit = true;
-        return acc;
-    }
+    // float ADD/SUB are NOT lowered to a sequential FADD/FSUB chain: the
+    // interpreter's fun_add/fun_sub use AddDoubles (|x|-sorted, error-
+    // compensated, NearestPretty), so a raw chain diverged both on cancellation
+    // and on ordinary decimals (no NearestPretty) -- #829.  Constant add()/sub()
+    // fold via try_fold's AddDoubles; runtime float add()/sub() routes to the
+    // tier2 blob rv64_add/rv64_sub, which now call the AddDoubles intrinsic.
 
     // MUL with float args.
     if (upper == "MUL" && nargs >= 2 && all_numeric() && any_float()) {

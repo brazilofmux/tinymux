@@ -230,11 +230,34 @@
         eq(idiv(%q0,%q1), -2)
       )=
   {
-    @log smoke=TC011: mod() floor-mod JIT parity. Succeeded.;
+    @log smoke=TC011: mod() floor-mod JIT parity. Succeeded.
+  },
+  {
+    @log smoke=TC011: mod() floor-mod JIT parity. Failed (m-7,3=[mod(%q0,%q1)] m7,-3=[mod(%q2,%q3)] m-7,-3=[mod(%q0,%q3)] m7,3=[mod(%q2,%q1)] rem=[remainder(%q0,%q1)] idiv=[idiv(%q0,%q1)]).
+  }
+-
+#
+# TC012: float add()/sub() through the JIT must match the interpreter, which
+# uses AddDoubles (|x|-sorted, error-compensated, then NearestPretty).  The %q
+# values are runtime so the math routes to the tier2 blob (rv64_add/rv64_sub)
+# rather than constant-folding.  Regression for #829: the blob did a raw
+# sequential sum with no NearestPretty, so add(0.1,0.2)=0.30000000000000004
+# (vs 0.3) and add(1e20,1,-1e20)=0 (vs 1, cancellation).
+#
+&tr.tc012 test_jit_coverage_fn=
+  @log smoke=TC012 setup [setq(0,0.1)][setq(1,0.2)][setq(2,1e20)][setq(3,-1e20)];
+  @if cand(
+        strmatch(add(%q0,%q1), 0.3),
+        strmatch(add(%q2,1,%q3), 1),
+        strmatch(sub(%q0,%q1), -0.1),
+        strmatch(add(fdiv(%q2,1),1,fdiv(%q3,1)), 1)
+      )=
+  {
+    @log smoke=TC012: float add/sub AddDoubles JIT parity. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC011: mod() floor-mod JIT parity. Failed (m-7,3=[mod(%q0,%q1)] m7,-3=[mod(%q2,%q3)] m-7,-3=[mod(%q0,%q3)] m7,3=[mod(%q2,%q1)] rem=[remainder(%q0,%q1)] idiv=[idiv(%q0,%q1)]).;
+    @log smoke=TC012: float add/sub AddDoubles JIT parity. Failed (a.1.2=[add(%q0,%q1)] cancel=[add(%q2,1,%q3)] sub=[sub(%q0,%q1)] ftyped=[add(fdiv(%q2,1),1,fdiv(%q3,1))]).;
     @trig me/tr.done
   }
 -

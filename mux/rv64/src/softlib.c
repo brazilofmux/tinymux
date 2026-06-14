@@ -1752,6 +1752,9 @@ static long long satoll(const char *s) {
  * ladd has the same storage semantics as fun_ladd's single static array. */
 #define RV64_DSCRATCH_ADDR 0x500000UL
 
+/* Max function arguments (== MAX_ARG in config.h); rv64_add's stack vals[]. */
+#define MAX_ARG_BLOB 100
+
 /* fun_ladd caps the word count at MAX_WORDS == LBUF_SIZE (stringutil.h). */
 #ifndef MAX_WORDS
 #define MAX_WORDS LBUF_SIZE
@@ -2588,10 +2591,19 @@ char *rv64_add(char *out, const char **fargs, int nfargs) {
         }
         rv64_ltoa(out, sum);
     } else {
-        double sum = 0.0;
-        for (int i = 0; i < nfargs; i++) {
-            sum += rv64_strtod(fargs[i]);
+        /* Float path: match fun_add — AddDoubles (|x|-sorted, error-compensated,
+         * NearestPretty).  A raw sequential `sum +=` diverged from the
+         * interpreter on cancellation (add(1e20,1,-1e20)=0 vs 1) AND on ordinary
+         * decimals because it skipped NearestPretty (add(0.1,0.2)=
+         * 0.30000000000000004 vs 0.3).  #829.  vals is a STACK array, not the
+         * shared RV64_DSCRATCH_ADDR — rv64_strtod stages its argument there, so
+         * a scratch-backed vals would be clobbered between iterations. */
+        double vals[MAX_ARG_BLOB];
+        int nv = nfargs > MAX_ARG_BLOB ? MAX_ARG_BLOB : nfargs;
+        for (int i = 0; i < nv; i++) {
+            vals[i] = rv64_strtod(fargs[i]);
         }
+        double sum = rv64_add_doubles(vals, nv);
         int n = rv64_fval(out, sum);
         out[n] = '\0';
     }
@@ -2610,9 +2622,13 @@ char *rv64_sub(char *out, const char **fargs, int nfargs) {
         long b = rv64_atol(fargs[1]);
         rv64_ltoa(out, a - b);
     } else {
-        double a = rv64_strtod(fargs[0]);
-        double b = rv64_strtod(fargs[1]);
-        int n = rv64_fval(out, a - b);
+        /* Float path: match fun_sub — AddDoubles([a, -b]) (error-compensated +
+         * NearestPretty), not a raw a-b which diverged like add (#829). */
+        double vals[2];
+        vals[0] = rv64_strtod(fargs[0]);
+        vals[1] = -rv64_strtod(fargs[1]);
+        double r = rv64_add_doubles(vals, 2);
+        int n = rv64_fval(out, r);
         out[n] = '\0';
     }
     return out;

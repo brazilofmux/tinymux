@@ -4644,7 +4644,9 @@
 >274
 "@log smoke=TC010 setup [setq(0,2.5)][setq(1,-2.5)][setq(2,99.9)];@if cand(eq(trunc(%q0), 2),eq(trunc(%q1), -2),eq(trunc(%q2), 99),eq(trunc(add(%q0,0.4)), 2))={@log smoke=TC010: trunc() tier2 blob parity. Succeeded.},{@log smoke=TC010: trunc() tier2 blob parity. Failed (t2.5=[trunc(%q0)] t-2.5=[trunc(%q1)] t99.9=[trunc(%q2)] t2.9=[trunc(add(%q0,0.4))]).}"
 >275
-"@log smoke=TC011 setup [setq(0,-7)][setq(1,3)][setq(2,7)][setq(3,-3)];@if cand(eq(mod(%q0,%q1), 2),eq(mod(%q2,%q3), -2),eq(mod(%q0,%q3), -1),eq(mod(%q2,%q1), 1),eq(remainder(%q0,%q1), -1),eq(idiv(%q0,%q1), -2))={@log smoke=TC011: mod() floor-mod JIT parity. Succeeded.;@trig me/tr.done},{@log smoke=TC011: mod() floor-mod JIT parity. Failed (m-7,3=[mod(%q0,%q1)] m7,-3=[mod(%q2,%q3)] m-7,-3=[mod(%q0,%q3)] m7,3=[mod(%q2,%q1)] rem=[remainder(%q0,%q1)] idiv=[idiv(%q0,%q1)]).;@trig me/tr.done}"
+"@log smoke=TC011 setup [setq(0,-7)][setq(1,3)][setq(2,7)][setq(3,-3)];@if cand(eq(mod(%q0,%q1), 2),eq(mod(%q2,%q3), -2),eq(mod(%q0,%q3), -1),eq(mod(%q2,%q1), 1),eq(remainder(%q0,%q1), -1),eq(idiv(%q0,%q1), -2))={@log smoke=TC011: mod() floor-mod JIT parity. Succeeded.},{@log smoke=TC011: mod() floor-mod JIT parity. Failed (m-7,3=[mod(%q0,%q1)] m7,-3=[mod(%q2,%q3)] m-7,-3=[mod(%q0,%q3)] m7,3=[mod(%q2,%q1)] rem=[remainder(%q0,%q1)] idiv=[idiv(%q0,%q1)]).}"
+>276
+"@log smoke=TC012 setup [setq(0,0.1)][setq(1,0.2)][setq(2,1e20)][setq(3,-1e20)];@if cand(strmatch(add(%q0,%q1), 0.3),strmatch(add(%q2,1,%q3), 1),strmatch(sub(%q0,%q1), -0.1),strmatch(add(fdiv(%q2,1),1,fdiv(%q3,1)), 1))={@log smoke=TC012: float add/sub AddDoubles JIT parity. Succeeded.;@trig me/tr.done},{@log smoke=TC012: float add/sub AddDoubles JIT parity. Failed (a.1.2=[add(%q0,%q1)] cancel=[add(%q2,1,%q3)] sub=[sub(%q0,%q1)] ftyped=[add(fdiv(%q2,1),1,fdiv(%q3,1))]).;@trig me/tr.done}"
 >300
 "[strmatch(jitstats(),*eval_attempts=*)]"
 <
