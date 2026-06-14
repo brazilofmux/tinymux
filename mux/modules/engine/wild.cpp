@@ -17,12 +17,14 @@
 #include "config.h"
 #include "externs.h"
 
-// Pattern (b) is pre-lowered by the caller; only lowercase the data side (a).
-// This provides Unicode case-insensitive matching for patterns via
-// mux_strlwr() at the entry points.  Non-ASCII case-insensitivity in data
-// still uses mux_tolower_ascii (identity for non-ASCII bytes), which is
-// correct for XOR transforms and documented as a limitation for the ~24 rare
-// literal transforms that change byte count.
+// The pattern is pre-lowercased by the caller (mux_strlwr, Unicode-aware) at
+// the entry points.  The non-capturing matcher quick_wild_impl() folds the data
+// side per character too (wild_lit_eq → mux_tolower), so it is fully Unicode
+// case-insensitive from either side.  The capturing matcher wild1() still uses
+// the byte-wise EQUAL/NOTEQUAL below, which fold only ASCII in the data — a
+// documented limitation for non-ASCII letters in $-command / ^-listen literals
+// (see docs/survey-wild-matching.md; making wild1 character-oriented while
+// preserving original-case captures is a tracked follow-up).
 //
 #define EQUAL(a,b) (mux_tolower_ascii(a) == (b))
 #define NOTEQUAL(a,b) (mux_tolower_ascii(a) != (b))
@@ -62,6 +64,89 @@ static size_t wild_char_len(const UTF8 *dstr)
     return t;
 }
 
+// Case-insensitively match the data character at dstr against the literal
+// character at tstr.  The pattern (tstr) is already lowercased by the caller
+// (mux_strlwr at the entry points), so the data character is folded on the fly
+// with mux_tolower() — the same Unicode mapping — and the folded bytes are
+// compared against the pattern.  This makes non-ASCII letters (É/é, Ñ/ñ, …)
+// match case-insensitively from EITHER side, where the old byte-wise EQUAL only
+// folded ASCII in the data and so e.g. strmatch(CAFÉ,café) failed.
+//
+// On a match, returns true and sets *p_dlen / *p_tlen to the bytes to advance
+// in the data and pattern respectively; these differ when a fold changes byte
+// count.  At end-of-data (*dstr == '\0') it matches only the pattern's NUL (the
+// ASCII path folds '\0' to '\0'), which callers treat as "strings both ended".
+//
+static bool wild_lit_eq(const UTF8 *tstr, const UTF8 *dstr,
+                        size_t *p_dlen, size_t *p_tlen)
+{
+    // ASCII fast path — the overwhelming common case.  tstr is pre-lowercased.
+    //
+    unsigned char dc = static_cast<unsigned char>(*dstr);
+    if (dc < 0x80)
+    {
+        if (mux_tolower_ascii(dc) != static_cast<unsigned char>(*tstr))
+        {
+            return false;
+        }
+        *p_dlen = 1;
+        *p_tlen = 1;
+        return true;
+    }
+
+    // Multibyte data character: validate and fold it.
+    //
+    size_t dlen = wild_char_len(dstr);
+    if (0 == dlen)
+    {
+        return false;
+    }
+
+    bool bXor;
+    const string_desc *d = mux_tolower(dstr, bXor);
+
+    if (  nullptr != d
+       && bXor
+       && d->n_bytes == dlen)
+    {
+        // XOR transform (e.g. Latin-1 É→é): the folded byte is the original
+        // byte XORed with the mask at d->p.  Compare against the pattern.
+        //
+        for (size_t i = 0; i < dlen; i++)
+        {
+            if (  static_cast<unsigned char>(tstr[i])
+               != (static_cast<unsigned char>(dstr[i]) ^ d->p[i]))
+            {
+                return false;
+            }
+        }
+        *p_dlen = dlen;
+        *p_tlen = dlen;
+        return true;
+    }
+
+    // Table transform with the folded bytes at d->p (may change byte count), or
+    // no fold available (d == nullptr, or a byte-count-changing XOR we don't
+    // apply) — compare the folded (or original) bytes against the pattern.
+    //
+    const UTF8 *fold = (nullptr != d && !bXor) ? d->p       : dstr;
+    size_t      flen = (nullptr != d && !bXor) ? d->n_bytes : dlen;
+
+    // Compare folded data bytes to the pattern.  Stops at the first mismatch,
+    // including the pattern's NUL terminator, so it never reads past it.
+    //
+    for (size_t i = 0; i < flen; i++)
+    {
+        if (static_cast<unsigned char>(tstr[i]) != fold[i])
+        {
+            return false;
+        }
+    }
+    *p_dlen = dlen;
+    *p_tlen = flen;
+    return true;
+}
+
 //
 // ---------------------------------------------------------------------------
 // quick_wild_impl: INTERNAL: do a wildcard match, without remembering the
@@ -79,49 +164,43 @@ static bool quick_wild_impl(const UTF8 *tstr, const UTF8 *dstr)
 
     while (*tstr != '*')
     {
-        switch (*tstr)
+        if ('?' == *tstr)
         {
-        case '?':
-
             // Single character match: consume one whole UTF-8 character.
-            // Return false at end of data or on a malformed character.  The
-            // loop's trailing dstr++ advances the final byte.
+            // Return false at end of data or on a malformed character.
             //
+            size_t t = wild_char_len(dstr);
+            if (0 == t)
             {
-                size_t t = wild_char_len(dstr);
-                if (0 == t)
-                {
-                    return false;
-                }
-                dstr += t - 1;
+                return false;
             }
-            break;
+            dstr += t;
+            tstr++;
+            continue;
+        }
 
-        case '\\':
-
+        if ('\\' == *tstr)
+        {
             // Escape character.  Move up, and force literal match of next
             // character.
             //
             tstr++;
-
-            // FALL THROUGH
-
-        default:
-
-            // Literal character.  Check for a match. If matching end of data,
-            // return true.
-            //
-            if (NOTEQUAL(*dstr, *tstr))
-            {
-                return false;
-            }
-            if (!*dstr)
-            {
-                return true;
-            }
         }
-        tstr++;
-        dstr++;
+
+        // Literal character.  Check for a (case-insensitive, whole-character)
+        // match.  If matching end of data, return true.
+        //
+        size_t dlen, tlen;
+        if (!wild_lit_eq(tstr, dstr, &dlen, &tlen))
+        {
+            return false;
+        }
+        if (!*dstr)
+        {
+            return true;
+        }
+        tstr += tlen;
+        dstr += dlen;
     }
 
     // Skip over '*'.
@@ -168,16 +247,19 @@ static bool quick_wild_impl(const UTF8 *tstr, const UTF8 *dstr)
         return true;
     }
 
-    // Scan for possible matches.
+    // Scan for possible matches.  Advance one whole UTF-8 character at a time
+    // so a multibyte literal anchor is only tested on character boundaries.
     //
     while (*dstr)
     {
-        if (  EQUAL(*dstr, *tstr)
-           && quick_wild_impl(tstr + 1, dstr + 1))
+        size_t dlen, tlen;
+        if (  wild_lit_eq(tstr, dstr, &dlen, &tlen)
+           && quick_wild_impl(tstr + tlen, dstr + dlen))
         {
             return true;
         }
-        dstr++;
+        size_t t = wild_char_len(dstr);
+        dstr += (0 != t) ? t : 1;
     }
     return false;
 }

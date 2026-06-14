@@ -62,10 +62,33 @@
       )=
   {
     @log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Failed (????=[strmatch(café,????)] ?????=[strmatch(café,?????)] c?fé=[strmatch(café,c?fé)] caf?=[strmatch(café,caf?)] naïve=[strmatch(naïve,?????)]).;
+  }
+-
+#
+# Test Case #4 - UTF-8 case folding works from EITHER side.  The pattern is
+# Unicode-lowercased at the entry point; quick_wild_impl now folds the data
+# character too, so an uppercase non-ASCII letter in the DATA (not just the
+# pattern) matches case-insensitively.  Previously the data side folded only
+# ASCII, so strmatch(CAFÉ,café) wrongly returned 0.
+#
+&tr.tc004 test_strmatch_fn=
+  @if cand(
+        eq(strmatch(CAFÉ,café), 1),
+        eq(strmatch(café,CAFÉ), 1),
+        eq(strmatch(ÑOÑO,ñoño), 1),
+        eq(strmatch(MÜNCHEN,münch*), 1),
+        eq(strmatch(CAFÉ,c?fé), 1),
+        eq(strmatch(café,latte), 0)
+      )=
+  {
+    @log smoke=TC004: strmatch() Unicode case folding both sides. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: strmatch() Unicode case folding both sides. Failed (CAFÉ/café=[strmatch(CAFÉ,café)] café/CAFÉ=[strmatch(café,CAFÉ)] ÑOÑO/ñoño=[strmatch(ÑOÑO,ñoño)] MÜNCHEN/münch*=[strmatch(MÜNCHEN,münch*)] CAFÉ/c?fé=[strmatch(CAFÉ,c?fé)]).;
     @trig me/tr.done
   }
 -

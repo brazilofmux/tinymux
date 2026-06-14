@@ -10152,9 +10152,11 @@
 >258
 "@if cand(eq(strmatch(, ),0),eq(strmatch(foobar,f*r),1),eq(strmatch(foobar,*z*),0),eq(strmatch(Foo,foo),1))={@log smoke=TC002: strmatch() empty and wildcard cases. Succeeded.;},{@log smoke=TC002: strmatch() empty and wildcard cases. Failed (empty=[strmatch(, )] f*r=[strmatch(foobar,f*r)] *z*=[strmatch(foobar,*z*)] Foo/foo=[strmatch(Foo,foo)]).;}"
 >259
-"@if cand(eq(strmatch(café,????), 1),eq(strmatch(café,?????), 0),eq(strmatch(café,c?fé), 1),eq(strmatch(café,caf?), 1),eq(strmatch(naïve,?????), 1))={@log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Succeeded.;@trig me/tr.done},{@log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Failed (????=[strmatch(café,????)] ?????=[strmatch(café,?????)] c?fé=[strmatch(café,c?fé)] caf?=[strmatch(café,caf?)] naïve=[strmatch(naïve,?????)]).;@trig me/tr.done}"
+"@if cand(eq(strmatch(café,????), 1),eq(strmatch(café,?????), 0),eq(strmatch(café,c?fé), 1),eq(strmatch(café,caf?), 1),eq(strmatch(naïve,?????), 1))={@log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Succeeded.;},{@log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Failed (????=[strmatch(café,????)] ?????=[strmatch(café,?????)] c?fé=[strmatch(café,c?fé)] caf?=[strmatch(café,caf?)] naïve=[strmatch(naïve,?????)]).;}"
 >260
 "@log smoke=End strmatch() test cases.;@notify smoke"
+>261
+"@if cand(eq(strmatch(CAFÉ,café), 1),eq(strmatch(café,CAFÉ), 1),eq(strmatch(ÑOÑO,ñoño), 1),eq(strmatch(MÜNCHEN,münch*), 1),eq(strmatch(CAFÉ,c?fé), 1),eq(strmatch(café,latte), 0))={@log smoke=TC004: strmatch() Unicode case folding both sides. Succeeded.;@trig me/tr.done},{@log smoke=TC004: strmatch() Unicode case folding both sides. Failed (CAFÉ/café=[strmatch(CAFÉ,café)] café/CAFÉ=[strmatch(café,CAFÉ)] ÑOÑO/ñoño=[strmatch(ÑOÑO,ñoño)] MÜNCHEN/münch*=[strmatch(MÜNCHEN,münch*)] CAFÉ/c?fé=[strmatch(CAFÉ,c?fé)]).;@trig me/tr.done}"
 <
 !272
 "test_strmem_fn"
