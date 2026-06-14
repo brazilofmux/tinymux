@@ -1668,11 +1668,13 @@
 >257
 "@if cand(eq(bound(5,1,10), 5),eq(bound(-3,0,10), 0),eq(bound(15,0,10), 10),eq(bound(5,5,5), 5))={@log smoke=TC001: bound clamp. Succeeded.},{@log smoke=TC001: bound clamp. Failed (bound(5%,1%,10)=[bound(5,1,10)] bound(-3%,0%,10)=[bound(-3,0,10)] bound(15%,0%,10)=[bound(15,0,10)]).}"
 >258
-"@if cand(eq(bound(5,1), 5),eq(bound(-3,0), 0),eq(bound(15,0), 15))={@log smoke=TC002: bound min only. Succeeded.;@trig me/tr.done},{@log smoke=TC002: bound min only. Failed (bound(5%,1)=[bound(5,1)] bound(-3%,0)=[bound(-3,0)] bound(15%,0)=[bound(15,0)]).;@trig me/tr.done}"
+"@if cand(eq(bound(5,1), 5),eq(bound(-3,0), 0),eq(bound(15,0), 15))={@log smoke=TC002: bound min only. Succeeded.},{@log smoke=TC002: bound min only. Failed (bound(5%,1)=[bound(5,1)] bound(-3%,0)=[bound(-3,0)] bound(15%,0)=[bound(15,0)]).}"
 >259
-"@if cand(eq(setr(0,[strmatch(bound(1.5,1,2),1.5)]),1),eq(setr(1,[strmatch(bound(0.5,1,2),1)]),1),eq(setr(2,[strmatch(bound(2.5,1,2),2)]),1),eq(setr(3,[strmatch(bound(-1.25,-1.25,-1.25),-1.25)]),1),eq(setr(4,[strmatch(bound(-2.5,-2),-2)]),1))={@log smoke=TC003: bound decimal and equal-bound cases. Succeeded.;@trig me/tr.done},{@log smoke=TC003: bound decimal and equal-bound cases. Failed (p0=%q0 p1=%q1 p2=%q2 p3=%q3 p4=%q4 bound(1.5%,1%,2)=[bound(1.5,1,2)] bound(0.5%,1%,2)=[bound(0.5,1,2)] bound(2.5%,1%,2)=[bound(2.5,1,2)] bound(-1.25%,-1.25%,-1.25)=[bound(-1.25,-1.25,-1.25)] bound(-2.5%,-2)=[bound(-2.5,-2)]).;@trig me/tr.done}"
+"@if cand(eq(setr(0,[strmatch(bound(1.5,1,2),1.5)]),1),eq(setr(1,[strmatch(bound(0.5,1,2),1)]),1),eq(setr(2,[strmatch(bound(2.5,1,2),2)]),1),eq(setr(3,[strmatch(bound(-1.25,-1.25,-1.25),-1.25)]),1),eq(setr(4,[strmatch(bound(-2.5,-2),-2)]),1))={@log smoke=TC003: bound decimal and equal-bound cases. Succeeded.},{@log smoke=TC003: bound decimal and equal-bound cases. Failed (p0=%q0 p1=%q1 p2=%q2 p3=%q3 p4=%q4 bound(1.5%,1%,2)=[bound(1.5,1,2)] bound(0.5%,1%,2)=[bound(0.5,1,2)] bound(2.5%,1%,2)=[bound(2.5,1,2)] bound(-1.25%,-1.25%,-1.25)=[bound(-1.25,-1.25,-1.25)] bound(-2.5%,-2)=[bound(-2.5,-2)]).}"
 >260
 "@log smoke=End bound() test cases.;@notify smoke"
+>261
+"@if cand(eq(bound(1.5,1,2), 1.5),eq(bound(2.5,1,3), 2.5),eq(bound(0.5,1,2), 1),eq(bound(2.5,1,2), 2),eq(bound(7,2), 7))={@log smoke=TC004: bound float fold path. Succeeded.;@trig me/tr.done},{@log smoke=TC004: bound float fold path. Failed (bound(1.5%,1%,2)=[bound(1.5,1,2)] bound(2.5%,1%,3)=[bound(2.5,1,3)] bound(0.5%,1%,2)=[bound(0.5,1,2)] bound(7%,2)=[bound(7,2)]).;@trig me/tr.done}"
 <
 !24
 "test_butlast_fn"
@@ -2482,7 +2484,9 @@
 >257
 "@if cand(eq(comp(a,b), -1),eq(comp(a,a), 0),eq(comp(b,a), 1))={@log smoke=TC001: comp basic operations. Succeeded.},{@log smoke=TC001: comp basic operations. Failed (comp(a%,b)=[comp(a,b)] comp(a%,a)=[comp(a,a)] comp(b%,a)=[comp(b,a)]).}"
 >258
-"@if cand(eq(comp(chr(233),chr(101 769)), 0),neq(comp(chr(233),chr(252)), 0),eq(comp(chr(65296),chr(65296)), 0))={@log smoke=TC002: comp Unicode. Succeeded.;@trig me/tr.done},{@log smoke=TC002: comp Unicode. Failed (comp(233%,101 769)=[comp(chr(233),chr(101 769))] comp(233%,252)=[comp(chr(233),chr(252))] comp(65296%,65296)=[comp(chr(65296),chr(65296))]).;@trig me/tr.done}"
+"@if cand(eq(comp(chr(233),chr(101 769)), 0),neq(comp(chr(233),chr(252)), 0),eq(comp(chr(65296),chr(65296)), 0))={@log smoke=TC002: comp Unicode. Succeeded.},{@log smoke=TC002: comp Unicode. Failed (comp(233%,101 769)=[comp(chr(233),chr(101 769))] comp(233%,252)=[comp(chr(233),chr(252))] comp(65296%,65296)=[comp(chr(65296),chr(65296))]).}"
+>259
+"@if cand(eq(comp(a,A), -1),eq(comp(A,a), 1),eq(comp(ABCDEF,abcdef,c), 0),eq(comp(abc,abc,a), 0),eq(comp(10,9), -1))={@log smoke=TC003: comp case and mode fold path. Succeeded.;@trig me/tr.done},{@log smoke=TC003: comp case and mode fold path. Failed (comp(a%,A)=[comp(a,A)] comp(A%,a)=[comp(A,a)] comp(ABCDEF%,abcdef%,c)=[comp(ABCDEF,abcdef,c)] comp(abc%,abc%,a)=[comp(abc,abc,a)] comp(10%,9)=[comp(10,9)]).;@trig me/tr.done}"
 >260
 "@log smoke=End comp() test cases.;@notify smoke"
 <

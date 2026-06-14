@@ -39,11 +39,34 @@
         eq(comp(chr(65296),chr(65296)), 0)
       )=
   {
-    @log smoke=TC002: comp Unicode. Succeeded.;
+    @log smoke=TC002: comp Unicode. Succeeded.
+  },
+  {
+    @log smoke=TC002: comp Unicode. Failed (comp(233%,101 769)=[comp(chr(233),chr(101 769))] comp(233%,252)=[comp(chr(233),chr(252))] comp(65296%,65296)=[comp(chr(65296),chr(65296))]).
+  }
+-
+#
+# Test Case #3 - Case sensitivity and the 3-arg mode, through the JIT
+# constant-fold path.  These comp() calls are UNBRACKETED so the @if
+# condition constant-folds via the JIT.  Regression for #824 sibling: the
+# fold used ASCII strcmp and ignored the mode arg, so comp(a,A) folded to 1
+# where the interpreter's Unicode collation gives -1, and comp(X,x,c)
+# (case-insensitive) folded to -1 instead of 0.
+#
+&tr.tc003 test_comp_fn=
+  @if cand(
+        eq(comp(a,A), -1),
+        eq(comp(A,a), 1),
+        eq(comp(ABCDEF,abcdef,c), 0),
+        eq(comp(abc,abc,a), 0),
+        eq(comp(10,9), -1)
+      )=
+  {
+    @log smoke=TC003: comp case and mode fold path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: comp Unicode. Failed (comp(233%,101 769)=[comp(chr(233),chr(101 769))] comp(233%,252)=[comp(chr(233),chr(252))] comp(65296%,65296)=[comp(chr(65296),chr(65296))]).;
+    @log smoke=TC003: comp case and mode fold path. Failed (comp(a%,A)=[comp(a,A)] comp(A%,a)=[comp(A,a)] comp(ABCDEF%,abcdef%,c)=[comp(ABCDEF,abcdef,c)] comp(abc%,abc%,a)=[comp(abc,abc,a)] comp(10%,9)=[comp(10,9)]).;
     @trig me/tr.done
   }
 -

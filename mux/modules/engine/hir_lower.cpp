@@ -324,13 +324,19 @@ static bool try_fold(const std::string &func_name,
         result = format_double(m);
         return true;
     }
-    if (upper == "BOUND" && nargs == 3) {
-        long x = mux_atol(u8(args[0]));
-        long lo = mux_atol(u8(args[1]));
-        long hi = mux_atol(u8(args[2]));
-        if (x < lo) x = lo;
-        if (x > hi) x = hi;
-        result = format_long(x);
+    if (upper == "BOUND" && (nargs == 2 || nargs == 3)) {
+        // Match fun_bound: a FLOAT clamp via mux_atof(non-strict) + fval, and
+        // the max arg is optional.  The old fold used mux_atol and so
+        // truncated float values (bound(2.5,1,3) folded to 2 not 2.5) and
+        // only handled the 3-arg form (#824 sibling).
+        double val = mux_atof(u8(args[0]), false);
+        double lo  = mux_atof(u8(args[1]), false);
+        if (val < lo) val = lo;
+        if (nargs == 3) {
+            double hi = mux_atof(u8(args[2]), false);
+            if (val > hi) val = hi;
+        }
+        result = format_double(val);
         return true;
     }
 
@@ -382,12 +388,29 @@ static bool try_fold(const std::string &func_name,
             [](long a, long b) { return a <= b; },
             [](double a, double b) { return a <= b; });
 
-    // --- COMP(a, b) — string comparison, returns -1/0/1 ---
-    if (upper == "COMP" && nargs >= 2) {
-        // Default: ASCII comparison (simplified — real impl has Unicode collation).
-        int cmp = strcmp(args[0].c_str(), args[1].c_str());
+    // --- COMP(a, b[, mode]) — string comparison, returns -1/0/1 ---
+    if (upper == "COMP" && (nargs == 2 || nargs == 3)) {
+        // Match fun_comp exactly: default (and 2-arg) use Unicode collation,
+        // mode 'c' uses case-insensitive collation, mode 'a' uses ASCII
+        // strcmp.  The old fold used strcmp for everything and ignored the
+        // mode arg (#824 sibling): comp(a,A) folded to 1 where collation gives
+        // -1, and comp(X,x,c) folded to -1 instead of 0.
+        const UTF8 *a = u8(args[0]);
+        const UTF8 *b = u8(args[1]);
+        size_t nA = args[0].size();
+        size_t nB = args[1].size();
+        char mode = (nargs == 3 && !args[2].empty()) ? args[2][0] : '\0';
+        int cmp;
+        if (mode == 'a' || mode == 'A') {
+            cmp = strcmp(reinterpret_cast<const char *>(a),
+                         reinterpret_cast<const char *>(b));
+        } else if (mode == 'c' || mode == 'C') {
+            cmp = mux_collate_cmp_ci(a, nA, b, nB);
+        } else {
+            cmp = mux_collate_cmp(a, nA, b, nB);
+        }
         if (cmp < 0) result = "-1";
-        else if (cmp > 0) result = "1";
+        else if (cmp != 0) result = "1";
         else result = "0";
         return true;
     }

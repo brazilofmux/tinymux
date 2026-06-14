@@ -38,12 +38,10 @@
         eq(bound(15,0), 15)
       )=
   {
-    @log smoke=TC002: bound min only. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC002: bound min only. Succeeded.
   },
   {
-    @log smoke=TC002: bound min only. Failed (bound(5%,1)=[bound(5,1)] bound(-3%,0)=[bound(-3,0)] bound(15%,0)=[bound(15,0)]).;
-    @trig me/tr.done
+    @log smoke=TC002: bound min only. Failed (bound(5%,1)=[bound(5,1)] bound(-3%,0)=[bound(-3,0)] bound(15%,0)=[bound(15,0)]).
   }
 -
 #
@@ -58,11 +56,33 @@
         eq(setr(4,[strmatch(bound(-2.5,-2),-2)]),1)
       )=
   {
-    @log smoke=TC003: bound decimal and equal-bound cases. Succeeded.;
+    @log smoke=TC003: bound decimal and equal-bound cases. Succeeded.
+  },
+  {
+    @log smoke=TC003: bound decimal and equal-bound cases. Failed (p0=%q0 p1=%q1 p2=%q2 p3=%q3 p4=%q4 bound(1.5%,1%,2)=[bound(1.5,1,2)] bound(0.5%,1%,2)=[bound(0.5,1,2)] bound(2.5%,1%,2)=[bound(2.5,1,2)] bound(-1.25%,-1.25%,-1.25)=[bound(-1.25,-1.25,-1.25)] bound(-2.5%,-2)=[bound(-2.5,-2)]).
+  }
+-
+#
+# Test Case #4 - Float clamping through the JIT constant-fold path.
+# These bound() calls are UNBRACKETED, so the @if condition constant-folds
+# via the JIT (const-fold const_xlate/try_fold).  Regression for #824 sibling:
+# the fold used integer mux_atol and truncated 1.5 -> 1, and only handled the
+# 3-arg form.  fun_bound is a float clamp (mux_atof + fval) with optional max.
+#
+&tr.tc004 test_bound_fn=
+  @if cand(
+        eq(bound(1.5,1,2), 1.5),
+        eq(bound(2.5,1,3), 2.5),
+        eq(bound(0.5,1,2), 1),
+        eq(bound(2.5,1,2), 2),
+        eq(bound(7,2), 7)
+      )=
+  {
+    @log smoke=TC004: bound float fold path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: bound decimal and equal-bound cases. Failed (p0=%q0 p1=%q1 p2=%q2 p3=%q3 p4=%q4 bound(1.5%,1%,2)=[bound(1.5,1,2)] bound(0.5%,1%,2)=[bound(0.5,1,2)] bound(2.5%,1%,2)=[bound(2.5,1,2)] bound(-1.25%,-1.25%,-1.25)=[bound(-1.25,-1.25,-1.25)] bound(-2.5%,-2)=[bound(-2.5,-2)]).;
+    @log smoke=TC004: bound float fold path. Failed (bound(1.5%,1%,2)=[bound(1.5,1,2)] bound(2.5%,1%,3)=[bound(2.5,1,3)] bound(0.5%,1%,2)=[bound(0.5,1,2)] bound(7%,2)=[bound(7,2)]).;
     @trig me/tr.done
   }
 -
