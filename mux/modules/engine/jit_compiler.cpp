@@ -1654,15 +1654,35 @@ static compiled_program reconstruct_from_cache(
 
     // Extract folded result for constant-folded programs.
     // Materialize blobs into the runtime buffer to read the result string.
+    //
+    // A folded result always lives in the string pool — hir_codegen sets
+    // final_out via pool_str() (or an interned str-pool address) precisely
+    // so it survives SQLite cache persistence.  Validate the resolved
+    // address falls inside the materialized string pool and bound the NUL
+    // scan to that region: out_addr comes straight from the cache record,
+    // so a malformed/corrupt row could otherwise point it into the high
+    // runtime buffer (e.g. the non-NUL DSCRATCH doubles area) and walk the
+    // string copy's strlen past the end of the 4 MB buffer (OOB read).
     if (!prog.needs_jit && prog.ok) {
         runtime_buffer_init();
         materialize_program(prog);
         uint64_t out_addr = rv_compiler::resolve_output_addr(
             prog.out_addr, rv_compiler::STACK_TOP);
-        if (out_addr < s_runtime_buffer.size()) {
-            prog.folded_result = reinterpret_cast<const char *>(
-                s_runtime_buffer.data() + out_addr);
+        if (out_addr < static_cast<uint64_t>(rv_compiler::STR_BASE)
+            || out_addr >= prog.str_pool_end
+            || prog.str_pool_end > s_runtime_buffer.size()) {
+            // Folded out_addr outside the materialized string pool — the
+            // record is corrupt; reject it so the caller recompiles.
+            prog.ok = false;
+            return prog;
         }
+        const char *p = reinterpret_cast<const char *>(
+            s_runtime_buffer.data() + out_addr);
+        size_t maxlen = static_cast<size_t>(prog.str_pool_end - out_addr);
+        const void *nul = memchr(p, '\0', maxlen);
+        size_t n = nul ? static_cast<size_t>(
+            static_cast<const char *>(nul) - p) : maxlen;
+        prog.folded_result.assign(p, n);
     }
 
     // Assign a program ID.
