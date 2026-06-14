@@ -2519,10 +2519,29 @@ char *rv64_max(char *out, const char **fargs, int nfargs) {
 
 char *rv64_mod(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '0'; out[1] = '\0'; return out; }
-    long long bot = rv64_atoi64(fargs[1]);
-    if (bot == 0) bot = 1;
-    long long top = rv64_atoi64(fargs[0]);
-    rv64_i64toa(out, top % bot);
+    long long y = rv64_atoi64(fargs[1]);
+    if (y == 0) y = 1;
+    long long x = rv64_atoi64(fargs[0]);
+    /* Floor-mod, matching fun_mod's i64Mod (result takes the divisor's sign).
+     * Plain x%y is truncate-remainder (sign of dividend) — that is remainder(),
+     * NOT mod(), and it diverged from the interpreter for negative operands
+     * (#828).  Also guards INT64_MIN % -1 (UB that traps on x86). */
+    long long r;
+    const long long I64MIN = (-9223372036854775807LL - 1);
+    if (y < 0) {
+        if (x <= 0) {
+            r = (x == I64MIN && y == -1) ? 0 : x % y;
+        } else {
+            r = ((x - 1) % y) + y + 1;
+        }
+    } else {
+        if (x < 0) {
+            r = ((x + 1) % y) + y - 1;
+        } else {
+            r = x % y;
+        }
+    }
+    rv64_i64toa(out, r);
     return out;
 }
 

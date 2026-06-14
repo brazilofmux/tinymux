@@ -2685,19 +2685,11 @@ general_lowering:
         }
     }
 
-    if (upper == "MOD" && nargs == 2 && all_int()) {
-        int a = ensure_hi(args[0]);
-        int b = ensure_hi(args[1]);
-        // Match interpreter: mod(x,0) normalizes divisor 0 to 1.
-        if (h.kind[b] == HIR_ICONST && h.val[b] == 0) {
-            int one = h.emit_iconst(1);
-            b = one;
-        }
-        int r = h.emit(HIR_REM, TY_INT, a, b);
-        h.native_ops++;
-        h.needs_jit = true;
-        return r;
-    }
+    // MOD is NOT lowered to a native HIR_REM: HIR_REM is C++ % (truncate /
+    // sign-of-dividend), but mux mod() is floor-mod (i64Mod, sign-of-divisor)
+    // and diverged for negative operands (#828).  Constant mod() folds via
+    // try_fold's i64Mod; runtime mod() routes to the tier2 blob rv64_mod, which
+    // implements floor-mod.  (IDIV stays native: HIR_DIV == i64Division.)
 
     // Comparisons: EQ, NEQ, GT, GTE, LT, LTE.
     if ((upper == "EQ" || upper == "NEQ" || upper == "GT" || upper == "GTE"

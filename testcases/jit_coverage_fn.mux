@@ -205,11 +205,36 @@
         eq(trunc(add(%q0,0.4)), 2)
       )=
   {
-    @log smoke=TC010: trunc() tier2 blob parity. Succeeded.;
+    @log smoke=TC010: trunc() tier2 blob parity. Succeeded.
+  },
+  {
+    @log smoke=TC010: trunc() tier2 blob parity. Failed (t2.5=[trunc(%q0)] t-2.5=[trunc(%q1)] t99.9=[trunc(%q2)] t2.9=[trunc(add(%q0,0.4))]).
+  }
+-
+#
+# TC011: mod() of negative operands through the JIT must match the
+# interpreter.  mux mod() is floor-mod (i64Mod, sign of divisor), NOT C++
+# truncate-% (which is remainder()).  The %q values are runtime so mod()
+# routes to the tier2 blob / native path rather than constant-folding.
+# Regression for #828: the blob (rv64_mod) and the native MOD->HIR_REM
+# lowering both used truncate %, so mod(-7,3) gave -1 instead of 2.
+#
+&tr.tc011 test_jit_coverage_fn=
+  @log smoke=TC011 setup [setq(0,-7)][setq(1,3)][setq(2,7)][setq(3,-3)];
+  @if cand(
+        eq(mod(%q0,%q1), 2),
+        eq(mod(%q2,%q3), -2),
+        eq(mod(%q0,%q3), -1),
+        eq(mod(%q2,%q1), 1),
+        eq(remainder(%q0,%q1), -1),
+        eq(idiv(%q0,%q1), -2)
+      )=
+  {
+    @log smoke=TC011: mod() floor-mod JIT parity. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC010: trunc() tier2 blob parity. Failed (t2.5=[trunc(%q0)] t-2.5=[trunc(%q1)] t99.9=[trunc(%q2)] t2.9=[trunc(add(%q0,0.4))]).;
+    @log smoke=TC011: mod() floor-mod JIT parity. Failed (m-7,3=[mod(%q0,%q1)] m7,-3=[mod(%q2,%q3)] m-7,-3=[mod(%q0,%q3)] m7,3=[mod(%q2,%q1)] rem=[remainder(%q0,%q1)] idiv=[idiv(%q0,%q1)]).;
     @trig me/tr.done
   }
 -

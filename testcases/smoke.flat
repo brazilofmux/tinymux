@@ -4642,7 +4642,9 @@
 >273
 "@log smoke=TC009 setup [setq(0,2.5)][setq(1,1.5)];@if cand(eq(add(abs(%q0),1), 3.5),eq(add(max(%q0,%q1),1), 3.5),eq(add(min(%q0,%q1),1), 2.5),eq(add(bound(%q0,1,9),0), 2.5))={@log smoke=TC009: float fn result feeding native int op. Succeeded.},{@log smoke=TC009: float fn result feeding native int op. Failed (abs=[add(abs(%q0),1)] max=[add(max(%q0,%q1),1)] min=[add(min(%q0,%q1),1)] bound=[add(bound(%q0,1,9),0)]).}"
 >274
-"@log smoke=TC010 setup [setq(0,2.5)][setq(1,-2.5)][setq(2,99.9)];@if cand(eq(trunc(%q0), 2),eq(trunc(%q1), -2),eq(trunc(%q2), 99),eq(trunc(add(%q0,0.4)), 2))={@log smoke=TC010: trunc() tier2 blob parity. Succeeded.;@trig me/tr.done},{@log smoke=TC010: trunc() tier2 blob parity. Failed (t2.5=[trunc(%q0)] t-2.5=[trunc(%q1)] t99.9=[trunc(%q2)] t2.9=[trunc(add(%q0,0.4))]).;@trig me/tr.done}"
+"@log smoke=TC010 setup [setq(0,2.5)][setq(1,-2.5)][setq(2,99.9)];@if cand(eq(trunc(%q0), 2),eq(trunc(%q1), -2),eq(trunc(%q2), 99),eq(trunc(add(%q0,0.4)), 2))={@log smoke=TC010: trunc() tier2 blob parity. Succeeded.},{@log smoke=TC010: trunc() tier2 blob parity. Failed (t2.5=[trunc(%q0)] t-2.5=[trunc(%q1)] t99.9=[trunc(%q2)] t2.9=[trunc(add(%q0,0.4))]).}"
+>275
+"@log smoke=TC011 setup [setq(0,-7)][setq(1,3)][setq(2,7)][setq(3,-3)];@if cand(eq(mod(%q0,%q1), 2),eq(mod(%q2,%q3), -2),eq(mod(%q0,%q3), -1),eq(mod(%q2,%q1), 1),eq(remainder(%q0,%q1), -1),eq(idiv(%q0,%q1), -2))={@log smoke=TC011: mod() floor-mod JIT parity. Succeeded.;@trig me/tr.done},{@log smoke=TC011: mod() floor-mod JIT parity. Failed (m-7,3=[mod(%q0,%q1)] m7,-3=[mod(%q2,%q3)] m-7,-3=[mod(%q0,%q3)] m7,3=[mod(%q2,%q1)] rem=[remainder(%q0,%q1)] idiv=[idiv(%q0,%q1)]).;@trig me/tr.done}"
 >300
 "[strmatch(jitstats(),*eval_attempts=*)]"
 <
