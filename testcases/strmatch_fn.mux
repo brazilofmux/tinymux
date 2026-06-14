@@ -23,7 +23,6 @@
       )=
   {
     @log smoke=TC001: strmatch basic operations. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC001: strmatch basic operations. Failed (f*=[strmatch(foo,f*)] bar=[strmatch(foo,bar)] foo=[strmatch(foo,foo)] ?oo=[strmatch(foo,?oo)]).;
@@ -41,10 +40,32 @@
       )=
   {
     @log smoke=TC002: strmatch() empty and wildcard cases. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC002: strmatch() empty and wildcard cases. Failed (empty=[strmatch(, )] f*r=[strmatch(foobar,f*r)] *z*=[strmatch(foobar,*z*)] Foo/foo=[strmatch(Foo,foo)]).;
+  }
+-
+#
+# Test Case #3 - UTF-8: '?' matches one whole character, not one byte.
+# Regression for the quick_wild_impl divergence: '?' advanced a single byte,
+# so strmatch(café,????) wrongly failed (café is 5 bytes / 4 characters) and
+# strmatch(café,?????) wrongly matched.  '?' must agree with strlen() and the
+# capturing wild1() path, which already counted whole UTF-8 characters.
+#
+&tr.tc003 test_strmatch_fn=
+  @if cand(
+        eq(strmatch(café,????), 1),
+        eq(strmatch(café,?????), 0),
+        eq(strmatch(café,c?fé), 1),
+        eq(strmatch(café,caf?), 1),
+        eq(strmatch(naïve,?????), 1)
+      )=
+  {
+    @log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Failed (????=[strmatch(café,????)] ?????=[strmatch(café,?????)] c?fé=[strmatch(café,c?fé)] caf?=[strmatch(café,caf?)] naïve=[strmatch(naïve,?????)]).;
     @trig me/tr.done
   }
 -

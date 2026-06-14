@@ -10148,9 +10148,11 @@
 >256
 "@log smoke=Beginning strmatch() test cases."
 >257
-"@if cand(eq(strmatch(foo,f*), 1),eq(strmatch(foo,bar), 0),eq(strmatch(foo,foo), 1),eq(strmatch(foo,?oo), 1))={@log smoke=TC001: strmatch basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: strmatch basic operations. Failed (f*=[strmatch(foo,f*)] bar=[strmatch(foo,bar)] foo=[strmatch(foo,foo)] ?oo=[strmatch(foo,?oo)]).;}"
+"@if cand(eq(strmatch(foo,f*), 1),eq(strmatch(foo,bar), 0),eq(strmatch(foo,foo), 1),eq(strmatch(foo,?oo), 1))={@log smoke=TC001: strmatch basic operations. Succeeded.;},{@log smoke=TC001: strmatch basic operations. Failed (f*=[strmatch(foo,f*)] bar=[strmatch(foo,bar)] foo=[strmatch(foo,foo)] ?oo=[strmatch(foo,?oo)]).;}"
 >258
-"@if cand(eq(strmatch(, ),0),eq(strmatch(foobar,f*r),1),eq(strmatch(foobar,*z*),0),eq(strmatch(Foo,foo),1))={@log smoke=TC002: strmatch() empty and wildcard cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: strmatch() empty and wildcard cases. Failed (empty=[strmatch(, )] f*r=[strmatch(foobar,f*r)] *z*=[strmatch(foobar,*z*)] Foo/foo=[strmatch(Foo,foo)]).;@trig me/tr.done}"
+"@if cand(eq(strmatch(, ),0),eq(strmatch(foobar,f*r),1),eq(strmatch(foobar,*z*),0),eq(strmatch(Foo,foo),1))={@log smoke=TC002: strmatch() empty and wildcard cases. Succeeded.;},{@log smoke=TC002: strmatch() empty and wildcard cases. Failed (empty=[strmatch(, )] f*r=[strmatch(foobar,f*r)] *z*=[strmatch(foobar,*z*)] Foo/foo=[strmatch(Foo,foo)]).;}"
+>259
+"@if cand(eq(strmatch(café,????), 1),eq(strmatch(café,?????), 0),eq(strmatch(café,c?fé), 1),eq(strmatch(café,caf?), 1),eq(strmatch(naïve,?????), 1))={@log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Succeeded.;@trig me/tr.done},{@log smoke=TC003: strmatch() UTF-8 ? matches whole characters. Failed (????=[strmatch(café,????)] ?????=[strmatch(café,?????)] c?fé=[strmatch(café,c?fé)] caf?=[strmatch(café,caf?)] naïve=[strmatch(naïve,?????)]).;@trig me/tr.done}"
 >260
 "@log smoke=End strmatch() test cases.;@notify smoke"
 <

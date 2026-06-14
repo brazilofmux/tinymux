@@ -32,6 +32,36 @@
 static UTF8 **arglist;
 static int numargs;
 
+// Length in bytes of the complete UTF-8 character at dstr, or 0 if dstr is at
+// end-of-string or points at a malformed / truncated character.  A single '?'
+// matches exactly one such character.  This mirrors the validation wild1()
+// already performs for its capturing '?' case, so the non-capturing matcher
+// (quick_wild_impl, used by strmatch/quick_wild/wild_match) agrees with it and
+// with strlen() on multibyte data — historically quick_wild_impl advanced '?'
+// by a single byte, so e.g. strmatch(café,????) wrongly failed (5 bytes != 4).
+//
+static size_t wild_char_len(const UTF8 *dstr)
+{
+    if ('\0' == dstr[0])
+    {
+        return 0;
+    }
+    size_t t = utf8_FirstByte[*dstr];
+    if (UTF8_CONTINUE <= t)
+    {
+        return 0;
+    }
+    for (size_t j = 1; j < t; j++)
+    {
+        if (  '\0' == dstr[j]
+           || UTF8_CONTINUE != utf8_FirstByte[dstr[j]])
+        {
+            return 0;
+        }
+    }
+    return t;
+}
+
 //
 // ---------------------------------------------------------------------------
 // quick_wild_impl: INTERNAL: do a wildcard match, without remembering the
@@ -53,11 +83,17 @@ static bool quick_wild_impl(const UTF8 *tstr, const UTF8 *dstr)
         {
         case '?':
 
-            // Single character match.  Return false if at end of data.
+            // Single character match: consume one whole UTF-8 character.
+            // Return false at end of data or on a malformed character.  The
+            // loop's trailing dstr++ advances the final byte.
             //
-            if (!*dstr)
             {
-                return false;
+                size_t t = wild_char_len(dstr);
+                if (0 == t)
+                {
+                    return false;
+                }
+                dstr += t - 1;
             }
             break;
 
@@ -106,11 +142,14 @@ static bool quick_wild_impl(const UTF8 *tstr, const UTF8 *dstr)
     {
         if (*tstr == '?')
         {
-            if (!*dstr)
+            // Each '?' consumes one whole UTF-8 character.
+            //
+            size_t t = wild_char_len(dstr);
+            if (0 == t)
             {
                 return false;
             }
-            dstr++;
+            dstr += t;
         }
         tstr++;
     }
