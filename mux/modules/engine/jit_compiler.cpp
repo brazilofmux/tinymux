@@ -1103,6 +1103,7 @@ struct persistent_vm_t {
     dbt_state_t dbt;
     bool dbt_ready;
     uint32_t run_count;
+    uint32_t dbt_buffer_resets;   // times the x86 translation buffer was reclaimed
 
     // Re-entrancy guard for the code arena. compile_attr() may only reclaim
     // (reset) the arena when no compiled code from it is on the call stack,
@@ -1140,7 +1141,7 @@ struct persistent_vm_t {
 
     persistent_vm_t()
         : memory(rv_compiler::MEM_SIZE, 0),
-          dbt_ready(false), run_count(0),
+          dbt_ready(false), run_count(0), dbt_buffer_resets(0),
           exec_depth(0), reset_pending(false),
           code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
           str_pool_next(rv_compiler::STR_BASE),
@@ -1302,10 +1303,52 @@ struct persistent_vm_t {
             rc = dbt_resume(&dbt, entry_pc);
         }
         exec_depth--;
-        if (0 == exec_depth && reset_pending) {
-            reset_arena();
+        if (0 == exec_depth) {
+            if (reset_pending) {
+                // Guest arena pressure (or a deferred request) — full reclaim,
+                // which also clears the DBT translation buffer.
+                reset_arena();
+            } else if (dbt_buffer_nearly_full()) {
+                // The DBT's x86 translation buffer filled at RUN time: new
+                // guest blocks (data-dependent paths through already-compiled
+                // attributes) keep translating even when no new compilation
+                // happens, so the compile-time arena check never sees it.  Once
+                // code_used pins at full, translate_block bails and those paths
+                // silently degrade to the interpreter forever.  Reclaim just the
+                // translation buffer (the guest arena + attr cache stay valid;
+                // blocks re-translate lazily) at this safe (exec_depth == 0)
+                // point.
+                reset_dbt_buffer();
+            }
         }
         return rc;
+    }
+
+    // True when the DBT's x86-64 translation buffer (separate from the guest
+    // RV64 arena pools) has crossed a 7/8 high-water mark and holds program
+    // blocks worth reclaiming.  Guarded so we never thrash: there must be
+    // translation above the permanent blob region, and a reset (which rewinds
+    // to blob_code_end) must leave real headroom.
+    bool dbt_buffer_nearly_full() const {
+        if (!dbt_ready) return false;
+        uint64_t used = dbt.code_used;
+        uint64_t blob = dbt.blob_code_end;
+        uint64_t cap  = CODE_BUF_SIZE;
+        return used * 8 >= cap * 7
+            && used > blob
+            && blob * 8 < cap * 7;
+    }
+
+    // Reclaim ONLY the DBT translation buffer — clears the x86 block cache and
+    // rewinds code_used to blob_code_end (blob translations preserved), leaving
+    // the guest code arena and attr cache intact.  The guest programs stay
+    // valid at their PCs and re-translate lazily on next run.  Safe ONLY at
+    // exec_depth == 0 (no translated block is on the call stack).
+    void reset_dbt_buffer() {
+        if (!dbt_ready) return;
+        dbt_reset(&dbt, memory.data(), memory.size(), poc_ecall, &dbt);
+        run_count = 0;
+        dbt_buffer_resets++;
     }
 
     // True when any arena pool has crossed a 7/8 high-water mark and should be
