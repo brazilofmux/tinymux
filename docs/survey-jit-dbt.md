@@ -241,6 +241,23 @@ plus a defense-in-depth note (unmasked guest LOAD/STORE).
       always < 64). FOLLOW-UP noted: the undumper `lua_bc_load`/`load_proto`
       (lua_bytecode.cpp) is the other deserialization boundary — a separate pass
       should confirm it can't OOB-read a truncated/malformed dump.
+- [x] `lua_bytecode.cpp` undumper (`lua_bc_load`/`load_proto`) — AUDITED. Well-
+      built overall: every count capped at 1,000,000, every read loop re-checks
+      `r.ok`, header validation (signature/version/format/magic/type-sizes/
+      check-int/check-num) thorough, all reader primitives gate on `has()`. TWO
+      latent gaps found+fixed (#833, 630b6fb55): (1) `bc_reader::has(n)` did
+      `pos + n <= len`, which WRAPS when `n` is a near-2^64 size —
+      `read_string()` derives its length from `read_size()` (a varint decoding
+      to any 64-bit value), so a crafted size makes `pos + sz` overflow, pass
+      the bound, and `std::string(data+pos, sz)` read/alloc ~2^64 bytes.
+      Reproduced with a 42-byte crafted dump (size = 2^64-41): old check →
+      `terminate()` (std::length_error), fixed → clean reject (ASan-verified).
+      Fix: `n <= len - pos` (pos<=len invariant → no underflow/overflow). (2)
+      `load_proto`→`load_protos` recursion had no depth bound (stack-overflow on
+      pathological nesting, at load time before eligibility rejects nested
+      protos); fixed via a threaded `depth` param capped at MAX_PROTO_DEPTH=200.
+      Latent only (trusted lua_dump input, text-only sandbox — see #832);
+      defense-in-depth for the deserialization boundary.
 - [x] `reconstruct_from_cache` — AUDITED. Mostly well-hardened: blob lengths
       (`code_len`/`str_len`/`fargs_len`/`deps_len`) come from
       `sqlite3_column_bytes`, so the `assign` counts can't desync from the blob;
