@@ -179,9 +179,19 @@ Net verified yield: #805 (high-severity DoS), #804 (latent a64 miscompile),
 plus a defense-in-depth note (unmasked guest LOAD/STORE).
 
 ## Areas still to audit (next passes)
-- [ ] SSA construction + linear-scan register allocation correctness (the
-      warm-loop register-pressure class — `dbt_internal.h` history shows it was
-      a real divergence bug; re-verify the SSA/spill logic, not just the guard).
+- [x] SSA + linear-scan register allocation — AUDITED, CLEAN (no bug).
+      hir_codegen.cpp: textbook Poletto-Sarkar linear scan (RA_NUM_REGS=10,
+      expire-old / spill-furthest-end; reg 0 == spilled, distinct from RA_REGS).
+      The warm-loop class is handled by the loop-aware liveness extension
+      (build_intervals: PHI operands extend to the predecessor block-end, and a
+      back-edge pass extends loop-invariant operands used inside the loop to the
+      latch block-end). That extension is load-bearing TWICE: it stops loop-
+      carried registers being reused mid-body, AND it keeps every loop-carried
+      value + PHI dest simultaneously live to latch_end → distinct registers/
+      slots → emit_phi_copies' sequential moves can't form a parallel-copy cycle
+      (no swap clobber). Verified empirically: a 12-loop-carried-value loop
+      (forces spills, 6 iters, cross-dependencies) and a low-pressure Fibonacci-
+      style cross-dep loop both match the interpreter exactly under JIT.
 - [x] Emitter immediate encoding — AUDITED (#830, 0c8d6507f). rel32/disp32
       truncation is a NON-issue: CODE_BUF_SIZE (1 MB) and MEM_SIZE (~5.5 MB) keep
       every code-relative rel32 and guest-memory disp32 far inside range. But the
