@@ -749,8 +749,12 @@ void load_comsystem_V0123(FILE* fp)
         if (MAX_CHANNEL_LEN < nChannel)
         {
             nChannel = MAX_CHANNEL_LEN;
+            // Back off to a whole-character boundary in the CONVERTED buffer
+            // (pBufferUnicode), the data actually copied below — not temp, the
+            // pre-conversion line (the header case just below gets this right).
+            //
             while (0 < nChannel
-                && UTF8_CONTINUE <= utf8_FirstByte[temp[nChannel - 1]])
+                && UTF8_CONTINUE <= utf8_FirstByte[static_cast<unsigned char>(pBufferUnicode[nChannel - 1])])
             {
                 nChannel--;
             }
