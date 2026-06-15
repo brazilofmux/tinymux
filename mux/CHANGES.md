@@ -9,13 +9,48 @@ Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
 # Changes in 2.14.0.8 (2026-JUN-14):
 
-This release is dominated by a security and correctness pass over the
-softcode evaluator, the JIT/DBT pipeline, the @lock and command parsers,
-the database loaders, and the player-authentication, comsys, and @mail
-subsystems.  Several of the fixes close player-reachable crashes and
-denial-of-service conditions; others close out-of-bounds reads/writes that
-could be triggered by a corrupt, migrated, or maliciously crafted database
-file.  Sites are tracked in docs/survey-*.md.
+This release pairs a broad security and correctness pass with several
+larger features: a unified date/time parser, a tiered storage cache with
+speculative prefetch, a substantial hardening and expansion of the GANL
+networking stack, and continued JIT/interpreter parity work.
+
+The security and correctness pass covers the softcode evaluator, the
+JIT/DBT pipeline, the @lock and command parsers, the database loaders, and
+the player-authentication, comsys, and @mail subsystems.  Several of the
+fixes close player-reachable crashes and denial-of-service conditions;
+others close out-of-bounds reads/writes that could be triggered by a
+corrupt, migrated, or maliciously crafted database file.  Sites are
+tracked in docs/survey-*.md.
+
+## New Softcode Functions
+
+ - `vwidth()` — the visible display width of a string, accounting for
+   color codes and wide/zero-width characters (the column count `wrap()`
+   and the alignment functions actually use).
+ - `cachestats()` — report attribute-cache statistics (size, hit/miss
+   counts, queue depth) for tuning the tiered storage cache.
+
+## Date and Time Parsing
+
+ - `ParseDate` has been replaced by a unified Ragel `-G2` scanner feeding
+   a recursive-descent parser, giving consistent handling of the many
+   accepted date/time formats across the time-parsing surface
+   (`convtime()`, `@convtime`, and friends).
+ - Out-of-range years are now rejected rather than silently wrapped, and
+   `do_convtime` no longer overflows on extreme year values. (#715)
+ - A `mux_min(int, int)` size_t truncation that could make `ParseDate`
+   fail outright was fixed, and a native fuzz/boundary harness was added.
+
+## Tiered Storage and Caching
+
+ - Stage 1 of the tiered storage cache: a configurable in-RAM attribute
+   cache with a tunable size and depth-preload, in front of the SQLite
+   backend.
+ - Object-affinity speculative prefetch on a cache miss warms related
+   attributes before they are asked for.
+ - A write-behind cache with pinning and tombstones, plus batched,
+   demand-driven SQLite writes, removes per-operation write latency from
+   the hot path; `cachestats()` exposes the counters.
 
 ## Security and Robustness Fixes
 
@@ -73,6 +108,23 @@ file.  Sites are tracked in docs/survey-*.md.
    register clobbers with `x0` operands and an inverted conditional-select
    produced wrong results; and division by zero returned the wrong value.
    (#804, #809) (AArch64 is a non-default backend.)
+ - More functions now run in JIT-compiled code with verified interpreter
+   parity: `ldelete()` and `wordpos()` are re-enabled in Tier 2 with
+   correct word-list / character-position semantics (#768); `ulambda()`
+   bodies are routed through the evaluator so they compile (#718); and
+   runtime-argument floating-point arithmetic is handled via the Tier-2
+   blob (#778).
+ - Further JIT result divergences were closed: `pos()` returns `#-1` (not
+   `0`) when the substring is not found (#770); `ljust()`/`rjust()`/
+   `center()` truncate when the width is smaller than the content (#772);
+   multi-character `delim`/`osep` arguments fall back to the interpreter
+   in the functions that mishandled them (#768, #782); empty list elements
+   now survive `split_token` (#789); and COLOR-encoded output is
+   byte-exact against the interpreter (#785, #787).
+ - The JIT now reclaims its per-VM code arena on recompile instead of
+   leaking it, keeps its arena registry and cursor `thread_local`, and
+   tightens ECALL context isolation.
+ - DBT JIT is now enabled on Apple Silicon (arm64 macOS).
 
 ## Wildcard and String Matching
 
@@ -90,13 +142,89 @@ file.  Sites are tracked in docs/survey-*.md.
 
 ## Networking
 
- - A zero-payload WebSocket frame ending exactly at a read boundary is now
-   dispatched. (#792 follow-up)
- - The WebSocket handshake flag is cleared before processing the handshake.
- - Fixed a double-free of per-I/O data on an immediate `WSASend`/`WSARecv`
-   failure (Windows IOCP).
- - A numeric address no longer poses as a reverse-DNS hostname. (#801
-   follow-up)
+This release brings a large hardening pass over the GANL networking stack
+and the telnet / WebSocket / DNS protocol surface.
+
+ - Site-ban bypass fixes: IPv4-mapped IPv6 source addresses are now
+   canonicalized before site-rule matching, and subnet containment with a
+   shared base/end address is computed correctly, so an IPv6-presented
+   client can no longer slip past an IPv4 site ban. (#799, #800)
+ - The `epoll` engine now handles the `epoll_wait()` error path (EINTR
+   retry; real errors surfaced) instead of spinning, and completes the
+   sibling error placeholders in event processing. (#791)
+ - Reverse-DNS hostnames from the resolver slave are sanitized, the slave
+   protocol buffers are bounded, and a purely numeric address can no
+   longer pose as a resolved hostname. (#801)
+ - The connection-handle-to-descriptor narrowing is guarded against
+   truncation (#790), the descriptor re-entrancy guard is now state-based
+   rather than reason-based (#802), and DESC teardown paths are hardened
+   against stale handle mappings.
+ - WebSocket: RFC 6455 conformance hardening (CLOSE / fragment-state / RSV
+   / UTF-8 / 64-bit length / control-frame rules); a zero-payload frame
+   ending exactly at a read boundary is now dispatched; the handshake flag
+   is cleared before processing; and a Windows-IOCP double-free of per-I/O
+   data on an immediate `WSASend`/`WSARecv` failure is fixed. (#792, #796)
+ - Telnet: an IAC-encoding buffer overflow is fixed, the subnegotiation
+   buffer is decoupled from `SBUF_SIZE`, parser limits are bounded, and
+   descriptor field copies are clamped.  A one-byte stack overflow in the
+   `slave.cpp` query buffer, and decimal-overflow / undefined-shift /
+   digit-offset bugs in the `DecodeN` IPv4 parser, are fixed.
+ - New negotiation support: configurable STARTTLS offers, NEW-ENVIRON
+   parsing, CHARSET REQUEST list parsing, ANSI/MXP capability handling,
+   and an OpenSSL key-password callback; an SSL session use-after-free and
+   an unhandled `read()` EOF are fixed.  Config-file site rules are loaded
+   through the driver bridge on demand. (#793, #797, #803)
+ - The `sqlslave` helper now surfaces connection/query failures instead of
+   dropping them, and ref-count races and buffer-ownership bugs are fixed.
+
+## Engine and Database
+
+ - `@dolist/now` runs multi-command bodies and honors `@break`, and inline
+   command lists support `;|` piping. (#765, #788)
+ - Comsys channels and @mail created in-game now survive a warm boot, and
+   are cleared correctly on a forced game load. (#783)
+ - Flatfile export no longer silently drops per-attribute owner and flags,
+   and the SQLite import path is mistake-proofed against importing into a
+   live database. (#766)
+ - `wrap()` truecolor width is fixed; grapheme clusters are no longer split
+   on interior color codes; and width / `strdistance` are cluster-aware for
+   ZWJ emoji. (#716, #787)
+ - SQLite backend: column reads are null-guarded, code-cache blobs are
+   validated and the statement reset on failure, and the
+   reset/rollback/checkpoint paths are corrected.
+
+## Memory Safety and Reliability
+
+ - A large RAII migration: ~75 `atr_get`/`atr_pget` sites and ~150
+   `alloc_lbuf`/`free_lbuf` sites were converted to owning `LBuf` handles
+   (`LBuf::adopt`, `LBufPtr`), removing manual free paths that could leak
+   on an error return. (#717)
+ - All static scratch buffers are now `thread_local`, and the reference
+   counts across the comsys, @mail, lua, and exp3 modules — and the
+   platform layer — are atomic.
+ - The Lua undumper caps its `read_size()` varint length to prevent a
+   `size_t` overflow, and validates compiled-code-cache blobs before use.
+
+## Platform and Build
+
+ - macOS arm64 build and test-rig support; the UTF-8 DFA tables were
+   regenerated and the table-generator toolchain fixed on macOS.
+ - Restart and file-descriptor handling hardened: `close_range`/`closefrom`
+   in the boot-helper fast path, the real `rlim_cur` reported, and
+   `PanicRestart` bounds its argv by argc and uses `execv`.
+ - Generated-file safeguards: a pre-commit hook plus read-only Ragel output
+   guard against hand-editing generated sources.
+ - The long-dead `muxsvc/` Windows service stub was removed.
+
+## Clients
+
+ - TitanFugue gained interactive keyboard input for `read()`/`tfread()`
+   (#758, #759, #760), a tokenized status-format-var cache (#761), an
+   `nlog()` counter, and better Hydra reconnect / error diagnostics.
+ - Credential storage is hardened across the console and Win32 GUI clients;
+   web-client world passwords were moved out of localStorage; and the
+   WorldBuilder gained TLS verification, attribute-escaping fixes, and
+   expanded softcode danger checks.
 
 ## Other Fixes
 
