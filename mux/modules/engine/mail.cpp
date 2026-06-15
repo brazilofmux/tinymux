@@ -203,10 +203,32 @@ static void sqlite_wt_sync_all_aliases(void)
 // text.
 //
 #define MAIL_FUDGE 1
+// Largest message index we will honor.  Message numbers come from the (admin-
+// supplied, possibly corrupt) mail database; an absurd value would overflow
+// mail_db_grow's int size arithmetic below and/or drive a wild index into
+// mail_list[].  No real mail database approaches this.
+//
+static constexpr int MAIL_DB_LIMIT = 0x04000000;   // 67,108,864
+
+// True if number is a safe index into the (currently sized) mail_list[].
+//
+static inline bool mail_index_valid(int number)
+{
+    return 0 <= number
+        && number < mudstate.mail_db_top;
+}
+
 static void mail_db_grow(int newtop)
 {
     if (newtop <= mudstate.mail_db_top)
     {
+        return;
+    }
+    if (newtop > MAIL_DB_LIMIT)
+    {
+        STARTLOG(LOG_PROBLEMS, "MAIL", "SIZE");
+        log_printf(T("mail_db_grow: refusing absurd mail size %d."), newtop);
+        ENDLOG;
         return;
     }
     if (mudstate.mail_db_size <= newtop)
@@ -257,6 +279,10 @@ static void mail_db_grow(int newtop)
 //
 static inline void MessageReferenceInc(int number)
 {
+    if (!mail_index_valid(number))
+    {
+        return;
+    }
     mail_list[number].m_nRefs++;
 }
 
@@ -267,6 +293,10 @@ static inline void MessageReferenceInc(int number)
 //
 static void MessageReferenceCheck(int number)
 {
+    if (!mail_index_valid(number))
+    {
+        return;
+    }
     MAILBODY &m = mail_list[number];
     if (m.m_nRefs <= 0)
     {
@@ -290,6 +320,10 @@ static void MessageReferenceCheck(int number)
 //
 static void MessageReferenceDec(int number)
 {
+    if (!mail_index_valid(number))
+    {
+        return;
+    }
     mail_list[number].m_nRefs--;
     if (mail_list[number].m_nRefs <= 0)
     {
@@ -303,6 +337,10 @@ static void MessageReferenceDec(int number)
 //
 const UTF8 *MessageFetch(int number)
 {
+    if (!mail_index_valid(number))
+    {
+        return T("MAIL: This mail message does not exist in the database. Please alert your admin.");
+    }
     MessageReferenceCheck(number);
     if (mail_list[number].m_pMessage)
     {
@@ -316,6 +354,10 @@ const UTF8 *MessageFetch(int number)
 
 size_t MessageFetchSize(int number)
 {
+    if (!mail_index_valid(number))
+    {
+        return 0;
+    }
     MessageReferenceCheck(number);
     if (mail_list[number].m_pMessage)
     {
@@ -400,7 +442,20 @@ static int add_mail_message(dbref player, UTF8 *message)
 //
 static bool MessageAddWithNumber(int i, UTF8 *pMessage)
 {
+    // i comes from the (possibly corrupt) mail database.  Reject negative and
+    // absurd values (the latter would overflow i+1 / mail_db_grow), and bail if
+    // the grow did not actually make room (e.g. allocation failure) rather than
+    // writing past the end of mail_list[].
+    //
+    if (i < 0 || MAIL_DB_LIMIT < i)
+    {
+        return false;
+    }
     mail_db_grow(i+1);
+    if (!mail_index_valid(i))
+    {
+        return false;
+    }
 
     MAILBODY *pm = &mail_list[i];
     pm->m_nMessage = strlen(reinterpret_cast<char *>(pMessage));
