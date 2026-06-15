@@ -662,7 +662,16 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
     LBuf pTarget = LBuf_Adopt(atr_get("check_pass.466", player, A_PASS, &aowner, &aflags));
     if (*pTarget)
     {
-        if (strcmp(reinterpret_cast<const char *>(mux_crypt(pPassword, pTarget, &iType)), reinterpret_cast<const char *>(pTarget.get())) == 0)
+        // mux_crypt() can return nullptr — crypt(3) returns NULL on a malformed
+        // or unsupported salt setting on some platforms (POSIX-sanctioned; e.g.
+        // a $5$/$6$ password DB migrated to a libc whose crypt() lacks that
+        // method).  ChangePassword() already guards this; check_pass() must too,
+        // or strcmp(nullptr, …) crashes the server on a login attempt.  Fail the
+        // authentication closed when the hash can't be computed.
+        //
+        const UTF8 *pHashed = mux_crypt(pPassword, pTarget, &iType);
+        if (  nullptr != pHashed
+           && strcmp(reinterpret_cast<const char *>(pHashed), reinterpret_cast<const char *>(pTarget.get())) == 0)
         {
             bValidPass = true;
             if (0 == (iType & mudconf.password_methods))
