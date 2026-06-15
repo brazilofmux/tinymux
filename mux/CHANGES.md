@@ -7,7 +7,7 @@ author:
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
-# Changes in 2.14.0.8 (2026-JUN-14):
+# Changes in 2.14.0.8 (2026-JUN-15):
 
 This release pairs a broad security and correctness pass with several
 larger features: a unified date/time parser, a tiered storage cache with
