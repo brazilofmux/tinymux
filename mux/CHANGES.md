@@ -7,6 +7,101 @@ author:
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
+# Changes in 2.14.0.8 (2026-JUN-14):
+
+This release is dominated by a security and correctness pass over the
+softcode evaluator, the JIT/DBT pipeline, the @lock and command parsers,
+the database loaders, and the player-authentication, comsys, and @mail
+subsystems.  Several of the fixes close player-reachable crashes and
+denial-of-service conditions; others close out-of-bounds reads/writes that
+could be triggered by a corrupt, migrated, or maliciously crafted database
+file.  Sites are tracked in docs/survey-*.md.
+
+## Security and Robustness Fixes
+
+ - Integer division/remainder of the most-negative 64-bit value by -1
+   (`idiv`/`mod`/`remainder`/`floordiv`), and division by zero, no longer
+   raise SIGFPE and crash the server.  Both the interpreter and the JIT-
+   compiled fast paths are guarded.  This was a player-reachable
+   denial-of-service. (#805, #811)
+ - A deeply nested `@lock` key (for example, several hundred `!` operators)
+   no longer overflows the C stack and crashes the server.  The lock parser
+   now bounds its recursion depth, and its scratch buffer is no longer
+   stack-allocated.  Any player able to `@lock` an object they own could
+   trigger this. (#839)
+ - The flatfile and SQLite database loaders now validate the dbrefs,
+   attribute numbers, message numbers, and lock expressions they read.  A
+   corrupt or crafted database can no longer drive an out-of-bounds write,
+   an out-of-bounds read, an unbounded recursion, or a runaway allocation
+   while loading objects, attributes, locks, @mail, or comsys channels.
+   (#806, #807, #808, #810, #841, #843)
+ - Logging in as a player whose stored password uses a hash method the
+   local C library's `crypt()` cannot compute (for example, a `$6$`
+   SHA-512 password database moved to a platform without it) no longer
+   crashes the server; authentication now fails closed. (#842)
+ - The just-in-time translator's instruction-emit, code-cache
+   reconstruction, and Lua-bytecode paths now bound every buffer write and
+   index, closing several out-of-bounds writes/reads reachable under code-
+   buffer pressure or from a malformed compiled-code cache entry. (#830,
+   #831, #832, #833)
+ - The softcode expression (`[...]`) parser now caps its recursion depth,
+   matching the evaluator, so pathologically nested input cannot overflow
+   the stack on platforms with a small default stack size. (#840)
+ - `justify()` no longer reserves a ~1.25 MB stack frame. (#818)
+
+## JIT / DBT Engine
+
+ - Numerous JIT-vs-interpreter result divergences were corrected so that
+   JIT-compiled softcode produces byte-identical results to the
+   interpreter: the compile-time folds of `t()`/`not()` on fractional-zero
+   and whitespace inputs (#824); folds of `bound()` and `comp()` (#824);
+   float function results fed into integer operations no longer truncate
+   (#826); `trunc()` rounds toward zero (#827); `mod()` of negative
+   operands is floor-mod (#828); and float `add()`/`sub()` use the same
+   error-compensated summation as the interpreter (#829).
+ - Tier-2 "blob" math now matches the interpreter for list reductions,
+   `lnum()`/`space()` edge cases, and `ladd()`; `isdbref()` is handled by
+   the engine; and `ladd()` is re-enabled with full parity. (#812, #813,
+   #814, #815)
+ - The RV64 Tier-2 environment gained a real `.bss`, static `.data`, and a
+   guest heap, enabling more functions to run in compiled code.
+ - The DBT now reclaims its x86-64 translation buffer when it nears full,
+   so a long-running server no longer silently degrades JIT-compiled
+   attributes back to the interpreter. (#834)
+ - AArch64 DBT code generation fixes: `LOAD`/`STORE` with a zero base
+   register and a nonzero immediate computed the wrong address; scratch-
+   register clobbers with `x0` operands and an inverted conditional-select
+   produced wrong results; and division by zero returned the wrong value.
+   (#804, #809) (AArch64 is a non-default backend.)
+
+## Wildcard and String Matching
+
+ - `?` in a wildcard pattern now matches one whole UTF-8 character rather
+   than one byte, so `strmatch(café,????)` matches as expected. (#835)
+ - Case-insensitive wildcard matching now folds non-ASCII letters (É/é,
+   Ñ/ñ, …) from either side, in both the non-capturing matcher (`strmatch`,
+   name/attribute/channel matching) and the capturing matcher used by
+   `$`-commands and `^`-listens, while preserving original-case captures.
+   (#836, #837)
+ - A `?` immediately following a `*` no longer splits a multi-byte
+   character across capture registers. (#838)
+ - `accent()` with the `E`/`e` plus macron form now returns the correct
+   character. (#816)
+
+## Networking
+
+ - A zero-payload WebSocket frame ending exactly at a read boundary is now
+   dispatched. (#792 follow-up)
+ - The WebSocket handshake flag is cleared before processing the handshake.
+ - Fixed a double-free of per-I/O data on an immediate `WSASend`/`WSARecv`
+   failure (Windows IOCP).
+ - A numeric address no longer poses as a reverse-DNS hostname. (#801
+   follow-up)
+
+## Other Fixes
+
+ - `version()` no longer returns an empty string. (#817)
+
 # Changes in 2.14.0.7 (2026-APR-03):
 
 ## New Softcode Functions
