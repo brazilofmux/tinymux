@@ -132,7 +132,20 @@ tier2_state s_tier2 = { false, {}, 0, 0, 0, 0, {}, 0 };
 // logic changes in a way that could produce different RV64 output
 // for the same softcode input.
 //
-static const char JIT_COMPILER_VERSION[] = "jit-t1-002";
+static const char JIT_COMPILER_VERSION[] = "jit-t1-003";
+
+// Build stamp backstop.  s_blob_version (below) feeds the SQLite
+// code_cache staleness key (blob_hash); a persisted entry is only reused
+// when its blob_hash still matches.  Relying solely on a hand-maintained
+// JIT_COMPILER_VERSION is fragile: a codegen change in another TU (e.g.
+// hir_codegen.cpp) with no version bump leaves stale entries matching and
+// being served — which manifests as a "poisoned" compiled result that
+// survives an upgrade until the cache is cleared by hand.  Because the
+// JIT requires a clean rebuild to take effect, this file is recompiled
+// every such build, so its __DATE__/__TIME__ stamp changes and folds into
+// the hash, invalidating every previously persisted entry automatically.
+//
+static const char JIT_BUILD_STAMP[] = __DATE__ " " __TIME__;
 
 // Blob content hash for cache invalidation.  Incorporates both the
 // tier 2 blob and the tier 1 compiler version so that upgrading
@@ -496,17 +509,19 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     s_tier2.loaded = true;
     const void *parts[] = {
         JIT_COMPILER_VERSION,
+        JIT_BUILD_STAMP,
         &hdr,
         s_tier2.image.data(),
         entries.empty() ? nullptr : entries.data(),
     };
     const size_t sizes[] = {
         sizeof(JIT_COMPILER_VERSION) - 1,
+        sizeof(JIT_BUILD_STAMP) - 1,
         sizeof(hdr),
         s_tier2.code_size,
         entries.size() * sizeof(rv64_blob_entry),
     };
-    s_blob_version = sha1_hex_parts(parts, sizes, 4);
+    s_blob_version = sha1_hex_parts(parts, sizes, 5);
     return true;
 }
 
@@ -833,9 +848,12 @@ static void tier2_lazy_init() {
     }
     // No blob found — Tier 2 disabled, ECALL fallback for everything.
     // Still hash the compiler version so tier 1 upgrades invalidate.
-    const void *parts[] = { JIT_COMPILER_VERSION };
-    const size_t sizes[] = { sizeof(JIT_COMPILER_VERSION) - 1 };
-    s_blob_version = sha1_hex_parts(parts, sizes, 1);
+    const void *parts[] = { JIT_COMPILER_VERSION, JIT_BUILD_STAMP };
+    const size_t sizes[] = {
+        sizeof(JIT_COMPILER_VERSION) - 1,
+        sizeof(JIT_BUILD_STAMP) - 1,
+    };
+    s_blob_version = sha1_hex_parts(parts, sizes, 2);
 }
 
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen,

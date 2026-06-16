@@ -2656,6 +2656,19 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         //
         // Keep these on the classic evaluator until JIT semantics match
         // exactly.
+        //
+        // Also require at least one function call somewhere in the tree.
+        // A multi-token expression with no calls (e.g. plain command text
+        // such as "+jobs/select monitor") parses as a SEQUENCE of literal
+        // and space nodes whose root is neither AST_LITERAL nor AST_SPACE,
+        // so the single-node check above does not catch it.  Compiling such
+        // pure-literal text adds no value, yet it populates the compile
+        // cache with a constant-folded passthrough whose result does not
+        // round-trip through SQLite persistence (the folded output can
+        // reference the source buffer rather than the persisted string
+        // pool), reloading later as an empty string.  Keep all
+        // function-free text on the classic evaluator.
+        bool saw_funccall = false;
         std::vector<const ASTNode *> work;
         work.push_back(ast_ptr);
         while (!work.empty()) {
@@ -2666,6 +2679,7 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
                 return false;
             }
             if (node->type == AST_FUNCCALL) {
+                saw_funccall = true;
                 if (!node->has_close_paren) {
                     return false;
                 }
@@ -2704,6 +2718,12 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         // by the compiler.  No scanning needed — the AST parser creates
         // the correct node types, and the compiler resolves each one
         // at compile time or via ECALL/SUBST slots at runtime.
+
+        // Pure literal/space text (no function calls anywhere): leave it on
+        // the classic evaluator.  See the saw_funccall note above.
+        if (!saw_funccall) {
+            return false;
+        }
         return true;
     };
 

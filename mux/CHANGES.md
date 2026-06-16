@@ -125,6 +125,16 @@ tracked in docs/survey-*.md.
    leaking it, keeps its arena registry and cursor `thread_local`, and
    tightens ECALL context isolation.
  - DBT JIT is now enabled on Apple Silicon (arm64 macOS).
+ - The persistent (SQLite) compiled-code cache no longer serves stale
+   entries.  Its staleness key folded in the hand-maintained tier-1
+   compiler version and the Tier-2 blob, but not the tier-1 codegen
+   itself, so a codegen change without a manual version bump could keep an
+   old compiled program — including one that evaluated to the wrong (e.g.
+   empty) result — matching and being served across an upgrade.  The cache
+   key now also includes the engine build stamp, so a rebuild always
+   invalidates previously persisted entries; and plain literal command
+   text (with no function calls) is no longer compiled or cached, since
+   the JIT adds nothing there.  (#844)
 
 ## Wildcard and String Matching
 
