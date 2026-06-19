@@ -793,6 +793,18 @@ void do_clone
         key &= ~CLONE_FROM_PARENT;
     }
 
+    // Cloning an exit splices it into your current location's exit list, so
+    // it requires control of that location -- regardless of /cost (with
+    // /inventory, loc is the executor, which it always controls).  The check
+    // must run before the cost branches, not only on the non-/cost path.
+    //
+    if (  TYPE_EXIT == Typeof(thing)
+       && !Controls(executor, loc))
+    {
+        notify_quiet(executor, NOPERM_MESSAGE);
+        return;
+    }
+
     // Determine the cost of cloning
     //
     const dbref new_owner = (key & CLONE_PRESERVE) ? Owner(thing) : Owner(executor);
@@ -820,12 +832,6 @@ void do_clone
             break;
 
         case TYPE_EXIT:
-
-            if (!Controls(executor, loc))
-            {
-                notify_quiet(executor, NOPERM_MESSAGE);
-                return;
-            }
             cost = mudconf.digcost;
             break;
         }

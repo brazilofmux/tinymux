@@ -1430,6 +1430,14 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
                     notify(executor, T("Error: You can\xE2\x80\x99t remove the present flag name from the hash table."));
                 }
             }
+            else
+            {
+                notify(executor, T("Error: Bad flagname given or flag not found."));
+            }
+        }
+        else
+        {
+            notify(executor, T("Error: Bad flagname given or flag not found."));
         }
     }
     else

@@ -1572,7 +1572,14 @@ void do_pemit_whisper
                 dbref target = lookup_player(executor, p, true);
                 if (NOTHING != target)
                 {
-                    aPlayers[nPlayers++] = target;
+                    // Apply the same locality/connected gate as the
+                    // non-quoted branch; do not 'continue' here, which would
+                    // skip the p advance below and loop forever.
+                    //
+                    if (noisy_check_whisper_target(executor, target, key))
+                    {
+                        aPlayers[nPlayers++] = target;
+                    }
                 }
                 else
                 {
@@ -1582,11 +1589,7 @@ void do_pemit_whisper
 
                     if (NOTHING != target)
                     {
-                        if (!noisy_check_whisper_target(executor, target, key))
-                        {
-                            continue;
-                        }
-                        else
+                        if (noisy_check_whisper_target(executor, target, key))
                         {
                             aPlayers[nPlayers++] = target;
                         }

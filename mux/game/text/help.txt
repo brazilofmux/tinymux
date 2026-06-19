@@ -14101,7 +14101,7 @@ REPORT
 
   COMMAND: report
 
-  Display an aggregation or census of player objects divided into 8 hour
+  Display an aggregation or census of player objects divided into 4 hour
   segments based on LAST connection attribute.
 
   Related Topics:

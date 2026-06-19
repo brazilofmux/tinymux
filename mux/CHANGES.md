@@ -143,6 +143,36 @@ found the following behavioral bugs:
    from the help; an absent or unrecognized type remains a literal compare,
    so existing calls are unchanged. (#854)
 
+## Command Correctness Fixes
+
+A correctness sweep of the command-side verb handlers (tracked in
+docs/survey-cmd-correctness-pass-2026-06.md):
+
+ - `@clone/cost` on an exit now enforces the same "you must control your
+   current location" rule as a plain `@clone` of an exit.  The locality
+   check lived only on the non-`/cost` path, so `@clone/cost <exit>=<n>`
+   let a builder splice a cloned exit into a room they do not control. (#855)
+ - The `@mark`/`@mark_all`/`@apply_marked` "DB cleaning is enabled" refusal
+   now points at the real command `@mark_all/clear` instead of the
+   non-existent `@unmark_all` (which produced a "Huh?"). (#856)
+ - `@ps <object>` now lists the queue of a controlled object owned by
+   another player.  A residual owner filter (absent from the sibling
+   `@halt`) made it report nothing for, e.g., a wizard inspecting an object
+   they had `@chown`ed away. (#857)
+ - `whisper "<quoted name>"=...` now applies the same too-far-away / not-
+   connected filter as the unquoted form, so the sender no longer gets a
+   success confirmation paired with a delivery error (and `A_LASTWHISPER`
+   is not polluted with an unreachable target).  A related quoted-name
+   path that could loop without advancing the parser was also fixed. (#858)
+ - `@flag/remove` with an unknown or empty flag name now reports an error
+   instead of silently doing nothing, matching the other flag-name failure
+   paths. (#859)
+ - The `report` help now says 4-hour segments, matching the code (the
+   bucket size was changed to four hours but the help still said eight).
+   (#860)
+
+## JIT / DBT Engine
+
  - Numerous JIT-vs-interpreter result divergences were corrected so that
    JIT-compiled softcode produces byte-identical results to the
    interpreter: the compile-time folds of `t()`/`not()` on fractional-zero

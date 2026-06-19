@@ -504,7 +504,7 @@ static void er_mark_disabled(dbref player)
     notify(player,
      T("Use the \xE2\x80\x98@disable cleaning\xE2\x80\x99 command to disable automatic cleaning."));
     notify(player,
-     T("Remember to \xE2\x80\x98@unmark_all\xE2\x80\x99 before re-enabling automatic cleaning."));
+     T("Remember to \xE2\x80\x98@mark_all/clear\xE2\x80\x99 before re-enabling automatic cleaning."));
 }
 
 

@@ -1854,6 +1854,14 @@ void do_ps(const dbref executor, const dbref caller, const dbref enactor, const 
             executor_targ = obj_targ;
             obj_targ = NOTHING;
         }
+        else
+        {
+            // Scope the listing to the object alone (any owner), matching
+            // @halt; match_controlled already verified permission, so a
+            // controller can inspect an object owned by another player.
+            //
+            executor_targ = NOTHING;
+        }
     }
     key = key & ~PS_ALL;
 
