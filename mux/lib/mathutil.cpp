@@ -109,6 +109,25 @@ static double AddWithError(double& err, double a, double b)
 //
 double NearestPretty(double R)
 {
+    // Fast path for integer-valued results (the common case for
+    // mul/add/sub over integer lists).  When |R| < 2^50, every FP
+    // neighbor R +/- k*ulp(R) (k = 1..4, the search window below) is
+    // non-integral, so dtoa renders each with strictly more decimal
+    // digits than the integral R itself -- the ULP search would return
+    // R unchanged.  Short-circuiting here skips 9 mux_dtoa calls per
+    // formatted number.  NaN/Inf fail the magnitude test and fall
+    // through to the exact path; |R| >= 2^50 (where a neighbor can be
+    // integral) also falls through unchanged.
+    //
+    if (fabs(R) < 1125899906842624.0)   // 2^50
+    {
+        int64_t iR = static_cast<int64_t>(R);
+        if (static_cast<double>(iR) == R)
+        {
+            return R;
+        }
+    }
+
     UTF8* rve = nullptr;
     int decpt;
     int bNegative;
