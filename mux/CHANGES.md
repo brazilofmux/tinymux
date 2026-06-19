@@ -134,6 +134,14 @@ found the following behavioral bugs:
    with a one-argument minimum, so `tr(abc)` reached the body and
    dereferenced the unallocated `<find>`/`<replace>` arguments; it now
    returns an argument-count error like its siblings. (#853)
+ - `unique()` now honors its documented `<sorttype>` argument, which had
+   been ignored (every comparison was a literal `strcmp`).  It uses the same
+   type codes as `sort()` — `a` (default), `i` case-insensitive, `n`
+   integer, `f` floating-point, `d` dbref, `u`/`c` Unicode — so e.g.
+   `unique(1 2 2.0 3, f)` is `1 2 3` and `unique(a A b a, i)` is `a b`.
+   The bogus `w=word` code (which exists in no related server) was removed
+   from the help; an absent or unrecognized type remains a literal compare,
+   so existing calls are unchanged. (#854)
 
  - Numerous JIT-vs-interpreter result divergences were corrected so that
    JIT-compiled softcode produces byte-identical results to the

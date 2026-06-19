@@ -18,12 +18,14 @@ the claimed `actual`?). Because correctness reasoning is error-prone, every
 survivor was then **empirically validated against a live server** (the smoke
 harness) before any fix — the live engine is the ground truth.
 
-**Result: 4 confirmed bugs fixed; 1 real divergence deferred pending a design
-decision; 1 dual-lens "confirmed" finding refuted by the live server (a false
-positive); 2 contested findings rejected.** The empirical gate proved its
-worth: the `switch()`/`#$` finding passed *both* code and spec verifiers yet
-the running engine already behaves correctly. Fixes are tracked in CHANGES.md
-as #850–#853; regression tests are in `testcases/correctness_fn.mux`.
+**Result: 5 confirmed bugs fixed; 1 dual-lens "confirmed" finding refuted by
+the live server (a false positive); 2 contested findings rejected.** The
+empirical gate proved its worth: the `switch()`/`#$` finding passed *both*
+code and spec verifiers yet the running engine already behaves correctly. One
+finding (`unique()`) was a real divergence whose fix needed a design decision;
+it was resolved after a cross-codebase study (see below). Fixes are tracked in
+CHANGES.md as #850–#854; regression tests are in
+`testcases/correctness_fn.mux` and `testcases/unique_fn.mux`.
 
 ## Confirmed and fixed
 
@@ -69,20 +71,36 @@ the defect lives in the registration table). Fixed to `min == 3`, matching the
 documented contract and siblings (`STRDELETE` min 3, `ACCENT` min 2); `tr(abc)`
 now returns an argument-count error. Regression: `correctness_fn.mux` TC005.
 
-## Deferred — needs a design decision
+## Resolved after cross-codebase research
 
-### `unique()` ignores its documented `<sorttype>` (functions.cpp)
+### #854 — `unique()` ignored its documented `<sorttype>` (functions.cpp)
 
-`unique(<list>[,<sorttype>[,<sep>[,<osep>]]])` — help.txt documents
+`unique(<list>[,<sorttype>[,<sep>[,<osep>]]])` — the help documented
 `<sorttype>` as `w=word, i=case-insensitive, n=numeric`, but `fun_unique`
-never reads `fargs[1]`; it always compares with a literal `strcmp`. The
-divergence is real, but the *fix* is a design decision: the `w/i/n` vocabulary
-in the help does not match the `a/i/n/f/d/u/c` sort-type letters used by
-`sort()`/`sortkey()` in the same file, and `w` ("word") is not a sort-type
-letter anywhere in the codebase or in PennMUSH's helpfile. **Held pending a
-look at how PennMUSH / RhostMUSH / TinyMUSH define `unique`'s sorttype** before
-implementing (or before correcting the help to match the literal-only
-behavior). No code change made.
+never read `fargs[1]`; it always compared with a literal `strcmp`. The fix
+required a design decision (the `w/i/n` help vocabulary didn't match the
+`a/i/n/f/d/u/c` sort-type letters used by `sort()`/`sortkey()` in the same
+file), so a cross-codebase study was done first:
+
+- **PennMUSH** has `unique()` with the *identical* signature; `<sorttype>`
+  there describes the data type and controls the comparison (`unique(1 2 2.0
+  3, f)` → `1 2 3`). Letters: `a i d n f m` (+ dbref keys). No `w`.
+- **RhostMUSH** has no `unique()` (`listunion`/`setunion` instead); sort
+  letters `a i d n f`. No `w`.
+- **TinyMUSH** (3.x/4) has no `unique()`; sort letters `a i d n f`. No `w`.
+
+Conclusions: `unique()` came from PennMUSH; `w=word` exists in none of the
+three servers (a TinyMUX-side invention with no basis); and PennMUSH treats
+`<sorttype>` as a comparison type. Resolution: `<sorttype>` is now honored
+using TinyMUX's own `sort()` type codes (`a` default, `i`, `n`, `f`, `d`,
+`u`, `c`) via a per-type equality test reusing the sort machinery's
+primitives (`mux_atoi64`, `mux_atof`, `dbnum`, `mux_stricmp`,
+`mux_collate_sortkey[_ci]`); the help was rewritten and `w=word` removed.
+An absent/unrecognized type stays a literal compare, so existing calls are
+unchanged. (One PennMUSH divergence noted but intentionally kept: TinyMUX's
+`unique()` removes *all* duplicates preserving first occurrence, whereas
+PennMUSH removes only *consecutive* duplicates.) Regression:
+`unique_fn.mux` TC004.
 
 ## Refuted by the live server — NOT a bug
 

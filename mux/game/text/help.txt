@@ -16702,15 +16702,21 @@ UNIQUE()
   FUNCTION: unique(<list>[,<sorttype>[,<sep>[,<osep>]]])
 
   Removes duplicate elements from <list>, preserving the first occurrence of
-  each value.  Elements are compared literally (no wildcarding).  The optional
-  <sorttype> controls how values are normalized before comparison (w=word,
-  i=case-insensitive, n=numeric).  <sep> specifies the input delimiter and
-  defaults to a space, while <osep> sets the output delimiter and defaults to
-  <sep>.
+  each value (it does not reorder the list).  Elements are compared literally
+  (no wildcarding).  The optional <sorttype> selects how values are compared,
+  using the same type codes as sort(): 'a' case-sensitive ASCII (the default),
+  'i' case-insensitive, 'n' integer, 'f' floating-point, 'd' dbref, 'u'
+  Unicode collation, and 'c' case-insensitive Unicode.  <sep> specifies the
+  input delimiter and defaults to a space, while <osep> sets the output
+  delimiter and defaults to <sep>.
 
   Examples:
     > say unique(a b a c b d)
     You say, "a b c d"
+    > say unique(a A b a, i)
+    You say, "a b"
+    > say unique(1 2 2.0 3, f)
+    You say, "1 2 3"
     > say unique(3 1 2 1 3, n, , |)
     You say, "3|1|2"
 

@@ -55,11 +55,31 @@
         eq(strlen(unique(,,|)), 0)
       )=
   {
-    @log smoke=TC003: unique whitespace and empty input. Succeeded.;
+    @log smoke=TC003: unique whitespace and empty input. Succeeded.
+  },
+  {
+    @log smoke=TC003: unique whitespace and empty input. Failed (unique(a-sp-a a)=[unique(a%b%b%ba a)] unique(%,%,|)=[unique(,,|)]).
+  }
+-
+#
+# Test Case #4 - <sorttype> normalizes the duplicate comparison, using the
+# same type codes as sort(): 'i' case-insensitive, 'f' float, 'd' dbref,
+# 'n' integer.  (Before this was honored, the type was ignored and every
+# comparison was a literal strcmp.)
+#
+&tr.tc004 test_unique_fn=
+  @if cand(
+        strmatch(unique(a A b a, i), a b),
+        strmatch(unique(1 2 2.0 3, f), 1 2 3),
+        strmatch(unique(#1 #2 #1 #3, d), #1 #2 #3),
+        strmatch(unique(5 05 6, n), 5 6)
+      )=
+  {
+    @log smoke=TC004: unique sorttype normalization. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: unique whitespace and empty input. Failed (unique(a-sp-a a)=[unique(a%b%b%ba a)] unique(%,%,|)=[unique(,,|)]).;
+    @log smoke=TC004: unique sorttype normalization. Failed (i=[unique(a A b a, i)] f=[unique(1 2 2.0 3, f)] d=[unique(#1 #2 #1 #3, d)] n=[unique(5 05 6, n)]).;
     @trig me/tr.done
   }
 -

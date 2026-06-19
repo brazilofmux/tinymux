@@ -13494,6 +13494,50 @@ static FUNCTION(fun_stddev)
 //   unique(list[, sorttype[, sep[, osep]]])
 // ---------------------------------------------------------------------------
 
+// Compare two list elements for unique()'s duplicate test, normalized per
+// the chosen sort type (the same type letters as sort()/sortkey()).  Note
+// strip_color() returns a shared buffer, so each stripped result must be
+// fully consumed before the next strip_color() call.
+//
+static bool unique_same(int sort_type, UTF8 *a, UTF8 *b)
+{
+    switch (sort_type)
+    {
+    case NUMERIC_LIST:
+        return mux_atoi64(strip_color(a)) == mux_atoi64(strip_color(b));
+
+    case DBREF_LIST:
+        return dbnum(strip_color(a)) == dbnum(strip_color(b));
+
+    case FLOAT_LIST:
+        return mux_atof(strip_color(a), false) == mux_atof(strip_color(b), false);
+
+    case CI_ASCII_LIST:
+        return 0 == mux_stricmp(a, b);
+
+    case UNICODE_LIST:
+    case CI_UNICODE_LIST:
+        {
+            UTF8 ka[LBUF_SIZE], kb[LBUF_SIZE];
+            size_t na, nb;
+            const UTF8 *pa = strip_color(a, &na, nullptr);
+            size_t la = (UNICODE_LIST == sort_type)
+                ? mux_collate_sortkey(pa, na, ka, LBUF_SIZE)
+                : mux_collate_sortkey_ci(pa, na, ka, LBUF_SIZE);
+            const UTF8 *pb = strip_color(b, &nb, nullptr);
+            size_t lb = (UNICODE_LIST == sort_type)
+                ? mux_collate_sortkey(pb, nb, kb, LBUF_SIZE)
+                : mux_collate_sortkey_ci(pb, nb, kb, LBUF_SIZE);
+            return la == lb && 0 == memcmp(ka, kb, la);
+        }
+
+    case ASCII_LIST:
+    default:
+        return 0 == strcmp(reinterpret_cast<const char *>(a),
+                           reinterpret_cast<const char *>(b));
+    }
+}
+
 static FUNCTION(fun_unique)
 {
     UNUSED_PARAMETER(executor);
@@ -13502,6 +13546,26 @@ static FUNCTION(fun_unique)
     UNUSED_PARAMETER(eval);
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
+
+    // Optional sort type (arg 2) selects how elements are normalized before
+    // comparison, using the same type letters as sort()/sortkey().  An
+    // absent or unrecognized type is a literal (case-sensitive) compare.
+    //
+    int sort_type = ASCII_LIST;
+    if (  2 <= nfargs
+       && '\0' != fargs[1][0])
+    {
+        switch (fargs[1][0])
+        {
+        case 'd': case 'D': sort_type = DBREF_LIST;      break;
+        case 'n': case 'N': sort_type = NUMERIC_LIST;    break;
+        case 'f': case 'F': sort_type = FLOAT_LIST;      break;
+        case 'i': case 'I': sort_type = CI_ASCII_LIST;   break;
+        case 'u': case 'U': sort_type = UNICODE_LIST;    break;
+        case 'c': case 'C': sort_type = CI_UNICODE_LIST; break;
+        default:            sort_type = ASCII_LIST;      break;
+        }
+    }
 
     SEP sep;
     if (!OPTIONAL_DELIM(3, sep, DELIM_DFLT|DELIM_STRING))
@@ -13529,8 +13593,7 @@ static FUNCTION(fun_unique)
         bool bDup = false;
         for (int j = 0; j < nSeen; j++)
         {
-            if (strcmp(reinterpret_cast<char *>(arr[i]),
-                       reinterpret_cast<char *>(seen[j])) == 0)
+            if (unique_same(sort_type, arr[i], seen[j]))
             {
                 bDup = true;
                 break;
