@@ -4286,40 +4286,68 @@ FUNCTION(fun_wrapcolumns)
 
     // Word-wrap the input text into lines of at most colWidth chars.
     //
+    // Copy each wrapped segment into a scratch buffer with its own NUL
+    // terminator.  On a hard (no-space) break the character at the break
+    // column is real content and must start the next line rather than be
+    // overwritten in place, which previously dropped one character per
+    // hard break.
+    //
     UTF8 *lines[LBUF_SIZE / 2];
     int nLines = 0;
 
+    UTF8 wrapbuf[LBUF_SIZE];
+    UTF8 *wp = wrapbuf;
+    UTF8 *const wpEnd = wrapbuf + LBUF_SIZE - 1;
+
     UTF8 *src = fargs[0];
-    while (*src && nLines < static_cast<int>(sizeof(lines)/sizeof(lines[0])))
+    while (  *src
+          && nLines < static_cast<int>(sizeof(lines)/sizeof(lines[0]))
+          && wp < wpEnd)
     {
-        // Find next line break point.
-        //
         int len = strlen(reinterpret_cast<const char*>(src));
+
+        int seg;    // content characters on this line
+        int adv;    // distance to advance src past this line
         if (len <= colWidth)
         {
-            lines[nLines++] = src;
-            break;
+            seg = len;
+            adv = len;
         }
-
-        // Look for a space within colWidth chars to break at.
-        //
-        int brk = colWidth;
-        while (brk > 0 && src[brk] != ' ')
+        else
         {
-            brk--;
-        }
-        if (brk == 0)
-        {
-            // No space found — hard break at colWidth.
+            // Look for a space within colWidth chars to break at.
             //
-            brk = colWidth;
+            int brk = colWidth;
+            while (brk > 0 && src[brk] != ' ')
+            {
+                brk--;
+            }
+            if (brk > 0)
+            {
+                // Break at the space and consume it.
+                //
+                seg = brk;
+                adv = brk + 1;
+            }
+            else
+            {
+                // No space — hard break at colWidth, keeping the character.
+                //
+                seg = colWidth;
+                adv = colWidth;
+            }
         }
 
-        // Null-terminate this line segment.
+        // Copy the segment (bounded) and NUL-terminate it.
         //
-        lines[nLines++] = src;
-        src[brk] = '\0';
-        src += brk + 1;
+        lines[nLines++] = wp;
+        for (int k = 0; k < seg && wp < wpEnd; k++)
+        {
+            *wp++ = src[k];
+        }
+        *wp++ = '\0';
+
+        src += adv;
 
         // Skip leading spaces on next line.
         //

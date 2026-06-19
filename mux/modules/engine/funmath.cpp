@@ -2632,7 +2632,10 @@ FUNCTION(fun_xor)
     bool val = false;
     for (int i = 0; i < nfargs; i++)
     {
-        int tval = mux_atol(fargs[i]);
+        // Test truthiness on the full 64-bit value, matching and()/or()/
+        // lxor(); narrowing to int drops the high bits of large operands.
+        //
+        bool tval = isTRUE(mux_atol(fargs[i]));
         val = (val && !tval) || (!val && tval);
     }
     safe_bool(val, buff, bufc);

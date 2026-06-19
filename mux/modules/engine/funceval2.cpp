@@ -921,7 +921,11 @@ FUNCTION(fun_step)
         {
             os[i] = split_token(&cp, isep);
         }
-        mux_exec(atext, LBUF_SIZE-1, buff, bufc, executor, caller, enactor,
+        // Evaluate the attribute as the object that owns it (executor =
+        // thing), matching map()/mix()/foreach(); previously it ran as the
+        // caller, so %!/me and permissions resolved to the wrong object.
+        //
+        mux_exec(atext, LBUF_SIZE-1, buff, bufc, thing, executor, enactor,
              AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), os, i);
     }
     free_lbuf(atext);

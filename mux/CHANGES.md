@@ -109,7 +109,31 @@ tracked in docs/survey-*.md.
    item begins at the delimiter (e.g. `index(|,|,1,1)`); the trailing-space
    trim now guards before decrementing the scan pointer. (#849)
 
-## JIT / DBT Engine
+## Softcode Correctness Fixes
+
+A correctness sweep of the softcode function library, evaluator, and lock
+and wildcard semantics (tracked in docs/survey-correctness-pass-2026-06.md)
+found the following behavioral bugs:
+
+ - `xor()` now tests the truthiness of each argument on its full 64-bit
+   value, matching `and()`/`or()`/`lxor()`.  It had narrowed each argument
+   to a 32-bit `int` first, so a non-zero value whose low 32 bits were zero
+   (e.g. `xor(4294967296)`) was wrongly treated as false — and disagreed
+   with its own list form `lxor()` on identical input. (#850)
+ - `wrapcolumns()` no longer drops a character on every hard (no-space)
+   line break.  The character at the break column was overwritten with a
+   NUL and skipped; e.g. `wrapcolumns(abcdefghij,4,1)` lost the `e` and `j`.
+   Each wrapped segment is now copied out with its own terminator so no
+   input character is consumed by the break. (#851)
+ - `step()` now evaluates the attribute as the object that owns it (like
+   `map()`/`mix()`/`foreach()`), not as the calling executor, so `%!`/`me`
+   and permission checks inside the stepped attribute resolve to the
+   attribute's object.  This is a behavior change for `step()` callers that
+   relied on the previous (inconsistent) identity. (#852)
+ - `tr()` now requires its documented three arguments.  It was registered
+   with a one-argument minimum, so `tr(abc)` reached the body and
+   dereferenced the unallocated `<find>`/`<replace>` arguments; it now
+   returns an argument-count error like its siblings. (#853)
 
  - Numerous JIT-vs-interpreter result divergences were corrected so that
    JIT-compiled softcode produces byte-identical results to the

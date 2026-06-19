@@ -44,7 +44,7 @@
   visual_width_fn vwidth_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn \
   wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn jit_parity_fn \
   jit_fold_parity_fn jit_route_parity_fn jit_coverage_fn \
-  tier2_parity_fn jitstats_fn overflow_inject_fn lua_fn shutdown
+  tier2_parity_fn jitstats_fn overflow_inject_fn correctness_fn lua_fn shutdown
 -
 @startup smoke=
   @log smoke=Starting SmokeMUX;

@@ -15303,7 +15303,7 @@ static FUN builtin_function_list[] =
     {T("TEXTFILE"),    fun_textfile,   MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("TIME"),        fun_time,       MAX_ARG, 0,       2,         0, CA_PUBLIC},
     {T("TIMEFMT"),     fun_timefmt,    MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {T("TR"),          fun_tr,         MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {T("TR"),          fun_tr,         MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("TRACE"),       fun_trace,      MAX_ARG, 1,       1, FN_NOEVAL, CA_PUBLIC},
     {T("TRANSLATE"),   fun_translate,  MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("TRIGGER"),     fun_trigger,    MAX_ARG, 1, MAX_ARG,         0, CA_PUBLIC},

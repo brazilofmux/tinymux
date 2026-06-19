@@ -1,0 +1,122 @@
+#
+# correctness_fn.mux - Regression tests for the June 2026 correctness pass.
+#
+# Each case pins a specific correctness fix found by the correctness
+# survey (docs/survey-correctness-pass-2026-06.md).  A helper object
+# (corrstep_helper) is created at build time so the step() test can
+# observe the evaluation-object identity across two distinct objects.
+#
+@create test_correctness_fn
+-
+@set test_correctness_fn=INHERIT QUIET
+-
+@create corrstep_helper
+-
+&STEPCHK corrstep_helper=[name(me)]
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_correctness_fn=
+  @log smoke=Beginning correctness regression test cases.
+-
+#
+# Test Case #1 - xor() must test truthiness on the full 64-bit value,
+# not a 32-bit-truncated copy.  2^32 is non-zero (TRUE), so xor of a
+# single TRUE arg is 1.  The old code stored mux_atol() into an int,
+# dropping the high bits of 4294967296 (low 32 bits are 0) and wrongly
+# returning 0 -- diverging from its list sibling lxor().
+#
+&tr.tc001 test_correctness_fn=
+  @if strmatch(xor(4294967296),1)=
+  {
+    @log smoke=TC001: xor 64-bit truthiness. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: xor 64-bit truthiness. Failed (actual=.[xor(4294967296)].).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #2 - wrapcolumns() must not drop a character on a hard
+# (no-space) line break.  wrapcolumns(abcdefghij,4,1) must wrap to the
+# three segments "abcd", "efgh", "ij" in order (all ten characters
+# preserved).  The old code overwrote the character at the break column
+# with NUL and skipped it, dropping 'e' and 'j'.
+#
+&tr.tc002 test_correctness_fn=
+  @if strmatch(wrapcolumns(abcdefghij,4,1),abcd*efgh*ij*)=
+  {
+    @log smoke=TC002: wrapcolumns hard-break preserves chars. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: wrapcolumns hard-break preserves chars. Failed (actual=.[wrapcolumns(abcdefghij,4,1)].).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #3 - Regression guard: #$ must NOT be bound to <str> while a
+# switch() pattern is evaluated; it is only substituted while a matched
+# <result> is evaluated.  At top level #$ is empty, so pattern "#$" !=
+# "foo" and the default ("NOMATCH") is taken.  (The correctness sweep
+# flagged a possible leak here; the live engine behaves correctly, so
+# this case guards against a future regression.)
+#
+&tr.tc003 test_correctness_fn=
+  @if strmatch(switch(foo,#$,MATCHED,NOMATCH),NOMATCH)=
+  {
+    @log smoke=TC003: switch #$ pattern scoping. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: switch #$ pattern scoping. Failed (actual=.[switch(foo,#$,MATCHED,NOMATCH)].).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #4 - step() must evaluate the attribute as the object that
+# owns it (like map/mix/foreach), not as the calling executor.
+# corrstep_helper/STEPCHK returns name(me); evaluated with the right
+# identity it yields "corrstep_helper", not the caller's name.
+#
+&tr.tc004 test_correctness_fn=
+  @if strmatch(step(corrstep_helper/STEPCHK,x,1),corrstep_helper)=
+  {
+    @log smoke=TC004: step evaluation-object identity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: step evaluation-object identity. Failed (actual=.[step(corrstep_helper/STEPCHK,x,1)].).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #5 - tr() requires three arguments (string, find, replace).
+# It was registered with a 1-argument minimum, so tr(abc) reached the
+# body and dereferenced the unallocated (NULL) find/replace args.  With
+# min==3 the dispatcher rejects it with an argument-count error.
+#
+&tr.tc005 test_correctness_fn=
+  @if strmatch(tr(abc),#-1*)=
+  {
+    @log smoke=TC005: tr argument-count contract. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: tr argument-count contract. Failed (actual=.[tr(abc)].).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_correctness_fn=
+  @log smoke=End correctness regression test cases.;
+  @notify smoke
+-
+drop test_correctness_fn
+-
+drop corrstep_helper
+-
+#
+# End of Test Cases
+#
