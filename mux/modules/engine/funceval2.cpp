@@ -111,9 +111,11 @@ FUNCTION(fun_scramble)
         return;
     }
 
-    // Build index array and Fisher-Yates shuffle.
+    // Build index array and Fisher-Yates shuffle.  An ASCII string can have
+    // up to LBUF_SIZE-1 single-byte clusters, so the array must be sized to
+    // LBUF_SIZE (not LBUF_SIZE/2) to hold one index per cluster.
     //
-    LBUF_OFFSET indices[LBUF_SIZE / 2];
+    LBUF_OFFSET indices[LBUF_SIZE];
     for (size_t i = 0; i < nClusters; i++)
     {
         indices[i] = static_cast<LBUF_OFFSET>(i);
@@ -179,9 +181,12 @@ FUNCTION(fun_shuffle)
             return;
         }
 
-        // Build index array and Fisher-Yates shuffle.
+        // Build index array and Fisher-Yates shuffle.  With a non-space
+        // single-char delimiter the word count can reach ~LBUF_SIZE (one word
+        // per delimiter byte), so the array must be sized to LBUF_SIZE to
+        // match the multi-char-delimiter path below.
         //
-        LBUF_OFFSET indices[LBUF_SIZE / 2];
+        LBUF_OFFSET indices[LBUF_SIZE];
         for (size_t i = 0; i < n; i++)
         {
             indices[i] = static_cast<LBUF_OFFSET>(i);

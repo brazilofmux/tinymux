@@ -83,6 +83,31 @@ tracked in docs/survey-*.md.
    matching the evaluator, so pathologically nested input cannot overflow
    the stack on platforms with a small default stack size. (#840)
  - `justify()` no longer reserves a ~1.25 MB stack frame. (#818)
+ - `scramble()` and `shuffle()` no longer overflow a stack buffer on large
+   input.  Their Fisher-Yates index arrays were sized `LBUF_SIZE/2` while the
+   grapheme-cluster / word count can reach `LBUF_SIZE`, so any player could
+   smash the stack with a single ~32 KB argument.  Both arrays are now sized
+   to `LBUF_SIZE`. (#845)
+ - `examine` and the `flags()` softcode function no longer overflow a stack
+   buffer when decoding attribute flags.  `decode_attr_flags()` can emit up
+   to `NUM_ATTRIBUTE_CODES` letters plus a NUL, but two callers gave it an
+   11-byte buffer; both now match the documented `NUM_ATTRIBUTE_CODES+1`
+   contract.  Reachable by setting enough attribute flags on a readable
+   object. (#846)
+ - `@reference` and absolute named-reference lookups no longer read past the
+   end of a buffer.  Both used `snprintf`'s return value (the length it would
+   have written) directly as a copy/compare length; on truncation of a long
+   reference name that exceeded the buffer, yielding an out-of-bounds read —
+   and for `@reference`, the adjacent heap bytes could be stored and echoed
+   back via `@reference/list`.  The length is now clamped to what was
+   actually written. (#847)
+ - `@cron` field and step parsing no longer accumulates digits into a signed
+   `int` without bound; an over-long numeric field could overflow `int`
+   (undefined behavior).  Parsing now bails once the value exceeds the field
+   range. (#848)
+ - `index()` no longer reads the byte preceding its argument buffer when an
+   item begins at the delimiter (e.g. `index(|,|,1,1)`); the trailing-space
+   trim now guards before decrementing the scan pointer. (#849)
 
 ## JIT / DBT Engine
 

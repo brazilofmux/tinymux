@@ -509,7 +509,7 @@ static FUNCTION(fun_flags)
             dbref aowner;
             int   aflags;
             atr_pget_info(it, pattr->number, &aowner, &aflags);
-            UTF8 xbuf[11];
+            UTF8 xbuf[NUM_ATTRIBUTE_CODES+1];
             decode_attr_flags(aflags, xbuf);
             safe_str(xbuf, buff, bufc);
         }
@@ -3762,10 +3762,14 @@ static FUNCTION(fun_index)
         {
             if (--end == 0)
             {
-                do {
+                // Guard before decrementing so p never reads below s (which
+                // would touch the byte preceding the buffer).
+                //
+                while (p > s && p[-1] == ' ')
+                {
                     p--;
-                } while ((*p == ' ') && (p > s));
-                *(++p) = '\0';
+                }
+                *p = '\0';
                 safe_str(s, buff, bufc);
                 return;
             }

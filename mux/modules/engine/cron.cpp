@@ -197,6 +197,13 @@ static int parse_cron_value(const UTF8 *&p, int low, int high,
         int val = 0;
         while (mux_isdigit(*p))
         {
+            // Bail before signed-overflow UB; any value above 'high' is
+            // rejected anyway, so capping at high+1 is sufficient.
+            //
+            if (val > high)
+            {
+                return -1;
+            }
             val = val * 10 + (*p - '0');
             p++;
         }
@@ -280,6 +287,13 @@ static const UTF8 *parse_cron_field(uint64_t &bitmap, int low, int high,
             }
             while (mux_isdigit(*p))
             {
+                // Bail before signed-overflow UB; a step larger than the
+                // field range is meaningless and rejected below.
+                //
+                if (step > high)
+                {
+                    return nullptr;
+                }
                 step = step * 10 + (*p - '0');
                 p++;
             }

@@ -187,20 +187,25 @@ static dbref absolute_named_reference(UTF8 *name)
     }
 
     LBuf pReferenceName = LBuf_Src("absolute_named_reference");
-    size_t nReferenceName;
+    int nRefN;
     if ('_' == name[0])
     {
-        nReferenceName = static_cast<size_t>(
-            snprintf(reinterpret_cast<char *>(pReferenceName.get()), LBUF_SIZE,
-                     "%s", reinterpret_cast<const char *>(name)));
+        nRefN = snprintf(reinterpret_cast<char *>(pReferenceName.get()), LBUF_SIZE,
+                     "%s", reinterpret_cast<const char *>(name));
     }
     else
     {
-        nReferenceName = static_cast<size_t>(
-            snprintf(reinterpret_cast<char *>(pReferenceName.get()), LBUF_SIZE,
+        nRefN = snprintf(reinterpret_cast<char *>(pReferenceName.get()), LBUF_SIZE,
                      "%s.%ld", reinterpret_cast<const char *>(name),
-                     static_cast<long>(md.player)));
+                     static_cast<long>(md.player));
     }
+
+    // snprintf returns the length it WOULD have written; clamp to the bytes
+    // actually written so the range never reads past pReferenceName.
+    //
+    size_t nReferenceName = (nRefN < 0) ? 0
+        : (static_cast<size_t>(nRefN) >= LBUF_SIZE ? LBUF_SIZE - 1
+                                                   : static_cast<size_t>(nRefN));
 
     auto it = mudstate.reference_htab.find(std::vector<UTF8>(pReferenceName.get(), pReferenceName.get() + nReferenceName));
     struct reference_entry *result = (it != mudstate.reference_htab.end()) ? static_cast<struct reference_entry *>(it->second) : nullptr;

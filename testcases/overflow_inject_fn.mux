@@ -218,6 +218,60 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #12 - scramble() large input must not overflow its index
+# array.  Regression for a stack OOB write: the index array was sized
+# LBUF_SIZE/2 (16384) but cluster count can reach ~LBUF_SIZE, so an
+# input above 16384 single-byte clusters smashed the stack.  A 20000-'a'
+# string scrambles to a 20000-'a' string (all clusters identical), so
+# the length is deterministic regardless of shuffle order.
+#
+&tr.tc012 test_overflow_inject_fn=
+  @if strmatch(strlen(scramble(repeat(a,20000))),20000)=
+  {
+    @log smoke=TC012: scramble large-input bounds. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC012: scramble large-input bounds. Failed (actual=.[strlen(scramble(repeat(a,20000)))].).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #13 - shuffle() single-char-delimiter path must not overflow
+# its index array.  Same regression as TC012 in the 1==sep.n && 1==osep.n
+# branch.  20000 pipe delimiters yield 20001 (empty) words; joined by the
+# single-char output delimiter that is 20000 pipes, length 20000.
+#
+&tr.tc013 test_overflow_inject_fn=
+  @if strmatch(strlen(shuffle(repeat(|,20000),|,|)),20000)=
+  {
+    @log smoke=TC013: shuffle large-input bounds. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC013: shuffle large-input bounds. Failed (actual=.[strlen(shuffle(repeat(|,20000),|,|))].).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #14 - index() with an item beginning at the delimiter must
+# not read before the buffer.  Regression for a decrement-before-guard
+# in the end-of-range trim loop: index(|,|,1,1) left the scan pointer at
+# the leading delimiter, and the loop read one byte before the lbuf.
+# The first item of the list "|" is empty.
+#
+&tr.tc014 test_overflow_inject_fn=
+  @if strmatch([index(|,|,1,1)],)=
+  {
+    @log smoke=TC014: index leading-delimiter bounds. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC014: index leading-delimiter bounds. Failed (actual=.[index(|,|,1,1)].).;
+    @trig me/tr.done
+  }
+-
 &tr.done test_overflow_inject_fn=
   @log smoke=End overflow/injection test cases.;
   @notify smoke

@@ -880,9 +880,10 @@ static void view_atr
         return;
     }
 
-    // Generate flags.
+    // Generate flags.  decode_attr_flags() can emit up to NUM_ATTRIBUTE_CODES
+    // letters plus a NUL terminator, so the buffer must match its contract.
     //
-    UTF8 xbuf[11];
+    UTF8 xbuf[NUM_ATTRIBUTE_CODES+1];
     decode_attr_flags(aflags, xbuf);
 
     if (  aowner != Owner(thing)
