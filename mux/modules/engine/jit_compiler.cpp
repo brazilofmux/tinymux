@@ -1004,6 +1004,31 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     prog.tier2_calls = h.tier2_calls;
     prog.native_ops = h.native_ops;
     prog.needs_jit = h.needs_jit || rc.needs_jit;
+
+    // Classify every runtime substitution/carg reference emitted during
+    // lowering into a per-program mask, so run_cached_program populates only
+    // the guest CARGS/SUBST slots this program actually reads.  emit_sref is
+    // the single choke point for these references, so this set is complete.
+    prog.subst_mask = 0;
+    prog.cargs_used = 0;
+    for (uint64_t a : h.sref_addrs) {
+        if (a >= rv_compiler::CARGS_BASE
+            && a < rv_compiler::CARGS_BASE
+                   + static_cast<uint64_t>(rv_compiler::MAX_CARGS)
+                     * rv_compiler::CARGS_SLOT) {
+            int idx = static_cast<int>(
+                (a - rv_compiler::CARGS_BASE) / rv_compiler::CARGS_SLOT);
+            if (idx + 1 > prog.cargs_used) prog.cargs_used = idx + 1;
+        } else if (a >= rv_compiler::SUBST_BASE
+            && a < rv_compiler::SUBST_BASE
+                   + static_cast<uint64_t>(rv_compiler::SUBST_COUNT)
+                     * rv_compiler::SUBST_SLOT) {
+            int slot = static_cast<int>(
+                (a - rv_compiler::SUBST_BASE) / rv_compiler::SUBST_SLOT);
+            prog.subst_mask |= (UINT64_C(1) << slot);
+        }
+    }
+
     prog.deps = std::move(deps);
     return prog;
 }
@@ -1497,6 +1522,12 @@ static uint64_t s_next_program_id = 1;
 static guest_memory_t s_runtime_buffer;
 static bool s_runtime_buffer_ready = false;
 
+// program_id whose compact blobs (code/str/fargs) currently occupy the
+// shared runtime buffer.  materialize_program sets this; run_cached_program
+// skips the blob memcpy when the buffer already holds the program being run.
+// 0 = unknown/none (program_ids start at 1).
+static uint64_t s_runtime_buffer_program_id = 0;
+
 static void runtime_buffer_init() {
     if (s_runtime_buffer_ready) return;
     s_runtime_buffer.resize(rv_compiler::MEM_SIZE);
@@ -1555,6 +1586,10 @@ static void compact_program(compiled_program &prog) {
 //
 static void materialize_program(const compiled_program &prog) {
     runtime_buffer_init();
+
+    // Record which program now occupies the shared buffer so a subsequent
+    // re-run of the same program can skip this copy (see run_cached_program).
+    s_runtime_buffer_program_id = prog.program_id;
 
     if (!prog.code_blob.empty()) {
         memcpy(s_runtime_buffer.data() + prog.entry_pc,
@@ -2296,8 +2331,18 @@ bool run_cached_program(compiled_program *prog,
         return true;
     }
 
-    // Materialize compact blobs into the shared runtime buffer.
-    materialize_program(*prog);
+    // Materialize compact blobs into the shared runtime buffer — unless the
+    // buffer already holds this exact program (consecutive re-run, the common
+    // hot path for repeatedly-called functions/commands).  Execution does not
+    // dirty these regions: the guest code is not self-modified (and on a
+    // dbt_rerun the x64 translation is cached, so the guest code isn't even
+    // re-read), the string pool is read-only, and frame-relative fargs entries
+    // are re-patched by the program's own code on every run.  program_id is a
+    // unique monotonic counter; the tracker is reset whenever any other program
+    // is materialized into the buffer (materialize_program sets it).
+    if (s_runtime_buffer_program_id != prog->program_id) {
+        materialize_program(*prog);
+    }
 
     // Reset writable blob state (data + BSS) for clean re-run.
     if (s_tier2.loaded) {
@@ -2313,8 +2358,11 @@ bool run_cached_program(compiled_program *prog,
         }
     }
 
-    // Populate CARGS: copy each arg, NUL-terminate unused slots.
-    for (int i = 0; i < rv_compiler::MAX_CARGS; i++) {
+    // Populate CARGS: copy each arg, NUL-terminate unused slots.  Only the
+    // slots this program actually reads (%0..%N) need populating; functions
+    // reached via ECALL receive cargs through the host pointer array, not
+    // these guest slots.
+    for (int i = 0; i < prog->cargs_used; i++) {
         uint64_t slot = rv_compiler::CARGS_BASE
                       + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
         if (i < ncargs && cargs && cargs[i]) {
@@ -2343,39 +2391,50 @@ bool run_cached_program(compiled_program *prog,
         }
     };
 
+    // Populate only the SUBST slots this program actually reads.  Each
+    // substitution's value (and several of the lookups below — Name/Location/
+    // Moniker, mux_sprintf) is computed only when its slot is referenced.
+    auto subst_used = [&](int slot) -> bool {
+        return (prog->subst_mask >> slot) & UINT64_C(1);
+    };
+
     // %# — enactor dbref as string.
-    {
+    if (subst_used(rv_compiler::SUBST_ENACTOR)) {
         UTF8 dbref_buf[32];
         mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), enactor);
         copy_subst(rv_compiler::SUBST_ENACTOR, dbref_buf);
     }
 
     // %! — executor dbref as string.
-    {
+    if (subst_used(rv_compiler::SUBST_EXECUTOR)) {
         UTF8 dbref_buf[32];
         mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), executor);
         copy_subst(rv_compiler::SUBST_EXECUTOR, dbref_buf);
     }
 
     // %n — enactor name.
-    if (Good_obj(enactor)) {
-        copy_subst(rv_compiler::SUBST_NAME, Name(enactor));
-    } else {
-        copy_subst(rv_compiler::SUBST_NAME, nullptr);
+    if (subst_used(rv_compiler::SUBST_NAME)) {
+        copy_subst(rv_compiler::SUBST_NAME,
+                   Good_obj(enactor) ? Name(enactor) : nullptr);
     }
 
     // %l — enactor location.
-    if (Good_obj(enactor)) {
-        dbref loc = Location(enactor);
-        UTF8 dbref_buf[32];
-        mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), loc);
-        copy_subst(rv_compiler::SUBST_LOCATION, dbref_buf);
-    } else {
-        copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
+    if (subst_used(rv_compiler::SUBST_LOCATION)) {
+        if (Good_obj(enactor)) {
+            dbref loc = Location(enactor);
+            UTF8 dbref_buf[32];
+            mux_sprintf(dbref_buf, sizeof(dbref_buf), T("#%d"), loc);
+            copy_subst(rv_compiler::SUBST_LOCATION, dbref_buf);
+        } else {
+            copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
+        }
     }
 
     // %q global registers.
     for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
+        if (!subst_used(rv_compiler::SUBST_QREG0 + i)) {
+            continue;
+        }
         if (mudstate.global_regs[i] && mudstate.global_regs[i]->reg_ptr) {
             copy_subst(rv_compiler::SUBST_QREG0 + i,
                        mudstate.global_regs[i]->reg_ptr);
@@ -2385,20 +2444,23 @@ bool run_cached_program(compiled_program *prog,
     }
 
     // %m — last command.
-    copy_subst(rv_compiler::SUBST_LASTCMD, mudstate.curr_cmd);
+    if (subst_used(rv_compiler::SUBST_LASTCMD)) {
+        copy_subst(rv_compiler::SUBST_LASTCMD, mudstate.curr_cmd);
+    }
 
     // %k — moniker (enactor name with color).
-    if (Good_obj(enactor)) {
-        copy_subst(rv_compiler::SUBST_MONIKER, Moniker(enactor));
-    } else {
-        copy_subst(rv_compiler::SUBST_MONIKER, nullptr);
+    if (subst_used(rv_compiler::SUBST_MONIKER)) {
+        copy_subst(rv_compiler::SUBST_MONIKER,
+                   Good_obj(enactor) ? Moniker(enactor) : nullptr);
     }
 
     // %| — piped command output.
-    copy_subst(rv_compiler::SUBST_POUT, mudstate.pout);
+    if (subst_used(rv_compiler::SUBST_POUT)) {
+        copy_subst(rv_compiler::SUBST_POUT, mudstate.pout);
+    }
 
     // %+ — number of cargs.
-    {
+    if (subst_used(rv_compiler::SUBST_NCARGS)) {
         UTF8 ncbuf[32];
         mux_sprintf(ncbuf, sizeof(ncbuf), T("%d"), ncargs);
         copy_subst(rv_compiler::SUBST_NCARGS, ncbuf);

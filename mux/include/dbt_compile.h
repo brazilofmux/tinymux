@@ -418,6 +418,14 @@ struct compiled_program {
     int native_ops;
     bool needs_jit;         // true if JIT execution required
 
+    // Which guest CARGS/SUBST slots this program actually reads, so
+    // run_cached_program populates only those (not all ~45 every call).
+    // Conservative defaults (populate everything) so any program that
+    // skips classification — e.g. one reconstructed from the SQLite cache
+    // — remains correct, just without the per-call savings.
+    uint64_t subst_mask = ~0ULL;            // bit i set => SUBST slot i is read
+    int      cargs_used = rv_compiler::MAX_CARGS;  // highest %N index + 1
+
     // Pool high-water marks after compilation.
     // Persistent VM uses these to advance shared pool cursors so the
     // next compilation starts where this one left off.

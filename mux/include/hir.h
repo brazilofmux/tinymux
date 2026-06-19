@@ -181,6 +181,12 @@ struct hir_program {
     std::vector<std::string> sval;
     std::vector<std::string> call_name;
 
+    // Guest addresses of every runtime substitution/carg reference emitted
+    // (via emit_sref).  Classified by compile_expression into a per-program
+    // mask so run_cached_program populates only the CARGS/SUBST slots the
+    // program actually reads, not all ~45 of them every call.
+    std::vector<uint64_t> sref_addrs;
+
     // Known-integer flag: true if a TY_STRING result is known to
     // parse as an integer (e.g., ECALL result from strlen/eq/gt).
     bool known_int[HIR_MAX_INSNS];
@@ -290,6 +296,7 @@ struct hir_program {
 
         sval.clear();
         call_name.clear();
+        sref_addrs.clear();
 
         // Initialize block 0.
         block_first[0] = 0;
@@ -349,6 +356,7 @@ struct hir_program {
     int emit_sref(uint64_t addr) {
         int i = emit_sconst(addr, "");
         if (i >= 0) runtime_ref[i] = true;
+        sref_addrs.push_back(addr);
         return i;
     }
 
