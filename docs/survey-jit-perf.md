@@ -156,3 +156,18 @@ lesson as `materialize_program`: the real floor was SUBST/CARGS, already fixed.
   smoke suite — scoping bugs hid in cases the sweep didn't construct.)
 - **Persist `subst_mask`/`cargs_used` in the SQLite cache** (schema bump) so
   post-restart programs loaded from disk also get the floor savings.
+  **Attempted, NOT shipped (held in a git stash).** The full plumbing works
+  (schema v12 migration + `CodeCacheRecord`/`CacheWriteOp`/queue/bind/read +
+  `reconstruct_from_cache` defaulting old rows to populate-all), but it
+  introduced **smoke-suite flakiness**: ~30% of runs drop the async/scheduler
+  tail (~61 assertions — semaphore/`@wait`/notify/`while`/trigger), `1264 →
+  1203`, with 0 failures, exit 0, Crashes 0 (the harness's async-completion
+  detection finishes early; not a crash). Baseline is 15/15 = 1264 (`P(0/15)`
+  at a 30% rate ≈ 0.2%, so the change is the trigger, not luck). It "shouldn't"
+  be related — the persist path only adds two columns to an already-deferred
+  write and one startup migration step — which points at a **timing-fragile
+  async-completion race in the smoke harness** that any scheduler perturbation
+  can trip. Given the persist change's benefit is only the marginal post-restart
+  case (steady state already gets the in-memory mask), it is not worth
+  destabilizing the suite. Land it after the harness race is hardened
+  independently.
