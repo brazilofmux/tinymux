@@ -114,9 +114,22 @@ gain from skipping it — blobs are too small for the memcpy to matter. The real
 floor money was in SUBST/CARGS population. (Lesson: verify the lead, don't trust
 the agent's ranking.)
 
+## ✅ FIXED — list-walking (`co_find_delim` ASCII fast path, b16367b5f)
+`co_find_delim` is the shared delimiter scanner under `first`/`rest`/`extract`/
+`words`/`iter` and the per-element list walk. It ran a color/UTF-8-aware Ragel
+DFA one byte per state transition. **Internal color is PUA UTF-8** (BMP
+U+F500-F7FF → `0xEF ...`, SMP U+F0000-F05FF → `0xF3 ...`; rendered to ANSI only
+at the network layer), so every color byte and every multi-byte UTF-8 byte is
+≥ 0x80. An ASCII delimiter (0x01..0x7F) can never appear inside a color token or
+a multi-byte char → the first matching byte is always a standalone visible
+delimiter → `memchr` is exact. Added a `memchr` fast path for ASCII targets
+(`lib/color_ops.rl`, regenerated `color_ops.c`); target 0 or ≥ 0x80 still uses
+the DFA. Measured (rvbench A/B): `iter(lnum(100),##)` 139 → **106µs** (−24%);
+`iter(lnum(100),mul(%i0,%i0))` 157 → **133µs** (−15%). Parity vs AST oracle incl.
+color-bearing lists; smoke 1264/1264. Note: `words`/`extract` of *constant*
+lists const-fold (no runtime walk), so the win shows on runtime lists (iter).
+
 ## Remaining opportunities (not yet done)
-- **Faster list walking** for `iter`/`map`/`fold` — `co_find_delim`/`co_extract`
-  per element (~5% self-time). Would help the dominant heavy-softcode case.
 - **`tier2_reset_writable` per-call BSS memset** — the other floor component;
   could be gated on whether the program calls a tier-2 function that uses BSS.
 - **Bracketed `[...]` softcode bypasses the JIT entirely** (the deliberate
