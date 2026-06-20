@@ -439,6 +439,20 @@ const unsigned char *co_find_delim(const unsigned char *data,
                                    const unsigned char *pe,
                                    unsigned char target)
 {
+    /* Fast path for ASCII delimiters (the overwhelmingly common case:
+     * space and other printable separators).  Internal color is stored as
+     * Private Use Area code points (BMP U+F500-F7FF, SMP U+F0000-F05FF) in
+     * UTF-8, so every color byte is >= 0x80; likewise every byte of a
+     * multi-byte UTF-8 character is >= 0x80.  A target in 0x01..0x7F can
+     * therefore never appear inside a color token or a multi-byte character,
+     * so the first matching byte is always a standalone visible delimiter --
+     * exactly what the color/UTF-8-aware DFA below returns.  memchr is a
+     * SIMD-optimized scan; the DFA walks one byte per state transition. */
+    if (0x01 <= target && target <= 0x7F) {
+        return (const unsigned char *)memchr(data, target,
+                                             (size_t)(pe - data));
+    }
+
     int cs;
     const unsigned char *p = data;
     const unsigned char *found = NULL;

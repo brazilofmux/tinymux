@@ -1103,19 +1103,33 @@ const unsigned char *co_find_delim(const unsigned char *data,
                                    const unsigned char *pe,
                                    unsigned char target)
 {
+    /* Fast path for ASCII delimiters (the overwhelmingly common case:
+     * space and other printable separators).  Internal color is stored as
+     * Private Use Area code points (BMP U+F500-F7FF, SMP U+F0000-F05FF) in
+     * UTF-8, so every color byte is >= 0x80; likewise every byte of a
+     * multi-byte UTF-8 character is >= 0x80.  A target in 0x01..0x7F can
+     * therefore never appear inside a color token or a multi-byte character,
+     * so the first matching byte is always a standalone visible delimiter --
+     * exactly what the color/UTF-8-aware DFA below returns.  memchr is a
+     * SIMD-optimized scan; the DFA walks one byte per state transition. */
+    if (0x01 <= target && target <= 0x7F) {
+        return (const unsigned char *)memchr(data, target,
+                                             (size_t)(pe - data));
+    }
+
     int cs;
     const unsigned char *p = data;
     const unsigned char *found = NULL;
 
     
-#line 1015 "color_ops.c"
+#line 1029 "color_ops.c"
 	{
 	cs = find_delim_start;
 	}
 
-#line 447 "color_ops.rl"
+#line 461 "color_ops.rl"
     
-#line 1018 "color_ops.c"
+#line 1032 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
@@ -1134,7 +1148,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 1035 "color_ops.c"
+#line 1049 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto st2;
@@ -1269,7 +1283,7 @@ case 11:
 	_out: {}
 	}
 
-#line 448 "color_ops.rl"
+#line 462 "color_ops.rl"
 
     return found;
 }
@@ -1951,13 +1965,13 @@ size_t co_compress_str(unsigned char *out,
 /* ---- co_strip_color ---- */
 
 
-#line 1848 "color_ops.c"
+#line 1862 "color_ops.c"
 static const int strip_color_start = 12;
 
 static const int strip_color_en_main = 12;
 
 
-#line 1141 "color_ops.rl"
+#line 1155 "color_ops.rl"
 
 
 size_t co_strip_color(unsigned char *out, const unsigned char *data,
@@ -1971,30 +1985,30 @@ size_t co_strip_color(unsigned char *out, const unsigned char *data,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 1864 "color_ops.c"
+#line 1878 "color_ops.c"
 	{
 	cs = strip_color_start;
 	}
 
-#line 1154 "color_ops.rl"
+#line 1168 "color_ops.rl"
     
-#line 1867 "color_ops.c"
+#line 1881 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 1133 "color_ops.rl"
+#line 1147 "color_ops.rl"
 	{
         const unsigned char *s = mark;
         while (s <= p) WP_SAFE(wp, wp_end, *s++);
     }
 	goto st12;
 tr7:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
-#line 1133 "color_ops.rl"
+#line 1147 "color_ops.rl"
 	{
         const unsigned char *s = mark;
         while (s <= p) WP_SAFE(wp, wp_end, *s++);
@@ -2004,7 +2018,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 1889 "color_ops.c"
+#line 1903 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -2033,62 +2047,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 1923 "color_ops.c"
+#line 1937 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 1933 "color_ops.c"
+#line 1947 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 1943 "color_ops.c"
+#line 1957 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 1953 "color_ops.c"
+#line 1967 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 1963 "color_ops.c"
+#line 1977 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -2106,38 +2120,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 1986 "color_ops.c"
+#line 2000 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 1996 "color_ops.c"
+#line 2010 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 2006 "color_ops.c"
+#line 2020 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -2155,14 +2169,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 1132 "color_ops.rl"
+#line 1146 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 2029 "color_ops.c"
+#line 2043 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -2184,7 +2198,7 @@ case 11:
 	_out: {}
 	}
 
-#line 1155 "color_ops.rl"
+#line 1169 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -2193,13 +2207,13 @@ case 11:
 /* ---- co_toupper (full Unicode via DFA tables) ---- */
 
 
-#line 2056 "color_ops.c"
+#line 2070 "color_ops.c"
 static const int toupper_machine_start = 12;
 
 static const int toupper_machine_en_main = 12;
 
 
-#line 1196 "color_ops.rl"
+#line 1210 "color_ops.rl"
 
 
 size_t co_toupper(unsigned char *out, const unsigned char *data, size_t len)
@@ -2212,21 +2226,21 @@ size_t co_toupper(unsigned char *out, const unsigned char *data, size_t len)
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 2071 "color_ops.c"
+#line 2085 "color_ops.c"
 	{
 	cs = toupper_machine_start;
 	}
 
-#line 1208 "color_ops.rl"
+#line 1222 "color_ops.rl"
     
-#line 2074 "color_ops.c"
+#line 2088 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 1171 "color_ops.rl"
+#line 1185 "color_ops.rl"
 	{
         size_t src = (size_t)(p - mark + 1);
         int bXor;
@@ -2250,16 +2264,16 @@ tr0:
     }
 	goto st12;
 tr4:
-#line 1167 "color_ops.rl"
+#line 1181 "color_ops.rl"
 	{
         const unsigned char *s = mark;
         while (s <= p) WP_SAFE(wp, wp_end, *s++);
     }
 	goto st12;
 tr7:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
-#line 1171 "color_ops.rl"
+#line 1185 "color_ops.rl"
 	{
         size_t src = (size_t)(p - mark + 1);
         int bXor;
@@ -2286,7 +2300,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 2136 "color_ops.c"
+#line 2150 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -2315,62 +2329,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 2170 "color_ops.c"
+#line 2184 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 2180 "color_ops.c"
+#line 2194 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 2190 "color_ops.c"
+#line 2204 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 2200 "color_ops.c"
+#line 2214 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 2210 "color_ops.c"
+#line 2224 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -2388,38 +2402,38 @@ case 6:
 		goto tr4;
 	goto st0;
 tr13:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 2233 "color_ops.c"
+#line 2247 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 2243 "color_ops.c"
+#line 2257 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 2253 "color_ops.c"
+#line 2267 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -2437,14 +2451,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 1166 "color_ops.rl"
+#line 1180 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 2276 "color_ops.c"
+#line 2290 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -2466,7 +2480,7 @@ case 11:
 	_out: {}
 	}
 
-#line 1209 "color_ops.rl"
+#line 1223 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -2475,13 +2489,13 @@ case 11:
 /* ---- co_tolower (full Unicode via DFA tables) ---- */
 
 
-#line 2303 "color_ops.c"
+#line 2317 "color_ops.c"
 static const int tolower_machine_start = 12;
 
 static const int tolower_machine_en_main = 12;
 
 
-#line 1250 "color_ops.rl"
+#line 1264 "color_ops.rl"
 
 
 size_t co_tolower(unsigned char *out, const unsigned char *data, size_t len)
@@ -2494,21 +2508,21 @@ size_t co_tolower(unsigned char *out, const unsigned char *data, size_t len)
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 2318 "color_ops.c"
+#line 2332 "color_ops.c"
 	{
 	cs = tolower_machine_start;
 	}
 
-#line 1262 "color_ops.rl"
+#line 1276 "color_ops.rl"
     
-#line 2321 "color_ops.c"
+#line 2335 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 1225 "color_ops.rl"
+#line 1239 "color_ops.rl"
 	{
         size_t src = (size_t)(p - mark + 1);
         int bXor;
@@ -2532,16 +2546,16 @@ tr0:
     }
 	goto st12;
 tr4:
-#line 1221 "color_ops.rl"
+#line 1235 "color_ops.rl"
 	{
         const unsigned char *s = mark;
         while (s <= p) WP_SAFE(wp, wp_end, *s++);
     }
 	goto st12;
 tr7:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
-#line 1225 "color_ops.rl"
+#line 1239 "color_ops.rl"
 	{
         size_t src = (size_t)(p - mark + 1);
         int bXor;
@@ -2568,7 +2582,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 2383 "color_ops.c"
+#line 2397 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -2597,62 +2611,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 2417 "color_ops.c"
+#line 2431 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 2427 "color_ops.c"
+#line 2441 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 2437 "color_ops.c"
+#line 2451 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 2447 "color_ops.c"
+#line 2461 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 2457 "color_ops.c"
+#line 2471 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -2670,38 +2684,38 @@ case 6:
 		goto tr4;
 	goto st0;
 tr13:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 2480 "color_ops.c"
+#line 2494 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 2490 "color_ops.c"
+#line 2504 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 2500 "color_ops.c"
+#line 2514 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -2719,14 +2733,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 1220 "color_ops.rl"
+#line 1234 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 2523 "color_ops.c"
+#line 2537 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -2748,7 +2762,7 @@ case 11:
 	_out: {}
 	}
 
-#line 1263 "color_ops.rl"
+#line 1277 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
@@ -5394,13 +5408,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5187 "color_ops.c"
+#line 5201 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3927 "color_ops.rl"
+#line 3941 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5414,21 +5428,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5203 "color_ops.c"
+#line 5217 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3940 "color_ops.rl"
+#line 3954 "color_ops.rl"
     
-#line 5206 "color_ops.c"
+#line 5220 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3912 "color_ops.rl"
+#line 3926 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5442,9 +5456,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
-#line 3912 "color_ops.rl"
+#line 3926 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5461,7 +5475,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5242 "color_ops.c"
+#line 5256 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5490,62 +5504,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5276 "color_ops.c"
+#line 5290 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5286 "color_ops.c"
+#line 5300 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5296 "color_ops.c"
+#line 5310 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5306 "color_ops.c"
+#line 5320 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5316 "color_ops.c"
+#line 5330 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5563,38 +5577,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5339 "color_ops.c"
+#line 5353 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5349 "color_ops.c"
+#line 5363 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5359 "color_ops.c"
+#line 5373 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5612,14 +5626,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3911 "color_ops.rl"
+#line 3925 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5382 "color_ops.c"
+#line 5396 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5641,7 +5655,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3941 "color_ops.rl"
+#line 3955 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
