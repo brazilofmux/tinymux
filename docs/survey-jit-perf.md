@@ -129,11 +129,30 @@ the DFA. Measured (rvbench A/B): `iter(lnum(100),##)` 139 → **106µs** (−24%
 color-bearing lists; smoke 1264/1264. Note: `words`/`extract` of *constant*
 lists const-fold (no runtime walk), so the win shows on runtime lists (iter).
 
+## Investigated, NOT worth it — `tier2_reset_writable` per-call reset
+Listed earlier as a floor component on the assumption BSS might be large. It is
+not: the `softlib.rv64` blob has **bss_size = 1028 bytes, data_size = 4 bytes**.
+The per-call memset+memcpy is below measurement noise — gating the reset on
+`prog->tier2_calls > 0` (correct, since tier2-free programs never touch tier2
+BSS/data) changed `r(0)` by nothing measurable (0.17 vs 0.16–0.20µs). Same
+lesson as `materialize_program`: the real floor was SUBST/CARGS, already fixed.
+
 ## Remaining opportunities (not yet done)
-- **`tier2_reset_writable` per-call BSS memset** — the other floor component;
-  could be gated on whether the program calls a tier-2 function that uses BSS.
 - **Bracketed `[...]` softcode bypasses the JIT entirely** (the deliberate
-  `AST_EVALBRACKET` guard). Large real-world surface; matching the subtle
-  re-eval semantics is a substantial project, not a quick win.
+  `AST_EVALBRACKET` guard, `ast.cpp`). Large real-world surface. **Attempted
+  and reverted** — confirmed the guard is load-bearing, not just cautious:
+  allowing terminated, non-`EV_NOFCHECK` brackets through `jit_can_handle`
+  (the `hir_lower` `AST_EVALBRACKET` case already lowers them transparently as
+  an FMAND context) passed a broad parity sweep (mixed/nested/`iter`/`switch`,
+  all matching the AST oracle) **but broke smoke**: `letq`/`localize` register
+  scoping and nested-brace tests (`result=INNERINNER`, `localize→.CCC.`). The
+  JIT reads `%q` from `SUBST_QREG` slots populated once per `run_cached_program`
+  and `setq` writes both the slot and `mudstate.global_regs`, but
+  `localize`/`letq` save/restore only `global_regs` — so a scoped body that now
+  JITs sees stale slot values. Lifting the guard requires modeling q-register
+  scope save/restore across the JIT boundary (the "subtle re-evaluation
+  behavior" the original comment names); it is a dedicated project, not an
+  incremental change. (Lesson: a broad parity sweep is not a substitute for the
+  smoke suite — scoping bugs hid in cases the sweep didn't construct.)
 - **Persist `subst_mask`/`cargs_used` in the SQLite cache** (schema bump) so
   post-restart programs loaded from disk also get the floor savings.
