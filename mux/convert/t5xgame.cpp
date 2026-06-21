@@ -5992,12 +5992,10 @@ bool T5X_GAME::Downgrade3()
     //
     m_flags |= 3;
 
-    // Downgrade objects by reducing color depth from 24-bit and 256-color down to ANSI-level -- highlight with 8 colors.
+    // v3 uses the same UTF-8 PUA color as v4/v5 (the older per-channel delta
+    // form), so no color-depth reduction happens here -- 24-bit color is
+    // preserved.  Reduction to ANSI 16-color belongs to the v2 downgrade.
     //
-    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
-    {
-        it->second->RestrictToColor16();
-    }
     return true;
 }
 
@@ -6033,10 +6031,13 @@ bool T5X_GAME::Downgrade2()
         }
     }
 
-    // Downgrade objects.
+    // Downgrade objects.  Latin-1/ANSI output cannot carry 24-bit or 256-color,
+    // so reduce color depth to 16 first; ConvertColorToANSI() (reached via
+    // ConvertToLatin1) assumes color has already been restricted to that range.
     //
     for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
     {
+        it->second->RestrictToColor16();
         it->second->ConvertToLatin1();
         it->second->DowngradeDefaultLock();
     }
