@@ -156,8 +156,9 @@ static const VersionInfo g_t5xVersions[] =
 {
     { "1", "1.6 2.0 2.4", "TinyMUX v1 - Latin-1, raw ANSI color (1.x-2.4)",   1 },
     { "2", "2.6",         "TinyMUX v2 - Latin-1, raw ANSI color (2.6)",       2 },
-    { "3", "2.7 2.13",    "TinyMUX v3 - UTF-8, PUA color (2.7-2.13)",         3 },
+    { "3", "2.7 2.13",    "TinyMUX v3 - UTF-8, PUA color v1 encoding (2.7-2.13)", 3 },
     { "4", "",            "TinyMUX v4 - UTF-8, PUA color v1 encoding",        4 },
+    { "5", "2.14",        "TinyMUX v5 - UTF-8, PUA color v2 encoding (2.14+)", 5 },
 };
 
 static const VersionInfo g_t6hVersions[] =
@@ -176,7 +177,7 @@ static const VersionInfo g_r7hVersions[] =
 static const ServerRegistry g_registries[] =
 {
     { ePennMUSH,  "p6h", "pennmush",      g_p6hVersions, ARRAY_LEN(g_p6hVersions), 0, 1 },
-    { eTinyMUX,   "t5x", "tinymux mux",   g_t5xVersions, ARRAY_LEN(g_t5xVersions), 0, 3 },
+    { eTinyMUX,   "t5x", "tinymux mux",   g_t5xVersions, ARRAY_LEN(g_t5xVersions), 0, 4 },
     { eTinyMUSH,  "t6h", "tinymush mush", g_t6hVersions, ARRAY_LEN(g_t6hVersions), 0, 3 },
     { eRhostMUSH, "r7h", "rhostmush rhost", g_r7hVersions, ARRAY_LEN(g_r7hVersions), 0, 0 },
 };
@@ -438,13 +439,15 @@ static bool MigrateOutput(ServerType t, int targetKey)
             {
                 if (targetKey > ver)
                 {
-                    if      (4 == targetKey) g_t5xgame.Upgrade4();
+                    if      (5 == targetKey) g_t5xgame.Upgrade5();
+                    else if (4 == targetKey) g_t5xgame.Upgrade4();
                     else if (3 == targetKey) g_t5xgame.Upgrade3();
                     else if (2 == targetKey) g_t5xgame.Upgrade2();
                 }
                 else
                 {
-                    if      (3 == targetKey) g_t5xgame.Downgrade3();
+                    if      (4 == targetKey) g_t5xgame.Downgrade4();
+                    else if (3 == targetKey) g_t5xgame.Downgrade3();
                     else if (2 == targetKey) g_t5xgame.Downgrade2();
                     else if (1 == targetKey) g_t5xgame.Downgrade1();
                 }
@@ -750,6 +753,17 @@ int main(int argc, char *argv[])
         t5xin = NULL;
         g_t5xgame.Pass2();
         g_t5xgame.Validate();
+
+        // Normalize 24-bit color to the v5 (two-code-point) form used
+        // internally.  A v3/v4 flatfile stores it in the older per-channel
+        // delta form; migrate it up so every decode path sees one form.
+        //
+        int inVer = (g_t5xgame.m_flags & T5X_V_MASK);
+        if (3 <= inVer && inVer <= 4)
+        {
+            g_t5xgame.MigrateColor(true);
+            g_t5xgame.Pass2();
+        }
     }
     else if (eTinyMUSH == eInputType)
     {
@@ -973,6 +987,22 @@ int main(int argc, char *argv[])
         else
         {
             fprintf(stderr, "Requested password reset is not currently supported.\n");
+        }
+    }
+
+    // Color is held internally in v5 (two-code-point) form.  A v3/v4 flatfile
+    // must store the older per-channel delta form, so migrate it down just
+    // before writing.  (Extraction emits @decomp softcode, which wants the v5
+    // internal form, so it is left alone.)
+    //
+    if (  !fExtract
+       && eTinyMUX == eOutputType)
+    {
+        int outVer = (g_t5xgame.m_flags & T5X_V_MASK);
+        if (3 <= outVer && outVer <= 4)
+        {
+            g_t5xgame.MigrateColor(false);
+            g_t5xgame.Pass2();
         }
     }
 

@@ -1136,9 +1136,9 @@ void T5X_GAME::ValidateFlags() const
 
     int ver = (m_flags & T5X_V_MASK);
     fprintf(stderr, "INFO: Flatfile version is %d\n", ver);
-    if (ver < 1 || 4 < ver)
+    if (ver < 1 || 5 < ver)
     {
-        fprintf(stderr, "WARNING: Expecting version to be between 1 and 4.\n");
+        fprintf(stderr, "WARNING: Expecting version to be between 1 and 5.\n");
     }
     flags &= ~T5X_V_MASK;
     int tflags = flags;
@@ -1175,6 +1175,11 @@ void T5X_GAME::ValidateFlags() const
             && (flags & T5X_MANDFLAGS_V4) != T5X_MANDFLAGS_V4)
     {
         fprintf(stderr, "WARNING: Not all mandatory flags for v4 are present.\n");
+    }
+    else if (  5 == ver
+            && (flags & T5X_MANDFLAGS_V5) != T5X_MANDFLAGS_V5)
+    {
+        fprintf(stderr, "WARNING: Not all mandatory flags for v5 are present.\n");
     }
 
     // Validate that this is a flatfile and not a structure file.
@@ -4979,11 +4984,55 @@ UTF8 *ConvertToUTF8(const char *p)
     return aBuffer;
 }
 
+bool T5X_GAME::Upgrade5()
+{
+    int ver = (m_flags & T5X_V_MASK);
+    if (5 <= ver)
+    {
+        return false;
+    }
+
+    // Only chain through Upgrade4() when actually below v4.  Upgrade4() calls
+    // Upgrade3(), which re-runs the v2->v3 Latin-1->UTF-8 pass unless ver is
+    // exactly 3; entering it at ver == 4 would double-encode attribute text.
+    //
+    if (ver < 4)
+    {
+        Upgrade4();
+    }
+    m_flags &= ~T5X_V_MASK;
+
+    // v5 shares v4's flag set and (in this converter) its PUA color byte form;
+    // only the version number advances.  The distinguishing feature of v5 -- the
+    // fixed two-code-point 24-bit color encoding -- is already what the color
+    // machinery here emits (see EmitSMPColor/UpdateColorState).
+    //
+    m_flags |= 5;
+
+    return true;
+}
+
 bool T5X_GAME::Upgrade4()
 {
     Upgrade3();
     int ver = (m_flags & T5X_V_MASK);
     if (4 == ver)
+    {
+        return false;
+    }
+    m_flags &= ~T5X_V_MASK;
+
+    // Additional flatfile flags.
+    //
+    m_flags |= 4;
+
+    return true;
+}
+
+bool T5X_GAME::Downgrade4()
+{
+    int ver = (m_flags & T5X_V_MASK);
+    if (ver <= 4)
     {
         return false;
     }
@@ -6517,6 +6566,289 @@ void NearestIndex_tree_b(int iHere, const LABi &labi, int &iBest, INT64 &rBest)
     if (rAxis < rBest)
     {
         NearestIndex_tree_L(palette[iHere].child[1-iNearChild], labi, iBest, rBest);
+    }
+}
+
+// --------------------------------------------------------------------------
+// 24-bit PUA color form migration.
+//
+// Two on-disk encodings of 24-bit color have shipped:
+//
+//   v4 (<=2.13): a BMP indexed base (EF 98-9F xx) followed by per-channel
+//                deltas, F3 B0 (80-97) xx, one per channel that differs from
+//                the palette base.  Variable length, 7-15 bytes per layer.
+//   v5 (2.14+):  a BMP indexed base followed by a fixed two-code-point pair,
+//                F3 (B0-B3) xx xx, CP1 = (R hi nibble << 8)|G, CP2 =
+//                (R lo nibble << 8)|B.  Always 11 bytes per layer.
+//
+// Both ranges overlap (F3 B0 8x), so they cannot be distinguished without
+// version context.  The converter keeps color in v5 form internally; these
+// routines translate at the v4<->v5 boundary.  ColorV4toV5 is a direct port
+// of the server's db_read() migration (db_rw.cpp); ColorV5toV4 is its inverse.
+//
+// Each returns true and fills pNew when it rewrote at least one color; false
+// (output untouched) when there was nothing to do or the result would not fit.
+//
+static bool ColorV4toV5(const UTF8 *pOld, UTF8 *pNew, size_t nBufSize, size_t *pnNew)
+{
+    const UTF8 *p = pOld;
+    UTF8 *q = pNew;
+    const UTF8 *qEnd = pNew + nBufSize - 9;     // room for 8 bytes + NUL
+    bool bChanged = false;
+
+    int lastFGIdx = -1;
+    int lastBGIdx = -1;
+
+    while ('\0' != *p)
+    {
+        if (q >= qEnd)
+        {
+            return false;
+        }
+
+        // Track BMP PUA indexed FG/BG bases as they pass through.
+        //
+        if (  0xEF == p[0]
+           && p[1] >= 0x98 && p[1] <= 0x9F
+           && p[2] >= 0x80 && p[2] <= 0xBF)
+        {
+            if (p[1] <= 0x9B)
+            {
+                lastFGIdx = ((int)(p[1] - 0x98) << 6) | (int)(p[2] - 0x80);
+            }
+            else
+            {
+                lastBGIdx = ((int)(p[1] - 0x9C) << 6) | (int)(p[2] - 0x80);
+            }
+            *q++ = *p++;
+            *q++ = *p++;
+            *q++ = *p++;
+            continue;
+        }
+
+        // Old per-channel delta: F3 B0 (80-97) xx
+        //
+        if (  0xF3 == p[0]
+           && 0xB0 == p[1]
+           && p[2] >= 0x80 && p[2] <= 0x97
+           && p[3] >= 0x80 && p[3] <= 0xBF)
+        {
+            unsigned int offset  = ((unsigned int)(p[2] - 0x80) << 6) | (unsigned int)(p[3] - 0x80);
+            unsigned int channel = offset / 256;
+            unsigned char value  = (unsigned char)(offset % 256);
+            bool bFG = (channel < 3);
+
+            int palIdx = bFG ? lastFGIdx : lastBGIdx;
+            unsigned char r, g, b;
+            if (0 <= palIdx && palIdx < 256)
+            {
+                r = (unsigned char)palette[palIdx].rgb.r;
+                g = (unsigned char)palette[palIdx].rgb.g;
+                b = (unsigned char)palette[palIdx].rgb.b;
+            }
+            else
+            {
+                r = 0; g = 0; b = 0;
+            }
+
+            unsigned int ch = bFG ? channel : channel - 3;
+            if      (0 == ch) { r = value; }
+            else if (1 == ch) { g = value; }
+            else              { b = value; }
+            p += 4;
+
+            // Absorb any further channel deltas in the same layer.
+            //
+            while (  0xF3 == p[0]
+                  && 0xB0 == p[1]
+                  && p[2] >= 0x80 && p[2] <= 0x97
+                  && p[3] >= 0x80 && p[3] <= 0xBF)
+            {
+                unsigned int next_offset  = ((unsigned int)(p[2] - 0x80) << 6) | (unsigned int)(p[3] - 0x80);
+                unsigned int next_channel = next_offset / 256;
+                unsigned char next_value  = (unsigned char)(next_offset % 256);
+                if ((next_channel < 3) != bFG)
+                {
+                    break;
+                }
+                unsigned int next_ch = bFG ? next_channel : next_channel - 3;
+                if      (0 == next_ch) { r = next_value; }
+                else if (1 == next_ch) { g = next_value; }
+                else                   { b = next_value; }
+                p += 4;
+            }
+
+            unsigned int base_block  = bFG ? 0 : 2;
+            unsigned int cp1_payload = ((unsigned int)(r >> 4) << 8) | g;
+            unsigned int cp2_payload = ((unsigned int)(r & 0xF) << 8) | b;
+
+            q[0] = 0xF3;
+            q[1] = (UTF8)(0xB0 + base_block);
+            q[2] = (UTF8)(0x80 | ((cp1_payload >> 6) & 0x3F));
+            q[3] = (UTF8)(0x80 | (cp1_payload & 0x3F));
+            q += 4;
+
+            q[0] = 0xF3;
+            q[1] = (UTF8)(0xB0 + base_block + 1);
+            q[2] = (UTF8)(0x80 | ((cp2_payload >> 6) & 0x3F));
+            q[3] = (UTF8)(0x80 | (cp2_payload & 0x3F));
+            q += 4;
+
+            bChanged = true;
+        }
+        else
+        {
+            *q++ = *p++;
+        }
+    }
+    *q = '\0';
+    *pnNew = (size_t)(q - pNew);
+    return bChanged;
+}
+
+static bool ColorV5toV4(const UTF8 *pOld, UTF8 *pNew, size_t nBufSize, size_t *pnNew)
+{
+    const UTF8 *p = pOld;
+    UTF8 *q = pNew;
+    const UTF8 *qEnd = pNew + nBufSize - 13;    // room for 3 deltas + NUL
+    bool bChanged = false;
+
+    int lastFGIdx = -1;
+    int lastBGIdx = -1;
+
+    while ('\0' != *p)
+    {
+        if (q >= qEnd)
+        {
+            return false;
+        }
+
+        // Track BMP PUA indexed FG/BG bases as they pass through.
+        //
+        if (  0xEF == p[0]
+           && p[1] >= 0x98 && p[1] <= 0x9F
+           && p[2] >= 0x80 && p[2] <= 0xBF)
+        {
+            if (p[1] <= 0x9B)
+            {
+                lastFGIdx = ((int)(p[1] - 0x98) << 6) | (int)(p[2] - 0x80);
+            }
+            else
+            {
+                lastBGIdx = ((int)(p[1] - 0x9C) << 6) | (int)(p[2] - 0x80);
+            }
+            *q++ = *p++;
+            *q++ = *p++;
+            *q++ = *p++;
+            continue;
+        }
+
+        // v5 two-code-point pair: CP1 (F3 B0 or F3 B2) immediately followed by
+        // the matching CP2 (F3 B1 or F3 B3).
+        //
+        if (  0xF3 == p[0]
+           && (0xB0 == p[1] || 0xB2 == p[1])
+           && p[2] >= 0x80 && p[2] <= 0xBF
+           && p[3] >= 0x80 && p[3] <= 0xBF
+           && 0xF3 == p[4]
+           && p[5] == p[1] + 1
+           && p[6] >= 0x80 && p[6] <= 0xBF
+           && p[7] >= 0x80 && p[7] <= 0xBF)
+        {
+            bool bFG = (0xB0 == p[1]);
+            unsigned int cp1 = ((unsigned int)(p[2] - 0x80) << 6) | (unsigned int)(p[3] - 0x80);
+            unsigned int cp2 = ((unsigned int)(p[6] - 0x80) << 6) | (unsigned int)(p[7] - 0x80);
+            unsigned char r = (unsigned char)((((cp1 >> 8) & 0xF) << 4) | ((cp2 >> 8) & 0xF));
+            unsigned char g = (unsigned char)(cp1 & 0xFF);
+            unsigned char b = (unsigned char)(cp2 & 0xFF);
+            p += 8;
+
+            int palIdx = bFG ? lastFGIdx : lastBGIdx;
+            bool haveBase = (0 <= palIdx && palIdx < 256);
+            unsigned char br = 0, bg = 0, bb = 0;
+            if (haveBase)
+            {
+                br = (unsigned char)palette[palIdx].rgb.r;
+                bg = (unsigned char)palette[palIdx].rgb.g;
+                bb = (unsigned char)palette[palIdx].rgb.b;
+            }
+
+            // Emit a per-channel delta for each channel that differs from the
+            // palette base (all three when there is no base to diff against).
+            //
+            unsigned int chBase = bFG ? 0 : 3;
+            unsigned char vals[3]  = { r, g, b };
+            unsigned char bases[3] = { br, bg, bb };
+            for (int c = 0; c < 3; c++)
+            {
+                if (!haveBase || vals[c] != bases[c])
+                {
+                    unsigned int offset = (chBase + (unsigned int)c) * 256 + vals[c];
+                    q[0] = 0xF3;
+                    q[1] = 0xB0;
+                    q[2] = (UTF8)(0x80 | ((offset >> 6) & 0x3F));
+                    q[3] = (UTF8)(0x80 | (offset & 0x3F));
+                    q += 4;
+                }
+            }
+
+            bChanged = true;
+        }
+        else
+        {
+            *q++ = *p++;
+        }
+    }
+    *q = '\0';
+    *pnNew = (size_t)(q - pNew);
+    return bChanged;
+}
+
+// Rewrite every attribute value (and object name) between the v4 and v5 PUA
+// color forms.  fToV5 == true migrates delta -> two-code-point (used on load
+// of a <=v4 flatfile); false migrates the other way (used before writing a
+// v3/v4 flatfile).  Callers run Pass2()/Validate() afterward.
+//
+void T5X_GAME::MigrateColor(bool fToV5)
+{
+    static UTF8 aBuffer[2 * LBUF_SIZE];
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    {
+        T5X_OBJECTINFO *poi = it->second;
+
+        if (NULL != poi->m_pName)
+        {
+            size_t nNew;
+            bool ok = fToV5
+                    ? ColorV4toV5((const UTF8 *)poi->m_pName, aBuffer, sizeof(aBuffer), &nNew)
+                    : ColorV5toV4((const UTF8 *)poi->m_pName, aBuffer, sizeof(aBuffer), &nNew);
+            if (ok)
+            {
+                free(poi->m_pName);
+                poi->m_pName = StringClone((char *)aBuffer);
+            }
+        }
+
+        if (NULL != poi->m_pvai)
+        {
+            for (vector<T5X_ATTRINFO *>::iterator ita = poi->m_pvai->begin(); ita != poi->m_pvai->end(); ++ita)
+            {
+                T5X_ATTRINFO *pai = *ita;
+                const char *pv = pai->m_pValueUnencoded;
+                if (NULL == pv)
+                {
+                    continue;
+                }
+                size_t nNew;
+                bool ok = fToV5
+                        ? ColorV4toV5((const UTF8 *)pv, aBuffer, sizeof(aBuffer), &nNew)
+                        : ColorV5toV4((const UTF8 *)pv, aBuffer, sizeof(aBuffer), &nNew);
+                if (ok)
+                {
+                    pai->SetNumOwnerFlagsAndValue(pai->m_iNum, pai->m_dbOwner, pai->m_iFlags, StringClone((char *)aBuffer));
+                }
+            }
+        }
     }
 }
 

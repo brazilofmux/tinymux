@@ -23,6 +23,13 @@
 #define T5X_MANDFLAGS_V4  (T5X_V_LINK|T5X_V_PARENT|T5X_V_XFLAGS|T5X_V_ZONE|T5X_V_POWERS|T5X_V_3FLAGS|T5X_V_QUOTED|T5X_V_ATRKEY)
 #define T5X_OFLAGS_V4     (T5X_V_DATABASE|T5X_V_ATRNAME|T5X_V_ATRMONEY)
 
+// v5 differs from v4 only in the 24-bit/256 PUA color encoding (per-channel
+// deltas -> fixed two-code-point form).  The mandatory/optional flag sets are
+// unchanged, mirroring the server (MANDFLAGS_V5 == MANDFLAGS_V4).
+//
+#define T5X_MANDFLAGS_V5  T5X_MANDFLAGS_V4
+#define T5X_OFLAGS_V5     T5X_OFLAGS_V4
+
 #define A_USER_START    256     // Start of user-named attributes.
 
 // Object types
@@ -729,12 +736,16 @@ public:
     void Write(FILE *fp);
     void Extract(FILE *fp, int dbExtract) const;
 
+    bool Upgrade5();
     bool Upgrade4();
     bool Upgrade3();
     bool Upgrade2();
     bool Downgrade1();
     bool Downgrade2();
     bool Downgrade3();
+    bool Downgrade4();
+
+    void MigrateColor(bool fToV5);
 
     bool DowngradeToRhost();
 

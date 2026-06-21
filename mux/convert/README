@@ -90,18 +90,42 @@ FEATURE: Upgrades and Downgrades
 Each MUSH flavor can usually support more than one type of flatfile.
 Sometimes, the differences are minor, sometimes these differences are major.
 
-Omega can upgrade PennMUSH from 'old' to 'new' style flatfiles.
+Omega can upgrade PennMUSH from 'old' to 'new' style flatfiles (-v new /
+-v old).
 
-Omega can upgrade or downgrade between TinyMUX flatfiles from TinyMUX 2.0
-through TinyMUX 2.14.  It may also be able to accept TinyMUX 1.6, but
-flatfiles from that era were more varied in the flatfile options.  Your 1.6
-flatfile may use options which Omega doesn't expect.  It is best to run it
-through TinyMUX 2.0 first.
+Omega can upgrade or downgrade between TinyMUX flatfile versions 1 through 5
+(-v 1 .. -v 5):
 
-Omega can upgrade or downgrade between TinyMUSH flatfiles from TinyMUSH 3.0p0
-through 3.1p6.
+  v1  Latin-1, raw ANSI color           (1.x through 2.4)
+  v2  Latin-1, raw ANSI color           (2.6)
+  v3  UTF-8, PUA color, delta encoding   (2.7 through 2.13)
+  v4  UTF-8, PUA color, delta encoding
+  v5  UTF-8, PUA color, two-code-point   (2.14+)
+
+It may also be able to accept TinyMUX 1.6, but flatfiles from that era were
+more varied in the flatfile options.  Your 1.6 flatfile may use options which
+Omega doesn't expect.  It is best to run it through TinyMUX 2.0 first.
+
+Omega can upgrade or downgrade between TinyMUSH flatfiles from TinyMUSH 3.0
+through 3.2 (-v 3.0, -v 3.1p4, -v 3.1p6, -v 3.2).
 
 Only one version of RhostMUSH flatfile is supported (v7).
+
+
+FEATURE: Color encoding
+
+TinyMUX stores color inline as Unicode Private Use Area code points.  The
+24-bit/256-color portion of that scheme has two on-disk forms:
+
+  - the per-channel "delta" form used by flatfile versions 3 and 4
+    (a palette base plus one code point per channel that differs), and
+  - the fixed two-code-point form introduced with version 5 / TinyMUX 2.14
+    (a palette base plus exactly CP1 and CP2).
+
+Omega understands both.  Internally it keeps color in the v5 form; a v3/v4
+flatfile is migrated up on load and migrated back down when a v3/v4 output is
+requested.  Flatfiles without 24-bit color are unaffected and round-trip
+byte-for-byte.  See docs/survey-color-pua-encoding.md for the byte layouts.
 
 
 FEATURE: Extraction
