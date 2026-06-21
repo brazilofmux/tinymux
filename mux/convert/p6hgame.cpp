@@ -2870,20 +2870,66 @@ static bool ScanForFragment(const char *p, bool fEval, int &iFragment, size_t &n
     return false;
 }
 
+// Emit a PennMUSH "[ansi(<codes>,<text>)]" group at *pq, but only if the whole
+// group fits before qEnd; returns false (emitting nothing) on overflow so the
+// caller can flag truncation rather than overrun the buffer.
+//
+static bool FlushAnsiGroup(char **pq, const char *qEnd, const bool *aCodes, const char *temp, size_t n)
+{
+    const size_t nFrag = sizeof(fragments)/sizeof(fragments[0]);
+    size_t nCode = 0;
+    for (size_t i = 0; i < nFrag; i++)
+    {
+        if (aCodes[i])
+        {
+            nCode++;
+        }
+    }
+    size_t needed = 6 + nCode + 1 + n + 2;  // "[ansi(" + codes + "," + text + ")]"
+    char *q = *pq;
+    if (q + needed > qEnd)
+    {
+        return false;
+    }
+    memcpy(q, "[ansi(", 6);
+    q += 6;
+    for (size_t i = 0; i < nFrag; i++)
+    {
+        if (aCodes[i])
+        {
+            *q++ = fragments[i].pSubstitution[0];
+        }
+    }
+    *q++ = ',';
+    memcpy(q, temp, n);
+    q += n;
+    memcpy(q, ")]", 2);
+    q += 2;
+    *pq = q;
+    return true;
+}
+
 static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
 {
-    static char buffer[65536];
+    // Substitution and [ansi(...)] markup can expand the input, so use 2*LBUF
+    // buffers; on overflow stop and warn rather than silently dropping data
+    // (or, in the ansi() flush, overrunning the buffer).
+    //
+    static char buffer[2*LBUF_SIZE];
+    static char temp[2*LBUF_SIZE];
     char *q = buffer;
+    char *bufEnd = buffer + sizeof(buffer) - 1;
+    char *tmpEnd = temp + sizeof(temp) - 1;
     char *p = pValue;
     bool fEval = false;
+    bool fTruncated = false;
 
     bool aCodes[sizeof(fragments)/sizeof(fragments[0])];
     bool fInColor = false;
-    char temp[65536];
-    char *qsave;
+    char *qsave = buffer;
 
     while (  '\0' != *p
-          && q < ((fInColor)?(temp + sizeof(temp) - 1):(buffer + sizeof(buffer) - 1)))
+          && q < (fInColor ? tmpEnd : bufEnd))
     {
         int iFragment;
         size_t nSkip;
@@ -2908,22 +2954,10 @@ static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
                         {
                             size_t n = q - temp;
                             q = qsave;
-                            if (0 < n)
+                            if (  0 < n
+                               && !FlushAnsiGroup(&q, bufEnd, aCodes, temp, n))
                             {
-                                memcpy(q, "[ansi(", 6);
-                                q += 6;
-                                for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
-                                {
-                                    if (aCodes[i])
-                                    {
-                                        *q++ = fragments[i].pSubstitution[0];
-                                    }
-                                }
-                                *q++ = ',';
-                                memcpy(q, temp, n);
-                                q += n;
-                                memcpy(q, ")]", 2);
-                                q += 2;
+                                fTruncated = true;
                             }
                             fInColor = false;
                         }
@@ -2935,7 +2969,7 @@ static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
                             qsave = q;
                             q = temp;
                             fInColor = true;
-                            for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
+                            for (size_t i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
                             {
                                 aCodes[i] = false;
                             }
@@ -2946,10 +2980,14 @@ static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
                 else
                 {
                     size_t ncpy = fragments[iFragment].nSubstitution;
-                    if (q + ncpy < ((fInColor)?(temp + sizeof(temp) - 1):(buffer + sizeof(buffer) - 1)))
+                    if (q + ncpy < (fInColor ? tmpEnd : bufEnd))
                     {
                         memcpy(q, fragments[iFragment].pSubstitution, ncpy);
                         q += ncpy;
+                    }
+                    else
+                    {
+                        fTruncated = true;
                     }
                 }
                 p += nskp;
@@ -2957,10 +2995,14 @@ static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
         }
         else
         {
-            if (q + nSkip < ((fInColor)?(temp + sizeof(temp) - 1):(buffer + sizeof(buffer) - 1)))
+            if (q + nSkip < (fInColor ? tmpEnd : bufEnd))
             {
                 memcpy(q, p, nSkip);
                 q += nSkip;
+            }
+            else
+            {
+                fTruncated = true;
             }
             p += nSkip;
         }
@@ -2970,67 +3012,67 @@ static char *EncodeSubstitutions(char *pValue, bool &fNeedEval)
     {
         size_t n = q - temp;
         q = qsave;
-        if (0 < n)
+        if (  0 < n
+           && !FlushAnsiGroup(&q, bufEnd, aCodes, temp, n))
         {
-            memcpy(q, "[ansi(", 6);
-            q += 6;
-            for (int i = 0; i < sizeof(fragments)/sizeof(fragments[0]); i++)
-            {
-                if (aCodes[i])
-                {
-                    *q++ = fragments[i].pSubstitution[0];
-                }
-            }
-            *q++ = ',';
-            memcpy(q, temp, n);
-            q += n;
-            memcpy(q, ")]", 2);
-            q += 2;
+            fTruncated = true;
         }
         fInColor = false;
     }
     *q = '\0';
+    if (  fTruncated
+       || '\0' != *p)
+    {
+        fprintf(stderr, "WARNING: attribute value truncated during extraction (exceeds %u bytes).\n",
+                (unsigned int)(sizeof(buffer) - 1));
+    }
     fNeedEval = fEval;
     return buffer;
 }
 
 static char *StripColor(char *pValue)
 {
-    static char buffer[65536];
+    static char buffer[2*LBUF_SIZE];
     char *q = buffer;
+    char *qEnd = buffer + sizeof(buffer) - 1;
     char *p = pValue;
     bool fEval = false;
 
-    while (  '\0' != *p
-          && q < buffer + sizeof(buffer) - 1)
+    while ('\0' != *p)
     {
         int iFragment;
         size_t nSkip;
         if (ScanForFragment(p, fEval, iFragment, nSkip))
         {
-            size_t nskp = fragments[iFragment].nFragment;
             if (fragments[iFragment].fColor)
             {
                 size_t ncpy = fragments[iFragment].nSubstitution;
-                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                if (q + ncpy > qEnd)
                 {
-                    memcpy(q, fragments[iFragment].pSubstitution, ncpy);
-                    q += ncpy;
+                    break;
                 }
+                memcpy(q, fragments[iFragment].pSubstitution, ncpy);
+                q += ncpy;
             }
-            p += nskp;
+            p += fragments[iFragment].nFragment;
         }
         else
         {
-            if (q + nSkip < buffer + sizeof(buffer) - 1)
+            if (q + nSkip > qEnd)
             {
-                memcpy(q, p, nSkip);
-                q += nSkip;
+                break;
             }
+            memcpy(q, p, nSkip);
+            q += nSkip;
             p += nSkip;
         }
     }
     *q = '\0';
+    if ('\0' != *p)
+    {
+        fprintf(stderr, "WARNING: attribute value truncated during extraction (exceeds %u bytes).\n",
+                (unsigned int)(sizeof(buffer) - 1));
+    }
     return buffer;
 }
 

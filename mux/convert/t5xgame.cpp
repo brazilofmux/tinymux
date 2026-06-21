@@ -7611,13 +7611,17 @@ static bool ScanForFragment(const char *p, bool fUnicode, bool fEval, int &iFrag
 
 static char *EncodeSubstitutions(bool fUnicode, char *pValue, bool &fNeedEval)
 {
-    static char buffer[65536];
+    // Substitution can expand the input up to ~2x (e.g. '%' -> "\%"), so a
+    // 2*LBUF buffer holds any lexer-capped (<=LBUF) value.  On overflow, stop
+    // at a clean boundary and warn rather than silently dropping data.
+    //
+    static char buffer[2*LBUF_SIZE];
     char *q = buffer;
+    char *qEnd = buffer + sizeof(buffer) - 1;
     char *p = pValue;
     bool fEval = false;
 
-    while (  '\0' != *p
-          && q < buffer + sizeof(buffer) - 1)
+    while ('\0' != *p)
     {
         int iFragment;
         size_t nSkip;
@@ -7629,71 +7633,81 @@ static char *EncodeSubstitutions(bool fUnicode, char *pValue, bool &fNeedEval)
                 fEval = true;
                 p = pValue;
                 q = buffer;
+                continue;
             }
-            else
+            size_t ncpy = fragments[iFragment].nSubstitution;
+            if (q + ncpy > qEnd)
             {
-                size_t ncpy = fragments[iFragment].nSubstitution;
-                size_t nskp = fragments[iFragment].nFragment;
-                if (q + ncpy < buffer + sizeof(buffer) - 1)
-                {
-                    memcpy(q, fragments[iFragment].pSubstitution, ncpy);
-                    q += ncpy;
-                }
-                p += nskp;
+                break;
             }
+            memcpy(q, fragments[iFragment].pSubstitution, ncpy);
+            q += ncpy;
+            p += fragments[iFragment].nFragment;
         }
         else
         {
-            if (q + nSkip < buffer + sizeof(buffer) - 1)
+            if (q + nSkip > qEnd)
             {
-                memcpy(q, p, nSkip);
-                q += nSkip;
+                break;
             }
+            memcpy(q, p, nSkip);
+            q += nSkip;
             p += nSkip;
         }
     }
     *q = '\0';
+    if ('\0' != *p)
+    {
+        fprintf(stderr, "WARNING: attribute value truncated during extraction (exceeds %u bytes).\n",
+                (unsigned int)(sizeof(buffer) - 1));
+    }
     fNeedEval = fEval;
     return buffer;
 }
 
 static char *StripColor(bool fUnicode, char *pValue)
 {
-    static char buffer[65536];
+    static char buffer[2*LBUF_SIZE];
     char *q = buffer;
+    char *qEnd = buffer + sizeof(buffer) - 1;
     char *p = pValue;
     bool fEval = false;
 
-    while (  '\0' != *p
-          && q < buffer + sizeof(buffer) - 1)
+    while ('\0' != *p)
     {
         int iFragment;
         size_t nSkip;
         if (ScanForFragment(p, fUnicode, fEval, iFragment, nSkip))
         {
-            size_t nskp = fragments[iFragment].nFragment;
             if (fragments[iFragment].fColor)
             {
                 size_t ncpy = fragments[iFragment].nSubstitution;
-                if (q + ncpy < buffer + sizeof(buffer) - 1)
+                if (q + ncpy > qEnd)
                 {
-                    memcpy(q, fragments[iFragment].pSubstitution, ncpy);
-                    q += ncpy;
+                    break;
                 }
+                memcpy(q, fragments[iFragment].pSubstitution, ncpy);
+                q += ncpy;
             }
-            p += nskp;
+            p += fragments[iFragment].nFragment;
         }
         else
         {
-            if (q + nSkip < buffer + sizeof(buffer) - 1)
+            if (q + nSkip > qEnd)
             {
-                memcpy(q, p, nSkip);
-                q += nSkip;
+                break;
             }
+            memcpy(q, p, nSkip);
+            q += nSkip;
             p += nSkip;
         }
     }
     *q = '\0';
+    if ('\0' != *p)
+    {
+        fprintf(stderr, "WARNING: attribute value truncated during extraction (exceeds %u bytes).\n",
+                (unsigned int)(sizeof(buffer) - 1));
+    }
     return buffer;
 }
 
