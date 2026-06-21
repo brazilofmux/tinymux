@@ -17,6 +17,13 @@ What it builds:
     fixtures/t5x-v5-color.flat  - the same, with a known 24-bit FG and BG color
                                   injected into the first attribute value, in
                                   the v5 two-code-point PUA form.
+    fixtures/p6h-new.flat       - the base converted to PennMUSH (new style).
+    fixtures/t6h-3.1.flat       - the base converted to TinyMUSH (3.1).
+    fixtures/r7h-v7.flat        - the base converted to RhostMUSH (v7).
+
+The family fixtures are produced by omega's own cross-conversion (we have no
+captured real-server flatfiles for the other codebases); they still exercise
+each family's parser and writer for round-trip regressions.
 
 The injected colors are chosen over palette base index 0 (black) so every
 channel differs from the base; that exercises all four v5 SMP blocks and, after
@@ -72,6 +79,16 @@ def main():
     omega("-v", "5", seed, base)
     inject_color(base, color)
 
+    # Family fixtures, produced by cross-conversion from the v5 base.
+    #
+    families = [
+        ("pennmush",  "p6h-new.flat"),
+        ("tinymush",  "t6h-3.1.flat"),
+        ("rhostmush", "r7h-v7.flat"),
+    ]
+    for fam, fname in families:
+        omega("-o", fam, base, os.path.join(FIXTURES, fname))
+
     # Sanity: the color fixture must parse and round-trip v5->v5 unchanged.
     rt = color + ".rt"
     omega(color, rt)
@@ -80,8 +97,10 @@ def main():
         sys.exit("color fixture failed v5->v5 round-trip")
     os.remove(rt)
 
-    print("wrote %s (%d bytes)" % (base, os.path.getsize(base)))
-    print("wrote %s (%d bytes)" % (color, os.path.getsize(color)))
+    for f in sorted(os.listdir(FIXTURES)):
+        p = os.path.join(FIXTURES, f)
+        if os.path.isfile(p):
+            print("wrote %s (%d bytes)" % (p, os.path.getsize(p)))
 
 
 if __name__ == "__main__":

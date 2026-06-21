@@ -54,6 +54,18 @@ verOf() {
     [ -n "$n" ] && echo $((n % 256))
 }
 
+# detect(file): print omega's "Detected input:" label for file.
+detect() { "$omega" "$1" /dev/null 2>&1 | sed -n 's/^Detected input: //p'; }
+
+# wantDetect(desc, file, substring): assert the detected label contains substring.
+wantDetect() {
+    d=$(detect "$2")
+    case $d in
+        *"$3"*) ok "$1" ;;
+        *)      nok "$1 (detected '$d', wanted '$3')" ;;
+    esac
+}
+
 echo "# 1. idempotent round-trip"
 for f in "$fix"/*.flat; do
     name=$(basename "$f")
@@ -83,7 +95,35 @@ for v in 1 2 3 4 5; do
     else nok "-v $v wrote version ${got:-?}"; fi
 done
 
-echo "# 4. cross-family conversions run cleanly"
+echo "# 4. auto-detection identifies each fixture's family/version"
+wantDetect "detect t5x-v5.flat as TinyMUX v5"        "$fix/t5x-v5.flat"       "TinyMUX v5"
+wantDetect "detect t5x-v5-color.flat as TinyMUX v5"  "$fix/t5x-v5-color.flat" "TinyMUX v5"
+wantDetect "detect p6h-new.flat as PennMUSH"         "$fix/p6h-new.flat"      "PennMUSH"
+wantDetect "detect t6h-3.1.flat as TinyMUSH"         "$fix/t6h-3.1.flat"      "TinyMUSH"
+wantDetect "detect r7h-v7.flat as RhostMUSH"         "$fix/r7h-v7.flat"       "RhostMUSH"
+
+echo "# 5. TinyMUSH version ladder"
+# 3.0 / 3.1 / 3.2 are distinguished by header feature flags.
+for spec in "3.0=TinyMUSH 3.0" "3.1p4=3.1p0 to 3.1p4" "3.2=3.2 or later"; do
+    id=${spec%%=*}; want=${spec#*=}
+    "$omega" -o tinymush -v "$id" "$fix/t5x-v5.flat" "$tmp/t6" >/dev/null 2>&1
+    wantDetect "t6h -v $id produces '$want'" "$tmp/t6" "$want"
+done
+# 3.1p4 vs 3.1p6 differ only by the extra-escape style of attribute content, so
+# on escape-free data the two outputs are identical (and re-detect the same).
+"$omega" -o tinymush -v 3.1p4 "$fix/t5x-v5.flat" "$tmp/t6a" >/dev/null 2>&1
+"$omega" -o tinymush -v 3.1p6 "$fix/t5x-v5.flat" "$tmp/t6b" >/dev/null 2>&1
+same "t6h 3.1p4 and 3.1p6 coincide on escape-free data" "$tmp/t6a" "$tmp/t6b"
+
+echo "# 6. PennMUSH new->old downgrade is rejected (known limitation)"
+if "$omega" -o pennmush -v old "$fix/p6h-new.flat" "$tmp/p" >/dev/null 2>&1; then
+    nok "p6h -v old should be rejected"
+else
+    ok "p6h -v old rejected cleanly (no crash)"
+fi
+
+echo "# 7. cross-family conversions run cleanly (both directions)"
+# TinyMUX -> every family.
 for from in t5x-v5.flat t5x-v5-color.flat; do
     for to in pennmush tinymush rhostmush tinymux; do
         if [ "$(conv_ok "$tmp/cf" -o "$to" "$fix/$from")" = ok ]; then
@@ -93,8 +133,16 @@ for from in t5x-v5.flat t5x-v5-color.flat; do
         fi
     done
 done
+# Every family -> TinyMUX.
+for from in p6h-new.flat t6h-3.1.flat r7h-v7.flat; do
+    if [ "$(conv_ok "$tmp/cf" -o tinymux "$fix/$from")" = ok ]; then
+        ok "$from -> tinymux"
+    else
+        nok "$from -> tinymux (nonzero exit or empty output)"
+    fi
+done
 
-echo "# 5. --list runs"
+echo "# 8. --list runs"
 if "$omega" --list >/dev/null 2>&1; then ok "omega --list"; else nok "omega --list"; fi
 
 echo "# ---"

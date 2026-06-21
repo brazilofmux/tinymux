@@ -7,42 +7,59 @@ Run it:
 
     ./run.sh
 
-run.sh builds ../omega if needed and exercises three classes of behavior
+run.sh builds ../omega if needed and exercises several classes of behavior
 against the committed fixtures, printing TAP-style results and exiting non-zero
 on any failure:
 
   1. Idempotent round-trip   - reading and rewriting a flatfile at the same
-                               version reproduces it byte-for-byte.
+                               version reproduces it byte-for-byte (all
+                               fixtures, every family).
   2. Color form fidelity     - 24-bit color survives migration across the
                                v5 <-> v4 <-> v3 boundary (the two-code-point
                                <-> per-channel-delta PUA encodings).
-  3. Cross-family conversion - every supported conversion path
-                               (TinyMUX -> PennMUSH/TinyMUSH/RhostMUSH and
-                               back) runs cleanly with non-empty output.
-  Plus version-ladder and --list smoke checks.
+  3. Version ladder          - TinyMUX -v 1..5 write the requested version;
+                               the TinyMUSH 3.0/3.1/3.2 ladder re-detects
+                               correctly (and 3.1p4 vs 3.1p6 coincide on
+                               escape-free data, which the suite documents).
+  4. Auto-detection          - each fixture is recognized as the right family.
+  5. Cross-family conversion - TinyMUX -> every family and every family ->
+                               TinyMUX run cleanly with non-empty output;
+                               PennMUSH new->old is rejected without crashing.
+  Plus an --list smoke check.
 
 Fixtures (in fixtures/):
 
-  t5x-v5.flat        A TinyMUX v5 flatfile with no 24-bit color; the clean base.
+  t5x-v5.flat        A TinyMUX v5 flatfile with no 24-bit color; the clean base,
+                     normalized from the tracked seed database.
   t5x-v5-color.flat  The same with a known 24-bit foreground RGB(200,135,100)
                      and background RGB(20,60,90) injected into the first
                      attribute, in the v5 two-code-point PUA form.  The colors
                      sit over palette base index 0 so every channel differs
                      from the base, exercising all four v5 SMP blocks and, after
                      a downgrade, all six v4 per-channel delta codes.
+  p6h-new.flat       The base cross-converted to PennMUSH (new style).
+  t6h-3.1.flat       The base cross-converted to TinyMUSH (3.1).
+  r7h-v7.flat        The base cross-converted to RhostMUSH (v7).
+
+  The family fixtures are produced by omega's own cross-conversion (there are no
+  captured real-server flatfiles for the other codebases); they still exercise
+  each family's parser/writer for round-trip and detection regressions.
 
 Regenerating fixtures:
 
     ./gen-fixtures.py [SEED_FLATFILE]
 
-reproduces both fixtures from a TinyMUX seed database (default:
+reproduces all fixtures from a TinyMUX seed database (default:
 ../../game/data/netmux.db).  The fixtures are committed so run.sh needs no seed.
 
 Extending the pool (starting points):
 
-  - Add fixtures for the other families (p6h/t6h/r7h) and assert their own
-    same-version round-trips.
+  - Assert semantic content after cross-family conversion, not just clean exit
+    (e.g. confirm a 24-bit color lands correctly in Rhost softcode).
+  - Add a color-stress fixture (a deliberately color-dense attribute near
+    LBUF) to probe the buffer-headroom assumptions in RestrictToColor16 /
+    ConvertColorToANSI / EncodeSubstitutions.
   - Add finer versions as they gain converter support (PennMUSH sub-versions,
     TinyMUSH 3.1 point releases) -- each becomes a fixture plus a round-trip
     assertion.
-  - Assert semantic content after cross-family conversion, not just clean exit.
+  - Capture real-server flatfiles (not omega-generated) for each family.
