@@ -17,6 +17,9 @@ What it builds:
     fixtures/t5x-v5-color.flat  - the same, with a known 24-bit FG and BG color
                                   injected into the first attribute value, in
                                   the v5 two-code-point PUA form.
+    fixtures/t5x-v5-stress.flat - the base with a large, maximally color-dense
+                                  attribute (used by run-asan.sh to probe the
+                                  color buffer bounds).
     fixtures/p6h-new.flat       - the base converted to PennMUSH (new style).
     fixtures/t6h-3.1.flat       - the base converted to TinyMUSH (3.1).
     fixtures/r7h-v7.flat        - the base converted to RhostMUSH (v7).
@@ -45,23 +48,42 @@ FIXTURES = os.path.join(HERE, "fixtures")
 FG_COLOR = bytes([0xEF, 0x98, 0x80, 0xF3, 0xB0, 0xB2, 0x87, 0xF3, 0xB1, 0xA1, 0xA4])
 BG_COLOR = bytes([0xEF, 0x9C, 0x80, 0xF3, 0xB2, 0x84, 0xBC, 0xF3, 0xB3, 0x91, 0x9A])
 
+# A maximally color-dense attribute value: every visible character is preceded
+# by a full 16-color state flip (toggle intense, change FG and BG).  16-color
+# codes survive RestrictToColor16 and expand through ConvertColorToANSI, so this
+# drives the downgrade/restrict color buffers near their worst-case expansion --
+# the input that the ASan harness (run-asan.sh) uses to probe buffer bounds.
+RESET = bytes([0xEF, 0x94, 0x80])
+INTENSE = bytes([0xEF, 0x94, 0x81])
+def _fg(i): return bytes([0xEF, 0x98, 0x80 | i])   # U+F600 + i
+def _bg(i): return bytes([0xEF, 0x9C, 0x80 | i])   # U+F700 + i
+
+
+def stress_value(target):
+    unit_a = INTENSE + _fg(1) + _bg(4) + b'X'
+    unit_b = RESET + _fg(2) + _bg(1) + b'Y'
+    out = bytearray()
+    while len(out) < target - len(unit_a) - len(unit_b):
+        out += unit_a
+        out += unit_b
+    return bytes(out)
+
 
 def omega(*args):
     subprocess.run([OMEGA, *args], check=True,
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def inject_color(src, dst):
+def inject(src, dst, blob):
     data = open(src, "rb").read()
-    # Insert color bytes just inside the first attribute value's opening quote
-    # (lines of the form  >NUM\n"value"  ).  PUA bytes are valid UTF-8 and are
-    # not quote/backslash/control, so they survive the writer's escaping.
+    # Insert bytes just inside the first attribute value's opening quote (lines
+    # of the form  >NUM\n"value"  ).  PUA bytes are valid UTF-8 and are not
+    # quote/backslash/control, so they survive the writer's escaping.
     m = re.search(rb'>\d+\n"', data)
     if not m:
         sys.exit("no attribute value found in %s" % src)
     pos = m.end()
-    out = data[:pos] + FG_COLOR + BG_COLOR + data[pos:]
-    open(dst, "wb").write(out)
+    open(dst, "wb").write(data[:pos] + blob + data[pos:])
 
 
 def main():
@@ -77,7 +99,8 @@ def main():
     color = os.path.join(FIXTURES, "t5x-v5-color.flat")
 
     omega("-v", "5", seed, base)
-    inject_color(base, color)
+    inject(base, color, FG_COLOR + BG_COLOR)
+    inject(base, os.path.join(FIXTURES, "t5x-v5-stress.flat"), stress_value(64000))
 
     # Family fixtures, produced by cross-conversion from the v5 base.
     #

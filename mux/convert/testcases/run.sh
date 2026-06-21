@@ -109,11 +109,11 @@ for spec in "3.0=TinyMUSH 3.0" "3.1p4=3.1p0 to 3.1p4" "3.2=3.2 or later"; do
     "$omega" -o tinymush -v "$id" "$fix/t5x-v5.flat" "$tmp/t6" >/dev/null 2>&1
     wantDetect "t6h -v $id produces '$want'" "$tmp/t6" "$want"
 done
-# 3.1p4 vs 3.1p6 differ only by the extra-escape style of attribute content, so
-# on escape-free data the two outputs are identical (and re-detect the same).
-"$omega" -o tinymush -v 3.1p4 "$fix/t5x-v5.flat" "$tmp/t6a" >/dev/null 2>&1
+# 3.1p4 vs 3.1p6 differ only by the extra-escape style of attribute content; on
+# escape-free data 3.1p6 re-detects as the 3.1p4 bucket.  (A byte compare would
+# be flaky -- the TinyMUSH writer embeds wall-clock timestamps.)
 "$omega" -o tinymush -v 3.1p6 "$fix/t5x-v5.flat" "$tmp/t6b" >/dev/null 2>&1
-same "t6h 3.1p4 and 3.1p6 coincide on escape-free data" "$tmp/t6a" "$tmp/t6b"
+wantDetect "t6h -v 3.1p6 coincides with 3.1p4 on escape-free data" "$tmp/t6b" "3.1p0 to 3.1p4"
 
 echo "# 6. PennMUSH new->old downgrade is rejected (known limitation)"
 if "$omega" -o pennmush -v old "$fix/p6h-new.flat" "$tmp/p" >/dev/null 2>&1; then

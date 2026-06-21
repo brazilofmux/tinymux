@@ -27,6 +27,16 @@ on any failure:
                                PennMUSH new->old is rejected without crashing.
   Plus an --list smoke check.
 
+run-asan.sh is a separate memory-safety harness.  It builds omega with
+AddressSanitizer (as ../omega.asan, leaving the normal ../omega in place) and
+runs every conversion direction, the version migrations, extraction, and a
+color-dense stress input, failing on any ASan report.  This is what surfaced
+the allocator-mismatch (malloc vs delete) and stack-use-after-scope bugs in the
+PennMUSH/TinyMUSH/RhostMUSH conversion paths.  Run it after touching any
+conversion or color code:
+
+    ./run-asan.sh
+
 Fixtures (in fixtures/):
 
   t5x-v5.flat        A TinyMUX v5 flatfile with no 24-bit color; the clean base,
@@ -37,6 +47,10 @@ Fixtures (in fixtures/):
                      sit over palette base index 0 so every channel differs
                      from the base, exercising all four v5 SMP blocks and, after
                      a downgrade, all six v4 per-channel delta codes.
+  t5x-v5-stress.flat The base with a large, maximally color-dense attribute
+                     (every visible char preceded by a full 16-color state
+                     flip).  Drives the restrict/ANSI/softcode color buffers
+                     near their worst-case expansion; used by run-asan.sh.
   p6h-new.flat       The base cross-converted to PennMUSH (new style).
   t6h-3.1.flat       The base cross-converted to TinyMUSH (3.1).
   r7h-v7.flat        The base cross-converted to RhostMUSH (v7).
@@ -56,9 +70,6 @@ Extending the pool (starting points):
 
   - Assert semantic content after cross-family conversion, not just clean exit
     (e.g. confirm a 24-bit color lands correctly in Rhost softcode).
-  - Add a color-stress fixture (a deliberately color-dense attribute near
-    LBUF) to probe the buffer-headroom assumptions in RestrictToColor16 /
-    ConvertColorToANSI / EncodeSubstitutions.
   - Add finer versions as they gain converter support (PennMUSH sub-versions,
     TinyMUSH 3.1 point releases) -- each becomes a fixture plus a round-trip
     assertion.

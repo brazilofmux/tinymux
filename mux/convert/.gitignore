@@ -14,3 +14,4 @@ lex.*.cpp
 # Object files and binary
 *.o
 omega
+omega.asan
