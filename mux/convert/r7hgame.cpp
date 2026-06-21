@@ -2038,15 +2038,16 @@ void R7H_GAME::ConvertFromP6H()
         }
     }
 
-    // Release memory that we allocated.
+    // Release memory that we allocated.  These keys came from StringClone()
+    // (malloc), so free() them -- delete would be an allocator mismatch.
     //
     for (map<const char *, int, ltstr>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
     {
-        delete it->first;
+        free(const_cast<char *>(it->first));
     }
     for (map<const char *, int, ltstr>::iterator it = AttrNamesKnown.begin(); it != AttrNamesKnown.end(); ++it)
     {
-        delete it->first;
+        free(const_cast<char *>(it->first));
     }
 
     SetSizeHint(dbRefMax+1);
@@ -2699,15 +2700,17 @@ void R7H_GAME::ConvertFromT5X()
                         (*itAttr)->m_dbOwner, iAttrFlags,
                         (*itAttr)->m_pValueUnencoded);
 
-                    // Handle password attribute.
+                    // Handle password attribute.  EncodeAttrValue() may return
+                    // its input pointer unchanged, so passbuf must outlive the
+                    // StringClone() below -- keep it in this scope, not the if.
                     //
+                    char passbuf[200];
                     if (T5X_A_PASS == (*itAttr)->m_iNum)
                     {
-                        char buffer[200];
-                        sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValueUnencoded);
+                        sprintf(passbuf, "$P6H$$%s", (*itAttr)->m_pValueUnencoded);
                         pEncodedAttrValue = EncodeAttrValue(
                             it->second->m_fOwner ? it->second->m_dbOwner : -1,
-                            (*itAttr)->m_dbOwner, iAttrFlags, buffer);
+                            (*itAttr)->m_dbOwner, iAttrFlags, passbuf);
                     }
 
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;

@@ -2761,7 +2761,10 @@ void P6H_GAME::ConvertFromT5X()
     //
     for (map<int, const char *, lti>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
     {
-        delete it->second;
+        // These were allocated with StringClone() (malloc), so free() them --
+        // not delete, which would be an allocator mismatch.
+        //
+        free(const_cast<char *>(it->second));
     }
 }
 

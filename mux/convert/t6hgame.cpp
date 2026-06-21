@@ -2178,15 +2178,16 @@ void T6H_GAME::ConvertFromP6H()
         }
     }
 
-    // Release memory that we allocated.
+    // Release memory that we allocated.  These keys came from StringClone()
+    // (malloc), so free() them -- delete would be an allocator mismatch.
     //
     for (map<const char *, int, ltstr>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
     {
-        delete it->first;
+        free(const_cast<char *>(it->first));
     }
     for (map<const char *, int, ltstr>::iterator it = AttrNamesKnown.begin(); it != AttrNamesKnown.end(); ++it)
     {
-        delete it->first;
+        free(const_cast<char *>(it->first));
     }
 
     SetSizeHint(dbRefMax+1);

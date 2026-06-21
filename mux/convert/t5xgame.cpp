@@ -2273,15 +2273,16 @@ void T5X_GAME::ConvertFromP6H()
         }
     }
 
-    // Release memory that we allocated.
+    // Release memory that we allocated.  These keys came from StringClone()
+    // (malloc), so free() them -- delete would be an allocator mismatch.
     //
     for (map<const char *, int, ltstr>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
     {
-        delete it->first;
+        free(const_cast<char *>(it->first));
     }
     for (map<const char *, int, ltstr>::iterator it = AttrNamesKnown.begin(); it != AttrNamesKnown.end(); ++it)
     {
-        delete it->first;
+        free(const_cast<char *>(it->first));
     }
 
     SetSizeHint(dbRefMax+1);
@@ -5334,8 +5335,11 @@ UTF8 *ConvertColorToANSI(const UTF8 *pString)
 {
     static UTF8 aBuffer[2*LBUF_SIZE];
     UTF8 *pBuffer = aBuffer;
+    // Reserve headroom for the most one iteration appends: an ANSI escape
+    // (<= 11 bytes for an xterm-256 sequence) or a 4-byte UTF-8 character.
+    //
     while (  '\0' != *pString
-          && pBuffer < aBuffer + sizeof(aBuffer) - sizeof(ANSI_NORMAL) - 1)
+          && pBuffer < aBuffer + sizeof(aBuffer) - 16)
     {
         unsigned int iCode = mux_color(pString);
         if (COLOR_NOTCOLOR == iCode)
@@ -7334,8 +7338,12 @@ const UTF8 *RestrictToColor16(const UTF8 *pString)
     ColorState csPrev = CS_NORMAL;
     ColorState csNext = CS_NORMAL;
     UTF8 *pBuffer = aBuffer;
+    // Reserve headroom for the most one iteration appends: a full color
+    // transition plus a 4-byte UTF-8 character.  (The trailing reset emitted
+    // after the loop is shorter than this, so it fits too.)
+    //
     while (  '\0' != *pString
-          && pBuffer < aBuffer + sizeof(aBuffer) - sizeof(COLOR_RESET) - 1)
+          && pBuffer < aBuffer + sizeof(aBuffer) - COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH - 4 - 1)
     {
         unsigned int iCode = mux_color(pString);
         if (COLOR_NOTCOLOR == iCode)
