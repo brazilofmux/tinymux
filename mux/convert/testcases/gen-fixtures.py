@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Regenerate the Omega converter test fixtures.
+
+Fixtures live in ./fixtures and are committed so the test driver (run.sh) is
+hermetic.  This script reproduces them from the tracked TinyMUX seed database
+so they can be refreshed deterministically.
+
+Usage:
+    ./gen-fixtures.py [SEED_FLATFILE]
+
+SEED_FLATFILE defaults to ../../game/data/netmux.db (a tracked v3 flatfile).
+The built ../omega binary is required.
+
+What it builds:
+    fixtures/t5x-v5.flat        - the seed normalized to TinyMUX v5 (no 24-bit
+                                  color); the canonical clean base.
+    fixtures/t5x-v5-color.flat  - the same, with a known 24-bit FG and BG color
+                                  injected into the first attribute value, in
+                                  the v5 two-code-point PUA form.
+
+The injected colors are chosen over palette base index 0 (black) so every
+channel differs from the base; that exercises all four v5 SMP blocks and, after
+a downgrade, all six v4 per-channel delta codes.
+"""
+
+import os
+import re
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OMEGA = os.path.join(HERE, "..", "omega")
+FIXTURES = os.path.join(HERE, "fixtures")
+
+# Known v5 (two-code-point) PUA sequences, base index 0:
+#   FG RGB(200,135,100): base EF 98 80 ; CP1 F3 B0 B2 87 ; CP2 F3 B1 A1 A4
+#   BG RGB( 20, 60, 90): base EF 9C 80 ; CP1 F3 B2 84 BC ; CP2 F3 B3 91 9A
+FG_COLOR = bytes([0xEF, 0x98, 0x80, 0xF3, 0xB0, 0xB2, 0x87, 0xF3, 0xB1, 0xA1, 0xA4])
+BG_COLOR = bytes([0xEF, 0x9C, 0x80, 0xF3, 0xB2, 0x84, 0xBC, 0xF3, 0xB3, 0x91, 0x9A])
+
+
+def omega(*args):
+    subprocess.run([OMEGA, *args], check=True,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def inject_color(src, dst):
+    data = open(src, "rb").read()
+    # Insert color bytes just inside the first attribute value's opening quote
+    # (lines of the form  >NUM\n"value"  ).  PUA bytes are valid UTF-8 and are
+    # not quote/backslash/control, so they survive the writer's escaping.
+    m = re.search(rb'>\d+\n"', data)
+    if not m:
+        sys.exit("no attribute value found in %s" % src)
+    pos = m.end()
+    out = data[:pos] + FG_COLOR + BG_COLOR + data[pos:]
+    open(dst, "wb").write(out)
+
+
+def main():
+    seed = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
+        HERE, "..", "..", "game", "data", "netmux.db")
+    if not os.path.isfile(OMEGA):
+        sys.exit("omega not built; run 'make' in %s" % os.path.join(HERE, ".."))
+    if not os.path.isfile(seed):
+        sys.exit("seed flatfile not found: %s" % seed)
+
+    os.makedirs(FIXTURES, exist_ok=True)
+    base = os.path.join(FIXTURES, "t5x-v5.flat")
+    color = os.path.join(FIXTURES, "t5x-v5-color.flat")
+
+    omega("-v", "5", seed, base)
+    inject_color(base, color)
+
+    # Sanity: the color fixture must parse and round-trip v5->v5 unchanged.
+    rt = color + ".rt"
+    omega(color, rt)
+    if open(color, "rb").read() != open(rt, "rb").read():
+        os.remove(rt)
+        sys.exit("color fixture failed v5->v5 round-trip")
+    os.remove(rt)
+
+    print("wrote %s (%d bytes)" % (base, os.path.getsize(base)))
+    print("wrote %s (%d bytes)" % (color, os.path.getsize(color)))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,48 @@
+Omega converter test pool
+=========================
+
+A small, hermetic regression suite for the Omega flatfile converter.
+
+Run it:
+
+    ./run.sh
+
+run.sh builds ../omega if needed and exercises three classes of behavior
+against the committed fixtures, printing TAP-style results and exiting non-zero
+on any failure:
+
+  1. Idempotent round-trip   - reading and rewriting a flatfile at the same
+                               version reproduces it byte-for-byte.
+  2. Color form fidelity     - 24-bit color survives migration across the
+                               v5 <-> v4 <-> v3 boundary (the two-code-point
+                               <-> per-channel-delta PUA encodings).
+  3. Cross-family conversion - every supported conversion path
+                               (TinyMUX -> PennMUSH/TinyMUSH/RhostMUSH and
+                               back) runs cleanly with non-empty output.
+  Plus version-ladder and --list smoke checks.
+
+Fixtures (in fixtures/):
+
+  t5x-v5.flat        A TinyMUX v5 flatfile with no 24-bit color; the clean base.
+  t5x-v5-color.flat  The same with a known 24-bit foreground RGB(200,135,100)
+                     and background RGB(20,60,90) injected into the first
+                     attribute, in the v5 two-code-point PUA form.  The colors
+                     sit over palette base index 0 so every channel differs
+                     from the base, exercising all four v5 SMP blocks and, after
+                     a downgrade, all six v4 per-channel delta codes.
+
+Regenerating fixtures:
+
+    ./gen-fixtures.py [SEED_FLATFILE]
+
+reproduces both fixtures from a TinyMUX seed database (default:
+../../game/data/netmux.db).  The fixtures are committed so run.sh needs no seed.
+
+Extending the pool (starting points):
+
+  - Add fixtures for the other families (p6h/t6h/r7h) and assert their own
+    same-version round-trips.
+  - Add finer versions as they gain converter support (PennMUSH sub-versions,
+    TinyMUSH 3.1 point releases) -- each becomes a fixture plus a round-trip
+    assertion.
+  - Assert semantic content after cross-family conversion, not just clean exit.
