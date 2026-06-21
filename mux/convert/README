@@ -1,8 +1,37 @@
 Omega: README
-Last Update: July 2010
+Last Update: June 2026
 
 This is intended to be the 'last' flatfile convertor with the ability to
 recognize and manipulate flatfiles for all four MUSH codebases.
+
+
+COMMAND LINE
+
+  omega <options> <infile> [<outfile>]
+
+  -i <type>      Input file type (p6h, r7h, t5x, t6h).  Optional; the input
+                 type is auto-detected from the flatfile header when omitted.
+  -o <type>      Output file type.  Defaults to the input type, or to the
+                 family named by a namespaced -v (see below).
+  -v <ver>       Output version.  Accepts a canonical id, an alias, or one of
+                 the generic keywords latest / oldest / same.  May be
+                 namespaced with a family prefix, e.g. 't5x:3' or 'mux:latest'.
+                 With no -v, the version is left unchanged ('same').
+  -c <charset>   Input charset (latin1, cp437, Windows1252).
+  -d <charset>   Output charset.
+  -1             Reset #1's password to 'potrzebie'.
+  -x <dbref>     Extract <dbref> in @decomp format.
+  -l, --list     List every supported family and version, then exit.
+
+  The type names accept both the short tag and the long name: p6h/pennmush,
+  t5x/tinymux/mux, t6h/tinymush/mush, r7h/rhostmush/rhost.
+
+  Both the detected input version and the produced output version are reported
+  on stderr, so it is always clear what was read and what was written.
+
+  Supported versions are described by a per-family registry rather than opaque
+  'legacy/legacyalt' tokens; run 'omega --list' to see the current set.  Adding
+  a version is a matter of adding a row to that table.
 
 
 FEATURE: Validation (Level 1)

@@ -82,12 +82,14 @@ void Usage()
     fprintf(stderr, "Supported options:\n");
     fprintf(stderr, "  -i <type>      Input file type (p6h, r7h, t5x, t6h)\n");
     fprintf(stderr, "  -o <type>      Output file type (p6h, r7h, t5x, t6h)\n");
-    fprintf(stderr, "  -v <ver>       Output version\n");
+    fprintf(stderr, "  -v <ver>       Output version (id, alias, or latest/oldest/same;\n");
+    fprintf(stderr, "                 optionally namespaced, e.g. t5x:3 or mux:latest)\n");
     fprintf(stderr, "  -c <charset>   Input charset\n");
     fprintf(stderr, "  -d <charset>   Output charset\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  -1             Reset #1 password to 'potrzebie'\n");
     fprintf(stderr, "  -x <dbref>     Extract <dbref> in @decomp format\n");
+    fprintf(stderr, "  -l, --list     List supported flatfile versions and exit\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "If no <outfile> is given, output is directed to standard out.\n");
 }
@@ -104,20 +106,376 @@ typedef enum
 
 typedef enum
 {
-    eSame,
-    eLatest,
-    eLegacyOne,
-    eLegacyTwo,
-    eLegacyThree,
-} ServerVersion;
-
-typedef enum
-{
     eLatin1,
     eWindows1252,
     eCodePage437,
     eCharsetUnknown,
 } Charset;
+
+// --------------------------------------------------------------------------
+// Version registry.
+//
+// Each server family advertises an ordered list of flatfile versions it can
+// produce.  A version is selected on the command line with '-v <id>', where
+// <id> is one of:
+//
+//   latest / oldest / same     generic keywords
+//   <token>                    a canonical id or alias from the tables below
+//   <prefix>:<token>           namespaced form, e.g. 't5x:3' or 'mux:latest'
+//
+// The 'key' is a family-specific handle consumed by DetectKey()/MigrateOutput().
+//
+typedef struct
+{
+    const char *pId;        // canonical id (the part after the optional colon)
+    const char *pAliases;   // space-separated alternates, or ""
+    const char *pLabel;     // human-readable description
+    int         key;        // family-specific version key
+} VersionInfo;
+
+typedef struct
+{
+    ServerType         server;
+    const char        *pPrefix;     // canonical namespace, e.g. "t5x"
+    const char        *pAltPrefix;  // space-separated friendly namespaces
+    const VersionInfo *pVersions;
+    int                nVersions;
+    int                iOldest;     // index into pVersions of the oldest
+    int                iLatest;     // index into pVersions of the newest
+} ServerRegistry;
+
+#define ARRAY_LEN(a) ((int)(sizeof(a)/sizeof((a)[0])))
+
+static const VersionInfo g_p6hVersions[] =
+{
+    { "old", "legacy", "PennMUSH old-style flatfile (1.7.5p0-1.7.7p40)",      0 },
+    { "new", "",       "PennMUSH new-style labelled flatfile (1.7.7p40+)",    1 },
+};
+
+static const VersionInfo g_t5xVersions[] =
+{
+    { "1", "1.6 2.0 2.4", "TinyMUX v1 - Latin-1, raw ANSI color (1.x-2.4)",   1 },
+    { "2", "2.6",         "TinyMUX v2 - Latin-1, raw ANSI color (2.6)",       2 },
+    { "3", "2.7 2.13",    "TinyMUX v3 - UTF-8, PUA color (2.7-2.13)",         3 },
+    { "4", "",            "TinyMUX v4 - UTF-8, PUA color v1 encoding",        4 },
+};
+
+static const VersionInfo g_t6hVersions[] =
+{
+    { "3.0",   "",          "TinyMUSH 3.0",            0 },
+    { "3.1p4", "3.1 3.1p0", "TinyMUSH 3.1p0 to 3.1p4", 1 },
+    { "3.1p6", "3.1p5",     "TinyMUSH 3.1p5 or 3.1p6", 2 },
+    { "3.2",   "",          "TinyMUSH 3.2 or later",   3 },
+};
+
+static const VersionInfo g_r7hVersions[] =
+{
+    { "7", "", "RhostMUSH v7", 7 },
+};
+
+static const ServerRegistry g_registries[] =
+{
+    { ePennMUSH,  "p6h", "pennmush",      g_p6hVersions, ARRAY_LEN(g_p6hVersions), 0, 1 },
+    { eTinyMUX,   "t5x", "tinymux mux",   g_t5xVersions, ARRAY_LEN(g_t5xVersions), 0, 3 },
+    { eTinyMUSH,  "t6h", "tinymush mush", g_t6hVersions, ARRAY_LEN(g_t6hVersions), 0, 3 },
+    { eRhostMUSH, "r7h", "rhostmush rhost", g_r7hVersions, ARRAY_LEN(g_r7hVersions), 0, 0 },
+};
+#define NUM_REGISTRIES ARRAY_LEN(g_registries)
+
+static const ServerRegistry *RegistryFor(ServerType t)
+{
+    for (int i = 0; i < NUM_REGISTRIES; i++)
+    {
+        if (g_registries[i].server == t)
+        {
+            return &g_registries[i];
+        }
+    }
+    return NULL;
+}
+
+// Case-insensitive test for whether pTok appears in a space-separated list.
+//
+static bool TokenInList(const char *pList, const char *pTok)
+{
+    size_t n = strlen(pTok);
+    const char *p = pList;
+    while ('\0' != *p)
+    {
+        while (' ' == *p)
+        {
+            p++;
+        }
+        const char *q = p;
+        while ('\0' != *q && ' ' != *q)
+        {
+            q++;
+        }
+        if (  (size_t)(q - p) == n
+           && 0 == strncasecmp(p, pTok, n))
+        {
+            return true;
+        }
+        p = q;
+    }
+    return false;
+}
+
+// Map a server-type prefix ("t5x", "tinymux", "mux", ...) to a ServerType.
+//
+static ServerType PrefixToServer(const char *pPrefix)
+{
+    for (int i = 0; i < NUM_REGISTRIES; i++)
+    {
+        if (  0 == strcasecmp(pPrefix, g_registries[i].pPrefix)
+           || TokenInList(g_registries[i].pAltPrefix, pPrefix))
+        {
+            return g_registries[i].server;
+        }
+    }
+    return eServerUnknown;
+}
+
+// Return the live version key of the currently loaded/produced object.
+//
+static int DetectKey(ServerType t)
+{
+    switch (t)
+    {
+    case ePennMUSH:
+        return g_p6hgame.HasLabels() ? 1 : 0;
+
+    case eTinyMUX:
+        return (g_t5xgame.m_flags & T5X_V_MASK);
+
+    case eTinyMUSH:
+        {
+            const int Mask31p0 = T6H_V_TIMESTAMPS | T6H_V_VISUALATTRS;
+            const int Mask32   = Mask31p0 | T6H_V_CREATETIME;
+            if ((g_t6hgame.m_flags & Mask32) == Mask32)
+            {
+                return 3;
+            }
+            else if ((g_t6hgame.m_flags & Mask31p0) == Mask31p0)
+            {
+                return g_t6hgame.m_fExtraEscapes ? 2 : 1;
+            }
+            return 0;
+        }
+
+    case eRhostMUSH:
+        return 7;
+
+    default:
+        return -1;
+    }
+}
+
+// Human-readable label for a (server, key) pair.
+//
+static const char *DescribeVersion(ServerType t, int key)
+{
+    const ServerRegistry *pReg = RegistryFor(t);
+    if (NULL != pReg)
+    {
+        for (int i = 0; i < pReg->nVersions; i++)
+        {
+            if (pReg->pVersions[i].key == key)
+            {
+                return pReg->pVersions[i].pLabel;
+            }
+        }
+    }
+
+    // A version the converter does not (yet) model -- name the family and the
+    // raw key so the gap is obvious rather than silent.
+    //
+    static char aBuffer[64];
+    snprintf(aBuffer, sizeof(aBuffer), "%s (unsupported flatfile version %d)",
+             NULL != pReg ? pReg->pPrefix : "unknown", key);
+    return aBuffer;
+}
+
+// Resolve a -v argument against the output family.  On success returns true
+// and sets *pKey (the target version key) and *pSame (true for 'same').
+//
+static bool ResolveVersion(ServerType t, const char *pArg, int *pKey, bool *pSame)
+{
+    *pSame = false;
+    *pKey  = -1;
+
+    const ServerRegistry *pReg = RegistryFor(t);
+    if (NULL == pReg)
+    {
+        fprintf(stderr, "No version table for the requested output type.\n");
+        return false;
+    }
+
+    // Strip an optional '<prefix>:' namespace and verify it names this family.
+    //
+    const char *pId = pArg;
+    const char *pColon = strchr(pArg, ':');
+    if (NULL != pColon)
+    {
+        char prefix[32];
+        size_t n = (size_t)(pColon - pArg);
+        if (n >= sizeof(prefix))
+        {
+            n = sizeof(prefix) - 1;
+        }
+        memcpy(prefix, pArg, n);
+        prefix[n] = '\0';
+        if (PrefixToServer(prefix) != t)
+        {
+            fprintf(stderr, "Version namespace '%s' does not match the output type (%s).\n",
+                    prefix, pReg->pPrefix);
+            return false;
+        }
+        pId = pColon + 1;
+    }
+
+    if (0 == strcasecmp(pId, "same"))
+    {
+        *pSame = true;
+        return true;
+    }
+    if (0 == strcasecmp(pId, "latest"))
+    {
+        *pKey = pReg->pVersions[pReg->iLatest].key;
+        return true;
+    }
+    if (0 == strcasecmp(pId, "oldest"))
+    {
+        *pKey = pReg->pVersions[pReg->iOldest].key;
+        return true;
+    }
+    for (int i = 0; i < pReg->nVersions; i++)
+    {
+        if (  0 == strcasecmp(pId, pReg->pVersions[i].pId)
+           || TokenInList(pReg->pVersions[i].pAliases, pId))
+        {
+            *pKey = pReg->pVersions[i].key;
+            return true;
+        }
+    }
+    fprintf(stderr, "Output version '%s' not recognized for %s.\n", pId, pReg->pPrefix);
+    fprintf(stderr, "Run 'omega --list' to see supported versions.\n");
+    return false;
+}
+
+// Print the full table of supported families and versions.
+//
+static void ListVersions()
+{
+    fprintf(stderr, "Version: %s\n", OMEGA_VERSION);
+    fprintf(stderr, "Supported flatfile versions (select with -v <id> or -v <prefix>:<id>):\n");
+    for (int i = 0; i < NUM_REGISTRIES; i++)
+    {
+        const ServerRegistry *pReg = &g_registries[i];
+        fprintf(stderr, "\n  %s (also: %s):\n", pReg->pPrefix, pReg->pAltPrefix);
+        for (int j = 0; j < pReg->nVersions; j++)
+        {
+            const VersionInfo *pV = &pReg->pVersions[j];
+            const char *pTag = "";
+            if (j == pReg->iLatest && j == pReg->iOldest)
+            {
+                pTag = "  [latest,oldest]";
+            }
+            else if (j == pReg->iLatest)
+            {
+                pTag = "  [latest]";
+            }
+            else if (j == pReg->iOldest)
+            {
+                pTag = "  [oldest]";
+            }
+            fprintf(stderr, "    %-7s %s%s\n", pV->pId, pV->pLabel, pTag);
+            if ('\0' != pV->pAliases[0])
+            {
+                fprintf(stderr, "            aliases: %s\n", pV->pAliases);
+            }
+        }
+    }
+    fprintf(stderr, "\nGeneric ids: latest, oldest, same.\n");
+}
+
+// Apply upgrades/downgrades so the output object reaches targetKey.
+//
+static bool MigrateOutput(ServerType t, int targetKey)
+{
+    switch (t)
+    {
+    case ePennMUSH:
+        {
+            bool fLabels = g_p6hgame.HasLabels();
+            if (1 == targetKey)
+            {
+                // new-style
+                //
+                if (!fLabels)
+                {
+                    g_p6hgame.Upgrade();
+                    g_p6hgame.Validate();
+                }
+            }
+            else
+            {
+                // old-style
+                //
+                if (fLabels)
+                {
+                    fprintf(stderr, "Downgrading from PennMUSH new-style to old-style is not currently supported.\n");
+                    return false;
+                }
+            }
+        }
+        break;
+
+    case eTinyMUX:
+        {
+            int ver = (g_t5xgame.m_flags & T5X_V_MASK);
+            if (targetKey != ver)
+            {
+                if (targetKey > ver)
+                {
+                    if      (4 == targetKey) g_t5xgame.Upgrade4();
+                    else if (3 == targetKey) g_t5xgame.Upgrade3();
+                    else if (2 == targetKey) g_t5xgame.Upgrade2();
+                }
+                else
+                {
+                    if      (3 == targetKey) g_t5xgame.Downgrade3();
+                    else if (2 == targetKey) g_t5xgame.Downgrade2();
+                    else if (1 == targetKey) g_t5xgame.Downgrade1();
+                }
+                g_t5xgame.Pass2();
+                g_t5xgame.Validate();
+            }
+        }
+        break;
+
+    case eTinyMUSH:
+        switch (targetKey)
+        {
+        case 3: g_t6hgame.Upgrade32();  break;
+        case 2: g_t6hgame.Upgrade31b(); break;
+        case 1: g_t6hgame.Upgrade31a(); break;
+        case 0: g_t6hgame.Downgrade();  break;
+        }
+        g_t6hgame.Pass2();
+        g_t6hgame.Validate();
+        break;
+
+    case eRhostMUSH:
+        // Single known version; nothing to do.
+        //
+        break;
+
+    default:
+        break;
+    }
+    return true;
+}
 
 int main(int argc, char *argv[])
 {
@@ -129,12 +487,29 @@ int main(int argc, char *argv[])
     int  dbExtract;
     ServerType eInputType = eAuto;
     ServerType eOutputType = eServerUnknown;
-    ServerVersion eOutputVersion = eSame;
+    char *pVersionArg = NULL;
     Charset eInputCharset = eCharsetUnknown;
     Charset eOutputCharset = eCharsetUnknown;
 
+    // Handle long options that getopt() does not parse for us.
+    //
+    for (int i = 1; i < argc; i++)
+    {
+        if (0 == strcmp(argv[i], "--list"))
+        {
+            ListVersions();
+            return 0;
+        }
+        if (  0 == strcmp(argv[i], "--help")
+           || 0 == strcmp(argv[i], "-h"))
+        {
+            Usage();
+            return 0;
+        }
+    }
+
     int ch;
-    while ((ch = getopt(argc, argv, "1i:o:v:c:d:x:")) != -1)
+    while ((ch = getopt(argc, argv, "1i:o:v:c:d:x:l")) != -1)
     {
         switch (ch)
         {
@@ -142,28 +517,13 @@ int main(int argc, char *argv[])
             fResetPassword = true;
             break;
 
+        case 'l':
+            ListVersions();
+            return 0;
+
         case 'i':
-            if (  strcasecmp(optarg, "p6h") == 0
-               || strcasecmp(optarg, "pennmush") == 0)
-            {
-                eInputType = ePennMUSH;
-            }
-            else if (  strcasecmp(optarg, "t5x") == 0
-                    || strcasecmp(optarg, "tinymux") == 0)
-            {
-                eInputType = eTinyMUX;
-            }
-            else if (  strcasecmp(optarg, "r7h") == 0
-                    || strcasecmp(optarg, "rhostmush") == 0)
-            {
-                eInputType = eRhostMUSH;
-            }
-            else if (  strcasecmp(optarg, "t6h") == 0
-                    || strcasecmp(optarg, "tinymush") == 0)
-            {
-                eInputType = eTinyMUSH;
-            }
-            else
+            eInputType = PrefixToServer(optarg);
+            if (eServerUnknown == eInputType)
             {
                 fprintf(stderr, "Input type not recognized.  Expected pennmush (p6h), tinymux (t5x), rhostmush (r7h), or tinymush (t6h).\n");
                 Usage();
@@ -172,27 +532,8 @@ int main(int argc, char *argv[])
             break;
 
         case 'o':
-            if (  strcasecmp(optarg, "p6h") == 0
-               || strcasecmp(optarg, "pennmush") == 0)
-            {
-                eOutputType = ePennMUSH;
-            }
-            else if (  strcasecmp(optarg, "t5x") == 0
-                    || strcasecmp(optarg, "tinymux") == 0)
-            {
-                eOutputType = eTinyMUX;
-            }
-            else if (  strcasecmp(optarg, "r7h") == 0
-                    || strcasecmp(optarg, "rhostmush") == 0)
-            {
-                eOutputType = eRhostMUSH;
-            }
-            else if (  strcasecmp(optarg, "t6h") == 0
-                    || strcasecmp(optarg, "tinymush") == 0)
-            {
-                eOutputType = eTinyMUSH;
-            }
-            else
+            eOutputType = PrefixToServer(optarg);
+            if (eServerUnknown == eOutputType)
             {
                 fprintf(stderr, "Output type not recognized.  Expected pennmush (p6h), tinymux (t5x), rhostmush (r7h), or tinymush (t6h).\n");
                 Usage();
@@ -201,55 +542,9 @@ int main(int argc, char *argv[])
             break;
 
         case 'v':
-            if (strcasecmp(optarg, "latest") == 0)
-            {
-                eOutputVersion = eLatest;
-            }
-            else if (strcasecmp(optarg, "legacy") == 0)
-            {
-                eOutputVersion = eLegacyOne;
-            }
-            else if (strcasecmp(optarg, "legacyalt") == 0)
-            {
-                eOutputVersion = eLegacyTwo;
-            }
-            else if (strcasecmp(optarg, "legacyaltalt") == 0)
-            {
-                eOutputVersion = eLegacyThree;
-            }
-            else
-            {
-                fprintf(stderr, "Output version not recognized.\n");
-                if (  eServerUnknown == eOutputType
-                   || ePennMUSH == eOutputType)
-                {
-                    fprintf(stderr, "PennMUSH 'latest' is everything since 1.7.7p40.\n");
-                    fprintf(stderr, "PennMUSH 'legacy' is everything between 1.7.5p0 and 1.7.7p40.\n");
-                }
-                if (  eServerUnknown == eOutputType
-                   || eTinyMUX == eOutputType)
-                {
-                    fprintf(stderr, "TinyMUX 'latest' is version 4 (produced since 2.10).\n");
-                    fprintf(stderr, "TinyMUX 'legacy' is version 3 (produced since 2.7).\n");
-                    fprintf(stderr, "TinyMUX 'legacyalt' is version 2 (produced by 2.6).\n");
-                    fprintf(stderr, "TinyMUX 'legacyaltalt' is version 1 (produced by 1.x through 2.4).\n");
-                }
-                if (  eServerUnknown == eOutputType
-                   || eRhostMUSH == eOutputType)
-                {
-                    fprintf(stderr, "RhostMUSH 'latest' is the only known version.\n");
-                }
-                if (  eServerUnknown == eOutputType
-                   || eTinyMUSH == eOutputType)
-                {
-                    fprintf(stderr, "TinyMUSH 'latest' is produced by 3.2.\n");
-                    fprintf(stderr, "TinyMUSH 'legacy' is produced by 3.1p5 or 3.1p6.\n");
-                    fprintf(stderr, "TinyMUSH 'legacyalt' is produced by 3.1p0 to 3.1p4.\n");
-                    fprintf(stderr, "TinyMUSH 'legacyaltalt' is produced by 3.0.\n");
-                }
-                Usage();
-                return 1;
-            }
+            // Resolution is deferred until the output type is known.
+            //
+            pVersionArg = optarg;
             break;
 
          case 'c':
@@ -389,29 +684,42 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Determine the output type.  An explicit -o wins; otherwise a namespaced
+    // -v (e.g. 'mux:latest') implies it; otherwise it mirrors the input.
+    //
     if (eServerUnknown == eOutputType)
     {
-        eOutputType = eInputType;
+        ServerType inferred = eServerUnknown;
+        if (NULL != pVersionArg)
+        {
+            const char *pColon = strchr(pVersionArg, ':');
+            if (NULL != pColon)
+            {
+                char prefix[32];
+                size_t n = (size_t)(pColon - pVersionArg);
+                if (n >= sizeof(prefix))
+                {
+                    n = sizeof(prefix) - 1;
+                }
+                memcpy(prefix, pVersionArg, n);
+                prefix[n] = '\0';
+                inferred = PrefixToServer(prefix);
+            }
+        }
+        eOutputType = (eServerUnknown != inferred) ? inferred : eInputType;
     }
 
-    if (  ePennMUSH == eOutputType
-       && (  eOutputVersion == eLegacyTwo
-          || eOutputVersion == eLegacyOne))
+    // Resolve the requested output version against the output family.  With no
+    // -v, the version is left unchanged ('same').
+    //
+    int  targetKey = -1;
+    bool fSameVersion = true;
+    if (NULL != pVersionArg)
     {
-        fprintf(stderr, "PennMUSH has only one legacy flatfile formats:\n");
-        fprintf(stderr, "PennMUSH 'latest' is everything since 1.7.7p40.\n");
-        fprintf(stderr, "PennMUSH 'legacy' is everything between 1.7.5p0 and 1.7.7p40.\n");
-        Usage();
-        return 1;
-    }
-
-    if (  eRhostMUSH == eOutputType
-       && eOutputVersion != eLatest
-       && eOutputVersion != eSame)
-    {
-        fprintf(stderr, "There is only one known RhostMUSH flatfile version.\n");
-        Usage();
-        return 1;
+        if (!ResolveVersion(eOutputType, pVersionArg, &targetKey, &fSameVersion))
+        {
+            return 1;
+        }
     }
 
     if (  (  eTinyMUX == eInputType
@@ -464,6 +772,8 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Requested input type is not currently supported.\n");
         return 1;
     }
+
+    fprintf(stderr, "Detected input: %s\n", DescribeVersion(eInputType, DetectKey(eInputType)));
 
     // Conversions
     //
@@ -625,196 +935,17 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Upgrades and downgrades.
+    // Apply the requested output version (skipped when 'same').
     //
-    if (ePennMUSH == eOutputType)
+    if (!fSameVersion)
     {
-        bool fLabels = g_p6hgame.HasLabels();
-        if (fLabels)
+        if (!MigrateOutput(eOutputType, targetKey))
         {
-            switch (eOutputVersion)
-            {
-            case eSame:
-            case eLatest:
-                break;
-
-            case eLegacyOne:
-                fprintf(stderr, "Downgrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
-                return 1;
-                break;
-
-            case eLegacyTwo:
-                fprintf(stderr, "Downgrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
-                return 1;
-                break;
-            }
-        }
-        else
-        {
-            switch (eOutputVersion)
-            {
-            case eLatest:
-                g_p6hgame.Upgrade();
-                g_p6hgame.Validate();
-                break;
-
-            case eSame:
-            case eLegacyOne:
-                break;
-
-            case eLegacyTwo:
-                fprintf(stderr, "Downgrading from PennMUSH latest to PennMUSH legacy is not not currently supported.\n");
-                return 1;
-                break;
-            }
+            return 1;
         }
     }
-    else if (eTinyMUX == eOutputType)
-    {
-        int ver = (g_t5xgame.m_flags & T5X_V_MASK);
-        switch (ver)
-        {
-        case 4:
-            switch (eOutputVersion)
-            {
-            case eLatest:
-            case eSame:
-                break;
 
-            case eLegacyOne:
-                g_t5xgame.Downgrade3();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eLegacyTwo:
-                g_t5xgame.Downgrade2();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eLegacyThree:
-                g_t5xgame.Downgrade1();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-            }
-            break;
-
-        case 3:
-            switch (eOutputVersion)
-            {
-            case eLatest:
-                g_t5xgame.Upgrade4();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eSame:
-            case eLegacyOne:
-                break;
-
-            case eLegacyTwo:
-                g_t5xgame.Downgrade2();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eLegacyThree:
-                g_t5xgame.Downgrade1();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-            }
-            break;
-
-        case 2:
-            switch (eOutputVersion)
-            {
-            case eLatest:
-                g_t5xgame.Upgrade4();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eLegacyOne:
-                g_t5xgame.Upgrade3();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eSame:
-            case eLegacyTwo:
-                break;
-
-            case eLegacyThree:
-                g_t5xgame.Downgrade1();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-            }
-            break;
-
-        case 1:
-            switch (eOutputVersion)
-            {
-            case eLatest:
-                g_t5xgame.Upgrade4();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eLegacyOne:
-                g_t5xgame.Upgrade3();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eLegacyTwo:
-                g_t5xgame.Upgrade2();
-                g_t5xgame.Pass2();
-                g_t5xgame.Validate();
-                break;
-
-            case eSame:
-            case eLegacyThree:
-                break;
-            }
-            break;
-        }
-    }
-    else if (eTinyMUSH == eOutputType)
-    {
-        switch (eOutputVersion)
-        {
-        case eSame:
-            break;
-
-        case eLatest:
-            g_t6hgame.Upgrade32();
-            g_t6hgame.Pass2();
-            g_t6hgame.Validate();
-            break;
-
-        case eLegacyOne:
-            g_t6hgame.Upgrade31b();
-            g_t6hgame.Pass2();
-            g_t6hgame.Validate();
-            break;
-
-        case eLegacyTwo:
-            g_t6hgame.Upgrade31a();
-            g_t6hgame.Pass2();
-            g_t6hgame.Validate();
-            break;
-
-        case eLegacyThree:
-            g_t6hgame.Downgrade();
-            g_t6hgame.Pass2();
-            g_t6hgame.Validate();
-            break;
-        }
-    }
+    fprintf(stderr, "Producing output: %s\n", DescribeVersion(eOutputType, DetectKey(eOutputType)));
 
     // Optionally reset password.
     //
