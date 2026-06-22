@@ -58,6 +58,8 @@ Fixtures (in fixtures/):
   p6h-new.flat       The base cross-converted to PennMUSH (new style).
   t6h-3.1.flat       The base cross-converted to TinyMUSH (3.1).
   r7h-v7.flat        The base cross-converted to RhostMUSH (v7).
+  r7h-color.flat     A RhostMUSH flatfile with 24-bit color (%c<#..>) in a user
+                     attribute, for the rhost->t5x color-import round-trip.
 
   The family fixtures are produced by omega's own cross-conversion (there are no
   captured real-server flatfiles for the other codebases); they still exercise

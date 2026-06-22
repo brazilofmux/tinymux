@@ -3302,9 +3302,15 @@ int convert_r7h_power2(int f2)
     return g;
 }
 
+static const UTF8 *ConvertColorFromRhostSoftcode(const char *pString);
+
 void T5X_GAME::ConvertFromR7H()
 {
-    SetFlags(T5X_MANDFLAGS_V2 | 2);
+    // v3: UTF-8 text with PUA color (RhostMUSH's in-band %c color is decoded to
+    // PUA below).  v3's mandatory flags add V_ATRKEY (lock-as-attribute); the
+    // default locks are moved to A_LOCK at the end of this function.
+    //
+    SetFlags(T5X_MANDFLAGS_V3 | 3);
 
     // Attribute names
     //
@@ -3340,7 +3346,7 @@ void T5X_GAME::ConvertFromR7H()
         T5X_OBJECTINFO *poi = new T5X_OBJECTINFO;
 
         poi->SetRef(it->first);
-        poi->SetName(StringClone(it->second->m_pName));
+        poi->SetName(StringClone((char *)ConvertColorFromRhostSoftcode(it->second->m_pName)));
         if (it->second->m_fLocation)
         {
             int iLocation = it->second->m_dbLocation;
@@ -3362,9 +3368,16 @@ void T5X_GAME::ConvertFromR7H()
         {
             poi->SetExits(it->second->m_dbExits);
         }
+        // V_LINK is mandatory: every object must carry a link field; write
+        // NOTHING (-1) when the source had none, or the reader desyncs.
+        //
         if (it->second->m_fLink)
         {
             poi->SetLink(it->second->m_dbLink);
+        }
+        else
+        {
+            poi->SetLink(T5X_NOTHING);
         }
         if (it->second->m_fNext)
         {
@@ -3378,9 +3391,15 @@ void T5X_GAME::ConvertFromR7H()
         {
             poi->SetOwner(it->second->m_dbOwner);
         }
+        // V_ZONE is mandatory: write NOTHING (-1) when the source had no zone.
+        //
         if (it->second->m_fZone)
         {
             poi->SetZone(it->second->m_dbZone);
+        }
+        else
+        {
+            poi->SetZone(T5X_NOTHING);
         }
         if (it->second->m_fPennies)
         {
@@ -3434,7 +3453,7 @@ void T5X_GAME::ConvertFromR7H()
                    && convert_r7h_attr_num((*itAttr)->m_iNum, &iNum))
                 {
                     T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                    pai->SetNumOwnerFlagsAndValue(iNum, (*itAttr)->m_dbOwner, convert_r7h_attr_flags((*itAttr)->m_iFlags), StringClone((*itAttr)->m_pValueUnencoded));
+                    pai->SetNumOwnerFlagsAndValue(iNum, (*itAttr)->m_dbOwner, convert_r7h_attr_flags((*itAttr)->m_iFlags), StringClone((char *)ConvertColorFromRhostSoftcode((*itAttr)->m_pValueUnencoded)));
                     pvai->push_back(pai);
                 }
             }
@@ -3466,6 +3485,18 @@ void T5X_GAME::ConvertFromR7H()
             dbRefMax = it->first;
         }
     }
+
+    // We produce a v3 flatfile (UTF-8, PUA color -- see the color conversion
+    // above), so the default lock lives in the A_LOCK attribute, not the object
+    // header.  Move it there (this is the v3 structural change; the Latin-1 ->
+    // UTF-8 step that Upgrade3() also does is unwanted here because the values
+    // are already UTF-8).
+    //
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    {
+        it->second->UpgradeDefaultLock();
+    }
+
     SetSizeHint(dbRefMax+1);
     if (g_r7hgame.m_fRecordPlayers)
     {
@@ -7123,6 +7154,197 @@ const UTF8 *ConvertColorToRhostSoftcode(const UTF8 *pString)
         pBuffer += 3;
     }
     *pBuffer = '\0';
+    return aBuffer;
+}
+
+// Nearest xterm-256 palette index for an RGB.  Used as the indexed base that
+// precedes a 24-bit PUA color so 256-color clients still get a fallback.
+//
+static int FindNearestPalette256Entry(RGB &rgb)
+{
+    LABi labi;
+    rgb2lab(&rgb, &labi);
+
+    INT64 d;
+    int j = -1;
+    NearestIndex_tree_L(PALETTE256_ROOT, labi, j, d);
+    return j;
+}
+
+// Map a RhostMUSH basic-color letter (either case) to a palette index 0-7, or
+// -1 if it is not a color letter.
+//
+static int RhostColorLetter(char ch)
+{
+    switch (ch)
+    {
+    case 'x': case 'X': return 0;
+    case 'r': case 'R': return 1;
+    case 'g': case 'G': return 2;
+    case 'y': case 'Y': return 3;
+    case 'b': case 'B': return 4;
+    case 'm': case 'M': return 5;
+    case 'c': case 'C': return 6;
+    case 'w': case 'W': return 7;
+    }
+    return -1;
+}
+
+static int RhostHexVal(char ch)
+{
+    if ('0' <= ch && ch <= '9') return ch - '0';
+    if ('a' <= ch && ch <= 'f') return ch - 'a' + 10;
+    if ('A' <= ch && ch <= 'F') return ch - 'A' + 10;
+    return 0;
+}
+
+static int RhostHex2(const char *p)
+{
+    return (RhostHexVal(p[0]) << 4) | RhostHexVal(p[1]);
+}
+
+// --------------------------------------------------------------------------
+// ConvertColorFromRhostSoftcode: inverse of ConvertColorToRhostSoftcode.
+//
+// RhostMUSH stores color in attribute text as in-band percent-codes:
+//   %cn reset, %ch hilite, %cu underline, %cf flash, %ci inverse;
+//   %c<letter> FG / %c<UPPER-letter> BG basic (x r g y b m c w);
+//   %c0xHH FG / %c0XHH BG xterm-256;
+//   %c<#RRGGBB> or %c<R G B> FG and %C<#RRGGBB> or %C<R G B> BG 24-bit.
+// Translate those to TinyMUX inline PUA color (matching what mux_color/
+// UpdateColorState decode); pass every other byte through unchanged.
+//
+static const UTF8 *ConvertColorFromRhostSoftcode(const char *pString)
+{
+    static UTF8 aBuffer[2*LBUF_SIZE];
+    UTF8 *q = aBuffer;
+    UTF8 *qEnd = aBuffer + sizeof(aBuffer) - 16;    // room for one color sequence
+    const char *p = pString;
+
+    while (  '\0' != *p
+          && q < qEnd)
+    {
+        if (  '%' != p[0]
+           || ('c' != p[1] && 'C' != p[1]))
+        {
+            *q++ = (UTF8)*p++;
+            continue;
+        }
+
+        bool fUpperPrefix = ('C' == p[1]);
+        const char *spec = p + 2;
+
+        // 24-bit: %c<#RRGGBB> / %c<R G B> (FG); %C<...> (BG).
+        //
+        if ('<' == spec[0])
+        {
+            const char *s = spec + 1;
+            int r = -1, g = -1, b = -1;
+            const char *pClose = NULL;
+            if (  '#' == s[0]
+               && isxdigit((unsigned char)s[1]) && isxdigit((unsigned char)s[2])
+               && isxdigit((unsigned char)s[3]) && isxdigit((unsigned char)s[4])
+               && isxdigit((unsigned char)s[5]) && isxdigit((unsigned char)s[6])
+               && '>' == s[7])
+            {
+                r = RhostHex2(s + 1);
+                g = RhostHex2(s + 3);
+                b = RhostHex2(s + 5);
+                pClose = s + 8;
+            }
+            else
+            {
+                char *endp;
+                long lr = strtol(s, &endp, 10);
+                if (endp != s && ' ' == *endp)
+                {
+                    long lg = strtol(endp, &endp, 10);
+                    if (' ' == *endp)
+                    {
+                        long lb = strtol(endp, &endp, 10);
+                        if (  '>' == *endp
+                           && 0 <= lr && lr <= 255
+                           && 0 <= lg && lg <= 255
+                           && 0 <= lb && lb <= 255)
+                        {
+                            r = (int)lr; g = (int)lg; b = (int)lb;
+                            pClose = endp + 1;
+                        }
+                    }
+                }
+            }
+            if (NULL != pClose)
+            {
+                RGB rgb;
+                rgb.r = r; rgb.g = g; rgb.b = b;
+                int base = FindNearestPalette256Entry(rgb);
+                unsigned int cidx = (fUpperPrefix ? COLOR_INDEX_BG : COLOR_INDEX_FG) + base;
+                unsigned int blk  = fUpperPrefix ? 2 : 0;
+                unsigned int cp1 = (((unsigned int)r >> 4) << 8) | (unsigned int)g;
+                unsigned int cp2 = (((unsigned int)r & 0xF) << 8) | (unsigned int)b;
+                memcpy(q, aColors[cidx].pUTF, aColors[cidx].nUTF);
+                q += aColors[cidx].nUTF;
+                q[0] = 0xF3; q[1] = (UTF8)(0xB0 + blk);     q[2] = (UTF8)(0x80 | ((cp1 >> 6) & 0x3F)); q[3] = (UTF8)(0x80 | (cp1 & 0x3F)); q += 4;
+                q[0] = 0xF3; q[1] = (UTF8)(0xB0 + blk + 1); q[2] = (UTF8)(0x80 | ((cp2 >> 6) & 0x3F)); q[3] = (UTF8)(0x80 | (cp2 & 0x3F)); q += 4;
+                p = pClose;
+                continue;
+            }
+            *q++ = (UTF8)*p++;      // malformed -- pass through
+            continue;
+        }
+
+        // xterm-256: %c0xHH (FG) / %c0XHH (BG).
+        //
+        int code = -1;
+        const char *pNext = NULL;
+        if (  '0' == spec[0]
+           && ('x' == spec[1] || 'X' == spec[1])
+           && isxdigit((unsigned char)spec[2])
+           && isxdigit((unsigned char)spec[3]))
+        {
+            bool fBG = ('X' == spec[1]);
+            unsigned int idx = (unsigned int)RhostHex2(spec + 2);
+            code = (int)((fBG ? COLOR_INDEX_BG : COLOR_INDEX_FG) + idx);
+            pNext = spec + 4;
+        }
+        else
+        {
+            switch (spec[0])
+            {
+            case 'n': code = COLOR_INDEX_RESET;     break;
+            case 'h': code = COLOR_INDEX_INTENSE;   break;
+            case 'u': code = COLOR_INDEX_UNDERLINE; break;
+            case 'f': code = COLOR_INDEX_BLINK;     break;
+            case 'i': code = COLOR_INDEX_INVERSE;   break;
+            default:
+                {
+                    int idx = RhostColorLetter(spec[0]);
+                    if (0 <= idx)
+                    {
+                        bool fBG = (0 != isupper((unsigned char)spec[0]));
+                        code = (int)((fBG ? COLOR_INDEX_BG : COLOR_INDEX_FG) + idx);
+                    }
+                }
+                break;
+            }
+            if (0 <= code)
+            {
+                pNext = spec + 1;
+            }
+        }
+
+        if (0 <= code)
+        {
+            memcpy(q, aColors[code].pUTF, aColors[code].nUTF);
+            q += aColors[code].nUTF;
+            p = pNext;
+        }
+        else
+        {
+            *q++ = (UTF8)*p++;     // not a recognized color code -- pass through
+        }
+    }
+    *q = '\0';
     return aBuffer;
 }
 

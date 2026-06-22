@@ -74,14 +74,16 @@ def omega(*args):
                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def inject(src, dst, blob):
+def inject(src, dst, blob, marker=rb'>\d+\n"'):
     data = open(src, "rb").read()
-    # Insert bytes just inside the first attribute value's opening quote (lines
-    # of the form  >NUM\n"value"  ).  PUA bytes are valid UTF-8 and are not
-    # quote/backslash/control, so they survive the writer's escaping.
-    m = re.search(rb'>\d+\n"', data)
+    # Insert bytes just inside an attribute value's opening quote (lines of the
+    # form  >NUM\n"value"  ).  PUA bytes are valid UTF-8 and are not
+    # quote/backslash/control, so they survive the writer's escaping.  The
+    # default marker hits the first attribute; pass a specific >NUM marker to
+    # target a particular (e.g. user) attribute.
+    m = re.search(marker, data)
     if not m:
-        sys.exit("no attribute value found in %s" % src)
+        sys.exit("no attribute value matching %r in %s" % (marker, src))
     pos = m.end()
     open(dst, "wb").write(data[:pos] + blob + data[pos:])
 
@@ -115,6 +117,14 @@ def main():
     ]
     for fam, fname in families:
         omega("-o", fam, base, os.path.join(FIXTURES, fname))
+
+    # A RhostMUSH fixture with 24-bit color in a *user* attribute (#257), for
+    # the rhost->t5x color round-trip test.  (#218, the first attribute, is the
+    # @Created timestamp, which does not survive cross-family conversion.)
+    u257 = os.path.join(FIXTURES, ".u257.tmp")
+    inject(base, u257, FG_COLOR + BG_COLOR, marker=rb'>257\n"')
+    omega("-o", "rhostmush", u257, os.path.join(FIXTURES, "r7h-color.flat"))
+    os.remove(u257)
 
     # Sanity: the color fixture must parse and round-trip v5->v5 unchanged.
     rt = color + ".rt"

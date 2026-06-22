@@ -46,15 +46,24 @@ unchanged, so the *source's* color bytes land in the target with no translation.
 | Direction | Mechanism | Color result |
 |-----------|-----------|--------------|
 | t5x → **rhost** | `ConvertColorToRhostSoftcode()` (`t5xgame.cpp`) | **correct** — PUA → `%c…`, 24-bit preserved |
+| **rhost** → t5x | `ConvertColorFromRhostSoftcode()` (`t5xgame.cpp`) | **correct** — `%c…` → PUA, 24-bit preserved (rhost→t5x now produces v3) |
 | t5x → **penn** | verbatim copy (`p6hgame.cpp` ConvertFromT5X) | **broken** — PUA bytes land raw, not `\x02c…\x03` |
 | t5x → **tinymush** | `ConvertT5XValue()` (`t6hgame.cpp:510`) maps every byte ≥ 0x7F to `'?'` | **broken** — color *and all UTF-8* destroyed |
 | **penn** → t5x | verbatim copy (`t5xgame.cpp` ConvertFromP6H) | **broken** — `\x02c…\x03` lands as literal control bytes |
 | **tinymush** → t5x | verbatim copy (`t5xgame.cpp` ConvertFromT6H) | **partial** — raw ANSI survives only if output is t5x v1/v2; not parsed to PUA for v3+ |
-| **rhost** → t5x | verbatim copy | **broken** — `%c…` lands as literal text (not MUX color) |
 
-So of the six cross-family color directions, **one works** (t5x→rhost). The
-others either garble color, or (t5x→tinymush) additionally destroy all non-ASCII
-text.
+So of the six cross-family color directions, **two now work** (t5x↔rhost). The
+remaining four either garble color, or (t5x→tinymush) additionally destroy all
+non-ASCII text.
+
+Note (found while implementing rhost→t5x): `ConvertFromR7H` emitted object
+headers without the mandatory ZONE/LINK fields for zone-/link-less objects,
+while declaring `V_ZONE`/`V_LINK` — so the produced t5x desynced the reader at
+the first such object, silently dropping the rest of the database.  Fixed by
+writing `-1` (NOTHING) for those fields.  `ConvertFromP6H`/`ConvertFromT6H`
+happen to set them for every object, but a real PennMUSH db with a zone-less
+object could hit the same class of bug — worth a look when those paths are
+revisited.
 
 Note: this is independent of the *extraction* (`-x`/@decomp) color path
 (`EncodeSubstitutions`), which is a separate concern and was hardened
@@ -70,9 +79,9 @@ model for an encoder):
 1. **penn → t5x** and **t5x → penn**: a `\x02c<codes>\x03` ⇄ PUA transcoder
    (parse/emit the letter/`#RRGGBB`/`+xtermN` vocabulary). Penn's markup is the
    cleanest to map because it is already structured color, not raw ANSI.
-2. **rhost → t5x**: a `%c…` parser (the inverse of the existing
-   `ConvertColorToRhostSoftcode`). The outbound side already matches Rhost
-   exactly, so this is "write the decoder."
+2. **rhost → t5x**: DONE — `ConvertColorFromRhostSoftcode()` parses the `%c…`
+   vocabulary into PUA (inverse of `ConvertColorToRhostSoftcode`), and
+   `ConvertFromR7H` now produces a v3 (UTF-8/PUA) flatfile.
 3. **tinymush ⇄ t5x**: parse/emit raw ANSI `ESC[…m` ⇄ PUA. TinyMUX already has
    ANSI→PUA in `ConvertToUTF8` (the v2→v3 path) — reuse it. **Also fix
    `ConvertT5XValue`'s `'?'`-for-every-non-ASCII behavior**, which is a Unicode

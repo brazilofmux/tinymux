@@ -151,7 +151,21 @@ nbsp=$(grep -o '%b ' "$tmp/ex" | wc -l)
 if [ "$nbsp" -ge 32000 ]; then ok "extract preserves expanding value ($nbsp '%b ')"
 else nok "extract truncated expanding value ($nbsp '%b ', want >=32000)"; fi
 
-echo "# 9. --list runs"
+echo "# 9. RhostMUSH color (%c..) is decoded on import (rhost -> t5x)"
+# r7h-color.flat has 24-bit FG #C88764 / BG #143C5A in a user attribute.
+# rhost -> t5x must parse the %c codes into PUA; round-tripping back to rhost
+# must reproduce them.  (Also exercises the rhost->t5x object-header fix: the
+# converted t5x has to re-parse for the back-conversion to see the attribute.)
+"$omega" -o tinymux -v 5 "$fix/r7h-color.flat" "$tmp/rc_t5x" >/dev/null 2>&1
+"$omega" -o rhostmush "$tmp/rc_t5x" "$tmp/rc_back" >/dev/null 2>&1
+rcolor=yes
+for c in '%c<#C88764>' '%C<#143C5A>'; do
+    grep -qaF "$c" "$tmp/rc_back" || rcolor=no
+done
+if [ "$rcolor" = yes ]; then ok "rhost 24-bit color survives rhost->t5x->rhost"
+else nok "rhost color lost on rhost->t5x import"; fi
+
+echo "# 10. --list runs"
 if "$omega" --list >/dev/null 2>&1; then ok "omega --list"; else nok "omega --list"; fi
 
 echo "# ---"
