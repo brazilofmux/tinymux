@@ -5005,8 +5005,9 @@ bool T5X_GAME::Upgrade5()
 
     // v5 shares v4's flag set and (in this converter) its PUA color byte form;
     // only the version number advances.  The distinguishing feature of v5 -- the
-    // fixed two-code-point 24-bit color encoding -- is already what the color
-    // machinery here emits (see EmitSMPColor/UpdateColorState).
+    // fixed two-code-point 24-bit color encoding -- is already the form the color
+    // decoder/migration here works in (see mux_color/UpdateColorState and
+    // ColorV4toV5).
     //
     m_flags |= 5;
 
@@ -7125,18 +7126,6 @@ const UTF8 *ConvertColorToRhostSoftcode(const UTF8 *pString)
     return aBuffer;
 }
 
-// Emit a 4-byte SMP PUA color code point.
-// block: 0=FG CP1, 1=FG CP2, 2=BG CP1, 3=BG CP2
-// payload: 12-bit value ((nibble << 8) | channel_byte)
-//
-static inline void EmitSMPColor(UTF8 *buf, unsigned int block, unsigned int payload)
-{
-    buf[0] = 0xF3;
-    buf[1] = static_cast<UTF8>(0xB0 + block);
-    buf[2] = static_cast<UTF8>(0x80 | ((payload >> 6) & 0x3F));
-    buf[3] = static_cast<UTF8>(0x80 | (payload & 0x3F));
-}
-
 // Maximum binary transition length is:
 //
 //   COLOR_RESET      "\xEF\x94\x80"
@@ -7147,13 +7136,16 @@ static inline void EmitSMPColor(UTF8 *buf, unsigned int block, unsigned int payl
 // + COLOR_FG_RED     "\xEF\x98\x81"
 // + COLOR_BG_WHITE   "\xEF\x9C\x87"
 //
-// Each of the seven codes is 3 bytes or 21 bytes total. Plus two 24-bit
-// SMP code points per layer (4 bytes each), for FG and BG = 4 code points.
+// Each of the seven codes is 3 bytes, or 21 bytes total.  ColorTransition()
+// always reduces to indexed (16/8) color, so there are no 24-bit SMP codes.
 //
-#define COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH (21+4*4)
+#define COLOR_MAXIMUM_BINARY_TRANSITION_LENGTH (21)
 
 // Generate the minimal color sequence that will transition from one color state
-// to another.
+// to another.  This is the color-depth reduction path (used by
+// RestrictToColor16): the "Approximate" step below maps the target down to an
+// indexed 16-color foreground / 8-color background before anything is emitted,
+// so the output is always indexed -- never 24-bit.
 //
 static UTF8 *ColorTransition
 (
@@ -7262,67 +7254,26 @@ static UTF8 *ColorTransition
         }
     }
 
+    // The Approximate step above has already reduced csNext to an indexed
+    // color, so emit the indexed foreground/background code directly.
+    //
     if (CS_FOREGROUND & tmp)
     {
-        bool fExact;
-        if (CS_FG_INDEXED & csNext)
-        {
-            iColor = static_cast<unsigned int>(CS_FG_FIELD(csNext));
-            fExact = true;
-        }
-        else
-        {
-            cs2rgb(CS_FG_FIELD(csNext), &rgb);
-            iColor = FindNearestPaletteEntry(rgb);
-            fExact = (  palette[iColor].rgb.r == rgb.r
-                     && palette[iColor].rgb.g == rgb.g
-                     && palette[iColor].rgb.b == rgb.b);
-        }
+        iColor = static_cast<unsigned int>(CS_FG_FIELD(csNext));
         if (iColor < COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[COLOR_INDEX_FG + iColor].pUTF, aColors[COLOR_INDEX_FG + iColor].nUTF);
             i += aColors[COLOR_INDEX_FG + iColor].nUTF;
-            if (!fExact)
-            {
-                // 2-code-point FG encoding: CP1 (block 0) + CP2 (block 1)
-                //
-                EmitSMPColor(Buffer + i, 0, ((rgb.r >> 4) << 8) | rgb.g);
-                i += 4;
-                EmitSMPColor(Buffer + i, 1, ((rgb.r & 0xF) << 8) | rgb.b);
-                i += 4;
-            }
         }
     }
 
     if (CS_BACKGROUND & tmp)
     {
-        bool fExact;
-        if (CS_BG_INDEXED & csNext)
-        {
-            iColor = static_cast<unsigned int>(CS_BG_FIELD(csNext));
-            fExact = true;
-        }
-        else
-        {
-            cs2rgb(CS_BG_FIELD(csNext), &rgb);
-            iColor = FindNearestPaletteEntry(rgb);
-            fExact = (  palette[iColor].rgb.r == rgb.r
-                     && palette[iColor].rgb.g == rgb.g
-                     && palette[iColor].rgb.b == rgb.b);
-        }
+        iColor = static_cast<unsigned int>(CS_BG_FIELD(csNext));
         if (iColor < COLOR_INDEX_DEFAULT)
         {
             memcpy(Buffer + i, aColors[COLOR_INDEX_BG + iColor].pUTF, aColors[COLOR_INDEX_BG + iColor].nUTF);
             i += aColors[COLOR_INDEX_BG + iColor].nUTF;
-            if (!fExact)
-            {
-                // 2-code-point BG encoding: CP1 (block 2) + CP2 (block 3)
-                //
-                EmitSMPColor(Buffer + i, 2, ((rgb.r >> 4) << 8) | rgb.g);
-                i += 4;
-                EmitSMPColor(Buffer + i, 3, ((rgb.r & 0xF) << 8) | rgb.b);
-                i += 4;
-            }
         }
     }
     Buffer[i] = '\0';
