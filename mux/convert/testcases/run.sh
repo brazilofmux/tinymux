@@ -194,7 +194,19 @@ want=$(printf '\357\224\201\357\230\201Caf\303\251\357\224\200')
 if grep -qaF "$want" "$tmp/pn_back"; then ok "t5x->penn->t5x keeps color + Unicode"
 else nok "t5x->penn->t5x lost color or Unicode"; fi
 
-echo "# 13. --list runs"
+echo "# 13. t5x <-> TinyMUSH preserves 24-bit color (binary)"
+# t5x-v5-24bit.flat has 24-bit FG #C88764 / BG #143C5A.  Out to TinyMUSH it
+# becomes \e[38;2;..]/\e[48;2;..] raw ANSI; back in, ConvertToUTF8 must parse
+# those into 24-bit PUA.  Round-trip to rhost must reproduce the hex.
+"$omega" -o tinymush "$fix/t5x-v5-24bit.flat" "$tmp/t6" >/dev/null 2>&1
+grep -qaF '\e[38;2;200;135;100m' "$tmp/t6" && t6fg=ok || t6fg=no
+"$omega" -o tinymux -v 5 "$tmp/t6" "$tmp/t6_back" >/dev/null 2>&1
+"$omega" -o rhostmush "$tmp/t6_back" "$tmp/t6_r" >/dev/null 2>&1
+if [ "$t6fg" = ok ] && grep -qaF '%c<#C88764>' "$tmp/t6_r" && grep -qaF '%C<#143C5A>' "$tmp/t6_r"
+then ok "t5x->tinymush->t5x keeps 24-bit color"
+else nok "t5x<->tinymush lost 24-bit color (fg-ansi=$t6fg)"; fi
+
+echo "# 14. --list runs"
 if "$omega" --list >/dev/null 2>&1; then ok "omega --list"; else nok "omega --list"; fi
 
 echo "# ---"

@@ -848,7 +848,7 @@ int main(int argc, char *argv[])
         {
             // It's easier to convert from 2.6.
             //
-            if (  g_t5xgame.Downgrade2()
+            if (  g_t5xgame.DowngradeToT6H()
                || g_t5xgame.Upgrade2())
             {
                 g_t5xgame.Pass2();
@@ -916,7 +916,7 @@ int main(int argc, char *argv[])
             g_t5xgame.ConvertFromR7H();
             g_t5xgame.Pass2();
             g_t5xgame.Validate();
-            if (  g_t5xgame.Downgrade2()
+            if (  g_t5xgame.DowngradeToPenn()
                || g_t5xgame.Upgrade2())
             {
                 g_t5xgame.Pass2();
@@ -933,7 +933,7 @@ int main(int argc, char *argv[])
             g_t5xgame.ConvertFromR7H();
             g_t5xgame.Pass2();
             g_t5xgame.Validate();
-            if (  g_t5xgame.Downgrade2()
+            if (  g_t5xgame.DowngradeToT6H()
                || g_t5xgame.Upgrade2())
             {
                 g_t5xgame.Pass2();

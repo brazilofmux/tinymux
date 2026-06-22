@@ -47,19 +47,22 @@ unchanged, so the *source's* color bytes land in the target with no translation.
 |-----------|-----------|--------------|
 | t5x → **rhost** | `ConvertColorToRhostSoftcode()` (`t5xgame.cpp`) | **correct** — PUA → `%c…`, 24-bit preserved |
 | **rhost** → t5x | `ConvertColorFromRhostSoftcode()` (`t5xgame.cpp`) | **correct** — `%c…` → PUA, 24-bit preserved (rhost→t5x now produces v3) |
-| t5x → **tinymush** | `Downgrade2` (PUA→ANSI, UTF-8→Latin-1) then `ConvertT5XValue` | **correct** — color as 16-color ANSI; Latin-1 text preserved (previously every byte ≥0x7F became `'?'`) |
-| **tinymush** → t5x | verbatim copy to v2, then the standard v2→v3 upgrade | **correct** — raw ANSI → PUA and Latin-1 → UTF-8 via `ConvertToUTF8` (with `-v 3`+; a v2 target keeps ANSI) |
+| t5x → **tinymush** | `DowngradeToT6H` / `ConvertColorToANSI24`, text → Latin-1 | **correct** — color as raw ANSI, 256 (`38;5;N`) and 24-bit (`38;2;R;G;B`) preserved |
+| **tinymush** → t5x | verbatim copy to v2, then the standard v2→v3 upgrade | **correct** — raw ANSI → PUA via `ConvertToUTF8` (now incl. 256/24-bit) and Latin-1 → UTF-8 (with `-v 3`+; a v2 target keeps ANSI) |
 | **penn** → t5x | `ConvertColorFromPennMarkup()` (`t5xgame.cpp`) | **correct** — `\x02c…\x03` markup → PUA, 24-bit preserved (penn→t5x now produces v3) |
 | t5x → **penn** | `DowngradeToPenn()` / `ConvertColorToPennMarkup()` | **correct** — PUA → `\x02c…\x03` markup, 24-bit preserved; writer sets DBF_SPIFFY_AF_ANSI; text kept UTF-8 |
 
-So **all six cross-family color directions now work**.  Within the limits of
-each codebase: TinyMUSH crosses at 16-color (its 3.x target era; see the
-TinyMUSH note), while PennMUSH and RhostMUSH carry full 24-bit.
+So **all six cross-family color directions now work, at full 24-bit** (color
+survives in both directions for PennMUSH, TinyMUSH, and RhostMUSH).  TinyMUSH
+24-bit lands as raw ANSI escapes, which TinyMUSH 4.0 renders; pre-4.0 servers
+ignore the unknown SGR parameters.  Text into TinyMUSH is still Latin-1 (its
+8-bit storage), lossy only for code points outside Latin-1.
 
-TinyMUSH note: TinyMUSH is 8-bit Latin-1 and 16-color, so t5x→tinymush is
-necessarily lossy for true Unicode and for 24-bit/256 color (both reduced) --
-that reduction is correct, not a bug.  The bug was the blanket `'?'` for *all*
-high bytes, which discarded representable Latin-1 too.
+TinyMUSH note: TinyMUSH stores color as raw ANSI escapes and 8-bit Latin-1
+text.  Color is carried at full depth (16/256/24-bit) via the ANSI escapes;
+text outside Latin-1 is the only lossy part (TinyMUSH has no wider text
+storage).  An earlier converter shortcut reduced color to 16 and mapped every
+high byte to `'?'`; both are fixed.
 
 Note (found while implementing rhost→t5x): `ConvertFromR7H` emitted object
 headers without the mandatory ZONE/LINK fields for zone-/link-less objects,
@@ -94,8 +97,13 @@ model for an encoder):
    and `ConvertColorToPennMarkup()`/`DowngradeToPenn()` (outbound) transcode the
    `\x02c<codes>\x03` markup ⇄ PUA; the penn writer sets DBF_SPIFFY_AF_ANSI.
 
-All six cross-family color directions are implemented.  Next fidelity step:
-TinyMUSH 4.0 binary 24-bit (extend the ANSI↔PUA helpers from 16-color to
-256/24-bit) -- see the TinyMUSH note above.
+All six cross-family color directions are implemented at full 24-bit.
+`ConvertToUTF8` now parses 256 (`38;5;N`) and 24-bit (`38;2;R;G;B`) ANSI (plus
+bright `90-97`/`100-107`), and `ConvertColorToANSI24` emits them, so the
+TinyMUSH path no longer reduces to 16.
+
+Remaining color/Unicode follow-ups (not blocking): the direct penn->t6h path
+(ConvertFromP6H on the t6h side) is not part of the t5x-mediated color plumbing;
+and text into TinyMUSH/Rhost is still Latin-1/ASCII.
 
 Sources are cloned under `/tmp/srv/{penn,tm,rhost}` for follow-up work.

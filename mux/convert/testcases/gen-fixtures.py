@@ -128,10 +128,11 @@ def main():
     # A RhostMUSH fixture with 24-bit color in a *user* attribute (#257), for
     # the rhost->t5x color round-trip test.  (#218, the first attribute, is the
     # @Created timestamp, which does not survive cross-family conversion.)
-    u257 = os.path.join(FIXTURES, ".u257.tmp")
-    inject(base, u257, FG_COLOR + BG_COLOR, marker=rb'>257\n"')
-    omega("-o", "rhostmush", u257, os.path.join(FIXTURES, "r7h-color.flat"))
-    os.remove(u257)
+    # A TinyMUX v5 flatfile with 24-bit FG #C88764 / BG #143C5A in a user
+    # attribute (#257), for cross-family 24-bit round-trip tests.
+    t24 = os.path.join(FIXTURES, "t5x-v5-24bit.flat")
+    inject(base, t24, FG_COLOR + BG_COLOR, marker=rb'>257\n"')
+    omega("-o", "rhostmush", t24, os.path.join(FIXTURES, "r7h-color.flat"))
 
     # A PennMUSH fixture with 24-bit color markup (TAG_START 'c' #RRGGBB
     # TAG_END) in an attribute value, for the penn->t5x color-import check.

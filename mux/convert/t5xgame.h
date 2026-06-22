@@ -504,6 +504,7 @@ public:
     void ConvertToLatin1();
     void ConvertToRhost();
     void ConvertToPenn();
+    void ConvertToT6H();
 
     T5X_ATTRNAMEINFO()
     {
@@ -555,6 +556,7 @@ public:
     void ConvertToLatin1();
     void ConvertToRhost();
     void ConvertToPenn();
+    void ConvertToT6H();
     void RestrictToColor16();
 
     T5X_ATTRINFO()
@@ -664,6 +666,7 @@ public:
     void ConvertToLatin1();
     void ConvertToRhost();
     void ConvertToPenn();
+    void ConvertToT6H();
     void DowngradeDefaultLock();
     void RestrictToColor16();
 
@@ -752,6 +755,7 @@ public:
 
     bool DowngradeToRhost();
     bool DowngradeToPenn();
+    bool DowngradeToT6H();
 
     void ConvertFromP6H();
     void ConvertFromT6H();

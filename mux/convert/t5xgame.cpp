@@ -4904,6 +4904,8 @@ const MUX_COLOR_SET aColors[] =
     { CS_BG(255),    CS_BACKGROUND, XTERM_BG(255), sizeof(XTERM_BG(255))-1, T(COLOR_BG_EEEEEE),  3, T("%X<#EEEEEE>"), 11},
 };
 
+static void EmitPUA24(UTF8 **pq, int r, int g, int b, bool fBG);
+
 // We want to remove mal-formed ESC sequences completely and convert the
 // well-formed ones.
 //
@@ -4938,77 +4940,70 @@ UTF8 *ConvertToUTF8(const char *p)
                 {
                     // The segment [p,q) should contain a list of semi-color delimited codes.
                     //
+                    // [p,q) is a ';'-delimited list of SGR codes.  Parse them
+                    // to integers, then interpret -- handling 38;5;N / 48;5;N
+                    // (xterm-256) and 38;2;R;G;B / 48;2;R;G;B (24-bit) as well as
+                    // the basic 0/1/4/5/7, 30-37, 40-47 and bright 90-97/100-107.
+                    //
+                    int codes[64];
+                    int nCodes = 0;
                     const char *r = p;
-                    while (r != q)
+                    while (  r < q
+                          && nCodes < (int)(sizeof(codes)/sizeof(codes[0])))
                     {
-                        while (  r != q
-                              && ';' != r[0])
+                        int v = 0;
+                        while (r < q && ';' != *r)
+                        {
+                            if ('0' <= *r && *r <= '9')
+                            {
+                                v = v * 10 + (*r - '0');
+                            }
+                            r++;
+                        }
+                        codes[nCodes++] = v;
+                        if (r < q && ';' == *r)
                         {
                             r++;
                         }
+                    }
 
-                        // The segment [p,r) should contain one code.
-                        //
-                        size_t n = r - p;
+                    for (int i = 0; i < nCodes; i++)
+                    {
+                        int c = codes[i];
                         const UTF8 *s = NULL;
-                        switch (n)
+                        if      (0 == c) s = aColors[COLOR_INDEX_RESET].pUTF;
+                        else if (1 == c) s = aColors[COLOR_INDEX_INTENSE].pUTF;
+                        else if (4 == c) s = aColors[COLOR_INDEX_UNDERLINE].pUTF;
+                        else if (5 == c) s = aColors[COLOR_INDEX_BLINK].pUTF;
+                        else if (7 == c) s = aColors[COLOR_INDEX_INVERSE].pUTF;
+                        else if (30 <= c && c <= 37)   s = aColors[COLOR_INDEX_FG + (c - 30)].pUTF;
+                        else if (40 <= c && c <= 47)   s = aColors[COLOR_INDEX_BG + (c - 40)].pUTF;
+                        else if (90 <= c && c <= 97)   s = aColors[COLOR_INDEX_FG + 8 + (c - 90)].pUTF;
+                        else if (100 <= c && c <= 107) s = aColors[COLOR_INDEX_BG + 8 + (c - 100)].pUTF;
+                        else if ((38 == c || 48 == c) && i + 1 < nCodes)
                         {
-                        case 1:
-                            if ('0' == *p)
+                            bool fBG = (48 == c);
+                            if (5 == codes[i+1] && i + 2 < nCodes)
                             {
-                                s = aColors[COLOR_INDEX_RESET].pUTF;
+                                unsigned int ci = (fBG ? COLOR_INDEX_BG : COLOR_INDEX_FG)
+                                                + (unsigned int)(codes[i+2] & 0xFF);
+                                s = aColors[ci].pUTF;
+                                i += 2;
                             }
-                            else if ('1' == *p)
+                            else if (2 == codes[i+1] && i + 4 < nCodes)
                             {
-                                s = aColors[COLOR_INDEX_INTENSE].pUTF;
-                            }
-                            else if ('4' == *p)
-                            {
-                                s = aColors[COLOR_INDEX_UNDERLINE].pUTF;
-                            }
-                            else if ('5' == *p)
-                            {
-                                s = aColors[COLOR_INDEX_BLINK].pUTF;
-                            }
-                            else if ('7' == *p)
-                            {
-                                s = aColors[COLOR_INDEX_INVERSE].pUTF;
-                            }
-                            break;
-
-                        case 2:
-                            if ('3' == *p)
-                            {
-                                unsigned int iCode = COLOR_INDEX_FG + (p[1] - '0');
-                                if (  COLOR_INDEX_FG <= iCode
-                                   && iCode < COLOR_INDEX_BG)
+                                if (pBuffer + 11 < aBuffer + sizeof(aBuffer))
                                 {
-                                    s = aColors[iCode].pUTF;
+                                    EmitPUA24(&pBuffer, codes[i+2] & 0xFF, codes[i+3] & 0xFF, codes[i+4] & 0xFF, fBG);
                                 }
+                                i += 4;
                             }
-                            else if ('4' == *p)
-                            {
-                                unsigned int iCode = COLOR_INDEX_BG + (p[1] - '0');
-                                if (  COLOR_INDEX_BG <= iCode
-                                   && iCode < sizeof(aColors)/sizeof(aColors[0]))
-                                {
-                                    s = aColors[iCode].pUTF;
-                                }
-                            }
-                            break;
                         }
 
                         if (NULL != s)
                         {
                             utf8_safe_chr(s, aBuffer, &pBuffer);
                         }
-
-                        while (  r != q
-                              && ';' == r[0])
-                        {
-                            r++;
-                        }
-                        p = r;
                     }
 
                     // Eat trailing terminator.
@@ -6171,6 +6166,44 @@ bool T5X_GAME::DowngradeToPenn()
     return true;
 }
 
+// Like DowngradeToRhost/Penn, but for TinyMUSH: PUA color becomes raw ANSI
+// escapes (xterm-256 and 24-bit preserved), text becomes Latin-1.  Used by the
+// t5x->t6h paths in place of Downgrade2(), which would reduce color to 16.
+//
+bool T5X_GAME::DowngradeToT6H()
+{
+    int ver = (m_flags & T5X_V_MASK);
+    if (ver <= 2)
+    {
+        return false;
+    }
+    m_flags &= ~(T5X_V_MASK|T5X_V_ATRKEY);
+    m_flags |= 2;
+
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
+    {
+        m_mAttrNums.erase(it->second->m_pNameUnencoded);
+        it->second->ConvertToT6H();
+        map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
+        if (itNum != m_mAttrNums.end())
+        {
+            fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
+                it->second->m_pNameUnencoded, it->second->m_iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+        }
+        else
+        {
+            m_mAttrNums[it->second->m_pNameUnencoded] = it->second;
+        }
+    }
+
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    {
+        it->second->ConvertToT6H();
+        it->second->DowngradeDefaultLock();
+    }
+    return true;
+}
+
 bool T5X_GAME::Downgrade1()
 {
     Downgrade2();
@@ -6203,6 +6236,12 @@ void T5X_ATTRNAMEINFO::ConvertToPenn()
 {
     // Attribute names carry no color; just Latin-1 the text.
     //
+    char *p = (char *)::ConvertToLatin1((UTF8 *)m_pNameUnencoded);
+    SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
+}
+
+void T5X_ATTRNAMEINFO::ConvertToT6H()
+{
     char *p = (char *)::ConvertToLatin1((UTF8 *)m_pNameUnencoded);
     SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
@@ -7347,6 +7386,109 @@ const UTF8 *ConvertColorToPennMarkup(const UTF8 *pString)
     return aBuffer;
 }
 
+// ConvertColorToANSI24: decode inline PUA color and emit raw ANSI SGR escapes,
+// preserving xterm-256 (38;5;N / 48;5;N) and 24-bit (38;2;R;G;B / 48;2;R;G;B).
+// Used for TinyMUSH output, which stores raw ANSI escapes and (in 4.0) renders
+// 24-bit.  Structure mirrors ConvertColorToRhostSoftcode; unlike
+// ConvertColorToANSI it does NOT reduce to 16 colors.
+//
+const UTF8 *ConvertColorToANSI24(const UTF8 *pString)
+{
+    static UTF8 aBuffer[2*LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    ColorState csCurrent = CS_NORMAL;
+    ColorState csNext = CS_NORMAL;
+    char tmp[32];
+
+    while (  '\0' != *pString
+          && pBuffer < aBuffer + sizeof(aBuffer) - 64)
+    {
+        unsigned int iCode = mux_color(pString);
+        if (COLOR_NOTCOLOR == iCode)
+        {
+            if (csCurrent != csNext)
+            {
+                if (  ((csCurrent & ~csNext) & CS_ATTRS)
+                   || (  (csNext & CS_BACKGROUND) == CS_BG_DEFAULT
+                      && (csCurrent & CS_BACKGROUND) != CS_BG_DEFAULT)
+                   || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
+                      && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
+                {
+                    memcpy(pBuffer, "\x1B[0m", 4);
+                    pBuffer += 4;
+                    csCurrent = CS_NORMAL;
+                }
+
+                ColorState tmp2 = csCurrent ^ csNext;
+
+                if (CS_ATTRS & tmp2)
+                {
+                    if (CS_INTENSE   & tmp2 & csNext) { memcpy(pBuffer, "\x1B[1m", 4); pBuffer += 4; }
+                    if (CS_UNDERLINE & tmp2 & csNext) { memcpy(pBuffer, "\x1B[4m", 4); pBuffer += 4; }
+                    if (CS_BLINK     & tmp2 & csNext) { memcpy(pBuffer, "\x1B[5m", 4); pBuffer += 4; }
+                    if (CS_INVERSE   & tmp2 & csNext) { memcpy(pBuffer, "\x1B[7m", 4); pBuffer += 4; }
+                }
+
+                if (  (CS_FOREGROUND & tmp2)
+                   && (csNext & CS_FOREGROUND) != CS_FG_DEFAULT)
+                {
+                    if (CS_FG_INDEXED & csNext)
+                    {
+                        unsigned int idx = static_cast<unsigned int>(CS_FG_FIELD(csNext)) & 0xFF;
+                        if (idx < 8)        sprintf(tmp, "\x1B[%um", 30 + idx);
+                        else if (idx < 16)  sprintf(tmp, "\x1B[%um", 90 + (idx - 8));
+                        else                sprintf(tmp, "\x1B[38;5;%um", idx);
+                        memcpy(pBuffer, tmp, strlen(tmp)); pBuffer += strlen(tmp);
+                    }
+                    else
+                    {
+                        RGB rgb;
+                        cs2rgb(CS_FG_FIELD(csNext), &rgb);
+                        sprintf(tmp, "\x1B[38;2;%u;%u;%um", (unsigned)rgb.r, (unsigned)rgb.g, (unsigned)rgb.b);
+                        memcpy(pBuffer, tmp, strlen(tmp)); pBuffer += strlen(tmp);
+                    }
+                }
+
+                if (  (CS_BACKGROUND & tmp2)
+                   && (csNext & CS_BACKGROUND) != CS_BG_DEFAULT)
+                {
+                    if (CS_BG_INDEXED & csNext)
+                    {
+                        unsigned int idx = static_cast<unsigned int>(CS_BG_FIELD(csNext)) & 0xFF;
+                        if (idx < 8)        sprintf(tmp, "\x1B[%um", 40 + idx);
+                        else if (idx < 16)  sprintf(tmp, "\x1B[%um", 100 + (idx - 8));
+                        else                sprintf(tmp, "\x1B[48;5;%um", idx);
+                        memcpy(pBuffer, tmp, strlen(tmp)); pBuffer += strlen(tmp);
+                    }
+                    else
+                    {
+                        RGB rgb;
+                        cs2rgb(CS_BG_FIELD(csNext), &rgb);
+                        sprintf(tmp, "\x1B[48;2;%u;%u;%um", (unsigned)rgb.r, (unsigned)rgb.g, (unsigned)rgb.b);
+                        memcpy(pBuffer, tmp, strlen(tmp)); pBuffer += strlen(tmp);
+                    }
+                }
+
+                csCurrent = csNext;
+            }
+            utf8_safe_chr(pString, aBuffer, &pBuffer);
+        }
+        else
+        {
+            csNext = UpdateColorState(csNext, iCode, pString);
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+
+    if (csNext != CS_NORMAL)
+    {
+        memcpy(pBuffer, "\x1B[0m", 4);
+        pBuffer += 4;
+    }
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
 // Nearest xterm-256 palette index for an RGB.  Used as the indexed base that
 // precedes a 24-bit PUA color so 256-color clients still get a fallback.
 //
@@ -8032,6 +8174,22 @@ void T5X_OBJECTINFO::ConvertToPenn()
     }
 }
 
+void T5X_OBJECTINFO::ConvertToT6H()
+{
+    char *p = (char *)ConvertColorToANSI24((UTF8 *)m_pName);
+    p = (char *)::ConvertToLatin1((UTF8 *)p);
+    free(m_pName);
+    m_pName = StringClone(p);
+
+    if (NULL != m_pvai)
+    {
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->ConvertToT6H();
+        }
+    }
+}
+
 void T5X_ATTRINFO::ConvertToRhost()
 {
     char *p = (char *)ConvertColorToRhostSoftcode((UTF8 *)m_pValueUnencoded);
@@ -8044,6 +8202,15 @@ void T5X_ATTRINFO::ConvertToPenn()
     //
     char *p = (char *)ConvertColorToPennMarkup((UTF8 *)m_pValueUnencoded);
     SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone(p));
+}
+
+void T5X_ATTRINFO::ConvertToT6H()
+{
+    // PUA color -> raw ANSI (256/24-bit preserved), then Unicode -> Latin-1.
+    // ESC survives ConvertToLatin1, so the escapes are unharmed.
+    //
+    char *p = (char *)ConvertColorToANSI24((UTF8 *)m_pValueUnencoded);
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)::ConvertToLatin1((UTF8 *)p)));
 }
 
 void T5X_GAME::Extract(FILE *fp, int dbExtract) const
