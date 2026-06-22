@@ -108,6 +108,13 @@ def main():
     # buffer.  Guards the silent-truncation fix in EncodeSubstitutions.
     inject(base, os.path.join(FIXTURES, "t5x-v5-expand.flat"), b'  ' * 32000)
 
+    # 16-color plus a Latin-1 character ("Café", UTF-8 0xC3 0xA9) in a user
+    # attribute, for the t5x <-> TinyMUSH text+color round-trip.  TinyMUSH stores
+    # 8-bit Latin-1 and color as raw ANSI, so this should survive both ways.
+    inject(base, os.path.join(FIXTURES, "t5x-v5-latin.flat"),
+           INTENSE + _fg(1) + b'Caf' + bytes([0xC3, 0xA9]) + RESET,
+           marker=rb'>257\n"')
+
     # Family fixtures, produced by cross-conversion from the v5 base.
     #
     families = [

@@ -509,19 +509,18 @@ bool T6H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
 
 const char *ConvertT5XValue(char *pValue)
 {
-    static char buffer[65536];
+    // By the time ConvertFromT5X() runs, the source has been downgraded to a
+    // v2 (Latin-1, raw-ANSI-color) flatfile, and TinyMUSH stores 8-bit Latin-1,
+    // so pass the bytes through unchanged.  (The old code mapped every byte
+    // >= 0x7F to '?', needlessly discarding accented Latin-1 characters; color
+    // already survives because it is plain-ASCII ANSI escapes by this point.)
+    //
+    static char buffer[2*LBUF_SIZE];
     char *p = buffer;
-    while ('\0' != *pValue)
+    while (  '\0' != *pValue
+          && p < buffer + sizeof(buffer) - 1)
     {
-        if (*pValue < 0x7F)
-        {
-            *p++ = *pValue;
-        }
-        else
-        {
-            *p++ = '?';
-        }
-        pValue++;
+        *p++ = *pValue++;
     }
     *p = '\0';
     return buffer;

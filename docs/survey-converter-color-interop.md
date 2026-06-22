@@ -47,14 +47,18 @@ unchanged, so the *source's* color bytes land in the target with no translation.
 |-----------|-----------|--------------|
 | t5x → **rhost** | `ConvertColorToRhostSoftcode()` (`t5xgame.cpp`) | **correct** — PUA → `%c…`, 24-bit preserved |
 | **rhost** → t5x | `ConvertColorFromRhostSoftcode()` (`t5xgame.cpp`) | **correct** — `%c…` → PUA, 24-bit preserved (rhost→t5x now produces v3) |
+| t5x → **tinymush** | `Downgrade2` (PUA→ANSI, UTF-8→Latin-1) then `ConvertT5XValue` | **correct** — color as 16-color ANSI; Latin-1 text preserved (previously every byte ≥0x7F became `'?'`) |
+| **tinymush** → t5x | verbatim copy to v2, then the standard v2→v3 upgrade | **correct** — raw ANSI → PUA and Latin-1 → UTF-8 via `ConvertToUTF8` (with `-v 3`+; a v2 target keeps ANSI) |
 | t5x → **penn** | verbatim copy (`p6hgame.cpp` ConvertFromT5X) | **broken** — PUA bytes land raw, not `\x02c…\x03` |
-| t5x → **tinymush** | `ConvertT5XValue()` (`t6hgame.cpp:510`) maps every byte ≥ 0x7F to `'?'` | **broken** — color *and all UTF-8* destroyed |
 | **penn** → t5x | verbatim copy (`t5xgame.cpp` ConvertFromP6H) | **broken** — `\x02c…\x03` lands as literal control bytes |
-| **tinymush** → t5x | verbatim copy (`t5xgame.cpp` ConvertFromT6H) | **partial** — raw ANSI survives only if output is t5x v1/v2; not parsed to PUA for v3+ |
 
-So of the six cross-family color directions, **two now work** (t5x↔rhost). The
-remaining four either garble color, or (t5x→tinymush) additionally destroy all
-non-ASCII text.
+So of the six cross-family color directions, **four now work** (t5x↔rhost and
+t5x↔tinymush).  Only PennMUSH (`\x02c…\x03` markup) remains, in both directions.
+
+TinyMUSH note: TinyMUSH is 8-bit Latin-1 and 16-color, so t5x→tinymush is
+necessarily lossy for true Unicode and for 24-bit/256 color (both reduced) --
+that reduction is correct, not a bug.  The bug was the blanket `'?'` for *all*
+high bytes, which discarded representable Latin-1 too.
 
 Note (found while implementing rhost→t5x): `ConvertFromR7H` emitted object
 headers without the mandatory ZONE/LINK fields for zone-/link-less objects,
@@ -82,13 +86,13 @@ model for an encoder):
 2. **rhost → t5x**: DONE — `ConvertColorFromRhostSoftcode()` parses the `%c…`
    vocabulary into PUA (inverse of `ConvertColorToRhostSoftcode`), and
    `ConvertFromR7H` now produces a v3 (UTF-8/PUA) flatfile.
-3. **tinymush ⇄ t5x**: parse/emit raw ANSI `ESC[…m` ⇄ PUA. TinyMUX already has
-   ANSI→PUA in `ConvertToUTF8` (the v2→v3 path) — reuse it. **Also fix
-   `ConvertT5XValue`'s `'?'`-for-every-non-ASCII behavior**, which is a Unicode
-   bug independent of color.
+3. **tinymush ⇄ t5x**: DONE — color crosses as raw ANSI ⇄ PUA using the existing
+   `Downgrade2`/`ConvertToUTF8` machinery; `ConvertT5XValue` no longer maps
+   representable Latin-1 to `'?'`.
+4. **penn ⇄ t5x**: a `\x02c<codes>\x03` ⇄ PUA transcoder (parse/emit the
+   letter/`#RRGGBB`/`+xtermN` vocabulary).  Penn's markup is structured color,
+   not raw ANSI, so it maps cleanly.
 
-Priority order (most value / least risk first): rhost→t5x decoder (outbound
-already proven) → tinymush ⇄ t5x (reuse existing ANSI↔PUA, fix the Unicode
-loss) → penn ⇄ t5x (new transcoder, but well-structured source).
+Penn is the remaining direction.
 
 Sources are cloned under `/tmp/srv/{penn,tm,rhost}` for follow-up work.

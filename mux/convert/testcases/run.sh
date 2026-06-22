@@ -165,7 +165,18 @@ done
 if [ "$rcolor" = yes ]; then ok "rhost 24-bit color survives rhost->t5x->rhost"
 else nok "rhost color lost on rhost->t5x import"; fi
 
-echo "# 10. --list runs"
+echo "# 10. t5x <-> TinyMUSH preserves Latin-1 text and color"
+# t5x-v5-latin.flat has intense+red "Café" (UTF-8) in a user attribute.
+# t5x -> tinymush -> t5x must keep the color (PUA) and the accented 'é'
+# (the old ConvertT5XValue mapped every >=0x7F byte to '?').
+"$omega" -o tinymush "$fix/t5x-v5-latin.flat" "$tmp/tm" >/dev/null 2>&1
+"$omega" -o tinymux -v 5 "$tmp/tm" "$tmp/tm_back" >/dev/null 2>&1
+# intense + FG-red PUA, "Caf", é (UTF-8), reset PUA -- exact round-trip.
+want=$(printf '\357\224\201\357\230\201Caf\303\251\357\224\200')
+if grep -qaF "$want" "$tmp/tm_back"; then ok "t5x->tinymush->t5x keeps Latin-1 + color"
+else nok "t5x->tinymush lost Latin-1 or color"; fi
+
+echo "# 11. --list runs"
 if "$omega" --list >/dev/null 2>&1; then ok "omega --list"; else nok "omega --list"; fi
 
 echo "# ---"
