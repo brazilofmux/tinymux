@@ -176,7 +176,15 @@ want=$(printf '\357\224\201\357\230\201Caf\303\251\357\224\200')
 if grep -qaF "$want" "$tmp/tm_back"; then ok "t5x->tinymush->t5x keeps Latin-1 + color"
 else nok "t5x->tinymush lost Latin-1 or color"; fi
 
-echo "# 11. --list runs"
+echo "# 11. PennMUSH color markup is decoded on import (penn -> t5x)"
+# p6h-color.flat has 24-bit FG #C88764 markup (\x02c#C88764\x03) in an attribute.
+# penn -> t5x must parse it to PUA; routing on to rhost must reproduce it.
+"$omega" -o tinymux -v 5 "$fix/p6h-color.flat" "$tmp/pc_t5x" >/dev/null 2>&1
+"$omega" -o rhostmush "$tmp/pc_t5x" "$tmp/pc_back" >/dev/null 2>&1
+if grep -qaF '%c<#C88764>' "$tmp/pc_back"; then ok "penn 24-bit color survives penn->t5x"
+else nok "penn color lost on penn->t5x import"; fi
+
+echo "# 12. --list runs"
 if "$omega" --list >/dev/null 2>&1; then ok "omega --list"; else nok "omega --list"; fi
 
 echo "# ---"

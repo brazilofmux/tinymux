@@ -133,6 +133,16 @@ def main():
     omega("-o", "rhostmush", u257, os.path.join(FIXTURES, "r7h-color.flat"))
     os.remove(u257)
 
+    # A PennMUSH fixture with 24-bit color markup (TAG_START 'c' #RRGGBB
+    # TAG_END) in an attribute value, for the penn->t5x color-import check.
+    pn = open(os.path.join(FIXTURES, "p6h-new.flat"), "rb").read()
+    pm = re.search(rb'value "\[', pn) or re.search(rb'value "', pn)
+    ppos = pm.end()
+    markup = bytes([0x02]) + b'c#C88764' + bytes([0x03]) + b'Z' + \
+             bytes([0x02]) + b'cn' + bytes([0x03])
+    open(os.path.join(FIXTURES, "p6h-color.flat"), "wb").write(
+        pn[:ppos] + markup + pn[ppos:])
+
     # Sanity: the color fixture must parse and round-trip v5->v5 unchanged.
     rt = color + ".rt"
     omega(color, rt)

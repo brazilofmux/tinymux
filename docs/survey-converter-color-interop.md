@@ -49,11 +49,11 @@ unchanged, so the *source's* color bytes land in the target with no translation.
 | **rhost** → t5x | `ConvertColorFromRhostSoftcode()` (`t5xgame.cpp`) | **correct** — `%c…` → PUA, 24-bit preserved (rhost→t5x now produces v3) |
 | t5x → **tinymush** | `Downgrade2` (PUA→ANSI, UTF-8→Latin-1) then `ConvertT5XValue` | **correct** — color as 16-color ANSI; Latin-1 text preserved (previously every byte ≥0x7F became `'?'`) |
 | **tinymush** → t5x | verbatim copy to v2, then the standard v2→v3 upgrade | **correct** — raw ANSI → PUA and Latin-1 → UTF-8 via `ConvertToUTF8` (with `-v 3`+; a v2 target keeps ANSI) |
+| **penn** → t5x | `ConvertColorFromPennMarkup()` (`t5xgame.cpp`) | **correct** — `\x02c…\x03` markup → PUA, 24-bit preserved (penn→t5x now produces v3) |
 | t5x → **penn** | verbatim copy (`p6hgame.cpp` ConvertFromT5X) | **broken** — PUA bytes land raw, not `\x02c…\x03` |
-| **penn** → t5x | verbatim copy (`t5xgame.cpp` ConvertFromP6H) | **broken** — `\x02c…\x03` lands as literal control bytes |
 
-So of the six cross-family color directions, **four now work** (t5x↔rhost and
-t5x↔tinymush).  Only PennMUSH (`\x02c…\x03` markup) remains, in both directions.
+So of the six cross-family color directions, **five now work** (t5x↔rhost,
+t5x↔tinymush, and penn→t5x).  Only the t5x→penn *outbound* remains.
 
 TinyMUSH note: TinyMUSH is 8-bit Latin-1 and 16-color, so t5x→tinymush is
 necessarily lossy for true Unicode and for 24-bit/256 color (both reduced) --

@@ -1885,9 +1885,15 @@ static NameMask p6h_attr_flags[] =
     { "noname",         T5X_AF_NONAME   },
 };
 
+static const UTF8 *ConvertColorFromPennMarkup(const char *pString);
+
 void T5X_GAME::ConvertFromP6H()
 {
-    SetFlags(T5X_MANDFLAGS_V2 | 2);
+    // v3: UTF-8 text with PUA color (PennMUSH's \x02c..\x03 markup is decoded to
+    // PUA below).  v3's mandatory flags add V_ATRKEY (lock-as-attribute); the
+    // default locks are moved to A_LOCK at the end of this function.
+    //
+    SetFlags(T5X_MANDFLAGS_V3 | 3);
 
     // Build internal attribute names.
     //
@@ -1959,7 +1965,7 @@ void T5X_GAME::ConvertFromP6H()
         int iType = p6h_convert_type[it->second->m_iType];
 
         poi->SetRef(it->first);
-        poi->SetName(StringClone(it->second->m_pName));
+        poi->SetName(StringClone((char *)ConvertColorFromPennMarkup(it->second->m_pName)));
         if (it->second->m_fLocation)
         {
             int iLocation = it->second->m_dbLocation;
@@ -2178,7 +2184,7 @@ void T5X_GAME::ConvertFromP6H()
                         }
                         else
                         {
-                            pai->SetNumOwnerFlagsAndValue(AttrNamesKnown[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone((*itAttr)->m_pValue));
+                            pai->SetNumOwnerFlagsAndValue(AttrNamesKnown[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone((char *)ConvertColorFromPennMarkup((*itAttr)->m_pValue)));
                         }
                         pvai->push_back(pai);
                     }
@@ -2188,7 +2194,7 @@ void T5X_GAME::ConvertFromP6H()
                         if (itFound != AttrNames.end())
                         {
                             T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                            pai->SetNumOwnerFlagsAndValue(AttrNames[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone((*itAttr)->m_pValue));
+                            pai->SetNumOwnerFlagsAndValue(AttrNames[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone((char *)ConvertColorFromPennMarkup((*itAttr)->m_pValue)));
                             pvai->push_back(pai);
                         }
                     }
@@ -2283,6 +2289,12 @@ void T5X_GAME::ConvertFromP6H()
     for (map<const char *, int, ltstr>::iterator it = AttrNamesKnown.begin(); it != AttrNamesKnown.end(); ++it)
     {
         free(const_cast<char *>(it->first));
+    }
+
+    // v3 keeps the default lock in the A_LOCK attribute, not the header.
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator ito = m_mObjects.begin(); ito != m_mObjects.end(); ++ito)
+    {
+        ito->second->UpgradeDefaultLock();
     }
 
     SetSizeHint(dbRefMax+1);
@@ -7343,6 +7355,182 @@ static const UTF8 *ConvertColorFromRhostSoftcode(const char *pString)
         {
             *q++ = (UTF8)*p++;     // not a recognized color code -- pass through
         }
+    }
+    *q = '\0';
+    return aBuffer;
+}
+
+// Emit a 24-bit color at *pq as the v5 PUA form: an indexed xterm-256 base (for
+// 256-color fallback) followed by the two SMP code points carrying exact RGB.
+//
+static void EmitPUA24(UTF8 **pq, int r, int g, int b, bool fBG)
+{
+    RGB rgb;
+    rgb.r = r; rgb.g = g; rgb.b = b;
+    int base = FindNearestPalette256Entry(rgb);
+    unsigned int cidx = (fBG ? COLOR_INDEX_BG : COLOR_INDEX_FG) + base;
+    unsigned int blk  = fBG ? 2 : 0;
+    unsigned int cp1 = (((unsigned int)r >> 4) << 8) | (unsigned int)g;
+    unsigned int cp2 = (((unsigned int)r & 0xF) << 8) | (unsigned int)b;
+    UTF8 *q = *pq;
+    memcpy(q, aColors[cidx].pUTF, aColors[cidx].nUTF);
+    q += aColors[cidx].nUTF;
+    q[0] = 0xF3; q[1] = (UTF8)(0xB0 + blk);     q[2] = (UTF8)(0x80 | ((cp1 >> 6) & 0x3F)); q[3] = (UTF8)(0x80 | (cp1 & 0x3F)); q += 4;
+    q[0] = 0xF3; q[1] = (UTF8)(0xB0 + blk + 1); q[2] = (UTF8)(0x80 | ((cp2 >> 6) & 0x3F)); q[3] = (UTF8)(0x80 | (cp2 & 0x3F)); q += 4;
+    *pq = q;
+}
+
+static bool IsHex6(const char *s)
+{
+    for (int i = 0; i < 6; i++)
+    {
+        if (!isxdigit((unsigned char)s[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+// --------------------------------------------------------------------------
+// ConvertColorFromPennMarkup: PennMUSH inline markup -> TinyMUX inline PUA.
+//
+// PennMUSH stores color as TAG_START(0x02) 'c' <payload> TAG_END(0x03).  The
+// payload (see PennMUSH write_ansi_letters): 'n' or '/' reset; f/h/i/u attrs
+// (F/H/I/U explicit-off, best-effort ignored -- PUA has no per-attr off);
+// lowercase x r g y b m c w = FG basic / uppercase = BG basic; '#RRGGBB' = FG
+// 24-bit; '+xtermN' = FG xterm-256; '!' then #RRGGBB / +xtermN = BG.  Other
+// markup tags (e.g. pueblo '\x02p…\x03') are dropped; everything else passes
+// through.
+//
+static const UTF8 *ConvertColorFromPennMarkup(const char *pString)
+{
+    static UTF8 aBuffer[2*LBUF_SIZE];
+    UTF8 *q = aBuffer;
+    UTF8 *qEnd = aBuffer + sizeof(aBuffer) - 16;
+    const char *p = pString;
+
+    while (  '\0' != *p
+          && q < qEnd)
+    {
+        if ('\x02' != p[0])
+        {
+            *q++ = (UTF8)*p++;
+            continue;
+        }
+
+        // A markup tag.  Find TAG_END.
+        //
+        const char *pEnd = p + 1;
+        while ('\0' != *pEnd && '\x03' != *pEnd)
+        {
+            pEnd++;
+        }
+        if ('\x03' != *pEnd)
+        {
+            *q++ = (UTF8)*p++;          // unterminated -- pass the 0x02 through
+            continue;
+        }
+        if ('c' != p[1])
+        {
+            p = pEnd + 1;               // non-color markup -- drop the tag
+            continue;
+        }
+
+        const char *s = p + 2;
+        if ('n' == s[0] || '/' == s[0])
+        {
+            memcpy(q, aColors[COLOR_INDEX_RESET].pUTF, aColors[COLOR_INDEX_RESET].nUTF);
+            q += aColors[COLOR_INDEX_RESET].nUTF;
+            p = pEnd + 1;
+            continue;
+        }
+
+        while (s < pEnd && q < qEnd)
+        {
+            int code = -1;
+            char c = *s;
+            if      ('f' == c) code = COLOR_INDEX_BLINK;
+            else if ('h' == c) code = COLOR_INDEX_INTENSE;
+            else if ('i' == c) code = COLOR_INDEX_INVERSE;
+            else if ('u' == c) code = COLOR_INDEX_UNDERLINE;
+            else if ('F' == c || 'H' == c || 'I' == c || 'U' == c)
+            {
+                s++;                    // explicit-off: best-effort skip
+                continue;
+            }
+            else if ('#' == c && IsHex6(s + 1))
+            {
+                EmitPUA24(&q, RhostHex2(s + 1), RhostHex2(s + 3), RhostHex2(s + 5), false);
+                s += 7;
+                continue;
+            }
+            else if ('+' == c)
+            {
+                if (  0 == strncmp(s + 1, "xterm", 5)
+                   && isdigit((unsigned char)s[6]))
+                {
+                    int idx = atoi(s + 6);
+                    const char *d = s + 6;
+                    while (isdigit((unsigned char)*d)) d++;
+                    if (0 <= idx && idx <= 255)
+                    {
+                        unsigned int ci = COLOR_INDEX_FG + (unsigned int)idx;
+                        memcpy(q, aColors[ci].pUTF, aColors[ci].nUTF);
+                        q += aColors[ci].nUTF;
+                    }
+                    s = d;
+                }
+                else
+                {
+                    s++;                // +name -- best-effort skip the word
+                    while (s < pEnd && (isalnum((unsigned char)*s))) s++;
+                }
+                continue;
+            }
+            else if ('!' == c)
+            {
+                s++;                    // background spec follows
+                if ('#' == *s && IsHex6(s + 1))
+                {
+                    EmitPUA24(&q, RhostHex2(s + 1), RhostHex2(s + 3), RhostHex2(s + 5), true);
+                    s += 7;
+                }
+                else if (  '+' == s[0]
+                        && 0 == strncmp(s + 1, "xterm", 5)
+                        && isdigit((unsigned char)s[6]))
+                {
+                    int idx = atoi(s + 6);
+                    const char *d = s + 6;
+                    while (isdigit((unsigned char)*d)) d++;
+                    if (0 <= idx && idx <= 255)
+                    {
+                        unsigned int ci = COLOR_INDEX_BG + (unsigned int)idx;
+                        memcpy(q, aColors[ci].pUTF, aColors[ci].nUTF);
+                        q += aColors[ci].nUTF;
+                    }
+                    s = d;
+                }
+                continue;
+            }
+            else
+            {
+                int idx = RhostColorLetter(c);
+                if (0 <= idx)
+                {
+                    bool fBG = (0 != isupper((unsigned char)c));
+                    code = (int)((fBG ? COLOR_INDEX_BG : COLOR_INDEX_FG) + idx);
+                }
+            }
+
+            if (0 <= code)
+            {
+                memcpy(q, aColors[code].pUTF, aColors[code].nUTF);
+                q += aColors[code].nUTF;
+            }
+            s++;
+        }
+        p = pEnd + 1;
     }
     *q = '\0';
     return aBuffer;
