@@ -6133,6 +6133,44 @@ bool T5X_GAME::DowngradeToRhost()
     return true;
 }
 
+// Like DowngradeToRhost, but for PennMUSH: PUA color becomes \x02c..\x03 markup
+// (24-bit preserved as #RRGGBB), text becomes Latin-1, and the default lock
+// moves to the header.  Used by the t5x->penn conversion path.
+//
+bool T5X_GAME::DowngradeToPenn()
+{
+    int ver = (m_flags & T5X_V_MASK);
+    if (ver <= 2)
+    {
+        return false;
+    }
+    m_flags &= ~(T5X_V_MASK|T5X_V_ATRKEY);
+    m_flags |= 2;
+
+    for (map<int, T5X_ATTRNAMEINFO *, lti>::iterator it = m_mAttrNames.begin(); it != m_mAttrNames.end(); ++it)
+    {
+        m_mAttrNums.erase(it->second->m_pNameUnencoded);
+        it->second->ConvertToPenn();
+        map<char *, T5X_ATTRNAMEINFO *, ltstr>::iterator itNum = m_mAttrNums.find(it->second->m_pNameUnencoded);
+        if (itNum != m_mAttrNums.end())
+        {
+            fprintf(stderr, "WARNING: Duplicate attribute name %s(%d) conflicts with %s(%d)\n",
+                it->second->m_pNameUnencoded, it->second->m_iNum, itNum->second->m_pNameUnencoded, itNum->second->m_iNum);
+        }
+        else
+        {
+            m_mAttrNums[it->second->m_pNameUnencoded] = it->second;
+        }
+    }
+
+    for (map<int, T5X_OBJECTINFO *, lti>::iterator it = m_mObjects.begin(); it != m_mObjects.end(); ++it)
+    {
+        it->second->ConvertToPenn();
+        it->second->DowngradeDefaultLock();
+    }
+    return true;
+}
+
 bool T5X_GAME::Downgrade1()
 {
     Downgrade2();
@@ -6158,6 +6196,14 @@ void T5X_ATTRNAMEINFO::ConvertToLatin1()
 void T5X_ATTRNAMEINFO::ConvertToRhost()
 {
     char *p = (char *)ConvertToAscii((UTF8 *)m_pNameUnencoded);
+    SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
+}
+
+void T5X_ATTRNAMEINFO::ConvertToPenn()
+{
+    // Attribute names carry no color; just Latin-1 the text.
+    //
+    char *p = (char *)::ConvertToLatin1((UTF8 *)m_pNameUnencoded);
     SetNumFlagsAndName(m_iNum, m_iFlags, StringClone(p));
 }
 
@@ -7169,6 +7215,138 @@ const UTF8 *ConvertColorToRhostSoftcode(const UTF8 *pString)
     return aBuffer;
 }
 
+// Emit one PennMUSH color markup tag: TAG_START(0x02) 'c' <payload> TAG_END(0x03).
+//
+static UTF8 *EmitPennCode(UTF8 *q, const char *payload)
+{
+    *q++ = 0x02;
+    *q++ = 'c';
+    while ('\0' != *payload)
+    {
+        *q++ = (UTF8)*payload++;
+    }
+    *q++ = 0x03;
+    return q;
+}
+
+// ConvertColorToPennMarkup: inverse of ConvertColorFromPennMarkup.  Decode the
+// inline PUA color in pString and emit PennMUSH markup tags (the structure
+// mirrors ConvertColorToRhostSoftcode); 24-bit color is preserved as #RRGGBB.
+//
+const UTF8 *ConvertColorToPennMarkup(const UTF8 *pString)
+{
+    static const char color_letters[8] = { 'x', 'r', 'g', 'y', 'b', 'm', 'c', 'w' };
+    static UTF8 aBuffer[2*LBUF_SIZE];
+    UTF8 *pBuffer = aBuffer;
+    ColorState csCurrent = CS_NORMAL;
+    ColorState csNext = CS_NORMAL;
+    char tmp[24];
+
+    while (  '\0' != *pString
+          && pBuffer < aBuffer + sizeof(aBuffer) - 64)
+    {
+        unsigned int iCode = mux_color(pString);
+        if (COLOR_NOTCOLOR == iCode)
+        {
+            if (csCurrent != csNext)
+            {
+                if (  ((csCurrent & ~csNext) & CS_ATTRS)
+                   || (  (csNext & CS_BACKGROUND) == CS_BG_DEFAULT
+                      && (csCurrent & CS_BACKGROUND) != CS_BG_DEFAULT)
+                   || (  (csNext & CS_FOREGROUND) == CS_FG_DEFAULT
+                      && (csCurrent & CS_FOREGROUND) != CS_FG_DEFAULT))
+                {
+                    pBuffer = EmitPennCode(pBuffer, "n");
+                    csCurrent = CS_NORMAL;
+                }
+
+                ColorState tmp2 = csCurrent ^ csNext;
+
+                if (CS_ATTRS & tmp2)
+                {
+                    if (CS_INTENSE   & tmp2 & csNext) pBuffer = EmitPennCode(pBuffer, "h");
+                    if (CS_UNDERLINE & tmp2 & csNext) pBuffer = EmitPennCode(pBuffer, "u");
+                    if (CS_BLINK     & tmp2 & csNext) pBuffer = EmitPennCode(pBuffer, "f");
+                    if (CS_INVERSE   & tmp2 & csNext) pBuffer = EmitPennCode(pBuffer, "i");
+                }
+
+                if (  (CS_FOREGROUND & tmp2)
+                   && (csNext & CS_FOREGROUND) != CS_FG_DEFAULT)
+                {
+                    if (CS_FG_INDEXED & csNext)
+                    {
+                        unsigned int idx = static_cast<unsigned int>(CS_FG_FIELD(csNext)) & 0xFF;
+                        if (idx < 8)
+                        {
+                            tmp[0] = color_letters[idx]; tmp[1] = '\0';
+                            pBuffer = EmitPennCode(pBuffer, tmp);
+                        }
+                        else if (idx < 16)
+                        {
+                            pBuffer = EmitPennCode(pBuffer, "h");
+                            tmp[0] = color_letters[idx - 8]; tmp[1] = '\0';
+                            pBuffer = EmitPennCode(pBuffer, tmp);
+                        }
+                        else
+                        {
+                            sprintf(tmp, "+xterm%u", idx);
+                            pBuffer = EmitPennCode(pBuffer, tmp);
+                        }
+                    }
+                    else
+                    {
+                        RGB rgb;
+                        cs2rgb(CS_FG_FIELD(csNext), &rgb);
+                        sprintf(tmp, "#%02X%02X%02X", rgb.r, rgb.g, rgb.b);
+                        pBuffer = EmitPennCode(pBuffer, tmp);
+                    }
+                }
+
+                if (  (CS_BACKGROUND & tmp2)
+                   && (csNext & CS_BACKGROUND) != CS_BG_DEFAULT)
+                {
+                    if (CS_BG_INDEXED & csNext)
+                    {
+                        unsigned int idx = static_cast<unsigned int>(CS_BG_FIELD(csNext)) & 0xFF;
+                        if (idx < 8)
+                        {
+                            tmp[0] = (char)toupper(color_letters[idx]); tmp[1] = '\0';
+                            pBuffer = EmitPennCode(pBuffer, tmp);
+                        }
+                        else
+                        {
+                            sprintf(tmp, "!+xterm%u", idx);
+                            pBuffer = EmitPennCode(pBuffer, tmp);
+                        }
+                    }
+                    else
+                    {
+                        RGB rgb;
+                        cs2rgb(CS_BG_FIELD(csNext), &rgb);
+                        sprintf(tmp, "!#%02X%02X%02X", rgb.r, rgb.g, rgb.b);
+                        pBuffer = EmitPennCode(pBuffer, tmp);
+                    }
+                }
+
+                csCurrent = csNext;
+            }
+            utf8_safe_chr(pString, aBuffer, &pBuffer);
+        }
+        else
+        {
+            csNext = UpdateColorState(csNext, iCode, pString);
+        }
+        pString = utf8_NextCodePoint(pString);
+    }
+
+    if (csNext != CS_NORMAL)
+    {
+        pBuffer = EmitPennCode(pBuffer, "n");
+    }
+    *pBuffer = '\0';
+    return aBuffer;
+}
+
 // Nearest xterm-256 palette index for an RGB.  Used as the indexed base that
 // precedes a 24-bit PUA color so 256-color clients still get a fallback.
 //
@@ -7835,10 +8013,37 @@ void T5X_OBJECTINFO::ConvertToRhost()
     }
 }
 
+void T5X_OBJECTINFO::ConvertToPenn()
+{
+    // Convert name: PUA color to Penn \x02c..\x03 markup.  Text stays UTF-8
+    // (modern PennMUSH is UTF-8); we must NOT run ConvertToLatin1 over the
+    // result, as its DFA maps the TAG_START/TAG_END control bytes to '?'.
+    //
+    char *p = (char *)ConvertColorToPennMarkup((UTF8 *)m_pName);
+    free(m_pName);
+    m_pName = StringClone(p);
+
+    if (NULL != m_pvai)
+    {
+        for (vector<T5X_ATTRINFO *>::iterator it = m_pvai->begin(); it != m_pvai->end(); ++it)
+        {
+            (*it)->ConvertToPenn();
+        }
+    }
+}
+
 void T5X_ATTRINFO::ConvertToRhost()
 {
     char *p = (char *)ConvertColorToRhostSoftcode((UTF8 *)m_pValueUnencoded);
     SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone((char *)ConvertToAscii((UTF8 *)p)));
+}
+
+void T5X_ATTRINFO::ConvertToPenn()
+{
+    // PUA color -> Penn markup; text stays UTF-8 (see T5X_OBJECTINFO::ConvertToPenn).
+    //
+    char *p = (char *)ConvertColorToPennMarkup((UTF8 *)m_pValueUnencoded);
+    SetNumOwnerFlagsAndValue(m_iNum, m_dbOwner, m_iFlags, StringClone(p));
 }
 
 void T5X_GAME::Extract(FILE *fp, int dbExtract) const

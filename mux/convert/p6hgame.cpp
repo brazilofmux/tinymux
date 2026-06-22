@@ -2416,7 +2416,8 @@ void P6H_GAME::ConvertFromT5X()
             | DBF_NEW_POWERS
             | DBF_NO_TEMPLE
             | DBF_SPLIT_IMMORTAL
-            | DBF_LABELS);
+            | DBF_LABELS
+            | DBF_SPIFFY_AF_ANSI);   // attribute color is stored as \x02c..\x03 markup
 
     // savedtime
     //

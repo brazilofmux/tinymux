@@ -50,10 +50,11 @@ unchanged, so the *source's* color bytes land in the target with no translation.
 | t5x → **tinymush** | `Downgrade2` (PUA→ANSI, UTF-8→Latin-1) then `ConvertT5XValue` | **correct** — color as 16-color ANSI; Latin-1 text preserved (previously every byte ≥0x7F became `'?'`) |
 | **tinymush** → t5x | verbatim copy to v2, then the standard v2→v3 upgrade | **correct** — raw ANSI → PUA and Latin-1 → UTF-8 via `ConvertToUTF8` (with `-v 3`+; a v2 target keeps ANSI) |
 | **penn** → t5x | `ConvertColorFromPennMarkup()` (`t5xgame.cpp`) | **correct** — `\x02c…\x03` markup → PUA, 24-bit preserved (penn→t5x now produces v3) |
-| t5x → **penn** | verbatim copy (`p6hgame.cpp` ConvertFromT5X) | **broken** — PUA bytes land raw, not `\x02c…\x03` |
+| t5x → **penn** | `DowngradeToPenn()` / `ConvertColorToPennMarkup()` | **correct** — PUA → `\x02c…\x03` markup, 24-bit preserved; writer sets DBF_SPIFFY_AF_ANSI; text kept UTF-8 |
 
-So of the six cross-family color directions, **five now work** (t5x↔rhost,
-t5x↔tinymush, and penn→t5x).  Only the t5x→penn *outbound* remains.
+So **all six cross-family color directions now work**.  Within the limits of
+each codebase: TinyMUSH crosses at 16-color (its 3.x target era; see the
+TinyMUSH note), while PennMUSH and RhostMUSH carry full 24-bit.
 
 TinyMUSH note: TinyMUSH is 8-bit Latin-1 and 16-color, so t5x→tinymush is
 necessarily lossy for true Unicode and for 24-bit/256 color (both reduced) --
@@ -89,10 +90,12 @@ model for an encoder):
 3. **tinymush ⇄ t5x**: DONE — color crosses as raw ANSI ⇄ PUA using the existing
    `Downgrade2`/`ConvertToUTF8` machinery; `ConvertT5XValue` no longer maps
    representable Latin-1 to `'?'`.
-4. **penn ⇄ t5x**: a `\x02c<codes>\x03` ⇄ PUA transcoder (parse/emit the
-   letter/`#RRGGBB`/`+xtermN` vocabulary).  Penn's markup is structured color,
-   not raw ANSI, so it maps cleanly.
+4. **penn ⇄ t5x**: DONE — `ConvertColorFromPennMarkup()` (inbound, penn→t5x v3)
+   and `ConvertColorToPennMarkup()`/`DowngradeToPenn()` (outbound) transcode the
+   `\x02c<codes>\x03` markup ⇄ PUA; the penn writer sets DBF_SPIFFY_AF_ANSI.
 
-Penn is the remaining direction.
+All six cross-family color directions are implemented.  Next fidelity step:
+TinyMUSH 4.0 binary 24-bit (extend the ANSI↔PUA helpers from 16-color to
+256/24-bit) -- see the TinyMUSH note above.
 
 Sources are cloned under `/tmp/srv/{penn,tm,rhost}` for follow-up work.

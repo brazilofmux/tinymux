@@ -803,9 +803,10 @@ int main(int argc, char *argv[])
         else if (  eTinyMUX == eInputType
                 && ePennMUSH == eOutputType)
         {
-            // It's easier to convert from 2.6 to Penn.
+            // Downgrade to a Penn-flavored v2 t5x first: PUA color -> \x02c..\x03
+            // markup (24-bit preserved), text -> Latin-1.
             //
-            if (  g_t5xgame.Downgrade2()
+            if (  g_t5xgame.DowngradeToPenn()
                || g_t5xgame.Upgrade2())
             {
                 g_t5xgame.Pass2();
@@ -880,7 +881,7 @@ int main(int argc, char *argv[])
             g_t5xgame.ConvertFromT6H();
             g_t5xgame.Pass2();
             g_t5xgame.Validate();
-            if (  g_t5xgame.Downgrade2()
+            if (  g_t5xgame.DowngradeToPenn()
                || g_t5xgame.Upgrade2())
             {
                 g_t5xgame.Pass2();

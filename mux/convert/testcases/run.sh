@@ -184,7 +184,17 @@ echo "# 11. PennMUSH color markup is decoded on import (penn -> t5x)"
 if grep -qaF '%c<#C88764>' "$tmp/pc_back"; then ok "penn 24-bit color survives penn->t5x"
 else nok "penn color lost on penn->t5x import"; fi
 
-echo "# 12. --list runs"
+echo "# 12. t5x -> PennMUSH -> t5x preserves color and Unicode"
+# t5x-v5-latin.flat has intense+red "Café" in a user attr.  Out to Penn it
+# becomes \x02ch\x03\x02cr\x03 markup; back in it must restore the same PUA, and
+# 'é' must survive as UTF-8.
+"$omega" -o pennmush "$fix/t5x-v5-latin.flat" "$tmp/pn" >/dev/null 2>&1
+"$omega" -o tinymux -v 5 "$tmp/pn" "$tmp/pn_back" >/dev/null 2>&1
+want=$(printf '\357\224\201\357\230\201Caf\303\251\357\224\200')
+if grep -qaF "$want" "$tmp/pn_back"; then ok "t5x->penn->t5x keeps color + Unicode"
+else nok "t5x->penn->t5x lost color or Unicode"; fi
+
+echo "# 13. --list runs"
 if "$omega" --list >/dev/null 2>&1; then ok "omega --list"; else nok "omega --list"; fi
 
 echo "# ---"
