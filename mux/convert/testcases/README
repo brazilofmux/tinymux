@@ -51,6 +51,10 @@ Fixtures (in fixtures/):
                      (every visible char preceded by a full 16-color state
                      flip).  Drives the restrict/ANSI/softcode color buffers
                      near their worst-case expansion; used by run-asan.sh.
+  t5x-v5-expand.flat The base with a first attribute of 32000 double-spaces;
+                     each extracts as "%b " (~96KB), overflowing the old 1*LBUF
+                     extraction buffer.  Guards against silent truncation in
+                     @decomp extraction.
   p6h-new.flat       The base cross-converted to PennMUSH (new style).
   t6h-3.1.flat       The base cross-converted to TinyMUSH (3.1).
   r7h-v7.flat        The base cross-converted to RhostMUSH (v7).

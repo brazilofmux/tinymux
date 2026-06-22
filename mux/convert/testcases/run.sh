@@ -142,7 +142,16 @@ for from in p6h-new.flat t6h-3.1.flat r7h-v7.flat; do
     fi
 done
 
-echo "# 8. --list runs"
+echo "# 8. extraction does not silently truncate an expanding value"
+# t5x-v5-expand.flat's first attribute is 32000 '  ' pairs; each extracts as
+# '%b ' (~96KB), which overflowed the old 1*LBUF extraction buffer.  All 32000
+# must survive.
+"$omega" -x 1 "$fix/t5x-v5-expand.flat" "$tmp/ex" 2>/dev/null
+nbsp=$(grep -o '%b ' "$tmp/ex" | wc -l)
+if [ "$nbsp" -ge 32000 ]; then ok "extract preserves expanding value ($nbsp '%b ')"
+else nok "extract truncated expanding value ($nbsp '%b ', want >=32000)"; fi
+
+echo "# 9. --list runs"
 if "$omega" --list >/dev/null 2>&1; then ok "omega --list"; else nok "omega --list"; fi
 
 echo "# ---"

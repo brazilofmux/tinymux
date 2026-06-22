@@ -101,6 +101,10 @@ def main():
     omega("-v", "5", seed, base)
     inject(base, color, FG_COLOR + BG_COLOR)
     inject(base, os.path.join(FIXTURES, "t5x-v5-stress.flat"), stress_value(64000))
+    # An attribute that expands on extraction ("  " -> "%b "); 32000 double
+    # spaces become 32000 "%b " (~96KB), overflowing the old 1*LBUF extraction
+    # buffer.  Guards the silent-truncation fix in EncodeSubstitutions.
+    inject(base, os.path.join(FIXTURES, "t5x-v5-expand.flat"), b'  ' * 32000)
 
     # Family fixtures, produced by cross-conversion from the v5 base.
     #
