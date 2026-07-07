@@ -39,6 +39,7 @@ static BOOL WINAPI ConsoleCtrlHandler(DWORD dwCtrlType)
     case CTRL_C_EVENT:
     case CTRL_CLOSE_EVENT:
     case CTRL_BREAK_EVENT:
+    case CTRL_LOGOFF_EVENT:
     case CTRL_SHUTDOWN_EVENT:
         g_shutdown_flag = 1;
         return TRUE;
