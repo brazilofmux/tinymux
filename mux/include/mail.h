@@ -8,6 +8,8 @@
 
 #include "copyright.h"
 
+#include <string>
+
 /* Some of this isn't implemented yet, but heralds the future! */
 #define M_ISREAD    0x0001
 #define M_UNREAD    0x0FFE
@@ -81,9 +83,10 @@ struct muser
 typedef struct mail_body MAILBODY;
 struct mail_body
 {
-    size_t m_nMessage;
-    UTF8  *m_pMessage;
-    int    m_nRefs;
+    std::string m_pMessage;
+    int         m_nRefs;
+
+    mail_body() : m_nRefs(0) {}
 };
 
 class MailList

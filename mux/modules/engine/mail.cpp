@@ -74,7 +74,7 @@ struct malias_t
 };
 
 static std::vector<std::unique_ptr<malias_t>> malias;
-static MAILBODY *mail_list = nullptr;
+static std::vector<MAILBODY> mail_list;
 
 // Small helper to reduce reinterpret_cast noise when passing std::string
 // contents to UTF8*-taking APIs (UTF8 is typically unsigned char*).
@@ -207,17 +207,15 @@ static void sqlite_wt_sync_all_aliases(void)
 
 // mail_db_grow - We keep a database of mail text, so if we send a
 // message to more than one player, we won't have to duplicate the
-// text.
+// text. Now implemented with std::vector + std::string.
 //
-#define MAIL_FUDGE 1
 // Largest message index we will honor.  Message numbers come from the (admin-
-// supplied, possibly corrupt) mail database; an absurd value would overflow
-// mail_db_grow's int size arithmetic below and/or drive a wild index into
-// mail_list[].  No real mail database approaches this.
+// supplied, possibly corrupt) mail database; an absurd value would drive a
+// wild index.  No real mail database approaches this.
 //
 static constexpr int MAIL_DB_LIMIT = 0x04000000;   // 67,108,864
 
-// True if number is a safe index into the (currently sized) mail_list[].
+// True if number is a safe index into the (currently sized) mail_list.
 //
 static inline bool mail_index_valid(int number)
 {
@@ -238,47 +236,17 @@ static void mail_db_grow(int newtop)
         ENDLOG;
         return;
     }
-    if (mudstate.mail_db_size <= newtop)
-    {
-        // We need to make the mail bag bigger.
-        //
-        int newsize = mudstate.mail_db_size + 100;
-        if (newtop > newsize)
-        {
-            newsize = newtop;
-        }
 
-        MAILBODY *newdb = static_cast<MAILBODY *>(MEMALLOC((newsize + MAIL_FUDGE) * sizeof(MAILBODY)));
-        if (nullptr == newdb)
-        {
-            STARTLOG(LOG_PROBLEMS, "MAIL", "MEM");
-            log_printf(T("mail_db_grow: out of memory growing mail body array to %d."), newsize);
-            ENDLOG;
-            return;
-        }
-        if (mail_list)
-        {
-            mail_list -= MAIL_FUDGE;
-            memcpy( newdb,
-                    mail_list,
-                    (mudstate.mail_db_top + MAIL_FUDGE) * sizeof(MAILBODY));
-            MEMFREE(mail_list);
-            mail_list = nullptr;
-        }
-        mail_list = newdb + MAIL_FUDGE;
-        newdb = nullptr;
-        mudstate.mail_db_size = newsize;
+    // With vector, just resize. Existing entries are preserved.
+    // No fudge, no manual alloc/copy.
+    if (static_cast<int>(mail_list.size()) < newtop)
+    {
+        mail_list.resize(newtop);
     }
 
-    // Initialize new parts of the mail bag.
-    //
-    for (int i = mudstate.mail_db_top; i < newtop; i++)
-    {
-        mail_list[i].m_nRefs = 0;
-        mail_list[i].m_nMessage = 0;
-        mail_list[i].m_pMessage = nullptr;
-    }
+    // New entries are default-constructed (refs=0, empty string).
     mudstate.mail_db_top = newtop;
+    mudstate.mail_db_size = newtop;  // for compatibility with old code paths
 }
 
 // MessageReferenceInc - Increments the reference count for any
@@ -307,18 +275,12 @@ static void MessageReferenceCheck(int number)
     MAILBODY &m = mail_list[number];
     if (m.m_nRefs <= 0)
     {
-        if (m.m_pMessage)
-        {
-            MEMFREE(m.m_pMessage);
-            m.m_pMessage = nullptr;
-            m.m_nMessage = 0;
-        }
+        m.m_pMessage.clear();
     }
 
-    if (m.m_pMessage == nullptr)
+    if (m.m_pMessage.empty())
     {
         m.m_nRefs = 0;
-        m.m_nMessage = 0;
     }
 }
 
@@ -349,9 +311,9 @@ const UTF8 *MessageFetch(int number)
         return T("MAIL: This mail message does not exist in the database. Please alert your admin.");
     }
     MessageReferenceCheck(number);
-    if (mail_list[number].m_pMessage)
+    if (!mail_list[number].m_pMessage.empty())
     {
-        return mail_list[number].m_pMessage;
+        return utf8(mail_list[number].m_pMessage);
     }
     else
     {
@@ -366,14 +328,7 @@ size_t MessageFetchSize(int number)
         return 0;
     }
     MessageReferenceCheck(number);
-    if (mail_list[number].m_pMessage)
-    {
-        return mail_list[number].m_nMessage;
-    }
-    else
-    {
-        return 0;
-    }
+    return mail_list[number].m_pMessage.size();
 }
 
 // This function returns a reference to the message and the the
@@ -381,15 +336,14 @@ size_t MessageFetchSize(int number)
 //
 static int MessageAdd(UTF8 *pMessage)
 {
+    size_t len = strlen(reinterpret_cast<char *>(pMessage));
     int i;
-    MAILBODY *pm;
     bool bFound = false;
     for (i = 0; i < mudstate.mail_db_top; i++)
     {
-        pm = &mail_list[i];
-        if (nullptr == pm->m_pMessage)
+        if (mail_list[i].m_pMessage.empty())
         {
-            pm->m_nRefs = 0;
+            mail_list[i].m_nRefs = 0;
             bFound = true;
             break;
         }
@@ -400,9 +354,8 @@ static int MessageAdd(UTF8 *pMessage)
         mail_db_grow(i + 1);
     }
 
-    pm = &mail_list[i];
-    pm->m_nMessage = strlen(reinterpret_cast<char *>(pMessage));
-    pm->m_pMessage = StringCloneLen(pMessage, pm->m_nMessage);
+    MAILBODY &pm = mail_list[i];
+    pm.m_pMessage.assign(reinterpret_cast<const char *>(pMessage), len);
     MessageReferenceInc(i);
     sqlite_wt_mail_body(i, pMessage);
     return i;
@@ -450,9 +403,7 @@ static int add_mail_message(dbref player, UTF8 *message)
 static bool MessageAddWithNumber(int i, UTF8 *pMessage)
 {
     // i comes from the (possibly corrupt) mail database.  Reject negative and
-    // absurd values (the latter would overflow i+1 / mail_db_grow), and bail if
-    // the grow did not actually make room (e.g. allocation failure) rather than
-    // writing past the end of mail_list[].
+    // absurd values, and bail if the grow did not actually make room.
     //
     if (i < 0 || MAIL_DB_LIMIT < i)
     {
@@ -464,9 +415,9 @@ static bool MessageAddWithNumber(int i, UTF8 *pMessage)
         return false;
     }
 
-    MAILBODY *pm = &mail_list[i];
-    pm->m_nMessage = strlen(reinterpret_cast<char *>(pMessage));
-    pm->m_pMessage = StringCloneLen(pMessage, pm->m_nMessage);
+    size_t len = strlen(reinterpret_cast<char *>(pMessage));
+    MAILBODY &pm = mail_list[i];
+    pm.m_pMessage.assign(reinterpret_cast<const char *>(pMessage), len);
     return true;
 }
 
@@ -2962,12 +2913,7 @@ void finish_mail()
         ml.RemoveAll();
     }
 
-    if (nullptr != mail_list)
-    {
-        mail_list -= MAIL_FUDGE;
-        MEMFREE(mail_list);
-        mail_list = nullptr;
-    }
+    mail_list.clear();
 }
 #endif
 
@@ -3057,7 +3003,6 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
 
         // Check ref counts.
         //
-        if (mail_list)
         {
             int i;
             int nCountHigher = 0;
@@ -3088,7 +3033,6 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
     {
         // First, we should fixup the reference counts.
         //
-        if (mail_list)
         {
             raw_notify(player, tprintf(T("Re-counting mailbag reference counts.")));
             std::vector<int> ai(mudstate.mail_db_top, 0);
@@ -5732,12 +5676,7 @@ static void clear_runtime_mail_data(void)
         ml.RemoveAll();
     }
 
-    if (nullptr != mail_list)
-    {
-        mail_list -= MAIL_FUDGE;
-        MEMFREE(mail_list);
-        mail_list = nullptr;
-    }
+    mail_list.clear();
     mudstate.mail_db_top = 0;
     mudstate.mail_db_size = 0;
 
@@ -5764,7 +5703,7 @@ bool sqlite_sync_mail(void)
     {
         if (0 < mail_list[i].m_nRefs)
         {
-            if (!sqldb.SyncMailBody(i, MessageFetch(i)))
+            if (!sqldb.SyncMailBody(i, utf8(mail_list[i].m_pMessage)))
             {
                 sqldb.Rollback();
                 return false;
