@@ -104,7 +104,7 @@ public:
     bool IsEnd(void);
     void RemoveItem(void);
     void RemoveAll(void);
-    void AppendItem(struct mail *newp);
+    void AppendItem(mail &&newm);
 };
 
 #endif // !MAIL_H

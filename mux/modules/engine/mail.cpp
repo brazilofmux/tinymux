@@ -1868,7 +1868,7 @@ static void do_mail_review_all(dbref player, UTF8 *msglist)
     {
         // Summary mode: list all sent messages grouped by recipient.
         //
-        for (auto &kv : mudstate.mail_htab)
+        for (auto &kv : mail_storage)
         {
             dbref target = kv.first;
             bool bHeader = false;
@@ -1918,7 +1918,7 @@ static void do_mail_review_all(dbref player, UTF8 *msglist)
             return;
         }
 
-        for (auto &kv : mudstate.mail_htab)
+        for (auto &kv : mail_storage)
         {
             dbref target = kv.first;
 
@@ -2822,7 +2822,8 @@ static void send_mail
     // If this is the first message, it is the head and the tail.
     //
     MailList ml(target);
-    ml.AppendItem(newp);
+    ml.AppendItem(std::move(*newp));
+    delete newp;
 
     // Notify people.
     //
@@ -2884,7 +2885,7 @@ void mail_destroy_player(dbref victim)
 
     // Step 2: Orphan sent mail in every other player's mailbox.
     //
-    for (auto &kv : mudstate.mail_htab)
+    for (auto &kv : mail_storage)
     {
         MailList ml2(kv.first);
         struct mail *mp;
@@ -3530,7 +3531,8 @@ static void load_mail_V6(FILE *fp)
         mp->sqlite_id = -1;
 
         MailList ml(mp->to);
-        ml.AppendItem(mp);
+        ml.AppendItem(std::move(*mp));
+        delete mp;
 
         p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
     }
@@ -3614,7 +3616,8 @@ static void load_mail_V5(FILE *fp)
         mp->sqlite_id = -1;
 
         MailList ml(mp->to);
-        ml.AppendItem(mp);
+        ml.AppendItem(std::move(*mp));
+        delete mp;
 
         p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
@@ -5456,13 +5459,10 @@ void MailList::RemoveItem(void)
     }
 }
 
-void MailList::AppendItem(struct mail *miNew)
+void MailList::AppendItem(mail &&miNew)
 {
-    if (!miNew) return;
     auto& lst = mail_storage[m_player];
-    lst.push_back(std::move(*miNew));
-    delete miNew;
-    // List owns now.
+    lst.push_back(std::move(miNew));
 }
 
 void MailList::RemoveAll(void)
@@ -5623,11 +5623,7 @@ void do_folder
 
 static void clear_runtime_mail_data(void)
 {
-    while (!mudstate.mail_htab.empty())
-    {
-        MailList ml(mudstate.mail_htab.begin()->first);
-        ml.RemoveAll();
-    }
+    mail_storage.clear();
 
     mail_list.clear();
     mudstate.mail_db_top = 0;
@@ -5793,7 +5789,8 @@ int sqlite_load_mail(void)
         mp->sqlite_id = rowid;
 
         MailList ml(mp->to);
-        ml.AppendItem(mp);
+        ml.AppendItem(std::move(*mp));
+        delete mp;
     }))
     {
         clear_runtime_mail_data();
