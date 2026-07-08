@@ -2656,7 +2656,7 @@ FUNCTION(fun_mailsubj)
         struct mail *mp = mail_fetch(playerask, num);
         if (mp)
         {
-            safe_str(mp->subject, buff, bufc);
+            safe_str(reinterpret_cast<const UTF8*>(mp->subject.c_str()), buff, bufc);
         }
         else
         {
@@ -3037,23 +3037,23 @@ FUNCTION(fun_mailinfo)
     }
     else if (0 == mux_stricmp(field, T("tolist")))
     {
-        if (mp->tolist)
+        if (!mp->tolist.empty())
         {
-            safe_str(mp->tolist, buff, bufc);
+            safe_str(reinterpret_cast<const UTF8*>(mp->tolist.c_str()), buff, bufc);
         }
     }
     else if (0 == mux_stricmp(field, T("subject")))
     {
-        if (mp->subject)
+        if (!mp->subject.empty())
         {
-            safe_str(mp->subject, buff, bufc);
+            safe_str(reinterpret_cast<const UTF8*>(mp->subject.c_str()), buff, bufc);
         }
     }
     else if (0 == mux_stricmp(field, T("time")))
     {
-        if (mp->time)
+        if (!mp->time.empty())
         {
-            safe_str(mp->time, buff, bufc);
+            safe_str(reinterpret_cast<const UTF8*>(mp->time.c_str()), buff, bufc);
         }
     }
     else if (bIsBody)

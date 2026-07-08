@@ -76,6 +76,9 @@ struct malias_t
 static std::vector<std::unique_ptr<malias_t>> malias;
 static std::vector<MAILBODY> mail_list;
 
+// Per-player mail lists using STL for ownership and iteration.
+static std::unordered_map<dbref, std::list<mail>> mail_storage;
+
 // Small helper to reduce reinterpret_cast noise when passing std::string
 // contents to UTF8*-taking APIs (UTF8 is typically unsigned char*).
 static inline const UTF8* utf8(const std::string& s) {
@@ -96,7 +99,7 @@ static void sqlite_wt_insert_mail(struct mail *mp)
     CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
     mp->sqlite_id = sqldb.InsertMailHeaderReturningId(
         mp->to, mp->from, mp->number,
-        mp->tolist, mp->time, mp->subject, mp->read);
+        utf8(mp->tolist), utf8(mp->time), utf8(mp->subject), mp->read);
     if (mp->sqlite_id < 0)
     {
         Log.tinyprintf(T("mail sqlite_wt_insert_mail failed for to=#%d from=#%d body=%d" ENDLINE),
@@ -1250,7 +1253,7 @@ static bool mail_match(struct mail *mp, struct mail_selector ms, int num)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
 
-    const UTF8 *pMailTimeStr = mp->time;
+    const UTF8 *pMailTimeStr = utf8(mp->time);
 
     CLinearTimeAbsolute ltaMail;
     if (ltaMail.SetString(pMailTimeStr))
@@ -1675,17 +1678,17 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
 
                 raw_notify(player, DASH_LINE);
                 status = status_string(mp);
-                names = make_namelist(player, mp->tolist);
+                names = make_namelist(player, const_cast<UTF8*>(utf8(mp->tolist)));
 
                 UTF8 szFromName[MBUF_SIZE];
                 trimmed_name(mp->from, szFromName, 16, 16, 0);
 
                 UTF8 szSubjectBuffer[MBUF_SIZE];
-                StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
+                StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 65);
 
                 raw_notify(player, tprintf(T("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s"),
                                i, szFromName,
-                               mp->time,
+                               utf8(mp->time),
                                (Connected(mp->from) &&
                                (!Hidden(mp->from) || See_Hidden(player))) ?
                                " (Conn)" : "      ", folder,
@@ -1749,17 +1752,17 @@ static void do_mail_next(dbref player)
 
                 raw_notify(player, DASH_LINE);
                 UTF8 *status = status_string(mp);
-                UTF8 *names = make_namelist(player, mp->tolist);
+                UTF8 *names = make_namelist(player, const_cast<UTF8*>(utf8(mp->tolist)));
 
                 UTF8 szFromName[MBUF_SIZE];
                 trimmed_name(mp->from, szFromName, 16, 16, 0);
 
                 UTF8 szSubjectBuffer[MBUF_SIZE];
-                StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
+                StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 65);
 
                 raw_notify(player, tprintf(T("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nTo     : %-65s\r\nSubject: %s"),
                                i, szFromName,
-                               mp->time,
+                               utf8(mp->time),
                                (Connected(mp->from) &&
                                (!Hidden(mp->from) || See_Hidden(player))) ?
                                " (Conn)" : "      ", folder,
@@ -1821,7 +1824,7 @@ bool mail_from_player(dbref player, struct mail *mp)
     }
     CLinearTimeAbsolute ltaCreated, ltaMail;
     if (  ltaCreated.SetString(pCreated)
-       && ltaMail.SetString(mp->time))
+       && ltaMail.SetString(utf8(mp->time)))
     {
         return ltaCreated <= ltaMail;
     }
@@ -1845,7 +1848,7 @@ bool mail_to_player(dbref player, struct mail *mp)
     }
     CLinearTimeAbsolute ltaCreated, ltaMail;
     if (  ltaCreated.SetString(pCreated)
-       && ltaMail.SetString(mp->time))
+       && ltaMail.SetString(utf8(mp->time)))
     {
         return ltaCreated <= ltaMail;
     }
@@ -1886,7 +1889,7 @@ static void do_mail_review_all(dbref player, UTF8 *msglist)
 
                     trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                    StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
+                    StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 25);
                     size_t nSize = MessageFetchSize(mp->number);
                     raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
                                    status_chars(mp),
@@ -1933,12 +1936,12 @@ static void do_mail_review_all(dbref player, UTF8 *msglist)
 
                         trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                        StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
+                        StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 65);
 
                         raw_notify(player, DASH_LINE);
                         raw_notify(player, tprintf(T("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s"),
                                        i, szFromName,
-                                       mp->time,
+                                       utf8(mp->time),
                                        (Connected(mp->from) &&
                                        (!Hidden(mp->from) || See_Hidden(player))) ?
                                        " (Conn)" : "      ", 0,
@@ -1997,7 +2000,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 
                 trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
+                StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 25);
                 size_t nSize = MessageFetchSize(mp->number);
                 raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
                                status_chars(mp),
@@ -2028,12 +2031,12 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 
                     trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                    StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 65);
+                    StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 65);
 
                     raw_notify(player, DASH_LINE);
                     raw_notify(player, tprintf(T("%-3d         From:  %s  At: %-25s  %s\r\nFldr   : %-2d Status: %s\r\nSubject: %s"),
                                    i, szFromName,
-                                   mp->time,
+                                   utf8(mp->time),
                                    (Connected(mp->from) &&
                                    (!Hidden(mp->from) || See_Hidden(player))) ?
                                    " (Conn)" : "      ", 0,
@@ -2154,7 +2157,7 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
             i++;
             if (mail_match(mp, ms, i))
             {
-                time = mail_list_time(mp->time);
+                time = mail_list_time(utf8(mp->time));
                 size_t nSize = MessageFetchSize(mp->number);
 
                 UTF8 szFromName[MBUF_SIZE];
@@ -2162,7 +2165,7 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
 
                 if (sub)
                 {
-                    StripTabsAndTruncate(mp->subject, szSubjectBuffer, MBUF_SIZE-1, 25);
+                    StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 25);
 
                     raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
                         status_chars(mp), i, nSize, szFromName, szSubjectBuffer));
@@ -2411,7 +2414,7 @@ static void do_mail_fwd(dbref player, UTF8 *msg, UTF8 *tolist)
         raw_notify(player, T("MAIL: You can\xE2\x80\x99t forward non-existent messages."));
         return;
     }
-    do_expmail_start(player, tolist, tprintf(T("%s (fwd from %s)"), mp->subject, Moniker(mp->from)));
+    do_expmail_start(player, tolist, tprintf(T("%s (fwd from %s)"), utf8(mp->subject), Moniker(mp->from)));
     atr_add_raw(player, A_MAILMSG, MessageFetch(mp->number));
     const UTF8 *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_FORWARD;
@@ -2466,7 +2469,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
         bp = names;
         *bp = '\0';
 
-        mux_strncpy(oldlist, mp->tolist, LBUF_SIZE-1);
+        mux_strncpy(oldlist, utf8(mp->tolist), LBUF_SIZE-1);
 
         string_token st(oldlist, T(" "));
         UTF8 *p;
@@ -2493,9 +2496,9 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
         *bp = '\0';
     }
 
-    const UTF8 *pSubject = mp->subject;
+    const UTF8 *pSubject = utf8(mp->subject);
     const UTF8 *pMessage = MessageFetch(mp->number);
-    const UTF8 *pTime = mp->time;
+    const UTF8 *pTime = utf8(mp->time);
     if (strncmp(reinterpret_cast<const char *>(pSubject), "Re:", 3))
     {
         do_expmail_start(player, tolist, tprintf(T("Re: %s"), pSubject));
@@ -2776,17 +2779,17 @@ static void send_mail
     if (  !tolist
        || tolist[0] == '\0')
     {
-        newp->tolist = StringClone(T("*HIDDEN*"));
+        newp->tolist = "*HIDDEN*";
     }
     else
     {
-        newp->tolist = StringClone(tolist);
+        newp->tolist.assign(reinterpret_cast<const char *>(tolist));
     }
 
     newp->number = number;
     MessageReferenceInc(number);
-    newp->time = StringClone(pTimeStr);
-    newp->subject = StringClone(subject);
+    newp->time.assign(reinterpret_cast<const char *>(pTimeStr));
+    newp->subject.assign(reinterpret_cast<const char *>(subject));
 
     // Send to folder 0
     //
@@ -2810,10 +2813,7 @@ static void send_mail
             raw_notify(player,
                 tprintf(T("MAIL: %s\xE2\x80\x99s mailbox is full (%d messages)."),
                     Moniker(target), total));
-            MessageReferenceDec(newp->number);
-            MEMFREE(newp->subject);
-            MEMFREE(newp->tolist);
-            MEMFREE(newp->time);
+            MessageReferenceDec(number);
             delete newp;
             return;
         }
@@ -2823,7 +2823,6 @@ static void send_mail
     //
     MailList ml(target);
     ml.AppendItem(newp);
-    sqlite_wt_insert_mail(newp);
 
     // Notify people.
     //
@@ -3303,7 +3302,7 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
             {
                 if (!tr && !tu)
                 {
-                    mux_strncpy(last, mp->time, sizeof(last)-1);
+                    mux_strncpy(last, utf8(mp->time), sizeof(last)-1);
                 }
                 if (Cleared(mp))
                 {
@@ -3456,9 +3455,9 @@ int dump_mail(FILE *fp)
                 putref(fp, mp->to);
                 putref(fp, mp->from);
                 putref(fp, mp->number);
-                putstring(fp, mp->tolist);
-                putstring(fp, mp->time);
-                putstring(fp, mp->subject);
+                putstring(fp, utf8(mp->tolist));
+                putstring(fp, utf8(mp->time));
+                putstring(fp, utf8(mp->subject));
                 putref(fp, mp->read);
                 count++;
             }
@@ -3522,11 +3521,11 @@ static void load_mail_V6(FILE *fp)
         MessageReferenceInc(mp->number);
 
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
-        mp->tolist  = StringCloneLen(pBuffer, nBuffer);
+        mp->tolist.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
-        mp->time    = StringCloneLen(pBuffer, nBuffer);
+        mp->time.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
-        mp->subject = StringCloneLen(pBuffer, nBuffer);
+        mp->subject.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
         mp->read    = getref(fp);
         mp->sqlite_id = -1;
 
@@ -3601,15 +3600,15 @@ static void load_mail_V5(FILE *fp)
 
         pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-        mp->tolist  = StringCloneLen(pBufferUnicode, nBufferUnicode);
+        mp->tolist.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
 
         pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-        mp->time    = StringCloneLen(pBufferUnicode, nBufferUnicode);
+        mp->time.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
 
         pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-        mp->subject = StringCloneLen(pBufferUnicode, nBufferUnicode);
+        mp->subject.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
 
         mp->read    = getref(fp);
         mp->sqlite_id = -1;
@@ -3885,7 +3884,7 @@ void check_mail_expiration(void)
                 continue;
             }
 
-            const UTF8 *pMailTimeStr = mp->time;
+            const UTF8 *pMailTimeStr = utf8(mp->time);
             if (!ltaMail.SetString(pMailTimeStr))
             {
                 continue;
@@ -5389,144 +5388,98 @@ void do_mail
 
 struct mail *MailList::FirstItem(void)
 {
-    auto it_first = mudstate.mail_htab.find(m_player);
-    m_miHead = (it_first != mudstate.mail_htab.end()) ? static_cast<struct mail*>(it_first->second) : nullptr;
-    m_mi = m_miHead;
+    auto it = mail_storage.find(m_player);
+    if (it == mail_storage.end() || it->second.empty())
+    {
+        m_mi = {};
+        m_miEnd = {};
+        m_bRemoved = false;
+        return nullptr;
+    }
+    auto& lst = it->second;
+    m_mi = lst.begin();
+    m_miEnd = lst.end();
     m_bRemoved = false;
-    return m_mi;
+    return &*m_mi;
 }
 
 struct mail *MailList::NextItem(void)
 {
     if (!m_bRemoved)
     {
-        if (nullptr != m_mi)
+        if (m_mi != m_miEnd)
         {
-            m_mi = m_mi->next;
-            if (m_mi == m_miHead)
+            ++m_mi;
+            if (m_mi == m_miEnd)
             {
-                m_mi = nullptr;
+                m_mi = m_miEnd;
             }
         }
     }
     m_bRemoved = false;
-    return m_mi;
+    if (m_mi == m_miEnd)
+        return nullptr;
+    return &*m_mi;
 }
 
 bool MailList::IsEnd(void)
 {
-    return (nullptr == m_mi);
+    return (m_mi == m_miEnd);
 }
 
 MailList::MailList(dbref player)
 {
-    m_mi       = nullptr;
-    m_miHead   = nullptr;
     m_player   = player;
     m_bRemoved = false;
 }
 
 void MailList::RemoveItem(void)
 {
-    if (  nullptr == m_mi
-       || NOTHING == m_player)
+    if (m_mi == m_miEnd || NOTHING == m_player)
     {
         return;
     }
 
-    struct mail *miNext = m_mi->next;
+    auto it = mail_storage.find(m_player);
+    if (it == mail_storage.end())
+        return;
+    auto& lst = it->second;
 
-    if (m_mi == m_miHead)
-    {
-        if (miNext == m_miHead)
-        {
-            mudstate.mail_htab.erase(m_player);
-            miNext   = nullptr;
-        }
-        else
-        {
-            auto it_repl = mudstate.mail_htab.find(m_player);
-            if (it_repl != mudstate.mail_htab.end()) it_repl->second = miNext;
-        }
-        m_miHead = miNext;
-    }
-
-    // Relink the list
-    //
-    m_mi->prev->next = m_mi->next;
-    m_mi->next->prev = m_mi->prev;
-
-    m_mi->next = nullptr;
-    m_mi->prev = nullptr;
-    sqlite_wt_delete_mail(m_mi);
+    sqlite_wt_delete_mail(&*m_mi);
     MessageReferenceDec(m_mi->number);
-    MEMFREE(m_mi->subject);
-    m_mi->subject = nullptr;
-    MEMFREE(m_mi->time);
-    m_mi->time = nullptr;
-    MEMFREE(m_mi->tolist);
-    m_mi->tolist = nullptr;
-    delete m_mi;
-
-    m_mi = miNext;
+    auto next_it = lst.erase(m_mi);
+    m_mi = next_it;
     m_bRemoved = true;
+    if (m_mi == m_miEnd && lst.empty())
+    {
+        mail_storage.erase(it);
+    }
 }
 
 void MailList::AppendItem(struct mail *miNew)
 {
-    auto it_append = mudstate.mail_htab.find(m_player);
-    struct mail *miHead = (it_append != mudstate.mail_htab.end()) ? static_cast<struct mail*>(it_append->second) : nullptr;
-
-    if (miHead)
-    {
-        // Add new item to the end of the list.
-        //
-        struct mail *miEnd = miHead->prev;
-
-        miNew->next = miHead;
-        miNew->prev = miEnd;
-
-        miHead->prev = miNew;
-        miEnd->next  = miNew;
-    }
-    else
-    {
-        mudstate.mail_htab.emplace(m_player, miNew);
-        miNew->next = miNew;
-        miNew->prev = miNew;
-    }
+    if (!miNew) return;
+    auto& lst = mail_storage[m_player];
+    lst.push_back(std::move(*miNew));
+    delete miNew;
+    // List owns now.
 }
 
 void MailList::RemoveAll(void)
 {
-    auto it_removeall = mudstate.mail_htab.find(m_player);
-    struct mail *miHead = (it_removeall != mudstate.mail_htab.end()) ? static_cast<struct mail*>(it_removeall->second) : nullptr;
+    auto it = mail_storage.find(m_player);
+    if (it == mail_storage.end())
+        return;
 
-    if (nullptr != miHead)
+    auto& lst = it->second;
+    for (auto& m : lst)
     {
-        sqlite_wt_delete_all_mail(m_player);
-        mudstate.mail_htab.erase(it_removeall);
+        MessageReferenceDec(m.number);
     }
-
-    struct mail *mi;
-    struct mail *miNext;
-    for (mi = miHead; nullptr != mi; mi = miNext)
-    {
-        miNext = mi->next;
-        if (miNext == miHead)
-        {
-            miNext = nullptr;
-        }
-        MessageReferenceDec(mi->number);
-        MEMFREE(mi->subject);
-        mi->subject = nullptr;
-        MEMFREE(mi->tolist);
-        mi->tolist = nullptr;
-        MEMFREE(mi->time);
-        mi->time = nullptr;
-        delete mi;
-    }
-    m_mi = nullptr;
+    sqlite_wt_delete_all_mail(m_player);
+    mail_storage.erase(it);
+    m_mi = {};
+    m_miEnd = {};
 }
 
 static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
@@ -5555,13 +5508,13 @@ static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
             i++;
             if (mail_match(mp, ms, i))
             {
-                time = mail_list_time(mp->time);
+                time = mail_list_time(utf8(mp->time));
                 size_t nSize = MessageFetchSize(mp->number);
 
                 UTF8 szFromName[MBUF_SIZE];
                 trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                StripTabsAndTruncate(mp->subject, szSubjectBuffer,
+                StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer,
                         MBUF_SIZE-1, 25);
 
                 raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
@@ -5724,7 +5677,7 @@ bool sqlite_sync_mail(void)
             {
                 mp->sqlite_id = sqldb.InsertMailHeaderReturningId(
                     mp->to, mp->from, mp->number,
-                    mp->tolist, mp->time, mp->subject, mp->read);
+                    utf8(mp->tolist), utf8(mp->time), utf8(mp->subject), mp->read);
                 if (mp->sqlite_id < 0)
                 {
                     sqldb.Rollback();
@@ -5833,9 +5786,9 @@ int sqlite_load_mail(void)
         mp->from      = from_player;
         mp->number    = body_number;
         MessageReferenceInc(mp->number);
-        mp->tolist    = StringClone(tolist);
-        mp->time      = StringClone(time_str);
-        mp->subject   = StringClone(subject);
+        mp->tolist.assign(reinterpret_cast<const char *>(tolist ? tolist : reinterpret_cast<const UTF8 *>("")));
+        mp->time.assign(reinterpret_cast<const char *>(time_str ? time_str : reinterpret_cast<const UTF8 *>("")));
+        mp->subject.assign(reinterpret_cast<const char *>(subject ? subject : reinterpret_cast<const UTF8 *>("")));
         mp->read      = read_flags;
         mp->sqlite_id = rowid;
 

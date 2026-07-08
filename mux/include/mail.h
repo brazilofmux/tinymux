@@ -49,16 +49,16 @@ typedef unsigned int mail_flag;
 
 struct mail
 {
-    struct mail *next;
-    struct mail *prev;
     dbref        to;
     dbref        from;
     int          number;
-    UTF8        *time;
-    UTF8        *subject;
-    UTF8        *tolist;
+    std::string  time;
+    std::string  subject;
+    std::string  tolist;
     int          read;
     int64_t      sqlite_id;   // SQLite rowid for write-through (-1 if unset)
+
+    mail() : to(NOTHING), from(NOTHING), number(0), read(0), sqlite_id(-1) {}
 };
 
 struct mail_selector
@@ -92,8 +92,8 @@ struct mail_body
 class MailList
 {
 private:
-    struct mail *m_miHead;
-    struct mail *m_mi;
+    std::list<mail>::iterator m_mi;
+    std::list<mail>::iterator m_miEnd;
     dbref        m_player;
     bool         m_bRemoved;
 
