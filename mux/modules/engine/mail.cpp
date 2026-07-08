@@ -2795,20 +2795,28 @@ static void send_mail
         {
             total++;
         }
-        if (total >= mudconf.mail_max_per_player)
+
+        // total already includes the message we emplaced above, so the limit
+        // is reached at max+1 (existing == max).  Report the pre-existing
+        // count (total-1) to match the prior behavior.
+        //
+        if (total > mudconf.mail_max_per_player)
         {
             raw_notify(player,
                 tprintf(T("MAIL: %s\xE2\x80\x99s mailbox is full (%d messages)."),
-                    Moniker(target), total));
+                    Moniker(target), total - 1));
             MessageReferenceDec(number);
             lst.pop_back();  // undo the emplace
             return;
         }
     }
 
-    // If this is the first message, it is the head and the tail.
+    // The message is committed to the target's in-memory list; write it
+    // through to SQLite so it is durable and so later read/delete mutations
+    // (which key off sqlite_id) persist.  Mirrors the pre-refactor insert
+    // that the STL migration dropped.
     //
-    // (already emplaced above)
+    sqlite_wt_insert_mail(&newm);
 
     // Notify people.
     //
