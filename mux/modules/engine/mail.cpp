@@ -2734,24 +2734,12 @@ static void send_mail
 
     // Initialize the appropriate fields.
     //
-    struct mail *newp = nullptr;
-    try
-    {
-        newp = new struct mail;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    auto& lst = mail_storage[target];
+    lst.emplace_back();
+    mail& newm = lst.back();
 
-    if (nullptr == newp)
-    {
-        raw_notify(player, T("MAIL: Out of memory."));
-        return;
-    }
-
-    newp->to = target;
-    newp->sqlite_id = -1;
+    newm.to = target;
+    newm.sqlite_id = -1;
 
     // Sender attribution policy for @mail/quick from objects:
     //   - If the sender is a player, credit the player.
@@ -2762,38 +2750,38 @@ static void send_mail
     //
     if (isPlayer(player))
     {
-        newp->from = player;
+        newm.from = player;
     }
     else
     {
         dbref mailbag = Owner(player);
         if (Wizard(mailbag))
         {
-            newp->from = player;
+            newm.from = player;
         }
         else
         {
-            newp->from = mailbag;
+            newm.from = mailbag;
         }
     }
     if (  !tolist
        || tolist[0] == '\0')
     {
-        newp->tolist = "*HIDDEN*";
+        newm.tolist = "*HIDDEN*";
     }
     else
     {
-        newp->tolist.assign(reinterpret_cast<const char *>(tolist));
+        newm.tolist.assign(reinterpret_cast<const char *>(tolist));
     }
 
-    newp->number = number;
+    newm.number = number;
     MessageReferenceInc(number);
-    newp->time.assign(reinterpret_cast<const char *>(pTimeStr));
-    newp->subject.assign(reinterpret_cast<const char *>(subject));
+    newm.time.assign(reinterpret_cast<const char *>(pTimeStr));
+    newm.subject.assign(reinterpret_cast<const char *>(subject));
 
     // Send to folder 0
     //
-    newp->read = flags & M_FMASK;
+    newm.read = flags & M_FMASK;
 
     // Reject if the target's mailbox is full.
     //
@@ -2814,16 +2802,14 @@ static void send_mail
                 tprintf(T("MAIL: %s\xE2\x80\x99s mailbox is full (%d messages)."),
                     Moniker(target), total));
             MessageReferenceDec(number);
-            delete newp;
+            lst.pop_back();  // undo the emplace
             return;
         }
     }
 
     // If this is the first message, it is the head and the tail.
     //
-    MailList ml(target);
-    ml.AppendItem(std::move(*newp));
-    delete newp;
+    // (already emplaced above)
 
     // Notify people.
     //
@@ -3497,42 +3483,25 @@ static void load_mail_V6(FILE *fp)
     while (  nullptr != p
           && strncmp(reinterpret_cast<char *>(nbuf1), "***", 3) != 0)
     {
-        struct mail *mp = nullptr;
-        try
-        {
-            mp = new struct mail;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
+        dbref to = mux_atol(nbuf1);
+        auto& lst = mail_storage[ to ];
+        lst.emplace_back();
+        mail& m = lst.back();
 
-        if (nullptr == mp)
-        {
-            STARTLOG(LOG_BUGS, "BUG", "MAIL");
-            log_text(T("Out of memory."));
-            ENDLOG;
-            return;
-        }
+        m.to      = to;
+        m.from    = getref(fp);
 
-        mp->to      = mux_atol(nbuf1);
-        mp->from    = getref(fp);
-
-        mp->number  = getref(fp);
-        MessageReferenceInc(mp->number);
+        m.number  = getref(fp);
+        MessageReferenceInc(m.number);
 
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
-        mp->tolist.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
+        m.tolist.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
-        mp->time.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
+        m.time.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
-        mp->subject.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
-        mp->read    = getref(fp);
-        mp->sqlite_id = -1;
-
-        MailList ml(mp->to);
-        ml.AppendItem(std::move(*mp));
-        delete mp;
+        m.subject.assign(reinterpret_cast<const char *>(pBuffer), nBuffer);
+        m.read    = getref(fp);
+        m.sqlite_id = -1;
 
         p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
     }
@@ -3574,50 +3543,33 @@ static void load_mail_V5(FILE *fp)
     while (  nullptr != p
           && strncmp(nbuf1, "***", 3) != 0)
     {
-        struct mail *mp = nullptr;
-        try
-        {
-            mp = new struct mail;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == mp)
-        {
-            STARTLOG(LOG_BUGS, "BUG", "MAIL");
-            log_text(T("Out of memory."));
-            ENDLOG;
-            return;
-        }
-
         pBufferUnicode = reinterpret_cast<UTF8 *>(nbuf1);
 
-        mp->to      = mux_atol(pBufferUnicode);
-        mp->from    = getref(fp);
+        dbref to = mux_atol(pBufferUnicode);
+        auto& lst = mail_storage[to];
+        lst.emplace_back();
+        mail& m = lst.back();
 
-        mp->number  = getref(fp);
-        MessageReferenceInc(mp->number);
+        m.to      = to;
+        m.from    = getref(fp);
 
-        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
-        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-        mp->tolist.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
-
-        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
-        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-        mp->time.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
+        m.number  = getref(fp);
+        MessageReferenceInc(m.number);
 
         pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
-        mp->subject.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
+        m.tolist.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
 
-        mp->read    = getref(fp);
-        mp->sqlite_id = -1;
+        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
+        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+        m.time.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
 
-        MailList ml(mp->to);
-        ml.AppendItem(std::move(*mp));
-        delete mp;
+        pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
+        pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
+        m.subject.assign(reinterpret_cast<const char *>(pBufferUnicode), nBufferUnicode);
+
+        m.read    = getref(fp);
+        m.sqlite_id = -1;
 
         p = fgets(nbuf1, sizeof(nbuf1), fp);
     }
@@ -5763,34 +5715,19 @@ int sqlite_load_mail(void)
         int body_number, const UTF8 *tolist, const UTF8 *time_str,
         const UTF8 *subject, int read_flags)
     {
-        struct mail *mp = nullptr;
-        try
-        {
-            mp = new struct mail;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
+        auto& lst = mail_storage[to_player];
+        lst.emplace_back();
+        mail& m = lst.back();
 
-        if (nullptr == mp)
-        {
-            return;
-        }
-
-        mp->to        = to_player;
-        mp->from      = from_player;
-        mp->number    = body_number;
-        MessageReferenceInc(mp->number);
-        mp->tolist.assign(reinterpret_cast<const char *>(tolist ? tolist : reinterpret_cast<const UTF8 *>("")));
-        mp->time.assign(reinterpret_cast<const char *>(time_str ? time_str : reinterpret_cast<const UTF8 *>("")));
-        mp->subject.assign(reinterpret_cast<const char *>(subject ? subject : reinterpret_cast<const UTF8 *>("")));
-        mp->read      = read_flags;
-        mp->sqlite_id = rowid;
-
-        MailList ml(mp->to);
-        ml.AppendItem(std::move(*mp));
-        delete mp;
+        m.to        = to_player;
+        m.from      = from_player;
+        m.number    = body_number;
+        MessageReferenceInc(m.number);
+        m.tolist.assign(reinterpret_cast<const char *>(tolist ? tolist : reinterpret_cast<const UTF8 *>("")));
+        m.time.assign(reinterpret_cast<const char *>(time_str ? time_str : reinterpret_cast<const UTF8 *>("")));
+        m.subject.assign(reinterpret_cast<const char *>(subject ? subject : reinterpret_cast<const UTF8 *>("")));
+        m.read      = read_flags;
+        m.sqlite_id = rowid;
     }))
     {
         clear_runtime_mail_data();
