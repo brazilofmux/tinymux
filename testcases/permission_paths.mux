@@ -1,0 +1,120 @@
+#
+# permission_paths.mux - Test Cases for permission-failure paths.
+#
+@create test_permission_paths
+-
+@set test_permission_paths=INHERIT QUIET
+-
+@pcreate PermActor=pass
+-
+@pcreate PermOwner=pass
+-
+@create perm_target
+-
+@set PermActor=QUIET
+-
+@set PermOwner=QUIET
+-
+@set perm_target=QUIET
+-
+@pay PermOwner=1000
+-
+@chown perm_target=PermOwner
+-
+think [attrib_set(PermActor/TARGET,[num(perm_target)])]
+-
+&probe_wizard PermActor=&actor_wizard me=[hasflag(me,WIZARD)]
+-
+&probe_controls PermActor=&actor_controls me=[controls(me,[get(me/TARGET)])]
+-
+&probe_attrib_result PermActor=&attrib_result me=[attrib_set([get(me/TARGET)]/PROBE,changed)]
+-
+&probe_attrib_after PermActor=&attrib_after me=[get([get(me/TARGET)]/PROBE)]
+-
+&probe_lock_before PermActor=&lock_before me=[lock([get(me/TARGET)])]
+-
+&probe_lock_result PermActor=&lock_result me=[lock([get(me/TARGET)],me)]
+-
+&probe_lock_after PermActor=&lock_after me=[lock([get(me/TARGET)])]
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_permission_paths=
+  @log smoke=Beginning permission-failure path test cases.;
+  @force PermActor=@trig me/probe_wizard;
+  @force PermActor=@trig me/probe_controls;
+  @force PermActor=@trig me/probe_attrib_result;
+  @force PermActor=@trig me/probe_attrib_after;
+  @force PermActor=@trig me/probe_lock_before;
+  @force PermActor=@trig me/probe_lock_result;
+  @force PermActor=@trig me/probe_lock_after
+-
+#
+# Test Case #1 - Forced Actor is not privileged and does not control target.
+#
+&tr.tc001 test_permission_paths=
+  @wait 0.1=
+  {
+    @if cand(
+          eq(get(PermActor/actor_wizard), 0),
+          eq(get(PermActor/actor_controls), 0)
+        )=
+    {
+      @log smoke=TC001: unauthorized actor setup. Succeeded.
+    },
+    {
+      @log smoke=TC001: unauthorized actor setup. Failed (wizard=[get(PermActor/actor_wizard)] controls=[get(PermActor/actor_controls)]).
+    }
+  }
+-
+#
+# Test Case #2 - Unauthorized attrib_set() fails and does not mutate target.
+#
+&tr.tc002 test_permission_paths=
+  @wait 0.1=
+  {
+    @if cand(
+          strmatch(get(PermActor/attrib_result), #-1 PERMISSION DENIED),
+          strmatch(get(PermActor/attrib_after), #-1 PERMISSION DENIED),
+          eq(strlen(get([get(PermActor/TARGET)]/PROBE)), 0)
+        )=
+    {
+      @log smoke=TC002: unauthorized attrib_set denied without mutation. Succeeded.
+    },
+    {
+      @log smoke=TC002: unauthorized attrib_set denied without mutation. Failed (result=[get(PermActor/attrib_result)] actor_after=[get(PermActor/attrib_after)] target_after=[get([get(PermActor/TARGET)]/PROBE)]).
+    }
+  }
+-
+#
+# Test Case #3 - Unauthorized lock() setter fails and does not mutate target.
+#
+&tr.tc003 test_permission_paths=
+  @wait 0.1=
+  {
+    @if cand(
+          eq(strlen(get(PermActor/lock_before)), 0),
+          strmatch(get(PermActor/lock_result), #-1 PERMISSION DENIED),
+          eq(strlen(get(PermActor/lock_after)), 0),
+          eq(strlen(lock([get(PermActor/TARGET)])), 0)
+        )=
+    {
+      @log smoke=TC003: unauthorized lock setter denied without mutation. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC003: unauthorized lock setter denied without mutation. Failed (before=[get(PermActor/lock_before)] result=[get(PermActor/lock_result)] actor_after=[get(PermActor/lock_after)] target_lock=[lock([get(PermActor/TARGET)])]).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_permission_paths=
+  @log smoke=End permission-failure path test cases.;
+  @notify smoke
+-
+drop test_permission_paths
+-
+#
+# End of Test Cases
+#
