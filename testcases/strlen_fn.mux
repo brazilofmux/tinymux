@@ -75,11 +75,30 @@
         eq(strlen(A[chr(127482)][chr(127480)]B), 3)
       )=
   {
-    @log smoke=TC004: strlen emoji clusters. Succeeded.;
+    @log smoke=TC004: strlen emoji clusters. Succeeded.
+  },
+  {
+    @log smoke=TC004: strlen emoji clusters. Failed (tone=[strlen([chr(128077)][chr(127997)])] flag=[strlen([chr(127482)][chr(127480)])] twoflag=[strlen([chr(127482)][chr(127480)][chr(127467)][chr(127479)])]).
+  }
+-
+#
+# Test Case #5 - RTL Hebrew and Arabic characters.
+# Hebrew letters and Arabic letters count as one grapheme each.  Arabic Fatha
+# is a combining mark and stays in the same grapheme cluster as its base.
+#
+&tr.tc005 test_strlen_fn=
+  @if cand(
+        eq(strlen([chr(1488)][chr(1489)][chr(1490)]), 3),
+        eq(strlen([chr(1587)][chr(1604)][chr(1575)][chr(1605)]), 4),
+        eq(strlen([chr(1605)][chr(1614)]), 1),
+        eq(strlen(A[chr(1488)]B), 3)
+      )=
+  {
+    @log smoke=TC005: strlen RTL Hebrew and Arabic. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: strlen emoji clusters. Failed (tone=[strlen([chr(128077)][chr(127997)])] flag=[strlen([chr(127482)][chr(127480)])] twoflag=[strlen([chr(127482)][chr(127480)][chr(127467)][chr(127479)])]).;
+    @log smoke=TC005: strlen RTL Hebrew and Arabic. Failed (he=[strlen([chr(1488)][chr(1489)][chr(1490)])] ar=[strlen([chr(1587)][chr(1604)][chr(1575)][chr(1605)])] arcomb=[strlen([chr(1605)][chr(1614)])] mixed=[strlen(A[chr(1488)]B)]).;
     @trig me/tr.done
   }
 -

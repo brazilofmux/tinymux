@@ -88,11 +88,29 @@
         eq(vwidth([chr(127482)][chr(127480)]ok),4)
       )=
   {
-    @log smoke=TC005: emoji clusters. Succeeded.;
+    @log smoke=TC005: emoji clusters. Succeeded.
+  },
+  {
+    @log smoke=TC005: emoji clusters. Failed (tone=[vwidth([chr(128077)][chr(127997)])] flag=[vwidth([chr(127482)][chr(127480)])] twoflag=[vwidth([chr(127482)][chr(127480)][chr(127467)][chr(127479)])]).
+  }
+-
+#
+# Test Case #6 - RTL Hebrew and Arabic characters are narrow, while Arabic
+# combining marks add no extra columns.
+#
+&tr.tc006 test_vwidth_fn=
+  @if cand(
+        eq(vwidth([chr(1488)][chr(1489)][chr(1490)]),3),
+        eq(vwidth([chr(1587)][chr(1604)][chr(1575)][chr(1605)]),4),
+        eq(vwidth([chr(1605)][chr(1614)]),1),
+        eq(vwidth(A[chr(1488)]B),3)
+      )=
+  {
+    @log smoke=TC006: RTL Hebrew and Arabic width. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: emoji clusters. Failed (tone=[vwidth([chr(128077)][chr(127997)])] flag=[vwidth([chr(127482)][chr(127480)])] twoflag=[vwidth([chr(127482)][chr(127480)][chr(127467)][chr(127479)])]).;
+    @log smoke=TC006: RTL Hebrew and Arabic width. Failed (he=[vwidth([chr(1488)][chr(1489)][chr(1490)])] ar=[vwidth([chr(1587)][chr(1604)][chr(1575)][chr(1605)])] arcomb=[vwidth([chr(1605)][chr(1614)])] mixed=[vwidth(A[chr(1488)]B)]).;
     @trig me/tr.done
   }
 -
