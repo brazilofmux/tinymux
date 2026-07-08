@@ -12,6 +12,8 @@
 #include "externs.h"
 
 #include <algorithm>
+#include <memory>
+#include <string>
 #include <vector>
 
 extern "C" {
@@ -60,20 +62,25 @@ const char *FOLDER_LINE =
 #define WIDTHOF_MALIASDESC 40
 #define SIZEOF_MALIASDESC (WIDTHOF_MALIASDESC*2)
 
-typedef struct malias
+struct malias_t
 {
-    int  owner;
-    UTF8 *name;
-    UTF8 *desc;
+    int owner;
+    std::string name;
+    std::string desc;
     size_t desc_width; // The visual width of the Mail Alias Description.
     std::vector<dbref> list;
-} malias_t;
 
-static int ma_size = 0;
-static int ma_top = 0;
+    malias_t() : owner(NOTHING), desc_width(0) {}
+};
 
-static malias_t **malias   = nullptr;
+static std::vector<std::unique_ptr<malias_t>> malias;
 static MAILBODY *mail_list = nullptr;
+
+// Small helper to reduce reinterpret_cast noise when passing std::string
+// contents to UTF8*-taking APIs (UTF8 is typically unsigned char*).
+static inline const UTF8* utf8(const std::string& s) {
+    return reinterpret_cast<const UTF8*>(s.c_str());
+}
 
 // ---------------------------------------------------------------------------
 // SQLite write-through helpers for mail mutations.
@@ -170,9 +177,10 @@ static void sqlite_wt_sync_all_aliases(void)
         Log.WriteString(T("mail sqlite_wt_sync_all_aliases failed to clear aliases." ENDLINE));
         return;
     }
-    for (int i = 0; i < ma_top; i++)
+    for (size_t i = 0; i < malias.size(); i++)
     {
-        malias_t *m = malias[i];
+        malias_t *m = malias[i].get();
+        if (!m) continue;
 
         LBuf members_buf = LBuf_Src("wt_sync_alias");
         UTF8 *bp = members_buf;
@@ -186,11 +194,11 @@ static void sqlite_wt_sync_all_aliases(void)
         }
         *bp = '\0';
 
-        if (!sqldb.SyncMailAlias(m->owner, m->name, m->desc,
+        if (!sqldb.SyncMailAlias(m->owner, utf8(m->name), utf8(m->desc),
             static_cast<int>(m->desc_width), members_buf))
         {
             Log.tinyprintf(T("mail sqlite_wt_sync_all_aliases failed for owner=#%d alias=%s" ENDLINE),
-                m->owner, m->name);
+                m->owner, m->name.c_str());
         }
     }
 }
@@ -1516,38 +1524,31 @@ static malias_t *get_malias(dbref player, UTF8 *alias, int *pnResult)
         if (ExpMail(player))
         {
             int x = mux_atol(alias + 1);
-            if (x < 0 || x >= ma_top)
+            if (x < 0 || x >= static_cast<int>(malias.size()))
             {
                 *pnResult = GMA_NOTFOUND;
                 return nullptr;
             }
             *pnResult = GMA_FOUND;
-            return malias[x];
+            return malias[x].get();
         }
     }
     else if (alias[0] == '*')
     {
         size_t nValidMailAlias;
-        bool   bValidMailAlias;
-        UTF8 *pValidMailAlias = MakeCanonicalMailAlias
-                                (   alias+1,
-                                    &nValidMailAlias,
-                                    &bValidMailAlias
-                                );
+        bool bValidMailAlias;
+        UTF8 *pValidMailAlias = MakeCanonicalMailAlias(
+            alias + 1, &nValidMailAlias, &bValidMailAlias);
 
         if (bValidMailAlias)
         {
-            for (int i = 0; i < ma_top; i++)
+            for (size_t i = 0; i < malias.size(); i++)
             {
-                malias_t *m = malias[i];
-                if (  m->owner == player
-                   || m->owner == GOD
-                   || ExpMail(player))
+                malias_t *m = malias[i].get();
+                if (m && (m->owner == player || m->owner == GOD || ExpMail(player)))
                 {
-                    if (!strcmp(reinterpret_cast<char *>(pValidMailAlias), reinterpret_cast<char *>(m->name)))
+                    if (!strcmp(reinterpret_cast<char *>(pValidMailAlias), m->name.c_str()))
                     {
-                        // Found it!
-                        //
                         *pnResult = GMA_FOUND;
                         return m;
                     }
@@ -3472,16 +3473,14 @@ static void do_mail_stub(dbref player, UTF8 *arg1, UTF8 *arg2)
 
 static void malias_write(FILE *fp)
 {
-    int i, j;
-    malias_t *m;
-
-    putref(fp, ma_top);
-    for (i = 0; i < ma_top; i++)
+    putref(fp, static_cast<int>(malias.size()));
+    for (size_t i = 0; i < malias.size(); i++)
     {
-        m = malias[i];
+        malias_t *m = malias[i].get();
+        if (!m) continue;
         mux_fprintf(fp, T("%d %d\n"), m->owner, static_cast<int>(m->list.size()));
-        mux_fprintf(fp, T("N:%s\n"), m->name);
-        mux_fprintf(fp, T("D:%s\n"), m->desc);
+        mux_fprintf(fp, T("N:%s\n"), m->name.c_str());
+        mux_fprintf(fp, T("D:%s\n"), m->desc.c_str());
         for (size_t j = 0; j < m->list.size(); j++)
         {
             putref(fp, m->list[j]);
@@ -3742,79 +3741,34 @@ UTF8 *MakeCanonicalMailAliasDesc
 
 static void malias_read(FILE *fp, bool bConvert)
 {
-    int i, j;
-
-    i = getref(fp);
-    if (i <= 0)
+    int count = getref(fp);
+    if (count <= 0)
     {
         return;
     }
+
     LBuf buffer = LBuf_Src("malias_read");
 
-    ma_size = ma_top = i;
+    // Build into a temporary so that on any error (truncated file, OOM mid-load)
+    // the unique_ptr destructors (and malias_t dtor) automatically clean up
+    // anything allocated so far. Only commit on full or best-effort success.
+    std::vector<std::unique_ptr<malias_t>> tmp;
+    tmp.reserve(count);
 
-    malias = nullptr;
-    try
-    {
-        malias = new malias_t *[ma_size];
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == malias)
-    {
-        STARTLOG(LOG_BUGS, "BUG", "MAIL");
-        log_text(T("Out of memory."));
-        ENDLOG;
-
-        // ma_size/ma_top were set to the (attacker-controlled) file count
-        // before the allocation.  Reset them so post-load and runtime paths
-        // that loop to ma_top / index malias[] don't walk a null pointer.
-        //
-        ma_size = ma_top = 0;
-        return;
-    }
-
-    for (i = 0; i < ma_top; i++)
+    for (int i = 0; i < count; i++)
     {
         // Format is: "%d %d\n", &(m->owner), &(m->numrecep)
         //
         if (!fgets(reinterpret_cast<char *>(buffer.get()), LBUF_SIZE, fp))
         {
-            // We've hit the end of the file. Set the last recognized
-            // @malias, and give up.
-            //
+            // Truncated flatfile: commit whatever we successfully read so far.
             STARTLOG(LOG_BUGS, "BUG", "MAIL");
             log_text(T("Unexpected end of file. Mail bag truncated."));
             ENDLOG;
-
-            ma_top = i;
-            return;
+            break;
         }
 
-        malias_t *m = nullptr;
-        try
-        {
-            m = new malias_t;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == m)
-        {
-            STARTLOG(LOG_BUGS, "BUG", "MAIL");
-            log_text(T("Out of memory. Mail bag truncated."));
-            ENDLOG;
-
-            ma_top = i;
-            return;
-        }
-
-        malias[i] = m;
+        auto m = std::make_unique<malias_t>();
 
         UTF8 *p = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(buffer.get()), ' '));
         m->owner = 0;
@@ -3822,13 +3776,13 @@ static void malias_read(FILE *fp, bool bConvert)
         if (p)
         {
             m->owner = mux_atol(buffer);
-            numrecep = mux_atol(p+1);
+            numrecep = mux_atol(p + 1);
         }
 
         // The format of @malias name is "N:<name>\n".
         //
         size_t nLen = GetLineTrunc(buffer, LBUF_SIZE, fp);
-        buffer[nLen-1] = '\0'; // Get rid of trailing '\n'.
+        buffer[nLen - 1] = '\0'; // Get rid of trailing '\n'.
 
         UTF8 *pBufferUnicode;
         if (bConvert)
@@ -3843,16 +3797,16 @@ static void malias_read(FILE *fp, bool bConvert)
 
         size_t nMailAlias;
         bool bMailAlias;
-        UTF8 *pMailAlias = MakeCanonicalMailAlias( pBufferUnicode+2,
-                                                   &nMailAlias,
-                                                   &bMailAlias);
+        UTF8 *pMailAlias = MakeCanonicalMailAlias(pBufferUnicode + 2,
+                                                  &nMailAlias,
+                                                  &bMailAlias);
         if (bMailAlias)
         {
-            m->name = StringCloneLen(pMailAlias, nMailAlias);
+            m->name.assign(reinterpret_cast<const char *>(pMailAlias), nMailAlias);
         }
         else
         {
-            m->name = StringCloneLen(T("Invalid"), 7);
+            m->name = "Invalid";
         }
 
         // The format of the description is "D:<description>\n"
@@ -3868,45 +3822,44 @@ static void malias_read(FILE *fp, bool bConvert)
             pBufferUnicode = buffer;
         }
 
-        size_t  nMailAliasDesc;
+        size_t nMailAliasDesc;
         bool bMailAliasDesc;
         size_t nVisualWidth;
-        UTF8 *pMailAliasDesc = MakeCanonicalMailAliasDesc( pBufferUnicode+2,
-                                                           &nMailAliasDesc,
-                                                           &bMailAliasDesc,
-                                                           &nVisualWidth);
+        UTF8 *pMailAliasDesc = MakeCanonicalMailAliasDesc(pBufferUnicode + 2,
+                                                          &nMailAliasDesc,
+                                                          &bMailAliasDesc,
+                                                          &nVisualWidth);
         if (bMailAliasDesc)
         {
-            m->desc = StringCloneLen(pMailAliasDesc, nMailAliasDesc);
+            m->desc.assign(reinterpret_cast<const char *>(pMailAliasDesc), nMailAliasDesc);
             m->desc_width = nVisualWidth;
         }
         else
         {
-            m->desc = StringCloneLen(T("Invalid Desc"), 12);
+            m->desc = "Invalid Desc";
             m->desc_width = 12;
         }
 
         if (numrecep > 0)
         {
-            // Clamp a hostile/corrupt recipient count.  A legitimate malias is
-            // bounded by the LBUF command string that creates it, which is why
-            // make_numlist's aRecip[] is sized (LBUF_SIZE+1)/2.  Without this,
-            // m->list grows unbounded from file content and later overflows
-            // aRecip[] in make_numlist; reserve() below could also exhaust
-            // memory on an INT_MAX count.
-            //
-            if (numrecep > (LBUF_SIZE+1)/2)
+            // Clamp a hostile/corrupt recipient count.
+            if (numrecep > (LBUF_SIZE + 1) / 2)
             {
-                numrecep = (LBUF_SIZE+1)/2;
+                numrecep = (LBUF_SIZE + 1) / 2;
             }
             m->list.reserve(numrecep);
-            for (j = 0; j < numrecep; j++)
+            for (int j = 0; j < numrecep; j++)
             {
                 int k = getref(fp);
                 m->list.push_back(k);
             }
         }
+
+        tmp.push_back(std::move(m));
     }
+
+    // Commit (replace) the table with what we loaded.
+    malias = std::move(tmp);
 }
 
 static void load_malias(FILE *fp, bool bConvert)
@@ -4105,7 +4058,6 @@ static void do_malias_send
 
 static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
 {
-    malias_t **nm;
     int nResult;
     get_malias(player, alias, &nResult);
 
@@ -4121,85 +4073,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
         return;
     }
 
-    malias_t *pt = nullptr;
-    try
-    {
-        pt = new malias_t;
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
-
-    if (nullptr == pt)
-    {
-        raw_notify(player, T("MAIL: Out of memory."));
-        return;
-    }
-
-    int i = 0;
-    if (!ma_size)
-    {
-        ma_size = MA_INC;
-        malias = nullptr;
-        try
-        {
-            malias = new malias_t *[ma_size];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == malias)
-        {
-            raw_notify(player, T("MAIL: Out of memory."));
-
-            // ma_size was bumped to MA_INC before this failed allocation;
-            // reset it so the next add doesn't fall through to malias[ma_top]
-            // on a null pointer.
-            //
-            ma_size = ma_top = 0;
-            delete pt;
-            return;
-        }
-    }
-    else if (ma_top >= ma_size)
-    {
-        ma_size += MA_INC;
-        nm = nullptr;
-        try
-        {
-            nm = new malias_t *[ma_size];
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == nm)
-        {
-            raw_notify(player, T("MAIL: Out of memory."));
-
-            // ma_size was grown by MA_INC before this failed allocation, but
-            // malias still points at the smaller old array.  Restore ma_size
-            // so later adds don't index past the real allocation.
-            //
-            ma_size -= MA_INC;
-            delete pt;
-            return;
-        }
-
-        for (i = 0; i < ma_top; i++)
-        {
-            nm[i] = malias[i];
-        }
-
-        delete [] malias;
-        malias = nm;
-    }
-
-    malias[ma_top] = pt;
+    auto pt = std::make_unique<malias_t>();
 
     // Parse the player list.
     //
@@ -4207,25 +4081,21 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     UTF8 *tail, spot;
     UTF8 *buff;
     dbref target;
-    i = 0;
-    while (  head
-          && *head
-         )
+    int added = 0;
+    while (head && *head)
     {
         while (*head == ' ')
         {
             head++;
         }
         tail = head;
-        while (  *tail
-              && *tail != ' ')
+        while (*tail && *tail != ' ')
         {
             if (*tail == '"')
             {
                 head++;
                 tail++;
-                while (  *tail
-                      && *tail != '"')
+                while (*tail && *tail != '"')
                 {
                     tail++;
                 }
@@ -4258,8 +4128,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
             target = lookup_player(player, head, true);
         }
 
-        if (  !Good_obj(target)
-           || !isPlayer(target))
+        if (!Good_obj(target) || !isPlayer(target))
         {
             raw_notify(player, T("MAIL: No such player."));
         }
@@ -4268,8 +4137,8 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
             buff = unparse_object(player, target, false);
             raw_notify(player,
                     tprintf(T("MAIL: %s added to alias %s"), buff, alias));
-            malias[ma_top]->list.push_back(target);
-            i++;
+            pt->list.push_back(target);
+            added++;
             free_lbuf(buff);
         }
 
@@ -4282,17 +4151,17 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
             head++;
         }
     }
+
     size_t nValidMailAlias;
-    bool   bValidMailAlias;
-    UTF8 *pValidMailAlias = MakeCanonicalMailAlias
-                            (   alias+1,
-                                &nValidMailAlias,
-                                &bValidMailAlias
-                            );
+    bool bValidMailAlias;
+    UTF8 *pValidMailAlias = MakeCanonicalMailAlias(
+        alias + 1, &nValidMailAlias, &bValidMailAlias);
 
     if (!bValidMailAlias)
     {
         raw_notify(player, T("MAIL: Invalid mail alias."));
+        // pt (and any recipients pushed) will be cleaned up automatically
+        // when it goes out of scope.
         return;
     }
 
@@ -4304,11 +4173,12 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     UTF8 *pValidMailAliasDesc = pValidMailAlias;
     size_t nValidMailAliasDesc = nValidMailAlias;
 
-    malias[ma_top]->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
-    malias[ma_top]->owner = player;
-    malias[ma_top]->desc = StringCloneLen(pValidMailAliasDesc, nValidMailAliasDesc);
-    malias[ma_top]->desc_width = nValidMailAliasDesc;
-    ma_top++;
+    pt->name.assign(reinterpret_cast<const char *>(pValidMailAlias), nValidMailAlias);
+    pt->owner = player;
+    pt->desc.assign(reinterpret_cast<const char *>(pValidMailAliasDesc), nValidMailAliasDesc);
+    pt->desc_width = nValidMailAliasDesc;
+
+    malias.push_back(std::move(pt));
     sqlite_wt_sync_all_aliases();
 
     raw_notify(player, tprintf(T("MAIL: Alias set \xE2\x80\x98%s\xE2\x80\x99 defined."), alias));
@@ -4335,7 +4205,7 @@ static void do_malias_list(dbref player, UTF8 *alias)
     UTF8 *buff = alloc_lbuf("do_malias_list");
     UTF8 *bp = buff;
 
-    safe_tprintf_str(buff, &bp, T("MAIL: Alias *%s: "), m->name);
+    safe_tprintf_str(buff, &bp, T("MAIL: Alias *%s: "), m->name.c_str());
     for (int i = static_cast<int>(m->list.size()) - 1; i > -1; i--)
     {
         const UTF8 *p = Moniker(m->list[i]);
@@ -4371,50 +4241,31 @@ static const UTF8 *Spaces(size_t n)
     }
 }
 
-static bool malias_compare(const malias_t &a, const malias_t &b)
-{
-    return mux_stricmp(a.name, b.name) < 0;
-}
+
 
 static void do_malias_list_all(dbref player)
 {
-    int actual_entries = 0;
-    malias_t* alias_array = nullptr;
-    try
-    {
-        alias_array = static_cast<malias_t *>(MEMALLOC(sizeof(malias_t)*ma_top));
-    }
-    catch (...)
-    {
-        ; // Nothing.
-    }
+    std::vector<malias_t*> visible;
+    visible.reserve(malias.size());
 
-    if (nullptr == alias_array)
+    for (size_t i = 0; i < malias.size(); i++)
     {
-        return;
-    }
-
-    int i;
-    for (i = 0; i < ma_top; i++)
-    {
-        malias_t *m = malias[i];
-        if (  GOD == m->owner
-           || m->owner == player
-           || God(player))
+        malias_t *m = malias[i].get();
+        if (m && (GOD == m->owner || m->owner == player || God(player)))
         {
-            alias_array[actual_entries].name = m->name;
-            alias_array[actual_entries].desc = m->desc;
-            alias_array[actual_entries].desc_width = m->desc_width;
-            alias_array[actual_entries].owner = m->owner;
-            ++actual_entries;
+            visible.push_back(m);
         }
     }
-    std::sort(alias_array, alias_array + actual_entries, malias_compare);
+
+    // Use a comparator on raw pointers for the temp view.
+    auto cmp = [](malias_t* a, malias_t* b) {
+        return mux_stricmp(utf8(a->name), utf8(b->name)) < 0;
+    };
+    std::sort(visible.begin(), visible.end(), cmp);
 
     bool notified = false;
-    for (i = 0; i < actual_entries; i++)
+    for (malias_t *m : visible)
     {
-        malias_t *m = &alias_array[i];
         if (!notified)
         {
             raw_notify(player, T("Name         Description                              Owner"));
@@ -4424,11 +4275,10 @@ static void do_malias_list_all(dbref player)
         const UTF8 *pSpaces = Spaces(40 - m->desc_width);
 
         UTF8 *p = tprintf(T("%-12s %s%s %-15.15s"),
-            m->name, m->desc, pSpaces, Moniker(m->owner));
+            m->name.c_str(), m->desc.c_str(), pSpaces, Moniker(m->owner));
         raw_notify(player, p);
     }
     raw_notify(player, T("*****  End of Mail Aliases *****"));
-    MEMFREE(alias_array);
 }
 
 static void do_malias_switch(dbref player, UTF8 *a1, UTF8 *a2)
@@ -4975,8 +4825,7 @@ static void do_malias_desc(dbref player, UTF8 *alias, UTF8 *desc)
 
         if (bValidMailAliasDesc)
         {
-            MEMFREE(m->desc);
-            m->desc = StringCloneLen(pValidMailAliasDesc, nValidMailAliasDesc);
+            m->desc.assign(reinterpret_cast<const char *>(pValidMailAliasDesc), nValidMailAliasDesc);
             m->desc_width = nVisualWidth;
             sqlite_wt_sync_all_aliases();
             raw_notify(player, T("MAIL: Description changed."));
@@ -5073,7 +4922,7 @@ static void do_malias_add(dbref player, UTF8 *alias, UTF8 *person)
 
     m->list.push_back(thing);
     sqlite_wt_sync_all_aliases();
-    raw_notify(player, tprintf(T("MAIL: %s added to %s"), Moniker(thing), m->name));
+    raw_notify(player, tprintf(T("MAIL: %s added to %s"), Moniker(thing), m->name.c_str()));
 }
 
 static void do_malias_remove(dbref player, UTF8 *alias, UTF8 *person)
@@ -5165,8 +5014,7 @@ static void do_malias_rename(dbref player, UTF8 *alias, UTF8 *newname)
                             );
     if (bValidMailAlias)
     {
-        MEMFREE(m->name);
-        m->name = StringCloneLen(pValidMailAlias, nValidMailAlias);
+        m->name.assign(reinterpret_cast<const char *>(pValidMailAlias), nValidMailAlias);
         sqlite_wt_sync_all_aliases();
         raw_notify(player, T("MAIL: Mailing Alias renamed."));
     }
@@ -5189,36 +5037,23 @@ static void do_malias_delete(dbref player, UTF8 *alias)
     {
         return;
     }
-    bool done = false;
-    for (int i = 0; i < ma_top; i++)
+
+    for (auto it = malias.begin(); it != malias.end(); ++it)
     {
-        if (done)
-        {
-            malias[i] = malias[i + 1];
-        }
-        else
+        if (it->get() == m)
         {
             if ((m->owner == player) || ExpMail(player))
             {
-                if (m == malias[i])
-                {
-                    done = true;
-                    raw_notify(player, T("MAIL: Alias Deleted."));
-                    malias[i] = malias[i + 1];
-                }
+                malias.erase(it);
+                sqlite_wt_sync_all_aliases();
+                raw_notify(player, T("MAIL: Alias Deleted."));
+                return;
             }
+            break;
         }
     }
 
-    if (!done)
-    {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
-    }
-    else
-    {
-        ma_top--;
-        sqlite_wt_sync_all_aliases();
-    }
+    raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
 }
 
 static void do_malias_adminlist(dbref player)
@@ -5231,15 +5066,13 @@ static void do_malias_adminlist(dbref player)
     raw_notify(player,
       T("Num  Name         Description                              Owner"));
 
-    malias_t *m;
-    int i;
-
-    for (i = 0; i < ma_top; i++)
+    for (size_t i = 0; i < malias.size(); i++)
     {
-        m = malias[i];
+        malias_t *m = malias[i].get();
+        if (!m) continue;
         const UTF8 *pSpaces = Spaces(40 - m->desc_width);
         raw_notify(player, tprintf(T("%-4d %-12s %s%s %-15.15s"),
-                       i, m->name, m->desc, pSpaces,
+                       static_cast<int>(i), m->name.c_str(), m->desc.c_str(), pSpaces,
                        Moniker(m->owner)));
     }
 
@@ -5254,8 +5087,8 @@ static void do_malias_status(dbref player)
     }
     else
     {
-        raw_notify(player, tprintf(T("MAIL: Number of mail aliases defined: %d"), ma_top));
-        raw_notify(player, tprintf(T("MAIL: Allocated slots %d"), ma_size));
+        raw_notify(player, tprintf(T("MAIL: Number of mail aliases defined: %d"), static_cast<int>(malias.size())));
+        raw_notify(player, tprintf(T("MAIL: Allocated slots %d"), static_cast<int>(malias.capacity())));
     }
 }
 
@@ -5292,11 +5125,12 @@ XFUNCTION(fun_malias)
 
     ITL pContext;
     ItemToList_Init(&pContext, buff, bufc);
-    for (int i = 0; i < ma_top; i++)
+    for (size_t i = 0; i < malias.size(); i++)
     {
-        if (malias[i]->owner == target)
+        malias_t *m = malias[i].get();
+        if (m && m->owner == target)
         {
-            if (!ItemToList_AddString(&pContext, malias[i]->name))
+            if (!ItemToList_AddString(&pContext, utf8(m->name)))
             {
                 break;
             }
@@ -5316,30 +5150,22 @@ static void malias_cleanup1(malias_t *m, dbref target)
 void malias_cleanup(dbref player)
 {
     // Remove destroyed player from alias membership lists.
-    //
-    for (int i = 0; i < ma_top; i++)
+    for (size_t i = 0; i < malias.size(); i++)
     {
-        malias_cleanup1(malias[i], player);
+        malias_t *m = malias[i].get();
+        if (m)
+        {
+            malias_cleanup1(m, player);
+        }
     }
 
-    // Delete aliases owned by the destroyed player.  Iterate backwards
-    // to avoid index-shift issues when removing multiple entries.
-    //
-    for (int i = ma_top - 1; i >= 0; i--)
+    // Delete aliases owned by the destroyed player. Iterate backwards.
+    for (int i = static_cast<int>(malias.size()) - 1; i >= 0; i--)
     {
-        if (malias[i]->owner == player)
+        malias_t *m = malias[i].get();
+        if (m && m->owner == player)
         {
-            MEMFREE(malias[i]->name);
-            MEMFREE(malias[i]->desc);
-            delete malias[i];
-
-            // Shift remaining entries down.
-            //
-            for (int j = i; j < ma_top - 1; j++)
-            {
-                malias[j] = malias[j + 1];
-            }
-            ma_top--;
+            malias.erase(malias.begin() + i);
         }
     }
     sqlite_wt_sync_all_aliases();
@@ -5922,31 +5748,7 @@ static void clear_runtime_mail_data(void)
     mudstate.mail_db_top = 0;
     mudstate.mail_db_size = 0;
 
-    if (nullptr != malias)
-    {
-        for (int i = 0; i < ma_top; i++)
-        {
-            if (malias[i])
-            {
-                if (malias[i]->name)
-                {
-                    MEMFREE(malias[i]->name);
-                    malias[i]->name = nullptr;
-                }
-                if (malias[i]->desc)
-                {
-                    MEMFREE(malias[i]->desc);
-                    malias[i]->desc = nullptr;
-                }
-                delete malias[i];
-                malias[i] = nullptr;
-            }
-        }
-        delete [] malias;
-        malias = nullptr;
-    }
-    ma_top = 0;
-    ma_size = 0;
+    malias.clear();
 }
 
 bool sqlite_sync_mail(void)
@@ -6002,9 +5804,10 @@ bool sqlite_sync_mail(void)
 
     // Sync mail aliases.
     //
-    for (int i = 0; i < ma_top; i++)
+    for (size_t i = 0; i < malias.size(); i++)
     {
-        malias_t *m = malias[i];
+        malias_t *m = malias[i].get();
+        if (!m) continue;
 
         // Serialize member list to space-separated string.
         //
@@ -6020,7 +5823,7 @@ bool sqlite_sync_mail(void)
         }
         *bp = '\0';
 
-        if (!sqldb.SyncMailAlias(m->owner, m->name, m->desc,
+        if (!sqldb.SyncMailAlias(m->owner, utf8(m->name), utf8(m->desc),
             static_cast<int>(m->desc_width), members_buf))
         {
             sqldb.Rollback();
@@ -6116,50 +5919,20 @@ int sqlite_load_mail(void)
 
     // Load mail aliases.
     //
-    std::vector<malias_t *> alias_vec;
+    std::vector<std::unique_ptr<malias_t>> alias_vec;
     auto free_alias_vec = [&alias_vec]()
     {
-        for (auto *m : alias_vec)
-        {
-            if (m)
-            {
-                if (m->name)
-                {
-                    MEMFREE(m->name);
-                    m->name = nullptr;
-                }
-                if (m->desc)
-                {
-                    MEMFREE(m->desc);
-                    m->desc = nullptr;
-                }
-                delete m;
-            }
-        }
         alias_vec.clear();
     };
 
     if (!sqldb.LoadAllMailAliases([&alias_vec](int owner, const UTF8 *name,
         const UTF8 *desc, int desc_width, const UTF8 *members)
     {
-        malias_t *m = nullptr;
-        try
-        {
-            m = new malias_t;
-        }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (nullptr == m)
-        {
-            return;
-        }
+        auto m = std::make_unique<malias_t>();
 
         m->owner = owner;
-        m->name = StringClone(name);
-        m->desc = StringClone(desc);
+        m->name = name ? reinterpret_cast<const char *>(name) : "";
+        m->desc = desc ? reinterpret_cast<const char *>(desc) : "";
         m->desc_width = desc_width;
 
         // Parse space-separated member list.
@@ -6179,7 +5952,7 @@ int sqlite_load_mail(void)
             }
         }
 
-        alias_vec.push_back(m);
+        alias_vec.push_back(std::move(m));
     }))
     {
         free_alias_vec();
@@ -6190,30 +5963,12 @@ int sqlite_load_mail(void)
 
     if (!alias_vec.empty())
     {
-        int alias_count = static_cast<int>(alias_vec.size());
-        malias = nullptr;
-        try
+        malias.reserve(alias_vec.size());
+        for (auto& up : alias_vec)
         {
-            malias = new malias_t *[alias_count];
+            malias.push_back(std::move(up));
         }
-        catch (...)
-        {
-            ; // Nothing.
-        }
-
-        if (!malias)
-        {
-            free_alias_vec();
-            clear_runtime_mail_data();
-            mudstate.bSQLiteLoading = false;
-            return -1;
-        }
-
-        ma_top = ma_size = alias_count;
-        for (int i = 0; i < ma_top; i++)
-        {
-            malias[i] = alias_vec[i];
-        }
+        alias_vec.clear();
     }
 
     mudstate.bSQLiteLoading = false;

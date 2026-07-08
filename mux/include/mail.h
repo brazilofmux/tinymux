@@ -43,8 +43,6 @@
 #define ExpMail(x)  (Wizard(x))
 //#define Reply(m)    (m->read & M_REPLY)
 
-#define MA_INC      2   /* what interval to increase the malias list */
-
 typedef unsigned int mail_flag;
 
 struct mail
