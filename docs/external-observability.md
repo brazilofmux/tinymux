@@ -72,7 +72,7 @@ Current behavior:
 - `@log` is wizard-only;
 - it appends to a pre-created `logs/M-<name>.log`;
 - the target file must already exist;
-- the log name is restricted to alphanumeric characters;
+- the log name is restricted to alphanumeric characters, at most 30 of them;
 - the message payload is caller-controlled;
 - color is stripped;
 - a newline is added;
