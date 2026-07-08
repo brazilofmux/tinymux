@@ -1,0 +1,69 @@
+#
+# malformed_syntax.mux - Test Cases for malformed softcode syntax.
+#
+@create test_malformed_syntax
+-
+@set test_malformed_syntax=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_malformed_syntax=
+  @log smoke=Beginning malformed syntax test cases.
+-
+#
+# Test Case #1 - Incomplete sort() call reports stable arity rejection.
+#
+&tr.tc001 test_malformed_syntax=
+  @if strmatch(
+        eval(\[sort()\]),
+        #-1 FUNCTION (SORT) EXPECTS BETWEEN 1 AND 4 ARGUMENTS
+      )=
+  {
+    @log smoke=TC001: malformed sort call arity rejection. Succeeded.
+  },
+  {
+    @log smoke=TC001: malformed sort call arity rejection. Failed ([eval(\[sort()\])]).
+  }
+-
+#
+# Test Case #2 - Incomplete add() call reports stable arity rejection.
+#
+&tr.tc002 test_malformed_syntax=
+  @if strmatch(
+        eval(\[add()\]),
+        #-1 FUNCTION (ADD) EXPECTS BETWEEN 1 AND 100 ARGUMENTS
+      )=
+  {
+    @log smoke=TC002: malformed add call arity rejection. Succeeded.
+  },
+  {
+    @log smoke=TC002: malformed add call arity rejection. Failed ([eval(\[add()\])]).
+  }
+-
+#
+# Test Case #3 - Incomplete switch() call reports stable arity rejection.
+#
+&tr.tc003 test_malformed_syntax=
+  @if strmatch(
+        eval(\[switch()\]),
+        #-1 FUNCTION (SWITCH) EXPECTS BETWEEN 2 AND 100 ARGUMENTS
+      )=
+  {
+    @log smoke=TC003: malformed switch call arity rejection. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: malformed switch call arity rejection. Failed ([eval(\[switch()\])]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_malformed_syntax=
+  @log smoke=End malformed syntax test cases.;
+  @notify smoke
+-
+drop test_malformed_syntax
+-
+#
+# End of Test Cases
+#
