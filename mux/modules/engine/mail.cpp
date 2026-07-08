@@ -2311,7 +2311,10 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
                         tprintf(T("MAIL: \xE2\x80\x98%s\xE2\x80\x99 is a badly-formed alias."), head));
                 return nullptr;
             }
-            for (size_t i = 0; i < m->list.size(); i++)
+            for (size_t i = 0;
+                 i < m->list.size()
+                 && nRecip < static_cast<int>(sizeof(aRecip)/sizeof(aRecip[0]));
+                 i++)
             {
                  aRecip[nRecip++] = m->list[i];
             }
@@ -3871,6 +3874,17 @@ static void malias_read(FILE *fp, bool bConvert)
 
         if (numrecep > 0)
         {
+            // Clamp a hostile/corrupt recipient count.  A legitimate malias is
+            // bounded by the LBUF command string that creates it, which is why
+            // make_numlist's aRecip[] is sized (LBUF_SIZE+1)/2.  Without this,
+            // m->list grows unbounded from file content and later overflows
+            // aRecip[] in make_numlist; reserve() below could also exhaust
+            // memory on an INT_MAX count.
+            //
+            if (numrecep > (LBUF_SIZE+1)/2)
+            {
+                numrecep = (LBUF_SIZE+1)/2;
+            }
             m->list.reserve(numrecep);
             for (j = 0; j < numrecep; j++)
             {

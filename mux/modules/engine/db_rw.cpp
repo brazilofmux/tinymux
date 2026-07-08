@@ -293,6 +293,12 @@ static BOOLEXP *getboolexp1(FILE *f, int depth)
                 break;
 
             default:
+                // Bad connective: b->sub1 (built above) and the node leak
+                // otherwise.  b->type is not yet set, so free sub1 explicitly
+                // rather than via free_boolexp(b).
+                //
+                free_boolexp(b->sub1);
+                free_bool(b);
                 goto error;
             }
             b->sub2 = getboolexp1(f, depth + 1);
@@ -304,6 +310,10 @@ static BOOLEXP *getboolexp1(FILE *f, int depth)
         }
         if (')' != d)
         {
+            // Missing close paren: b->type and its subtree(s) are fully set
+            // here, so free_boolexp() unwinds them correctly.
+            //
+            free_boolexp(b);
             goto error;
         }
         return b;
@@ -395,6 +405,10 @@ static BOOLEXP *getboolexp1(FILE *f, int depth)
 
             if (EOF == c)
             {
+                // EOF mid lock-string: b->sub1 not yet allocated (StringClone
+                // below is unreached), so free only the node.
+                //
+                free_bool(b);
                 goto error;
             }
             *s = '\0';
@@ -514,6 +528,16 @@ static bool get_list(FILE *f, dbref i)
                 return true;
             }
             return true;
+
+        case EOF:
+
+            // Truncated flatfile: the attribute list was cut off before its
+            // '<' terminator.  Abort the load rather than spinning forever —
+            // getstring_noalloc() makes no progress at EOF, so the default
+            // case below would loop indefinitely emitting log lines.
+            //
+            Log.tinyprintf(T("Unexpected EOF when getting attributes on object %d" ENDLINE), i);
+            return false;
 
         default:
             Log.tinyprintf(T("Bad character \xE2\x80\x98%c\xE2\x80\x99 when getting attributes on object %d" ENDLINE), c, i);

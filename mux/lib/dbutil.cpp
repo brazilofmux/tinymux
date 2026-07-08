@@ -224,7 +224,7 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                             *pOutput++ = ch;
                             ch = *pInput++;
                         } while (decode_table[static_cast<unsigned char>(ch)] == 0);
-                        nOutput = pOutput - p;
+                        nOutput += pOutput - p;
                     }
                 }
                 int iAction = action_table[iState][decode_table[static_cast<unsigned char>(ch)]];

@@ -1601,6 +1601,16 @@ bool CSQLiteDB::GetAllAttributes(dbref obj, AttrCallback cb)
         dbref owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGetObj, 2));
         int flags = sqlite3_column_int(m_stmtAttrGetObj, 3);
 
+        // Clamp a tampered/corrupt value blob to LBUF_SIZE, mirroring the
+        // write-path clamp (cache_put) and the standalone read clamp
+        // (GetAttribute).  The consumer (atr_get_str_LEN) memcpy's this length
+        // into a fixed LBUF_SIZE buffer; an oversized blob would overflow it.
+        //
+        if (len > LBUF_SIZE)
+        {
+            len = LBUF_SIZE;
+        }
+
         // sqlite3_column_blob() returns NULL with bytes > 0 only under OOM; skip
         // such a row rather than handing the consumer a NULL it will dereference.
         if (NULL == value && 0 != len)
@@ -1639,6 +1649,16 @@ bool CSQLiteDB::GetBuiltinAttributes(dbref obj, AttrCallback cb)
         size_t len = static_cast<size_t>(sqlite3_column_bytes(m_stmtAttrGetBuiltin, 1));
         dbref owner = static_cast<dbref>(sqlite3_column_int(m_stmtAttrGetBuiltin, 2));
         int flags = sqlite3_column_int(m_stmtAttrGetBuiltin, 3);
+
+        // Clamp a tampered/corrupt value blob to LBUF_SIZE, mirroring the
+        // write-path clamp (cache_put) and the standalone read clamp
+        // (GetAttribute).  The consumer (atr_get_str_LEN) memcpy's this length
+        // into a fixed LBUF_SIZE buffer; an oversized blob would overflow it.
+        //
+        if (len > LBUF_SIZE)
+        {
+            len = LBUF_SIZE;
+        }
 
         // sqlite3_column_blob() returns NULL with bytes > 0 only under OOM; skip
         // such a row rather than handing the consumer a NULL it will dereference.
