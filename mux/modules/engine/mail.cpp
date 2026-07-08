@@ -3768,6 +3768,12 @@ static void malias_read(FILE *fp, bool bConvert)
         STARTLOG(LOG_BUGS, "BUG", "MAIL");
         log_text(T("Out of memory."));
         ENDLOG;
+
+        // ma_size/ma_top were set to the (attacker-controlled) file count
+        // before the allocation.  Reset them so post-load and runtime paths
+        // that loop to ma_top / index malias[] don't walk a null pointer.
+        //
+        ma_size = ma_top = 0;
         return;
     }
 
@@ -4148,6 +4154,12 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
         if (nullptr == malias)
         {
             raw_notify(player, T("MAIL: Out of memory."));
+
+            // ma_size was bumped to MA_INC before this failed allocation;
+            // reset it so the next add doesn't fall through to malias[ma_top]
+            // on a null pointer.
+            //
+            ma_size = ma_top = 0;
             delete pt;
             return;
         }
@@ -4168,6 +4180,12 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
         if (nullptr == nm)
         {
             raw_notify(player, T("MAIL: Out of memory."));
+
+            // ma_size was grown by MA_INC before this failed allocation, but
+            // malias still points at the smaller old array.  Restore ma_size
+            // so later adds don't index past the real allocation.
+            //
+            ma_size -= MA_INC;
             delete pt;
             return;
         }
