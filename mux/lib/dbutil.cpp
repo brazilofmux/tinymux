@@ -310,13 +310,20 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
         ungetc(c, f);
 
         UTF8 *p = buf;
+        size_t nBufferLeft = sizeof(buf);
         for (;;)
         {
-            // Fetch up to and including the next LF.
+            // Fetch up to and including the next LF.  Cap the request at the
+            // space remaining in buf: a crafted legacy string with enough
+            // '\r'-continued lines would otherwise march p past the static
+            // buffer and overflow it on the next fgets.
             //
-            if (fgets(reinterpret_cast<char *>(p), LBUF_SIZE, f) == nullptr)
+            int nRead = (nBufferLeft < LBUF_SIZE)
+                      ? static_cast<int>(nBufferLeft) : LBUF_SIZE;
+            if (  nRead <= 1
+               || fgets(reinterpret_cast<char *>(p), nRead, f) == nullptr)
             {
-                // EOF or ERROR.
+                // EOF, ERROR, or no room left.
                 //
                 p[0] = '\0';
             }
@@ -332,6 +339,7 @@ void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer)
                         // Line is continued on the next line.
                         //
                         p += nLine;
+                        nBufferLeft -= nLine;
                         continue;
                     }
 

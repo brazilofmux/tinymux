@@ -2324,7 +2324,15 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             target = lookup_player(player, head, true);
             if (Good_obj(target))
             {
-                aRecip[nRecip++] = target;
+                // Bound the write like the alias-copy loop above: aRecip[] is
+                // sized (LBUF_SIZE+1)/2, and a single clamped malias can fill
+                // it, so a valid recipient past the cap is dropped rather than
+                // overflowing the stack array.
+                //
+                if (nRecip < static_cast<int>(sizeof(aRecip)/sizeof(aRecip[0])))
+                {
+                    aRecip[nRecip++] = target;
+                }
             }
             else
             {
