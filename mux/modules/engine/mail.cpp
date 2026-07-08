@@ -249,7 +249,6 @@ static void mail_db_grow(int newtop)
 
     // New entries are default-constructed (refs=0, empty string).
     mudstate.mail_db_top = newtop;
-    mudstate.mail_db_size = newtop;  // for compatibility with old code paths
 }
 
 // MessageReferenceInc - Increments the reference count for any
@@ -5579,7 +5578,6 @@ static void clear_runtime_mail_data(void)
 
     mail_list.clear();
     mudstate.mail_db_top = 0;
-    mudstate.mail_db_size = 0;
 
     malias.clear();
 }
