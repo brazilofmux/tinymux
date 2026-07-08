@@ -180,7 +180,6 @@ static void sqlite_wt_sync_all_aliases(void)
     for (size_t i = 0; i < malias.size(); i++)
     {
         malias_t *m = malias[i].get();
-        if (!m) continue;
 
         LBuf members_buf = LBuf_Src("wt_sync_alias");
         UTF8 *bp = members_buf;
@@ -1545,7 +1544,7 @@ static malias_t *get_malias(dbref player, UTF8 *alias, int *pnResult)
             for (size_t i = 0; i < malias.size(); i++)
             {
                 malias_t *m = malias[i].get();
-                if (m && (m->owner == player || m->owner == GOD || ExpMail(player)))
+                if (m->owner == player || m->owner == GOD || ExpMail(player))
                 {
                     if (!strcmp(reinterpret_cast<char *>(pValidMailAlias), m->name.c_str()))
                     {
@@ -3477,7 +3476,6 @@ static void malias_write(FILE *fp)
     for (size_t i = 0; i < malias.size(); i++)
     {
         malias_t *m = malias[i].get();
-        if (!m) continue;
         mux_fprintf(fp, T("%d %d\n"), m->owner, static_cast<int>(m->list.size()));
         mux_fprintf(fp, T("N:%s\n"), m->name.c_str());
         mux_fprintf(fp, T("D:%s\n"), m->desc.c_str());
@@ -4251,7 +4249,7 @@ static void do_malias_list_all(dbref player)
     for (size_t i = 0; i < malias.size(); i++)
     {
         malias_t *m = malias[i].get();
-        if (m && (GOD == m->owner || m->owner == player || God(player)))
+        if (GOD == m->owner || m->owner == player || God(player))
         {
             visible.push_back(m);
         }
@@ -5069,7 +5067,6 @@ static void do_malias_adminlist(dbref player)
     for (size_t i = 0; i < malias.size(); i++)
     {
         malias_t *m = malias[i].get();
-        if (!m) continue;
         const UTF8 *pSpaces = Spaces(40 - m->desc_width);
         raw_notify(player, tprintf(T("%-4d %-12s %s%s %-15.15s"),
                        static_cast<int>(i), m->name.c_str(), m->desc.c_str(), pSpaces,
@@ -5128,7 +5125,7 @@ XFUNCTION(fun_malias)
     for (size_t i = 0; i < malias.size(); i++)
     {
         malias_t *m = malias[i].get();
-        if (m && m->owner == target)
+        if (m->owner == target)
         {
             if (!ItemToList_AddString(&pContext, utf8(m->name)))
             {
@@ -5152,18 +5149,14 @@ void malias_cleanup(dbref player)
     // Remove destroyed player from alias membership lists.
     for (size_t i = 0; i < malias.size(); i++)
     {
-        malias_t *m = malias[i].get();
-        if (m)
-        {
-            malias_cleanup1(m, player);
-        }
+        malias_cleanup1(malias[i].get(), player);
     }
 
     // Delete aliases owned by the destroyed player. Iterate backwards.
     for (int i = static_cast<int>(malias.size()) - 1; i >= 0; i--)
     {
         malias_t *m = malias[i].get();
-        if (m && m->owner == player)
+        if (m->owner == player)
         {
             malias.erase(malias.begin() + i);
         }
@@ -5807,7 +5800,6 @@ bool sqlite_sync_mail(void)
     for (size_t i = 0; i < malias.size(); i++)
     {
         malias_t *m = malias[i].get();
-        if (!m) continue;
 
         // Serialize member list to space-separated string.
         //
