@@ -1,0 +1,61 @@
+#
+# nested_depth.mux - Test Cases for nested function recursion-limit behavior.
+#
+@create test_nested_depth
+-
+@set test_nested_depth=INHERIT QUIET
+-
+#
+# config(function_recursion_limit) is publicly readable, but changing/restoring
+# function_recursion_limit is CA_GOD-settable. The normal smoke harness runs as #1.
+# Capture the pre-test value and restore it unconditionally before assertions.
+# Keep setup/probe/restore in one queued @switch action list. @switch captures
+# the pre-test limit as #$, and the restore uses #$ directly so it cannot race
+# the queued PRE_LIMIT attribute store.
+# Do not test the hard evaluator stack guard here; its stable observable is no crash.
+#
+@switch [config(function_recursion_limit)]=*,
+  {
+    &PRE_LIMIT test_nested_depth=#$;
+    @admin function_recursion_limit=5;
+    &R3 test_nested_depth=[cat(cat(cat(fdepth())))];
+    &R4 test_nested_depth=[cat(cat(cat(cat(fdepth()))))];
+    @admin function_recursion_limit=#$
+  }
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_nested_depth=
+  @log smoke=Beginning nested recursion-limit test cases.
+-
+#
+# Test Case #1 - Near-limit nesting succeeds and over-limit nesting fails visibly.
+#
+&tr.tc001 test_nested_depth=
+  @wait 0.2=
+  {
+    @if cand(
+          eq(get(test_nested_depth/R3),4),
+          strmatch(get(test_nested_depth/R4), #-1 FUNCTION RECURSION LIMIT EXCEEDED),
+          strmatch(config(function_recursion_limit), get(test_nested_depth/PRE_LIMIT))
+        )=
+    {
+      @log smoke=TC001: nested recursion-limit probes restored config and matched expected results. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC001: nested recursion-limit probes failed (pre=[get(test_nested_depth/PRE_LIMIT)] r3=[get(test_nested_depth/R3)] r4=[get(test_nested_depth/R4)] current=[config(function_recursion_limit)]).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_nested_depth=
+  @log smoke=End nested recursion-limit test cases.;
+  @notify smoke
+-
+drop test_nested_depth
+-
+#
+# End of Test Cases
+#
