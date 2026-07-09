@@ -1468,10 +1468,10 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     LBuf tbuff = LBuf_Src("ast_noeval_switch.2");
 
-    const UTF8 *saved_switch = mudstate.switch_token;
-    mudstate.switch_token = mbuff;
-
-    // Loop through patterns looking for a match.
+    // Loop through patterns looking for a match.  #$ is bound to the
+    // match target only while a matched <result> (or the default) is
+    // evaluated, never while a pattern is evaluated (#857; mirrors
+    // switch_handler in functions.cpp).
     //
     int i;
     for (i = 1; i < nfargs - 1 && !alarm_clock.alarmed; i += 2)
@@ -1487,6 +1487,8 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             : strcmp(reinterpret_cast<char *>(tbuff.get()),
                      reinterpret_cast<char *>(mbuff.get())) == 0)
         {
+            const UTF8 *saved_switch = mudstate.switch_token;
+            mudstate.switch_token = mbuff;
             ast_eval_branch(node, i + 1, node->children[i + 1].get(), buff, bufc,
                 executor, caller, enactor, eval, cargs, ncargs);
             mudstate.switch_token = saved_switch;
@@ -1498,11 +1500,12 @@ static void ast_noeval_switch(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     //
     if (i < nfargs)
     {
+        const UTF8 *saved_switch = mudstate.switch_token;
+        mudstate.switch_token = mbuff;
         ast_eval_branch(node, i, node->children[i].get(), buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);
+        mudstate.switch_token = saved_switch;
     }
-
-    mudstate.switch_token = saved_switch;
 }
 
 // Native switchall/caseall: all-match pattern dispatch.
@@ -1525,10 +1528,9 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     LBuf tbuff = LBuf_Src("ast_noeval_switchall.2");
 
-    const UTF8 *saved_switch = mudstate.switch_token;
-    mudstate.switch_token = mbuff;
-
-    // Loop through all patterns, evaluating every match.
+    // Loop through all patterns, evaluating every match.  As in
+    // ast_noeval_switch, #$ is bound only around <result>/default
+    // evaluation, never pattern evaluation (#857).
     //
     bool bMatched = false;
     int i;
@@ -1546,8 +1548,11 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                      reinterpret_cast<char *>(mbuff.get())) == 0)
         {
             bMatched = true;
+            const UTF8 *saved_switch = mudstate.switch_token;
+            mudstate.switch_token = mbuff;
             ast_eval_branch(node, i + 1, node->children[i + 1].get(), buff, bufc,
                 executor, caller, enactor, eval, cargs, ncargs);
+            mudstate.switch_token = saved_switch;
         }
     }
 
@@ -1555,11 +1560,12 @@ static void ast_noeval_switchall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     //
     if (!bMatched && i < nfargs)
     {
+        const UTF8 *saved_switch = mudstate.switch_token;
+        mudstate.switch_token = mbuff;
         ast_eval_branch(node, i, node->children[i].get(), buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);
+        mudstate.switch_token = saved_switch;
     }
-
-    mudstate.switch_token = saved_switch;
 }
 
 // Native iter: list iteration.
