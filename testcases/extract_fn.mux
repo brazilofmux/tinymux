@@ -134,7 +134,7 @@
   }
 -
 #
-# Test Case #8 - Walk single-hyphens through elements.
+# Test Case #8 - Walk single-hyphens through elements and arity boundary.
 #
 &tr.tc008 test_extract_fn=
   @if cand(
@@ -142,14 +142,15 @@
         strmatch(extract(a-b-c-d-e-f-g-h,4,2,-), d-e),
         strmatch(extract(a-b-c-d-e-f-g-h,8,1,-), h),
         strmatch(extract(-a-b-c-d-e-f-g-h,2,1,-), a),
-        strmatch(extract(a--b-c-d-e-f-g-h,3,1,-), b)
+        strmatch(extract(a--b-c-d-e-f-g-h,3,1,-), b),
+        strmatch(extract(a-b-c,1,1,-,|,extra), #-1 FUNCTION (EXTRACT) EXPECTS BETWEEN 3 AND 5 ARGUMENTS)
       )=
   {
     @log smoke=TC008: extract walk single-hyphens through elements. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC008: extract walk single-hyphens through elements. Failed.;
+    @log smoke=TC008: extract walk single-hyphens through elements. Failed (extract(over-max)=[extract(a-b-c,1,1,-,|,extra)]).;
     @trig me/tr.done
   }
 -

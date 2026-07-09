@@ -41,20 +41,21 @@
   }
 -
 #
-# Test Case #3 - Negative count errors; non-numeric coerces to zero.
+# Test Case #3 - Negative count errors, non-numeric coercion, and arity boundary.
 #
 &tr.tc003 test_right_fn=
   @if cand(
         strmatch(right(abc,-1), #-1 OUT OF RANGE),
         eq(strlen(right(abc,foo)), 0),
-        eq(strlen(right(,3)), 0)
+        eq(strlen(right(,3)), 0),
+        strmatch(right(hello,3,x), #-1 FUNCTION (RIGHT) EXPECTS 2 ARGUMENTS)
       )=
   {
     @log smoke=TC003: right invalid counts. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: right invalid counts. Failed (right(abc%,-1)=[right(abc,-1)] right(abc%,foo)=[right(abc,foo)] right(%,3)=[right(,3)]).;
+    @log smoke=TC003: right invalid counts. Failed (right(abc%,-1)=[right(abc,-1)] right(abc%,foo)=[right(abc,foo)] right(%,3)=[right(,3)] right(over-max)=[right(hello,3,x)]).;
     @trig me/tr.done
   }
 -
