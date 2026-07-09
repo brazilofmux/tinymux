@@ -1087,6 +1087,14 @@ static void ra_set_loc(rv_compiler &rc, hir_loc *loc,
 //
 static void emit_phi_copies(hir_program &h, rv_compiler &rc,
                              hir_loc *loc, int from_blk, int to_blk) {
+    // A branch target outside [0, n_blocks) is an unpatched placeholder
+    // or an overflowed new_block() — indexing block_first[] with it reads
+    // wild memory (#858).  Flag it and skip; the branch emits no copies.
+    if (to_blk < 0 || to_blk >= h.n_blocks) {
+        fprintf(stderr, "hir_codegen: emit_phi_copies invalid to_blk=%d "
+                "(from_blk=%d n_blocks=%d)\n", to_blk, from_blk, h.n_blocks);
+        return;
+    }
     if (h.block_first[to_blk] > h.block_last[to_blk]) return;
     for (int i = h.block_first[to_blk]; i <= h.block_last[to_blk]; i++) {
         if (h.blk[i] != to_blk || h.kind[i] != HIR_PHI) continue;

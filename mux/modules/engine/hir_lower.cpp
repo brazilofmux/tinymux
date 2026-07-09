@@ -1529,6 +1529,15 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         std::vector<int> br_shortcircuit;    // BR insns → short-circuit target
         int br_allpassed = -1;               // BR insn → "all passed" target
 
+        // Snapshot for rollback: a mid-chain bail to general_lowering
+        // must not leave already-emitted BRC/BR placeholder (-1) targets
+        // behind — codegen has no valid block to resolve them to (#858).
+        int save_insns  = h.n_insns;
+        int save_blocks = h.n_blocks;
+        int save_cur    = h.cur_block;
+        int save_pargs  = h.n_pargs;
+        size_t save_srefs = h.sref_addrs.size();
+
         for (int ai = 0; ai < nfargs; ai++) {
             int cond = hir_lower_node(h, rc, node->children[ai].get());
 
@@ -1543,6 +1552,17 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 } else if (h.known_int[cond]) {
                     cond = h.emit(HIR_ATOI, TY_INT, cond);
                 } else {
+                    // A non-integer arg after branches were already
+                    // emitted would orphan their placeholder targets;
+                    // roll the partial lowering back and let the ECALL
+                    // path lower the whole node instead (#858).
+                    h.n_insns   = save_insns;
+                    h.n_blocks  = save_blocks;
+                    h.cur_block = save_cur;
+                    h.n_pargs   = save_pargs;
+                    h.sval.resize(save_insns);
+                    h.call_name.resize(save_insns);
+                    h.sref_addrs.resize(save_srefs);
                     goto general_lowering;
                 }
             }
