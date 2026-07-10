@@ -27,19 +27,21 @@
   }
 -
 #
-# Test Case #2 - Two-character separators.
+# Test Case #2 - Two-character separators and empty input.
 #
 &tr.tc002 test_squish_fn=
   @if cand(
         strmatch(squish(ABABCCAB,AB), ABCCAB),
-        gt(strlen(squish(%r%rFoo%r%rBar%r%r,%r)), 0)
+        gt(strlen(squish(%r%rFoo%r%rBar%r%r,%r)), 0),
+        eq(strlen(squish()), 0),
+        eq(strlen(squish(,)), 0)
       )=
   {
-    @log smoke=TC002: Two-character separators. Succeeded.;
+    @log smoke=TC002: Two-character separators and empty input. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: Two-character separators. Failed (squish(ABABCCAB%,AB)=[squish(ABABCCAB,AB)]).;
+    @log smoke=TC002: Two-character separators and empty input. Failed (squish(ABABCCAB%,AB)=[squish(ABABCCAB,AB)] squish()=[strlen(squish())] squish(%,)=[strlen(squish(,))]).;
     @trig me/tr.done
   }
 -
