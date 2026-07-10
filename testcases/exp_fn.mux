@@ -28,20 +28,21 @@
   }
 -
 #
-# Test Case #2 - Inverse of ln, overflow to +Inf, coercion.
+# Test Case #2 - Inverse of ln, overflow to +Inf, underflow to zero, coercion.
 #
 &tr.tc002 test_exp_fn=
   @if cand(
         eq(round(exp(ln(7)),6), 7),
         strmatch(exp(1000), +Inf),
+        strmatch(exp(-1000), 0),
         eq(exp(foo), 1)
       )=
   {
-    @log smoke=TC002: exp inverse and overflow. Succeeded.;
+    @log smoke=TC002: exp inverse, overflow, and underflow. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: exp inverse and overflow. Failed (exp(ln(7))=[round(exp(ln(7)),6)] exp(1000)=[exp(1000)] exp(foo)=[exp(foo)]).;
+    @log smoke=TC002: exp inverse, overflow, and underflow. Failed (exp(ln(7))=[round(exp(ln(7)),6)] exp(1000)=[exp(1000)] exp(-1000)=[exp(-1000)] exp(foo)=[exp(foo)]).;
     @trig me/tr.done
   }
 -
