@@ -90,6 +90,7 @@ size_t co_insert_at(unsigned char *out, const unsigned char *list,
 
 /* New co_* functions for Tier 2 wrappers below. */
 size_t co_cluster_count(const unsigned char *data, size_t len);
+size_t co_visible_length(const unsigned char *data, size_t len);
 size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
 size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
 size_t co_reverse(unsigned char *out, const unsigned char *p, size_t len);
@@ -815,23 +816,48 @@ char *co_escape_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* left()/strtrunc() parity: mirror fun_strtrunc (funceval.cpp) — negative
+ * count is a range error, zero is empty, and extraction counts grapheme
+ * clusters via co_cluster_count/co_mid_cluster, NOT visible code points.
+ * The old co_left/co_right code-point path split multi-code-point clusters
+ * (e.g. emoji + skin-tone modifier) that the host keeps intact (#871). */
 char *co_left_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
-    size_t count = (size_t)atol(fargs[1]);
-    size_t n = co_left((unsigned char *)out,
-                       (const unsigned char *)fargs[0],
-                       rv64_slen(fargs[0]), count);
-    out[n] = '\0';
+    long count = atol(fargs[1]);
+    if (count < 0) { rv64_scopy(out, "#-1 OUT OF RANGE"); return out; }
+    if (count == 0) { out[0] = '\0'; return out; }
+    size_t len = rv64_slen(fargs[0]);
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    size_t clusters = co_cluster_count(p, len);
+    if ((size_t)count < clusters) {
+        size_t n = co_mid_cluster((unsigned char *)out, p, len,
+                                  0, (size_t)count);
+        out[n] = '\0';
+    } else if (co_visible_length(p, len) > 0) {
+        rv64_scopy(out, fargs[0]);
+    } else {
+        out[0] = '\0';
+    }
     return out;
 }
 
+/* right() parity: mirror fun_right (functions.cpp) — same rules as
+ * co_left_wrap but taking the LAST count clusters. */
 char *co_right_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
-    size_t count = (size_t)atol(fargs[1]);
-    size_t n = co_right((unsigned char *)out,
-                        (const unsigned char *)fargs[0],
-                        rv64_slen(fargs[0]), count);
-    out[n] = '\0';
+    long count = atol(fargs[1]);
+    if (count < 0) { rv64_scopy(out, "#-1 OUT OF RANGE"); return out; }
+    if (count == 0) { out[0] = '\0'; return out; }
+    size_t len = rv64_slen(fargs[0]);
+    const unsigned char *p = (const unsigned char *)fargs[0];
+    size_t clusters = co_cluster_count(p, len);
+    if ((size_t)count < clusters) {
+        size_t n = co_mid_cluster((unsigned char *)out, p, len,
+                                  clusters - (size_t)count, (size_t)count);
+        out[n] = '\0';
+    } else {
+        rv64_scopy(out, fargs[0]);
+    }
     return out;
 }
 
