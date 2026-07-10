@@ -10187,17 +10187,21 @@ static void centerjustcombo
     {
         return;
     }
-    LBUF_OFFSET nWidth = static_cast<LBUF_OFFSET>(mux_atol(strip_color(fargs[1])));
-    if (0 == nWidth)
+    // Range-check the width before narrowing to LBUF_OFFSET (uint16_t
+    // at this LBUF_SIZE) — casting first wraps widths mod 65536, letting
+    // e.g. 999999 slip under the limit as 16959 (#860).
+    long lWidth = mux_atol(strip_color(fargs[1]));
+    if (0 == lWidth)
     {
         return;
     }
 
-    if (LBUF_SIZE <= nWidth)
+    if (lWidth < 0 || LBUF_SIZE <= lWidth)
     {
         safe_range(buff, bufc);
         return;
     }
+    LBUF_OFFSET nWidth = static_cast<LBUF_OFFSET>(lWidth);
 
     const unsigned char *pStr = reinterpret_cast<const unsigned char *>(fargs[0]);
     size_t lenStr = strlen(reinterpret_cast<const char *>(pStr));
