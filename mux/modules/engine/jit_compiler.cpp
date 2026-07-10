@@ -918,6 +918,14 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
 
     s_compile_deps = nullptr;
 
+    // If any HIR capacity limit was hit during lowering, the program
+    // contains -1 instruction/block indices that later phases would
+    // dereference (#859).  Bail out — the AST evaluator handles it.
+    if (h.overflowed) {
+        s_jit_stats.compile_fail++;
+        return prog;  // prog.ok is still false
+    }
+
     const char *dump_env = getenv("TINYMUX_DUMP_HIR");
     bool bDump = (dump_env && *dump_env != '0');
 

@@ -208,8 +208,20 @@ while kill -0 "$MUX_PID" 2>/dev/null; do
     fi
 done
 
-# Wait for process to fully exit.
-wait "$MUX_PID" 2>/dev/null || true
+# Wait for process to fully exit, capturing its status.  A status above
+# 128 means death by signal (128+N); when we killed it ourselves on a
+# timeout, HANG_TYPE is set and the signal is expected — otherwise the
+# process crashed and must be reported as a crash, not a stalled chain
+# (#859: a SIGBUS here used to read as "Dispatched: N/M, Crashes: 0").
+MUX_RC=0
+wait "$MUX_PID" 2>/dev/null || MUX_RC=$?
+MUX_CRASH=""
+if [ -z "$HANG_TYPE" ] && [ "$MUX_RC" -gt 128 ]; then
+    MUX_SIG=$((MUX_RC - 128))
+    MUX_SIGNAME=$(kill -l "$MUX_SIG" 2>/dev/null || echo "$MUX_SIG")
+    MUX_CRASH="muxscript died: signal $MUX_SIGNAME (exit status $MUX_RC)"
+    echo "CRASH: $MUX_CRASH"
+fi
 ELAPSED=$((SECONDS - WALL_START))
 echo "muxscript ran for ${ELAPSED}s."
 
@@ -235,10 +247,16 @@ CRASH_SMOKE=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' smoke.log || true)
 CRASH_NETMUX=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' netmux.log 2>/dev/null || true)
 : "${SUCCEEDED:=0}" "${FAILED:=0}" "${CRASH_SMOKE:=0}" "${CRASH_NETMUX:=0}"
 CRASHES=$((CRASH_SMOKE + CRASH_NETMUX))
+if [ -n "$MUX_CRASH" ]; then
+    CRASHES=$((CRASHES + 1))
+fi
 
 echo "  Succeeded: $SUCCEEDED"
 echo "  Failed:    $FAILED"
 echo "  Crashes:   $CRASHES"
+if [ -n "$MUX_CRASH" ]; then
+    echo "  Crash:     $MUX_CRASH"
+fi
 if [ -n "$HANG_TYPE" ]; then
     echo "  Hang:      $HANG_TYPE"
 fi

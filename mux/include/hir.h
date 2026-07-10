@@ -279,6 +279,12 @@ struct hir_program {
     int native_ops;
     bool needs_jit;
 
+    // Set when any capacity limit (HIR_MAX_INSNS/BLOCKS/PARGS/CARGS) is
+    // hit during lowering.  The -1 an overflowing emit/new_block returns
+    // otherwise flows into instruction/block indices unchecked (#859);
+    // compile_expression checks this and aborts to the interpreter.
+    bool overflowed;
+
     void init() {
         n_insns = 0;
         n_cargs = 0;
@@ -293,6 +299,7 @@ struct hir_program {
         tier2_calls = 0;
         native_ops = 0;
         needs_jit = false;
+        overflowed = false;
 
         sval.clear();
         call_name.clear();
@@ -313,7 +320,7 @@ struct hir_program {
     // Emit an instruction, return its index.
     int emit(hir_kind k, hir_type t, int s1 = -1, int s2 = -1,
              int64_t v = 0) {
-        if (n_insns >= HIR_MAX_INSNS) return -1;
+        if (n_insns >= HIR_MAX_INSNS) { overflowed = true; return -1; }
         int i = n_insns++;
         kind[i] = k;
         ty[i] = t;
@@ -371,7 +378,7 @@ struct hir_program {
                   const std::string *fallback_name = nullptr) {
         int i = emit(HIR_CALL, ret_ty);
         if (i < 0) return -1;
-        if (n_cargs + nargs > HIR_MAX_CARGS) return -1;
+        if (n_cargs + nargs > HIR_MAX_CARGS) { overflowed = true; return -1; }
         func_idx[i] = fidx;
         if (fallback_name && fidx == 0) {
             call_name[i] = *fallback_name;
@@ -388,7 +395,7 @@ struct hir_program {
     int emit_strcat(const int *args, int nargs) {
         int i = emit(HIR_STRCAT, TY_STRING);
         if (i < 0) return -1;
-        if (n_cargs + nargs > HIR_MAX_CARGS) return -1;
+        if (n_cargs + nargs > HIR_MAX_CARGS) { overflowed = true; return -1; }
         cbase[i] = n_cargs;
         cnargs[i] = nargs;
         for (int j = 0; j < nargs; j++) {
@@ -402,7 +409,7 @@ struct hir_program {
                  const int *blocks, const int *vals, int nargs) {
         int i = emit(HIR_PHI, t, -1, -1, qreg);
         if (i < 0) return -1;
-        if (n_pargs + nargs > HIR_MAX_PARGS) return -1;
+        if (n_pargs + nargs > HIR_MAX_PARGS) { overflowed = true; return -1; }
         pbase[i] = n_pargs;
         pnargs[i] = nargs;
         for (int j = 0; j < nargs; j++) {
@@ -416,7 +423,7 @@ struct hir_program {
     // Allocate a new basic block.  Returns block index.
     // Does NOT switch cur_block — caller must set it explicitly.
     int new_block() {
-        if (n_blocks >= HIR_MAX_BLOCKS) return -1;
+        if (n_blocks >= HIR_MAX_BLOCKS) { overflowed = true; return -1; }
         int b = n_blocks++;
         block_succ[b][0] = block_succ[b][1] = -1;
         block_nsucc[b] = 0;
