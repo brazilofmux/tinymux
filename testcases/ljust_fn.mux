@@ -130,10 +130,32 @@
       )=
   {
     @log smoke=TC007: color inside cluster truncation. Succeeded.;
+  },
+  {
+    @log smoke=TC007: color inside cluster truncation. Failed (plain=[encode64(stripansi(ljust([chr(128075)][chr(127995)]ab,3)))] col=[encode64(stripansi(ljust(strcat(ansi(r,chr(128075)),chr(127995),ab),3)))] vw=[vwidth(strcat(ansi(r,chr(128075)),chr(127995)))]).
+  }
+-
+#
+# Test Case #8 - LBUF width boundary regression guard (#860).
+# Commit b8f11142bc6bd507c3e7a6473174b02ba21789fc fixed a bug where
+# centerjustcombo() narrowed the parsed width to LBUF_OFFSET before checking
+# it against LBUF_SIZE, so far-over widths such as 999999 could wrap into
+# an apparently valid range.
+#
+&tr.tc008 test_ljust_fn=
+  @if cand(
+        eq(strlen(ljust(x,[sub(config(lbuf_size),1)])), sub(config(lbuf_size),1)),
+        strmatch(ljust(x,[config(lbuf_size)]), #-1 OUT OF RANGE),
+        strmatch(ljust(x,999999), #-1 OUT OF RANGE),
+        strmatch(ljust(x,-5), #-1 OUT OF RANGE),
+        eq(strlen(ljust(x,0)), 0)
+      )=
+  {
+    @log smoke=TC008: ljust LBUF width boundary regression guard. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC007: color inside cluster truncation. Failed (plain=[encode64(stripansi(ljust([chr(128075)][chr(127995)]ab,3)))] col=[encode64(stripansi(ljust(strcat(ansi(r,chr(128075)),chr(127995),ab),3)))] vw=[vwidth(strcat(ansi(r,chr(128075)),chr(127995)))]).;
+    @log smoke=TC008: ljust LBUF width boundary regression guard. Failed (atmax_len=[strlen(ljust(x,[sub(config(lbuf_size),1)]))] atlimit=[ljust(x,[config(lbuf_size)])] far=[ljust(x,999999)] neg=[ljust(x,-5)] zero_len=[strlen(ljust(x,0))]).;
     @trig me/tr.done
   }
 -
