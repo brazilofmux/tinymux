@@ -17,13 +17,14 @@
 &tr.tc001 test_cos_fn=
   @if cand(
         eq(round(cos(0),6), 1),
-        eq(round(cos(pi()),6), -1)
+        eq(round(cos(pi()),6), -1),
+        eq(round(cos(foo),6), 1)
       )=
   {
-    @log smoke=TC001: cos basic operations. Succeeded.
+    @log smoke=TC001: cos basic operations and non-numeric coercion. Succeeded.
   },
   {
-    @log smoke=TC001: cos basic operations. Failed (cos(0)=[round(cos(0),6)] cos(pi)=[round(cos(pi()),6)]).
+    @log smoke=TC001: cos basic operations and non-numeric coercion. Failed (cos(0)=[round(cos(0),6)] cos(pi)=[round(cos(pi()),6)] cos(foo)=[round(cos(foo),6)]).
   }
 -
 #
