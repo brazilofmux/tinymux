@@ -61,10 +61,10 @@
 #
 # Test Case #3 - ljust/rjust/center width parsing parity (centerjustcombo):
 # "+3" is a valid integer (mux_atol), "3.5" is not (is_integer) and emits
-# nothing, widths at or past LBUF_SIZE are a range error, and a negative
-# width wraps through LBUF_OFFSET (uint16) — -1 wraps to 65535 (range
-# error), -40000 wraps to 25536 columns of padding.  The 25536 case also
-# guards the LBUF_SIZE=32768 libmux build and DBT NEGW correctness.
+# nothing, and any width that is negative or at/past LBUF_SIZE is a range
+# error (#860/#862: the width is range-checked as a long before narrowing
+# to LBUF_OFFSET, so large-magnitude negative values no longer wrap through
+# uint16 into a false-valid width).
 #
 &tr.tc003 test_delim_parity_fn=
   @if cand(
@@ -72,13 +72,13 @@
         eq(strlen(ljust(abcdef,3.5)), 0),
         strmatch(ljust(abc,40000), #-1 OUT OF RANGE),
         strmatch(rjust(abc,-1), #-1 OUT OF RANGE),
-        eq(strlen(rjust(abc,-40000)), 25536)
+        strmatch(rjust(abc,-40000), #-1 OUT OF RANGE)
       )=
   {
     @log smoke=TC003: justify width parity. Succeeded.;
   },
   {
-    @log smoke=TC003: justify width parity. Failed (plus=[ljust(abcdef,+3)] float=[ljust(abcdef,3.5)] big=[ljust(abc,40000)] neg1=[rjust(abc,-1)] wraplen=[strlen(rjust(abc,-40000))]).;
+    @log smoke=TC003: justify width parity. Failed (plus=[ljust(abcdef,+3)] float=[ljust(abcdef,3.5)] big=[ljust(abc,40000)] neg1=[rjust(abc,-1)] neg2=[rjust(abc,-40000)]).;
   }
 -
 #
