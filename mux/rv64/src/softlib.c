@@ -28,6 +28,7 @@ char *rv64_scopy(char *dst, const char *src);
 void *memcpy(void *dst, const void *src, size_t n);
 int   memcmp(const void *a, const void *b, size_t n);
 void *memset(void *dst, int c, size_t n);
+void *memchr(const void *s, int c, size_t n);
 void  memswap(void *a, void *b, size_t n);
 
 /* Forward declarations for co_* functions (in color_ops.o). */
@@ -174,6 +175,17 @@ void *memset(void *dst, int c, size_t n) {
     unsigned char v = (unsigned char)c;
     while (n--) *d++ = v;
     return dst;
+}
+
+__attribute__((noinline))
+void *memchr(const void *s, int c, size_t n) {
+    const unsigned char *p = (const unsigned char *)s;
+    unsigned char v = (unsigned char)c;
+    while (n--) {
+        if (*p == v) return (void *)p;
+        p++;
+    }
+    return (void *)0;
 }
 
 __attribute__((noinline))
@@ -884,16 +896,17 @@ size_t co_split_words(const unsigned char *data, size_t len,
                       size_t *word_starts, size_t *word_ends,
                       size_t max_words);
 
-/* centerjustcombo width parity (#782): "" for a non-integer or zero
- * width; the value is parsed with mux_atol semantics and narrowed
- * through LBUF_OFFSET (uint16), so negative widths wrap; widths at or
- * past LBUF_SIZE are a range error.  Returns -1 for "emit nothing",
- * -2 for "emit #-1 OUT OF RANGE", else the width. */
+/* centerjustcombo width parity (#782, b8f11142b): "" for a non-integer
+ * or zero width; negative widths and widths at or past LBUF_SIZE are a
+ * range error.  The width is range-checked BEFORE any narrowing, matching
+ * the host's fix for the uint16 wraparound (ljust(x,999999) used to pad
+ * 16959 columns).  Returns -1 for "emit nothing", -2 for "emit
+ * #-1 OUT OF RANGE", else the width. */
 static long parse_justify_width(const char *s) {
     if (!sis_integer(s)) return -1;
-    unsigned short w = (unsigned short)satoi(s);
+    int w = satoi(s);
     if (w == 0) return -1;
-    if (w >= LBUF_SIZE) return -2;
+    if (w < 0 || w >= LBUF_SIZE) return -2;
     return (long)w;
 }
 
