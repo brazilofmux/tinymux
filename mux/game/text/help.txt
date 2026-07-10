@@ -12002,9 +12002,7 @@ MID()
 
   The first character in a string is at position zero.
 
-  Left() is supported as an alias for strtrunc().
-
-  Related Topics: delete(), right(), strtrunc().
+  Related Topics: delete(), left(), right().
 
 & MIN()
 MIN()
@@ -14210,12 +14208,10 @@ RIGHT()
 
   FUNCTION: right(<string>, <length>)
 
-  This returns the right-most <length> characters from the <string>.
+  This returns the right-most <length> visual characters (grapheme
+  clusters) from the <string>.
 
-  If you are looking for left(), the corresponding function to right(), then
-  look at strtrunc() as an equivalent.
-
-  Related Topics: mid(), strtrunc().
+  Related Topics: left(), mid().
 
 & RJUST()
 RJUST()
@@ -15734,19 +15730,19 @@ STRSORT()
 
   Related Topics: sort(), strunique().
 
-& STRTRUNC()
 & LEFT()
-STRTRUNC()
+& STRTRUNC()
+LEFT()
 
-  FUNCTION: strtrunc(<string>,<number>)
+  FUNCTION: left(<string>,<number>)
 
-  This function returns <string> truncated if it is longer than <number>. If
-  <number> is greater than the length of <string>, it just returns <string>.
-  Much more efficient than the equivalent mid().
+  This returns the left-most <number> visual characters (grapheme clusters)
+  from <string>.  If <number> is greater than the length of <string>, it
+  just returns <string>.  Much more efficient than the equivalent mid().
 
-  left() is an alias for strtrunc().
+  strtrunc() is a synonym for left().
 
-  Related Topics: mid(), ljust(), right().
+  Related Topics: mid(), ljust(), right(), strtrunc().
 
 & STRUNIQUE()
 STRUNIQUE()

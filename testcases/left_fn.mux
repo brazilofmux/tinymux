@@ -1,0 +1,67 @@
+#
+# left_fn.mux - Test Cases for left() (and its synonym strtrunc()).
+#
+@create test_left_fn
+-
+@set test_left_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_left_fn=
+  @log smoke=Beginning left() test cases.
+-
+#
+# Test Case #1 - Basic operations, and strtrunc() synonym parity.
+# left() is a first-class function (it was historically an alias.conf
+# alias for strtrunc(); both are now real table entries sharing one
+# implementation).
+#
+&tr.tc001 test_left_fn=
+  @if cand(
+        strmatch(left(foobar,3), foo),
+        strmatch(left(foobar,99), foobar),
+        strmatch(left(foobar,3), strtrunc(foobar,3)),
+        eq(strlen(left(foobar,0)), 0),
+        strmatch(left(foobar,-1), #-1 OUT OF RANGE)
+      )=
+  {
+    @log smoke=TC001: left basic operations and strtrunc parity. Succeeded.
+  },
+  {
+    @log smoke=TC001: left basic operations and strtrunc parity. Failed (left(foobar%,3)=[left(foobar,3)] left(foobar%,99)=[left(foobar,99)] strtrunc=[strtrunc(foobar,3)] zero_len=[strlen(left(foobar,0))] neg=[left(foobar,-1)]).
+  }
+-
+#
+# Test Case #2 - Grapheme clusters stay intact.
+# chr(128075)+chr(127995) is emoji + skin-tone modifier: two code points,
+# one grapheme cluster.  left(...,1) must return the whole cluster, never
+# a split fragment.  The setr()-fed form keeps the argument runtime-valued
+# so the assertion cannot be satisfied by compile-time constant folding
+# alone (the tier2/JIT path must agree too — see 612ce793f).
+#
+&tr.tc002 test_left_fn=
+  @if cand(
+        eq(strlen(left([chr(128075)][chr(127995)]cd,1)), 1),
+        strmatch(left([chr(128075)][chr(127995)]cd,1), [chr(128075)][chr(127995)]),
+        eq(strlen(left(setr(0,[chr(128075)][chr(127995)]cd),1)), 1),
+        eq(strlen(right(setr(1,ab[chr(128075)][chr(127995)]),1)), 1)
+      )=
+  {
+    @log smoke=TC002: left grapheme clusters intact. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: left grapheme clusters intact. Failed (const_len=[strlen(left([chr(128075)][chr(127995)]cd,1))] runtime_len=[strlen(left(setr(0,[chr(128075)][chr(127995)]cd),1))] right_runtime_len=[strlen(right(setr(1,ab[chr(128075)][chr(127995)]),1))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_left_fn=
+  @log smoke=End left() test cases.;
+  @notify smoke
+-
+drop test_left_fn
+-
+#
+# End of Test Cases
+#

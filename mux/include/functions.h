@@ -237,7 +237,7 @@ XFUNCTION(fun_squish);
 XFUNCTION(fun_step);
 XFUNCTION(fun_strcat);
 XFUNCTION(fun_stripansi);
-XFUNCTION(fun_strtrunc);
+XFUNCTION(fun_left);
 XFUNCTION(fun_table);
 XFUNCTION(fun_translate);
 XFUNCTION(fun_udefault);

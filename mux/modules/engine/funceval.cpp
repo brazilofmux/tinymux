@@ -2406,7 +2406,13 @@ FUNCTION(fun_andflags)
     safe_bool(handle_flaglists(executor, fargs[0], fargs[1], true), buff, bufc);
 }
 
-FUNCTION(fun_strtrunc)
+// left()/strtrunc(): one implementation, two first-class names.  strtrunc
+// predates the mid/left/right trio; left was historically a config-layer
+// alias for it (alias.conf), which made LEFT invisible to the function
+// table, the JIT allowlist, and minimal configs.  Both names are now real
+// table entries sharing this function.
+//
+FUNCTION(fun_left)
 {
     UNUSED_PARAMETER(executor);
     UNUSED_PARAMETER(caller);
