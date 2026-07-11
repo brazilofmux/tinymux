@@ -31,13 +31,15 @@
         eq(strlen(right(abc,0)), 0),
         strmatch(right(abc,3), abc),
         strmatch(right(abc,5), abc),
-        strmatch(right(abcdefgh,1), h)
+        strmatch(right(abcdefgh,1), h),
+        strmatch(right(ab[chr(128075)][chr(127995)],1), [chr(128075)][chr(127995)]),
+        eq(strlen(right(setr(0,ab[chr(128075)][chr(127995)]),1)), 1)
       )=
   {
-    @log smoke=TC002: right boundary lengths. Succeeded.
+    @log smoke=TC002: right boundary lengths and grapheme clusters. Succeeded.
   },
   {
-    @log smoke=TC002: right boundary lengths. Failed (right(abc%,0)=[right(abc,0)] right(abc%,3)=[right(abc,3)] right(abc%,5)=[right(abc,5)] right(abcdefgh%,1)=[right(abcdefgh,1)]).
+    @log smoke=TC002: right boundary lengths and grapheme clusters. Failed (right(abc%,0)=[right(abc,0)] right(abc%,3)=[right(abc,3)] right(abc%,5)=[right(abc,5)] right(abcdefgh%,1)=[right(abcdefgh,1)] cluster=[right(ab[chr(128075)][chr(127995)],1)] runtime_len=[strlen(right(setr(0,ab[chr(128075)][chr(127995)]),1))]).
   }
 -
 #
