@@ -15,6 +15,8 @@
 # 10.0.0.1 in 10.0.0.0/8 => 1
 # 10.0.0.1 in 10.0.0.0/255.0.0.0 => 1 (explicit mask)
 # 172.16.5.10 in 172.16.0.0/12 => 1
+# 999.999.999.999 in 10.0.0.0/8 => #-1 INVALID IP ADDRESS (malformed octet)
+# 10.0.0.1 in 10.0.0.0/33 => #-1 INVALID PREFIX LENGTH (bits > 32)
 #
 &tr.tc001 test_subnetmatch_fn=
   @if cand(
@@ -22,14 +24,16 @@
         eq(subnetmatch(192.168.2.50,192.168.1.0/24), 0),
         eq(subnetmatch(10.0.0.1,10.0.0.0/8), 1),
         eq(subnetmatch(10.0.0.1,10.0.0.0,255.0.0.0), 1),
-        eq(subnetmatch(172.16.5.10,172.16.0.0/12), 1)
+        eq(subnetmatch(172.16.5.10,172.16.0.0/12), 1),
+        strmatch(subnetmatch(999.999.999.999,10.0.0.0/8), #-1 INVALID IP ADDRESS),
+        strmatch(subnetmatch(10.0.0.1,10.0.0.0/33), #-1 INVALID PREFIX LENGTH)
       )=
   {
     @log smoke=TC001: subnetmatch CIDR and mask. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: subnetmatch CIDR and mask. Failed (s1=[subnetmatch(192.168.1.50,192.168.1.0/24)] s2=[subnetmatch(192.168.2.50,192.168.1.0/24)] s3=[subnetmatch(10.0.0.1,10.0.0.0/8)] s4=[subnetmatch(10.0.0.1,10.0.0.0,255.0.0.0)] s5=[subnetmatch(172.16.5.10,172.16.0.0/12)]).;
+    @log smoke=TC001: subnetmatch CIDR and mask. Failed (s1=[subnetmatch(192.168.1.50,192.168.1.0/24)] s2=[subnetmatch(192.168.2.50,192.168.1.0/24)] s3=[subnetmatch(10.0.0.1,10.0.0.0/8)] s4=[subnetmatch(10.0.0.1,10.0.0.0,255.0.0.0)] s5=[subnetmatch(172.16.5.10,172.16.0.0/12)] s6=[subnetmatch(999.999.999.999,10.0.0.0/8)] s7=[subnetmatch(10.0.0.1,10.0.0.0/33)]).;
     @trig me/tr.done
   }
 -
