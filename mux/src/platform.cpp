@@ -208,7 +208,11 @@ MUX_RESULT CPlatform::BootHelperProcess(
         goto failure;
 
     case 0:
-        alarm_clock.clear();
+        // Child: the alarm thread does not exist post-fork, so the alarm can
+        // never fire here.  Reset the lock-free flag only — do NOT call
+        // alarm_clock.clear(), which locks a std::mutex possibly inherited
+        // locked across fork() and would deadlock the child before exec.
+        alarm_clock.alarmed.store(false);
         mux_close(sv[0]);
         if (sv[1] != 0)
         {

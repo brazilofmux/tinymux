@@ -39,6 +39,20 @@ performance work and a large expansion of the smoke-test suite.
 
 ## Reliability and Restart
 
+ - A `fork()`-with-locked-mutex deadlock that could hang the server after
+   days of uptime is fixed.  The alarm clock (the runaway-softcode/PCRE CPU
+   limiter) is a `std::thread` plus condition variable whose mutex is taken
+   briefly on every command.  The stubslave, database-dump, and helper-
+   process children each called `alarm_clock.clear()` immediately after
+   `fork()`; since `fork()` copies only the calling thread, a child that
+   forked during the alarm thread's mutex window inherited that mutex locked
+   with no owner and self-deadlocked in `clear()` before `exec`.  A later
+   stubslave reboot then blocked the parent forever in `waitpid()`, parking
+   the whole network loop — idle, no CPU, refusing new connections — until a
+   manual restart.  The children now reset the lock-free `alarmed` flag
+   instead of taking the mutex, and the parent's blocking `waitpid()` calls
+   are bounded (poll, then `SIGKILL`) so a wedged child can never stall the
+   server.
  - A connect-time crash loop is fixed.  A player whose `A_LOGINDATA` was
    truncated or malformed made `decrypt_logindata()` dereference a null
    field pointer and `SIGSEGV` on connect; and, separately,
