@@ -21,10 +21,25 @@
       )=
   {
     @log smoke=TC001: corbool() basic operations. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC001: corbool() basic operations. Failed (corbool(0%,0%,0)=[corbool(0,0,0)] corbool(0%,1%,0)=[corbool(0,1,0)]).;
+  }
+-
+#
+# Test Case #2 - Short-circuit skips later arguments.
+#
+&tr.tc002 test_corbool_fn=
+  @if cand(
+        strmatch([setq(0,clear)][corbool(1,[setq(0,hit)]0)]:%q0, 1:clear),
+        strmatch([setq(1,clear)][corbool(0,[setq(1,hit)]1)]:%q1, 1:hit)
+      )=
+  {
+    @log smoke=TC002: corbool() short-circuit side effects. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: corbool() short-circuit side effects. Failed (skip=.[setq(0,clear)][corbool(1,[setq(0,hit)]0)]:%q0. eval=.[setq(1,clear)][corbool(0,[setq(1,hit)]1)]:%q1.).;
     @trig me/tr.done
   }
 -

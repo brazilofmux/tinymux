@@ -21,10 +21,25 @@
       )=
   {
     @log smoke=TC001: candbool() basic operations. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC001: candbool() basic operations. Failed (candbool(1%,1%,1)=[candbool(1,1,1)] candbool(1%,0%,1)=[candbool(1,0,1)]).;
+  }
+-
+#
+# Test Case #2 - Short-circuit skips later arguments.
+#
+&tr.tc002 test_candbool_fn=
+  @if cand(
+        strmatch([setq(0,clear)][candbool(0,[setq(0,hit)]1)]:%q0, 0:clear),
+        strmatch([setq(1,clear)][candbool(1,[setq(1,hit)]1)]:%q1, 1:hit)
+      )=
+  {
+    @log smoke=TC002: candbool() short-circuit side effects. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: candbool() short-circuit side effects. Failed (skip=.[setq(0,clear)][candbool(0,[setq(0,hit)]1)]:%q0. eval=.[setq(1,clear)][candbool(1,[setq(1,hit)]1)]:%q1.).;
     @trig me/tr.done
   }
 -
