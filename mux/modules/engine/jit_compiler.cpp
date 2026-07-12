@@ -846,7 +846,12 @@ static void tier2_lazy_init() {
             return;
         }
     }
-    // No blob found — Tier 2 disabled, ECALL fallback for everything.
+    // No blob found — the JIT declines every expression (jit_eval
+    // checks s_tier2.loaded) and the interpreter handles everything.
+    // Say so once, loudly: this is a degraded state on a JIT build,
+    // not a silent mode of normal operation (#875).
+    fprintf(stderr, "tier2: softlib.rv64 missing or unloadable -- "
+            "JIT disabled, falling back to the interpreter\n");
     // Still hash the compiler version so tier 1 upgrades invalidate.
     const void *parts[] = { JIT_COMPILER_VERSION, JIT_BUILD_STAMP };
     const size_t sizes[] = {
@@ -1212,6 +1217,12 @@ struct persistent_vm_t {
     compile_result compile(const UTF8 *expr, size_t len,
                            int eval = EV_FCHECK | EV_EVAL) {
         tier2_lazy_init();
+
+        // No blob, no persistent-VM compiles — same clean decline as
+        // jit_eval (#875).
+        if (!s_tier2.loaded) {
+            return {0, 0, false};
+        }
 
         // Bounds check: code heap must not reach blob region.
         if (code_heap_next >= rv_compiler::BLOB_BASE) {
@@ -4415,10 +4426,15 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
     // but the DBT infrastructure (mmap, block cache) may not be safe
     // to initialize during early startup (config loading, @startup).
     // The s_dbt_ready flag is set after the first successful get_dbt.
+    //
+    // The loaded check must be OUTSIDE the init-once conditional: with
+    // it inside, only the first call declined when the blob was missing
+    // and every later call ran the JIT blob-less, producing silently
+    // wrong results for some compiled shapes (#875).
     if (!s_tier2_init) {
         tier2_lazy_init();
-        if (!s_tier2.loaded) return false;
     }
+    if (!s_tier2.loaded) return false;
 
     s_jit_stats.eval_attempts++;
 
