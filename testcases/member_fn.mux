@@ -44,21 +44,27 @@
   }
 -
 #
-# Test Case #3 - Custom delimiter, empty target word, and arity boundary.
+# Test Case #3 - Custom delimiter, empty target word, arity boundary, and
+# color transparency: color never affects membership, on either evaluation
+# path (the interpreter compared raw bytes until the JIT differential
+# fuzzer caught it disagreeing with the color-stripping tier2 co_member).
 #
 &tr.tc003 test_member_fn=
   @if cand(
         eq(member(a|b|c,b,|), 2),
         eq(member(a:1|b:2|c:3,c:3,|), 3),
         eq(member(a b c,), 0),
-        strmatch(member(a|b|c,b,|,extra), #-1 FUNCTION (MEMBER) EXPECTS 2 OR 3 ARGUMENTS)
+        strmatch(member(a|b|c,b,|,extra), #-1 FUNCTION (MEMBER) EXPECTS 2 OR 3 ARGUMENTS),
+        eq(member(ansi(h,ab gh kl),ab), 1),
+        eq(member(ab gh kl,ansi(r,gh)), 2),
+        eq(member(setr(0,ansi(h,ab gh kl)),gh), 2)
       )=
   {
     @log smoke=TC003: member custom delimiter. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: member custom delimiter. Failed (member(a|b|c%,b%,|)=[member(a|b|c,b,|)] member(a:1|b:2|c:3%,c:3%,|)=[member(a:1|b:2|c:3,c:3,|)] member(a b c%,empty)=[member(a b c,)] member(over-max)=[member(a|b|c,b,|,extra)]).;
+    @log smoke=TC003: member custom delimiter. Failed (member(a|b|c%,b%,|)=[member(a|b|c,b,|)] member(a:1|b:2|c:3%,c:3%,|)=[member(a:1|b:2|c:3,c:3,|)] member(a b c%,empty)=[member(a b c,)] member(over-max)=[member(a|b|c,b,|,extra)] colored-list=[member(ansi(h,ab gh kl),ab)] colored-word=[member(ab gh kl,ansi(r,gh))] runtime=[member(setr(0,ansi(h,ab gh kl)),gh)]).;
     @trig me/tr.done
   }
 -

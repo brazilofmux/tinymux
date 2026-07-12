@@ -5116,6 +5116,15 @@ static FUNCTION(fun_member)
         return;
     }
 
+    // Compare color-stripped words, mirroring the tier2 co_member —
+    // color never affects membership.  The raw strcmp here said 0 for
+    // member(ansi(h,ab gh kl),ab) while the compiled path said 1 (found
+    // by the JIT differential fuzzer).  strip_color returns one static
+    // buffer, so the stripped target is copied before tokens are
+    // stripped through the same buffer.
+    UTF8 target[LBUF_SIZE];
+    mux_strncpy(target, strip_color(fargs[1]), LBUF_SIZE-1);
+
     int wcount;
     UTF8 *r, *s;
 
@@ -5124,7 +5133,8 @@ static FUNCTION(fun_member)
     do
     {
         r = split_token(&s, sep);
-        if (!strcmp(reinterpret_cast<char *>(fargs[1]), reinterpret_cast<char *>(r)))
+        if (!strcmp(reinterpret_cast<char *>(target),
+                    reinterpret_cast<char *>(strip_color(r))))
         {
             safe_ltoa(wcount, buff, bufc);
             return;
