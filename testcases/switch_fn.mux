@@ -19,14 +19,15 @@
 &tr.tc001 test_switch_fn=
   @if cand(
         strmatch(switch(foo,f*,found,default), found),
-        strmatch(switch(bar,f*,found,default), default)
+        strmatch(switch(bar,f*,found,default), default),
+        eq(strlen(switch(bar,f*,found)),0)
       )=
   {
     @log smoke=TC001: switch basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: switch basic operations. Failed (s1=[switch(foo,f*,found,default)] s2=[switch(bar,f*,found,default)]).;
+    @log smoke=TC001: switch basic operations. Failed (s1=[switch(foo,f*,found,default)] s2=[switch(bar,f*,found,default)] s3=[switch(bar,f*,found)]).;
     @trig me/tr.done
   }
 -
