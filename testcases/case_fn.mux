@@ -17,14 +17,15 @@
 &tr.tc001 test_case_fn=
   @if cand(
         strmatch(case(2,1,one,2,two,default),two),
-        strmatch(case(5,1,one,2,two,default),default)
+        strmatch(case(5,1,one,2,two,default),default),
+        eq(strlen(case(abc,def,hit)),0)
       )=
   {
     @log smoke=TC001: case() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: case() basic operations. Failed (case(2)=[case(2,1,one,2,two,default)] case(5)=[case(5,1,one,2,two,default)]).;
+    @log smoke=TC001: case() basic operations. Failed (case(2)=[case(2,1,one,2,two,default)] case(5)=[case(5,1,one,2,two,default)] case(nomatch)=[case(abc,def,hit)]).;
     @trig me/tr.done
   }
 -
