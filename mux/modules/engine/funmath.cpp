@@ -2093,7 +2093,12 @@ FUNCTION(fun_fmod)
     val1 = mux_atof(fargs[0]);
     val2 = mux_atof(fargs[1]);
 #ifndef HAVE_IEEE_FP_SNAN
-    if (val1 == 0.0)
+    // The indeterminate case is a zero *divisor* (fmod(x,0) is NaN);
+    // fmod(0,y) is a valid 0.  The guard checked val1 (the dividend),
+    // copy-pasted from fun_power's val1 sign check — so on a
+    // NO_IEEE_FP_SNAN lane fmod(0,3) wrongly returned Ind and fmod(x,0)
+    // fell through unguarded.  Reported by ThresholdOps.
+    if (val2 == 0.0)
     {
         safe_str(T("Ind"), buff, bufc);
     }
