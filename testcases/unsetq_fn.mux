@@ -29,10 +29,33 @@
       )=
   {
     @log smoke=TC001: unsetq/listq. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC001: unsetq/listq. Failed.;
+  }
+-
+#
+# Test Case #2 - Collection-level unsetq()/listq() behavior.
+#
+&tr.tc002 test_unsetq_fn=
+  think [attrib_set(test_unsetq_fn/P1,[setq(0,x,1,y,A,z)][listq()])][attrib_set(test_unsetq_fn/P2,[unsetq()][listq()])][attrib_set(test_unsetq_fn/P3,[setq(a,hello)][listq()])][attrib_set(test_unsetq_fn/P4,[r(a)])][attrib_set(test_unsetq_fn/P5,[unsetq(A)][listq()])][attrib_set(test_unsetq_fn/P6,[setq(0,)][listq()])][attrib_set(test_unsetq_fn/P7,[r(0)])][attrib_set(test_unsetq_fn/P8,[unsetq(9)])][attrib_set(test_unsetq_fn/P9,[listq()])];
+  @if cand(
+        strmatch(get(test_unsetq_fn/P1),0 1 A),
+        eq(strlen(get(test_unsetq_fn/P2)),0),
+        strmatch(get(test_unsetq_fn/P3),A),
+        strmatch(get(test_unsetq_fn/P4),hello),
+        eq(strlen(get(test_unsetq_fn/P5)),0),
+        eq(strlen(get(test_unsetq_fn/P6)),0),
+        eq(strlen(get(test_unsetq_fn/P7)),0),
+        eq(strlen(get(test_unsetq_fn/P8)),0),
+        eq(strlen(get(test_unsetq_fn/P9)),0)
+      )=
+  {
+    @log smoke=TC002: unsetq()/listq() collection behavior. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: unsetq()/listq() collection behavior. Failed (P1=[get(test_unsetq_fn/P1)] P2=[get(test_unsetq_fn/P2)] P3=[get(test_unsetq_fn/P3)] P4=[get(test_unsetq_fn/P4)] P5=[get(test_unsetq_fn/P5)] P6=[get(test_unsetq_fn/P6)] P7=[get(test_unsetq_fn/P7)] P8=[get(test_unsetq_fn/P8)] P9=[get(test_unsetq_fn/P9)]).;
     @trig me/tr.done
   }
 -
