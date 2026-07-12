@@ -18,14 +18,22 @@
   @if cand(
         eq(israt(1.5), 1),
         eq(israt(1), 1),
-        eq(israt(abc), 0)
+        eq(israt(abc), 0),
+        eq(israt(1e10), 0),
+        eq(israt(-1.5), 1),
+        eq(israt(+2), 1),
+        eq(israt(.5), 1),
+        eq(israt(5.), 1),
+        eq(israt(.), 0),
+        eq(israt(-), 0),
+        eq(israt(1.2.3), 0)
       )=
   {
     @log smoke=TC001: israt() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: israt() basic operations. Failed (israt(1.5)=[israt(1.5)] israt(1)=[israt(1)] israt(abc)=[israt(abc)]).;
+    @log smoke=TC001: israt() basic operations. Failed (israt(1.5)=[israt(1.5)] israt(1)=[israt(1)] israt(abc)=[israt(abc)] israt(1e10)=[israt(1e10)] israt(-1.5)=[israt(-1.5)] israt(+2)=[israt(+2)] israt(.5)=[israt(.5)] israt(5.)=[israt(5.)] israt(.)=[israt(.)] israt(-)=[israt(-)] israt(1.2.3)=[israt(1.2.3)]).;
     @trig me/tr.done
   }
 -
