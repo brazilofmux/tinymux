@@ -25,10 +25,38 @@
       )=
   {
     @log smoke=TC001: wrapcolumns basic. Succeeded.;
-    @trig me/tr.done
   },
   {
     @log smoke=TC001: wrapcolumns basic. Failed (q8=%q8 q9=%q9 qa=%qa qb=%qb qc=%qc qd=%qd qe=%qe qf=%qf rows=[words(%q0,%r)] r1=[extract(%q0,1,1,%r)] r2=[extract(%q0,2,1,%r)] r3=[extract(%q0,3,1,%r)]).;
+  }
+-
+#
+# Test Case #2 - Parameter surface coverage.
+#
+&tr.tc002 test_wrapcolumns_fn=
+  think setq(0,wrapcolumns(alpha bravo charlie delta echo foxtrot,10,2,L,,,,1));
+  think setq(1,wrapcolumns(abcdefghijklmno,5,1));
+  @if cand(
+        setr(8,eq(words(%q0,%r),3)),
+        setr(9,eq(pos(alpha,extract(%q0,1,1,%r)),1)),
+        setr(a,eq(pos(bravo,extract(%q0,1,1,%r)),11)),
+        setr(b,eq(pos(charlie,extract(%q0,2,1,%r)),1)),
+        setr(c,eq(pos(delta,extract(%q0,2,1,%r)),11)),
+        setr(d,eq(pos(foxtrot,extract(%q0,3,1,%r)),1)),
+        setr(e,cand(eq(strlen(wrapcolumns(hi,10,1,R)),10),eq(pos(hi,wrapcolumns(hi,10,1,R)),9))),
+        setr(f,cand(eq(strlen(wrapcolumns(hi,10,1,C)),10),eq(pos(hi,wrapcolumns(hi,10,1,C)),5))),
+        setr(g,strmatch(.[wrapcolumns(aa bb,2,2,L,\[,|,\])]., .\[aa|bb\].)),
+        setr(h,eq(words(%q1,%r),3)),
+        setr(i,strmatch(extract(%q1,1,1,%r),abcde)),
+        setr(j,strmatch(extract(%q1,2,1,%r),fghij)),
+        setr(k,strmatch(extract(%q1,3,1,%r),klmno))
+      )=
+  {
+    @log smoke=TC002: wrapcolumns parameter surface. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: wrapcolumns parameter surface. Failed (q8=%q8 q9=%q9 qa=%qa qb=%qb qc=%qc qd=%qd qe=%qe qf=%qf qg=%qg qh=%qh qi=%qi qj=%qj qk=%qk order_rows=[words(%q0,%r)] order_r1=[extract(%q0,1,1,%r)] order_r2=[extract(%q0,2,1,%r)] order_r3=[extract(%q0,3,1,%r)] right=.[wrapcolumns(hi,10,1,R)]. center=.[wrapcolumns(hi,10,1,C)]. border=.[wrapcolumns(aa bb,2,2,L,\[,|,\])]. hard_rows=[words(%q1,%r)] hard_r1=[extract(%q1,1,1,%r)] hard_r2=[extract(%q1,2,1,%r)] hard_r3=[extract(%q1,3,1,%r)]).;
     @trig me/tr.done
   }
 -
