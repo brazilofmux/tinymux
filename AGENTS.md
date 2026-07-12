@@ -9,12 +9,12 @@
 - `client/` contains the Hydra client family (console, Android, iOS, TinyFugue, Web, Win32 GUI).
 
 ## Build, Test, and Development Commands
-- Main server build (from `mux/src`):
-  - `./configure`
-  - `make -j$(nproc)`
-  - `make install` (required; creates `game/bin` symlinks)
+- Main server build (2.14):
+  - Configure once from `mux/`: `cd mux && ./configure --enable-realitylvls --enable-wodrealms` (add `--enable-jit` for the JIT/DBT path).
+  - Build everything from the repo **root**: `make install` (required; builds `netmux`, `engine.so`, and modules, and creates `game/bin` symlinks).
+  - Do **not** build from `mux/src` directly — that only builds `netmux`, not `engine.so` or the modules. (Building from `mux/src` was the 2.13 workflow; it is wrong for 2.14.)
 - Deterministic/package build:
-  - `DEBIAN_BUILD=1 ./configure && make && make install`
+  - `DEBIAN_BUILD=1 make install` from the repo root.
 - Parser tools (from `parser/`):
   - `make` to build `tokenize`, `parse`, `eval`
   - `./eval --ast` for AST + output inspection
