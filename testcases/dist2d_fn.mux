@@ -17,14 +17,18 @@
 &tr.tc001 test_dist2d_fn=
   @if cand(
         eq(dist2d(0,0,3,4),5),
-        eq(dist2d(1,1,4,5),5)
+        eq(dist2d(1,1,4,5),5),
+        eq(dist2d(0,0,0,0),0),
+        eq(dist2d(-3,-4,0,0),5),
+        strmatch(dist2d(0,0,1,1),1.4142135623730951),
+        eq(dist2d(1,2,5,6),dist2d(5,6,1,2))
       )=
   {
     @log smoke=TC001: dist2d() basic operations. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC001: dist2d() basic operations. Failed (dist2d(0%,0%,3%,4)=[dist2d(0,0,3,4)] dist2d(1%,1%,4%,5)=[dist2d(1,1,4,5)]).;
+    @log smoke=TC001: dist2d() basic operations. Failed (dist2d(0%,0%,3%,4)=[dist2d(0,0,3,4)] dist2d(1%,1%,4%,5)=[dist2d(1,1,4,5)] zero=[dist2d(0,0,0,0)] neg=[dist2d(-3,-4,0,0)] decimal=[dist2d(0,0,1,1)] sym1=[dist2d(1,2,5,6)] sym2=[dist2d(5,6,1,2)]).;
     @trig me/tr.done
   }
 -
