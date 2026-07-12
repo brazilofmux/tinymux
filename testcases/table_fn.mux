@@ -20,12 +20,27 @@
       )=
 
   {
-    @log smoke=TC001: table basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: table basic operations. Succeeded.
   },
   {
     @log smoke=TC001: table basic operations Failed.;
-    @log smoke=TC001 actual L0 =.[table(a b c d e f,2)]=.;
+    @log smoke=TC001 actual L0 =.[table(a b c d e f,2)]=.
+  }
+-
+#
+# Test Case #2 - Separator/delimiter one-character validation.
+#
+&tr.tc002 test_table_fn=
+  @if cand(
+        strmatch(table(a b,2,78,||), #-1 DELIMITER MUST BE ONE CHARACTER),
+        strmatch(table(a b,2,78,%b,||), #-1 SEPARATOR MUST BE ONE CHARACTER)
+      )=
+  {
+    @log smoke=TC002: table separator/delimiter validation. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: table separator/delimiter validation. Failed (delim=[table(a b,2,78,||)] sep=[table(a b,2,78,%b,||)]).;
     @trig me/tr.done
   }
 -
