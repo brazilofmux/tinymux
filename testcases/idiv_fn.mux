@@ -20,8 +20,7 @@
         eq(idiv(-10,3), -3)
       )=
   {
-    @log smoke=TC001: idiv() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: idiv() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: idiv() basic operations. Failed (idiv(10%,3)=[idiv(10,3)] idiv(-10%,3)=[idiv(-10,3)]).;
@@ -35,15 +34,31 @@
         eq(idiv(10,-3),-3),
         eq(idiv(-10,-3),3),
         eq(idiv(5.5,2),2),
-        eq(idiv(),0),
+        strmatch(idiv(), #-1 FUNCTION (IDIV) EXPECTS 2 ARGUMENTS),
         eq(idiv(foo,3),0)
       )=
   {
-    @log smoke=TC002: idiv() sign and coercion cases. Succeeded.;
+    @log smoke=TC002: idiv() sign and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: idiv() sign and coercion cases. Failed (idiv(10%,-3)=[idiv(10,-3)] idiv(-10%,-3)=[idiv(-10,-3)] idiv(5.5%,2)=[idiv(5.5,2)] idiv()=[idiv()] idiv(foo%,3)=[idiv(foo,3)]).
+  }
+-
+#
+# Test Case #3 - Divide-by-zero error path.
+#
+&tr.tc003 test_idiv_fn=
+  @if cand(
+        strmatch(idiv(10,0), #-1 DIVIDE BY ZERO),
+        strmatch(idiv(10,abc), #-1 DIVIDE BY ZERO),
+        strmatch(idiv(10,0.5), #-1 DIVIDE BY ZERO)
+      )=
+  {
+    @log smoke=TC003: idiv() divide-by-zero. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: idiv() sign and coercion cases. Failed (idiv(10%,-3)=[idiv(10,-3)] idiv(-10%,-3)=[idiv(-10,-3)] idiv(5.5%,2)=[idiv(5.5,2)] idiv()=[idiv()] idiv(foo%,3)=[idiv(foo,3)]).;
+    @log smoke=TC003: idiv() divide-by-zero. Failed (idiv(10%,0)=[idiv(10,0)] idiv(10%,abc)=[idiv(10,abc)] idiv(10%,0.5)=[idiv(10,0.5)]).;
     @trig me/tr.done
   }
 -
