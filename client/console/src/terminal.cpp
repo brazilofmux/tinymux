@@ -459,9 +459,11 @@ void Terminal::redraw_input() {
     clear_row(input_row());
     const auto& buf = editor_.text();
     if (!buf.empty()) {
-        write_at(input_row(), 0, buf);
+        size_t visible = std::min(buf.size(), (size_t)cols_);
+        write_at(input_row(), 0, buf.substr(0, visible));
     }
-    int cursor_col = editor_.cursor_vcol();
+    int cursor_col = std::min(editor_.cursor_vcol(), cols_ - 1);
+    if (cursor_col < 0) cursor_col = 0;
     COORD pos = { (SHORT)cursor_col, (SHORT)input_row() };
     SetConsoleCursorPosition(hOut_, pos);
 }
