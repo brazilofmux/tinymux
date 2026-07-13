@@ -826,10 +826,9 @@ dbref create_player
 
     // Make sure the password is OK.  Name is checked in create_obj.
     //
-    UTF8 *pbuf = trim_spaces(password);
+    LBuf pbuf = LBuf_Adopt(trim_spaces(password));
     if (!ok_password(pbuf, pmsg))
     {
-        free_lbuf(pbuf);
         return NOTHING;
     }
 
@@ -838,7 +837,6 @@ dbref create_player
     if (!protectname_check(name, NOTHING))
     {
         *pmsg = T("That name is protected by another player.");
-        free_lbuf(pbuf);
         return NOTHING;
     }
 
@@ -848,7 +846,6 @@ dbref create_player
     if (player == NOTHING)
     {
         *pmsg = T("Either there is already a player with that name, or that name is illegal.");
-        free_lbuf(pbuf);
         return NOTHING;
     }
 
@@ -856,7 +853,7 @@ dbref create_player
     //
     ChangePassword(player, pbuf);
     s_Home(player, start_home());
-    free_lbuf(pbuf);
+    pbuf.reset();
     if (mudconf.talk_mode_default)
     {
         s_Flags(player, FLAG_WORD2, Flags2(player) | TALKMODE);
