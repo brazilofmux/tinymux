@@ -20,8 +20,7 @@
         eq(floordiv(-10,3), -4)
       )=
   {
-    @log smoke=TC001: floordiv() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: floordiv() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: floordiv() basic operations. Failed (floordiv(10%,3)=[floordiv(10,3)] floordiv(-10%,3)=[floordiv(-10,3)]).;
@@ -35,15 +34,31 @@
         eq(floordiv(10,-3),-4),
         eq(floordiv(-10,-3),3),
         eq(floordiv(5.5,2),2),
-        eq(floordiv(),0),
+        strmatch(floordiv(), #-1 FUNCTION (FLOORDIV) EXPECTS 2 ARGUMENTS),
         eq(floordiv(foo,3),0)
       )=
   {
-    @log smoke=TC002: floordiv() sign and coercion cases. Succeeded.;
+    @log smoke=TC002: floordiv() sign and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: floordiv() sign and coercion cases. Failed (floordiv(10%,-3)=[floordiv(10,-3)] floordiv(-10%,-3)=[floordiv(-10,-3)] floordiv(5.5%,2)=[floordiv(5.5,2)] floordiv()=[floordiv()] floordiv(foo%,3)=[floordiv(foo,3)]).
+  }
+-
+#
+# Test Case #3 - Divide-by-zero error path.
+#
+&tr.tc003 test_floordiv_fn=
+  @if cand(
+        strmatch(floordiv(10,0), #-1 DIVIDE BY ZERO),
+        strmatch(floordiv(10,abc), #-1 DIVIDE BY ZERO),
+        strmatch(floordiv(10,0.5), #-1 DIVIDE BY ZERO)
+      )=
+  {
+    @log smoke=TC003: floordiv() divide-by-zero. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: floordiv() sign and coercion cases. Failed (floordiv(10%,-3)=[floordiv(10,-3)] floordiv(-10%,-3)=[floordiv(-10,-3)] floordiv(5.5%,2)=[floordiv(5.5,2)] floordiv()=[floordiv()] floordiv(foo%,3)=[floordiv(foo,3)]).;
+    @log smoke=TC003: floordiv() divide-by-zero. Failed (floordiv(10%,0)=[floordiv(10,0)] floordiv(10%,abc)=[floordiv(10,abc)] floordiv(10%,0.5)=[floordiv(10,0.5)]).;
     @trig me/tr.done
   }
 -
