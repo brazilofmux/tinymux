@@ -557,7 +557,15 @@ void ConnectionBase::handleClose() {
         return;
     }
 
-    // Mark socket as closed since this is a confirmation from the network engine
+    // Was the socket still open coming in?  On the graceful path close() has
+    // already asked the engine to close (socketClosed_ == true); but the epoll
+    // engine's abnormal-close branch (EPOLLERR|EPOLLHUP) emits this event
+    // WITHOUT closing the fd, so here socketClosed_ is still false.  Remember
+    // that so we can actually close the fd below, after the teardown flush.
+    const bool socketStillOpen = !socketClosed_;
+
+    // Mark socket as closed (see close-below; keeps the destructor from also
+    // trying to close after we transition to Closed).
     socketClosed_ = true;
 
     // Check if we need to clean up resources
@@ -567,6 +575,18 @@ void ConnectionBase::handleClose() {
         cleanupResources(disconnectReason_);
     } else {
         GANL_CONN_DEBUG(handle_, "Resources were already cleaned up. Skipping cleanup in handleClose.");
+    }
+
+    // Close the fd if the engine handed us an abnormal-close event without
+    // closing it (EPOLLERR|EPOLLHUP path).  Done after cleanupResources() so any
+    // final queued output is flushed first (a no-op once the peer is gone).
+    // Without this the fd leaked on every RST/hangup: the destructor's close is
+    // gated on state != Closed, and we set Closed just below.  closeConnection()
+    // is idempotent (it no-ops if the fd is already out of the engine's map),
+    // so the graceful path (socketStillOpen == false) is unaffected.
+    if (socketStillOpen) {
+        GANL_CONN_DEBUG(handle_, "Abnormal-close event; closing fd after flush.");
+        networkEngine_.closeConnection(handle_);
     }
 
     // Transition to the final state after any cleanup
