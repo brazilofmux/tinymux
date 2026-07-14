@@ -86,8 +86,7 @@
 &tr.tc004 test_digest_fn=
   @if strmatch([digest()],*NOT FOUND)=
   {
-    @log smoke=TC005: DIGEST() is not supported on this version. Okay.;
-    @trig me/tr.done
+    @log smoke=TC004: DIGEST() is not supported on this version. Okay.
   },
   {
     @if digest(md5)=
@@ -102,18 +101,33 @@
         strmatch([digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)], 57EDF4A22BE3C955AC49DA2E2107B67A)
       )=
       {
-        @log smoke=TC004: MD5 test vectors. Succeeded.;
-        @trig me/tr.done
+        @log smoke=TC004: MD5 test vectors. Succeeded.
       },
       {
-        @log smoke=TC004: MD5 test vectors. Failed (h0=.[digest(md5,)]. h1=.[digest(md5,a)]. h2=.[digest(md5,abc)]. h3=.[digest(md5,message digest)]. h4=.[digest(md5,abcdefghijklmnopqrstuvwxyz)]. h5=.[digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)]. h6=.[digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)].).;
-        @trig me/tr.done
+        @log smoke=TC004: MD5 test vectors. Failed (h0=.[digest(md5,)]. h1=.[digest(md5,a)]. h2=.[digest(md5,abc)]. h3=.[digest(md5,message digest)]. h4=.[digest(md5,abcdefghijklmnopqrstuvwxyz)]. h5=.[digest(md5,ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789)]. h6=.[digest(md5,12345678901234567890123456789012345678901234567890123456789012345678901234567890)].).
       }
     },
     {
-      @log smoke=TC004: MD5 is not supported in this version. Okay.;
-      @trig me/tr.done
+      @log smoke=TC004: MD5 is not supported in this version. Okay.
     }
+  }
+-
+#
+# Test Case #5 - Error path: unsupported digest type.
+#
+&tr.tc005 test_digest_fn=
+  @if cand(
+        strmatch(digest(sha_1,abc), #-1 UNSUPPORTED DIGEST TYPE),
+        strmatch(digest(bogus,abc), #-1 UNSUPPORTED DIGEST TYPE),
+        strmatch(digest(sha-1,abc), A9993E364706816ABA3E25717850C26C9CD0D89D)
+      )=
+  {
+    @log smoke=TC005: digest() unsupported-type error path. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: digest() unsupported-type error path. Failed (sha_1=[digest(sha_1,abc)] bogus=[digest(bogus,abc)] sha-1=[digest(sha-1,abc)]).;
+    @trig me/tr.done
   }
 -
 &tr.done test_digest_fn=
