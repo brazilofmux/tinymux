@@ -3353,6 +3353,36 @@ int getref(FILE *f)
     }
 }
 
+// putref64 - write a 64-bit integer on its own line.
+//
+// Same line-oriented format as putref(), but the full 64-bit range survives
+// the round trip.  Used for the Unix-epoch second counts stored for
+// connect/idle/start times across @restart, which would otherwise be
+// truncated to 32 bits (and wrap after 2038-01-19).
+//
+void putref64(FILE *f, int64_t ref)
+{
+    UTF8 buf[I64BUF_SIZE+1];
+    size_t n = mux_i64toa(ref, buf);
+    buf[n] = '\n';
+    fwrite(buf, sizeof(char), n+1, f);
+}
+
+// getref64 - read a 64-bit integer from the next line.
+//
+int64_t getref64(FILE *f)
+{
+    static UTF8 buf[SBUF_SIZE];
+    if (nullptr != fgets(reinterpret_cast<char *>(buf), sizeof(buf), f))
+    {
+        return mux_atoi64(buf);
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 void free_boolexp(BOOLEXP *b)
 {
     if (b == TRUE_BOOLEXP)
@@ -3496,7 +3526,7 @@ void dump_restart_db(void)
 {
     FILE *f;
     DESC *d;
-    int version = 4;
+    int version = 5;
 
     mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
     mux_fprintf(f, T("+V%d\n"), version);
@@ -3511,7 +3541,7 @@ void dump_restart_db(void)
         putref(f, 0);
 #endif
     }
-    putref(f, mudstate.start_time.ReturnSeconds());
+    putref64(f, mudstate.start_time.ReturnSeconds());
     putstring(f, mudstate.doing_hdr);
     putref(f, mudstate.record_players);
     putref(f, mudstate.restart_count);
@@ -3520,12 +3550,12 @@ void dump_restart_db(void)
         d = *it;
         putref(f, d->socket);
         putref(f, d->flags);
-        putref(f, d->connected_at.ReturnSeconds());
+        putref64(f, d->connected_at.ReturnSeconds());
         putref(f, d->command_count);
         putref(f, d->timeout);
         putref(f, 0);
         putref(f, d->player);
-        putref(f, d->last_time.ReturnSeconds());
+        putref64(f, d->last_time.ReturnSeconds());
         putref(f, d->raw_input_state);
         putref(f, d->raw_codepoint_state);
 
@@ -3567,12 +3597,14 @@ void load_restart_db(void)
     if (  1 == version
        || 2 == version
        || 3 == version
-       || 4 == version)
+       || 4 == version
+       || 5 == version)
     {
         // Version 1 started on 2001-DEC-03
         // Version 2 started on 2005-NOV-08
         // Version 3 started on 2007-MAR-09
         // Version 4 started on 2007-AUG-12
+        // Version 5 started on 2026-JUL-14 (64-bit connect/idle/start times)
         //
         num_main_game_ports = getref(f);
         for (int i = 0; i < num_main_game_ports; i++)
@@ -3607,7 +3639,7 @@ void load_restart_db(void)
     }
     DebugTotalSockets += num_main_game_ports;
 
-    mudstate.start_time.SetSeconds(getref(f));
+    mudstate.start_time.SetSeconds(5 <= version ? getref64(f) : getref(f));
 
     size_t nBuffer;
     UTF8 *pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(f, true, &nBuffer));
@@ -3640,12 +3672,12 @@ void load_restart_db(void)
         d->ss = SocketState::Accepted;
         d->socket = val;
         d->flags = getref(f);
-        d->connected_at.SetSeconds(getref(f));
+        d->connected_at.SetSeconds(5 <= version ? getref64(f) : getref(f));
         d->command_count = getref(f);
         d->timeout = getref(f);
         getref(f); // Eat host_info
         d->player = getref(f);
-        d->last_time.SetSeconds(getref(f));
+        d->last_time.SetSeconds(5 <= version ? getref64(f) : getref(f));
         for (int i = 0; i < 256; i++)
         {
             d->nvt_him_state[i] = OPTION_NO;
