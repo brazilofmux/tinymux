@@ -52,6 +52,7 @@ mux/game/*.pfx
 mux-*.tar.gz
 mux-*.tar.bz2
 mux-*.patch.gz
+mux-*.APPLY.txt
 *.sha256
 *.asc
 mux2.13/
