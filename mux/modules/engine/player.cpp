@@ -153,6 +153,34 @@ void record_login
     int aflags, i;
 
     LBuf atrbuf = LBuf_Adopt(atr_get("record_login.143", player, A_LOGINDATA, &aowner, &aflags));
+
+    // Diagnostic breadcrumb: a well-formed A_LOGINDATA has
+    // 2*NUM_GOOD + 2*NUM_BAD + 3 (== 17) ';'-separated fields (see
+    // encrypt_logindata's template).  A non-empty value shorter than that was
+    // truncated at rest -- decrypt_logindata tolerates it now, but the truncation
+    // source is still unknown, so log which player read a malformed value.
+    {
+        const UTF8 *v = atrbuf;
+        if ('\0' != v[0])
+        {
+            size_t nSemi = 0;
+            for (const UTF8 *p = v; '\0' != *p; p++)
+            {
+                if (';' == *p)
+                {
+                    nSemi++;
+                }
+            }
+            if (  '#' != v[0]
+               || nSemi < 2 * NUM_GOOD + 2 * NUM_BAD + 3)
+            {
+                STARTLOG(LOG_PROBLEMS, "DB", "LOGIN");
+                log_printf(T("record_login(#%d): malformed A_LOGINDATA (truncated?): %s"), player, v);
+                ENDLOG;
+            }
+        }
+    }
+
     decrypt_logindata(atrbuf, &login_info);
     if (isgood)
     {
