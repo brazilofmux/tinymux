@@ -29,6 +29,9 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <sys/wait.h>
+#if defined(__linux__)
+#include <dirent.h>      // count_open_fds() reads /proc/self/fd
+#endif
 #endif
 
 #if defined(_WIN32)
@@ -834,6 +837,7 @@ public:
 
     void onConnectionClose(ganl::SessionId sessionId, ganl::DisconnectReason reason) override {
         ganl::ConnectionHandle handle = static_cast<ganl::ConnectionHandle>(sessionId);
+        adapter_.connections_closed_++;
         DESC* d = adapter_.get_desc(handle);
         if (!d) {
             return;
@@ -1946,6 +1950,7 @@ void GanlAdapter::run_main_loop() {
                     pending_remote_addresses_[connHandle] = events[i].remoteAddress;
                     pending_tls_flags_[connHandle] = useTls;
                     handle_to_conn_[connHandle] = conn;
+                    connections_accepted_++;
 
                     if (!conn->initialize(useTls)) {
                         handle_to_conn_.erase(connHandle);
@@ -2128,6 +2133,71 @@ void GanlAdapter::run_main_loop() {
     g_pILog->WriteString(T("GANL: Exiting main loop.\n"));
 }
 
+// Count the process's open file descriptors via /proc/self/fd (Linux only).
+// Returns -1 where unavailable.  Used solely by the NET/STAT accounting log.
+static long count_open_fds()
+{
+#if defined(__linux__)
+    DIR* dir = opendir("/proc/self/fd");
+    if (nullptr == dir)
+    {
+        return -1;
+    }
+    long n = 0;
+    while (nullptr != readdir(dir))
+    {
+        n++;
+    }
+    closedir(dir);
+    // Discard ".", ".." and the fd opendir() itself holds open.
+    return (n >= 3) ? (n - 3) : n;
+#else
+    return -1;
+#endif
+}
+
+// Emit a rate-limited NET/STAT line triangulating where sockets accumulate:
+// logical DESCs vs. the adapter's connection maps vs. the OS fd count, plus
+// cumulative accept/close churn.  Divergence localizes the leaking layer:
+//   osfds >> conn_map   -> fds leaked below the engine (unclosed sockets)
+//   conn_map >> descs   -> engine connections never reaped into DESCs
+//   accepted-closed >> descs -> close callback not firing
+void GanlAdapter::log_socket_stats(bool force)
+{
+    static CLinearTimeAbsolute lta_last;
+    static bool primed = false;
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    if (!force && primed)
+    {
+        CLinearTimeDelta ltd = ltaNow - lta_last;
+        if (ltd.ReturnSeconds() < 60)   // at most once per minute
+        {
+            return;
+        }
+    }
+    lta_last = ltaNow;
+    primed = true;
+
+    const long osfds = count_open_fds();
+    const long long live =
+        static_cast<long long>(connections_accepted_)
+      - static_cast<long long>(connections_closed_);
+
+    STARTLOG(LOG_NET, "NET", "STAT");
+    g_pILog->WriteString(tprintf(
+        T("sockets descs=%u conn_map=%u desc_map=%u accepted=%u closed=%u live=%d osfds=%d"),
+        static_cast<unsigned>(g_descriptors_list.size()),
+        static_cast<unsigned>(handle_to_conn_.size()),
+        static_cast<unsigned>(handle_to_desc_.size()),
+        static_cast<unsigned>(connections_accepted_),
+        static_cast<unsigned>(connections_closed_),
+        static_cast<int>(live),
+        static_cast<int>(osfds)));
+    ENDLOG;
+}
+
 // Helper to run periodic TinyMUX tasks (quotas, scheduler, output flush).
 void GanlAdapter::process_tinyMUX_tasks() {
     CLinearTimeAbsolute ltaNow;
@@ -2188,6 +2258,9 @@ void GanlAdapter::process_tinyMUX_tasks() {
             process_output(d, false);
         }
     }
+
+    // Periodic socket-accounting breadcrumb for fd/socket leak diagnosis.
+    log_socket_stats(false);
 
     g_pILog->Flush();
 }

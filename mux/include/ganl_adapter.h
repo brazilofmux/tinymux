@@ -87,6 +87,14 @@ public:
     std::map<DESC*, ganl::ConnectionHandle> desc_to_handle_;
     std::map<ganl::ConnectionHandle, std::shared_ptr<ganl::ConnectionBase>> handle_to_conn_;
 
+    // Socket-accounting instrumentation for fd/socket leak diagnosis.  Cumulative
+    // counts of connections accepted and closed; a periodic NET/STAT log
+    // (log_socket_stats) triangulates DESCs vs. these maps vs. OS fds to localize
+    // which layer is leaking.
+    uint64_t connections_accepted_ = 0;
+    uint64_t connections_closed_   = 0;
+    void log_socket_stats(bool force);
+
     // Listener Handles (Port -> ListenerHandle)
     std::map<int, ganl::ListenerHandle> port_listeners_;
     std::map<int, ganl::ListenerHandle> ssl_port_listeners_;
