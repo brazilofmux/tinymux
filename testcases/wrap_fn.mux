@@ -87,11 +87,29 @@
         16
       )=
   {
-    @log smoke=TC004: wide-char wall flush. Succeeded.;
+    @log smoke=TC004: wide-char wall flush. Succeeded.
+  },
+  {
+    @log smoke=TC004: wide-char wall flush. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - Error path: width range and justification validation.
+#
+&tr.tc005 test_wrap_fn=
+  @if cand(
+        strmatch(wrap(hello,0), #-1 OUT OF RANGE),
+        strmatch(wrap(hello,-5), #-1 OUT OF RANGE),
+        strmatch(wrap(hello,32768), #-1 OUT OF RANGE),
+        strmatch(wrap(hello,32767), ljust(hello,32767)),
+        strmatch(wrap(hello,10,x), #-1 INVALID JUSTIFICATION SPECIFIED)
+      )=
+  {
+    @log smoke=TC005: wrap() error paths. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: wide-char wall flush. Failed (%q0).;
+    @log smoke=TC005: wrap() error paths. Failed (w0=[wrap(hello,0)] w-5=[wrap(hello,-5)] w32768=[wrap(hello,32768)] w32767len=[strlen(wrap(hello,32767))] wjust=[wrap(hello,10,x)]).;
     @trig me/tr.done
   }
 -
