@@ -44,6 +44,19 @@ NAMETAB method_nametab[] =
  * decrypt_logindata, encrypt_logindata: Decode and encode login info.
  */
 
+// grabto() returns nullptr once the ';'-separated fields in A_LOGINDATA are
+// exhausted, which happens when the attribute is malformed or truncated (e.g.
+// "#803" with no trailing fields).  Treat a missing field as an empty string so
+// callers never dereference nullptr: mux_atol() crashes on a nullptr argument,
+// and the host/dtm pointers are later handed to tprintf()/notify().
+//
+static UTF8 *grab_field(UTF8 **str)
+{
+    static UTF8 empty[1] = { '\0' };
+    UTF8 *p = grabto(str, ';');
+    return (nullptr != p) ? p : empty;
+}
+
 static void decrypt_logindata(UTF8 *atrbuf, LDATA *info)
 {
     int i;
@@ -65,18 +78,18 @@ static void decrypt_logindata(UTF8 *atrbuf, LDATA *info)
     if (*atrbuf == '#')
     {
         atrbuf++;
-        info->tot_good = mux_atol(grabto(&atrbuf, ';'));
+        info->tot_good = mux_atol(grab_field(&atrbuf));
         for (i = 0; i < NUM_GOOD; i++)
         {
-            info->good[i].host = grabto(&atrbuf, ';');
-            info->good[i].dtm = grabto(&atrbuf, ';');
+            info->good[i].host = grab_field(&atrbuf);
+            info->good[i].dtm = grab_field(&atrbuf);
         }
-        info->new_bad = mux_atol(grabto(&atrbuf, ';'));
-        info->tot_bad = mux_atol(grabto(&atrbuf, ';'));
+        info->new_bad = mux_atol(grab_field(&atrbuf));
+        info->tot_bad = mux_atol(grab_field(&atrbuf));
         for (i = 0; i < NUM_BAD; i++)
         {
-            info->bad[i].host = grabto(&atrbuf, ';');
-            info->bad[i].dtm = grabto(&atrbuf, ';');
+            info->bad[i].host = grab_field(&atrbuf);
+            info->bad[i].dtm = grab_field(&atrbuf);
         }
     }
 }
