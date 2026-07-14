@@ -35,11 +35,27 @@
         setr(1,benchmark(add(1,2), 1))
       )=
   {
-    @log smoke=TC002: more iterations take more time. Succeeded.;
+    @log smoke=TC002: more iterations take more time. Succeeded.
+  },
+  {
+    @log smoke=TC002: more iterations >= single. Failed (%q0 vs %q1).
+  }
+-
+#
+# Test Case #3 - Error path: non-positive and unevaluated (FN_NOEVAL) iterations.
+#
+&tr.tc003 test_benchmark_fn=
+  @if cand(
+        strmatch(benchmark(add(1,2), 0), #-1 ITERATIONS MUST BE POSITIVE),
+        strmatch(benchmark(add(1,2), -5), #-1 ITERATIONS MUST BE POSITIVE),
+        strmatch(benchmark(add(1,2), add(0,1)), #-1 ITERATIONS MUST BE POSITIVE)
+      )=
+  {
+    @log smoke=TC003: benchmark() error paths. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: more iterations >= single. Failed (%q0 vs %q1).;
+    @log smoke=TC003: benchmark() error paths. Failed (zero=[benchmark(add(1,2),0)] neg=[benchmark(add(1,2),-5)] noeval=[benchmark(add(1,2),add(0,1))]).;
     @trig me/tr.done
   }
 -
