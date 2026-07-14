@@ -7,6 +7,198 @@ author:
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
+# Changes in 2.14.0.9 (2026-JUL-14):
+
+This release is a stability and hardening follow-up to 2.14.0.8: a
+file-descriptor leak in the GANL networking stack and a connect-time crash
+loop are fixed, the database load paths get a second memory-safety pass
+under the corrupt-database threat model, the @mail and mail-alias
+subsystems are migrated to RAII/STL storage, and the Omega flatfile
+converter gains full cross-server (PennMUSH, RhostMUSH, TinyMUSH) color
+interoperability.  It also carries a round of JIT/interpreter parity and
+performance work and a large expansion of the smoke-test suite.
+
+## Networking
+
+ - A descriptor leak in the `epoll` engine is fixed.  The abnormal-
+   disconnect path (`EPOLLERR`/`EPOLLHUP` — a client `RST` or hangup)
+   emitted a close event but, unlike the graceful and outbound-failure
+   paths, never closed the socket or removed it from the engine, so every
+   abrupt disconnect leaked one descriptor, left registered in `epoll`
+   forever.  A busy game accumulated tens of thousands of orphaned sockets
+   over its uptime.  `handleClose()` now closes the descriptor on the
+   abnormal path as well; verified live (40 `RST` disconnects leaked 40
+   descriptors before the fix, 0 after).
+ - When `ConnectionBase::initialize()` fails to associate its context, the
+   accepted socket is now closed rather than leaked, matching the sibling
+   failure branches.
+ - A rate-limited `NET/STAT` socket-accounting log line (logical DESCs vs.
+   the adapter's connection maps vs. the OS descriptor count, plus
+   accept/close churn) was added to localize where sockets accumulate.
+ - GANL console shutdown now handles a Windows logoff cleanly.
+
+## Reliability and Restart
+
+ - A connect-time crash loop is fixed.  A player whose `A_LOGINDATA` was
+   truncated or malformed made `decrypt_logindata()` dereference a null
+   field pointer and `SIGSEGV` on connect; and, separately,
+   `unset_signals()` spun forever on a missing loop increment instead of
+   restoring the default handlers, so a caught crash pinned the process at
+   100% CPU in the signal handler and defeated crash-driven `@restart`
+   recovery.  Field reads now return an empty string rather than null, and
+   the signal-reset loop is fixed, so a bad `A_LOGINDATA` fails safe and a
+   crash restarts as intended.  `record_login` also warns on a malformed
+   `A_LOGINDATA` read.
+ - Connection, idle, and server-start times now survive `@restart` past
+   2038.  They are 64-bit Unix-second counts but were round-tripped through
+   the 32-bit `dbref` channel in `restart.db`, truncating after
+   2038-01-19 and corrupting the WHO "On For" column for any session
+   spanning a restart.  They are now serialized as 64-bit and `restart.db`
+   is bumped to version 5 (older versions still read).  A missing
+   `EPOCH_OFFSET` in the `time()` fallback of `GetUTCLinearTime` was also
+   fixed.
+
+## Database Load Hardening
+
+A second memory-safety pass over the database load paths (flatfile reader,
+@mail/mail-alias loader, SQLite bulk attribute load) under the
+corrupt-or-crafted-database threat model, covering code the June pass
+(#806/#808/#841/#843) did not reach:
+
+ - `getstring_noalloc` no longer overflows its static buffer.  Both the
+   escaped-string refill path (a mis-accumulated byte count) and the legacy
+   continued-line path (no capacity guard) could march past the buffer on a
+   crafted >64 KB quoted string; both now track the space remaining.
+ - The mail-alias loader (`malias_read`) now clamps the recipient count it
+   reads from the file, and `make_numlist` bounds both its alias-expansion
+   and direct-recipient copies, so a crafted `mail.db` alias can no longer
+   overflow the fixed recipient stack array.  The mail-alias table also
+   resets its count and capacity when an allocation fails, so an oversized
+   count can no longer leave it pointing at freed or undersized storage.
+ - The SQLite bulk-load paths now clamp attribute value lengths to
+   `LBUF_SIZE`, matching the write and single-read paths, closing a heap
+   overflow on the first read of an over-long value written directly into
+   the database file.
+ - `get_list` now stops at end-of-file instead of spinning forever (and
+   flooding the log) on a flatfile truncated mid-attribute-list, and the v2
+   lock parser (`getboolexp1`) frees its partial subtree on each
+   malformed-input error path.
+
+## @mail and Mail-Alias Storage
+
+The @mail and mail-alias subsystems were migrated from manual C-style
+arrays and hand-managed string lifetimes to RAII/STL storage, eliminating
+the class of leaks, allocation-failure state corruption, and out-of-bounds
+accesses that motivated the hardening above:
+
+ - The mail-alias table is now a `std::vector<std::unique_ptr<malias_t>>`
+   with `std::string` names; the manual `new[]`/`delete[]`, optimistic
+   size updates, and defensive null guards are gone.
+ - Mail bodies use a `std::vector` of `std::string`, and mail headers own
+   `std::string` fields with per-player `std::list` storage, removing the
+   manual `MAILBODY` array and all `StringClone`/`MEMFREE` lifetime
+   management.
+ - Two regressions introduced by the migration were caught and fixed: the
+   SQLite write-through insert for newly sent mail was restored (it had
+   become dead code, risking a lost message on a crash before the next full
+   sync), and a mailbox-full off-by-one that cut the effective per-player
+   limit by one and inflated the "mailbox is full" count was corrected.
+
+## Omega Flatfile Converter
+
+The Omega cross-server flatfile converter gained full color
+interoperability across PennMUSH, RhostMUSH, and TinyMUSH, plus
+current-format support and a memory-safety pass:
+
+ - Current (v5, 2.14) flatfiles are now supported, and the per-channel
+   delta PUA color codec was restored so 2.13 (v3/v4) flatfiles round-trip
+   byte-exact.
+ - Color is now carried across every conversion direction: import from and
+   export to PennMUSH inline markup and RhostMUSH `%c` codes, and 256- and
+   24-bit color is preserved across TinyMUSH (raw-ANSI) conversion and
+   across the v4→v3 TinyMUX downgrade (previously reduced to 16 colors).
+   Latin-1 text is also preserved on the TinyMUX→TinyMUSH path (accented
+   characters had been turned into `?`).
+ - The `@decomp` extraction helpers no longer silently truncate large
+   attributes (buffers doubled to `2*LBUF` with a clean-boundary warning on
+   overflow), and a latent PennMUSH markup buffer overflow on color-heavy
+   values was fixed.
+ - AddressSanitizer over the full conversion matrix found and fixed five
+   latent memory-safety bugs (allocator mismatches and a stack
+   use-after-scope on the cross-family paths); an ASan harness, a
+   color-stress fixture, and a converter test pool were added.
+ - The `-v` version selector was replaced with a self-describing per-family
+   registry (canonical ids, aliases, `latest`/`oldest`/`same`, and an
+   `omega --list`), and the detected input and produced output versions are
+   now reported.
+
+## JIT / DBT Engine
+
+ - The JIT now declines cleanly when its Tier-2 blob (`softlib.rv64`) is
+   missing.  The blob-presence check sat inside a once-only init block, so
+   only the first call declined and every later call ran the JIT without
+   the blob, producing silently wrong results for some compiled shapes.
+   The check is hoisted so a blob-less build falls back to the interpreter
+   on every call, and the missing blob is logged once. (#875)
+ - `member()` now compares color-stripped words, matching the compiled
+   `co_member` and the rest of the word-comparison family; a colored list
+   or target previously never matched in the interpreter.  (Found by the
+   JIT differential fuzzer.)
+ - The Tier-2 `left`/`right` wrappers are now grapheme-cluster-aware and
+   range-check negative counts, matching the host functions, and `left()`
+   is now a first-class function (with `strtrunc()` as its documented
+   synonym) rather than a config-file alias, so it is visible to the
+   function table, the JIT allowlist, and tooling.
+ - `#$` no longer leaks into `switch()`/`switchall()` pattern evaluation on
+   the AST fast path, which had diverged from the interpreted path. (#857)
+ - A `cand()`/`cor()` chain that bails to the interpreter mid-chain (a
+   runtime-integer argument followed by a runtime-string one) no longer
+   crashes or emits garbage; the partial fast-path lowering is now rolled
+   back cleanly before the fallback. (#858)
+ - `ljust()`/`rjust()`/`center()` now range-check the requested width
+   before narrowing it, so a large width (e.g. `ljust(x,999999)`) reports
+   an out-of-range error instead of silently wrapping to a bogus column
+   count; the interpreter and Tier-2 paths now agree.
+ - `fmod()` on non-IEEE-SNaN portability builds now guards the divisor
+   rather than the dividend, so `fmod(0,3)` is `0` and `fmod(x,0)` is
+   indeterminate (they were inverted).  Dead code on the primary build.
+ - A muxscript death mid-run is now reported as a crash by the smoke
+   harness instead of being silently swallowed, and the HIR compiler
+   poisons and abandons a compile that overflows its instruction/block
+   capacity, falling back to the AST evaluator. (#859)
+
+## Performance
+
+ - `NearestPretty` gained an integer fast-path that skips the 9× shortest-
+   decimal search for whole-number results — the common case for integer
+   list math — measured at roughly −35% on `iter(lnum(100),mul(%i0,%i0))`.
+ - `run_cached_program` now populates only the substitution and argument
+   slots a compiled program actually reads instead of all ~45 every call,
+   dropping the per-call floor of a cached eval from ~0.40 to ~0.15 µs.
+ - `co_find_delim` — the shared delimiter scanner under `first`/`rest`/
+   `extract`/`words`/`iter` — gained a `memchr` fast path for ASCII
+   delimiters (safe because internal color and multi-byte UTF-8 bytes are
+   all ≥ 0x80), measured at roughly −24% on list-walk benchmarks.
+
+## Console and Memory Safety
+
+ - The console input line and cursor are now clipped to the window width in
+   `redraw_input()`, so long input no longer wraps onto the status bar and
+   the cursor stays on-screen on narrow terminals.
+ - The `atr_get`/`alloc_lbuf` RAII migration continued: `create_player`'s
+   trimmed-password buffer is now an owning `LBuf`, so its several
+   early-return paths free automatically.
+
+## Build, Tests, and Documentation
+
+ - A top-level `LICENSE` file (Artistic-1.0 plus the revised TinyMUD
+   notice) and a `CONTRIBUTING.md` were added, and `AGENTS.md` was
+   corrected to the 2.14 build workflow.
+ - The smoke-test suite was substantially expanded with error-path and
+   boundary coverage across many softcode functions (argument-count and
+   width boundaries, divide-by-zero, no-match `switch`/`case`, Unicode and
+   RTL handling, permission and malformed-syntax paths, and more).
+
 # Changes in 2.14.0.8 (2026-JUN-15):
 
 This release pairs a broad security and correctness pass with several
