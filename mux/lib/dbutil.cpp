@@ -37,6 +37,36 @@ int getref(FILE *f)
     }
 }
 
+// putref64 — write a 64-bit integer on its own line.
+//
+// Same line-oriented format as putref(), but the full 64-bit range survives
+// the round trip.  Used for values that are wider than a dbref, e.g. the
+// Unix-epoch second counts stored for connect/idle/start times, which would
+// otherwise be truncated to 32 bits (and wrap after 2038-01-19).
+//
+void putref64(FILE *f, int64_t ref)
+{
+    UTF8 buf[I64BUF_SIZE+1];
+    size_t n = mux_i64toa(ref, buf);
+    buf[n] = '\n';
+    fwrite(buf, sizeof(char), n+1, f);
+}
+
+// getref64 — read a 64-bit integer from the next line.
+//
+int64_t getref64(FILE *f)
+{
+    static UTF8 buf[SBUF_SIZE];
+    if (nullptr != fgets(reinterpret_cast<char *>(buf), sizeof(buf), f))
+    {
+        return mux_atoi64(buf);
+    }
+    else
+    {
+        return 0;
+    }
+}
+
 // String escape/de-escape tables for the flatfile format.
 //
 // Encode table (for putstring): maps bytes to escape codes.

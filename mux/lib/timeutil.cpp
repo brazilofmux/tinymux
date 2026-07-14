@@ -1112,7 +1112,8 @@ void GetUTCLinearTime(int64_t *plt)
 
     time(&t);
 
-    *plt = t*FACTOR_100NS_PER_SECOND;
+    *plt = (static_cast<int64_t>(t) * FACTOR_100NS_PER_SECOND)
+         + EPOCH_OFFSET;
 #endif
 }
 

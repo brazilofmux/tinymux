@@ -9,9 +9,12 @@
 #define DBUTIL_H
 
 #include <cstdio>
+#include <cstdint>
 
 LIBMUX_API void putref(FILE *f, int ref);
 LIBMUX_API int  getref(FILE *f);
+LIBMUX_API void    putref64(FILE *f, int64_t ref);
+LIBMUX_API int64_t getref64(FILE *f);
 LIBMUX_API void putstring(FILE *f, const UTF8 *s);
 LIBMUX_API void *getstring_noalloc(FILE *f, bool new_strings, size_t *pnBuffer);
 

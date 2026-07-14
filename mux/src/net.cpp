@@ -3030,7 +3030,7 @@ void dump_restart_db(void)
 {
     FILE *f;
     DESC *d;
-    int version = 4;
+    int version = 5;
 
     mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
     mux_fprintf(f, T("+V%d\n"), version);
@@ -3055,7 +3055,7 @@ void dump_restart_db(void)
     g_pIGameEngine->GetRecordPlayers(&nRecordPlayers);
     unsigned int nRestartCount = 0;
     g_pIGameEngine->GetRestartCount(&nRestartCount);
-    putref(f, ltaStart.ReturnSeconds());
+    putref64(f, ltaStart.ReturnSeconds());
     putstring(f, doingHdr);
     putref(f, nRecordPlayers);
     putref(f, nRestartCount);
@@ -3064,12 +3064,12 @@ void dump_restart_db(void)
         d = *it;
         putref(f, d->socket);
         putref(f, d->flags);
-        putref(f, d->connected_at.ReturnSeconds());
+        putref64(f, d->connected_at.ReturnSeconds());
         putref(f, d->command_count);
         putref(f, d->timeout);
         putref(f, 0);
         putref(f, d->player);
-        putref(f, d->last_time.ReturnSeconds());
+        putref64(f, d->last_time.ReturnSeconds());
         putref(f, d->raw_input_state);
         putref(f, d->raw_codepoint_state);
 
@@ -3115,12 +3115,14 @@ void load_restart_db(void)
     if (  1 == version
        || 2 == version
        || 3 == version
-       || 4 == version)
+       || 4 == version
+       || 5 == version)
     {
         // Version 1 started on 2001-DEC-03
         // Version 2 started on 2005-NOV-08
         // Version 3 started on 2007-MAR-09
         // Version 4 started on 2007-AUG-12
+        // Version 5 started on 2026-JUL-14 (64-bit connect/idle/start times)
         //
         num_main_game_ports = getref(f);
 #ifdef UNIX_SSL
@@ -3161,7 +3163,7 @@ void load_restart_db(void)
     }
     else
     {
-        // The restart file, restart.db, has a version other than 1-4.  You
+        // The restart file, restart.db, has a version other than 1-5.  You
         // cannot @restart from the previous version to the new version.  Use
         // @shutdown instead.
         //
@@ -3171,7 +3173,7 @@ void load_restart_db(void)
     }
     {
         CLinearTimeAbsolute ltaStart;
-        ltaStart.SetSeconds(getref(f));
+        ltaStart.SetSeconds(5 <= version ? getref64(f) : getref(f));
         g_pIGameEngine->SetStartTime(ltaStart);
     }
 
@@ -3208,12 +3210,12 @@ void load_restart_db(void)
         d->ss = SocketState::Accepted;
         d->socket = val;
         d->flags = getref(f);
-        d->connected_at.SetSeconds(getref(f));
+        d->connected_at.SetSeconds(5 <= version ? getref64(f) : getref(f));
         d->command_count = getref(f);
         d->timeout = getref(f);
         getref(f); // Eat host_info
         d->player = getref(f);
-        d->last_time.SetSeconds(getref(f));
+        d->last_time.SetSeconds(5 <= version ? getref64(f) : getref(f));
         for (int i = 0; i < 256; i++)
         {
             d->nvt_him_state[i] = OPTION_NO;
