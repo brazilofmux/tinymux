@@ -146,6 +146,11 @@ bool ConnectionBase::initialize(bool useTls) {
     // Associate this Connection object pointer with the network handle
     ErrorCode error = 0;
     if (!networkEngine_.associateContext(handle_, this, error)) {
+        // Close the accepted socket we are about to stop managing.  The other
+        // failure branches below (onConnectionOpen, TLS/telnet) already close;
+        // this one used to return without closing, leaking the fd (the adapter's
+        // initialize()-failed path only erases its maps, it does not close).
+        networkEngine_.closeConnection(handle_);
         transitionToState(ConnectionState::Closed); // Mark as unusable
         return false;
     }
