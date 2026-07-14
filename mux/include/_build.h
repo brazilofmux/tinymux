@@ -6,8 +6,8 @@
 #ifndef _BUILD_H
 #define _BUILD_H
 
-#define MUX_VERSION       "2.14.0.8"         // Version number
-#define MUX_RELEASE_DATE  "2026-JUN-15"      // Source release date
+#define MUX_VERSION       "2.14.0.9"         // Version number
+#define MUX_RELEASE_DATE  "2026-JUL-14"      // Source release date
 
 // Define if this release is qualified as ALPHA or BETA.
 //
