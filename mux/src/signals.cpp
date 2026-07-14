@@ -312,6 +312,7 @@ static void unset_signals(void)
     {
         int sig = pst->iSignal;
         signal(sig, SIG_DFL);
+        pst++;
     }
 }
 
