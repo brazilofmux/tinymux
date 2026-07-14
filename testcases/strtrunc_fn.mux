@@ -40,11 +40,23 @@
         strmatch(strtrunc(A[chr(233)]B[chr(65296)]C,20), A[chr(233)]B[chr(65296)]C)
       )=
   {
-    @log smoke=TC002: strtrunc multi-byte Unicode. Succeeded.;
+    @log smoke=TC002: strtrunc multi-byte Unicode. Succeeded.
+  },
+  {
+    @log smoke=TC002: strtrunc multi-byte Unicode. Failed.
+  }
+-
+#
+# Test Case #3 - Error path: negative width (shared guard with left()).
+#
+&tr.tc003 test_strtrunc_fn=
+  @if strmatch(strtrunc(foobar,-1), #-1 OUT OF RANGE)=
+  {
+    @log smoke=TC003: strtrunc() error path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: strtrunc multi-byte Unicode. Failed.;
+    @log smoke=TC003: strtrunc() error path. Failed (strtrunc(foobar,-1)=[strtrunc(foobar,-1)]).;
     @trig me/tr.done
   }
 -
