@@ -297,10 +297,37 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
                     if (alarm_clock.alarmed)
                     {
                         notify(executor, T("GAME: Expensive activity abbreviated."));
-                        s_Flags(point->enactor, FLAG_WORD1, Flags(point->enactor) | HALT);
-                        s_Flags(point->executor, FLAG_WORD1, Flags(point->executor) | HALT);
-                        halt_que(point->enactor, NOTHING);
-                        halt_que(executor, NOTHING);
+
+                        // The command has already returned by this point --
+                        // polling loops abbreviated it mid-run -- so the HALT
+                        // only quarantines future work. That is right for a
+                        // machine object, whose future work is more of the
+                        // same runaway, but wrong for a wizard player, whose
+                        // future work is the next typed command -- often the
+                        // one that fixes the problem. Don't dark the admin.
+                        //
+                        bool bExemptEnactor = isPlayer(point->enactor)
+                                           && Wizard(point->enactor);
+                        bool bExemptExecutor = isPlayer(executor)
+                                            && Wizard(executor);
+                        if (!bExemptEnactor)
+                        {
+                            s_Flags(point->enactor, FLAG_WORD1, Flags(point->enactor) | HALT);
+                            halt_que(point->enactor, NOTHING);
+                        }
+                        if (!bExemptExecutor)
+                        {
+                            s_Flags(executor, FLAG_WORD1, Flags(executor) | HALT);
+                            halt_que(executor, NOTHING);
+                        }
+                        if (  bExemptEnactor
+                           || bExemptExecutor)
+                        {
+                            STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
+                            log_name_and_loc(executor);
+                            log_text(T(" expensive activity abbreviated; wizard player exempted from HALT"));
+                            ENDLOG;
+                        }
                     }
                     alarm_clock.clear();
 

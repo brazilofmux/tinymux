@@ -2159,8 +2159,17 @@ void do_command(DESC *d, UTF8 *command)
         if (alarm_clock.alarmed)
         {
             notify(d->player, T("GAME: Expensive activity abbreviated."));
-            drv_HaltQueue(d->player, NOTHING);
-            drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) | HALT);
+
+            // Same exemption as the queue-side guard in cque.cpp: the
+            // command was already abbreviated mid-run, so the HALT only
+            // quarantines future work. Don't dark a wizard whose next
+            // typed command is often the fix.
+            if (  GOD != d->player
+               && !(drv_Flags(d->player, FLAG_WORD1) & WIZARD))
+            {
+                drv_HaltQueue(d->player, NOTHING);
+                drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) | HALT);
+            }
         }
         alarm_clock.clear();
 
