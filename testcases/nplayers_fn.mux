@@ -1,0 +1,73 @@
+#
+# nplayers_fn.mux - Test Cases for nplayers().
+#
+@create test_nplayers_fn
+-
+@set test_nplayers_fn=INHERIT QUIET
+-
+#
+# Dynamic actors/victims for nplayers() coverage (no fixed dbrefs).
+# Players created by @pcreate in the offline smoke harness are not connected;
+# only muxscript's launching player is marked connected.
+#
+@pcreate NplayersRoomMortal=pass
+-
+@set *NplayersRoomMortal=QUIET
+-
+think [setq(0,create(NplayersRoom,10,r))][attrib_set(test_nplayers_fn/ROOM,%q0)]
+-
+@tel *NplayersRoomMortal=[get(test_nplayers_fn/ROOM)]
+-
+@pcreate NplayersErrMortal=pass
+-
+@set *NplayersErrMortal=QUIET
+-
+think [setq(0,create(NplayersErrVictim,10,r))][attrib_set(test_nplayers_fn/VICTIM,%q0)][attrib_set(*NplayersErrMortal/VICTIM,%q0)]
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_nplayers_fn=
+  @log smoke=Beginning nplayers() test cases.
+-
+#
+# Test Case #1 - Happy paths reachable in the offline smoke harness.
+#
+&tr.tc001 test_nplayers_fn=
+  @if cand(
+        eq(nplayers([get(test_nplayers_fn/ROOM)]),0),
+        eq(nplayers(me),0)
+      )=
+  {
+    @log smoke=TC001: nplayers() happy paths. Succeeded.
+  },
+  {
+    @log smoke=TC001: nplayers() happy paths. Failed (room=[nplayers([get(test_nplayers_fn/ROOM)])] me=[nplayers(me)] connected=[hasflag(*NplayersRoomMortal,CONNECTED)]).
+  }
+-
+#
+# Test Case #2 - Error paths: not-found and permission-denied.
+#
+&tr.tc002 test_nplayers_fn=
+  @if cand(
+        strmatch(nplayers(#999999), #-1 NOT FOUND),
+        strmatch(objeval(*NplayersErrMortal, nplayers([get(me/VICTIM)])), #-1 PERMISSION DENIED)
+      )=
+  {
+    @log smoke=TC002: nplayers() error paths. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: nplayers() error paths. Failed (nf=[nplayers(#999999)] pd=[objeval(*NplayersErrMortal, nplayers([get(me/VICTIM)]))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_nplayers_fn=
+  @log smoke=End nplayers() test cases.;
+  @notify smoke
+-
+drop test_nplayers_fn
+-
+#
+# End of Test Cases
+#
