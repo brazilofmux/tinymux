@@ -25,6 +25,7 @@
 #if defined(__linux__)
 #include <dirent.h>      // count_open_fds() reads /proc/self/fd
 #endif
+#include <csignal>      // kill(), SIGKILL — bounded child reaping
 #endif
 
 #if defined(_WIN32)
@@ -2758,6 +2759,32 @@ extern QUEUE_INFO Queue_In;
 extern QUEUE_INFO Queue_Out;
 extern pid_t stubslave_pid;
 
+// Reap a forked child without ever blocking the main thread forever.  A child
+// that wedges before exec would otherwise park us in waitpid() with no timeout,
+// stalling the entire network loop (idle, no CPU, not accepting).  Poll briefly,
+// then force the issue with SIGKILL (guaranteed to terminate a futex-blocked
+// process) so a wedged child can never park the server.
+static void reap_child_bounded(pid_t pid)
+{
+    if (pid <= 0)
+    {
+        return;
+    }
+    for (int i = 0; i < 50; i++)   // ~5s grace at 100ms
+    {
+        pid_t r = waitpid(pid, nullptr, WNOHANG);
+        if (r == pid || (r == -1 && errno == ECHILD))
+        {
+            return;
+        }
+        usleep(100000);
+    }
+    kill(pid, SIGKILL);
+    while (waitpid(pid, nullptr, 0) == -1 && errno == EINTR)
+    {
+    }
+}
+
 bool GanlAdapter::boot_stubslave()
 {
     const char *pFailedFunc = nullptr;
@@ -2804,10 +2831,12 @@ bool GanlAdapter::boot_stubslave()
 
     case 0:
 
-        // If we don't clear this alarm, the child will eventually receive a
-        // SIG_PROF.
-        //
-        alarm_clock.clear();
+        // In the forked child the alarm thread does not exist, so the alarm can
+        // never fire here.  Only reset the lock-free, async-signal-safe flag.
+        // Do NOT call alarm_clock.clear() — it locks a std::mutex that may have
+        // been inherited locked across fork(), deadlocking the child before exec
+        // (and then parking the parent forever in the waitpid() below).
+        alarm_clock.alarmed.store(false);
 
         // Child.  The following calls to dup2() assume only the minimal
         // dup2() functionality.  That is, the destination descriptor is
@@ -2856,7 +2885,7 @@ failure:
 
     if (stubslave_pid > 0)
     {
-        waitpid(stubslave_pid, nullptr, 0);
+        reap_child_bounded(stubslave_pid);
     }
     stubslave_pid = 0;
 
@@ -2884,7 +2913,7 @@ void GanlAdapter::shutdown_stubslave()
 
     if (stubslave_pid > 0)
     {
-        waitpid(stubslave_pid, nullptr, 0);
+        reap_child_bounded(stubslave_pid);
     }
     stubslave_pid = 0;
 }

@@ -1783,10 +1783,12 @@ void fork_and_dump(int key)
         }
         if (child == 0)
         {
-            // If we don't clear this alarm, the child will eventually receive a
-            // SIG_PROF.
-            //
-            alarm_clock.clear();
+            // In the forked child the alarm thread does not exist, so the alarm
+            // can never fire here.  Only reset the lock-free, async-signal-safe
+            // flag so the dump runs unabbreviated.  Do NOT call
+            // alarm_clock.clear() — it locks a std::mutex that may have been
+            // inherited locked across fork(), deadlocking the dump child.
+            alarm_clock.alarmed.store(false);
 #endif // HAVE_WORKING_FORK
 
             if (key & DUMP_STRUCT)

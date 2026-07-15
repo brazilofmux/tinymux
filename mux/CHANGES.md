@@ -172,6 +172,15 @@ author:
    corrupted the WHO "On For" column for any session spanning a
    restart. The times are now serialized as 64-bit and `restart.db` is
    bumped to version 5 (older versions still read).
+ - Fix a rare `fork()` deadlock that could hang the server. The
+   post-fork dump and stubslave children called `alarm_clock.clear()`,
+   which locks a `std::mutex` held by the alarm thread; a child that
+   forked during that brief window inherited the mutex locked with no
+   owner and self-deadlocked before `exec`, and a later stubslave
+   reboot then blocked the parent forever in `waitpid()`, parking the
+   whole network loop. The children now reset the lock-free `alarmed`
+   flag instead of taking the mutex, and the stubslave `waitpid()`
+   calls are bounded (poll, then `SIGKILL`).
 
 # Performance Enhancements:
 
