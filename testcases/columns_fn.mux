@@ -240,8 +240,7 @@
       )=
 
   {
-    @log smoke=TC007: columns walk single-hypens through elements. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC007: columns walk single-hypens through elements. Succeeded.
   },
   {
     @log smoke=TC007: columns walk single-hypens through elements Failed.;
@@ -264,6 +263,27 @@
     @log smoke=TC007 actual L16 =.[columns(a-b-c-d-e-f---g-h,5,-)]=.;
     @log smoke=TC007 actual L17 =.[columns(a-b-c-d-e-f-g---h,5,-)]=.;
     @log smoke=TC007 actual L18 =.[columns(a-b-c-d-e-f-g-h--,5,-)]=.;
+  }
+-
+#
+# Test Case #8 - Error path: width/indent range, separator length.
+#
+&tr.tc008 test_columns_fn=
+  @if cand(
+        strmatch(columns(a b c,0), #-1 OUT OF RANGE),
+        strmatch(columns(a b c,79), #-1 OUT OF RANGE),
+        strmatch(columns(a b c,78), a%rb%rc%r),
+        strmatch(columns(a b c,40,%b,40), #-1 OUT OF RANGE),
+        not(strmatch(columns(a b c,38,%b,40), #-1*)),
+        strmatch(columns(a b c,5,[repeat(x,51)]), #-1 SEPARATOR IS TOO LARGE),
+        not(strmatch(columns(a b c,5,[repeat(x,50)]), #-1*))
+      )=
+  {
+    @log smoke=TC008: columns() width/indent/separator error paths. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: columns() width/indent/separator error paths. Failed (w0=[columns(a b c,0)] w79=[columns(a b c,79)] w78=[columns(a b c,78)] wi80=[columns(a b c,40,%b,40)] wi78=[columns(a b c,38,%b,40)] sep51=[columns(a b c,5,[repeat(x,51)])] sep50=[columns(a b c,5,[repeat(x,50)])]).;
     @trig me/tr.done
   }
 -
