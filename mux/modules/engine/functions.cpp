@@ -10395,7 +10395,14 @@ static FUNCTION(fun_printf)
         bool bWidth = false;
         while (mux_isdigit(*fmt))
         {
-            nWidth = nWidth * 10 + (*fmt - '0');
+            // Once the accumulator reaches LBUF_SIZE it can never become
+            // valid again; stop accumulating (but keep consuming digits so
+            // the parse position stays correct) to avoid signed overflow.
+            //
+            if (nWidth < LBUF_SIZE)
+            {
+                nWidth = nWidth * 10 + (*fmt - '0');
+            }
             fmt++;
             bWidth = true;
         }
@@ -10409,7 +10416,13 @@ static FUNCTION(fun_printf)
             nPrec = 0;
             while (mux_isdigit(*fmt))
             {
-                nPrec = nPrec * 10 + (*fmt - '0');
+                // Same clamp as the width accumulator above; a precision at
+                // or beyond LBUF_SIZE already truncates nothing.
+                //
+                if (nPrec < LBUF_SIZE)
+                {
+                    nPrec = nPrec * 10 + (*fmt - '0');
+                }
                 fmt++;
             }
         }

@@ -104,11 +104,30 @@
         strmatch(printf(%%-32768s,hi), #-1 OUT OF RANGE)
       )=
   {
-    @log smoke=TC006: printf() width-range error path. Succeeded.;
+    @log smoke=TC006: printf() width-range error path. Succeeded.
+  },
+  {
+    @log smoke=TC006: printf() width-range error path. Failed (w32768=[printf(%%32768s,hi)] w32767len=[strlen(printf(%%32767s,hi))] wflag=[printf(%%-32768s,hi)]).
+  }
+-
+#
+# Test Case #7 - Overflow-length width and precision digit strings.
+# Any width whose digits ever reach LBUF_SIZE must error deterministically,
+# no matter how many digits follow; an over-long precision truncates nothing.
+#
+&tr.tc007 test_printf_fn=
+  @if cand(
+        strmatch(printf(%%999999999999s,hi), #-1 OUT OF RANGE),
+        strmatch(printf(%%2147483648s,hi), #-1 OUT OF RANGE),
+        strmatch(printf(%%4294967306s,hi), #-1 OUT OF RANGE),
+        strmatch(printf(%%.999999999999s,abcdef), abcdef)
+      )=
+  {
+    @log smoke=TC007: printf() overflow-length width/precision. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC006: printf() width-range error path. Failed (w32768=[printf(%%32768s,hi)] w32767len=[strlen(printf(%%32767s,hi))] wflag=[printf(%%-32768s,hi)]).;
+    @log smoke=TC007: printf() overflow-length width/precision. Failed (w12=[printf(%%999999999999s,hi)] wneg=[printf(%%2147483648s,hi)] wsilent=[printf(%%4294967306s,hi)] phuge=[printf(%%.999999999999s,abcdef)]).;
     @trig me/tr.done
   }
 -
