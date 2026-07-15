@@ -88,11 +88,27 @@
         strmatch(printf(%%s and %%d, hello, 99),hello and 99)
       )=
   {
-    @log smoke=TC005: printf mixed args. Succeeded.;
+    @log smoke=TC005: printf mixed args. Succeeded.
+  },
+  {
+    @log smoke=TC005: printf mixed args. Failed (plain=[printf(no args)] list=[printf(%%s %%s %%s, one, two, three)] mixed=[printf(%%s and %%d, hello, 99)]).
+  }
+-
+#
+# Test Case #6 - Error path: width range boundary.
+#
+&tr.tc006 test_printf_fn=
+  @if cand(
+        strmatch(printf(%%32768s,hi), #-1 OUT OF RANGE),
+        strmatch(printf(%%32767s,hi), rjust(hi,32767)),
+        strmatch(printf(%%-32768s,hi), #-1 OUT OF RANGE)
+      )=
+  {
+    @log smoke=TC006: printf() width-range error path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: printf mixed args. Failed (plain=[printf(no args)] list=[printf(%%s %%s %%s, one, two, three)] mixed=[printf(%%s and %%d, hello, 99)]).;
+    @log smoke=TC006: printf() width-range error path. Failed (w32768=[printf(%%32768s,hi)] w32767len=[strlen(printf(%%32767s,hi))] wflag=[printf(%%-32768s,hi)]).;
     @trig me/tr.done
   }
 -
