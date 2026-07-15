@@ -6,6 +6,19 @@
 @set test_ncon_fn=INHERIT QUIET
 -
 #
+# Dynamic actor/victim for error-path testing (no fixed dbrefs).
+#
+@pcreate NconErrMortal=pass
+-
+@set *NconErrMortal=QUIET
+-
+@create NconErrVictim
+-
+@set NconErrVictim=QUIET
+-
+think [attrib_set(test_ncon_fn/VICTIM,[num(NconErrVictim)])][attrib_set(*NconErrMortal/VICTIM,[num(NconErrVictim)])]
+-
+#
 # Beginning of Test Cases
 #
 &tr.tc000 test_ncon_fn=
@@ -42,11 +55,31 @@
 &tr.tc003 test_ncon_fn=
   @if gte(nthings(here),0)=
   {
-    @log smoke=TC003: nthings basic. Succeeded.;
+    @log smoke=TC003: nthings basic. Succeeded.
+  },
+  {
+    @log smoke=TC003: nthings basic. Failed (nthings=[nthings(here)]).
+  }
+-
+#
+# Test Case #4 - Error paths: not-found and permission-denied for all
+# three functions.
+#
+&tr.tc004 test_ncon_fn=
+  @if cand(
+        strmatch(ncon(#999999), #-1 NOT FOUND),
+        strmatch(nexits(#999999), #-1 NOT FOUND),
+        strmatch(nthings(#999999), #-1 NOT FOUND),
+        strmatch(objeval(*NconErrMortal, ncon([get(me/VICTIM)])), #-1 PERMISSION DENIED),
+        strmatch(objeval(*NconErrMortal, nexits([get(me/VICTIM)])), #-1 PERMISSION DENIED),
+        strmatch(objeval(*NconErrMortal, nthings([get(me/VICTIM)])), #-1 PERMISSION DENIED)
+      )=
+  {
+    @log smoke=TC004: ncon/nexits/nthings error paths. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: nthings basic. Failed (nthings=[nthings(here)]).;
+    @log smoke=TC004: ncon/nexits/nthings error paths. Failed (nf_ncon=[ncon(#999999)] nf_nexits=[nexits(#999999)] nf_nthings=[nthings(#999999)] pd_ncon=[objeval(*NconErrMortal, ncon([get(me/VICTIM)]))] pd_nexits=[objeval(*NconErrMortal, nexits([get(me/VICTIM)]))] pd_nthings=[objeval(*NconErrMortal, nthings([get(me/VICTIM)]))]).;
     @trig me/tr.done
   }
 -
