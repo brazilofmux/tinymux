@@ -1,6 +1,6 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: May 1, 2026
+date: July 15, 2026
 author:
  - Brazil
 ---
@@ -155,6 +155,23 @@ author:
  - Fix collation NFC tiebreaker: normalize to NFC before binary
    comparison so canonically equivalent strings compare equal per UCA.
  - Restore timezone prefetch probes inadvertently disabled.
+ - Fix a file-descriptor leak in the GANL `epoll` engine: the
+   abnormal-disconnect path (a client RST or hangup) emitted a close
+   event but never closed the socket or removed it from the engine, so
+   every abrupt disconnect leaked one descriptor and a busy game
+   accumulated thousands of orphaned sockets. Also close the accepted
+   socket when connection setup fails to associate its context.
+ - Fix a connect-time crash loop on a truncated or malformed
+   `A_LOGINDATA`: `decrypt_logindata()` dereferenced a null field
+   pointer, and `unset_signals()` spun forever on a missing loop
+   increment, pinning the process at 100% CPU and defeating
+   crash-driven `@restart` recovery. Field reads now fail safe and the
+   signal-reset loop is fixed.
+ - Fix `@restart` truncating the 64-bit connect/idle/start times
+   through the 32-bit dbref channel in `restart.db` (Y2038), which
+   corrupted the WHO "On For" column for any session spanning a
+   restart. The times are now serialized as 64-bit and `restart.db` is
+   bumped to version 5 (older versions still read).
 
 # Performance Enhancements:
 
