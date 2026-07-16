@@ -175,11 +175,26 @@
         3
       )=
   {
-    @log smoke=TC011: graphemes multiple combining marks. Succeeded.;
+    @log smoke=TC011: graphemes multiple combining marks. Succeeded.
+  },
+  {
+    @log smoke=TC011: graphemes multiple combining marks. Failed (words=[words(graphemes([chr(97 771 769)]bc))]).
+  }
+-
+#
+# Test Case #12 - Error path: separator length boundary.
+#
+&tr.tc012 test_graphemes_fn=
+  @if cand(
+        strmatch(graphemes(abc,[repeat(x,51)]), #-1 SEPARATOR IS TOO LARGE),
+        strmatch(graphemes(abc,[repeat(x,50)]), a[repeat(x,50)]b[repeat(x,50)]c)
+      )=
+  {
+    @log smoke=TC012: graphemes() separator-length error path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC011: graphemes multiple combining marks. Failed (words=[words(graphemes([chr(97 771 769)]bc))]).;
+    @log smoke=TC012: graphemes() separator-length error path. Failed (sep51=[graphemes(abc,[repeat(x,51)])] sep50=[graphemes(abc,[repeat(x,50)])]).;
     @trig me/tr.done
   }
 -
