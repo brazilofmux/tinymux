@@ -40,16 +40,33 @@
           260 256 258 262 266 264 268 270 280 274 278 276 282 290 288 284 286 261 257 259 263 267 265 269 271 281 275 279 277 283 291 289 285 287
         )=
     {
-      @log smoke=TC002: accent examples (U+0100 and above). Succeeded.;
-      @trig me/tr.done
+      @log smoke=TC002: accent examples (U+0100 and above). Succeeded.
     },
     {
-      @log smoke=TC002: accent examples (U+0100 and above). Failed (%q0).;
-      @trig me/tr.done
+      @log smoke=TC002: accent examples (U+0100 and above). Failed (%q0).
     }
   },
   {
-    @log smoke=TC002: Unicode accents are not supported on this version. Okay.;
+    @log smoke=TC002: Unicode accents are not supported on this version. Okay.
+  }
+-
+#
+# Test Case #3 - Error paths: length mismatch and invalid UTF-8.
+#
+&tr.tc003 test_accent_fn=
+  @if cand(
+        strmatch(accent(cafe,abc), #-1 STRING LENGTHS MUST BE EQUAL),
+        strmatch(accent(a,), #-1 STRING LENGTHS MUST BE EQUAL),
+        strmatch(accent(,a), #-1 STRING LENGTHS MUST BE EQUAL),
+        strmatch(accent([decode64(gA==)],x), #-1 STRINGS ARE INVALID),
+        strmatch(accent([decode64(gA==)],xy), #-1 STRINGS ARE INVALID)
+      )=
+  {
+    @log smoke=TC003: accent() error paths. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: accent() error paths. Failed (len1=[accent(cafe,abc)] len2=[accent(a,)] len3=[accent(,a)] inv1=[accent([decode64(gA==)],x)] inv2=[accent([decode64(gA==)],xy)]).;
     @trig me/tr.done
   }
 -
