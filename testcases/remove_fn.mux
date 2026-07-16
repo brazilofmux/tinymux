@@ -20,8 +20,7 @@
         strmatch(remove(a|b|c,b,|), a|c)
       )=
   {
-    @log smoke=TC001: remove basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: remove basic operations. Succeeded.
   },
   {
     @log smoke=TC001: remove basic operations. Failed (remove(c)=[remove(a b c d,c)] remove(b%,|)=[remove(a|b|c,b,|)]).;
@@ -50,11 +49,28 @@
         strmatch(extract(%q3,3,1,|),c)
       )=
   {
-    @log smoke=TC002: remove repeat and miss cases. Succeeded.;
+    @log smoke=TC002: remove repeat and miss cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: remove repeat and miss cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3).
+  }
+-
+#
+# Test Case #3 - Error path: element contains active separator.
+#
+&tr.tc003 test_remove_fn=
+  @if cand(
+        strmatch(remove(a b c d,b c), #-1 CAN ONLY REMOVE ONE ELEMENT),
+        strmatch(remove(a,a b), #-1 CAN ONLY REMOVE ONE ELEMENT),
+        strmatch(remove(a b c,a b,%b), #-1 CAN ONLY REMOVE ONE ELEMENT),
+        strmatch(remove(a|b|c,b c,|), a|b|c)
+      )=
+  {
+    @log smoke=TC003: remove() error path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: remove repeat and miss cases. Failed (q0=%q0 q1=%q1 q2=%q2 q3=%q3).;
+    @log smoke=TC003: remove() error path. Failed (default=[remove(a b c d,b c)] trivial=[remove(a,a b)] explicit=[remove(a b c,a b,%b)] pipe=[remove(a|b|c,b c,|)]).;
     @trig me/tr.done
   }
 -
