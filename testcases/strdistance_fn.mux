@@ -62,11 +62,29 @@
         eq(strdistance(a[chr(127482)][chr(127480)]b, ab), 1)
       )=
   {
-    @log smoke=TC003: strdistance clusters. Succeeded.;
+    @log smoke=TC003: strdistance clusters. Succeeded.
+  },
+  {
+    @log smoke=TC003: strdistance clusters. Failed (flag-del=[strdistance([chr(127482)][chr(127480)],)] tone-del=[strdistance([chr(128077)][chr(127997)],)] sub=[strdistance([chr(128104)],[chr(128105)])]).
+  }
+-
+#
+# Test Case #4 - Error path: string-length range boundary.
+#
+&tr.tc004 test_strdistance_fn=
+  @if cand(
+        strmatch(strdistance([repeat(x,4001)],y), #-1 STRINGS TOO LONG),
+        eq(strdistance([repeat(x,4000)],y), 4000),
+        strmatch(strdistance(y,[repeat(x,4001)]), #-1 STRINGS TOO LONG),
+        eq(strdistance([repeat([chr(233)],4000)],y), 4000),
+        strmatch(strdistance([repeat([chr(233)],4001)],y), #-1 STRINGS TOO LONG)
+      )=
+  {
+    @log smoke=TC004: strdistance() string-length error path. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: strdistance clusters. Failed (flag-del=[strdistance([chr(127482)][chr(127480)],)] tone-del=[strdistance([chr(128077)][chr(127997)],)] sub=[strdistance([chr(128104)],[chr(128105)])]).;
+    @log smoke=TC004: strdistance() string-length error path. Failed (a4001=[strdistance([repeat(x,4001)],y)] a4000=[strdistance([repeat(x,4000)],y)] b4001=[strdistance(y,[repeat(x,4001)])] u4000=[strdistance([repeat([chr(233)],4000)],y)] u4001=[strdistance([repeat([chr(233)],4001)],y)]).;
     @trig me/tr.done
   }
 -
