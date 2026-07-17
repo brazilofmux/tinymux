@@ -6,6 +6,33 @@
 @set test_lock_fn=INHERIT QUIET
 -
 #
+# Dynamic actors/victims for error-path testing (no fixed dbrefs).
+#
+@pcreate LockCtrlMortal=pass
+-
+@set *LockCtrlMortal=QUIET
+-
+@create LockCtrlVictim
+-
+@set LockCtrlVictim=QUIET
+-
+think [attrib_set(*LockCtrlMortal/VICTIM,[num(LockCtrlVictim)])]
+-
+@pcreate LockNoModMortal=pass
+-
+@set *LockNoModMortal=QUIET
+-
+@create LockNoModVictim
+-
+@set LockNoModVictim=QUIET
+-
+@chown LockNoModVictim=*LockNoModMortal
+-
+@set LockNoModVictim=NOMODIFY
+-
+think [attrib_set(*LockNoModMortal/VICTIM,[num(LockNoModVictim)])]
+-
+#
 # Beginning of Test Cases
 #
 &tr.tc000 test_lock_fn=
@@ -69,11 +96,43 @@
   think >>> reset lock: [lock(me,me)];
   @if strmatch(lock(me),[num(me)])=
   {
-    @log smoke=TC004: deep lock recursion bounded (no crash). Succeeded.;
+    @log smoke=TC004: deep lock recursion bounded (no crash). Succeeded.
+  },
+  {
+    @log smoke=TC004: deep lock recursion bounded (no crash). Failed (lock=[lock(me)] expected=[num(me)]).
+  }
+-
+#
+# Test Case #5 - Error path: object/lock-name parsing.
+#
+&tr.tc005 test_lock_fn=
+  @if cand(
+        strmatch(lock(#999999), #-1 NOT FOUND),
+        strmatch(lock(me/ExamineLock), #-1 LOCK NOT FOUND)
+      )=
+  {
+    @log smoke=TC005: lock() parsing error paths. Succeeded.
+  },
+  {
+    @log smoke=TC005: lock() parsing error paths. Failed (nf=[lock(#999999)] lnf=[lock(me/ExamineLock)]).
+  }
+-
+#
+# Test Case #6 - Error path: set-lock side effects (malformed key,
+# permission denial via Controls() and NoModify()).
+#
+&tr.tc006 test_lock_fn=
+  @if cand(
+        strmatch(lock(me,me&&you), #-1 I DON'T UNDERSTAND THAT KEY),
+        strmatch(objeval(*LockCtrlMortal, lock([get(me/VICTIM)],me)), #-1 PERMISSION DENIED),
+        strmatch(objeval(*LockNoModMortal, lock([get(me/VICTIM)],me)), #-1 PERMISSION DENIED)
+      )=
+  {
+    @log smoke=TC006: lock() set-side-effect error paths. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: deep lock recursion bounded (no crash). Failed (lock=[lock(me)] expected=[num(me)]).;
+    @log smoke=TC006: lock() set-side-effect error paths. Failed (key=[lock(me,me&&you)] ctrl=[objeval(*LockCtrlMortal, lock([get(me/VICTIM)],me))] nomod=[objeval(*LockNoModMortal, lock([get(me/VICTIM)],me))]).;
     @trig me/tr.done
   }
 -
