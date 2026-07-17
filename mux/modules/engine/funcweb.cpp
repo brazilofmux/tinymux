@@ -833,6 +833,11 @@ FUNCTION(fun_json)
             bool bFirst = true;
             while (pWord && *pWord)
             {
+                // split_token NUL-terminates the element in place;
+                // next_token would leave the tail attached.
+                //
+                UTF8 *pElem = split_token(&pWord, sep);
+
                 if (!bFirst)
                 {
                     safe_chr(',', buff, bufc);
@@ -842,8 +847,7 @@ FUNCTION(fun_json)
                 // Each element should already be valid JSON.
                 // Append it directly.
                 //
-                safe_str(pWord, buff, bufc);
-                pWord = next_token(pWord, sep);
+                safe_str(pElem, buff, bufc);
             }
             free_lbuf(pList);
         }
@@ -853,6 +857,7 @@ FUNCTION(fun_json)
     {
         // Build a JSON object from key-value pairs.
         //
+        UTF8 *pStart = *bufc;
         safe_chr('{', buff, bufc);
         UTF8 *pList = pValue ? alloc_lbuf("fun_json.object") : nullptr;
         if (pList)
@@ -866,19 +871,21 @@ FUNCTION(fun_json)
             bool bFirst = true;
             while (pWord && *pWord)
             {
-                UTF8 *pKey = pWord;
-                pWord = next_token(pWord, sep);
+                // split_token NUL-terminates each token in place;
+                // next_token would leave the tail attached.
+                //
+                UTF8 *pKey = split_token(&pWord, sep);
                 if (!pWord || !*pWord)
                 {
-                    // Odd number of elements — missing value.
+                    // Odd number of elements — missing value.  Rewind only
+                    // this function's own output, not the whole buffer.
                     //
-                    *bufc = buff; // Reset output.
+                    *bufc = pStart;
                     safe_str(T("#-1 ODD NUMBER OF ELEMENTS"), buff, bufc);
                     free_lbuf(pList);
                     return;
                 }
-                UTF8 *pVal = pWord;
-                pWord = next_token(pWord, sep);
+                UTF8 *pVal = split_token(&pWord, sep);
 
                 if (!bFirst)
                 {
