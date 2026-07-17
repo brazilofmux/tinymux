@@ -20,7 +20,13 @@
         strmatch(.[json(number,42)]., .42.),
         strmatch(.[json(boolean,1)]., .true.),
         strmatch(.[json(boolean,0)]., .false.),
-        strmatch(.[json(null)]., .null.)
+        strmatch(.[json(null)]., .null.),
+        strmatch(.[json(array,1 2 3)]., .\[1\,2\,3\].),
+        strmatch(.[json(array,"a" "b")]., .\["a"\,"b"\].),
+        strmatch(.[json(object,"a" 1)]., .\{"a":1\}.),
+        strmatch(.[json(object,"a" 1 "b" 2)]., .\{"a":1\,"b":2\}.),
+        eq(isjson([json(object,"a" 1 "b" 2)]),1),
+        strmatch(x[json(object,a 1 b)]y, x#-1 ODD NUMBER OF ELEMENTSy)
       )=
 
   {
@@ -33,6 +39,11 @@
     @log smoke=TC001 actual L2 =.[json(boolean,1)]=.;
     @log smoke=TC001 actual L3 =.[json(boolean,0)]=.;
     @log smoke=TC001 actual L4 =.[json(null)]=.;
+    @log smoke=TC001 actual L5 =.[json(array,1 2 3)]=.;
+    @log smoke=TC001 actual L6 =.[json(array,"a" "b")]=.;
+    @log smoke=TC001 actual L7 =.[json(object,"a" 1)]=.;
+    @log smoke=TC001 actual L8 =.[json(object,"a" 1 "b" 2)]=.;
+    @log smoke=TC001 actual L9 =.x[json(object,a 1 b)]y=.;
   }
 -
 #
