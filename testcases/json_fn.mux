@@ -144,15 +144,32 @@
       )=
 
   {
-    @log smoke=TC006: json_mod insert/replace. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC006: json_mod insert/replace. Succeeded.
   },
   {
     @log smoke=TC006: json_mod insert/replace Failed.;
     @log smoke=TC006 actual L0 =.[json_mod(\{"a":1\},insert,$.b,2)]=.;
     @log smoke=TC006 actual L1 =.[json_mod(\{"a":1\},insert,$.a,99)]=.;
     @log smoke=TC006 actual L2 =.[json_mod(\{"a":1\},replace,$.a,99)]=.;
-    @log smoke=TC006 actual L3 =.[json_mod(\{"a":1\},replace,$.z,99)]=.;
+    @log smoke=TC006 actual L3 =.[json_mod(\{"a":1\},replace,$.z,99)]=.
+  }
+-
+#
+# Test Case #7 - Error path: json() own errors and shared-helper
+# INVALID JSON via type=number.
+#
+&tr.tc007 test_json_fn=
+  @if cand(
+        strmatch(json(bogus_type,x), #-1 UNKNOWN JSON TYPE),
+        strmatch(json(object,a 1 b), #-1 ODD NUMBER OF ELEMENTS),
+        strmatch(json(number,notanumber), #-1 INVALID JSON)
+      )=
+  {
+    @log smoke=TC007: json() error paths. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC007: json() error paths. Failed (type=[json(bogus_type,x)] odd=[json(object,a 1 b)] num=[json(number,notanumber)]).;
     @trig me/tr.done
   }
 -
