@@ -165,11 +165,28 @@
         strmatch(json(number,notanumber), #-1 INVALID JSON)
       )=
   {
-    @log smoke=TC007: json() error paths. Succeeded.;
+    @log smoke=TC007: json() error paths. Succeeded.
+  },
+  {
+    @log smoke=TC007: json() error paths. Failed (type=[json(bogus_type,x)] odd=[json(object,a 1 b)] num=[json(number,notanumber)]).
+  }
+-
+#
+# Test Case #8 - Error path: json_query() own error and shared-helper
+# INVALID JSON / JSON ERROR cases.
+#
+&tr.tc008 test_json_fn=
+  @if cand(
+        strmatch(json_query([chr(123)]"a":1[chr(125)],bogus_query_type), #-1 UNKNOWN QUERY TYPE),
+        strmatch(json_query(not valid json,type), #-1 INVALID JSON),
+        strmatch(json_query([chr(123)]"a":1[chr(125)],get,notapath), #-1 JSON ERROR)
+      )=
+  {
+    @log smoke=TC008: json_query() error paths. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC007: json() error paths. Failed (type=[json(bogus_type,x)] odd=[json(object,a 1 b)] num=[json(number,notanumber)]).;
+    @log smoke=TC008: json_query() error paths. Failed (qtype=[json_query([chr(123)]"a":1[chr(125)],bogus_query_type)] inv=[json_query(not valid json,type)] path=[json_query([chr(123)]"a":1[chr(125)],get,notapath)]).;
     @trig me/tr.done
   }
 -
