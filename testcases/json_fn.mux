@@ -182,11 +182,28 @@
         strmatch(json_query([chr(123)]"a":1[chr(125)],get,notapath), #-1 JSON ERROR)
       )=
   {
-    @log smoke=TC008: json_query() error paths. Succeeded.;
+    @log smoke=TC008: json_query() error paths. Succeeded.
+  },
+  {
+    @log smoke=TC008: json_query() error paths. Failed (qtype=[json_query([chr(123)]"a":1[chr(125)],bogus_query_type)] inv=[json_query(not valid json,type)] path=[json_query([chr(123)]"a":1[chr(125)],get,notapath)]).
+  }
+-
+#
+# Test Case #9 - Error path: json_mod() own error and shared-helper
+# INVALID JSON / JSON ERROR cases.
+#
+&tr.tc009 test_json_fn=
+  @if cand(
+        strmatch(json_mod([chr(123)][chr(125)],bogus_op,$.a,1), #-1 UNKNOWN OPERATION),
+        strmatch(json_mod(not valid json,set,$.a,1), #-1 INVALID JSON),
+        strmatch(json_mod([chr(123)][chr(125)],set,notapath,1), #-1 JSON ERROR)
+      )=
+  {
+    @log smoke=TC009: json_mod() error paths. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC008: json_query() error paths. Failed (qtype=[json_query([chr(123)]"a":1[chr(125)],bogus_query_type)] inv=[json_query(not valid json,type)] path=[json_query([chr(123)]"a":1[chr(125)],get,notapath)]).;
+    @log smoke=TC009: json_mod() error paths. Failed (op=[json_mod([chr(123)][chr(125)],bogus_op,$.a,1)] inv=[json_mod(not valid json,set,$.a,1)] path=[json_mod([chr(123)][chr(125)],set,notapath,1)]).;
     @trig me/tr.done
   }
 -
