@@ -6,6 +6,33 @@
 @set test_attrib_set_fn=INHERIT QUIET
 -
 #
+# Dynamic actors/victims for error-path testing (no fixed dbrefs).
+#
+@pcreate AttrCtrlMortal=pass
+-
+@set *AttrCtrlMortal=QUIET
+-
+@create AttrCtrlVictim
+-
+@set AttrCtrlVictim=QUIET
+-
+think [attrib_set(*AttrCtrlMortal/VICTIM,[num(AttrCtrlVictim)])]
+-
+@pcreate AttrNoModMortal=pass
+-
+@set *AttrNoModMortal=QUIET
+-
+@create AttrNoModVictim
+-
+@set AttrNoModVictim=QUIET
+-
+@chown AttrNoModVictim=*AttrNoModMortal
+-
+@set AttrNoModVictim=NOMODIFY
+-
+think [attrib_set(*AttrNoModMortal/VICTIM,[num(AttrNoModVictim)])]
+-
+#
 # Beginning of Test Cases
 #
 &tr.tc000 test_attrib_set_fn=
@@ -53,11 +80,42 @@
         eq(strlen(get(me/tc003_data)), 0)
       )=
   {
-    @log smoke=TC003: attrib_set empty value clears. Succeeded.;
+    @log smoke=TC003: attrib_set empty value clears. Succeeded.
+  },
+  {
+    @log smoke=TC003: attrib_set empty value clears. Failed (get=[get(me/tc003_data)]).
+  }
+-
+#
+# Test Case #4 - Error path: argument/name parsing.
+#
+&tr.tc004 test_attrib_set_fn=
+  @if cand(
+        strmatch(attrib_set(me,value), #-1 BAD ARGUMENT FORMAT TO ATTRIB_SET),
+        strmatch(attrib_set(#999999/foo,bar), #-1 BAD ARGUMENT FORMAT TO ATTRIB_SET),
+        strmatch(attrib_set(me/CONV_Bob Smith_STAMP,hello), #-1 UNABLE TO CREATE ATTRIBUTE)
+      )=
+  {
+    @log smoke=TC004: attrib_set() parsing error paths. Succeeded.
+  },
+  {
+    @log smoke=TC004: attrib_set() parsing error paths. Failed (fmt1=[attrib_set(me,value)] fmt2=[attrib_set(#999999/foo,bar)] name=[attrib_set(me/CONV_Bob Smith_STAMP,hello)]).
+  }
+-
+#
+# Test Case #5 - Error path: permission gates (Controls, NoModify).
+#
+&tr.tc005 test_attrib_set_fn=
+  @if cand(
+        strmatch(objeval(*AttrCtrlMortal, attrib_set([get(me/VICTIM)]/LLM_ENDPOINT,newvalue)), #-1 PERMISSION DENIED),
+        strmatch(objeval(*AttrNoModMortal, attrib_set([get(me/VICTIM)]/LLM_ENDPOINT,newvalue)), #-1 PERMISSION DENIED)
+      )=
+  {
+    @log smoke=TC005: attrib_set() permission error paths. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: attrib_set empty value clears. Failed (get=[get(me/tc003_data)]).;
+    @log smoke=TC005: attrib_set() permission error paths. Failed (ctrl=[objeval(*AttrCtrlMortal, attrib_set([get(me/VICTIM)]/LLM_ENDPOINT,newvalue))] nomod=[objeval(*AttrNoModMortal, attrib_set([get(me/VICTIM)]/LLM_ENDPOINT,newvalue))]).;
     @trig me/tr.done
   }
 -
