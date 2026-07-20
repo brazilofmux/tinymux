@@ -18,6 +18,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test output in: `testcases/smoke.log`
 - GANL engine regression harness: `make test-ganl` (also part of `make test`);
   scripted engine scenarios in `mux/ganl/tests/`, TAP output
+- Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
+  spins a throwaway netmux and drives `$`-command `%0..%9` captures over a
+  socket (`tests/scenario/`) — the path muxscript can't reach
 
 ## Release Process
 - Update version numbers in:

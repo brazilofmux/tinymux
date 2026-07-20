@@ -81,9 +81,14 @@ the `mudstate`/`mudconf` globals + `pool_init`, and calls `wild()`/`quick_wild()
 directly, asserting both match results and `%0..%9` capture contents. 20 cases
 (ASCII + UTF-8, captures + spans) all pass; the harness was first run against the
 byte-wise `wild1` to confirm it caught the bug (`wild("café *","CAFÉ münchen")`
-→ no-match) before the fix flipped it green. This is the only coverage of the
-capture path — muxscript's REPL drives neither `$`-commands nor `^`-listens, and
-the smoke suite has no capture tests.
+→ no-match) before the fix flipped it green. `wild_test.cpp` covers `wild()` in
+isolation; muxscript's REPL drives neither `$`-commands nor `^`-listens (no
+`match_mine`/listen wiring), so the *end-to-end* capture plumbing — a typed
+command flowing through `match_mine` → `wild()` → `%0..%9` → the queued action —
+now has scenario coverage in `tests/scenario/` (`make test-scenario`): a
+throwaway netmux, driven over a socket, installs `$`-commands whose actions echo
+their captures back and asserts them (`*`, `* *`, `? *`, and the `*?` #838 path).
+It is opt-in (not in `make test`) as a live-socket test.
 
 **#838 (FIXED): `numextra` (`?` immediately after `*`).** `wild1`'s post-`*`
 `?` handling advanced and captured one byte per `?` (the do-while skip and both
