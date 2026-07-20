@@ -94,11 +94,22 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
   wselect disarm `EPOLLOUT`/`wantWrite` **outside** the `eventCount < maxEvents`
   emit guard, stalling output. kqueue keeps disarm inside the guard (the pattern
   to copy). The most consequential engine bug.
-- **ISSUE #944:** `EPOLLHUP`/`EV_EOF` checked before the readable payload drops
-  final data on send-then-close. kqueue is the **severe** case (routine data loss
-  on macOS/BSD: single `EVFILT_READ`+`EV_EOF` kevent); epoll is narrow (needs
-  `EPOLLHUP|EPOLLIN` together, since `EPOLLRDHUP` is unused). select/wselect are
-  read-first and correct.
+- **ISSUE #944 — CLOSED, working-as-intended (2026-07-20).** `EPOLLHUP`/`EV_EOF`
+  is checked before the readable payload, so a coalesced "data + FIN" is not read
+  (kqueue emits Close for the `EV_EOF` kevent; epoll checks `EPOLLERR/EPOLLHUP`
+  before `EPOLLIN`; select/wselect are read-first). But the net effect — the final
+  command dropped on immediate client close — is **intended**: verified against
+  TinyMUX 2.3 (`origin/release/2.3`), where `shutdownsock`→`freeqs(d)` discards
+  `d->input_head` on disconnect and the command pipeline is the same deferred
+  `Task_ProcessCommand` design. Commands are best-effort by the single-threaded
+  "keep the server available to all players" principle. A prototyped read-before-
+  close reorder was live-verified on kqueue/macOS (`Total read: 28, EOF=1` in one
+  `handleRead`, vs 0 before) but changed nothing observable — the bytes are read,
+  queued, then discarded by `freeqs` on close anyway — so it was reverted (PR #957
+  closed). The half-close that *would* execute the final command (#956) was closed
+  as by-design (it would exceed 2.3's guarantees). Residual minor nit: the
+  cross-engine EOF-vs-read ordering divergence (kqueue/epoll EOF-first vs
+  select/wselect read-first) — harmless, not worth a hot-path change.
 - **ISSUE #946:** select's `FD_SET` has no `FD_SETSIZE` bound → OOB write above
   the 1024th fd. **wselect refuted** — it already guards `fd_count < FD_SETSIZE`.
   Low current exposure (select engine near-unreachable via the factory; ulimit
