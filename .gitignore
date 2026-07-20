@@ -163,3 +163,7 @@ mux/script/x64/
 
 # macOS debug symbol bundles (produced by clang -g)
 *.dSYM/
+
+# GANL engine test harness artifacts
+mux/ganl/tests/ganl_engine_tests
+mux/ganl/tests/ganl_tests.err

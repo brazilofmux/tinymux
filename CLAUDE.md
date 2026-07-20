@@ -16,6 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run smoke tests: `make test` (from repo root — builds, installs, then tests)
 - Or manually: `cd testcases && ./tools/Makesmoke && ./tools/Smoke`
 - Test output in: `testcases/smoke.log`
+- GANL engine regression harness: `make test-ganl` (also part of `make test`);
+  scripted engine scenarios in `mux/ganl/tests/`, TAP output
 
 ## Release Process
 - Update version numbers in:
