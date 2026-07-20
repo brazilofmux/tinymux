@@ -129,10 +129,18 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
   as by-design (it would exceed 2.3's guarantees). Residual minor nit: the
   cross-engine EOF-vs-read ordering divergence (kqueue/epoll EOF-first vs
   select/wselect read-first) — harmless, not worth a hot-path change.
-- **ISSUE #946:** select's `FD_SET` has no `FD_SETSIZE` bound → OOB write above
-  the 1024th fd. **wselect refuted** — it already guards `fd_count < FD_SETSIZE`.
-  Low current exposure (select engine near-unreachable via the factory; ulimit
-  gate).
+- **ISSUE #946 — FIXED (2026-07-20):** select's `FD_SET` had no `FD_SETSIZE`
+  bound → OOB write above the 1024th fd. **wselect refuted** — it already guards
+  `fd_count < FD_SETSIZE`. Low current exposure (select engine near-unreachable
+  via the factory; ulimit gate), but on glibc with `_FORTIFY_SOURCE` the miss is
+  a hard `abort()` ("bit out of range 0 - FD_SETSIZE on fd_set"), i.e. a
+  crash-DoS rather than silent corruption — driver-confirmed on Linux by burning
+  fds past 1200 and adopting a socketpair end (pre-fix: abort; post-fix: clean
+  `ENOBUFS`). Fix: reject `fd >= FD_SETSIZE` at all four registration sites —
+  `createListener`/`acceptConnection` close the fd (engine owns it),
+  `adoptListener`/`adoptConnection` reject without closing (ownership transfers
+  only on success); `spawnSlave` is covered via `adoptConnection`. All three
+  entry classes driver-verified rejecting with `ENOBUFS`.
 - **ISSUE #947:** cross-engine `IoEvent`/close-ownership contract divergence
   (harmonization) plus two concrete point bugs: wselect never assigns `ev.buffer`
   on Read (stale-slot use-after-null, `:613-631`); select's `closeConnection`
