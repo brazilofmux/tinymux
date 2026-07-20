@@ -15,6 +15,7 @@ import sys
 EXCLUDED = {"0upload.mux", "smoke.mux"}
 CREATE_RE = re.compile(r"@create\s+([A-Za-z0-9_]+)(?:=\S+)?(?=[;\s]|$)")
 CCREATE_RE = re.compile(r"@ccreate\s+([A-Za-z0-9_]+)(?=[;\s]|$)")
+PCREATE_RE = re.compile(r"@pcreate\s+([A-Za-z0-9_]+)=")
 DIG_RE = re.compile(r"@dig\s+([A-Za-z0-9_]+)(?:=\S+)?(?=[;\s]|$)")
 OPEN_RE = re.compile(r"@open\s+([A-Za-z0-9_]+)=")
 ATTRIB_SET_RE = re.compile(r"attrib_set\((test_[A-Za-z0-9_]+)/([A-Za-z0-9_]+)\s*,")
@@ -66,6 +67,7 @@ def collect_cleanup_manifest(tc_dir: Path, test_name: str):
     path = tc_dir / f"{test_name}.mux"
     main_obj = f"test_{test_name}"
     literal_objects = []
+    literal_players = []
     literal_channels = []
     stored_dbref_attrs = []
 
@@ -80,6 +82,8 @@ def collect_cleanup_manifest(tc_dir: Path, test_name: str):
 
         literal_channels.extend(CCREATE_RE.findall(raw_line))
 
+        literal_players.extend(PCREATE_RE.findall(raw_line))
+
         literal_objects.extend(DIG_RE.findall(raw_line))
 
         literal_objects.extend(OPEN_RE.findall(raw_line))
@@ -93,6 +97,10 @@ def collect_cleanup_manifest(tc_dir: Path, test_name: str):
         commands.append(f"@destroy/override [get({main_obj}/{attr})]")
     for name in unique_reversed(literal_objects):
         commands.append(f"@destroy/override {name}")
+    # Players last, after any player-owned fixture objects; the * prefix makes
+    # player-name matching work from the smoke object's cleanup context.
+    for name in unique_reversed(literal_players):
+        commands.append(f"@destroy/override *{name}")
     for name in unique_reversed(literal_channels):
         commands.append(f"@cdestroy {name}")
     return commands
