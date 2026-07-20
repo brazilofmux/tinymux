@@ -32,18 +32,6 @@ const SocketFD INVALID_SOCKET_FD = -1;
 
 namespace ganl {
 
-namespace {
-
-void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
-    for (ConnectionBase* connection : connections) {
-        if (connection != nullptr) {
-            connection->checkNegotiationTimeout();
-        }
-    }
-}
-
-} // namespace
-
 // Use constexpr for any fixed-size initial values
 constexpr int MAX_SOCKET_FDS = FD_SETSIZE;  // Maximum FDs select() can handle
 
@@ -249,6 +237,15 @@ ListenerHandle SelectNetworkEngine::createListener(const std::string& host, uint
         return InvalidListenerHandle;
     }
 
+    // glibc FD_SET writes out of bounds for fd >= FD_SETSIZE, so an fd this
+    // engine cannot select() on must never reach the fd sets (issue #946).
+    if (fd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(fd, "Listener fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); rejecting.");
+        closeSocket(fd);
+        error = ENOBUFS;
+        return InvalidListenerHandle;
+    }
+
     // Store basic socket info under lock
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -271,6 +268,13 @@ ListenerHandle SelectNetworkEngine::adoptListener(int fd, ErrorCode& error) {
     error = 0;
     if (fd < 0) {
         error = EBADF;
+        return InvalidListenerHandle;
+    }
+    // Reject before FD_SET can write out of bounds (issue #946).  The fd is
+    // not closed: ownership transfers only on success.
+    if (fd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(fd, "Adopted listener fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); rejecting.");
+        error = ENOBUFS;
         return InvalidListenerHandle;
     }
 
@@ -301,6 +305,13 @@ ConnectionHandle SelectNetworkEngine::adoptConnection(int fd, void* connectionCo
     error = 0;
     if (fd < 0) {
         error = EBADF;
+        return InvalidConnectionHandle;
+    }
+    // Reject before FD_SET can write out of bounds (issue #946).  The fd is
+    // not closed: ownership transfers only on success.
+    if (fd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(fd, "Adopted connection fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); rejecting.");
+        error = ENOBUFS;
         return InvalidConnectionHandle;
     }
 
@@ -465,7 +476,13 @@ void SelectNetworkEngine::closeConnection(ConnectionHandle conn) {
     // Remove from tracking under lock
     {
         std::lock_guard<std::mutex> lock(mutex_);
-         if (!initialized_ && sockets_.find(fd) == sockets_.end()) {
+        // A not-found fd must ALWAYS no-op, running or not (issue #947): the
+        // caller's handleClose re-closes after the engine already released the
+        // fd, and shutdown()+close() on an unmapped — possibly reused — fd
+        // number would tear down an innocent descriptor.  Matches the
+        // epoll/kqueue/wselect closeConnection contract.  (During engine
+        // shutdown the fds are still mapped, so those closes proceed.)
+        if (sockets_.find(fd) == sockets_.end()) {
              GANL_SELECT_DEBUG(fd, "Connection already removed or engine shutdown.");
              return; // Avoid closing FD twice
         }
@@ -593,17 +610,9 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
     }
 
     if (nfds == 0) {
-        std::vector<ConnectionBase*> connections;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            connections.reserve(sockets_.size());
-            for (const auto& entry : sockets_) {
-                if (entry.second.type == SocketType::Connection) {
-                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
-                }
-            }
-        }
-        checkNegotiationTimeouts(connections);
+        // Idle timeout, no events. GANL passes telnet negotiation through to
+        // netmux's legacy layer, so connections never linger in
+        // TelnetNegotiating and there is nothing to sweep here (see #945).
         return 0;
     }
 
@@ -756,18 +765,30 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 if (!initialized_) continue; // Re-check initialization state
                 auto sockIt = sockets_.find(fd);
                 if (sockIt != sockets_.end() && sockIt->second.wantWrite) {
-                     // Clear write interest immediately to prevent busy loop
-                     sockIt->second.wantWrite = false;
-                     updateFdSets(fd, sockIt->second); // Update master sets
-                     generateWriteEvent = true; // Flag that we should generate the event
-                     GANL_SELECT_DEBUG(fd, "Cleared wantWrite and updated fd sets.");
+                     // Only consume the write-readiness (clear wantWrite + drop
+                     // the fd from the master write set) if we can actually emit
+                     // the Write event this poll.  Clearing it when the per-poll
+                     // budget is exhausted would strand the connection's pending
+                     // output until a later postWrite re-armed it (issue #943);
+                     // leaving it set lets select re-report writability next poll.
+                     if (eventCount < maxEvents) {
+                         sockIt->second.wantWrite = false;
+                         updateFdSets(fd, sockIt->second); // Update master sets
+                         generateWriteEvent = true; // Flag that we should generate the event
+                         GANL_SELECT_DEBUG(fd, "Cleared wantWrite and updated fd sets.");
+                     } else {
+                         GANL_SELECT_DEBUG(fd, "Max events reached, deferring Write event (wantWrite left armed).");
+                     }
                 } else {
                       GANL_SELECT_DEBUG(fd, "Write ready, but wantWrite was already false or socket removed.");
                 }
             } // Release lock
 
-            // Generate event outside the lock if flagged
-            if (generateWriteEvent && eventCount < maxEvents) {
+            // Generate event outside the lock if flagged.  generateWriteEvent is
+            // only set when the budget check above passed, so no second
+            // eventCount guard is needed here (and the readiness was left armed
+            // otherwise).
+            if (generateWriteEvent) {
                 IoEvent& ev = events[eventCount++];
                 ev.type = IoEventType::Write;
                 ev.connection = fd;
@@ -797,8 +818,6 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 }
 
                 // Connection::handleWrite will perform actual write() and call postWrite again if needed
-            } else if (generateWriteEvent) {
-                 GANL_SELECT_DEBUG(fd, "Max events reached, skipping Write event generation (but wantWrite cleared).");
             }
         }
 
@@ -903,6 +922,16 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
         return InvalidConnectionHandle;
     }
     GANL_SELECT_DEBUG(listenerFd, "accept() successful. New FD: " << clientFd);
+
+    // glibc FD_SET writes out of bounds for fd >= FD_SETSIZE; an accepted fd
+    // this engine cannot select() on must be closed, not registered
+    // (issue #946; mirrors wselect's fd_count guard).
+    if (clientFd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(clientFd, "Accepted fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); closing.");
+        closeSocket(clientFd);
+        error = ENOBUFS;
+        return InvalidConnectionHandle;
+    }
 
     // Create a NetworkAddress object from the client address immediately after accept
     NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);

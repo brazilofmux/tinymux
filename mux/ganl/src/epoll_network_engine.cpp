@@ -27,18 +27,6 @@
 
 namespace ganl {
 
-namespace {
-
-void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
-    for (ConnectionBase* connection : connections) {
-        if (connection != nullptr) {
-            connection->checkNegotiationTimeout();
-        }
-    }
-}
-
-} // namespace
-
 // Use constexpr for initial epoll events size
 constexpr size_t INITIAL_EPOLL_EVENTS_SIZE = 128;
 
@@ -336,7 +324,10 @@ ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, ui
 
     int fd = -1;
     int lastErr = 0;
-    bool connectInProgress = false;
+    // Only consumed by the debug log below (a no-op under NDEBUG); the epoll
+    // registration is identical for both outcomes, so guard against
+    // unused-variable warnings in release builds.
+    [[maybe_unused]] bool connectInProgress = false;
 
     for (addrinfo* ai = results; ai != nullptr; ai = ai->ai_next) {
         int sockFlags = ai->ai_socktype;
@@ -386,18 +377,22 @@ ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, ui
         return InvalidConnectionHandle;
     }
 
-    // Register with epoll
-    SocketType sockType = connectInProgress
-        ? SocketType::OutboundConnecting
-        : SocketType::Connection;
-    uint32_t initialEvents = connectInProgress
-        ? (EPOLLOUT | EPOLLET)          // Wait for connect completion
-        : (EPOLLIN | EPOLLET);          // Already connected, ready for data
+    // Register with epoll.  Both the immediate-connect and connect-in-progress
+    // cases register as OutboundConnecting waiting for EPOLLOUT: the async path
+    // needs it to detect connect completion, and for an immediate connect the
+    // socket is already writable, so EPOLL_CTL_ADD reports EPOLLOUT on the next
+    // epoll_wait — the OutboundConnecting handler then checks SO_ERROR (0),
+    // transitions the socket to a normal Connection (re-arming EPOLLIN), and
+    // emits ConnectSuccess.  (The previous code registered EPOLLIN for the
+    // immediate case and only rewrote the in-memory map to EPOLLOUT without an
+    // epoll_ctl(MOD), so the handler's expected EPOLLOUT never fired and the
+    // connection hung forever — issue #942.)
+    const uint32_t initialEvents = EPOLLOUT | EPOLLET;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
         sockets_[fd] = SocketInfo{
-            sockType,
+            SocketType::OutboundConnecting,
             /*context=*/connectionContext,
             /*events=*/initialEvents,
             /*activeReadBuffer=*/nullptr,
@@ -420,23 +415,8 @@ ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, ui
     }
 
     GANL_EPOLL_DEBUG(fd, "Outbound connect initiated ("
-        << (connectInProgress ? "in progress" : "immediate") << ").");
-
-    // For immediate connects, keep the socket as OutboundConnecting with
-    // EPOLLOUT interest.  The next processEvents() will see EPOLLOUT, check
-    // SO_ERROR (which will be 0), and emit ConnectSuccess — consistent with
-    // the async path.  No special-casing needed by the caller.
-    if (!connectInProgress) {
-        GANL_EPOLL_DEBUG(fd, "Connect completed immediately, will emit ConnectSuccess on next poll.");
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto it = sockets_.find(fd);
-        if (it != sockets_.end()) {
-            it->second.type = SocketType::OutboundConnecting;
-            it->second.events = EPOLLOUT | EPOLLET;
-        }
-        // Events already registered as EPOLLOUT|EPOLLET above, so
-        // EPOLLOUT will fire on the next epoll_wait.
-    }
+        << (connectInProgress ? "in progress" : "immediate — EPOLLOUT fires next poll")
+        << ").");
 
     return static_cast<ConnectionHandle>(fd);
 }
@@ -482,7 +462,9 @@ ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path
     }
     strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
 
-    bool connectInProgress = false;
+    // Only consumed by the debug log below (a no-op under NDEBUG); see the note
+    // in initiateConnect().
+    [[maybe_unused]] bool connectInProgress = false;
     int rc = ::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr));
     if (rc == 0) {
         connectInProgress = false;
@@ -495,17 +477,19 @@ ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path
         return InvalidConnectionHandle;
     }
 
-    SocketType sockType = connectInProgress
-        ? SocketType::OutboundConnecting
-        : SocketType::Connection;
-    uint32_t initialEvents = connectInProgress
-        ? (EPOLLOUT | EPOLLET)
-        : (EPOLLIN | EPOLLET);
+    // Register as OutboundConnecting waiting for EPOLLOUT.  AF_UNIX connects
+    // almost always complete immediately (connectInProgress == false); the
+    // already-writable socket then reports EPOLLOUT on the next epoll_wait and
+    // the OutboundConnecting handler emits ConnectSuccess (re-arming EPOLLIN).
+    // See the matching comment and #942 in initiateConnect() — registering
+    // EPOLLIN here left the handler's expected EPOLLOUT unfired, hanging the
+    // link (the proxy's Unix back-door path exercises exactly this).
+    const uint32_t initialEvents = EPOLLOUT | EPOLLET;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
         sockets_[fd] = SocketInfo{
-            sockType,
+            SocketType::OutboundConnecting,
             /*context=*/connectionContext,
             /*events=*/initialEvents,
             /*activeReadBuffer=*/nullptr,
@@ -526,17 +510,9 @@ ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path
         return InvalidConnectionHandle;
     }
 
-    if (!connectInProgress) {
-        GANL_EPOLL_DEBUG(fd, "Unix connect completed immediately.");
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto it = sockets_.find(fd);
-        if (it != sockets_.end()) {
-            it->second.type = SocketType::OutboundConnecting;
-            it->second.events = EPOLLOUT | EPOLLET;
-        }
-    }
-
-    GANL_EPOLL_DEBUG(fd, "Unix outbound connect initiated.");
+    GANL_EPOLL_DEBUG(fd, "Unix outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate — EPOLLOUT fires next poll")
+        << ").");
     return static_cast<ConnectionHandle>(fd);
 }
 
@@ -837,7 +813,17 @@ bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size
 // --- Event Processing ---
 
 int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEvents) {
-    int nfds = epoll_wait(epollFd_, epollEvents_.data(), epollEvents_.size(), timeoutMs);
+    // Never fetch more kernel events than the caller's IoEvent budget.
+    // epoll_wait only consumes the ready-list entries it reports, so anything
+    // left unfetched stays queued in the kernel and is delivered next poll —
+    // even under EPOLLET.  Over-fetching instead hands us edge-triggered
+    // events we may have no budget to emit; their edges are then consumed and
+    // (without an epoll_ctl re-arm) never fire again (issue #943).
+    int fetchMax = static_cast<int>(epollEvents_.size());
+    if (maxEvents < fetchMax) {
+        fetchMax = maxEvents;
+    }
+    int nfds = epoll_wait(epollFd_, epollEvents_.data(), fetchMax, timeoutMs);
 
     if (nfds < 0) {
         if (errno == EINTR) {
@@ -856,25 +842,42 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
     }
 
     if (nfds == 0) {
-        std::vector<ConnectionBase*> connections;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            connections.reserve(sockets_.size());
-            for (const auto& entry : sockets_) {
-                if (entry.second.type == SocketType::Connection) {
-                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
-                }
-            }
-        }
-        checkNegotiationTimeouts(connections);
+        // Idle timeout, no events. GANL passes telnet negotiation through to
+        // netmux's legacy layer, so connections never linger in
+        // TelnetNegotiating and there is nothing to sweep here (see #945).
         return 0;
     }
 
     int eventCount = 0; // Number of IoEvent entries filled
 
-    for (int i = 0; i < nfds && eventCount < maxEvents; ++i) {
+    for (int i = 0; i < nfds; ++i) {
         const epoll_event& epEvent = epollEvents_[i];
         int fd = epEvent.data.fd;
+
+        if (eventCount >= maxEvents) {
+            // The budget filled before this fetched event was processed (one
+            // kernel event can emit several IoEvents — Read+Write, accept
+            // bursts).  Its EPOLLET edge is already consumed, so dropping it
+            // here would lose it forever.  An identical-mask EPOLL_CTL_MOD
+            // makes the kernel re-poll the fd and re-queue it if still ready,
+            // so it fires again on the next epoll_wait.
+            uint32_t storedEvents = 0;
+            bool found = false;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                auto sockIt = sockets_.find(fd);
+                if (sockIt != sockets_.end()) {
+                    storedEvents = sockIt->second.events;
+                    found = true;
+                }
+            }
+            if (found) {
+                GANL_EPOLL_DEBUG(fd, "Budget exhausted before this event; re-arming via MOD to re-fire next poll.");
+                ErrorCode modError = 0;
+                modifyEpollFlags(fd, storedEvents, modError);
+            }
+            continue;
+        }
         uint32_t revents = epEvent.events;
 
         // --- Retrieve socket info and context under lock ---
@@ -1074,8 +1077,8 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
 
             // Handle Write Readiness
             if (!connectionClosed && (revents & EPOLLOUT)) {
-                // Create and fill Write event
                 if (eventCount < maxEvents) {
+                    // Create and fill Write event
                     IoEvent& ev = events[eventCount++];
                     ev.type = IoEventType::Write;
                     ev.connection = connHandle;
@@ -1091,30 +1094,49 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                     ev.buffer = nullptr; // Write operations don't use buffer reference
                     ev.bytesTransferred = 0; // No specific bytes count for readiness events
                     ev.error = 0;
-                }
 
-                // IMPORTANT: Always disable EPOLLOUT after generating Write event
-                // The connection will re-register write interest via postWrite if it needs to write more
-                if (socketInfoCopy.events & EPOLLOUT) {
-                    GANL_EPOLL_DEBUG(fd, "Disabling EPOLLOUT after generating Write event.");
-                    ErrorCode modError = 0;
+                    // Disable EPOLLOUT — but ONLY now that the Write event has
+                    // actually been emitted.  This disarm MUST stay inside the
+                    // `eventCount < maxEvents` guard: if the per-poll budget was
+                    // exhausted by earlier events and we disarmed here without
+                    // emitting, the connection's pending output would stall until
+                    // some later postWrite re-armed EPOLLOUT (issue #943).
+                    // Leaving it armed lets the write readiness re-fire next poll.
+                    // (kqueue keeps its EVFILT_WRITE disable inside the same
+                    // guard — this matches that.)  The connection re-registers
+                    // write interest via postWrite when it has more to send.
+                    if (socketInfoCopy.events & EPOLLOUT) {
+                        GANL_EPOLL_DEBUG(fd, "Disabling EPOLLOUT after generating Write event.");
+                        ErrorCode modError = 0;
 
-                    // Clear the write user context since we've completed the operation
-                    {
-                        std::lock_guard<std::mutex> lock(mutex_);
-                        auto sockIt = sockets_.find(fd);
-                        if (sockIt != sockets_.end()) {
-                            if (sockIt->second.writeUserContext) {
-                                GANL_EPOLL_DEBUG(fd, "Cleared write user context after generating Write event");
-                                sockIt->second.writeUserContext = nullptr;
+                        // Clear the write user context since we've completed the operation
+                        {
+                            std::lock_guard<std::mutex> lock(mutex_);
+                            auto sockIt = sockets_.find(fd);
+                            if (sockIt != sockets_.end()) {
+                                if (sockIt->second.writeUserContext) {
+                                    GANL_EPOLL_DEBUG(fd, "Cleared write user context after generating Write event");
+                                    sockIt->second.writeUserContext = nullptr;
+                                }
                             }
                         }
-                    }
 
-                    // modifyEpollFlags will re-lock briefly to update the map
-                    if (!modifyEpollFlags(fd, socketInfoCopy.events & ~EPOLLOUT, modError)) {
-                        GANL_EPOLL_DEBUG(fd, "Error disabling EPOLLOUT: " << strerror(modError) << ".");
+                        // modifyEpollFlags will re-lock briefly to update the map
+                        if (!modifyEpollFlags(fd, socketInfoCopy.events & ~EPOLLOUT, modError)) {
+                            GANL_EPOLL_DEBUG(fd, "Error disabling EPOLLOUT: " << strerror(modError) << ".");
+                        }
                     }
+                } else {
+                    // Budget exhausted (an earlier event on this same fd — e.g.
+                    // a Read — took the last slot): the EPOLLET edge for this
+                    // writability is already consumed, so merely leaving
+                    // EPOLLOUT in the mask would NOT re-fire.  An identical-mask
+                    // EPOLL_CTL_MOD re-polls the fd and re-queues it (still
+                    // writable), so the Write event is emitted next poll
+                    // instead of stalling the connection's output (issue #943).
+                    GANL_EPOLL_DEBUG(fd, "Max events reached, deferring Write event (re-arming EPOLLOUT via MOD).");
+                    ErrorCode modError = 0;
+                    modifyEpollFlags(fd, socketInfoCopy.events, modError);
                 }
             }
         } // end if connection

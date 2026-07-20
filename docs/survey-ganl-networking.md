@@ -84,30 +84,73 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
 (was leaking stale fields from the caller-reused `events[]` slot).
 
 ✅ **Candidates — verified against current source and filed 2026-07-20:**
-- **ISSUE #942:** epoll immediate-connect arms `EPOLLIN` but the map/handler
-  expect `EPOLLOUT`, and no `epoll_ctl(MOD)` is issued → `ConnectSuccess` never
-  fires. `initiateUnixConnect` has the same defect. Survey's "no callers" was
-  **stale**: `mux/proxy/session_manager.cpp:1710-1714,2282-2286` call both, so
-  every Unix-socket proxy back-door link hangs on Linux. HIGH for the proxy;
-  netmux doesn't use these paths.
-- **ISSUE #943:** lost write-wakeup at the `maxEvents` boundary — epoll/select/
-  wselect disarm `EPOLLOUT`/`wantWrite` **outside** the `eventCount < maxEvents`
-  emit guard, stalling output. kqueue keeps disarm inside the guard (the pattern
-  to copy). The most consequential engine bug.
-- **ISSUE #944:** `EPOLLHUP`/`EV_EOF` checked before the readable payload drops
-  final data on send-then-close. kqueue is the **severe** case (routine data loss
-  on macOS/BSD: single `EVFILT_READ`+`EV_EOF` kevent); epoll is narrow (needs
-  `EPOLLHUP|EPOLLIN` together, since `EPOLLRDHUP` is unused). select/wselect are
-  read-first and correct.
-- **ISSUE #946:** select's `FD_SET` has no `FD_SETSIZE` bound → OOB write above
-  the 1024th fd. **wselect refuted** — it already guards `fd_count < FD_SETSIZE`.
-  Low current exposure (select engine near-unreachable via the factory; ulimit
-  gate).
-- **ISSUE #947:** cross-engine `IoEvent`/close-ownership contract divergence
-  (harmonization) plus two concrete point bugs: wselect never assigns `ev.buffer`
-  on Read (stale-slot use-after-null, `:613-631`); select's `closeConnection`
-  double-closes a running not-found fd (`:468-476`, missing the sibling
-  idempotency).
+- **ISSUE #942 — FIXED (PR #959, 2026-07-20):** epoll immediate-connect armed
+  `EPOLLIN` but the map/handler expect `EPOLLOUT`, and no `epoll_ctl(MOD)` was
+  issued → `ConnectSuccess` never fired. `initiateUnixConnect` had the same
+  defect. Survey's "no callers" was **stale**:
+  `mux/proxy/session_manager.cpp:1710-1714,2282-2286` call both, so every
+  Unix-socket proxy back-door link hung on Linux (netmux doesn't use these
+  paths). Fix: both connect paths register `OutboundConnecting`/`EPOLLOUT|EPOLLET`
+  unconditionally — an already-connected socket is writable, so `EPOLL_CTL_ADD`
+  reports `EPOLLOUT` on the next `epoll_wait` and the handler emits
+  `ConnectSuccess` like the async path. Verified on Linux with a standalone
+  libganl driver: AF_UNIX immediate connect emits `ConnectSuccess` post-fix and
+  revert-verified to hang (timeout) pre-fix; full smoke 1306/1306 green.
+- **ISSUE #943 — FIXED (PR #960, 2026-07-20):** lost write-wakeup at the
+  `maxEvents` boundary — epoll/select/wselect disarmed `EPOLLOUT`/`wantWrite`
+  **outside** the `eventCount < maxEvents` emit guard, stalling output. kqueue
+  keeps disarm inside the guard (the pattern copied for select/wselect, which
+  are level-triggered so an armed readiness simply re-reports). **epoll needed
+  more than the guard move**: under `EPOLLET` a delivered edge is consumed, so
+  "leave `EPOLLOUT` armed" never re-fires — and worse, the event loop's
+  `eventCount < maxEvents` termination condition silently dropped whole
+  fetched-but-unbudgeted kernel events (`epoll_wait` over-fetched up to 128 vs
+  netmux's budget of 64). Linux verification caught both with a standalone
+  libganl driver (deferred Write never arrived). Final epoll fix: (1) cap the
+  `epoll_wait` fetch at `maxEvents` so unfetched ready-list entries stay queued
+  in the kernel (ET edges included); (2) on budget exhaustion — loop-top for
+  whole events, else-branch for same-fd Read+Write — re-arm via identical-mask
+  `EPOLL_CTL_MOD`, which re-polls the fd and re-queues it if still ready.
+  Driver-verified both deferral paths re-fire post-fix and revert-verified both
+  stall pre-fix; full smoke 1306/1306 green.
+- **ISSUE #944 — CLOSED, working-as-intended (2026-07-20).** `EPOLLHUP`/`EV_EOF`
+  is checked before the readable payload, so a coalesced "data + FIN" is not read
+  (kqueue emits Close for the `EV_EOF` kevent; epoll checks `EPOLLERR/EPOLLHUP`
+  before `EPOLLIN`; select/wselect are read-first). But the net effect — the final
+  command dropped on immediate client close — is **intended**: verified against
+  TinyMUX 2.3 (`origin/release/2.3`), where `shutdownsock`→`freeqs(d)` discards
+  `d->input_head` on disconnect and the command pipeline is the same deferred
+  `Task_ProcessCommand` design. Commands are best-effort by the single-threaded
+  "keep the server available to all players" principle. A prototyped read-before-
+  close reorder was live-verified on kqueue/macOS (`Total read: 28, EOF=1` in one
+  `handleRead`, vs 0 before) but changed nothing observable — the bytes are read,
+  queued, then discarded by `freeqs` on close anyway — so it was reverted (PR #957
+  closed). The half-close that *would* execute the final command (#956) was closed
+  as by-design (it would exceed 2.3's guarantees). Residual minor nit: the
+  cross-engine EOF-vs-read ordering divergence (kqueue/epoll EOF-first vs
+  select/wselect read-first) — harmless, not worth a hot-path change.
+- **ISSUE #946 — FIXED (2026-07-20):** select's `FD_SET` had no `FD_SETSIZE`
+  bound → OOB write above the 1024th fd. **wselect refuted** — it already guards
+  `fd_count < FD_SETSIZE`. Low current exposure (select engine near-unreachable
+  via the factory; ulimit gate), but on glibc with `_FORTIFY_SOURCE` the miss is
+  a hard `abort()` ("bit out of range 0 - FD_SETSIZE on fd_set"), i.e. a
+  crash-DoS rather than silent corruption — driver-confirmed on Linux by burning
+  fds past 1200 and adopting a socketpair end (pre-fix: abort; post-fix: clean
+  `ENOBUFS`). Fix: reject `fd >= FD_SETSIZE` at all four registration sites —
+  `createListener`/`acceptConnection` close the fd (engine owns it),
+  `adoptListener`/`adoptConnection` reject without closing (ownership transfers
+  only on success); `spawnSlave` is covered via `adoptConnection`. All three
+  entry classes driver-verified rejecting with `ENOBUFS`.
+- **ISSUE #947 — PARTIALLY FIXED (2026-07-20):** cross-engine `IoEvent`/
+  close-ownership contract divergence (harmonization) plus two concrete point
+  bugs. **Done:** select's `closeConnection` double-close fixed — a not-found fd
+  now always no-ops (was: while running, fell through to `shutdown()`+`close()`
+  on a possibly-reused fd number; driver-verified pre-fix closing an innocent
+  reused `/dev/null` fd, post-fix surviving). Engine contract written up in
+  `docs/ganl-engine-contract.md` (close ownership, per-type `IoEvent` field
+  population, LT/ET drain + budget rules). **Open (needs Windows box):** wselect
+  never assigns `ev.buffer` on Read (stale-slot use-after-null, `:613-631`; fix
+  is `ev.buffer = bufferRef`); kqueue accept-error stale fields (macOS box).
 - **ISSUE #945:** `checkNegotiationTimeouts` runs only on zero-event polls, so
   under sustained load telnet-negotiation timeouts are never enforced (half-open
   DoS assist). Confirmed in all five engines.
@@ -252,19 +295,27 @@ destructor re-entrancy workaround (ganl_adapter.cpp:799) and the missing
   and the next `sendDataToClient` runs `formattedOutput_.clear()` (now `:290`),
   discarding it. In the protocol/negotiation paths the source is a stack-local
   `IoBuffer`, so the loss is immediate.
-- **ISSUE #953 (F8):** `continueTlsHandshake` return (`:777`) is dead **and**
-  semantically inverted — both callers decide from `tlsProducedData`, so the
-  return is a no-op today but a refactor trap. Filed with the two nits below.
+- **ISSUE #953 (F8) — FIXED (2026-07-20):** `continueTlsHandshake` return
+  (`:777`) was dead **and** semantically inverted — both callers decided from
+  `tlsProducedData`, so the return was a no-op but a refactor trap. Fixed by
+  making `continueTlsHandshake`/`processSecureData` void (the buffers are the
+  API: callers inspect `decryptedInput_` growth; fatal results close inside)
+  and deleting the dead `!tlsCanContinue` branch at both call sites.
 - **REFUTED (F9):** epoll IS edge-triggered (`EPOLLIN|EPOLLET`), but the readiness
   read loop drains to EAGAIN before returning (`connection.cpp:1071-1109`), which
   is exactly the ET contract — no stall. The missing `postRead()` is harmless
   (epoll's `postRead` only stores the buffer pointer). Not filed.
-- **ISSUE #953 (F5):** read-overflow guard closes via `handleError(0)` → "error 0"
-  diagnostic. Trivial (near-unreachable; close reason still correct).
-- **ISSUE #953 (io_buffer NIT):** `ensureWritable` growth has no overflow guard.
-  Practically unreachable — but the survey's mitigation text was wrong: there is
-  no websocket/telnet-SB buffering in this layer; the bound holds because the
-  production handler is a raw passthrough and `required` is always small.
+- **ISSUE #953 (F5) — FIXED (2026-07-20):** read-overflow guard closed via
+  `handleError(0)` → "error 0" diagnostic. Now logs the real reason (reported
+  bytes vs writable) and calls `close(NetworkError)` directly.
+- **ISSUE #953 (io_buffer NIT) — FIXED (2026-07-20):** `ensureWritable` growth
+  had no overflow guard. Practically unreachable — the survey's mitigation text
+  was wrong (no websocket/telnet-SB buffering in this layer; the bound holds
+  because the production handler is a raw passthrough and `required` is always
+  small) — but now enforced: requests where `required` or `writePos_ + required`
+  exceed a 1 GiB `kMaxBufferSize` throw `std::length_error`, which also makes
+  the `writePos_ + required` / `size * 3 / 2` growth arithmetic provably
+  non-wrapping.
 
 ## Sub-part 6 — address / DNS (surveyed 2026-06-10)
 
