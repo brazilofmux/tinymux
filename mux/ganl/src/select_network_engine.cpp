@@ -249,6 +249,15 @@ ListenerHandle SelectNetworkEngine::createListener(const std::string& host, uint
         return InvalidListenerHandle;
     }
 
+    // glibc FD_SET writes out of bounds for fd >= FD_SETSIZE, so an fd this
+    // engine cannot select() on must never reach the fd sets (issue #946).
+    if (fd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(fd, "Listener fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); rejecting.");
+        closeSocket(fd);
+        error = ENOBUFS;
+        return InvalidListenerHandle;
+    }
+
     // Store basic socket info under lock
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -271,6 +280,13 @@ ListenerHandle SelectNetworkEngine::adoptListener(int fd, ErrorCode& error) {
     error = 0;
     if (fd < 0) {
         error = EBADF;
+        return InvalidListenerHandle;
+    }
+    // Reject before FD_SET can write out of bounds (issue #946).  The fd is
+    // not closed: ownership transfers only on success.
+    if (fd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(fd, "Adopted listener fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); rejecting.");
+        error = ENOBUFS;
         return InvalidListenerHandle;
     }
 
@@ -301,6 +317,13 @@ ConnectionHandle SelectNetworkEngine::adoptConnection(int fd, void* connectionCo
     error = 0;
     if (fd < 0) {
         error = EBADF;
+        return InvalidConnectionHandle;
+    }
+    // Reject before FD_SET can write out of bounds (issue #946).  The fd is
+    // not closed: ownership transfers only on success.
+    if (fd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(fd, "Adopted connection fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); rejecting.");
+        error = ENOBUFS;
         return InvalidConnectionHandle;
     }
 
@@ -913,6 +936,16 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
         return InvalidConnectionHandle;
     }
     GANL_SELECT_DEBUG(listenerFd, "accept() successful. New FD: " << clientFd);
+
+    // glibc FD_SET writes out of bounds for fd >= FD_SETSIZE; an accepted fd
+    // this engine cannot select() on must be closed, not registered
+    // (issue #946; mirrors wselect's fd_count guard).
+    if (clientFd >= MAX_SOCKET_FDS) {
+        GANL_SELECT_DEBUG(clientFd, "Accepted fd exceeds FD_SETSIZE (" << MAX_SOCKET_FDS << "); closing.");
+        closeSocket(clientFd);
+        error = ENOBUFS;
+        return InvalidConnectionHandle;
+    }
 
     // Create a NetworkAddress object from the client address immediately after accept
     NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
