@@ -69,9 +69,11 @@ headers without the mandatory ZONE/LINK fields for zone-/link-less objects,
 while declaring `V_ZONE`/`V_LINK` — so the produced t5x desynced the reader at
 the first such object, silently dropping the rest of the database.  Fixed by
 writing `-1` (NOTHING) for those fields.  `ConvertFromP6H`/`ConvertFromT6H`
-happen to set them for every object, but a real PennMUSH db with a zone-less
-object could hit the same class of bug — worth a look when those paths are
-revisited.
+set them only conditionally (`if (m_fZone)` / `if (m_fExits)`/`if (m_fLink)`,
+no else), so a source with a zone-less/link-less object (a PennMUSH object with
+no zone, or a pre-zone TinyMUSH db) would have skipped the mandatory field and
+hit the same desync.  **Fixed** the same way: both now force `SetLink`/`SetZone`
+with a `T5X_NOTHING` fallback, mirroring `ConvertFromR7H`.
 
 Note: this is independent of the *extraction* (`-x`/@decomp) color path
 (`EncodeSubstitutions`), which is a separate concern and was hardened

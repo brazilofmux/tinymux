@@ -1999,6 +1999,16 @@ void T5X_GAME::ConvertFromP6H()
                 break;
             }
         }
+        else
+        {
+            // V_LINK is mandatory (in T5X_MANDFLAGS_V3): an object with no
+            // exits/home in the source must still carry a link field, or the
+            // t5x reader desyncs and drops the rest of the database (same class
+            // of bug as the R7H fix).  The m_fExits branch above always sets a
+            // link; this else covers the link-less object.
+            //
+            poi->SetLink(T5X_NOTHING);
+        }
         if (it->second->m_fNext)
         {
             poi->SetNext(it->second->m_dbNext);
@@ -2011,9 +2021,15 @@ void T5X_GAME::ConvertFromP6H()
         {
             poi->SetOwner(it->second->m_dbOwner);
         }
+        // V_ZONE is mandatory: write NOTHING (-1) when the source had no zone.
+        //
         if (it->second->m_fZone)
         {
             poi->SetZone(it->second->m_dbZone);
+        }
+        else
+        {
+            poi->SetZone(T5X_NOTHING);
         }
         if (it->second->m_fPennies)
         {
@@ -2627,9 +2643,18 @@ void T5X_GAME::ConvertFromT6H()
         {
             poi->SetExits(it->second->m_dbExits);
         }
+        // V_LINK is mandatory (in T5X_MANDFLAGS_V2): every object must carry a
+        // link field; write NOTHING (-1) when the source had none, or the t5x
+        // reader desyncs at the first link-less object and silently drops the
+        // rest of the database (same class of bug as the R7H fix below).
+        //
         if (it->second->m_fLink)
         {
             poi->SetLink(it->second->m_dbLink);
+        }
+        else
+        {
+            poi->SetLink(T5X_NOTHING);
         }
         if (it->second->m_fNext)
         {
@@ -2643,9 +2668,15 @@ void T5X_GAME::ConvertFromT6H()
         {
             poi->SetOwner(it->second->m_dbOwner);
         }
+        // V_ZONE is mandatory: write NOTHING (-1) when the source had no zone.
+        //
         if (it->second->m_fZone)
         {
             poi->SetZone(it->second->m_dbZone);
+        }
+        else
+        {
+            poi->SetZone(T5X_NOTHING);
         }
         if (it->second->m_fPennies)
         {
