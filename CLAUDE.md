@@ -18,6 +18,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test output in: `testcases/smoke.log`
 - GANL engine regression harness: `make test-ganl` (also part of `make test`);
   scripted engine scenarios in `mux/ganl/tests/`, TAP output
+  - On Windows (no make): build `mux/ganl/tests/ganl_tests.vcxproj` with MSBuild
+    and run `mux/bin_release/ganl_tests.exe` — covers the wselect + iocp engines
+    via the accept path (nonzero exit on failure)
 - netaddr subnet unit tests: `make test-netaddr` (also part of `make test`);
   `mux_subnet::compare_to` + `parse_subnet` in `tests/netaddr/` (#799/#800)
 - Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
