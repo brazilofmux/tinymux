@@ -756,18 +756,30 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 if (!initialized_) continue; // Re-check initialization state
                 auto sockIt = sockets_.find(fd);
                 if (sockIt != sockets_.end() && sockIt->second.wantWrite) {
-                     // Clear write interest immediately to prevent busy loop
-                     sockIt->second.wantWrite = false;
-                     updateFdSets(fd, sockIt->second); // Update master sets
-                     generateWriteEvent = true; // Flag that we should generate the event
-                     GANL_SELECT_DEBUG(fd, "Cleared wantWrite and updated fd sets.");
+                     // Only consume the write-readiness (clear wantWrite + drop
+                     // the fd from the master write set) if we can actually emit
+                     // the Write event this poll.  Clearing it when the per-poll
+                     // budget is exhausted would strand the connection's pending
+                     // output until a later postWrite re-armed it (issue #943);
+                     // leaving it set lets select re-report writability next poll.
+                     if (eventCount < maxEvents) {
+                         sockIt->second.wantWrite = false;
+                         updateFdSets(fd, sockIt->second); // Update master sets
+                         generateWriteEvent = true; // Flag that we should generate the event
+                         GANL_SELECT_DEBUG(fd, "Cleared wantWrite and updated fd sets.");
+                     } else {
+                         GANL_SELECT_DEBUG(fd, "Max events reached, deferring Write event (wantWrite left armed).");
+                     }
                 } else {
                       GANL_SELECT_DEBUG(fd, "Write ready, but wantWrite was already false or socket removed.");
                 }
             } // Release lock
 
-            // Generate event outside the lock if flagged
-            if (generateWriteEvent && eventCount < maxEvents) {
+            // Generate event outside the lock if flagged.  generateWriteEvent is
+            // only set when the budget check above passed, so no second
+            // eventCount guard is needed here (and the readiness was left armed
+            // otherwise).
+            if (generateWriteEvent) {
                 IoEvent& ev = events[eventCount++];
                 ev.type = IoEventType::Write;
                 ev.connection = fd;
@@ -797,8 +809,6 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 }
 
                 // Connection::handleWrite will perform actual write() and call postWrite again if needed
-            } else if (generateWriteEvent) {
-                 GANL_SELECT_DEBUG(fd, "Max events reached, skipping Write event generation (but wantWrite cleared).");
             }
         }
 

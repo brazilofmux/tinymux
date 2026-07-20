@@ -1074,8 +1074,8 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
 
             // Handle Write Readiness
             if (!connectionClosed && (revents & EPOLLOUT)) {
-                // Create and fill Write event
                 if (eventCount < maxEvents) {
+                    // Create and fill Write event
                     IoEvent& ev = events[eventCount++];
                     ev.type = IoEventType::Write;
                     ev.connection = connHandle;
@@ -1091,30 +1091,42 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                     ev.buffer = nullptr; // Write operations don't use buffer reference
                     ev.bytesTransferred = 0; // No specific bytes count for readiness events
                     ev.error = 0;
-                }
 
-                // IMPORTANT: Always disable EPOLLOUT after generating Write event
-                // The connection will re-register write interest via postWrite if it needs to write more
-                if (socketInfoCopy.events & EPOLLOUT) {
-                    GANL_EPOLL_DEBUG(fd, "Disabling EPOLLOUT after generating Write event.");
-                    ErrorCode modError = 0;
+                    // Disable EPOLLOUT — but ONLY now that the Write event has
+                    // actually been emitted.  This disarm MUST stay inside the
+                    // `eventCount < maxEvents` guard: if the per-poll budget was
+                    // exhausted by earlier events and we disarmed here without
+                    // emitting, the connection's pending output would stall until
+                    // some later postWrite re-armed EPOLLOUT (issue #943).
+                    // Leaving it armed lets the write readiness re-fire next poll.
+                    // (kqueue keeps its EVFILT_WRITE disable inside the same
+                    // guard — this matches that.)  The connection re-registers
+                    // write interest via postWrite when it has more to send.
+                    if (socketInfoCopy.events & EPOLLOUT) {
+                        GANL_EPOLL_DEBUG(fd, "Disabling EPOLLOUT after generating Write event.");
+                        ErrorCode modError = 0;
 
-                    // Clear the write user context since we've completed the operation
-                    {
-                        std::lock_guard<std::mutex> lock(mutex_);
-                        auto sockIt = sockets_.find(fd);
-                        if (sockIt != sockets_.end()) {
-                            if (sockIt->second.writeUserContext) {
-                                GANL_EPOLL_DEBUG(fd, "Cleared write user context after generating Write event");
-                                sockIt->second.writeUserContext = nullptr;
+                        // Clear the write user context since we've completed the operation
+                        {
+                            std::lock_guard<std::mutex> lock(mutex_);
+                            auto sockIt = sockets_.find(fd);
+                            if (sockIt != sockets_.end()) {
+                                if (sockIt->second.writeUserContext) {
+                                    GANL_EPOLL_DEBUG(fd, "Cleared write user context after generating Write event");
+                                    sockIt->second.writeUserContext = nullptr;
+                                }
                             }
                         }
-                    }
 
-                    // modifyEpollFlags will re-lock briefly to update the map
-                    if (!modifyEpollFlags(fd, socketInfoCopy.events & ~EPOLLOUT, modError)) {
-                        GANL_EPOLL_DEBUG(fd, "Error disabling EPOLLOUT: " << strerror(modError) << ".");
+                        // modifyEpollFlags will re-lock briefly to update the map
+                        if (!modifyEpollFlags(fd, socketInfoCopy.events & ~EPOLLOUT, modError)) {
+                            GANL_EPOLL_DEBUG(fd, "Error disabling EPOLLOUT: " << strerror(modError) << ".");
+                        }
                     }
+                } else {
+                    // Budget exhausted: leave EPOLLOUT armed so this write
+                    // readiness re-fires on the next poll instead of stalling.
+                    GANL_EPOLL_DEBUG(fd, "Max events reached, deferring Write event (EPOLLOUT left armed).");
                 }
             }
         } // end if connection
