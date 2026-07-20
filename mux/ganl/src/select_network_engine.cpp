@@ -617,7 +617,6 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
     }
 
     int eventCount = 0;
-    std::vector<std::pair<SocketFD, void*>> fdsToClose; // Store FD and context
 
     // --- Process ready FDs ---
     // Iterate only up to the maxFd *read before the select call*.
@@ -675,6 +674,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
 
              if (eventCount < maxEvents) {
                  IoEvent& ev = events[eventCount++];
+                 ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                  ev.type = IoEventType::Error;
                  ev.connection = (infoCopy.type == SocketType::Connection) ? fd : InvalidConnectionHandle;
                  ev.listener = (infoCopy.type == SocketType::Listener) ? fd : InvalidListenerHandle;
@@ -683,9 +683,25 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                  ev.context = contextPtr;
                  ev.buffer = nullptr;
                  GANL_SELECT_DEBUG(fd, "Generated Error event. Code=" << ev.error << ", Buffer=" << ev.buffer);
+
+                 // Close ownership (contract §1): the engine only deregisters
+                 // its interest; the APPLICATION closes the fd, via
+                 // handleError -> close() -> closeConnection.  The old
+                 // self-close here (fdsToClose sweep + synthesized Close)
+                 // freed the fd number while the adapter still held a live
+                 // handle to it, so a subsequent accept() could reuse the
+                 // number and collide with the stale handle.  Deregister only
+                 // once the Error event is actually emitted; if the budget
+                 // suppressed it, stay armed so select re-reports next poll.
+                 // Listeners stay registered — a transient accept error must
+                 // not kill the listener (matches epoll/kqueue).
+                 if (infoCopy.type == SocketType::Connection) {
+                     std::lock_guard<std::mutex> lock(mutex_);
+                     FD_CLR(fd, &masterReadFds_);
+                     FD_CLR(fd, &masterWriteFds_);
+                     FD_CLR(fd, &masterErrorFds_);
+                 }
             }
-            // Mark for closure after processing this event cycle
-            fdsToClose.push_back({fd, contextPtr});
             continue; // Don't process read/write if error occurred
         }
 
@@ -701,6 +717,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                  if (newConn != InvalidConnectionHandle) {
                      GANL_SELECT_DEBUG(fd, "Accepted new connection handle: " << newConn);
                      IoEvent& ev = events[eventCount++];
+                     ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                      ev.type = IoEventType::Accept;
                      ev.listener = fd;
                      ev.connection = newConn;
@@ -714,6 +731,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                          GANL_SELECT_DEBUG(fd, "Error accepting connection: " << getErrorString(acceptError));
                          if (eventCount < maxEvents) {
                             IoEvent& ev = events[eventCount++];
+                            ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                             ev.type = IoEventType::Error;
                             ev.listener = fd;
                             ev.connection = InvalidConnectionHandle;
@@ -740,6 +758,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
             // Only generate event if maxEvents not reached
             if (eventCount < maxEvents) {
                 IoEvent& ev = events[eventCount++];
+                ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                 ev.type = IoEventType::Read;
                 ev.connection = fd;
                 ev.context = contextPtr;
@@ -790,6 +809,7 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
             // otherwise).
             if (generateWriteEvent) {
                 IoEvent& ev = events[eventCount++];
+                ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                 ev.type = IoEventType::Write;
                 ev.connection = fd;
 
@@ -822,28 +842,6 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
         }
 
     } // end for loop through FDs
-
-    // Close connections that encountered errors
-    for (const auto& pair : fdsToClose) {
-         SocketFD fdToClose = pair.first;
-         void* savedContext = pair.second;
-         GANL_SELECT_DEBUG(fdToClose, "Closing connection due to earlier error.");
-         // closeConnection acquires its own lock to remove from maps/sets
-         closeConnection(static_cast<ConnectionHandle>(fdToClose));
-
-         // Generate a Close event AFTER closing locally
-         if (eventCount < maxEvents) {
-              IoEvent& ev = events[eventCount++];
-              ev.type = IoEventType::Close;
-              ev.connection = fdToClose;
-              ev.context = savedContext; // Use saved context
-              ev.bytesTransferred = 0;
-              ev.error = 0; // Error was reported previously
-              // Note: Buffer reference is already handled in the initial Error event
-              ev.buffer = nullptr; // Socket is already closed, no buffer reference available
-              GANL_SELECT_DEBUG(fdToClose, "Generated Close event after error.");
-         }
-    }
 
     return eventCount;
 }

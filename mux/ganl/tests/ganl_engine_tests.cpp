@@ -687,6 +687,96 @@ Result scenarioHupWithData(const EngineUnderTest& eut) {
     return r;
 }
 
+// #947 harmonization: after a terminal Close/Error event the fd must still be
+// OPEN — close ownership belongs to the application (handleError/handleClose
+// -> closeConnection), never the engine.  select historically self-closed
+// errored fds inside processEvents, freeing the fd number while the caller
+// still held a live handle to it (the fd-reuse collision class).  Trigger per
+// engine:
+//   - select: TCP urgent data (MSG_OOB) — select flags exceptfds -> the
+//     engine's error branch -> Error event.
+//   - epoll/kqueue: abortive close (SO_LINGER 0) -> RST ->
+//     EPOLLERR|EPOLLHUP / EV_EOF-with-error -> Close event.
+Result scenarioConnErrorDeferClose(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    // Build a real TCP loopback pair outside the engine (OOB needs TCP; a
+    // socketpair(AF_UNIX) has no urgent-data path).
+    int lfd = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (lfd < 0) return fail("socket failed");
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = 0;
+    if (::bind(lfd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0 ||
+        ::listen(lfd, 1) != 0) {
+        ::close(lfd);
+        return fail("bind/listen failed");
+    }
+    socklen_t alen = sizeof(addr);
+    if (::getsockname(lfd, reinterpret_cast<sockaddr*>(&addr), &alen) != 0) {
+        ::close(lfd);
+        return fail("getsockname failed");
+    }
+    int peer = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (peer < 0) { ::close(lfd); return fail("socket failed"); }
+    if (::connect(peer, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+        ::close(peer); ::close(lfd);
+        return fail("connect failed");
+    }
+    int sfd = ::accept(lfd, nullptr, nullptr);
+    ::close(lfd);
+    if (sfd < 0) { ::close(peer); return fail("accept failed"); }
+
+    ErrorCode err = 0;
+    ConnectionHandle ch = eng->adoptConnection(sfd, nullptr, err);
+    if (ch == InvalidConnectionHandle) {
+        ::close(sfd); ::close(peer);
+        return (err == ENOTSUP) ? skip("adoptConnection not supported")
+                                : fail("adoptConnection failed");
+    }
+
+    if (eut.name == "select") {
+        // Urgent data drives select's exceptfds -> its error branch.
+        if (::send(peer, "!", 1, MSG_OOB) != 1) {
+            ::close(peer);
+            return fail("send MSG_OOB failed");
+        }
+    } else {
+        // Abortive close: RST reaches the engine as an error/HUP condition.
+        struct linger lg;
+        lg.l_onoff = 1;
+        lg.l_linger = 0;
+        setsockopt(peer, SOL_SOCKET, SO_LINGER, &lg, sizeof(lg));
+        ::close(peer);
+        peer = -1;
+    }
+
+    IoEvent got{};
+    bool terminal = pollFor(*eng, 3000, 8, [&](const IoEvent& e) {
+        return e.connection == ch &&
+               (e.type == IoEventType::Close || e.type == IoEventType::Error);
+    }, &got);
+
+    Result r = pass();
+    if (!terminal) {
+        r = fail("no terminal Close/Error event for errored connection");
+    } else if (::fcntl(sfd, F_GETFD) == -1) {
+        r = fail("engine closed the fd itself before closeConnection "
+                 "(close-ownership contract)");
+    } else {
+        eng->closeConnection(ch);
+        if (::fcntl(sfd, F_GETFD) != -1) {
+            r = fail("closeConnection did not close the fd");
+        }
+    }
+    if (peer >= 0) ::close(peer);
+    if (r.outcome == Outcome::Fail && ::fcntl(sfd, F_GETFD) != -1) ::close(sfd);
+    eng->shutdown();
+    return r;
+}
+
 #endif // !defined(_WIN32)
 
 // #953: IoBuffer::ensureWritable must reject a size that wraps
@@ -731,6 +821,7 @@ const Scenario kScenarios[] = {
     {"emfile-listener-error",    scenarioEmfileListenerError,  true},
     {"fd-setsize-reject",        scenarioFdSetsizeReject,      true},
     {"hup-with-data",            scenarioHupWithData,          true},
+    {"conn-error-defer-close",   scenarioConnErrorDeferClose,  true},
 #endif
     {"ensure-writable-cap",      scenarioEnsureWritableCap,    false},
 };

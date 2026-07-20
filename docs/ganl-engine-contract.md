@@ -16,14 +16,30 @@ to emulate.
   raw `shutdown()`/`close()` on an unmapped fd number can tear down an
   unrelated descriptor that reused the number. (epoll, kqueue, wselect
   already no-op; select fixed for #947.)
-- **Terminal events do not transfer close duty.** After an engine emits
-  `Close` or a connection-level `Error`, the fd is closed by whoever the
-  engine's convention says — and that convention MUST be: the engine
-  removes the fd from its own multiplexer/tracking, and the *application*
-  (via `ConnectionBase::close()` → `closeConnection`) performs the actual
-  close. An engine that closes the fd itself must still keep
-  `closeConnection` a safe no-op afterwards (see idempotence above); it
-  must never emit further events for that handle.
+- **The engine never closes a connection's fd from `processEvents`.** On a
+  terminal condition (`Close` or connection-level `Error`) the engine emits
+  the event, MAY deregister its own interest in the fd, but MUST keep the
+  fd open and mapped; the *application* (via `handleClose`/`handleError` →
+  `ConnectionBase::close()` → `closeConnection`) performs the actual close.
+  Rationale: an engine-side close frees the fd *number* while the caller
+  still holds a live handle to it, so a subsequent `accept()` can reuse the
+  number and collide with the stale handle — the recurring GANL UAF class.
+  Emit exactly ONE terminal event per teardown (select's old
+  Error-then-synthesized-Close pair is gone). epoll and kqueue always
+  worked this way; select was harmonized for #947 (its error branch now
+  deregisters from the master fd sets — so level-triggered select does not
+  re-report — and leaves the close to the application). Regression-guarded
+  by the `conn-error-defer-close` harness scenario, which fails against the
+  old self-closing select.
+- **Listener errors do not tear down the listener.** The engine emits the
+  listener-level `Error` and leaves the listener registered; the adapter
+  logs it (NET/LERR). A transient accept failure (e.g. EMFILE) must not
+  kill the listening socket.
+- **Exception — outbound connect failure (epoll-only today):** on
+  `ConnectFail` the engine cleans up the never-established socket itself
+  (EPOLL_CTL_DEL + close + untrack). The application never had a working
+  connection, and `closeConnection` afterwards is a safe no-op per the
+  idempotence rule. No other engine currently implements outbound connect.
 - **`detachConnection`/`detachListener`** deregister and untrack WITHOUT
   closing — used by `@restart` to let fds survive exec. They are also
   idempotent on a not-found fd.
@@ -74,17 +90,39 @@ error path). Therefore:
 
 ## Known deviations (open)
 
-- **wselect:** Read events never assign `ev.buffer` — the saved
-  `bufferRef` is dead and the slot retains a stale pointer (issue #947,
-  needs the Windows box; fix is `ev.buffer = bufferRef`).
-- **kqueue:** the accept-error `Error` event leaves `bytesTransferred` /
-  `buffer` / `remoteAddress` unset (stale-slot pattern; macOS box).
+- **wselect:** still uses the legacy self-close convention on a
+  connection error (close + synthesize inside `processEvents`) instead
+  of the defer-to-application model of §1. Safe today because its
+  `closeConnection` is idempotent and `handleClose` is state-guarded,
+  but it carries the fd-number-reuse hazard §1 describes. Harmonizing it
+  (mirror the select fix: emit `Error`, deregister interest, keep the fd
+  mapped) needs the Windows box + harness run; `conn-error-defer-close`
+  is POSIX-only until then.
+- **iocp:** completion-model differences (real `bytesTransferred`,
+  buffer ownership during overlapped I/O) are documented in the engine
+  itself; the field-population rule above still applies.
+
+## Resolved deviations
+
+- ~~**wselect:** Read events never assign `ev.buffer`~~ — fixed in #962;
+  regression-guarded by the Windows harness (`accept-read-ev-buffer`).
+- ~~**kqueue:** accept-error `Error` event left `bytesTransferred` /
+  `buffer` / `remoteAddress` unset~~ — fixed in #967 (full population).
+- ~~**kqueue:** EV_ERROR after a budget-suppressed EV_EOF overwrote
+  another connection's event~~ — fixed 2026-07-20: the overwrite index
+  now keys on whether the Close was actually *emitted* (`closeEmitted`),
+  not merely detected, so a budget-starved Close can no longer redirect
+  the Error into a stranger's slot.
 - ~~**epoll:** EMFILE during accept logs but emits no listener `Error`
   event~~ — fixed 2026-07-20: epoll now emits the fully-populated
   listener `Error` like select/kqueue (driver-verified with a clamped
   `RLIMIT_NOFILE`). The busy-spin on a pending-but-unacceptable
   connection remains cross-engine (LT listener re-reports; tracked in
   the survey).
-- **iocp:** completion-model differences (real `bytesTransferred`,
-  buffer ownership during overlapped I/O) are documented in the engine
-  itself; the field-population rule above still applies.
+- ~~**select:** self-closed errored connections (`fdsToClose` sweep +
+  synthesized `Close`)~~ — harmonized 2026-07-20 to the §1 defer model;
+  regression-guarded by `conn-error-defer-close` (fails against the old
+  behavior via MSG_OOB → exceptfds).
+- ~~**all POSIX engines:** per-site field population~~ — every emission
+  site in epoll/kqueue/select now zeroes the slot (`ev = IoEvent{}`)
+  before filling, mechanically enforcing §2.

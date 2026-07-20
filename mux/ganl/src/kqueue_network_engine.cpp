@@ -649,6 +649,7 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                  if (newConn != InvalidConnectionHandle) {
                       GANL_KQUEUE_DEBUG(fd, "Accepted new connection handle: " << newConn);
                       IoEvent& ev = events[eventCount++];
+                      ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                       ev.type = IoEventType::Accept;
                       ev.listener = fd;
                       ev.connection = newConn;
@@ -669,6 +670,7 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                             // Generate an error event for the listener?
                             if (eventCount < maxEvents) {
                                 IoEvent& ev = events[eventCount++];
+                                ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                                 ev.type = IoEventType::Error;
                                 ev.listener = fd;
                                 ev.connection = InvalidConnectionHandle;
@@ -694,12 +696,15 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
         else if (isConnection) {
             ConnectionHandle connHandle = static_cast<ConnectionHandle>(fd);
             bool connectionClosed = false; // Flag to prevent processing read/write after close/error
+            bool closeEmitted = false;     // Whether the EV_EOF branch actually emitted its Close
 
             // Check for EV_EOF first (often indicates graceful close or error)
             if (kev.flags & EV_EOF) {
                  GANL_KQUEUE_DEBUG(fd, "EV_EOF detected.");
                  if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];
+                     closeEmitted = true;
+                     ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                      ev.type = IoEventType::Close; // Treat EOF as Close
                      ev.connection = connHandle;
                      ev.context = currentContext;
@@ -732,13 +737,16 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
             // Check for EV_ERROR (independent of EOF)
             if (kev.flags & EV_ERROR) {
                 GANL_KQUEUE_DEBUG(fd, "EV_ERROR detected.");
-                // If we already generated a Close event from EOF, don't generate another error event unless needed?
-                // Let's prioritize Error if EV_ERROR is set. Overwrite previous Close if necessary.
-                int currentEventIndex = connectionClosed ? eventCount - 1 : eventCount;
+                // Prioritize Error over a Close from EV_EOF: overwrite the Close
+                // we just emitted for THIS fd.  Key on closeEmitted, not
+                // connectionClosed — if the budget suppressed the Close,
+                // eventCount-1 is some OTHER connection's slot and overwriting
+                // it would corrupt that event.
+                int currentEventIndex = closeEmitted ? eventCount - 1 : eventCount;
 
                 // Only get the buffer reference if we haven't already processed it in EV_EOF
                 IoBuffer* bufferRef = nullptr;
-                if (!connectionClosed) {
+                if (!closeEmitted) {
                     std::lock_guard<std::mutex> lock(mutex_);
                     auto sockIt = sockets_.find(fd);
                     if (sockIt != sockets_.end()) {
@@ -749,8 +757,14 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 }
 
                 if (currentEventIndex < maxEvents) {
-                    if (!connectionClosed) eventCount++; // Only increment if not overwriting Close
+                    if (!closeEmitted) eventCount++; // Only increment if not overwriting Close
                     IoEvent& ev = events[currentEventIndex];
+                    // When overwriting the Close, carry its buffer reference
+                    // into the Error event before zeroing the slot.
+                    if (closeEmitted && bufferRef == nullptr) {
+                        bufferRef = ev.buffer;
+                    }
+                    ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                     ev.type = IoEventType::Error;
                     ev.connection = connHandle;
                     ev.context = currentContext;
@@ -774,6 +788,7 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 GANL_KQUEUE_DEBUG(fd, "EVFILT_READ detected. Available bytes hint: " << kev.data);
                  if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];
+                     ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                      ev.type = IoEventType::Read;
                      ev.connection = connHandle;
                      ev.context = currentContext;
@@ -810,6 +825,7 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                 GANL_KQUEUE_DEBUG(fd, "EVFILT_WRITE detected. Available buffer space hint: " << kev.data);
                  if (eventCount < maxEvents) {
                     IoEvent& ev = events[eventCount++];
+                    ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                     ev.type = IoEventType::Write;
                     ev.connection = connHandle;
 

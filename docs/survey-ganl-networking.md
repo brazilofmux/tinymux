@@ -146,16 +146,28 @@ post-fix `Error` event with `error == EMFILE`.
   `adoptListener`/`adoptConnection` reject without closing (ownership transfers
   only on success); `spawnSlave` is covered via `adoptConnection`. All three
   entry classes driver-verified rejecting with `ENOBUFS`.
-- **ISSUE #947 — PARTIALLY FIXED (2026-07-20):** cross-engine `IoEvent`/
+- **ISSUE #947 — FIXED on POSIX (2026-07-20):** cross-engine `IoEvent`/
   close-ownership contract divergence (harmonization) plus two concrete point
-  bugs. **Done:** select's `closeConnection` double-close fixed — a not-found fd
-  now always no-ops (was: while running, fell through to `shutdown()`+`close()`
-  on a possibly-reused fd number; driver-verified pre-fix closing an innocent
-  reused `/dev/null` fd, post-fix surviving). Engine contract written up in
-  `docs/ganl-engine-contract.md` (close ownership, per-type `IoEvent` field
-  population, LT/ET drain + budget rules). **Open (needs Windows box):** wselect
-  never assigns `ev.buffer` on Read (stale-slot use-after-null, `:613-631`; fix
-  is `ev.buffer = bufferRef`); kqueue accept-error stale fields (macOS box).
+  bugs. **Point bugs:** select's `closeConnection` double-close fixed (not-found
+  fd always no-ops; driver-verified pre-fix closing an innocent reused
+  `/dev/null` fd); wselect's dead `bufferRef` fixed in #962 (Windows harness
+  guards it); kqueue accept-error stale fields fixed in #967.
+  **Harmonization (second 2026-07-20 pass):** (1) every emission site in
+  epoll/kqueue/select now zeroes its `IoEvent` slot before filling
+  (`ev = IoEvent{}`), mechanically enforcing the contract's field-population
+  rule; (2) select no longer self-closes errored connections — its `fdsToClose`
+  sweep and synthesized `Close` are gone; it emits one `Error`, deregisters its
+  interest, and leaves the close to the application like epoll/kqueue, ending
+  the fd-number-reuse-while-handle-live hazard; (3) a kqueue budget-edge bug
+  found during the pass: EV_ERROR after a budget-suppressed EV_EOF computed its
+  overwrite index from `eventCount-1` and corrupted another connection's event —
+  the index now keys on whether the Close was actually emitted. New harness
+  scenario `conn-error-defer-close` (MSG_OOB→exceptfds for select, RST for
+  epoll/kqueue) asserts the fd stays open until `closeConnection`; it fails
+  against the pre-fix select. Contract updated in `docs/ganl-engine-contract.md`.
+  **Open (Windows box):** wselect still self-closes on connection error —
+  mirror the select fix there and extend the scenario; kqueue leg of the new
+  scenario pending a macOS run.
 - **ISSUE #945:** `checkNegotiationTimeouts` runs only on zero-event polls, so
   under sustained load telnet-negotiation timeouts are never enforced (half-open
   DoS assist). Confirmed in all five engines.
