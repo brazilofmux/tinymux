@@ -96,10 +96,23 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
   `ConnectSuccess` like the async path. Verified on Linux with a standalone
   libganl driver: AF_UNIX immediate connect emits `ConnectSuccess` post-fix and
   revert-verified to hang (timeout) pre-fix; full smoke 1306/1306 green.
-- **ISSUE #943:** lost write-wakeup at the `maxEvents` boundary — epoll/select/
-  wselect disarm `EPOLLOUT`/`wantWrite` **outside** the `eventCount < maxEvents`
-  emit guard, stalling output. kqueue keeps disarm inside the guard (the pattern
-  to copy). The most consequential engine bug.
+- **ISSUE #943 — FIXED (PR #960, 2026-07-20):** lost write-wakeup at the
+  `maxEvents` boundary — epoll/select/wselect disarmed `EPOLLOUT`/`wantWrite`
+  **outside** the `eventCount < maxEvents` emit guard, stalling output. kqueue
+  keeps disarm inside the guard (the pattern copied for select/wselect, which
+  are level-triggered so an armed readiness simply re-reports). **epoll needed
+  more than the guard move**: under `EPOLLET` a delivered edge is consumed, so
+  "leave `EPOLLOUT` armed" never re-fires — and worse, the event loop's
+  `eventCount < maxEvents` termination condition silently dropped whole
+  fetched-but-unbudgeted kernel events (`epoll_wait` over-fetched up to 128 vs
+  netmux's budget of 64). Linux verification caught both with a standalone
+  libganl driver (deferred Write never arrived). Final epoll fix: (1) cap the
+  `epoll_wait` fetch at `maxEvents` so unfetched ready-list entries stay queued
+  in the kernel (ET edges included); (2) on budget exhaustion — loop-top for
+  whole events, else-branch for same-fd Read+Write — re-arm via identical-mask
+  `EPOLL_CTL_MOD`, which re-polls the fd and re-queues it if still ready.
+  Driver-verified both deferral paths re-fire post-fix and revert-verified both
+  stall pre-fix; full smoke 1306/1306 green.
 - **ISSUE #944 — CLOSED, working-as-intended (2026-07-20).** `EPOLLHUP`/`EV_EOF`
   is checked before the readable payload, so a coalesced "data + FIN" is not read
   (kqueue emits Close for the `EV_EOF` kevent; epoll checks `EPOLLERR/EPOLLHUP`

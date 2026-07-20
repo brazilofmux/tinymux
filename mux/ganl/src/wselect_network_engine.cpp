@@ -637,17 +637,22 @@ void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
             if (info.type == SocketType::Connection && isReadyWrite) {
                 GANL_WSELECT_DEBUG(sock, "Connection writable.");
 
-                // Clear write interest *immediately* after detecting readiness.
-                // The handler (ConnectionBase) must call postWrite() again if it
-                // still has data to send after handling this event.
-                info.wantWrite = false;
-                FD_CLR(sock, &masterWriteFds_);
-                // Update error set monitoring: only monitor if still interested in read or write
-                if (!info.wantRead) { // If not interested in read anymore either
-                     FD_CLR(sock, &masterErrorFds_);
-                }
-
                 if (eventCount < maxEvents) {
+                    // Clear write interest — but ONLY now that we are actually
+                    // emitting the Write event.  This disarm MUST stay inside the
+                    // `eventCount < maxEvents` guard: clearing wantWrite / the
+                    // master write set when the per-poll budget was exhausted
+                    // (without emitting) would strand the connection's pending
+                    // output until a later postWrite re-armed it (issue #943).
+                    // The handler (ConnectionBase) calls postWrite() again if it
+                    // still has data after handling this event.
+                    info.wantWrite = false;
+                    FD_CLR(sock, &masterWriteFds_);
+                    // Update error set monitoring: only monitor if still interested in read or write
+                    if (!info.wantRead) { // If not interested in read anymore either
+                         FD_CLR(sock, &masterErrorFds_);
+                    }
+
                     IoEvent& ev = events[eventCount++];
                     ev.type = IoEventType::Write;
                     ev.connection = sock;
@@ -670,6 +675,11 @@ void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
                     }
 
                     GANL_WSELECT_DEBUG(sock, "Generated Write event. Cleared wantWrite and removed from masterWriteFds.");
+                } else {
+                    // Budget exhausted: leave wantWrite / the master write set
+                    // armed so this write readiness re-fires on the next poll
+                    // instead of stalling the connection's output (issue #943).
+                    GANL_WSELECT_DEBUG(sock, "Max events reached, deferring Write event (wantWrite left armed).");
                 }
 
             } // End Connection Write Handling
