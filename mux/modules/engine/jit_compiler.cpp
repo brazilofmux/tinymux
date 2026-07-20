@@ -1915,6 +1915,41 @@ bool jit_load_from_sqlite(const std::string &key, compiled_program &out) {
     return out.ok;
 }
 
+// Marshal %q register slots from mudstate.global_regs into guest SUBST
+// memory.  `subst_mask` selects which registers to copy (bit
+// SUBST_QREG0+i, matching compiled_program::subst_mask); pass
+// ~UINT64_C(0) to copy all of them.  This is the single authority for
+// q-register slot population: program entry uses it today, and the
+// scope-restore / post-ECALL resync points reuse it so the slots can
+// never drift from global_regs at a sync boundary
+// (docs/plan-jit-evalbracket-lift.md, Phases 2-3).
+//
+static void marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
+{
+    for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
+        const int slot_idx = rv_compiler::SUBST_QREG0 + i;
+        if (!((subst_mask >> slot_idx) & UINT64_C(1))) {
+            continue;
+        }
+        const uint64_t slot = rv_compiler::SUBST_BASE
+            + static_cast<uint64_t>(slot_idx) * rv_compiler::SUBST_SLOT;
+        const UTF8 *value = nullptr;
+        if (mudstate.global_regs[i] && mudstate.global_regs[i]->reg_ptr) {
+            value = mudstate.global_regs[i]->reg_ptr;
+        }
+        if (value && value[0]) {
+            size_t len = strlen(reinterpret_cast<const char *>(value));
+            if (len >= static_cast<size_t>(rv_compiler::SUBST_SLOT)) {
+                len = rv_compiler::SUBST_SLOT - 1;
+            }
+            memcpy(mem + slot, value, len);
+            mem[slot + len] = 0;
+        } else {
+            mem[slot] = 0;
+        }
+    }
+}
+
 // Look up or compile an expression.  Returns a pointer to the
 // cached compiled_program (owned by the cache — do not free).
 // Returns nullptr on compilation failure.
@@ -2270,15 +2305,7 @@ struct shared_heap_t {
             copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
             copy_subst(rv_compiler::SUBST_MONIKER, nullptr);
         }
-        for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
-            if (mudstate.global_regs[i]
-                && mudstate.global_regs[i]->reg_ptr) {
-                copy_subst(rv_compiler::SUBST_QREG0 + i,
-                           mudstate.global_regs[i]->reg_ptr);
-            } else {
-                copy_subst(rv_compiler::SUBST_QREG0 + i, nullptr);
-            }
-        }
+        marshal_qregs_to_slots(memory.data(), ~UINT64_C(0));
         copy_subst(rv_compiler::SUBST_LASTCMD, mudstate.curr_cmd);
         copy_subst(rv_compiler::SUBST_POUT, mudstate.pout);
         {
@@ -2450,17 +2477,7 @@ bool run_cached_program(compiled_program *prog,
     }
 
     // %q global registers.
-    for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
-        if (!subst_used(rv_compiler::SUBST_QREG0 + i)) {
-            continue;
-        }
-        if (mudstate.global_regs[i] && mudstate.global_regs[i]->reg_ptr) {
-            copy_subst(rv_compiler::SUBST_QREG0 + i,
-                       mudstate.global_regs[i]->reg_ptr);
-        } else {
-            copy_subst(rv_compiler::SUBST_QREG0 + i, nullptr);
-        }
-    }
+    marshal_qregs_to_slots(s_runtime_buffer.data(), prog->subst_mask);
 
     // %m — last command.
     if (subst_used(rv_compiler::SUBST_LASTCMD)) {

@@ -152,9 +152,10 @@ of re-sync points. The re-marshal primitive already exists inline
 Stand up everything needed to *observe* the bug before touching it, so later
 phases have a red/green signal.
 
-- Add a `jitstats` counter `qreg_resyncs` (struct at `include/dbt_compile.h:53`,
-  emitted by `fun_jitstats`, `jit_compiler.cpp:4494`) — zero until Phase 2 wires
-  the resync. Lets tests assert the new path actually fires.
+- Add a `jitstats` counter `qreg_resyncs` (`jit_stats_t` in
+  `include/dbt_compile.h`, emitted by `fun_jitstats`) — zero until Phase 2
+  wires the resync. Lets tests assert the new path actually fires.
+  *(Landed in #981.)*
 - Add `jiteval(<expr>)` — a wizard-only debug function that forces an
   expression through `jit_eval()`, bypassing the `jit_can_handle()` gate
   (returns `#-1 JIT BAILOUT` if the JIT declines). This makes the guarded
