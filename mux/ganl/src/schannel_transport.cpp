@@ -263,13 +263,22 @@ namespace ganl {
 
             // Try AcquireCredentialsHandle with each candidate in priority order.
             for (auto& c : candidates) {
-                SCHANNEL_CRED cred = { 0 };
-                cred.dwVersion = SCHANNEL_CRED_VERSION;
-                cred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER;
-                cred.dwMinimumCipherStrength = 128;
+                // TLS 1.2 + 1.3 via the modern SCH_CREDENTIALS struct (#952).
+                // grbitDisabledProtocols is an inverted (disable) mask: turn off
+                // everything below TLS 1.2, leaving 1.2 and 1.3 negotiable.
+                // SCH_CREDENTIALS has no dwMinimumCipherStrength; weak ciphers are
+                // already barred by OS crypto policy for TLS 1.2/1.3.
+                TLS_PARAMETERS tlsParams = { 0 };
+                tlsParams.grbitDisabledProtocols =
+                    SP_PROT_TLS1_1 | SP_PROT_TLS1_0 | SP_PROT_SSL3 | SP_PROT_SSL2;
+
+                SCH_CREDENTIALS cred = { 0 };
+                cred.dwVersion = SCH_CREDENTIALS_VERSION;
                 cred.cCreds = 1;
                 cred.paCred = &c.cert;
                 cred.dwFlags = SCH_CRED_NO_SYSTEM_MAPPER | SCH_CRED_NO_DEFAULT_CREDS;
+                cred.cTlsParameters = 1;
+                cred.pTlsParameters = &tlsParams;
 
                 CredHandle testCredHandle;
                 SecInvalidateHandle(&testCredHandle);
@@ -502,13 +511,19 @@ namespace ganl {
         }
 
         // Step 6: Verify with AcquireCredentialsHandle.
-        SCHANNEL_CRED cred = { 0 };
-        cred.dwVersion = SCHANNEL_CRED_VERSION;
-        cred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER;
-        cred.dwMinimumCipherStrength = 128;
+        // TLS 1.2 + 1.3 via SCH_CREDENTIALS (#952); see the selection path above
+        // for the rationale on the inverted grbitDisabledProtocols mask.
+        TLS_PARAMETERS tlsParams = { 0 };
+        tlsParams.grbitDisabledProtocols =
+            SP_PROT_TLS1_1 | SP_PROT_TLS1_0 | SP_PROT_SSL3 | SP_PROT_SSL2;
+
+        SCH_CREDENTIALS cred = { 0 };
+        cred.dwVersion = SCH_CREDENTIALS_VERSION;
         cred.cCreds = 1;
         cred.paCred = &storeCert;
         cred.dwFlags = SCH_CRED_NO_SYSTEM_MAPPER | SCH_CRED_NO_DEFAULT_CREDS;
+        cred.cTlsParameters = 1;
+        cred.pTlsParameters = &tlsParams;
 
         CredHandle testCredHandle;
         SecInvalidateHandle(&testCredHandle);
@@ -1348,15 +1363,20 @@ namespace ganl {
             dwFlags = SCH_CRED_NO_DEFAULT_CREDS | SCH_CRED_MANUAL_CRED_VALIDATION;
         }
 
-        // Set up authentication data
-        SCHANNEL_CRED schannelCred = { 0 };
-        schannelCred.dwVersion = SCHANNEL_CRED_VERSION;
+        // Set up authentication data. Modern SCH_CREDENTIALS enables TLS 1.3
+        // negotiation (TLS 1.2 still acceptable). grbitDisabledProtocols is an
+        // inverted (disable) mask turning off everything below TLS 1.2; the
+        // combined (server+client) constants suit both INBOUND and OUTBOUND
+        // credentials. No dwMinimumCipherStrength field exists here — OS crypto
+        // policy governs cipher strength for TLS 1.2/1.3 (#952).
+        TLS_PARAMETERS tlsParams = { 0 };
+        tlsParams.grbitDisabledProtocols =
+            SP_PROT_TLS1_1 | SP_PROT_TLS1_0 | SP_PROT_SSL3 | SP_PROT_SSL2;
 
-        // Set supported protocols (TLS 1.2 by default)
-        schannelCred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER | SP_PROT_TLS1_2_CLIENT;
-
-        // Set cipher strength
-        schannelCred.dwMinimumCipherStrength = 128;
+        SCH_CREDENTIALS schannelCred = { 0 };
+        schannelCred.dwVersion = SCH_CREDENTIALS_VERSION;
+        schannelCred.cTlsParameters = 1;
+        schannelCred.pTlsParameters = &tlsParams;
 
         // Set up server certificate if available and server mode
         if (context.isServer && serverCertContext_ != nullptr) {
