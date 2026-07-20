@@ -1,8 +1,10 @@
 // GANL engine regression harness.
 //
-// Scripted scenarios run against each readiness engine available on this
-// platform (Linux: epoll + select; macOS/BSD: kqueue + select), locking in
-// the fixes from the 2026-07 engine hardening pass:
+// Scripted scenarios run against each engine available on this platform,
+// locking in the fixes from the 2026-07 engine hardening pass.
+//
+// POSIX (Linux: epoll + select; macOS/BSD: kqueue + select) — these engines
+// support socketpair + adoptConnection, so connections are injected directly:
 //
 //   #942  epoll immediate-connect must emit ConnectSuccess
 //   #943  write readiness past the maxEvents budget must re-fire, not stall
@@ -11,15 +13,37 @@
 //   #953  IoBuffer::ensureWritable must reject wrapping sizes (length_error)
 //   EMFILE accept failure must emit a listener Error event (NET/LERR path)
 //
+// Windows (wselect + iocp) — these engines do NOT support adoptConnection or
+// initiateConnect (base-class ENOTSUP), so scenarios obtain a connection via
+// the accept path (loopback listener + client connect + Accept event):
+//
+//   #962  Read event must carry the exact IoBuffer handed to postRead()
+//   #947  closeConnection must be idempotent (double-close stays healthy)
+//   #953  IoBuffer::ensureWritable must reject wrapping sizes (shared)
+//
 // Zero dependencies: plain main(), TAP-ish output, nonzero exit on failure.
-// Build/run: make -C mux/ganl/tests check
+// Build/run: POSIX `make -C mux/ganl/tests check`; Windows via ganl_tests.vcxproj.
 //
 // Engines print their debug logging to stderr in non-NDEBUG builds; the
 // `check` target redirects stderr to ganl_tests.err and shows stdout only.
 
+// Winsock must be included before anything that might pull in <windows.h>.
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
 #include <network_engine.h>
 #include <network_types.h>
 #include <io_buffer.h>
+
+#if defined(_WIN32)
+#include <wselect_network_engine.h>
+#include <iocp_network_engine.h>
+#else
 #include <select_network_engine.h>
 #if defined(__linux__)
 #include <epoll_network_engine.h>
@@ -27,7 +51,6 @@
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <kqueue_network_engine.h>
 #endif
-
 #include <sys/socket.h>
 #include <sys/resource.h>
 #include <sys/un.h>
@@ -35,7 +58,10 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
+#endif
+
 #include <cerrno>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -96,6 +122,179 @@ bool pollFor(NetworkEngine& eng, int totalMs, int budget,
     }
     return false;
 }
+
+#if defined(_WIN32)
+
+// ---------------------------------------------------------------------------
+// Windows helpers (accept path)
+//
+// wselect and iocp do not support adoptConnection()/initiateConnect() — those
+// return ENOTSUP on the base class — so connections cannot be injected via a
+// socketpair as the POSIX scenarios do. Instead we obtain a real connection by
+// listening on loopback, connecting a client, and pumping the engine until the
+// accepted ConnectionHandle arrives. Both engines return the underlying SOCKET
+// as the Listener/Connection handle.
+// ---------------------------------------------------------------------------
+
+uint16_t listenerPort(ListenerHandle lh) {
+    sockaddr_in addr{};
+    int alen = static_cast<int>(sizeof(addr));
+    if (getsockname(static_cast<SOCKET>(lh),
+                    reinterpret_cast<sockaddr*>(&addr), &alen) != 0) {
+        return 0;
+    }
+    return ntohs(addr.sin_port);
+}
+
+SOCKET connectLoopback(uint16_t port) {
+    SOCKET s = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (s == INVALID_SOCKET) return INVALID_SOCKET;
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    addr.sin_port = htons(port);
+    if (::connect(s, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0) {
+        closesocket(s);
+        return INVALID_SOCKET;
+    }
+    return s;
+}
+
+struct AcceptedConn {
+    ListenerHandle lh = InvalidListenerHandle;
+    SOCKET client = INVALID_SOCKET;
+    ConnectionHandle conn = InvalidConnectionHandle;
+};
+
+// Fill `out` by listening, connecting a client, and accepting. Returns "" on
+// success or an error detail string.
+std::string setupAccepted(NetworkEngine& eng, AcceptedConn& out) {
+    ErrorCode err = 0;
+    out.lh = eng.createListener("127.0.0.1", 0, err);
+    if (out.lh == InvalidListenerHandle) return "createListener failed";
+    if (!eng.startListening(out.lh, nullptr, err)) return "startListening failed";
+    uint16_t port = listenerPort(out.lh);
+    if (port == 0) return "getsockname failed";
+    out.client = connectLoopback(port);
+    if (out.client == INVALID_SOCKET) return "client connect failed";
+    IoEvent ev{};
+    if (!pollFor(eng, 3000, 16, [&](const IoEvent& e) {
+            return e.type == IoEventType::Accept &&
+                   e.connection != InvalidConnectionHandle;
+        }, &ev)) {
+        return "Accept event never emitted";
+    }
+    out.conn = ev.connection;
+    return "";
+}
+
+void teardownAccepted(NetworkEngine& eng, AcceptedConn& ac) {
+    if (ac.conn != InvalidConnectionHandle) eng.closeConnection(ac.conn);
+    if (ac.lh != InvalidListenerHandle) eng.closeListener(ac.lh);
+    if (ac.client != INVALID_SOCKET) closesocket(ac.client);
+    ac.conn = InvalidConnectionHandle;
+    ac.lh = InvalidListenerHandle;
+    ac.client = INVALID_SOCKET;
+}
+
+// ---------------------------------------------------------------------------
+// Windows scenarios
+// ---------------------------------------------------------------------------
+
+// #962: a Read event must carry the exact IoBuffer handed to postRead().
+// wselect saved the buffer, nulled its slot, then tested the nulled slot — so
+// ev.buffer was never assigned and kept a stale pointer from the reused
+// events[] slot. Assert ev.buffer points at the posted buffer.
+Result scenarioAcceptReadEvBuffer(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    AcceptedConn ac;
+    std::string setupErr = setupAccepted(*eng, ac);
+    if (!setupErr.empty()) { teardownAccepted(*eng, ac); eng->shutdown(); return fail(setupErr); }
+
+    IoBuffer readBuf(4096);
+    ErrorCode err = 0;
+    if (!eng->postRead(ac.conn, readBuf, err)) {
+        teardownAccepted(*eng, ac); eng->shutdown();
+        return fail("postRead failed (errno " + std::to_string(err) + ")");
+    }
+
+    const char msg[] = "hello-ganl";
+    int sent = ::send(ac.client, msg, static_cast<int>(sizeof(msg) - 1), 0);
+    if (sent != static_cast<int>(sizeof(msg) - 1)) {
+        teardownAccepted(*eng, ac); eng->shutdown();
+        return fail("client send failed");
+    }
+
+    IoEvent ev{};
+    bool got = pollFor(*eng, 3000, 16, [&](const IoEvent& e) {
+        return e.type == IoEventType::Read && e.connection == ac.conn;
+    }, &ev);
+
+    Result r;
+    if (!got) {
+        r = fail("Read event never emitted");
+    } else if (ev.buffer != &readBuf) {
+        r = fail("Read event ev.buffer != posted buffer (#962 stale-buffer regression)");
+    } else {
+        r = pass();
+    }
+    teardownAccepted(*eng, ac);
+    eng->shutdown();
+    return r;
+}
+
+// A posted write must produce a Write event (write readiness for wselect,
+// write completion for iocp).
+Result scenarioWriteArmsAndFires(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    AcceptedConn ac;
+    std::string setupErr = setupAccepted(*eng, ac);
+    if (!setupErr.empty()) { teardownAccepted(*eng, ac); eng->shutdown(); return fail(setupErr); }
+
+    ErrorCode err = 0;
+    if (!eng->postWrite(ac.conn, "hello", 5, err)) {
+        teardownAccepted(*eng, ac); eng->shutdown();
+        return fail("postWrite failed (errno " + std::to_string(err) + ")");
+    }
+
+    bool got = pollFor(*eng, 3000, 16, [&](const IoEvent& e) {
+        return e.type == IoEventType::Write && e.connection == ac.conn;
+    });
+    Result r = got ? pass() : fail("Write event never emitted");
+    teardownAccepted(*eng, ac);
+    eng->shutdown();
+    return r;
+}
+
+// #947: closeConnection on an already-closed handle must no-op, never a second
+// shutdown()/closesocket() on a since-reused socket. Close twice and confirm
+// the engine stays healthy (still pumps events, no crash/double-free).
+Result scenarioDoubleCloseIdempotent(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    AcceptedConn ac;
+    std::string setupErr = setupAccepted(*eng, ac);
+    if (!setupErr.empty()) { teardownAccepted(*eng, ac); eng->shutdown(); return fail(setupErr); }
+
+    eng->closeConnection(ac.conn);   // legitimate close
+    eng->closeConnection(ac.conn);   // handleClose-style re-close: must no-op
+    ac.conn = InvalidConnectionHandle;
+
+    // Engine must remain usable after the redundant close.
+    IoEvent events[8];
+    for (int i = 0; i < 3; i++) eng->processEvents(50, events, 8);
+
+    teardownAccepted(*eng, ac);   // closes listener + client
+    eng->shutdown();
+    return pass();
+}
+
+#else // !defined(_WIN32)
 
 struct TcpListener {
     int fd = -1;
@@ -488,8 +687,11 @@ Result scenarioHupWithData(const EngineUnderTest& eut) {
     return r;
 }
 
+#endif // !defined(_WIN32)
+
 // #953: IoBuffer::ensureWritable must reject a size that wraps
 // writePos_ + required instead of silently under-allocating.
+// Engine-independent — runs on every platform.
 Result scenarioEnsureWritableCap(const EngineUnderTest&) {
     IoBuffer b(64);
     b.ensureWritable(16);
@@ -516,6 +718,11 @@ struct Scenario {
 };
 
 const Scenario kScenarios[] = {
+#if defined(_WIN32)
+    {"accept-read-ev-buffer",    scenarioAcceptReadEvBuffer,    true},
+    {"write-arms-and-fires",     scenarioWriteArmsAndFires,     true},
+    {"double-close-idempotent",  scenarioDoubleCloseIdempotent, true},
+#else
     {"immediate-unix-connect",   scenarioImmediateUnixConnect, true},
     {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},
     {"deferred-write-cross-fd",  scenarioDeferredWriteCrossFd, true},
@@ -524,13 +731,30 @@ const Scenario kScenarios[] = {
     {"emfile-listener-error",    scenarioEmfileListenerError,  true},
     {"fd-setsize-reject",        scenarioFdSetsizeReject,      true},
     {"hup-with-data",            scenarioHupWithData,          true},
+#endif
     {"ensure-writable-cap",      scenarioEnsureWritableCap,    false},
 };
 
 } // namespace
 
 int main() {
+#if defined(_WIN32)
+    WSADATA wsaData;
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        printf("Bail out! WSAStartup failed\n");
+        return 1;
+    }
+#endif
+
     std::vector<EngineUnderTest> engines;
+#if defined(_WIN32)
+    engines.push_back({"wselect", [] {
+        return std::unique_ptr<NetworkEngine>(new WSelectNetworkEngine());
+    }});
+    engines.push_back({"iocp", [] {
+        return std::unique_ptr<NetworkEngine>(new IocpNetworkEngine());
+    }});
+#else
 #if defined(__linux__)
     engines.push_back({"epoll", [] {
         return std::unique_ptr<NetworkEngine>(new EpollNetworkEngine());
@@ -544,6 +768,7 @@ int main() {
     engines.push_back({"select", [] {
         return std::unique_ptr<NetworkEngine>(new SelectNetworkEngine());
     }});
+#endif
 
     int testNum = 0, failures = 0, skips = 0;
     auto report = [&](const std::string& label, const Result& r) {
@@ -578,5 +803,9 @@ int main() {
     printf("1..%d\n", testNum);
     printf("# %d passed, %d failed, %d skipped\n",
            testNum - failures - skips, failures, skips);
+
+#if defined(_WIN32)
+    WSACleanup();
+#endif
     return failures == 0 ? 0 : 1;
 }

@@ -10,6 +10,7 @@ mux/bin_debug/
 mux/bin_release/
 mux/x64/
 mux/ganl/x64/
+mux/ganl/tests/x64/
 mux/modules/*/x64/
 
 # Visual Studio user settings
