@@ -5223,16 +5223,35 @@ static FUNCTION(fun_wordpos)
         return;
     }
 
-    size_t ncp;
-    UTF8 *cp = strip_color(fargs[0], 0, &ncp);
+    size_t nBytes;
+    UTF8 *cp = strip_color(fargs[0], &nBytes, nullptr);
     unsigned int charpos = mux_atol(fargs[1]);
 
+    // charpos is a 1-based grapheme (character) position, matching this
+    // function's documentation and the grapheme-correct wordstart()/wordend().
+    // The old code used charpos as a raw byte offset (&cp[charpos-1]) while
+    // bounding it against the code-point count from strip_color()'s third
+    // out-parameter, so it returned the wrong word for any multi-byte UTF-8
+    // text. Bound by the grapheme count and resolve charpos to a byte pointer by
+    // walking grapheme clusters over the byte length. This is identical to the
+    // old behaviour for pure-ASCII input (one cluster == one byte == one point).
+    size_t nGraphemes = utf8_cluster_count(cp, nBytes);
+
     if (  charpos > 0
-       && charpos <= ncp)
+       && charpos <= nGraphemes)
     {
+        // Resolve the (charpos-1) leading grapheme clusters to a byte pointer.
+        UTF8 *tp = cp;
+        size_t remaining = nBytes;
+        for (unsigned int g = 1; g < charpos; g++)
+        {
+            mux_cursor cluster = utf8_next_grapheme(tp, remaining);
+            tp += cluster.m_byte;
+            remaining -= cluster.m_byte;
+        }
+
         size_t ncp_trimmed;
-        UTF8 *tp = &(cp[charpos - 1]);
-        cp = trim_space_sep_LEN(cp, ncp, sep, &ncp_trimmed);
+        cp = trim_space_sep_LEN(cp, nBytes, sep, &ncp_trimmed);
         UTF8 *xp = split_token(&cp, sep);
 
         int i;
@@ -12492,6 +12511,55 @@ static FUNCTION(fun_graphemes)
 }
 
 // ---------------------------------------------------------------------------
+// lcat: Concatenate the items of a list into a single string.
+//
+// lcat(<list>[, <isep>[, <osep>]])
+//
+// Splits <list> on <isep> (default space) and joins the items with <osep>
+// (default the empty string), so lcat() is the list-consuming counterpart to
+// the variadic-argument cat()/strcat() and the inverse of graphemes():
+// lcat(graphemes(<str>)) reconstructs <str>.
+//
+static FUNCTION(fun_lcat)
+{
+    SEP isep;
+    if (!OPTIONAL_DELIM(2, isep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    // The output separator defaults to empty (join with nothing), unlike the
+    // usual "defaults to isep" — that is the point of a joiner.  DELIM_INIT
+    // keeps this pre-set value when the third argument is omitted.
+    SEP osep;
+    osep.n = 0;
+    osep.str[0] = '\0';
+    if (!OPTIONAL_DELIM(3, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
+    UTF8 *cp = trim_space_sep(fargs[0], isep);
+    if ('\0' == *cp)
+    {
+        return;
+    }
+
+    bool first = true;
+    UTF8 *xp = split_token(&cp, isep);
+    while (nullptr != xp)
+    {
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+        safe_str(xp, buff, bufc);
+        xp = split_token(&cp, isep);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // strdistance: Levenshtein edit distance between two strings.
 //
 // Operates on grapheme clusters, not code points: a cluster is one edit unit
@@ -15143,6 +15211,7 @@ static FUN builtin_function_list[] =
 #ifdef REALITY_LVLS
     {T("LISTRLEVELS"), fun_listrlevels, MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #endif
+    {T("LCAT"),        fun_lcat,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("LCMDS"),       fun_lcmds,      MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("LCON"),        fun_lcon,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LCSTR"),       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},

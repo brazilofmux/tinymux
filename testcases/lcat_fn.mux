@@ -1,0 +1,69 @@
+#
+# lcat_fn.mux - Test Cases for lcat().
+#
+@create test_lcat_fn
+-
+@set test_lcat_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_lcat_fn=
+  @log smoke=Beginning lcat() test cases.
+-
+#
+# Test Case #1 - lcat(<list>[, <isep>[, <osep>]]) joins list items into a
+# single string: split on <isep> (default space), join with <osep> (default
+# empty).  comp()==0 means the strings are equal.
+#
+&tr.tc001 test_lcat_fn=
+  @if cand(
+        eq(comp(lcat(a b c), abc), 0),
+        eq(comp(lcat(a b c,%b,-), a-b-c), 0),
+        eq(comp(lcat(a|b|c,|), abc), 0),
+        eq(comp(lcat(a|b|c,|,+), a+b+c), 0),
+        eq(comp(lcat(solo), solo), 0),
+        eq(strlen(lcat(%b)), 0)
+      )=
+  {
+    @log smoke=TC001: lcat basic joining and separators. Succeeded.
+  },
+  {
+    @log smoke=TC001: lcat basic joining and separators. Failed (basic=[lcat(a b c)] osep=[lcat(a b c,%b,-)] isep=[lcat(a|b|c,|)] both=[lcat(a|b|c,|,+)] solo=[lcat(solo)] emptylen=[strlen(lcat(%b))]).
+  }
+-
+#
+# Test Case #2 - lcat() is the inverse of graphemes(): joining a grapheme
+# list back with the default empty separator reconstructs the original
+# string, including multi-byte UTF-8 and multi-code-point grapheme clusters
+# (a skin-tone wave emoji).  With the DEFAULT space separators the round-trip
+# is only lossless for space-free strings (a space grapheme is ambiguous with
+# the list delimiter); a string containing spaces round-trips by giving both
+# graphemes() and lcat() a non-space separator.  Runtime-fed via setr()/r().
+#
+&tr.tc002 test_lcat_fn=
+  @if cand(
+        eq(comp(lcat(graphemes(hello)), hello), 0),
+        eq(comp(lcat(graphemes(h[chr(233)]llo)), h[chr(233)]llo), 0),
+        eq(comp(lcat(graphemes(a[chr(128075)][chr(127995)]b)), a[chr(128075)][chr(127995)]b), 0),
+        eq(comp(lcat(graphemes(h[chr(233)]llo world,|),|), h[chr(233)]llo world), 0),
+        eq(comp(lcat(graphemes(setr(0,h[chr(233)]llo))), r(0)), 0)
+      )=
+  {
+    @log smoke=TC002: lcat/graphemes round-trip (UTF-8). Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: lcat/graphemes round-trip (UTF-8). Failed (ascii=[lcat(graphemes(hello))] acc=[lcat(graphemes(h[chr(233)]llo))] emoji=[lcat(graphemes(a[chr(128075)][chr(127995)]b))] spaced=[lcat(graphemes(h[chr(233)]llo world,|),|)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lcat_fn=
+  @log smoke=End lcat() test cases.;
+  @notify smoke
+-
+drop test_lcat_fn
+-
+#
+# End of Test Cases
+#

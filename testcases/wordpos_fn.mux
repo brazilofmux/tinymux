@@ -44,11 +44,40 @@
         eq(wordpos(a|bb|ccc,3,|), 2)
       )=
   {
-    @log smoke=TC002: wordpos separators and custom delimiter. Succeeded.;
+    @log smoke=TC002: wordpos separators and custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC002: wordpos separators and custom delimiter. Failed (p5=[wordpos(This is a test,5)] p6|=[wordpos(a|bb|ccc,6,|)] p3|=[wordpos(a|bb|ccc,3,|)]).
+  }
+-
+#
+# Test Case #3 - charpos is a 1-based GRAPHEME position, not a byte offset.
+# "h<U+00E9>llo world" has 11 graphemes (the accented e is 2 UTF-8 bytes):
+# graphemes h(1) e(2) l(3) l(4) o(5) space(6) w(7) o(8) r(9) l(10) d(11).
+# Grapheme 6 is the space -> word 2; a byte-indexed implementation would map
+# position 6 to the 'o' (byte 6) and wrongly return word 1.  The skin-tone
+# wave "a<U+1F44B><U+1F3FB> b" is one grapheme cluster of two code points, so
+# its 4 graphemes are a(1) wave(2) space(3) b(4) -- proving cluster (not byte
+# or code-point) indexing.  Expected values derived from this tree's muxscript.
+#
+&tr.tc003 test_wordpos_fn=
+  @if cand(
+        eq(wordpos(h[chr(233)]llo world,1), 1),
+        eq(wordpos(h[chr(233)]llo world,6), 2),
+        eq(wordpos(h[chr(233)]llo world,11), 2),
+        strmatch(wordpos(h[chr(233)]llo world,12), #-1*),
+        eq(wordpos(a[chr(128075)][chr(127995)] b,2), 1),
+        eq(wordpos(a[chr(128075)][chr(127995)] b,3), 2),
+        eq(wordpos(a[chr(128075)][chr(127995)] b,4), 2),
+        strmatch(wordpos(a[chr(128075)][chr(127995)] b,5), #-1*),
+        eq(wordpos(setr(0,h[chr(233)]llo world),6), 2)
+      )=
+  {
+    @log smoke=TC003: wordpos grapheme-position indexing (UTF-8). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: wordpos separators and custom delimiter. Failed (p5=[wordpos(This is a test,5)] p6|=[wordpos(a|bb|ccc,6,|)] p3|=[wordpos(a|bb|ccc,3,|)]).;
+    @log smoke=TC003: wordpos grapheme-position indexing (UTF-8). Failed (acc6=[wordpos(h[chr(233)]llo world,6)] acc11=[wordpos(h[chr(233)]llo world,11)] acc12=[wordpos(h[chr(233)]llo world,12)] emoji3=[wordpos(a[chr(128075)][chr(127995)] b,3)] emoji4=[wordpos(a[chr(128075)][chr(127995)] b,4)] rt6=[setr(0,h[chr(233)]llo world)][wordpos(r(0),6)]).;
     @trig me/tr.done
   }
 -

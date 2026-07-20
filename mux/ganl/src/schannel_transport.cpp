@@ -263,13 +263,22 @@ namespace ganl {
 
             // Try AcquireCredentialsHandle with each candidate in priority order.
             for (auto& c : candidates) {
-                SCHANNEL_CRED cred = { 0 };
-                cred.dwVersion = SCHANNEL_CRED_VERSION;
-                cred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER;
-                cred.dwMinimumCipherStrength = 128;
+                // TLS 1.2 + 1.3 via the modern SCH_CREDENTIALS struct (#952).
+                // grbitDisabledProtocols is an inverted (disable) mask: turn off
+                // everything below TLS 1.2, leaving 1.2 and 1.3 negotiable.
+                // SCH_CREDENTIALS has no dwMinimumCipherStrength; weak ciphers are
+                // already barred by OS crypto policy for TLS 1.2/1.3.
+                TLS_PARAMETERS tlsParams = { 0 };
+                tlsParams.grbitDisabledProtocols =
+                    SP_PROT_TLS1_1 | SP_PROT_TLS1_0 | SP_PROT_SSL3 | SP_PROT_SSL2;
+
+                SCH_CREDENTIALS cred = { 0 };
+                cred.dwVersion = SCH_CREDENTIALS_VERSION;
                 cred.cCreds = 1;
                 cred.paCred = &c.cert;
                 cred.dwFlags = SCH_CRED_NO_SYSTEM_MAPPER | SCH_CRED_NO_DEFAULT_CREDS;
+                cred.cTlsParameters = 1;
+                cred.pTlsParameters = &tlsParams;
 
                 CredHandle testCredHandle;
                 SecInvalidateHandle(&testCredHandle);
@@ -502,13 +511,19 @@ namespace ganl {
         }
 
         // Step 6: Verify with AcquireCredentialsHandle.
-        SCHANNEL_CRED cred = { 0 };
-        cred.dwVersion = SCHANNEL_CRED_VERSION;
-        cred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER;
-        cred.dwMinimumCipherStrength = 128;
+        // TLS 1.2 + 1.3 via SCH_CREDENTIALS (#952); see the selection path above
+        // for the rationale on the inverted grbitDisabledProtocols mask.
+        TLS_PARAMETERS tlsParams = { 0 };
+        tlsParams.grbitDisabledProtocols =
+            SP_PROT_TLS1_1 | SP_PROT_TLS1_0 | SP_PROT_SSL3 | SP_PROT_SSL2;
+
+        SCH_CREDENTIALS cred = { 0 };
+        cred.dwVersion = SCH_CREDENTIALS_VERSION;
         cred.cCreds = 1;
         cred.paCred = &storeCert;
         cred.dwFlags = SCH_CRED_NO_SYSTEM_MAPPER | SCH_CRED_NO_DEFAULT_CREDS;
+        cred.cTlsParameters = 1;
+        cred.pTlsParameters = &tlsParams;
 
         CredHandle testCredHandle;
         SecInvalidateHandle(&testCredHandle);
@@ -1188,29 +1203,22 @@ namespace ganl {
             return TlsResult::WantRead;
         }
         else if (status == SEC_I_RENEGOTIATE) {
-            // Renegotiation needed
-            GANL_SCHANNEL_DEBUG(conn, "Renegotiation requested by peer");
-            context.needsRenegotiate = true;
+            // Peer requested TLS renegotiation. We do not support it and refuse
+            // by dropping the connection. Rationale (#950): renegotiation is a
+            // CPU-asymmetric DoS vector, and clearing established=false while the
+            // connection keeps running opens a cleartext-downgrade window (a send
+            // during renegotiation would route application data to the plaintext
+            // path). The OpenSSL build disables client-initiated renegotiation
+            // outright (SSL_OP_NO_RENEGOTIATION); Schannel has no equivalent
+            // server-side pre-disable, so we refuse at the point of request.
+            // TLS 1.3 has no renegotiation, so this path disappears there.
             context.established = false;
-
-            // Save any extra data for next operation
-            SecBuffer* pExtraBuffer = NULL;
-            for (int i = 0; i < 4; i++) {
-                if (buffers[i].BufferType == SECBUFFER_EXTRA) {
-                    pExtraBuffer = &buffers[i];
-                    break;
-                }
-            }
-
-            if (pExtraBuffer != NULL && pExtraBuffer->cbBuffer > 0) {
-                // Copy to handshake buffer for renegotiation
-                context.handshakeBuffer.resize(pExtraBuffer->cbBuffer);
-                memcpy(context.handshakeBuffer.data(), pExtraBuffer->pvBuffer, pExtraBuffer->cbBuffer);
-                GANL_SCHANNEL_DEBUG(conn, "Saved " << pExtraBuffer->cbBuffer << " bytes for renegotiation");
-            }
-
+            context.needsRenegotiate = false;
             context.incompleteBuffer.clear();
-            return TlsResult::WantRead;
+            context.lastError = "Peer requested TLS renegotiation; refusing (unsupported)";
+            GANL_SCHANNEL_DEBUG(conn, context.lastError);
+            ganl::logMessage("TLS[%u] decrypt: %s", (unsigned)conn, context.lastError.c_str());
+            return TlsResult::Error;
         }
         else if (status == SEC_I_CONTEXT_EXPIRED) {
             // Connection is being closed
@@ -1249,83 +1257,92 @@ namespace ganl {
         // Get stream sizes
         const SecPkgContext_StreamSizes& sizes = context.streamSizes;
 
-        // Calculate the message size and ensure it's not too large
-        size_t dataSize = plain_in.readableBytes();
-        if (dataSize > sizes.cbMaximumMessage) {
-            context.lastError = "Message too large for Schannel";
-            GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError
-                << " (" << dataSize << " > " << sizes.cbMaximumMessage << ")");
+        // Schannel encrypts one TLS record at a time, each carrying at most
+        // cbMaximumMessage plaintext bytes. Loop over the input in record-sized
+        // chunks so a single write larger than one record (a long multi-line
+        // pose, an @dump-style burst) is split across multiple records instead
+        // of dropping the client (#951). Each encrypted record is appended to
+        // encrypted_out in order; the plaintext is consumed only after the whole
+        // buffer has been encrypted so an error leaves the input untouched
+        // (matching the caller's close-on-error contract).
+        size_t remaining = plain_in.readableBytes();
+        if (remaining == 0) {
+            return TlsResult::Success;
+        }
+
+        const DWORD maxChunk = sizes.cbMaximumMessage;
+        if (maxChunk == 0) {
+            context.lastError = "Schannel stream max message size is zero";
+            GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
             return TlsResult::Error;
         }
 
-        // Calculate the total size needed for the message
-        size_t totalSize = sizes.cbHeader + dataSize + sizes.cbTrailer;
+        // Reusable scratch buffer sized for one full record (header + max
+        // plaintext + trailer). Reused across chunks to avoid per-record allocs.
+        std::vector<BYTE> messageBuffer(sizes.cbHeader + maxChunk + sizes.cbTrailer);
 
-        // Allocate a buffer for the encrypted message
-        std::vector<BYTE> messageBuffer(totalSize);
+        size_t totalConsumed = 0;
+        while (remaining > 0) {
+            const DWORD chunk = static_cast<DWORD>(remaining < maxChunk ? remaining : maxChunk);
 
-        // Copy the data to the message buffer (after the header)
-        memcpy(messageBuffer.data() + sizes.cbHeader, plain_in.readPtr(), dataSize);
+            // Copy this chunk of plaintext into the data slot (after the header).
+            memcpy(messageBuffer.data() + sizes.cbHeader,
+                   plain_in.readPtr() + totalConsumed, chunk);
 
-        // Prepare encryption buffers
-        SecBuffer buffers[4];
-        buffers[0].pvBuffer = messageBuffer.data();
-        buffers[0].cbBuffer = sizes.cbHeader;
-        buffers[0].BufferType = SECBUFFER_STREAM_HEADER;
+            SecBuffer buffers[4];
+            buffers[0].pvBuffer = messageBuffer.data();
+            buffers[0].cbBuffer = sizes.cbHeader;
+            buffers[0].BufferType = SECBUFFER_STREAM_HEADER;
 
-        buffers[1].pvBuffer = messageBuffer.data() + sizes.cbHeader;
-        buffers[1].cbBuffer = static_cast<DWORD>(dataSize);
-        buffers[1].BufferType = SECBUFFER_DATA;
+            buffers[1].pvBuffer = messageBuffer.data() + sizes.cbHeader;
+            buffers[1].cbBuffer = chunk;
+            buffers[1].BufferType = SECBUFFER_DATA;
 
-        buffers[2].pvBuffer = messageBuffer.data() + sizes.cbHeader + dataSize;
-        buffers[2].cbBuffer = sizes.cbTrailer;
-        buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
+            buffers[2].pvBuffer = messageBuffer.data() + sizes.cbHeader + chunk;
+            buffers[2].cbBuffer = sizes.cbTrailer;
+            buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
 
-        buffers[3].pvBuffer = NULL;
-        buffers[3].cbBuffer = 0;
-        buffers[3].BufferType = SECBUFFER_EMPTY;
+            buffers[3].pvBuffer = NULL;
+            buffers[3].cbBuffer = 0;
+            buffers[3].BufferType = SECBUFFER_EMPTY;
 
-        SecBufferDesc bufferDesc;
-        bufferDesc.ulVersion = SECBUFFER_VERSION;
-        bufferDesc.cBuffers = 4;
-        bufferDesc.pBuffers = buffers;
+            SecBufferDesc bufferDesc;
+            bufferDesc.ulVersion = SECBUFFER_VERSION;
+            bufferDesc.cBuffers = 4;
+            bufferDesc.pBuffers = buffers;
 
-        // Encrypt the message
-        SECURITY_STATUS status = EncryptMessage(&context.contextHandle, 0, &bufferDesc, 0);
+            SECURITY_STATUS status = EncryptMessage(&context.contextHandle, 0, &bufferDesc, 0);
+            if (status != SEC_E_OK) {
+                // Error encrypting. Leave plain_in unconsumed; the caller treats
+                // Error as close(TlsError), so partial output is discarded.
+                context.lastError = "EncryptMessage failed: " + getSchannelErrorString(status);
+                GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
+                ganl::logMessage("TLS[%u] encrypt: %s", (unsigned)conn, context.lastError.c_str());
+                return TlsResult::Error;
+            }
 
-        if (status == SEC_E_OK) {
-            GANL_SCHANNEL_DEBUG(conn, "EncryptMessage successful");
-
-            // Calculate the total size of the encrypted message
-            size_t encryptedSize = buffers[0].cbBuffer + buffers[1].cbBuffer + buffers[2].cbBuffer;
-
-            // Copy the encrypted message to the output buffer
+            // Copy the encrypted record (header + data + trailer) to the output.
+            const size_t encryptedSize = buffers[0].cbBuffer + buffers[1].cbBuffer + buffers[2].cbBuffer;
             encrypted_out.ensureWritable(encryptedSize);
             char* dest = encrypted_out.writePtr();
 
             memcpy(dest, buffers[0].pvBuffer, buffers[0].cbBuffer);
             dest += buffers[0].cbBuffer;
-
             memcpy(dest, buffers[1].pvBuffer, buffers[1].cbBuffer);
             dest += buffers[1].cbBuffer;
-
             memcpy(dest, buffers[2].pvBuffer, buffers[2].cbBuffer);
 
             encrypted_out.commitWrite(encryptedSize);
-            GANL_SCHANNEL_DEBUG(conn, "Encrypted " << dataSize << " bytes to " << encryptedSize << " bytes");
+            GANL_SCHANNEL_DEBUG(conn, "Encrypted " << chunk << " bytes to " << encryptedSize
+                << " bytes (" << (remaining - chunk) << " plaintext bytes remaining)");
 
-            // Consume the input data
-            plain_in.consumeRead(dataSize);
+            totalConsumed += chunk;
+            remaining -= chunk;
+        }
 
-            return TlsResult::Success;
-        }
-        else {
-            // Error encrypting
-            context.lastError = "EncryptMessage failed: " + getSchannelErrorString(status);
-            GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
-            ganl::logMessage("TLS[%u] encrypt: %s", (unsigned)conn, context.lastError.c_str());
-            return TlsResult::Error;
-        }
+        // Consume all the plaintext we encrypted.
+        plain_in.consumeRead(totalConsumed);
+        return TlsResult::Success;
     }
 
     bool SchannelTransport::acquireCredentials(SessionContext& context) {
@@ -1346,15 +1363,20 @@ namespace ganl {
             dwFlags = SCH_CRED_NO_DEFAULT_CREDS | SCH_CRED_MANUAL_CRED_VALIDATION;
         }
 
-        // Set up authentication data
-        SCHANNEL_CRED schannelCred = { 0 };
-        schannelCred.dwVersion = SCHANNEL_CRED_VERSION;
+        // Set up authentication data. Modern SCH_CREDENTIALS enables TLS 1.3
+        // negotiation (TLS 1.2 still acceptable). grbitDisabledProtocols is an
+        // inverted (disable) mask turning off everything below TLS 1.2; the
+        // combined (server+client) constants suit both INBOUND and OUTBOUND
+        // credentials. No dwMinimumCipherStrength field exists here — OS crypto
+        // policy governs cipher strength for TLS 1.2/1.3 (#952).
+        TLS_PARAMETERS tlsParams = { 0 };
+        tlsParams.grbitDisabledProtocols =
+            SP_PROT_TLS1_1 | SP_PROT_TLS1_0 | SP_PROT_SSL3 | SP_PROT_SSL2;
 
-        // Set supported protocols (TLS 1.2 by default)
-        schannelCred.grbitEnabledProtocols = SP_PROT_TLS1_2_SERVER | SP_PROT_TLS1_2_CLIENT;
-
-        // Set cipher strength
-        schannelCred.dwMinimumCipherStrength = 128;
+        SCH_CREDENTIALS schannelCred = { 0 };
+        schannelCred.dwVersion = SCH_CREDENTIALS_VERSION;
+        schannelCred.cTlsParameters = 1;
+        schannelCred.pTlsParameters = &tlsParams;
 
         // Set up server certificate if available and server mode
         if (context.isServer && serverCertContext_ != nullptr) {
