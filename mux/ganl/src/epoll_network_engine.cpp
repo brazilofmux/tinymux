@@ -825,7 +825,17 @@ bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size
 // --- Event Processing ---
 
 int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEvents) {
-    int nfds = epoll_wait(epollFd_, epollEvents_.data(), epollEvents_.size(), timeoutMs);
+    // Never fetch more kernel events than the caller's IoEvent budget.
+    // epoll_wait only consumes the ready-list entries it reports, so anything
+    // left unfetched stays queued in the kernel and is delivered next poll —
+    // even under EPOLLET.  Over-fetching instead hands us edge-triggered
+    // events we may have no budget to emit; their edges are then consumed and
+    // (without an epoll_ctl re-arm) never fire again (issue #943).
+    int fetchMax = static_cast<int>(epollEvents_.size());
+    if (maxEvents < fetchMax) {
+        fetchMax = maxEvents;
+    }
+    int nfds = epoll_wait(epollFd_, epollEvents_.data(), fetchMax, timeoutMs);
 
     if (nfds < 0) {
         if (errno == EINTR) {
@@ -860,9 +870,34 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
 
     int eventCount = 0; // Number of IoEvent entries filled
 
-    for (int i = 0; i < nfds && eventCount < maxEvents; ++i) {
+    for (int i = 0; i < nfds; ++i) {
         const epoll_event& epEvent = epollEvents_[i];
         int fd = epEvent.data.fd;
+
+        if (eventCount >= maxEvents) {
+            // The budget filled before this fetched event was processed (one
+            // kernel event can emit several IoEvents — Read+Write, accept
+            // bursts).  Its EPOLLET edge is already consumed, so dropping it
+            // here would lose it forever.  An identical-mask EPOLL_CTL_MOD
+            // makes the kernel re-poll the fd and re-queue it if still ready,
+            // so it fires again on the next epoll_wait.
+            uint32_t storedEvents = 0;
+            bool found = false;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                auto sockIt = sockets_.find(fd);
+                if (sockIt != sockets_.end()) {
+                    storedEvents = sockIt->second.events;
+                    found = true;
+                }
+            }
+            if (found) {
+                GANL_EPOLL_DEBUG(fd, "Budget exhausted before this event; re-arming via MOD to re-fire next poll.");
+                ErrorCode modError = 0;
+                modifyEpollFlags(fd, storedEvents, modError);
+            }
+            continue;
+        }
         uint32_t revents = epEvent.events;
 
         // --- Retrieve socket info and context under lock ---
@@ -1112,9 +1147,16 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                         }
                     }
                 } else {
-                    // Budget exhausted: leave EPOLLOUT armed so this write
-                    // readiness re-fires on the next poll instead of stalling.
-                    GANL_EPOLL_DEBUG(fd, "Max events reached, deferring Write event (EPOLLOUT left armed).");
+                    // Budget exhausted (an earlier event on this same fd — e.g.
+                    // a Read — took the last slot): the EPOLLET edge for this
+                    // writability is already consumed, so merely leaving
+                    // EPOLLOUT in the mask would NOT re-fire.  An identical-mask
+                    // EPOLL_CTL_MOD re-polls the fd and re-queues it (still
+                    // writable), so the Write event is emitted next poll
+                    // instead of stalling the connection's output (issue #943).
+                    GANL_EPOLL_DEBUG(fd, "Max events reached, deferring Write event (re-arming EPOLLOUT via MOD).");
+                    ErrorCode modError = 0;
+                    modifyEpollFlags(fd, socketInfoCopy.events, modError);
                 }
             }
         } // end if connection
