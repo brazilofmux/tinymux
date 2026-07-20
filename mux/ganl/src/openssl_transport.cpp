@@ -77,11 +77,25 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
     options |= SSL_OP_ALL; // Enable bug workarounds
     options |= SSL_OP_SINGLE_DH_USE;
     options |= SSL_OP_SINGLE_ECDH_USE;
+#ifdef SSL_OP_NO_RENEGOTIATION
+    // Disable client-initiated renegotiation (TLS 1.2). It is a CPU-asymmetric
+    // DoS vector, and it is the only thing that makes SSL_write() return
+    // WANT_READ mid-stream — which the mem-BIO write path is not structured to
+    // retry safely (see #949). TLS 1.3 has no renegotiation. Guarded because
+    // the macro only exists on OpenSSL >= 1.1.0h / LibreSSL. (#948)
+    options |= SSL_OP_NO_RENEGOTIATION;
+#endif
     SSL_CTX_set_options(ctx_, options);
 
     // Prefer server cipher order
     SSL_CTX_set_options(ctx_, SSL_OP_CIPHER_SERVER_PREFERENCE);
     // Consider setting cipher list: SSL_CTX_set_cipher_list(ctx_, "HIGH:!aNULL:!MD5:!RC4");
+
+    // Tolerate a moved plaintext buffer across a retried SSL_write(): the
+    // formatted-output buffer can be re-allocated between calls, and without
+    // this a WANT_READ/WANT_WRITE retry with a relocated pointer trips
+    // SSL_R_BAD_WRITE_RETRY and drops the client. (#948)
+    SSL_CTX_set_mode(ctx_, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     keyPassword_ = config.password;
     SSL_CTX_set_default_passwd_cb(ctx_, &OpenSSLTransport::passwordCallback);
