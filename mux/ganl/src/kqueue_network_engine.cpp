@@ -656,6 +656,9 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                       ev.bytesTransferred = 0;
                       ev.error = 0;
                       ev.remoteAddress = getRemoteNetworkAddress(newConn); // Set the remote address
+                      ev.buffer = nullptr; // Accept events carry no I/O buffer; set it so
+                                           // the reused events[] slot can't leak a stale
+                                           // pointer (#947, docs/ganl-engine-contract.md).
                  } else {
                       // Error accepting
                       if (acceptError == EAGAIN || acceptError == EWOULDBLOCK) {
@@ -671,6 +674,14 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
                                 ev.connection = InvalidConnectionHandle;
                                 ev.error = acceptError;
                                 ev.context = currentContext;
+                                // events[] is reused across polls; fully populate the
+                                // remaining fields so this listener Error event cannot
+                                // inherit stale values (a buffer pointer, byte count, or
+                                // remote address) from a prior event in this slot
+                                // (#947, docs/ganl-engine-contract.md).
+                                ev.bytesTransferred = 0;
+                                ev.buffer = nullptr;
+                                ev.remoteAddress = NetworkAddress();
                             }
                       }
                       break; // Stop trying to accept on this listener for now

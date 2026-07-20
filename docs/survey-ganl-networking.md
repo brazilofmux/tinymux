@@ -82,6 +82,11 @@ The two sibling placeholders in the same file were swept in the follow-up
 commit: accept-error (~906) now logs a real failure (EMFILE etc.) before
 breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
 (was leaking stale fields from the caller-reused `events[]` slot).
+Follow-up (2026-07-20): the accept-error path now also **emits** the
+fully-populated listener `Error` event — select/kqueue already did; epoll only
+logged to stderr, leaving fd exhaustion invisible to the adapter's NET/LERR
+game-log path. Driver-verified with a clamped `RLIMIT_NOFILE`: pre-fix silent,
+post-fix `Error` event with `error == EMFILE`.
 
 ✅ **Candidates — verified against current source and filed 2026-07-20:**
 - **ISSUE #942 — FIXED (PR #959, 2026-07-20):** epoll immediate-connect armed
@@ -154,10 +159,17 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
 - **ISSUE #945:** `checkNegotiationTimeouts` runs only on zero-event polls, so
   under sustained load telnet-negotiation timeouts are never enforced (half-open
   DoS assist). Confirmed in all five engines.
-- No test coverage for `mux/ganl/` — a loopback harness driving each engine
-  through the same scripted scenarios (EMFILE, HUP-with-data, maxEvents overflow,
-  FD_SETSIZE) would catch most of these mechanically. Still a test-infra
-  follow-up (see the `tests/netaddr/` pattern started in `bb2cb8f84`).
+- ~~No test coverage for `mux/ganl/`~~ — **DONE (2026-07-20):**
+  `mux/ganl/tests/` is exactly that harness — scripted scenarios (immediate
+  connect, maxEvents overflow both shapes, FD_SETSIZE reject, double-close
+  fd-reuse, EMFILE listener Error, HUP-with-data, ensureWritable cap) run
+  against every engine on the platform (Linux: epoll+select; macOS: kqueue+
+  select). `make test-ganl` at the repo root; wired into `make test`.
+  Validated against a hand-built pre-fix libganl (master @896190d12): catches
+  6 of the fixed bugs (#943 both shapes on epoll + same-fd on select, #946
+  fortify abort, #947 select double-close, EMFILE silence) and passes 14/14
+  on current code. kqueue leg pending a macOS run; wselect/iocp pending
+  Windows.
 
 ## Sub-part 3 — TLS transports (`openssl_transport.cpp`, `schannel_transport.cpp`) 📝
 

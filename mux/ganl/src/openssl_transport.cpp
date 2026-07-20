@@ -407,7 +407,16 @@ TlsResult OpenSSLTransport::processIncoming(ConnectionHandle conn, IoBuffer& enc
                  GANL_SSL_DEBUG(conn, "Read " << ssl_ret << " bytes of decrypted application data.");
                  decrypted_out.append(readBuffer, ssl_ret);
                  processingNeeded = true; // Re-loop to try SSL_read again
-            } else if (ssl_ret == 0) { // Clean shutdown
+            } else if (ssl_ret == 0) { // Clean shutdown (received close_notify)
+                 // SSL_read()==0 here is unambiguously a received close_notify, not
+                 // a truncation attack (FIN without close_notify). This transport
+                 // feeds SSL from a memory BIO configured with
+                 // BIO_set_mem_eof_return(readBio, -1), so an empty read BIO yields
+                 // WANT_READ, never EOF — a socket FIN can never reach SSL_read() as
+                 // a 0 return. A truncated connection instead surfaces as a
+                 // socket-level EOF at the network engine, which emits Close. So no
+                 // SSL_get_error()/SSL_ERROR_ZERO_RETURN disambiguation is needed on
+                 // this branch (the sibling ssl_ret<0 path still checks it).
                  GANL_SSL_DEBUG(conn, "Peer notified shutdown via SSL_read() returning 0.");
                  finalResult = TlsResult::Closed;
             } else { // ssl_ret < 0

@@ -79,9 +79,12 @@ error path). Therefore:
   needs the Windows box; fix is `ev.buffer = bufferRef`).
 - **kqueue:** the accept-error `Error` event leaves `bytesTransferred` /
   `buffer` / `remoteAddress` unset (stale-slot pattern; macOS box).
-- **epoll:** EMFILE during accept logs but emits no listener `Error`
-  event; the LT listener re-reports so it also busy-spins — as do the
-  other engines, for the same reason (tracked in the survey).
+- ~~**epoll:** EMFILE during accept logs but emits no listener `Error`
+  event~~ — fixed 2026-07-20: epoll now emits the fully-populated
+  listener `Error` like select/kqueue (driver-verified with a clamped
+  `RLIMIT_NOFILE`). The busy-spin on a pending-but-unacceptable
+  connection remains cross-engine (LT listener re-reports; tracked in
+  the survey).
 - **iocp:** completion-model differences (real `bytesTransferred`,
   buffer ownership during overlapped I/O) are documented in the engine
   itself; the field-population rule above still applies.
