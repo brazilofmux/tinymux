@@ -704,8 +704,20 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
             ConnectionHandle connHandle = static_cast<ConnectionHandle>(fd);
             bool connectionClosed = false; // Flag to prevent processing read/write after close/error
 
+            // A peer close (EV_EOF) can be reported together with still-readable
+            // data in the same read kevent (a coalesced "data then FIN"). When
+            // bytes remain (kev.data > 0 on EVFILT_READ), fall through to the
+            // Read branch below instead of emitting Close here: the connection's
+            // read loop drains the data and then discovers the EOF via
+            // read()==0. Emitting Close now would drop that final data. A bare
+            // EOF (no pending data) or any EV_ERROR still closes immediately.
+            const bool eofWithPendingData = (kev.flags & EV_EOF)
+                                          && (kev.filter == EVFILT_READ)
+                                          && (kev.data > 0)
+                                          && !(kev.flags & EV_ERROR);
+
             // Check for EV_EOF first (often indicates graceful close or error)
-            if (kev.flags & EV_EOF) {
+            if ((kev.flags & EV_EOF) && !eofWithPendingData) {
                  GANL_KQUEUE_DEBUG(fd, "EV_EOF detected.");
                  if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];

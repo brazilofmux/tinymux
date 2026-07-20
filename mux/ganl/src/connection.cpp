@@ -1136,10 +1136,17 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
     }
 
     // --- Common Processing After Read Attempt ---
-    if (needsClose) {
+    // On a hard read error, close immediately: bytes already buffered may be
+    // unreliable and must not be run through the pipeline.
+    if (needsClose && !success) {
         close(closeReason); // Close the connection
         return;             // Stop processing
     }
+
+    // A clean EOF (potentialEOF, success==true) is deliberately NOT closed here.
+    // A coalesced "data + FIN" delivery reads the final bytes and the EOF in the
+    // same handleRead call; closing before the pipeline runs would drop that
+    // data. Process the buffered data first, then honor the EOF close below.
 
     // Only proceed if the read operation itself was okay (success=true) AND we have data
     if (success && encryptedInput.readableBytes() > 0) {
@@ -1177,7 +1184,15 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
     else if (success) {
         GANL_CONN_DEBUG(handle_, "Read successful but no new data in buffer (or IOCP reported data but commit failed?).");
     }
-    // Note: If success is false, we already returned after calling close().
+    // Note: on a hard read error we already returned after calling close().
+
+    // Honor a clean EOF now that any coalesced final data has been processed.
+    // close() drains any output the pipeline just produced (see the plaintext/
+    // TLS drain-before-close paths) before tearing the socket down.
+    if (needsClose && !isClosingOrClosed()) {
+        close(closeReason);
+        return;
+    }
 
     // Final check: If processing generated output, trigger a write
     if (!isClosingOrClosed()) {

@@ -1024,8 +1024,42 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
             ConnectionHandle connHandle = static_cast<ConnectionHandle>(fd);
             bool connectionClosed = false;
 
-            // Check for errors/hup first
-            if (revents & (EPOLLERR | EPOLLHUP)) {
+            // A peer hangup (EPOLLHUP/EPOLLERR) can be reported together with
+            // still-readable data in the same wakeup. Handle EPOLLIN FIRST so the
+            // connection's read loop drains that data and then discovers the
+            // close via read()==0 — emitting Close before the read would drop the
+            // final bytes. Only synthesize a Close directly when there is nothing
+            // to drain (no EPOLLIN). This mirrors the read-first ordering of the
+            // select/kqueue engines.
+            const bool peerGone = (revents & (EPOLLERR | EPOLLHUP)) != 0;
+
+            // Handle Read Readiness
+            if (revents & EPOLLIN) {
+                if (eventCount < maxEvents) {
+                     IoEvent& ev = events[eventCount++];
+                     ev.type = IoEventType::Read;
+                     ev.connection = connHandle;
+                     ev.context = socketInfoCopy.context; // Use copied context
+                     ev.buffer = socketInfoCopy.activeReadBuffer; // Include IoBuffer reference if available
+                     ev.bytesTransferred = 0; // No specific bytes count for readiness events
+                     ev.error = 0;
+
+                     // Clear buffer reference after generating the event for enhanced safety
+                     if (socketInfoCopy.activeReadBuffer) {
+                         std::lock_guard<std::mutex> lock(mutex_);
+                         auto sockIt = sockets_.find(fd);
+                         if (sockIt != sockets_.end()) {
+                             sockIt->second.activeReadBuffer = nullptr;
+                             GANL_EPOLL_DEBUG(fd, "Cleared activeReadBuffer after generating Read event");
+                         }
+                     }
+                }
+            }
+
+            // Errors / hangup with no readable data: synthesize a Close now.
+            // (With EPOLLIN present, the read path above discovers and handles
+            // the close, so we must not emit a duplicate Close here.)
+            if (!(revents & EPOLLIN) && peerGone) {
                  // We could use getsockopt with SO_ERROR here to get the specific error
                 if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];
@@ -1049,31 +1083,10 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                 connectionClosed = true;
             }
 
-            // Handle Read Readiness
-            if (!connectionClosed && (revents & EPOLLIN)) {
-                if (eventCount < maxEvents) {
-                     IoEvent& ev = events[eventCount++];
-                     ev.type = IoEventType::Read;
-                     ev.connection = connHandle;
-                     ev.context = socketInfoCopy.context; // Use copied context
-                     ev.buffer = socketInfoCopy.activeReadBuffer; // Include IoBuffer reference if available
-                     ev.bytesTransferred = 0; // No specific bytes count for readiness events
-                     ev.error = 0;
-
-                     // Clear buffer reference after generating the event for enhanced safety
-                     if (socketInfoCopy.activeReadBuffer) {
-                         std::lock_guard<std::mutex> lock(mutex_);
-                         auto sockIt = sockets_.find(fd);
-                         if (sockIt != sockets_.end()) {
-                             sockIt->second.activeReadBuffer = nullptr;
-                             GANL_EPOLL_DEBUG(fd, "Cleared activeReadBuffer after generating Read event");
-                         }
-                     }
-                }
-            }
-
-            // Handle Write Readiness
-            if (!connectionClosed && (revents & EPOLLOUT)) {
+            // Handle Write Readiness. Skip when the peer is gone (EPOLLERR/HUP):
+            // even if EPOLLIN kept connectionClosed false so we could drain, a
+            // hung-up peer cannot accept writes.
+            if (!connectionClosed && !peerGone && (revents & EPOLLOUT)) {
                 // Create and fill Write event
                 if (eventCount < maxEvents) {
                     IoEvent& ev = events[eventCount++];
