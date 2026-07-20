@@ -261,17 +261,21 @@ moving between them.
 | :--- | :--- | :--- |
 | Word index -> word text | `extract()`, `first()`, `rest()`, `last()` | covered |
 | Grapheme offset -> grapheme slice | `mid()`, `strdelete()`, `strinsert()`, `strreplace()` | covered |
-| Byte offset -> containing word | `wordpos(str, charpos, sep)` | present (byte-offset, not grapheme) |
+| Grapheme position -> containing word | `wordpos(str, charpos, sep)` | **covered** |
 | Word index -> grapheme start/end | `wordstart()`, `wordend()` | **covered** |
 | String -> grapheme list | `graphemes()` | **covered** |
 | Grapheme list -> string | -- | **missing** (no list-consuming joiner; `strcat()` is variadic-args only) |
 
-Note: `wordpos()` indexes into the color-stripped UTF-8 buffer by byte
-position (`cp[charpos - 1]`), not by grapheme cluster. Despite the
-documentation saying "character position", the implementation is
-byte-oriented. For ASCII strings the distinction is invisible, but for
-multi-byte UTF-8 the results will be wrong if the caller passes a
-grapheme count instead of a byte offset.
+Note: `wordpos()` now indexes by grapheme cluster (fixed): it bounds
+`charpos` against the grapheme count and walks grapheme clusters
+(`utf8_next_grapheme`) to resolve the position, matching its "character
+position" documentation and the grapheme-correct `wordstart()`/`wordend()`.
+The previous implementation used `charpos` as a raw byte offset
+(`cp[charpos - 1]`) while bounding against the code-point count, so it
+returned the wrong word for multi-byte UTF-8. Behaviour is unchanged for
+pure-ASCII input (one cluster == one byte == one code point). Regression
+coverage: `testcases/wordpos_fn.mux` TC003 (accented `é` and a skin-tone
+grapheme cluster).
 
 ### Best Additions
 
