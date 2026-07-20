@@ -118,6 +118,9 @@ void functions_add(FUN funlist[]);
 // In ast.cpp
 XFUNCTION(fun_asteval);
 XFUNCTION(fun_astbench);
+#if defined(TINYMUX_JIT)
+XFUNCTION(fun_jiteval);
+#endif
 // In jit_compiler.cpp
 #if defined(TINYMUX_JIT)
 XFUNCTION(fun_rvbench);

@@ -68,6 +68,9 @@ struct jit_stats_t {
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime
     uint64_t tier2_total;         // Tier 2 blob calls at runtime
+    uint64_t qreg_resyncs;        // SUBST_QREG slots re-marshalled from
+                                  // global_regs after a scope restore or
+                                  // reg-mutating ECALL (plan-jit-evalbracket)
 
     // Code size tracking.
     uint64_t code_bytes_total;    // total RV64 bytes emitted across all compiles

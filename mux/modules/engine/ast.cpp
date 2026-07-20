@@ -2784,6 +2784,42 @@ FUNCTION(fun_asteval)
         eval | EV_FCHECK | EV_EVAL, cargs, ncargs);
 }
 
+#if defined(TINYMUX_JIT)
+// ---------------------------------------------------------------
+// jiteval(): force an expression through the JIT, bypassing the
+// jit_can_handle() gate.  Wizard-only debug oracle for the
+// eval-bracket guard-lift work (docs/plan-jit-evalbracket-lift.md):
+// lets testcases compare jiteval({expr}) against asteval({expr})
+// for expressions the production gate still routes to the AST.
+// Returns #-1 JIT BAILOUT if jit_eval() declined the expression.
+// ---------------------------------------------------------------
+
+FUNCTION(fun_jiteval)
+{
+    UNUSED_PARAMETER(fp);
+
+    if (!Wizard(executor)) {
+        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        return;
+    }
+
+    if (nfargs < 1) {
+        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        return;
+    }
+
+    const UTF8 *expr = fargs[0];
+    size_t nLen = strlen(reinterpret_cast<const char *>(expr));
+    if (nLen == 0) return;
+
+    if (!jit_eval(expr, nLen, buff, bufc,
+                  executor, caller, enactor,
+                  eval | EV_FMAND | EV_EVAL, cargs, ncargs)) {
+        safe_str(T("#-1 JIT BAILOUT"), buff, bufc);
+    }
+}
+#endif // TINYMUX_JIT
+
 // ---------------------------------------------------------------
 // astbench(): head-to-head AST vs JIT benchmark.
 //
