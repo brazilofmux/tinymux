@@ -18,6 +18,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test output in: `testcases/smoke.log`
 - GANL engine regression harness: `make test-ganl` (also part of `make test`);
   scripted engine scenarios in `mux/ganl/tests/`, TAP output
+- netaddr subnet unit tests: `make test-netaddr` (also part of `make test`);
+  `mux_subnet::compare_to` + `parse_subnet` in `tests/netaddr/` (#799/#800)
 
 ## Release Process
 - Update version numbers in:

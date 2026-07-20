@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -32,7 +32,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-ios
+test: install test-ganl test-netaddr test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -41,6 +41,13 @@ test: install test-ganl test-ios
 test-ganl:
 	@echo "==> Running GANL engine tests"
 	$(MAKE) -C mux/ganl/tests check
+
+# netaddr unit tests: mux_subnet::compare_to (subnet/address, #799/#800) and
+# parse_subnet rejection/normalization paths.  Links the netmux-side
+# netmux-netaddr.o (from install) against libmux.
+test-netaddr:
+	@echo "==> Running netaddr subnet tests"
+	$(MAKE) -C tests/netaddr test
 
 # Headless iOS Titan parser/model tests via SPM. Skipped off Darwin
 # or when swift is unavailable.
