@@ -622,11 +622,16 @@ void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
                     ev.error = 0;
                     ev.context = contextPtr; // Connection's context (ConnectionBase*)
 
-                    // Include the IoBuffer in the event
-                    if (info.activeReadBuffer) {
-                        ev.buffer = info.activeReadBuffer;
-                        GANL_WSELECT_DEBUG(sock, "Generated Read event with IoBuffer@" << info.activeReadBuffer);
+                    // Include the IoBuffer in the event.  Use the saved bufferRef,
+                    // not info.activeReadBuffer — the latter was just nulled above,
+                    // so the old `if (info.activeReadBuffer)` test was always false
+                    // and ev.buffer was never assigned, leaving a stale pointer
+                    // from the reused events[] slot (#947).
+                    if (bufferRef) {
+                        ev.buffer = bufferRef;
+                        GANL_WSELECT_DEBUG(sock, "Generated Read event with IoBuffer@" << bufferRef);
                     } else {
+                        ev.buffer = nullptr;
                         GANL_WSELECT_DEBUG(sock, "Generated Read event without IoBuffer");
                     }
                 }
