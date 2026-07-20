@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-scenario hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -48,6 +48,13 @@ test-ganl:
 test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
+
+# Live scenario test: the wildcard capture path ($-command %0..%9), which
+# muxscript cannot drive.  Opt-in (NOT part of `make test`) because it spins a
+# throwaway netmux and drives it over a socket — timing-sensitive by nature.
+test-scenario: install
+	@echo "==> Running wildcard-capture scenario test"
+	bash tests/scenario/run.sh
 
 # Headless iOS Titan parser/model tests via SPM. Skipped off Darwin
 # or when swift is unavailable.

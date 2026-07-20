@@ -20,6 +20,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   scripted engine scenarios in `mux/ganl/tests/`, TAP output
 - netaddr subnet unit tests: `make test-netaddr` (also part of `make test`);
   `mux_subnet::compare_to` + `parse_subnet` in `tests/netaddr/` (#799/#800)
+- Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
+  spins a throwaway netmux and drives `$`-command `%0..%9` captures over a
+  socket (`tests/scenario/`) — the path muxscript can't reach
 
 ## Release Process
 - Update version numbers in:
