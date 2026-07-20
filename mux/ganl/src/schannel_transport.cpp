@@ -435,6 +435,11 @@ namespace ganl {
         }
 
         // Import into CNG as an ephemeral key (no key name → not persisted).
+        // The key must be EXPORTABLE: initializeFromPem round-trips it through a
+        // PKCS#12 blob (PFXExportCertStoreEx) into a key container Schannel
+        // accepts. Import unfinalized, set the export policy, then finalize —
+        // NCryptImportKey finalizes in one shot, which is too late to set the
+        // policy (#975).
         NCRYPT_PROV_HANDLE hProv = 0;
         SECURITY_STATUS secStatus = NCryptOpenStorageProvider(&hProv,
             MS_KEY_STORAGE_PROVIDER, 0);
@@ -445,17 +450,68 @@ namespace ganl {
         }
 
         secStatus = NCryptImportKey(hProv, 0, BCRYPT_RSAPRIVATE_BLOB, nullptr,
-            &outKey, pCngBlob, cbCngBlob, 0);
+            &outKey, pCngBlob, cbCngBlob, NCRYPT_DO_NOT_FINALIZE_FLAG);
         LocalFree(pCngBlob);
-        NCryptFreeObject(hProv);
-
         if (FAILED(secStatus)) {
+            NCryptFreeObject(hProv);
             lastGlobalError_ = "NCryptImportKey failed: " + std::to_string(secStatus);
+            return false;
+        }
+
+        DWORD exportPolicy = NCRYPT_ALLOW_EXPORT_FLAG | NCRYPT_ALLOW_PLAINTEXT_EXPORT_FLAG;
+        secStatus = NCryptSetProperty(outKey, NCRYPT_EXPORT_POLICY_PROPERTY,
+            reinterpret_cast<PBYTE>(&exportPolicy), sizeof(exportPolicy), NCRYPT_SILENT_FLAG);
+        if (FAILED(secStatus)) {
+            NCryptFreeObject(outKey);
+            NCryptFreeObject(hProv);
+            lastGlobalError_ = "NCryptSetProperty(EXPORT_POLICY) failed: " + std::to_string(secStatus);
+            return false;
+        }
+
+        secStatus = NCryptFinalizeKey(outKey, NCRYPT_SILENT_FLAG);
+        NCryptFreeObject(hProv);
+        if (FAILED(secStatus)) {
+            NCryptFreeObject(outKey);
+            lastGlobalError_ = "NCryptFinalizeKey failed: " + std::to_string(secStatus);
             return false;
         }
 
         ganl::logMessage("TLS: PEM private key loaded successfully via CNG");
         return true;
+    }
+
+    void SchannelTransport::deleteCertKeyContainer(PCCERT_CONTEXT cert) {
+        // Delete the persisted CNG key container that PFXImportCertStore
+        // (CRYPT_USER_KEYSET) created for this cert, so it does not leak on disk
+        // (#975). Best-effort: no CERT_KEY_PROV_INFO, or an already-gone key, is
+        // a no-op. Only ever called on certs we imported ourselves, never on a
+        // cert from the user's own store.
+        if (cert == nullptr) return;
+
+        DWORD cb = 0;
+        if (!CertGetCertificateContextProperty(cert, CERT_KEY_PROV_INFO_PROP_ID, nullptr, &cb)
+            || cb == 0) {
+            return;
+        }
+        std::vector<BYTE> buf(cb);
+        if (!CertGetCertificateContextProperty(cert, CERT_KEY_PROV_INFO_PROP_ID, buf.data(), &cb)) {
+            return;
+        }
+        auto* kpi = reinterpret_cast<CRYPT_KEY_PROV_INFO*>(buf.data());
+        if (kpi->pwszContainerName == nullptr) return;
+
+        const wchar_t* provName = kpi->pwszProvName ? kpi->pwszProvName
+                                                    : MS_KEY_STORAGE_PROVIDER;
+        NCRYPT_PROV_HANDLE hProv = 0;
+        if (FAILED(NCryptOpenStorageProvider(&hProv, provName, 0))) return;
+
+        DWORD openFlags = NCRYPT_SILENT_FLAG;
+        if (kpi->dwFlags & CRYPT_MACHINE_KEYSET) openFlags |= NCRYPT_MACHINE_KEY_FLAG;
+        NCRYPT_KEY_HANDLE hKey = 0;
+        if (SUCCEEDED(NCryptOpenKey(hProv, &hKey, kpi->pwszContainerName, 0, openFlags))) {
+            NCryptDeleteKey(hKey, NCRYPT_SILENT_FLAG);  // deletes the container and frees hKey
+        }
+        NCryptFreeObject(hProv);
     }
 
     bool SchannelTransport::initializeFromPem(const TlsConfig& config) {
@@ -497,22 +553,87 @@ namespace ganl {
         }
         CertFreeCertificateContext(pemCert);  // store now owns its copy
 
-        // Step 5: Associate the CNG key with the store certificate.
+        // Step 5: Associate the CNG key with the store certificate via
+        // CERT_KEY_CONTEXT_PROP_ID. CERT_NCRYPT_KEY_HANDLE_PROP_ID is NOT enough:
+        // CryptAcquireCertificatePrivateKey / PFXExportCertStoreEx don't find a
+        // key set that way (CRYPT_E_NO_KEY_PROPERTY), so the private key never
+        // makes it into the exported PKCS#12 — the true root cause of #975.
         // Caller retains ownership of the key handle.
+        CERT_KEY_CONTEXT keyContext{};
+        keyContext.cbSize = sizeof(keyContext);
+        keyContext.hNCryptKey = hKey;
+        keyContext.dwKeySpec = CERT_NCRYPT_KEY_SPEC;
         if (!CertSetCertificateContextProperty(storeCert,
-                CERT_NCRYPT_KEY_HANDLE_PROP_ID, 0, &hKey)) {
+                CERT_KEY_CONTEXT_PROP_ID, 0, &keyContext)) {
             CertFreeCertificateContext(storeCert);
             CertCloseStore(memStore, 0);
             NCryptFreeObject(hKey);
-            lastGlobalError_ = "CertSetCertificateContextProperty(NCRYPT_KEY_HANDLE) failed: " +
+            lastGlobalError_ = "CertSetCertificateContextProperty(KEY_CONTEXT) failed: " +
                 std::to_string(GetLastError());
             ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
             return false;
         }
 
-        // Step 6: Verify with AcquireCredentialsHandle.
-        // TLS 1.2 + 1.3 via SCH_CREDENTIALS (#952); see the selection path above
-        // for the rationale on the inverted grbitDisabledProtocols mask.
+        // Step 6: Round-trip the cert + ephemeral key through an in-memory
+        // PKCS#12 blob and re-import it into a key container. Schannel's server
+        // credential path does not accept a cert bound to an ephemeral / in-
+        // memory NCrypt key (AcquireCredentialsHandle fails SEC_E_NO_CREDENTIALS,
+        // 0x8009030E — #975); it requires a key provisioned into a container.
+        // PFXImportCertStore with CRYPT_USER_KEYSET does exactly that. The
+        // resulting on-disk key container is deleted at shutdown (see
+        // deleteCertKeyContainer), so it does not leak. The temporary export
+        // password never leaves this function.
+        CRYPT_DATA_BLOB pfxBlob{};
+        const wchar_t* pfxPassword = L"";
+        if (!PFXExportCertStoreEx(memStore, &pfxBlob, pfxPassword, nullptr,
+                EXPORT_PRIVATE_KEYS)) {
+            CertFreeCertificateContext(storeCert);
+            CertCloseStore(memStore, 0);
+            NCryptFreeObject(hKey);
+            lastGlobalError_ = "PFXExportCertStoreEx(size) failed: " + std::to_string(GetLastError());
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+        std::vector<BYTE> pfxBytes(pfxBlob.cbData);
+        pfxBlob.pbData = pfxBytes.data();
+        if (!PFXExportCertStoreEx(memStore, &pfxBlob, pfxPassword, nullptr,
+                EXPORT_PRIVATE_KEYS)) {
+            CertFreeCertificateContext(storeCert);
+            CertCloseStore(memStore, 0);
+            NCryptFreeObject(hKey);
+            lastGlobalError_ = "PFXExportCertStoreEx(export) failed: " + std::to_string(GetLastError());
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        // Temporary store, cert, and ephemeral key are done.
+        CertFreeCertificateContext(storeCert);
+        CertCloseStore(memStore, 0);
+        NCryptFreeObject(hKey);
+
+        // Step 7: Re-import into a user key container (persisted, exportable so
+        // shutdown can delete it).
+        HCERTSTORE keysetStore = PFXImportCertStore(&pfxBlob, pfxPassword,
+            CRYPT_USER_KEYSET | CRYPT_EXPORTABLE);
+        SecureZeroMemory(pfxBytes.data(), pfxBytes.size());  // scrub the plaintext key blob
+        if (!keysetStore) {
+            lastGlobalError_ = "PFXImportCertStore failed: " + std::to_string(GetLastError());
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        // Step 8: Find the imported cert (now carrying a usable container key).
+        PCCERT_CONTEXT keysetCert = CertFindCertificateInStore(keysetStore,
+            X509_ASN_ENCODING | PKCS_7_ASN_ENCODING, 0, CERT_FIND_ANY, nullptr, nullptr);
+        if (!keysetCert) {
+            CertCloseStore(keysetStore, 0);
+            lastGlobalError_ = "No certificate in re-imported PKCS#12 store";
+            ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
+            return false;
+        }
+
+        // Step 9: Verify a server credential can be acquired (TLS 1.2 + 1.3 via
+        // SCH_CREDENTIALS, #952).
         TLS_PARAMETERS tlsParams = { 0 };
         tlsParams.grbitDisabledProtocols =
             SP_PROT_TLS1_1 | SP_PROT_TLS1_0 | SP_PROT_SSL3 | SP_PROT_SSL2;
@@ -520,7 +641,7 @@ namespace ganl {
         SCH_CREDENTIALS cred = { 0 };
         cred.dwVersion = SCH_CREDENTIALS_VERSION;
         cred.cCreds = 1;
-        cred.paCred = &storeCert;
+        cred.paCred = &keysetCert;
         cred.dwFlags = SCH_CRED_NO_SYSTEM_MAPPER | SCH_CRED_NO_DEFAULT_CREDS;
         cred.cTlsParameters = 1;
         cred.pTlsParameters = &tlsParams;
@@ -539,9 +660,9 @@ namespace ganl {
             &expiry);
 
         if (FAILED(status)) {
-            CertFreeCertificateContext(storeCert);
-            CertCloseStore(memStore, 0);
-            NCryptFreeObject(hKey);
+            deleteCertKeyContainer(keysetCert);   // don't leak the container we just made
+            CertFreeCertificateContext(keysetCert);
+            CertCloseStore(keysetStore, 0);
             lastGlobalError_ = "AcquireCredentialsHandle(PEM) failed: " +
                 getSchannelErrorString(status);
             ganl::logMessage("TLS initializeFromPem: %s", lastGlobalError_.c_str());
@@ -550,16 +671,16 @@ namespace ganl {
 
         FreeCredentialsHandle(&testCredHandle);
 
-        // Step 7: Store results.
-        serverCertContext_ = storeCert;
-        certStore_ = memStore;
+        // Step 10: Store results. The persisted container is deleted at shutdown
+        // via deleteCertKeyContainer(serverCertContext_); ncryptKey_ stays 0.
+        serverCertContext_ = keysetCert;
+        certStore_ = keysetStore;
         certStoreOpen_ = true;
-        ncryptKey_ = hKey;
 
         char subjectName[256] = {0};
-        CertGetNameStringA(storeCert, CERT_NAME_SIMPLE_DISPLAY_TYPE,
+        CertGetNameStringA(keysetCert, CERT_NAME_SIMPLE_DISPLAY_TYPE,
             0, nullptr, subjectName, sizeof(subjectName));
-        ganl::logMessage("TLS: PEM initialization complete: '%s'", subjectName);
+        ganl::logMessage("TLS: PEM initialization complete (via PKCS#12 keyset): '%s'", subjectName);
         return true;
     }
 
@@ -595,8 +716,12 @@ namespace ganl {
             ncryptKey_ = 0;
         }
 
-        // Free certificate context
+        // Delete the persisted key container backing the server cert (created by
+        // PFXImportCertStore for both the PFX and PEM paths) so it does not leak
+        // on disk (#975). Done before freeing the cert (we read its key-prov
+        // info) and after all session credentials are freed above.
         if (serverCertContext_ != nullptr) {
+            deleteCertKeyContainer(serverCertContext_);
             CertFreeCertificateContext(serverCertContext_);
             serverCertContext_ = nullptr;
         }
