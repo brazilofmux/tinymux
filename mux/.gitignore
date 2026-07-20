@@ -31,3 +31,6 @@ game/bin/muxescape
 
 # Autom4te cache directory
 autom4te.cache/
+# Hand-written (not configure-generated) — keep tracked despite the global
+# Makefile ignore in mux/.gitignore.
+!ganl/tests/Makefile
