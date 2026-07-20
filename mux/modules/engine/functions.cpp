@@ -5223,16 +5223,35 @@ static FUNCTION(fun_wordpos)
         return;
     }
 
-    size_t ncp;
-    UTF8 *cp = strip_color(fargs[0], 0, &ncp);
+    size_t nBytes;
+    UTF8 *cp = strip_color(fargs[0], &nBytes, nullptr);
     unsigned int charpos = mux_atol(fargs[1]);
 
+    // charpos is a 1-based grapheme (character) position, matching this
+    // function's documentation and the grapheme-correct wordstart()/wordend().
+    // The old code used charpos as a raw byte offset (&cp[charpos-1]) while
+    // bounding it against the code-point count from strip_color()'s third
+    // out-parameter, so it returned the wrong word for any multi-byte UTF-8
+    // text. Bound by the grapheme count and resolve charpos to a byte pointer by
+    // walking grapheme clusters over the byte length. This is identical to the
+    // old behaviour for pure-ASCII input (one cluster == one byte == one point).
+    size_t nGraphemes = utf8_cluster_count(cp, nBytes);
+
     if (  charpos > 0
-       && charpos <= ncp)
+       && charpos <= nGraphemes)
     {
+        // Resolve the (charpos-1) leading grapheme clusters to a byte pointer.
+        UTF8 *tp = cp;
+        size_t remaining = nBytes;
+        for (unsigned int g = 1; g < charpos; g++)
+        {
+            mux_cursor cluster = utf8_next_grapheme(tp, remaining);
+            tp += cluster.m_byte;
+            remaining -= cluster.m_byte;
+        }
+
         size_t ncp_trimmed;
-        UTF8 *tp = &(cp[charpos - 1]);
-        cp = trim_space_sep_LEN(cp, ncp, sep, &ncp_trimmed);
+        cp = trim_space_sep_LEN(cp, nBytes, sep, &ncp_trimmed);
         UTF8 *xp = split_token(&cp, sep);
 
         int i;
