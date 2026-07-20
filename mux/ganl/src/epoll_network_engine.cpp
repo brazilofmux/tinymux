@@ -922,16 +922,31 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                           ev.remoteAddress = getRemoteNetworkAddress(newConn);
                      } else {
                           // Invalid handle: either the accept queue is drained
-                          // (EAGAIN/EWOULDBLOCK — normal under edge-triggered
-                          // epoll) or a genuine accept() failure (EMFILE, etc.).
-                          // Either way we stop draining; log only the real error
-                          // so resource exhaustion is not silent.
+                          // (EAGAIN/EWOULDBLOCK — normal) or a genuine accept()
+                          // failure (EMFILE, etc.).  Either way we stop
+                          // draining.  A real failure also emits a listener
+                          // Error event — select and kqueue already do; the
+                          // adapter logs it (NET/LERR) so resource exhaustion
+                          // is visible in the game log, not just stderr.
                           if (acceptError != 0
                               && acceptError != EAGAIN
                               && acceptError != EWOULDBLOCK) {
                               std::cerr << "[Epoll:CTL] accept() on listener fd "
                                         << fd << " failed: "
                                         << strerror(acceptError) << std::endl;
+                              if (eventCount < maxEvents) {
+                                  // Populate every field — `events` slots are
+                                  // reused across processEvents() calls.
+                                  IoEvent& ev = events[eventCount++];
+                                  ev.type = IoEventType::Error;
+                                  ev.listener = fd;
+                                  ev.connection = InvalidConnectionHandle;
+                                  ev.context = socketInfoCopy.context;
+                                  ev.error = acceptError;
+                                  ev.bytesTransferred = 0;
+                                  ev.buffer = nullptr;
+                                  ev.remoteAddress = NetworkAddress();
+                              }
                           }
                           break;
                      }
