@@ -10,7 +10,18 @@
 
 // Windows Headers
 #define SECURITY_WIN32
+// Expose the modern SCH_CREDENTIALS / TLS_PARAMETERS structures (and TLS 1.3
+// support) from <schannel.h>. Must be defined before the header is included.
+// The legacy SCHANNEL_CRED remains available; grbitDisabledProtocols in
+// TLS_PARAMETERS is a *disable* mask (inverted from SCHANNEL_CRED's enable
+// mask). See #952.
+#define SCHANNEL_USE_BLACKLISTS
 #include <windows.h>
+// SCHANNEL_USE_BLACKLISTS exposes CRYPTO_SETTINGS / TLS_PARAMETERS in
+// <schannel.h>, whose members are typed UNICODE_STRING / PUNICODE_STRING.
+// windows.h alone does not declare those in user mode, so pull in <winternl.h>
+// (which defines UNICODE_STRING) before <schannel.h> (#952).
+#include <winternl.h>
 #include <wincrypt.h>
 #include <ncrypt.h>
 #include <schannel.h>
