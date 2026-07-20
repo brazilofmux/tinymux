@@ -912,6 +912,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                      if (newConn != InvalidConnectionHandle) {
                           // ... (populate Accept event as before, using socketInfoCopy.context) ...
                            IoEvent& ev = events[eventCount++];
+                           ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                           ev.type = IoEventType::Accept;
                           ev.listener = fd;
                           ev.connection = newConn;
@@ -938,6 +939,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                                   // Populate every field — `events` slots are
                                   // reused across processEvents() calls.
                                   IoEvent& ev = events[eventCount++];
+                                  ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                                   ev.type = IoEventType::Error;
                                   ev.listener = fd;
                                   ev.connection = InvalidConnectionHandle;
@@ -964,6 +966,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                                 reinterpret_cast<char*>(&sockerr), &errlen);
 
                      IoEvent& ev = events[eventCount++];
+                     ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                      ev.type = IoEventType::Error;
                      ev.listener = fd;
                      ev.connection = InvalidConnectionHandle;
@@ -1006,6 +1009,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
 
                     if (eventCount < maxEvents) {
                         IoEvent& ev = events[eventCount++];
+                        ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                         ev.type = IoEventType::ConnectSuccess;
                         ev.connection = connHandle;
                         ev.context = socketInfoCopy.context;
@@ -1018,6 +1022,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
 
                     if (eventCount < maxEvents) {
                         IoEvent& ev = events[eventCount++];
+                        ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                         ev.type = IoEventType::ConnectFail;
                         ev.connection = connHandle;
                         ev.context = socketInfoCopy.context;
@@ -1047,6 +1052,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                  // We could use getsockopt with SO_ERROR here to get the specific error
                 if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];
+                     ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                      ev.type = IoEventType::Close; // Or IoEventType::Error based on error detection
                      ev.connection = connHandle;
                      ev.context = socketInfoCopy.context; // Use copied context
@@ -1071,6 +1077,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
             if (!connectionClosed && (revents & EPOLLIN)) {
                 if (eventCount < maxEvents) {
                      IoEvent& ev = events[eventCount++];
+                     ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                      ev.type = IoEventType::Read;
                      ev.connection = connHandle;
                      ev.context = socketInfoCopy.context; // Use copied context
@@ -1095,6 +1102,7 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
                 if (eventCount < maxEvents) {
                     // Create and fill Write event
                     IoEvent& ev = events[eventCount++];
+                    ev = IoEvent{}; // zero every field — slots are reused across polls (contract §2)
                     ev.type = IoEventType::Write;
                     ev.connection = connHandle;
 
