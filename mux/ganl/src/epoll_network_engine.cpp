@@ -27,18 +27,6 @@
 
 namespace ganl {
 
-namespace {
-
-void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
-    for (ConnectionBase* connection : connections) {
-        if (connection != nullptr) {
-            connection->checkNegotiationTimeout();
-        }
-    }
-}
-
-} // namespace
-
 // Use constexpr for initial epoll events size
 constexpr size_t INITIAL_EPOLL_EVENTS_SIZE = 128;
 
@@ -856,17 +844,9 @@ int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEve
     }
 
     if (nfds == 0) {
-        std::vector<ConnectionBase*> connections;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            connections.reserve(sockets_.size());
-            for (const auto& entry : sockets_) {
-                if (entry.second.type == SocketType::Connection) {
-                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
-                }
-            }
-        }
-        checkNegotiationTimeouts(connections);
+        // Idle timeout, no events. GANL passes telnet negotiation through to
+        // netmux's legacy layer, so connections never linger in
+        // TelnetNegotiating and there is nothing to sweep here (see #945).
         return 0;
     }
 

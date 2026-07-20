@@ -62,11 +62,6 @@ public:
     void handleNetworkEvent(const IoEvent& event);
 
     /**
-     * Check whether telnet negotiation has timed out while the connection is idle.
-     */
-    void checkNegotiationTimeout();
-
-    /**
      * Send data to the client
      *
      * @param data Data to send
