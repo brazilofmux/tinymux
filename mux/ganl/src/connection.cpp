@@ -507,29 +507,6 @@ bool ConnectionBase::processProtocolData() {
     return true; // Continue processing possible if more data arrives later
 }
 
-void ConnectionBase::checkNegotiationTimeout() {
-    if (isClosingOrClosed() || getState() != ConnectionState::TelnetNegotiating) {
-        return;
-    }
-
-    NegotiationStatus status = protocolHandler_.getNegotiationStatus(handle_);
-    switch (status) {
-    case NegotiationStatus::Completed:
-        GANL_CONN_DEBUG(handle_, "Telnet negotiation completed during idle timeout check.");
-        transitionToState(ConnectionState::Running);
-        break;
-
-    case NegotiationStatus::Failed:
-        GANL_CONN_DEBUG(handle_, "Telnet negotiation failed during idle timeout check.");
-        close(DisconnectReason::ProtocolError);
-        break;
-
-    case NegotiationStatus::InProgress:
-    default:
-        break;
-    }
-}
-
 void ConnectionBase::closeNetworkAfterDrain() {
     if (!closeAfterWriteDrain_ || pendingWriteFlag() || encryptedOutput_.readableBytes() > 0) {
         return;
@@ -1116,8 +1093,8 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
     // Evaluate the outcome once the loop has stopped. This must live OUTSIDE the
     // loop: every terminating path above (EOF, error, EAGAIN) uses break, so
     // running this inside the loop skipped it on exactly the iterations that
-    // matter — leaving an EOF or error connection half-open with the
-    // negotiation-timeout timer still armed and postWrite() still reachable.
+    // matter — leaving an EOF or error connection half-open with postWrite()
+    // still reachable.
     GANL_CONN_DEBUG(handle_, "Readiness read loop finished. Total read: " << totalBytesReadInCall
         << ", EOF=" << potentialEOF << ", Error=" << readError);
 

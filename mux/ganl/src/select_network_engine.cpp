@@ -32,18 +32,6 @@ const SocketFD INVALID_SOCKET_FD = -1;
 
 namespace ganl {
 
-namespace {
-
-void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
-    for (ConnectionBase* connection : connections) {
-        if (connection != nullptr) {
-            connection->checkNegotiationTimeout();
-        }
-    }
-}
-
-} // namespace
-
 // Use constexpr for any fixed-size initial values
 constexpr int MAX_SOCKET_FDS = FD_SETSIZE;  // Maximum FDs select() can handle
 
@@ -622,17 +610,9 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
     }
 
     if (nfds == 0) {
-        std::vector<ConnectionBase*> connections;
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            connections.reserve(sockets_.size());
-            for (const auto& entry : sockets_) {
-                if (entry.second.type == SocketType::Connection) {
-                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
-                }
-            }
-        }
-        checkNegotiationTimeouts(connections);
+        // Idle timeout, no events. GANL passes telnet negotiation through to
+        // netmux's legacy layer, so connections never linger in
+        // TelnetNegotiating and there is nothing to sweep here (see #945).
         return 0;
     }
 

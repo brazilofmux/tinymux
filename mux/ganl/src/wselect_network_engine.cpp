@@ -11,18 +11,6 @@
 
 namespace ganl {
 
-namespace {
-
-void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
-    for (ConnectionBase* connection : connections) {
-        if (connection != nullptr) {
-            connection->checkNegotiationTimeout();
-        }
-    }
-}
-
-} // namespace
-
     // --- Constructor / Destructor ---
 
     WSelectNetworkEngine::WSelectNetworkEngine() {
@@ -500,14 +488,9 @@ void checkNegotiationTimeouts(const std::vector<ConnectionBase*>& connections) {
         }
 
         if (nfds == 0) {
-            std::vector<ConnectionBase*> connections;
-            connections.reserve(sockets_.size());
-            for (const auto& entry : sockets_) {
-                if (entry.second.type == SocketType::Connection) {
-                    connections.push_back(static_cast<ConnectionBase*>(entry.second.context));
-                }
-            }
-            checkNegotiationTimeouts(connections);
+            // Idle timeout, no events. GANL passes telnet negotiation through to
+            // netmux's legacy layer, so connections never linger in
+            // TelnetNegotiating and there is nothing to sweep here (see #945).
             return 0; // Timeout
         }
 
