@@ -224,10 +224,18 @@ void ConnectionBase::handleNetworkEvent(const IoEvent& event) {
                           << ") doesn't match encryptedInput_ (" << &encryptedInput_ << ")");
             }
 
-            // Ensure bytesTransferred doesn't exceed buffer space (shouldn't happen with correct postRead)
+            // Ensure bytesTransferred doesn't exceed buffer space (shouldn't happen
+            // with correct postRead; readiness engines always report 0, so only a
+            // buggy completion engine could trip this).  A Read event's error field
+            // is 0, so routing through handleError(event.error) logged a misleading
+            // "Error: 0" — state the real reason and close directly (issue #953).
             if (event.bytesTransferred > encryptedInput_.writableBytes() && pendingRead_) {
-                // Commit only what fits? Or close? Let's close for safety.
-                handleError(event.error); // Treat as an error
+                GANL_CONN_DEBUG(handle_, "Read overflow: engine reported " << event.bytesTransferred
+                          << " bytes but only " << encryptedInput_.writableBytes() << " writable. Closing.");
+                ganl::logMessage("CONN[%u] read overflow: engine reported %zu bytes, buffer has %zu writable",
+                                 (unsigned)handle_, (size_t)event.bytesTransferred,
+                                 encryptedInput_.writableBytes());
+                close(DisconnectReason::NetworkError);
                 break;
             }
             handleRead(event.bytesTransferred);
@@ -340,7 +348,7 @@ void ConnectionBase::sendDataToClient(const std::string& data) {
     }
 }
 
-bool ConnectionBase::processSecureData() {
+void ConnectionBase::processSecureData() {
     // Called when encryptedInput_ has data (or during handshake start)
     IoBuffer& encryptedInput = encryptedInput_;
     IoBuffer& decryptedInput = decryptedInput_;
@@ -348,7 +356,8 @@ bool ConnectionBase::processSecureData() {
 
     if (getState() == ConnectionState::TlsHandshaking) {
         GANL_CONN_DEBUG(handle_, "Continuing TLS Handshake...");
-        return continueTlsHandshake();
+        continueTlsHandshake();
+        return;
     }
 
     // Regular data processing after handshake
@@ -365,14 +374,13 @@ bool ConnectionBase::processSecureData() {
         case TlsResult::Success:
             // Data successfully processed (decrypted or handshake message handled).
             // May have generated handshake data to send back in encryptedOutput_.
-             // Fall through to return true
-             return true;
+            break;
 
         case TlsResult::WantRead:
             // TLS layer needs more data from the network. Stop processing for now.
             GANL_CONN_DEBUG(handle_, "TLS needs more data (WantRead).");
             // Ensure a read is posted (handleRead will do this).
-            return false; // Stop processing chain
+            break;
 
         case TlsResult::WantWrite:
             // TLS layer needs to send data (handshake messages). Stop processing input for now.
@@ -381,20 +389,20 @@ bool ConnectionBase::processSecureData() {
             if (encryptedOutput.readableBytes() > 0 && !pendingWriteFlag()) {
                  postWrite();
             }
-            return false; // Stop processing chain
+            break;
 
         case TlsResult::Closed:
             // TLS session closed gracefully by peer during read.
             GANL_CONN_DEBUG(handle_, "TLS session closed by peer.");
             close(DisconnectReason::UserQuit); // Or TlsError? UserQuit seems better for clean TLS close.
-            return false; // Stop processing chain
+            break;
 
         case TlsResult::Error:
         default:
             // Unrecoverable TLS error.
             GANL_CONN_DEBUG(handle_, "TLS Error: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
             close(DisconnectReason::TlsError);
-            return false; // Stop processing chain
+            break;
     }
 }
 
@@ -720,7 +728,7 @@ void ConnectionBase::startTlsHandshake() {
     // Commented out: Most server implementations wait for ClientHello first.
 }
 
-bool ConnectionBase::continueTlsHandshake() {
+void ConnectionBase::continueTlsHandshake() {
     GANL_CONN_DEBUG(handle_, "Continuing TLS Handshake with input data (" << encryptedInput_.readableBytes() << " bytes).");
 
     // --- Call processIncoming ---
@@ -740,18 +748,14 @@ bool ConnectionBase::continueTlsHandshake() {
 
         // If startTelnetNegotiation failed, the state might be Closing/Closed
         if (isClosingOrClosed()) {
-             return false; // Stop processing if negotiation start failed
+             return; // Stop processing if negotiation start failed
         }
 
-        // Handshake is done. Now, did this processIncoming call *also* yield app data?
-        // The return value 'true'/'false' from this function determines if handleRead
-        // continues to processProtocolData. We should return true only if NO app data
-        // was decrypted during this specific final handshake step.
-        // If app data WAS decrypted (decryptedInput_ > 0), returning false might seem wrong,
-        // but handleRead's logic should handle it based on the tlsProducedData flag anyway.
-        // Let's simplify: Return based on whether immediate protocol processing is needed.
-        // If decryptedInput_ has data, protocol layer needs to run.
-        return decryptedInput_.readableBytes() == 0; // True = stop pipeline now, False = maybe continue in handleRead
+        // Handshake is done.  If this final processIncoming call also yielded
+        // early application data, decryptedInput_ now has bytes; the caller
+        // (handleRead's tlsProducedData check) sees that growth and runs the
+        // protocol layer.  Nothing to signal here — the buffers are the API.
+        return;
     }
 
     // --- If Handshake NOT Complete, Handle TlsResult ---
@@ -763,26 +767,26 @@ bool ConnectionBase::continueTlsHandshake() {
             if (encryptedOutput_.readableBytes() > 0 && !pendingWrite_) {
                 postWrite();
             }
-            return false; // Wait for next network event
+            break; // Wait for next network event
 
         case TlsResult::WantRead:
             GANL_CONN_DEBUG(handle_, "TLS handshake needs more data (WantRead).");
-            // Ensure read is posted (handleRead will usually do this after we return false)
+            // Ensure read is posted (handleRead will usually do this after we return)
             // if (!pendingRead_) { postRead(); } // Usually redundant
-            return false; // Stop processing chain
+            break; // Stop processing chain
 
         case TlsResult::WantWrite:
             GANL_CONN_DEBUG(handle_, "TLS handshake needs to write data (WantWrite).");
             if (encryptedOutput_.readableBytes() > 0 && !pendingWrite_) {
                 postWrite();
             }
-            return false; // Stop processing chain
+            break; // Stop processing chain
 
         case TlsResult::Closed: // Should not happen during handshake?
             GANL_CONN_DEBUG(handle_, "TLS session closed unexpectedly during handshake. Closing.");
             ganl::logMessage("TLS[%u] session closed unexpectedly during handshake", (unsigned)handle_);
             close(DisconnectReason::TlsError);
-            return false;
+            break;
 
         case TlsResult::Error:
         default:
@@ -791,7 +795,7 @@ bool ConnectionBase::continueTlsHandshake() {
             GANL_CONN_DEBUG(handle_, "TLS Handshake Error: " << err << ". Closing.");
             ganl::logMessage("TLS[%u] handshake error: %s", (unsigned)handle_, err.c_str());
             close(DisconnectReason::TlsError);
-            return false;
+            break;
         }
     }
 }
@@ -1127,12 +1131,13 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
         // 1. TLS Layer
         if (isTlsEnabled()) {
             size_t decryptedBefore = decryptedInput.readableBytes();
-            bool tlsCanContinue = processSecureData(); // Process data now in encryptedInput_
+            processSecureData(); // Process data now in encryptedInput_
+            // The buffers are the API: continue to the protocol layer exactly
+            // when TLS produced plaintext.  On WantRead/WantWrite there is
+            // nothing to process; on fatal results processSecureData already
+            // closed the connection.
             tlsProducedData = (decryptedInput.readableBytes() > decryptedBefore);
-            continueProcessing = tlsProducedData; // Only continue to protocol if TLS produced data
-            if (!tlsCanContinue && !tlsProducedData) {
-                continueProcessing = false; // Halted by TLS needs
-            }
+            continueProcessing = tlsProducedData;
         }
         else {
             // Non-TLS: Copy data directly
@@ -1323,12 +1328,13 @@ void CompletionConnection::handleRead(size_t bytesTransferred)
         // 1. TLS Layer
         if (isTlsEnabled()) {
             size_t decryptedBefore = decryptedInput.readableBytes();
-            bool tlsCanContinue = processSecureData(); // Process data now in encryptedInput_
+            processSecureData(); // Process data now in encryptedInput_
+            // The buffers are the API: continue to the protocol layer exactly
+            // when TLS produced plaintext.  On WantRead/WantWrite there is
+            // nothing to process; on fatal results processSecureData already
+            // closed the connection.
             tlsProducedData = (decryptedInput.readableBytes() > decryptedBefore);
-            continueProcessing = tlsProducedData; // Only continue to protocol if TLS produced data
-            if (!tlsCanContinue && !tlsProducedData) {
-                continueProcessing = false; // Halted by TLS needs
-            }
+            continueProcessing = tlsProducedData;
         }
         else {
             // Non-TLS: Copy data directly

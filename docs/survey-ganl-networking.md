@@ -295,19 +295,27 @@ destructor re-entrancy workaround (ganl_adapter.cpp:799) and the missing
   and the next `sendDataToClient` runs `formattedOutput_.clear()` (now `:290`),
   discarding it. In the protocol/negotiation paths the source is a stack-local
   `IoBuffer`, so the loss is immediate.
-- **ISSUE #953 (F8):** `continueTlsHandshake` return (`:777`) is dead **and**
-  semantically inverted — both callers decide from `tlsProducedData`, so the
-  return is a no-op today but a refactor trap. Filed with the two nits below.
+- **ISSUE #953 (F8) — FIXED (2026-07-20):** `continueTlsHandshake` return
+  (`:777`) was dead **and** semantically inverted — both callers decided from
+  `tlsProducedData`, so the return was a no-op but a refactor trap. Fixed by
+  making `continueTlsHandshake`/`processSecureData` void (the buffers are the
+  API: callers inspect `decryptedInput_` growth; fatal results close inside)
+  and deleting the dead `!tlsCanContinue` branch at both call sites.
 - **REFUTED (F9):** epoll IS edge-triggered (`EPOLLIN|EPOLLET`), but the readiness
   read loop drains to EAGAIN before returning (`connection.cpp:1071-1109`), which
   is exactly the ET contract — no stall. The missing `postRead()` is harmless
   (epoll's `postRead` only stores the buffer pointer). Not filed.
-- **ISSUE #953 (F5):** read-overflow guard closes via `handleError(0)` → "error 0"
-  diagnostic. Trivial (near-unreachable; close reason still correct).
-- **ISSUE #953 (io_buffer NIT):** `ensureWritable` growth has no overflow guard.
-  Practically unreachable — but the survey's mitigation text was wrong: there is
-  no websocket/telnet-SB buffering in this layer; the bound holds because the
-  production handler is a raw passthrough and `required` is always small.
+- **ISSUE #953 (F5) — FIXED (2026-07-20):** read-overflow guard closed via
+  `handleError(0)` → "error 0" diagnostic. Now logs the real reason (reported
+  bytes vs writable) and calls `close(NetworkError)` directly.
+- **ISSUE #953 (io_buffer NIT) — FIXED (2026-07-20):** `ensureWritable` growth
+  had no overflow guard. Practically unreachable — the survey's mitigation text
+  was wrong (no websocket/telnet-SB buffering in this layer; the bound holds
+  because the production handler is a raw passthrough and `required` is always
+  small) — but now enforced: requests where `required` or `writePos_ + required`
+  exceed a 1 GiB `kMaxBufferSize` throw `std::length_error`, which also makes
+  the `writePos_ + required` / `size * 3 / 2` growth arithmetic provably
+  non-wrapping.
 
 ## Sub-part 6 — address / DNS (surveyed 2026-06-10)
 
