@@ -82,6 +82,11 @@ The two sibling placeholders in the same file were swept in the follow-up
 commit: accept-error (~906) now logs a real failure (EMFILE etc.) before
 breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
 (was leaking stale fields from the caller-reused `events[]` slot).
+Follow-up (2026-07-20): the accept-error path now also **emits** the
+fully-populated listener `Error` event — select/kqueue already did; epoll only
+logged to stderr, leaving fd exhaustion invisible to the adapter's NET/LERR
+game-log path. Driver-verified with a clamped `RLIMIT_NOFILE`: pre-fix silent,
+post-fix `Error` event with `error == EMFILE`.
 
 ✅ **Candidates — verified against current source and filed 2026-07-20:**
 - **ISSUE #942 — FIXED (PR #959, 2026-07-20):** epoll immediate-connect armed
