@@ -133,7 +133,7 @@ private:
 
     // State machine transitions
     void startTlsHandshake();
-    bool continueTlsHandshake();
+    void continueTlsHandshake();
     void startTelnetNegotiation();
     bool processApplicationData();
     void transitionToState(ConnectionState newState);
@@ -165,7 +165,12 @@ protected:
     IoBuffer& getEncryptedOutputBuffer() { return encryptedOutput_; }
 
     // Data processing methods used by derived classes
-    bool processSecureData();
+    // Runs the TLS layer over encryptedInput_.  Progress is observable only
+    // through the buffers (decryptedInput_ growth) and connection state; on
+    // fatal results it calls close() itself.  Deliberately void: an earlier
+    // bool return was semantically inverted vs its callers' variable naming
+    // and unused for the actual continue/stop decision (issue #953).
+    void processSecureData();
     bool processProtocolData();
     void closeNetworkAfterDrain();
 

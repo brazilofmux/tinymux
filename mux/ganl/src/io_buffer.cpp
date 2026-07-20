@@ -125,6 +125,17 @@ void IoBuffer::ensureWritable(size_t required) {
         throw std::runtime_error("Cannot resize a locked buffer");
     }
 
+    // Invariant: no I/O buffer legitimately approaches this size (the largest
+    // real requests are LBUF-scale writes and socket-read chunks), so a huge
+    // `required` is a caller bug or corrupted length.  Rejecting here also
+    // makes the growth arithmetic below (writePos_ + required, size * 3 / 2)
+    // provably non-wrapping (issue #953).
+    static constexpr size_t kMaxBufferSize = static_cast<size_t>(1) << 30; // 1 GiB
+    if (required > kMaxBufferSize || writePos_ > kMaxBufferSize - required) {
+        GANL_BUFFER_DEBUG("ERROR: ensureWritable(" << required << ") exceeds kMaxBufferSize with writePos=" << writePos_);
+        throw std::length_error("IoBuffer::ensureWritable: requested size exceeds maximum buffer size");
+    }
+
     if (writableBytes() >= required) {
         GANL_BUFFER_DEBUG("Already have enough writable space (" << writableBytes() << "). No action needed.");
         return;  // Already have enough space
