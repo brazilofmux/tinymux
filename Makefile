@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios hooks
+.PHONY: all install clean realclean test test-ios test-ganl hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -27,13 +27,20 @@ install: all
 clean:
 	$(MAKE) -C mux clean
 	$(MAKE) -C testcases/tools clean
+	$(MAKE) -C mux/ganl/tests clean
 
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ios
+test: install test-ganl test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
+
+# GANL engine regression harness (epoll/select on Linux, kqueue/select on
+# macOS/BSD).  Scripted engine scenarios locking in the 2026-07 fixes.
+test-ganl:
+	@echo "==> Running GANL engine tests"
+	$(MAKE) -C mux/ganl/tests check
 
 # Headless iOS Titan parser/model tests via SPM. Skipped off Darwin
 # or when swift is unavailable.
