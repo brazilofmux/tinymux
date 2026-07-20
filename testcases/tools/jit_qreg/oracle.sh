@@ -20,6 +20,13 @@
 # lands (plan Phases 2-3); it flips green as those phases land and then
 # guards them.  Opt-in — not part of `make test` while red.
 #
+# Flag asymmetry note for future case authors: the AST side runs under
+# EV_FCHECK and the JIT side under EV_FMAND (the astbench convention).
+# The current shapes are insensitive to that — and the AST self-check
+# pins each expected literal — but an expression whose result differs
+# between FCHECK and FMAND would report a "divergence" that is flag
+# skew, not a guard-lift bug.  Keep oracle expressions flag-neutral.
+#
 # Usage:  oracle.sh
 # Exit status: 0 = all shapes agree, 1 = divergence, 2 = setup error.
 #
@@ -54,6 +61,21 @@ $TIMEOUT "$BIN/muxscript" -g "$WORK" -c exp.conf < "$WORK/probe.txt" > "$WORK/pr
 if ! grep -a "JITPROBE~" "$WORK/probe.log" | grep -q "="; then
     echo "ERROR: this build has no JIT (jitstats() missing) — reconfigure with" >&2
     echo "  cd mux && ./configure --enable-jit ... && make clean install" >&2
+    exit 2
+fi
+
+# Canary: jiteval of a trivially-compilable expression must actually
+# JIT.  On a build where the JIT declines everything (e.g. a missing or
+# unloadable softlib.rv64 blob, #875), all three cases would report
+# "#-1 JIT BAILOUT" — three FAILs indistinguishable from the real bug
+# signal.  Exit 2 instead so red stays trustworthy.
+printf '&canary me=add(1,1)\nthink CANARY~[jiteval(v(canary))]~\n' > "$WORK/canary.txt"
+$TIMEOUT "$BIN/muxscript" -g "$WORK" -c exp.conf < "$WORK/canary.txt" > "$WORK/canary.log" 2>&1
+canary=$(grep -a "CANARY~" "$WORK/canary.log" | head -1 | sed 's/.*CANARY~\(.*\)~.*/\1/')
+if [ "$canary" != "2" ]; then
+    echo "ERROR: jiteval canary returned '$canary' (wanted 2) — the JIT is" >&2
+    echo "declining expressions (softlib.rv64 blob missing?); a divergence" >&2
+    echo "run would be meaningless." >&2
     exit 2
 fi
 
