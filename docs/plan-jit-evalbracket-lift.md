@@ -107,6 +107,12 @@ that would expose them. Fixing D1 and D2 is necessary and sufficient.
 | D1-letq | `[setq(b,OUTER)][letq(b,INNER,%qb)][%qb]` | `INNEROUTER` | `INNERINNER` |
 | D1-localize | `[setq(0,A)][localize(…nested…)]%q0` | `CBA` | `CCC` |
 | D2-ecall-u | preload `%q9=qf`; `[u(me/%q9)][%q0]`, `qf` does `setq(0,MUTATED)` | `MUTATED` | `ENTRY` |
+| R1-letq-r | `[setq(0,PRE)][letq(0,IN,r(0))][r(0)]` | `INPRE` | `PREPRE` |
+| R2-scope-r | `[setq(0,A)][localize(setq(0,B))][r(0)]` | `A` | `B` |
+| RW-strcat | `strcat(%q0,setq(0,B),%q0)` with `%q0=A` | `AB` | `BB` **(production route too)** |
+
+(R1/R2/RW found during Phase 2 implementation; all six now covered by
+`oracle.sh`. RW was reachable in production without brackets.)
 
 D2 confirmed on the ECALL path (`ecalls=3`, `qreg_resyncs=0`). Two hazards
 verified along the way:
@@ -195,24 +201,42 @@ Reviewable as a no-op refactor. This is the primitive Phases 2–3 reuse.
 
 ### Phase 2 — Fix D1: resync slots on inlined scope restore (guard still up)
 
-Extend the `_RESTORE_QREGS` ECALL path so that, in JIT context, after
-`restore_global_regs` it re-marshals the q-slots via the Phase 1 helper (a
-dedicated resync ECALL, or a combined restore+resync opcode mirroring
-`ECALL_SETQ_PACK`). Wire it into the ULOCAL/letq/localize restore emission in
-`hir_lower.cpp` (`2285-2312, 2396-2421, 2509-2524`). Bump `qreg_resyncs`.
+**LANDED (2026-07-20), scope grew during implementation** — investigation
+surfaced three additional q-register defects beyond planned D1, one of them
+**live in production** (not latent behind the guard). Four pieces:
 
-This is a **correctness no-op today** for any program that currently bails, but
-it activates for scope constructs that *are* already JITtable without brackets
-(e.g. `localize(setq(0,X))` — a funccall with no eval-bracket). Resyncing slots
-to `global_regs` can only *align* the JIT with the authoritative interpreter
-state, never diverge from it.
+1. **Runtime slot resync (the planned work).** `ecall_invoke_fun` detects a
+   `_RESTORE_QREGS` return and re-marshals all q-slots via the Phase 1 helper;
+   bumps `qreg_resyncs`.
+2. **Compile-time tracking save/restore (R1/R2).** The lowerer's `qreg[]` SSA
+   tracking serves `r(n)` reads, and inlined scopes never restored it: a
+   tracked `r(n)` *after* a scope restore read the inner SSA
+   (`[setq(0,A)][localize(setq(0,B))][r(0)]` → `B`), and letq assignments
+   never *updated* tracking, so `r(n)` *inside* a letq body read the pre-letq
+   SSA (`letq(0,IN,r(0))` → stale). All three inlined scopes
+   (ulocal/letq/localize) now snapshot `qreg[]` before the body and restore
+   after; letq assignments update tracking like setq does.
+3. **`%q` read materialization (RW — production-reachable).** `%q`
+   substitution reads lowered to bare `emit_sref` — a *deferred pointer
+   deref* observed at consumption time, not a point-in-time load. Any
+   read-before-write therefore returned the post-write value:
+   `strcat(%q0,setq(0,B),%q0)` → `BB` instead of `AB`, **on the production
+   route, bracket-free** — a live wrong-answer bug the parity sweeps' corpus
+   never generated. Reads now materialize at their sequence point via a
+   single-arg `HIR_STRCAT` (snapshots the slot into an output slot at
+   position). Perf: cached JIT on a six-read `%q` expr is still ~3.5× faster
+   than native AST (0.16µs vs 0.56µs/call).
+4. **Build-stamp invalidation gap.** `JIT_BUILD_STAMP` (`__DATE__ __TIME__`)
+   lives in `jit_compiler.cpp`'s TU, so an incremental build touching only
+   `hir_lower.cpp`/`hir_codegen.cpp` kept serving persisted blobs compiled by
+   the *old* lowering. `jit_compiler.eo` now explicitly depends on both
+   sources in the engine Makefile, refreshing the stamp whenever codegen
+   changes.
 
-**Green check:**
-- Full `make test` stays green (proves no regression on the currently-reachable
-  JIT set).
-- `oracle.sh` D1-letq and D1-localize flip red→green (`INNEROUTER`, `CBA`);
-  D2-ecall-u stays red until Phase 3.
-- `jitstats()` shows `qreg_resyncs>0` across the oracle run.
+**Green results:** oracle 5/6 (D1-letq `INNEROUTER`, D1-localize `CBA`,
+R1 `INPRE`, R2 `A`, RW `AB`; D2 stays red for Phase 3); smoke 1310/1310
+including new `jit_parity_fn.mux` TC010 (bracket-free read-write-read on the
+production JIT route); `jit_diff` 400×2 seeds, 0 LOGIC; `qreg_resyncs` fires.
 
 ### Phase 3 — Fix D2: resync slots after reg-mutating ECALL returns (guard still up)
 

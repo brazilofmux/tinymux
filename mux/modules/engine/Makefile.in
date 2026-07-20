@@ -500,6 +500,13 @@ all-local: engine.so
 
 -include $(ENGINE_CXX_OBJS:.eo=.d)
 
+# The persistent code-cache blob version (JIT_BUILD_STAMP, __DATE__/__TIME__)
+# lives in jit_compiler.cpp's translation unit, but the cached code it
+# validates is produced by the lowerer and codegen.  Recompile it whenever
+# they change, so an incremental build refreshes the stamp and can never
+# serve blobs compiled by an older lowering.
+jit_compiler.eo: hir_lower.cpp hir_codegen.cpp
+
 engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir)/lua54/liblua54.a $(top_builddir)/lib/libmux.so
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) $(LD_NOUNDEFINED) \
 	    $(ENGINE_SONAME_FLAG) \

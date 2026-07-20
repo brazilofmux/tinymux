@@ -2284,12 +2284,20 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
                         // ULOCAL: save qregs.
                         int qreg_handle = -1;
+                        int saved_qreg[HIR_NUM_QREGS];
                         if (is_local)
                         {
                             int save_q = engine_api_lookup("_SAVE_QREGS");
                             qreg_handle = h.emit_call(TY_STRING,
                                 save_q, nullptr, 0);
                             h.ecalls++;
+
+                            // Snapshot compile-time %q tracking: body
+                            // setq/setr are reverted by the runtime
+                            // restore, so post-scope r(n) reads must
+                            // resolve to the pre-scope SSA values
+                            // (docs/plan-jit-evalbracket-lift.md, Ph 2).
+                            memcpy(saved_qreg, qreg, sizeof(qreg));
                         }
 
                         // Inline the body AST.
@@ -2309,6 +2317,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                             int rqargs[1] = { qreg_handle };
                             h.emit_call(TY_STRING, restore_q, rqargs, 1);
                             h.ecalls++;
+                        }
+                        if (is_local)
+                        {
+                            memcpy(qreg, saved_qreg, sizeof(qreg));
                         }
 
                         // Restore CARGS.
@@ -2398,10 +2410,27 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.ecalls++;
         h.needs_jit = true;
 
+        // Snapshot compile-time %q tracking around the scope: the
+        // assignments below and any body setq/setr are reverted by the
+        // runtime restore, so post-scope r(n) reads must resolve to
+        // the pre-scope SSA values
+        // (docs/plan-jit-evalbracket-lift.md, Phase 2).
+        int saved_qreg[HIR_NUM_QREGS];
+        memcpy(saved_qreg, qreg, sizeof(qreg));
+
         // Evaluate and assign each value.
         for (int i = 0; i < npairs; i++) {
             int val = hir_lower_trimmed(h, rc,
                 node->children[i * 2 + 1].get());
+
+            // Track the assignment so r(n) reads inside the body see
+            // the letq-bound value, not a stale pre-letq one (mirrors
+            // the setq lowering; slots > digit range are never read
+            // via tracked r(n), so the guard is just bounds safety).
+            if (regnums[i] < HIR_NUM_QREGS) {
+                qreg[regnums[i]] = val;
+                qreg_used = true;
+            }
 
             // Convert to string for SETQ_SYNC if needed.
             int sval = val;
@@ -2422,6 +2451,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int rqargs[1] = { save_handle };
         h.emit_call(TY_STRING, restore_idx, rqargs, 1);
         h.ecalls++;
+
+        memcpy(qreg, saved_qreg, sizeof(qreg));
 
         return body_result;
     }
@@ -2512,6 +2543,13 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.ecalls++;
         h.needs_jit = true;
 
+        // Snapshot compile-time %q tracking: body setq/setr update
+        // qreg[], but the runtime restore reverts the registers, so
+        // post-scope r(n) reads must resolve to the pre-scope SSA
+        // values (docs/plan-jit-evalbracket-lift.md, Phase 2).
+        int saved_qreg[HIR_NUM_QREGS];
+        memcpy(saved_qreg, qreg, sizeof(qreg));
+
         int body_result = hir_lower_trimmed(h, rc,
             node->children[0].get());
 
@@ -2519,6 +2557,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int rqargs[1] = { save_handle };
         h.emit_call(TY_STRING, restore_idx, rqargs, 1);
         h.ecalls++;
+
+        memcpy(qreg, saved_qreg, sizeof(qreg));
 
         return body_result;
     }
@@ -3751,7 +3791,19 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                         + (rv_compiler::SUBST_QREG0 + rn)
                           * rv_compiler::SUBST_SLOT;
                     h.needs_jit = true;
-                    return h.emit_sref(addr);
+                    // Materialize the read at this sequence point.  A
+                    // bare sref is a deferred pointer deref — observed
+                    // at consumption time (final strcat / ECALL) — but
+                    // %q slots mutate mid-program (SETQ_SYNC
+                    // write-through, scope-restore resync), so a bare
+                    // sref reads the final slot value, not the value
+                    // at this position: strcat(%q0,setq(0,B),%q0)
+                    // returned "BB" instead of "AB".  A single-arg
+                    // STRCAT snapshots the slot into an output slot at
+                    // its own position in the instruction stream
+                    // (docs/plan-jit-evalbracket-lift.md, Phase 2).
+                    int sref = h.emit_sref(addr);
+                    return h.emit_strcat(&sref, 1);
                 }
                 if (r == '<') {
                     // Named register: %q<name>.

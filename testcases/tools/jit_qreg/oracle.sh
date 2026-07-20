@@ -15,6 +15,14 @@
 #   D1-localize  nested localize restore leaves the SUBST slot stale
 #   D2-ecall-u   a non-inlined u() ECALL body's setq mutates global_regs
 #                but never the slot a later %q read uses
+#   R1-letq-r    tracked r(n) inside a letq body reads the pre-letq SSA
+#                (letq assignments never updated compile-time tracking)
+#   R2-scope-r   tracked r(n) after a scope restore reads the inner SSA
+#                (no compile-time tracking restore at scope exit)
+#   RW-strcat    read-write-read: %q srefs were deferred pointer derefs
+#                observed at consumption time, so a read BEFORE a setq
+#                returned the post-setq value (production-reachable,
+#                no brackets needed: strcat(%q0,setq(0,B),%q0) -> "BB")
 #
 # This script is EXPECTED TO FAIL (exit 1) until the slot-resync work
 # lands (plan Phases 2-3); it flips green as those phases land and then
@@ -87,12 +95,21 @@ cat > "$WORK/cases.txt" <<'EOF'
 &e1 me=[setq(b,OUTER)][letq(b,INNER,%qb)][%qb]
 &e2 me=[setq(0,A)][localize([setq(0,B)][localize([setq(0,C)]%q0)]%q0)]%q0
 &e3 me=[u(me/%q9)][%q0]
+&e4 me=[setq(0,PRE)][letq(0,IN,r(0))][r(0)]
+&e5 me=[setq(0,A)][localize(setq(0,B))][r(0)]
+&e6 me=strcat(%q0,setq(0,B),%q0)
 think CASE1A~[asteval(v(e1))]~
 think CASE1J~[jiteval(v(e1))]~
 think CASE2A~[asteval(v(e2))]~
 think CASE2J~[jiteval(v(e2))]~
 think CASE3A~[setq(9,qf)][setq(0,ENTRY)][asteval(v(e3))]~
 think CASE3J~[setq(9,qf)][setq(0,ENTRY)][jiteval(v(e3))]~
+think CASE4A~[asteval(v(e4))]~
+think CASE4J~[jiteval(v(e4))]~
+think CASE5A~[asteval(v(e5))]~
+think CASE5J~[jiteval(v(e5))]~
+think CASE6A~[setq(0,A)][asteval(v(e6))]~
+think CASE6J~[setq(0,A)][jiteval(v(e6))]~
 EOF
 
 rm -f "$WORK"/data/exp.sqlite*
@@ -118,6 +135,9 @@ check() {
 check "D1-letq"     CASE1A CASE1J "INNEROUTER"
 check "D1-localize" CASE2A CASE2J "CBA"
 check "D2-ecall-u"  CASE3A CASE3J "MUTATED"
+check "R1-letq-r"   CASE4A CASE4J "INPRE"
+check "R2-scope-r"  CASE5A CASE5J "A"
+check "RW-strcat"   CASE6A CASE6J "AB"
 
 if [ "$fails" -eq 0 ]; then
     echo "OK: all q-register scope shapes agree"

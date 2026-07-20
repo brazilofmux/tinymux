@@ -5081,7 +5081,9 @@
 >266
 "@if strmatch(setr(0,sha1([cat(sin(1),sin(2),sin(3))])),setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})])))={@log smoke=TC008: cat() runtime float parity. Succeeded.},{@log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).}"
 >274
-"@if strmatch(setr(0,[ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]),setr(1,[asteval({ladd(1e20 1 -1e20)})]:[asteval({ladd(0.1 0.2)})]:[asteval({ladd(1|2|3,|)})]))={@log smoke=TC009: ladd() AddDoubles parity. Succeeded.;@trig me/tr.done},{@log smoke=TC009: ladd() AddDoubles parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
+"@if strmatch(setr(0,[ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]),setr(1,[asteval({ladd(1e20 1 -1e20)})]:[asteval({ladd(0.1 0.2)})]:[asteval({ladd(1|2|3,|)})]))={@log smoke=TC009: ladd() AddDoubles parity. Succeeded.},{@log smoke=TC009: ladd() AddDoubles parity. Failed (%q0 vs %q1).}"
+>275
+"@if strmatch(strcat(setq(5,A),%q5,setq(5,B),%q5),AB)={@log smoke=TC010: qreg read-write-read materialization. Succeeded.;@trig me/tr.done},{@log smoke=TC010: qreg read-write-read materialization. Failed (got [strcat(setq(5,A),%q5,setq(5,B),%q5)]).;@trig me/tr.done}"
 <
 !123
 "test_jit_route_parity_fn"
