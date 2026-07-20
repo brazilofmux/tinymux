@@ -1242,83 +1242,92 @@ namespace ganl {
         // Get stream sizes
         const SecPkgContext_StreamSizes& sizes = context.streamSizes;
 
-        // Calculate the message size and ensure it's not too large
-        size_t dataSize = plain_in.readableBytes();
-        if (dataSize > sizes.cbMaximumMessage) {
-            context.lastError = "Message too large for Schannel";
-            GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError
-                << " (" << dataSize << " > " << sizes.cbMaximumMessage << ")");
+        // Schannel encrypts one TLS record at a time, each carrying at most
+        // cbMaximumMessage plaintext bytes. Loop over the input in record-sized
+        // chunks so a single write larger than one record (a long multi-line
+        // pose, an @dump-style burst) is split across multiple records instead
+        // of dropping the client (#951). Each encrypted record is appended to
+        // encrypted_out in order; the plaintext is consumed only after the whole
+        // buffer has been encrypted so an error leaves the input untouched
+        // (matching the caller's close-on-error contract).
+        size_t remaining = plain_in.readableBytes();
+        if (remaining == 0) {
+            return TlsResult::Success;
+        }
+
+        const DWORD maxChunk = sizes.cbMaximumMessage;
+        if (maxChunk == 0) {
+            context.lastError = "Schannel stream max message size is zero";
+            GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
             return TlsResult::Error;
         }
 
-        // Calculate the total size needed for the message
-        size_t totalSize = sizes.cbHeader + dataSize + sizes.cbTrailer;
+        // Reusable scratch buffer sized for one full record (header + max
+        // plaintext + trailer). Reused across chunks to avoid per-record allocs.
+        std::vector<BYTE> messageBuffer(sizes.cbHeader + maxChunk + sizes.cbTrailer);
 
-        // Allocate a buffer for the encrypted message
-        std::vector<BYTE> messageBuffer(totalSize);
+        size_t totalConsumed = 0;
+        while (remaining > 0) {
+            const DWORD chunk = static_cast<DWORD>(remaining < maxChunk ? remaining : maxChunk);
 
-        // Copy the data to the message buffer (after the header)
-        memcpy(messageBuffer.data() + sizes.cbHeader, plain_in.readPtr(), dataSize);
+            // Copy this chunk of plaintext into the data slot (after the header).
+            memcpy(messageBuffer.data() + sizes.cbHeader,
+                   plain_in.readPtr() + totalConsumed, chunk);
 
-        // Prepare encryption buffers
-        SecBuffer buffers[4];
-        buffers[0].pvBuffer = messageBuffer.data();
-        buffers[0].cbBuffer = sizes.cbHeader;
-        buffers[0].BufferType = SECBUFFER_STREAM_HEADER;
+            SecBuffer buffers[4];
+            buffers[0].pvBuffer = messageBuffer.data();
+            buffers[0].cbBuffer = sizes.cbHeader;
+            buffers[0].BufferType = SECBUFFER_STREAM_HEADER;
 
-        buffers[1].pvBuffer = messageBuffer.data() + sizes.cbHeader;
-        buffers[1].cbBuffer = static_cast<DWORD>(dataSize);
-        buffers[1].BufferType = SECBUFFER_DATA;
+            buffers[1].pvBuffer = messageBuffer.data() + sizes.cbHeader;
+            buffers[1].cbBuffer = chunk;
+            buffers[1].BufferType = SECBUFFER_DATA;
 
-        buffers[2].pvBuffer = messageBuffer.data() + sizes.cbHeader + dataSize;
-        buffers[2].cbBuffer = sizes.cbTrailer;
-        buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
+            buffers[2].pvBuffer = messageBuffer.data() + sizes.cbHeader + chunk;
+            buffers[2].cbBuffer = sizes.cbTrailer;
+            buffers[2].BufferType = SECBUFFER_STREAM_TRAILER;
 
-        buffers[3].pvBuffer = NULL;
-        buffers[3].cbBuffer = 0;
-        buffers[3].BufferType = SECBUFFER_EMPTY;
+            buffers[3].pvBuffer = NULL;
+            buffers[3].cbBuffer = 0;
+            buffers[3].BufferType = SECBUFFER_EMPTY;
 
-        SecBufferDesc bufferDesc;
-        bufferDesc.ulVersion = SECBUFFER_VERSION;
-        bufferDesc.cBuffers = 4;
-        bufferDesc.pBuffers = buffers;
+            SecBufferDesc bufferDesc;
+            bufferDesc.ulVersion = SECBUFFER_VERSION;
+            bufferDesc.cBuffers = 4;
+            bufferDesc.pBuffers = buffers;
 
-        // Encrypt the message
-        SECURITY_STATUS status = EncryptMessage(&context.contextHandle, 0, &bufferDesc, 0);
+            SECURITY_STATUS status = EncryptMessage(&context.contextHandle, 0, &bufferDesc, 0);
+            if (status != SEC_E_OK) {
+                // Error encrypting. Leave plain_in unconsumed; the caller treats
+                // Error as close(TlsError), so partial output is discarded.
+                context.lastError = "EncryptMessage failed: " + getSchannelErrorString(status);
+                GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
+                ganl::logMessage("TLS[%u] encrypt: %s", (unsigned)conn, context.lastError.c_str());
+                return TlsResult::Error;
+            }
 
-        if (status == SEC_E_OK) {
-            GANL_SCHANNEL_DEBUG(conn, "EncryptMessage successful");
-
-            // Calculate the total size of the encrypted message
-            size_t encryptedSize = buffers[0].cbBuffer + buffers[1].cbBuffer + buffers[2].cbBuffer;
-
-            // Copy the encrypted message to the output buffer
+            // Copy the encrypted record (header + data + trailer) to the output.
+            const size_t encryptedSize = buffers[0].cbBuffer + buffers[1].cbBuffer + buffers[2].cbBuffer;
             encrypted_out.ensureWritable(encryptedSize);
             char* dest = encrypted_out.writePtr();
 
             memcpy(dest, buffers[0].pvBuffer, buffers[0].cbBuffer);
             dest += buffers[0].cbBuffer;
-
             memcpy(dest, buffers[1].pvBuffer, buffers[1].cbBuffer);
             dest += buffers[1].cbBuffer;
-
             memcpy(dest, buffers[2].pvBuffer, buffers[2].cbBuffer);
 
             encrypted_out.commitWrite(encryptedSize);
-            GANL_SCHANNEL_DEBUG(conn, "Encrypted " << dataSize << " bytes to " << encryptedSize << " bytes");
+            GANL_SCHANNEL_DEBUG(conn, "Encrypted " << chunk << " bytes to " << encryptedSize
+                << " bytes (" << (remaining - chunk) << " plaintext bytes remaining)");
 
-            // Consume the input data
-            plain_in.consumeRead(dataSize);
+            totalConsumed += chunk;
+            remaining -= chunk;
+        }
 
-            return TlsResult::Success;
-        }
-        else {
-            // Error encrypting
-            context.lastError = "EncryptMessage failed: " + getSchannelErrorString(status);
-            GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
-            ganl::logMessage("TLS[%u] encrypt: %s", (unsigned)conn, context.lastError.c_str());
-            return TlsResult::Error;
-        }
+        // Consume all the plaintext we encrypted.
+        plain_in.consumeRead(totalConsumed);
+        return TlsResult::Success;
     }
 
     bool SchannelTransport::acquireCredentials(SessionContext& context) {
