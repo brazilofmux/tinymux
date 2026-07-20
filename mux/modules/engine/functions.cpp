@@ -15193,6 +15193,7 @@ static FUN builtin_function_list[] =
     {T("ITER"),        fun_iter,       MAX_ARG, 2,       4, FN_NOEVAL, CA_PUBLIC},
     {T("ITEXT"),       fun_itext,      MAX_ARG, 0,       1,         0, CA_PUBLIC},
 #ifdef TINYMUX_JIT
+    {T("JITEVAL"),     fun_jiteval,    MAX_ARG, 1,       1,         0, CA_WIZARD},
     {T("JITSTATS"),    fun_jitstats,   MAX_ARG, 0,       1,         0, CA_WIZARD},
 #endif
     {T("JSON"),        fun_json,       MAX_ARG, 1,       2,         0, CA_PUBLIC},

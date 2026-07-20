@@ -4531,7 +4531,8 @@ FUNCTION(fun_jitstats)
         "code_max=%llu "
         "hir_insns=%llu "
         "hir_max=%llu "
-        "spills=%llu",
+        "spills=%llu "
+        "qreg_resyncs=%llu",
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -4549,7 +4550,8 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.code_bytes_max,
         (unsigned long long)s_jit_stats.hir_insns_total,
         (unsigned long long)s_jit_stats.hir_insns_max,
-        (unsigned long long)s_jit_stats.spills_total);
+        (unsigned long long)s_jit_stats.spills_total,
+        (unsigned long long)s_jit_stats.qreg_resyncs);
 
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {
