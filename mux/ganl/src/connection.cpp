@@ -315,25 +315,37 @@ void ConnectionBase::sendDataToClient(const std::string& data) {
         // Note: processOutgoing reads from formattedOutput_ and writes to encryptedOutput_
         IoBuffer* sourceBuffer = &formattedOutput_; // Start with formatted data
 
-        if (useTls_ && secureTransport_ != nullptr && secureTransport_->isEstablished(handle_)) {
-             GANL_CONN_DEBUG(handle_, "Processing " << sourceBuffer->readableBytes() << " bytes through TLS.");
-             // Ensure encryptedOutput_ has space? Or assume processOutgoing handles it. Let's assume.
-             TlsResult result = secureTransport_->processOutgoing(handle_, *sourceBuffer, encryptedOutput_, true);
-             // Explicitly specifying consumeInput=true ensures buffer is consumed by the method
+        if (useTls_ && secureTransport_ != nullptr) {
+             if (secureTransport_->isEstablished(handle_)) {
+                 GANL_CONN_DEBUG(handle_, "Processing " << sourceBuffer->readableBytes() << " bytes through TLS.");
+                 // Ensure encryptedOutput_ has space? Or assume processOutgoing handles it. Let's assume.
+                 TlsResult result = secureTransport_->processOutgoing(handle_, *sourceBuffer, encryptedOutput_, true);
+                 // Explicitly specifying consumeInput=true ensures buffer is consumed by the method
 
-             GANL_CONN_DEBUG(handle_, "TLS processOutgoing result: " << static_cast<int>(result)
-                       << ". encryptedOutput_ size now: " << encryptedOutput_.readableBytes());
+                 GANL_CONN_DEBUG(handle_, "TLS processOutgoing result: " << static_cast<int>(result)
+                           << ". encryptedOutput_ size now: " << encryptedOutput_.readableBytes());
 
-             if (result == TlsResult::Error || result == TlsResult::Closed) {
-                 GANL_CONN_DEBUG(handle_, "TLS error during processOutgoing: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
-                 close(DisconnectReason::TlsError);
-                 return;
+                 if (result == TlsResult::Error || result == TlsResult::Closed) {
+                     GANL_CONN_DEBUG(handle_, "TLS error during processOutgoing: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
+                     close(DisconnectReason::TlsError);
+                     return;
+                 }
+                 // If result is WantRead/WantWrite, it implies handshake messages need I/O,
+                 // but the application data might still be buffered in encryptedOutput_.
+                 // The subsequent postWrite() call will handle sending.
+             } else {
+                 // TLS connection, but the session is not currently established
+                 // (mid/failed (re)negotiation window). NEVER emit application data
+                 // as plaintext on a TLS socket — that is a confidentiality
+                 // downgrade (#950). Retain the formatted bytes in formattedOutput_;
+                 // formatOutput() appends and processOutgoing() consumes only what it
+                 // encrypts, so the retained bytes flush in order once TLS is
+                 // (re)established, or are dropped if the connection closes.
+                 GANL_CONN_DEBUG(handle_, "TLS not established; retaining " << sourceBuffer->readableBytes()
+                           << " formatted bytes (no cleartext egress).");
              }
-             // If result is WantRead/WantWrite, it implies handshake messages need I/O,
-             // but the application data might still be buffered in encryptedOutput_.
-             // The subsequent postWrite() call will handle sending.
         } else {
-             GANL_CONN_DEBUG(handle_, "TLS not used or not established. Copying " << sourceBuffer->readableBytes() << " bytes directly to encryptedOutput_.");
+             GANL_CONN_DEBUG(handle_, "TLS not used. Copying " << sourceBuffer->readableBytes() << " bytes directly to encryptedOutput_.");
              // If TLS is not enabled, copy formatted data directly to encrypted output
              encryptedOutput_.append(sourceBuffer->readPtr(), sourceBuffer->readableBytes());
              sourceBuffer->clear(); // Consume the source to be consistent with TLS path

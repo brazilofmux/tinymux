@@ -86,6 +86,42 @@ static void expect(const char *a, const char *b, SC want)
     delete sb;
 }
 
+// Assert parse_subnet(cidr) rejects the input (returns nullptr).  These drive
+// the error paths (which call the netmux-side cf_log_syntax); that is
+// nullptr-safe here because driver_log.h's STARTLOG guards on g_pILog.
+static void expect_reject(const char *cidr)
+{
+    mux_subnet *sn = make_subnet(cidr);
+    if (nullptr == sn)
+    {
+        g_pass++;
+    }
+    else
+    {
+        g_fail++;
+        printf("FAIL: parse_subnet(\"%s\") should have been rejected but parsed\n",
+               cidr);
+        delete sn;
+    }
+}
+
+// Assert parse_subnet(cidr) accepts the input (returns non-nullptr).
+static void expect_accept(const char *cidr)
+{
+    mux_subnet *sn = make_subnet(cidr);
+    if (nullptr != sn)
+    {
+        g_pass++;
+        delete sn;
+    }
+    else
+    {
+        g_fail++;
+        printf("FAIL: parse_subnet(\"%s\") should have been accepted but was rejected\n",
+               cidr);
+    }
+}
+
 // --- address-vs-subnet (compare_to(MUX_SOCKADDR*)) helpers ----------------
 // Build a MUX_SOCKADDR for a native IPv4 dotted address.
 static MUX_SOCKADDR sockaddr_v4(const char *ip)
@@ -189,6 +225,39 @@ int main()
                 "v6 2001:db8::1");
     expect_addr("1.2.3.0/24",    sockaddr_v6("2001:db8::1"), false,
                 "v6 2001:db8::1 (vs v4 rule)");
+
+    // --- parse_subnet rejection paths (previously untested) -----------------
+    // The subnet parser gates the access-control (site-ban) rule set, so its
+    // rejection of malformed input is security-adjacent.  make_subnet() treated
+    // any nullptr as a hard FAIL, so nothing exercised these branches.
+    //
+    // Non-numeric / empty CIDR mask field.
+    expect_reject("10.0.0.0/abc");
+    expect_reject("10.0.0.0/");
+    // CIDR prefix length out of range (v4 0..32, v6 0..128).
+    expect_reject("10.0.0.0/33");
+    expect_reject("10.0.0.0/-1");
+    expect_reject("2001:db8::/129");
+    // Missing mask (no '/' and no whitespace-delimited netmask).
+    expect_reject("10.0.0.0");
+    expect_reject("");
+    // Malformed host address (bad octet / not an address at all).
+    expect_reject("10.0.0.999/24");
+    expect_reject("not-an-ip/24");
+
+    // --- parse_subnet accepts and normalizes host bits set outside the mask -
+    // 10.0.0.1/24 has a host bit set; parse_subnet clears it ("fixed") rather
+    // than rejecting, yielding a subnet equal to 10.0.0.0/24.  Verify both the
+    // acceptance and that the normalization is what compare_to sees.
+    expect_accept("10.0.0.1/24");
+    expect("10.0.0.1/24", "10.0.0.0/24", SC::kEqual);
+
+    // --- IPv6 shared-END nesting (the v6 analogue of the 0.0.0.0/1 case) ----
+    // ::/1 spans ::..7fff:ffff:...:ffff; 7fff::/16 ends at that same address,
+    // so the shared-end containment must classify as kContains, not kEqual /
+    // kContainedBy (the #799 bug class, now on the v6 path).
+    expect("::/1",      "7fff::/16", SC::kContains);
+    expect("7fff::/16", "::/1",      SC::kContainedBy);
 
     printf("\n=== netaddr compare_to: %d passed, %d failed ===\n",
            g_pass, g_fail);
