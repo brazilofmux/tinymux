@@ -1188,29 +1188,22 @@ namespace ganl {
             return TlsResult::WantRead;
         }
         else if (status == SEC_I_RENEGOTIATE) {
-            // Renegotiation needed
-            GANL_SCHANNEL_DEBUG(conn, "Renegotiation requested by peer");
-            context.needsRenegotiate = true;
+            // Peer requested TLS renegotiation. We do not support it and refuse
+            // by dropping the connection. Rationale (#950): renegotiation is a
+            // CPU-asymmetric DoS vector, and clearing established=false while the
+            // connection keeps running opens a cleartext-downgrade window (a send
+            // during renegotiation would route application data to the plaintext
+            // path). The OpenSSL build disables client-initiated renegotiation
+            // outright (SSL_OP_NO_RENEGOTIATION); Schannel has no equivalent
+            // server-side pre-disable, so we refuse at the point of request.
+            // TLS 1.3 has no renegotiation, so this path disappears there.
             context.established = false;
-
-            // Save any extra data for next operation
-            SecBuffer* pExtraBuffer = NULL;
-            for (int i = 0; i < 4; i++) {
-                if (buffers[i].BufferType == SECBUFFER_EXTRA) {
-                    pExtraBuffer = &buffers[i];
-                    break;
-                }
-            }
-
-            if (pExtraBuffer != NULL && pExtraBuffer->cbBuffer > 0) {
-                // Copy to handshake buffer for renegotiation
-                context.handshakeBuffer.resize(pExtraBuffer->cbBuffer);
-                memcpy(context.handshakeBuffer.data(), pExtraBuffer->pvBuffer, pExtraBuffer->cbBuffer);
-                GANL_SCHANNEL_DEBUG(conn, "Saved " << pExtraBuffer->cbBuffer << " bytes for renegotiation");
-            }
-
+            context.needsRenegotiate = false;
             context.incompleteBuffer.clear();
-            return TlsResult::WantRead;
+            context.lastError = "Peer requested TLS renegotiation; refusing (unsupported)";
+            GANL_SCHANNEL_DEBUG(conn, context.lastError);
+            ganl::logMessage("TLS[%u] decrypt: %s", (unsigned)conn, context.lastError.c_str());
+            return TlsResult::Error;
         }
         else if (status == SEC_I_CONTEXT_EXPIRED) {
             // Connection is being closed
