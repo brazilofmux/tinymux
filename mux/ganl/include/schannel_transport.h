@@ -102,6 +102,10 @@ namespace ganl {
         bool loadPemCertificate(const std::string& certFile, PCCERT_CONTEXT& outCert);
         bool loadPemPrivateKey(const std::string& keyFile, NCRYPT_KEY_HANDLE& outKey);
 
+        // Delete the persisted CNG key container backing a cert we imported via
+        // PFXImportCertStore, so it does not leak on disk (#975).
+        void deleteCertKeyContainer(PCCERT_CONTEXT cert);
+
         // Certificate selection helper
         static int scoreCertForServerTls(PCCERT_CONTEXT cert);
 
