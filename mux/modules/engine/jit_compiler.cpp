@@ -2617,6 +2617,25 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
             ec->eval, fargs, nfargs, ec->cargs, ec->ncargs);
 
     s_current_ecall_ctx = saved_ctx;
+
+    // Scope-restore resync: _RESTORE_QREGS just reverted
+    // mudstate.global_regs, but the guest %q SUBST slots — which
+    // SETQ_SYNC dual-writes kept current through the scope body — now
+    // hold the discarded inner values.  Re-marshal them from the
+    // authoritative global_regs so post-scope %q reads see the
+    // restored state (docs/plan-jit-evalbracket-lift.md, Phase 2).
+    static FUN *s_restore_qregs_fp = nullptr;
+    if (s_restore_qregs_fp == nullptr) {
+        int ridx = engine_api_lookup("_RESTORE_QREGS");
+        if (ridx > 0 && ridx < ENGINE_API_MAX_FUNCS) {
+            s_restore_qregs_fp = engine_api_table[ridx];
+        }
+    }
+    if (fp == s_restore_qregs_fp && fp != nullptr) {
+        marshal_qregs_to_slots(ec->memory, ~UINT64_C(0));
+        s_jit_stats.qreg_resyncs++;
+    }
+
     *bufc = '\0';
     size_t result_len = static_cast<size_t>(bufc - buff);
 
