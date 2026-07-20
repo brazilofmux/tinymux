@@ -336,7 +336,10 @@ ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, ui
 
     int fd = -1;
     int lastErr = 0;
-    bool connectInProgress = false;
+    // Only consumed by the debug log below (a no-op under NDEBUG); the epoll
+    // registration is identical for both outcomes, so guard against
+    // unused-variable warnings in release builds.
+    [[maybe_unused]] bool connectInProgress = false;
 
     for (addrinfo* ai = results; ai != nullptr; ai = ai->ai_next) {
         int sockFlags = ai->ai_socktype;
@@ -386,18 +389,22 @@ ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, ui
         return InvalidConnectionHandle;
     }
 
-    // Register with epoll
-    SocketType sockType = connectInProgress
-        ? SocketType::OutboundConnecting
-        : SocketType::Connection;
-    uint32_t initialEvents = connectInProgress
-        ? (EPOLLOUT | EPOLLET)          // Wait for connect completion
-        : (EPOLLIN | EPOLLET);          // Already connected, ready for data
+    // Register with epoll.  Both the immediate-connect and connect-in-progress
+    // cases register as OutboundConnecting waiting for EPOLLOUT: the async path
+    // needs it to detect connect completion, and for an immediate connect the
+    // socket is already writable, so EPOLL_CTL_ADD reports EPOLLOUT on the next
+    // epoll_wait — the OutboundConnecting handler then checks SO_ERROR (0),
+    // transitions the socket to a normal Connection (re-arming EPOLLIN), and
+    // emits ConnectSuccess.  (The previous code registered EPOLLIN for the
+    // immediate case and only rewrote the in-memory map to EPOLLOUT without an
+    // epoll_ctl(MOD), so the handler's expected EPOLLOUT never fired and the
+    // connection hung forever — issue #942.)
+    const uint32_t initialEvents = EPOLLOUT | EPOLLET;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
         sockets_[fd] = SocketInfo{
-            sockType,
+            SocketType::OutboundConnecting,
             /*context=*/connectionContext,
             /*events=*/initialEvents,
             /*activeReadBuffer=*/nullptr,
@@ -420,23 +427,8 @@ ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, ui
     }
 
     GANL_EPOLL_DEBUG(fd, "Outbound connect initiated ("
-        << (connectInProgress ? "in progress" : "immediate") << ").");
-
-    // For immediate connects, keep the socket as OutboundConnecting with
-    // EPOLLOUT interest.  The next processEvents() will see EPOLLOUT, check
-    // SO_ERROR (which will be 0), and emit ConnectSuccess — consistent with
-    // the async path.  No special-casing needed by the caller.
-    if (!connectInProgress) {
-        GANL_EPOLL_DEBUG(fd, "Connect completed immediately, will emit ConnectSuccess on next poll.");
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto it = sockets_.find(fd);
-        if (it != sockets_.end()) {
-            it->second.type = SocketType::OutboundConnecting;
-            it->second.events = EPOLLOUT | EPOLLET;
-        }
-        // Events already registered as EPOLLOUT|EPOLLET above, so
-        // EPOLLOUT will fire on the next epoll_wait.
-    }
+        << (connectInProgress ? "in progress" : "immediate — EPOLLOUT fires next poll")
+        << ").");
 
     return static_cast<ConnectionHandle>(fd);
 }
@@ -482,7 +474,9 @@ ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path
     }
     strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
 
-    bool connectInProgress = false;
+    // Only consumed by the debug log below (a no-op under NDEBUG); see the note
+    // in initiateConnect().
+    [[maybe_unused]] bool connectInProgress = false;
     int rc = ::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr));
     if (rc == 0) {
         connectInProgress = false;
@@ -495,17 +489,19 @@ ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path
         return InvalidConnectionHandle;
     }
 
-    SocketType sockType = connectInProgress
-        ? SocketType::OutboundConnecting
-        : SocketType::Connection;
-    uint32_t initialEvents = connectInProgress
-        ? (EPOLLOUT | EPOLLET)
-        : (EPOLLIN | EPOLLET);
+    // Register as OutboundConnecting waiting for EPOLLOUT.  AF_UNIX connects
+    // almost always complete immediately (connectInProgress == false); the
+    // already-writable socket then reports EPOLLOUT on the next epoll_wait and
+    // the OutboundConnecting handler emits ConnectSuccess (re-arming EPOLLIN).
+    // See the matching comment and #942 in initiateConnect() — registering
+    // EPOLLIN here left the handler's expected EPOLLOUT unfired, hanging the
+    // link (the proxy's Unix back-door path exercises exactly this).
+    const uint32_t initialEvents = EPOLLOUT | EPOLLET;
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
         sockets_[fd] = SocketInfo{
-            sockType,
+            SocketType::OutboundConnecting,
             /*context=*/connectionContext,
             /*events=*/initialEvents,
             /*activeReadBuffer=*/nullptr,
@@ -526,17 +522,9 @@ ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path
         return InvalidConnectionHandle;
     }
 
-    if (!connectInProgress) {
-        GANL_EPOLL_DEBUG(fd, "Unix connect completed immediately.");
-        std::lock_guard<std::mutex> lock(mutex_);
-        auto it = sockets_.find(fd);
-        if (it != sockets_.end()) {
-            it->second.type = SocketType::OutboundConnecting;
-            it->second.events = EPOLLOUT | EPOLLET;
-        }
-    }
-
-    GANL_EPOLL_DEBUG(fd, "Unix outbound connect initiated.");
+    GANL_EPOLL_DEBUG(fd, "Unix outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate — EPOLLOUT fires next poll")
+        << ").");
     return static_cast<ConnectionHandle>(fd);
 }
 

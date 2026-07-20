@@ -84,21 +84,38 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
 (was leaking stale fields from the caller-reused `events[]` slot).
 
 ✅ **Candidates — verified against current source and filed 2026-07-20:**
-- **ISSUE #942:** epoll immediate-connect arms `EPOLLIN` but the map/handler
-  expect `EPOLLOUT`, and no `epoll_ctl(MOD)` is issued → `ConnectSuccess` never
-  fires. `initiateUnixConnect` has the same defect. Survey's "no callers" was
-  **stale**: `mux/proxy/session_manager.cpp:1710-1714,2282-2286` call both, so
-  every Unix-socket proxy back-door link hangs on Linux. HIGH for the proxy;
-  netmux doesn't use these paths.
+- **ISSUE #942 — FIXED (PR #959, 2026-07-20):** epoll immediate-connect armed
+  `EPOLLIN` but the map/handler expect `EPOLLOUT`, and no `epoll_ctl(MOD)` was
+  issued → `ConnectSuccess` never fired. `initiateUnixConnect` had the same
+  defect. Survey's "no callers" was **stale**:
+  `mux/proxy/session_manager.cpp:1710-1714,2282-2286` call both, so every
+  Unix-socket proxy back-door link hung on Linux (netmux doesn't use these
+  paths). Fix: both connect paths register `OutboundConnecting`/`EPOLLOUT|EPOLLET`
+  unconditionally — an already-connected socket is writable, so `EPOLL_CTL_ADD`
+  reports `EPOLLOUT` on the next `epoll_wait` and the handler emits
+  `ConnectSuccess` like the async path. Verified on Linux with a standalone
+  libganl driver: AF_UNIX immediate connect emits `ConnectSuccess` post-fix and
+  revert-verified to hang (timeout) pre-fix; full smoke 1306/1306 green.
 - **ISSUE #943:** lost write-wakeup at the `maxEvents` boundary — epoll/select/
   wselect disarm `EPOLLOUT`/`wantWrite` **outside** the `eventCount < maxEvents`
   emit guard, stalling output. kqueue keeps disarm inside the guard (the pattern
   to copy). The most consequential engine bug.
-- **ISSUE #944:** `EPOLLHUP`/`EV_EOF` checked before the readable payload drops
-  final data on send-then-close. kqueue is the **severe** case (routine data loss
-  on macOS/BSD: single `EVFILT_READ`+`EV_EOF` kevent); epoll is narrow (needs
-  `EPOLLHUP|EPOLLIN` together, since `EPOLLRDHUP` is unused). select/wselect are
-  read-first and correct.
+- **ISSUE #944 — CLOSED, working-as-intended (2026-07-20).** `EPOLLHUP`/`EV_EOF`
+  is checked before the readable payload, so a coalesced "data + FIN" is not read
+  (kqueue emits Close for the `EV_EOF` kevent; epoll checks `EPOLLERR/EPOLLHUP`
+  before `EPOLLIN`; select/wselect are read-first). But the net effect — the final
+  command dropped on immediate client close — is **intended**: verified against
+  TinyMUX 2.3 (`origin/release/2.3`), where `shutdownsock`→`freeqs(d)` discards
+  `d->input_head` on disconnect and the command pipeline is the same deferred
+  `Task_ProcessCommand` design. Commands are best-effort by the single-threaded
+  "keep the server available to all players" principle. A prototyped read-before-
+  close reorder was live-verified on kqueue/macOS (`Total read: 28, EOF=1` in one
+  `handleRead`, vs 0 before) but changed nothing observable — the bytes are read,
+  queued, then discarded by `freeqs` on close anyway — so it was reverted (PR #957
+  closed). The half-close that *would* execute the final command (#956) was closed
+  as by-design (it would exceed 2.3's guarantees). Residual minor nit: the
+  cross-engine EOF-vs-read ordering divergence (kqueue/epoll EOF-first vs
+  select/wselect read-first) — harmless, not worth a hot-path change.
 - **ISSUE #946:** select's `FD_SET` has no `FD_SETSIZE` bound → OOB write above
   the 1024th fd. **wselect refuted** — it already guards `fd_count < FD_SETSIZE`.
   Low current exposure (select engine near-unreachable via the factory; ulimit
