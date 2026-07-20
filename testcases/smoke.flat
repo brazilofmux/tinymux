@@ -1,6 +1,6 @@
 +X996101
-+S338
-+N748
++S339
++N749
 -R0
 +A256
 "1:TR.TC000"
@@ -681,316 +681,318 @@
 +A594
 "1:SUITE.CLEANUP.LBAND_FN"
 +A595
-"1:SUITE.CLEANUP.LCSTR_FN"
+"1:SUITE.CLEANUP.LCAT_FN"
 +A596
-"1:SUITE.CLEANUP.LDELETE_FN"
+"1:SUITE.CLEANUP.LCSTR_FN"
 +A597
-"1:SUITE.CLEANUP.LEFT_FN"
+"1:SUITE.CLEANUP.LDELETE_FN"
 +A598
-"1:SUITE.CLEANUP.LETQ_FN"
+"1:SUITE.CLEANUP.LEFT_FN"
 +A599
-"1:SUITE.CLEANUP.LIMATH_FN"
+"1:SUITE.CLEANUP.LETQ_FN"
 +A600
-"1:SUITE.CLEANUP.LINSERT_FN"
+"1:SUITE.CLEANUP.LIMATH_FN"
 +A601
-"1:SUITE.CLEANUP.LJUST_FN"
+"1:SUITE.CLEANUP.LINSERT_FN"
 +A602
-"1:SUITE.CLEANUP.LMAX_FN"
+"1:SUITE.CLEANUP.LJUST_FN"
 +A603
-"1:SUITE.CLEANUP.LMIN_FN"
+"1:SUITE.CLEANUP.LMAX_FN"
 +A604
-"1:SUITE.CLEANUP.LN_FN"
+"1:SUITE.CLEANUP.LMIN_FN"
 +A605
-"1:SUITE.CLEANUP.LNUM_FN"
+"1:SUITE.CLEANUP.LN_FN"
 +A606
-"1:SUITE.CLEANUP.LOCATE_POSS"
+"1:SUITE.CLEANUP.LNUM_FN"
 +A607
-"1:SUITE.CLEANUP.LOCK_FN"
+"1:SUITE.CLEANUP.LOCATE_POSS"
 +A608
-"1:SUITE.CLEANUP.LOCKENCODE_FN"
+"1:SUITE.CLEANUP.LOCK_FN"
 +A609
-"1:SUITE.CLEANUP.LOG_FN"
+"1:SUITE.CLEANUP.LOCKENCODE_FN"
 +A610
-"1:SUITE.CLEANUP.LOR_FN"
+"1:SUITE.CLEANUP.LOG_FN"
 +A611
-"1:SUITE.CLEANUP.LPAD_FN"
+"1:SUITE.CLEANUP.LOR_FN"
 +A612
-"1:SUITE.CLEANUP.LPOS_FN"
+"1:SUITE.CLEANUP.LPAD_FN"
 +A613
-"1:SUITE.CLEANUP.LT_FN"
+"1:SUITE.CLEANUP.LPOS_FN"
 +A614
-"1:SUITE.CLEANUP.LTE_FN"
+"1:SUITE.CLEANUP.LT_FN"
 +A615
-"1:SUITE.CLEANUP.LUA_FN"
+"1:SUITE.CLEANUP.LTE_FN"
 +A616
-"1:SUITE.CLEANUP.LXOR_FN"
+"1:SUITE.CLEANUP.LUA_FN"
 +A617
-"1:SUITE.CLEANUP.MAILINFO_FN"
+"1:SUITE.CLEANUP.LXOR_FN"
 +A618
-"1:SUITE.CLEANUP.MAILSEND_FN"
+"1:SUITE.CLEANUP.MAILINFO_FN"
 +A619
-"1:SUITE.CLEANUP.MALFORMED_SYNTAX"
+"1:SUITE.CLEANUP.MAILSEND_FN"
 +A620
-"1:SUITE.CLEANUP.MATCH_FN"
+"1:SUITE.CLEANUP.MALFORMED_SYNTAX"
 +A621
-"1:SUITE.CLEANUP.MATCHALL_FN"
+"1:SUITE.CLEANUP.MATCH_FN"
 +A622
-"1:SUITE.CLEANUP.MAX_FN"
+"1:SUITE.CLEANUP.MATCHALL_FN"
 +A623
-"1:SUITE.CLEANUP.MEAN_FN"
+"1:SUITE.CLEANUP.MAX_FN"
 +A624
-"1:SUITE.CLEANUP.MEDIAN_FN"
+"1:SUITE.CLEANUP.MEAN_FN"
 +A625
-"1:SUITE.CLEANUP.MEMBER_FN"
+"1:SUITE.CLEANUP.MEDIAN_FN"
 +A626
-"1:SUITE.CLEANUP.MERGE_FN"
+"1:SUITE.CLEANUP.MEMBER_FN"
 +A627
-"1:SUITE.CLEANUP.MID_FN"
+"1:SUITE.CLEANUP.MERGE_FN"
 +A628
-"1:SUITE.CLEANUP.MIN_FN"
+"1:SUITE.CLEANUP.MID_FN"
 +A629
-"1:SUITE.CLEANUP.MOD_FN"
+"1:SUITE.CLEANUP.MIN_FN"
 +A630
-"1:SUITE.CLEANUP.MOON_FN"
+"1:SUITE.CLEANUP.MOD_FN"
 +A631
-"1:SUITE.CLEANUP.MUL_FN"
+"1:SUITE.CLEANUP.MOON_FN"
 +A632
-"1:SUITE.CLEANUP.NCON_FN"
+"1:SUITE.CLEANUP.MUL_FN"
 +A633
-"1:SUITE.CLEANUP.NEQ_FN"
+"1:SUITE.CLEANUP.NCON_FN"
 +A634
-"1:SUITE.CLEANUP.NESTED_DEPTH"
+"1:SUITE.CLEANUP.NEQ_FN"
 +A635
-"1:SUITE.CLEANUP.NOEVAL_FN"
+"1:SUITE.CLEANUP.NESTED_DEPTH"
 +A636
-"1:SUITE.CLEANUP.NOT_FN"
+"1:SUITE.CLEANUP.NOEVAL_FN"
 +A637
-"1:SUITE.CLEANUP.NPLAYERS_FN"
+"1:SUITE.CLEANUP.NOT_FN"
 +A638
-"1:SUITE.CLEANUP.OBJID_FN"
+"1:SUITE.CLEANUP.NPLAYERS_FN"
 +A639
-"1:SUITE.CLEANUP.OEMIT_FN"
+"1:SUITE.CLEANUP.OBJID_FN"
 +A640
-"1:SUITE.CLEANUP.OR_FN"
+"1:SUITE.CLEANUP.OEMIT_FN"
 +A641
-"1:SUITE.CLEANUP.ORBOOL_FN"
+"1:SUITE.CLEANUP.OR_FN"
 +A642
-"1:SUITE.CLEANUP.ORD_FN"
+"1:SUITE.CLEANUP.ORBOOL_FN"
 +A643
-"1:SUITE.CLEANUP.OVERFLOW_INJECT_FN"
+"1:SUITE.CLEANUP.ORD_FN"
 +A644
-"1:SUITE.CLEANUP.PAGINATE_FN"
+"1:SUITE.CLEANUP.OVERFLOW_INJECT_FN"
 +A645
-"1:SUITE.CLEANUP.PARENMATCH_FN"
+"1:SUITE.CLEANUP.PAGINATE_FN"
 +A646
-"1:SUITE.CLEANUP.PARSEDATE_FN"
+"1:SUITE.CLEANUP.PARENMATCH_FN"
 +A647
-"1:SUITE.CLEANUP.PARSER_FN"
+"1:SUITE.CLEANUP.PARSEDATE_FN"
 +A648
-"1:SUITE.CLEANUP.PERMISSION_PATHS"
+"1:SUITE.CLEANUP.PARSER_FN"
 +A649
-"1:SUITE.CLEANUP.PI_FN"
+"1:SUITE.CLEANUP.PERMISSION_PATHS"
 +A650
-"1:SUITE.CLEANUP.PICKRAND_FN"
+"1:SUITE.CLEANUP.PI_FN"
 +A651
-"1:SUITE.CLEANUP.POCVM2_FN"
+"1:SUITE.CLEANUP.PICKRAND_FN"
 +A652
-"1:SUITE.CLEANUP.POS_FN"
+"1:SUITE.CLEANUP.POCVM2_FN"
 +A653
-"1:SUITE.CLEANUP.POSN_FN"
+"1:SUITE.CLEANUP.POS_FN"
 +A654
-"1:SUITE.CLEANUP.POWER_FN"
+"1:SUITE.CLEANUP.POSN_FN"
 +A655
-"1:SUITE.CLEANUP.PRINTF_FN"
+"1:SUITE.CLEANUP.POWER_FN"
 +A656
-"1:SUITE.CLEANUP.PROTECT_FN"
+"1:SUITE.CLEANUP.PRINTF_FN"
 +A657
-"1:SUITE.CLEANUP.REGLATTR_FN"
+"1:SUITE.CLEANUP.PROTECT_FN"
 +A658
-"1:SUITE.CLEANUP.REMAINDER_FN"
+"1:SUITE.CLEANUP.REGLATTR_FN"
 +A659
-"1:SUITE.CLEANUP.REMOVE_FN"
+"1:SUITE.CLEANUP.REMAINDER_FN"
 +A660
-"1:SUITE.CLEANUP.REPEAT_FN"
+"1:SUITE.CLEANUP.REMOVE_FN"
 +A661
-"1:SUITE.CLEANUP.REPLACE_FN"
+"1:SUITE.CLEANUP.REPEAT_FN"
 +A662
-"1:SUITE.CLEANUP.REST_FN"
+"1:SUITE.CLEANUP.REPLACE_FN"
 +A663
-"1:SUITE.CLEANUP.REVERSE_FN"
+"1:SUITE.CLEANUP.REST_FN"
 +A664
-"1:SUITE.CLEANUP.REVWORDS_FN"
+"1:SUITE.CLEANUP.REVERSE_FN"
 +A665
-"1:SUITE.CLEANUP.RIGHT_FN"
+"1:SUITE.CLEANUP.REVWORDS_FN"
 +A666
-"1:SUITE.CLEANUP.RJUST_FN"
+"1:SUITE.CLEANUP.RIGHT_FN"
 +A667
-"1:SUITE.CLEANUP.ROMAN_FN"
+"1:SUITE.CLEANUP.RJUST_FN"
 +A668
-"1:SUITE.CLEANUP.ROUND_FN"
+"1:SUITE.CLEANUP.ROMAN_FN"
 +A669
-"1:SUITE.CLEANUP.ROUTE_FN"
+"1:SUITE.CLEANUP.ROUND_FN"
 +A670
-"1:SUITE.CLEANUP.RPAD_FN"
+"1:SUITE.CLEANUP.ROUTE_FN"
 +A671
-"1:SUITE.CLEANUP.RVBENCH_FN"
+"1:SUITE.CLEANUP.RPAD_FN"
 +A672
-"1:SUITE.CLEANUP.SANDBOX_FN"
+"1:SUITE.CLEANUP.RVBENCH_FN"
 +A673
-"1:SUITE.CLEANUP.SEARCH_EVAL_FN"
+"1:SUITE.CLEANUP.SANDBOX_FN"
 +A674
-"1:SUITE.CLEANUP.SECURE_FN"
+"1:SUITE.CLEANUP.SEARCH_EVAL_FN"
 +A675
-"1:SUITE.CLEANUP.SETDIFF_FN"
+"1:SUITE.CLEANUP.SECURE_FN"
 +A676
-"1:SUITE.CLEANUP.SETINTER_FN"
+"1:SUITE.CLEANUP.SETDIFF_FN"
 +A677
-"1:SUITE.CLEANUP.SETUNION_FN"
+"1:SUITE.CLEANUP.SETINTER_FN"
 +A678
-"1:SUITE.CLEANUP.SHA1_FN"
+"1:SUITE.CLEANUP.SETUNION_FN"
 +A679
-"1:SUITE.CLEANUP.SHL_FN"
+"1:SUITE.CLEANUP.SHA1_FN"
 +A680
-"1:SUITE.CLEANUP.SHR_FN"
+"1:SUITE.CLEANUP.SHL_FN"
 +A681
-"1:SUITE.CLEANUP.SHUFFLE_FN"
+"1:SUITE.CLEANUP.SHR_FN"
 +A682
-"1:SUITE.CLEANUP.SHUTDOWN"
+"1:SUITE.CLEANUP.SHUFFLE_FN"
 +A683
-"1:SUITE.CLEANUP.SIGN_FN"
+"1:SUITE.CLEANUP.SHUTDOWN"
 +A684
-"1:SUITE.CLEANUP.SIN_FN"
+"1:SUITE.CLEANUP.SIGN_FN"
 +A685
-"1:SUITE.CLEANUP.SINGLETIME_FN"
+"1:SUITE.CLEANUP.SIN_FN"
 +A686
-"1:SUITE.CLEANUP.SORT_FN"
+"1:SUITE.CLEANUP.SINGLETIME_FN"
 +A687
-"1:SUITE.CLEANUP.SORTKEY_FN"
+"1:SUITE.CLEANUP.SORT_FN"
 +A688
-"1:SUITE.CLEANUP.SOUNDEX_FN"
+"1:SUITE.CLEANUP.SORTKEY_FN"
 +A689
-"1:SUITE.CLEANUP.SPACE_FN"
+"1:SUITE.CLEANUP.SOUNDEX_FN"
 +A690
-"1:SUITE.CLEANUP.SPELLNUM_FN"
+"1:SUITE.CLEANUP.SPACE_FN"
 +A691
-"1:SUITE.CLEANUP.SPLICE_FN"
+"1:SUITE.CLEANUP.SPELLNUM_FN"
 +A692
-"1:SUITE.CLEANUP.SQRT_FN"
+"1:SUITE.CLEANUP.SPLICE_FN"
 +A693
-"1:SUITE.CLEANUP.SQUISH_FN"
+"1:SUITE.CLEANUP.SQRT_FN"
 +A694
-"1:SUITE.CLEANUP.STDDEV_FN"
+"1:SUITE.CLEANUP.SQUISH_FN"
 +A695
-"1:SUITE.CLEANUP.STRCAT_FN"
+"1:SUITE.CLEANUP.STDDEV_FN"
 +A696
-"1:SUITE.CLEANUP.STRDELETE_FN"
+"1:SUITE.CLEANUP.STRCAT_FN"
 +A697
-"1:SUITE.CLEANUP.STRDISTANCE_FN"
+"1:SUITE.CLEANUP.STRDELETE_FN"
 +A698
-"1:SUITE.CLEANUP.STRIP_FN"
+"1:SUITE.CLEANUP.STRDISTANCE_FN"
 +A699
-"1:SUITE.CLEANUP.STRIPANSI_FN"
+"1:SUITE.CLEANUP.STRIP_FN"
 +A700
-"1:SUITE.CLEANUP.STRLEN_FN"
+"1:SUITE.CLEANUP.STRIPANSI_FN"
 +A701
-"1:SUITE.CLEANUP.STRMATCH_FN"
+"1:SUITE.CLEANUP.STRLEN_FN"
 +A702
-"1:SUITE.CLEANUP.STRMEM_FN"
+"1:SUITE.CLEANUP.STRMATCH_FN"
 +A703
-"1:SUITE.CLEANUP.STRSET_FN"
+"1:SUITE.CLEANUP.STRMEM_FN"
 +A704
-"1:SUITE.CLEANUP.STRSORT_FN"
+"1:SUITE.CLEANUP.STRSET_FN"
 +A705
-"1:SUITE.CLEANUP.STRTRUNC_FN"
+"1:SUITE.CLEANUP.STRSORT_FN"
 +A706
-"1:SUITE.CLEANUP.SUB_FN"
+"1:SUITE.CLEANUP.STRTRUNC_FN"
 +A707
-"1:SUITE.CLEANUP.SUBNETMATCH_FN"
+"1:SUITE.CLEANUP.SUB_FN"
 +A708
-"1:SUITE.CLEANUP.SWITCH_CMD"
+"1:SUITE.CLEANUP.SUBNETMATCH_FN"
 +A709
-"1:SUITE.CLEANUP.SWITCH_FN"
+"1:SUITE.CLEANUP.SWITCH_CMD"
 +A710
-"1:SUITE.CLEANUP.T_FN"
+"1:SUITE.CLEANUP.SWITCH_FN"
 +A711
-"1:SUITE.CLEANUP.TABLE_FN"
+"1:SUITE.CLEANUP.T_FN"
 +A712
-"1:SUITE.CLEANUP.TAN_FN"
+"1:SUITE.CLEANUP.TABLE_FN"
 +A713
-"1:SUITE.CLEANUP.TIER2_PARITY_FN"
+"1:SUITE.CLEANUP.TAN_FN"
 +A714
-"1:SUITE.CLEANUP.TR_FN"
+"1:SUITE.CLEANUP.TIER2_PARITY_FN"
 +A715
-"1:SUITE.CLEANUP.TRANSLATE_FN"
+"1:SUITE.CLEANUP.TR_FN"
 +A716
-"1:SUITE.CLEANUP.TRIGGER_CMD"
+"1:SUITE.CLEANUP.TRANSLATE_FN"
 +A717
-"1:SUITE.CLEANUP.TRIM_FN"
+"1:SUITE.CLEANUP.TRIGGER_CMD"
 +A718
-"1:SUITE.CLEANUP.TRUNC_FN"
+"1:SUITE.CLEANUP.TRIM_FN"
 +A719
-"1:SUITE.CLEANUP.UCSTR_FN"
+"1:SUITE.CLEANUP.TRUNC_FN"
 +A720
-"1:SUITE.CLEANUP.UNIQUE_FN"
+"1:SUITE.CLEANUP.UCSTR_FN"
 +A721
-"1:SUITE.CLEANUP.UNSETQ_FN"
+"1:SUITE.CLEANUP.UNIQUE_FN"
 +A722
-"1:SUITE.CLEANUP.URL_ESCAPE_FN"
+"1:SUITE.CLEANUP.UNSETQ_FN"
 +A723
-"1:SUITE.CLEANUP.VADD_FN"
+"1:SUITE.CLEANUP.URL_ESCAPE_FN"
 +A724
-"1:SUITE.CLEANUP.VCROSS_FN"
+"1:SUITE.CLEANUP.VADD_FN"
 +A725
-"1:SUITE.CLEANUP.VDOT_FN"
+"1:SUITE.CLEANUP.VCROSS_FN"
 +A726
-"1:SUITE.CLEANUP.VERSION_FN"
+"1:SUITE.CLEANUP.VDOT_FN"
 +A727
-"1:SUITE.CLEANUP.VISUAL_WIDTH_FN"
+"1:SUITE.CLEANUP.VERSION_FN"
 +A728
-"1:SUITE.CLEANUP.VMAG_FN"
+"1:SUITE.CLEANUP.VISUAL_WIDTH_FN"
 +A729
-"1:SUITE.CLEANUP.VMUL_FN"
+"1:SUITE.CLEANUP.VMAG_FN"
 +A730
-"1:SUITE.CLEANUP.VSUB_FN"
+"1:SUITE.CLEANUP.VMUL_FN"
 +A731
-"1:SUITE.CLEANUP.VUNIT_FN"
+"1:SUITE.CLEANUP.VSUB_FN"
 +A732
-"1:SUITE.CLEANUP.VWIDTH_FN"
+"1:SUITE.CLEANUP.VUNIT_FN"
 +A733
-"1:SUITE.CLEANUP.WAIT_CMD"
+"1:SUITE.CLEANUP.VWIDTH_FN"
 +A734
-"1:SUITE.CLEANUP.WHILE_FN"
+"1:SUITE.CLEANUP.WAIT_CMD"
 +A735
-"1:SUITE.CLEANUP.WORDEND_FN"
+"1:SUITE.CLEANUP.WHILE_FN"
 +A736
-"1:SUITE.CLEANUP.WORDPOS_FN"
+"1:SUITE.CLEANUP.WORDEND_FN"
 +A737
-"1:SUITE.CLEANUP.WORDS_FN"
+"1:SUITE.CLEANUP.WORDPOS_FN"
 +A738
-"1:SUITE.CLEANUP.WORDSTART_FN"
+"1:SUITE.CLEANUP.WORDS_FN"
 +A739
-"1:SUITE.CLEANUP.WRAP_FN"
+"1:SUITE.CLEANUP.WORDSTART_FN"
 +A740
-"1:SUITE.CLEANUP.WRAPCOLUMNS_FN"
+"1:SUITE.CLEANUP.WRAP_FN"
 +A741
-"1:SUITE.CLEANUP.XOR_FN"
+"1:SUITE.CLEANUP.WRAPCOLUMNS_FN"
 +A742
-"1:SUITE.CLEANUP.ZIP_FN"
+"1:SUITE.CLEANUP.XOR_FN"
 +A743
-"1:PRE_LIMIT"
+"1:SUITE.CLEANUP.ZIP_FN"
 +A744
-"1:R3"
+"1:PRE_LIMIT"
 +A745
-"1:R4"
+"1:R3"
 +A746
-"1:LBUF_MAX"
+"1:R4"
 +A747
+"1:LBUF_MAX"
++A748
 "1:MAX_TIMES"
 !0
 "Limbo"
 -1
 -1
-337
+338
 66
 -1
 -1
@@ -1007,10 +1009,10 @@
 "Wizard"
 0
 -1
-267
+268
 -1
 0
-217
+218
 1
 -1
 1000
@@ -1028,7 +1030,7 @@
 >49
 "20"
 >213
-"237 337 244 196 337"
+"238 338 245 197 338"
 >218
 "Fri Jan 01 00:00:00 2010"
 >219
@@ -5428,13 +5430,42 @@
 "@if eq(lbxor(255|15,|),240)={@log smoke=TC012: lbxor custom delimiter. Succeeded.;@trig me/tr.done},{@log smoke=TC012: lbxor custom delimiter. Failed ([lbxor(255|15,|)]).;@trig me/tr.done}"
 <
 !131
-"test_lcstr_fn"
+"test_lcat_fn"
 0
 -1
 -1
 -1
 0
 130
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning lcat() test cases."
+>257
+"@if cand(eq(comp(lcat(a b c), abc), 0),eq(comp(lcat(a b c,%b,-), a-b-c), 0),eq(comp(lcat(a|b|c,|), abc), 0),eq(comp(lcat(a|b|c,|,+), a+b+c), 0),eq(comp(lcat(solo), solo), 0),eq(strlen(lcat(%b)), 0))={@log smoke=TC001: lcat basic joining and separators. Succeeded.},{@log smoke=TC001: lcat basic joining and separators. Failed (basic=[lcat(a b c)] osep=[lcat(a b c,%b,-)] isep=[lcat(a|b|c,|)] both=[lcat(a|b|c,|,+)] solo=[lcat(solo)] emptylen=[strlen(lcat(%b))]).}"
+>258
+"@if cand(eq(comp(lcat(graphemes(hello)), hello), 0),eq(comp(lcat(graphemes(h[chr(233)]llo)), h[chr(233)]llo), 0),eq(comp(lcat(graphemes(a[chr(128075)][chr(127995)]b)), a[chr(128075)][chr(127995)]b), 0),eq(comp(lcat(graphemes(h[chr(233)]llo world,|),|), h[chr(233)]llo world), 0),eq(comp(lcat(graphemes(setr(0,h[chr(233)]llo))), r(0)), 0))={@log smoke=TC002: lcat/graphemes round-trip (UTF-8). Succeeded.;@trig me/tr.done},{@log smoke=TC002: lcat/graphemes round-trip (UTF-8). Failed (ascii=[lcat(graphemes(hello))] acc=[lcat(graphemes(h[chr(233)]llo))] emoji=[lcat(graphemes(a[chr(128075)][chr(127995)]b))] spaced=[lcat(graphemes(h[chr(233)]llo world,|),|)]).;@trig me/tr.done}"
+>260
+"@log smoke=End lcat() test cases.;@notify smoke"
+<
+!132
+"test_lcstr_fn"
+0
+-1
+-1
+-1
+0
+131
 1
 -1
 1
@@ -5456,14 +5487,14 @@
 >260
 "@log smoke=End lcstr() test cases.;@notify smoke"
 <
-!132
+!133
 "test_ldelete_fn"
 0
 -1
 -1
 -1
 0
-131
+132
 1
 -1
 1
@@ -5499,14 +5530,14 @@
 >274
 "@if cand(strmatch(ldelete(a b c,0), a b c),strmatch(ldelete(a b c,4), a b c),strmatch(ldelete(a b c,-1), a b),strmatch(ldelete(a b c d e,1 3 5), b d),eq(strlen(ldelete(,1)), 0))={@log smoke=TC009: ldelete edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC009: ldelete edge cases. Failed (p0=[ldelete(a b c,0)] p4=[ldelete(a b c,4)] neg=[ldelete(a b c,-1)] multi=[ldelete(a b c d e,1 3 5)] empty=[ldelete(,1)]).;@trig me/tr.done}"
 <
-!133
+!134
 "test_left_fn"
 0
 -1
 -1
 -1
 0
-132
+133
 1
 -1
 1
@@ -5528,14 +5559,14 @@
 >260
 "@log smoke=End left() test cases.;@notify smoke"
 <
-!134
+!135
 "test_letq_fn"
 0
 -1
 -1
 -1
 0
-133
+134
 1
 -1
 1
@@ -5567,14 +5598,14 @@
 >264
 "@if strmatch(setr(0,letq(x,5,add(%qx,3))),8)={@log smoke=TC007: letq body evaluation. Succeeded.;@trig me/tr.done},{@log smoke=TC007: letq body evaluation. Failed (%q0).;@trig me/tr.done}"
 <
-!135
+!136
 "test_limath_fn"
 0
 -1
 -1
 -1
 0
-134
+135
 1
 -1
 1
@@ -5620,14 +5651,14 @@
 >279
 "@if strmatch(limath(foo, 1 2 3),#-1*)={@log smoke=TC014: limath unknown operation. Succeeded.;@trig me/tr.done},{@log smoke=TC014: limath unknown operation. Failed ([limath(foo, 1 2 3)]).;@trig me/tr.done}"
 <
-!136
+!137
 "test_linsert_fn"
 0
 -1
 -1
 -1
 0
-135
+136
 1
 -1
 1
@@ -5649,14 +5680,14 @@
 >260
 "@log smoke=End linsert()/lreplace() test cases.;@notify smoke"
 <
-!137
+!138
 "test_ljust_fn"
 0
 -1
 -1
 -1
 0
-136
+137
 1
 -1
 1
@@ -5690,14 +5721,14 @@
 >266
 "@if cand(eq(strlen(ljust(x,[sub(config(lbuf_size),1)])), sub(config(lbuf_size),1)),strmatch(ljust(x,[config(lbuf_size)]), #-1 OUT OF RANGE),strmatch(ljust(x,999999), #-1 OUT OF RANGE),strmatch(ljust(x,-5), #-1 OUT OF RANGE),eq(strlen(ljust(x,0)), 0))={@log smoke=TC008: ljust LBUF width boundary regression guard. Succeeded.;@trig me/tr.done},{@log smoke=TC008: ljust LBUF width boundary regression guard. Failed (atmax_len=[strlen(ljust(x,[sub(config(lbuf_size),1)]))] atlimit=[ljust(x,[config(lbuf_size)])] far=[ljust(x,999999)] neg=[ljust(x,-5)] zero_len=[strlen(ljust(x,0))]).;@trig me/tr.done}"
 <
-!138
+!139
 "test_lmax_fn"
 0
 -1
 -1
 -1
 0
-137
+138
 1
 -1
 1
@@ -5721,14 +5752,14 @@
 >260
 "@log smoke=End lmax() test cases.;@notify smoke"
 <
-!139
+!140
 "test_lmin_fn"
 0
 -1
 -1
 -1
 0
-138
+139
 1
 -1
 1
@@ -5752,14 +5783,14 @@
 >260
 "@log smoke=End lmin() test cases.;@notify smoke"
 <
-!140
+!141
 "test_ln_fn"
 0
 -1
 -1
 -1
 0
-139
+140
 1
 -1
 1
@@ -5781,14 +5812,14 @@
 >260
 "@log smoke=End ln() test cases.;@notify smoke"
 <
-!141
+!142
 "test_lnum_fn"
 0
 -1
 -1
 -1
 0
-140
+141
 1
 -1
 1
@@ -5814,14 +5845,14 @@
 >261
 "@if cand(eq(strlen(lnum(0)), 0),eq(strlen(lnum(-3)), 0),strmatch(lnum(1), 0),eq(strlen(lnum(foo)), 0))={@log smoke=TC004: lnum() degenerate counts. Succeeded.;@trig me/tr.done},{@log smoke=TC004: lnum() degenerate counts. Failed (lnum(0)=[lnum(0)] lnum(-3)=[lnum(-3)] lnum(1)=[lnum(1)] lnum(foo)=[lnum(foo)]).;@trig me/tr.done}"
 <
-!142
+!143
 "test_locate_poss"
 0
 -1
 -1
 -1
 0
-141
+142
 1
 -1
 1
@@ -5841,14 +5872,14 @@
 >260
 "@log smoke=End locate() possessive test cases.;@notify smoke"
 <
-!143
+!144
 "test_lock_fn"
 0
 -1
 -1
 -1
 0
-146
+147
 1
 -1
 1
@@ -5878,15 +5909,15 @@
 >263
 "@if cand(strmatch(lock(me,me&&you), #-1 I DON'T UNDERSTAND THAT KEY),strmatch(objeval(*LockCtrlMortal, lock([get(me/VICTIM)],me)), #-1 PERMISSION DENIED),strmatch(objeval(*LockNoModMortal, lock([get(me/VICTIM)],me)), #-1 PERMISSION DENIED))={@log smoke=TC006: lock() set-side-effect error paths. Succeeded.;@trig me/tr.done},{@log smoke=TC006: lock() set-side-effect error paths. Failed (key=[lock(me,me&&you)] ctrl=[objeval(*LockCtrlMortal, lock([get(me/VICTIM)],me))] nomod=[objeval(*LockNoModMortal, lock([get(me/VICTIM)],me))]).;@trig me/tr.done}"
 <
-!144
+!145
 "LockCtrlMortal"
 0
 -1
 -1
 -1
 0
-142
-144
+143
+145
 -1
 150
 2051
@@ -5907,9 +5938,9 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >267
-"1:0:#145"
+"1:0:#146"
 <
-!145
+!146
 "LockCtrlVictim"
 1
 -1
@@ -5930,15 +5961,15 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!146
+!147
 "LockNoModMortal"
 0
 -1
 -1
 -1
 0
-144
-146
+145
+147
 -1
 140
 2051
@@ -5959,17 +5990,17 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >267
-"1:0:#147"
+"1:0:#148"
 <
-!147
+!148
 "LockNoModVictim"
 1
 -1
 -1
 -1
 0
-145
 146
+147
 -1
 1
 6145
@@ -5982,14 +6013,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!148
+!149
 "test_lockencode_fn"
 0
 -1
 -1
 -1
 0
-143
+144
 1
 -1
 1
@@ -6023,14 +6054,14 @@
 >266
 "@if strmatch(setr(0,lockdecode(lockencode(*Wizard))),*Wizard)={@log smoke=TC008: roundtrip encode/decode. Succeeded.;@trig me/tr.done},{@log smoke=TC008: roundtrip encode/decode. Failed (%q0).;@trig me/tr.done}"
 <
-!149
+!150
 "test_log_fn"
 0
 -1
 -1
 -1
 0
-148
+149
 1
 -1
 1
@@ -6056,14 +6087,14 @@
 >261
 "@if cand(strmatch(log(10,1), #-1*),strmatch(log(10,0), #-1*))={@log smoke=TC004: log base out of range. Succeeded.;@trig me/tr.done},{@log smoke=TC004: log base out of range. Failed (log(10,1)=[log(10,1)] log(10,0)=[log(10,0)]).;@trig me/tr.done}"
 <
-!150
+!151
 "test_lor_fn"
 0
 -1
 -1
 -1
 0
-149
+150
 1
 -1
 1
@@ -6087,14 +6118,14 @@
 >260
 "@log smoke=End lor() test cases.;@notify smoke"
 <
-!151
+!152
 "test_lpad_fn"
 0
 -1
 -1
 -1
 0
-150
+151
 1
 -1
 1
@@ -6122,14 +6153,14 @@
 >262
 "@if strmatch([lpad()],*NOT FOUND)={@log smoke=TC005: LPAD() is not supported on this version. Okay.;@trig me/tr.done},{@if cand(strmatch(lpad(1,1,-+), 1),eq(strlen(lpad(1,3,-+)), 3),eq(strlen(lpad(1,5,-+)), 5),eq(strlen(lpad(123,11,-+)), 11))={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed.;@trig me/tr.done}}"
 <
-!152
+!153
 "test_lpos_fn"
 0
 -1
 -1
 -1
 0
-151
+152
 1
 -1
 1
@@ -6153,14 +6184,14 @@
 >260
 "@log smoke=End lpos() test cases.;@notify smoke"
 <
-!153
+!154
 "test_lt_fn"
 0
 -1
 -1
 -1
 0
-152
+153
 1
 -1
 1
@@ -6182,14 +6213,14 @@
 >260
 "@log smoke=End lt() test cases.;@notify smoke"
 <
-!154
+!155
 "test_lte_fn"
 0
 -1
 -1
 -1
 0
-153
+154
 1
 -1
 1
@@ -6211,14 +6242,14 @@
 >260
 "@log smoke=End lte() test cases.;@notify smoke"
 <
-!155
+!156
 "test_lua_fn"
 0
 -1
 -1
 -1
 0
-154
+155
 1
 -1
 1
@@ -6460,14 +6491,14 @@
 >412
 "@if strmatch(setr(0,lua(me/LUA_TBLIDX)),55)={@log smoke=TC058: lua for-loop table index arithmetic. Succeeded.;@trig me/tr.done},{@log smoke=TC058: lua for-loop table index arithmetic. Failed (%q0).;@trig me/tr.done}"
 <
-!156
+!157
 "test_lxor_fn"
 0
 -1
 -1
 -1
 0
-155
+156
 1
 -1
 1
@@ -6503,14 +6534,14 @@
 >274
 "@if strmatch(lxor(5 0 -3),0)={@log smoke=TC009: lxor non-zero as true. Succeeded.;@trig me/tr.done},{@log smoke=TC009: lxor non-zero as true. Failed ([lxor(5 0 -3)]).;@trig me/tr.done}"
 <
-!157
+!158
 "test_mailinfo_fn"
 0
 -1
 -1
 -1
 0
-156
+157
 1
 -1
 1
@@ -6554,14 +6585,14 @@
 >278
 "@if t(strlen(mailinfo(last(maillist(#1)),tolist,#1)))={@log smoke=TC013: mailinfo tolist. Succeeded.;@trig me/tr.done},{@log smoke=TC013: mailinfo tolist. Failed (tolist=[mailinfo(last(maillist(#1)),tolist,#1)]).;@trig me/tr.done}"
 <
-!158
+!159
 "test_mailsend_fn"
 0
 -1
 -1
 -1
 0
-157
+158
 1
 -1
 1
@@ -6591,14 +6622,14 @@
 >263
 "@if strmatch(setr(0,mailsend(NoSuchPlayer9999,Test Subject,Test message)),#-1 NO VALID RECIPIENTS)={@log smoke=TC006: mailsend bad player. Succeeded.;@trig me/tr.done},{@log smoke=TC006: mailsend bad player. Failed (%q0).;@trig me/tr.done}"
 <
-!159
+!160
 "test_malformed_syntax"
 0
 -1
 -1
 -1
 0
-158
+159
 1
 -1
 1
@@ -6622,14 +6653,14 @@
 >260
 "@log smoke=End malformed syntax test cases.;@notify smoke"
 <
-!160
+!161
 "test_match_fn"
 0
 -1
 -1
 -1
 0
-159
+160
 1
 -1
 1
@@ -6651,14 +6682,14 @@
 >260
 "@log smoke=End match() test cases.;@notify smoke"
 <
-!161
+!162
 "test_matchall_fn"
 0
 -1
 -1
 -1
 0
-160
+161
 1
 -1
 1
@@ -6680,14 +6711,14 @@
 >260
 "@log smoke=End matchall() test cases.;@notify smoke"
 <
-!162
+!163
 "test_max_fn"
 0
 -1
 -1
 -1
 0
-161
+162
 1
 -1
 1
@@ -6709,14 +6740,14 @@
 >260
 "@log smoke=End max() test cases.;@notify smoke"
 <
-!163
+!164
 "test_mean_fn"
 0
 -1
 -1
 -1
 0
-162
+163
 1
 -1
 1
@@ -6738,14 +6769,14 @@
 >260
 "@log smoke=End mean() test cases.;@notify smoke"
 <
-!164
+!165
 "test_median_fn"
 0
 -1
 -1
 -1
 0
-163
+164
 1
 -1
 1
@@ -6767,14 +6798,14 @@
 >260
 "@log smoke=End median() test cases.;@notify smoke"
 <
-!165
+!166
 "test_member_fn"
 0
 -1
 -1
 -1
 0
-164
+165
 1
 -1
 1
@@ -6798,14 +6829,14 @@
 >260
 "@log smoke=End member() test cases.;@notify smoke"
 <
-!166
+!167
 "test_merge_fn"
 0
 -1
 -1
 -1
 0
-165
+166
 1
 -1
 1
@@ -6851,14 +6882,14 @@
 >279
 "@if cand(strmatch(merge(00000,abcde,0), abcde),strmatch(merge(01234,abcde,0), a1234),strmatch(merge(abcde,XXXXX,c), abXde),strmatch(merge(a,b,x), a),strmatch(merge(abc,de,a), #-1*))={@log smoke=TC014: merge behavior and edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC014: merge behavior and edge cases. Failed (all=[merge(00000,abcde,0)] one=[merge(01234,abcde,0)] mid=[merge(abcde,XXXXX,c)] noop=[merge(a,b,x)] err=[merge(abc,de,a)]).;@trig me/tr.done}"
 <
-!167
+!168
 "test_mid_fn"
 0
 -1
 -1
 -1
 0
-166
+167
 1
 -1
 1
@@ -6882,14 +6913,14 @@
 >260
 "@log smoke=End mid() test cases.;@notify smoke"
 <
-!168
+!169
 "test_min_fn"
 0
 -1
 -1
 -1
 0
-167
+168
 1
 -1
 1
@@ -6911,14 +6942,14 @@
 >260
 "@log smoke=End min() test cases.;@notify smoke"
 <
-!169
+!170
 "test_mod_fn"
 0
 -1
 -1
 -1
 0
-168
+169
 1
 -1
 1
@@ -6940,14 +6971,14 @@
 >260
 "@log smoke=End mod() test cases.;@notify smoke"
 <
-!170
+!171
 "test_moon_fn"
 0
 -1
 -1
 -1
 0
-169
+170
 1
 -1
 1
@@ -6969,14 +7000,14 @@
 >260
 "@log smoke=End moon() test cases.;@notify smoke"
 <
-!171
+!172
 "test_mul_fn"
 0
 -1
 -1
 -1
 0
-170
+171
 1
 -1
 1
@@ -6998,14 +7029,14 @@
 >260
 "@log smoke=End mul() test cases.;@notify smoke"
 <
-!172
+!173
 "test_ncon_fn"
 0
 -1
 -1
 -1
 0
-173
+174
 1
 -1
 1
@@ -7031,17 +7062,17 @@
 >261
 "@if cand(strmatch(ncon(#999999), #-1 NOT FOUND),strmatch(nexits(#999999), #-1 NOT FOUND),strmatch(nthings(#999999), #-1 NOT FOUND),strmatch(objeval(*NconErrMortal, ncon([get(me/VICTIM)])), #-1 PERMISSION DENIED),strmatch(objeval(*NconErrMortal, nexits([get(me/VICTIM)])), #-1 PERMISSION DENIED),strmatch(objeval(*NconErrMortal, nthings([get(me/VICTIM)])), #-1 PERMISSION DENIED))={@log smoke=TC004: ncon/nexits/nthings error paths. Succeeded.;@trig me/tr.done},{@log smoke=TC004: ncon/nexits/nthings error paths. Failed (nf_ncon=[ncon(#999999)] nf_nexits=[nexits(#999999)] nf_nthings=[nthings(#999999)] pd_ncon=[objeval(*NconErrMortal, ncon([get(me/VICTIM)]))] pd_nexits=[objeval(*NconErrMortal, nexits([get(me/VICTIM)]))] pd_nthings=[objeval(*NconErrMortal, nthings([get(me/VICTIM)]))]).;@trig me/tr.done}"
 >267
-"#174"
+"#175"
 <
-!173
+!174
 "NconErrMortal"
 0
 -1
 -1
 -1
 0
-171
-173
+172
+174
 -1
 150
 2051
@@ -7062,16 +7093,16 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >267
-"1:0:#174"
+"1:0:#175"
 <
-!174
+!175
 "NconErrVictim"
 1
 -1
 -1
 -1
 0
-147
+148
 1
 -1
 1
@@ -7085,14 +7116,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!175
+!176
 "test_neq_fn"
 0
 -1
 -1
 -1
 0
-172
+173
 1
 -1
 1
@@ -7114,41 +7145,8 @@
 >260
 "@log smoke=End neq() test cases.;@notify smoke"
 <
-!176
-"test_nested_depth"
-0
--1
--1
--1
-0
-175
-1
--1
-1
-33556481
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
->256
-"@log smoke=Beginning nested recursion-limit test cases."
->257
-"@wait 0.2={@if cand(eq(get(test_nested_depth/R3),4),strmatch(get(test_nested_depth/R4), #-1 FUNCTION RECURSION LIMIT EXCEEDED),strmatch(config(function_recursion_limit), get(test_nested_depth/PRE_LIMIT)))={@log smoke=TC001: nested recursion-limit probes restored config and matched expected results. Succeeded.;@trig me/tr.done},{@log smoke=TC001: nested recursion-limit probes failed (pre=[get(test_nested_depth/PRE_LIMIT)] r3=[get(test_nested_depth/R3)] r4=[get(test_nested_depth/R4)] current=[config(function_recursion_limit)]).;@trig me/tr.done}}"
->260
-"@log smoke=End nested recursion-limit test cases.;@notify smoke"
->743
-"500"
->744
-"4"
->745
-"#-1 FUNCTION RECURSION LIMIT EXCEEDED"
-<
 !177
-"test_noeval_fn"
+"test_nested_depth"
 0
 -1
 -1
@@ -7168,20 +7166,53 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >256
-"@log smoke=Beginning noeval test cases."
+"@log smoke=Beginning nested recursion-limit test cases."
 >257
-"@pemit me=TC001: Creating test objects.;@create test_noeval_tgt;@set test_noeval_tgt=INHERIT QUIET;&TESTATTR test_noeval_tgt=[add(1,2)];@set test_noeval_tgt/TESTATTR=no_eval;@create test_noeval_tgt2;@set test_noeval_tgt2=INHERIT QUIET NOEVAL;&TESTATTR test_noeval_tgt2=[add(1,2)];@create test_noeval_tgt3;@set test_noeval_tgt3=INHERIT QUIET;&TESTATTR test_noeval_tgt3=[add(1,2)];@wait 0={@if cand(strmatch(.[u(test_noeval_tgt/TESTATTR)]., .3.),strmatch(.[u(test_noeval_tgt2/TESTATTR)]., .3.),strmatch(.[get_eval(test_noeval_tgt/TESTATTR)]., .3.),strmatch(.[get(test_noeval_tgt/TESTATTR)]., .3.),strmatch(.[hasflag(test_noeval_tgt/TESTATTR,no_eval)]., .1.),strmatch(.[hasflag(test_noeval_tgt2,NOEVAL)]., .1.),strmatch(.[u(test_noeval_tgt3/TESTATTR)]., .3.))={@log smoke=TC001: noeval flag and attr flag. Succeeded.},{@log smoke=TC001: noeval flag and attr flag Failed.;@log smoke=TC001 actual L0 =.[u(test_noeval_tgt/TESTATTR)]=.;@log smoke=TC001 actual L1 =.[u(test_noeval_tgt2/TESTATTR)]=.;@log smoke=TC001 actual L2 =.[get_eval(test_noeval_tgt/TESTATTR)]=.;@log smoke=TC001 actual L3 =.[get(test_noeval_tgt/TESTATTR)]=.;@log smoke=TC001 actual L4 =.[hasflag(test_noeval_tgt/TESTATTR,no_eval)]=.;@log smoke=TC001 actual L5 =.[hasflag(test_noeval_tgt2,NOEVAL)]=.;@log smoke=TC001 actual L6 =.[u(test_noeval_tgt3/TESTATTR)]=.};@destroy/override test_noeval_tgt;@destroy/override test_noeval_tgt2;@destroy/override test_noeval_tgt3;@trig me/tr.done}"
+"@wait 0.2={@if cand(eq(get(test_nested_depth/R3),4),strmatch(get(test_nested_depth/R4), #-1 FUNCTION RECURSION LIMIT EXCEEDED),strmatch(config(function_recursion_limit), get(test_nested_depth/PRE_LIMIT)))={@log smoke=TC001: nested recursion-limit probes restored config and matched expected results. Succeeded.;@trig me/tr.done},{@log smoke=TC001: nested recursion-limit probes failed (pre=[get(test_nested_depth/PRE_LIMIT)] r3=[get(test_nested_depth/R3)] r4=[get(test_nested_depth/R4)] current=[config(function_recursion_limit)]).;@trig me/tr.done}}"
 >260
-"@log smoke=End noeval test cases.;@notify smoke"
+"@log smoke=End nested recursion-limit test cases.;@notify smoke"
+>744
+"500"
+>745
+"4"
+>746
+"#-1 FUNCTION RECURSION LIMIT EXCEEDED"
 <
 !178
-"test_not_fn"
+"test_noeval_fn"
 0
 -1
 -1
 -1
 0
 177
+1
+-1
+1
+33556481
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+>256
+"@log smoke=Beginning noeval test cases."
+>257
+"@pemit me=TC001: Creating test objects.;@create test_noeval_tgt;@set test_noeval_tgt=INHERIT QUIET;&TESTATTR test_noeval_tgt=[add(1,2)];@set test_noeval_tgt/TESTATTR=no_eval;@create test_noeval_tgt2;@set test_noeval_tgt2=INHERIT QUIET NOEVAL;&TESTATTR test_noeval_tgt2=[add(1,2)];@create test_noeval_tgt3;@set test_noeval_tgt3=INHERIT QUIET;&TESTATTR test_noeval_tgt3=[add(1,2)];@wait 0={@if cand(strmatch(.[u(test_noeval_tgt/TESTATTR)]., .3.),strmatch(.[u(test_noeval_tgt2/TESTATTR)]., .3.),strmatch(.[get_eval(test_noeval_tgt/TESTATTR)]., .3.),strmatch(.[get(test_noeval_tgt/TESTATTR)]., .3.),strmatch(.[hasflag(test_noeval_tgt/TESTATTR,no_eval)]., .1.),strmatch(.[hasflag(test_noeval_tgt2,NOEVAL)]., .1.),strmatch(.[u(test_noeval_tgt3/TESTATTR)]., .3.))={@log smoke=TC001: noeval flag and attr flag. Succeeded.},{@log smoke=TC001: noeval flag and attr flag Failed.;@log smoke=TC001 actual L0 =.[u(test_noeval_tgt/TESTATTR)]=.;@log smoke=TC001 actual L1 =.[u(test_noeval_tgt2/TESTATTR)]=.;@log smoke=TC001 actual L2 =.[get_eval(test_noeval_tgt/TESTATTR)]=.;@log smoke=TC001 actual L3 =.[get(test_noeval_tgt/TESTATTR)]=.;@log smoke=TC001 actual L4 =.[hasflag(test_noeval_tgt/TESTATTR,no_eval)]=.;@log smoke=TC001 actual L5 =.[hasflag(test_noeval_tgt2,NOEVAL)]=.;@log smoke=TC001 actual L6 =.[u(test_noeval_tgt3/TESTATTR)]=.};@destroy/override test_noeval_tgt;@destroy/override test_noeval_tgt2;@destroy/override test_noeval_tgt3;@trig me/tr.done}"
+>260
+"@log smoke=End noeval test cases.;@notify smoke"
+<
+!179
+"test_not_fn"
+0
+-1
+-1
+-1
+0
+178
 1
 -1
 1
@@ -7203,14 +7234,14 @@
 >260
 "@log smoke=End not() test cases.;@notify smoke"
 <
-!179
+!180
 "test_nplayers_fn"
 0
 -1
 -1
 -1
 0
-182
+183
 1
 -1
 1
@@ -7232,19 +7263,19 @@
 >260
 "@log smoke=End nplayers() test cases.;@notify smoke"
 >267
-"#183"
+"#184"
 >413
-"#181"
+"#182"
 <
-!180
+!181
 "NplayersRoomMortal"
-181
+182
 -1
 -1
 -1
 0
 -1
-180
+181
 -1
 150
 2051
@@ -7265,11 +7296,11 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!181
+!182
 "NplayersRoom"
 -1
 -1
-180
+181
 -1
 -1
 -1
@@ -7286,15 +7317,15 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!182
+!183
 "NplayersErrMortal"
 0
 -1
 -1
 -1
 0
-178
-182
+179
+183
 -1
 150
 2051
@@ -7315,9 +7346,9 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >267
-"1:0:#183"
+"1:0:#184"
 <
-!183
+!184
 "NplayersErrVictim"
 -1
 -1
@@ -7338,14 +7369,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!184
+!185
 "test_objid_fn"
 0
 -1
 -1
 -1
 0
-179
+180
 1
 -1
 1
@@ -7365,14 +7396,14 @@
 >260
 "@log smoke=End objid()/isobjid() test cases.;@notify smoke"
 <
-!185
+!186
 "test_oemit_fn"
 0
 -1
 -1
 -1
 0
-184
+185
 1
 -1
 1
@@ -7394,14 +7425,14 @@
 >260
 "@log smoke=End oemit() test cases.;@notify smoke"
 <
-!186
+!187
 "test_or_fn"
 0
 -1
 -1
 -1
 0
-185
+186
 1
 -1
 1
@@ -7423,14 +7454,14 @@
 >260
 "@log smoke=End or() test cases.;@notify smoke"
 <
-!187
+!188
 "test_orbool_fn"
 0
 -1
 -1
 -1
 0
-186
+187
 1
 -1
 1
@@ -7452,14 +7483,14 @@
 >260
 "@log smoke=End orbool() test cases.;@notify smoke"
 <
-!188
+!189
 "test_ord_fn"
 0
 -1
 -1
 -1
 0
-187
+188
 1
 -1
 1
@@ -7489,14 +7520,14 @@
 >263
 "@if eq(ord(chr(65296)), 65296)={@log smoke=TC006: ord fullwidth character. Succeeded.;@trig me/tr.done},{@log smoke=TC006: ord fullwidth character. Failed (ord(chr(65296))=[ord(chr(65296))]).;@trig me/tr.done}"
 <
-!189
+!190
 "test_overflow_inject_fn"
 0
 -1
 -1
 -1
 0
-188
+189
 1
 -1
 1
@@ -7542,14 +7573,14 @@
 >279
 "@if strmatch([index(|,|,1,1)],)={@log smoke=TC014: index leading-delimiter bounds. Succeeded.;@trig me/tr.done},{@log smoke=TC014: index leading-delimiter bounds. Failed (actual=.[index(|,|,1,1)].).;@trig me/tr.done}"
 <
-!190
+!191
 "test_paginate_fn"
 0
 -1
 -1
 -1
 0
-189
+190
 1
 -1
 1
@@ -7589,14 +7620,14 @@
 >276
 "@if eq(words(chanusers(pgtest,%b,,-1,-1)),words(chanusers(pgtest)))={@log smoke=TC011: negative offset/limit treated as 0. Succeeded.;@trig me/tr.done},{@log smoke=TC011: negative offset/limit treated as 0. Failed (neg=[words(chanusers(pgtest,%b,,-1,-1))] full=[words(chanusers(pgtest))]).;@trig me/tr.done}"
 <
-!191
+!192
 "test_parenmatch_fn"
 0
 -1
 -1
 -1
 0
-190
+191
 1
 -1
 1
@@ -7622,14 +7653,14 @@
 >261
 "@if gt(strlen(parenmatch(hello)), 0)={@log smoke=TC004: parenmatch basic. Succeeded.;@trig me/tr.done},{@log smoke=TC004: parenmatch basic. Failed.;@trig me/tr.done}"
 <
-!192
+!193
 "test_parsedate_fn"
 0
 -1
 -1
 -1
 0
-191
+192
 1
 -1
 1
@@ -7713,14 +7744,14 @@
 >319
 "@if not(strmatch(setr(0,convtime(30826-06-15,utc)),#-1 INVALID DATE))={@log smoke=TC033: Boundary year parses. Succeeded.},{@log smoke=TC033: Boundary year parses. Failed (%q0).};@trig me/tr.done"
 <
-!193
+!194
 "test_parser_fn"
 0
 -1
 -1
 -1
 0
-192
+193
 1
 -1
 1
@@ -7840,14 +7871,14 @@
 >401
 "@if eq(comp(setr(0,[setr(2,POST)][eval({pre%q<bad;mid%q2post})]), setr(1,[setr(2,POST)][eval({pre%q<bad;mid%q2post})])), 0)={@log smoke=TC052: edge malformed pct-q then later substitution parity. Succeeded.;@trig me/tr.done},{@log smoke=TC052: edge malformed pct-q then later substitution parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
 <
-!194
+!195
 "test_permission_paths"
 0
 -1
 -1
 -1
 0
-196
+197
 1
 -1
 1
@@ -7871,15 +7902,15 @@
 >260
 "@log smoke=End permission-failure path test cases.;@notify smoke"
 <
-!195
+!196
 "PermActor"
 0
 -1
 -1
 -1
 0
-193
-195
+194
+196
 -1
 150
 2051
@@ -7900,7 +7931,7 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >414
-"1:0:#197"
+"1:0:#198"
 >415
 "1:0:&actor_wizard me=[hasflag(me,WIZARD)]"
 >416
@@ -7916,15 +7947,15 @@
 >421
 "1:0:&lock_after me=[lock([get(me/TARGET)])]"
 <
-!196
+!197
 "PermOwner"
 0
 -1
 -1
 -1
 0
-195
 196
+197
 -1
 140
 2051
@@ -7947,15 +7978,15 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!197
+!198
 "perm_target"
 1
 -1
 -1
 -1
 0
-174
-196
+175
+197
 -1
 1
 6145
@@ -7968,14 +7999,14 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!198
+!199
 "test_pi_fn"
 0
 -1
 -1
 -1
 0
-194
+195
 1
 -1
 1
@@ -7997,14 +8028,14 @@
 >260
 "@log smoke=End pi() test cases.;@notify smoke"
 <
-!199
+!200
 "test_pickrand_fn"
 0
 -1
 -1
 -1
 0
-198
+199
 1
 -1
 1
@@ -8038,14 +8069,14 @@
 >266
 "@if cand(strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h,pickrand(a-b-c-d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(-a-b-c-d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a--b-c-d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b--c-d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c--d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d--e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e--f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f--g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g--h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g-h-,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(--a-b-c-d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a---b-c-d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b---c-d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c---d-e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d---e-f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e---f-g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f---g-h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g---h,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.),strmatch(.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g-h--,-),|)))]., .1%b1%b1%b1%b1%b1%b1%b1%b1%b1.))={@log smoke=TC008: pickrand walk single-hypens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC008: pickrand walk single-hypens through elements Failed.;@log smoke=TC008 actual L0 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h,pickrand(a-b-c-d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L1 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(-a-b-c-d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L2 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a--b-c-d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L3 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b--c-d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L4 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c--d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L5 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d--e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L6 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e--f-g-h,-),|)))]=.;@log smoke=TC008 actual L7 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f--g-h,-),|)))]=.;@log smoke=TC008 actual L8 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g--h,-),|)))]=.;@log smoke=TC008 actual L9 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g-h-,-),|)))]=.;@log smoke=TC008 actual L10 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(--a-b-c-d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L11 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a---b-c-d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L12 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b---c-d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L13 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c---d-e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L14 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d---e-f-g-h,-),|)))]=.;@log smoke=TC008 actual L15 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e---f-g-h,-),|)))]=.;@log smoke=TC008 actual L16 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f---g-h,-),|)))]=.;@log smoke=TC008 actual L17 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g---h,-),|)))]=.;@log smoke=TC008 actual L18 =.[iter(lnum(10),t(member(a|b|c|d|e|f|g|h|,pickrand(a-b-c-d-e-f-g-h--,-),|)))]=.;@trig me/tr.done}"
 <
-!200
+!201
 "test_pocvm2_fn"
 0
 -1
 -1
 -1
 0
-199
+200
 1
 -1
 1
@@ -8071,14 +8102,14 @@
 >302
 "[strmatch(jitstats(),*eval_attempts=*)]"
 <
-!201
+!202
 "test_pos_fn"
 0
 -1
 -1
 -1
 0
-200
+201
 1
 -1
 1
@@ -8102,14 +8133,14 @@
 >260
 "@log smoke=End pos() test cases.;@notify smoke"
 <
-!202
+!203
 "test_posn_fn"
 0
 -1
 -1
 -1
 0
-201
+202
 1
 -1
 1
@@ -8141,14 +8172,14 @@
 >264
 "@if eq(posn(f, caf[chr(233)]caf[chr(233)], 2),7)={@log smoke=TC007: posn Unicode grapheme offset. Succeeded.;@trig me/tr.done},{@log smoke=TC007: posn Unicode grapheme offset. Failed ([posn(f, caf[chr(233)]caf[chr(233)], 2)]).;@trig me/tr.done}"
 <
-!203
+!204
 "test_power_fn"
 0
 -1
 -1
 -1
 0
-202
+203
 1
 -1
 1
@@ -8170,14 +8201,14 @@
 >260
 "@log smoke=End power() test cases.;@notify smoke"
 <
-!204
+!205
 "test_printf_fn"
 0
 -1
 -1
 -1
 0
-203
+204
 1
 -1
 1
@@ -8209,14 +8240,14 @@
 >264
 "@if cand(strmatch(printf(%%999999999999s,hi), #-1 OUT OF RANGE),strmatch(printf(%%2147483648s,hi), #-1 OUT OF RANGE),strmatch(printf(%%4294967306s,hi), #-1 OUT OF RANGE),strmatch(printf(%%.999999999999s,abcdef), abcdef))={@log smoke=TC007: printf() overflow-length width/precision. Succeeded.;@trig me/tr.done},{@log smoke=TC007: printf() overflow-length width/precision. Failed (w12=[printf(%%999999999999s,hi)] wneg=[printf(%%2147483648s,hi)] wsilent=[printf(%%4294967306s,hi)] phuge=[printf(%%.999999999999s,abcdef)]).;@trig me/tr.done}"
 <
-!205
+!206
 "test_protect_fn"
 0
 -1
 -1
 -1
 0
-204
+205
 1
 -1
 1
@@ -8236,14 +8267,14 @@
 >260
 "@log smoke=End @protect test cases.;@notify smoke"
 <
-!206
+!207
 "test_reglattr_fn"
 0
 -1
 -1
 -1
 0
-205
+206
 1
 -1
 1
@@ -8289,14 +8320,14 @@
 >427
 "6"
 <
-!207
+!208
 "test_remainder_fn"
 0
 -1
 -1
 -1
 0
-206
+207
 1
 -1
 1
@@ -8318,14 +8349,14 @@
 >260
 "@log smoke=End remainder() test cases.;@notify smoke"
 <
-!208
+!209
 "test_remove_fn"
 0
 -1
 -1
 -1
 0
-207
+208
 1
 -1
 1
@@ -8349,14 +8380,14 @@
 >260
 "@log smoke=End remove() test cases.;@notify smoke"
 <
-!209
+!210
 "test_repeat_fn"
 0
 -1
 -1
 -1
 0
-208
+209
 1
 -1
 1
@@ -8377,19 +8408,19 @@
 "@if cand(eq(strlen(repeat(ab,0)),0),strmatch(repeat(ab,1),ab),eq(strlen(repeat(,5)),0),eq(strlen(repeat(x,-1)),0),eq(strlen(repeat(ab,[get(test_repeat_fn/MAX_TIMES)])),mul(get(test_repeat_fn/MAX_TIMES),2)),strmatch(repeat(ab,[add(get(test_repeat_fn/MAX_TIMES),1)]),#-1 STRING TOO LONG))={@log smoke=TC002: repeat zero, empty, and LBUF-boundary cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: repeat zero, empty, and LBUF-boundary cases. Failed (repeat(ab%,0) len=[strlen(repeat(ab,0))] repeat(ab%,1) len=[strlen(repeat(ab,1))] repeat(%,5) len=[strlen(repeat(,5))] repeat(x%,-1) len=[strlen(repeat(x,-1))] lbuf_max=[get(test_repeat_fn/LBUF_MAX)] max_times=[get(test_repeat_fn/MAX_TIMES)] atmax_len=[strlen(repeat(ab,[get(test_repeat_fn/MAX_TIMES)]))] over_len=[strlen(repeat(ab,[add(get(test_repeat_fn/MAX_TIMES),1)]))]).;@trig me/tr.done}"
 >260
 "@log smoke=End repeat() test cases.;@notify smoke"
->746
-"32767"
 >747
+"32767"
+>748
 "16383"
 <
-!210
+!211
 "test_replace_fn"
 0
 -1
 -1
 -1
 0
-209
+210
 1
 -1
 1
@@ -8419,14 +8450,14 @@
 >263
 "@if cand(strmatch(replace(a|b|c,0,Pear,|), a|b|c),strmatch(replace(a|b|c,9,Pear,|), a|b|c),strmatch(replace(a|b|c,2,,|), a||c),strmatch(replace(a|b|c,-9,Pear,|), a|b|c))={@log smoke=TC006: Zero, oversized, and empty replacement behavior. Succeeded.;@trig me/tr.done},{@log smoke=TC006: Zero, oversized, and empty replacement behavior. Failed (zero=[replace(a|b|c,0,Pear,|)] big=[replace(a|b|c,9,Pear,|)] empty=[replace(a|b|c,2,,|)] neg=[replace(a|b|c,-9,Pear,|)]).;@trig me/tr.done}"
 <
-!211
+!212
 "test_rest_fn"
 0
 -1
 -1
 -1
 0
-210
+211
 1
 -1
 1
@@ -8460,14 +8491,14 @@
 >266
 "@if cand(strmatch(rest(a-b-c-d-e-f-g-h,-), b-c-d-e-f-g-h),strmatch(rest(-a-b-c-d-e-f-g-h,-), a-b-c-d-e-f-g-h),strmatch(rest(a--b-c-d-e-f-g-h,-), -b-c-d-e-f-g-h))={@log smoke=TC008: rest walk single-hyphens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC008: rest walk single-hyphens through elements. Failed.;@trig me/tr.done}"
 <
-!212
+!213
 "test_reverse_fn"
 0
 -1
 -1
 -1
 0
-211
+212
 1
 -1
 1
@@ -8489,14 +8520,14 @@
 >260
 "@log smoke=End reverse() test cases.;@notify smoke"
 <
-!213
+!214
 "test_revwords_fn"
 0
 -1
 -1
 -1
 0
-212
+213
 1
 -1
 1
@@ -8520,14 +8551,14 @@
 >260
 "@log smoke=End revwords() test cases.;@notify smoke"
 <
-!214
+!215
 "test_right_fn"
 0
 -1
 -1
 -1
 0
-213
+214
 1
 -1
 1
@@ -8551,14 +8582,14 @@
 >260
 "@log smoke=End right() test cases.;@notify smoke"
 <
-!215
+!216
 "test_rjust_fn"
 0
 -1
 -1
 -1
 0
-214
+215
 1
 -1
 1
@@ -8588,14 +8619,14 @@
 >263
 "@if cand(strmatch(rjust(abcdef,3), abc),eq(strlen(rjust(abcdef,0)), 0),eq(strlen(rjust(abcdef,xyz)), 0))={@log smoke=TC006: rjust truncation. Succeeded.;@trig me/tr.done},{@log smoke=TC006: rjust truncation. Failed (t=[rjust(abcdef,3)] w0=[rjust(abcdef,0)] wx=[rjust(abcdef,xyz)]).;@trig me/tr.done}"
 <
-!216
+!217
 "test_roman_fn"
 0
 -1
 -1
 -1
 0
-215
+216
 1
 -1
 1
@@ -8619,14 +8650,14 @@
 >260
 "@log smoke=End roman() test cases.;@notify smoke"
 <
-!217
+!218
 "test_round_fn"
 0
 -1
 -1
 -1
 0
-216
+217
 1
 -1
 1
@@ -8648,7 +8679,7 @@
 >260
 "@log smoke=End round() test cases.;@notify smoke"
 <
-!218
+!219
 "test_route_fn"
 0
 -1
@@ -8719,25 +8750,25 @@
 >309
 "@if strmatch(route(v(room_a), v(room_b), locked rebuild),v(exit_ab))={@log smoke=TC023: route locked rebuild. Succeeded.;@trig me/tr.done},{@log smoke=TC023: route locked rebuild. Failed ([route(v(room_a), v(room_b), locked rebuild)]).;@trig me/tr.done}"
 >428
-"#219"
->429
 "#220"
->430
+>429
 "#221"
->431
+>430
 "#222"
->432
+>431
 "#223"
->433
+>432
 "#224"
->434
+>433
 "#225"
->435
+>434
 "#226"
->436
+>435
 "#227"
->437
+>436
 "#228"
+>437
+"#229"
 >438
 "#-1 FUNCTION (CREATE) EXPECTS 2 OR 3 ARGUMENTS"
 >439
@@ -8749,61 +8780,40 @@
 >442
 "#-1 FUNCTION (CREATE) EXPECTS 2 OR 3 ARGUMENTS"
 >443
-"#229"
->444
 "#230"
->445
+>444
 "#231"
->446
+>445
 "#232"
->447
+>446
 "#233"
->448
+>447
 "#234"
->449
+>448
 "#235"
->450
+>449
 "#236"
->451
+>450
 "#237"
->452
+>451
 "#238"
->453
+>452
 "#239"
->454
+>453
 "#240"
->455
+>454
 "#241"
->456
+>455
 "#242"
->457
+>456
 "#243"
->458
+>457
 "#244"
-<
-!219
-"Route_Room_A"
--1
--1
--1
-226
--1
--1
-1
--1
-0
-0
-0
-262144
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
+>458
+"#245"
 <
 !220
-"Route_Room_B"
+"Route_Room_A"
 -1
 -1
 -1
@@ -8824,6 +8834,27 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !221
+"Route_Room_B"
+-1
+-1
+-1
+228
+-1
+-1
+1
+-1
+0
+0
+0
+262144
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+<
+!222
 "Route_Room_C"
 -1
 -1
@@ -8844,7 +8875,7 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!222
+!223
 "Route_Room_D"
 -1
 -1
@@ -8865,7 +8896,7 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!223
+!224
 "Route_Room_E"
 -1
 -1
@@ -8886,12 +8917,12 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!224
+!225
 "Route_Room_Parent"
 -1
 -1
 -1
-228
+229
 -1
 -1
 1
@@ -8907,7 +8938,7 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!225
+!226
 "Route_Room_Child"
 -1
 -1
@@ -8916,7 +8947,7 @@
 -1
 -1
 1
-224
+225
 0
 0
 0
@@ -8928,29 +8959,8 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!226
-"route_exit_ab"
-220
--1
--1
-219
--1
--1
-1
--1
-0
-2
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
-<
 !227
-"route_exit_bc"
+"route_exit_ab"
 221
 -1
 -1
@@ -8971,11 +8981,11 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !228
-"route_exit_parent_to_c"
+"route_exit_bc"
+222
+-1
+-1
 221
--1
--1
-224
 -1
 -1
 1
@@ -8992,19 +9002,19 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !229
-"Route_Room_X1"
+"route_exit_parent_to_c"
+222
 -1
 -1
--1
-238
+225
 -1
 -1
 1
 -1
 0
+2
 0
 0
-262144
 0
 0
 >218
@@ -9013,7 +9023,7 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !230
-"Route_Room_X2"
+"Route_Room_X1"
 -1
 -1
 -1
@@ -9034,7 +9044,7 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !231
-"Route_Room_Y1"
+"Route_Room_X2"
 -1
 -1
 -1
@@ -9055,6 +9065,27 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !232
+"Route_Room_Y1"
+-1
+-1
+-1
+241
+-1
+-1
+1
+-1
+0
+0
+0
+262144
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+<
+!233
 "Route_Room_Y2"
 -1
 -1
@@ -9075,29 +9106,8 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!233
-"Route_Room_P1"
--1
--1
--1
-241
--1
--1
-1
--1
-0
-0
-0
-262144
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
-<
 !234
-"Route_Room_P2"
+"Route_Room_P1"
 -1
 -1
 -1
@@ -9118,7 +9128,7 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !235
-"Route_Room_PDead"
+"Route_Room_P2"
 -1
 -1
 -1
@@ -9139,6 +9149,27 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !236
+"Route_Room_PDead"
+-1
+-1
+-1
+244
+-1
+-1
+1
+-1
+0
+0
+0
+262144
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+<
+!237
 "Route_Room_Q1"
 -1
 -1
@@ -9159,12 +9190,12 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!237
+!238
 "Route_Room_R1"
 -1
 -1
 -1
-244
+245
 -1
 -1
 1
@@ -9180,29 +9211,8 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 <
-!238
-"route_exit_x12"
-230
--1
--1
-229
--1
--1
-1
--1
-0
-2
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
-<
 !239
-"route_exit_x2y1"
+"route_exit_x12"
 231
 -1
 -1
@@ -9223,7 +9233,7 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !240
-"route_exit_y12"
+"route_exit_x2y1"
 232
 -1
 -1
@@ -9244,11 +9254,11 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !241
-"route_exit_p12"
-234
--1
--1
+"route_exit_y12"
 233
+-1
+-1
+232
 -1
 -1
 1
@@ -9265,8 +9275,8 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !242
-"route_exit_p2r1"
-237
+"route_exit_p12"
+235
 -1
 -1
 234
@@ -9286,8 +9296,8 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !243
-"route_exit_pdead_q1"
-236
+"route_exit_p2r1"
+238
 -1
 -1
 235
@@ -9307,11 +9317,11 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !244
-"route_exit_r1q1"
-236
--1
--1
+"route_exit_pdead_q1"
 237
+-1
+-1
+236
 -1
 -1
 1
@@ -9328,13 +9338,34 @@
 "Fri Jan 01 00:00:00 2010"
 <
 !245
+"route_exit_r1q1"
+237
+-1
+-1
+238
+-1
+-1
+1
+-1
+0
+2
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
+<
+!246
 "test_rpad_fn"
 0
 -1
 -1
 -1
 0
-218
+219
 1
 -1
 1
@@ -9362,14 +9393,14 @@
 >262
 "@if strmatch([rpad()],*NOT FOUND)={@log smoke=TC005: RPAD() is not supported on this version. Okay.;@trig me/tr.done},{@if cand(strmatch(rpad(1,1,-+), 1),eq(strlen(rpad(1,3,-+)), 3),eq(strlen(rpad(1,5,-+)), 5),eq(strlen(rpad(123,11,-+)), 11))={@log smoke=TC005: Vary string and width with '-+' fill. Succeeded.;@trig me/tr.done},{@log smoke=TC005: Vary string and width with '-+' fill. Failed.;@trig me/tr.done}}"
 <
-!246
+!247
 "test_rvbench_fn"
 0
 -1
 -1
 -1
 0
-245
+246
 1
 -1
 1
@@ -9497,14 +9528,14 @@
 >406
 "@log smoke=BENCH055:[rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\\,|)),10000)];@trig me/tr.done"
 <
-!247
+!248
 "test_sandbox_fn"
 0
 -1
 -1
 -1
 0
-246
+247
 1
 -1
 1
@@ -9528,14 +9559,14 @@
 >260
 "@log smoke=End sandbox() test cases.;@notify smoke"
 <
-!248
+!249
 "test_search_eval_fn"
 0
 -1
 -1
 -1
 0
-247
+248
 1
 -1
 1
@@ -9569,37 +9600,14 @@
 >266
 "@if eq(words(search(eval=hasattr(\\#\\#,marker))),3)={@log smoke=TC008: search eval all types. Succeeded.;@trig me/tr.done},{@log smoke=TC008: search eval all types. Failed(got [words(search(eval=hasattr(\\#\\#,marker)))] expected 3).;@trig me/tr.done}"
 <
-!249
+!250
 "se_apple1"
 1
 -1
 -1
 -1
 0
-197
-1
--1
-1
-1
-0
-0
-0
-0
->218
-"Fri Jan 01 00:00:00 2010"
->219
-"Fri Jan 01 00:00:00 2010"
->459
-"apple"
-<
-!250
-"se_apple2"
-1
--1
--1
--1
-0
-249
+198
 1
 -1
 1
@@ -9616,7 +9624,7 @@
 "apple"
 <
 !251
-"se_nonapple"
+"se_apple2"
 1
 -1
 -1
@@ -9636,10 +9644,10 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >459
-"banana"
+"apple"
 <
 !252
-"se_tagged1"
+"se_nonapple"
 1
 -1
 -1
@@ -9658,11 +9666,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->460
-"yes"
+>459
+"banana"
 <
 !253
-"se_tagged2"
+"se_tagged1"
 1
 -1
 -1
@@ -9685,7 +9693,7 @@
 "yes"
 <
 !254
-"se_untagged"
+"se_tagged2"
 1
 -1
 -1
@@ -9704,9 +9712,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
+>460
+"yes"
 <
 !255
-"se_neg1"
+"se_untagged"
 1
 -1
 -1
@@ -9725,11 +9735,9 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->461
-"vanilla"
 <
 !256
-"se_neg2"
+"se_neg1"
 1
 -1
 -1
@@ -9749,10 +9757,10 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >461
-"chocolate"
+"vanilla"
 <
 !257
-"se_wild1"
+"se_neg2"
 1
 -1
 -1
@@ -9771,11 +9779,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->462
-"color:red"
+>461
+"chocolate"
 <
 !258
-"se_wild2"
+"se_wild1"
 1
 -1
 -1
@@ -9795,10 +9803,10 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >462
-"color:blue"
+"color:red"
 <
 !259
-"se_wild3"
+"se_wild2"
 1
 -1
 -1
@@ -9818,10 +9826,10 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >462
-"size:large"
+"color:blue"
 <
 !260
-"se_num1"
+"se_wild3"
 1
 -1
 -1
@@ -9840,11 +9848,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->463
-"50"
+>462
+"size:large"
 <
 !261
-"se_num2"
+"se_num1"
 1
 -1
 -1
@@ -9864,10 +9872,10 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >463
-"150"
+"50"
 <
 !262
-"se_num3"
+"se_num2"
 1
 -1
 -1
@@ -9887,10 +9895,10 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >463
-"200"
+"150"
 <
 !263
-"se_multi1"
+"se_num3"
 1
 -1
 -1
@@ -9909,13 +9917,11 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
->464
-"red"
->465
-"circle"
+>463
+"200"
 <
 !264
-"se_multi2"
+"se_multi1"
 1
 -1
 -1
@@ -9937,10 +9943,10 @@
 >464
 "red"
 >465
-"square"
+"circle"
 <
 !265
-"se_multi3"
+"se_multi2"
 1
 -1
 -1
@@ -9960,12 +9966,12 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >464
-"blue"
+"red"
 >465
-"circle"
+"square"
 <
 !266
-"se_clear1"
+"se_multi3"
 1
 -1
 -1
@@ -9984,9 +9990,13 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
+>464
+"blue"
+>465
+"circle"
 <
 !267
-"se_clear2"
+"se_clear1"
 1
 -1
 -1
@@ -10005,17 +10015,38 @@
 "Fri Jan 01 00:00:00 2010"
 >219
 "Fri Jan 01 00:00:00 2010"
+<
+!268
+"se_clear2"
+1
+-1
+-1
+-1
+0
+267
+1
+-1
+1
+1
+0
+0
+0
+0
+>218
+"Fri Jan 01 00:00:00 2010"
+>219
+"Fri Jan 01 00:00:00 2010"
 >466
 "present"
 <
-!268
+!269
 "test_secure_fn"
 0
 -1
 -1
 -1
 0
-248
+249
 1
 -1
 1
@@ -10041,14 +10072,14 @@
 >261
 "@if chr(256)={@va me=%xg[chr(256)]%xr%[%xg[chr(256)]%xr%]%xg[chr(256)]%xr%(%xg[chr(256)]%xr%)%xg[chr(256)]%xr%{%xg[chr(256)]%xr%}%xg[chr(256)]%xr%;%xg[chr(256)]%xr%%%xg[chr(256)]%xr%\\%xg[chr(256)]%xr%$%xg[chr(256)]%xr%,%xg[chr(256)];@if gt(strlen(translate(secure(%va),p)), 0)={@log smoke=TC004: Unicode-color mix. Succeeded.;@trig me/tr.done},{@log smoke=TC004: Unicode-color mix. Failed.;@trig me/tr.done};},{@log smoke=TC004: Unicode is not supported on this version. Okay.;@trig me/tr.done}"
 <
-!269
+!270
 "test_setdiff_fn"
 0
 -1
 -1
 -1
 0
-268
+269
 1
 -1
 1
@@ -10072,14 +10103,14 @@
 >260
 "@log smoke=End setdiff() test cases.;@notify smoke"
 <
-!270
+!271
 "test_setinter_fn"
 0
 -1
 -1
 -1
 0
-269
+270
 1
 -1
 1
@@ -10103,14 +10134,14 @@
 >260
 "@log smoke=End setinter() test cases.;@notify smoke"
 <
-!271
+!272
 "test_setunion_fn"
 0
 -1
 -1
 -1
 0
-270
+271
 1
 -1
 1
@@ -10136,14 +10167,14 @@
 >261
 "@if cand(strmatch(setunion(2 10 1,3), 1 10 2 3),strmatch(setunion(2 10 1,3,,,n), 1 2 3 10),strmatch(setunion(a b,c d,%b,-), a-b-c-d))={@log smoke=TC004: setunion sort and osep. Succeeded.;@trig me/tr.done},{@log smoke=TC004: setunion sort and osep. Failed (ascii=[setunion(2 10 1,3)] numeric=[setunion(2 10 1,3,,,n)] osep=[setunion(a b,c d,%b,-)]).;@trig me/tr.done}"
 <
-!272
+!273
 "test_sha1_fn"
 0
 -1
 -1
 -1
 0
-271
+272
 1
 -1
 1
@@ -10167,14 +10198,14 @@
 >260
 "@log smoke=End sha1() test cases.;@notify smoke"
 <
-!273
+!274
 "test_shl_fn"
 0
 -1
 -1
 -1
 0
-272
+273
 1
 -1
 1
@@ -10202,14 +10233,14 @@
 >262
 "@if cand(strmatch(shl(1.5,2), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(shl(foo,2), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(shl(1,bar), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC005: shl non-integer rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC005: shl non-integer rejection. Failed (shl(1.5%,2)=[shl(1.5,2)] shl(foo%,2)=[shl(foo,2)] shl(1%,bar)=[shl(1,bar)]).;@trig me/tr.done}"
 <
-!274
+!275
 "test_shr_fn"
 0
 -1
 -1
 -1
 0
-273
+274
 1
 -1
 1
@@ -10235,14 +10266,14 @@
 >261
 "@if cand(strmatch([shr(1,-1)],*SECOND ARGUMENT MUST BE A POSITIVE NUMBER),strmatch(shr(1.5,2), #-1 ARGUMENTS MUST BE INTEGERS),strmatch(shr(foo,2), #-1 ARGUMENTS MUST BE INTEGERS))={@log smoke=TC004: shr() argument rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC004: shr() argument rejection. Failed (shr(1%,-1)=[shr(1,-1)] shr(1.5%,2)=[shr(1.5,2)] shr(foo%,2)=[shr(foo,2)]).;@trig me/tr.done}"
 <
-!275
+!276
 "test_shuffle_fn"
 0
 -1
 -1
 -1
 0
-274
+275
 1
 -1
 1
@@ -10278,14 +10309,14 @@
 >274
 "@if cand(strmatch(.[sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]., .a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(-a-b-c-d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a--b-c-d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b--c-d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c--d-e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d--e-f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e--f-g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e-f--g-h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e-f-g--h,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e-f-g-h-,-),a,-)]., .-a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(--a-b-c-d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a---b-c-d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b---c-d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c---d-e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d---e-f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e---f-g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e-f---g-h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e-f-g---h,-),a,-)]., .--a-b-c-d-e-f-g-h.),strmatch(.[sort(shuffle(a-b-c-d-e-f-g-h--,-),a,-)]., .--a-b-c-d-e-f-g-h.))={@log smoke=TC009: shuffle walk single-hypens through elements. Succeeded.;@trig me/tr.done},{@log smoke=TC009: shuffle walk single-hypens through elements Failed.;@log smoke=TC009 actual L0 =.[sort(shuffle(a-b-c-d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L1 =.[sort(shuffle(-a-b-c-d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L2 =.[sort(shuffle(a--b-c-d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L3 =.[sort(shuffle(a-b--c-d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L4 =.[sort(shuffle(a-b-c--d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L5 =.[sort(shuffle(a-b-c-d--e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L6 =.[sort(shuffle(a-b-c-d-e--f-g-h,-),a,-)]=.;@log smoke=TC009 actual L7 =.[sort(shuffle(a-b-c-d-e-f--g-h,-),a,-)]=.;@log smoke=TC009 actual L8 =.[sort(shuffle(a-b-c-d-e-f-g--h,-),a,-)]=.;@log smoke=TC009 actual L9 =.[sort(shuffle(a-b-c-d-e-f-g-h-,-),a,-)]=.;@log smoke=TC009 actual L10 =.[sort(shuffle(--a-b-c-d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L11 =.[sort(shuffle(a---b-c-d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L12 =.[sort(shuffle(a-b---c-d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L13 =.[sort(shuffle(a-b-c---d-e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L14 =.[sort(shuffle(a-b-c-d---e-f-g-h,-),a,-)]=.;@log smoke=TC009 actual L15 =.[sort(shuffle(a-b-c-d-e---f-g-h,-),a,-)]=.;@log smoke=TC009 actual L16 =.[sort(shuffle(a-b-c-d-e-f---g-h,-),a,-)]=.;@log smoke=TC009 actual L17 =.[sort(shuffle(a-b-c-d-e-f-g---h,-),a,-)]=.;@log smoke=TC009 actual L18 =.[sort(shuffle(a-b-c-d-e-f-g-h--,-),a,-)]=.;@trig me/tr.done}"
 <
-!276
+!277
 "test_shutdown"
 0
 -1
 -1
 -1
 0
-275
+276
 1
 -1
 1
@@ -10301,14 +10332,14 @@
 >256
 "@log smoke=Ending SmokeMUX;@notify smoke"
 <
-!277
+!278
 "test_sign_fn"
 0
 -1
 -1
 -1
 0
-276
+277
 1
 -1
 1
@@ -10332,14 +10363,14 @@
 >260
 "@log smoke=End sign() test cases.;@notify smoke"
 <
-!278
+!279
 "test_sin_fn"
 0
 -1
 -1
 -1
 0
-277
+278
 1
 -1
 1
@@ -10361,14 +10392,14 @@
 >260
 "@log smoke=End sin() test cases.;@notify smoke"
 <
-!279
+!280
 "test_singletime_fn"
 0
 -1
 -1
 -1
 0
-278
+279
 1
 -1
 1
@@ -10394,14 +10425,14 @@
 >261
 "@if cand(strmatch(singletime(-5), 0s),strmatch(singletime(abc), 0s))={@log smoke=TC004: singletime edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC004: singletime edge cases. Failed (neg=[singletime(-5)] nan=[singletime(abc)]).;@trig me/tr.done}"
 <
-!280
+!281
 "smoke"
 0
 -1
 -1
 -1
 0
-279
+280
 1
 -1
 1
@@ -10417,9 +10448,9 @@
 >219
 "Fri Jan 01 00:00:00 2010"
 >467
-"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn assert_cmd atan2_fn atan_fn attrib_set_fn band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn butlast_fn bxor_fn cachestats_fn cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn chaninfo_fn chanuser_fn chanusers_fn choose_fn chr_fn citer_fn clone_fn cmd_say cmogrifier_fn columns_fn comp_fn connlog_fn convtime_fn cor_fn corbool_fn correctness_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn db_validate_refs dec_fn delete_fn delextract_fn delim_parity_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn grab_fn graball_fn graphemes_fn gt_fn gte_fn hmac_fn iabs_fn iadd_fn idiv_fn if_cmd imul_fn inc_fn include_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn jit_coverage_fn jit_fold_parity_fn jit_parity_fn jit_route_parity_fn jitstats_fn json_fn ladd_fn lambda_fn land_fn last_fn lband_fn lcstr_fn ldelete_fn left_fn letq_fn limath_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn"
+"abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn and_fn andbool_fn asin_fn assert_cmd atan2_fn atan_fn attrib_set_fn band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn bound_fn butlast_fn bxor_fn cachestats_fn cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn chaninfo_fn chanuser_fn chanusers_fn choose_fn chr_fn citer_fn clone_fn cmd_say cmogrifier_fn columns_fn comp_fn connlog_fn convtime_fn cor_fn corbool_fn correctness_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn db_validate_refs dec_fn delete_fn delextract_fn delim_parity_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn grab_fn graball_fn graphemes_fn gt_fn gte_fn hmac_fn iabs_fn iadd_fn idiv_fn if_cmd imul_fn inc_fn include_fn index_fn insert_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn isnum_fn israt_fn isub_fn isword_fn itemize_fn jit_coverage_fn jit_fold_parity_fn jit_parity_fn jit_route_parity_fn jitstats_fn json_fn ladd_fn lambda_fn land_fn last_fn lband_fn lcat_fn lcstr_fn ldelete_fn left_fn letq_fn limath_fn linsert_fn ljust_fn lmax_fn lmin_fn ln_fn lnum_fn locate_poss lock_fn lockencode_fn"
 >468
-"lor_fn lpad_fn lpos_fn lt_fn lte_fn lua_fn lxor_fn mailinfo_fn mailsend_fn malformed_syntax match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn nested_depth noeval_fn not_fn nplayers_fn objid_fn oemit_fn or_fn orbool_fn ord_fn overflow_inject_fn paginate_fn parenmatch_fn parsedate_fn parser_fn permission_paths pi_fn pickrand_fn pocvm2_fn pos_fn posn_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn route_fn rpad_fn rvbench_fn sandbox_fn search_eval_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn shutdown sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strdistance_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strset_fn strsort_fn strtrunc_fn sub_fn subnetmatch_fn switch_cmd switch_fn t_fn table_fn tan_fn tier2_parity_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn version_fn visual_width_fn vmag_fn vmul_fn vsub_fn vunit_fn vwidth_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn"
+"log_fn lor_fn lpad_fn lpos_fn lt_fn lte_fn lua_fn lxor_fn mailinfo_fn mailsend_fn malformed_syntax match_fn matchall_fn max_fn mean_fn median_fn member_fn merge_fn mid_fn min_fn mod_fn moon_fn mul_fn ncon_fn neq_fn nested_depth noeval_fn not_fn nplayers_fn objid_fn oemit_fn or_fn orbool_fn ord_fn overflow_inject_fn paginate_fn parenmatch_fn parsedate_fn parser_fn permission_paths pi_fn pickrand_fn pocvm2_fn pos_fn posn_fn power_fn printf_fn protect_fn reglattr_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn right_fn rjust_fn roman_fn round_fn route_fn rpad_fn rvbench_fn sandbox_fn search_eval_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn shuffle_fn shutdown sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strdistance_fn strip_fn stripansi_fn strlen_fn strmatch_fn strmem_fn strset_fn strsort_fn strtrunc_fn sub_fn subnetmatch_fn switch_cmd switch_fn t_fn table_fn tan_fn tier2_parity_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn ucstr_fn unique_fn unsetq_fn url_escape_fn vadd_fn vcross_fn vdot_fn version_fn visual_width_fn vmag_fn vmul_fn vsub_fn vunit_fn vwidth_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn"
 >469
 "@wait me={@log smoke=SUITE-DISPATCH: %0 tcs=[words(lattr(test_%0/tr.tc*))];@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 >489
@@ -10440,35 +10471,35 @@
 "@destroy/override crctest;@destroy/override *CrcErrMortal"
 >531
 "@destroy/override smoke_home_exit"
->606
-"@destroy/override test_lp_gem;@destroy/override test_lp_box"
 >607
+"@destroy/override test_lp_gem;@destroy/override test_lp_box"
+>608
 "@destroy/override LockNoModVictim;@destroy/override LockCtrlVictim;@destroy/override *LockNoModMortal;@destroy/override *LockCtrlMortal"
->632
+>633
 "@destroy/override [get(test_ncon_fn/VICTIM)];@destroy/override NconErrVictim;@destroy/override *NconErrMortal"
->635
+>636
 "@destroy/override test_noeval_tgt3;@destroy/override test_noeval_tgt2;@destroy/override test_noeval_tgt"
->637
+>638
 "@destroy/override [get(test_nplayers_fn/VICTIM)];@destroy/override [get(test_nplayers_fn/ROOM)];@destroy/override *NplayersErrMortal;@destroy/override *NplayersRoomMortal"
->644
+>645
 "@cdestroy pgtest"
->648
+>649
 "@destroy/override perm_target;@destroy/override *PermOwner;@destroy/override *PermActor"
->669
+>670
 "@destroy/override [get(test_route_fn/exit_r1q1)];@destroy/override [get(test_route_fn/exit_pdead_q1)];@destroy/override [get(test_route_fn/exit_p2r1)];@destroy/override [get(test_route_fn/exit_p12)];@destroy/override [get(test_route_fn/exit_y12)];@destroy/override [get(test_route_fn/exit_x2y1)];@destroy/override [get(test_route_fn/exit_x12)];@destroy/override [get(test_route_fn/room_r1)];@destroy/override [get(test_route_fn/room_q1)];@destroy/override [get(test_route_fn/room_pdead)];@destroy/override [get(test_route_fn/room_p2)];@destroy/override [get(test_route_fn/room_p1)];@destroy/override [get(test_route_fn/room_y2)];@destroy/override [get(test_route_fn/room_y1)];@destroy/override [get(test_route_fn/room_x2)];@destroy/override [get(test_route_fn/room_x1)];@destroy/override [get(test_route_fn/zone_r)];@destroy/override [get(test_route_fn/zone_q)];@destroy/override [get(test_route_fn/zone_p)];@destroy/override [get(test_route_fn/zone_y)];@destroy/override [get(test_route_fn/zone_x)];@destroy/override [get(test_route_fn/exit_parent_to_c)];@destroy/override [get(test_route_fn/exit_bc)];@destroy/override [get(test_route_fn/exit_ab)];@destroy/override [get(test_route_fn/room_child)];@destroy/override [get(test_route_fn/room_parent)];@destroy/override [get(test_route_fn/room_e)];@destroy/override [get(test_route_fn/room_d)];@destroy/override [get(test_route_fn/room_c)];@destroy/override [get(test_route_fn/room_b)];@destroy/override [get(test_route_fn/room_a)];@destroy/override route_exit_r1q1;@destroy/override route_exit_pdead_q1;@destroy/override route_exit_p2r1;@destroy/override route_exit_p12;@destroy/override route_exit_y12;@destroy/override route_exit_x2y1;@destroy/override route_exit_x12;@destroy/override route_exit_parent_to_c;@destroy/override route_exit_bc;@destroy/override route_exit_ab"
->673
+>674
 "@destroy/override se_clear2;@destroy/override se_clear1;@destroy/override se_multi3;@destroy/override se_multi2;@destroy/override se_multi1;@destroy/override se_num3;@destroy/override se_num2;@destroy/override se_num1;@destroy/override se_wild3;@destroy/override se_wild2;@destroy/override se_wild1;@destroy/override se_neg2;@destroy/override se_neg1;@destroy/override se_untagged;@destroy/override se_tagged2;@destroy/override se_tagged1;@destroy/override se_nonapple;@destroy/override se_apple2;@destroy/override se_apple1"
->721
+>722
 "@destroy/override [get(test_unsetq_fn/P9)];@destroy/override [get(test_unsetq_fn/P8)];@destroy/override [get(test_unsetq_fn/P7)];@destroy/override [get(test_unsetq_fn/P6)];@destroy/override [get(test_unsetq_fn/P5)];@destroy/override [get(test_unsetq_fn/P4)];@destroy/override [get(test_unsetq_fn/P3)];@destroy/override [get(test_unsetq_fn/P2)];@destroy/override [get(test_unsetq_fn/P1)]"
 <
-!281
+!282
 "test_sort_fn"
 0
 -1
 -1
 -1
 0
-280
+281
 1
 -1
 1
@@ -10500,14 +10531,14 @@
 >264
 "@if cand(strmatch(sort(), #-1*),strmatch(sort(b B a A), a A b B))={@log smoke=TC007: sort edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC007: sort edge cases. Failed (noargs=[sort()] case=[sort(b B a A)]).;@trig me/tr.done}"
 <
-!282
+!283
 "test_sortkey_fn"
 0
 -1
 -1
 -1
 0
-281
+282
 1
 -1
 1
@@ -10543,14 +10574,14 @@
 >472
 "%0"
 <
-!283
+!284
 "test_soundex_fn"
 0
 -1
 -1
 -1
 0
-282
+283
 1
 -1
 1
@@ -10574,14 +10605,14 @@
 >260
 "@log smoke=End soundex() test cases.;@notify smoke"
 <
-!284
+!285
 "test_space_fn"
 0
 -1
 -1
 -1
 0
-283
+284
 1
 -1
 1
@@ -10603,14 +10634,14 @@
 >260
 "@log smoke=End space() test cases.;@notify smoke"
 <
-!285
+!286
 "test_spellnum_fn"
 0
 -1
 -1
 -1
 0
-284
+285
 1
 -1
 1
@@ -10636,14 +10667,14 @@
 >261
 "@if cand(strmatch(spellnum(foo), #-1 ARGUMENT MUST BE A NUMBER),strmatch(spellnum(1.2.3), #-1 ARGUMENT MUST BE A NUMBER),strmatch(spellnum(1234567890123456), #-1 ARGUMENT MUST BE A NUMBER))={@log smoke=TC004: spellnum() invalid arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: spellnum() invalid arguments. Failed (spellnum(foo)=[spellnum(foo)] spellnum(1.2.3)=[spellnum(1.2.3)] spellnum(16digits)=[spellnum(1234567890123456)]).;@trig me/tr.done}"
 <
-!286
+!287
 "test_splice_fn"
 0
 -1
 -1
 -1
 0
-285
+286
 1
 -1
 1
@@ -10669,14 +10700,14 @@
 >261
 "@if cand(strmatch(splice(a b,1 2,x y), #-1 TOO MANY WORDS),eq(strlen(splice(,,x)), 0))={@log smoke=TC004: splice search-word and empty-list cases. Succeeded.;@trig me/tr.done},{@log smoke=TC004: splice search-word and empty-list cases. Failed (splice(a b%,1 2%,x y)=[splice(a b,1 2,x y)] splice(%,%,x)=[splice(,,x)]).;@trig me/tr.done}"
 <
-!287
+!288
 "test_sqrt_fn"
 0
 -1
 -1
 -1
 0
-286
+287
 1
 -1
 1
@@ -10698,14 +10729,14 @@
 >260
 "@log smoke=End sqrt() test cases.;@notify smoke"
 <
-!288
+!289
 "test_squish_fn"
 0
 -1
 -1
 -1
 0
-287
+288
 1
 -1
 1
@@ -10727,14 +10758,14 @@
 >260
 "@log smoke=End squish() test cases.;@notify smoke"
 <
-!289
+!290
 "test_stddev_fn"
 0
 -1
 -1
 -1
 0
-288
+289
 1
 -1
 1
@@ -10758,14 +10789,14 @@
 >260
 "@log smoke=End stddev() test cases.;@notify smoke"
 <
-!290
+!291
 "test_strcat_fn"
 0
 -1
 -1
 -1
 0
-289
+290
 1
 -1
 1
@@ -10787,14 +10818,14 @@
 >260
 "@log smoke=End strcat() test cases.;@notify smoke"
 <
-!291
+!292
 "test_strdelete_fn"
 0
 -1
 -1
 -1
 0
-290
+291
 1
 -1
 1
@@ -10820,14 +10851,14 @@
 >261
 "@if cand(eq(strlen(strdelete(,0,1)), 0),strmatch(strdelete(abcdef,2,0), abcdef),strmatch(strinsert(abcdef,9,X), abcdefX),strmatch(strreplace(abcdef,2,9,Z), abZ))={@log smoke=TC004: str* edge cases. Succeeded.;@trig me/tr.done},{@log smoke=TC004: str* edge cases. Failed (del-empty=[strdelete(,0,1)] del-zero=[strdelete(abcdef,2,0)] ins-big=[strinsert(abcdef,9,X)] rep-big=[strreplace(abcdef,2,9,Z)]).;@trig me/tr.done}"
 <
-!292
+!293
 "test_strdistance_fn"
 0
 -1
 -1
 -1
 0
-291
+292
 1
 -1
 1
@@ -10853,14 +10884,14 @@
 >261
 "@if cand(strmatch(strdistance([repeat(x,4001)],y), #-1 STRINGS TOO LONG),eq(strdistance([repeat(x,4000)],y), 4000),strmatch(strdistance(y,[repeat(x,4001)]), #-1 STRINGS TOO LONG),eq(strdistance([repeat([chr(233)],4000)],y), 4000),strmatch(strdistance([repeat([chr(233)],4001)],y), #-1 STRINGS TOO LONG))={@log smoke=TC004: strdistance() string-length error path. Succeeded.;@trig me/tr.done},{@log smoke=TC004: strdistance() string-length error path. Failed (a4001=[strdistance([repeat(x,4001)],y)] a4000=[strdistance([repeat(x,4000)],y)] b4001=[strdistance(y,[repeat(x,4001)])] u4000=[strdistance([repeat([chr(233)],4000)],y)] u4001=[strdistance([repeat([chr(233)],4001)],y)]).;@trig me/tr.done}"
 <
-!293
+!294
 "test_strip_fn"
 0
 -1
 -1
 -1
 0
-292
+293
 1
 -1
 1
@@ -10884,14 +10915,14 @@
 >260
 "@log smoke=End strip() test cases.;@notify smoke"
 <
-!294
+!295
 "test_stripansi_fn"
 0
 -1
 -1
 -1
 0
-293
+294
 1
 -1
 1
@@ -10917,14 +10948,14 @@
 >261
 "@if cand(eq(comp(stripansi(a%xrb%xnc),abc),0),eq(strlen(stripansi(%xrtest%xn)),4))={@log smoke=TC004: stripansi() embedded color. Succeeded.;@trig me/tr.done},{@log smoke=TC004: stripansi() embedded color. Failed (s1=[stripansi(a%xrb%xnc)] len=[strlen(stripansi(%xrtest%xn))]).;@trig me/tr.done}"
 <
-!295
+!296
 "test_strlen_fn"
 0
 -1
 -1
 -1
 0
-294
+295
 1
 -1
 1
@@ -10952,14 +10983,14 @@
 >262
 "@if cand(eq(strlen([chr(1488)][chr(1489)][chr(1490)]), 3),eq(strlen([chr(1587)][chr(1604)][chr(1575)][chr(1605)]), 4),eq(strlen([chr(1605)][chr(1614)]), 1),eq(strlen(A[chr(1488)]B), 3))={@log smoke=TC005: strlen RTL Hebrew and Arabic. Succeeded.;@trig me/tr.done},{@log smoke=TC005: strlen RTL Hebrew and Arabic. Failed (he=[strlen([chr(1488)][chr(1489)][chr(1490)])] ar=[strlen([chr(1587)][chr(1604)][chr(1575)][chr(1605)])] arcomb=[strlen([chr(1605)][chr(1614)])] mixed=[strlen(A[chr(1488)]B)]).;@trig me/tr.done}"
 <
-!296
+!297
 "test_strmatch_fn"
 0
 -1
 -1
 -1
 0
-295
+296
 1
 -1
 1
@@ -10985,14 +11016,14 @@
 >261
 "@if cand(eq(strmatch(CAFÉ,café), 1),eq(strmatch(café,CAFÉ), 1),eq(strmatch(ÑOÑO,ñoño), 1),eq(strmatch(MÜNCHEN,münch*), 1),eq(strmatch(CAFÉ,c?fé), 1),eq(strmatch(café,latte), 0))={@log smoke=TC004: strmatch() Unicode case folding both sides. Succeeded.;@trig me/tr.done},{@log smoke=TC004: strmatch() Unicode case folding both sides. Failed (CAFÉ/café=[strmatch(CAFÉ,café)] café/CAFÉ=[strmatch(café,CAFÉ)] ÑOÑO/ñoño=[strmatch(ÑOÑO,ñoño)] MÜNCHEN/münch*=[strmatch(MÜNCHEN,münch*)] CAFÉ/c?fé=[strmatch(CAFÉ,c?fé)]).;@trig me/tr.done}"
 <
-!297
+!298
 "test_strmem_fn"
 0
 -1
 -1
 -1
 0
-296
+297
 1
 -1
 1
@@ -11018,14 +11049,14 @@
 >261
 "@if cand(eq(strmem(x), 1),eq(strmem(abcdefghij), 10))={@log smoke=TC004: strmem() single char and long string. Succeeded.;@trig me/tr.done},{@log smoke=TC004: strmem() single char and long string. Failed (strmem(x)=[strmem(x)] strmem(abcdefghij)=[strmem(abcdefghij)]).;@trig me/tr.done}"
 <
-!298
+!299
 "test_strset_fn"
 0
 -1
 -1
 -1
 0
-297
+298
 1
 -1
 1
@@ -11067,14 +11098,14 @@
 >277
 "@if strmatch(strinter(a[chr(233)]b, [chr(233)]c),[chr(233)])={@log smoke=TC012: strinter Unicode. Succeeded.;@trig me/tr.done},{@log smoke=TC012: strinter Unicode. Failed ([strinter(a[chr(233)]b, [chr(233)]c)]).;@trig me/tr.done}"
 <
-!299
+!300
 "test_strsort_fn"
 0
 -1
 -1
 -1
 0
-298
+299
 1
 -1
 1
@@ -11114,14 +11145,14 @@
 >276
 "@if strmatch(strunique([chr(233)]a[chr(233)]b),[chr(233)]ab)={@log smoke=TC011: strunique Unicode dedup. Succeeded.;@trig me/tr.done},{@log smoke=TC011: strunique Unicode dedup. Failed ([strunique([chr(233)]a[chr(233)]b)]).;@trig me/tr.done}"
 <
-!300
+!301
 "test_strtrunc_fn"
 0
 -1
 -1
 -1
 0
-299
+300
 1
 -1
 1
@@ -11145,14 +11176,14 @@
 >260
 "@log smoke=End strtrunc() test cases.;@notify smoke"
 <
-!301
+!302
 "test_sub_fn"
 0
 -1
 -1
 -1
 0
-300
+301
 1
 -1
 1
@@ -11174,14 +11205,14 @@
 >260
 "@log smoke=End sub() test cases.;@notify smoke"
 <
-!302
+!303
 "test_subnetmatch_fn"
 0
 -1
 -1
 -1
 0
-301
+302
 1
 -1
 1
@@ -11201,14 +11232,14 @@
 >260
 "@log smoke=End subnetmatch() test cases.;@notify smoke"
 <
-!303
+!304
 "test_switch_cmd"
 0
 -1
 -1
 -1
 0
-302
+303
 1
 -1
 1
@@ -11242,14 +11273,14 @@
 >266
 "&tc008_result me=;@switch Hello World=Hello*, {&tc008_result me=#$};@wait 0.1={@if strmatch([get(me/tc008_result)], Hello World)={@log smoke=TC008: switch #$ substitution. Succeeded.;@trig me/tr.done},{@log smoke=TC008: switch #$ substitution. Failed (actual=.[get(me/tc008_result)].).;@trig me/tr.done}}"
 <
-!304
+!305
 "test_switch_fn"
 0
 -1
 -1
 -1
 0
-303
+304
 1
 -1
 1
@@ -11269,14 +11300,14 @@
 >260
 "@log smoke=End switch() test cases.;@notify smoke"
 <
-!305
+!306
 "test_t_fn"
 0
 -1
 -1
 -1
 0
-304
+305
 1
 -1
 1
@@ -11302,14 +11333,14 @@
 >261
 "@if cand(eq(t(#0), 1),eq(t(#-1), 0),eq(t(%b), 0),eq(t(false), 1))={@log smoke=TC004: t() dbref and whitespace rules. Succeeded.;@trig me/tr.done},{@log smoke=TC004: t() dbref and whitespace rules. Failed (t(#0)=[t(#0)] t(#-1)=[t(#-1)] t(space)=[t(%b)] t(false)=[t(false)]).;@trig me/tr.done}"
 <
-!306
+!307
 "test_table_fn"
 0
 -1
 -1
 -1
 0
-305
+306
 1
 -1
 1
@@ -11331,14 +11362,14 @@
 >260
 "@log smoke=End table() test cases.;@notify smoke"
 <
-!307
+!308
 "test_tan_fn"
 0
 -1
 -1
 -1
 0
-306
+307
 1
 -1
 1
@@ -11360,14 +11391,14 @@
 >260
 "@log smoke=End tan() test cases.;@notify smoke"
 <
-!308
+!309
 "test_tier2_parity_fn"
 0
 -1
 -1
 -1
 0
-307
+308
 1
 -1
 1
@@ -11401,14 +11432,14 @@
 >266
 "@if cand(strmatch(.[match(Alpha Beta Gamma,BETA)]., .2.),strmatch(.[match(Alpha Beta Gamma,g*)]., .3.),strmatch(.[match(Alpha Beta Gamma,NOMATCH)]., .0.))={@log smoke=TC008: match case folding. Succeeded.;@trig me/tr.done},{@log smoke=TC008: match case folding Failed.;@log smoke=TC008 actual L0 =.[match(Alpha Beta Gamma,BETA)]=.;@log smoke=TC008 actual L1 =.[match(Alpha Beta Gamma,g*)]=.;@log smoke=TC008 actual L2 =.[match(Alpha Beta Gamma,NOMATCH)]=.;@trig me/tr.done}"
 <
-!309
+!310
 "test_tr_fn"
 0
 -1
 -1
 -1
 0
-308
+309
 1
 -1
 1
@@ -11456,14 +11487,14 @@
 >280
 "think setq(0,tr([ansi(r, [chr(101)][chr(769)])]Z,[chr(101)][chr(769)],X));@if cand(strmatch(stripansi(%q0), XZ),gt(strlen(translate(%q0, p)), strlen(stripansi(%q0))))={@log smoke=TC015: tr color preserved through cluster replace. Succeeded.;@trig me/tr.done},{@log smoke=TC015: tr color preserved through cluster replace. Failed (strip=[stripansi(%q0)] tlen=[strlen(translate(%q0, p))]).;@trig me/tr.done}"
 <
-!310
+!311
 "test_translate_fn"
 0
 -1
 -1
 -1
 0
-309
+310
 1
 -1
 1
@@ -11489,14 +11520,14 @@
 >261
 "@if cand(eq(comp(translate(%r,p), %%r),0),eq(comp(translate(12345,p), 12345),0))={@log smoke=TC004: translate() newline and digits. Succeeded.;@trig me/tr.done},{@log smoke=TC004: translate() newline and digits. Failed (tp=[translate(%r,p)] td=[translate(12345,p)]).;@trig me/tr.done}"
 <
-!311
+!312
 "test_trigger_cmd"
 0
 -1
 -1
 -1
 0
-310
+311
 1
 -1
 1
@@ -11532,14 +11563,14 @@
 >340
 "&tc004_result me=inline"
 <
-!312
+!313
 "test_trim_fn"
 0
 -1
 -1
 -1
 0
-311
+312
 1
 -1
 1
@@ -11563,14 +11594,14 @@
 >260
 "@log smoke=End trim() test cases.;@notify smoke"
 <
-!313
+!314
 "test_trunc_fn"
 0
 -1
 -1
 -1
 0
-312
+313
 1
 -1
 1
@@ -11592,14 +11623,14 @@
 >260
 "@log smoke=End trunc() test cases.;@notify smoke"
 <
-!314
+!315
 "test_ucstr_fn"
 0
 -1
 -1
 -1
 0
-313
+314
 1
 -1
 1
@@ -11621,14 +11652,14 @@
 >260
 "@log smoke=End ucstr() test cases.;@notify smoke"
 <
-!315
+!316
 "test_unique_fn"
 0
 -1
 -1
 -1
 0
-314
+315
 1
 -1
 1
@@ -11654,14 +11685,14 @@
 >261
 "@if cand(strmatch(unique(a A b a, i), a b),strmatch(unique(1 2 2.0 3, f), 1 2 3),strmatch(unique(#1 #2 #1 #3, d), #1 #2 #3),strmatch(unique(5 05 6, n), 5 6))={@log smoke=TC004: unique sorttype normalization. Succeeded.;@trig me/tr.done},{@log smoke=TC004: unique sorttype normalization. Failed (i=[unique(a A b a, i)] f=[unique(1 2 2.0 3, f)] d=[unique(#1 #2 #1 #3, d)] n=[unique(5 05 6, n)]).;@trig me/tr.done}"
 <
-!316
+!317
 "test_unsetq_fn"
 0
 -1
 -1
 -1
 0
-315
+316
 1
 -1
 1
@@ -11683,14 +11714,14 @@
 >260
 "@log smoke=End unsetq()/listq() test cases.;@notify smoke"
 <
-!317
+!318
 "test_url_escape_fn"
 0
 -1
 -1
 -1
 0
-316
+317
 1
 -1
 1
@@ -11714,14 +11745,14 @@
 >260
 "@log smoke=End url_escape() test cases.;@notify smoke"
 <
-!318
+!319
 "test_vadd_fn"
 0
 -1
 -1
 -1
 0
-317
+318
 1
 -1
 1
@@ -11747,14 +11778,14 @@
 >261
 "@if cand(strmatch(vadd(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vadd(,1 2 3)), 0),eq(strlen(vadd(1 2 3,)), 0))={@log smoke=TC004: vadd mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vadd mismatch and empty arguments. Failed (vadd(1 2%,1 2 3)=[vadd(1 2,1 2 3)] vadd(%,1 2 3)=[vadd(,1 2 3)] vadd(1 2 3%,)=[vadd(1 2 3,)]).;@trig me/tr.done}"
 <
-!319
+!320
 "test_vcross_fn"
 0
 -1
 -1
 -1
 0
-318
+319
 1
 -1
 1
@@ -11780,14 +11811,14 @@
 >261
 "@if cand(strmatch(vcross(1 2,3 4), #-1 VECTORS MUST BE DIMENSION OF 3),strmatch(vcross(1 2 3,4 5), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vcross(,1 2 3)), 0),eq(strlen(vcross(1 2 3,)), 0))={@log smoke=TC004: vcross dimension errors and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vcross dimension errors and empty arguments. Failed (vcross(1 2%,3 4)=[vcross(1 2,3 4)] vcross(1 2 3%,4 5)=[vcross(1 2 3,4 5)] vcross(%,1 2 3)=[vcross(,1 2 3)] vcross(1 2 3%,)=[vcross(1 2 3,)]).;@trig me/tr.done}"
 <
-!320
+!321
 "test_vdot_fn"
 0
 -1
 -1
 -1
 0
-319
+320
 1
 -1
 1
@@ -11813,14 +11844,14 @@
 >261
 "@if cand(strmatch(vdot(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),strmatch(vdot(1,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vdot(,1 2 3)), 0),eq(strlen(vdot(1 2 3,)), 0))={@log smoke=TC004: vdot mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vdot mismatch and empty arguments. Failed (vdot(1 2%,1 2 3)=[vdot(1 2,1 2 3)] vdot(1%,1 2 3)=[vdot(1,1 2 3)] vdot(%,1 2 3)=[vdot(,1 2 3)] vdot(1 2 3%,)=[vdot(1 2 3,)]).;@trig me/tr.done}"
 <
-!321
+!322
 "test_version_fn"
 0
 -1
 -1
 -1
 0
-320
+321
 1
 -1
 1
@@ -11842,14 +11873,14 @@
 >260
 "@log smoke=End version() test cases.;@notify smoke"
 <
-!322
+!323
 "test_visual_width_fn"
 0
 -1
 -1
 -1
 0
-321
+322
 1
 -1
 1
@@ -11875,14 +11906,14 @@
 >261
 "@if cand(eq(strlen(rjust(chr(20013),6,-)),5),eq(strlen(rjust([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC004: rjust CJK visual width. Succeeded.;@trig me/tr.done},{@log smoke=TC004: rjust CJK visual width. Failed.;@trig me/tr.done}"
 <
-!323
+!324
 "test_vmag_fn"
 0
 -1
 -1
 -1
 0
-322
+323
 1
 -1
 1
@@ -11906,14 +11937,14 @@
 >260
 "@log smoke=End vmag() test cases.;@notify smoke"
 <
-!324
+!325
 "test_vmul_fn"
 0
 -1
 -1
 -1
 0
-323
+324
 1
 -1
 1
@@ -11939,14 +11970,14 @@
 >261
 "@if cand(strmatch(vmul(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vmul(,1 2 3)), 0),eq(strlen(vmul(1 2 3,)), 0))={@log smoke=TC004: vmul mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vmul mismatch and empty arguments. Failed (vmul(1 2%,1 2 3)=[vmul(1 2,1 2 3)] vmul(%,1 2 3)=[vmul(,1 2 3)] vmul(1 2 3%,)=[vmul(1 2 3,)]).;@trig me/tr.done}"
 <
-!325
+!326
 "test_vsub_fn"
 0
 -1
 -1
 -1
 0
-324
+325
 1
 -1
 1
@@ -11972,14 +12003,14 @@
 >261
 "@if cand(strmatch(vsub(1 2,1 2 3), #-1 VECTORS MUST BE SAME DIMENSIONS),eq(strlen(vsub(,1 2 3)), 0),eq(strlen(vsub(1 2 3,)), 0))={@log smoke=TC004: vsub mismatch and empty arguments. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vsub mismatch and empty arguments. Failed (vsub(1 2%,1 2 3)=[vsub(1 2,1 2 3)] vsub(%,1 2 3)=[vsub(,1 2 3)] vsub(1 2 3%,)=[vsub(1 2 3,)]).;@trig me/tr.done}"
 <
-!326
+!327
 "test_vunit_fn"
 0
 -1
 -1
 -1
 0
-325
+326
 1
 -1
 1
@@ -12005,14 +12036,14 @@
 >261
 "@if cand(strmatch(vunit(0 0 0), #-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR),eq(strlen(vunit(,|)), 0))={@log smoke=TC004: vunit zero-length rejection. Succeeded.;@trig me/tr.done},{@log smoke=TC004: vunit zero-length rejection. Failed (vunit(0 0 0)=[vunit(0 0 0)] vunit(%,|)=[vunit(,|)]).;@trig me/tr.done}"
 <
-!327
+!328
 "test_vwidth_fn"
 0
 -1
 -1
 -1
 0
-326
+327
 1
 -1
 1
@@ -12042,14 +12073,14 @@
 >263
 "@if cand(eq(vwidth([chr(1488)][chr(1489)][chr(1490)]),3),eq(vwidth([chr(1587)][chr(1604)][chr(1575)][chr(1605)]),4),eq(vwidth([chr(1605)][chr(1614)]),1),eq(vwidth(A[chr(1488)]B),3))={@log smoke=TC006: RTL Hebrew and Arabic width. Succeeded.;@trig me/tr.done},{@log smoke=TC006: RTL Hebrew and Arabic width. Failed (he=[vwidth([chr(1488)][chr(1489)][chr(1490)])] ar=[vwidth([chr(1587)][chr(1604)][chr(1575)][chr(1605)])] arcomb=[vwidth([chr(1605)][chr(1614)])] mixed=[vwidth(A[chr(1488)]B)]).;@trig me/tr.done}"
 <
-!328
+!329
 "test_wait_cmd"
 0
 -1
 -1
 -1
 0
-327
+328
 1
 -1
 1
@@ -12079,14 +12110,14 @@
 >263
 "&tc006_result me=untouched;@wait me/tc006_sem={&tc006_result me=ran};@wait 0.1={@drain me/tc006_sem};@wait 0.5={@if strmatch([get(me/tc006_result)], untouched)={@log smoke=TC006: drain clears waiters. Succeeded.;@trig me/tr.done},{@log smoke=TC006: drain clears waiters. Failed (actual=.[get(me/tc004_result)].).;@trig me/tr.done}}"
 <
-!329
+!330
 "test_while_fn"
 0
 -1
 -1
 -1
 0
-328
+329
 1
 -1
 1
@@ -12116,14 +12147,14 @@
 >475
 "%0"
 <
-!330
+!331
 "test_wordend_fn"
 0
 -1
 -1
 -1
 0
-329
+330
 1
 -1
 1
@@ -12155,14 +12186,14 @@
 >264
 "@if cand(eq(wordstart(hello, 1), 1),eq(wordend(hello, 1), 5))={@log smoke=TC007: wordend single word bracket. Succeeded.;@trig me/tr.done},{@log smoke=TC007: wordend single word bracket. Failed (start=[wordstart(hello, 1)] end=[wordend(hello, 1)]).;@trig me/tr.done}"
 <
-!331
+!332
 "test_wordpos_fn"
 0
 -1
 -1
 -1
 0
-330
+331
 1
 -1
 1
@@ -12186,14 +12217,14 @@
 >260
 "@log smoke=End wordpos() test cases.;@notify smoke"
 <
-!332
+!333
 "test_words_fn"
 0
 -1
 -1
 -1
 0
-331
+332
 1
 -1
 1
@@ -12217,14 +12248,14 @@
 >260
 "@log smoke=End words() test cases.;@notify smoke"
 <
-!333
+!334
 "test_wordstart_fn"
 0
 -1
 -1
 -1
 0
-332
+333
 1
 -1
 1
@@ -12256,14 +12287,14 @@
 >264
 "@if strmatch(wordstart(hello world, 0),#-1)={@log smoke=TC007: wordstart word zero. Succeeded.;@trig me/tr.done},{@log smoke=TC007: wordstart word zero. Failed ([wordstart(hello world, 0)]).;@trig me/tr.done}"
 <
-!334
+!335
 "test_wrap_fn"
 0
 -1
 -1
 -1
 0
-333
+334
 1
 -1
 1
@@ -12291,14 +12322,14 @@
 >262
 "@if cand(strmatch(wrap(hello,0), #-1 OUT OF RANGE),strmatch(wrap(hello,-5), #-1 OUT OF RANGE),strmatch(wrap(hello,32768), #-1 OUT OF RANGE),strmatch(wrap(hello,32767), ljust(hello,32767)),strmatch(wrap(hello,10,x), #-1 INVALID JUSTIFICATION SPECIFIED))={@log smoke=TC005: wrap() error paths. Succeeded.;@trig me/tr.done},{@log smoke=TC005: wrap() error paths. Failed (w0=[wrap(hello,0)] w-5=[wrap(hello,-5)] w32768=[wrap(hello,32768)] w32767len=[strlen(wrap(hello,32767))] wjust=[wrap(hello,10,x)]).;@trig me/tr.done}"
 <
-!335
+!336
 "test_wrapcolumns_fn"
 0
 -1
 -1
 -1
 0
-334
+335
 1
 -1
 1
@@ -12320,14 +12351,14 @@
 >260
 "@log smoke=End wrapcolumns() test cases.;@notify smoke"
 <
-!336
+!337
 "test_xor_fn"
 0
 -1
 -1
 -1
 0
-335
+336
 1
 -1
 1
@@ -12349,14 +12380,14 @@
 >260
 "@log smoke=End xor() test cases.;@notify smoke"
 <
-!337
+!338
 "test_zip_fn"
 0
 -1
 -1
 -1
 0
-336
+337
 1
 -1
 1

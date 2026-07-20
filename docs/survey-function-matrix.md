@@ -264,7 +264,7 @@ moving between them.
 | Grapheme position -> containing word | `wordpos(str, charpos, sep)` | **covered** |
 | Word index -> grapheme start/end | `wordstart()`, `wordend()` | **covered** |
 | String -> grapheme list | `graphemes()` | **covered** |
-| Grapheme list -> string | -- | **missing** (no list-consuming joiner; `strcat()` is variadic-args only) |
+| Grapheme list -> string | `lcat(list,isep,osep)` | **covered** (list-consuming joiner; the inverse of `graphemes()`) |
 
 Note: `wordpos()` now indexes by grapheme cluster (fixed): it bounds
 `charpos` against the grapheme count and walks grapheme clusters
