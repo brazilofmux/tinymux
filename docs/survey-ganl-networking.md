@@ -84,12 +84,18 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
 (was leaking stale fields from the caller-reused `events[]` slot).
 
 ✅ **Candidates — verified against current source and filed 2026-07-20:**
-- **ISSUE #942:** epoll immediate-connect arms `EPOLLIN` but the map/handler
-  expect `EPOLLOUT`, and no `epoll_ctl(MOD)` is issued → `ConnectSuccess` never
-  fires. `initiateUnixConnect` has the same defect. Survey's "no callers" was
-  **stale**: `mux/proxy/session_manager.cpp:1710-1714,2282-2286` call both, so
-  every Unix-socket proxy back-door link hangs on Linux. HIGH for the proxy;
-  netmux doesn't use these paths.
+- **ISSUE #942 — FIXED (PR #959, 2026-07-20):** epoll immediate-connect armed
+  `EPOLLIN` but the map/handler expect `EPOLLOUT`, and no `epoll_ctl(MOD)` was
+  issued → `ConnectSuccess` never fired. `initiateUnixConnect` had the same
+  defect. Survey's "no callers" was **stale**:
+  `mux/proxy/session_manager.cpp:1710-1714,2282-2286` call both, so every
+  Unix-socket proxy back-door link hung on Linux (netmux doesn't use these
+  paths). Fix: both connect paths register `OutboundConnecting`/`EPOLLOUT|EPOLLET`
+  unconditionally — an already-connected socket is writable, so `EPOLL_CTL_ADD`
+  reports `EPOLLOUT` on the next `epoll_wait` and the handler emits
+  `ConnectSuccess` like the async path. Verified on Linux with a standalone
+  libganl driver: AF_UNIX immediate connect emits `ConnectSuccess` post-fix and
+  revert-verified to hang (timeout) pre-fix; full smoke 1306/1306 green.
 - **ISSUE #943:** lost write-wakeup at the `maxEvents` boundary — epoll/select/
   wselect disarm `EPOLLOUT`/`wantWrite` **outside** the `eventCount < maxEvents`
   emit guard, stalling output. kqueue keeps disarm inside the guard (the pattern
