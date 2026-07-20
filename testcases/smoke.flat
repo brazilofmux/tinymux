@@ -10423,7 +10423,7 @@
 >469
 "@wait me={@log smoke=SUITE-DISPATCH: %0 tcs=[words(lattr(test_%0/tr.tc*))];@dolist lattr(test_%0/tr.tc*)=@trig test_%0/##}"
 >489
-"@destroy/override AttrNoModVictim;@destroy/override AttrCtrlVictim"
+"@destroy/override AttrNoModVictim;@destroy/override AttrCtrlVictim;@destroy/override *AttrNoModMortal;@destroy/override *AttrCtrlMortal"
 >509
 "@cdestroy cipriv;@cdestroy citest"
 >510
@@ -10437,23 +10437,23 @@
 >524
 "@destroy/override corrstep_helper"
 >528
-"@destroy/override crctest"
+"@destroy/override crctest;@destroy/override *CrcErrMortal"
 >531
 "@destroy/override smoke_home_exit"
 >606
 "@destroy/override test_lp_gem;@destroy/override test_lp_box"
 >607
-"@destroy/override LockNoModVictim;@destroy/override LockCtrlVictim"
+"@destroy/override LockNoModVictim;@destroy/override LockCtrlVictim;@destroy/override *LockNoModMortal;@destroy/override *LockCtrlMortal"
 >632
-"@destroy/override [get(test_ncon_fn/VICTIM)];@destroy/override NconErrVictim"
+"@destroy/override [get(test_ncon_fn/VICTIM)];@destroy/override NconErrVictim;@destroy/override *NconErrMortal"
 >635
 "@destroy/override test_noeval_tgt3;@destroy/override test_noeval_tgt2;@destroy/override test_noeval_tgt"
 >637
-"@destroy/override [get(test_nplayers_fn/VICTIM)];@destroy/override [get(test_nplayers_fn/ROOM)]"
+"@destroy/override [get(test_nplayers_fn/VICTIM)];@destroy/override [get(test_nplayers_fn/ROOM)];@destroy/override *NplayersErrMortal;@destroy/override *NplayersRoomMortal"
 >644
 "@cdestroy pgtest"
 >648
-"@destroy/override perm_target"
+"@destroy/override perm_target;@destroy/override *PermOwner;@destroy/override *PermActor"
 >669
 "@destroy/override [get(test_route_fn/exit_r1q1)];@destroy/override [get(test_route_fn/exit_pdead_q1)];@destroy/override [get(test_route_fn/exit_p2r1)];@destroy/override [get(test_route_fn/exit_p12)];@destroy/override [get(test_route_fn/exit_y12)];@destroy/override [get(test_route_fn/exit_x2y1)];@destroy/override [get(test_route_fn/exit_x12)];@destroy/override [get(test_route_fn/room_r1)];@destroy/override [get(test_route_fn/room_q1)];@destroy/override [get(test_route_fn/room_pdead)];@destroy/override [get(test_route_fn/room_p2)];@destroy/override [get(test_route_fn/room_p1)];@destroy/override [get(test_route_fn/room_y2)];@destroy/override [get(test_route_fn/room_y1)];@destroy/override [get(test_route_fn/room_x2)];@destroy/override [get(test_route_fn/room_x1)];@destroy/override [get(test_route_fn/zone_r)];@destroy/override [get(test_route_fn/zone_q)];@destroy/override [get(test_route_fn/zone_p)];@destroy/override [get(test_route_fn/zone_y)];@destroy/override [get(test_route_fn/zone_x)];@destroy/override [get(test_route_fn/exit_parent_to_c)];@destroy/override [get(test_route_fn/exit_bc)];@destroy/override [get(test_route_fn/exit_ab)];@destroy/override [get(test_route_fn/room_child)];@destroy/override [get(test_route_fn/room_parent)];@destroy/override [get(test_route_fn/room_e)];@destroy/override [get(test_route_fn/room_d)];@destroy/override [get(test_route_fn/room_c)];@destroy/override [get(test_route_fn/room_b)];@destroy/override [get(test_route_fn/room_a)];@destroy/override route_exit_r1q1;@destroy/override route_exit_pdead_q1;@destroy/override route_exit_p2r1;@destroy/override route_exit_p12;@destroy/override route_exit_y12;@destroy/override route_exit_x2y1;@destroy/override route_exit_x12;@destroy/override route_exit_parent_to_c;@destroy/override route_exit_bc;@destroy/override route_exit_ab"
 >673
