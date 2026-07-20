@@ -83,57 +83,69 @@ commit: accept-error (~906) now logs a real failure (EMFILE etc.) before
 breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
 (was leaking stale fields from the caller-reused `events[]` slot).
 
-📝 **Candidates pending verification** (file individually after confirming):
-- epoll: immediate-connect path arms for an `EPOLLOUT` it never registers
-  (`~393-439`); `initiateUnixConnect` has the same defect (AF_UNIX connects
-  succeed immediately, so it would actually trigger — currently no callers).
-- epoll/select/wselect: lost write-wakeup at the `maxEvents` boundary — clears
-  `wantWrite`/disables `EPOLLOUT` even when no Write event is emitted, stalling
-  output. kqueue gets this right (`kqueue_network_engine.cpp:876-878`) — the
-  pattern to copy.
-- epoll/kqueue: `EPOLLHUP`/`EV_EOF` checked before the readable payload, so a
-  combined "peer wrote then closed" (`QUIT\n`+FIN in one wakeup) drops the final
-  data. select/wselect read-first ordering doesn't.
-- select/wselect: no `FD_SETSIZE` bound before `FD_SET` → out-of-bounds write
-  past the `fd_set` bitmap above the 1024th fd (`MAX_SOCKET_FDS` defined but
-  never enforced).
-- Cross-engine divergences: who closes an errored connection (select/wselect
-  self-close + synthesize Close; epoll/kqueue/iocp leave it to the caller —
-  double-close hazard); EMFILE-during-accept (some emit a listener Error, epoll
-  spins); ET-vs-LT read contract; `ev.buffer`/stale-`IoEvent`-field validity
-  varies by engine and is undocumented.
-- Systemic: `checkNegotiationTimeouts` runs **only** when the poll returns zero
-  events, so under sustained load telnet-negotiation timeouts are never enforced
-  (immortal half-open connections = DoS angle).
+✅ **Candidates — verified against current source and filed 2026-07-20:**
+- **ISSUE #942:** epoll immediate-connect arms `EPOLLIN` but the map/handler
+  expect `EPOLLOUT`, and no `epoll_ctl(MOD)` is issued → `ConnectSuccess` never
+  fires. `initiateUnixConnect` has the same defect. Survey's "no callers" was
+  **stale**: `mux/proxy/session_manager.cpp:1710-1714,2282-2286` call both, so
+  every Unix-socket proxy back-door link hangs on Linux. HIGH for the proxy;
+  netmux doesn't use these paths.
+- **ISSUE #943:** lost write-wakeup at the `maxEvents` boundary — epoll/select/
+  wselect disarm `EPOLLOUT`/`wantWrite` **outside** the `eventCount < maxEvents`
+  emit guard, stalling output. kqueue keeps disarm inside the guard (the pattern
+  to copy). The most consequential engine bug.
+- **ISSUE #944:** `EPOLLHUP`/`EV_EOF` checked before the readable payload drops
+  final data on send-then-close. kqueue is the **severe** case (routine data loss
+  on macOS/BSD: single `EVFILT_READ`+`EV_EOF` kevent); epoll is narrow (needs
+  `EPOLLHUP|EPOLLIN` together, since `EPOLLRDHUP` is unused). select/wselect are
+  read-first and correct.
+- **ISSUE #946:** select's `FD_SET` has no `FD_SETSIZE` bound → OOB write above
+  the 1024th fd. **wselect refuted** — it already guards `fd_count < FD_SETSIZE`.
+  Low current exposure (select engine near-unreachable via the factory; ulimit
+  gate).
+- **ISSUE #947:** cross-engine `IoEvent`/close-ownership contract divergence
+  (harmonization) plus two concrete point bugs: wselect never assigns `ev.buffer`
+  on Read (stale-slot use-after-null, `:613-631`); select's `closeConnection`
+  double-closes a running not-found fd (`:468-476`, missing the sibling
+  idempotency).
+- **ISSUE #945:** `checkNegotiationTimeouts` runs only on zero-event polls, so
+  under sustained load telnet-negotiation timeouts are never enforced (half-open
+  DoS assist). Confirmed in all five engines.
 - No test coverage for `mux/ganl/` — a loopback harness driving each engine
   through the same scripted scenarios (EMFILE, HUP-with-data, maxEvents overflow,
-  FD_SETSIZE) would catch most of these mechanically.
+  FD_SETSIZE) would catch most of these mechanically. Still a test-infra
+  follow-up (see the `tests/netaddr/` pattern started in `bb2cb8f84`).
 
 ## Sub-part 3 — TLS transports (`openssl_transport.cpp`, `schannel_transport.cpp`) 📝
 
-From a sub-survey; **not yet independently verified** — confirm before filing.
+From a sub-survey; **verified against current source 2026-07-20** and filed.
 
-📝 **OpenSSL (Linux/BSD):**
-- `SSL_read() == 0` is mapped to a clean close *before* consulting
-  `SSL_get_error()` (`~396`), so a truncation (`SSL_ERROR_SYSCALL` EOF without
-  close_notify) is indistinguishable from a graceful disconnect. Branch on
-  `SSL_get_error()` first; only `SSL_ERROR_ZERO_RETURN` is Closed.
-- Renegotiation not disabled (`SSL_OP_NO_RENEGOTIATION` unset) → TLS 1.2 client
-  can force renegotiation (CPU DoS); combined with no `SSL_MODE_*` write flags,
-  a `WANT_READ` mid-`SSL_write` can trip `BAD_WRITE_RETRY` and drop the client.
-- Peer verification hard-coded `SSL_VERIFY_NONE` (config only warns); fine for a
-  public listener, unsafe for any outbound/cluster link.
+✅ **OpenSSL (Linux/BSD):**
+- **REFUTED — `SSL_read() == 0` truncation ambiguity.** The transport uses memory
+  BIOs with `BIO_set_mem_eof_return(readBio, -1)` (`openssl_transport.cpp:232`),
+  so a socket FIN never surfaces as `SSL_read()==0` (the mem BIO returns
+  WANT_READ); truncation is caught independently at the engine layer as EOF →
+  `Close`. `SSL_read()==0` here means a genuine decrypted close_notify, and the
+  server takes no clean-vs-dirty-close-sensitive action. Not filed.
+- **ISSUE #948:** renegotiation not disabled (`SSL_OP_NO_RENEGOTIATION` unset,
+  `:76-83`) → TLS 1.2 renegotiation CPU-DoS; and no `SSL_CTX_set_mode` call, so a
+  `WANT_READ` mid-`SSL_write` (via renegotiation) can trip `BAD_WRITE_RETRY` on
+  the re-formatted buffer and drop the client.
+- Peer verification hard-coded `SSL_VERIFY_NONE` — **benign today** (only caller
+  is server-side, no outbound/cluster path exists; the verifyPeer-logging gap is
+  already #743). Folded as a note into #948; would become real only if an
+  outbound TLS client path is added.
 
-📝 **Schannel (Windows) — flagged as a Windows release-blocker by the survey:**
-- On `SEC_I_RENEGOTIATE`, `context.established` flips to false while the
-  connection stays `Running`, so subsequent server replies egress as **plaintext
-  on the TLS socket** — a peer-forced cleartext downgrade. Diverges sharply from
-  the OpenSSL build.
-- `encryptMessage` errors out (drops the client) on messages larger than the
-  stream max instead of chunking — a long line of MUD output can disconnect a
-  Schannel client.
-- TLS 1.2 only, no 1.3 (OpenSSL build negotiates 1.3) — cross-platform
-  divergence.
+✅ **Schannel (Windows) — verified by source reading (not compiled on the survey host):**
+- **ISSUE #950:** on `SEC_I_RENEGOTIATE`, `context.established` flips false while
+  the connection stays `Running`, so `sendData`'s `isEstablished()`-gated branch
+  routes application replies to the **plaintext** else-path (`connection.cpp:
+  320-325`) → peer-forced cleartext downgrade. HIGH (Windows).
+- **ISSUE #951:** `encryptMessage` returns `Error` (drops the client) on messages
+  larger than `cbMaximumMessage` (`:1249-1259`) instead of chunking — a long line
+  of MUD output disconnects a Schannel client.
+- **ISSUE #952:** TLS 1.2 only via the legacy `SCHANNEL_CRED` struct, no 1.3
+  (OpenSSL build negotiates 1.3) — migrate to `SCH_CREDENTIALS`. Low.
 
 ## Sub-part 4 — protocol parsers (surveyed 2026-06-10)
 
@@ -233,24 +245,26 @@ that `close()` already destroyed (:621). Includes the reason-specific
 destructor re-entrancy workaround (ganl_adapter.cpp:799) and the missing
 `return` after `close()` in IOCP `handleWrite` (:1351).
 
-🔶 **Candidates for the fix pass (lower confidence / need cross-file checks),
-from the connection survey — not yet filed:**
-- F2: TLS-path partial write — `sendDataToClient` does `formattedOutput_.clear()`
-  unconditionally (:266) and consumes `applicationOutput_`; if TLS
-  `processOutgoing` returns WantRead/WantWrite having buffered the plaintext
-  internally, the formatted bytes may be unrecoverable. Needs verification
-  against `openssl_transport.cpp` `processOutgoing` buffering semantics.
-- F8: `continueTlsHandshake` returns `decryptedInput_.readableBytes()==0` (:708)
-  — i.e. returns false when there IS early app data; works only because
-  `handleRead` recomputes `tlsProducedData` (:1081). Fragile to refactor.
-- F9: on TLS `WantRead`, readiness `handleRead` doesn't `postRead()` at the end
-  (:977-1116) — relies on level-triggered re-fire; could stall under edge-
-  triggered epoll. Needs verification against the epoll engine's trigger mode.
-- F5: `handleNetworkEvent` read-overflow path calls `handleError(event.error)`
-  with a Read event's typically-zero error (:204) → "error 0" close.
-- io_buffer NIT: `ensureWritable` `writePos_ + required` / `buffer_.size()*3`
-  have no overflow guard (defensive only; no data path produces a multi-GB
-  `required` — websocket caps at WS_MAX_PAYLOAD, telnet SB at 4096, reads ~16KB).
+✅ **Candidates from the connection survey — verified 2026-07-20:**
+- **ISSUE #949 (F2):** TLS-path partial write loses plaintext. Verified that
+  OpenSSL does **not** retain the unconsumed plaintext (mem write-BIO holds only
+  encrypted records); `processOutgoing` consumes input only on `bytesWritten>0`,
+  and the next `sendDataToClient` runs `formattedOutput_.clear()` (now `:290`),
+  discarding it. In the protocol/negotiation paths the source is a stack-local
+  `IoBuffer`, so the loss is immediate.
+- **ISSUE #953 (F8):** `continueTlsHandshake` return (`:777`) is dead **and**
+  semantically inverted — both callers decide from `tlsProducedData`, so the
+  return is a no-op today but a refactor trap. Filed with the two nits below.
+- **REFUTED (F9):** epoll IS edge-triggered (`EPOLLIN|EPOLLET`), but the readiness
+  read loop drains to EAGAIN before returning (`connection.cpp:1071-1109`), which
+  is exactly the ET contract — no stall. The missing `postRead()` is harmless
+  (epoll's `postRead` only stores the buffer pointer). Not filed.
+- **ISSUE #953 (F5):** read-overflow guard closes via `handleError(0)` → "error 0"
+  diagnostic. Trivial (near-unreachable; close reason still correct).
+- **ISSUE #953 (io_buffer NIT):** `ensureWritable` growth has no overflow guard.
+  Practically unreachable — but the survey's mitigation text was wrong: there is
+  no websocket/telnet-SB buffering in this layer; the bound holds because the
+  production handler is a raw passthrough and `required` is always small.
 
 ## Sub-part 6 — address / DNS (surveyed 2026-06-10)
 
@@ -310,9 +324,19 @@ tracked by the parent (generic reaper still collects it — no zombie).
 ## Survey status: COMPLETE — fix pass underway
 
 All six sub-parts surveyed (bridge, engines, protocol parsers, TLS, buffer+
-connection core, address/DNS). Issues filed: **#790–#801**. The TLS sub-part
-(earlier parallel survey) remains as verify-then-file candidates in the TLS
-section above.
+connection core, address/DNS). Issues filed: **#790–#801**.
+
+**Second filing pass (2026-07-20):** the previously-unfiled sub-part 2 (engines),
+sub-part 3 (TLS), and sub-part 5 (connection core) candidates were independently
+re-verified against current source and filed as **#942–#953**: #942 (epoll
+immediate-connect), #943 (maxEvents write-stall), #944 (EOF-before-payload), #945
+(negotiation-timeout-on-idle), #946 (select FD_SETSIZE), #947 (cross-engine
+contract + wselect/select point bugs), #948 (OpenSSL renegotiation/write-mode),
+#949 (TLS partial-write plaintext loss), #950/#951/#952 (Schannel downgrade /
+chunking / TLS 1.3), #953 (connection-core hygiene). Two candidates were
+**refuted** on verification and are recorded inline: OpenSSL `SSL_read()==0`
+truncation (mem-BIO decouples EOF) and connection F9 (epoll ET stall — read loop
+drains to EAGAIN).
 
 **Fix pass:**
 - **#794 — FIXED (df9f5de02):** per-connection output high-water mark in
