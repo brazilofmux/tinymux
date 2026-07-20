@@ -167,4 +167,5 @@ mux/script/x64/
 
 # GANL engine test harness artifacts
 mux/ganl/tests/ganl_engine_tests
+mux/ganl/tests/ganl_engine_tests.dSYM/
 mux/ganl/tests/ganl_tests.err
