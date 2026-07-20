@@ -141,11 +141,16 @@ breaking; listener EPOLLERR/EPOLLHUP (~912) now fully populates the Error event
   `adoptListener`/`adoptConnection` reject without closing (ownership transfers
   only on success); `spawnSlave` is covered via `adoptConnection`. All three
   entry classes driver-verified rejecting with `ENOBUFS`.
-- **ISSUE #947:** cross-engine `IoEvent`/close-ownership contract divergence
-  (harmonization) plus two concrete point bugs: wselect never assigns `ev.buffer`
-  on Read (stale-slot use-after-null, `:613-631`); select's `closeConnection`
-  double-closes a running not-found fd (`:468-476`, missing the sibling
-  idempotency).
+- **ISSUE #947 — PARTIALLY FIXED (2026-07-20):** cross-engine `IoEvent`/
+  close-ownership contract divergence (harmonization) plus two concrete point
+  bugs. **Done:** select's `closeConnection` double-close fixed — a not-found fd
+  now always no-ops (was: while running, fell through to `shutdown()`+`close()`
+  on a possibly-reused fd number; driver-verified pre-fix closing an innocent
+  reused `/dev/null` fd, post-fix surviving). Engine contract written up in
+  `docs/ganl-engine-contract.md` (close ownership, per-type `IoEvent` field
+  population, LT/ET drain + budget rules). **Open (needs Windows box):** wselect
+  never assigns `ev.buffer` on Read (stale-slot use-after-null, `:613-631`; fix
+  is `ev.buffer = bufferRef`); kqueue accept-error stale fields (macOS box).
 - **ISSUE #945:** `checkNegotiationTimeouts` runs only on zero-event polls, so
   under sustained load telnet-negotiation timeouts are never enforced (half-open
   DoS assist). Confirmed in all five engines.
