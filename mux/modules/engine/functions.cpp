@@ -12492,6 +12492,55 @@ static FUNCTION(fun_graphemes)
 }
 
 // ---------------------------------------------------------------------------
+// lcat: Concatenate the items of a list into a single string.
+//
+// lcat(<list>[, <isep>[, <osep>]])
+//
+// Splits <list> on <isep> (default space) and joins the items with <osep>
+// (default the empty string), so lcat() is the list-consuming counterpart to
+// the variadic-argument cat()/strcat() and the inverse of graphemes():
+// lcat(graphemes(<str>)) reconstructs <str>.
+//
+static FUNCTION(fun_lcat)
+{
+    SEP isep;
+    if (!OPTIONAL_DELIM(2, isep, DELIM_DFLT|DELIM_STRING))
+    {
+        return;
+    }
+
+    // The output separator defaults to empty (join with nothing), unlike the
+    // usual "defaults to isep" — that is the point of a joiner.  DELIM_INIT
+    // keeps this pre-set value when the third argument is omitted.
+    SEP osep;
+    osep.n = 0;
+    osep.str[0] = '\0';
+    if (!OPTIONAL_DELIM(3, osep, DELIM_NULL|DELIM_CRLF|DELIM_STRING|DELIM_INIT))
+    {
+        return;
+    }
+
+    UTF8 *cp = trim_space_sep(fargs[0], isep);
+    if ('\0' == *cp)
+    {
+        return;
+    }
+
+    bool first = true;
+    UTF8 *xp = split_token(&cp, isep);
+    while (nullptr != xp)
+    {
+        if (!first)
+        {
+            print_sep(osep, buff, bufc);
+        }
+        first = false;
+        safe_str(xp, buff, bufc);
+        xp = split_token(&cp, isep);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // strdistance: Levenshtein edit distance between two strings.
 //
 // Operates on grapheme clusters, not code points: a cluster is one edit unit
@@ -15143,6 +15192,7 @@ static FUN builtin_function_list[] =
 #ifdef REALITY_LVLS
     {T("LISTRLEVELS"), fun_listrlevels, MAX_ARG, 0,       0,         0, CA_PUBLIC},
 #endif
+    {T("LCAT"),        fun_lcat,       MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("LCMDS"),       fun_lcmds,      MAX_ARG, 1,       3,         0, CA_PUBLIC},
     {T("LCON"),        fun_lcon,       MAX_ARG, 1,       2,         0, CA_PUBLIC},
     {T("LCSTR"),       fun_lcstr,            1, 1,       1,         0, CA_PUBLIC},

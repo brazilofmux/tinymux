@@ -264,7 +264,7 @@ moving between them.
 | Byte offset -> containing word | `wordpos(str, charpos, sep)` | present (byte-offset, not grapheme) |
 | Word index -> grapheme start/end | `wordstart()`, `wordend()` | **covered** |
 | String -> grapheme list | `graphemes()` | **covered** |
-| Grapheme list -> string | -- | **missing** (no list-consuming joiner; `strcat()` is variadic-args only) |
+| Grapheme list -> string | `lcat(list,isep,osep)` | **covered** (list-consuming joiner; the inverse of `graphemes()`) |
 
 Note: `wordpos()` indexes into the color-stripped UTF-8 buffer by byte
 position (`cp[charpos - 1]`), not by grapheme cluster. Despite the

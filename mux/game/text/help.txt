@@ -10197,6 +10197,31 @@ LATTRP()
 
   Related Topics: attrcnt(), @dolist, lattr().
 
+& LCAT()
+LCAT()
+
+  FUNCTION: lcat(<list>[, <isep>[, <osep>]])
+
+  Concatenates the items of <list> into a single string.  <list> is split
+  on <isep> (default a space) and the items are joined with <osep> (default
+  the empty string, i.e. nothing between them).
+
+  lcat() is the list-consuming counterpart to the variadic-argument cat()
+  and strcat(), and the inverse of graphemes(): lcat(graphemes(<string>))
+  reconstructs <string>.
+
+  Examples:
+    > say lcat(a b c)
+    You say, "abc"
+    > say lcat(a b c, %b, -)
+    You say, "a-b-c"
+    > say lcat(a|b|c, |, +)
+    You say, "a+b+c"
+    > say lcat(graphemes(hello))
+    You say, "hello"
+
+  Related Topics: cat(), strcat(), graphemes(), words().
+
 & LCMDS()
 LCMDS()
 
