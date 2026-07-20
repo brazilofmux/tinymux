@@ -38,6 +38,9 @@ mux/game/shutdown.status
 mux/game/data/*.db
 mux/game/data/*.db.new
 mux/game/data/*.db.old
+mux/game/data/*.sqlite
+mux/game/data/*.sqlite-shm
+mux/game/data/*.sqlite-wal
 mux/game/data/netmux.dir
 mux/game/data/netmux.pag
 
