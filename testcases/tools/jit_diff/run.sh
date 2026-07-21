@@ -48,10 +48,13 @@ mkdir -p "$WORK/data"
 ln -sfn "$BIN" "$WORK/bin"
 printf 'input_database\tdata/exp.db\noutput_database\tdata/exp.db.new\n' > "$WORK/exp.conf"
 
-# The I side always runs with the bracket toggle off (production
-# eval-bracket bail = the faithful interpreter oracle); the J side's
-# conf gains the toggle in brackets mode.
+# The I side always runs with the bracket toggle EXPLICITLY off
+# (production eval-bracket bail = the faithful interpreter oracle).
+# Explicit, not inherited: jit_eval_brackets defaults ON since the
+# Phase 5 flip, so relying on the default would compare JIT against
+# JIT.
 cp "$WORK/exp.conf" "$WORK/int.conf"
+printf 'jit_eval_brackets\t0\n' >> "$WORK/int.conf"
 
 GEN_FLAGS=""
 if [ -n "${JITDIFF_BRACKETS:-}" ]; then

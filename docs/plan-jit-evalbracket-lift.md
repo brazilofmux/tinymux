@@ -501,16 +501,40 @@ pairing), **0 LOGIC / 0 COLOR / 0 missing everywhere**, all eight
 toggle-on smoke legs 1318/1318. Dev instances on both boxes run
 toggle-on via the `netmux.conf` opt-in (#1001).
 
-Remaining — the default flip (one final PR):
-- flip `jit_eval_brackets` init to `true` in conf.cpp;
-- **remove the `netmux.conf` soak opt-in in the same commit** (that
-  file ships — the opt-in must not outlive the soak, per the #1001
-  review);
-- retire `jiteval()` per the surface-reduction commitment (production
-  route now reaches everything it existed for) — drop the function,
-  the table entry, and the oracle's dependency on it, or demote to a
-  debug build if a forced-JIT probe still earns its keep;
-- final validation matrix + survey/plan doc closeout.
+**THE FLIP — LANDED (2026-07-21).** `jit_eval_brackets` defaults ON;
+the `netmux.conf` soak opt-in is removed in the same commit; `jiteval()`
+is retired (function, declaration, table row) and the q-register oracle
+now compares production evaluation across two workspaces (default conf
+= JIT vs `jit_eval_brackets 0` = AST); `jit_diff`'s I-side conf sets
+the toggle explicitly off (relying on the default would compare JIT
+against JIT).
+
+The flip surfaced three latent items, because Makesmoke *bakes* the
+smoke database by executing testcase setup commands under the conf
+default — a third evaluation context nobody had run toggle-on before:
+
+1. **`#$` (switch token) unimplemented in the lowerer** — fell through
+   to literal text, so `@switch` actions like `[idiv(#$,2)]` computed
+   `idiv("#$",2)` = 0. Fixed: the lowerer bails compilation on `#$`
+   (AST semantics preserved).
+2. **`fdepth()`/`fcount()` under inlining** — compiled code doesn't
+   maintain `func_nest_lev`/`func_invk_ctr`, so introspection read 0.
+   Fixed: lowerer bails on FDEPTH/FCOUNT. The wider design question —
+   whether `function_recursion_limit` is a cost guard (JIT-exempt by
+   the best-effort ethos) or a semantic contract (needs a static-depth
+   watermark checked at run entry) — is **#1002**, not a flip blocker
+   (divergence direction is fail-open into more capability).
+3. **Smoke classifier was case-sensitive** — `nested_depth.mux`'s
+   lowercase "failed" message slipped through and the suite reported
+   ALL PASSED around a real failure. Fixed: `grep -ci`.
+
+Final matrix: smoke **1318/1318 with the new default AND with the
+toggle explicitly off**; `smoke.flat` re-bake byte-identical to the
+pre-flip bake; oracle 9/9 on the production route; sweeps standard and
+brackets+utf8+longreg(SEED=7) 400/0 LOGIC.
+
+**The campaign is complete.** Remaining follow-ups live as issues:
+#987 (asteval fidelity), #1002 (recursion-limit design).
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 

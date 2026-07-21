@@ -183,7 +183,7 @@ void cf_init(void)
     mudconf.float_precision = -1;
 
     mudconf.autozone        = true;
-    mudconf.jit_eval_brackets = false;
+    mudconf.jit_eval_brackets = true;
     mudconf.use_hostname    = true;
     mudconf.clone_copy_cost = false;
     mudconf.dark_sleepers   = true;
