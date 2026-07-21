@@ -328,11 +328,52 @@
         strmatch(strcat(setq(9,S),localize(strcat(setq(9,repeat(x,300)),strlen(%q9))),strlen(%q9)),3001)
       )=
   {
-    @log smoke=TC018: mid-program long registers + scope transitions (#996). Succeeded.;
+    @log smoke=TC018: mid-program long registers + scope transitions (#996). Succeeded.
+  },
+  {
+    @log smoke=TC018: mid-program long registers + scope transitions (#996). Failed (mid=[strlen(u(me/lr_mid))] out=[strcat(setq(9,repeat(x,300)),localize(strcat(setq(9,S),strlen(%q9))),strlen(%q9))] in=[strcat(setq(9,S),localize(strcat(setq(9,repeat(x,300)),strlen(%q9))),strlen(%q9))]).
+  }
+-
+#
+# Test Case #19 - function_recursion_limit static-depth watermark
+# (#1002).  Compiled code flattens function nests and maintains no
+# func_nest_lev, so jit_eval declines a run whenever live nesting plus
+# the program's static depth would trip the limit — the AST then
+# produces the limit error exactly.  @admin is God-only and a
+# runtime-triggered attribute executes as the OBJECT, so (like
+# nested_depth.mux) the limit juggling and probes run in SETUP — at
+# Makesmoke bake time, as #1, under the conf default (toggle on), so
+# the u() carriers exercise the JIT watermark — and the TC asserts the
+# stored results plus the restored limit.  Depths 4 and 6 at limit 6
+# agree on both evaluation routes; depth 5 sits in the documented
+# one-level skew zone (ECALL-dispatched u() does not bump
+# func_nest_lev) and is deliberately not asserted.
+#
+&nest4 test_jit_parity_fn=cat(cat(cat(cat(ok4))))
+-
+&nest6 test_jit_parity_fn=cat(cat(cat(cat(cat(cat(ok6))))))
+-
+@switch [config(function_recursion_limit)]=*,
+  {
+    &PRE_LIMIT test_jit_parity_fn=#$;
+    @admin function_recursion_limit=6;
+    &N4 test_jit_parity_fn=[u(test_jit_parity_fn/nest4)];
+    &N6 test_jit_parity_fn=[u(test_jit_parity_fn/nest6)];
+    @admin function_recursion_limit=#$
+  }
+-
+&tr.tc019 test_jit_parity_fn=
+  @if cand(
+        strmatch(get(me/N4),ok4),
+        strmatch(get(me/N6),#-1 FUNCTION RECURSION LIMIT EXCEEDED),
+        strmatch(config(function_recursion_limit),get(me/PRE_LIMIT))
+      )=
+  {
+    @log smoke=TC019: recursion-limit depth watermark (#1002). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC018: mid-program long registers + scope transitions (#996). Failed (mid=[strlen(u(me/lr_mid))] out=[strcat(setq(9,repeat(x,300)),localize(strcat(setq(9,S),strlen(%q9))),strlen(%q9))] in=[strcat(setq(9,S),localize(strcat(setq(9,repeat(x,300)),strlen(%q9))),strlen(%q9))]).;
+    @log smoke=TC019: recursion-limit depth watermark (#1002). Failed (n4=.[get(me/N4)]. n6=.[get(me/N6)]. pre=[get(me/PRE_LIMIT)] cur=[config(function_recursion_limit)]).;
     @trig me/tr.done
   }
 -

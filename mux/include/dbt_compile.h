@@ -66,6 +66,8 @@ struct jit_stats_t {
     uint64_t bail_slots;          // output slot exhaustion
     uint64_t bail_longreg;        // %q register value exceeds SUBST_SLOT;
                                   // declined at entry marshal (#996)
+    uint64_t bail_depth;          // static nest depth would trip
+                                  // function_recursion_limit (#1002)
 
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime
@@ -443,6 +445,16 @@ struct compiled_program {
     // — remains correct, just without the per-call savings.
     uint64_t subst_mask = ~0ULL;            // bit i set => SUBST slot i is read
     int      cargs_used = rv_compiler::MAX_CARGS;  // highest %N index + 1
+
+    // Maximum static function-call nesting depth in the source AST
+    // (#1002).  The AST evaluator errors a call at nesting level L when
+    // func_nest_lim <= func_nest_lev(L); compiled code flattens the
+    // nest and maintains no counter, so jit_eval declines the run when
+    // live func_nest_lev + max_func_depth >= func_nest_lim — the AST
+    // then reproduces the limit error exactly.  Persisted in the
+    // SQLite code cache (schema v12); 0 for pre-v12 rows, which the
+    // blob-version stamp invalidates anyway.
+    int      max_func_depth = 0;
 
     // Pool high-water marks after compilation.
     // Persistent VM uses these to advance shared pool cursors so the
