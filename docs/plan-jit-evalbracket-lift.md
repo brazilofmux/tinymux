@@ -110,9 +110,11 @@ that would expose them. Fixing D1 and D2 is necessary and sufficient.
 | R1-letq-r | `[setq(0,PRE)][letq(0,IN,r(0))][r(0)]` | `INPRE` | `PREPRE` |
 | R2-scope-r | `[setq(0,A)][localize(setq(0,B))][r(0)]` | `A` | `B` |
 | RW-strcat | `strcat(%q0,setq(0,B),%q0)` with `%q0=A` | `AB` | `BB` **(production route too)** |
+| D2-ecall-r | `[setq(0,PRE)][u(me/%q9)][r(0)]` | `MUTATED` | `PRE` |
 
-(R1/R2/RW found during Phase 2 implementation; all six now covered by
-`oracle.sh`. RW was reachable in production without brackets.)
+(R1/R2/RW found during Phase 2 implementation, D2-ecall-r during Phase 3; all
+seven covered by `oracle.sh`, green as of Phase 3. RW was reachable in
+production without brackets.)
 
 D2 confirmed on the ECALL path (`ecalls=3`, `qreg_resyncs=0`). Two hazards
 verified along the way:
@@ -240,16 +242,31 @@ production JIT route); `jit_diff` 400×2 seeds, 0 LOGIC; `qreg_resyncs` fires.
 
 ### Phase 3 — Fix D2: resync slots after reg-mutating ECALL returns (guard still up)
 
-After an ECALL whose callee may mutate `global_regs` (`ecall_invoke_fun`,
-`jit_compiler.cpp:2547-2612`), re-marshal the slots. Conservative first cut:
-re-marshal after every fun ECALL; optimize later by flagging which builtins touch
-registers (`setq`/`setr`/`u`/`ulocal`/`localize`/`letq`/`unsetq`/…). Guard the
-cost behind `subst_mask` so programs that never read `%q` pay nothing.
+**LANDED (2026-07-20).** Conservative cut as planned, plus the compile-time
+mirror of D2 found during implementation:
 
-**Green check:** full `make test`; parity sweep still clean; `oracle.sh`
-D2-ecall-u flips red→green — **all three shapes now green, exit 0**, and the
-script graduates from opt-in to a `make test` step; no measurable regression on
-`rvbench(<hot-expr>,100000)` for `%q`-free programs (the mask short-circuits).
+- **Runtime:** `ecall_invoke_fun` re-marshals the `%q` slots after *every*
+  host ECALL, masked by the program's `subst_mask` (new `eval_ctx.qreg_mask`,
+  set at all three run paths) — `%q`-free programs skip at a single bit test.
+  Subsumes Phase 2's `_RESTORE_QREGS` special case. A pure callee makes the
+  resync a semantic no-op.
+- **D2-ecall-r (new shape):** the compile-time `qreg[]` tracking has the same
+  exposure — a tracked `r(n)` read *after* an opaque ECALL returned the stale
+  SSA (`[setq(0,PRE)][u(me/%q9)][r(0)]` → `PRE` instead of `MUTATED`). The
+  lowerer now clobbers tracking after ECALLs whose callee may mutate
+  registers: the general opaque-call site (tier2 wrappers excluded — pure),
+  `_EDEFAULT_GET` (evaluates the attribute body), and non-local inlined `u()`
+  *after the merge block* — the inline body and the runtime `fun_u` fallback
+  are alternative paths, so tracked values lowered along the inline path are
+  not valid post-merge. (`ulocal` restores registers on both paths; its
+  Phase 2 snapshot restore already covers it.) Clobbered reads fall back to
+  the `fun_r` ECALL, which reads the authoritative `global_regs`.
+
+**Green results:** oracle **7/7 green, exit 0** — graduated into `make test`
+as `test-jit-qreg` (skips cleanly on non-JIT builds); smoke 1310/1310;
+`jit_diff` 400×2 seeds 0 LOGIC; perf: `%q`-free ECALL expr unaffected
+(cached 0.29µs vs native 0.59µs), a two-ECALL `%q`-reading expr still beats
+native (0.61µs vs 0.82µs) despite masked resyncs + materialization.
 
 ### Phase 4 — Lift the guard (behind a toggle first)
 
@@ -283,6 +300,19 @@ bisecting, mirroring how `sandbox()`/`asteval()` force the AST path
 cleanly gated.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
+
+Surface-reduction commitments (so the push doesn't permanently grow the
+feature surface):
+
+- **Retire or demote `jiteval`.** Once the guard is lifted, the production
+  route reaches everything `jiteval` bypasses the gate for — plain eval vs
+  `asteval()` covers parity with no bypass function. Remove it, or demote to
+  a debug build (`#ifdef`) if a forced-JIT probe still earns its keep.
+- **Teach `jit_diff` stateful register shapes** (setq/setr/letq/localize
+  woven between `%q`/`r(n)` reads). The RW production bug was invisible to
+  the sweep only because the corpus never generated read-write-read shapes —
+  a better corpus pushes the system with zero server surface, and keeps
+  paying after we stop looking.
 
 - Flip the toggle default on (or remove it) once sweeps are consistently clean.
 - Add permanent smoke testcases for scoped brackets that now JIT (extend

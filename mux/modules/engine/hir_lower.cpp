@@ -972,6 +972,15 @@ void qreg_init() {
     qreg_used = false;
 }
 
+// Invalidate compile-time %q tracking after emitting an ECALL whose
+// callee may mutate mudstate.global_regs (u()/ufuns, edefault, any
+// opaque host function).  Subsequent tracked r(n) reads then fall back
+// to the ECALL fun_r path, which reads the authoritative global_regs
+// (docs/plan-jit-evalbracket-lift.md, Phase 3).
+static void qreg_clobber() {
+    for (int i = 0; i < HIR_NUM_QREGS; i++) qreg[i] = -1;
+}
+
 // Compile-time eval flag tracking.
 //
 // s_compile_eval: the EV_* flags in effect for the current compilation.
@@ -2351,7 +2360,20 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         h.cur_block = merge_block;
                         int blocks[2] = { fb_exit, inline_exit };
                         int vals[2] = { fb_result, body_result };
-                        return h.emit_phi(TY_STRING, -1, blocks, vals, 2);
+                        int phi = h.emit_phi(TY_STRING, -1,
+                                             blocks, vals, 2);
+
+                        // Non-local u(): register mutations leak by
+                        // design, but WHICH mutations depends on the
+                        // runtime path (inline body vs fun_u
+                        // fallback), so tracked values lowered along
+                        // the inline path are not valid post-merge.
+                        // (ulocal restores registers on both paths;
+                        // its snapshot restore above handles it.)
+                        if (!is_local) {
+                            qreg_clobber();
+                        }
+                        return phi;
                     }
                 }
                 else
@@ -2489,6 +2511,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int lookup_result = h.emit_call(TY_STRING, helper_idx, hargs, 1);
         h.ecalls++;
         h.needs_jit = true;
+        if (is_edefault) {
+            // _EDEFAULT_GET evaluates the attribute body, which may
+            // setq — invalidate compile-time %q tracking.
+            qreg_clobber();
+        }
 
         // Check if result is non-empty: strlen(result) > 0.
         int len = h.emit(HIR_STRCMP, TY_INT, lookup_result,
@@ -3475,6 +3502,10 @@ literal_strcat:
         h.tier2_calls++;
     } else {
         h.ecalls++;
+        // Host ECALL: the callee may mutate global registers (u(),
+        // regmatch(), any ufun) — invalidate compile-time %q tracking.
+        // Tier2 wrappers above are pure string/math and skip this.
+        qreg_clobber();
     }
     if (returns_int(upper)) {
         h.known_int[i] = true;

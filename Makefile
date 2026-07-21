@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-scenario hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-scenario test-jit-qreg hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -32,9 +32,22 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-ios
+test: install test-ganl test-netaddr test-jit-qreg test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
+
+# JIT q-register scope oracle (docs/plan-jit-evalbracket-lift.md).
+# Compares forced-JIT vs AST results for the scope/ordering shapes fixed
+# in plan Phases 2-3.  Skips cleanly on builds without --enable-jit
+# (the script exits 2 when jitstats()/the JIT blob is unavailable).
+test-jit-qreg:
+	@echo "==> Running JIT q-register scope oracle"
+	@sh testcases/tools/jit_qreg/oracle.sh; rc=$$?; \
+	if [ $$rc -eq 2 ]; then \
+	    echo "==> Skipping (build has no JIT)"; \
+	else \
+	    exit $$rc; \
+	fi
 
 # GANL engine regression harness (epoll/select on Linux, kqueue/select on
 # macOS/BSD).  Scripted engine scenarios locking in the 2026-07 fixes.
