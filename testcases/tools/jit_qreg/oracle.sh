@@ -26,6 +26,12 @@
 #   D2-ecall-r   tracked r(n) after an opaque ECALL reads the stale SSA
 #                (compile-time tracking not invalidated across calls
 #                whose callee may mutate global_regs)
+#   LR-scope-*   #996 four-transition proof: long q-register values
+#                across localize scope entry/exit — the long bit must
+#                clear when the inner scope shortens the register and
+#                re-set when the restore brings the long value back
+#                (and the inverse, where SETQ_SYNC creates the long
+#                value inside the scope)
 #
 # With plan Phases 2-3 landed, all shapes are green and this script
 # guards them — it runs as part of `make test` (test-jit-qreg target;
@@ -102,6 +108,8 @@ cat > "$WORK/cases.txt" <<'EOF'
 &e5 me=[setq(0,A)][localize(setq(0,B))][r(0)]
 &e6 me=strcat(%q0,setq(0,B),%q0)
 &e7 me=[setq(0,PRE)][u(me/%q9)][r(0)]
+&e8 me=[setq(0,repeat(x,300))][localize([setq(0,S)][strlen(%q0)])][strlen(%q0)]
+&e9 me=[setq(0,S)][localize([setq(0,repeat(x,300))][strlen(%q0)])][strlen(%q0)]
 think CASE1A~[asteval(v(e1))]~
 think CASE1J~[jiteval(v(e1))]~
 think CASE2A~[asteval(v(e2))]~
@@ -116,6 +124,10 @@ think CASE6A~[setq(0,A)][asteval(v(e6))]~
 think CASE6J~[setq(0,A)][jiteval(v(e6))]~
 think CASE7A~[setq(9,qf)][asteval(v(e7))]~
 think CASE7J~[setq(9,qf)][jiteval(v(e7))]~
+think CASE8A~[asteval(v(e8))]~
+think CASE8J~[jiteval(v(e8))]~
+think CASE9A~[asteval(v(e9))]~
+think CASE9J~[jiteval(v(e9))]~
 EOF
 
 rm -f "$WORK"/data/exp.sqlite*
@@ -145,6 +157,8 @@ check "R1-letq-r"   CASE4A CASE4J "INPRE"
 check "R2-scope-r"  CASE5A CASE5J "A"
 check "RW-strcat"   CASE6A CASE6J "AB"
 check "D2-ecall-r"  CASE7A CASE7J "MUTATED"
+check "LR-scope-out" CASE8A CASE8J "1300"
+check "LR-scope-in"  CASE9A CASE9J "3001"
 
 if [ "$fails" -eq 0 ]; then
     echo "OK: all q-register scope shapes agree"

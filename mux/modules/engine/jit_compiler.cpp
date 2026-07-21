@@ -1931,16 +1931,16 @@ static constexpr uint64_t QREG_SLOT_BITS =
         ? (UINT64_C(1) << MAX_GLOBAL_REGS) - 1
         : ~UINT64_C(0))) << rv_compiler::SUBST_QREG0;
 
-// Returns false when a masked register's value exceeds SUBST_SLOT-1
-// bytes: a %q slot cannot hold it, so a JIT %q read would silently
-// truncate where the interpreter returns the full value (#996).
-// Entry-marshal callers must decline the run to the AST evaluator on
-// false (nothing has executed yet, so declining is side-effect-free).
-// The mid-program resync caller cannot decline and still truncates —
-// that half is the #996 step-2 long-register bitmap design.
-static bool marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
+// Also maintains the long-register bitmap (#996 step 2): the whole
+// QREG_LONGBITS u64 is rewritten on EVERY call — computed bits for
+// masked registers, zero elsewhere.  The runtime buffer is reused
+// across programs, so a partial update would leak a previous program's
+// stale bits; the whole-word write makes freshness true by
+// construction.  A truncated slot no longer declines the run: %q reads
+// branch on the bit and fetch long values via the fun_r ECALL.
+static void marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
 {
-    bool all_fit = true;
+    uint64_t longbits = 0;
     for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
         const int slot_idx = rv_compiler::SUBST_QREG0 + i;
         if (!((subst_mask >> slot_idx) & UINT64_C(1))) {
@@ -1956,7 +1956,7 @@ static bool marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
             size_t len = strlen(reinterpret_cast<const char *>(value));
             if (len >= static_cast<size_t>(rv_compiler::SUBST_SLOT)) {
                 len = rv_compiler::SUBST_SLOT - 1;
-                all_fit = false;
+                longbits |= UINT64_C(1) << i;
             }
             memcpy(mem + slot, value, len);
             mem[slot + len] = 0;
@@ -1964,7 +1964,24 @@ static bool marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
             mem[slot] = 0;
         }
     }
-    return all_fit;
+    memcpy(mem + rv_compiler::QREG_LONGBITS, &longbits, sizeof(longbits));
+}
+
+// Set/clear one register's long bit after an ECALL_SETQ write (#996).
+static void qreg_longbit_update(eval_ctx *ec, int regnum, size_t vlen)
+{
+    if (rv_compiler::QREG_LONGBITS + sizeof(uint64_t) > ec->memory_size) {
+        return;
+    }
+    uint64_t bits;
+    memcpy(&bits, ec->memory + rv_compiler::QREG_LONGBITS, sizeof(bits));
+    const uint64_t bit = UINT64_C(1) << regnum;
+    if (vlen >= static_cast<size_t>(rv_compiler::SUBST_SLOT)) {
+        bits |= bit;
+    } else {
+        bits &= ~bit;
+    }
+    memcpy(ec->memory + rv_compiler::QREG_LONGBITS, &bits, sizeof(bits));
 }
 
 // Look up or compile an expression.  Returns a pointer to the
@@ -2322,12 +2339,7 @@ struct shared_heap_t {
             copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
             copy_subst(rv_compiler::SUBST_MONIKER, nullptr);
         }
-        if (!marshal_qregs_to_slots(memory.data(), ~UINT64_C(0))) {
-            // A register value exceeds the slot: decline to the AST
-            // evaluator rather than run with a truncated %q (#996).
-            s_jit_stats.bail_longreg++;
-            return false;
-        }
+        marshal_qregs_to_slots(memory.data(), ~UINT64_C(0));
         copy_subst(rv_compiler::SUBST_LASTCMD, mudstate.curr_cmd);
         copy_subst(rv_compiler::SUBST_POUT, mudstate.pout);
         {
@@ -2499,15 +2511,8 @@ bool run_cached_program(compiled_program *prog,
         }
     }
 
-    // %q global registers.
-    if (!marshal_qregs_to_slots(s_runtime_buffer.data(),
-                                prog->subst_mask)) {
-        // A register this program reads exceeds the slot: decline to
-        // the AST evaluator rather than run with a truncated %q
-        // (#996).  Nothing has executed yet, so declining is clean.
-        s_jit_stats.bail_longreg++;
-        return false;
-    }
+    // %q global registers (+ the long-register bitmap, #996).
+    marshal_qregs_to_slots(s_runtime_buffer.data(), prog->subst_mask);
 
     // %m — last command.
     if (subst_used(rv_compiler::SUBST_LASTCMD)) {
@@ -2662,11 +2667,22 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     // subst_mask: %q-free programs skip at the bit test.  A pure
     // callee makes this a semantic no-op (slots already match).
     // (docs/plan-jit-evalbracket-lift.md, Phases 2-3.)
-    if ((ec->qreg_mask & QREG_SLOT_BITS) != 0) {
-        // Mid-program: cannot decline (side effects already applied);
-        // a register grown past the slot by the callee still
-        // truncates here — the #996 step-2 bitmap design covers it.
-        (void)marshal_qregs_to_slots(ec->memory, ec->qreg_mask);
+    // fun_r is a pure register read — the long-path %q ECALL (#996) —
+    // and must not itself trigger a full masked re-marshal.
+    static FUN *s_fun_r_fp = nullptr;
+    if (s_fun_r_fp == nullptr) {
+        int r_idx = engine_api_lookup("R");
+        if (r_idx > 0 && r_idx < ENGINE_API_MAX_FUNCS) {
+            s_fun_r_fp = engine_api_table[r_idx];
+        }
+    }
+    if ((ec->qreg_mask & QREG_SLOT_BITS) != 0
+        && fp != s_fun_r_fp) {
+        // Re-marshal slots AND the long-register bitmap from the
+        // authoritative global_regs (#996: a register grown past the
+        // slot by the callee sets its bit here, so later %q reads
+        // take the fun_r path instead of reading a truncated slot).
+        marshal_qregs_to_slots(ec->memory, ec->qreg_mask);
         s_jit_stats.qreg_resyncs++;
     }
 
@@ -3598,6 +3614,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 memcpy(ec->memory + slot, value, cplen);
                 ec->memory[slot + cplen] = 0;
             }
+            qreg_longbit_update(ec, regnum, vlen);
 
             RegAssign(&mudstate.global_regs[regnum], vlen, value);
             ctx->x[10] = vlen;
@@ -3632,6 +3649,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 memcpy(ec->memory + slot, value, cplen);
                 ec->memory[slot + cplen] = 0;
             }
+            qreg_longbit_update(ec, regnum, vlen);
 
             // Allocate from Arena (Tier B).
             auto *a = JITArena::Alloc(vlen + 1);
