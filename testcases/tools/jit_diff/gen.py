@@ -168,20 +168,27 @@ def longreg_case(i):
     marshal reads), then the measured expression reads %q9.  Lengths
     straddle the 256-byte SUBST_SLOT so both the entry-marshal decline
     (bail_longreg) and the normal short path are exercised.
-    Mid-program setq-then-read of long values is deliberately NOT
-    generated until the #996 step-2 fix lands.
+    Mid-program setq-then-read shapes (the #996 step-2 surface: the
+    long value is created INSIDE the measured program by SETQ_SYNC and
+    read back through the long-bit diamond) run without a preamble.
     Returns (preamble_command, expression)."""
     n = random.choice([40, 120, 250, 255, 256, 260, 300, 500])
     pre = f"think [setq(9,repeat(x,{n}))]"
-    shape = i % 4
+    shape = i % 6
     if shape == 0:
         e = "strcat(%q9,END)"
     elif shape == 1:
         e = "strcat(strlen(%q9),:,mid(%q9,5,7))"
     elif shape == 2:
         e = "strcat(before(%q9,zz),:,strlen(%q9))"
-    else:
+    elif shape == 3:
         e = "strcat(reverse(%q9),D)"
+    elif shape == 4:
+        pre = None
+        e = f"strcat(setq(9,repeat(x,{n})),%q9,END)"
+    else:
+        pre = None
+        e = f"strcat(setq(9,repeat(x,{n})),strlen(%q9))"
     return pre, e
 
 

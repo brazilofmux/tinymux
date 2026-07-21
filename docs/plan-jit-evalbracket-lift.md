@@ -464,8 +464,38 @@ the post-ECALL resync (they should fall out of it — the resync runs
 after `_RESTORE_QREGS` — but the oracle should grow a long-register
 scope shape to prove it).
 
-Still open for Phase 5: #996 step 2 (above), soak with the toggle on,
-then flip the default and retire `jiteval`.
+*Step 2 — LANDED (2026-07-21), per the approved design with all review
+requirements:*
+
+- `QREG_LONGBITS` u64 at the SUBST-end/DMA gap (0x6B700), named
+  constant; the entry marshal **whole-word writes** it every run
+  (computed bits for masked registers, zero elsewhere — no stale-bit
+  leakage across the reused runtime buffer, per review requirement).
+- Writers: entry marshal, `ECALL_SETQ` + `ECALL_SETQ_PACK`
+  (`qreg_longbit_update` from the `vlen` they already have), and the
+  post-ECALL resync (whole-word via the marshal). Scope restores fall
+  out of the resync as predicted — proven by the four-transition
+  oracle shapes (`LR-scope-out` `1300` / `LR-scope-in` `3001`).
+- Readers: single choke point `emit_qreg_read(h, rc, rn)` — the only
+  `SUBST_QREG0` sref site (grep-audited) — emits load/shift/and (all
+  existing HIR ops; `HIR_LUA_ALOAD` doubles as the plain guest u64
+  load) + BRC diamond: bit clear → Phase 2 slot materialization
+  unchanged; bit set → `fun_r` ECALL (authoritative `global_regs`).
+- `fun_r` is exempted from the conservative post-ECALL resync (pointer
+  compare) so the long path doesn't re-marshal on every read.
+- Step 1's entry declines removed: long-register programs stay JITted
+  (`bail_longreg` stays in jitstats and now reads 0 — the acceptance
+  signal). Honest cost: the diamond is load+test+branch per `%q` read;
+  rvbench six-read expr 0.19µs/call vs 0.16 pre-diamond, still ~3×
+  faster than native (0.57).
+- Corpus: `--longreg` now generates mid-program setq-then-read shapes;
+  TC018 locks mid-program + both scope transitions bracket-free.
+
+Results: smoke 1318/1318 both toggles; oracle **9/9**; sweeps standard,
+longreg ×2 seeds, longreg+utf8+brackets — all 400/0 LOGIC.
+
+Still open for Phase 5: soak with the toggle on, then flip the default
+and retire `jiteval`.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 

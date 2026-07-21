@@ -989,6 +989,74 @@ static void qreg_clobber() {
     for (int i = 0; i < HIR_NUM_QREGS; i++) qreg[i] = -1;
 }
 
+// Single choke point for runtime %q register reads (#996 step 2).
+// Every lowering that reads a SUBST_QREG slot MUST come through here:
+// the slot holds at most SUBST_SLOT-1 bytes, so a register whose
+// authoritative value is longer has bit rn set in the guest
+// QREG_LONGBITS word and the read must fetch via the fun_r ECALL
+// (authoritative global_regs) instead of the truncated slot.
+//
+// Cost when the bit is clear: a native u64 load + shift/and + branch
+// and a diamond in the block structure, on top of the Phase 2
+// slot-materialization STRCAT.
+static int emit_qreg_read(hir_program &h, rv_compiler &rc, int rn)
+{
+    h.needs_jit = true;
+
+    // bit = (LONGBITS >> rn) & 1.  HIR_LUA_ALOAD is a plain native
+    // "load int64 at base + (key-1)*8" despite the name — with key=1
+    // it reads exactly the u64 at QREG_LONGBITS.
+    int key1 = h.emit_iconst(1);
+    int word = h.emit(HIR_LUA_ALOAD, TY_INT, key1, -1,
+                      static_cast<int64_t>(rv_compiler::QREG_LONGBITS));
+    int shn  = h.emit_iconst(rn);
+    int shr  = h.emit(HIR_SHR, TY_INT, word, shn);
+    int one  = h.emit_iconst(1);
+    int bit  = h.emit(HIR_BAND, TY_INT, shr, one);
+
+    int long_block  = h.new_block();
+    int short_block = h.new_block();
+    int entry_block = h.cur_block;
+    h.emit(HIR_BRC, TY_VOID, bit, short_block, long_block);
+    h.add_edge(entry_block, long_block);
+    h.add_edge(entry_block, short_block);
+
+    // Long path: fun_r ECALL — reads the full value from global_regs.
+    h.cur_block = long_block;
+    char name[2] = { static_cast<char>(
+        (rn < 10) ? ('0' + rn) : ('a' + rn - 10)), 0 };
+    uint64_t naddr = rc.pool_str(name);
+    int nval = h.emit_sconst(naddr, name);
+    int r_idx = engine_api_lookup("R");
+    int rargs[1] = { nval };
+    int long_val = h.emit_call(TY_STRING, r_idx, rargs, 1);
+    h.ecalls++;
+    int long_exit = h.cur_block;
+
+    // Short path: materialize the slot at this sequence point
+    // (Phase 2 semantics — see the read-write-read notes).
+    h.cur_block = short_block;
+    uint64_t addr = rv_compiler::SUBST_BASE
+        + static_cast<uint64_t>(rv_compiler::SUBST_QREG0 + rn)
+          * rv_compiler::SUBST_SLOT;
+    int sref = h.emit_sref(addr);
+    int short_val = h.emit_strcat(&sref, 1);
+    int short_exit = h.cur_block;
+
+    int merge_block = h.new_block();
+    h.cur_block = long_exit;
+    h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+    h.add_edge(long_exit, merge_block);
+    h.cur_block = short_exit;
+    h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+    h.add_edge(short_exit, merge_block);
+
+    h.cur_block = merge_block;
+    int blocks[2] = { long_exit, short_exit };
+    int vals[2] = { long_val, short_val };
+    return h.emit_phi(TY_STRING, -1, blocks, vals, 2);
+}
+
 // Compile-time eval flag tracking.
 //
 // s_compile_eval: the EV_* flags in effect for the current compilation.
@@ -3897,23 +3965,13 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                     rn = mux_RegisterSet[static_cast<unsigned char>(r)];
                 }
                 if (rn >= 0 && rn < MAX_GLOBAL_REGS) {
-                    uint64_t addr = rv_compiler::SUBST_BASE
-                        + (rv_compiler::SUBST_QREG0 + rn)
-                          * rv_compiler::SUBST_SLOT;
-                    h.needs_jit = true;
-                    // Materialize the read at this sequence point.  A
-                    // bare sref is a deferred pointer deref — observed
-                    // at consumption time (final strcat / ECALL) — but
-                    // %q slots mutate mid-program (SETQ_SYNC
-                    // write-through, scope-restore resync), so a bare
-                    // sref reads the final slot value, not the value
-                    // at this position: strcat(%q0,setq(0,B),%q0)
-                    // returned "BB" instead of "AB".  A single-arg
-                    // STRCAT snapshots the slot into an output slot at
-                    // its own position in the instruction stream
-                    // (docs/plan-jit-evalbracket-lift.md, Phase 2).
-                    int sref = h.emit_sref(addr);
-                    return h.emit_strcat(&sref, 1);
+                    // All runtime %q reads go through the single
+                    // choke point: it materializes the slot at this
+                    // sequence point (Phase 2 read-write-read
+                    // semantics) and branches to the fun_r ECALL when
+                    // the register's long bit is set (#996 step 2) —
+                    // the 256-byte slot would be a truncated copy.
+                    return emit_qreg_read(h, rc, rn);
                 }
                 if (r == '<') {
                     // Named register: %q<name>.

@@ -264,6 +264,17 @@ struct rv_compiler {
     static constexpr int      SUBST_OBJID    = SUBST_NCARGS + 1;
     static constexpr int      SUBST_COUNT    = SUBST_OBJID + 1;
 
+    // Long q-register bitmap (#996 step 2): one u64 in the gap between
+    // the SUBST region and the DMA windows.  Bit i set = register i's
+    // authoritative (mudstate.global_regs) value exceeds SUBST_SLOT-1
+    // bytes, so its %q slot holds a TRUNCATED copy and reads must take
+    // the fun_r ECALL path.  Maintained by the entry marshal (whole-
+    // word write every run — the runtime buffer is reused across
+    // programs, so partial updates would leak stale bits), by
+    // ECALL_SETQ/ECALL_SETQ_PACK, and by the post-ECALL resync.
+    static constexpr uint64_t QREG_LONGBITS =
+        SUBST_BASE + static_cast<uint64_t>(SUBST_COUNT) * SUBST_SLOT;
+
     // DMA windows (Tier C): zero-copy host interaction.
     // 4 windows of 16KB each at 0x70000-0x7FFFF.
     static constexpr uint64_t DMA_BASE         = 0x70000;

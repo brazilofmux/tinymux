@@ -327,11 +327,32 @@
         eq(strlen(strcat(setq(9,repeat(x,200)),u(me/lr_read))),203)
       )=
   {
-    @log smoke=TC017: long-register entry-marshal decline (#996). Succeeded.;
+    @log smoke=TC017: long-register entry-marshal decline (#996). Succeeded.
+  },
+  {
+    @log smoke=TC017: long-register entry-marshal decline (#996). Failed (long=[strlen(strcat(setq(9,repeat(x,300)),u(me/lr_read)))] short=[strlen(strcat(setq(9,repeat(x,200)),u(me/lr_read)))]).
+  }
+-
+#
+# Test Case #18 - #996 step 2: mid-program long values and scope
+# transitions.  A long value created INSIDE a program (SETQ_SYNC) sets
+# its long bit, so the %q read diamond fetches via fun_r instead of the
+# truncated 256-byte slot; scope restore re-marshals the bitmap through
+# the post-ECALL resync.  Bracket-free (strcat + inlined localize).
+#
+&lr_mid test_jit_parity_fn=strcat(setq(9,repeat(x,300)),%q9,END)
+&tr.tc018 test_jit_parity_fn=
+  @if cand(
+        eq(strlen(u(me/lr_mid)),303),
+        strmatch(strcat(setq(9,repeat(x,300)),localize(strcat(setq(9,S),strlen(%q9))),strlen(%q9)),1300),
+        strmatch(strcat(setq(9,S),localize(strcat(setq(9,repeat(x,300)),strlen(%q9))),strlen(%q9)),3001)
+      )=
+  {
+    @log smoke=TC018: mid-program long registers + scope transitions (#996). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC017: long-register entry-marshal decline (#996). Failed (long=[strlen(strcat(setq(9,repeat(x,300)),u(me/lr_read)))] short=[strlen(strcat(setq(9,repeat(x,200)),u(me/lr_read)))]).;
+    @log smoke=TC018: mid-program long registers + scope transitions (#996). Failed (mid=[strlen(u(me/lr_mid))] out=[strcat(setq(9,repeat(x,300)),localize(strcat(setq(9,S),strlen(%q9))),strlen(%q9))] in=[strcat(setq(9,S),localize(strcat(setq(9,repeat(x,300)),strlen(%q9))),strlen(%q9))]).;
     @trig me/tr.done
   }
 -
