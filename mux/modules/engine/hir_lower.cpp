@@ -2622,6 +2622,50 @@ general_lowering:
     }
     int nargs = static_cast<int>(args.size());
 
+    // maxArgsParsed comma-catenation (#988): the AST parser always
+    // splits on commas, and for builtins whose maxArgsParsed limits
+    // splitting, ast_eval_node re-catenates the excess args (with
+    // commas) into the last slot.  Mirror that here — without it the
+    // ECALL layer silently clamps and sha1(abc,def) computes
+    // sha1("abc").  Constant pieces join at compile time so the fold
+    // path below still sees a foldable SCONST.
+    {
+        int fidx0 = engine_api_lookup(fname.c_str());
+        FUN *fp0 = (fidx0 > 0 && fidx0 < ENGINE_API_MAX_FUNCS)
+                   ? engine_api_table[fidx0] : nullptr;
+        if (fp0 != nullptr
+            && fp0->maxArgsParsed > 0
+            && nargs > fp0->maxArgsParsed) {
+            int m = fp0->maxArgsParsed;
+            bool tail_const = true;
+            for (int k = m - 1; k < nargs; k++) {
+                if (!h.is_const(args[k])) { tail_const = false; break; }
+            }
+            if (tail_const) {
+                std::string joined;
+                for (int k = m - 1; k < nargs; k++) {
+                    if (k > m - 1) joined += ",";
+                    joined += h.const_str(args[k]);
+                }
+                uint64_t addr = rc.pool_str(joined);
+                args[m - 1] = h.emit_sconst(addr, joined);
+            } else {
+                std::vector<int> pieces;
+                uint64_t caddr = rc.pool_str(",");
+                for (int k = m - 1; k < nargs; k++) {
+                    if (k > m - 1) {
+                        pieces.push_back(h.emit_sconst(caddr, ","));
+                    }
+                    pieces.push_back(args[k]);
+                }
+                args[m - 1] = h.emit_strcat(
+                    pieces.data(), static_cast<int>(pieces.size()));
+            }
+            args.resize(m);
+            nargs = m;
+        }
+    }
+
     // Try constant folding.
     bool all_const = true;
     std::vector<std::string> arg_values;

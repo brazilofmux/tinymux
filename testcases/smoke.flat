@@ -5083,7 +5083,11 @@
 >274
 "@if strmatch(setr(0,[ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]),setr(1,[asteval({ladd(1e20 1 -1e20)})]:[asteval({ladd(0.1 0.2)})]:[asteval({ladd(1|2|3,|)})]))={@log smoke=TC009: ladd() AddDoubles parity. Succeeded.},{@log smoke=TC009: ladd() AddDoubles parity. Failed (%q0 vs %q1).}"
 >275
-"@if strmatch(strcat(setq(5,A),%q5,setq(5,B),%q5),AB)={@log smoke=TC010: qreg read-write-read materialization. Succeeded.;@trig me/tr.done},{@log smoke=TC010: qreg read-write-read materialization. Failed (got [strcat(setq(5,A),%q5,setq(5,B),%q5)]).;@trig me/tr.done}"
+"@if strmatch(strcat(setq(5,A),%q5,setq(5,B),%q5),AB)={@log smoke=TC010: qreg read-write-read materialization. Succeeded.},{@log smoke=TC010: qreg read-write-read materialization. Failed (got [strcat(setq(5,A),%q5,setq(5,B),%q5)]).}"
+>276
+"@if cand(strmatch(sha1(abc,def), B9C58B99E102D8B50B76D23E71E9C155E5C3195F),strmatch(sha1(abc,strcat(d,ef)), B9C58B99E102D8B50B76D23E71E9C155E5C3195F))={@log smoke=TC011: maxArgsParsed comma-catenation (JIT route). Succeeded.},{@log smoke=TC011: maxArgsParsed comma-catenation (JIT route). Failed (const=[sha1(abc,def)] dyn=[sha1(abc,strcat(d,ef))]).}"
+>277
+"@if cand(strmatch(wordpos(strcat(h,chr(233),llo world),6), 2),strmatch(wordpos(strcat(h,chr(233),llo world),12), #-1*),strmatch(wordpos(strcat(a,chr(128075),chr(127995),%b b),3), 2),strmatch(wordpos(abc def,5), 2))={@log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Succeeded.;@trig me/tr.done},{@log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Failed (w6=[wordpos(strcat(h,chr(233),llo world),6)] w12=[wordpos(strcat(h,chr(233),llo world),12)] e3=[wordpos(strcat(a,chr(128075),chr(127995),%b b),3)]).;@trig me/tr.done}"
 <
 !123
 "test_jit_route_parity_fn"

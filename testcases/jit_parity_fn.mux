@@ -164,11 +164,51 @@
 &tr.tc010 test_jit_parity_fn=
   @if strmatch(strcat(setq(5,A),%q5,setq(5,B),%q5),AB)=
   {
-    @log smoke=TC010: qreg read-write-read materialization. Succeeded.;
+    @log smoke=TC010: qreg read-write-read materialization. Succeeded.
+  },
+  {
+    @log smoke=TC010: qreg read-write-read materialization. Failed (got [strcat(setq(5,A),%q5,setq(5,B),%q5)]).
+  }
+-
+#
+# Test Case #11 - maxArgsParsed comma-catenation on the JIT route (#988).
+# sha1() has maxArgsParsed=1: the parser splits on commas and the
+# evaluator re-catenates, so sha1(abc,def) is sha1("abc,def").  The JIT
+# lowering dropped the excess args and computed sha1("abc").
+# Deliberately bracket-free so the condition rides the JIT route; the
+# strcat variant exercises the runtime (non-constant) catenation path.
+#
+&tr.tc011 test_jit_parity_fn=
+  @if cand(
+        strmatch(sha1(abc,def), B9C58B99E102D8B50B76D23E71E9C155E5C3195F),
+        strmatch(sha1(abc,strcat(d,ef)), B9C58B99E102D8B50B76D23E71E9C155E5C3195F)
+      )=
+  {
+    @log smoke=TC011: maxArgsParsed comma-catenation (JIT route). Succeeded.
+  },
+  {
+    @log smoke=TC011: maxArgsParsed comma-catenation (JIT route). Failed (const=[sha1(abc,def)] dyn=[sha1(abc,strcat(d,ef))]).
+  }
+-
+#
+# Test Case #12 - tier2 wordpos() grapheme positions on the JIT route
+# (#989).  The rv64 wrapper bounded charpos by code points and walked
+# bytes, returning the wrong word for multi-byte text.  Bracket-free
+# condition; strcat composes the UTF-8 string without eval brackets.
+#
+&tr.tc012 test_jit_parity_fn=
+  @if cand(
+        strmatch(wordpos(strcat(h,chr(233),llo world),6), 2),
+        strmatch(wordpos(strcat(h,chr(233),llo world),12), #-1*),
+        strmatch(wordpos(strcat(a,chr(128075),chr(127995),%b b),3), 2),
+        strmatch(wordpos(abc def,5), 2)
+      )=
+  {
+    @log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC010: qreg read-write-read materialization. Failed (got [strcat(setq(5,A),%q5,setq(5,B),%q5)]).;
+    @log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Failed (w6=[wordpos(strcat(h,chr(233),llo world),6)] w12=[wordpos(strcat(h,chr(233),llo world),12)] e3=[wordpos(strcat(a,chr(128075),chr(127995),%b b),3)]).;
     @trig me/tr.done
   }
 -

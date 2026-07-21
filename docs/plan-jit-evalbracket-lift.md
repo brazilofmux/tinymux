@@ -322,8 +322,29 @@ bisecting, mirroring how `sandbox()`/`asteval()` force the AST path
 **Toggle OFF (default):** oracle 7/7, smoke 1310/1310, standard sweep 0
 LOGIC — byte-identical behavior, cleanly gated.
 
-**Gate for Phase 5 (default-on):** #988 and #989 fixed, toggle-on smoke
-fully green, bracket + UTF-8 sweeps clean.
+**Correction (post-#990):** the Phase 4 PR claimed the toggle-on smoke was
+"green except exactly the two filed bugs" — that read only the tail of the
+log. The full failure set was 11 lines / 9 distinct TCs: the three fixed by
+#988/#989 (sha1 parser-tests ×2 files + wordpos) plus **six more
+pre-existing divergences**, confirmed pre-existing by a stash-bisect and
+tracked as **#991**.
+
+**#988 and #989 — FIXED (2026-07-20):**
+- #988: the general call lowering now mirrors `ast_eval_node`'s
+  maxArgsParsed comma-catenation (constant pieces join at compile time so
+  folding still sees an SCONST; runtime pieces STRCAT with `,` literals).
+  `sha1(abc,def)` and `sha1(abc,strcat(d,ef))` both compute the packed
+  hash on the JIT route.
+- #989: `rv64_wordpos` now bounds `charpos` by `co_cluster_count` and
+  resolves it to a byte offset via `co_mid_cluster` (mirroring the
+  interpreter's grapheme walk); softlib.rv64 blob rebuilt (the RISC-V
+  cross-toolchain is on this box). ASCII behavior unchanged.
+- Locked by bracket-free `jit_parity_fn.mux` TC011/TC012 on the default
+  JIT route; smoke 1312/1312.
+
+**Gate for Phase 5 (default-on):** the six #991 divergences fixed,
+toggle-on smoke fully green, bracket + UTF-8 + stateful-register sweep
+corpora clean.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 
