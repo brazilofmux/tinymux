@@ -20,8 +20,8 @@ REPO=$(CDPATH= cd -- "$SCRIPT_DIR/../../.." && pwd)
 ROUNDS=${1:-40}
 LOG="$REPO/testcases/soak.log"
 
-: > "$LOG"
-echo "=== JIT bracket toggle-on soak: $ROUNDS rounds ===" | tee -a "$LOG"
+# Append (timestamped) so history survives across soak sessions.
+echo "=== JIT bracket toggle-on soak: $ROUNDS rounds ($(date)) ===" | tee -a "$LOG"
 
 round=0
 while [ "$round" -lt "$ROUNDS" ]; do
@@ -53,6 +53,14 @@ while [ "$round" -lt "$ROUNDS" ]; do
         echo "SOAK FAILED at round $round" | tee -a "$LOG"
         exit 1
     fi
+    # A COLOR-encoding divergence is a regression too (post-#995 the
+    # baseline is 0 everywhere) — halt on it even though run.sh only
+    # sets a failing status for LOGIC.
+    case $summary in
+        *", 0 COLOR"*) ;;
+        *)  echo "SOAK FAILED at round $round: COLOR divergence" | tee -a "$LOG"
+            exit 1 ;;
+    esac
 
     # Periodic full-suite toggle-on smoke.
     if [ $((round % 10)) -eq 0 ]; then

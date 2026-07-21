@@ -494,8 +494,23 @@ requirements:*
 Results: smoke 1318/1318 both toggles; oracle **9/9**; sweeps standard,
 longreg ×2 seeds, longreg+utf8+brackets — all 400/0 LOGIC.
 
-Still open for Phase 5: soak with the toggle on, then flip the default
-and retire `jiteval`.
+**Phase 5 soak — COMPLETE on both boxes (2026-07-21):** `soak.sh 40`
+each on macOS arm64 and Linux x64 — 40 rounds × 400 expressions per box
+(seeds 1007–1280, brackets always on, utf8/longreg through every
+pairing), **0 LOGIC / 0 COLOR / 0 missing everywhere**, all eight
+toggle-on smoke legs 1318/1318. Dev instances on both boxes run
+toggle-on via the `netmux.conf` opt-in (#1001).
+
+Remaining — the default flip (one final PR):
+- flip `jit_eval_brackets` init to `true` in conf.cpp;
+- **remove the `netmux.conf` soak opt-in in the same commit** (that
+  file ships — the opt-in must not outlive the soak, per the #1001
+  review);
+- retire `jiteval()` per the surface-reduction commitment (production
+  route now reaches everything it existed for) — drop the function,
+  the table entry, and the oracle's dependency on it, or demote to a
+  debug build if a forced-JIT probe still earns its keep;
+- final validation matrix + survey/plan doc closeout.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 
