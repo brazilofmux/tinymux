@@ -97,6 +97,8 @@ const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
 const unsigned char *co_visible_advance(const unsigned char *p,
                                         const unsigned char *pe,
                                         size_t n, size_t *out_count);
+const unsigned char *co_skip_color(const unsigned char *p,
+                                   const unsigned char *pe);
 size_t co_visible_length(const unsigned char *data, size_t len);
 size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
 size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
@@ -910,12 +912,46 @@ char *co_secure_wrap(char *out, const char **fargs, int nfargs) {
 }
 
 char *co_lpos_wrap(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 2 || fargs[1][0] == '\0') { out[0] = '\0'; return out; }
-    size_t n = co_lpos((unsigned char *)out,
-                       (const unsigned char *)fargs[0],
-                       rv64_slen(fargs[0]),
-                       (unsigned char)fargs[1][0]);
-    out[n] = '\0';
+    /* Mirror fun_lpos: an empty pattern defaults to a single space
+     * (the old wrapper returned empty), and the pattern is matched in
+     * full via color-aware co_search (the old co_lpos matched only
+     * fargs[1][0], so lpos(abxab,bx) reported every 'b'). */
+    out[0] = '\0';
+    if (nfargs < 2) return out;
+    const unsigned char *pStr = (const unsigned char *)fargs[0];
+    size_t nStr = rv64_slen(fargs[0]);
+    if (nStr == 0) return out;
+
+    static const unsigned char spacePat[2] = { ' ', 0 };
+    const unsigned char *pPat = (const unsigned char *)fargs[1];
+    size_t nPat = rv64_slen(fargs[1]);
+    if (nPat == 0) { pPat = spacePat; nPat = 1; }
+
+    char *op = out;
+    int first = 1;
+    const unsigned char *pCur = pStr;
+    const unsigned char *pe = pStr + nStr;
+    size_t nRemain = nStr;
+    while (nRemain > 0) {
+        const unsigned char *match = co_search(pCur, nRemain, pPat, nPat);
+        if (match == 0) break;
+        if (!first) *op++ = ' ';
+        first = 0;
+        op += sitoa(op,
+            (int)co_cluster_count(pStr, (size_t)(match - pStr)));
+        /* Advance past the match by one visible code point. */
+        const unsigned char *pNext = co_skip_color(match, pe);
+        if (pNext < pe) {
+            unsigned char ch = *pNext;
+            size_t cplen = (ch < 0x80) ? 1
+                         : (ch < 0xE0) ? 2
+                         : (ch < 0xF0) ? 3 : 4;
+            pNext += cplen;
+        }
+        nRemain = (size_t)(pe - pNext);
+        pCur = pNext;
+    }
+    *op = '\0';
     return out;
 }
 
@@ -1113,16 +1149,15 @@ char *co_splice_wrap(char *out, const char **fargs, int nfargs) {
     unsigned char delim = get_delim(fargs, nfargs, 3);
     unsigned char osep = get_osep(fargs, nfargs, 4, delim);
 
-    /* Validate: search word must be single-word (no delimiter). */
-    {
-        const unsigned char *wp = (const unsigned char *)fargs[2];
-        while (*wp) {
-            if (*wp == delim) {
-                rv64_scopy(out, "#-1 TOO MANY WORDS");
-                return out;
-            }
-            wp++;
-        }
+    /* Validate: search word must be a single word per countwords —
+     * for the default space delimiter that trims and collapses, so a
+     * blank or space-padded word counts 0/1 and is NOT an error (the
+     * old raw byte scan rejected splice(a,b,%b)).  co_words_count
+     * implements the same counting. */
+    if (co_words_count((const unsigned char *)fargs[2],
+                       rv64_slen(fargs[2]), delim) > 1) {
+        rv64_scopy(out, "#-1 TOO MANY WORDS");
+        return out;
     }
 
     /* Validate: list1 and list2 must have equal word counts. */
@@ -1509,32 +1544,70 @@ char *rv64_lnum(char *out, const char **fargs, int nfargs) {
 
 /* isnum(string) — is it a valid number? */
 char *rv64_isnum(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    const char *p = fargs[0];
-    if (*p == '-' || *p == '+') p++;
-    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    int has_digit = 0, has_dot = 0;
-    while (*p) {
-        if (*p >= '0' && *p <= '9') { has_digit = 1; p++; }
-        else if (*p == '.' && !has_dot) { has_dot = 1; p++; }
-        else { out[0] = '0'; out[1] = '\0'; return out; }
-    }
-    out[0] = has_digit ? '1' : '0';
+    /* Mirror fun_isnum -> is_real -> ParseFloat (strict): surrounding
+     * whitespace, an [eE][+-]1..4-digit exponent, and the IEEE magic
+     * strings Inf/Ind/Nan are all valid numbers.  The old wrapper
+     * rejected every one of those (wrapper audit). */
+    out[0] = '0';
     out[1] = '\0';
+    if (nfargs < 1) return out;
+    const char *p = fargs[0];
+
+    if (!(*p >= '0' && *p <= '9') && *p != '.') {
+        while (sisspace(*p)) p++;
+        if (*p == '-' || *p == '+') p++;
+        if (!(*p >= '0' && *p <= '9') && *p != '.') {
+            /* Magic strings (case-insensitive): Inf, Ind, Nan. */
+            char a = p[0] | 0x20;
+            char b = p[0] ? (char)(p[1] | 0x20) : 0;
+            char c = (p[0] && p[1]) ? (char)(p[2] | 0x20) : 0;
+            if (a == 'i' && b == 'n' && (c == 'f' || c == 'd')) {
+                p += 3;
+            } else if (a == 'n' && b == 'a' && c == 'n') {
+                p += 3;
+            } else {
+                return out;
+            }
+            goto last_spaces;
+        }
+    }
+    {
+        int nA = 0, nB = 0;
+        while (*p >= '0' && *p <= '9') { nA++; p++; }
+        if (*p == '.') p++;
+        while (*p >= '0' && *p <= '9') { nB++; p++; }
+        if (nA == 0 && nB == 0) return out;
+        if (*p == 'E' || *p == 'e') {
+            int nC = 0;
+            p++;
+            if (*p == '-' || *p == '+') p++;
+            while (*p >= '0' && *p <= '9') { nC++; p++; }
+            if (nC < 1 || 4 < nC) return out;
+        }
+    }
+last_spaces:
+    while (sisspace(*p)) p++;
+    if (*p == '\0') out[0] = '1';
     return out;
 }
 
 /* isint(string) — is it a valid integer? */
 char *rv64_isint(char *out, const char **fargs, int nfargs) {
-    if (nfargs < 1 || fargs[0][0] == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
+    /* Mirror fun_isint -> is_integer: leading/trailing whitespace
+     * around the integer is accepted (the old wrapper rejected it). */
+    out[0] = '0';
+    out[1] = '\0';
+    if (nfargs < 1) return out;
     const char *p = fargs[0];
-    if (*p == '-' || *p == '+') p++;
-    if (*p == '\0') { out[0] = '0'; out[1] = '\0'; return out; }
-    while (*p) {
-        if (*p < '0' || *p > '9') { out[0] = '0'; out[1] = '\0'; return out; }
+    while (sisspace(*p)) p++;
+    if (*p == '-' || *p == '+') {
         p++;
+        if (*p == '\0') return out;
     }
-    out[0] = '1'; out[1] = '\0';
+    if (!(*p >= '0' && *p <= '9')) return out;
+    while (*p >= '0' && *p <= '9') p++;
+    while (sisspace(*p)) p++;
+    if (*p == '\0') out[0] = '1';
     return out;
 }
 

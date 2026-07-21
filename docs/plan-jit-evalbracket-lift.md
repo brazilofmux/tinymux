@@ -381,9 +381,39 @@ and #993's COLOR case in the same stroke. Locked by bracket-free
 `jit_parity_fn.mux` TC015. Sweeps: standard + brackets × 3 seeds
 (default/7/13) all 0 LOGIC, 0 COLOR; smoke 1315/1315 both toggles.
 
-Still open for Phase 5: the sweep-corpus modes (UTF-8/`chr()`, stateful
-registers), soak with the toggle on, then flip the default and retire
-`jiteval`.
+**Wrapper audit (2026-07-21):** all 79 rv64/co_*_wrap tier2 wrappers
+audited against their interpreter authorities (three parallel readers +
+empirical verification of every claimed divergence). Five live
+divergences found and fixed, all on the default route:
+
+- `co_lpos_wrap` — empty pattern must default to space, and the FULL
+  pattern must match via color-aware `co_search` (was first-byte-only:
+  `lpos(abxab,bx)` reported every `b`); the constant-fold path had the
+  same bug and now declines multi-byte patterns.
+- `co_splice_wrap` — search-word validation now counts words like
+  `countwords` (a blank/padded word is not `#-1 TOO MANY WORDS`).
+- setunion/setdiff/setinter — the blob's comparator supports only
+  a/i/n/d; AutoDetect (`?`/present-empty) and f/u/c now gate to the
+  interpreter at compile time.
+- `rv64_isnum` — full `ParseFloat` mirror (exponents, surrounding
+  whitespace, `Inf`/`Ind`/`Nan`).
+- `rv64_isint` — `is_integer` mirror (surrounding whitespace).
+
+Also established empirically: the multi-char/computed separator and
+osep-edge divergences the wrappers *would* have are unreachable — the
+`hir_lower` delim gating (const-only, size checks) holds, including for
+runtime-computed separators. Dead rows noted: `co_vislen_wrap`,
+`rv64_dec2hex`/`hex2dec` (unrouted), `rv64_null`, `rv64_round`
+(deliberately ECALL). ~65 wrappers verified MIRROR OK.
+
+New `JITDIFF_UTF8=1` corpus mode (multi-byte words incl. an emoji+
+modifier cluster in every generator shape) — clean across seeds and in
+composition with `JITDIFF_BRACKETS`, consistent with the audit's
+conclusion that the remaining wrappers are cluster-correct. Locked by
+bracket-free `jit_parity_fn.mux` TC016.
+
+Still open for Phase 5: the stateful-register sweep-corpus mode, soak
+with the toggle on, then flip the default and retire `jiteval`.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 

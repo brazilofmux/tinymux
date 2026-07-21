@@ -829,6 +829,14 @@ static bool try_fold(const std::string &func_name,
 
     // --- LPOS(list, char) ---
     if (upper == "LPOS" && nargs == 2) {
+        // co_lpos matches a single byte; fun_lpos matches the FULL
+        // pattern via color-aware co_search.  Fold only the one-byte
+        // pattern case (empty defaults to space) — anything longer
+        // goes to the runtime wrapper, which mirrors fun_lpos
+        // (wrapper audit: lpos(abxab,bx) folded to every 'b').
+        if (args[1].size() > 1) {
+            return false;
+        }
         unsigned char target = (!args[1].empty())
             ? static_cast<unsigned char>(args[1][0]) : ' ';
         LBuf out = LBuf_Src("hir_lpos");
@@ -3528,6 +3536,24 @@ literal_strcat:
                         if (ostr.size() != 1) {
                             t2addr = 0;
                         }
+                    }
+                }
+            }
+            // SETUNION/SETDIFF/SETINTER sort type (arg[4]): the blob's
+            // get_cmp implements only a/i/n/d — no AutoDetect ('?' or
+            // present-but-empty) and no f/u/c comparators (handle_sets
+            // maps those to f_comp/u_collate).  Fall back for anything
+            // else (wrapper audit: setunion(2 10,1 3,%b,%b,?) sorted
+            // ASCII on the blob, numeric on the interpreter).
+            if ((upper == "SETUNION" || upper == "SETDIFF"
+                 || upper == "SETINTER") && nargs >= 5) {
+                if (!h.is_const(args[4])) {
+                    t2addr = 0;
+                } else {
+                    std::string tstr = h.const_str(args[4]);
+                    if (tstr.size() != 1
+                        || strchr("aAiInNdD", tstr[0]) == nullptr) {
+                        t2addr = 0;
                     }
                 }
             }
