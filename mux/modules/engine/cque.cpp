@@ -427,12 +427,12 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
 
     if (point->switch_token)
     {
-        free_lbuf(point->switch_token);
+        MEMFREE(point->switch_token);
         point->switch_token = nullptr;
     }
     if (point->iter_token)
     {
-        free_lbuf(point->iter_token);
+        MEMFREE(point->iter_token);
         point->iter_token = nullptr;
     }
 
@@ -530,12 +530,12 @@ static int CallBack_HaltQueue(const PTASK_RECORD p)
 
             if (point->switch_token)
             {
-                free_lbuf(point->switch_token);
+                MEMFREE(point->switch_token);
                 point->switch_token = nullptr;
             }
             if (point->iter_token)
             {
-                free_lbuf(point->iter_token);
+                MEMFREE(point->iter_token);
                 point->iter_token = nullptr;
             }
 
@@ -639,12 +639,12 @@ static int CallBack_HaltQueueByPid(const PTASK_RECORD p)
 
             if (point->switch_token)
             {
-                free_lbuf(point->switch_token);
+                MEMFREE(point->switch_token);
                 point->switch_token = nullptr;
             }
             if (point->iter_token)
             {
-                free_lbuf(point->iter_token);
+                MEMFREE(point->iter_token);
                 point->iter_token = nullptr;
             }
 
@@ -858,12 +858,12 @@ static int CallBack_NotifySemaphoreDrainOrAll(PTASK_RECORD p)
 
                 if (point->switch_token)
                 {
-                    free_lbuf(point->switch_token);
+                    MEMFREE(point->switch_token);
                     point->switch_token = nullptr;
                 }
                 if (point->iter_token)
                 {
-                    free_lbuf(point->iter_token);
+                    MEMFREE(point->iter_token);
                     point->iter_token = nullptr;
                 }
 
@@ -1290,16 +1290,19 @@ void wait_que
 
     // Copy iter/switch context if provided.
     //
+    // Exact-size clones, not LBUFs: tokens are typically a few bytes
+    // (a list element, a switch match), but a queued fan-out holds one
+    // per entry until dispatch — 5000 queued @dolist entries held
+    // 5000 x 32KB = 164MB of pool LBUFs for <=5-byte strings (queue
+    // review, 2026-07-21).
     if (iter_token)
     {
-        tmp->iter_token = alloc_lbuf("wait_que.iter_token");
-        mux_strncpy(tmp->iter_token, iter_token, LBUF_SIZE-1);
+        tmp->iter_token = StringClone(iter_token);
         tmp->iter_number = iter_number;
     }
     if (switch_token)
     {
-        tmp->switch_token = alloc_lbuf("wait_que.switch_token");
-        mux_strncpy(tmp->switch_token, switch_token, LBUF_SIZE-1);
+        tmp->switch_token = StringClone(switch_token);
     }
 
     int iPriority;
