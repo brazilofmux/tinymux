@@ -1931,8 +1931,16 @@ static constexpr uint64_t QREG_SLOT_BITS =
         ? (UINT64_C(1) << MAX_GLOBAL_REGS) - 1
         : ~UINT64_C(0))) << rv_compiler::SUBST_QREG0;
 
-static void marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
+// Returns false when a masked register's value exceeds SUBST_SLOT-1
+// bytes: a %q slot cannot hold it, so a JIT %q read would silently
+// truncate where the interpreter returns the full value (#996).
+// Entry-marshal callers must decline the run to the AST evaluator on
+// false (nothing has executed yet, so declining is side-effect-free).
+// The mid-program resync caller cannot decline and still truncates —
+// that half is the #996 step-2 long-register bitmap design.
+static bool marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
 {
+    bool all_fit = true;
     for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
         const int slot_idx = rv_compiler::SUBST_QREG0 + i;
         if (!((subst_mask >> slot_idx) & UINT64_C(1))) {
@@ -1948,6 +1956,7 @@ static void marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
             size_t len = strlen(reinterpret_cast<const char *>(value));
             if (len >= static_cast<size_t>(rv_compiler::SUBST_SLOT)) {
                 len = rv_compiler::SUBST_SLOT - 1;
+                all_fit = false;
             }
             memcpy(mem + slot, value, len);
             mem[slot + len] = 0;
@@ -1955,6 +1964,7 @@ static void marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
             mem[slot] = 0;
         }
     }
+    return all_fit;
 }
 
 // Look up or compile an expression.  Returns a pointer to the
@@ -2312,7 +2322,12 @@ struct shared_heap_t {
             copy_subst(rv_compiler::SUBST_LOCATION, nullptr);
             copy_subst(rv_compiler::SUBST_MONIKER, nullptr);
         }
-        marshal_qregs_to_slots(memory.data(), ~UINT64_C(0));
+        if (!marshal_qregs_to_slots(memory.data(), ~UINT64_C(0))) {
+            // A register value exceeds the slot: decline to the AST
+            // evaluator rather than run with a truncated %q (#996).
+            s_jit_stats.bail_longreg++;
+            return false;
+        }
         copy_subst(rv_compiler::SUBST_LASTCMD, mudstate.curr_cmd);
         copy_subst(rv_compiler::SUBST_POUT, mudstate.pout);
         {
@@ -2485,7 +2500,14 @@ bool run_cached_program(compiled_program *prog,
     }
 
     // %q global registers.
-    marshal_qregs_to_slots(s_runtime_buffer.data(), prog->subst_mask);
+    if (!marshal_qregs_to_slots(s_runtime_buffer.data(),
+                                prog->subst_mask)) {
+        // A register this program reads exceeds the slot: decline to
+        // the AST evaluator rather than run with a truncated %q
+        // (#996).  Nothing has executed yet, so declining is clean.
+        s_jit_stats.bail_longreg++;
+        return false;
+    }
 
     // %m — last command.
     if (subst_used(rv_compiler::SUBST_LASTCMD)) {
@@ -2641,7 +2663,10 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     // callee makes this a semantic no-op (slots already match).
     // (docs/plan-jit-evalbracket-lift.md, Phases 2-3.)
     if ((ec->qreg_mask & QREG_SLOT_BITS) != 0) {
-        marshal_qregs_to_slots(ec->memory, ec->qreg_mask);
+        // Mid-program: cannot decline (side effects already applied);
+        // a register grown past the slot by the callee still
+        // truncates here — the #996 step-2 bitmap design covers it.
+        (void)marshal_qregs_to_slots(ec->memory, ec->qreg_mask);
         s_jit_stats.qreg_resyncs++;
     }
 
@@ -4577,7 +4602,8 @@ FUNCTION(fun_jitstats)
         "hir_insns=%llu "
         "hir_max=%llu "
         "spills=%llu "
-        "qreg_resyncs=%llu",
+        "qreg_resyncs=%llu "
+        "bail_longreg=%llu",
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -4596,7 +4622,8 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.hir_insns_total,
         (unsigned long long)s_jit_stats.hir_insns_max,
         (unsigned long long)s_jit_stats.spills_total,
-        (unsigned long long)s_jit_stats.qreg_resyncs);
+        (unsigned long long)s_jit_stats.qreg_resyncs,
+        (unsigned long long)s_jit_stats.bail_longreg);
 
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {

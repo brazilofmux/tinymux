@@ -161,6 +161,30 @@ def gen_root(colored):
             return e
 
 
+def longreg_case(i):
+    """Long-register read shape (#996): a preamble command sets %q9 in
+    BOTH processes (whichever route evaluates it, setq maintains the
+    authoritative global_regs, which is what the NEXT command's entry
+    marshal reads), then the measured expression reads %q9.  Lengths
+    straddle the 256-byte SUBST_SLOT so both the entry-marshal decline
+    (bail_longreg) and the normal short path are exercised.
+    Mid-program setq-then-read of long values is deliberately NOT
+    generated until the #996 step-2 fix lands.
+    Returns (preamble_command, expression)."""
+    n = random.choice([40, 120, 250, 255, 256, 260, 300, 500])
+    pre = f"think [setq(9,repeat(x,{n}))]"
+    shape = i % 4
+    if shape == 0:
+        e = "strcat(%q9,END)"
+    elif shape == 1:
+        e = "strcat(strlen(%q9),:,mid(%q9,5,7))"
+    elif shape == 2:
+        e = "strcat(before(%q9,zz),:,strlen(%q9))"
+    else:
+        e = "strcat(reverse(%q9),D)"
+    return pre, e
+
+
 def bracket_wrap(i, e, e2):
     """Wrap generated exprs in eval-bracket compositions (Phase 4 corpus:
     the jit_eval_brackets surface).  Shapes: bracket embedded in literal
@@ -178,6 +202,7 @@ def main():
     batch = int(sys.argv[2]) if len(sys.argv) > 2 else 50
     out = sys.argv[3] if len(sys.argv) > 3 else "."
     brackets = "--brackets" in sys.argv
+    longreg = "--longreg" in sys.argv
     if "--utf8" in sys.argv:
         WORDS.extend(UTF8_WORDS)
     # Deterministic by default; override via SEED env for variety across runs.
@@ -185,12 +210,18 @@ def main():
     random.seed(int(os.environ.get("SEED", "1")))
 
     exprs = []
+    preambles = []
     with open(f"{out}/manifest.txt", "w") as man:
         for i in range(count):
-            e = gen_root(colored=(i % 3 == 0))
-            if brackets:
-                e = bracket_wrap(i, e, gen_root(colored=False))
+            pre = None
+            if longreg and i % 5 == 2:
+                pre, e = longreg_case(i)
+            else:
+                e = gen_root(colored=(i % 3 == 0))
+                if brackets:
+                    e = bracket_wrap(i, e, gen_root(colored=False))
             exprs.append(e)
+            preambles.append(pre)
             man.write(f"{i}\t{e}\n")
 
     # J and I sides are emitted into SEPARATE batch files: the J batches
@@ -210,6 +241,11 @@ def main():
              open(f"{out}/bI{b}.txt", "w") as fi:
             for i in range(start, min(start + batch, count)):
                 e = exprs[i]
+                # State preamble (long-register shapes): identical in
+                # both processes so both sides read the same registers.
+                if preambles[i] is not None:
+                    fj.write(preambles[i] + "\n")
+                    fi.write(preambles[i] + "\n")
                 # J side: JIT result captured via the @if condition into r(0).
                 fj.write(
                     f"@if strlen(setr(0,{e}))="

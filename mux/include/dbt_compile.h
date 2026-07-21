@@ -64,6 +64,8 @@ struct jit_stats_t {
 
     uint64_t bail_noeval;         // NOEVAL function forced bailout
     uint64_t bail_slots;          // output slot exhaustion
+    uint64_t bail_longreg;        // %q register value exceeds SUBST_SLOT;
+                                  // declined at entry marshal (#996)
 
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime

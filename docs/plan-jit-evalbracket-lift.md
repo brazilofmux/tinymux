@@ -412,8 +412,60 @@ composition with `JITDIFF_BRACKETS`, consistent with the audit's
 conclusion that the remaining wrappers are cluster-correct. Locked by
 bracket-free `jit_parity_fn.mux` TC016.
 
-Still open for Phase 5: the stateful-register sweep-corpus mode, soak
-with the toggle on, then flip the default and retire `jiteval`.
+**#996 — long q-registers vs the 256-byte SUBST slot** (found by
+Kagura's review of the series; pre-existing, production-reachable:
+`setq(0,repeat(x,300))` then a JIT `%q0` read returned 255 bytes).
+
+*Step 1 — LANDED (2026-07-21):* `marshal_qregs_to_slots` reports when a
+masked register exceeds `SUBST_SLOT-1`; both entry-marshal sites decline
+the run to the AST evaluator (`bail_longreg` jitstats counter). The
+mid-program resync cannot decline and still truncates (step 2's target).
+New `JITDIFF_LONGREG=1` corpus mode (interpreter preamble sets `%q9`
+straddling 256 bytes; the measured expression reads it) — clean alone
+and composed with utf8+brackets; `jit_parity_fn.mux` TC017 locks the
+decline via a fresh `u()` inner evaluation (300 → decline, 200 → JIT).
+
+*Step 2 — DESIGN (for review):* fix the mid-program half — a long value
+created inside a program (`ECALL_SETQ_PACK` keeps `global_regs` full
+but truncates the slot) currently mis-reads for the rest of that
+program.
+
+1. **Long-register bitmap in guest memory.** One u64 at a fixed guest
+   address (a reserved 8 bytes adjacent to the SUBST region); bit *i* =
+   register *i*'s authoritative value exceeds `SUBST_SLOT-1`.
+2. **Writers maintain it:** the entry marshal sets bits instead of
+   declining (superseding step 1 — long-register programs stay JITted);
+   `ECALL_SETQ`/`SETQ_PACK` set/clear the bit from the assigned length;
+   the post-ECALL resync sets/clears bits from the `global_regs`
+   lengths it already measures.
+3. **Readers branch on the bit.** The `%q` lowering (today: sref +
+   single-arg STRCAT materialization) becomes a small diamond: native
+   load of the bitmap word, `AND (1<<rn)`, BRC → short path materializes
+   the slot exactly as today (zero new cost when the bit is clear) /
+   long path ECALLs `fun_r("<reg>")`, which reads the authoritative
+   `global_regs`. PHI merge. All block machinery (BRC/PHI) is already
+   exercised by if/switch/u-inline lowering.
+4. **Feasibility check done:** `OUT_SLOT` = 32768 = LBUF, so long
+   values flow intact through ECALL results, output slots, and STRCAT —
+   only the `%q` SUBST slots are 256 bytes. `r(n)` paths are already
+   authoritative (`fun_r` ECALL / tracked SSA).
+5. **Acceptance:** the corpus gains mid-program setq-then-read long
+   shapes (deliberately excluded from `--longreg` today); TC017 gains a
+   mid-program case; `bail_longreg` returns to zero (entry declines
+   replaced by bitmap bits).
+
+Open review questions: (a) exact bitmap address — a spare word in the
+reserved region below `SUBST_BASE`, or SUBST slot 45's first 8 bytes;
+(b) whether the cached-program `subst_mask` conservative default (~0)
+makes the entry marshal's bit-maintenance measurably slower for
+mask-unknown programs (it already strlen's every register there);
+(c) whether `letq`/`localize` restore paths need bitmap updates beyond
+the post-ECALL resync (they should fall out of it — the resync runs
+after `_RESTORE_QREGS` — but the oracle should grow a long-register
+scope shape to prove it).
+
+Still open for Phase 5: #996 step 2 (above), soak with the toggle on,
+then flip the default and retire `jiteval`.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 

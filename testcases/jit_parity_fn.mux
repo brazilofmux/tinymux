@@ -304,11 +304,34 @@
         eq(isnum(strcat(1,chr(101),33333)),0)
       )=
   {
-    @log smoke=TC016: wrapper-audit parity (lpos/splice/sets/isnum/isint). Succeeded.;
+    @log smoke=TC016: wrapper-audit parity (lpos/splice/sets/isnum/isint). Succeeded.
+  },
+  {
+    @log smoke=TC016: wrapper-audit parity (lpos/splice/sets/isnum/isint). Failed (lpe=.[lpos(space(3),)]. lpm=.[lpos(abxab,bx)]. spl=.[splice(a,b,%b)]. seta=.[setunion(2 10,1 3,%b,%b,?)]. ine=[isnum(strcat(1,chr(101),3))] iis=[isint(strcat(9,chr(32)))]).
+  }
+-
+#
+# Test Case #17 - long q-register entry-marshal decline (#996 step 1).
+# %q SUBST slots are 256 bytes; a register value longer than 255 bytes
+# cannot be marshalled without truncation, so the entry marshal now
+# declines the run to the AST evaluator (bail_longreg).  The read goes
+# through u() so it is a FRESH inner evaluation whose entry marshal
+# sees the just-set register; 300 exercises the decline, 200 the normal
+# JIT path.  Mid-program setq-then-read of long values stays truncating
+# until #996 step 2.  Bracket-free.
+#
+&lr_read test_jit_parity_fn=strcat(%q9,END)
+&tr.tc017 test_jit_parity_fn=
+  @if cand(
+        eq(strlen(strcat(setq(9,repeat(x,300)),u(me/lr_read))),303),
+        eq(strlen(strcat(setq(9,repeat(x,200)),u(me/lr_read))),203)
+      )=
+  {
+    @log smoke=TC017: long-register entry-marshal decline (#996). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC016: wrapper-audit parity (lpos/splice/sets/isnum/isint). Failed (lpe=.[lpos(space(3),)]. lpm=.[lpos(abxab,bx)]. spl=.[splice(a,b,%b)]. seta=.[setunion(2 10,1 3,%b,%b,?)]. ine=[isnum(strcat(1,chr(101),3))] iis=[isint(strcat(9,chr(32)))]).;
+    @log smoke=TC017: long-register entry-marshal decline (#996). Failed (long=[strlen(strcat(setq(9,repeat(x,300)),u(me/lr_read)))] short=[strlen(strcat(setq(9,repeat(x,200)),u(me/lr_read)))]).;
     @trig me/tr.done
   }
 -
