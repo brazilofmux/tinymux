@@ -255,6 +255,7 @@ public:
         int         ecalls;
         int         tier2_calls;
         int         native_ops;
+        int64_t     max_func_depth;
         const void *deps_blob;
         int         deps_len;
     };
@@ -271,6 +272,7 @@ public:
                       int64_t out_pool_end,
                       int64_t out_addr, int needs_jit,
                       int folds, int ecalls, int tier2_calls, int native_ops,
+                      int64_t max_func_depth,
                       const void *deps_blob, int deps_len);
     bool CodeCacheFlush();
     void CodeCacheReset();

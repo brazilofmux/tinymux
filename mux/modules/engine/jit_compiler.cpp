@@ -861,6 +861,18 @@ static void tier2_lazy_init() {
     s_blob_version = sha1_hex_parts(parts, sizes, 2);
 }
 
+// Maximum AST_FUNCCALL nesting depth of a parse tree (#1002).
+static int ast_max_funccall_depth(const ASTNode *node)
+{
+    if (!node) return 0;
+    int child_max = 0;
+    for (const auto &c : node->children) {
+        int d = ast_max_funccall_depth(c.get());
+        if (d > child_max) child_max = d;
+    }
+    return child_max + (node->type == AST_FUNCCALL ? 1 : 0);
+}
+
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
                                             int eval = EV_FCHECK | EV_EVAL,
                                             uint64_t code_base = 0,
@@ -887,6 +899,13 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
         s_jit_stats.compile_fail++;
         return prog;
     }
+
+    // Static function-nesting depth watermark (#1002): the maximum
+    // AST_FUNCCALL nesting the AST evaluator would reach.  jit_eval
+    // declines the run when live func_nest_lev + this watermark would
+    // trip function_recursion_limit, so the AST reproduces the limit
+    // error the flattened compiled code cannot.
+    prog.max_func_depth = ast_max_funccall_depth(ast.get());
 
     // --- HIR pipeline ---
 
@@ -1756,6 +1775,7 @@ static compiled_program reconstruct_from_cache(
     prog.ecalls = rec.ecalls;
     prog.tier2_calls = rec.tier2_calls;
     prog.native_ops = rec.native_ops;
+    prog.max_func_depth = static_cast<int>(rec.max_func_depth);
 
     // Restore inline dependencies from BLOB.
     if (rec.deps_blob && rec.deps_len > 0)
@@ -1865,6 +1885,7 @@ static void store_to_sqlite_cache(const std::string &key,
         prog.needs_jit ? 1 : 0,
         prog.folds, prog.ecalls,
         prog.tier2_calls, prog.native_ops,
+        static_cast<int64_t>(prog.max_func_depth),
         prog.deps.data(),
         static_cast<int>(prog.deps.size()
             * sizeof(compiled_program::inline_dep)));
@@ -2404,6 +2425,14 @@ bool run_cached_program(compiled_program *prog,
                         int ncargs,
                         int eval,
                         void *lua_state) {
+    // #1002 depth watermark (see jit_eval; repeated here for callers
+    // that bypass it, e.g. rvbench).
+    if (mudstate.func_nest_lev + prog->max_func_depth
+        >= mudconf.func_nest_lim) {
+        s_jit_stats.bail_depth++;
+        return false;
+    }
+
     if (!prog->needs_jit) {
         size_t n = prog->folded_result.size();
         if (n >= out_size) n = out_size - 1;
@@ -4532,6 +4561,19 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         return false;
     }
 
+    // #1002 static-depth watermark: the AST evaluator errors a call at
+    // nesting level L when func_nest_lim <= L; compiled code flattens
+    // the nest (and folding pre-computes it), so decline to the AST
+    // whenever this evaluation could reach the limit.  Uses the LIVE
+    // func_nest_lev so nested entry contexts count, and the live limit
+    // so @admin changes apply to cached programs.
+    if (mudstate.func_nest_lev + prog->max_func_depth
+        >= mudconf.func_nest_lim) {
+        s_jit_stats.bail_depth++;
+        s_jit_stats.eval_bailout++;
+        return false;
+    }
+
     if (!prog->needs_jit) {
         // Constant-folded — result was extracted at compaction time.
         // Safe at any nesting depth (no DBT involved).
@@ -4621,7 +4663,8 @@ FUNCTION(fun_jitstats)
         "hir_max=%llu "
         "spills=%llu "
         "qreg_resyncs=%llu "
-        "bail_longreg=%llu",
+        "bail_longreg=%llu "
+        "bail_depth=%llu",
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -4641,7 +4684,8 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.hir_insns_max,
         (unsigned long long)s_jit_stats.spills_total,
         (unsigned long long)s_jit_stats.qreg_resyncs,
-        (unsigned long long)s_jit_stats.bail_longreg);
+        (unsigned long long)s_jit_stats.bail_longreg,
+        (unsigned long long)s_jit_stats.bail_depth);
 
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {

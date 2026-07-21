@@ -67,6 +67,7 @@ struct CacheWriteOp
     int             cc_ecalls;
     int             cc_tier2_calls;
     int             cc_native_ops;
+    int64_t         cc_max_func_depth;
     vector<char>    cc_deps;
 };
 
@@ -162,6 +163,7 @@ void cache_flush_writes(void)
                 op.cc_needs_jit,
                 op.cc_folds, op.cc_ecalls,
                 op.cc_tier2_calls, op.cc_native_ops,
+                op.cc_max_func_depth,
                 op.cc_deps.data(),
                 static_cast<int>(op.cc_deps.size()));
         }
@@ -245,6 +247,7 @@ void cache_queue_code_cache_put(
     int64_t out_pool_end,
     int64_t out_addr, int needs_jit,
     int folds, int ecalls, int tier2_calls, int native_ops,
+    int64_t max_func_depth,
     const void *deps_blob, int deps_len)
 {
     CacheWriteOp op;
@@ -286,6 +289,7 @@ void cache_queue_code_cache_put(
     op.cc_ecalls       = ecalls;
     op.cc_tier2_calls  = tier2_calls;
     op.cc_native_ops   = native_ops;
+    op.cc_max_func_depth = max_func_depth;
     op.cc_deps.assign(static_cast<const char *>(deps_blob),
                       static_cast<const char *>(deps_blob) + deps_len);
 

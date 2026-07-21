@@ -533,8 +533,30 @@ toggle explicitly off**; `smoke.flat` re-bake byte-identical to the
 pre-flip bake; oracle 9/9 on the production route; sweeps standard and
 brackets+utf8+longreg(SEED=7) 400/0 LOGIC.
 
-**The campaign is complete.** Remaining follow-ups live as issues:
-#987 (asteval fidelity), #1002 (recursion-limit design).
+**The campaign is complete.** Follow-ups, both since resolved
+(2026-07-21):
+
+- **#987** — corrected diagnosis: `asteval({[bracketed]})` content is
+  pre-evaluated by the argument pass (braces shield only bare calls),
+  so asteval re-evaluates the *result*; the parity suites were
+  reworked to AST-canonical expected constants asserted bracket-free,
+  which the dual-toggle smoke runs check on BOTH routes every cycle.
+  (Bonus: fold TC019 had `member()`'s arguments reversed since
+  inception.)
+- **#1002** — resolved as a semantic contract via the static-depth
+  watermark: `compiled_program.max_func_depth` (max AST_FUNCCALL
+  nesting, persisted in the code cache, schema v12) is checked at
+  `jit_eval` entry against the LIVE `func_nest_lev` and
+  `function_recursion_limit`; a run that could reach the limit
+  declines to the AST, which reproduces the limit error exactly
+  (`bail_depth` jitstats counter).  Documented boundary: ECALL-
+  dispatched callees don't bump `func_nest_lev`, so cross-ECALL
+  nesting carries a one-level skew (probe-writing softcode should not
+  assert at exactly limit-minus-one across a u() boundary);
+  `jit_parity_fn.mux` TC019 asserts the unambiguous depths, with the
+  probes run at Makesmoke bake time as #1 (`@admin` is God-only and
+  runtime triggers execute as the object — the nested_depth.mux
+  pattern).
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 
