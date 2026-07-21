@@ -23,10 +23,13 @@
 #                observed at consumption time, so a read BEFORE a setq
 #                returned the post-setq value (production-reachable,
 #                no brackets needed: strcat(%q0,setq(0,B),%q0) -> "BB")
+#   D2-ecall-r   tracked r(n) after an opaque ECALL reads the stale SSA
+#                (compile-time tracking not invalidated across calls
+#                whose callee may mutate global_regs)
 #
-# This script is EXPECTED TO FAIL (exit 1) until the slot-resync work
-# lands (plan Phases 2-3); it flips green as those phases land and then
-# guards them.  Opt-in — not part of `make test` while red.
+# With plan Phases 2-3 landed, all shapes are green and this script
+# guards them — it runs as part of `make test` (test-jit-qreg target;
+# skipped automatically on non-JIT builds via exit 2).
 #
 # Flag asymmetry note for future case authors: the AST side runs under
 # EV_FCHECK and the JIT side under EV_FMAND (the astbench convention).
@@ -98,6 +101,7 @@ cat > "$WORK/cases.txt" <<'EOF'
 &e4 me=[setq(0,PRE)][letq(0,IN,r(0))][r(0)]
 &e5 me=[setq(0,A)][localize(setq(0,B))][r(0)]
 &e6 me=strcat(%q0,setq(0,B),%q0)
+&e7 me=[setq(0,PRE)][u(me/%q9)][r(0)]
 think CASE1A~[asteval(v(e1))]~
 think CASE1J~[jiteval(v(e1))]~
 think CASE2A~[asteval(v(e2))]~
@@ -110,6 +114,8 @@ think CASE5A~[asteval(v(e5))]~
 think CASE5J~[jiteval(v(e5))]~
 think CASE6A~[setq(0,A)][asteval(v(e6))]~
 think CASE6J~[setq(0,A)][jiteval(v(e6))]~
+think CASE7A~[setq(9,qf)][asteval(v(e7))]~
+think CASE7J~[setq(9,qf)][jiteval(v(e7))]~
 EOF
 
 rm -f "$WORK"/data/exp.sqlite*
@@ -138,10 +144,11 @@ check "D2-ecall-u"  CASE3A CASE3J "MUTATED"
 check "R1-letq-r"   CASE4A CASE4J "INPRE"
 check "R2-scope-r"  CASE5A CASE5J "A"
 check "RW-strcat"   CASE6A CASE6J "AB"
+check "D2-ecall-r"  CASE7A CASE7J "MUTATED"
 
 if [ "$fails" -eq 0 ]; then
     echo "OK: all q-register scope shapes agree"
     exit 0
 fi
-echo "$fails divergence(s) — expected while plan Phases 2-3 are unlanded"
+echo "$fails divergence(s)"
 exit 1

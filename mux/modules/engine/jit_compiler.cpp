@@ -1924,6 +1924,13 @@ bool jit_load_from_sqlite(const std::string &key, compiled_program &out) {
 // never drift from global_regs at a sync boundary
 // (docs/plan-jit-evalbracket-lift.md, Phases 2-3).
 //
+// The subst_mask bits covering the %q register slots
+// (SUBST_QREG0 .. SUBST_QREG0 + MAX_GLOBAL_REGS - 1).
+static constexpr uint64_t QREG_SLOT_BITS =
+    ((MAX_GLOBAL_REGS < 64
+        ? (UINT64_C(1) << MAX_GLOBAL_REGS) - 1
+        : ~UINT64_C(0))) << rv_compiler::SUBST_QREG0;
+
 static void marshal_qregs_to_slots(uint8_t *mem, uint64_t subst_mask)
 {
     for (int i = 0; i < MAX_GLOBAL_REGS; i++) {
@@ -2324,6 +2331,7 @@ struct shared_heap_t {
         ec.eval = eval_flags;
         ec.cargs = cargs;
         ec.ncargs = ncargs;
+        ec.qreg_mask = ~UINT64_C(0);
         ec.lua_state = nullptr;
         ec.dbt = &dbt;
         ec.pvm = nullptr;
@@ -2511,6 +2519,7 @@ bool run_cached_program(compiled_program *prog,
     ec.eval = eval;
     ec.cargs = cargs;
     ec.ncargs = ncargs;
+    ec.qreg_mask = prog->subst_mask;
     ec.lua_state = lua_state;
     ec.dbt = nullptr;
     ec.pvm = nullptr;
@@ -2618,21 +2627,16 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
 
     s_current_ecall_ctx = saved_ctx;
 
-    // Scope-restore resync: _RESTORE_QREGS just reverted
-    // mudstate.global_regs, but the guest %q SUBST slots — which
-    // SETQ_SYNC dual-writes kept current through the scope body — now
-    // hold the discarded inner values.  Re-marshal them from the
-    // authoritative global_regs so post-scope %q reads see the
-    // restored state (docs/plan-jit-evalbracket-lift.md, Phase 2).
-    static FUN *s_restore_qregs_fp = nullptr;
-    if (s_restore_qregs_fp == nullptr) {
-        int ridx = engine_api_lookup("_RESTORE_QREGS");
-        if (ridx > 0 && ridx < ENGINE_API_MAX_FUNCS) {
-            s_restore_qregs_fp = engine_api_table[ridx];
-        }
-    }
-    if (fp == s_restore_qregs_fp && fp != nullptr) {
-        marshal_qregs_to_slots(ec->memory, ~UINT64_C(0));
+    // Conservative post-ECALL resync: any host callee may have mutated
+    // mudstate.global_regs (a scope _RESTORE_QREGS reverting them, or
+    // an interpreter-side setq — which writes only global_regs, never
+    // the guest slots), so re-marshal the %q slots this program reads
+    // from the authoritative global_regs.  Masked by the program's
+    // subst_mask: %q-free programs skip at the bit test.  A pure
+    // callee makes this a semantic no-op (slots already match).
+    // (docs/plan-jit-evalbracket-lift.md, Phases 2-3.)
+    if ((ec->qreg_mask & QREG_SLOT_BITS) != 0) {
+        marshal_qregs_to_slots(ec->memory, ec->qreg_mask);
         s_jit_stats.qreg_resyncs++;
     }
 
@@ -4670,6 +4674,7 @@ static bool run_compiled(compiled_program &prog,
     ec.eval = EV_FCHECK | EV_EVAL;
     ec.cargs = nullptr;
     ec.ncargs = 0;
+    ec.qreg_mask = prog.subst_mask;
     ec.lua_state = nullptr;
     ec.dbt = nullptr;
     ec.pvm = nullptr;

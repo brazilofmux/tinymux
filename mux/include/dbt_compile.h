@@ -471,6 +471,12 @@ struct eval_ctx {
     const UTF8 **cargs;
     int        ncargs;
 
+    // %q SUBST slots this program reads (bit SUBST_QREG0+i), from
+    // compiled_program::subst_mask — gates the conservative post-ECALL
+    // q-register resync so %q-free programs skip it entirely.
+    // ~0 when unknown (direct/uncached runs).
+    uint64_t qreg_mask;
+
     // Lua JIT: opaque pointer to lua_State.
     // Non-null when running a JIT-compiled Lua program — allows ECALL
     // handlers to call back into the Lua VM for unsupported operations.
