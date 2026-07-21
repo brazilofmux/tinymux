@@ -1,9 +1,16 @@
 #
-# jit_parity_fn.mux - JIT/Tier 2 parity checks against AST evaluation.
+# jit_parity_fn.mux - JIT/Tier 2 parity checks against AST-canonical
+# expected values.
 #
-# These tests compare normal evaluation under --enable-jit against
-# asteval({ ... }), which forces the AST evaluator. They are intended to
-# expose semantic mismatches in Tier 2 wrappers and JIT lowering.
+# Each condition is deliberately BRACKET-FREE so it rides the JIT route
+# (jit_eval_brackets defaults on), and asserts against a literal
+# constant captured from the AST evaluator in an explicit toggle-off
+# workspace.  Because the smoke suite runs under BOTH toggles, every
+# constant is checked on the JIT route and the AST route each cycle —
+# stronger than the older live asteval({...}) comparison, which passes
+# whenever both routes drift together, and which is also a footgun for
+# BRACKET-carrying content (the arg pass pre-evaluates brackets inside
+# braces; only bare calls are shielded — #987).
 #
 @create test_jit_parity_fn
 -
@@ -19,120 +26,96 @@
 # Test Case #1 - before() with default separator trims leading spaces.
 #
 &tr.tc001 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,sha1([before(%b%bfoo bar,)])),
-        setr(1,sha1([asteval({before(%b%bfoo bar,)})]))
-      )=
+  @if strmatch(before(%b%bfoo bar,),foo)=
   {
     @log smoke=TC001: before() default-space parity. Succeeded.
   },
   {
-    @log smoke=TC001: before() default-space parity. Failed (%q0 vs %q1).
+    @log smoke=TC001: before() default-space parity. Failed (got .[before(%b%bfoo bar,)].).
   }
 -
 #
 # Test Case #2 - after() with default separator trims leading spaces.
 #
 &tr.tc002 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,sha1([after(%b%bfoo bar,)])),
-        setr(1,sha1([asteval({after(%b%bfoo bar,)})]))
-      )=
+  @if strmatch(after(%b%bfoo bar,),bar)=
   {
     @log smoke=TC002: after() default-space parity. Succeeded.
   },
   {
-    @log smoke=TC002: after() default-space parity. Failed (%q0 vs %q1).
+    @log smoke=TC002: after() default-space parity. Failed (got .[after(%b%bfoo bar,)].).
   }
 -
 #
 # Test Case #3 - isnum() should match AST handling of exponent notation.
 #
 &tr.tc003 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,[isnum(1e3)]),
-        setr(1,[asteval({isnum(1e3)})])
-      )=
+  @if eq(isnum(1e3),1)=
   {
     @log smoke=TC003: isnum() exponent parity. Succeeded.
   },
   {
-    @log smoke=TC003: isnum() exponent parity. Failed (%q0 vs %q1).
+    @log smoke=TC003: isnum() exponent parity. Failed (got [isnum(1e3)]).
   }
 -
 #
 # Test Case #4 - chr() must handle non-ASCII Unicode code points.
 #
 &tr.tc004 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,sha1([chr(233)])),
-        setr(1,sha1([asteval({chr(233)})]))
-      )=
+  @if strmatch(sha1(chr(233)),BF15BE717AC1B080B4F1C456692825891FF5073D)=
   {
     @log smoke=TC004: chr() Unicode parity. Succeeded.
   },
   {
-    @log smoke=TC004: chr() Unicode parity. Failed (%q0 vs %q1).
+    @log smoke=TC004: chr() Unicode parity. Failed (got [sha1(chr(233))]).
   }
 -
 #
 # Test Case #5 - chr() must handle multi-codepoint grapheme input.
 #
 &tr.tc005 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,sha1([chr(101 769)])),
-        setr(1,sha1([asteval({chr(101 769)})]))
-      )=
+  @if strmatch(sha1(chr(101 769)),BF15BE717AC1B080B4F1C456692825891FF5073D)=
   {
     @log smoke=TC005: chr() grapheme parity. Succeeded.
   },
   {
-    @log smoke=TC005: chr() grapheme parity. Failed (%q0 vs %q1).
+    @log smoke=TC005: chr() grapheme parity. Failed (got [sha1(chr(101 769))]).
   }
 -
 #
 # Test Case #6 - ord(chr(...)) should preserve Unicode code points.
 #
 &tr.tc006 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,[ord(chr(233))]),
-        setr(1,[asteval({ord(chr(233))})])
-      )=
+  @if eq(ord(chr(233)),233)=
   {
     @log smoke=TC006: ord(chr()) Unicode parity. Succeeded.
   },
   {
-    @log smoke=TC006: ord(chr()) Unicode parity. Failed (%q0 vs %q1).
+    @log smoke=TC006: ord(chr()) Unicode parity. Failed (got [ord(chr(233))]).
   }
 -
 #
 # Test Case #7 - ord(chr(...)) should preserve combining sequences.
 #
 &tr.tc007 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,[ord(chr(101 769))]),
-        setr(1,[asteval({ord(chr(101 769))})])
-      )=
+  @if eq(ord(chr(101 769)),233)=
   {
     @log smoke=TC007: ord(chr()) grapheme parity. Succeeded.
   },
   {
-    @log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).
+    @log smoke=TC007: ord(chr()) grapheme parity. Failed (got [ord(chr(101 769))]).
   }
 -
 #
 # Test Case #8 - cat() must preserve all runtime float arguments.
 #
 &tr.tc008 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,sha1([cat(sin(1),sin(2),sin(3))])),
-        setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})]))
-      )=
+  @if strmatch(cat(sin(1),sin(2),sin(3)),0.8414709848078965 0.9092974268256817 0.1411200080598672)=
   {
     @log smoke=TC008: cat() runtime float parity. Succeeded.
   },
   {
-    @log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).
+    @log smoke=TC008: cat() runtime float parity. Failed (got .[cat(sin(1),sin(2),sin(3))].).
   }
 -
 #
@@ -142,15 +125,12 @@
 # ladd(1e20 1 -1e20) is 1 (compensated), not 0 (naive).  See #813.
 #
 &tr.tc009 test_jit_parity_fn=
-  @if strmatch(
-        setr(0,[ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]),
-        setr(1,[asteval({ladd(1e20 1 -1e20)})]:[asteval({ladd(0.1 0.2)})]:[asteval({ladd(1|2|3,|)})])
-      )=
+  @if strmatch(strcat(ladd(1e20 1 -1e20),:,ladd(0.1 0.2),:,ladd(1|2|3,|)),1:0.3:6)=
   {
     @log smoke=TC009: ladd() AddDoubles parity. Succeeded.
   },
   {
-    @log smoke=TC009: ladd() AddDoubles parity. Failed (%q0 vs %q1).
+    @log smoke=TC009: ladd() AddDoubles parity. Failed (got [ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]).
   }
 -
 #

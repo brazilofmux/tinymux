@@ -4946,107 +4946,107 @@
 >256
 "@log smoke=Beginning JIT fold parity test cases."
 >257
-"@if strmatch(setr(0,[strlen(hello)]),setr(1,[asteval({strlen(hello)})]))={@log smoke=TC001: strlen() ASCII parity. Succeeded.},{@log smoke=TC001: strlen() ASCII parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(strlen(hello)),AC3478D69A3C81FA62E60F5C3696165A4E5E6AC4)={@log smoke=TC001: strlen() ASCII parity. Succeeded.},{@log smoke=TC001: strlen() ASCII parity. Failed.}"
 >258
-"@if strmatch(setr(0,[strlen()]),setr(1,[asteval({strlen()})]))={@log smoke=TC002: strlen() empty parity. Succeeded.},{@log smoke=TC002: strlen() empty parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(strlen()),B6589FC6AB0DC82CF12099D1C2D40AB994E8410C)={@log smoke=TC002: strlen() empty parity. Succeeded.},{@log smoke=TC002: strlen() empty parity. Failed.}"
 >259
-"@if strmatch(setr(0,[words(the quick brown fox)]),setr(1,[asteval({words(the quick brown fox)})]))={@log smoke=TC003: words() basic parity. Succeeded.},{@log smoke=TC003: words() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(words(the quick brown fox)),1B6453892473A467D07372D45EB05ABC2031647A)={@log smoke=TC003: words() basic parity. Succeeded.},{@log smoke=TC003: words() basic parity. Failed.}"
 >260
 "@log smoke=End JIT fold parity test cases.;@notify smoke"
 >261
-"@if strmatch(setr(0,[words()]),setr(1,[asteval({words()})]))={@log smoke=TC004: words() empty parity. Succeeded.},{@log smoke=TC004: words() empty parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(words()),B6589FC6AB0DC82CF12099D1C2D40AB994E8410C)={@log smoke=TC004: words() empty parity. Succeeded.},{@log smoke=TC004: words() empty parity. Failed.}"
 >262
-"@if strmatch(setr(0,[words(a-b-c-d,-)]),setr(1,[asteval({words(a-b-c-d,-)})]))={@log smoke=TC005: words() custom delim parity. Succeeded.},{@log smoke=TC005: words() custom delim parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(words(a-b-c-d,-)),1B6453892473A467D07372D45EB05ABC2031647A)={@log smoke=TC005: words() custom delim parity. Succeeded.},{@log smoke=TC005: words() custom delim parity. Failed.}"
 >263
-"@if strmatch(setr(0,sha1([first(alpha beta gamma)])),setr(1,sha1([asteval({first(alpha beta gamma)})])))={@log smoke=TC006: first() basic parity. Succeeded.},{@log smoke=TC006: first() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(first(alpha beta gamma)),BE76331B95DFC399CD776D2FC68021E0DB03CC4F)={@log smoke=TC006: first() basic parity. Succeeded.},{@log smoke=TC006: first() basic parity. Failed.}"
 >264
-"@if strmatch(setr(0,sha1([first()])),setr(1,sha1([asteval({first()})])))={@log smoke=TC007: first() empty parity. Succeeded.},{@log smoke=TC007: first() empty parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(first()),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC007: first() empty parity. Succeeded.},{@log smoke=TC007: first() empty parity. Failed.}"
 >266
-"@if strmatch(setr(0,sha1([rest(alpha beta gamma)])),setr(1,sha1([asteval({rest(alpha beta gamma)})])))={@log smoke=TC008: rest() basic parity. Succeeded.},{@log smoke=TC008: rest() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(rest(alpha beta gamma)),E9C7100130CDDAA2FF2B3D14EE1EB7B84C06EE06)={@log smoke=TC008: rest() basic parity. Succeeded.},{@log smoke=TC008: rest() basic parity. Failed.}"
 >274
-"@if strmatch(setr(0,sha1([rest(single)])),setr(1,sha1([asteval({rest(single)})])))={@log smoke=TC009: rest() single word parity. Succeeded.},{@log smoke=TC009: rest() single word parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(rest(single)),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC009: rest() single word parity. Succeeded.},{@log smoke=TC009: rest() single word parity. Failed.}"
 >275
-"@if strmatch(setr(0,sha1([last(alpha beta gamma)])),setr(1,sha1([asteval({last(alpha beta gamma)})])))={@log smoke=TC010: last() basic parity. Succeeded.},{@log smoke=TC010: last() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(last(alpha beta gamma)),FF70F4C33DE2200B76651BBE1E54AA55FCD77447)={@log smoke=TC010: last() basic parity. Succeeded.},{@log smoke=TC010: last() basic parity. Failed.}"
 >276
-"@if strmatch(setr(0,sha1([first(a-b-c,-)])),setr(1,sha1([asteval({first(a-b-c,-)})])))={@log smoke=TC011: first() custom delim parity. Succeeded.},{@log smoke=TC011: first() custom delim parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(first(a-b-c,-)),86F7E437FAA5A7FCE15D1DDCB9EAEAEA377667B8)={@log smoke=TC011: first() custom delim parity. Succeeded.},{@log smoke=TC011: first() custom delim parity. Failed.}"
 >277
-"@if strmatch(setr(0,sha1([rest(a-b-c,-)])),setr(1,sha1([asteval({rest(a-b-c,-)})])))={@log smoke=TC012: rest() custom delim parity. Succeeded.},{@log smoke=TC012: rest() custom delim parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(rest(a-b-c,-)),09269EE77AEDEA19D75D8386A6DF393853BC87E0)={@log smoke=TC012: rest() custom delim parity. Succeeded.},{@log smoke=TC012: rest() custom delim parity. Failed.}"
 >278
-"@if strmatch(setr(0,sha1([mid(foobar,2,3)])),setr(1,sha1([asteval({mid(foobar,2,3)})])))={@log smoke=TC013: mid() basic parity. Succeeded.},{@log smoke=TC013: mid() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(mid(foobar,2,3)),C735B0AED0B3C4A0BA7B51A98CAB31C282E86B11)={@log smoke=TC013: mid() basic parity. Succeeded.},{@log smoke=TC013: mid() basic parity. Failed.}"
 >279
-"@if strmatch(setr(0,sha1([mid(foobar,2,-2)])),setr(1,sha1([asteval({mid(foobar,2,-2)})])))={@log smoke=TC014: mid() negative count parity. Succeeded.},{@log smoke=TC014: mid() negative count parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(mid(foobar,2,-2)),0343BB07C98F8A943E8EB80C0BA3D9758D372D22)={@log smoke=TC014: mid() negative count parity. Succeeded.},{@log smoke=TC014: mid() negative count parity. Failed.}"
 >280
-"@if strmatch(setr(0,sha1([mid(foobar,0,100)])),setr(1,sha1([asteval({mid(foobar,0,100)})])))={@log smoke=TC015: mid() overflow parity. Succeeded.},{@log smoke=TC015: mid() overflow parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(mid(foobar,0,100)),8843D7F92416211DE9EBB963FF4CE28125932878)={@log smoke=TC015: mid() overflow parity. Succeeded.},{@log smoke=TC015: mid() overflow parity. Failed.}"
 >281
-"@if strmatch(setr(0,sha1([mid(,0,5)])),setr(1,sha1([asteval({mid(,0,5)})])))={@log smoke=TC016: mid() empty string parity. Succeeded.},{@log smoke=TC016: mid() empty string parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(mid(,0,5)),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC016: mid() empty string parity. Succeeded.},{@log smoke=TC016: mid() empty string parity. Failed.}"
 >303
-"@if strmatch(setr(0,[pos(cd,abcdef)]),setr(1,[asteval({pos(cd,abcdef)})]))={@log smoke=TC017: pos() basic parity. Succeeded.},{@log smoke=TC017: pos() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(pos(cd,abcdef)),77DE68DAECD823BABBB58EDB1C8E14D7106E83BB)={@log smoke=TC017: pos() basic parity. Succeeded.},{@log smoke=TC017: pos() basic parity. Failed.}"
 >304
-"@if strmatch(setr(0,[pos(xyz,abcdef)]),setr(1,[asteval({pos(xyz,abcdef)})]))={@log smoke=TC018: pos() not found parity. Succeeded.},{@log smoke=TC018: pos() not found parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(pos(xyz,abcdef)),781312E4CA2C1476A946B1D8091199D58E89F203)={@log smoke=TC018: pos() not found parity. Succeeded.},{@log smoke=TC018: pos() not found parity. Failed.}"
 >305
-"@if strmatch(setr(0,[member(gamma,alpha beta gamma delta)]),setr(1,[asteval({member(gamma,alpha beta gamma delta)})]))={@log smoke=TC019: member() found parity. Succeeded.},{@log smoke=TC019: member() found parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(member(alpha beta gamma delta,gamma)),77DE68DAECD823BABBB58EDB1C8E14D7106E83BB)={@log smoke=TC019: member() found parity. Succeeded.},{@log smoke=TC019: member() found parity. Failed.}"
 >306
-"@if strmatch(setr(0,[member(missing,alpha beta gamma)]),setr(1,[asteval({member(missing,alpha beta gamma)})]))={@log smoke=TC020: member() not found parity. Succeeded.},{@log smoke=TC020: member() not found parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(member(alpha beta gamma,missing)),B6589FC6AB0DC82CF12099D1C2D40AB994E8410C)={@log smoke=TC020: member() not found parity. Succeeded.},{@log smoke=TC020: member() not found parity. Failed.}"
 >307
-"@if strmatch(setr(0,sha1([extract(a b c d e,2,3)])),setr(1,sha1([asteval({extract(a b c d e,2,3)})])))={@log smoke=TC021: extract() basic parity. Succeeded.},{@log smoke=TC021: extract() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(extract(a b c d e,2,3)),17D151710F4BAEE6F6CD8F54ED9F2C20CE5272B1)={@log smoke=TC021: extract() basic parity. Succeeded.},{@log smoke=TC021: extract() basic parity. Failed.}"
 >308
-"@if strmatch(setr(0,sha1([extract(a b c d e,0,1)])),setr(1,sha1([asteval({extract(a b c d e,0,1)})])))={@log smoke=TC022: extract() zero pos parity. Succeeded.},{@log smoke=TC022: extract() zero pos parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(extract(a b c d e,0,1)),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC022: extract() zero pos parity. Succeeded.},{@log smoke=TC022: extract() zero pos parity. Failed.}"
 >309
-"@if strmatch(setr(0,sha1([extract(a-b-c-d,2,2,-)])),setr(1,sha1([asteval({extract(a-b-c-d,2,2,-)})])))={@log smoke=TC023: extract() custom delim parity. Succeeded.},{@log smoke=TC023: extract() custom delim parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(extract(a-b-c-d,2,2,-)),09269EE77AEDEA19D75D8386A6DF393853BC87E0)={@log smoke=TC023: extract() custom delim parity. Succeeded.},{@log smoke=TC023: extract() custom delim parity. Failed.}"
 >310
-"@if strmatch(setr(0,sha1([repeat(abc,3)])),setr(1,sha1([asteval({repeat(abc,3)})])))={@log smoke=TC024: repeat() basic parity. Succeeded.},{@log smoke=TC024: repeat() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(repeat(abc,3)),0B6F5DAE7F8D68348F7D56AC05EA20A55F652D91)={@log smoke=TC024: repeat() basic parity. Succeeded.},{@log smoke=TC024: repeat() basic parity. Failed.}"
 >311
-"@if strmatch(setr(0,sha1([repeat(x,0)])),setr(1,sha1([asteval({repeat(x,0)})])))={@log smoke=TC025: repeat() zero parity. Succeeded.},{@log smoke=TC025: repeat() zero parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(repeat(x,0)),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC025: repeat() zero parity. Succeeded.},{@log smoke=TC025: repeat() zero parity. Failed.}"
 >312
-"@if strmatch(setr(0,sha1([trim(hello)])),setr(1,sha1([asteval({trim(hello)})])))={@log smoke=TC026: trim() no-op parity. Succeeded.},{@log smoke=TC026: trim() no-op parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(trim(hello)),AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D)={@log smoke=TC026: trim() no-op parity. Succeeded.},{@log smoke=TC026: trim() no-op parity. Failed.}"
 >313
-"@if strmatch(setr(0,sha1([trim(xxxhelloxxx,l,x)])),setr(1,sha1([asteval({trim(xxxhelloxxx,l,x)})])))={@log smoke=TC027: trim() left custom parity. Succeeded.},{@log smoke=TC027: trim() left custom parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(trim(xxxhelloxxx,l,x)),CE4F5A7FCAFE7EF514B5F60A44E9E32A398429BE)={@log smoke=TC027: trim() left custom parity. Succeeded.},{@log smoke=TC027: trim() left custom parity. Failed.}"
 >314
-"@if strmatch(setr(0,sha1([trim(xxxhelloxxx,r,x)])),setr(1,sha1([asteval({trim(xxxhelloxxx,r,x)})])))={@log smoke=TC028: trim() right custom parity. Succeeded.},{@log smoke=TC028: trim() right custom parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(trim(xxxhelloxxx,r,x)),11C212DAE9EB1902123584297283D8A9982361D6)={@log smoke=TC028: trim() right custom parity. Succeeded.},{@log smoke=TC028: trim() right custom parity. Failed.}"
 >315
-"@if strmatch(setr(0,sha1([trim(xxxhelloxxx,b,x)])),setr(1,sha1([asteval({trim(xxxhelloxxx,b,x)})])))={@log smoke=TC029: trim() both custom parity. Succeeded.},{@log smoke=TC029: trim() both custom parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(trim(xxxhelloxxx,b,x)),AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D)={@log smoke=TC029: trim() both custom parity. Succeeded.},{@log smoke=TC029: trim() both custom parity. Failed.}"
 >316
-"@if strmatch(setr(0,sha1([edit(hello world,world,earth)])),setr(1,sha1([asteval({edit(hello world,world,earth)})])))={@log smoke=TC030: edit() basic parity. Succeeded.},{@log smoke=TC030: edit() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(edit(hello world,world,earth)),262019D80C5667B58BA745BE1C3D83D43AF1A1BD)={@log smoke=TC030: edit() basic parity. Succeeded.},{@log smoke=TC030: edit() basic parity. Failed.}"
 >317
-"@if strmatch(setr(0,sha1([edit(aaa,a,bb)])),setr(1,sha1([asteval({edit(aaa,a,bb)})])))={@log smoke=TC031: edit() multiple replace parity. Succeeded.},{@log smoke=TC031: edit() multiple replace parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(edit(aaa,a,bb)),0E03C6205EA671D7D41A0E3AABFC9D15D97E5ED3)={@log smoke=TC031: edit() multiple replace parity. Succeeded.},{@log smoke=TC031: edit() multiple replace parity. Failed.}"
 >318
-"@if strmatch(setr(0,sha1([edit(hello,,)])),setr(1,sha1([asteval({edit(hello,,)})])))={@log smoke=TC032: edit() empty pattern parity. Succeeded.},{@log smoke=TC032: edit() empty pattern parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(edit(hello,,)),AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D)={@log smoke=TC032: edit() empty pattern parity. Succeeded.},{@log smoke=TC032: edit() empty pattern parity. Failed.}"
 >319
-"@if strmatch(setr(0,sha1([delete(abcdef,2,2)])),setr(1,sha1([asteval({delete(abcdef,2,2)})])))={@log smoke=TC033: delete() basic parity. Succeeded.},{@log smoke=TC033: delete() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(delete(abcdef,2,2)),86017B2A86A51B3C18FB0E2B68C5766107D4D51E)={@log smoke=TC033: delete() basic parity. Succeeded.},{@log smoke=TC033: delete() basic parity. Failed.}"
 >320
-"@if strmatch(setr(0,sha1([delete(abcdef,3,-2)])),setr(1,sha1([asteval({delete(abcdef,3,-2)})])))={@log smoke=TC034: delete() negative count parity. Succeeded.},{@log smoke=TC034: delete() negative count parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(delete(abcdef,3,-2)),86017B2A86A51B3C18FB0E2B68C5766107D4D51E)={@log smoke=TC034: delete() negative count parity. Succeeded.},{@log smoke=TC034: delete() negative count parity. Failed.}"
 >321
-"@if strmatch(setr(0,sha1([delete(abcdef,0,0)])),setr(1,sha1([asteval({delete(abcdef,0,0)})])))={@log smoke=TC035: delete() zero count parity. Succeeded.},{@log smoke=TC035: delete() zero count parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(delete(abcdef,0,0)),1F8AC10F23C5B5BC1167BDA84B833E5C057A77D2)={@log smoke=TC035: delete() zero count parity. Succeeded.},{@log smoke=TC035: delete() zero count parity. Failed.}"
 >322
-"@if strmatch(setr(0,sha1([right(abcdef,3)])),setr(1,sha1([asteval({right(abcdef,3)})])))={@log smoke=TC036: right() basic parity. Succeeded.},{@log smoke=TC036: right() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(right(abcdef,3)),589C22335A381F122D129225F5C0BA3056ED5811)={@log smoke=TC036: right() basic parity. Succeeded.},{@log smoke=TC036: right() basic parity. Failed.}"
 >323
-"@if strmatch(setr(0,sha1([right(abc,100)])),setr(1,sha1([asteval({right(abc,100)})])))={@log smoke=TC037: right() overflow parity. Succeeded.},{@log smoke=TC037: right() overflow parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(right(abc,100)),A9993E364706816ABA3E25717850C26C9CD0D89D)={@log smoke=TC037: right() overflow parity. Succeeded.},{@log smoke=TC037: right() overflow parity. Failed.}"
 >324
-"@if strmatch(setr(0,sha1([right(abc,0)])),setr(1,sha1([asteval({right(abc,0)})])))={@log smoke=TC038: right() zero parity. Succeeded.},{@log smoke=TC038: right() zero parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(right(abc,0)),DA39A3EE5E6B4B0D3255BFEF95601890AFD80709)={@log smoke=TC038: right() zero parity. Succeeded.},{@log smoke=TC038: right() zero parity. Failed.}"
 >325
-"@if strmatch(setr(0,[isnum(3.14)]),setr(1,[asteval({isnum(3.14)})]))={@log smoke=TC039: isnum() float parity. Succeeded.},{@log smoke=TC039: isnum() float parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(isnum(3.14)),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC039: isnum() float parity. Succeeded.},{@log smoke=TC039: isnum() float parity. Failed.}"
 >326
-"@if strmatch(setr(0,[isnum(abc)]),setr(1,[asteval({isnum(abc)})]))={@log smoke=TC040: isnum() non-number parity. Succeeded.},{@log smoke=TC040: isnum() non-number parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(isnum(abc)),B6589FC6AB0DC82CF12099D1C2D40AB994E8410C)={@log smoke=TC040: isnum() non-number parity. Succeeded.},{@log smoke=TC040: isnum() non-number parity. Failed.}"
 >327
-"@if strmatch(setr(0,[isnum()]),setr(1,[asteval({isnum()})]))={@log smoke=TC041: isnum() empty parity. Succeeded.},{@log smoke=TC041: isnum() empty parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(isnum()),D9B46B53EA2054153AAFFDDE26A250D3FE115DC5)={@log smoke=TC041: isnum() empty parity. Succeeded.},{@log smoke=TC041: isnum() empty parity. Failed.}"
 >328
-"@if strmatch(setr(0,[isint(42)]),setr(1,[asteval({isint(42)})]))={@log smoke=TC042: isint() integer parity. Succeeded.},{@log smoke=TC042: isint() integer parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(isint(42)),356A192B7913B04C54574D18C28D46E6395428AB)={@log smoke=TC042: isint() integer parity. Succeeded.},{@log smoke=TC042: isint() integer parity. Failed.}"
 >329
-"@if strmatch(setr(0,[isint(3.14)]),setr(1,[asteval({isint(3.14)})]))={@log smoke=TC043: isint() float parity. Succeeded.},{@log smoke=TC043: isint() float parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(isint(3.14)),B6589FC6AB0DC82CF12099D1C2D40AB994E8410C)={@log smoke=TC043: isint() float parity. Succeeded.},{@log smoke=TC043: isint() float parity. Failed.}"
 >330
-"@if strmatch(setr(0,sha1([lpos(a b a c a,a)])),setr(1,sha1([asteval({lpos(a b a c a,a)})])))={@log smoke=TC044: lpos() basic parity. Succeeded.},{@log smoke=TC044: lpos() basic parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(lpos(a b a c a,a)),B47BA05B69E210D60B7FD8582314CCCD90A94FD1)={@log smoke=TC044: lpos() basic parity. Succeeded.},{@log smoke=TC044: lpos() basic parity. Failed.}"
 >331
-"@if strmatch(setr(0,sha1([stripansi(hello)])),setr(1,sha1([asteval({stripansi(hello)})])))={@log smoke=TC045: stripansi() plain parity. Succeeded.},{@log smoke=TC045: stripansi() plain parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(stripansi(hello)),AAF4C61DDCC5E8A2DABEDE0F3B482CD9AEA9434D)={@log smoke=TC045: stripansi() plain parity. Succeeded.},{@log smoke=TC045: stripansi() plain parity. Failed.}"
 >332
-"@if strmatch(setr(0,sha1([squish(hello world)])),setr(1,sha1([asteval({squish(hello world)})])))={@log smoke=TC046: squish() parity. Succeeded.},{@log smoke=TC046: squish() parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(squish(hello world)),2AAE6C35C94FCFB415DBE95F408B9CE91EE846ED)={@log smoke=TC046: squish() parity. Succeeded.},{@log smoke=TC046: squish() parity. Failed.}"
 >333
-"@if strmatch(setr(0,[pi()]),setr(1,[asteval({pi()})]))={@log smoke=TC047: pi() parity. Succeeded.},{@log smoke=TC047: pi() parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(pi()),29EDEC2B9CB930ED550E0B10AA74AA47664B2ED2)={@log smoke=TC047: pi() parity. Succeeded.},{@log smoke=TC047: pi() parity. Failed.}"
 >334
-"@if strmatch(setr(0,[e()]),setr(1,[asteval({e()})]))={@log smoke=TC048: e() parity. Succeeded.},{@log smoke=TC048: e() parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(e()),9B79A23F276A1F1E5319DE111E8560F6CCC3C50F)={@log smoke=TC048: e() parity. Succeeded.},{@log smoke=TC048: e() parity. Failed.}"
 >335
-"@if strmatch(setr(0,sha1([mudname()])),setr(1,sha1([asteval({mudname()})])))={@log smoke=TC049: mudname() parity. Succeeded.},{@log smoke=TC049: mudname() parity. Failed (%q0 vs %q1).}"
+"@if strmatch(mudname(),config(mud_name))={@log smoke=TC049: mudname() parity. Succeeded.},{@log smoke=TC049: mudname() parity. Failed.}"
 >336
-"@if strmatch(setr(0,sha1([version()])),setr(1,sha1([asteval({version()})])))={@log smoke=TC050: version() parity. Succeeded.;@trig me/tr.done},{@log smoke=TC050: version() parity. Failed (%q0 vs %q1).;@trig me/tr.done}"
+"@if strmatch(version(),MUX *)={@log smoke=TC050: version() parity. Succeeded.;@trig me/tr.done},{@log smoke=TC050: version() parity. Failed.;@trig me/tr.done}"
 <
 !122
 "test_jit_parity_fn"
@@ -5071,25 +5071,25 @@
 >256
 "@log smoke=Beginning JIT parity test cases."
 >257
-"@if strmatch(setr(0,sha1([before(%b%bfoo bar,)])),setr(1,sha1([asteval({before(%b%bfoo bar,)})])))={@log smoke=TC001: before() default-space parity. Succeeded.},{@log smoke=TC001: before() default-space parity. Failed (%q0 vs %q1).}"
+"@if strmatch(before(%b%bfoo bar,),foo)={@log smoke=TC001: before() default-space parity. Succeeded.},{@log smoke=TC001: before() default-space parity. Failed (got .[before(%b%bfoo bar,)].).}"
 >258
-"@if strmatch(setr(0,sha1([after(%b%bfoo bar,)])),setr(1,sha1([asteval({after(%b%bfoo bar,)})])))={@log smoke=TC002: after() default-space parity. Succeeded.},{@log smoke=TC002: after() default-space parity. Failed (%q0 vs %q1).}"
+"@if strmatch(after(%b%bfoo bar,),bar)={@log smoke=TC002: after() default-space parity. Succeeded.},{@log smoke=TC002: after() default-space parity. Failed (got .[after(%b%bfoo bar,)].).}"
 >259
-"@if strmatch(setr(0,[isnum(1e3)]),setr(1,[asteval({isnum(1e3)})]))={@log smoke=TC003: isnum() exponent parity. Succeeded.},{@log smoke=TC003: isnum() exponent parity. Failed (%q0 vs %q1).}"
+"@if eq(isnum(1e3),1)={@log smoke=TC003: isnum() exponent parity. Succeeded.},{@log smoke=TC003: isnum() exponent parity. Failed (got [isnum(1e3)]).}"
 >260
 "@log smoke=End JIT parity test cases.;@notify smoke"
 >261
-"@if strmatch(setr(0,sha1([chr(233)])),setr(1,sha1([asteval({chr(233)})])))={@log smoke=TC004: chr() Unicode parity. Succeeded.},{@log smoke=TC004: chr() Unicode parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(chr(233)),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC004: chr() Unicode parity. Succeeded.},{@log smoke=TC004: chr() Unicode parity. Failed (got [sha1(chr(233))]).}"
 >262
-"@if strmatch(setr(0,sha1([chr(101 769)])),setr(1,sha1([asteval({chr(101 769)})])))={@log smoke=TC005: chr() grapheme parity. Succeeded.},{@log smoke=TC005: chr() grapheme parity. Failed (%q0 vs %q1).}"
+"@if strmatch(sha1(chr(101 769)),BF15BE717AC1B080B4F1C456692825891FF5073D)={@log smoke=TC005: chr() grapheme parity. Succeeded.},{@log smoke=TC005: chr() grapheme parity. Failed (got [sha1(chr(101 769))]).}"
 >263
-"@if strmatch(setr(0,[ord(chr(233))]),setr(1,[asteval({ord(chr(233))})]))={@log smoke=TC006: ord(chr()) Unicode parity. Succeeded.},{@log smoke=TC006: ord(chr()) Unicode parity. Failed (%q0 vs %q1).}"
+"@if eq(ord(chr(233)),233)={@log smoke=TC006: ord(chr()) Unicode parity. Succeeded.},{@log smoke=TC006: ord(chr()) Unicode parity. Failed (got [ord(chr(233))]).}"
 >264
-"@if strmatch(setr(0,[ord(chr(101 769))]),setr(1,[asteval({ord(chr(101 769))})]))={@log smoke=TC007: ord(chr()) grapheme parity. Succeeded.},{@log smoke=TC007: ord(chr()) grapheme parity. Failed (%q0 vs %q1).}"
+"@if eq(ord(chr(101 769)),233)={@log smoke=TC007: ord(chr()) grapheme parity. Succeeded.},{@log smoke=TC007: ord(chr()) grapheme parity. Failed (got [ord(chr(101 769))]).}"
 >266
-"@if strmatch(setr(0,sha1([cat(sin(1),sin(2),sin(3))])),setr(1,sha1([asteval({cat(sin(1),sin(2),sin(3))})])))={@log smoke=TC008: cat() runtime float parity. Succeeded.},{@log smoke=TC008: cat() runtime float parity. Failed (%q0 vs %q1).}"
+"@if strmatch(cat(sin(1),sin(2),sin(3)),0.8414709848078965 0.9092974268256817 0.1411200080598672)={@log smoke=TC008: cat() runtime float parity. Succeeded.},{@log smoke=TC008: cat() runtime float parity. Failed (got .[cat(sin(1),sin(2),sin(3))].).}"
 >274
-"@if strmatch(setr(0,[ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]),setr(1,[asteval({ladd(1e20 1 -1e20)})]:[asteval({ladd(0.1 0.2)})]:[asteval({ladd(1|2|3,|)})]))={@log smoke=TC009: ladd() AddDoubles parity. Succeeded.},{@log smoke=TC009: ladd() AddDoubles parity. Failed (%q0 vs %q1).}"
+"@if strmatch(strcat(ladd(1e20 1 -1e20),:,ladd(0.1 0.2),:,ladd(1|2|3,|)),1:0.3:6)={@log smoke=TC009: ladd() AddDoubles parity. Succeeded.},{@log smoke=TC009: ladd() AddDoubles parity. Failed (got [ladd(1e20 1 -1e20)]:[ladd(0.1 0.2)]:[ladd(1|2|3,|)]).}"
 >275
 "@if strmatch(strcat(setq(5,A),%q5,setq(5,B),%q5),AB)={@log smoke=TC010: qreg read-write-read materialization. Succeeded.},{@log smoke=TC010: qreg read-write-read materialization. Failed (got [strcat(setq(5,A),%q5,setq(5,B),%q5)]).}"
 >276
@@ -5140,23 +5140,23 @@
 >256
 "@log smoke=Beginning JIT route parity test cases."
 >257
-"&tc001_result me=;@trig/now me/tr.helper1;@if cand(strmatch(setr(0,sha1([cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))])),setr(1,sha1([asteval({cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))})]))),strmatch(%q0,setr(2,sha1([get(me/tc001_result)]))))={@log smoke=TC001: float compare chain route parity. Succeeded.},{@log smoke=TC001: float compare chain route parity. Failed (%q0 vs %q1 vs %q2).}"
+"&tc001_result me=;@trig/now me/tr.helper1;@if strmatch(setr(0,sha1([cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))])),sha1([get(me/tc001_result)]))={@log smoke=TC001: float compare chain route parity. Succeeded.},{@log smoke=TC001: float compare chain route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).}"
 >258
-"&tc002_result me=;@trig/now me/tr.helper2;@if cand(strmatch(setr(0,sha1([cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))])),setr(1,sha1([asteval({cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))})]))),strmatch(%q0,setr(2,sha1([get(me/tc002_result)]))))={@log smoke=TC002: float formatting route parity. Succeeded.},{@log smoke=TC002: float formatting route parity. Failed (%q0 vs %q1 vs %q2).}"
+"&tc002_result me=;@trig/now me/tr.helper2;@if strmatch(setr(0,sha1([cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))])),sha1([get(me/tc002_result)]))={@log smoke=TC002: float formatting route parity. Succeeded.},{@log smoke=TC002: float formatting route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).}"
 >259
-"&tc003_result me=;@trig/now me/tr.helper3;@if cand(strmatch(setr(0,sha1([elements(%bAck%b%bMoo%bBeep%bFoof,2,2)])),setr(1,sha1([asteval({elements(%bAck%b%bMoo%bBeep%bFoof,2,2)})]))),strmatch(%q0,setr(2,sha1([get(me/tc003_result)]))))={@log smoke=TC003: elements() whitespace route parity. Succeeded.},{@log smoke=TC003: elements() whitespace route parity. Failed (%q0 vs %q1 vs %q2).}"
+"&tc003_result me=;@trig/now me/tr.helper3;@if strmatch(setr(0,sha1([elements(%bAck%b%bMoo%bBeep%bFoof,2,2)])),sha1([get(me/tc003_result)]))={@log smoke=TC003: elements() whitespace route parity. Succeeded.},{@log smoke=TC003: elements() whitespace route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).}"
 >260
 "@log smoke=End JIT route parity test cases.;@notify smoke"
 >261
-"&tc004_result me=;@trig/now me/tr.helper4;@if cand(strmatch(setr(0,sha1([insert(Yet@Another@Funky@List,Mundane,4,@)])),setr(1,sha1([asteval({insert(Yet@Another@Funky@List,Mundane,4,@)})]))),strmatch(%q0,setr(2,sha1([get(me/tc004_result)]))))={@log smoke=TC004: insert() delimiter route parity. Succeeded.},{@log smoke=TC004: insert() delimiter route parity. Failed (%q0 vs %q1 vs %q2).}"
+"&tc004_result me=;@trig/now me/tr.helper4;@if strmatch(setr(0,sha1([insert(Yet@Another@Funky@List,Mundane,4,@)])),sha1([get(me/tc004_result)]))={@log smoke=TC004: insert() delimiter route parity. Succeeded.},{@log smoke=TC004: insert() delimiter route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).}"
 >262
-"&tc005_result me=;@trig/now me/tr.helper5;@if cand(strmatch(setr(0,sha1([switch(a,a,{result,with,commas},*,other)])),setr(1,sha1([asteval({switch(a,a,{result,with,commas},*,other)})]))),strmatch(%q0,setr(2,sha1([get(me/tc005_result)]))))={@log smoke=TC005: brace comma route parity. Succeeded.},{@log smoke=TC005: brace comma route parity. Failed (%q0 vs %q1 vs %q2).}"
+"&tc005_result me=;@trig/now me/tr.helper5;@if strmatch(setr(0,sha1([switch(a,a,{result,with,commas},*,other)])),sha1([get(me/tc005_result)]))={@log smoke=TC005: brace comma route parity. Succeeded.},{@log smoke=TC005: brace comma route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).}"
 >263
-"&tc006_result me=;@trig/now me/tr.helper6;@if cand(strmatch(setr(0,sha1([cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))])),setr(1,sha1([asteval({cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))})]))),strmatch(%q0,setr(2,sha1([get(me/tc006_result)]))))={@log smoke=TC006: mixed list route parity. Succeeded.},{@log smoke=TC006: mixed list route parity. Failed (%q0 vs %q1 vs %q2).}"
+"&tc006_result me=;@trig/now me/tr.helper6;@if strmatch(setr(0,sha1([cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))])),sha1([get(me/tc006_result)]))={@log smoke=TC006: mixed list route parity. Succeeded.},{@log smoke=TC006: mixed list route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).}"
 >264
-"&tc007_result me=;@trig/now me/tr.helper7;@if cand(strmatch(setr(0,sha1([eval(\\[add(1,2)\\]\\[add(2,2)\\]\\[mul(2,3)\\])])),setr(1,sha1([asteval({eval(\\[add(1,2)\\]\\[add(2,2)\\]\\[mul(2,3)\\])})]))),strmatch(%q0,setr(2,sha1([get(me/tc007_result)]))))={@log smoke=TC007: escaped eval bracket route parity. Succeeded.},{@log smoke=TC007: escaped eval bracket route parity. Failed (%q0 vs %q1 vs %q2).}"
+"&tc007_result me=;@trig/now me/tr.helper7;@if strmatch(setr(0,sha1([eval(\\[add(1,2)\\]\\[add(2,2)\\]\\[mul(2,3)\\])])),sha1([get(me/tc007_result)]))={@log smoke=TC007: escaped eval bracket route parity. Succeeded.},{@log smoke=TC007: escaped eval bracket route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).}"
 >266
-"setr(0,kiwi);&tc008_result me=;@trig/now me/tr.helper8=pear;@if cand(strmatch(setr(1,sha1([cat(%q0,-,[add(1,2)],-,pear)])),setr(2,sha1([asteval({cat(%q0,-,[add(1,2)],-,pear)})]))),strmatch(%q1,setr(3,sha1([get(me/tc008_result)]))))={@log smoke=TC008: q-register route parity. Succeeded.},{@log smoke=TC008: q-register route parity. Failed (%q1 vs %q2 vs %q3).}"
+"setr(0,kiwi);&tc008_result me=;@trig/now me/tr.helper8=pear;@if strmatch(setr(1,sha1([cat(%q0,-,[add(1,2)],-,pear)])),sha1([get(me/tc008_result)]))={@log smoke=TC008: q-register route parity. Succeeded.},{@log smoke=TC008: q-register route parity. Failed (norm=%q1).}"
 >274
 "@if cand(strmatch(u(me/fn.mul,6,7),42),strmatch(u(me/fn.fdiv,20,8),2.5),strmatch(u(me/fn.sub,3.5,1.25),2.25),strmatch(u(me/fn.sqrt,16),4),strmatch(u(me/fn.mul,2.5,4),10))={@log smoke=TC009: u()/cargs float math via blob. Succeeded.;@trig me/tr.done},{@log smoke=TC009: u()/cargs float math via blob. Failed (mul=[u(me/fn.mul,6,7)] fdiv=[u(me/fn.fdiv,20,8)] sub=[u(me/fn.sub,3.5,1.25)] sqrt=[u(me/fn.sqrt,16)] mulf=[u(me/fn.mul,2.5,4)]).;@trig me/tr.done}"
 >341

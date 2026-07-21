@@ -1,11 +1,14 @@
 #
 # jit_route_parity_fn.mux - Parity tests across evaluation routes.
 #
-# These tests compare the same expression through three routes:
-#   1. normal evaluation under --enable-jit
-#   2. asteval({ ... }) to force the AST evaluator
-#   3. a stored attribute triggered as a command, which exercises
+# These tests compare the same expression through two routes:
+#   1. normal evaluation (the JIT route — jit_eval_brackets defaults on)
+#   2. a stored attribute triggered as a command, which exercises
 #      command-argument expansion from an attribute body
+# The former asteval({...}) leg was dropped: the dual-toggle smoke
+# runs already check both evaluation routes against these comparisons,
+# and asteval's bracket-content pre-evaluation footgun (#987) makes
+# the inline pattern easy to misuse.
 #
 @create test_jit_route_parity_fn
 -
@@ -52,18 +55,15 @@
 &tr.tc001 test_jit_route_parity_fn=
   &tc001_result me=;
   @trig/now me/tr.helper1;
-  @if cand(
-        strmatch(
-          setr(0,sha1([cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))])),
-          setr(1,sha1([asteval({cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))})]))
-        ),
-        strmatch(%q0,setr(2,sha1([get(me/tc001_result)])))
+  @if strmatch(
+        setr(0,sha1([cand(eq(dist2d(0,0,3,4),5),eq(mean(2,4,6),4),eq(median(3,1,2),2))])),
+        sha1([get(me/tc001_result)])
       )=
   {
     @log smoke=TC001: float compare chain route parity. Succeeded.
   },
   {
-    @log smoke=TC001: float compare chain route parity. Failed (%q0 vs %q1 vs %q2).
+    @log smoke=TC001: float compare chain route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).
   }
 -
 #
@@ -72,18 +72,15 @@
 &tr.tc002 test_jit_route_parity_fn=
   &tc002_result me=;
   @trig/now me/tr.helper2;
-  @if cand(
-        strmatch(
-          setr(0,sha1([cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))])),
-          setr(1,sha1([asteval({cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))})]))
-        ),
-        strmatch(%q0,setr(2,sha1([get(me/tc002_result)])))
+  @if strmatch(
+        setr(0,sha1([cand(strmatch(round(sqrt(2),6),1.414214),eq(round(2.5,0),2),strmatch(cat(dist3d(0,0,0,1,2,2)),3))])),
+        sha1([get(me/tc002_result)])
       )=
   {
     @log smoke=TC002: float formatting route parity. Succeeded.
   },
   {
-    @log smoke=TC002: float formatting route parity. Failed (%q0 vs %q1 vs %q2).
+    @log smoke=TC002: float formatting route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).
   }
 -
 #
@@ -92,18 +89,15 @@
 &tr.tc003 test_jit_route_parity_fn=
   &tc003_result me=;
   @trig/now me/tr.helper3;
-  @if cand(
-        strmatch(
-          setr(0,sha1([elements(%bAck%b%bMoo%bBeep%bFoof,2,2)])),
-          setr(1,sha1([asteval({elements(%bAck%b%bMoo%bBeep%bFoof,2,2)})]))
-        ),
-        strmatch(%q0,setr(2,sha1([get(me/tc003_result)])))
+  @if strmatch(
+        setr(0,sha1([elements(%bAck%b%bMoo%bBeep%bFoof,2,2)])),
+        sha1([get(me/tc003_result)])
       )=
   {
     @log smoke=TC003: elements() whitespace route parity. Succeeded.
   },
   {
-    @log smoke=TC003: elements() whitespace route parity. Failed (%q0 vs %q1 vs %q2).
+    @log smoke=TC003: elements() whitespace route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).
   }
 -
 #
@@ -112,18 +106,15 @@
 &tr.tc004 test_jit_route_parity_fn=
   &tc004_result me=;
   @trig/now me/tr.helper4;
-  @if cand(
-        strmatch(
-          setr(0,sha1([insert(Yet@Another@Funky@List,Mundane,4,@)])),
-          setr(1,sha1([asteval({insert(Yet@Another@Funky@List,Mundane,4,@)})]))
-        ),
-        strmatch(%q0,setr(2,sha1([get(me/tc004_result)])))
+  @if strmatch(
+        setr(0,sha1([insert(Yet@Another@Funky@List,Mundane,4,@)])),
+        sha1([get(me/tc004_result)])
       )=
   {
     @log smoke=TC004: insert() delimiter route parity. Succeeded.
   },
   {
-    @log smoke=TC004: insert() delimiter route parity. Failed (%q0 vs %q1 vs %q2).
+    @log smoke=TC004: insert() delimiter route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).
   }
 -
 #
@@ -132,18 +123,15 @@
 &tr.tc005 test_jit_route_parity_fn=
   &tc005_result me=;
   @trig/now me/tr.helper5;
-  @if cand(
-        strmatch(
-          setr(0,sha1([switch(a,a,{result,with,commas},*,other)])),
-          setr(1,sha1([asteval({switch(a,a,{result,with,commas},*,other)})]))
-        ),
-        strmatch(%q0,setr(2,sha1([get(me/tc005_result)])))
+  @if strmatch(
+        setr(0,sha1([switch(a,a,{result,with,commas},*,other)])),
+        sha1([get(me/tc005_result)])
       )=
   {
     @log smoke=TC005: brace comma route parity. Succeeded.
   },
   {
-    @log smoke=TC005: brace comma route parity. Failed (%q0 vs %q1 vs %q2).
+    @log smoke=TC005: brace comma route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).
   }
 -
 #
@@ -152,18 +140,15 @@
 &tr.tc006 test_jit_route_parity_fn=
   &tc006_result me=;
   @trig/now me/tr.helper6;
-  @if cand(
-        strmatch(
-          setr(0,sha1([cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))])),
-          setr(1,sha1([asteval({cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))})]))
-        ),
-        strmatch(%q0,setr(2,sha1([get(me/tc006_result)])))
+  @if strmatch(
+        setr(0,sha1([cand(eq(member(c,a b c d),3),strmatch(remove(b,a|b|c,|),a|c),strmatch(insert(a|c,x,2,|),a|x|c))])),
+        sha1([get(me/tc006_result)])
       )=
   {
     @log smoke=TC006: mixed list route parity. Succeeded.
   },
   {
-    @log smoke=TC006: mixed list route parity. Failed (%q0 vs %q1 vs %q2).
+    @log smoke=TC006: mixed list route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).
   }
 -
 #
@@ -172,18 +157,15 @@
 &tr.tc007 test_jit_route_parity_fn=
   &tc007_result me=;
   @trig/now me/tr.helper7;
-  @if cand(
-        strmatch(
-          setr(0,sha1([eval(\[add(1,2)\]\[add(2,2)\]\[mul(2,3)\])])),
-          setr(1,sha1([asteval({eval(\[add(1,2)\]\[add(2,2)\]\[mul(2,3)\])})]))
-        ),
-        strmatch(%q0,setr(2,sha1([get(me/tc007_result)])))
+  @if strmatch(
+        setr(0,sha1([eval(\[add(1,2)\]\[add(2,2)\]\[mul(2,3)\])])),
+        sha1([get(me/tc007_result)])
       )=
   {
     @log smoke=TC007: escaped eval bracket route parity. Succeeded.
   },
   {
-    @log smoke=TC007: escaped eval bracket route parity. Failed (%q0 vs %q1 vs %q2).
+    @log smoke=TC007: escaped eval bracket route parity. Failed (norm=%q0 route=[sha1(get(me/tc001_result))]).
   }
 -
 #
@@ -193,18 +175,15 @@
   setr(0,kiwi);
   &tc008_result me=;
   @trig/now me/tr.helper8=pear;
-  @if cand(
-        strmatch(
-          setr(1,sha1([cat(%q0,-,[add(1,2)],-,pear)])),
-          setr(2,sha1([asteval({cat(%q0,-,[add(1,2)],-,pear)})]))
-        ),
-        strmatch(%q1,setr(3,sha1([get(me/tc008_result)])))
+  @if strmatch(
+        setr(1,sha1([cat(%q0,-,[add(1,2)],-,pear)])),
+        sha1([get(me/tc008_result)])
       )=
   {
     @log smoke=TC008: q-register route parity. Succeeded.
   },
   {
-    @log smoke=TC008: q-register route parity. Failed (%q1 vs %q2 vs %q3).
+    @log smoke=TC008: q-register route parity. Failed (norm=%q1).
   }
 -
 #
