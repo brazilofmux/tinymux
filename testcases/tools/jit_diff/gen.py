@@ -149,10 +149,23 @@ def gen_root(colored):
             return e
 
 
+def bracket_wrap(i, e, e2):
+    """Wrap generated exprs in eval-bracket compositions (Phase 4 corpus:
+    the jit_eval_brackets surface).  Shapes: bracket embedded in literal
+    text, adjacent brackets, and a pure bracketed call."""
+    shape = i % 3
+    if shape == 0:
+        return f"x [{e}] y"
+    if shape == 1:
+        return f"[{e}] [{e2}]"
+    return f"[{e}]"
+
+
 def main():
     count = int(sys.argv[1]) if len(sys.argv) > 1 else 200
     batch = int(sys.argv[2]) if len(sys.argv) > 2 else 50
     out = sys.argv[3] if len(sys.argv) > 3 else "."
+    brackets = "--brackets" in sys.argv
     # Deterministic by default; override via SEED env for variety across runs.
     import os
     random.seed(int(os.environ.get("SEED", "1")))
@@ -161,23 +174,39 @@ def main():
     with open(f"{out}/manifest.txt", "w") as man:
         for i in range(count):
             e = gen_root(colored=(i % 3 == 0))
+            if brackets:
+                e = bracket_wrap(i, e, gen_root(colored=False))
             exprs.append(e)
             man.write(f"{i}\t{e}\n")
 
+    # J and I sides are emitted into SEPARATE batch files: the J batches
+    # run in a workspace whose conf may set jit_eval_brackets, while the
+    # I batches always run with the toggle off, so the eval-bracket in
+    # the @pemit arg reliably bails the JIT and the I side stays the
+    # production interpreter route with production flags.  (An earlier
+    # attempt forced the I side through asteval({...}) in-process, but
+    # fun_asteval is not flag-faithful to the embedding context — e.g.
+    # it trims a trailing space after an empty-yielding bracket that the
+    # production route preserves — which manufactured false LOGIC
+    # divergences.  Only the split-process design keeps the oracle
+    # byte-faithful.)
     b = 0
     for start in range(0, count, batch):
-        with open(f"{out}/b{b}.txt", "w") as f:
+        with open(f"{out}/bJ{b}.txt", "w") as fj, \
+             open(f"{out}/bI{b}.txt", "w") as fi:
             for i in range(start, min(start + batch, count)):
                 e = exprs[i]
                 # J side: JIT result captured via the @if condition into r(0).
-                f.write(
+                fj.write(
                     f"@if strlen(setr(0,{e}))="
                     f"{{@pemit #1=J~{i}~[sha1(r(0))]~[sha1(stripansi(r(0)))]~}},"
                     f"{{@pemit #1=J~{i}~[sha1(r(0))]~[sha1(stripansi(r(0)))]~}}\n")
-                # I side: interpreter result (eval-bracket bails the JIT).
-                f.write(
+                # I side: interpreter result (eval-bracket bails the JIT
+                # in the toggle-off workspace this file runs in).
+                fi.write(
                     f"@pemit #1=I~{i}~[sha1({e})]~[sha1(stripansi({e}))]~\n")
-            f.write("@wait 4=@shutdown\n")
+            fj.write("@wait 4=@shutdown\n")
+            fi.write("@wait 4=@shutdown\n")
         b += 1
     print(f"{count} expressions in {b} batch(es) of {batch}")
 

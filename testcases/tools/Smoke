@@ -133,6 +133,13 @@ module comsys_mod
 module mail_mod
 _EOF
 
+# Optional extra conf directives (e.g. running the whole suite with
+# the Phase 4 JIT bracket toggle on:
+#   SMOKE_EXTRA_CONF="jit_eval_brackets 1" ./tools/Smoke ).
+if [ -n "${SMOKE_EXTRA_CONF:-}" ]; then
+    printf '%s\n' "$SMOKE_EXTRA_CONF" >> smoke.conf
+fi
+
 # ---------------------------------------------------------------------------
 # Import smoke.flat into SQLite via dbconvert.
 # ---------------------------------------------------------------------------

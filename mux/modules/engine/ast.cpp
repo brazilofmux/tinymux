@@ -2682,7 +2682,20 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
             work.pop_back();
 
             if (node->type == AST_EVALBRACKET) {
-                return false;
+                // Terminated brackets are JITtable when the toggle is
+                // on: hir_lower evaluates their contents in FMAND
+                // context, and the Phase 2-3 q-register coherence work
+                // (slot resync, tracking save/restore, read
+                // materialization) covers the scoping semantics that
+                // made the original unconditional bail load-bearing.
+                // Unterminated brackets keep legacy literal parsing —
+                // always bail.  The EV_NOFCHECK literal-passthrough
+                // mode is gated at the call site
+                // (docs/plan-jit-evalbracket-lift.md, Phase 4).
+                if (!mudconf.jit_eval_brackets
+                    || !node->has_close_bracket) {
+                    return false;
+                }
             }
             if (node->type == AST_FUNCCALL) {
                 saw_funccall = true;
@@ -2735,6 +2748,11 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
 
     if (nLen >= 8
         && (eval & EV_EVAL)
+        // Under EV_NOFCHECK, eval brackets pass through as literal
+        // [...] text (the ast.cpp literal path); the JIT lowerer
+        // always evaluates bracket contents, so NOFCHECK text must
+        // stay on the AST evaluator.
+        && !(eval & EV_NOFCHECK)
         && !alarm_clock.alarmed
         && jit_can_handle())
     {
