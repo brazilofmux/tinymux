@@ -1060,6 +1060,15 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
         while (last > first && node->children[last - 1]->type == AST_SPACE) {
             last--;
         }
+        // Leading spaces too: ast_eval_node skips both leading and
+        // trailing AST_SPACE children (mux_exec's at_space=1).  Only
+        // the trailing trim was mirrored here, so a sequence starting
+        // with literal whitespace kept it on the JIT route —
+        // objeval(*p, ncon(#1)) returned " 0" vs the AST's "0"
+        // (#991 error-path cluster).
+        while (first < last && node->children[first]->type == AST_SPACE) {
+            first++;
+        }
     }
     if (first == last) {
         uint64_t addr = rc.pool_str("");

@@ -204,11 +204,57 @@
         strmatch(wordpos(abc def,5), 2)
       )=
   {
-    @log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Succeeded.;
+    @log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Succeeded.
+  },
+  {
+    @log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Failed (w6=[wordpos(strcat(h,chr(233),llo world),6)] w12=[wordpos(strcat(h,chr(233),llo world),12)] e3=[wordpos(strcat(a,chr(128075),chr(127995),%b b),3)]).
+  }
+-
+#
+# Test Case #13 - sequence leading-space trim + ECALL eval-flag masking
+# on the default JIT route (#991).  Both shapes route through u() so the
+# inner evaluation is bracket-free and JITs today:
+#  - an attribute body starting with literal whitespace must lose it
+#    (ast_eval_node skips leading AST_SPACE; the lowerer only trimmed
+#    trailing), and
+#  - eval(if(1,{outer {inner} text})) must preserve the inner braces
+#    (builtins receive only EV_TRACE, so fun_eval's re-eval must not
+#    inherit EV_STRIP_CURLY from the program flags).
+#
+&lead_sp test_jit_parity_fn= strcat(a,b)
+&eval_brace test_jit_parity_fn=eval(if(1,{outer {inner} text}))
+&tr.tc013 test_jit_parity_fn=
+  @if cand(
+        strmatch(u(me/lead_sp),ab),
+        eq(strlen(u(me/lead_sp)),2),
+        strmatch(u(me/eval_brace),outer \{inner\} text)
+      )=
+  {
+    @log smoke=TC013: leading-space trim + eval-flag masking (JIT route). Succeeded.
+  },
+  {
+    @log smoke=TC013: leading-space trim + eval-flag masking (JIT route). Failed (sp=.[u(me/lead_sp)]. br=.[u(me/eval_brace)].).
+  }
+-
+#
+# Test Case #14 - grapheme delete() and repeat() overflow on the default
+# JIT route (#991).  rv64_delete did raw byte arithmetic (splitting
+# multi-byte clusters); co_repeat_wrap silently truncated instead of
+# returning #-1 STRING TOO LONG.  Bracket-free via strcat/chr.
+#
+&tr.tc014 test_jit_parity_fn=
+  @if cand(
+        strmatch(delete(strcat(A,chr(233),B),1,1),AB),
+        eq(strlen(delete(strcat(A,chr(233),B),1,1)),2),
+        strmatch(repeat(ab,16384),#-1 STRING TOO LONG),
+        eq(strlen(repeat(ab,16383)),32766)
+      )=
+  {
+    @log smoke=TC014: delete() graphemes + repeat() overflow (JIT route). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC012: tier2 wordpos() grapheme positions (JIT route). Failed (w6=[wordpos(strcat(h,chr(233),llo world),6)] w12=[wordpos(strcat(h,chr(233),llo world),12)] e3=[wordpos(strcat(a,chr(128075),chr(127995),%b b),3)]).;
+    @log smoke=TC014: delete() graphemes + repeat() overflow (JIT route). Failed (del=.[delete(strcat(A,chr(233),B),1,1)]. over=.[repeat(ab,16384)]. atmax=[strlen(repeat(ab,16383))]).;
     @trig me/tr.done
   }
 -

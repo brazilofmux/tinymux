@@ -90,6 +90,8 @@ size_t co_insert_at(unsigned char *out, const unsigned char *list,
 
 /* New co_* functions for Tier 2 wrappers below. */
 size_t co_cluster_count(const unsigned char *data, size_t len);
+size_t co_delete_cluster(unsigned char *out, const unsigned char *data,
+                         size_t len, size_t iStart, size_t nCount);
 size_t co_visible_length(const unsigned char *data, size_t len);
 size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
 size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
@@ -533,10 +535,28 @@ char *co_trim_wrap(char *out, const char **fargs, int nfargs) {
 char *co_repeat_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
     int count = satoi(fargs[1]);
-    if (count <= 0) { out[0] = '\0'; return out; }
+    size_t len = rv64_slen(fargs[0]);
+    if (count < 1 || len == 0) { out[0] = '\0'; return out; }
+    if (count == 1) { rv64_scopy(out, fargs[0]); return out; }
+    if (len == 1) {
+        /* fun_repeat's single-char branch is a clipped fill with NO
+         * overflow error — mirror that. */
+        size_t n = (size_t)count;
+        if (n > LBUF_SIZE - 1) n = LBUF_SIZE - 1;
+        memset(out, fargs[0][0], n);
+        out[n] = '\0';
+        return out;
+    }
+    /* fun_repeat overflow: the error string, not silent truncation
+     * (#991: repeat(ab,16384) returned empty vs #-1 STRING TOO LONG). */
+    if (  (size_t)count > LBUF_SIZE - 1
+       || len * (size_t)count > LBUF_SIZE - 1) {
+        rv64_scopy(out, "#-1 STRING TOO LONG");
+        return out;
+    }
     size_t n = co_repeat((unsigned char *)out,
                          (const unsigned char *)fargs[0],
-                         rv64_slen(fargs[0]),
+                         len,
                          (size_t)count);
     out[n] = '\0';
     return out;
@@ -1184,22 +1204,29 @@ char *rv64_delete(char *out, const char **fargs, int nfargs) {
     }
     int first = satoi(fargs[1]);
     int dlen  = satoi(fargs[2]);
-    size_t slen = rv64_slen(fargs[0]);
-    if (first < 0) first = 0;
-    unsigned char *op = (unsigned char *)out;
-    const unsigned char *sp = (const unsigned char *)fargs[0];
-    /* Copy before deletion point. */
-    size_t before = ((size_t)first < slen) ? (size_t)first : slen;
-    memcpy(op, sp, before);
-    op += before;
-    /* Skip deleted range. */
-    size_t skip = (size_t)first + (size_t)(dlen > 0 ? dlen : 0);
-    if (skip < slen) {
-        size_t after = slen - skip;
-        memcpy(op, sp + skip, after);
-        op += after;
+
+    /* Mirror fun_delete exactly: positions and counts are GRAPHEME
+     * CLUSTERS, not bytes — the old byte arithmetic split multi-byte
+     * characters (#991: delete(AéB０C,1,1) corrupted the é bytes).
+     * Same negative-range normalization as the interpreter. */
+    if (dlen < 0) {
+        first += 1 + dlen;
+        dlen = -dlen;
     }
-    *op = '\0';
+    if (first < 0) {
+        dlen += first;
+        first = 0;
+    }
+    if (dlen <= 0 || first >= LBUF_SIZE) {
+        rv64_scopy(out, fargs[0]);
+        return out;
+    }
+
+    size_t n = co_delete_cluster((unsigned char *)out,
+                                 (const unsigned char *)fargs[0],
+                                 rv64_slen(fargs[0]),
+                                 (size_t)first, (size_t)dlen);
+    out[n] = '\0';
     return out;
 }
 

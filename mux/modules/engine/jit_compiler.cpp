@@ -2622,8 +2622,13 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     eval_ctx *saved_ctx = s_current_ecall_ctx;
     s_current_ecall_ctx = ec;
 
+    // Builtins receive only the trace bit, mirroring the AST dispatch
+    // (ast.cpp fp->fun(..., feval & EV_TRACE, ...)).  Passing the full
+    // program flags diverged for re-evaluating handlers: fun_eval's
+    // inner mux_exec inherited EV_STRIP_CURLY and stripped nested
+    // braces the AST route preserves (#991 parser TC010).
     fp->fun(fp, buff, &bufc, ec->executor, ec->caller, ec->enactor,
-            ec->eval, fargs, nfargs, ec->cargs, ec->ncargs);
+            ec->eval & EV_TRACE, fargs, nfargs, ec->cargs, ec->ncargs);
 
     s_current_ecall_ctx = saved_ctx;
 

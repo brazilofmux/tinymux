@@ -342,9 +342,35 @@ tracked as **#991**.
 - Locked by bracket-free `jit_parity_fn.mux` TC011/TC012 on the default
   JIT route; smoke 1312/1312.
 
-**Gate for Phase 5 (default-on):** the six #991 divergences fixed,
-toggle-on smoke fully green, bracket + UTF-8 + stateful-register sweep
-corpora clean.
+**Gate for Phase 5 (default-on):** ~~the six #991 divergences fixed,
+toggle-on smoke fully green~~ **DONE (2026-07-20)** — three root causes:
+
+1. **Sequence leading-space trim** (four TC classes at once): the lowerer
+   mirrored only `ast_eval_node`'s *trailing* AST_SPACE trim, not the
+   leading one — `objeval(*p, ncon(#1))` returned `" 0"` vs the AST's
+   `"0"`. Live today bracket-free (any leading-space arg to a NOEVAL
+   re-evaluator).
+2. **ECALL eval-flag leakage**: the AST dispatches builtins with
+   `feval & EV_TRACE` (ast.cpp); `ecall_invoke_fun` passed the full
+   program flags, so `fun_eval`'s inner `mux_exec` inherited
+   `EV_STRIP_CURLY` and stripped nested braces the AST preserves
+   (`eval(if(1,{outer {inner} text}))` → `outer inner text`). Masked to
+   `EV_TRACE`, mirroring the AST exactly.
+3. **Two more byte-oriented blob wrappers**: `rv64_delete` did raw byte
+   arithmetic (split the é in `delete(AéB０C,1,1)`) — now mirrors
+   `fun_delete` (negative-range normalization + `co_delete_cluster`);
+   `co_repeat_wrap` silently truncated at LBUF — now mirrors
+   `fun_repeat` exactly (single-char clipped fill, `#-1 STRING TOO
+   LONG` overflow).
+
+**Toggle-on smoke: 1312/1312 — fully green.** Oracle 7/7; standard sweep
+0 LOGIC; bracket sweep default seed 0 LOGIC.
+
+Remaining for Phase 5 (default-on): **#993** (one state-dependent LOGIC at
+`SEED=7` — batch-only, isolation-clean, precisely the stateful-corpus
+target — and one COLOR-encoding divergence, #980 family), the sweep-corpus
+modes (UTF-8/`chr()`, stateful registers), soak with the toggle on, then
+flip the default and retire `jiteval`.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 
