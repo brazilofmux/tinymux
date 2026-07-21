@@ -10,6 +10,13 @@
 #
 # Usage:  run.sh [count] [batch]      (defaults: 200, 50)
 #         SEED=7 run.sh 400           (vary the corpus)
+#         JITDIFF_BRACKETS=1 run.sh 400
+#             Phase 4 mode (docs/plan-jit-evalbracket-lift.md): sets
+#             jit_eval_brackets in the J-side conf and generates a
+#             bracket-wrapped corpus, so the J side exercises JITted
+#             [...] eval brackets.  The I side always runs in a separate
+#             process with the toggle off, keeping the eval-bracket bail
+#             (= the production interpreter route) as a faithful oracle.
 #
 # Requires a built tree (mux/game/bin/muxscript + engine.so).  Build with
 # `make install` from the repo root first.
@@ -41,6 +48,17 @@ mkdir -p "$WORK/data"
 ln -sfn "$BIN" "$WORK/bin"
 printf 'input_database\tdata/exp.db\noutput_database\tdata/exp.db.new\n' > "$WORK/exp.conf"
 
+# The I side always runs with the bracket toggle off (production
+# eval-bracket bail = the faithful interpreter oracle); the J side's
+# conf gains the toggle in brackets mode.
+cp "$WORK/exp.conf" "$WORK/int.conf"
+
+GEN_FLAGS=""
+if [ -n "${JITDIFF_BRACKETS:-}" ]; then
+    printf 'jit_eval_brackets\t1\n' >> "$WORK/exp.conf"
+    GEN_FLAGS="--brackets"
+fi
+
 DYLD_LIBRARY_PATH="$BIN"; export DYLD_LIBRARY_PATH
 LD_LIBRARY_PATH="$BIN";   export LD_LIBRARY_PATH
 
@@ -58,12 +76,31 @@ if ! grep -a "JITPROBE~" "$WORK/probe.log" | grep -q "="; then
     exit 2
 fi
 
-python3 "$SCRIPT_DIR/gen.py" "$COUNT" "$BATCH" "$WORK" || exit 2
+# Brackets mode: verify the toggle actually took in this build — an
+# older binary without the jit_eval_brackets directive would warn and
+# run with brackets bailing, silently comparing AST against AST.
+if [ -n "${JITDIFF_BRACKETS:-}" ]; then
+    printf 'think [jitstats(reset)]\nthink BRPROBE~[strcat(ab,cd)]~\n@pemit #1=BRSTATS~[jitstats()]~\n' > "$WORK/brprobe.txt"
+    rm -f "$WORK"/data/exp.sqlite*
+    $TIMEOUT "$BIN/muxscript" -g "$WORK" -c exp.conf < "$WORK/brprobe.txt" > "$WORK/brprobe.log" 2>&1
+    if ! grep -a "BRSTATS~" "$WORK/brprobe.log" | grep -qE "eval_handled=[1-9]"; then
+        echo "ERROR: jit_eval_brackets did not take effect (old binary or" >&2
+        echo "directive rejected) — a brackets sweep would compare the AST" >&2
+        echo "against itself.  Rebuild with the Phase 4 guard-lift change." >&2
+        exit 2
+    fi
+fi
+
+python3 "$SCRIPT_DIR/gen.py" "$COUNT" "$BATCH" "$WORK" $GEN_FLAGS || exit 2
 
 : > "$WORK/results.txt"
-for bf in "$WORK"/b*.txt; do
+for bf in "$WORK"/bJ*.txt "$WORK"/bI*.txt; do
+    case "$bf" in
+        *bJ*) CONF=exp.conf ;;
+        *)    CONF=int.conf ;;
+    esac
     rm -f "$WORK"/data/exp.sqlite*
-    $TIMEOUT "$BIN/muxscript" -g "$WORK" -c exp.conf < "$bf" > "$bf.log" 2>&1
+    $TIMEOUT "$BIN/muxscript" -g "$WORK" -c "$CONF" < "$bf" > "$bf.log" 2>&1
     grep -aoE "[JI]~[0-9]+~[0-9A-F]*~[0-9A-F]*~" "$bf.log" >> "$WORK/results.txt"
     if grep -aq "Run away" "$bf.log"; then
         echo "WARNING: queue overflow in $(basename "$bf") — lower the batch size." >&2

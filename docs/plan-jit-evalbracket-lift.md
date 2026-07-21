@@ -286,18 +286,44 @@ Add the `!(eval & EV_NOFCHECK)` gate at the `jit_can_handle` call site
 bisecting, mirroring how `sandbox()`/`asteval()` force the AST path
 (`jit_compiler.cpp:4395`, `ast.cpp:2764`).
 
-**Green check (toggle ON):**
-- `letq_fn.mux` TC002 and `overflow_inject_fn.mux` TC010 now route through the
-  JIT and stay green (the two canonical failures).
-- `jit_diff` parity sweep (`run.sh 400`, `SEED=7`, `SEED=13`) — **zero `LOGIC`
-  divergences**, matching the Phase 0 baseline.
-- `jitstats()` shows `eval_handled` up and bracket-driven `eval_bailout` down;
-  `qreg_resyncs>0`.
-- `jit_parity_fn.mux` / `jit_route_parity_fn.mux` / `jit_fold_parity_fn.mux`
-  (all use `asteval({…})` as the AST oracle) stay green.
+**LANDED (2026-07-20), toggle default OFF.** Results and findings:
 
-**Green check (toggle OFF):** identical to pre-Phase-4 — proves the lift is
-cleanly gated.
+- **Toggle:** `jit_eval_brackets` config directive (cf_bool, CA_GOD, default
+  off; runtime-settable via `@admin`). Guard admits terminated brackets when
+  on; unterminated brackets always bail; `EV_NOFCHECK` gated at the call site
+  (that mode is literal passthrough, which the lowerer doesn't model).
+- **Harness upgrades (required for a meaningful green check):**
+  - `jit_diff` J and I sides now run in **separate processes** — the I side
+    always with the toggle off, keeping the eval-bracket bail (= the true
+    production interpreter route) as the oracle. An in-process
+    `asteval({…})`-forced I side was tried first and manufactured ~113 false
+    LOGIC divergences: `fun_asteval` is not flag-faithful (trims a trailing
+    space after an empty-yielding bracket that production preserves) —
+    filed as **#987**.
+  - `JITDIFF_BRACKETS=1` mode: bracket-wrapped corpus (embedded-in-text,
+    adjacent, pure) + toggle in the J-side conf + a canary proving the
+    toggle took.
+  - `SMOKE_EXTRA_CONF` passthrough in the smoke runner for whole-suite
+    toggle-on runs.
+- **The core result:** `letq_fn.mux` TC002 (`letq scoping` — the historical
+  `INNERINNER` failure) and the localize scoping cases **route through the
+  JIT and pass** with the toggle on. Bracket sweep (`JITDIFF_BRACKETS=1`,
+  400 exprs): **0 LOGIC**. The Phases 0–3 groundwork held.
+- **Two pre-existing production JIT bugs witnessed** by the toggle-on smoke
+  run (their TCs carry brackets, so they were AST-carried until the toggle;
+  both then shown to reproduce **bracket-free on today's default route**):
+  - **#988** — maxArgsParsed comma-catenation missing: `sha1(abc,def)`
+    computes `sha1("abc")` (JIT drops `,def`; `ecall_invoke_fun` silently
+    clamps).
+  - **#989** — tier2 `wordpos()` miscounts UTF-8 positions (byte-vs-cluster,
+    #980 family). The sweep corpus is ASCII-only — blind here; UTF-8 corpus
+    mode added to the Phase 5 list.
+
+**Toggle OFF (default):** oracle 7/7, smoke 1310/1310, standard sweep 0
+LOGIC — byte-identical behavior, cleanly gated.
+
+**Gate for Phase 5 (default-on):** #988 and #989 fixed, toggle-on smoke
+fully green, bracket + UTF-8 sweeps clean.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 
