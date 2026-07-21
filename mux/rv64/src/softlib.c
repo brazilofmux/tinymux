@@ -1601,22 +1601,31 @@ char *rv64_hex2dec(char *out, const char **fargs, int nfargs) {
 char *rv64_wordpos(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { rv64_scopy(out, "#-1"); return out; }
 
-    /* Strip color: charpos indexes into the visible (stripped) string,
-     * and fun_wordpos uses cp[charpos-1] — a byte index. */
+    /* Strip color: charpos indexes into the visible (stripped) string. */
     unsigned char stripped[LBUF_SIZE];
     size_t slen = co_strip_color(stripped,
                                  (const unsigned char *)fargs[0],
                                  rv64_slen(fargs[0]));
 
-    /* Bound charpos against the visible code-point count
-     * (fun_wordpos: charpos > 0 && charpos <= ncp). */
-    size_t ncp = co_visible_length(stripped, slen);
+    /* charpos is a 1-based GRAPHEME position (fun_wordpos post-#949):
+     * bound it against the cluster count, not code points — the old
+     * code-point bound plus byte-offset walk returned the wrong word
+     * for any multi-byte text (#989: wordpos(h..é..llo world,6) gave
+     * 1 instead of 2). */
+    size_t nclusters = co_cluster_count(stripped, slen);
     int charpos = satoi(fargs[1]);
-    if (charpos < 1 || (size_t)charpos > ncp) {
+    if (charpos < 1 || (size_t)charpos > nclusters) {
         rv64_scopy(out, "#-1");
         return out;
     }
-    size_t tp = (size_t)(charpos - 1);
+
+    /* Resolve the leading (charpos-1) clusters to a byte offset,
+     * mirroring the interpreter's utf8_next_grapheme walk.
+     * co_mid_cluster on already-stripped data returns the byte length
+     * of those clusters. */
+    unsigned char cbuf[LBUF_SIZE];
+    size_t tp = co_mid_cluster(cbuf, stripped, slen, 0,
+                               (size_t)(charpos - 1));
 
     unsigned char delim = get_delim(fargs, nfargs, 2);
     unsigned char sep[1];
