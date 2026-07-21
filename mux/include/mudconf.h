@@ -58,7 +58,9 @@ struct confdata
     bool    cache_names;        /* Should object names be cached separately */
     bool    jit_eval_brackets;  // JIT may compile [..] eval brackets
                                 // (TINYMUX_JIT builds; inert otherwise).
-                                // docs/plan-jit-evalbracket-lift.md Ph 4.
+                                // Default ON since the Phase 5 flip;
+                                // set 0 to force brackets to the AST.
+                                // docs/plan-jit-evalbracket-lift.md.
     bool    clone_copy_cost;    /* Does @clone copy value? */
     bool    dark_sleepers;      /* Are sleeping players 'dark'? */
     bool    destroy_going_now;  // Does GOING act like DESTROY_OK?

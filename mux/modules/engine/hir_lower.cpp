@@ -2700,6 +2700,20 @@ general_lowering:
         }
     }
 
+    // Function-nesting introspection (fdepth/fcount) reads
+    // mudstate.func_nest_lev / func_invk_ctr, which JIT-compiled
+    // programs do not maintain — native lowering flattens the nest at
+    // compile time, so the counters would read 0/stale.  Bail the
+    // compilation; these are rare diagnostics and the AST answers
+    // them correctly.  (Surfaced by the Phase 5 flip via
+    // nested_depth.mux's Makesmoke-time setup: [cat(cat(cat(
+    // fdepth())))] baked "0" instead of "4".)
+    if (fname == "FDEPTH" || fname == "FCOUNT") {
+        rc.out_exhausted = true;  // force compilation failure
+        uint64_t addr = rc.pool_str("");
+        return h.emit_sconst(addr, "");
+    }
+
     // Lower arguments.
     std::vector<int> args;
     for (auto &child : node->children) {
@@ -3737,6 +3751,18 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                 h.ecalls++;
                 h.needs_jit = true;
                 return result;
+            }
+            if (node->text[1] == '$') {
+                // #$ — switch token (mudstate.switch_token).  The JIT
+                // does not model the switch-token context, and the old
+                // fall-through emitted the literal text "#$" — under
+                // the default-on flip, @switch actions like
+                // [idiv(#$,2)] evaluated idiv("#$",2) = 0 (caught by
+                // repeat_fn.mux's Makesmoke-time setup).  Bail the
+                // compilation so #$-carrying programs stay on the AST.
+                rc.out_exhausted = true;  // force compilation failure
+                uint64_t addr = rc.pool_str("");
+                return h.emit_sconst(addr, "");
             }
         }
 

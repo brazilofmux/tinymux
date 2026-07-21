@@ -249,7 +249,9 @@ fi
 echo ""
 echo "=== Smoke Test Results ==="
 SUCCEEDED=$(grep -c 'Succeeded' smoke.log || true)
-FAILED=$(grep -c 'Failed' smoke.log || true)
+# Case-insensitive: a TC whose failure message says "failed" must not
+# slip through the classifier (nested_depth TC001 did exactly that).
+FAILED=$(grep -ci 'failed' smoke.log || true)
 CRASH_SMOKE=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' smoke.log || true)
 CRASH_NETMUX=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' netmux.log 2>/dev/null || true)
 : "${SUCCEEDED:=0}" "${FAILED:=0}" "${CRASH_SMOKE:=0}" "${CRASH_NETMUX:=0}"
@@ -304,7 +306,7 @@ echo ""
 # Show failures if any.
 if [ "$FAILED" -gt 0 ]; then
     echo "--- Failed tests ---"
-    grep 'Failed' smoke.log
+    grep -i 'failed' smoke.log
     echo ""
 fi
 
