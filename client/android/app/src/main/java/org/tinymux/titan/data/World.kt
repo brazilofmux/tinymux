@@ -20,6 +20,10 @@ data class World(
     val hydraUser: String = "",
     val hydraPass: String = "",
     val hydraGame: String = "",
+    // Last known Hydra session id. Persisted so the next launch can resume via
+    // GetSession(saved_id) instead of re-authenticating (#762). Stored in
+    // EncryptedSharedPreferences alongside the password.
+    val hydraSession: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("name", name)
@@ -34,6 +38,7 @@ data class World(
             put("hydraUser", hydraUser)
             put("hydraPass", hydraPass)
             put("hydraGame", hydraGame)
+            if (hydraSession.isNotEmpty()) put("hydraSession", hydraSession)
         }
     }
 
@@ -52,6 +57,7 @@ data class World(
             hydraUser = obj.optString("hydraUser", ""),
             hydraPass = obj.optString("hydraPass", ""),
             hydraGame = obj.optString("hydraGame", ""),
+            hydraSession = obj.optString("hydraSession", ""),
         )
     }
 }

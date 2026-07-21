@@ -29,6 +29,9 @@ class HydraConnection(
     private val useTls: Boolean = true,
     private val termWidth: Int = 80,
     private val termHeight: Int = 24,
+    // Saved Hydra session id from a previous run. When non-empty we probe it
+    // with GetSession before falling back to Authenticate (#762).
+    resumeSessionId: String = "",
 ) {
     var connected = false; private set
     @Volatile private var intentionalDisconnect = false
@@ -45,8 +48,11 @@ class HydraConnection(
     var onDisconnect: (() -> Unit)? = null
 
     private var channel: ManagedChannel? = null
-    private var sessionId: String = ""
+    private var sessionId: String = resumeSessionId
     private var sessionJob: Job? = null
+
+    /** Current Hydra session id, for persisting across launches (#762). */
+    val currentSessionId: String get() = sessionId
     private val inputLock = Any()
     private val outputLock = Any()
     // Coroutine channel for sending input through the bidi stream.
@@ -115,24 +121,53 @@ class HydraConnection(
                     outputBuffer.clear()
                 }
 
-                // Authenticate
-                val authResp = stub.authenticate(
-                    AuthRequest.newBuilder()
-                        .setUsername(username)
-                        .setPassword(password)
-                        .build()
-                )
-
-                if (!authResp.success) {
-                    val err = authResp.error.ifEmpty { "Authentication failed" }
-                    addScrollback("[Hydra] $err")
-                    launch(mainDispatcher) { onLine?.invoke("[Hydra] $err") }
-                    ch.shutdownNow()
-                    channel = null
-                    return@launch
+                // Session persistence: if we were given a saved session_id,
+                // probe it via GetSession before falling back to Authenticate.
+                // A successful probe means the server still has our session
+                // alive (username, game links, GMCP subscriptions) and we can
+                // skip password auth entirely. On any failure — expired,
+                // unknown, or transport error — fall through to the normal
+                // Authenticate(username, password) path (#762).
+                var resumed = false
+                if (sessionId.isNotEmpty()) {
+                    try {
+                        val info = stub.withAuth().getSession(
+                            SessionRequest.newBuilder().setSessionId(sessionId).build()
+                        )
+                        if (info.sessionId.isNotEmpty() && info.username == username) {
+                            resumed = true
+                            val msg = "[Hydra] Resumed session (${sessionId.take(8)}...)"
+                            addScrollback(msg)
+                            launch(mainDispatcher) { onLine?.invoke(msg) }
+                        } else {
+                            sessionId = ""
+                        }
+                    } catch (_: Exception) {
+                        // Probe failed — discard the stale token and re-auth.
+                        sessionId = ""
+                    }
                 }
 
-                sessionId = authResp.sessionId
+                if (!resumed) {
+                    // Authenticate
+                    val authResp = stub.authenticate(
+                        AuthRequest.newBuilder()
+                            .setUsername(username)
+                            .setPassword(password)
+                            .build()
+                    )
+
+                    if (!authResp.success) {
+                        val err = authResp.error.ifEmpty { "Authentication failed" }
+                        addScrollback("[Hydra] $err")
+                        launch(mainDispatcher) { onLine?.invoke("[Hydra] $err") }
+                        ch.shutdownNow()
+                        channel = null
+                        return@launch
+                    }
+
+                    sessionId = authResp.sessionId
+                }
                 val authedStub = stub.withAuth()
 
                 // Connect to game
