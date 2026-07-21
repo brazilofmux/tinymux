@@ -366,11 +366,24 @@ toggle-on smoke fully green~~ **DONE (2026-07-20)** — three root causes:
 **Toggle-on smoke: 1312/1312 — fully green.** Oracle 7/7; standard sweep
 0 LOGIC; bracket sweep default seed 0 LOGIC.
 
-Remaining for Phase 5 (default-on): **#993** (one state-dependent LOGIC at
-`SEED=7` — batch-only, isolation-clean, precisely the stateful-corpus
-target — and one COLOR-encoding divergence, #980 family), the sweep-corpus
-modes (UTF-8/`chr()`, stateful registers), soak with the toggle on, then
-flip the default and retire `jiteval`.
+Remaining for Phase 5 (default-on): ~~#993~~ **RESOLVED (2026-07-20)** —
+the "state-dependent" LOGIC was deterministic all along: the minimizer's
+isolation replay ran both sides in one toggle-on process (not updated for
+the Phase 4 J/I split), comparing JIT against JIT — fixed in
+`minimize.py` (I side now replays under `int.conf`). The underlying
+divergence: `rv64_after`/`rv64_before` did a raw byte search with no
+`trim_space_sep`, so the default-pattern remainder kept a trailing space
+the interpreter trims (`after(cat(a,),)` → `"b "` vs `"b"`). Rewriting
+both wrappers as exact `fun_after`/`fun_before` mirrors —
+`trim_space_sep` + color-aware `co_search`/`co_visible_advance` — also
+fixed **#980** (colored needle never matched the raw-byte comparison)
+and #993's COLOR case in the same stroke. Locked by bracket-free
+`jit_parity_fn.mux` TC015. Sweeps: standard + brackets × 3 seeds
+(default/7/13) all 0 LOGIC, 0 COLOR; smoke 1315/1315 both toggles.
+
+Still open for Phase 5: the sweep-corpus modes (UTF-8/`chr()`, stateful
+registers), soak with the toggle on, then flip the default and retire
+`jiteval`.
 
 ### Phase 5 — Default on, widen coverage, remove scaffolding
 
