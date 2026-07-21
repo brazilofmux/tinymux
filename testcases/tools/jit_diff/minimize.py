@@ -109,14 +109,14 @@ def variants(expr):
             yield f"{name}({','.join(na)})"
 
 
-def run_mux(script_path):
+def run_mux(script_path, conf="exp.conf"):
     """Run one fresh muxscript process on a script file; return stdout."""
     for fn in os.listdir(os.path.join(WORK, "data")):
         if fn.startswith("exp.sqlite"):
             os.remove(os.path.join(WORK, "data", fn))
     with open(script_path) as inp:
         try:
-            proc = subprocess.run(MUX + ["-g", WORK, "-c", "exp.conf"],
+            proc = subprocess.run(MUX + ["-g", WORK, "-c", conf],
                                   stdin=inp, capture_output=True, text=True,
                                   timeout=TIMEOUT)
             out = proc.stdout
@@ -134,21 +134,34 @@ def run_mux(script_path):
 
 
 def run_chunk(exprs, base):
-    """Run one chunk through a fresh muxscript; return {global_idx: (j, i,
-    differs)}.  base offsets the indices so chunks merge cleanly."""
-    lines = []
+    """Run one chunk through fresh muxscript processes; return
+    {global_idx: (j, i, differs)}.  base offsets the indices so chunks
+    merge cleanly.
+
+    J and I sides run in SEPARATE processes with separate confs,
+    mirroring run.sh: the J side under exp.conf (which may enable
+    jit_eval_brackets), the I side under int.conf (toggle always off,
+    so the eval-bracket bail keeps the production interpreter route).
+    Running both in one toggle-on process compared JIT against JIT and
+    misclassified deterministic divergences as STATE-DEPENDENT."""
+    jlines = []
+    ilines = []
     for i, e in enumerate(exprs):
         gi = base + i
-        lines.append(
+        jlines.append(
             f"@if strlen(setr(0,{e}))="
             f"{{@pemit #1=J~{gi}~[sha1(stripansi(r(0)))]~}},"
             f"{{@pemit #1=J~{gi}~[sha1(stripansi(r(0)))]~}}")
-        lines.append(f"@pemit #1=I~{gi}~[sha1(stripansi({e}))]~")
-    lines.append("@wait 4=@shutdown")
-    bf = os.path.join(WORK, "min_batch.txt")
-    with open(bf, "w") as f:
-        f.write("\n".join(lines) + "\n")
-    out = run_mux(bf)
+        ilines.append(f"@pemit #1=I~{gi}~[sha1(stripansi({e}))]~")
+    jlines.append("@wait 4=@shutdown")
+    ilines.append("@wait 4=@shutdown")
+    jf = os.path.join(WORK, "min_batch_j.txt")
+    iff = os.path.join(WORK, "min_batch_i.txt")
+    with open(jf, "w") as f:
+        f.write("\n".join(jlines) + "\n")
+    with open(iff, "w") as f:
+        f.write("\n".join(ilines) + "\n")
+    out = run_mux(jf) + run_mux(iff, conf="int.conf")
     res = {}
     for ln in out.splitlines():
         for tag in ("J", "I"):

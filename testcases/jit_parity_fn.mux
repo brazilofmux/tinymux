@@ -250,11 +250,36 @@
         eq(strlen(repeat(ab,16383)),32766)
       )=
   {
-    @log smoke=TC014: delete() graphemes + repeat() overflow (JIT route). Succeeded.;
+    @log smoke=TC014: delete() graphemes + repeat() overflow (JIT route). Succeeded.
+  },
+  {
+    @log smoke=TC014: delete() graphemes + repeat() overflow (JIT route). Failed (del=.[delete(strcat(A,chr(233),B),1,1)]. over=.[repeat(ab,16384)]. atmax=[strlen(repeat(ab,16383))]).
+  }
+-
+#
+# Test Case #15 - before()/after() default-pattern trim + color-aware
+# search on the default JIT route (#993/#980).  The rv64 wrappers did a
+# raw byte search with no trim_space_sep: the default-pattern remainder
+# kept a trailing space the interpreter trims, and a colored needle
+# never matched (after(ansi(r,...),ansi(r,cd)) returned empty).
+# Bracket-free conditions.
+#
+&tr.tc015 test_jit_parity_fn=
+  @if cand(
+        strmatch(after(strcat(a,%b,b,%b),),b),
+        eq(strlen(after(strcat(a,%b,b,%b),)),1),
+        strmatch(before(strcat(%b,a,%b,b),),a),
+        strmatch(stripansi(after(ansi(r,ij x cd ab x),ansi(r,cd))),%bab%bx),
+        strmatch(stripansi(before(ansi(r,ij x cd ab x),ansi(r,cd))),ij%bx%b),
+        strmatch(after(a-b-c,-),b-c),
+        strmatch(before(a-b-c,-),a)
+      )=
+  {
+    @log smoke=TC015: before/after trim + color-aware search (JIT route). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC014: delete() graphemes + repeat() overflow (JIT route). Failed (del=.[delete(strcat(A,chr(233),B),1,1)]. over=.[repeat(ab,16384)]. atmax=[strlen(repeat(ab,16383))]).;
+    @log smoke=TC015: before/after trim + color-aware search (JIT route). Failed (a1=.[after(strcat(a,%b,b,%b),)]. c=.[stripansi(after(ansi(r,ij x cd ab x),ansi(r,cd)))].).;
     @trig me/tr.done
   }
 -

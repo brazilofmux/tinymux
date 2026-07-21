@@ -92,6 +92,11 @@ size_t co_insert_at(unsigned char *out, const unsigned char *list,
 size_t co_cluster_count(const unsigned char *data, size_t len);
 size_t co_delete_cluster(unsigned char *out, const unsigned char *data,
                          size_t len, size_t iStart, size_t nCount);
+const unsigned char *co_search(const unsigned char *haystack, size_t hlen,
+                               const unsigned char *needle, size_t nlen);
+const unsigned char *co_visible_advance(const unsigned char *p,
+                                        const unsigned char *pe,
+                                        size_t n, size_t *out_count);
 size_t co_visible_length(const unsigned char *data, size_t len);
 size_t co_tolower(unsigned char *out, const unsigned char *p, size_t len);
 size_t co_toupper(unsigned char *out, const unsigned char *p, size_t len);
@@ -2169,39 +2174,53 @@ static int sis_integer(const char *s) {
  * Pat defaults to space.
  * --------------------------------------------------------------- */
 
+/* Mirror trim_space_sep (functions.cpp): when before()/after() use the
+ * default single-space pattern, the haystack's leading and trailing
+ * spaces are trimmed first (#993 divergence: after(cat(a,),) kept the
+ * trailing space on the JIT route).  fargs are const guest buffers, so
+ * trim via pointer+length instead of mutating. */
+static const char *rv64_trim_space(const char *str, size_t *len_out) {
+    while (*str == ' ') str++;
+    size_t len = rv64_slen(str);
+    while (len > 0 && str[len - 1] == ' ') len--;
+    *len_out = len;
+    return str;
+}
+
 char *rv64_before(char *out, const char **fargs, int nfargs) {
     if (nfargs < 1) {
         out[0] = '\0';
         return out;
     }
 
+    /* Mirror fun_before: default pattern is a single space, with the
+     * haystack space-trimmed; the search and copy are color-aware via
+     * co_search (#980: a colored needle never matched the raw-byte
+     * comparison). */
     const char *str = fargs[0];
-    const char *pat = " ";
-    if (nfargs >= 2 && fargs[1][0] != '\0') {
-        pat = fargs[1];
-    }
-    int pat_len = rv64_slen(pat);
-
-    /* Search for pat in str. */
-    const char *p = str;
-    while (*p) {
-        int match = 1;
-        for (int i = 0; i < pat_len; i++) {
-            if (p[i] != pat[i]) { match = 0; break; }
-        }
-        if (match) {
-            /* Copy everything before this point. */
-            char *op = out;
-            const char *s = str;
-            while (s < p) *op++ = *s++;
-            *op = '\0';
-            return out;
-        }
-        p++;
+    const char *pat = (nfargs >= 2) ? fargs[1] : "";
+    size_t plen = rv64_slen(pat);
+    size_t slen;
+    if (plen == 0) {
+        pat = " ";
+        plen = 1;
+        str = rv64_trim_space(str, &slen);
+    } else {
+        slen = rv64_slen(str);
     }
 
-    /* Pattern not found — return the entire string (matching MUX). */
-    rv64_scopy(out, str);
+    const unsigned char *match = co_search((const unsigned char *)str, slen,
+                                           (const unsigned char *)pat, plen);
+    if (match != 0) {
+        size_t n = (size_t)(match - (const unsigned char *)str);
+        memcpy(out, str, n);
+        out[n] = '\0';
+        return out;
+    }
+
+    /* Pattern not found — return the (possibly trimmed) string. */
+    memcpy(out, str, slen);
+    out[slen] = '\0';
     return out;
 }
 
@@ -2219,26 +2238,33 @@ char *rv64_after(char *out, const char **fargs, int nfargs) {
         return out;
     }
 
+    /* Mirror fun_after: default pattern is a single space, with the
+     * haystack space-trimmed (#993: the raw remainder kept a trailing
+     * space the interpreter trims); search and advance are color-aware
+     * via co_search/co_visible_advance (#980: a colored needle never
+     * matched the raw-byte comparison, returning empty). */
     const char *str = fargs[0];
-    const char *pat = " ";
-    if (nfargs >= 2 && fargs[1][0] != '\0') {
-        pat = fargs[1];
+    const char *pat = (nfargs >= 2) ? fargs[1] : "";
+    size_t plen = rv64_slen(pat);
+    size_t slen;
+    if (plen == 0) {
+        pat = " ";
+        plen = 1;
+        str = rv64_trim_space(str, &slen);
+    } else {
+        slen = rv64_slen(str);
     }
-    int pat_len = rv64_slen(pat);
 
-    /* Search for pat in str. */
-    const char *p = str;
-    while (*p) {
-        int match = 1;
-        for (int i = 0; i < pat_len; i++) {
-            if (p[i] != pat[i]) { match = 0; break; }
-        }
-        if (match) {
-            /* Copy everything after the match. */
-            rv64_scopy(out, p + pat_len);
-            return out;
-        }
-        p++;
+    const unsigned char *match = co_search((const unsigned char *)str, slen,
+                                           (const unsigned char *)pat, plen);
+    if (match != 0) {
+        size_t nPatVis = co_visible_length((const unsigned char *)pat, plen);
+        const unsigned char *aft = co_visible_advance(match,
+            (const unsigned char *)str + slen, nPatVis, 0);
+        size_t n = (size_t)(((const unsigned char *)str + slen) - aft);
+        memcpy(out, aft, n);
+        out[n] = '\0';
+        return out;
     }
 
     /* Pattern not found — return empty. */
