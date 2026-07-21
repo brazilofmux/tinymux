@@ -63,6 +63,12 @@ fi
 if [ -n "${JITDIFF_UTF8:-}" ]; then
     GEN_FLAGS="$GEN_FLAGS --utf8"
 fi
+# Long-register corpus (#996): %q9 values straddling the 256-byte
+# SUBST_SLOT, set by an interpreter preamble and read by the measured
+# expression.  Composes with the other modes.
+if [ -n "${JITDIFF_LONGREG:-}" ]; then
+    GEN_FLAGS="$GEN_FLAGS --longreg"
+fi
 
 DYLD_LIBRARY_PATH="$BIN"; export DYLD_LIBRARY_PATH
 LD_LIBRARY_PATH="$BIN";   export LD_LIBRARY_PATH
