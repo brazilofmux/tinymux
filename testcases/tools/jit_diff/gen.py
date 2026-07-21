@@ -23,6 +23,18 @@ import sys
 WORDS = ["ab", "cd", "ef", "gh", "ij", "kl", "x", "yy", "zzz"]
 COLORS = ["r", "g", "b", "h", "y", "rh", "c", "m"]
 
+# UTF-8 corpus mode (--utf8): multi-byte words drive the byte-vs-cluster
+# divergence class through every position/length-taking function shape
+# (the rv64_wordpos/rv64_delete family).  All are plain literals — safe
+# to embed anywhere a WORDS entry is (no commas, spaces, %, or braces).
+#   é       2-byte Latin
+#   héllo   mixed ASCII/2-byte
+#   日本    3-byte CJK pair
+#   👋🏻      emoji + skin-tone modifier: one grapheme, two code points
+#   café    trailing 2-byte
+UTF8_WORDS = ["é", "héllo", "日本",
+              "\U0001f44b\U0001f3fb", "café"]
+
 
 def leaf_list(colored):
     n = random.randint(1, 5)
@@ -166,6 +178,8 @@ def main():
     batch = int(sys.argv[2]) if len(sys.argv) > 2 else 50
     out = sys.argv[3] if len(sys.argv) > 3 else "."
     brackets = "--brackets" in sys.argv
+    if "--utf8" in sys.argv:
+        WORDS.extend(UTF8_WORDS)
     # Deterministic by default; override via SEED env for variety across runs.
     import os
     random.seed(int(os.environ.get("SEED", "1")))

@@ -275,11 +275,40 @@
         strmatch(before(a-b-c,-),a)
       )=
   {
-    @log smoke=TC015: before/after trim + color-aware search (JIT route). Succeeded.;
+    @log smoke=TC015: before/after trim + color-aware search (JIT route). Succeeded.
+  },
+  {
+    @log smoke=TC015: before/after trim + color-aware search (JIT route). Failed (a1=.[after(strcat(a,%b,b,%b),)]. c=.[stripansi(after(ansi(r,ij x cd ab x),ansi(r,cd)))].).
+  }
+-
+#
+# Test Case #16 - wrapper-audit fixes on the default JIT route: lpos
+# empty/multi-byte patterns (fun_lpos mirror + fold decline), splice
+# search-word counting (countwords semantics), setunion sort-type
+# gating (autodetect/float route to the interpreter), and isnum/isint
+# ParseFloat/is_integer mirrors (exponents, whitespace, IEEE magic
+# strings).  Bracket-free; chr()/strcat defeat constant folding where
+# the runtime wrapper is the target.
+#
+&tr.tc016 test_jit_parity_fn=
+  @if cand(
+        strmatch(lpos(space(3),),0 1 2),
+        strmatch(lpos(abxab,bx),1),
+        strmatch(splice(a,b,%b),a),
+        strmatch(setunion(2 10,1 3,%b,%b,?),1 2 3 10),
+        strmatch(setunion(10.5 9.5,1,%b,%b,f),1 9.5 10.5),
+        eq(isnum(strcat(1,chr(101),3)),1),
+        eq(isnum(strcat(1.5,chr(32))),1),
+        eq(isnum(strcat(In,chr(102))),1),
+        eq(isint(strcat(9,chr(32))),1),
+        eq(isnum(strcat(1,chr(101),33333)),0)
+      )=
+  {
+    @log smoke=TC016: wrapper-audit parity (lpos/splice/sets/isnum/isint). Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC015: before/after trim + color-aware search (JIT route). Failed (a1=.[after(strcat(a,%b,b,%b),)]. c=.[stripansi(after(ansi(r,ij x cd ab x),ansi(r,cd)))].).;
+    @log smoke=TC016: wrapper-audit parity (lpos/splice/sets/isnum/isint). Failed (lpe=.[lpos(space(3),)]. lpm=.[lpos(abxab,bx)]. spl=.[splice(a,b,%b)]. seta=.[setunion(2 10,1 3,%b,%b,?)]. ine=[isnum(strcat(1,chr(101),3))] iis=[isint(strcat(9,chr(32)))]).;
     @trig me/tr.done
   }
 -

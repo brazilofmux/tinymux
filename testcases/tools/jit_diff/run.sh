@@ -58,6 +58,11 @@ if [ -n "${JITDIFF_BRACKETS:-}" ]; then
     printf 'jit_eval_brackets\t1\n' >> "$WORK/exp.conf"
     GEN_FLAGS="--brackets"
 fi
+# UTF-8 corpus: multi-byte words in every generator shape (byte-vs-
+# cluster divergence class).  Composes with JITDIFF_BRACKETS.
+if [ -n "${JITDIFF_UTF8:-}" ]; then
+    GEN_FLAGS="$GEN_FLAGS --utf8"
+fi
 
 DYLD_LIBRARY_PATH="$BIN"; export DYLD_LIBRARY_PATH
 LD_LIBRARY_PATH="$BIN";   export LD_LIBRARY_PATH
