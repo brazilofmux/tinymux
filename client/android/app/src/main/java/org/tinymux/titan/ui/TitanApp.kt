@@ -215,7 +215,7 @@ fun TitanApp() {
 
         val context = ConditionContext(
             isConnected = tab.isConnected,
-            idleSeconds = tab.idleSeconds(),
+            idleSeconds = tab.idleSeconds().toLong(),
         )
         val result = triggerEngine.check(AnsiParser.stripAnsi(line), context)
         tab.touchActivity()
@@ -279,7 +279,7 @@ fun TitanApp() {
 
     fun connectHydra(name: String, host: String, port: Int,
                      hydraUser: String, hydraPass: String, hydraGame: String,
-                     useTls: Boolean = true) {
+                     useTls: Boolean = true, resumeSessionId: String = "") {
         val tab = WorldTab(name)
         tabs.add(tab)
         val tabIndex = tabs.size - 1
@@ -292,13 +292,23 @@ fun TitanApp() {
         val termW = (screenWidthDp / charWidthDp).toInt().coerceIn(40, 200)
         val termH = (screenHeightDp / (appSettings.fontSize * 1.2)).toInt().coerceIn(10, 80)
 
-        val hconn = HydraConnection(name, host, port, hydraUser, hydraPass, hydraGame, useTls, termW, termH)
+        val hconn = HydraConnection(name, host, port, hydraUser, hydraPass, hydraGame, useTls, termW, termH,
+            resumeSessionId)
         tab.hydraConnection = hconn
 
         hconn.onLine = { line -> processServerLine(tabIndex, line) }
         hconn.onConnect = {
             appendLine(tabIndex, "% Connected via Hydra to $host:$port")
             tab.disconnected = false
+            // Persist the (new or resumed) session id so the next launch can
+            // resume via GetSession instead of re-authenticating (#762). Only
+            // saved worlds are updated; ad-hoc /hconnect sessions are not.
+            val sid = hconn.currentSessionId
+            if (sid.isNotEmpty()) {
+                worldRepo.get(name)?.let { w ->
+                    if (w.hydraSession != sid) worldRepo.add(w.copy(hydraSession = sid))
+                }
+            }
             for (cmd in hookRepo.fireEvent("CONNECT")) hconn.sendLine(cmd)
             updateService()
         }
@@ -1135,7 +1145,8 @@ fun TitanApp() {
                 showWorldManager = false
                 if (world.useHydra) {
                     connectHydra(world.name, world.host, world.port,
-                        world.hydraUser, world.hydraPass, world.hydraGame)
+                        world.hydraUser, world.hydraPass, world.hydraGame,
+                        resumeSessionId = world.hydraSession)
                 } else {
                     connectWorld(world.name, world.host, world.port, world.ssl, world.loginCommands)
                 }
