@@ -278,6 +278,8 @@ struct rv_compiler {
     // DMA windows (Tier C): zero-copy host interaction.
     // 4 windows of 16KB each at 0x70000-0x7FFFF.
     static constexpr uint64_t DMA_BASE         = 0x70000;
+    static_assert(QREG_LONGBITS + sizeof(uint64_t) <= DMA_BASE,
+                  "long-register bitmap must stay below the DMA windows");
     static constexpr int      DMA_WINDOW_SIZE  = 16 * 1024;
     static constexpr int      DMA_WINDOW_COUNT = 4;
     static constexpr uint64_t DMA_DESC_BASE    = 0x80000; // descriptor rings (4KB)
