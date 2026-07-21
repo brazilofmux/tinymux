@@ -169,3 +169,4 @@ mux/script/x64/
 mux/ganl/tests/ganl_engine_tests
 mux/ganl/tests/ganl_engine_tests.dSYM/
 mux/ganl/tests/ganl_tests.err
+testcases/soak.log
