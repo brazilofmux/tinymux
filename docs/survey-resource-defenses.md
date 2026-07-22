@@ -646,3 +646,98 @@ ganl 14/14.
 adopted, graduated site thresholds ported, connection-rate limiting ported
 with a different response, ident/rDNS latency self-healing and the separate
 blocklist declined as answering problems our architecture does not have.
+
+## Update (2026-07-22): Rhost `@tor` and `proxy_checker` — declined; SiteMon gap closed
+
+Ashen-Shugar pointed us at `@tor` and the proxy auto-detection. Both examined;
+both declined. The examination did find a real gap in our own work, fixed here.
+
+### `@tor` is not a list — it is a live DNS query per connection
+
+The name misleads. `@tor` (the command, `CA_IMMORTAL`) manages only the
+server's own address seed; it holds no addresses. With `tor_paranoid` on,
+every accepted connection triggers a **synchronous `getaddrinfo()`** against
+`exitlist.torproject.org`, with **no result caching**, positioned *ahead of*
+the blacklist check, the connection-rate throttle, and the permit/forbid
+block. (The static-list mechanism is a separate thing: `tor_pull.sh` feeding
+`@blacklist`.)
+
+That form is disqualifying for us, and for the same reason we declined their
+rDNS auto-learn: it puts a blocking resolver back on the accept path of a
+single-threaded server. Worse, it is self-inflicted amplification — a cheap
+TCP connect forces an expensive DNS round trip — and it sits ahead of the
+rate limits that might otherwise contain it. It also has no whitelist, so a
+legitimate Tor player cannot be exempted by any config. Rhost ships
+`tor_paranoid` off.
+
+**We need no mechanism for this anyway.** Their `@blacklist` sub-lists
+(`/register`, `/noguest`, `/nodns`) exist because a 100k-entry linked list
+would choke their ACL walk. Ours is a BST, so a Tor exit list is just
+`include tor.conf` of `register_site <ip>/32` lines, cron-refreshed. Verified:
+**2500 entries load with zero syntax errors, and an address buried at entry
+1201 is correctly refused.** Graduated thresholds even let an admin say "Tor
+is fine up to N connections" rather than choosing block-or-allow.
+
+### `proxy_checker`: a clever heuristic we still will not ship
+
+Ashen-Shugar reverse-engineered firewall proxy filtering for it, and the logic
+is sound: read `IP_MTU` and `TCP_MAXSEG`, fire when `mtu <= 1500 && mss + 80 <
+mtu` — roughly 40 bytes of *extra* encapsulation beyond the normal header gap,
+the signature of a tunnel or a clamping NAT. Comparing MSS against MTU on the
+same socket is the right call: a genuinely low-MTU path does not trip it.
+
+Declined on portability and on the false-positive class. It is IPv4-only,
+compiled out entirely on macOS and Cygwin (`SOL_IP`/`IP_MTU` are Linux), and
+both `getsockopt` returns go unchecked into uninitialized stack variables.
+Most decisively, the false positives are *mobile* — their own helpfile says
+"Phone-based connections will be seen as proxies (since they essentially
+are)" — a far larger share of players now than when it was written. Rhost
+ships it at 0.
+
+### What we did take: confidence governs durability
+
+The transferable idea is the response architecture, not either detector:
+
+- **Signal confidence governs response durability.** `proxy_checker` answers
+  an admittedly unreliable signal with an *ephemeral per-descriptor flag* that
+  never touches the ACL and does not survive the connection.
+  `lastsite_paranoia` answers a high-confidence signal with a *permanent ACL
+  write*. Same codebase, deliberately different durability.
+- The notification **names the action taken**, not just the detection.
+- The log carries the **raw discriminating values** so a false positive is
+  diagnosable rather than merely disputable.
+- Exemption is checked **before** logging or broadcasting, so a whitelisted
+  source is genuinely silent.
+
+This retroactively validates our shape — all four defenses use transient,
+self-healing responses — and is worth keeping as a standing constraint.
+
+### The gap it found in our own work
+
+Their "always tell a human what the server did" half was missing here. The
+pre-existing `forbid_site` refusal calls `site_mon_send()`, so staff watching
+SiteMon see it; the three defenses added today logged to file only. Under an
+actual attack, staff would have seen the old refusal type and been blind to
+the new ones. All three now broadcast, naming the action:
+
+    SITEMON: [9]  Connection refused [pre-auth limit] from 127.0.0.1.
+    SITEMON: [9]  Connection refused [rate limit] from 127.0.0.1.
+    SITEMON: [9]  Login throttled [failed-login budget spent] from 127.0.0.1.
+
+**The broadcast is damped by `nospam_connect`, and needs it more than the log
+does.** `site_mon_send()` walks every connected descriptor and calls
+`process_output()` per recipient, so an undamped broadcast makes a connection
+flood into an output flood with work proportional to refusals x staff online
+— the same amplification `nospam_connect` exists to stop. One
+`refusal_log_wanted()` call now gates both the log line and the broadcast:
+it advances the run counter, so calling it twice would double-count.
+
+**Verified:** all three broadcasts observed by a wizard with the `SITEMON`
+flag (the gate is `SITEMON` in `FLAG_WORD3`, not `MONITOR`), each in
+isolation; and under ~21 refusals in one run the damping held broadcasts to 2.
+Regression: smoke 1319/1319, stress 8/8, netaddr 57/57, ganl 14/14.
+
+**Rhost follow-up tally: three ports, four declines** — `nospam_connect`,
+graduated thresholds and connection-rate limiting taken; ident/rDNS
+self-healing, the separate blocklist, `@tor` and `proxy_checker` declined,
+each because our architecture already answers the problem.

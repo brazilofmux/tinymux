@@ -733,7 +733,17 @@ public:
             int nWait = 0;
             if (connect_rate_exceeded(d->address, &nWait))
             {
-                if (refusal_log_wanted(addrText[0] != '\0' ? addrText : T("UNKNOWN")))
+                // One damping decision drives BOTH the log line and the staff
+                // broadcast.  refusal_log_wanted() advances the run counter,
+                // so it must be called exactly once per refusal; and the
+                // broadcast needs the damping at least as much as the log
+                // does -- telling every watching wizard about every refused
+                // connection turns a connection flood into an output flood,
+                // with work proportional to refusals x staff online.
+                //
+                const bool bTell = refusal_log_wanted(
+                    addrText[0] != '\0' ? addrText : T("UNKNOWN"));
+                if (bTell)
                 {
                     STARTLOG(LOG_NET | LOG_SECURITY, "NET", "RATE");
                     UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.rate");
@@ -745,6 +755,16 @@ public:
                     g_pILog->log_text(logBuf);
                     free_mbuf(logBuf);
                     ENDLOG;
+
+                    // Tell the humans too, naming the action taken -- staff
+                    // watching SiteMon already see forbid_site refusals, and
+                    // were blind to this one.
+                    //
+                    UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.rate");
+                    d->address.ntop(siteBuf, MBUF_SIZE);
+                    site_mon_send(d->socket, siteBuf, nullptr,
+                        T("Connection refused [rate limit]"));
+                    free_mbuf(siteBuf);
                 }
 
                 // Raw write: the DESC is torn down immediately below, so the
@@ -809,7 +829,9 @@ public:
 
             if (g_dc.max_preauth_sitecons <= nPreauth)
             {
-                if (refusal_log_wanted(addrText[0] != '\0' ? addrText : T("UNKNOWN")))
+                const bool bTell = refusal_log_wanted(
+                    addrText[0] != '\0' ? addrText : T("UNKNOWN"));
+                if (bTell)
                 {
                 STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
                 UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.preauth");
@@ -821,6 +843,12 @@ public:
                 g_pILog->log_text(logBuf);
                 free_mbuf(logBuf);
                 ENDLOG;
+
+                UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.preauth");
+                d->address.ntop(siteBuf, MBUF_SIZE);
+                site_mon_send(d->socket, siteBuf, nullptr,
+                    T("Connection refused [pre-auth limit]"));
+                free_mbuf(siteBuf);
                 }
 
                 // Tell the peer why, so a legitimate player knows to retry
