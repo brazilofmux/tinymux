@@ -718,6 +718,7 @@ struct DRIVER_CONFIG
     int     conn_timeout;
     int     cmd_quota_max;
     int     output_limit;
+    int     input_limit;
     int     default_charset;
     int     max_players;
     int     control_flags;

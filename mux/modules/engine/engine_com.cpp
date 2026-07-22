@@ -3251,6 +3251,7 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     pConfig->conn_timeout       = mudconf.conn_timeout;
     pConfig->cmd_quota_max      = mudconf.cmd_quota_max;
     pConfig->output_limit       = mudconf.output_limit;
+    pConfig->input_limit        = mudconf.input_limit;
     pConfig->default_charset    = mudconf.default_charset;
     pConfig->max_players        = mudconf.max_players;
     pConfig->control_flags      = mudconf.control_flags;

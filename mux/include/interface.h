@@ -50,6 +50,7 @@ struct descriptor_data
   size_t input_size;
   size_t input_tot;
   size_t input_lost;
+  bool input_throttled;   // hysteresis: dropping input past input_limit
   std::deque<std::string> input_queue;
   UTF8 *raw_input_buf;
   UTF8 *raw_input_at;

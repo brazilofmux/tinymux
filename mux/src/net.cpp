@@ -328,6 +328,7 @@ void freeqs(DESC *d)
 
     d->input_queue.clear();
     d->input_size = 0;
+    d->input_throttled = false;
 
     if (d->raw_input_buf)
     {
@@ -399,21 +400,54 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
 {
     bool was_empty = d->input_queue.empty();
 
+    // Normalize to NFC before queuing (never expands the string), so the
+    // enqueued length below matches what net.cpp decrements on dequeue.
+    const UTF8 *qtext = cmd;
+    size_t qlen = len;
+    LBuf nfc_buf = LBuf_Src("save_command");
     if (  CHARSET_UTF8 == d->encoding
        && !utf8_is_nfc(cmd, len))
     {
-        // Normalize to NFC before queuing.  NFC never expands the string.
-        //
-        LBuf nfc_buf = LBuf_Src("save_command");
         size_t nNfc;
         utf8_normalize_nfc(cmd, len, nfc_buf, LBUF_SIZE - 1, &nNfc);
         nfc_buf[nNfc] = '\0';
-        d->input_queue.emplace_back(reinterpret_cast<const char *>(nfc_buf.get()), nNfc);
+        qtext = nfc_buf.get();
+        qlen = nNfc;
     }
-    else
+
+    // Input backlog cap (per connection): pending input commands hold memory
+    // and, on a single-threaded server, a flood arriving faster than the
+    // per-connection command quota drains it starves the whole loop.  Cap the
+    // queued bytes; excess input is dropped (best-effort — commands are not
+    // guaranteed to execute).  input_size is owned here per-line so it stays
+    // exactly in step with the net.cpp dequeue decrement (cmd.size()).
+    // Hysteresis on input_throttled keeps a flood from spamming the log
+    // (which would just move the amplification into logging).
+    if (  0 < g_dc.input_limit
+       && static_cast<size_t>(g_dc.input_limit) < d->input_size + qlen)
     {
-        d->input_queue.emplace_back(reinterpret_cast<const char *>(cmd), len);
+        d->input_lost += qlen;
+        if (!d->input_throttled)
+        {
+            d->input_throttled = true;
+            STARTLOG(LOG_NET, "NET", "READ");
+            UTF8 *buf = alloc_lbuf("save_command.LOG");
+            mux_sprintf(buf, LBUF_SIZE,
+                T("[%u/%s] Input backlog limit (%d) reached; dropping input from "),
+                d->socket, d->addr, g_dc.input_limit);
+            g_pILog->log_text(buf);
+            free_lbuf(buf);
+            if (d->flags & DS_CONNECTED)
+            {
+                g_pILog->log_name(d->player);
+            }
+            ENDLOG;
+        }
+        return;
     }
+
+    d->input_queue.emplace_back(reinterpret_cast<const char *>(qtext), qlen);
+    d->input_size += qlen;
 
     if (was_empty)
     {
@@ -2406,6 +2440,14 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
 
                 d->input_size -= cmd.size();
 
+                // Hysteresis: once the backlog drains below half the cap,
+                // clear the throttle so a later flood logs again.
+                if (  d->input_throttled
+                   && d->input_size < static_cast<size_t>(g_dc.input_limit) / 2)
+                {
+                    d->input_throttled = false;
+                }
+
                 // IDLE command: keep connection alive without resetting idle timer (#590).
                 //
                 const char *pCmd = cmd.data();
@@ -3468,6 +3510,7 @@ void load_restart_db(void)
         d->input_size = 0;
         d->input_tot = 0;
         d->input_lost = 0;
+        d->input_throttled = false;
         d->raw_input_buf = nullptr;
         d->raw_input_at = nullptr;
         d->nOption = 0;

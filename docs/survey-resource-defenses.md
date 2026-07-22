@@ -101,6 +101,42 @@ shape (guest-code back-edge budget that survives superblocking); the reserved
 6. **GANL output drop policy** — replace the 1GiB `length_error` with a
    per-connection drop-oldest matching the DESC-level policy.
 
+## Update (2026-07-21): input backlog cap — measured, recalibrated
+
+Implementing gap #2 first turned up two facts that reshaped it:
+
+- **`input_size` is NOT dead — the memory audit was wrong.** It *is*
+  incremented, in `telnet.cpp:1592` (the audit grepped only `net.cpp`). The
+  real gap was narrower: the counter is maintained but nothing *caps* it. It
+  is also incremented in a telnet *batch* (`nInputBytes`) while the dequeue
+  decrements by `cmd.size()` — a latent drift — and the websocket input path
+  doesn't touch it at all.
+- **The app-level input queue does not grow unbounded in practice.** Measured
+  under a sustained flood (reader thread holding TCP open), `input_size`
+  stayed in the tens of bytes; even with the drain throttled to
+  `command_quota 1` it peaked at ~44. The single-threaded read/drain cadence
+  plus TCP flow control already bound it — a flood piles bytes into the
+  kernel/GANL buffers, not the app command queue. So the unbounded-`input_queue`
+  threat is largely mitigated by the existing architecture.
+
+And a design constraint the maintainer flagged: **input is drop-sensitive**.
+A dropped output line loses old game text (fine); a dropped input line
+silently corrupts a user's paste — a code attribute is one legit ~32KB line,
+`@edit`/multi-attribute uploads are legit bursts. So a drop-based cap is the
+wrong primary mechanism for input; the correct form is **read-side
+backpressure** (stop reading the descriptor when backlogged; TCP holds the
+excess with zero loss), deferred for now.
+
+**What shipped (option a):** the correctness half — `save_command` now owns
+`input_size` per enqueued line, fixing the telnet-batch/dequeue drift and
+covering the websocket path — plus a **high anti-runaway backstop**
+(`input_limit`, default 16×LBUF ≈ 512KB, `<=0` disables) with hysteresis
+logging. The backstop is set far above any interactive burst (verified: two
+back-to-back 30KB attribute pastes store intact, zero drops) and only exists
+to catch a pathological runaway (e.g. a future change that removes the
+implicit bound). Read-side backpressure remains the proper form (option b),
+deferred.
+
 ## Recommended first increment
 
 **#2 (input backlog cap) then #1 (JIT alarm).** #2 is a clean, low-risk
