@@ -139,13 +139,25 @@ void cf_init(void)
     mudconf.idle_interval = 60;
     mudconf.keepalive_interval = 60;
     mudconf.retry_limit = 3;
+    // Failed-login budget per source address.  Generous relative to how often
+    // real players mistype (and dorms/NAT put many unrelated players behind
+    // one address), but 10/minute makes brute-force-by-reconnect -- currently
+    // unbounded -- useless.
+    mudconf.login_fail_limit = 10;
+    mudconf.login_fail_period = 60;
+    // Collapse a consecutive run of refusals from one address rather than
+    // logging each.  Rhost ships the equivalent off (0); we default to 1
+    // because the collapse loses no signal -- you still get the first line
+    // and an exact count -- while closing the refused-flood-fills-the-disk
+    // path by default.
+    mudconf.nospam_connect = 1;
     mudconf.output_limit = 2 * LBUF_SIZE;
     // Pre-auth connections from one source address.  Legit multi-play
     // (dorm/NAT, household, one player on 5+ alts) AUTHENTICATES promptly,
     // so it does not accumulate pre-auth sockets; a slowloris holds many
     // half-open ones.  Refusal is transient and self-healing (a slot frees
     // the moment a peer authenticates or conn_timeout reaps it).
-    mudconf.max_preauth_per_site = 2;
+    mudconf.max_preauth_sitecons = 2;
     // Pool memory budget: 0 = unlimited (off) by default.  No non-zero
     // default is safe across deployments (a 256MB VPS and a 32GB host want
     // very different ceilings), so the admin sizes it per host; enabling it
@@ -1990,7 +2002,7 @@ static CONFPARM conftable[] =
     {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               nullptr,            0},
     {T("output_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.outdb),           nullptr, SIZEOF_PATHNAME},
     {T("input_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
-    {T("max_preauth_per_site"),      cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_preauth_per_site,   nullptr,            0},
+    {T("max_preauth_sitecons"),      cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_preauth_sitecons,   nullptr,            0},
     {T("pool_memory_limit"),         cf_pool_limit,  CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.pool_memory_limit), nullptr,          0},
     {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},
@@ -2039,6 +2051,9 @@ static CONFPARM conftable[] =
     {T("reset_players"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.reset_players),   nullptr,            0},
     {T("reset_site"),                cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,     HC_RESET},
     {T("restrict_home"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.restrict_home),   nullptr,            0},
+    {T("nospam_connect"),            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.nospam_connect,         nullptr,            0},
+    {T("login_fail_limit"),          cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_limit,       nullptr,            0},
+    {T("login_fail_period"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_period,      nullptr,            0},
     {T("retry_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            nullptr,            0},
     {T("robot_cost"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              nullptr,            0},
     {T("robot_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.robot_flags),     nullptr,            0},

@@ -98,4 +98,11 @@ extern port_info main_game_ports[MAX_LISTEN_PORTS];
 #endif
 extern int      num_main_game_ports;
 
+// Connection-refusal log damping (see nospam_connect in net.cpp).  Refusing a
+// connection still costs a log write, so a connection flood becomes a disk
+// flood unless refusal logging is damped.
+//
+extern bool refusal_log_wanted(const UTF8 *pAddr);
+extern void refusal_log_flush(void);
+
 #endif // !INTERFACE_H

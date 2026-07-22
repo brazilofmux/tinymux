@@ -186,7 +186,11 @@ struct confdata
     int     number_guests;      // number of guest characters allowed.
     int     opencost;           /* cost of @open command */
     int     output_limit;       /* Max # chars queued for output */
-    int     max_preauth_per_site; /* Max simultaneous NOT-YET-AUTHENTICATED
+    /* Named after RhostMUSH's max_sitecons, but deliberately NOT the same
+     * knob: theirs caps ALL connections from a site, ours caps only the
+     * unauthenticated ones.  The 'preauth' qualifier keeps a Rhost admin
+     * from reading it as a drop-in equivalent. */
+    int     max_preauth_sitecons; /* Max simultaneous NOT-YET-AUTHENTICATED
                                  * connections from one source address.
                                  * Bounds slowloris / connection-exhaustion
                                  * at the anonymous front door WITHOUT
@@ -215,6 +219,18 @@ struct confdata
     int     queuemax;           /* max commands a player may have in queue */
     int     references_per_hour;/* Maximum allowed @reference adds per hour per object */
     int     retry_limit;        /* close conn after this many bad logins */
+    int     login_fail_limit;   /* Burst of failed logins allowed from one
+                                 * source address; the budget refills over
+                                 * login_fail_period.  retry_limit is
+                                 * per-SOCKET, so without this a reconnect
+                                 * buys a fresh batch forever.  0 = off. */
+    int     login_fail_period;  /* Seconds over which the failed-login budget
+                                 * fully refills. */
+    int     nospam_connect;     /* Damp connection-refusal logging so that a
+                                 * refused flood cannot become a disk flood.
+                                 * 0=log all, 1=collapse a consecutive run
+                                 * from one address into first+summary,
+                                 * 2=log none.  (RhostMUSH-compatible.) */
     int     robotcost;          /* cost of @robot command */
     int     room_quota;         /* quota needed to make a room */
     int     sacadjust;          /* sacrifice earns (obj_cost/sfactor) + sadj */

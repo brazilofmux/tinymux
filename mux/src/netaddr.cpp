@@ -1303,6 +1303,41 @@ bool mux_sockaddr::same_address(const mux_sockaddr &it) const
     return false;
 }
 
+// Throttling key for this source address.
+//
+// IPv4 keys on the full 32-bit address.  IPv6 keys on the /64 PREFIX, not the
+// full address: a single IPv6 customer is normally handed a whole /64, so one
+// host can source 2**64 distinct addresses.  Keying a per-source table on the
+// full v6 address would let one attacker both evade the throttle completely
+// and flood the table with single-use entries.  /64 is the allocation unit, so
+// it is the unit that must be throttled.
+//
+size_t mux_sockaddr::source_key(UTF8 *pKey, size_t nKeyMax) const
+{
+    switch (u.sa.sa_family)
+    {
+#if defined(HAVE_SOCKADDR_IN)
+    case AF_INET:
+        if (nKeyMax < 4)
+        {
+            return 0;
+        }
+        memcpy(pKey, &u.sai.sin_addr, 4);
+        return 4;
+#endif
+#if defined(HAVE_SOCKADDR_IN6)
+    case AF_INET6:
+        if (nKeyMax < 8)
+        {
+            return 0;
+        }
+        memcpy(pKey, &u.sai6.sin6_addr, 8);
+        return 8;
+#endif
+    }
+    return 0;
+}
+
 bool mux_sockaddr::operator==(const mux_sockaddr &it) const
 {
     if (it.u.sa.sa_family != u.sa.sa_family)
