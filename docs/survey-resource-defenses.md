@@ -79,6 +79,7 @@ shape (guest-code back-edge budget that survives superblocking); the reserved
 | Guest restrictions | Yes | pool cap 30, `CA_NO_GUEST` commands |
 | **Per-source-IP connection cap** | **Yes (2026-07-22)** | `max_preauth_sitecons`=2 caps *unauthenticated* connections per source address; authenticated sessions are never counted — see the update below |
 | **Failed-login throttle per-IP** | **Yes (2026-07-22)** | `login_fail_limit`=10 per `login_fail_period`=60s, token bucket per source (v6 keyed by /64) — see the update below |
+| **Connection-rate limit (churn)** | **Yes (2026-07-22)** | `max_lastsite_cnt`=40 per `min_con_attempt`=60s, token bucket per source — see the update below |
 | **Input rate / backlog cap at read boundary** | **NO — GAP** | see `d->input_size` dead counter; only `d->quota` (command-execution token bucket, 100 +1/s) throttles at *dequeue*, not at the read |
 
 ## Gaps, ranked for defensive value
@@ -573,3 +574,75 @@ Two ports, two informed declines — which is roughly the expected yield from
 reading another implementation, and the declines were worth the reading time
 because each one required locating the mechanism in our own code before ruling
 on it.
+
+## Update (2026-07-22): per-source connection-rate limit (churn)
+
+The Rhost item my own follow-up list skipped. Prompted by Ambrosia posting the
+`max_sitecons` / `max_lastsite_cnt` / `lastsite_paranoia` / `min_con_attempt`
+wizhelp entries, which made it obvious that repeat-connect spam had been
+surveyed but never adjudicated.
+
+**The vector was genuinely uncovered.** `max_preauth_sitecons` bounds how many
+pre-auth connections are held **at once**; `login_fail_limit` bounds **failed
+logins**. An attacker who connects and immediately disconnects — never logging
+in, never failing a login — is touched by neither, while every cycle still
+costs an accept, a `DESC`, the welcome screen's file dump, the site checks and
+a log line.
+
+- `max_lastsite_cnt` (default **40**, `0`=off) — connections allowed from one
+  source address per window.
+- `min_con_attempt` (default **60** seconds) — the window over which that
+  budget fully refills.
+
+Both names are Rhost's. Checked in the GANL accept path *before* the pre-auth
+cap (it is the cheaper test), and only **accepted** connections are charged: a
+refused attempt costs the attacker nothing extra, but charging it would hold a
+shared address at zero for as long as one attacker kept trying, starving the
+legitimate users behind it of the refill.
+
+### Two deliberate differences from Rhost
+
+- **The response is a transient refusal, not their `lastsite_paranoia`
+  auto-register/auto-forbid.** A permanent sitelock earned by a burst is
+  precisely the wrong answer on a shared address: one abuser in a dorm would
+  lock out the whole building until an admin noticed and undid it by hand.
+  A refusal that heals as the bucket refills costs a legitimate player
+  seconds. Admins who want the permanent form already have `forbid_site`,
+  now with graduated thresholds. We therefore ship **no** `lastsite_paranoia`
+  knob at all rather than one whose values mean something different from
+  theirs.
+- **The counting is a true per-source bucket.** Rhost keeps a single
+  "last site" slot, so only *consecutive* connections from one address count
+  and one interleaved connection from anywhere else resets the counter —
+  trivially walked around by alternating two addresses. Being keyed per source
+  (v6 by /64), ours cannot be reset that way.
+
+### Why the default is 40/60 and not Rhost's 20/60
+
+Ours counts strictly harder than theirs *and* is on by default where theirs is
+gated behind `lastsite_paranoia 0`, so the same number would bite considerably
+harder. 40/60s still cuts churn from **unlimited** to 40/minute — three orders
+of magnitude — while clearing the burst that actually matters: a whole dorm
+reconnecting at once after a reboot. Verified: 30 connect-and-login cycles
+from a single address at the shipping default were **30 accepted / 0 refused**.
+
+### Implementation note
+
+The failed-login bucket was generalized rather than copied: one
+`source_bucket` mechanism (fixed 512-slot table, lazy refill, least-suspicious
+eviction, `/64` v6 keying) now backs both `g_login_fail` and `g_connect_rate`.
+Two defenses on one tested mechanism, with no second copy to drift.
+
+**Verified:** at `max_lastsite_cnt 10 / min_con_attempt 60` with the pre-auth
+cap and login-fail throttle both disabled — proving this defense alone catches
+it — pure connect/disconnect churn ran 11 cycles then was refused, with the
+`NET/RATE` log line damped by `nospam_connect` to one entry. At 5/10s, 5 of 12
+rapid cycles were refused and a connection 8s later succeeded (self-healing).
+Regression at the shipping default: smoke 1319/1319, stress 8/8 (its 16
+simultaneous connections from one address still pass), netaddr 57/57,
+ganl 14/14.
+
+**This genuinely closes the RhostMUSH follow-up list:** `nospam_connect`
+adopted, graduated site thresholds ported, connection-rate limiting ported
+with a different response, ident/rDNS latency self-healing and the separate
+blocklist declined as answering problems our architecture does not have.

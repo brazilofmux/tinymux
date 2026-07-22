@@ -3249,6 +3249,8 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     pConfig->retry_limit        = mudconf.retry_limit;
     pConfig->login_fail_limit   = mudconf.login_fail_limit;
     pConfig->login_fail_period  = mudconf.login_fail_period;
+    pConfig->max_lastsite_cnt   = mudconf.max_lastsite_cnt;
+    pConfig->min_con_attempt    = mudconf.min_con_attempt;
     pConfig->nospam_connect     = mudconf.nospam_connect;
     pConfig->idle_timeout       = mudconf.idle_timeout;
     pConfig->conn_timeout       = mudconf.conn_timeout;

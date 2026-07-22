@@ -712,6 +712,74 @@ public:
             return ganl::InvalidSessionId;
         }
 
+        // Connection-rate limit (per source address).
+        //
+        // Checked BEFORE the pre-auth cap because it is the cheaper test and
+        // catches the case the pre-auth cap structurally cannot: an attacker
+        // who connects and immediately disconnects never accumulates
+        // concurrent sockets, and never attempts a login, so neither
+        // max_preauth_sitecons nor login_fail_limit ever sees them -- while
+        // every cycle still costs an accept, a DESC, the welcome file dump,
+        // the site checks and a log line.
+        //
+        // The refusal is transient by design.  Rhost answers this with an
+        // automatic register/forbid sitelock; on a shared address that is the
+        // wrong answer, because one abuser in a dorm would lock out the whole
+        // building until an admin undid it by hand.  A refusal that heals as
+        // the bucket refills costs a legitimate player seconds instead.
+        //
+        if (haveSockAddr)
+        {
+            int nWait = 0;
+            if (connect_rate_exceeded(d->address, &nWait))
+            {
+                if (refusal_log_wanted(addrText[0] != '\0' ? addrText : T("UNKNOWN")))
+                {
+                    STARTLOG(LOG_NET | LOG_SECURITY, "NET", "RATE");
+                    UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.rate");
+                    mux_sprintf(logBuf, MBUF_SIZE,
+                        T("[%u/%s] Refused: connection rate exceeded "
+                          "(max_lastsite_cnt %d per %ds); %ds remaining."),
+                        d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"),
+                        g_dc.max_lastsite_cnt, g_dc.min_con_attempt, nWait);
+                    g_pILog->log_text(logBuf);
+                    free_mbuf(logBuf);
+                    ENDLOG;
+                }
+
+                // Raw write: the DESC is torn down immediately below, so the
+                // normal output queue would never be flushed.
+                //
+                {
+                    static const char sMsg[] =
+                        "Too many connections from your address.  Please wait "
+                        "a moment and try again.\r\n";
+                    const char *pMsg = sMsg;
+                    int nRemaining = static_cast<int>(sizeof(sMsg) - 1);
+                    while (0 < nRemaining)
+                    {
+                        int cnt = SOCKET_WRITE(d->socket, pMsg, nRemaining, 0);
+                        if (cnt < 0)
+                        {
+                            break;
+                        }
+                        nRemaining -= cnt;
+                        pMsg += cnt;
+                    }
+                }
+
+                adapter_.free_desc2(d);
+                return ganl::InvalidSessionId;
+            }
+
+            // Charge only connections we actually accept.  A refused attempt
+            // costs the attacker nothing extra, but charging it would hold a
+            // shared address at zero for as long as one attacker kept trying,
+            // starving the legitimate users behind it of the refill.
+            //
+            connect_rate_charge(d->address);
+        }
+
         // Pre-authentication connection cap (per source address).
         //
         // Slowloris / descriptor-exhaustion holds many half-open sockets that
