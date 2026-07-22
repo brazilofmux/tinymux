@@ -714,6 +714,8 @@ struct DRIVER_CONFIG
     UTF8    ip_address[128];
     bool    use_hostname;
     int     retry_limit;
+    int     login_fail_limit;
+    int     login_fail_period;
     int     idle_timeout;
     int     conn_timeout;
     int     cmd_quota_max;

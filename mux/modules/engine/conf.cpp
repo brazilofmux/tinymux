@@ -139,6 +139,12 @@ void cf_init(void)
     mudconf.idle_interval = 60;
     mudconf.keepalive_interval = 60;
     mudconf.retry_limit = 3;
+    // Failed-login budget per source address.  Generous relative to how often
+    // real players mistype (and dorms/NAT put many unrelated players behind
+    // one address), but 10/minute makes brute-force-by-reconnect -- currently
+    // unbounded -- useless.
+    mudconf.login_fail_limit = 10;
+    mudconf.login_fail_period = 60;
     mudconf.output_limit = 2 * LBUF_SIZE;
     // Pre-auth connections from one source address.  Legit multi-play
     // (dorm/NAT, household, one player on 5+ alts) AUTHENTICATES promptly,
@@ -2039,6 +2045,8 @@ static CONFPARM conftable[] =
     {T("reset_players"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.reset_players),   nullptr,            0},
     {T("reset_site"),                cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,     HC_RESET},
     {T("restrict_home"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.restrict_home),   nullptr,            0},
+    {T("login_fail_limit"),          cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_limit,       nullptr,            0},
+    {T("login_fail_period"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_period,      nullptr,            0},
     {T("retry_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            nullptr,            0},
     {T("robot_cost"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              nullptr,            0},
     {T("robot_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.robot_flags),     nullptr,            0},

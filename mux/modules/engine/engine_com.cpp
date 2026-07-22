@@ -3247,6 +3247,8 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     safe_copy_str(pConfig->ip_address, sizeof(pConfig->ip_address), mudconf.ip_address);
     pConfig->use_hostname       = mudconf.use_hostname;
     pConfig->retry_limit        = mudconf.retry_limit;
+    pConfig->login_fail_limit   = mudconf.login_fail_limit;
+    pConfig->login_fail_period  = mudconf.login_fail_period;
     pConfig->idle_timeout       = mudconf.idle_timeout;
     pConfig->conn_timeout       = mudconf.conn_timeout;
     pConfig->cmd_quota_max      = mudconf.cmd_quota_max;

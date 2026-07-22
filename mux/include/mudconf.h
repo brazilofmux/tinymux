@@ -215,6 +215,13 @@ struct confdata
     int     queuemax;           /* max commands a player may have in queue */
     int     references_per_hour;/* Maximum allowed @reference adds per hour per object */
     int     retry_limit;        /* close conn after this many bad logins */
+    int     login_fail_limit;   /* Burst of failed logins allowed from one
+                                 * source address; the budget refills over
+                                 * login_fail_period.  retry_limit is
+                                 * per-SOCKET, so without this a reconnect
+                                 * buys a fresh batch forever.  0 = off. */
+    int     login_fail_period;  /* Seconds over which the failed-login budget
+                                 * fully refills. */
     int     robotcost;          /* cost of @robot command */
     int     room_quota;         /* quota needed to make a room */
     int     sacadjust;          /* sacrifice earns (obj_cost/sfactor) + sadj */

@@ -165,6 +165,20 @@ static MUX_SOCKADDR sockaddr_v6_port(const char *ip, unsigned short port)
     return MUX_SOCKADDR(reinterpret_cast<const struct sockaddr *>(&sin6));
 }
 
+// Assert a plain boolean expectation.
+static void expect_bool(bool got, const char *label)
+{
+    if (got)
+    {
+        g_pass++;
+    }
+    else
+    {
+        g_fail++;
+        printf("FAIL: %s\n", label);
+    }
+}
+
 // Assert same_address(a, b) == want.  Also asserts the relationship to
 // operator==, which differs precisely by including the port.
 static void expect_same_addr(MUX_SOCKADDR a, MUX_SOCKADDR b, bool want,
@@ -340,6 +354,43 @@ int main()
             printf("FAIL: same_address must ignore the port where "
                    "operator== does not\n");
         }
+    }
+
+    // --- source_key: throttling key, IPv6 collapsed to its /64 -----------
+    // A per-source table keyed on the FULL v6 address is worthless: one
+    // customer normally holds a whole /64, so a single host can source 2**64
+    // addresses -- evading any per-source throttle and flooding the table
+    // with single-use entries at the same time.  Key on the /64.
+    {
+        UTF8 k1[8], k2[8];
+        MUX_SOCKADDR v4a = sockaddr_v4_port("192.0.2.10", 1);
+        MUX_SOCKADDR v4b = sockaddr_v4_port("192.0.2.11", 2);
+        size_t n1 = v4a.source_key(k1, sizeof(k1));
+        size_t n2 = v4b.source_key(k2, sizeof(k2));
+        expect_bool(4 == n1 && 4 == n2, "source_key v4 length is 4");
+        expect_bool(0 != memcmp(k1, k2, 4), "source_key v4 distinguishes hosts");
+
+        // Same /64, wildly different interface identifiers -> ONE key.
+        MUX_SOCKADDR s1 = sockaddr_v6_port("2001:db8:1:2::1", 1);
+        MUX_SOCKADDR s2 = sockaddr_v6_port("2001:db8:1:2:ffff:ffff:ffff:ffff", 2);
+        n1 = s1.source_key(k1, sizeof(k1));
+        n2 = s2.source_key(k2, sizeof(k2));
+        expect_bool(8 == n1 && 8 == n2, "source_key v6 length is 8 (/64)");
+        expect_bool(0 == memcmp(k1, k2, 8),
+                    "source_key v6 collapses a whole /64 to one key");
+
+        // A different /64 must be a different key.
+        MUX_SOCKADDR s3 = sockaddr_v6_port("2001:db8:1:3::1", 1);
+        n2 = s3.source_key(k2, sizeof(k2));
+        expect_bool(0 != memcmp(k1, k2, 8), "source_key v6 separates /64s");
+
+        // Differing lengths keep v4 and v6 keys from ever colliding.
+        expect_bool(v4a.source_key(k1, sizeof(k1))
+                 != s1.source_key(k2, sizeof(k2)),
+                    "source_key lengths differ across families");
+
+        // Too small a buffer must fail closed, not overrun.
+        expect_bool(0 == s1.source_key(k1, 7), "source_key rejects short buffer");
     }
 
     printf("\n=== netaddr compare_to: %d passed, %d failed ===\n",

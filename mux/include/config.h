@@ -530,6 +530,11 @@ public:
     // grouping needs this instead.
     bool same_address(const mux_sockaddr &it) const;
 
+    // Throttling key for this source: 4 bytes for IPv4, the /64 prefix (8
+    // bytes) for IPv6.  Returns the length written, or 0 for an unsupported
+    // family.  Lengths differ per family, so keys never collide across them.
+    size_t source_key(UTF8 *pKey, size_t nKeyMax) const;
+
 private:
     void Clear();
     union

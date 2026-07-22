@@ -78,7 +78,7 @@ shape (guest-code back-edge budget that survives superblocking); the reserved
 | Max connected players | Yes, off by default | `max_players`=-1 |
 | Guest restrictions | Yes | pool cap 30, `CA_NO_GUEST` commands |
 | **Per-source-IP connection cap** | **Yes (2026-07-22)** | `max_preauth_per_site`=2 caps *unauthenticated* connections per source address; authenticated sessions are never counted — see the update below |
-| **Failed-login throttle per-IP** | **NO — GAP** | `retry_limit`=3 is **per-socket** (`net.cpp:1829`); reconnect gives unlimited fresh batches, no lockout/delay/per-IP memory |
+| **Failed-login throttle per-IP** | **Yes (2026-07-22)** | `login_fail_limit`=10 per `login_fail_period`=60s, token bucket per source (v6 keyed by /64) — see the update below |
 | **Input rate / backlog cap at read boundary** | **NO — GAP** | see `d->input_size` dead counter; only `d->quota` (command-execution token bucket, 100 +1/s) throttles at *dequeue*, not at the read |
 
 ## Gaps, ranked for defensive value
@@ -260,3 +260,75 @@ authenticating a pending connection immediately frees a slot for a new one; and
 dorm / household / five-alts case is untouched. Regression: smoke 1319/1319,
 stress 8/8 (its 16 simultaneous logins from one address still pass), netaddr
 39/39, ganl 14/14.
+
+## Update (2026-07-22): per-source failed-login throttle
+
+`retry_limit` (3) is **per-socket**: after three bad passwords the connection
+closes and the attacker reconnects for three more. Nothing remembers anything
+across connections, so brute-force-by-reconnect was unbounded. This adds that
+memory as a token bucket per source address, consumed only by failed
+*connect* attempts:
+
+- `login_fail_limit` (default **10**, `0`=off) — burst of failed logins allowed
+  from one source.
+- `login_fail_period` (default **60** seconds) — the interval over which that
+  budget fully refills. Sustained rate = limit/period, so the default is
+  10/minute against a previously unlimited rate.
+
+Checked in `check_connect` **before** `ConnectPlayer`, so a throttled source
+also stops costing us a password hash per guess. Guests are exempt (fixed
+password, separately bounded by the guest pool). On refusal the socket is left
+open and `retries_left` untouched — the attempt never reached a password check,
+so it is not a failed login — and `conn_timeout` still reaps an idle one.
+
+### Two shapes of this defense that are actively harmful, and were rejected
+
+- **Per-account lockout.** Player names are public (WHO, in-game, the
+  directory). A per-account lockout lets anyone lock any player — including a
+  wizard — out of their own game by spamming failures at their name. That
+  trades a brute-force risk for a guaranteed griefing tool.
+- **A delay before answering a failed login.** The classic anti-brute-force
+  move, and impossible here: this server is single-threaded, so sleeping to
+  slow one attacker stops the world for every other player. The throttle must
+  be non-blocking, so it refuses rather than stalls.
+
+### Keying: IPv6 by /64, not by address
+
+A single IPv6 customer normally holds a whole /64, so one host can source 2⁶⁴
+distinct addresses. Keying a per-source table on the full v6 address would let
+one attacker *both* evade the throttle entirely *and* flood the table with
+single-use entries. `mux_sockaddr::source_key()` therefore returns the 4-byte
+v4 address or the 8-byte v6 **/64 prefix** — the allocation unit is the unit
+that must be throttled. Lengths differ per family, so keys never collide
+across them. Covered by 7 unit tests in `tests/netaddr`.
+
+### The table must not become the resource it protects
+
+Fixed array of 512 slots, scanned linearly — no allocation, no growth, nothing
+to flood. It is consulted only on login attempts, which are themselves already
+bounded by `max_preauth_per_site`. When full, eviction takes the **least**
+suspicious entry (the fullest bucket, oldest as tie-break), so table pressure
+never costs us the record of an active attacker. Fully-refilled buckets carry
+no information and are the first to go.
+
+### The dorm cost is real, bounded, and deliberate
+
+Many unrelated players share one address, so an exhausted bucket does briefly
+refuse legitimate players from that address — including ones typing the correct
+password. It is bounded (the bucket refills continuously; the wait is seconds,
+not a lockout), the default budget is generous relative to how often real
+players mistype, and an admin can widen or disable it. There is deliberately
+**no** "this source already has an authenticated session" exemption: it would
+read as dorm-friendly while handing a full bypass to exactly the attacker who
+worries us most — an existing player going after someone else's account.
+
+**Verified** on a live netmux at `login_fail_limit 3` / `login_fail_period 600`
+(refill negligible during the run): guesses 1–3 rejected normally, 4–6 refused
+with the wait message, **each from a fresh connection** — i.e. reconnecting no
+longer buys a fresh batch, which is the whole point. A correct password is also
+refused while over budget (the documented cost). At limit 5 / period 20s the
+budget demonstrably refills and the correct password succeeds again. Both the
+`CON/THR` log line and the earlier `NET/SITE` pre-auth line were confirmed to
+emit (note: `netmux` needs `-e -` to send the game log to stderr; without it
+the log goes to a file and looks absent). Regression: smoke 1319/1319, stress
+8/8, netaddr 46/46, ganl 14/14.

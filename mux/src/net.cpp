@@ -1710,6 +1710,194 @@ void init_logout_cmdtab(void)
     }
 }
 
+// ---------------------------------------------------------------------------
+// Per-source failed-login throttle.
+//
+// `retry_limit` (default 3) is per-SOCKET: after three bad passwords the
+// connection closes, and the attacker simply reconnects for three more.  There
+// is no memory across connections, so brute-force-by-reconnect is unbounded.
+// This adds that memory as a token bucket per source address.
+//
+// Two shapes of this defense are actively HARMFUL in a MUSH and are not used
+// here:
+//
+//   * A per-ACCOUNT lockout.  Player names are public (WHO, in-game, the
+//     directory), so anyone could lock any player -- including a wizard --
+//     out of their own game by spamming failures at their name.  That trades
+//     a brute-force risk for a guaranteed griefing tool.
+//
+//   * A delay before answering a failed login.  This server is
+//     single-threaded; sleeping to slow one attacker stops the world for
+//     every other player.  The throttle must be non-blocking, so it refuses
+//     rather than stalls.
+//
+// The dorm/NAT tradeoff is real and deliberate: many unrelated players share
+// one address, so an exhausted bucket does briefly refuse legitimate players
+// from that address.  It is bounded (the bucket refills continuously, so the
+// wait is seconds, not a lockout), the default budget is generous relative to
+// how often real players mistype, and an admin can widen or disable it.  Note
+// there is deliberately no "this source already has an authenticated session"
+// exemption: it would read as dorm-friendly but hand a full bypass to exactly
+// the attacker who worries us most -- an existing player going after someone
+// else's account.
+//
+#define LOGIN_FAIL_SLOTS 512
+
+typedef struct
+{
+    size_t nKey;         // 0 => slot free
+    UTF8   aKey[8];      // v4 address, or v6 /64 prefix
+    double tokens;       // remaining failure budget
+    int64_t tLast;        // when `tokens` was last brought current (seconds)
+} login_fail_bucket;
+
+static login_fail_bucket g_login_fail[LOGIN_FAIL_SLOTS];
+
+// Failures per second that the bucket regains.
+//
+static double login_fail_rate(void)
+{
+    int nPeriod = g_dc.login_fail_period;
+    if (nPeriod <= 0)
+    {
+        nPeriod = 1;
+    }
+    return static_cast<double>(g_dc.login_fail_limit) / nPeriod;
+}
+
+// Find the bucket for this source, bringing its token count current.  With
+// bCreate, allocate one if absent -- evicting the LEAST suspicious entry (the
+// fullest bucket) when the table is full, so that pressure never costs us the
+// record of an active attacker.  The table is a fixed array scanned linearly:
+// it is consulted only on login attempts (themselves already bounded by
+// max_preauth_per_site), and a defense must not become the resource it
+// protects -- a growable table is one more thing to flood.
+//
+static login_fail_bucket *login_fail_find(const UTF8 *pKey, size_t nKey,
+                                          int64_t tNow, bool bCreate)
+{
+    login_fail_bucket *pFree = nullptr;
+    login_fail_bucket *pEvict = nullptr;
+    for (int i = 0; i < LOGIN_FAIL_SLOTS; i++)
+    {
+        login_fail_bucket *p = &g_login_fail[i];
+        if (0 == p->nKey)
+        {
+            if (nullptr == pFree)
+            {
+                pFree = p;
+            }
+            continue;
+        }
+
+        if (  p->nKey == nKey
+           && 0 == memcmp(p->aKey, pKey, nKey))
+        {
+            double t = p->tokens + (tNow - p->tLast) * login_fail_rate();
+            if (t >= g_dc.login_fail_limit)
+            {
+                t = g_dc.login_fail_limit;
+            }
+            p->tokens = t;
+            p->tLast = tNow;
+            return p;
+        }
+
+        if (  nullptr == pEvict
+           || p->tokens > pEvict->tokens
+           || (  p->tokens == pEvict->tokens
+              && p->tLast < pEvict->tLast))
+        {
+            pEvict = p;
+        }
+    }
+
+    if (!bCreate)
+    {
+        return nullptr;
+    }
+
+    login_fail_bucket *p = (nullptr != pFree) ? pFree : pEvict;
+    if (nullptr == p)
+    {
+        return nullptr;
+    }
+    p->nKey = nKey;
+    memcpy(p->aKey, pKey, nKey);
+    p->tokens = g_dc.login_fail_limit;
+    p->tLast = tNow;
+    return p;
+}
+
+// True if this source has spent its failure budget.  When it has, *pWait gets
+// the whole seconds until one attempt is affordable again.  A source with no
+// recorded failures has no bucket and is always allowed.
+//
+static bool login_fail_over_budget(const MUX_SOCKADDR &sa, int *pWait)
+{
+    if (g_dc.login_fail_limit <= 0)
+    {
+        return false;
+    }
+
+    UTF8 aKey[8];
+    size_t nKey = sa.source_key(aKey, sizeof(aKey));
+    if (0 == nKey)
+    {
+        return false;
+    }
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    login_fail_bucket *p = login_fail_find(aKey, nKey,
+        static_cast<int64_t>(ltaNow.ReturnSeconds()), false);
+    if (  nullptr == p
+       || 1.0 <= p->tokens)
+    {
+        return false;
+    }
+
+    double rate = login_fail_rate();
+    int nWait = (0.0 < rate) ? static_cast<int>((1.0 - p->tokens) / rate) + 1 : 1;
+    if (nullptr != pWait)
+    {
+        *pWait = nWait;
+    }
+    return true;
+}
+
+// Charge one failed login attempt against this source.
+//
+static void login_fail_record(const MUX_SOCKADDR &sa)
+{
+    if (g_dc.login_fail_limit <= 0)
+    {
+        return;
+    }
+
+    UTF8 aKey[8];
+    size_t nKey = sa.source_key(aKey, sizeof(aKey));
+    if (0 == nKey)
+    {
+        return;
+    }
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    login_fail_bucket *p = login_fail_find(aKey, nKey,
+        static_cast<int64_t>(ltaNow.ReturnSeconds()), true);
+    if (nullptr == p)
+    {
+        return;
+    }
+
+    p->tokens -= 1.0;
+    if (p->tokens < 0.0)
+    {
+        p->tokens = 0.0;
+    }
+}
+
 static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logreason,
                      DESC *d, int disconnect_reason,
                      dbref player, int filecache, UTF8 *motd_msg, UTF8 *command,
@@ -1844,6 +2032,44 @@ static bool check_connect(DESC *d, UTF8 *msg)
             }
         }
 
+        // Has this source spent its failure budget?  Checked BEFORE the
+        // password test, so a source under throttle also stops costing us the
+        // password hash on every guess.  Guests are exempt: they authenticate
+        // with a fixed password and are separately bounded by the guest pool,
+        // so a full pool would otherwise charge failures against the site.
+        //
+        int nWait = 0;
+        if (  !isGuest
+           && login_fail_over_budget(d->address, &nWait))
+        {
+            UTF8 *tbuf = alloc_mbuf("check_conn.throttle");
+            mux_sprintf(tbuf, MBUF_SIZE,
+                T("Too many failed login attempts from your address.  Please wait %d second%s and try again.\r\n"),
+                nWait, (1 == nWait) ? T("") : T("s"));
+            queue_write(d, tbuf);
+            free_mbuf(tbuf);
+
+            STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "THR");
+            buff = alloc_lbuf("check_conn.LOG.throttle");
+            mux_sprintf(buff, LBUF_SIZE,
+                T("[%u/%s] Throttled connect to \xE2\x80\x98%s\xE2\x80\x99: failure budget spent, %ds remaining."),
+                d->socket, d->addr, user, nWait);
+            g_pILog->log_text(buff);
+            free_lbuf(buff);
+            ENDLOG;
+
+            // The socket is deliberately left open and retries_left is left
+            // alone: the attempt never reached a password check, so it is not
+            // a failed login.  conn_timeout still reaps the connection if it
+            // just sits here.
+            //
+            free_lbuf(command);
+            free_lbuf(user);
+            free_lbuf(password);
+            g_debug_cmd = cmdsave;
+            return true;
+        }
+
         UTF8 host_address[MBUF_SIZE];
         d->address.ntop(host_address, sizeof(host_address));
         g_pIPlayerSession->ConnectPlayer(user, password,
@@ -1853,6 +2079,10 @@ static bool check_connect(DESC *d, UTF8 *msg)
         {
             // Not a player, or wrong password.
             //
+            if (!isGuest)
+            {
+                login_fail_record(d->address);
+            }
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
