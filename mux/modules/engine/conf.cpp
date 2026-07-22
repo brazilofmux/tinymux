@@ -140,6 +140,12 @@ void cf_init(void)
     mudconf.keepalive_interval = 60;
     mudconf.retry_limit = 3;
     mudconf.output_limit = 2 * LBUF_SIZE;
+    // Pre-auth connections from one source address.  Legit multi-play
+    // (dorm/NAT, household, one player on 5+ alts) AUTHENTICATES promptly,
+    // so it does not accumulate pre-auth sockets; a slowloris holds many
+    // half-open ones.  Refusal is transient and self-healing (a slot frees
+    // the moment a peer authenticates or conn_timeout reaps it).
+    mudconf.max_preauth_per_site = 2;
     // Pool memory budget: 0 = unlimited (off) by default.  No non-zero
     // default is safe across deployments (a 256MB VPS and a 32GB host want
     // very different ceilings), so the admin sizes it per host; enabling it
@@ -1984,6 +1990,7 @@ static CONFPARM conftable[] =
     {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               nullptr,            0},
     {T("output_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.outdb),           nullptr, SIZEOF_PATHNAME},
     {T("input_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
+    {T("max_preauth_per_site"),      cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_preauth_per_site,   nullptr,            0},
     {T("pool_memory_limit"),         cf_pool_limit,  CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.pool_memory_limit), nullptr,          0},
     {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},

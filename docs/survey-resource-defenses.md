@@ -77,7 +77,7 @@ shape (guest-code back-edge budget that survives superblocking); the reserved
 | Global fd cap | Yes | `getdtablesize()-7` (`ganl_adapter.cpp:1919`) |
 | Max connected players | Yes, off by default | `max_players`=-1 |
 | Guest restrictions | Yes | pool cap 30, `CA_NO_GUEST` commands |
-| **Per-source-IP connection cap** | **NO — GAP** | site ACL is allow/deny, never per-IP count → one source can fill the global fd table (slowloris); 120s unauth timeout is the only mitigant |
+| **Per-source-IP connection cap** | **Yes (2026-07-22)** | `max_preauth_per_site`=2 caps *unauthenticated* connections per source address; authenticated sessions are never counted — see the update below |
 | **Failed-login throttle per-IP** | **NO — GAP** | `retry_limit`=3 is **per-socket** (`net.cpp:1829`); reconnect gives unlimited fresh batches, no lockout/delay/per-IP memory |
 | **Input rate / backlog cap at read boundary** | **NO — GAP** | see `d->input_size` dead counter; only `d->quota` (command-execution token bucket, 100 +1/s) throttles at *dequeue*, not at the read |
 
@@ -218,3 +218,45 @@ proves the design was planned. #1 is the highest-stakes item but wants care
 budget), so it earns a dedicated change once the pattern from Lua is adapted.
 Both are "finish what was scaffolded," which is the right posture toward a
 36-year-old defense layer.
+
+## Update (2026-07-22): per-source pre-authenticated connection cap
+
+**The naive form of this defense is harmful.** Multi-connection is *normal* in
+MUSH: a dorm or NAT puts many unrelated players behind one address, households
+share one, and a single player commonly sits on five or more alts at once. A
+per-IP cap on *total* connections would break real play on every one of those,
+which is why 36 years of TinyMUX shipped only allow/deny site ACLs and never a
+per-IP count.
+
+What is *not* normal is many connections from one address sitting at the login
+prompt. Legitimate multi-play authenticates promptly; a slowloris does not
+authenticate at all. So the cap counts only connections **without**
+`DS_CONNECTED`:
+
+- `max_preauth_per_site` (default **2**, `0`=unlimited, `CA_GOD`/`CA_WIZARD`)
+  — max simultaneous not-yet-authenticated connections from one source address.
+- Checked in the GANL accept path (`ganl_adapter.cpp`) just before the new
+  `DESC` joins `g_descriptors_list`, so a refused connection never occupies a
+  descriptor slot.
+- Refusal writes a short "try again in a moment" line **raw**
+  (`SOCKET_WRITE`, the same route `fcache_rawdump` uses) because the DESC is
+  torn down immediately and the normal output queue would never flush; it logs
+  under `LOG_NET|LOG_SECURITY`.
+- Comparison is by address only. `mux_sockaddr::operator==` includes the source
+  port — which differs for every connection from one peer — so a new
+  `mux_sockaddr::same_address()` does family + address-bytes equality
+  (`netaddr.cpp`), covered by 6 new unit tests in `tests/netaddr`.
+
+**Self-healing by construction:** a slot frees the instant a peer authenticates
+*or* `conn_timeout` (120s) reaps it, so the worst case for a legitimate player
+who collides is one retry, never a lockout. Cross-family (v4 vs v4-mapped-v6)
+is deliberately not unified — it can at most double a hostile client's
+allowance, and both forms of one peer cannot arrive on the same listener.
+
+**Verified against the threat model and the domain:** with the default of 2, a
+third pre-auth socket from 127.0.0.1 is refused *with* the explanatory message;
+authenticating a pending connection immediately frees a slot for a new one; and
+12 authenticated sessions from that same single address were all accepted — the
+dorm / household / five-alts case is untouched. Regression: smoke 1319/1319,
+stress 8/8 (its 16 simultaneous logins from one address still pass), netaddr
+39/39, ganl 14/14.
