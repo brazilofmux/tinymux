@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-scenario test-jit-qreg hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-scenario test-stress test-jit-qreg hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -68,6 +68,15 @@ test-netaddr:
 test-scenario: install
 	@echo "==> Running wildcard-capture scenario test"
 	bash tests/scenario/run.sh
+
+# Live network + queue stress harness: concurrent connections, bulk queue
+# fan-outs, and an over-cap burst that provokes the runaway shed.  Defensive
+# — pushes the accept/read/write path and the scheduler to catch problems
+# before a live game does.  Opt-in (NOT part of `make test`): live-socket,
+# timing-sensitive, and multi-second by design.
+test-stress: install
+	@echo "==> Running network+queue stress harness"
+	bash tests/stress/run.sh
 
 # Headless iOS Titan parser/model tests via SPM. Skipped off Darwin
 # or when swift is unavailable.
