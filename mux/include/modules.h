@@ -716,6 +716,8 @@ struct DRIVER_CONFIG
     int     retry_limit;
     int     login_fail_limit;
     int     login_fail_period;
+    int     max_lastsite_cnt;
+    int     min_con_attempt;
     int     nospam_connect;
     int     idle_timeout;
     int     conn_timeout;

@@ -1821,12 +1821,183 @@ void refusal_log_flush(void)
 }
 
 // ---------------------------------------------------------------------------
-// Per-source failed-login throttle.
+// Per-source token buckets.
+//
+// Two front-door defenses need the same shape: remember, per source address,
+// how much of some budget has been spent recently, and refuse once it runs
+// out.  One mechanism, two instances (see g_login_fail and g_connect_rate
+// below).
+//
+// The table must not become the resource it protects: a fixed array, scanned
+// linearly, no allocation and no growth -- there is nothing here to flood.
+// When it is full, eviction takes the LEAST suspicious entry (the fullest
+// bucket, oldest as tie-break), so table pressure never costs us the record
+// of an active attacker; fully-refilled buckets carry no information and go
+// first.
+//
+// Keying is by mux_sockaddr::source_key(): the v4 address, or the v6 /64
+// PREFIX.  One IPv6 customer normally holds a whole /64, so keying on the
+// full address would let one attacker both evade the budget entirely and
+// flood the table with single-use entries.
+//
+#define SOURCE_BUCKET_SLOTS 512
+
+typedef struct
+{
+    size_t  nKey;        // 0 => slot free
+    UTF8    aKey[8];     // v4 address, or v6 /64 prefix
+    double  tokens;      // budget remaining
+    int64_t tLast;       // when `tokens` was last brought current (seconds)
+} source_bucket;
+
+// Budget regained per second: a full refill of nLimit over nPeriod seconds.
+//
+static double bucket_rate(int nLimit, int nPeriod)
+{
+    if (nPeriod <= 0)
+    {
+        nPeriod = 1;
+    }
+    return static_cast<double>(nLimit) / nPeriod;
+}
+
+// Find this source's bucket, bringing its token count current.  With bCreate,
+// allocate one if absent, evicting as described above when the table is full.
+//
+static source_bucket *bucket_find(source_bucket *aTable, const UTF8 *pKey,
+    size_t nKey, int nLimit, int nPeriod, int64_t tNow, bool bCreate)
+{
+    source_bucket *pFree = nullptr;
+    source_bucket *pEvict = nullptr;
+    for (int i = 0; i < SOURCE_BUCKET_SLOTS; i++)
+    {
+        source_bucket *p = &aTable[i];
+        if (0 == p->nKey)
+        {
+            if (nullptr == pFree)
+            {
+                pFree = p;
+            }
+            continue;
+        }
+
+        if (  p->nKey == nKey
+           && 0 == memcmp(p->aKey, pKey, nKey))
+        {
+            double t = p->tokens + (tNow - p->tLast) * bucket_rate(nLimit, nPeriod);
+            if (t >= nLimit)
+            {
+                t = nLimit;
+            }
+            p->tokens = t;
+            p->tLast = tNow;
+            return p;
+        }
+
+        if (  nullptr == pEvict
+           || p->tokens > pEvict->tokens
+           || (  p->tokens == pEvict->tokens
+              && p->tLast < pEvict->tLast))
+        {
+            pEvict = p;
+        }
+    }
+
+    if (!bCreate)
+    {
+        return nullptr;
+    }
+
+    source_bucket *p = (nullptr != pFree) ? pFree : pEvict;
+    if (nullptr == p)
+    {
+        return nullptr;
+    }
+    p->nKey = nKey;
+    memcpy(p->aKey, pKey, nKey);
+    p->tokens = nLimit;
+    p->tLast = tNow;
+    return p;
+}
+
+// True if this source has spent its budget.  *pWait gets the whole seconds
+// until one unit is affordable again.  A source with no bucket has spent
+// nothing and is always allowed.
+//
+static bool bucket_over_budget(source_bucket *aTable, int nLimit, int nPeriod,
+                               const MUX_SOCKADDR &sa, int *pWait)
+{
+    if (nLimit <= 0)
+    {
+        return false;
+    }
+
+    UTF8 aKey[8];
+    size_t nKey = sa.source_key(aKey, sizeof(aKey));
+    if (0 == nKey)
+    {
+        return false;
+    }
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    source_bucket *p = bucket_find(aTable, aKey, nKey, nLimit, nPeriod,
+        static_cast<int64_t>(ltaNow.ReturnSeconds()), false);
+    if (  nullptr == p
+       || 1.0 <= p->tokens)
+    {
+        return false;
+    }
+
+    double rate = bucket_rate(nLimit, nPeriod);
+    int nWait = (0.0 < rate) ? static_cast<int>((1.0 - p->tokens) / rate) + 1 : 1;
+    if (nullptr != pWait)
+    {
+        *pWait = nWait;
+    }
+    return true;
+}
+
+// Charge one unit against this source.
+//
+static void bucket_charge(source_bucket *aTable, int nLimit, int nPeriod,
+                          const MUX_SOCKADDR &sa)
+{
+    if (nLimit <= 0)
+    {
+        return;
+    }
+
+    UTF8 aKey[8];
+    size_t nKey = sa.source_key(aKey, sizeof(aKey));
+    if (0 == nKey)
+    {
+        return;
+    }
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    source_bucket *p = bucket_find(aTable, aKey, nKey, nLimit, nPeriod,
+        static_cast<int64_t>(ltaNow.ReturnSeconds()), true);
+    if (nullptr == p)
+    {
+        return;
+    }
+
+    p->tokens -= 1.0;
+    if (p->tokens < 0.0)
+    {
+        p->tokens = 0.0;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Instance 1: per-source failed-login throttle.
 //
 // `retry_limit` (default 3) is per-SOCKET: after three bad passwords the
 // connection closes, and the attacker simply reconnects for three more.  There
 // is no memory across connections, so brute-force-by-reconnect is unbounded.
-// This adds that memory as a token bucket per source address.
+// This bucket is that memory.
 //
 // Two shapes of this defense are actively HARMFUL in a MUSH and are not used
 // here:
@@ -1851,161 +2022,60 @@ void refusal_log_flush(void)
 // the attacker who worries us most -- an existing player going after someone
 // else's account.
 //
-#define LOGIN_FAIL_SLOTS 512
+static source_bucket g_login_fail[SOURCE_BUCKET_SLOTS];
 
-typedef struct
-{
-    size_t nKey;         // 0 => slot free
-    UTF8   aKey[8];      // v4 address, or v6 /64 prefix
-    double tokens;       // remaining failure budget
-    int64_t tLast;        // when `tokens` was last brought current (seconds)
-} login_fail_bucket;
-
-static login_fail_bucket g_login_fail[LOGIN_FAIL_SLOTS];
-
-// Failures per second that the bucket regains.
-//
-static double login_fail_rate(void)
-{
-    int nPeriod = g_dc.login_fail_period;
-    if (nPeriod <= 0)
-    {
-        nPeriod = 1;
-    }
-    return static_cast<double>(g_dc.login_fail_limit) / nPeriod;
-}
-
-// Find the bucket for this source, bringing its token count current.  With
-// bCreate, allocate one if absent -- evicting the LEAST suspicious entry (the
-// fullest bucket) when the table is full, so that pressure never costs us the
-// record of an active attacker.  The table is a fixed array scanned linearly:
-// it is consulted only on login attempts (themselves already bounded by
-// max_preauth_sitecons), and a defense must not become the resource it
-// protects -- a growable table is one more thing to flood.
-//
-static login_fail_bucket *login_fail_find(const UTF8 *pKey, size_t nKey,
-                                          int64_t tNow, bool bCreate)
-{
-    login_fail_bucket *pFree = nullptr;
-    login_fail_bucket *pEvict = nullptr;
-    for (int i = 0; i < LOGIN_FAIL_SLOTS; i++)
-    {
-        login_fail_bucket *p = &g_login_fail[i];
-        if (0 == p->nKey)
-        {
-            if (nullptr == pFree)
-            {
-                pFree = p;
-            }
-            continue;
-        }
-
-        if (  p->nKey == nKey
-           && 0 == memcmp(p->aKey, pKey, nKey))
-        {
-            double t = p->tokens + (tNow - p->tLast) * login_fail_rate();
-            if (t >= g_dc.login_fail_limit)
-            {
-                t = g_dc.login_fail_limit;
-            }
-            p->tokens = t;
-            p->tLast = tNow;
-            return p;
-        }
-
-        if (  nullptr == pEvict
-           || p->tokens > pEvict->tokens
-           || (  p->tokens == pEvict->tokens
-              && p->tLast < pEvict->tLast))
-        {
-            pEvict = p;
-        }
-    }
-
-    if (!bCreate)
-    {
-        return nullptr;
-    }
-
-    login_fail_bucket *p = (nullptr != pFree) ? pFree : pEvict;
-    if (nullptr == p)
-    {
-        return nullptr;
-    }
-    p->nKey = nKey;
-    memcpy(p->aKey, pKey, nKey);
-    p->tokens = g_dc.login_fail_limit;
-    p->tLast = tNow;
-    return p;
-}
-
-// True if this source has spent its failure budget.  When it has, *pWait gets
-// the whole seconds until one attempt is affordable again.  A source with no
-// recorded failures has no bucket and is always allowed.
-//
 static bool login_fail_over_budget(const MUX_SOCKADDR &sa, int *pWait)
 {
-    if (g_dc.login_fail_limit <= 0)
-    {
-        return false;
-    }
-
-    UTF8 aKey[8];
-    size_t nKey = sa.source_key(aKey, sizeof(aKey));
-    if (0 == nKey)
-    {
-        return false;
-    }
-
-    CLinearTimeAbsolute ltaNow;
-    ltaNow.GetUTC();
-    login_fail_bucket *p = login_fail_find(aKey, nKey,
-        static_cast<int64_t>(ltaNow.ReturnSeconds()), false);
-    if (  nullptr == p
-       || 1.0 <= p->tokens)
-    {
-        return false;
-    }
-
-    double rate = login_fail_rate();
-    int nWait = (0.0 < rate) ? static_cast<int>((1.0 - p->tokens) / rate) + 1 : 1;
-    if (nullptr != pWait)
-    {
-        *pWait = nWait;
-    }
-    return true;
+    return bucket_over_budget(g_login_fail, g_dc.login_fail_limit,
+                              g_dc.login_fail_period, sa, pWait);
 }
 
-// Charge one failed login attempt against this source.
-//
 static void login_fail_record(const MUX_SOCKADDR &sa)
 {
-    if (g_dc.login_fail_limit <= 0)
-    {
-        return;
-    }
+    bucket_charge(g_login_fail, g_dc.login_fail_limit,
+                  g_dc.login_fail_period, sa);
+}
 
-    UTF8 aKey[8];
-    size_t nKey = sa.source_key(aKey, sizeof(aKey));
-    if (0 == nKey)
-    {
-        return;
-    }
+// ---------------------------------------------------------------------------
+// Instance 2: per-source connection-rate limit (connect/disconnect churn).
+//
+// The other two front-door caps both miss this.  max_preauth_sitecons bounds
+// how many pre-auth connections are held at ONCE, and login_fail_limit bounds
+// FAILED LOGINS -- so an attacker who connects and immediately disconnects,
+// never logging in and never failing a login, is touched by neither.  Each
+// cycle still costs an accept, a DESC, the welcome screen's file dump, the
+// site checks, and a log line.  This bounds that.
+//
+// Modelled on RhostMUSH's max_lastsite_cnt / min_con_attempt, and their names
+// are kept.  Two deliberate differences:
+//
+//   * The RESPONSE is a transient refusal, not their lastsite_paranoia
+//     auto-register/auto-forbid.  A permanent sitelock earned by a burst is
+//     precisely the wrong answer on a shared address: one abuser in a dorm
+//     would lock out the building until an admin noticed and undid it by
+//     hand.  A refusal that heals as the bucket refills costs a legitimate
+//     player seconds.  Admins who want the permanent form already have
+//     forbid_site, now with graduated thresholds.
+//
+//   * The COUNTING is a true per-source bucket.  Rhost keeps one "last site"
+//     slot, so only CONSECUTIVE connections from one address count and a
+//     single interleaved connection from anywhere else resets the counter --
+//     trivially walked around by alternating two addresses.  Being keyed
+//     per-source, ours cannot be reset that way; it is correspondingly
+//     stricter, which is why the default budget is more generous than theirs.
+//
+static source_bucket g_connect_rate[SOURCE_BUCKET_SLOTS];
 
-    CLinearTimeAbsolute ltaNow;
-    ltaNow.GetUTC();
-    login_fail_bucket *p = login_fail_find(aKey, nKey,
-        static_cast<int64_t>(ltaNow.ReturnSeconds()), true);
-    if (nullptr == p)
-    {
-        return;
-    }
+bool connect_rate_exceeded(const MUX_SOCKADDR &sa, int *pWait)
+{
+    return bucket_over_budget(g_connect_rate, g_dc.max_lastsite_cnt,
+                              g_dc.min_con_attempt, sa, pWait);
+}
 
-    p->tokens -= 1.0;
-    if (p->tokens < 0.0)
-    {
-        p->tokens = 0.0;
-    }
+void connect_rate_charge(const MUX_SOCKADDR &sa)
+{
+    bucket_charge(g_connect_rate, g_dc.max_lastsite_cnt,
+                  g_dc.min_con_attempt, sa);
 }
 
 static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logreason,

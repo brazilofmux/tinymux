@@ -226,6 +226,16 @@ struct confdata
                                  * buys a fresh batch forever.  0 = off. */
     int     login_fail_period;  /* Seconds over which the failed-login budget
                                  * fully refills. */
+    int     max_lastsite_cnt;   /* Connections allowed from one source address
+                                 * per min_con_attempt seconds.  Bounds
+                                 * connect/disconnect churn, which neither
+                                 * max_preauth_sitecons (concurrent) nor
+                                 * login_fail_limit (failed logins) sees.
+                                 * RhostMUSH-compatible name; the response is
+                                 * a transient refusal, NOT their
+                                 * lastsite_paranoia sitelock.  0 = off. */
+    int     min_con_attempt;    /* Seconds over which the connection budget
+                                 * fully refills.  (RhostMUSH-compatible.) */
     int     nospam_connect;     /* Damp connection-refusal logging so that a
                                  * refused flood cannot become a disk flood.
                                  * 0=log all, 1=collapse a consecutive run

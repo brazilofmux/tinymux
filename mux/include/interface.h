@@ -103,6 +103,11 @@ extern int      num_main_game_ports;
 // flood unless refusal logging is damped.
 //
 extern bool refusal_log_wanted(const UTF8 *pAddr);
+
+// Per-source connection-rate limit (connect/disconnect churn).  See net.cpp.
+//
+extern bool connect_rate_exceeded(const MUX_SOCKADDR &sa, int *pWait);
+extern void connect_rate_charge(const MUX_SOCKADDR &sa);
 extern void refusal_log_flush(void);
 
 #endif // !INTERFACE_H

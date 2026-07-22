@@ -151,6 +151,15 @@ void cf_init(void)
     // and an exact count -- while closing the refused-flood-fills-the-disk
     // path by default.
     mudconf.nospam_connect = 1;
+    // Connection churn per source.  Rhost ships 20/60s but gates it behind
+    // lastsite_paranoia (off by default) and counts only CONSECUTIVE
+    // connections, so one interleaved connection from elsewhere resets them.
+    // Ours is a true per-source bucket -- it cannot be reset that way -- so
+    // the same number would bite considerably harder.  40/60s still cuts
+    // churn from unlimited to 40/minute while clearing a whole dorm
+    // reconnecting at once after a reboot, which is the burst that matters.
+    mudconf.max_lastsite_cnt = 40;
+    mudconf.min_con_attempt = 60;
     mudconf.output_limit = 2 * LBUF_SIZE;
     // Pre-auth connections from one source address.  Legit multi-play
     // (dorm/NAT, household, one player on 5+ alts) AUTHENTICATES promptly,
@@ -2051,6 +2060,8 @@ static CONFPARM conftable[] =
     {T("reset_players"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.reset_players),   nullptr,            0},
     {T("reset_site"),                cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,     HC_RESET},
     {T("restrict_home"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.restrict_home),   nullptr,            0},
+    {T("max_lastsite_cnt"),          cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_lastsite_cnt,       nullptr,            0},
+    {T("min_con_attempt"),           cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.min_con_attempt,        nullptr,            0},
     {T("nospam_connect"),            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.nospam_connect,         nullptr,            0},
     {T("login_fail_limit"),          cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_limit,       nullptr,            0},
     {T("login_fail_period"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_period,      nullptr,            0},
