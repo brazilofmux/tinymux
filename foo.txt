@@ -1,9 +1,0 @@
-@Ashen-Shugar — this one we've already got, and in a form I think you'll like. Our edit() is color-aware by default, so there's no separate editansi():
-
-- edit(hello «red»world«/» today, world, there) → hello there today, and the there comes out red — the replacement inherits the matched region's color.
-- It matches the visible text, so color in the string being searched doesn't defeat the match, and color in the from pattern is ignored for matching.
-- If you want the replacement in a specific color, put it in the to arg and that wins instead.
-
-The reason we don't have the edit/editansi split is that we treat color as a property of the string rather than as raw ANSI — everything runs through a normalized markup layer, so edit, mid, merge, all of them are color-aware without a separate variant. Different road to the same place you were pointing at.
-
-Four pointers, and honestly a good batch: the SiteMon one was a real gap we fixed, and the other three each made us go verify exactly where we stood. Keep 'em coming.
