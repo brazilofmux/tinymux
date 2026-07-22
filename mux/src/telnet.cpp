@@ -1589,6 +1589,9 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         d->nOption = 0;
     }
     d->input_tot  += nBytes;
-    d->input_size += nInputBytes;
+    // d->input_size is now owned by save_command (per enqueued line), so it
+    // stays exactly in step with the dequeue decrement and covers the
+    // websocket input path too.  nInputBytes still feeds input_tot only.
+    (void)nInputBytes;
     d->input_lost += nLostBytes;
 }

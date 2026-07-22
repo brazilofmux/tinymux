@@ -631,6 +631,7 @@ public:
         d->input_size = 0;
         d->input_tot = 0;
         d->input_lost = 0;
+        d->input_throttled = false;
         d->raw_input_buf = nullptr;
         d->raw_input_at = nullptr;
         d->nOption = 0;

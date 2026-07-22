@@ -186,6 +186,10 @@ struct confdata
     int     number_guests;      // number of guest characters allowed.
     int     opencost;           /* cost of @open command */
     int     output_limit;       /* Max # chars queued for output */
+    int     input_limit;        /* Anti-runaway backstop on per-connection
+                                 * pending-input bytes.  High by design:
+                                 * input drop corrupts legit pastes; <=0
+                                 * disables.  See conf.cpp / survey. */
     int     pagecost;           /* cost of @page command */
     int     parent_nest_lim;    /* Max levels of parents */
     int     paycheck;           /* players earn this much each day connected */

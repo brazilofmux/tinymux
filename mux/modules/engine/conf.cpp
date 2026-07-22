@@ -139,6 +139,15 @@ void cf_init(void)
     mudconf.keepalive_interval = 60;
     mudconf.retry_limit = 3;
     mudconf.output_limit = 2 * LBUF_SIZE;
+    // Input backlog is drop-SENSITIVE (a dropped line silently corrupts a
+    // user's paste — a code attribute is one legit ~32KB line, and @edit /
+    // multi-attribute uploads are legit bursts), unlike output.  So this is
+    // a high anti-runaway BACKSTOP, not a primary throttle: 16 max-size
+    // lines, far above any interactive burst, but bounded.  In practice the
+    // read/drain cadence + TCP flow control already bound the app queue
+    // (docs/survey-resource-defenses.md); the proper form is read-side
+    // backpressure, deferred.  <=0 disables.
+    mudconf.input_limit = 16 * LBUF_SIZE;
     mudconf.paycheck = 0;
     mudconf.paystart = 0;
     mudconf.paylimit = 10000;
@@ -1940,6 +1949,7 @@ static CONFPARM conftable[] =
     {T("number_guests"),             cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.number_guests,          nullptr,            0},
     {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               nullptr,            0},
     {T("output_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.outdb),           nullptr, SIZEOF_PATHNAME},
+    {T("input_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
     {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},
     {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.paranoid_alloc),  nullptr,            0},
