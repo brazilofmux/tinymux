@@ -31,6 +31,10 @@ bool         g_bStandAlone = true;
 mux_ILog    *g_pILog       = nullptr;
 mux_INotify *g_pINotify    = nullptr;
 
+// netaddr.cpp also exports the graduated-site-rule threshold splitter; it is
+// declared in externs.h, which drags in the whole driver, so declare it here.
+extern bool parse_site_threshold(UTF8 *str, unsigned long *pulThreshold);
+
 // --- tiny test framework ---------------------------------------------------
 static int g_pass = 0;
 static int g_fail = 0;
@@ -391,6 +395,76 @@ int main()
 
         // Too small a buffer must fail closed, not overrun.
         expect_bool(0 == s1.source_key(k1, 7), "source_key rejects short buffer");
+    }
+
+    // --- parse_site_threshold: graduated site rules ----------------------
+    // The trailing-token strip must cut the LAST token, not the first copy
+    // of its text -- "127.0.0.1/32 3" truncated at the '3' of "/32" silently
+    // dropped the whole rule (found live; the digit collision is why the
+    // simpler forbid_site "10.0.0.0/8 4" happened to work and this did not).
+    {
+        struct { const char *in; bool ok; unsigned long want; const char *rest; }
+        aCases[] = {
+            // No threshold: string untouched.
+            { "127.0.0.0/8",                 true,  0, "127.0.0.0/8"           },
+            { "192.0.2.0 255.255.255.0",     true,  0, "192.0.2.0 255.255.255.0" },
+            // CIDR + threshold.
+            { "127.0.0.0/8 4",               true,  4, "127.0.0.0/8"           },
+            // Digit collisions: the threshold digit also appears in the mask.
+            { "127.0.0.1/32 3",              true,  3, "127.0.0.1/32"          },
+            { "10.0.0.0/8 8",                true,  8, "10.0.0.0/8"            },
+            { "192.0.2.0/24 2",              true,  2, "192.0.2.0/24"          },
+            // Address + mask + threshold.
+            { "192.0.2.0 255.255.255.0 8",   true,  8, "192.0.2.0 255.255.255.0" },
+            // Explicit zero disables, same as absent.
+            { "127.0.0.0/8 0",               true,  0, "127.0.0.0/8"           },
+            // Negative is a syntax error, not a silent 0.
+            { "127.0.0.0/8 -1",              false, 0, nullptr                 },
+            // A non-numeric trailing token is not a threshold; leave it be.
+            { "127.0.0.0/8 abc",             true,  0, "127.0.0.0/8 abc"       },
+            // IPv6 CIDR.
+            { "2001:db8::/32 5",             true,  5, "2001:db8::/32"         },
+        };
+
+        for (size_t i = 0; i < sizeof(aCases)/sizeof(aCases[0]); i++)
+        {
+            UTF8 buf[128];
+            std::strncpy(reinterpret_cast<char *>(buf), aCases[i].in,
+                         sizeof(buf) - 1);
+            buf[sizeof(buf) - 1] = '\0';
+            unsigned long ulThreshold = 12345;
+            bool ok = parse_site_threshold(buf, &ulThreshold);
+
+            char label[192];
+            snprintf(label, sizeof(label), "parse_site_threshold(\"%s\")",
+                     aCases[i].in);
+            if (ok != aCases[i].ok)
+            {
+                g_fail++;
+                printf("FAIL: %s returned %s\n", label, ok ? "true" : "false");
+                continue;
+            }
+            if (!ok)
+            {
+                g_pass++;
+                continue;
+            }
+            if (ulThreshold != aCases[i].want)
+            {
+                g_fail++;
+                printf("FAIL: %s threshold = %lu want %lu\n", label,
+                       ulThreshold, aCases[i].want);
+                continue;
+            }
+            if (0 != strcmp(reinterpret_cast<char *>(buf), aCases[i].rest))
+            {
+                g_fail++;
+                printf("FAIL: %s left \"%s\" want \"%s\"\n", label,
+                       reinterpret_cast<char *>(buf), aCases[i].rest);
+                continue;
+            }
+            g_pass++;
+        }
     }
 
     printf("\n=== netaddr compare_to: %d passed, %d failed ===\n",

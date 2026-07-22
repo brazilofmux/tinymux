@@ -413,3 +413,78 @@ Worth recording honestly: Rhost's aggressive machinery is almost entirely
 is `max_sitecons`, `retry_limit 3`, `regtry_limit 1`, `conn_timeout 120`, and
 a descriptor reserve. The transferable posture is not any single counter — it
 is *opt-in, whitelist-aware, graduated, and hand-reversible*.
+
+## Update (2026-07-22): graduated site rules (per-entry connection threshold)
+
+Ported from RhostMUSH (`forbid_site <addr> <mask> [<maxconns>]`), noted as the
+best idea in that survey. Binary site policy is what makes shared addresses
+painful: a dorm, a NAT gateway or a household is *one address* carrying many
+unrelated players, so `register_site` on the campus punishes everyone for one
+abuser while doing nothing leaves the site undefended. A threshold makes the
+middle expressible — **"the dorm is fine until it isn't"**:
+
+```
+forbid_site   192.0.2.0/24 8            # CIDR + threshold
+forbid_site   192.0.2.0 255.255.255.0 8 # address + mask + threshold
+permit_site   127.0.0.1/32 3            # exemption WITH a ceiling
+```
+
+Every site directive accepts the optional trailing count: `forbid_site`,
+`register_site`, `noguest_site`, `suspect_site`, `nositemon_site`,
+`permit_site`, `guest_site`, `trust_site`, `sitemon_site`. Omitted or `0`
+means "always", the historical behaviour. `reset_site` rejects one (it removes
+rules rather than applying one) rather than ignoring it silently.
+
+**Direction depends on what the rule does.** Rules that SET an `HI_` flag
+(forbid, register, noguest, suspect, nositemon) are restrictions and engage at
+or above the threshold. Rules that CLEAR one (permit, guest, trust, sitemon)
+are exemptions and engage only *below* it — an exemption that survived past its
+own ceiling would not be a threshold at all. This is the same inversion Rhost
+applies to its permit-side entries, and it is what makes "permitted up to N
+connections" sayable.
+
+**Counting is per connecting ADDRESS, not per subnet.** The subnet selects
+which rule you land under; the address is what gets counted. That is the right
+unit here — a NATted dorm is one address, so its own population is what the
+threshold should measure. The count excludes the incoming connection (it is
+not yet in `g_descriptors_list`), so threshold N means "engages once N
+connections from that address already exist", matching Rhost.
+
+**Cost is zero for existing configurations.** The count is computed lazily,
+at most once per lookup, and only when a thresholded rule is actually matched.
+An ACL with no thresholds — every configuration that exists today — never
+walks the descriptor list.
+
+**Self-healing:** dropping below the threshold re-admits immediately; verified
+live.
+
+### A parsing bug the exemption case caught
+
+The first implementation stripped the trailing threshold with
+`strstr(buf, token)`, which finds the **first** copy of the token's text.
+`permit_site 127.0.0.1/32 3` therefore truncated at the `3` of `/32`, leaving
+`127.0.0.1/` — `parse_subnet` failed and the rule was **silently dropped**.
+`forbid_site 127.0.0.0/8 4` worked only by luck (no earlier `4`), which is
+exactly why testing the *exemption* direction mattered: the restriction
+direction happened to pass. Fixed by cutting the last token via a backward
+scan, and the logic was factored into `parse_site_threshold()` in
+`netaddr.cpp` so this bug class is unit-testable — 11 new cases in
+`tests/netaddr`, including three digit collisions.
+
+**Verified live** (`. `=accepted, `X`=refused, six sequential connections):
+
+| Configuration | 1 2 3 4 5 6 |
+|---|---|
+| `forbid_site 127.0.0.0/8 4` | `. . . . X X` |
+| `forbid_site 127.0.0.0/8 3` (digit collision) | `. . . X X X` |
+| `forbid_site 127.0.0.0/8` + `permit_site 127.0.0.1/32 3` | `. . . X X X` |
+| `forbid_site 127.0.0.0/8` (regression) | `X X X X X X` |
+| no site rules (regression) | `. . . . . .` |
+
+Thresholds also show in `@list site_information` (`Forbid (at 4+ conns)`) so an
+admin can tell "forbidden" from "forbidden once 8 connections are up".
+Regression: smoke 1319/1319, stress 8/8, netaddr 57/57, ganl 14/14.
+
+> Testing note: probe a refusal by reading until EOF, not once. A refused
+> connection receives its explanatory text *and then* the close, so a single
+> `recv()` sees data and misreads the refusal as an acceptance.
