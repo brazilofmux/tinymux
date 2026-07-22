@@ -2114,6 +2114,8 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
     return;
 }
 
+void site_mon_send(SOCKET, const UTF8 *, DESC *, const UTF8 *);
+
 const UTF8 *connect_fail = T("Either that player does not exist, or has a different password.\r\n");
 
 static bool check_connect(DESC *d, UTF8 *msg)
@@ -2229,7 +2231,12 @@ static bool check_connect(DESC *d, UTF8 *msg)
             queue_write(d, tbuf);
             free_mbuf(tbuf);
 
-            if (refusal_log_wanted(d->addr))
+            // One damping decision drives both the log line and the staff
+            // broadcast; refusal_log_wanted() advances the run counter, so it
+            // must be called exactly once per refusal.
+            //
+            const bool bTell = refusal_log_wanted(d->addr);
+            if (bTell)
             {
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "THR");
             buff = alloc_lbuf("check_conn.LOG.throttle");
@@ -2239,6 +2246,16 @@ static bool check_connect(DESC *d, UTF8 *msg)
             g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;
+
+            // Tell the humans too, naming the action taken.  The DESC is
+            // still live here (we keep the socket), so pass it.
+            //
+            {
+                UTF8 siteBuf[MBUF_SIZE];
+                d->address.ntop(siteBuf, sizeof(siteBuf));
+                site_mon_send(d->socket, siteBuf, d,
+                    T("Login throttled [failed-login budget spent]"));
+            }
             }
 
             // The socket is deliberately left open and retries_left is left
