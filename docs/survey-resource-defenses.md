@@ -488,3 +488,88 @@ Regression: smoke 1319/1319, stress 8/8, netaddr 57/57, ganl 14/14.
 > Testing note: probe a refusal by reading until EOF, not once. A refused
 > connection receives its explanatory text *and then* the close, so a single
 > `recv()` sees data and misreads the refusal as an acceptance.
+
+## Update (2026-07-22): Rhost's ident/rDNS latency self-healing — NOT applicable
+
+Item 2 of the Rhost follow-up list, examined and **closed without a change.**
+The mitigation exists to solve a problem our architecture does not have.
+
+**Ident: gone, deliberately.** `slave.cpp` has no port-113 path at all — no
+`connect()`, no ident protocol, only `getnameinfo`/`gethostbyaddr`. Per the
+maintainer, TinyMUX did ident once and dropped it because probing back at a
+connecting host was increasingly read as an aggressive act. So Rhost's
+`DS_AUTH_IN_PROGRESS` >3s → `H_NOAUTH` auto-learn has nothing to attach to
+here.
+
+**rDNS: out of process and never waited on.** The difference that matters is
+where the resolve happens. Rhost resolves **in the main process** — `addrout()`
+calls `getnameinfo()` inline on the accept path — so a connection from an
+address with a blackholed PTR stalls their single-threaded server, which is
+precisely why they must auto-learn `H_NODNS` and never pay that timeout twice.
+TinyMUX offloads to a separate slave process and never blocks on the answer:
+
+- `queue_dns_lookup()` appends to `pendingWrites` and returns; the accept path
+  goes straight on to `d->ss = SocketState::Accepted; welcome_user(d)`. The
+  connection is **never gated** on the lookup.
+- The write to the slave is non-blocking — `EAGAIN` registers write interest
+  and returns rather than stalling the loop.
+- `pendingWrites` is capped at 4096 and the read reassembly buffer at 64 KiB
+  (both from #801); past the cap a lookup is simply dropped and the connection
+  shows its numeric address.
+- The answer arrives asynchronously and `apply_reverse_dns_result()` patches
+  `d->addr` afterward.
+- The slave forks per request with `MAX_CHILDREN 20` and a 300s per-child
+  alarm, so a hostile PTR consumes a slave slot, never a driver cycle.
+
+So there is no timeout for an attacker to make us pay, and nothing for an
+auto-learned `H_NODNS` to save. Porting it would change the slave interface
+for a benefit of zero.
+
+**Residual risk, worth naming but not fixing.** An attacker connecting from
+many addresses with deliberately blackholed PTR can occupy all 20 slave slots
+for up to 5 minutes each, starving reverse lookups for legitimate connections.
+The consequence is bounded and cosmetic — `WHO`, the logs, and `A_LASTSITE`
+show numeric addresses instead of hostnames — with no effect on availability,
+because nothing in the game waits on the result. Two cheap improvements exist
+if that ever matters: a short negative cache so a known-bad address is not
+re-queried per connection (there is no dedupe today — two call sites, no
+cache), and a per-child alarm shorter than 300s. Neither is worth the churn
+now; `max_preauth_sitecons` already bounds how many pre-auth connections one
+address can hold, which is the cheapest lever on the same problem.
+
+**Standing lesson:** a mitigation is only worth porting once you have located
+the mechanism it mitigates in your own code. Rhost's is an in-process resolver
+call; ours is a pipe to a child. Same feature, different architecture, and the
+defense does not transfer.
+
+## Update (2026-07-22): Rhost's separate blocklist structure — NOT applicable
+
+Item 3 of the Rhost follow-up list, closed without a change. Per the
+maintainer: the balanced BST *is* the answer, and avoiding exactly this problem
+was the entire reason for building it.
+
+Rhost keeps `@blacklist` as a separate capped structure (default 100k entries,
+loaded from a file, ships with a TOR-exit-node populator) specifically so a
+large list does not turn their ACL walk into the bottleneck. Their own help
+text warns that the site list is walked linearly on every connect — because
+`mudstate.access_list` is a plain singly-linked list of `SITE`, prepended at
+runtime, with no index.
+
+Ours is `mux_subnets`: a self-balancing binary search tree of subnets
+(`mux_subnet_node`, with root-insertion rotations — `rotr`, `rollallr`,
+`joinlr`) where a contained subnet hangs off its container's `pnInside` rather
+than sitting in the same flat scan. Lookup descends by subnet comparison
+instead of visiting every entry, so a large list does not degrade the accept
+path and there is nothing to segregate a big blocklist away from. Splitting the
+list would add a second structure and a second policy surface to solve a
+problem the data structure already solves.
+
+**This closes the RhostMUSH follow-up list.** Of the four ideas surfaced by
+that survey: `nospam_connect` was adopted (it found a real hole — refusal
+logging as a disk-flood vector), graduated site thresholds were ported, and
+the ident/rDNS latency self-healing and the separate blocklist were both
+examined and dismissed as answering problems our architecture does not have.
+Two ports, two informed declines — which is roughly the expected yield from
+reading another implementation, and the declines were worth the reading time
+because each one required locating the mechanism in our own code before ruling
+on it.
