@@ -27,6 +27,42 @@
 //
 bool g_paranoid_alloc = false;
 
+// Pool memory footprint budget (#pool-oom).  See alloc.h.
+size_t g_pool_limit_bytes = 0;
+size_t g_pool_system_bytes = 0;
+
+// Account bytes just taken from the system on a pool slow-path alloc and, if
+// they push the footprint past the budget, trip the per-command abort so the
+// current (runaway) command unwinds and frees its buffers back to the freelist
+// — a graceful degrade instead of a fatal OutOfMemory.  Hysteresis: log once
+// per breach, re-armed only after the footprint settles back under half the
+// budget (buffers freed to the freelist do not reduce g_pool_system_bytes, so
+// this re-arms on the next genuine growth attempt, not spuriously).
+static void pool_account_system(size_t nBytes)
+{
+    static bool warned = false;
+    g_pool_system_bytes += nBytes;
+    if (0 != g_pool_limit_bytes)
+    {
+        if (g_pool_system_bytes > g_pool_limit_bytes)
+        {
+            alarm_clock.alarmed.store(true, std::memory_order_relaxed);
+            if (!warned)
+            {
+                warned = true;
+                mux_fprintf(stderr,
+                    T("Pool memory budget exceeded (%zu > %zu bytes); aborting "
+                      "the current command to protect the server." ENDLINE),
+                    g_pool_system_bytes, g_pool_limit_bytes);
+            }
+        }
+        else if (g_pool_system_bytes < g_pool_limit_bytes / 2)
+        {
+            warned = false;
+        }
+    }
+}
+
 // Output callback for @list buffers — set by engine at startup.
 //
 ALLOC_NOTIFY_FN g_alloc_notify_fn = nullptr;
@@ -265,6 +301,7 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
     }
 
     pools[poolnum].all_buffers.push_back(raw);
+    pool_account_system(pools[poolnum].pool_alloc_size);
 
     ph = reinterpret_cast<POOLHDR *>(raw);
     p = reinterpret_cast<UTF8 *>(raw + sizeof(POOLHDR));
@@ -352,6 +389,7 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
     }
 
     pools[POOL_LBUF].all_buffers.push_back(raw);
+    pool_account_system(LBUF_SIZE + sizeof(POOLHDR) + sizeof(POOLFTR));
 
     ph = reinterpret_cast<POOLHDR *>(raw);
     p = reinterpret_cast<UTF8 *>(raw + sizeof(POOLHDR));
