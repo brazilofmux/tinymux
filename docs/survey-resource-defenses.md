@@ -541,3 +541,35 @@ address can hold, which is the cheapest lever on the same problem.
 the mechanism it mitigates in your own code. Rhost's is an in-process resolver
 call; ours is a pipe to a child. Same feature, different architecture, and the
 defense does not transfer.
+
+## Update (2026-07-22): Rhost's separate blocklist structure — NOT applicable
+
+Item 3 of the Rhost follow-up list, closed without a change. Per the
+maintainer: the balanced BST *is* the answer, and avoiding exactly this problem
+was the entire reason for building it.
+
+Rhost keeps `@blacklist` as a separate capped structure (default 100k entries,
+loaded from a file, ships with a TOR-exit-node populator) specifically so a
+large list does not turn their ACL walk into the bottleneck. Their own help
+text warns that the site list is walked linearly on every connect — because
+`mudstate.access_list` is a plain singly-linked list of `SITE`, prepended at
+runtime, with no index.
+
+Ours is `mux_subnets`: a self-balancing binary search tree of subnets
+(`mux_subnet_node`, with root-insertion rotations — `rotr`, `rollallr`,
+`joinlr`) where a contained subnet hangs off its container's `pnInside` rather
+than sitting in the same flat scan. Lookup descends by subnet comparison
+instead of visiting every entry, so a large list does not degrade the accept
+path and there is nothing to segregate a big blocklist away from. Splitting the
+list would add a second structure and a second policy surface to solve a
+problem the data structure already solves.
+
+**This closes the RhostMUSH follow-up list.** Of the four ideas surfaced by
+that survey: `nospam_connect` was adopted (it found a real hole — refusal
+logging as a disk-flood vector), graduated site thresholds were ported, and
+the ident/rDNS latency self-healing and the separate blocklist were both
+examined and dismissed as answering problems our architecture does not have.
+Two ports, two informed declines — which is roughly the expected yield from
+reading another implementation, and the declines were worth the reading time
+because each one required locating the mechanism in our own code before ruling
+on it.
