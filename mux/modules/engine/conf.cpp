@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "alloc.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -139,6 +140,13 @@ void cf_init(void)
     mudconf.keepalive_interval = 60;
     mudconf.retry_limit = 3;
     mudconf.output_limit = 2 * LBUF_SIZE;
+    // Pool memory budget: 0 = unlimited (off) by default.  No non-zero
+    // default is safe across deployments (a 256MB VPS and a 32GB host want
+    // very different ceilings), so the admin sizes it per host; enabling it
+    // converts a fatal OutOfMemory under a runaway command into a graceful
+    // per-command abort.  (#pool-oom)
+    mudconf.pool_memory_limit = 0;
+    g_pool_limit_bytes = 0;
     // Input backlog is drop-SENSITIVE (a dropped line silently corrupts a
     // user's paste — a code attribute is one legit ~32KB line, and @edit /
     // multi-attribute uploads are legit bursts), unlike output.  So this is
@@ -643,6 +651,32 @@ static CF_HAND(cf_size)
     }
 
     *pSize = val;
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
+// cf_pool_limit: Set the pool memory budget (bytes, K/M/G suffixes; 0 or -1
+// = unlimited) and push it to the libmux allocator (g_pool_limit_bytes) so it
+// stays in sync on initial load and @readcache reload.  (#pool-oom)
+//
+static CF_HAND(cf_pool_limit)
+{
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+
+    int64_t v = 0;
+    int rc = cf_size(reinterpret_cast<int *>(&v), str, nullptr, 0,
+                     player, cmd);
+    if (rc != 0)
+    {
+        return rc;
+    }
+    if (v < 0)
+    {
+        v = 0;  // -1 (unlimited) normalizes to 0 = off
+    }
+    *reinterpret_cast<int64_t *>(vp) = v;
+    g_pool_limit_bytes = static_cast<size_t>(v);
     return 0;
 }
 
@@ -1950,6 +1984,7 @@ static CONFPARM conftable[] =
     {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               nullptr,            0},
     {T("output_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.outdb),           nullptr, SIZEOF_PATHNAME},
     {T("input_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
+    {T("pool_memory_limit"),         cf_pool_limit,  CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.pool_memory_limit), nullptr,          0},
     {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},
     {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.paranoid_alloc),  nullptr,            0},

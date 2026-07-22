@@ -170,6 +170,44 @@ keeps its own instruction budget. Closing that residual needs the guest-code
 `ECALL_CHECK_ALARM` emission (the Lua-budget pattern); deferred as not
 user-reachable.
 
+## Update (2026-07-21): pool memory budget — mechanism, and a recalibration
+
+Implementing gap #3 (the `pool_alloc` → fatal `OutOfMemory` cliff) turned up
+the healthiest possible finding: **the cliff is hard to reach, and that is the
+36 years of defense-in-depth working as designed.** The whole MUSH-server
+tradition is making dangerous things hard to reach; this is that.
+
+What the measurement showed:
+- `pool_alloc`/`pool_alloc_lbuf` only take memory from the system on the slow
+  path (freelist empty); freed buffers return to the freelist, not the system.
+  So the process's *pool footprint* equals the **peak concurrent** pool
+  buffers, and grows only on genuine growth.
+- For normal softcode that peak stays tiny: the interpreter allocs-and-frees
+  through the freelist within a command, nesting is bounded (`func_nest_lim`,
+  `nStackLimit`), and iterating builtins reuse buffers. A short session's pool
+  footprint didn't cross even 256KB. Reaching the cliff needs a command
+  holding *megabytes of concurrent pool buffers*, which the existing discipline
+  makes hard.
+- The crash observed while building the JIT alarm (a nested `iter` with
+  `max_dispatch=0` OS-OOM-killed at 0.4s) is **not** this path — it is the
+  JIT's own arena/guest-memory growth, and it is bounded by `max_dispatch`
+  (default 10M) in production; it only OOMs when that guard is disabled. A
+  separate, independently-guarded path.
+
+**What shipped:** the pool-footprint budget as **defense-in-depth, off by
+default.** `pool_memory_limit` (bytes, K/M/G suffixes; `0`=unlimited) caps the
+process's pooled-buffer footprint; on the slow path, crossing it trips the
+same cooperative per-command abort the wall-clock alarm uses
+(`alarm_clock.alarmed`) so a runaway command unwinds and frees its buffers to
+the freelist instead of the process reaching the fatal `OutOfMemory` — a
+graceful degrade. It composes with the JIT wall-clock alarm (both trip the same
+flag). Off by default because **no non-zero default is safe across deployments**
+(a 256MB VPS and a 32GB host want very different ceilings) *and* because the
+existing discipline already makes the cliff hard — this is the last backstop,
+for the day a new code path, a pathological case, or a disabled guard makes the
+pool reachable. Verified: default-off is a true no-op (smoke 1319/1319, oracle
+9/9, jit_diff 400/0, stress 8/8); the trip path is wired to the abort flag.
+
 ## Recommended first increment
 
 **#2 (input backlog cap) then #1 (JIT alarm).** #2 is a clean, low-risk

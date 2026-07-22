@@ -190,6 +190,12 @@ struct confdata
                                  * pending-input bytes.  High by design:
                                  * input drop corrupts legit pastes; <=0
                                  * disables.  See conf.cpp / survey. */
+    int64_t pool_memory_limit;  /* Pool memory footprint budget (bytes).
+                                 * When the process's pooled-buffer footprint
+                                 * would exceed this, the current command is
+                                 * aborted so it frees its buffers instead of
+                                 * the server reaching a fatal OutOfMemory.
+                                 * 0 = unlimited.  Sized per deployment. */
     int     pagecost;           /* cost of @page command */
     int     parent_nest_lim;    /* Max levels of parents */
     int     paycheck;           /* players earn this much each day connected */
