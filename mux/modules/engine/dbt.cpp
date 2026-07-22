@@ -500,6 +500,17 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
             return -2;
         }
 
+        // Wall-clock abort: the per-command alarm has fired.  Return so the
+        // caller aborts the run (the AST fallback then short-circuits on the
+        // same flag and the queue loop halts the object) — a JIT program must
+        // not run unbounded wall-clock time between ECALLs while the
+        // single-threaded server waits.  A relaxed load is a plain read.
+        if (  dbt->alarm_flag
+           && dbt->alarm_flag->load(std::memory_order_relaxed)) {
+            dbt->dispatch_count = dispatch_count;
+            return -3;
+        }
+
         uint64_t pc = dbt->ctx.next_pc;
 
         // ECALL signal: bit 0 set.
@@ -583,6 +594,17 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
             fprintf(stderr, "dbt: dispatch limit exceeded (%llu)\n",
                     static_cast<unsigned long long>(dbt->max_dispatch));
             return -2;
+        }
+
+        // Wall-clock abort: the per-command alarm has fired.  Return so the
+        // caller aborts the run (the AST fallback then short-circuits on the
+        // same flag and the queue loop halts the object) — a JIT program must
+        // not run unbounded wall-clock time between ECALLs while the
+        // single-threaded server waits.  A relaxed load is a plain read.
+        if (  dbt->alarm_flag
+           && dbt->alarm_flag->load(std::memory_order_relaxed)) {
+            dbt->dispatch_count = dispatch_count;
+            return -3;
         }
 
         uint64_t pc = dbt->ctx.next_pc;

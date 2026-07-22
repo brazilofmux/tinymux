@@ -137,6 +137,39 @@ to catch a pathological runaway (e.g. a future change that removes the
 implicit bound). Read-side backpressure remains the proper form (option b),
 deferred.
 
+## Update (2026-07-21): JIT wall-clock alarm — FIXED
+
+Gap #1 (the availability regression) closed. The interpreter cooperatively
+polls the per-command wall-clock alarm everywhere; the JIT/DBT dispatch loop
+polled only `max_dispatch` (an instruction counter). Fix: `dbt_state_t` gained
+a host-provided `const std::atomic<bool> *alarm_flag`; both DBT dispatch loops
+(`dbt_run`, `dbt_resume`) check it each iteration and return `-3` when set. The
+engine points it at `&alarm_clock.alarmed` at the two DBT setup sites; the
+standalone `dbt_test` harness leaves it null (verified: 172/172, engine
+layering preserved — dbt.cpp only reads a pointer it was handed, rather than
+using the dead `ECALL_CHECK_ALARM` guest-code hook).
+
+On abort the existing `rc != 0` path takes over: `run_cached_program` returns
+false, jit_eval falls back to the AST, which short-circuits on the same
+already-set flag, and the queue/net loop halts the object with "Expensive
+activity abbreviated" — identical to how an over-long interpreted command
+ends. New `bail_alarm` jitstats counter.
+
+Verified against a live server with `max_dispatch` disabled (so the alarm is
+the *only* bound) and `lag_limit 1`: a 25M-ECALL nested-`iter` loop aborts at
+**1.01s** (not unbounded), `bail_alarm=1`, and — the point — a **concurrent
+connection's ping is answered at 1.01s** instead of waiting out the whole
+loop. Smoke 1319/1319 both toggles, oracle 9/9, jit_diff 400/0, stress 8/8,
+no false-firing under the normal 60s limit.
+
+**Residual (documented):** ECALL-free native self-loop superblocks
+(`dbt_x64_sysv.cpp` warm-entry back-edges) don't return to the dispatch loop
+and so still escape this check — but they form only for pure-arithmetic
+blocks, which MUSHcode's loop bodies (all ECALL) don't produce. The Lua path
+keeps its own instruction budget. Closing that residual needs the guest-code
+`ECALL_CHECK_ALARM` emission (the Lua-budget pattern); deferred as not
+user-reachable.
+
 ## Recommended first increment
 
 **#2 (input backlog cap) then #1 (JIT alarm).** #2 is a clean, low-risk
