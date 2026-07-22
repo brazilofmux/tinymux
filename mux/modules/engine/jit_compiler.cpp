@@ -1157,6 +1157,7 @@ static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
         // TINYMUX_DBT_MAX_DISPATCH overrides; 0 = unlimited.
         const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
         dbt->max_dispatch = md_env ? strtoull(md_env, nullptr, 0) : 10000000;
+        dbt->alarm_flag = &alarm_clock.alarmed;  // wall-clock abort (#JIT-alarm)
 
         s_dbt_ready = true;
         return dbt;
@@ -2290,6 +2291,7 @@ struct shared_heap_t {
             const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
             dbt.max_dispatch = md_env
                 ? strtoull(md_env, nullptr, 0) : 10000000;
+            dbt.alarm_flag = &alarm_clock.alarmed;  // wall-clock (#JIT-alarm)
 
             pretranslate_tier2(&dbt);
             dbt.blob_code_end = dbt.code_used;
@@ -2601,7 +2603,15 @@ bool run_cached_program(compiled_program *prog,
     ec.dbt = dbt;
 
     int rc = dbt_run(dbt, prog->entry_pc, rv_compiler::STACK_TOP);
-    if (rc != 0) return false;
+    if (rc != 0) {
+        if (rc == -3) {
+            // Wall-clock alarm fired mid-run: abort.  The AST fallback
+            // short-circuits on the same flag; the queue/net loop then halts
+            // the object.  Not a compile/exec bug — do not log as one.
+            s_jit_stats.bail_alarm++;
+        }
+        return false;
+    }
 
     uint64_t out_addr = resolve_runtime_out_addr(
         prog->out_addr, rv_compiler::STACK_TOP);
@@ -4664,7 +4674,8 @@ FUNCTION(fun_jitstats)
         "spills=%llu "
         "qreg_resyncs=%llu "
         "bail_longreg=%llu "
-        "bail_depth=%llu",
+        "bail_depth=%llu "
+        "bail_alarm=%llu",
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -4685,7 +4696,8 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.spills_total,
         (unsigned long long)s_jit_stats.qreg_resyncs,
         (unsigned long long)s_jit_stats.bail_longreg,
-        (unsigned long long)s_jit_stats.bail_depth);
+        (unsigned long long)s_jit_stats.bail_depth,
+        (unsigned long long)s_jit_stats.bail_alarm);
 
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {

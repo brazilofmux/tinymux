@@ -68,6 +68,8 @@ struct jit_stats_t {
                                   // declined at entry marshal (#996)
     uint64_t bail_depth;          // static nest depth would trip
                                   // function_recursion_limit (#1002)
+    uint64_t bail_alarm;          // per-command wall-clock alarm fired
+                                  // mid-JIT; run aborted (#JIT-alarm)
 
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime

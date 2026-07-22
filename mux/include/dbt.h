@@ -11,6 +11,7 @@
 #ifndef DBT_H
 #define DBT_H
 
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <unordered_map>
@@ -163,6 +164,14 @@ struct dbt_state_t {
     // infinite-loop bugs into test failures instead of hangs.
     //
     uint64_t max_dispatch;
+
+    // Host wall-clock abort flag (#JIT-alarm).  When non-null, the dispatch
+    // loop checks it each iteration and returns -3 if set, so a JIT-compiled
+    // program honors the per-command wall-clock alarm the interpreter already
+    // obeys.  The engine points this at &alarm_clock.alarmed; the standalone
+    // dbt_test harness leaves it null.  dbt.cpp stays engine-independent — it
+    // only reads a pointer it was handed.
+    const std::atomic<bool> *alarm_flag = nullptr;
 
     // Inline CALL cold-exit diagnostics.
     //
