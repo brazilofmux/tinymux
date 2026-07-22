@@ -186,6 +186,13 @@ struct confdata
     int     number_guests;      // number of guest characters allowed.
     int     opencost;           /* cost of @open command */
     int     output_limit;       /* Max # chars queued for output */
+    int     max_preauth_per_site; /* Max simultaneous NOT-YET-AUTHENTICATED
+                                 * connections from one source address.
+                                 * Bounds slowloris / connection-exhaustion
+                                 * at the anonymous front door WITHOUT
+                                 * limiting authenticated sessions (dorms,
+                                 * households, and one player on several
+                                 * alts are all normal).  0 = unlimited. */
     int     input_limit;        /* Anti-runaway backstop on per-connection
                                  * pending-input bytes.  High by design:
                                  * input drop corrupts legit pastes; <=0

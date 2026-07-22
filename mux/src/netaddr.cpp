@@ -1276,6 +1276,33 @@ mux_sockaddr::mux_sockaddr(const sockaddr *sa)
     }
 }
 
+// Address-only equality: same family and same address bytes, ignoring the
+// port (which differs per connection from the same peer).  Used to group
+// connections by source address.
+//
+bool mux_sockaddr::same_address(const mux_sockaddr &it) const
+{
+    if (it.u.sa.sa_family != u.sa.sa_family)
+    {
+        return false;
+    }
+
+    switch (u.sa.sa_family)
+    {
+#if defined(HAVE_SOCKADDR_IN)
+    case AF_INET:
+        return 0 == memcmp(&it.u.sai.sin_addr, &u.sai.sin_addr,
+                           sizeof(u.sai.sin_addr));
+#endif
+#if defined(HAVE_SOCKADDR_IN6)
+    case AF_INET6:
+        return 0 == memcmp(&it.u.sai6.sin6_addr, &u.sai6.sin6_addr,
+                           sizeof(u.sai6.sin6_addr));
+#endif
+    }
+    return false;
+}
+
 bool mux_sockaddr::operator==(const mux_sockaddr &it) const
 {
     if (it.u.sa.sa_family != u.sa.sa_family)

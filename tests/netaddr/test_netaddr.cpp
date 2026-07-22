@@ -143,6 +143,46 @@ static MUX_SOCKADDR sockaddr_v6(const char *ip)
     return MUX_SOCKADDR(reinterpret_cast<const struct sockaddr *>(&sin6));
 }
 
+// Build a MUX_SOCKADDR for a native IPv4 dotted address with an explicit port.
+static MUX_SOCKADDR sockaddr_v4_port(const char *ip, unsigned short port)
+{
+    struct sockaddr_in sin;
+    std::memset(&sin, 0, sizeof(sin));
+    sin.sin_family = AF_INET;
+    sin.sin_port = htons(port);
+    inet_pton(AF_INET, ip, &sin.sin_addr);
+    return MUX_SOCKADDR(reinterpret_cast<const struct sockaddr *>(&sin));
+}
+
+// Build a MUX_SOCKADDR for an IPv6 address with an explicit port.
+static MUX_SOCKADDR sockaddr_v6_port(const char *ip, unsigned short port)
+{
+    struct sockaddr_in6 sin6;
+    std::memset(&sin6, 0, sizeof(sin6));
+    sin6.sin6_family = AF_INET6;
+    sin6.sin6_port = htons(port);
+    inet_pton(AF_INET6, ip, &sin6.sin6_addr);
+    return MUX_SOCKADDR(reinterpret_cast<const struct sockaddr *>(&sin6));
+}
+
+// Assert same_address(a, b) == want.  Also asserts the relationship to
+// operator==, which differs precisely by including the port.
+static void expect_same_addr(MUX_SOCKADDR a, MUX_SOCKADDR b, bool want,
+                             const char *label)
+{
+    bool got = a.same_address(b);
+    if (got == want)
+    {
+        g_pass++;
+    }
+    else
+    {
+        g_fail++;
+        printf("FAIL: same_address(%s) = %s want %s\n",
+               label, got ? "true" : "false", want ? "true" : "false");
+    }
+}
+
 // Assert compare_to(addr) for a subnet == want.  `inside` true => the address
 // is expected to be within the subnet (kContains).
 static void expect_addr(const char *subnet, MUX_SOCKADDR addr, bool inside,
@@ -258,6 +298,49 @@ int main()
     // kContainedBy (the #799 bug class, now on the v6 path).
     expect("::/1",      "7fff::/16", SC::kContains);
     expect("7fff::/16", "::/1",      SC::kContainedBy);
+
+    // --- same_address: address-only equality (port ignored) ---------------
+    // This is the whole reason the method exists: every connection from one
+    // peer has a different source port, so operator== (which includes the
+    // port) cannot group them.  Used by the per-source pre-auth cap.
+    expect_same_addr(sockaddr_v4_port("10.0.0.7", 40001),
+                     sockaddr_v4_port("10.0.0.7", 40002), true,
+                     "v4 same addr, different ports");
+    expect_same_addr(sockaddr_v4_port("10.0.0.7", 40001),
+                     sockaddr_v4_port("10.0.0.8", 40001), false,
+                     "v4 different addr, same port");
+    expect_same_addr(sockaddr_v6_port("2001:db8::1", 40001),
+                     sockaddr_v6_port("2001:db8::1", 40002), true,
+                     "v6 same addr, different ports");
+    expect_same_addr(sockaddr_v6_port("2001:db8::1", 40001),
+                     sockaddr_v6_port("2001:db8::2", 40001), false,
+                     "v6 differs in last hextet");
+
+    // Cross-family never matches, including the v4-mapped form: mux_sockaddr
+    // stores what the kernel handed back without normalizing, so a v4-mapped
+    // v6 address is a distinct value from its native v4 twin.  Matches
+    // operator== semantics; both forms of one peer cannot arrive on the same
+    // listener, so per-source grouping is unaffected.
+    expect_same_addr(sockaddr_v4_port("127.0.0.1", 40001),
+                     sockaddr_v6_port("::ffff:127.0.0.1", 40001), false,
+                     "v4 vs v4-mapped v6");
+
+    // A different port must NOT make operator== agree with same_address --
+    // that difference is the contract.
+    {
+        MUX_SOCKADDR a = sockaddr_v4_port("10.0.0.7", 40001);
+        MUX_SOCKADDR b = sockaddr_v4_port("10.0.0.7", 40002);
+        if (a.same_address(b) && !(a == b))
+        {
+            g_pass++;
+        }
+        else
+        {
+            g_fail++;
+            printf("FAIL: same_address must ignore the port where "
+                   "operator== does not\n");
+        }
+    }
 
     printf("\n=== netaddr compare_to: %d passed, %d failed ===\n",
            g_pass, g_fail);

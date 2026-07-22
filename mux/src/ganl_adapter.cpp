@@ -712,6 +712,73 @@ public:
             return ganl::InvalidSessionId;
         }
 
+        // Pre-authentication connection cap (per source address).
+        //
+        // Slowloris / descriptor-exhaustion holds many half-open sockets that
+        // never log in.  Legitimate multi-connection use is normal in MUSH —
+        // a dorm or NAT puts many players behind one address, households
+        // share one, and a single player commonly sits on several alts — but
+        // all of that AUTHENTICATES promptly, so it does not accumulate
+        // pre-auth sockets.  Counting only NOT-YET-AUTHENTICATED connections
+        // therefore bounds the anonymous front door without ever limiting
+        // real play.  Refusal is transient and self-healing: a slot frees the
+        // moment a peer authenticates or conn_timeout reaps it, so a rare
+        // collision costs a retry, not a lockout.
+        //
+        if (  0 < g_dc.max_preauth_per_site
+           && haveSockAddr)
+        {
+            int nPreauth = 0;
+            for (DESC *dOther : g_descriptors_list)
+            {
+                if (  nullptr != dOther
+                   && 0 == (dOther->flags & DS_CONNECTED)
+                   && dOther->address.same_address(d->address))
+                {
+                    nPreauth++;
+                }
+            }
+
+            if (g_dc.max_preauth_per_site <= nPreauth)
+            {
+                STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+                UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.preauth");
+                mux_sprintf(logBuf, MBUF_SIZE,
+                    T("[%u/%s] Refused: %d unauthenticated connections already "
+                      "pending from this address (max_preauth_per_site %d)."),
+                    d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"),
+                    nPreauth, g_dc.max_preauth_per_site);
+                g_pILog->log_text(logBuf);
+                free_mbuf(logBuf);
+                ENDLOG;
+
+                // Tell the peer why, so a legitimate player knows to retry
+                // rather than seeing a bare dropped connection.  Written raw
+                // (as fcache_rawdump does): the DESC is torn down immediately
+                // below, so the normal output queue would never be flushed.
+                {
+                    static const char sMsg[] =
+                        "Too many connections from your address are waiting to "
+                        "log in.  Please try again in a moment.\r\n";
+                    const char *pMsg = sMsg;
+                    int nRemaining = static_cast<int>(sizeof(sMsg) - 1);
+                    while (0 < nRemaining)
+                    {
+                        int cnt = SOCKET_WRITE(d->socket, pMsg, nRemaining, 0);
+                        if (cnt < 0)
+                        {
+                            break;
+                        }
+                        nRemaining -= cnt;
+                        pMsg += cnt;
+                    }
+                }
+
+                adapter_.free_desc2(d);
+                return ganl::InvalidSessionId;
+            }
+        }
+
         auto listIt = g_descriptors_list.insert(g_descriptors_list.begin(), d);
         g_descriptors_map.insert(std::make_pair(d, listIt));
 

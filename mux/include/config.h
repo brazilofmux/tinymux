@@ -525,6 +525,11 @@ public:
 
     bool operator==(const mux_sockaddr &it) const;
 
+    // Address-only equality (ignores port).  operator== includes the port,
+    // which differs for every connection from the same peer, so per-source
+    // grouping needs this instead.
+    bool same_address(const mux_sockaddr &it) const;
+
 private:
     void Clear();
     union

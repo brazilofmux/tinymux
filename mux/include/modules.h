@@ -719,6 +719,7 @@ struct DRIVER_CONFIG
     int     cmd_quota_max;
     int     output_limit;
     int     input_limit;
+    int     max_preauth_per_site;
     int     default_charset;
     int     max_players;
     int     control_flags;
