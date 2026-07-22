@@ -3249,12 +3249,13 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     pConfig->retry_limit        = mudconf.retry_limit;
     pConfig->login_fail_limit   = mudconf.login_fail_limit;
     pConfig->login_fail_period  = mudconf.login_fail_period;
+    pConfig->nospam_connect     = mudconf.nospam_connect;
     pConfig->idle_timeout       = mudconf.idle_timeout;
     pConfig->conn_timeout       = mudconf.conn_timeout;
     pConfig->cmd_quota_max      = mudconf.cmd_quota_max;
     pConfig->output_limit       = mudconf.output_limit;
     pConfig->input_limit        = mudconf.input_limit;
-    pConfig->max_preauth_per_site = mudconf.max_preauth_per_site;
+    pConfig->max_preauth_sitecons = mudconf.max_preauth_sitecons;
     pConfig->default_charset    = mudconf.default_charset;
     pConfig->max_players        = mudconf.max_players;
     pConfig->control_flags      = mudconf.control_flags;

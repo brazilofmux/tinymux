@@ -716,12 +716,13 @@ struct DRIVER_CONFIG
     int     retry_limit;
     int     login_fail_limit;
     int     login_fail_period;
+    int     nospam_connect;
     int     idle_timeout;
     int     conn_timeout;
     int     cmd_quota_max;
     int     output_limit;
     int     input_limit;
-    int     max_preauth_per_site;
+    int     max_preauth_sitecons;
     int     default_charset;
     int     max_players;
     int     control_flags;

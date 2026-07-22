@@ -725,7 +725,7 @@ public:
         // moment a peer authenticates or conn_timeout reaps it, so a rare
         // collision costs a retry, not a lockout.
         //
-        if (  0 < g_dc.max_preauth_per_site
+        if (  0 < g_dc.max_preauth_sitecons
            && haveSockAddr)
         {
             int nPreauth = 0;
@@ -739,18 +739,21 @@ public:
                 }
             }
 
-            if (g_dc.max_preauth_per_site <= nPreauth)
+            if (g_dc.max_preauth_sitecons <= nPreauth)
             {
+                if (refusal_log_wanted(addrText[0] != '\0' ? addrText : T("UNKNOWN")))
+                {
                 STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
                 UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.preauth");
                 mux_sprintf(logBuf, MBUF_SIZE,
                     T("[%u/%s] Refused: %d unauthenticated connections already "
-                      "pending from this address (max_preauth_per_site %d)."),
+                      "pending from this address (max_preauth_sitecons %d)."),
                     d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"),
-                    nPreauth, g_dc.max_preauth_per_site);
+                    nPreauth, g_dc.max_preauth_sitecons);
                 g_pILog->log_text(logBuf);
                 free_mbuf(logBuf);
                 ENDLOG;
+                }
 
                 // Tell the peer why, so a legitimate player knows to retry
                 // rather than seeing a bare dropped connection.  Written raw

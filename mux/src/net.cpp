@@ -1197,6 +1197,15 @@ void check_idle(void)
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
 
+    // Land any pending "and N more" summary on the periodic sweep.  A run of
+    // refusals otherwise only ends when a different address is refused or
+    // someone logs in successfully -- and a sustained attacker produces
+    // neither, so the count would sit unreported for the whole attack.  This
+    // bounds refusal logging by TIME rather than by the attacker's rate,
+    // which is the property we actually want.
+    //
+    refusal_log_flush();
+
     for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); )
     {
         DESC* d = *it;
@@ -1711,6 +1720,107 @@ void init_logout_cmdtab(void)
 }
 
 // ---------------------------------------------------------------------------
+// Connection-refusal log damping  (`nospam_connect`, named and behaved after
+// RhostMUSH's parameter of the same name).
+//
+// Every defense in this file answers an abusive connection by refusing it and
+// writing a log line.  That makes the log itself the next resource to attack:
+// a flood we successfully refuse still fills a disk.  Rhost's help text names
+// the threat outright -- "Real twinkish players may try multiple connects to
+// overload a log file".
+//
+//   0  log every refusal
+//   1  log the first of a consecutive run from one address, then a single
+//      summary line when the run ends (default -- loses no signal)
+//   2  do not log refusals at all
+//
+// Like Rhost's, this is one address slot plus a counter: the state cannot
+// grow, so the anti-flood measure is not itself floodable.  Wizard monitor
+// output is unaffected either way.
+//
+static UTF8 g_nospam_lastsite[MBUF_SIZE] = { '\0' };
+static int  g_nospam_counter = 0;
+
+// Emit the pending "and N more" summary, if any.  Called when the run ends --
+// either a different address is refused, or a connection is accepted.
+//
+static void refusal_log_summary(void)
+{
+    if (  g_nospam_counter <= 0
+       || '\0' == g_nospam_lastsite[0])
+    {
+        g_nospam_counter = 0;
+        return;
+    }
+
+    STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SPAM");
+    UTF8 *buf = alloc_mbuf("refusal_log.summary");
+    mux_sprintf(buf, MBUF_SIZE,
+        T("[%s] Connection refused [total %d more time%s]."),
+        g_nospam_lastsite, g_nospam_counter,
+        (1 == g_nospam_counter) ? T("") : T("s"));
+    g_pILog->log_text(buf);
+    free_mbuf(buf);
+    ENDLOG;
+
+    g_nospam_counter = 0;
+}
+
+// True if this refusal should be logged in full right now.
+//
+bool refusal_log_wanted(const UTF8 *pAddr)
+{
+    if (g_dc.nospam_connect <= 0)
+    {
+        return true;
+    }
+    if (2 <= g_dc.nospam_connect)
+    {
+        return false;
+    }
+
+    if (  nullptr != pAddr
+       && 0 == strcmp(reinterpret_cast<const char *>(pAddr),
+                      reinterpret_cast<const char *>(g_nospam_lastsite)))
+    {
+        // Same address as the run in progress: count it, stay quiet.
+        //
+        g_nospam_counter++;
+        return false;
+    }
+
+    // A different address ends the previous run.
+    //
+    refusal_log_summary();
+    if (nullptr != pAddr)
+    {
+        mux_strncpy(g_nospam_lastsite, pAddr, sizeof(g_nospam_lastsite) - 1);
+    }
+    else
+    {
+        g_nospam_lastsite[0] = '\0';
+    }
+    return true;
+}
+
+// A successful login ends any run of refusals.
+//
+// Rhost flushes on an accepted connection because its refusals happen at
+// accept.  Ours also refuse at login, and every login attempt arrives on a
+// freshly accepted socket -- so flushing on accept would end the run before
+// every single refusal and defeat the damping entirely.
+//
+void refusal_log_flush(void)
+{
+    if (g_dc.nospam_connect <= 0)
+    {
+        return;
+    }
+    refusal_log_summary();
+    g_nospam_lastsite[0] = '\0';
+}
+
+// ---------------------------------------------------------------------------
 // Per-source failed-login throttle.
 //
 // `retry_limit` (default 3) is per-SOCKET: after three bad passwords the
@@ -1770,7 +1880,7 @@ static double login_fail_rate(void)
 // fullest bucket) when the table is full, so that pressure never costs us the
 // record of an active attacker.  The table is a fixed array scanned linearly:
 // it is consulted only on login attempts (themselves already bounded by
-// max_preauth_per_site), and a defense must not become the resource it
+// max_preauth_sitecons), and a defense must not become the resource it
 // protects -- a growable table is one more thing to flood.
 //
 static login_fail_bucket *login_fail_find(const UTF8 *pKey, size_t nKey,
@@ -2049,6 +2159,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
             queue_write(d, tbuf);
             free_mbuf(tbuf);
 
+            if (refusal_log_wanted(d->addr))
+            {
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "THR");
             buff = alloc_lbuf("check_conn.LOG.throttle");
             mux_sprintf(buff, LBUF_SIZE,
@@ -2057,6 +2169,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;
+            }
 
             // The socket is deliberately left open and retries_left is left
             // alone: the attempt never reached a password check, so it is not
@@ -2195,6 +2308,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 bool isPueblo = (d->flags & DS_PUEBLOCLIENT) != 0;
                 bool isSusp = g_access_list.isSuspect(&d->address);
                 int timeout = g_dc.idle_timeout;
+                refusal_log_flush();
                 g_pIPlayerSession->AnnounceConnect(player, num_con,
                     isPueblo, isSusp, d->addr, d->username, host_address,
                     &timeout, &d->connlog_id);
@@ -2305,6 +2419,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                     UTF8 crea_host[MBUF_SIZE];
                     d->address.ntop(crea_host, sizeof(crea_host));
                     int timeout = g_dc.idle_timeout;
+                    refusal_log_flush();
                     g_pIPlayerSession->AnnounceConnect(player, 1,
                         isPueblo, isSusp, d->addr, d->username,
                         crea_host, &timeout, &d->connlog_id);
