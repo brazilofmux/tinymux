@@ -522,6 +522,80 @@ mux_subnet::SubnetComparison mux_subnet::compare_to(MUX_SOCKADDR *msa) const
     return fComp;
 }
 
+// Split an optional trailing connection threshold off a site specification,
+// RhostMUSH-style.  `str` is truncated in place to just the subnet and
+// *pulThreshold receives the count (0 when none was given).  Returns false
+// only for a malformed threshold.
+//
+// Both subnet spellings must survive this, so token count alone is ambiguous:
+// "10.0.0.0 8" is an address and a (bad) mask, while "10.0.0.0/8 4" is a CIDR
+// subnet and a threshold.  The '/' settles it -- with CIDR the second token is
+// the threshold, otherwise it is the mask and the threshold is third.
+//
+bool parse_site_threshold(UTF8 *str, unsigned long *pulThreshold)
+{
+    if (  nullptr == str
+       || nullptr == pulThreshold)
+    {
+        return false;
+    }
+    *pulThreshold = 0;
+
+    static const char *pDelims = " \t=,";
+    const bool bCIDR = (nullptr != strchr(reinterpret_cast<char *>(str), '/'));
+    const int iWant = bCIDR ? 2 : 3;
+
+    // Count and locate tokens without disturbing `str`.
+    //
+    UTF8 *pLast = nullptr;
+    int nTok = 0;
+    for (UTF8 *p = str; '\0' != *p; )
+    {
+        while (  '\0' != *p
+              && nullptr != strchr(pDelims, *p))
+        {
+            p++;
+        }
+        if ('\0' == *p)
+        {
+            break;
+        }
+        pLast = p;
+        nTok++;
+        while (  '\0' != *p
+              && nullptr == strchr(pDelims, *p))
+        {
+            p++;
+        }
+    }
+
+    if (  iWant != nTok
+       || nullptr == pLast
+       || !is_integer(pLast, nullptr))
+    {
+        return true;
+    }
+
+    const long lThreshold = mux_atol(pLast);
+    if (lThreshold < 0)
+    {
+        return false;
+    }
+    *pulThreshold = static_cast<unsigned long>(lThreshold);
+
+    // Cut the LAST token.  Searching for its text would find an earlier copy:
+    // "127.0.0.1/32 3" would be truncated at the '3' of "/32".
+    //
+    UTF8 *pEnd = pLast;
+    while (  str < pEnd
+          && nullptr != strchr(pDelims, pEnd[-1]))
+    {
+        pEnd--;
+    }
+    *pEnd = '\0';
+    return true;
+}
+
 mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
 {
     mux_addr *mux_address_mask = nullptr;

@@ -3015,13 +3015,15 @@ mux_subnets::~mux_subnets()
     delete msnRoot;
 }
 
-mux_subnet_node::mux_subnet_node(mux_subnet *msn_arg, unsigned long ulControl_arg)
+mux_subnet_node::mux_subnet_node(mux_subnet *msn_arg, unsigned long ulControl_arg,
+                                 unsigned long ulThreshold_arg)
 {
     msn = msn_arg;
     pnLeft = nullptr;
     pnInside = nullptr;
     pnRight = nullptr;
     ulControl = ulControl_arg;
+    ulThreshold = ulThreshold_arg;
 }
 
 mux_subnet_node::~mux_subnet_node()
@@ -3096,7 +3098,75 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
     }
 }
 
-void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned long *pulInfo)
+// ---------------------------------------------------------------------------
+// Graduated site rules  (RhostMUSH's per-entry connection threshold, ported).
+//
+// Binary site policy is what makes shared addresses painful: a dorm, a NAT
+// gateway, or a household is one address carrying many unrelated players, so
+// "register_site the campus" punishes everyone for one abuser and doing
+// nothing leaves the site undefended.  A threshold makes the middle
+// expressible -- "the dorm is fine until it isn't":
+//
+//     register_site 192.0.2.0/24 8
+//
+// says a host in that range may hold up to 7 simultaneous connections
+// unbothered, and only from the 8th does registration apply.
+//
+// Counting is per connecting ADDRESS, not per subnet: the subnet selects
+// which rule you land under, the address is what is counted.  That is the
+// right unit here -- a NATted dorm is one address, so its own population is
+// what the threshold measures.
+//
+static int site_connection_count(MUX_SOCKADDR *msa)
+{
+    int nCons = 0;
+    for (DESC *d : g_descriptors_list)
+    {
+        if (  nullptr != d
+           && d->address.same_address(*msa))
+        {
+            nCons++;
+        }
+    }
+    return nCons;
+}
+
+// Does this node's rule engage right now?
+//
+// Rules that SET an HI_ flag (forbid, register, noguest, suspect, nositemon)
+// are restrictions: they engage at or above the threshold.  Rules that CLEAR
+// one (permit, guest, trust, sitemon) are exemptions, so they engage only
+// while BELOW it -- an exemption that survived past its own ceiling would not
+// be a threshold at all.  This is the same inversion Rhost applies to its
+// permit-side entries, and it makes "permitted up to N connections" sayable.
+//
+// The count is computed at most once per lookup and only when a thresholded
+// rule is actually matched, so ACLs that use no thresholds -- every existing
+// configuration -- pay nothing.
+//
+static bool node_rule_engages(unsigned long ulControl, unsigned long ulThreshold,
+                              MUX_SOCKADDR *msa, int *pnCons)
+{
+    if (0 == ulThreshold)
+    {
+        return true;
+    }
+
+    if (*pnCons < 0)
+    {
+        *pnCons = site_connection_count(msa);
+    }
+
+    const unsigned long ulExempting = HC_PERMIT | HC_SITEMON | HC_GUEST | HC_TRUST;
+    if (0 != (ulControl & ulExempting))
+    {
+        return static_cast<unsigned long>(*pnCons) < ulThreshold;
+    }
+    return static_cast<unsigned long>(*pnCons) >= ulThreshold;
+}
+
+void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned long *pulInfo,
+    int *pnCons)
 {
     if (nullptr == msnRoot)
     {
@@ -3107,10 +3177,19 @@ void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned l
     switch (ct)
     {
     case mux_subnet::SubnetComparison::kLessThan:
-        search(msnRoot->pnRight, msa, pulInfo);
+        search(msnRoot->pnRight, msa, pulInfo, pnCons);
         break;
 
     case mux_subnet::SubnetComparison::kContains:
+        if (!node_rule_engages(msnRoot->ulControl, msnRoot->ulThreshold, msa, pnCons))
+        {
+            // Under (or over) its threshold: this rule contributes nothing,
+            // but rules nested inside it are still evaluated.
+            //
+            search(msnRoot->pnInside, msa, pulInfo, pnCons);
+            break;
+        }
+
         if (HC_PERMIT & msnRoot->ulControl)
         {
             *pulInfo &= ~(HI_REGISTER|HI_FORBID);
@@ -3151,11 +3230,11 @@ void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned l
             *pulInfo &= ~(HI_SUSPECT);
         }
 
-        search(msnRoot->pnInside, msa, pulInfo);
+        search(msnRoot->pnInside, msa, pulInfo, pnCons);
         break;
 
     case mux_subnet::SubnetComparison::kGreaterThan:
-        search(msnRoot->pnLeft, msa, pulInfo);
+        search(msnRoot->pnLeft, msa, pulInfo, pnCons);
         break;
 
     default:
@@ -3249,65 +3328,65 @@ mux_subnet_node *mux_subnets::remove(mux_subnet_node *msnRoot, mux_subnet *msn_a
     return msnRoot;
 }
 
-bool mux_subnets::permit(mux_subnet *msn_arg)
+bool mux_subnets::permit(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_PERMIT);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_PERMIT, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::registered(mux_subnet *msn_arg)
+bool mux_subnets::registered(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_REGISTER);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_REGISTER, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::forbid(mux_subnet *msn_arg)
+bool mux_subnets::forbid(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_FORBID);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_FORBID, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::nositemon(mux_subnet *msn_arg)
+bool mux_subnets::nositemon(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOSITEMON);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOSITEMON, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::sitemon(mux_subnet *msn_arg)
+bool mux_subnets::sitemon(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SITEMON);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SITEMON, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::noguest(mux_subnet *msn_arg)
+bool mux_subnets::noguest(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOGUEST);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_NOGUEST, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::guest(mux_subnet *msn_arg)
+bool mux_subnets::guest(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_GUEST);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_GUEST, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::suspect(mux_subnet *msn_arg)
+bool mux_subnets::suspect(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SUSPECT);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_SUSPECT, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
 
-bool mux_subnets::trust(mux_subnet *msn_arg)
+bool mux_subnets::trust(mux_subnet *msn_arg, unsigned long ulThreshold)
 {
-    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_TRUST);
+    mux_subnet_node *msn = new mux_subnet_node(msn_arg, HC_TRUST, ulThreshold);
     insert(&msnRoot, msn);
     return true;
 }
@@ -3364,6 +3443,15 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
             safe_str(access_keywords[i].s, sControl, &bufc);
         }
     }
+    // Show a graduated rule's threshold, so an admin reading the list can
+    // tell "forbidden" from "forbidden once 8 connections are up".
+    //
+    if (0 != p->ulThreshold)
+    {
+        safe_str(T(" (at "), sControl, &bufc);
+        safe_ltoa(static_cast<long>(p->ulThreshold), sControl, &bufc);
+        safe_str(T("+ conns)"), sControl, &bufc);
+    }
     *bufc = '\0';
 
     mux_sprintf(sAddress, LBUF_SIZE, T("%s/%d"), sLine, nLeadingBits);
@@ -3393,28 +3481,32 @@ void mux_subnets::listinfo(dbref player)
 int mux_subnets::check(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
-    search(msnRoot, msa, &ulInfo);
+    int nCons = -1;
+    search(msnRoot, msa, &ulInfo, &nCons);
     return ulInfo;
 }
 
 bool mux_subnets::isRegistered(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
-    search(msnRoot, msa, &ulInfo);
+    int nCons = -1;
+    search(msnRoot, msa, &ulInfo, &nCons);
     return 0 != (ulInfo & HI_REGISTER);
 }
 
 bool mux_subnets::isForbid(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
-    search(msnRoot, msa, &ulInfo);
+    int nCons = -1;
+    search(msnRoot, msa, &ulInfo, &nCons);
     return 0 != (ulInfo & HI_FORBID);
 }
 
 bool mux_subnets::isSuspect(MUX_SOCKADDR *msa)
 {
     unsigned long ulInfo = HI_PERMIT;
-    search(msnRoot, msa, &ulInfo);
+    int nCons = -1;
+    search(msnRoot, msa, &ulInfo, &nCons);
     return 0 != (ulInfo & HI_SUSPECT);
 }
 

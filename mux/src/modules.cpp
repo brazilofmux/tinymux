@@ -955,24 +955,53 @@ MUX_RESULT CDriverControl::SiteUpdate(const UTF8 *subnetStr,
     LBuf buf = LBuf_Src("parse_subnet");
     mux_strncpy(buf, subnetStr, LBUF_SIZE - 1);
 
+    // Optional graduated threshold, RhostMUSH-style: a trailing bare integer
+    // after the subnet.  Both subnet spellings are supported, so the token
+    // count alone is ambiguous for two tokens -- "10.0.0.0 8" is an address
+    // and a (bad) mask, while "10.0.0.0/8 4" is a CIDR subnet and a
+    // threshold.  The '/' settles it: with CIDR the second token is the
+    // threshold, otherwise it is the mask and the threshold is third.
+    //
+    //     forbid_site   192.0.2.0/24 8
+    //     forbid_site   192.0.2.0 255.255.255.0 8
+    //
+    unsigned long ulThreshold = 0;
+    if (!parse_site_threshold(buf, &ulThreshold))
+    {
+        cf_log_syntax(player, cmd, T("Connection threshold may not be negative."));
+        return MUX_E_FAIL;
+    }
+
     mux_subnet *pSubnet = parse_subnet(buf, player, cmd);
     if (nullptr == pSubnet)
     {
         return MUX_E_FAIL;
     }
 
+    // A threshold on reset_site is meaningless -- it removes rules rather
+    // than applying one -- so say so instead of silently ignoring it.
+    //
+    if (  0 != ulThreshold
+       && HC_RESET == operation)
+    {
+        cf_log_syntax(player, cmd,
+            T("A connection threshold has no meaning for reset_site."));
+        delete pSubnet;
+        return MUX_E_FAIL;
+    }
+
     bool bOK = false;
     switch (operation)
     {
-    case HC_PERMIT:     bOK = g_access_list.permit(pSubnet);     break;
-    case HC_REGISTER:   bOK = g_access_list.registered(pSubnet); break;
-    case HC_FORBID:     bOK = g_access_list.forbid(pSubnet);     break;
-    case HC_NOSITEMON:  bOK = g_access_list.nositemon(pSubnet);  break;
-    case HC_SITEMON:    bOK = g_access_list.sitemon(pSubnet);    break;
-    case HC_NOGUEST:    bOK = g_access_list.noguest(pSubnet);    break;
-    case HC_GUEST:      bOK = g_access_list.guest(pSubnet);      break;
-    case HC_SUSPECT:    bOK = g_access_list.suspect(pSubnet);    break;
-    case HC_TRUST:      bOK = g_access_list.trust(pSubnet);      break;
+    case HC_PERMIT:     bOK = g_access_list.permit(pSubnet, ulThreshold);     break;
+    case HC_REGISTER:   bOK = g_access_list.registered(pSubnet, ulThreshold); break;
+    case HC_FORBID:     bOK = g_access_list.forbid(pSubnet, ulThreshold);     break;
+    case HC_NOSITEMON:  bOK = g_access_list.nositemon(pSubnet, ulThreshold);  break;
+    case HC_SITEMON:    bOK = g_access_list.sitemon(pSubnet, ulThreshold);    break;
+    case HC_NOGUEST:    bOK = g_access_list.noguest(pSubnet, ulThreshold);    break;
+    case HC_GUEST:      bOK = g_access_list.guest(pSubnet, ulThreshold);      break;
+    case HC_SUSPECT:    bOK = g_access_list.suspect(pSubnet, ulThreshold);    break;
+    case HC_TRUST:      bOK = g_access_list.trust(pSubnet, ulThreshold);      break;
     case HC_RESET:
         if (!g_access_list.reset(pSubnet))
         {

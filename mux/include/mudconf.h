@@ -338,7 +338,8 @@ extern CONFDATA mudconf;
 class mux_subnet_node
 {
 public:
-    mux_subnet_node(mux_subnet *msn, unsigned long ulControl);
+    mux_subnet_node(mux_subnet *msn, unsigned long ulControl,
+                    unsigned long ulThreshold = 0);
     ~mux_subnet_node();
 
 private:
@@ -347,6 +348,13 @@ private:
     mux_subnet_node *pnInside;
     mux_subnet_node *pnRight;
     unsigned long    ulControl;
+
+    // Optional graduated threshold (0 = none, the historical behaviour).
+    // A rule that SETS an HI_ flag engages only once this many connections
+    // from the connecting address already exist; a rule that CLEARS one --
+    // an exemption -- engages only while below it.  See mux_subnets::search.
+    //
+    unsigned long    ulThreshold;
 
     friend class mux_subnets;
 };
@@ -382,24 +390,24 @@ public:
 
     // Permit Group: permit, registered, and forbid
     //
-    bool permit(mux_subnet *msn);
-    bool registered(mux_subnet *msn);
-    bool forbid(mux_subnet *msn);
+    bool permit(mux_subnet *msn, unsigned long ulThreshold = 0);
+    bool registered(mux_subnet *msn, unsigned long ulThreshold = 0);
+    bool forbid(mux_subnet *msn, unsigned long ulThreshold = 0);
 
     // Sitemon Group: sitemon, nositemon
     //
-    bool nositemon(mux_subnet *msn);
-    bool sitemon(mux_subnet *msn);
+    bool nositemon(mux_subnet *msn, unsigned long ulThreshold = 0);
+    bool sitemon(mux_subnet *msn, unsigned long ulThreshold = 0);
 
     // Guest Group: guest, noguest
     //
-    bool noguest(mux_subnet *msn);
-    bool guest(mux_subnet *msn);
+    bool noguest(mux_subnet *msn, unsigned long ulThreshold = 0);
+    bool guest(mux_subnet *msn, unsigned long ulThreshold = 0);
 
     // Suspect Group: suspect, trust
     //
-    bool suspect(mux_subnet *msn);
-    bool trust(mux_subnet *msn);
+    bool suspect(mux_subnet *msn, unsigned long ulThreshold = 0);
+    bool trust(mux_subnet *msn, unsigned long ulThreshold = 0);
 
     // Queries: registered, forbid, suspect, noguest, nositemon.
     //
@@ -422,7 +430,8 @@ public:
 private:
     mux_subnet_node *msnRoot;
     void insert(mux_subnet_node **msnRoot, mux_subnet_node *msn);
-    void search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned long *pulInfo);
+    void search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa,
+                unsigned long *pulInfo, int *pnCons);
     mux_subnet_node *remove(mux_subnet_node *msnRoot, mux_subnet *msn_arg);
 
     mux_subnet_node *rotr(mux_subnet_node *msnRoot);
