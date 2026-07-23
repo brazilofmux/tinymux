@@ -2292,6 +2292,18 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         return;
     }
 
+    // Softcode execution trace (#1023).  Record (source -> result) for the
+    // call boundaries -- function calls and eval brackets -- when tracing is
+    // armed.  These are the subexpressions a builder debugging code cares
+    // about; the change-filter in tcache_add drops no-op nodes.  Off-path
+    // cost is a single bit test, since EV_TRACE is only set while tracing.
+    //
+    const bool bTrace =
+        (eval & EV_TRACE) && !(eval & EV_NOTRACE)
+        && (  AST_FUNCCALL == node->type
+           || AST_EVALBRACKET == node->type);
+    UTF8 *pTraceStart = bTrace ? *bufc : nullptr;
+
     switch (node->type)
     {
     case AST_LITERAL:
@@ -2503,6 +2515,38 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         break;
     }
     }
+
+    // Trace emit (#1023): record this call boundary's (source -> result).
+    // tcache_add takes ownership of pOrig and applies the change-filter.
+    //
+    if (bTrace)
+    {
+        std::string src = ast_raw_text(node);
+        UTF8 *pOrig = alloc_lbuf("ast_trace.orig");
+        size_t nSrc = src.size();
+        if (nSrc > LBUF_SIZE - 1)
+        {
+            nSrc = LBUF_SIZE - 1;
+        }
+        memcpy(pOrig, src.data(), nSrc);
+        pOrig[nSrc] = '\0';
+
+        // The result span [pTraceStart, *bufc) is not NUL-terminated yet.
+        //
+        UTF8 chSaved = **bufc;
+        **bufc = '\0';
+        tcache_add(executor, pOrig, pTraceStart);
+        **bufc = chSaved;
+
+        // Bottom-up mode flushes each line as its subexpression completes
+        // (innermost first); top-down accumulates and flushes at the outermost
+        // eval (mux_exec).
+        //
+        if (!mudconf.trace_topdown)
+        {
+            tcache_finish();
+        }
+    }
 }
 
 void ast_exec(const UTF8 *pStr, size_t nStr,
@@ -2634,6 +2678,23 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         ast_ptr = parse_holder.get();
     }
 
+    // Softcode execution trace (TRACE flag / EV_TRACE).  Reconnects the
+    // trace emitter that the AST/JIT evaluator migration orphaned (#1023).
+    // Two things follow from tracing being armed: the accumulated
+    // (input -> output) lines are bracketed and flushed to the owner at the
+    // outermost evaluation, and the JIT is bypassed for this call -- a
+    // compiled blob has no per-node frames for ast_eval_node's hook to
+    // observe, so traced evaluation must run on the AST interpreter.
+    //
+    const bool is_trace =
+        (Trace(executor) || (eval & EV_TRACE)) && !(eval & EV_NOTRACE);
+    bool is_top = false;
+    if (is_trace)
+    {
+        is_top = tcache_empty();
+        eval |= EV_TRACE;   // propagate to the whole subtree
+    }
+
     // Evaluate the AST.
     //
 #if defined(TINYMUX_JIT)
@@ -2754,6 +2815,7 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
         // stay on the AST evaluator.
         && !(eval & EV_NOFCHECK)
         && !alarm_clock.alarmed
+        && !is_trace   // traced evaluation must run on the AST interpreter
         && jit_can_handle())
     {
         if (jit_eval(pStr, nLen, buff, bufc,
@@ -2766,6 +2828,26 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
 #endif
     ast_eval_node(ast_ptr, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
+
+    // Flush accumulated trace lines to the owner at the outermost eval.
+    // ast_eval_node returns normally on alarm/stack-limit, so this is
+    // always reached for the top-level call.
+    //
+    if (is_top)
+    {
+        // trace_limit caps stored lines in top-down mode; tell the owner how
+        // many were dropped (2.13 parity).  Read the overflow before finish
+        // resets the counter.
+        //
+        const int nDropped =
+            mudconf.trace_topdown ? tcache_dropped_count() : 0;
+        tcache_finish();
+        if (0 < nDropped)
+        {
+            notify(executor,
+                tprintf(T("%d lines of trace output discarded."), nDropped));
+        }
+    }
 }
 
 // ---------------------------------------------------------------

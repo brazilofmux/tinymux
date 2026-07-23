@@ -448,6 +448,10 @@ extern bool break_called;
 
 /* From eval.cpp */
 void tcache_init(void);
+bool tcache_empty(void);
+void tcache_add(dbref player, UTF8 *orig, const UTF8 *result);
+void tcache_finish(void);
+int  tcache_dropped_count(void);
 UTF8 *parse_to(UTF8 **, UTF8, int);
 void parse_arglist(dbref executor, dbref caller, dbref enactor, UTF8 *,
                     int, UTF8 *[], int, const UTF8 *[], int, int *);
