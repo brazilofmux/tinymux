@@ -594,7 +594,7 @@ void tcache_init(void)
     tcache_count = 0;
 }
 
-static bool tcache_empty(void)
+bool tcache_empty(void)
 {
     if (tcache_top)
     {
@@ -605,7 +605,7 @@ static bool tcache_empty(void)
     return false;
 }
 
-static void tcache_add(dbref player, UTF8 *orig, const UTF8 *result)
+void tcache_add(dbref player, UTF8 *orig, const UTF8 *result)
 {
     if (  strcmp(reinterpret_cast<const char *>(orig), reinterpret_cast<const char *>(result))
        && (++tcache_count) <= mudconf.trace_limit)
@@ -627,7 +627,18 @@ static void tcache_add(dbref player, UTF8 *orig, const UTF8 *result)
     }
 }
 
-static void tcache_finish(void)
+// Lines dropped past trace_limit (top-down only): tcache_add counts every
+// changed subexpression in tcache_count but stops storing past the cap, so
+// the overflow is the difference.  Read before tcache_finish resets it.
+//
+int tcache_dropped_count(void)
+{
+    return (tcache_count > mudconf.trace_limit)
+         ? (tcache_count - mudconf.trace_limit)
+         : 0;
+}
+
+void tcache_finish(void)
 {
     while (tcache_head != nullptr)
     {
