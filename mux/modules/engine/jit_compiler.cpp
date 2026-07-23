@@ -5014,16 +5014,6 @@ static uint32_t SUB(uint8_t rd, uint8_t rs1, uint8_t rs2) {
          | (rs2 << 20) | (0x20u << 25);
 }
 
-static void load_guest_addr(std::vector<uint32_t> &code, uint8_t rd,
-                            uint64_t addr) {
-    if (!rv_compiler::is_output_frame_ref(addr)) {
-        load_val(code, rd, addr);
-        return;
-    }
-    load_val(code, rd, rv_compiler::output_frame_delta(addr));
-    code.push_back(SUB(rd, 8, rd));  // rd = frame_top - delta
-}
-
 } // namespace rv64_asm
 
 // Persistent VM ECALL handler.

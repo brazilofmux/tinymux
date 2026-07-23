@@ -1201,7 +1201,6 @@ extern NAMETAB method_nametab[];
 #define EV_EVAL         0x00000800  /* Evaluate results before returning */
 #define EV_STRIP_TS     0x00001000  /* Strip trailing spaces */
 #define EV_STRIP_LS     0x00002000  /* Strip leading spaces */
-#define EV_STRIP_ESC    0x00004000  /* Strip one level of \ characters */
 #define EV_STRIP_AROUND 0x00008000  /* Strip {} only at ends of string */
 #define EV_TOP          0x00010000  /* This is a toplevel call to eval() */
 #define EV_NOTRACE      0x00020000  /* Don't trace this call to eval */

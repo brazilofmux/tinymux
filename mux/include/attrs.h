@@ -30,8 +30,6 @@ constexpr int AF_TRACE    = 0x00080000; // Trace evaluation of this attribute.
 constexpr int AF_NOEVAL   = 0x00100000; // Don't evaluate attribute contents.
 constexpr int AF_NONAME   = 0x00400000; // Supress name in oattr cases.
 constexpr int AF_NODECOMP = 0x00800000; // Do not include in @decomp.
-constexpr int AF_ISUSED   = 0x10000000; // Used to make efficient sweeps of stale
-                                        // attributes.
 
 // Allow AF_TRACE in x to control the EV_TRACE bit in y.
 //

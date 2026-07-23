@@ -73,7 +73,6 @@ struct confdata
     bool    idle_wiz_dark;      /* Do idling wizards get set dark? */
     bool    indent_desc;        // Newlines before and after descs?
     bool    match_mine;
-    bool    no_flash;           // Suppress ANSI blink codes globally.         /* Should you check yourself for $-commands? */
     bool    terse_nospoof;      // Shorten NOSPOOF prefix for say/pose.
     bool    match_mine_pl;      /* Should players check selves for $-cmds? */
     bool    name_spaces;        // allow player names to have spaces.
