@@ -184,6 +184,14 @@ public:
 
         s_lua_jit_stats.cache_hits++;
 
+        // On a wall-clock alarm mid-run, run_cached_program writes
+        // "#-1 CPU LIMITED" into pResult and returns true (handled) rather
+        // than false.  That is deliberate: a false here returns MUX_E_FAIL,
+        // and the Lua caller responds by re-running the whole chunk in the
+        // Lua VM -- expensive work we must NOT do once the command is already
+        // over its CPU budget.  So an alarm surfaces as a successful
+        // CPU-LIMITED result, not a failover.
+        //
         bool ok = run_cached_program(&it->second, executor, caller, enactor,
             pResult, nResultMax, pArgs, nArgs,
             EV_FCHECK | EV_EVAL, pLuaState);

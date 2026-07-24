@@ -5414,11 +5414,13 @@ void MailList::RemoveItem(void)
     auto next_it = lst.erase(m_mi);
     m_bRemoved = true;
 
-    // If this was the last message, erase the map entry and clear
-    // iterators *before* the list is destroyed.  Leaving m_mi/m_miEnd
-    // pointing into a erased std::list makes IsEnd()/NextItem() use
-    // invalidated iterators (purge, expire, retract-unread, mail-debug).
-    // Mirror RemoveAll().
+    // If this was the last message, clear the iterators and erase the map
+    // entry.  Clearing is the point: leaving m_mi/m_miEnd pointing into an
+    // erased std::list makes IsEnd()/NextItem() dereference invalidated
+    // iterators (purge, expire, retract-unread, mail-debug).  RemoveAll()
+    // clears the same pair, but erases first; here we must test lst.empty()
+    // first, so the list has to stay alive until after the test -- hence
+    // clear, then erase.
     //
     if (lst.empty())
     {
