@@ -1959,10 +1959,10 @@ void T5X_GAME::ConvertFromP6H()
                         {
                             // This is a known name, but it doesn't have the
                             // same meaning. Rename it.
+                            // #1087: size from strlen — was char[100] + sprintf.
                             //
-                            char buffer[100];
-                            sprintf(buffer, "X%s", pAttrName);
-                            AttrNames[StringClone(buffer)] = iNextAttr;
+                            std::string renamed = std::string("X") + (pAttrName ? pAttrName : "");
+                            AttrNames[StringClone(renamed.c_str())] = iNextAttr;
                             AttrNamesKnown[StringClone(pAttrName)] = iNextAttr;
                             iNextAttr++;
                         }
@@ -1977,12 +1977,12 @@ void T5X_GAME::ConvertFromP6H()
     }
 
     // Add attribute names
+    // #1087: size from name length — was char[256] + sprintf.
     //
     for (map<const char *, int, ltstr>::iterator it = AttrNames.begin(); it != AttrNames.end(); ++it)
     {
-        char buffer[256];
-        sprintf(buffer, "%d:%s", 0, it->first);
-        AddNumAndName(it->second, StringClone(buffer));
+        std::string encoded = std::string("0:") + (it->first ? it->first : "");
+        AddNumAndName(it->second, StringClone(encoded.c_str()));
     }
     SetNextAttr(iNextAttr);
 
