@@ -6311,6 +6311,19 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                         iFmt++;
                         ncpFmt--;
                     }
+                    else if ('z' == pFmt[iFmt])
+                    {
+                        // size_t/ssize_t length modifier.  Map onto the
+                        // existing nLongs tiers by actual width so both LP64
+                        // (size_t == unsigned long) and LLP64 (size_t is
+                        // 64-bit while long is 32-bit) marshal the va_arg
+                        // type the caller actually pushed.  Without this,
+                        // "%zu" fell through to mux_assert(0) and aborted.
+                        //
+                        nLongs = (sizeof(size_t) == sizeof(unsigned long)) ? 1 : 2;
+                        iFmt++;
+                        ncpFmt--;
+                    }
                     else if (  '0' <= pFmt[iFmt]
                             && pFmt[iFmt] <= '9')
                     {
