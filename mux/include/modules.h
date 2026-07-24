@@ -350,6 +350,10 @@ public:
     virtual MUX_RESULT IsGod(dbref obj, bool *pGod) = 0;
     virtual MUX_RESULT HasControl(dbref who, dbref what, bool *pControls) = 0;
     virtual MUX_RESULT HasCommAll(dbref obj, bool *pCommAll) = 0;
+    // #1084: evaluate object lock atr for who (could_doit parity for modules).
+    // atr is an attribute number (e.g. A_LOCK, A_LUSE, A_LENTER).
+    //
+    virtual MUX_RESULT CouldDoit(dbref who, dbref what, int atr, bool *pResult) = 0;
 };
 
 // Storage interfaces — engine-provided access to the shared SQLite

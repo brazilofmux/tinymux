@@ -1832,6 +1832,7 @@ public:
     virtual MUX_RESULT IsGod(dbref obj, bool *pGod);
     virtual MUX_RESULT HasControl(dbref who, dbref what, bool *pControls);
     virtual MUX_RESULT HasCommAll(dbref obj, bool *pCommAll);
+    virtual MUX_RESULT CouldDoit(dbref who, dbref what, int atr, bool *pResult);
 
     CPermissions(void);
     virtual ~CPermissions();
@@ -1941,6 +1942,21 @@ MUX_RESULT CPermissions::HasCommAll(dbref obj, bool *pCommAll)
         return MUX_E_INVALIDARG;
     }
     *pCommAll = Comm_All(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CPermissions::CouldDoit(dbref who, dbref what, int atr, bool *pResult)
+{
+    if (nullptr == pResult)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(who) || !Good_obj(what))
+    {
+        *pResult = false;
+        return MUX_E_INVALIDARG;
+    }
+    *pResult = could_doit(who, what, atr);
     return MUX_S_OK;
 }
 

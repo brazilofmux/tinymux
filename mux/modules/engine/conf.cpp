@@ -787,6 +787,18 @@ static NAMETAB bool_names[] =
     {static_cast<UTF8*>(nullptr), 0,  0,  0}
 };
 
+// #1085: after runtime conf changes that may affect g_dc, re-pull the
+// driver basket (same as cf_live_driver_int).
+//
+static void live_sync_driver_config(void)
+{
+    if (  !mudstate.bReadingConfiguration
+       && nullptr != g_driver_config_sync_fn)
+    {
+        g_driver_config_sync_fn();
+    }
+}
+
 static CF_HAND(cf_bool)
 {
     UNUSED_PARAMETER(pExtra);
@@ -800,6 +812,7 @@ static CF_HAND(cf_bool)
     }
     const auto pb = reinterpret_cast<bool*>(vp);
     *pb = isTRUE(i);
+    live_sync_driver_config();
     return 0;
 }
 
@@ -817,6 +830,7 @@ static CF_HAND(cf_option)
         return -1;
     }
     *vp = i;
+    live_sync_driver_config();
     return 0;
 }
 
@@ -882,6 +896,7 @@ static CF_HAND(cf_string)
         Log.SetPrefix(buff);
         free_sbuf(buff);
     }
+    live_sync_driver_config();
     return retval;
 }
 
@@ -2107,7 +2122,7 @@ static CONFPARM conftable[] =
     {T("search_cost"),               cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.searchcost,             nullptr,            0},
     {T("see_owned_dark"),            cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.see_own_dark),    nullptr,            0},
     {T("signal_action"),             cf_option,      CA_STATIC, CA_GOD,      &mudconf.sig_action,             sigactions_nametab, 0},
-    {T("site_chars"),                cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.site_chars),      nullptr,            0},
+    {T("site_chars"),                cf_live_driver_int, CA_GOD, CA_WIZARD,  reinterpret_cast<int *>(&mudconf.site_chars),      nullptr,            0},
     {T("sitemon_site"),              cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,   HC_SITEMON},
     {T("space_compress"),            cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.space_compress),  nullptr,            0},
 #if defined(UNIX_SSL) || defined(_WIN32)
