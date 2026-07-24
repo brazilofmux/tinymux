@@ -53,13 +53,42 @@ void mux_alarm::alarm_proc()
     }
 }
 
+/*! \brief Start the worker thread.
+ *
+ * Caller must hold mutex_.  The new thread blocks on mutex_ until the caller
+ * releases it, then reads alarm_period_ directly -- so a wake_ raised before
+ * the thread existed is not "lost": a fresh worker does not need waking, it
+ * needs a period, and it reads the one already stored.
+ */
+void mux_alarm::start_thread_locked()
+{
+    if (!thread_started_)
+    {
+        thread_started_ = true;
+        alarm_thread_ = std::thread(&mux_alarm::alarm_proc, this);
+    }
+}
+
 /*! \brief Alarm Clock Constructor.
  *
- * Launches the alarm thread which waits on the condition variable.
+ * Deliberately does NOT launch the alarm thread.
+ *
+ * alarm_clock is a namespace-scope global in libmux.so, so its constructor
+ * runs during static initialization -- while the dynamic loader is still
+ * working.  Calling pthread_create from an ELF constructor is a known glibc
+ * hazard (thread startup needs TLS allocation, which contends with the
+ * loader), and it deadlocked this process before main in roughly 14% of runs
+ * (measured 7/50): both threads parked in futex_wait, zero output.  That made
+ * `make test` hang nondeterministically on tests/netaddr/test_netaddr and hit
+ * any binary linking -lmux.  LD_BIND_NOW=1 did not help, ruling out lazy
+ * binding.
+ *
+ * The thread is created on first set() instead -- by which time static
+ * initialization is long finished.  A clock nobody has armed needs no worker:
+ * alarmed stays false, which is exactly right.
  */
 mux_alarm::mux_alarm()
 {
-    alarm_thread_ = std::thread(&mux_alarm::alarm_proc, this);
 }
 
 /*! \brief Alarm Clock Destructor.
@@ -114,6 +143,12 @@ void mux_alarm::set(CLinearTimeDelta alarm_period)
     alarmed.store(false);
     alarm_set_ = true;
     wake_ = true;
+
+    // First arming creates the worker.  Arming is the only operation that
+    // needs one, and by now we are well past static initialization.
+    //
+    start_thread_locked();
+
     cv_.notify_one();
 }
 

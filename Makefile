@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-scenario test-stress test-jit-qreg hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-alarm test-scenario test-stress test-jit-qreg hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -32,7 +32,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-jit-qreg test-ios
+test: install test-ganl test-netaddr test-alarm test-jit-qreg test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -61,6 +61,14 @@ test-ganl:
 test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
+
+# mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
+# worker-thread start — alarm_clock is a libmux global whose constructor used
+# to spawn a thread during static init, deadlocking before main in ~14% of
+# runs (which is what made `make test` hang here intermittently).
+test-alarm:
+	@echo "==> Running mux_alarm tests"
+	$(MAKE) -C tests/alarm test
 
 # Live scenario test: the wildcard capture path ($-command %0..%9), which
 # muxscript cannot drive.  Opt-in (NOT part of `make test`) because it spins a

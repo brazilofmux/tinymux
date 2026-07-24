@@ -236,8 +236,14 @@ private:
     bool shutdown_{};
     std::chrono::milliseconds alarm_period_{0};
     bool wake_{};                    // spurious-wakeup guard
+    bool thread_started_{};          // worker created lazily; see set()
 
     void alarm_proc();
+
+    // Create the worker thread if it does not exist yet.  Caller must hold
+    // mutex_.  Deliberately NOT called from the constructor -- see alarm.cpp.
+    //
+    void start_thread_locked();
 
 public:
     std::atomic<bool> alarmed{};
