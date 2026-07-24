@@ -9,6 +9,10 @@ Remaining work for the 2.14 line is hardening — test cases, stress and
 soak testing, differential sweeps, and fixes for whatever those pushes
 surface. New capability belongs to a future line.
 
+**Audit rotation:** see [`docs/audit-coverage.md`](audit-coverage.md) for
+subsystem slices, Pass 1–3 history, and the recommended revisit order.
+We expect to re-audit slices already marked deep.
+
 ## The standing verification estate
 
 - `make test` — smoke suite (1319 TCs, run under both `jit_eval_brackets`
