@@ -928,8 +928,11 @@ public:
             // Defer finalization until first data arrives so we can
             // distinguish telnet from WebSocket before sending telnet
             // negotiation bytes (which would corrupt a WS handshake).
+            // last_time marks the start of the proto-detect window (#1074);
+            // process_tinyMUX_tasks ages it out if the client never speaks.
             //
             d->flags |= DS_NEED_PROTO;
+            d->last_time.GetUTC();
         }
 
         return static_cast<ganl::SessionId>(handle);
@@ -2135,6 +2138,39 @@ void GanlAdapter::run_main_loop() {
             }
         }
 
+        // #1074: While any connection is in DS_NEED_PROTO, do not sleep past
+        // the remaining proto-detect grace window.  Otherwise WhenNext can
+        // block processEvents for seconds/minutes and the age-out in
+        // process_tinyMUX_tasks never runs for a silent client.
+        //
+        {
+            CLinearTimeDelta protoGrace;
+            protoGrace.SetMilliseconds(500);
+            CLinearTimeAbsolute ltaNow;
+            ltaNow.GetUTC();
+            for (DESC* d : g_descriptors_list)
+            {
+                if (!d || !(d->flags & DS_NEED_PROTO))
+                {
+                    continue;
+                }
+                const CLinearTimeDelta age = ltaNow - d->last_time;
+                int remain_ms = 0;
+                if (age < protoGrace)
+                {
+                    remain_ms = (protoGrace - age).ReturnMilliseconds();
+                    if (remain_ms < 1)
+                    {
+                        remain_ms = 1;
+                    }
+                }
+                if (timeout_ms > remain_ms)
+                {
+                    timeout_ms = remain_ms;
+                }
+            }
+        }
+
         // Process Network Events
         constexpr int MAX_EVENTS_PER_CALL = 64;
         ganl::IoEvent events[MAX_EVENTS_PER_CALL];
@@ -2485,13 +2521,55 @@ void GanlAdapter::process_tinyMUX_tasks() {
             if (d) {
                 // Defer protocol detection to onDataReceived so that
                 // telnet negotiation bytes don't corrupt a wss:// handshake.
+                // Refresh last_time so the proto-detect grace window starts
+                // after the TLS handshake, not at accept (#1074).
                 //
                 d->flags |= DS_NEED_PROTO;
+                d->last_time.GetUTC();
                 if (pf.isTls)
                 {
                     d->flags |= DS_TLS;
                 }
             }
+        }
+    }
+
+    // #1074: Plain (and post-TLS) connections hold DS_NEED_PROTO until the
+    // first client byte so we can tell telnet from WebSocket.  Classic MUD
+    // clients wait for the server to speak first and never send that byte,
+    // so the welcome banner never arrives.  After a short grace period with
+    // no data, assume telnet and finalize.  Real WebSocket clients send the
+    // HTTP upgrade promptly; the window is intentionally short.
+    //
+    {
+        CLinearTimeDelta protoGrace;
+        protoGrace.SetMilliseconds(500);
+        // Collect first — Finalize may enqueue output; avoid iterator
+        // invalidation if a close path ever runs from welcome_user.
+        std::vector<DESC*> aged;
+        for (DESC* d : g_descriptors_list)
+        {
+            if (d && (d->flags & DS_NEED_PROTO))
+            {
+                const CLinearTimeDelta age = ltaNow - d->last_time;
+                if (age >= protoGrace)
+                {
+                    aged.push_back(d);
+                }
+            }
+        }
+        for (DESC* d : aged)
+        {
+            // Re-check: data may have finalized this DESC between collect
+            // and now (unlikely in this single-threaded task path, but safe).
+            //
+            if (!(d->flags & DS_NEED_PROTO))
+            {
+                continue;
+            }
+            d->flags &= ~DS_NEED_PROTO;
+            const bool isTls = (d->flags & DS_TLS) != 0;
+            FinalizeGanlConnection(*this, d, isTls);
         }
     }
 
