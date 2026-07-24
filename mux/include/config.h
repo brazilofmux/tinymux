@@ -535,6 +535,12 @@ public:
     // family.  Lengths differ per family, so keys never collide across them.
     size_t source_key(UTF8 *pKey, size_t nKeyMax) const;
 
+    // True if this address and `it` share the same throttling key (full IPv4
+    // host, or IPv6 /64).  Prefer this over same_address() for per-source
+    // caps and rate limits so a single v6 customer cannot fan out across the
+    // /64 and evade the defense.
+    bool same_source_key(const mux_sockaddr &it) const;
+
 private:
     void Clear();
     union

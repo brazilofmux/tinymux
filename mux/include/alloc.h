@@ -43,6 +43,15 @@ LIBMUX_API void pool_free_lbuf(UTF8* buf, const UTF8* file, const int line);
 typedef void (*ALLOC_NOTIFY_FN)(dbref player, const UTF8 *text);
 extern LIBMUX_API ALLOC_NOTIFY_FN g_alloc_notify_fn;
 
+// driver_config_sync_fn — callback so engine @admin of DRIVER_CONFIG knobs
+// can push mudconf into the driver's g_dc basket without a restart.  Driver
+// registers this after the first GetConfig(); engine calls it from
+// cf_live_driver_int.  nullptr until the driver is up (boot conf is applied
+// by the initial GetConfig after LoadGame).
+//
+typedef void (*DRIVER_CONFIG_SYNC_FN)(void);
+extern LIBMUX_API DRIVER_CONFIG_SYNC_FN g_driver_config_sync_fn;
+
 LIBMUX_API void list_bufstats(dbref);
 LIBMUX_API void list_buftrace(dbref);
 LIBMUX_API void pool_reset(void);

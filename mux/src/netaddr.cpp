@@ -1412,6 +1412,19 @@ size_t mux_sockaddr::source_key(UTF8 *pKey, size_t nKeyMax) const
     return 0;
 }
 
+// True when two addresses share a throttling key (see source_key).
+//
+bool mux_sockaddr::same_source_key(const mux_sockaddr &it) const
+{
+    UTF8 aKeyThis[8];
+    UTF8 aKeyThat[8];
+    size_t nThis = source_key(aKeyThis, sizeof(aKeyThis));
+    size_t nThat = it.source_key(aKeyThat, sizeof(aKeyThat));
+    return 0 != nThis
+        && nThis == nThat
+        && 0 == memcmp(aKeyThis, aKeyThat, nThis);
+}
+
 bool mux_sockaddr::operator==(const mux_sockaddr &it) const
 {
     if (it.u.sa.sa_family != u.sa.sa_family)

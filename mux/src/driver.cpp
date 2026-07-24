@@ -518,6 +518,18 @@ int DCL_CDECL main(int argc, char *argv[])
         return 2;
     }
 
+    // Let engine-side @admin of defense knobs re-pull the basket into g_dc
+    // so incident-response changes take effect without a restart.  Same
+    // pattern as g_pool_limit_bytes (live push), via a libmux callback so
+    // engine.so does not need a driver symbol.
+    //
+    g_driver_config_sync_fn = []() {
+        if (nullptr != g_pIGameEngine)
+        {
+            g_pIGameEngine->GetConfig(&g_dc);
+        }
+    };
+
     // Push initial timing state to the engine.
     //
     pGameEngine->SetStartTime(ltaStartup);

@@ -791,16 +791,9 @@ public:
                 adapter_.free_desc2(d);
                 return ganl::InvalidSessionId;
             }
-
-            // Charge only connections we actually accept.  A refused attempt
-            // costs the attacker nothing extra, but charging it would hold a
-            // shared address at zero for as long as one attacker kept trying,
-            // starving the legitimate users behind it of the refill.
-            //
-            connect_rate_charge(d->address);
         }
 
-        // Pre-authentication connection cap (per source address).
+        // Pre-authentication connection cap (per source key).
         //
         // Slowloris / descriptor-exhaustion holds many half-open sockets that
         // never log in.  Legitimate multi-connection use is normal in MUSH —
@@ -813,6 +806,11 @@ public:
         // moment a peer authenticates or conn_timeout reaps it, so a rare
         // collision costs a retry, not a lockout.
         //
+        // Grouping uses same_source_key() (IPv4 host / IPv6 /64), matching the
+        // login-fail and connect-rate defenses.  same_address() would let one
+        // IPv6 customer open max_preauth_sitecons sockets per address across
+        // the whole /64 and exhaust the fd table without tripping the cap.
+        //
         if (  0 < g_dc.max_preauth_sitecons
            && haveSockAddr)
         {
@@ -821,7 +819,7 @@ public:
             {
                 if (  nullptr != dOther
                    && 0 == (dOther->flags & DS_CONNECTED)
-                   && dOther->address.same_address(d->address))
+                   && dOther->address.same_source_key(d->address))
                 {
                     nPreauth++;
                 }
@@ -833,22 +831,22 @@ public:
                     addrText[0] != '\0' ? addrText : T("UNKNOWN"));
                 if (bTell)
                 {
-                STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-                UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.preauth");
-                mux_sprintf(logBuf, MBUF_SIZE,
-                    T("[%u/%s] Refused: %d unauthenticated connections already "
-                      "pending from this address (max_preauth_sitecons %d)."),
-                    d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"),
-                    nPreauth, g_dc.max_preauth_sitecons);
-                g_pILog->log_text(logBuf);
-                free_mbuf(logBuf);
-                ENDLOG;
+                    STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+                    UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.preauth");
+                    mux_sprintf(logBuf, MBUF_SIZE,
+                        T("[%u/%s] Refused: %d unauthenticated connections already "
+                          "pending from this address (max_preauth_sitecons %d)."),
+                        d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"),
+                        nPreauth, g_dc.max_preauth_sitecons);
+                    g_pILog->log_text(logBuf);
+                    free_mbuf(logBuf);
+                    ENDLOG;
 
-                UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.preauth");
-                d->address.ntop(siteBuf, MBUF_SIZE);
-                site_mon_send(d->socket, siteBuf, nullptr,
-                    T("Connection refused [pre-auth limit]"));
-                free_mbuf(siteBuf);
+                    UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.preauth");
+                    d->address.ntop(siteBuf, MBUF_SIZE);
+                    site_mon_send(d->socket, siteBuf, nullptr,
+                        T("Connection refused [pre-auth limit]"));
+                    free_mbuf(siteBuf);
                 }
 
                 // Tell the peer why, so a legitimate player knows to retry
@@ -876,6 +874,16 @@ public:
                 adapter_.free_desc2(d);
                 return ganl::InvalidSessionId;
             }
+        }
+
+        // Charge only connections we actually accept.  Rate and pre-auth
+        // refusals above return without reaching here.  Charging a refused
+        // attempt would hold a shared address at zero for as long as one
+        // attacker kept trying, starving legitimate users of the refill.
+        //
+        if (haveSockAddr)
+        {
+            connect_rate_charge(d->address);
         }
 
         auto listIt = g_descriptors_list.insert(g_descriptors_list.begin(), d);

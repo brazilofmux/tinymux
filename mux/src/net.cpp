@@ -3137,31 +3137,49 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
         break;
 
     case mux_subnet::SubnetComparison::kEqual:
-        if (0 != ((HC_PERMIT|HC_REGISTER|HC_FORBID) & msn_arg->ulControl))
         {
-            (*msnRoot)->ulControl &= ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_PERMIT|HC_REGISTER|HC_FORBID);
-        }
+            // Merge flag groups from the new rule onto the existing node.
+            // When any control group is updated, also adopt the new rule's
+            // threshold so re-applying `forbid_site 10.0.0.0/8 8` after a
+            // prior threshold of 4 is not a silent no-op.
+            //
+            bool bControlUpdated = false;
 
-        if (0 != ((HC_NOSITEMON|HC_SITEMON) & msn_arg->ulControl))
-        {
-            (*msnRoot)->ulControl &= ~(HC_NOSITEMON|HC_SITEMON);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOSITEMON|HC_SITEMON);
-        }
+            if (0 != ((HC_PERMIT|HC_REGISTER|HC_FORBID) & msn_arg->ulControl))
+            {
+                (*msnRoot)->ulControl &= ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
+                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_PERMIT|HC_REGISTER|HC_FORBID);
+                bControlUpdated = true;
+            }
 
-        if (0 != ((HC_NOGUEST|HC_GUEST) & msn_arg->ulControl))
-        {
-            (*msnRoot)->ulControl &= ~(HC_NOGUEST|HC_GUEST);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOGUEST|HC_GUEST);
-        }
+            if (0 != ((HC_NOSITEMON|HC_SITEMON) & msn_arg->ulControl))
+            {
+                (*msnRoot)->ulControl &= ~(HC_NOSITEMON|HC_SITEMON);
+                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOSITEMON|HC_SITEMON);
+                bControlUpdated = true;
+            }
 
-        if (0 != ((HC_SUSPECT|HC_TRUST) & msn_arg->ulControl))
-        {
-            (*msnRoot)->ulControl &= ~(HC_SUSPECT|HC_TRUST);
-            (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_SUSPECT|HC_TRUST);
-        }
+            if (0 != ((HC_NOGUEST|HC_GUEST) & msn_arg->ulControl))
+            {
+                (*msnRoot)->ulControl &= ~(HC_NOGUEST|HC_GUEST);
+                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOGUEST|HC_GUEST);
+                bControlUpdated = true;
+            }
 
-        delete msn_arg;
+            if (0 != ((HC_SUSPECT|HC_TRUST) & msn_arg->ulControl))
+            {
+                (*msnRoot)->ulControl &= ~(HC_SUSPECT|HC_TRUST);
+                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_SUSPECT|HC_TRUST);
+                bControlUpdated = true;
+            }
+
+            if (bControlUpdated)
+            {
+                (*msnRoot)->ulThreshold = msn_arg->ulThreshold;
+            }
+
+            delete msn_arg;
+        }
         break;
 
     case mux_subnet::SubnetComparison::kContains:

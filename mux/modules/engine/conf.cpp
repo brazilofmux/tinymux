@@ -630,6 +630,29 @@ static CF_HAND(cf_int)
 }
 
 // ---------------------------------------------------------------------------
+// cf_live_driver_int: Set an integer that the driver reads from g_dc on the
+// accept/login hot path.  Plain cf_int only updates mudconf; g_dc is a
+// boot-time snapshot via GetConfig.  After a runtime @admin, re-pull the
+// basket so defense knobs (rate limits, pre-auth cap, nospam, input_limit)
+// take effect immediately — matching pool_memory_limit's live push.
+//
+static CF_HAND(cf_live_driver_int)
+{
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
+    *vp = mux_atol(str);
+    if (  !mudstate.bReadingConfiguration
+       && nullptr != g_driver_config_sync_fn)
+    {
+        g_driver_config_sync_fn();
+    }
+    return 0;
+}
+
+// ---------------------------------------------------------------------------
 // cf_size: Set a size parameter with optional K/M/G suffix.
 // -1 means unlimited.
 //
@@ -2010,8 +2033,8 @@ static CONFPARM conftable[] =
     {T("number_guests"),             cf_int,         CA_STATIC, CA_WIZARD,   &mudconf.number_guests,          nullptr,            0},
     {T("open_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.opencost,               nullptr,            0},
     {T("output_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.outdb),           nullptr, SIZEOF_PATHNAME},
-    {T("input_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
-    {T("max_preauth_sitecons"),      cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_preauth_sitecons,   nullptr,            0},
+    {T("input_limit"),               cf_live_driver_int, CA_GOD, CA_WIZARD,  reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
+    {T("max_preauth_sitecons"),      cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.max_preauth_sitecons,   nullptr,            0},
     {T("pool_memory_limit"),         cf_pool_limit,  CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.pool_memory_limit), nullptr,          0},
     {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},
@@ -2060,11 +2083,11 @@ static CONFPARM conftable[] =
     {T("reset_players"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.reset_players),   nullptr,            0},
     {T("reset_site"),                cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,     HC_RESET},
     {T("restrict_home"),             cf_bool,        CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.restrict_home),   nullptr,            0},
-    {T("max_lastsite_cnt"),          cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_lastsite_cnt,       nullptr,            0},
-    {T("min_con_attempt"),           cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.min_con_attempt,        nullptr,            0},
-    {T("nospam_connect"),            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.nospam_connect,         nullptr,            0},
-    {T("login_fail_limit"),          cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_limit,       nullptr,            0},
-    {T("login_fail_period"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.login_fail_period,      nullptr,            0},
+    {T("max_lastsite_cnt"),          cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.max_lastsite_cnt,       nullptr,            0},
+    {T("min_con_attempt"),           cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.min_con_attempt,        nullptr,            0},
+    {T("nospam_connect"),            cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.nospam_connect,         nullptr,            0},
+    {T("login_fail_limit"),          cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.login_fail_limit,       nullptr,            0},
+    {T("login_fail_period"),         cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.login_fail_period,      nullptr,            0},
     {T("retry_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            nullptr,            0},
     {T("robot_cost"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              nullptr,            0},
     {T("robot_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.robot_flags),     nullptr,            0},

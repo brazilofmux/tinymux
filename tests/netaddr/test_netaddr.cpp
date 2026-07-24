@@ -395,6 +395,16 @@ int main()
 
         // Too small a buffer must fail closed, not overrun.
         expect_bool(0 == s1.source_key(k1, 7), "source_key rejects short buffer");
+
+        // same_source_key must match source_key grouping (v6 /64 collapse).
+        expect_bool(s1.same_source_key(s2),
+                    "same_source_key v6 collapses a whole /64");
+        expect_bool(!s1.same_source_key(s3),
+                    "same_source_key v6 separates /64s");
+        expect_bool(!v4a.same_source_key(v4b),
+                    "same_source_key v4 distinguishes hosts");
+        expect_bool(!v4a.same_source_key(s1),
+                    "same_source_key does not match across families");
     }
 
     // --- parse_site_threshold: graduated site rules ----------------------

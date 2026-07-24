@@ -31,6 +31,9 @@ bool g_paranoid_alloc = false;
 size_t g_pool_limit_bytes = 0;
 size_t g_pool_system_bytes = 0;
 
+// Engine → driver live config push.  See alloc.h.
+DRIVER_CONFIG_SYNC_FN g_driver_config_sync_fn = nullptr;
+
 // Account bytes just taken from the system on a pool slow-path alloc and, if
 // they push the footprint past the budget, trip the per-command abort so the
 // current (runaway) command unwinds and frees its buffers back to the freelist
