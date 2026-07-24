@@ -1163,6 +1163,9 @@ static BQUE *setup_que
     if (a < a_Queue(Owner(executor), 1))
     {
         a_Queue(Owner(executor), -1);
+        // #1080: refund the payfor charge — OOM paths already do this.
+        //
+        giveto(executor, cost);
 
         notify(Owner(executor),
             T("Run away objects: too many commands queued.  Halted."));

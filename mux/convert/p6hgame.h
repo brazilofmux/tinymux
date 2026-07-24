@@ -1,6 +1,8 @@
 #ifndef _P6HGAME_H_
 #define _P6HGAME_H_
 
+#include <string>
+
 #define P6H_OLD_TYPE_ROOM       0x0
 #define P6H_OLD_TYPE_THING      0x1
 #define P6H_OLD_TYPE_EXIT       0x2
@@ -128,6 +130,8 @@ public:
     }
 
     char *Write(char *p);
+    void Append(std::string &out) const;
+    std::string WriteString() const;
 
     bool ConvertFromT5X(T5X_LOCKEXP *p);
 

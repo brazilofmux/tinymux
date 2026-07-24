@@ -941,6 +941,21 @@ static bool guest_farg_addr(const uint8_t *memory, size_t memory_size,
     return true;
 }
 
+// #1078: overflow-safe [addr, addr+nbytes) wholly inside guest memory.
+// nbytes == 0 is allowed only when addr <= memory_size.
+//
+static bool guest_range_ok(uint64_t addr, uint64_t nbytes, size_t memory_size)
+{
+    if (nbytes == 0) {
+        return addr <= memory_size;
+    }
+    if (addr >= memory_size) {
+        return false;
+    }
+    // Equivalent to addr + nbytes <= memory_size without wrap.
+    return nbytes <= memory_size - static_cast<size_t>(addr);
+}
+
 // Shared helper for dbt_run/dbt_resume nonzero status: count wall-clock
 // aborts and, when requested, write the AST-shaped diagnostic so callers
 // that treat the run as handled do not fall through to an empty result.
@@ -2776,6 +2791,13 @@ static thread_local eval_ctx *s_current_ecall_ctx = nullptr;
 static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
                             uint64_t out_addr, uint64_t out_size) {
+    // #1079: out buffer must be a valid guest range before any write.
+    //
+    if (!guest_range_ok(out_addr, out_size, ec->memory_size) || out_size == 0) {
+        ctx->x[10] = 0;
+        return -1;
+    }
+
     // Validate argument count against function's declared limits.
     // Return the same error string the AST evaluator would.
     if (nfargs < fp->minArgs) {
@@ -2806,13 +2828,19 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     if (nfargs > MAX_ARG) nfargs = MAX_ARG;
     uint64_t frame_top = ctx->x[8];  // s0 = frame pointer
     for (int i = 0; i < nfargs; i++) {
-        uint64_t ptr;
-        memcpy(&ptr, ec->memory + fargs_addr + i * 8, 8);
+        uint64_t ptr = 0;
+        // #1079: overflow-safe fargs table slot load + guest C-string bound.
+        //
+        if (!guest_farg_addr(ec->memory, ec->memory_size, fargs_addr, i, &ptr)) {
+            ctx->x[10] = 0;
+            return -1;
+        }
         // Resolve frame-relative output references.
         if (rv_compiler::is_output_frame_ref(ptr)) {
             ptr = rv_compiler::resolve_output_addr(ptr, frame_top);
         }
-        if (ptr >= ec->memory_size) {
+        size_t slen = 0;
+        if (!guest_strnlen(ec->memory, ec->memory_size, ptr, &slen)) {
             ctx->x[10] = 0;
             return -1;
         }
@@ -2940,7 +2968,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         uint64_t out_size = ctx->x[14];
 
         if (func_idx <= 0 || func_idx >= engine_api_count ||
-            out_addr + out_size > ec->memory_size) {
+            !guest_range_ok(out_addr, out_size, ec->memory_size)) {
             ctx->x[10] = 0;
             return -1;
         }
@@ -2962,7 +2990,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         size_t name_len = 0;
         if (  !guest_strnlen(ec->memory, ec->memory_size, name_addr, &name_len)
-           || out_addr + out_size > ec->memory_size) {
+           || !guest_range_ok(out_addr, out_size, ec->memory_size)) {
             ctx->x[10] = 0;
             return -1;
         }
@@ -3712,12 +3740,28 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 }
 
                 int len = static_cast<int>(lua_rawlen(L, tbl_idx));
-                if (len > max_elems) len = max_elems;
-                if (dest_addr + len * 8 > ec->memory_size) len = 0;
+                if (max_elems < 0) {
+                    max_elems = 0;
+                }
+                if (len < 0) {
+                    len = 0;
+                }
+                if (len > max_elems) {
+                    len = max_elems;
+                }
+                // #1078: no wrap on dest_addr + len*8.
+                //
+                if (  len == 0
+                   || !guest_range_ok(dest_addr,
+                          static_cast<uint64_t>(len) * 8u,
+                          ec->memory_size)) {
+                    len = 0;
+                }
 
-                int64_t *dest = reinterpret_cast<int64_t *>(
-                    ec->memory + dest_addr);
-                bool ok = true;
+                int64_t *dest = (len > 0)
+                    ? reinterpret_cast<int64_t *>(ec->memory + dest_addr)
+                    : nullptr;
+                bool ok = (len > 0);
                 for (int ii = 1; ii <= len; ii++) {
                     lua_geti(L, tbl_idx, ii);
                     if (lua_isinteger(L, -1)) {
@@ -4345,8 +4389,23 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         int max_elems = static_cast<int>(ctx->x[12]);
 
         int len = static_cast<int>(lua_rawlen(L, tbl_idx));
-        if (len > max_elems) len = max_elems;
-        if (dest_addr + len * 8 > ec->memory_size) { ctx->x[10] = 0; return -1; }
+        if (max_elems < 0) {
+            max_elems = 0;
+        }
+        if (len < 0) {
+            len = 0;
+        }
+        if (len > max_elems) {
+            len = max_elems;
+        }
+        // #1078: overflow-safe range (no dest_addr + len*8 wrap).
+        //
+        if (  len == 0
+           || !guest_range_ok(dest_addr, static_cast<uint64_t>(len) * 8u,
+                  ec->memory_size)) {
+            ctx->x[10] = 0;
+            return -1;
+        }
 
         int64_t *dest = reinterpret_cast<int64_t *>(ec->memory + dest_addr);
         for (int i = 1; i <= len; i++) {
@@ -4371,7 +4430,15 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         int tbl_idx = static_cast<int>(ctx->x[10]);
         uint64_t src_addr = ctx->x[11];
         int len = static_cast<int>(ctx->x[12]);
-        if (src_addr + len * 8 > ec->memory_size) return -1;
+        if (len < 0) {
+            return -1;
+        }
+        // #1078: overflow-safe range.
+        //
+        if (!guest_range_ok(src_addr, static_cast<uint64_t>(len) * 8u,
+                ec->memory_size)) {
+            return -1;
+        }
 
         int64_t *src = reinterpret_cast<int64_t *>(ec->memory + src_addr);
         for (int i = 0; i < len; i++) {

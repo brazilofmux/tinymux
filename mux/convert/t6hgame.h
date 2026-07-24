@@ -1,6 +1,8 @@
 #ifndef _T6HGAME_H_
 #define _T6HGAME_H_
 
+#include <string>
+
 #define T6H_V_MASK          0x000000ffUL
 #define T6H_V_ZONE          0x00000100UL
 #define T6H_V_LINK          0x00000200UL
@@ -476,6 +478,8 @@ public:
 
     void Write(FILE *fp);
     char *Write(char *p);
+    void Append(std::string &out) const;
+    std::string WriteString() const;
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
     bool ConvertFromT5X(T5X_LOCKEXP *p);
