@@ -501,10 +501,13 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
         }
 
         // Wall-clock abort: the per-command alarm has fired.  Return so the
-        // caller aborts the run (the AST fallback then short-circuits on the
-        // same flag and the queue loop halts the object) — a JIT program must
-        // not run unbounded wall-clock time between ECALLs while the
-        // single-threaded server waits.  A relaxed load is a plain read.
+        // caller aborts the run.  Polled only at the top of this dispatch
+        // loop — after an ECALL return and before each trampoline entry.
+        // Block chaining / pretranslated softlib can keep execution in
+        // native code across many guest branches without returning here, so
+        // pure tier-2 compute is best-effort between host ECALLs (same class
+        // of mid-function gap a long C builtin has on the AST path).  A
+        // relaxed load is a plain read.
         if (  dbt->alarm_flag
            && dbt->alarm_flag->load(std::memory_order_relaxed)) {
             dbt->dispatch_count = dispatch_count;
@@ -597,10 +600,13 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
         }
 
         // Wall-clock abort: the per-command alarm has fired.  Return so the
-        // caller aborts the run (the AST fallback then short-circuits on the
-        // same flag and the queue loop halts the object) — a JIT program must
-        // not run unbounded wall-clock time between ECALLs while the
-        // single-threaded server waits.  A relaxed load is a plain read.
+        // caller aborts the run.  Polled only at the top of this dispatch
+        // loop — after an ECALL return and before each trampoline entry.
+        // Block chaining / pretranslated softlib can keep execution in
+        // native code across many guest branches without returning here, so
+        // pure tier-2 compute is best-effort between host ECALLs (same class
+        // of mid-function gap a long C builtin has on the AST path).  A
+        // relaxed load is a plain read.
         if (  dbt->alarm_flag
            && dbt->alarm_flag->load(std::memory_order_relaxed)) {
             dbt->dispatch_count = dispatch_count;

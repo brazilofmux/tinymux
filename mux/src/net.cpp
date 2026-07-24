@@ -2238,24 +2238,24 @@ static bool check_connect(DESC *d, UTF8 *msg)
             const bool bTell = refusal_log_wanted(d->addr);
             if (bTell)
             {
-            STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "THR");
-            buff = alloc_lbuf("check_conn.LOG.throttle");
-            mux_sprintf(buff, LBUF_SIZE,
-                T("[%u/%s] Throttled connect to \xE2\x80\x98%s\xE2\x80\x99: failure budget spent, %ds remaining."),
-                d->socket, d->addr, user, nWait);
-            g_pILog->log_text(buff);
-            free_lbuf(buff);
-            ENDLOG;
+                STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "THR");
+                buff = alloc_lbuf("check_conn.LOG.throttle");
+                mux_sprintf(buff, LBUF_SIZE,
+                    T("[%u/%s] Throttled connect to \xE2\x80\x98%s\xE2\x80\x99: failure budget spent, %ds remaining."),
+                    d->socket, d->addr, user, nWait);
+                g_pILog->log_text(buff);
+                free_lbuf(buff);
+                ENDLOG;
 
-            // Tell the humans too, naming the action taken.  The DESC is
-            // still live here (we keep the socket), so pass it.
-            //
-            {
-                UTF8 siteBuf[MBUF_SIZE];
-                d->address.ntop(siteBuf, sizeof(siteBuf));
-                site_mon_send(d->socket, siteBuf, d,
-                    T("Login throttled [failed-login budget spent]"));
-            }
+                // Tell the humans too, naming the action taken.  The DESC is
+                // still live here (we keep the socket), so pass it.
+                //
+                {
+                    UTF8 siteBuf[MBUF_SIZE];
+                    d->address.ntop(siteBuf, sizeof(siteBuf));
+                    site_mon_send(d->socket, siteBuf, d,
+                        T("Login throttled [failed-login budget spent]"));
+                }
             }
 
             // The socket is deliberately left open and retries_left is left
@@ -2873,9 +2873,12 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
                 d->input_size -= cmd.size();
 
                 // Hysteresis: once the backlog drains below half the cap,
-                // clear the throttle so a later flood logs again.
+                // clear the throttle so a later flood logs again.  Use a
+                // multiply (not divide) so input_limit == 1 does not leave
+                // the flag stuck: limit/2 is 0 and size_t never goes negative.
                 if (  d->input_throttled
-                   && d->input_size < static_cast<size_t>(g_dc.input_limit) / 2)
+                   && (  0 == d->input_size
+                      || d->input_size * 2 < static_cast<size_t>(g_dc.input_limit)))
                 {
                     d->input_throttled = false;
                 }
@@ -3217,10 +3220,11 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
 // says a host in that range may hold up to 7 simultaneous connections
 // unbothered, and only from the 8th does registration apply.
 //
-// Counting is per connecting ADDRESS, not per subnet: the subnet selects
-// which rule you land under, the address is what is counted.  That is the
-// right unit here -- a NATted dorm is one address, so its own population is
-// what the threshold measures.
+// Counting is per source key (IPv4 host / IPv6 /64), not per full address
+// and not per matching subnet: the subnet selects which rule you land under,
+// the key is what is counted.  A NATted dorm is one v4 address; an IPv6
+// customer is one /64 — matching the login-fail and connect-rate defenses
+// so multi-address v6 hosts cannot undercount a graduated threshold.
 //
 static int site_connection_count(MUX_SOCKADDR *msa)
 {
@@ -3228,7 +3232,7 @@ static int site_connection_count(MUX_SOCKADDR *msa)
     for (DESC *d : g_descriptors_list)
     {
         if (  nullptr != d
-           && d->address.same_address(*msa))
+           && d->address.same_source_key(*msa))
         {
             nCons++;
         }
@@ -3549,13 +3553,26 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
         }
     }
     // Show a graduated rule's threshold, so an admin reading the list can
-    // tell "forbidden" from "forbidden once 8 connections are up".
+    // tell "forbidden" from "forbidden once 8 connections are up".  Restricting
+    // controls engage at ≥ N; exempting ones (permit/guest/trust/sitemon)
+    // engage only while under N — print that direction explicitly.
     //
     if (0 != p->ulThreshold)
     {
-        safe_str(T(" (at "), sControl, &bufc);
-        safe_ltoa(static_cast<long>(p->ulThreshold), sControl, &bufc);
-        safe_str(T("+ conns)"), sControl, &bufc);
+        const unsigned long ulExempting =
+            HC_PERMIT | HC_SITEMON | HC_GUEST | HC_TRUST;
+        if (0 != (p->ulControl & ulExempting))
+        {
+            safe_str(T(" (while under "), sControl, &bufc);
+            safe_ltoa(static_cast<long>(p->ulThreshold), sControl, &bufc);
+            safe_str(T(" conns)"), sControl, &bufc);
+        }
+        else
+        {
+            safe_str(T(" (at "), sControl, &bufc);
+            safe_ltoa(static_cast<long>(p->ulThreshold), sControl, &bufc);
+            safe_str(T("+ conns)"), sControl, &bufc);
+        }
     }
     *bufc = '\0';
 

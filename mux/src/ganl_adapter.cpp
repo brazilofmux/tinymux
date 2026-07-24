@@ -691,20 +691,30 @@ public:
         }
 
         if (haveSockAddr && g_access_list.isForbid(&d->address)) {
-            STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-            UTF8* logBuf = alloc_mbuf("ganl_connection.LOG.badsite");
-            mux_sprintf(logBuf, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
-                d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"), d->address.port());
-            g_pILog->log_text(logBuf);
-            free_mbuf(logBuf);
-            ENDLOG;
-
-            UTF8* siteBuffer = alloc_mbuf("ganl_connection.address");
-            if (siteBuffer != nullptr)
+            // One damping decision drives both the log line and the staff
+            // broadcast — same nospam_connect path as rate/preauth refusals.
+            // A flood against a known-forbidden site (or a large Tor include
+            // list) must not turn into disk/output amplification.
+            //
+            const bool bTell = refusal_log_wanted(
+                addrText[0] != '\0' ? addrText : T("UNKNOWN"));
+            if (bTell)
             {
-                d->address.ntop(siteBuffer, MBUF_SIZE);
-                site_mon_send(d->socket, siteBuffer, nullptr, T("Connection refused"));
-                free_mbuf(siteBuffer);
+                STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+                UTF8* logBuf = alloc_mbuf("ganl_connection.LOG.badsite");
+                mux_sprintf(logBuf, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
+                    d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"), d->address.port());
+                g_pILog->log_text(logBuf);
+                free_mbuf(logBuf);
+                ENDLOG;
+
+                UTF8* siteBuffer = alloc_mbuf("ganl_connection.address");
+                if (siteBuffer != nullptr)
+                {
+                    d->address.ntop(siteBuffer, MBUF_SIZE);
+                    site_mon_send(d->socket, siteBuffer, nullptr, T("Connection refused"));
+                    free_mbuf(siteBuffer);
+                }
             }
             fcache_rawdump(static_cast<SOCKET>(d->socket), FC_CONN_SITE);
 

@@ -25,11 +25,14 @@ extern LIBMUX_API bool g_paranoid_alloc;
 
 // Pool memory footprint budget (#pool-oom).  Buffers taken from the system
 // are never returned to it (they stay on the pool freelist), so the process's
-// pool footprint only grows on the slow allocation path.  When g_pool_limit_bytes
-// is non-zero and the running system total would exceed it, the allocator trips
-// the per-command abort (alarm_clock.alarmed) so a runaway command unwinds and
-// frees its buffers to the freelist instead of the process reaching a fatal
-// OutOfMemory.  0 = unlimited (legacy behavior).  Set by the engine from config.
+// pool footprint only grows on the slow allocation path and g_pool_system_bytes
+// never shrinks.  When g_pool_limit_bytes is non-zero and the running system
+// total would exceed it, the allocator trips the per-command abort
+// (alarm_clock.alarmed) so a runaway command unwinds and frees its buffers to
+// the freelist instead of the process reaching a fatal OutOfMemory.  Once
+// breached the ceiling stays in force until restart or the admin raises the
+// limit (the warning re-arms only if the limit is raised past the footprint).
+// 0 = unlimited (legacy behavior).  Set by the engine from config.
 extern LIBMUX_API size_t g_pool_limit_bytes;
 extern LIBMUX_API size_t g_pool_system_bytes;   // total bytes ever taken from system
 LIBMUX_API void pool_init(int, int);
