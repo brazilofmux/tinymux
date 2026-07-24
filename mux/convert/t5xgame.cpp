@@ -1,3 +1,5 @@
+#include <string>
+#include <cstring>
 #include "omega.h"
 #include "t5xgame.h"
 
@@ -227,132 +229,154 @@ void T5X_LOCKEXP::Write(FILE *fp)
     }
 }
 
-char *T5X_LOCKEXP::Write(char *p)
+void T5X_LOCKEXP::Append(std::string &out) const
 {
     switch (m_op)
     {
     case T5X_LOCKEXP::le_is:
-        *p++ = '=';
+        out.push_back('=');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case T5X_LOCKEXP::le_carry:
-        *p++ = '+';
+        out.push_back('+');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case T5X_LOCKEXP::le_indirect:
-        *p++ = '@';
+        out.push_back('@');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case T5X_LOCKEXP::le_owner:
-        *p++ = '$';
+        out.push_back('$');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case T5X_LOCKEXP::le_or:
-        p = m_le[0]->Write(p);
-        *p++ = '|';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back('|');
+        m_le[1]->Append(out);
         break;
 
     case T5X_LOCKEXP::le_not:
-        *p++ = '!';
+        out.push_back('!');
         if (  le_and == m_le[0]->m_op
            || le_or == m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (  le_and == m_le[0]->m_op
            || le_or == m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case T5X_LOCKEXP::le_attr:
-        p = m_le[0]->Write(p);
-        *p++ = ':';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back(':');
+        m_le[1]->Append(out);
         break;
 
     case T5X_LOCKEXP::le_eval:
-        p = m_le[0]->Write(p);
-        *p++ = '/';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back('/');
+        m_le[1]->Append(out);
         break;
 
     case T5X_LOCKEXP::le_and:
         if (le_or == m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_or == m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
-        *p++ = '&';
+        out.push_back('&');
         if (le_or == m_le[1]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[1]->Write(p);
+        m_le[1]->Append(out);
         if (le_or == m_le[1]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case T5X_LOCKEXP::le_ref:
-        sprintf(p, "(#%d)", m_dbRef);
-        p += strlen(p);
+        {
+            char tmp[32];
+            snprintf(tmp, sizeof(tmp), "(#%d)", m_dbRef);
+            out += tmp;
+        }
         break;
 
     case T5X_LOCKEXP::le_text:
-        sprintf(p, "%s", m_p[0]);
-        p += strlen(p);
+        out += (m_p[0] ? m_p[0] : "");
         break;
 
     default:
         fprintf(stderr, "%d not recognized.\n", m_op);
         break;
     }
-    return p;
+}
+
+
+std::string T5X_LOCKEXP::WriteString() const
+{
+    std::string out;
+    Append(out);
+    return out;
+}
+
+char *T5X_LOCKEXP::Write(char *p)
+{
+    // Prefer WriteString()/Append for new code (#1077).  This entry point
+    // remains for legacy callers; it still requires a buffer large enough
+    // for the expanded lock text.
+    //
+    std::string s;
+    Append(s);
+    memcpy(p, s.data(), s.size());
+    p[s.size()] = '\0';
+    return p + s.size();
 }
 
 bool T5X_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
@@ -1421,12 +1445,10 @@ void T5X_ATTRINFO::Validate() const
        && m_fIsLock
        && NULL != m_pKeyTree)
     {
-        char buffer[65536];
-        char *p = m_pKeyTree->Write(buffer);
-        *p = '\0';
-        if (strcmp(m_pValueUnencoded, buffer) != 0)
+        std::string lockbuf = m_pKeyTree->WriteString();
+        if (strcmp(m_pValueUnencoded, lockbuf.c_str()) != 0)
         {
-            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValueUnencoded);
+            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", lockbuf.c_str(), m_pValueUnencoded);
         }
     }
 }
@@ -2208,9 +2230,8 @@ void T5X_GAME::ConvertFromP6H()
                         int iNum = AttrNamesKnown[pAttrName];
                         if (T5X_A_PASS == iNum)
                         {
-                            char buffer[200];
-                            sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValue);
-                            pai->SetNumOwnerFlagsAndValue(AttrNamesKnown[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone(buffer));
+                            std::string passbuf = std::string("$P6H$$") + ((*itAttr)->m_pValue ? (*itAttr)->m_pValue : "");
+                                                        pai->SetNumOwnerFlagsAndValue(AttrNamesKnown[pAttrName], (*itAttr)->m_dbOwner, iAttrFlags, StringClone(passbuf.c_str()));
                         }
                         else
                         {
@@ -2268,14 +2289,12 @@ void T5X_GAME::ConvertFromP6H()
                             }
                             else
                             {
-                                char buffer[65536];
-                                char *p = pLock->Write(buffer);
-                                *p = '\0';
+                                std::string lockbuf = pLock->WriteString();
 
                                 // Add it.
                                 //
                                 T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-                                pai->SetNumAndValue(iLock, StringClone(buffer));
+                                pai->SetNumAndValue(iLock, StringClone(lockbuf.c_str()));
 
                                 if (NULL == poi->m_pvai)
                                 {
@@ -5189,14 +5208,12 @@ void T5X_OBJECTINFO::UpgradeDefaultLock()
     //
     if (NULL != m_ple)
     {
-        char buffer[65536];
-        char *p = m_ple->Write(buffer);
-        *p = '\0';
+        std::string lockbuf = m_ple->WriteString();
 
         // Add it.
         //
         T5X_ATTRINFO *pai = new T5X_ATTRINFO;
-        pai->SetNumAndValue(T5X_A_LOCK, StringClone(buffer));
+        pai->SetNumAndValue(T5X_A_LOCK, StringClone(lockbuf.c_str()));
 
         if (NULL == m_pvai)
         {
@@ -8759,11 +8776,9 @@ void T5X_OBJECTINFO::Extract(FILE *fp, bool fUnicode) const
 
     if (NULL != m_ple)
     {
-        char buffer[65536];
-        char *p = m_ple->Write(buffer);
-        *p = '\0';
+        std::string lockbuf = m_ple->WriteString();
 
-        fprintf(fp, "@lock/DefaultLock %s=%s\n", pStrippedObjName, p);
+        fprintf(fp, "@lock/DefaultLock %s=%s\n", pStrippedObjName, lockbuf.c_str());
     }
 
     // Extract attribute values.

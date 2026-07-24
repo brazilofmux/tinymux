@@ -1,3 +1,6 @@
+#include <string>
+#include <cstdlib>
+#include <cstring>
 #include "omega.h"
 #include "p6hgame.h"
 #include "t5xgame.h"
@@ -195,132 +198,154 @@ void R7H_LOCKEXP::Write(FILE *fp)
     }
 }
 
-char *R7H_LOCKEXP::Write(char *p)
+void R7H_LOCKEXP::Append(std::string &out) const
 {
     switch (m_op)
     {
     case R7H_LOCKEXP::le_is:
-        *p++ = '=';
+        out.push_back('=');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case R7H_LOCKEXP::le_carry:
-        *p++ = '+';
+        out.push_back('+');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case R7H_LOCKEXP::le_indirect:
-        *p++ = '@';
+        out.push_back('@');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case R7H_LOCKEXP::le_owner:
-        *p++ = '$';
+        out.push_back('$');
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_ref != m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case R7H_LOCKEXP::le_or:
-        p = m_le[0]->Write(p);
-        *p++ = '|';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back('|');
+        m_le[1]->Append(out);
         break;
 
     case R7H_LOCKEXP::le_not:
-        *p++ = '!';
+        out.push_back('!');
         if (  le_and == m_le[0]->m_op
            || le_or == m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (  le_and == m_le[0]->m_op
            || le_or == m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case R7H_LOCKEXP::le_attr:
-        p = m_le[0]->Write(p);
-        *p++ = ':';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back(':');
+        m_le[1]->Append(out);
         break;
 
     case R7H_LOCKEXP::le_eval:
-        p = m_le[0]->Write(p);
-        *p++ = '/';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back('/');
+        m_le[1]->Append(out);
         break;
 
     case R7H_LOCKEXP::le_and:
         if (le_or == m_le[0]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[0]->Write(p);
+        m_le[0]->Append(out);
         if (le_or == m_le[0]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
-        *p++ = '&';
+        out.push_back('&');
         if (le_or == m_le[1]->m_op)
         {
-            *p++ = '(';
+            out.push_back('(');
         }
-        p = m_le[1]->Write(p);
+        m_le[1]->Append(out);
         if (le_or == m_le[1]->m_op)
         {
-            *p++ = ')';
+            out.push_back(')');
         }
         break;
 
     case R7H_LOCKEXP::le_ref:
-        sprintf(p, "(#%d)", m_dbRef);
-        p += strlen(p);
+        {
+            char tmp[32];
+            snprintf(tmp, sizeof(tmp), "(#%d)", m_dbRef);
+            out += tmp;
+        }
         break;
 
     case R7H_LOCKEXP::le_text:
-        sprintf(p, "%s", m_p[0]);
-        p += strlen(p);
+        out += (m_p[0] ? m_p[0] : "");
         break;
 
     default:
         fprintf(stderr, "%d not recognized.\n", m_op);
         break;
     }
-    return p;
+}
+
+
+std::string R7H_LOCKEXP::WriteString() const
+{
+    std::string out;
+    Append(out);
+    return out;
+}
+
+char *R7H_LOCKEXP::Write(char *p)
+{
+    // Prefer WriteString()/Append for new code (#1077).  This entry point
+    // remains for legacy callers; it still requires a buffer large enough
+    // for the expanded lock text.
+    //
+    std::string s;
+    Append(s);
+    memcpy(p, s.data(), s.size());
+    p[s.size()] = '\0';
+    return p + s.size();
 }
 
 bool R7H_LOCKEXP::ConvertFromP6H(P6H_LOCKEXP *p)
@@ -1058,12 +1083,10 @@ void R7H_ATTRINFO::Validate() const
        && m_fIsLock
        && NULL != m_pKeyTree)
     {
-        char buffer[65536];
-        char *p = m_pKeyTree->Write(buffer);
-        *p = '\0';
-        if (strcmp(m_pValueUnencoded, buffer) != 0)
+        std::string lockbuf = m_pKeyTree->WriteString();
+        if (strcmp(m_pValueUnencoded, lockbuf.c_str()) != 0)
         {
-            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pValueUnencoded);
+            fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", lockbuf.c_str(), m_pValueUnencoded);
         }
     }
 }
@@ -1530,7 +1553,10 @@ static NameMask p6h_attr_flags[] =
     { "internal",       R7H_AF_INTERNAL },
 };
 
-static char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char *pValue)
+// #1077: size from prefix + value; growable static buffer (callers
+// StringClone immediately).  Avoids stack sprintf into 64 KiB.
+//
+static const char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, const char *pValue)
 {
     // If using the default owner and flags (almost all attributes will),
     // just store the string.
@@ -1548,8 +1574,31 @@ static char *EncodeAttrValue(int iObjOwner, int iAttrOwner, int iAttrFlags, char
     {
         iAttrOwner = iObjOwner;
     }
-    static char buffer[65536];
-    sprintf(buffer, "%c%d:%d:%s", ATR_INFO_CHAR, iAttrOwner, iAttrFlags, pValue);
+
+    char prefix[64];
+    int nPrefix = snprintf(prefix, sizeof(prefix), "%c%d:%d:",
+        ATR_INFO_CHAR, iAttrOwner, iAttrFlags);
+    if (nPrefix < 0 || (size_t)nPrefix >= sizeof(prefix))
+    {
+        exit(1);
+    }
+    size_t nValue = strlen(pValue ? pValue : "");
+    size_t nNeeded = (size_t)nPrefix + nValue + 1;
+
+    static char *buffer = NULL;
+    static size_t capacity = 0;
+    if (nNeeded > capacity)
+    {
+        char *nbuf = static_cast<char *>(realloc(buffer, nNeeded));
+        if (NULL == nbuf)
+        {
+            exit(1);
+        }
+        buffer = nbuf;
+        capacity = nNeeded;
+    }
+    memcpy(buffer, prefix, (size_t)nPrefix);
+    memcpy(buffer + nPrefix, pValue ? pValue : "", nValue + 1);
     return buffer;
 }
 
@@ -1941,7 +1990,7 @@ void R7H_GAME::ConvertFromP6H()
                             iAttrFlags |= p6h_attr_flags[i].mask;
                         }
                     }
-                    char *pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, (*itAttr)->m_pValue);
+                    const char *pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, (*itAttr)->m_pValue);
                     char *pAttrName = r7h_ConvertAttributeName((*itAttr)->m_pName);
                     map<const char *, int , ltstr>::iterator itFound = AttrNamesKnown.find(pAttrName);
                     if (itFound != AttrNamesKnown.end())
@@ -1950,9 +1999,8 @@ void R7H_GAME::ConvertFromP6H()
                         int iNum = AttrNamesKnown[pAttrName];
                         if (R7H_A_PASS == iNum)
                         {
-                            char buffer[200];
-                            sprintf(buffer, "$P6H$$%s", (*itAttr)->m_pValue);
-                            pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, buffer);
+                            std::string passbuf = std::string("$P6H$$") + ((*itAttr)->m_pValue ? (*itAttr)->m_pValue : "");
+                            pEncodedAttrValue = EncodeAttrValue(poi->m_dbOwner, (*itAttr)->m_dbOwner, iAttrFlags, passbuf.c_str());
                             pai->SetNumAndValue(AttrNamesKnown[pAttrName], StringClone(pEncodedAttrValue));
                         }
                         else
@@ -2011,14 +2059,12 @@ void R7H_GAME::ConvertFromP6H()
                             }
                             else
                             {
-                                char buffer[65536];
-                                char *p = pLock->Write(buffer);
-                                *p = '\0';
+                                std::string lockbuf = pLock->WriteString();
 
                                 // Add it.
                                 //
                                 R7H_ATTRINFO *pai = new R7H_ATTRINFO;
-                                pai->SetNumAndValue(iLock, StringClone(buffer));
+                                pai->SetNumAndValue(iLock, StringClone(lockbuf.c_str()));
 
                                 if (NULL == poi->m_pvai)
                                 {
@@ -2709,7 +2755,7 @@ void R7H_GAME::ConvertFromT5X()
                    && convert_t5x_attr_num((*itAttr)->m_iNum, &iNum))
                 {
                     int iAttrFlags = convert_t5x_attr_flags((*itAttr)->m_iFlags);
-                    char *pEncodedAttrValue = EncodeAttrValue(
+                    const char *pEncodedAttrValue = EncodeAttrValue(
                         it->second->m_fOwner ? it->second->m_dbOwner : -1,
                         (*itAttr)->m_dbOwner, iAttrFlags,
                         (*itAttr)->m_pValueUnencoded);
@@ -2718,13 +2764,13 @@ void R7H_GAME::ConvertFromT5X()
                     // its input pointer unchanged, so passbuf must outlive the
                     // StringClone() below -- keep it in this scope, not the if.
                     //
-                    char passbuf[200];
+                    std::string passbuf;
                     if (T5X_A_PASS == (*itAttr)->m_iNum)
                     {
-                        sprintf(passbuf, "$P6H$$%s", (*itAttr)->m_pValueUnencoded);
+                        passbuf = std::string("$P6H$$") + ((*itAttr)->m_pValueUnencoded ? (*itAttr)->m_pValueUnencoded : "");
                         pEncodedAttrValue = EncodeAttrValue(
                             it->second->m_fOwner ? it->second->m_dbOwner : -1,
-                            (*itAttr)->m_dbOwner, iAttrFlags, passbuf);
+                            (*itAttr)->m_dbOwner, iAttrFlags, passbuf.c_str());
                     }
 
                     R7H_ATTRINFO *pai = new R7H_ATTRINFO;

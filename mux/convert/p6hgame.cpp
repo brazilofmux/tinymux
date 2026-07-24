@@ -1,3 +1,5 @@
+#include <string>
+#include <cstring>
 #include "omega.h"
 #include "p6hgame.h"
 #include "t5xgame.h"
@@ -94,98 +96,117 @@ static char *EncodeString(const char *str)
     return buf;
 }
 
-char *P6H_LOCKEXP::Write(char *p)
+void P6H_LOCKEXP::Append(std::string &out) const
 {
     switch (m_op)
     {
     case P6H_LOCKEXP::le_is:
-        *p++ = '=';
-        p = m_le[0]->Write(p);
+        out.push_back('=');
+        m_le[0]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_carry:
-        *p++ = '+';
-        p = m_le[0]->Write(p);
+        out.push_back('+');
+        m_le[0]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_indirect:
-        *p++ = '@';
-        p = m_le[0]->Write(p);
+        out.push_back('@');
+        m_le[0]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_indirect2:
-        *p++ = '@';
-        p = m_le[0]->Write(p);
-        *p++ = '/';
-        p = m_le[1]->Write(p);
+        out.push_back('@');
+        m_le[0]->Append(out);
+        out.push_back('/');
+        m_le[1]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_owner:
-        *p++ = '$';
-        p = m_le[0]->Write(p);
+        out.push_back('$');
+        m_le[0]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_or:
-        p = m_le[0]->Write(p);
-        *p++ = '|';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back('|');
+        m_le[1]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_not:
-        *p++ = '!';
-        p = m_le[0]->Write(p);
+        out.push_back('!');
+        m_le[0]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_attr:
-        p = m_le[0]->Write(p);
-        *p++ = ':';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back(':');
+        m_le[1]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_eval:
-        p = m_le[0]->Write(p);
-        *p++ = '/';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back('/');
+        m_le[1]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_and:
-        p = m_le[0]->Write(p);
-        *p++ = '&';
-        p = m_le[1]->Write(p);
+        m_le[0]->Append(out);
+        out.push_back('&');
+        m_le[1]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_ref:
-        sprintf(p, "#%d", m_dbRef);
-        p += strlen(p);
+        {
+            char tmp[32];
+            snprintf(tmp, sizeof(tmp), "#%d", m_dbRef);
+            out += tmp;
+        }
         break;
 
     case P6H_LOCKEXP::le_text:
-        sprintf(p, "%s", m_p[0]);
-        p += strlen(p);
+        out += (m_p[0] ? m_p[0] : "");
         break;
 
     case P6H_LOCKEXP::le_class:
-        sprintf(p, "%s", m_p[0]);
-        p += strlen(p);
-        *p++ = '^';
-        p = m_le[1]->Write(p);
+        out += (m_p[0] ? m_p[0] : "");
+        out.push_back('^');
+        m_le[1]->Append(out);
         break;
 
     case P6H_LOCKEXP::le_true:
-        sprintf(p, "#true");
-        p += strlen(p);
+        out += "#true";
         break;
 
     case P6H_LOCKEXP::le_false:
-        sprintf(p, "#false");
-        p += strlen(p);
+        out += "#false";
         break;
 
     default:
         fprintf(stderr, "%d not recognized.\n", m_op);
         break;
     }
-    return p;
+}
+
+
+std::string P6H_LOCKEXP::WriteString() const
+{
+    std::string out;
+    Append(out);
+    return out;
+}
+
+char *P6H_LOCKEXP::Write(char *p)
+{
+    // Prefer WriteString()/Append for new code (#1077).  This entry point
+    // remains for legacy callers; it still requires a buffer large enough
+    // for the expanded lock text.
+    //
+    std::string s;
+    Append(s);
+    memcpy(p, s.data(), s.size());
+    p[s.size()] = '\0';
+    return p + s.size();
 }
 
 bool P6H_LOCKEXP::ConvertFromT5X(T5X_LOCKEXP *p)
@@ -1568,12 +1589,10 @@ void P6H_LOCKINFO::Validate() const
     if (  NULL != m_pKey
        && NULL != m_pKeyTree)
     {
-        char buffer[65536];
-        char *p = m_pKeyTree->Write(buffer);
-        *p = '\0';
-        if (strcmp(m_pKey, buffer) != 0)
+        std::string lockbuf = m_pKeyTree->WriteString();
+        if (strcmp(m_pKey, lockbuf.c_str()) != 0)
         {
-             fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", buffer, m_pKey);
+             fprintf(stderr, "WARNING: Re-generated lock key '%s' does not agree with parsed key '%s'.\n", lockbuf.c_str(), m_pKey);
              exit(1);
         }
     }
@@ -2659,15 +2678,14 @@ void P6H_GAME::ConvertFromT5X()
                             P6H_LOCKEXP *ple = new P6H_LOCKEXP;
                             if (ple->ConvertFromT5X((*itAttr)->m_pKeyTree))
                             {
-                                char *p = ple->Write(aBuffer);
-                                *p = '\0';
+                                std::string lockbuf = ple->WriteString();
 
                                 P6H_LOCKINFO *pli = new P6H_LOCKINFO;
                                 pli->SetType(StringClone(pType));
                                 pli->SetCreator(it->first);
                                 pli->SetFlags(StringClone(""));
                                 pli->SetDerefs(0);
-                                pli->SetKey(StringClone(aBuffer));
+                                pli->SetKey(StringClone(lockbuf.c_str()));
 
                                 pvli->push_back(pli);
                             }

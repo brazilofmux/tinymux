@@ -1,6 +1,8 @@
 #ifndef _R7HGAME_H_
 #define _R7HGAME_H_
 
+#include <string>
+
 #define R7H_V_MASK          0x000000ff
 #define R7H_V_ZONE          0x00000100
 #define R7H_V_LINK          0x00000200
@@ -662,6 +664,8 @@ public:
 
     void Write(FILE *fp);
     char *Write(char *p);
+    void Append(std::string &out) const;
+    std::string WriteString() const;
 
     bool ConvertFromP6H(P6H_LOCKEXP *p);
     bool ConvertFromT5X(T5X_LOCKEXP *p);
