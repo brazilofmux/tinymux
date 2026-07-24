@@ -3112,6 +3112,28 @@ mux_subnets::~mux_subnets()
     delete msnRoot;
 }
 
+// The control bits belonging to each group, indexed by HCG_*.
+//
+static const unsigned long g_ulGroupMask[HCG_COUNT] =
+{
+    HC_PERMIT|HC_REGISTER|HC_FORBID,    // HCG_PERMIT
+    HC_NOSITEMON|HC_SITEMON,            // HCG_SITEMON
+    HC_NOGUEST|HC_GUEST,                // HCG_GUEST
+    HC_SUSPECT|HC_TRUST                 // HCG_SUSPECT
+};
+
+// The member of each group that EXEMPTS rather than restricts.  Exempting
+// rules engage only while UNDER their threshold; restricting rules engage at
+// or above it.
+//
+static const unsigned long g_ulGroupExempting[HCG_COUNT] =
+{
+    HC_PERMIT,      // HCG_PERMIT
+    HC_SITEMON,     // HCG_SITEMON
+    HC_GUEST,       // HCG_GUEST
+    HC_TRUST        // HCG_SUSPECT
+};
+
 mux_subnet_node::mux_subnet_node(mux_subnet *msn_arg, unsigned long ulControl_arg,
                                  unsigned long ulThreshold_arg)
 {
@@ -3120,7 +3142,16 @@ mux_subnet_node::mux_subnet_node(mux_subnet *msn_arg, unsigned long ulControl_ar
     pnInside = nullptr;
     pnRight = nullptr;
     ulControl = ulControl_arg;
-    ulThreshold = ulThreshold_arg;
+
+    // A node is built from one *_site directive, so the threshold applies
+    // only to the group that directive names.  Every other group is
+    // unthresholded until its own directive arrives.
+    //
+    for (int i = 0; i < HCG_COUNT; i++)
+    {
+        ulThreshold[i] = (0 != (ulControl_arg & g_ulGroupMask[i]))
+                       ? ulThreshold_arg : 0;
+    }
 }
 
 mux_subnet_node::~mux_subnet_node()
@@ -3149,43 +3180,22 @@ void mux_subnets::insert(mux_subnet_node **msnRoot, mux_subnet_node *msn_arg)
     case mux_subnet::SubnetComparison::kEqual:
         {
             // Merge flag groups from the new rule onto the existing node.
-            // When any control group is updated, also adopt the new rule's
-            // threshold so re-applying `forbid_site 10.0.0.0/8 8` after a
-            // prior threshold of 4 is not a silent no-op.
+            // A group the new rule NAMES adopts both its flags and its
+            // threshold, so re-applying `forbid_site 10.0.0.0/8 8` after a
+            // prior threshold of 4 is not a silent no-op.  Groups the new
+            // rule does not name keep their own flags and thresholds: an
+            // unrelated `sitemon_site 10.0.0.0/8` must not reset a forbid's
+            // threshold to 0 and turn "forbid at 8+" into "forbid always".
             //
-            bool bControlUpdated = false;
-
-            if (0 != ((HC_PERMIT|HC_REGISTER|HC_FORBID) & msn_arg->ulControl))
+            for (int i = 0; i < HCG_COUNT; i++)
             {
-                (*msnRoot)->ulControl &= ~(HC_PERMIT|HC_REGISTER|HC_FORBID);
-                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_PERMIT|HC_REGISTER|HC_FORBID);
-                bControlUpdated = true;
-            }
-
-            if (0 != ((HC_NOSITEMON|HC_SITEMON) & msn_arg->ulControl))
-            {
-                (*msnRoot)->ulControl &= ~(HC_NOSITEMON|HC_SITEMON);
-                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOSITEMON|HC_SITEMON);
-                bControlUpdated = true;
-            }
-
-            if (0 != ((HC_NOGUEST|HC_GUEST) & msn_arg->ulControl))
-            {
-                (*msnRoot)->ulControl &= ~(HC_NOGUEST|HC_GUEST);
-                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_NOGUEST|HC_GUEST);
-                bControlUpdated = true;
-            }
-
-            if (0 != ((HC_SUSPECT|HC_TRUST) & msn_arg->ulControl))
-            {
-                (*msnRoot)->ulControl &= ~(HC_SUSPECT|HC_TRUST);
-                (*msnRoot)->ulControl |= (msn_arg->ulControl) & (HC_SUSPECT|HC_TRUST);
-                bControlUpdated = true;
-            }
-
-            if (bControlUpdated)
-            {
-                (*msnRoot)->ulThreshold = msn_arg->ulThreshold;
+                const unsigned long ulMask = g_ulGroupMask[i];
+                if (0 != (msn_arg->ulControl & ulMask))
+                {
+                    (*msnRoot)->ulControl &= ~ulMask;
+                    (*msnRoot)->ulControl |= msn_arg->ulControl & ulMask;
+                    (*msnRoot)->ulThreshold[i] = msn_arg->ulThreshold[i];
+                }
             }
 
             delete msn_arg;
@@ -3260,9 +3270,21 @@ static int site_connection_count(MUX_SOCKADDR *msa)
 // rule is actually matched, so ACLs that use no thresholds -- every existing
 // configuration -- pay nothing.
 //
-static bool node_rule_engages(unsigned long ulControl, unsigned long ulThreshold,
-                              MUX_SOCKADDR *msa, int *pnCons)
+// Does one control GROUP of a node engage for this source?
+//
+// Each group is judged against its own threshold, so a thresholded rule in
+// one group never gates -- or is gated by -- an unrelated rule in another.
+// Returns false for a group the node does not configure at all.
+//
+static bool node_group_engages(unsigned long ulControl, unsigned long ulThreshold,
+                               int iGroup, MUX_SOCKADDR *msa, int *pnCons)
 {
+    const unsigned long ulBits = ulControl & g_ulGroupMask[iGroup];
+    if (0 == ulBits)
+    {
+        return false;
+    }
+
     if (0 == ulThreshold)
     {
         return true;
@@ -3273,8 +3295,7 @@ static bool node_rule_engages(unsigned long ulControl, unsigned long ulThreshold
         *pnCons = site_connection_count(msa);
     }
 
-    const unsigned long ulExempting = HC_PERMIT | HC_SITEMON | HC_GUEST | HC_TRUST;
-    if (0 != (ulControl & ulExempting))
+    if (0 != (ulBits & g_ulGroupExempting[iGroup]))
     {
         return static_cast<unsigned long>(*pnCons) < ulThreshold;
     }
@@ -3297,53 +3318,64 @@ void mux_subnets::search(mux_subnet_node *msnRoot, MUX_SOCKADDR *msa, unsigned l
         break;
 
     case mux_subnet::SubnetComparison::kContains:
-        if (!node_rule_engages(msnRoot->ulControl, msnRoot->ulThreshold, msa, pnCons))
+        // Each control group is gated by its OWN threshold.  A group under
+        // (or over) its threshold contributes nothing; the others still
+        // apply, and rules nested inside are evaluated regardless.
+        //
+        if (node_group_engages(msnRoot->ulControl,
+                msnRoot->ulThreshold[HCG_PERMIT], HCG_PERMIT, msa, pnCons))
         {
-            // Under (or over) its threshold: this rule contributes nothing,
-            // but rules nested inside it are still evaluated.
-            //
-            search(msnRoot->pnInside, msa, pulInfo, pnCons);
-            break;
+            if (HC_PERMIT & msnRoot->ulControl)
+            {
+                *pulInfo &= ~(HI_REGISTER|HI_FORBID);
+            }
+            else if (HC_REGISTER & msnRoot->ulControl)
+            {
+                *pulInfo |= HI_REGISTER;
+            }
+            else if (HC_FORBID & msnRoot->ulControl)
+            {
+                *pulInfo |= HI_FORBID;
+            }
         }
 
-        if (HC_PERMIT & msnRoot->ulControl)
+        if (node_group_engages(msnRoot->ulControl,
+                msnRoot->ulThreshold[HCG_SITEMON], HCG_SITEMON, msa, pnCons))
         {
-            *pulInfo &= ~(HI_REGISTER|HI_FORBID);
-        }
-        else if (HC_REGISTER & msnRoot->ulControl)
-        {
-            *pulInfo |= HI_REGISTER;
-        }
-        else if (HC_FORBID & msnRoot->ulControl)
-        {
-            *pulInfo |= HI_FORBID;
-        }
-
-        if (HC_NOSITEMON & msnRoot->ulControl)
-        {
-            *pulInfo |= HI_NOSITEMON;
-        }
-        else if (HC_SITEMON & msnRoot->ulControl)
-        {
-            *pulInfo &= ~(HI_NOSITEMON);
+            if (HC_NOSITEMON & msnRoot->ulControl)
+            {
+                *pulInfo |= HI_NOSITEMON;
+            }
+            else if (HC_SITEMON & msnRoot->ulControl)
+            {
+                *pulInfo &= ~(HI_NOSITEMON);
+            }
         }
 
-        if (HC_NOGUEST & msnRoot->ulControl)
+        if (node_group_engages(msnRoot->ulControl,
+                msnRoot->ulThreshold[HCG_GUEST], HCG_GUEST, msa, pnCons))
         {
-            *pulInfo |= HI_NOGUEST;
-        }
-        else if (HC_GUEST & msnRoot->ulControl)
-        {
-            *pulInfo &= ~(HI_NOGUEST);
+            if (HC_NOGUEST & msnRoot->ulControl)
+            {
+                *pulInfo |= HI_NOGUEST;
+            }
+            else if (HC_GUEST & msnRoot->ulControl)
+            {
+                *pulInfo &= ~(HI_NOGUEST);
+            }
         }
 
-        if (HC_SUSPECT & msnRoot->ulControl)
+        if (node_group_engages(msnRoot->ulControl,
+                msnRoot->ulThreshold[HCG_SUSPECT], HCG_SUSPECT, msa, pnCons))
         {
-            *pulInfo |= HI_SUSPECT;
-        }
-        else if (HC_TRUST & msnRoot->ulControl)
-        {
-            *pulInfo &= ~(HI_SUSPECT);
+            if (HC_SUSPECT & msnRoot->ulControl)
+            {
+                *pulInfo |= HI_SUSPECT;
+            }
+            else if (HC_TRUST & msnRoot->ulControl)
+            {
+                *pulInfo &= ~(HI_SUSPECT);
+            }
         }
 
         search(msnRoot->pnInside, msa, pulInfo, pnCons);
@@ -3516,18 +3548,19 @@ bool mux_subnets::reset(mux_subnet *msn_arg)
 static struct access_keyword
 {
     unsigned long  m;
+    int            g;
     const UTF8    *s;
 } access_keywords[] =
 {
-    { HC_PERMIT,     T("Permit")    },
-    { HC_REGISTER,   T("Register")  },
-    { HC_FORBID,     T("Forbid")    },
-    { HC_NOSITEMON,  T("NoSiteMon") },
-    { HC_SITEMON,    T("SiteMon")   },
-    { HC_NOGUEST,    T("NoGuest")   },
-    { HC_GUEST,      T("Guest")     },
-    { HC_SUSPECT,    T("Suspect")   },
-    { HC_TRUST,      T("Trust")     },
+    { HC_PERMIT,     HCG_PERMIT,  T("Permit")    },
+    { HC_REGISTER,   HCG_PERMIT,  T("Register")  },
+    { HC_FORBID,     HCG_PERMIT,  T("Forbid")    },
+    { HC_NOSITEMON,  HCG_SITEMON, T("NoSiteMon") },
+    { HC_SITEMON,    HCG_SITEMON, T("SiteMon")   },
+    { HC_NOGUEST,    HCG_GUEST,   T("NoGuest")   },
+    { HC_GUEST,      HCG_GUEST,   T("Guest")     },
+    { HC_SUSPECT,    HCG_SUSPECT, T("Suspect")   },
+    { HC_TRUST,      HCG_SUSPECT, T("Trust")     },
 };
 
 void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sControl, mux_subnet_node *p)
@@ -3557,28 +3590,27 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
             }
 
             safe_str(access_keywords[i].s, sControl, &bufc);
-        }
-    }
-    // Show a graduated rule's threshold, so an admin reading the list can
-    // tell "forbidden" from "forbidden once 8 connections are up".  Restricting
-    // controls engage at ≥ N; exempting ones (permit/guest/trust/sitemon)
-    // engage only while under N — print that direction explicitly.
-    //
-    if (0 != p->ulThreshold)
-    {
-        const unsigned long ulExempting =
-            HC_PERMIT | HC_SITEMON | HC_GUEST | HC_TRUST;
-        if (0 != (p->ulControl & ulExempting))
-        {
-            safe_str(T(" (while under "), sControl, &bufc);
-            safe_ltoa(static_cast<long>(p->ulThreshold), sControl, &bufc);
-            safe_str(T(" conns)"), sControl, &bufc);
-        }
-        else
-        {
-            safe_str(T(" (at "), sControl, &bufc);
-            safe_ltoa(static_cast<long>(p->ulThreshold), sControl, &bufc);
-            safe_str(T("+ conns)"), sControl, &bufc);
+
+            // Annotate each control with ITS OWN group's threshold, so an
+            // admin can tell "Forbid" from "Forbid once 8 connections are
+            // up" even when several groups carrying different thresholds
+            // share one subnet.  Restricting controls engage at >= N;
+            // exempting ones (permit/sitemon/guest/trust) engage only while
+            // under N -- print that direction explicitly.
+            //
+            const unsigned long ulThreshold =
+                p->ulThreshold[access_keywords[i].g];
+            if (0 != ulThreshold)
+            {
+                const bool bExempting = 0 != (access_keywords[i].m
+                    & g_ulGroupExempting[access_keywords[i].g]);
+
+                safe_str(bExempting ? T(" (while under ") : T(" (at "),
+                    sControl, &bufc);
+                safe_ltoa(static_cast<long>(ulThreshold), sControl, &bufc);
+                safe_str(bExempting ? T(" conns)") : T("+ conns)"),
+                    sControl, &bufc);
+            }
         }
     }
     *bufc = '\0';
