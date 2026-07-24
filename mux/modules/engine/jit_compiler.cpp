@@ -873,6 +873,45 @@ static int ast_max_funccall_depth(const ASTNode *node)
     return child_max + (node->type == AST_FUNCCALL ? 1 : 0);
 }
 
+// Total AST_FUNCCALL nodes in a parse tree (invocation-count watermark).
+static int ast_funccall_count(const ASTNode *node)
+{
+    if (!node) return 0;
+    int n = (node->type == AST_FUNCCALL) ? 1 : 0;
+    for (const auto &c : node->children) {
+        n += ast_funccall_count(c.get());
+    }
+    return n;
+}
+
+// Shared helper for dbt_run/dbt_resume nonzero status: count wall-clock
+// aborts and, when requested, write the AST-shaped diagnostic so callers
+// that treat the run as handled do not fall through to an empty result.
+static bool handle_dbt_run_status(int rc, UTF8 *out, size_t out_size,
+                                  bool emit_cpu_limited)
+{
+    if (rc == 0) {
+        return true;
+    }
+    if (rc == -3) {
+        s_jit_stats.bail_alarm++;
+        if (emit_cpu_limited && nullptr != out && 0 < out_size) {
+            // Mirror AST's alarm path (ast_eval_function): emit
+            // "#-1 CPU LIMITED" rather than returning false and letting
+            // the AST short-circuit produce an empty string.
+            const UTF8 *kMsg = T("#-1 CPU LIMITED");
+            size_t n = strlen(reinterpret_cast<const char *>(kMsg));
+            if (n >= out_size) {
+                n = out_size - 1;
+            }
+            memcpy(out, kMsg, n);
+            out[n] = '\0';
+            return true;  // handled
+        }
+    }
+    return false;
+}
+
 static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
                                             int eval = EV_FCHECK | EV_EVAL,
                                             uint64_t code_base = 0,
@@ -906,6 +945,11 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // trip function_recursion_limit, so the AST reproduces the limit
     // error the flattened compiled code cannot.
     prog.max_func_depth = ast_max_funccall_depth(ast.get());
+
+    // Static invocation-count watermark: total FUNCCALL nodes.  Flattened
+    // JIT does not maintain func_invk_ctr for sequential calls, so decline
+    // when live ctr + this count would trip function_invocation_limit.
+    prog.n_func_calls = ast_funccall_count(ast.get());
 
     // --- HIR pipeline ---
 
@@ -2398,7 +2442,14 @@ struct shared_heap_t {
             rc = dbt_resume(&dbt, e->entry_pc);
         }
 
-        if (rc != 0) return false;
+        // Alarm abort: count + emit #-1 CPU LIMITED (handled). Other
+        // failures fall through to the outer AST path.
+        if (!handle_dbt_run_status(rc, out, out_size, true)) {
+            return false;
+        }
+        if (rc == -3) {
+            return true;
+        }
 
         // Extract result.
         uint64_t out_addr = resolve_runtime_out_addr(
@@ -2432,6 +2483,15 @@ bool run_cached_program(compiled_program *prog,
     if (mudstate.func_nest_lev + prog->max_func_depth
         >= mudconf.func_nest_lim) {
         s_jit_stats.bail_depth++;
+        return false;
+    }
+
+    // Invocation-count watermark (skip when n_func_calls is 0, which is
+    // the reconstruct-from-SQLite default until the program recompiles).
+    if (  0 < prog->n_func_calls
+       && mudstate.func_invk_ctr + prog->n_func_calls
+          >= mudconf.func_invk_lim) {
+        s_jit_stats.bail_invk++;
         return false;
     }
 
@@ -2603,14 +2663,11 @@ bool run_cached_program(compiled_program *prog,
     ec.dbt = dbt;
 
     int rc = dbt_run(dbt, prog->entry_pc, rv_compiler::STACK_TOP);
-    if (rc != 0) {
-        if (rc == -3) {
-            // Wall-clock alarm fired mid-run: abort.  The AST fallback
-            // short-circuits on the same flag; the queue/net loop then halts
-            // the object.  Not a compile/exec bug — do not log as one.
-            s_jit_stats.bail_alarm++;
-        }
+    if (!handle_dbt_run_status(rc, out, out_size, true)) {
         return false;
+    }
+    if (rc == -3) {
+        return true;  // CPU LIMITED already written
     }
 
     uint64_t out_addr = resolve_runtime_out_addr(
@@ -4584,6 +4641,17 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         return false;
     }
 
+    // Static invocation-count watermark: flattened sequential calls do
+    // not maintain func_invk_ctr.  Decline when the live counter plus
+    // this program's FUNCCALL count would trip function_invocation_limit.
+    if (  0 < prog->n_func_calls
+       && mudstate.func_invk_ctr + prog->n_func_calls
+          >= mudconf.func_invk_lim) {
+        s_jit_stats.bail_invk++;
+        s_jit_stats.eval_bailout++;
+        return false;
+    }
+
     if (!prog->needs_jit) {
         // Constant-folded — result was extracted at compaction time.
         // Safe at any nesting depth (no DBT involved).
@@ -4675,6 +4743,7 @@ FUNCTION(fun_jitstats)
         "qreg_resyncs=%llu "
         "bail_longreg=%llu "
         "bail_depth=%llu "
+        "bail_invk=%llu "
         "bail_alarm=%llu",
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
@@ -4697,6 +4766,7 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.qreg_resyncs,
         (unsigned long long)s_jit_stats.bail_longreg,
         (unsigned long long)s_jit_stats.bail_depth,
+        (unsigned long long)s_jit_stats.bail_invk,
         (unsigned long long)s_jit_stats.bail_alarm);
 
     // Append NOEVAL breakdown.
@@ -4801,7 +4871,12 @@ static bool run_compiled(compiled_program &prog,
 
     int rc = dbt_run(dbt, prog.entry_pc, rv_compiler::STACK_TOP);
 
-    if (rc != 0) return false;
+    if (!handle_dbt_run_status(rc, out, out_size, true)) {
+        return false;
+    }
+    if (rc == -3) {
+        return true;
+    }
 
     uint64_t out_addr = resolve_runtime_out_addr(
         prog.out_addr, rv_compiler::STACK_TOP);

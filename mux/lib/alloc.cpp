@@ -37,10 +37,17 @@ DRIVER_CONFIG_SYNC_FN g_driver_config_sync_fn = nullptr;
 // Account bytes just taken from the system on a pool slow-path alloc and, if
 // they push the footprint past the budget, trip the per-command abort so the
 // current (runaway) command unwinds and frees its buffers back to the freelist
-// — a graceful degrade instead of a fatal OutOfMemory.  Hysteresis: log once
-// per breach, re-armed only after the footprint settles back under half the
-// budget (buffers freed to the freelist do not reduce g_pool_system_bytes, so
-// this re-arms on the next genuine growth attempt, not spuriously).
+// — a graceful degrade instead of a fatal OutOfMemory.
+//
+// Policy: the budget is a permanent soft ceiling on system growth.  Pool
+// freelist returns never reduce g_pool_system_bytes (buffers stay owned by
+// the pool), so once past the limit the process stays over budget until
+// restart or the admin raises pool_memory_limit.  Log once per breach; do
+// not re-arm the warning from freelist activity (there is none that lowers
+// the counter).  After the first breach, continue to trip alarm_clock on
+// further slow-path growth so subsequent runaway allocs still unwind rather
+// than growing without bound.
+//
 static void pool_account_system(size_t nBytes)
 {
     static bool warned = false;
@@ -55,11 +62,15 @@ static void pool_account_system(size_t nBytes)
                 warned = true;
                 mux_fprintf(stderr,
                     T("Pool memory budget exceeded (%zu > %zu bytes); aborting "
-                      "the current command to protect the server." ENDLINE),
+                      "the current command to protect the server.  Further "
+                      "slow-path growth will keep aborting until the budget "
+                      "is raised or the process restarts." ENDLINE),
                     g_pool_system_bytes, g_pool_limit_bytes);
             }
         }
-        else if (g_pool_system_bytes < g_pool_limit_bytes / 2)
+        // Re-arm only when the admin raises the limit past the current
+        // footprint (g_pool_system_bytes never shrinks).
+        else if (warned && g_pool_system_bytes <= g_pool_limit_bytes)
         {
             warned = false;
         }

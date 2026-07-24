@@ -64,10 +64,15 @@ struct jit_stats_t {
 
     uint64_t bail_noeval;         // NOEVAL function forced bailout
     uint64_t bail_slots;          // output slot exhaustion
-    uint64_t bail_longreg;        // %q register value exceeds SUBST_SLOT;
-                                  // declined at entry marshal (#996)
+    uint64_t bail_longreg;        // legacy: was entry-decline for long %q
+                                  // values (#996 step 1). After the longbit
+                                  // diamond (step 2) runs no longer decline;
+                                  // counter stays for dashboard compatibility
+                                  // and remains zero.
     uint64_t bail_depth;          // static nest depth would trip
                                   // function_recursion_limit (#1002)
+    uint64_t bail_invk;           // static call count would trip
+                                  // function_invocation_limit
     uint64_t bail_alarm;          // per-command wall-clock alarm fired
                                   // mid-JIT; run aborted (#JIT-alarm)
 
@@ -457,6 +462,15 @@ struct compiled_program {
     // SQLite code cache (schema v12); 0 for pre-v12 rows, which the
     // blob-version stamp invalidates anyway.
     int      max_func_depth = 0;
+
+    // Total AST_FUNCCALL nodes in the source AST (not nesting depth).
+    // Compiled code does not maintain func_invk_ctr for flattened
+    // sequential calls, so jit_eval declines when
+    // live func_invk_ctr + n_func_calls would trip function_invocation_limit
+    // — same static-watermark idea as max_func_depth.  Not persisted in
+    // the SQLite code cache yet (0 on reconstruct → watermark skipped
+    // until the next recompile into the memory LRU).
+    int      n_func_calls = 0;
 
     // Pool high-water marks after compilation.
     // Persistent VM uses these to advance shared pool cursors so the
