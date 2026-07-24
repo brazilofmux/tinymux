@@ -337,10 +337,33 @@ uint32_t CMailMod::Release(void)
 // Message body management.
 // ---------------------------------------------------------------------------
 
+// Largest message index we will honor (#1065 / engine #843 parity).
+// Message numbers can come from a corrupt mail database; an absurd value
+// would drive a huge resize or a wild index.
+//
+static constexpr int MAIL_DB_LIMIT = 0x04000000;   // 67,108,864
+
 void CMailMod::mail_db_grow(int newtop)
 {
     if (newtop <= static_cast<int>(m_mail_list.size()))
     {
+        return;
+    }
+    if (newtop > MAIL_DB_LIMIT)
+    {
+        if (nullptr != m_pILog)
+        {
+            bool fStarted;
+            m_pILog->start_log(&fStarted, LOG_BUGS, T("BUG"), T("MAIL"));
+            if (fStarted)
+            {
+                UTF8 buf[128];
+                snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
+                         "mail_db_grow: refusing absurd mail size %d.", newtop);
+                m_pILog->log_text(buf);
+                m_pILog->end_log();
+            }
+        }
         return;
     }
     m_mail_list.resize(newtop);
@@ -375,7 +398,21 @@ int CMailMod::new_mail_message(const UTF8 *message, int number)
         }
     }
 
+    // Reject negative / absurd indices before grow (#1065).
+    //
+    if (number < 0 || number > MAIL_DB_LIMIT)
+    {
+        return NOTHING;
+    }
+
     mail_db_grow(number + 1);
+
+    // Grow may have refused an absurd size; do not index past the vector.
+    //
+    if (number >= static_cast<int>(m_mail_list.size()))
+    {
+        return NOTHING;
+    }
 
     struct mail_body &pm = m_mail_list[number];
     pm.m_pMessage.assign(reinterpret_cast<const char *>(message), nLen);
@@ -2417,6 +2454,8 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
     }
 
     // De-duplicate and build result string.
+    // #1066: never advance by snprintf's untruncated return value — that
+    // walks past the stack buffer when the list is truncated.
     //
     UTF8 result[MOD_LBUF_SIZE];
     UTF8 *rp = result;
@@ -2434,17 +2473,37 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
                 }
             }
 
+            size_t remain = sizeof(result) - static_cast<size_t>(rp - result);
+            if (remain <= 1)
+            {
+                break;
+            }
             if (rp != result)
             {
                 *rp++ = ' ';
+                remain--;
             }
             if (bBlind)
             {
+                if (remain <= 1)
+                {
+                    break;
+                }
                 *rp++ = '!';
+                remain--;
             }
-            int n = snprintf(reinterpret_cast<char *>(rp),
-                sizeof(result) - (rp - result),
+            int n = snprintf(reinterpret_cast<char *>(rp), remain,
                 "%d", aRecip[i]);
+            if (n < 0)
+            {
+                break;
+            }
+            if (static_cast<size_t>(n) >= remain)
+            {
+                // Truncated incomplete number — discard it.
+                *rp = '\0';
+                break;
+            }
             rp += n;
         }
     }

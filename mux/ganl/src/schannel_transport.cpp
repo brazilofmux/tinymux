@@ -812,9 +812,28 @@ namespace ganl {
         GANL_SCHANNEL_DEBUG(conn, "Processing Incoming. EncryptedIn=" << encrypted_in.readableBytes()
             << ", Established=" << context.established);
 
-        // If connection is not established, perform handshake
+        // If connection is not established, perform handshake.  After the
+        // final handshake record, SECBUFFER_EXTRA app data may already sit
+        // in incompleteBuffer — decrypt it in this same call so multi-record
+        // flights are not stalled until the next network read (#1067).
+        //
         if (!context.established) {
-            return performHandshake(conn, encrypted_in, encrypted_out);
+            TlsResult hr = performHandshake(conn, encrypted_in, encrypted_out);
+            if (context.established
+                && !context.incompleteBuffer.empty()) {
+                IoBuffer emptyIn;
+                TlsResult dr = decryptMessage(conn, emptyIn, decrypted_out);
+                if (dr == TlsResult::Error || dr == TlsResult::Closed) {
+                    return dr;
+                }
+                // WantRead after partial decrypt of leftover is still OK if
+                // we already completed the handshake; surface Success so the
+                // connection layer can process any plaintext produced.
+                if (dr == TlsResult::Success || decrypted_out.readableBytes() > 0) {
+                    return TlsResult::Success;
+                }
+            }
+            return hr;
         }
 
         // If connection is established, decrypt incoming data
@@ -1101,8 +1120,17 @@ namespace ganl {
                 &outBufferDesc, &dwSSPIOutFlags, &expiry
             );
 
+            // #1068: Only mark the context handle live when ASC actually
+            // produced/used one. Setting this on every failure would later
+            // DeleteSecurityContext on garbage and pass a bad phContext on retry.
+            //
             if (!context.contextHandleInitialized) {
-                context.contextHandleInitialized = true;
+                if (status == SEC_E_OK
+                    || status == SEC_I_CONTINUE_NEEDED
+                    || status == SEC_I_COMPLETE_NEEDED
+                    || status == SEC_I_COMPLETE_AND_CONTINUE) {
+                    context.contextHandleInitialized = true;
+                }
             }
 
             // Handle output token
@@ -1119,32 +1147,37 @@ namespace ganl {
             size_t bytesConsumed = 0;
             moreProcessingNeeded = false; // Assume loop stops unless CONTINUE_NEEDED happens
 
-            if (status == SEC_E_OK) {
-                GANL_SCHANNEL_DEBUG(conn, "AcceptSecurityContext returned SEC_E_OK (Handshake Complete).");
-                bytesConsumed = inBuffers[0].cbBuffer; // Assume consumed all input for this final step
-
-                // Check for SECBUFFER_EXTRA (leftover application data)
+            // Helper: bytes Schannel actually consumed = input size - EXTRA.
+            auto schannelConsumed = [&](size_t inputCb) -> size_t {
+                size_t consumed = inputCb;
                 if (inBuffers[1].BufferType == SECBUFFER_EXTRA && inBuffers[1].cbBuffer > 0) {
-                    GANL_SCHANNEL_DEBUG(conn, "Found SECBUFFER_EXTRA with " << inBuffers[1].cbBuffer << " bytes.");
-                    if (inBuffers[1].cbBuffer <= bytesConsumed) {
-                        bytesConsumed -= inBuffers[1].cbBuffer; // Don't consume the extra data yet
-                        // Move extra data to context.incompleteBuffer
-                        context.incompleteBuffer.assign(
-                            context.handshakeBuffer.begin() + bytesConsumed,
-                            context.handshakeBuffer.end() // end() points one past the last element
-                        );
-                        GANL_SCHANNEL_DEBUG(conn, "Copied " << context.incompleteBuffer.size() << " extra bytes to incompleteBuffer.");
-
+                    if (inBuffers[1].cbBuffer <= consumed) {
+                        consumed -= inBuffers[1].cbBuffer;
                     }
                     else {
-                        GANL_SCHANNEL_DEBUG(conn, "Error: SECBUFFER_EXTRA size > consumed size!");
-                        // Handle error appropriately
-                        status = SEC_E_INTERNAL_ERROR; // Treat as error
-                        bytesConsumed = 0; // Don't consume anything on error
+                        GANL_SCHANNEL_DEBUG(conn, "Error: SECBUFFER_EXTRA size > input size!");
+                        return static_cast<size_t>(-1); // signal error
                     }
                 }
+                return consumed;
+            };
+
+            if (status == SEC_E_OK) {
+                GANL_SCHANNEL_DEBUG(conn, "AcceptSecurityContext returned SEC_E_OK (Handshake Complete).");
+                bytesConsumed = schannelConsumed(inBuffers[0].cbBuffer);
+                if (bytesConsumed == static_cast<size_t>(-1)) {
+                    status = SEC_E_INTERNAL_ERROR;
+                    bytesConsumed = 0;
+                }
+                else if (inBuffers[1].BufferType == SECBUFFER_EXTRA && inBuffers[1].cbBuffer > 0) {
+                    // Leftover application data — hold for decrypt after establish.
+                    context.incompleteBuffer.assign(
+                        context.handshakeBuffer.begin() + bytesConsumed,
+                        context.handshakeBuffer.end());
+                    GANL_SCHANNEL_DEBUG(conn, "Copied " << context.incompleteBuffer.size()
+                        << " extra bytes to incompleteBuffer.");
+                }
                 else {
-                    // No extra data, clear incomplete buffer
                     context.incompleteBuffer.clear();
                 }
 
@@ -1171,9 +1204,13 @@ namespace ganl {
             }
             else if (status == SEC_I_CONTINUE_NEEDED) {
                 GANL_SCHANNEL_DEBUG(conn, "AcceptSecurityContext returned SEC_I_CONTINUE_NEEDED.");
-                // Consume all input provided *for this specific call*
-                bytesConsumed = inBuffers[0].cbBuffer;
-                if (bytesConsumed > 0 && bytesConsumed <= context.handshakeBuffer.size()) {
+                // #1068: honor SECBUFFER_EXTRA — do not drop unprocessed bytes.
+                bytesConsumed = schannelConsumed(inBuffers[0].cbBuffer);
+                if (bytesConsumed == static_cast<size_t>(-1)) {
+                    context.handshakeBuffer.clear();
+                    status = SEC_E_INTERNAL_ERROR;
+                }
+                else if (bytesConsumed > 0 && bytesConsumed <= context.handshakeBuffer.size()) {
                     GANL_SCHANNEL_DEBUG(conn, "Erasing " << bytesConsumed << " consumed bytes from handshakeBuffer.");
                     context.handshakeBuffer.erase(context.handshakeBuffer.begin(), context.handshakeBuffer.begin() + bytesConsumed);
                     // If buffer is now empty, we need more data from network
@@ -1185,6 +1222,15 @@ namespace ganl {
                         // Data remains, loop again to call ASC with the rest
                         moreProcessingNeeded = true;
                     }
+                }
+                else if (bytesConsumed == 0) {
+                    // Nothing consumed but CONTINUE_NEEDED with EXTRA-only edge:
+                    // keep buffer and wait for more if empty after EXTRA adjust.
+                    if (context.handshakeBuffer.empty()) {
+                        context.waitingForData = true;
+                        break;
+                    }
+                    moreProcessingNeeded = true;
                 }
                 else {
                     GANL_SCHANNEL_DEBUG(conn, "Error: CONTINUE_NEEDED but invalid bytesConsumed!");
@@ -1213,6 +1259,8 @@ namespace ganl {
         } // End while(moreProcessingNeeded && !context.handshakeBuffer.empty())
 
         // --- Determine overall result after loop ---
+        // Note: SECBUFFER_EXTRA app data may sit in incompleteBuffer; the
+        // caller (processIncoming) decrypts it after established=true.
         if (context.established) {
             return TlsResult::Success;
         }
@@ -1260,106 +1308,112 @@ namespace ganl {
             return TlsResult::Success;
         }
 
-        // Prepare decryption buffers
-        SecBuffer buffers[4];
-        buffers[0].pvBuffer = context.incompleteBuffer.data();
-        buffers[0].cbBuffer = static_cast<DWORD>(context.incompleteBuffer.size());
-        buffers[0].BufferType = SECBUFFER_DATA;
+        // #1067: Loop DecryptMessage while SECBUFFER_EXTRA remains so that
+        // multiple TLS records in one TCP segment are fully drained.
+        //
+        bool producedPlaintext = false;
+        while (!context.incompleteBuffer.empty()) {
+            SecBuffer buffers[4];
+            buffers[0].pvBuffer = context.incompleteBuffer.data();
+            buffers[0].cbBuffer = static_cast<DWORD>(context.incompleteBuffer.size());
+            buffers[0].BufferType = SECBUFFER_DATA;
 
-        buffers[1].pvBuffer = NULL;
-        buffers[1].cbBuffer = 0;
-        buffers[1].BufferType = SECBUFFER_EMPTY;
+            buffers[1].pvBuffer = NULL;
+            buffers[1].cbBuffer = 0;
+            buffers[1].BufferType = SECBUFFER_EMPTY;
 
-        buffers[2].pvBuffer = NULL;
-        buffers[2].cbBuffer = 0;
-        buffers[2].BufferType = SECBUFFER_EMPTY;
+            buffers[2].pvBuffer = NULL;
+            buffers[2].cbBuffer = 0;
+            buffers[2].BufferType = SECBUFFER_EMPTY;
 
-        buffers[3].pvBuffer = NULL;
-        buffers[3].cbBuffer = 0;
-        buffers[3].BufferType = SECBUFFER_EMPTY;
+            buffers[3].pvBuffer = NULL;
+            buffers[3].cbBuffer = 0;
+            buffers[3].BufferType = SECBUFFER_EMPTY;
 
-        SecBufferDesc bufferDesc;
-        bufferDesc.ulVersion = SECBUFFER_VERSION;
-        bufferDesc.cBuffers = 4;
-        bufferDesc.pBuffers = buffers;
+            SecBufferDesc bufferDesc;
+            bufferDesc.ulVersion = SECBUFFER_VERSION;
+            bufferDesc.cBuffers = 4;
+            bufferDesc.pBuffers = buffers;
 
-        // Decrypt the message
-        SECURITY_STATUS status = DecryptMessage(&context.contextHandle, &bufferDesc, 0, NULL);
+            SECURITY_STATUS status = DecryptMessage(&context.contextHandle, &bufferDesc, 0, NULL);
 
-        // Handle different status codes
-        if (status == SEC_E_OK) {
-            GANL_SCHANNEL_DEBUG(conn, "DecryptMessage successful");
+            if (status == SEC_E_OK) {
+                GANL_SCHANNEL_DEBUG(conn, "DecryptMessage successful");
 
-            // Find the data buffer (should be in buffers[1])
-            SecBuffer* pDataBuffer = NULL;
-            SecBuffer* pExtraBuffer = NULL;
+                SecBuffer* pDataBuffer = NULL;
+                SecBuffer* pExtraBuffer = NULL;
 
-            for (int i = 0; i < 4; i++) {
-                if (buffers[i].BufferType == SECBUFFER_DATA) {
-                    pDataBuffer = &buffers[i];
+                for (int i = 0; i < 4; i++) {
+                    if (buffers[i].BufferType == SECBUFFER_DATA) {
+                        pDataBuffer = &buffers[i];
+                    }
+                    else if (buffers[i].BufferType == SECBUFFER_EXTRA) {
+                        pExtraBuffer = &buffers[i];
+                    }
                 }
-                else if (buffers[i].BufferType == SECBUFFER_EXTRA) {
-                    pExtraBuffer = &buffers[i];
+
+                if (pDataBuffer != NULL && pDataBuffer->cbBuffer > 0) {
+                    decrypted_out.append(pDataBuffer->pvBuffer, pDataBuffer->cbBuffer);
+                    producedPlaintext = true;
+                    GANL_SCHANNEL_DEBUG(conn, "Decrypted " << pDataBuffer->cbBuffer << " bytes");
                 }
-            }
 
-            // Copy decrypted data to output buffer
-            if (pDataBuffer != NULL && pDataBuffer->cbBuffer > 0) {
-                decrypted_out.append(pDataBuffer->pvBuffer, pDataBuffer->cbBuffer);
-                GANL_SCHANNEL_DEBUG(conn, "Decrypted " << pDataBuffer->cbBuffer << " bytes");
-            }
+                if (pExtraBuffer != NULL && pExtraBuffer->cbBuffer > 0) {
+                    memmove(context.incompleteBuffer.data(), pExtraBuffer->pvBuffer, pExtraBuffer->cbBuffer);
+                    context.incompleteBuffer.resize(pExtraBuffer->cbBuffer);
+                    GANL_SCHANNEL_DEBUG(conn, "Saved " << pExtraBuffer->cbBuffer
+                        << " bytes of extra data; continuing decrypt loop");
+                    // Continue loop to decrypt the next record.
+                    continue;
+                }
 
-            // Save any extra data for next operation
-            if (pExtraBuffer != NULL && pExtraBuffer->cbBuffer > 0) {
-                memmove(context.incompleteBuffer.data(), pExtraBuffer->pvBuffer, pExtraBuffer->cbBuffer);
-                context.incompleteBuffer.resize(pExtraBuffer->cbBuffer);
-                GANL_SCHANNEL_DEBUG(conn, "Saved " << pExtraBuffer->cbBuffer << " bytes of extra data");
+                context.incompleteBuffer.clear();
+                return TlsResult::Success;
+            }
+            else if (status == SEC_E_INCOMPLETE_MESSAGE) {
+                // Need more data for the current (partial) record.
+                GANL_SCHANNEL_DEBUG(conn, "DecryptMessage needs more data");
+                context.waitingForData = true;
+                // If we already decrypted earlier records in this call, the
+                // connection should still process that plaintext.
+                return producedPlaintext ? TlsResult::Success : TlsResult::WantRead;
+            }
+            else if (status == SEC_I_RENEGOTIATE) {
+                // Peer requested TLS renegotiation. We do not support it and refuse
+                // by dropping the connection. Rationale (#950): renegotiation is a
+                // CPU-asymmetric DoS vector, and clearing established=false while the
+                // connection keeps running opens a cleartext-downgrade window (a send
+                // during renegotiation would route application data to the plaintext
+                // path). The OpenSSL build disables client-initiated renegotiation
+                // outright (SSL_OP_NO_RENEGOTIATION); Schannel has no equivalent
+                // server-side pre-disable, so we refuse at the point of request.
+                // TLS 1.3 has no renegotiation, so this path disappears there.
+                context.established = false;
+                context.needsRenegotiate = false;
+                context.incompleteBuffer.clear();
+                context.lastError = "Peer requested TLS renegotiation; refusing (unsupported)";
+                GANL_SCHANNEL_DEBUG(conn, context.lastError);
+                ganl::logMessage("TLS[%u] decrypt: %s", (unsigned)conn, context.lastError.c_str());
+                return TlsResult::Error;
+            }
+            else if (status == SEC_I_CONTEXT_EXPIRED) {
+                // Connection is being closed
+                GANL_SCHANNEL_DEBUG(conn, "Context expired (connection closing)");
+                context.established = false;
+                context.incompleteBuffer.clear();
+                return TlsResult::Closed;
             }
             else {
+                // Other error
+                context.lastError = "DecryptMessage failed: " + getSchannelErrorString(status);
+                GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
+                ganl::logMessage("TLS[%u] decrypt: %s", (unsigned)conn, context.lastError.c_str());
                 context.incompleteBuffer.clear();
+                return TlsResult::Error;
             }
+        }
 
-            return TlsResult::Success;
-        }
-        else if (status == SEC_E_INCOMPLETE_MESSAGE) {
-            // Need more data
-            GANL_SCHANNEL_DEBUG(conn, "DecryptMessage needs more data");
-            context.waitingForData = true;
-            return TlsResult::WantRead;
-        }
-        else if (status == SEC_I_RENEGOTIATE) {
-            // Peer requested TLS renegotiation. We do not support it and refuse
-            // by dropping the connection. Rationale (#950): renegotiation is a
-            // CPU-asymmetric DoS vector, and clearing established=false while the
-            // connection keeps running opens a cleartext-downgrade window (a send
-            // during renegotiation would route application data to the plaintext
-            // path). The OpenSSL build disables client-initiated renegotiation
-            // outright (SSL_OP_NO_RENEGOTIATION); Schannel has no equivalent
-            // server-side pre-disable, so we refuse at the point of request.
-            // TLS 1.3 has no renegotiation, so this path disappears there.
-            context.established = false;
-            context.needsRenegotiate = false;
-            context.incompleteBuffer.clear();
-            context.lastError = "Peer requested TLS renegotiation; refusing (unsupported)";
-            GANL_SCHANNEL_DEBUG(conn, context.lastError);
-            ganl::logMessage("TLS[%u] decrypt: %s", (unsigned)conn, context.lastError.c_str());
-            return TlsResult::Error;
-        }
-        else if (status == SEC_I_CONTEXT_EXPIRED) {
-            // Connection is being closed
-            GANL_SCHANNEL_DEBUG(conn, "Context expired (connection closing)");
-            context.established = false;
-            context.incompleteBuffer.clear();
-            return TlsResult::Closed;
-        }
-        else {
-            // Other error
-            context.lastError = "DecryptMessage failed: " + getSchannelErrorString(status);
-            GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
-            ganl::logMessage("TLS[%u] decrypt: %s", (unsigned)conn, context.lastError.c_str());
-            context.incompleteBuffer.clear();
-            return TlsResult::Error;
-        }
+        return TlsResult::Success;
     }
 
     TlsResult SchannelTransport::encryptMessage(ConnectionHandle conn, IoBuffer& plain_in, IoBuffer& encrypted_out) {

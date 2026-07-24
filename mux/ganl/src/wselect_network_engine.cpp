@@ -791,6 +791,16 @@ namespace ganl {
         SocketInfo newInfo{ SocketType::Connection, nullptr, true, false, nullptr, remoteAddr.toString(), nullptr };
         addSocketInternal(clientSock, newInfo); // Adds to sockets_, monitoredSockets_, and master FD sets
 
+        // #1070: FD_SETSIZE failure leaves the accepted socket untracked.
+        // Close it and return invalid — do not hand the raw SOCKET to the adapter.
+        //
+        if (sockets_.find(clientSock) == sockets_.end()) {
+            GANL_WSELECT_DEBUG(clientSock, "Failed to register accepted socket (FD_SETSIZE or map); closing.");
+            closeSocket(clientSock);
+            error = WSAENOBUFS;
+            return InvalidConnectionHandle;
+        }
+
         GANL_WSELECT_DEBUG(clientSock, "New connection registered from " << remoteAddr.toString());
         return static_cast<ConnectionHandle>(clientSock);
     }
