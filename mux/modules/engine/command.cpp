@@ -2050,6 +2050,10 @@ UTF8 *process_command
 
     // Reset recursion limits.
     //
+    // Note: include_nest_lev is intentionally not reset here — it tracks
+    // recursive process_command_list_inline depth across nested
+    // @include/@dolist/now invocations and is balanced by that path.
+    //
     mudstate.func_nest_lev = 0;
     mudstate.func_invk_ctr = 0;
     mudstate.ntfy_nest_lev = 0;

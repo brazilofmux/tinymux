@@ -925,22 +925,36 @@ void T6H_ATTRINFO::EncodeDecode(int dbObjOwner)
         else
         {
             // Encode owner and flags into the attribute text.
+            // Size the heap buffer from prefix + value so long attrs cannot
+            // overflow a fixed stack buffer (was char[65536] + sprintf).
             //
             if (T6H_NOTHING == m_dbOwner)
             {
                 m_dbOwner = dbObjOwner;
             }
 
-            char buffer[65536];
-            sprintf(buffer, "%c%d:%d:", ATR_INFO_CHAR, m_dbOwner, m_iFlags);
-            size_t n = strlen(buffer);
-            sprintf(buffer + n, "%s", m_pValueUnencoded);
+            char prefix[32];
+            int nPrefix = snprintf(prefix, sizeof(prefix), "%c%d:%d:",
+                ATR_INFO_CHAR, m_dbOwner, m_iFlags);
+            if (nPrefix < 0 || (size_t)nPrefix >= sizeof(prefix))
+            {
+                exit(1);
+            }
+            size_t nValue = strlen(m_pValueUnencoded);
+            size_t nNeeded = (size_t)nPrefix + nValue + 1;
+            char *buffer = (char *)malloc(nNeeded);
+            if (NULL == buffer)
+            {
+                exit(1);
+            }
+            memcpy(buffer, prefix, (size_t)nPrefix);
+            memcpy(buffer + nPrefix, m_pValueUnencoded, nValue + 1);
 
             free(m_pAllocated);
-            m_pAllocated = StringClone(buffer);
+            m_pAllocated = buffer;
 
             m_pValueEncoded = m_pAllocated;
-            m_pValueUnencoded = m_pAllocated + n;
+            m_pValueUnencoded = m_pAllocated + nPrefix;
         }
         m_kState = kNone;
     }

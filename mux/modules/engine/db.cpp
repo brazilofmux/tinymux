@@ -1926,8 +1926,10 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
         return;
     }
 
-    sort(attrnums.begin(), attrnums.end());
-    attrnums.erase(unique(attrnums.begin(), attrnums.end()), attrnums.end());
+    // Include dirty non-tombstone cache / write-queue puts, and drop
+    // tombstoned attrs that SQLite has not yet seen deleted (#1045).
+    //
+    cache_collect_pending_attrnums(thing, attrnums);
 }
 
 static inline void makekey(dbref thing, int atr, Aname *abuff)

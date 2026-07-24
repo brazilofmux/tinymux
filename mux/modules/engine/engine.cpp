@@ -1928,6 +1928,9 @@ int load_game(int ccPageFile)
     {
         mudstate.bSQLiteLoading = false;
         sqldb.Rollback();
+        // Queued attrs targeted the aborted transaction — drop them.
+        //
+        cache_discard_writes();
         // Everything is not ok.
         //
         mux_fclose(f);
@@ -1939,10 +1942,27 @@ int load_game(int ccPageFile)
         ENDLOG
         return LOAD_GAME_LOADING_PROBLEM;
     }
+    // Flush remaining write-queue puts into the open import transaction
+    // before Commit (#1047).  Must run while bSQLiteLoading is still true
+    // so flush does not open a nested Begin/Commit.
+    //
+    if (!cache_flush_writes())
+    {
+        mudstate.bSQLiteLoading = false;
+        sqldb.Rollback();
+        cache_discard_writes();
+        mux_fclose(f);
+        f = 0;
+        STARTLOG(LOG_ALWAYS, "INI", "FATAL")
+        log_text(T("Error flushing SQLite attributes after flatfile load."));
+        ENDLOG
+        return LOAD_GAME_LOADING_PROBLEM;
+    }
     mudstate.bSQLiteLoading = false;
     if (!sqldb.Commit())
     {
         sqldb.Rollback();
+        cache_discard_writes();
         mux_fclose(f);
         f = 0;
         STARTLOG(LOG_ALWAYS, "INI", "FATAL")

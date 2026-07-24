@@ -578,6 +578,7 @@ struct statedata
     int     pipe_nest_lev;      // Number of piped commands.
     int     pcreates_this_hour; // Player creations possible this hour.
     int     ntfy_nest_lev;      // Current nesting of notifys.
+    int     include_nest_lev;   // Current nesting of @include/@dolist/now inline lists.
     int     train_nest_lev;     // Current nesting of train.
     int     record_players;     // The maximum # of player logged on.
     int     wild_invk_ctr;      // Regular Expression function calls.

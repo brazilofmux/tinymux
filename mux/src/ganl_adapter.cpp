@@ -1675,6 +1675,8 @@ bool GanlAdapter::initialize() {
 
         // Adopt surviving connection fds from the descriptor list
         // (loaded by load_restart_db into g_descriptors_list).
+        // Collect failures first so we can fully tear down zombies (#1042).
+        std::vector<DESC*> adopt_failed;
         for (DESC* d : g_descriptors_list) {
             if (!d || d->socket < 0) {
                 continue;
@@ -1685,6 +1687,7 @@ bool GanlAdapter::initialize() {
             if (connHandle == ganl::InvalidConnectionHandle) {
                 g_pILog->WriteString(tprintf(T("GANL: Failed to adopt connection fd %d: %s\n"),
                     d->socket, networkEngine_->getErrorString(error).c_str()));
+                adopt_failed.push_back(d);
                 continue;
             }
 
@@ -1699,6 +1702,7 @@ bool GanlAdapter::initialize() {
                 g_pILog->WriteString(tprintf(T("GANL: Failed to create ConnectionBase for adopted fd %d\n"),
                     d->socket));
                 networkEngine_->closeConnection(connHandle);
+                adopt_failed.push_back(d);
                 continue;
             }
 
@@ -1711,11 +1715,17 @@ bool GanlAdapter::initialize() {
                 g_pILog->WriteString(tprintf(T("GANL: Connection initialize failed for adopted fd %d\n"),
                     d->socket));
                 handle_to_conn_.erase(connHandle);
+                adopt_failed.push_back(d);
                 continue;
             }
 
             g_pILog->WriteString(tprintf(T("GANL: Adopted connection fd %d (player %d)\n"),
                 d->socket, d->player));
+        }
+        // Tear down DESCs that never got a live GANL mapping: close the fd
+        // and free the DESC so they are not zombie CONNECTED sessions.
+        for (DESC* d : adopt_failed) {
+            shutdownsock(d, R_RESTART);
         }
 
         restarting_ = false;
@@ -1920,23 +1930,34 @@ void GanlAdapter::prepare_for_restart() {
                      main_game_ports[idx].msa.sa(), &n);
     }
 
-    // 2. Close TLS connections — their in-process session state cannot
-    //    survive exec.  Non-TLS connections are kept open.
-#ifdef UNIX_SSL
+    // 2. Close connections whose in-process protocol state cannot survive
+    //    exec: established TLS (DS_TLS — not "ss != Accepted", which misses
+    //    post-handshake sessions that are ss=Accepted), mid-handshake TLS
+    //    (ss != Accepted), WebSocket framing, and protocol-detection holds.
+    //    Plain telnet survivors remain open.  (#1040, #1041)
     {
-        std::vector<DESC*> tls_descs;
+        std::vector<DESC*> drop_descs;
         for (DESC* d : g_descriptors_list) {
-            if (d && d->ss != SocketState::Accepted) {
-                tls_descs.push_back(d);
+            if (!d) {
+                continue;
+            }
+            const bool bTls = (d->flags & DS_TLS) != 0
+#ifdef UNIX_SSL
+                || d->ss != SocketState::Accepted
+#endif
+                ;
+            const bool bWs = (d->flags
+                & (DS_WEBSOCKET | DS_WEBSOCKET_HS | DS_NEED_PROTO)) != 0;
+            if (bTls || bWs) {
+                drop_descs.push_back(d);
             }
         }
-        for (DESC* d : tls_descs) {
+        for (DESC* d : drop_descs) {
             close_connection(d, ganl::DisconnectReason::ServerShutdown);
         }
     }
-#endif
 
-    // 3. Flush output for remaining non-TLS connections.
+    // 3. Flush output for remaining plain-telnet connections.
     for (DESC* d : g_descriptors_list) {
         if (d) {
             process_output(d, false);

@@ -388,6 +388,7 @@ void cf_init(void)
     mudstate.func_invk_ctr = 0;
     mudstate.wild_invk_ctr = 0;
     mudstate.ntfy_nest_lev = 0;
+    mudstate.include_nest_lev = 0;
     mudstate.train_nest_lev = 0;
     mudstate.lock_nest_lev = 0;
     mudstate.zone_nest_num = 0;
@@ -633,7 +634,8 @@ static CF_HAND(cf_int)
 // cf_live_driver_int: Set an integer that the driver reads from g_dc on the
 // accept/login hot path.  Plain cf_int only updates mudconf; g_dc is a
 // boot-time snapshot via GetConfig.  After a runtime @admin, re-pull the
-// basket so defense knobs (rate limits, pre-auth cap, nospam, input_limit)
+// basket so defense/session knobs (rate limits, pre-auth cap, nospam,
+// input/output_limit, timeouts, max_players, cmd_quota_max, retry_limit)
 // take effect immediately — matching pool_memory_limit's live push.
 //
 static CF_HAND(cf_live_driver_int)
@@ -1917,10 +1919,10 @@ static CONFPARM conftable[] =
     {T("check_offset"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.check_offset,           nullptr,            0},
     {T("clone_copies_cost"),         cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.clone_copy_cost), nullptr,            0},
     {T("command_quota_increment"),   cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_incr,         nullptr,            0},
-    {T("command_quota_max"),         cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.cmd_quota_max,          nullptr,            0},
+    {T("command_quota_max"),         cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.cmd_quota_max,          nullptr,            0},
     {T("comsys_database"),           cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.comsys_db),       nullptr, SIZEOF_PATHNAME},
     {T("config_access"),             cf_cf_access,   CA_GOD,    CA_DISABLED, nullptr,                         access_nametab,     0},
-    {T("conn_timeout"),              cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.conn_timeout,           nullptr,            0},
+    {T("conn_timeout"),              cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.conn_timeout,           nullptr,            0},
     {T("connect_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.conn_file),       nullptr, SIZEOF_PATHNAME},
     {T("connect_help_file"),         cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.conn_help_file),  nullptr, SIZEOF_PATHNAME},
     {T("connect_reg_file"),          cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.creg_file),       nullptr, SIZEOF_PATHNAME},
@@ -1983,7 +1985,7 @@ static CONFPARM conftable[] =
     {T("hook_obj"),                  cf_dbref,       CA_GOD,    CA_GOD,      &mudconf.hook_obj,               nullptr,            0},
     {T("hostnames"),                 cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.use_hostname),    nullptr,            0},
     {T("idle_interval"),             cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.idle_interval,          nullptr,            0},
-    {T("idle_timeout"),              cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.idle_timeout,           nullptr,            0},
+    {T("idle_timeout"),              cf_live_driver_int, CA_GOD, CA_PUBLIC,  &mudconf.idle_timeout,           nullptr,            0},
     {T("idle_wiz_dark"),             cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.idle_wiz_dark),   nullptr,            0},
     {T("include"),                   cf_include,     CA_STATIC, CA_DISABLED, nullptr,                         nullptr,            0},
     {T("indent_desc"),               cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.indent_desc),     nullptr,            0},
@@ -2017,7 +2019,7 @@ static CONFPARM conftable[] =
     {T("match_own_commands"),        cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.match_mine),      nullptr,            0},
     {T("max_cache_size"),            cf_size,        CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.max_cache_size),  nullptr,            0},
     {T("max_name_protect"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.max_name_protect,       nullptr,            0},
-    {T("max_players"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.max_players,            nullptr,            0},
+    {T("max_players"),               cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.max_players,            nullptr,            0},
     {T("min_guests"),                cf_int,         CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.min_guests),      nullptr,            0},
     {T("money_name_plural"),         cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.many_coins),       nullptr,           32},
     {T("money_name_singular"),       cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.one_coin),         nullptr,           32},
@@ -2036,7 +2038,7 @@ static CONFPARM conftable[] =
     {T("input_limit"),               cf_live_driver_int, CA_GOD, CA_WIZARD,  reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
     {T("max_preauth_sitecons"),      cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.max_preauth_sitecons,   nullptr,            0},
     {T("pool_memory_limit"),         cf_pool_limit,  CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.pool_memory_limit), nullptr,          0},
-    {T("output_limit"),              cf_int,         CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
+    {T("output_limit"),              cf_live_driver_int, CA_GOD, CA_WIZARD,  reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},
     {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.paranoid_alloc),  nullptr,            0},
     {T("parent_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.parent_nest_lim,        nullptr,            0},
@@ -2088,7 +2090,7 @@ static CONFPARM conftable[] =
     {T("nospam_connect"),            cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.nospam_connect,         nullptr,            0},
     {T("login_fail_limit"),          cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.login_fail_limit,       nullptr,            0},
     {T("login_fail_period"),         cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.login_fail_period,      nullptr,            0},
-    {T("retry_limit"),               cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.retry_limit,            nullptr,            0},
+    {T("retry_limit"),               cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.retry_limit,            nullptr,            0},
     {T("robot_cost"),                cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.robotcost,              nullptr,            0},
     {T("robot_flags"),               cf_set_flags,   CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudconf.robot_flags),     nullptr,            0},
     {T("robot_speech"),              cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.robot_speak),     nullptr,            0},
