@@ -4989,8 +4989,10 @@ static void do_malias_status(dbref player)
     }
     else
     {
-        raw_notify(player, tprintf(T("MAIL: Number of mail aliases defined: %d"), static_cast<int>(malias.size())));
-        raw_notify(player, tprintf(T("MAIL: Allocated slots %d"), static_cast<int>(malias.capacity())));
+        raw_notify(player, tprintf(T("MAIL: Number of mail aliases defined: %d"),
+                       static_cast<int>(malias.size())));
+        raw_notify(player, tprintf(T("MAIL: Vector capacity: %d"),
+                       static_cast<int>(malias.capacity())));
     }
 }
 
@@ -5410,11 +5412,23 @@ void MailList::RemoveItem(void)
     sqlite_wt_delete_mail(&*m_mi);
     MessageReferenceDec(m_mi->number);
     auto next_it = lst.erase(m_mi);
-    m_mi = next_it;
     m_bRemoved = true;
-    if (m_mi == m_miEnd && lst.empty())
+
+    // If this was the last message, erase the map entry and clear
+    // iterators *before* the list is destroyed.  Leaving m_mi/m_miEnd
+    // pointing into a erased std::list makes IsEnd()/NextItem() use
+    // invalidated iterators (purge, expire, retract-unread, mail-debug).
+    // Mirror RemoveAll().
+    //
+    if (lst.empty())
     {
+        m_mi = {};
+        m_miEnd = {};
         mail_storage.erase(it);
+    }
+    else
+    {
+        m_mi = next_it;
     }
 }
 

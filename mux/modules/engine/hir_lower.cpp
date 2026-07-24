@@ -1626,10 +1626,13 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Snapshot for rollback: a mid-chain bail to general_lowering
         // must not leave already-emitted BRC/BR placeholder (-1) targets
         // behind — codegen has no valid block to resolve them to (#858).
+        // Also snapshot n_cargs: child lowering may advance the carg pool
+        // via CALL/STRCAT; re-lowering after rollback would double-count.
         int save_insns  = h.n_insns;
         int save_blocks = h.n_blocks;
         int save_cur    = h.cur_block;
         int save_pargs  = h.n_pargs;
+        int save_cargs  = h.n_cargs;
         size_t save_srefs = h.sref_addrs.size();
 
         for (int ai = 0; ai < nfargs; ai++) {
@@ -1654,6 +1657,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                     h.n_blocks  = save_blocks;
                     h.cur_block = save_cur;
                     h.n_pargs   = save_pargs;
+                    h.n_cargs   = save_cargs;
                     h.sval.resize(save_insns);
                     h.call_name.resize(save_insns);
                     h.sref_addrs.resize(save_srefs);
