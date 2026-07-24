@@ -467,9 +467,10 @@ struct compiled_program {
     // Compiled code does not maintain func_invk_ctr for flattened
     // sequential calls, so jit_eval declines when
     // live func_invk_ctr + n_func_calls would trip function_invocation_limit
-    // — same static-watermark idea as max_func_depth.  Not persisted in
-    // the SQLite code cache yet (0 on reconstruct → watermark skipped
-    // until the next recompile into the memory LRU).
+    // — same static-watermark idea as max_func_depth.  Persisted in the
+    // SQLite code cache (schema v13) so @restart does not drop the
+    // defense until expressions recompile.  0 for pre-v13 rows (watermark
+    // skipped until recompile, same progressive path as max_func_depth).
     int      n_func_calls = 0;
 
     // Pool high-water marks after compilation.
