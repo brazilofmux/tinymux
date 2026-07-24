@@ -3880,6 +3880,22 @@ void load_restart_db(void)
             }
         }
         mux_fclose(f);
+
+        // Close the listener fds inherited across exec (loaded into
+        // main_game_ports[] above).  Clearing g_restarting sends
+        // ganl_initialize() down the fresh-start branch, which binds new
+        // listeners on these same ports; leaving the inherited fds open and
+        // bound makes that bind() fail with EADDRINUSE (#1043).  Discard them
+        // so the fresh start can rebind cleanly (num_main_game_ports is reset
+        // when the fresh listeners are (re)populated).
+        for (int i = 0; i < num_main_game_ports; i++)
+        {
+            if (INVALID_SOCKET != main_game_ports[i].socket)
+            {
+                SOCKET_CLOSE(main_game_ports[i].socket);
+                main_game_ports[i].socket = INVALID_SOCKET;
+            }
+        }
         g_restarting = false;
     };
 

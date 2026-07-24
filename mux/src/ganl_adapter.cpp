@@ -1702,6 +1702,9 @@ bool GanlAdapter::initialize() {
                 g_pILog->WriteString(tprintf(T("GANL: Failed to create ConnectionBase for adopted fd %d\n"),
                     d->socket));
                 networkEngine_->closeConnection(connHandle);
+                // closeConnection() already closed this fd (handle == fd);
+                // mark it gone so the teardown below does not double-close.
+                d->socket = INVALID_SOCKET;
                 adopt_failed.push_back(d);
                 continue;
             }
@@ -1724,8 +1727,24 @@ bool GanlAdapter::initialize() {
         }
         // Tear down DESCs that never got a live GANL mapping: close the fd
         // and free the DESC so they are not zombie CONNECTED sessions.
+        //
+        // Guard on the DESC still being present in g_descriptors_map.  On the
+        // initialize()-fail path, conn->initialize() can call
+        // Connection::close() -> cleanupResources -> onConnectionClose, which
+        // removes d from g_descriptors_map and free_desc2()s it before
+        // initialize() returns false (a failed postRead / telnet negotiation
+        // takes that route; NetworkError maps to R_SOCKDIED, not R_LOGOUT, so
+        // it reaches the free at ganl_adapter onConnectionClose).  Calling
+        // shutdownsock(d) on that already-freed pointer is a use-after-free:
+        // it reads d->flags and does an unchecked g_descriptors_map.find(d) ->
+        // it->second.  count(d) only hashes the pointer value (it never
+        // dereferences the possibly-freed d) and is 0 exactly when d was freed;
+        // the adoptConnection-fail and createConnection-null paths never free
+        // d, so they remain present and are correctly torn down here.
         for (DESC* d : adopt_failed) {
-            shutdownsock(d, R_RESTART);
+            if (0 != g_descriptors_map.count(d)) {
+                shutdownsock(d, R_RESTART);
+            }
         }
 
         restarting_ = false;
