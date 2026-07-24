@@ -678,6 +678,27 @@ void CComsysMod::sqlite_wt_delete_channel_user(const UTF8 *channel_name,
 // Channel access checks.
 // ---------------------------------------------------------------------------
 
+// Attribute numbers for channel-object locks (attrs.h A_LOCK/A_LUSE/A_LENTER).
+// Duplicated here so the module does not include engine attrs.h.
+//
+static constexpr int kA_LOCK   = 42;
+static constexpr int kA_LENTER = 59;
+static constexpr int kA_LUSE   = 62;
+
+// #1084: type-bit OR could_doit on channel object — engine comsys parity.
+//
+static bool channel_lock_ok(mux_IPermissions *pPerm, dbref player,
+    dbref chan_obj, int atr)
+{
+    if (nullptr == pPerm || NOTHING == chan_obj)
+    {
+        return false;
+    }
+    bool ok = false;
+    pPerm->CouldDoit(player, chan_obj, atr, &ok);
+    return ok;
+}
+
 bool CComsysMod::test_transmit_access(dbref player, struct channel *ch)
 {
     if (nullptr != m_pIPermissions)
@@ -702,7 +723,8 @@ bool CComsysMod::test_transmit_access(dbref player, struct channel *ch)
         access = CHANNEL_PLAYER_TRANSMIT;
     }
 
-    return ((ch->type & access) != 0);
+    return ((ch->type & access) != 0)
+        || channel_lock_ok(m_pIPermissions, player, ch->chan_obj, kA_LUSE);
 }
 
 bool CComsysMod::test_receive_access(dbref player, struct channel *ch)
@@ -729,7 +751,8 @@ bool CComsysMod::test_receive_access(dbref player, struct channel *ch)
         access = CHANNEL_PLAYER_RECEIVE;
     }
 
-    return ((ch->type & access) != 0);
+    return ((ch->type & access) != 0)
+        || channel_lock_ok(m_pIPermissions, player, ch->chan_obj, kA_LENTER);
 }
 
 bool CComsysMod::test_join_access(dbref player, struct channel *ch)
@@ -756,7 +779,8 @@ bool CComsysMod::test_join_access(dbref player, struct channel *ch)
         access = CHANNEL_PLAYER_JOIN;
     }
 
-    return ((ch->type & access) != 0);
+    return ((ch->type & access) != 0)
+        || channel_lock_ok(m_pIPermissions, player, ch->chan_obj, kA_LOCK);
 }
 
 // ---------------------------------------------------------------------------

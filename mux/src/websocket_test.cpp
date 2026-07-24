@@ -33,6 +33,17 @@ void process_output(descriptor_data *, int) {}
 void ganl_close_connection(descriptor_data *, int) { g_closed++; }
 void welcome_user(descriptor_data *) {}
 void queue_write_LEN(descriptor_data *, const UTF8 *, size_t) {}
+
+// #1083 path in ws_queue_frame reads g_dc.output_limit and may log via
+// g_pILog.  Provide definitions so the unit test links without the full
+// driver/engine (libmux may not export these to this link line).
+//
+DRIVER_CONFIG g_dc = {};
+mux_ILog *g_pILog = nullptr;
+UTF8 *pool_alloc_lbuf(const UTF8 *, const UTF8 *, int) { return nullptr; }
+void pool_free_lbuf(UTF8 *, const UTF8 *, int) {}
+void LogName(dbref) {}
+
 // descriptor_data embeds a mux_sockaddr; the parser never touches it, but the
 // aggregate's default construction needs the ctor.  Stub it to avoid pulling
 // in netaddr.o (which drags in global server state).
@@ -112,6 +123,13 @@ int main() {
     CHECK("empty TEXT at boundary: one message", g_messages.size() == 1);
     CHECK("empty TEXT at boundary: empty payload",
           g_messages.size() == 1 && g_messages[0].empty());
+
+    // 7. #1081: unmasked client frames must fail the connection (RFC 6455 §5.1).
+    //    b1 without 0x80 mask bit: empty TEXT, unmasked.
+    reset(d, ws);
+    feed(d, {0x81, 0x00});  // FIN+TEXT, unmasked, len 0
+    CHECK("unmasked TEXT: closed", g_closed == 1);
+    CHECK("unmasked TEXT: no message", g_messages.empty());
 
     printf("\nws parser: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail ? 1 : 0;

@@ -10,6 +10,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "driver_log.h"  // STARTLOG via g_pILog (not mudconf)
 
 #include "interface.h"
 #include "websocket.h"
@@ -146,6 +147,19 @@ bool ws_is_upgrade_request(const char *data, size_t len)
 // Handshake
 // --------------------------------------------------------------------------
 
+// #1082: reject HTTP upgrade — queue response, flush, close.  Always
+// returns true so the caller treats the handshake as finished (failed)
+// and does not re-enter with DS_WEBSOCKET_HS.  After this returns, d
+// may be freed; the caller must not touch it.
+//
+static bool ws_handshake_reject(DESC *d, const char *reject)
+{
+    queue_write_LEN(d, reinterpret_cast<const UTF8 *>(reject), strlen(reject));
+    process_output(d, false);
+    ganl_close_connection(d, R_QUIT);
+    return true;
+}
+
 bool ws_process_handshake(DESC *d, const char *data, size_t len)
 {
     // Accumulate data until we have the complete HTTP header
@@ -159,12 +173,10 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
     {
         // Reject: headers too large.
         //
-        const char *reject =
+        return ws_handshake_reject(d,
             "HTTP/1.1 400 Bad Request\r\n"
             "Content-Length: 0\r\n"
-            "Connection: close\r\n\r\n";
-        queue_write_LEN(d, reinterpret_cast<const UTF8 *>(reject), strlen(reject));
-        return true; // handshake done (failed)
+            "Connection: close\r\n\r\n");
     }
 
     // Check for end of headers.
@@ -192,12 +204,10 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
 
     if (!pathOk)
     {
-        const char *reject =
+        return ws_handshake_reject(d,
             "HTTP/1.1 404 Not Found\r\n"
             "Content-Length: 0\r\n"
-            "Connection: close\r\n\r\n";
-        queue_write_LEN(d, reinterpret_cast<const UTF8 *>(reject), strlen(reject));
-        return true;
+            "Connection: close\r\n\r\n");
     }
 
     // Check required headers.
@@ -227,25 +237,21 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
 
     if (!upgradeOk || !connectionOk || wsKey.empty())
     {
-        const char *reject =
+        return ws_handshake_reject(d,
             "HTTP/1.1 400 Bad Request\r\n"
             "Content-Length: 0\r\n"
-            "Connection: close\r\n\r\n";
-        queue_write_LEN(d, reinterpret_cast<const UTF8 *>(reject), strlen(reject));
-        return true;
+            "Connection: close\r\n\r\n");
     }
 
     // Version must be 13 (RFC 6455).
     //
     if (wsVersion != "13")
     {
-        const char *reject =
+        return ws_handshake_reject(d,
             "HTTP/1.1 426 Upgrade Required\r\n"
             "Sec-WebSocket-Version: 13\r\n"
             "Content-Length: 0\r\n"
-            "Connection: close\r\n\r\n";
-        queue_write_LEN(d, reinterpret_cast<const UTF8 *>(reject), strlen(reject));
-        return true;
+            "Connection: close\r\n\r\n");
     }
 
     // Compute accept key: SHA1(client_key + GUID), then base64.
@@ -259,7 +265,12 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
     unsigned int digest_len = 0;
     if (!mux_sha1_digest(parts, lens, 1, digest, &digest_len) || digest_len != 20)
     {
-        return false;
+        // #1082: crypto failure is fatal, not "need more data".
+        //
+        return ws_handshake_reject(d,
+            "HTTP/1.1 500 Internal Server Error\r\n"
+            "Content-Length: 0\r\n"
+            "Connection: close\r\n\r\n");
     }
 
     char acceptKey[29]; // ceil(20 * 4/3) + 1 = 29
@@ -283,13 +294,10 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
         // snprintf return to a huge size_t and reading past the
         // stack buffer.
         //
-        const char *reject =
+        return ws_handshake_reject(d,
             "HTTP/1.1 500 Internal Server Error\r\n"
             "Content-Length: 0\r\n"
-            "Connection: close\r\n\r\n";
-        queue_write_LEN(d, reinterpret_cast<const UTF8 *>(reject),
-                        strlen(reject));
-        return true;
+            "Connection: close\r\n\r\n");
     }
     queue_write_LEN(d, reinterpret_cast<const UTF8 *>(response),
                     static_cast<size_t>(n));
@@ -375,16 +383,45 @@ void ws_queue_frame(DESC *d, const uint8_t *data, size_t len, uint8_t opcode)
         hdrlen = 10;
     }
 
-    // Queue header + payload as a single write.
+    // Queue header + payload as a single write.  #1083: enforce the same
+    // output_limit / drop-oldest policy as queue_write_LEN, accounting
+    // framed size (hdr + payload) so control-frame floods cannot grow
+    // the queue without bound.  Skip when output_limit is unset (0).
     //
+    const size_t framed = hdrlen + len;
+    if (g_dc.output_limit > 0)
+    {
+        if (static_cast<size_t>(g_dc.output_limit) < d->output_size + framed)
+        {
+            process_output(d, false);
+        }
+        while (  static_cast<size_t>(g_dc.output_limit) < d->output_size + framed
+              && !d->output_queue.empty())
+        {
+            const size_t nchars = d->output_queue.front().size();
+            STARTLOG(LOG_NET, "NET", "WRITE");
+            UTF8 *buf = alloc_lbuf("ws_queue_frame.LOG");
+            mux_sprintf(buf, LBUF_SIZE,
+                T("[%u/%s] Output buffer overflow, %zu chars discarded by "),
+                d->socket, d->addr, nchars);
+            g_pILog->log_text(buf);
+            free_lbuf(buf);
+            if (d->flags & DS_CONNECTED)
+            {
+                g_pILog->log_name(d->player);
+            }
+            ENDLOG;
+            d->output_size -= nchars;
+            d->output_lost += nchars;
+            d->output_queue.pop_front();
+        }
+    }
+
     std::string frame(reinterpret_cast<const char *>(hdr), hdrlen);
     frame.append(reinterpret_cast<const char *>(data), len);
 
-    // Use add_to_output_queue via queue_write_LEN's underlying mechanism.
-    // We bypass queue_write_LEN to avoid double-framing.
-    //
     d->output_queue.emplace_back(std::move(frame));
-    d->output_size += hdrlen + len;
+    d->output_size += framed;
 }
 
 void ws_send_close(DESC *d, uint16_t code)
@@ -515,6 +552,15 @@ void ws_process_input(DESC *d, const char *data, size_t len)
 
                 uint8_t lenByte = b1 & 0x7F;
                 ws->frame_buf.clear();
+
+                // RFC 6455 §5.1: client→server frames MUST be masked; the
+                // server MUST fail the connection otherwise (#1081).
+                //
+                if (!ws->frame_masked)
+                {
+                    ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
+                    return;
+                }
 
                 // RFC 6455 §5.2: the reserved bits RSV1/2/3 MUST be 0 unless an
                 // extension that defines them has been negotiated.  We negotiate
