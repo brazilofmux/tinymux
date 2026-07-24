@@ -231,7 +231,7 @@ class LIBMUX_API mux_alarm
 private:
     bool alarm_set_{};
     std::thread alarm_thread_;
-    std::mutex mutex_;
+    mutable std::mutex mutex_;       // mutable for const worker_started()
     std::condition_variable cv_;
     bool shutdown_{};
     std::chrono::milliseconds alarm_period_{0};
@@ -253,6 +253,11 @@ public:
     static void surrender_slice();
     void set(CLinearTimeDelta alarm_period);
     void clear();
+
+    // True once the worker has been created (first successful set()).
+    // For unit tests that must lock "lazy start" without relying on an
+    // intermittent static-init deadlock.  Thread-safe.
+    bool worker_started() const;
 };
 
 extern LIBMUX_API mux_alarm alarm_clock;

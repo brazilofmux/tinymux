@@ -3257,24 +3257,22 @@ static int site_connection_count(MUX_SOCKADDR *msa)
     return nCons;
 }
 
-// Does this node's rule engage right now?
-//
-// Rules that SET an HI_ flag (forbid, register, noguest, suspect, nositemon)
-// are restrictions: they engage at or above the threshold.  Rules that CLEAR
-// one (permit, guest, trust, sitemon) are exemptions, so they engage only
-// while BELOW it -- an exemption that survived past its own ceiling would not
-// be a threshold at all.  This is the same inversion Rhost applies to its
-// permit-side entries, and it makes "permitted up to N connections" sayable.
-//
-// The count is computed at most once per lookup and only when a thresholded
-// rule is actually matched, so ACLs that use no thresholds -- every existing
-// configuration -- pay nothing.
-//
 // Does one control GROUP of a node engage for this source?
 //
 // Each group is judged against its own threshold, so a thresholded rule in
 // one group never gates -- or is gated by -- an unrelated rule in another.
 // Returns false for a group the node does not configure at all.
+//
+// Within a group, bits that SET an HI_ flag (forbid, register, noguest,
+// suspect, nositemon) are restrictions: they engage at or above the
+// threshold.  Bits that CLEAR one (permit, guest, trust, sitemon) are
+// exemptions: they engage only while BELOW it -- an exemption that
+// survived past its own ceiling would not be a threshold at all.  Same
+// inversion Rhost applies to permit-side entries.
+//
+// The connection count is computed at most once per lookup and only when a
+// thresholded rule is actually matched, so ACLs that use no thresholds --
+// every existing configuration -- pay nothing.
 //
 static bool node_group_engages(unsigned long ulControl, unsigned long ulThreshold,
                                int iGroup, MUX_SOCKADDR *msa, int *pnCons)
