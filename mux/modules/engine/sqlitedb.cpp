@@ -388,7 +388,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 11;
+    static const int CURRENT_SCHEMA_VERSION = 13;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
