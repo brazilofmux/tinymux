@@ -8,6 +8,7 @@
 
 #include "copyright.h"
 
+#include <list>
 #include <string>
 
 /* Some of this isn't implemented yet, but heralds the future! */

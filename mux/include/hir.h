@@ -360,10 +360,14 @@ struct hir_program {
 
     // Emit a runtime string reference (CARGS/SUBST slot).
     // Same as emit_sconst but marked as non-constant to prevent folding.
+    // Only record sref_addrs / runtime_ref on success so capacity overflow
+    // does not leave a guest address that was never emitted.
     int emit_sref(uint64_t addr) {
         int i = emit_sconst(addr, "");
-        if (i >= 0) runtime_ref[i] = true;
-        sref_addrs.push_back(addr);
+        if (i >= 0) {
+            runtime_ref[i] = true;
+            sref_addrs.push_back(addr);
+        }
         return i;
     }
 
