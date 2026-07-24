@@ -73,8 +73,12 @@ struct jit_stats_t {
                                   // function_recursion_limit (#1002)
     uint64_t bail_invk;           // static call count would trip
                                   // function_invocation_limit
-    uint64_t bail_alarm;          // per-command wall-clock alarm fired
-                                  // mid-JIT; run aborted (#JIT-alarm)
+    uint64_t bail_alarm;          // wall-clock alarm fired mid-JIT; run
+                                  // aborted (#JIT-alarm).  Counted per
+                                  // aborted DBT run, so JIT-in-JIT nesting
+                                  // (an ECALL into another compiled program)
+                                  // can bump it more than once for a single
+                                  // command as each run on the stack unwinds.
 
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime
