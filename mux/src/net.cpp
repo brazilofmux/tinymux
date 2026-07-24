@@ -2626,15 +2626,22 @@ void do_command(DESC *d, UTF8 *command)
         {
             notify(d->player, T("GAME: Expensive activity abbreviated."));
 
-            // Same exemption as the queue-side guard in cque.cpp: the
-            // command was already abbreviated mid-run, so the HALT only
-            // quarantines future work. Don't dark a wizard whose next
-            // typed command is often the fix.
-            if (  GOD != d->player
-               && !(drv_Flags(d->player, FLAG_WORD1) & WIZARD))
+            // Same exemption as the queue-side guard in cque.cpp: use
+            // Wizard() (via drv_Wizard — owner inheritance), not the raw
+            // WIZARD bit.  The command was already abbreviated mid-run, so
+            // the HALT only quarantines future work. Don't dark a wizard
+            // whose next typed command is often the fix.
+            if (!drv_Wizard(d->player))
             {
                 drv_HaltQueue(d->player, NOTHING);
                 drv_s_Flags(d->player, FLAG_WORD1, drv_Flags(d->player, FLAG_WORD1) | HALT);
+            }
+            else
+            {
+                STARTLOG(LOG_PROBLEMS, "CMD", "CPU");
+                g_pILog->log_name_and_loc(d->player);
+                g_pILog->log_text(T(" expensive activity abbreviated; wizard player exempted from HALT"));
+                ENDLOG;
             }
         }
         alarm_clock.clear();

@@ -174,6 +174,14 @@ protected:
     bool processProtocolData();
     void closeNetworkAfterDrain();
 
+    // Single egress path for protocol/application bytes (#950).  TLS +
+    // established → encrypt into encryptedOutput_; non-TLS → plain append;
+    // TLS but not established → never cleartext (retain source if
+    // retainIfTlsNotReady, else drop).  Returns false if a TLS error closed
+    // the connection.
+    bool egressToWire(IoBuffer& source, bool retainIfTlsNotReady,
+                      const char* what);
+
     // Core properties needed by derived classes
     ConnectionHandle handle_;
     NetworkEngine& networkEngine_;
