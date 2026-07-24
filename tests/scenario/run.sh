@@ -104,8 +104,14 @@ if [ "$UP" -ne 1 ]; then
     exit 1
 fi
 
-# --- Drive the scenario -----------------------------------------------------
-$TIMEOUT python3 "$SCRIPT_DIR/wild_capture.py" 127.0.0.1 "$PORT"
-RC=$?
+# --- Drive the scenarios ----------------------------------------------------
+# Each driver runs against the same throwaway server; a failure in one does
+# not skip the others, and any failure fails the run.
+RC=0
+
+for DRIVER in wild_capture.py site_threshold.py; do
+    echo "==> $DRIVER"
+    $TIMEOUT python3 "$SCRIPT_DIR/$DRIVER" 127.0.0.1 "$PORT" || RC=1
+done
 
 exit "$RC"

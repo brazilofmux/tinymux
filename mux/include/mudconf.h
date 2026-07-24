@@ -344,6 +344,21 @@ extern CONFDATA mudconf;
 
 // Subnets
 //
+// Site rules fall into four INDEPENDENT control groups (permit/registered/
+// forbid, sitemon/nositemon, guest/noguest, suspect/trust).  A single *_site
+// directive sets exactly one group, so each group carries its own graduated
+// threshold: re-applying one rule must not disturb the thresholds the other
+// three were configured with.
+//
+enum
+{
+    HCG_PERMIT = 0,     // permit, registered, forbid
+    HCG_SITEMON,        // sitemon, nositemon
+    HCG_GUEST,          // guest, noguest
+    HCG_SUSPECT,        // suspect, trust
+    HCG_COUNT
+};
+
 class mux_subnet_node
 {
 public:
@@ -358,12 +373,17 @@ private:
     mux_subnet_node *pnRight;
     unsigned long    ulControl;
 
-    // Optional graduated threshold (0 = none, the historical behaviour).
-    // A rule that SETS an HI_ flag engages only once this many connections
-    // from the connecting address already exist; a rule that CLEARS one --
-    // an exemption -- engages only while below it.  See mux_subnets::search.
+    // Optional graduated threshold PER CONTROL GROUP (0 = none, the
+    // historical behaviour).  A rule that SETS an HI_ flag engages only once
+    // this many connections from the connecting source key already exist; a
+    // rule that CLEARS one -- an exemption -- engages only while below it.
+    // Indexed by HCG_*; see mux_subnets::search.
     //
-    unsigned long    ulThreshold;
+    // Per group rather than per node: `forbid_site 10.0.0.0/8 8` followed by
+    // an unrelated `sitemon_site 10.0.0.0/8` must not silently reset the
+    // forbid's threshold to 0 and turn "forbid at 8+" into "forbid always".
+    //
+    unsigned long    ulThreshold[HCG_COUNT];
 
     friend class mux_subnets;
 };
