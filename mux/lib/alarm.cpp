@@ -64,8 +64,13 @@ void mux_alarm::start_thread_locked()
 {
     if (!thread_started_)
     {
-        thread_started_ = true;
+        // Construct first, then mark started.  If std::thread throws
+        // (resource exhaustion), leave thread_started_ false so a later
+        // set() can retry rather than silently never arming for the rest
+        // of the process lifetime.
+        //
         alarm_thread_ = std::thread(&mux_alarm::alarm_proc, this);
+        thread_started_ = true;
     }
 }
 
@@ -164,4 +169,10 @@ void mux_alarm::clear()
     alarm_set_ = false;
     wake_ = true;
     cv_.notify_one();
+}
+
+bool mux_alarm::worker_started() const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return thread_started_;
 }

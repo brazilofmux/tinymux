@@ -73,18 +73,24 @@ int main()
     printf("== mux_alarm ==\n");
 
     // 1. A clock nobody has armed must not be alarmed -- and with lazy start
-    //    there is no worker thread yet at all.
+    //    there is no worker thread yet at all.  worker_started() is the
+    //    mechanical lock: re-introducing a ctor-time std::thread would still
+    //    pass the fire/clear checks when the process does not deadlock.
     check(!alarm_clock.alarmed.load(), "fresh clock is not alarmed");
+    check(!alarm_clock.worker_started(),
+          "worker not started before first set() (lazy start)");
 
-    // 2. First arming must create the worker AND fire.  This is the lazy-start
-    //    regression guard: pre-fix the thread already existed, so a broken
-    //    lazy start would show up only here.
+    // 2. First arming must create the worker AND fire.
     alarm_clock.set(ms(150));
+    check(alarm_clock.worker_started(),
+          "worker started after first set()");
     check(wait_alarmed(3000), "first set() fires (worker started lazily)");
 
     // 3. clear() disarms.
     alarm_clock.clear();
     check(!alarm_clock.alarmed.load(), "clear() disarms");
+    check(alarm_clock.worker_started(),
+          "worker still present after clear()");
 
     // 4. Re-arming with the worker already running must fire again.
     alarm_clock.set(ms(150));

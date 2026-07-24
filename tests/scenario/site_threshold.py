@@ -116,6 +116,86 @@ def main():
             print("    expected: %r" % expected)
             print("    got:      %r" % got)
 
+    # ------------------------------------------------------------------
+    # Live engage-at-N (not just @list text).  Uses 127.0.0.1/32 so the
+    # scenario host's own sockets count toward the threshold.  The Wizard
+    # login already holds one DESC from that key.
+    #
+    # Restriction: forbid engages when existing conns >= N (count is taken
+    # before the new DESC is inserted).  With Wizard already connected (1),
+    # forbid_site 127.0.0.1/32 2 allows one more socket (existing=1) and
+    # refuses the next (existing=2).  Raise max_preauth_sitecons so the
+    # preauth cap does not fire first.
+    # ------------------------------------------------------------------
+    def try_hold_conn(timeout=1.0):
+        """Connect and return the socket if still open after settle, else None."""
+        s = socket.socket()
+        s.settimeout(3)
+        try:
+            s.connect((HOST, PORT))
+        except OSError:
+            try:
+                s.close()
+            except OSError:
+                pass
+            return None
+        # Refuse path: fcache_rawdump then close → recv returns b''.
+        # Accept path: socket stays open (welcome/negotiation may arrive).
+        deadline = time.monotonic() + timeout
+        s.settimeout(0.2)
+        while time.monotonic() < deadline:
+            try:
+                chunk = s.recv(4096)
+                if not chunk:
+                    try:
+                        s.close()
+                    except OSError:
+                        pass
+                    return None
+            except socket.timeout:
+                pass
+            except OSError:
+                try:
+                    s.close()
+                except OSError:
+                    pass
+                return None
+        return s
+
+    LOOPBACK = "127.0.0.1/32"
+    sendline(sock, "@admin max_preauth_sitecons=10")
+    sendline(sock, "@admin max_lastsite_cnt=100")
+    sendline(sock, "@admin forbid_site=%s 2" % LOOPBACK)
+    read_for(sock, None, 0.5)
+
+    held = []
+    try:
+        n += 1
+        s1 = try_hold_conn()
+        if s1 is not None:
+            held.append(s1)
+            print("ok %d - live forbid: 2nd concurrent conn from loopback accepted" % n)
+        else:
+            failures += 1
+            print("not ok %d - live forbid: 2nd concurrent conn was refused (expected accept)" % n)
+
+        n += 1
+        s2 = try_hold_conn()
+        if s2 is None:
+            print("ok %d - live forbid: 3rd concurrent conn from loopback refused" % n)
+        else:
+            held.append(s2)
+            failures += 1
+            print("not ok %d - live forbid: 3rd concurrent conn was accepted (expected refuse)" % n)
+    finally:
+        for s in held:
+            try:
+                s.close()
+            except OSError:
+                pass
+        sendline(sock, "@admin reset_site=%s" % LOOPBACK)
+        read_for(sock, None, 0.3)
+
     sendline(sock, "QUIT")
     sock.close()
 
