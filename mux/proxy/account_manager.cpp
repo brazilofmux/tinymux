@@ -390,11 +390,19 @@ bool AccountManager::saveSession(const std::string& persistId,
                                  std::string& errorMsg) {
     if (!db_) { errorMsg = "no database"; return false; }
 
+    // #1091: Do not use INSERT OR REPLACE — REPLACE deletes the parent row
+    // first, and scrollback.session_id ... ON DELETE CASCADE wipes every
+    // encrypted history line.  Upsert in place so child rows survive.
+    //
     sqlite3_stmt* stmt = nullptr;
     const char* sql =
-        "INSERT OR REPLACE INTO saved_sessions"
+        "INSERT INTO saved_sessions"
         " (id, account_id, created, last_active, links_json)"
-        " VALUES (?, ?, ?, ?, ?)";
+        " VALUES (?, ?, ?, ?, ?)"
+        " ON CONFLICT(id) DO UPDATE SET"
+        "  account_id=excluded.account_id,"
+        "  last_active=excluded.last_active,"
+        "  links_json=excluded.links_json";
     int rc = sqlite3_prepare_v2(db_, sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK) {
         errorMsg = sqlite3_errmsg(db_);

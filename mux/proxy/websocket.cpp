@@ -116,7 +116,11 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
     const uint8_t* p = reinterpret_cast<const uint8_t*>(data);
     const uint8_t* pe = p + len;
 
-    while (p < pe) {
+    // Also enter when a zero-length payload is already complete after the
+    // mask key (or unmasked header): otherwise empty CLOSE/PING never run.
+    while (p < pe
+           || (ws.parseState == WsState::Payload
+               && ws.frameBuf.size() == ws.payloadLen)) {
         switch (ws.parseState) {
         case WsState::Header1:
             ws.fin = (*p & 0x80) != 0;
@@ -132,17 +136,20 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
 
             // Client-to-server frames must be masked.
             if (!ws.masked) {
+                // #1094: surface CLOSE so the session path tears down the FD.
                 responses += wsCloseFrame(1002);
+                messages.push_back({WS_OP_CLOSE, {}});
                 ws.parseState = WsState::Header1;
                 return messages;
             }
 
             if (len7 < 126) {
                 ws.payloadLen = len7;
-                ws.parseState = ws.masked ? WsState::MaskKey : WsState::Payload;
                 ws.frameBuf.clear();
                 ws.maskIdx = 0;
+                // #1093: MaskKey indexes maskKey[lenBytesRead]; always start at 0.
                 ws.lenBytesRead = 0;
+                ws.parseState = ws.masked ? WsState::MaskKey : WsState::Payload;
             } else if (len7 == 126) {
                 ws.payloadLen = 0;
                 ws.lenBytesRead = 0;
@@ -161,10 +168,13 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
                               | ws.lenBuf[1];
                 if (ws.payloadLen > WS_MAX_PAYLOAD) {
                     responses += wsCloseFrame(1009);
+                    messages.push_back({WS_OP_CLOSE, {}});
                     return messages;
                 }
                 ws.frameBuf.clear();
                 ws.maskIdx = 0;
+                // #1093: reset — lenBytesRead was 2 for the length field.
+                ws.lenBytesRead = 0;
                 ws.parseState = ws.masked ? WsState::MaskKey : WsState::Payload;
             }
             break;
@@ -177,12 +187,15 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
                     ws.payloadLen = (ws.payloadLen << 8) | ws.lenBuf[i];
                 }
                 if (ws.payloadLen > WS_MAX_PAYLOAD) {
-                    // Too large — close
                     responses += wsCloseFrame(1009);
+                    messages.push_back({WS_OP_CLOSE, {}});
                     return messages;
                 }
                 ws.frameBuf.clear();
                 ws.maskIdx = 0;
+                // #1093: reset — lenBytesRead was 8 for the length field;
+                // without this, MaskKey writes past maskKey[4] (OOB).
+                ws.lenBytesRead = 0;
                 ws.parseState = ws.masked ? WsState::MaskKey : WsState::Payload;
             }
             break;
@@ -218,7 +231,12 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
                     // Send pong
                     responses += wsEncodeFrame(ws.frameBuf, WS_OP_PONG);
                 } else if (op == WS_OP_CLOSE) {
+                    // #1094: echo close response AND deliver CLOSE so the
+                    // session manager closes the connection (was dead code).
                     responses += wsCloseFrame(1000);
+                    messages.push_back({WS_OP_CLOSE, ws.frameBuf});
+                    ws.parseState = WsState::Header1;
+                    return messages;
                 } else if (op == WS_OP_PONG) {
                     // Ignore
                 } else {
@@ -228,6 +246,7 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
                         if (ws.fragBuf.size() > WS_MAX_PAYLOAD) {
                             // Fragment reassembly too large
                             responses += wsCloseFrame(1009);
+                            messages.push_back({WS_OP_CLOSE, {}});
                             ws.fragBuf.clear();
                             return messages;
                         }

@@ -203,13 +203,20 @@ int ScrollBack::loadFromDb(sqlite3* db,
             continue;
         }
 
-        // Append to ring buffer
+        // Append to ring buffer — keep memoryBytes_ in lockstep with
+        // append() so a full restore cannot size_t-underflow on the
+        // next live append (#1092).
+        //
         Line& line = buffer_[head_];
+        if (count_ == capacity_) {
+            memoryBytes_ -= line.text.size() + line.source.size();
+        }
         line.text.assign(reinterpret_cast<char*>(plaintext.data()),
                          plaintext.size());
         line.source = source;
         line.timestamp = static_cast<time_t>(ts);
         line.seq = seq;
+        memoryBytes_ += line.text.size() + line.source.size();
 
         head_ = (head_ + 1) % capacity_;
         if (count_ < capacity_) count_++;
