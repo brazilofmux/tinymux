@@ -3700,6 +3700,11 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
     pcache_init();
     cf_init();
 
+    // dbconvert path: write-through attribute cache immediately (no
+    // scheduler).  Cleared before return if the process continues (#1046).
+    //
+    mudstate.bStandAlone = true;
+
     // Decide what conversions to do and how to format the output file.
     //
     setflags = clrflags = ver = 0;
@@ -3832,15 +3837,36 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         {
             mudstate.bSQLiteLoading = false;
             sqldb.Rollback();
+            // Queued attrs targeted the aborted transaction — drop them.
+            //
+            cache_discard_writes();
             mux_fclose(fpIn);
+            mudstate.bStandAlone = false;
+            return MUX_E_FAIL;
+        }
+        // Flush remaining write-queue puts into the open import transaction
+        // before Commit (#1047).  Must run while bSQLiteLoading is still true
+        // so flush does not open a nested Begin/Commit.  With bStandAlone
+        // this is typically a no-op (write-through).
+        //
+        if (!cache_flush_writes())
+        {
+            mudstate.bSQLiteLoading = false;
+            sqldb.Rollback();
+            cache_discard_writes();
+            mux_fprintf(stderr, T("SQLite attribute import flush failed.\n"));
+            mux_fclose(fpIn);
+            mudstate.bStandAlone = false;
             return MUX_E_FAIL;
         }
         mudstate.bSQLiteLoading = false;
         if (!sqldb.Commit())
         {
             sqldb.Rollback();
+            cache_discard_writes();
             mux_fprintf(stderr, T("SQLite attribute import commit failed.\n"));
             mux_fclose(fpIn);
+            mudstate.bStandAlone = false;
             return MUX_E_FAIL;
         }
         if (!sqlite_sync_runtime())
@@ -3983,6 +4009,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
 #ifdef SELFCHECK
     db_free();
 #endif
+    mudstate.bStandAlone = false;
     return MUX_S_OK;
 }
 

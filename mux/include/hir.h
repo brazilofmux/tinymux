@@ -279,6 +279,13 @@ struct hir_program {
     int native_ops;
     bool needs_jit;
 
+    // Extra static watermarks from inlined u()/ulocal() bodies (#1056).
+    // Outer AST max-depth / funccall-count miss the body; accumulate
+    // body depth/count here so compile_expression can add them to the
+    // program watermarks used by run_cached_program / jit_eval.
+    int inline_extra_depth;
+    int inline_extra_calls;
+
     // Set when any capacity limit (HIR_MAX_INSNS/BLOCKS/PARGS/CARGS) is
     // hit during lowering.  The -1 an overflowing emit/new_block returns
     // otherwise flows into instruction/block indices unchecked (#859);
@@ -299,6 +306,8 @@ struct hir_program {
         tier2_calls = 0;
         native_ops = 0;
         needs_jit = false;
+        inline_extra_depth = 0;
+        inline_extra_calls = 0;
         overflowed = false;
 
         sval.clear();

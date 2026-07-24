@@ -77,6 +77,12 @@ static bool add_to(const dbref executor, const int am, int attrnum, int *pnum)
     return true;
 }
 
+// Max recursive depth for process_command_list_inline (@include,
+// @dolist/now, and any other inline action-list expansion).  Bounds
+// stack growth from mutual @include recursion.
+//
+static const int MAX_INCLUDE_NEST = 50;
+
 // process_command_list_inline: run a semicolon-separated command list
 // synchronously, honoring @break/@assert (the loop stops when
 // break_called fires) and ;| piping (%|), exactly like the queued
@@ -93,6 +99,13 @@ void process_command_list_inline(dbref executor, dbref caller, dbref enactor,
                                  int eval, UTF8 *clist,
                                  const UTF8 *cargs[], int ncargs)
 {
+    if (mudstate.include_nest_lev >= MAX_INCLUDE_NEST)
+    {
+        notify(executor, T("Include nesting limit exceeded."));
+        return;
+    }
+    mudstate.include_nest_lev++;
+
     UTF8 *save_pout     = mudstate.pout;
     UTF8 *save_poutnew  = mudstate.poutnew;
     UTF8 *save_poutbufc = mudstate.poutbufc;
@@ -172,6 +185,8 @@ void process_command_list_inline(dbref executor, dbref caller, dbref enactor,
     mudstate.poutobj       = save_poutobj;
     mudstate.inpipe        = save_inpipe;
     mudstate.pipe_nest_lev = save_nest;
+
+    mudstate.include_nest_lev--;
 }
 
 // This Task assumes that pEntry is already unlinked from any lists it may
@@ -306,19 +321,42 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
                         // future work is the next typed command -- often the
                         // one that fixes the problem. Don't dark the admin.
                         //
+                        // halt_que's first arg is the owner key (matched
+                        // against Owner(entry->executor)), not the running
+                        // object.  For a non-player object, halt only that
+                        // object's entries; for a player, halt all of theirs.
+                        // Good_obj before touching flags (enactor/executor
+                        // may be gone by the time the alarm fires).
+                        //
                         bool bExemptEnactor = isPlayer(point->enactor)
                                            && Wizard(point->enactor);
                         bool bExemptExecutor = isPlayer(executor)
                                             && Wizard(executor);
-                        if (!bExemptEnactor)
+                        if (  !bExemptEnactor
+                           && Good_obj(point->enactor))
                         {
-                            s_Flags(point->enactor, FLAG_WORD1, Flags(point->enactor) | HALT);
-                            halt_que(point->enactor, NOTHING);
+                            s_Halted(point->enactor);
+                            if (isPlayer(point->enactor))
+                            {
+                                halt_que(point->enactor, NOTHING);
+                            }
+                            else
+                            {
+                                halt_que(Owner(point->enactor), point->enactor);
+                            }
                         }
-                        if (!bExemptExecutor)
+                        if (  !bExemptExecutor
+                           && Good_obj(executor))
                         {
-                            s_Flags(executor, FLAG_WORD1, Flags(executor) | HALT);
-                            halt_que(executor, NOTHING);
+                            s_Halted(executor);
+                            if (isPlayer(executor))
+                            {
+                                halt_que(executor, NOTHING);
+                            }
+                            else
+                            {
+                                halt_que(Owner(executor), executor);
+                            }
                         }
                         if (  bExemptEnactor
                            || bExemptExecutor)
@@ -1103,14 +1141,16 @@ static BQUE *setup_que
         return nullptr;
     }
 
-    // Make sure executor can afford to do it.
+    // Make sure executor can afford to do it.  Keep the charged amount so
+    // later OOM can refund exactly what payfor took (waitcost, plus at most
+    // one machinecost penny).
     //
-    int a = mudconf.waitcost;
+    int cost = mudconf.waitcost;
     if (mudconf.machinecost && RandomINT32(0, mudconf.machinecost-1) == 0)
     {
-        a++;
+        cost++;
     }
-    if (!payfor(executor, a))
+    if (!payfor(executor, cost))
     {
         notify(Owner(executor), T("Not enough money to queue command."));
         return nullptr;
@@ -1119,7 +1159,7 @@ static BQUE *setup_que
     // Wizards and their objs may queue up to db_top+1 cmds. Players are
     // limited to QUEUE_QUOTA. -mnp
     //
-    a = QueueMax(Owner(executor));
+    int a = QueueMax(Owner(executor));
     if (a < a_Queue(Owner(executor), 1))
     {
         a_Queue(Owner(executor), -1);
@@ -1163,10 +1203,20 @@ static BQUE *setup_que
         }
     }
 
-    // Create the qeue entry and load the save string.
+    // Create the queue entry and load the save string.
     //
     const auto tmp = alloc_qentry("setup_que.qblock");
+    if (nullptr == tmp)
+    {
+        STARTLOG(LOG_PROBLEMS, "QUE", "MEM");
+        log_printf(T("setup_que: out of memory allocating queue entry."));
+        ENDLOG;
+        giveto(executor, cost);
+        a_Queue(Owner(executor), -1);
+        return nullptr;
+    }
     tmp->comm = nullptr;
+    tmp->text = nullptr;
 
     UTF8 *tptr = tmp->text = static_cast<UTF8*>(MEMALLOC(tlen));
     if (nullptr == tptr)
@@ -1175,6 +1225,8 @@ static BQUE *setup_que
         log_printf(T("setup_que: out of memory allocating %zu bytes for queue entry."), tlen);
         ENDLOG;
         free_qentry(tmp);
+        giveto(executor, cost);
+        a_Queue(Owner(executor), -1);
         return nullptr;
     }
 
@@ -1252,8 +1304,11 @@ static BQUE *setup_que
 
 // ---------------------------------------------------------------------------
 // wait_que: Add commands to the wait or semaphore queues.
+// Returns true if the command was queued, false if not (CF_INTERP off,
+// setup_que failed, etc.).  Callers that mutate state before calling
+// (e.g. do_wait's semaphore add_to) must reverse on false.
 //
-void wait_que
+bool wait_que
 (
     const dbref    executor,
     const dbref    caller,
@@ -1275,7 +1330,7 @@ void wait_que
 {
     if (!(mudconf.control_flags & CF_INTERP))
     {
-        return;
+        return false;
     }
 
     BQUE *tmp = setup_que(executor, caller, enactor, eval,
@@ -1285,7 +1340,7 @@ void wait_que
 
     if (!tmp)
     {
-        return;
+        return false;
     }
 
     // Copy iter/switch context if provided.
@@ -1346,6 +1401,7 @@ void wait_que
         }
         scheduler.DeferTask(tmp->waittime, iPriority, Task_SemaphoreTimeout, tmp, 0);
     }
+    return true;
 }
 
 #if defined(STUB_SLAVE)
@@ -1451,11 +1507,55 @@ void sql_que
 
     tmp->u.hQuery = hQuery;
 
+    // Hold the entry until Query completes (or fails).  waittime is not
+    // used as a real SQL timeout (Task_SQLTimeout just runs the entry),
+    // but must be initialized before DeferTask.
+    //
+    tmp->waittime.GetUTC();
     scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0);
     const MUX_RESULT mr = mudstate.pIQueryControl->Query(hQuery, dbname, query);
     if (MUX_FAILED(mr))
     {
+        // Query rejected: cancel the hold, free the BQUE, and refund
+        // money/quota exactly as a successful dequeue would.
+        //
         scheduler.CancelTask(Task_SQLTimeout, tmp, 0);
+
+        giveto(executor, mudconf.waitcost);
+        a_Queue(Owner(executor), -1);
+
+        for (auto& i : tmp->scr)
+        {
+            if (i)
+            {
+                RegRelease(i);
+                i = nullptr;
+            }
+        }
+        NamedRegsClear(tmp->named_scr);
+
+#if defined(STUB_SLAVE)
+        if (nullptr != tmp->pResultsSet)
+        {
+            tmp->pResultsSet->Release();
+            tmp->pResultsSet = nullptr;
+        }
+#endif // STUB_SLAVE
+
+        if (tmp->switch_token)
+        {
+            MEMFREE(tmp->switch_token);
+            tmp->switch_token = nullptr;
+        }
+        if (tmp->iter_token)
+        {
+            MEMFREE(tmp->iter_token);
+            tmp->iter_token = nullptr;
+        }
+
+        MEMFREE(tmp->text);
+        tmp->text = nullptr;
+        free_qentry(tmp);
     }
 }
 
@@ -1565,6 +1665,15 @@ void do_wait
             }
         }
 
+        // Don't raise the semaphore if the queue is disabled — wait_que
+        // would silently no-op and leave the count elevated.
+        //
+        if (!(mudconf.control_flags & CF_INTERP))
+        {
+            return;
+        }
+
+        const dbref sem = thing;
         int num = 0;
         if (!add_to(thing, 1, atr, &num))
         {
@@ -1578,10 +1687,15 @@ void do_wait
             thing = NOTHING;
             bTimed = false;
         }
-        wait_que(executor, caller, enactor, eval, bTimed, ltaWhen, thing, atr,
+        if (!wait_que(executor, caller, enactor, eval, bTimed, ltaWhen, thing, atr,
             cmd,
             ncargs, cargs,
-            mudstate.global_regs);
+            mudstate.global_regs))
+        {
+            // setup_que failed after we claimed the semaphore; reverse.
+            //
+            (void)add_to(sem, -1, atr, nullptr);
+        }
     }
 }
 

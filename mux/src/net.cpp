@@ -3848,15 +3848,80 @@ void load_restart_db(void)
         g_pIGameEngine->SetRestartCount(static_cast<unsigned int>(getref(f)) + 1);
     }
 
+    // On any mid-load failure after DESCs have been inserted, tear them all
+    // down so we do not leave a half-restarted process (#1043).
+    auto abort_restart_load = [&]() {
+        for (auto it = g_descriptors_list.begin(); it != g_descriptors_list.end(); )
+        {
+            DESC *dx = *it;
+            ++it;
+            if (  nullptr != dx
+               && INVALID_SOCKET != dx->socket)
+            {
+                SOCKET_CLOSE(dx->socket);
+                dx->socket = INVALID_SOCKET;
+            }
+            if (nullptr != dx)
+            {
+                auto mapIt = g_descriptors_map.find(dx);
+                if (mapIt != g_descriptors_map.end())
+                {
+                    g_descriptors_list.erase(mapIt->second);
+                    g_descriptors_map.erase(mapIt);
+                }
+                if (dx->program_data)
+                {
+                    // leave program_data cleanup to destroy path if any
+                }
+                clearstrings(dx);
+                freeqs(dx);
+                destroy_desc(dx);
+                free_desc(dx);
+            }
+        }
+        mux_fclose(f);
+
+        // Close the listener fds inherited across exec (loaded into
+        // main_game_ports[] above).  Clearing g_restarting sends
+        // ganl_initialize() down the fresh-start branch, which binds new
+        // listeners on these same ports; leaving the inherited fds open and
+        // bound makes that bind() fail with EADDRINUSE (#1043).  Discard them
+        // so the fresh start can rebind cleanly (num_main_game_ports is reset
+        // when the fresh listeners are (re)populated).
+        for (int i = 0; i < num_main_game_ports; i++)
+        {
+            if (INVALID_SOCKET != main_game_ports[i].socket)
+            {
+                SOCKET_CLOSE(main_game_ports[i].socket);
+                main_game_ports[i].socket = INVALID_SOCKET;
+            }
+        }
+        g_restarting = false;
+    };
+
     int val;
     DESC *d;
     while ((val = getref(f)) != 0)
     {
         d = alloc_desc("restart");
+        if (nullptr == d)
+        {
+            abort_restart_load();
+            return;
+        }
         init_desc(d);
+        // pool_alloc only zeros the first unsigned; zero process-local fields
+        // that cannot survive exec and must not be garbage (#1039).
+        d->ws = nullptr;
+        d->retries_left = g_dc.retry_limit;
+        d->charset_request_pending = false;
+        d->gmcp_enabled = false;
         d->ss = SocketState::Accepted;
         d->socket = val;
         d->flags = getref(f);
+        // Protocol state cannot survive exec; strip if prepare_for_restart
+        // missed any (defense in depth for #1040/#1041).
+        d->flags &= ~(DS_TLS | DS_WEBSOCKET | DS_WEBSOCKET_HS | DS_NEED_PROTO);
         d->connected_at.SetSeconds(5 <= version ? getref64(f) : getref(f));
         d->command_count = getref(f);
         d->timeout = getref(f);
@@ -3874,6 +3939,15 @@ void load_restart_db(void)
         d->raw_codepoint_length = 0;
         d->ttype = nullptr;
         d->encoding = g_dc.default_charset;
+        d->negotiated_encoding = g_dc.default_charset;
+        // Restore peer sockaddr for site policy / same_source_key (#1039).
+        {
+            socklen_t n = static_cast<socklen_t>(d->address.maxaddrlen());
+            if (0 != getpeername(d->socket, d->address.sa(), &n))
+            {
+                std::memset(d->address.sa(), 0, d->address.maxaddrlen());
+            }
+        }
         if (3 <= version)
         {
             d->raw_input_state              = getref(f);
@@ -3957,8 +4031,11 @@ void load_restart_db(void)
                 d->output_prefix = alloc_lbuf("set_userstring");
                 if (nullptr == d->output_prefix)
                 {
-                    mux_fclose(f);
-                    g_restarting = false;
+                    clearstrings(d);
+                    freeqs(d);
+                    destroy_desc(d);
+                    free_desc(d);
+                    abort_restart_load();
                     return;
                 }
                 memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode);
@@ -3981,8 +4058,11 @@ void load_restart_db(void)
                 d->output_suffix = alloc_lbuf("set_userstring");
                 if (nullptr == d->output_suffix)
                 {
-                    mux_fclose(f);
-                    g_restarting = false;
+                    clearstrings(d);
+                    freeqs(d);
+                    destroy_desc(d);
+                    free_desc(d);
+                    abort_restart_load();
                     return;
                 }
                 memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode);
@@ -4039,6 +4119,15 @@ void load_restart_db(void)
                     nBufferUnicode = LBUF_SIZE - 1;
                 }
                 d->output_prefix = alloc_lbuf("set_userstring");
+                if (nullptr == d->output_prefix)
+                {
+                    clearstrings(d);
+                    freeqs(d);
+                    destroy_desc(d);
+                    free_desc(d);
+                    abort_restart_load();
+                    return;
+                }
                 memcpy(d->output_prefix, pBufferUnicode, nBufferUnicode);
                 d->output_prefix[nBufferUnicode] = '\0';
             }
@@ -4058,6 +4147,15 @@ void load_restart_db(void)
                     nBufferUnicode = LBUF_SIZE - 1;
                 }
                 d->output_suffix = alloc_lbuf("set_userstring");
+                if (nullptr == d->output_suffix)
+                {
+                    clearstrings(d);
+                    freeqs(d);
+                    destroy_desc(d);
+                    free_desc(d);
+                    abort_restart_load();
+                    return;
+                }
                 memcpy(d->output_suffix, pBufferUnicode, nBufferUnicode);
                 d->output_suffix[nBufferUnicode] = '\0';
             }

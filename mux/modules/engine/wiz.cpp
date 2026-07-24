@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "alloc.h"
 
 static void do_teleport_single
 (
@@ -833,6 +834,14 @@ void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             scheduler.SetMinPriority(PRIORITY_CF_DEQUEUE_ENABLED);
         }
         mudconf.control_flags |= flagvalue;
+        // Push control_flags (logins/guests/etc.) into the driver's g_dc
+        // basket so @enable/@disable take effect on the accept path without
+        // a restart.  Same callback as cf_live_driver_int.
+        //
+        if (nullptr != g_driver_config_sync_fn)
+        {
+            g_driver_config_sync_fn();
+        }
         STARTLOG(LOG_CONFIGMODS, "CFG", "GLOBAL");
         log_name(executor);
         log_text(T(" enabled: "));
@@ -850,6 +859,12 @@ void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             scheduler.SetMinPriority(PRIORITY_CF_DEQUEUE_DISABLED);
         }
         mudconf.control_flags &= ~flagvalue;
+        // See GLOB_ENABLE: keep g_dc.control_flags in sync for logins/guests.
+        //
+        if (nullptr != g_driver_config_sync_fn)
+        {
+            g_driver_config_sync_fn();
+        }
         STARTLOG(LOG_CONFIGMODS, "CFG", "GLOBAL");
         log_name(executor);
         log_text(T(" disabled: "));

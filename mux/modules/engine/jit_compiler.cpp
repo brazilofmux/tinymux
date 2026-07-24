@@ -884,6 +884,26 @@ static int ast_funccall_count(const ASTNode *node)
     return n;
 }
 
+// Bounded strlen over guest memory (#1057).  Returns false when `addr`
+// is out of range or the region [addr, memory_size) has no NUL — callers
+// must not treat the pointer as a C string in that case.
+//
+static bool guest_strnlen(const uint8_t *memory, size_t memory_size,
+                          uint64_t addr, size_t *out_len)
+{
+    if (!memory || addr >= memory_size) {
+        return false;
+    }
+    const size_t maxn = memory_size - static_cast<size_t>(addr);
+    const char *p = reinterpret_cast<const char *>(memory + addr);
+    const void *nul = memchr(p, '\0', maxn);
+    if (!nul) {
+        return false;
+    }
+    *out_len = static_cast<size_t>(static_cast<const char *>(nul) - p);
+    return true;
+}
+
 // Shared helper for dbt_run/dbt_resume nonzero status: count wall-clock
 // aborts and, when requested, write the AST-shaped diagnostic so callers
 // that treat the run as handled do not fall through to an empty result.
@@ -944,6 +964,9 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // declines the run when live func_nest_lev + this watermark would
     // trip function_recursion_limit, so the AST reproduces the limit
     // error the flattened compiled code cannot.
+    //
+    // Outer-AST-only for now; inlined u()/ulocal() body watermarks are
+    // accumulated during lowering and added after (#1056).
     prog.max_func_depth = ast_max_funccall_depth(ast.get());
 
     // Static invocation-count watermark: total FUNCCALL nodes.  Flattened
@@ -974,6 +997,10 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     s_inline_depth = 0;
 
     h.result = hir_lower_node(h, rc, ast.get());
+
+    // Fold inlined-body watermarks into the program stats (#1056).
+    prog.max_func_depth += h.inline_extra_depth;
+    prog.n_func_calls   += h.inline_extra_calls;
 
     // Convert native scalar results to strings for MUX output.
     // This is the boundary where non-string values escape to
@@ -2316,12 +2343,12 @@ struct shared_heap_t {
         if (!e->needs_jit) {
             uint64_t out_addr = resolve_runtime_out_addr(
                 e->out_addr, rv_compiler::STACK_TOP);
-            if (out_addr == 0 || out_addr >= memory.size()) return false;
-            const char *r = reinterpret_cast<const char *>(
-                memory.data() + out_addr);
-            size_t n = strlen(r);
+            size_t n = 0;
+            if (!guest_strnlen(memory.data(), memory.size(), out_addr, &n)) {
+                return false;
+            }
             if (n >= out_size) n = out_size - 1;
-            memcpy(out, r, n);
+            memcpy(out, memory.data() + out_addr, n);
             out[n] = '\0';
             return true;
         }
@@ -2357,15 +2384,21 @@ struct shared_heap_t {
             }
         }
 
-        // Populate CARGS.
+        // Populate CARGS.  Slot is CARGS_SLOT bytes including the trailing
+        // NUL.  Truncating a long carg would change softcode results vs the
+        // AST path (LBUF-sized), so decline instead and let the AST evaluator
+        // handle it — the nested-eval twin of run_cached_program's fix (#1055).
+        // Nothing has run yet (memory is reset each eval), so an early return
+        // here is a clean bail.
         for (int i = 0; i < rv_compiler::MAX_CARGS; i++) {
             uint64_t slot = rv_compiler::CARGS_BASE
                           + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
             if (i < ncargs && cargs && cargs[i]) {
                 size_t len = strlen(
                     reinterpret_cast<const char *>(cargs[i]));
-                if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
-                    len = rv_compiler::CARGS_SLOT - 1;
+                if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT)) {
+                    return false;
+                }
                 memcpy(memory.data() + slot, cargs[i], len);
                 memory[slot + len] = 0;
             } else {
@@ -2453,15 +2486,15 @@ struct shared_heap_t {
             return true;
         }
 
-        // Extract result.
+        // Extract result (#1057: bound guest NUL scan).
         uint64_t out_addr = resolve_runtime_out_addr(
             e->out_addr, rv_compiler::STACK_TOP);
-        if (out_addr == 0 || out_addr >= memory.size()) return false;
-        const char *r = reinterpret_cast<const char *>(
-            memory.data() + out_addr);
-        size_t n = strlen(r);
+        size_t n = 0;
+        if (!guest_strnlen(memory.data(), memory.size(), out_addr, &n)) {
+            return false;
+        }
         if (n >= out_size) n = out_size - 1;
-        memcpy(out, r, n);
+        memcpy(out, memory.data() + out_addr, n);
         out[n] = '\0';
         return true;
     }
@@ -2536,13 +2569,18 @@ bool run_cached_program(compiled_program *prog,
     // slots this program actually reads (%0..%N) need populating; functions
     // reached via ECALL receive cargs through the host pointer array, not
     // these guest slots.
+    //
+    // Slot is CARGS_SLOT bytes including the trailing NUL.  Silently
+    // truncating a long carg would change softcode results vs the AST
+    // path (LBUF-sized); decline so the AST evaluator handles it (#1055).
     for (int i = 0; i < prog->cargs_used; i++) {
         uint64_t slot = rv_compiler::CARGS_BASE
                       + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
         if (i < ncargs && cargs && cargs[i]) {
             size_t len = strlen(reinterpret_cast<const char *>(cargs[i]));
-            if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
-                len = rv_compiler::CARGS_SLOT - 1;
+            if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT)) {
+                return false;
+            }
             memcpy(s_runtime_buffer.data() + slot, cargs[i], len);
             s_runtime_buffer[slot + len] = 0;
         } else {
@@ -2672,13 +2710,16 @@ bool run_cached_program(compiled_program *prog,
         return true;  // CPU LIMITED already written
     }
 
+    // Harvest result from guest memory (#1057).
     uint64_t out_addr = resolve_runtime_out_addr(
         prog->out_addr, rv_compiler::STACK_TOP);
-    const char *r = reinterpret_cast<const char *>(
-        s_runtime_buffer.data() + out_addr);
-    size_t n = strlen(r);
+    size_t n = 0;
+    if (!guest_strnlen(s_runtime_buffer.data(), s_runtime_buffer.size(),
+                       out_addr, &n)) {
+        return false;
+    }
     if (n >= out_size) n = out_size - 1;
-    memcpy(out, r, n);
+    memcpy(out, s_runtime_buffer.data() + out_addr, n);
     out[n] = '\0';
     return true;
 }
@@ -3697,9 +3738,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // mudstate.global_regs (for ECALL reads).
         int regnum = static_cast<int>(ctx->x[10]);
         uint64_t val_addr = ctx->x[11];
-        if (regnum >= 0 && regnum < MAX_GLOBAL_REGS && val_addr < ec->memory_size) {
+        size_t vlen = 0;
+        if (regnum >= 0 && regnum < MAX_GLOBAL_REGS
+            && guest_strnlen(ec->memory, ec->memory_size, val_addr, &vlen)) {
             const UTF8 *value = ec->memory + val_addr;
-            size_t vlen = strlen(reinterpret_cast<const char *>(value));
 
             // Write to SUBST slot in guest memory.
             uint64_t slot = rv_compiler::SUBST_BASE
@@ -3729,8 +3771,13 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         uint64_t val_addr = ctx->x[11];
         size_t vlen = static_cast<size_t>(ctx->x[12]);
 
-        if (0 == vlen && val_addr < ec->memory_size) {
-            vlen = strlen(reinterpret_cast<const char *>(ec->memory + val_addr));
+        if (0 == vlen) {
+            // Length 0 means "use strlen" — bound the scan to guest
+            // memory so a missing NUL cannot walk off the buffer (#1057).
+            if (!guest_strnlen(ec->memory, ec->memory_size, val_addr, &vlen)) {
+                ctx->x[10] = 0;
+                return -1;
+            }
         }
 
         if (regnum >= 0 && regnum < MAX_GLOBAL_REGS && val_addr + vlen <= ec->memory_size) {
@@ -4316,13 +4363,13 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // Run inner function.
         int inner_rc = dbt_resume(ec->dbt, target_pc);
 
-        // Extract result length.
+        // Extract result length (#1057: bound guest NUL scan).
         uint64_t result_len = 0;
         uint64_t resolved_out = resolve_runtime_out_addr(out_ref, saved_ctx.x[2]);
+        size_t n = 0;
         if (inner_rc == 0 && resolved_out > 0
-            && resolved_out < ec->memory_size) {
-            result_len = strlen(reinterpret_cast<const char *>(
-                ec->memory + resolved_out));
+            && guest_strnlen(ec->memory, ec->memory_size, resolved_out, &n)) {
+            result_len = n;
         }
 
         // Restore outer context.
@@ -4555,12 +4602,27 @@ FUNCTION(fun__write_carg)
                  + static_cast<uint64_t>(idx) * rv_compiler::CARGS_SLOT;
     if (dst + rv_compiler::CARGS_SLOT > s_current_ecall_ctx->memory_size) return;
 
-    size_t len = strlen(reinterpret_cast<const char *>(fargs[1]));
-    if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
-        len = rv_compiler::CARGS_SLOT - 1;
+    // fargs[1] is a guest-memory pointer (from ecall_invoke_fun).
+    // Bound the NUL scan; reject if missing.  Values that do not fit
+    // the slot are also rejected rather than silently truncated
+    // (#1055 / #1057) — the host has no clean way to decline the whole
+    // program from here, so leave the slot untouched.
+    eval_ctx *ec = s_current_ecall_ctx;
+    if (fargs[1] < ec->memory
+        || fargs[1] >= ec->memory + ec->memory_size) {
+        return;
+    }
+    uint64_t val_addr = static_cast<uint64_t>(fargs[1] - ec->memory);
+    size_t len = 0;
+    if (!guest_strnlen(ec->memory, ec->memory_size, val_addr, &len)) {
+        return;
+    }
+    if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT)) {
+        return;
+    }
 
-    memcpy(s_current_ecall_ctx->memory + dst, fargs[1], len);
-    s_current_ecall_ctx->memory[dst + len] = 0;
+    memcpy(ec->memory + dst, fargs[1], len);
+    ec->memory[dst + len] = 0;
 }
 
 // ---------------------------------------------------------------
@@ -4834,11 +4896,13 @@ static bool run_compiled(compiled_program &prog,
         // Fully folded — result is already in guest memory.
         uint64_t out_addr = resolve_runtime_out_addr(
             prog.out_addr, rv_compiler::STACK_TOP);
-        const char *r = reinterpret_cast<const char *>(
-            prog.memory.data() + out_addr);
-        size_t n = strlen(r);
+        size_t n = 0;
+        if (!guest_strnlen(prog.memory.data(), prog.memory_size,
+                           out_addr, &n)) {
+            return false;
+        }
         if (n >= out_size) n = out_size - 1;
-        memcpy(out, r, n);
+        memcpy(out, prog.memory.data() + out_addr, n);
         out[n] = '\0';
         return true;
     }
@@ -4882,11 +4946,12 @@ static bool run_compiled(compiled_program &prog,
 
     uint64_t out_addr = resolve_runtime_out_addr(
         prog.out_addr, rv_compiler::STACK_TOP);
-    const char *r = reinterpret_cast<const char *>(
-        prog.memory.data() + out_addr);
-    size_t n = strlen(r);
+    size_t n = 0;
+    if (!guest_strnlen(prog.memory.data(), prog.memory_size, out_addr, &n)) {
+        return false;
+    }
     if (n >= out_size) n = out_size - 1;
-    memcpy(out, r, n);
+    memcpy(out, prog.memory.data() + out_addr, n);
     out[n] = '\0';
     return true;
 }
@@ -5125,12 +5190,13 @@ static int poc_ecall(rv64_ctx_t *ctx, void *user_data) {
         // Run inner function via dbt_resume.
         int inner_rc = dbt_resume(dbt, target_pc);
 
-        // Extract inner result length.
+        // Extract inner result length (#1057: bound guest NUL scan).
         uint64_t result_len = 0;
         uint64_t resolved_out = resolve_runtime_out_addr(out_ref, saved_ctx.x[2]);
-        if (inner_rc == 0 && resolved_out > 0 && resolved_out < dbt->memory_size) {
-            result_len = strlen(reinterpret_cast<const char *>(
-                dbt->memory + resolved_out));
+        size_t n = 0;
+        if (inner_rc == 0 && resolved_out > 0
+            && guest_strnlen(dbt->memory, dbt->memory_size, resolved_out, &n)) {
+            result_len = n;
         }
 
         // Restore outer CPU context.

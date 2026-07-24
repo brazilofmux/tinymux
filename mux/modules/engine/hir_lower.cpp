@@ -1074,6 +1074,30 @@ std::vector<compiled_program::inline_dep> *s_compile_deps = nullptr;
 int s_inline_depth = 0;
 static constexpr int MAX_INLINE_DEPTH = 3;
 
+// Static FUNCCALL watermarks for inlined attribute bodies (#1056).
+// Mirrors jit_compiler's ast_max_funccall_depth / ast_funccall_count.
+//
+static int hir_ast_max_funccall_depth(const ASTNode *node)
+{
+    if (!node) return 0;
+    int child_max = 0;
+    for (const auto &c : node->children) {
+        int d = hir_ast_max_funccall_depth(c.get());
+        if (d > child_max) child_max = d;
+    }
+    return child_max + (node->type == AST_FUNCCALL ? 1 : 0);
+}
+
+static int hir_ast_funccall_count(const ASTNode *node)
+{
+    if (!node) return 0;
+    int n = (node->type == AST_FUNCCALL) ? 1 : 0;
+    for (const auto &c : node->children) {
+        n += hir_ast_funccall_count(c.get());
+    }
+    return n;
+}
+
 static bool hir_is_malformed_qsubst(const ASTNode *node) {
     if (!node || node->type != AST_SUBST) return false;
     const std::string &txt = node->text;
@@ -1436,11 +1460,13 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         c = static_cast<char>(toupper(static_cast<unsigned char>(c)));
 
     // r(n) — read %q register.
+    // Only single-char register names (0-9, a-z via mux_RegisterSet);
+    // multi-char / named registers fall through to ECALL (#1054).
     if (fname == "R" && node->children.size() == 1) {
-        // Register number must be a literal constant 0-9.
         const ASTNode *arg0 = node->children[0].get();
-        if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
-            int rn = arg0->text[0] - '0';
+        if (arg0->type == AST_LITERAL && arg0->text.size() == 1) {
+            int rn = mux_RegisterSet[
+                static_cast<unsigned char>(arg0->text[0])];
             if (rn >= 0 && rn < HIR_NUM_QREGS && qreg[rn] >= 0) {
                 qreg_used = true;
                 return qreg[rn];
@@ -1450,14 +1476,21 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // setq(n, value) — set %q register, return empty string.
+    // Match letq: require a single-char register name via mux_RegisterSet
+    // so multi-char literals (e.g. "10") do not take only the first
+    // character (#1054).  Letter regs a-z still emit SETQ_SYNC; only
+    // slots in [0, HIR_NUM_QREGS) are tracked for compile-time r(n).
     if (fname == "SETQ" && node->children.size() == 2) {
         const ASTNode *arg0 = node->children[0].get();
-        if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
-            int rn = arg0->text[0] - '0';
-            if (rn >= 0 && rn < HIR_NUM_QREGS) {
+        if (arg0->type == AST_LITERAL && arg0->text.size() == 1) {
+            int rn = mux_RegisterSet[
+                static_cast<unsigned char>(arg0->text[0])];
+            if (rn >= 0 && rn < MAX_GLOBAL_REGS) {
                 int val = hir_lower_argument(h, rc, node->children[1].get());
-                qreg[rn] = val;
-                qreg_used = true;
+                if (rn < HIR_NUM_QREGS) {
+                    qreg[rn] = val;
+                    qreg_used = true;
+                }
 
                 // Emit write-through: sync to SUBST slot + mudstate.
                 int sval = val;
@@ -1477,14 +1510,18 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // setr(n, value) — set %q register, return value.
+    // Same single-char / mux_RegisterSet rules as setq (#1054).
     if (fname == "SETR" && node->children.size() == 2) {
         const ASTNode *arg0 = node->children[0].get();
-        if (arg0->type == AST_LITERAL && !arg0->text.empty()) {
-            int rn = arg0->text[0] - '0';
-            if (rn >= 0 && rn < HIR_NUM_QREGS) {
+        if (arg0->type == AST_LITERAL && arg0->text.size() == 1) {
+            int rn = mux_RegisterSet[
+                static_cast<unsigned char>(arg0->text[0])];
+            if (rn >= 0 && rn < MAX_GLOBAL_REGS) {
                 int val = hir_lower_argument(h, rc, node->children[1].get());
-                qreg[rn] = val;
-                qreg_used = true;
+                if (rn < HIR_NUM_QREGS) {
+                    qreg[rn] = val;
+                    qreg_used = true;
+                }
 
                 // Emit write-through: sync to SUBST slot + mudstate.
                 int sval = val;
@@ -2278,6 +2315,17 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         bool is_local = (fname == "ULOCAL");
                         int nExtra = static_cast<int>(
                             node->children.size()) - 1;
+
+                        // Inlined body is flattened out of a real u()
+                        // call frame, so its FUNCCALL nest/count are
+                        // invisible to the outer AST watermark.
+                        // Accumulate so compile_expression can fold
+                        // them into prog.max_func_depth / n_func_calls
+                        // (#1056).
+                        h.inline_extra_depth +=
+                            hir_ast_max_funccall_depth(body_ast.get());
+                        h.inline_extra_calls +=
+                            hir_ast_funccall_count(body_ast.get());
 
                         // Record dependency for cache staleness.
                         uint32_t mc = attr_mod_count_get(thing,

@@ -79,7 +79,7 @@ static const size_t WRITE_QUEUE_THRESHOLD = 50;
 
 // Forward declaration.
 //
-void cache_flush_writes(void);
+bool cache_flush_writes(void);
 static void trim_attribute_cache(void);
 static bool cache_obj_preloaded(dbref obj, bool bAll);
 
@@ -104,17 +104,19 @@ static void schedule_flush(void)
     }
 }
 
-void cache_flush_writes(void)
+bool cache_flush_writes(void)
 {
     if (s_write_queue.empty() || !g_pSQLiteBackend)
     {
-        return;
+        return true;
     }
 
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.write_protect)
     {
-        return;
+        // Forked dump child must not write; leave queue intact for the parent.
+        //
+        return true;
     }
 #endif
 
@@ -126,23 +128,36 @@ void cache_flush_writes(void)
 
     if (bOwnTransaction)
     {
-        db.Begin();
+        if (!db.Begin())
+        {
+            Log.tinyprintf(T("cache_flush_writes: Begin failed" ENDLINE));
+            return false;
+        }
     }
 
+    bool bOk = true;
     for (const auto &op : s_write_queue)
     {
         if (op.op == CacheWriteOp::OP_PUT)
         {
-            g_pSQLiteBackend->Put(op.object, op.attrnum,
-                op.value.data(), op.value.size(), op.owner, op.flags);
+            if (!g_pSQLiteBackend->Put(op.object, op.attrnum,
+                op.value.data(), op.value.size(), op.owner, op.flags))
+            {
+                bOk = false;
+                break;
+            }
         }
         else if (op.op == CacheWriteOp::OP_DEL)
         {
-            g_pSQLiteBackend->Del(op.object, op.attrnum);
+            if (!g_pSQLiteBackend->Del(op.object, op.attrnum))
+            {
+                bOk = false;
+                break;
+            }
         }
         else if (op.op == CacheWriteOp::OP_CODE_CACHE_PUT)
         {
-            db.CodeCachePut(
+            if (!db.CodeCachePut(
                 op.cc_source_hash.data(),
                 static_cast<int>(op.cc_source_hash.size()),
                 op.cc_blob_hash.data(),
@@ -167,13 +182,33 @@ void cache_flush_writes(void)
                 op.cc_max_func_depth,
                 op.cc_n_func_calls,
                 op.cc_deps.data(),
-                static_cast<int>(op.cc_deps.size()));
+                static_cast<int>(op.cc_deps.size())))
+            {
+                bOk = false;
+                break;
+            }
         }
     }
 
-    if (bOwnTransaction)
+    if (bOk && bOwnTransaction)
     {
-        db.Commit();
+        if (!db.Commit())
+        {
+            bOk = false;
+        }
+    }
+
+    if (!bOk)
+    {
+        // Leave the queue and dirty pins intact so a later flush can retry.
+        // Only roll back a transaction we opened ourselves.
+        //
+        if (bOwnTransaction)
+        {
+            db.Rollback();
+        }
+        Log.tinyprintf(T("cache_flush_writes: SQLite write failed" ENDLINE));
+        return false;
     }
 
     // Unpin flushed entries: tombstones are removed from cache entirely;
@@ -213,6 +248,71 @@ void cache_flush_writes(void)
     }
     s_write_queue.clear();
     s_attr_write_index.clear();
+    return true;
+}
+
+// Drop pending write-queue ops without applying them.  Used after a
+// failed flatfile import whose transaction has already been rolled back.
+//
+void cache_discard_writes(void)
+{
+    s_write_queue.clear();
+    s_attr_write_index.clear();
+}
+
+// Merge pending (not yet flushed) attribute numbers into attrnums for
+// atr_head/atr_next enumeration.  Adds dirty non-tombstone cache entries
+// and queued OP_PUTs; excludes tombstoned attrs and queued OP_DELs.
+//
+void cache_collect_pending_attrnums(dbref thing, vector<int> &attrnums)
+{
+    unordered_set<int> present(attrnums.begin(), attrnums.end());
+
+    for (const auto &kv : mudstate.attribute_lru_cache_map)
+    {
+        if (kv.first.object != static_cast<unsigned int>(thing))
+        {
+            continue;
+        }
+        const unsigned int an = kv.first.attrnum;
+        if (  an == 0U
+           || an == static_cast<unsigned int>(A_LIST))
+        {
+            continue;
+        }
+        if (kv.second.tombstone)
+        {
+            present.erase(static_cast<int>(an));
+        }
+        else if (kv.second.dirty)
+        {
+            present.insert(static_cast<int>(an));
+        }
+    }
+
+    for (const auto &op : s_write_queue)
+    {
+        if (op.object != static_cast<unsigned int>(thing))
+        {
+            continue;
+        }
+        if (  op.attrnum == 0U
+           || op.attrnum == static_cast<unsigned int>(A_LIST))
+        {
+            continue;
+        }
+        if (op.op == CacheWriteOp::OP_PUT)
+        {
+            present.insert(static_cast<int>(op.attrnum));
+        }
+        else if (op.op == CacheWriteOp::OP_DEL)
+        {
+            present.erase(static_cast<int>(op.attrnum));
+        }
+    }
+
+    attrnums.assign(present.begin(), present.end());
+    sort(attrnums.begin(), attrnums.end());
 }
 
 static void queue_attr_write(const CacheWriteOp &new_op)
@@ -650,7 +750,10 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
 
 bool cache_sync(void)
 {
-    cache_flush_writes();
+    if (!cache_flush_writes())
+    {
+        return false;
+    }
     if (g_pSQLiteBackend)
     {
         g_pSQLiteBackend->Sync();

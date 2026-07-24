@@ -24,7 +24,9 @@ int cache_init(const UTF8 *indb);
 void cache_close(void);
 void cache_tick(void);
 bool cache_sync(void);
-void cache_flush_writes(void);
+bool cache_flush_writes(void);
+void cache_discard_writes(void);
+void cache_collect_pending_attrnums(dbref thing, std::vector<int> &attrnums);
 void cache_queue_code_cache_put(
     const char *source_hash, int source_hash_len,
     const char *blob_hash, int blob_hash_len,

@@ -434,7 +434,7 @@ LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, 
 /* From cque.cpp */
 int  nfy_que(dbref, int, int, int);
 int  halt_que(dbref, dbref);
-void wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
+bool wait_que(dbref executor, dbref caller, dbref enactor, int, bool,
               const CLinearTimeAbsolute&, dbref, int, UTF8 *, int, const UTF8 *[], reg_ref *[],
               NamedRegsMap *named_sargs = nullptr,
               const UTF8 *iter_token = nullptr, int iter_number = 0,

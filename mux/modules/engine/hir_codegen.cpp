@@ -43,6 +43,9 @@ static uint32_t rv_LUI(uint8_t rd, int32_t imm) {
 static uint32_t rv_SLLI(uint8_t rd, uint8_t rs1, int32_t shamt) {
     return rv_i_type(OP_IMM, rd, ALU_SLLI, rs1, shamt);
 }
+static uint32_t rv_SRLI(uint8_t rd, uint8_t rs1, int32_t shamt) {
+    return rv_i_type(OP_IMM, rd, ALU_SRLI, rs1, shamt);
+}
 static uint32_t rv_ECALL() {
     return rv_i_type(OP_SYSTEM, 0, 0, 0, 0);
 }
@@ -474,7 +477,33 @@ static void rv_emit_itoa(std::vector<uint32_t> &code,
         static_cast<int32_t>((done - bge_rev) * 4));
 }
 
+// Emit LUI+ADDI (or ADDI alone) that materializes the low 32 bits of
+// `bits` into rd.  On RV64 the result is sign-extended from bit 31.
+//
+static void rv_load_i32_bits(std::vector<uint32_t> &code, uint8_t rd,
+                              uint32_t bits) {
+    int32_t sval = static_cast<int32_t>(bits);
+    if (sval >= -2048 && sval <= 2047) {
+        code.push_back(rv_ADDI(rd, 0, sval));
+        return;
+    }
+    uint32_t hi = bits & 0xFFFFF000u;
+    int32_t lo = static_cast<int32_t>(bits & 0xFFFu);
+    if (lo & 0x800) {
+        hi += 0x1000u;
+        lo -= 0x1000;
+    }
+    code.push_back(rv_LUI(rd, static_cast<int32_t>(hi)));
+    if (lo) {
+        code.push_back(rv_ADDI(rd, rd, lo));
+    }
+}
+
 // Load a signed 64-bit value into a register.
+//
+// Fits-in-12 → ADDI; fits-in-signed-32 → LUI+ADDI; otherwise a two-half
+// sequence (load high, slli 32, OR zero-extended low).  Uses t0 (x5) as a
+// temporary, or t1 (x6) when rd is t0.
 //
 static void rv_load_i64(std::vector<uint32_t> &code, uint8_t rd, int64_t val) {
     if (val >= -2048 && val <= 2047) {
@@ -482,19 +511,28 @@ static void rv_load_i64(std::vector<uint32_t> &code, uint8_t rd, int64_t val) {
         return;
     }
     if (val >= -2147483648LL && val <= 2147483647LL) {
-        uint32_t uval = static_cast<uint32_t>(static_cast<int32_t>(val));
-        uint32_t hi = uval & 0xFFFFF000;
-        int32_t lo = static_cast<int32_t>(uval & 0xFFF);
-        if (lo & 0x800) {
-            hi += 0x1000;
-            lo -= 0x1000;
-        }
-        code.push_back(rv_LUI(rd, static_cast<int32_t>(hi)));
-        if (lo) code.push_back(rv_ADDI(rd, rd, lo));
+        rv_load_i32_bits(code, rd, static_cast<uint32_t>(static_cast<int32_t>(val)));
         return;
     }
-    // Values beyond 32-bit: load zero (shouldn't happen for typical softcode).
-    code.push_back(rv_ADDI(rd, 0, 0));
+
+    // Full 64-bit immediate: hi << 32 | lo.
+    const uint64_t u = static_cast<uint64_t>(val);
+    const uint32_t lo = static_cast<uint32_t>(u);
+    const uint32_t hi = static_cast<uint32_t>(u >> 32);
+    const uint8_t tmp = (rd == 5) ? 6 : 5;  // t0, else t1 if rd is t0
+
+    rv_load_i32_bits(code, rd, hi);
+    code.push_back(rv_SLLI(rd, rd, 32));
+
+    if (lo != 0) {
+        rv_load_i32_bits(code, tmp, lo);
+        // LUI+ADDI sign-extends; clear upper 32 so OR cannot smear into hi.
+        if (lo & 0x80000000u) {
+            code.push_back(rv_SLLI(tmp, tmp, 32));
+            code.push_back(rv_SRLI(tmp, tmp, 32));
+        }
+        code.push_back(rv_OR(rd, rd, tmp));
+    }
 }
 
 // Load a value into a register using LUI + ADDI.
