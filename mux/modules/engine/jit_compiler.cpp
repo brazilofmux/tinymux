@@ -2384,15 +2384,21 @@ struct shared_heap_t {
             }
         }
 
-        // Populate CARGS.
+        // Populate CARGS.  Slot is CARGS_SLOT bytes including the trailing
+        // NUL.  Truncating a long carg would change softcode results vs the
+        // AST path (LBUF-sized), so decline instead and let the AST evaluator
+        // handle it — the nested-eval twin of run_cached_program's fix (#1055).
+        // Nothing has run yet (memory is reset each eval), so an early return
+        // here is a clean bail.
         for (int i = 0; i < rv_compiler::MAX_CARGS; i++) {
             uint64_t slot = rv_compiler::CARGS_BASE
                           + static_cast<uint64_t>(i) * rv_compiler::CARGS_SLOT;
             if (i < ncargs && cargs && cargs[i]) {
                 size_t len = strlen(
                     reinterpret_cast<const char *>(cargs[i]));
-                if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT))
-                    len = rv_compiler::CARGS_SLOT - 1;
+                if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT)) {
+                    return false;
+                }
                 memcpy(memory.data() + slot, cargs[i], len);
                 memory[slot + len] = 0;
             } else {
