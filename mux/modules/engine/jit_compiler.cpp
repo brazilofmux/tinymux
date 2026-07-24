@@ -1821,6 +1821,7 @@ static compiled_program reconstruct_from_cache(
     prog.tier2_calls = rec.tier2_calls;
     prog.native_ops = rec.native_ops;
     prog.max_func_depth = static_cast<int>(rec.max_func_depth);
+    prog.n_func_calls   = static_cast<int>(rec.n_func_calls);
 
     // Restore inline dependencies from BLOB.
     if (rec.deps_blob && rec.deps_len > 0)
@@ -1931,6 +1932,7 @@ static void store_to_sqlite_cache(const std::string &key,
         prog.folds, prog.ecalls,
         prog.tier2_calls, prog.native_ops,
         static_cast<int64_t>(prog.max_func_depth),
+        static_cast<int64_t>(prog.n_func_calls),
         prog.deps.data(),
         static_cast<int>(prog.deps.size()
             * sizeof(compiled_program::inline_dep)));
@@ -2486,8 +2488,8 @@ bool run_cached_program(compiled_program *prog,
         return false;
     }
 
-    // Invocation-count watermark (skip when n_func_calls is 0, which is
-    // the reconstruct-from-SQLite default until the program recompiles).
+    // Invocation-count watermark (0 means unknown/pre-v13 cache row —
+    // skip until that program recompiles and is rewritten with a count).
     if (  0 < prog->n_func_calls
        && mudstate.func_invk_ctr + prog->n_func_calls
           >= mudconf.func_invk_lim) {

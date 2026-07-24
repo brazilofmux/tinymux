@@ -737,6 +737,26 @@ bool CSQLiteDB::MigrateSchema()
         version = 12;
     }
 
+    if (version < 13)
+    {
+        // Static function-invocation count watermark for JIT programs
+        // (checked at run entry against the live
+        // function_invocation_limit).  Survives @restart so the defense
+        // does not need to re-learn after a cold start.
+        const char *migration_v13 =
+            "BEGIN;"
+            "ALTER TABLE code_cache ADD COLUMN n_func_calls INTEGER NOT NULL DEFAULT 0;"
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 13);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v13, 13))
+        {
+            return false;
+        }
+        version = 13;
+    }
+
     // Log any FK violations (informational, not fatal).
     //
     if (SQLITE_OK == sqlite3_prepare_v2(m_db,
@@ -1105,7 +1125,7 @@ bool CSQLiteDB::PrepareStatements()
         "SELECT memory_blob, code_blob, entry_pc, code_size, str_blob, str_pool_end,"
         " fargs_blob, fargs_pool_end, out_pool_end,"
         " out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops, deps_blob,"
-        " max_func_depth"
+        " max_func_depth, n_func_calls"
         " FROM code_cache WHERE source_hash=? AND blob_hash=?",
         &m_stmtCodeCacheGet))
     {
@@ -1117,8 +1137,8 @@ bool CSQLiteDB::PrepareStatements()
         " (source_hash, blob_hash, memory_blob, code_blob, entry_pc, code_size,"
         "  str_blob, str_pool_end, fargs_blob, fargs_pool_end, out_pool_end,"
         "  out_addr, needs_jit, folds, ecalls, tier2_calls, native_ops,"
-        "  compile_time, deps_blob, max_func_depth)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        "  compile_time, deps_blob, max_func_depth, n_func_calls)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         &m_stmtCodeCachePut))
     {
         return false;
@@ -2003,6 +2023,7 @@ bool CSQLiteDB::CodeCacheGet(const char *source_hash, int source_hash_len,
     rec.deps_blob   = sqlite3_column_blob(m_stmtCodeCacheGet, 15);
     rec.deps_len    = sqlite3_column_bytes(m_stmtCodeCacheGet, 15);
     rec.max_func_depth = sqlite3_column_int64(m_stmtCodeCacheGet, 16);
+    rec.n_func_calls   = sqlite3_column_int64(m_stmtCodeCacheGet, 17);
 
     if (  (rec.memory_len > 0 && !rec.memory_blob)
        || (rec.code_len   > 0 && !rec.code_blob)
@@ -2032,6 +2053,7 @@ bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
                               int folds, int ecalls, int tier2_calls,
                               int native_ops,
                               int64_t max_func_depth,
+                              int64_t n_func_calls,
                               const void *deps_blob, int deps_len)
 {
     sqlite3_reset(m_stmtCodeCachePut);
@@ -2057,6 +2079,7 @@ bool CSQLiteDB::CodeCachePut(const char *source_hash, int source_hash_len,
     sqlite3_bind_int64(m_stmtCodeCachePut, 18, static_cast<int64_t>(time(nullptr)));
     BindBlob(m_stmtCodeCachePut, 19, deps_blob, deps_len);
     sqlite3_bind_int64(m_stmtCodeCachePut, 20, max_func_depth);
+    sqlite3_bind_int64(m_stmtCodeCachePut, 21, n_func_calls);
 
     if (SQLITE_DONE != sqlite3_step(m_stmtCodeCachePut))
     {
