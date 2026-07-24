@@ -668,11 +668,11 @@ FUNCTION(fun_lastcreate)
     int aowner;
     int aflags;
 
-    UTF8* newobject_string = atr_get("fun_lastcreate.2998", target,
-            A_NEWOBJS, &aowner, &aflags);
+    // atr_get always allocates; free on every path (#1064).
+    LBuf newobject_string = LBuf_Adopt(atr_get("fun_lastcreate.2998", target,
+            A_NEWOBJS, &aowner, &aflags));
 
-    if (  nullptr == newobject_string
-       || '\0' == newobject_string[0])
+    if ('\0' == newobject_string[0])
     {
         safe_str(T("#-1"), buff, bufc);
         return;
@@ -693,7 +693,6 @@ FUNCTION(fun_lastcreate)
             break;
         }
     }
-    free_lbuf(newobject_string);
 }
 
 // Borrowed from TinyMUSH 2.2

@@ -2074,14 +2074,37 @@ void GanlAdapter::run_main_loop() {
     // Calculate available descriptor limit, reserving 7 for system use
     // (logging, slave pipes, etc.) — same as legacy shovechars().
     //
+    // #1069: On Windows, FD_SETSIZE (default 64) only applies to select/
+    // wselect. IOCP is completion-based and must not inherit that ceiling.
+    //
     unsigned int avail_descriptors;
+    const bool bCompletionModel = (networkEngine_
+        && networkEngine_->getIoModelType() == ganl::IoModel::Completion);
+    if (bCompletionModel)
+    {
+        // Prefer configured max_players plus headroom for non-player DESCs
+        // (site checks, slaves, half-open). Unlimited max_players (-1) uses
+        // a generous OS-scale default; the OS still enforces real limits.
+        //
+        if (g_dc.max_players > 0)
+        {
+            avail_descriptors = static_cast<unsigned int>(g_dc.max_players) + 64u;
+        }
+        else
+        {
+            avail_descriptors = 16384u;
+        }
+    }
+    else
+    {
 #if defined(_WIN32)
-    avail_descriptors = FD_SETSIZE - 7;
+        avail_descriptors = FD_SETSIZE - 7;
 #elif defined(HAVE_GETDTABLESIZE)
-    avail_descriptors = getdtablesize() - 7;
+        avail_descriptors = getdtablesize() - 7;
 #else
-    avail_descriptors = sysconf(_SC_OPEN_MAX) - 7;
+        avail_descriptors = sysconf(_SC_OPEN_MAX) - 7;
 #endif
+    }
 
     // Cache the engine's restart-readiness in a volatile flag so that
     // signal handlers can read it without a COM call.

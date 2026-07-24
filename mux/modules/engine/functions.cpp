@@ -5885,9 +5885,12 @@ static FUNCTION(fun_elock)
     {
         return;
     }
-    else if (!locatable(executor, it, enactor))
+    if (!locatable(executor, it, enactor))
     {
+        // #1063: must not fall through — otherwise the lock is still
+        // evaluated and 0/1 is appended after #-1 (privacy leak).
         safe_nothing(buff, bufc);
+        return;
     }
 
     // Get the victim and ensure we can do it.
