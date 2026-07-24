@@ -925,8 +925,14 @@ static bool guest_farg_addr(const uint8_t *memory, size_t memory_size,
     if (!memory || !out_addr || idx < 0) {
         return false;
     }
+    if (memory_size < 8u) {
+        return false;
+    }
     const uint64_t slot = fargs_addr + static_cast<uint64_t>(idx) * 8u;
-    if (slot + 8u > memory_size) {
+    // Overflow-safe bound: reject a wrapped slot (slot < fargs_addr, e.g. a
+    // near-2^64 fargs_addr) and any slot whose 8-byte read runs past the
+    // guest region -- without adding to slot, which could itself wrap.
+    if (slot < fargs_addr || slot > memory_size - 8u) {
         return false;
     }
     uint64_t p = 0;
@@ -3222,14 +3228,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 const char *gname = "";
                 const char *val = "";
                 if (nfargs >= 1) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr, 8);
-                    gname = reinterpret_cast<const char *>(ec->memory + p);
+                    const char *s = farg_cstr(0);
+                    if (s) gname = s;
                 }
                 if (nfargs >= 2) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
-                    val = reinterpret_cast<const char *>(ec->memory + p);
+                    const char *s = farg_cstr(1);
+                    if (s) val = s;
                     char *end;
                     long long iv = strtoll(val, &end, 10);
                     if (*end == '\0' && end != val) {
@@ -3262,10 +3266,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 }
 
                 // Get the function reference.
-                uint64_t p;
-                memcpy(&p, ec->memory + fargs_addr, 8);
-                const char *func_ref = reinterpret_cast<const char *>(
-                    ec->memory + p);
+                const char *func_ref = farg_cstr(0);
+                if (!func_ref) func_ref = "";
 
                 // Try as stack index first (from __lua_getglobal/getfield).
                 char *end;
@@ -3289,9 +3291,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 // Push arguments.
                 int lua_nargs = nfargs - 1;
                 for (int j = 0; j < lua_nargs; j++) {
-                    memcpy(&p, ec->memory + fargs_addr + (j + 1) * 8, 8);
-                    const char *arg = reinterpret_cast<const char *>(
-                        ec->memory + p);
+                    const char *arg = farg_cstr(j + 1);
+                    if (!arg) arg = "";
                     // Push as number if parseable, else string.
                     char *aend;
                     long long iv = strtoll(arg, &aend, 10);
@@ -3355,14 +3356,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 // fargs[0]=base (as string), fargs[1]=exponent (as string).
                 double base_v = 0, exp_v = 0;
                 if (nfargs >= 1) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr, 8);
-                    base_v = atof(reinterpret_cast<const char *>(ec->memory + p));
+                    const char *s = farg_cstr(0);
+                    if (s) base_v = atof(s);
                 }
                 if (nfargs >= 2) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
-                    exp_v = atof(reinterpret_cast<const char *>(ec->memory + p));
+                    const char *s = farg_cstr(1);
+                    if (s) exp_v = atof(s);
                 }
                 double result = pow(base_v, exp_v);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
@@ -3388,15 +3387,14 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 }
 
                 // Read args.
-                uint64_t p;
-                memcpy(&p, ec->memory + fargs_addr, 8);
-                const char *func_ref = reinterpret_cast<const char *>(ec->memory + p);
-                memcpy(&p, ec->memory + fargs_addr + 8, 8);
-                const char *state_ref = reinterpret_cast<const char *>(ec->memory + p);
-                memcpy(&p, ec->memory + fargs_addr + 16, 8);
-                const char *control = reinterpret_cast<const char *>(ec->memory + p);
-                memcpy(&p, ec->memory + fargs_addr + 24, 8);
-                int nr = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                const char *func_ref  = farg_cstr(0);
+                const char *state_ref = farg_cstr(1);
+                const char *control   = farg_cstr(2);
+                const char *nr_s      = farg_cstr(3);
+                if (!func_ref)  func_ref = "";
+                if (!state_ref) state_ref = "";
+                if (!control)   control = "";
+                int nr = nr_s ? atoi(nr_s) : 1;
                 if (nr < 1) nr = 1;
                 if (nr > 10) nr = 10;
 
@@ -3484,9 +3482,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 // or __lua_tfor_call).
                 int ridx = 1;
                 if (nfargs >= 1) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr, 8);
-                    ridx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                    const char *s = farg_cstr(0);
+                    if (s) ridx = atoi(s);
                 }
 
                 // Results are at the top of the Lua stack.
@@ -3702,20 +3699,16 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 uint64_t dest_addr = 0;
                 int max_elems = 0;
                 if (nfargs >= 1) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr, 8);
-                    tbl_idx = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                    const char *s = farg_cstr(0);
+                    if (s) tbl_idx = atoi(s);
                 }
                 if (nfargs >= 2) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr + 8, 8);
-                    dest_addr = static_cast<uint64_t>(
-                        atoll(reinterpret_cast<const char *>(ec->memory + p)));
+                    const char *s = farg_cstr(1);
+                    if (s) dest_addr = static_cast<uint64_t>(atoll(s));
                 }
                 if (nfargs >= 3) {
-                    uint64_t p;
-                    memcpy(&p, ec->memory + fargs_addr + 16, 8);
-                    max_elems = atoi(reinterpret_cast<const char *>(ec->memory + p));
+                    const char *s = farg_cstr(2);
+                    if (s) max_elems = atoi(s);
                 }
 
                 int len = static_cast<int>(lua_rawlen(L, tbl_idx));
