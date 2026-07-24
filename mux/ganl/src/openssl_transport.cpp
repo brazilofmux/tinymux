@@ -84,6 +84,19 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
     // retry safely (see #949). TLS 1.3 has no renegotiation. Guarded because
     // the macro only exists on OpenSSL >= 1.1.0h / LibreSSL. (#948)
     options |= SSL_OP_NO_RENEGOTIATION;
+#else
+    // Residual risk on older OpenSSL/LibreSSL without the option: TLS 1.2
+    // client-initiated renegotiation remains possible (CPU DoS + BAD_WRITE_RETRY
+    // surface).  We still require TLS 1.2+ above and enable MOVING_WRITE_BUFFER
+    // below, but cannot refuse renegotiation.  Log once so operators know.
+    static bool s_loggedRenegoGap = false;
+    if (!s_loggedRenegoGap) {
+        s_loggedRenegoGap = true;
+        std::cerr << "[OpenSSL:Global] WARNING: SSL_OP_NO_RENEGOTIATION is not "
+                     "available on this OpenSSL build; TLS 1.2 client-initiated "
+                     "renegotiation cannot be disabled (#948)."
+                  << std::endl;
+    }
 #endif
     SSL_CTX_set_options(ctx_, options);
 

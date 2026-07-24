@@ -151,6 +151,7 @@ bool ConnectionBase::initialize(bool useTls) {
         // this one used to return without closing, leaking the fd (the adapter's
         // initialize()-failed path only erases its maps, it does not close).
         networkEngine_.closeConnection(handle_);
+        socketClosed_ = true;
         transitionToState(ConnectionState::Closed); // Mark as unusable
         return false;
     }
@@ -272,6 +273,62 @@ void ConnectionBase::handleNetworkEvent(const IoEvent& event) {
 
 // --- Data Flow ---
 
+// Single egress path for protocol/application bytes (#950).
+//
+// TLS + established  → processOutgoing into encryptedOutput_
+// non-TLS            → plain append into encryptedOutput_
+// TLS + !established → never cleartext.  If retainIfTlsNotReady, leave source
+//                      unconsumed so a member buffer can flush later; else drop.
+//
+bool ConnectionBase::egressToWire(IoBuffer& source, bool retainIfTlsNotReady,
+                                  const char* what)
+{
+    if (source.readableBytes() == 0) {
+        return true;
+    }
+
+    if (useTls_ && secureTransport_ != nullptr) {
+        if (secureTransport_->isEstablished(handle_)) {
+            GANL_CONN_DEBUG(handle_, "Encrypting " << source.readableBytes()
+                      << " bytes of " << what << " through TLS.");
+            TlsResult result = secureTransport_->processOutgoing(
+                handle_, source, encryptedOutput_, true);
+            GANL_CONN_DEBUG(handle_, "TLS processOutgoing (" << what
+                      << ") result: " << static_cast<int>(result)
+                      << ". encryptedOutput_ size now: "
+                      << encryptedOutput_.readableBytes());
+            if (result == TlsResult::Error || result == TlsResult::Closed) {
+                GANL_CONN_DEBUG(handle_, "TLS error sending " << what << ": "
+                          << secureTransport_->getLastTlsErrorString(handle_)
+                          << ". Closing.");
+                close(DisconnectReason::TlsError);
+                return false;
+            }
+            return true;
+        }
+
+        // Mid/failed (re)negotiation window: NEVER emit cleartext on a TLS
+        // socket.  That is a confidentiality downgrade (#950).
+        if (retainIfTlsNotReady) {
+            GANL_CONN_DEBUG(handle_, "TLS not established; retaining "
+                      << source.readableBytes() << " bytes of " << what
+                      << " (no cleartext egress).");
+        } else {
+            GANL_CONN_DEBUG(handle_, "TLS not established; dropping "
+                      << source.readableBytes() << " bytes of " << what
+                      << " (no cleartext egress).");
+            source.clear();
+        }
+        return true;
+    }
+
+    GANL_CONN_DEBUG(handle_, "TLS not used. Copying " << source.readableBytes()
+              << " bytes of " << what << " directly to encryptedOutput_.");
+    encryptedOutput_.append(source.readPtr(), source.readableBytes());
+    source.clear();
+    return true;
+}
+
 void ConnectionBase::sendDataToClient(const std::string& data) {
     GANL_CONN_DEBUG(handle_, "Received " << data.length() << " bytes from application to send.");
 
@@ -302,7 +359,7 @@ void ConnectionBase::sendDataToClient(const std::string& data) {
         // leftover bytes are preserved in order and flushed on the next send.
         // (#948 closes the only current trigger — client-initiated renegotiation
         // — but retaining the bytes is correct regardless. The non-TLS path
-        // below clears formattedOutput_ explicitly after copying it out.)
+        // clears formattedOutput_ inside egressToWire after copying it out.)
         if (!protocolHandler_.formatOutput(handle_, applicationOutput_, formattedOutput_, true)) {
             GANL_CONN_DEBUG(handle_, "Error formatting output data: " << protocolHandler_.getLastProtocolErrorString(handle_) << ". Closing.");
             close(DisconnectReason::ProtocolError);
@@ -311,45 +368,12 @@ void ConnectionBase::sendDataToClient(const std::string& data) {
         // Explicitly passing consumeInput=true ensures applicationOutput_ is consumed by the method
         GANL_CONN_DEBUG(handle_, "Formatted data. formattedOutput_ size: " << formattedOutput_.readableBytes());
 
-        // 3. Encrypt the data (TLS) if needed
-        // Note: processOutgoing reads from formattedOutput_ and writes to encryptedOutput_
-        IoBuffer* sourceBuffer = &formattedOutput_; // Start with formatted data
-
-        if (useTls_ && secureTransport_ != nullptr) {
-             if (secureTransport_->isEstablished(handle_)) {
-                 GANL_CONN_DEBUG(handle_, "Processing " << sourceBuffer->readableBytes() << " bytes through TLS.");
-                 // Ensure encryptedOutput_ has space? Or assume processOutgoing handles it. Let's assume.
-                 TlsResult result = secureTransport_->processOutgoing(handle_, *sourceBuffer, encryptedOutput_, true);
-                 // Explicitly specifying consumeInput=true ensures buffer is consumed by the method
-
-                 GANL_CONN_DEBUG(handle_, "TLS processOutgoing result: " << static_cast<int>(result)
-                           << ". encryptedOutput_ size now: " << encryptedOutput_.readableBytes());
-
-                 if (result == TlsResult::Error || result == TlsResult::Closed) {
-                     GANL_CONN_DEBUG(handle_, "TLS error during processOutgoing: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
-                     close(DisconnectReason::TlsError);
-                     return;
-                 }
-                 // If result is WantRead/WantWrite, it implies handshake messages need I/O,
-                 // but the application data might still be buffered in encryptedOutput_.
-                 // The subsequent postWrite() call will handle sending.
-             } else {
-                 // TLS connection, but the session is not currently established
-                 // (mid/failed (re)negotiation window). NEVER emit application data
-                 // as plaintext on a TLS socket — that is a confidentiality
-                 // downgrade (#950). Retain the formatted bytes in formattedOutput_;
-                 // formatOutput() appends and processOutgoing() consumes only what it
-                 // encrypts, so the retained bytes flush in order once TLS is
-                 // (re)established, or are dropped if the connection closes.
-                 GANL_CONN_DEBUG(handle_, "TLS not established; retaining " << sourceBuffer->readableBytes()
-                           << " formatted bytes (no cleartext egress).");
-             }
-        } else {
-             GANL_CONN_DEBUG(handle_, "TLS not used. Copying " << sourceBuffer->readableBytes() << " bytes directly to encryptedOutput_.");
-             // If TLS is not enabled, copy formatted data directly to encrypted output
-             encryptedOutput_.append(sourceBuffer->readPtr(), sourceBuffer->readableBytes());
-             sourceBuffer->clear(); // Consume the source to be consistent with TLS path
-             GANL_CONN_DEBUG(handle_, "encryptedOutput_ size now: " << encryptedOutput_.readableBytes());
+        // 3. Encrypt or plain-copy via the single #950-safe egress helper.
+        // Retain formattedOutput_ if TLS is not yet established so a later
+        // send can flush once the session is ready.
+        if (!egressToWire(formattedOutput_, /*retainIfTlsNotReady=*/true,
+                          "application data")) {
+            return;
         }
 
         // 4. Post write operation if not already pending
@@ -449,29 +473,16 @@ bool ConnectionBase::processProtocolData() {
         return false; // Stop processing
     }
 
-    // Send any generated Telnet responses
+    // Send any generated Telnet responses via the #950-safe egress path.
+    // Local buffer: drop (do not retain) if TLS is not established — there
+    // is no member buffer to hold them across the call.
     if (telnetResponses.readableBytes() > 0) {
-        GANL_CONN_DEBUG(handle_, "Sending " << telnetResponses.readableBytes() << " bytes of Telnet responses.");
-        // Treat telnet responses as application data going out
-        IoBuffer* sourceBuf = &telnetResponses;
-        if (isTlsEnabled() && secureTransport_ != nullptr && secureTransport_->isEstablished(handle_)) {
-             // Encrypt the telnet responses
-             GANL_CONN_DEBUG(handle_, "Encrypting telnet responses.");
-             TlsResult tlsRes = secureTransport_->processOutgoing(handle_, *sourceBuf, encryptedOutput, true);
-             // Explicitly passing consumeInput=true ensures source buffer is consumed
-
-             if (tlsRes == TlsResult::Error || tlsRes == TlsResult::Closed) {
-                 GANL_CONN_DEBUG(handle_, "TLS Error sending telnet responses: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
-                 close(DisconnectReason::TlsError);
-                 return false;
-             }
-        } else {
-            // Send directly if no TLS
-            GANL_CONN_DEBUG(handle_, "Sending telnet responses without TLS.");
-            encryptedOutput.append(sourceBuf->readPtr(), sourceBuf->readableBytes());
-            sourceBuf->clear(); // Consume all data to be consistent with TLS path
+        GANL_CONN_DEBUG(handle_, "Sending " << telnetResponses.readableBytes()
+                  << " bytes of Telnet responses.");
+        if (!egressToWire(telnetResponses, /*retainIfTlsNotReady=*/false,
+                          "telnet responses")) {
+            return false;
         }
-        // Ensure write is posted
         if (encryptedOutput.readableBytes() > 0 && !pendingWriteFlag()) {
             postWrite();
         }
@@ -836,26 +847,14 @@ void ConnectionBase::startTelnetNegotiation() {
     protocolHandler_.startNegotiation(handle_, telnetOptions);
     GANL_CONN_DEBUG(handle_, "protocolHandler_.startNegotiation generated " << telnetOptions.readableBytes() << " bytes of options.");
 
-    // Send the initial options
+    // Send the initial options via the #950-safe egress path.  TLS callers
+    // only reach here after isEstablished(); if that invariant breaks, drop
+    // rather than cleartext-egress IAC negotiation bytes.
     if (telnetOptions.readableBytes() > 0) {
-         IoBuffer* sourceBuf = &telnetOptions;
-         if (useTls_ && secureTransport_ != nullptr && secureTransport_->isEstablished(handle_)) {
-              GANL_CONN_DEBUG(handle_, "Encrypting initial Telnet options.");
-              TlsResult tlsRes = secureTransport_->processOutgoing(handle_, *sourceBuf, encryptedOutput_, true);
-              // Explicitly passing consumeInput=true ensures source buffer is consumed
-
-              if (tlsRes == TlsResult::Error || tlsRes == TlsResult::Closed) {
-                  GANL_CONN_DEBUG(handle_, "TLS Error sending initial Telnet options: " << secureTransport_->getLastTlsErrorString(handle_) << ". Closing.");
-                  close(DisconnectReason::TlsError);
-                  return; // Stop negotiation start
-              }
-         } else {
-             GANL_CONN_DEBUG(handle_, "Sending initial Telnet options without TLS.");
-             encryptedOutput_.append(sourceBuf->readPtr(), sourceBuf->readableBytes());
-             sourceBuf->clear(); // Consume all data to be consistent with TLS path
+         if (!egressToWire(telnetOptions, /*retainIfTlsNotReady=*/false,
+                           "initial Telnet options")) {
+             return; // TLS error closed the connection
          }
-
-         // Ensure write is posted
          if (encryptedOutput_.readableBytes() > 0 && !pendingWrite_) {
              postWrite();
          }

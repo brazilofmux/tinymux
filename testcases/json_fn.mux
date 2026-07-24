@@ -13,6 +13,8 @@
 -
 #
 # Test Case #1 - json() construction.
+# L5/L6/L8 lock the split_token whole-tail fix: next_token left the list
+# tail intact so json(array,1 2 3) used to re-emit as [1 2 3,2 3,3].
 #
 &tr.tc001 test_json_fn=
   @if cand(

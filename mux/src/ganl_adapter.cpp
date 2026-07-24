@@ -2136,13 +2136,18 @@ void GanlAdapter::run_main_loop() {
                     pending_remote_addresses_[connHandle] = events[i].remoteAddress;
                     pending_tls_flags_[connHandle] = useTls;
                     handle_to_conn_[connHandle] = conn;
-                    connections_accepted_++;
 
+                    // Count only connections that fully initialize.  Failed
+                    // init closes the fd itself and never reaches
+                    // onConnectionClose, so accepting first would permanently
+                    // inflate NET/STAT live = accepted - closed.
                     if (!conn->initialize(useTls)) {
                         handle_to_conn_.erase(connHandle);
                         connection_listener_map_.erase(connHandle);
                         pending_remote_addresses_.erase(connHandle);
                         pending_tls_flags_.erase(connHandle);
+                    } else {
+                        connections_accepted_++;
                     }
                 }
                 continue;
@@ -2373,14 +2378,14 @@ void GanlAdapter::log_socket_stats(bool force)
 
     STARTLOG(LOG_NET, "NET", "STAT");
     g_pILog->WriteString(tprintf(
-        T("sockets descs=%u conn_map=%u desc_map=%u accepted=%u closed=%u live=%d osfds=%d"),
-        static_cast<unsigned>(g_descriptors_list.size()),
-        static_cast<unsigned>(handle_to_conn_.size()),
-        static_cast<unsigned>(handle_to_desc_.size()),
-        static_cast<unsigned>(connections_accepted_),
-        static_cast<unsigned>(connections_closed_),
-        static_cast<int>(live),
-        static_cast<int>(osfds)));
+        T("sockets descs=%zu conn_map=%zu desc_map=%zu accepted=%llu closed=%llu live=%lld osfds=%ld"),
+        g_descriptors_list.size(),
+        handle_to_conn_.size(),
+        handle_to_desc_.size(),
+        static_cast<unsigned long long>(connections_accepted_),
+        static_cast<unsigned long long>(connections_closed_),
+        live,
+        osfds));
     ENDLOG;
 }
 
