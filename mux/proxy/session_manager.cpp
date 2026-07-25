@@ -694,6 +694,17 @@ void SessionManager::handleFrontDoorPlainData(FrontDoorState& fd,
     TelnetSignals signals;
     splitTelnetStream(data, len, fd.telnetState, regular, gmcpMsgs, signals);
 
+    // #1101: an IAC SB reassembly that overruns TELNET_SB_MAX trips sbOverflow
+    // (the parser was already reset to stop unbounded growth).  Tear the
+    // connection down — leaving it open lets the post-reset flood bytes desync
+    // into the regular stream and lets the abuser repeat.  Do not touch fd
+    // after closeConnection (its close callback may free it).
+    if (fd.telnetState.sbOverflow) {
+        LOG_WARN("front-door telnet SB reassembly overflow; closing connection");
+        engine_.closeConnection(fd.handle);
+        return;
+    }
+
     // Track client GMCP capability
     if (signals.sawWillGmcp || signals.sawDoGmcp) {
         fd.gmcpEnabled = true;
@@ -1959,6 +1970,15 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     TelnetSignals signals;
     splitTelnetStream(data, len, link->telnetState, regular, gmcpMsgs, signals, true);
 
+    // #1101: same SB-overflow guard as the front-door — drop the misbehaving
+    // back-door link rather than desync its stream.  Do not touch link/session
+    // after closeConnection (onBackDoorClose may invalidate them).
+    if (link->telnetState.sbOverflow) {
+        LOG_WARN("back-door telnet SB reassembly overflow; closing link");
+        engine_.closeConnection(bdHandle);
+        return;
+    }
+
     // Track GMCP capability on the back-door link
     if (signals.sawWillGmcp || signals.sawDoGmcp) {
         link->gmcpEnabled = true;
@@ -2455,10 +2475,18 @@ std::string SessionManager::generatePersistId() {
 }
 
 ScrollBack SessionManager::makeScrollback() const {
-    // #1100: honor scrollback_lines from config (default 10000).
+    // #1100: honor scrollback_lines from config (default 10000).  Clamp both
+    // ends: 0 -> default, and anything above MAX_SCROLLBACK_LINES down to it,
+    // since cap feeds ScrollBack's up-front buffer_.resize(cap) — a negative
+    // scrollback_lines parses to SIZE_MAX and would OOM one vector per session.
     size_t cap = config_.scrollbackLines;
     if (cap == 0) {
         cap = 10000;
+    }
+    if (cap > MAX_SCROLLBACK_LINES) {
+        LOG_WARN("scrollback_lines %zu exceeds max %zu; clamping",
+                 cap, MAX_SCROLLBACK_LINES);
+        cap = MAX_SCROLLBACK_LINES;
     }
     return ScrollBack(cap);
 }
@@ -2747,8 +2775,15 @@ std::string SessionManager::authenticateAndGetSession(
         return sessions_[sessId].persistId;
     }
 
-    // #1100: enforce max_sessions_per_account before creating a new one.
-    // (Existing-session path above already covers the reuse case.)
+    // #1100: one session per account is STRUCTURAL.  The reuse-existing loop
+    // and the restore-saved-session path above collapse any re-login for an
+    // account onto its single session, so countSessionsForAccount(accountId)
+    // is always 0 here.  This guard is therefore a defense-in-depth backstop
+    // (fires only if a duplicate ever slips past reuse), NOT a tunable policy:
+    // max_sessions_per_account > 1 cannot produce multiple concurrent sessions
+    // under the current model — multiple game *connections* per account are
+    // links within the one session, not separate sessions.  (Same invariant
+    // holds on the telnet front-door path, which reuses identically.)
     if (config_.maxSessionsPerAccount > 0 &&
         countSessionsForAccount(accountId) >=
             static_cast<size_t>(config_.maxSessionsPerAccount)) {
@@ -3016,6 +3051,31 @@ std::string SessionManager::renderPrometheusMetrics() {
     return out.str();
 }
 
+// #1102: clientIp is "host:port" (IPv4) or "[host]:port" (IPv6) from
+// NetworkAddress::toString(), or a bare host from the gRPC peer parse.  A
+// naive `ip == "127.0.0.1"` never matches (the ":port" suffix), and IPv6
+// "[::1]:port" matched nothing at all.  Extract the host and test loopback.
+static bool isLoopbackClientIp(const std::string& clientIp) {
+    std::string host = clientIp;
+    if (!host.empty() && host.front() == '[') {
+        // "[v6]:port" -> "v6"
+        const auto rb = host.find(']');
+        host = (rb == std::string::npos) ? host.substr(1)
+                                         : host.substr(1, rb - 1);
+    } else {
+        // Strip a trailing ":port" only when there is exactly one colon; a
+        // bare, unbracketed IPv6 literal has several colons and no port.
+        const auto first = host.find(':');
+        if (first != std::string::npos && first == host.rfind(':')) {
+            host = host.substr(0, first);
+        }
+    }
+    return host == "127.0.0.1" || host == "::1" || host == "localhost"
+        || host.rfind("127.", 0) == 0                 // 127.0.0.0/8
+        || host == "::ffff:127.0.0.1"
+        || host.rfind("::ffff:127.", 0) == 0;         // v4-mapped loopback
+}
+
 void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     HttpRequest req;
     if (!parseHttpRequest(fd.httpBuf, req)) return;  // incomplete
@@ -3033,10 +3093,7 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 
     if (req.path == "/metrics") {
         // #1102: metrics are recon-useful — only serve to loopback peers.
-        const std::string& ip = fd.clientIp;
-        const bool loopback = (ip == "127.0.0.1" || ip == "::1" ||
-                               ip == "localhost" || ip.rfind("127.", 0) == 0);
-        if (!loopback) {
+        if (!isLoopbackClientIp(fd.clientIp)) {
             std::string resp = "HTTP/1.1 403 Forbidden\r\n"
                                "Content-Type: text/plain\r\n"
                                "Content-Length: 10\r\n"

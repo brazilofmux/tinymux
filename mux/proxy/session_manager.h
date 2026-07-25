@@ -433,6 +433,12 @@ private:
     // #1096: close the front-door when the buffer would exceed this cap.
     static constexpr size_t MAX_WRITE_BUFFER = 256 * 1024;
 
+    // #1100: upper bound on scrollback_lines.  The value feeds ScrollBack's
+    // up-front buffer_.resize(cap), so an out-of-range config (a negative
+    // parsed to SIZE_MAX, or an absurd value) would OOM/throw one vector per
+    // session.  ~1M lines is far above any sane setting and safely finite.
+    static constexpr size_t MAX_SCROLLBACK_LINES = 1000000;
+
     struct WriteBuffer {
         std::string data;
         size_t offset{0};
