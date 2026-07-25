@@ -52,6 +52,31 @@
         # y[lt] → "an"  (ylang-ylang, yttrium).
         'y' [lt] any* => { use_an = true; };
 
+        # --- numerals: the article follows the SPOKEN form ---
+        #
+        # A leading '8' always begins "eight" — eight, eighty, eight
+        # hundred, eight thousand, 8.5 ("eight point five"), 80s.  Every
+        # one takes "an", so the whole-input form is safe here.
+        #
+        '8' any* => { use_an = true; };
+
+        # "11" and "18" are "eleven"/"eighteen" only while they are the
+        # LEADING spoken group.  That holds when the digits after them
+        # come in whole groups of three: 11 -> eleven, 11000 -> eleven
+        # thousand, 18000000 -> eighteen million.  It does NOT hold for
+        # 110 ("one hundred ten") or 1800 (formally "one thousand eight
+        # hundred"), so those must fall through to "a".
+        #
+        # These two patterns deliberately do NOT end in any*.  The
+        # scanner takes the longest match first, so a fixed-length
+        # pattern only wins when it spans the entire input; for 110 it
+        # matches just "11" while the catch-all matches all three
+        # characters, and the catch-all correctly wins.  That is the one
+        # place in this machine where length, not order, decides.
+        #
+        '11' ([0-9][0-9][0-9])* => { use_an = true; };
+        '18' ([0-9][0-9][0-9])* => { use_an = true; };
+
         # --- specific "a" overrides of an otherwise-vowel start ---
 
         # Vowel + [.-] → "a"  (abbreviations: "a E.T.", "a I-beam").

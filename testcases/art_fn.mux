@@ -5,6 +5,9 @@
 # The scanner is art_scan.rl (#1170: catch-all must be LAST so vowel and
 # exception rules can win equal-length ties).
 #
+# Numerals follow the SPOKEN form, so the cases below are about how the
+# number is read aloud rather than its first character.
+#
 @create test_art_fn
 -
 @set test_art_fn=INHERIT QUIET
@@ -71,10 +74,60 @@
   }
 -
 #
-# Test Case #4 - The result is always one of the two articles and never
-# empty.
+# Test Case #4 - Numerals follow the spoken form.
+#
+# A leading 8 always begins "eight" (eight, eighty, eight hundred, eight
+# point five), so it always takes "an".  11 and 18 are "eleven" and
+# "eighteen" only while they lead the spoken groups of three: 11 and
+# 11000 ("eleven thousand") take "an", but 110 is "one hundred ten" and
+# 1100 is formally "one thousand one hundred", so both take "a".
 #
 &tr.tc004 test_art_fn=
+  @if cand(
+        strmatch(art(8), an),
+        strmatch(art(80), an),
+        strmatch(art(800), an),
+        strmatch(art(8.5), an),
+        strmatch(art(11), an),
+        strmatch(art(11000), an),
+        strmatch(art(18), an),
+        strmatch(art(18000), an)
+      )=
+  {
+    @log smoke=TC004: art numerals taking an. Succeeded.
+  },
+  {
+    @log smoke=TC004: art numerals taking an. Failed (8=[art(8)] 80=[art(80)] 800=[art(800)] 8.5=[art(8.5)] 11=[art(11)] 11000=[art(11000)] 18=[art(18)] 18000=[art(18000)]).
+  }
+-
+#
+# Test Case #5 - Numerals that do NOT take "an".  110 and 1100 are the
+# discriminating cases: a rule keying on the "11" prefix alone would
+# wrongly report "an" for both.
+#
+&tr.tc005 test_art_fn=
+  @if cand(
+        strmatch(art(110), a),
+        strmatch(art(1100), a),
+        strmatch(art(180), a),
+        strmatch(art(1800), a),
+        strmatch(art(9), a),
+        strmatch(art(90), a),
+        strmatch(art(1), a),
+        strmatch(art(20), a)
+      )=
+  {
+    @log smoke=TC005: art numerals taking a. Succeeded.
+  },
+  {
+    @log smoke=TC005: art numerals taking a. Failed (110=[art(110)] 1100=[art(1100)] 180=[art(180)] 1800=[art(1800)] 9=[art(9)] 90=[art(90)] 1=[art(1)] 20=[art(20)]).
+  }
+-
+#
+# Test Case #6 - The result is always one of the two articles and never
+# empty.
+#
+&tr.tc006 test_art_fn=
   @if cand(
         t(member(a an, art(cat))),
         t(member(a an, art(umbrella))),
@@ -82,11 +135,11 @@
         gt(strlen(art(x)), 0)
       )=
   {
-    @log smoke=TC004: art always yields an article. Succeeded.;
+    @log smoke=TC006: art always yields an article. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: art always yields an article. Failed (cat=[art(cat)] umb=[art(umbrella)] num=[art(1234)] x=[art(x)]).;
+    @log smoke=TC006: art always yields an article. Failed (cat=[art(cat)] umb=[art(umbrella)] num=[art(1234)] x=[art(x)]).;
     @trig me/tr.done
   }
 -
