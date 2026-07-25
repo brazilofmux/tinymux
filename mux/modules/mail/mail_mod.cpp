@@ -762,6 +762,47 @@ bool CMailMod::LoadMailAliases(void)
 }
 
 // ---------------------------------------------------------------------------
+// Composition attributes — AF_INTERNAL / AF_DARK; must use raw attr APIs.
+// ---------------------------------------------------------------------------
+
+bool CMailMod::set_comp_attr(dbref player, int attrnum, const UTF8 *value)
+{
+    if (nullptr == m_pIObjectInfo)
+    {
+        return false;
+    }
+    return MUX_SUCCEEDED(m_pIObjectInfo->AtrAddRaw(player, attrnum,
+        value ? value : T("")));
+}
+
+bool CMailMod::get_comp_attr(dbref player, int attrnum, UTF8 *buf, size_t nBuf)
+{
+    if (nullptr == buf || 0 == nBuf)
+    {
+        return false;
+    }
+    buf[0] = '\0';
+    if (nullptr == m_pIObjectInfo)
+    {
+        return false;
+    }
+    dbref aowner = NOTHING;
+    int aflags = 0;
+    MUX_RESULT mr = m_pIObjectInfo->AtrGet(player, attrnum, buf, nBuf,
+        &aowner, &aflags);
+    return MUX_SUCCEEDED(mr);
+}
+
+bool CMailMod::clr_comp_attr(dbref player, int attrnum)
+{
+    if (nullptr == m_pIObjectInfo)
+    {
+        return false;
+    }
+    return MUX_SUCCEEDED(m_pIObjectInfo->AtrClr(player, attrnum));
+}
+
+// ---------------------------------------------------------------------------
 // mux_IMailControl implementation.
 // ---------------------------------------------------------------------------
 
@@ -3044,20 +3085,15 @@ void CMailMod::do_expmail_start(dbref player, const UTF8 *arg,
         return;
     }
 
-    // Store composition state on player attributes.
+    // Store composition state.  #1229: Mailto/Mailsub/Mailmsg/Mailflags are
+    // AF_INTERNAL or AF_DARK — IAttributeAccess permission checks always
+    // reject player-as-executor writes; use raw attr APIs like the engine.
     //
-    if (nullptr != m_pIAttributeAccess)
-    {
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailto"),
-            reinterpret_cast<const UTF8 *>(tolist.c_str()));
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailsub"), subject);
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailflags"), T("0"));
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailmsg"), T(""));
-    }
+    set_comp_attr(player, MOD_A_MAILTO,
+        reinterpret_cast<const UTF8 *>(tolist.c_str()));
+    set_comp_attr(player, MOD_A_MAILSUB, subject);
+    set_comp_attr(player, MOD_A_MAILFLAGS, T("0"));
+    clr_comp_attr(player, MOD_A_MAILMSG);
 
     // Set composing flag.
     //
@@ -3109,25 +3145,10 @@ void CMailMod::do_expmail_stop(dbref player, int flags)
     UTF8 aMailFlags[MOD_LBUF_SIZE];
     aMailFlags[0] = '\0';
 
-    if (nullptr != m_pIAttributeAccess)
-    {
-        size_t nLen;
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailto"), aTolist, sizeof(aTolist) - 1, &nLen);
-        aTolist[nLen] = '\0';
-
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailmsg"), aMailMsg, sizeof(aMailMsg) - 1, &nLen);
-        aMailMsg[nLen] = '\0';
-
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailsub"), aMailSub, sizeof(aMailSub) - 1, &nLen);
-        aMailSub[nLen] = '\0';
-
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailflags"), aMailFlags, sizeof(aMailFlags) - 1, &nLen);
-        aMailFlags[nLen] = '\0';
-    }
+    get_comp_attr(player, MOD_A_MAILTO, aTolist, sizeof(aTolist));
+    get_comp_attr(player, MOD_A_MAILMSG, aMailMsg, sizeof(aMailMsg));
+    get_comp_attr(player, MOD_A_MAILSUB, aMailSub, sizeof(aMailSub));
+    get_comp_attr(player, MOD_A_MAILFLAGS, aMailFlags, sizeof(aMailFlags));
 
     if (aTolist[0] == '\0')
     {
@@ -3213,17 +3234,7 @@ void CMailMod::do_mail_cc(dbref player, const UTF8 *arg, bool bBlind)
 
     UTF8 existing[MOD_LBUF_SIZE];
     existing[0] = '\0';
-    if (nullptr != m_pIAttributeAccess)
-    {
-        size_t nLen = 0;
-        m_pIAttributeAccess->GetAttribute(player, player, T("Mailto"),
-            existing, sizeof(existing) - 1, &nLen);
-        if (nLen >= sizeof(existing))
-        {
-            nLen = sizeof(existing) - 1;
-        }
-        existing[nLen] = '\0';
-    }
+    get_comp_attr(player, MOD_A_MAILTO, existing, sizeof(existing));
 
     std::string fulllist = tolist;
     if ('\0' != existing[0])
@@ -3232,11 +3243,8 @@ void CMailMod::do_mail_cc(dbref player, const UTF8 *arg, bool bBlind)
         fulllist.append(reinterpret_cast<const char *>(existing));
     }
 
-    if (nullptr != m_pIAttributeAccess)
-    {
-        m_pIAttributeAccess->SetAttribute(player, player, T("Mailto"),
-            reinterpret_cast<const UTF8 *>(fulllist.c_str()));
-    }
+    set_comp_attr(player, MOD_A_MAILTO,
+        reinterpret_cast<const UTF8 *>(fulllist.c_str()));
 
     std::string names = make_namelist(player,
         reinterpret_cast<const UTF8 *>(fulllist.c_str()));
@@ -3446,32 +3454,25 @@ void CMailMod::do_mail_fwd(dbref player, const UTF8 *msg,
     // Set message body to the forwarded message.
     //
     const UTF8 *body = MessageFetch(mp->number);
-    if (nullptr != m_pIAttributeAccess && body)
+    if (body)
     {
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailmsg"), body);
+        set_comp_attr(player, MOD_A_MAILMSG, body);
     }
 
     // Set M_FORWARD flag.
     //
-    if (nullptr != m_pIAttributeAccess)
+    UTF8 aFlags[32];
+    aFlags[0] = '\0';
+    get_comp_attr(player, MOD_A_MAILFLAGS, aFlags, sizeof(aFlags));
+    int iFlag = M_FORWARD;
+    if (aFlags[0])
     {
-        UTF8 aFlags[32];
-        size_t nLen = 0;
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailflags"), aFlags, sizeof(aFlags) - 1, &nLen);
-        aFlags[nLen] = '\0';
-        int iFlag = M_FORWARD;
-        if (aFlags[0])
-        {
-            iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
-        }
-        UTF8 flagbuf[16];
-        snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
-            "%d", iFlag);
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailflags"), flagbuf);
+        iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
     }
+    UTF8 flagbuf[16];
+    snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
+        "%d", iFlag);
+    set_comp_attr(player, MOD_A_MAILFLAGS, flagbuf);
 }
 
 void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
@@ -3648,33 +3649,23 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
             pMessage ? reinterpret_cast<const char *>(pMessage) : "",
             reinterpret_cast<const char *>(fromname));
 
-        if (nullptr != m_pIAttributeAccess)
-        {
-            m_pIAttributeAccess->SetAttribute(player, player,
-                T("Mailmsg"), body);
-        }
+        set_comp_attr(player, MOD_A_MAILMSG, body);
     }
 
     // Set M_REPLY flag.
     //
-    if (nullptr != m_pIAttributeAccess)
+    UTF8 aFlags[32];
+    aFlags[0] = '\0';
+    get_comp_attr(player, MOD_A_MAILFLAGS, aFlags, sizeof(aFlags));
+    int iFlag = M_REPLY;
+    if (aFlags[0])
     {
-        UTF8 aFlags[32];
-        size_t nLen = 0;
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailflags"), aFlags, sizeof(aFlags) - 1, &nLen);
-        aFlags[nLen] = '\0';
-        int iFlag = M_REPLY;
-        if (aFlags[0])
-        {
-            iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
-        }
-        UTF8 flagbuf[16];
-        snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
-            "%d", iFlag);
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailflags"), flagbuf);
+        iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
     }
+    UTF8 flagbuf[16];
+    snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
+        "%d", iFlag);
+    set_comp_attr(player, MOD_A_MAILFLAGS, flagbuf);
 }
 
 void CMailMod::do_mail_proof(dbref player)
@@ -3695,7 +3686,7 @@ void CMailMod::do_mail_proof(dbref player)
         return;
     }
 
-    // Read and display the draft.
+    // Read and display the draft (#1229: raw attr APIs for AF_INTERNAL).
     //
     UTF8 aTolist[MOD_LBUF_SIZE];
     aTolist[0] = '\0';
@@ -3704,19 +3695,9 @@ void CMailMod::do_mail_proof(dbref player)
     UTF8 aMailSub[MOD_LBUF_SIZE];
     aMailSub[0] = '\0';
 
-    if (nullptr != m_pIAttributeAccess)
-    {
-        size_t nLen;
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailto"), aTolist, sizeof(aTolist) - 1, &nLen);
-        aTolist[nLen] = '\0';
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailmsg"), aMailMsg, sizeof(aMailMsg) - 1, &nLen);
-        aMailMsg[nLen] = '\0';
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailsub"), aMailSub, sizeof(aMailSub) - 1, &nLen);
-        aMailSub[nLen] = '\0';
-    }
+    get_comp_attr(player, MOD_A_MAILTO, aTolist, sizeof(aTolist));
+    get_comp_attr(player, MOD_A_MAILMSG, aMailMsg, sizeof(aMailMsg));
+    get_comp_attr(player, MOD_A_MAILSUB, aMailSub, sizeof(aMailSub));
 
     std::string names = make_namelist(player, aTolist);
     if (nullptr != m_pINotify)
@@ -3758,13 +3739,7 @@ void CMailMod::do_edit_msg(dbref player, const UTF8 *from, const UTF8 *to)
     //
     UTF8 aMailMsg[MOD_LBUF_SIZE];
     aMailMsg[0] = '\0';
-    if (nullptr != m_pIAttributeAccess)
-    {
-        size_t nLen = 0;
-        m_pIAttributeAccess->GetAttribute(player, player,
-            T("Mailmsg"), aMailMsg, sizeof(aMailMsg) - 1, &nLen);
-        aMailMsg[nLen] = '\0';
-    }
+    get_comp_attr(player, MOD_A_MAILMSG, aMailMsg, sizeof(aMailMsg));
 
     // Simple find-and-replace (first occurrence only, matching server behavior).
     //
@@ -3835,13 +3810,7 @@ void CMailMod::do_edit_msg(dbref player, const UTF8 *from, const UTF8 *to)
     }
     *rp = '\0';
 
-    // Write back.
-    //
-    if (nullptr != m_pIAttributeAccess)
-    {
-        m_pIAttributeAccess->SetAttribute(player, player,
-            T("Mailmsg"), result);
-    }
+    set_comp_attr(player, MOD_A_MAILMSG, result);
 
     if (nullptr != m_pINotify)
     {
