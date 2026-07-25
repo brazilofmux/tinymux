@@ -511,16 +511,23 @@ static void page_return(dbref player, dbref target, const UTF8 *tag,
 
 static bool page_check(dbref player, dbref target)
 {
-    if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost))
-    {
-        notify(player, tprintf(T("You don\xE2\x80\x99t have enough %s."), mudconf.many_coins));
-    }
-    else if (!Connected(target))
+    // Validate first and charge last.  payfor() used to run before any of
+    // these checks and nothing refunded it when they failed, so paging an
+    // offline player -- or one whose PAGE-lock rejected the sender -- still
+    // cost pagecost and delivered nothing.  do_page() calls this once per
+    // recipient, so a multi-target page multiplied the loss (#1187).
+    //
+    // payfor() deducts only on success, so moving it last needs no refund
+    // path.
+    //
+    if (!Connected(target))
     {
         page_return(player, target, T("Away"), A_AWAY,
             tprintf(T("Sorry, %s is not connected."), Moniker(target)));
+        return false;
     }
-    else if (!could_doit(player, target, A_LPAGE))
+
+    if (!could_doit(player, target, A_LPAGE))
     {
         if (  Can_Hide(target)
            && Hidden(target)
@@ -534,27 +541,37 @@ static bool page_check(dbref player, dbref target)
             page_return(player, target, T("Reject"), A_REJECT,
                 tprintf(T("Sorry, %s is not accepting pages."), Moniker(target)));
         }
+        return false;
     }
-    else if (!could_doit(target, player, A_LPAGE))
+
+    // A wizard may page someone who cannot page back; everyone else may not.
+    // Hold the warning until the page is actually paid for, so a sender who
+    // cannot afford it does not get told about a page that never happens.
+    //
+    bool bCannotReturn = false;
+    if (!could_doit(target, player, A_LPAGE))
     {
-        if (Wizard(player))
-        {
-            notify(player, tprintf(T("Warning: %s can\xE2\x80\x99t return your page."),
-                Moniker(target)));
-            return true;
-        }
-        else
+        if (!Wizard(player))
         {
             notify(player, tprintf(T("Sorry, %s can\xE2\x80\x99t return your page."),
                 Moniker(target)));
             return false;
         }
+        bCannotReturn = true;
     }
-    else
+
+    if (!payfor(player, Guest(player) ? 0 : mudconf.pagecost))
     {
-        return true;
+        notify(player, tprintf(T("You don\xE2\x80\x99t have enough %s."), mudconf.many_coins));
+        return false;
     }
-    return false;
+
+    if (bCannotReturn)
+    {
+        notify(player, tprintf(T("Warning: %s can\xE2\x80\x99t return your page."),
+            Moniker(target)));
+    }
+    return true;
 }
 
 // The combinations are:
