@@ -7777,6 +7777,8 @@
 "@if cand(strmatch(mul(1.1,1.1),1.21),strmatch(mul(1.5,2),3),strmatch(mul(0.1,3),0.3))={@log smoke=TC003: mul prettification retained. Succeeded.;@trig me/tr.done},{@log smoke=TC003: mul prettification retained. Failed (sq=[mul(1.1,1.1)] i=[mul(1.5,2)] tenth=[mul(0.1,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End mul() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(mul(1.224744871391589,1),1.224744871391589),strmatch(mul(2.449489742783178,1),2.449489742783178),strmatch(mul(sqrt(1.5),1),[sqrt(1.5)]),strmatch(mul(sqrt(2),1),1.414213562373095))={@log smoke=TC004: mul NearestPretty tie and shorten. Succeeded.;@trig me/tr.done},{@log smoke=TC004: mul NearestPretty tie and shorten. Failed (tie1=[mul(1.224744871391589,1)] tie2=[mul(2.449489742783178,1)] tiesq=[mul(sqrt(1.5),1)]/[sqrt(1.5)] shorten=[mul(sqrt(2),1)]).;@trig me/tr.done}"
 <
 !192
 "test_munge_fn"
