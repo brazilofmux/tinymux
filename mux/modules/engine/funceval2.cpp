@@ -15,6 +15,8 @@
 #include "externs.h"
 #include "ast.h"
 
+#include <vector>
+
 extern "C" {
 #include "color_ops.h"
 }
@@ -111,11 +113,9 @@ FUNCTION(fun_scramble)
         return;
     }
 
-    // Build index array and Fisher-Yates shuffle.  An ASCII string can have
-    // up to LBUF_SIZE-1 single-byte clusters, so the array must be sized to
-    // LBUF_SIZE (not LBUF_SIZE/2) to hold one index per cluster.
+    // #1110: heap-allocate index / cluster scratch (was LBUF-scale stack).
     //
-    LBUF_OFFSET indices[LBUF_SIZE];
+    std::vector<LBUF_OFFSET> indices(nClusters);
     for (size_t i = 0; i < nClusters; i++)
     {
         indices[i] = static_cast<LBUF_OFFSET>(i);
@@ -130,14 +130,14 @@ FUNCTION(fun_scramble)
 
     // Output clusters in shuffled order using co_mid_cluster.
     //
+    std::vector<unsigned char> cluster(LBUF_SIZE);
     for (size_t i = 0; i < nClusters; i++)
     {
-        unsigned char cluster[LBUF_SIZE];
-        size_t cb = co_mid_cluster(cluster, p, slen, indices[i], 1);
+        size_t cb = co_mid_cluster(cluster.data(), p, slen, indices[i], 1);
 
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         if (cb > nMax) cb = nMax;
-        memcpy(*bufc, cluster, cb);
+        memcpy(*bufc, cluster.data(), cb);
         *bufc += cb;
     }
     **bufc = '\0';
@@ -181,12 +181,9 @@ FUNCTION(fun_shuffle)
             return;
         }
 
-        // Build index array and Fisher-Yates shuffle.  With a non-space
-        // single-char delimiter the word count can reach ~LBUF_SIZE (one word
-        // per delimiter byte), so the array must be sized to LBUF_SIZE to
-        // match the multi-char-delimiter path below.
+        // #1110: heap-allocate index / word scratch (was LBUF-scale stack).
         //
-        LBUF_OFFSET indices[LBUF_SIZE];
+        std::vector<LBUF_OFFSET> indices(n);
         for (size_t i = 0; i < n; i++)
         {
             indices[i] = static_cast<LBUF_OFFSET>(i);
@@ -201,6 +198,7 @@ FUNCTION(fun_shuffle)
 
         // Output shuffled words using co_extract.
         //
+        std::vector<unsigned char> word(LBUF_SIZE);
         bool bFirst = true;
         for (size_t i = 0; i < n; i++)
         {
@@ -213,13 +211,12 @@ FUNCTION(fun_shuffle)
                 bFirst = false;
             }
 
-            unsigned char word[LBUF_SIZE];
-            size_t nWord = co_extract(word, p, slen,
+            size_t nWord = co_extract(word.data(), p, slen,
                 indices[i] + 1, 1, delim, delim);
 
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
             if (nWord > nMax) nWord = nMax;
-            memcpy(*bufc, word, nWord);
+            memcpy(*bufc, word.data(), nWord);
             *bufc += nWord;
         }
         **bufc = '\0';
@@ -227,16 +224,17 @@ FUNCTION(fun_shuffle)
     else
     {
         // Multi-char delimiter: use co_split_words + Fisher-Yates.
+        // #1110: heap-allocate word-boundary tables (was ~512 KiB stack).
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        std::vector<size_t> wstarts(LBUF_SIZE), wends(LBUF_SIZE);
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts, wends, LBUF_SIZE);
+                            sep.n, wstarts.data(), wends.data(), LBUF_SIZE);
 
         /* Build index array and shuffle via Fisher-Yates. */
-        LBUF_OFFSET indices[LBUF_SIZE];
+        std::vector<LBUF_OFFSET> indices(nWords);
         for (size_t j = 0; j < nWords; j++)
             indices[j] = static_cast<LBUF_OFFSET>(j);
 
@@ -301,13 +299,13 @@ FUNCTION(fun_pickrand)
         if (0 < n)
         {
             size_t w = static_cast<size_t>(RandomINT32(0, static_cast<int32_t>(n-1)));
-            unsigned char out[LBUF_SIZE];
-            size_t nOut = co_extract(out, p, slen,
+            std::vector<unsigned char> out(LBUF_SIZE);
+            size_t nOut = co_extract(out.data(), p, slen,
                 w + 1, 1, delim, delim);
 
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
             if (nOut > nMax) nOut = nMax;
-            memcpy(*bufc, out, nOut);
+            memcpy(*bufc, out.data(), nOut);
             *bufc += nOut;
             **bufc = '\0';
         }
@@ -315,13 +313,14 @@ FUNCTION(fun_pickrand)
     else
     {
         // Multi-char delimiter: use co_split_words.
+        // #1110: heap-allocate word-boundary tables (was ~512 KiB stack).
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(s);
         size_t nLen = strlen(reinterpret_cast<const char *>(s));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        std::vector<size_t> wstarts(LBUF_SIZE), wends(LBUF_SIZE);
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts, wends, LBUF_SIZE);
+                            sep.n, wstarts.data(), wends.data(), LBUF_SIZE);
         if (nWords > 0)
         {
             LBUF_OFFSET w = static_cast<LBUF_OFFSET>(
@@ -493,27 +492,28 @@ FUNCTION(fun_last)
         UTF8 *bp = (' ' == sep.str[0])
             ? trim_space_sep(fargs[0], sep) : fargs[0];
         size_t slen = strlen(reinterpret_cast<const char *>(bp));
-        unsigned char out[LBUF_SIZE];
-        size_t nOut = co_last(out,
+        std::vector<unsigned char> out(LBUF_SIZE);
+        size_t nOut = co_last(out.data(),
             reinterpret_cast<const unsigned char *>(bp), slen,
             static_cast<unsigned char>(sep.str[0]));
 
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         if (nOut > nMax) nOut = nMax;
-        memcpy(*bufc, out, nOut);
+        memcpy(*bufc, out.data(), nOut);
         *bufc += nOut;
         **bufc = '\0';
     }
     else
     {
         // Multi-char delimiter: use co_split_words.
+        // #1110: heap-allocate word-boundary tables (was ~512 KiB stack).
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        size_t ws[LBUF_SIZE], we[LBUF_SIZE];
+        std::vector<size_t> ws(LBUF_SIZE), we(LBUF_SIZE);
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, ws, we, LBUF_SIZE);
+                            sep.n, ws.data(), we.data(), LBUF_SIZE);
         if (nWords > 0)
         {
             size_t nb = we[nWords-1] - ws[nWords-1];
@@ -558,13 +558,13 @@ FUNCTION(fun_lrest)
         size_t nWords = co_words_count(p, slen, delim);
         if (nWords > 1)
         {
-            unsigned char out[LBUF_SIZE];
-            size_t nOut = co_extract(out, p, slen,
+            std::vector<unsigned char> out(LBUF_SIZE);
+            size_t nOut = co_extract(out.data(), p, slen,
                 1, nWords - 1, delim, delim);
 
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
             if (nOut > nMax) nOut = nMax;
-            memcpy(*bufc, out, nOut);
+            memcpy(*bufc, out.data(), nOut);
             *bufc += nOut;
             **bufc = '\0';
         }
@@ -572,13 +572,14 @@ FUNCTION(fun_lrest)
     else
     {
         // Multi-char delimiter: use co_split_words.
+        // #1110: heap-allocate word-boundary tables (was ~512 KiB stack).
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        std::vector<size_t> wstarts(LBUF_SIZE), wends(LBUF_SIZE);
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts, wends, LBUF_SIZE);
+                            sep.n, wstarts.data(), wends.data(), LBUF_SIZE);
         if (nWords > 1)
         {
             size_t nb = wends[0] - wstarts[0];
@@ -2837,6 +2838,15 @@ static void room_list
                 DOLIST(thing, Exits(parent))
                 {
                     dbref loc = Location(thing);
+                    // #1108: Unlinked exits leave Location == NOTHING (-1).
+                    // IsSet/Set no-op on out-of-range, but Examinable → Flags/
+                    // Owner → db[-1] is an OOB read.  Only walk rooms.
+                    //
+                    if (  !Good_obj(loc)
+                       || !isRoom(loc))
+                    {
+                        continue;
+                    }
                     if (  exit_visible(thing, player, key)
                        && !mudstate.bfTraverse.IsSet(loc))
                     {

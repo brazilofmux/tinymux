@@ -9,6 +9,8 @@
 #include "externs.h"
 #include "sha1.h"
 
+#include <vector>
+
 static const long nMaximums[10] =
 {
     0, 9, 99, 999, 9999, 99999, 999999, 9999999, 99999999, 999999999
@@ -691,12 +693,15 @@ FUNCTION(fun_limath)
         return;
     }
 
-    int64_t vals[MAX_WORDS];
-    int n = 0;
+    // #1110: heap-allocate — vals[MAX_WORDS] was ~256 KiB on the stack and
+    // ate recursion margin under deep mux_exec (leaf, but still one big frame).
+    //
+    std::vector<int64_t> vals;
+    vals.reserve(64);
     UTF8 *cp = trim_space_sep(fargs[1], sep);
     while (cp)
     {
-        if (n >= MAX_WORDS)
+        if (static_cast<int>(vals.size()) >= MAX_WORDS)
         {
             safe_str(T("#-1 LIST TOO LONG"), buff, bufc);
             return;
@@ -707,9 +712,10 @@ FUNCTION(fun_limath)
             safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
-        vals[n++] = mux_atoi64(curr);
+        vals.push_back(mux_atoi64(curr));
     }
 
+    const int n = static_cast<int>(vals.size());
     if (n == 0)
     {
         safe_chr('0', buff, bufc);
@@ -898,15 +904,22 @@ FUNCTION(fun_shl)
     if (  is_integer(fargs[0], nullptr)
        && is_integer(fargs[1], nullptr))
     {
+        // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
+        //
         long  b = mux_atol(fargs[1]);
-        if (0 <= b)
+        if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);
             safe_i64toa(a << b, buff, bufc);
         }
+        else if (b < 0)
+        {
+            // Keep historical wording for smoke tests (0 is allowed).
+            safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+        }
         else
         {
-            safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+            safe_str(T("#-1 SECOND ARGUMENT MUST BE LESS THAN 64"), buff, bufc);
         }
     }
     else
@@ -928,15 +941,21 @@ FUNCTION(fun_shr)
     if (  is_integer(fargs[0], nullptr)
        && is_integer(fargs[1], nullptr))
     {
+        // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
+        //
         long  b = mux_atol(fargs[1]);
-        if (0 <= b)
+        if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);
             safe_i64toa(a >> b, buff, bufc);
         }
-        else
+        else if (b < 0)
         {
             safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+        }
+        else
+        {
+            safe_str(T("#-1 SECOND ARGUMENT MUST BE LESS THAN 64"), buff, bufc);
         }
     }
     else

@@ -553,6 +553,11 @@ FUNCTION(fun_pose)
 
     // Apply speechmod to the message text.
     //
+    // #1107: SPEECHMOD/SAYSTRING are evaluated as the target.  Only run
+    // them when the executor Controls the target (same bar as @fsay/@fpose);
+    // otherwise format the moniker + raw text so CA_PUBLIC pose() cannot
+    // force arbitrary softcode as #victim with attacker-controlled %0.
+    //
     const UTF8 *command;
     if (SAY_SAY == key)
     {
@@ -564,10 +569,14 @@ FUNCTION(fun_pose)
     }
 
     UTF8 *messageOrig = message;
-    UTF8 *messageNew = modSpeech(target, message, true, command);
-    if (messageNew)
+    UTF8 *messageNew = nullptr;
+    if (Controls(executor, target))
     {
-        message = messageNew;
+        messageNew = modSpeech(target, message, true, command);
+        if (messageNew)
+        {
+            message = messageNew;
+        }
     }
 
     // Write the optional prefix first.
@@ -583,7 +592,11 @@ FUNCTION(fun_pose)
     {
     case SAY_SAY:
         {
-            UTF8 *saystring = modSpeech(target, messageOrig, false, command);
+            UTF8 *saystring = nullptr;
+            if (Controls(executor, target))
+            {
+                saystring = modSpeech(target, messageOrig, false, command);
+            }
             if (saystring)
             {
                 safe_tprintf_str(buff, bufc, T("%s %s \xE2\x80\x9C%s\xE2\x80\x9D"),
@@ -2570,6 +2583,17 @@ FUNCTION(fun_mail)
        || !isPlayer(playerask))
     {
         safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        return;
+    }
+
+    // #1106: Self body access must not run under nObjEvalNest.  The 2-arg
+    // path already enforces this; the 1-arg path (playerask == executor)
+    // previously skipped it, so objeval(#player, mail(1)) could read bodies.
+    //
+    if (  playerask == executor
+       && mudstate.nObjEvalNest != 0)
+    {
+        safe_noperm(buff, bufc);
         return;
     }
 
