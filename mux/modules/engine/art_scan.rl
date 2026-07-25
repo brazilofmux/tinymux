@@ -27,47 +27,60 @@
     # English article scanner.
     #
     # Every pattern ends with  any*  so every alternative consumes
-    # the full input.  When all alternatives match the same length
-    # the Ragel scanner picks the LAST listed pattern (highest
-    # priority).  Patterns are ordered general → specific so that
-    # specific exceptions override the general rules.
+    # the full input.  When several alternatives match the same length
+    # (here: the whole string), the Ragel longest-match scanner keeps
+    # the FIRST listed pattern among those of equal length.  That is
+    # the opposite of what an earlier comment claimed, and putting
+    # the catch-all first made it win every tie — so art() always
+    # returned "a" (#1170).
+    #
+    # Order is therefore specific → general, with the catch-all LAST:
+    # more-specific exceptions win the equal-length tie, then the
+    # general vowel rule, then the default.
     # ---------------------------------------------------------------
 
     main := |*
 
-        # 1. Default — everything gets "a".
-        any+ => { use_an = false; };
+        # --- specific "an" exceptions (silent h, y-consonant) ---
 
-        # 2. Vowel start → "an".
-        [aeiou] any* => { use_an = true; };
-
-        # 3. Vowel + [.-] → "a"  (abbreviations: "a E.T.", "a I-beam").
-        [aeiou] [.\-] any* => { use_an = false; };
-
-        # 4. he(ir|rb) → "an"  (heir, herb).
+        # he(ir|rb) → "an"  (heir, herb).
         'he' ('ir' | 'rb') any* => { use_an = true; };
 
-        # 5. ho(mag|nest|no|ur) → "an"  (homage, honest, honor, hour).
+        # ho(mag|nest|no|ur) → "an"  (homage, honest, honor, hour).
         'ho' ('mag' | 'nest' | 'no' | 'ur') any* => { use_an = true; };
 
-        # 6. e[uw] → "a"  (eucalyptus, ewe).
+        # y[lt] → "an"  (ylang-ylang, yttrium).
+        'y' [lt] any* => { use_an = true; };
+
+        # --- specific "a" overrides of an otherwise-vowel start ---
+
+        # Vowel + [.-] → "a"  (abbreviations: "a E.T.", "a I-beam").
+        [aeiou] [.\-] any* => { use_an = false; };
+
+        # e[uw] → "a"  (eucalyptus, ewe).
         'e' [uw] any* => { use_an = false; };
 
-        # 7. onc?e → "a"  (once, one).
+        # onc?e → "a"  (once, one).
         'on' 'c'? 'e' any* => { use_an = false; };
 
-        # 8. u[bcfhjkqrst][aeiou] → "a"  (ubiquitous, use, ...).
-        'u' [bcfhjkqrst] [aeiou] any* => { use_an = false; };
+        # unanim(ous|ity) → "a"  (before the broader uni- rule).
+        'unanim' ('ous' | 'ity') any* => { use_an = false; };
 
-        # 9. uni(vowel-class|dim|dir|sex|son) → "a"  (unicorn, uniform, ...).
+        # uni(vowel-class|dim|dir|sex|son) → "a"  (unicorn, uniform, ...).
         'uni' ([acflopqtvx] | 'dim' | 'dir' | 'sex' | 'son') any* =>
             { use_an = false; };
 
-        # 10. unanim(ous|ity) → "a".
-        'unanim' ('ous' | 'ity') any* => { use_an = false; };
+        # u[bcfhjkqrst][aeiou] → "a"  (ubiquitous, use, ...).
+        'u' [bcfhjkqrst] [aeiou] any* => { use_an = false; };
 
-        # 11. y[lt] → "an"  (ylang-ylang, yttrium).
-        'y' [lt] any* => { use_an = true; };
+        # --- general rules ---
+
+        # Vowel start → "an".
+        [aeiou] any* => { use_an = true; };
+
+        # Default — everything else gets "a".  LAST so equal-length ties
+        # prefer the rules above (#1170).
+        any+ => { use_an = false; };
 
     *|;
 

@@ -2,16 +2,8 @@
 # art_fn.mux - Test Cases for art().
 #
 # art(<string>) returns the English indefinite article, "a" or "an".
-#
-# COVERAGE IS PARTIAL AND DELIBERATELY SO.  art() currently returns "a"
-# for every input and cannot produce "an" at all — including for the
-# example in its own help text, art(umbrella).  See #1170.
-#
-# Only consonant-initial inputs are asserted here, where "a" is both the
-# current answer and the correct one.  Asserting the vowel cases would
-# mean encoding the defect in order to pass, and asserting them
-# correctly would mean committing a failing test.  When #1170 is fixed,
-# art(umbrella) -> an and the rest of the vowel rules belong here.
+# The scanner is art_scan.rl (#1170: catch-all must be LAST so vowel and
+# exception rules can win equal-length ties).
 #
 @create test_art_fn
 -
@@ -21,8 +13,8 @@
   @log smoke=Beginning art() test cases.
 -
 #
-# Test Case #1 - Consonant-initial words take "a".  The TinyMUX case is
-# the one documented example that currently holds.
+# Test Case #1 - Consonant-initial words take "a".  Documented example
+# art(TinyMUX).
 #
 &tr.tc001 test_art_fn=
   @if cand(
@@ -39,11 +31,50 @@
   }
 -
 #
-# Test Case #2 - The result is always one of the two articles and never
-# empty, whatever the input.  This holds regardless of #1170 and would
-# catch a scanner that fell through to no answer at all.
+# Test Case #2 - Vowel-initial words take "an".  These are the cases
+# that #1170 permanently returned as "a".
 #
 &tr.tc002 test_art_fn=
+  @if cand(
+        strmatch(art(umbrella), an),
+        strmatch(art(apple), an),
+        strmatch(art(elephant), an),
+        strmatch(art(avocado), an),
+        strmatch(art(igloo), an),
+        strmatch(art(orange), an)
+      )=
+  {
+    @log smoke=TC002: art vowel initial. Succeeded.
+  },
+  {
+    @log smoke=TC002: art vowel initial. Failed (umb=[art(umbrella)] apple=[art(apple)] ele=[art(elephant)] avo=[art(avocado)] igl=[art(igloo)] ora=[art(orange)]).
+  }
+-
+#
+# Test Case #3 - Documented exceptions: silent-h / y- / vowel-that-sounds
+# like a consonant.
+#
+&tr.tc003 test_art_fn=
+  @if cand(
+        strmatch(art(hour), an),
+        strmatch(art(heir), an),
+        strmatch(art(ytterbium), an),
+        strmatch(art(unicycle), a),
+        strmatch(art(one-sided), a),
+        strmatch(art(use), a)
+      )=
+  {
+    @log smoke=TC003: art documented exceptions. Succeeded.
+  },
+  {
+    @log smoke=TC003: art documented exceptions. Failed (hour=[art(hour)] heir=[art(heir)] yt=[art(ytterbium)] uni=[art(unicycle)] one=[art(one-sided)] use=[art(use)]).
+  }
+-
+#
+# Test Case #4 - The result is always one of the two articles and never
+# empty.
+#
+&tr.tc004 test_art_fn=
   @if cand(
         t(member(a an, art(cat))),
         t(member(a an, art(umbrella))),
@@ -51,11 +82,11 @@
         gt(strlen(art(x)), 0)
       )=
   {
-    @log smoke=TC002: art always yields an article. Succeeded.;
+    @log smoke=TC004: art always yields an article. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: art always yields an article. Failed (cat=[art(cat)] umb=[art(umbrella)] num=[art(1234)] x=[art(x)]).;
+    @log smoke=TC004: art always yields an article. Failed (cat=[art(cat)] umb=[art(umbrella)] num=[art(1234)] x=[art(x)]).;
     @trig me/tr.done
   }
 -

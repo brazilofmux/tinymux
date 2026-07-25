@@ -27,7 +27,7 @@ static const int art_scan_start = 0;
 static const int art_scan_en_main = 0;
 
 
-#line 75 "art_scan.rl"
+#line 88 "art_scan.rl"
 
 
 // art_should_use_an — returns true when the article should be "an".
@@ -60,7 +60,7 @@ bool art_should_use_an(const UTF8 *data, size_t len)
 	act = 0;
 	}
 
-#line 99 "art_scan.rl"
+#line 112 "art_scan.rl"
     
 #line 55 "art_scan.cpp"
 	{
@@ -69,8 +69,48 @@ bool art_should_use_an(const UTF8 *data, size_t len)
 	switch ( cs )
 	{
 tr7:
-#line 39 "art_scan.rl"
+#line 83 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
+	goto st0;
+tr8:
+#line 79 "art_scan.rl"
+	{te = p;p--;{ use_an = true; }}
+	goto st0;
+tr11:
+#line 58 "art_scan.rl"
+	{te = p;p--;{ use_an = false; }}
+	goto st0;
+tr13:
+#line 61 "art_scan.rl"
+	{te = p;p--;{ use_an = false; }}
+	goto st0;
+tr19:
+#line 47 "art_scan.rl"
+	{te = p;p--;{ use_an = true; }}
+	goto st0;
+tr25:
+#line 50 "art_scan.rl"
+	{te = p;p--;{ use_an = true; }}
+	goto st0;
+tr31:
+#line 64 "art_scan.rl"
+	{te = p;p--;{ use_an = false; }}
+	goto st0;
+tr35:
+#line 74 "art_scan.rl"
+	{te = p;p--;{ use_an = false; }}
+	goto st0;
+tr45:
+#line 67 "art_scan.rl"
+	{te = p;p--;{ use_an = false; }}
+	goto st0;
+tr50:
+#line 71 "art_scan.rl"
+	{te = p;p--;{ use_an = false; }}
+	goto st0;
+tr55:
+#line 53 "art_scan.rl"
+	{te = p;p--;{ use_an = true; }}
 	goto st0;
 st0:
 #line 1 "NONE"
@@ -80,7 +120,7 @@ st0:
 case 0:
 #line 1 "NONE"
 	{ts = p;}
-#line 69 "art_scan.cpp"
+#line 99 "art_scan.cpp"
 	switch( (*p) ) {
 		case 97u: goto st2;
 		case 101u: goto st5;
@@ -494,56 +534,56 @@ case 45:
 	{
 	switch ( cs ) {
 	case 1: goto tr7;
-	case 2: goto tr7;
-	case 3: goto tr7;
-	case 4: goto tr7;
-	case 5: goto tr7;
-	case 6: goto tr7;
+	case 2: goto tr8;
+	case 3: goto tr8;
+	case 4: goto tr11;
+	case 5: goto tr8;
+	case 6: goto tr13;
 	case 7: goto tr7;
 	case 8: goto tr7;
 	case 9: goto tr7;
-	case 10: goto tr7;
+	case 10: goto tr19;
 	case 11: goto tr7;
 	case 12: goto tr7;
 	case 13: goto tr7;
 	case 14: goto tr7;
-	case 15: goto tr7;
+	case 15: goto tr25;
 	case 16: goto tr7;
 	case 17: goto tr7;
 	case 18: goto tr7;
 	case 19: goto tr7;
-	case 20: goto tr7;
-	case 21: goto tr7;
-	case 22: goto tr7;
-	case 23: goto tr7;
-	case 24: goto tr7;
-	case 25: goto tr7;
-	case 26: goto tr7;
-	case 27: goto tr7;
-	case 28: goto tr7;
-	case 29: goto tr7;
-	case 30: goto tr7;
-	case 31: goto tr7;
-	case 32: goto tr7;
-	case 33: goto tr7;
-	case 34: goto tr7;
-	case 35: goto tr7;
-	case 36: goto tr7;
-	case 37: goto tr7;
-	case 38: goto tr7;
-	case 39: goto tr7;
-	case 40: goto tr7;
-	case 41: goto tr7;
-	case 42: goto tr7;
-	case 43: goto tr7;
+	case 20: goto tr8;
+	case 21: goto tr8;
+	case 22: goto tr8;
+	case 23: goto tr31;
+	case 24: goto tr8;
+	case 25: goto tr8;
+	case 26: goto tr35;
+	case 27: goto tr8;
+	case 28: goto tr8;
+	case 29: goto tr8;
+	case 30: goto tr8;
+	case 31: goto tr8;
+	case 32: goto tr8;
+	case 33: goto tr8;
+	case 34: goto tr45;
+	case 35: goto tr8;
+	case 36: goto tr8;
+	case 37: goto tr8;
+	case 38: goto tr50;
+	case 39: goto tr8;
+	case 40: goto tr8;
+	case 41: goto tr8;
+	case 42: goto tr8;
+	case 43: goto tr8;
 	case 44: goto tr7;
-	case 45: goto tr7;
+	case 45: goto tr55;
 	}
 	}
 
 	}
 
-#line 100 "art_scan.rl"
+#line 113 "art_scan.rl"
 
     return use_an;
 }
