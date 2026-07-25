@@ -1,0 +1,89 @@
+#
+# etimefmt_fn.mux - Test Cases for etimefmt() and timefmt().
+#
+# etimefmt(<format>,<secs>) formats an ELAPSED duration, so it has no
+# timezone dependence and its output can be asserted literally.
+#
+# timefmt(<format>[,<secs>]) formats a POINT IN TIME in local time, so
+# the same epoch renders differently on machines in different zones —
+# this harness is not on UTC (timefmt($Y,0) is 1969 here).  Absolute
+# dates are therefore NOT asserted; a test doing so would pass on one
+# developer's box and fail on another's.  What is asserted instead are
+# the equivalences the help text itself documents ($F, $R and $r being
+# shorthands for longer forms), which compare two renderings of the same
+# instant and hold in every zone.
+#
+@create test_etimefmt_fn
+-
+@set test_etimefmt_fn=INHERIT QUIET
+-
+&tr.tc000 test_etimefmt_fn=
+  @log smoke=Beginning etimefmt()/timefmt() test cases.
+-
+#
+# Test Case #1 - Documented example, and the field-width form.
+# etimefmt($2h:$2M, 3700) is " 1:01": one hour, one minute, hours
+# right-justified in a width of 2 and minutes zero-padded.
+#
+&tr.tc001 test_etimefmt_fn=
+  @if cand(
+        strmatch(etimefmt($2h:$2M, 3700), %b1:01),
+        strmatch(etimefmt($s, 90), 30),
+        strmatch(etimefmt($m:$S, 90), 1:30),
+        strmatch(etimefmt($d, 172800), 2)
+      )=
+  {
+    @log smoke=TC001: etimefmt documented example and fields. Succeeded.
+  },
+  {
+    @log smoke=TC001: etimefmt documented example and fields. Failed (ex=[etimefmt($2h:$2M, 3700)] s=[etimefmt($s, 90)] ms=[etimefmt($m:$S, 90)] d=[etimefmt($d, 172800)]).
+  }
+-
+#
+# Test Case #2 - $$ is a literal dollar and unrecognized text passes
+# through unchanged, for both functions.
+#
+&tr.tc002 test_etimefmt_fn=
+  @if cand(
+        strmatch(etimefmt($$, 0), $),
+        strmatch(timefmt($$), $),
+        strmatch(timefmt(literal text), literal text),
+        strmatch(etimefmt(plain, 0), plain)
+      )=
+  {
+    @log smoke=TC002: dollar escape and passthrough. Succeeded.
+  },
+  {
+    @log smoke=TC002: dollar escape and passthrough. Failed (e=[etimefmt($$, 0)] t=[timefmt($$)] lit=[timefmt(literal text)] plain=[etimefmt(plain, 0)]).
+  }
+-
+#
+# Test Case #3 - timefmt shorthands agree with their long forms on the
+# same instant.  Timezone-independent by construction.
+#
+&tr.tc003 test_etimefmt_fn=
+  @if cand(
+        strmatch(timefmt($F, 946684800), [timefmt($Y-$m-$d, 946684800)]),
+        strmatch(timefmt($R, 946684800), [timefmt($H:$M, 946684800)]),
+        strmatch(timefmt($r, 946684800), [timefmt($I:$M:$S $p, 946684800)]),
+        eq(strlen(timefmt($Y, 946684800)), 4),
+        eq(strlen(timefmt($Y)), 4)
+      )=
+  {
+    @log smoke=TC003: timefmt documented shorthands. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: timefmt documented shorthands. Failed (F=[timefmt($F, 946684800)] ymd=[timefmt($Y-$m-$d, 946684800)] R=[timefmt($R, 946684800)] hm=[timefmt($H:$M, 946684800)] r=[timefmt($r, 946684800)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_etimefmt_fn=
+  @log smoke=End etimefmt()/timefmt() test cases.;
+  @notify smoke
+-
+drop test_etimefmt_fn
+-
+#
+# End of Test Cases
+#
