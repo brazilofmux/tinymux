@@ -430,6 +430,7 @@ public:
     virtual MUX_RESULT LoadAllMailBodies(PFN_MAIL_BODY_CB pfn, void *context) = 0;
     virtual MUX_RESULT LoadAllMailAliases(PFN_MAIL_ALIAS_CB pfn, void *context) = 0;
     virtual MUX_RESULT GetMeta(const UTF8 *key, int *pValue) = 0;
+    virtual MUX_RESULT PutMeta(const UTF8 *key, int value) = 0;
 
     // Write-through: headers.
     //
