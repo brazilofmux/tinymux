@@ -57,11 +57,32 @@ char *mux_stpcpy(char *dest, const char *src)
 
 void child_timeout_signal(int iSig)
 {
-    exit(1);
+    // _exit(), not exit(): exit() runs atexit handlers and flushes stdio,
+    // neither of which is async-signal-safe.
+    //
+    _exit(1);
 }
 
 int query(char *ip)
 {
+    // The response format is one record per line, "ip ' ' hostname '\n'", and
+    // ip is copied verbatim below.  The hostname is sanitized (see #801), but
+    // ip was not: a separator or newline inside it splits one record into two
+    // on the parent side, which is the same forgery primitive #801 closed for
+    // the hostname.  The caller now frames requests on newlines so this cannot
+    // happen, but state the invariant here so a future change to the input
+    // path cannot quietly reopen it.
+    //
+    for (const char *s = ip; '\0' != *s; s++)
+    {
+        if (  '\n' == *s
+           || '\r' == *s
+           || ' '  == *s)
+        {
+            return -1;
+        }
+    }
+
     const char *pHName = ip;
 
 #if defined(HAVE_GETADDRINFO) && defined(HAVE_GETNAMEINFO)
@@ -183,7 +204,9 @@ void alarm_signal(int iSig)
 
     if (getppid() != parent_pid)
     {
-        exit(1);
+        // _exit(): see child_timeout_signal().
+        //
+        _exit(1);
     }
 
     signal(SIGALRM, CAST_SIGNAL_FUNC alarm_signal);
@@ -216,11 +239,73 @@ void child_signal(int iSig)
     signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
 }
 
+// Fork a child to resolve one address.  Returns false only if fork() failed.
+//
+static bool spawn_query(char *arg)
+{
+    pid_t child = fork();
+    if (-1 == child)
+    {
+        return false;
+    }
+
+    if (0 == child)
+    {
+        // We don't want to try this for more than 5 minutes.
+        //
+        struct itimerval itime;
+        struct timeval interval;
+
+        interval.tv_sec = 300;  // 5 minutes.
+        interval.tv_usec = 0;
+        itime.it_interval = interval;
+        itime.it_value = interval;
+        signal(SIGALRM, CAST_SIGNAL_FUNC child_timeout_signal);
+        setitimer(ITIMER_REAL, &itime, 0);
+
+        _exit(query(arg) != 0);
+    }
+
+    nChildrenStarted++;
+
+    int nChildren = nChildrenStarted - nChildrenEndedSIGCHLD
+        - nChildrenEndedMain;
+
+    // Collect the children.
+    //
+    while (waitpid(0, nullptr, (nChildren < MAX_CHILDREN) ? WNOHANG : 0) > 0)
+    {
+        if (0 < nChildren)
+        {
+            nChildrenEndedMain++;
+        }
+    }
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
-    char arg[MAX_STRING];
-    int len;
-    pid_t child;
+    // Requests arrive as newline-delimited addresses, and the pipe does not
+    // preserve the parent's write boundaries: one read() can return several
+    // queued requests, and can split one across two reads.  Treating each
+    // read() as exactly one address (as this loop used to) meant that a burst
+    // of connections -- the case that matters, since that is when the parent
+    // queues lookups faster than the slave forks -- handed the concatenation
+    // to the resolver.
+    //
+    // On the getaddrinfo path that lookup simply fails and both records are
+    // discarded by the parent, so use_hostname silently degraded to numeric
+    // addresses under load.  On the legacy gethostbyaddr path it is worse:
+    // inet_addr("A\nB") parses as A and ignores the rest, so the slave
+    // resolved A's PTR and emitted "A\nB <A's hostname>", which the parent
+    // splits into a dropped line and "B <A's hostname>" -- attributing one
+    // connection's hostname to another in WHO, the logs, and A_LASTSITE.
+    //
+    // Frame on newlines, exactly as the parent does when reading responses.
+    //
+    char buf[MAX_STRING * 2];
+    size_t nBuf = 0;
+    bool bDiscard = false;   // dropping an over-long line until its delimiter
 
     parent_pid = getppid();
     if (parent_pid == 1)
@@ -237,13 +322,13 @@ int main(int argc, char *argv[])
 
     for (;;)
     {
-        len = read(0, arg, MAX_STRING - 1);
-        if (len == 0)
+        ssize_t got = read(0, buf + nBuf, sizeof(buf) - nBuf - 1);
+        if (0 == got)
         {
             break;
         }
 
-        if (len < 0)
+        if (got < 0)
         {
             if (errno == EINTR)
             {
@@ -252,62 +337,66 @@ int main(int argc, char *argv[])
             }
             break;
         }
-        arg[len] = '\0';
+        nBuf += static_cast<size_t>(got);
 
-        // Strip trailing whitespace (the GANL adapter sends a newline
-        // delimiter after the IP address).
+        // Dispatch every complete request in the buffer, leaving any partial
+        // tail for the next read().
         //
-        while (len > 0 && (arg[len-1] == '\n' || arg[len-1] == '\r' || arg[len-1] == ' '))
+        size_t start = 0;
+        for (;;)
         {
-            arg[--len] = '\0';
-        }
-
-        if (len == 0)
-        {
-            continue;
-        }
-
-        child = fork();
-        switch (child)
-        {
-        case -1:
-            exit(1);
-            break;
-
-        case 0: // child.
+            char *nl = static_cast<char *>(memchr(buf + start, '\n', nBuf - start));
+            if (nullptr == nl)
             {
-                // We don't want to try this for more than 5 minutes.
+                break;
+            }
+
+            size_t next = static_cast<size_t>(nl - buf) + 1;
+            if (bDiscard)
+            {
+                // Tail of an over-long line; its delimiter ends the drop.
                 //
-                struct itimerval itime;
-                struct timeval interval;
-
-                interval.tv_sec = 300;  // 5 minutes.
-                interval.tv_usec = 0;
-                itime.it_interval = interval;
-                itime.it_value = interval;
-                signal(SIGALRM, CAST_SIGNAL_FUNC child_timeout_signal);
-                setitimer(ITIMER_REAL, &itime, 0);
+                bDiscard = false;
             }
-            exit(query(arg) != 0);
-            break;
-        }
-
-        if (child > 0)
-        {
-            nChildrenStarted++;
-        }
-
-        int nChildren = nChildrenStarted - nChildrenEndedSIGCHLD
-            - nChildrenEndedMain;
-
-        // Collect the children.
-        //
-        while (waitpid(0, nullptr, (nChildren < MAX_CHILDREN) ? WNOHANG : 0) > 0)
-        {
-            if (0 < nChildren)
+            else
             {
-                nChildrenEndedMain++;
+                char *line = buf + start;
+                *nl = '\0';
+
+                size_t nLine = static_cast<size_t>(nl - line);
+                while (  0 < nLine
+                      && (  '\r' == line[nLine-1]
+                         || ' '  == line[nLine-1]))
+                {
+                    line[--nLine] = '\0';
+                }
+
+                if (  0 < nLine
+                   && !spawn_query(line))
+                {
+                    _exit(1);
+                }
             }
+            start = next;
+        }
+
+        // Keep the partial tail.
+        //
+        if (0 < start)
+        {
+            memmove(buf, buf + start, nBuf - start);
+            nBuf -= start;
+        }
+
+        // A request with no delimiter that has filled the buffer cannot be a
+        // real address (the parent sends at most a numeric address plus a
+        // newline).  Drop it and resynchronize at the next delimiter rather
+        // than resolving a truncated prefix or wedging on a full buffer.
+        //
+        if (nBuf >= sizeof(buf) - 1)
+        {
+            nBuf = 0;
+            bDiscard = true;
         }
     }
     exit(0);
