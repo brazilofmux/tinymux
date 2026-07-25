@@ -1,0 +1,67 @@
+#
+# subeval_fn.mux - Test Cases for subeval().
+#
+# subeval(<string>) evaluates escapes but NOT {} and not functions.
+#
+# Coverage here is deliberately partial.  help subeval() states that
+# command-line use "is limited to nil because evaluation of subeval's
+# parameters occurs before the subeval() function is called", so the
+# inline form does not express the function's real contract.  The
+# inline shape subeval(\[fn(...)\]) additionally diverges between the
+# two evaluation routes (see the linked issue), so it is deliberately
+# NOT asserted here rather than pinning down whichever answer happens
+# to be produced.  What is asserted below agrees on both routes and is
+# the behaviour the documentation actually describes.
+#
+@create test_subeval_fn
+-
+@set test_subeval_fn=INHERIT QUIET
+-
+&fn.holds test_subeval_fn=subeval(\[add(1,2)\])
+-
+&tr.tc000 test_subeval_fn=
+  @log smoke=Beginning subeval() test cases.
+-
+#
+# Test Case #1 - Braces are not evaluated; escapes are.
+#
+&tr.tc001 test_subeval_fn=
+  @if cand(
+        strmatch(subeval({abc}), {abc}),
+        strmatch(subeval(a%bb), a b),
+        strmatch(subeval(plain), plain)
+      )=
+  {
+    @log smoke=TC001: subeval braces and escapes. Succeeded.
+  },
+  {
+    @log smoke=TC001: subeval braces and escapes. Failed (braces=[subeval({abc})] escape=[subeval(a%bb)] plain=[subeval(plain)]).
+  }
+-
+#
+# Test Case #2 - Functions are not evaluated when subeval is reached
+# through an attribute, which is the documented use with v()/u().
+#
+&tr.tc002 test_subeval_fn=
+  @if cand(
+        eq(strlen(u(me/fn.holds)), 10),
+        strmatch(u(me/fn.holds), *add*)
+      )=
+  {
+    @log smoke=TC002: subeval leaves functions unevaluated. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: subeval leaves functions unevaluated. Failed (got=[u(me/fn.holds)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_subeval_fn=
+  @log smoke=End subeval() test cases.;
+  @notify smoke
+-
+drop test_subeval_fn
+-
+#
+# End of Test Cases
+#

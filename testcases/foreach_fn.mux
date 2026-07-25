@@ -1,0 +1,61 @@
+#
+# foreach_fn.mux - Test Cases for foreach().
+#
+# foreach(<attr>,<string>[,<start>[,<end>]]) evaluates <attr> once per
+# character of <string>, passing the character as %0, and concatenates
+# the results.  With <start>/<end> markers only the delimited span is
+# transformed and the markers themselves are removed.
+#
+@create test_foreach_fn
+-
+@set test_foreach_fn=INHERIT QUIET
+-
+&fn.add_one test_foreach_fn=[add(%0,1)]
+-
+&fn.upper test_foreach_fn=[ucstr(%0)]
+-
+&tr.tc000 test_foreach_fn=
+  @log smoke=Beginning foreach() test cases.
+-
+#
+# Test Case #1 - Documented example: per-character evaluation.
+#
+&tr.tc001 test_foreach_fn=
+  @if cand(
+        strmatch(foreach(fn.add_one, 54321), 65432),
+        strmatch(foreach(fn.upper, abc), ABC)
+      )=
+  {
+    @log smoke=TC001: foreach per-character evaluation. Succeeded.
+  },
+  {
+    @log smoke=TC001: foreach per-character evaluation. Failed (nums=[foreach(fn.add_one, 54321)] alpha=[foreach(fn.upper, abc)]).
+  }
+-
+#
+# Test Case #2 - Delimited span: only the marked region is transformed
+# and the markers are stripped from the result.
+#
+&tr.tc002 test_foreach_fn=
+  @if cand(
+        strmatch(foreach(fn.upper, ab#cd#ef, #, #), abCDef),
+        strmatch(foreach(fn.upper, abc), ABC)
+      )=
+  {
+    @log smoke=TC002: foreach delimited span. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: foreach delimited span. Failed (span=[foreach(fn.upper, ab#cd#ef, #, #)] plain=[foreach(fn.upper, abc)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_foreach_fn=
+  @log smoke=End foreach() test cases.;
+  @notify smoke
+-
+drop test_foreach_fn
+-
+#
+# End of Test Cases
+#

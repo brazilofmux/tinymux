@@ -1,0 +1,65 @@
+#
+# munge_fn.mux - Test Cases for munge().
+#
+# munge(<attr>,<list 1>,<list 2>[,<delim>]) passes the whole of <list 1>
+# to <attr> as %0 and the delimiter as %1, then reorders <list 2> to
+# match the positions of the returned elements within <list 1>.  An
+# element the user function drops does not appear in the result.
+#
+@create test_munge_fn
+-
+@set test_munge_fn=INHERIT QUIET
+-
+&fn.sort_alpha test_munge_fn=[sort(%0)]
+-
+&fn.places test_munge_fn=Fort Benden Ista
+-
+&fn.dbrefs test_munge_fn=#20 #9000 #5000
+-
+&fn.rev test_munge_fn=[revwords(%0)]
+-
+&tr.tc000 test_munge_fn=
+  @log smoke=Beginning munge() test cases.
+-
+#
+# Test Case #1 - Documented example: sort one list, reorder the other
+# to match.  From help munge().
+#
+&tr.tc001 test_munge_fn=
+  @if cand(
+        strmatch(munge(fn.sort_alpha,[v(fn.places)],[v(fn.dbrefs)]), #9000 #20 #5000),
+        strmatch(munge(fn.sort_alpha,c a b,3 1 2), 1 2 3)
+      )=
+  {
+    @log smoke=TC001: munge sorted reorder. Succeeded.
+  },
+  {
+    @log smoke=TC001: munge sorted reorder. Failed (help=[munge(fn.sort_alpha,[v(fn.places)],[v(fn.dbrefs)])] simple=[munge(fn.sort_alpha,c a b,3 1 2)]).
+  }
+-
+#
+# Test Case #2 - Reversal, and an identity mapping.
+#
+&tr.tc002 test_munge_fn=
+  @if cand(
+        strmatch(munge(fn.rev,a b c,1 2 3), 3 2 1),
+        strmatch(munge(fn.sort_alpha,a b c,1 2 3), 1 2 3)
+      )=
+  {
+    @log smoke=TC002: munge reversal and identity. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: munge reversal and identity. Failed (rev=[munge(fn.rev,a b c,1 2 3)] ident=[munge(fn.sort_alpha,a b c,1 2 3)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_munge_fn=
+  @log smoke=End munge() test cases.;
+  @notify smoke
+-
+drop test_munge_fn
+-
+#
+# End of Test Cases
+#
