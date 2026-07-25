@@ -11,11 +11,15 @@
 #include "sqlite_backend.h"
 #include "engine_api.h"
 
+// #1185: Also require zero Powers/Powers2 so freelist recycle cannot inherit
+// privilege bits from a corrupt or incompletely-reclaimed garbage slot.
+//
 #define IS_CLEAN(i) (isGarbage(i) && Going(i) && \
              ((i) >= 0) && ((i) < mudstate.db_top) && \
              (Location(i) == NOTHING) && \
              (Contents(i) == NOTHING) && (Exits(i) == NOTHING) && \
-             (Next(i) == NOTHING) && (Owner(i) == GOD))
+             (Next(i) == NOTHING) && (Owner(i) == GOD) && \
+             (Powers(i) == 0) && (Powers2(i) == 0))
 
 static int check_type;
 
@@ -746,6 +750,11 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
     f.word[FLAG_WORD1] |= objtype;
     db[obj].fs = f;
     s_Owner(obj, (self_owned ? obj : owner));
+    // #1185: Unconditionally clear powers on create. destroy_obj zeros them for
+    // normal reclaim, but freelist/corrupt-load paths must not carry privilege.
+    //
+    s_Powers(obj, 0);
+    s_Powers2(obj, 0);
     s_Pennies(obj, value);
     if (Pennies(obj) != value)
     {
@@ -1252,7 +1261,20 @@ static void purge_going(void)
             }
             else
             {
-                dbref player =  static_cast<dbref>(mux_atol(p));
+                dbref player = static_cast<dbref>(mux_atol(p));
+                // #1183: A_DESTROYER is wizard-writable and may be stale or
+                // corrupt; never chown inventory to a non-owner dbref.
+                //
+                if (!Good_owner(player))
+                {
+                    STARTLOG(LOG_PROBLEMS, "OBJ", "DAMAG");
+                    log_type_and_name(i);
+                    log_text(T("GOING player has invalid destroyer #"));
+                    log_number(player);
+                    log_text(T("; falling back to GOD."));
+                    ENDLOG;
+                    player = GOD;
+                }
                 destroy_player(player, i);
             }
             break;

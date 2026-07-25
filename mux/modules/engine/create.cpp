@@ -169,7 +169,16 @@ void do_open(const dbref executor, const dbref caller, const dbref enactor, cons
     if (nlinks >= 2)
     {
         const dbref destnum = parse_linkable_room(executor, dest);
-        if (Good_obj(destnum) || destnum == HOME)
+        // #1188: HOME is a valid *link* destination, but not a real room to
+        // open an exit from. open_exit() would bail on !Good_obj with no
+        // message, leaving a silent one-way open.
+        //
+        if (destnum == HOME)
+        {
+            notify_quiet(executor,
+                T("You can\xE2\x80\x99t open a reverse exit at home."));
+        }
+        else if (Good_obj(destnum))
         {
             UTF8 buff[I32BUF_SIZE];
             mux_ltoa(loc, buff);
