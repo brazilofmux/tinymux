@@ -2803,6 +2803,16 @@ FUNCTION(fun_mailreview)
     }
     else // nfargs == 2
     {
+        // #1122: body access must not run under nObjEvalNest (sent-mail twin
+        // of #1106).  Without this, objeval(#victim, mailreview(p,1)) returns
+        // the victim's sent bodies to the caller.
+        //
+        if (mudstate.nObjEvalNest != 0)
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+
         int num = mux_atol(fargs[1]);
         if (num < 1)
         {
@@ -4301,6 +4311,17 @@ FUNCTION(fun_wrapcolumns)
     int nCols    = mux_atol(fargs[2]);
     if (colWidth < 1) colWidth = 1;
     if (nCols < 1)    nCols = 1;
+    // #1111: upper-bound width/cols — unbounded pad loops are CPU DoS.
+    // Match other formatters (table/columns) that clamp to LBUF-scale values.
+    //
+    if (colWidth > static_cast<int>(LBUF_SIZE - 1))
+    {
+        colWidth = static_cast<int>(LBUF_SIZE - 1);
+    }
+    if (nCols > static_cast<int>(LBUF_SIZE / 2))
+    {
+        nCols = static_cast<int>(LBUF_SIZE / 2);
+    }
 
     // Parse optional args.
     //
@@ -4498,36 +4519,36 @@ FUNCTION(fun_sandbox)
     // Collect the FUN pointers we need to modify, and save their original
     // perms so we can restore them after evaluation.
     //
+    // #1117: dynamic storage — fixed 512-entry table could fill (aliases +
+    // ~500 builtins) and leave unrecorded FUN* enabled in reverse mode.
+    //
     struct sandbox_entry {
         FUN *fp;
         int  saved_perms;
     };
-    sandbox_entry entries[512];
-    int nEntries = 0;
+    std::vector<sandbox_entry> entries;
+    entries.reserve(mudstate.builtin_functions.size());
 
-    auto record_entry = [&entries, &nEntries](FUN *fp) -> bool
+    auto record_entry = [&entries](FUN *fp) -> bool
     {
-        for (int i = 0; i < nEntries; i++)
+        for (size_t i = 0; i < entries.size(); i++)
         {
             if (entries[i].fp == fp)
             {
                 return false;
             }
         }
-        if (nEntries >= static_cast<int>(sizeof(entries)/sizeof(entries[0])))
-        {
-            return false;
-        }
-        entries[nEntries].fp = fp;
-        entries[nEntries].saved_perms = fp->perms;
-        nEntries++;
+        sandbox_entry e;
+        e.fp = fp;
+        e.saved_perms = fp->perms;
+        entries.push_back(e);
         return true;
     };
 
     // Parse the function name list.
     //
-    FUN *listed[512];
-    int nListed = 0;
+    std::vector<FUN*> listed;
+    listed.reserve(32);
     {
         SEP sepSpace;
         sepSpace.n = 1;
@@ -4542,12 +4563,11 @@ FUNCTION(fun_sandbox)
                 UTF8 *pCased = mux_strupr(tok, nCased);
                 std::vector<UTF8> name(pCased, pCased + nCased);
                 auto it = mudstate.builtin_functions.find(name);
-                if (  it != mudstate.builtin_functions.end()
-                   && nListed < static_cast<int>(sizeof(listed)/sizeof(listed[0])))
+                if (it != mudstate.builtin_functions.end())
                 {
                     FUN *fp = static_cast<FUN*>(it->second);
                     bool bSeen = false;
-                    for (int i = 0; i < nListed; i++)
+                    for (size_t i = 0; i < listed.size(); i++)
                     {
                         if (listed[i] == fp)
                         {
@@ -4557,7 +4577,7 @@ FUNCTION(fun_sandbox)
                     }
                     if (!bSeen)
                     {
-                        listed[nListed++] = fp;
+                        listed.push_back(fp);
                     }
                 }
             }
@@ -4579,7 +4599,7 @@ FUNCTION(fun_sandbox)
         }
         // Re-enable the allowed functions.
         //
-        for (int i = 0; i < nListed; i++)
+        for (size_t i = 0; i < listed.size(); i++)
         {
             listed[i]->perms &= ~CA_DISABLED;
         }
@@ -4588,7 +4608,7 @@ FUNCTION(fun_sandbox)
     {
         // Normal mode: block only the listed functions.
         //
-        for (int i = 0; i < nListed; i++)
+        for (size_t i = 0; i < listed.size(); i++)
         {
             if (record_entry(listed[i]))
             {
@@ -4610,7 +4630,7 @@ FUNCTION(fun_sandbox)
 
     // Restore original permissions.
     //
-    for (int i = 0; i < nEntries; i++)
+    for (size_t i = 0; i < entries.size(); i++)
     {
         entries[i].fp->perms = entries[i].saved_perms;
     }

@@ -9,6 +9,8 @@
 #include "externs.h"
 #include "sha1.h"
 
+#include <algorithm>
+#include <climits>
 #include <vector>
 
 static const long nMaximums[10] =
@@ -628,20 +630,14 @@ FUNCTION(fun_lmath)
     }
     else if (mux_stricmp(op, T("median")) == 0)
     {
-        // Insertion sort -- MAX_WORDS is small.
+        // #1119: O(n log n) sort — insertion sort was O(n²) up to MAX_WORDS.
         //
-        for (int i = 1; i < n; i++)
+        if (alarm_clock.alarmed)
         {
-            double key = g_aDoubles[i];
-            int j = i - 1;
-            while (  j >= 0
-                  && g_aDoubles[j] > key)
-            {
-                g_aDoubles[j + 1] = g_aDoubles[j];
-                j--;
-            }
-            g_aDoubles[j + 1] = key;
+            safe_str(T("#-1 CPU LIMIT EXCEEDED"), buff, bufc);
+            return;
         }
+        std::sort(g_aDoubles, g_aDoubles + n);
         if (n % 2 == 1)
         {
             fval(buff, bufc, g_aDoubles[n / 2]);
@@ -806,20 +802,14 @@ FUNCTION(fun_limath)
     }
     else if (mux_stricmp(op, T("median")) == 0)
     {
-        // Insertion sort.
+        // #1119: O(n log n) sort — insertion sort was O(n²) up to MAX_WORDS.
         //
-        for (int i = 1; i < n; i++)
+        if (alarm_clock.alarmed)
         {
-            int64_t key = vals[i];
-            int j = i - 1;
-            while (  j >= 0
-                  && vals[j] > key)
-            {
-                vals[j + 1] = vals[j];
-                j--;
-            }
-            vals[j + 1] = key;
+            safe_str(T("#-1 CPU LIMIT EXCEEDED"), buff, bufc);
+            return;
         }
+        std::sort(vals.begin(), vals.end());
         if (n % 2 == 1)
         {
             safe_i64toa(vals[n / 2], buff, bufc);
@@ -1211,6 +1201,13 @@ FUNCTION(fun_iabs)
     if (num == 0)
     {
         safe_chr('0', buff, bufc);
+    }
+    else if (num == INT64_MIN)
+    {
+        // #1114: -INT64_MIN is not representable in int64_t (UB).
+        // Magnitude as decimal string (one digit more than INT64_MAX).
+        //
+        safe_str(T("9223372036854775808"), buff, bufc);
     }
     else if (num < 0)
     {

@@ -60,6 +60,14 @@ UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, const SEP &sep, size_t *nTrim)
         return str;
     }
 
+    // #1118: empty string — do not form str-1 (pointer UB).
+    //
+    if (nStr == 0)
+    {
+        *nTrim = 0;
+        return str;
+    }
+
     // Advance over leading spaces.
     //
     UTF8 *pBegin = str;
@@ -7999,6 +8007,15 @@ FUNCTION(fun_distribute)
 FUNCTION(fun_sql)
 {
     UNUSED_PARAMETER(nfargs);
+    UNUSED_PARAMETER(caller);
+
+    // #1115: hard Wizard gate (table perms alone can be reconfigured).
+    //
+    if (!Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
 
     if (!mush_database)
     {
@@ -8018,31 +8035,23 @@ FUNCTION(fun_sql)
         return;
     }
 
-
-    UTF8 *curr = alloc_lbuf("fun_sql");
-    UTF8 *dp = curr;
-    mux_exec(fargs[0], LBUF_SIZE-1, curr, &dp, executor, caller, enactor,
-        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-    *dp = '\0';
-
-    UTF8 *cp = curr;
-    cp = trim_space_sep(cp, sepSpace);
+    // #1115: args are already evaluated by the dispatcher — do not re-eval
+    // fargs[0] (double EV_EVAL lets user-influenced fragments run as wizard).
+    //
+    UTF8 *cp = trim_space_sep(fargs[0], sepSpace);
     if (!*cp)
     {
-        free_lbuf(curr);
         return;
     }
 
     if (mysql_ping(mush_database))
     {
-        free_lbuf(curr);
         safe_str(T("#-1 SQL UNAVAILABLE"), buff, bufc);
         return;
     }
 
     if (mysql_real_query(mush_database, reinterpret_cast<char *>(cp), strlen(reinterpret_cast<char *>(cp))))
     {
-        free_lbuf(curr);
         safe_str(T("#-1 QUERY ERROR"), buff, bufc);
         return;
     }
@@ -8060,14 +8069,17 @@ FUNCTION(fun_sql)
                 mysql_free_result(extra);
             }
         }
-        free_lbuf(curr);
         return;
     }
 
     int num_fields = mysql_num_fields(result);
 
     MYSQL_ROW row = mysql_fetch_row(result);
-    while (row)
+    // #1115: match mapsql — stop on invk/alarm so large results cannot stall.
+    //
+    while (  row
+          && mudstate.func_invk_ctr < mudconf.func_invk_lim
+          && !alarm_clock.alarmed)
     {
         int loop;
         for (loop = 0; loop < num_fields; loop++)
@@ -8079,13 +8091,14 @@ FUNCTION(fun_sql)
             safe_str(reinterpret_cast<UTF8 *>(row[loop]), buff, bufc);
         }
         row = mysql_fetch_row(result);
-        if (row)
+        if (  row
+           && mudstate.func_invk_ctr < mudconf.func_invk_lim
+           && !alarm_clock.alarmed)
         {
             print_sep(sepRow, buff, bufc);
         }
     }
 
-    free_lbuf(curr);
     mysql_free_result(result);
 
     // Drain any remaining result sets from stored procedures.
@@ -8105,6 +8118,16 @@ FUNCTION(fun_sql)
 //
 FUNCTION(fun_mapsql)
 {
+    UNUSED_PARAMETER(caller);
+
+    // #1115: hard Wizard gate (table perms alone can be reconfigured).
+    //
+    if (!Wizard(executor))
+    {
+        safe_noperm(buff, bufc);
+        return;
+    }
+
     if (!mush_database)
     {
         safe_str(T("#-1 NO DATABASE"), buff, bufc);
@@ -8129,25 +8152,17 @@ FUNCTION(fun_mapsql)
         return;
     }
 
-    // Evaluate the query argument.
+    // #1115: query arg already evaluated by dispatcher — do not re-eval.
     //
-    UTF8 *qbuf = alloc_lbuf("fun_mapsql");
-    UTF8 *qp = qbuf;
-    mux_exec(fargs[1], LBUF_SIZE-1, qbuf, &qp, executor, caller, enactor,
-        eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
-    *qp = '\0';
-
-    UTF8 *cp = trim_space_sep(qbuf, sepSpace);
+    UTF8 *cp = trim_space_sep(fargs[1], sepSpace);
     if (!*cp)
     {
-        free_lbuf(qbuf);
         free_lbuf(atext);
         return;
     }
 
     if (mysql_ping(mush_database))
     {
-        free_lbuf(qbuf);
         free_lbuf(atext);
         safe_str(T("#-1 SQL UNAVAILABLE"), buff, bufc);
         return;
@@ -8156,7 +8171,6 @@ FUNCTION(fun_mapsql)
     if (mysql_real_query(mush_database, reinterpret_cast<char *>(cp),
             strlen(reinterpret_cast<char *>(cp))))
     {
-        free_lbuf(qbuf);
         free_lbuf(atext);
         safe_str(T("#-1 QUERY ERROR"), buff, bufc);
         return;
@@ -8170,7 +8184,6 @@ FUNCTION(fun_mapsql)
             MYSQL_RES *extra = mysql_store_result(mush_database);
             if (extra) mysql_free_result(extra);
         }
-        free_lbuf(qbuf);
         free_lbuf(atext);
         return;
     }
@@ -8224,7 +8237,6 @@ FUNCTION(fun_mapsql)
         if (extra) mysql_free_result(extra);
     }
 
-    free_lbuf(qbuf);
     free_lbuf(atext);
 }
 
