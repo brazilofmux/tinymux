@@ -669,9 +669,24 @@ public:
             // #1135: fail closed — without a peer sockaddr, site ACL and
             // per-source rate/preauth defenses cannot run.
             //
-            STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
-            g_pILog->log_text(T("Connection refused: peer address unavailable."));
-            ENDLOG;
+            // Damp like other refusal paths (refusal_log_wanted) so an
+            // RST-race flood cannot amplify into unbounded log spam.
+            //
+            const UTF8 *addrLabel = d->addr[0] != '\0' ? d->addr
+                : (!remoteAddress.empty()
+                    ? reinterpret_cast<const UTF8 *>(remoteAddress.c_str())
+                    : T("UNKNOWN"));
+            if (refusal_log_wanted(addrLabel))
+            {
+                STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+                UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.noaddr");
+                mux_sprintf(logBuf, MBUF_SIZE,
+                    T("[%llu/%s] Connection refused: peer address unavailable."),
+                    static_cast<unsigned long long>(handle), addrLabel);
+                g_pILog->log_text(logBuf);
+                free_mbuf(logBuf);
+                ENDLOG;
+            }
             adapter_.free_desc2(d);
             return ganl::InvalidSessionId;
         }
