@@ -517,7 +517,11 @@ void disable_him(DESC *d, unsigned char chOption)
  */
 void enable_us(DESC *d, unsigned char chOption)
 {
-    switch (him_state(d, chOption))
+    // #1128: RFC 1143 Q-method — consult *our* state, not the peer's.
+    // Using him_state made enable_us a no-op when the client already had
+    // the same option YES (common for BINARY after WILL BINARY).
+    //
+    switch (us_state(d, chOption))
     {
     case OPTION_NO:
         set_us_state(d, chOption, OPTION_WANTYES_EMPTY);
@@ -545,7 +549,9 @@ void enable_us(DESC *d, unsigned char chOption)
  */
 void disable_us(DESC *d, unsigned char chOption)
 {
-    switch (him_state(d, chOption))
+    // #1128: RFC 1143 Q-method — consult *our* state, not the peer's.
+    //
+    switch (us_state(d, chOption))
     {
     case OPTION_YES:
         set_us_state(d, chOption, OPTION_WANTNO_EMPTY);
@@ -1049,13 +1055,25 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             {
                 *q++ = ch;
             }
+            else
+            {
+                // #1131: SB full — reset like Hydra #1101 spirit.  Staying in
+                // SB forever left the NVT stuck; completing with q==qend also
+                // discarded the whole subnegotiation.
+                //
+                q = d->aOption;
+                d->nOption = 0;
+                d->raw_input_state = NVT_IS_NORMAL;
+            }
             break;
 
         case 18:
             // Action 18 - Accept Completed Sub-option and transition to Normal state.
             //
+            // #1131: allow q == qend (buffer full with valid SB up to last byte).
+            //
             if (  d->aOption < q
-               && q < qend)
+               && q <= qend)
             {
                 const size_t m = q - d->aOption;
                 switch (d->aOption[0])
@@ -1353,9 +1371,15 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         if (  chSep == ch3
                                            || reqPtr == &d->aOption[m])
                                         {
-                                            const size_t nTerm = reqPtr - pTermStart - 1;
+                                            // #1132: ending on separator excludes the sep byte
+                                            // (-1); ending at buffer end does not.
+                                            //
+                                            const size_t nTerm =
+                                                (chSep == ch3)
+                                                ? static_cast<size_t>(reqPtr - pTermStart - 1)
+                                                : static_cast<size_t>(reqPtr - pTermStart);
 
-                                            // Process [pTermStart, pTermStart+nTermEnd)
+                                            // Process [pTermStart, pTermStart+nTerm)
                                             // We let the client determine priority by its order of the list.
                                             //
                                             if (  nUTF8 == nTerm
@@ -1579,8 +1603,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         d->raw_input_at = nullptr;
     }
 
+    // #1131: q may equal qend when the option buffer is full — still a
+    // valid partial SB that should resume on the next read.
+    //
     if (  d->aOption <= q
-       && q < qend)
+       && q <= qend)
     {
         d->nOption = q - d->aOption;
     }

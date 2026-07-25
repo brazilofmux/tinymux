@@ -142,33 +142,40 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
     // always fully drains the queue (buffer-to-buffer copy), so this call
     // is never unproductive.
     //
-    if (static_cast<size_t>(g_dc.output_limit) < d->output_size + n)
+    // #1134: match WS path — output_limit <= 0 means unset/unlimited
+    // (skip drop-oldest).  Casting 0 or negative to size_t was wrong:
+    // 0 forced flush every write; negative became huge and never dropped.
+    //
+    if (g_dc.output_limit > 0)
     {
-        process_output(d, false);
-    }
-
-    while (  static_cast<size_t>(g_dc.output_limit) < d->output_size + n
-          && !d->output_queue.empty())
-    {
-        // Drop the oldest entry to make room.
-        //
-        const size_t nchars = d->output_queue.front().size();
-
-        STARTLOG(LOG_NET, "NET", "WRITE");
-        UTF8 *buf = alloc_lbuf("queue_write.LOG");
-        mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %zu chars discarded by "),
-            d->socket, d->addr, nchars);
-        g_pILog->log_text(buf);
-        free_lbuf(buf);
-        if (d->flags & DS_CONNECTED)
+        if (static_cast<size_t>(g_dc.output_limit) < d->output_size + n)
         {
-            g_pILog->log_name(d->player);
+            process_output(d, false);
         }
-        ENDLOG;
 
-        d->output_size -= nchars;
-        d->output_lost += nchars;
-        d->output_queue.pop_front();
+        while (  static_cast<size_t>(g_dc.output_limit) < d->output_size + n
+              && !d->output_queue.empty())
+        {
+            // Drop the oldest entry to make room.
+            //
+            const size_t nchars = d->output_queue.front().size();
+
+            STARTLOG(LOG_NET, "NET", "WRITE");
+            UTF8 *buf = alloc_lbuf("queue_write.LOG");
+            mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %zu chars discarded by "),
+                d->socket, d->addr, nchars);
+            g_pILog->log_text(buf);
+            free_lbuf(buf);
+            if (d->flags & DS_CONNECTED)
+            {
+                g_pILog->log_name(d->player);
+            }
+            ENDLOG;
+
+            d->output_size -= nchars;
+            d->output_lost += nchars;
+            d->output_queue.pop_front();
+        }
     }
 
     if (d->flags & DS_WEBSOCKET)
@@ -355,6 +362,9 @@ void freeqs(DESC *d)
     d->height = 24;
     d->width = 78;
     d->charset_request_pending = false;
+    // #1126: clear residual GMCP enablement from pooled DESCs.
+    //
+    d->gmcp_enabled = false;
 }
 
 /* ---------------------------------------------------------------------------

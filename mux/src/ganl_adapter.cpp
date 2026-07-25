@@ -646,6 +646,10 @@ public:
         d->width = 78;
         d->encoding = g_dc.default_charset;
         d->negotiated_encoding = g_dc.default_charset;
+        // #1126: pool-reused DESCs may retain residual negotiation flags.
+        //
+        d->gmcp_enabled = false;
+        d->charset_request_pending = false;
 
         for (auto& state : d->nvt_him_state) {
             state = OPTION_NO;
@@ -660,7 +664,14 @@ public:
             haveSockAddr = PopulateDescriptorAddress(d, endpoint);
         }
         if (!haveSockAddr) {
-            std::memset(d->address.sa(), 0, d->address.maxaddrlen());
+            // #1135: fail closed — without a peer sockaddr, site ACL and
+            // per-source rate/preauth defenses cannot run.
+            //
+            STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+            g_pILog->log_text(T("Connection refused: peer address unavailable."));
+            ENDLOG;
+            adapter_.free_desc2(d);
+            return ganl::InvalidSessionId;
         }
 
         // Normalize an IPv4-mapped IPv6 source to native AF_INET before the
@@ -712,7 +723,9 @@ public:
                 if (siteBuffer != nullptr)
                 {
                     d->address.ntop(siteBuffer, MBUF_SIZE);
-                    site_mon_send(d->socket, siteBuffer, nullptr, T("Connection refused"));
+                    // #1133: pass DESC so HI_NOSITEMON / SUSPECT apply.
+                    //
+                    site_mon_send(d->socket, siteBuffer, d, T("Connection refused"));
                     free_mbuf(siteBuffer);
                 }
             }
@@ -772,7 +785,9 @@ public:
                     //
                     UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.rate");
                     d->address.ntop(siteBuf, MBUF_SIZE);
-                    site_mon_send(d->socket, siteBuf, nullptr,
+                    // #1133: pass DESC so HI_NOSITEMON / SUSPECT apply.
+                    //
+                    site_mon_send(d->socket, siteBuf, d,
                         T("Connection refused [rate limit]"));
                     free_mbuf(siteBuf);
                 }
@@ -854,7 +869,9 @@ public:
 
                     UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.preauth");
                     d->address.ntop(siteBuf, MBUF_SIZE);
-                    site_mon_send(d->socket, siteBuf, nullptr,
+                    // #1133: pass DESC so HI_NOSITEMON / SUSPECT apply.
+                    //
+                    site_mon_send(d->socket, siteBuf, d,
                         T("Connection refused [pre-auth limit]"));
                     free_mbuf(siteBuf);
                 }
