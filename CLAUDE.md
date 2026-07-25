@@ -3,7 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Build Commands
-- Configure (one-time): `cd mux && ./configure --enable-realitylvls --enable-wodrealms`
+- Configure (one-time): `cd mux && ./configure --enable-jit --enable-realitylvls --enable-wodrealms`
+  - `--enable-jit` defaults to NO. Without it the JIT is never built, and the
+    `jit_parity`/`jit_diff` tests silently exercise only the interpreter.
   - For release builds add `--enable-stubslave`; omit for smoke testing
 - **Build everything from repo root**: `make install`
   - Builds libmux.so, netmux, engine.so, all modules, creates game/bin symlinks
