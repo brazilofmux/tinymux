@@ -2244,10 +2244,16 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
                 tail++;
             }
         }
-        tail--;
-        if (*tail != '"')
+        // #1197: guard like the module path — a lone '"' leaves tail == head
+        // and must not be decremented (would underflow before *tail write).
+        //
+        if (tail > head)
         {
-            tail++;
+            tail--;
+            if (*tail != '"')
+            {
+                tail++;
+            }
         }
         spot = *tail;
         *tail = '\0';
@@ -5222,11 +5228,19 @@ void do_malias
 
     if (nullptr != mudstate.pIMailControl)
     {
+        // #1198: with the module loaded, never fall through into the engine
+        // malias store (dual-store split).
+        //
         MUX_RESULT mr = mudstate.pIMailControl->MaliasCommand(executor, key, arg1, arg2);
         if (MUX_SUCCEEDED(mr))
         {
             return;
         }
+        if (MUX_E_NOTIMPLEMENTED == mr)
+        {
+            raw_notify(executor, T("MAIL: That @malias command is not available."));
+        }
+        return;
     }
 
     switch (key)
@@ -5286,11 +5300,19 @@ void do_mail
 
     if (nullptr != mudstate.pIMailControl)
     {
+        // #1198: with the module loaded, never fall through into engine
+        // mail_storage — that mutates a second world for the same process.
+        //
         MUX_RESULT mr = mudstate.pIMailControl->MailCommand(executor, key, arg1, arg2);
         if (MUX_SUCCEEDED(mr))
         {
             return;
         }
+        if (MUX_E_NOTIMPLEMENTED == mr)
+        {
+            raw_notify(executor, T("MAIL: That @mail command is not available."));
+        }
+        return;
     }
 
     // Only @mail/quick is allowed from non-player executors. All other
@@ -5608,11 +5630,18 @@ void do_folder
 
     if (nullptr != mudstate.pIMailControl)
     {
+        // #1198: with the module loaded, never fall through into the engine store.
+        //
         MUX_RESULT mr = mudstate.pIMailControl->FolderCommand(executor, key, nargs, arg1, arg2);
         if (MUX_SUCCEEDED(mr))
         {
             return;
         }
+        if (MUX_E_NOTIMPLEMENTED == mr)
+        {
+            raw_notify(executor, T("MAIL: That folder command is not available."));
+        }
+        return;
     }
 
     switch (key)
