@@ -107,10 +107,15 @@ extern bool g_restarting;
 //
 extern volatile sig_atomic_t g_panicking;
 
-// Cached restart-readiness flag — set by the driver after the engine
-// reports mudstate.bCanRestart == true.  Read by signal handlers to
-// decide whether to attempt PanicRestart (async-signal-safe) or just
+// Cached restart-readiness flag — latched by the driver's main loop once
+// the engine reports mudstate.bCanRestart == true (the engine arms that
+// ~15s after startup, from dispatch_CanRestart).  Read by signal handlers
+// to decide whether to attempt PanicRestart (async-signal-safe) or just
 // _exit.  Avoids a COM call from signal context.
+//
+// Must be polled, not sampled once at startup: the engine cannot have
+// armed before the main loop begins, so a pre-loop sample is always 0
+// (#1127).  The latch is one-way, so the COM call stops once armed.
 //
 extern volatile sig_atomic_t g_bCanRestart;
 

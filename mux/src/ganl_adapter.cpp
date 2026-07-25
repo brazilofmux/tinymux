@@ -2109,19 +2109,36 @@ void GanlAdapter::run_main_loop() {
 #endif
     }
 
-    // Cache the engine's restart-readiness in a volatile flag so that
-    // signal handlers can read it without a COM call.
-    //
-    {
-        bool bCan = false;
-        if (g_pIGameEngine)
-        {
-            g_pIGameEngine->GetBCanRestart(&bCan);
-        }
-        g_bCanRestart = bCan ? 1 : 0;
-    }
-
     while (!g_shutdown_flag) {
+        // Cache the engine's restart-readiness in a volatile flag so that
+        // signal handlers can read it without a COM call.
+        //
+        // #1127: this must be polled, not sampled once before the loop.
+        // The engine arms mudstate.bCanRestart from dispatch_CanRestart,
+        // which init_timer() defers by +15s — and init_timer() itself runs
+        // after process_preload() in CGameEngine::Startup, while the only
+        // scheduler call during preload drains the priority heap and never
+        // runs time-deferred tasks.  So a pre-loop sample was provably
+        // always 0 for the life of the process, and the crash handler's
+        // PanicRestart (the only crash path that produces a core) was
+        // unreachable.
+        //
+        // One-way latch: once armed it stays armed, so the COM call stops
+        // after the first ~15s rather than running every iteration.
+        //
+        if (!g_bCanRestart)
+        {
+            bool bCan = false;
+            if (g_pIGameEngine)
+            {
+                g_pIGameEngine->GetBCanRestart(&bCan);
+            }
+            if (bCan)
+            {
+                g_bCanRestart = 1;
+            }
+        }
+
         int timeout_ms = 100; // Default timeout for processEvents
 
         // Calculate minimum timeout based on scheduled tasks

@@ -495,9 +495,27 @@ static void DCL_CDECL sighandler(int sig)
 
         // Let the default handler produce a core dump.
         //
+        // #1129: this must re-raise, not _exit.  _exit() terminates
+        // immediately, so the default disposition never runs and no core
+        // is written — the process merely exits 134, which a supervisor
+        // sees as WIFEXITED rather than WIFSIGNALED.  Every mux_assert
+        // (AssertionFailed) and OutOfMemory funnels through abort(), so
+        // this silently discarded the core on exactly the failures where
+        // one matters most.
+        //
+        // Use abort() rather than raise(SIGABRT): signal() installs with
+        // the signal in sa_mask, so a bare raise() from inside the handler
+        // would leave SIGABRT pending-and-blocked, fall through to the
+        // re-arm below, and be redelivered to this same handler — a loop,
+        // still with no core.  POSIX requires abort() to unblock SIGABRT
+        // and raise it, and abort() is on the async-signal-safe list, so
+        // it satisfies the constraint documented above.  This mirrors what
+        // PanicRestart's fork-child already does (platform.cpp).
+        //
         unset_signals();
         signal(SIGABRT, SIG_DFL);
-        _exit(134); // 128 + SIGABRT(6)
+        abort();
+        _exit(134); // not reached; belt-and-braces if abort() ever returns
     }
     signal(sig, CAST_SIGNAL_FUNC sighandler);
     g_panicking = 0;
