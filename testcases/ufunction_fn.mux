@@ -1,0 +1,157 @@
+#
+# ufunction_fn.mux - Test Cases for global user functions (@function).
+#
+# @function registers a global whose name resolves like a builtin: the
+# candidate name is looked up in the builtin table first, then in
+# ufunc_htab.  Nothing in the corpus exercised this, which is how the
+# compiled route came to be unable to reach a global at all (#1231) — it
+# consulted only the builtin table and returned a nameless
+# "#-1 FUNCTION NOT FOUND" for every @function global.
+#
+# Two things dictate the shape of this file:
+#
+#   * @function is CA_GOD, so it cannot be issued from a tr.tc*
+#     attribute — those run as the test object, which is INHERIT and
+#     wizard-owned but is not #1, and the command is silently refused.
+#   * ufunc_htab is never written to the database, in 2.13 or 2.14, so a
+#     global declared while Makesmoke builds the flatfile is gone by the
+#     time Smoke reloads it.
+#
+# The registrations therefore live in an @startup on #1, which is the
+# conventional way a game declares its globals: @startup runs as the
+# object that holds it, and #1 is God.  This is also why @function had
+# no coverage anywhere in the suite before now.
+#
+@create test_ufunction_fn
+-
+@set test_ufunction_fn=INHERIT QUIET
+-
+&fn.add test_ufunction_fn=[add(%0,%1)]
+-
+&fn.none test_ufunction_fn=noargs
+-
+&fn.setq test_ufunction_fn=[setq(0,INNER)]body
+-
+&fn.unk test_ufunction_fn=[tf_nosuch(1)]
+-
+#
+# fn.setq is registered twice, plain and /preserve, so TC004 can tell
+# the two register regimes apart by the flag alone.
+#
+@startup me=
+  @function tf_add=test_ufunction_fn/fn.add;
+  @function tf_none=test_ufunction_fn/fn.none;
+  @function tf_setq=test_ufunction_fn/fn.setq;
+  @function/preserve tf_pres=test_ufunction_fn/fn.setq
+-
+&tr.tc000 test_ufunction_fn=
+  @log smoke=Beginning @function global test cases.
+-
+#
+# Test Case #1 - A global resolves and receives its arguments.
+#
+&tr.tc001 test_ufunction_fn=
+  @if cand(
+        eq(tf_add(2,3), 5),
+        eq(tf_add(10,-4), 6),
+        strmatch(tf_none(), noargs)
+      )=
+  {
+    @log smoke=TC001: global function resolution. Succeeded.
+  },
+  {
+    @log smoke=TC001: global function resolution. Failed (add=[tf_add(2,3)] neg=[tf_add(10,-4)] none=[tf_none()]).
+  }
+-
+#
+# Test Case #2 - A global nested inside another call, and wrapping one.
+# Resolution has to work wherever a call is accepted, not only at the
+# head of an eval bracket.
+#
+&tr.tc002 test_ufunction_fn=
+  @if cand(
+        strmatch(strcat(x,tf_add(2,3),y), x5y),
+        eq(add(tf_add(1,2),4), 7),
+        eq(tf_add(tf_add(1,1),1), 3)
+      )=
+  {
+    @log smoke=TC002: global function nesting. Succeeded.
+  },
+  {
+    @log smoke=TC002: global function nesting. Failed (cat=[strcat(x,tf_add(2,3),y)] outer=[add(tf_add(1,2),4)] nest=[tf_add(tf_add(1,1),1)]).
+  }
+-
+#
+# Test Case #3 - A setq inside a plain global body is visible to the
+# caller afterwards.  On the compiled route the %q slots have to be
+# re-marshalled from global_regs once the call returns, or the later
+# read still sees the caller's value.
+#
+&tr.tc003 test_ufunction_fn=
+  @if cand(
+        strmatch([setq(0,OUTER)][tf_setq()]:[%q0], body:INNER),
+        strmatch(u(me/fn.add,7,8), 15)
+      )=
+  {
+    @log smoke=TC003: global function register visibility. Succeeded.
+  },
+  {
+    @log smoke=TC003: global function register visibility. Failed (q=[setq(0,OUTER)][tf_setq()]:[%q0] ufn=[u(me/fn.add,7,8)]).
+  }
+-
+#
+# Test Case #4 - The same body registered with /preserve must NOT leak
+# its setq, giving the opposite result to TC003.  Asserted as a pair:
+# a call that skipped the save/restore entirely would still satisfy
+# either one on its own.
+#
+&tr.tc004 test_ufunction_fn=
+  @if cand(
+        strmatch([setq(0,OUTER)][tf_pres()]:[%q0], body:OUTER),
+        strmatch([setq(0,OUTER)][tf_setq()]:[%q0], body:INNER)
+      )=
+  {
+    @log smoke=TC004: global function register preservation. Succeeded.
+  },
+  {
+    @log smoke=TC004: global function register preservation. Failed (pres=[setq(0,OUTER)][tf_pres()]:[%q0] plain=[setq(0,OUTER)][tf_setq()]:[%q0]).
+  }
+-
+#
+# Test Case #5 - An undefined global still names itself in the error.
+# The nameless "#-1 FUNCTION NOT FOUND" was the symptom of #1231, so a
+# regression that reopened it shows up here as well as in TC001.
+#
+# The call goes through u() rather than sitting in the assertion
+# directly.  An unrecognised name is only an error where EV_FMAND is
+# set — the top of an eval bracket, or an attribute body evaluated by
+# u() — and written inline it would land in a function argument, which
+# carries EV_FCHECK without EV_FMAND.  There the name is not an error at
+# all: it is emitted verbatim, so strmatch(tf_nosuch(1),#-1*) compares
+# against the literal text "tf_nosuch(1)" and reports no match.  That is
+# 2.13 behaviour, not a defect, and it applies to unknown builtins
+# equally; the arming rules are what tests/parity213 measures.
+#
+&tr.tc005 test_ufunction_fn=
+  @if cand(
+        strmatch(u(me/fn.unk), #-1*NOSUCH*),
+        strmatch(tf_add(2,3), 5)
+      )=
+  {
+    @log smoke=TC005: undefined global names itself. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: undefined global names itself. Failed (unknown=[u(me/fn.unk)] known=[tf_add(2,3)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ufunction_fn=
+  @log smoke=End @function global test cases.;
+  @notify smoke
+-
+drop test_ufunction_fn
+-
+#
+# End of Test Cases
+#
