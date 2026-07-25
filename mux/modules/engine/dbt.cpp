@@ -451,9 +451,15 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
             unresolvable++;
             continue;
         }
-        int32_t cur_disp;
-        memcpy(&cur_disp, dbt->code_buf + jmp_off, 4);
-        uint32_t cur_target = jmp_off + 4 + static_cast<uint32_t>(cur_disp);
+        // Ask the backend where this site currently branches to.  The
+        // decode used to be an inline rel32 read, which is x86-64's
+        // format; on AArch64 the site is a B imm26 word, so cur_target
+        // came out as noise, never matched stub_offset, and every site
+        // fell into the already_ok path below — leaving this pass
+        // unable to resolve anything on A64 (#1152).
+        //
+        uint32_t cur_target =
+            dbt_backend_decode_jmp_target(dbt->code_buf, jmp_off);
 
         if (cur_target != dbt->patches[i].stub_offset) {
             dbt->pending_patch_targets.erase(target);
