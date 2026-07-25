@@ -1,0 +1,58 @@
+#
+# null_fn.mux - Test Cases for null().
+#
+# null(<text>) evaluates <text> and returns nothing.  The point is the
+# side effect: the argument really is evaluated, it is only the RESULT
+# that is discarded.  TC002 proves that by observing a setq() performed
+# inside the discarded argument.
+#
+@create test_null_fn
+-
+@set test_null_fn=INHERIT QUIET
+-
+&tr.tc000 test_null_fn=
+  @log smoke=Beginning null() test cases.
+-
+#
+# Test Case #1 - Returns the empty string and contributes nothing to a
+# surrounding concatenation.
+#
+&tr.tc001 test_null_fn=
+  @if cand(
+        eq(strlen(null(abc)), 0),
+        strmatch(strcat(x,null(abc),y), xy),
+        eq(strlen(null([add(1,2)])), 0)
+      )=
+  {
+    @log smoke=TC001: null discards its result. Succeeded.
+  },
+  {
+    @log smoke=TC001: null discards its result. Failed (len=[strlen(null(abc))] cat=[strcat(x,null(abc),y)] eval=[strlen(null([add(1,2)]))]).
+  }
+-
+#
+# Test Case #2 - The argument is still evaluated: a setq() inside null()
+# is visible afterwards.
+#
+&tr.tc002 test_null_fn=
+  @if cand(
+        strmatch([setq(0,BEFORE)][null(setq(0,AFTER))][%q0], AFTER)
+      )=
+  {
+    @log smoke=TC002: null evaluates its argument. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: null evaluates its argument. Failed (got=[setq(0,BEFORE)][null(setq(0,AFTER))][%q0]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_null_fn=
+  @log smoke=End null() test cases.;
+  @notify smoke
+-
+drop test_null_fn
+-
+#
+# End of Test Cases
+#

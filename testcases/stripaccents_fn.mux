@@ -1,0 +1,60 @@
+#
+# stripaccents_fn.mux - Test Cases for stripaccents().
+#
+# stripaccents(<string>) converts accented Unicode characters to their
+# closest unaccented ASCII equivalents.  Unaccented input must pass
+# through untouched, which is the case that catches an implementation
+# that mangles ordinary text on its way past.
+#
+@create test_stripaccents_fn
+-
+@set test_stripaccents_fn=INHERIT QUIET
+-
+&tr.tc000 test_stripaccents_fn=
+  @log smoke=Beginning stripaccents() test cases.
+-
+#
+# Test Case #1 - Documented examples: a lone accented character and one
+# embedded in a word.
+#
+&tr.tc001 test_stripaccents_fn=
+  @if cand(
+        strmatch(stripaccents([chr(233)]), e),
+        strmatch(stripaccents(caf[chr(233)]), cafe),
+        eq(strlen(stripaccents([chr(233)])), 1)
+      )=
+  {
+    @log smoke=TC001: stripaccents documented examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: stripaccents documented examples. Failed (lone=[stripaccents([chr(233)])] word=[stripaccents(caf[chr(233)])] len=[strlen(stripaccents([chr(233)]))]).
+  }
+-
+#
+# Test Case #2 - Plain ASCII is unchanged, and several accented
+# characters in one string are each converted.
+#
+&tr.tc002 test_stripaccents_fn=
+  @if cand(
+        strmatch(stripaccents(plain), plain),
+        strmatch(stripaccents(a b 1 2), a b 1 2),
+        strmatch(stripaccents(caf[chr(233)] na[chr(239)]ve), cafe naive)
+      )=
+  {
+    @log smoke=TC002: stripaccents leaves ASCII alone. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: stripaccents leaves ASCII alone. Failed (plain=[stripaccents(plain)] mixed=[stripaccents(a b 1 2)] multi=[stripaccents(caf[chr(233)] na[chr(239)]ve)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_stripaccents_fn=
+  @log smoke=End stripaccents() test cases.;
+  @notify smoke
+-
+drop test_stripaccents_fn
+-
+#
+# End of Test Cases
+#

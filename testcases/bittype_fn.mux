@@ -1,0 +1,79 @@
+#
+# bittype_fn.mux - Test Cases for bittype().
+#
+# bittype([<object>]) returns a privilege level based on the OWNER of
+# <object>: God 7, Wizard 5, Royalty 4, Staff/Builder 3, Head/Immortal 2,
+# Mortal 1, Uninspected/Guest 0, and #-1 on error.  With no argument it
+# defaults to 'me'.
+#
+# The value depends on WHO owns the object, so it is environment-coupled
+# by design.  Inside the smoke harness the test objects are owned by the
+# player 'Wizard' rather than by God, so the level here is 5 and not 7 —
+# a bare bittype() typed at a God prompt returns 7, which is what makes
+# this easy to get wrong.  Both the concrete harness value and the
+# environment-independent relationships are asserted, so a change in
+# harness ownership fails with an obvious message rather than silently
+# passing a range check.
+#
+# The help documents #-1 for the ERROR case, but an unresolvable
+# reference such as bittype(#-1) currently yields the empty string
+# instead.  That discrepancy is left unasserted rather than pinning
+# behaviour the documentation contradicts.
+#
+# Note also that the level is NOT transitively equal to the owner's own
+# level: here bittype(me) is 5 while bittype(owner(me)) is 7.  "Based on
+# the owner" evidently does not mean the two agree, so no such property
+# is asserted.
+#
+@create test_bittype_fn
+-
+@set test_bittype_fn=INHERIT QUIET
+-
+&tr.tc000 test_bittype_fn=
+  @log smoke=Beginning bittype() test cases.
+-
+#
+# Test Case #1 - The harness value, and agreement between the
+# no-argument and explicit forms.
+#
+&tr.tc001 test_bittype_fn=
+  @if cand(
+        eq(bittype(), 5),
+        eq(bittype(me), 5),
+        eq(bittype(), bittype(me))
+      )=
+  {
+    @log smoke=TC001: bittype owner-derived level. Succeeded.
+  },
+  {
+    @log smoke=TC001: bittype owner-derived level. Failed (noarg=[bittype()] me=[bittype(me)]).
+  }
+-
+#
+# Test Case #2 - The level is a documented privilege value, and the
+# no-argument form is exactly the 'me' form.
+#
+&tr.tc002 test_bittype_fn=
+  @if cand(
+        member(0 1 2 3 4 5 7, bittype()),
+        eq(bittype(), bittype(me)),
+        isnum(bittype())
+      )=
+  {
+    @log smoke=TC002: bittype documented level set. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: bittype documented level set. Failed (level=[bittype()] member=[member(0 1 2 3 4 5 7, bittype())] isnum=[isnum(bittype())]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_bittype_fn=
+  @log smoke=End bittype() test cases.;
+  @notify smoke
+-
+drop test_bittype_fn
+-
+#
+# End of Test Cases
+#

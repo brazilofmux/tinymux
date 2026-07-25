@@ -1,0 +1,60 @@
+#
+# lrest_fn.mux - Test Cases for lrest().
+#
+# lrest(<string>[,<delim>]) returns all but the LAST word, and is the
+# counterpart to rest(), which drops the first.  A single-word input
+# yields the empty string, which is the edge worth holding down: it is
+# the case where "drop one word" and "return the input" differ.
+#
+@create test_lrest_fn
+-
+@set test_lrest_fn=INHERIT QUIET
+-
+&tr.tc000 test_lrest_fn=
+  @log smoke=Beginning lrest() test cases.
+-
+#
+# Test Case #1 - Documented examples from help lrest().
+#
+&tr.tc001 test_lrest_fn=
+  @if cand(
+        strmatch(lrest(This is a test), This is a),
+        strmatch(lrest(alpha|beta|gamma, |), alpha|beta),
+        eq(strlen(lrest(only)), 0)
+      )=
+  {
+    @log smoke=TC001: lrest documented examples. Succeeded.
+  },
+  {
+    @log smoke=TC001: lrest documented examples. Failed (words=[lrest(This is a test)] delim=[lrest(alpha|beta|gamma, |)] single=[lrest(only)]).
+  }
+-
+#
+# Test Case #2 - Complement of rest(): together they account for the
+# whole list, and lrest() of a two-word list is exactly the first word.
+#
+&tr.tc002 test_lrest_fn=
+  @if cand(
+        strmatch(lrest(a b), a),
+        strmatch(rest(a b), b),
+        strmatch(last(a b c), c),
+        strmatch(lrest(a b c), a b)
+      )=
+  {
+    @log smoke=TC002: lrest complements rest and last. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: lrest complements rest and last. Failed (lrest2=[lrest(a b)] rest2=[rest(a b)] last3=[last(a b c)] lrest3=[lrest(a b c)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lrest_fn=
+  @log smoke=End lrest() test cases.;
+  @notify smoke
+-
+drop test_lrest_fn
+-
+#
+# End of Test Cases
+#

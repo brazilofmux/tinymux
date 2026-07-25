@@ -1,0 +1,62 @@
+#
+# garble_fn.mux - Test Cases for garble().
+#
+# garble(<string>,<percent>) randomly corrupts <string>, each character
+# having roughly <percent> chance of being replaced.
+#
+# The output at any nonzero percentage is RANDOM, so it cannot be
+# asserted directly and this file deliberately does not try.  What is
+# asserted is what must hold on every run regardless of the draw: 0%
+# leaves the string untouched, and garbling preserves length.  Pinning a
+# particular garbled string would produce a test that fails at random,
+# which is worse than no test at all.
+#
+@create test_garble_fn
+-
+@set test_garble_fn=INHERIT QUIET
+-
+&tr.tc000 test_garble_fn=
+  @log smoke=Beginning garble() test cases.
+-
+#
+# Test Case #1 - Zero percent is the identity.
+#
+&tr.tc001 test_garble_fn=
+  @if cand(
+        strmatch(garble(hello world,0), hello world),
+        strmatch(garble(abc,0), abc)
+      )=
+  {
+    @log smoke=TC001: garble at 0 percent is identity. Succeeded.
+  },
+  {
+    @log smoke=TC001: garble at 0 percent is identity. Failed (words=[garble(hello world,0)] short=[garble(abc,0)]).
+  }
+-
+#
+# Test Case #2 - Length is preserved at any percentage.
+#
+&tr.tc002 test_garble_fn=
+  @if cand(
+        eq(strlen(garble(hello world,100)), 11),
+        eq(strlen(garble(hello world,50)), 11),
+        eq(strlen(garble(abcdefghij,100)), 10)
+      )=
+  {
+    @log smoke=TC002: garble preserves length. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: garble preserves length. Failed (full=[strlen(garble(hello world,100))] half=[strlen(garble(hello world,50))] ten=[strlen(garble(abcdefghij,100))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_garble_fn=
+  @log smoke=End garble() test cases.;
+  @notify smoke
+-
+drop test_garble_fn
+-
+#
+# End of Test Cases
+#
