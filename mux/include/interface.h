@@ -56,6 +56,14 @@ struct descriptor_data
   UTF8 *raw_input_at;
   size_t        nOption;
   unsigned char aOption[TELNET_OPTION_SIZE];
+
+  // #1131: set when an IAC SB subnegotiation overran aOption and bytes
+  // were dropped.  The accumulated buffer is then a truncated prefix, so
+  // the completed SB must be discarded rather than parsed.  Cleared when
+  // a new SB begins and when one completes.
+  //
+  bool sbOverflow;
+
   int raw_input_state;
   int raw_codepoint_state;
   size_t raw_codepoint_length;

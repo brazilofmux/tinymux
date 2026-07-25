@@ -3354,6 +3354,17 @@ MUX_RESULT CGameEngine::DumpChildExited(int child_pid)
         return MUX_S_FALSE;
     }
 
+    // #1136: ignore reaps that are not the dump child once dumper is known.
+    // Under fork_dump the driver may report any child exit; a DNS slave or
+    // other helper must not clear dump state early.  dumper == 0 means the
+    // classic race (SIGCHLD before fork() returned) — accept that child.
+    //
+    if (  0 != mudstate.dumper
+       && mudstate.dumper != static_cast<pid_t>(child_pid))
+    {
+        return MUX_S_FALSE;
+    }
+
     mudstate.dumped = child_pid;
     if (mudstate.dumper == mudstate.dumped)
     {

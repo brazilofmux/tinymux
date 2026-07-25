@@ -564,9 +564,11 @@ void set_signals(void)
 #ifdef SIGXCPU
     signal(SIGXCPU, CAST_SIGNAL_FUNC sighandler);
 #endif // SIGXCPU
-#ifdef SIGFSZ
+#ifdef SIGXFSZ
+    // #1130: was wrongly gated on nonstandard SIGFSZ (typically undefined).
+    //
     signal(SIGXFSZ, CAST_SIGNAL_FUNC sighandler);
-#endif // SIGFSZ
+#endif // SIGXFSZ
 #ifdef SIGEMT
     signal(SIGEMT, CAST_SIGNAL_FUNC sighandler);
 #endif // SIGEMT

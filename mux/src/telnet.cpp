@@ -517,7 +517,11 @@ void disable_him(DESC *d, unsigned char chOption)
  */
 void enable_us(DESC *d, unsigned char chOption)
 {
-    switch (him_state(d, chOption))
+    // #1128: RFC 1143 Q-method — consult *our* state, not the peer's.
+    // Using him_state made enable_us a no-op when the client already had
+    // the same option YES (common for BINARY after WILL BINARY).
+    //
+    switch (us_state(d, chOption))
     {
     case OPTION_NO:
         set_us_state(d, chOption, OPTION_WANTYES_EMPTY);
@@ -545,7 +549,9 @@ void enable_us(DESC *d, unsigned char chOption)
  */
 void disable_us(DESC *d, unsigned char chOption)
 {
-    switch (him_state(d, chOption))
+    // #1128: RFC 1143 Q-method — consult *our* state, not the peer's.
+    //
+    switch (us_state(d, chOption))
     {
     case OPTION_YES:
         set_us_state(d, chOption, OPTION_WANTNO_EMPTY);
@@ -911,6 +917,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             // Action 10 - Transition to the Have_IAC_SB state.
             //
             q = d->aOption;
+            d->sbOverflow = false;   // #1131: fresh subnegotiation
             d->raw_input_state = NVT_IS_HAVE_IAC_SB;
             break;
 
@@ -1049,13 +1056,36 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             {
                 *q++ = ch;
             }
+            else
+            {
+                // #1131: SB overran aOption.  Drop the byte and remember
+                // that this subnegotiation is truncated, but STAY in the SB
+                // state so the rest of it is swallowed until IAC SE.
+                //
+                // Do NOT return to NVT_IS_NORMAL here: in Normal state the
+                // remaining SB payload is accepted as typed input (action 1)
+                // and an embedded LF submits it as a command (action 3), so
+                // resetting turns a malformed subnegotiation into command
+                // injection.  Staying in SB is also not a DoS — a client can
+                // hold a connection open just as long by never sending CRLF,
+                // and both are reaped by conn_timeout / idle_timeout.
+                //
+                d->sbOverflow = true;
+            }
             break;
 
         case 18:
             // Action 18 - Accept Completed Sub-option and transition to Normal state.
             //
-            if (  d->aOption < q
-               && q < qend)
+            // #1131: allow q == qend (buffer full with valid SB up to the
+            // last byte), but never parse a subnegotiation that overflowed —
+            // that buffer is a truncated prefix, and handing it to the option
+            // parsers below would mis-parse attacker-chosen data (e.g. a
+            // short CHARSET list or a partial NAWS).
+            //
+            if (  !d->sbOverflow
+               && d->aOption < q
+               && q <= qend)
             {
                 const size_t m = q - d->aOption;
                 switch (d->aOption[0])
@@ -1353,9 +1383,15 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         if (  chSep == ch3
                                            || reqPtr == &d->aOption[m])
                                         {
-                                            const size_t nTerm = reqPtr - pTermStart - 1;
+                                            // #1132: ending on separator excludes the sep byte
+                                            // (-1); ending at buffer end does not.
+                                            //
+                                            const size_t nTerm =
+                                                (chSep == ch3)
+                                                ? static_cast<size_t>(reqPtr - pTermStart - 1)
+                                                : static_cast<size_t>(reqPtr - pTermStart);
 
-                                            // Process [pTermStart, pTermStart+nTermEnd)
+                                            // Process [pTermStart, pTermStart+nTerm)
                                             // We let the client determine priority by its order of the list.
                                             //
                                             if (  nUTF8 == nTerm
@@ -1561,6 +1597,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 }
             }
             q = d->aOption;
+            d->sbOverflow = false;   // #1131: subnegotiation consumed
             d->raw_input_state = NVT_IS_NORMAL;
             break;
         }
@@ -1579,8 +1616,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
         d->raw_input_at = nullptr;
     }
 
+    // #1131: q may equal qend when the option buffer is full — still a
+    // valid partial SB that should resume on the next read.
+    //
     if (  d->aOption <= q
-       && q < qend)
+       && q <= qend)
     {
         d->nOption = q - d->aOption;
     }

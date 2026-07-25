@@ -646,6 +646,12 @@ public:
         d->width = 78;
         d->encoding = g_dc.default_charset;
         d->negotiated_encoding = g_dc.default_charset;
+        // #1126: pool-reused DESCs may retain residual negotiation flags.
+        //
+        d->gmcp_enabled = false;
+        d->charset_request_pending = false;
+        d->sbOverflow = false;              // #1131
+        d->connlog_id = 0;                  // #1126: parity with restart path
 
         for (auto& state : d->nvt_him_state) {
             state = OPTION_NO;
@@ -660,7 +666,29 @@ public:
             haveSockAddr = PopulateDescriptorAddress(d, endpoint);
         }
         if (!haveSockAddr) {
-            std::memset(d->address.sa(), 0, d->address.maxaddrlen());
+            // #1135: fail closed — without a peer sockaddr, site ACL and
+            // per-source rate/preauth defenses cannot run.
+            //
+            // Damp like other refusal paths (refusal_log_wanted) so an
+            // RST-race flood cannot amplify into unbounded log spam.
+            //
+            const UTF8 *addrLabel = d->addr[0] != '\0' ? d->addr
+                : (!remoteAddress.empty()
+                    ? reinterpret_cast<const UTF8 *>(remoteAddress.c_str())
+                    : T("UNKNOWN"));
+            if (refusal_log_wanted(addrLabel))
+            {
+                STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+                UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.noaddr");
+                mux_sprintf(logBuf, MBUF_SIZE,
+                    T("[%llu/%s] Connection refused: peer address unavailable."),
+                    static_cast<unsigned long long>(handle), addrLabel);
+                g_pILog->log_text(logBuf);
+                free_mbuf(logBuf);
+                ENDLOG;
+            }
+            adapter_.free_desc2(d);
+            return ganl::InvalidSessionId;
         }
 
         // Normalize an IPv4-mapped IPv6 source to native AF_INET before the
@@ -712,7 +740,9 @@ public:
                 if (siteBuffer != nullptr)
                 {
                     d->address.ntop(siteBuffer, MBUF_SIZE);
-                    site_mon_send(d->socket, siteBuffer, nullptr, T("Connection refused"));
+                    // #1133: pass DESC so HI_NOSITEMON / SUSPECT apply.
+                    //
+                    site_mon_send(d->socket, siteBuffer, d, T("Connection refused"));
                     free_mbuf(siteBuffer);
                 }
             }
@@ -772,7 +802,9 @@ public:
                     //
                     UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.rate");
                     d->address.ntop(siteBuf, MBUF_SIZE);
-                    site_mon_send(d->socket, siteBuf, nullptr,
+                    // #1133: pass DESC so HI_NOSITEMON / SUSPECT apply.
+                    //
+                    site_mon_send(d->socket, siteBuf, d,
                         T("Connection refused [rate limit]"));
                     free_mbuf(siteBuf);
                 }
@@ -854,7 +886,9 @@ public:
 
                     UTF8 *siteBuf = alloc_mbuf("ganl_connection.SITEMON.preauth");
                     d->address.ntop(siteBuf, MBUF_SIZE);
-                    site_mon_send(d->socket, siteBuf, nullptr,
+                    // #1133: pass DESC so HI_NOSITEMON / SUSPECT apply.
+                    //
+                    site_mon_send(d->socket, siteBuf, d,
                         T("Connection refused [pre-auth limit]"));
                     free_mbuf(siteBuf);
                 }
@@ -2391,9 +2425,28 @@ void GanlAdapter::run_main_loop() {
                         continue;
                     }
 #endif // STUB_SLAVE
-                    if (g_dc.fork_dump)
+                    // #1136: report EVERY reaped child, not just the last.
+                    //
+                    // This loop drains all pending children, but the old code
+                    // funnelled each one through a single sig_atomic_t slot,
+                    // so when a slave and the dump child exited in the same
+                    // batch whichever was reaped last won and the other was
+                    // silently dropped.  Paired with DumpChildExited's pid
+                    // guard, a dropped dump-child exit leaves mudstate.dumping
+                    // stuck true forever: no further dump ever starts and the
+                    // shutdown dump spins in its 1s wait loop.
+                    //
+                    // We are already in the main loop here (not a signal
+                    // handler), so the COM call is safe to make inline and the
+                    // slot is unnecessary.  DumpChildExited returns MUX_S_FALSE
+                    // when the pid is not the dump child, which also restores
+                    // the Unknown-child diagnostic below — it was unreachable
+                    // whenever fork_dump was on.
+                    //
+                    if (  g_dc.fork_dump
+                       && nullptr != g_pIGameEngine
+                       && MUX_S_FALSE != g_pIGameEngine->DumpChildExited(reapPid))
                     {
-                        g_dump_child_pid = static_cast<sig_atomic_t>(reapPid);
                         continue;
                     }
                     STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
@@ -2404,16 +2457,6 @@ void GanlAdapter::run_main_loop() {
             }
         }
 #endif // HAVE_WORKING_FORK
-
-        // If SIGCHLD recorded a dump child exit, report it to the
-        // engine now (safe context, not a signal handler).
-        //
-        pid_t dump_pid = static_cast<pid_t>(g_dump_child_pid);
-        if (0 != dump_pid)
-        {
-            g_dump_child_pid = 0;
-            g_pIGameEngine->DumpChildExited(dump_pid);
-        }
 
         // Process TinyMUX Tasks (Timers, Idle, Quotas, etc.)
         process_tinyMUX_tasks();
