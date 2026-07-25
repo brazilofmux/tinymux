@@ -198,7 +198,7 @@ UF_UNKNOWN_SPACE|[nosuchfn (1,2)]|pin
 # ===================================================================
 DA_TWO_CALLS|[add(1,2) mul(3,4)]
 DA_CALL_BRACKET|[add(1,2) [mul(3,4)]]
-DA_BRACKET_CALL|[[add(1,2)] mul(3,4)]
+DA_BRACKET_CALL|[[add(1,2)] mul(3,4)]|2.14
 DA_BRACKET_BOTH|[[add(1,2)] [mul(3,4)]]
 DA_NESTED_ARG|[strcat(add(1,2) mul(3,4))]
 DA_ARG_THEN_OUTER|[strcat(add(1,2)) mul(3,4)]
@@ -228,7 +228,7 @@ SC_ARG_SP|[strcat(add (1,2))]
 SC_DOUBLESPACE|[strcat(a  b)]
 SC_LEADTRAIL|[strcat(  a  )]
 SC_PLAINTEXT|a  b  c
-SC_SPAN|[zz mul(2,3)]
+SC_SPAN|[zz mul(2,3)]|2.14
 
 # --- text before a call in an FMAND region (#1238 scope boundary) ---
 # 2.13's candidate name there is the accumulated OUTPUT, so leading text
@@ -237,5 +237,5 @@ SC_SPAN|[zz mul(2,3)]
 # 2.14 routes do not even agree with each other here.  Left
 # unadjudicated: there is no settled value yet.  Same family as SC_SPAN
 # and DA_BRACKET_CALL.
-FM_LIT_CALL|[x add(1,2) y]
-FM_LIT_CALL2|[x add(1,2)]
+FM_LIT_CALL|[x add(1,2) y]|2.14
+FM_LIT_CALL2|[x add(1,2)]|2.14
