@@ -69,7 +69,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1124 closed (#1121 Highs, #1123 Mediums, #1125 JIT perms); re-rotate by family later |
 | C3 | Commands / hooks | `command.cpp`, `predicates.cpp` | large | thin | thin | @-command side effects |
 | C4 | Match / wild | `match.cpp`, `wild.cpp` | med | scenario tests | partial | Live `$` capture has scenario; re-read matching |
-| C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | — | thin | Gameplay path correctness |
+| C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | Pass 8 | deep | #1181, #1186–#1188 open (clone/preserve, moniker HTML, pagecost order, @open HOME) |
 | C6 | Boolexp / locks | `boolexp.cpp` | med | elock-related | partial | Lock evaluation side channels |
 
 ### D — JIT / DBT / Lua
@@ -77,8 +77,8 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
-| D2 | HIR lower / codegen | `hir_*.cpp` | large | earlier JIT campaigns | partial | Lowering correctness vs AST |
-| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | portability work | partial | x64/a64/win64; portability doc exists |
+| D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 | deep | Highs #1143–#1146 → #1156; residual Mediums #1149–#1150 |
+| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 | deep | Highs #1147–#1148 → #1156; residual Mediums #1151–#1153 |
 | D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | Pass 3 ECALL | partial | Softlib bridges hardened; module surface remains |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
@@ -90,15 +90,15 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | E2 | Attr cache / write queue | `attrcache.cpp` | med | Pass 1, residual notes | partial | Flush errors; code-cache coalesce residual |
 | E3 | Flatfile R/W | `db.cpp`, `db_rw.cpp` | large | Pass 1 import flush | partial | Import/export edges |
 | E4 | Command queue | `cque.cpp`, `timer.cpp`, `cron.cpp` | large | Pass 1, #1080 | deep | OOM refund, depth, runaway money |
-| E5 | Object / player / flags | `object.cpp`, `player*.cpp`, `flags.cpp`, `powers.cpp` | large | — | thin | Permissions matrix |
+| E5 | Object / player / flags | `object.cpp`, `player*.cpp`, `flags.cpp`, `powers.cpp` | large | Pass 8 | deep | #1179–#1180 High; #1182–#1185 Medium open |
 
 ### F — Modules (loadable)
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| F1 | comsys_mod | `mux/modules/comsys/` | small | Pass 3 | deep | Lock parity (#1084); revisit storage |
-| F2 | mail_mod | `mux/modules/mail/` | med | Pass 2 | deep | MAIL_DB_LIMIT, make_tolist |
-| F3 | Engine-in-tree comsys/mail | `engine/comsys.cpp`, `engine/mail.cpp` | large | partial | partial | Module vs engine dual paths |
+| F1 | comsys_mod | `mux/modules/comsys/` | small | Pass 3, 9 | deep | #1084 locks; Pass 9 dual-path Highs/Mediums with F3 |
+| F2 | mail_mod | `mux/modules/mail/` | med | Pass 2, 9 | deep | MAIL_DB_LIMIT; Pass 9 body WT #1192 + dual-store #1191 |
+| F3 | Engine-in-tree comsys/mail | `engine/comsys.cpp`, `engine/mail.cpp` | large | Pass 9 | deep | Dual path vs modules; Highs #1189–#1193, Mediums #1194–#1199 open |
 | F4 | Module ABI / COM | `engine_com.cpp`, `modules.h` | large | Pass 3 CouldDoit | partial | Vtable adds need full rebuild |
 
 ### G — Convert / offline tools
@@ -171,6 +171,9 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 4 | 2026-07 | Hydra proxy I1–I5 (session, scrollback, WS, auth, process) | #1091–#1102 filed; Highs → #1103; Mediums → #1105 (complete) |
 | Pass 5 | 2026-07 | Softcode C2 function builtins + JIT ECALL perms | Highs #1106–#1110 → #1121; Mediums #1111–#1119/#1122 → #1123; #1124 JIT `check_access` → #1125 |
 | Pass 6 | 2026-07 | A3 net/output + A4 telnet NVT + A6 signals/restart | #1126–#1136 filed; #1127/#1129 → #1138; rest → #1139 (complete) |
+| Pass 7 | 2026-07 | D2 HIR + D3 DBT | Highs #1143–#1148 → #1156; Mediums #1149–#1153 residual; also JIT float/ifelse Highs #1157/#1159 closed separately |
+| Pass 8 | 2026-07 | E5 object/player/flags/powers + C5 speech/look/move/create | Highs #1179–#1181; Mediums #1182–#1188 open (not yet fixed) |
+| Pass 9 | 2026-07 | F3 engine comsys/mail vs F1/F2 modules | Highs #1189–#1193; Mediums #1194–#1199 open (not yet fixed) |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -183,13 +186,13 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **Pass 7 — D2 + D3** HIR/DBT | Complements JIT ECALL deep work |
-| **Pass 8** | **E5 + C5** object/player/move | Gameplay permission paths |
-| **Pass 9** | **F3** engine comsys/mail vs modules | Dual implementation drift |
+| **Now** | **Fix Pass 8 Highs** #1179–#1181 and/or **Pass 9 Highs** #1189–#1193 | Standing Highs-first; @cdestroy inverted is default-path |
 | **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | Pass 4 closed; residual depth |
 | **Pass 11** | **B3 + B4 nits + B6** OpenSSL re-read + Schannel residual + harness | Windows/Linux TLS depth |
-| **Pass 12+** | **J\*** clients by platform | After server/proxy confidence |
-| **Anytime** | **D5** jit_diff soak | Continuous, not a “pass” |
+| **Pass 12** | **C3** commands/hooks deep | Still thin; @-command side effects |
+| **Pass 13+** | **J\*** clients by platform | After server/proxy confidence |
+| **Residual** | Pass 7 Mediums #1149–#1153; Pass 6 twin #1141; Pass 8/9 Mediums | Fix when rotating back |
+| **Anytime** | **D5** jit_diff soak + corpus gaps (#1160) | Continuous; other agents on float/fuzz |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -231,5 +234,8 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 5 complete (#1121/#1123/#1125); C2 deep; rotation → Pass 6 A3+A4+A6 |
 | 2026-07-25 | Pass 6 A3+A4+A6 filed #1126–#1136; rotation → Fix Pass 6 |
 | 2026-07-25 | Pass 6 complete (#1138 crash/core, #1139 Highs+Mediums); rotation → Pass 7 D2+D3 |
+| 2026-07-25 | Pass 7 Highs closed (#1156); Mediums #1149–#1153 residual; D2/D3 deep |
+| 2026-07-25 | Pass 8 E5+C5 filed #1179–#1188; E5/C5 deep; rotation → Pass 9 F3 (or Fix Pass 8 Highs) |
+| 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
 
 Update this table when the map structure changes.
