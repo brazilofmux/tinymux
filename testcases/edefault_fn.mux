@@ -1,0 +1,51 @@
+#
+# edefault_fn.mux - Test Cases for edefault().
+#
+# edefault(<obj>/<attr>,<default case>) returns the attribute EVALUATED,
+# as get_eval() does, when it exists and is readable; otherwise it
+# evaluates the default case.  The default arm must only be evaluated
+# when the attribute is absent.
+#
+@create test_edefault_fn
+-
+@set test_edefault_fn=INHERIT QUIET
+-
+&fn.raw test_edefault_fn=[add(1,2)]
+-
+&fn.plain test_edefault_fn=apple orange banana
+-
+&fn.empty test_edefault_fn=
+-
+&tr.tc000 test_edefault_fn=
+  @log smoke=Beginning edefault() test cases.
+-
+#
+# Test Case #1 - Present attribute is evaluated; missing and empty fall
+# back to the default case, which is itself evaluated.
+#
+&tr.tc001 test_edefault_fn=
+  @if cand(
+        eq(edefault(me/fn.raw, none), 3),
+        strmatch(edefault(me/fn.plain, none), apple orange banana),
+        strmatch(edefault(me/nosuchattr, none), none),
+        strmatch(edefault(me/fn.empty, none), none),
+        eq(edefault(me/nosuchattr, [add(2,2)]), 4)
+      )=
+  {
+    @log smoke=TC001: edefault evaluation and fallback. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: edefault evaluation and fallback. Failed (raw=[edefault(me/fn.raw, none)] plain=[edefault(me/fn.plain, none)] missing=[edefault(me/nosuchattr, none)] empty=[edefault(me/fn.empty, none)] evaldef=[edefault(me/nosuchattr, [add(2,2)])]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_edefault_fn=
+  @log smoke=End edefault() test cases.;
+  @notify smoke
+-
+drop test_edefault_fn
+-
+#
+# End of Test Cases
+#

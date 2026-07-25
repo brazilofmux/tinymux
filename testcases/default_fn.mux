@@ -1,0 +1,67 @@
+#
+# default_fn.mux - Test Cases for default().
+#
+# default(<obj>/<attr>,<default case>) returns the attribute as get()
+# does — RAW, unevaluated — when it exists and is readable, and otherwise
+# evaluates the default case.  The raw-vs-evaluated split is the whole
+# difference between this and edefault(), so TC002 pins both sides of it.
+#
+@create test_default_fn
+-
+@set test_default_fn=INHERIT QUIET
+-
+&fn.plain test_default_fn=apple orange banana
+-
+&fn.raw test_default_fn=[add(1,2)]
+-
+&fn.empty test_default_fn=
+-
+&tr.tc000 test_default_fn=
+  @log smoke=Beginning default() test cases.
+-
+#
+# Test Case #1 - Present, missing, and present-but-empty.
+# Documented examples from help default().
+#
+&tr.tc001 test_default_fn=
+  @if cand(
+        strmatch(default(me/fn.plain, No fruits!), apple orange banana),
+        strmatch(default(me/nosuchattr, No fruits!), No fruits!),
+        strmatch(default(me/fn.empty, No fruits!), No fruits!)
+      )=
+  {
+    @log smoke=TC001: default present/missing/empty. Succeeded.
+  },
+  {
+    @log smoke=TC001: default present/missing/empty. Failed (present=[default(me/fn.plain, No fruits!)] missing=[default(me/nosuchattr, No fruits!)] empty=[default(me/fn.empty, No fruits!)]).
+  }
+-
+#
+# Test Case #2 - default() does NOT evaluate the attribute; edefault()
+# does.  An attribute holding [add(1,2)] comes back literally from
+# default() and as 3 from edefault().
+#
+&tr.tc002 test_default_fn=
+  @if cand(
+        eq(strlen(default(me/fn.raw, none)), 10),
+        strmatch(default(me/fn.raw, none), *add*),
+        eq(edefault(me/fn.raw, none), 3)
+      )=
+  {
+    @log smoke=TC002: default raw vs edefault evaluated. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: default raw vs edefault evaluated. Failed (raw=[default(me/fn.raw, none)] evaluated=[edefault(me/fn.raw, none)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_default_fn=
+  @log smoke=End default() test cases.;
+  @notify smoke
+-
+drop test_default_fn
+-
+#
+# End of Test Cases
+#

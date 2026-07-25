@@ -1,0 +1,90 @@
+#
+# zfun_fn.mux - Test Cases for zfun().
+#
+# zfun(<attr>,<arg0>...)            evaluates <attr> on the EXECUTOR's zone
+# zfun(<obj>/<attr>,<arg0>...)      evaluates it on the zone object of <obj>
+#
+# Only the second form is covered here, deliberately.  Exercising the
+# first would require @chzone on the test object itself, and zoning the
+# test object costs it the inherited permission the smoke harness needs:
+# every tr.tcNNN body opens with @log, so a zoned test object produces no
+# output at all and the suite reports zero results while appearing to
+# dispatch.  A silent suite is worse than an uncovered form, so the
+# executor-zone path is left to a scenario test instead.
+#
+# All three objects are dropped so they share a location: the obj/attr
+# form resolves <obj> by name from the executor, which only matches
+# objects in the same room (or its inventory).
+#
+# test_zfun_zone   holds the attributes and is nobody's executor
+# test_zfun_target is zoned to it and is named in the obj/attr form
+# test_zfun_fn     stays unzoned so the harness can log
+#
+@create test_zfun_zone
+-
+@set test_zfun_zone=INHERIT QUIET
+-
+&fn.ztest test_zfun_zone=ZONE-[%0]
+-
+&fn.zargs test_zfun_zone=[%0]/[%1]
+-
+@create test_zfun_target
+-
+@set test_zfun_target=INHERIT QUIET
+-
+@chzone test_zfun_target=test_zfun_zone
+-
+@create test_zfun_fn
+-
+@set test_zfun_fn=INHERIT QUIET
+-
+&tr.tc000 test_zfun_fn=
+  @log smoke=Beginning zfun() test cases.
+-
+#
+# Test Case #1 - obj/attr form resolves the zone of the named object and
+# passes arguments through as %0, %1.
+#
+&tr.tc001 test_zfun_fn=
+  @if cand(
+        strmatch(zfun(test_zfun_target/fn.ztest,hi), ZONE-hi),
+        strmatch(zfun(test_zfun_target/fn.zargs,a,b), a/b)
+      )=
+  {
+    @log smoke=TC001: zfun obj/attr zone resolution. Succeeded.
+  },
+  {
+    @log smoke=TC001: zfun obj/attr zone resolution. Failed (one=[zfun(test_zfun_target/fn.ztest,hi)] two=[zfun(test_zfun_target/fn.zargs,a,b)]).
+  }
+-
+#
+# Test Case #2 - An object with no zone yields an error rather than a
+# value, and the error is reported rather than silently empty.
+#
+&tr.tc002 test_zfun_fn=
+  @if cand(
+        strmatch(zfun(test_zfun_fn/fn.ztest,hi), #-1*),
+        gt(strlen(zfun(test_zfun_fn/fn.ztest,hi)), 0)
+      )=
+  {
+    @log smoke=TC002: zfun unzoned object errors. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: zfun unzoned object errors. Failed (got=[zfun(test_zfun_fn/fn.ztest,hi)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_zfun_fn=
+  @log smoke=End zfun() test cases.;
+  @notify smoke
+-
+drop test_zfun_zone
+-
+drop test_zfun_target
+-
+drop test_zfun_fn
+-
+#
+# End of Test Cases
+#
