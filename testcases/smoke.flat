@@ -4806,9 +4806,11 @@
 >258
 "@if cand(eq(hastype(#0,ROOM), 1),eq(hastype(#0,THING), 0),strmatch(type(#0), ROOM),eq(hastype(me,[type(me)]), 1),eq(hastype(#0,[type(#0)]), 1))={@log smoke=TC002: hastype agrees with type. Succeeded.},{@log smoke=TC002: hastype agrees with type. Failed (room=[hastype(#0,ROOM)] notthing=[hastype(#0,THING)] type=[type(#0)] self=[hastype(me,[type(me)])] self0=[hastype(#0,[type(#0)])]).}"
 >259
-"@if cand(strmatch(hastype(#-1,THING), #-1*),strmatch(hastype(nosuchobjecthere,THING), #-1*))={@log smoke=TC003: hastype bad object. Succeeded.;@trig me/tr.done},{@log smoke=TC003: hastype bad object. Failed (dbref=[hastype(#-1,THING)] name=[hastype(nosuchobjecthere,THING)]).;@trig me/tr.done}"
+"@if cand(strmatch(hastype(#-1,THING), #-1*),strmatch(hastype(nosuchobjecthere,THING), #-1*))={@log smoke=TC003: hastype bad object. Succeeded.},{@log smoke=TC003: hastype bad object. Failed (dbref=[hastype(#-1,THING)] name=[hastype(nosuchobjecthere,THING)]).}"
 >260
 "@log smoke=End hastype() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(hastype(me,TRUMPET), #-1 NO SUCH TYPE),strmatch(hastype(me,T), #-1 NO SUCH TYPE),strmatch(hastype(#0,RUBBISH), #-1 NO SUCH TYPE),strmatch(hastype(me,ZEBRA), #-1 NO SUCH TYPE),eq(hastype(me,thing), 1),eq(hastype(me,Thing), 1),eq(hastype(#0,room), 1))={@log smoke=TC004: hastype full-name match and exact error. Succeeded.;@trig me/tr.done},{@log smoke=TC004: hastype full-name match and exact error. Failed (trumpet=.[hastype(me,TRUMPET)]. t=.[hastype(me,T)]. rubbish=.[hastype(#0,RUBBISH)]. zebra=.[hastype(me,ZEBRA)]. lc=[hastype(me,thing)] mixed=[hastype(me,Thing)] lcroom=[hastype(#0,room)]).;@trig me/tr.done}"
 <
 !116
 "test_hmac_fn"
