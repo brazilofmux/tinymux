@@ -929,7 +929,19 @@ void do_clone
         s_Dropto(clone, NOTHING);
         if (Dropto(thing) != NOTHING)
         {
-            link_exit(executor, clone, Dropto(thing));
+            // #1181: @clone/preserve must not re-link via link_exit —
+            // that path charges open cost and steals ownership to the
+            // executor (wizard), clearing INHERIT|WIZARD and setting HALT.
+            //
+            if (key & CLONE_PRESERVE)
+            {
+                s_Dropto(clone, Dropto(thing));
+                route_invalidate();
+            }
+            else
+            {
+                link_exit(executor, clone, Dropto(thing));
+            }
         }
         break;
 
@@ -940,7 +952,17 @@ void do_clone
         s_Location(clone, NOTHING);
         if (Location(thing) != NOTHING)
         {
-            link_exit(executor, clone, Location(thing));
+            // #1181: same preserve ownership rule as rooms/dropto above.
+            //
+            if (key & CLONE_PRESERVE)
+            {
+                s_Location(clone, Location(thing));
+                route_invalidate();
+            }
+            else
+            {
+                link_exit(executor, clone, Location(thing));
+            }
         }
         break;
     }
