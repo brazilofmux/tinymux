@@ -69,11 +69,31 @@
         strmatch(shr(foo,2), #-1 ARGUMENTS MUST BE INTEGERS)
       )=
   {
-    @log smoke=TC004: shr() argument rejection. Succeeded.;
+    @log smoke=TC004: shr() argument rejection. Succeeded.
+  },
+  {
+    @log smoke=TC004: shr() argument rejection. Failed (shr(1%,-1)=[shr(1,-1)] shr(1.5%,2)=[shr(1.5,2)] shr(foo%,2)=[shr(foo,2)]).
+  }
+-
+#
+# Test Case #5 - Shift count bounds (#1109).  A count >= 64 on an int64_t
+# is C++ undefined behavior, so it must be rejected rather than shifted.
+# The b < 0 wording is historical and must not change.
+#
+&tr.tc005 test_shr_fn=
+  @if cand(
+        strmatch(shr(1,64), #-1 SECOND ARGUMENT MUST BE LESS THAN 64),
+        strmatch(shr(1,100), #-1 SECOND ARGUMENT MUST BE LESS THAN 64),
+        strmatch(shr(1,-1), #-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER),
+        eq(shr(4611686018427387904,62), 1),
+        eq(shr(1,0), 1)
+      )=
+  {
+    @log smoke=TC005: shr shift-count bounds. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: shr() argument rejection. Failed (shr(1%,-1)=[shr(1,-1)] shr(1.5%,2)=[shr(1.5,2)] shr(foo%,2)=[shr(foo,2)]).;
+    @log smoke=TC005: shr shift-count bounds. Failed (shr(1%,64)=[shr(1,64)] shr(1%,100)=[shr(1,100)] shr(1%,-1)=[shr(1,-1)] shr(4611686018427387904%,62)=[shr(4611686018427387904,62)] shr(1%,0)=[shr(1,0)]).;
     @trig me/tr.done
   }
 -
