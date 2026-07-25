@@ -2788,6 +2788,124 @@ bool run_cached_program(compiled_program *prog,
 //
 static thread_local eval_ctx *s_current_ecall_ctx = nullptr;
 
+// Invoke a global user function (@function) from an ECALL.
+//
+// A global is an attribute reference rather than a C entry point, so it
+// cannot go through ecall_invoke_fun.  This mirrors ast.cpp's ufun arm
+// (permissions, FN_PRIV executor swap, AF_NOEVAL raw copy, FN_PRES
+// register preservation) while keeping this file's guest-memory
+// conventions for arguments and the result.
+//
+static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
+                             uint64_t fargs_addr, int nfargs,
+                             uint64_t out_addr, uint64_t out_size) {
+    // #1079: the out buffer must be a valid guest range before any write.
+    //
+    if (!guest_range_ok(out_addr, out_size, ec->memory_size) || out_size == 0) {
+        ctx->x[10] = 0;
+        return -1;
+    }
+
+    // #1124: the same permission gates ast.cpp applies.  A global can be
+    // registered with restrictive perms, and compiled softcode must not
+    // be a way around them.
+    //
+    if (  !check_access(ec->executor, ufp->perms)
+       || (  (ufp->flags & FN_RESTRICT)
+          && !Wizard(ec->executor)))
+    {
+        int n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
+            out_size, "%s",
+            reinterpret_cast<const char *>(FUNC_NOPERM_MESSAGE));
+        if (n < 0) n = 0;
+        if (static_cast<size_t>(n) >= out_size) n = static_cast<int>(out_size - 1);
+        ctx->x[10] = static_cast<uint64_t>(n);
+        return -1;
+    }
+
+    if (nfargs > MAX_ARG) nfargs = MAX_ARG;
+    if (nfargs < 0) nfargs = 0;
+
+    UTF8 *fargs[MAX_ARG];
+    memset(fargs, 0, sizeof(fargs));
+    uint64_t frame_top = ctx->x[8];  // s0 = frame pointer
+    for (int i = 0; i < nfargs; i++) {
+        uint64_t ptr = 0;
+        if (!guest_farg_addr(ec->memory, ec->memory_size, fargs_addr, i, &ptr)) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        if (rv_compiler::is_output_frame_ref(ptr)) {
+            ptr = rv_compiler::resolve_output_addr(ptr, frame_top);
+        }
+        size_t slen = 0;
+        if (!guest_strnlen(ec->memory, ec->memory_size, ptr, &slen)) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        fargs[i] = ec->memory + ptr;
+    }
+
+    dbref aowner;
+    int aflags;
+    UTF8 *tbuf = atr_get("ecall.ufun", ufp->obj, ufp->atr, &aowner, &aflags);
+    dbref obj = (ufp->flags & FN_PRIV) ? ufp->obj : ec->executor;
+
+    LBuf buff = LBuf_Src("eval_ecall_ufun");
+    UTF8 *bufc = buff.get();
+
+    eval_ctx *saved_ctx = s_current_ecall_ctx;
+    s_current_ecall_ctx = ec;
+
+    if (  (aflags & AF_NOEVAL)
+       || NoEval(ufp->obj))
+    {
+        size_t nLen = strlen(reinterpret_cast<const char *>(tbuf));
+        safe_copy_buf(tbuf, nLen, buff, &bufc);
+    }
+    else
+    {
+        reg_ref **preserve = nullptr;
+        if (ufp->flags & FN_PRES) {
+            preserve = PushRegisters(MAX_GLOBAL_REGS);
+            save_global_regs(preserve);
+        }
+
+        int feval = ec->eval & ~(EV_TOP | EV_FMAND);
+        mux_exec(tbuf, LBUF_SIZE-1, buff, &bufc, obj, ec->executor, ec->enactor,
+                 AttrTrace(aflags, feval),
+                 const_cast<const UTF8 **>(fargs), nfargs);
+
+        if (ufp->flags & FN_PRES) {
+            restore_global_regs(preserve);
+            PopRegisters(preserve, MAX_GLOBAL_REGS);
+        }
+    }
+
+    s_current_ecall_ctx = saved_ctx;
+    free_lbuf(tbuf);
+
+    // A user-function body is arbitrary softcode and may setq, so the %q
+    // slots this program reads have to be re-marshalled from the
+    // authoritative global_regs — the same resync ecall_invoke_fun does
+    // after a builtin.  Unconditional here: there is no pure-read case
+    // to exempt.
+    //
+    if ((ec->qreg_mask & QREG_SLOT_BITS) != 0) {
+        marshal_qregs_to_slots(ec->memory, ec->qreg_mask);
+        s_jit_stats.qreg_resyncs++;
+    }
+
+    *bufc = '\0';
+    size_t result_len = static_cast<size_t>(bufc - buff);
+    if (result_len >= out_size) result_len = out_size - 1;
+    memcpy(ec->memory + out_addr, buff, result_len);
+    ec->memory[out_addr + result_len] = '\0';
+
+    ctx->x[10] = static_cast<uint64_t>(result_len);
+    return -1;
+}
+
 static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
                             uint64_t out_addr, uint64_t out_size) {
@@ -3812,6 +3930,19 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         std::vector<UTF8> key(pCased, pCased + nCased);
         auto it = mudstate.builtin_functions.find(key);
         if (it == mudstate.builtin_functions.end()) {
+            // Not a builtin — try the global user-function table before
+            // giving up (#1231).  @function registers into ufunc_htab,
+            // and consulting only builtin_functions made every global
+            // unreachable from compiled softcode while the AST route
+            // resolved it fine.  2.13 checks both in the same order
+            // (mux/src/eval.cpp:1487), as does ast.cpp.
+            //
+            auto it_ufunc = mudstate.ufunc_htab.find(key);
+            if (it_ufunc != mudstate.ufunc_htab.end()) {
+                return ecall_invoke_ufun(
+                    static_cast<UFUN *>(it_ufunc->second),
+                    ec, ctx, fargs_addr, nfargs, out_addr, out_size);
+            }
             const char *err = "#-1 FUNCTION NOT FOUND";
             size_t elen = strlen(err);
             if (elen >= out_size) elen = out_size - 1;
