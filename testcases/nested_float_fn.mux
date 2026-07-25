@@ -1,0 +1,132 @@
+#
+# nested_float_fn.mux - Test Cases for float arithmetic in nested evaluation.
+#
+# A JIT-compiled expression that evaluates another expression (u(), ulocal(),
+# or any outer construct wrapping one) runs the inner compile on the shared
+# heap, whose string pool lives at 0x40000..0x60000 rather than the one-shot
+# compiler's 0x1000..0x4000.  hir_codegen's FP slot allocator bounded itself
+# against the static rv_compiler::STR_LIMIT (0x4000) instead of this compile's
+# own str_pool_limit, so every FP slot address stayed 0 and all float
+# temporaries aliased guest address 0 (#1159).
+#
+# The signature of that failure is one float operand overwriting the other:
+#
+#   mul(12.75,strlen(abc))          38.25   became  9    (3*3)
+#   fdiv(strlen(abcdefg),strlen(ab))  3.5   became  1    (x/x)
+#
+# Every case below needs a float that is computed at run time inside a nested
+# evaluation.  A fully constant-folded float never allocates an FP slot, which
+# is why TC004 keeps one as a guard rather than as the main coverage.
+#
+@create test_nested_float_fn
+-
+@set test_nested_float_fn=INHERIT QUIET
+-
+#
+# Helper attributes.  Each takes its integer operand as a u() argument so the
+# float arithmetic cannot be folded at compile time.
+#
+&fn.fmul test_nested_float_fn=mul(12.75,strlen(%0))
+-
+&fn.fdiv test_nested_float_fn=fdiv(strlen(%0),strlen(%1))
+-
+&fn.fint test_nested_float_fn=mul(2.5,strlen(%0))
+-
+&fn.ffold test_nested_float_fn=fdiv(7,2)
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_nested_float_fn=
+  @log smoke=Beginning nested float test cases.
+-
+#
+# Test Case #1 - A nested float result consumed by an outer function.
+# The inner u() alone was always correct; the defect only appeared once an
+# outer compiled expression consumed it, so each shape here wraps the u().
+#
+&tr.tc001 test_nested_float_fn=
+  @if cand(
+        strmatch(strcat(<,u(me/fn.fmul,abc),>), <38.25>),
+        strmatch(add(u(me/fn.fmul,abc),1), 39.25),
+        eq(strlen(u(me/fn.fmul,abc)), 5),
+        strmatch(first(u(me/fn.fmul,abc)), 38.25)
+      )=
+  {
+    @log smoke=TC001: nested float consumed by outer function. Succeeded.
+  },
+  {
+    @log smoke=TC001: nested float consumed by outer function. Failed (cat=[strcat(<,u(me/fn.fmul,abc),>)] add=[add(u(me/fn.fmul,abc),1)] len=[strlen(u(me/fn.fmul,abc))] first=[first(u(me/fn.fmul,abc))]).
+  }
+-
+#
+# Test Case #2 - Two runtime float temporaries in one expression.
+# When every FP slot aliases one address the second operand overwrites the
+# first, so any x/y collapses to x/x == 1.  Two different quotients are used
+# so that collapse cannot pass by coincidence.
+#
+&tr.tc002 test_nested_float_fn=
+  @if cand(
+        strmatch(strcat(<,u(me/fn.fdiv,abcdefg,ab),>), <3.5>),
+        strmatch(strcat(<,u(me/fn.fdiv,abcd,ab),>), <2>),
+        strmatch(strcat(<,u(me/fn.fint,ab),>), <5>)
+      )=
+  {
+    @log smoke=TC002: multiple float temporaries. Succeeded.
+  },
+  {
+    @log smoke=TC002: multiple float temporaries. Failed (div35=[strcat(<,u(me/fn.fdiv,abcdefg,ab),>)] div2=[strcat(<,u(me/fn.fdiv,abcd,ab),>)] int=[strcat(<,u(me/fn.fint,ab),>)]).
+  }
+-
+#
+# Test Case #3 - The nesting is not specific to one outer function.
+# iter(), switch() and ulocal() reach the same shared-heap path.
+#
+&tr.tc003 test_nested_float_fn=
+  @if cand(
+        strmatch(iter(1,u(me/fn.fmul,abc)), 38.25),
+        strmatch(switch(1,1,u(me/fn.fmul,abc),zz), 38.25),
+        strmatch(strcat(<,ulocal(me/fn.fmul,abc),>), <38.25>)
+      )=
+  {
+    @log smoke=TC003: nesting via iter, switch and ulocal. Succeeded.
+  },
+  {
+    @log smoke=TC003: nesting via iter, switch and ulocal. Failed (iter=[iter(1,u(me/fn.fmul,abc))] switch=[switch(1,1,u(me/fn.fmul,abc),zz)] ulocal=[strcat(<,ulocal(me/fn.fmul,abc),>)]).
+  }
+-
+#
+# Test Case #4 - Guard, plus the bare-call shape.
+# A fully folded float allocates no FP slot and was correct throughout, so it
+# pins the case that must not regress while fixing the others -- it is the one
+# assertion here that still passes against an unfixed build.
+#
+# The two bare u() calls are NOT a control.  Typed at a bare prompt they were
+# always correct, which is what made this defect easy to miss by hand, but the
+# @if condition wrapping them is itself compiled, so inside this file they are
+# nested like everything else and fail against an unfixed build too.
+#
+&tr.tc004 test_nested_float_fn=
+  @if cand(
+        strmatch(strcat(<,u(me/fn.ffold),>), <3.5>),
+        strmatch(u(me/fn.fmul,abc), 38.25),
+        strmatch(u(me/fn.fdiv,abcdefg,ab), 3.5)
+      )=
+  {
+    @log smoke=TC004: folded and un-nested float guards. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: folded and un-nested float guards. Failed (fold=[strcat(<,u(me/fn.ffold),>)] bare=[u(me/fn.fmul,abc)] baredv=[u(me/fn.fdiv,abcdefg,ab)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_nested_float_fn=
+  @log smoke=End nested float test cases.;
+  @notify smoke
+-
+drop test_nested_float_fn
+-
+#
+# End of Test Cases
+#

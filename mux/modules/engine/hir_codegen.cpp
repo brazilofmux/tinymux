@@ -1230,7 +1230,18 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     uint64_t fp_pool = (rc.str_pool + 7) & ~7ULL;  // align to 8
     for (int i = 0; i < h.n_insns; i++) {
         if (needs_fp_reg(h, i)) {
-            if (fp_pool + 8 > rv_compiler::STR_LIMIT) break;
+            // Bound against THIS compile's pool limit, not the one-shot
+            // compiler's static STR_LIMIT.  The shared heap lays its
+            // string pool at 0x40000..0x60000, well above the static
+            // 0x4000, so the old test failed on the first FP value and
+            // left every slot addr at 0 — all float temporaries then
+            // aliased guest address 0 and silently computed garbage
+            // (#1159).  Genuine exhaustion must fail the compile, not
+            // hand back address 0.
+            if (fp_pool + 8 > rc.str_pool_limit) {
+                rc.out_exhausted = true;
+                break;
+            }
             loc[i].addr = fp_pool;
             loc[i].in_reg = false;
             loc[i].spill_slot = -1;
