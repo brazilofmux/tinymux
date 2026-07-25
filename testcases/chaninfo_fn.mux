@@ -201,6 +201,19 @@
   }
 -
 #
+# Test Case #15b - chanfind(name) returns channel name (#1204).
+# Default/custom headers differ from the bare name; name match is required.
+#
+&tr.tc015b test_chaninfo_fn=
+  @if strmatch(chanfind(citest), citest)=
+  {
+    @log smoke=TC015b: chanfind by name. Succeeded.
+  },
+  {
+    @log smoke=TC015b: chanfind by name. Failed (find=[chanfind(citest)]).
+  }
+-
+#
 # Test Case #16 - chanfind(bogus) returns #-1 CHANNEL NOT FOUND.
 #
 &tr.tc016 test_chaninfo_fn=
