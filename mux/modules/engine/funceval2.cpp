@@ -2259,12 +2259,21 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
                 }
                 else
                 {
-                    RegAssign(&mudstate.global_regs[curq], 0, nullptr);
+                    // #1112: clear, do not no-op.  RegAssign early-returns on
+                    // a null ptr (eval.cpp), so passing nullptr left the
+                    // register at its PREVIOUS value — invisible while every
+                    // capture was empty, but now that captures fill, an unset
+                    // group would leak whatever the caller had setq'd there.
+                    // The named-register branch below already uses T("").
+                    //
+                    RegAssign(&mudstate.global_regs[curq], 0, T(""));
                 }
             }
             else
             {
-                RegAssign(&mudstate.global_regs[curq], 0, nullptr);
+                // #1112: ditto — more registers listed than captured groups.
+                //
+                RegAssign(&mudstate.global_regs[curq], 0, T(""));
             }
         }
         else

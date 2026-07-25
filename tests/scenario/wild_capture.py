@@ -67,6 +67,13 @@ def main():
         "&cap.multi me=$wildcapgreet * from *:@pemit %#=CAP2<%0><%1>",
         "&cap.qmark me=$wildcappick ? of *:@pemit %#=CAP3<%0><%1>",
         "&cap.starq me=$wildcapword *?:@pemit %#=CAP4<%0><%1>",
+        # #1112: REGEXP-flagged $-command.  This is the engine.cpp
+        # regexp_match() path (distinct from the wildcard matcher above);
+        # its %0..%9 come from pcre2_substring_copy_bynumber, which was
+        # passed a zero capacity and so emptied every capture.  %0 is the
+        # whole match, %1..%n the parenthesized groups.
+        "&cap.regexp me=$^wildcapre (.+) from (.+)$:@pemit %#=CAP5<%1><%2>",
+        "@set me/cap.regexp=regexp",
     ]
     for cmd in setup:
         sendline(sock, cmd)
@@ -78,6 +85,7 @@ def main():
         ("wildcapgreet alice from bob",  "CAP2<alice><bob>"),      # * * -> %0 %1
         ("wildcappick 3 of hearts",      "CAP3<3><hearts>"),       # ? * -> %0 %1
         ("wildcapword abc",              "CAP4<ab><c>"),           # *?  -> %0 %1 (#838)
+        ("wildcapre alice from bob",     "CAP5<alice><bob>"),      # regexp -> %1 %2 (#1112)
     ]
 
     npass = nfail = 0

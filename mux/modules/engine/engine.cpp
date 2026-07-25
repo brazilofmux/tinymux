@@ -142,8 +142,16 @@ bool regexp_match
             continue;
         }
 
-        // Get the substring
-        PCRE2_SIZE outlen = 0;
+        // Get the substring.
+        //
+        // #1112 (twin of the regmatch fix): outlen is IN/OUT — on entry it is
+        // the destination capacity in code units, so passing 0 made every copy
+        // fail with PCRE2_ERROR_NOMEMORY and the arg below was freed to
+        // nullptr.  That silently emptied every %0..%9 capture for REGEXP
+        // $-commands and ^-listens.  args[i] is a fresh LBUF_SIZE lbuf
+        // (alloc_lbuf above); leave room for PCRE2's terminating NUL.
+        //
+        PCRE2_SIZE outlen = LBUF_SIZE - 1;
         rc = pcre2_substring_copy_bynumber(match_data, i, args[i], &outlen);
         if (rc < 0)
         {
