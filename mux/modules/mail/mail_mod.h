@@ -26,6 +26,16 @@ const MUX_CID CID_MailMod = UINT64_C(0x00000002D7A3E1B5);
 
 #define MOD_LBUF_SIZE   8000
 
+// Composition attributes (mirrored from attrs.h).  These carry AF_INTERNAL
+// and/or AF_DARK, so mux_IAttributeAccess Set/Get with the player as
+// executor always fails permission checks.  Use IObjectInfo::AtrAddRaw /
+// AtrGet / AtrClr instead (#1229).
+//
+#define MOD_A_MAILTO      205
+#define MOD_A_MAILMSG     206
+#define MOD_A_MAILSUB     207
+#define MOD_A_MAILFLAGS   211
+
 // Mail message flags (mirrored from mail.h).
 //
 #define M_ISREAD    0x0001
@@ -209,6 +219,12 @@ private:
     bool LoadMailHeaders(void);
     bool LoadMailAliases(void);
     void ClearRuntimeData(void);
+
+    // Composition attr helpers — raw attr access for AF_INTERNAL mail state.
+    //
+    bool set_comp_attr(dbref player, int attrnum, const UTF8 *value);
+    bool get_comp_attr(dbref player, int attrnum, UTF8 *buf, size_t nBuf);
+    bool clr_comp_attr(dbref player, int attrnum);
 
     // Selector and matching helpers.
     //
