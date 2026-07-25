@@ -109,9 +109,12 @@ def main():
     results = {}
     for name, expr in corpus:
         sentinel = f"{MARK}END{name}{MARK}"
-        # say/pose/@... are commands in their own right; everything else is
-        # an expression and is wrapped in `think` with markers.
-        if expr.lstrip().startswith(("say ", "pose ", "@", ":")):
+        # say/pose/@/& are commands in their own right (& sets an
+        # attribute, @ covers @function/@set/etc), so they are sent bare.
+        # Everything else is an expression and is wrapped in `think`.
+        # A bare command still gets its sentinel, so setup lines stay in
+        # step with the case they belong to.
+        if expr.lstrip().startswith(("say ", "pose ", "@", "&", ":")):
             s.sendall((expr + "\r\n").encode())
         else:
             s.sendall(f"think {MARK}{name}{MARK}{expr}{MARK}\r\n".encode())

@@ -125,6 +125,39 @@ the whole expression back verbatim and 2.14 quietly drops part of it.
 Both leave the author guessing; *"unbalanced parenthesis"* would beat
 either.
 
+## space_compress changes what the corpus measures
+
+In 2.13 `space_compress` does two unrelated jobs: ordinary output
+whitespace compression, and gating the trailing-space trim on the
+candidate function name (`eval.cpp:1434`). Turning it off therefore
+changes a *parsing* behaviour, not just formatting:
+
+```
+                  space_compress on   space_compress 0
+[add (1,2)]       3                   #-1 FUNCTION (ADD ) NOT FOUND
+[add  (1,2)]      3                   #-1 FUNCTION (ADD  ) NOT FOUND
+[ add (1,2)]      3                   #-1 FUNCTION ( ADD ) NOT FOUND
+```
+
+So `name (args)` is not a stable 2.13 behaviour — it exists only when a
+formatting option happens to be on, and the error it produces otherwise
+carries the space inside the function name. That matters when deciding
+whether 2.14 should reproduce it: there is no single 2.13 answer to
+match.
+
+The corpus is measured under the default (`space_compress` on). To see
+the other side, add the setting to the generated conf:
+
+```sh
+# in probe_engine(), or by hand against a scratch netmux:
+printf 'space_compress\t0\n' >> t.conf
+```
+
+A permanent fourth engine leg was considered and left out: it would
+double an already multi-minute run for an axis that only affects the
+handful of `SC_*` shapes. If a fix lands that touches the trim, adding
+the leg is the right next step.
+
 ## Runtime
 
 A full run spins three servers and probes every shape against each, so it

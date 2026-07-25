@@ -164,3 +164,68 @@ RP_APOSTROPHE|[strcat(It's a (big, red) ball)]|2.13
 SPACE_CALL_KNOWN|[add (1,2)]|pin
 SPACE_CALL_UNKNOWN|[b (c,d)]|pin
 SPACE_CALL_NESTED|[strcat([add (1,2)])]|pin
+
+# ===================================================================
+# Global user functions (@function).  2.13 resolves a global on the same
+# path as a builtin: the candidate name is looked up in the builtin table
+# first, then in ufunc_htab (eval.cpp:1487).  2.14's AST route does the
+# same; the JIT's ECALL fallback consults only the builtin table, so a
+# global is unreachable there — #1231.
+#
+# The two setup lines define one.  Lines beginning with & or @ are sent
+# as commands rather than wrapped in `think`.
+# ===================================================================
+UF_SETUP_ATTR|&UFADD me=[add(%0,%1)]
+UF_SETUP_FN|@function ufadd=me/UFADD
+UF_ADJACENT|[ufadd(2,3)]|2.13
+UF_IN_ARG|[strcat(ufadd(2,3))]|2.13
+UF_DISARM|[ufadd(2,3) ufadd(4,5)]|2.13
+UF_AFTER_BUILTIN|[add(1,2) ufadd(4,5)]
+UF_MIDTEXT|[strcat(x ufadd(2,3) y)]
+UF_SPACE|[ufadd (2,3)]|pin
+UF_TWOSPACE|[ufadd  (2,3)]|pin
+UF_IN_ARG_SPACE|[strcat(ufadd (2,3))]
+UF_UNKNOWN_SPACE|[nosuchfn (1,2)]|pin
+
+# ===================================================================
+# Disarm across nested regions.  After a successful call 2.13 clears
+# EV_FCHECK (eval.cpp:1677), so a later '(' in the same region is
+# literal; an eval bracket starts a fresh region with FCHECK|FMAND set
+# (eval.cpp:2334).  These shapes chart where a region begins and ends.
+#
+# Most already agree.  They are kept as a guard: a change to the arming
+# model would move them, and they say so immediately.
+# ===================================================================
+DA_TWO_CALLS|[add(1,2) mul(3,4)]
+DA_CALL_BRACKET|[add(1,2) [mul(3,4)]]
+DA_BRACKET_CALL|[[add(1,2)] mul(3,4)]
+DA_BRACKET_BOTH|[[add(1,2)] [mul(3,4)]]
+DA_NESTED_ARG|[strcat(add(1,2) mul(3,4))]
+DA_ARG_THEN_OUTER|[strcat(add(1,2)) mul(3,4)]
+DA_INNER_RESETS|[strcat(add(1,2),mul(3,4))]
+DA_ITER|[iter(1 2,add(%i0,1) mul(2,3))]
+DA_SWITCH|[switch(1,1,add(1,2) mul(3,4),no)]
+DA_DEEP|[strcat(strcat(add(1,2) mul(3,4)) sub(9,1))]
+DA_BRACKET_IN_ARG|[strcat(add(1,2) [mul(3,4)])]
+DA_THREE|[add(1,2) mul(3,4) sub(9,1)]
+
+# ===================================================================
+# space_compress interaction.  In 2.13 that setting does two unrelated
+# jobs: ordinary output whitespace compression, and gating the
+# trailing-space trim on the candidate function name (eval.cpp:1434).
+# With space_compress 0, [add (1,2)] is an error carrying a name with
+# the space still in it — so `name (args)` is not a stable 2.13
+# behaviour, it depends on a formatting option.  See the README.
+#
+# Measured here under the default (space_compress on).  The pure
+# compression shapes are included so the two effects stay separable if
+# one of them changes.
+# ===================================================================
+SC_TRIM|[add (1,2)]|pin
+SC_TRIM2|[add  (1,2)]|pin
+SC_LEADSPACE|[ add (1,2)]|pin
+SC_ARG_SP|[strcat(add (1,2))]
+SC_DOUBLESPACE|[strcat(a  b)]
+SC_LEADTRAIL|[strcat(  a  )]
+SC_PLAINTEXT|a  b  c
+SC_SPAN|[zz mul(2,3)]
