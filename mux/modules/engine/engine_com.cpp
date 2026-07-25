@@ -5174,6 +5174,7 @@ public:
     virtual MUX_RESULT LoadAllMailBodies(PFN_MAIL_BODY_CB pfn, void *context);
     virtual MUX_RESULT LoadAllMailAliases(PFN_MAIL_ALIAS_CB pfn, void *context);
     virtual MUX_RESULT GetMeta(const UTF8 *key, int *pValue);
+    virtual MUX_RESULT PutMeta(const UTF8 *key, int value);
     virtual MUX_RESULT InsertMailHeader(int to_player, int from_player,
         int body_number, const UTF8 *tolist, const UTF8 *time_str,
         const UTF8 *subject, int read_flags, int64_t *pRowid);
@@ -5286,6 +5287,20 @@ MUX_RESULT CMailStorage::GetMeta(const UTF8 *key, int *pValue)
     if (nullptr == key || nullptr == pValue) return MUX_E_INVALIDARG;
     bool ok = pDb->GetMeta(
         reinterpret_cast<const char *>(key), pValue);
+    return ok ? MUX_S_OK : MUX_E_FAIL;
+}
+
+MUX_RESULT CMailStorage::PutMeta(const UTF8 *key, int value)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    if (nullptr == key) return MUX_E_INVALIDARG;
+    bool ok = pDb->PutMeta(
+        reinterpret_cast<const char *>(key), value);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 

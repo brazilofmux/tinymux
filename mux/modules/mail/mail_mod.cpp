@@ -417,6 +417,12 @@ int CMailMod::new_mail_message(const UTF8 *message, int number)
     struct mail_body &pm = m_mail_list[number];
     pm.m_pMessage.assign(reinterpret_cast<const char *>(message), nLen);
 
+    // #1192: Persist body + mail_db_top on live creates.  Skipped while
+    // m_bLoading so SQLite load does not write back through itself.
+    //
+    sqlite_wt_mail_body(number,
+        reinterpret_cast<const UTF8 *>(pm.m_pMessage.c_str()));
+
     if (bTruncated && nullptr != m_pILog)
     {
         bool fStarted;
@@ -553,6 +559,13 @@ void CMailMod::sqlite_wt_mail_body(int number, const UTF8 *message)
     if (m_bLoading || nullptr == m_pIStorage) return;
 
     m_pIStorage->SyncMailBody(number, message);
+
+    // Keep the loader gate current (#783 / engine MessageAdd parity):
+    // sqlite_load_mail / module Initialize only size bodies from
+    // mail_db_top meta.  Without this, in-game module mail is lost on reboot.
+    //
+    m_pIStorage->PutMeta(T("mail_db_top"),
+        static_cast<int>(m_mail_list.size()));
 }
 
 void CMailMod::sqlite_wt_delete_mail_body(int number)

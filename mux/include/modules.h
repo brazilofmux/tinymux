@@ -362,7 +362,10 @@ public:
 const MUX_CID CID_ComsysStorage         = UINT64_C(0x00000002A3B4C5D6);
 const MUX_IID IID_IComsysStorage        = UINT64_C(0x00000002B4C5D6E7);
 const MUX_CID CID_MailStorage           = UINT64_C(0x00000002C5D6E7F8);
-const MUX_IID IID_IMailStorage          = UINT64_C(0x00000002D6E7F809);
+// IID bumped ..F809 -> ..F80A when PutMeta was added to the vtable
+// (#1192): a stale mail_mod.so must fail discovery, not mis-dispatch
+// through shifted slots (the #817 pattern).
+const MUX_IID IID_IMailStorage          = UINT64_C(0x00000002D6E7F80A);
 
 // Callback typedefs for bulk-load operations (C function pointers for
 // ABI safety across .so boundaries).
@@ -430,6 +433,7 @@ public:
     virtual MUX_RESULT LoadAllMailBodies(PFN_MAIL_BODY_CB pfn, void *context) = 0;
     virtual MUX_RESULT LoadAllMailAliases(PFN_MAIL_ALIAS_CB pfn, void *context) = 0;
     virtual MUX_RESULT GetMeta(const UTF8 *key, int *pValue) = 0;
+    virtual MUX_RESULT PutMeta(const UTF8 *key, int value) = 0;
 
     // Write-through: headers.
     //
