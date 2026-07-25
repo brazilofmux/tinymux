@@ -365,6 +365,7 @@ void freeqs(DESC *d)
     // #1126: clear residual GMCP enablement from pooled DESCs.
     //
     d->gmcp_enabled = false;
+    d->sbOverflow = false;                  // #1131
 }
 
 /* ---------------------------------------------------------------------------
@@ -3926,6 +3927,7 @@ void load_restart_db(void)
         d->retries_left = g_dc.retry_limit;
         d->charset_request_pending = false;
         d->gmcp_enabled = false;
+        d->sbOverflow = false;              // #1131
         d->ss = SocketState::Accepted;
         d->socket = val;
         d->flags = getref(f);

@@ -119,12 +119,6 @@ extern volatile sig_atomic_t g_panicking;
 //
 extern volatile sig_atomic_t g_bCanRestart;
 
-// Dump child PID — set by SIGCHLD handler, consumed by main loop.
-// Nonzero means a dump child exited; the main loop reports it to
-// the engine via DumpChildExited() COM call where it's safe.
-//
-extern volatile sig_atomic_t g_dump_child_pid;
-
 // Site access list — driver owns, engine mutates via
 // mux_IDriverControl::SiteUpdate().  Driver reads directly (hot path).
 //

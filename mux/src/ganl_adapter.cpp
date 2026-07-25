@@ -650,6 +650,8 @@ public:
         //
         d->gmcp_enabled = false;
         d->charset_request_pending = false;
+        d->sbOverflow = false;              // #1131
+        d->connlog_id = 0;                  // #1126: parity with restart path
 
         for (auto& state : d->nvt_him_state) {
             state = OPTION_NO;
@@ -2408,9 +2410,28 @@ void GanlAdapter::run_main_loop() {
                         continue;
                     }
 #endif // STUB_SLAVE
-                    if (g_dc.fork_dump)
+                    // #1136: report EVERY reaped child, not just the last.
+                    //
+                    // This loop drains all pending children, but the old code
+                    // funnelled each one through a single sig_atomic_t slot,
+                    // so when a slave and the dump child exited in the same
+                    // batch whichever was reaped last won and the other was
+                    // silently dropped.  Paired with DumpChildExited's pid
+                    // guard, a dropped dump-child exit leaves mudstate.dumping
+                    // stuck true forever: no further dump ever starts and the
+                    // shutdown dump spins in its 1s wait loop.
+                    //
+                    // We are already in the main loop here (not a signal
+                    // handler), so the COM call is safe to make inline and the
+                    // slot is unnecessary.  DumpChildExited returns MUX_S_FALSE
+                    // when the pid is not the dump child, which also restores
+                    // the Unknown-child diagnostic below — it was unreachable
+                    // whenever fork_dump was on.
+                    //
+                    if (  g_dc.fork_dump
+                       && nullptr != g_pIGameEngine
+                       && MUX_S_FALSE != g_pIGameEngine->DumpChildExited(reapPid))
                     {
-                        g_dump_child_pid = static_cast<sig_atomic_t>(reapPid);
                         continue;
                     }
                     STARTLOG(LOG_PROBLEMS, "SIG", "DEBUG");
@@ -2421,16 +2442,6 @@ void GanlAdapter::run_main_loop() {
             }
         }
 #endif // HAVE_WORKING_FORK
-
-        // If SIGCHLD recorded a dump child exit, report it to the
-        // engine now (safe context, not a signal handler).
-        //
-        pid_t dump_pid = static_cast<pid_t>(g_dump_child_pid);
-        if (0 != dump_pid)
-        {
-            g_dump_child_pid = 0;
-            g_pIGameEngine->DumpChildExited(dump_pid);
-        }
 
         // Process TinyMUX Tasks (Timers, Idle, Quotas, etc.)
         process_tinyMUX_tasks();

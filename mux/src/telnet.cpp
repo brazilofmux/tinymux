@@ -917,6 +917,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             // Action 10 - Transition to the Have_IAC_SB state.
             //
             q = d->aOption;
+            d->sbOverflow = false;   // #1131: fresh subnegotiation
             d->raw_input_state = NVT_IS_HAVE_IAC_SB;
             break;
 
@@ -1057,22 +1058,33 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             }
             else
             {
-                // #1131: SB full — reset like Hydra #1101 spirit.  Staying in
-                // SB forever left the NVT stuck; completing with q==qend also
-                // discarded the whole subnegotiation.
+                // #1131: SB overran aOption.  Drop the byte and remember
+                // that this subnegotiation is truncated, but STAY in the SB
+                // state so the rest of it is swallowed until IAC SE.
                 //
-                q = d->aOption;
-                d->nOption = 0;
-                d->raw_input_state = NVT_IS_NORMAL;
+                // Do NOT return to NVT_IS_NORMAL here: in Normal state the
+                // remaining SB payload is accepted as typed input (action 1)
+                // and an embedded LF submits it as a command (action 3), so
+                // resetting turns a malformed subnegotiation into command
+                // injection.  Staying in SB is also not a DoS — a client can
+                // hold a connection open just as long by never sending CRLF,
+                // and both are reaped by conn_timeout / idle_timeout.
+                //
+                d->sbOverflow = true;
             }
             break;
 
         case 18:
             // Action 18 - Accept Completed Sub-option and transition to Normal state.
             //
-            // #1131: allow q == qend (buffer full with valid SB up to last byte).
+            // #1131: allow q == qend (buffer full with valid SB up to the
+            // last byte), but never parse a subnegotiation that overflowed —
+            // that buffer is a truncated prefix, and handing it to the option
+            // parsers below would mis-parse attacker-chosen data (e.g. a
+            // short CHARSET list or a partial NAWS).
             //
-            if (  d->aOption < q
+            if (  !d->sbOverflow
+               && d->aOption < q
                && q <= qend)
             {
                 const size_t m = q - d->aOption;
@@ -1585,6 +1597,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 }
             }
             q = d->aOption;
+            d->sbOverflow = false;   // #1131: subnegotiation consumed
             d->raw_input_state = NVT_IS_NORMAL;
             break;
         }
