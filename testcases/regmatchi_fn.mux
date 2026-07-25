@@ -1,0 +1,67 @@
+#
+# regmatchi_fn.mux - Test Cases for regmatchi().
+#
+# regmatchi(<string>,<regexp>[,<register list>]) is regmatch() with a
+# case-insensitive match.  regmatch() itself is covered in
+# regmatch_fn.mux; every case here pairs the two so the only thing being
+# asserted is the case-sensitivity difference.
+#
+@create test_regmatchi_fn
+-
+@set test_regmatchi_fn=INHERIT QUIET
+-
+&tr.tc000 test_regmatchi_fn=
+  @log smoke=Beginning regmatchi() test cases.
+-
+#
+# Test Case #1 - Case-insensitive where regmatch() is not.
+#
+&tr.tc001 test_regmatchi_fn=
+  @if cand(
+        eq(regmatchi(HELLO,hello), 1),
+        eq(regmatch(HELLO,hello), 0),
+        eq(regmatchi(hello,HELLO), 1),
+        eq(regmatchi(HELLO,HELLO), 1),
+        eq(regmatchi(HELLO,zzz), 0)
+      )=
+  {
+    @log smoke=TC001: regmatchi case-insensitive matching. Succeeded.
+  },
+  {
+    @log smoke=TC001: regmatchi case-insensitive matching. Failed (i=[regmatchi(HELLO,hello)] sens=[regmatch(HELLO,hello)] rev=[regmatchi(hello,HELLO)] same=[regmatchi(HELLO,HELLO)] none=[regmatchi(HELLO,zzz)]).
+  }
+-
+#
+# Test Case #2 - Capture registers are populated by the insensitive form.
+# The register list maps POSITION to substring index and VALUE to the
+# destination register: '0 3 5' puts substring 0 (the whole match) in
+# %q0, substring 1 in %q3 and substring 2 in %q5 — the documented
+# example from help regmatch(), reused here with a pattern that only
+# matches case-insensitively.
+#
+&tr.tc002 test_regmatchi_fn=
+  @if cand(
+        eq(regmatchi(COOKIES=30, %(cookies%)=%(.*%), 0 3 5), 1),
+        strmatch(%q0, COOKIES=30),
+        strmatch(%q3, COOKIES),
+        strmatch(%q5, 30),
+        eq(regmatch(COOKIES=30, %(cookies%)=%(.*%)), 0)
+      )=
+  {
+    @log smoke=TC002: regmatchi capture registers. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: regmatchi capture registers. Failed (rc=[regmatchi(COOKIES=30, %(cookies%)=%(.*%), 0 3 5)] q0=[%q0] q3=[%q3] q5=[%q5]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_regmatchi_fn=
+  @log smoke=End regmatchi() test cases.;
+  @notify smoke
+-
+drop test_regmatchi_fn
+-
+#
+# End of Test Cases
+#
