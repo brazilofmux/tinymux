@@ -164,6 +164,39 @@ A full run spins three servers and probes every shape against each, so it
 takes a few minutes at ~95 shapes. That is why it is opt-in rather than
 part of `make test`.
 
+## Trusting the reader
+
+`run.sh` runs `selftest.py` before it measures anything, and refuses to
+report if it fails.
+
+The reason is that a desynchronised probe does not produce obviously
+broken output — it produces *plausible* rows attributed to the wrong
+shape. The original failure (#1233) looked like this in a real run:
+
+```
+PN_EMPTY   2.13='<NO-OUTPUT>'
+PN_ONLY    2.13='ZZENDPN_EMPTYZZ | (a)'     <- previous shape's sentinel
+```
+
+which, once the verdict column existed, presented as a specification
+violation that did not exist. On one branch it accounted for five false
+`VIOLATED` verdicts out of seven.
+
+`selftest.py` drives the two framing hazards deterministically against a
+scripted stand-in server, so the guarantee does not depend on catching an
+intermittent fault in the wild:
+
+- **late sentinel** — a case's sentinel arrives after its window closes.
+  It must be recognised as stale, its own row recovered rather than left
+  `<NO-OUTPUT>`, and the *following* case left uncontaminated.
+- **batched delivery** — two cases arrive in one TCP segment. Neither may
+  be dropped.
+
+Both fail against the pre-#1233 reader with exactly the symptom above, so
+the test pins the bug rather than merely exercising the code. Run it alone
+with `python3 tests/parity213/selftest.py` (a couple of seconds), or set
+`PARITY_SKIP_SELFTEST=1` to skip the preflight on a fast re-run.
+
 ## Extending the corpus
 
 `corpus.txt` is `NAME|expression`, one per line, `#` for comments. Keep

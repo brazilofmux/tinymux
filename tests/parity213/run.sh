@@ -54,6 +54,24 @@ if ! command -v python3 >/dev/null 2>&1; then
     exit 2
 fi
 
+# Preflight: prove the reader still frames correctly before trusting a
+# single measurement from it.  A desynchronised probe does not produce
+# obviously-broken output — it produces plausible rows attributed to the
+# wrong shape, which with the verdict column present as specification
+# violations (#1233).  Takes a couple of seconds; skippable for a fast
+# re-run once the reader is known good.
+#
+if [ -z "${PARITY_SKIP_SELFTEST:-}" ]; then
+    if ! python3 "$SCRIPT_DIR/selftest.py" > "${TMPDIR:-/tmp}/parity_selftest.$$" 2>&1; then
+        echo "ERROR: probe.py reader selftest failed — measurements from this" >&2
+        echo "       reader cannot be trusted.  Output:" >&2
+        sed 's/^/       /' "${TMPDIR:-/tmp}/parity_selftest.$$" >&2
+        rm -f "${TMPDIR:-/tmp}/parity_selftest.$$"
+        exit 2
+    fi
+    rm -f "${TMPDIR:-/tmp}/parity_selftest.$$"
+fi
+
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/parity213.XXXXXX") || exit 2
 trap 'rm -rf "$WORK"' EXIT
 
