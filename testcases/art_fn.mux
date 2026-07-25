@@ -1,0 +1,70 @@
+#
+# art_fn.mux - Test Cases for art().
+#
+# art(<string>) returns the English indefinite article, "a" or "an".
+#
+# COVERAGE IS PARTIAL AND DELIBERATELY SO.  art() currently returns "a"
+# for every input and cannot produce "an" at all — including for the
+# example in its own help text, art(umbrella).  See #1170.
+#
+# Only consonant-initial inputs are asserted here, where "a" is both the
+# current answer and the correct one.  Asserting the vowel cases would
+# mean encoding the defect in order to pass, and asserting them
+# correctly would mean committing a failing test.  When #1170 is fixed,
+# art(umbrella) -> an and the rest of the vowel rules belong here.
+#
+@create test_art_fn
+-
+@set test_art_fn=INHERIT QUIET
+-
+&tr.tc000 test_art_fn=
+  @log smoke=Beginning art() test cases.
+-
+#
+# Test Case #1 - Consonant-initial words take "a".  The TinyMUX case is
+# the one documented example that currently holds.
+#
+&tr.tc001 test_art_fn=
+  @if cand(
+        strmatch(art(TinyMUX), a),
+        strmatch(art(cat), a),
+        strmatch(art(box), a),
+        strmatch(art(dog), a)
+      )=
+  {
+    @log smoke=TC001: art consonant initial. Succeeded.
+  },
+  {
+    @log smoke=TC001: art consonant initial. Failed (mux=[art(TinyMUX)] cat=[art(cat)] box=[art(box)] dog=[art(dog)]).
+  }
+-
+#
+# Test Case #2 - The result is always one of the two articles and never
+# empty, whatever the input.  This holds regardless of #1170 and would
+# catch a scanner that fell through to no answer at all.
+#
+&tr.tc002 test_art_fn=
+  @if cand(
+        t(member(a an, art(cat))),
+        t(member(a an, art(umbrella))),
+        t(member(a an, art(1234))),
+        gt(strlen(art(x)), 0)
+      )=
+  {
+    @log smoke=TC002: art always yields an article. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: art always yields an article. Failed (cat=[art(cat)] umb=[art(umbrella)] num=[art(1234)] x=[art(x)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_art_fn=
+  @log smoke=End art() test cases.;
+  @notify smoke
+-
+drop test_art_fn
+-
+#
+# End of Test Cases
+#

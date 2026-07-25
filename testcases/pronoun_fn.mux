@@ -1,0 +1,126 @@
+#
+# pronoun_fn.mux - Test Cases for subj(), obj(), poss(), aposs().
+#
+# The four pronoun functions all read the object's Sex attribute and
+# differ only in which grammatical form they return:
+#
+#   subj()   subjective   he    she   it    they
+#   obj()    objective    him   her   it    them
+#   poss()   possessive   his   her   its   their
+#   aposs()  absolute     his   hers  its   theirs
+#
+# Each case asserts all four forms for one sex together, because the
+# interesting failure is two of them being confused with each other —
+# poss() and aposs() coincide for male ('his') and neuter ('its') and
+# differ only for female and plural, so those two sexes are what
+# actually distinguish them.
+#
+@create test_pronoun_male
+-
+@set test_pronoun_male=INHERIT QUIET
+-
+&SEX test_pronoun_male=male
+-
+@create test_pronoun_female
+-
+@set test_pronoun_female=INHERIT QUIET
+-
+&SEX test_pronoun_female=female
+-
+@create test_pronoun_neuter
+-
+@set test_pronoun_neuter=INHERIT QUIET
+-
+@create test_pronoun_plural
+-
+@set test_pronoun_plural=INHERIT QUIET
+-
+&SEX test_pronoun_plural=plural
+-
+@create test_pronoun_fn
+-
+@set test_pronoun_fn=INHERIT QUIET
+-
+&tr.tc000 test_pronoun_fn=
+  @log smoke=Beginning pronoun function test cases.
+-
+#
+# Test Case #1 - Male and neuter.  poss() and aposs() coincide for both,
+# so these pin the shared forms.
+#
+&tr.tc001 test_pronoun_fn=
+  @if cand(
+        strmatch(subj(test_pronoun_male), he),
+        strmatch(obj(test_pronoun_male), him),
+        strmatch(poss(test_pronoun_male), his),
+        strmatch(aposs(test_pronoun_male), his),
+        strmatch(subj(test_pronoun_neuter), it),
+        strmatch(obj(test_pronoun_neuter), it),
+        strmatch(poss(test_pronoun_neuter), its),
+        strmatch(aposs(test_pronoun_neuter), its)
+      )=
+  {
+    @log smoke=TC001: pronouns male and neuter. Succeeded.
+  },
+  {
+    @log smoke=TC001: pronouns male and neuter. Failed (m=[subj(test_pronoun_male)]/[obj(test_pronoun_male)]/[poss(test_pronoun_male)]/[aposs(test_pronoun_male)] n=[subj(test_pronoun_neuter)]/[obj(test_pronoun_neuter)]/[poss(test_pronoun_neuter)]/[aposs(test_pronoun_neuter)]).
+  }
+-
+#
+# Test Case #2 - Female and plural.  These are the sexes where poss()
+# and aposs() differ (her/hers, their/theirs), so a build that confused
+# the two functions fails here and only here.
+#
+&tr.tc002 test_pronoun_fn=
+  @if cand(
+        strmatch(subj(test_pronoun_female), she),
+        strmatch(obj(test_pronoun_female), her),
+        strmatch(poss(test_pronoun_female), her),
+        strmatch(aposs(test_pronoun_female), hers),
+        strmatch(subj(test_pronoun_plural), they),
+        strmatch(obj(test_pronoun_plural), them),
+        strmatch(poss(test_pronoun_plural), their),
+        strmatch(aposs(test_pronoun_plural), theirs)
+      )=
+  {
+    @log smoke=TC002: pronouns female and plural. Succeeded.
+  },
+  {
+    @log smoke=TC002: pronouns female and plural. Failed (f=[subj(test_pronoun_female)]/[obj(test_pronoun_female)]/[poss(test_pronoun_female)]/[aposs(test_pronoun_female)] p=[subj(test_pronoun_plural)]/[obj(test_pronoun_plural)]/[poss(test_pronoun_plural)]/[aposs(test_pronoun_plural)]).
+  }
+-
+#
+# Test Case #3 - poss() and aposs() are not the same function.
+#
+&tr.tc003 test_pronoun_fn=
+  @if cand(
+        t(comp(poss(test_pronoun_female), aposs(test_pronoun_female))),
+        t(comp(poss(test_pronoun_plural), aposs(test_pronoun_plural))),
+        eq(comp(poss(test_pronoun_male), aposs(test_pronoun_male)), 0)
+      )=
+  {
+    @log smoke=TC003: poss and aposs are distinct. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: poss and aposs are distinct. Failed (f=[poss(test_pronoun_female)]/[aposs(test_pronoun_female)] p=[poss(test_pronoun_plural)]/[aposs(test_pronoun_plural)] m=[poss(test_pronoun_male)]/[aposs(test_pronoun_male)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_pronoun_fn=
+  @log smoke=End pronoun function test cases.;
+  @notify smoke
+-
+drop test_pronoun_male
+-
+drop test_pronoun_female
+-
+drop test_pronoun_neuter
+-
+drop test_pronoun_plural
+-
+drop test_pronoun_fn
+-
+#
+# End of Test Cases
+#
