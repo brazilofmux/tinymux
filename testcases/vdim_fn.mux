@@ -1,0 +1,57 @@
+#
+# vdim_fn.mux - Test Cases for vdim().
+#
+# vdim(<vector>[,<delimiter>]) returns the dimensionality of a vector.
+# It shares an implementation with words(), so the cases below assert
+# both that the documented behaviour holds and that the two stay in
+# agreement — if they ever diverge, one of them has been changed alone.
+#
+@create test_vdim_fn
+-
+@set test_vdim_fn=INHERIT QUIET
+-
+&tr.tc000 test_vdim_fn=
+  @log smoke=Beginning vdim() test cases.
+-
+#
+# Test Case #1 - Documented example and alternate delimiter.
+#
+&tr.tc001 test_vdim_fn=
+  @if cand(
+        eq(vdim(1 2 3 4), 4),
+        eq(vdim(a|b|c, |), 3),
+        eq(vdim(5), 1)
+      )=
+  {
+    @log smoke=TC001: vdim dimensionality. Succeeded.
+  },
+  {
+    @log smoke=TC001: vdim dimensionality. Failed (four=[vdim(1 2 3 4)] delim=[vdim(a|b|c, |)] one=[vdim(5)]).
+  }
+-
+#
+# Test Case #2 - Agrees with words() on the same input.
+#
+&tr.tc002 test_vdim_fn=
+  @if cand(
+        eq(vdim(1 2 3 4), words(1 2 3 4)),
+        eq(vdim(a|b|c, |), words(a|b|c, |))
+      )=
+  {
+    @log smoke=TC002: vdim agrees with words. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: vdim agrees with words. Failed (v=[vdim(1 2 3 4)] w=[words(1 2 3 4)] vd=[vdim(a|b|c, |)] wd=[words(a|b|c, |)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_vdim_fn=
+  @log smoke=End vdim() test cases.;
+  @notify smoke
+-
+drop test_vdim_fn
+-
+#
+# End of Test Cases
+#

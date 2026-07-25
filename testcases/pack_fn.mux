@@ -1,0 +1,63 @@
+#
+# pack_fn.mux - Test Cases for pack() and unpack().
+#
+# pack(<number>[,<radix>]) renders a base-10 number in the given radix
+# (default 64) using Myrddin's Bulletin Board alphabet:
+#   0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@$
+# unpack() is its exact inverse.  Because they are inverses, the
+# round-trip is the strongest property available and is asserted in both
+# directions rather than only pinning one literal.
+#
+@create test_pack_fn
+-
+@set test_pack_fn=INHERIT QUIET
+-
+&tr.tc000 test_pack_fn=
+  @log smoke=Beginning pack()/unpack() test cases.
+-
+#
+# Test Case #1 - Documented example, and the inverse relationship.
+#
+&tr.tc001 test_pack_fn=
+  @if cand(
+        strmatch(pack(629126998), bVxTM),
+        eq(unpack(bVxTM), 629126998),
+        eq(unpack(pack(12345)), 12345),
+        eq(unpack(pack(0)), 0)
+      )=
+  {
+    @log smoke=TC001: pack/unpack documented example and round-trip. Succeeded.
+  },
+  {
+    @log smoke=TC001: pack/unpack documented example and round-trip. Failed (pack=[pack(629126998)] unpack=[unpack(bVxTM)] trip=[unpack(pack(12345))] zero=[unpack(pack(0))]).
+  }
+-
+#
+# Test Case #2 - Explicit radix.  Base 16 is checkable against ordinary
+# hex, which base 64 is not.
+#
+&tr.tc002 test_pack_fn=
+  @if cand(
+        strmatch(pack(255,16), FF),
+        eq(unpack(FF,16), 255),
+        eq(unpack(pack(4095,16),16), 4095),
+        strmatch(pack(7,2), 111)
+      )=
+  {
+    @log smoke=TC002: pack/unpack explicit radix. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: pack/unpack explicit radix. Failed (hex=[pack(255,16)] unhex=[unpack(FF,16)] trip=[unpack(pack(4095,16),16)] bin=[pack(7,2)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_pack_fn=
+  @log smoke=End pack()/unpack() test cases.;
+  @notify smoke
+-
+drop test_pack_fn
+-
+#
+# End of Test Cases
+#
