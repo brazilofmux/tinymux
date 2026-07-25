@@ -1,0 +1,69 @@
+#
+# regrep_fn.mux - Test Cases for regrep() and regrepi().
+#
+# regrep(<object>,<attribute pattern>,<regexp>) searches the attributes
+# whose NAMES match the wildcard <attribute pattern> for VALUES matching
+# the regular expression, and returns the matching attribute NAMES.
+# regrepi() is the case-insensitive form.
+#
+# The attribute pattern is deliberately narrow (RG_*) so the result does
+# not depend on built-in attributes the object happens to carry.
+#
+@create test_regrep_fn
+-
+@set test_regrep_fn=INHERIT QUIET
+-
+&rg.alpha test_regrep_fn=Hello there
+-
+&rg.beta test_regrep_fn=Hello friend
+-
+&rg.gamma test_regrep_fn=goodbye now
+-
+&tr.tc000 test_regrep_fn=
+  @log smoke=Beginning regrep() test cases.
+-
+#
+# Test Case #1 - Matching attribute names are returned; the match is
+# against the attribute VALUE and is case-sensitive.
+#
+&tr.tc001 test_regrep_fn=
+  @if cand(
+        strmatch(regrep(me,RG.*,^Hello), RG.ALPHA RG.BETA),
+        strmatch(regrep(me,RG.*,^goodbye), RG.GAMMA),
+        eq(strlen(regrep(me,RG.*,^hello)), 0)
+      )=
+  {
+    @log smoke=TC001: regrep value match and case sensitivity. Succeeded.
+  },
+  {
+    @log smoke=TC001: regrep value match and case sensitivity. Failed (hello=[regrep(me,RG.*,^Hello)] bye=[regrep(me,RG.*,^goodbye)] lower=[regrep(me,RG.*,^hello)]).
+  }
+-
+#
+# Test Case #2 - regrepi() matches regardless of case, and a regexp
+# matching no value returns the empty string.
+#
+&tr.tc002 test_regrep_fn=
+  @if cand(
+        strmatch(regrepi(me,RG.*,^hello), RG.ALPHA RG.BETA),
+        strmatch(regrepi(me,RG.*,^HELLO), RG.ALPHA RG.BETA),
+        eq(strlen(regrepi(me,RG.*,^zzz)), 0)
+      )=
+  {
+    @log smoke=TC002: regrepi case-insensitive match. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: regrepi case-insensitive match. Failed (lower=[regrepi(me,RG.*,^hello)] upper=[regrepi(me,RG.*,^HELLO)] none=[regrepi(me,RG.*,^zzz)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_regrep_fn=
+  @log smoke=End regrep() test cases.;
+  @notify smoke
+-
+drop test_regrep_fn
+-
+#
+# End of Test Cases
+#

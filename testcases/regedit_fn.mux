@@ -1,0 +1,78 @@
+#
+# regedit_fn.mux - Test Cases for regedit(), regediti(), regeditall(),
+#                  regeditalli().
+#
+# Regex-based find-and-replace, similar to edit() but with a regular
+# expression.  regedit() replaces only the FIRST match; regeditall()
+# replaces every match; the 'i' variants are case-insensitive.  The
+# first-vs-all distinction is the one worth guarding, so each case uses
+# a subject with more than one match.
+#
+@create test_regedit_fn
+-
+@set test_regedit_fn=INHERIT QUIET
+-
+&tr.tc000 test_regedit_fn=
+  @log smoke=Beginning regedit() family test cases.
+-
+#
+# Test Case #1 - First match only versus every match.
+#
+&tr.tc001 test_regedit_fn=
+  @if cand(
+        strmatch(regedit(aaa,a,X), Xaa),
+        strmatch(regeditall(aaa,a,X), XXX),
+        strmatch(regeditall(hello world,o,0), hell0 w0rld)
+      )=
+  {
+    @log smoke=TC001: regedit first versus all. Succeeded.
+  },
+  {
+    @log smoke=TC001: regedit first versus all. Failed (first=[regedit(aaa,a,X)] all=[regeditall(aaa,a,X)] multi=[regeditall(hello world,o,0)]).
+  }
+-
+#
+# Test Case #2 - Case-insensitive variants match where the sensitive
+# ones do not, and preserve the first/all distinction.
+#
+&tr.tc002 test_regedit_fn=
+  @if cand(
+        strmatch(regediti(AAA,a,X), XAA),
+        strmatch(regeditalli(AAA,a,X), XXX),
+        strmatch(regedit(AAA,a,X), AAA),
+        strmatch(regeditall(AAA,a,X), AAA)
+      )=
+  {
+    @log smoke=TC002: regedit case-insensitive variants. Succeeded.
+  },
+  {
+    @log smoke=TC002: regedit case-insensitive variants. Failed (i=[regediti(AAA,a,X)] alli=[regeditalli(AAA,a,X)] sens=[regedit(AAA,a,X)] allsens=[regeditall(AAA,a,X)]).
+  }
+-
+#
+# Test Case #3 - A regexp that matches nothing leaves the string alone.
+#
+&tr.tc003 test_regedit_fn=
+  @if cand(
+        strmatch(regedit(hello,z,X), hello),
+        strmatch(regeditall(hello,z,X), hello),
+        eq(strlen(regeditall(hello,l,)), 3)
+      )=
+  {
+    @log smoke=TC003: regedit no-match and empty replacement. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: regedit no-match and empty replacement. Failed (nomatch=[regedit(hello,z,X)] nomatchall=[regeditall(hello,z,X)] delete=[regeditall(hello,l,)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_regedit_fn=
+  @log smoke=End regedit() family test cases.;
+  @notify smoke
+-
+drop test_regedit_fn
+-
+#
+# End of Test Cases
+#
