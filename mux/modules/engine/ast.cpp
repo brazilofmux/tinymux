@@ -811,6 +811,64 @@ static bool ast_is_malformed_qsubst(const ASTNode *node)
 
 // Evaluate a function argument with the same top-level space trimming
 // that parse_arglist()/parse_to() applies around comma-separated args.
+// Evaluate children [first, last) of a SEQUENCE, applying 2.13's
+// one-call-per-region rule.
+//
+// EV_FCHECK without EV_FMAND means "the first '(' in this region may be
+// a function call".  2.13 clears EV_FCHECK once that opportunity is used
+// (mux/src/eval.cpp:1677, `eval &= ~EV_FCHECK`), so a later call in the
+// same region emits as literal text:
+//
+//     [strcat(x add(1,2) y)]  ->  x add(1,2) y      (not "x 3 y")
+//
+// Two places evaluate such a run — the AST_SEQUENCE case in
+// ast_eval_node and the space-compressed argument path in
+// ast_eval_argument — and both have to apply the rule.  Only the former
+// did, so the rule was dead for exactly the case that matters, a call
+// sitting mid-argument (#1214).  Shared here so the two cannot drift.
+//
+static void ast_eval_sequence_children(const ASTNode *node,
+    size_t first, size_t last, UTF8 *buff, UTF8 **bufc,
+    dbref executor, dbref caller, dbref enactor,
+    int eval, const UTF8 *cargs[], int ncargs)
+{
+    bool bFCheckPending = (eval & EV_FCHECK) != 0
+                       && (eval & EV_FMAND) == 0;
+
+    for (size_t i = first; i < last; i++)
+    {
+        int childEval = eval;
+        if (bFCheckPending)
+        {
+            if (node->children[i]->type != AST_FUNCCALL)
+            {
+                // A non-call consumes the opportunity without
+                // dispatching.
+                //
+                childEval = eval & ~EV_FCHECK;
+            }
+
+            // Any non-space child consumes it, including a FUNCCALL
+            // that does dispatch.
+            //
+            if (node->children[i]->type != AST_SPACE)
+            {
+                bFCheckPending = false;
+            }
+        }
+        else if (  (eval & EV_FCHECK) != 0
+                && (eval & EV_FMAND) == 0)
+        {
+            // Already consumed by an earlier non-space child.
+            //
+            childEval = eval & ~EV_FCHECK;
+        }
+
+        ast_eval_node(node->children[i].get(), buff, bufc,
+            executor, caller, enactor, childEval, cargs, ncargs);
+    }
+}
+
 static void ast_eval_argument(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
@@ -838,11 +896,8 @@ static void ast_eval_argument(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             last--;
         }
 
-        for (size_t i = first; i < last; i++)
-        {
-            ast_eval_node(node->children[i].get(), buff, bufc,
-                executor, caller, enactor, eval, cargs, ncargs);
-        }
+        ast_eval_sequence_children(node, first, last, buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs);
         return;
     }
 
@@ -2497,47 +2552,8 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             }
         }
 
-        // EV_FCHECK without EV_FMAND: mux_exec only checks the first
-        // '(' as a potential function call, then clears EV_FCHECK.
-        // Replicate by only letting the first effective child keep
-        // EV_FCHECK; subsequent children get it stripped so their
-        // FUNCALL nodes output as literal text.
-        //
-        bool bFCheckPending = (eval & EV_FCHECK) != 0
-                           && (eval & EV_FMAND) == 0;
-
-        for (size_t i = first; i < last; i++)
-        {
-            int childEval = eval;
-            if (bFCheckPending)
-            {
-                if (node->children[i]->type != AST_FUNCCALL)
-                {
-                    // If it's not a function call, it consumes the
-                    // FCHECK opportunity without dispatching.
-                    //
-                    childEval = eval & ~EV_FCHECK;
-                }
-
-                // Any non-space child (even if it's a FUNCCALL that
-                // dispatches) consumes the FCHECK opportunity.
-                //
-                if (node->children[i]->type != AST_SPACE)
-                {
-                    bFCheckPending = false;
-                }
-            }
-            else if (  (eval & EV_FCHECK) != 0
-                    && (eval & EV_FMAND) == 0)
-            {
-                // FCHECK opportunity already consumed by an earlier
-                // non-space child in this sequence.
-                //
-                childEval = eval & ~EV_FCHECK;
-            }
-            ast_eval_node(node->children[i].get(), buff, bufc,
-                executor, caller, enactor, childEval, cargs, ncargs);
-        }
+        ast_eval_sequence_children(node, first, last, buff, bufc,
+            executor, caller, enactor, eval, cargs, ncargs);
         break;
     }
     }
