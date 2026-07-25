@@ -122,12 +122,12 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| I1 | Session / process manager | `session_manager.*`, `process_manager.*` | med | Pass 4 | deep | #1091–#1102 cluster (lifecycle, queues, auth) |
-| I2 | gRPC / gRPC-web | `grpc_server.*`, `grpc_web.*` | med | Pass 4 | partial | Lockout/metrics; still need deeper RPC surface |
-| I3 | Telnet bridge / stream | `telnet_bridge.*`, `telnet_stream.*` | med | Pass 4 | partial | SB reassembly #1101 |
-| I4 | Proxy WebSocket | `mux/proxy/websocket.*` | small | Pass 4 | deep | #1093–#1095 (mask OOB, CLOSE, control limits) |
-| I5 | Accounts / crypto / scrollback | `account_manager.*`, `crypto.*`, `scrollback.*` | med | Pass 4 | deep | CASCADE wipe #1091; memoryBytes #1092; RNG #1098 |
-| I6 | Proxy regression | `proxy_regression.cpp` | small | Pass 4 | partial | Must expand with #1093+ cases |
+| I1 | Session / process manager | `session_manager.*`, `process_manager.*` | med | Pass 4 | deep | #1091–#1102 closed (#1103 Highs, #1105 Mediums) |
+| I2 | gRPC / gRPC-web | `grpc_server.*`, `grpc_web.*` | med | Pass 4 | partial | Auth lockout + ListGames/GetGameStatus gate (#1105); deeper RPC surface remains |
+| I3 | Telnet bridge / stream | `telnet_bridge.*`, `telnet_stream.*` | med | Pass 4 | deep | SB reassembly cap + disconnect (#1101 via #1105) |
+| I4 | Proxy WebSocket | `mux/proxy/websocket.*` | small | Pass 4 | deep | #1093–#1095 closed (#1103 mask/CLOSE; #1105 RSV/control limits) |
+| I5 | Accounts / crypto / scrollback | `account_manager.*`, `crypto.*`, `scrollback.*` | med | Pass 4 | deep | #1091–#1092, #1098, #1100 closed (#1103/#1105) |
+| I6 | Proxy regression | `proxy_regression.cpp` | small | Pass 4 | partial | 16/64-bit mask, CLOSE, RSV, large PING, SB cap; more cases welcome |
 
 ### J — Clients (Hydra family)
 
@@ -168,7 +168,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 1 | 2026-07 | Restart DESC, SQLite durability, queue, JIT host edge, conf ints, convert encode | #1039–#1061 → PR #1062 |
 | Pass 2 | 2026-07 | Softcode, mail_mod, Windows IOCP/wselect, Schannel, JIT residual | #1063–#1071 → PR #1072; #1073/#1075 schema; #1074/#1076 banner |
 | Pass 3 | 2026-07 | Convert residual, JIT bounds, queue money, WS, comsys_mod, conf live sync | #1077–#1080 → #1086; #1087/#1088; #1081–#1085 → #1089 |
-| Pass 4 | 2026-07 | Hydra proxy I1–I5 (session, scrollback, WS, auth, process) | #1091–#1102 filed; fix PR TBD |
+| Pass 4 | 2026-07 | Hydra proxy I1–I5 (session, scrollback, WS, auth, process) | #1091–#1102 filed; Highs → #1103; Mediums → #1105 (complete) |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -181,13 +181,12 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **Fix Pass 4** (#1091–#1102) | Data-loss + WS memory-safety first |
-| **Pass 5** | **C2** function builtins (batch by letter / family) | Huge; never one-and-done |
+| **Now** | **Pass 5 — C2** function builtins (batch by letter / family) | Huge; never one-and-done |
 | **Pass 6** | **A3 + A4 + A6** net/telnet/signals re-sweep | Lifecycle adjacent to Pass 1; idle/site/output |
 | **Pass 7** | **D2 + D3** HIR/DBT | Complements JIT ECALL deep work |
 | **Pass 8** | **E5 + C5** object/player/move | Gameplay permission paths |
 | **Pass 9** | **F3** engine comsys/mail vs modules | Dual implementation drift |
-| **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | After #1091–#1102 |
+| **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | Pass 4 closed; residual depth |
 | **Pass 11** | **B3 + B4 nits + B6** OpenSSL re-read + Schannel residual + harness | Windows/Linux TLS depth |
 | **Pass 12+** | **J\*** clients by platform | After server/proxy confidence |
 | **Anytime** | **D5** jit_diff soak | Continuous, not a “pass” |
@@ -227,5 +226,7 @@ From `docs/status-2.14.md` and practice:
 |------|--------|
 | 2026-07-24 | Initial map after Passes 1–3; open defects cleared except #1027 |
 | 2026-07-24 | Pass 4 Hydra filed #1091–#1102; I* slice status updated |
+| 2026-07-25 | Pass 4 Highs #1091–#1094 merged (#1103); I4/I5/I6 + rotation updated |
+| 2026-07-25 | Pass 4 Mediums #1095–#1102 merged (#1105); Pass 4 complete; rotation → Pass 5 C2 |
 
 Update this table when the map structure changes.
