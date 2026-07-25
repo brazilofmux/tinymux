@@ -66,6 +66,42 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #4 - The two NearestPretty regimes.
+#
+# mul() finishes with NearestPretty(), which scans R +/- 4 ulp and takes
+# the neighbour with the shortest decimal rendering.  That gives two
+# distinct behaviours, and both are asserted here because a change to
+# either one is a regression:
+#
+#   TIE      R already renders as short as the best neighbour, so R must
+#            survive.  sqrt(1.5) is 16 digits and its shortest neighbour
+#            is also 16, so mul(sqrt(1.5),1) must be sqrt(1.5).  A
+#            tie-break preferring a lower neighbour returns
+#            1.224744871391588 instead and fails here.
+#
+#   SHORTER  A neighbour is STRICTLY shorter, so NearestPretty moves the
+#            result on purpose.  sqrt(2) is 17 digits and its neighbour
+#            one ulp below is 16, so mul(sqrt(2),1) is deliberately NOT
+#            sqrt(2).  Disabling NearestPretty to "fix" the tie case
+#            would return 1.4142135623730951 and fail here.
+#
+&tr.tc004 test_mul_fn=
+  @if cand(
+        strmatch(mul(1.224744871391589,1),1.224744871391589),
+        strmatch(mul(2.449489742783178,1),2.449489742783178),
+        strmatch(mul(sqrt(1.5),1),[sqrt(1.5)]),
+        strmatch(mul(sqrt(2),1),1.414213562373095)
+      )=
+  {
+    @log smoke=TC004: mul NearestPretty tie and shorten. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: mul NearestPretty tie and shorten. Failed (tie1=[mul(1.224744871391589,1)] tie2=[mul(2.449489742783178,1)] tiesq=[mul(sqrt(1.5),1)]/[sqrt(1.5)] shorten=[mul(sqrt(2),1)]).;
+    @trig me/tr.done
+  }
+-
 &tr.done test_mul_fn=
   @log smoke=End mul() test cases.;
   @notify smoke

@@ -3236,17 +3236,22 @@ general_lowering:
     // fold via try_fold's AddDoubles; runtime float add()/sub() routes to the
     // tier2 blob rv64_add/rv64_sub, which now call the AddDoubles intrinsic.
 
-    // MUL with float args.
-    if (upper == "MUL" && nargs >= 2 && all_numeric() && any_float()) {
-        int acc = ensure_float(args[0]);
-        for (int i = 1; i < nargs; i++) {
-            int b = ensure_float(args[i]);
-            acc = h.emit(HIR_FMUL, TY_FLOAT, acc, b);
-        }
-        h.native_ops++;
-        h.needs_jit = true;
-        return acc;
-    }
+    // float MUL is NOT lowered to a native FMUL chain, for the same reason
+    // float ADD/SUB are not (#829): the interpreter's fun_mul finishes with
+    // fval(NearestPretty(prod)), and NearestPretty may move the result by up
+    // to 4 ulp to reach a shorter decimal rendering.  A raw FMUL chain skips
+    // that step, so the JIT returned the exact IEEE product where the
+    // interpreter returned its prettified neighbour -- #1171:
+    //
+    //   mul(sqrt(100.125),3)   interpreter 30.01874414428424
+    //                          native FMUL 30.018744144284252
+    //
+    // Constant mul() still folds above via try_fold, which applies
+    // NearestPretty itself; runtime float mul() falls through to the tier2
+    // blob rv64_mul, which mirrors fun_mul exactly (strtod, multiply,
+    // rv64_nearest_pretty, fval).  Integer mul() is unaffected: it never
+    // reached this path, and NearestPretty returns integral values
+    // unchanged via its own fast path.
 
     // FDIV: always produces float.  Promote args to double.
 #ifdef HAVE_IEEE_FP_SNAN
