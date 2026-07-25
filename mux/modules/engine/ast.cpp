@@ -832,40 +832,54 @@ static void ast_eval_sequence_children(const ASTNode *node,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
-    bool bFCheckPending = (eval & EV_FCHECK) != 0
-                       && (eval & EV_FMAND) == 0;
+    // Whether a call in this region can still be recognised.
+    //
+    bool armed = (eval & EV_FCHECK) != 0;
+
+    // What spends that opportunity differs by region kind (#1238).
+    //
+    // Without EV_FMAND, 2.13 checks only the first '(' it reaches, so
+    // any preceding text spends the opportunity and a later call emits
+    // as literal.
+    //
+    // With EV_FMAND the candidate name is the accumulated OUTPUT rather
+    // than a token, so text before a call does NOT spend it — 2.13
+    // folds that text into the name instead:
+    //
+    //     [x add(1,2) y]          ->  #-1 FUNCTION (X ADD) NOT FOUND
+    //
+    // Only a call spends it there, matching the unconditional
+    // `eval &= ~EV_FCHECK` after a dispatch (mux/src/eval.cpp:1677):
+    //
+    //     [add(1,2) mul(3,4)]     ->  3 mul(3,4)
+    //     [add(1,2) zz mul(3,4)]  ->  3 zz mul(3,4)
+    //
+    const bool fmand = (eval & EV_FMAND) != 0;
 
     for (size_t i = first; i < last; i++)
     {
-        int childEval = eval;
-        if (bFCheckPending)
-        {
-            if (node->children[i]->type != AST_FUNCCALL)
-            {
-                // A non-call consumes the opportunity without
-                // dispatching.
-                //
-                childEval = eval & ~EV_FCHECK;
-            }
+        const ASTNode *child = node->children[i].get();
 
-            // Any non-space child consumes it, including a FUNCCALL
-            // that does dispatch.
-            //
-            if (node->children[i]->type != AST_SPACE)
-            {
-                bFCheckPending = false;
-            }
-        }
-        else if (  (eval & EV_FCHECK) != 0
-                && (eval & EV_FMAND) == 0)
+        int childEval = eval;
+        if (  !armed
+           || (  !fmand
+              && child->type != AST_FUNCCALL))
         {
-            // Already consumed by an earlier non-space child.
-            //
             childEval = eval & ~EV_FCHECK;
         }
 
-        ast_eval_node(node->children[i].get(), buff, bufc,
+        ast_eval_node(child, buff, bufc,
             executor, caller, enactor, childEval, cargs, ncargs);
+
+        if (  armed
+           && child->type != AST_SPACE)
+        {
+            if (  !fmand
+               || child->type == AST_FUNCCALL)
+            {
+                armed = false;
+            }
+        }
     }
 }
 

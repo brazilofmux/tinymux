@@ -229,3 +229,13 @@ SC_DOUBLESPACE|[strcat(a  b)]
 SC_LEADTRAIL|[strcat(  a  )]
 SC_PLAINTEXT|a  b  c
 SC_SPAN|[zz mul(2,3)]
+
+# --- text before a call in an FMAND region (#1238 scope boundary) ---
+# 2.13's candidate name there is the accumulated OUTPUT, so leading text
+# is folded into the name rather than spending the recognition
+# opportunity.  2.14 tokenizes instead and cannot express that; the two
+# 2.14 routes do not even agree with each other here.  Left
+# unadjudicated: there is no settled value yet.  Same family as SC_SPAN
+# and DA_BRACKET_CALL.
+FM_LIT_CALL|[x add(1,2) y]
+FM_LIT_CALL2|[x add(1,2)]
