@@ -732,6 +732,11 @@ static CF_HAND(cf_pool_limit)
     return 0;
 }
 
+// Defined below, next to cf_bool/cf_string/cf_option which also use it.
+// Declared here because cf_dbref and cf_seconds precede that definition.
+//
+static void live_sync_driver_config(void);
+
 // ---------------------------------------------------------------------------
 // cf_dbref: Set dbref parameter....looking for an ignoring the leading '#'.
 //
@@ -755,6 +760,12 @@ static CF_HAND(cf_dbref)
     // Copy the numeric value to the parameter.
     //
     *vp = mux_atol(p);
+
+    // guest_char_num and player_starting_room are both in the driver basket
+    // and read live (the guest-login gate and where a newly created player is
+    // moved), so re-pull it here for the same reason as cf_seconds (#1222).
+    //
+    live_sync_driver_config();
     return 0;
 }
 
@@ -770,6 +781,14 @@ static CF_HAND(cf_seconds)
 
     auto* pltd = reinterpret_cast<CLinearTimeDelta*>(vp);
     pltd->SetSecondsString(str);
+
+    // lag_limit, lag_maximum and timeslice all land in the driver basket and
+    // are read live by net.cpp (the alarm-clock watchdog, the lag report
+    // threshold, and command deferral).  Without this the runtime @admin
+    // updated mudconf -- so config() reported the new value -- while the
+    // driver kept using the boot-time one until restart (#1222).
+    //
+    live_sync_driver_config();
     return 0;
 }
 
