@@ -46,6 +46,19 @@ static MUX_CLASS_INFO comsys_classes[] =
 };
 #define NUM_CLASSES (sizeof(comsys_classes)/sizeof(comsys_classes[0]))
 
+// Required by libmux ModuleLoad — without this, bLoaded stays false and
+// CreateInstance never finds the class (#1191 root cause).
+//
+extern "C" MUX_RESULT DCL_API mux_CanUnloadNow(void)
+{
+    if (  0 == g_cComponents
+       && 0 == g_cServerLocks)
+    {
+        return MUX_S_OK;
+    }
+    return MUX_S_FALSE;
+}
+
 extern "C" MUX_RESULT DCL_API mux_Register(void)
 {
     MUX_RESULT mr = MUX_E_UNEXPECTED;
@@ -102,7 +115,8 @@ CComsysMod::CComsysMod(void) : m_cRef(1),
     m_pIAttributeAccess(nullptr),
     m_pIEvaluator(nullptr),
     m_pIPermissions(nullptr),
-    m_pIStorage(nullptr)
+    m_pIStorage(nullptr),
+    m_revision(0)
 {
     g_cComponents++;
 }
@@ -637,6 +651,17 @@ void CComsysMod::do_comdisconnectchannel(dbref player, const UTF8 *channel)
 // Write-through helpers — delegate to engine storage interface.
 // ---------------------------------------------------------------------------
 
+void CComsysMod::bump_revision(void)
+{
+    // Wrap-safe for softcode gen-sync; softcode treats any change as dirty.
+    //
+    m_revision++;
+    if (m_revision < 0)
+    {
+        m_revision = 1;
+    }
+}
+
 void CComsysMod::sqlite_wt_channel_user(const UTF8 *channel_name,
     const comuser &user)
 {
@@ -644,6 +669,7 @@ void CComsysMod::sqlite_wt_channel_user(const UTF8 *channel_name,
     m_pIStorage->SyncChannelUser(channel_name, user.who,
         user.bUserIsOn, user.ComTitleStatus, user.bGagJoinLeave,
         reinterpret_cast<const UTF8 *>(user.title.c_str()));
+    bump_revision();
 }
 
 void CComsysMod::sqlite_wt_channel(struct channel *ch)
@@ -652,6 +678,7 @@ void CComsysMod::sqlite_wt_channel(struct channel *ch)
     m_pIStorage->SyncChannel(ch->name, ch->header, ch->type,
         ch->temp1, ch->temp2, ch->charge, ch->charge_who,
         ch->amount_col, ch->num_messages, ch->chan_obj);
+    bump_revision();
 }
 
 void CComsysMod::sqlite_wt_player_channel(dbref who, const UTF8 *alias,
@@ -659,12 +686,14 @@ void CComsysMod::sqlite_wt_player_channel(dbref who, const UTF8 *alias,
 {
     if (nullptr == m_pIStorage) return;
     m_pIStorage->SyncPlayerChannel(who, alias, channel_name);
+    bump_revision();
 }
 
 void CComsysMod::sqlite_wt_delete_player_channel(dbref who, const UTF8 *alias)
 {
     if (nullptr == m_pIStorage) return;
     m_pIStorage->DeletePlayerChannel(who, alias);
+    bump_revision();
 }
 
 void CComsysMod::sqlite_wt_delete_channel_user(const UTF8 *channel_name,
@@ -672,6 +701,7 @@ void CComsysMod::sqlite_wt_delete_channel_user(const UTF8 *channel_name,
 {
     if (nullptr == m_pIStorage) return;
     m_pIStorage->DeleteChannelUser(channel_name, who);
+    bump_revision();
 }
 
 // ---------------------------------------------------------------------------
@@ -1487,6 +1517,7 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
             if (nullptr != m_pIStorage)
             {
                 m_pIStorage->DeleteChannel(it->second->name);
+                bump_revision();
             }
             it = m_channels.erase(it);
         }
@@ -2651,6 +2682,16 @@ MUX_RESULT CComsysMod::ProcessCommand(dbref executor, const UTF8 *pCmd,
     return MUX_S_OK;
 }
 
+MUX_RESULT CComsysMod::GetRevision(int *pRev)
+{
+    if (nullptr == pRev)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pRev = m_revision;
+    return MUX_S_OK;
+}
+
 // ---------------------------------------------------------------------------
 // Alias management.
 // ---------------------------------------------------------------------------
@@ -2987,6 +3028,7 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
     if (nullptr != m_pIStorage)
     {
         m_pIStorage->DeleteChannel(ch->name);
+        bump_revision();
     }
 
     // Notify before erasing (ch will be destroyed by unique_ptr).

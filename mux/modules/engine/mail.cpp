@@ -79,6 +79,10 @@ static std::vector<MAILBODY> mail_list;
 // Per-player mail lists using STL for ownership and iteration.
 static std::unordered_map<dbref, std::list<mail>> mail_storage;
 
+// #1191 softcode gen-sync (defined with mail_fetch).
+//
+static void ensure_mail_softcode_sync(void);
+
 // Small helper to reduce reinterpret_cast noise when passing std::string
 // contents to UTF8*-taking APIs (UTF8 is typically unsigned char*).
 static inline const UTF8* utf8(const std::string& s) {
@@ -2541,8 +2545,44 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
 /*-------------------------------------------------------------------------*
  *   Basic mail functions
  *-------------------------------------------------------------------------*/
+// #1191: Softcode mail_* helpers use engine maps; re-sync from SQLite when
+// the module store is ahead.
+//
+static void ensure_mail_softcode_sync(void)
+{
+    if (nullptr == mudstate.pIMailControl)
+    {
+        return;
+    }
+
+    // Re-entrancy guard, mirroring the comsys side: the loader runs engine
+    // paths that can call back into us before s_seen_rev is assigned.
+    //
+    if (mudstate.bSQLiteLoading)
+    {
+        return;
+    }
+
+    static int s_seen_rev = -1;
+    int rev = 0;
+    MUX_RESULT mr = mudstate.pIMailControl->GetRevision(&rev);
+    if (MUX_FAILED(mr))
+    {
+        return;
+    }
+    if (rev == s_seen_rev)
+    {
+        return;
+    }
+
+    (void)sqlite_load_mail();
+    s_seen_rev = rev;
+}
+
 struct mail *mail_fetch(dbref player, int num)
 {
+    ensure_mail_softcode_sync();
+
     int i = 0;
     MailList ml(player);
     struct mail *mp;
@@ -2593,6 +2633,8 @@ void count_mail(dbref player, int folder, int *rcount, int *ucount, int *ccount)
             return;
         }
     }
+
+    ensure_mail_softcode_sync();
 
     int rc = 0;
     int uc = 0;
@@ -4446,6 +4488,21 @@ static void do_mail_quick(dbref player, UTF8 *arg1, UTF8 *arg2)
 //
 const UTF8 *do_mail_send_softcode(dbref player, UTF8 *recipients, UTF8 *subject, UTF8 *message)
 {
+    // #1191: When the mail module owns the store, send through SoftcodeSend
+    // so headers/bodies land in the same map as @mail commands.
+    //
+    if (nullptr != mudstate.pIMailControl)
+    {
+        const UTF8 *err = nullptr;
+        MUX_RESULT mr = mudstate.pIMailControl->SoftcodeSend(player,
+            recipients, subject, message, &err);
+        if (MUX_SUCCEEDED(mr))
+        {
+            return nullptr;
+        }
+        return (nullptr != err) ? err : T("#-1 MAIL SEND FAILED");
+    }
+
     // Resolve to the owning player — softcode may run on a non-player object.
     //
     player = Owner(player);
@@ -5352,6 +5409,8 @@ void do_mail
 
 struct mail *MailList::FirstItem(void)
 {
+    ensure_mail_softcode_sync();
+
     auto it = mail_storage.find(m_player);
     if (it == mail_storage.end() || it->second.empty())
     {

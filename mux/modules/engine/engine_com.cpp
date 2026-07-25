@@ -5022,6 +5022,13 @@ MUX_RESULT CComsysStorage::SyncChannel(const UTF8 *name, const UTF8 *header,
 
     bool ok = pDb->SyncChannel(name, header, type,
         temp1, temp2, charge, charge_who, amount_col, num_messages, chan_obj);
+    if (ok)
+    {
+        // #1191 / #783: softcode reloads via sqlite_load_comsys() only when
+        // has_comsys meta is set.  Module creates must open that gate.
+        //
+        ok = pDb->PutMeta("has_comsys", 1);
+    }
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 

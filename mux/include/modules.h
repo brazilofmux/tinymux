@@ -463,7 +463,10 @@ public:
 // It calls into the comsys module for command dispatch and events.
 //
 const MUX_CID CID_Comsys                = UINT64_C(0x00000002C5A2F193);
-const MUX_IID IID_IComsysControl        = UINT64_C(0x000000028E4B63D7);
+// IID bumped ..63D7 -> ..63D8 when GetRevision was added to the vtable
+// (#1191): a stale comsys_mod.so must fail discovery rather than be
+// called through a slot it does not implement (the #817 pattern).
+const MUX_IID IID_IComsysControl        = UINT64_C(0x000000028E4B63D8);
 
 interface mux_IComsysControl : public mux_IUnknown
 {
@@ -516,6 +519,12 @@ public:
     //
     virtual MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
         bool *pbHandled) = 0;
+
+    // #1191: Softcode bridge — revision bumps on every mutation so the
+    // engine can re-load its softcode maps from SQLite when they lag the
+    // module-owned store.
+    //
+    virtual MUX_RESULT GetRevision(int *pRev) = 0;
 };
 
 // Attribute read/write with built-in permission checks.
@@ -533,7 +542,9 @@ public:
 // Mail module — @mail system provided by loadable module.
 //
 const MUX_CID CID_Mail                  = UINT64_C(0x00000002D7A3E1B5);
-const MUX_IID IID_IMailControl          = UINT64_C(0x00000002F9C84D62);
+// IID bumped ..4D62 -> ..4D63 when GetRevision/SoftcodeSend were added
+// to the vtable (#1191); see the comsys note above.
+const MUX_IID IID_IMailControl          = UINT64_C(0x00000002F9C84D63);
 
 interface mux_IMailControl : public mux_IUnknown
 {
@@ -565,6 +576,12 @@ public:
     virtual MUX_RESULT CountMail(dbref player, int folder,
         int *pRead, int *pUnread, int *pCleared) = 0;
     virtual MUX_RESULT DestroyPlayerMail(dbref player) = 0;
+
+    // #1191: Softcode bridge — revision + mailsend() path into module store.
+    //
+    virtual MUX_RESULT GetRevision(int *pRev) = 0;
+    virtual MUX_RESULT SoftcodeSend(dbref player, const UTF8 *recipients,
+        const UTF8 *subject, const UTF8 *message, const UTF8 **ppError) = 0;
 };
 
 // Mail delivery — server-provided interface for mail permission checks,
