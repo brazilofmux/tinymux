@@ -1,0 +1,92 @@
+# Parser-shape corpus for the 2.13 <-> 2.14 parity jig.
+#
+# Format:  NAME|expression
+#
+# One expression per line, sent as `think <expression>` wrapped in markers.
+# Keep each on a single line and avoid the marker text (ZZ) inside it.
+#
+# These shapes exist because MUSH function-call recognition is context
+# sensitive in ways a tokenizer cannot decide: `add(` is a call and
+# `foo(` is not, and only a function-table lookup separates them.  The
+# corpus therefore probes POSITION (where in the text the call sits),
+# ARMING (what precedes it), and NESTING, rather than trying to describe
+# a grammar.
+#
+# Comment lines start with #.  Blank lines are ignored.
+
+# --- position of a call within a function argument ---
+POS_START|[strcat(add(1,2))]
+POS_START_TAIL|[strcat(add(1,2) tail)]
+POS_MID|[strcat(x add(1,2) y)]
+POS_END|[strcat(head add(1,2))]
+POS_MID_COLON|[strcat(Total: add(1,2) items)]
+POS_MID_NOSP|[strcat(xadd(1,2)y)]
+POS_MID_COMMA_SEP|[strcat(a,b add(1,2) c)]
+POS_ARG2_START|[strcat(zz,add(1,2))]
+POS_ARG2_MID|[strcat(zz,q add(1,2) r)]
+
+# --- known vs unknown callee name (the function-table dependency) ---
+UNKNOWN_START|[strcat(foo(1,2))]
+UNKNOWN_MID|[strcat(x foo(1,2) y)]
+
+# --- escaped brackets: a literal '[' places the call mid-text ---
+ESC_BOTH|[strcat(\[add(1,2)\])]
+ESC_OPEN|[strcat(\[add(1,2))]
+ESC_CLOSE|[strcat(add(1,2)\])]
+ESC_BOTH_TEXT|[strcat(q\[add(1,2)\]r)]
+REALBRK_IN_ARG|[strcat(q[add(1,2)]r)]
+REALBRK_ALONE|[strcat([add(1,2)])]
+
+# --- brace groups ---
+BRACE_MID|[strcat({x add(1,2) y})]
+BRACE_START|[strcat({add(1,2)})]
+
+# --- %-substitution adjacency ---
+PCT_BEFORE|[strcat(%b add(1,2))]
+PCT_ADJACENT|[strcat(%badd(1,2))]
+PAREN_ESC|[strcat(add%(1,2%))]
+
+# --- more than one call in the same text (the one-shot rule) ---
+DOUBLE_CALL|[strcat(add(1,2) mul(3,4))]
+DOUBLE_MID|[strcat(z add(1,2) mul(3,4) w)]
+
+# --- nesting depth ---
+NESTED_OUTER|[strcat(strcat(add(1,2)))]
+NESTED_MID|[strcat(strcat(x add(1,2) y))]
+DEEP_MID|[strcat(strcat(strcat(q add(1,2) r)))]
+
+# --- what precedes the callee name ---
+SPACE_BEFORE_PAREN|[strcat(x add (1,2) y)]
+DIGIT_PREFIX|[strcat(x 1add(1,2) y)]
+UNDERSCORE_PREFIX|[strcat(x _add(1,2) y)]
+PUNCT_PREFIX|[strcat(x .add(1,2) y)]
+DASH_PREFIX|[strcat(x -add(1,2) y)]
+BANG_PREFIX|[strcat(x !add(1,2) y)]
+EQ_PREFIX|[strcat(x =add(1,2) y)]
+SLASH_PREFIX|[strcat(x /add(1,2) y)]
+QUOTE_PREFIX|[strcat(x "add(1,2) y)]
+COLON_PREFIX|[strcat(x :add(1,2) y)]
+SEMI_PREFIX|[strcat(x ;add(1,2) y)]
+OPENPAREN_PREFIX|[strcat(x (add(1,2) y)]
+
+# --- top level (no enclosing function argument) ---
+TOPLEVEL_MID|x add(1,2) y
+TOPLEVEL_START|add(1,2) y
+TOPLEVEL_BRK|x [add(1,2)] y
+
+# --- control-flow function arguments ---
+SWITCH_ARG_MID|[switch(1,1,x add(1,2) y,zz)]
+IF_ARG_MID|[if(1,x add(1,2) y)]
+ITER_MID|[iter(1,x add(1,2) y)]
+
+# --- callee arity and shape ---
+U_ARG_MID|[strcat(x u(1,2) y)]
+LIT_LOOKALIKE|[strcat(x add (1,2) y)]
+EMPTY_ARGS|[strcat(x add() y)]
+ONE_ARG|[strcat(x abs(-5) y)]
+
+# --- player-facing prose (the reason the rule exists) ---
+SAY_PROSE|say Hey, I tried add(1).
+SAY_MIXED|say Hey, I tried add(1) and I got [add(1)].
+POSE_PROSE|pose tried add(1) today.
+PEMIT_PROSE|@pemit me=Hey, I tried add(1).
