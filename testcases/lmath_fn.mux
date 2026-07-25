@@ -1,0 +1,76 @@
+#
+# lmath_fn.mux - Test Cases for lmath().
+#
+# lmath(<operation>, <list of numbers>[, <delim>]) applies <operation>
+# across a list.  It subsumes ladd()/lmin()/lmax() and adds operations
+# with no standalone equivalent, so it is the only route to several of
+# them.  Expected values below are the documented ones from help lmath().
+#
+@create test_lmath_fn
+-
+@set test_lmath_fn=INHERIT QUIET
+-
+&tr.tc000 test_lmath_fn=
+  @log smoke=Beginning lmath() test cases.
+-
+#
+# Test Case #1 - Documented examples: add, mul, mean, median.
+#
+&tr.tc001 test_lmath_fn=
+  @if cand(
+        eq(lmath(add, 1 2 3 4 5), 15),
+        eq(lmath(mul, 2 3 4), 24),
+        eq(lmath(mean, 10 20 30), 20),
+        eq(lmath(median, 1 3 5 7), 4)
+      )=
+  {
+    @log smoke=TC001: lmath documented operations. Succeeded.
+  },
+  {
+    @log smoke=TC001: lmath documented operations. Failed (add=[lmath(add, 1 2 3 4 5)] mul=[lmath(mul, 2 3 4)] mean=[lmath(mean, 10 20 30)] median=[lmath(median, 1 3 5 7)]).
+  }
+-
+#
+# Test Case #2 - Single-element and negative-value lists.
+# A one-element list must return that element, not an identity value.
+#
+&tr.tc002 test_lmath_fn=
+  @if cand(
+        eq(lmath(add, 7), 7),
+        eq(lmath(mul, 7), 7),
+        eq(lmath(add, -3 3), 0),
+        eq(lmath(mul, -2 3), -6)
+      )=
+  {
+    @log smoke=TC002: lmath single element and negatives. Succeeded.
+  },
+  {
+    @log smoke=TC002: lmath single element and negatives. Failed (add1=[lmath(add, 7)] mul1=[lmath(mul, 7)] addneg=[lmath(add, -3 3)] mulneg=[lmath(mul, -2 3)]).
+  }
+-
+#
+# Test Case #3 - Alternate delimiter.
+#
+&tr.tc003 test_lmath_fn=
+  @if cand(
+        eq(lmath(add, 1|2|3, |), 6),
+        eq(lmath(mul, 2|3|4, |), 24)
+      )=
+  {
+    @log smoke=TC003: lmath alternate delimiter. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: lmath alternate delimiter. Failed (add=[lmath(add, 1|2|3, |)] mul=[lmath(mul, 2|3|4, |)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lmath_fn=
+  @log smoke=End lmath() test cases.;
+  @notify smoke
+-
+drop test_lmath_fn
+-
+#
+# End of Test Cases
+#

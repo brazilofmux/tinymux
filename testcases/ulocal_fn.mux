@@ -1,0 +1,62 @@
+#
+# ulocal_fn.mux - Test Cases for ulocal().
+#
+# ulocal() evaluates an attribute like u(), but preserves the global
+# registers r(0)-r(9)/r(A)-r(Z) in their initial state: a setq() inside
+# the called attribute must not be visible to the caller afterwards.
+# That q-register isolation is the entire reason the function exists,
+# and it is what these cases pin.
+#
+@create test_ulocal_fn
+-
+@set test_ulocal_fn=INHERIT QUIET
+-
+&fn.setter test_ulocal_fn=[setq(0,INNER)]BODY
+-
+&fn.echo test_ulocal_fn=[%0]-[%1]
+-
+&tr.tc000 test_ulocal_fn=
+  @log smoke=Beginning ulocal() test cases.
+-
+#
+# Test Case #1 - q-register isolation, and the u() contrast.
+# ulocal() must leave %q0 as the caller set it; u() must not.
+#
+&tr.tc001 test_ulocal_fn=
+  @if cand(
+        strmatch([setq(0,OUTER)][ulocal(fn.setter)]:[%q0], BODY:OUTER),
+        strmatch([setq(0,OUTER)][u(fn.setter)]:[%q0], BODY:INNER)
+      )=
+  {
+    @log smoke=TC001: ulocal q-register isolation. Succeeded.
+  },
+  {
+    @log smoke=TC001: ulocal q-register isolation. Failed (ulocal=[setq(0,OUTER)][ulocal(fn.setter)]:[%q0] u=[setq(0,OUTER)][u(fn.setter)]:[%q0]).
+  }
+-
+#
+# Test Case #2 - Arguments are passed through as %0, %1.
+#
+&tr.tc002 test_ulocal_fn=
+  @if cand(
+        strmatch(ulocal(fn.echo,a,b), a-b),
+        strmatch(ulocal(me/fn.echo,x,y), x-y)
+      )=
+  {
+    @log smoke=TC002: ulocal argument passing. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: ulocal argument passing. Failed (bare=[ulocal(fn.echo,a,b)] qualified=[ulocal(me/fn.echo,x,y)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ulocal_fn=
+  @log smoke=End ulocal() test cases.;
+  @notify smoke
+-
+drop test_ulocal_fn
+-
+#
+# End of Test Cases
+#

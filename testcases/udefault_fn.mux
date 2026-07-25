@@ -1,0 +1,47 @@
+#
+# udefault_fn.mux - Test Cases for udefault().
+#
+# udefault(<attr>,<default>,<args>...) evaluates <attr> with the supplied
+# arguments if it exists and is non-empty, and otherwise evaluates
+# <default>.  Both arms are unevaluated until selected (FN_NOEVAL), so the
+# unselected arm must not be evaluated at all.
+#
+@create test_udefault_fn
+-
+@set test_udefault_fn=INHERIT QUIET
+-
+&fn.center test_udefault_fn=[center(%0,5,*)]
+-
+&fn.empty test_udefault_fn=
+-
+&tr.tc000 test_udefault_fn=
+  @log smoke=Beginning udefault() test cases.
+-
+#
+# Test Case #1 - Present attribute is evaluated with the arguments;
+# a missing one falls back to the default.  Both from help udefault().
+#
+&tr.tc001 test_udefault_fn=
+  @if cand(
+        strmatch(udefault(fn.center,-- BOOM --,ACK), *ACK*),
+        strmatch(udefault(me/nosuchattr,-- BOOM --,ACK), -- BOOM --),
+        strmatch(udefault(me/fn.empty,-- BOOM --,ACK), -- BOOM --)
+      )=
+  {
+    @log smoke=TC001: udefault present/missing/empty. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC001: udefault present/missing/empty. Failed (present=[udefault(fn.center,-- BOOM --,ACK)] missing=[udefault(me/nosuchattr,-- BOOM --,ACK)] empty=[udefault(me/fn.empty,-- BOOM --,ACK)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_udefault_fn=
+  @log smoke=End udefault() test cases.;
+  @notify smoke
+-
+drop test_udefault_fn
+-
+#
+# End of Test Cases
+#
