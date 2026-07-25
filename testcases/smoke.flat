@@ -1289,8 +1289,12 @@
 "@if cand(eq(add(1,2), 3),eq(add(1,2,3), 6),eq(add(-1,1), 0))={@log smoke=TC001: add basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: add basic operations. Failed (add(1%,2)=[add(1,2)] add(1%,2%,3)=[add(1,2,3)] add(-1%,1)=[add(-1,1)]).;}"
 >258
 "@if cand(strmatch(add(1.5,2.25),3.75),eq(add(-5,2,1),-2),eq(add(),0),eq(add(foo,2),2))={@log smoke=TC002: add decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: add decimal and coercion cases. Failed (add(1.5%,2.25)=[add(1.5,2.25)] add(-5%,2%,1)=[add(-5,2,1)] add()=[add()] add(foo%,2)=[add(foo,2)]).;@trig me/tr.done}"
+>259
+"@if cand(strmatch(add(1.224744871391589,0),1.224744871391589),strmatch(add(2.449489742783178,0),2.449489742783178),strmatch(add(sqrt(1.5),0),[sqrt(1.5)]))={@log smoke=TC003: add identity preserves the operand. Succeeded.;@trig me/tr.done},{@log smoke=TC003: add identity preserves the operand. Failed (a=[add(1.224744871391589,0)] b=[add(2.449489742783178,0)] sq=[add(sqrt(1.5),0)]/[sqrt(1.5)]).;@trig me/tr.done}"
 >260
 "@log smoke=End add() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(add(0.1,0.2),0.3),strmatch(add(1.5,2.5),4),strmatch(add(0.1,0.2,0.3),0.6))={@log smoke=TC004: add compensation retained. Succeeded.;@trig me/tr.done},{@log smoke=TC004: add compensation retained. Failed (classic=[add(0.1,0.2)] whole=[add(1.5,2.5)] three=[add(0.1,0.2,0.3)]).;@trig me/tr.done}"
 <
 !6
 "test_after_fn"
@@ -7769,6 +7773,8 @@
 "@if cand(eq(mul(2,3), 6),eq(mul(2,3,4), 24))={@log smoke=TC001: mul basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: mul basic operations. Failed (mul(2%,3)=[mul(2,3)] mul(2%,3%,4)=[mul(2,3,4)]).;}"
 >258
 "@if cand(strmatch(mul(1.5,2),3),eq(mul(-2,3),-6),eq(mul(),0),eq(mul(foo,3),0))={@log smoke=TC002: mul decimal and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: mul decimal and coercion cases. Failed (mul(1.5%,2)=[mul(1.5,2)] mul(-2%,3)=[mul(-2,3)] mul()=[mul()] mul(foo%,3)=[mul(foo,3)]).;@trig me/tr.done}"
+>259
+"@if cand(strmatch(mul(1.1,1.1),1.21),strmatch(mul(1.5,2),3),strmatch(mul(0.1,3),0.3))={@log smoke=TC003: mul prettification retained. Succeeded.;@trig me/tr.done},{@log smoke=TC003: mul prettification retained. Failed (sq=[mul(1.1,1.1)] i=[mul(1.5,2)] tenth=[mul(0.1,3)]).;@trig me/tr.done}"
 >260
 "@log smoke=End mul() test cases.;@notify smoke"
 <

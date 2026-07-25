@@ -136,15 +136,38 @@ double NearestPretty(double R)
     double ulpR = mux_ulp(R);
     double finalR = R;
 
-    size_t nDigits = 10000;
+    // Seed the search with R itself rather than a sentinel, so R wins any
+    // tie and a neighbour is taken only when it is STRICTLY shorter.  The
+    // old seed of 10000 let the first candidate examined (i = -4) claim an
+    // equal-length "win", so a result already as short as possible was
+    // still displaced by a lower neighbour.  That is what broke the
+    // identities:
+    //
+    //   mul(1.224744871391589,1)  ->  1.224744871391588
+    //   add(1.224744871391589,0)  ->  1.224744871391588
+    //
+    // Both render in 16 digits, so neither is prettier; the input was
+    // discarded purely because it was examined last.  Genuine shortenings
+    // are unaffected — where a neighbour really is shorter than R it is
+    // still chosen, which is the point of the function.
+    //
+    UTF8* p0 = mux_dtoa(R, mode, 50, &decpt, &bNegative, &rve);
+    size_t nDigits = rve - p0;
+
     for (int i = -4; i <= 4; i++)
     {
+        if (0 == i)
+        {
+            // R is the seed above.
+            //
+            continue;
+        }
         double testR = R + ulpR * static_cast<double>(i);
         UTF8* p = mux_dtoa(testR, mode, 50, &decpt, &bNegative, &rve);
         size_t nDigitsR0 = rve - p;
         if (nDigitsR0 < nDigits)
         {
-            nDigits = rve - p;
+            nDigits = nDigitsR0;
             finalR = testR;
         }
     }
