@@ -527,6 +527,15 @@ void hir_copy_prop(hir_program &h) {
                     changed = true;
                 }
             }
+            // Propagate through HIR_LUA_SETI's stored value (in val[]).
+            int vop = hir_val_operand(h, i);
+            if (vop >= 0) {
+                int r = resolve_copy(h, vop);
+                if (r != vop) {
+                    h.val[i] = r;
+                    changed = true;
+                }
+            }
             // Propagate through call/strcat arguments.
             if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
                 int base = h.cbase[i];
@@ -612,6 +621,13 @@ void hir_dce(hir_program &h) {
                 changed = true;
             }
 
+            // HIR_LUA_SETI's stored value lives in val[], not src1/src2.
+            int vop = hir_val_operand(h, i);
+            if (vop >= 0 && !used[vop]) {
+                used[vop] = true;
+                changed = true;
+            }
+
             // Call/strcat arguments.
             if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
                 int base = h.cbase[i];
@@ -664,6 +680,22 @@ static bool is_pure_op(hir_kind k) {
     // Guest memory / table ops are NOT pure: SETQ_SYNC and ECALLs mutate
     // qreg longbits and table cells between otherwise-identical loads
     // (#1144 ALOAD/GETI; #1145 SETI must not CSE or be treated pure).
+    //
+    // Do NOT "restore" HIR_LUA_ALOAD here for performance.  It looks like
+    // #1144 gave up real CSE -- emit_qreg_read() loads QREG_LONGBITS once
+    // per %q read, so strcat(%q0,%q1,%q2,%q3) emits four identical ALOADs
+    // of one address -- but GVN never collapsed them even when ALOAD was
+    // pure.  Each carries its own ICONST 1 operand, HIR_ICONST is not
+    // value-numbered, so the ValueKeys differ and nothing matches.  Making
+    // ALOAD pure again therefore changes neither the emitted HIR (measured:
+    // still 4 ALOADs post-opt) nor the runtime.
+    //
+    // Collapsing them needs HIR_ICONST value-numbered as well -- which does
+    // work, 4 ALOADs become 1 -- but that only pays off with ALOAD pure,
+    // and ALOAD cannot be pure without memory-dependence tracking: a naive
+    // "bump a generation counter on each clobber" scheme is unsound at
+    // merge blocks, because GVN walks the dominator tree and a clobber on
+    // a sibling path may be visited after the merge that it must invalidate.
     switch (k) {
         case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV:
         case HIR_REM: case HIR_NEG: case HIR_ABS: case HIR_SIGN:

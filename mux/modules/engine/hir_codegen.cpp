@@ -873,6 +873,15 @@ static void compute_live_ranges(hir_program &h,
                 last_use[h.src2[i]] = pp_i;
         }
 
+        // HIR_LUA_SETI's stored value lives in val[], not src1/src2.
+        // Without this its live range ends at its definition and the
+        // allocator hands the register to something else before the
+        // store reads it.
+        int vop = hir_val_operand(h, i);
+        if (vop >= 0 && pp_i > last_use[vop]) {
+            last_use[vop] = pp_i;
+        }
+
         // Call/strcat arguments.
         if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
             for (int j = 0; j < h.cnargs[i]; j++) {
@@ -938,6 +947,7 @@ static void compute_live_ranges(hir_program &h,
                         extend(h.src1[i]);
                         if (h.kind[i] != HIR_BRC)
                             extend(h.src2[i]);
+                        extend(hir_val_operand(h, i));
                         if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
                             for (int j = 0; j < h.cnargs[i]; j++)
                                 extend(h.carg[h.cbase[i] + j]);
