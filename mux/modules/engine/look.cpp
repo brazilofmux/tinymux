@@ -743,14 +743,22 @@ static void look_contents(dbref player, dbref loc, const UTF8 *contents_name, in
                         safe_str(T("<a xch_cmd=\"look "), html_buff, &html_cp);
                         switch (style)
                         {
+                        // Monikers land inside the xch_cmd="..." attribute, so
+                        // they need the same escaping look_exits() gives exit
+                        // names.  Inserted raw, a moniker containing a double
+                        // quote closed the attribute early and let anything
+                        // after it become further Pueblo/HTML markup for
+                        // HTML-capable clients (#1186).  The anchor text below
+                        // was already escaped; only these were not.
+                        //
                         case CONTENTS_LOCAL:
-                            safe_str(Moniker(thing), html_buff, &html_cp);
+                            html_escape(Moniker(thing), html_buff, &html_cp);
                             break;
 
                         case CONTENTS_NESTED:
-                            safe_str(Moniker(Location(thing)), html_buff, &html_cp);
+                            html_escape(Moniker(Location(thing)), html_buff, &html_cp);
                             safe_str(T("\xE2\x80\x99s "), html_buff, &html_cp);
-                            safe_str(Moniker(thing), html_buff, &html_cp);
+                            html_escape(Moniker(thing), html_buff, &html_cp);
                             break;
 
                         case CONTENTS_REMOTE:

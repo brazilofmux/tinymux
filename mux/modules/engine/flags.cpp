@@ -886,12 +886,18 @@ UTF8 *decode_flags(dbref player, FLAGSET *fs)
                 continue;
             }
 
-            // Don't show CONNECT on dark wizards to mortals
+            // Don't show CONNECT on hidden players to those who can't see
+            // them.  Test DARK alone -- that is what Hidden() means -- to
+            // match has_flag() and flag_description().  Requiring WIZARD too
+            // leaked the 'c' letter for every dark non-wizard: royalty,
+            // staff, and any mortal able to set itself DARK (#1184).  This
+            // takes a FLAGSET rather than a dbref, so the test is on the
+            // flagset the caller passed, which is the target's.
             //
             if (  flagtype == TYPE_PLAYER
                && fbe->flagflag == FLAG_WORD2
                && fbe->flagvalue == CONNECTED
-               && (fs->word[FLAG_WORD1] & (WIZARD | DARK)) == (WIZARD | DARK)
+               && (fs->word[FLAG_WORD1] & DARK) != 0
                && !See_Hidden(player))
             {
                 continue;

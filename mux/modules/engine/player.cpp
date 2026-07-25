@@ -490,9 +490,24 @@ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
 
 const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
 {
+    // Layout is fixed-width up to the timestamp:
+    //
+    //   $P6H$$1:sha1:<40 hex digits>:<timestamp>
+    //
+    // The timestamp is copied below from a constant offset past the hash
+    // field, so the entire fixed part must be present before that read is in
+    // bounds.  Checking only the prefix let a truncated or corrupt A_PASS --
+    // anything from "$P6H$$1:sha1:" up to one byte short of the separator --
+    // run safe_str off the end of the attribute value (#1182).  Require the
+    // full layout, including the separator, and fail closed otherwise.
+    //
+    constexpr size_t nP6HVahtFixed =
+        P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX + 1;
+
     size_t nSetting = strlen(reinterpret_cast<const char *>(szSetting));
-    if (  P6H_VAHT_1SHA1_PREFIX_LENGTH <= nSetting
-       && memcmp(szSetting, szP6HPrefix1SHA1, P6H_VAHT_1SHA1_PREFIX_LENGTH) == 0)
+    if (  nP6HVahtFixed <= nSetting
+       && memcmp(szSetting, szP6HPrefix1SHA1, P6H_VAHT_1SHA1_PREFIX_LENGTH) == 0
+       && ':' == szSetting[P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX])
     {
         // Calculate SHA-1 Hash.
         //
