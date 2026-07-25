@@ -2798,6 +2798,28 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
         return -1;
     }
 
+    // #1124: mirror AST's check_access (ast.cpp) so CA_WIZARD / CA_GOD
+    // builtins cannot be invoked from JIT-compiled softcode by mortals.
+    // engine_api_table includes every builtin; without this gate, ECALL
+    // would call fp->fun with no perms test.
+    //
+    // Exemption: underscore-prefixed names are JIT internal helpers
+    // (_SAVE_QREGS, _WRITE_CARG, _CHECK_U_PERM, …) deliberately marked
+    // CA_GOD so softcode cannot call them, but the compiler must.  They
+    // never appear as softcode-visible symbols softcode can type.
+    //
+    if (  fp->name[0] != '_'
+       && !check_access(ec->executor, fp->perms))
+    {
+        int n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
+            out_size, "%s",
+            reinterpret_cast<const char *>(FUNC_NOPERM_MESSAGE));
+        if (n < 0) n = 0;
+        if (static_cast<size_t>(n) >= out_size) n = static_cast<int>(out_size - 1);
+        ctx->x[10] = static_cast<uint64_t>(n);
+        return -1;
+    }
+
     // Validate argument count against function's declared limits.
     // Return the same error string the AST evaluator would.
     if (nfargs < fp->minArgs) {
