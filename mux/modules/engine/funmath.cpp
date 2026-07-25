@@ -634,7 +634,7 @@ FUNCTION(fun_lmath)
         //
         if (alarm_clock.alarmed)
         {
-            safe_str(T("#-1 CPU LIMIT EXCEEDED"), buff, bufc);
+            safe_str(T("#-1 CPU LIMITED"), buff, bufc);
             return;
         }
         std::sort(g_aDoubles, g_aDoubles + n);
@@ -806,7 +806,7 @@ FUNCTION(fun_limath)
         //
         if (alarm_clock.alarmed)
         {
-            safe_str(T("#-1 CPU LIMIT EXCEEDED"), buff, bufc);
+            safe_str(T("#-1 CPU LIMITED"), buff, bufc);
             return;
         }
         std::sort(vals.begin(), vals.end());
