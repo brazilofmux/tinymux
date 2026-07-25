@@ -66,6 +66,19 @@ static MUX_CLASS_INFO mail_classes[] =
 };
 #define NUM_CLASSES (sizeof(mail_classes)/sizeof(mail_classes[0]))
 
+// Required by libmux ModuleLoad — without this, bLoaded stays false and
+// CreateInstance never finds the class (#1191 root cause).
+//
+extern "C" MUX_RESULT DCL_API mux_CanUnloadNow(void)
+{
+    if (  0 == g_cComponents
+       && 0 == g_cServerLocks)
+    {
+        return MUX_S_OK;
+    }
+    return MUX_S_FALSE;
+}
+
 extern "C" MUX_RESULT DCL_API mux_Register(void)
 {
     MUX_RESULT mr = MUX_E_UNEXPECTED;
@@ -123,6 +136,7 @@ CMailMod::CMailMod(void) : m_cRef(1),
     m_pIPermissions(nullptr),
     m_pIMailDelivery(nullptr),
     m_pIStorage(nullptr),
+    m_revision(0),
     m_mail_expiration(14),
     m_mail_per_player(250),
     m_bLoading(false)
@@ -417,6 +431,11 @@ int CMailMod::new_mail_message(const UTF8 *message, int number)
     struct mail_body &pm = m_mail_list[number];
     pm.m_pMessage.assign(reinterpret_cast<const char *>(message), nLen);
 
+    // #1191/#1192: persist body for softcode gen-sync reload (no-op while loading).
+    //
+    sqlite_wt_mail_body(number,
+        reinterpret_cast<const UTF8 *>(pm.m_pMessage.c_str()));
+
     if (bTruncated && nullptr != m_pILog)
     {
         bool fStarted;
@@ -512,6 +531,15 @@ void CMailMod::MailListRemoveAll(dbref player)
 // SQLite write-through helpers.
 // ---------------------------------------------------------------------------
 
+void CMailMod::bump_revision(void)
+{
+    m_revision++;
+    if (m_revision < 0)
+    {
+        m_revision = 1;
+    }
+}
+
 void CMailMod::sqlite_wt_insert_mail(struct mail *mp)
 {
     if (m_bLoading || nullptr == m_pIStorage) return;
@@ -525,6 +553,7 @@ void CMailMod::sqlite_wt_insert_mail(struct mail *mp)
         mp->read, &rowid);
 
     mp->sqlite_id = MUX_SUCCEEDED(mr) ? rowid : -1;
+    bump_revision();
 }
 
 void CMailMod::sqlite_wt_update_mail_flags(struct mail *mp)
@@ -532,6 +561,7 @@ void CMailMod::sqlite_wt_update_mail_flags(struct mail *mp)
     if (m_bLoading || nullptr == m_pIStorage || mp->sqlite_id < 0) return;
 
     m_pIStorage->UpdateMailReadFlags(mp->sqlite_id, mp->read);
+    bump_revision();
 }
 
 void CMailMod::sqlite_wt_delete_mail(struct mail *mp)
@@ -539,6 +569,7 @@ void CMailMod::sqlite_wt_delete_mail(struct mail *mp)
     if (m_bLoading || nullptr == m_pIStorage || mp->sqlite_id < 0) return;
 
     m_pIStorage->DeleteMailHeader(mp->sqlite_id);
+    bump_revision();
 }
 
 void CMailMod::sqlite_wt_delete_all_mail(int to_player)
@@ -546,6 +577,7 @@ void CMailMod::sqlite_wt_delete_all_mail(int to_player)
     if (m_bLoading || nullptr == m_pIStorage) return;
 
     m_pIStorage->DeleteAllMailHeaders(to_player);
+    bump_revision();
 }
 
 void CMailMod::sqlite_wt_mail_body(int number, const UTF8 *message)
@@ -553,6 +585,12 @@ void CMailMod::sqlite_wt_mail_body(int number, const UTF8 *message)
     if (m_bLoading || nullptr == m_pIStorage) return;
 
     m_pIStorage->SyncMailBody(number, message);
+
+    // Keep softcode reload gate current (#783 / #1191 / #1192).
+    //
+    m_pIStorage->PutMeta(T("mail_db_top"),
+        static_cast<int>(m_mail_list.size()));
+    bump_revision();
 }
 
 void CMailMod::sqlite_wt_delete_mail_body(int number)
@@ -560,6 +598,7 @@ void CMailMod::sqlite_wt_delete_mail_body(int number)
     if (m_bLoading || nullptr == m_pIStorage) return;
 
     m_pIStorage->DeleteMailBody(number);
+    bump_revision();
 }
 
 void CMailMod::sqlite_wt_sync_all_aliases(void)
@@ -597,6 +636,7 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
             static_cast<int>(m->desc_width),
             reinterpret_cast<const UTF8 *>(members_buf));
     }
+    bump_revision();
 }
 
 // ---------------------------------------------------------------------------
@@ -5464,6 +5504,121 @@ MUX_RESULT CMailMod::DestroyPlayerMail(dbref player)
     }
     sqlite_wt_sync_all_aliases();
 
+    return MUX_S_OK;
+}
+
+MUX_RESULT CMailMod::GetRevision(int *pRev)
+{
+    if (nullptr == pRev)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pRev = m_revision;
+    return MUX_S_OK;
+}
+
+// Softcode mailsend() entry — mirrors engine do_mail_send_softcode against
+// the module-owned store (#1191).
+//
+MUX_RESULT CMailMod::SoftcodeSend(dbref player, const UTF8 *recipients,
+    const UTF8 *subject, const UTF8 *message, const UTF8 **ppError)
+{
+    if (nullptr == ppError)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *ppError = nullptr;
+
+    if (player < 0)
+    {
+        *ppError = T("#-1 NOT A PLAYER");
+        return MUX_E_INVALIDARG;
+    }
+    if (nullptr == recipients || '\0' == recipients[0])
+    {
+        *ppError = T("#-1 NO RECIPIENTS");
+        return MUX_E_INVALIDARG;
+    }
+    if (nullptr == subject || '\0' == subject[0])
+    {
+        *ppError = T("#-1 NO SUBJECT");
+        return MUX_E_INVALIDARG;
+    }
+    if (nullptr == message || '\0' == message[0])
+    {
+        *ppError = T("#-1 NO MESSAGE");
+        return MUX_E_INVALIDARG;
+    }
+
+    // Resolve owner if needed — softcode may run on a non-player object.
+    // IMailDelivery / ObjectInfo tell us if player is a player.
+    //
+    bool bIsPlayer = false;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->IsPlayer(player, &bIsPlayer);
+    }
+    if (!bIsPlayer && nullptr != m_pIObjectInfo)
+    {
+        dbref owner = -1;
+        m_pIObjectInfo->GetOwner(player, &owner);
+        player = owner;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->IsPlayer(player, &bIsPlayer);
+        }
+        if (!bIsPlayer)
+        {
+            *ppError = T("#-1 NOT A PLAYER");
+            return MUX_E_INVALIDARG;
+        }
+    }
+
+    if (nullptr != m_pIMailDelivery)
+    {
+        bool bComposing = false;
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+        if (bComposing)
+        {
+            *ppError = T("#-1 MAIL ALREADY IN PROGRESS");
+            return MUX_E_FAIL;
+        }
+        bool bWiz = false;
+        if (nullptr != m_pIPermissions)
+        {
+            m_pIPermissions->IsWizard(player, &bWiz);
+        }
+        if (!bWiz)
+        {
+            bool bThrottled = false;
+            m_pIMailDelivery->ThrottleCheck(player, &bThrottled);
+            if (bThrottled)
+            {
+                *ppError = T("#-1 TOO MUCH MAIL SENT");
+                return MUX_E_FAIL;
+            }
+        }
+    }
+
+    std::string numlist = make_numlist(player, recipients, false);
+    if (numlist.empty())
+    {
+        *ppError = T("#-1 NO VALID RECIPIENTS");
+        return MUX_E_FAIL;
+    }
+
+    // mail_to_list takes ownership of a malloc'd buffer.
+    //
+    size_t nLen = numlist.size() + 1;
+    UTF8 *numlist_copy = static_cast<UTF8 *>(malloc(nLen));
+    if (nullptr == numlist_copy)
+    {
+        *ppError = T("#-1 OUT OF MEMORY");
+        return MUX_E_OUTOFMEMORY;
+    }
+    memcpy(numlist_copy, numlist.c_str(), nLen);
+
+    mail_to_list(player, numlist_copy, subject, message, 0, true);
     return MUX_S_OK;
 }
 

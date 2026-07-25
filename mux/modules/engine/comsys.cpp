@@ -17,6 +17,10 @@ using namespace std;
 
 static unordered_map<dbref, comsys_t> comsys_table;
 
+// Forward decl for softcode gen-sync used by get_comsys / select_channel.
+//
+static void ensure_comsys_softcode_sync(void);
+
 #define DFLT_MAX_LOG        0
 #define MIN_RECALL_REQUEST  1
 #define DFLT_RECALL_REQUEST 10
@@ -365,6 +369,8 @@ void save_channels(FILE* fp)
 
 static comsys_t* get_comsys(const dbref which)
 {
+    ensure_comsys_softcode_sync();
+
     if (which < 0)
     {
         return nullptr;
@@ -2234,10 +2240,42 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     return true;
 }
 
+// #1191: When the comsys module owns live channel state, softcode still
+// reads engine maps (select_channel, fun_*).  Re-load those maps from
+// SQLite when the module reports a newer revision so softcode and
+// commands stay coherent.
+//
+static void ensure_comsys_softcode_sync(void)
+{
+    if (nullptr == mudstate.pIComsysControl)
+    {
+        return;
+    }
+
+    static int s_seen_rev = -1;
+    int rev = 0;
+    MUX_RESULT mr = mudstate.pIComsysControl->GetRevision(&rev);
+    if (MUX_FAILED(mr))
+    {
+        return;
+    }
+    if (rev == s_seen_rev)
+    {
+        return;
+    }
+
+    // Reload engine softcode maps from SQLite (module already write-through).
+    //
+    (void)sqlite_load_comsys();
+    s_seen_rev = rev;
+}
+
 // Find struct channel entry by name with the channel_name hash table.
 //
 struct channel* select_channel(UTF8* channel_name)
 {
+    ensure_comsys_softcode_sync();
+
     // Try exact match first.
     //
     const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
@@ -4107,6 +4145,8 @@ FUNCTION(fun_channels)
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
 
+    ensure_comsys_softcode_sync();
+
     SEP sep;
     if (!OPTIONAL_DELIM(2, sep, DELIM_DFLT|DELIM_STRING))
     {
@@ -4754,6 +4794,8 @@ FUNCTION(fun_chaninfo)
 //
 FUNCTION(fun_chanfind)
 {
+    ensure_comsys_softcode_sync();
+
     UNUSED_PARAMETER(caller);
     UNUSED_PARAMETER(enactor);
     UNUSED_PARAMETER(eval);

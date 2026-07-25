@@ -161,8 +161,13 @@ private:
     std::map<std::vector<UTF8>, std::unique_ptr<channel>> m_channels;
     std::unordered_map<dbref, comsys_t> m_comsys;
 
+    // Softcode gen-sync (#1191): bumped on every write-through mutation.
+    //
+    int m_revision;
+
     // Internal helpers.
     //
+    void bump_revision(void);
     bool LoadChannels(void);
     bool LoadChannelUsers(void);
     bool LoadPlayerChannels(void);
@@ -235,6 +240,7 @@ public:
         const UTF8 *pVictim, int key) override;
     MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
         bool *pbHandled) override;
+    MUX_RESULT GetRevision(int *pRev) override;
 
     // mux_IServerEventsSink
     //

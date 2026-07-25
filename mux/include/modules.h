@@ -430,6 +430,7 @@ public:
     virtual MUX_RESULT LoadAllMailBodies(PFN_MAIL_BODY_CB pfn, void *context) = 0;
     virtual MUX_RESULT LoadAllMailAliases(PFN_MAIL_ALIAS_CB pfn, void *context) = 0;
     virtual MUX_RESULT GetMeta(const UTF8 *key, int *pValue) = 0;
+    virtual MUX_RESULT PutMeta(const UTF8 *key, int value) = 0;
 
     // Write-through: headers.
     //
@@ -512,6 +513,12 @@ public:
     //
     virtual MUX_RESULT ProcessCommand(dbref executor, const UTF8 *pCmd,
         bool *pbHandled) = 0;
+
+    // #1191: Softcode bridge — revision bumps on every mutation so the
+    // engine can re-load its softcode maps from SQLite when they lag the
+    // module-owned store.
+    //
+    virtual MUX_RESULT GetRevision(int *pRev) = 0;
 };
 
 // Attribute read/write with built-in permission checks.
@@ -561,6 +568,12 @@ public:
     virtual MUX_RESULT CountMail(dbref player, int folder,
         int *pRead, int *pUnread, int *pCleared) = 0;
     virtual MUX_RESULT DestroyPlayerMail(dbref player) = 0;
+
+    // #1191: Softcode bridge — revision + mailsend() path into module store.
+    //
+    virtual MUX_RESULT GetRevision(int *pRev) = 0;
+    virtual MUX_RESULT SoftcodeSend(dbref player, const UTF8 *recipients,
+        const UTF8 *subject, const UTF8 *message, const UTF8 **ppError) = 0;
 };
 
 // Mail delivery — server-provided interface for mail permission checks,

@@ -198,8 +198,13 @@ private:
     //
     std::vector<std::unique_ptr<malias_t>> m_malias;
 
+    // Softcode gen-sync (#1191): bumped on every write-through mutation.
+    //
+    int m_revision;
+
     // Internal helpers.
     //
+    void bump_revision(void);
     bool LoadMailBodies(void);
     bool LoadMailHeaders(void);
     bool LoadMailAliases(void);
@@ -354,6 +359,9 @@ public:
     MUX_RESULT CountMail(dbref player, int folder,
         int *pRead, int *pUnread, int *pCleared) override;
     MUX_RESULT DestroyPlayerMail(dbref player) override;
+    MUX_RESULT GetRevision(int *pRev) override;
+    MUX_RESULT SoftcodeSend(dbref player, const UTF8 *recipients,
+        const UTF8 *subject, const UTF8 *message, const UTF8 **ppError) override;
 
     // mux_IServerEventsSink
     //

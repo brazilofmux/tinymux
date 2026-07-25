@@ -967,10 +967,20 @@ bool CSQLiteDB::PrepareStatements()
 
     // Comsys statements.
     //
+    // Use ON CONFLICT DO UPDATE (not INSERT OR REPLACE).  REPLACE deletes
+    // the old PRIMARY KEY row first, which fires ON DELETE CASCADE and
+    // wipes channel_users / player_channels (#1191 softcode gen-sync and
+    // any mid-session SyncChannel after membership).
+    //
     if (!Prepare(m_db,
-        "INSERT OR REPLACE INTO channels "
+        "INSERT INTO channels "
         "(name, header, type, temp1, temp2, charge, charge_who, amount_col, num_messages, chan_obj) "
-        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+        "VALUES (?,?,?,?,?,?,?,?,?,?) "
+        "ON CONFLICT(name) DO UPDATE SET "
+        "header=excluded.header, type=excluded.type, temp1=excluded.temp1, "
+        "temp2=excluded.temp2, charge=excluded.charge, "
+        "charge_who=excluded.charge_who, amount_col=excluded.amount_col, "
+        "num_messages=excluded.num_messages, chan_obj=excluded.chan_obj",
         &m_stmtChannelSync))
     {
         return false;
