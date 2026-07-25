@@ -56,7 +56,7 @@ NESTED_MID|[strcat(strcat(x add(1,2) y))]
 DEEP_MID|[strcat(strcat(strcat(q add(1,2) r)))]
 
 # --- what precedes the callee name ---
-SPACE_BEFORE_PAREN|[strcat(x add (1,2) y)]
+SPACE_BEFORE_PAREN|[strcat(x add (1,2) y)]|2.13
 DIGIT_PREFIX|[strcat(x 1add(1,2) y)]
 UNDERSCORE_PREFIX|[strcat(x _add(1,2) y)]
 PUNCT_PREFIX|[strcat(x .add(1,2) y)]
@@ -81,7 +81,7 @@ ITER_MID|[iter(1,x add(1,2) y)]
 
 # --- callee arity and shape ---
 U_ARG_MID|[strcat(x u(1,2) y)]
-LIT_LOOKALIKE|[strcat(x add (1,2) y)]
+LIT_LOOKALIKE|[strcat(x add (1,2) y)]|2.13
 EMPTY_ARGS|[strcat(x add() y)]
 ONE_ARG|[strcat(x abs(-5) y)]
 
@@ -98,31 +98,31 @@ PEMIT_PROSE|@pemit me=Hey, I tried add(1).
 # ===================================================================
 
 # --- paren depth, balanced, no commas ---
-PN_D1|[strcat(a (b) c)]
-PN_D2|[strcat(a (b (c) d) e)]
-PN_D3|[strcat(a (b (c (d) e) f) g)]
-PN_ADJACENT|[strcat(a (b)(c) d)]
-PN_EMPTY|[strcat(a () b)]
+PN_D1|[strcat(a (b) c)]|2.13
+PN_D2|[strcat(a (b (c) d) e)]|2.13
+PN_D3|[strcat(a (b (c (d) e) f) g)]|2.13
+PN_ADJACENT|[strcat(a (b)(c) d)]|2.13
+PN_EMPTY|[strcat(a () b)]|2.13
 PN_ONLY|[strcat((a))]
 
 # --- paren depth with commas at each level ---
-PNC_D1|[strcat(a (b,c) d)]
-PNC_D2|[strcat(a (b,(c,d),e) f)]
-PNC_LEAD|[strcat((a,b) tail)]
-PNC_TRAIL|[strcat(head (a,b))]
-PNC_TWOARG|[strcat(x (a,b) y,z)]
+PNC_D1|[strcat(a (b,c) d)]|2.13
+PNC_D2|[strcat(a (b,(c,d),e) f)]|2.13
+PNC_LEAD|[strcat((a,b) tail)]|2.13
+PNC_TRAIL|[strcat(head (a,b))]|2.13
+PNC_TWOARG|[strcat(x (a,b) y,z)]|2.13
 
 # --- unbalanced parens ---
-PU_EXTRA_OPEN|[strcat(a (b c)]
+PU_EXTRA_OPEN|[strcat(a (b c)]|neither
 PU_EXTRA_CLOSE|[strcat(a b) c)]
 PU_CLOSE_FIRST|[strcat(a ) b)]
-PU_OPEN_ONLY|[strcat(a ( b)]
+PU_OPEN_ONLY|[strcat(a ( b)]|neither
 
 # --- brackets inside arguments ---
 BK_LITERAL|[strcat(a [b] c)]
 BK_CALL|[strcat(a [add(1,2)] c)]
 BK_ESC|[strcat(a \[b\] c)]
-BK_NESTED_PAREN|[strcat(a [add(1,2)] (x,y) c)]
+BK_NESTED_PAREN|[strcat(a [add(1,2)] (x,y) c)]|2.13
 
 # --- braces inside arguments ---
 BR_LITERAL|[strcat(a {b} c)]
@@ -130,10 +130,10 @@ BR_COMMA|[strcat(a {b,c} d)]
 BR_PAREN|[strcat(a {b (c,d) e} f)]
 
 # --- mixed nesting ---
-MX_BP|[strcat(a [b (c,d) e] f)]
-MX_PB|[strcat(a (b [c] d) e)]
-MX_PBR|[strcat(a (b {c,d} e) f)]
-MX_ALL|[strcat(a [b (c {d,e} f) g] h)]
+MX_BP|[strcat(a [b (c,d) e] f)]|2.13
+MX_PB|[strcat(a (b [c] d) e)]|2.13
+MX_PBR|[strcat(a (b {c,d} e) f)]|2.13
+MX_ALL|[strcat(a [b (c {d,e} f) g] h)]|2.13
 
 # --- escaped delimiters ---
 ES_PCT_PAREN|[strcat(a %(b,c%) d)]
@@ -147,9 +147,20 @@ DEEP_16|[strcat((((((((((((((((x))))))))))))))))]
 DEEP_34|[strcat((((((((((((((((((((((((((((((((((x))))))))))))))))))))))))))))))))))]
 
 # --- realistic prose through formatting functions ---
-RP_TIME|[strcat(Meet me (Tue, 5pm) downtown)]
-RP_HELP|[ansi(r,Warning (see help, page 2))]
-RP_LJUST|[ljust(Hello (world) ok,30)]
-RP_STRLEN|[strlen(Hello (world) ok)]
-RP_NESTED_FN|[strcat(Result: [add(1,2)] (of 3, total))]
-RP_APOSTROPHE|[strcat(It's a (big, red) ball)]
+RP_TIME|[strcat(Meet me (Tue, 5pm) downtown)]|2.13
+RP_HELP|[ansi(r,Warning (see help, page 2))]|2.13
+RP_LJUST|[ljust(Hello (world) ok,30)]|2.13
+RP_STRLEN|[strlen(Hello (world) ok)]|2.13
+RP_NESTED_FN|[strcat(Result: [add(1,2)] (of 3, total))]|2.13
+RP_APOSTROPHE|[strcat(It's a (big, red) ball)]|2.13
+
+# --- space between callee name and '(' — PINNED (see #1219 discussion) ---
+#
+# 2.13 treats `name (args)` with a space as a call; 2.14 requires the
+# paren to be adjacent.  So [add (1,2)] evaluates on 2.13 and becomes
+# literal text on 2.14 — working softcode silently ceasing to function.
+# Flagged as something to support, decision deferred.
+#
+SPACE_CALL_KNOWN|[add (1,2)]|pin
+SPACE_CALL_UNKNOWN|[b (c,d)]|pin
+SPACE_CALL_NESTED|[strcat([add (1,2)])]|pin
