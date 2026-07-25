@@ -230,12 +230,15 @@ SC_LEADTRAIL|[strcat(  a  )]
 SC_PLAINTEXT|a  b  c
 SC_SPAN|[zz mul(2,3)]|2.14
 
-# --- text before a call in an FMAND region (#1238 scope boundary) ---
+# --- text before a call in an FMAND region ---
 # 2.13's candidate name there is the accumulated OUTPUT, so leading text
 # is folded into the name rather than spending the recognition
-# opportunity.  2.14 tokenizes instead and cannot express that; the two
-# 2.14 routes do not even agree with each other here.  Left
-# unadjudicated: there is no settled value yet.  Same family as SC_SPAN
-# and DA_BRACKET_CALL.
+# opportunity: [x add(1,2) y] -> "#-1 FUNCTION (X ADD) NOT FOUND".
+# 2.14 tokenizes instead and cannot express that.
+#
+# Settled as 2.14 (#1246): the span-name error is not the target and
+# literal text is the better answer, so both routes must agree with each
+# other and divergence from 2.13 is accepted.  Same family as SC_SPAN
+# and DA_BRACKET_CALL, which carry the same verdict for the same reason.
 FM_LIT_CALL|[x add(1,2) y]|2.14
 FM_LIT_CALL2|[x add(1,2)]|2.14
