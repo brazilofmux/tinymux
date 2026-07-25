@@ -1501,9 +1501,17 @@
 >257
 "@if cand(strmatch(art(TinyMUX), a),strmatch(art(cat), a),strmatch(art(box), a),strmatch(art(dog), a))={@log smoke=TC001: art consonant initial. Succeeded.},{@log smoke=TC001: art consonant initial. Failed (mux=[art(TinyMUX)] cat=[art(cat)] box=[art(box)] dog=[art(dog)]).}"
 >258
-"@if cand(t(member(a an, art(cat))),t(member(a an, art(umbrella))),t(member(a an, art(1234))),gt(strlen(art(x)), 0))={@log smoke=TC002: art always yields an article. Succeeded.;@trig me/tr.done},{@log smoke=TC002: art always yields an article. Failed (cat=[art(cat)] umb=[art(umbrella)] num=[art(1234)] x=[art(x)]).;@trig me/tr.done}"
+"@if cand(strmatch(art(umbrella), an),strmatch(art(apple), an),strmatch(art(elephant), an),strmatch(art(avocado), an),strmatch(art(igloo), an),strmatch(art(orange), an))={@log smoke=TC002: art vowel initial. Succeeded.},{@log smoke=TC002: art vowel initial. Failed (umb=[art(umbrella)] apple=[art(apple)] ele=[art(elephant)] avo=[art(avocado)] igl=[art(igloo)] ora=[art(orange)]).}"
+>259
+"@if cand(strmatch(art(hour), an),strmatch(art(heir), an),strmatch(art(ytterbium), an),strmatch(art(unicycle), a),strmatch(art(one-sided), a),strmatch(art(use), a))={@log smoke=TC003: art documented exceptions. Succeeded.},{@log smoke=TC003: art documented exceptions. Failed (hour=[art(hour)] heir=[art(heir)] yt=[art(ytterbium)] uni=[art(unicycle)] one=[art(one-sided)] use=[art(use)]).}"
 >260
 "@log smoke=End art() test cases.;@notify smoke"
+>261
+"@if cand(strmatch(art(8), an),strmatch(art(80), an),strmatch(art(800), an),strmatch(art(8.5), an),strmatch(art(11), an),strmatch(art(11000), an),strmatch(art(18), an),strmatch(art(18000), an),strmatch(art(8th), an),strmatch(art(11th), an),strmatch(art(18-wheeler), an),strmatch(art(11:30), an))={@log smoke=TC004: art numerals taking an. Succeeded.},{@log smoke=TC004: art numerals taking an. Failed (8=[art(8)] 80=[art(80)] 800=[art(800)] 8.5=[art(8.5)] 11=[art(11)] 11000=[art(11000)] 18=[art(18)] 18000=[art(18000)] 8th=[art(8th)] 11th=[art(11th)] 18w=[art(18-wheeler)] 1130=[art(11:30)]).}"
+>262
+"@if cand(strmatch(art(110), a),strmatch(art(1100), a),strmatch(art(180), a),strmatch(art(1800), a),strmatch(art(1100th), a),strmatch(art(9), a),strmatch(art(90), a),strmatch(art(1), a),strmatch(art(20), a))={@log smoke=TC005: art numerals taking a. Succeeded.},{@log smoke=TC005: art numerals taking a. Failed (110=[art(110)] 1100=[art(1100)] 180=[art(180)] 1800=[art(1800)] 1100th=[art(1100th)] 9=[art(9)] 90=[art(90)] 1=[art(1)] 20=[art(20)]).}"
+>263
+"@if cand(t(member(a an, art(cat))),t(member(a an, art(umbrella))),t(member(a an, art(1234))),gt(strlen(art(x)), 0))={@log smoke=TC006: art always yields an article. Succeeded.;@trig me/tr.done},{@log smoke=TC006: art always yields an article. Failed (cat=[art(cat)] umb=[art(umbrella)] num=[art(1234)] x=[art(x)]).;@trig me/tr.done}"
 <
 !13
 "test_asin_fn"
