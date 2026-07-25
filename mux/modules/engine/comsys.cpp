@@ -2614,9 +2614,12 @@ void do_destroychannel
     const vector<UTF8> channel_name_vector(channel_name, channel_name + channel_name_length);
     const auto it = mudstate.channel_names.find(channel_name_vector);
 
-    if (it != mudstate.channel_names.end())
+    // #1189: miss check was inverted (!= meant "found" reported not found;
+    // missing names fell through with it == end() and dereferenced).
+    //
+    if (it == mudstate.channel_names.end())
     {
-        raw_notify(executor, tprintf(T("Could not find channel_name %s."), channel_name));
+        raw_notify(executor, tprintf(T("Could not find channel %s."), channel_name));
         return;
     }
 
