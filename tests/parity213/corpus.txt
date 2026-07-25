@@ -90,3 +90,66 @@ SAY_PROSE|say Hey, I tried add(1).
 SAY_MIXED|say Hey, I tried add(1) and I got [add(1)].
 POSE_PROSE|pose tried add(1) today.
 PEMIT_PROSE|@pemit me=Hey, I tried add(1).
+
+# ===================================================================
+# Nesting map (#1219).  2.13 kept one stack where '[' pushed ']' and
+# '(' pushed ')', unwinding on a match; 2.14 tracks bracket and brace
+# depth but not paren depth.  These shapes chart the consequences.
+# ===================================================================
+
+# --- paren depth, balanced, no commas ---
+PN_D1|[strcat(a (b) c)]
+PN_D2|[strcat(a (b (c) d) e)]
+PN_D3|[strcat(a (b (c (d) e) f) g)]
+PN_ADJACENT|[strcat(a (b)(c) d)]
+PN_EMPTY|[strcat(a () b)]
+PN_ONLY|[strcat((a))]
+
+# --- paren depth with commas at each level ---
+PNC_D1|[strcat(a (b,c) d)]
+PNC_D2|[strcat(a (b,(c,d),e) f)]
+PNC_LEAD|[strcat((a,b) tail)]
+PNC_TRAIL|[strcat(head (a,b))]
+PNC_TWOARG|[strcat(x (a,b) y,z)]
+
+# --- unbalanced parens ---
+PU_EXTRA_OPEN|[strcat(a (b c)]
+PU_EXTRA_CLOSE|[strcat(a b) c)]
+PU_CLOSE_FIRST|[strcat(a ) b)]
+PU_OPEN_ONLY|[strcat(a ( b)]
+
+# --- brackets inside arguments ---
+BK_LITERAL|[strcat(a [b] c)]
+BK_CALL|[strcat(a [add(1,2)] c)]
+BK_ESC|[strcat(a \[b\] c)]
+BK_NESTED_PAREN|[strcat(a [add(1,2)] (x,y) c)]
+
+# --- braces inside arguments ---
+BR_LITERAL|[strcat(a {b} c)]
+BR_COMMA|[strcat(a {b,c} d)]
+BR_PAREN|[strcat(a {b (c,d) e} f)]
+
+# --- mixed nesting ---
+MX_BP|[strcat(a [b (c,d) e] f)]
+MX_PB|[strcat(a (b [c] d) e)]
+MX_PBR|[strcat(a (b {c,d} e) f)]
+MX_ALL|[strcat(a [b (c {d,e} f) g] h)]
+
+# --- escaped delimiters ---
+ES_PCT_PAREN|[strcat(a %(b,c%) d)]
+ES_BSL_PAREN|[strcat(a \(b,c\) d)]
+ES_PCT_BRACK|[strcat(a %[b%] c)]
+ES_MIXED|[strcat(a %(b [c] d%) e)]
+
+# --- depth stress (2.13 stops pushing past stacklim 32) ---
+DEEP_08|[strcat(((((((((x))))))))))]
+DEEP_16|[strcat((((((((((((((((x))))))))))))))))]
+DEEP_34|[strcat((((((((((((((((((((((((((((((((((x))))))))))))))))))))))))))))))))))]
+
+# --- realistic prose through formatting functions ---
+RP_TIME|[strcat(Meet me (Tue, 5pm) downtown)]
+RP_HELP|[ansi(r,Warning (see help, page 2))]
+RP_LJUST|[ljust(Hello (world) ok,30)]
+RP_STRLEN|[strlen(Hello (world) ok)]
+RP_NESTED_FN|[strcat(Result: [add(1,2)] (of 3, total))]
+RP_APOSTROPHE|[strcat(It's a (big, red) ball)]
