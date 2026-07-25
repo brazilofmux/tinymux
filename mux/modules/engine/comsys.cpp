@@ -116,6 +116,39 @@ static void sqlite_wt_delete_player_channel(int who, const UTF8 *alias)
     }
 }
 
+// #1199: Drop every player's aliases that point at a channel being destroyed.
+// SQLite DeleteChannel CASCADE clears player_channels rows, but the in-memory
+// comsys_table must be swept or stale aliases survive until restart.
+//
+static void purge_aliases_for_channel(const UTF8 *channel_name)
+{
+    if (  nullptr == channel_name
+       || '\0' == channel_name[0])
+    {
+        return;
+    }
+
+    for (auto &kv : comsys_table)
+    {
+        comsys_t &c = kv.second;
+        for (auto it = c.aliases.begin(); it != c.aliases.end(); )
+        {
+            if (0 == mux_stricmp(
+                    reinterpret_cast<const UTF8 *>(it->channel.c_str()),
+                    channel_name))
+            {
+                sqlite_wt_delete_player_channel(c.who,
+                    reinterpret_cast<const UTF8 *>(it->alias.c_str()));
+                it = c.aliases.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+}
+
 // Return value is a static buffer.
 //
 static UTF8* RestrictTitleValue(const UTF8* pTitleRequest)
@@ -2679,6 +2712,9 @@ void do_destroychannel
         raw_notify(executor, NOPERM_MESSAGE);
         return;
     }
+    // #1199: sweep player aliases before the channel row (and CASCADE) go away.
+    //
+    purge_aliases_for_channel(ch->name);
     sqlite_wt_delete_channel(ch->name);
 
     delete ch;
@@ -2975,6 +3011,9 @@ void do_channelnuke(const dbref player)
 
             if (player == ch->charge_who)
             {
+                // #1199: same alias sweep as do_destroychannel.
+                //
+                purge_aliases_for_channel(ch->name);
                 sqlite_wt_delete_channel(ch->name);
 
                 delete ch;
@@ -4793,12 +4832,13 @@ FUNCTION(fun_chaninfo)
 }
 
 // ---------------------------------------------------------------------------
-// chanfind(header) — reverse-lookup channel name from header string.
+// chanfind(name-or-header) — resolve a channel name from name or header.
 // ---------------------------------------------------------------------------
 //
-// Given a channel header (display name), returns the canonical channel name.
-// Useful when players see e.g. "<PublicServices>" in chat and need to find
-// the internal name "PubServ".  Case-insensitive match.
+// Matches the canonical channel name or its display header (case-insensitive).
+// Name matching covers the common "channel exists under this name" case
+// (#1204); header matching keeps the reverse-lookup documented for
+// @cset/header values players see in chat (e.g. "<PublicServices>" → PubServ).
 //
 // Visibility: same subscriber-aware model as chaninfo.
 //
@@ -4820,7 +4860,11 @@ FUNCTION(fun_chanfind)
     {
         const auto ch = it->second;
 
-        if (0 == mux_stricmp(target, ch->header))
+        // #1204: name is the baseline; header remains supported for reverse
+        // lookup of custom display headers.
+        //
+        if (  0 == mux_stricmp(target, ch->name)
+           || 0 == mux_stricmp(target, ch->header))
         {
             // Visibility check.
             //

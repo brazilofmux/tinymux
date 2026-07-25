@@ -5996,19 +5996,21 @@ CHANNELS()
 & CHANFIND()
 CHANFIND()
 
-  FUNCTION: chanfind(<header>)
+  FUNCTION: chanfind(<name-or-header>)
 
-  Reverse-lookups a channel by its display header.  Given a channel header
-  string (e.g. "<PublicServices>"), returns the canonical channel name
-  (e.g. "PubServ").  Case-insensitive match.
+  Resolves a channel by its canonical name or its display header.
+  Case-insensitive match.  Returns the canonical channel name, or
+  #-1 CHANNEL NOT FOUND.
 
-  This is useful when players see a header in channel output and need to
-  find the internal channel name for use with other channel functions.
+  Name matching finds an existing channel by the name used with
+  @ccreate / addcom.  Header matching reverse-looks up a custom
+  @cset/header value players see in chat (e.g. "<PublicServices>"
+  -> PubServ).
 
   Visibility: same subscriber-aware rules as chaninfo().
 
   Example:
-    > say chanfind(<Public>)
+    > say chanfind(Public)
     You say, "Public"
     > say chanfind(<Staff>)
     You say, "StaffChat"

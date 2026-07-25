@@ -3023,12 +3023,39 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
         return MUX_E_PERMISSION;
     }
 
-    // Remove from SQLite.
+    // Capture canonical name before the channel object goes away.
+    //
+    const std::string channelName(
+        reinterpret_cast<const char *>(ch->name));
+
+    // Remove from SQLite.  ON DELETE CASCADE clears channel_users and
+    // player_channels rows for this channel name.
     //
     if (nullptr != m_pIStorage)
     {
         m_pIStorage->DeleteChannel(ch->name);
         bump_revision();
+    }
+
+    // #1199: purge other players' in-memory aliases that pointed here.
+    // (SQLite rows are already CASCADE-deleted; still drop local aliases.)
+    //
+    for (auto &kv : m_comsys)
+    {
+        comsys_t &c = kv.second;
+        for (auto ait = c.aliases.begin(); ait != c.aliases.end(); )
+        {
+            if (ait->channel == channelName)
+            {
+                sqlite_wt_delete_player_channel(c.who,
+                    reinterpret_cast<const UTF8 *>(ait->alias.c_str()));
+                ait = c.aliases.erase(ait);
+            }
+            else
+            {
+                ++ait;
+            }
+        }
     }
 
     // Notify before erasing (ch will be destroyed by unique_ptr).
