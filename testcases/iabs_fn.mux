@@ -39,11 +39,31 @@
         eq(iabs(),0)
       )=
   {
-    @log smoke=TC002: iabs() truncation and coercion cases. Succeeded.;
+    @log smoke=TC002: iabs() truncation and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: iabs() truncation and coercion cases. Failed (iabs(-5.9)=[iabs(-5.9)] iabs(5.9)=[iabs(5.9)] iabs(foo)=[iabs(foo)] iabs()=[iabs()]).
+  }
+-
+#
+# Test Case #3 - INT64_MIN is out of domain (#1114).  |INT64_MIN| is 2**63,
+# which int64_t cannot represent, so iabs() rejects rather than returning
+# the magnitude: the string "9223372036854775808" would re-parse (mux_atoi64
+# wraps) back to INT64_MIN, making add(iabs(...),0) negative and breaking
+# the iabs(x) >= 0 invariant.  INT64_MIN+1 must still work normally.
+#
+&tr.tc003 test_iabs_fn=
+  @if cand(
+        strmatch(iabs(-9223372036854775808), #-1 OUT OF RANGE),
+        eq(iabs(-9223372036854775807), 9223372036854775807),
+        eq(iabs(9223372036854775807), 9223372036854775807)
+      )=
+  {
+    @log smoke=TC003: iabs() INT64_MIN out of range. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: iabs() truncation and coercion cases. Failed (iabs(-5.9)=[iabs(-5.9)] iabs(5.9)=[iabs(5.9)] iabs(foo)=[iabs(foo)] iabs()=[iabs()]).;
+    @log smoke=TC003: iabs() INT64_MIN out of range. Failed (iabs(-9223372036854775808)=[iabs(-9223372036854775808)] iabs(-9223372036854775807)=[iabs(-9223372036854775807)] iabs(9223372036854775807)=[iabs(9223372036854775807)]).;
     @trig me/tr.done
   }
 -

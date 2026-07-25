@@ -1204,10 +1204,20 @@ FUNCTION(fun_iabs)
     }
     else if (num == INT64_MIN)
     {
-        // #1114: -INT64_MIN is not representable in int64_t (UB).
-        // Magnitude as decimal string (one digit more than INT64_MAX).
+        // #1114: |INT64_MIN| is 2**63, which int64_t cannot represent —
+        // negating it is UB.  Reject rather than hand back the magnitude
+        // as a string: "9223372036854775808" is not a valid int64, and
+        // every consumer corrupts it.  Measured on this tree, feeding it
+        // to an integer-path function re-parses through mux_atoi64 (which
+        // wraps rather than saturates) straight back to INT64_MIN —
+        // idiv(iabs(-9223372036854775808),1) and shl(...,0) both yield
+        // -9223372036854775808 — while the float path loses precision
+        // instead (add(...,0) -> 9223372036854769664).  Either way iabs()'s
+        // one invariant is silently broken.  Failing loudly matches how the
+        // integer family handles an out-of-domain argument (fun_table,
+        // fun_columns).
         //
-        safe_str(T("9223372036854775808"), buff, bufc);
+        safe_range(buff, bufc);
     }
     else if (num < 0)
     {

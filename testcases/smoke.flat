@@ -4292,7 +4292,9 @@
 >257
 "@if cand(eq(iabs(-5), 5),eq(iabs(5), 5),eq(iabs(0), 0))={@log smoke=TC001: iabs() basic operations. Succeeded.;@trig me/tr.done},{@log smoke=TC001: iabs() basic operations. Failed (iabs(-5)=[iabs(-5)] iabs(5)=[iabs(5)] iabs(0)=[iabs(0)]).;}"
 >258
-"@if cand(eq(iabs(-5.9),5),eq(iabs(5.9),5),eq(iabs(foo),0),eq(iabs(),0))={@log smoke=TC002: iabs() truncation and coercion cases. Succeeded.;@trig me/tr.done},{@log smoke=TC002: iabs() truncation and coercion cases. Failed (iabs(-5.9)=[iabs(-5.9)] iabs(5.9)=[iabs(5.9)] iabs(foo)=[iabs(foo)] iabs()=[iabs()]).;@trig me/tr.done}"
+"@if cand(eq(iabs(-5.9),5),eq(iabs(5.9),5),eq(iabs(foo),0),eq(iabs(),0))={@log smoke=TC002: iabs() truncation and coercion cases. Succeeded.},{@log smoke=TC002: iabs() truncation and coercion cases. Failed (iabs(-5.9)=[iabs(-5.9)] iabs(5.9)=[iabs(5.9)] iabs(foo)=[iabs(foo)] iabs()=[iabs()]).}"
+>259
+"@if cand(strmatch(iabs(-9223372036854775808), #-1 OUT OF RANGE),eq(iabs(-9223372036854775807), 9223372036854775807),eq(iabs(9223372036854775807), 9223372036854775807))={@log smoke=TC003: iabs() INT64_MIN out of range. Succeeded.;@trig me/tr.done},{@log smoke=TC003: iabs() INT64_MIN out of range. Failed (iabs(-9223372036854775808)=[iabs(-9223372036854775808)] iabs(-9223372036854775807)=[iabs(-9223372036854775807)] iabs(9223372036854775807)=[iabs(9223372036854775807)]).;@trig me/tr.done}"
 >260
 "@log smoke=End iabs() test cases.;@notify smoke"
 <
