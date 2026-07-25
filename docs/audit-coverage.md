@@ -66,7 +66,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 2 softcode | partial | elock/lastcreate fixed; full matrix not exhausted |
-| C2 | Function builtins | `functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 2–3 | partial | Largest surface; re-rotate by subsystem |
+| C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1119 filed; Highs #1106–#1110 first |
 | C3 | Commands / hooks | `command.cpp`, `predicates.cpp` | large | thin | thin | @-command side effects |
 | C4 | Match / wild | `match.cpp`, `wild.cpp` | med | scenario tests | partial | Live `$` capture has scenario; re-read matching |
 | C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | — | thin | Gameplay path correctness |
@@ -169,6 +169,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 2 | 2026-07 | Softcode, mail_mod, Windows IOCP/wselect, Schannel, JIT residual | #1063–#1071 → PR #1072; #1073/#1075 schema; #1074/#1076 banner |
 | Pass 3 | 2026-07 | Convert residual, JIT bounds, queue money, WS, comsys_mod, conf live sync | #1077–#1080 → #1086; #1087/#1088; #1081–#1085 → #1089 |
 | Pass 4 | 2026-07 | Hydra proxy I1–I5 (session, scrollback, WS, auth, process) | #1091–#1102 filed; Highs → #1103; Mediums → #1105 (complete) |
+| Pass 5 | 2026-07 | Softcode C2 function builtins (funceval/2, funmath, functions helpers) | #1106–#1119 filed; fix PR TBD |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -181,7 +182,7 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **Pass 5 — C2** function builtins (batch by letter / family) | Huge; never one-and-done |
+| **Now** | **Fix Pass 5** (#1106–#1119) | Softcode Highs first (mail nest, pose SPEECHMOD, lrooms OOB, shifts, stack) |
 | **Pass 6** | **A3 + A4 + A6** net/telnet/signals re-sweep | Lifecycle adjacent to Pass 1; idle/site/output |
 | **Pass 7** | **D2 + D3** HIR/DBT | Complements JIT ECALL deep work |
 | **Pass 8** | **E5 + C5** object/player/move | Gameplay permission paths |
@@ -228,5 +229,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Pass 4 Hydra filed #1091–#1102; I* slice status updated |
 | 2026-07-25 | Pass 4 Highs #1091–#1094 merged (#1103); I4/I5/I6 + rotation updated |
 | 2026-07-25 | Pass 4 Mediums #1095–#1102 merged (#1105); Pass 4 complete; rotation → Pass 5 C2 |
+| 2026-07-25 | Pass 5 C2 filed #1106–#1119; C2 path note → `mux/modules/engine/`; rotation → Fix Pass 5 |
 
 Update this table when the map structure changes.
