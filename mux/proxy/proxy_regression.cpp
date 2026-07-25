@@ -260,7 +260,9 @@ void testWebSocketMaskEnforcement() {
     const std::string unmasked = bytes({0x81, 0x02}) + "hi";
     auto messages = wsDecodeFrames(ws, unmasked.data(), unmasked.size(), responses);
 
-    expect(messages.empty(), "unmasked client frame should not be delivered");
+    // #1094: unmasked frames deliver a synthetic CLOSE so callers close the FD.
+    expect(messages.size() == 1 && messages[0].opcode == WS_OP_CLOSE,
+           "unmasked client frame should deliver CLOSE for teardown");
     expect(responses == wsCloseFrame(1002),
            "unmasked client frame should trigger protocol-error close");
 
@@ -277,6 +279,60 @@ void testWebSocketMaskEnforcement() {
     expect(messages[0].payload == "hi", "masked frame payload mismatch");
 }
 
+// #1093: after a 16-bit extended length, MaskKey must start at index 0.
+// Frame: FIN+TEXT, mask, len=126, length=0x0002, mask 01 02 03 04, "hi" xored.
+void testWebSocketExtLenMaskKey() {
+    WsState ws;
+    std::string responses;
+    const uint8_t m0 = 0x01, m1 = 0x02, m2 = 0x03, m3 = 0x04;
+    const std::string frame = bytes({
+        0x81, 0xFE, 0x00, 0x02, m0, m1, m2, m3,
+        static_cast<uint8_t>('h' ^ m0),
+        static_cast<uint8_t>('i' ^ m1)
+    });
+    auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+    expect(responses.empty(), "ext-len masked TEXT should not close");
+    expect(messages.size() == 1, "ext-len masked TEXT should yield one message");
+    expect(messages[0].opcode == WS_OP_TEXT, "ext-len opcode TEXT");
+    expect(messages[0].payload == "hi", "ext-len payload unmasked correctly");
+}
+
+// #1093: after a 64-bit extended length, MaskKey must start at index 0.
+// This is the out-of-bounds case: pre-fix, lenBytesRead was still 8 entering
+// MaskKey, so maskKey[8] (past uint8_t maskKey[4]) was written — an OOB write
+// that UBSan/ASan traps.  The 16-bit case above only desyncs framing (index 2
+// is still in-bounds), so this case is what actually guards the memory-safety
+// fix.  Frame: FIN+TEXT, mask, len=127, 64-bit length=0x...0002, mask, "hi".
+void testWebSocketExtLen64MaskKey() {
+    WsState ws;
+    std::string responses;
+    const uint8_t m0 = 0x01, m1 = 0x02, m2 = 0x03, m3 = 0x04;
+    const std::string frame = bytes({
+        0x81, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+        m0, m1, m2, m3,
+        static_cast<uint8_t>('h' ^ m0),
+        static_cast<uint8_t>('i' ^ m1)
+    });
+    auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+    expect(responses.empty(), "ext-len64 masked TEXT should not close");
+    expect(messages.size() == 1, "ext-len64 masked TEXT should yield one message");
+    expect(messages[0].opcode == WS_OP_TEXT, "ext-len64 opcode TEXT");
+    expect(messages[0].payload == "hi", "ext-len64 payload unmasked correctly");
+}
+
+// #1094: client CLOSE must be delivered so the session path can close.
+void testWebSocketCloseDelivered() {
+    WsState ws;
+    std::string responses;
+    // Empty CLOSE, masked, mask all zero.
+    const std::string frame = bytes({0x88, 0x80, 0x00, 0x00, 0x00, 0x00});
+    auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+    expect(messages.size() == 1 && messages[0].opcode == WS_OP_CLOSE,
+           "client CLOSE should be delivered");
+    expect(responses == wsCloseFrame(1000),
+           "client CLOSE should echo close response");
+}
+
 } // namespace
 
 int main() {
@@ -290,6 +346,9 @@ int main() {
     testSplitEorAcrossReads();
     testAsciiBridgeConversion();
     testWebSocketMaskEnforcement();
+    testWebSocketExtLenMaskKey();
+    testWebSocketExtLen64MaskKey();
+    testWebSocketCloseDelivered();
     std::cout << "proxy_regression: ok\n";
     return 0;
 }
