@@ -3953,11 +3953,19 @@ void load_restart_db(void)
         d->encoding = g_dc.default_charset;
         d->negotiated_encoding = g_dc.default_charset;
         // Restore peer sockaddr for site policy / same_source_key (#1039).
+        //
+        // d->address is the only field here rebuilt from the live socket
+        // rather than from the restart file, so a failure is not recoverable
+        // by reading further.  Record it and drop the descriptor after the
+        // record is fully parsed (#1141) -- the file is a sequential stream,
+        // so bailing out here would desynchronize every descriptor after it.
+        bool bHaveSockAddr = true;
         {
             socklen_t n = static_cast<socklen_t>(d->address.maxaddrlen());
             if (0 != getpeername(d->socket, d->address.sa(), &n))
             {
                 std::memset(d->address.sa(), 0, d->address.maxaddrlen());
+                bHaveSockAddr = false;
             }
         }
         if (3 <= version)
@@ -4223,6 +4231,42 @@ void load_restart_db(void)
         d->quota = g_dc.cmd_quota_max;
         d->program_data = nullptr;
         d->connlog_id = 0;
+
+        if (!bHaveSockAddr)
+        {
+            // #1141: fail closed, like the accept path (#1135).  A zeroed
+            // sockaddr matches no rule in mux_subnet::compare_to, so every
+            // later g_access_list query -- isForbid, the graduated site
+            // thresholds, isRegistered -- and all same_source_key rate and
+            // pre-auth accounting would silently fail open for the life of
+            // this session.  Drop it rather than carry an unpoliceable one.
+            //
+            // Not damped like the accept-path refusal: this population is
+            // bounded by who was connected across the restart and cannot be
+            // driven by a remote flood, and each dropped session is worth a
+            // line.
+            STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
+            UTF8 *logBuf = alloc_mbuf("load_restart_db.LOG.noaddr");
+            mux_sprintf(logBuf, MBUF_SIZE,
+                T("[%d/%s] Restart session dropped: peer address unavailable."),
+                d->socket, d->addr[0] != '\0' ? d->addr : T("UNKNOWN"));
+            g_pILog->log_text(logBuf);
+            free_mbuf(logBuf);
+            ENDLOG;
+
+            // Never inserted into g_descriptors_list, so ganl_initialize()'s
+            // adopt loop will not see this fd -- close it here or it leaks.
+            if (INVALID_SOCKET != d->socket)
+            {
+                SOCKET_CLOSE(d->socket);
+                d->socket = INVALID_SOCKET;
+            }
+            clearstrings(d);
+            freeqs(d);
+            destroy_desc(d);
+            free_desc(d);
+            continue;
+        }
 
         auto it = g_descriptors_list.insert(g_descriptors_list.end(), d);
         g_descriptors_map.insert(make_pair(d, it));

@@ -686,6 +686,7 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSalt, int *piType);
 int  QueueMax(dbref);
 int  a_Queue(dbref, int);
 void pcache_reload(dbref);
+void pcache_delete(dbref);
 void pcache_init(void);
 
 /* From predicates.cpp */

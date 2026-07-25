@@ -5306,7 +5306,8 @@ MUX_RESULT CMailStorage::PutMeta(const UTF8 *key, int value)
     }
 
     if (nullptr == key) return MUX_E_INVALIDARG;
-    bool ok = pDb->PutMeta(reinterpret_cast<const char *>(key), value);
+    bool ok = pDb->PutMeta(
+        reinterpret_cast<const char *>(key), value);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 

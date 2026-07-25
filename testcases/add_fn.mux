@@ -47,6 +47,48 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #3 - Adding 0 returns the operand unchanged.
+#
+# add() routes through AddDoubles(), which finishes with NearestPretty().
+# Same requirement as mul() TC003: an operand that is already its own
+# shortest round-trip form must survive the +/- 4 ulp search intact.  A
+# tie-break preferring a lower neighbour returns 1.224744871391588 here.
+#
+&tr.tc003 test_add_fn=
+  @if cand(
+        strmatch(add(1.224744871391589,0),1.224744871391589),
+        strmatch(add(2.449489742783178,0),2.449489742783178),
+        strmatch(add(sqrt(1.5),0),[sqrt(1.5)])
+      )=
+  {
+    @log smoke=TC003: add identity preserves the operand. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: add identity preserves the operand. Failed (a=[add(1.224744871391589,0)] b=[add(2.449489742783178,0)] sq=[add(sqrt(1.5),0)]/[sqrt(1.5)]).;
+    @trig me/tr.done
+  }
+-
+#
+# Test Case #4 - AddDoubles still compensates and prettifies.  0.1+0.2
+# is the classic case: the raw IEEE sum is 0.30000000000000004.
+#
+&tr.tc004 test_add_fn=
+  @if cand(
+        strmatch(add(0.1,0.2),0.3),
+        strmatch(add(1.5,2.5),4),
+        strmatch(add(0.1,0.2,0.3),0.6)
+      )=
+  {
+    @log smoke=TC004: add compensation retained. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: add compensation retained. Failed (classic=[add(0.1,0.2)] whole=[add(1.5,2.5)] three=[add(0.1,0.2,0.3)]).;
+    @trig me/tr.done
+  }
+-
 &tr.done test_add_fn=
   @log smoke=End add() test cases.;
   @notify smoke

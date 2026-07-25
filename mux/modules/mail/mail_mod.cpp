@@ -431,7 +431,9 @@ int CMailMod::new_mail_message(const UTF8 *message, int number)
     struct mail_body &pm = m_mail_list[number];
     pm.m_pMessage.assign(reinterpret_cast<const char *>(message), nLen);
 
-    // #1191/#1192: persist body for softcode gen-sync reload (no-op while loading).
+    // #1192: Persist body + mail_db_top on live creates.  Skipped while
+    // m_bLoading so SQLite load does not write back through itself.
+    // Also feeds the #1191 softcode gen-sync reload.
     //
     sqlite_wt_mail_body(number,
         reinterpret_cast<const UTF8 *>(pm.m_pMessage.c_str()));
@@ -586,7 +588,9 @@ void CMailMod::sqlite_wt_mail_body(int number, const UTF8 *message)
 
     m_pIStorage->SyncMailBody(number, message);
 
-    // Keep softcode reload gate current (#783 / #1191 / #1192).
+    // Keep the loader gate current (#783 / engine MessageAdd parity):
+    // sqlite_load_mail / module Initialize only size bodies from
+    // mail_db_top meta.  Without this, in-game module mail is lost on reboot.
     //
     m_pIStorage->PutMeta(T("mail_db_top"),
         static_cast<int>(m_mail_list.size()));
