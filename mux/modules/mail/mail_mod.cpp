@@ -618,18 +618,39 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
         malias_t *m = m_malias[i].get();
         if (nullptr == m) continue;
 
-        // Build space-separated member list.
+        // Build space-separated member list.  #1197: clamp snprintf return
+        // (it can exceed remain) and refuse to write a separator when the
+        // buffer is nearly full — same class as #1066 make_numlist.
         //
         char members_buf[MOD_LBUF_SIZE];
         char *bp = members_buf;
-        for (size_t j = 0; j < m->list.size(); j++)
+        size_t remain = sizeof(members_buf);
+        for (size_t j = 0; j < m->list.size() && remain > 1; j++)
         {
             if (j > 0)
             {
+                if (remain <= 1)
+                {
+                    break;
+                }
                 *bp++ = ' ';
+                remain--;
             }
-            bp += snprintf(bp, sizeof(members_buf) - (bp - members_buf),
-                           "%d", m->list[j]);
+            int n = snprintf(bp, remain, "%d", m->list[j]);
+            if (n < 0)
+            {
+                break;
+            }
+            if (static_cast<size_t>(n) >= remain)
+            {
+                // Truncated — leave the partial write and stop.
+                //
+                bp += remain - 1;
+                remain = 1;
+                break;
+            }
+            bp += n;
+            remain -= static_cast<size_t>(n);
         }
         *bp = '\0';
 
@@ -2260,42 +2281,8 @@ void CMailMod::send_mail
         }
     }
 
-    // Reject if the target's mailbox is full.
-    //
-    if (0 < m_mail_per_player)
-    {
-        bool bWizTarget = false;
-        if (nullptr != m_pIPermissions)
-        {
-            m_pIPermissions->IsWizard(target, &bWizTarget);
-        }
-        if (!bWizTarget)
-        {
-            int total = 0;
-            std::list<mail> *pList = MailList(target);
-            if (pList)
-            {
-                total = static_cast<int>(pList->size());
-            }
-            if (total >= m_mail_per_player)
-            {
-                UTF8 targetname[MOD_LBUF_SIZE];
-                get_player_name(target, targetname, sizeof(targetname));
-
-                UTF8 msg[2 * MOD_LBUF_SIZE];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                    "MAIL: %s\xE2\x80\x99s mailbox is full (%d messages).",
-                    targetname, total);
-                if (nullptr != m_pINotify)
-                {
-                    m_pINotify->RawNotify(player, msg);
-                }
-                return;
-            }
-        }
-    }
-
-    // Build the mail struct and append to target's list.
+    // Build the mail struct and append first (#1196: engine counts after
+    // emplace so the limit is total > max, not total >= max before insert).
     //
     mail newm;
     newm.to = target;
@@ -2320,14 +2307,46 @@ void CMailMod::send_mail
     //
     newm.read = flags & M_FMASK;
 
-    // Append to target's mail list and persist.
-    //
     m_mail_htab[target].push_back(std::move(newm));
     struct mail *mp = &m_mail_htab[target].back();
+
+    // Reject if the target's mailbox is full.  Engine uses No_Mail_Expire
+    // (wizard or POW_NO_MAIL_EXPIRE); COM only exposes IsWizard today.
+    //
+    if (0 < m_mail_per_player)
+    {
+        bool bExempt = false;
+        if (nullptr != m_pIPermissions)
+        {
+            m_pIPermissions->IsWizard(target, &bExempt);
+        }
+        if (!bExempt)
+        {
+            int total = static_cast<int>(m_mail_htab[target].size());
+            if (total > m_mail_per_player)
+            {
+                UTF8 targetname[MOD_LBUF_SIZE];
+                get_player_name(target, targetname, sizeof(targetname));
+
+                UTF8 msg[2 * MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                    "MAIL: %s\xE2\x80\x99s mailbox is full (%d messages).",
+                    targetname, total - 1);
+                if (nullptr != m_pINotify)
+                {
+                    m_pINotify->RawNotify(player, msg);
+                }
+                MessageReferenceDec(number);
+                m_mail_htab[target].pop_back();
+                return;
+            }
+        }
+    }
+
+    // Persist and notify.
+    //
     sqlite_wt_insert_mail(mp);
 
-    // Notify via IMailDelivery.
-    //
     if (nullptr != m_pIMailDelivery)
     {
         m_pIMailDelivery->NotifyDelivery(mp->from, target, subject, silent);
@@ -3154,6 +3173,80 @@ void CMailMod::do_expmail_abort(dbref player)
     if (nullptr != m_pINotify)
     {
         m_pINotify->RawNotify(player, T("MAIL: Message aborted."));
+    }
+}
+
+// #1196: append recipients to an in-progress composition (CC/BCC).
+// bBlind prefixes each resolved dbref with '!' so make_namelist/send hide them.
+//
+void CMailMod::do_mail_cc(dbref player, const UTF8 *arg, bool bBlind)
+{
+    bool bComposing = false;
+    if (nullptr != m_pIMailDelivery)
+    {
+        m_pIMailDelivery->IsComposing(player, &bComposing);
+    }
+    if (!bComposing)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: No mail message in progress."));
+        }
+        return;
+    }
+    if (nullptr == arg || '\0' == *arg)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("MAIL: I do not know whom you want to mail."));
+        }
+        return;
+    }
+
+    std::string tolist = make_numlist(player, arg, bBlind);
+    if (tolist.empty())
+    {
+        return;
+    }
+
+    UTF8 existing[MOD_LBUF_SIZE];
+    existing[0] = '\0';
+    if (nullptr != m_pIAttributeAccess)
+    {
+        size_t nLen = 0;
+        m_pIAttributeAccess->GetAttribute(player, player, T("Mailto"),
+            existing, sizeof(existing) - 1, &nLen);
+        if (nLen >= sizeof(existing))
+        {
+            nLen = sizeof(existing) - 1;
+        }
+        existing[nLen] = '\0';
+    }
+
+    std::string fulllist = tolist;
+    if ('\0' != existing[0])
+    {
+        fulllist.push_back(' ');
+        fulllist.append(reinterpret_cast<const char *>(existing));
+    }
+
+    if (nullptr != m_pIAttributeAccess)
+    {
+        m_pIAttributeAccess->SetAttribute(player, player, T("Mailto"),
+            reinterpret_cast<const UTF8 *>(fulllist.c_str()));
+    }
+
+    std::string names = make_namelist(player,
+        reinterpret_cast<const UTF8 *>(fulllist.c_str()));
+    if (nullptr != m_pINotify)
+    {
+        UTF8 msg[MOD_LBUF_SIZE];
+        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+            "MAIL: You are sending mail to \xE2\x80\x98%s\xE2\x80\x99.",
+            names.c_str());
+        m_pINotify->RawNotify(player, msg);
     }
 }
 
@@ -5113,9 +5206,11 @@ bool CMailMod::do_mail_stub(dbref player, const UTF8 *arg1,
 
     if (nullptr != arg2 && '\0' != *arg2)
     {
-        // Sending mail — not yet implemented in module.
+        // #1198: composition start lives in the module store — do not
+        // return NOTIMPLEMENTED and let the engine fall through.
         //
-        return false;
+        do_expmail_start(player, arg1, arg2);
+        return true;
     }
 
     // Must be reading or listing mail.
@@ -5233,13 +5328,15 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
         return MUX_S_OK;
 
     case MAIL_CC:
-        do_mail_quick(executor, pArg1, pArg2);
+        // #1196: composition add, not one-shot send.
+        //
+        do_mail_cc(executor, pArg1, false);
         return MUX_S_OK;
 
     case MAIL_BCC:
-        // BCC uses blind numlist.
+        // #1196: composition add with blind numlist prefix.
         //
-        do_mail_quick(executor, pArg1, pArg2);
+        do_mail_cc(executor, pArg1, true);
         return MUX_S_OK;
 
     case MAIL_PROOF:
@@ -5403,6 +5500,11 @@ MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
 
 MUX_RESULT CMailMod::ExpireMail(void)
 {
+    // #1196: align with engine check_mail_expiration — negative/zero never
+    // expire; age in seconds; skip M_Safe; expire unread; wizard exempt.
+    // (Engine also exempts No_Mail_Expire power holders; COM exposes only
+    // IsWizard today.)
+    //
     if (m_mail_expiration <= 0)
     {
         return MUX_S_OK;
@@ -5410,15 +5512,12 @@ MUX_RESULT CMailMod::ExpireMail(void)
 
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetLocal();
-
-    int nExpired = 0;
+    const int expire_secs = m_mail_expiration * 86400;
 
     for (auto &kv : m_mail_htab)
     {
         dbref player = kv.first;
 
-        // Wizards are exempt from mail expiration.
-        //
         bool bWizard = false;
         if (nullptr != m_pIObjectInfo)
         {
@@ -5432,34 +5531,31 @@ MUX_RESULT CMailMod::ExpireMail(void)
         auto &mlist = kv.second;
         for (auto it = mlist.begin(); it != mlist.end(); )
         {
-            // Skip unread mail — don't expire what hasn't been seen.
+            // @mail/safe messages never expire.
             //
-            if (!(it->read & M_ISREAD))
+            if (it->read & M_SAFE)
             {
                 ++it;
                 continue;
             }
 
             CLinearTimeAbsolute ltaMail;
-            if (ltaMail.SetString(reinterpret_cast<const UTF8 *>(it->time.c_str())))
+            if (!ltaMail.SetString(reinterpret_cast<const UTF8 *>(it->time.c_str())))
             {
-                CLinearTimeDelta ltd(ltaMail, ltaNow);
-                int iAgeDays = ltd.ReturnDays();
-                if (iAgeDays < 0)
-                {
-                    iAgeDays = -iAgeDays;
-                }
-
-                if (iAgeDays > m_mail_expiration)
-                {
-                    MessageReferenceDec(it->number);
-                    sqlite_wt_delete_mail(&(*it));
-                    it = mlist.erase(it);
-                    nExpired++;
-                    continue;
-                }
+                ++it;
+                continue;
             }
-            ++it;
+
+            CLinearTimeDelta ltd(ltaMail, ltaNow);
+            if (ltd.ReturnSeconds() <= expire_secs)
+            {
+                ++it;
+                continue;
+            }
+
+            MessageReferenceDec(it->number);
+            sqlite_wt_delete_mail(&(*it));
+            it = mlist.erase(it);
         }
     }
 

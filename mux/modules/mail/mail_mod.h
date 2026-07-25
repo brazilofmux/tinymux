@@ -282,6 +282,7 @@ private:
     void do_expmail_abort(dbref player);
     void do_mail_quick(dbref player, const UTF8 *arg1,
         const UTF8 *arg2);
+    void do_mail_cc(dbref player, const UTF8 *arg, bool bBlind);
     void do_mail_fwd(dbref player, const UTF8 *msg,
         const UTF8 *tolist);
     void do_mail_reply(dbref player, const UTF8 *msg, bool all,
