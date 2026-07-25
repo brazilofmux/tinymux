@@ -43,10 +43,10 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |----|--------|-------|------:|-----------|--------|-------|
 | A1 | Driver bootstrap / COM | `mux/src/driver.cpp`, `driver_bridge.cpp`, `modules.cpp`, `muxcli.cpp` | med | — | thin | Config basket pull; module load order |
 | A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 1–2, #1074 | deep | Restart DESC, `DS_NEED_PROTO`, IOCP cap, accept path |
-| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 1, #1083 path | partial | queue_write, idle, site policy; re-sweep useful |
-| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | thin | thin | Negotiation / charset / GMCP edges |
+| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 6 | deep | #1133–#1135 filed (SiteMon, output_limit, sockaddr fail-open) |
+| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 6 | deep | #1126 gmcp_enabled; #1128 enable_us; #1131–#1132 SB/charset |
 | A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 3 | deep | Mask, handshake close, backpressure (#1081–#1083) |
-| A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 1 | partial | Async-signal safety; dump/fork edges |
+| A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 6 | deep | #1127 g_bCanRestart; #1129 SIGABRT; #1130 SIGXFSZ; #1136 dump reaps |
 | A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | unit green | partial | Covered by units; logic re-read optional |
 | A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp` | small | — | thin | DNS/email slave pipes |
 
@@ -66,7 +66,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 2 softcode | partial | elock/lastcreate fixed; full matrix not exhausted |
-| C2 | Function builtins | `functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 2–3 | partial | Largest surface; re-rotate by subsystem |
+| C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1124 closed (#1121 Highs, #1123 Mediums, #1125 JIT perms); re-rotate by family later |
 | C3 | Commands / hooks | `command.cpp`, `predicates.cpp` | large | thin | thin | @-command side effects |
 | C4 | Match / wild | `match.cpp`, `wild.cpp` | med | scenario tests | partial | Live `$` capture has scenario; re-read matching |
 | C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | — | thin | Gameplay path correctness |
@@ -145,8 +145,8 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| K1 | Smoke suite | `testcases/` | large | every fix PR | deep | 1319 TCs; grow when behavior changes |
-| K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | opt-in | partial | Make scenario more routine? |
+| K1 | Smoke suite | `testcases/` | large | every fix PR | deep | 1325+ TCs; grow when behavior changes |
+| K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | opt-in | partial | wild-capture, site-threshold, jit-perms; make more routine |
 | K3 | Unit islands | `tests/alarm`, `netaddr`, `db`, `libmux` | small | on change | partial | |
 | K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | — | thin | |
 | K5 | Parser research | `parser/` | small | — | deferred | Not production runtime |
@@ -169,6 +169,8 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 2 | 2026-07 | Softcode, mail_mod, Windows IOCP/wselect, Schannel, JIT residual | #1063–#1071 → PR #1072; #1073/#1075 schema; #1074/#1076 banner |
 | Pass 3 | 2026-07 | Convert residual, JIT bounds, queue money, WS, comsys_mod, conf live sync | #1077–#1080 → #1086; #1087/#1088; #1081–#1085 → #1089 |
 | Pass 4 | 2026-07 | Hydra proxy I1–I5 (session, scrollback, WS, auth, process) | #1091–#1102 filed; Highs → #1103; Mediums → #1105 (complete) |
+| Pass 5 | 2026-07 | Softcode C2 function builtins + JIT ECALL perms | Highs #1106–#1110 → #1121; Mediums #1111–#1119/#1122 → #1123; #1124 JIT `check_access` → #1125 |
+| Pass 6 | 2026-07 | A3 net/output + A4 telnet NVT + A6 signals/restart | #1126–#1136 filed; fix PR TBD |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -181,8 +183,7 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **Pass 5 — C2** function builtins (batch by letter / family) | Huge; never one-and-done |
-| **Pass 6** | **A3 + A4 + A6** net/telnet/signals re-sweep | Lifecycle adjacent to Pass 1; idle/site/output |
+| **Now** | **Fix Pass 6** (#1126–#1136) | Highs first: gmcp_enabled, g_bCanRestart, enable_us, SIGABRT |
 | **Pass 7** | **D2 + D3** HIR/DBT | Complements JIT ECALL deep work |
 | **Pass 8** | **E5 + C5** object/player/move | Gameplay permission paths |
 | **Pass 9** | **F3** engine comsys/mail vs modules | Dual implementation drift |
@@ -228,5 +229,7 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Pass 4 Hydra filed #1091–#1102; I* slice status updated |
 | 2026-07-25 | Pass 4 Highs #1091–#1094 merged (#1103); I4/I5/I6 + rotation updated |
 | 2026-07-25 | Pass 4 Mediums #1095–#1102 merged (#1105); Pass 4 complete; rotation → Pass 5 C2 |
+| 2026-07-25 | Pass 5 complete (#1121/#1123/#1125); C2 deep; rotation → Pass 6 A3+A4+A6 |
+| 2026-07-25 | Pass 6 A3+A4+A6 filed #1126–#1136; rotation → Fix Pass 6 |
 
 Update this table when the map structure changes.
