@@ -391,12 +391,14 @@ static void emit_stub_slen(emit_t *e) {
 // Actually simpler: inline byte loop since strcpy returns dst not end.
 // Or use stpcpy if available.  For now, call strcpy and then strlen.
 //
+// Guest dst is saved in R14 (callee-saved).  A push after the 16-byte
+// aligned prologue would leave RSP ≡ 8 (mod 16) at CALL and violate
+// System V (#1148).  R14 is restored by the trampoline on block return.
+//
 static void emit_stub_scopy(emit_t *e) {
     emit_stub_prologue(e);
-    // Save guest dst address for computing return value
-    emit_load_ctx_reg(e, X64_RCX, 10);    // guest a0 (dst)
-    // push rcx (save guest dst)
-    emit_byte(e, 0x51);
+    // Save guest dst in R14 across host CALLs (stack stays 16-aligned).
+    emit_load_ctx_reg(e, X64_R14, 10);    // guest a0 (dst)
 
     // rdi = host dst, rsi = host src
     emit_load_ctx_reg(e, X64_RDI, 10);    // a0
@@ -412,10 +414,8 @@ static void emit_stub_scopy(emit_t *e) {
     emit_call_host(e, reinterpret_cast<void *>(strlen));
     // rax = length of string at dst
 
-    // pop rcx (guest dst)
-    emit_byte(e, 0x59);
-    // result = guest_dst + length → points at the NUL
-    emit_add_r64(e, X64_RAX, X64_RCX);
+    // result = guest_dst (R14) + length → points at the NUL
+    emit_add_r64(e, X64_RAX, X64_R14);
     emit_store_ctx_reg(e, 10, X64_RAX);
 
     emit_stub_epilogue(e);
@@ -427,9 +427,8 @@ static void emit_stub_scopy(emit_t *e) {
 //
 static void emit_stub_memcpy(emit_t *e) {
     emit_stub_prologue(e);
-    // Save guest dst for return value
-    emit_load_ctx_reg(e, X64_RCX, 10);
-    emit_byte(e, 0x51);  // push rcx
+    // Save guest dst in R14 — keeps RSP 16-byte aligned for CALL (#1148).
+    emit_load_ctx_reg(e, X64_R14, 10);
 
     emit_load_ctx_reg(e, X64_RDI, 10);    // dst
     emit_guest_to_host(e, X64_RDI);
@@ -438,8 +437,7 @@ static void emit_stub_memcpy(emit_t *e) {
     emit_load_ctx_reg(e, X64_RDX, 12);    // len
     emit_call_host(e, reinterpret_cast<void *>(memcpy));
 
-    emit_byte(e, 0x59);  // pop rcx (guest dst)
-    emit_store_ctx_reg(e, 10, X64_RCX);   // return original guest dst
+    emit_store_ctx_reg(e, 10, X64_R14);   // return original guest dst
     emit_stub_epilogue(e);
     emit_intrinsic_return(e);
 }
@@ -470,8 +468,8 @@ static void emit_stub_memcmp(emit_t *e) {
 //
 static void emit_stub_memset(emit_t *e) {
     emit_stub_prologue(e);
-    emit_load_ctx_reg(e, X64_RCX, 10);
-    emit_byte(e, 0x51);  // push rcx (save guest dst)
+    // Save guest dst in R14 — keeps RSP 16-byte aligned for CALL (#1148).
+    emit_load_ctx_reg(e, X64_R14, 10);
 
     emit_load_ctx_reg(e, X64_RDI, 10);    // dst
     emit_guest_to_host(e, X64_RDI);
@@ -479,8 +477,7 @@ static void emit_stub_memset(emit_t *e) {
     emit_load_ctx_reg(e, X64_RDX, 12);    // len
     emit_call_host(e, reinterpret_cast<void *>(memset));
 
-    emit_byte(e, 0x59);  // pop rcx (guest dst)
-    emit_store_ctx_reg(e, 10, X64_RCX);
+    emit_store_ctx_reg(e, 10, X64_R14);
     emit_stub_epilogue(e);
     emit_intrinsic_return(e);
 }
@@ -1214,6 +1211,10 @@ static direct_jalr_flow_t emit_direct_jalr_flow(
 //
 void dbt_backend_backpatch_jmp(uint8_t *code_buf, uint32_t jmp_disp_offset,
                                 uint8_t *target) {
+    // Refuse OOB patches from stale/failed translate sites (#1147).
+    if (static_cast<size_t>(jmp_disp_offset) + 4 > CODE_BUF_SIZE) {
+        return;
+    }
     int32_t disp = static_cast<int32_t>(
         target - (code_buf + jmp_disp_offset + 4));
     memcpy(code_buf + jmp_disp_offset, &disp, 4);
@@ -1275,6 +1276,10 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     //
     uint8_t *intrinsic = try_emit_intrinsic(dbt, guest_pc);
     if (intrinsic) return intrinsic;
+
+    // Snapshot patch table so emit_exit_chained sites from a failed
+    // emit can be rolled back (#1147).
+    const size_t patches_before = dbt->patches.size();
 
     uint8_t *block_start = dbt->code_buf + dbt->code_used;
 
@@ -2906,14 +2911,15 @@ done:
         }
     }
 
+    if (e.offset > e.capacity) {
+        dbt_rollback_patches(dbt, patches_before);
+        return nullptr;
+    }
     dbt->blocks_translated++;
     dbt->insns_translated += count;
     if (self_loop) {
         dbt->superblock_count++;
         dbt->side_exits_total += num_side_exits;
-    }
-    if (e.offset > e.capacity) {
-        return nullptr;
     }
     // Hex dump of JIT code for traced blocks.
     if (dbt_trace_translate_enabled(dbt, guest_pc) && e.offset <= 2048) {

@@ -1144,6 +1144,16 @@ static void emit_phi_copies(hir_program &h, rv_compiler &rc,
             int val = h.pval[base + j];
             if (val < 0) break;
 
+            // Float PHI: both slots are 8-byte guest doubles — FLD/FSD.
+            // Must not fall into the string path (strcpy of float bits).
+            if (h.ty[i] == TY_FLOAT) {
+                rv_load_guest_addr(rc.code, RA_SCRATCH, loc[val].addr);
+                rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
+                rv_load_guest_addr(rc.code, RA_SCRATCH, loc[i].addr);
+                rc.code.push_back(rv_FSD(RA_SCRATCH, 0, 0));
+                break;
+            }
+
             bool phi_is_int = (loc[i].in_reg || loc[i].spill_slot >= 0);
             if (phi_is_int) {
                 // Integer PHI (registered or spilled).

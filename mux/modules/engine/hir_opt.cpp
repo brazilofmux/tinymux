@@ -570,8 +570,11 @@ void hir_copy_prop(hir_program &h) {
 // ---------------------------------------------------------------
 
 static bool has_side_effects(hir_kind k) {
+    // HIR_LUA_SETI mutates table cells — DCE must keep stores even when
+    // the result (if any) is unused (#1145).
     return k == HIR_CALL || k == HIR_STRCAT || k == HIR_STORE_Q
         || k == HIR_SETQ_SYNC
+        || k == HIR_LUA_SETI
         || k == HIR_RET || k == HIR_BR || k == HIR_BRC;
 }
 
@@ -658,6 +661,9 @@ void hir_dce(hir_program &h) {
 // ---------------------------------------------------------------
 
 static bool is_pure_op(hir_kind k) {
+    // Guest memory / table ops are NOT pure: SETQ_SYNC and ECALLs mutate
+    // qreg longbits and table cells between otherwise-identical loads
+    // (#1144 ALOAD/GETI; #1145 SETI must not CSE or be treated pure).
     switch (k) {
         case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV:
         case HIR_REM: case HIR_NEG: case HIR_ABS: case HIR_SIGN:
@@ -667,7 +673,6 @@ static bool is_pure_op(hir_kind k) {
         case HIR_NOT: case HIR_BOOL:
         case HIR_INC: case HIR_DEC:
         case HIR_ATOI: case HIR_ITOA: case HIR_STRCMP:
-        case HIR_LUA_GETI: case HIR_LUA_SETI: case HIR_LUA_ALOAD:
         case HIR_FADD: case HIR_FSUB: case HIR_FMUL: case HIR_FDIV:
         case HIR_FNEG:
         case HIR_FEQ: case HIR_FLT: case HIR_FLE:

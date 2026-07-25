@@ -654,6 +654,10 @@ void dbt_register_intrinsic(dbt_state_t *dbt, uint64_t guest_addr,
 
 void dbt_backend_backpatch_jmp(uint8_t *code_buf, uint32_t patch_offset,
                                 uint8_t *target) {
+    // Refuse OOB patches from stale/failed translate sites (#1147).
+    if (static_cast<size_t>(patch_offset) + 4 > CODE_BUF_SIZE) {
+        return;
+    }
     int32_t byte_diff = static_cast<int32_t>(target - (code_buf + patch_offset));
     int32_t imm26 = byte_diff >> 2;
     uint32_t inst = 0x14000000 | (imm26 & 0x03FFFFFF);
@@ -755,6 +759,10 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
 uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     uint8_t *intrinsic = try_emit_intrinsic(dbt, guest_pc);
     if (intrinsic) return intrinsic;
+
+    // Snapshot patch table so emit_exit_chained sites from a failed
+    // emit can be rolled back (#1147).
+    const size_t patches_before = dbt->patches.size();
 
     uint8_t *block_start = dbt->code_buf + dbt->code_used;
 
@@ -2076,7 +2084,10 @@ done:
         }
     }
 
-    if (e.offset > e.capacity) return nullptr;
+    if (e.offset > e.capacity) {
+        dbt_rollback_patches(dbt, patches_before);
+        return nullptr;
+    }
 
     dbt->code_used += e.offset;
     dbt->blocks_translated++;
