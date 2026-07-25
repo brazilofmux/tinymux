@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-alarm test-scenario test-stress test-jit-qreg hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-alarm test-scenario test-stress test-jit-qreg test-jit-ifelse hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -32,7 +32,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-alarm test-jit-qreg test-ios
+test: install test-ganl test-netaddr test-alarm test-jit-qreg test-jit-ifelse test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -43,6 +43,20 @@ test: install test-ganl test-netaddr test-alarm test-jit-qreg test-ios
 test-jit-qreg:
 	@echo "==> Running JIT q-register scope oracle"
 	@sh testcases/tools/jit_qreg/oracle.sh; rc=$$?; \
+	if [ $$rc -eq 2 ]; then \
+	    echo "==> Skipping (build has no JIT)"; \
+	else \
+	    exit $$rc; \
+	fi
+
+# JIT ifelse()/if() condition-truth oracle (#1157).
+# Compares JIT vs AST for the condition shapes where xlate() disagrees
+# with "atol() != 0" or with an integer truncation: bare %0-%9 cargs,
+# non-numeric and dbref literals, and fractional floats.
+# Skips cleanly on builds without --enable-jit (the script exits 2).
+test-jit-ifelse:
+	@echo "==> Running JIT ifelse() condition oracle"
+	@sh testcases/tools/jit_ifelse/oracle.sh; rc=$$?; \
 	if [ $$rc -eq 2 ]; then \
 	    echo "==> Skipping (build has no JIT)"; \
 	else \

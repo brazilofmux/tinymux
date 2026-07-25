@@ -1553,20 +1553,37 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Lower the condition (always evaluated).
         int cond = hir_lower_node(h, rc, node->children[0].get());
 
-        // Ensure condition is integer.
+        // Ensure condition is integer.  The interpreter decides this
+        // condition with xlate() (fun_ifelse in funceval.cpp), so anything
+        // we fold or emit here has to agree with xlate() exactly (#1157).
         if (h.ty[cond] != TY_INT) {
-            if (h.kind[cond] == HIR_SCONST) {
-                int64_t v = static_cast<int64_t>(
-                    mux_atol(u8(h.sval[cond])));
-                cond = h.emit_iconst(v);
-            } else if (h.ty[cond] == TY_FLOAT) {
-                // Float condition: truncate to int (nonzero = true).
-                cond = h.emit(HIR_FTOI, TY_INT, cond);
+            if (h.is_const(cond)) {
+                // Genuine compile-time literal: fold using the interpreter's
+                // own truth test.  mux_atol() is not xlate() — "abc", "#5"
+                // and "0abc" are all true but atol to 0, so the fold used to
+                // pick the else arm for them.
+                //
+                // is_const() also excludes emit_sref() slots (%0-%9 and
+                // SUBST), which are HIR_SCONST with an empty sval and a
+                // runtime_ref marking; their value is only known once
+                // run_cached_program fills CARGS_BASE.  Folding those read
+                // "" and chose the else arm on every call — the reported
+                // defect.  They now fall through to the ECALL path below.
+                //
+                // c_str() is well-defined for empty strings; xlate only reads.
+                std::string cval = h.sval[cond];
+                bool truth = xlate(const_cast<UTF8 *>(
+                    reinterpret_cast<const UTF8 *>(cval.c_str())));
+                cond = h.emit_iconst(truth ? 1 : 0);
             } else if (h.known_int[cond]) {
                 cond = h.emit(HIR_ATOI, TY_INT, cond);
             } else {
-                // Non-integer condition (string truth = non-empty).
-                // Fall through to ECALL for safety.
+                // Runtime string, or a float.  A float cannot use FTOI here:
+                // xlate() calls any nonzero float true, but FTOI truncates
+                // 0.5 and -0.5 to 0, and xlate() calls NaN/+Inf/-Inf false
+                // where a plain nonzero test would call them true.  There is
+                // no HIR shape that reproduces xlate() for these, so defer
+                // to the ECALL, which runs the real thing.
                 goto general_lowering;
             }
         }

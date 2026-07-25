@@ -1,0 +1,141 @@
+#
+# ifelse_fn.mux - Test Cases for ifelse() and if().
+#
+# The condition of ifelse()/if() is decided by xlate() (see fun_ifelse in
+# funceval.cpp), which is NOT "atol() != 0":
+#
+#   "#5"    true    (any #ref that is not #-...)
+#   "#-1"   false
+#   "abc"   true    (non-empty and unparseable as a number)
+#   "0abc"  true    (ParseFloat fails, so the non-empty rule applies)
+#   "0.5"   true    (any nonzero float)
+#   "00.00" false   (all-zero digits, either side of the point)
+#   ""      false
+#
+# Every case below is a shape where "atol() != 0" or an integer truncation
+# would give the opposite answer, so this file is what stops a truth test
+# from quietly regressing to one of those (#1157).
+#
+@create test_ifelse_fn
+-
+@set test_ifelse_fn=INHERIT QUIET
+-
+#
+# Helper attributes.  These take the condition as a u() argument (%0), so
+# the condition is only known at call time and cannot be folded away.
+#
+&fn.cond test_ifelse_fn=ifelse(%0,Y,N)
+-
+&fn.if1 test_ifelse_fn=if(%0,Y)
+-
+&fn.nest test_ifelse_fn=ifelse(%0,ifelse(%1,AA,AB),BB)
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_ifelse_fn=
+  @log smoke=Beginning ifelse() test cases.
+-
+#
+# Test Case #1 - Condition supplied as a u() argument.
+# The condition arrives at call time, so it must be evaluated then and not
+# assumed to be a compile-time constant.
+#
+&tr.tc001 test_ifelse_fn=
+  @if cand(
+        strmatch(u(me/fn.cond,1), Y),
+        strmatch(u(me/fn.cond,0), N),
+        strmatch(u(me/fn.cond,abc), Y),
+        strmatch(u(me/fn.cond,7), Y),
+        strmatch(u(me/fn.if1,1), Y)
+      )=
+  {
+    @log smoke=TC001: ifelse argument condition. Succeeded.
+  },
+  {
+    @log smoke=TC001: ifelse argument condition. Failed (1=[u(me/fn.cond,1)] 0=[u(me/fn.cond,0)] abc=[u(me/fn.cond,abc)] 7=[u(me/fn.cond,7)] if=[u(me/fn.if1,1)]).
+  }
+-
+#
+# Test Case #2 - Non-numeric and dbref conditions are true.
+# All four atol() to 0, so a numeric-only truth test picks the wrong arm.
+#
+&tr.tc002 test_ifelse_fn=
+  @if cand(
+        strmatch(ifelse(abc,Y,N), Y),
+        strmatch(ifelse(#5,Y,N), Y),
+        strmatch(ifelse(0abc,Y,N), Y),
+        strmatch(ifelse(#-1,Y,N), N)
+      )=
+  {
+    @log smoke=TC002: ifelse string truth. Succeeded.
+  },
+  {
+    @log smoke=TC002: ifelse string truth. Failed (abc=[ifelse(abc,Y,N)] dbref=[ifelse(#5,Y,N)] 0abc=[ifelse(0abc,Y,N)] negref=[ifelse(#-1,Y,N)]).
+  }
+-
+#
+# Test Case #3 - Zero-valued conditions are false.
+# Guards the other direction: these must not become true.
+#
+&tr.tc003 test_ifelse_fn=
+  @if cand(
+        strmatch(ifelse(0,Y,N), N),
+        strmatch(ifelse(0.0,Y,N), N),
+        strmatch(ifelse(00.00,Y,N), N),
+        strmatch(ifelse(1,Y,N), Y)
+      )=
+  {
+    @log smoke=TC003: ifelse zero conditions. Succeeded.
+  },
+  {
+    @log smoke=TC003: ifelse zero conditions. Failed (0=[ifelse(0,Y,N)] 0.0=[ifelse(0.0,Y,N)] 00.00=[ifelse(00.00,Y,N)] 1=[ifelse(1,Y,N)]).
+  }
+-
+#
+# Test Case #4 - Fractional float conditions are true.
+# Truncating toward zero would make each of these false.
+#
+&tr.tc004 test_ifelse_fn=
+  @if cand(
+        strmatch(ifelse(0.5,Y,N), Y),
+        strmatch(ifelse(add(0.2,0.3),Y,N), Y),
+        strmatch(ifelse(sub(0.0,0.5),Y,N), Y),
+        strmatch(ifelse(add(0.5,0.5),Y,N), Y)
+      )=
+  {
+    @log smoke=TC004: ifelse fractional float conditions. Succeeded.
+  },
+  {
+    @log smoke=TC004: ifelse fractional float conditions. Failed (half=[ifelse(0.5,Y,N)] sum=[ifelse(add(0.2,0.3),Y,N)] neg=[ifelse(sub(0.0,0.5),Y,N)] one=[ifelse(add(0.5,0.5),Y,N)]).
+  }
+-
+#
+# Test Case #5 - Nesting and the 2-argument if() form.
+# if() with a false condition yields the empty string, not "0".
+#
+&tr.tc005 test_ifelse_fn=
+  @if cand(
+        strmatch(u(me/fn.nest,1,1), AA),
+        strmatch(u(me/fn.nest,1,0), AB),
+        strmatch(u(me/fn.nest,0,1), BB),
+        eq(strlen(u(me/fn.if1,0)), 0)
+      )=
+  {
+    @log smoke=TC005: ifelse nesting and if() form. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: ifelse nesting and if() form. Failed (11=[u(me/fn.nest,1,1)] 10=[u(me/fn.nest,1,0)] 01=[u(me/fn.nest,0,1)] iflen=[strlen(u(me/fn.if1,0))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_ifelse_fn=
+  @log smoke=End ifelse() test cases.;
+  @notify smoke
+-
+drop test_ifelse_fn
+-
+#
+# End of Test Cases
+#
