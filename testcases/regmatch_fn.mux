@@ -1,0 +1,80 @@
+#
+# regmatch_fn.mux - Test Cases for regmatch().
+#
+# #1112: the capture side-effect was silently dead — real_regmatch passed
+# outlen = 0 to pcre2_substring_copy_bynumber, which PCRE2 reads as the
+# buffer capacity, so every copy failed with PCRE2_ERROR_NOMEMORY and every
+# named/numbered register was cleared instead of filled.  regmatch() had no
+# smoke coverage at all, which is how documented behavior stayed broken.
+#
+@create test_regmatch_fn
+-
+@set test_regmatch_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_regmatch_fn=
+  @log smoke=Beginning regmatch() test cases.
+-
+#
+# Test Case #1 - Return value.
+#
+&tr.tc001 test_regmatch_fn=
+  @if cand(
+        eq(regmatch(cookies=30, %(.+%)=%(.*%)), 1),
+        eq(regmatch(cookies=30, ^zzz$), 0)
+      )=
+  {
+    @log smoke=TC001: regmatch return value. Succeeded.
+  },
+  {
+    @log smoke=TC001: regmatch return value. Failed (match=[regmatch(cookies=30, %(.+%)=%(.*%))] nomatch=[regmatch(cookies=30, ^zzz$)]).
+  }
+-
+#
+# Test Case #2 - Capture registers fill (#1112).  This is the worked
+# example from 'help regmatch': string 'cookies=30' against '%(.+%)=%(.*%)'
+# with register list '0 3 5' sets %q0/%q3/%q5 to the 0th/1st/2nd
+# substrings.  Side effect and read happen in one argument so the
+# register substitution sees the assignment.
+#
+&tr.tc002 test_regmatch_fn=
+  @if strmatch(
+        [regmatch(cookies=30, %(.+%)=%(.*%), 0 3 5)]:%q0:%q3:%q5,
+        1:cookies=30:cookies:30
+      )=
+  {
+    @log smoke=TC002: regmatch capture registers. Succeeded.
+  },
+  {
+    @log smoke=TC002: regmatch capture registers. Failed (got=[regmatch(cookies=30, %(.+%)=%(.*%), 0 3 5)]:%q0:%q3:%q5 want=1:cookies=30:cookies:30).
+  }
+-
+#
+# Test Case #3 - A register of -1 discards that substring, leaving any
+# prior value in place.
+#
+&tr.tc003 test_regmatch_fn=
+  @if strmatch(
+        [setq(3, keepme)][regmatch(cookies=30, %(.+%)=%(.*%), 0 -1 5)]:%q0:%q3:%q5,
+        1:cookies=30:keepme:30
+      )=
+  {
+    @log smoke=TC003: regmatch -1 discards substring. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: regmatch -1 discards substring. Failed (got=[setq(3, keepme)][regmatch(cookies=30, %(.+%)=%(.*%), 0 -1 5)]:%q0:%q3:%q5 want=1:cookies=30:keepme:30).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_regmatch_fn=
+  @log smoke=End regmatch() test cases.;
+  @notify smoke
+-
+drop test_regmatch_fn
+-
+#
+# End of Test Cases
+#

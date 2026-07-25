@@ -1820,6 +1820,16 @@ static UTF8 *regrep_util(dbref player, dbref thing, const UTF8 *pattern,
     }
     pcre2_match_data *match_data =
         pcre2_match_data_create_from_pattern(re, nullptr);
+    // #1113: null-check match_data like regmatch/regrab/regedit.
+    //
+    if (!match_data)
+    {
+        pcre2_code_free(re);
+        olist_pop();
+        UTF8 *tbuf1 = alloc_lbuf("regrep_util");
+        mux_strncpy(tbuf1, T("#-1 REGEXP MATCH DATA ERROR"), LBUF_SIZE-1);
+        return tbuf1;
+    }
 
     UTF8 *tbuf1 = alloc_lbuf("regrep_util");
     UTF8 *bp = tbuf1;
@@ -2236,7 +2246,9 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
             if (i < matches)
             {
                 LBuf p = LBuf_Src("fun_regmatch");
-                PCRE2_SIZE outlen = 0;
+                // #1112: PCRE2 requires capacity on entry, not 0.
+                //
+                PCRE2_SIZE outlen = LBUF_SIZE - 1;
                 int ret = pcre2_substring_copy_bynumber(
                     match_data, i, p, &outlen);
 
@@ -2247,12 +2259,21 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
                 }
                 else
                 {
-                    RegAssign(&mudstate.global_regs[curq], 0, nullptr);
+                    // #1112: clear, do not no-op.  RegAssign early-returns on
+                    // a null ptr (eval.cpp), so passing nullptr left the
+                    // register at its PREVIOUS value — invisible while every
+                    // capture was empty, but now that captures fill, an unset
+                    // group would leak whatever the caller had setq'd there.
+                    // The named-register branch below already uses T("").
+                    //
+                    RegAssign(&mudstate.global_regs[curq], 0, T(""));
                 }
             }
             else
             {
-                RegAssign(&mudstate.global_regs[curq], 0, nullptr);
+                // #1112: ditto — more registers listed than captured groups.
+                //
+                RegAssign(&mudstate.global_regs[curq], 0, T(""));
             }
         }
         else
@@ -2265,7 +2286,9 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
                 if (i < matches)
                 {
                     LBuf p = LBuf_Src("fun_regmatch");
-                    PCRE2_SIZE outlen = 0;
+                    // #1112: PCRE2 requires capacity on entry, not 0.
+                    //
+                    PCRE2_SIZE outlen = LBUF_SIZE - 1;
                     int ret = pcre2_substring_copy_bynumber(
                         match_data, i, p, &outlen);
 

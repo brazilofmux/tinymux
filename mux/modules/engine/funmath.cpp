@@ -9,6 +9,8 @@
 #include "externs.h"
 #include "sha1.h"
 
+#include <algorithm>
+#include <climits>
 #include <vector>
 
 static const long nMaximums[10] =
@@ -628,20 +630,14 @@ FUNCTION(fun_lmath)
     }
     else if (mux_stricmp(op, T("median")) == 0)
     {
-        // Insertion sort -- MAX_WORDS is small.
+        // #1119: O(n log n) sort — insertion sort was O(n²) up to MAX_WORDS.
         //
-        for (int i = 1; i < n; i++)
+        if (alarm_clock.alarmed)
         {
-            double key = g_aDoubles[i];
-            int j = i - 1;
-            while (  j >= 0
-                  && g_aDoubles[j] > key)
-            {
-                g_aDoubles[j + 1] = g_aDoubles[j];
-                j--;
-            }
-            g_aDoubles[j + 1] = key;
+            safe_str(T("#-1 CPU LIMITED"), buff, bufc);
+            return;
         }
+        std::sort(g_aDoubles, g_aDoubles + n);
         if (n % 2 == 1)
         {
             fval(buff, bufc, g_aDoubles[n / 2]);
@@ -806,20 +802,14 @@ FUNCTION(fun_limath)
     }
     else if (mux_stricmp(op, T("median")) == 0)
     {
-        // Insertion sort.
+        // #1119: O(n log n) sort — insertion sort was O(n²) up to MAX_WORDS.
         //
-        for (int i = 1; i < n; i++)
+        if (alarm_clock.alarmed)
         {
-            int64_t key = vals[i];
-            int j = i - 1;
-            while (  j >= 0
-                  && vals[j] > key)
-            {
-                vals[j + 1] = vals[j];
-                j--;
-            }
-            vals[j + 1] = key;
+            safe_str(T("#-1 CPU LIMITED"), buff, bufc);
+            return;
         }
+        std::sort(vals.begin(), vals.end());
         if (n % 2 == 1)
         {
             safe_i64toa(vals[n / 2], buff, bufc);
@@ -1211,6 +1201,23 @@ FUNCTION(fun_iabs)
     if (num == 0)
     {
         safe_chr('0', buff, bufc);
+    }
+    else if (num == INT64_MIN)
+    {
+        // #1114: |INT64_MIN| is 2**63, which int64_t cannot represent —
+        // negating it is UB.  Reject rather than hand back the magnitude
+        // as a string: "9223372036854775808" is not a valid int64, and
+        // every consumer corrupts it.  Measured on this tree, feeding it
+        // to an integer-path function re-parses through mux_atoi64 (which
+        // wraps rather than saturates) straight back to INT64_MIN —
+        // idiv(iabs(-9223372036854775808),1) and shl(...,0) both yield
+        // -9223372036854775808 — while the float path loses precision
+        // instead (add(...,0) -> 9223372036854769664).  Either way iabs()'s
+        // one invariant is silently broken.  Failing loudly matches how the
+        // integer family handles an out-of-domain argument (fun_table,
+        // fun_columns).
+        //
+        safe_range(buff, bufc);
     }
     else if (num < 0)
     {
