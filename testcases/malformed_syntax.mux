@@ -17,7 +17,7 @@
 &tr.tc001 test_malformed_syntax=
   @if strmatch(
         eval(\[sort()\]),
-        #-1 FUNCTION (SORT) EXPECTS BETWEEN 1 AND 4 ARGUMENTS
+        #-1 FUNCTION * EXPECTS BETWEEN 1 AND 4 ARGUMENTS
       )=
   {
     @log smoke=TC001: malformed sort call arity rejection. Succeeded.
@@ -32,7 +32,7 @@
 &tr.tc002 test_malformed_syntax=
   @if strmatch(
         eval(\[add()\]),
-        #-1 FUNCTION (ADD) EXPECTS BETWEEN 1 AND 100 ARGUMENTS
+        #-1 FUNCTION * EXPECTS BETWEEN 1 AND 100 ARGUMENTS
       )=
   {
     @log smoke=TC002: malformed add call arity rejection. Succeeded.
@@ -47,7 +47,7 @@
 &tr.tc003 test_malformed_syntax=
   @if strmatch(
         eval(\[switch()\]),
-        #-1 FUNCTION (SWITCH) EXPECTS BETWEEN 2 AND 100 ARGUMENTS
+        #-1 FUNCTION * EXPECTS BETWEEN 2 AND 100 ARGUMENTS
       )=
   {
     @log smoke=TC003: malformed switch call arity rejection. Succeeded.;

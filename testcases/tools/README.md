@@ -274,3 +274,36 @@ parser. Content with literal top-level braces or semicolons may be
 re-indented differently. Blank-line spacing between commands may also
 differ (`unformat`'s "extraspace" vs `reformat`'s single-line `-`
 terminators).
+
+## Error-path assertions: no parentheses in expected strings
+
+MUX error text contains a parenthesised function name:
+
+```
+#-1 FUNCTION (RIGHT) EXPECTS 2 ARGUMENTS
+```
+
+Do **not** put that verbatim inside another function argument. Write the
+pattern with a wildcard in place of the name:
+
+```
+strmatch(right(hello,3,x), #-1 FUNCTION * EXPECTS 2 ARGUMENTS)
+```
+
+Why: an expected string carrying `(` has to survive argument scanning
+intact. When it did not (#1219), the pattern truncated at the first `)`,
+the leaked tail closed the enclosing `cand()` early, and the failing
+condition was silently dropped from the assertion list — so the arity and
+error-path cases passed *vacuously*, on exactly the tests written to catch
+those bugs. That was only noticed because fixing the parser made the
+suite's pass count go up.
+
+The wildcard form keeps the part that carries the meaning (`EXPECTS 2
+ARGUMENTS` still distinguishes 2 from 3) while removing the structural
+hazard. `#-1*` alone is acceptable where the specific text does not matter.
+
+Greppable check — this should return only comments:
+
+```sh
+grep -n 'FUNCTION (' testcases/*.mux
+```

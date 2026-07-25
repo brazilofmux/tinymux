@@ -53,8 +53,8 @@
 #
 &tr.tc003 test_soundex_fn=
   @if cand(
-        strmatch(soundex(two words), #-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT),
-        strmatch(soundex(4ever), #-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT)
+        strmatch(soundex(two words), #-1 FUNCTION * REQUIRES A SINGLE WORD ARGUMENT),
+        strmatch(soundex(4ever), #-1 FUNCTION * REQUIRES A SINGLE WORD ARGUMENT)
       )=
   {
     @log smoke=TC003: soundex() single-word validation. Succeeded.;

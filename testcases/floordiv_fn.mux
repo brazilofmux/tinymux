@@ -34,7 +34,7 @@
         eq(floordiv(10,-3),-4),
         eq(floordiv(-10,-3),3),
         eq(floordiv(5.5,2),2),
-        strmatch(floordiv(), #-1 FUNCTION (FLOORDIV) EXPECTS 2 ARGUMENTS),
+        strmatch(floordiv(), #-1 FUNCTION * EXPECTS 2 ARGUMENTS),
         eq(floordiv(foo,3),0)
       )=
   {

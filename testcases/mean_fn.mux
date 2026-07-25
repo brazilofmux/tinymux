@@ -35,7 +35,7 @@
         strmatch(mean(1.5,2.5,3.5),2.5),
         strmatch(mean(-2,-4,-6),-4),
         strmatch(mean(-1.5,0,1.5),0),
-        strmatch(mean(), #-1 FUNCTION (MEAN) EXPECTS BETWEEN 1 AND 100 ARGUMENTS),
+        strmatch(mean(), #-1 FUNCTION * EXPECTS BETWEEN 1 AND 100 ARGUMENTS),
         strmatch(mean(foo,2,4),2)
       )=
   {

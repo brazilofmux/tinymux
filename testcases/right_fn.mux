@@ -50,7 +50,7 @@
         strmatch(right(abc,-1), #-1 OUT OF RANGE),
         eq(strlen(right(abc,foo)), 0),
         eq(strlen(right(,3)), 0),
-        strmatch(right(hello,3,x), #-1 FUNCTION (RIGHT) EXPECTS 2 ARGUMENTS)
+        strmatch(right(hello,3,x), #-1 FUNCTION * EXPECTS 2 ARGUMENTS)
       )=
   {
     @log smoke=TC003: right invalid counts. Succeeded.;
