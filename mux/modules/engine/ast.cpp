@@ -312,13 +312,39 @@ private:
         {
             return seq;
         }
+        // Depth of bare parentheses opened inside this sequence (#1219).
+        //
+        // A '(' that follows a name is consumed by parseFuncCall, which
+        // recurses and accounts for its own parens; the only thing counted
+        // here is a parenthesis appearing as literal text.  While one is
+        // open, a ')' or ',' belongs to it rather than to the enclosing
+        // call, so neither terminates the sequence.
+        //
+        // 2.13 did this with a stack of expected closers in parse_to_lite:
+        // '(' pushed ')', and a closer found on the stack unwound to it
+        // rather than ending the argument.  Without the equivalent here,
+        // `strcat(Meet me (Tue, 5pm) downtown)` ended its argument at the
+        // first ')' and the comma split it, giving
+        // `Meet me (Tue5pm downtown)`.
+        //
+        int parenDepth = 0;
+
         while (!atEnd())
         {
             ASTTokenType t = peek().type;
-            if (stopRP && t == ASTTOK_RPAREN) break;
+            if (stopRP && t == ASTTOK_RPAREN && 0 == parenDepth) break;
             if (stopRB && t == ASTTOK_RBRACK) break;
             if (stopRC && t == ASTTOK_RBRACE) break;
-            if (stopCM && t == ASTTOK_COMMA)  break;
+            if (stopCM && t == ASTTOK_COMMA && 0 == parenDepth) break;
+
+            if (ASTTOK_LPAREN == t)
+            {
+                parenDepth++;
+            }
+            else if (ASTTOK_RPAREN == t && 0 < parenDepth)
+            {
+                parenDepth--;
+            }
 
             auto node = parseOne();
             if (node)
