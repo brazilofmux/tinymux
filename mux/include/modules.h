@@ -73,11 +73,13 @@ const MUX_CID CID_Functions              = UINT64_C(0x00000002FE32BEA1);
 const MUX_CID CID_Notify                 = UINT64_C(0x00000002B880897B);
 const MUX_IID IID_INotify                = UINT64_C(0x00000002621F4385);
 const MUX_CID CID_ObjectInfo             = UINT64_C(0x00000002251565F1);
-const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C49);
+// IID bumped ..6C49 -> ..6C4A when PayFor/GiveTo were added (#1194).
+const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C4A);
 const MUX_CID CID_AttributeAccess       = UINT64_C(0x000000024A3E71B5);
 const MUX_IID IID_IAttributeAccess      = UINT64_C(0x00000002D89F42C3);
 const MUX_CID CID_Evaluator             = UINT64_C(0x00000002E7B3A51D);
-const MUX_IID IID_IEvaluator            = UINT64_C(0x000000023C6D8F72);
+// IID bumped ..8F72 -> ..8F73 when EvalWithArgs was added (#1194).
+const MUX_IID IID_IEvaluator            = UINT64_C(0x000000023C6D8F73);
 const MUX_CID CID_Permissions           = UINT64_C(0x00000002A4C7E831);
 const MUX_IID IID_IPermissions          = UINT64_C(0x0000000257B1D946);
 const MUX_CID CID_MailDelivery          = UINT64_C(0x00000002B3F5D721);
@@ -290,6 +292,12 @@ public:
     //
     virtual MUX_RESULT GetPennies(dbref obj, int *pPennies) = 0;
 
+    // Money transfer — wrap engine payfor/giveto (wizard/free-money aware).
+    // #1194: channel charge collection from modules.
+    //
+    virtual MUX_RESULT PayFor(dbref who, int cost, bool *pPaid) = 0;
+    virtual MUX_RESULT GiveTo(dbref who, int amount) = 0;
+
     // PureName — returns the unadorned name (no ANSI).
     //
     virtual MUX_RESULT GetPureName(dbref obj, const UTF8 **ppName) = 0;
@@ -339,6 +347,12 @@ public:
     virtual MUX_RESULT Eval(dbref executor, dbref caller, dbref enactor,
         const UTF8 *pExpr, UTF8 *pResult, size_t nResultMax,
         size_t *pnResultLen) = 0;
+
+    // Evaluate softcode with %0..%n-1 replacement args (#1194 MOGRIFY`BLOCK).
+    //
+    virtual MUX_RESULT EvalWithArgs(dbref executor, dbref caller, dbref enactor,
+        const UTF8 *pExpr, const UTF8 *args[], int nargs,
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen) = 0;
 };
 
 // Permission queries.
