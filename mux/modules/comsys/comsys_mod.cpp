@@ -1431,12 +1431,59 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
         return MUX_E_INVALIDARG;
     }
 
-    // Remove all channels owned by this player.
+    // Mirror engine ReleaseAllResources comsys side (#1193):
+    // disconnect presence, clear aliases/membership, destroy owned
+    // channels, drop per-player comsys row, and purge SQLite player_channels.
     //
+
+    // 1. Quiet disconnect of channel presence.
+    //
+    PlayerDisconnect(player);
+
+    // 2. Remove all aliases and channel membership for this player.
+    //
+    auto itCom = m_comsys.find(player);
+    if (itCom != m_comsys.end())
+    {
+        comsys_t &c = itCom->second;
+        std::vector<com_alias> aliases = c.aliases;
+        for (const auto &ca : aliases)
+        {
+            do_delcomchannel(player,
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()), true);
+            sqlite_wt_delete_player_channel(player,
+                reinterpret_cast<const UTF8 *>(ca.alias.c_str()));
+        }
+        c.aliases.clear();
+        m_comsys.erase(itCom);
+    }
+
+    // 3. Strip residual membership (joined without a surviving alias).
+    //
+    for (auto &kv : m_channels)
+    {
+        struct channel *ch = kv.second.get();
+        if (nullptr == ch)
+        {
+            continue;
+        }
+        if (0 != ch->users.erase(player))
+        {
+            sqlite_wt_delete_channel_user(ch->name, player);
+        }
+    }
+
+    // 4. Destroy channels owned by this player.  SQLite ON DELETE CASCADE
+    // clears channel_users / player_channels for those channel names; also
+    // drop other players' in-memory aliases that pointed at them.
+    //
+    std::vector<std::string> destroyedNames;
     for (auto it = m_channels.begin(); it != m_channels.end(); )
     {
         if (player == it->second->charge_who)
         {
+            destroyedNames.emplace_back(
+                reinterpret_cast<const char *>(it->second->name));
             if (nullptr != m_pIStorage)
             {
                 m_pIStorage->DeleteChannel(it->second->name);
@@ -1447,6 +1494,43 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
         {
             ++it;
         }
+    }
+
+    if (!destroyedNames.empty())
+    {
+        for (auto &kv : m_comsys)
+        {
+            comsys_t &c = kv.second;
+            for (auto ait = c.aliases.begin(); ait != c.aliases.end(); )
+            {
+                bool bHit = false;
+                for (const auto &nm : destroyedNames)
+                {
+                    if (ait->channel == nm)
+                    {
+                        bHit = true;
+                        break;
+                    }
+                }
+                if (bHit)
+                {
+                    sqlite_wt_delete_player_channel(c.who,
+                        reinterpret_cast<const UTF8 *>(ait->alias.c_str()));
+                    ait = c.aliases.erase(ait);
+                }
+                else
+                {
+                    ++ait;
+                }
+            }
+        }
+    }
+
+    // 5. Belt-and-suspenders: remaining player_channels rows for this who.
+    //
+    if (nullptr != m_pIStorage)
+    {
+        m_pIStorage->DeleteAllPlayerChannels(player);
     }
 
     return MUX_S_OK;
