@@ -37,7 +37,9 @@
   &r.end me=[strcat(head add(1,2))];
   &r.first me=[strcat(add(1,2) tail)];
   &r.brk me=[strcat(x add(1,2) [add(3,4)])];
-  &r.two me=[strcat(add(1,2) mul(3,4))]
+  &r.two me=[strcat(add(1,2) mul(3,4))];
+  &r.fm me=[add(1,2) mul(3,4)];
+  &r.fm2 me=[add(1,2) zz mul(3,4)]
 -
 #
 # Test Case #1 - A call after other text in the same region is literal.
@@ -92,11 +94,46 @@
         not(strmatch(v(r.brk), *3*7))
       )=
   {
-    @log smoke=TC003: brackets re-arm recognition. Succeeded.;
+    @log smoke=TC003: brackets re-arm recognition. Succeeded.
+  },
+  {
+    @log smoke=TC003: brackets re-arm recognition. Failed (mixed=[v(r.brk)]).
+  }
+-
+#
+# Test Case #4 - Disarm also applies at eval-bracket top level, where
+# EV_FMAND is set (#1238).  2.13's clear of EV_FCHECK after a dispatch
+# (mux/src/eval.cpp:1677) is unconditional, so a second call in the same
+# bracket is literal:
+#
+#   [add(1,2) mul(3,4)]  ->  3 mul(3,4)      not  3 12
+#
+# Only the case where a call comes FIRST is asserted here.  Text
+# appearing BEFORE a call in an FMAND region is deliberately left alone:
+# 2.13's candidate name there is the accumulated output, so leading text
+# is folded into the name rather than spending the opportunity —
+#
+#   [x add(1,2) y]  ->  #-1 FUNCTION (X ADD) NOT FOUND
+#
+# — which 2.14's token parser cannot express.  The two 2.14 routes do not
+# even agree with each other on it (JIT "x add(1,2) y", AST "x 3 y"), and
+# neither matches 2.13, so there is no settled value to assert.  That
+# shape is tracked as FM_LIT_CALL in tests/parity213 instead, with the
+# SC_SPAN and DA_BRACKET_CALL family it belongs to.
+#
+&tr.tc004 test_disarm_fn=
+  @if cand(
+        strmatch(v(r.fm), 3*mul*),
+        not(strmatch(v(r.fm), *12*)),
+        strmatch(v(r.fm2), 3 zz*mul*),
+        not(strmatch(v(r.fm2), *12*))
+      )=
+  {
+    @log smoke=TC004: bracket-level call disarms the rest. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: brackets re-arm recognition. Failed (mixed=[v(r.brk)]).;
+    @log smoke=TC004: bracket-level call disarms the rest. Failed (fm=[v(r.fm)] fm2=[v(r.fm2)]).;
     @trig me/tr.done
   }
 -
