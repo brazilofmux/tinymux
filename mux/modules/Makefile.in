@@ -659,20 +659,28 @@ uninstall-am:
 # External modules — each is a single .cpp → .so
 all-local: sqlproxy.so sqlslave.so exp3.so comsys_mod.so mail_mod.so
 
-sqlproxy.so: sqlproxy/sqlproxy.cpp
+# Each module compiles the COM interface declarations in
+# include/modules.h, and an interface change there alters both the vtable
+# layout and the IID a module queries with.  Without modules.h as a
+# prerequisite, `make install` relinks the .so from a stale object that
+# still carries the OLD IID: QueryInterface then fails and every function
+# in that module reports "#-1 NO ... INTERFACE" (seen on #1194's IID bump,
+# which broke all ten exp3 m* functions until exp3 was rebuilt by hand).
+#
+sqlproxy.so: sqlproxy/sqlproxy.cpp $(top_srcdir)/include/modules.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
-exp3.so: exp3/exp3.cpp exp3/exp3.h
+exp3.so: exp3/exp3.cpp exp3/exp3.h $(top_srcdir)/include/modules.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
-comsys_mod.so: comsys/comsys_mod.cpp comsys/comsys_mod.h
+comsys_mod.so: comsys/comsys_mod.cpp comsys/comsys_mod.h $(top_srcdir)/include/modules.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
-mail_mod.so: mail/mail_mod.cpp mail/mail_mod.h
+mail_mod.so: mail/mail_mod.cpp mail/mail_mod.h $(top_srcdir)/include/modules.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(PCRE2_LIBS)
 
 # SQL slave needs special treatment for SQL libraries
-sqlslave.so: sqlslave/sqlslave.cpp
+sqlslave.so: sqlslave/sqlslave.cpp $(top_srcdir)/include/modules.h
 	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(SQL_INCLUDE) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(SQL_LIBPATH) $(SQL_LIBS) $(PCRE2_LIBS)
 
 # Installation
