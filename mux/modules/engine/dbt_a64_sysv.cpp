@@ -664,6 +664,23 @@ void dbt_backend_backpatch_jmp(uint8_t *code_buf, uint32_t patch_offset,
     memcpy(code_buf + patch_offset, &inst, 4);
 }
 
+uint32_t dbt_backend_decode_jmp_target(const uint8_t *code_buf,
+                                        uint32_t patch_offset) {
+    // B imm26: the displacement is in words and is measured from the
+    // branch instruction itself, not from the end of it as on x86-64.
+    //
+    uint32_t inst;
+    memcpy(&inst, code_buf + patch_offset, 4);
+
+    int32_t imm26 = static_cast<int32_t>(inst & 0x03FFFFFFu);
+    if (imm26 & 0x02000000) {
+        // Sign-extend from bit 25.
+        //
+        imm26 |= static_cast<int32_t>(0xFC000000u);
+    }
+    return patch_offset + static_cast<uint32_t>(imm26 * 4);
+}
+
 // Inline CALL: emit a native BLR to an already-translated callee.
 //
 // The callee's translated code ends with RET (BR X30), which returns
