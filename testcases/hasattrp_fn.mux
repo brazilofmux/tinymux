@@ -1,0 +1,88 @@
+#
+# hasattrp_fn.mux - Test Cases for hasattrp() and lattrp().
+#
+# The trailing 'p' forms consult the object's PARENTS as well as the
+# object itself:
+#
+#   hasattr(<obj>,<attr>)   object only
+#   hasattrp(<obj>,<attr>)  object or any parent
+#   lattr(<obj>[/<pat>])    object only
+#   lattrp(<obj>[/<pat>])   object and parents
+#
+# Every case pairs the p-form against the plain form on the same input,
+# so a build where hasattrp() quietly stopped consulting parents — or
+# where hasattr() started — fails.  A test of the p-forms alone would
+# pass in both of those cases.
+#
+@create test_hasattrp_parent
+-
+@set test_hasattrp_parent=INHERIT QUIET
+-
+&hp.inherited test_hasattrp_parent=from the parent
+-
+@create test_hasattrp_fn
+-
+@set test_hasattrp_fn=INHERIT QUIET
+-
+&hp.own test_hasattrp_fn=from the child
+-
+@parent test_hasattrp_fn=test_hasattrp_parent
+-
+&tr.tc000 test_hasattrp_fn=
+  @log smoke=Beginning hasattrp()/lattrp() test cases.
+-
+#
+# Test Case #1 - hasattrp() sees an inherited attribute; hasattr() does
+# not.  Both see one set on the object itself.
+#
+&tr.tc001 test_hasattrp_fn=
+  @if cand(
+        eq(hasattrp(me,HP.INHERITED), 1),
+        eq(hasattr(me,HP.INHERITED), 0),
+        eq(hasattrp(me,HP.OWN), 1),
+        eq(hasattr(me,HP.OWN), 1),
+        eq(hasattrp(me,HP.NOSUCH), 0)
+      )=
+  {
+    @log smoke=TC001: hasattrp consults parents. Succeeded.
+  },
+  {
+    @log smoke=TC001: hasattrp consults parents. Failed (inh_p=[hasattrp(me,HP.INHERITED)] inh=[hasattr(me,HP.INHERITED)] own_p=[hasattrp(me,HP.OWN)] own=[hasattr(me,HP.OWN)] none=[hasattrp(me,HP.NOSUCH)]).
+  }
+-
+#
+# Test Case #2 - lattrp() lists inherited attributes; lattr() does not.
+#
+# Membership and count are asserted rather than an exact string: the
+# ORDER of lattrp() is not documented, and it is in fact own-attributes
+# first rather than alphabetical, so pinning a literal would enshrine an
+# undocumented ordering.
+#
+&tr.tc002 test_hasattrp_fn=
+  @if cand(
+        eq(words(lattrp(me/HP.*)), 2),
+        t(member(lattrp(me/HP.*), HP.INHERITED)),
+        t(member(lattrp(me/HP.*), HP.OWN)),
+        strmatch(lattr(me/HP.*), HP.OWN),
+        eq(words(lattr(me/HP.*)), 1)
+      )=
+  {
+    @log smoke=TC002: lattrp lists inherited attributes. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: lattrp lists inherited attributes. Failed (p=[lattrp(me/HP.*)] plain=[lattr(me/HP.*)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_hasattrp_fn=
+  @log smoke=End hasattrp()/lattrp() test cases.;
+  @notify smoke
+-
+drop test_hasattrp_parent
+-
+drop test_hasattrp_fn
+-
+#
+# End of Test Cases
+#

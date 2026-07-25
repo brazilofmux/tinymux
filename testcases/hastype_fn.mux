@@ -1,0 +1,89 @@
+#
+# hastype_fn.mux - Test Cases for hastype().
+#
+# hastype(<object>,<type>) returns 1 when <object> is of the named type
+# and 0 otherwise.  Documented valid types are ROOM, EXIT, PLAYER and
+# THING; an invalid type is documented to return #-1.
+#
+# Two documented behaviours are NOT asserted here because the
+# implementation currently contradicts them (see #1168):
+#
+#   - the match is on the FIRST LETTER only, so hastype(<thing>,TRUMPET)
+#     returns 1 rather than an error
+#   - the invalid-type path appends the boolean to the error string,
+#     yielding '#-1 NO SUCH TYPE0'
+#
+# Pinning either would enshrine behaviour the help text contradicts, so
+# this file covers the four real types and the object-not-found path.
+# When #1168 is resolved in either direction, the assertions belong here.
+#
+@create test_hastype_fn
+-
+@set test_hastype_fn=INHERIT QUIET
+-
+&tr.tc000 test_hastype_fn=
+  @log smoke=Beginning hastype() test cases.
+-
+#
+# Test Case #1 - A THING is a THING and is nothing else.
+#
+&tr.tc001 test_hastype_fn=
+  @if cand(
+        eq(hastype(me,THING), 1),
+        eq(hastype(me,ROOM), 0),
+        eq(hastype(me,EXIT), 0),
+        eq(hastype(me,PLAYER), 0),
+        strmatch(type(me), THING)
+      )=
+  {
+    @log smoke=TC001: hastype THING exclusivity. Succeeded.
+  },
+  {
+    @log smoke=TC001: hastype THING exclusivity. Failed (thing=[hastype(me,THING)] room=[hastype(me,ROOM)] exit=[hastype(me,EXIT)] player=[hastype(me,PLAYER)] type=[type(me)]).
+  }
+-
+#
+# Test Case #2 - Room #0 is a ROOM, and hastype() agrees with type() on
+# every object tested.
+#
+&tr.tc002 test_hastype_fn=
+  @if cand(
+        eq(hastype(#0,ROOM), 1),
+        eq(hastype(#0,THING), 0),
+        strmatch(type(#0), ROOM),
+        eq(hastype(me,[type(me)]), 1),
+        eq(hastype(#0,[type(#0)]), 1)
+      )=
+  {
+    @log smoke=TC002: hastype agrees with type. Succeeded.
+  },
+  {
+    @log smoke=TC002: hastype agrees with type. Failed (room=[hastype(#0,ROOM)] notthing=[hastype(#0,THING)] type=[type(#0)] self=[hastype(me,[type(me)])] self0=[hastype(#0,[type(#0)])]).
+  }
+-
+#
+# Test Case #3 - An object that cannot be matched is an error, not 0.
+#
+&tr.tc003 test_hastype_fn=
+  @if cand(
+        strmatch(hastype(#-1,THING), #-1*),
+        strmatch(hastype(nosuchobjecthere,THING), #-1*)
+      )=
+  {
+    @log smoke=TC003: hastype bad object. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: hastype bad object. Failed (dbref=[hastype(#-1,THING)] name=[hastype(nosuchobjecthere,THING)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_hastype_fn=
+  @log smoke=End hastype() test cases.;
+  @notify smoke
+-
+drop test_hastype_fn
+-
+#
+# End of Test Cases
+#
