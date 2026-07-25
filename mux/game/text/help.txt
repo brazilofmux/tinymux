@@ -6281,17 +6281,6 @@ CLEARCOM
 
   Related Topics: addcom, delcom.
 
-& CMOGRIFIER()
-CMOGRIFIER()
-
-  FUNCTION: cmogrifier(<channel>)
-
-  Returns the dbref of the channel object associated with <channel>, or
-  #-1 if the channel has no channel object.  Private channels the
-  executor cannot see are reported as #-1 CHANNEL NOT FOUND.
-
-  Related Topics: channels(), comsys.
-
 & CMDS()
 CMDS()
 
@@ -6312,6 +6301,17 @@ CMDS()
     You say, "101"
 
   Related Topics:
+
+& CMOGRIFIER()
+CMOGRIFIER()
+
+  FUNCTION: cmogrifier(<channel>)
+
+  Returns the dbref of the channel object associated with <channel>, or
+  #-1 if the channel has no channel object.  Private channels the
+  executor cannot see are reported as #-1 CHANNEL NOT FOUND.
+
+  Related Topics: channels(), comsys.
 
 & CMSGS()
 CMSGS()
@@ -7383,24 +7383,6 @@ DELCOM
 
   Related Topics: addcom, alias, comlist, clearcom.
 
-& DELEXTRACT()
-DELEXTRACT()
-
-  FUNCTION: delextract(<list>, <first>, <count>[, <delim>])
-
-  Removes <count> words from <list> starting at 1-based position
-  <first>, and returns the remaining words joined with <delim>
-  (default space).  A <count> of 0 or less leaves the list unchanged.
-  Positions before 1 are treated as 1.
-
-  Examples:
-    > think delextract(a b c d e, 2, 2)
-    a d e
-    > think delextract(a|b|c|d, 1, 1, |)
-    b|c|d
-
-  Related Topics: extract(), ldelete(), elements(), remove().
-
 & DELETE()
 DELETE()
 
@@ -7418,6 +7400,24 @@ DELETE()
     You say, "Would you like tea?"
 
   Related Topics: mid(), ldelete()
+
+& DELEXTRACT()
+DELEXTRACT()
+
+  FUNCTION: delextract(<list>, <first>, <count>[, <delim>])
+
+  Removes <count> words from <list> starting at 1-based position
+  <first>, and returns the remaining words joined with <delim>
+  (default space).  A <count> of 0 or less leaves the list unchanged.
+  Positions before 1 are treated as 1.
+
+  Examples:
+    > think delextract(a b c d e, 2, 2)
+    a d e
+    > think delextract(a|b|c|d, 1, 1, |)
+    b|c|d
+
+  Related Topics: extract(), ldelete(), elements(), remove().
 
 & DESTROY()
 DESTROY()
@@ -8589,13 +8589,13 @@ FUNCTION LIST
     BOR()       BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPLIST()
     CAPSTR()
     CASE()      CAT()       CEIL()      CENTER()    CHANFIND()  CHANINFO()
-    CHANNELS()  CHANOBJ()   CHANUSER()  CHANUSERS() CHILDREN()  CHOOSE()    CHR()       CMOGRIFIER()CMDS()      COLORDEPTH()COLUMNS()
+    CHANNELS()  CHANOBJ()   CHANUSER()  CHANUSERS() CHILDREN()  CHOOSE()    CHR()       CMDS()      CMOGRIFIER()COLORDEPTH()COLUMNS()
     COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
     CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL()
     CONTROLS()  CONVSECS()  CONVTIME()  COR()       CORBOOL()   COS()
     CPAD()      CRC32()     CRC32OBJ()  CREATE()    CTIME()     CTU()
     CWHO()
-    DEC()       DECRYPT()   DEFAULT()   DELEXTRACT()DELETE()    DESTROY()
+    DEC()       DECRYPT()   DEFAULT()   DELETE()    DELEXTRACT()DESTROY()
     DIE()
     DIGEST()    DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()
     DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
@@ -8647,17 +8647,16 @@ FUNCTION LIST (continued)
     REPLACE()   REST()      RESTARTS()  RESTARTSECS()           RESTARTTIME()
     REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
     ROOM()      ROUND()     ROUTE()     RPAD()      RXLEVEL()   S()
-    SCRAMBLE()
-    SANDBOX()   SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
-    SETINTER()
+    SANDBOX()   SCRAMBLE()  SEARCH()    SECS()      SECURE()    SET()
+    SETDIFF()   SETINTER()
     SETNAME()   SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()
     SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
     SORT()      SORTBY()    SOUNDEX()   SOUNDLIKE() SPACE()     SPELLNUM()
     SPLICE()    SQL()
     SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()
     STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
-    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBNETMATCH()
-    SUBJ()
+    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
+    SUBNETMATCH()
     SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
     TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
 
@@ -8708,6 +8707,21 @@ GAGGED
 
   Related Topics:
 
+& GARBAGE
+GARBAGE
+
+  Garbage is the un-object.  It is the lack of an object -- the gap where an
+  object once was.  This gap will eventually be filled as new objects are
+  created.  Not to worry though.  These gaps occupy very little memory.  The
+  server does not allow softcode to search, modify, access, step into,
+  otherwise access these gaps.
+
+  It is best to leave garbage alone, and softcode should see these gaps between
+  valid dbrefs in the same way as if they were accessing dbrefs beyond the end
+  of the valid database.
+
+  Related Topics: @stats, stats()
+
 & GARBLE()
 GARBLE()
 
@@ -8728,21 +8742,6 @@ GARBLE()
     11
 
   Related Topics: scramble(), mid().
-
-& GARBAGE
-GARBAGE
-
-  Garbage is the un-object.  It is the lack of an object -- the gap where an
-  object once was.  This gap will eventually be filled as new objects are
-  created.  Not to worry though.  These gaps occupy very little memory.  The
-  server does not allow softcode to search, modify, access, step into,
-  otherwise access these gaps.
-
-  It is best to leave garbage alone, and softcode should see these gaps between
-  valid dbrefs in the same way as if they were accessing dbrefs beyond the end
-  of the valid database.
-
-  Related Topics: @stats, stats()
 
 & GENDER
 GENDER
@@ -12284,26 +12283,6 @@ MONIKER()
   Related Topics: @name, ansi(), @moniker, chr(), ord(), ASCII,
                   stripaccent(), stripansi(), UNICODE.
 
-& MOON()
-MOON()
-
-  FUNCTION: moon([<secs>[, <numeric>]])
-
-  Returns lunar-phase information.  With no arguments, uses the current
-  UTC time.  With <secs>, uses that Unix timestamp.
-
-  Without a true <numeric> flag, returns a descriptive phrase such as
-  "The Moon is Full", "The Moon is New", or a waxing/waning crescent,
-  half, or gibbous message with a percentage of illumination.
-
-  With a true <numeric> flag, returns a signed illumination percentage:
-  positive while waxing, negative while waning.
-
-  The phase is computed from a fixed new-moon epoch and a mean synodic
-  month of 29.53059 days.
-
-  Related Topics: secs(), time(), timefmt(), BOOLEAN VALUES.
-
 & MONITOR
 MONITOR
 
@@ -12324,6 +12303,26 @@ MONITOR
   must be set by a wizard.
 
   Related Topics: LISTENING.
+
+& MOON()
+MOON()
+
+  FUNCTION: moon([<secs>[, <numeric>]])
+
+  Returns lunar-phase information.  With no arguments, uses the current
+  UTC time.  With <secs>, uses that Unix timestamp.
+
+  Without a true <numeric> flag, returns a descriptive phrase such as
+  "The Moon is Full", "The Moon is New", or a waxing/waning crescent,
+  half, or gibbous message with a percentage of illumination.
+
+  With a true <numeric> flag, returns a signed illumination percentage:
+  positive while waxing, negative while waning.
+
+  The phase is computed from a fixed new-moon epoch and a mean synodic
+  month of 29.53059 days.
+
+  Related Topics: secs(), time(), timefmt(), BOOLEAN VALUES.
 
 & MOTD()
 MOTD()
@@ -16053,6 +16052,17 @@ SUBEVAL()
   evaluation of subeval's parameters occurs before the subeval()
   function is called.
 
+& SUBJ()
+SUBJ()
+
+  FUNCTION: subj(<object>)
+
+  Returns the proper subjective pronoun (he, she, it, they) for referring to
+  <object>, based on the object's Sex attribute.  You must either control
+  or be near <object>.
+
+  Related Topics: aposs(), obj(), poss(), SUBSTITUTIONS.
+
 & SUBNETMATCH()
 SUBNETMATCH()
 
@@ -16075,17 +16085,6 @@ SUBNETMATCH()
     1
 
   Related Topics: host(), ports().
-
-& SUBJ()
-SUBJ()
-
-  FUNCTION: subj(<object>)
-
-  Returns the proper subjective pronoun (he, she, it, they) for referring to
-  <object>, based on the object's Sex attribute.  You must either control
-  or be near <object>.
-
-  Related Topics: aposs(), obj(), poss(), SUBSTITUTIONS.
 
 & SUBSTITUTIONS
 SUBSTITUTIONS

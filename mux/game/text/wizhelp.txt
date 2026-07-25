@@ -4357,6 +4357,17 @@ PLAYER_STARTING_ROOM
 
   Related Topics: player_starting_home, @pcreate, player_flags.
 
+& POCVM2()
+POCVM2()
+
+  FUNCTION: pocvm2()
+
+  Wizard-only diagnostic for the softcode JIT / POC virtual-machine path.
+  Intended for developer builds and regression work; not for general
+  gameplay.  Output format is implementation-defined and may change.
+
+  Related Topics: jitstats(), astbench(), rvbench().
+
 & PORT
 PORT
 
@@ -4517,17 +4528,6 @@ QUIT_FILE
   can only be changed via the configuration file.
 
   Related Topics: QUIT, @readcache.
-
-& POCVM2()
-POCVM2()
-
-  FUNCTION: pocvm2()
-
-  Wizard-only diagnostic for the softcode JIT / POC virtual-machine path.
-  Intended for developer builds and regression work; not for general
-  gameplay.  Output format is implementation-defined and may change.
-
-  Related Topics: jitstats(), astbench(), rvbench().
 
 & QUOTAS
 QUOTAS
