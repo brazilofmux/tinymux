@@ -104,33 +104,6 @@ static bool sqlite_refresh_cached_attributes_in_sqlite(void)
     return true;
 }
 
-// Clear SQLite tables/meta after failed create-object reconcile attempts.
-//
-static bool sqlite_clear_after_reconcile_failure(CSQLiteDB &sqldb)
-{
-    if (!sqldb.Begin())
-    {
-        sqldb.Rollback();
-        if (!sqldb.Begin())
-        {
-            return false;
-        }
-    }
-
-    if (  !sqldb.ClearAttributes()
-       || !sqldb.ClearObjectTable()
-       || !sqldb.ClearAttrNames()
-       || !sqldb.PutMeta("attr_next", A_USER_START)
-       || !sqldb.PutMeta("db_top", 0)
-       || !sqldb.PutMeta("record_players", 0)
-       || !sqldb.Commit())
-    {
-        sqldb.Rollback();
-        return false;
-    }
-    return true;
-}
-
 // Force a newly-created object slot back to a reusable clean shape even
 // if backend attr deletes fail during teardown.
 //
@@ -280,14 +253,17 @@ static void reconcile_failed_create_backend(dbref obj)
         bRecovered = bRecovered && sqlite_sync_runtime();
         if (!bRecovered)
         {
-            if (!sqlite_clear_after_reconcile_failure(sqldb))
-            {
-                STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-                log_text(T("create_obj failed-cleanup fallback SQLite clear failed."));
-                ENDLOG;
-            }
+            // #1179: Never nuclear-clear SQLite (all attrs/objects/meta)
+            // after a create-failure reconcile miss.  That used to wipe the
+            // durable store while RAM kept running — crash/restart = mass
+            // data loss.  Leave SQLite alone and log loudly so an admin can
+            // force a controlled resync / dump from live memory.
+            //
             STARTLOG(LOG_ALWAYS, "DB", "OBJSYNC");
-            log_text(T("create_obj failed-cleanup fallback cached refresh/sync failed."));
+            log_text(T("create_obj failed-cleanup: cached refresh/sync failed; "));
+            log_text(T("SQLite left unchanged (no nuclear clear). "));
+            log_text(T("In-memory DB may diverge until a full sqlite_sync_runtime "));
+            log_text(T("or dump succeeds. Investigate backend errors."));
             ENDLOG;
         }
     }
@@ -939,6 +915,7 @@ static void destroy_bad_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
+    pcache_delete(obj);
     s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
@@ -1056,6 +1033,10 @@ void destroy_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
+    // #1180: Drop pcache before TYPE_GARBAGE so s_Pennies cannot no-op
+    // on !Good_obj, and freelist recycle cannot inherit QueueMax/queue.
+    //
+    pcache_delete(obj);
     s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);

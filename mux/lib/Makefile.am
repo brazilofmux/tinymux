@@ -43,10 +43,15 @@ color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
 	ragel -G2 -C -o $@ $<
 	chmod a-w $@
 
+date_scan.cpp: date_scan.rl $(top_srcdir)/include/timeutil.h
+	chmod u+w $@ 2>/dev/null || true
+	ragel -G2 -o $@ $<
+	chmod a-w $@
+
 libmux.so: $(LIBMUX_OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) $(LIBMUX_SONAME_FLAG) -o $@ $(LIBMUX_OBJS) $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
-BUILT_SOURCES = color_ops.c
+BUILT_SOURCES = color_ops.c date_scan.cpp
 
 CLEANFILES = libmux.so *.lo *.d color_ops.c
 
