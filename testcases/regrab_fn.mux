@@ -1,0 +1,77 @@
+#
+# regrab_fn.mux - Test Cases for regrab(), regrabi(), regraball(),
+#                 regraballi().
+#
+# These act like grab()/graball() but match with a PCRE regular
+# expression instead of a wildcard pattern.  regrab() returns the FIRST
+# matching element, regraball() returns ALL of them; the 'i' variants are
+# case-insensitive.  Every case below is chosen so the case-sensitive and
+# case-insensitive forms give different answers, which is the only way to
+# tell the two apart.
+#
+@create test_regrab_fn
+-
+@set test_regrab_fn=INHERIT QUIET
+-
+&tr.tc000 test_regrab_fn=
+  @log smoke=Beginning regrab() family test cases.
+-
+#
+# Test Case #1 - regrab returns the first match and is case-sensitive.
+#
+&tr.tc001 test_regrab_fn=
+  @if cand(
+        strmatch(regrab(apple banana cherry,^b), banana),
+        eq(strlen(regrab(Apple Banana Cherry,^b)), 0),
+        strmatch(regrabi(Apple Banana Cherry,^b), Banana)
+      )=
+  {
+    @log smoke=TC001: regrab first match and case sensitivity. Succeeded.
+  },
+  {
+    @log smoke=TC001: regrab first match and case sensitivity. Failed (hit=[regrab(apple banana cherry,^b)] miss=[regrab(Apple Banana Cherry,^b)] insens=[regrabi(Apple Banana Cherry,^b)]).
+  }
+-
+#
+# Test Case #2 - regraball returns every match, in list order.
+#
+&tr.tc002 test_regrab_fn=
+  @if cand(
+        strmatch(regraball(ape bee cat bat,^b), bee bat),
+        strmatch(regraballi(Ape Bee Cat Bat,^b), Bee Bat),
+        eq(strlen(regraball(Ape Bee Cat Bat,^b)), 0)
+      )=
+  {
+    @log smoke=TC002: regraball all matches. Succeeded.
+  },
+  {
+    @log smoke=TC002: regraball all matches. Failed (all=[regraball(ape bee cat bat,^b)] alli=[regraballi(Ape Bee Cat Bat,^b)] none=[regraball(Ape Bee Cat Bat,^b)]).
+  }
+-
+#
+# Test Case #3 - Alternate separator, and a regexp matching nothing.
+#
+&tr.tc003 test_regrab_fn=
+  @if cand(
+        strmatch(regrab(a|b|c,^b,|), b),
+        strmatch(regraball(aa|ab|ba,^a,|), aa|ab),
+        eq(strlen(regrab(apple banana,^z)), 0)
+      )=
+  {
+    @log smoke=TC003: regrab separators and no-match. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: regrab separators and no-match. Failed (sep=[regrab(a|b|c,^b,|)] allsep=[regraball(aa|ab|ba,^a,|)] none=[regrab(apple banana,^z)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_regrab_fn=
+  @log smoke=End regrab() family test cases.;
+  @notify smoke
+-
+drop test_regrab_fn
+-
+#
+# End of Test Cases
+#
