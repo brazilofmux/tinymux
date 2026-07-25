@@ -915,6 +915,7 @@ static void destroy_bad_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
+    pcache_delete(obj);
     s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
@@ -1032,6 +1033,10 @@ void destroy_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
+    // #1180: Drop pcache before TYPE_GARBAGE so s_Pennies cannot no-op
+    // on !Good_obj, and freelist recycle cannot inherit QueueMax/queue.
+    //
+    pcache_delete(obj);
     s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
