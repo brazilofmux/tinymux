@@ -2252,6 +2252,16 @@ static void ensure_comsys_softcode_sync(void)
         return;
     }
 
+    // Re-entrancy guard: sqlite_load_comsys() itself calls select_channel()
+    // for every channel_users row, and select_channel() calls us.  Without
+    // this the nested call sees the same stale s_seen_rev (it is only
+    // assigned after the load returns) and starts the load again.
+    //
+    if (mudstate.bSQLiteLoading)
+    {
+        return;
+    }
+
     static int s_seen_rev = -1;
     int rev = 0;
     MUX_RESULT mr = mudstate.pIComsysControl->GetRevision(&rev);

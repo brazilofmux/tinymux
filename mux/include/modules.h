@@ -463,7 +463,10 @@ public:
 // It calls into the comsys module for command dispatch and events.
 //
 const MUX_CID CID_Comsys                = UINT64_C(0x00000002C5A2F193);
-const MUX_IID IID_IComsysControl        = UINT64_C(0x000000028E4B63D7);
+// IID bumped ..63D7 -> ..63D8 when GetRevision was added to the vtable
+// (#1191): a stale comsys_mod.so must fail discovery rather than be
+// called through a slot it does not implement (the #817 pattern).
+const MUX_IID IID_IComsysControl        = UINT64_C(0x000000028E4B63D8);
 
 interface mux_IComsysControl : public mux_IUnknown
 {
@@ -539,7 +542,9 @@ public:
 // Mail module — @mail system provided by loadable module.
 //
 const MUX_CID CID_Mail                  = UINT64_C(0x00000002D7A3E1B5);
-const MUX_IID IID_IMailControl          = UINT64_C(0x00000002F9C84D62);
+// IID bumped ..4D62 -> ..4D63 when GetRevision/SoftcodeSend were added
+// to the vtable (#1191); see the comsys note above.
+const MUX_IID IID_IMailControl          = UINT64_C(0x00000002F9C84D63);
 
 interface mux_IMailControl : public mux_IUnknown
 {

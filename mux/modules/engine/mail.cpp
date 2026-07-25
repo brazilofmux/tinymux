@@ -2555,6 +2555,14 @@ static void ensure_mail_softcode_sync(void)
         return;
     }
 
+    // Re-entrancy guard, mirroring the comsys side: the loader runs engine
+    // paths that can call back into us before s_seen_rev is assigned.
+    //
+    if (mudstate.bSQLiteLoading)
+    {
+        return;
+    }
+
     static int s_seen_rev = -1;
     int rev = 0;
     MUX_RESULT mr = mudstate.pIMailControl->GetRevision(&rev);
