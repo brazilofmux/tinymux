@@ -297,6 +297,29 @@ void testWebSocketExtLenMaskKey() {
     expect(messages[0].payload == "hi", "ext-len payload unmasked correctly");
 }
 
+// #1093: after a 64-bit extended length, MaskKey must start at index 0.
+// This is the out-of-bounds case: pre-fix, lenBytesRead was still 8 entering
+// MaskKey, so maskKey[8] (past uint8_t maskKey[4]) was written — an OOB write
+// that UBSan/ASan traps.  The 16-bit case above only desyncs framing (index 2
+// is still in-bounds), so this case is what actually guards the memory-safety
+// fix.  Frame: FIN+TEXT, mask, len=127, 64-bit length=0x...0002, mask, "hi".
+void testWebSocketExtLen64MaskKey() {
+    WsState ws;
+    std::string responses;
+    const uint8_t m0 = 0x01, m1 = 0x02, m2 = 0x03, m3 = 0x04;
+    const std::string frame = bytes({
+        0x81, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+        m0, m1, m2, m3,
+        static_cast<uint8_t>('h' ^ m0),
+        static_cast<uint8_t>('i' ^ m1)
+    });
+    auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+    expect(responses.empty(), "ext-len64 masked TEXT should not close");
+    expect(messages.size() == 1, "ext-len64 masked TEXT should yield one message");
+    expect(messages[0].opcode == WS_OP_TEXT, "ext-len64 opcode TEXT");
+    expect(messages[0].payload == "hi", "ext-len64 payload unmasked correctly");
+}
+
 // #1094: client CLOSE must be delivered so the session path can close.
 void testWebSocketCloseDelivered() {
     WsState ws;
@@ -324,6 +347,7 @@ int main() {
     testAsciiBridgeConversion();
     testWebSocketMaskEnforcement();
     testWebSocketExtLenMaskKey();
+    testWebSocketExtLen64MaskKey();
     testWebSocketCloseDelivered();
     std::cout << "proxy_regression: ok\n";
     return 0;
