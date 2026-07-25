@@ -1,0 +1,155 @@
+# Parser-shape corpus for the 2.13 <-> 2.14 parity jig.
+#
+# Format:  NAME|expression
+#
+# One expression per line, sent as `think <expression>` wrapped in markers.
+# Keep each on a single line and avoid the marker text (ZZ) inside it.
+#
+# These shapes exist because MUSH function-call recognition is context
+# sensitive in ways a tokenizer cannot decide: `add(` is a call and
+# `foo(` is not, and only a function-table lookup separates them.  The
+# corpus therefore probes POSITION (where in the text the call sits),
+# ARMING (what precedes it), and NESTING, rather than trying to describe
+# a grammar.
+#
+# Comment lines start with #.  Blank lines are ignored.
+
+# --- position of a call within a function argument ---
+POS_START|[strcat(add(1,2))]
+POS_START_TAIL|[strcat(add(1,2) tail)]
+POS_MID|[strcat(x add(1,2) y)]
+POS_END|[strcat(head add(1,2))]
+POS_MID_COLON|[strcat(Total: add(1,2) items)]
+POS_MID_NOSP|[strcat(xadd(1,2)y)]
+POS_MID_COMMA_SEP|[strcat(a,b add(1,2) c)]
+POS_ARG2_START|[strcat(zz,add(1,2))]
+POS_ARG2_MID|[strcat(zz,q add(1,2) r)]
+
+# --- known vs unknown callee name (the function-table dependency) ---
+UNKNOWN_START|[strcat(foo(1,2))]
+UNKNOWN_MID|[strcat(x foo(1,2) y)]
+
+# --- escaped brackets: a literal '[' places the call mid-text ---
+ESC_BOTH|[strcat(\[add(1,2)\])]
+ESC_OPEN|[strcat(\[add(1,2))]
+ESC_CLOSE|[strcat(add(1,2)\])]
+ESC_BOTH_TEXT|[strcat(q\[add(1,2)\]r)]
+REALBRK_IN_ARG|[strcat(q[add(1,2)]r)]
+REALBRK_ALONE|[strcat([add(1,2)])]
+
+# --- brace groups ---
+BRACE_MID|[strcat({x add(1,2) y})]
+BRACE_START|[strcat({add(1,2)})]
+
+# --- %-substitution adjacency ---
+PCT_BEFORE|[strcat(%b add(1,2))]
+PCT_ADJACENT|[strcat(%badd(1,2))]
+PAREN_ESC|[strcat(add%(1,2%))]
+
+# --- more than one call in the same text (the one-shot rule) ---
+DOUBLE_CALL|[strcat(add(1,2) mul(3,4))]
+DOUBLE_MID|[strcat(z add(1,2) mul(3,4) w)]
+
+# --- nesting depth ---
+NESTED_OUTER|[strcat(strcat(add(1,2)))]
+NESTED_MID|[strcat(strcat(x add(1,2) y))]
+DEEP_MID|[strcat(strcat(strcat(q add(1,2) r)))]
+
+# --- what precedes the callee name ---
+SPACE_BEFORE_PAREN|[strcat(x add (1,2) y)]
+DIGIT_PREFIX|[strcat(x 1add(1,2) y)]
+UNDERSCORE_PREFIX|[strcat(x _add(1,2) y)]
+PUNCT_PREFIX|[strcat(x .add(1,2) y)]
+DASH_PREFIX|[strcat(x -add(1,2) y)]
+BANG_PREFIX|[strcat(x !add(1,2) y)]
+EQ_PREFIX|[strcat(x =add(1,2) y)]
+SLASH_PREFIX|[strcat(x /add(1,2) y)]
+QUOTE_PREFIX|[strcat(x "add(1,2) y)]
+COLON_PREFIX|[strcat(x :add(1,2) y)]
+SEMI_PREFIX|[strcat(x ;add(1,2) y)]
+OPENPAREN_PREFIX|[strcat(x (add(1,2) y)]
+
+# --- top level (no enclosing function argument) ---
+TOPLEVEL_MID|x add(1,2) y
+TOPLEVEL_START|add(1,2) y
+TOPLEVEL_BRK|x [add(1,2)] y
+
+# --- control-flow function arguments ---
+SWITCH_ARG_MID|[switch(1,1,x add(1,2) y,zz)]
+IF_ARG_MID|[if(1,x add(1,2) y)]
+ITER_MID|[iter(1,x add(1,2) y)]
+
+# --- callee arity and shape ---
+U_ARG_MID|[strcat(x u(1,2) y)]
+LIT_LOOKALIKE|[strcat(x add (1,2) y)]
+EMPTY_ARGS|[strcat(x add() y)]
+ONE_ARG|[strcat(x abs(-5) y)]
+
+# --- player-facing prose (the reason the rule exists) ---
+SAY_PROSE|say Hey, I tried add(1).
+SAY_MIXED|say Hey, I tried add(1) and I got [add(1)].
+POSE_PROSE|pose tried add(1) today.
+PEMIT_PROSE|@pemit me=Hey, I tried add(1).
+
+# ===================================================================
+# Nesting map (#1219).  2.13 kept one stack where '[' pushed ']' and
+# '(' pushed ')', unwinding on a match; 2.14 tracks bracket and brace
+# depth but not paren depth.  These shapes chart the consequences.
+# ===================================================================
+
+# --- paren depth, balanced, no commas ---
+PN_D1|[strcat(a (b) c)]
+PN_D2|[strcat(a (b (c) d) e)]
+PN_D3|[strcat(a (b (c (d) e) f) g)]
+PN_ADJACENT|[strcat(a (b)(c) d)]
+PN_EMPTY|[strcat(a () b)]
+PN_ONLY|[strcat((a))]
+
+# --- paren depth with commas at each level ---
+PNC_D1|[strcat(a (b,c) d)]
+PNC_D2|[strcat(a (b,(c,d),e) f)]
+PNC_LEAD|[strcat((a,b) tail)]
+PNC_TRAIL|[strcat(head (a,b))]
+PNC_TWOARG|[strcat(x (a,b) y,z)]
+
+# --- unbalanced parens ---
+PU_EXTRA_OPEN|[strcat(a (b c)]
+PU_EXTRA_CLOSE|[strcat(a b) c)]
+PU_CLOSE_FIRST|[strcat(a ) b)]
+PU_OPEN_ONLY|[strcat(a ( b)]
+
+# --- brackets inside arguments ---
+BK_LITERAL|[strcat(a [b] c)]
+BK_CALL|[strcat(a [add(1,2)] c)]
+BK_ESC|[strcat(a \[b\] c)]
+BK_NESTED_PAREN|[strcat(a [add(1,2)] (x,y) c)]
+
+# --- braces inside arguments ---
+BR_LITERAL|[strcat(a {b} c)]
+BR_COMMA|[strcat(a {b,c} d)]
+BR_PAREN|[strcat(a {b (c,d) e} f)]
+
+# --- mixed nesting ---
+MX_BP|[strcat(a [b (c,d) e] f)]
+MX_PB|[strcat(a (b [c] d) e)]
+MX_PBR|[strcat(a (b {c,d} e) f)]
+MX_ALL|[strcat(a [b (c {d,e} f) g] h)]
+
+# --- escaped delimiters ---
+ES_PCT_PAREN|[strcat(a %(b,c%) d)]
+ES_BSL_PAREN|[strcat(a \(b,c\) d)]
+ES_PCT_BRACK|[strcat(a %[b%] c)]
+ES_MIXED|[strcat(a %(b [c] d%) e)]
+
+# --- depth stress (2.13 stops pushing past stacklim 32) ---
+DEEP_08|[strcat(((((((((x))))))))))]
+DEEP_16|[strcat((((((((((((((((x))))))))))))))))]
+DEEP_34|[strcat((((((((((((((((((((((((((((((((((x))))))))))))))))))))))))))))))))))]
+
+# --- realistic prose through formatting functions ---
+RP_TIME|[strcat(Meet me (Tue, 5pm) downtown)]
+RP_HELP|[ansi(r,Warning (see help, page 2))]
+RP_LJUST|[ljust(Hello (world) ok,30)]
+RP_STRLEN|[strlen(Hello (world) ok)]
+RP_NESTED_FN|[strcat(Result: [add(1,2)] (of 3, total))]
+RP_APOSTROPHE|[strcat(It's a (big, red) ball)]

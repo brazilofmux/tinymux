@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-alarm test-scenario test-stress test-jit-qreg test-jit-ifelse hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -90,6 +90,24 @@ test-alarm:
 test-scenario: install
 	@echo "==> Running wildcard-capture scenario test"
 	bash tests/scenario/run.sh
+
+# 2.13 <-> 2.14 parser parity jig.  MUSH function-call recognition is
+# context sensitive in ways a tokenizer cannot decide (`add(` is a call,
+# `foo(` is not — only a function-table lookup separates them), so the
+# grammar is not well-formed and there is no rule to validate against.
+# The specification is what 2.13 actually does, and this measures it.
+#
+# Compares 2.14's JIT and AST routes against each other (always), and
+# against a built 2.13 tree when one is available (MUX213_ROOT, or a
+# conventional location).  All three are driven identically through a
+# live netmux over a socket — 2.13 has no muxscript, so the 2.14 legs
+# use the same path rather than the convenient one.
+#
+# Opt-in, NOT part of `make test`: divergences currently exist (#1214),
+# so this is a measurement tool rather than a pass/fail gate.
+test-parity213: install
+	@echo "==> Running 2.13/2.14 parser parity jig"
+	sh tests/parity213/run.sh
 
 # Live network + queue stress harness: concurrent connections, bulk queue
 # fan-outs, and an over-cap burst that provokes the runaway shed.  Defensive
