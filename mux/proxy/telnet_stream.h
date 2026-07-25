@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+// #1101: cap IAC SB reassembly so a hostile peer cannot grow memory forever.
+constexpr size_t TELNET_SB_MAX = 65536;
+
 struct TelnetParseState {
     enum State {
         Normal,
@@ -20,6 +23,7 @@ struct TelnetParseState {
     unsigned char cmdByte{0};
     std::string gmcpBuf;
     std::string otherSBBuf;
+    bool sbOverflow{false};  // set when gmcpBuf/otherSBBuf hit TELNET_SB_MAX
 };
 
 struct TelnetGmcpMessage {

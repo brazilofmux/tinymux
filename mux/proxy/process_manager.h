@@ -37,7 +37,11 @@ public:
     // Request a game process to stop. Returns true if process was running.
     bool stopGame(const std::string& gameName);
 
-    // Stop then start.
+    // #1099: SIGTERM/CTRL_BREAK, wait up to timeoutSec, then SIGKILL/Terminate
+    // and reap.  Returns true if the process is gone (or was not running).
+    bool stopAndWait(const std::string& gameName, int timeoutSec = 5);
+
+    // Stop (with wait) then start.
     bool restartGame(const GameConfig& game, std::string& errorMsg);
 
     // Is a game process currently running?

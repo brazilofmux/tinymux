@@ -259,11 +259,25 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
         return;
     }
 
+    // #1096: helper — append at most up to MAX_WRITE_BUFFER; on overflow
+    // close the slow front-door (session itself is kept).
+    auto appendCapped = [&](WriteBuffer& wb, const char* p, size_t n) -> bool {
+        if (wb.remaining() + n > MAX_WRITE_BUFFER) {
+            LOG_WARN("safeWrite: write buffer cap (%zu) exceeded on fd %lu — closing",
+                     MAX_WRITE_BUFFER, (unsigned long)handle);
+            writeBuffers_.erase(handle);
+            engine_.closeConnection(handle);
+            return false;
+        }
+        wb.append(p, n);
+        return true;
+    };
+
     // If there is already buffered data for this connection, append and
     // let drainWriteBuffer send it in order.
     auto it = writeBuffers_.find(handle);
     if (it != writeBuffers_.end() && !it->second.empty()) {
-        it->second.append(data, len);
+        (void)appendCapped(it->second, data, len);
         return;
     }
 
@@ -276,7 +290,9 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
             // Socket not ready — buffer everything and arm EPOLLOUT.
             auto& wb = writeBuffers_[handle];
             wb.reset();
-            wb.append(data, len);
+            if (!appendCapped(wb, data, len)) {
+                return;
+            }
             ganl::ErrorCode err = 0;
             engine_.postWrite(handle, nullptr, 0, err);
         } else {
@@ -290,7 +306,9 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
         // Partial write — buffer the remainder and arm EPOLLOUT.
         auto& wb = writeBuffers_[handle];
         wb.reset();
-        wb.append(data + n, len - n);
+        if (!appendCapped(wb, data + n, len - n)) {
+            return;
+        }
         ganl::ErrorCode err = 0;
         engine_.postWrite(handle, nullptr, 0, err);
     }
@@ -1136,6 +1154,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         session.persistId = generatePersistId();
                         session.dbPersistId = session.persistId;
                         session.tokenCreated = session.created;
+                        session.scrollback = makeScrollback();
                         session.frontDoors.push_back(fd.handle);
 
                         fd.internalSessionId = session.internalId;
@@ -1310,6 +1329,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             session.persistId = generatePersistId();
             session.dbPersistId = session.persistId;
             session.tokenCreated = session.created;
+            session.scrollback = makeScrollback();
             session.frontDoors.push_back(fd.handle);
 
             fd.internalSessionId = session.internalId;
@@ -1601,13 +1621,31 @@ void SessionManager::dispatchCommand(HydraSession& session,
                 "Password changes require a TLS connection.\r\n");
             return;
         }
-        if (args.empty()) {
-            sendToClient(fdHandle, "Usage: /passwd <newpassword>\r\n");
+        // #1097: require current password so a stolen session cannot take over.
+        size_t sp = args.find(' ');
+        if (args.empty() || sp == std::string::npos || sp == 0 ||
+            sp + 1 >= args.size()) {
+            sendToClient(fdHandle,
+                "Usage: /passwd <oldpassword> <newpassword>\r\n");
+            return;
+        }
+        std::string oldPassword = args.substr(0, sp);
+        std::string newPassword = args.substr(sp + 1);
+        // Trim leading spaces on new password only (allow spaces in new? no — first word)
+        while (!newPassword.empty() && newPassword[0] == ' ') {
+            newPassword.erase(newPassword.begin());
+        }
+        // If new password has more spaces, keep rest as part of password.
+        std::vector<uint8_t> checkKey;
+        uint32_t authId = accounts_.authenticate(
+            session.username, oldPassword, checkKey);
+        if (authId == 0 || authId != session.accountId) {
+            sendToClient(fdHandle, "Password change failed: wrong password.\r\n");
             return;
         }
         std::vector<uint8_t> newKey;
         std::string errorMsg;
-        if (accounts_.changePassword(session.accountId, args,
+        if (accounts_.changePassword(session.accountId, newPassword,
                                       session.scrollbackKey,
                                       newKey, errorMsg)) {
             session.scrollbackKey = newKey;
@@ -2416,6 +2454,26 @@ std::string SessionManager::generatePersistId() {
     return id;
 }
 
+ScrollBack SessionManager::makeScrollback() const {
+    // #1100: honor scrollback_lines from config (default 10000).
+    size_t cap = config_.scrollbackLines;
+    if (cap == 0) {
+        cap = 10000;
+    }
+    return ScrollBack(cap);
+}
+
+size_t SessionManager::countSessionsForAccount(uint32_t accountId) const {
+    size_t n = 0;
+    for (const auto& [id, sess] : sessions_) {
+        (void)id;
+        if (sess.accountId == accountId) {
+            ++n;
+        }
+    }
+    return n;
+}
+
 void SessionManager::flushSession(HydraSession& session) {
     // Use dbPersistId for SQLite operations — persistId may have been
     // rotated in-memory without updating the database row.
@@ -2482,6 +2540,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     session.persistId = saved.persistId;
     session.dbPersistId = session.persistId;
     session.tokenCreated = time(nullptr);
+    session.scrollback = makeScrollback();
     session.frontDoors.push_back(fd.handle);
 
     int loaded = session.scrollback.loadFromDb(
@@ -2590,12 +2649,25 @@ HydraSession* SessionManager::findByPersistId(const std::string& persistId) {
 }
 
 std::string SessionManager::authenticateAndGetSession(
-    const std::string& username, const std::string& password) {
+    const std::string& username, const std::string& password,
+    const std::string& clientIp) {
+    // #1097: apply the same failed-login lockout as the telnet front-door.
+    if (!clientIp.empty() && isLockedOut(clientIp)) {
+        authFailuresTotal_.fetch_add(1);
+        return "";
+    }
+
     std::vector<uint8_t> sbKey;
     uint32_t accountId = accounts_.authenticate(username, password, sbKey);
     if (accountId == 0) {
         authFailuresTotal_.fetch_add(1);
+        if (!clientIp.empty()) {
+            recordLoginFailure(clientIp);
+        }
         return "";
+    }
+    if (!clientIp.empty()) {
+        clearLoginFailures(clientIp);
     }
 
     // Check for existing in-memory session
@@ -2653,6 +2725,7 @@ std::string SessionManager::authenticateAndGetSession(
         session.persistId = saved.persistId;
         session.dbPersistId = session.persistId;
         session.tokenCreated = session.created;
+        session.scrollback = makeScrollback();
 
         session.scrollback.loadFromDb(
             accounts_.db(), saved.persistId, accountId, sbKey);
@@ -2671,7 +2744,16 @@ std::string SessionManager::authenticateAndGetSession(
         LOG_INFO("Session %lu (%s) restored via gRPC for '%s' (%zu links)",
                  (unsigned long)sessId, saved.persistId.c_str(),
                  username.c_str(), savedLinks.size());
-        return saved.persistId;
+        return sessions_[sessId].persistId;
+    }
+
+    // #1100: enforce max_sessions_per_account before creating a new one.
+    // (Existing-session path above already covers the reuse case.)
+    if (config_.maxSessionsPerAccount > 0 &&
+        countSessionsForAccount(accountId) >=
+            static_cast<size_t>(config_.maxSessionsPerAccount)) {
+        LOG_WARN("max_sessions_per_account reached for account %u", accountId);
+        return "";
     }
 
     // New session
@@ -2685,13 +2767,15 @@ std::string SessionManager::authenticateAndGetSession(
     session.persistId = generatePersistId();
     session.dbPersistId = session.persistId;
     session.tokenCreated = session.created;
+    session.scrollback = makeScrollback();
 
     std::string pid = session.persistId;
-    sessions_[session.internalId] = std::move(session);
-    indexSession(sessions_[nextSessionId_ - 1]);
+    HydraSessionId sessId = session.internalId;
+    sessions_[sessId] = std::move(session);
+    indexSession(sessions_[sessId]);
 
     LOG_INFO("Session %lu (%s) created via gRPC for '%s'",
-             (unsigned long)(nextSessionId_ - 1), pid.c_str(),
+             (unsigned long)sessId, pid.c_str(),
              username.c_str());
     return pid;
 }
@@ -2716,8 +2800,8 @@ std::string SessionManager::createAccountAndGetSession(
         recordAccountCreate(clientIp);
     }
 
-    // Auto-login
-    return authenticateAndGetSession(username, password);
+    // Auto-login (pass clientIp so lockout bookkeeping stays consistent)
+    return authenticateAndGetSession(username, password, clientIp);
 }
 
 // ---- OutputItem rendering ----
@@ -2948,6 +3032,19 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     }
 
     if (req.path == "/metrics") {
+        // #1102: metrics are recon-useful — only serve to loopback peers.
+        const std::string& ip = fd.clientIp;
+        const bool loopback = (ip == "127.0.0.1" || ip == "::1" ||
+                               ip == "localhost" || ip.rfind("127.", 0) == 0);
+        if (!loopback) {
+            std::string resp = "HTTP/1.1 403 Forbidden\r\n"
+                               "Content-Type: text/plain\r\n"
+                               "Content-Length: 10\r\n"
+                               "\r\nForbidden\n";
+            safeWrite(fd.handle, resp);
+            fd.httpBuf.clear();
+            return;
+        }
         std::string body = renderPrometheusMetrics();
         std::string resp = "HTTP/1.1 200 OK\r\n"
                            "Content-Type: text/plain; version=0.0.4\r\n"
@@ -3021,24 +3118,30 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     // ---- Dispatch RPCs ----
 
     if (method == "ListGames") {
-        hydra::GameList resp;
-        for (const auto& game : config_.games) {
-            auto* gi = resp.add_games();
-            gi->set_name(game.name);
-            gi->set_host(game.host);
-            gi->set_port(game.port);
-            gi->set_type(game.type == GameType::Local
-                ? hydra::GAME_LOCAL : hydra::GAME_REMOTE);
-            gi->set_autostart(game.autostart);
+        // #1102: require a valid session token (auth header).
+        if (authToken.empty() || !findByPersistId(authToken)) {
+            sendUnaryResponse("", 16, "unauthenticated");  // UNAUTHENTICATED
+        } else {
+            hydra::GameList resp;
+            for (const auto& game : config_.games) {
+                auto* gi = resp.add_games();
+                gi->set_name(game.name);
+                gi->set_host(game.host);
+                gi->set_port(game.port);
+                gi->set_type(game.type == GameType::Local
+                    ? hydra::GAME_LOCAL : hydra::GAME_REMOTE);
+                gi->set_autostart(game.autostart);
+            }
+            sendUnaryResponse(resp.SerializeAsString(), 0);
         }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
 
     } else if (method == "Authenticate") {
         hydra::AuthRequest rpcReq;
         rpcReq.ParseFromString(protoBody);
 
+        // #1097: lockout applies on grpc-web too (peer IP on front-door).
         std::string pid = authenticateAndGetSession(
-            rpcReq.username(), rpcReq.password());
+            rpcReq.username(), rpcReq.password(), fd.clientIp);
 
         hydra::AuthResponse resp;
         if (pid.empty()) {
@@ -3511,6 +3614,7 @@ void SessionManager::restoreAllSessions() {
         session.persistId = s.persistId;
         session.dbPersistId = s.persistId;
         session.state = SessionState::Detached;
+        session.scrollback = makeScrollback();
         // scrollbackKey is empty — can't decrypt scroll-back until player logs in.
         // Defer link reconnection: back-door links will reconnect when the
         // player authenticates, providing the scrollback key.  This prevents

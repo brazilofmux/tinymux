@@ -89,10 +89,21 @@ public:
 
     Status Authenticate(ServerContext* ctx, const hydra::AuthRequest* req,
                         hydra::AuthResponse* resp) override {
+        // #1097: extract peer IP so gRPC cannot bypass front-door lockout.
+        std::string peer = ctx->peer();
+        std::string clientIp;
+        {
+            auto c1 = peer.find(':');
+            if (c1 != std::string::npos) {
+                auto c2 = peer.rfind(':');
+                if (c2 > c1) clientIp = peer.substr(c1 + 1, c2 - c1 - 1);
+                else clientIp = peer.substr(c1 + 1);
+            }
+        }
         auto future = workQueue_.enqueue<std::string>(
-            [user = req->username(), pw = req->password()]
+            [user = req->username(), pw = req->password(), clientIp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
-                return sm.authenticateAndGetSession(user, pw);
+                return sm.authenticateAndGetSession(user, pw, clientIp);
             });
         std::string pid = future.get();
         if (pid.empty()) {
@@ -201,6 +212,16 @@ public:
 
     Status ListGames(ServerContext* ctx, const hydra::Empty* req,
                      hydra::GameList* resp) override {
+        // #1102: require a valid session token.
+        (void)req;
+        std::string sid = getSessionId(ctx, "");
+        auto authFuture = workQueue_.enqueue<bool>(
+            [sid](SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
+                return sm.findByPersistId(sid) != nullptr;
+            });
+        if (sid.empty() || !authFuture.get()) {
+            return Status(StatusCode::UNAUTHENTICATED, "session required");
+        }
         for (const auto& game : config_.games) {
             auto* gi = resp->add_games();
             gi->set_name(game.name);
@@ -879,9 +900,14 @@ public:
 
     Status GetGameStatus(ServerContext* ctx, const hydra::GameStatusRequest* req,
                          hydra::GameStatusResponse* resp) override {
+        // #1102: require a valid session token (metadata authorization).
+        std::string sid = getSessionId(ctx, "");
         auto future = workQueue_.enqueue<bool>(
-            [gameName = req->game_name(), resp]
-            (SessionManager&, AccountManager&, const HydraConfig& cfg, ProcessManager& pm) {
+            [sid, gameName = req->game_name(), resp]
+            (SessionManager& sm, AccountManager&, const HydraConfig& cfg, ProcessManager& pm) {
+                if (sid.empty() || sm.findByPersistId(sid) == nullptr) {
+                    return false;
+                }
                 for (const auto& g : cfg.games) {
                     if (g.type != GameType::Local) continue;
                     if (!gameName.empty() && g.name != gameName) continue;
@@ -892,7 +918,9 @@ public:
                 }
                 return true;
             });
-        future.get();
+        if (!future.get()) {
+            return Status(StatusCode::UNAUTHENTICATED, "session required");
+        }
         return Status::OK;
     }
 

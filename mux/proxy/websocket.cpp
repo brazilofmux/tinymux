@@ -122,12 +122,19 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
            || (ws.parseState == WsState::Payload
                && ws.frameBuf.size() == ws.payloadLen)) {
         switch (ws.parseState) {
-        case WsState::Header1:
+        case WsState::Header1: {
+            // #1095: RFC 6455 §5.2 — RSV1–3 must be 0 (no extensions negotiated).
+            if ((*p & 0x70) != 0) {
+                responses += wsCloseFrame(1002);
+                messages.push_back({WS_OP_CLOSE, {}});
+                ws.parseState = WsState::Header1;
+                return messages;
+            }
             ws.fin = (*p & 0x80) != 0;
             ws.opcode = *p & 0x0F;
             ws.parseState = WsState::Header2;
             p++;
-            break;
+        } break;
 
         case WsState::Header2: {
             ws.masked = (*p & 0x80) != 0;
@@ -137,6 +144,17 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
             // Client-to-server frames must be masked.
             if (!ws.masked) {
                 // #1094: surface CLOSE so the session path tears down the FD.
+                responses += wsCloseFrame(1002);
+                messages.push_back({WS_OP_CLOSE, {}});
+                ws.parseState = WsState::Header1;
+                return messages;
+            }
+
+            // #1095: RFC 6455 §5.5 — control frames (0x8–0xF) must have FIN=1
+            // and payload length ≤ 125 *before* extended length, so a large
+            // masked PING cannot be accepted and echoed as a 64 KiB PONG.
+            const bool isControl = (ws.opcode & 0x08) != 0;
+            if (isControl && (!ws.fin || len7 >= 126)) {
                 responses += wsCloseFrame(1002);
                 messages.push_back({WS_OP_CLOSE, {}});
                 ws.parseState = WsState::Header1;

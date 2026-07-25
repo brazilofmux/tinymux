@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
+#include <vector>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -11,24 +12,23 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <time.h>
 #endif
 
 ProcessManager::ProcessManager() {
 }
 
 ProcessManager::~ProcessManager() {
-    // Terminate all managed processes on destruction
-    for (auto& [name, proc] : processes_) {
-#if defined(_WIN32)
-        if (proc.hProcess) {
-            TerminateProcess(proc.hProcess, 1);
-            CloseHandle(proc.hProcess);
-        }
-#else
-        if (proc.pid > 0) {
-            kill(proc.pid, SIGTERM);
-        }
-#endif
+    // #1099: wait/reap (with kill escalate) so local games are not left
+    // orphaned and zombies are reaped on Hydra exit.
+    std::vector<std::string> names;
+    names.reserve(processes_.size());
+    for (const auto& [name, proc] : processes_) {
+        (void)proc;
+        names.push_back(name);
+    }
+    for (const auto& name : names) {
+        stopAndWait(name, 3);
     }
 }
 
@@ -130,16 +130,42 @@ bool ProcessManager::stopGame(const std::string& gameName) {
     return true;
 }
 
+bool ProcessManager::stopAndWait(const std::string& gameName, int timeoutSec) {
+    // #1099: graceful stop, poll until dead, then hard-kill and reap.
+    stopGame(gameName);
+
+    auto it = processes_.find(gameName);
+    if (it == processes_.end() || !it->second.hProcess) {
+        return true;
+    }
+
+    if (timeoutSec < 1) {
+        timeoutSec = 1;
+    }
+
+    DWORD waitMs = static_cast<DWORD>(timeoutSec) * 1000;
+    DWORD rc = WaitForSingleObject(it->second.hProcess, waitMs);
+    if (rc == WAIT_OBJECT_0) {
+        CloseHandle(it->second.hProcess);
+        processes_.erase(it);
+        return true;
+    }
+
+    LOG_WARN("Game '%s' (pid %lu) still alive after %ds — terminating",
+             gameName.c_str(),
+             static_cast<unsigned long>(it->second.pid),
+             timeoutSec);
+    TerminateProcess(it->second.hProcess, 1);
+    WaitForSingleObject(it->second.hProcess, 3000);
+    CloseHandle(it->second.hProcess);
+    processes_.erase(it);
+    return true;
+}
+
 bool ProcessManager::restartGame(const GameConfig& game,
                                  std::string& errorMsg) {
-    stopGame(game.name);
-    auto it = processes_.find(game.name);
-    if (it != processes_.end()) {
-        if (!isProcessAlive(it->second.hProcess)) {
-            CloseHandle(it->second.hProcess);
-            processes_.erase(it);
-        }
-    }
+    // #1099: wait for the old process to exit before startGame.
+    stopAndWait(game.name, 5);
     return startGame(game, errorMsg);
 }
 
@@ -284,19 +310,64 @@ bool ProcessManager::stopGame(const std::string& gameName) {
     return true;
 }
 
+bool ProcessManager::stopAndWait(const std::string& gameName, int timeoutSec) {
+    // #1099: SIGTERM, poll waitpid, SIGKILL escalate, reap.
+    stopGame(gameName);
+
+    auto it = processes_.find(gameName);
+    if (it == processes_.end() || it->second.pid <= 0) {
+        return true;
+    }
+
+    if (timeoutSec < 1) {
+        timeoutSec = 1;
+    }
+
+    const pid_t pid = it->second.pid;
+
+    auto pollUntil = [&](int seconds) -> bool {
+        const time_t until = time(nullptr) + seconds;
+        for (;;) {
+            int status = 0;
+            pid_t ret = waitpid(pid, &status, WNOHANG);
+            if (ret != 0) {
+                // reaped (ret > 0) or no such child (ret < 0)
+                processes_.erase(gameName);
+                return true;
+            }
+            if (time(nullptr) >= until) {
+                return false;
+            }
+            struct timespec ts;
+            ts.tv_sec = 0;
+            ts.tv_nsec = 50L * 1000L * 1000L;
+            nanosleep(&ts, nullptr);
+        }
+    };
+
+    if (pollUntil(timeoutSec)) {
+        return true;
+    }
+
+    LOG_WARN("Game '%s' (pid %d) still alive after %ds — SIGKILL",
+             gameName.c_str(), pid, timeoutSec);
+    kill(pid, SIGKILL);
+
+    if (pollUntil(3)) {
+        return true;
+    }
+
+    LOG_ERROR("Game '%s' (pid %d) unreaped after SIGKILL",
+              gameName.c_str(), pid);
+    processes_.erase(gameName);
+    return false;
+}
+
 bool ProcessManager::restartGame(const GameConfig& game,
                                  std::string& errorMsg) {
-    stopGame(game.name);
-    // Give it a moment to exit (non-blocking check)
-    auto it = processes_.find(game.name);
-    if (it != processes_.end()) {
-        int status = 0;
-        pid_t ret = waitpid(it->second.pid, &status, WNOHANG);
-        if (ret != 0) {
-            processes_.erase(it);
-        }
-        // If still alive, start will fail with "already running"
-    }
+    // #1099: wait for the old process to exit before startGame so
+    // "already running" is not a flaky race.
+    stopAndWait(game.name, 5);
     return startGame(game, errorMsg);
 }
 

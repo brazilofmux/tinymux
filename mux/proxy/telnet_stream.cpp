@@ -19,6 +19,19 @@ void splitTelnetStream(const char* data, size_t len,
     signals = {};
     regular.reserve(regular.size() + len);
 
+    // #1101: if SB reassembly would exceed the cap, drop the subnegotiation
+    // and return to Normal so a hostile peer cannot grow memory unboundedly.
+    auto appendSb = [&](std::string& buf, char c) -> bool {
+        if (buf.size() >= TELNET_SB_MAX) {
+            buf.clear();
+            parseState.state = TelnetParseState::Normal;
+            parseState.sbOverflow = true;
+            return false;
+        }
+        buf.push_back(c);
+        return true;
+    };
+
     for (size_t i = 0; i < len; i++) {
         unsigned char ch = static_cast<unsigned char>(data[i]);
 
@@ -93,7 +106,9 @@ void splitTelnetStream(const char* data, size_t len,
                 parseState.state = TelnetParseState::InGmcpSB;
             } else {
                 parseState.otherSBBuf.clear();
-                parseState.otherSBBuf.push_back(static_cast<char>(ch));
+                if (!appendSb(parseState.otherSBBuf, static_cast<char>(ch))) {
+                    break;
+                }
                 parseState.state = TelnetParseState::InOtherSB;
             }
             break;
@@ -102,7 +117,7 @@ void splitTelnetStream(const char* data, size_t len,
             if (ch == T_IAC) {
                 parseState.state = TelnetParseState::InOtherSBIAC;
             } else {
-                parseState.otherSBBuf.push_back(static_cast<char>(ch));
+                (void)appendSb(parseState.otherSBBuf, static_cast<char>(ch));
             }
             break;
 
@@ -140,18 +155,24 @@ void splitTelnetStream(const char* data, size_t len,
                 parseState.otherSBBuf.clear();
                 parseState.state = TelnetParseState::Normal;
             } else if (ch == T_IAC) {
-                parseState.otherSBBuf.push_back(static_cast<char>(T_IAC));
+                if (!appendSb(parseState.otherSBBuf, static_cast<char>(T_IAC))) {
+                    break;
+                }
                 parseState.state = TelnetParseState::InOtherSB;
             } else {
-                parseState.otherSBBuf.push_back(static_cast<char>(T_IAC));
-                parseState.otherSBBuf.push_back(static_cast<char>(ch));
+                if (!appendSb(parseState.otherSBBuf, static_cast<char>(T_IAC))) {
+                    break;
+                }
+                if (!appendSb(parseState.otherSBBuf, static_cast<char>(ch))) {
+                    break;
+                }
                 parseState.state = TelnetParseState::InOtherSB;
             }
             break;
 
         case TelnetParseState::InGmcpSB:
             if (ch == T_IAC) { parseState.state = TelnetParseState::InGmcpIAC; }
-            else { parseState.gmcpBuf.push_back(static_cast<char>(ch)); }
+            else { (void)appendSb(parseState.gmcpBuf, static_cast<char>(ch)); }
             break;
 
         case TelnetParseState::InGmcpIAC:
@@ -160,11 +181,17 @@ void splitTelnetStream(const char* data, size_t len,
                 parseState.gmcpBuf.clear();
                 parseState.state = TelnetParseState::Normal;
             } else if (ch == T_IAC) {
-                parseState.gmcpBuf.push_back(static_cast<char>(T_IAC));
+                if (!appendSb(parseState.gmcpBuf, static_cast<char>(T_IAC))) {
+                    break;
+                }
                 parseState.state = TelnetParseState::InGmcpSB;
             } else {
-                parseState.gmcpBuf.push_back(static_cast<char>(T_IAC));
-                parseState.gmcpBuf.push_back(static_cast<char>(ch));
+                if (!appendSb(parseState.gmcpBuf, static_cast<char>(T_IAC))) {
+                    break;
+                }
+                if (!appendSb(parseState.gmcpBuf, static_cast<char>(ch))) {
+                    break;
+                }
                 parseState.state = TelnetParseState::InGmcpSB;
             }
             break;
