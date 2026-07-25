@@ -15,7 +15,26 @@ function inside literal text: every node is either a pure-literal leaf or a
 function-call node, and colored leaves are a single ansi(<color>,<words>) call
 wrapping the whole list.  Do not "simplify" leaf generation to inline functions.
 
-Usage: gen.py <count> <batch_size> <out_dir>  (also writes <out_dir>/manifest.txt)
+CORPUS SHAPES (all default-on; see the block above DELIMS for the rationale):
+  ~20%  custom delimiters / output separators
+  ~15%  float arithmetic with RUNTIME operands
+  ~15%  ifelse()/switch() over a runtime condition, mixed-type arms
+  ~14%  nested evaluation -- u()/ulocal() consumed by an outer call
+  rest  string/list function trees
+
+The float, branch and nested shapes exist because three consecutive defects
+escaped this fuzzer, all for the same reason: a corpus of string and list
+functions over literal operands.  #1143 (float PHI arms copied raw double
+bits as a C string), #1157 (a bare %N condition folded to 0) and #1159 (FP
+slots pinned at address 0 in nested compiles) are each invisible unless the
+operand is unknown at COMPILE time -- a folded float allocates no FP slot
+and a folded condition emits no branch.  Hence v(fz.*) rather than literals
+or %q: v() is an ECALL the compiler cannot see through, whereas
+compile-time %q tracking can fold %q back to a constant, which is exactly
+what made ifelse(%q0,...) look healthy while ifelse(%0,...) was broken.
+
+Usage: gen.py <count> <batch_size> <out_dir>
+       (also writes <out_dir>/manifest.txt and <out_dir>/setup.txt)
 """
 import random
 import sys
@@ -105,6 +124,165 @@ def gen(t, depth, colored):
     return f"{fn}({','.join(gen(a, depth - 1, colored) for a in args)})"
 
 
+# ---------------------------------------------------------------
+# Float / branch / nested-evaluation corpus
+#
+# These three shapes are grouped because they share one requirement: the
+# value has to be unknown at COMPILE time.  A folded float never allocates
+# an FP slot and a folded condition never emits a branch, so a corpus of
+# constants exercises none of the machinery below and reports a vacuous
+# pass.  That is not hypothetical — #1143 (float PHI arms), #1157 (bare %N
+# conditions) and #1159 (FP slots in nested compiles) were all missed by
+# this fuzzer, and all three are foldable-away if the operands are literal.
+#
+# FZ_SETUP is written to the top of every batch file, in both processes.
+# v() is an ECALL, so the compiler cannot see through it — that is what
+# makes these values genuinely runtime.  %q was deliberately NOT used:
+# compile-time %q tracking can fold it back to a constant, which is the
+# trap that made ifelse(%q0,...) look healthy while ifelse(%0,...) was
+# broken (#1157).
+# ---------------------------------------------------------------
+FZ_SETUP = [
+    "&fz.s1 me=abc",
+    "&fz.s2 me=abcdefg",
+    "&fz.s3 me=ab",
+    "&fz.l1 me=ab cd ef",
+    "&fz.l2 me=x y",
+]
+
+# Runtime integers: strlen/words of an attribute the compiler cannot fold.
+RUNTIME_INTS = [
+    "strlen(v(fz.s1))",     # 3
+    "strlen(v(fz.s2))",     # 7
+    "strlen(v(fz.s3))",     # 2
+    "words(v(fz.l1))",      # 3
+    "words(v(fz.l2))",      # 2
+]
+
+FLOAT_LITS = ["0.5", "1.5", "2.25", "-0.75", "12.75", "3.0", "-2.5", "100.125"]
+
+# Float-returning functions.  "F" = float subtree, "i" = small int literal.
+# Domain errors (sqrt of a negative, fdiv by zero) are deliberately left
+# reachable: both sides run the same binary, so a domain result is still a
+# byte-comparable oracle, and idiv/fdiv by a runtime zero is its own defect
+# class (#1146).
+FLOAT_FUNCS = {
+    "fdiv": ["F", "F"], "mul": ["F", "F"], "add": ["F", "F"],
+    "sub": ["F", "F"], "fmod": ["F", "F"],
+    "abs": ["F"], "sqrt": ["F"], "trunc": ["F"],
+    "floor": ["F"], "ceil": ["F"], "sign": ["F"],
+    "round": ["F", "i"], "power": ["F", "i"],
+}
+
+
+def runtime_int():
+    return random.choice(RUNTIME_INTS)
+
+
+def gen_float(depth):
+    """Float expression tree.  Leaves are a mix of literals and
+    literal*runtime products; the product form is what forces a real FP
+    slot instead of a compile-time fold."""
+    if depth <= 0 or random.random() < 0.35:
+        r = random.random()
+        if r < 0.4:
+            return random.choice(FLOAT_LITS)
+        if r < 0.85:
+            return f"mul({random.choice(FLOAT_LITS)},{runtime_int()})"
+        return runtime_int()
+    fn = random.choice(list(FLOAT_FUNCS))
+    args = []
+    for a in FLOAT_FUNCS[fn]:
+        args.append(gen_float(depth - 1) if a == "F"
+                    else str(random.randint(0, 3)))
+    return f"{fn}({','.join(args)})"
+
+
+def gen_float_root():
+    """Guarantee at least one runtime operand, so the expression cannot
+    fold to a constant and skip FP slot allocation entirely."""
+    e = gen_float(random.randint(1, 3))
+    if "v(fz." not in e:
+        e = f"mul({e},{runtime_int()})"
+    return e
+
+
+def branch_arm(colored):
+    """Arms are deliberately type-MIXED.  A PHI whose arms disagree on type
+    is the #1143 surface: float arms silently collapsed to a string PHI and
+    the raw double bits were copied as a C string."""
+    r = random.random()
+    if r < 0.4:
+        return gen_float(1)
+    if r < 0.7:
+        return runtime_int()
+    return leaf_word() if random.random() < 0.5 else leaf_list(colored)
+
+
+def gen_branch(colored):
+    """ifelse()/switch() over a runtime condition with mixed-type arms."""
+    cond = random.choice([
+        runtime_int(),
+        f"gt({runtime_int()},2)",
+        f"lt({runtime_int()},3)",
+        "v(fz.s1)",
+        f"sub({runtime_int()},{runtime_int()})",
+    ])
+    if random.random() < 0.5:
+        return f"ifelse({cond},{branch_arm(colored)},{branch_arm(colored)})"
+    m1, m2 = random.choice([("2", "3"), ("3", "7"), ("0", "1")])
+    return (f"switch({runtime_int()},{m1},{branch_arm(colored)},"
+            f"{m2},{branch_arm(colored)},{branch_arm(colored)})")
+
+
+# Outer wrappers for nested-evaluation shapes.  The wrapper is the entire
+# point: a bare u() at the prompt compiles through the one-shot compiler and
+# was always correct, while a u() consumed by an enclosing COMPILED
+# expression routes the inner compile through the shared heap — the path
+# that had every FP slot address pinned at 0 (#1159).
+NEST_WRAPPERS = [
+    "strcat(<,{0},>)",
+    "add({0},1)",
+    "strlen({0})",
+    "first({0})",
+    "iter(1,{0})",
+    "switch(1,1,{0},zz)",
+    "ifelse(1,{0},zz)",
+]
+
+
+def gen_nested(i, colored):
+    """u()/ulocal() of a generated attribute body, consumed by an outer
+    call.  Returns (preamble_commands, expression).
+
+    Oracle note: the I side's eval-bracket bails the JIT for the OUTER
+    expression only; the inner body still evaluates through mux_exec on
+    both sides.  That is exactly the asymmetry that exposes this class —
+    outer-compiled routes the inner through the shared heap, outer-
+    interpreted routes it through the one-shot compiler."""
+    name = f"fz.u{i}"
+    shape = i % 5
+    if shape == 0:
+        body = f"mul({random.choice(FLOAT_LITS)},strlen(%0))"
+        args = f",{leaf_word()}"
+    elif shape == 1:
+        body = "fdiv(strlen(%0),strlen(%1))"
+        args = f",{leaf_word()},{leaf_word()}"
+    elif shape == 2:
+        # Bare %N as an ifelse condition (#1157): xlate() truth, not atol().
+        body = f"ifelse(%0,{branch_arm(colored)},{branch_arm(colored)})"
+        args = f",{random.choice(['1', '0', 'abc', '#5', '0.5', '0abc', ''])}"
+    elif shape == 3:
+        body = gen_float_root()
+        args = ""
+    else:
+        body = f"add(strlen(%0),1)"   # int body: the control shape
+        args = f",{leaf_word()}"
+    call = random.choice(["u", "ulocal"])
+    inner = f"{call}(me/{name}{args})"
+    return [f"&{name} me={body}"], random.choice(NEST_WRAPPERS).format(inner)
+
+
 # Single-char delimiters and output separators (incl. multi-char osep, the
 # class where ldelete/extract had bugs).  All parser-safe — no ;[]%(){}, or space.
 DELIMS = ["-", "|", "@", ".", ":", "/"]
@@ -151,9 +329,16 @@ def gen_delim_test():
 
 
 def gen_root(colored):
-    # ~25% of roots exercise custom delimiters / output separators.
-    if random.random() < 0.25:
+    r = random.random()
+    # ~20% of roots exercise custom delimiters / output separators.
+    if r < 0.20:
         return gen_delim_test()
+    # ~15% float arithmetic with runtime operands (real FP slots, #1159).
+    if r < 0.35:
+        return gen_float_root()
+    # ~15% branch shapes with mixed-type PHI arms (#1143).
+    if r < 0.50:
+        return gen_branch(colored)
     # Otherwise force the root to be a (possibly nested) function call.
     while True:
         e = gen(random.choice(["S", "L"]), random.randint(1, 4), colored)
@@ -218,18 +403,36 @@ def main():
 
     exprs = []
     preambles = []
+    # Attribute definitions the MINIMIZER needs.  It replays a single
+    # expression in a fresh process, so without these v(fz.*) is empty and
+    # u(me/fz.uN) is undefined -- every nested finding would reduce to "no
+    # divergence" and be misfiled as STATE-DEPENDENT.  Only "&" commands go
+    # here: they are idempotent and order-independent, unlike the longreg
+    # setq preamble, whose whole point is the preceding command's state.
+    setup_cmds = list(FZ_SETUP)
     with open(f"{out}/manifest.txt", "w") as man:
         for i in range(count):
             pre = None
             if longreg and i % 5 == 2:
-                pre, e = longreg_case(i)
+                p, e = longreg_case(i)
+                pre = [p] if p is not None else None
+            elif i % 7 == 3:
+                # ~14% nested evaluation (#1157/#1159).  Not bracket-wrapped:
+                # these carry their own outer call, which is what routes the
+                # inner compile through the shared heap.
+                pre, e = gen_nested(i, colored=(i % 3 == 0))
             else:
                 e = gen_root(colored=(i % 3 == 0))
                 if brackets:
                     e = bracket_wrap(i, e, gen_root(colored=False))
             exprs.append(e)
             preambles.append(pre)
+            if pre:
+                setup_cmds.extend(c for c in pre if c.startswith("&"))
             man.write(f"{i}\t{e}\n")
+
+    with open(f"{out}/setup.txt", "w") as f:
+        f.write("\n".join(setup_cmds) + "\n")
 
     # J and I sides are emitted into SEPARATE batch files: the J batches
     # run in a workspace whose conf may set jit_eval_brackets, while the
@@ -246,13 +449,21 @@ def main():
     for start in range(0, count, batch):
         with open(f"{out}/bJ{b}.txt", "w") as fj, \
              open(f"{out}/bI{b}.txt", "w") as fi:
+            # Shared runtime-value attributes, identical in both processes.
+            # Every batch file is run against a freshly wiped DB, so these
+            # must be re-stated per batch rather than once per corpus.
+            for cmd in FZ_SETUP:
+                fj.write(cmd + "\n")
+                fi.write(cmd + "\n")
             for i in range(start, min(start + batch, count)):
                 e = exprs[i]
-                # State preamble (long-register shapes): identical in
-                # both processes so both sides read the same registers.
+                # State preamble (long-register and nested shapes):
+                # identical in both processes so both sides see the same
+                # registers and attribute bodies.
                 if preambles[i] is not None:
-                    fj.write(preambles[i] + "\n")
-                    fi.write(preambles[i] + "\n")
+                    for cmd in preambles[i]:
+                        fj.write(cmd + "\n")
+                        fi.write(cmd + "\n")
                 # J side: JIT result captured via the @if condition into r(0).
                 fj.write(
                     f"@if strlen(setr(0,{e}))="

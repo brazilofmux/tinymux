@@ -27,6 +27,20 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gen import FUNCS  # noqa: E402  (typed arg signatures)
 
 WORK = os.environ["JITDIFF_WORK"]
+
+# Attribute definitions shared by the corpus (written by gen.py).  Every
+# script this module runs must replay them: a minimized expression is run
+# in a FRESH process, so without these v(fz.*) is empty and u(me/fz.uN) is
+# undefined, and any float/nested finding collapses to "no divergence".
+def _load_setup():
+    try:
+        with open(os.path.join(WORK, "setup.txt")) as f:
+            return [ln.rstrip("\n") for ln in f if ln.strip()]
+    except OSError:
+        return []
+
+
+SETUP = _load_setup()
 if os.environ.get("JITDIFF_MUX_BIN"):
     MUX = [os.environ["JITDIFF_MUX_BIN"]]
 else:
@@ -144,8 +158,8 @@ def run_chunk(exprs, base):
     so the eval-bracket bail keeps the production interpreter route).
     Running both in one toggle-on process compared JIT against JIT and
     misclassified deterministic divergences as STATE-DEPENDENT."""
-    jlines = []
-    ilines = []
+    jlines = list(SETUP)
+    ilines = list(SETUP)
     for i, e in enumerate(exprs):
         gi = base + i
         jlines.append(
@@ -222,16 +236,27 @@ def shrink(expr):
 
 
 def show_value(expr):
-    """Return the stripansi'd JIT and interp values for display."""
-    bf = os.path.join(WORK, "min_val.txt")
-    with open(bf, "w") as f:
+    """Return the stripansi'd JIT and interp values for display.
+
+    The two sides run in SEPARATE processes with separate confs, for the
+    same reason run_chunk does: jit_eval_brackets defaults ON, so an
+    eval-bracket evaluated in the J-side process is compiled too, and the
+    "INTERP" column would just be the JIT value again -- printing two
+    identical values under a heading that claims they differ."""
+    jf = os.path.join(WORK, "min_val_j.txt")
+    iff = os.path.join(WORK, "min_val_i.txt")
+    with open(jf, "w") as f:
+        f.write("\n".join(SETUP) + ("\n" if SETUP else ""))
         f.write(
             f"@if strlen(setr(0,{expr}))="
             f"{{@pemit #1=VJ~<[stripansi(r(0))]>}},"
             f"{{@pemit #1=VJ~<[stripansi(r(0))]>}}\n")
+        f.write("@wait 3=@shutdown\n")
+    with open(iff, "w") as f:
+        f.write("\n".join(SETUP) + ("\n" if SETUP else ""))
         f.write(f"@pemit #1=VI~<[stripansi({expr})]>\n")
         f.write("@wait 3=@shutdown\n")
-    out = run_mux(bf)
+    out = run_mux(jf) + run_mux(iff, conf="int.conf")
     vj = vi = "?"
     for ln in out.splitlines():
         if "VJ~<" in ln:
