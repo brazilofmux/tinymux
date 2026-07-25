@@ -445,6 +445,12 @@ void dbt_resolve_chains(dbt_state_t *dbt) {
 
         // Check: is the JMP still pointing to the slow-path stub?
         uint32_t jmp_off = dbt->patches[i].jmp_offset;
+        // Stale failed-translate sites may point past the arena (#1147).
+        if (static_cast<size_t>(jmp_off) + 4 > CODE_BUF_SIZE
+            || jmp_off >= dbt->code_used) {
+            unresolvable++;
+            continue;
+        }
         int32_t cur_disp;
         memcpy(&cur_disp, dbt->code_buf + jmp_off, 4);
         uint32_t cur_target = jmp_off + 4 + static_cast<uint32_t>(cur_disp);

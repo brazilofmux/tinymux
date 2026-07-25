@@ -1226,6 +1226,10 @@ static direct_jalr_flow_t emit_direct_jalr_flow(
 //
 void dbt_backend_backpatch_jmp(uint8_t *code_buf, uint32_t jmp_disp_offset,
                                 uint8_t *target) {
+    // Refuse OOB patches from stale/failed translate sites (#1147).
+    if (static_cast<size_t>(jmp_disp_offset) + 4 > CODE_BUF_SIZE) {
+        return;
+    }
     int32_t disp = static_cast<int32_t>(
         target - (code_buf + jmp_disp_offset + 4));
     memcpy(code_buf + jmp_disp_offset, &disp, 4);
@@ -1287,6 +1291,10 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     //
     uint8_t *intrinsic = try_emit_intrinsic(dbt, guest_pc);
     if (intrinsic) return intrinsic;
+
+    // Snapshot patch table so emit_exit_chained sites from a failed
+    // emit can be rolled back (#1147).
+    const size_t patches_before = dbt->patches.size();
 
     uint8_t *block_start = dbt->code_buf + dbt->code_used;
 
@@ -2918,14 +2926,15 @@ done:
         }
     }
 
+    if (e.offset > e.capacity) {
+        dbt_rollback_patches(dbt, patches_before);
+        return nullptr;
+    }
     dbt->blocks_translated++;
     dbt->insns_translated += count;
     if (self_loop) {
         dbt->superblock_count++;
         dbt->side_exits_total += num_side_exits;
-    }
-    if (e.offset > e.capacity) {
-        return nullptr;
     }
     // Hex dump of JIT code for traced blocks.
     if (dbt_trace_translate_enabled(dbt, guest_pc) && e.offset <= 2048) {

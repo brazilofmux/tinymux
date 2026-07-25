@@ -159,6 +159,35 @@ void dbt_cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code);
 void dbt_backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
                            uint8_t *native_code);
 
+// Drop patch sites recorded during a failed translate_block so their
+// absolute code_buf offsets are not backpatched into later live code
+// that reuses the same arena region (#1147).
+static inline void dbt_rollback_patches(dbt_state_t *dbt,
+                                        size_t patches_before) {
+    if (dbt->patches.size() <= patches_before) {
+        return;
+    }
+    for (size_t i = patches_before; i < dbt->patches.size(); i++) {
+        uint64_t target = dbt->patches[i].target_pc;
+        auto it = dbt->pending_patch_targets.find(target);
+        if (it == dbt->pending_patch_targets.end()) {
+            continue;
+        }
+        std::vector<size_t> &idxs = it->second;
+        size_t w = 0;
+        for (size_t r = 0; r < idxs.size(); r++) {
+            if (idxs[r] < patches_before) {
+                idxs[w++] = idxs[r];
+            }
+        }
+        idxs.resize(w);
+        if (idxs.empty()) {
+            dbt->pending_patch_targets.erase(it);
+        }
+    }
+    dbt->patches.resize(patches_before);
+}
+
 // Direct JALR target resolution (pure computation).
 bool dbt_resolve_direct_jalr_target(uint64_t pc,
                                      const rv64_insn_t &insn,

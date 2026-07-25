@@ -1585,6 +1585,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         }
 
         // Runtime condition: multi-block code.
+        // Lower both arms first (no BR yet), then pick a PHI type and
+        // coerce each arm in its exit block before branching to merge.
+        // Float arms used to collapse to TY_STRING and then strcpy the
+        // double bits as a C string (#1143).
         int entry_block = h.cur_block;
         int true_block = h.new_block();
         int false_block = h.new_block();
@@ -1599,8 +1603,6 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.cur_block = true_block;
         int true_val = hir_lower_trimmed(h, rc, node->children[1].get());
         int true_exit = h.cur_block;  // might change with nested ifelse
-        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
-        h.add_edge(true_exit, merge_block);
 
         // Lower false branch (strip braces via hir_lower_trimmed).
         h.cur_block = false_block;
@@ -1613,13 +1615,38 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             false_val = h.emit_sconst(addr, "");
         }
         int false_exit = h.cur_block;
-        h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
-        h.add_edge(false_exit, merge_block);
+
+        // Pick PHI type, then coerce arms in their exit blocks.
+        hir_type rty;
+        if (h.ty[true_val] == TY_INT && h.ty[false_val] == TY_INT) {
+            rty = TY_INT;
+        } else if ((h.ty[true_val] == TY_FLOAT || h.ty[true_val] == TY_INT)
+                   && (h.ty[false_val] == TY_FLOAT || h.ty[false_val] == TY_INT)
+                   && (h.ty[true_val] == TY_FLOAT || h.ty[false_val] == TY_FLOAT)) {
+            rty = TY_FLOAT;
+        } else {
+            rty = TY_STRING;
+        }
+
+        auto coerce_phi_arm = [&](int &val, int exit_blk) {
+            h.cur_block = exit_blk;
+            if (rty == TY_FLOAT && h.ty[val] == TY_INT) {
+                val = h.emit(HIR_ITOF, TY_FLOAT, val);
+            } else if (rty == TY_STRING) {
+                if (h.ty[val] == TY_FLOAT) {
+                    val = h.emit(HIR_FTOA, TY_STRING, val);
+                } else if (h.ty[val] == TY_INT) {
+                    val = h.emit(HIR_ITOA, TY_STRING, val);
+                }
+            }
+            h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
+            h.add_edge(exit_blk, merge_block);
+        };
+        coerce_phi_arm(true_val, true_exit);
+        coerce_phi_arm(false_val, false_exit);
 
         // Merge block with PHI.
         h.cur_block = merge_block;
-        hir_type rty = (h.ty[true_val] == TY_INT && h.ty[false_val] == TY_INT)
-                     ? TY_INT : TY_STRING;
         int blocks[2] = { true_exit, false_exit };
         int vals[2] = { true_val, false_val };
         int phi = h.emit_phi(rty, -1, blocks, vals, 2);
@@ -1967,28 +1994,62 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         // Allocate merge block.
         merge_blk = h.new_block();
-        h.cur_block = merge_blk;
 
-        // Patch all BR instructions to point to merge_blk and add edges.
-        // The BR instructions are the last insn in each result/default block.
+        // Pick PHI type (#1143): all INT → INT; pure numeric with at
+        // least one FLOAT → FLOAT; otherwise STRING with coercions.
+        hir_type rty = TY_INT;
+        bool any_float = false;
+        bool any_non_num = false;
+        for (int rv : result_vals) {
+            if (h.ty[rv] == TY_FLOAT) {
+                any_float = true;
+            } else if (h.ty[rv] != TY_INT) {
+                any_non_num = true;
+            }
+        }
+        if (any_non_num) {
+            rty = TY_STRING;
+        } else if (any_float) {
+            rty = TY_FLOAT;
+        }
+
+        // Patch BRs to merge; coerce float/int arms in-place when the
+        // PHI is STRING or FLOAT so PHI operands match rty.
         for (int ri = 0; ri < static_cast<int>(result_exits.size()); ri++) {
             int blk = result_exits[ri];
-            // Find the BR instruction (last in block — scan backwards).
+            int &rv = result_vals[ri];
+            int br_idx = -1;
             for (int ii = h.n_insns - 1; ii >= 0; ii--) {
-                if (h.blk[ii] == blk && h.kind[ii] == HIR_BR && h.val[ii] == -1) {
-                    h.val[ii] = merge_blk;
-                    h.add_edge(blk, merge_blk);
+                if (h.blk[ii] == blk && h.kind[ii] == HIR_BR
+                    && h.val[ii] == -1) {
+                    br_idx = ii;
                     break;
                 }
             }
+            bool need_coerce =
+                (rty == TY_STRING
+                 && (h.ty[rv] == TY_FLOAT || h.ty[rv] == TY_INT))
+                || (rty == TY_FLOAT && h.ty[rv] == TY_INT);
+            if (need_coerce && br_idx >= 0) {
+                // Drop placeholder BR; re-emit coerce + BR at block end.
+                h.kind[br_idx] = HIR_NOP;
+                h.src1[br_idx] = h.src2[br_idx] = -1;
+                h.cur_block = blk;
+                if (rty == TY_FLOAT) {
+                    rv = h.emit(HIR_ITOF, TY_FLOAT, rv);
+                } else if (h.ty[rv] == TY_FLOAT) {
+                    rv = h.emit(HIR_FTOA, TY_STRING, rv);
+                } else {
+                    rv = h.emit(HIR_ITOA, TY_STRING, rv);
+                }
+                h.emit(HIR_BR, TY_VOID, -1, -1, merge_blk);
+            } else if (br_idx >= 0) {
+                h.val[br_idx] = merge_blk;
+            }
+            h.add_edge(blk, merge_blk);
         }
 
-        // Build PHI node at merge.
-        hir_type rty = TY_STRING;
-        for (int rv : result_vals) {
-            if (h.ty[rv] != TY_INT) { rty = TY_STRING; break; }
-            rty = TY_INT;
-        }
+        h.cur_block = merge_blk;
         int phi = h.emit_phi(rty, -1,
             result_exits.data(), result_vals.data(),
             static_cast<int>(result_vals.size()));
@@ -2486,10 +2547,27 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         // block number.  All edges to merge are forward.
                         int merge_block = h.new_block();
 
+                        // u() merge is always TY_STRING (fallback is
+                        // fun_u). Coerce a native float/int body before
+                        // the BR so PHI arms are real C strings (#1143).
+                        if (h.ty[body_result] == TY_FLOAT
+                            || h.ty[body_result] == TY_INT) {
+                            h.cur_block = inline_exit;
+                            if (h.ty[body_result] == TY_FLOAT) {
+                                body_result = h.emit(HIR_FTOA, TY_STRING,
+                                                     body_result);
+                            } else {
+                                body_result = h.emit(HIR_ITOA, TY_STRING,
+                                                     body_result);
+                            }
+                            inline_exit = h.cur_block;
+                        }
+
                         // Patch the fallback BR to target merge_block.
                         h.val[fb_br_idx] = merge_block;
                         h.add_edge(fb_exit, merge_block);
 
+                        h.cur_block = inline_exit;
                         h.emit(HIR_BR, TY_VOID, -1, -1, merge_block);
                         h.add_edge(inline_exit, merge_block);
 
@@ -3095,9 +3173,13 @@ general_lowering:
 
     // IDIV: integer division (truncate toward zero).
     // Match interpreter: idiv(x,0) returns "#-1 DIVIDE BY ZERO".
-    if (upper == "IDIV" && nargs == 2 && all_int()) {
-        // Constant divisor 0 → fold to error string at compile time.
-        if (h.kind[args[1]] == HIR_ICONST && h.val[args[1]] == 0) {
+    // Only emit bare HIR_DIV when the divisor is a known non-zero
+    // constant — a runtime zero yields all-ones (-1) on RV64/x86,
+    // not the MUX error string (#1146). Non-const divisors fall
+    // through to fun_idiv via the general ECALL path.
+    if (upper == "IDIV" && nargs == 2 && all_int()
+        && h.kind[args[1]] == HIR_ICONST) {
+        if (h.val[args[1]] == 0) {
             uint64_t addr = rc.pool_str("#-1 DIVIDE BY ZERO");
             return h.emit_sconst(addr, "#-1 DIVIDE BY ZERO");
         }
