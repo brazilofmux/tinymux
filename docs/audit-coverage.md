@@ -43,10 +43,10 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |----|--------|-------|------:|-----------|--------|-------|
 | A1 | Driver bootstrap / COM | `mux/src/driver.cpp`, `driver_bridge.cpp`, `modules.cpp`, `muxcli.cpp` | med | — | thin | Config basket pull; module load order |
 | A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 1–2, #1074 | deep | Restart DESC, `DS_NEED_PROTO`, IOCP cap, accept path |
-| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 6 | deep | #1133–#1135 filed (SiteMon, output_limit, sockaddr fail-open) |
-| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 6 | deep | #1126 gmcp_enabled; #1128 enable_us; #1131–#1132 SB/charset |
+| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 6 | deep | #1133–#1135 closed (#1139); residual: `@restart` getpeername fail-open |
+| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 6 | deep | #1126/#1128/#1131/#1132 closed (#1139; SB overflow via sbOverflow) |
 | A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 3 | deep | Mask, handshake close, backpressure (#1081–#1083) |
-| A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 6 | deep | #1127 g_bCanRestart; #1129 SIGABRT; #1130 SIGXFSZ; #1136 dump reaps |
+| A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 6 | deep | #1127/#1129 → #1138; #1130/#1136 → #1139 (cores + dump reaps) |
 | A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | unit green | partial | Covered by units; logic re-read optional |
 | A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp` | small | — | thin | DNS/email slave pipes |
 
@@ -170,7 +170,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 3 | 2026-07 | Convert residual, JIT bounds, queue money, WS, comsys_mod, conf live sync | #1077–#1080 → #1086; #1087/#1088; #1081–#1085 → #1089 |
 | Pass 4 | 2026-07 | Hydra proxy I1–I5 (session, scrollback, WS, auth, process) | #1091–#1102 filed; Highs → #1103; Mediums → #1105 (complete) |
 | Pass 5 | 2026-07 | Softcode C2 function builtins + JIT ECALL perms | Highs #1106–#1110 → #1121; Mediums #1111–#1119/#1122 → #1123; #1124 JIT `check_access` → #1125 |
-| Pass 6 | 2026-07 | A3 net/output + A4 telnet NVT + A6 signals/restart | #1126–#1136 filed; fix PR TBD |
+| Pass 6 | 2026-07 | A3 net/output + A4 telnet NVT + A6 signals/restart | #1126–#1136 filed; #1127/#1129 → #1138; rest → #1139 (complete) |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -183,8 +183,7 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **Fix Pass 6** (#1126–#1136) | Highs first: gmcp_enabled, g_bCanRestart, enable_us, SIGABRT |
-| **Pass 7** | **D2 + D3** HIR/DBT | Complements JIT ECALL deep work |
+| **Now** | **Pass 7 — D2 + D3** HIR/DBT | Complements JIT ECALL deep work |
 | **Pass 8** | **E5 + C5** object/player/move | Gameplay permission paths |
 | **Pass 9** | **F3** engine comsys/mail vs modules | Dual implementation drift |
 | **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | Pass 4 closed; residual depth |
@@ -231,5 +230,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 4 Mediums #1095–#1102 merged (#1105); Pass 4 complete; rotation → Pass 5 C2 |
 | 2026-07-25 | Pass 5 complete (#1121/#1123/#1125); C2 deep; rotation → Pass 6 A3+A4+A6 |
 | 2026-07-25 | Pass 6 A3+A4+A6 filed #1126–#1136; rotation → Fix Pass 6 |
+| 2026-07-25 | Pass 6 complete (#1138 crash/core, #1139 Highs+Mediums); rotation → Pass 7 D2+D3 |
 
 Update this table when the map structure changes.
