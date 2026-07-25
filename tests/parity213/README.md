@@ -85,6 +85,85 @@ cases like this and change behaviour silently.
 
 So the output is evidence for a design conversation, not a defect list.
 
+## The verdict column
+
+`corpus.txt` lines are `NAME|expression[|verdict]`. The verdict records
+**which engine is right for that shape**, decided case by case. It is
+recognised by value rather than position, because `|` is a legal MUX
+delimiter and may appear inside an expression.
+
+| verdict | meaning | harness check |
+|---|---|---|
+| `2.13` | 2.13's output is correct; 2.14 should match | both 2.14 routes must equal 2.13 |
+| `2.14` | current 2.14 behaviour is the desired one | the two 2.14 routes must agree; divergence from 2.13 is accepted |
+| `both` | all three should agree | all three equal |
+| `neither` | neither engine is satisfactory; wants new behaviour | reported, never satisfied or violated |
+| `pin` | deliberately deferred | reported, not a violation |
+| *(absent)* | not yet decided | reported as UNADJUDICATED if it diverges |
+
+**Only a VIOLATED verdict fails the harness.** An unadjudicated divergence
+is reported so it can be decided, not treated as a regression — the point
+is to fill the column in over time, turning the map into a specification.
+
+The criterion for deciding is debuggability, not compatibility. 2.14 is
+allowed to be better than 2.13. The ranking that has emerged:
+
+1. **worst** — silently corrupting valid input (plausible-looking wrong
+   output, no error)
+2. silently changing the meaning of valid input
+3. an error on input that is genuinely broken — *this is good*; it tells
+   the author something is wrong
+4. best — a specific diagnostic naming the actual problem
+
+That is why `MX_BP` carries `2.13`: `[strcat(a [b (c,d) e] f)]` is broken
+softcode, 2.13 answers `#-1 FUNCTION (B) NOT FOUND`, and 2.14 silently
+prints text that looks intentional. The error is the better output even
+though it is uglier.
+
+And why the `PU_*` unbalanced-paren shapes carry `neither`: 2.13 echoes
+the whole expression back verbatim and 2.14 quietly drops part of it.
+Both leave the author guessing; *"unbalanced parenthesis"* would beat
+either.
+
+## space_compress changes what the corpus measures
+
+In 2.13 `space_compress` does two unrelated jobs: ordinary output
+whitespace compression, and gating the trailing-space trim on the
+candidate function name (`eval.cpp:1434`). Turning it off therefore
+changes a *parsing* behaviour, not just formatting:
+
+```
+                  space_compress on   space_compress 0
+[add (1,2)]       3                   #-1 FUNCTION (ADD ) NOT FOUND
+[add  (1,2)]      3                   #-1 FUNCTION (ADD  ) NOT FOUND
+[ add (1,2)]      3                   #-1 FUNCTION ( ADD ) NOT FOUND
+```
+
+So `name (args)` is not a stable 2.13 behaviour — it exists only when a
+formatting option happens to be on, and the error it produces otherwise
+carries the space inside the function name. That matters when deciding
+whether 2.14 should reproduce it: there is no single 2.13 answer to
+match.
+
+The corpus is measured under the default (`space_compress` on). To see
+the other side, add the setting to the generated conf:
+
+```sh
+# in probe_engine(), or by hand against a scratch netmux:
+printf 'space_compress\t0\n' >> t.conf
+```
+
+A permanent fourth engine leg was considered and left out: it would
+double an already multi-minute run for an axis that only affects the
+handful of `SC_*` shapes. If a fix lands that touches the trim, adding
+the leg is the right next step.
+
+## Runtime
+
+A full run spins three servers and probes every shape against each, so it
+takes a few minutes at ~95 shapes. That is why it is opt-in rather than
+part of `make test`.
+
 ## Extending the corpus
 
 `corpus.txt` is `NAME|expression`, one per line, `#` for comments. Keep

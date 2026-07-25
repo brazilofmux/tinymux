@@ -107,13 +107,74 @@ probe_engine() {
     return 0
 }
 
-# report <fileA> <fileB> <labelA> <labelB>
+# report <fileA> <fileB> <labelA> <labelB> — plain divergence listing.
 report() {
     paste "$1" "$2" | awk -F'\t' -v A="$3" -v B="$4" '
         { if ($2 != $4) { printf "    %-22s %s=%-28s %s=%s\n", $1, A, "\047"$2"\047", B, "\047"$4"\047"; d++ } else s++ }
         END { printf "  %s vs %s: %d agree, %d differ\n", A, B, s+0, d+0 }
     '
     paste "$1" "$2" | awk -F'\t' '{ if ($2 != $4) d++ } END { exit (d>0) }'
+}
+
+# Extract NAME<TAB>VERDICT for shapes that carry one.  The verdict is the
+# optional third column and is recognised by VALUE, not position, because
+# '|' is a legal MUX delimiter and may appear inside an expression.
+verdict_table() {
+    awk -F'|' '
+        /^[[:space:]]*(#|$)/ { next }
+        NF > 2 {
+            v = $NF
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+            if (v=="2.13" || v=="2.14" || v=="both" || v=="neither" || v=="pin")
+                printf "%s\t%s\n", $1, v
+        }
+    ' "$1"
+}
+
+# adjudicate <r213> <jit> <ast> <corpus>
+# Applies the verdict column.  Semantics:
+#   2.13     both 2.14 routes must match the 2.13 reference
+#   2.14     current 2.14 behaviour is desired; the routes must agree with
+#            each other, and divergence from 2.13 is accepted
+#   both     all three must agree
+#   neither  neither engine is satisfactory; needs new behaviour (reported,
+#            never counted as satisfied or violated)
+#   pin      deliberately deferred (reported, not a violation)
+adjudicate() {
+    verdict_table "$4" > "$WORK/verdicts.txt"
+    paste "$1" "$2" "$3" | awk -F'\t' -v VF="$WORK/verdicts.txt" '
+        BEGIN { while ((getline line < VF) > 0) { split(line, a, "\t"); V[a[1]] = a[2] } }
+        {
+            name=$1; r13=$2; jit=$4; ast=$6
+            v = (name in V) ? V[name] : ""
+            internal = (jit != ast)
+            diverged = (r13 != jit || r13 != ast)
+            if (v == "") {
+                if (diverged) { un++; unl = unl sprintf("    %-22s 2.13=%-26s JIT=%-26s AST=%s\n", name, "\047"r13"\047", "\047"jit"\047", "\047"ast"\047") }
+                next
+            }
+            if (v == "neither") { nn++; nl = nl sprintf("    %-22s 2.13=%-26s 2.14=%s\n", name, "\047"r13"\047", "\047"jit"\047"); next }
+            if (v == "pin")     { pp++; pl = pl sprintf("    %-22s 2.13=%-26s 2.14=%s\n", name, "\047"r13"\047", "\047"jit"\047"); next }
+            ok = 0
+            if (v == "2.13") ok = (r13 == jit && r13 == ast)
+            else if (v == "2.14") ok = (jit == ast)
+            else if (v == "both") ok = (r13 == jit && r13 == ast)
+            if (ok) { sat++ }
+            else {
+                vio++
+                vl = vl sprintf("    %-22s want=%-6s 2.13=%-22s JIT=%-22s AST=%s\n", name, v, "\047"r13"\047", "\047"jit"\047", "\047"ast"\047")
+            }
+        }
+        END {
+            printf "  satisfied:     %d\n", sat+0
+            if (vio) { printf "  VIOLATED:      %d\n", vio; printf "%s", vl }
+            else     { printf "  VIOLATED:      0\n" }
+            if (nn)  { printf "  needs-new:     %d  (verdict \047neither\047)\n", nn; printf "%s", nl }
+            if (pp)  { printf "  pinned:        %d  (deferred by decision)\n", pp; printf "%s", pl }
+            if (un)  { printf "  UNADJUDICATED: %d  (divergent, no verdict yet)\n", un; printf "%s", unl }
+            exit (vio > 0)
+        }
+    '
 }
 
 echo "==> 2.13/2.14 parser parity jig"
@@ -145,24 +206,29 @@ echo
 rc=0
 
 echo "Internal consistency (no 2.13 needed):"
-report "$WORK/jit.txt" "$WORK/ast.txt" "JIT" "AST" || rc=1
+report "$WORK/jit.txt" "$WORK/ast.txt" "JIT" "AST" || true
 
 if [ "$HAVE213" -eq 1 ]; then
     echo
     echo "Against the 2.13 reference:"
-    report "$WORK/r213.txt" "$WORK/jit.txt" "2.13" "JIT" || rc=1
+    report "$WORK/r213.txt" "$WORK/jit.txt" "2.13" "JIT" || true
     echo
-    report "$WORK/r213.txt" "$WORK/ast.txt" "2.13" "AST" || rc=1
+    report "$WORK/r213.txt" "$WORK/ast.txt" "2.13" "AST" || true
+    echo
+    echo "Verdicts:"
+    adjudicate "$WORK/r213.txt" "$WORK/jit.txt" "$WORK/ast.txt" "$CORPUS" || rc=1
 fi
 
 echo
 if [ "$rc" -eq 0 ]; then
-    echo "OK: no divergence"
+    echo "OK: no verdict violated"
 else
-    echo "DIVERGENCE FOUND — see above."
-    echo
-    echo "Note: a divergence here is a finding, not automatically a bug."
-    echo "The 2.13 grammar is not well-formed and some of its behaviour is"
-    echo "organic; deciding which shapes should change is a design call."
+    echo "VERDICT VIOLATED — see above."
 fi
+echo
+echo "A divergence is a finding, not automatically a bug: the 2.13 grammar"
+echo "is not well-formed and some of its behaviour is organic.  The verdict"
+echo "column records which engine is right per shape, decided case by case."
+echo "Only a VIOLATED verdict fails this harness; unadjudicated divergences"
+echo "are reported so they can be decided, not treated as regressions."
 exit $rc

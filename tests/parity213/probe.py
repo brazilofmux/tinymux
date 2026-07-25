@@ -23,6 +23,10 @@ import sys
 import time
 
 MARK = "ZZ"
+
+# Recognised values for the optional third column.  Kept in sync with
+# run.sh; see tests/parity213/README.md for what each means.
+VERDICTS = {"2.13", "2.14", "both", "neither", "pin"}
 CASE_TIMEOUT = 10.0     # per-case wait for its sentinel
 SETTLE = 0.05
 
@@ -36,8 +40,18 @@ def read_corpus(path):
                 continue
             if "|" not in line:
                 continue
-            name, _, expr = line.partition("|")
-            out.append((name.strip(), expr))
+            # NAME|expression[|verdict].  The verdict column is consumed
+            # by run.sh, not here.  It is recognised by VALUE rather than
+            # by field count: '|' is a common MUX delimiter, so an
+            # expression may legitimately contain one and a positional
+            # rule would truncate it.
+            parts = line.split("|")
+            name = parts[0].strip()
+            if len(parts) > 2 and parts[-1].strip() in VERDICTS:
+                expr = "|".join(parts[1:-1])
+            else:
+                expr = "|".join(parts[1:])
+            out.append((name, expr))
     return out
 
 
@@ -95,9 +109,12 @@ def main():
     results = {}
     for name, expr in corpus:
         sentinel = f"{MARK}END{name}{MARK}"
-        # say/pose/@... are commands in their own right; everything else is
-        # an expression and is wrapped in `think` with markers.
-        if expr.lstrip().startswith(("say ", "pose ", "@", ":")):
+        # say/pose/@/& are commands in their own right (& sets an
+        # attribute, @ covers @function/@set/etc), so they are sent bare.
+        # Everything else is an expression and is wrapped in `think`.
+        # A bare command still gets its sentinel, so setup lines stay in
+        # step with the case they belong to.
+        if expr.lstrip().startswith(("say ", "pose ", "@", "&", ":")):
             s.sendall((expr + "\r\n").encode())
         else:
             s.sendall(f"think {MARK}{name}{MARK}{expr}{MARK}\r\n".encode())
