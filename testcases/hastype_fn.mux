@@ -5,17 +5,11 @@
 # and 0 otherwise.  Documented valid types are ROOM, EXIT, PLAYER and
 # THING; an invalid type is documented to return #-1.
 #
-# Two documented behaviours are NOT asserted here because the
-# implementation currently contradicts them (see #1168):
-#
-#   - the match is on the FIRST LETTER only, so hastype(<thing>,TRUMPET)
-#     returns 1 rather than an error
-#   - the invalid-type path appends the boolean to the error string,
-#     yielding '#-1 NO SUCH TYPE0'
-#
-# Pinning either would enshrine behaviour the help text contradicts, so
-# this file covers the four real types and the object-not-found path.
-# When #1168 is resolved in either direction, the assertions belong here.
+# #1168 resolved both historical divergences in the documented
+# direction: the type is matched as a full case-insensitive name (the
+# old code tested only the first letter, so TRUMPET passed as THING),
+# and the invalid-type arm returns the bare error (it used to fall
+# through and emit '#-1 NO SUCH TYPE0').  TC004 pins both.
 #
 @create test_hastype_fn
 -
@@ -70,11 +64,34 @@
         strmatch(hastype(nosuchobjecthere,THING), #-1*)
       )=
   {
-    @log smoke=TC003: hastype bad object. Succeeded.;
+    @log smoke=TC003: hastype bad object. Succeeded.
+  },
+  {
+    @log smoke=TC003: hastype bad object. Failed (dbref=[hastype(#-1,THING)] name=[hastype(nosuchobjecthere,THING)]).
+  }
+-
+#
+# Test Case #4 - The type must be a full (case-insensitive) name; an
+# invalid type is exactly '#-1 NO SUCH TYPE' with no boolean appended
+# (#1168: TRUMPET/T formerly passed as THING, and the error read
+# '#-1 NO SUCH TYPE0').
+#
+&tr.tc004 test_hastype_fn=
+  @if cand(
+        strmatch(hastype(me,TRUMPET), #-1 NO SUCH TYPE),
+        strmatch(hastype(me,T), #-1 NO SUCH TYPE),
+        strmatch(hastype(#0,RUBBISH), #-1 NO SUCH TYPE),
+        strmatch(hastype(me,ZEBRA), #-1 NO SUCH TYPE),
+        eq(hastype(me,thing), 1),
+        eq(hastype(me,Thing), 1),
+        eq(hastype(#0,room), 1)
+      )=
+  {
+    @log smoke=TC004: hastype full-name match and exact error. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: hastype bad object. Failed (dbref=[hastype(#-1,THING)] name=[hastype(nosuchobjecthere,THING)]).;
+    @log smoke=TC004: hastype full-name match and exact error. Failed (trumpet=.[hastype(me,TRUMPET)]. t=.[hastype(me,T)]. rubbish=.[hastype(#0,RUBBISH)]. zebra=.[hastype(me,ZEBRA)]. lc=[hastype(me,thing)] mixed=[hastype(me,Thing)] lcroom=[hastype(#0,room)]).;
     @trig me/tr.done
   }
 -

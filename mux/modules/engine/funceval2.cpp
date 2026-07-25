@@ -2058,37 +2058,32 @@ FUNCTION(fun_hastype)
         safe_match_result(it, buff, bufc);
         return;
     }
-    bool bResult = false;
-    switch (fargs[1][0])
+    // Match the full type name (help hastype(): ROOM, EXIT, PLAYER,
+    // THING; anything else is #-1).  This historically tested only
+    // fargs[1][0], so any string starting with R/E/P/T passed as that
+    // type, and the error arm fell through to safe_bool and emitted
+    // "#-1 NO SUCH TYPE0" (#1168).
+    bool bResult;
+    if (!mux_stricmp(fargs[1], T("ROOM")))
     {
-    case 'r':
-    case 'R':
-
         bResult = isRoom(it);
-        break;
-
-    case 'e':
-    case 'E':
-
+    }
+    else if (!mux_stricmp(fargs[1], T("EXIT")))
+    {
         bResult = isExit(it);
-        break;
-
-    case 'p':
-    case 'P':
-
+    }
+    else if (!mux_stricmp(fargs[1], T("PLAYER")))
+    {
         bResult = isPlayer(it);
-        break;
-
-    case 't':
-    case 'T':
-
+    }
+    else if (!mux_stricmp(fargs[1], T("THING")))
+    {
         bResult = isThing(it);
-        break;
-
-    default:
-
+    }
+    else
+    {
         safe_str(T("#-1 NO SUCH TYPE"), buff, bufc);
-        break;
+        return;
     }
     safe_bool(bResult, buff, bufc);
 }
