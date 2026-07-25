@@ -67,15 +67,20 @@
         # 110 ("one hundred ten") or 1800 (formally "one thousand eight
         # hundred"), so those must fall through to "a".
         #
-        # These two patterns deliberately do NOT end in any*.  The
-        # scanner takes the longest match first, so a fixed-length
-        # pattern only wins when it spans the entire input; for 110 it
-        # matches just "11" while the catch-all matches all three
-        # characters, and the catch-all correctly wins.  That is the one
-        # place in this machine where length, not order, decides.
+        # A non-digit may end the digit run and take the rest of the
+        # input: 11th, 18-wheeler, 11:30, 11,000 all keep "eleven"/
+        # "eighteen" as the leading spoken group and take "an".
         #
-        '11' ([0-9][0-9][0-9])* => { use_an = true; };
-        '18' ([0-9][0-9][0-9])* => { use_an = true; };
+        # Unlike every other rule, these two do NOT unconditionally
+        # consume the full input.  A digit-led tail that breaks the
+        # groups-of-three shape (110, 1800, 1100th) falls outside the
+        # pattern, so the pattern matches only the leading "11"/"18",
+        # the catch-all matches the whole string, and the catch-all
+        # correctly wins on length.  That is the one place in this
+        # machine where length, not order, decides.
+        #
+        '11' ([0-9][0-9][0-9])* ((any - [0-9]) any*)? => { use_an = true; };
+        '18' ([0-9][0-9][0-9])* ((any - [0-9]) any*)? => { use_an = true; };
 
         # --- specific "a" overrides of an otherwise-vowel start ---
 

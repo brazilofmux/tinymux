@@ -81,6 +81,8 @@
 # "eighteen" only while they lead the spoken groups of three: 11 and
 # 11000 ("eleven thousand") take "an", but 110 is "one hundred ten" and
 # 1100 is formally "one thousand one hundred", so both take "a".
+# A non-digit may end the digit run: 11th, 18-wheeler and 11:30 keep
+# "eleven"/"eighteen" as the leading spoken group and take "an".
 #
 &tr.tc004 test_art_fn=
   @if cand(
@@ -91,13 +93,17 @@
         strmatch(art(11), an),
         strmatch(art(11000), an),
         strmatch(art(18), an),
-        strmatch(art(18000), an)
+        strmatch(art(18000), an),
+        strmatch(art(8th), an),
+        strmatch(art(11th), an),
+        strmatch(art(18-wheeler), an),
+        strmatch(art(11:30), an)
       )=
   {
     @log smoke=TC004: art numerals taking an. Succeeded.
   },
   {
-    @log smoke=TC004: art numerals taking an. Failed (8=[art(8)] 80=[art(80)] 800=[art(800)] 8.5=[art(8.5)] 11=[art(11)] 11000=[art(11000)] 18=[art(18)] 18000=[art(18000)]).
+    @log smoke=TC004: art numerals taking an. Failed (8=[art(8)] 80=[art(80)] 800=[art(800)] 8.5=[art(8.5)] 11=[art(11)] 11000=[art(11000)] 18=[art(18)] 18000=[art(18000)] 8th=[art(8th)] 11th=[art(11th)] 18w=[art(18-wheeler)] 1130=[art(11:30)]).
   }
 -
 #
@@ -111,6 +117,7 @@
         strmatch(art(1100), a),
         strmatch(art(180), a),
         strmatch(art(1800), a),
+        strmatch(art(1100th), a),
         strmatch(art(9), a),
         strmatch(art(90), a),
         strmatch(art(1), a),
@@ -120,7 +127,7 @@
     @log smoke=TC005: art numerals taking a. Succeeded.
   },
   {
-    @log smoke=TC005: art numerals taking a. Failed (110=[art(110)] 1100=[art(1100)] 180=[art(180)] 1800=[art(1800)] 9=[art(9)] 90=[art(90)] 1=[art(1)] 20=[art(20)]).
+    @log smoke=TC005: art numerals taking a. Failed (110=[art(110)] 1100=[art(1100)] 180=[art(180)] 1800=[art(1800)] 1100th=[art(1100th)] 9=[art(9)] 90=[art(90)] 1=[art(1)] 20=[art(20)]).
   }
 -
 #
