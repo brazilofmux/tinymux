@@ -7,6 +7,218 @@ author:
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
+# Changes in 2.14.0.10 (UNRELEASED — draft, finalize date at release):
+
+By far the largest cycle since the 2.14 branch point: where 2.14.0.9
+collected 27 merged changes over a month, this one has passed 155 in under
+two weeks.  Five threads dominate it.  The GANL networking survey is
+carried to completion, including the TLS paths on both OpenSSL and
+Schannel.  The JIT's eval-bracket guard is lifted and the compiled route
+becomes the default for bracketed expressions.  A systematic audit sweep
+runs the codebase in numbered passes, closing well over a hundred filed
+defects.  A new set of front-door defenses bounds what an unauthenticated
+connection can cost the server.  And a 2.13/2.14 parser parity harness is
+built, then used to find and fix real divergences in expression
+evaluation.
+
+## Parser and Expression Evaluation
+
+ - **Semicolons inside expressions are no longer dropped.**  The HIR
+   lowering had no case for `AST_SEMICOLON`, so it fell to a default arm
+   that lowers unhandled nodes to an empty string.  Every `;` inside a
+   function argument silently disappeared on the compiled route — the
+   default configuration — while the interpreter and 2.13 kept it:
+   `[strcat(hello; world)]` returned `hello world`, and `[ansi(r,a;b)]`
+   returned `ab`.  No function call was needed to trigger it; ordinary
+   prose lost a character with a plausible-looking result.  An audit
+   confirmed this was the only missing node type of the nine declared.
+   (#1237)
+ - 2.13's one-call-per-region rule is restored.  `EV_FCHECK` marks the
+   first `(` in a region as a candidate function call, and 2.13 clears it
+   once that opportunity is used, so a later call in the same region emits
+   as literal text.  This is what keeps ordinary speech from evaluating —
+   a player typing `I tried add(1)` must not have it evaluated, while
+   `[add(1)]` must be.  2.14 applied the rule in one of the two places
+   that evaluate such a run, so it was dead exactly where it mattered.
+   Fixed for function arguments (#1214) and at eval-bracket top level
+   (#1238).  Note this is user-visible: `[strcat(x add(1,2) y)]` now
+   returns `x add(1,2) y` rather than `x 3 y`, and
+   `[add(1,2) mul(3,4)]` returns `3 mul(3,4)` rather than `3 12`.
+ - Nested parentheses are balanced when scanning function arguments
+   (#1219).
+ - `ifelse()`/`if()` conditions are decided with `xlate()` rather than
+   `atol()`, matching the interpreter (#1157).
+
+## Networking and the GANL Engine Layer
+
+ - The GANL survey filings (#942–#953) are resolved across every engine.
+   Highlights: the `epoll` engine registers `EPOLLOUT` for immediate
+   connects (#942) and no longer disarms write interest without emitting
+   a `Write` event (#943); the `select` engine rejects descriptors at or
+   above `FD_SETSIZE` before `FD_SET` writes out of bounds (#946) and
+   makes `closeConnection` idempotent (#947); `wselect` assigns
+   `ev.buffer` from the saved buffer reference on `Read`, and `kqueue`
+   fully populates the accept `IoEvent` (#947).
+ - Engine close-ownership and `IoEvent` population are harmonized across
+   engines, and the contract is written down in
+   `docs/ganl-engine-contract.md` (#947).
+ - `epoll` now emits a listener `Error` event on a real `accept()`
+   failure rather than treating it as routine.
+ - Connection-core hygiene: TLS return handling, overflow diagnostics and
+   a buffer cap (#953).  A dead telnet-negotiation-timeout sweep is
+   removed (#945).
+ - The DNS slave protocol frames requests on newlines (#1220).
+
+## TLS
+
+ - OpenSSL write path hardened: renegotiation disabled and plaintext
+   retained across retries (#948, #949).
+ - Schannel hardening: a cleartext-downgrade gap closed, large writes
+   chunked, and TLS 1.3 support (#950, #951, #952); Schannel also accepts
+   PEM certificate/key pairs (#975).
+
+## Front-Door Defenses
+
+New, and off by default where behaviour could surprise an existing site.
+These bound what an unauthenticated or abusive source can consume.
+
+ - Per-source cap on pre-authenticated connections (#1013).
+ - Per-source failed-login throttle, with refusal-log damping informed by
+   Rhost's approach (#1014).
+ - Per-source connection-rate limit covering connect/disconnect churn
+   (#1017).
+ - Graduated site rules with a per-entry connection threshold (#1015),
+   stored per control group (#1034).
+ - Anti-runaway input backlog cap, with `save_command` owning
+   `input_size` (#1010).
+ - Pool memory footprint budget, defense-in-depth and off by default
+   (#1012).
+ - The per-command wall-clock alarm is honored on the DBT path (#1011).
+ - New refusal types are broadcast to SiteMon (#1018).
+ - Wizard players are exempt from the CPU guard's collateral HALT (#920).
+
+## JIT / DBT Engine
+
+ - **The eval-bracket guard is lifted and `jit_eval_brackets` now
+   defaults on** (#1003), completed in phases: q-register scope coherence
+   with slot resync, tracking and read materialization; conservative
+   post-`ECALL` resync; and a toggle-on soak before the flip.  The
+   `jiteval` conf is retired.
+ - Long q-registers: the compiled route declines at entry marshal and
+   gains a long-register bitmap with a read diamond, since `SUBST` slots
+   are 256 bytes and a longer register would truncate on a compiled `%q`
+   read (#996).
+ - `@function` globals resolve from compiled softcode (#1231).
+ - `ECALL` performs `check_access` for `CA_WIZARD` builtins (#1124).
+ - Maximum argument count is enforced, not only the minimum (#1226).
+ - Float `mul()` applies `NearestPretty` like the interpreter (#1171).
+ - FP slot allocation is bounded by the compile's pool limit (#1159).
+ - A static-depth watermark honors `function_recursion_limit` (#1002).
+ - `n_func_calls` persists in `code_cache` (schema v13).
+ - Tier-2 wrapper audit: interpreter-mirror fixes across the rv64
+   wrappers, including `fun_after`/`fun_before` (#993, #980), `wordpos`
+   UTF-8 (#989) and `maxArgsParsed` catenation (#988).
+
+## Comsys, @mail, and Module Storage
+
+ - Comsys and mail modules are initialized after SQLite is open (#1190)
+   and activated with their softcode state synced to the module store
+   (#1191).
+ - `@cdestroy`'s inverted channel lookup is corrected (#1189); `chanfind`
+   matches by name; aliases are purged on channel destroy.
+ - Module `PlayerNuke` teardown completed (#1193); module gag/charge/BLOCK
+   and join/who/dbck brought to parity.
+ - Mail: module bounds, dual-store fall-through, CC/quota/expire handling
+   (#1227); write-through module bodies and `mail_db_top` (#1192); raw
+   attributes used for composition so `@mail/proof` works; `MailList`
+   iterators cleared before map erase.
+
+## Database, Objects, and Players
+
+ - SQLite is never nuclear-cleared after a create-object reconcile failure
+   (#1179).
+ - `CURRENT_SCHEMA_VERSION` bumped to 13 so the v12/v13 migrations run.
+ - Create freelist, `purge_going` and reverse `@open` hardened.
+ - `@clone/preserve` re-links without stealing ownership (#1181).
+ - The pcache entry is dropped on player destroy, avoiding a recycle leak
+   (#1180).
+
+## Reliability and Restart
+
+ - Core dumps and panic-restart are restored on fatal signals (#1127,
+   #1129).
+ - The `#1141` restart fail-open is closed.
+ - The alarm worker thread starts lazily rather than in a static
+   constructor, and is constructed before being marked started.
+ - `%z` is supported in `mux_vsnprintf`, unbreaking netmux startup.
+ - Softcode `TRACE` output is restored (#1023).
+ - Driver basket values are re-pulled from `cf_seconds` and `cf_dbref`
+   (#1222).
+ - `DS_NEED_PROTO` timeout fallback for server-first clients (#1074).
+
+## Softcode Functions
+
+ - `art()` can return "an" again (#1170).
+ - `hastype()` matches full type names, and its error no longer grows a
+   stray `0`.
+ - `wordpos()` indexes by grapheme cluster rather than byte offset.
+ - `json(array/object)` emit whole-tail elements and use `split_token`.
+ - `printf()` width/precision accumulators are clamped against signed
+   overflow.
+ - New: `lcat()`, a list-consuming string joiner with grapheme
+   round-trip.
+ - Help entries added for 15 public builtins that had none (#1167).
+
+## Converters
+
+ - P6H/T6H to t5x forces the mandatory LINK/ZONE fields.
+ - Attribute-name encoding is sized from `strlen` (#1087).
+
+## Audit Sweep
+
+A systematic pass-by-pass audit ran through the cycle, filing and closing
+defects in numbered batches (Passes 1 through 9 landed here; the coverage
+map in `docs/audit-coverage.md` tracks the remainder).  Roughly #1039
+through #1200 originate from it, spanning both High and Medium severities
+across the engine, networking, JIT and module surfaces.
+
+## Tests, Tooling, and Documentation
+
+ - **A 2.13/2.14 parser parity jig** (`tests/parity213`, opt-in via `make
+   test-parity213`).  Function-call recognition is context sensitive in
+   ways a tokenizer cannot decide, and the grammar is not well-formed, so
+   the specification is what 2.13 actually does.  The harness drives up to
+   three engines — 2.14 compiled, 2.14 interpreted, and a real 2.13
+   reference — identically over a socket, and carries a verdict column
+   recording which engine is right per shape.  It found #1214, #1237 and
+   #1238.
+ - The parity probe reader was itself desynchronizing under load and
+   attributing output to the wrong shape; it now frames a line at a time
+   and ships a deterministic reader selftest that runs before any
+   measurement is trusted (#1233).
+ - A GANL engine regression harness (`mux/ganl/tests`, `make test-ganl`),
+   including wselect and iocp coverage on Windows.
+ - A live network+queue stress harness, and live scenario coverage for
+   wildcard capture and for telnet negotiation/CHARSET/SB overflow.
+ - `netaddr` subnet unit tests wired into `make test`.
+ - Large smoke-suite expansion: error-path coverage across dozens of
+   functions, the eval-composition family, the regexp family, type and
+   flag predicates, pronouns/art/time formats, and jit_diff corpus shapes
+   for float, branch and nested evaluation.
+ - `testcases/smoke.flat` is no longer tracked (#1205); it is generated.
+ - Surveys and design docs added for the queue, per-resource defenses, and
+   the JIT eval-bracket lift plan.
+
+## Known Follow-ups
+
+ - AST-route-only parser defects cannot fail CI: `make test` exercises the
+   compiled route, so a defect present only on the interpreted route
+   passes silently.  Two fixes this cycle were guarded only by a
+   `jit_eval_brackets 0` run (#1243).
+ - The HIR lowering's default arm turns a missing node case into silent
+   data loss rather than a fallback; it should decline to compile instead
+   (#1242).
+
 # Changes in 2.14.0.9 (2026-JUL-14):
 
 This release is a stability and hardening follow-up to 2.14.0.8: a
