@@ -1,0 +1,111 @@
+#
+# disarm_fn.mux - Test Cases for 2.13's one-call-per-region rule.
+#
+# EV_FCHECK without EV_FMAND means "the first '(' in this region may be
+# a function call".  2.13 clears EV_FCHECK once that opportunity is used
+# (mux/src/eval.cpp:1677), so a second call in the same region is NOT
+# evaluated — it emits as literal text:
+#
+#   [strcat(x add(1,2) y)]  ->  x add(1,2) y      not  x 3 y
+#
+# This is why ordinary speech survives evaluation.  A player typing
+# "I tried add(1)" must not have it evaluated, while "[add(1)]" must be.
+#
+# ast_eval_argument has a space-compressed fast path that iterated a
+# SEQUENCE argument's children itself, bypassing the AST_SEQUENCE case
+# where the rule lived — so the rule was dead for exactly the case that
+# matters, a call sitting mid-argument (#1214).
+#
+# The patterns below deliberately avoid parentheses in the EXPECTED
+# strings and use wildcards instead.  Expected text containing '(' is
+# the hazard documented in arity_fn.mux; keeping it out means these
+# cases test call recognition and nothing else.
+#
+# ROUTE: the compiled route already implemented this rule, so these
+# cases only discriminate on the AST route.  A default `make test`
+# (JIT on) passes them either way; the dual-toggle run
+#   SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke
+# is what actually guards the fix.
+#
+@create test_disarm_fn
+-
+@set test_disarm_fn=INHERIT QUIET
+-
+&tr.tc000 test_disarm_fn=
+  @log smoke=Beginning disarm test cases.;
+  &r.mid me=[strcat(x add(1,2) y)];
+  &r.end me=[strcat(head add(1,2))];
+  &r.first me=[strcat(add(1,2) tail)];
+  &r.brk me=[strcat(x add(1,2) [add(3,4)])];
+  &r.two me=[strcat(add(1,2) mul(3,4))]
+-
+#
+# Test Case #1 - A call after other text in the same region is literal.
+# Asserted in both directions: the source text must survive AND the
+# evaluated result must not appear.
+#
+# The values come from tr.tc000, where each expression is a real
+# top-level eval-bracket region.  Written inline inside cand() instead,
+# the expression sits in a function argument whose FCHECK opportunity is
+# already spent, so it cannot reproduce the defect -- an earlier draft
+# of this file passed with the fix reverted for exactly that reason.
+#
+&tr.tc001 test_disarm_fn=
+  @if cand(
+        strmatch(v(r.mid), x*add*y),
+        not(strmatch(v(r.mid), *3*)),
+        strmatch(v(r.end), head*add*)
+      )=
+  {
+    @log smoke=TC001: mid-region call stays literal. Succeeded.
+  },
+  {
+    @log smoke=TC001: mid-region call stays literal. Failed (mid=[v(r.mid)] end=[v(r.end)]).
+  }
+-
+#
+# Test Case #2 - The FIRST call in a region still dispatches.  Guards
+# the opposite direction, so a change that disarms everything cannot
+# pass by making TC001 trivially true.
+#
+&tr.tc002 test_disarm_fn=
+  @if cand(
+        strmatch(v(r.first), 3 tail),
+        eq(add(1,2), 3)
+      )=
+  {
+    @log smoke=TC002: first call still dispatches. Succeeded.
+  },
+  {
+    @log smoke=TC002: first call still dispatches. Failed (first=[v(r.first)]).
+  }
+-
+#
+# Test Case #3 - A bracket re-arms.  Each [...] is its own region, so a
+# call inside one evaluates even though an earlier call in the enclosing
+# text already consumed that region's opportunity.  This is the
+# player-facing case: prose is left alone, [brackets] are not.
+#
+&tr.tc003 test_disarm_fn=
+  @if cand(
+        strmatch(v(r.brk), x*add*7),
+        not(strmatch(v(r.brk), *3*7))
+      )=
+  {
+    @log smoke=TC003: brackets re-arm recognition. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: brackets re-arm recognition. Failed (mixed=[v(r.brk)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_disarm_fn=
+  @log smoke=End disarm test cases.;
+  @notify smoke
+-
+drop test_disarm_fn
+-
+#
+# End of Test Cases
+#
