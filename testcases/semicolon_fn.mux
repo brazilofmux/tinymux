@@ -1,0 +1,95 @@
+#
+# semicolon_fn.mux - Test Cases for semicolons inside expressions.
+#
+# A semicolon separates commands in a queued command list, but inside an
+# expression it is ordinary text.  hir_lower had no case for the
+# AST_SEMICOLON node, so it fell through to the default arm and compiled
+# to an empty string: every ';' inside a function argument silently
+# vanished on the compiled route, while the AST route and 2.13 kept it
+# (#1237).
+#
+#   [strcat(hello; world)]   ->  hello world     (was)
+#   [ansi(r,a;b)]            ->  ab              (was)
+#
+# Nothing involving a function call was needed to trigger it -- this was
+# ordinary prose losing a character, with no error and a plausible
+# result, which is the worst way for a defect to present.
+#
+# Two constraints shape this file:
+#
+#   * The expressions live in attributes set at FILE scope.  Written
+#     inside a tr.tc* body they would be split on the ';' when that
+#     command list executes, and the test would measure the splitter
+#     rather than the compiler.
+#   * The assertions never contain a literal ';' for the same reason.
+#     The character is pinned by code point (ord() == 59) and by length,
+#     which is stricter than a wildcard match anyway: a dropped ';'
+#     changes the length whether or not the shape still matches.
+#
+@create test_semicolon_fn
+-
+@set test_semicolon_fn=INHERIT QUIET
+-
+&fn.prose test_semicolon_fn=[strcat(hello; world)]
+-
+&fn.tight test_semicolon_fn=[strcat(a;b)]
+-
+&fn.alone test_semicolon_fn=[strcat(;)]
+-
+&fn.spaced test_semicolon_fn=[strcat(x ; y)]
+-
+&fn.arg2 test_semicolon_fn=[strcat(q,x;y)]
+-
+&tr.tc000 test_semicolon_fn=
+  @log smoke=Beginning semicolon test cases.
+-
+#
+# Test Case #1 - A semicolon survives inside a function argument.
+# "hello; world" is 12 characters; dropping the ';' gives 11.  The ord()
+# check pins which character it is, so a substitution would fail too.
+#
+&tr.tc001 test_semicolon_fn=
+  @if cand(
+        eq(strlen(u(me/fn.prose)), 12),
+        eq(ord(mid(u(me/fn.prose),5,1)), 59),
+        strmatch(u(me/fn.prose), hello*world)
+      )=
+  {
+    @log smoke=TC001: semicolon survives in an argument. Succeeded.
+  },
+  {
+    @log smoke=TC001: semicolon survives in an argument. Failed (len=[strlen(u(me/fn.prose))] want 12, got [u(me/fn.prose)]).
+  }
+-
+#
+# Test Case #2 - The same with no surrounding spaces, alone, spaced, and
+# in a second argument.  These are the shapes where a tokenizer is most
+# likely to treat ';' as structure rather than text.
+#
+&tr.tc002 test_semicolon_fn=
+  @if cand(
+        eq(strlen(u(me/fn.tight)), 3),
+        eq(ord(mid(u(me/fn.tight),1,1)), 59),
+        eq(strlen(u(me/fn.alone)), 1),
+        eq(ord(u(me/fn.alone)), 59),
+        eq(strlen(u(me/fn.spaced)), 5),
+        eq(strlen(u(me/fn.arg2)), 4)
+      )=
+  {
+    @log smoke=TC002: semicolon in tight and edge positions. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: semicolon in tight and edge positions. Failed (tight=[strlen(u(me/fn.tight))] alone=[strlen(u(me/fn.alone))] spaced=[strlen(u(me/fn.spaced))] arg2=[strlen(u(me/fn.arg2))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_semicolon_fn=
+  @log smoke=End semicolon test cases.;
+  @notify smoke
+-
+drop test_semicolon_fn
+-
+#
+# End of Test Cases
+#

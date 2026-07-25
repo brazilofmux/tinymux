@@ -3845,7 +3845,19 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                     const ASTNode *node) {
     switch (node->type) {
     case AST_LITERAL:
-    case AST_SPACE: {
+    case AST_SPACE:
+    // A semicolon is ordinary text here.  It separates commands in a
+    // queued command list, but inside an expression it is just a
+    // character, and ast_eval_node emits it as one (ast.cpp's
+    // AST_SEMICOLON arm).  Lowering had no case for it, so it fell to
+    // the default arm below and compiled to an empty string — every ';'
+    // inside a function argument silently disappeared on the compiled
+    // route while the AST route and 2.13 kept it (#1237):
+    //
+    //     [strcat(hello; world)]  ->  hello world
+    //     [ansi(r,a;b)]           ->  ab
+    //
+    case AST_SEMICOLON: {
         uint64_t addr = rc.pool_str(node->text);
         return h.emit_sconst(addr, node->text);
     }
