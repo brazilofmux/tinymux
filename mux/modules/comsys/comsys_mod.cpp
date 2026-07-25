@@ -387,6 +387,18 @@ bool CComsysMod::LoadChannelUsers(void)
             struct channel *ch = self->select_channel(channel_name);
             if (nullptr == ch) return;
 
+            // #1195: skip invalid dbrefs; object listeners are allowed.
+            //
+            if (nullptr != self->m_pIObjectInfo)
+            {
+                bool bValid = false;
+                self->m_pIObjectInfo->IsValid(who, &bValid);
+                if (!bValid)
+                {
+                    return;
+                }
+            }
+
             comuser cu;
             cu.who            = who;
             cu.bUserIsOn      = is_on;
@@ -814,6 +826,189 @@ bool CComsysMod::test_join_access(dbref player, struct channel *ch)
 }
 
 // ---------------------------------------------------------------------------
+// Policy helpers (#1194 / #1195).
+// ---------------------------------------------------------------------------
+
+bool CComsysMod::flag_set(dbref obj, int word, unsigned int bit)
+{
+    if (nullptr == m_pIObjectInfo)
+    {
+        return false;
+    }
+    unsigned int flags = 0;
+    if (MUX_FAILED(m_pIObjectInfo->GetFlags(obj, word, &flags)))
+    {
+        return false;
+    }
+    return (flags & bit) != 0;
+}
+
+bool CComsysMod::is_wizard(dbref obj)
+{
+    if (nullptr != m_pIPermissions)
+    {
+        bool b = false;
+        m_pIPermissions->IsWizard(obj, &b);
+        return b;
+    }
+    if (nullptr != m_pIObjectInfo)
+    {
+        bool b = false;
+        m_pIObjectInfo->IsWizard(obj, &b);
+        return b;
+    }
+    return false;
+}
+
+bool CComsysMod::is_gagged(dbref obj)
+{
+    return flag_set(obj, MOD_FLAG_WORD2, MOD_FLAG_GAGGED);
+}
+
+bool CComsysMod::is_hidden(dbref obj)
+{
+    // Engine Hidden(x) is (Flags(x) & DARK) — FLAG_WORD1.
+    //
+    return flag_set(obj, MOD_FLAG_WORD1, MOD_FLAG_DARK);
+}
+
+bool CComsysMod::is_guest(dbref obj)
+{
+    if (nullptr == m_pIObjectInfo)
+    {
+        return false;
+    }
+    unsigned int powers = 0;
+    if (MUX_FAILED(m_pIObjectInfo->GetPowers(obj, &powers)))
+    {
+        return false;
+    }
+    return (powers & MOD_POW_GUEST) != 0;
+}
+
+bool CComsysMod::undead_connected(dbref obj)
+{
+    // Engine UNDEAD(x): Good_obj && (not player || Connected).
+    //
+    if (nullptr == m_pIObjectInfo)
+    {
+        return false;
+    }
+    bool bValid = false;
+    m_pIObjectInfo->IsValid(obj, &bValid);
+    if (!bValid)
+    {
+        return false;
+    }
+    bool bPlayer = false;
+    m_pIObjectInfo->IsPlayer(obj, &bPlayer);
+    if (!bPlayer)
+    {
+        return true;
+    }
+    bool bConnected = false;
+    m_pIObjectInfo->IsConnected(obj, &bConnected);
+    return bConnected;
+}
+
+bool CComsysMod::pay_channel_charge(dbref player, struct channel *ch)
+{
+    if (nullptr == ch || 0 >= ch->charge)
+    {
+        return true;
+    }
+    if (nullptr == m_pIObjectInfo)
+    {
+        return true;
+    }
+
+    const int cost = is_guest(player) ? 0 : ch->charge;
+    bool bPaid = false;
+    if (MUX_FAILED(m_pIObjectInfo->PayFor(player, cost, &bPaid)) || !bPaid)
+    {
+        return false;
+    }
+    ch->amount_col += ch->charge;
+    sqlite_wt_channel(ch);
+    m_pIObjectInfo->GiveTo(ch->charge_who, ch->charge);
+    return true;
+}
+
+bool CComsysMod::blocked_by_mogrify(dbref player, struct channel *ch,
+    const UTF8 *arg2)
+{
+    // Engine call_mogrifier(MOGRIFY`BLOCK): non-empty result suppresses send.
+    //
+    if (  nullptr == ch
+       || ch->chan_obj < 0
+       || nullptr == m_pIAttributeAccess
+       || nullptr == m_pIEvaluator
+       || nullptr == arg2)
+    {
+        return false;
+    }
+
+    bool bValid = false;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->IsValid(ch->chan_obj, &bValid);
+    }
+    if (!bValid)
+    {
+        return false;
+    }
+
+    UTF8 atext[MOD_LBUF_SIZE];
+    atext[0] = '\0';
+    size_t nLen = 0;
+    // GOD executor so AF_DARK channel-object attrs are readable.
+    //
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(1, ch->chan_obj,
+        T("MOGRIFY`BLOCK"), atext, sizeof(atext) - 1, &nLen);
+    if (MUX_FAILED(mr) || 0 == nLen || '\0' == atext[0])
+    {
+        return false;
+    }
+
+    UTF8 chattype[2];
+    chattype[0] = (':' == arg2[0] || ';' == arg2[0]) ? arg2[0] : '"';
+    chattype[1] = '\0';
+
+    UTF8 sdrBuf[32];
+    snprintf(reinterpret_cast<char *>(sdrBuf), sizeof(sdrBuf), "#%d", player);
+
+    const UTF8 *pName = nullptr;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->GetName(player, &pName);
+    }
+    if (nullptr == pName)
+    {
+        pName = T("???");
+    }
+
+    const UTF8 *block_args[5] = {
+        chattype, ch->name, arg2, pName, sdrBuf
+    };
+
+    UTF8 result[MOD_LBUF_SIZE];
+    result[0] = '\0';
+    size_t nResult = 0;
+    mr = m_pIEvaluator->EvalWithArgs(ch->chan_obj, ch->chan_obj, player,
+        atext, block_args, 5, result, sizeof(result), &nResult);
+    if (MUX_FAILED(mr) || 0 == nResult || '\0' == result[0])
+    {
+        return false;
+    }
+
+    if (nullptr != m_pINotify)
+    {
+        m_pINotify->RawNotify(player, result);
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
 // Unsubscribe a player from a channel completely.
 // ---------------------------------------------------------------------------
 
@@ -912,14 +1107,29 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
 
     if (nullptr == user)
     {
-        // Create new user on channel.
+        // #1195: enforce membership cap like the engine.
         //
+        if (static_cast<int>(ch->users.size()) >= MAX_USERS_PER_CHANNEL)
+        {
+            if (nullptr != m_pINotify)
+            {
+                UTF8 msg[256];
+                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                         "Too many people on channel %s already.",
+                         reinterpret_cast<const char *>(ch->name));
+                m_pINotify->RawNotify(player, msg);
+            }
+            return;
+        }
+
         comuser cu;
         cu.who = player;
         cu.bUserIsOn = true;
         cu.ComTitleStatus = true;
         cu.bGagJoinLeave = false;
-        cu.bConnected = true;
+        // #1195: UNDEAD connection, not "always true".
+        //
+        cu.bConnected = undead_connected(player);
 
         auto result = ch->users.emplace(player, std::move(cu));
         user = &result.first->second;
@@ -944,8 +1154,13 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
         return;
     }
 
-    // Send join notification.
+    // Engine suppresses join announce for Hidden players.
     //
+    if (is_hidden(player))
+    {
+        return;
+    }
+
     const UTF8 *pName = nullptr;
     if (nullptr != m_pIObjectInfo)
     {
@@ -983,24 +1198,27 @@ void CComsysMod::do_leavechannel(dbref player, struct channel *ch)
 
     if (user->bUserIsOn)
     {
-        // Send leave notification before turning off.
+        // Engine suppresses leave announce for Hidden players.
         //
-        const UTF8 *pName = nullptr;
-        if (nullptr != m_pIObjectInfo)
+        if (!is_hidden(player))
         {
-            m_pIObjectInfo->GetMoniker(player, &pName);
-        }
-        if (nullptr == pName)
-        {
-            pName = T("???");
-        }
+            const UTF8 *pName = nullptr;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->GetMoniker(player, &pName);
+            }
+            if (nullptr == pName)
+            {
+                pName = T("???");
+            }
 
-        UTF8 msg[MOD_LBUF_SIZE];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "%s %s has left this channel.",
-                 reinterpret_cast<const char *>(ch->header),
-                 reinterpret_cast<const char *>(pName));
-        SendChannelMessage(player, ch, msg, true);
+            UTF8 msg[MOD_LBUF_SIZE];
+            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
+                     "%s %s has left this channel.",
+                     reinterpret_cast<const char *>(ch->header),
+                     reinterpret_cast<const char *>(pName));
+            SendChannelMessage(player, ch, msg, true);
+        }
 
         user->bUserIsOn = false;
         sqlite_wt_channel_user(ch->name, *user);
@@ -1018,30 +1236,83 @@ void CComsysMod::do_comwho(dbref player, struct channel *ch)
         return;
     }
 
-    UTF8 msg[256];
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "-- %s --", reinterpret_cast<const char *>(ch->name));
-    m_pINotify->RawNotify(player, msg);
+    // #1195: mirror engine do_comwho — players vs objects; filter Hidden
+    // unless Wizard_Who / See_Hidden.
+    //
+    bool bSeeHidden = false;
+    bool bWizardWho = false;
+    m_pIObjectInfo->SeeHidden(player, &bSeeHidden);
+    m_pIObjectInfo->WizardWho(player, &bWizardWho);
+    const bool bMaySeeHidden = bSeeHidden || bWizardWho;
 
-    int count = 0;
+    m_pINotify->RawNotify(player, T("-- Players --"));
+
+    for (auto &kv : ch->users)
+    {
+        comuser &user = kv.second;
+        bool bPlayer = false;
+        m_pIObjectInfo->IsPlayer(user.who, &bPlayer);
+        if (!bPlayer)
+        {
+            continue;
+        }
+
+        bool bConnected = false;
+        m_pIObjectInfo->IsConnected(user.who, &bConnected);
+        const bool bHidden = is_hidden(user.who);
+
+        if (bConnected && (!bHidden || bMaySeeHidden))
+        {
+            if (user.bUserIsOn)
+            {
+                const UTF8 *pName = nullptr;
+                m_pIObjectInfo->GetMoniker(user.who, &pName);
+                if (nullptr != pName)
+                {
+                    m_pINotify->RawNotify(player, pName);
+                }
+            }
+        }
+        else if (!bHidden)
+        {
+            // Stale presence — disconnect from this channel's view.
+            //
+            do_comdisconnectchannel(user.who, ch->name);
+        }
+    }
+
+    m_pINotify->RawNotify(player, T("-- Objects --"));
+
     for (auto &kv : ch->users)
     {
         const comuser &user = kv.second;
-        if (user.bConnected && user.bUserIsOn)
+        bool bPlayer = false;
+        m_pIObjectInfo->IsPlayer(user.who, &bPlayer);
+        if (bPlayer)
+        {
+            continue;
+        }
+
+        bool bGoing = false;
+        m_pIObjectInfo->IsGoing(user.who, &bGoing);
+        if (bGoing)
+        {
+            continue;
+        }
+        if (user.bUserIsOn)
         {
             const UTF8 *pName = nullptr;
             m_pIObjectInfo->GetMoniker(user.who, &pName);
             if (nullptr != pName)
             {
                 m_pINotify->RawNotify(player, pName);
-                count++;
             }
         }
     }
 
+    UTF8 msg[256];
     snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "-- %s -- %d connected", reinterpret_cast<const char *>(ch->name),
-             count);
+             "-- %s --", reinterpret_cast<const char *>(ch->name));
     m_pINotify->RawNotify(player, msg);
 }
 
@@ -1228,6 +1499,18 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         return;
     }
 
+    // #1194: Gagged (non-wizard) may not speak on channels.
+    //
+    if (is_gagged(player) && !is_wizard(player))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("GAGGED players may not speak on channels."));
+        }
+        return;
+    }
+
     // Check transmit access.
     //
     if (!test_transmit_access(player, ch))
@@ -1237,6 +1520,25 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
             m_pINotify->RawNotify(player,
                 T("That channel type cannot be transmitted on."));
         }
+        return;
+    }
+
+    // #1194: channel charge (payfor + giveto to charge_who).
+    //
+    if (!pay_channel_charge(player, ch))
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(player,
+                T("You don\xE2\x80\x99t have enough coins."));
+        }
+        return;
+    }
+
+    // #1194: MOGRIFY`BLOCK on the channel object.
+    //
+    if (blocked_by_mogrify(player, ch, arg2))
+    {
         return;
     }
 
@@ -3141,22 +3443,23 @@ void CComsysMod::shutdown(void)
 
 void CComsysMod::dbck(void)
 {
-    // Channel consistency checks:
-    // 1. Remove users whose dbrefs are no longer valid players.
+    // Channel consistency checks (#1195):
+    // 1. Prune users with invalid dbrefs only — object listeners stay.
     // 2. Reassign channel ownership if owner is gone.
-    // 3. Prune comsys entries for destroyed players.
+    // 3. Prune comsys alias rows for destroyed players.
     //
     for (auto &kv : m_channels)
     {
         struct channel *ch = kv.second.get();
 
-        // Prune users that are no longer valid players.
-        //
         for (auto it = ch->users.begin(); it != ch->users.end(); )
         {
-            bool bPlayer = false;
-            m_pIObjectInfo->IsPlayer(it->second.who, &bPlayer);
-            if (!bPlayer)
+            bool bValid = false;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->IsValid(it->second.who, &bValid);
+            }
+            if (!bValid)
             {
                 it = ch->users.erase(it);
             }
@@ -3166,25 +3469,24 @@ void CComsysMod::dbck(void)
             }
         }
 
-        // If the channel owner is no longer a valid player, reassign to GOD.
-        //
-        if (ch->charge_who != NOTHING)
+        if (ch->charge_who != NOTHING && nullptr != m_pIObjectInfo)
         {
-            bool bPlayer = false;
-            m_pIObjectInfo->IsPlayer(ch->charge_who, &bPlayer);
-            if (!bPlayer)
+            bool bValid = false;
+            m_pIObjectInfo->IsValid(ch->charge_who, &bValid);
+            if (!bValid)
             {
                 ch->charge_who = 1; // GOD
             }
         }
     }
 
-    // Prune comsys entries for players that no longer exist.
-    //
     for (auto it = m_comsys.begin(); it != m_comsys.end(); )
     {
         bool bPlayer = false;
-        m_pIObjectInfo->IsPlayer(it->first, &bPlayer);
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->IsPlayer(it->first, &bPlayer);
+        }
         if (!bPlayer)
         {
             it = m_comsys.erase(it);

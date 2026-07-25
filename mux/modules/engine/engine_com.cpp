@@ -856,6 +856,8 @@ public:
     virtual MUX_RESULT SetFlags(dbref obj, int word, unsigned int flags);
     virtual MUX_RESULT GetPowers(dbref obj, unsigned int *pPowers);
     virtual MUX_RESULT GetPennies(dbref obj, int *pPennies);
+    virtual MUX_RESULT PayFor(dbref who, int cost, bool *pPaid);
+    virtual MUX_RESULT GiveTo(dbref who, int amount);
     virtual MUX_RESULT GetPureName(dbref obj, const UTF8 **ppName);
     virtual MUX_RESULT DecodeFlags(dbref player, dbref obj, UTF8 **ppStr);
 
@@ -1107,6 +1109,35 @@ MUX_RESULT CObjectInfo::GetPennies(dbref obj, int *pPennies)
         return MUX_E_INVALIDARG;
     }
     *pPennies = Pennies(obj);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::PayFor(dbref who, int cost, bool *pPaid)
+{
+    if (nullptr == pPaid)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *pPaid = false;
+    if (!Good_obj(who))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    // payfor() is wizard/free-money aware and debits Owner(who).
+    //
+    *pPaid = payfor(who, cost);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::GiveTo(dbref who, int amount)
+{
+    if (!Good_obj(who))
+    {
+        return MUX_E_INVALIDARG;
+    }
+    // giveto() no-ops for wizards/free-money holders.
+    //
+    giveto(who, amount);
     return MUX_S_OK;
 }
 
@@ -1633,6 +1664,9 @@ public:
     virtual MUX_RESULT Eval(dbref executor, dbref caller, dbref enactor,
         const UTF8 *pExpr, UTF8 *pResult, size_t nResultMax,
         size_t *pnResultLen);
+    virtual MUX_RESULT EvalWithArgs(dbref executor, dbref caller, dbref enactor,
+        const UTF8 *pExpr, const UTF8 *args[], int nargs,
+        UTF8 *pResult, size_t nResultMax, size_t *pnResultLen);
 
     CEvaluator(void);
     virtual ~CEvaluator();
@@ -1722,6 +1756,61 @@ MUX_RESULT CEvaluator::Eval(dbref executor, dbref caller, dbref enactor,
     size_t nExpr = strlen((const char *)pExpr);
     mux_exec(pExpr, nExpr, buf, &bufc, executor, caller, enactor,
              EV_FCHECK | EV_STRIP_CURLY | EV_EVAL, nullptr, 0);
+    *bufc = '\0';
+
+    size_t nLen = bufc - buf;
+    if (nLen >= nResultMax)
+    {
+        nLen = nResultMax - 1;
+    }
+    memcpy(pResult, buf, nLen);
+    pResult[nLen] = '\0';
+
+    if (nullptr != pnResultLen)
+    {
+        *pnResultLen = nLen;
+    }
+    return MUX_S_OK;
+}
+
+MUX_RESULT CEvaluator::EvalWithArgs(dbref executor, dbref caller, dbref enactor,
+    const UTF8 *pExpr, const UTF8 *args[], int nargs,
+    UTF8 *pResult, size_t nResultMax, size_t *pnResultLen)
+{
+    if (nullptr == pExpr || nullptr == pResult || 0 == nResultMax)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    if (nargs < 0 || (nargs > 0 && nullptr == args))
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    if (!Good_obj(executor))
+    {
+        pResult[0] = '\0';
+        if (nullptr != pnResultLen)
+        {
+            *pnResultLen = 0;
+        }
+        return MUX_E_INVALIDARG;
+    }
+    if (!Good_obj(caller))
+    {
+        caller = executor;
+    }
+    if (!Good_obj(enactor))
+    {
+        enactor = executor;
+    }
+
+    // Match call_mogrifier: EV_FCHECK|EV_EVAL|EV_TOP with %0..%n-1.
+    //
+    LBuf buf = LBuf_Src("EvalWithArgs");
+    UTF8 *bufc = buf;
+    size_t nExpr = strlen(reinterpret_cast<const char *>(pExpr));
+    mux_exec(pExpr, nExpr, buf, &bufc, executor, caller, enactor,
+             EV_FCHECK | EV_EVAL | EV_TOP, args, nargs);
     *bufc = '\0';
 
     size_t nLen = bufc - buf;

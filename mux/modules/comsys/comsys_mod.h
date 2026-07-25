@@ -82,6 +82,14 @@ const MUX_CID CID_ComsysMod = UINT64_C(0x00000002C5A2F193);
 
 #define MAX_COST        32767
 #define MOD_LBUF_SIZE   8000
+// Mirrored from comsys.h / flags.h for module-side policy (#1194/#1195).
+//
+#define MAX_USERS_PER_CHANNEL 1000000
+#define MOD_FLAG_WORD1  0
+#define MOD_FLAG_WORD2  1
+#define MOD_FLAG_DARK   0x00000040u
+#define MOD_FLAG_GAGGED 0x00040000u
+#define MOD_POW_GUEST   0x02000000u
 
 // Per-player alias entry — pairs an alias string with its channel name.
 //
@@ -203,6 +211,18 @@ private:
     void do_delcomchannel(dbref player, const UTF8 *channel, bool bQuiet);
     void do_comlast(dbref player, struct channel *ch, int arg);
     void sort_com_aliases(comsys_t &c);
+
+    // Policy helpers (#1194 / #1195) — flag/money/eval via COM.
+    //
+    bool flag_set(dbref obj, int word, unsigned int bit);
+    bool is_wizard(dbref obj);
+    bool is_gagged(dbref obj);
+    bool is_hidden(dbref obj);
+    bool is_guest(dbref obj);
+    bool undead_connected(dbref obj);
+    bool pay_channel_charge(dbref player, struct channel *ch);
+    bool blocked_by_mogrify(dbref player, struct channel *ch,
+        const UTF8 *arg2);
 
 public:
     // mux_IUnknown
