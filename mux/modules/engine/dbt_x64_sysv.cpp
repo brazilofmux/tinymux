@@ -1220,6 +1220,16 @@ void dbt_backend_backpatch_jmp(uint8_t *code_buf, uint32_t jmp_disp_offset,
     memcpy(code_buf + jmp_disp_offset, &disp, 4);
 }
 
+uint32_t dbt_backend_decode_jmp_target(const uint8_t *code_buf,
+                                        uint32_t jmp_disp_offset) {
+    // rel32: the displacement is in bytes and is measured from the end
+    // of the displacement field.
+    //
+    int32_t disp;
+    memcpy(&disp, code_buf + jmp_disp_offset, 4);
+    return jmp_disp_offset + 4 + static_cast<uint32_t>(disp);
+}
+
 // ---------------------------------------------------------------
 // Block exit helpers
 // ---------------------------------------------------------------

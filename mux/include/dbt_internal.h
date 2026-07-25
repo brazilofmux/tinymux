@@ -220,4 +220,18 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc);
 void dbt_backend_backpatch_jmp(uint8_t *code_buf, uint32_t patch_offset,
                                 uint8_t *target);
 
+// Read back where a patch site currently branches to, as a code-buffer
+// offset.  The inverse of dbt_backend_backpatch_jmp, and platform
+// specific for the same reason: x86-64 stores a rel32 measured from the
+// end of the displacement, AArch64 a B imm26 in words measured from the
+// instruction itself.
+//
+// dbt_resolve_chains used to decode the site as rel32 unconditionally,
+// so on AArch64 it compared a B imm26 word against a byte displacement.
+// Sites never matched their stub offset and were all counted
+// already_ok, leaving that pass unable to resolve anything (#1152).
+//
+uint32_t dbt_backend_decode_jmp_target(const uint8_t *code_buf,
+                                        uint32_t patch_offset);
+
 #endif // DBT_INTERNAL_H
