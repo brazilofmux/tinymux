@@ -333,9 +333,30 @@ static void hir_insert_phis(hir_program &h, dom_frontiers &dfr) {
                     if (phi >= 0) {
                         h.blk[phi] = df_b;
                         // Reserve slots: each predecessor will add one arg.
+                        //
+                        // A failed reserve must overflow the program, not
+                        // silently do nothing (#1149).  emit_phi's own
+                        // capacity guard cannot catch this: SSA calls it
+                        // with nargs == 0, so `n_pargs + 0 > HIR_MAX_PARGS`
+                        // is false and it returns a PHI with
+                        // pbase == n_pargs.  If the reservation below is
+                        // then skipped, n_pargs does not advance and the
+                        // NEXT PHI at this block receives the SAME pbase.
+                        // Rename fill writes at pbase[i] + pnargs[i], so
+                        // the two PHIs interleave into each other's
+                        // arguments and the compile can still succeed —
+                        // with a PHI reading a sibling's value.
+                        //
+                        // h.overflowed is the established way out: the
+                        // compiler bails and the AST evaluator handles the
+                        // expression (#859).
+                        //
                         int reserve = h.n_pred[df_b];
                         if (h.n_pargs + reserve <= HIR_MAX_PARGS) {
                             h.n_pargs += reserve;
+                        } else {
+                            h.overflowed = true;
+                            return;
                         }
                     }
 

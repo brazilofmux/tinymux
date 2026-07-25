@@ -1097,6 +1097,19 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
             printf("Phase 2: SSA Construction\n");
             hir_dump(h);
         }
+
+        // SSA construction can exhaust capacity on its own, and the
+        // check at the end of lowering (above) has already run by this
+        // point.  hir_insert_phis() sets overflowed when it cannot
+        // reserve parg slots (#1149), and the emit()/emit_phi() guards
+        // in hir.h fire from here too.  Without this check the flag is
+        // written and never read: renaming and codegen proceed over a
+        // program whose PHI insertion stopped partway.
+        //
+        if (h.overflowed) {
+            s_jit_stats.compile_fail++;
+            return prog;  // prog.ok is still false
+        }
     }
 
     // Phase 3: SSA optimization (constant fold, copy prop, DCE).
