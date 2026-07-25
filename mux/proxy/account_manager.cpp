@@ -10,7 +10,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <random>
 
 #if defined(_WIN32)
 #include <io.h>
@@ -31,23 +30,37 @@
 // PBKDF2-HMAC-SHA256 with a $pbkdf2$ prefix.  The verify path checks
 // the prefix to pick the right algorithm.
 
+// #1098: map CSPRNG bytes into a crypt(3)/PBKDF2 salt alphabet.
+static std::string randomCharset(size_t n, const char* charset, size_t charsetLen) {
+    std::string out;
+    out.reserve(n);
+    std::vector<uint8_t> raw(n);
+    randomBytes(raw.data(), n);
+    for (size_t i = 0; i < n; i++) {
+        out.push_back(charset[raw[i] % charsetLen]);
+    }
+    return out;
+}
+
 static std::string generateSalt() {
     static const char charset[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789./";
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dist(0, sizeof(charset) - 2);
+    constexpr size_t charsetLen = sizeof(charset) - 1;
 
 #if defined(_WIN32)
     std::string salt = "$pbkdf2$";
 #else
     std::string salt = "$6$";  // SHA-512
 #endif
-    for (int i = 0; i < 16; i++) {
-        salt += charset[dist(gen)];
-    }
+    salt += randomCharset(16, charset, charsetLen);
     salt += '$';
     return salt;
+}
+
+static std::string generateSbSalt() {
+    static const char charset[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    return randomCharset(16, charset, sizeof(charset) - 1);
 }
 
 static std::string bytesToHex(const uint8_t* data, size_t len) {
@@ -214,16 +227,8 @@ bool AccountManager::createAccount(const std::string& username,
         return false;
     }
 
-    // Generate scroll-back key salt (random string)
-    std::string sbSalt;
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dist(0, 61);
-        static const char c[] =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        for (int i = 0; i < 16; i++) sbSalt += c[dist(gen)];
-    }
+    // Generate scroll-back key salt (CSPRNG, #1098)
+    std::string sbSalt = generateSbSalt();
 
     int flags = admin ? 1 : 0;
 
@@ -321,16 +326,8 @@ bool AccountManager::changePassword(uint32_t accountId,
         return false;
     }
 
-    // Generate new scroll-back key salt
-    std::string sbSalt;
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<> dist(0, 61);
-        static const char c[] =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        for (int i = 0; i < 16; i++) sbSalt += c[dist(gen)];
-    }
+    // Generate new scroll-back key salt (CSPRNG, #1098)
+    std::string sbSalt = generateSbSalt();
 
     sqlite3_stmt* stmt = nullptr;
     const char* sql =

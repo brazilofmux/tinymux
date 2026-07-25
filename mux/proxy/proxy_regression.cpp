@@ -333,6 +333,50 @@ void testWebSocketCloseDelivered() {
            "client CLOSE should echo close response");
 }
 
+// #1095: RSV bits must force protocol close.
+void testWebSocketRsvRejected() {
+    WsState ws;
+    std::string responses;
+    // FIN+TEXT with RSV1 set, masked, empty payload.
+    const std::string frame = bytes({0xC1, 0x80, 0x00, 0x00, 0x00, 0x00});
+    auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+    expect(messages.size() == 1 && messages[0].opcode == WS_OP_CLOSE,
+           "RSV frame should deliver CLOSE");
+    expect(responses == wsCloseFrame(1002),
+           "RSV frame should trigger protocol-error close");
+}
+
+// #1095: control frames cannot use extended length (large PING → PONG).
+void testWebSocketLargePingRejected() {
+    WsState ws;
+    std::string responses;
+    // FIN+PING, mask, len=126 (illegal for control).
+    const std::string frame = bytes({0x89, 0xFE, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00});
+    auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+    expect(messages.size() == 1 && messages[0].opcode == WS_OP_CLOSE,
+           "ext-len PING should deliver CLOSE");
+    expect(responses == wsCloseFrame(1002),
+           "ext-len PING should trigger protocol-error close");
+}
+
+// #1101: unbounded SB reassembly must trip the cap.
+void testTelnetSbCap() {
+    TelnetParseState state;
+    std::string regular;
+    std::vector<TelnetGmcpMessage> gmcp;
+    TelnetSignals signals;
+
+    // IAC SB GMCP then flood payload without SE.
+    std::string flood = bytes({0xff, 0xfa, 0xc9});
+    flood.append(TELNET_SB_MAX + 64, 'X');
+    splitTelnetStream(flood.data(), flood.size(), state, regular, gmcp, signals);
+    expect(state.sbOverflow, "SB flood should set sbOverflow");
+    expect(state.state == TelnetParseState::Normal,
+           "SB overflow should reset parser to Normal");
+    expect(state.gmcpBuf.empty(), "SB overflow should clear gmcpBuf");
+    expect(gmcp.empty(), "incomplete GMCP after overflow must not deliver");
+}
+
 } // namespace
 
 int main() {
@@ -349,6 +393,9 @@ int main() {
     testWebSocketExtLenMaskKey();
     testWebSocketExtLen64MaskKey();
     testWebSocketCloseDelivered();
+    testWebSocketRsvRejected();
+    testWebSocketLargePingRejected();
+    testTelnetSbCap();
     std::cout << "proxy_regression: ok\n";
     return 0;
 }

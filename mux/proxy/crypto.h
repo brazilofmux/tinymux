@@ -30,6 +30,7 @@ bool aeadDecrypt(const uint8_t* key, size_t keyLen,
                  std::vector<uint8_t>& plaintextOut);
 
 // Generate n cryptographically secure random bytes.
+// Hard-fails (abort) if the CSPRNG cannot produce bytes (#1098).
 void randomBytes(uint8_t* buf, size_t n);
 
 // Compute key_id: hex of first 8 bytes of SHA-256(key).

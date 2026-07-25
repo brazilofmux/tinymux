@@ -125,6 +125,9 @@ struct HydraSession {
         int linkNumber;         // 1-based
     };
 
+    // #1096: cap per-subscriber queues so a slow gRPC/WS client cannot OOM.
+    static constexpr size_t MAX_SUBSCRIBER_QUEUE = 256;
+
     // Per-subscriber queue — each subscriber holds a shared_ptr to one.
     struct SubscriberQueue {
         std::queue<OutputItem> output;
@@ -163,6 +166,9 @@ struct HydraSession {
         void pushOutput(OutputItem item) {
             for (auto& [id, sq] : subscribers) {
                 if (sq->wantsOutput) {
+                    while (sq->output.size() >= MAX_SUBSCRIBER_QUEUE) {
+                        sq->output.pop();
+                    }
                     sq->output.push(item);
                 }
             }
@@ -173,6 +179,9 @@ struct HydraSession {
         void pushGmcp(GmcpItem item) {
             for (auto& [id, sq] : subscribers) {
                 if (sq->wantsGmcp) {
+                    while (sq->gmcp.size() >= MAX_SUBSCRIBER_QUEUE) {
+                        sq->gmcp.pop();
+                    }
                     sq->gmcp.push(item);
                 }
             }
@@ -295,8 +304,10 @@ public:
     HydraSession* findByPersistId(const std::string& persistId);
 
     // Authenticate and create/resume a session. Returns persistId, or empty on failure.
+    // clientIp participates in failed-login lockout (#1097); empty skips lockout.
     std::string authenticateAndGetSession(const std::string& username,
-                                          const std::string& password);
+                                          const std::string& password,
+                                          const std::string& clientIp = "");
 
     // Create account and auto-login. Returns persistId, or empty on failure.
     // clientIp is used for rate-limiting (empty = no rate check).
@@ -419,6 +430,15 @@ private:
     // Per-connection write buffers for non-blocking I/O.
     // Data lands here only when ::send() returns EAGAIN/partial.
     // Offset tracking avoids O(n) erase on partial writes.
+    // #1096: close the front-door when the buffer would exceed this cap.
+    static constexpr size_t MAX_WRITE_BUFFER = 256 * 1024;
+
+    // #1100: upper bound on scrollback_lines.  The value feeds ScrollBack's
+    // up-front buffer_.resize(cap), so an out-of-range config (a negative
+    // parsed to SIZE_MAX, or an absurd value) would OOM/throw one vector per
+    // session.  ~1M lines is far above any sane setting and safely finite.
+    static constexpr size_t MAX_SCROLLBACK_LINES = 1000000;
+
     struct WriteBuffer {
         std::string data;
         size_t offset{0};
@@ -431,6 +451,11 @@ private:
         void reset() { data.clear(); offset = 0; }
     };
     std::unordered_map<ganl::ConnectionHandle, WriteBuffer> writeBuffers_;
+
+    // Build a ScrollBack sized from config_.scrollbackLines (#1100).
+    ScrollBack makeScrollback() const;
+    // Count in-memory sessions for an account (#1100).
+    size_t countSessionsForAccount(uint32_t accountId) const;
 
     TelnetBridge bridge_;
     ProcessManager procMgr_;

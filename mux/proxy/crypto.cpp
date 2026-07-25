@@ -2,6 +2,8 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 bool aeadEncrypt(const uint8_t* key, size_t keyLen,
@@ -113,7 +115,17 @@ bool aeadDecrypt(const uint8_t* key, size_t keyLen,
 }
 
 void randomBytes(uint8_t* buf, size_t n) {
-    RAND_bytes(buf, static_cast<int>(n));
+    // #1098: never ignore CSPRNG failure — weak/uninitialized tokens and
+    // AEAD nonces are worse than a hard process exit.
+    if (n == 0) {
+        return;
+    }
+    if (RAND_bytes(buf, static_cast<int>(n)) != 1) {
+        // OpenSSL failed to produce cryptographically secure bytes.
+        fprintf(stderr, "hydra: RAND_bytes failed — aborting\n");
+        fflush(stderr);
+        abort();
+    }
 }
 
 std::string computeKeyId(const std::vector<uint8_t>& key) {

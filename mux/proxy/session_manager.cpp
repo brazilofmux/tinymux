@@ -259,11 +259,25 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
         return;
     }
 
+    // #1096: helper — append at most up to MAX_WRITE_BUFFER; on overflow
+    // close the slow front-door (session itself is kept).
+    auto appendCapped = [&](WriteBuffer& wb, const char* p, size_t n) -> bool {
+        if (wb.remaining() + n > MAX_WRITE_BUFFER) {
+            LOG_WARN("safeWrite: write buffer cap (%zu) exceeded on fd %lu — closing",
+                     MAX_WRITE_BUFFER, (unsigned long)handle);
+            writeBuffers_.erase(handle);
+            engine_.closeConnection(handle);
+            return false;
+        }
+        wb.append(p, n);
+        return true;
+    };
+
     // If there is already buffered data for this connection, append and
     // let drainWriteBuffer send it in order.
     auto it = writeBuffers_.find(handle);
     if (it != writeBuffers_.end() && !it->second.empty()) {
-        it->second.append(data, len);
+        (void)appendCapped(it->second, data, len);
         return;
     }
 
@@ -276,7 +290,9 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
             // Socket not ready — buffer everything and arm EPOLLOUT.
             auto& wb = writeBuffers_[handle];
             wb.reset();
-            wb.append(data, len);
+            if (!appendCapped(wb, data, len)) {
+                return;
+            }
             ganl::ErrorCode err = 0;
             engine_.postWrite(handle, nullptr, 0, err);
         } else {
@@ -290,7 +306,9 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
         // Partial write — buffer the remainder and arm EPOLLOUT.
         auto& wb = writeBuffers_[handle];
         wb.reset();
-        wb.append(data + n, len - n);
+        if (!appendCapped(wb, data + n, len - n)) {
+            return;
+        }
         ganl::ErrorCode err = 0;
         engine_.postWrite(handle, nullptr, 0, err);
     }
@@ -675,6 +693,17 @@ void SessionManager::handleFrontDoorPlainData(FrontDoorState& fd,
     std::vector<TelnetGmcpMessage> gmcpMsgs;
     TelnetSignals signals;
     splitTelnetStream(data, len, fd.telnetState, regular, gmcpMsgs, signals);
+
+    // #1101: an IAC SB reassembly that overruns TELNET_SB_MAX trips sbOverflow
+    // (the parser was already reset to stop unbounded growth).  Tear the
+    // connection down — leaving it open lets the post-reset flood bytes desync
+    // into the regular stream and lets the abuser repeat.  Do not touch fd
+    // after closeConnection (its close callback may free it).
+    if (fd.telnetState.sbOverflow) {
+        LOG_WARN("front-door telnet SB reassembly overflow; closing connection");
+        engine_.closeConnection(fd.handle);
+        return;
+    }
 
     // Track client GMCP capability
     if (signals.sawWillGmcp || signals.sawDoGmcp) {
@@ -1136,6 +1165,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
                         session.persistId = generatePersistId();
                         session.dbPersistId = session.persistId;
                         session.tokenCreated = session.created;
+                        session.scrollback = makeScrollback();
                         session.frontDoors.push_back(fd.handle);
 
                         fd.internalSessionId = session.internalId;
@@ -1310,6 +1340,7 @@ void SessionManager::handleLogin(FrontDoorState& fd,
             session.persistId = generatePersistId();
             session.dbPersistId = session.persistId;
             session.tokenCreated = session.created;
+            session.scrollback = makeScrollback();
             session.frontDoors.push_back(fd.handle);
 
             fd.internalSessionId = session.internalId;
@@ -1601,13 +1632,31 @@ void SessionManager::dispatchCommand(HydraSession& session,
                 "Password changes require a TLS connection.\r\n");
             return;
         }
-        if (args.empty()) {
-            sendToClient(fdHandle, "Usage: /passwd <newpassword>\r\n");
+        // #1097: require current password so a stolen session cannot take over.
+        size_t sp = args.find(' ');
+        if (args.empty() || sp == std::string::npos || sp == 0 ||
+            sp + 1 >= args.size()) {
+            sendToClient(fdHandle,
+                "Usage: /passwd <oldpassword> <newpassword>\r\n");
+            return;
+        }
+        std::string oldPassword = args.substr(0, sp);
+        std::string newPassword = args.substr(sp + 1);
+        // Trim leading spaces on new password only (allow spaces in new? no — first word)
+        while (!newPassword.empty() && newPassword[0] == ' ') {
+            newPassword.erase(newPassword.begin());
+        }
+        // If new password has more spaces, keep rest as part of password.
+        std::vector<uint8_t> checkKey;
+        uint32_t authId = accounts_.authenticate(
+            session.username, oldPassword, checkKey);
+        if (authId == 0 || authId != session.accountId) {
+            sendToClient(fdHandle, "Password change failed: wrong password.\r\n");
             return;
         }
         std::vector<uint8_t> newKey;
         std::string errorMsg;
-        if (accounts_.changePassword(session.accountId, args,
+        if (accounts_.changePassword(session.accountId, newPassword,
                                       session.scrollbackKey,
                                       newKey, errorMsg)) {
             session.scrollbackKey = newKey;
@@ -1920,6 +1969,15 @@ void SessionManager::onBackDoorData(ganl::ConnectionHandle bdHandle,
     std::vector<TelnetGmcpMessage> gmcpMsgs;
     TelnetSignals signals;
     splitTelnetStream(data, len, link->telnetState, regular, gmcpMsgs, signals, true);
+
+    // #1101: same SB-overflow guard as the front-door — drop the misbehaving
+    // back-door link rather than desync its stream.  Do not touch link/session
+    // after closeConnection (onBackDoorClose may invalidate them).
+    if (link->telnetState.sbOverflow) {
+        LOG_WARN("back-door telnet SB reassembly overflow; closing link");
+        engine_.closeConnection(bdHandle);
+        return;
+    }
 
     // Track GMCP capability on the back-door link
     if (signals.sawWillGmcp || signals.sawDoGmcp) {
@@ -2416,6 +2474,34 @@ std::string SessionManager::generatePersistId() {
     return id;
 }
 
+ScrollBack SessionManager::makeScrollback() const {
+    // #1100: honor scrollback_lines from config (default 10000).  Clamp both
+    // ends: 0 -> default, and anything above MAX_SCROLLBACK_LINES down to it,
+    // since cap feeds ScrollBack's up-front buffer_.resize(cap) — a negative
+    // scrollback_lines parses to SIZE_MAX and would OOM one vector per session.
+    size_t cap = config_.scrollbackLines;
+    if (cap == 0) {
+        cap = 10000;
+    }
+    if (cap > MAX_SCROLLBACK_LINES) {
+        LOG_WARN("scrollback_lines %zu exceeds max %zu; clamping",
+                 cap, MAX_SCROLLBACK_LINES);
+        cap = MAX_SCROLLBACK_LINES;
+    }
+    return ScrollBack(cap);
+}
+
+size_t SessionManager::countSessionsForAccount(uint32_t accountId) const {
+    size_t n = 0;
+    for (const auto& [id, sess] : sessions_) {
+        (void)id;
+        if (sess.accountId == accountId) {
+            ++n;
+        }
+    }
+    return n;
+}
+
 void SessionManager::flushSession(HydraSession& session) {
     // Use dbPersistId for SQLite operations — persistId may have been
     // rotated in-memory without updating the database row.
@@ -2482,6 +2568,7 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     session.persistId = saved.persistId;
     session.dbPersistId = session.persistId;
     session.tokenCreated = time(nullptr);
+    session.scrollback = makeScrollback();
     session.frontDoors.push_back(fd.handle);
 
     int loaded = session.scrollback.loadFromDb(
@@ -2590,12 +2677,25 @@ HydraSession* SessionManager::findByPersistId(const std::string& persistId) {
 }
 
 std::string SessionManager::authenticateAndGetSession(
-    const std::string& username, const std::string& password) {
+    const std::string& username, const std::string& password,
+    const std::string& clientIp) {
+    // #1097: apply the same failed-login lockout as the telnet front-door.
+    if (!clientIp.empty() && isLockedOut(clientIp)) {
+        authFailuresTotal_.fetch_add(1);
+        return "";
+    }
+
     std::vector<uint8_t> sbKey;
     uint32_t accountId = accounts_.authenticate(username, password, sbKey);
     if (accountId == 0) {
         authFailuresTotal_.fetch_add(1);
+        if (!clientIp.empty()) {
+            recordLoginFailure(clientIp);
+        }
         return "";
+    }
+    if (!clientIp.empty()) {
+        clearLoginFailures(clientIp);
     }
 
     // Check for existing in-memory session
@@ -2653,6 +2753,7 @@ std::string SessionManager::authenticateAndGetSession(
         session.persistId = saved.persistId;
         session.dbPersistId = session.persistId;
         session.tokenCreated = session.created;
+        session.scrollback = makeScrollback();
 
         session.scrollback.loadFromDb(
             accounts_.db(), saved.persistId, accountId, sbKey);
@@ -2671,7 +2772,23 @@ std::string SessionManager::authenticateAndGetSession(
         LOG_INFO("Session %lu (%s) restored via gRPC for '%s' (%zu links)",
                  (unsigned long)sessId, saved.persistId.c_str(),
                  username.c_str(), savedLinks.size());
-        return saved.persistId;
+        return sessions_[sessId].persistId;
+    }
+
+    // #1100: one session per account is STRUCTURAL.  The reuse-existing loop
+    // and the restore-saved-session path above collapse any re-login for an
+    // account onto its single session, so countSessionsForAccount(accountId)
+    // is always 0 here.  This guard is therefore a defense-in-depth backstop
+    // (fires only if a duplicate ever slips past reuse), NOT a tunable policy:
+    // max_sessions_per_account > 1 cannot produce multiple concurrent sessions
+    // under the current model — multiple game *connections* per account are
+    // links within the one session, not separate sessions.  (Same invariant
+    // holds on the telnet front-door path, which reuses identically.)
+    if (config_.maxSessionsPerAccount > 0 &&
+        countSessionsForAccount(accountId) >=
+            static_cast<size_t>(config_.maxSessionsPerAccount)) {
+        LOG_WARN("max_sessions_per_account reached for account %u", accountId);
+        return "";
     }
 
     // New session
@@ -2685,13 +2802,15 @@ std::string SessionManager::authenticateAndGetSession(
     session.persistId = generatePersistId();
     session.dbPersistId = session.persistId;
     session.tokenCreated = session.created;
+    session.scrollback = makeScrollback();
 
     std::string pid = session.persistId;
-    sessions_[session.internalId] = std::move(session);
-    indexSession(sessions_[nextSessionId_ - 1]);
+    HydraSessionId sessId = session.internalId;
+    sessions_[sessId] = std::move(session);
+    indexSession(sessions_[sessId]);
 
     LOG_INFO("Session %lu (%s) created via gRPC for '%s'",
-             (unsigned long)(nextSessionId_ - 1), pid.c_str(),
+             (unsigned long)sessId, pid.c_str(),
              username.c_str());
     return pid;
 }
@@ -2716,8 +2835,8 @@ std::string SessionManager::createAccountAndGetSession(
         recordAccountCreate(clientIp);
     }
 
-    // Auto-login
-    return authenticateAndGetSession(username, password);
+    // Auto-login (pass clientIp so lockout bookkeeping stays consistent)
+    return authenticateAndGetSession(username, password, clientIp);
 }
 
 // ---- OutputItem rendering ----
@@ -2932,6 +3051,31 @@ std::string SessionManager::renderPrometheusMetrics() {
     return out.str();
 }
 
+// #1102: clientIp is "host:port" (IPv4) or "[host]:port" (IPv6) from
+// NetworkAddress::toString(), or a bare host from the gRPC peer parse.  A
+// naive `ip == "127.0.0.1"` never matches (the ":port" suffix), and IPv6
+// "[::1]:port" matched nothing at all.  Extract the host and test loopback.
+static bool isLoopbackClientIp(const std::string& clientIp) {
+    std::string host = clientIp;
+    if (!host.empty() && host.front() == '[') {
+        // "[v6]:port" -> "v6"
+        const auto rb = host.find(']');
+        host = (rb == std::string::npos) ? host.substr(1)
+                                         : host.substr(1, rb - 1);
+    } else {
+        // Strip a trailing ":port" only when there is exactly one colon; a
+        // bare, unbracketed IPv6 literal has several colons and no port.
+        const auto first = host.find(':');
+        if (first != std::string::npos && first == host.rfind(':')) {
+            host = host.substr(0, first);
+        }
+    }
+    return host == "127.0.0.1" || host == "::1" || host == "localhost"
+        || host.rfind("127.", 0) == 0                 // 127.0.0.0/8
+        || host == "::ffff:127.0.0.1"
+        || host.rfind("::ffff:127.", 0) == 0;         // v4-mapped loopback
+}
+
 void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     HttpRequest req;
     if (!parseHttpRequest(fd.httpBuf, req)) return;  // incomplete
@@ -2948,6 +3092,16 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     }
 
     if (req.path == "/metrics") {
+        // #1102: metrics are recon-useful — only serve to loopback peers.
+        if (!isLoopbackClientIp(fd.clientIp)) {
+            std::string resp = "HTTP/1.1 403 Forbidden\r\n"
+                               "Content-Type: text/plain\r\n"
+                               "Content-Length: 10\r\n"
+                               "\r\nForbidden\n";
+            safeWrite(fd.handle, resp);
+            fd.httpBuf.clear();
+            return;
+        }
         std::string body = renderPrometheusMetrics();
         std::string resp = "HTTP/1.1 200 OK\r\n"
                            "Content-Type: text/plain; version=0.0.4\r\n"
@@ -3021,24 +3175,30 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
     // ---- Dispatch RPCs ----
 
     if (method == "ListGames") {
-        hydra::GameList resp;
-        for (const auto& game : config_.games) {
-            auto* gi = resp.add_games();
-            gi->set_name(game.name);
-            gi->set_host(game.host);
-            gi->set_port(game.port);
-            gi->set_type(game.type == GameType::Local
-                ? hydra::GAME_LOCAL : hydra::GAME_REMOTE);
-            gi->set_autostart(game.autostart);
+        // #1102: require a valid session token (auth header).
+        if (authToken.empty() || !findByPersistId(authToken)) {
+            sendUnaryResponse("", 16, "unauthenticated");  // UNAUTHENTICATED
+        } else {
+            hydra::GameList resp;
+            for (const auto& game : config_.games) {
+                auto* gi = resp.add_games();
+                gi->set_name(game.name);
+                gi->set_host(game.host);
+                gi->set_port(game.port);
+                gi->set_type(game.type == GameType::Local
+                    ? hydra::GAME_LOCAL : hydra::GAME_REMOTE);
+                gi->set_autostart(game.autostart);
+            }
+            sendUnaryResponse(resp.SerializeAsString(), 0);
         }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
 
     } else if (method == "Authenticate") {
         hydra::AuthRequest rpcReq;
         rpcReq.ParseFromString(protoBody);
 
+        // #1097: lockout applies on grpc-web too (peer IP on front-door).
         std::string pid = authenticateAndGetSession(
-            rpcReq.username(), rpcReq.password());
+            rpcReq.username(), rpcReq.password(), fd.clientIp);
 
         hydra::AuthResponse resp;
         if (pid.empty()) {
@@ -3511,6 +3671,7 @@ void SessionManager::restoreAllSessions() {
         session.persistId = s.persistId;
         session.dbPersistId = s.persistId;
         session.state = SessionState::Detached;
+        session.scrollback = makeScrollback();
         // scrollbackKey is empty — can't decrypt scroll-back until player logs in.
         // Defer link reconnection: back-door links will reconnect when the
         // player authenticates, providing the scrollback key.  This prevents
