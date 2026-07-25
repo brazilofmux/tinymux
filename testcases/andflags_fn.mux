@@ -1,0 +1,67 @@
+#
+# andflags_fn.mux - Test Cases for andflags() and orflags().
+#
+# andflags(<object>,<letters>) is 1 when the object has ALL the listed
+# flags; orflags() is 1 when it has AT LEAST ONE.  A '!' before a letter
+# means "not flag".
+#
+# The test object is set INHERIT QUIET, so flags(me) is 'IQ'.  Every case
+# pairs a present flag with an absent one so the AND/OR distinction
+# cannot collapse unnoticed: a list of one present and one absent flag
+# must be 0 for andflags() and 1 for orflags().
+#
+@create test_andflags_fn
+-
+@set test_andflags_fn=INHERIT QUIET
+-
+&tr.tc000 test_andflags_fn=
+  @log smoke=Beginning andflags()/orflags() test cases.
+-
+#
+# Test Case #1 - AND requires every flag; OR requires only one.
+#
+&tr.tc001 test_andflags_fn=
+  @if cand(
+        strmatch(flags(me), IQ),
+        eq(andflags(me,I), 1),
+        eq(andflags(me,IQ), 1),
+        eq(andflags(me,ID), 0),
+        eq(orflags(me,ID), 1),
+        eq(orflags(me,DX), 0)
+      )=
+  {
+    @log smoke=TC001: andflags/orflags all versus any. Succeeded.
+  },
+  {
+    @log smoke=TC001: andflags/orflags all versus any. Failed (flags=[flags(me)] i=[andflags(me,I)] iq=[andflags(me,IQ)] id=[andflags(me,ID)] orid=[orflags(me,ID)] ordx=[orflags(me,DX)]).
+  }
+-
+#
+# Test Case #2 - Negation with '!'.
+#
+&tr.tc002 test_andflags_fn=
+  @if cand(
+        eq(andflags(me,!D), 1),
+        eq(andflags(me,!I), 0),
+        eq(andflags(me,I!D), 1),
+        eq(orflags(me,!I), 0),
+        eq(orflags(me,D!I), 0)
+      )=
+  {
+    @log smoke=TC002: andflags/orflags negation. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: andflags/orflags negation. Failed (notd=[andflags(me,!D)] noti=[andflags(me,!I)] inotd=[andflags(me,I!D)] ornoti=[orflags(me,!I)] ordnoti=[orflags(me,D!I)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_andflags_fn=
+  @log smoke=End andflags()/orflags() test cases.;
+  @notify smoke
+-
+drop test_andflags_fn
+-
+#
+# End of Test Cases
+#

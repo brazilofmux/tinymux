@@ -1,0 +1,60 @@
+#
+# valid_fn.mux - Test Cases for valid().
+#
+# valid(<category>,<argument>) reports whether <argument> satisfies the
+# character and arrangement restrictions implied by <category>.  An
+# unknown category is an error rather than a false answer, which is the
+# distinction worth pinning: "not valid" and "not a category" must not
+# look the same to calling code.
+#
+@create test_valid_fn
+-
+@set test_valid_fn=INHERIT QUIET
+-
+&tr.tc000 test_valid_fn=
+  @log smoke=Beginning valid() test cases.
+-
+#
+# Test Case #1 - Object names: an ordinary name is valid, an empty one
+# is not.
+#
+&tr.tc001 test_valid_fn=
+  @if cand(
+        eq(valid(name,Bob), 1),
+        eq(valid(name,), 0),
+        eq(valid(attrname,FOO), 1)
+      )=
+  {
+    @log smoke=TC001: valid name and attrname. Succeeded.
+  },
+  {
+    @log smoke=TC001: valid name and attrname. Failed (name=[valid(name,Bob)] empty=[valid(name,)] attr=[valid(attrname,FOO)]).
+  }
+-
+#
+# Test Case #2 - An unknown category errors; it does not answer 0.
+#
+&tr.tc002 test_valid_fn=
+  @if cand(
+        strmatch(valid(bogus,x), #-1*),
+        eq(valid(name,Bob), 1),
+        t(comp(valid(bogus,x), 0))
+      )=
+  {
+    @log smoke=TC002: valid unknown category errors. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: valid unknown category errors. Failed (bogus=[valid(bogus,x)] cmp=[comp(valid(bogus,x), 0)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_valid_fn=
+  @log smoke=End valid() test cases.;
+  @notify smoke
+-
+drop test_valid_fn
+-
+#
+# End of Test Cases
+#
