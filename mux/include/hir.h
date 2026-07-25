@@ -515,6 +515,28 @@ struct hir_program {
     }
 };
 
+// Third-operand accessor.
+//
+// Almost every instruction keeps its operands in src1/src2, with the
+// CALL/STRCAT and PHI side arrays as the two documented exceptions that
+// operand walkers already special-case.  HIR_LUA_SETI is a third
+// exception and a much easier one to miss: it is seti(tbl,key,value)
+// and the VALUE is an instruction index parked in val[] (see the
+// HIR_LUA_SETI case in hir_codegen.cpp, which reads it back as `s3`).
+//
+// A walker that misses it will treat the stored value as dead, so DCE
+// can NOP it and the register allocator can reuse its register while
+// the SETI still expects it.  val[] is a plain integer for every other
+// opcode -- for HIR_LUA_ALOAD it is a guest ADDRESS -- so this must
+// stay strictly gated on the opcode.
+//
+// Returns the operand's instruction index, or -1 when there is none.
+inline int hir_val_operand(const hir_program &h, int i) {
+    if (i < 0 || i >= h.n_insns || h.kind[i] != HIR_LUA_SETI) return -1;
+    int v = static_cast<int>(h.val[i]);
+    return (v >= 0 && v < h.n_insns) ? v : -1;
+}
+
 // SSA construction (hir_ssa.cpp).
 void hir_build_cfg(hir_program &h);
 void hir_ssa_construct(hir_program &h);
