@@ -3648,12 +3648,19 @@ literal_strcat:
         return r;
     }
 
-    // Validate argument count at compile time.  If the function
-    // requires more args than we have, return the same error string
-    // the AST evaluator would — not empty.
+    // Validate argument count at compile time, in BOTH directions, and
+    // return the same error string the AST evaluator would — not empty.
+    //
+    // Only the too-few case was checked, so an over-supplied call was
+    // compiled and silently evaluated with the arguments the callee
+    // happened to read: right(hello,3,x) returned "llo" on the JIT route
+    // while the AST route reported the arity error.  maxArgsParsed
+    // comma-catenation has already run above, so nargs here is the count
+    // the callee will actually see; a function declared with maxArgs of
+    // MAX_ARG is unbounded and cannot trip the upper test.
     if (fidx > 0 && fidx < ENGINE_API_MAX_FUNCS) {
         FUN *fp = engine_api_table[fidx];
-        if (fp && nargs < fp->minArgs) {
+        if (fp && (nargs < fp->minArgs || nargs > fp->maxArgs)) {
             char errbuf[256];
             if (fp->minArgs == fp->maxArgs) {
                 snprintf(errbuf, sizeof(errbuf),
