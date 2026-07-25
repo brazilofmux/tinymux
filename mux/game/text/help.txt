@@ -5477,6 +5477,28 @@ BEING KILLED
 
   Related Topics: kill, @akill, @kill, @okill, IMMORTAL, WIZARD.
 
+& BETWEEN()
+BETWEEN()
+
+  FUNCTION: between(<lo>, <hi>, <value>[, <inclusive>])
+
+  Returns 1 if <value> lies between <lo> and <hi>, and 0 otherwise.  All
+  three bounds are parsed as floating-point numbers.
+
+  If <inclusive> is true (see BOOLEAN VALUES), the range is closed:
+  lo <= value <= hi.  If omitted or false, the range is open: lo < value
+  < hi.
+
+  Examples:
+    > think between(1, 10, 5)
+    1
+    > think between(1, 10, 1)
+    0
+    > think between(1, 10, 1, 1)
+    1
+
+  Related Topics: bound(), gt(), lt(), BOOLEAN VALUES.
+
 & BITTYPE()
 BITTYPE()
 
@@ -5724,6 +5746,26 @@ CANSEE()
   DARK.
 
   Related Topics:
+
+& CAPLIST()
+CAPLIST()
+
+  FUNCTION: caplist(<list>[, <delim>[, <osep>]])
+
+  Title-cases each word of <list>: the first letter of each word is
+  capitalised.  Short "small words" (a, an, the, and, or, but, for, nor,
+  of, in, on, at, to, by, is, as, if, it, so, vs, via) are left lowercase
+  unless they are the first or last word of the list.
+
+  <delim> defaults to a space.  <osep> defaults to <delim>.
+
+  Examples:
+    > think caplist(the quick brown fox)
+    The Quick Brown Fox
+    > think caplist(a tale of two cities)
+    A Tale of Two Cities
+
+  Related Topics: capstr(), lcstr(), ucstr(), words().
 
 & CAPSTR()
 CAPSTR()
@@ -6238,6 +6280,17 @@ CLEARCOM
     Channel Staff deleted.
 
   Related Topics: addcom, delcom.
+
+& CMOGRIFIER()
+CMOGRIFIER()
+
+  FUNCTION: cmogrifier(<channel>)
+
+  Returns the dbref of the channel object associated with <channel>, or
+  #-1 if the channel has no channel object.  Private channels the
+  executor cannot see are reported as #-1 CHANNEL NOT FOUND.
+
+  Related Topics: channels(), comsys.
 
 & CMDS()
 CMDS()
@@ -7066,6 +7119,17 @@ CRC32()
 
   Related Topics: digest(), sha1(), unpack().
 
+& CRC32OBJ()
+CRC32OBJ()
+
+  FUNCTION: crc32obj(<object>)
+
+  Returns a CRC32 checksum over every attribute value on <object> that
+  the executor can examine.  Useful for softcoded integrity checks and
+  change detection.  You must be able to examine the object.
+
+  Related Topics: crc32(), hasattr(), lattr().
+
 & CREATE()
 CREATE()
 
@@ -7318,6 +7382,24 @@ DELCOM
     Channel Public deleted.
 
   Related Topics: addcom, alias, comlist, clearcom.
+
+& DELEXTRACT()
+DELEXTRACT()
+
+  FUNCTION: delextract(<list>, <first>, <count>[, <delim>])
+
+  Removes <count> words from <list> starting at 1-based position
+  <first>, and returns the remaining words joined with <delim>
+  (default space).  A <count> of 0 or less leaves the list unchanged.
+  Positions before 1 are treated as 1.
+
+  Examples:
+    > think delextract(a b c d e, 2, 2)
+    a d e
+    > think delextract(a|b|c|d, 1, 1, |)
+    b|c|d
+
+  Related Topics: extract(), ldelete(), elements(), remove().
 
 & DELETE()
 DELETE()
@@ -8501,16 +8583,20 @@ FUNCTION LIST
     @@()        ABS()       ACCENT()    ACOS()      ADD()       AFTER()
     ALPHAMAX()  ALPHAMIN()  AND()       ANDBOOL()   ANDFLAGS()  ANSI()
     APOSS()     ART()       ASIN()      ATAN()      ATAN2()     ATTRCNT()
-    BAND()      BASECONV()  BEEP()      BEFORE()    BENCHMARK() BITTYPE()
+    BAND()      BASECONV()  BEEP()      BEFORE()    BENCHMARK() BETWEEN()
+    BITTYPE()
     BNAND()
-    BOR()       BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPSTR()
+    BOR()       BXOR()      CAND()      CANDBOOL()  CANSEE()    CAPLIST()
+    CAPSTR()
     CASE()      CAT()       CEIL()      CENTER()    CHANFIND()  CHANINFO()
-    CHANNELS()  CHANOBJ()   CHANUSER()  CHANUSERS() CHILDREN()  CHOOSE()    CHR()       CMDS()      COLORDEPTH()COLUMNS()
+    CHANNELS()  CHANOBJ()   CHANUSER()  CHANUSERS() CHILDREN()  CHOOSE()    CHR()       CMOGRIFIER()CMDS()      COLORDEPTH()COLUMNS()
     COMALIAS()  COMP()      COMTITLE()  CON()       CONFIG()    CONN()
     CONNLAST()  CONNLEFT()  CONNMAX()   CONNNUM()   CONNRECORD()CONNTOTAL()
     CONTROLS()  CONVSECS()  CONVTIME()  COR()       CORBOOL()   COS()
-    CPAD()      CRC32()     CREATE()    CTIME()     CTU()       CWHO()
-    DEC()       DECRYPT()   DEFAULT()   DELETE()    DESTROY()   DIE()
+    CPAD()      CRC32()     CRC32OBJ()  CREATE()    CTIME()     CTU()
+    CWHO()
+    DEC()       DECRYPT()   DEFAULT()   DELEXTRACT()DELETE()    DESTROY()
+    DIE()
     DIGEST()    DIGITTIME() DIST2D()    DIST3D()    DISTRIBUTE()DOING()
     DUMPING()   E()         EDEFAULT()  EDIT()      ELEMENTS()  ELOCK()
     EMIT()      ENCRYPT()   ENTRANCES() EQ()        ERROR()     ESCAPE()
@@ -8523,8 +8609,8 @@ FUNCTION LIST
 & FUNCTION LIST2
 FUNCTION LIST (continued)
 
-    FOREACH()   FULLNAME()  GET()       GET_EVAL()  GMCP()      GRAB()
-    GRABALL()
+    FOREACH()   FULLNAME()  GARBLE()    GET()       GET_EVAL()  GMCP()
+    GRAB()      GRABALL()
     GREP()      GREPI()     GT()        GTE()       HASATTR()   HASATTRP()
     HASFLAG()   HASPOWER()  HASQUOTA()  HASRXLEVEL()HASTXLEVEL()HASTYPE()
     HEIGHT()    HOME()      HOST()      IABS()      IADD()      IDIV()
@@ -8542,7 +8628,8 @@ FUNCTION LIST (continued)
     MAILSUBJ()
     MAP()       MATCH()     MATCHALL()  MAX()       MEMBER()    MERGE()
     MID()       MIN()       MIX()       MOD()       MONEY()     MONIKER()
-    MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()     NAME()
+    MOON()      MOTD()      MTIME()     MUDNAME()   MUL()       MUNGE()
+    NAME()
     NEARBY()    NEQ()       NEXT()      NOT()       NULL()      NUM()
 
 ("help function list3" for more)
@@ -8559,14 +8646,18 @@ FUNCTION LIST (continued)
     REGEDITALLI()           REMAINDER() REMIT()     REMOVE()    REPEAT()
     REPLACE()   REST()      RESTARTS()  RESTARTSECS()           RESTARTTIME()
     REVERSE()   REVWORDS()  RIGHT()     RJUST()     RLOC()      ROMAN()
-    ROOM()      ROUND()     RPAD()      RXLEVEL()   S()         SCRAMBLE()
-    SEARCH()    SECS()      SECURE()    SET()       SETDIFF()   SETINTER()
+    ROOM()      ROUND()     ROUTE()     RPAD()      RXLEVEL()   S()
+    SCRAMBLE()
+    SANDBOX()   SEARCH()    SECS()      SECURE()    SET()       SETDIFF()
+    SETINTER()
     SETNAME()   SETPARENT() SETQ()      SETR()      SETUNION()  SHA1()
     SHL()       SHR()       SHUFFLE()   SIGN()      SIN()       SINGLETIME()
-    SORT()      SORTBY()    SPACE()     SPELLNUM()  SPLICE()    SQL()
+    SORT()      SORTBY()    SOUNDEX()   SOUNDLIKE() SPACE()     SPELLNUM()
+    SPLICE()    SQL()
     SQRT()      SQUISH()    STARTSECS() STARTTIME() STATS()     STEP()
     STRCAT()    STRIP()     STRIPACCENTS()          STRIPANSI() STRLEN()
-    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBJ()
+    STRMATCH()  STRMEM()    STRTRUNC()  SUB()       SUBEVAL()   SUBNETMATCH()
+    SUBJ()
     SUCCESSES() SWITCH()    T()         TABLE()     TAN()       TEL()
     TERMINFO()  TEXT()      TEXTFILE()  TIME()      TIMEFMT()   TRANSLATE()
 
@@ -8576,12 +8667,14 @@ FUNCTION LIST (continued)
 FUNCTION LIST (continued)
 
     TR()        TRACE()     TRIGGER()   TRIM()      TRUNC()     TXLEVEL()
-    TYPE()      U()         UCSTR()     UDEFAULT()  ULOCAL()    UNPACK()
+    TYPE()      U()         UCSTR()     UDEFAULT()  ULAMBDA()   ULOCAL()
+    UNPACK()
     V()         VADD()      VALID()     VCROSS()    VDIM()      VDOT()
     VERB()      VERSION()   VISIBLE()   VMAG()      VMUL()      VSUB()
     VUNIT()
-    WHERE()     WIDTH()     WIPE()      WORDPOS()   WORDS()     WRAP()
-    WRITETIME() XGET()      XOR()       ZCHILDREN() ZEXITS()    ZFUN()
+    WHERE()     WHILE()     WIDTH()     WIPE()      WORDPOS()   WORDS()
+    WRAP()      WRAPCOLUMNS()           WRITETIME() XGET()      XOR()
+    ZCHILDREN() ZEXITS()    ZFUN()
     ZONE()      ZROOMS()    ZTHINGS()   ZWHO()
 
 & FUNCTIONS
@@ -8614,6 +8707,27 @@ GAGGED
   circumstances. This flag has no meaning for objects, exits, or rooms.
 
   Related Topics:
+
+& GARBLE()
+GARBLE()
+
+  FUNCTION: garble(<string>, <percent>)
+
+  Returns <string> with roughly <percent> percent of its non-space
+  characters replaced by random printable ASCII (33-126).  Spaces are
+  always preserved.  <percent> is clamped to 0-100.
+
+  At 0 percent the string is unchanged.  At 100 percent every non-space
+  character is replaced.  Nonzero percentages are random; do not assert
+  a fixed garbled string in tests.
+
+  Examples:
+    > think garble(hello world, 0)
+    hello world
+    > think strlen(garble(hello world, 50))
+    11
+
+  Related Topics: scramble(), mid().
 
 & GARBAGE
 GARBAGE
@@ -12170,6 +12284,26 @@ MONIKER()
   Related Topics: @name, ansi(), @moniker, chr(), ord(), ASCII,
                   stripaccent(), stripansi(), UNICODE.
 
+& MOON()
+MOON()
+
+  FUNCTION: moon([<secs>[, <numeric>]])
+
+  Returns lunar-phase information.  With no arguments, uses the current
+  UTC time.  With <secs>, uses that Unix timestamp.
+
+  Without a true <numeric> flag, returns a descriptive phrase such as
+  "The Moon is Full", "The Moon is New", or a waxing/waning crescent,
+  half, or gibbous message with a percentage of illumination.
+
+  With a true <numeric> flag, returns a signed illumination percentage:
+  positive while waxing, negative while waning.
+
+  The phase is computed from a fixed new-moon epoch and a mean synodic
+  month of 29.53059 days.
+
+  Related Topics: secs(), time(), timefmt(), BOOLEAN VALUES.
+
 & MONITOR
 MONITOR
 
@@ -14470,6 +14604,26 @@ ROUND()
 
   Related Topics: fdiv(), floor(), mod(), trunc().
 
+& ROUTE()
+ROUTE()
+
+  FUNCTION: route(<source>, <destination>[, <options>])
+
+  Finds a path through the room graph from <source> to <destination>
+  using the server's route finder.  Both arguments are objects (usually
+  rooms).
+
+  Optional <options> is a space-separated list of tokens:
+
+    distance  report path length
+    path      include the room path in the result
+    rebuild   rebuild the route graph before searching
+    locked    respect exit locks
+
+  Unrecognised option tokens yield #-2.
+
+  Related Topics: rloc(), lexits(), home().
+
 & ROYALTY
 ROYALTY
 
@@ -14564,6 +14718,27 @@ SAFE
   switch.
 
   Related Topics: @destroy, DESTROY_OK.
+
+& SANDBOX()
+SANDBOX()
+
+  FUNCTION: sandbox(<expression>, <function list>[, <reverse>])
+
+  Evaluates <expression> with selected built-in functions temporarily
+  disabled (or, in reverse mode, with only the listed functions
+  enabled).  Permissions are restored when evaluation finishes.
+
+  <function list> is a space-separated list of function names.  By
+  default those names are blocked for the duration of <expression>.  If
+  <reverse> is true, every built-in except those listed is blocked
+  instead.
+
+  Arguments are not pre-evaluated (FN_NOEVAL).  The JIT is forced off
+  for the sandboxed evaluation so permission checks are honoured.
+
+  Useful for evaluating untrusted softcode with a reduced function set.
+
+  Related Topics: localize(), null(), @@(), BOOLEAN VALUES.
 
 & SAY
 SAY
@@ -15212,6 +15387,48 @@ SORTKEY()
 
   Related Topics: sort(), sortby(), munge().
 
+& SOUNDEX()
+SOUNDEX()
+
+  FUNCTION: soundex(<word>)
+
+  Returns the four-character Soundex code for <word> (one uppercase
+  letter followed by three digits).  Similar-sounding words tend to
+  share the same code.
+
+  <word> must be a single word that starts with a letter; otherwise the
+  function returns an error.
+
+  Example:
+    > think soundex(foobar)
+    F160
+
+  The algorithm follows classic Soundex (first letter kept; remaining
+  letters coded as digits; consecutive duplicates collapsed; vowels and
+  H/W/Y dropped from the code; padded or truncated to four characters).
+  Related to PennMUSH soundex().
+
+  Related Topics: soundlike().
+
+& SOUNDLIKE()
+SOUNDLIKE()
+
+  FUNCTION: soundlike(<word1>, <word2>)
+
+  Returns 1 if <word1> and <word2> have the same Soundex code (see
+  soundex()), and 0 if they do not.  Both arguments must be single
+  words starting with a letter.
+
+  This is TinyMUX's spelling of the same idea as PennMUSH soundslike().
+
+  Examples:
+    > think soundlike(smith, smyth)
+    1
+    > think soundlike(smith, jones)
+    0
+
+  Related Topics: soundex().
+
 & SPACE()
 SPACE()
 
@@ -15835,6 +16052,29 @@ SUBEVAL()
   When used from the command line, its use is limited to nil because
   evaluation of subeval's parameters occurs before the subeval()
   function is called.
+
+& SUBNETMATCH()
+SUBNETMATCH()
+
+  FUNCTION: subnetmatch(<ip>, <network/bits>)
+            subnetmatch(<ip>, <network>, <mask>)
+
+  Returns 1 if the IPv4 address <ip> lies within the given subnet, and 0
+  otherwise.  IPv4 only.
+
+  With two arguments, <network/bits> is CIDR notation (for example
+  192.168.1.0/24).  With three arguments, <network> and <mask> are
+  separate dotted-quad addresses.
+
+  Invalid addresses or CIDR forms return a #-1 error string.
+
+  Examples:
+    > think subnetmatch(192.168.1.50, 192.168.1.0/24)
+    1
+    > think subnetmatch(10.0.0.1, 10.0.0.0, 255.0.0.0)
+    1
+
+  Related Topics: host(), ports().
 
 & SUBJ()
 SUBJ()
@@ -16626,6 +16866,24 @@ UDEFAULT()
 
   Related Topics: get(), get_eval(), u(), default(), edefault().
 
+& ULAMBDA()
+ULAMBDA()
+
+  FUNCTION: ulambda([<object>/]<attribute>[, <arg>]...)
+
+  Evaluates an attribute as a user-defined function the same way u()
+  does, but without pre-evaluating its arguments (FN_NOEVAL).  That lets
+  you pass unevaluated text or code into the attribute as %0, %1, and so
+  on.
+
+  You must be able to examine the attribute.  Evaluation runs with the
+  privileges of the object that owns the attribute.
+
+  On PennMUSH, ulambda() is tied to anonymous lambda attributes; on
+  TinyMUX it is registered as a no-pre-eval form of u().
+
+  Related Topics: u(), ulocal(), udefault(), localize().
+
 & ULOCAL()
 ULOCAL()
 
@@ -17182,6 +17440,27 @@ WHERE()
 
   Related Topics: loc(), rloc().
 
+& WHILE()
+WHILE()
+
+  FUNCTION: while(<eval-attr>, <cond-attr>, <list>, <compval>[, <isep>[, <osep>]])
+
+  Walks <list> left to right.  For each element:
+
+    1. Evaluate <eval-attr> with the element as %0 and append the result
+       to the output (joined by <osep>).
+    2. Evaluate <cond-attr> with the element as %0.
+    3. If that result is equal to <compval> (string match), stop.
+
+  <eval-attr> and <cond-attr> are attribute references as for u() (bare
+  name or obj/attr).  If both resolve to the same attribute text, the
+  condition reuses the evaluation result instead of running twice.
+
+  <isep> defaults to a space; <osep> defaults to <isep>.  Iteration
+  respects the function-invocation limit and the CPU timer.
+
+  Related Topics: iter(), filter(), fold(), map().
+
 & WHISPER
 WHISPER
 
@@ -17403,6 +17682,28 @@ WRAP() (continued)
   The width can not be above 4000 characters.
 
   Related Topics: ljust(), rjust(), center(), columns().
+
+& WRAPCOLUMNS()
+WRAPCOLUMNS()
+
+  FUNCTION: wrapcolumns(<text>, <width>, <ncols>[, <just>[, <lborder>[,
+            <mborder>[, <rborder>[, <order>]]]]])
+
+  Word-wraps <text> into columns of at most <width> characters, laid out
+  in <ncols> columns.
+
+  Optional arguments:
+
+    <just>     L, R, or C for left/right/center justification (default L)
+    <lborder>  string placed before the first column on each row
+    <mborder>  string between columns
+    <rborder>  string after the last column
+    <order>    0 = down-then-across (newspaper fill, default);
+               1 = across-then-down (row fill)
+
+  Width and column count are clamped to safe upper bounds.
+
+  Related Topics: wrap(), columns(), table(), center(), ljust(), rjust().
 
 & WRITETIME()
 WRITETIME()
