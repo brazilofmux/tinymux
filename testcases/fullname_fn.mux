@@ -1,0 +1,82 @@
+#
+# fullname_fn.mux - Test Cases for fullname() and moniker().
+#
+# fullname(<dbref>) is name() in every case except an EXIT, where the
+# aliases are returned as well.  moniker(<object>) returns the MONIKER
+# attribute when its plain form matches the object's name, and the name
+# otherwise — so a MONIKER that does not correspond to the name cannot
+# be used to impersonate a different one.
+#
+@create test_fullname_plain
+-
+@set test_fullname_plain=INHERIT QUIET
+-
+@create test_fullname_mon
+-
+@set test_fullname_mon=INHERIT QUIET
+-
+&MONIKER test_fullname_mon=test_fullname_mon
+-
+@create test_fullname_bad
+-
+@set test_fullname_bad=INHERIT QUIET
+-
+&MONIKER test_fullname_bad=Something Else Entirely
+-
+@create test_fullname_fn
+-
+@set test_fullname_fn=INHERIT QUIET
+-
+&tr.tc000 test_fullname_fn=
+  @log smoke=Beginning fullname()/moniker() test cases.
+-
+#
+# Test Case #1 - For a THING, fullname() is exactly name().
+#
+&tr.tc001 test_fullname_fn=
+  @if cand(
+        strmatch(fullname(test_fullname_plain), test_fullname_plain),
+        eq(comp(fullname(test_fullname_plain), name(test_fullname_plain)), 0),
+        eq(comp(fullname(me), name(me)), 0)
+      )=
+  {
+    @log smoke=TC001: fullname matches name for things. Succeeded.
+  },
+  {
+    @log smoke=TC001: fullname matches name for things. Failed (full=[fullname(test_fullname_plain)] name=[name(test_fullname_plain)] self=[fullname(me)]/[name(me)]).
+  }
+-
+#
+# Test Case #2 - moniker() returns the MONIKER when it corresponds to
+# the name, and falls back to the name when it does not.
+#
+&tr.tc002 test_fullname_fn=
+  @if cand(
+        strmatch(moniker(test_fullname_mon), test_fullname_mon),
+        strmatch(moniker(test_fullname_bad), test_fullname_bad),
+        strmatch(moniker(test_fullname_plain), test_fullname_plain)
+      )=
+  {
+    @log smoke=TC002: moniker falls back to name. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: moniker falls back to name. Failed (match=[moniker(test_fullname_mon)] mismatch=[moniker(test_fullname_bad)] none=[moniker(test_fullname_plain)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_fullname_fn=
+  @log smoke=End fullname()/moniker() test cases.;
+  @notify smoke
+-
+drop test_fullname_plain
+-
+drop test_fullname_mon
+-
+drop test_fullname_bad
+-
+drop test_fullname_fn
+-
+#
+# End of Test Cases
+#
