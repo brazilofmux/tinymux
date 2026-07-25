@@ -82,11 +82,31 @@
         strmatch(shl(1,bar), #-1 ARGUMENTS MUST BE INTEGERS)
       )=
   {
-    @log smoke=TC005: shl non-integer rejection. Succeeded.;
+    @log smoke=TC005: shl non-integer rejection. Succeeded.
+  },
+  {
+    @log smoke=TC005: shl non-integer rejection. Failed (shl(1.5%,2)=[shl(1.5,2)] shl(foo%,2)=[shl(foo,2)] shl(1%,bar)=[shl(1,bar)]).
+  }
+-
+#
+# Test Case #6 - Shift count bounds (#1109).  A count >= 64 on an int64_t
+# is C++ undefined behavior, so it must be rejected rather than shifted.
+# The b < 0 wording is historical and must not change.
+#
+&tr.tc006 test_shl_fn=
+  @if cand(
+        strmatch(shl(1,64), #-1 SECOND ARGUMENT MUST BE LESS THAN 64),
+        strmatch(shl(1,100), #-1 SECOND ARGUMENT MUST BE LESS THAN 64),
+        strmatch(shl(1,-1), #-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER),
+        eq(shl(1,62), 4611686018427387904),
+        eq(shl(1,0), 1)
+      )=
+  {
+    @log smoke=TC006: shl shift-count bounds. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: shl non-integer rejection. Failed (shl(1.5%,2)=[shl(1.5,2)] shl(foo%,2)=[shl(foo,2)] shl(1%,bar)=[shl(1,bar)]).;
+    @log smoke=TC006: shl shift-count bounds. Failed (shl(1%,64)=[shl(1,64)] shl(1%,100)=[shl(1,100)] shl(1%,-1)=[shl(1,-1)] shl(1%,62)=[shl(1,62)] shl(1%,0)=[shl(1,0)]).;
     @trig me/tr.done
   }
 -
