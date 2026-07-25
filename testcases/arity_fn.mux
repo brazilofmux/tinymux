@@ -1,0 +1,94 @@
+#
+# arity_fn.mux - Test Cases for builtin argument-count enforcement.
+#
+# A call with too FEW or too MANY arguments must report an arity error
+# rather than being evaluated with whatever the callee happens to read.
+# The JIT lowerer checked only the too-few direction, so an over-supplied
+# call compiled and silently returned a plausible answer —
+# right(hello,3,x) gave "llo" on the JIT route while the AST route
+# reported the error.
+#
+# The assertions below deliberately match against `#-1*` rather than the
+# full error text.  MUX error strings contain a parenthesised function
+# name, and the existing right()/member()/extract() arity cases were
+# masked for exactly that reason: an expected string containing
+# `(RIGHT)` was truncated mid-argument, the leaked tail closed the
+# enclosing cand() early, and the failing condition was dropped from the
+# assertion list.  Keeping parentheses out of the patterns means this
+# file tests argument counting and nothing else.
+#
+@create test_arity_fn
+-
+@set test_arity_fn=INHERIT QUIET
+-
+&tr.tc000 test_arity_fn=
+  @log smoke=Beginning arity test cases.
+-
+#
+# Test Case #1 - Too many arguments is an error.
+#
+# right() takes exactly 2, member() 2 or 3, extract() 3 to 5.  Each is
+# given one more than its maximum.
+#
+&tr.tc001 test_arity_fn=
+  @if cand(
+        strmatch(right(hello,3,x), #-1*),
+        strmatch(member(a b c,b,x,y), #-1*),
+        strmatch(extract(a b c,1,1,x,y,z), #-1*)
+      )=
+  {
+    @log smoke=TC001: arity over-maximum rejected. Succeeded.
+  },
+  {
+    @log smoke=TC001: arity over-maximum rejected. Failed (right=[right(hello,3,x)] member=[member(a b c,b,x,y)] extract=[extract(a b c,1,1,x,y,z)]).
+  }
+-
+#
+# Test Case #2 - Too few arguments is an error.  Guards the direction
+# that already worked, so a change to the bounds check cannot fix one
+# side by breaking the other.
+#
+&tr.tc002 test_arity_fn=
+  @if cand(
+        strmatch(right(hello), #-1*),
+        strmatch(member(a b c), #-1*),
+        strmatch(extract(a b c,1), #-1*)
+      )=
+  {
+    @log smoke=TC002: arity under-minimum rejected. Succeeded.
+  },
+  {
+    @log smoke=TC002: arity under-minimum rejected. Failed (right=[right(hello)] member=[member(a b c)] extract=[extract(a b c,1)]).
+  }
+-
+#
+# Test Case #3 - Valid counts still evaluate, including the boundaries
+# and functions declared with no upper bound.
+#
+&tr.tc003 test_arity_fn=
+  @if cand(
+        strmatch(right(hello,3), llo),
+        eq(member(a b c,b), 2),
+        eq(member(a b c,b,x), 0),
+        strmatch(extract(a b c,1,1), a),
+        strmatch(strcat(a,b,c,d,e,f), abcdef),
+        eq(add(1,2,3,4,5), 15)
+      )=
+  {
+    @log smoke=TC003: valid arities still evaluate. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: valid arities still evaluate. Failed (right=[right(hello,3)] member2=[member(a b c,b)] member3=[member(a b c,b,x)] extract=[extract(a b c,1,1)] strcat=[strcat(a,b,c,d,e,f)] add=[add(1,2,3,4,5)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_arity_fn=
+  @log smoke=End arity test cases.;
+  @notify smoke
+-
+drop test_arity_fn
+-
+#
+# End of Test Cases
+#
