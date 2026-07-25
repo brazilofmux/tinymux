@@ -46,6 +46,26 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #3 - NearestPretty still shortens where a neighbour really
+# is shorter.  Guards the opposite direction from TC003: a fix that
+# simply returned the raw product would break these.
+#
+&tr.tc003 test_mul_fn=
+  @if cand(
+        strmatch(mul(1.1,1.1),1.21),
+        strmatch(mul(1.5,2),3),
+        strmatch(mul(0.1,3),0.3)
+      )=
+  {
+    @log smoke=TC003: mul prettification retained. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: mul prettification retained. Failed (sq=[mul(1.1,1.1)] i=[mul(1.5,2)] tenth=[mul(0.1,3)]).;
+    @trig me/tr.done
+  }
+-
 &tr.done test_mul_fn=
   @log smoke=End mul() test cases.;
   @notify smoke

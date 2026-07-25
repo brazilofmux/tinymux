@@ -2732,6 +2732,120 @@ static void engine_alloc_notify(dbref player, const UTF8 *text)
     notify(player, text);
 }
 
+// ---------------------------------------------------------------------------
+// discover_comsys_mail_modules — post-SQLite module init (#1190)
+//
+// Must run only after init_dbfile()/cache_init() has set g_pSQLiteBackend.
+// On any failure, Release the control pointer and leave it nullptr so the
+// in-tree engine comsys/mail paths stay active.
+// ---------------------------------------------------------------------------
+static void discover_comsys_mail_modules(void)
+{
+    mudstate.pIComsysControl = nullptr;
+    mudstate.pIMailControl = nullptr;
+
+    if (nullptr == g_pSQLiteBackend)
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "MOD");
+        log_text(T("Skipping comsys/mail module init: SQLite backend not open."));
+        ENDLOG;
+        return;
+    }
+
+    MUX_RESULT mr;
+
+    // Comsys module.
+    //
+    mr = mux_CreateInstance(CID_Comsys, nullptr, UseSameProcess,
+                            IID_IComsysControl,
+                            reinterpret_cast<void **>(&mudstate.pIComsysControl));
+    if (MUX_SUCCEEDED(mr) && nullptr != mudstate.pIComsysControl)
+    {
+        mux_IComsysStorage *pComsysStorage = nullptr;
+        mr = mux_CreateInstance(CID_ComsysStorage, nullptr, UseSameProcess,
+                                IID_IComsysStorage,
+                                reinterpret_cast<void **>(&pComsysStorage));
+        if (MUX_SUCCEEDED(mr) && nullptr != pComsysStorage)
+        {
+            mr = mudstate.pIComsysControl->Initialize(pComsysStorage);
+            pComsysStorage->Release();
+            pComsysStorage = nullptr;
+            if (MUX_SUCCEEDED(mr))
+            {
+                STARTLOG(LOG_ALWAYS, "INI", "MOD");
+                log_text(T("Comsys module initialized (via engine storage)."));
+                ENDLOG;
+            }
+            else
+            {
+                STARTLOG(LOG_ALWAYS, "INI", "MOD");
+                log_printf(T("Comsys module Initialize failed (mr=%d); using built-in."), mr);
+                ENDLOG;
+                mudstate.pIComsysControl->Release();
+                mudstate.pIComsysControl = nullptr;
+            }
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Comsys storage interface creation failed (mr=%d); using built-in."), mr);
+            ENDLOG;
+            mudstate.pIComsysControl->Release();
+            mudstate.pIComsysControl = nullptr;
+        }
+    }
+    else
+    {
+        mudstate.pIComsysControl = nullptr;
+    }
+
+    // Mail module.
+    //
+    mr = mux_CreateInstance(CID_Mail, nullptr, UseSameProcess,
+                            IID_IMailControl,
+                            reinterpret_cast<void **>(&mudstate.pIMailControl));
+    if (MUX_SUCCEEDED(mr) && nullptr != mudstate.pIMailControl)
+    {
+        mux_IMailStorage *pMailStorage = nullptr;
+        mr = mux_CreateInstance(CID_MailStorage, nullptr, UseSameProcess,
+                                IID_IMailStorage,
+                                reinterpret_cast<void **>(&pMailStorage));
+        if (MUX_SUCCEEDED(mr) && nullptr != pMailStorage)
+        {
+            mr = mudstate.pIMailControl->Initialize(pMailStorage,
+                mudconf.mail_expiration, mudconf.mail_max_per_player);
+            pMailStorage->Release();
+            pMailStorage = nullptr;
+            if (MUX_SUCCEEDED(mr))
+            {
+                STARTLOG(LOG_ALWAYS, "INI", "MOD");
+                log_text(T("Mail module initialized (via engine storage)."));
+                ENDLOG;
+            }
+            else
+            {
+                STARTLOG(LOG_ALWAYS, "INI", "MOD");
+                log_printf(T("Mail module Initialize failed (mr=%d); using built-in."), mr);
+                ENDLOG;
+                mudstate.pIMailControl->Release();
+                mudstate.pIMailControl = nullptr;
+            }
+        }
+        else
+        {
+            STARTLOG(LOG_ALWAYS, "INI", "MOD");
+            log_printf(T("Mail storage interface creation failed (mr=%d); using built-in."), mr);
+            ENDLOG;
+            mudstate.pIMailControl->Release();
+            mudstate.pIMailControl = nullptr;
+        }
+    }
+    else
+    {
+        mudstate.pIMailControl = nullptr;
+    }
+}
+
 MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     const UTF8 *inputDb, bool bMinDB)
 {
@@ -2778,87 +2892,12 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     g_float_precision = mudconf.float_precision;
     g_space_compress = mudstate.bStandAlone || mudconf.space_compress;
 
-    // Try to discover the comsys module.  If not loaded, the pointer
-    // stays nullptr and the built-in comsys code handles everything.
+    // Comsys/mail modules are discovered after SQLite is open (#1190).
+    // Leaving the control pointers null keeps the built-in paths active
+    // until discover_comsys_mail_modules() runs at the end of LoadGame.
     //
     mudstate.pIComsysControl = nullptr;
-    mr = mux_CreateInstance(CID_Comsys, nullptr, UseSameProcess,
-                            IID_IComsysControl,
-                            reinterpret_cast<void **>(&mudstate.pIComsysControl));
-    if (MUX_SUCCEEDED(mr))
-    {
-        // Create a storage interface for the comsys module to use.
-        // This routes all SQLite access through the engine's connection.
-        //
-        mux_IComsysStorage *pComsysStorage = nullptr;
-        mr = mux_CreateInstance(CID_ComsysStorage, nullptr, UseSameProcess,
-                                IID_IComsysStorage,
-                                reinterpret_cast<void **>(&pComsysStorage));
-        if (MUX_SUCCEEDED(mr))
-        {
-            mr = mudstate.pIComsysControl->Initialize(pComsysStorage);
-            pComsysStorage->Release();
-            if (MUX_SUCCEEDED(mr))
-            {
-                STARTLOG(LOG_ALWAYS, "INI", "MOD");
-                log_text(T("Comsys module initialized (via engine storage)."));
-                ENDLOG;
-            }
-            else
-            {
-                STARTLOG(LOG_ALWAYS, "INI", "MOD");
-                log_printf(T("Comsys module Initialize failed (mr=%d)."), mr);
-                ENDLOG;
-            }
-        }
-        else
-        {
-            STARTLOG(LOG_ALWAYS, "INI", "MOD");
-            log_printf(T("Comsys storage interface creation failed (mr=%d)."), mr);
-            ENDLOG;
-        }
-    }
-
-    // Try to discover the mail module.  If not loaded, the pointer
-    // stays nullptr and the built-in mail code handles everything.
-    //
     mudstate.pIMailControl = nullptr;
-    mr = mux_CreateInstance(CID_Mail, nullptr, UseSameProcess,
-                            IID_IMailControl,
-                            reinterpret_cast<void **>(&mudstate.pIMailControl));
-    if (MUX_SUCCEEDED(mr))
-    {
-        // Create a storage interface for the mail module to use.
-        //
-        mux_IMailStorage *pMailStorage = nullptr;
-        mr = mux_CreateInstance(CID_MailStorage, nullptr, UseSameProcess,
-                                IID_IMailStorage,
-                                reinterpret_cast<void **>(&pMailStorage));
-        if (MUX_SUCCEEDED(mr))
-        {
-            mr = mudstate.pIMailControl->Initialize(pMailStorage,
-                mudconf.mail_expiration, mudconf.mail_max_per_player);
-            pMailStorage->Release();
-            if (MUX_SUCCEEDED(mr))
-            {
-                STARTLOG(LOG_ALWAYS, "INI", "MOD");
-                log_text(T("Mail module initialized (via engine storage)."));
-                ENDLOG;
-            }
-            else
-            {
-                STARTLOG(LOG_ALWAYS, "INI", "MOD");
-                log_printf(T("Mail module Initialize failed (mr=%d)."), mr);
-                ENDLOG;
-            }
-        }
-        else
-        {
-            STARTLOG(LOG_ALWAYS, "INI", "MOD");
-            log_printf(T("Mail storage interface creation failed (mr=%d)."), mr);
-            ENDLOG;
-        }
-    }
 
     // Try to discover the Lua scripting module.
     //
@@ -3102,6 +3141,12 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
             }
         }
     }
+
+    // #1190: Discover comsys/mail modules only after SQLite is open and
+    // game + aux data are loaded.  Failure clears the control pointers so
+    // the built-in engine paths remain authoritative.
+    //
+    discover_comsys_mail_modules();
 
     return MUX_S_OK;
 }
@@ -4896,10 +4941,27 @@ uint32_t CComsysStorage::Release(void)
     return m_cRef;
 }
 
+// #1190: Comsys/mail storage COM must not dereference a closed backend.
+//
+static CSQLiteDB *sqlite_storage_db(void)
+{
+    if (nullptr == g_pSQLiteBackend)
+    {
+        return nullptr;
+    }
+    return &g_pSQLiteBackend->GetDB();
+}
+
 MUX_RESULT CComsysStorage::LoadAllChannels(PFN_CHANNEL_CB pfn, void *context)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == pfn) return MUX_E_INVALIDARG;
-    bool ok = g_pSQLiteBackend->GetDB().LoadAllChannels(
+    bool ok = pDb->LoadAllChannels(
         [pfn, context](const UTF8 *name, const UTF8 *header,
             int type, int temp1, int temp2, int charge, int charge_who,
             int amount_col, int num_messages, int chan_obj)
@@ -4912,8 +4974,14 @@ MUX_RESULT CComsysStorage::LoadAllChannels(PFN_CHANNEL_CB pfn, void *context)
 
 MUX_RESULT CComsysStorage::LoadAllChannelUsers(PFN_CHANNEL_USER_CB pfn, void *context)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == pfn) return MUX_E_INVALIDARG;
-    bool ok = g_pSQLiteBackend->GetDB().LoadAllChannelUsers(
+    bool ok = pDb->LoadAllChannelUsers(
         [pfn, context](const UTF8 *channel_name, int who,
             bool is_on, bool comtitle_status, bool gag_join_leave,
             const UTF8 *title)
@@ -4926,8 +4994,14 @@ MUX_RESULT CComsysStorage::LoadAllChannelUsers(PFN_CHANNEL_USER_CB pfn, void *co
 
 MUX_RESULT CComsysStorage::LoadAllPlayerChannels(PFN_PLAYER_CHANNEL_CB pfn, void *context)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == pfn) return MUX_E_INVALIDARG;
-    bool ok = g_pSQLiteBackend->GetDB().LoadAllPlayerChannels(
+    bool ok = pDb->LoadAllPlayerChannels(
         [pfn, context](int who, const UTF8 *alias,
             const UTF8 *channel_name)
         {
@@ -4940,7 +5014,13 @@ MUX_RESULT CComsysStorage::SyncChannel(const UTF8 *name, const UTF8 *header,
     int type, int temp1, int temp2, int charge, int charge_who,
     int amount_col, int num_messages, int chan_obj)
 {
-    bool ok = g_pSQLiteBackend->GetDB().SyncChannel(name, header, type,
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->SyncChannel(name, header, type,
         temp1, temp2, charge, charge_who, amount_col, num_messages, chan_obj);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
@@ -4948,7 +5028,13 @@ MUX_RESULT CComsysStorage::SyncChannel(const UTF8 *name, const UTF8 *header,
 MUX_RESULT CComsysStorage::SyncChannelUser(const UTF8 *channel_name, int who,
     bool is_on, bool comtitle_status, bool gag_join_leave, const UTF8 *title)
 {
-    bool ok = g_pSQLiteBackend->GetDB().SyncChannelUser(channel_name, who,
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->SyncChannelUser(channel_name, who,
         is_on, comtitle_status, gag_join_leave, title);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
@@ -4956,38 +5042,74 @@ MUX_RESULT CComsysStorage::SyncChannelUser(const UTF8 *channel_name, int who,
 MUX_RESULT CComsysStorage::SyncPlayerChannel(int who, const UTF8 *alias,
     const UTF8 *channel_name)
 {
-    bool ok = g_pSQLiteBackend->GetDB().SyncPlayerChannel(who, alias,
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->SyncPlayerChannel(who, alias,
         channel_name);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CComsysStorage::DeleteChannel(const UTF8 *name)
 {
-    bool ok = g_pSQLiteBackend->GetDB().DeleteChannel(name);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->DeleteChannel(name);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CComsysStorage::DeleteChannelUser(const UTF8 *channel_name, int who)
 {
-    bool ok = g_pSQLiteBackend->GetDB().DeleteChannelUser(channel_name, who);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->DeleteChannelUser(channel_name, who);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CComsysStorage::DeletePlayerChannel(int who, const UTF8 *alias)
 {
-    bool ok = g_pSQLiteBackend->GetDB().DeletePlayerChannel(who, alias);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->DeletePlayerChannel(who, alias);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CComsysStorage::DeleteAllPlayerChannels(int who)
 {
-    bool ok = g_pSQLiteBackend->GetDB().DeleteAllPlayerChannels(who);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->DeleteAllPlayerChannels(who);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CComsysStorage::ClearComsysTables(void)
 {
-    bool ok = g_pSQLiteBackend->GetDB().ClearComsysTables();
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->ClearComsysTables();
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
@@ -5100,8 +5222,14 @@ uint32_t CMailStorage::Release(void)
 
 MUX_RESULT CMailStorage::LoadAllMailHeaders(PFN_MAIL_HEADER_CB pfn, void *context)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == pfn) return MUX_E_INVALIDARG;
-    bool ok = g_pSQLiteBackend->GetDB().LoadAllMailHeaders(
+    bool ok = pDb->LoadAllMailHeaders(
         [pfn, context](int64_t rowid, int to_player, int from_player,
             int body_number, const UTF8 *tolist, const UTF8 *time_str,
             const UTF8 *subject, int read_flags)
@@ -5114,8 +5242,14 @@ MUX_RESULT CMailStorage::LoadAllMailHeaders(PFN_MAIL_HEADER_CB pfn, void *contex
 
 MUX_RESULT CMailStorage::LoadAllMailBodies(PFN_MAIL_BODY_CB pfn, void *context)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == pfn) return MUX_E_INVALIDARG;
-    bool ok = g_pSQLiteBackend->GetDB().LoadAllMailBodies(
+    bool ok = pDb->LoadAllMailBodies(
         [pfn, context](int number, const UTF8 *message)
         {
             pfn(context, number, message);
@@ -5125,8 +5259,14 @@ MUX_RESULT CMailStorage::LoadAllMailBodies(PFN_MAIL_BODY_CB pfn, void *context)
 
 MUX_RESULT CMailStorage::LoadAllMailAliases(PFN_MAIL_ALIAS_CB pfn, void *context)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == pfn) return MUX_E_INVALIDARG;
-    bool ok = g_pSQLiteBackend->GetDB().LoadAllMailAliases(
+    bool ok = pDb->LoadAllMailAliases(
         [pfn, context](int owner, const UTF8 *name,
             const UTF8 *desc, int desc_width, const UTF8 *members)
         {
@@ -5137,8 +5277,14 @@ MUX_RESULT CMailStorage::LoadAllMailAliases(PFN_MAIL_ALIAS_CB pfn, void *context
 
 MUX_RESULT CMailStorage::GetMeta(const UTF8 *key, int *pValue)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == key || nullptr == pValue) return MUX_E_INVALIDARG;
-    bool ok = g_pSQLiteBackend->GetDB().GetMeta(
+    bool ok = pDb->GetMeta(
         reinterpret_cast<const char *>(key), pValue);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
@@ -5147,8 +5293,14 @@ MUX_RESULT CMailStorage::InsertMailHeader(int to_player, int from_player,
     int body_number, const UTF8 *tolist, const UTF8 *time_str,
     const UTF8 *subject, int read_flags, int64_t *pRowid)
 {
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
     if (nullptr == pRowid) return MUX_E_INVALIDARG;
-    int64_t id = g_pSQLiteBackend->GetDB().InsertMailHeaderReturningId(
+    int64_t id = pDb->InsertMailHeaderReturningId(
         to_player, from_player, body_number, tolist, time_str,
         subject, read_flags);
     if (id < 0) return MUX_E_FAIL;
@@ -5158,51 +5310,99 @@ MUX_RESULT CMailStorage::InsertMailHeader(int to_player, int from_player,
 
 MUX_RESULT CMailStorage::UpdateMailReadFlags(int64_t rowid, int read_flags)
 {
-    bool ok = g_pSQLiteBackend->GetDB().UpdateMailReadFlags(rowid, read_flags);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->UpdateMailReadFlags(rowid, read_flags);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CMailStorage::DeleteMailHeader(int64_t rowid)
 {
-    bool ok = g_pSQLiteBackend->GetDB().DeleteMailHeader(rowid);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->DeleteMailHeader(rowid);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CMailStorage::DeleteAllMailHeaders(int to_player)
 {
-    bool ok = g_pSQLiteBackend->GetDB().DeleteAllMailHeaders(to_player);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->DeleteAllMailHeaders(to_player);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CMailStorage::SyncMailBody(int number, const UTF8 *message)
 {
-    bool ok = g_pSQLiteBackend->GetDB().SyncMailBody(number, message);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->SyncMailBody(number, message);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CMailStorage::DeleteMailBody(int number)
 {
-    bool ok = g_pSQLiteBackend->GetDB().DeleteMailBody(number);
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->DeleteMailBody(number);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CMailStorage::SyncMailAlias(int owner, const UTF8 *name,
     const UTF8 *desc, int desc_width, const UTF8 *members)
 {
-    bool ok = g_pSQLiteBackend->GetDB().SyncMailAlias(owner, name, desc,
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->SyncMailAlias(owner, name, desc,
         desc_width, members);
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CMailStorage::ClearMailAliases(void)
 {
-    bool ok = g_pSQLiteBackend->GetDB().ClearMailAliases();
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->ClearMailAliases();
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CMailStorage::ClearMailTables(void)
 {
-    bool ok = g_pSQLiteBackend->GetDB().ClearMailTables();
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+
+    bool ok = pDb->ClearMailTables();
     return ok ? MUX_S_OK : MUX_E_FAIL;
 }
 
