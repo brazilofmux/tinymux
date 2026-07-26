@@ -67,7 +67,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |----|--------|-------|------:|-----------|--------|-------|
 | C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 2 softcode | partial | elock/lastcreate fixed; full matrix not exhausted |
 | C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1124 closed (#1121 Highs, #1123 Mediums, #1125 JIT perms); re-rotate by family later |
-| C3 | Commands / hooks | `command.cpp`, `predicates.cpp` | large | thin | thin | @-command side effects |
+| C3 | Commands / hooks | `command.cpp`, `predicates.cpp`, `set.cpp` (@include) | large | Pass 12 2026-07-26 | deep | #1279 @include as includer; #1280 NOEVAL permit/ignore footgun; process_cmdent access-before-handler held |
 | C4 | Match / wild | `match.cpp`, `wild.cpp` | med | scenario tests | partial | Live `$` capture has scenario; re-read matching |
 | C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | Pass 8 | deep | #1181, #1186–#1188 open (clone/preserve, moniker HTML, pagecost order, @open HOME) |
 | C6 | Boolexp / locks | `boolexp.cpp` | med | elock-related | partial | Lock evaluation side channels |
@@ -189,7 +189,7 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 | **Now** | **Fix Pass 8 Highs** #1179–#1181 and/or **Pass 9 Highs** #1189–#1193 | Standing Highs-first; @cdestroy inverted is default-path |
 | **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | Pass 4 closed; residual depth |
 | **Pass 11** | **B3 + B4 nits + B6** OpenSSL re-read + Schannel residual + harness | Windows/Linux TLS depth |
-| **Pass 12** | **C3** commands/hooks deep | Still thin; @-command side effects |
+| **Pass 12** | **C3** done (#1279/#1280) | Fix queue / residual Mediums |
 | **Pass 13+** | **J\*** clients by platform | After server/proxy confidence |
 | **Residual** | Pass 7 Mediums #1149–#1153; Pass 6 twin #1141; Pass 8/9 Mediums | Fix when rotating back |
 | **Anytime** | **D5** jit_diff soak + corpus gaps (#1160) | Continuous; other agents on float/fuzz |
@@ -239,5 +239,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
 
 | 2026-07-26 | Pass A8 residual: stubslave parent write remainder + Win32 DNS queue caps; A8 → deep |
+| 2026-07-26 | Pass 12 C3: @include executor fix #1279; NOEVAL hook issue #1280; C3 → deep |
 
 Update this table when the map structure changes.
