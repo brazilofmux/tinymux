@@ -737,6 +737,10 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "pow",   DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::pow)));
     reg_intrinsic(dbt, "atan2", DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::atan2)));
     reg_intrinsic(dbt, "fmod",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmod)));
+    // max()/min() float path (#1273) — host fmax/fmin intercept the blob stubs.
+    //
+    reg_intrinsic(dbt, "fmax",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmax)));
+    reg_intrinsic(dbt, "fmin",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmin)));
 
     // Rounding intrinsic — NearestPretty (double→double).
     //

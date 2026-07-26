@@ -962,6 +962,12 @@ static const fp_math_entry s_fp_binary[] = {
     { "POWER", "pow",   FMATH_POW   },
     { "ATAN2", "atan2", FMATH_ATAN2 },
     { "FMOD",  "fmod",  FMATH_FMOD  },
+    // max()/min() use float compare (mux_atof+fval); restore a native
+    // path via libm fmax/fmin after #1260 removed integer HIR_MAX/MIN
+    // (#1273).  Multi-arg forms chain FCALL2 below.
+    //
+    { "MAX",   "fmax",  FMATH_FMAX  },
+    { "MIN",   "fmin",  FMATH_FMIN  },
     { nullptr, nullptr, 0 }
 };
 
@@ -3171,12 +3177,11 @@ general_lowering:
     // ABS: softcode abs() is float — see s_fp_unary (fabs).  Integer
     // HIR_ABS was removed (#1150 / #1256).  iabs() remains an ECALL (#1114).
 
-    // SIGN / MAX / MIN / BOUND are intentionally NOT lowered to integer
-    // HIR_SIGN / HIR_MAX / HIR_MIN (#1260).  Interpreter fun_sign /
-    // fun_max / fun_min / fun_bound are float (mux_atof + fval); the
-    // prior is_int / all_int native path diverged at type edges and
-    // near 2^53.  Constants still fold via try_fold (float); runtime
-    // falls through to ECALL.  Integer isign() stays ECALL.
+    // SIGN / BOUND are intentionally NOT lowered to integer HIR_SIGN /
+    // HIR_MAX / HIR_MIN (#1260).  Interpreter fun_sign / fun_bound are
+    // float (mux_atof + fval).  MAX/MIN use the float s_fp_binary path
+    // (fmax/fmin) when args are numeric (#1273).  Integer isign() stays
+    // ECALL.
 
     // IDIV: integer division (truncate toward zero).
     // Match interpreter: idiv(x,0) returns "#-1 DIVIDE BY ZERO".
@@ -3461,33 +3466,43 @@ general_lowering:
 #endif
     }
 
-    // Binary FP functions: POWER, ATAN2, FMOD → FCALL2.
+    // Binary FP functions: POWER, ATAN2, FMOD, MAX, MIN → FCALL2.
+    // POWER/ATAN2/FMOD require exactly 2 args.  MAX/MIN accept N>=2 and
+    // chain fmax/fmin left-to-right (#1273).
+    //
     for (int ti = 0; s_fp_binary[ti].mux_name; ti++) {
-        if (upper == s_fp_binary[ti].mux_name && nargs == 2
-            && all_numeric()) {
+        const bool is_maxmin = (  s_fp_binary[ti].fmath == FMATH_FMAX
+                               || s_fp_binary[ti].fmath == FMATH_FMIN);
+        if (upper != s_fp_binary[ti].mux_name || !all_numeric()) {
+            continue;
+        }
+        if (is_maxmin ? nargs < 2 : nargs != 2) {
+            continue;
+        }
 #ifndef HAVE_IEEE_FP_SNAN
-            // On non-IEEE systems, POWER and FMOD have domain guards
-            // in the interpreter.  Fall through to ECALL.
-            //
-            if (  s_fp_binary[ti].fmath == FMATH_POW
-               || s_fp_binary[ti].fmath == FMATH_FMOD)
-            {
-                break;
-            }
-#endif
-            uint64_t addr = fp_intrinsic_addr(s_fp_binary[ti].blob_sym);
-            if (addr) {
-                int a = ensure_float(args[0]);
-                int b = ensure_float(args[1]);
-                int r = h.emit(HIR_FCALL2, TY_FLOAT, a, b,
-                               static_cast<int64_t>(addr));
-                h.func_idx[r] = s_fp_binary[ti].fmath;
-                h.native_ops++;
-                h.needs_jit = true;
-                return r;
-            }
+        // On non-IEEE systems, POWER and FMOD have domain guards
+        // in the interpreter.  Fall through to ECALL.
+        //
+        if (  s_fp_binary[ti].fmath == FMATH_POW
+           || s_fp_binary[ti].fmath == FMATH_FMOD)
+        {
             break;
         }
+#endif
+        uint64_t addr = fp_intrinsic_addr(s_fp_binary[ti].blob_sym);
+        if (addr) {
+            int r = ensure_float(args[0]);
+            for (int ai = 1; ai < nargs; ai++) {
+                int b = ensure_float(args[ai]);
+                r = h.emit(HIR_FCALL2, TY_FLOAT, r, b,
+                           static_cast<int64_t>(addr));
+                h.func_idx[r] = s_fp_binary[ti].fmath;
+            }
+            h.native_ops++;
+            h.needs_jit = true;
+            return r;
+        }
+        break;
     }
 
     // ---------------------------------------------------------------
