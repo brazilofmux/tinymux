@@ -1,6 +1,6 @@
 ---
 title: TinyMUX 2.14 CHANGES
-date: April 2026
+date: July 2026
 author:
  - Brazil
 ---
