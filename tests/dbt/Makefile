@@ -12,6 +12,9 @@
 #          `exec`, which links the real ones.
 #   exec   the RV64 execution harness: interpreter and DBT, host backend
 #          only, because this one actually runs the code it translates.
+#   fuzz   instruction-level differential fuzzer: random RV64 sequences
+#          through both routes, comparing all 32 registers.  Same link as
+#          exec minus the ELF loader and the hand-assembled cases.
 #
 # All three compile engine sources directly, so none needs a prior
 # `make install` or --enable-jit, and none has a skip path that could
@@ -54,7 +57,7 @@ rename = -Ddbt_backend_backpatch_jmp=$(1)_backpatch_jmp \
 
 ELF = $(ENGINE)/dbt_rt/test_rv64.elf
 
-all: test_chain test_cache dbt_test
+all: test_chain test_cache dbt_test fuzz_diff
 
 # --- chain: all three backends, byte inspection only -----------------
 test_chain.o: test_chain.cpp
@@ -88,6 +91,15 @@ else
 	$(COMPILE) -o $@ $(EXEC_SRCS)
 endif
 
+FUZZ_SRCS = fuzz_diff.cpp $(ENGINE)/dbt_interp.cpp $(ENGINE)/dbt.cpp \
+            $(ENGINE)/$(HOST_BACKEND).cpp
+fuzz_diff:
+ifeq ($(HOST_BACKEND),)
+	@echo "SKIP: no DBT backend for host '$(ARCH)'."
+else
+	$(COMPILE) -o $@ $(FUZZ_SRCS)
+endif
+
 chain: test_chain
 	./test_chain
 
@@ -107,9 +119,19 @@ else
 	fi
 endif
 
-test: chain cache exec
+# A small default keeps `make test` quick; the corpus is deterministic, so
+# a CI failure reproduces exactly.  Soak with more:
+#   DBT_FUZZ_ITERS=20000 DBT_FUZZ_SEED=7 make -C tests/dbt fuzz
+fuzz: fuzz_diff
+ifeq ($(HOST_BACKEND),)
+	@echo "==> Skipping DBT fuzz (unsupported host '$(ARCH)')"
+else
+	./fuzz_diff
+endif
+
+test: chain cache exec fuzz
 
 clean:
-	rm -f *.o test_chain test_cache dbt_test
+	rm -f *.o test_chain test_cache dbt_test fuzz_diff
 
-.PHONY: all test chain cache exec clean
+.PHONY: all test chain cache exec fuzz clean

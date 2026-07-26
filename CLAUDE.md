@@ -32,6 +32,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     one binary via `-D` symbol renames, on every host: #1152 survived because
     nothing exercised the affected backend, so host-only coverage is not enough.
   - **cache** — `dbt_cache_insert`/`dbt_cache_lookup` dedupe and FIFO eviction (#1153).
+  - **fuzz** — instruction-level differential fuzzer: random RV64 sequences
+    through the interpreter and the DBT, comparing all 32 registers, with
+    delta-debug shrinking of any mismatch. `jit_diff` fuzzes the softcode
+    layer; this one fuzzes the layer below it, where #1147/#1148/#1151/#1152/#1153
+    all lived. Deterministic (`DBT_FUZZ_SEED`, `DBT_FUZZ_ITERS`); soak with
+    `DBT_FUZZ_ITERS=20000 make -C tests/dbt fuzz`.
   - **exec** — `mux/modules/engine/dbt_test.cpp`, which had never been wired into
     any build. Hand-assembled RV64 through the interpreter and (for ~6 of 39
     test functions) the DBT, plus a cross-compiled ELF through both routes —
