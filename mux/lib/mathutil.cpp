@@ -961,12 +961,13 @@ long mux_atol(const UTF8 *pString)
         c1 = pString[1];
         if (mux_isdigit(c1))
         {
-            sum = 100 * sum + TableATOI[c0-'0'][c1-'0'];
+            sum = UINT64_C(100) * sum
+                + static_cast<uint64_t>(TableATOI[c0-'0'][c1-'0']);
             pString += 2;
         }
         else
         {
-            sum = 10 * sum + (c0-'0');
+            sum = UINT64_C(10) * sum + static_cast<uint64_t>(c0-'0');
             break;
         }
     } while (mux_isdigit(c0 = pString[0]));
@@ -975,14 +976,33 @@ long mux_atol(const UTF8 *pString)
     //
     if (LeadingCharacter == '-')
     {
-        sum = -sum;
+        // 0u - sum rather than -sum: negating INT64_MIN is undefined, and
+        // this is the form the sanitizer message itself recommends.
+        //
+        sum = UINT64_C(0) - sum;
     }
-    return sum;
+
+    // Converting an out-of-range unsigned value is implementation-defined
+    // before C++20 rather than undefined, and every compiler this builds
+    // with does the two's-complement thing -- which is exactly the value the
+    // old signed overflow produced in practice.
+    //
+    return static_cast<int64_t>(sum);
 }
 
 int64_t mux_atoi64(const UTF8 *pString)
 {
-    int64_t sum = 0;
+    // Accumulate unsigned.  The digits come from softcode, so a string past
+    // INT64_MAX overflowed a signed accumulator -- undefined behaviour, not
+    // merely wrapping, and the compiler is entitled to assume it cannot
+    // happen (#1455).  Unsigned arithmetic wraps by definition and produces
+    // the same bits, so this removes the UB without changing any answer.
+    //
+    // Deliberately NOT a range check: what this should return for an
+    // out-of-range string is a behaviour question softcode may depend on,
+    // and settling it belongs with #1402's conversion work rather than here.
+    //
+    uint64_t sum = 0;
     int LeadingCharacter = 0;
 
     // Convert ASCII digits
