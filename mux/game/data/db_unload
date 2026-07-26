@@ -15,6 +15,18 @@
 #   Note: The server should not be running during export.
 #
 
+#
+#   Runs from the game directory rather than data/, and passes the basename
+#   as data/<basename>.  dbconvert's init_modules() loads ./bin/engine.so
+#   relative to the CURRENT DIRECTORY, so running from data/ made it look for
+#   data/bin/engine.so and fail with "Failed to initialize modules" (#1336).
+#   This mirrors what db_unload.bat/db_load.bat do on Windows.
+#
+#   On macOS the old form happened to work: dyld consults DYLD_LIBRARY_PATH
+#   even for a path containing a slash, so ./bin/engine.so was rescued by the
+#   export below.  Linux's ld.so does not do that for slash-containing paths,
+#   so the failure was real there and merely masked here.
+#
 # Directory this script lives in (the game's data/ directory).
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
@@ -50,15 +62,16 @@ while [ $# -ge 1 ]; do
     esac
 done
 
-BIN="$SCRIPT_DIR/../bin"
+GAME_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+BIN="$GAME_DIR/bin"
 LD_LIBRARY_PATH="$BIN"; export LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH="$BIN"; export DYLD_LIBRARY_PATH
 
-cd "$SCRIPT_DIR" || exit 1
+cd "$GAME_DIR" || exit 1
 
 echo "Exporting from: $SCRIPT_DIR/$BASENAME.sqlite"
 
-set -- -d "$BASENAME" -u -o "$FLATFILE"
+set -- -d "data/$BASENAME" -u -o "$FLATFILE"
 [ -n "$COMSYS" ] && set -- "$@" -C "$COMSYS"
 [ -n "$MAIL" ]   && set -- "$@" -m "$MAIL"
 
