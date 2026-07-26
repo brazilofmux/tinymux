@@ -25,6 +25,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     via the accept path (nonzero exit on failure)
 - netaddr subnet unit tests: `make test-netaddr` (also part of `make test`);
   `mux_subnet::compare_to` + `parse_subnet` in `tests/netaddr/` (#799/#800)
+- DBT chain patch encode/decode: `make test-dbt-chain` (also part of `make test`);
+  `tests/dbt_chain/` asserts `dbt_backend_decode_jmp_target` is the exact inverse
+  of `dbt_backend_backpatch_jmp` (#1152). Builds **all three** backends
+  (a64_sysv, x64_sysv, x64_win64) into one binary on every host via `-D` symbol
+  renames — #1152 survived because nothing exercised the affected backend, so
+  host-only coverage is not enough here. Compiles the backend sources directly:
+  needs neither `install` nor `--enable-jit`, and has no skip path.
 - Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
   spins a throwaway netmux and drives `$`-command `%0..%9` captures over a
   socket (`tests/scenario/`) — the path muxscript can't reach

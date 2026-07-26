@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -28,11 +28,12 @@ clean:
 	$(MAKE) -C mux clean
 	$(MAKE) -C testcases/tools clean
 	$(MAKE) -C mux/ganl/tests clean
+	$(MAKE) -C tests/dbt_chain clean
 
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-alarm test-jit-qreg test-jit-ifelse test-ios
+test: install test-ganl test-netaddr test-dbt-chain test-alarm test-jit-qreg test-jit-ifelse test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -75,6 +76,18 @@ test-ganl:
 test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
+
+# DBT block-chaining patch encode/decode tests (#1152).  Asserts that
+# dbt_backend_decode_jmp_target is the exact inverse of
+# dbt_backend_backpatch_jmp, which is what dbt_resolve_chains relies on to
+# tell an unresolved site from a live one.  Builds all three backends
+# (a64_sysv, x64_sysv, x64_win64) into one binary on every host — the #1152
+# bug survived precisely because nothing exercised the affected backend.
+# Compiles the backend sources directly, so it needs neither `install` nor
+# --enable-jit and cannot degrade into testing nothing.
+test-dbt-chain:
+	@echo "==> Running DBT chain patch encode/decode tests"
+	$(MAKE) -C tests/dbt_chain test
 
 # mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
 # worker-thread start — alarm_clock is a libmux global whose constructor used
