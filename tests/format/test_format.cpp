@@ -258,10 +258,14 @@ static void test_truncation(void)
 //
 // snprintf is not an oracle here: the required behaviour deliberately differs
 // from printf's.  An unimplemented spec is echoed literally, so the evidence
-// lands in the output where it is visible, and formatting continues.  Before
+// lands in the output where it is visible, and formatting then STOPS.  Before
 // this, each of these reached mux_assert(0), which is an unconditional abort()
 // in the shipping build -- mux_assert has no NDEBUG guard -- so an ordinary
 // looking T("%+d") took the whole game down.
+//
+// Stopping rather than continuing is what test_unimplemented_stops below
+// pins.  Recovery consumes no va_arg, so anything interpreted afterwards
+// reads a shifted argument list (#1445).
 //
 // Reaching this function at all is the test.  If the recovery regresses to an
 // abort, the harness dies here rather than reporting a failure, which is
@@ -308,6 +312,54 @@ static void test_unimplemented(void)
     }
 }
 
+// Recovery must STOP at the first spec it cannot parse (#1445).
+//
+// No va_arg is consumed for an unimplemented spec, so a later conversion in
+// the same format string reads the wrong argument.  Continuing was measured
+// before this was fixed:
+//
+//   "%+d|%d"  11, 22      ->  "%+d|11"    silently the wrong argument
+//   "%+d|%s"  11, "tail"  ->  SIGSEGV     an int dereferenced as UTF8*
+//
+// The %s case is why this is a crash test and not a cosmetic one, and it is
+// why "echo and carry on" is not a safe recovery: there is no way to
+// resynchronise without knowing what the unknown spec would have taken.
+//
+// Conversions BEFORE the bad spec must still be honoured -- stopping is not
+// the same as discarding the whole format.
+//
+static void test_unimplemented_stops(void)
+{
+    static const struct
+    {
+        const char *fmt;
+        const char *want;
+    } cases[] =
+    {
+        // Everything from the bad spec onward is echoed verbatim.
+        //
+        { "%+d|%d",   "%+d|%d"   },
+        { "a%#xb%sc", "a%#xb%sc" },
+        { "%hd tail", "%hd tail" },
+    };
+
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
+    {
+        std::string got = mux_fmt(cases[i].fmt, 11, 22);
+        report("stops", cases[i].fmt, got, cases[i].want);
+    }
+
+    // The %s tail: this is the shape that segfaulted.  Reaching the report
+    // at all is most of the assertion.
+    //
+    report("stops", "%+d|%s", mux_fmt("%+d|%s", 11, "tail"), "%+d|%s");
+
+    // A conversion before the bad spec is still performed.
+    //
+    report("stops", "%s|%+d", mux_fmt("%s|%+d", "head", 11), "head|%+d");
+    report("stops", "%d then %a", mux_fmt("%d then %a", 7, 1.5), "7 then %a");
+}
+
 int main(void)
 {
     printf("=== mux_vsnprintf differential tests (vs snprintf) ===\n");
@@ -318,6 +370,7 @@ int main(void)
     test_float_specials();
     test_truncation();
     test_unimplemented();
+    test_unimplemented_stops();
 
     printf("=== %d passed, %d failed ===\n", g_pass, g_fail);
     return (0 == g_fail) ? 0 : 1;
