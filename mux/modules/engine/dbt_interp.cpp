@@ -42,6 +42,19 @@ static inline uint64_t fp_box_d(double d) {
     return bits;
 }
 
+
+// RISC-V canonical quiet NaN.  Any operation that produces a NaN result
+// returns exactly this: unlike IEEE 754 in general, and unlike every host
+// this runs on, RISC-V never propagates an operand's NaN payload.  The host
+// does, so a result computed with native doubles has to be canonicalised
+// before it becomes a guest register value (#1337).
+//
+static constexpr uint64_t RV_CANON_NAN = 0x7FF8000000000000ULL;
+
+static inline uint64_t fp_box_canon_d(double d) {
+    return std::isnan(d) ? RV_CANON_NAN : fp_box_d(d);
+}
+
 // RISC-V rounding modes, as encoded in the rm field (funct3) of the FP
 // instructions.  7 means "dynamic": take the mode from fcsr.frm instead.
 //
@@ -750,7 +763,7 @@ int rv64_interp_run(rv64_state_t *state, rv64_memory_t *mem,
             case OP_FNMADD: r = -a * b - c; break;
             default: r = 0; break;
             }
-            state->f[insn.rd] = fp_box_d(r);
+            state->f[insn.rd] = fp_box_canon_d(r);
             break;
         }
 
@@ -768,30 +781,30 @@ int rv64_interp_run(rv64_state_t *state, rv64_memory_t *mem,
             case FP_FADD: {
                 double a = fp_unbox_d(state->f[insn.rs1]);
                 double b = fp_unbox_d(state->f[insn.rs2]);
-                state->f[insn.rd] = fp_box_d(a + b);
+                state->f[insn.rd] = fp_box_canon_d(a + b);
                 break;
             }
             case FP_FSUB: {
                 double a = fp_unbox_d(state->f[insn.rs1]);
                 double b = fp_unbox_d(state->f[insn.rs2]);
-                state->f[insn.rd] = fp_box_d(a - b);
+                state->f[insn.rd] = fp_box_canon_d(a - b);
                 break;
             }
             case FP_FMUL: {
                 double a = fp_unbox_d(state->f[insn.rs1]);
                 double b = fp_unbox_d(state->f[insn.rs2]);
-                state->f[insn.rd] = fp_box_d(a * b);
+                state->f[insn.rd] = fp_box_canon_d(a * b);
                 break;
             }
             case FP_FDIV: {
                 double a = fp_unbox_d(state->f[insn.rs1]);
                 double b = fp_unbox_d(state->f[insn.rs2]);
-                state->f[insn.rd] = fp_box_d(a / b);
+                state->f[insn.rd] = fp_box_canon_d(a / b);
                 break;
             }
             case FP_FSQRT: {
                 double a = fp_unbox_d(state->f[insn.rs1]);
-                state->f[insn.rd] = fp_box_d(sqrt(a));
+                state->f[insn.rd] = fp_box_canon_d(sqrt(a));
                 break;
             }
             case FP_FSGNJ: {
