@@ -42,11 +42,21 @@ think [setq(0, create(Mutscan_Thing, 10))][attrib_set(test_mutscan_fn/thing, %q0
 -
 @tel [get(test_mutscan_fn/thing)]=[get(test_mutscan_fn/room_a)]
 -
+#
+# @open puts the exit in the opener's location, so this has to move -- but
+# `me` is the shared smoke runner, and every later file in the suite runs as
+# the same object.  Save the original location first and go back to it
+# below, or the move leaks into everything that follows (#1386).
+#
+think [attrib_set(test_mutscan_fn/saved_loc, [loc(me)])]
+-
 @tel me=[get(test_mutscan_fn/room_a)]
 -
 @open mutscan_exit_open
 -
 think [attrib_set(test_mutscan_fn/exit_open, [lastcreate(me, e)])]
+-
+@tel me=[get(test_mutscan_fn/saved_loc)]
 -
 &tr.tc000 test_mutscan_fn=
   @log smoke=Beginning mutscan function test cases.
