@@ -65,6 +65,11 @@ DECLARE_BACKEND(win64);
 // makes backpatch or decode call into shared code, this test dies loudly
 // instead of quietly testing something else.
 //
+// Data symbols cannot abort, so this one is simply defined. The backends
+// bake its address into the intrinsic stubs' bounds check (#1151); the
+// chaining pair never reads it.
+uint8_t g_dbt_safe_page[DBT_SAFE_PAGE_SIZE];
+
 static void die_unreachable(const char *who) {
     fprintf(stderr, "test_dbt_chain: %s was called from the chaining path.\n"
             "The encode/decode pair is no longer leaf arithmetic; these "

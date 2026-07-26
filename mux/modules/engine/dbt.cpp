@@ -99,6 +99,27 @@ bool dbt_resolve_direct_jalr_target(uint64_t pc,
 }
 
 // ---------------------------------------------------------------
+// Out-of-range guest pointer sink (#1151)
+// ---------------------------------------------------------------
+//
+// Intrinsic stubs convert a guest offset to a host pointer and hand it
+// straight to strlen/strcpy/memcpy/memset with lengths the guest chose.
+// The interpreter bounds-checks every access (dbt_interp.cpp mem_check);
+// the DBT did not, so a bad guest pointer became a host read or write at
+// an arbitrary address.
+//
+// A conversion that fails the bound is redirected here instead of being
+// trapped.  That follows the interpreter, which logs and returns 0 rather
+// than halting -- there is no fault path in the DBT to unwind to.  A
+// clamped strlen sees an immediate NUL, a clamped memcpy reads zeros, and
+// nothing touches host memory outside this buffer.  Writes through a
+// clamped pointer land here too and may dirty it; that is contained, which
+// is the property being bought.  ctx.mem_clamps counts the redirects so a
+// live clamp is visible rather than silent.
+//
+alignas(16) uint8_t g_dbt_safe_page[DBT_SAFE_PAGE_SIZE];
+
+// ---------------------------------------------------------------
 // Block cache
 // ---------------------------------------------------------------
 
@@ -500,6 +521,10 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     dbt->ctx = {};
     dbt->ctx.next_pc = entry_pc;
     dbt->ctx.x[2] = stack_top; // SP
+    // Publish the guest bound for the intrinsic stubs' pointer check
+    // (#1151).  Set here, after the ctx wipe, because dbt_reset can change
+    // memory_size between runs while blob translations survive.
+    dbt->ctx.mem_size = dbt->memory_size;
     uint64_t dispatch_count = 0;
 
     for (;;) {

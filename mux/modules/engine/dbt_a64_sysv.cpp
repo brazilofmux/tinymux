@@ -287,8 +287,34 @@ static void emit_store_ctx_reg(emit_t *e, int guest_reg, int host_reg) {
     emit_store_guest(e, guest_reg, host_reg);
 }
 
+// Convert a guest offset in host_reg to a host pointer, bounds-checked
+// against ctx.mem_size (#1151).
+//
+// Every intrinsic stub reaches host pointers through here — both the
+// hand-written ones (slen/scopy/memcpy/memcmp/memset/memswap) and the
+// generic ptr_mask marshaller — so this one function covers the whole
+// intrinsic surface.
+//
+// Branchless: an out-of-range offset selects the sink page instead of
+// base+offset, and CINC bumps the clamp counter on the same condition.
+// X16/X17 (IP0/IP1) are the AArch64 intra-procedure-call scratch
+// registers — never argument or long-lived registers, so using them here
+// cannot disturb args already staged in X0..X7 by earlier conversions.
+//
 static void emit_guest_to_host(emit_t *e, int host_reg) {
-    emit_add_r64(e, host_reg, host_reg, A64_X20);
+    emit_ldr_x64_imm(e, A64_X16, A64_X19, CTX_MEM_SIZE_OFF);  // bound
+    emit_cmp_r64(e, host_reg, A64_X16);                       // off vs bound
+    emit_add_r64(e, host_reg, host_reg, A64_X20);             // base + off
+    emit_mov_r64_imm64(e, A64_X17,
+                       reinterpret_cast<uint64_t>(g_dbt_safe_page));
+    // CC = unsigned less-than: in range keeps base+off, else the sink.
+    emit_csel(e, host_reg, host_reg, A64_X17, A64_COND_CC);
+
+    // ctx.mem_clamps += (off >= bound).
+    emit_ldr_x64_imm(e, A64_X16, A64_X19, CTX_MEM_CLAMPS_OFF);
+    emit_cset(e, A64_X17, A64_COND_CS);
+    emit_add_r64(e, A64_X16, A64_X16, A64_X17);
+    emit_str_x64_imm(e, A64_X16, A64_X19, CTX_MEM_CLAMPS_OFF);
 }
 
 static void emit_intrinsic_return(emit_t *e) {
