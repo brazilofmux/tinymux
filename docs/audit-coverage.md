@@ -56,8 +56,8 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |----|--------|-------|------:|-----------|--------|-------|
 | B1 | Epoll / select / kqueue / wselect / IOCP | `mux/ganl/src/*_network_engine.cpp` | med | Pass 1–2 + residual 2026-07-26 | deep | #942–#947 held; #1290 dual-stack V6ONLY warn on kqueue/IOCP/wselect |
 | B2 | IOCP / wselect | `iocp_*`, `wselect_*` | med | Pass 2 Windows | deep | FD_SETSIZE accept leak, IOCP desc cap |
-| B3 | OpenSSL transport | `openssl_transport.cpp` | med | earlier TLS work | partial | Renegotiation disabled; re-read chunking |
-| B4 | Schannel transport | `schannel_transport.cpp` | med | Pass 2 | deep | EXTRA loop, handle init (#1067–#1068); nits remain |
+| B3 | OpenSSL transport | `openssl_transport.cpp` | med | Pass 11 2026-07-26 | deep | #948/#949 held; #1282 read-BIO cap + cipher list pin |
+| B4 | Schannel transport | `schannel_transport.cpp` | med | Pass 2 + Pass 11 | deep | #1067–#1068/#950–#952 held; #1282 handshake/incomplete buffer caps |
 | B5 | Connection / buffers | `connection.cpp`, `io_buffer`, types | med | Pass 2 context | partial | Backlog, write posts |
 | B6 | GANL tests | `mux/ganl/tests/` | small | ongoing | partial | Expand wselect/IOCP cases over time |
 
@@ -177,6 +177,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | Pass B1/H1 residual | 2026-07-26 | engines + alloc/alarm | #1290 freelist, alarm ms, dual-stack warn |
 | Pass D4 residual | 2026-07-26 | lua_mod bridges | #1287 mux.pennies/iswizard/isconnected match softcode perms; string.dump removed |
+| Pass 11 | 2026-07-26 | B3 OpenSSL + B4 Schannel residual | #1282 wire-buffer caps + OpenSSL cipher pin; prior #948–#952/#1067–#1068 still held |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -193,6 +194,8 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 | **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | Pass 4 closed; residual depth |
 | **Pass 11** | **B3 + B4 nits + B6** OpenSSL re-read + Schannel residual + harness | Windows/Linux TLS depth |
 | **Pass 12** | **C3** done (#1279/#1280) | Fix queue / residual Mediums |
+| **Pass 11** | **B3/B4 done (#1282)** | B6 harness expansion still welcome |
+| **Pass 12** | **C3** commands/hooks deep | Still thin; @-command side effects |
 | **Pass 13+** | **J\*** clients by platform | After server/proxy confidence |
 | **Residual** | Pass 7 Mediums #1149–#1153; Pass 6 twin #1141; Pass 8/9 Mediums | Fix when rotating back |
 | **Anytime** | **D5** jit_diff soak + corpus gaps (#1160) | Continuous; other agents on float/fuzz |
@@ -241,12 +244,10 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 8 E5+C5 filed #1179–#1188; E5/C5 deep; rotation → Pass 9 F3 (or Fix Pass 8 Highs) |
 | 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
 | 2026-07-25 | Residual scout C6+G2+F4 deep; #1294–#1296 boolexp NUL, COM guards, muxescape/muxscript |
-
 | 2026-07-26 | Pass A8 residual: stubslave parent write remainder + Win32 DNS queue caps; A8 → deep |
 | 2026-07-26 | Pass 12 C3: @include executor fix #1279; NOEVAL hook issue #1280; C3 → deep |
-
 | 2026-07-26 | Pass B1/H1 residual: freelist + alarm + dual-stack #1290; B1/H1 → deep |
-
 | 2026-07-26 | Pass D4 residual: Lua bridge Examinable gates + string.dump #1287; D4 → deep |
+| 2026-07-26 | Pass 11 B3/B4: TLS wire-buffer caps + OpenSSL cipher pin #1282; B3 deep |
 
 Update this table when the map structure changes.

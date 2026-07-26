@@ -16,6 +16,12 @@
 
 namespace ganl {
 
+// Cap pending ciphertext held in the mem BIOs / incomplete reassembly
+// paths.  A TLS record is at most ~16 KiB; handshake cert chains can be
+// larger.  Past this, treat the peer as abusive and fail the session
+// rather than grow without bound (Pass 11 residual #1282).
+static constexpr size_t kMaxTlsPendingWire = 256 * 1024;
+
 int OpenSSLTransport::passwordCallback(char* buf, int size, int rwflag, void* userdata) {
     (void)rwflag;
 
@@ -102,7 +108,35 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
 
     // Prefer server cipher order
     SSL_CTX_set_options(ctx_, SSL_OP_CIPHER_SERVER_PREFERENCE);
-    // Consider setting cipher list: SSL_CTX_set_cipher_list(ctx_, "HIGH:!aNULL:!MD5:!RC4");
+
+    // Pass 11 residual: pin a modern cipher suite list.  TLS_server_method()
+    // already excludes SSLv2/3 and TLS 1.0/1.1 via SSL_OP_NO_*, but default
+    // TLS 1.2 suites can still include weak leftovers on some OpenSSL builds.
+    // Fail soft: if set_cipher_list fails, keep defaults and log once rather
+    // than aborting init (so a mis-typed list never bricks TLS entirely).
+    if (SSL_CTX_set_cipher_list(ctx_,
+            "HIGH:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA:!SRP") != 1) {
+        std::cerr << "[OpenSSL:Global] WARNING: SSL_CTX_set_cipher_list failed; "
+                     "using library defaults (#1282)."
+                  << std::endl;
+        ERR_clear_error();
+    }
+#ifdef TLS1_3_VERSION
+    // Prefer AEAD TLS 1.3 suites when the build supports them.
+    if (SSL_CTX_set_ciphersuites(ctx_,
+            "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256") != 1) {
+        std::cerr << "[OpenSSL:Global] WARNING: SSL_CTX_set_ciphersuites failed; "
+                     "using library TLS 1.3 defaults (#1282)."
+                  << std::endl;
+        ERR_clear_error();
+    }
+#endif
+#ifdef TLS1_2_VERSION
+    if (SSL_CTX_set_min_proto_version(ctx_, TLS1_2_VERSION) != 1) {
+        // Options above already disable older protocols; ignore min-proto failure.
+        ERR_clear_error();
+    }
+#endif
 
     // Tolerate a moved plaintext buffer across a retried SSL_write(): the
     // formatted-output buffer can be re-allocated between calls, and without
@@ -362,6 +396,15 @@ TlsResult OpenSSLTransport::processIncoming(ConnectionHandle conn, IoBuffer& enc
 
     // 1. Feed data to BIO (outside lock)
     if (encrypted_in.readableBytes() > 0) {
+        // Refuse to accumulate unbounded ciphertext in the mem BIO (#1282).
+        const size_t pendingBefore = static_cast<size_t>(BIO_ctrl_pending(context.readBio));
+        if (pendingBefore + encrypted_in.readableBytes() > kMaxTlsPendingWire) {
+            context.lastError = "TLS read BIO pending exceeds cap";
+            GANL_SSL_DEBUG(conn, "Error: " << context.lastError
+                     << " (pending=" << pendingBefore
+                     << " + in=" << encrypted_in.readableBytes() << ")");
+            return TlsResult::Error;
+        }
         int written = BIO_write(context.readBio, encrypted_in.readPtr(), encrypted_in.readableBytes());
         GANL_SSL_DEBUG(conn, "BIO_write(" << encrypted_in.readableBytes() << ") returned " << written);
         if (written > 0) {
