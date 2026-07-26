@@ -2623,8 +2623,10 @@ static void test_fp_nan_canonicalisation() {
 static void test_fp_minmax_snan() {
     printf("test_fp_minmax_snan...\n");
 
-    const uint64_t SNAN  = 0x7FF0000000000001ULL;  // exp all 1s, mantissa
-                                                   // MSB clear => signalling
+    const uint64_t SIGNAN = 0x7FF0000000000001ULL;  // exp all 1s, mantissa
+                                                    // MSB clear => signalling
+                                                    // (SNAN is a glibc math.h
+                                                    // macro, like NZERO below)
     const uint64_t QNAN  = 0x7FF8000000000000ULL;
     const uint64_t PINF  = 0x7FF0000000000000ULL;
     const uint64_t NINF  = 0xFFF0000000000000ULL;
@@ -2667,8 +2669,8 @@ static void test_fp_minmax_snan() {
                 // sNaN against a real value: the real value wins, in either
                 // operand position.
                 std::vector<uint32_t> code =
-                    build(swap ? VALS[i].bits : SNAN,
-                          swap ? SNAN : VALS[i].bits, is_max);
+                    build(swap ? VALS[i].bits : SIGNAN,
+                          swap ? SIGNAN : VALS[i].bits, is_max);
                 char desc[160];
                 snprintf(desc, sizeof(desc), "%s(sNaN,%s) sNaN in %s: interp",
                          op, VALS[i].name, swap ? "rs2" : "rs1");
@@ -2680,7 +2682,7 @@ static void test_fp_minmax_snan() {
         }
         // Both NaN -> canonical.  Without this the fix could be "always take
         // the other operand", which would be wrong here.
-        std::vector<uint32_t> both = build(SNAN, QNAN, is_max);
+        std::vector<uint32_t> both = build(SIGNAN, QNAN, is_max);
         char d2[160];
         snprintf(d2, sizeof(d2), "%s(sNaN,qNaN) both NaN: interp", op);
         CHECK_EQ(d2, run_code(both).state.f[3], QNAN);
