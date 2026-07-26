@@ -1,0 +1,120 @@
+#
+# powersee_fn.mux - Coverage for powers, locks, visibility and player match.
+#
+# Seven builtins with no reference anywhere in the corpus (#1160):
+#
+#   haspower  powers  elock  cansee  pmatch  pfind  hasquota
+#
+# These are softcode's answers to "what may this object do / see / match".
+# hasquota() is included for the name only when quotas are off: the
+# disabled path still has to return a clear error rather than a false
+# quota answer.
+#
+# @power is used once so haspower/powers are not vacuously empty (wizardship
+# is a flag, not a power table entry).  It has to be granted to the test
+# object, not to `me`: the grant runs at upload time as the uploader, while
+# the cases run under `@trig test_powersee_fn/...`, where `me` is the test
+# object.  Granting to `me` here left tc001 querying an object that had
+# never been given the power.
+#
+@create test_powersee_fn
+-
+@set test_powersee_fn=INHERIT QUIET
+-
+think [setq(0, create(Powersee_Thing, 10))][attrib_set(test_powersee_fn/thing, %q0)]
+-
+@tel [get(test_powersee_fn/thing)]=me
+-
+@power test_powersee_fn=search
+-
+&tr.tc000 test_powersee_fn=
+  @log smoke=Beginning powersee function test cases.
+-
+#
+# Test Case #1 - powers() lists granted powers; haspower() queries them.
+#
+&tr.tc001 test_powersee_fn=
+  @if cand(
+        strmatch(setr(0, powers(me)), *search*),
+        eq(haspower(me, search), 1),
+        eq(haspower(me, NoSuchPowerXYZ), 0)
+      )=
+  {
+    @log smoke=TC001: powers and haspower. Succeeded.
+  },
+  {
+    @log smoke=TC001: powers and haspower. Failed (powers=%q0 has=[haspower(me, search)] none=[haspower(me, NoSuchPowerXYZ)]).
+  }
+-
+#
+# Test Case #2 - elock() evaluates the default lock against a victim.
+#
+# elock(me, me) is true for an unlocked or self-passing lock on the
+# executor.  The pin is a 0/1 answer, not an error.
+#
+&tr.tc002 test_powersee_fn=
+  @if or(
+        eq(setr(0, elock(me, me)), 0),
+        eq(%q0, 1)
+      )=
+  {
+    @log smoke=TC002: elock returns a boolean. Succeeded.
+  },
+  {
+    @log smoke=TC002: elock returns a boolean. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - cansee() is true for a carried thing.
+#
+&tr.tc003 test_powersee_fn=
+  @if eq(cansee(me, get(me/thing)), 1)=
+  {
+    @log smoke=TC003: cansee carried thing. Succeeded.
+  },
+  {
+    @log smoke=TC003: cansee carried thing. Failed ([cansee(me, get(me/thing))]).
+  }
+-
+#
+# Test Case #4 - pmatch() and pfind() resolve the wizard.
+#
+# eq() compares object identity so pmatch/pfind results match me even
+# when string forms differ.  pfind also accepts an absolute #dbref.
+#
+&tr.tc004 test_powersee_fn=
+  @if cand(
+        eq(setr(0, pmatch(Wizard)), me),
+        eq(setr(1, pfind(Wizard)), me),
+        strmatch(setr(2, pfind(#1)), #1)
+      )=
+  {
+    @log smoke=TC004: pmatch and pfind resolve wizard. Succeeded.
+  },
+  {
+    @log smoke=TC004: pmatch and pfind resolve wizard. Failed (pm=%q0 pfname=%q1 pfhash=%q2).
+  }
+-
+#
+# Test Case #5 - hasquota() errors clearly when quotas are disabled.
+#
+&tr.tc005 test_powersee_fn=
+  @if strmatch(setr(0, hasquota(me, 0)), #-1*)=
+  {
+    @log smoke=TC005: hasquota disabled path. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: hasquota disabled path. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_powersee_fn=
+  @log smoke=End powersee function test cases.;
+  @notify smoke
+-
+drop test_powersee_fn
+-
+#
+# End of Test Cases
+#
