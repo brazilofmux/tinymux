@@ -128,6 +128,15 @@ struct HydraSession {
     // #1096: cap per-subscriber queues so a slow gRPC/WS client cannot OOM.
     static constexpr size_t MAX_SUBSCRIBER_QUEUE = 256;
 
+    // #1266: cap concurrent gRPC/WS subscribers per session (queue *count*,
+    // not depth).  Enough for dual-device + one extra Subscribe; blocks
+    // N-stream amplification of every game line.
+    static constexpr size_t MAX_SUBSCRIBERS = 8;
+
+    // #1268: shared with front-door telnet line assembly (8192).
+    // gRPC/WS/grpc-web input_line must not exceed this.
+    static constexpr size_t MAX_INPUT_LINE_LENGTH = 8192;
+
     // Per-subscriber queue — each subscriber holds a shared_ptr to one.
     struct SubscriberQueue {
         std::queue<OutputItem> output;
@@ -146,9 +155,13 @@ struct HydraSession {
         std::map<int, std::shared_ptr<SubscriberQueue>> subscribers;
 
         // Register a new subscriber. Returns its ID and queue.
+        // On capacity (#1266): returns {-1, nullptr}; caller must not use.
         std::pair<int, std::shared_ptr<SubscriberQueue>> addSubscriber(
                 bool wantsOutput, bool wantsGmcp,
                 RenderFormat fmt = RenderFormat::TrueColor) {
+            if (subscribers.size() >= MAX_SUBSCRIBERS) {
+                return {-1, nullptr};
+            }
             int id = nextSubId++;
             auto sq = std::make_shared<SubscriberQueue>();
             sq->wantsOutput = wantsOutput;
@@ -214,8 +227,9 @@ struct FrontDoorState {
     LoginPhase loginPhase{AwaitUsername};
     std::string pendingUsername;
 
-    // Line assembly buffer (for telnet line-at-a-time)
-    static constexpr size_t MAX_LINE_LENGTH = 8192;
+    // Line assembly buffer (for telnet line-at-a-time).
+    // Keep in sync with HydraSession::MAX_INPUT_LINE_LENGTH (#1268).
+    static constexpr size_t MAX_LINE_LENGTH = HydraSession::MAX_INPUT_LINE_LENGTH;
     std::string lineBuf;
 
     // Client capabilities (defaults for Phase 1; auto-detect in future)

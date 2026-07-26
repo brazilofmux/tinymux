@@ -924,12 +924,24 @@ void SessionManager::handleWsGameSessionData(FrontDoorState& fd,
                 return;
             }
 
-            // Register subscriber
+            // Register subscriber (#1266: reject when at cap).
             {
                 std::lock_guard<std::mutex> lock(session->outputQueue->mutex);
                 auto [id, sq] = session->outputQueue->addSubscriber(true, true);
                 fd.wsGameSessionSubId = id;
                 fd.wsGameSessionQueue = sq;
+            }
+            if (!fd.wsGameSessionQueue) {
+                hydra::ServerMessage errMsg;
+                auto* notice = errMsg.mutable_notice();
+                notice->set_text("Too many subscribers on this session");
+                notice->set_severity(hydra::SEVERITY_ERROR);
+                std::string frame = wsEncodeFrame(errMsg.SerializeAsString(),
+                                                  WS_OP_BINARY);
+                safeWrite(fd.handle, frame);
+                safeWrite(fd.handle, wsCloseFrame(1008));
+                engine_.closeConnection(fd.handle);
+                return;
             }
             fd.wsGameSessionOQ = session->outputQueue;
             fd.wsGameSessionPersistId = sid;
@@ -971,14 +983,20 @@ void SessionManager::handleWsGameSessionData(FrontDoorState& fd,
         session->lastActivity = time(nullptr);
 
         if (cmsg.has_input_line()) {
-            BackDoorLink* active = session->getActiveLink();
-            if (active && active->state == LinkState::Active) {
-                std::string line = bridge_.convertInput(
-                    ganl::EncodingType::Utf8,
-                    active->protoState.encoding,
-                    cmsg.input_line());
-                line += "\r\n";
-                safeWrite(active->handle, line);
+            // #1268: match front-door telnet line limit.
+            if (cmsg.input_line().size() > HydraSession::MAX_INPUT_LINE_LENGTH) {
+                LOG_WARN("WsGameSession fd %lu: input_line too long (%zu), dropped",
+                         (unsigned long)fd.handle, cmsg.input_line().size());
+            } else {
+                BackDoorLink* active = session->getActiveLink();
+                if (active && active->state == LinkState::Active) {
+                    std::string line = bridge_.convertInput(
+                        ganl::EncodingType::Utf8,
+                        active->protoState.encoding,
+                        cmsg.input_line());
+                    line += "\r\n";
+                    safeWrite(active->handle, line);
+                }
             }
         } else if (cmsg.has_ping()) {
             // Queue pong sentinel for the drain loop
@@ -3259,10 +3277,18 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
         hydra::InputResponse resp;
         if (!s) {
             resp.set_error("session not found");
+        } else if (rpcReq.line().size() > HydraSession::MAX_INPUT_LINE_LENGTH) {
+            // #1268
+            resp.set_error("line too long");
         } else {
             BackDoorLink* active = s->getActiveLink();
             if (active && active->state == LinkState::Active) {
-                std::string data = rpcReq.line() + "\r\n";
+                // #1267: same charset conversion as native gRPC / WS GameSession.
+                std::string data = bridge_.convertInput(
+                    ganl::EncodingType::Utf8,
+                    active->protoState.encoding,
+                    rpcReq.line());
+                data += "\r\n";
                 safeWrite(active->handle, data);
                 resp.set_success(true);
             } else {

@@ -38,6 +38,11 @@ static std::string getSessionId(ServerContext* ctx, const std::string& msgField)
     return msgField;
 }
 
+// #1268: match front-door telnet line assembly.
+static bool inputLineWithinLimit(const std::string& line) {
+    return line.size() <= HydraSession::MAX_INPUT_LINE_LENGTH;
+}
+
 // ---- Helper: map C++ LinkState to proto LinkState enum ----
 
 static hydra::LinkState toProtoLinkState(LinkState s) {
@@ -361,6 +366,11 @@ public:
             subId = id;
             sq = q;
         }
+        if (!sq) {
+            // #1266: too many concurrent GameSession/Subscribe streams.
+            return Status(StatusCode::RESOURCE_EXHAUSTED,
+                          "too many subscribers on this session");
+        }
 
         // Replay cached GMCP state into the new subscriber's queue
         {
@@ -374,13 +384,21 @@ public:
             replayFuture.get();
         }
 
-        // Reader thread: process client input
+        // Reader thread: process client input.
+        // #1265: wait on each future so this stream cannot flood the work
+        // queue faster than the main loop drains (bounded enqueue is the
+        // global backstop; future.get is per-stream sequencing).
         std::atomic<bool> done{false};
         std::thread reader([&]() {
             hydra::ClientMessage msg;
             while (stream->Read(&msg)) {
                 if (msg.has_input_line()) {
-                    workQueue_.enqueue<void>(
+                    if (!inputLineWithinLimit(msg.input_line())) {
+                        LOG_WARN("GameSession: input_line too long (%zu), dropped",
+                                 msg.input_line().size());
+                        continue;
+                    }
+                    auto fut = workQueue_.enqueue<void>(
                         [sid, line = msg.input_line()]
                         (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                             HydraSession* s = sm.findByPersistId(sid);
@@ -395,6 +413,7 @@ public:
                                 sm.safeWrite(active->handle, data);
                             }
                         });
+                    fut.get();
                 } else if (msg.has_ping()) {
                     // Queue pong for the writer loop (don't write from reader thread)
                     HydraSession::OutputItem pongItem;
@@ -419,7 +438,7 @@ public:
                     }
                     // Forward terminal size to game via NAWS
                     if (prefs.terminal_width() > 0 || prefs.terminal_height() > 0) {
-                        workQueue_.enqueue<void>(
+                        auto fut = workQueue_.enqueue<void>(
                             [sid, w = prefs.terminal_width(), h = prefs.terminal_height()]
                             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                                 HydraSession* s = sm.findByPersistId(sid);
@@ -432,22 +451,30 @@ public:
                                     sm.safeWrite(active->handle, buildNawsFrame(width, height));
                                 }
                             });
+                        fut.get();
                     }
                     // Store terminal_type in session for future TTYPE forwarding
                     if (!prefs.terminal_type().empty()) {
-                        workQueue_.enqueue<void>(
+                        auto fut = workQueue_.enqueue<void>(
                             [sid, ttype = prefs.terminal_type()]
                             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                                 HydraSession* s = sm.findByPersistId(sid);
                                 if (s) s->terminalType = ttype;
                             });
+                        fut.get();
                     }
                     LOG_DEBUG("GameSession: client set preferences color=%d width=%u height=%u type=%s",
                               prefs.color_format(), prefs.terminal_width(), prefs.terminal_height(),
                               prefs.terminal_type().c_str());
                 } else if (msg.has_gmcp()) {
+                    // Cap GMCP package+json similarly to input lines (#1268).
+                    if (msg.gmcp().package().size() + msg.gmcp().json().size()
+                        > HydraSession::MAX_INPUT_LINE_LENGTH) {
+                        LOG_WARN("GameSession: GMCP payload too long, dropped");
+                        continue;
+                    }
                     // Forward GMCP to active link
-                    workQueue_.enqueue<void>(
+                    auto fut = workQueue_.enqueue<void>(
                         [sid, pkg = msg.gmcp().package(), json = msg.gmcp().json()]
                         (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
                             HydraSession* s = sm.findByPersistId(sid);
@@ -459,6 +486,7 @@ public:
                                 sm.safeWrite(active->handle, buildGmcpFrame(payload));
                             }
                         });
+                    fut.get();
                 }
             }
             done.store(true);
@@ -533,6 +561,12 @@ public:
     Status SendInput(ServerContext* ctx, const hydra::InputRequest* req,
                      hydra::InputResponse* resp) override {
         std::string sid = getSessionId(ctx, req->session_id());
+        // #1268: reject before enqueue so the work queue never holds a huge line.
+        if (!inputLineWithinLimit(req->line())) {
+            resp->set_success(false);
+            resp->set_error("line too long");
+            return Status::OK;
+        }
         auto future = workQueue_.enqueue<bool>(
             [sid, line = req->line(), resp]
             (SessionManager& sm, AccountManager&, const HydraConfig&, ProcessManager&) {
@@ -601,6 +635,10 @@ public:
             subId = id;
             sq = q;
         }
+        if (!sq) {
+            return Status(StatusCode::RESOURCE_EXHAUSTED,
+                          "too many subscribers on this session");
+        }
 
         while (!ctx->IsCancelled()) {
             std::unique_lock<std::mutex> lock(oq->mutex);
@@ -665,6 +703,10 @@ public:
             auto [id, q] = oq->addSubscriber(false, true);
             subId = id;
             sq = q;
+        }
+        if (!sq) {
+            return Status(StatusCode::RESOURCE_EXHAUSTED,
+                          "too many subscribers on this session");
         }
 
         while (!ctx->IsCancelled()) {
@@ -901,20 +943,26 @@ public:
     Status GetGameStatus(ServerContext* ctx, const hydra::GameStatusRequest* req,
                          hydra::GameStatusResponse* resp) override {
         // #1102: require a valid session token (metadata authorization).
+        // #1269: any authenticated session may learn running/up; host PIDs
+        // are admin-only (Start/Stop/Restart already require admin).
         std::string sid = getSessionId(ctx, "");
         auto future = workQueue_.enqueue<bool>(
             [sid, gameName = req->game_name(), resp]
-            (SessionManager& sm, AccountManager&, const HydraConfig& cfg, ProcessManager& pm) {
-                if (sid.empty() || sm.findByPersistId(sid) == nullptr) {
+            (SessionManager& sm, AccountManager& am, const HydraConfig& cfg, ProcessManager& pm) {
+                HydraSession* s = sid.empty() ? nullptr : sm.findByPersistId(sid);
+                if (!s) {
                     return false;
                 }
+                const bool admin = am.isAdmin(s->accountId);
                 for (const auto& g : cfg.games) {
                     if (g.type != GameType::Local) continue;
                     if (!gameName.empty() && g.name != gameName) continue;
                     auto* pi = resp->add_processes();
                     pi->set_game_name(g.name);
                     pi->set_running(pm.isRunning(g.name));
-                    pi->set_pid(static_cast<int>(pm.getPid(g.name)));
+                    if (admin) {
+                        pi->set_pid(static_cast<int>(pm.getPid(g.name)));
+                    }
                 }
                 return true;
             });
