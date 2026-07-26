@@ -4349,6 +4349,8 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
                 &nInsnHits, &nMemHits, &nBytes,
                 &nCacheHits, &nCacheMisses, &nCacheEntries);
             notify(executor, tprintf(T("Lua module loaded (Lua 5.4).")));
+            notify(executor, tprintf(T("  Lua JIT:          %s"),
+                mudconf.lua_jit ? T("enabled") : T("disabled (default)")));
             notify(executor, tprintf(T("  Calls:            %zu"), nCalls));
             notify(executor, tprintf(T("  Errors:           %zu"), nErrors));
             notify(executor, tprintf(T("  Insn limit hits:  %zu"), nInsnHits));
