@@ -179,10 +179,17 @@ static int bridge_name(lua_State *L)
 }
 
 // mux.owner(dbref) — return owner dbref.
+// Softcode owner() uses match_thing + Owner(); absolute #dbref is allowed
+// there too.  Require Good_obj only (same as softcode after a successful match).
 //
 static int bridge_owner(lua_State *L)
 {
-    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+    dbref obj = static_cast<dbref>(luaL_checkinteger(L, 1));
+    if (!Good_obj(obj))
+    {
+        lua_pushnil(L);
+        return 1;
+    }
 
     mux_IObjectInfo *pOI = nullptr;
     MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
@@ -191,7 +198,7 @@ static int bridge_owner(lua_State *L)
     if (MUX_SUCCEEDED(mr) && nullptr != pOI)
     {
         dbref owner;
-        mr = pOI->GetOwner(static_cast<dbref>(obj), &owner);
+        mr = pOI->GetOwner(obj, &owner);
         pOI->Release();
         if (MUX_SUCCEEDED(mr))
         {
@@ -411,10 +418,23 @@ static int bridge_isplayer(lua_State *L)
 }
 
 // mux.isconnected(dbref) — check if player is connected.
+// Match softcode hasflag(obj,CONNECTED): pub_flags || Examinable || self (#1287).
 //
 static int bridge_isconnected(lua_State *L)
 {
-    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+    lua_exec_ctx *ctx = get_exec_ctx(L);
+    if (nullptr == ctx) { lua_pushboolean(L, 0); return 1; }
+
+    dbref obj = static_cast<dbref>(luaL_checkinteger(L, 1));
+    if (  !Good_obj(obj)
+       || (  !mudconf.pub_flags
+          && !Examinable(ctx->executor, obj)
+          && obj != ctx->executor
+          && obj != ctx->enactor))
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
 
     mux_IObjectInfo *pOI = nullptr;
     MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
@@ -423,7 +443,7 @@ static int bridge_isconnected(lua_State *L)
     if (MUX_SUCCEEDED(mr) && nullptr != pOI)
     {
         bool bConn = false;
-        mr = pOI->IsConnected(static_cast<dbref>(obj), &bConn);
+        mr = pOI->IsConnected(obj, &bConn);
         pOI->Release();
         if (MUX_SUCCEEDED(mr))
         {
@@ -436,10 +456,20 @@ static int bridge_isconnected(lua_State *L)
 }
 
 // mux.pennies(dbref) — return object pennies.
+// Match softcode money(): Examinable required (#1287).  Absolute dbref
+// without Examinable used to return balance for any object.
 //
 static int bridge_pennies(lua_State *L)
 {
-    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+    lua_exec_ctx *ctx = get_exec_ctx(L);
+    if (nullptr == ctx) { lua_pushnil(L); return 1; }
+
+    dbref obj = static_cast<dbref>(luaL_checkinteger(L, 1));
+    if (!Good_obj(obj) || !Examinable(ctx->executor, obj))
+    {
+        lua_pushnil(L);
+        return 1;
+    }
 
     mux_IObjectInfo *pOI = nullptr;
     MUX_RESULT mr = mux_CreateInstance(CID_ObjectInfo, nullptr,
@@ -448,7 +478,7 @@ static int bridge_pennies(lua_State *L)
     if (MUX_SUCCEEDED(mr) && nullptr != pOI)
     {
         int pennies = 0;
-        mr = pOI->GetPennies(static_cast<dbref>(obj), &pennies);
+        mr = pOI->GetPennies(obj, &pennies);
         pOI->Release();
         if (MUX_SUCCEEDED(mr))
         {
@@ -461,10 +491,23 @@ static int bridge_pennies(lua_State *L)
 }
 
 // mux.iswizard(dbref) — check if object is a wizard.
+// Match softcode hasflag() object form: pub_flags || Examinable || self (#1287).
 //
 static int bridge_iswizard(lua_State *L)
 {
-    int obj = static_cast<int>(luaL_checkinteger(L, 1));
+    lua_exec_ctx *ctx = get_exec_ctx(L);
+    if (nullptr == ctx) { lua_pushboolean(L, 0); return 1; }
+
+    dbref obj = static_cast<dbref>(luaL_checkinteger(L, 1));
+    if (  !Good_obj(obj)
+       || (  !mudconf.pub_flags
+          && !Examinable(ctx->executor, obj)
+          && obj != ctx->executor
+          && obj != ctx->enactor))
+    {
+        lua_pushboolean(L, 0);
+        return 1;
+    }
 
     mux_IPermissions *pPerms = nullptr;
     MUX_RESULT mr = mux_CreateInstance(CID_Permissions, nullptr,
@@ -473,7 +516,7 @@ static int bridge_iswizard(lua_State *L)
     if (MUX_SUCCEEDED(mr) && nullptr != pPerms)
     {
         bool bWizard = false;
-        mr = pPerms->IsWizard(static_cast<dbref>(obj), &bWizard);
+        mr = pPerms->IsWizard(obj, &bWizard);
         pPerms->Release();
         if (MUX_SUCCEEDED(mr))
         {
@@ -611,6 +654,14 @@ bool CLuaMod::CreateLuaState(void)
     luaL_requiref(m_L, "_G", luaopen_base, 1);
     lua_pop(m_L, 1);
     luaL_requiref(m_L, "string", luaopen_string, 1);
+    // string.dump reifies bytecode and is an escape hatch for reconstructing
+    // blocked loaders; softcode has no equivalent.  (#1287)
+    lua_getglobal(m_L, "string");
+    if (lua_istable(m_L, -1))
+    {
+        lua_pushnil(m_L);
+        lua_setfield(m_L, -2, "dump");
+    }
     lua_pop(m_L, 1);
     luaL_requiref(m_L, "table", luaopen_table, 1);
     lua_pop(m_L, 1);
@@ -623,6 +674,8 @@ bool CLuaMod::CreateLuaState(void)
 
     // Remove dangerous functions from the global table.
     //
+    // string.dump is removed via the string library patch below if present;
+    // base-library escapes that rebuild loaders are nilled here.
     static const char *blocked[] = {
         "load", "loadfile", "dofile", "require",
         "rawget", "rawset", "rawequal", "rawlen",
