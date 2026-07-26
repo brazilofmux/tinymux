@@ -473,20 +473,22 @@ int cache_init(const UTF8 *indb)
 
     g_pSQLiteBackend = new CSQLiteBackend();
 
-    // Derive SQLite database path from the input database name.
-    // Replace .db extension with .sqlite, or append .sqlite if no .db suffix.
+    // Derive the SQLite database path from the input database name.
+    // Bounds-checked and shared with the bMinDB path in engine_com.cpp,
+    // which open-coded the same replace-or-append and could overflow
+    // (#1411).  Safe here even before the fix, because indb is capped at
+    // SIZEOF_PATHNAME and this buffer is LBUF_SIZE -- but that was an
+    // implicit cross-module invariant rather than a check.
     //
-    char szPath[LBUF_SIZE];
-    mux_strncpy((UTF8 *)szPath, indb, sizeof(szPath) - 1);
-    szPath[sizeof(szPath) - 1] = '\0';
-    size_t n = strlen(szPath);
-    if (n > 3 && strcmp(szPath + n - 3, ".db") == 0)
+    char szPath[SIZEOF_PATHNAME];
+    if (!derive_sqlite_path(szPath, sizeof(szPath), indb))
     {
-        strcpy(szPath + n - 3, ".sqlite");
-    }
-    else
-    {
-        strcat(szPath, ".sqlite");
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        log_text(T("cache_init: input_database too long to derive a .sqlite path."));
+        ENDLOG;
+        delete g_pSQLiteBackend;
+        g_pSQLiteBackend = nullptr;
+        return HF_OPEN_STATUS_ERROR;
     }
 
     // Check if the database file exists before opening.

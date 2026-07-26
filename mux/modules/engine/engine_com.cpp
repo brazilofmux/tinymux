@@ -3109,20 +3109,23 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     {
         // Remove the SQLite database to start fresh.
         //
+        // Bounds-checked: input_database may be SIZEOF_PATHNAME-1 long,
+        // and ".sqlite" needs seven more bytes plus a terminator, so the
+        // old strcpy/strcat pair wrote past this buffer (#1411).  If it
+        // does not fit there is nothing to remove under that name, so
+        // say so and carry on rather than starting from a bad path.
+        //
         char sqlitefile[SIZEOF_PATHNAME];
-        mux_strncpy((UTF8 *)sqlitefile, mudconf.indb,
-                     sizeof(sqlitefile) - 1);
-        sqlitefile[sizeof(sqlitefile) - 1] = '\0';
-        size_t n = strlen(sqlitefile);
-        if (n > 3 && strcmp(sqlitefile + n - 3, ".db") == 0)
+        if (derive_sqlite_path(sqlitefile, sizeof(sqlitefile), mudconf.indb))
         {
-            strcpy(sqlitefile + n - 3, ".sqlite");
+            RemoveFile((UTF8 *)sqlitefile);
         }
         else
         {
-            strcat(sqlitefile, ".sqlite");
+            STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+            log_text(T("input_database too long to derive a .sqlite path; not removed."));
+            ENDLOG;
         }
-        RemoveFile((UTF8 *)sqlitefile);
     }
     int ccPageFile = init_dbfile(mudconf.indb);
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
