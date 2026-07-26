@@ -79,6 +79,23 @@ static const uint32_t CRC32_Table[256] =
 // Portable CRC-32 routine. These slower routines are less compiler and
 // platform dependent and still get the job done.
 //
+// A 32-bit load from a possibly-unaligned address.
+//
+// UNALIGNED32 records that the TARGET tolerates such a load; it does not make
+// *reinterpret_cast<const uint32_t *>(p) defined in C++, and UndefinedBehavior-
+// Sanitizer reports each one (#1454).  memcpy is the portable spelling of the
+// same operation and every compiler this builds with folds it to the single
+// load the cast produced -- so the hash values are bit-identical, which is the
+// property that matters here: this is the attribute-lookup hash, and a changed
+// value would invalidate every existing database.
+//
+static inline uint32_t mux_read_u32(const uint8_t *p)
+{
+    uint32_t v;
+    memcpy(&v, p, sizeof(v));
+    return v;
+}
+
 uint32_t CRC32_ProcessBuffer
 (
     uint32_t         ulCrc,
@@ -180,12 +197,20 @@ uint32_t HASH_ProcessBuffer
         case 10: ulHash  = CRC32_Table[pBuffer[6] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
         case 9:  ulHash  = CRC32_Table[pBuffer[7] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
-        case 8:  ulHash ^= *reinterpret_cast<const uint32_t *>(pBuffer + 8);
+        case 8:  // Read via memcpy rather than a cast.  UNALIGNED32 says the TARGET
+                 // tolerates an unaligned 32-bit load; it does not make the cast
+                 // defined in C++, and UBSan reports every one of these (#1454).
+                 // memcpy is the portable spelling and compiles to the same single
+                 // load here, so the hash values are unchanged -- which matters,
+                 // because this is the attribute-lookup hash and a changed value
+                 // would invalidate every existing database.
+                 //
+                 ulHash ^= mux_read_u32(pBuffer + 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
-                 ulHash ^= *reinterpret_cast<const uint32_t *>(pBuffer + 12);
+                 ulHash ^= mux_read_u32(pBuffer + 12);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
@@ -199,7 +224,7 @@ uint32_t HASH_ProcessBuffer
         case 6:  ulHash  = CRC32_Table[pBuffer[10] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
         case 5:  ulHash  = CRC32_Table[pBuffer[11] ^ static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
 #if defined(UNALIGNED32) && defined(WORDS_LITTLEENDIAN)
-        case 4:  ulHash ^= *reinterpret_cast<const uint32_t *>(pBuffer + 12);
+        case 4:  ulHash ^= mux_read_u32(pBuffer + 12);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
                  ulHash  = CRC32_Table[static_cast<uint8_t>(ulHash)] ^ (ulHash >> 8);
