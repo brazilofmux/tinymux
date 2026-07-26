@@ -153,6 +153,9 @@ ragel/test_harness
 ragel/test_trigger_bin
 
 # Color-ops standalone test harness build artifacts
+tests/format/*.o
+tests/format/test_format
+tests/format/test_format.dSYM/
 tests/color_ops/*.o
 tests/color_ops/tables_ascii.c
 tests/color_ops/tables_extra.c

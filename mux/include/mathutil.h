@@ -57,6 +57,10 @@ LIBMUX_API size_t mux_utox(unsigned long uval, UTF8 *buf, bool bUpperCase);
 LIBMUX_API size_t mux_ui64tox(uint64_t uval, UTF8 *buf, bool bUpperCase);
 LIBMUX_API size_t mux_utoa(unsigned long uval, UTF8 *buf);
 LIBMUX_API size_t mux_ui64toa(uint64_t uval, UTF8 *buf);
+// Octal needs up to 22 digits for a 64-bit value -- one more than
+// LONGEST_I64.  Size scratch buffers accordingly.
+LIBMUX_API size_t mux_utoo(unsigned long uval, UTF8 *buf);
+LIBMUX_API size_t mux_ui64too(uint64_t uval, UTF8 *buf);
 LIBMUX_API size_t mux_ltoa(long val, UTF8 *buf);
 LIBMUX_API size_t mux_i64toa(int64_t val, UTF8 *buf);
 LIBMUX_API double mux_atof(const UTF8 *szString, bool bStrict = true);
