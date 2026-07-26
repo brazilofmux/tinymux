@@ -161,7 +161,7 @@ void mux_alarm::set(CLinearTimeDelta alarm_period)
     std::lock_guard<std::mutex> lock(mutex_);
     // ReturnMilliseconds() is long and can truncate on Win32 when the
     // delta exceeds LONG_MAX ms (~24.8 days).  Derive ms from 100ns ticks
-    // with int64_t and clamp to chrono::milliseconds' range (#1289).
+    // with int64_t and clamp to chrono::milliseconds' range (#1290).
     //
     using ms_rep = std::chrono::milliseconds::rep;
     constexpr int64_t k100nsPerMs = 10000;
