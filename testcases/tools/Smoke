@@ -279,23 +279,60 @@ echo "  Log lines: $(wc -l < smoke.log)"
 # the tail of the suite and still reports "all passed."
 # ---------------------------------------------------------------------------
 
+# SUITE-EXPECTED is what the *database* thinks the suite is: the runtime
+# computes it with words() over the same attributes it is meant to check.
+# When the upload loses names, that number shrinks with them and the run
+# reports a clean "N / N" -- which is how #1387 hid 46 test files.
+#
+# suite.manifest is the generator's own record, written to the workspace
+# instead of through the upload, so it cannot shrink the same way.  A
+# disagreement between the two means the upload did not store what was
+# generated, and that is now a failure rather than a silence.
 EXPECTED=$(grep -oE 'SUITE-EXPECTED: [0-9]+' smoke.log | grep -oE '[0-9]+' | head -1)
 DISPATCHED=$(grep -c 'SUITE-DISPATCH:' smoke.log || true)
 ENDED=$(grep -c 'Ending SmokeMUX' smoke.log || true)
-: "${EXPECTED:=0}" "${DISPATCHED:=0}" "${ENDED:=0}"
+GENERATED=0
+if [ -r suite.manifest ]; then
+    GENERATED=$(grep -c . suite.manifest || true)
+fi
+: "${EXPECTED:=0}" "${DISPATCHED:=0}" "${ENDED:=0}" "${GENERATED:=0}"
 
-echo "  Dispatched: $DISPATCHED / $EXPECTED expected"
+if [ "$GENERATED" -gt 0 ]; then
+    echo "  Dispatched: $DISPATCHED / $GENERATED generated (database says $EXPECTED)"
+else
+    echo "  Dispatched: $DISPATCHED / $EXPECTED expected"
+fi
 
 INCOMPLETE=false
 if [ "$EXPECTED" -gt 0 ] && [ "$DISPATCHED" -lt "$EXPECTED" ]; then INCOMPLETE=true; fi
 if [ "$ENDED" -eq 0 ]; then INCOMPLETE=true; fi
+LOST=false
+if [ "$GENERATED" -gt 0 ] && [ "$EXPECTED" -ne "$GENERATED" ]; then
+    LOST=true; INCOMPLETE=true
+fi
+if [ "$GENERATED" -gt 0 ] && [ "$DISPATCHED" -lt "$GENERATED" ]; then INCOMPLETE=true; fi
+
+if $LOST; then
+    echo "  SUITE LOSS: the generator emitted $GENERATED test names but the"
+    echo "              database holds $EXPECTED.  The upload did not store"
+    echo "              what was generated, so the missing tests never ran"
+    echo "              and the runtime count agreed with the loss (#1387)."
+fi
 
 if $INCOMPLETE; then
     echo "  INCOMPLETE: the suite did not run every test (chain stalled or"
     echo "              muxscript exited before the queue drained)."
-    if [ -r "$TC/smoke.mux" ]; then
+    # Prefer the generator's manifest: smoke.mux's hardcoded lists are stale
+    # by construction now that the generator is authoritative, and reading
+    # them here is part of why #1387 was hard to see from the failure output
+    # -- the names it called missing were not the ones that had gone.
+    if [ -r suite.manifest ]; then
+        sort -u suite.manifest > "smoke.expected.$$"
+    elif [ -r "$TC/smoke.mux" ]; then
         awk '/&suite.list.[12] smoke=/{grab=1;next} /^-/{grab=0} grab{gsub(/\\/,"");print}' \
             "$TC/smoke.mux" | tr ' ' '\n' | grep -v '^$' | sort -u > "smoke.expected.$$"
+    fi
+    if [ -r "smoke.expected.$$" ]; then
         grep -oE 'SUITE-DISPATCH: [^ ]+' smoke.log | awk '{print $2}' | sort -u > "smoke.dispatched.$$"
         MISSING=$(comm -23 "smoke.expected.$$" "smoke.dispatched.$$" | tr '\n' ' ')
         rm -f "smoke.expected.$$" "smoke.dispatched.$$"

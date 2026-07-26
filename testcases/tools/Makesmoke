@@ -157,6 +157,13 @@ _EOF
 # ---------------------------------------------------------------------------
 
 echo "Unformatting .mux test files..."
+# The manifest is the generator's own record of what it emitted, written
+# straight to the workspace rather than through the upload.  Smoke checks
+# the database's idea of the suite against it; see #1387, where the upload
+# silently kept an older list and the runtime count agreed with it.
+SMOKE_SUITE_MANIFEST="$PWD/suite.manifest"
+export SMOKE_SUITE_MANIFEST
+rm -f "$SMOKE_SUITE_MANIFEST"
 python3 "$SCRIPT_DIR/generate_smoke_suite.py" ${TEST_NAMES[@]+"${TEST_NAMES[@]}"} > "$SUITE_TMP"
 "$SCRIPT_DIR/unformat" "$TC"/*.mux "$SUITE_TMP" > "$TMP"
 if [ ! -s "$TMP" ]; then

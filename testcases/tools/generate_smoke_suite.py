@@ -7,6 +7,7 @@ not themselves smoke tests, and emits formatted MUX commands that override
 on the `smoke` object.
 """
 
+import os
 from pathlib import Path
 import re
 import sys
@@ -142,6 +143,19 @@ def main() -> int:
     print("#")
     emit_suite_attr("suite.list.1", first)
     emit_suite_attr("suite.list.2", second)
+    # Also record the names in a plain file, outside the upload stream.
+    #
+    # The runtime SUITE-EXPECTED is computed from the attributes the upload
+    # stores, so it agrees with whatever the database ended up holding --
+    # including when the upload lost names, which is how #1387 hid 46 test
+    # files behind a clean "Dispatched: 261 / 261".  A count that came
+    # through the same path it is meant to validate cannot detect a loss on
+    # that path.  This one never enters the database.
+    manifest = os.environ.get("SMOKE_SUITE_MANIFEST")
+    if manifest:
+        with open(manifest, "w", encoding="utf-8") as fh:
+            for name in first + second:
+                fh.write(name + "\n")
     for name in names:
         emit_cleanup_attr(name, collect_cleanup_manifest(tc_dir, name))
     return 0
