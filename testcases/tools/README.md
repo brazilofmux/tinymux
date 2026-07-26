@@ -25,6 +25,48 @@ ragel -G2 -o reformat.c reformat.rl && cc -O2 -o reformat reformat.c
 `Makesmoke` builds `unformat` automatically if the binary is missing or
 stale.
 
+`ragel` is only needed to regenerate the `.c` files from the `.rl` sources.
+The `.c` files are checked in, so a box without ragel builds fine.
+
+### Windows
+
+A Windows box that can build TinyMUX has Visual Studio but generally no
+`make`, `gcc` or `cc`, so `tools/Makefile` cannot run. `Makesmoke` detects
+this and falls back to `tools/build-msvc.sh`, which locates the compiler via
+`vswhere` and builds `unformat.exe` with `cl`. You can also run it directly:
+
+```sh
+./tools/build-msvc.sh
+```
+
+Two Windows-specific details it handles, both of which produce misleading
+errors if you compile by hand instead:
+
+- ragel's `-G2` output declares `const char *eof __attribute__((unused))`,
+  which `cl` rejects. `msvc_compat.h` is force-included to define the keyword
+  away. The declaration comes from ragel rather than from `unformat.rl`, so
+  there is nothing to fix in the `.rl`, and the generated `.c` must not be
+  hand-edited.
+- `Makesmoke` assigns its scratch file to the shell variable `TMP`, which
+  `cl` inherits as its temp *directory* and then fails with `cannot create
+  linker response file`. The generated build batch resets `TMP`/`TEMP` first.
+
+`reformat` does **not** build under MSVC — it uses POSIX `getline()` and
+`ssize_t`. Nothing in the smoke path needs it.
+
+Prerequisites for running the suite on Windows, beyond a TinyMUX build:
+
+| need | why |
+|---|---|
+| Git Bash or MSYS | `Makesmoke` and `Smoke` are shell scripts |
+| Python 3 | `generate_smoke_suite.py` discovers the corpus and builds the cleanup manifest |
+| Visual Studio C++ | builds `unformat` via the fallback above |
+
+`muxscript.exe` and `dbconvert.exe` must both be present in the game `bin`
+directory. `dbconvert` is `netmux` under another name — it dispatches on
+`argv[0]` — so copying `netmux.exe` to `dbconvert.exe` is sufficient and is
+what the Windows build does not do for you.
+
 ---
 
 # unformat
