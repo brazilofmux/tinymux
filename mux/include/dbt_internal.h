@@ -16,6 +16,18 @@
 #include "dbt_decoder.h"
 
 // ---------------------------------------------------------------
+// Out-of-range guest pointer sink (#1151)
+// ---------------------------------------------------------------
+//
+// Defined in dbt.cpp; backends bake its address into the intrinsic stubs.
+// Its address is stable for the process lifetime, unlike memory_size,
+// which dbt_reset can change — that is why the bound is read from ctx at
+// run time while this pointer is an immediate.
+//
+static constexpr size_t DBT_SAFE_PAGE_SIZE = 4096;
+extern uint8_t g_dbt_safe_page[DBT_SAFE_PAGE_SIZE];
+
+// ---------------------------------------------------------------
 // Register cache
 // ---------------------------------------------------------------
 

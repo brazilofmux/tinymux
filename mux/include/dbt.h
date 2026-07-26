@@ -42,6 +42,13 @@ struct rv64_ctx_t {
     double   f[32];             // FP registers (64-bit doubles, D extension only)
     uint32_t fcsr;              // FP control/status: frm[7:5], fflags[4:0]
     uint32_t _pad1;
+    // Guest bounds for intrinsic pointer conversion (#1151).  Appended at
+    // the end so no existing CTX_* offset moves.  dbt_run keeps mem_size in
+    // step with dbt->memory_size, which dbt_reset can change while blob
+    // translations are preserved — so the bound cannot be baked into the
+    // emitted code as an immediate.
+    uint64_t mem_size;          // guest image size in bytes
+    uint64_t mem_clamps;        // count of out-of-range pointers clamped
 };
 
 // Context offsets for JIT emitter.
@@ -52,6 +59,20 @@ static constexpr int CTX_RAS_OFF     = 264;
 static constexpr int CTX_RAS_TOP_OFF = 520;
 static constexpr int CTX_FP_OFF      = 528;
 static constexpr int CTX_FCSR_OFF    = 784;
+static constexpr int CTX_MEM_SIZE_OFF   = 792;
+static constexpr int CTX_MEM_CLAMPS_OFF = 800;
+
+// The offsets above are hand-maintained against rv64_ctx_t.  A mismatch
+// would silently make every emitted ctx access read the wrong field, so
+// pin them rather than trusting the arithmetic.
+static_assert(offsetof(rv64_ctx_t, mem_size) == CTX_MEM_SIZE_OFF,
+              "CTX_MEM_SIZE_OFF out of step with rv64_ctx_t");
+static_assert(offsetof(rv64_ctx_t, mem_clamps) == CTX_MEM_CLAMPS_OFF,
+              "CTX_MEM_CLAMPS_OFF out of step with rv64_ctx_t");
+static_assert(offsetof(rv64_ctx_t, fcsr) == CTX_FCSR_OFF,
+              "CTX_FCSR_OFF out of step with rv64_ctx_t");
+static_assert(offsetof(rv64_ctx_t, next_pc) == CTX_NEXT_PC_OFF,
+              "CTX_NEXT_PC_OFF out of step with rv64_ctx_t");
 
 // Block cache entry — exactly 16 bytes for inline JIT lookup.
 // R13 points to cache[0] during execution.

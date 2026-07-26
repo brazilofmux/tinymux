@@ -314,11 +314,59 @@ static void emit_store_next_pc(emit_t *e, int host_reg) {
     emit_u32(e, CTX_NEXT_PC_OFF);
 }
 
-// Helper: emit "convert guest pointer in host_reg to host pointer"
-//   add host_reg, r12
+// Load/store a 64-bit ctx field at an arbitrary offset (the guest-register
+// helpers only reach x[0..31]).
+//
+static void emit_load_ctx_u64(emit_t *e, int host_reg, int32_t off) {
+    emit_byte(e, rex(1, reg_hi(host_reg), 0, 0));
+    emit_byte(e, 0x8B);
+    emit_byte(e, modrm(0x02, host_reg, X64_RBX));
+    emit_u32(e, static_cast<uint32_t>(off));
+}
+
+static void emit_store_ctx_u64(emit_t *e, int host_reg, int32_t off) {
+    emit_byte(e, rex(1, reg_hi(host_reg), 0, 0));
+    emit_byte(e, 0x89);
+    emit_byte(e, modrm(0x02, host_reg, X64_RBX));
+    emit_u32(e, static_cast<uint32_t>(off));
+}
+
+// Convert a guest offset in host_reg to a host pointer, bounds-checked
+// against ctx.mem_size (#1151).
+//
+// Every intrinsic stub reaches host pointers through here — both the
+// hand-written ones and the generic ptr_mask marshaller — so this one
+// function covers the whole intrinsic surface.
+//
+// The compare is against the raw guest offset, not against the converted
+// pointer: base+offset can wrap for a large offset and then compare below
+// the limit, which is exactly the adversarial case.  x86 ADD writes flags
+// and there is no LEA helper here, so the offset is saved first and the
+// compare happens after the add.
+//
+// Scratch: RAX, R10, R11.  RAX is the return register and dead before the
+// host call; R10/R11 hold pinned guest registers, but the host call is
+// about to clobber them anyway and emit_intrinsic_return reloads all four
+// pinned registers from ctx before returning.
 //
 static void emit_guest_to_host(emit_t *e, int host_reg) {
-    emit_add_r64(e, host_reg, X64_R12);
+    emit_mov_r64(e, X64_RAX, host_reg);            // save raw guest offset
+    emit_add_r64(e, host_reg, X64_R12);            // base + offset
+
+    emit_load_ctx_u64(e, X64_R10, CTX_MEM_CLAMPS_OFF);
+    emit_add_r64_imm(e, X64_R10, 1);               // clamps + 1 (flags dead)
+
+    emit_load_ctx_u64(e, X64_R11, CTX_MEM_SIZE_OFF);
+    emit_cmp_r64(e, X64_RAX, X64_R11);             // offset vs bound
+
+    // Everything below is MOV/CMOV, which leave the flags from the CMP.
+    emit_mov_r64_imm64(e, X64_RAX,
+                       reinterpret_cast<uint64_t>(g_dbt_safe_page));
+    emit_cmovcc(e, CMOV_AE, host_reg, X64_RAX);    // out of range -> sink
+
+    emit_load_ctx_u64(e, X64_RAX, CTX_MEM_CLAMPS_OFF);
+    emit_cmovcc(e, CMOV_AE, X64_RAX, X64_R10);     // count only when clamped
+    emit_store_ctx_u64(e, X64_RAX, CTX_MEM_CLAMPS_OFF);
 }
 
 // Emit intrinsic return: reload pinned host registers from ctx
