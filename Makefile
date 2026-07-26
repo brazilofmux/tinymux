@@ -37,11 +37,16 @@ realclean:
 
 test: install test-ganl test-netaddr test-format test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
+# Extra flags passed through to tools/Smoke.  Empty for a normal build; set by
+# test-asan, where an instrumented binary is slow enough to trip Smoke's
+# hang detector (#1440 follow-up).
+SMOKE_FLAGS ?=
+
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
 	$(MAKE) -C testcases/tools
 	@echo "==> Smoke: compiled route (jit_eval_brackets default)"
-	cd testcases && ./tools/Makesmoke && ./tools/Smoke
+	cd testcases && ./tools/Makesmoke && ./tools/Smoke $(SMOKE_FLAGS)
 
 # Smoke again on the interpreted route (#1243).
 #
@@ -65,7 +70,7 @@ test-smoke:
 # report in a fixed order.
 test-smoke-ast: test-smoke
 	@echo "==> Smoke: interpreted route (jit_eval_brackets 0)"
-	cd testcases && SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke
+	cd testcases && SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke $(SMOKE_FLAGS)
 
 # JIT q-register scope oracle (docs/plan-jit-evalbracket-lift.md).
 # Compares forced-JIT vs AST results for the scope/ordering shapes fixed
@@ -150,6 +155,51 @@ test-netaddr:
 # The value is concentrated in the suites that execute the most engine code.
 # ASan reports a bad access only when something reaches it, so this multiplies
 # the coverage already there rather than substituting for it.
+#
+# Smoke's hang detector has to be relaxed for an instrumented binary.  Its
+# defaults (30s without log growth, 300s wall clock) are sized for a normal
+# build, and an instrumented run trips them:
+#
+#     TIMEOUT: idle-hang (no log activity for 30s >= 30s)
+#
+# at about 1050 of 1497 cases.  Raising it to 300s moved the report to
+# "no log activity for 301s" at the SAME point, which is the useful
+# measurement: this is not uniform slowness, it is one silent stretch.  The
+# last line before it is
+#
+#     Beginning rvbench() benchmarks.
+#
+# rvbench_fn.mux runs ~37 benchmarks of 10000 iterations each and logs nothing
+# until they finish, so under instrumentation it goes quiet for many minutes.
+# astbench_fn, benchmark_fn and cachestats_fn are the same shape.
+#
+# The numbers below are generous rather than sufficient -- a full instrumented
+# pass has NOT been demonstrated to complete here, and the benchmarks are the
+# reason.  Measuring performance under -fsanitize is meaningless anyway, so the
+# real fix is to exclude those four files from this target; the generator takes
+# an inclusion list and has no skip mechanism today.  See the issue linked from
+# the commit for that.
+ASAN_SMOKE_FLAGS ?= --activity-timeout 900 --wallclock-timeout 7200
+
+# tests/format and tests/dbt build their own binaries with their own hardcoded
+# CXXFLAGS, so they are NOT instrumented even on a sanitizer tree.  A plain
+# binary that then loads an instrumented libmux.so is refused outright:
+#
+#     ASan runtime does not come first in initial library list; you should
+#     either link runtime to your application or manually preload it with
+#     LD_PRELOAD.
+#
+# which made test-asan fail at its first suite and never reach smoke at all.
+# Preloading the runtime is ASan's own remedy for that message.  Resolved
+# rather than hardcoded because the path is compiler- and
+# version-specific, and left empty when it cannot be found so a tree without
+# it (or a platform where the mechanism differs, e.g. macOS
+# DYLD_INSERT_LIBRARIES) degrades to the previous behaviour rather than
+# failing on a bogus LD_PRELOAD.
+ASAN_RUNTIME := $(shell p=$$(g++ -print-file-name=libasan.so 2>/dev/null); \
+                        [ -n "$$p" ] && [ -e "$$p" ] && echo "$$p")
+ASAN_PRELOAD := $(if $(ASAN_RUNTIME),LD_PRELOAD=$(ASAN_RUNTIME),)
+
 test-asan:
 	@if ! grep -q 'fsanitize' mux/config.status 2>/dev/null; then \
 	    echo "==> test-asan: this tree is not configured with sanitizers."; \
@@ -157,10 +207,14 @@ test-asan:
 	    exit 1; \
 	fi
 	@echo "==> Running the high-coverage suites under sanitizers"
-	$(MAKE) test-format
-	$(MAKE) test-dbt
-	$(MAKE) test-smoke
-	$(MAKE) test-smoke-ast
+	@if [ -z "$(ASAN_RUNTIME)" ]; then \
+	    echo "    note: libasan.so not located; tests/format and tests/dbt"; \
+	    echo "    may refuse to run against an instrumented libmux."; \
+	fi
+	$(ASAN_PRELOAD) $(MAKE) test-format
+	$(ASAN_PRELOAD) $(MAKE) test-dbt
+	$(MAKE) SMOKE_FLAGS="$(ASAN_SMOKE_FLAGS)" test-smoke
+	$(MAKE) SMOKE_FLAGS="$(ASAN_SMOKE_FLAGS)" test-smoke-ast
 
 # mux_vsnprintf differential tests: %i, %o and the floating-point conversions
 # against the platform snprintf as an oracle.  These conversions used to fall
