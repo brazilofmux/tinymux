@@ -96,6 +96,34 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([JIT_ENABLED], [test "x$jit_enabled" = "xyes"])
 AC_SUBST(TINYMUX_JIT)
 
+dnl Native Language Support (GNU gettext / libintl) for server notifies.
+dnl Optional: English-only builds remain first-class on all platforms (#1419).
+AC_MSG_CHECKING(whether to enable NLS / gettext)
+AC_ARG_ENABLE(
+  [nls],
+  AS_HELP_STRING([--enable-nls],[enable gettext NLS for server messages (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      nls_enabled=no
+      AC_MSG_RESULT(no)
+    else
+      nls_enabled=yes
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    nls_enabled=no
+    AC_MSG_RESULT(no)
+  ])
+if test "x$nls_enabled" = "xyes"; then
+  AC_CHECK_HEADERS([libintl.h], [], [AC_MSG_ERROR([--enable-nls requires libintl.h])])
+  dnl glibc provides gettext in libc; some systems need -lintl.
+  AC_SEARCH_LIBS([gettext], [intl], [], [AC_MSG_ERROR([--enable-nls requires gettext in libc or libintl])])
+  AC_CHECK_FUNCS([bind_textdomain_codeset])
+  AC_DEFINE([HAVE_NLS], [1], [Define if GNU gettext NLS is enabled.])
+fi
+AM_CONDITIONAL([NLS_ENABLED], [test "x$nls_enabled" = "xyes"])
+
 AC_MSG_CHECKING(whether to enable gRPC support for Hydra proxy)
 AC_ARG_ENABLE(
   [grpc],

@@ -8,17 +8,35 @@
 #include "config.h"
 #include "externs.h"
 
-const UTF8 *NOMATCH_MESSAGE      = T("I don\xE2\x80\x99t see that here.");
-const UTF8 *AMBIGUOUS_MESSAGE    = T("I don\xE2\x80\x99t know which one you mean!");
-const UTF8 *NOPERM_MESSAGE       = T("Permission denied.");
-const UTF8 *FUNC_FAIL_MESSAGE    = T("#-1");
-const UTF8 *FUNC_NOMATCH_MESSAGE = T("#-1 NO MATCH");
-const UTF8 *OUT_OF_RANGE         = T("#-1 OUT OF RANGE");
-const UTF8 *FUNC_NOT_FOUND       = T("#-1 NOT FOUND");
-const UTF8 *FUNC_AMBIGUOUS       = T("#-2 AMBIGUOUS");
-const UTF8 *FUNC_NOPERM_MESSAGE  = T("#-1 PERMISSION DENIED");
-const UTF8 *OUT_OF_MEMORY        = T("#-1 OUT OF MEMORY");
-const UTF8 *NOT_CONNECTED        = T("#-1 NOT CONNECTED");
+// Player-facing match prose (T → gettext when HAVE_NLS). Softcode/machine
+// tokens use S_ so NLS cannot change the softcode ABI (#1419).
+//
+// Static init must NOT call gettext: bindtextdomain runs later in
+// mux_nls_init. Store English msgids with N_(); mux_nls_refresh_messages()
+// rebinds the player pointers after the domain is live.
+//
+const UTF8 *NOMATCH_MESSAGE      = N_("I don\xE2\x80\x99t see that here.");
+const UTF8 *AMBIGUOUS_MESSAGE    = N_("I don\xE2\x80\x99t know which one you mean!");
+const UTF8 *NOPERM_MESSAGE       = N_("Permission denied.");
+const UTF8 *FUNC_FAIL_MESSAGE    = S_("#-1");
+const UTF8 *FUNC_NOMATCH_MESSAGE = S_("#-1 NO MATCH");
+const UTF8 *OUT_OF_RANGE         = S_("#-1 OUT OF RANGE");
+const UTF8 *FUNC_NOT_FOUND       = S_("#-1 NOT FOUND");
+const UTF8 *FUNC_AMBIGUOUS       = S_("#-2 AMBIGUOUS");
+const UTF8 *FUNC_NOPERM_MESSAGE  = S_("#-1 PERMISSION DENIED");
+const UTF8 *OUT_OF_MEMORY        = S_("#-1 OUT OF MEMORY");
+const UTF8 *NOT_CONNECTED        = S_("#-1 NOT CONNECTED");
+
+void mux_nls_refresh_messages(void)
+{
+#if defined(HAVE_NLS)
+    // Re-resolve through gettext now that textdomain is bound.
+    //
+    NOMATCH_MESSAGE   = T("I don\xE2\x80\x99t see that here.");
+    AMBIGUOUS_MESSAGE = T("I don\xE2\x80\x99t know which one you mean!");
+    NOPERM_MESSAGE    = T("Permission denied.");
+#endif
+}
 
 #define CON_LOCAL       0x01    // Match is near me.
 #define CON_TYPE        0x02    // Match is of requested type.

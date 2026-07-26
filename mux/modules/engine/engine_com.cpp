@@ -3003,6 +3003,14 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     }
     cf_read();
 
+    // Optional gettext domain for server notifies (#1419).  Softcode #-1
+    // diagnostics use S_() and stay English.  Locale packs live under
+    // game/locale/<lang>/LC_MESSAGES/tinymux.mo (cwd is typically game/).
+    // Path is not a player message — do not run it through T()/gettext.
+    //
+    mux_nls_init(reinterpret_cast<const UTF8 *>("locale"));
+    mux_nls_refresh_messages();
+
     // Sync function aliases into JIT lookup table now that config
     // (including alias.conf) has been processed.
     engine_api_sync_aliases();

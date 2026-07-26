@@ -17,8 +17,10 @@
 // String constants also defined in match.cpp (engine).  The driver
 // needs its own copies since engine.so doesn't export them.
 //
-const UTF8 *FUNC_FAIL_MESSAGE = T("#-1");
-const UTF8 *FUNC_NOPERM_MESSAGE = T("#-1 PERMISSION DENIED");
+// Softcode ABI tokens — never run through gettext (#1419).
+//
+const UTF8 *FUNC_FAIL_MESSAGE = S_("#-1");
+const UTF8 *FUNC_NOPERM_MESSAGE = S_("#-1 PERMISSION DENIED");
 
 // notify_check — driver-side bridge through mux_INotify.
 //

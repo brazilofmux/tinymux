@@ -1,0 +1,11 @@
+# Pseudo-locale for NLS smoke (Phase 1 spike, #1419).
+msgid ""
+msgstr ""
+"Project-Id-Version: TinyMUX 2.14\n"
+"Language: xx\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Permission denied."
+msgstr "[xx] Permission denied."
