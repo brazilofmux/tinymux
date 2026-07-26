@@ -48,7 +48,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 3 | deep | Mask, handshake close, backpressure (#1081–#1083) |
 | A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 6 | deep | #1127/#1129 → #1138; #1130/#1136 → #1139 (cores + dump reaps) |
 | A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | unit green | partial | Covered by units; logic re-read optional |
-| A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp` | small | — | thin | DNS/email slave pipes |
+| A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp`, DNS channel in `ganl_adapter` | small | #1220 + residual 2026-07-26 | deep | Framing #1220; residual stubslave write remainder + Win32 DNS queue caps |
 
 ### B — GANL library
 
@@ -237,5 +237,7 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 7 Highs closed (#1156); Mediums #1149–#1153 residual; D2/D3 deep |
 | 2026-07-25 | Pass 8 E5+C5 filed #1179–#1188; E5/C5 deep; rotation → Pass 9 F3 (or Fix Pass 8 Highs) |
 | 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
+
+| 2026-07-26 | Pass A8 residual: stubslave parent write remainder + Win32 DNS queue caps; A8 → deep |
 
 Update this table when the map structure changes.
