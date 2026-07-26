@@ -7,6 +7,14 @@
 &tr.has_jit test_jitstats_fn=
   [strmatch(jitstats(),*eval_attempts=*)]
 -
+&LJ_ADD test_jitstats_fn=return mux.args[1] + mux.args[2]
+-
+&tr.has_lua test_jitstats_fn=
+  [strmatch(lua(me/LJ_ADD,2,3),5)]
+-
+&tr.lj_ok test_jitstats_fn=
+  [after(grab(jitstats(),lua_run_ok=*),=)]
+-
 &tr.tc001 test_jitstats_fn=
   @if u(me/tr.has_jit)=
   {
@@ -51,16 +59,77 @@
           OK
         )=
     {
-      @log smoke=TC003: jitstats reset. Succeeded.;
-      @trig me/tr.done
+      @log smoke=TC003: jitstats reset. Succeeded.
     },
     {
-      @log smoke=TC003: jitstats reset. Failed (%q0).;
+      @log smoke=TC003: jitstats reset. Failed (%q0).
+    }
+  },
+  {
+    @log smoke=TC003: jitstats reset. Skipped (JIT not enabled).
+  }
+-
+#
+# Test Case #4 - The Lua JIT engages when lua_jit is on, and stays out of
+# the way when it is off (#1324).
+#
+# Green smoke does not prove the compiled Lua path ran: every Lua JIT
+# failure falls back to the Lua interpreter and still returns the correct
+# answer, so a test that only checks lua()'s result passes whether or not
+# the JIT did anything (#1249, #1278).  lua_run_ok is what distinguishes
+# them, which is why it is reported by jitstats() (#1316).
+#
+# Asserted in BOTH directions rather than skipped under the default, so
+# neither mode is vacuous: with lua_jit 1 the counter must advance, with
+# lua_jit 0 it must not -- that second half is a real test of the gate
+# added in #1310.
+#
+# The counter is sampled before and after rather than compared against
+# zero, so the case does not depend on where it falls in the suite or on
+# whether TC003's reset ran first.
+#
+&tr.tc004 test_jitstats_fn=
+  @if cand(u(me/tr.has_jit),u(me/tr.has_lua))=
+  {
+    @if strmatch(
+          setr(3,[null(setr(0,u(me/tr.lj_ok)))][lua(me/LJ_ADD,2,3)][null(setr(1,u(me/tr.lj_ok)))]),
+          5
+        )=
+    {
+      @if strmatch(config(lua_jit),1)=
+      {
+        @if cand(
+              gt(%q1,%q0),
+              gt(after(grab(jitstats(),lua_compile_ok=*),=),0)
+            )=
+        {
+          @log smoke=TC004: lua JIT engages under lua_jit 1. Succeeded.;
+          @trig me/tr.done
+        },
+        {
+          @log smoke=TC004: lua JIT engages under lua_jit 1. Failed (lua_run_ok %q0 to %q1, compile_ok=[after(grab(jitstats(),lua_compile_ok=*),=)], run_fail=[after(grab(jitstats(),lua_run_fail=*),=)]).;
+          @trig me/tr.done
+        }
+      },
+      {
+        @if strmatch(%q0,%q1)=
+        {
+          @log smoke=TC004: lua JIT stays out under lua_jit 0. Succeeded.;
+          @trig me/tr.done
+        },
+        {
+          @log smoke=TC004: lua JIT stays out under lua_jit 0. Failed (lua_run_ok advanced %q0 to %q1 with lua_jit 0).;
+          @trig me/tr.done
+        }
+      }
+    },
+    {
+      @log smoke=TC004: lua JIT engage. Failed (lua returned %q3, expected 5).;
       @trig me/tr.done
     }
   },
   {
-    @log smoke=TC003: jitstats reset. Skipped (JIT not enabled).;
+    @log smoke=TC004: lua JIT engage. Skipped (JIT or Lua not available).;
     @trig me/tr.done
   }
 -
