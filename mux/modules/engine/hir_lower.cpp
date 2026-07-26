@@ -1304,7 +1304,15 @@ static int hir_lower_trimmed(hir_program &h, rv_compiler &rc,
         // Lower only the trimmed children.
         std::vector<int> parts;
         for (size_t i = first; i < last; i++) {
-            parts.push_back(hir_lower_node(h, rc, inner->children[i].get()));
+            // Same refusal sentinel as the near-identical loop below, which
+            // #1440 guarded; this copy was missed because the two blocks are
+            // separated by ~80 lines and differ only in which node they walk
+            // (#1457).
+            int part = hir_lower_node(h, rc, inner->children[i].get());
+            if (part < 0) {
+                return -1;
+            }
+            parts.push_back(part);
         }
         if (parts.size() == 1) return parts[0];
         // Concatenate: ensure all parts are strings.
@@ -1424,7 +1432,15 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Arguments are still lowered (%-substitutions resolved).
         std::vector<int> args;
         for (auto &child : node->children) {
-            args.push_back(hir_lower_node(h, rc, child.get()));
+            // is_const() guards a negative index internally, so this loop
+            // does not fault -- but a -1 still reaches emit_strcat below,
+            // which copies it into carg[] unchecked and leaves a malformed
+            // operand in the HIR for codegen to walk (#1457).
+            int a = hir_lower_node(h, rc, child.get());
+            if (a < 0) {
+                return -1;
+            }
+            args.push_back(a);
         }
         int nargs = static_cast<int>(args.size());
 
@@ -2926,9 +2942,24 @@ general_lowering:
     }
 
     // Lower arguments.
+    //
+    // This is the loop that feeds the entire builtin dispatch below, and it
+    // is the reason per-site guards keep missing cases (#1457): #1440 guarded
+    // the two loops in the ECALL fall-through, but every fast path BEFORE
+    // those -- ensure_hi's h.ty[ai], the IDIV h.kind[args[1]]/h.val[args[1]]
+    // constant check, and their siblings -- indexes these same values first.
+    // Refusing here covers all of them at once.
+    //
+    // (all_int() is not the exposure: h.is_int() guards a negative index
+    // internally, as does h.is_const(). ensure_hi() does not.)
+    //
     std::vector<int> args;
     for (auto &child : node->children) {
-        args.push_back(hir_lower_argument(h, rc, child.get()));
+        int a = hir_lower_argument(h, rc, child.get());
+        if (a < 0) {
+            return -1;
+        }
+        args.push_back(a);
     }
     int nargs = static_cast<int>(args.size());
 
