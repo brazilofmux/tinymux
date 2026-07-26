@@ -70,7 +70,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | C3 | Commands / hooks | `command.cpp`, `predicates.cpp` | large | thin | thin | @-command side effects |
 | C4 | Match / wild | `match.cpp`, `wild.cpp` | med | scenario tests | partial | Live `$` capture has scenario; re-read matching |
 | C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | Pass 8 | deep | #1181, #1186–#1188 open (clone/preserve, moniker HTML, pagecost order, @open HOME) |
-| C6 | Boolexp / locks | `boolexp.cpp` | med | elock-related | partial | Lock evaluation side channels |
+| C6 | Boolexp / locks | `boolexp.cpp` | med | residual C6/G2/F4 | deep | #839 parse depth; oversize-key NUL (#1294); empty=open by design; AF_IS_LOCK blocks `&` set |
 
 ### D — JIT / DBT / Lua
 
@@ -99,14 +99,14 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | F1 | comsys_mod | `mux/modules/comsys/` | small | Pass 3, 9 | deep | #1084 locks; Pass 9 dual-path Highs/Mediums with F3 |
 | F2 | mail_mod | `mux/modules/mail/` | med | Pass 2, 9 | deep | MAIL_DB_LIMIT; Pass 9 body WT #1192 + dual-store #1191 |
 | F3 | Engine-in-tree comsys/mail | `engine/comsys.cpp`, `engine/mail.cpp` | large | Pass 9 | deep | Dual path vs modules; Highs #1189–#1193, Mediums #1194–#1199 open |
-| F4 | Module ABI / COM | `engine_com.cpp`, `modules.h` | large | Pass 3 CouldDoit | partial | Vtable adds need full rebuild |
+| F4 | Module ABI / COM | `engine_com.cpp`, `modules.h` | large | residual C6/G2/F4 | deep | IAttributeAccess/IPermissions gated; AtrAddRaw privileged by design; out-param/nValueMax (#1295) |
 
 ### G — Convert / offline tools
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | G1 | Omega / format convert | `mux/convert/*` | huge | Pass 1, 3, #1087 | deep | sprintf class largely closed; re-scan new paths |
-| G2 | muxescape / script | `mux/muxescape/`, `mux/script/` | med | — | thin | |
+| G2 | muxescape / script | `mux/muxescape/`, `mux/script/` | med | residual C6/G2/F4 | deep | #1296 muxescape 16MiB cap; muxscript -p MarkConnected gate |
 | G3 | announce | `mux/announce/` | small | — | thin | |
 
 ### H — libmux / platform / unicode
@@ -237,5 +237,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 7 Highs closed (#1156); Mediums #1149–#1153 residual; D2/D3 deep |
 | 2026-07-25 | Pass 8 E5+C5 filed #1179–#1188; E5/C5 deep; rotation → Pass 9 F3 (or Fix Pass 8 Highs) |
 | 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
+| 2026-07-25 | Residual scout C6+G2+F4 deep; #1294–#1296 boolexp NUL, COM guards, muxescape/muxscript |
 
 Update this table when the map structure changes.

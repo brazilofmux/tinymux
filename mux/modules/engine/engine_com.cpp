@@ -933,12 +933,20 @@ uint32_t CObjectInfo::Release(void)
 
 MUX_RESULT CObjectInfo::IsValid(dbref obj, bool *pValid)
 {
+    if (nullptr == pValid)
+    {
+        return MUX_E_INVALIDARG;
+    }
     *pValid = Good_obj(obj);
     return MUX_S_OK;
 }
 
 MUX_RESULT CObjectInfo::GetName(dbref obj, const UTF8 **ppName)
 {
+    if (nullptr == ppName)
+    {
+        return MUX_E_INVALIDARG;
+    }
     if (!Good_obj(obj))
     {
         *ppName = nullptr;
@@ -950,6 +958,10 @@ MUX_RESULT CObjectInfo::GetName(dbref obj, const UTF8 **ppName)
 
 MUX_RESULT CObjectInfo::GetOwner(dbref obj, dbref *pOwner)
 {
+    if (nullptr == pOwner)
+    {
+        return MUX_E_INVALIDARG;
+    }
     if (!Good_obj(obj))
     {
         *pOwner = NOTHING;
@@ -961,6 +973,10 @@ MUX_RESULT CObjectInfo::GetOwner(dbref obj, dbref *pOwner)
 
 MUX_RESULT CObjectInfo::GetLocation(dbref obj, dbref *pLocation)
 {
+    if (nullptr == pLocation)
+    {
+        return MUX_E_INVALIDARG;
+    }
     if (!Good_obj(obj))
     {
         *pLocation = NOTHING;
@@ -972,6 +988,10 @@ MUX_RESULT CObjectInfo::GetLocation(dbref obj, dbref *pLocation)
 
 MUX_RESULT CObjectInfo::GetType(dbref obj, int *pType)
 {
+    if (nullptr == pType)
+    {
+        return MUX_E_INVALIDARG;
+    }
     if (!Good_obj(obj))
     {
         *pType = TYPE_GARBAGE;
@@ -1248,6 +1268,11 @@ MUX_RESULT CObjectInfo::SeeHidden(dbref obj, bool *pResult)
 
 MUX_RESULT CObjectInfo::AtrAddRaw(dbref obj, int attrnum, const UTF8 *value)
 {
+    // Privileged raw write (no bCanSetAttr).  Trusted callers only: driver
+    // lifecycle and modules that must touch AF_INTERNAL attrs mail_mod cannot
+    // reach through IAttributeAccess (#1229).  Untrusted softcode must use
+    // IAttributeAccess instead.
+    //
     if (!Good_obj(obj))
     {
         return MUX_E_INVALIDARG;
@@ -1269,7 +1294,10 @@ MUX_RESULT CObjectInfo::AtrClr(dbref obj, int attrnum)
 MUX_RESULT CObjectInfo::AtrGet(dbref obj, int attrnum, UTF8 *pValue,
     size_t nValueMax, dbref *pOwner, int *pFlags)
 {
-    if (nullptr == pValue || nullptr == pOwner || nullptr == pFlags)
+    if (  nullptr == pValue
+       || nullptr == pOwner
+       || nullptr == pFlags
+       || 0 == nValueMax)
     {
         return MUX_E_INVALIDARG;
     }
@@ -1286,7 +1314,10 @@ MUX_RESULT CObjectInfo::AtrGet(dbref obj, int attrnum, UTF8 *pValue,
 MUX_RESULT CObjectInfo::AtrPGet(dbref obj, int attrnum, UTF8 *pValue,
     size_t nValueMax, dbref *pOwner, int *pFlags)
 {
-    if (nullptr == pValue || nullptr == pOwner || nullptr == pFlags)
+    if (  nullptr == pValue
+       || nullptr == pOwner
+       || nullptr == pFlags
+       || 0 == nValueMax)
     {
         return MUX_E_INVALIDARG;
     }
@@ -1487,7 +1518,7 @@ MUX_RESULT CAttributeAccess::GetAttribute(dbref executor, dbref obj,
     const UTF8 *pAttrName, UTF8 *pValue, size_t nValueMax,
     size_t *pnValueLen)
 {
-    if (nullptr == pValue || 0 == nValueMax)
+    if (nullptr == pValue || 0 == nValueMax || nullptr == pAttrName)
     {
         return MUX_E_INVALIDARG;
     }
@@ -1541,7 +1572,7 @@ MUX_RESULT CAttributeAccess::GetAttribute(dbref executor, dbref obj,
 MUX_RESULT CAttributeAccess::SetAttribute(dbref executor, dbref obj,
     const UTF8 *pAttrName, const UTF8 *pValue)
 {
-    if (!Good_obj(obj))
+    if (!Good_obj(obj) || nullptr == pAttrName)
     {
         return MUX_E_INVALIDARG;
     }

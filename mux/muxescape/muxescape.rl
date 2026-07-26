@@ -88,12 +88,23 @@ static void emit_literal_segment(const unsigned char *ts, const unsigned char *t
     }
 }
 
+// Cap offline tool input so a accidental huge redirect cannot OOM the host.
+// Message bodies for @mail/page are far smaller; 16 MiB is generous.
+//
+static constexpr size_t MUXESCAPE_MAX_INPUT = 16u * 1024u * 1024u;
+
 static bool read_all(FILE *fp, std::vector<char> &buf)
 {
     char chunk[4096];
     while (true) {
         size_t n = std::fread(chunk, 1, sizeof(chunk), fp);
         if (n > 0) {
+            if (buf.size() + n > MUXESCAPE_MAX_INPUT) {
+                std::fprintf(stderr,
+                    "muxescape: input exceeds %zu byte limit\n",
+                    MUXESCAPE_MAX_INPUT);
+                return false;
+            }
             buf.insert(buf.end(), chunk, chunk + n);
         }
         if (n < sizeof(chunk)) {
