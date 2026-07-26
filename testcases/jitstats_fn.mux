@@ -155,6 +155,62 @@
     @trig me/tr.done
   }
 -
+&tr.fl_nested test_jitstats_fn=
+  [jitstats(flush)]
+-
+#
+# Test Case #5 - jitstats(flush) survives being called from inside a
+# compiled program (#1316).
+#
+# The flush clears the in-memory program caches, and softcode reaches
+# this function through an ECALL from compiled code -- so the call can
+# arrive with a live compiled_program on the stack, and clearing frees
+# the program that is still executing.  It surfaced as an empty return
+# instead of OK on the JIT route, because the post-run harvest reads
+# prog->out_addr out of memory that had just been released.
+#
+# The captures below must be real top-level eval-bracket regions.  The
+# same call written inline inside cand(...) sits in a function argument
+# and is not necessarily the compiled region, so it would not reproduce
+# the defect.  f.nested goes one further and reaches the flush through
+# u(...), which is the ECALL path itself.
+#
+# The counter check is the other half: a return of OK proves nothing if
+# the flush stopped flushing.  f.s1 and f.s2 evaluate identical text, so
+# the second would be a memory-cache hit had the cache survived; after a
+# real flush every region after it misses, and cache_hit_mem is unmoved.
+#
+# No tr.done handoff here.  The @dolist over tr.tc* queues this case
+# after tc004, and tc004's tr.done trigger is queued after that again,
+# so tr.done still runs last.  Triggering tr.tc005 from tc004 instead
+# would run this case twice, since the dolist already dispatches it.
+#
+&tr.tc005 test_jitstats_fn=
+  @if u(me/tr.has_jit)=
+  {
+    &f.direct me=[jitstats(flush)];
+    &f.nested me=[u(me/tr.fl_nested) tailmark];
+    &f.s1 me=[jitstats()];
+    &f.warm me=[jitstats(flush)];
+    &f.s2 me=[jitstats()];
+    @if cand(
+          strmatch(v(f.direct),OK),
+          strmatch(v(f.nested),OK tailmark),
+          strmatch(v(f.warm),OK),
+          eq(after(grab(v(f.s1),cache_hit_mem=*),=),
+             after(grab(v(f.s2),cache_hit_mem=*),=))
+        )=
+    {
+      @log smoke=TC005: jitstats flush from compiled code. Succeeded.
+    },
+    {
+      @log smoke=TC005: jitstats flush from compiled code. Failed (direct=[v(f.direct)] nested=[v(f.nested)] warm=[v(f.warm)] hit1=[after(grab(v(f.s1),cache_hit_mem=*),=)] hit2=[after(grab(v(f.s2),cache_hit_mem=*),=)]).
+    }
+  },
+  {
+    @log smoke=TC005: jitstats flush from compiled code. Skipped (JIT not enabled).
+  }
+-
 &tr.done test_jitstats_fn=
   @log smoke=End jitstats() test cases.;
   @notify smoke

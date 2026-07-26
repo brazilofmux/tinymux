@@ -178,4 +178,11 @@ void jit_lua_reset_stats(void);
 //
 void jit_lua_clear_cache(void);
 
+// Apply a jitstats(flush) that was deferred because a compiled program was
+// still executing when it was requested.  Call before taking a pointer into
+// either program cache; it is a no-op unless a flush is pending and the JIT
+// is quiet (#1316).
+//
+void jit_flush_pending_caches(void);
+
 #endif // ENGINE_API_H
