@@ -2121,19 +2121,58 @@ no_addr_fusion:
             continue;
         }
 
-        // -- SYSTEM --
+        // -- SYSTEM: ECALL / EBREAK / CSR (#1333) --
         case OP_SYSTEM: {
             rc_flush(&e, &rc); fc_flush(&e, &fc);
-            if (insn.imm == 0) {
-                // ECALL — set bit 0 signal
-                emit_exit_with_pc(&e, pc | 1);
-            } else if (insn.imm == 1) {
-                // EBREAK — set bit 1 signal
-                emit_exit_with_pc(&e, pc | 2);
-            } else {
-                // Unsupported SYSTEM variant — refuse the block (#1323).
+            // ECALL/EBREAK require funct3 == 0.  Without that guard, CSR
+            // addresses 0x000/0x001 are misdecoded as ECALL/EBREAK.
+            //
+            if (insn.funct3 == 0) {
+                if (insn.imm == 0) {
+                    emit_exit_with_pc(&e, pc | 1);
+                    goto done;
+                }
+                if (insn.imm == 1) {
+                    emit_exit_with_pc(&e, pc | 2);
+                    goto done;
+                }
                 refuse_unhandled = true;
+                goto done;
             }
+            // CSRRW/CSRRS/CSRRC (1-3) and CSRRWI/CSRRSI/CSRRCI (5-7).
+            //
+            if (  (insn.funct3 >= 1 && insn.funct3 <= 3)
+               || (insn.funct3 >= 5 && insn.funct3 <= 7)) {
+                const uint32_t csr_addr = static_cast<uint32_t>(insn.imm) & 0xFFFu;
+                if (csr_addr != 0x001 && csr_addr != 0x002 && csr_addr != 0x003) {
+                    refuse_unhandled = true;
+                    goto done;
+                }
+                // Call dbt_csr_apply(ctx, csr, funct3, src, rd).  AAPCS64:
+                // x0..x4.  Prologue saves LR and keeps SP 16-byte aligned.
+                //
+                emit_stub_prologue(&e);
+                emit_mov_r64(&e, A64_X0, A64_X19); // ctx
+                emit_mov_r64_imm32(&e, A64_X1, static_cast<int32_t>(csr_addr));
+                emit_mov_r64_imm32(&e, A64_X2, insn.funct3);
+                if (insn.funct3 <= 3) {
+                    if (insn.rs1) {
+                        emit_load_guest(&e, A64_X3, insn.rs1);
+                    } else {
+                        emit_mov_r64(&e, A64_X3, A64_XZR);
+                    }
+                } else {
+                    emit_mov_r64_imm32(&e, A64_X3, insn.rs1); // zimm
+                }
+                emit_mov_r64_imm32(&e, A64_X4, insn.rd);
+                emit_call_host(&e, reinterpret_cast<void *>(dbt_csr_apply));
+                emit_stub_epilogue(&e);
+                rc_invalidate_reload(&e, &rc);
+                fc_invalidate(&fc);
+                pc += 4;
+                continue;
+            }
+            refuse_unhandled = true;
             goto done;
         }
 
