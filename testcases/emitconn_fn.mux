@@ -1,0 +1,137 @@
+#
+# emitconn_fn.mux - Coverage for emit, pose formatting, conn*, and reality offline.
+#
+# Twenty-two builtins with no reference anywhere in the corpus (#1160):
+#
+#   emit  pemit  remit  nsemit  nspemit  nsremit  nsoemit
+#   pose
+#   conn  connnum  connlast  connleft  connmax  conntotal  connrecord
+#   listrlevels  rxlevel  txlevel  hasrxlevel  hastxlevel  ilev
+#   gmcp
+#
+# Softcode-reachable under muxscript:
+#   - emit* return without #-1 and write to the session (side effect OK)
+#   - pose() is pure formatting (say/pose/semipose text without emitting)
+#   - conn* report zeros offline for the executor
+#   - reality helpers error or empty when no rlevels are configured
+#   - gmcp() is a non-error no-op without a GMCP client
+#
+@create test_emitconn_fn
+-
+@set test_emitconn_fn=INHERIT QUIET
+-
+&tr.tc000 test_emitconn_fn=
+  @log smoke=Beginning emitconn function test cases.
+-
+#
+# Test Case #1 - emit family does not error.
+#
+# These write to the session under muxscript; the pin is a defined, non-#-1
+# return rather than capturing the text.
+#
+&tr.tc001 test_emitconn_fn=
+  @if cand(
+        not(strmatch(setr(0, emit(emitprobe)), #-1*)),
+        not(strmatch(setr(1, pemit(me, pemitprobe)), #-1*)),
+        not(strmatch(setr(2, remit(here, remitprobe)), #-1*)),
+        not(strmatch(setr(3, nsemit(nsemitprobe)), #-1*)),
+        not(strmatch(setr(4, nspemit(me, nspemitprobe)), #-1*)),
+        not(strmatch(setr(5, nsremit(here, nsremitprobe)), #-1*)),
+        not(strmatch(setr(6, nsoemit(me, nsoemitprobe)), #-1*))
+      )=
+  {
+    @log smoke=TC001: emit family non-error. Succeeded.
+  },
+  {
+    @log smoke=TC001: emit family non-error. Failed (e=%q0 p=%q1 r=%q2 ns=%q3 nsp=%q4 nsr=%q5 nso=%q6).
+  }
+-
+#
+# Test Case #2 - pose() formats say / pose / semipose without emitting.
+#
+# Leading " is say, : is pose with space, ; is pose without space.  Bare
+# text defaults to say.  Name comes from the moniker of the first arg.
+#
+&tr.tc002 test_emitconn_fn=
+  @if cand(
+        strmatch(setr(0, pose(me, :waves)), *waves),
+        not(strmatch(%q0, *says*)),
+        strmatch(setr(1, pose(me, waves)), *says*),
+        strmatch(setr(2, pose(me, ;nods)), *nods),
+        not(strmatch(%q2, * *nods*))
+      )=
+  {
+    @log smoke=TC002: pose formats say and pose. Succeeded.
+  },
+  {
+    @log smoke=TC002: pose formats say and pose. Failed (pose=%q0 say=%q1 semi=%q2).
+  }
+-
+#
+# Test Case #3 - conn* report zeros for the executor offline.
+#
+# Under muxscript there is no live descriptor; these still resolve the
+# player and return defined numeric zeros rather than permission errors.
+#
+&tr.tc003 test_emitconn_fn=
+  @if cand(
+        eq(conn(me), 0),
+        eq(connnum(me), 0),
+        eq(connlast(me), 0),
+        eq(connleft(me), 0),
+        eq(connmax(me), 0),
+        eq(conntotal(me), 0),
+        eq(connrecord(), 0)
+      )=
+  {
+    @log smoke=TC003: conn family offline zeros. Succeeded.
+  },
+  {
+    @log smoke=TC003: conn family offline zeros. Failed (conn=[conn(me)] num=[connnum(me)] last=[connlast(me)] left=[connleft(me)] max=[connmax(me)] tot=[conntotal(me)] rec=[connrecord()]).
+  }
+-
+#
+# Test Case #4 - reality helpers when no rlevels are configured.
+#
+# listrlevels / has*level report clear errors; rxlevel/txlevel may be
+# empty; ilev() is a nested-eval depth watermark and is defined offline.
+#
+&tr.tc004 test_emitconn_fn=
+  @if cand(
+        strmatch(setr(0, listrlevels()), #-1*),
+        strmatch(setr(1, hasrxlevel(me, foo)), #-1*),
+        strmatch(setr(2, hastxlevel(me, foo)), #-1*),
+        not(strmatch(setr(3, rxlevel(me)), #-1 NO*)),
+        not(strmatch(setr(4, txlevel(me)), #-1 NO*)),
+        isint(setr(5, ilev()))
+      )=
+  {
+    @log smoke=TC004: reality offline paths. Succeeded.
+  },
+  {
+    @log smoke=TC004: reality offline paths. Failed (list=%q0 hasrx=%q1 hastx=%q2 rx=%q3 tx=%q4 ilev=%q5).
+  }
+-
+#
+# Test Case #5 - gmcp() is a non-error no-op without a GMCP client.
+#
+&tr.tc005 test_emitconn_fn=
+  @if not(strmatch(setr(0, gmcp(me, Core.Hello)), #-1*))=
+  {
+    @log smoke=TC005: gmcp non-error. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: gmcp non-error. Failed (%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_emitconn_fn=
+  @log smoke=End emitconn function test cases.;
+  @notify smoke
+-
+drop test_emitconn_fn
+-
+#
+# End of Test Cases
+#
