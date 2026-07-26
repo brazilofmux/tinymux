@@ -166,6 +166,43 @@ AC_ARG_ENABLE(
   ])
 AC_SUBST(SELFCHECK)
 
+AC_MSG_CHECKING(whether to enable sanitizers)
+AC_ARG_ENABLE(
+  [sanitizers],
+  AS_HELP_STRING([--enable-sanitizers@<:@=LIST@:>@],[build with -fsanitize=LIST for diagnostics; LIST defaults to address,undefined (default is NO)]),
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      if test "x$enableval" = "xyes"; then
+        mux_sanitizers="address,undefined"
+      else
+        mux_sanitizers="$enableval"
+      fi
+      dnl Sanitizers have to appear on both the compile and the link lines,
+      dnl and the frame pointer must survive for the stack traces to be
+      dnl readable.  Appended here, late, so the feature checks above ran
+      dnl uninstrumented -- a sanitizer build is for running the suites, not
+      dnl for deciding what the compiler supports.
+      dnl
+      dnl Diagnostic builds only.  Never ship one: ASan is not a hardening
+      dnl measure, and it changes both performance and the process's
+      dnl behaviour on a fault.
+      mux_sanitizer_flags="-fsanitize=$mux_sanitizers -fno-omit-frame-pointer"
+      CFLAGS="$CFLAGS $mux_sanitizer_flags"
+      CXXFLAGS="$CXXFLAGS $mux_sanitizer_flags"
+      LDFLAGS="$LDFLAGS $mux_sanitizer_flags"
+      dnl No AC_DEFINE: nothing in the tree needs to know at compile time,
+      dnl and the flags land in config.status, which is what `make test-asan`
+      dnl checks -- so a tree configured with these flags by hand is detected
+      dnl the same way as one configured with --enable-sanitizers.
+      AC_MSG_RESULT($mux_sanitizers)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+
 AC_MSG_CHECKING(for location of SQL header files)
 AC_ARG_WITH(
   [mysql-include],

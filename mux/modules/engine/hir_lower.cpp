@@ -1385,6 +1385,11 @@ static int hir_lower_argument(hir_program &h, rv_compiler &rc,
             parts.push_back(hir_lower_node(h, rc, child->children[i].get()));
         }
         if (parts.size() == 1) return parts[0];
+        // A refused child lowering leaves -1 in the vector; indexing the
+        // per-instruction arrays with it is out of bounds (#1440).
+        for (int p : parts) {
+            if (p < 0) return -1;
+        }
         for (auto &p : parts) {
             if (h.ty[p] == TY_INT) {
                 p = h.emit(HIR_ITOA, TY_STRING, p);
@@ -1575,6 +1580,19 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Lower the condition (always evaluated).
         int cond = hir_lower_node(h, rc, node->children[0].get());
 
+        // hir_lower_node returns -1 to REFUSE the compile (unknown AST node
+        // type, #1242) and sets h.overflowed.  Indexing with it reads before the
+        // per-instruction arrays: kind[] is the FIRST member of hir_program, so
+        // h.kind[-1] is four bytes before the struct.  AddressSanitizer reports it
+        // as a stack-buffer-overflow; without a sanitizer it is a silent garbage
+        // read that decides a branch.  Propagate the refusal -- no rollback is
+        // needed, since overflowed abandons the compile before codegen and the AST
+        // evaluator takes the expression.
+        //
+        if (cond < 0) {
+            return -1;
+        }
+
         // Ensure condition is integer.  The interpreter decides this
         // condition with xlate() (fun_ifelse in funceval.cpp), so anything
         // we fold or emit here has to agree with xlate() exactly (#1157).
@@ -1740,6 +1758,19 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         for (int ai = 0; ai < nfargs; ai++) {
             int cond = hir_lower_node(h, rc, node->children[ai].get());
+
+            // hir_lower_node returns -1 to REFUSE the compile (unknown AST node
+            // type, #1242) and sets h.overflowed.  Indexing with it reads before the
+            // per-instruction arrays: kind[] is the FIRST member of hir_program, so
+            // h.kind[-1] is four bytes before the struct.  AddressSanitizer reports it
+            // as a stack-buffer-overflow; without a sanitizer it is a silent garbage
+            // read that decides a branch.  Propagate the refusal -- no rollback is
+            // needed, since overflowed abandons the compile before codegen and the AST
+            // evaluator takes the expression.
+            //
+            if (cond < 0) {
+                return -1;
+            }
 
             // Ensure condition is integer.
             if (h.ty[cond] != TY_INT) {
@@ -2585,6 +2616,17 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         // has been lowered, so it gets the highest
                         // block number.  All edges to merge are forward.
                         int merge_block = h.new_block();
+
+                        // Same refusal check as the ifelse and and/or
+                        // sites above.  h.ty[-1] lands INSIDE the struct
+                        // (ty[] is not the first member), so this one reads
+                        // garbage silently rather than tripping a sanitizer
+                        // -- which is exactly why it wants the guard rather
+                        // than waiting to be caught.
+                        //
+                        if (body_result < 0) {
+                            return -1;
+                        }
 
                         // u() merge is always TY_STRING (fallback is
                         // fun_u). Coerce a native float/int body before
@@ -3510,6 +3552,10 @@ general_lowering:
     // ---------------------------------------------------------------
 
     // Convert any TY_INT or TY_FLOAT args to strings for ECALL.
+    // A refused child lowering leaves -1 here; see #1440.
+    for (int ai : args) {
+        if (ai < 0) return -1;
+    }
     for (auto &ai : args) {
         if (h.ty[ai] == TY_INT) {
             ai = h.emit(HIR_ITOA, TY_STRING, ai);
@@ -3681,6 +3727,9 @@ literal_strcat:
     // truncated or corrupted argument lists.
     //
     for (int ai = 0; ai < nargs; ai++) {
+        if (args[ai] < 0) return -1;      // refused child lowering (#1440)
+    }
+    for (int ai = 0; ai < nargs; ai++) {
         if (h.ty[args[ai]] == TY_INT) {
             args[ai] = h.emit(HIR_ITOA, TY_STRING, args[ai]);
         } else if (h.ty[args[ai]] == TY_FLOAT) {
@@ -3814,6 +3863,11 @@ literal_strcat:
     int i = h.emit_call(TY_STRING, fidx,
                          args.data(), nargs,
                          fidx == 0 ? &upper : nullptr);
+    // emit_call returns -1 when the instruction or carg pool overflows and
+    // sets h.overflowed; indexing with it is out of bounds (#1440).
+    if (i < 0) {
+        return -1;
+    }
     if (t2addr) {
         h.tier2_addr[i] = t2addr;
         h.tier2_calls++;
