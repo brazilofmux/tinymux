@@ -563,6 +563,8 @@ static constexpr uint8_t SETCC_L  = 0x9C;
 static constexpr uint8_t SETCC_GE = 0x9D;
 static constexpr uint8_t SETCC_B  = 0x92;
 static constexpr uint8_t SETCC_AE = 0x93;
+static constexpr uint8_t SETCC_A  = 0x97;   // CF=0 and ZF=0
+static constexpr uint8_t SETCC_NP = 0x9B;   // parity clear: operands ordered
 
 static inline void emit_setcc(emit_t *e, uint8_t cc, int reg) {
     // Always emit REX so regs 4-7 map to SPL/BPL/SIL/DIL.
@@ -1297,6 +1299,45 @@ static inline void emit_fminmax_d(emit_t *e, int xd, int xs1, int xs2,
 
     emit_canon_nan_d(e, 0);                 // fires only when both were NaN
     emit_movsd_xmm(e, xd, 0);
+}
+
+// FEQ.D / FLT.D / FLE.D with RISC-V semantics (#1359).  funct3: 2=EQ, 1=LT,
+// 0=LE.  Produces a fully zero-extended 0 or 1 in rd.
+//
+// UCOMISD sets ZF, PF and CF *all* on unordered, so the naive mapping is
+// wrong in both directions:
+//
+//   FEQ  SETE  reads ZF, which NaN sets    -> feq(NaN,x) came back 1
+//   FLT  SETB  reads CF, which NaN sets    -> flt(NaN,x) came back 1
+//   FLE  SETAE is CF=0, i.e. rs1 >= rs2    -> plain FGE, wrong with no NaN
+//                                             anywhere in sight
+//
+// RISC-V wants every comparison against NaN to be false.
+//
+// For LT and LE, comparing in the OTHER order makes that fall out for free:
+// unordered leaves CF=1, so both SETA (CF=0 && ZF=0) and SETAE (CF=0) give
+// zero, and `xs2 > xs1` / `xs2 >= xs1` are exactly `xs1 < xs2` / `xs1 <= xs2`.
+// This is what the old FLE comment described but never applied.
+//
+// EQ cannot use that trick -- it is symmetric, so no operand order clears ZF
+// for NaN -- and needs the parity flag tested explicitly.  RCX is safe as the
+// second destination: it is outside rc_host_regs, and rd is either a cached
+// host register or RAX (when rd==x0), never RCX.
+//
+static inline void emit_fcmp_d(emit_t *e, int rd, int xs1, int xs2,
+                               int funct3) {
+    if (funct3 == 2) {                      // FEQ.D
+        emit_ucomisd(e, xs1, xs2);
+        emit_setcc(e, SETCC_E, rd);
+        emit_setcc(e, SETCC_NP, X64_RCX);   // ordered?
+        emit_movzx_r64_r8(e, rd, rd);
+        emit_movzx_r64_r8(e, X64_RCX, X64_RCX);
+        emit_and_r64(e, rd, X64_RCX);
+    } else {                                // FLT.D (1), FLE.D (0)
+        emit_ucomisd(e, xs2, xs1);
+        emit_setcc(e, funct3 == 1 ? SETCC_A : SETCC_AE, rd);
+        emit_movzx_r64_r8(e, rd, rd);
+    }
 }
 
 // Spill/reload the rounded double through ctx.fp_scratch.
