@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-dbt-interp test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -30,12 +30,13 @@ clean:
 	$(MAKE) -C mux/ganl/tests clean
 	$(MAKE) -C tests/dbt_chain clean
 	$(MAKE) -C tests/dbt_exec clean
+	$(MAKE) -C tests/dbt_interp clean
 	$(MAKE) -C tests/dbt_cache clean
 
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-alarm test-jit-qreg test-jit-ifelse test-ios
+test: install test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-dbt-interp test-alarm test-jit-qreg test-jit-ifelse test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -110,6 +111,16 @@ test-dbt-cache:
 test-dbt-exec:
 	@echo "==> Running RV64 execution tests (interpreter + DBT)"
 	$(MAKE) -C tests/dbt_exec test
+
+# RV64 interpreter guest-memory bounds: mem_check gated every guest read and
+# write with `addr + len <= size`, which wraps for an addr near UINT64_MAX and
+# let the caller index mem->data with the unwrapped address (#1292).  The
+# interpreter-route counterpart to the DBT-side bounds work in #1151.
+# #includes dbt_interp.cpp (the accessors are file-static) — no `install`, no
+# --enable-jit, no skip path.
+test-dbt-interp:
+	@echo "==> Running DBT interpreter bounds tests"
+	$(MAKE) -C tests/dbt_interp test
 
 # mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
 # worker-thread start — alarm_clock is a libmux global whose constructor used

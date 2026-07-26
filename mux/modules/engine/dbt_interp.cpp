@@ -47,7 +47,15 @@ static inline uint64_t fp_box_d(double d) {
 // ---------------------------------------------------------------
 
 static inline bool mem_check(rv64_memory_t *mem, uint64_t addr, size_t len) {
-    return addr + len <= mem->size;
+    // Test the operands separately: `addr + len` is unsigned 64-bit and
+    // wraps for an addr near UINT64_MAX, producing a small sum that
+    // compares below mem->size.  The check then passed and the caller
+    // indexed mem->data with the unwrapped addr (#1292).
+    //
+    // Subtracting instead cannot wrap, because the first term has
+    // already established addr <= mem->size.
+    //
+    return addr <= mem->size && len <= mem->size - addr;
 }
 
 static inline uint8_t mem_read8(rv64_memory_t *mem, uint64_t addr) {
