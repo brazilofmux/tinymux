@@ -2920,11 +2920,14 @@ no_addr_fusion:
 
         default:
         fallback_interp:
-            // Unhandled instruction: skip it (advance PC by 4).
-            // The caller should use the interpreter for full coverage.
-            rc_flush(&e, &rc); fc_flush(&e, &fc);
-            emit_exit_chained(&e, dbt, pc + 4);
-            goto done;
+            // Unhandled instruction: refuse to translate this block (#1323).
+            // The old path advanced to pc+4 without executing the insn
+            // (rd left stale).  dbt_run never single-steps the interpreter,
+            // so "fallback" was a silent skip.  Returning nullptr lets the
+            // caller decline compiled execution instead of running wrong code.
+            //
+            dbt_rollback_patches(dbt, patches_before);
+            return nullptr;
         }
     }
 

@@ -807,6 +807,11 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     // emit can be rolled back (#1147).
     const size_t patches_before = dbt->patches.size();
 
+    // Set when an unhandled guest insn is hit; the whole block is refused
+    // rather than emitting exit_with_pc(same) (spin) or a silent skip (#1323).
+    //
+    bool refuse_unhandled = false;
+
     uint8_t *block_start = dbt->code_buf + dbt->code_used;
 
     emit_t e;
@@ -2094,10 +2099,8 @@ no_addr_fusion:
                     int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
                     emit_fmov_x64_d(&e, rd, fs1);
                 } else {
-                    // FCLASS.D (funct3==1) — not yet implemented.
-                    // Exit to dispatcher to avoid wrong architectural state.
-                    rc_flush(&e, &rc); fc_flush(&e, &fc);
-                    emit_exit_with_pc(&e, pc);
+                    // FCLASS.D (funct3==1) — not yet implemented (#1323).
+                    refuse_unhandled = true;
                     goto done;
                 }
                 break;
@@ -2110,9 +2113,8 @@ no_addr_fusion:
                 break;
             }
             default:
-                // Unhandled FP opcode — exit to dispatcher.
-                rc_flush(&e, &rc); fc_flush(&e, &fc);
-                emit_exit_with_pc(&e, pc);
+                // Unhandled FP opcode (#1323).
+                refuse_unhandled = true;
                 goto done;
             }
             pc += 4;
@@ -2129,7 +2131,8 @@ no_addr_fusion:
                 // EBREAK — set bit 1 signal
                 emit_exit_with_pc(&e, pc | 2);
             } else {
-                emit_exit_with_pc(&e, pc);
+                // Unsupported SYSTEM variant — refuse the block (#1323).
+                refuse_unhandled = true;
             }
             goto done;
         }
@@ -2140,9 +2143,9 @@ no_addr_fusion:
             continue;
 
         default:
-            // Unknown opcode — exit to dispatcher.
-            rc_flush(&e, &rc); fc_flush(&e, &fc);
-            emit_exit_with_pc(&e, pc);
+            // Unknown opcode — refuse the block (#1323).  Emitting
+            // exit_with_pc(same pc) spun the dispatcher forever.
+            refuse_unhandled = true;
             goto done;
         }
     }
@@ -2152,6 +2155,11 @@ no_addr_fusion:
     emit_exit_chained(&e, dbt, pc);
 
 done:
+    if (refuse_unhandled) {
+        dbt_rollback_patches(dbt, patches_before);
+        return nullptr;
+    }
+
     // Emit cold stubs for superblock side exits.
     for (int i = 0; i < num_side_exits; i++) {
         emit_patch_b19(&e, side_exits[i].jcc_patch, emit_pos(&e));
