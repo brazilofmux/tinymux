@@ -1,6 +1,20 @@
 #
 # dolist_cmd.mux - Test Cases for @dolist command.
 #
+# TC001/TC002 intentionally use *queued* @switch (not /now) so ## from the
+# enclosing @dolist is preserved into the switch body.  Those switch bodies
+# land on the queue *after* the dolist iterations, so a fixed @wait is a race
+# under a loaded suite (#1394).
+#
+# Completion signal: the last list item's switch body triggers the check.
+# Queue order is FIFO — when the last switch body runs, earlier items have
+# already updated the accumulator.  No wall-clock wait.
+#
+# Compared values are captured with setr() and failure messages print %q —
+# a second attribute read can see a value the comparison never saw (#1394).
+#
+# Only tr.tc001 is a harness entry (lattr tr.tc*); the rest chain as tr.s*.
+#
 @create test_dolist_cmd
 -
 @set test_dolist_cmd=INHERIT QUIET
@@ -8,54 +22,62 @@
 #
 # Beginning of Test Cases
 #
-&tr.tc000 test_dolist_cmd=
-  @log smoke=Beginning @dolist command test cases.
+&tr.tc001 test_dolist_cmd=
+  @log smoke=Beginning @dolist command test cases.;
+  @trig me/tr.s001
 -
 #
 # Test Case #1 - ## inside @switch inside @dolist.
 #
-# @switch (without /inline) queues its body. The iter token (##)
+# @switch (without /now) queues its body. The iter token (##)
 # from the enclosing @dolist must be preserved into the queued
 # @switch body. Without the fix, ## resolves to empty.
 #
-&tr.tc001 test_dolist_cmd=
+&tr.s001 test_dolist_cmd=
   &tc001_result me=;
   @dolist alpha bravo charlie=
   {
     @switch 1=1,
     {
-      &tc001_result me=[get(me/tc001_result)] ##
+      &tc001_result me=[get(me/tc001_result)] ##;
+      @if strmatch(##,charlie)={@trig me/tr.s001_check}
     }
-  };
-  @wait 1=
+  }
+-
+&tr.s001_check test_dolist_cmd=
+  @if strmatch(setr(0, trim(get(me/tc001_result))), alpha bravo charlie)=
   {
-    @if strmatch([trim(get(me/tc001_result))], alpha bravo charlie)=
-    {
-      @log smoke=TC001: dolist itext in queued switch body. Succeeded.
-    },
-    {
-      @log smoke=TC001: dolist itext in queued switch body. Failed (actual=.[trim(get(me/tc001_result))].).
-    }
+    @log smoke=TC001: dolist itext in queued switch body. Succeeded.;
+    @trig me/tr.s002
+  },
+  {
+    @log smoke=TC001: dolist itext in queued switch body. Failed (actual=.%q0.).;
+    @trig me/tr.s002
   }
 -
 #
 # Test Case #2 - ## inside @switch default case inside @dolist.
 #
-&tr.tc002 test_dolist_cmd=
+&tr.s002 test_dolist_cmd=
   &tc002_result me=;
   @dolist X Y Z=
   {
-    @switch ##=nomatch,{},{&tc002_result me=[get(me/tc002_result)] ##}
-  };
-  @wait 1=
-  {
-    @if strmatch([trim(get(me/tc002_result))], X Y Z)=
+    @switch ##=nomatch,{},
     {
-      @log smoke=TC002: dolist itext in queued switch default. Succeeded.
-    },
-    {
-      @log smoke=TC002: dolist itext in queued switch default. Failed (actual=.[trim(get(me/tc002_result))].).
+      &tc002_result me=[get(me/tc002_result)] ##;
+      @if strmatch(##,Z)={@trig me/tr.s002_check}
     }
+  }
+-
+&tr.s002_check test_dolist_cmd=
+  @if strmatch(setr(0, trim(get(me/tc002_result))), X Y Z)=
+  {
+    @log smoke=TC002: dolist itext in queued switch default. Succeeded.;
+    @trig me/tr.s003
+  },
+  {
+    @log smoke=TC002: dolist itext in queued switch default. Failed (actual=.%q0.).;
+    @trig me/tr.s003
   }
 -
 #
@@ -63,23 +85,22 @@
 #                runner has always supported ;| (%| carries the previous
 #                command's output); the inline runner must too.
 #
-&tr.tc003 test_dolist_cmd=
+# /now runs the body synchronously, so the check is immediate — no wait.
+#
+&tr.s003 test_dolist_cmd=
   &tc003_result me=;
   @dolist/now P Q=
   {
     think VAL-##;|&tc003_result me=[get(me/tc003_result)] [before(%|,%r)]
   };
-  @wait 0.5=
+  @if strmatch(setr(0,trim(get(me/tc003_result))),VAL-P VAL-Q)=
   {
-    @if strmatch(setr(0,trim(get(me/tc003_result))),VAL-P VAL-Q)=
-    {
-      @log smoke=TC003: pipe inside inline dolist. Succeeded.;
-      @trig me/tr.done
-    },
-    {
-      @log smoke=TC003: pipe inside inline dolist. Failed (actual=.[trim(get(me/tc002_result))].).;
-      @trig me/tr.done
-    }
+    @log smoke=TC003: pipe inside inline dolist. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: pipe inside inline dolist. Failed (actual=.%q0.).;
+    @trig me/tr.done
   }
 -
 &tr.done test_dolist_cmd=
