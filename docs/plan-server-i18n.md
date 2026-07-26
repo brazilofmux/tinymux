@@ -28,11 +28,20 @@ Players and wizards see two very different classes of English:
 | **Logs / startup** | `db_read: object dbref #…`, INI/LOAD lines | Operators, log scrapers | **Optional / separate domain** |
 | **Help / wizhelp** | `mux/game/text/*.txt` (~25k lines) | Players/staff | **Later phase** (content, not `libintl` alone) |
 
-Rough order-of-magnitude in `mux/modules/engine` (line hits, not unique strings):
+Measured over `mux/src`, `mux/lib` and `mux/modules` — **distinct** literals, not
+line hits, since the same sentence appearing twice is one msgid:
 
-- `#-1 …` style returns: ~**390**
-- `notify*` with `T(...)`: ~**975**
-- `safe_str(T(...))` (mixed diagnostics + rare prose): ~**470**
+| | count |
+|---|---|
+| distinct `T("…")` literals | **6,976** |
+| of those, reachable from a `notify*` sink | **896** |
+| of those, `#-1 …` softcode tokens | **170** |
+| distinct `#-1 …` literals anywhere | **180** |
+
+The gap between 6,976 and 896 is the whole argument for the `T`/`S_` split in
+§6.1: flipping `T()` naively exposes seven times more strings than want
+translating, and sweeps up 170 softcode ABI tokens on the way — including the
+bare `#-1`.
 
 Game **builders** already own world text (attributes, `@emit`, etc.). This plan does **not** replace that with gettext.
 
@@ -70,6 +79,56 @@ Mark every `T("…")` (and globals like `NOPERM_MESSAGE`) with one of:
 
 **Critical invariant:** smoke tests and softcode matchers key off English `#-1 …` text today. Localizing those by default would break the world. Treat them as an **ABI**.
 
+### 4.1 The boundary is already structural
+
+Worth knowing before designing the tagging: the split is not merely a
+convention that has to be imposed. Of the literals that reach a `notify*`
+sink, **zero** are `#-1 …` tokens. Those never travel the player-output path
+at all — they are `safe_str`'d into evaluation buffers and returned to
+softcode. So "reaches `notify*`" is already a near-exact mechanical selector
+for `I18N_PLAYER`, which makes the Phase 2 bootstrap cheaper to scope than a
+hand classification of 6,976 call sites suggests.
+
+What the 896 actually costs, since "896 strings" and "896 translatable
+sentences" are different problems:
+
+| | count | note |
+|---|---|---|
+| full sentences (≥20 chars) | 655 | translate directly, no code change |
+| carrying a `%`-spec | 386 | need positional args (`%1$s`) before a translator can reorder |
+| short fragments (<8 chars) | 35 | `'--- '`, `'Conn'`, `'Exits:'`, `'%s: %s'` — concatenation sites |
+
+The expensive part is not extraction; it is the 386 format strings needing
+positional arguments and the 35 concatenation sites needing restructuring.
+Both are worth doing on their own merits — positional args and whole messages
+are better code whether or not a `.mo` ever ships — so they can be paid for
+before the go/no-go rather than after it.
+
+### 4.2 Not every `#-1` message is a literal
+
+`S_()` marking freezes *literals*. Two shapes on the `#-1` surface are not
+literals, and marking cannot reach them:
+
+**Assembled from pieces.** `[qqnofn(1)]` produces its diagnostic as
+`T("#-1 FUNCTION (")` + the name + `T(") NOT FOUND")`. The tail fragment does
+not begin with `#-1`, so any inventory built by grepping for `#-1` omits it
+while still appearing complete.
+
+**Spliced from third-party libraries.** Two sites embed another project's
+wording verbatim:
+
+```c
+safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
+safe_str(errbuf, buff, bufc);                                  // PCRE2's text
+snprintf(pResult, nResultMax, "#-1 LUA ERROR: %s", errmsg);    // Lua's text
+```
+
+That text varies with library version, and library version varies with
+platform packaging (Homebrew vs vcpkg vs distro). So the parts of the `#-1`
+surface most likely to differ between two builds are the two places TinyMUX
+quotes someone else — not TinyMUX's own wording. Freezing the ABI has to
+account for them explicitly, or the freeze is narrower than it reads.
+
 If a future product wants localized softcode errors, that must be a **conf switch** defaulting off, and tests must run with English.
 
 ---
@@ -97,6 +156,13 @@ If a future product wants localized softcode errors, that must be a **conf switc
 
 Apple’s own “locale” story is not a drop-in replacement for gettext `.po` workflows. Prefer **GNU gettext compatibility** for one message catalog format across all three OS families.
 
+The same holds on Windows: the native equivalent would be `.mui` resource
+DLLs, but those exist for Win32 resource tables, which a server that owns its
+own string handling does not otherwise need. GNU gettext runs on Windows via
+`libintl` from vcpkg or MSYS2, so `.po` can be the *only* catalog format on
+all three platforms. That reduces the Windows question to a dependency and
+packaging one, rather than a second mechanism to build and maintain.
+
 ### 5.3 Windows
 
 | Item | Notes |
@@ -106,6 +172,25 @@ Apple’s own “locale” story is not a drop-in replacement for gettext `.po` 
 | Runtime | `bindtextdomain` needs a real filesystem path next to the binary or under `game/locale` |
 | UTF-8 | TinyMUX is UTF-8 throughout. Catalogs must be **UTF-8**; Windows console code pages are a **display** concern, not storage. Prefer UTF-8 `.mo` + existing UTF-8 game output. |
 | Risk | Medium–high for packaging; low if i18n is optional and English is compiled-in |
+
+### 5.3.1 What actually varies across OSes
+
+Measured rather than assumed, since the ABI-freeze decision depends on it. Of
+the 180 distinct `#-1 …` literals, **5** appear under any conditional
+compilation, and all five are guarded by *build configuration*, not by OS:
+
+| token | guard |
+|---|---|
+| `#-1 END OF TABLE`, `#-1 NO RESULTS SET` | `STUB_SLAVE` |
+| `#-1 HMAC FAILED`, `#-1 UNSUPPORTED DIGEST TYPE` | `UNIX_DIGEST` |
+| `#-1 PERMISSION DENIED` | `HAVE_WORKING_FORK` |
+
+No token is *spelled* differently on a different platform. What differs is
+whether it is reachable in a given build — which is the same reason a Windows
+smoke run reports build-configuration failures for the `hmac`/`digest` cases.
+So the cross-platform question is **availability, not wording**, and that is a
+much weaker claim to have to defend. The exceptions are the library-spliced
+messages in §4.2, which can genuinely differ in text.
 
 ### 5.4 Build matrix recommendation
 
@@ -217,6 +302,12 @@ Ship at least: empty or English catalog, and one sample language for CI (e.g. `x
 Proceed past Phase 0 only if:
 
 1. [ ] Softcode `#-1` strings are agreed **stable English ABI** (not translated by default).
+   Cheapest way to make this checkable rather than asserted: add a corpus that
+   *provokes* each reachable token and logs what was emitted, so confirming the
+   ABI across platforms is a `diff` of two smoke logs. That catches the
+   assembled and library-spliced messages of §4.2, which no static inventory
+   can, and it yields the `S_()` inventory as an observed artifact rather than
+   a grep.
 2. [ ] NLS is **optional** on Linux, Windows, and macOS English builds.
 3. [ ] A Phase 1 prototype links gettext on at least **Linux + one of {Windows, macOS}** without breaking `make test`.
 4. [ ] Translator workflow (`.pot` → `.po` → `.mo` → `game/locale`) is documented for a single sample language.
