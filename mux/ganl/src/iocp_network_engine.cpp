@@ -1,5 +1,6 @@
 #include "iocp_network_engine.h"
 #include "connection.h"
+#include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <memory>
@@ -1049,7 +1050,16 @@ namespace ganl {
 
             if (addressFamily == AF_INET6) {
                 int v6Only = options.dualStack ? 0 : 1;
-                setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<const char*>(&v6Only), sizeof(v6Only));
+                // Pass B1 residual (#739 family): dual-stack failure must not
+                // be silent when dualStack was requested.
+                if (setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY,
+                        reinterpret_cast<const char*>(&v6Only), sizeof(v6Only)) == SOCKET_ERROR
+                    && options.dualStack) {
+                    ErrorCode v6Err = static_cast<ErrorCode>(WSAGetLastError());
+                    std::cerr << "[IOCP] WARNING: setsockopt(IPV6_V6ONLY=0) failed; "
+                              << "listener will accept IPv6 only: "
+                              << getErrorString(v6Err) << std::endl;
+                }
             }
         }
 

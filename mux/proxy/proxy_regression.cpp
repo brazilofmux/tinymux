@@ -2,6 +2,8 @@
 #include "telnet_stream.h"
 #include "telnet_utils.h"
 #include "websocket.h"
+#include "session_manager.h"  // HydraSession::OutputQueue caps (#1266/#1268)
+#include "work_queue.h"       // WorkQueue::MAX_PENDING (#1265)
 
 #include <algorithm>
 #include <cstdlib>
@@ -377,6 +379,52 @@ void testTelnetSbCap() {
     expect(gmcp.empty(), "incomplete GMCP after overflow must not deliver");
 }
 
+// #1266: subscriber *count* is capped (queue depth was already #1096).
+void testSubscriberCountCap() {
+    HydraSession::OutputQueue oq;
+    std::vector<std::shared_ptr<HydraSession::SubscriberQueue>> held;
+    held.reserve(HydraSession::MAX_SUBSCRIBERS);
+    for (size_t i = 0; i < HydraSession::MAX_SUBSCRIBERS; i++) {
+        auto [id, sq] = oq.addSubscriber(true, false);
+        expect(sq != nullptr, "subscriber within cap should succeed");
+        expect(id > 0, "subscriber id should be positive");
+        held.push_back(sq);
+    }
+    auto [id, sq] = oq.addSubscriber(true, true);
+    expect(sq == nullptr, "subscriber over cap must return null queue");
+    expect(id == -1, "subscriber over cap must return id -1");
+    expect(oq.subscribers.size() == HydraSession::MAX_SUBSCRIBERS,
+           "map size must stay at MAX_SUBSCRIBERS");
+}
+
+// #1268: input line limit is shared with front-door telnet assembly.
+void testInputLineLimitShared() {
+    expect(HydraSession::MAX_INPUT_LINE_LENGTH == 8192,
+           "MAX_INPUT_LINE_LENGTH is 8192");
+    expect(FrontDoorState::MAX_LINE_LENGTH == HydraSession::MAX_INPUT_LINE_LENGTH,
+           "front-door MAX_LINE_LENGTH matches session input limit");
+}
+
+// #1265: work queue documents a hard pending cap.
+void testWorkQueuePendingCapConstant() {
+    expect(WorkQueue::MAX_PENDING == 1024, "WorkQueue::MAX_PENDING is 1024");
+    expect(WorkQueue::MAX_PENDING > 0, "WorkQueue pending cap is positive");
+}
+
+// #1267-class: convertInput is the authority for non-UTF8 game targets
+// (grpc-web SendInput must call the same path — regression locks the helper).
+void testConvertInputNonUtf8Target() {
+    TelnetBridge bridge;
+    // High-bit UTF-8 must not pass through as raw bytes to an ASCII game.
+    const std::string utf8Euro = "\xE2\x82\xAC";  // U+20AC
+    std::string out = bridge.convertInput(
+        ganl::EncodingType::Utf8,
+        ganl::EncodingType::Ascii,
+        utf8Euro);
+    expect(isAscii(out), "convertInput to Ascii must yield pure ASCII");
+    expect(!out.empty(), "convertInput should produce a fallback for Euro");
+}
+
 } // namespace
 
 int main() {
@@ -396,6 +444,10 @@ int main() {
     testWebSocketRsvRejected();
     testWebSocketLargePingRejected();
     testTelnetSbCap();
+    testSubscriberCountCap();
+    testInputLineLimitShared();
+    testWorkQueuePendingCapConstant();
+    testConvertInputNonUtf8Target();
     std::cout << "proxy_regression: ok\n";
     return 0;
 }

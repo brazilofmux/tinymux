@@ -2257,7 +2257,10 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
         return;
     }
 
-    // @include requires read access, not control.
+    // @include requires read access, not control: the attribute text is
+    // expanded into the *includer's* action list (executor stays the caller).
+    // Running as the source object with only See_attr would let a player
+    // execute with foreign privileges by including any VISUAL attr (#1279).
     //
     if (!See_attr(executor, thing, pattr))
     {
@@ -2349,10 +2352,10 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
     }
 
     // Walk the included text, splitting on semicolons and executing
-    // each command inline, with ;| piping honored like the queued
-    // runner (#788).
+    // each command inline as the includer (not the source object —
+    // #1279), with ;| piping honored like the queued runner (#788).
     //
-    process_command_list_inline(thing, caller, enactor,
+    process_command_list_inline(executor, caller, enactor,
         AttrTrace(aflags, 0), body, env, nenv);
 
     // Restore break state for /nobreak.

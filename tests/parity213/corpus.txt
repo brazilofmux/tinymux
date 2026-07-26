@@ -242,3 +242,38 @@ SC_SPAN|[zz mul(2,3)]|2.14
 # and DA_BRACKET_CALL, which carry the same verdict for the same reason.
 FM_LIT_CALL|[x add(1,2) y]|2.14
 FM_LIT_CALL2|[x add(1,2)]|2.14
+
+# --- crossed nesting: closer stack vs depth counter (#1248) ---
+# 2.13's parse_to_lite keeps a STACK of expected closers; a closer that
+# matches an entry unwinds to it, past any intervening entries.  #1219
+# gave 2.14 a paren depth COUNTER instead, which is simpler and fixed the
+# balanced shapes, but cannot unwind.  The two structures can only differ
+# when a closer arrives whose opener is not the most recent one -- so the
+# balanced controls below must agree, and the crossed ones are the test.
+#
+# Measured 2026-07-26: 6 of 11 diverge, JIT and AST agreeing throughout.
+# Two distinct outcomes, adjudicated by the debuggability ranking in
+# README.md rather than by compatibility.
+#
+# Balanced controls -- a counter and a stack agree here by construction.
+XN_BAL_PAREN|[strcat((a b) c)]|both
+XN_BAL_BRACKET|[strcat([a b] c)]|both
+XN_BAL_NEST|[strcat((a [b] c))]|both
+#
+# Crossed, and 2.13's unwinding re-arms recognition so it attempts a
+# lookup 2.14 never attempts.  2.13 answers with a #-1 FUNCTION NOT FOUND
+# naming a real problem; 2.14 silently emits plausible-looking text.  That
+# is rank 3 versus rank 1 -- the same trade as MX_BP, and it carries the
+# same verdict for the same reason.  Fixing these means replacing the
+# counter with a closer stack (#1248 step 3); until then they are VIOLATED
+# by design, naming the work rather than hiding it.
+XN_BRACKET_FIRST|[strcat([a (b] c))]|2.13
+XN_COMMA_BRACKET|[strcat([a, (b], c))]|2.13
+XN_DEEP|[strcat((a [b (c] d) e))]|2.13
+#
+# Crossed the other way, and neither engine errors: 2.13 echoes a stray
+# trailing ']' and 2.14 quietly drops it.  Both leave the author guessing,
+# which is the PU_* situation -- "unbalanced bracket" would beat either.
+XN_PAREN_FIRST|[strcat((a [b) c])]|neither
+XN_COMMA_CROSS|[strcat((a, [b), c])]|neither
+XN_FN_CROSS|[strcat((add(1,2) [x) y])]|neither

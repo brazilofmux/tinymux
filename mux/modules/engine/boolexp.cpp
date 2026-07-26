@@ -834,9 +834,14 @@ BOOLEXP *parse_boolexp(dbref player, const UTF8 *buf, bool internal)
     size_t n = strlen(reinterpret_cast<const char *>(buf));
     if (n > sizeof(parsestore)-1)
     {
+        // Truncate oversize keys.  Always write an explicit NUL — memcpy of
+        // n+1 from a longer source does not leave parsestore terminated and
+        // the recursive-descent scanner would walk off the buffer.
+        //
         n = sizeof(parsestore)-1;
     }
-    memcpy(parsestore, buf, n+1);
+    memcpy(parsestore, buf, n);
+    parsestore[n] = '\0';
     parsebuf = parsestore;
     parse_player = player;
     s_parse_depth = 0;

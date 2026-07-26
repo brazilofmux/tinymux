@@ -2760,6 +2760,13 @@ void GanlAdapter::queue_dns_lookup(const UTF8* numericAddress) {
         if (dnsShuttingDown_ || dnsThreads_.empty()) {
             return;
         }
+        // Match the POSIX slave pendingWrites cap (#801 / A8 residual): under
+        // a connection flood the request deque would otherwise grow without
+        // bound while workers are busy in getnameinfo.
+        constexpr size_t kDnsRequestCap = 4096;
+        if (dnsRequests_.size() >= kDnsRequestCap) {
+            return;
+        }
         dnsRequests_.emplace_back(reinterpret_cast<const char*>(numericAddress));
     }
     dnsCv_.notify_one();
@@ -3051,7 +3058,12 @@ void GanlAdapter::dns_worker_func() {
 
         {
             std::lock_guard<std::mutex> lock(dnsMutex_);
-            dnsResults_.emplace_back(std::move(ip), std::move(resolved));
+            // Bound result queue so a stalled main loop cannot let workers
+            // grow host RAM without limit (A8 residual, mirror request cap).
+            constexpr size_t kDnsResultCap = 4096;
+            if (dnsResults_.size() < kDnsResultCap) {
+                dnsResults_.emplace_back(std::move(ip), std::move(resolved));
+            }
         }
     }
 }
@@ -3717,7 +3729,10 @@ MUX_RESULT GanlAdapter::pump_stubslave()
     struct pollfd pfd;
     pfd.fd = fd;
     pfd.events = POLLIN;
-    if (0 < Pipe_QueueLength(&Queue_Out))
+    // POLLOUT when the COM queue has bytes *or* a prior short write left a
+    // remainder (remainder alone would otherwise block forever on POLLIN).
+    if (  0 < Pipe_QueueLength(&Queue_Out)
+       || !stubslave_channel_->writeRemainder.empty())
     {
         pfd.events |= POLLOUT;
     }
@@ -3782,30 +3797,56 @@ MUX_RESULT GanlAdapter::pump_stubslave()
         }
     }
 
+    // Drain Queue_Out to the socketpair.  Pipe_GetBytes dequeues immediately,
+    // so any short write or EAGAIN must keep the unwritten tail in
+    // writeRemainder — otherwise module IPC frames are silently dropped
+    // (child Stub_PipePump already retried short writes for the same reason).
     if (  stubslave_channel_
        && stubslave_channel_->fd >= 0
-       && (pfd.revents & POLLOUT))
+       && (  !stubslave_channel_->writeRemainder.empty()
+          || (pfd.revents & POLLOUT)
+          || 0 < Pipe_QueueLength(&Queue_Out)))
     {
-        char buf[LBUF_SIZE];
-        size_t nWanted = sizeof(buf);
-        if (  Pipe_GetBytes(&Queue_Out, &nWanted, buf)
-           && 0 < nWanted)
+        // Refill remainder from the COM queue when empty.
+        if (stubslave_channel_->writeRemainder.empty())
         {
-            int len = mux_write(stubslave_channel_->fd, buf, nWanted);
+            char buf[LBUF_SIZE];
+            size_t nWanted = sizeof(buf);
+            if (  Pipe_GetBytes(&Queue_Out, &nWanted, buf)
+               && 0 < nWanted)
+            {
+                stubslave_channel_->writeRemainder.assign(buf, nWanted);
+            }
+        }
+
+        while (!stubslave_channel_->writeRemainder.empty())
+        {
+            const char *p = stubslave_channel_->writeRemainder.data();
+            size_t n = stubslave_channel_->writeRemainder.size();
+            int len = mux_write(stubslave_channel_->fd, p, n);
+            if (len > 0)
+            {
+                stubslave_channel_->writeRemainder.erase(0, static_cast<size_t>(len));
+                continue;
+            }
             if (len < 0)
             {
                 int iSocketError = errno;
-                if (EAGAIN != iSocketError && EWOULDBLOCK != iSocketError)
+                if (EAGAIN == iSocketError || EWOULDBLOCK == iSocketError)
                 {
-                    shutdown_stubslave();
-
-                    STARTLOG(LOG_ALWAYS, "NET", "STUB");
-                    g_pILog->log_text(T("write() of stubslave failed. Stubslave stopped."));
-                    ENDLOG;
-
-                    return MUX_E_FAIL;
+                    // Keep remainder; next pump / POLLOUT will retry.
+                    break;
                 }
+                shutdown_stubslave();
+
+                STARTLOG(LOG_ALWAYS, "NET", "STUB");
+                g_pILog->log_text(T("write() of stubslave failed. Stubslave stopped."));
+                ENDLOG;
+
+                return MUX_E_FAIL;
             }
+            // len == 0 — treat as transient; retry later.
+            break;
         }
     }
     return MUX_S_OK;

@@ -200,6 +200,11 @@ public:
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
     struct StubSlaveChannel {
         int fd{-1};
+        // Bytes already dequeued from Queue_Out but not yet fully written
+        // to the socketpair.  Pipe_GetBytes removes data from the queue; a
+        // short write or EAGAIN without this remainder would drop module
+        // IPC frames (Pass A8 residual).
+        std::string writeRemainder;
     };
     std::unique_ptr<StubSlaveChannel> stubslave_channel_;
 
