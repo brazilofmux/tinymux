@@ -3240,6 +3240,13 @@ JITSTATS()
   literal argument `reset` to clear all counters and return `OK`.  Useful for
   monitoring rveval health or measuring benchmark runs.
 
+  The lua_* counters cover the Lua JIT specifically: lua_compile_ok,
+  lua_compile_fail, lua_run_ok, lua_run_fail, lua_cache_hits and
+  lua_invalidations.  These matter because a failing Lua JIT is otherwise
+  invisible: every failure falls back to the Lua interpreter, so lua()
+  keeps returning correct results.  lua_run_fail rising while lua_run_ok
+  stays at zero means the JIT compiles but never executes.
+
   Related Topics: astbench(), rvbench().
 
 & INCLUDE

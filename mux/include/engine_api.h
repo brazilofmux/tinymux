@@ -157,4 +157,21 @@ void jit_store_to_sqlite(const std::string &key, const compiled_program &prog);
 bool jit_load_from_sqlite(const std::string &key, compiled_program &out);
 void jit_compact_program(compiled_program &prog);
 
+// Lua JIT counters, owned by jit_lua.cpp.  Reported by jitstats() so the
+// Lua path is observable at all: without this the counters are incremented
+// and never read, and a Lua JIT that compiles but never runs looks exactly
+// like a healthy one, because every failure falls back to the interpreter
+// and still produces correct results (#1316).
+//
+struct lua_jit_counters {
+    uint64_t compile_ok;
+    uint64_t compile_fail;
+    uint64_t run_ok;
+    uint64_t run_fail;
+    uint64_t cache_hits;
+    uint64_t invalidations;
+};
+void jit_lua_get_stats(lua_jit_counters *out);
+void jit_lua_reset_stats(void);
+
 #endif // ENGINE_API_H
