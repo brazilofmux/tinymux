@@ -228,6 +228,9 @@ void cf_init(void)
 
     mudconf.autozone        = true;
     mudconf.jit_eval_brackets = true;
+    // Default OFF: Lua JIT lowering has never been production-correct
+    // (#1278/#1309).  Set lua_jit=1 only when testing the compiled path.
+    mudconf.lua_jit         = false;
     mudconf.use_hostname    = true;
     mudconf.clone_copy_cost = false;
     mudconf.dark_sleepers   = true;
@@ -2027,6 +2030,7 @@ static CONFPARM conftable[] =
     {T("input_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.indb),            nullptr, SIZEOF_PATHNAME},
     {T("ip_address"),                cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.ip_address),      nullptr,    LBUF_SIZE},
     {T("jit_eval_brackets"),         cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.jit_eval_brackets), nullptr,        0},
+    {T("lua_jit"),                   cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.lua_jit),         nullptr,            0},
     {T("keepalive_interval"),        cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.keepalive_interval,     nullptr,            0},
     {T("kill_guarantee_cost"),       cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killguarantee,          nullptr,            0},
     {T("kill_max_cost"),             cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.killmax,                nullptr,            0},

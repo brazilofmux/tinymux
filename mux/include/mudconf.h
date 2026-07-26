@@ -61,6 +61,10 @@ struct confdata
                                 // Default ON since the Phase 5 flip;
                                 // set 0 to force brackets to the AST.
                                 // docs/plan-jit-evalbracket-lift.md.
+    bool    lua_jit;            // Lua chunks may use the bytecode→HIR→DBT
+                                // path (TINYMUX_JIT builds).  Default OFF
+                                // until #1309 correctness work lands;
+                                // interpreter path remains always on.
     bool    clone_copy_cost;    /* Does @clone copy value? */
     bool    dark_sleepers;      /* Are sleeping players 'dark'? */
     bool    destroy_going_now;  // Does GOING act like DESTROY_OK?
