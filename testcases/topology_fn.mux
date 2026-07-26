@@ -172,14 +172,16 @@ think [parent(get(test_topology_fn/thing_1), get(test_topology_fn/parent_obj))]
 #
 # Test Case #8 - where() gives a thing's location, home() gives a dbref.
 #
-# home() is only asserted to BE a dbref: which room a thing homes to
-# depends on configuration, but returning #-1 or nothing would be wrong
-# under any configuration.
+# home() is only asserted to BE a real dbref: which room a thing homes
+# to depends on configuration, but returning #-1 or nothing would be
+# wrong under any configuration.  strmatch(..., #*) alone is not enough
+# -- it also matches #-1 -- so isdbref() plus an explicit #-1 reject.
 #
 &tr.tc008 test_topology_fn=
   @if cand(
         strmatch(setr(0, where(get(me/thing_1))), get(me/room_a)),
-        strmatch(setr(1, home(get(me/thing_1))), #*)
+        isdbref(setr(1, home(get(me/thing_1)))),
+        not(strmatch(%q1, #-1))
       )=
   {
     @log smoke=TC008: where and home resolve a thing. Succeeded.
