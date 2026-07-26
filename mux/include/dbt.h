@@ -150,6 +150,9 @@ struct dbt_state_t {
     uint64_t superblock_count;   // blocks with self-loop detected
     uint64_t side_exits_total;   // total side exits across all superblocks
     uint64_t inline_calls;       // Tier 2 calls inlined via native CALL
+    uint64_t code_reclaims;      // program-region reclaims after a full buffer
+    uint64_t code_full;          // translations declined with the buffer full
+    uint32_t reclaims_this_run;  // reclaims since dbt_run entry (thrash bound)
 
     // ECALL callback — same signature as the interpreter.
     // Return >= 0 to exit, < 0 to continue.
