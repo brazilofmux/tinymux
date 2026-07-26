@@ -3152,14 +3152,11 @@ general_lowering:
         return r;
     }
 
-    // ABS: absolute value.
-    if (upper == "ABS" && nargs == 1 && h.is_int(args[0])) {
-        int a = ensure_hi(args[0]);
-        int r = h.emit(HIR_ABS, TY_INT, a);
-        h.native_ops++;
-        h.needs_jit = true;
-        return r;
-    }
+    // ABS is intentionally NOT lowered to integer HIR_ABS (#1150).
+    // Softcode abs() is float (mux_atof/fval); HIR_ABS is signed-integer
+    // magnitude and is UB on INT64_MIN.  The float path (s_fp_unary →
+    // fabs / FMATH_FABS) matches the interpreter for both ints and
+    // decimals.  iabs() remains an ECALL (and rejects INT64_MIN, #1114).
 
     // SIGN: sign of integer (-1, 0, 1).
     if (upper == "SIGN" && nargs == 1 && h.is_int(args[0])) {
