@@ -77,8 +77,8 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
-| D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 | deep | Highs #1143–#1146 → #1156; residual Mediums #1149–#1150 |
-| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 | deep | Highs #1147–#1148 → #1156; residual Mediums #1151–#1153 |
+| D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1149–#1150 closed; re-scout filed #1258–#1260 (NEG missing codegen, INC/DEC fold UB, max/min/sign/bound int path) — #1258/#1259 closed, **#1260** open; #1255/#1256 abs INT64_MIN follow-ups closed |
+| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1147–#1148/#1152/#1154 closed; Mediums #1151/#1153 closed since the re-scout; no new D3 High. Residual: **#1292** interpreter `mem_check` wrap |
 | D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | Pass 3 + residual 2026-07-26 | deep | #1287 pennies/iswizard/isconnected Examinable gates; string.dump nilled |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
@@ -123,11 +123,11 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | I1 | Session / process manager | `session_manager.*`, `process_manager.*` | med | Pass 4 | deep | #1091–#1102 closed (#1103 Highs, #1105 Mediums) |
-| I2 | gRPC / gRPC-web | `grpc_server.*`, `grpc_web.*` | med | Pass 4 | partial | Auth lockout + ListGames/GetGameStatus gate (#1105); deeper RPC surface remains |
+| I2 | gRPC / gRPC-web | `grpc_server.*`, `grpc_web.*` | med | Pass 4 + Pass 10 | deep | Pass 4: lockout + ListGames/GetGameStatus auth (#1105). Pass 10 residual: #1265 work-queue flood (closed), #1266 unbounded subscribers, #1267 grpc-web SendInput encoding, #1268 uncapped input lines, #1269 GetGameStatus PIDs non-admin |
 | I3 | Telnet bridge / stream | `telnet_bridge.*`, `telnet_stream.*` | med | Pass 4 | deep | SB reassembly cap + disconnect (#1101 via #1105) |
 | I4 | Proxy WebSocket | `mux/proxy/websocket.*` | small | Pass 4 | deep | #1093–#1095 closed (#1103 mask/CLOSE; #1105 RSV/control limits) |
 | I5 | Accounts / crypto / scrollback | `account_manager.*`, `crypto.*`, `scrollback.*` | med | Pass 4 | deep | #1091–#1092, #1098, #1100 closed (#1103/#1105) |
-| I6 | Proxy regression | `proxy_regression.cpp` | small | Pass 4 | partial | 16/64-bit mask, CLOSE, RSV, large PING, SB cap; more cases welcome |
+| I6 | Proxy regression | `proxy_regression.cpp` | small | Pass 4 + Pass 10 | partial | Telnet/WS frame cases deep; gRPC/auth/work-queue still absent → #1270 |
 
 ### J — Clients (Hydra family)
 
@@ -172,9 +172,10 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 5 | 2026-07 | Softcode C2 function builtins + JIT ECALL perms | Highs #1106–#1110 → #1121; Mediums #1111–#1119/#1122 → #1123; #1124 JIT `check_access` → #1125 |
 | Pass 6 | 2026-07 | A3 net/output + A4 telnet NVT + A6 signals/restart | #1126–#1136 filed; #1127/#1129 → #1138; rest → #1139 (complete) |
 | Pass 7 | 2026-07 | D2 HIR + D3 DBT | Highs #1143–#1148 → #1156; Mediums #1149–#1153 residual; also JIT float/ifelse Highs #1157/#1159 closed separately |
-| Pass 8 | 2026-07 | E5 object/player/flags/powers + C5 speech/look/move/create | Highs #1179–#1181; Mediums #1182–#1188 open (not yet fixed) |
-| Pass 9 | 2026-07 | F3 engine comsys/mail vs F1/F2 modules | Highs #1189–#1193; Mediums #1194–#1199 open (not yet fixed) |
-
+| Pass 8 | 2026-07 | E5 object/player/flags/powers + C5 speech/look/move/create | Highs #1179–#1181; Mediums #1182–#1188 closed in follow-ups |
+| Pass 9 | 2026-07 | F3 engine comsys/mail vs F1/F2 modules | Highs #1189–#1193; Mediums #1194–#1199 largely fixed in follow-up PRs |
+| Pass 10 | 2026-07-26 | I2 gRPC residual + I6 regression gaps | Filed #1265–#1270 (work-queue flood, subscriber cap, grpc-web encoding, input length, GetGameStatus PIDs, regression gap). No new unauth RCE; Pass 4 auth gates held. |
+| Pass 7 re-scout | 2026-07-26 | D2 HIR + D3 DBT residual | No new D3 Highs; D2 filed #1258 (HIR_NEG no codegen), #1259 (INC/DEC fold UB), #1260 (max/min/sign/bound int path). Left #1151/#1153 to existing owners (both since closed). |
 | Pass B1/H1 residual | 2026-07-26 | engines + alloc/alarm | #1290 freelist, alarm ms, dual-stack warn |
 | Pass D4 residual | 2026-07-26 | lua_mod bridges | #1287 mux.pennies/iswizard/isconnected match softcode perms; string.dump removed |
 | Pass 11 | 2026-07-26 | B3 OpenSSL + B4 Schannel residual | #1282 wire-buffer caps + OpenSSL cipher pin; prior #948–#952/#1067–#1068 still held |
@@ -191,15 +192,13 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **Fix Pass 8 Highs** #1179–#1181 and/or **Pass 9 Highs** #1189–#1193 | Standing Highs-first; @cdestroy inverted is default-path |
-| **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | Pass 4 closed; residual depth |
-| **Pass 11** | **B3 + B4 nits + B6** OpenSSL re-read + Schannel residual + harness | Windows/Linux TLS depth |
-| **Pass 12** | **C3** done (#1279/#1280) | Fix queue / residual Mediums |
-| **Pass 11** | **B3/B4 done (#1282)** | B6 harness expansion still welcome |
-| **Pass 12** | **C3** commands/hooks deep | Still thin; @-command side effects |
-| **Pass 13+** | **J\*** clients by platform | After server/proxy confidence |
-| **Residual** | Pass 7 Mediums #1149–#1153; Pass 6 twin #1141; Pass 8/9 Mediums | Fix when rotating back |
-| **Anytime** | **D5** jit_diff soak + corpus gaps (#1160) | Continuous; other agents on float/fuzz |
+| **Now** | **Fix Pass 10** #1266–#1270 (#1265 closed) | Fresh I2 findings; #1266 is a practical DoS under auth |
+| **Then** | **#1260** D2 max/min/sign/bound int path; **#1292** interpreter `mem_check` wrap | All that is left of the D2/D3 residual |
+| **Pass 11** | B3/B4 done (#1282); **B6** harness expansion still welcome | Windows/Linux TLS depth |
+| **Pass 12** | C3 done (#1279); **#1280** NOEVAL hook residual still open | @-command side effects |
+| **Pass 13** | A8 done (slave/stubslave); **#1275** Win32 DNS queue caps still open | Small, self-contained |
+| **Pass 14+** | **J\*** clients by platform | After server/proxy confidence |
+| **Anytime** | **D5** jit_diff soak + corpus gaps (#1160); parser residuals #1247/#1248 held for golden vectors | Continuous |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -246,6 +245,7 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
 | 2026-07-25 | Residual scout C6+G2+F4 deep; #1294–#1296 boolexp NUL, COM guards, muxescape/muxscript |
 | 2026-07-26 | Pass A8 residual: stubslave parent write remainder + Win32 DNS queue caps; A8 → deep |
+| 2026-07-26 | Pass 10 I2+I6 residual scout; filed #1265–#1270; I2 deep, I6 still partial (test gap) |
 | 2026-07-26 | Pass 12 C3: @include executor fix #1279; NOEVAL hook issue #1280; C3 → deep |
 | 2026-07-26 | Pass E2 residual: code-cache write coalesce + preloaded-miss path #1284; E2 → deep |
 | 2026-07-26 | Pass B1/H1 residual: freelist + alarm + dual-stack #1290; B1/H1 → deep |

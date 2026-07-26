@@ -87,6 +87,16 @@ test-dbt:
 	@echo "==> Running DBT and RV64 tests"
 	$(MAKE) -C tests/dbt test
 
+# RV64 interpreter guest-memory bounds: mem_check gated every guest read and
+# write with `addr + len <= size`, which wraps for an addr near UINT64_MAX and
+# let the caller index mem->data with the unwrapped address (#1292).  The
+# interpreter-route counterpart to the DBT-side bounds work in #1151.
+# #includes dbt_interp.cpp (the accessors are file-static) — no `install`, no
+# --enable-jit, no skip path.
+test-dbt-interp:
+	@echo "==> Running DBT interpreter bounds tests"
+	$(MAKE) -C tests/dbt_interp test
+
 # mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
 # worker-thread start — alarm_clock is a libmux global whose constructor used
 # to spawn a thread during static init, deadlocking before main in ~14% of

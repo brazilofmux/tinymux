@@ -10,6 +10,9 @@
 #   cache  dbt.cpp against backend stubs that abort if called.  Cannot be
 #          merged with `chain`, whose backends are renamed away, or with
 #          `exec`, which links the real ones.
+#   interp guest-memory bounds on the interpreter route.  #includes
+#          dbt_interp.cpp to reach file-static mem_check, so it cannot
+#          share a link with `exec`, which compiles that TU normally.
 #   exec   the RV64 execution harness: interpreter and DBT, host backend
 #          only, because this one actually runs the code it translates.
 #
@@ -19,7 +22,7 @@
 # support: it skips loudly off x86_64/aarch64 because it must execute.
 #
 # Build: make          Run: make test
-# Individually:        make chain | make cache | make exec
+# Individually:        make chain | make cache | make interp | make exec
 
 CXX       = g++
 CXXFLAGS  = -std=c++17 -g -O2
@@ -54,7 +57,7 @@ rename = -Ddbt_backend_backpatch_jmp=$(1)_backpatch_jmp \
 
 ELF = $(ENGINE)/dbt_rt/test_rv64.elf
 
-all: test_chain test_cache dbt_test
+all: test_chain test_cache test_interp dbt_test
 
 # --- chain: all three backends, byte inspection only -----------------
 test_chain.o: test_chain.cpp
@@ -76,6 +79,18 @@ dbt_shared.o: $(ENGINE)/dbt.cpp
 test_cache: test_cache.o dbt_shared.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
+# --- interp: guest-memory bounds on the interpreter route ------------
+# mem_check and the mem accessors are file-static, so the driver
+# #includes dbt_interp.cpp rather than linking it.  That also means no
+# stubs: the TU needs only dbt_interp.h, dbt_decoder.h and the standard
+# library.  It cannot share a link with `exec`, which compiles the same
+# TU normally, or with `cache`/`chain`, whose backends are stubbed or
+# renamed (#1292).
+test_interp.o: test_interp.cpp $(ENGINE)/dbt_interp.cpp
+	$(COMPILE) -I$(ENGINE) -c -o $@ $<
+test_interp: test_interp.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
 # --- exec: real execution, host backend only -------------------------
 EXEC_SRCS = $(ENGINE)/dbt_test.cpp $(ENGINE)/dbt_interp.cpp \
             $(ENGINE)/dbt_elf64.cpp $(ENGINE)/dbt.cpp \
@@ -94,6 +109,9 @@ chain: test_chain
 cache: test_cache
 	./test_cache
 
+interp: test_interp
+	./test_interp
+
 exec: dbt_test
 ifeq ($(HOST_BACKEND),)
 	@echo "==> Skipping DBT execution tests (unsupported host '$(ARCH)')"
@@ -107,7 +125,7 @@ else
 	fi
 endif
 
-test: chain cache exec
+test: chain cache interp exec
 
 clean:
 	rm -f *.o test_chain test_cache dbt_test

@@ -1,4 +1,5 @@
-test_chain
-test_cache
 dbt_test
 *.o
+test_cache
+test_chain
+test_interp
