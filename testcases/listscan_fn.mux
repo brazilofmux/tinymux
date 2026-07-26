@@ -34,11 +34,21 @@ think [setq(0, create(Listscan_Thing_1, 10))][attrib_set(test_listscan_fn/thing_
 -
 think [setq(0, create(Listscan_Thing_2, 10))][attrib_set(test_listscan_fn/thing_2, %q0)]
 -
+#
+# @open puts the exit in the opener's location, so this has to move -- but
+# `me` is the shared smoke runner, and every later file in the suite runs as
+# the same object.  Save the original location first and go back to it
+# below, or the move leaks into everything that follows (#1386).
+#
+think [attrib_set(test_listscan_fn/saved_loc, [loc(me)])]
+-
 @tel me=[get(test_listscan_fn/room_a)]
 -
 @open listscan_exit_ab=[get(test_listscan_fn/room_b)]
 -
 think [attrib_set(test_listscan_fn/exit_ab, [lastcreate(me, e)])]
+-
+@tel me=[get(test_listscan_fn/saved_loc)]
 -
 @tel [get(test_listscan_fn/thing_1)]=[get(test_listscan_fn/room_a)]
 -
