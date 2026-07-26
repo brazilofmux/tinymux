@@ -51,6 +51,25 @@ public:
         }
     }
 
+    // Complete the promise without running fn_, for work that will never
+    // reach the main loop because the queue has stopped (#1286).
+    //
+    // A value-initialised Result rather than a broken promise: every
+    // future.get() in grpc_server.cpp is unguarded, so breaking the promise
+    // would throw out of a gRPC handler.  Each handler already reads the
+    // default as failure -- bool -> false, std::string -> "" (empty pid ==
+    // auth failed), pair -> {"",""}, shared_ptr<OutputQueue> -> nullptr,
+    // which its three call sites already test with `if (!oq) return
+    // NOT_FOUND`.  A client mid-shutdown gets a clean denial.
+    //
+    void cancel() {
+        if constexpr (std::is_void_v<Result>) {
+            promise_.set_value();
+        } else {
+            promise_.set_value(Result{});
+        }
+    }
+
 private:
     Func fn_;
     std::promise<Result> promise_;
@@ -88,13 +107,20 @@ public:
             cv_space_.wait(lock, [this] {
                 return queue_.size() < MAX_PENDING || stopped_;
             });
-            // Past the cap only while stopping, and bounded by the RPCs
-            // already in flight.  Pushing rather than failing keeps the
-            // caller's future on exactly the path it takes today: fulfilled
-            // if a later drain runs, broken by ~WorkQueue if not.  Failing
-            // the promise here would instead throw from the 29 unguarded
-            // `.get()` call sites in grpc_server.cpp.
-            //
+            if (stopped_) {
+                // Complete the item here rather than pushing it.  Pushing
+                // relies on either a later drain or ~WorkQueue breaking the
+                // promise, and neither happens: hydra_main declares
+                // `WorkQueue workQueue` before `unique_ptr<GrpcServer>`, so
+                // reverse destruction runs ~GrpcServer first and its
+                // server_->Shutdown() blocks on in-flight RPCs -- which is
+                // exactly this thread, now parked in future.get() instead of
+                // in enqueue().  The hang moves rather than goes away.
+                //
+                lock.unlock();
+                item->cancel();
+                return future;
+            }
             queue_.push(std::move(item));
         }
         return future;

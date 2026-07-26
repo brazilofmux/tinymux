@@ -451,8 +451,10 @@ void testWorkQueueStopReleasesBlockedProducer() {
            "queue fills to exactly MAX_PENDING");
 
     // One more must block: there is no space and nothing is draining.
+    // Keep the work future: releasing enqueue() is only half of it.
+    std::future<bool> work;
     auto producer = std::async(std::launch::async,
-                               [&q, &noop] { q.enqueue<bool>(noop); });
+                               [&q, &noop, &work] { work = q.enqueue<bool>(noop); });
 
     expect(producer.wait_for(std::chrono::milliseconds(250))
                == std::future_status::timeout,
@@ -465,6 +467,23 @@ void testWorkQueueStopReleasesBlockedProducer() {
            "stop() releases a producer blocked on a full queue");
 
     producer.get();
+
+    // The caller's future must also resolve.  Returning from enqueue() is
+    // not enough: every gRPC handler immediately calls future.get(), so a
+    // future that never settles just moves the parked thread from enqueue()
+    // to get() -- still an in-flight RPC, and ~GrpcServer's Shutdown() still
+    // waits on it.  hydra_main declares WorkQueue before the GrpcServer
+    // unique_ptr, so ~GrpcServer runs first and ~WorkQueue never gets to
+    // break the promise.  This assertion is what distinguishes completing
+    // the item from queueing it past the cap.
+    expect(work.valid(), "cancelled enqueue still returns a usable future");
+    if (work.valid()) {
+        expect(work.wait_for(std::chrono::seconds(2))
+                   == std::future_status::ready,
+               "the caller's future resolves rather than hanging get()");
+        expect(work.get() == false,
+               "a cancelled item yields the default result, not an exception");
+    }
 
     // Idempotent: a second stop() must not deadlock or throw.
     q.stop();
