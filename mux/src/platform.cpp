@@ -245,7 +245,22 @@ MUX_RESULT CPlatform::BootHelperProcess(
         // (BSDs) which do the right thing in a single syscall, and
         // keep the linear fallback for systems without either.
         //
-#if defined(__linux__) && defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 34)
+        // The glibc version test has to be nested rather than chained onto
+        // the same #if.  `defined(__GLIBC_PREREQ) && __GLIBC_PREREQ(2, 34)`
+        // short-circuits at evaluation, but the preprocessor still has to
+        // *parse* the call, and a toolchain where the macro is undefined
+        // (any non-glibc target — clang/macOS, the BSDs) rejects it as a
+        // function-like macro that is not defined.  That broke every clean
+        // build on those hosts; it survived since 2026-04 only because an
+        // incremental build reuses a platform.o from before the change.
+        //
+#if defined(__linux__) && defined(__GLIBC_PREREQ)
+#  if __GLIBC_PREREQ(2, 34)
+#    define MUX_USE_CLOSE_RANGE 1
+#  endif
+#endif
+
+#if defined(MUX_USE_CLOSE_RANGE)
         (void)close_range(3, ~0U, 0);
 #elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) \
    || defined(__DragonFly__) || defined(__sun)
