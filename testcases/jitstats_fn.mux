@@ -239,6 +239,19 @@
 # offline, and the one that will turn green on its own once #1326 is lifted
 # and the brackets-0 workaround can be dropped.
 #
+# The restore is checked against POST_*, captured here, rather than against
+# config() read in tr.tc006.  This block runs during the Makesmoke UPLOAD,
+# where jit_eval_brackets is at its built-in default of 1; tr.tc006 runs
+# later during Smoke, and the interpreted pass runs with it at 0.  Comparing
+# across those two epochs failed on that route only and took `make test`
+# red (#1437).  Both values now come from the same epoch, which is what the
+# assertion is actually about: that this block put back what it changed.
+#
+# The exercise has to stay here rather than move into tr.tc006 -- @admin in
+# a triggered attribute body does not take effect before the [lua(...)] in
+# the same command list, so the chunk would run with lua_jit still 0 and
+# lua_run_ok would never advance.
+#
 @switch [config(lua_jit)]=*,
   {
     &PRE_LUA_JIT test_jitstats_fn=#$;
@@ -250,9 +263,11 @@
         &LJ_OK_BEFORE test_jitstats_fn=[u(test_jitstats_fn/tr.lj_ok)];
         &LJ_RESULT test_jitstats_fn=[lua(test_jitstats_fn/LJ_ADD,2,3)];
         &LJ_OK_AFTER test_jitstats_fn=[u(test_jitstats_fn/tr.lj_ok)];
-        @admin jit_eval_brackets=#$
+        @admin jit_eval_brackets=#$;
+        &POST_BRACKETS test_jitstats_fn=[config(jit_eval_brackets)]
       };
-    @admin lua_jit=#$
+    @admin lua_jit=#$;
+    &POST_LUA_JIT test_jitstats_fn=[config(lua_jit)]
   }
 -
 &tr.tc006 test_jitstats_fn=
@@ -261,14 +276,14 @@
     @if cand(
           strmatch(get(me/LJ_RESULT),5),
           gt(get(me/LJ_OK_AFTER),get(me/LJ_OK_BEFORE)),
-          strmatch(config(lua_jit),get(me/PRE_LUA_JIT)),
-          strmatch(config(jit_eval_brackets),get(me/PRE_BRACKETS))
+          strmatch(get(me/POST_LUA_JIT),get(me/PRE_LUA_JIT)),
+          strmatch(get(me/POST_BRACKETS),get(me/PRE_BRACKETS))
         )=
     {
       @log smoke=TC006: lua JIT executes compiled code. Succeeded (lua_run_ok [get(me/LJ_OK_BEFORE)] to [get(me/LJ_OK_AFTER)]).
     },
     {
-      @log smoke=TC006: lua JIT executes compiled code. Failed (result=[get(me/LJ_RESULT)] lua_run_ok [get(me/LJ_OK_BEFORE)] to [get(me/LJ_OK_AFTER)] lua_jit=[config(lua_jit)]/[get(me/PRE_LUA_JIT)] brackets=[config(jit_eval_brackets)]/[get(me/PRE_BRACKETS)]).
+      @log smoke=TC006: lua JIT executes compiled code. Failed (result=[get(me/LJ_RESULT)] lua_run_ok [get(me/LJ_OK_BEFORE)] to [get(me/LJ_OK_AFTER)] lua_jit=[get(me/POST_LUA_JIT)]/[get(me/PRE_LUA_JIT)] brackets=[get(me/POST_BRACKETS)]/[get(me/PRE_BRACKETS)]).
     }
   },
   {
