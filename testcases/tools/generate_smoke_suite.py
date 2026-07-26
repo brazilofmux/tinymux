@@ -9,6 +9,7 @@ on the `smoke` object.
 
 import os
 from pathlib import Path
+import collections
 import re
 import sys
 
@@ -116,6 +117,33 @@ def emit_cleanup_attr(test_name: str, commands):
     print("-")
 
 
+# One expected verdict per tr.tc* label that has a verdict-logging branch.
+#
+# Labels whose only output is diagnostic (banner cases, the benchmark files
+# that report numbers) are not counted, so they do not need to be special
+# cases.  Cases that can report "Skipped" instead of a verdict on some build
+# -- the JIT and Lua ones -- are counted here, and Smoke treats Skipped as
+# conclusive, so a build without those features does not read as a loss.
+#
+_VERDICT_LOG = re.compile(r"@log\s+smoke=\s*(TC\d+)\b([^\n;]*)")
+
+
+def count_expected_verdicts(tc_dir: Path) -> int:
+    total = 0
+    for path in sorted(tc_dir.glob("*.mux")):
+        if path.name == "0upload.mux":
+            continue
+        text = path.read_text(encoding="utf-8", errors="replace")
+        by_label = collections.defaultdict(list)
+        for m in _VERDICT_LOG.finditer(text):
+            by_label[m.group(1)].append(m.group(2))
+        total += sum(
+            1 for msgs in by_label.values()
+            if any(("Succeeded" in m or "Failed" in m) for m in msgs)
+        )
+    return total
+
+
 def main() -> int:
     tc_dir = Path(__file__).resolve().parent.parent
     discovered = discover_names(tc_dir)
@@ -162,6 +190,17 @@ def main() -> int:
     manifest = os.environ.get("SMOKE_SUITE_MANIFEST")
     if manifest:
         with open(manifest, "w", encoding="utf-8") as fh:
+            # How many verdict lines the run should produce, counted from the
+            # sources rather than from the run (#1396).  Smoke's totals are
+            # grep counts over the log, so a case that dispatches and then
+            # logs neither verdict is counted in neither total and the run
+            # still reports ALL TESTS PASSED.  Reintroducing #1386's defect
+            # lost 149 assertions exactly that way.
+            #
+            # One per tr.tc* label that has at least one verdict-logging
+            # branch.  Extra diagnostic @log lines in the same case do not
+            # count -- only whether the label can report a verdict at all.
+            fh.write("#expected-verdicts %d\n" % count_expected_verdicts(tc_dir))
             for name in first + second:
                 fh.write(name + "\n")
     for name in names:
