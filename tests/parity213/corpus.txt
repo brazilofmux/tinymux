@@ -260,16 +260,44 @@ XN_BAL_PAREN|[strcat((a b) c)]|both
 XN_BAL_BRACKET|[strcat([a b] c)]|both
 XN_BAL_NEST|[strcat((a [b] c))]|both
 #
-# Crossed, and 2.13's unwinding re-arms recognition so it attempts a
-# lookup 2.14 never attempts.  2.13 answers with a #-1 FUNCTION NOT FOUND
-# naming a real problem; 2.14 silently emits plausible-looking text.  That
-# is rank 3 versus rank 1 -- the same trade as MX_BP, and it carries the
-# same verdict for the same reason.  Fixing these means replacing the
-# counter with a closer stack (#1248 step 3); until then they are VIOLATED
-# by design, naming the work rather than hiding it.
+# 2.13 attempts a lookup 2.14 never attempts, answering with a #-1 FUNCTION
+# NOT FOUND that names a real problem where 2.14 silently emits
+# plausible-looking text -- rank 3 versus rank 1, the same trade as MX_BP,
+# hence the same verdict.
+#
+# The CROSSING is not what causes it, though the shapes are crossed.  See
+# the XN_TWIN_* controls below: remove the crossing entirely and the
+# divergence is unchanged.  What arms 2.13 is entering the bracket region,
+# where it accepts `a (` as a call by accumulating the name before the
+# paren and tolerating the space.  That is the #1247 accumulated-name
+# model, not the closer-stack question #1248 asks about -- replacing the
+# paren counter with a stack would leave all three of these exactly as
+# they are (measured 2026-07-26, both 2.14 routes identical).
+#
+# So these are VIOLATED by design, but the work they name is #1247's, and
+# their verdict is worth re-confirming alongside FM_FAIL_NAME rather than
+# inherited from a causal story that did not hold.
 XN_BRACKET_FIRST|[strcat([a (b] c))]|2.13
 XN_COMMA_BRACKET|[strcat([a, (b], c))]|2.13
 XN_DEEP|[strcat((a [b (c] d) e))]|2.13
+#
+# The controls that separate "crossed" from "inside a bracket region".
+# Both twins are perfectly balanced -- `[a (b)]` closes its paren before
+# its bracket -- and both diverge exactly as the crossed shapes above do:
+#
+#   XN_TWIN_NESTED   2.13 `#-1 FUNCTION (A) NOT FOUND c`   2.14 `a (b) c`
+#   XN_TWIN_PLAIN    2.13 `#-1 FUNCTION (A) NOT FOUND`     2.14 `a (b)`
+#
+# XN_TOP_SPACE is the same text at argument top level rather than inside a
+# bracket region, and there the two engines agree -- which is what pins the
+# trigger to the region, not to the parentheses.
+#
+# Left UNADJUDICATED deliberately: these are the same defect as the three
+# above, so they should take whatever verdict that family settles on once
+# it is re-confirmed, rather than having one copied across now.
+XN_TWIN_NESTED|[strcat([a (b)] c)]
+XN_TWIN_PLAIN|[strcat([a (b)])]
+XN_TOP_SPACE|[strcat(a (b) c)]|both
 #
 # Crossed the other way, and neither engine errors: 2.13 echoes a stray
 # trailing ']' and 2.14 quietly drops it.  Both leave the author guessing,
