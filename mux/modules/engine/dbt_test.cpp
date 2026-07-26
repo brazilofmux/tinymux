@@ -2340,6 +2340,60 @@ static void test_1338_superblock_side_exit_fp() {
                 static_cast<unsigned long long>(dbt.superblock_count));
     }
     dbt_cleanup(&dbt);
+// NaN canonicalisation (#1337).
+//
+// RISC-V returns the canonical quiet NaN 0x7FF8000000000000 from any
+// operation that produces a NaN.  It never propagates an operand's payload,
+// which is what both hosts do by default and what both routes therefore
+// used to do: `fadd.d` of a payload-carrying NaN returned that payload.
+//
+// The interpreter canonicalises explicitly; the a64 backend runs translated
+// code with FPCR.DN set, which makes the hardware do it for the whole
+// arithmetic surface.  Both are checked here because the differential
+// fuzzer cannot distinguish "both correct" from "both wrong in the same
+// way" -- and before this they were wrong in the same way.  Expected values
+// are from qemu-riscv64.
+//
+// Not covered here: FMIN/FMAX given a signalling NaN, where RISC-V returns
+// the *number* and ARM returns a NaN whatever DN says.  Separate defect.
+//
+static void test_fp_nan_canonicalisation() {
+    printf("test_fp_nan_canonicalisation...\n");
+    const uint64_t CANON = 0x7FF8000000000000ULL;
+
+    struct { const char *name; uint8_t f5; } OPS[] = {
+        { "fadd.d", FP_FADD }, { "fsub.d", FP_FSUB },
+        { "fmul.d", FP_FMUL }, { "fdiv.d", FP_FDIV },
+    };
+
+    for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++) {
+        for (int swap = 0; swap <= 1; swap++) {
+            // Put the payload NaN in one operand and 1.0 in the other, so
+            // the result is a NaN produced from a NaN input -- which is the
+            // case that propagates a payload rather than generating a fresh
+            // canonical one.
+            std::vector<uint32_t> code = {
+                LUI(6, 0x2000),
+                ADDI(5, 0, -1),
+                r_type(OP_FP, 1, 0, 5, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f1 = payload NaN
+                ADDI(7, 0, 0x3FF),
+                SLLI(7, 7, 52),
+                r_type(OP_FP, 2, 0, 7, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f2 = 1.0
+                r_type(OP_FP, 3, 0, swap ? 2 : 1, swap ? 1 : 2,
+                       (uint8_t)((OPS[i].f5 << 2) | FP_FMT_D)),
+                ECALL()
+            };
+            char desc[128];
+            uint64_t interp = run_code(code).state.f[3];
+            uint64_t dbt    = run_code_dbt_fbits(code, 3);
+            snprintf(desc, sizeof(desc), "%s %s payload NaN: interpreter canonicalises",
+                     OPS[i].name, swap ? "rs2" : "rs1");
+            CHECK_EQ(desc, interp, CANON);
+            snprintf(desc, sizeof(desc), "%s %s payload NaN: DBT canonicalises",
+                     OPS[i].name, swap ? "rs2" : "rs1");
+            CHECK_EQ(desc, dbt, CANON);
+        }
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -2388,6 +2442,7 @@ int main(int argc, char *argv[]) {
     test_fsgnj_rd_aliases_rs2();
     test_fcvt_rounding_modes();
     test_1338_superblock_side_exit_fp();
+    test_fp_nan_canonicalisation();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();

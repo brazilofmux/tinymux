@@ -649,6 +649,25 @@ static inline void emit_nop(emit_t *e) {
     emit_inst(e, 0xD503201F);
 }
 
+// MRS Xt, FPCR / MSR FPCR, Xt — read and write the FP control register.
+//
+// Used for FPCR.DN (bit 25, "Default NaN"), which is what makes ARM's NaN
+// handling match RISC-V's: with DN clear, an operation given a NaN operand
+// propagates that operand's payload, while RISC-V requires the canonical
+// quiet NaN 0x7FF8000000000000 for any result that is a NaN.  Setting one
+// bit gets that for the whole arithmetic surface, rather than testing and
+// patching the result of every individual FP instruction.
+//
+static constexpr uint64_t A64_FPCR_DN = 1ULL << 25;
+
+static inline void emit_mrs_fpcr(emit_t *e, int xt) {
+    emit_inst(e, 0xD53B4400 | static_cast<uint32_t>(xt));
+}
+
+static inline void emit_msr_fpcr(emit_t *e, int xt) {
+    emit_inst(e, 0xD51B4400 | static_cast<uint32_t>(xt));
+}
+
 // ---------------------------------------------------------------
 // Branch patching
 // ---------------------------------------------------------------

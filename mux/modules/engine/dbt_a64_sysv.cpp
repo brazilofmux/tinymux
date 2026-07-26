@@ -2298,6 +2298,27 @@ void dbt_backend_emit_trampoline(dbt_state_t *dbt) {
     emit_mov_r64(&e, A64_X20, A64_X1);   // memory base
     emit_mov_r64(&e, A64_X21, A64_X3);   // cache
 
+    // Run guest code with FPCR.DN set, and restore the host's FPCR on the
+    // way out.  RISC-V requires the canonical quiet NaN from any operation
+    // that produces a NaN; ARM without DN propagates an operand's payload
+    // instead, so fadd.d of a payload-carrying NaN returned that payload
+    // (#1337).  DN makes the whole arithmetic surface behave, which is
+    // considerably cheaper than testing and rewriting the result of every
+    // FP instruction.
+    //
+    // Scoped to the trampoline rather than set once around the dispatch
+    // loop, so it covers exactly the translated code and never leaks into
+    // the ECALL handlers, which run host FP.  X26 is callee-saved, already
+    // pushed above, and untouched by translated blocks -- the register
+    // cache uses X9-X12 and X22-X25, and X0/X1/X2/X16/X17 as scratch.
+    //
+    // Note this does *not* fix FMIN/FMAX with a signalling NaN: RISC-V
+    // returns the non-NaN operand there and DN turns it into the default
+    // NaN instead, which is a different wrong answer.  Tracked separately.
+    emit_mrs_fpcr(&e, A64_X26);
+    emit_orr_r64_imm(&e, A64_X0, A64_X26, A64_FPCR_DN);
+    emit_msr_fpcr(&e, A64_X0);
+
     // Pre-load pinned guest registers: a0→X22, a1→X23, a2→X24, a3→X25
     for (int i = 0; i < RC_NUM_PINNED; i++) {
         emit_load_guest(&e, rc_host_regs[4 + i], rc_pinned_guest[i]);
@@ -2310,6 +2331,9 @@ void dbt_backend_emit_trampoline(dbt_state_t *dbt) {
     for (int i = 0; i < RC_NUM_PINNED; i++) {
         emit_store_guest(&e, rc_pinned_guest[i], rc_host_regs[4 + i]);
     }
+
+    // Restore the host FPCR saved on entry.
+    emit_msr_fpcr(&e, A64_X26);
 
     // Restore callee-saved (reverse order).
     emit_ldp_post(&e, A64_X25, A64_X26, A64_SP, 16);
