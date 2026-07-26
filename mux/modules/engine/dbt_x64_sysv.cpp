@@ -2678,6 +2678,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_addsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2687,6 +2688,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_subsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2696,6 +2698,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_mulsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2705,6 +2708,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_divsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2713,6 +2717,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_sqrtsd(&e, XMM0, XMM0);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2887,6 +2892,7 @@ no_addr_fusion:
             case OP_FNMSUB: {
                 // -(rs1*rs2) + rs3 = rs3 - (rs1*rs2)
                 emit_subsd(&e, XMM1, XMM0);
+                emit_canon_nan_d(&e, XMM1);
                 int xd = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, xd, XMM1);
                 pc += 4;
@@ -2905,6 +2911,7 @@ no_addr_fusion:
                 emit_byte(&e, modrm(0x03, XMM0, XMM1));
                 break;
             }
+            emit_canon_nan_d(&e, XMM0);
             { int xd = fc_write(&e, &fc, insn.rd);
               emit_movsd_xmm(&e, xd, XMM0); }
             pc += 4;

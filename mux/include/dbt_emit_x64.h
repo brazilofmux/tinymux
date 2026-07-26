@@ -1203,6 +1203,32 @@ static inline void emit_rv_round_integral_d(emit_t *e, int src_xmm, int rm) {
 // applies the rm-selected rounding that master was missing (#1320).
 //
 
+// Canonicalise a NaN result in place (#1337 / #1353).
+//
+// RISC-V returns exactly 0x7FF8000000000000 from any operation producing a
+// NaN and never propagates an operand's payload.  a64 gets this free by
+// running translated code with FPCR.DN set; SSE has no equivalent and
+// propagates the payload, so x86-64 has to do it explicitly.
+//
+// The select happens in the integer domain, which costs no XMM scratch --
+// worth having, since ctx.fp_scratch and XMM0/XMM1 are already spoken for
+// on the FCVT path:
+//
+//     movq  rcx, xmm          ; result bits
+//     ucomisd xmm, xmm        ; PF set iff NaN
+//     mov   rax, CANON
+//     cmovp rcx, rax
+//     movq  xmm, rcx
+//
+// RAX/RCX are never cached, so no allocator interaction.
+static inline void emit_canon_nan_d(emit_t *e, int xmm) {
+    emit_movq_r64_xmm(e, X64_RCX, xmm);
+    emit_ucomisd(e, xmm, xmm);
+    emit_mov_r64_imm64(e, X64_RAX, 0x7FF8000000000000ull);
+    emit_cmovcc(e, CMOV_P, X64_RCX, X64_RAX);
+    emit_movq_xmm_r64(e, xmm, X64_RCX);
+}
+
 // Spill/reload the rounded double through ctx.fp_scratch.
 static inline void emit_store_ctx_f64(emit_t *e, int xmm, int off) {
     emit_byte(e, 0xF2); emit_byte(e, 0x0F); emit_byte(e, 0x11);
