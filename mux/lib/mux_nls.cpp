@@ -12,18 +12,16 @@
 #endif
 
 #if defined(HAVE_NLS)
-// gettext("") is not identity: the empty msgid stores the .mo header
-// (Project-Id-Version, …). T("") is idiomatic empty-UTF8 throughout
-// the tree (~80 sites); those must stay empty (#1443).
+// Used by M_() only. gettext("") is not identity: the empty msgid stores
+// the .mo header (Project-Id-Version, …). Guard so a mistaken M_("")
+// cannot inject that blob (#1443). T("") remains a pure cast and is
+// never routed here.
 //
 LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid)
 {
     if (  nullptr == msgid
        || '\0' == msgid[0])
     {
-        // Preserve pointer identity for nullptr / empty-string literals
-        // so emptiness tests and StringClone(T("")) keep working.
-        //
         return msgid;
     }
 

@@ -1,16 +1,18 @@
 /*! \file mux_nls.h
- * \brief Optional GNU gettext wrappers for server messages (#1419).
+ * \brief Optional GNU gettext wrappers for server messages (#1419, #1444).
  *
- * Softcode diagnostics (#-1 …) are a stable English ABI — use S_().
- * Player-facing notifies use T(), which becomes gettext when HAVE_NLS.
+ * Macro roles (keep these distinct — catalogs are maintenance cost):
  *
- * Caveats (see also #1443, #1444):
- * - Never call gettext on "" — that msgid is the catalog header.
- * - T() is still applied tree-wide as a UTF-8 cast; flipping it to
- *   gettext is the Phase 1 spike. #1444 discusses opt-in prose macros.
- * - Static tables that use T("name") with HAVE_NLS become dynamic
- *   initialisers (gettext call before bindtextdomain); unbound gettext
- *   returns the msgid, so identifiers stay English until rebound.
+ *   T(x)   UTF-8 cast only. Command/function/attr names, formats, internals.
+ *          Never runs gettext. Safe at static init.
+ *   M_(x)  Player/staff prose. gettext when HAVE_NLS. Opt-in only.
+ *   S_(x)  Softcode / machine ABI (#-1 …). Never translated.
+ *   N_(x)  Mark-only for xgettext when the msgid is stored before runtime
+ *          lookup (static globals re-bound via M_ after mux_nls_init).
+ *
+ * #1443: never call gettext on "" — that msgid is the .mo header.
+ * #1444: opt-in M_() so the maintained set is the strings someone chose,
+ *        not 6k tree-wide T() literals minus exclusions.
  */
 
 #ifndef MUX_NLS_H
@@ -18,22 +20,27 @@
 
 // UTF8 is defined in config.h before this header is included.
 
+// UTF-8 cast — always, NLS or not. Identity for empty string / tables.
+//
+#define T(x)  (reinterpret_cast<const UTF8 *>(x))
+
+// Softcode / machine tokens — never translate.
+//
+#define S_(x) (reinterpret_cast<const UTF8 *>(x))
+
+// Mark-only for xgettext; no gettext call (static msgid storage).
+//
+#define N_(x) (reinterpret_cast<const UTF8 *>(x))
+
 #if defined(HAVE_NLS)
-// Helper (not a ternary macro): empty msgids must not reach gettext —
-// the empty key holds .mo metadata (#1443). Also evaluates the argument
-// once, so expression call sites stay safe.
+// Runtime lookup for opted-in prose. Empty/nullptr msgids are returned
+// unchanged so gettext("") cannot inject the catalog header (#1443).
 //
 LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid);
 
-#define T(x)  (mux_gettext(reinterpret_cast<const UTF8 *>(x)))
-// Softcode / machine tokens — never translate.
-#define S_(x) (reinterpret_cast<const UTF8 *>(x))
-// Mark-only for xgettext; stores the English msgid (no gettext call).
-#define N_(x) (reinterpret_cast<const UTF8 *>(x))
+#define M_(x) (mux_gettext(reinterpret_cast<const UTF8 *>(x)))
 #else
-#define T(x)  (reinterpret_cast<const UTF8 *>(x))
-#define S_(x) (reinterpret_cast<const UTF8 *>(x))
-#define N_(x) (reinterpret_cast<const UTF8 *>(x))
+#define M_(x) (reinterpret_cast<const UTF8 *>(x))
 #endif
 
 // Bind domain "tinymux" under locale_dir (typically game/locale).
@@ -41,9 +48,9 @@ LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid);
 //
 LIBMUX_API void mux_nls_init(const UTF8 *locale_dir);
 
-// Re-resolve player-facing global message pointers through gettext after
+// Re-resolve player-facing global message pointers through M_() after
 // mux_nls_init. Implemented in engine/match.cpp (not libmux). No-op
-// without HAVE_NLS. Softcode S_() tokens are never refreshed (English ABI).
+// without HAVE_NLS. Softcode S_() tokens are never refreshed.
 //
 void mux_nls_refresh_messages(void);
 

@@ -1,5 +1,5 @@
-# TinyMUX server-message template (Phase 1 spike, #1419).
-# Softcode #-1 diagnostics are NOT in this catalog (S_() / English ABI).
+# TinyMUX server-message template (Phase 1 spike, #1419 / #1444).
+# Opt-in M_()/N_() only — not T() casts. Softcode #-1 uses S_() (ABI).
 msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"

@@ -1,9 +1,23 @@
-# Server-message catalogs (NLS spike, #1419)
+# Server-message catalogs (NLS, #1419 / #1444)
 
 See `docs/plan-server-i18n.md`.
 
-- **Player notifies** use `T("…")` → gettext when built with `--enable-nls`.
-- **Softcode diagnostics** (`#-1 …`) use `S_("…")` and are **never** translated.
+## What is in the catalog
+
+| Macro | Role | In `.pot`? |
+|-------|------|------------|
+| **`M_("…")`** | Player/staff prose (opt-in) | Yes — primary keyword |
+| **`N_("…")`** | Static msgid storage before `M_()` rebind | Yes — same strings as `M_` |
+| **`T("…")`** | UTF-8 cast only (names, formats, internals) | **No** |
+| **`S_("…")`** | Softcode / machine ABI (`#-1 …`) | **No** |
+
+Maintaining translations is ongoing cost. Prefer **small, deliberate `M_()` sites** over bulk extraction of every `T()`.
+
+Extract (once the pipeline exists):
+
+```bash
+xgettext -kM_ -kN_ -o tinymux.pot …
+```
 
 ## Build a binary catalog
 
@@ -18,7 +32,7 @@ Start netmux with cwd = `game/` (usual) and:
 ```bash
 # gettext ignores LANGUAGE when the process locale is C/POSIX.
 # Prefer a real UTF-8 locale, then select the catalog via LANGUAGE:
-export LANG=en_US.UTF-8   # or C.UTF-8 is *not* enough on some glibc hosts
+export LANG=en_US.UTF-8
 export LANGUAGE=xx
 # ensure game/locale/xx/LC_MESSAGES/tinymux.mo exists
 ./bin/netmux
@@ -39,12 +53,8 @@ Without `--enable-nls`, catalogs are ignored and English is compiled in.
 
 ## Softcode ABI
 
-`#-1 …` diagnostics use `S_()` and are **never** passed to gettext. Player globals that used to initialize with `T()` at static load now use `N_()` + `mux_nls_refresh_messages()` after `bindtextdomain`.
+`#-1 …` diagnostics use `S_()` and are **never** passed to gettext.
 
 ## Empty strings (#1443)
 
-`gettext("")` returns the catalog **header**, not `""`. `T()` goes through `mux_gettext`, which leaves empty msgids (and `nullptr`) untouched. Do not put an empty `msgid` in a player-facing catalog entry.
-
-## Direction note (#1444)
-
-Phase 1 still maps `T()` → gettext. That is tree-wide (identifiers, formats, `#-1` not yet `S_()`). A safer long-term shape is opt-in prose (`M_()` / similar) with `T()` remaining a cast — see issue **#1444**.
+`gettext("")` returns the catalog **header**, not `""`. `M_()` goes through `mux_gettext`, which leaves empty msgids (and `nullptr`) untouched. `T("")` is only a cast and never hits gettext.

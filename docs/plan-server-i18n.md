@@ -208,30 +208,34 @@ messages in §4.2, which can genuinely differ in text.
 
 ### 6.1 Macro layer
 
-Evolve without renaming every call site:
+**Decision (#1444):** opt **in** for prose, do not flip tree-wide `T()` to gettext.
+`T()` stays the UTF-8 cast it always was (command/function/attr names, formats,
+internals). Translators only see strings someone deliberately marked — cheaper
+to maintain, and a miss leaves English rather than breaking `abs()` / `@cron`.
 
 ```c
-// English-only / no NLS
-#define T(x)  (reinterpret_cast<const UTF8 *>(x))
-
-// With NLS (illustrative)
-#define T(x)  (mux_gettext(x))           // player-facing path
-#define N_(x) (x)                        // mark-only for xgettext
+#define T(x)  (reinterpret_cast<const UTF8 *>(x))  // cast only — never gettext
+#define M_(x) (mux_gettext(x))                     // player/staff prose (NLS on)
+#define N_(x) (x)                                  // mark-only for xgettext / static msgid
 #define S_(x) (reinterpret_cast<const UTF8 *>(x))  // softcode ABI: never translate
 ```
 
 Migration strategy:
 
-1. Introduce `S_()` (or `T_SOFTERR()`) for `#-1` and other ABI tokens.
-2. Keep `T()` for notifies initially, then optionally flip `T` → gettext when NLS on.
-3. Avoid translating format templates until `printf`-style args are catalog-safe (`ngettext` for plurals).
+1. Introduce `S_()` for `#-1` and other ABI tokens (English forever by default).
+2. Leave `T()` as cast everywhere (static tables stay statically initialisable).
+3. Mark notify prose with **`M_()`** incrementally (~896 notify-reachable sentences).
+4. Avoid format templates until `printf`-style args are catalog-safe (`ngettext` for plurals).
+
+Each `T` → `M_` step is safe in isolation. A complete `T` → `S_` sweep for `#-1`
+is still good hygiene but is no longer load-bearing for catalog safety.
 
 ### 6.2 Extraction
 
-- `xgettext` over `mux/**/*.{cpp,h,c}` with keywords `T`, `N_`, `S_` (S_ extracted but marked `softerr` / not shipped to player catalogs).
+- `xgettext` over `mux/**/*.{cpp,h,c}` with keywords **`M_`**, **`N_`** only for the player domain (not `T`).
 - Domain: **`tinymux`** for player notifies.
 - Optional second domain: **`tinymux-log`**.
-- CI job (Linux) that fails if new `notify*(T("…"))` strings are missing from the `.pot` (once the pipeline exists).
+- CI job (Linux) that fails if new `notify*(M_("…"))` strings are missing from the `.pot` (once the pipeline exists).
 
 ### 6.3 Runtime
 

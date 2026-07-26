@@ -8,12 +8,11 @@
 #include "config.h"
 #include "externs.h"
 
-// Player-facing match prose (T → gettext when HAVE_NLS). Softcode/machine
+// Player-facing match prose is opt-in M_() (#1444). Softcode/machine
 // tokens use S_ so NLS cannot change the softcode ABI (#1419).
 //
-// Static init must NOT call gettext: bindtextdomain runs later in
-// mux_nls_init. Store English msgids with N_(); mux_nls_refresh_messages()
-// rebinds the player pointers after the domain is live.
+// Static init stores English msgids with N_() (no gettext). After
+// mux_nls_init, mux_nls_refresh_messages() rebinds via M_().
 //
 const UTF8 *NOMATCH_MESSAGE      = N_("I don\xE2\x80\x99t see that here.");
 const UTF8 *AMBIGUOUS_MESSAGE    = N_("I don\xE2\x80\x99t know which one you mean!");
@@ -30,11 +29,11 @@ const UTF8 *NOT_CONNECTED        = S_("#-1 NOT CONNECTED");
 void mux_nls_refresh_messages(void)
 {
 #if defined(HAVE_NLS)
-    // Re-resolve through gettext now that textdomain is bound.
+    // Re-resolve opted-in prose now that textdomain is bound.
     //
-    NOMATCH_MESSAGE   = T("I don\xE2\x80\x99t see that here.");
-    AMBIGUOUS_MESSAGE = T("I don\xE2\x80\x99t know which one you mean!");
-    NOPERM_MESSAGE    = T("Permission denied.");
+    NOMATCH_MESSAGE   = M_("I don\xE2\x80\x99t see that here.");
+    AMBIGUOUS_MESSAGE = M_("I don\xE2\x80\x99t know which one you mean!");
+    NOPERM_MESSAGE    = M_("Permission denied.");
 #endif
 }
 
