@@ -781,6 +781,16 @@ static inline void emit_fmax_d(emit_t *e, int rd, int rn, int rm) {
     emit_inst(e, 0x1E606800 | (rm << 16) | (rn << 5) | rd);
 }
 
+// FCSEL Dd, Dn, Dm, cond — Dd = cond ? Dn : Dm (double).
+//
+//   00011110 | type=01 | 1 | Rm | cond | 11 | Rn | Rd
+//
+static inline void emit_fcsel_d(emit_t *e, int rd, int rn, int rm,
+                                uint8_t cond) {
+    emit_inst(e, 0x1E600C00 | (rm << 16)
+                 | (static_cast<uint32_t>(cond) << 12) | (rn << 5) | rd);
+}
+
 static inline void emit_fneg_d(emit_t *e, int rd, int rn) {
     emit_inst(e, 0x1E614000 | (rn << 5) | rd);
 }
