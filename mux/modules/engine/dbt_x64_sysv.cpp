@@ -2906,18 +2906,57 @@ no_addr_fusion:
             continue;
         }
 
-        // -- ECALL / EBREAK --
+        // -- SYSTEM: ECALL / EBREAK / CSR (#1333) --
         //
         case OP_SYSTEM: {
             rc_flush(&e, &rc); fc_flush(&e, &fc);
-            if (insn.imm == 0) {
-                // ECALL: set next_pc with bit 0 = 1 as signal
-                emit_exit_with_pc(&e, pc | 1);
-            } else {
-                // EBREAK: set next_pc with bit 1 = 1 as signal
-                emit_exit_with_pc(&e, pc | 2);
+            // ECALL/EBREAK require funct3 == 0.  Without that guard, CSR
+            // addresses 0x000/0x001 are misdecoded as ECALL/EBREAK.
+            //
+            if (insn.funct3 == 0) {
+                if (insn.imm == 0) {
+                    emit_exit_with_pc(&e, pc | 1);
+                    goto done;
+                }
+                if (insn.imm == 1) {
+                    emit_exit_with_pc(&e, pc | 2);
+                    goto done;
+                }
+                goto fallback_interp;
             }
-            goto done;
+            // CSRRW/CSRRS/CSRRC (1-3) and CSRRWI/CSRRSI/CSRRCI (5-7).
+            //
+            if (  (insn.funct3 >= 1 && insn.funct3 <= 3)
+               || (insn.funct3 >= 5 && insn.funct3 <= 7)) {
+                const uint32_t csr_addr = static_cast<uint32_t>(insn.imm) & 0xFFFu;
+                if (csr_addr != 0x001 && csr_addr != 0x002 && csr_addr != 0x003) {
+                    goto fallback_interp;
+                }
+                // Call dbt_csr_apply(ctx, csr, funct3, src, rd).  SysV:
+                // rdi/rsi/rdx/rcx/r8.  Stack must be 16-byte aligned.
+                //
+                emit_stub_prologue(&e);
+                emit_mov_r64(&e, X64_RDI, X64_RBX);
+                emit_mov_r64_imm32(&e, X64_RSI, static_cast<int32_t>(csr_addr));
+                emit_mov_r64_imm32(&e, X64_RDX, insn.funct3);
+                if (insn.funct3 <= 3) {
+                    if (insn.rs1) {
+                        emit_load_guest(&e, X64_RCX, insn.rs1);
+                    } else {
+                        emit_xor_r64(&e, X64_RCX, X64_RCX);
+                    }
+                } else {
+                    emit_mov_r64_imm32(&e, X64_RCX, insn.rs1); // zimm
+                }
+                emit_mov_r64_imm32(&e, X64_R8, insn.rd);
+                emit_call_host(&e, reinterpret_cast<void *>(dbt_csr_apply));
+                emit_stub_epilogue(&e);
+                rc_invalidate_reload(&e, &rc);
+                fc_invalidate(&fc);
+                pc += 4;
+                continue;
+            }
+            goto fallback_interp;
         }
 
         default:

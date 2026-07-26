@@ -2913,18 +2913,65 @@ no_addr_fusion:
             continue;
         }
 
-        // -- ECALL / EBREAK --
+        // -- SYSTEM: ECALL / EBREAK / CSR (#1333) --
         //
         case OP_SYSTEM: {
             rc_flush(&e, &rc); fc_flush(&e, &fc);
-            if (insn.imm == 0) {
-                // ECALL: set next_pc with bit 0 = 1 as signal
-                emit_exit_with_pc(&e, pc | 1);
-            } else {
-                // EBREAK: set next_pc with bit 1 = 1 as signal
-                emit_exit_with_pc(&e, pc | 2);
+            // ECALL/EBREAK require funct3 == 0.  Without that guard, CSR
+            // addresses 0x000/0x001 are misdecoded as ECALL/EBREAK.
+            //
+            if (insn.funct3 == 0) {
+                if (insn.imm == 0) {
+                    emit_exit_with_pc(&e, pc | 1);
+                    goto done;
+                }
+                if (insn.imm == 1) {
+                    emit_exit_with_pc(&e, pc | 2);
+                    goto done;
+                }
+                goto fallback_interp;
             }
-            goto done;
+            // CSRRW/CSRRS/CSRRC (1-3) and CSRRWI/CSRRSI/CSRRCI (5-7).
+            //
+            if (  (insn.funct3 >= 1 && insn.funct3 <= 3)
+               || (insn.funct3 >= 5 && insn.funct3 <= 7)) {
+                const uint32_t csr_addr = static_cast<uint32_t>(insn.imm) & 0xFFFu;
+                if (csr_addr != 0x001 && csr_addr != 0x002 && csr_addr != 0x003) {
+                    goto fallback_interp;
+                }
+                // Call dbt_csr_apply(ctx, csr, funct3, src, rd).  Win64:
+                // rcx/rdx/r8/r9 + stack arg.  Prologue allocates shadow space.
+                //
+                emit_stub_prologue(&e);
+                emit_mov_r64(&e, X64_RCX, X64_RBX);
+                emit_mov_r64_imm32(&e, X64_RDX, static_cast<int32_t>(csr_addr));
+                emit_mov_r64_imm32(&e, X64_R8, insn.funct3);
+                if (insn.funct3 <= 3) {
+                    if (insn.rs1) {
+                        emit_load_guest(&e, X64_R9, insn.rs1);
+                    } else {
+                        emit_xor_r64(&e, X64_R9, X64_R9);
+                    }
+                } else {
+                    emit_mov_r64_imm32(&e, X64_R9, insn.rs1); // zimm
+                }
+                // 5th arg (rd) at [rsp+32] after the 32-byte shadow space.
+                // Encoding: REX.W + mov r/m64,r64 with SIB (base=RSP).
+                //
+                emit_mov_r64_imm32(&e, X64_RAX, insn.rd);
+                emit_byte(&e, 0x48); // REX.W
+                emit_byte(&e, 0x89); // MOV
+                emit_byte(&e, 0x44); // mod=01 reg=RAX r/m=SIB
+                emit_byte(&e, 0x24); // SIB: no index, base=RSP
+                emit_byte(&e, 32);   // disp8
+                emit_call_host(&e, reinterpret_cast<void *>(dbt_csr_apply));
+                emit_stub_epilogue(&e);
+                rc_invalidate_reload(&e, &rc);
+                fc_invalidate(&fc);
+                pc += 4;
+                continue;
+            }
+            goto fallback_interp;
         }
 
         default:

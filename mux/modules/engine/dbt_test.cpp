@@ -224,6 +224,26 @@ static uint32_t ECALL() {
     return i_type(OP_SYSTEM, 0, 0, 0, 0);
 }
 
+// CSR immediates (SYSTEM, funct3 5-7): rs1 field is the zimm.
+//
+static uint32_t CSRRWI(uint8_t rd, uint16_t csr, uint8_t zimm) {
+    return i_type(OP_SYSTEM, rd, 5, zimm, csr);
+}
+static uint32_t CSRRSI(uint8_t rd, uint16_t csr, uint8_t zimm) {
+    return i_type(OP_SYSTEM, rd, 6, zimm, csr);
+}
+static uint32_t CSRRCI(uint8_t rd, uint16_t csr, uint8_t zimm) {
+    return i_type(OP_SYSTEM, rd, 7, zimm, csr);
+}
+// CSR register forms (SYSTEM, funct3 1-3).
+//
+static uint32_t CSRRW(uint8_t rd, uint16_t csr, uint8_t rs1) {
+    return i_type(OP_SYSTEM, rd, 1, rs1, csr);
+}
+static uint32_t CSRRS(uint8_t rd, uint16_t csr, uint8_t rs1) {
+    return i_type(OP_SYSTEM, rd, 2, rs1, csr);
+}
+
 // Convenience: ADDW rd, rs1, rs2
 static uint32_t ADDW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return r_type(OP_REG32, rd, ALU_ADD, rs1, rs2, 0x00);
@@ -1260,6 +1280,193 @@ static void test_fp_fma() {
     CHECK_FEQ("FMSUB.D 3*5-7", fmsub_r, 8.0);
     CHECK_FEQ("FNMSUB.D -(3*5)+7", fnmsub_r, -8.0);
     CHECK_FEQ("FNMADD.D -(3*5)-7", fnmadd_r, -22.0);
+}
+
+// #1333: CSR access must not be misdecoded as ECALL/EBREAK, and the
+// fflags/frm/fcsr trio must round-trip on both interpreter and DBT.
+//
+static void test_csr_fcsr_family() {
+    printf("test_csr_fcsr_family...\n");
+
+    // CSRRWI frm, 1  → fcsr.frm = 1 (RTZ)
+    // CSRRWI fflags, 0x1F → set all exception flags
+    // CSRRS  x5, fcsr, x0 → read full fcsr into x5 (should be 0x3F)
+    // CSRRWI frm, 0 → clear frm
+    // CSRRS  x6, fcsr, x0 → read fcsr (should be 0x1F — flags remain)
+    // CSRRW  x7, fflags, x0 → read fflags, write 0
+    // exit with a0 = x5, a1 = x6, a2 = x7
+    //
+    std::vector<uint32_t> code = {
+        CSRRWI(0, 0x002, 1),       // frm = 1
+        CSRRWI(0, 0x001, 0x1F),    // fflags = 0x1F
+        CSRRS(5, 0x003, 0),        // x5 = fcsr
+        CSRRWI(0, 0x002, 0),       // frm = 0
+        CSRRS(6, 0x003, 0),        // x6 = fcsr
+        CSRRW(7, 0x001, 0),        // x7 = fflags; fflags = 0
+        ADDI(10, 5, 0),            // a0 = x5
+        ADDI(11, 6, 0),            // a1 = x6
+        ADDI(12, 7, 0),            // a2 = x7
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    // Interpreter path.
+    //
+    {
+        const size_t MEM_SIZE = 4096;
+        std::vector<uint8_t> memory(MEM_SIZE, 0);
+        for (size_t i = 0; i < code.size(); i++) {
+            memcpy(memory.data() + i * 4, &code[i], 4);
+        }
+        rv64_state_t state{};
+        rv64_memory_t mem = { memory.data(), MEM_SIZE };
+        int rc = rv64_interp_run(&state, &mem, test_ecall, nullptr);
+        CHECK_EQ("csr interp: exit rc", static_cast<uint64_t>(rc), 0x3FULL);
+        CHECK_EQ("csr interp: fcsr after frm=1|fflags", state.x[5], 0x3FULL);
+        CHECK_EQ("csr interp: fcsr after frm clear", state.x[6], 0x1FULL);
+        CHECK_EQ("csr interp: fflags readback", state.x[7], 0x1FULL);
+        CHECK_EQ("csr interp: fcsr final", static_cast<uint64_t>(state.fcsr), 0ULL);
+    }
+
+    // DBT path.
+    //
+    {
+        const size_t MEM_SIZE = 64 * 1024;
+        std::vector<uint8_t> memory(MEM_SIZE, 0);
+        for (size_t i = 0; i < code.size(); i++) {
+            memcpy(memory.data() + i * 4, &code[i], 4);
+        }
+        dbt_state_t dbt;
+        if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+            g_tests_run++;
+            g_tests_failed++;
+            fprintf(stderr, "  FAIL: test_csr_fcsr_family: dbt_init\n");
+            return;
+        }
+        dbt.max_dispatch = 10000;
+        g_dbt_exit_ctx = {};
+        int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+        // dbt_test_ecall2 returns 0; results live in the exit context.
+        //
+        g_tests_run++;
+        if (rc == 0) {
+            g_tests_passed++;
+        } else {
+            g_tests_failed++;
+            fprintf(stderr, "  FAIL: csr dbt: dbt_run rc=%d, expected 0\n", rc);
+        }
+        CHECK_EQ("csr dbt: a0 (x5 snapshot)", g_dbt_exit_ctx.x[10], 0x3FULL);
+        CHECK_EQ("csr dbt: fcsr after frm=1|fflags", g_dbt_exit_ctx.x[5], 0x3FULL);
+        CHECK_EQ("csr dbt: fcsr after frm clear", g_dbt_exit_ctx.x[6], 0x1FULL);
+        CHECK_EQ("csr dbt: fflags readback", g_dbt_exit_ctx.x[7], 0x1FULL);
+        CHECK_EQ("csr dbt: fcsr final",
+                 static_cast<uint64_t>(g_dbt_exit_ctx.fcsr), 0ULL);
+        // Must not have burned the dispatch budget (old livelock path).
+        //
+        g_tests_run++;
+        if (dbt.dispatch_count < 100) {
+            g_tests_passed++;
+        } else {
+            g_tests_failed++;
+            fprintf(stderr,
+                    "  FAIL: csr dbt: dispatch_count=%llu (suspected livelock)\n",
+                    static_cast<unsigned long long>(dbt.dispatch_count));
+        }
+        dbt_cleanup(&dbt);
+    }
+}
+
+// #1333: CSR number 0x001 (fflags) must never be taken as EBREAK.
+//
+static void test_csr_fflags_not_ebreak() {
+    printf("test_csr_fflags_not_ebreak...\n");
+
+    std::vector<uint32_t> code = {
+        CSRRWI(0, 0x001, 3),   // fflags = 3
+        CSRRS(10, 0x001, 0),   // a0 = fflags
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_csr_fflags_not_ebreak: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 10000;
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    // Pre-fix: dbt_run returned -1 with "EBREAK at 0x0".  Now it should
+    // exit via ECALL with a0 = 3 (dbt_test_ecall2 returns 0; check ctx).
+    //
+    g_tests_run++;
+    if (rc == 0) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr,
+                "  FAIL: csr fflags: dbt_run rc=%d (pre-fix: -1 EBREAK)\n",
+                rc);
+    }
+    CHECK_EQ("csr fflags: a0", g_dbt_exit_ctx.x[10], 3ULL);
+    CHECK_EQ("csr fflags: fcsr",
+             static_cast<uint64_t>(g_dbt_exit_ctx.fcsr), 3ULL);
+    dbt_cleanup(&dbt);
+}
+
+// #1333: unsupported CSR numbers refuse the block (no same-PC spin).
+//
+static void test_unsupported_csr_refuses_block() {
+    printf("test_unsupported_csr_refuses_block...\n");
+
+    // cycle (0xC00) is not implemented.
+    //
+    std::vector<uint32_t> code = {
+        CSRRS(5, 0xC00, 0),
+        ADDI(10, 5, 0),
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_unsupported_csr_refuses_block: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 1000;
+
+    jit_write_begin();
+    uint8_t *native = dbt_backend_translate_block(&dbt, 0);
+    CHECK_EQ("unsupported csr: translate returns null",
+             reinterpret_cast<uintptr_t>(native), 0ULL);
+
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == -1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr,
+                "  FAIL: unsupported csr: dbt_run rc=%d, expected -1\n", rc);
+    }
+    dbt_cleanup(&dbt);
 }
 
 // #1323: unhandled guest instructions must refuse block translation, not
@@ -2380,6 +2587,9 @@ int main(int argc, char *argv[]) {
     test_fp_fclass();
     test_unhandled_refuses_block();
     test_refuse_does_not_reclaim();
+    test_csr_fcsr_family();
+    test_csr_fflags_not_ebreak();
+    test_unsupported_csr_refuses_block();
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
     test_selfloop_pressure_forward_branch();
