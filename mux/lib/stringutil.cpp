@@ -6339,6 +6339,12 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                 bool bPrecision = false;
                 int nLongs = 0;
 
+                // Where this conversion spec starts, so an unimplemented one
+                // can be echoed literally rather than killing the process
+                // (#1429).
+                //
+                size_t iFmtSpec = iFmt;
+
                 iFmt++;
                 ncpFmt--;
 
@@ -6698,10 +6704,39 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                     }
                     else
                     {
-                        mux_assert(0);
+                        // An unimplemented conversion.  This was mux_assert(0),
+                        // which is a hard abort() in the shipping build --
+                        // mux_assert has no NDEBUG guard -- so an ordinary
+                        // looking T("%+d") took the whole game down.  #1382
+                        // produced two wizard-triggerable aborts exactly that
+                        // way (@list cache and astbench), and both were fixed
+                        // at the call site rather than here (#1429).
+                        //
+                        // Echo the spec literally instead and carry on.  A
+                        // bounded formatter already truncates when it runs out
+                        // of room, so callers are written against "imperfect
+                        // output" and not against "no server".  Emitting it
+                        // rather than dropping it also leaves the evidence in
+                        // the output, where it is visible without a debugger.
+                        //
+                        // Caveat: no va_arg was consumed for this spec, so any
+                        // later conversion in the same format string takes a
+                        // shifted argument.  That is inherent to recovering at
+                        // all without fully parsing an unknown spec, and it is
+                        // still strictly better than terminating.
+                        //
+                        size_t d = utf8_FirstByte[pFmt[iFmt]];
+                        size_t nSpec = (iFmt - iFmtSpec) + d;
+                        if (nLimit < iBuffer + nSpec)
+                        {
+                            goto done;
+                        }
+                        memcpy(pBuffer + iBuffer, pFmt + iFmtSpec, nSpec);
+                        iBuffer += nSpec;
 
-                        iFmt += utf8_FirstByte[pFmt[iFmt]];
+                        iFmt += d;
                         ncpFmt--;
+                        break;
                     }
                 }
             }
