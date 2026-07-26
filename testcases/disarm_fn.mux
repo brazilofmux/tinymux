@@ -108,18 +108,21 @@
 #
 #   [add(1,2) mul(3,4)]  ->  3 mul(3,4)      not  3 12
 #
-# Only the case where a call comes FIRST is asserted here.  Text
-# appearing BEFORE a call in an FMAND region is deliberately left alone:
-# 2.13's candidate name there is the accumulated output, so leading text
-# is folded into the name rather than spending the opportunity —
+# Only the case where a call comes FIRST is asserted here.  Text before
+# a call is covered by TC001 on the argument path and by the parity
+# corpus at bracket level.
+#
+# For the record on what 2.13 does there: its candidate name is the
+# accumulated output, so leading text is folded into the name rather
+# than spending the opportunity, and the whole span is looked up —
 #
 #   [x add(1,2) y]  ->  #-1 FUNCTION (X ADD) NOT FOUND
 #
-# — which 2.14's token parser cannot express.  The two 2.14 routes do not
-# even agree with each other on it (JIT "x add(1,2) y", AST "x 3 y"), and
-# neither matches 2.13, so there is no settled value to assert.  That
-# shape is tracked as FM_LIT_CALL in tests/parity213 instead, with the
-# SC_SPAN and DA_BRACKET_CALL family it belongs to.
+# — which 2.14's token parser cannot express.  Settled as 2.14 (#1246):
+# the span-name error is not the target, literal text is the better
+# answer, and both routes now agree on "x add(1,2) y".  Tracked as
+# FM_LIT_CALL in tests/parity213 with the SC_SPAN and DA_BRACKET_CALL
+# family, all carrying the 2.14 verdict.
 #
 &tr.tc004 test_disarm_fn=
   @if cand(

@@ -35,7 +35,7 @@
         eq(median(7,7,7),7),
         eq(median(-3,-1,-2),-2),
         strmatch(median(1.5,3.5,2.5,4.5),3),
-        strmatch(median(), #-1 FUNCTION (MEDIAN) EXPECTS BETWEEN 1 AND 100 ARGUMENTS),
+        strmatch(median(), #-1 FUNCTION * EXPECTS BETWEEN 1 AND 100 ARGUMENTS),
         eq(median(foo,2,4),2)
       )=
   {

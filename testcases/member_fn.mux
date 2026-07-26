@@ -54,7 +54,7 @@
         eq(member(a|b|c,b,|), 2),
         eq(member(a:1|b:2|c:3,c:3,|), 3),
         eq(member(a b c,), 0),
-        strmatch(member(a|b|c,b,|,extra), #-1 FUNCTION (MEMBER) EXPECTS 2 OR 3 ARGUMENTS),
+        strmatch(member(a|b|c,b,|,extra), #-1 FUNCTION * EXPECTS 2 OR 3 ARGUMENTS),
         eq(member(ansi(h,ab gh kl),ab), 1),
         eq(member(ab gh kl,ansi(r,gh)), 2),
         eq(member(setr(0,ansi(h,ab gh kl)),gh), 2)

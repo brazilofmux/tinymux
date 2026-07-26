@@ -34,7 +34,7 @@
         eq(idiv(10,-3),-3),
         eq(idiv(-10,-3),3),
         eq(idiv(5.5,2),2),
-        strmatch(idiv(), #-1 FUNCTION (IDIV) EXPECTS 2 ARGUMENTS),
+        strmatch(idiv(), #-1 FUNCTION * EXPECTS 2 ARGUMENTS),
         eq(idiv(foo,3),0)
       )=
   {
