@@ -318,6 +318,35 @@ static uint64_t run_code_dbt(const std::vector<uint32_t>& code, int reg) {
     return g_dbt_exit_ctx.x[reg];
 }
 
+// As run_code_dbt, but returns an FP register's raw bits.  rv64_ctx_t::f is
+// double[32] where rv64_state_t::f is uint64_t[32], so the bits are copied
+// out rather than converted: the sign-manipulation tests below differ only
+// in the sign bit of a value whose magnitude is unchanged, and comparing as
+// double would call -1.0 and +1.0 unequal but -0.0 and +0.0 equal — hiding
+// exactly the class of bug being tested.
+static uint64_t run_code_dbt_fbits(const std::vector<uint32_t>& code, int freg) {
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        return ~0ULL;
+    }
+    dbt.max_dispatch = 1000000;
+    dbt_run(&dbt, 0, MEM_SIZE - 16);
+    dbt_cleanup(&dbt);
+    uint64_t bits;
+    memcpy(&bits, &g_dbt_exit_ctx.f[freg], sizeof(bits));
+    return bits;
+}
+
+// ---------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------
+
 static void test_addi() {
     printf("test_addi...\n");
 
@@ -1489,6 +1518,40 @@ static void test_selfloop_pressure_fp_int_rd() {
     CHECK_EQ("selfloop FP int-rd: DBT matches interpreter", dbt, interp);
 }
 
+// FSGNJ.D/FSGNJN.D take the magnitude from rs1 and the sign from rs2 by
+// writing ABS(rs1) into rd and then testing rs2's sign.  When rd == rs2 the
+// register cache hands out one host register for both, so the ABS destroyed
+// the very sign about to be tested — and the sign bit of an absolute value
+// is always clear, so the branch resolved the same way every time and the
+// result was -|rs1| regardless of rs2.  The rs1 == rs2 shortcut in that code
+// is a different aliasing case and never covered this one.  Golden values
+// cross-checked against qemu-riscv64.
+static void test_fsgnj_rd_aliases_rs2() {
+    printf("test_fsgnj_rd_aliases_rs2...\n");
+    for (int funct3 = 0; funct3 <= 1; funct3++) {
+        std::vector<uint32_t> code = {
+            ADDI(5, 0, -1),
+            r_type(OP_FP, 3, 0, 5, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f3 = all ones
+            ADDI(6, 0, 0x3FF),
+            SLLI(6, 6, 52),
+            r_type(OP_FP, 4, 0, 6, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f4 = +1.0
+            // FSGNJ[N].D f3, f4, f3 — rd aliases rs2.
+            r_type(OP_FP, 3, (uint8_t)funct3, 4, 3, (FP_FSGNJ << 2) | FP_FMT_D),
+            ECALL()
+        };
+        // rs2's sign bit is set: FSGNJ copies it (-1.0), FSGNJN inverts (+1.0).
+        uint64_t want = (funct3 == 0) ? 0xBFF0000000000000ULL
+                                      : 0x3FF0000000000000ULL;
+        uint64_t interp = run_code(code).state.f[3];
+        uint64_t dbt    = run_code_dbt_fbits(code, 3);
+        CHECK_EQ(funct3 == 0 ? "FSGNJ.D rd==rs2: interpreter"
+                             : "FSGNJN.D rd==rs2: interpreter", interp, want);
+        CHECK_EQ(funct3 == 0 ? "FSGNJ.D rd==rs2: DBT matches interpreter"
+                             : "FSGNJN.D rd==rs2: DBT matches interpreter",
+                 dbt, interp);
+    }
+}
+
 // Load/store with rs1 == x0 and a nonzero immediate (absolute small-address
 // access).  The a64 backend's rc_read(x0) returns scratch X0; materializing
 // the offset into X0 before the address add clobbered the base, computing
@@ -1866,6 +1929,7 @@ int main(int argc, char *argv[]) {
     test_selfloop_pressure_forward_branch();
     test_selfloop_pressure_regw_rs2();
     test_selfloop_pressure_fp_int_rd();
+    test_fsgnj_rd_aliases_rs2();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
