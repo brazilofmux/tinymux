@@ -6,7 +6,11 @@
 // #1382 in fun_astbench and, independently, the same shape in @list.  A grep
 // of the tree found no third instance, but "no third instance today" is not a
 // property anyone can maintain by hand -- so %i, %o and the floating-point
-// conversions are implemented rather than forbidden.
+// conversions are implemented rather than forbidden, and what remains
+// unimplemented is echoed literally rather than being fatal (#1429).  The two
+// halves matter together: implementing conversions shrinks the surface, and
+// not aborting means the next gap found is a formatting bug instead of an
+// outage.
 //
 // Floating point is assembled here from mux_dtoa digits (the same correctly
 // rounded generator mux_ftoa and fval use) rather than delegated to the host
@@ -249,6 +253,61 @@ static void test_truncation(void)
     }
 }
 
+// Conversions mux_vsnprintf still does not implement must not kill the
+// process (#1429).
+//
+// snprintf is not an oracle here: the required behaviour deliberately differs
+// from printf's.  An unimplemented spec is echoed literally, so the evidence
+// lands in the output where it is visible, and formatting continues.  Before
+// this, each of these reached mux_assert(0), which is an unconditional abort()
+// in the shipping build -- mux_assert has no NDEBUG guard -- so an ordinary
+// looking T("%+d") took the whole game down.
+//
+// Reaching this function at all is the test.  If the recovery regresses to an
+// abort, the harness dies here rather than reporting a failure, which is
+// itself an unambiguous signal.
+//
+static void test_unimplemented(void)
+{
+    static const struct
+    {
+        const char *fmt;
+        const char *want;
+    } cases[] =
+    {
+        // The seven forms named in #1429.  Each is a perfectly ordinary
+        // printf spec that no one would expect to be fatal.
+        //
+        { "%+d",  "%+d"  },
+        { "% d",  "% d"  },
+        { "%#o",  "%#o"  },
+        { "%#x",  "%#x"  },
+        { "%+f",  "%+f"  },
+        { "%hd",  "%hd"  },
+        { "%a",   "%a"   },
+
+        // Surrounding text must survive on both sides, and a spec must not
+        // swallow what follows it.
+        //
+        { "before %+d after", "before %+d after" },
+        { "[%a]",             "[%a]"             },
+
+        // A trailing bare '%' and a doubled '%' are already handled; included
+        // so the recovery path cannot break them.
+        //
+        { "100%% sure",       "100% sure"        },
+    };
+
+    for (size_t i = 0; i < sizeof(cases) / sizeof(cases[0]); i++)
+    {
+        // Deliberately passing an argument the spec will not consume: the
+        // recovery does not call va_arg, and must not read one either.
+        //
+        std::string got = mux_fmt(cases[i].fmt, 42);
+        report("unimplemented", cases[i].fmt, got, cases[i].want);
+    }
+}
+
 int main(void)
 {
     printf("=== mux_vsnprintf differential tests (vs snprintf) ===\n");
@@ -258,6 +317,7 @@ int main(void)
     test_floats();
     test_float_specials();
     test_truncation();
+    test_unimplemented();
 
     printf("=== %d passed, %d failed ===\n", g_pass, g_fail);
     return (0 == g_fail) ? 0 : 1;
