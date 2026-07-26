@@ -137,10 +137,11 @@ test-netaddr:
 # settings would be rude, and a sanitizer build is not what anyone wants left
 # behind.  Configure one yourself first:
 #
-#   cd mux && ./configure <your usual flags> \
-#       CFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1" \
-#       CXXFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1" \
-#       LDFLAGS="-fsanitize=address,undefined"
+#   cd mux && ./configure <your usual flags> --enable-sanitizers
+#
+# or, to pick the set:
+#
+#   cd mux && ./configure <your usual flags> --enable-sanitizers=address
 #
 # then `make clean && make install` from the repo root.  The clean matters:
 # objects left from a non-sanitizer build link fine but are not instrumented,
