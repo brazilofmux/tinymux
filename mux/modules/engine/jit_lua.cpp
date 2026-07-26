@@ -91,6 +91,25 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     // Code generation: HIR → RV64.
     hir_codegen(*h, rc_state);
 
+    // Copy code into guest memory at code_base — same as softcode
+    // compile_expression.  Without this, code lives only in rc_state.code
+    // while memory's code region stays zero; compact then materializes
+    // zeros at entry_pc and the DBT spins forever at guest PC 0
+    // (unknown opcode → exit_with_pc(same) → #1309 hang).
+    //
+    if (rc_state.code.size() * 4 > rv_compiler::CODE_LIMIT) {
+        delete h;
+        return false;
+    }
+    for (size_t i = 0; i < rc_state.code.size(); i++) {
+        memcpy(rc_state.memory.data() + rc_state.code_base + i * 4,
+               &rc_state.code[i], 4);
+    }
+    if (rc_state.out_exhausted || rc_state.pool_exhausted) {
+        delete h;
+        return false;
+    }
+
     // Build compiled_program output.
     // Include rc_state.needs_jit: codegen may force runtime for results that
     // live only in registers (ITOA path), even when lowering saw no ecalls.

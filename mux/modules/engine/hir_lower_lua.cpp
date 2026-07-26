@@ -2028,7 +2028,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
     if (result_val < 0) return -1;
     h.result = result_val;
-    h.needs_jit = (h.ecalls > 0 || h.native_ops > 0);
+    // ecalls/native_ops force a runtime path.  Also keep needs_jit if
+    // lowering already set it (mux.args → CARGS srefs have no ecall/native
+    // count but must not take the folded path with empty sval) (#1309).
+    //
+    if (h.ecalls > 0 || h.native_ops > 0) {
+        h.needs_jit = true;
+    } else if (!h.sref_addrs.empty()) {
+        h.needs_jit = true;
+    }
 
     return result_val;
 }

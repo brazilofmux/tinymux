@@ -20,7 +20,7 @@
 | **0** Hygiene | Claim #1309, worktree, link issues | done |
 | **1** Safety gate | `mudconf.lua_jit` default **off**; loader fix may land green | in progress |
 | **2** Loader | `read_int` varint (Kagura #1306 / cherry-pick) | cherry-picked on branch |
-| **3a** Hang / empty folds | Trailing RETURN, MMBIN pc++, mux.args, nest | mostly fixed; residual mux.args DBT loop |
+| **3a** Hang / empty folds | Trailing RETURN, MMBIN, code copy, sref ATOI | fixed (checkpoint) |
 | **3b** Strings | Empty string returns | after 3a |
 | **3c** Suite | 23× `#-1 NO ATTRIBUTE SPECIFIED` under full `lua_fn.mux` | after 3a |
 | **3d** Opcodes | HIR/DBT audit; HIR_NEG discrimination | parallel once green |

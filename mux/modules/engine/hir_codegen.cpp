@@ -1322,12 +1322,23 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
-                if (h.kind[s1] == HIR_SCONST) {
+                // Compile-time only for true constants.  runtime_ref SCONSTs
+                // (CARGS/SUBST, mux.args) have empty sval but a live guest
+                // address — atoi must run at runtime (#1309).
+                //
+                if (  h.kind[s1] == HIR_SCONST
+                   && !h.runtime_ref[s1]) {
                     int64_t v = static_cast<int64_t>(
                         mux_atol(u8(h.sval[s1])));
                     rv_load_i64(rc.code, dest, v);
                 } else {
-                    rv_load_guest_addr(rc.code, 10, loc[s1].addr);
+                    // SCONST runtime_ref: loc.addr was set from h.val (guest
+                    // CARGS/SUBST slot).  Other sources use normal loc.
+                    //
+                    uint64_t addr = (h.kind[s1] == HIR_SCONST)
+                        ? static_cast<uint64_t>(h.val[s1])
+                        : loc[s1].addr;
+                    rv_load_guest_addr(rc.code, 10, addr);
                     rv_emit_atoi(rc.code, 10, dest);
                 }
                 ra_set_loc(rc, loc, int_alloc, i, dest);
@@ -1340,12 +1351,17 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
-                if (h.kind[s1] == HIR_SCONST && h.kind[s2] == HIR_SCONST) {
+                if (  h.kind[s1] == HIR_SCONST && h.kind[s2] == HIR_SCONST
+                   && !h.runtime_ref[s1] && !h.runtime_ref[s2]) {
                     int r = strcmp(h.sval[s1].c_str(), h.sval[s2].c_str());
                     rv_load_i64(rc.code, dest, r < 0 ? -1 : r > 0 ? 1 : 0);
                 } else {
-                    rv_load_guest_addr(rc.code, 10, loc[s1].addr);
-                    rv_load_guest_addr(rc.code, 11, loc[s2].addr);
+                    uint64_t a1 = (h.kind[s1] == HIR_SCONST)
+                        ? static_cast<uint64_t>(h.val[s1]) : loc[s1].addr;
+                    uint64_t a2 = (h.kind[s2] == HIR_SCONST)
+                        ? static_cast<uint64_t>(h.val[s2]) : loc[s2].addr;
+                    rv_load_guest_addr(rc.code, 10, a1);
+                    rv_load_guest_addr(rc.code, 11, a2);
                     rv_emit_strcmp(rc.code, 10, 11, dest);
                 }
                 ra_set_loc(rc, loc, int_alloc, i, dest);
