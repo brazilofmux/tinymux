@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -63,6 +63,17 @@ test-jit-ifelse:
 	else \
 	    exit $$rc; \
 	fi
+
+# Full smoke with mudconf.lua_jit forced on (#1309).  Default `make test`
+# keeps lua_jit off so production configs stay safe until Phase 4 default-on.
+# Requires --enable-jit (same as the rest of the Lua JIT path).
+# Opt-in: not part of `make test`.
+#   make test-lua-jit
+#   # or:  cd testcases && SMOKE_EXTRA_CONF='lua_jit 1' ./tools/Smoke
+test-lua-jit: install
+	@echo "==> Running smoke with lua_jit 1 (Lua bytecode→HIR→DBT path)"
+	$(MAKE) -C testcases/tools
+	cd testcases && ./tools/Makesmoke && SMOKE_EXTRA_CONF='lua_jit 1' ./tools/Smoke
 
 # GANL engine regression harness (epoll/select on Linux, kqueue/select on
 # macOS/BSD).  Scripted engine scenarios locking in the 2026-07 fixes.

@@ -2570,6 +2570,12 @@ static shared_heap_t s_shared_heap;
 // Run a cached program.  Uses dbt_rerun if the DBT already has
 // translated blocks for this program, otherwise dbt_reset.
 //
+// Nesting depth of run_cached_program.  Softcode JIT ECALL → fun_lua →
+// Lua TryJIT must not dbt_reset/rerun the shared persistent DBT while the
+// outer softcode program is live (#1309 nested corruption / hang).
+//
+static int s_run_cached_depth = 0;
+
 bool run_cached_program(compiled_program *prog,
                         dbref executor, dbref caller_db,
                         dbref enactor,
@@ -2578,6 +2584,13 @@ bool run_cached_program(compiled_program *prog,
                         int ncargs,
                         int eval,
                         void *lua_state) {
+    if (s_run_cached_depth > 0) {
+        // Nested JIT run: refuse and let the caller fall back (Lua VM
+        // for fun_lua).  Outer softcode keeps its DBT translations.
+        //
+        return false;
+    }
+
     // #1002 depth watermark (see jit_eval; repeated here for callers
     // that bypass it, e.g. rvbench).
     if (mudstate.func_nest_lev + prog->max_func_depth
@@ -2602,6 +2615,15 @@ bool run_cached_program(compiled_program *prog,
         out[n] = '\0';
         return true;
     }
+
+    // Hold the reentrancy lock for the whole DBT path (including early
+    // declines that still touch shared runtime state).
+    //
+    struct RunDepthGuard {
+        int &depth;
+        explicit RunDepthGuard(int &d) : depth(d) { ++depth; }
+        ~RunDepthGuard() { --depth; }
+    } run_depth_guard(s_run_cached_depth);
 
     // Materialize compact blobs into the shared runtime buffer — unless the
     // buffer already holds this exact program (consecutive re-run, the common
