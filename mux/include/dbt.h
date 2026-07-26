@@ -49,6 +49,12 @@ struct rv64_ctx_t {
     // emitted code as an immediate.
     uint64_t mem_size;          // guest image size in bytes
     uint64_t mem_clamps;        // count of out-of-range pointers clamped
+    // Scratch double for FCVT (#1320 + #1329).  Rounding leaves its result
+    // in XMM0 and the unsigned-64 path must destroy XMM0 to compute
+    // x - 2^63; XMM0/XMM1 are the only never-cached FP registers, so the
+    // rounded value is spilled here and reloaded for the saturation tests
+    // that follow.  Appended, so no existing CTX_* offset moves.
+    double   fp_scratch;
 };
 
 // Context offsets for JIT emitter.
@@ -61,12 +67,15 @@ static constexpr int CTX_FP_OFF      = 528;
 static constexpr int CTX_FCSR_OFF    = 784;
 static constexpr int CTX_MEM_SIZE_OFF   = 792;
 static constexpr int CTX_MEM_CLAMPS_OFF = 800;
+static constexpr int CTX_FP_SCRATCH_OFF = 808;
 
 // The offsets above are hand-maintained against rv64_ctx_t.  A mismatch
 // would silently make every emitted ctx access read the wrong field, so
 // pin them rather than trusting the arithmetic.
 static_assert(offsetof(rv64_ctx_t, mem_size) == CTX_MEM_SIZE_OFF,
               "CTX_MEM_SIZE_OFF out of step with rv64_ctx_t");
+static_assert(offsetof(rv64_ctx_t, fp_scratch) == CTX_FP_SCRATCH_OFF,
+              "CTX_FP_SCRATCH_OFF out of step with rv64_ctx_t");
 static_assert(offsetof(rv64_ctx_t, mem_clamps) == CTX_MEM_CLAMPS_OFF,
               "CTX_MEM_CLAMPS_OFF out of step with rv64_ctx_t");
 static_assert(offsetof(rv64_ctx_t, fcsr) == CTX_FCSR_OFF,

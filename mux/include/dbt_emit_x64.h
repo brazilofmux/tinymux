@@ -1129,103 +1129,239 @@ static inline void emit_movq_xmm_r64(emit_t *e, int xmm, int r64) {
     emit_byte(e, modrm(0x03, xmm, r64));
 }
 
-// RISC-V FCVT.{W,WU,L,LU}.D semantics on x86-64 (#1313/#1314).
+// ROUNDSD xmm_dst, xmm_src, imm8 (66 0F 3A 0B /r ib) — SSE4.1.
+// imm8[1:0]: 00 nearest-even, 01 down, 10 up, 11 toward-zero.
+// imm8[3]=0 selects the immediate mode rather than MXCSR.
 //
-// CVTTSD2SI answers a single "integer indefinite" sentinel (0x80000000 /
-// 0x8000000000000000) for NaN, both infinities and every out-of-range
-// value alike, and is signed.  RISC-V instead requires NaN -> the
-// destination type's MAXIMUM, saturation at both ends, and sign-extension
-// of W results even for the unsigned form.  One instruction therefore
-// cannot express it.
-//
-// The fix-ups test the SOURCE double rather than the converted integer,
-// because the sentinel has already collapsed the cases the spec separates
-// -- +inf, NaN and 2^63 all arrive as the same bit pattern.
-//
-// Ordering is load-bearing.  UCOMISD sets CF for "below" *and* for
-// unordered, so a NaN would take the low-side saturation; the NaN fix-up
-// therefore runs last and overwrites it.
-//
-// form matches the RISC-V rs2 selector: 0=W, 1=WU, 2=L, 3=LU.
-// Scratch: RAX, RCX, XMM0, XMM1 -- all documented as never cached.
-//
-static inline void emit_rv_fcvt_d(emit_t *e, int dst, int xsrc, int form)
-{
-    const uint64_t D_2P31  = 0x41E0000000000000ull;  //  2^31
-    const uint64_t D_N2P31 = 0xC1E0000000000000ull;  // -2^31
-    const uint64_t D_2P32  = 0x41F0000000000000ull;  //  2^32
-    const uint64_t D_2P63  = 0x43E0000000000000ull;  //  2^63
-    const uint64_t D_2P64  = 0x43F0000000000000ull;  //  2^64
+static constexpr int X64_ROUND_RNE = 0;
+static constexpr int X64_ROUND_RDN = 1;
+static constexpr int X64_ROUND_RUP = 2;
+static constexpr int X64_ROUND_RTZ = 3;
 
-    emit_cvttsd2si_r64(e, dst, xsrc);
+static inline void emit_roundsd(emit_t *e, int dst, int src, int mode) {
+    emit_byte(e, 0x66);
+    if (reg_hi(dst) || reg_hi(src)) {
+        emit_byte(e, rex(0, reg_hi(dst), 0, reg_hi(src)));
+    }
+    emit_byte(e, 0x0F);
+    emit_byte(e, 0x3A);
+    emit_byte(e, 0x0B);
+    emit_byte(e, modrm(0x03, dst, src));
+    emit_byte(e, static_cast<uint8_t>(mode & 3));
+}
+
+// Round a double in src_xmm into XMM0 under an explicit RISC-V rounding
+// mode (0..4).  RNE/RDN/RUP/RTZ map onto ROUNDSD; RMM (ties away from
+// zero) has no SSE encoding and is lowered as
+// copysign(trunc(|x| + 0.5), x), which is exact for every finite value
+// the FCVT family can round (ties cannot occur once |x| >= 2^52).
+//
+// Clobbers XMM0, XMM1, RAX, RCX, RDX.  XMM0/XMM1 are the documented FP
+// scratches; RAX/RCX/RDX are the documented integer scratches.
+//
+static inline void emit_rv_round_integral_d(emit_t *e, int src_xmm, int rm) {
+    if (rm == 1) {
+        // RTZ — leave the value alone; CVTTSD2SI truncates.
+        emit_movsd_xmm(e, 0 /*XMM0*/, src_xmm);
+        return;
+    }
+    if (rm == 0) {
+        emit_roundsd(e, 0, src_xmm, X64_ROUND_RNE);
+        return;
+    }
+    if (rm == 2) {
+        emit_roundsd(e, 0, src_xmm, X64_ROUND_RDN);
+        return;
+    }
+    if (rm == 3) {
+        emit_roundsd(e, 0, src_xmm, X64_ROUND_RUP);
+        return;
+    }
+    // RMM (rm == 4), and any reserved value treated as RNE by the
+    // interpreter's default — only 4 is expected here.
+    //
+    // XMM0 = copysign(trunc(fabs(src) + 0.5), src)
+    emit_movq_r64_xmm(e, X64_RAX, src_xmm);
+    emit_mov_r64(e, X64_RCX, X64_RAX);                 // keep original bits
+    emit_mov_r64_imm64(e, X64_RDX, 0x7FFFFFFFFFFFFFFFULL);
+    emit_and_r64(e, X64_RAX, X64_RDX);                  // clear sign
+    emit_movq_xmm_r64(e, 0 /*XMM0*/, X64_RAX);
+    emit_mov_r64_imm64(e, X64_RAX, 0x3FE0000000000000ULL); // 0.5
+    emit_movq_xmm_r64(e, 1 /*XMM1*/, X64_RAX);
+    emit_addsd(e, 0, 1);
+    emit_roundsd(e, 0, 0, X64_ROUND_RTZ);
+    emit_mov_r64_imm64(e, X64_RDX, 0x8000000000000000ULL);
+    emit_and_r64(e, X64_RCX, X64_RDX);                  // original sign bit
+    emit_movq_r64_xmm(e, X64_RAX, 0);
+    emit_or_r64(e, X64_RAX, X64_RCX);
+    emit_movq_xmm_r64(e, 0, X64_RAX);
+}
+
+// Truncating convert of the already-rounded value in XMM0.
+// form is the RISC-V rs2 selector: 0=W, 1=WU, 2=L, 3=LU.
+// Saturation / NaN / unsigned-range fix-ups are #1329/#1334 — this only
+// applies the rm-selected rounding that master was missing (#1320).
+//
+
+// Spill/reload the rounded double through ctx.fp_scratch.
+static inline void emit_store_ctx_f64(emit_t *e, int xmm, int off) {
+    emit_byte(e, 0xF2); emit_byte(e, 0x0F); emit_byte(e, 0x11);
+    emit_byte(e, modrm(0x02, xmm, X64_RBX)); emit_u32(e, (uint32_t)off);
+}
+static inline void emit_load_ctx_f64(emit_t *e, int xmm, int off) {
+    emit_byte(e, 0xF2); emit_byte(e, 0x0F); emit_byte(e, 0x10);
+    emit_byte(e, modrm(0x02, xmm, X64_RBX)); emit_u32(e, (uint32_t)off);
+}
+
+// Convert the already-rounded double in XMM0 with RISC-V FCVT semantics
+// (#1329), replacing emit_fcvt_from_rounded_d's bare CVTTSD2SI.
+//
+// CVTTSD2SI answers one "integer indefinite" sentinel for NaN, both
+// infinities and every out-of-range value alike, and is signed.  RISC-V
+// wants NaN -> the destination maximum, saturation at both ends, and
+// sign-extension of W results even unsigned.
+//
+// The tests run against the ROUNDED value, not the original operand: with
+// #1320 applied, 2^31-0.5 under RNE becomes 2^31 and must saturate, which
+// a test on the unrounded operand would miss.
+//
+// XMM0 holds the value and XMM1 the comparison constant; the LU path has
+// to destroy XMM0 for the bias, so it reloads from ctx.fp_scratch.
+static inline void emit_fcvt_from_rounded_d(emit_t *e, int dst, int form)
+{
+    const uint64_t D_2P31  = 0x41E0000000000000ull;
+    const uint64_t D_N2P31 = 0xC1E0000000000000ull;
+    const uint64_t D_2P32  = 0x41F0000000000000ull;
+    const uint64_t D_2P63  = 0x43E0000000000000ull;
+    const uint64_t D_2P64  = 0x43F0000000000000ull;
+
+    emit_store_ctx_f64(e, 0, CTX_FP_SCRATCH_OFF);
+    emit_cvttsd2si_r64(e, dst, 0);
 
     if (0 == form) {                       // FCVT.W.D
         emit_mov_r64_imm64(e, X64_RCX, D_N2P31);
         emit_movq_xmm_r64(e, 1, X64_RCX);
-        emit_ucomisd(e, xsrc, 1);
+        emit_ucomisd(e, 0, 1);
         emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFF80000000ull);
-        emit_cmovcc(e, CMOV_B, dst, X64_RCX);        // x < -2^31
+        emit_cmovcc(e, CMOV_B, dst, X64_RCX);
         emit_mov_r64_imm64(e, X64_RCX, D_2P31);
         emit_movq_xmm_r64(e, 1, X64_RCX);
-        emit_ucomisd(e, xsrc, 1);
+        emit_ucomisd(e, 0, 1);
         emit_mov_r64_imm64(e, X64_RCX, 0x000000007FFFFFFFull);
-        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^31
-        emit_ucomisd(e, xsrc, xsrc);
-        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> INT32_MAX
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);
+        emit_ucomisd(e, 0, 0);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);
     } else if (1 == form) {                // FCVT.WU.D
-        emit_xor_r64(e, X64_RCX, X64_RCX);
-        emit_movq_xmm_r64(e, 1, X64_RCX);            // 0.0
-        emit_ucomisd(e, xsrc, 1);
-        // MOV, not XOR: XOR writes flags and would destroy the CF the
-        // CMOV below depends on.
         emit_mov_r64_imm64(e, X64_RCX, 0ull);
-        emit_cmovcc(e, CMOV_B, dst, X64_RCX);        // x < 0 -> 0
+        emit_movq_xmm_r64(e, 1, X64_RCX);
+        emit_ucomisd(e, 0, 1);
+        // MOV, not XOR: XOR writes flags and would destroy the CF the
+        // CMOV depends on.
+        emit_mov_r64_imm64(e, X64_RCX, 0ull);
+        emit_cmovcc(e, CMOV_B, dst, X64_RCX);
         emit_mov_r64_imm64(e, X64_RCX, D_2P32);
         emit_movq_xmm_r64(e, 1, X64_RCX);
-        emit_ucomisd(e, xsrc, 1);
+        emit_ucomisd(e, 0, 1);
         emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFFFFFFFFFFull);
-        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^32
-        emit_ucomisd(e, xsrc, xsrc);
-        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> all ones
-        emit_movsxd(e, dst, dst);                    // RV64 sign-extends W
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);
+        emit_ucomisd(e, 0, 0);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);
+        emit_movsxd(e, dst, dst);
     } else if (2 == form) {                // FCVT.L.D
-        // The low side needs no fix-up: CVTTSD2SI already yields
-        // INT64_MIN for -inf and for x <= -2^63, which is the RISC-V
-        // answer.
         emit_mov_r64_imm64(e, X64_RCX, D_2P63);
         emit_movq_xmm_r64(e, 1, X64_RCX);
-        emit_ucomisd(e, xsrc, 1);
+        emit_ucomisd(e, 0, 1);
         emit_mov_r64_imm64(e, X64_RCX, 0x7FFFFFFFFFFFFFFFull);
-        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^63
-        emit_ucomisd(e, xsrc, xsrc);
-        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> INT64_MAX
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);
+        emit_ucomisd(e, 0, 0);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);
     } else {                               // FCVT.LU.D
-        // CVTTSD2SI is signed, so 2^63 <= x < 2^64 needs the bias
-        // identity: trunc(x) == trunc(x - 2^63) + 2^63.
+        // 2^63 <= x < 2^64 needs trunc(x - 2^63) + 2^63, because the
+        // instruction is signed.  That destroys XMM0, so the condition is
+        // captured in a register first and the rounded value reloaded from
+        // ctx.fp_scratch for the saturation tests afterwards.
         emit_mov_r64_imm64(e, X64_RCX, D_2P63);
         emit_movq_xmm_r64(e, 1, X64_RCX);
-        emit_movsd_xmm(e, 0, xsrc);
-        emit_subsd(e, 0, 1);
-        emit_cvttsd2si_r64(e, X64_RCX, 0);
-        emit_mov_r64_imm64(e, X64_RAX, 0x8000000000000000ull);
-        emit_add_r64(e, X64_RCX, X64_RAX);
-        emit_ucomisd(e, xsrc, 1);
-        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^63
+        emit_ucomisd(e, 0, 1);
+        emit_setcc(e, 0x93 /*SETAE*/, X64_RAX);       // AL = (x >= 2^63)
+        emit_movzx_r64_r8(e, X64_RAX, X64_RAX);       // SETcc writes AL only
+
+        emit_subsd(e, 0, 1);                          // XMM0 = x - 2^63
+        emit_cvttsd2si_r64(e, dst, 0);
+        emit_mov_r64_imm64(e, X64_RCX, 0x8000000000000000ull);
+        emit_add_r64(e, dst, X64_RCX);                // dst = biased result
+
+        emit_load_ctx_f64(e, 0, CTX_FP_SCRATCH_OFF);  // restore rounded x
+        emit_cvttsd2si_r64(e, X64_RCX, 0);            // unbiased result
+        emit_test_r64(e, X64_RAX, X64_RAX);
+        emit_cmovcc(e, CMOV_E, dst, X64_RCX);         // x < 2^63 -> unbiased
+
         emit_mov_r64_imm64(e, X64_RCX, D_2P64);
         emit_movq_xmm_r64(e, 1, X64_RCX);
-        emit_ucomisd(e, xsrc, 1);
+        emit_ucomisd(e, 0, 1);
         emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFFFFFFFFFFull);
-        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^64
-        emit_xor_r64(e, X64_RCX, X64_RCX);
-        emit_movq_xmm_r64(e, 1, X64_RCX);            // 0.0
-        emit_ucomisd(e, xsrc, 1);
-        // MOV, not XOR: XOR writes flags and would destroy the CF the
-        // CMOV below depends on.
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);        // x >= 2^64 -> all ones
+
         emit_mov_r64_imm64(e, X64_RCX, 0ull);
-        emit_cmovcc(e, CMOV_B, dst, X64_RCX);        // x < 0 -> 0
+        emit_movq_xmm_r64(e, 1, X64_RCX);             // 0.0
+        emit_ucomisd(e, 0, 1);
+        emit_mov_r64_imm64(e, X64_RCX, 0ull);
+        emit_cmovcc(e, CMOV_B, dst, X64_RCX);         // x < 0 -> 0
+
         emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFFFFFFFFFFull);
-        emit_ucomisd(e, xsrc, xsrc);
-        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> all ones
+        emit_ucomisd(e, 0, 0);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);         // NaN -> all ones
+    }
+}
+
+// FCVT.{W,WU,L,LU}.D with the instruction's rounding mode.
+//
+// rm is insn.funct3: 0..4 static, 7 dynamic (read fcsr.frm at run time).
+// Dynamic is the common encoding — the assembler emits it whenever the
+// source does not name a mode — so it cannot be treated as exotic.
+// Layout matches the a64 backend: frm=0 (RNE, the reset value) is the
+// fall-through; reserved frm values land there too.
+//
+// Clobbers XMM0, XMM1, RAX, RCX, RDX.
+//
+static inline void emit_fcvt_float_to_int_d(emit_t *e, int dst, int src_xmm,
+                                            int form, int rm) {
+    if (rm >= 0 && rm <= 4) {
+        emit_rv_round_integral_d(e, src_xmm, rm);
+        emit_fcvt_from_rounded_d(e, dst, form);
+        return;
+    }
+
+    // Dynamic rm=7 (and any other unexpected encoding): read fcsr.frm.
+    // mov eax, dword [rbx + CTX_FCSR_OFF]
+    emit_byte(e, 0x8B);
+    emit_byte(e, modrm(0x02, X64_RAX, X64_RBX));
+    emit_u32(e, static_cast<uint32_t>(CTX_FCSR_OFF));
+    emit_shr_r32_imm(e, X64_RAX, 5);
+    emit_and_r64_imm(e, X64_RAX, 7);
+
+    uint32_t to_mode[5] = { 0, 0, 0, 0, 0 };
+    for (int m = 1; m <= 4; m++) {
+        emit_cmp_r64_imm(e, X64_RAX, m);
+        to_mode[m] = emit_jcc_rel32(e, JCC_E);
+    }
+    // Fall-through: RNE (frm=0) and reserved 5/6.
+    emit_rv_round_integral_d(e, src_xmm, 0);
+    emit_fcvt_from_rounded_d(e, dst, form);
+    uint32_t to_done[5] = { 0, 0, 0, 0, 0 };
+    to_done[0] = emit_jmp_rel32(e);
+    for (int m = 1; m <= 4; m++) {
+        emit_patch_rel32(e, to_mode[m], emit_pos(e));
+        emit_rv_round_integral_d(e, src_xmm, m);
+        emit_fcvt_from_rounded_d(e, dst, form);
+        if (m != 4) {
+            to_done[m] = emit_jmp_rel32(e);
+        }
+    }
+    const uint32_t done = emit_pos(e);
+    emit_patch_rel32(e, to_done[0], done);
+    for (int m = 1; m <= 3; m++) {
+        emit_patch_rel32(e, to_done[m], done);
     }
 }
 
