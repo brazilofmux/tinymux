@@ -3,3 +3,4 @@ dbt_test
 test_cache
 test_chain
 test_interp
+fuzz_diff
