@@ -175,6 +175,22 @@
 # the defect.  f.nested goes one further and reaches the flush through
 # u(...), which is the ECALL path itself.
 #
+# f.iter leads because it is the only shape that discriminates on every
+# host (#1413).  The defect is a use-after-free, so what the harvest reads
+# out of the freed compiled_program depends on the allocator: on macOS
+# arm64 the direct shape returns empty, but on Linux x86-64 the freed bytes
+# are still usable and it returns OK against the UNFIXED engine -- so a test
+# built only on the direct shape passes there and guards nothing.  Under
+# iter the whole command is lost on Linux, producing no output at all, which
+# is why strlen is asserted alongside the value: the failure mode there is a
+# vanished result rather than a wrong one.
+#
+# The general lesson, since this was the second such test in a day: a
+# regression test written against the symptom you happened to observe is
+# only as portable as that symptom.  Where a defect is real everywhere but
+# manifests differently, pick the shape with the widest failure, not the one
+# that was easiest to see.
+#
 # The counter check is the other half: a return of OK proves nothing if
 # the flush stopped flushing.  f.s1 and f.s2 evaluate identical text, so
 # the second would be a memory-cache hit had the cache survived; after a
@@ -188,12 +204,15 @@
 &tr.tc005 test_jitstats_fn=
   @if u(me/tr.has_jit)=
   {
+    &f.iter me=[iter(1 2 3,[u(me/tr.fl_nested)]-)];
     &f.direct me=[jitstats(flush)];
     &f.nested me=[u(me/tr.fl_nested) tailmark];
     &f.s1 me=[jitstats()];
     &f.warm me=[jitstats(flush)];
     &f.s2 me=[jitstats()];
     @if cand(
+          strmatch(v(f.iter),OK- OK- OK-),
+          gt(strlen(v(f.iter)),0),
           strmatch(v(f.direct),OK),
           strmatch(v(f.nested),OK tailmark),
           strmatch(v(f.warm),OK),
@@ -204,7 +223,7 @@
       @log smoke=TC005: jitstats flush from compiled code. Succeeded.
     },
     {
-      @log smoke=TC005: jitstats flush from compiled code. Failed (direct=[v(f.direct)] nested=[v(f.nested)] warm=[v(f.warm)] hit1=[after(grab(v(f.s1),cache_hit_mem=*),=)] hit2=[after(grab(v(f.s2),cache_hit_mem=*),=)]).
+      @log smoke=TC005: jitstats flush from compiled code. Failed (iter=[v(f.iter)] iterlen=[strlen(v(f.iter))] direct=[v(f.direct)] nested=[v(f.nested)] warm=[v(f.warm)] hit1=[after(grab(v(f.s1),cache_hit_mem=*),=)] hit2=[after(grab(v(f.s2),cache_hit_mem=*),=)]).
     }
   },
   {
