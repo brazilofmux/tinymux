@@ -793,6 +793,25 @@ static inline void emit_fcvtzs_x64_d(emit_t *e, int xd, int dn) {
     emit_inst(e, 0x9E780000 | (dn << 5) | xd);
 }
 
+// FCVTZU Xd, Dn — double to unsigned int64 (truncate toward zero)
+static inline void emit_fcvtzu_x64_d(emit_t *e, int xd, int dn) {
+    emit_inst(e, 0x9E790000 | (dn << 5) | xd);
+}
+
+// FCVTZS Wd, Dn / FCVTZU Wd, Dn — the 32-bit destination forms (sf=0).
+//
+// These matter for FCVT.W.D / FCVT.WU.D: ARM saturates at the *destination*
+// width, so the 32-bit form pins +inf to 0x7FFFFFFF / 0xFFFFFFFF where the
+// 64-bit form would saturate at 64-bit bounds and leave the low word wrong
+// once truncated (#1313).
+static inline void emit_fcvtzs_w32_d(emit_t *e, int wd, int dn) {
+    emit_inst(e, 0x1E780000 | (dn << 5) | wd);
+}
+
+static inline void emit_fcvtzu_w32_d(emit_t *e, int wd, int dn) {
+    emit_inst(e, 0x1E790000 | (dn << 5) | wd);
+}
+
 // FMOV Xd, Dn — bitwise move double to int64
 static inline void emit_fmov_x64_d(emit_t *e, int xd, int dn) {
     emit_inst(e, 0x9E660000 | (dn << 5) | xd);

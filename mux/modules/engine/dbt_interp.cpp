@@ -828,8 +828,16 @@ int rv64_interp_run(rv64_state_t *state, rv64_memory_t *mem,
                 }
                 case 1: {
                     // FCVT.WU.D — double to unsigned int32, sign-extend to 64
+                    // NaN converts to the destination's MAXIMUM, not to 0
+                    // (RISC-V unpriv spec, "Invalid Operation" table) -- it is
+                    // only *negative* input that gives 0.  Folding the two
+                    // together made fcvt.wu.d(NaN) yield 0 instead of
+                    // 0xFFFFFFFF_FFFFFFFF (#1314).  The differential fuzzer
+                    // could not see this: the a64 backend was wrong the same
+                    // way, so both routes agreed.
                     uint32_t v;
-                    if (std::isnan(a) || a < 0.0) v = 0;
+                    if (std::isnan(a)) v = UINT32_MAX;
+                    else if (a < 0.0) v = 0;
                     else if (a >= 4294967296.0) v = UINT32_MAX;
                     else v = static_cast<uint32_t>(a);
                     r = sext32(v);
@@ -847,8 +855,10 @@ int rv64_interp_run(rv64_state_t *state, rv64_memory_t *mem,
                 }
                 case 3: {
                     // FCVT.LU.D — double to unsigned int64
+                    // NaN -> maximum, negative -> 0; see FCVT.WU.D (#1314).
                     uint64_t v;
-                    if (std::isnan(a) || a < 0.0) v = 0;
+                    if (std::isnan(a)) v = UINT64_MAX;
+                    else if (a < 0.0) v = 0;
                     else if (a >= 18446744073709551616.0) v = UINT64_MAX;
                     else v = static_cast<uint64_t>(a);
                     r = v;

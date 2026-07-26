@@ -1098,6 +1098,86 @@ static void test_fp_sign_inject() {
     CHECK_FEQ("FSGNJX.D", fsgnjx_r, -42.0);
 }
 
+// #1313 / #1314: FCVT.{W,WU,L,LU}.D for NaN and the infinities.
+//
+// RISC-V and the host ISAs disagree here, so BOTH routes must be checked and
+// the expected values must come from the RISC-V unprivileged spec ("Invalid
+// Operation" / out-of-range table), not from either implementation:
+//
+//   NaN   -> the destination type's MAXIMUM (not 0, which is what ARM
+//            FCVTZS/FCVTZU and x86 CVTTSD2SI give)
+//   +inf  -> destination maximum
+//   -inf  -> destination minimum (0 for the unsigned forms)
+//
+// and every 32-bit (W/WU) result is SIGN-extended to 64 bits on RV64 --
+// including the unsigned form, so fcvt.wu.d(+inf) is 0xFFFFFFFF_FFFFFFFF.
+//
+// The differential fuzzer structurally cannot find the NaN unsigned rows:
+// the interpreter and the a64 backend were wrong in the same direction, so
+// the two routes agreed with each other (#1314).
+static void check_fcvt_case(const char *what, uint64_t bits, int rs2,
+                            uint64_t expected) {
+    // Build the double in an integer register, FMV it across, convert, and
+    // leave the result in x5.  Constructed in-register because run_code_dbt
+    // has no data segment.
+    // A byte at a time: ADDI's immediate is 12-bit SIGNED (max 2047), so a
+    // 16-bit chunk does not fit and a naive split still overflows.  Every
+    // byte is <= 255 and always encodes cleanly.
+    std::vector<uint32_t> code;
+    code.push_back(ADDI(1, 0, 0));
+    for (int shift = 56; shift >= 0; shift -= 8) {
+        code.push_back(SLLI(1, 1, 8));
+        uint8_t byte = static_cast<uint8_t>((bits >> shift) & 0xFF);
+        if (byte) {
+            code.push_back(ADDI(2, 0, static_cast<int32_t>(byte)));
+            code.push_back(r_type(0x33, 1, 0, 1, 2, 0));   // ADD x1, x1, x2
+        }
+    }
+    code.push_back(r_type(OP_FP, 1, 0, 1, 0, (FP_FMVDX << 2) | FP_FMT_D));
+    // The W/WU/L/LU variant lives in the rs2 field; funct3 is the
+    // rounding mode (0 = RNE).
+    code.push_back(r_type(OP_FP, 5, 0, 1, rs2, (FP_FCVTW << 2) | FP_FMT_D));
+    code.push_back(ADDI(17, 0, 93));
+    code.push_back(ADDI(10, 0, 0));
+    code.push_back(ECALL());
+
+    TestResult r = run_code(code);
+    char desc[128];
+    snprintf(desc, sizeof(desc), "%s: interp", what);
+    CHECK_EQ(desc, r.state.x[5], expected);
+
+    snprintf(desc, sizeof(desc), "%s: DBT", what);
+    CHECK_EQ(desc, run_code_dbt(code, 5), expected);
+}
+
+static void test_fp_cvt_nan_inf() {
+    printf("test_fp_cvt_nan_inf...\n");
+
+    const uint64_t PINF = 0x7FF0000000000000ULL;
+    const uint64_t NINF = 0xFFF0000000000000ULL;
+    const uint64_t QNAN = 0x7FF8000000000000ULL;
+
+    // fcvt.w.d  (rs2=0) — signed 32, sign-extended
+    check_fcvt_case("fcvt.w.d(+inf)",  PINF, 0, 0x000000007FFFFFFFULL);
+    check_fcvt_case("fcvt.w.d(-inf)",  NINF, 0, 0xFFFFFFFF80000000ULL);
+    check_fcvt_case("fcvt.w.d(NaN)",   QNAN, 0, 0x000000007FFFFFFFULL);
+
+    // fcvt.wu.d (rs2=1) — unsigned 32, still SIGN-extended
+    check_fcvt_case("fcvt.wu.d(+inf)", PINF, 1, 0xFFFFFFFFFFFFFFFFULL);
+    check_fcvt_case("fcvt.wu.d(-inf)", NINF, 1, 0x0000000000000000ULL);
+    check_fcvt_case("fcvt.wu.d(NaN)",  QNAN, 1, 0xFFFFFFFFFFFFFFFFULL);
+
+    // fcvt.l.d  (rs2=2) — signed 64
+    check_fcvt_case("fcvt.l.d(+inf)",  PINF, 2, 0x7FFFFFFFFFFFFFFFULL);
+    check_fcvt_case("fcvt.l.d(-inf)",  NINF, 2, 0x8000000000000000ULL);
+    check_fcvt_case("fcvt.l.d(NaN)",   QNAN, 2, 0x7FFFFFFFFFFFFFFFULL);
+
+    // fcvt.lu.d (rs2=3) — unsigned 64
+    check_fcvt_case("fcvt.lu.d(+inf)", PINF, 3, 0xFFFFFFFFFFFFFFFFULL);
+    check_fcvt_case("fcvt.lu.d(-inf)", NINF, 3, 0x0000000000000000ULL);
+    check_fcvt_case("fcvt.lu.d(NaN)",  QNAN, 3, 0xFFFFFFFFFFFFFFFFULL);
+}
+
 static void test_fp_fma() {
     printf("test_fp_fma...\n");
 
@@ -1780,6 +1860,7 @@ int main(int argc, char *argv[]) {
     test_fp_fsqrt();
     test_fp_minmax();
     test_fp_sign_inject();
+    test_fp_cvt_nan_inf();
     test_fp_fma();
     test_fp_fclass();
     test_fp_fmv_dx();
