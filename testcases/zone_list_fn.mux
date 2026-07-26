@@ -1,0 +1,123 @@
+#
+# zone_list_fn.mux - Coverage for zone membership list functions.
+#
+# Six builtins with no reference anywhere in the corpus (#1160):
+#
+#   zrooms  zthings  zexits  zchildren  zwho  inzone
+#
+# These answer "what of type T lives in zone Z".  The fixture is a zone
+# object plus two rooms, an exit and a thing, all @chzone'd to it — the
+# same zoning pattern route_fn.mux uses for cross-zone routes.
+#
+# Note: create(<name>) alone is not enough for a zone object; create
+# expects two or three arguments, so the zone is create(<name>, 10).
+#
+# inzone() and zrooms() both list rooms in the zone today; both names are
+# still pinned so a future divergence is caught.  zwho() is empty unless a
+# player is zoned there — assert non-error rather than a WHO membership.
+#
+@create test_zone_list_fn
+-
+@set test_zone_list_fn=INHERIT QUIET
+-
+think [setq(0, create(ZoneList_Zone, 10))][attrib_set(test_zone_list_fn/zone, %q0)]
+-
+think [setq(0, create(ZoneList_Room_A, 10, r))][attrib_set(test_zone_list_fn/room_a, %q0)]
+-
+think [setq(0, create(ZoneList_Room_B, 10, r))][attrib_set(test_zone_list_fn/room_b, %q0)]
+-
+think [setq(0, create(ZoneList_Thing, 10))][attrib_set(test_zone_list_fn/thing, %q0)]
+-
+@tel me=[get(test_zone_list_fn/room_a)]
+-
+@open zonelist_exit_ab=[get(test_zone_list_fn/room_b)]
+-
+think [attrib_set(test_zone_list_fn/exit_ab, [lastcreate(me, e)])]
+-
+@tel [get(test_zone_list_fn/thing)]=[get(test_zone_list_fn/room_a)]
+-
+@chzone [get(test_zone_list_fn/room_a)]=[get(test_zone_list_fn/zone)]
+-
+@chzone [get(test_zone_list_fn/room_b)]=[get(test_zone_list_fn/zone)]
+-
+@chzone [get(test_zone_list_fn/thing)]=[get(test_zone_list_fn/zone)]
+-
+@chzone [get(test_zone_list_fn/exit_ab)]=[get(test_zone_list_fn/zone)]
+-
+&tr.tc000 test_zone_list_fn=
+  @log smoke=Beginning zone list function test cases.
+-
+#
+# Test Case #1 - zrooms() lists rooms in the zone.
+#
+&tr.tc001 test_zone_list_fn=
+  @if cand(
+        gt(member(zrooms(get(me/zone)), get(me/room_a)), 0),
+        gt(member(zrooms(get(me/zone)), get(me/room_b)), 0)
+      )=
+  {
+    @log smoke=TC001: zrooms lists zoned rooms. Succeeded.
+  },
+  {
+    @log smoke=TC001: zrooms lists zoned rooms. Failed ([zrooms(get(me/zone))]).
+  }
+-
+#
+# Test Case #2 - zthings() and zexits() filter by type.
+#
+&tr.tc002 test_zone_list_fn=
+  @if cand(
+        gt(member(zthings(get(me/zone)), get(me/thing)), 0),
+        gt(member(zexits(get(me/zone)), get(me/exit_ab)), 0),
+        not(strmatch(zthings(get(me/zone)), *[get(me/room_a)]*)),
+        not(strmatch(zexits(get(me/zone)), *[get(me/thing)]*))
+      )=
+  {
+    @log smoke=TC002: zthings and zexits filter by type. Succeeded.
+  },
+  {
+    @log smoke=TC002: zthings and zexits filter by type. Failed (things=[zthings(get(me/zone))] exits=[zexits(get(me/zone))]).
+  }
+-
+#
+# Test Case #3 - zchildren() is the untyped union of the zone.
+#
+&tr.tc003 test_zone_list_fn=
+  @if cand(
+        gt(member(zchildren(get(me/zone)), get(me/room_a)), 0),
+        gt(member(zchildren(get(me/zone)), get(me/thing)), 0),
+        gt(member(zchildren(get(me/zone)), get(me/exit_ab)), 0)
+      )=
+  {
+    @log smoke=TC003: zchildren lists every zoned object. Succeeded.
+  },
+  {
+    @log smoke=TC003: zchildren lists every zoned object. Failed ([zchildren(get(me/zone))]).
+  }
+-
+#
+# Test Case #4 - inzone() agrees with zrooms(); zwho() does not error.
+#
+&tr.tc004 test_zone_list_fn=
+  @if cand(
+        eq(comp(inzone(get(me/zone)), zrooms(get(me/zone))), 0),
+        not(strmatch(setr(0, zwho(get(me/zone))), #-1*))
+      )=
+  {
+    @log smoke=TC004: inzone matches zrooms; zwho ok. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: inzone matches zrooms; zwho ok. Failed (inzone=[inzone(get(me/zone))] zrooms=[zrooms(get(me/zone))] zwho=%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_zone_list_fn=
+  @log smoke=End zone list function test cases.;
+  @notify smoke
+-
+drop test_zone_list_fn
+-
+#
+# End of Test Cases
+#
