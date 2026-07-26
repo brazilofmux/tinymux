@@ -25,24 +25,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
     via the accept path (nonzero exit on failure)
 - netaddr subnet unit tests: `make test-netaddr` (also part of `make test`);
   `mux_subnet::compare_to` + `parse_subnet` in `tests/netaddr/` (#799/#800)
-- DBT chain patch encode/decode: `make test-dbt-chain` (also part of `make test`);
-  `tests/dbt_chain/` asserts `dbt_backend_decode_jmp_target` is the exact inverse
-  of `dbt_backend_backpatch_jmp` (#1152). Builds **all three** backends
-  (a64_sysv, x64_sysv, x64_win64) into one binary on every host via `-D` symbol
-  renames — #1152 survived because nothing exercised the affected backend, so
-  host-only coverage is not enough here. Compiles the backend sources directly:
-  needs neither `install` nor `--enable-jit`, and has no skip path.
-- DBT block cache: `make test-dbt-cache` (also part of `make test`);
-  `tests/dbt_cache/` covers `dbt_cache_insert`/`dbt_cache_lookup` dedupe and
-  FIFO eviction (#1153). Compiles `dbt.cpp` against backend stubs — no
-  `install`, no `--enable-jit`, no skip path.
-- RV64 execution tests: `make test-dbt-exec` (also part of `make test`);
-  `tests/dbt_exec/` builds `mux/modules/engine/dbt_test.cpp`, which had never
-  been wired into any build. Hand-assembled RV64 sequences run through the
-  interpreter and (for a subset) the DBT, plus a cross-compiled ELF through
-  both routes. Note only ~6 of 39 test functions drive the DBT directly — the
-  ELF leg carries most of the block-translation coverage. Builds the **host**
-  backend only, since it executes; skips loudly off x86_64/aarch64.
+- DBT and RV64 tests: `make test-dbt` (also part of `make test`); `tests/dbt/`
+  builds three binaries, each needing a different link:
+  - **chain** — `dbt_backend_decode_jmp_target` must invert
+    `dbt_backend_backpatch_jmp` (#1152). Compiles **all three** backends into
+    one binary via `-D` symbol renames, on every host: #1152 survived because
+    nothing exercised the affected backend, so host-only coverage is not enough.
+  - **cache** — `dbt_cache_insert`/`dbt_cache_lookup` dedupe and FIFO eviction (#1153).
+  - **exec** — `mux/modules/engine/dbt_test.cpp`, which had never been wired into
+    any build. Hand-assembled RV64 through the interpreter and (for ~6 of 39
+    test functions) the DBT, plus a cross-compiled ELF through both routes —
+    the ELF leg carries most of the block-translation coverage. Builds the
+    **host** backend only, since it executes; skips loudly off x86_64/aarch64.
 - Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
   spins a throwaway netmux and drives `$`-command `%0..%9` captures over a
   socket (`tests/scenario/`) — the path muxscript can't reach

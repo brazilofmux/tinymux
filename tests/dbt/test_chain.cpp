@@ -71,7 +71,7 @@ DECLARE_BACKEND(win64);
 uint8_t g_dbt_safe_page[DBT_SAFE_PAGE_SIZE];
 
 static void die_unreachable(const char *who) {
-    fprintf(stderr, "test_dbt_chain: %s was called from the chaining path.\n"
+    fprintf(stderr, "test_chain: %s was called from the chaining path.\n"
             "The encode/decode pair is no longer leaf arithmetic; these "
             "stubs are no longer safe.\n", who);
     abort();
