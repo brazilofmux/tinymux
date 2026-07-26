@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+# FnCoverage — which registered builtins have no reference in the corpus.
+#
+# #1160 measured 196 uncovered builtins.  A day later it was 144, because
+# several test files landed in between.  A number that moves that fast is
+# only useful if it is cheap to re-measure, so this does the measuring
+# rather than leaving it in an issue body to go stale.
+#
+# "Covered" here means the name appears in call position — NAME( — in some
+# testcases/*.mux.  That is a weak notion deliberately: it answers "does
+# anything reference this at all", which is the question #1160 asks.  It
+# says nothing about whether the reference asserts anything, so treat it as
+# a floor, not a measure of test quality.
+#
+# Usage:
+#   ./tools/FnCoverage            summary only
+#   ./tools/FnCoverage --list     summary plus the uncovered names
+#   ./tools/FnCoverage --tier1    exit 1 if any Tier 1 name is uncovered
+#
+# Exit: 0 normally; 1 if --tier1 is given and a Tier 1 name is uncovered.
+
+set -u
+
+HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+TESTCASES=$(CDPATH= cd -- "$HERE/.." && pwd)
+REPO=$(CDPATH= cd -- "$TESTCASES/.." && pwd)
+FUNCTIONS="$REPO/mux/modules/engine/functions.cpp"
+
+MODE=${1:-}
+
+if [ ! -f "$FUNCTIONS" ]; then
+    echo "FnCoverage: cannot find $FUNCTIONS" >&2
+    exit 2
+fi
+
+WORK=$(mktemp -d "${TMPDIR:-/tmp}/fncov.XXXXXX") || exit 2
+trap 'rm -rf "$WORK"' EXIT
+
+# Registered builtins: the { T("NAME"), fun_... } table entries.
+grep -oE '\{[[:space:]]*T\("[A-Z0-9_]+"\)[[:space:]]*,[[:space:]]*fun_' "$FUNCTIONS" \
+    | sed 's/.*T("//; s/").*//' | sort -u > "$WORK/all"
+
+# Names beginning with _ are internal helpers reached only from generated
+# softcode, never written by a user, so they are excluded from the ratio
+# rather than counted as gaps.
+grep '^_' "$WORK/all" > "$WORK/internal" || true
+grep -v '^_' "$WORK/all" > "$WORK/user"
+
+cat "$TESTCASES"/*.mux 2>/dev/null | tr 'A-Z' 'a-z' > "$WORK/corpus"
+
+: > "$WORK/uncovered"
+while read -r fn; do
+    low=$(printf '%s' "$fn" | tr 'A-Z' 'a-z')
+    if ! grep -qE "(^|[^a-z0-9_])${low}[[:space:]]*\(" "$WORK/corpus"; then
+        printf '%s\n' "$fn" >> "$WORK/uncovered"
+    fi
+done < "$WORK/user"
+
+n_all=$(wc -l < "$WORK/user")
+n_int=$(wc -l < "$WORK/internal")
+n_unc=$(wc -l < "$WORK/uncovered")
+n_cov=$((n_all - n_unc))
+pct=$(( n_cov * 100 / (n_all > 0 ? n_all : 1) ))
+
+echo "=== builtin corpus coverage (#1160) ==="
+printf '  user-callable builtins : %d\n' "$n_all"
+printf '  referenced in a test   : %d (%d%%)\n' "$n_cov" "$pct"
+printf '  no reference at all    : %d\n' "$n_unc"
+printf '  internal helpers (excluded): %d\n' "$n_int"
+
+# Tier 1 — the eval/composition family.  #1160 singled these out because
+# the JIT does its most aggressive work here (nested compilation, carg
+# marshalling, result-type handoff) and #1159 lived in exactly this set.
+TIER1="ULOCAL UDEFAULT DEFAULT EDEFAULT ZFUN SUBEVAL FOREACH MUNGE LMATH FILTERBOOL"
+t1_missing=""
+for f in $TIER1; do
+    if grep -qx "$f" "$WORK/uncovered"; then
+        t1_missing="$t1_missing $f"
+    fi
+done
+
+echo
+if [ -n "$t1_missing" ]; then
+    echo "  TIER 1 UNCOVERED:$t1_missing"
+else
+    echo "  Tier 1 (eval/composition): all covered"
+fi
+
+if [ "$MODE" = "--list" ]; then
+    echo
+    echo "Uncovered:"
+    fold -s -w 72 < "$WORK/uncovered" | sed 's/^/  /'
+    tr '\n' ' ' < "$WORK/uncovered" | fold -s -w 72 | sed 's/^/  /'
+    echo
+fi
+
+if [ "$MODE" = "--tier1" ] && [ -n "$t1_missing" ]; then
+    exit 1
+fi
+exit 0

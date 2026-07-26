@@ -1,0 +1,175 @@
+#
+# misc_builtin_fn.mux - Coverage for builtins with no corpus reference.
+#
+# #1160 measured the gap between registered builtins and builtins any test
+# mentions.  These eleven had zero references anywhere in testcases/ — not
+# a dedicated file, not incidentally inside another test:
+#
+#   lit  s  encrypt  decrypt  lrand  secs  startsecs
+#   xget  attrcnt  objmem  playmem
+#
+# They are grouped here because they share the property that made them
+# easy to start with: each can be asserted without a scenario driver, a
+# live connection, or a second player.  The rest of the #1160 list is
+# environment-dependent (comms, sessions, SQL, mail) and wants fixtures or
+# tests/scenario/ instead.
+#
+# Two conventions this file follows deliberately:
+#
+#   - No parenthesised text in an EXPECTED string.  An expected value
+#     carrying '(' has to survive argument scanning intact; when it did
+#     not, the pattern truncated and the leaked tail closed the enclosing
+#     cand() early, so the case passed vacuously (#1249).
+#
+#   - Assertions are semantic rather than literal where the literal form
+#     is environment-dependent.  attrcnt() and objmem() return numbers
+#     that legitimately vary, so the assertions pin the *relationship*
+#     (a new attribute increments the count) rather than a magic value.
+#
+@create test_misc_builtin_fn
+-
+@set test_misc_builtin_fn=INHERIT QUIET
+-
+&tr.tc000 test_misc_builtin_fn=
+  @log smoke=Beginning misc builtin test cases.;
+  &d.one me=hello world;
+  &d.two me=second value
+-
+#
+# Test Case #1 - lit() suppresses evaluation; s() performs it.
+#
+# Asserted by length rather than by matching the text, because the literal
+# form contains brackets and parentheses that an expected string should
+# not carry.  '[add(1,1)]' is 10 characters unevaluated and '2' is 1
+# character evaluated, so the pair discriminates in both directions: a
+# lit() that evaluated would report 1, and an s() that did not would
+# report a length instead of the sum.
+#
+&tr.tc001 test_misc_builtin_fn=
+  @if cand(
+        eq(strlen(lit([add(1,1)])), 10),
+        eq(strlen([add(1,1)]), 1),
+        strmatch(s(sum is [add(2,3)]), *is 5)
+      )=
+  {
+    @log smoke=TC001: lit suppresses eval, s performs it. Succeeded.
+  },
+  {
+    @log smoke=TC001: lit suppresses eval, s performs it. Failed (litlen=[strlen(lit([add(1,1)]))] evallen=[strlen([add(1,1)])] s=[s(sum is [add(2,3)])]).
+  }
+-
+#
+# Test Case #2 - encrypt()/decrypt() round-trip.
+#
+# Both directions matter.  Round-trip alone would pass if encrypt() were
+# the identity function, so the second condition asserts the ciphertext
+# actually differs from the plaintext.
+#
+&tr.tc002 test_misc_builtin_fn=
+  @if cand(
+        eq(comp(decrypt(encrypt(hello there,k9),k9), hello there), 0),
+        not(eq(comp(encrypt(hello there,k9), hello there), 0))
+      )=
+  {
+    @log smoke=TC002: encrypt/decrypt round-trip. Succeeded.
+  },
+  {
+    @log smoke=TC002: encrypt/decrypt round-trip. Failed (rt=[decrypt(encrypt(hello there,k9),k9)]).
+  }
+-
+#
+# Test Case #3 - lrand() count and bounds.
+#
+# The values are random, so the assertion pins what is invariant: the
+# number of elements produced, and that every element lies inside the
+# requested range.  lmin/lmax over the whole list checks all of them
+# without depending on any particular draw.
+#
+&tr.tc003 test_misc_builtin_fn=
+  @if cand(
+        eq(words(lrand(3,7,5)), 5),
+        gte(lmin(lrand(3,7,5)), 3),
+        lte(lmax(lrand(3,7,5)), 7)
+      )=
+  {
+    @log smoke=TC003: lrand count and bounds. Succeeded.
+  },
+  {
+    @log smoke=TC003: lrand count and bounds. Failed (n=[words(lrand(3,7,5))] lo=[lmin(lrand(3,7,5))] hi=[lmax(lrand(3,7,5))]).
+  }
+-
+#
+# Test Case #4 - secs() and startsecs() are numeric and ordered.
+#
+# Wall-clock values cannot be pinned, but the relationship can: the server
+# started before now, so secs() must not precede startsecs().
+#
+&tr.tc004 test_misc_builtin_fn=
+  @if cand(
+        isnum(secs()),
+        isnum(startsecs()),
+        gte(secs(), startsecs())
+      )=
+  {
+    @log smoke=TC004: secs and startsecs numeric and ordered. Succeeded.
+  },
+  {
+    @log smoke=TC004: secs and startsecs numeric and ordered. Failed (now=[secs()] start=[startsecs()]).
+  }
+-
+#
+# Test Case #5 - xget() agrees with get().
+#
+# xget(obj,attr) is the two-argument spelling of get(obj/attr); pinning
+# them equal is what makes this a real assertion rather than a smoke test
+# that xget() returned something.
+#
+&tr.tc005 test_misc_builtin_fn=
+  @if cand(
+        eq(comp(xget(me,d.one), get(me/d.one)), 0),
+        strmatch(xget(me,d.one), hello world),
+        eq(comp(xget(me,d.two), get(me/d.two)), 0)
+      )=
+  {
+    @log smoke=TC005: xget agrees with get. Succeeded.
+  },
+  {
+    @log smoke=TC005: xget agrees with get. Failed (x=[xget(me,d.one)] g=[get(me/d.one)]).
+  }
+-
+#
+# Test Case #6 - attrcnt() tracks attributes; objmem/playmem are numeric.
+#
+# attrcnt()'s absolute value depends on how many attributes the harness
+# has already set, so it is cross-checked against lattr() instead: the two
+# report the same set by different routes, and that identity holds however
+# many attributes exist.  objmem()/playmem() report sizes that vary by
+# build and database, so those are pinned only as non-negative numbers.
+#
+&tr.tc006 test_misc_builtin_fn=
+  @if cand(
+        eq(attrcnt(me), words(lattr(me/*))),
+        gt(attrcnt(me), 0),
+        isnum(objmem(me)),
+        gte(objmem(me), 0),
+        isnum(playmem(me)),
+        gte(playmem(me), 0)
+      )=
+  {
+    @log smoke=TC006: attrcnt agrees with lattr, objmem/playmem numeric. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: attrcnt agrees with lattr, objmem/playmem numeric. Failed (cnt=[attrcnt(me)] lattr=[words(lattr(me/*))] om=[objmem(me)] pm=[playmem(me)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_misc_builtin_fn=
+  @log smoke=End misc builtin test cases.;
+  @notify smoke
+-
+drop test_misc_builtin_fn
+-
+#
+# End of Test Cases
+#
