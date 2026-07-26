@@ -15,6 +15,11 @@
 #define SCHANNEL_BUFFER_EXTRA_FLAG     (16)
 #define SCHANNEL_BUFFER_ALERT_FLAG     (32)
 
+// Cap handshake / incomplete ciphertext reassembly (Pass 11 residual #1282).
+// One TLS record is ≤ ~16 KiB; handshake cert chains can be larger.  Past
+// this, drop the session rather than grow without bound under a flood.
+static constexpr size_t kMaxSchannelWireBuffer = 256 * 1024;
+
 namespace ganl {
 
     // --- SessionContext Implementation ---
@@ -1051,6 +1056,15 @@ namespace ganl {
 
         // Append new incoming data to the PERSISTENT handshake buffer
         if (encrypted_in.readableBytes() > 0) {
+            if (context.handshakeBuffer.size() + encrypted_in.readableBytes()
+                > kMaxSchannelWireBuffer) {
+                context.lastError = "TLS handshake buffer exceeds cap";
+                GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError
+                    << " (size=" << context.handshakeBuffer.size()
+                    << " + in=" << encrypted_in.readableBytes() << ")");
+                context.handshakeBuffer.clear();
+                return TlsResult::Error;
+            }
             size_t originalSize = context.handshakeBuffer.size();
             context.handshakeBuffer.insert(context.handshakeBuffer.end(),
                 encrypted_in.readPtr(),
@@ -1294,6 +1308,15 @@ namespace ganl {
 
         // Add incoming data to incomplete buffer if we have any
         if (encrypted_in.readableBytes() > 0) {
+            if (context.incompleteBuffer.size() + encrypted_in.readableBytes()
+                > kMaxSchannelWireBuffer) {
+                context.lastError = "TLS incomplete buffer exceeds cap";
+                GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError
+                    << " (size=" << context.incompleteBuffer.size()
+                    << " + in=" << encrypted_in.readableBytes() << ")");
+                context.incompleteBuffer.clear();
+                return TlsResult::Error;
+            }
             size_t originalSize = context.incompleteBuffer.size();
             context.incompleteBuffer.resize(originalSize + encrypted_in.readableBytes());
             memcpy(context.incompleteBuffer.data() + originalSize, encrypted_in.readPtr(), encrypted_in.readableBytes());
