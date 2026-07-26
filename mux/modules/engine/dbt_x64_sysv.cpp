@@ -2731,22 +2731,8 @@ no_addr_fusion:
             case FP_FCMP: { // FEQ.D / FLT.D / FLE.D
                 int xs1 = fc_read(&e, &fc, insn.rs1);
                 int xs2 = fc_read(&e, &fc, insn.rs2);
-                emit_ucomisd(&e, xs1, xs2);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : X64_RAX;
-                switch (insn.funct3) {
-                case 2: // FEQ.D
-                    emit_setcc(&e, SETCC_E, rd);
-                    break;
-                case 1: // FLT.D
-                    emit_setcc(&e, SETCC_B, rd);
-                    break;
-                case 0: // FLE.D
-                    emit_setcc(&e, SETCC_AE, rd);
-                    // Actually FLE needs: ucomisd rs2, rs1 with AE
-                    // Let's use the correct order.
-                    break;
-                }
-                emit_movzx_r64_r8(&e, rd, rd);
+                emit_fcmp_d(&e, rd, xs1, xs2, insn.funct3);
                 break;
             }
             case FP_FSGNJ: { // FSGNJ.D / FSGNJN.D / FSGNJX.D
