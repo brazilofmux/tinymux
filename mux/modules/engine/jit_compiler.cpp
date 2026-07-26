@@ -5075,6 +5075,7 @@ FUNCTION(fun_jitstats)
 
     if (nfargs >= 1 && strcmp(reinterpret_cast<const char *>(fargs[0]), "reset") == 0) {
         memset(&s_jit_stats, 0, sizeof(s_jit_stats));
+        jit_lua_reset_stats();
         safe_str(T("OK"), buff, bufc);
         return;
     }
@@ -5128,6 +5129,27 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.bail_depth,
         (unsigned long long)s_jit_stats.bail_invk,
         (unsigned long long)s_jit_stats.bail_alarm);
+
+    // Append Lua JIT counters (#1316).  lua_run_fail incrementing while
+    // softcode still returns correct answers is the signature of a Lua JIT
+    // that compiles and then silently falls back to the interpreter.
+    if (n < static_cast<int>(LBUF_SIZE) - 256) {
+        lua_jit_counters lj = {};
+        jit_lua_get_stats(&lj);
+        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
+            " lua_compile_ok=%llu"
+            " lua_compile_fail=%llu"
+            " lua_run_ok=%llu"
+            " lua_run_fail=%llu"
+            " lua_cache_hits=%llu"
+            " lua_invalidations=%llu",
+            (unsigned long long)lj.compile_ok,
+            (unsigned long long)lj.compile_fail,
+            (unsigned long long)lj.run_ok,
+            (unsigned long long)lj.run_fail,
+            (unsigned long long)lj.cache_hits,
+            (unsigned long long)lj.invalidations);
+    }
 
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {
