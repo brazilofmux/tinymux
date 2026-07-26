@@ -2,19 +2,62 @@
 # cron_fn.mux - Test Cases for @cron, @crondel, @crontab.
 #
 # Note: Smoke tests run via @startup as Wizard (#1).
-# Since @cron is a command (not a function), we cannot capture its
-# return value. We exercise the commands to verify they don't crash
-# and check side effects where possible.
+#
+# @cron is a command, so there is no return value to capture, and cron
+# entries live only in a file-static in-memory list (cron_head in
+# mux/modules/engine/cron.cpp) with no attribute persistence and no
+# softcode function exposing them.  That is why every case here used to
+# log Succeeded unconditionally -- six verdicts that could not go red
+# (#1438).
+#
+# They can be asserted after all.  do_cron, do_crondel and do_crontab
+# each notify() the executor with a distinct message, and notify() to an
+# object IS observable from softcode: give the object MONITOR plus a
+# @listen pattern and its @aahear fires with the text in %0.  @crontab's
+# "Matched N cron entries." then reports the real length of the in-memory
+# list, so add and delete become verifiable state changes rather than
+# commands that merely did not crash.
+#
+# Three details make this work, each of which cost a run to find:
+#
+#  1. The @listen pattern must be a bare *.  @listen fills %0..%9 with the
+#     WILDCARD matches, not the whole line, so a pattern of *cron* yields
+#     only the text before "cron" -- "Matched 3 cron entries." arrives as
+#     "Matched 3 ".  Filtering happens in the handler instead.
+#
+#  2. The entries are placed on a separate object, qsched, whose name
+#     contains no "cron".  @crontab prints one line per entry as
+#     "<object>/<attr>: <timestring> [next: ...]", so entries held on
+#     test_cron_fn itself would match the handler's *cron* filter and fire
+#     it several times for one command.  With qsched, exactly one message
+#     per command reaches the handler.
+#
+#  3. Sequencing is driven by the message, not by the queue.  @aahear is
+#     queued, and a @trig issued right after the command still runs BEFORE
+#     it -- every check then reads the previous command's message, which
+#     is how the first draft of this file failed with a one-step lag.  So
+#     the handler stores the text and triggers whatever step NEXT names.
+#     Nothing here waits a fixed time (#1394).
 #
 @create test_cron_fn
 -
-@set test_cron_fn=INHERIT QUIET
+@set test_cron_fn=INHERIT QUIET MONITOR
 -
 #
-# Helper attribute for cron to trigger.
+# The object the cron entries are attached to.  Deliberately not named
+# after cron -- see note 2 above.
 #
-&CRON_TARGET test_cron_fn=
-  think cron_target_fired
+@create qsched
+-
+@set qsched=INHERIT QUIET
+-
+&FIRE_ME qsched=
+  think qsched_fired
+-
+&LISTEN test_cron_fn=*
+-
+&AAHEAR test_cron_fn=
+  @switch %0=*cron*,{&HEARD me=%0; @trig me/[v(NEXT)]}
 -
 #
 # Beginning of Test Cases
@@ -23,52 +66,146 @@
   @log smoke=Beginning @cron test cases.
 -
 #
-# Test Case #1 - @cron with valid args does not crash.
+# Test Case #1 - @cron with valid args adds an entry.
 #
 &tr.tc001 test_cron_fn=
-  @cron me/CRON_TARGET = 0 * * * *;
-  @log smoke=TC001: @cron basic add. Succeeded.
+  &HEARD me=;
+  &DONE me=;
+  &NEXT me=tr.s001;
+  @wait 20 {@trig me/tr.guard};
+  @cron qsched/FIRE_ME = 0 * * * *
+-
+&tr.s001 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Cron entry added.)=
+  {
+    @log smoke=TC001: @cron basic add. Succeeded.
+  },
+  {
+    @log smoke=TC001: @cron basic add. Failed (heard=%q0).
+  };
+  &NEXT me=tr.s002;
+  @cron qsched/FIRE_ME = */15 * * * *
 -
 #
-# Test Case #2 - @cron with step syntax does not crash.
+# Test Case #2 - @cron with step syntax adds a second, distinct entry.
 #
-&tr.tc002 test_cron_fn=
-  @cron me/CRON_TARGET = */15 * * * *;
-  @log smoke=TC002: @cron step syntax. Succeeded.
+&tr.s002 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Cron entry added.)=
+  {
+    @log smoke=TC002: @cron step syntax. Succeeded.
+  },
+  {
+    @log smoke=TC002: @cron step syntax. Failed (heard=%q0).
+  };
+  &NEXT me=tr.s003;
+  @cron qsched/FIRE_ME = 0 9-17 * * mon-fri
 -
 #
-# Test Case #3 - @cron with range syntax does not crash.
+# Test Case #3 - @cron with range and day-name syntax.
 #
-&tr.tc003 test_cron_fn=
-  @cron me/CRON_TARGET = 0 9-17 * * mon-fri;
-  @log smoke=TC003: @cron range syntax. Succeeded.
+&tr.s003 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Cron entry added.)=
+  {
+    @log smoke=TC003: @cron range syntax. Succeeded.
+  },
+  {
+    @log smoke=TC003: @cron range syntax. Failed (heard=%q0).
+  };
+  &NEXT me=tr.s004;
+  @crontab qsched
 -
 #
-# Test Case #4 - @crontab does not crash.
+# Test Case #4 - @crontab reports the three entries just added.
 #
-&tr.tc004 test_cron_fn=
-  @crontab me;
-  @log smoke=TC004: @crontab. Succeeded.
+# This is what turns the three cases above from "did not crash" into "the
+# entry is actually in the list".
+#
+&tr.s004 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Matched 3 cron entries.)=
+  {
+    @log smoke=TC004: @crontab counts the added entries. Succeeded.
+  },
+  {
+    @log smoke=TC004: @crontab counts the added entries. Failed (heard=%q0, expected Matched 3 cron entries.).
+  };
+  &NEXT me=tr.s005;
+  @cron qsched/FIRE_ME = 0 * * * *
 -
 #
-# Test Case #5 - @crondel specific attr does not crash.
+# Test Case #5 - a duplicate is refused.  Never covered before.
 #
-&tr.tc005 test_cron_fn=
-  @crondel me/CRON_TARGET;
-  @log smoke=TC005: @crondel specific. Succeeded.
+&tr.s005 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), That cron entry already exists.)=
+  {
+    @log smoke=TC005: @cron rejects a duplicate. Succeeded.
+  },
+  {
+    @log smoke=TC005: @cron rejects a duplicate. Failed (heard=%q0).
+  };
+  &NEXT me=tr.s006;
+  @cron qsched/FIRE_ME = 99 99 99 99 99
 -
 #
-# Test Case #6 - @crondel all does not crash.
+# Test Case #6 - a malformed timestring is rejected.  Also new.
 #
-&tr.tc006 test_cron_fn=
-  @cron me/CRON_TARGET = 0 0 * * *;
-  @crondel me;
-  @log smoke=TC006: @crondel all. Succeeded.;
+&tr.s006 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Syntax errors. No cron entry made.)=
+  {
+    @log smoke=TC006: @cron rejects a bad timestring. Succeeded.
+  },
+  {
+    @log smoke=TC006: @cron rejects a bad timestring. Failed (heard=%q0).
+  };
+  &NEXT me=tr.s007;
+  @crondel qsched/FIRE_ME
+-
+#
+# Test Case #7 - @crondel removes every entry for the attribute.
+#
+&tr.s007 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Removed 3 cron entries.)=
+  {
+    @log smoke=TC007: @crondel removes the attribute's entries. Succeeded.
+  },
+  {
+    @log smoke=TC007: @crondel removes the attribute's entries. Failed (heard=%q0, expected Removed 3 cron entries.).
+  };
+  &NEXT me=tr.s008;
+  @crontab qsched
+-
+#
+# Test Case #8 - and the list is empty afterwards.
+#
+&tr.s008 test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Matched 0 cron entries.)=
+  {
+    @log smoke=TC008: @crontab is empty after @crondel. Succeeded.
+  },
+  {
+    @log smoke=TC008: @crontab is empty after @crondel. Failed (heard=%q0).
+  };
+  &DONE me=1;
   @trig me/tr.done
+-
+#
+# Stall guard.  The chain is driven by cron's replies, so a regression
+# that stops one arriving would otherwise end the file silently -- no
+# verdict at all, which reads as coverage in a green run (#1391).  This
+# is the one timed wait in the file, and it exists only to make that
+# failure mode loud.
+#
+&tr.guard test_cron_fn=
+  @switch [get(me/DONE)]=1,,
+  {
+    @log smoke=TC00x: @cron chain stalled, no reply for step [get(me/NEXT)]. Failed (last heard=[get(me/HEARD)]).;
+    @trig me/tr.done
+  }
 -
 &tr.done test_cron_fn=
   @log smoke=End @cron test cases.;
   @notify smoke
 -
 drop test_cron_fn
+-
+drop qsched
 -
