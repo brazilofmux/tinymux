@@ -6339,6 +6339,12 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                 bool bPrecision = false;
                 int nLongs = 0;
 
+                // Where this conversion spec began, so an unimplemented one
+                // can be echoed literally instead of killing the process
+                // (#1429).
+                //
+                size_t iFmtSpec = iFmt;
+
                 iFmt++;
                 ncpFmt--;
 
@@ -6698,10 +6704,40 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                     }
                     else
                     {
-                        mux_assert(0);
-
+                        // An unimplemented conversion.  This used to be
+                        // mux_assert(0), which is a hard process kill in the
+                        // shipping build -- mux_assert has no NDEBUG guard and
+                        // AssertionFailed calls abort() unconditionally.  So an
+                        // ordinary, correct-looking format string took a live
+                        // netmux down: #1382 did it twice, in @list and in
+                        // astbench(), and both were fixed by rewriting the call
+                        // site rather than the formatter.
+                        //
+                        // #1416 implemented the conversions people actually
+                        // reach for, but the shape that produced those bugs
+                        // survives it -- the restriction is invisible at the
+                        // call site, mux_sprintf looks like sprintf, and
+                        // nothing about T("%+d") suggests it is fatal.
+                        //
+                        // Echo the spec literally and carry on.  This function
+                        // is already a best-effort formatter: it truncates when
+                        // it runs out of room rather than failing, and callers
+                        // are written against that contract.  Imperfect output
+                        // beats no server, and echoing rather than dropping
+                        // leaves the offending spec visible in the output where
+                        // someone can see it (#1429).
+                        //
                         iFmt += utf8_FirstByte[pFmt[iFmt]];
                         ncpFmt--;
+
+                        size_t nSpec = iFmt - iFmtSpec;
+                        if (nLimit < iBuffer + nSpec)
+                        {
+                            goto done;
+                        }
+                        memcpy(pBuffer + iBuffer, pFmt + iFmtSpec, nSpec);
+                        iBuffer += nSpec;
+                        break;
                     }
                 }
             }

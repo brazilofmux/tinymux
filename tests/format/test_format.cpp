@@ -249,6 +249,71 @@ static void test_truncation(void)
     }
 }
 
+// ---------------------------------------------------------------------------
+// Unimplemented conversions must not kill the process (#1429).
+//
+// mux_assert(0) has no NDEBUG guard and AssertionFailed calls abort()
+// unconditionally, so every one of these used to take a live netmux down --
+// reached from an ordinary format string that looks like any other.  The
+// contract now is best-effort: echo the spec and carry on, the same way the
+// formatter already truncates rather than failing when it runs out of room.
+//
+// The exact rendering is deliberately NOT pinned against snprintf here.  libc
+// implements these; we do not, and asserting equality would be asserting that
+// we implement them.  What is pinned is that the call returns, terminates the
+// buffer, stays in bounds, and preserves the surrounding text.
+// ---------------------------------------------------------------------------
+
+static void test_unimplemented_survive(void)
+{
+    struct Case { const char *fmt; int kind; };
+    // kind: 0 = int arg, 1 = double arg, 2 = unsigned arg
+    const Case cases[] = {
+        {"%+d", 0}, {"% d", 0}, {"%#o", 2}, {"%#x", 2},
+        {"%+f", 1}, {"%hd", 0}, {"%a",  1},
+    };
+
+    for (const Case &c : cases)
+    {
+        std::string fmt = std::string("[") + c.fmt + "]";
+        UTF8 buf[LBUF_SIZE];
+        memset(buf, 0x7F, 64);
+
+        std::string got;
+        if (1 == c.kind)      got = mux_fmt(fmt.c_str(), 1.5);
+        else if (2 == c.kind) got = mux_fmt(fmt.c_str(), 42u);
+        else                  got = mux_fmt(fmt.c_str(), 42);
+
+        // Survived, is terminated, and kept the surrounding literal text.
+        bool ok = (got.size() >= 2)
+               && ('[' == got.front())
+               && (']' == got.back())
+               && (got.size() < LBUF_SIZE);
+        if (ok)
+        {
+            g_pass++;
+        }
+        else
+        {
+            g_fail++;
+            printf("not ok - unimplemented %-5s produced [%s]\n", c.fmt, got.c_str());
+        }
+    }
+
+    // Text after an unimplemented spec must still be emitted -- the old
+    // behaviour never got there at all.
+    std::string tail = mux_fmt("a%+db", 7);
+    if (tail.size() >= 2 && 'a' == tail.front() && 'b' == tail.back())
+    {
+        g_pass++;
+    }
+    else
+    {
+        g_fail++;
+        printf("not ok - text after unimplemented spec lost: [%s]\n", tail.c_str());
+    }
+}
+
 int main(void)
 {
     printf("=== mux_vsnprintf differential tests (vs snprintf) ===\n");
@@ -258,6 +323,7 @@ int main(void)
     test_floats();
     test_float_specials();
     test_truncation();
+    test_unimplemented_survive();
 
     printf("=== %d passed, %d failed ===\n", g_pass, g_fail);
     return (0 == g_fail) ? 0 : 1;
