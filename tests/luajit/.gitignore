@@ -1,0 +1,7 @@
+# Scratch game directory for a run in progress.
+work/
+
+# Workdirs preserved from a failed run (#1446): core file, out.log and the
+# scratch database.  Kept deliberately rather than cleaned up, so an
+# intermittent crash is diagnosable -- delete them by hand when done.
+work.fail.*/
