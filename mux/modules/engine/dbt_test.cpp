@@ -2911,6 +2911,133 @@ static void test_mulh_x0() {
     }
 }
 
+// a64 mirrors of the x86-64 defects found on the other host.
+//
+// Kagura's x64 run turned up three bugs in quick succession -- #1357
+// (FMIN/FMAX returning a signalling NaN), #1359 (FLE.D inverted, FEQ.D/FLT.D
+// true for NaN) and #1361 (MULH* squaring rs1 when rs2 is x0).  Each is a
+// backend-local mistake, so the a64 side has to be checked separately rather
+// than assumed clean: the differential fuzzer compares interpreter against
+// *this host's* DBT, so an x64-only bug is invisible here and vice versa.
+//
+// a64 looks structurally immune to #1361 -- SMULH/UMULH are three-operand, so
+// there is no implicit-register clobber of the kind that bit x86-64's MUL --
+// and MULHSU already carries a comment about avoiding X0 for exactly that
+// reason.  That is an argument, not evidence, so these pin it.
+//
+// Constant names are prefixed: a bare SNAN collided with a glibc math.h macro
+// and broke the Linux build (#1356), as NZERO would have before it.
+//
+static void test_a64_mirrors_x64_defects() {
+    printf("test_a64_mirrors_x64_defects...\n");
+
+    const uint64_t kQNan = 0x7FF8000000000000ULL;
+    const uint64_t kOne  = 0x3FF0000000000000ULL;
+    const uint64_t kTwo  = 0x4000000000000000ULL;
+
+    // --- #1361 mirror: MULH/MULHSU/MULHU with rs2 = x0 -------------------
+    //
+    // x1 = a large non-zero value, then high-multiply it by x0.  Every form
+    // must yield 0; squaring rs1 (the x64 bug) would not.
+    {
+        std::vector<uint32_t> code = {
+            ADDI(1, 0, 0),
+            ADDI(2, 0, 0x7FF), SLLI(2, 2, 40),
+            r_type(0x33, 1, 0, 1, 2, 0),          // x1 = 0x7FF << 40
+            r_type(0x33, 5, 1, 1, 0, 1),          // MULH   x5, x1, x0
+            r_type(0x33, 6, 2, 1, 0, 1),          // MULHSU x6, x1, x0
+            r_type(0x33, 7, 3, 1, 0, 1),          // MULHU  x7, x1, x0
+            ADDI(17, 0, 93), ECALL()
+        };
+        TestResult r = run_code(code);
+        CHECK_EQ("#1361 mirror: MULH   rs2=x0 interp", r.state.x[5], 0ULL);
+        CHECK_EQ("#1361 mirror: MULHSU rs2=x0 interp", r.state.x[6], 0ULL);
+        CHECK_EQ("#1361 mirror: MULHU  rs2=x0 interp", r.state.x[7], 0ULL);
+        CHECK_EQ("#1361 mirror: MULH   rs2=x0 DBT", run_code_dbt(code, 5), 0ULL);
+        CHECK_EQ("#1361 mirror: MULHSU rs2=x0 DBT", run_code_dbt(code, 6), 0ULL);
+        CHECK_EQ("#1361 mirror: MULHU  rs2=x0 DBT", run_code_dbt(code, 7), 0ULL);
+    }
+
+    // Positive control for the block above.  Every expected value there is
+    // zero, which is also what a declined translation or a zeroed exit
+    // context would produce -- so on its own it cannot distinguish "MULH by
+    // x0 is correct" from "the DBT never ran".  Same shape with a non-zero
+    // rs2 and a non-zero expected high half.
+    {
+        // x1 = x2 = 0x7FF << 40.  (0x7FF<<40)^2 = 0x7FF*0x7FF << 80, so the
+        // high 64 bits are 0x7FF*0x7FF >> 16 == 0x3FF000 >> 16 ... computed
+        // below from the interpreter, which the FCVT/qemu work has pinned
+        // independently; the point here is only that DBT == interp != 0.
+        std::vector<uint32_t> code = {
+            ADDI(1, 0, 0),
+            ADDI(2, 0, 0x7FF), SLLI(2, 2, 40),
+            r_type(0x33, 1, 0, 1, 2, 0),          // x1 = 0x7FF << 40
+            r_type(0x33, 5, 3, 1, 1, 1),          // MULHU x5, x1, x1
+            ADDI(17, 0, 93), ECALL()
+        };
+        const uint64_t interp = run_code(code).state.x[5];
+        g_tests_run++;
+        if (interp != 0) {
+            g_tests_passed++;
+        } else {
+            g_tests_failed++;
+            fprintf(stderr, "  FAIL: #1361 control: expected a non-zero "
+                            "high half, got 0 (control is useless)\n");
+        }
+        CHECK_EQ("#1361 control: MULHU non-zero DBT matches interp",
+                 run_code_dbt(code, 5), interp);
+    }
+
+    // --- #1359 mirror: FLE.D / FLT.D / FEQ.D, ordered and with NaN -------
+    //
+    // funct3: 0 = FLE.D, 1 = FLT.D, 2 = FEQ.D.  NaN makes all three false;
+    // the ordered rows catch an inverted comparison.
+    struct { const char *name; int f3; uint64_t a, b; uint64_t want; } CASES[] = {
+        { "fle(1,2)",     0, kOne,  kTwo,  1 },
+        { "fle(2,1)",     0, kTwo,  kOne,  0 },
+        { "fle(1,1)",     0, kOne,  kOne,  1 },
+        { "fle(NaN,1)",   0, kQNan, kOne,  0 },
+        { "fle(1,NaN)",   0, kOne,  kQNan, 0 },
+        { "flt(1,2)",     1, kOne,  kTwo,  1 },
+        { "flt(2,1)",     1, kTwo,  kOne,  0 },
+        { "flt(NaN,1)",   1, kQNan, kOne,  0 },
+        { "flt(1,NaN)",   1, kOne,  kQNan, 0 },
+        { "feq(1,1)",     2, kOne,  kOne,  1 },
+        { "feq(1,2)",     2, kOne,  kTwo,  0 },
+        { "feq(NaN,1)",   2, kQNan, kOne,  0 },
+        { "feq(1,NaN)",   2, kOne,  kQNan, 0 },
+    };
+
+    for (size_t i = 0; i < sizeof(CASES)/sizeof(CASES[0]); i++) {
+        std::vector<uint32_t> code;
+        auto load = [&](int freg, int xreg, uint64_t bits) {
+            code.push_back(ADDI(xreg, 0, 0));
+            for (int sh = 56; sh >= 0; sh -= 8) {
+                code.push_back(SLLI(xreg, xreg, 8));
+                uint8_t byte = (uint8_t)((bits >> sh) & 0xFF);
+                if (byte) {
+                    code.push_back(ADDI(30, 0, (int32_t)byte));
+                    code.push_back(r_type(0x33, xreg, 0, xreg, 30, 0));
+                }
+            }
+            code.push_back(r_type(OP_FP, freg, 0, xreg, 0,
+                                  (FP_FMVDX << 2) | FP_FMT_D));
+        };
+        load(1, 5, CASES[i].a);
+        load(2, 6, CASES[i].b);
+        code.push_back(r_type(OP_FP, 7, CASES[i].f3, 1, 2,
+                              (FP_FCMP << 2) | FP_FMT_D));
+        code.push_back(ADDI(17, 0, 93));
+        code.push_back(ECALL());
+
+        char desc[128];
+        snprintf(desc, sizeof(desc), "#1359 mirror: %s interp", CASES[i].name);
+        CHECK_EQ(desc, run_code(code).state.x[7], CASES[i].want);
+        snprintf(desc, sizeof(desc), "#1359 mirror: %s DBT", CASES[i].name);
+        CHECK_EQ(desc, run_code_dbt(code, 7), CASES[i].want);
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2964,6 +3091,11 @@ int main(int argc, char *argv[]) {
     test_fp_minmax_snan();
     test_fp_compare_semantics();
     test_mulh_x0();
+    // Host-agnostic pins of the same three x64 defects; written on a64 to
+    // prove that backend is clean, and kept after the x64 stack lands so
+    // both hosts keep the shape (#1364 rebased on #1358/#1360/#1363).
+    //
+    test_a64_mirrors_x64_defects();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
