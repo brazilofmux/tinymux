@@ -162,6 +162,38 @@ test-netaddr:
 # cost rather than for a defect.  The timeouts are raised as well, since an
 # instrumented smoke run legitimately takes several times longer.
 ASAN_SMOKE_EXCLUDE = rvbench_fn
+
+# LeakSanitizer is fatal to the harness, not merely noisy.  A long-lived
+# server legitimately does not free everything at exit, and LSan's nonzero
+# exit status at shutdown makes Makesmoke report "ERROR: muxscript failed"
+# before a single test runs.  Measured on a sanitizer build of this tree:
+#
+#   default ASAN_OPTIONS           muxscript exit=1, "detected memory leaks"
+#   ASAN_OPTIONS=detect_leaks=0    exit=0
+#
+# Leak hunting stays available and opt-in -- there are ~500 KB in ~460
+# allocations to look at when someone wants them:
+#
+#   ASAN_OPTIONS=detect_leaks=1 make test-asan
+#
+# Both honour a value already in the environment, so either can be overridden.
+ASAN_ENV = ASAN_OPTIONS=$${ASAN_OPTIONS:-detect_leaks=0} \
+           UBSAN_OPTIONS=$${UBSAN_OPTIONS:-print_stacktrace=1}
+
+# The tests/ islands build their own binaries from their own Makefiles, so
+# they are NOT sanitizer-instrumented even when libmux is, and ASan refuses
+# to start:
+#
+#   ASan runtime does not come first in initial library list; you should
+#   either link runtime to your application or manually preload it
+#
+# test-format and test-dbt both died on this immediately.  Preloading the
+# runtime is the documented remedy and keeps the islands out of the configure
+# plumbing.  Resolved from the compiler rather than hardcoded, and empty when
+# unavailable so an unusual toolchain degrades to the original error rather
+# than a confusing LD_PRELOAD failure.
+ASAN_PRELOAD = $(shell $(CC) -print-file-name=libasan.so 2>/dev/null | grep / || true)
+ASAN_ISLAND_ENV = $(if $(ASAN_PRELOAD),LD_PRELOAD=$(ASAN_PRELOAD),) $(ASAN_ENV)
 test-asan:
 	@if ! grep -q 'fsanitize' mux/config.status 2>/dev/null; then \
 	    echo "==> test-asan: this tree is not configured with sanitizers."; \
@@ -169,19 +201,19 @@ test-asan:
 	    exit 1; \
 	fi
 	@echo "==> Running the suites under sanitizers"
-	$(MAKE) test-format
-	$(MAKE) test-netaddr
-	$(MAKE) test-alarm
-	$(MAKE) test-dbt
-	$(MAKE) test-ganl
-	$(MAKE) test-jit-qreg
-	$(MAKE) test-jit-ifelse
-	$(MAKE) test-lua-ecall
-	$(MAKE) test-scenario
-	cd testcases && SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" ./tools/Makesmoke \
-	    && SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" ./tools/Smoke \
+	$(ASAN_ISLAND_ENV) $(MAKE) test-format
+	$(ASAN_ISLAND_ENV) $(MAKE) test-netaddr
+	$(ASAN_ISLAND_ENV) $(MAKE) test-alarm
+	$(ASAN_ISLAND_ENV) $(MAKE) test-dbt
+	$(ASAN_ISLAND_ENV) $(MAKE) test-ganl
+	$(ASAN_ISLAND_ENV) $(MAKE) test-jit-qreg
+	$(ASAN_ISLAND_ENV) $(MAKE) test-jit-ifelse
+	$(ASAN_ISLAND_ENV) $(MAKE) test-lua-ecall
+	$(ASAN_ISLAND_ENV) $(MAKE) test-scenario
+	cd testcases && $(ASAN_ENV) SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" ./tools/Makesmoke \
+	    && $(ASAN_ENV) SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" ./tools/Smoke \
 	        --activity-timeout 300 --wallclock-timeout 3600
-	cd testcases && SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" \
+	cd testcases && $(ASAN_ENV) SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" \
 	    SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke \
 	        --activity-timeout 300 --wallclock-timeout 3600
 
