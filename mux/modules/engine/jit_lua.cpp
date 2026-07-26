@@ -243,6 +243,12 @@ public:
             jit_compact_program(prog);
         }
 
+        // Drain before inserting, not after: a flush deferred from earlier in
+        // this command would otherwise wipe the program we just compiled and
+        // hand back a key that no longer resolves.
+        //
+        jit_flush_pending_caches();
+
         uint64_t key = s_next_key.fetch_add(1, std::memory_order_relaxed);
         s_lua_cache[key] = std::move(prog);
         *pKey = key;
@@ -256,6 +262,13 @@ public:
         UTF8 *pResult, size_t nResultMax, size_t *pnResultLen,
         void *pLuaState) override
     {
+        // Apply a deferred flush before taking a pointer into the cache:
+        // &it->second below is held by run_cached_program for the whole
+        // execution, and a flush arriving mid-run would free it (#1316).
+        // A drop here is a miss, and the caller falls back to the Lua VM.
+        //
+        jit_flush_pending_caches();
+
         auto it = s_lua_cache.find(key);
         if (it == s_lua_cache.end()) return MUX_E_NOTFOUND;
 

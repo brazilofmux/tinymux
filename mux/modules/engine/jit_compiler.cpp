@@ -2152,8 +2152,18 @@ static void qreg_longbit_update(eval_ctx *ec, int regnum, size_t vlen)
 // cached compiled_program (owned by the cache — do not free).
 // Returns nullptr on compilation failure.
 //
+// Perform a jitstats(flush) that had to wait for the JIT to become quiet.
+// Defined below with s_run_cached_depth; called here because this is the
+// only place a caller obtains a compiled_program * for the softcode route,
+// so it is the last moment at which clearing the cache frees nothing that
+// is already spoken for (#1316).
+//
+static void jit_drain_pending_flush(void);
+
 static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
                                          int eval = EV_FCHECK | EV_EVAL) {
+    jit_drain_pending_flush();
+
     std::string key = compile_cache_key(expr, nLen, eval);
 
     auto it = s_compile_cache.find(key);
@@ -2579,6 +2589,53 @@ static shared_heap_t s_shared_heap;
 // outer softcode program is live (#1309 nested corruption / hang).
 //
 static int s_run_cached_depth = 0;
+
+// Deferred half of jitstats(flush) (#1316).
+//
+// s_compile_cache holds compiled_program by value and compile_cached() hands
+// back a pointer into it, which run_cached_program holds across the whole
+// execution -- and jit_eval still reads prog->ecalls after that returns.
+// Compiled code reaches the interpreter through ECALLs (u(), ufuns), so
+// fun_jitstats can run with a live program on the stack; clearing the cache
+// there frees the program that is mid-flight.  It showed up as jitstats(flush)
+// returning an empty string instead of OK on the compiled route, because the
+// post-run harvest reads prog->out_addr out of freed memory.
+//
+// So the SQLite DELETE and the write-queue drop happen immediately -- neither
+// frees anything a running program points at -- while the in-memory caches
+// wait until no program is live.  Draining at the top of compile_cached()
+// (and of the Lua Run/Compile entries) is what makes that safe: those are the
+// points where the caller does not yet hold a pointer, and s_run_cached_depth
+// == 0 means no outer run_cached_program frame holds one either.
+//
+static bool s_code_cache_flush_pending = false;
+
+static void jit_flush_memory_caches(void)
+{
+    s_compile_cache.clear();
+    s_compile_lru.clear();
+    s_dbt_last_program_id = 0;
+    s_runtime_buffer_program_id = 0;
+    jit_lua_clear_cache();
+}
+
+static void jit_drain_pending_flush(void)
+{
+    if (  s_code_cache_flush_pending
+       && 0 == s_run_cached_depth)
+    {
+        s_code_cache_flush_pending = false;
+        jit_flush_memory_caches();
+    }
+}
+
+// Same drain, reachable from jit_lua.cpp, which owns the other program cache
+// and takes a pointer into it the same way.
+//
+void jit_flush_pending_caches(void)
+{
+    jit_drain_pending_flush();
+}
 
 bool run_cached_program(compiled_program *prog,
                         dbref executor, dbref caller_db,
@@ -5108,11 +5165,18 @@ FUNCTION(fun_jitstats)
             if (g_pSQLiteBackend) {
                 ok = g_pSQLiteBackend->GetDB().CodeCacheFlush();
             }
-            s_compile_cache.clear();
-            s_compile_lru.clear();
-            s_dbt_last_program_id = 0;
-            s_runtime_buffer_program_id = 0;
-            jit_lua_clear_cache();
+            // The in-memory caches can only be cleared when no compiled
+            // program is live: an ECALL can reach this function from inside
+            // one, and clearing would free the program still executing.  See
+            // s_code_cache_flush_pending.  Nothing is lost by waiting -- the
+            // drain runs before the next program is looked up, so no stale
+            // native code can be served in between.
+            //
+            if (0 == s_run_cached_depth) {
+                jit_flush_memory_caches();
+            } else {
+                s_code_cache_flush_pending = true;
+            }
             if (!ok) {
                 safe_str(T("#-1 CODE CACHE FLUSH FAILED"), buff, bufc);
                 return;
