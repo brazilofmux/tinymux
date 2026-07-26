@@ -788,7 +788,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_LUA_GETI:
     case HIR_LUA_ALOAD:
     case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
-    case HIR_NEG: case HIR_ABS: case HIR_SIGN:
+    case HIR_NEG: case HIR_SIGN:
     case HIR_MAX: case HIR_MIN:
     case HIR_EQ:  case HIR_NE:  case HIR_GT:  case HIR_LT:
     case HIR_GE:  case HIR_LE:
@@ -1516,29 +1516,6 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
-            // ABS: branchless absolute value.
-            // SRA tmp, rs, 63 (sign mask: all 1s if negative, all 0s if positive)
-            // XOR dest, rs, tmp
-            // SUB dest, dest, tmp
-            case HIR_ABS: {
-                int s1 = h.src1[i];
-                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
-                uint8_t reg = int_alloc.reg[i];
-                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
-                uint8_t dest = spilled ? RA_SCRATCH : reg;
-                if (!dest) break;
-                constexpr uint8_t t0 = 5;  // scratch for sign mask
-                // SRAI t0, r1, 63 — arithmetic shift right by 63
-                rc.code.push_back(rv_i_type(OP_IMM, t0, ALU_SRLI, r1, 63)
-                                  | (0x10u << 26));  // set funct6 high bit for SRAI
-                // XOR dest, r1, t0
-                rc.code.push_back(rv_r_type(OP_REG, dest, ALU_XOR, r1, t0, 0));
-                // SUB dest, dest, t0
-                rc.code.push_back(rv_SUB(dest, dest, t0));
-                ra_set_loc(rc, loc, int_alloc, i, dest);
-                break;
-            }
-
             // SIGN: returns -1, 0, or 1.
             // SLT t0, rs, x0   (t0 = 1 if rs < 0)
             // SLT dest, x0, rs (dest = 1 if rs > 0, i.e., 0 < rs)
@@ -2164,7 +2141,6 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_DIV:        return "DIV";
     case HIR_REM:        return "REM";
     case HIR_NEG:        return "NEG";
-    case HIR_ABS:        return "ABS";
     case HIR_SIGN:       return "SIGN";
     case HIR_MAX:        return "MAX";
     case HIR_MIN:        return "MIN";

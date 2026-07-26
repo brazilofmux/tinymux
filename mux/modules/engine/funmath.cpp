@@ -1169,6 +1169,21 @@ FUNCTION(fun_abs)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    // #1255: |INT64_MIN| is 2**63.  mux_atof can take the literal, but
+    // fval formats whole numbers near that magnitude as int64 and wraps
+    // back to a negative string — abs() returning a negative.  Reject
+    // the exact integer domain like iabs() (#1114): error beats silent
+    // nonsense.  Non-integer strings still take the float path.
+    //
+    int nDigits = 0;
+    if (  is_integer(fargs[0], &nDigits)
+       && 0 < nDigits
+       && mux_atoi64(fargs[0]) == INT64_MIN)
+    {
+        safe_range(buff, bufc);
+        return;
+    }
+
     double num = mux_atof(fargs[0]);
     if (0.0 == num)
     {

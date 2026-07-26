@@ -117,22 +117,16 @@
   }
 -
 #
-# Test Case #6 - abs/sign at boundary.
-# abs() and sign() use mux_atof + floating-point paths, not 64-bit
-# integer math.  The string representation of abs(INT64_MIN) and
-# sign(INT64_MIN) depends on double precision and formatting.
-#
-# AArch64/GCC:  "9223372036854775807 -1 1"
-#   SHA1 = 7559F505A95361A8A70E043F87F50C60660CEA60
-#   (abs(INT64_MIN) clamps to INT64_MAX on AArch64)
-# AMD64/GCC:    "-9223372036854775808 -1 1"
-#   SHA1 = C76CBDAD3533A3385AAC6910A5CA19160044CA73
-#   (abs(INT64_MIN) overflows to INT64_MIN on AMD64)
+# Test Case #6 - abs/sign at boundary (#1255).
+# abs(INT64_MIN) is out of domain — |INT64_MIN| is 2**63, which fval
+# cannot print as a non-negative int64.  Reject like iabs (#1114).
+# sign() remains float and still yields -1 / 1 for the extremes.
 #
 &tr.tc006 test_overflow_inject_fn=
-  @if cor(
-        strmatch([cat( abs(-9223372036854775808), sign(-9223372036854775808), sign(9223372036854775807) )], 9223372036854775807%b-1%b1),
-        strmatch([cat( abs(-9223372036854775808), sign(-9223372036854775808), sign(9223372036854775807) )], -9223372036854775808%b-1%b1)
+  @if cand(
+        strmatch(abs(-9223372036854775808), #-1*),
+        eq(sign(-9223372036854775808), -1),
+        eq(sign(9223372036854775807), 1)
       )=
   {
     @log smoke=TC006: abs/sign boundary. Succeeded.;

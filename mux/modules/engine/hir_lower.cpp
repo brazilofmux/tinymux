@@ -256,6 +256,17 @@ static bool try_fold(const std::string &func_name,
 
     // --- ABS(a) ---
     if (upper == "ABS" && nargs == 1) {
+        // #1255: |INT64_MIN| cannot format via fval as a non-negative int64.
+        // Match fun_abs / iabs and refuse the domain at const-fold too.
+        //
+        int nDigits = 0;
+        if (  is_integer(u8(args[0]), &nDigits)
+           && 0 < nDigits
+           && mux_atoi64(u8(args[0])) == INT64_MIN)
+        {
+            result = reinterpret_cast<const char *>(OUT_OF_RANGE);
+            return true;
+        }
         double d = mux_atof(u8(args[0]));
         result = format_double(fabs(d));
         return true;
@@ -3152,11 +3163,8 @@ general_lowering:
         return r;
     }
 
-    // ABS is intentionally NOT lowered to integer HIR_ABS (#1150).
-    // Softcode abs() is float (mux_atof/fval); HIR_ABS is signed-integer
-    // magnitude and is UB on INT64_MIN.  The float path (s_fp_unary →
-    // fabs / FMATH_FABS) matches the interpreter for both ints and
-    // decimals.  iabs() remains an ECALL (and rejects INT64_MIN, #1114).
+    // ABS: softcode abs() is float — see s_fp_unary (fabs).  Integer
+    // HIR_ABS was removed (#1150 / #1256).  iabs() remains an ECALL (#1114).
 
     // SIGN: sign of integer (-1, 0, 1).
     if (upper == "SIGN" && nargs == 1 && h.is_int(args[0])) {
