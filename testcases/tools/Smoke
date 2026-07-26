@@ -90,7 +90,8 @@ fi
 
 rm -rf "$DATA" logs text smoke.fail
 rm -f smoke.conf alias.conf compat.conf shutdown.status
-rm -f bin smoke.log netmux.log
+rm -f smoke.log netmux.log
+rm -rf bin
 
 # ---------------------------------------------------------------------------
 # Create fresh environment.
@@ -99,7 +100,7 @@ rm -f bin smoke.log netmux.log
 mkdir "$DATA"
 mkdir -p logs text
 
-[ ! -e bin ] && ln -s "$BIN" bin
+rm -rf bin && ln -s "$BIN" bin
 cp "$TC/../mux/game/alias.conf" .
 cp "$TC/../mux/game/compat.conf" .
 touch "$LOGFILE"
@@ -341,7 +342,8 @@ fi
 
 rm -f smoke.conf alias.conf compat.conf shutdown.status
 rm -rf "$DATA" logs text
-rm -f bin netmux.log
+rm -f netmux.log
+rm -rf bin
 
 # ---------------------------------------------------------------------------
 # Exit status.
