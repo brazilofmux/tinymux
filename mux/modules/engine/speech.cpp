@@ -48,7 +48,7 @@ static int idle_timeout_val(dbref player)
     dbref aowner;
     int aflags;
     LBuf ITbuffer = LBuf_Adopt(atr_get("idle_timeout_val.53", player, A_IDLETMOUT, &aowner, &aflags));
-    int idle_timeout = mux_atol(ITbuffer);
+    int idle_timeout = mux_atoi64(ITbuffer);
     return idle_timeout;
 }
 
@@ -693,7 +693,7 @@ void do_page
         UTF8 *p;
         for (p = st.parse(); p; p = st.parse())
         {
-            dbref target = mux_atol(p);
+            dbref target = mux_atoi64(p);
             if (  Good_obj(target)
                && isPlayer(target))
             {
@@ -1520,7 +1520,7 @@ void do_pemit_whisper
         UTF8 *r;
         for (r = st.parse(); r; r = st.parse())
         {
-            dbref target = mux_atol(r);
+            dbref target = mux_atoi64(r);
             if (Good_obj(target))
             {
                 if (!noisy_check_whisper_target(executor, target, key))

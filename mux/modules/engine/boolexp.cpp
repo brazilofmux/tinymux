@@ -373,7 +373,7 @@ static BOOLEXP *test_atr(UTF8 *s)
         {
             return TRUE_BOOLEXP;
         }
-        anum = mux_atol(buff);
+        anum = mux_atoi64(buff);
         if (anum <= 0)
         {
             return TRUE_BOOLEXP;
@@ -464,7 +464,7 @@ static BOOLEXP *parse_boolexp_L(void)
                     free_bool(b);
                     return TRUE_BOOLEXP;
                 }
-                b->thing = mux_atol(&buf[1]);
+                b->thing = mux_atoi64(&buf[1]);
                 if (!Good_dbref(b->thing))
                 {
                     free_bool(b);
@@ -503,7 +503,7 @@ static BOOLEXP *parse_boolexp_L(void)
                 free_bool(b);
                 return TRUE_BOOLEXP;
             }
-            b->thing = mux_atol(&buf[1]);
+            b->thing = mux_atoi64(&buf[1]);
             if (b->thing < 0)
             {
                 free_bool(b);

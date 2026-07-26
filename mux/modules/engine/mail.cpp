@@ -684,7 +684,7 @@ static int get_folder_number(dbref player, UTF8 *name)
                 p++;
             }
 
-            int iFolderNumber = mux_atol(p);
+            int iFolderNumber = mux_atoi64(p);
             free_lbuf(aFolders);
             return iFolderNumber;
         }
@@ -704,7 +704,7 @@ static int parse_folder(dbref player, UTF8 *folder_string)
     }
     if (mux_isdigit(*folder_string))
     {
-        int fnum = mux_atol(folder_string);
+        int fnum = mux_atoi64(folder_string);
         if (  fnum < 0
            || fnum > MAX_FOLDERS)
         {
@@ -786,7 +786,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             // We have a subrange, split it up and test to see if it is valid.
             //
             q++;
-            ms->low = mux_atol(p);
+            ms->low = mux_atoi64(p);
             if (ms->low <= 0)
             {
                 raw_notify(player, mailmsg[MAIL_INVALID_RANGE]);
@@ -800,7 +800,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             }
             else
             {
-                ms->high = mux_atol(q);
+                ms->high = mux_atoi64(q);
                 if (ms->low > ms->high)
                 {
                     raw_notify(player, mailmsg[MAIL_INVALID_RANGE]);
@@ -812,7 +812,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
         {
             // A single message.
             //
-            ms->low = ms->high = mux_atol(p);
+            ms->low = ms->high = mux_atoi64(p);
             if (ms->low <= 0)
             {
                 raw_notify(player, mailmsg[MAIL_INVALID_NUMBER]);
@@ -834,7 +834,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 raw_notify(player, mailmsg[MAIL_INVALID_RANGE]);
                 return false;
             }
-            ms->high = mux_atol(p);
+            ms->high = mux_atoi64(p);
             if (ms->high <= 0)
             {
                 raw_notify(player, mailmsg[MAIL_INVALID_RANGE]);
@@ -853,7 +853,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 return false;
             }
             ms->day_comp = 0;
-            ms->days = mux_atol(p);
+            ms->days = mux_atoi64(p);
             if (ms->days < 0)
             {
                 raw_notify(player, mailmsg[MAIL_INVALID_AGE]);
@@ -872,7 +872,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 return false;
             }
             ms->day_comp = -1;
-            ms->days = mux_atol(p);
+            ms->days = mux_atoi64(p);
             if (ms->days < 0)
             {
                 raw_notify(player, mailmsg[MAIL_INVALID_AGE]);
@@ -891,7 +891,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 return false;
             }
             ms->day_comp = 1;
-            ms->days = mux_atol(p);
+            ms->days = mux_atoi64(p);
             if (ms->days < 0)
             {
                 raw_notify(player, mailmsg[MAIL_INVALID_AGE]);
@@ -909,7 +909,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 raw_notify(player, mailmsg[MAIL_INVALID_DBREF]);
                 return false;
             }
-            ms->player = mux_atol(p);
+            ms->player = mux_atoi64(p);
             if (!Good_obj(ms->player) || !(ms->player))
             {
                 raw_notify(player, mailmsg[MAIL_INVALID_DBREF]);
@@ -1114,7 +1114,7 @@ static int player_folder(dbref player)
         set_player_folder(player, 0);
         return 0;
     }
-    int number = mux_atol(atrstr);
+    int number = mux_atoi64(atrstr);
     free_lbuf(atrstr);
     return number;
 }
@@ -1479,7 +1479,7 @@ static malias_t *get_malias(dbref player, UTF8 *alias, int *pnResult)
     {
         if (ExpMail(player))
         {
-            int x = mux_atol(alias + 1);
+            int x = mux_atoi64(alias + 1);
             if (x < 0 || x >= static_cast<int>(malias.size()))
             {
                 *pnResult = GMA_NOTFOUND;
@@ -1557,7 +1557,7 @@ static UTF8 *make_namelist(dbref player, UTF8 *arg)
             {
                 p++;
             }
-            dbref target = mux_atol(p);
+            dbref target = mux_atoi64(p);
             if (  Good_obj(target)
                && isPlayer(target))
             {
@@ -2411,7 +2411,7 @@ static void do_mail_fwd(dbref player, UTF8 *msg, UTF8 *tolist)
         raw_notify(player, T("MAIL: Too much @mail sent recently."));
         return;
     }
-    int num = mux_atol(msg);
+    int num = mux_atoi64(msg);
     if (!num)
     {
         raw_notify(player, T("MAIL: I don\xE2\x80\x99t understand that message number."));
@@ -2429,7 +2429,7 @@ static void do_mail_fwd(dbref player, UTF8 *msg, UTF8 *tolist)
     int iFlag = M_FORWARD;
     if (pValue)
     {
-        iFlag |= mux_atol(pValue);
+        iFlag |= mux_atoi64(pValue);
     }
     atr_add_raw(player, A_MAILFLAGS, mux_ltoa_t(iFlag));
 }
@@ -2452,7 +2452,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
         raw_notify(player, T("MAIL: Too much @mail sent recently."));
         return;
     }
-    int num = mux_atol(msg);
+    int num = mux_atoi64(msg);
     if (!num)
     {
         raw_notify(player, T("MAIL: I don\xE2\x80\x99t understand that message number."));
@@ -2484,7 +2484,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
         UTF8 *p;
         for (p = st.parse(); p; p = st.parse())
         {
-            if (mux_atol(p) != mp->from)
+            if (mux_atoi64(p) != mp->from)
             {
                 safe_chr('#', names, &bp);
                 safe_str(p, names, &bp);
@@ -2533,7 +2533,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
     int iFlag = M_REPLY;
     if (pValue)
     {
-        iFlag |= mux_atol(pValue);
+        iFlag |= mux_atoi64(pValue);
     }
     atr_add_raw(player, A_MAILFLAGS, mux_ltoa_t(iFlag));
 
@@ -3168,7 +3168,7 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
     }
     else if (*name == NUMBER_TOKEN)
     {
-        target = mux_atol(&name[1]);
+        target = mux_atoi64(&name[1]);
         if (!Good_obj(target) || !isPlayer(target))
         {
             target = NOTHING;
@@ -3538,7 +3538,7 @@ static void load_mail_V6(FILE *fp)
     while (  nullptr != p
           && strncmp(reinterpret_cast<char *>(nbuf1), "***", 3) != 0)
     {
-        dbref to = mux_atol(nbuf1);
+        dbref to = mux_atoi64(nbuf1);
         auto& lst = mail_storage[ to ];
         lst.emplace_back();
         mail& m = lst.back();
@@ -3565,7 +3565,7 @@ static void load_mail_V6(FILE *fp)
     while (  nullptr != p
           && strncmp(reinterpret_cast<char *>(nbuf1), "+++", 3) != 0)
     {
-        int number = mux_atol(nbuf1);
+        int number = mux_atoi64(nbuf1);
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
         new_mail_message(pBuffer, number);
         p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
@@ -3600,7 +3600,7 @@ static void load_mail_V5(FILE *fp)
     {
         pBufferUnicode = reinterpret_cast<UTF8 *>(nbuf1);
 
-        dbref to = mux_atol(pBufferUnicode);
+        dbref to = mux_atoi64(pBufferUnicode);
         auto& lst = mail_storage[to];
         lst.emplace_back();
         mail& m = lst.back();
@@ -3634,7 +3634,7 @@ static void load_mail_V5(FILE *fp)
           && strncmp(nbuf1, "+++", 3) != 0)
     {
         pBufferUnicode = reinterpret_cast<UTF8 *>(nbuf1);
-        int number = mux_atol(pBufferUnicode);
+        int number = mux_atoi64(pBufferUnicode);
         pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
         new_mail_message(pBufferUnicode, number);
@@ -3726,8 +3726,8 @@ static void malias_read(FILE *fp, bool bConvert)
         int numrecep = 0;
         if (p)
         {
-            m->owner = mux_atol(buffer);
-            numrecep = mux_atol(p + 1);
+            m->owner = mux_atoi64(buffer);
+            numrecep = mux_atoi64(p + 1);
         }
 
         // The format of @malias name is "N:<name>\n".
@@ -4072,7 +4072,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
         }
         else if (*head == '#')
         {
-            target = mux_atol(head + 1);
+            target = mux_atoi64(head + 1);
         }
         else
         {
@@ -4423,7 +4423,7 @@ static void mail_to_list(dbref player, UTF8 *list, UTF8 *subject, UTF8 *message,
             }
             else
             {
-                dbref target = mux_atol(head);
+                dbref target = mux_atoi64(head);
                 if (  Good_obj(target)
                    && isPlayer(target))
                 {
@@ -4580,7 +4580,7 @@ static void do_expmail_stop(dbref player, int flags)
         {
             UTF8 *mailsub   = atr_get("do_expmail_stop.3870", player, A_MAILSUB, &aowner, &aflags);
             UTF8 *mailflags = atr_get("do_expmail_stop.3871", player, A_MAILFLAGS, &aowner, &aflags);
-            mail_to_list(player, tolist, mailsub, pMailMsg, flags | mux_atol(mailflags), false);
+            mail_to_list(player, tolist, mailsub, pMailMsg, flags | mux_atoi64(mailflags), false);
             free_lbuf(mailflags);
             free_lbuf(mailsub);
 
@@ -5875,7 +5875,7 @@ int sqlite_load_mail(void)
             {
                 while (*p == ' ') p++;
                 if (*p == '\0') break;
-                m->list.push_back(mux_atol(p));
+                m->list.push_back(mux_atoi64(p));
                 while (*p && *p != ' ') p++;
             }
         }

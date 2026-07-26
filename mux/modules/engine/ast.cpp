@@ -2968,7 +2968,7 @@ FUNCTION(fun_astbench)
 
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
-    int iterations = mux_atol(fargs[1]);
+    int iterations = mux_atoi64(fargs[1]);
     if (nLen == 0 || iterations < 1) return;
     if (iterations > 100000) iterations = 100000;
 

@@ -58,7 +58,7 @@ bool parse_and_get_attrib
         int nargs = 1;
         if (mux_isdigit(*p))
         {
-            nargs = mux_atol(p);
+            nargs = mux_atoi64(p);
             while (mux_isdigit(*p)) p++;
             if (nargs < 1)  nargs = 1;
             if (nargs > 10) nargs = 10;
@@ -171,8 +171,8 @@ FUNCTION(fun_cwho)
 
     int pg_offset = 0;
     int pg_limit  = 0;
-    if (nfargs >= 3) pg_offset = mux_atol(fargs[2]);
-    if (nfargs >= 4) pg_limit  = mux_atol(fargs[3]);
+    if (nfargs >= 3) pg_offset = mux_atoi64(fargs[2]);
+    if (nfargs >= 4) pg_limit  = mux_atoi64(fargs[3]);
     if (pg_offset < 0) pg_offset = 0;
     if (pg_limit < 0)  pg_limit = 0;
 
@@ -818,7 +818,7 @@ FUNCTION(fun_create)
         }
         if (*fargs[1])
         {
-            cost = mux_atol(fargs[1]);
+            cost = mux_atoi64(fargs[1]);
             if (  cost < mudconf.createmin
                || mudconf.createmax < cost)
             {
@@ -1939,11 +1939,11 @@ FUNCTION(fun_columns)
         return;
     }
 
-    int nWidth = mux_atol(fargs[1]);
+    int nWidth = mux_atoi64(fargs[1]);
     int nIndent = 0;
     if (nfargs == 4)
     {
-        nIndent = mux_atol(fargs[3]);
+        nIndent = mux_atoi64(fargs[3]);
         if (nIndent < 0 || 77 < nIndent)
         {
             nIndent = 1;
@@ -2090,7 +2090,7 @@ FUNCTION(fun_table)
     int nLineLength = 78;
     if (nfargs >= 3)
     {
-        nLineLength = mux_atol(fargs[2]);
+        nLineLength = mux_atoi64(fargs[2]);
     }
 
     // Get field width.
@@ -2098,7 +2098,7 @@ FUNCTION(fun_table)
     int nFieldWidth = 10;
     if (nfargs >= 2)
     {
-        nFieldWidth = mux_atol(fargs[1]);
+        nFieldWidth = mux_atoi64(fargs[1]);
     }
     else
     {
@@ -2435,7 +2435,7 @@ FUNCTION(fun_left)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int nLeft = mux_atol(fargs[1]);
+    int nLeft = mux_atoi64(fargs[1]);
     if (nLeft < 0)
     {
         safe_range(buff, bufc);
@@ -2556,7 +2556,7 @@ FUNCTION(fun_mail)
         else
         {
             playerask = executor;
-            num = mux_atol(fargs[0]);
+            num = mux_atoi64(fargs[0]);
         }
     }
     else // if (nfargs == 2)
@@ -2570,7 +2570,7 @@ FUNCTION(fun_mail)
         else if (  (playerask == executor && !mudstate.nObjEvalNest)
                 || God(executor))
         {
-            num = mux_atol(fargs[1]);
+            num = mux_atoi64(fargs[1]);
         }
         else
         {
@@ -2654,7 +2654,7 @@ FUNCTION(fun_mailsubj)
     if (1 == nfargs)
     {
         playerask = executor;
-        num = mux_atol(fargs[0]);
+        num = mux_atoi64(fargs[0]);
     }
     else
     {
@@ -2667,7 +2667,7 @@ FUNCTION(fun_mailsubj)
         else if (  executor == playerask
                 || Wizard(executor))
         {
-            num = mux_atol(fargs[1]);
+            num = mux_atoi64(fargs[1]);
         }
         else
         {
@@ -2717,7 +2717,7 @@ FUNCTION(fun_mailfrom)
     if (nfargs == 1)
     {
         playerask = executor;
-        num = mux_atol(fargs[0]);
+        num = mux_atoi64(fargs[0]);
     }
     else // if (nfargs == 2)
     {
@@ -2730,7 +2730,7 @@ FUNCTION(fun_mailfrom)
         if (  playerask == executor
            || Wizard(executor))
         {
-            num = mux_atol(fargs[1]);
+            num = mux_atoi64(fargs[1]);
         }
         else
         {
@@ -2813,7 +2813,7 @@ FUNCTION(fun_mailreview)
             return;
         }
 
-        int num = mux_atol(fargs[1]);
+        int num = mux_atoi64(fargs[1]);
         if (num < 1)
         {
             safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
@@ -2958,8 +2958,8 @@ FUNCTION(fun_maillist)
 
     int pg_offset = 0;
     int pg_limit  = 0;
-    if (nfargs >= 2) pg_offset = mux_atol(fargs[1]);
-    if (nfargs >= 3) pg_limit  = mux_atol(fargs[2]);
+    if (nfargs >= 2) pg_offset = mux_atoi64(fargs[1]);
+    if (nfargs >= 3) pg_limit  = mux_atoi64(fargs[2]);
     if (pg_offset < 0) pg_offset = 0;
     if (pg_limit < 0)  pg_limit = 0;
 
@@ -3005,7 +3005,7 @@ FUNCTION(fun_mailinfo)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int num = mux_atol(fargs[0]);
+    int num = mux_atoi64(fargs[0]);
     const UTF8 *field = fargs[1];
 
     dbref playerask;
@@ -3141,7 +3141,7 @@ FUNCTION(fun_mailflags)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int num = mux_atol(fargs[0]);
+    int num = mux_atoi64(fargs[0]);
 
     dbref playerask;
     if (nfargs >= 2 && fargs[1][0] != '\0')
@@ -3561,7 +3561,7 @@ FUNCTION(fun_elements)
         do
         {
             UTF8 *r = split_token(&s, sepSpace);
-            int cur = mux_atol(r) - 1;
+            int cur = mux_atoi64(r) - 1;
             if (  0 <= cur
                && static_cast<size_t>(cur) < nWords)
             {
@@ -3603,7 +3603,7 @@ FUNCTION(fun_elements)
         do
         {
             UTF8 *r = split_token(&s, sepSpace);
-            int cur = mux_atol(r) - 1;
+            int cur = mux_atoi64(r) - 1;
             if (  0 <= cur
                && cur < static_cast<int>(nWords))
             {
@@ -3676,8 +3676,8 @@ FUNCTION(fun_delextract)
         return;
     }
 
-    int iFirst = mux_atol(fargs[1]);
-    int nCount = mux_atol(fargs[2]);
+    int iFirst = mux_atoi64(fargs[1]);
+    int nCount = mux_atoi64(fargs[2]);
     if (iFirst < 1) iFirst = 1;
     if (nCount < 1)
     {
@@ -3726,7 +3726,7 @@ FUNCTION(fun_garble)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int pct = mux_atol(fargs[1]);
+    int pct = mux_atoi64(fargs[1]);
     if (pct < 0)   pct = 0;
     if (pct > 100)  pct = 100;
 
@@ -4255,7 +4255,7 @@ FUNCTION(fun_subnetmatch)
             safe_str(T("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
             return;
         }
-        int bits = mux_atol(slash + 1);
+        int bits = mux_atoi64(slash + 1);
         if (bits < 0 || bits > 32)
         {
             safe_str(T("#-1 INVALID PREFIX LENGTH"), buff, bufc);
@@ -4307,8 +4307,8 @@ FUNCTION(fun_wrapcolumns)
     UNUSED_PARAMETER(ncargs);
     UNUSED_PARAMETER(executor);
 
-    int colWidth = mux_atol(fargs[1]);
-    int nCols    = mux_atol(fargs[2]);
+    int colWidth = mux_atoi64(fargs[1]);
+    int nCols    = mux_atoi64(fargs[2]);
     if (colWidth < 1) colWidth = 1;
     if (nCols < 1)    nCols = 1;
     // #1111: upper-bound width/cols — unbounded pad loops are CPU DoS.
@@ -4333,7 +4333,7 @@ FUNCTION(fun_wrapcolumns)
     const UTF8 *lBorder = (nfargs >= 5) ? fargs[4] : T("");
     const UTF8 *mBorder = (nfargs >= 6) ? fargs[5] : T("");
     const UTF8 *rBorder = (nfargs >= 7) ? fargs[6] : T("");
-    int order = (nfargs >= 8) ? mux_atol(fargs[7]) : 0;
+    int order = (nfargs >= 8) ? mux_atoi64(fargs[7]) : 0;
 
     // Word-wrap the input text into lines of at most colWidth chars.
     //

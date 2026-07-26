@@ -916,7 +916,7 @@ void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
     memcpy(aBuffer, p, n);
     memset(aBuffer + n, '0', sizeof(aBuffer) - n - 1);
     aBuffer[sizeof(aBuffer) - 1] = '\0';
-    long ns = mux_atol(aBuffer);
+    long ns = mux_atoi64(aBuffer);
     *iNano = static_cast<unsigned short>(ns % 1000);
     ns /= 1000;
     *iMicro = static_cast<unsigned short>(ns % 1000);
@@ -972,7 +972,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Day of month.
     //
-    ft->iDayOfMonth = static_cast<unsigned short>(mux_atol(p));
+    ft->iDayOfMonth = static_cast<unsigned short>(mux_atoi64(p));
     if (ft->iDayOfMonth < 1 || daystab[i] < ft->iDayOfMonth)
     {
         return false;
@@ -982,7 +982,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Hours
     //
-    ft->iHour = static_cast<unsigned short>(mux_atol(p));
+    ft->iHour = static_cast<unsigned short>(mux_atoi64(p));
     if (ft->iHour > 23 || (ft->iHour == 0 && *p != '0'))
     {
         return false;
@@ -993,7 +993,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Minutes
     //
-    ft->iMinute = static_cast<unsigned short>(mux_atol(p));
+    ft->iMinute = static_cast<unsigned short>(mux_atoi64(p));
     if (ft->iMinute > 59 || (ft->iMinute == 0 && *p != '0'))
     {
         return false;
@@ -1004,7 +1004,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
 
     // Seconds
     //
-    ft->iSecond = static_cast<unsigned short>(mux_atol(p));
+    ft->iSecond = static_cast<unsigned short>(mux_atoi64(p));
     if (ft->iSecond > 59 || (ft->iSecond == 0 && *p != '0'))
     {
         return false;
@@ -1044,7 +1044,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
     // accepted as the wrong date.  This mirrors the same guard in
     // ParseDate() (#708); do_convtime() is the conversion branch it missed.
     //
-    // Cap the digit count before parsing: mux_atol() accumulates without
+    // Cap the digit count before parsing: mux_atoi64() accumulates without
     // overflow detection, so a long-enough year string wraps the long and
     // can land back inside the valid range (e.g. 2^32+2000 -> 2000 where
     // long is 32-bit).  Valid years have at most 5 digits.
@@ -1059,7 +1059,7 @@ bool do_convtime(const UTF8 *str, FIELDEDTIME *ft)
             return false;
         }
     }
-    long iYearLong = mux_atol(p);
+    long iYearLong = mux_atoi64(p);
     if (iYearLong < -27256 || 30826 < iYearLong)
     {
         return false;

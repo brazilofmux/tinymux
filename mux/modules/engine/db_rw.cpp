@@ -786,7 +786,7 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
             i = getref(f);
 
             // Validate the object dbref before using it to index db[] or to
-            // size db_grow() (#806).  getref() returns an unchecked mux_atol()
+            // size db_grow() (#806).  getref() returns an unchecked mux_atoi64()
             // result, and s_Name()/s_Location()/etc. write db[i] with no bounds
             // check (SIZE_HACK == 1, so only db[-1] is valid).  A corrupt or
             // malicious flatfile can therefore carry a negative dbref (OOB write

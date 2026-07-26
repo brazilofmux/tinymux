@@ -29,7 +29,7 @@ int getref(FILE *f)
     static UTF8 buf[SBUF_SIZE];
     if (nullptr != fgets(reinterpret_cast<char *>(buf), sizeof(buf), f))
     {
-        return mux_atol(buf);
+        return mux_atoi64(buf);
     }
     else
     {

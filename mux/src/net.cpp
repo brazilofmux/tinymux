@@ -665,7 +665,7 @@ void desc_reload(dbref player)
         UTF8* buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
         if (buf)
         {
-            d->timeout = mux_atol(buf);
+            d->timeout = mux_atoi64(buf);
             if (d->timeout <= 0)
             {
                 d->timeout = g_dc.idle_timeout;
@@ -2952,7 +2952,7 @@ FUNCTION(fun_doing)
 
     if (is_rational(fargs[0]))
     {
-        const SOCKET s = mux_atol(fargs[0]);
+        const SOCKET s = mux_atoi64(fargs[0]);
         DESC *d = find_desc_by_socket(s);
         if (d)
         {
@@ -3011,7 +3011,7 @@ FUNCTION(fun_host)
     DESC* d = nullptr;
     if (isPort)
     {
-        const SOCKET s = mux_atol(fargs[0]);
+        const SOCKET s = mux_atoi64(fargs[0]);
         d = find_desc_by_socket(s);
     }
     else
@@ -3066,7 +3066,7 @@ FUNCTION(fun_siteinfo)
     DESC* d = nullptr;
     if (isPort)
     {
-        const SOCKET s = mux_atol(fargs[0]);
+        const SOCKET s = mux_atoi64(fargs[0]);
         d = find_desc_by_socket(s);
     }
     else

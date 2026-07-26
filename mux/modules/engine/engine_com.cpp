@@ -4439,7 +4439,7 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
         atr_pget_str_LEN(buf, player, A_TIMEOUT, &aowner, &aflags, &nLen);
         if (nLen)
         {
-            *pTimeout = mux_atol(buf);
+            *pTimeout = mux_atoi64(buf);
             if (*pTimeout <= 0)
             {
                 *pTimeout = mudconf.idle_timeout;

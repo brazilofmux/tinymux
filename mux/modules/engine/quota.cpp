@@ -69,13 +69,13 @@ static void mung_quotas(dbref player, int key, int value)
         if (key & QUOTA_TOT)
         {
             LBuf buff = LBuf_Adopt(atr_get("mung_quotas.79", player, A_RQUOTA, &aowner, &aflags));
-            aq = mux_atol(buff) + xq;
+            aq = mux_atoi64(buff) + xq;
             atr_add_raw(player, A_QUOTA, mux_ltoa_t(aq));
         }
         else
         {
             LBuf buff = LBuf_Adopt(atr_get("mung_quotas.86", player, A_QUOTA, &aowner, &aflags));
-            rq = mux_atol(buff) - xq;
+            rq = mux_atoi64(buff) - xq;
             atr_add_raw(player, A_RQUOTA, mux_ltoa_t(rq));
         }
     }
@@ -88,14 +88,14 @@ static void mung_quotas(dbref player, int key, int value)
             if (!*buff.get())
             {
                 LBuf buff2 = LBuf_Adopt(atr_get("mung_quotas.100", player, A_RQUOTA, &aowner, &aflags));
-                rq = mux_atol(buff2);
+                rq = mux_atoi64(buff2);
                 aq = rq + count_quota(player);
             }
             else
             {
-                aq = mux_atol(buff);
+                aq = mux_atoi64(buff);
                 LBuf buff2 = LBuf_Adopt(atr_get("mung_quotas.109", player, A_RQUOTA, &aowner, &aflags));
-                rq = mux_atol(buff2);
+                rq = mux_atoi64(buff2);
             }
         }
 
@@ -126,9 +126,9 @@ static void show_quota(dbref player, dbref victim)
     LBuf buff = LBuf_Src("show_quota");
 
     atr_get_str(buff, victim, A_QUOTA, &aowner, &aflags);
-    int aq = mux_atol(buff);
+    int aq = mux_atoi64(buff);
     atr_get_str(buff, victim, A_RQUOTA, &aowner, &aflags);
-    int rq = aq - mux_atol(buff);
+    int rq = aq - mux_atoi64(buff);
 
     mux_field fldName = StripTabsAndTruncate(Name(victim), buff, LBUF_SIZE-1, 16);
 
@@ -187,7 +187,7 @@ void do_quota
     {
         if (arg1 && *arg1)
         {
-            value = mux_atol(arg1);
+            value = mux_atoi64(arg1);
             set = true;
         }
         else if (key & (QUOTA_SET | QUOTA_FIX))
@@ -250,7 +250,7 @@ void do_quota
     if (arg2 && *arg2)
     {
         set = true;
-        value = mux_atol(arg2);
+        value = mux_atoi64(arg2);
     }
     else if (key & QUOTA_FIX)
     {
@@ -308,8 +308,8 @@ FUNCTION(fun_hasquota)
         int aflags;
         dbref aowner;
         LBuf quota = LBuf_Adopt(atr_get("fun_hasquota.313", who, A_RQUOTA, &aowner, &aflags));
-        int rq = mux_atol(quota);
-        bResult = (rq >= mux_atol(fargs[1]));
+        int rq = mux_atoi64(quota);
+        bResult = (rq >= mux_atoi64(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);
 }

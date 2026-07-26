@@ -475,7 +475,7 @@ static dbref get_exit_dest(dbref executor, dbref exit)
     dbref dest = NOTHING;
     if (*result == NUMBER_TOKEN)
     {
-        dest = mux_atol(result + 1);
+        dest = mux_atoi64(result + 1);
     }
 
     return dest;

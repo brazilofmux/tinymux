@@ -574,7 +574,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     }
     else if (pname[0] == '#')
     {
-        parm->s_rst_owner = mux_atol(&pname[1]);
+        parm->s_rst_owner = mux_atoi64(&pname[1]);
         if (!Good_obj(parm->s_rst_owner))
         {
             parm->s_rst_owner = NOTHING;

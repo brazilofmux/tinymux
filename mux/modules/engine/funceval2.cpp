@@ -374,7 +374,7 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
     ast_exec(tbuf, LBUF_SIZE-1, result, &bp, pctx->executor, pctx->caller, pctx->enactor,
              AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), elems, 2);
     *bp = '\0';
-    int n = mux_atol(result);
+    int n = mux_atoi64(result);
     return n;
 }
 
@@ -689,7 +689,7 @@ FUNCTION(fun_lastcreate)
     {
         if (i == iObjectPosition)
         {
-            dbref jLastCreated = mux_atol(ptr);
+            dbref jLastCreated = mux_atoi64(ptr);
             safe_tprintf_str(buff, bufc, T("#%d"), jLastCreated);
             break;
         }
@@ -881,7 +881,7 @@ FUNCTION(fun_step)
         return;
     }
 
-    int step_size = mux_atol(fargs[2]);
+    int step_size = mux_atoi64(fargs[2]);
     if (  step_size < 1
        || NUM_ENV_VARS < step_size)
     {
@@ -1218,8 +1218,8 @@ FUNCTION(fun_die)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int n   = mux_atol(fargs[0]);
-    int die = mux_atol(fargs[1]);
+    int n   = mux_atoi64(fargs[0]);
+    int die = mux_atoi64(fargs[1]);
 
     if (  n == 0
        || die <= 0)
@@ -1268,7 +1268,7 @@ FUNCTION(fun_lrand)
         return;
     }
 
-    int n_times = mux_atol(fargs[2]);
+    int n_times = mux_atoi64(fargs[2]);
     if (n_times < 1)
     {
         return;
@@ -1277,8 +1277,8 @@ FUNCTION(fun_lrand)
     {
         n_times = LBUF_SIZE;
     }
-    int32_t iLower = mux_atol(fargs[0]);
-    int32_t iUpper = mux_atol(fargs[1]);
+    int32_t iLower = mux_atoi64(fargs[0]);
+    int32_t iUpper = mux_atoi64(fargs[1]);
 
     if (iLower <= iUpper)
     {
@@ -1550,7 +1550,7 @@ FUNCTION(fun_unpack)
     if (2 <= nfargs)
     {
         if (  !is_integer(fargs[1], nullptr)
-           || (iRadix = mux_atol(fargs[1])) < 2
+           || (iRadix = mux_atoi64(fargs[1])) < 2
            || 64 < iRadix)
         {
             safe_str(T("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
@@ -1599,7 +1599,7 @@ FUNCTION(fun_pack)
     int iRadix = 64;
     if (2 <= nfargs)
     {
-        iRadix = mux_atol(fargs[1]);
+        iRadix = mux_atoi64(fargs[1]);
         if (  iRadix < 2
            || 64 < iRadix)
         {
@@ -1635,14 +1635,14 @@ FUNCTION(fun_baseconv)
         return;
     }
 
-    int iRadixFrom = mux_atol(fargs[1]);
+    int iRadixFrom = mux_atoi64(fargs[1]);
     if (  iRadixFrom < 2
        || 64 < iRadixFrom)
     {
         safe_str(T("#-1 INPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
         return;
     }
-    int iRadixTo = mux_atol(fargs[2]);
+    int iRadixTo = mux_atoi64(fargs[2]);
     if (  iRadixTo < 2
        || 64 < iRadixTo)
     {
@@ -2912,7 +2912,7 @@ FUNCTION(fun_lrooms)
     int N = 1;
     if (nfargs >= 2)
     {
-        N = mux_atol(fargs[1]);
+        N = mux_atoi64(fargs[1]);
         if (N < 0)
         {
             safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"),

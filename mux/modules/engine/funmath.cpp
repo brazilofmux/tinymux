@@ -61,7 +61,7 @@ FUNCTION(fun_add)
     long sum = 0;
     for (i = 0; i < nArgs; i++)
     {
-        sum += mux_atol(fargs[i]);
+        sum += mux_atoi64(fargs[i]);
     }
     safe_ltoa(sum, buff, bufc);
 }
@@ -135,8 +135,8 @@ FUNCTION(fun_sub)
        && nDigits <= 9)
     {
         int iResult;
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         iResult = a - b;
         safe_ltoa(iResult, buff, bufc);
     }
@@ -227,8 +227,8 @@ FUNCTION(fun_gt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a > b);
     }
     else
@@ -257,8 +257,8 @@ FUNCTION(fun_gte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a >= b);
     }
     else
@@ -287,8 +287,8 @@ FUNCTION(fun_lt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a < b);
     }
     else
@@ -317,8 +317,8 @@ FUNCTION(fun_lte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a <= b);
     }
     else
@@ -347,8 +347,8 @@ FUNCTION(fun_eq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a == b);
     }
     else
@@ -380,8 +380,8 @@ FUNCTION(fun_neq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a != b);
     }
     else
@@ -896,7 +896,7 @@ FUNCTION(fun_shl)
     {
         // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
         //
-        long  b = mux_atol(fargs[1]);
+        long  b = mux_atoi64(fargs[1]);
         if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);
@@ -933,7 +933,7 @@ FUNCTION(fun_shr)
     {
         // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
         //
-        long  b = mux_atol(fargs[1]);
+        long  b = mux_atoi64(fargs[1]);
         if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);
@@ -1802,7 +1802,7 @@ FUNCTION(fun_round)
             r = 0.0;
         }
 #endif // HAVE_IEEE_FP_FORMAT
-        int frac = mux_atol(fargs[1]);
+        int frac = mux_atoi64(fargs[1]);
         safe_str(mux_ftoa(r, true, frac), buff, bufc);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -2225,7 +2225,7 @@ FUNCTION(fun_log)
         if (  is_integer(fargs[1], &nDigits)
            && nDigits <= 2)
         {
-            int iBase = mux_atol(fargs[1]);
+            int iBase = mux_atoi64(fargs[1]);
             if (10 == iBase)
             {
                 kBase = kCommon;

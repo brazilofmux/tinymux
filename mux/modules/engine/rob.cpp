@@ -72,7 +72,7 @@ void do_kill
         int cost = 0;
         if (key == KILL_KILL)
         {
-            cost = mux_atol(costchar);
+            cost = mux_atoi64(costchar);
             if (cost < mudconf.killmin)
             {
                 cost = mudconf.killmin;
@@ -320,7 +320,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         dbref aowner;
         int aflags;
         LBuf str = LBuf_Adopt(atr_pget(recipient, A_COST, &aowner, &aflags));
-        cost = mux_atol(str);
+        cost = mux_atoi64(str);
 
         // Can't afford it?
         //
@@ -434,7 +434,7 @@ void do_give
     }
     if (is_rational(amnt))
     {
-        give_money(executor, recipient, key, mux_atol(amnt));
+        give_money(executor, recipient, key, mux_atoi64(amnt));
     }
     else
     {

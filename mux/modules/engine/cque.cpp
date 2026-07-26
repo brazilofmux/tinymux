@@ -52,7 +52,7 @@ static bool add_to(const dbref executor, const int am, int attrnum, int *pnum)
     dbref aowner;
 
     LBuf atr_gotten = LBuf_Adopt(atr_get("add_to.68", executor, attrnum, &aowner, &aflags));
-    int num = mux_atol(atr_gotten);
+    int num = mux_atoi64(atr_gotten);
     num += am;
 
     UTF8 buff[I32BUF_SIZE];
@@ -986,7 +986,7 @@ int nfy_que(dbref sem, int attr, int key, int count)
         int   aflags;
         dbref aowner;
         LBuf str = LBuf_Adopt(atr_get("nfy_que.562", sem, attr, &aowner, &aflags));
-        cSemaphore = mux_atol(str);
+        cSemaphore = mux_atoi64(str);
     }
 
     Notify_Num_Done = 0;
@@ -1091,7 +1091,7 @@ void do_notify
         if (  count
            && count[0] != '\0')
         {
-            loccount = mux_atol(count);
+            loccount = mux_atoi64(count);
         }
         else
         {
@@ -2095,7 +2095,7 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
 
     if (key == QUEUE_KICK)
     {
-        const int i = mux_atol(arg);
+        const int i = mux_atoi64(arg);
         const int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
@@ -2115,7 +2115,7 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
     }
     else if (key == QUEUE_WARP)
     {
-        const int iWarp = mux_atol(arg);
+        const int iWarp = mux_atoi64(arg);
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
