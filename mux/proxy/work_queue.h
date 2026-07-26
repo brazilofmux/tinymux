@@ -79,9 +79,22 @@ public:
         auto future = item->getFuture();
         {
             std::unique_lock<std::mutex> lock(mutex_);
+            // `stopped_` releases the wait at shutdown (#1286).  Without
+            // it, a producer parked here has no way out: cv_space_ is only
+            // notified by processPending(), and after the main loop's final
+            // drain nothing calls it again -- so ~GrpcServer's Shutdown(),
+            // which waits for in-flight RPCs, would wait forever.
+            //
             cv_space_.wait(lock, [this] {
-                return queue_.size() < MAX_PENDING;
+                return queue_.size() < MAX_PENDING || stopped_;
             });
+            // Past the cap only while stopping, and bounded by the RPCs
+            // already in flight.  Pushing rather than failing keeps the
+            // caller's future on exactly the path it takes today: fulfilled
+            // if a later drain runs, broken by ~WorkQueue if not.  Failing
+            // the promise here would instead throw from the 29 unguarded
+            // `.get()` call sites in grpc_server.cpp.
+            //
             queue_.push(std::move(item));
         }
         return future;
@@ -105,6 +118,17 @@ public:
         }
     }
 
+    // Release any producer blocked on a full queue.  Call once the main
+    // loop has stopped draining and before the gRPC server is torn down;
+    // it is idempotent (#1286).
+    void stop() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            stopped_ = true;
+        }
+        cv_space_.notify_all();
+    }
+
     // Check if there are pending items (for diagnostics).
     size_t pending() const {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -115,6 +139,7 @@ private:
     mutable std::mutex mutex_;
     std::condition_variable cv_space_;
     std::queue<std::unique_ptr<WorkItem>> queue_;
+    bool stopped_ = false;
 };
 
 #endif // HYDRA_WORK_QUEUE_H

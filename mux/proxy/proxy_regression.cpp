@@ -6,7 +6,9 @@
 #include "work_queue.h"       // WorkQueue::MAX_PENDING (#1265)
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
+#include <future>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -425,6 +427,50 @@ void testConvertInputNonUtf8Target() {
     expect(!out.empty(), "convertInput should produce a fallback for Euro");
 }
 
+// #1286: a producer blocked on a full queue must be releasable.
+//
+// cv_space_ is only notified by processPending(), so after the main loop's
+// final drain nothing wakes a parked producer.  ~GrpcServer's Shutdown()
+// then waits for in-flight RPCs that can never finish.  stop() is the way
+// out.
+//
+// Note on failure mode: if stop() regresses, the producer stays parked and
+// this case hangs rather than reporting.  That is deliberate -- releasing
+// it any other way would need processPending(), which wants a live
+// SessionManager/AccountManager/ProcessManager.  A hang here means stop()
+// no longer wakes waiters.
+void testWorkQueueStopReleasesBlockedProducer() {
+    WorkQueue q;
+
+    auto noop = [](SessionManager&, AccountManager&, const HydraConfig&,
+                   ProcessManager&) { return true; };
+    for (size_t i = 0; i < WorkQueue::MAX_PENDING; i++) {
+        q.enqueue<bool>(noop);
+    }
+    expect(q.pending() == WorkQueue::MAX_PENDING,
+           "queue fills to exactly MAX_PENDING");
+
+    // One more must block: there is no space and nothing is draining.
+    auto producer = std::async(std::launch::async,
+                               [&q, &noop] { q.enqueue<bool>(noop); });
+
+    expect(producer.wait_for(std::chrono::milliseconds(250))
+               == std::future_status::timeout,
+           "producer blocks once the queue is full");
+
+    q.stop();
+
+    expect(producer.wait_for(std::chrono::seconds(5))
+               == std::future_status::ready,
+           "stop() releases a producer blocked on a full queue");
+
+    producer.get();
+
+    // Idempotent: a second stop() must not deadlock or throw.
+    q.stop();
+    expect(true, "stop() is idempotent");
+}
+
 } // namespace
 
 int main() {
@@ -448,6 +494,7 @@ int main() {
     testInputLineLimitShared();
     testWorkQueuePendingCapConstant();
     testConvertInputNonUtf8Target();
+    testWorkQueueStopReleasesBlockedProducer();
     std::cout << "proxy_regression: ok\n";
     return 0;
 }
