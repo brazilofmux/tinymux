@@ -1218,9 +1218,26 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
                 executor, caller, enactor, pArgs, nArgs,
                 pResult, nResultMax, pnResultLen, m_L);
             lua_settop(m_L, saved_top);  // restore stack
-            return MUX_SUCCEEDED(mr);
+            if (MUX_E_NOTFOUND != mr) {
+                return MUX_SUCCEEDED(mr);
+            }
+
+            // The compiled program is gone.  jitstats(flush) clears the
+            // JIT-side program cache (jit_lua_clear_cache) but cannot reach
+            // this Lua-side latch, so jit_key still names a key that no
+            // longer resolves.  Left alone, every later call takes this
+            // branch, misses again, and falls back to the Lua interpreter
+            // for the life of the process: correct answers with a dead JIT,
+            // which is exactly the failure #1309 is about and which no
+            // result-equality test can see.  It also inverts the purpose of
+            // flush, whose whole job is to force a recompile against new
+            // codegen (#1316).  Clear the latch and compile again below.
+            //
+            entry.jit_key = 0;
+            entry.jit_eligible = false;
+        } else {
+            return false;  // Previously failed to compile.
         }
-        return false;  // Previously failed to compile.
     }
 
     // First attempt: dump the chunk to bytecode and try JIT compilation.
