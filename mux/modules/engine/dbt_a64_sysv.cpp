@@ -1152,9 +1152,12 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             }
 
             // Superblock: SLT+branch side exit (forward).
+            // FP flush: same as OP_BRANCH side exit (#1338).
+            //
             if (self_loop && next.imm > 0
                 && num_side_exits < MAX_SIDE_EXITS
                 && count < MAX_BLOCK_INSNS - 5) {
+                fc_flush(&e, &fc);
                 uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
                 side_exits[num_side_exits].jcc_patch = bcond_patch;
                 side_exits[num_side_exits].target_pc = target;
@@ -1493,11 +1496,20 @@ no_addr_fusion:
 
             // Superblock side exit: forward branch within self-loop.
             // Record taken path as cold stub, continue with fall-through.
+            //
+            // Flush the FP cache before the possible leave (#1338).  Side
+            // exits only snapshot integer slots; a dirty FP write (e.g.
+            // fdiv into f4) on the fall-through path just before a later
+            // taken side exit was never written to ctx, so the next block
+            // reloaded zeros.  Integer fall-through keeps host regs via
+            // the snapshot; FP has no snapshot, so it must hit memory.
+            //
             if (self_loop && insn.imm > 0
                 && num_side_exits < MAX_SIDE_EXITS
                 && count < MAX_BLOCK_INSNS - 4) {
                 int rs1 = rc_read(&e, &rc, insn.rs1);
                 int rs2 = rc_read(&e, &rc, insn.rs2);
+                fc_flush(&e, &fc);
                 emit_cmp_r64(&e, rs1, rs2);
                 uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
                 side_exits[num_side_exits].jcc_patch = bcond_patch;

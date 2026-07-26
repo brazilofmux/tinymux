@@ -2266,6 +2266,82 @@ static void test_fcvt_rounding_modes() {
     }
 }
 
+// #1338: superblock side exits must not drop dirty FP state.
+//
+// Fuzzer seed-7 shape: a counted loop with two forward branches and an
+// fdiv on the fall-through of the first.  Every iteration that executes
+// fdiv then takes the second side exit (bgeu), so without an FP flush at
+// side-exit points the NaN never lands in ctx.f[4].
+//
+static void test_1338_superblock_side_exit_fp() {
+    printf("test_1338_superblock_side_exit_fp...\n");
+
+    // Guest words from the issue (plus a7=93 so the interpreter ecall exits).
+    //
+    std::vector<uint32_t> code = {
+        0x40000493u, // addi x9, x0, 1024
+        0x00500413u, // addi x8, x0, 5
+        0x00D35463u, // bge  x6, x13, +8   (skip fdiv when x6>=x13)
+        0x1A140253u, // fdiv.d f4, f8, f1  (0/0 -> canonical NaN)
+        0x01B37663u, // bgeu x6, x27, +12  (always taken while both stay 0)
+        0xFFF00693u, // addi x13, x0, -1
+        0x03569693u, // slli x13, x13, 53
+        0x7FF68693u, // addi x13, x13, 2047
+        0xFFF40413u, // addi x8, x8, -1
+        0xFE0412E3u, // bne  x8, x0, -28   (back edge to bge)
+        0x05D00893u, // addi x17, x0, 93   (a7 = exit)
+        0x00000073u, // ecall
+    };
+
+    TestResult ir = run_code(code);
+    const uint64_t f4_i = ir.state.f[4];
+    const uint64_t x13_i = ir.state.x[13];
+    CHECK_EQ("1338: interp f4 is canonical NaN", f4_i, 0x7FF8000000000000ULL);
+    CHECK_EQ("1338: interp x13", x13_i, 0x27FBULL);
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_1338: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 1000000;
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == 0) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_1338: dbt_run rc=%d\n", rc);
+    }
+
+    uint64_t f4_d = 0;
+    memcpy(&f4_d, &g_dbt_exit_ctx.f[4], 8);
+    CHECK_EQ("1338: dbt f4 matches interp (not dropped on side exit)",
+             f4_d, f4_i);
+    CHECK_EQ("1338: dbt x13 matches", g_dbt_exit_ctx.x[13], x13_i);
+    // The bug is superblock-specific; require we actually formed one so
+    // the test cannot pass by silently disabling superblocks.
+    //
+    g_tests_run++;
+    if (dbt.superblock_count >= 1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_1338: expected a superblock, got %llu\n",
+                static_cast<unsigned long long>(dbt.superblock_count));
+    }
+    dbt_cleanup(&dbt);
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2311,6 +2387,7 @@ int main(int argc, char *argv[]) {
     test_selfloop_pressure_fp_int_rd();
     test_fsgnj_rd_aliases_rs2();
     test_fcvt_rounding_modes();
+    test_1338_superblock_side_exit_fp();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
@@ -2352,3 +2429,4 @@ int main(int argc, char *argv[]) {
 
     return (g_tests_failed > 0 || elf_failures > 0 || dbt_failures > 0) ? 1 : 0;
 }
+
