@@ -125,7 +125,7 @@ def emit_cleanup_attr(test_name: str, commands):
 # -- the JIT and Lua ones -- are counted here, and Smoke treats Skipped as
 # conclusive, so a build without those features does not read as a loss.
 #
-_VERDICT_LOG = re.compile(r"@log\s+smoke=\s*(TC\d+)\b([^\n;]*)")
+_VERDICT_LOG = re.compile(r"@log\s+smoke=\s*(TC[0-9]+[a-z]?)[:.]?([^\n;]*)")
 
 
 def count_expected_verdicts(tc_dir: Path) -> int:
