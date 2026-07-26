@@ -10,8 +10,12 @@
 # disabled path still has to return a clear error rather than a false
 # quota answer.
 #
-# @power is used once so haspower/powers are not vacuously empty on a
-# stock wizard (wizardship is a flag, not a power table entry).
+# @power is used once so haspower/powers are not vacuously empty (wizardship
+# is a flag, not a power table entry).  It has to be granted to the test
+# object, not to `me`: the grant runs at upload time as the uploader, while
+# the cases run under `@trig test_powersee_fn/...`, where `me` is the test
+# object.  Granting to `me` here left tc001 querying an object that had
+# never been given the power.
 #
 @create test_powersee_fn
 -
@@ -21,7 +25,7 @@ think [setq(0, create(Powersee_Thing, 10))][attrib_set(test_powersee_fn/thing, %
 -
 @tel [get(test_powersee_fn/thing)]=me
 -
-@power me=search
+@power test_powersee_fn=search
 -
 &tr.tc000 test_powersee_fn=
   @log smoke=Beginning powersee function test cases.

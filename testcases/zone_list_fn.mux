@@ -28,11 +28,21 @@ think [setq(0, create(ZoneList_Room_B, 10, r))][attrib_set(test_zone_list_fn/roo
 -
 think [setq(0, create(ZoneList_Thing, 10))][attrib_set(test_zone_list_fn/thing, %q0)]
 -
+#
+# @open puts the exit in the opener's location, so this has to move -- but
+# `me` is the shared smoke runner, and every later file in the suite runs as
+# the same object.  Save the original location first and go back to it
+# below, or the move leaks into everything that follows (#1386).
+#
+think [attrib_set(test_zone_list_fn/saved_loc, [loc(me)])]
+-
 @tel me=[get(test_zone_list_fn/room_a)]
 -
 @open zonelist_exit_ab=[get(test_zone_list_fn/room_b)]
 -
 think [attrib_set(test_zone_list_fn/exit_ab, [lastcreate(me, e)])]
+-
+@tel me=[get(test_zone_list_fn/saved_loc)]
 -
 @tel [get(test_zone_list_fn/thing)]=[get(test_zone_list_fn/room_a)]
 -
