@@ -6032,6 +6032,228 @@ UTF8 *mux_foldmatch(const UTF8 *a, size_t &n, bool &fChanged)
     return Buffer;
 }
 
+// Render a double in printf's %f / %e / %g shapes using David M. Gay's dtoa
+// for the digits.
+//
+// Not snprintf: this keeps float rendering on the same correctly-rounded
+// digit generator the rest of the tree already uses (mux_ftoa, fval,
+// NearestPretty all go through mux_dtoa), rather than making output depend on
+// the host libc.  mux_ftoa itself is not usable here -- it is MUX's own float
+// rendering and switches to exponent form once the decimal point passes 18,
+// which %f never does.
+//
+// dtoa gives digits and a decimal-point position with trailing zeros
+// suppressed, so the padding back out to the requested precision is ours.
+// decpt == 9999 signals Inf/NaN.
+//
+// Returns the length written, or 0 with *pbOverflow set when the result will
+// not fit nScratch.  The caller treats that as truncation; before %f was
+// implemented at all this path was a mux_assert(0), so truncating is strictly
+// an improvement on aborting the process.
+//
+#define MUX_FLOAT_SCRATCH 512
+
+static size_t mux_format_double(UTF8 *pScratch, size_t nScratch, double dval,
+                                UTF8 chConv, int nPrec, bool *pbOverflow)
+{
+    *pbOverflow = false;
+
+    bool bUpper = (  'F' == chConv
+                  || 'E' == chConv
+                  || 'G' == chConv);
+    UTF8 chLower = static_cast<UTF8>(bUpper ? chConv - 'A' + 'a' : chConv);
+
+    int  decpt = 0;
+    int  bNeg  = 0;
+    UTF8 *rve  = nullptr;
+    UTF8 *pDigits = nullptr;
+
+    // %g selects between %e and %f on the exponent, so it has to see the
+    // significant digits before it can choose.
+    //
+    int nSig = 0;
+    if ('g' == chLower)
+    {
+        nSig = (0 == nPrec) ? 1 : nPrec;
+        pDigits = mux_dtoa(dval, 2, nSig, &decpt, &bNeg, &rve);
+    }
+    else if ('e' == chLower)
+    {
+        pDigits = mux_dtoa(dval, 2, nPrec + 1, &decpt, &bNeg, &rve);
+    }
+    else
+    {
+        pDigits = mux_dtoa(dval, 3, nPrec, &decpt, &bNeg, &rve);
+    }
+
+    if (nullptr == pDigits)
+    {
+        *pbOverflow = true;
+        return 0;
+    }
+
+    size_t nDigits = static_cast<size_t>(rve - pDigits);
+    size_t q = 0;
+
+    // Inf and NaN.  printf spells these "inf"/"nan", uppercased for the
+    // uppercase conversions; a sign is carried on infinity only.
+    //
+    if (9999 == decpt)
+    {
+        const char *pWord = ('n' == pDigits[0] || 'N' == pDigits[0]) ? "nan" : "inf";
+        if (  bNeg
+           && 'i' == pWord[0])
+        {
+            pScratch[q++] = '-';
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            pScratch[q++] = static_cast<UTF8>(bUpper ? pWord[i] - 'a' + 'A' : pWord[i]);
+        }
+        pScratch[q] = '\0';
+        return q;
+    }
+
+    // dtoa returns nothing for zero.  Treat it as a single '0' digit sitting
+    // just left of the point, which is what the assembly below expects.
+    //
+    UTF8 chZero = '0';
+    if (0 == nDigits)
+    {
+        pDigits = &chZero;
+        nDigits = 1;
+        decpt = 1;
+    }
+
+    // Resolve %g to whichever of %e / %f it renders as.  C's rule: use %e
+    // when the exponent is below -4 or at least the precision.
+    //
+    bool bStripTrailing = false;
+    int  nExp = decpt - 1;
+    if ('g' == chLower)
+    {
+        bStripTrailing = true;
+        if (  nExp < -4
+           || nSig <= nExp)
+        {
+            chLower = 'e';
+            nPrec = nSig - 1;
+        }
+        else
+        {
+            chLower = 'f';
+            nPrec = nSig - 1 - nExp;
+            if (nPrec < 0)
+            {
+                nPrec = 0;
+            }
+        }
+    }
+
+    // Worst case is %f of DBL_MAX: ~309 integer digits, plus the point, plus
+    // the precision.  Bail rather than overrun.
+    //
+    size_t nWorst = (('f' == chLower) ? (decpt > 0 ? static_cast<size_t>(decpt) : 1)
+                                      : 1)
+                  + static_cast<size_t>(nPrec) + 16;
+    if (nScratch <= nWorst)
+    {
+        *pbOverflow = true;
+        return 0;
+    }
+
+    if (bNeg)
+    {
+        pScratch[q++] = '-';
+    }
+
+    // %g suppresses trailing zeros, but only inside the fraction: the strip
+    // must never reach back into the integer digits, or "%.1g" of 0 renders
+    // as the empty string instead of "0".  iDot records where the fraction
+    // begins; bDot says whether there is one at all.
+    //
+    size_t iDot = 0;
+    bool   bDot = false;
+
+    if ('e' == chLower)
+    {
+        pScratch[q++] = pDigits[0];
+        if (0 < nPrec)
+        {
+            iDot = q;
+            bDot = true;
+            pScratch[q++] = '.';
+            for (int i = 0; i < nPrec; i++)
+            {
+                size_t k = static_cast<size_t>(i) + 1;
+                pScratch[q++] = (k < nDigits) ? pDigits[k] : '0';
+            }
+        }
+        if (  bStripTrailing
+           && bDot)
+        {
+            while (  iDot + 1 < q
+                  && '0' == pScratch[q-1]) q--;
+            if (iDot + 1 == q) q = iDot;
+        }
+        pScratch[q++] = static_cast<UTF8>(bUpper ? 'E' : 'e');
+        int nShow = nExp;
+        pScratch[q++] = static_cast<UTF8>((nShow < 0) ? '-' : '+');
+        if (nShow < 0) nShow = -nShow;
+        if (nShow < 10)
+        {
+            pScratch[q++] = '0';
+            pScratch[q++] = static_cast<UTF8>('0' + nShow);
+        }
+        else
+        {
+            q += mux_ltoa(nShow, pScratch + q);
+        }
+    }
+    else
+    {
+        // Integer part.
+        //
+        if (decpt <= 0)
+        {
+            pScratch[q++] = '0';
+        }
+        else
+        {
+            for (int i = 0; i < decpt; i++)
+            {
+                size_t k = static_cast<size_t>(i);
+                pScratch[q++] = (k < nDigits) ? pDigits[k] : '0';
+            }
+        }
+
+        if (0 < nPrec)
+        {
+            iDot = q;
+            bDot = true;
+            pScratch[q++] = '.';
+            for (int i = 0; i < nPrec; i++)
+            {
+                int k = decpt + i;
+                pScratch[q++] = (  0 <= k
+                                && static_cast<size_t>(k) < nDigits)
+                              ? pDigits[static_cast<size_t>(k)] : '0';
+            }
+        }
+
+        if (  bStripTrailing
+           && bDot)
+        {
+            while (  iDot + 1 < q
+                  && '0' == pScratch[q-1]) q--;
+            if (iDot + 1 == q) q = iDot;
+        }
+    }
+
+    pScratch[q] = '\0';
+    return q;
+}
+
 // mux_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
 // should be chosen to include the '\0' termination.
@@ -6059,7 +6281,12 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
     if (  nullptr != pFmt
        && utf8_strlen(pFmt, ncpFmt))
     {
-        static UTF8 Buff[I64BUF_SIZE];
+        // Octal needs 22 digits for a 64-bit value plus the terminator, one
+        // more than I64BUF_SIZE allows for decimal.  Floating point does not
+        // use this buffer at all -- see the 'f'/'e'/'g' branch, which formats
+        // straight into the output.
+        //
+        static UTF8 Buff[I64BUF_SIZE + 8];
 
         while (0 != ncpFmt)
         {
@@ -6118,15 +6345,25 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                 while (0 != ncpFmt)
                 {
                     if (  'd' == pFmt[iFmt]
+                       || 'i' == pFmt[iFmt]
                        || 's' == pFmt[iFmt]
                        || 'u' == pFmt[iFmt]
+                       || 'o' == pFmt[iFmt]
                        || 'x' == pFmt[iFmt]
                        || 'X' == pFmt[iFmt]
-                       || 'p' == pFmt[iFmt])
+                       || 'p' == pFmt[iFmt]
+                       || 'f' == pFmt[iFmt]
+                       || 'F' == pFmt[iFmt]
+                       || 'e' == pFmt[iFmt]
+                       || 'E' == pFmt[iFmt]
+                       || 'g' == pFmt[iFmt]
+                       || 'G' == pFmt[iFmt])
                     {
                         UTF8 *pBuff = Buff;
+                        UTF8 FBuff[MUX_FLOAT_SCRATCH];
 
-                        if ('d' == pFmt[iFmt])
+                        if (  'd' == pFmt[iFmt]
+                           || 'i' == pFmt[iFmt])
                         {
                             // Obtain and validate argument.
                             //
@@ -6204,10 +6441,45 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             nWidth = 2*sizeof(uintptr_t);
                             bZeroPadded = true;
                         }
+                        else if (  'f' == pFmt[iFmt]
+                                || 'F' == pFmt[iFmt]
+                                || 'e' == pFmt[iFmt]
+                                || 'E' == pFmt[iFmt]
+                                || 'g' == pFmt[iFmt]
+                                || 'G' == pFmt[iFmt])
+                        {
+                            // Floating point.  Before this, %f and friends
+                            // fell through to the mux_assert(0) below and took
+                            // the process down -- a standard C conversion this
+                            // function happened not to implement was a server
+                            // abort with no warning at the call site (#1382,
+                            // and again in @list).
+                            //
+                            // Digits come from mux_dtoa, the same correctly
+                            // rounded generator mux_ftoa/fval/NearestPretty
+                            // use, so float output does not depend on the host
+                            // libc.  nLongs is ignored: "%lf" is double in
+                            // printf, and "%Lf" never reaches here because 'L'
+                            // is not parsed as a length modifier.
+                            //
+                            double dval = va_arg(va, double);
+                            int nPrec = bSawPeriod ? static_cast<int>(nPrecision) : 6;
+
+                            bool bOverflow = false;
+                            cbBuff = cpBuff = mux_format_double(FBuff,
+                                sizeof(FBuff), dval, pFmt[iFmt], nPrec,
+                                &bOverflow);
+                            if (bOverflow)
+                            {
+                                goto done;
+                            }
+                            pBuff = FBuff;
+                        }
                         else
                         {
                             bool bHex = (  'x' == pFmt[iFmt]
                                         || 'X' == pFmt[iFmt]);
+                            bool bOct = ('o' == pFmt[iFmt]);
                             bool bUpper = ('X' == pFmt[iFmt]);
 
                             // Obtain and validate argument.
@@ -6215,17 +6487,17 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             if (0 == nLongs)
                             {
                                 unsigned int ui = va_arg(va, unsigned int);
-                                cbBuff = cpBuff = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
+                                cbBuff = cpBuff = bOct?mux_utoo(ui, Buff):(bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff));
                             }
                             else if (1 == nLongs)
                             {
                                 unsigned long int ui = va_arg(va, unsigned long int);
-                                cbBuff = cpBuff = bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff);
+                                cbBuff = cpBuff = bOct?mux_utoo(ui, Buff):(bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff));
                             }
                             else if (2 == nLongs)
                             {
                                 uint64_t ui = va_arg(va, uint64_t);
-                                cbBuff = cpBuff = bHex?mux_ui64tox(ui, Buff, bUpper):mux_ui64toa(ui, Buff);
+                                cbBuff = cpBuff = bOct?mux_ui64too(ui, Buff):(bHex?mux_ui64tox(ui, Buff, bUpper):mux_ui64toa(ui, Buff));
                             }
                             else
                             {
@@ -6260,7 +6532,18 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                         if (  !bLeft
                            && bWidth)
                         {
-                            if (  'd' == pFmt[iFmt]
+                            // Any signed conversion: the minus sign has to be
+                            // laid down before zero-padding begins, or
+                            // "%08.2f" of -3.5 renders as "0000-3.50".
+                            //
+                            if (  (  'd' == pFmt[iFmt]
+                                  || 'i' == pFmt[iFmt]
+                                  || 'f' == pFmt[iFmt]
+                                  || 'F' == pFmt[iFmt]
+                                  || 'e' == pFmt[iFmt]
+                                  || 'E' == pFmt[iFmt]
+                                  || 'g' == pFmt[iFmt]
+                                  || 'G' == pFmt[iFmt])
                                && '-' == pBuff[0]
                                && 0 < nPadding
                                && bZeroPadded)

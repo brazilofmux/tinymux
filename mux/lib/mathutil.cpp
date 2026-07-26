@@ -761,6 +761,42 @@ size_t mux_ui64tox(uint64_t uval, UTF8 *buf, bool bUpperCase)
     return p - buf;
 }
 
+// Octal.  Note the buffer requirement: an unsigned 64-bit value is up to 22
+// octal digits, which is one more than LONGEST_I64 allows for decimal, so a
+// caller sizing a scratch buffer from I64BUF_SIZE is not large enough.
+//
+size_t mux_utoo(unsigned long uval, UTF8 *buf)
+{
+    UTF8 *p = buf;
+    UTF8 *q = p;
+
+    while (uval > 7)
+    {
+        *p++ = static_cast<UTF8>('0' + (uval % 8));
+        uval /= 8;
+    }
+    *p++ = static_cast<UTF8>('0' + uval);
+    *p = '\0';
+    ReverseDigits(q, p-1);
+    return p - buf;
+}
+
+size_t mux_ui64too(uint64_t uval, UTF8 *buf)
+{
+    UTF8 *p = buf;
+    UTF8 *q = p;
+
+    while (uval > 7)
+    {
+        *p++ = static_cast<UTF8>('0' + (uval % 8));
+        uval /= 8;
+    }
+    *p++ = static_cast<UTF8>('0' + uval);
+    *p = '\0';
+    ReverseDigits(q, p-1);
+    return p - buf;
+}
+
 const UTF8 Digits100[201] =
 "001020304050607080900111213141516171819102122232425262728292\
 031323334353637383930414243444546474849405152535455565758595\
