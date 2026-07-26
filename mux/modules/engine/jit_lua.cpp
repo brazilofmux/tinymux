@@ -44,6 +44,23 @@ struct lua_jit_stats {
 
 static lua_jit_stats s_lua_jit_stats = {};
 
+// Published to jitstats() (#1316).  These counters are the only way to tell
+// a Lua JIT that runs from one that compiles and then silently falls back.
+//
+void jit_lua_get_stats(lua_jit_counters *out) {
+    if (nullptr == out) return;
+    out->compile_ok    = s_lua_jit_stats.compile_ok;
+    out->compile_fail  = s_lua_jit_stats.compile_fail;
+    out->run_ok        = s_lua_jit_stats.run_ok;
+    out->run_fail      = s_lua_jit_stats.run_fail;
+    out->cache_hits    = s_lua_jit_stats.cache_hits;
+    out->invalidations = s_lua_jit_stats.invalidations;
+}
+
+void jit_lua_reset_stats(void) {
+    s_lua_jit_stats = {};
+}
+
 // ---------------------------------------------------------------
 // Compile a Lua bytecode blob to a compiled_program.
 // ---------------------------------------------------------------

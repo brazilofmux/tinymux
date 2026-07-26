@@ -737,6 +737,10 @@ void pretranslate_tier2(dbt_state_t *dbt) {
     reg_intrinsic(dbt, "pow",   DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::pow)));
     reg_intrinsic(dbt, "atan2", DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::atan2)));
     reg_intrinsic(dbt, "fmod",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmod)));
+    // max()/min() float path (#1273) — host fmax/fmin intercept the blob stubs.
+    //
+    reg_intrinsic(dbt, "fmax",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmax)));
+    reg_intrinsic(dbt, "fmin",  DBT_EMIT_FP_DD_D, reinterpret_cast<void *>(static_cast<fn_dd_d>(::fmin)));
 
     // Rounding intrinsic — NearestPretty (double→double).
     //
@@ -5075,6 +5079,7 @@ FUNCTION(fun_jitstats)
 
     if (nfargs >= 1 && strcmp(reinterpret_cast<const char *>(fargs[0]), "reset") == 0) {
         memset(&s_jit_stats, 0, sizeof(s_jit_stats));
+        jit_lua_reset_stats();
         safe_str(T("OK"), buff, bufc);
         return;
     }
@@ -5129,11 +5134,57 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.bail_invk,
         (unsigned long long)s_jit_stats.bail_alarm);
 
+    // Append Lua JIT counters (#1316).  lua_run_fail incrementing while
+    // softcode still returns correct answers is the signature of a Lua JIT
+    // that compiles and then silently falls back to the interpreter.
+    if (n < static_cast<int>(LBUF_SIZE) - 256) {
+        lua_jit_counters lj = {};
+        jit_lua_get_stats(&lj);
+        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
+            " lua_compile_ok=%llu"
+            " lua_compile_fail=%llu"
+            " lua_run_ok=%llu"
+            " lua_run_fail=%llu"
+            " lua_cache_hits=%llu"
+            " lua_invalidations=%llu",
+            (unsigned long long)lj.compile_ok,
+            (unsigned long long)lj.compile_fail,
+            (unsigned long long)lj.run_ok,
+            (unsigned long long)lj.run_fail,
+            (unsigned long long)lj.cache_hits,
+            (unsigned long long)lj.invalidations);
+    }
+
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {
         n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n, " noeval_%s=%llu",
             s_jit_stats.noeval_top[i].name,
             (unsigned long long)s_jit_stats.noeval_top[i].count);
+    }
+
+    // Append DBT code-buffer occupancy (#1315).  The Tier-2 blob is
+    // pretranslated once and preserved across every dbt_reset, so
+    // dbt_blob_bytes is a permanent reservation out of dbt_code_cap and
+    // what remains is all any program will ever get.  That cost is
+    // backend-specific -- the same blob is not the same number of host
+    // bytes on Win64, x64 SysV and aarch64 -- so it wants measuring per
+    // platform rather than assuming one constant suits every backend.
+    //
+    // dbt_code_full counting up means translations are being declined for
+    // want of space; dbt_code_reclaims counts the mid-run recoveries that
+    // keep such a decline local to one program instead of permanent.
+    if (n < static_cast<int>(LBUF_SIZE) - 256) {
+        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
+            " dbt_code_cap=%u"
+            " dbt_blob_bytes=%u"
+            " dbt_code_used=%u"
+            " dbt_code_reclaims=%llu"
+            " dbt_code_full=%llu",
+            static_cast<unsigned>(CODE_BUF_SIZE),
+            static_cast<unsigned>(s_dbt_ready ? s_persistent_dbt.blob_code_end : 0),
+            static_cast<unsigned>(s_dbt_ready ? s_persistent_dbt.code_used : 0),
+            static_cast<unsigned long long>(s_dbt_ready ? s_persistent_dbt.code_reclaims : 0),
+            static_cast<unsigned long long>(s_dbt_ready ? s_persistent_dbt.code_full : 0));
     }
 
     safe_str(tmp, buff, bufc);

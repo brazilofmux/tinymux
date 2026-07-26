@@ -43,7 +43,12 @@
 #include <unistd.h>
 #include <poll.h>
 #include <fcntl.h>
+#include <sys/socket.h>
+#include <sys/wait.h>
+#include <signal.h>
 #endif
+
+#include <string>
 
 // Script mode doesn't include externs.h or db.h, so we define the
 // constants we need directly.
@@ -1170,6 +1175,310 @@ static bool resolve_gamedir(const char *flag_dir)
     return true;
 }
 
+// ---------------------------------------------------------------------------
+// Stubslave parent path for release (--enable-stubslave) builds.
+//
+// netmux boots the helper via CPlatform::BootHelperProcess + GanlAdapter
+// pump.  muxscript has neither, so without a local boot any "module X local"
+// config fails (or, historically, SEGV'd looking for a channel that never
+// existed — #1293).  Smoke modules load in-proc, but booting the slave here
+// means the shipping configuration is actually exercised by make test.
+// ---------------------------------------------------------------------------
+
+#if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)
+
+static QUEUE_INFO g_stub_queue_in;
+static QUEUE_INFO g_stub_queue_out;
+static int g_stub_fd = -1;
+static pid_t g_stub_pid = 0;
+static std::string g_stub_write_remainder;
+static mux_ISlaveControl *g_pISlaveControl = nullptr;
+
+static void reap_stubslave_bounded(pid_t pid)
+{
+    if (pid <= 0)
+    {
+        return;
+    }
+    for (int i = 0; i < 50; i++)
+    {
+        pid_t r = waitpid(pid, nullptr, WNOHANG);
+        if (r == pid || (r == -1 && errno == ECHILD))
+        {
+            return;
+        }
+        usleep(100000);
+    }
+    kill(pid, SIGKILL);
+    while (waitpid(pid, nullptr, 0) == -1 && errno == EINTR)
+    {
+    }
+}
+
+static void shutdown_stubslave_parent(void)
+{
+    if (nullptr != g_pISlaveControl)
+    {
+        (void)g_pISlaveControl->ShutdownSlave();
+        g_pISlaveControl->Release();
+        g_pISlaveControl = nullptr;
+    }
+    if (g_stub_fd >= 0)
+    {
+        ::shutdown(g_stub_fd, SHUT_RDWR);
+        mux_close(g_stub_fd);
+        g_stub_fd = -1;
+    }
+    g_stub_write_remainder.clear();
+    if (g_stub_pid > 0)
+    {
+        reap_stubslave_bounded(g_stub_pid);
+        g_stub_pid = 0;
+    }
+}
+
+extern "C" MUX_RESULT DCL_API script_pipepump(void)
+{
+    if (g_stub_fd < 0)
+    {
+        return MUX_E_FAIL;
+    }
+
+    struct pollfd pfd;
+    pfd.fd = g_stub_fd;
+    pfd.events = POLLIN;
+    if (  0 < Pipe_QueueLength(&g_stub_queue_out)
+       || !g_stub_write_remainder.empty())
+    {
+        pfd.events |= POLLOUT;
+    }
+    pfd.revents = 0;
+
+    int found = poll(&pfd, 1, -1);
+    if (found < 0)
+    {
+        if (EINTR == errno)
+        {
+            return MUX_S_OK;
+        }
+        return MUX_E_FAIL;
+    }
+
+    if (pfd.revents & (POLLIN | POLLHUP | POLLERR))
+    {
+        char buf[LBUF_SIZE];
+        for (;;)
+        {
+            int len = mux_read(g_stub_fd, buf, sizeof(buf));
+            if (len < 0)
+            {
+                if (EAGAIN == errno || EWOULDBLOCK == errno)
+                {
+                    break;
+                }
+                shutdown_stubslave_parent();
+                return MUX_E_FAIL;
+            }
+            if (0 == len)
+            {
+                shutdown_stubslave_parent();
+                return MUX_E_FAIL;
+            }
+            Pipe_AppendBytes(&g_stub_queue_in, static_cast<size_t>(len), buf);
+        }
+    }
+
+    // Drain Queue_Out.  Pipe_GetBytes dequeues immediately, so short writes
+    // and EAGAIN must keep the unwritten tail (same fix as #1276).
+    //
+    if (  g_stub_fd >= 0
+       && (  !g_stub_write_remainder.empty()
+          || (pfd.revents & POLLOUT)
+          || 0 < Pipe_QueueLength(&g_stub_queue_out)))
+    {
+        if (g_stub_write_remainder.empty())
+        {
+            char buf[LBUF_SIZE];
+            size_t nWanted = sizeof(buf);
+            if (Pipe_GetBytes(&g_stub_queue_out, &nWanted, buf) && 0 < nWanted)
+            {
+                g_stub_write_remainder.assign(buf, nWanted);
+            }
+        }
+
+        while (!g_stub_write_remainder.empty())
+        {
+            const char *p = g_stub_write_remainder.data();
+            size_t n = g_stub_write_remainder.size();
+            int len = mux_write(g_stub_fd, p, n);
+            if (len > 0)
+            {
+                g_stub_write_remainder.erase(0, static_cast<size_t>(len));
+                continue;
+            }
+            if (len < 0)
+            {
+                if (EAGAIN == errno || EWOULDBLOCK == errno)
+                {
+                    break;
+                }
+                shutdown_stubslave_parent();
+                return MUX_E_FAIL;
+            }
+            break;
+        }
+    }
+    return MUX_S_OK;
+}
+
+// Fork/exec bin/stubslave with a socketpair.  Mirrors CPlatform::BootHelperProcess
+// without pulling platform.cpp (and its netmux-only deps) into muxscript.
+//
+static bool boot_stubslave_helper(void)
+{
+    int sv[2] = {-1, -1};
+    if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) < 0)
+    {
+        fprintf(stderr, "muxscript: stubslave socketpair failed: %s\n",
+                strerror(errno));
+        return false;
+    }
+
+    {
+        int flags = fcntl(sv[0], F_GETFL, 0);
+        if (flags < 0 || fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) < 0)
+        {
+            fprintf(stderr, "muxscript: stubslave fcntl(O_NONBLOCK) failed: %s\n",
+                    strerror(errno));
+            mux_close(sv[0]);
+            mux_close(sv[1]);
+            return false;
+        }
+    }
+
+    pid_t childPid = fork();
+    if (childPid < 0)
+    {
+        fprintf(stderr, "muxscript: stubslave fork failed: %s\n", strerror(errno));
+        mux_close(sv[0]);
+        mux_close(sv[1]);
+        return false;
+    }
+
+    if (0 == childPid)
+    {
+        // Child: reset lock-free alarm flag only — never clear() (mutex may
+        // be locked across fork).  Then exec stubslave on the socketpair.
+        //
+        alarm_clock.alarmed.store(false);
+        mux_close(sv[0]);
+        if (sv[1] != 0)
+        {
+            mux_close(0);
+            if (dup2(sv[1], 0) == -1)
+            {
+                _exit(1);
+            }
+        }
+        if (sv[1] != 1)
+        {
+            mux_close(1);
+            if (dup2(sv[1], 1) == -1)
+            {
+                _exit(1);
+            }
+        }
+        if (sv[1] > 1)
+        {
+            mux_close(sv[1]);
+        }
+
+        // Nested glibc version test — see platform.cpp / #1303.
+        //
+#if defined(__linux__) && defined(__GLIBC_PREREQ)
+#  if __GLIBC_PREREQ(2, 34)
+#    define MUXSCRIPT_USE_CLOSE_RANGE 1
+#  endif
+#endif
+
+#if defined(MUXSCRIPT_USE_CLOSE_RANGE)
+        (void)close_range(3, ~0U, 0);
+#elif defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) \
+   || defined(__DragonFly__) || defined(__sun)
+        closefrom(3);
+#else
+        {
+            int maxfds = 256;
+#ifdef HAVE_GETDTABLESIZE
+            maxfds = getdtablesize();
+#else
+            maxfds = static_cast<int>(sysconf(_SC_OPEN_MAX));
+#endif
+            if (maxfds < 3)
+            {
+                maxfds = 256;
+            }
+            for (int i = 3; i < maxfds; i++)
+            {
+                mux_close(i);
+            }
+        }
+#endif
+
+        execlp("bin/stubslave", "stubslave", static_cast<char *>(nullptr));
+        _exit(1);
+    }
+
+    mux_close(sv[1]);
+    g_stub_fd = sv[0];
+    g_stub_pid = childPid;
+    return true;
+}
+
+// Attach pipe pump and open the StubSlave management interface.  Call after
+// mux_InitModuleLibrary and before LoadGame so conf "module X local" works.
+// Soft-fails (returns false, continues in-proc-only) if the helper is missing
+// — same policy as netmux when BootHelperProcess fails.
+//
+static bool init_stubslave_for_script(void)
+{
+    if (!boot_stubslave_helper())
+    {
+        return false;
+    }
+
+    Pipe_InitializeQueueInfo(&g_stub_queue_in);
+    Pipe_InitializeQueueInfo(&g_stub_queue_out);
+
+    MUX_RESULT mr = mux_InitModuleLibraryPump(script_pipepump,
+                                              &g_stub_queue_in,
+                                              &g_stub_queue_out);
+    if (MUX_FAILED(mr))
+    {
+        fprintf(stderr, "muxscript: mux_InitModuleLibraryPump failed (%d)\n", mr);
+        shutdown_stubslave_parent();
+        return false;
+    }
+
+    mr = mux_CreateInstance(CID_StubSlave, nullptr, UseSlaveProcess,
+                            IID_ISlaveControl,
+                            reinterpret_cast<void **>(&g_pISlaveControl));
+    if (MUX_FAILED(mr) || nullptr == g_pISlaveControl)
+    {
+        fprintf(stderr,
+                "muxscript: StubSlave management interface unavailable (%d)\n",
+                mr);
+        shutdown_stubslave_parent();
+        return false;
+    }
+
+    fprintf(stderr, "muxscript: stubslave attached (pid %d)\n",
+            static_cast<int>(g_stub_pid));
+    return true;
+}
+
+#endif // STUB_SLAVE && HAVE_WORKING_FORK
+
 static MUX_RESULT init_com(void)
 {
     MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess);
@@ -1662,6 +1971,19 @@ int main(int argc, char *argv[])
         return 2;
     }
 
+#if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)
+    // Boot the release-config helper before LoadGame so conf can load
+    // modules as "local"/"slave".  Soft-fail leaves in-proc modules working
+    // (same as netmux when BootHelperProcess fails).  #1293
+    //
+    if (!init_stubslave_for_script())
+    {
+        fprintf(stderr,
+                "muxscript: continuing without stubslave "
+                "(in-proc modules only)\n");
+    }
+#endif
+
     // Load game database.
     mr = g_pEngine->LoadGame(reinterpret_cast<const UTF8 *>(conffile),
                               nullptr, false);
@@ -1669,6 +1991,11 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "muxscript: LoadGame failed (%d)\n", mr);
         g_pEngine->Release();
+#if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)
+        shutdown_stubslave_parent();
+#endif
+        mux_RevokeClassObjects(NUM_SCRIPT_CLASSES, script_classes);
+        mux_FinalizeModuleLibrary();
         return 2;
     }
 
@@ -1686,6 +2013,11 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "muxscript: Startup failed (%d)\n", mr);
         g_pEngine->Release();
+#if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)
+        shutdown_stubslave_parent();
+#endif
+        mux_RevokeClassObjects(NUM_SCRIPT_CLASSES, script_classes);
+        mux_FinalizeModuleLibrary();
         return 2;
     }
 
@@ -1702,6 +2034,11 @@ int main(int argc, char *argv[])
             fprintf(stderr, "muxscript: invalid player '%s' (use dbref like #4 or 4)\n",
                     player_arg);
             g_pEngine->Release();
+#if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)
+            shutdown_stubslave_parent();
+#endif
+            mux_RevokeClassObjects(NUM_SCRIPT_CLASSES, script_classes);
+            mux_FinalizeModuleLibrary();
             return 1;
         }
         g_player = static_cast<dbref>(val);
@@ -1720,6 +2057,9 @@ int main(int argc, char *argv[])
                 g_player);
         g_pEngine->Shutdown();
         g_pEngine->Release();
+#if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)
+        shutdown_stubslave_parent();
+#endif
         mux_RevokeClassObjects(NUM_SCRIPT_CLASSES, script_classes);
         mux_FinalizeModuleLibrary();
         return 1;
@@ -1743,6 +2083,10 @@ int main(int argc, char *argv[])
     }
     g_pEngine->Shutdown();
     g_pEngine->Release();
+
+#if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)
+    shutdown_stubslave_parent();
+#endif
 
     // Revoke script-mode classes and finalize.
     mux_RevokeClassObjects(NUM_SCRIPT_CLASSES, script_classes);

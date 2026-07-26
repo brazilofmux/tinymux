@@ -983,7 +983,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
 
             dbt->intrinsics[i].emitter(&e, dbt->intrinsics[i].host_fn);
 
-            if (e.offset > e.capacity) return nullptr;
+            if (e.offset > e.capacity) return dbt_xlate_full(dbt);
 
             dbt->code_used += e.offset;
             dbt->intrinsic_hits++;
@@ -996,7 +996,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
             return block_start;
         }
     }
-    return nullptr;
+    return nullptr; // not an intrinsic — not a translate failure
 }
 
 // ---------------------------------------------------------------
@@ -1682,9 +1682,12 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 goto done;
             }
 
+            // Superblock SLT+branch forward side exit.  FP flush: #1338.
+            //
             if (self_loop && next.imm > 0
                 && num_side_exits < MAX_SIDE_EXITS
                 && count < MAX_BLOCK_INSNS - 5) {
+                fc_flush(&e, &fc);
                 uint32_t jcc_patch = emit_jcc_rel32(&e, cc);
                 side_exits[num_side_exits].jcc_patch = jcc_patch;
                 side_exits[num_side_exits].target_pc = target;
@@ -2215,11 +2218,17 @@ no_addr_fusion:
             // this is a forward branch, record the taken path as a cold
             // side exit and continue translating the fall-through inline.
             //
+            // Flush FP before the possible leave (#1338).  Side exits only
+            // snapshot integer slots; dirty FP writes on the fall-through
+            // path must hit ctx before a later taken side exit abandons
+            // the host FP registers.
+            //
             if (self_loop && insn.imm > 0
                 && num_side_exits < MAX_SIDE_EXITS
                 && count < MAX_BLOCK_INSNS - 4) {
                 int rs1 = rc_read(&e, &rc, insn.rs1);
                 int rs2 = rc_read(&e, &rc, insn.rs2);
+                fc_flush(&e, &fc);
                 emit_cmp_r64(&e, rs1, rs2);
                 uint32_t jcc_patch = emit_jcc_rel32(&e, cc);
                 side_exits[num_side_exits].jcc_patch = jcc_patch;
@@ -2972,9 +2981,11 @@ no_addr_fusion:
             // (rd left stale).  dbt_run never single-steps the interpreter,
             // so "fallback" was a silent skip.  Returning nullptr lets the
             // caller decline compiled execution instead of running wrong code.
+            // XLATE_REFUSE so dbt_run does not reclaim as if the buffer were
+            // full (#1331).
             //
             dbt_rollback_patches(dbt, patches_before);
-            return nullptr;
+            return dbt_xlate_refuse(dbt);
         }
     }
 
@@ -3037,7 +3048,7 @@ done:
 
     if (e.offset > e.capacity) {
         dbt_rollback_patches(dbt, patches_before);
-        return nullptr;
+        return dbt_xlate_full(dbt);
     }
     dbt->blocks_translated++;
     dbt->insns_translated += count;

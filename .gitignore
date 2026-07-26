@@ -133,6 +133,7 @@ testcases/*.bak
 # Hydra proxy build artifacts
 mux/proxy/hydra
 mux/proxy/proxy_regression
+mux/proxy/*.d
 mux/proxy/.deps/
 mux/proxy/Makefile
 mux/proxy/*.o

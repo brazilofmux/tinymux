@@ -611,7 +611,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
             e.capacity = CODE_BUF_SIZE - dbt->code_used;
 
             dbt->intrinsics[i].emitter(&e, dbt->intrinsics[i].host_fn);
-            if (e.offset > e.capacity) return nullptr;
+            if (e.offset > e.capacity) return dbt_xlate_full(dbt);
 
             dbt->code_used += e.offset;
             dbt->intrinsic_hits++;
@@ -619,7 +619,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
             return block_start;
         }
     }
-    return nullptr;
+    return nullptr; // not an intrinsic — not a translate failure
 }
 
 // ---------------------------------------------------------------
@@ -1152,9 +1152,12 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             }
 
             // Superblock: SLT+branch side exit (forward).
+            // FP flush: same as OP_BRANCH side exit (#1338).
+            //
             if (self_loop && next.imm > 0
                 && num_side_exits < MAX_SIDE_EXITS
                 && count < MAX_BLOCK_INSNS - 5) {
+                fc_flush(&e, &fc);
                 uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
                 side_exits[num_side_exits].jcc_patch = bcond_patch;
                 side_exits[num_side_exits].target_pc = target;
@@ -1493,11 +1496,20 @@ no_addr_fusion:
 
             // Superblock side exit: forward branch within self-loop.
             // Record taken path as cold stub, continue with fall-through.
+            //
+            // Flush the FP cache before the possible leave (#1338).  Side
+            // exits only snapshot integer slots; a dirty FP write (e.g.
+            // fdiv into f4) on the fall-through path just before a later
+            // taken side exit was never written to ctx, so the next block
+            // reloaded zeros.  Integer fall-through keeps host regs via
+            // the snapshot; FP has no snapshot, so it must hit memory.
+            //
             if (self_loop && insn.imm > 0
                 && num_side_exits < MAX_SIDE_EXITS
                 && count < MAX_BLOCK_INSNS - 4) {
                 int rs1 = rc_read(&e, &rc, insn.rs1);
                 int rs2 = rc_read(&e, &rc, insn.rs2);
+                fc_flush(&e, &fc);
                 emit_cmp_r64(&e, rs1, rs2);
                 uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
                 side_exits[num_side_exits].jcc_patch = bcond_patch;
@@ -2038,27 +2050,92 @@ no_addr_fusion:
                 //     type's MAXIMUM.  Nothing in the convert expresses that,
                 //     so test for unordered and select explicitly below.
                 //
+                //   * The rounding mode was ignored: FCVTZS/FCVTZU truncate,
+                //     so RNE -- the default, and what the assembler emits
+                //     when no mode is written -- behaved as RTZ and turned
+                //     1.5 into 1 (#1320).  RISC-V selects the mode per
+                //     instruction where ARM selects it per opcode, so the
+                //     rm field picks a different convert rather than
+                //     setting a mode bit.
+                //
                 int fs1 = fc_read(&e, &fc, insn.rs1);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+                const bool is64 = (insn.rs2 >= 2);
+                const bool uns  = (insn.rs2 & 1) != 0;
                 uint64_t nan_result;
                 if (insn.rs2 == 0) {
-                    // FCVT.W.D — double to signed 32-bit, sign-extended.
-                    emit_fcvtzs_w32_d(&e, rd, fs1);
-                    emit_sxtw(&e, rd, rd);
                     nan_result = 0x000000007FFFFFFFULL;   // INT32_MAX
                 } else if (insn.rs2 == 1) {
-                    // FCVT.WU.D — double to unsigned 32-bit, sign-extended.
-                    emit_fcvtzu_w32_d(&e, rd, fs1);
-                    emit_sxtw(&e, rd, rd);
                     nan_result = 0xFFFFFFFFFFFFFFFFULL;   // sext(UINT32_MAX)
                 } else if (insn.rs2 == 2) {
-                    // FCVT.L.D — double to signed 64-bit.
-                    emit_fcvtzs_x64_d(&e, rd, fs1);
                     nan_result = 0x7FFFFFFFFFFFFFFFULL;   // INT64_MAX
                 } else {
-                    // FCVT.LU.D — double to unsigned 64-bit.
-                    emit_fcvtzu_x64_d(&e, rd, fs1);
                     nan_result = 0xFFFFFFFFFFFFFFFFULL;   // UINT64_MAX
+                }
+
+                // RISC-V rm -> (ARM rmode, opcode).  Ties-away is the odd one
+                // out: it shares rmode=00 with nearest-even and is selected by
+                // the opcode instead.
+                struct rm_map_t { int rmode; int opcode; };
+                static const rm_map_t RM_TO_A64[5] = {
+                    { A64_FCVT_RMODE_N, A64_FCVT_OP_S  },  // 0 RNE
+                    { A64_FCVT_RMODE_Z, A64_FCVT_OP_S  },  // 1 RTZ
+                    { A64_FCVT_RMODE_M, A64_FCVT_OP_S  },  // 2 RDN
+                    { A64_FCVT_RMODE_P, A64_FCVT_OP_S  },  // 3 RUP
+                    { A64_FCVT_RMODE_N, A64_FCVT_OP_AS },  // 4 RMM
+                };
+                auto emit_cvt = [&](int rm) {
+                    const rm_map_t &m = RM_TO_A64[rm];
+                    // Unsigned is +1 on the opcode for every form, including
+                    // FCVTAS -> FCVTAU.
+                    emit_fcvt_int_d(&e, rd, fs1, is64, m.rmode,
+                                    m.opcode + (uns ? 1 : 0));
+                    if (!is64) {
+                        // RV64 sign-extends a 32-bit result even when the
+                        // convert itself is unsigned.
+                        emit_sxtw(&e, rd, rd);
+                    }
+                };
+
+                if (insn.funct3 <= 4) {
+                    // Static rounding mode: one instruction, no dispatch.
+                    emit_cvt(insn.funct3);
+                } else {
+                    // Dynamic (rm=7) -- and it is the common encoding, since
+                    // the assembler defaults to it when no mode is written.
+                    // The mode lives in fcsr.frm and can change at run time,
+                    // so it has to be read here rather than baked in.
+                    //
+                    // Laid out so frm=0 (RNE, the reset value and in practice
+                    // the only one ever set) is the fall-through and costs
+                    // four compares; the rest take one branch more.
+                    emit_ldr_w32_imm(&e, A64_X17, A64_X19, CTX_FCSR_OFF);
+                    emit_lsr_r32_imm(&e, A64_X17, A64_X17, 5);
+                    emit_mov_r64_imm32(&e, A64_X16, 7);
+                    emit_and_r64(&e, A64_X17, A64_X17, A64_X16);
+
+                    uint32_t to_mode[5] = { 0, 0, 0, 0, 0 };
+                    for (int rm = 1; rm <= 4; rm++) {
+                        emit_cmp_r64_imm(&e, A64_X17, (uint32_t)rm);
+                        to_mode[rm] = emit_b_cond(&e, A64_COND_EQ, 0);
+                    }
+                    // Fall-through: RNE.  Reserved frm values (5, 6) land
+                    // here too, which matches the interpreter's default.
+                    emit_cvt(0);
+                    uint32_t to_done[5] = { 0, 0, 0, 0, 0 };
+                    to_done[0] = emit_b(&e, 0);
+                    for (int rm = 1; rm <= 4; rm++) {
+                        emit_patch_b19(&e, to_mode[rm], emit_pos(&e));
+                        emit_cvt(rm);
+                        if (rm != 4) {
+                            to_done[rm] = emit_b(&e, 0);
+                        }
+                    }
+                    const uint32_t done = emit_pos(&e);
+                    emit_patch_b26(&e, to_done[0], done);
+                    for (int rm = 1; rm <= 3; rm++) {
+                        emit_patch_b26(&e, to_done[rm], done);
+                    }
                 }
                 // NaN → destination maximum.  FCMP of a value against itself
                 // is unordered exactly when it is NaN, and VS reads that as
@@ -2195,8 +2272,11 @@ no_addr_fusion:
 
 done:
     if (refuse_unhandled) {
+        // XLATE_REFUSE: dbt_run must not reclaim / count as buffer full
+        // (#1331).
+        //
         dbt_rollback_patches(dbt, patches_before);
-        return nullptr;
+        return dbt_xlate_refuse(dbt);
     }
 
     // Emit cold stubs for superblock side exits.
@@ -2222,7 +2302,7 @@ done:
 
     if (e.offset > e.capacity) {
         dbt_rollback_patches(dbt, patches_before);
-        return nullptr;
+        return dbt_xlate_full(dbt);
     }
 
     dbt->code_used += e.offset;
