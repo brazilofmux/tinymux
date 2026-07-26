@@ -219,7 +219,12 @@ void hir_const_fold(hir_program &h) {
                 }
                 break;
             case HIR_ABS:
-                if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
+                // Softcode abs() no longer lowers to HIR_ABS (#1150); this
+                // fold remains for any residual integer ABS.  -INT64_MIN is
+                // C++ UB (same class as #805 / #1114) — skip the fold.
+                //
+                if (s1 >= 0 && h.kind[s1] == HIR_ICONST
+                    && h.val[s1] != INT64_MIN) {
                     h.kind[i] = HIR_ICONST;
                     h.val[i] = (h.val[s1] < 0) ? -h.val[s1] : h.val[s1];
                     h.src1[i] = -1;
