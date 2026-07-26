@@ -150,17 +150,40 @@ test-netaddr:
 # The value is concentrated in the suites that execute the most engine code.
 # ASan reports a bad access only when something reaches it, so this multiplies
 # the coverage already there rather than substituting for it.
+#
+# Everything below was verified to run clean under -fsanitize=address,undefined
+# before being added, including test-ganl and test-scenario -- the only legs
+# that exercise the live network path, which muxscript cannot reach at all.
+#
+# rvbench_fn is excluded from the smoke legs.  It issues 55 rvbench() calls at
+# 10000 iterations each; instrumented, that is ~25ms per iteration, so the file
+# alone runs for hours and the harness reports an idle-hang at ~260 of 315
+# files -- which is how test-asan came to report FAILED for instrumentation
+# cost rather than for a defect.  The timeouts are raised as well, since an
+# instrumented smoke run legitimately takes several times longer.
+ASAN_SMOKE_EXCLUDE = rvbench_fn
 test-asan:
 	@if ! grep -q 'fsanitize' mux/config.status 2>/dev/null; then \
 	    echo "==> test-asan: this tree is not configured with sanitizers."; \
 	    echo "    See the recipe above this target in the Makefile."; \
 	    exit 1; \
 	fi
-	@echo "==> Running the high-coverage suites under sanitizers"
+	@echo "==> Running the suites under sanitizers"
 	$(MAKE) test-format
+	$(MAKE) test-netaddr
+	$(MAKE) test-alarm
 	$(MAKE) test-dbt
-	$(MAKE) test-smoke
-	$(MAKE) test-smoke-ast
+	$(MAKE) test-ganl
+	$(MAKE) test-jit-qreg
+	$(MAKE) test-jit-ifelse
+	$(MAKE) test-lua-ecall
+	$(MAKE) test-scenario
+	cd testcases && SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" ./tools/Makesmoke \
+	    && SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" ./tools/Smoke \
+	        --activity-timeout 300 --wallclock-timeout 3600
+	cd testcases && SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" \
+	    SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke \
+	        --activity-timeout 300 --wallclock-timeout 3600
 
 # mux_vsnprintf differential tests: %i, %o and the floating-point conversions
 # against the platform snprintf as an oracle.  These conversions used to fall
