@@ -1480,7 +1480,7 @@ static void ast_noeval_cand(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
-        val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
+        val = bBool ? xlate(temp) : isTRUE(mux_atoi64(temp));
     }
     safe_bool(val, buff, bufc);
 }
@@ -1502,7 +1502,7 @@ static void ast_noeval_cor(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
-        val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
+        val = bBool ? xlate(temp) : isTRUE(mux_atoi64(temp));
     }
     safe_bool(val, buff, bufc);
 }
