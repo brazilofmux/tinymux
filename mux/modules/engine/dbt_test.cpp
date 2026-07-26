@@ -2605,6 +2605,90 @@ static void test_fp_nan_canonicalisation() {
     }
 }
 
+// FMIN.D / FMAX.D with a signalling NaN operand (#1344).
+//
+// RISC-V prefers the NUMBER over a NaN operand whether that NaN is quiet or
+// signalling: an sNaN raises the invalid flag but still loses to a real
+// value, and only when BOTH operands are NaN is the result canonical.
+//
+// ARM's FMINNM/FMAXNM are IEEE minNum/maxNum, which prefer the number only
+// for a quiet NaN -- an sNaN comes back as a NaN.  FPCR.DN (#1343) does not
+// help; it only changes which NaN.  The backend now quietens both operands
+// first, which makes the two rules coincide.
+//
+// The interpreter is already correct here, by way of host fmin/fmax
+// semantics rather than anything the tests pinned down -- so both routes are
+// asserted.  Expected values follow the RISC-V unprivileged spec.
+//
+static void test_fp_minmax_snan() {
+    printf("test_fp_minmax_snan...\n");
+
+    const uint64_t SNAN  = 0x7FF0000000000001ULL;  // exp all 1s, mantissa
+                                                   // MSB clear => signalling
+    const uint64_t QNAN  = 0x7FF8000000000000ULL;
+    const uint64_t PINF  = 0x7FF0000000000000ULL;
+    const uint64_t NINF  = 0xFFF0000000000000ULL;
+    const uint64_t ONE   = 0x3FF0000000000000ULL;
+    const uint64_t NEGZERO = 0x8000000000000000ULL;  // NZERO is a POSIX macro
+
+    struct { const char *name; uint64_t bits; } VALS[] = {
+        { "+inf", PINF }, { "-inf", NINF }, { "1.0", ONE }, { "-0.0", NEGZERO },
+    };
+
+    // f1 = a, f2 = b, f3 = min/max(f1,f2).  Constants are built a byte at a
+    // time because ADDI's immediate is 12-bit SIGNED.
+    auto build = [](uint64_t a, uint64_t b, int is_max) {
+        std::vector<uint32_t> code;
+        auto load = [&](int freg, int xreg, uint64_t bits) {
+            code.push_back(ADDI(xreg, 0, 0));
+            for (int sh = 56; sh >= 0; sh -= 8) {
+                code.push_back(SLLI(xreg, xreg, 8));
+                uint8_t byte = (uint8_t)((bits >> sh) & 0xFF);
+                if (byte) {
+                    code.push_back(ADDI(30, 0, (int32_t)byte));
+                    code.push_back(r_type(0x33, xreg, 0, xreg, 30, 0));
+                }
+            }
+            code.push_back(r_type(OP_FP, freg, 0, xreg, 0,
+                                  (FP_FMVDX << 2) | FP_FMT_D));
+        };
+        load(1, 5, a);
+        load(2, 6, b);
+        code.push_back(r_type(OP_FP, 3, is_max ? 1 : 0, 1, 2,
+                              (FP_FMINMAX << 2) | FP_FMT_D));
+        code.push_back(ECALL());
+        return code;
+    };
+
+    for (int is_max = 0; is_max <= 1; is_max++) {
+        const char *op = is_max ? "fmax.d" : "fmin.d";
+        for (size_t i = 0; i < sizeof(VALS)/sizeof(VALS[0]); i++) {
+            for (int swap = 0; swap <= 1; swap++) {
+                // sNaN against a real value: the real value wins, in either
+                // operand position.
+                std::vector<uint32_t> code =
+                    build(swap ? VALS[i].bits : SNAN,
+                          swap ? SNAN : VALS[i].bits, is_max);
+                char desc[160];
+                snprintf(desc, sizeof(desc), "%s(sNaN,%s) sNaN in %s: interp",
+                         op, VALS[i].name, swap ? "rs2" : "rs1");
+                CHECK_EQ(desc, run_code(code).state.f[3], VALS[i].bits);
+                snprintf(desc, sizeof(desc), "%s(sNaN,%s) sNaN in %s: DBT",
+                         op, VALS[i].name, swap ? "rs2" : "rs1");
+                CHECK_EQ(desc, run_code_dbt_fbits(code, 3), VALS[i].bits);
+            }
+        }
+        // Both NaN -> canonical.  Without this the fix could be "always take
+        // the other operand", which would be wrong here.
+        std::vector<uint32_t> both = build(SNAN, QNAN, is_max);
+        char d2[160];
+        snprintf(d2, sizeof(d2), "%s(sNaN,qNaN) both NaN: interp", op);
+        CHECK_EQ(d2, run_code(both).state.f[3], QNAN);
+        snprintf(d2, sizeof(d2), "%s(sNaN,qNaN) both NaN: DBT", op);
+        CHECK_EQ(d2, run_code_dbt_fbits(both, 3), QNAN);
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2655,6 +2739,7 @@ int main(int argc, char *argv[]) {
     test_fcvt_rounding_modes();
     test_1338_superblock_side_exit_fp();
     test_fp_nan_canonicalisation();
+    test_fp_minmax_snan();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();

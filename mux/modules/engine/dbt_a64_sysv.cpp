@@ -2005,10 +2005,41 @@ no_addr_fusion:
                 int fs1 = fc_read(&e, &fc, insn.rs1);
                 int fs2 = fc_read(&e, &fc, insn.rs2);
                 int fd = fc_write(&e, &fc, insn.rd);
+
+                // Quieten both operands before the min/max (#1344).
+                //
+                // RISC-V FMIN.D/FMAX.D prefer the *number* over a NaN
+                // operand whether it is quiet or signalling; a signalling
+                // NaN raises the invalid flag but still loses to a real
+                // value, and only when BOTH operands are NaN is the result
+                // the canonical NaN.
+                //
+                // ARM's FMINNM/FMAXNM are IEEE minNum/maxNum, which prefer
+                // the number only for a QUIET NaN -- given a signalling one
+                // they return a NaN, so fmin.d(sNaN, 1.0) came back NaN
+                // where RISC-V requires 1.0.  FPCR.DN (#1337/#1343) does not
+                // help here; it only changes *which* NaN is returned.
+                //
+                // Replacing any NaN operand with the canonical quiet NaN
+                // first makes ARM's rule coincide with RISC-V's exactly:
+                // qNaN vs number picks the number, and NaN vs NaN yields the
+                // default NaN, which DN has already made canonical.
+                //
+                // D0/D1 are the documented FP scratch (the cache lives in
+                // D16-D21) and X17 is the IP1 scratch used the same way by
+                // the guest-address clamp and the FCVT NaN fixup.
+                //
+                emit_mov_r64_imm64(&e, A64_X17, 0x7FF8000000000000ULL);
+                emit_fmov_d_x64(&e, A64_D0, A64_X17);   // D0 = canonical NaN
+                emit_fcmp_d(&e, fs1, fs1);              // unordered iff NaN
+                emit_fcsel_d(&e, A64_D1, A64_D0, fs1, A64_COND_VS);
+                emit_fcmp_d(&e, fs2, fs2);
+                emit_fcsel_d(&e, A64_D0, A64_D0, fs2, A64_COND_VS);
+
                 if (insn.funct3 == 0)
-                    emit_fmin_d(&e, fd, fs1, fs2);
+                    emit_fmin_d(&e, fd, A64_D1, A64_D0);
                 else
-                    emit_fmax_d(&e, fd, fs1, fs2);
+                    emit_fmax_d(&e, fd, A64_D1, A64_D0);
                 break;
             }
             case FP_FCMP: {
