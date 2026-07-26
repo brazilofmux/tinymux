@@ -1,0 +1,105 @@
+#
+# astbench_fn.mux - Test Cases for astbench().
+#
+# astbench() had no reference anywhere in the corpus, which is how #1382
+# survived: the function formats its report with "%.2f", and
+# safe_tprintf_str routes through mux_vsnprintf, which implements only
+# integer/string conversions and calls mux_assert(0) on anything else.
+# So every astbench() call aborted the process.  A builtin that kills the
+# server on every invocation was invisible because nothing called it.
+#
+# These cases therefore assert something weaker than usual on purpose:
+# not the benchmark numbers, which are timing-dependent and vary per run
+# and per host, but that a call RETURNS AT ALL and returns the documented
+# shape.  That is exactly the property #1382 violated.
+#
+# astbench is CA_WIZARD; the test object reaches it the same way the rest
+# of the corpus does, by being INHERIT and owned by a wizard.
+#
+# The EXPECTED patterns avoid '(' -- expected text containing a paren is
+# the hazard documented in arity_fn.mux -- so the expressions under
+# benchmark are named in the report only via their result.
+#
+@create test_astbench_fn
+-
+@set test_astbench_fn=INHERIT QUIET
+-
+&tr.tc000 test_astbench_fn=
+  @log smoke=Beginning astbench function test cases.;
+  &r.add me=[astbench(add(1,2),10)];
+  &r.str me=[astbench(strcat(ab,cd),10)];
+  &r.zero me=[astbench(add(1,2),0)]
+-
+#
+# Test Case #1 - astbench returns its report instead of aborting.
+#
+# The shape is "ast=<f>us jit=<f>us ratio=<f>x result=<value>".  Matching
+# the trailing result pins that the benchmarked expression really ran;
+# matching the us/x markers pins that the floating-point fields were
+# formatted rather than dropped.
+#
+&tr.tc001 test_astbench_fn=
+  @if cand(
+        strmatch(v(r.add), ast=*us jit=*us ratio=*x result=3),
+        strmatch(v(r.str), ast=*us jit=*us ratio=*x result=abcd)
+      )=
+  {
+    @log smoke=TC001: astbench returns a formatted report. Succeeded.
+  },
+  {
+    @log smoke=TC001: astbench returns a formatted report. Failed (add=[v(r.add)] str=[v(r.str)]).
+  }
+-
+#
+# Test Case #2 - The float fields are real numbers, not empty or literal.
+#
+# #1382's failure was an abort, but a naive "just drop the %f" repair
+# would return "ast=us jit=us ratio=x" and still match TC001's wildcards.
+# Require an actual number -- at least one digit, a '.', then digits -- in
+# the ast and ratio fields.  MUX wildcards are '*' and '?' only; '#' is a
+# literal here, which is why these use '?'.
+#
+# The values themselves are not asserted.  jit= is legitimately 0.00 on a
+# build without TINYMUX_JIT, and ratio= follows it, so pinning magnitudes
+# would make this fail on configuration rather than on behaviour.
+#
+&tr.tc002 test_astbench_fn=
+  @if cand(
+        strmatch(v(r.add), ast=?*.??us *),
+        strmatch(v(r.add), *ratio=?*.?x *),
+        not(strmatch(v(r.add), *f*us*))
+      )=
+  {
+    @log smoke=TC002: astbench formats its float fields. Succeeded.
+  },
+  {
+    @log smoke=TC002: astbench formats its float fields. Failed ([v(r.add)]).
+  }
+-
+#
+# Test Case #3 - iterations below 1 returns empty, and does not abort.
+#
+# fun_astbench returns early for iterations < 1, before any formatting.
+# Pinned so the guard is not removed casually: it is what keeps a
+# divide-by-iterations out of the timing math.
+#
+&tr.tc003 test_astbench_fn=
+  @if eq(strlen(v(r.zero)), 0)=
+  {
+    @log smoke=TC003: astbench with zero iterations returns empty. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: astbench with zero iterations returns empty. Failed ([v(r.zero)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_astbench_fn=
+  @log smoke=End astbench function test cases.;
+  @notify smoke
+-
+drop test_astbench_fn
+-
+#
+# End of Test Cases
+#

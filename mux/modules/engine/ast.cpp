@@ -12,6 +12,7 @@
 #include "ast.h"
 #include "functions.h"
 
+#include <cstdio>
 #include <cstring>
 #include <algorithm>
 #include <list>
@@ -3046,7 +3047,20 @@ FUNCTION(fun_astbench)
     *rp = '\0';
 
     double ratio = (jit_us > 0.001) ? ast_us / jit_us : 0.0;
+
+    // Format floating-point with libc snprintf.  mux_vsnprintf / safe_tprintf
+    // only know integer and string conversions — "%.2f" falls through to
+    // mux_assert(0) and aborts the process (#1382).  rvbench() already uses
+    // this pattern for the same reason.
+    //
+    char ast_buf[32];
+    char jit_buf[32];
+    char ratio_buf[32];
+    snprintf(ast_buf, sizeof(ast_buf), "%.2f", ast_us);
+    snprintf(jit_buf, sizeof(jit_buf), "%.2f", jit_us);
+    snprintf(ratio_buf, sizeof(ratio_buf), "%.1f", ratio);
+
     safe_tprintf_str(buff, bufc,
-        T("ast=%.2fus jit=%.2fus ratio=%.1fx result=%s"),
-        ast_us, jit_us, ratio, result.get());
+        T("ast=%sus jit=%sus ratio=%sx result=%s"),
+        ast_buf, jit_buf, ratio_buf, result.get());
 }
