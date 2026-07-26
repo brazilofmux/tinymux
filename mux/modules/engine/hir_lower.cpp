@@ -1382,7 +1382,15 @@ static int hir_lower_argument(hir_program &h, rv_compiler &rc,
         }
         std::vector<int> parts;
         for (size_t i = first; i < last; i++) {
-            parts.push_back(hir_lower_node(h, rc, child->children[i].get()));
+            // -1 is the "declined" sentinel these functions return, so it
+            // must never reach h.ty[]/h.kind[] as an index -- ty is the
+            // first member of hir_program, and h.ty[-1] reads below the
+            // whole object (#1452).  Propagate the decline instead.
+            int part = hir_lower_node(h, rc, child->children[i].get());
+            if (part < 0) {
+                return -1;
+            }
+            parts.push_back(part);
         }
         if (parts.size() == 1) return parts[0];
         for (auto &p : parts) {
@@ -1419,7 +1427,13 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Arguments are still lowered (%-substitutions resolved).
         std::vector<int> args;
         for (auto &child : node->children) {
-            args.push_back(hir_lower_node(h, rc, child.get()));
+            // A declined child must not become an index (#1452); h.is_const
+            // and every h.<array>[ai] below would take -1.
+            int a = hir_lower_node(h, rc, child.get());
+            if (a < 0) {
+                return -1;
+            }
+            args.push_back(a);
         }
         int nargs = static_cast<int>(args.size());
 
@@ -1574,6 +1588,19 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         // Lower the condition (always evaluated).
         int cond = hir_lower_node(h, rc, node->children[0].get());
+
+        // Same sentinel hazard as cand/cor below (#1452): h.ty[cond],
+        // h.sval[cond] and h.known_int[cond] all index with this.  Nothing
+        // has been emitted for the branches yet at this point, so declining
+        // outright is enough -- no rollback is needed.
+        //
+        // UBSan did not name this site because ifelse's condition happened
+        // not to decline during that run; it is the same defect as the
+        // reported ones, found by auditing rather than by execution.
+        //
+        if (cond < 0) {
+            return -1;
+        }
 
         // Ensure condition is integer.  The interpreter decides this
         // condition with xlate() (fun_ifelse in funceval.cpp), so anything
@@ -1740,6 +1767,23 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         for (int ai = 0; ai < nfargs; ai++) {
             int cond = hir_lower_node(h, rc, node->children[ai].get());
+
+            // A declined operand cannot be indexed (#1452).  Roll back the
+            // partial lowering exactly as the non-integer case below does --
+            // branches may already have been emitted, and leaving them would
+            // orphan their placeholder targets (#858) -- then let the general
+            // ECALL path lower the whole node.
+            if (cond < 0) {
+                h.n_insns   = save_insns;
+                h.n_blocks  = save_blocks;
+                h.cur_block = save_cur;
+                h.n_pargs   = save_pargs;
+                h.n_cargs   = save_cargs;
+                h.sval.resize(save_insns);
+                h.call_name.resize(save_insns);
+                h.sref_addrs.resize(save_srefs);
+                goto general_lowering;
+            }
 
             // Ensure condition is integer.
             if (h.ty[cond] != TY_INT) {
@@ -2884,9 +2928,19 @@ general_lowering:
     }
 
     // Lower arguments.
+    //
+    // A declined argument must not reach the builtin dispatch below: every
+    // fast path there indexes h.ty[], h.kind[], h.val[] and h.known_int[]
+    // with these values, and -1 underflows hir_program (#1452).  Decline
+    // the whole call instead -- the interpreter fallback handles it.
+    //
     std::vector<int> args;
     for (auto &child : node->children) {
-        args.push_back(hir_lower_argument(h, rc, child.get()));
+        int a = hir_lower_argument(h, rc, child.get());
+        if (a < 0) {
+            return -1;
+        }
+        args.push_back(a);
     }
     int nargs = static_cast<int>(args.size());
 
@@ -3814,6 +3868,16 @@ literal_strcat:
     int i = h.emit_call(TY_STRING, fidx,
                          args.data(), nargs,
                          fidx == 0 ? &upper : nullptr);
+
+    // emit_call returns -1 when the instruction or carg pool is exhausted.
+    // The two assignments below are WRITES through that index, so this is
+    // not merely an out-of-bounds read: h.tier2_addr[-1] and h.known_int[-1]
+    // store below the object (#1452).
+    //
+    if (i < 0) {
+        return -1;
+    }
+
     if (t2addr) {
         h.tier2_addr[i] = t2addr;
         h.tier2_calls++;
