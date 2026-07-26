@@ -88,7 +88,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |----|--------|-------|------:|-----------|--------|-------|
 | E1 | SQLite / sqlitedb | `sqlitedb.cpp`, `sqlite_backend.cpp` | large | Pass 1, #1073 | deep | Schema gate, prepare, load paths |
 | E2 | Attr cache / write queue | `attrcache.cpp` | med | Pass 1 + residual 2026-07-26 | deep | Flush-on-fail leaves queue; #1284 code-cache coalesce + preloaded-miss Get |
-| E3 | Flatfile R/W | `db.cpp`, `db_rw.cpp` | large | Pass 1 import flush | partial | Import/export edges |
+| E3 | Flatfile R/W | `db.cpp`, `db_rw.cpp` | large | Pass 1 + Pass 13 residual 2026-07-26 | deep | #806 dbref/lock gates held; color migrate fail-closed; no new High/Medium |
 | E4 | Command queue | `cque.cpp`, `timer.cpp`, `cron.cpp` | large | Pass 1, #1080 | deep | OOM refund, depth, runaway money |
 | E5 | Object / player / flags | `object.cpp`, `player*.cpp`, `flags.cpp`, `powers.cpp` | large | Pass 8 | deep | #1179–#1180 High; #1182–#1185 Medium open |
 
@@ -180,6 +180,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass D4 residual | 2026-07-26 | lua_mod bridges | #1287 mux.pennies/iswizard/isconnected match softcode perms; string.dump removed |
 | Pass 11 | 2026-07-26 | B3 OpenSSL + B4 Schannel residual | #1282 wire-buffer caps + OpenSSL cipher pin; prior #948–#952/#1067–#1068 still held |
 | Pass E2 residual | 2026-07-26 | attrcache write queue | #1284 code-cache coalesce by source_hash; preloaded miss no longer re-Gets |
+| **Pass 13 residual** | **2026-07-26** | **Anti-cool: E3 re-read, ltoa/quota family, conf path builders** | **#1411** `.sqlite` path overflow on max `input_database`; **#1408** family annotated (pay_quota/money); E3 → deep. See `docs/survey-residual-pass13-2026-07.md`. No D* dive. |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -188,17 +189,17 @@ Also useful historical surveys (pre-hardening-month):
 
 ## Recommended rotation (next ~N passes)
 
-Revisit is expected. Suggested order balances **new surface** with **re-sweeps**:
+Revisit is expected. Suggested order balances **new surface** with **re-sweeps**.
+**2026-07-26:** prior “Now/Then” rows (#1260–#1270, #1280, #1292, #1275) are **closed**; do not re-queue them as open defects.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **Fix Pass 10** #1266–#1270 (#1265 closed) | Fresh I2 findings; #1266 is a practical DoS under auth |
-| **Then** | **#1260** D2 max/min/sign/bound int path; **#1292** interpreter `mem_check` wrap | All that is left of the D2/D3 residual |
-| **Pass 11** | B3/B4 done (#1282); **B6** harness expansion still welcome | Windows/Linux TLS depth |
-| **Pass 12** | C3 done (#1279); **#1280** NOEVAL hook residual still open | @-command side effects |
-| **Pass 13** | A8 done (slave/stubslave); **#1275** Win32 DNS queue caps still open | Small, self-contained |
+| **Now** | Fix **#1411** path helper; resolve **#1408** clamp design | Fresh Pass 13 Medium + documented family |
+| **Then** | Land free PRs: **#1397** Lua engage; dual-review **#1405** races | Higher ROI than inventing Pass 14 |
+| **Then** | **#1407** softlib blob (MacBook) + close #1402 when host+guest done | LLP64/justify family |
+| **Later** | **K2** scenario defaults; **F3** dual-path leftovers if any remain open | Still not D3 |
 | **Pass 14+** | **J\*** clients by platform | After server/proxy confidence |
-| **Anytime** | **D5** jit_diff soak + corpus gaps (#1160); parser residuals #1247/#1248 held for golden vectors | Continuous |
+| **Anytime** | **D5** jit_diff soak + corpus gaps (#1160); #1247 when kagura free | Continuous / claimed |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -251,5 +252,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-26 | Pass B1/H1 residual: freelist + alarm + dual-stack #1290; B1/H1 → deep |
 | 2026-07-26 | Pass D4 residual: Lua bridge Examinable gates + string.dump #1287; D4 → deep |
 | 2026-07-26 | Pass 11 B3/B4: TLS wire-buffer caps + OpenSSL cipher pin #1282; B3 deep |
+| 2026-07-26 | **Pass 13 residual** (anti-cool): E3 re-read deep; #1411 path overflow; #1408 family note; rotation table refreshed (old #126x–#1292 closed) |
 
 Update this table when the map structure changes.
