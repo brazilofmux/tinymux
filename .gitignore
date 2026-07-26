@@ -117,6 +117,9 @@ testcases/alias.conf
 testcases/compat.conf
 testcases/netmux.pid
 testcases/netmux.log
+testcases/netmux.sqlite
+testcases/netmux.sqlite-shm
+testcases/netmux.sqlite-wal
 testcases/shutdown.status
 testcases/smoke.pid
 testcases/smoke.d/
@@ -129,6 +132,7 @@ testcases/*.bak
 
 # Hydra proxy build artifacts
 mux/proxy/hydra
+mux/proxy/proxy_regression
 mux/proxy/.deps/
 mux/proxy/Makefile
 mux/proxy/*.o
@@ -174,3 +178,8 @@ mux/ganl/tests/ganl_engine_tests
 mux/ganl/tests/ganl_engine_tests.dSYM/
 mux/ganl/tests/ganl_tests.err
 testcases/soak.log
+
+# Core dumps (e.g. from a crash investigation under `ulimit -c unlimited`)
+core
+core.*
+vgcore.*
