@@ -3,8 +3,12 @@
 # Minimal binary that loads engine.so via COM and runs softcode
 # without networking.  Links against libmux.so.
 
+# Pass the same feature macros as src/ and modules/engine so muxscript never
+# disagrees with libmux/engine on STUB_SLAVE- or TINYMUX_JIT-gated layout
+# (queue-entry/state members).  Omitting them is a silent ABI footgun the day
+# mux_main.cpp transitively includes those headers — #1293.
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
-    $(WOD_REALMS) $(REALITY_LVLS) \
+    $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
     $(SELFCHECK) $(SSL) $(OPENSSL_CFLAGS)
 
 bin_PROGRAMS = muxscript

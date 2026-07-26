@@ -316,8 +316,12 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+# Pass the same feature macros as src/ and modules/engine so muxscript never
+# disagrees with libmux/engine on STUB_SLAVE- or TINYMUX_JIT-gated layout
+# (queue-entry/state members).  Omitting them is a silent ABI footgun the day
+# mux_main.cpp transitively includes those headers — #1293.
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
-    $(WOD_REALMS) $(REALITY_LVLS) \
+    $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) $(TINYMUX_JIT) \
     $(SELFCHECK) $(SSL) $(OPENSSL_CFLAGS)
 
 muxscript_SOURCES = mux_main.cpp
