@@ -26,6 +26,11 @@ void cache_tick(void);
 bool cache_sync(void);
 bool cache_flush_writes(void);
 void cache_discard_writes(void);
+// Drop pending OP_CODE_CACHE_PUT ops only (keep attribute put/del).
+// Used by jitstats(flush) so a subsequent DELETE FROM code_cache is not
+// undone by a later write-queue flush re-inserting the same programs (#1316).
+//
+void cache_discard_code_cache_writes(void);
 void cache_collect_pending_attrnums(dbref thing, std::vector<int> &attrnums);
 void cache_queue_code_cache_put(
     const char *source_hash, int source_hash_len,

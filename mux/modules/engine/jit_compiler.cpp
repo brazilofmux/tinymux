@@ -5077,11 +5077,49 @@ FUNCTION(fun_jitstats)
         return;
     }
 
-    if (nfargs >= 1 && strcmp(reinterpret_cast<const char *>(fargs[0]), "reset") == 0) {
-        memset(&s_jit_stats, 0, sizeof(s_jit_stats));
-        jit_lua_reset_stats();
-        safe_str(T("OK"), buff, bufc);
-        return;
+    if (nfargs >= 1) {
+        const char *arg = reinterpret_cast<const char *>(fargs[0]);
+        if (strcmp(arg, "reset") == 0) {
+            memset(&s_jit_stats, 0, sizeof(s_jit_stats));
+            jit_lua_reset_stats();
+            safe_str(T("OK"), buff, bufc);
+            return;
+        }
+        if (strcmp(arg, "flush") == 0) {
+            // Wipe the persisted JIT code_cache and every in-process
+            // compiled program that would still serve the old codegen.
+            // Without this, a later build can load a code_cache row written
+            // by an earlier one (blob_hash only covers the Tier-2 blob, not
+            // engine codegen changes) — the A/B trap from #1315 / #1316.
+            //
+            // 1. Drop pending OP_CODE_CACHE_PUT so a later write-queue flush
+            //    cannot re-insert what we are about to DELETE.
+            // 2. DELETE FROM code_cache.
+            // 3. Clear softcode and Lua in-memory compile caches.
+            //
+#if defined(HAVE_WORKING_FORK)
+            if (mudstate.write_protect) {
+                safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+                return;
+            }
+#endif
+            cache_discard_code_cache_writes();
+            bool ok = true;
+            if (g_pSQLiteBackend) {
+                ok = g_pSQLiteBackend->GetDB().CodeCacheFlush();
+            }
+            s_compile_cache.clear();
+            s_compile_lru.clear();
+            s_dbt_last_program_id = 0;
+            s_runtime_buffer_program_id = 0;
+            jit_lua_clear_cache();
+            if (!ok) {
+                safe_str(T("#-1 CODE CACHE FLUSH FAILED"), buff, bufc);
+                return;
+            }
+            safe_str(T("OK"), buff, bufc);
+            return;
+        }
     }
 
     // Format: key=value pairs, newline-separated for readability.
