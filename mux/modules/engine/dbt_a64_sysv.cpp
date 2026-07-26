@@ -2014,26 +2014,54 @@ no_addr_fusion:
             }
             case FP_FCVTW: {
                 // FCVT int ← double
+                // RISC-V and ARM disagree on both out-of-range and NaN, so
+                // neither FCVTZS nor FCVTZU can be used bare here (#1313):
+                //
+                //   * ARM saturates at the destination width.  The W forms
+                //     were converting at 64-bit width and then narrowing, so
+                //     fcvt.w.d(+inf) gave -1 (0x7FFF_FFFF_FFFF_FFFF truncated
+                //     to 0xFFFFFFFF, sign-extended) instead of 0x7FFFFFFF,
+                //     and fcvt.w.d(-inf) gave 0 instead of 0x80000000.  Use
+                //     the 32-bit forms so ARM saturates where RISC-V does.
+                //
+                //   * RV64 sign-extends a 32-bit result even for the
+                //     *unsigned* form, so fcvt.wu.d(+inf) is
+                //     0xFFFFFFFF_FFFFFFFF.  The old MOV Wd,Wd zero-extended
+                //     and produced 0x00000000_FFFFFFFF.
+                //
+                //   * ARM returns 0 for NaN; RISC-V returns the destination
+                //     type's MAXIMUM.  Nothing in the convert expresses that,
+                //     so test for unordered and select explicitly below.
+                //
                 int fs1 = fc_read(&e, &fc, insn.rs1);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+                uint64_t nan_result;
                 if (insn.rs2 == 0) {
-                    // FCVT.W.D — double to signed 32-bit
-                    emit_fcvtzs_x64_d(&e, rd, fs1);
+                    // FCVT.W.D — double to signed 32-bit, sign-extended.
+                    emit_fcvtzs_w32_d(&e, rd, fs1);
                     emit_sxtw(&e, rd, rd);
+                    nan_result = 0x000000007FFFFFFFULL;   // INT32_MAX
                 } else if (insn.rs2 == 1) {
-                    // FCVT.WU.D — double to unsigned 32-bit
-                    // FCVTZU Xd, Dn (unsigned conversion)
-                    emit_inst(&e, 0x9E790000 | (fs1 << 5) | rd);
-                    // Zero-extend 32→64: use MOV Wd, Wd
-                    emit_mov_r32(&e, rd, rd);
+                    // FCVT.WU.D — double to unsigned 32-bit, sign-extended.
+                    emit_fcvtzu_w32_d(&e, rd, fs1);
+                    emit_sxtw(&e, rd, rd);
+                    nan_result = 0xFFFFFFFFFFFFFFFFULL;   // sext(UINT32_MAX)
                 } else if (insn.rs2 == 2) {
-                    // FCVT.L.D — double to signed 64-bit
+                    // FCVT.L.D — double to signed 64-bit.
                     emit_fcvtzs_x64_d(&e, rd, fs1);
+                    nan_result = 0x7FFFFFFFFFFFFFFFULL;   // INT64_MAX
                 } else {
-                    // FCVT.LU.D — double to unsigned 64-bit
-                    // Use unsigned variant (FCVTZU)
-                    emit_inst(&e, 0x9E790000 | (fs1 << 5) | rd);
+                    // FCVT.LU.D — double to unsigned 64-bit.
+                    emit_fcvtzu_x64_d(&e, rd, fs1);
+                    nan_result = 0xFFFFFFFFFFFFFFFFULL;   // UINT64_MAX
                 }
+                // NaN → destination maximum.  FCMP of a value against itself
+                // is unordered exactly when it is NaN, and VS reads that as
+                // "overflow"/unordered.  X17 is the documented IP1 scratch,
+                // used the same way by the guest-address clamp above.
+                emit_mov_r64_imm64(&e, A64_X17, nan_result);
+                emit_fcmp_d(&e, fs1, fs1);
+                emit_csel(&e, rd, A64_X17, rd, A64_COND_VS);
                 break;
             }
             case FP_FCVTDW: {
