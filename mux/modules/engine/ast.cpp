@@ -1507,7 +1507,7 @@ static void ast_noeval_cand(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
-        val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
+        val = bBool ? xlate(temp) : isTRUE(mux_atoi64(temp));
     }
     safe_bool(val, buff, bufc);
 }
@@ -1529,7 +1529,7 @@ static void ast_noeval_cor(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
-        val = bBool ? xlate(temp) : isTRUE(mux_atol(temp));
+        val = bBool ? xlate(temp) : isTRUE(mux_atoi64(temp));
     }
     safe_bool(val, buff, bufc);
 }
@@ -3004,7 +3004,7 @@ FUNCTION(fun_astbench)
 
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
-    int iterations = mux_atol(fargs[1]);
+    int iterations = mux_atoi64(fargs[1]);
     if (nLen == 0 || iterations < 1) return;
     if (iterations > 100000) iterations = 100000;
 

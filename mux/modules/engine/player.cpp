@@ -49,7 +49,7 @@ NAMETAB method_nametab[] =
 // grabto() returns nullptr once the ';'-separated fields in A_LOGINDATA are
 // exhausted, which happens when the attribute is malformed or truncated (e.g.
 // "#803" with no trailing fields).  Treat a missing field as an empty string so
-// callers never dereference nullptr: mux_atol() crashes on a nullptr argument,
+// callers never dereference nullptr: mux_atoi64() crashes on a nullptr argument,
 // and the host/dtm pointers are later handed to tprintf()/notify().
 //
 static UTF8 *grab_field(UTF8 **str)
@@ -80,14 +80,14 @@ static void decrypt_logindata(UTF8 *atrbuf, LDATA *info)
     if (*atrbuf == '#')
     {
         atrbuf++;
-        info->tot_good = mux_atol(grab_field(&atrbuf));
+        info->tot_good = mux_atoi64(grab_field(&atrbuf));
         for (i = 0; i < NUM_GOOD; i++)
         {
             info->good[i].host = grab_field(&atrbuf);
             info->good[i].dtm = grab_field(&atrbuf);
         }
-        info->new_bad = mux_atol(grab_field(&atrbuf));
-        info->tot_bad = mux_atol(grab_field(&atrbuf));
+        info->new_bad = mux_atoi64(grab_field(&atrbuf));
+        info->tot_bad = mux_atoi64(grab_field(&atrbuf));
         for (i = 0; i < NUM_BAD; i++)
         {
             info->bad[i].host = grab_field(&atrbuf);
@@ -774,7 +774,7 @@ dbref connect_player(UTF8 *name, UTF8 *password, UTF8 *host, UTF8 *username, UTF
         }
         else
         {
-            giveto(player, mux_atol(allowance));
+            giveto(player, mux_atoi64(allowance));
         }
     }
     atr_add_raw(player, A_LAST, time_str);
@@ -1217,7 +1217,7 @@ dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
             return NOTHING;
         }
 
-        thing = mux_atol(name);
+        thing = mux_atoi64(name);
         if (!Good_obj(thing))
         {
             return NOTHING;

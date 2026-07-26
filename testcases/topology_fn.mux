@@ -1,0 +1,239 @@
+#
+# topology_fn.mux - Test Cases for object topology functions.
+#
+# Covers fourteen builtins that had no reference anywhere in the corpus
+# (#1160): con(), next(), exit(), lcon(), lexits(), entrances(),
+# lparent(), children(), rloc(), where(), home(), nearby(), visible()
+# and findable().
+#
+# These are the room/contents/exit relationships the database is built
+# on, and they are exactly the shape where a compiled route can diverge
+# from the interpreter without changing any answer a simpler test would
+# look at.
+#
+# Layout built below:
+#
+#   Topo_Room_A  --topo_exit_ab-->  Topo_Room_B
+#     contains Topo_Thing_1 (parented to Topo_Parent)
+#     contains Topo_Thing_2
+#
+@create test_topology_fn
+-
+@set test_topology_fn=INHERIT QUIET
+-
+#
+# Setup: create the rooms and things, then attrib_set the dbrefs so the
+# cases can refer to them without depending on any absolute number.
+#
+think [setq(0, create(Topo_Room_A, 10, r))][attrib_set(test_topology_fn/room_a, %q0)]
+-
+think [setq(0, create(Topo_Room_B, 10, r))][attrib_set(test_topology_fn/room_b, %q0)]
+-
+think [setq(0, create(Topo_Thing_1, 10))][attrib_set(test_topology_fn/thing_1, %q0)]
+-
+think [setq(0, create(Topo_Thing_2, 10))][attrib_set(test_topology_fn/thing_2, %q0)]
+-
+think [setq(0, create(Topo_Parent, 10))][attrib_set(test_topology_fn/parent_obj, %q0)]
+-
+#
+# Exit A -> B: teleport to the source room, @open, then record the dbref.
+#
+# @open puts the exit in the opener's location, so this has to move -- but
+# `me` is the shared smoke runner, and every later file in the suite runs as
+# the same object.  Save the original location first and go back to it
+# below, or the move leaks into everything that follows.
+#
+think [attrib_set(test_topology_fn/saved_loc, [loc(me)])]
+-
+@tel me=[get(test_topology_fn/room_a)]
+-
+@open topo_exit_ab=[get(test_topology_fn/room_b)]
+-
+think [attrib_set(test_topology_fn/exit_ab, [lastcreate(me, e)])]
+-
+@tel me=[get(test_topology_fn/saved_loc)]
+-
+#
+# Put both things in room A and parent the first one.
+#
+@tel [get(test_topology_fn/thing_1)]=[get(test_topology_fn/room_a)]
+-
+@tel [get(test_topology_fn/thing_2)]=[get(test_topology_fn/room_a)]
+-
+think [parent(get(test_topology_fn/thing_1), get(test_topology_fn/parent_obj))]
+-
+&tr.tc000 test_topology_fn=
+  @log smoke=Beginning topology function test cases.
+-
+#
+# Test Case #1 - lcon() lists a room's contents.
+#
+# Membership rather than equality: whoever uploaded the suite may still
+# be standing in the room, so the list legitimately holds more than the
+# two fixture objects.
+#
+&tr.tc001 test_topology_fn=
+  @if cand(
+        gt(member(lcon(get(me/room_a)), get(me/thing_1)), 0),
+        gt(member(lcon(get(me/room_a)), get(me/thing_2)), 0)
+      )=
+  {
+    @log smoke=TC001: lcon lists room contents. Succeeded.
+  },
+  {
+    @log smoke=TC001: lcon lists room contents. Failed ([lcon(get(me/room_a))] lacks [get(me/thing_1)] or [get(me/thing_2)]).
+  }
+-
+#
+# Test Case #2 - con() starts the contents chain and next() walks it.
+#
+# Asserted as membership of lcon() rather than against a fixed order:
+# the chain order is an implementation detail, but every link in it must
+# be something lcon() also reports.
+#
+&tr.tc002 test_topology_fn=
+  @if cand(
+        gt(member(lcon(get(me/room_a)), setr(0, con(get(me/room_a)))), 0),
+        gt(member(lcon(get(me/room_a)), setr(1, next(%q0))), 0)
+      )=
+  {
+    @log smoke=TC002: con starts and next walks the contents chain. Succeeded.
+  },
+  {
+    @log smoke=TC002: con starts and next walks the contents chain. Failed (con=%q0 next=%q1 lcon=[lcon(get(me/room_a))]).
+  }
+-
+#
+# Test Case #3 - lexits() and exit() both report the room's exit.
+#
+&tr.tc003 test_topology_fn=
+  @if cand(
+        strmatch(setr(0, lexits(get(me/room_a))), get(me/exit_ab)),
+        strmatch(setr(1, exit(get(me/room_a))), get(me/exit_ab))
+      )=
+  {
+    @log smoke=TC003: lexits and exit report the room exit. Succeeded.
+  },
+  {
+    @log smoke=TC003: lexits and exit report the room exit. Failed (lexits=%q0 exit=%q1 expected [get(me/exit_ab)]).
+  }
+-
+#
+# Test Case #4 - entrances() finds the exit leading TO a room.
+#
+&tr.tc004 test_topology_fn=
+  @if strmatch(
+        setr(0, entrances(get(me/room_b))),
+        get(me/exit_ab)
+      )=
+  {
+    @log smoke=TC004: entrances finds the inbound exit. Succeeded.
+  },
+  {
+    @log smoke=TC004: entrances finds the inbound exit. Failed (%q0, expected [get(me/exit_ab)]).
+  }
+-
+#
+# Test Case #5 - lparent() reports the object then its parent.
+#
+&tr.tc005 test_topology_fn=
+  @if strmatch(
+        setr(0, lparent(get(me/thing_1))),
+        [get(me/thing_1)] [get(me/parent_obj)]
+      )=
+  {
+    @log smoke=TC005: lparent walks the parent chain. Succeeded.
+  },
+  {
+    @log smoke=TC005: lparent walks the parent chain. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - children() is the inverse of lparent().
+#
+&tr.tc006 test_topology_fn=
+  @if strmatch(
+        setr(0, children(get(me/parent_obj))),
+        get(me/thing_1)
+      )=
+  {
+    @log smoke=TC006: children inverts the parent chain. Succeeded.
+  },
+  {
+    @log smoke=TC006: children inverts the parent chain. Failed (%q0, expected [get(me/thing_1)]).
+  }
+-
+#
+# Test Case #7 - rloc() at depth 0 is the object; depth 1 is its location.
+#
+&tr.tc007 test_topology_fn=
+  @if cand(
+        strmatch(setr(0, rloc(get(me/thing_1), 0)), get(me/thing_1)),
+        strmatch(setr(1, rloc(get(me/thing_1), 1)), get(me/room_a))
+      )=
+  {
+    @log smoke=TC007: rloc resolves location by depth. Succeeded.
+  },
+  {
+    @log smoke=TC007: rloc resolves location by depth. Failed (depth0=%q0 depth1=%q1).
+  }
+-
+#
+# Test Case #8 - where() gives a thing's location, home() gives a dbref.
+#
+# home() is only asserted to BE a real dbref: which room a thing homes
+# to depends on configuration, but returning #-1 or nothing would be
+# wrong under any configuration.  strmatch(..., #*) alone is not enough
+# -- it also matches #-1 -- so isdbref() plus an explicit #-1 reject.
+#
+&tr.tc008 test_topology_fn=
+  @if cand(
+        strmatch(setr(0, where(get(me/thing_1))), get(me/room_a)),
+        isdbref(setr(1, home(get(me/thing_1)))),
+        not(strmatch(%q1, #-1))
+      )=
+  {
+    @log smoke=TC008: where and home resolve a thing. Succeeded.
+  },
+  {
+    @log smoke=TC008: where and home resolve a thing. Failed (where=%q0 home=%q1).
+  }
+-
+#
+# Test Case #9 - nearby() is true within a room and false across rooms.
+#
+&tr.tc009 test_topology_fn=
+  @if cand(
+        strmatch(setr(0, nearby(get(me/thing_1), get(me/thing_2))), 1),
+        strmatch(setr(1, nearby(get(me/thing_1), get(me/room_b))), 0)
+      )=
+  {
+    @log smoke=TC009: nearby distinguishes same room from elsewhere. Succeeded.
+  },
+  {
+    @log smoke=TC009: nearby distinguishes same room from elsewhere. Failed (same=%q0 other=%q1).
+  }
+-
+#
+# Test Case #10 - visible() and findable() on a co-located object.
+#
+&tr.tc010 test_topology_fn=
+  @if cand(
+        strmatch(setr(0, visible(get(me/thing_1), get(me/thing_2))), 1),
+        strmatch(setr(1, findable(get(me/thing_1), get(me/thing_2))), 1)
+      )=
+  {
+    @log smoke=TC010: visible and findable on a co-located object. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC010: visible and findable on a co-located object. Failed (visible=%q0 findable=%q1).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_topology_fn=
+  @log smoke=End topology function test cases.;
+  @notify smoke
+-
+drop test_topology_fn
+-

@@ -61,7 +61,7 @@ FUNCTION(fun_add)
     long sum = 0;
     for (i = 0; i < nArgs; i++)
     {
-        sum += mux_atol(fargs[i]);
+        sum += mux_atoi64(fargs[i]);
     }
     safe_ltoa(sum, buff, bufc);
 }
@@ -135,8 +135,8 @@ FUNCTION(fun_sub)
        && nDigits <= 9)
     {
         int iResult;
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         iResult = a - b;
         safe_ltoa(iResult, buff, bufc);
     }
@@ -227,8 +227,8 @@ FUNCTION(fun_gt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a > b);
     }
     else
@@ -257,8 +257,8 @@ FUNCTION(fun_gte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a >= b);
     }
     else
@@ -287,8 +287,8 @@ FUNCTION(fun_lt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a < b);
     }
     else
@@ -317,8 +317,8 @@ FUNCTION(fun_lte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a <= b);
     }
     else
@@ -347,8 +347,8 @@ FUNCTION(fun_eq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a == b);
     }
     else
@@ -380,8 +380,8 @@ FUNCTION(fun_neq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atol(fargs[0]);
-        long b = mux_atol(fargs[1]);
+        long a = mux_atoi64(fargs[0]);
+        long b = mux_atoi64(fargs[1]);
         bResult = (a != b);
     }
     else
@@ -896,7 +896,7 @@ FUNCTION(fun_shl)
     {
         // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
         //
-        long  b = mux_atol(fargs[1]);
+        long  b = mux_atoi64(fargs[1]);
         if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);
@@ -933,7 +933,7 @@ FUNCTION(fun_shr)
     {
         // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
         //
-        long  b = mux_atol(fargs[1]);
+        long  b = mux_atoi64(fargs[1]);
         if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);
@@ -1802,7 +1802,7 @@ FUNCTION(fun_round)
             r = 0.0;
         }
 #endif // HAVE_IEEE_FP_FORMAT
-        int frac = mux_atol(fargs[1]);
+        int frac = mux_atoi64(fargs[1]);
         safe_str(mux_ftoa(r, true, frac), buff, bufc);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -2225,7 +2225,7 @@ FUNCTION(fun_log)
         if (  is_integer(fargs[1], &nDigits)
            && nDigits <= 2)
         {
-            int iBase = mux_atol(fargs[1]);
+            int iBase = mux_atoi64(fargs[1]);
             if (10 == iBase)
             {
                 kBase = kCommon;
@@ -2402,7 +2402,7 @@ FUNCTION(fun_and)
     bool val = true;
     for (int i = 0; i < nfargs && val; i++)
     {
-        val = isTRUE(mux_atol(fargs[i]));
+        val = isTRUE(mux_atoi64(fargs[i]));
     }
     safe_bool(val, buff, bufc);
 }
@@ -2419,7 +2419,7 @@ FUNCTION(fun_or)
     bool val = false;
     for (int i = 0; i < nfargs && !val; i++)
     {
-        val = isTRUE(mux_atol(fargs[i]));
+        val = isTRUE(mux_atoi64(fargs[i]));
     }
     safe_bool(val, buff, bufc);
 }
@@ -2468,7 +2468,7 @@ FUNCTION(fun_cand)
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
-        val = isTRUE(mux_atol(temp));
+        val = isTRUE(mux_atoi64(temp));
     }
     safe_bool(val, buff, bufc);
 }
@@ -2483,7 +2483,7 @@ FUNCTION(fun_cor)
         mux_exec(fargs[i], LBUF_SIZE-1, temp, &bp, executor, caller, enactor,
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
-        val = isTRUE(mux_atol(temp));
+        val = isTRUE(mux_atoi64(temp));
     }
     safe_bool(val, buff, bufc);
 }
@@ -2507,7 +2507,7 @@ FUNCTION(fun_firstof)
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
 
-        if (isTRUE(mux_atol(temp)) || i == nfargs - 1)
+        if (isTRUE(mux_atoi64(temp)) || i == nfargs - 1)
         {
             safe_str(temp, buff, bufc);
             return;
@@ -2578,7 +2578,7 @@ FUNCTION(fun_allof)
             eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL, cargs, ncargs);
         *bp = '\0';
 
-        if (isTRUE(mux_atol(temp)))
+        if (isTRUE(mux_atoi64(temp)))
         {
             if (!bFirst)
             {
@@ -2681,7 +2681,7 @@ FUNCTION(fun_xor)
         // Test truthiness on the full 64-bit value, matching and()/or()/
         // lxor(); narrowing to int drops the high bits of large operands.
         //
-        bool tval = isTRUE(mux_atol(fargs[i]));
+        bool tval = isTRUE(mux_atoi64(fargs[i]));
         val = (val && !tval) || (!val && tval);
     }
     safe_bool(val, buff, bufc);
@@ -3177,7 +3177,7 @@ FUNCTION(fun_land)
         while (cp && bValue)
         {
             UTF8 *curr = split_token(&cp, sep);
-            bValue = isTRUE(mux_atol(curr));
+            bValue = isTRUE(mux_atoi64(curr));
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -3205,7 +3205,7 @@ FUNCTION(fun_lor)
         while (cp && !bValue)
         {
             UTF8 *curr = split_token(&cp, sep);
-            bValue = isTRUE(mux_atol(curr));
+            bValue = isTRUE(mux_atoi64(curr));
         }
     }
     safe_bool(bValue, buff, bufc);
@@ -3233,7 +3233,7 @@ FUNCTION(fun_lxor)
         while (cp)
         {
             UTF8 *curr = split_token(&cp, sep);
-            bool bCurr = isTRUE(mux_atol(curr));
+            bool bCurr = isTRUE(mux_atoi64(curr));
             bValue = (bValue && !bCurr) || (!bValue && bCurr);
         }
     }

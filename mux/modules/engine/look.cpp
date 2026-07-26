@@ -127,7 +127,7 @@ static int GetRealmLevel(dbref executor, dbref thing, const UTF8 *attrname)
     {
         // Fast path: plain integer, no evaluation needed.
         //
-        result = mux_atol(buff);
+        result = mux_atoi64(buff);
     }
     else
     {
@@ -139,7 +139,7 @@ static int GetRealmLevel(dbref executor, dbref thing, const UTF8 *attrname)
             AttrTrace(aflags, EV_FCHECK|EV_EVAL|EV_TOP),
             nullptr, 0);
         *ep = '\0';
-        result = mux_atol(ebuf);
+        result = mux_atoi64(ebuf);
         free_lbuf(ebuf);
     }
     free_lbuf(buff);

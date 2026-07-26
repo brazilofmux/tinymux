@@ -15,6 +15,9 @@
 &tr.lj_ok test_jitstats_fn=
   [after(grab(jitstats(),lua_run_ok=*),=)]
 -
+&tr.lj_try test_jitstats_fn=
+  [add(after(grab(jitstats(),lua_run_ok=*),=),after(grab(jitstats(),lua_run_fail=*),=))]
+-
 &tr.tc001 test_jitstats_fn=
   @if u(me/tr.has_jit)=
   {
@@ -80,34 +83,53 @@
 # them, which is why it is reported by jitstats() (#1316).
 #
 # Asserted in BOTH directions rather than skipped under the default, so
-# neither mode is vacuous: with lua_jit 1 the counter must advance, with
-# lua_jit 0 it must not -- that second half is a real test of the gate
+# neither mode is vacuous: with lua_jit 1 the Lua JIT must be reached, with
+# lua_jit 0 it must not be -- that second half is a real test of the gate
 # added in #1310.
 #
-# The counter is sampled before and after rather than compared against
-# zero, so the case does not depend on where it falls in the suite or on
-# whether TC003's reset ran first.
+# What "reached" means, and why it is not simply lua_run_ok advancing:
+# run_cached_program refuses re-entry while an outer softcode program is
+# live (#1321), so a lua() called from JIT-compiled softcode declines to
+# the Lua interpreter by design (#1326).  With jit_eval_brackets on -- the
+# default, and what the smoke suite runs under -- that is every lua() call
+# here, so run_ok can never advance and requiring it would fail on every
+# platform.  Requiring run_ok + run_fail to advance instead still proves
+# the compiled path was entered and a program was produced, which is the
+# #1278 blindness this case exists to remove, and the log line records
+# which of the two outcomes occurred so the distinction is not lost.
+#
+# Tighten this to require run_ok once #1326 lifts the nesting restriction.
+#
+# Counters are sampled before and after rather than compared against zero,
+# so the case does not depend on where it falls in the suite or on whether
+# TC003's reset ran first.  Note it must NOT require lua_compile_ok to
+# advance: tr.has_lua above compiles the chunk, so the measured call is a
+# cache hit and compiles nothing.
 #
 &tr.tc004 test_jitstats_fn=
   @if cand(u(me/tr.has_jit),u(me/tr.has_lua))=
   {
     @if strmatch(
-          setr(3,[null(setr(0,u(me/tr.lj_ok)))][lua(me/LJ_ADD,2,3)][null(setr(1,u(me/tr.lj_ok)))]),
+          setr(3,[null(setr(0,u(me/tr.lj_try)))][null(setr(4,u(me/tr.lj_ok)))][lua(me/LJ_ADD,2,3)][null(setr(1,u(me/tr.lj_try)))][null(setr(5,u(me/tr.lj_ok)))]),
           5
         )=
     {
       @if strmatch(config(lua_jit),1)=
       {
-        @if cand(
-              gt(%q1,%q0),
-              gt(after(grab(jitstats(),lua_compile_ok=*),=),0)
-            )=
+        @if gt(%q1,%q0)=
         {
-          @log smoke=TC004: lua JIT engages under lua_jit 1. Succeeded.;
-          @trig me/tr.done
+          @if gt(%q5,%q4)=
+          {
+            @log smoke=TC004: lua JIT engages under lua_jit 1. Succeeded (ran, lua_run_ok %q4 to %q5).;
+            @trig me/tr.done
+          },
+          {
+            @log smoke=TC004: lua JIT engages under lua_jit 1. Succeeded (reached, declined to the Lua interpreter per #1326; attempts %q0 to %q1, lua_run_ok flat at %q4).;
+            @trig me/tr.done
+          }
         },
         {
-          @log smoke=TC004: lua JIT engages under lua_jit 1. Failed (lua_run_ok %q0 to %q1, compile_ok=[after(grab(jitstats(),lua_compile_ok=*),=)], run_fail=[after(grab(jitstats(),lua_run_fail=*),=)]).;
+          @log smoke=TC004: lua JIT engages under lua_jit 1. Failed (never attempted: lua_run_ok+lua_run_fail flat at %q0, compile_ok=[after(grab(jitstats(),lua_compile_ok=*),=)]).;
           @trig me/tr.done
         }
       },
@@ -118,7 +140,7 @@
           @trig me/tr.done
         },
         {
-          @log smoke=TC004: lua JIT stays out under lua_jit 0. Failed (lua_run_ok advanced %q0 to %q1 with lua_jit 0).;
+          @log smoke=TC004: lua JIT stays out under lua_jit 0. Failed (attempted: %q0 to %q1 with lua_jit 0).;
           @trig me/tr.done
         }
       }

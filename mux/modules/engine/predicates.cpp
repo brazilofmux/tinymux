@@ -188,7 +188,7 @@ static bool pay_quota(dbref who, int cost)
     dbref aowner;
     int aflags;
     LBuf quota_str = LBuf_Adopt(atr_get("pay_quota.200", Owner(who), A_RQUOTA, &aowner, &aflags));
-    int quota = mux_atol(quota_str);
+    int quota = mux_atoi64(quota_str);
 
     // enough to build?  Wizards always have enough.
     //
@@ -275,7 +275,7 @@ void add_quota(dbref who, int payment)
     UTF8 buf[I32BUF_SIZE];
 
     LBuf quota = LBuf_Adopt(atr_get("add_quota.288", who, A_RQUOTA, &aowner, &aflags));
-    mux_ltoa(mux_atol(quota) + payment, buf);
+    mux_ltoa(mux_atoi64(quota) + payment, buf);
     atr_add_raw(who, A_RQUOTA, buf);
 }
 
@@ -1818,7 +1818,7 @@ void parse_range(UTF8 **name, dbref *low_bound, dbref *high_bound)
                 buff1++;
             }
 
-            *high_bound = mux_atol(buff1);
+            *high_bound = mux_atoi64(buff1);
             if (*high_bound >= mudstate.db_top)
             {
                 *high_bound = mudstate.db_top - 1;
@@ -1839,7 +1839,7 @@ void parse_range(UTF8 **name, dbref *low_bound, dbref *high_bound)
             buff2++;
         }
 
-        *low_bound = mux_atol(buff2);
+        *low_bound = mux_atoi64(buff2);
         if (*low_bound < 0)
         {
             *low_bound = 0;
@@ -2635,7 +2635,7 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             charges = atr_pget(thing, A_CHARGES, &aowner2, &aflags2);
             if (*charges)
             {
-                num = mux_atol(charges);
+                num = mux_atoi64(charges);
                 if (num > 0)
                 {
                     buff = alloc_sbuf("did_it.charges");

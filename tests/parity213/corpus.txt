@@ -305,6 +305,57 @@ XN_TOP_SPACE|[strcat(a (b) c)]|both
 XN_PAREN_FIRST|[strcat((a [b) c])]|neither
 XN_COMMA_CROSS|[strcat((a, [b), c])]|neither
 XN_FN_CROSS|[strcat((add(1,2) [x) y])]|neither
+#
+# ---- does the paren *counter* differ from 2.13's closer stack? (#1248) ----
+#
+# #1219 replaced 2.13's parse_to_lite stack of expected closers with a paren
+# depth counter, noting the stack also unwound crossed nesting like
+# '( [ ) ]' and that no corpus shape then distinguished the two.  These
+# shapes were written to distinguish them, and they do not: every crossed
+# form below agrees.
+#
+# The XN_* shapes above do not settle it, because two other divergences sit
+# on top of the crossing and mask it:
+#
+#   a space before '(' makes 2.13 read a call (SPACE_CALL_*, pinned), and
+#   an unterminated call to an *unknown* function diverges on its own
+#   (UT_* below) whatever the nesting is.
+#
+# So these use top level rather than an eval bracket -- an inner ']' cannot
+# then close the region early -- and only known functions.  A literal comma
+# surviving in the output means the argument did not split; add() makes the
+# same boundary numeric.
+#
+XN_CROSS_TOP|strcat((a[b)c],d)|both
+XN_CROSS_TOP3|strcat((a[b)c],d,e)|both
+XN_BRACE_TOP|strcat((a{b)c},d)|both
+XN_CROSS_NUM|add(1[2)3],4)|both
+XN_NEST_TOP|strcat((a[b]c),d)|both
+
+# ---- unterminated call: known vs unknown function ----
+#
+# This is what the crossed XN_* shapes above are actually measuring, and
+# nesting is not involved: the one-token-deep form below diverges on its own.
+#
+# When a call's ')' never arrives before the ']':
+#
+#   2.13  emits '#-1 FUNCTION (X) NOT FOUND' if the name is *not* a
+#         function, and falls back to literal text if it is;
+#   2.14  falls back to literal text either way.
+#
+# 2.13 is the inconsistent one.  Its TRACE shows why: it looks the name up
+# as soon as it sees 'name(' and reports a failed lookup immediately, but a
+# successful lookup still needs an argument list it cannot finish, so that
+# path punts.  2.14 defers the lookup until it has a whole call, so it
+# never reaches the diagnostic.  Verified with TRACE on both engines:
+#
+#   [add(1,2]      2.13 'add(1,2'                      2.14 'add(1,2'
+#   [nosuchfn(1,2] 2.13 '#-1 FUNCTION (NOSUCHFN) NOT FOUND'  2.14 'nosuchfn(1,2'
+#
+UT_KNOWN_UNTERM|[add(1,2]|both
+UT_UNKNOWN_UNTERM|[a(b]
+UT_KNOWN_TOP|add(1,2|both
+UT_UNKNOWN_TOP|a(b|both
 
 # ===================================================================
 # EV_FMAND failed lookup (#1247).  When a function lookup FAILS at

@@ -604,7 +604,7 @@ static CF_HAND(cf_int_array)
         int unused;
         if (is_integer(p, &unused))
         {
-            aPorts[nPorts++] = mux_atol(p);
+            aPorts[nPorts++] = mux_atoi64(p);
         }
     }
 
@@ -629,7 +629,7 @@ static CF_HAND(cf_int)
 
     // Copy the numeric value to the parameter.
     //
-    *vp = mux_atol(str);
+    *vp = mux_atoi64(str);
     return 0;
 }
 
@@ -648,7 +648,7 @@ static CF_HAND(cf_live_driver_int)
     UNUSED_PARAMETER(player);
     UNUSED_PARAMETER(cmd);
 
-    *vp = mux_atol(str);
+    *vp = mux_atoi64(str);
     if (  !mudstate.bReadingConfiguration
        && nullptr != g_driver_config_sync_fn)
     {
@@ -688,7 +688,14 @@ static CF_HAND(cf_size)
         return -1;
     }
 
-    int64_t val = mux_atol(p);
+    // mux_atoi64, not mux_atol: long is 32-bit on LLP64 (Windows), so a raw
+    // byte count at or above 2^31 was truncated before the suffix multiplier
+    // could be applied.  Values in [2^31, 2^32) came out NEGATIVE, and every
+    // consumer reads a negative size as "unlimited" (attrcache.cpp:506) --
+    // so `max_cache_size 3000000000` silently uncapped the cache instead of
+    // capping it at 3 GB (#1373).
+    //
+    int64_t val = mux_atoi64(p);
 
     // Find the suffix character.
     //
@@ -762,7 +769,7 @@ static CF_HAND(cf_dbref)
 
     // Copy the numeric value to the parameter.
     //
-    *vp = mux_atol(p);
+    *vp = mux_atoi64(p);
 
     // guest_char_num and player_starting_room are both in the driver basket
     // and read live (the guest-login gate and where a newly created player is

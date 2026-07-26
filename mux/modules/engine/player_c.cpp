@@ -71,7 +71,7 @@ static void pcache_reload1(dbref player, PCACHE *pp)
     const UTF8 *cp = atr_get_raw(player, A_MONEY);
     if (cp && *cp)
     {
-        pp->money = mux_atol(cp);
+        pp->money = mux_atoi64(cp);
     }
     else
     {
@@ -85,7 +85,7 @@ static void pcache_reload1(dbref player, PCACHE *pp)
     {
         dbref aowner;
         int   aflags;
-        m = mux_atol(atr_decode_flags_owner(cp, &aowner, &aflags));
+        m = mux_atoi64(atr_decode_flags_owner(cp, &aowner, &aflags));
         if (m < 0)
         {
             m = -1;
@@ -353,7 +353,7 @@ int Pennies(dbref obj)
             const UTF8 *cp = atr_get_raw(obj, A_MONEY);
             if (cp)
             {
-                return mux_atol(cp);
+                return mux_atoi64(cp);
             }
         }
     }

@@ -2380,26 +2380,45 @@ no_addr_fusion:
                         emit_imul_r64(&e, rd, rs2);
                     }
                     break;
+                // The MULH family multiplies through scratch RCX, captured
+                // BEFORE rc_load overwrites RAX.  rc_read materialises x0
+                // as RAX-as-zero, so when guest rs2 is x0 the host register
+                // `rs2` IS RAX: loading rs1 into RAX first destroys the zero
+                // and the multiply then squares rs1 (#1361).  This is the
+                // same hazard DIV/REM guard against just below -- it simply
+                // was never carried across to the high multiplies.
                 case 1: // MULH (signed * signed, high 64)
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_imul1_r64(&e, rs2);
+                    emit_imul1_r64(&e, X64_RCX);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
                 case 2: // MULHSU (signed * unsigned, high 64)
                     // MULHSU(rs1, rs2) = MULHU(rs1, rs2) - (rs1 < 0 ? rs2 : 0)
-                    // RCX is scratch (never cached), rs2 is always a cached reg.
                     //
+                    // The adjustment is taken AFTER the multiply: MUL writes
+                    // only RDX:RAX, so RCX still holds rs2, and RAX is free
+                    // once the low half is dead.  Reading rs1's cached
+                    // register there is safe because rc_read marked it
+                    // most-recently-used, so the rc_write for rd could not
+                    // have evicted it.  When rs1 is x0 -- the one case where
+                    // its host register would be RAX -- the adjustment is
+                    // zero by definition, so the guard skips it.
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_mov_r64(&e, X64_RCX, X64_RAX);   // save rs1 for sign check
-                    emit_mul_r64(&e, rs2);                  // RDX:RAX = unsigned(rs1) * rs2
-                    emit_sar_r64_imm(&e, X64_RCX, 63);    // RCX = sign mask (-1 or 0)
-                    emit_and_r64(&e, X64_RCX, rs2);        // RCX = rs2 if rs1 < 0, else 0
-                    emit_sub_r64(&e, X64_RDX, X64_RCX);   // RDX -= adjustment
+                    emit_mul_r64(&e, X64_RCX);            // RDX:RAX = unsigned(rs1) * rs2
+                    if (insn.rs1 != 0) {
+                        emit_mov_r64(&e, X64_RAX, rs1);
+                        emit_sar_r64_imm(&e, X64_RAX, 63); // sign mask (-1 or 0)
+                        emit_and_r64(&e, X64_RAX, X64_RCX); // rs2 if rs1 < 0, else 0
+                        emit_sub_r64(&e, X64_RDX, X64_RAX);
+                    }
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
                 case 3: // MULHU (unsigned * unsigned, high 64)
+                    emit_mov_r64(&e, X64_RCX, rs2);
                     rc_load(&e, &rc, X64_RAX, insn.rs1);
-                    emit_mul_r64(&e, rs2);
+                    emit_mul_r64(&e, X64_RCX);
                     rc_store(&e, &rc, insn.rd, X64_RDX);
                     break;
                 // DIV/DIVU/REM/REMU: a bare idiv/div traps (#DE -> SIGFPE)
@@ -2732,33 +2751,14 @@ no_addr_fusion:
                 int xs1 = fc_read(&e, &fc, insn.rs1);
                 int xs2 = fc_read(&e, &fc, insn.rs2);
                 int xd  = fc_write(&e, &fc, insn.rd);
-                emit_movsd_xmm(&e, XMM0, xs1);
-                if (insn.funct3 == 0)
-                    emit_minsd(&e, XMM0, xs2);
-                else
-                    emit_maxsd(&e, XMM0, xs2);
-                emit_movsd_xmm(&e, xd, XMM0);
+                emit_fminmax_d(&e, xd, xs1, xs2, insn.funct3 != 0);
                 break;
             }
             case FP_FCMP: { // FEQ.D / FLT.D / FLE.D
                 int xs1 = fc_read(&e, &fc, insn.rs1);
                 int xs2 = fc_read(&e, &fc, insn.rs2);
-                emit_ucomisd(&e, xs1, xs2);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : X64_RAX;
-                switch (insn.funct3) {
-                case 2: // FEQ.D
-                    emit_setcc(&e, SETCC_E, rd);
-                    break;
-                case 1: // FLT.D
-                    emit_setcc(&e, SETCC_B, rd);
-                    break;
-                case 0: // FLE.D
-                    emit_setcc(&e, SETCC_AE, rd);
-                    // Actually FLE needs: ucomisd rs2, rs1 with AE
-                    // Let's use the correct order.
-                    break;
-                }
-                emit_movzx_r64_r8(&e, rd, rd);
+                emit_fcmp_d(&e, rd, xs1, xs2, insn.funct3);
                 break;
             }
             case FP_FSGNJ: { // FSGNJ.D / FSGNJN.D / FSGNJX.D
