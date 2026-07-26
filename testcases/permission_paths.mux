@@ -1,6 +1,18 @@
 #
 # permission_paths.mux - Test Cases for permission-failure paths.
 #
+# The probes run as PermActor via @force and land in attributes these
+# cases read after a wait.  Each case captures every value it compares
+# with setr() FIRST, then tests the %q registers, and the failure message
+# prints those registers rather than reading the attributes again.
+#
+# Two reasons.  A second read happens later than the comparison, so if a
+# probe lands in between it reports a value that would have passed, for a
+# comparison that saw an empty attribute (#1394).  And cand() short
+# circuits, so capturing inside each term would leave the later registers
+# unset on failure -- hence the leading always-true argument that captures
+# all of them before any test runs.
+#
 @create test_permission_paths
 -
 @set test_permission_paths=INHERIT QUIET
@@ -57,14 +69,15 @@ think [attrib_set(PermActor/TARGET,[num(perm_target)])]
   @wait 0.1=
   {
     @if cand(
-          eq(get(PermActor/actor_wizard), 0),
-          eq(get(PermActor/actor_controls), 0)
+          [null(setr(0, get(PermActor/actor_wizard)))][null(setr(1, get(PermActor/actor_controls)))]1,
+          eq(%q0, 0),
+          eq(%q1, 0)
         )=
     {
       @log smoke=TC001: unauthorized actor setup. Succeeded.
     },
     {
-      @log smoke=TC001: unauthorized actor setup. Failed (wizard=[get(PermActor/actor_wizard)] controls=[get(PermActor/actor_controls)]).
+      @log smoke=TC001: unauthorized actor setup. Failed (wizard=%q0 controls=%q1).
     }
   }
 -
@@ -75,15 +88,16 @@ think [attrib_set(PermActor/TARGET,[num(perm_target)])]
   @wait 0.1=
   {
     @if cand(
-          strmatch(get(PermActor/attrib_result), #-1 PERMISSION DENIED),
-          strmatch(get(PermActor/attrib_after), #-1 PERMISSION DENIED),
-          eq(strlen(get([get(PermActor/TARGET)]/PROBE)), 0)
+          [null(setr(0, get(PermActor/attrib_result)))][null(setr(1, get(PermActor/attrib_after)))][null(setr(2, get([get(PermActor/TARGET)]/PROBE)))]1,
+          strmatch(%q0, #-1 PERMISSION DENIED),
+          strmatch(%q1, #-1 PERMISSION DENIED),
+          eq(strlen(%q2), 0)
         )=
     {
       @log smoke=TC002: unauthorized attrib_set denied without mutation. Succeeded.
     },
     {
-      @log smoke=TC002: unauthorized attrib_set denied without mutation. Failed (result=[get(PermActor/attrib_result)] actor_after=[get(PermActor/attrib_after)] target_after=[get([get(PermActor/TARGET)]/PROBE)]).
+      @log smoke=TC002: unauthorized attrib_set denied without mutation. Failed (result=%q0 actor_after=%q1 target_after=%q2).
     }
   }
 -
@@ -94,17 +108,18 @@ think [attrib_set(PermActor/TARGET,[num(perm_target)])]
   @wait 0.1=
   {
     @if cand(
-          eq(strlen(get(PermActor/lock_before)), 0),
-          strmatch(get(PermActor/lock_result), #-1 PERMISSION DENIED),
-          eq(strlen(get(PermActor/lock_after)), 0),
-          eq(strlen(lock([get(PermActor/TARGET)])), 0)
+          [null(setr(0, get(PermActor/lock_before)))][null(setr(1, get(PermActor/lock_result)))][null(setr(2, get(PermActor/lock_after)))][null(setr(3, lock([get(PermActor/TARGET)])))]1,
+          eq(strlen(%q0), 0),
+          strmatch(%q1, #-1 PERMISSION DENIED),
+          eq(strlen(%q2), 0),
+          eq(strlen(%q3), 0)
         )=
     {
       @log smoke=TC003: unauthorized lock setter denied without mutation. Succeeded.;
       @trig me/tr.done
     },
     {
-      @log smoke=TC003: unauthorized lock setter denied without mutation. Failed (before=[get(PermActor/lock_before)] result=[get(PermActor/lock_result)] actor_after=[get(PermActor/lock_after)] target_lock=[lock([get(PermActor/TARGET)])]).;
+      @log smoke=TC003: unauthorized lock setter denied without mutation. Failed (before=%q0 result=%q1 actor_after=%q2 target_lock=%q3).;
       @trig me/tr.done
     }
   }

@@ -6,6 +6,14 @@
 @set test_dolist_cmd=INHERIT QUIET
 -
 #
+# These cases check an attribute that queued commands accumulate, so they
+# wait before comparing.  The compared value is captured with setr() and
+# the failure message prints %q0 rather than reading the attribute again:
+# a second read happens later than the comparison, and if the queue drains
+# in between it reports the finished value for a comparison that saw a
+# partial one.  That produced "Failed (actual=.X Y Z.)" where X Y Z was
+# exactly what was expected -- a failure that reads as impossible (#1394).
+#
 # Beginning of Test Cases
 #
 &tr.tc000 test_dolist_cmd=
@@ -29,12 +37,12 @@
   };
   @wait 1=
   {
-    @if strmatch([trim(get(me/tc001_result))], alpha bravo charlie)=
+    @if strmatch(setr(0, trim(get(me/tc001_result))), alpha bravo charlie)=
     {
       @log smoke=TC001: dolist itext in queued switch body. Succeeded.
     },
     {
-      @log smoke=TC001: dolist itext in queued switch body. Failed (actual=.[trim(get(me/tc001_result))].).
+      @log smoke=TC001: dolist itext in queued switch body. Failed (actual=.%q0.).
     }
   }
 -
@@ -49,12 +57,12 @@
   };
   @wait 1=
   {
-    @if strmatch([trim(get(me/tc002_result))], X Y Z)=
+    @if strmatch(setr(0, trim(get(me/tc002_result))), X Y Z)=
     {
       @log smoke=TC002: dolist itext in queued switch default. Succeeded.
     },
     {
-      @log smoke=TC002: dolist itext in queued switch default. Failed (actual=.[trim(get(me/tc002_result))].).
+      @log smoke=TC002: dolist itext in queued switch default. Failed (actual=.%q0.).
     }
   }
 -
@@ -77,7 +85,7 @@
       @trig me/tr.done
     },
     {
-      @log smoke=TC003: pipe inside inline dolist. Failed (actual=.[trim(get(me/tc002_result))].).;
+      @log smoke=TC003: pipe inside inline dolist. Failed (actual=.%q0.).;
       @trig me/tr.done
     }
   }
