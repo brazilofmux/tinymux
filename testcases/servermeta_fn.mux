@@ -1,0 +1,136 @@
+#
+# servermeta_fn.mux - Coverage for server and descriptor meta builtins.
+#
+# Sixteen builtins with no reference anywhere in the corpus (#1160):
+#
+#   restartsecs  restarttime  mtime  writetime
+#   motd  doing  beep  fcount
+#   colordepth  height  terminfo
+#   host  idle  ports  siteinfo  lports
+#
+# (restartsecs/restarttime pair with restarts() already covered by
+# listscan_fn.mux once #1375 lands; they are independent names.)
+#
+# These are "ask the process / descriptor" helpers.  Under muxscript many
+# descriptor fields are empty or defaulted; the pin is a defined answer
+# rather than a live telnet session.  terminfo() reports NOT CONNECTED
+# offline, which is the interesting failure mode.
+#
+@create test_servermeta_fn
+-
+@set test_servermeta_fn=INHERIT QUIET
+-
+&tr.tc000 test_servermeta_fn=
+  @log smoke=Beginning servermeta function test cases.
+-
+#
+# Test Case #1 - restartsecs() and restarttime() track process start.
+#
+&tr.tc001 test_servermeta_fn=
+  @if cand(
+        isint(setr(0, restartsecs())),
+        gt(%q0, 0),
+        gt(strlen(setr(1, restarttime())), 0),
+        not(strmatch(%q1, #-1*))
+      )=
+  {
+    @log smoke=TC001: restartsecs and restarttime. Succeeded.
+  },
+  {
+    @log smoke=TC001: restartsecs and restarttime. Failed (secs=%q0 time=%q1).
+  }
+-
+#
+# Test Case #2 - mtime() and writetime() on the test object.
+#
+# mtime is a date string; writetime is a duration string that may be
+# "0 seconds" on a fresh object.
+#
+&tr.tc002 test_servermeta_fn=
+  @if cand(
+        gt(strlen(setr(0, mtime(me))), 0),
+        not(strmatch(%q0, #-1*)),
+        gt(strlen(setr(1, writetime(me))), 0),
+        not(strmatch(%q1, #-1*))
+      )=
+  {
+    @log smoke=TC002: mtime and writetime. Succeeded.
+  },
+  {
+    @log smoke=TC002: mtime and writetime. Failed (mtime=%q0 writetime=%q1).
+  }
+-
+#
+# Test Case #3 - motd(), doing(), beep(), fcount().
+#
+# motd may be empty; doing may be empty; beep returns the bell character
+# or empty for wizard; fcount is a non-negative integer of find-cache hits.
+#
+&tr.tc003 test_servermeta_fn=
+  @if cand(
+        not(strmatch(setr(0, motd()), #-1*)),
+        not(strmatch(setr(1, doing(me)), #-1*)),
+        not(strmatch(setr(2, beep()), #-1*)),
+        isint(setr(3, fcount())),
+        gte(%q3, 0)
+      )=
+  {
+    @log smoke=TC003: motd doing beep fcount. Succeeded.
+  },
+  {
+    @log smoke=TC003: motd doing beep fcount. Failed (motd=%q0 doing=%q1 beep=%q2 fcount=%q3).
+  }
+-
+#
+# Test Case #4 - colordepth(), height(), terminfo() without a live socket.
+#
+# Offline defaults: colordepth 0, height a positive default, terminfo an
+# explicit NOT CONNECTED error rather than a silent empty string.
+#
+&tr.tc004 test_servermeta_fn=
+  @if cand(
+        isint(setr(0, colordepth(me))),
+        isint(setr(1, height(me))),
+        gt(%q1, 0),
+        strmatch(setr(2, terminfo(me)), #-1*)
+      )=
+  {
+    @log smoke=TC004: colordepth height terminfo offline. Succeeded.
+  },
+  {
+    @log smoke=TC004: colordepth height terminfo offline. Failed (cd=%q0 h=%q1 ti=%q2).
+  }
+-
+#
+# Test Case #5 - host(), idle(), ports(), siteinfo(), lports().
+#
+# Descriptor fields may be empty offline; none of them should throw a
+# permission or match failure for the executor on self / wizard lports.
+#
+&tr.tc005 test_servermeta_fn=
+  @if cand(
+        not(strmatch(setr(0, host(me)), #-1*)),
+        isint(setr(1, idle(me))),
+        gte(%q1, 0),
+        not(strmatch(setr(2, ports(me)), #-1*)),
+        not(strmatch(setr(3, siteinfo(me)), #-1*)),
+        not(strmatch(setr(4, lports()), #-1*))
+      )=
+  {
+    @log smoke=TC005: host idle ports siteinfo lports. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC005: host idle ports siteinfo lports. Failed (host=%q0 idle=%q1 ports=%q2 site=%q3 lports=%q4).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_servermeta_fn=
+  @log smoke=End servermeta function test cases.;
+  @notify smoke
+-
+drop test_servermeta_fn
+-
+#
+# End of Test Cases
+#
