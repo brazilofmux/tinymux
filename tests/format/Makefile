@@ -29,7 +29,13 @@ test_format.o: test_format.cpp
 $(TARGET): test_format.o
 	$(CXX) $(CXXFLAGS) -o $@ $^ -L$(LIBDIR) -lmux -Wl,-rpath,$(LIBDIR)
 
+# The source guard runs first and is independent of the built binary: it is
+# the half that catches a BAD FORMAT BEING ADDED, which the runtime tests
+# cannot see.  Since #1429 an unsupported spec is echoed and the rest of the
+# message dropped rather than aborting -- quieter in production, and quieter
+# is exactly why the noise has to happen here.
 test: $(TARGET)
+	python3 ./check_formats.py
 	LD_LIBRARY_PATH=$(LIBDIR):$$LD_LIBRARY_PATH ./$(TARGET)
 
 clean:

@@ -652,16 +652,32 @@ void ast_dump(const ASTNode *node, int indent)
     // can't overflow the stack. Use a fixed cap rather than the
     // evaluator's depth counter since dump is diagnostic.
     //
+    // Indent by hand rather than with "%*s".  mux_vsnprintf implements the
+    // '-' and '0' flags and literal digit widths only -- it has no '*' width,
+    // so "%*s" reached mux_assert(0) and abort()ed the process (#1429 covers
+    // the general case; this was the one live instance in the tree).  Nothing
+    // calls ast_dump today, which is the only reason it never fired, but it
+    // is declared in ast.h as a debug helper and is meant to be callable.
+    //
+    UTF8 pad[81];
+    size_t nPad = (indent < 0) ? 0 : static_cast<size_t>(indent);
+    if (sizeof(pad) - 1 < nPad)
+    {
+        nPad = sizeof(pad) - 1;
+    }
+    memset(pad, ' ', nPad);
+    pad[nPad] = '\0';
+
     if (indent > 2 * 400)
     {
         STARTLOG(LOG_DEBUG, "AST", "DUMP");
-        Log.tinyprintf(T("%*s... (truncated)"), indent, "");
+        Log.tinyprintf(T("%s... (truncated)"), pad);
         ENDLOG;
         return;
     }
 
     STARTLOG(LOG_DEBUG, "AST", "DUMP");
-    Log.tinyprintf(T("%*s%s"), indent, "", ast_node_name(node->type));
+    Log.tinyprintf(T("%s%s"), pad, ast_node_name(node->type));
     if (!node->text.empty())
     {
         Log.tinyprintf(T(" \"%s\""), node->text.c_str());
