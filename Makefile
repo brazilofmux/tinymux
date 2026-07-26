@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-format test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -130,6 +130,16 @@ test-ganl:
 test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
+
+# mux_vsnprintf differential tests: %i, %o and the floating-point conversions
+# against the platform snprintf as an oracle.  These conversions used to fall
+# through to mux_assert(0) and abort the process (#1382, and the same shape in
+# @list), so they are implemented rather than forbidden -- and the float path
+# assembles mux_dtoa digits by hand, which is precisely the code that needs an
+# oracle rather than a few spot checks.
+test-format:
+	@echo "==> Running mux_vsnprintf format tests"
+	$(MAKE) -C tests/format test
 
 # DBT and RV64 tests (tests/dbt): chain patch encode/decode across all three
 # backends (#1152), block cache dedupe and eviction (#1153), and the RV64
