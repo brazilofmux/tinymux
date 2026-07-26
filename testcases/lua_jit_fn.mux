@@ -1,0 +1,258 @@
+#
+# lua_jit_fn.mux - Lua JIT engage + coverage beyond result-equality (#1309).
+#
+# Why this file exists separately from lua_fn.mux:
+#
+#   Green smoke does not prove the compiled Lua path ran.  Every Lua JIT
+#   failure falls back to the Lua interpreter and still returns the correct
+#   answer, so a test that only checks lua()'s result passes whether or not
+#   the JIT did anything (#1249, #1278, #1309).  These cases pin engage
+#   (counters must move under lua_jit 1) and a few shapes that historically
+#   broke only on the compiled path (string-then-arith sequencing).
+#
+# Modes:
+#
+#   - No softcode JIT / no lua(): cases skip with Skipped logs.
+#   - lua_jit 0 (default smoke): gate tests prove the JIT stays out; pure
+#     result cases still run through the interpreter.
+#   - lua_jit 1 (make test-lua-jit): engage + sequencing + opcode extras.
+#
+# Sequencing: the smoke harness @trig's every tr.tc* concurrently.  Concurrent
+# lua() calls race the module, so this file has a single tr.tc001 entry point
+# that chains the rest as tr.s00N (not matched by lattr tr.tc*).
+#
+# No @tel of the wizard — do not strand the suite uploader.
+#
+@create test_lua_jit_fn
+-
+@set test_lua_jit_fn=INHERIT QUIET
+-
+&tr.has_jit test_lua_jit_fn=
+  [strmatch(jitstats(),*eval_attempts=*)]
+-
+&LJ_ADD test_lua_jit_fn=return mux.args[1] + mux.args[2]
+-
+&LJ_STR test_lua_jit_fn=return "hello"
+-
+&LJ_AND test_lua_jit_fn=return (false and 99) or 7
+-
+&LJ_OR test_lua_jit_fn=return true or 99
+-
+&LJ_REPEAT test_lua_jit_fn= \
+  local i = 0 \
+  repeat \
+    i = i + 1 \
+  until i >= 5 \
+  return i
+-
+&tr.lj_ok test_lua_jit_fn=
+  [after(grab(jitstats(),lua_run_ok=*),=)]
+-
+&tr.lj_try test_lua_jit_fn=
+  [add(after(grab(jitstats(),lua_run_ok=*),=),after(grab(jitstats(),lua_run_fail=*),=))]
+-
+&tr.lj_inv test_lua_jit_fn=
+  [after(grab(jitstats(),lua_invalidations=*),=)]
+-
+#
+# Single harness entry: discoverability requires tr.tc*.
+#
+&tr.tc001 test_lua_jit_fn=
+  @log smoke=Beginning lua_jit engage and coverage cases.;
+  @trig me/tr.s001
+-
+#
+# Step 1 - Engage gate (mirrors jitstats_fn TC004).
+#
+&tr.s001 test_lua_jit_fn=
+  @if u(me/tr.has_jit)=
+  {
+    @if strmatch(
+          setr(3,[null(setr(0,u(me/tr.lj_try)))][null(setr(4,u(me/tr.lj_ok)))][lua(me/LJ_ADD,2,3)][null(setr(1,u(me/tr.lj_try)))][null(setr(5,u(me/tr.lj_ok)))]),
+          5
+        )=
+    {
+      @if strmatch(config(lua_jit),1)=
+      {
+        @if gt(%q1,%q0)=
+        {
+          @if gt(%q5,%q4)=
+          {
+            @log smoke=TC001: lua JIT engage under lua_jit 1. Succeeded (ran, lua_run_ok %q4 to %q5).;
+            @trig me/tr.s002
+          },
+          {
+            @log smoke=TC001: lua JIT engage under lua_jit 1. Succeeded (reached, declined per #1326; attempts %q0 to %q1).;
+            @trig me/tr.s002
+          }
+        },
+        {
+          @log smoke=TC001: lua JIT engage under lua_jit 1. Failed (never attempted; attempts flat at %q0).;
+          @trig me/tr.s002
+        }
+      },
+      {
+        @if strmatch(%q0,%q1)=
+        {
+          @log smoke=TC001: lua JIT stays out under lua_jit 0. Succeeded.;
+          @trig me/tr.s002
+        },
+        {
+          @log smoke=TC001: lua JIT stays out under lua_jit 0. Failed (attempted %q0 to %q1).;
+          @trig me/tr.s002
+        }
+      }
+    },
+    {
+      @log smoke=TC001: lua JIT engage. Failed (lua returned %q3, expected 5).;
+      @trig me/tr.s002
+    }
+  },
+  {
+    @log smoke=TC001: lua JIT engage. Skipped (JIT not enabled).;
+    @trig me/tr.s002
+  }
+-
+#
+# Step 2 - String-return chunk then arithmetic chunk (#1309 hang class).
+#
+&tr.s002 test_lua_jit_fn=
+  @if cand(
+        strmatch(setr(0,lua(me/LJ_STR)),hello),
+        strmatch(setr(1,lua(me/LJ_ADD,2,3)),5)
+      )=
+  {
+    @log smoke=TC002: string then arith sequence. Succeeded.;
+    @trig me/tr.s003
+  },
+  {
+    @if strmatch(%q0,#-1*)=
+    {
+      @log smoke=TC002: string then arith sequence. Skipped (Lua not available).;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC002: string then arith sequence. Failed (str=%q0 add=%q1).;
+      @trig me/tr.s003
+    }
+  }
+-
+#
+# Step 3 - Reverse order control.
+#
+&tr.s003 test_lua_jit_fn=
+  @if cand(
+        strmatch(setr(0,lua(me/LJ_ADD,10,1)),11),
+        strmatch(setr(1,lua(me/LJ_STR)),hello)
+      )=
+  {
+    @log smoke=TC003: arith then string sequence. Succeeded.;
+    @trig me/tr.s004
+  },
+  {
+    @log smoke=TC003: arith then string sequence. Failed (add=%q0 str=%q1).;
+    @trig me/tr.s004
+  }
+-
+#
+# Step 4 - Short-circuit and/or (true bridges as "1").
+#
+&tr.s004 test_lua_jit_fn=
+  @if cand(
+        strmatch(setr(0,lua(me/LJ_AND)),7),
+        strmatch(setr(1,lua(me/LJ_OR)),1)
+      )=
+  {
+    @log smoke=TC004: lua and/or short-circuit. Succeeded.;
+    @trig me/tr.s005
+  },
+  {
+    @log smoke=TC004: lua and/or short-circuit. Failed (and=%q0 or=%q1).;
+    @trig me/tr.s005
+  }
+-
+#
+# Step 5 - repeat/until.
+#
+&tr.s005 test_lua_jit_fn=
+  @if strmatch(setr(0,lua(me/LJ_REPEAT)),5)=
+  {
+    @log smoke=TC005: lua repeat-until. Succeeded.;
+    @trig me/tr.s006
+  },
+  {
+    @log smoke=TC005: lua repeat-until. Failed (%q0).;
+    @trig me/tr.s006
+  }
+-
+#
+# Step 6 - jitstats(flush) when available (#1316 / #1369).
+#
+&tr.s006 test_lua_jit_fn=
+  @if u(me/tr.has_jit)=
+  {
+    @if strmatch(
+          setr(9,[null(lua(me/LJ_ADD,1,1))][null(setr(0,u(me/tr.lj_inv)))][jitstats(flush)]),
+          OK
+        )=
+    {
+      @if strmatch(setr(1,lua(me/LJ_ADD,4,5)),9)=
+      {
+        @log smoke=TC006: jitstats flush then re-run. Succeeded (inv_before=%q0 inv_after=[u(me/tr.lj_inv)]).;
+        @trig me/tr.s007
+      },
+      {
+        @log smoke=TC006: jitstats flush then re-run. Failed (lua after flush=%q1).;
+        @trig me/tr.s007
+      }
+    },
+    {
+      @log smoke=TC006: jitstats flush. Skipped (flush not available; need #1369).;
+      @trig me/tr.s007
+    }
+  },
+  {
+    @log smoke=TC006: jitstats flush. Skipped (JIT not enabled).;
+    @trig me/tr.s007
+  }
+-
+#
+# Step 7 - Under lua_jit 1, string-then-arith must attempt the Lua JIT path.
+#
+&tr.s007 test_lua_jit_fn=
+  @if cand(u(me/tr.has_jit),strmatch(config(lua_jit),1))=
+  {
+    @if strmatch(
+          setr(3,[null(setr(0,u(me/tr.lj_try)))][null(lua(me/LJ_STR))][lua(me/LJ_ADD,2,3)][null(setr(1,u(me/tr.lj_try)))]),
+          5
+        )=
+    {
+      @if gt(%q1,%q0)=
+      {
+        @log smoke=TC007: string-arith sequence engages Lua JIT. Succeeded (attempts %q0 to %q1).;
+        @trig me/tr.done
+      },
+      {
+        @log smoke=TC007: string-arith sequence engages Lua JIT. Failed (attempts flat at %q0).;
+        @trig me/tr.done
+      }
+    },
+    {
+      @log smoke=TC007: string-arith sequence engages Lua JIT. Failed (final lua result not 5).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC007: string-arith sequence engages Lua JIT. Skipped (need JIT and lua_jit 1).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_lua_jit_fn=
+  @log smoke=End lua_jit engage and coverage cases.;
+  @notify smoke
+-
+drop test_lua_jit_fn
+-
+#
+# End of Test Cases
+#
