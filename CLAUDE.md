@@ -36,6 +36,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   `tests/dbt_cache/` covers `dbt_cache_insert`/`dbt_cache_lookup` dedupe and
   FIFO eviction (#1153). Compiles `dbt.cpp` against backend stubs — no
   `install`, no `--enable-jit`, no skip path.
+- RV64 execution tests: `make test-dbt-exec` (also part of `make test`);
+  `tests/dbt_exec/` builds `mux/modules/engine/dbt_test.cpp`, which had never
+  been wired into any build. Hand-assembled RV64 sequences run through the
+  interpreter and (for a subset) the DBT, plus a cross-compiled ELF through
+  both routes. Note only ~6 of 39 test functions drive the DBT directly — the
+  ELF leg carries most of the block-translation coverage. Builds the **host**
+  backend only, since it executes; skips loudly off x86_64/aarch64.
 - Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
   spins a throwaway netmux and drives `$`-command `%0..%9` captures over a
   socket (`tests/scenario/`) — the path muxscript can't reach

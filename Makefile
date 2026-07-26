@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-dbt-cache test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -29,12 +29,13 @@ clean:
 	$(MAKE) -C testcases/tools clean
 	$(MAKE) -C mux/ganl/tests clean
 	$(MAKE) -C tests/dbt_chain clean
+	$(MAKE) -C tests/dbt_exec clean
 	$(MAKE) -C tests/dbt_cache clean
 
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-dbt-chain test-dbt-cache test-alarm test-jit-qreg test-jit-ifelse test-ios
+test: install test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-alarm test-jit-qreg test-jit-ifelse test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -99,6 +100,16 @@ test-dbt-chain:
 test-dbt-cache:
 	@echo "==> Running DBT block cache tests"
 	$(MAKE) -C tests/dbt_cache test
+
+# RV64 execution tests (interpreter + DBT).  mux/modules/engine/dbt_test.cpp
+# had never been in any build — no Makefile.am entry, no CI — so it only ran
+# if someone typed the compile line from its header by hand.  That left no
+# automated RV64 *execution* coverage at all, the same "nothing exercises it"
+# gap behind #1152/#1153/#1151.  Builds the host backend (this one executes
+# translated code, unlike tests/dbt_chain) and skips loudly off x86_64/aarch64.
+test-dbt-exec:
+	@echo "==> Running RV64 execution tests (interpreter + DBT)"
+	$(MAKE) -C tests/dbt_exec test
 
 # mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
 # worker-thread start — alarm_clock is a libmux global whose constructor used
