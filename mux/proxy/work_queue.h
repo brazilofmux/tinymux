@@ -1,6 +1,7 @@
 #ifndef HYDRA_WORK_QUEUE_H
 #define HYDRA_WORK_QUEUE_H
 
+#include <condition_variable>
 #include <functional>
 #include <future>
 #include <memory>
@@ -56,9 +57,19 @@ private:
 };
 
 // Thread-safe work queue. gRPC threads enqueue, main loop processes.
+//
+// #1265: bounded pending depth so a fast GameSession reader cannot grow
+// host RAM without limit.  Enqueue blocks until space is available (natural
+// backpressure on the gRPC thread).
 class WorkQueue {
 public:
+    // High-water mark on pending items.  Chosen large enough for a burst of
+    // unary RPCs under load, small enough to bound memory (each item holds a
+    // captured input line up to MAX_LINE_LENGTH).
+    static constexpr size_t MAX_PENDING = 1024;
+
     // Enqueue a work item. Returns a future for the result.
+    // Blocks while the queue is full (#1265).
     // Called from gRPC threads.
     template<typename Result>
     std::future<Result> enqueue(
@@ -67,7 +78,10 @@ public:
         auto item = std::make_unique<TypedWorkItem<Result>>(std::move(fn));
         auto future = item->getFuture();
         {
-            std::lock_guard<std::mutex> lock(mutex_);
+            std::unique_lock<std::mutex> lock(mutex_);
+            cv_space_.wait(lock, [this] {
+                return queue_.size() < MAX_PENDING;
+            });
             queue_.push(std::move(item));
         }
         return future;
@@ -83,6 +97,8 @@ public:
             std::lock_guard<std::mutex> lock(mutex_);
             batch.swap(queue_);
         }
+        // Space is free for waiters as soon as we take the batch.
+        cv_space_.notify_all();
         while (!batch.empty()) {
             batch.front()->execute(sessionMgr, accounts, config, procMgr);
             batch.pop();
@@ -97,6 +113,7 @@ public:
 
 private:
     mutable std::mutex mutex_;
+    std::condition_variable cv_space_;
     std::queue<std::unique_ptr<WorkItem>> queue_;
 };
 
