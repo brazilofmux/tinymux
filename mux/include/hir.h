@@ -156,6 +156,7 @@ enum fmath_id {
     FMATH_SQRT, FMATH_CEIL, FMATH_FLOOR, FMATH_FABS,
     // Binary (FCALL2)
     FMATH_POW, FMATH_ATAN2, FMATH_FMOD,
+    FMATH_FMAX, FMATH_FMIN,  // max()/min() float path (#1273)
 };
 
 // ---------------------------------------------------------------

@@ -2393,6 +2393,9 @@ __attribute__((noipa)) double trunc(double x) { (void)x; return stub_nan(); }
 __attribute__((noipa)) double pow(double x, double y)   { (void)x; (void)y; return stub_nan(); }
 __attribute__((noipa)) double atan2(double y, double x) { (void)x; (void)y; return stub_nan(); }
 __attribute__((noipa)) double fmod(double x, double y)  { (void)x; (void)y; return stub_nan(); }
+/* max()/min() float path stubs (#1273) — DBT intercepts to host fmax/fmin. */
+__attribute__((noipa)) double fmax(double x, double y)  { (void)x; (void)y; return stub_nan(); }
+__attribute__((noipa)) double fmin(double x, double y)  { (void)x; (void)y; return stub_nan(); }
 
 /* ---------------------------------------------------------------
  * String↔double conversion — DBT intrinsic targets.
@@ -2488,6 +2491,12 @@ MATH_WRAP_1(trunc, trunc)
 MATH_WRAP_2(power, pow)
 MATH_WRAP_2(atan2, atan2)
 MATH_WRAP_2(fmod,  fmod)
+/* String-entry wrappers for max/min when routed via the tier-2 name map.
+ * The HIR path uses raw fmax/fmin intrinsics (#1273); these keep the blob
+ * complete if something still calls rv64_fmax / rv64_fmin by name.
+ */
+MATH_WRAP_2(fmax,  fmax)
+MATH_WRAP_2(fmin,  fmin)
 
 /* ---------------------------------------------------------------
  * rv64_add / rv64_sub — replicate server's dual integer/float path.
