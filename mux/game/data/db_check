@@ -1,32 +1,73 @@
 #!/bin/sh
 #
+#	Validate MUX V2 flatfile.
+#
+#	Usage: db_check <basename> <source_file> [log_file]
+#
+#	Runs from the game directory rather than data/, and passes the basename
+#	as data/<basename>.  netmux's init_modules() loads ./bin/engine.so
+#	relative to the CURRENT DIRECTORY, so running from data/ made it look
+#	for data/bin/engine.so and fail with "Failed to initialize modules"
+#	(#1336).  This mirrors what db_load/db_unload and the .bat scripts do.
+#
+#	On macOS the old form happened to work: dyld consults DYLD_LIBRARY_PATH
+#	even for a path containing a slash, so ./bin/engine.so was rescued by
+#	the export below.  Linux's ld.so does not do that for slash-containing
+#	paths, so the failure was real there and merely masked here.
+#
+#	Unlike the previous version this no longer depends on being invoked
+#	from data/ -- it locates the game directory from its own path -- and
+#	it propagates netmux's exit status instead of always returning 0,
+#	which made a failed check indistinguishable from a passing one.
+#
 
-BIN=../bin
+# Directory this script lives in (the game's data/ directory).
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+GAME_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)
+
+# Directory the caller invoked us from, for resolving relative file arguments.
+INVOKE_DIR=$(pwd)
+
+abspath() {
+    case "$1" in
+        /*) printf '%s\n' "$1" ;;
+        *)  printf '%s\n' "$INVOKE_DIR/$1" ;;
+    esac
+}
+
+BIN="$GAME_DIR/bin"
 
 # Linux/Solaris
-LD_LIBRARY_PATH=$BIN
+LD_LIBRARY_PATH="$BIN"
 export LD_LIBRARY_PATH
 
 # Mac OS X / NeXTStep / Mach
-DYLD_LIBRARY_PATH=$BIN
+DYLD_LIBRARY_PATH="$BIN"
 export DYLD_LIBRARY_PATH
 
 # AIX
-LIBPATH=$BIN
+LIBPATH="$BIN"
 export LIBPATH
 
 # HP-UX
-SHLIB_PATH=$BIN
+SHLIB_PATH="$BIN"
 export SHLIB_PATH
 
-PATH=/bin:/usr/bin:
-#
-#	Validate MUX V2 flatfile.
-#
 case $# in
-	2)	../bin/netmux -d$1 -k -i$2 -o/dev/null 2>&1 ;;
-	3)	../bin/netmux -d$1 -k -i$2 -o/dev/null 2>$3 ;;
-	*)	echo Usage: $0 'basename source_file [log_file]'; exit 1 ;;
+	2|3)	;;
+	*)	echo "Usage: $0 basename source_file [log_file]"; exit 1 ;;
 esac
 
-exit 0
+BASENAME="$1"
+SOURCE=$(abspath "$2")
+
+cd "$GAME_DIR" || exit 1
+
+if [ $# -eq 3 ]; then
+	LOGFILE=$(abspath "$3")
+	"$BIN/netmux" -d "data/$BASENAME" -k -i "$SOURCE" -o /dev/null 2>"$LOGFILE"
+else
+	"$BIN/netmux" -d "data/$BASENAME" -k -i "$SOURCE" -o /dev/null 2>&1
+fi
+
+exit $?
