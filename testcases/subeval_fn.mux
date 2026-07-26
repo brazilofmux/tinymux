@@ -48,11 +48,43 @@
         strmatch(u(me/fn.holds), *add*)
       )=
   {
-    @log smoke=TC002: subeval leaves functions unevaluated. Succeeded.;
+    @log smoke=TC002: subeval leaves functions unevaluated. Succeeded.
+  },
+  {
+    @log smoke=TC002: subeval leaves functions unevaluated. Failed (got=[u(me/fn.holds)]).
+  }
+-
+#
+# Test Case #3 - The INLINE shape (#1162).
+#
+# This was deliberately left unasserted when the file was written: the two
+# evaluation routes disagreed, the AST evaluating the function inline
+# ([3]) while the JIT left it alone ([add(1,2)]), and pinning it would have
+# meant picking a winner with no justification.
+#
+# They now agree, and they agree on the answer the documentation and the
+# code both call for: fun_subeval passes EV_NOFCHECK ("Do not evaluate
+# functions!"), and help subeval() says "Escapes are evaluated, but {} and
+# functions are not".  So the function must survive unevaluated.
+#
+# Note EV_FIGNORE, which fun_subeval also passes, is #define'd to 0 and
+# does nothing -- EV_NOFCHECK is the flag actually carrying this.
+#
+# Verified on both routes with the JIT proven active/inactive by the
+# eval_handled delta in jitstats(), not by the config value alone.
+#
+&tr.tc003 test_subeval_fn=
+  @if cand(
+        eq(strlen(subeval(\[add(1,2)\])), 10),
+        strmatch(subeval(\[add(1,2)\]), *add*),
+        eq(eval(subeval(\[add(1,2)\])), 3)
+      )=
+  {
+    @log smoke=TC003: subeval inline leaves functions unevaluated. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: subeval leaves functions unevaluated. Failed (got=[u(me/fn.holds)]).;
+    @log smoke=TC003: subeval inline leaves functions unevaluated. Failed (got=[subeval(\[add(1,2)\])] len=[strlen(subeval(\[add(1,2)\]))]).;
     @trig me/tr.done
   }
 -
