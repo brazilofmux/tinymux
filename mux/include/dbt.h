@@ -102,7 +102,36 @@ static constexpr size_t BLOCK_CACHE_WAYS = 4;
 static constexpr size_t BLOCK_CACHE_SIZE = BLOCK_CACHE_SETS * BLOCK_CACHE_WAYS;
 static constexpr size_t BLOCK_CACHE_MASK = BLOCK_CACHE_SETS - 1;
 
-static constexpr size_t CODE_BUF_SIZE = 1024 * 1024;   // 1 MB JIT buffer
+// JIT code buffer.  Sized from measurement rather than guessed (#1315).
+//
+// dbt_reset preserves the Tier-2 blob translations, so blob_code_end bytes
+// are reserved for the life of the process and only the remainder is ever
+// available to user programs.  At 1 MB that remainder was small enough to
+// exhaust:
+//
+//   backend   blob      of 1 MB   left for programs
+//   Win64     818,552   78.1%     ~225 KB
+//   aarch64   624,616   59.6%     ~414 KB
+//
+// On Win64 a single lua() call consumed the rest and, before #1331, took
+// the JIT down process-wide.  Both platforms spent the majority of the
+// buffer before translating a single user program.
+//
+// 4 MB puts the blob under 20% on both and leaves >3 MB for programs.  It
+// is cheap: jit_alloc uses anonymous mmap on POSIX, so untouched pages are
+// never committed and resident memory tracks what is actually translated,
+// not this constant.  Windows VirtualAlloc(MEM_COMMIT) does charge commit,
+// but pages stay demand-zero, so the working set follows use there too.
+// And if the larger allocation ever fails, jit_alloc returns nullptr,
+// dbt_init returns -1, and the JIT declines cleanly to the interpreter --
+// the same path a machine too small for the old size already took.
+//
+// Branch range is not a constraint: block chaining patches a B imm26 on
+// aarch64 (+/-128 MB) and a rel32 on x86-64, and the imm19 conditional
+// patches are all intra-block, where a block is at most MAX_BLOCK_INSNS
+// guest instructions.
+//
+static constexpr size_t CODE_BUF_SIZE = 4 * 1024 * 1024;   // 4 MB JIT buffer
 
 // Block chaining: patch site for backpatching JMP targets.
 // When a block exit targets a not-yet-translated PC, we record a patch
