@@ -2155,6 +2155,55 @@ static void test_fcvt_rounding_modes() {
     }
 }
 
+
+// Superblock side exits must write back the FP cache (#1338).
+//
+// A side exit leaves a superblock from the middle.  The integer cache is
+// restored from a snapshot in the cold stub; the FP cache was not, so an FP
+// result computed before the branch was simply dropped whenever the taken
+// path was the one used -- the store that would have written it back sits
+// further down the fall-through, which a side exit never reaches.
+//
+// The loop below is the shrunk case the differential fuzzer produced.  The
+// second forward branch is always taken, so the fdiv executes and then the
+// branch leaves the block before f4 is ever stored.  x13 comes out right
+// either way, which is what made this look like a control-flow bug rather
+// than a write-back one.
+//
+static void test_superblock_side_exit_flushes_fp() {
+    printf("test_superblock_side_exit_flushes_fp...\n");
+    // x6 = x27 = 0 throughout; x13 accumulates 2047 per iteration, so the
+    // first branch is taken only on the first pass and the fdiv runs on
+    // every later one.
+    std::vector<uint32_t> code = {
+        ADDI(9, 0, 1024),
+        ADDI(8, 0, 5),                                        // trip count
+        // loop:
+        b_type(OP_BRANCH, BR_BGE, 6, 13, 8),                  // bge x6,x13 -> skip fdiv
+        r_type(OP_FP, 4, 0, 8, 1, (FP_FDIV << 2) | FP_FMT_D), // fdiv.d f4,f8,f1 (0/0)
+        b_type(OP_BRANCH, BR_BGEU, 6, 27, 12),                // bgeu x6,x27 -> side exit
+        ADDI(13, 0, -1),
+        SLLI(13, 13, 53),
+        ADDI(13, 13, 2047),
+        ADDI(8, 8, -1),
+        BNE(8, 0, -28),
+        ECALL()
+    };
+    // 0/0 is a NaN, and RISC-V returns the canonical one.
+    const uint64_t CANON = 0x7FF8000000000000ULL;
+    uint64_t interp = run_code(code).state.f[4];
+    uint64_t dbt    = run_code_dbt_fbits(code, 4);
+    CHECK_EQ("side-exit FP flush: interpreter computes the fdiv", interp, CANON);
+    CHECK_EQ("side-exit FP flush: DBT matches interpreter", dbt, interp);
+
+    // x13 agrees even with the bug present, so assert it too: if this ever
+    // starts failing, the sequence has stopped exercising what it was for.
+    uint64_t ix13 = run_code(code).state.x[13];
+    uint64_t dx13 = run_code_dbt(code, 13);
+    CHECK_EQ("side-exit FP flush: x13 accumulates", ix13, 5ULL * 2047);
+    CHECK_EQ("side-exit FP flush: DBT x13 matches", dx13, ix13);
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2199,6 +2248,7 @@ int main(int argc, char *argv[]) {
     test_selfloop_pressure_fp_int_rd();
     test_fsgnj_rd_aliases_rs2();
     test_fcvt_rounding_modes();
+    test_superblock_side_exit_flushes_fp();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();

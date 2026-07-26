@@ -1161,6 +1161,8 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 side_exits[num_side_exits].expected_next_pc = 0;
                 memcpy(side_exits[num_side_exits].snapshot, rc.slots,
                        sizeof(rc.slots));
+                memcpy(side_exits[num_side_exits].fsnapshot, fc.slots,
+                       sizeof(fc.slots));
                 num_side_exits++;
                 pc = branch_pc + 4;
                 count++;
@@ -1505,6 +1507,8 @@ no_addr_fusion:
                 side_exits[num_side_exits].expected_next_pc = 0;
                 memcpy(side_exits[num_side_exits].snapshot, rc.slots,
                        sizeof(rc.slots));
+                memcpy(side_exits[num_side_exits].fsnapshot, fc.slots,
+                       sizeof(fc.slots));
                 num_side_exits++;
                 pc += 4;
                 continue;
@@ -2240,6 +2244,17 @@ done:
                     && side_exits[i].snapshot[j].dirty) {
                     emit_store_guest(&e, side_exits[i].snapshot[j].guest_reg,
                                      rc_host_regs[j]);
+                }
+            }
+            // Same for the FP cache.  Without this an FP result computed
+            // before the branch is dropped on the taken path: the store
+            // that would have written it back sits further down the
+            // fall-through, which a side exit never reaches (#1338).
+            for (int j = 0; j < FC_NUM_SLOTS; j++) {
+                if (side_exits[i].fsnapshot[j].guest_freg >= 0
+                    && side_exits[i].fsnapshot[j].dirty) {
+                    emit_store_fp_d(&e, side_exits[i].fsnapshot[j].guest_freg,
+                                    fc_host_xmm[j]);
                 }
             }
             emit_exit_chained(&e, dbt, side_exits[i].target_pc);

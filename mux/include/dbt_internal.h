@@ -166,6 +166,12 @@ struct side_exit_t {
     uint64_t target_pc;         // guest PC of the taken path
     uint64_t expected_next_pc;  // expected next_pc for inline CALL cold exits
     rc_slot_t snapshot[RC_NUM_SLOTS];
+    // The FP cache needs the same treatment as the integer one.  A side
+    // exit leaves the block from the middle, so anything the body has
+    // computed into a cache slot and not yet written back is lost unless
+    // the cold stub stores it -- and an FP result is just as lost as an
+    // integer one (#1338).
+    fc_slot_t fsnapshot[FC_NUM_SLOTS];
 };
 
 // ---------------------------------------------------------------
