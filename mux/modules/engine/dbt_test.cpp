@@ -2734,6 +2734,183 @@ static void test_fp_minmax_snan() {
     }
 }
 
+// FEQ.D / FLT.D / FLE.D (#1359).
+//
+// test_fp_compare() above predates this and could not have caught the bug:
+// it drives rv64_interp_run directly, so the DBT never runs, and the
+// interpreter is correct here.  It also covers only FLT and FEQ -- never
+// FLE, the one that was inverted -- and uses no NaN.  A test that cannot
+// distinguish the two routes proves nothing about the backend, which is
+// why FLE.D shipped computing rs1 >= rs2: wrong for ordinary ordered
+// operands, with no NaN involved anywhere.
+//
+// Both routes are asserted below.  The two cases a careless table would
+// reach for, fle(1,1) and fle(NaN,1), both come out right even under the
+// inverted form, so the table deliberately includes the asymmetric
+// orderings that do not.
+//
+// RISC-V: every comparison against NaN is false, quiet or signalling.
+// Signed zeros compare EQUAL, unlike FMIN/FMAX where the sign is decisive.
+//
+static void test_fp_compare_semantics() {
+    printf("test_fp_compare_semantics...\n");
+
+    const uint64_t SIGNAN  = 0x7FF0000000000001ULL;
+    const uint64_t QNAN    = 0x7FF8000000000000ULL;
+    const uint64_t PINF    = 0x7FF0000000000000ULL;
+    const uint64_t NINF    = 0xFFF0000000000000ULL;
+    const uint64_t ONE     = 0x3FF0000000000000ULL;
+    const uint64_t TWO     = 0x4000000000000000ULL;
+    const uint64_t NEGONE  = 0xBFF0000000000000ULL;
+    const uint64_t PZERO   = 0x0000000000000000ULL;
+    const uint64_t NEGZERO = 0x8000000000000000ULL;
+
+    // f1 = a, f2 = b, x7 = cmp(f1,f2).
+    auto build = [](uint64_t a, uint64_t b, int funct3) {
+        std::vector<uint32_t> code;
+        auto load = [&](int freg, int xreg, uint64_t bits) {
+            code.push_back(ADDI(xreg, 0, 0));
+            for (int sh = 56; sh >= 0; sh -= 8) {
+                code.push_back(SLLI(xreg, xreg, 8));
+                uint8_t byte = (uint8_t)((bits >> sh) & 0xFF);
+                if (byte) {
+                    code.push_back(ADDI(30, 0, (int32_t)byte));
+                    code.push_back(r_type(0x33, xreg, 0, xreg, 30, 0));
+                }
+            }
+            code.push_back(r_type(OP_FP, freg, 0, xreg, 0,
+                                  (FP_FMVDX << 2) | FP_FMT_D));
+        };
+        load(1, 5, a);
+        load(2, 6, b);
+        code.push_back(r_type(OP_FP, 7, funct3, 1, 2,
+                              (FP_FCMP << 2) | FP_FMT_D));
+        code.push_back(ECALL());
+        return code;
+    };
+
+    // funct3: 2 = FEQ.D, 1 = FLT.D, 0 = FLE.D
+    struct { const char *nm; uint64_t a, b; int f3; uint64_t want; } C[] = {
+        // Ordered, both directions -- the asymmetry an inverted FLE fails.
+        { "feq(1,2)",       ONE,     TWO,     2, 0 },
+        { "feq(2,1)",       TWO,     ONE,     2, 0 },
+        { "feq(1,1)",       ONE,     ONE,     2, 1 },
+        { "flt(1,2)",       ONE,     TWO,     1, 1 },
+        { "flt(2,1)",       TWO,     ONE,     1, 0 },
+        { "flt(1,1)",       ONE,     ONE,     1, 0 },
+        { "fle(1,2)",       ONE,     TWO,     0, 1 },
+        { "fle(2,1)",       TWO,     ONE,     0, 0 },
+        { "fle(1,1)",       ONE,     ONE,     0, 1 },
+        // Negatives and infinities.
+        { "flt(-1,1)",      NEGONE,  ONE,     1, 1 },
+        { "flt(1,-1)",      ONE,     NEGONE,  1, 0 },
+        { "fle(-inf,+inf)", NINF,    PINF,    0, 1 },
+        { "fle(+inf,-inf)", PINF,    NINF,    0, 0 },
+        { "feq(+inf,+inf)", PINF,    PINF,    2, 1 },
+        { "flt(-inf,-inf)", NINF,    NINF,    1, 0 },
+        // Signed zeros compare equal.
+        { "feq(-0,+0)",     NEGZERO, PZERO,   2, 1 },
+        { "flt(-0,+0)",     NEGZERO, PZERO,   1, 0 },
+        { "fle(-0,+0)",     NEGZERO, PZERO,   0, 1 },
+        { "fle(+0,-0)",     PZERO,   NEGZERO, 0, 1 },
+        // Every comparison against NaN is false, in either position, and
+        // whether the NaN is quiet or signalling.
+        { "feq(qNaN,1)",    QNAN,    ONE,     2, 0 },
+        { "feq(1,qNaN)",    ONE,     QNAN,    2, 0 },
+        { "flt(qNaN,1)",    QNAN,    ONE,     1, 0 },
+        { "flt(1,qNaN)",    ONE,     QNAN,    1, 0 },
+        { "fle(qNaN,1)",    QNAN,    ONE,     0, 0 },
+        { "fle(1,qNaN)",    ONE,     QNAN,    0, 0 },
+        { "feq(sNaN,1)",    SIGNAN,  ONE,     2, 0 },
+        { "feq(1,sNaN)",    ONE,     SIGNAN,  2, 0 },
+        { "flt(sNaN,1)",    SIGNAN,  ONE,     1, 0 },
+        { "flt(1,sNaN)",    ONE,     SIGNAN,  1, 0 },
+        { "fle(sNaN,1)",    SIGNAN,  ONE,     0, 0 },
+        { "fle(1,sNaN)",    ONE,     SIGNAN,  0, 0 },
+        { "feq(qNaN,qNaN)", QNAN,    QNAN,    2, 0 },
+        { "fle(qNaN,qNaN)", QNAN,    QNAN,    0, 0 },
+    };
+
+    for (size_t i = 0; i < sizeof(C)/sizeof(C[0]); i++) {
+        std::vector<uint32_t> code = build(C[i].a, C[i].b, C[i].f3);
+        char desc[160];
+        snprintf(desc, sizeof(desc), "%s: interp", C[i].nm);
+        CHECK_EQ(desc, run_code(code).state.x[7], C[i].want);
+        snprintf(desc, sizeof(desc), "%s: DBT", C[i].nm);
+        CHECK_EQ(desc, run_code_dbt(code, 7), C[i].want);
+    }
+}
+
+// MULH / MULHSU / MULHU against x0 (#1361).
+//
+// x0 is materialised as RAX-as-zero, so the host register for a guest x0
+// operand IS RAX -- the same register the dividend is loaded into.  The
+// high multiplies loaded rs1 into RAX first, destroying the zero, and then
+// multiplied by "rs2" (still RAX), squaring rs1.  MULHSU also re-read rs2
+// after the multiply, where RAX holds the low half of the product.
+//
+// test_mul_div_rem() covers this family but never with x0 as an operand,
+// which is exactly why it survived.  Both routes are asserted: the
+// interpreter is correct here, so an interpreter-only check proves nothing
+// about the backend (#1359).
+//
+static void test_mulh_x0() {
+    printf("test_mulh_x0...\n");
+
+    // f3 = MULH-family(rs1, rs2) for the given funct3, via x0 in one or
+    // both operand positions.  Anything times zero is zero -- including
+    // the high half -- so every expectation below is 0.
+    auto build = [](int64_t v, int shift, int funct3,
+                    int rs1_is_x0, int rs2_is_x0) {
+        std::vector<uint32_t> code;
+        // x14 = v << shift.  ADDI's immediate is 12-bit signed, so the
+        // magnitude comes from the shift rather than from repeated adds.
+        code.push_back(ADDI(14, 0, (int32_t)v));
+        if (shift) code.push_back(SLLI(14, 14, shift));
+        code.push_back(r_type(0x33, 4, funct3, rs1_is_x0 ? 0 : 14,
+                              rs2_is_x0 ? 0 : 14, 0x01));
+        code.push_back(ECALL());
+        return code;
+    };
+
+    struct { const char *nm; int f3; } OPS[] = {
+        { "mulh",   1 }, { "mulhsu", 2 }, { "mulhu",  3 },
+    };
+    // Negative values matter for MULHSU: the sign of rs1 drives the
+    // correction term that read the clobbered register.
+    //
+    // The shifts are load-bearing for MULH.  Squaring a small rs1 leaves a
+    // zero high half, so the broken form returns the right answer anyway --
+    // MULH only diverges once |rs1| exceeds 2^32 and rs1*rs1 overflows 64
+    // bits.  Without these rows this test would pass against the bug.
+    struct { int64_t v; int shift; } VALS[] = {
+        { -7, 0 }, { -1, 0 }, { 1, 0 }, { 2047, 0 }, { -2048, 0 },
+        { -7, 34 }, { 1023, 40 }, { -1, 63 }, { 3, 62 },
+    };
+
+    for (size_t o = 0; o < sizeof(OPS)/sizeof(OPS[0]); o++) {
+        for (size_t i = 0; i < sizeof(VALS)/sizeof(VALS[0]); i++) {
+            struct { const char *pos; int a, b; } P[] = {
+                { "rs2=x0",  0, 1 }, { "rs1=x0",  1, 0 }, { "both=x0", 1, 1 },
+            };
+            for (size_t p = 0; p < 3; p++) {
+                std::vector<uint32_t> code =
+                    build(VALS[i].v, VALS[i].shift, OPS[o].f3,
+                          P[p].a, P[p].b);
+                char desc[160];
+                snprintf(desc, sizeof(desc), "%s(%lld<<%d,%s): interp",
+                         OPS[o].nm, (long long)VALS[i].v, VALS[i].shift,
+                         P[p].pos);
+                CHECK_EQ(desc, run_code(code).state.x[4], 0);
+                snprintf(desc, sizeof(desc), "%s(%lld<<%d,%s): DBT",
+                         OPS[o].nm, (long long)VALS[i].v, VALS[i].shift,
+                         P[p].pos);
+                CHECK_EQ(desc, run_code_dbt(code, 4), 0);
+            }
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2785,6 +2962,8 @@ int main(int argc, char *argv[]) {
     test_1338_superblock_side_exit_fp();
     test_fp_nan_canonicalisation();
     test_fp_minmax_snan();
+    test_fp_compare_semantics();
+    test_mulh_x0();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
