@@ -1076,6 +1076,15 @@ void cache_preload_deferred_bfs(dbref room, int depth)
 
 // Format a byte count as a human-readable string with K/M/G suffix.
 //
+// mux_sprintf implements its own conversions -- d, u, x, X, c, s, p -- and
+// has no float conversion.  A %f reaches its unhandled-specifier branch,
+// mux_assert(0), and mux_assert is not compiled out in release: it calls
+// AssertionFailed, which abort()s.  So every %f below killed the server
+// outright once the cache reached 1 KB (#1382).
+//
+// libc snprintf for the float parts, as rvbench and pocvm2 already do in
+// jit_compiler.cpp, then hand the result to the MUX formatters as %s.
+//
 static void format_size(UTF8 *buf, size_t buflen, int64_t bytes)
 {
     if (bytes < 0)
@@ -1084,17 +1093,17 @@ static void format_size(UTF8 *buf, size_t buflen, int64_t bytes)
     }
     else if (bytes >= 1024LL * 1024 * 1024)
     {
-        mux_sprintf(buf, buflen, T("%.1f GB"),
+        snprintf(reinterpret_cast<char *>(buf), buflen, "%.1f GB",
             static_cast<double>(bytes) / (1024.0 * 1024.0 * 1024.0));
     }
     else if (bytes >= 1024 * 1024)
     {
-        mux_sprintf(buf, buflen, T("%.1f MB"),
+        snprintf(reinterpret_cast<char *>(buf), buflen, "%.1f MB",
             static_cast<double>(bytes) / (1024.0 * 1024.0));
     }
     else if (bytes >= 1024)
     {
-        mux_sprintf(buf, buflen, T("%.1f KB"),
+        snprintf(reinterpret_cast<char *>(buf), buflen, "%.1f KB",
             static_cast<double>(bytes) / 1024.0);
     }
     else
@@ -1128,10 +1137,15 @@ void list_cache_stats(dbref player)
         static_cast<unsigned long>(nEntries),
         szSize, szMax,
         mudconf.cache_preload_depth));
-    notify(player, tprintf(T("Hits: %llu   Misses: %llu   Hit rate: %.1f%%"),
+    // Same reason as format_size above: tprintf routes to mux_vsnprintf,
+    // which would abort on %f.
+    //
+    char szHitPct[64];
+    snprintf(szHitPct, sizeof(szHitPct), "%.1f", hit_pct);
+    notify(player, tprintf(T("Hits: %llu   Misses: %llu   Hit rate: %s%%"),
         static_cast<unsigned long long>(cache_hits),
         static_cast<unsigned long long>(cache_misses),
-        hit_pct));
+        szHitPct));
 
     CSQLiteDB::Stats st = g_pSQLiteBackend->GetDB().GetStats();
 
