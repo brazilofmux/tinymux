@@ -153,7 +153,16 @@ static inline bool a64_encode_logical_imm64(uint64_t val, uint32_t *enc) {
         // Find rotation: rotate elem right until bit 0 is 1 and the
         // highest set bit is contiguous.
         for (int rot = 0; rot < size; rot++) {
-            uint64_t rotated = ((elem >> rot) | (elem << (size - rot))) & mask;
+            // rot == 0 is the identity rotation.  Spelling it out avoids
+            // elem << 64, which is undefined when size == 64 -- AArch64
+            // masks the shift count to six bits so it silently becomes
+            // elem << 0 and the right answer falls out by accident (#1456).
+            // For size < 64 the shift is defined and the mask discards it,
+            // so this case is the same value at every size.
+            //
+            uint64_t rotated = (0 == rot)
+                             ? (elem & mask)
+                             : (((elem >> rot) | (elem << (size - rot))) & mask);
             // Check if rotated is a contiguous run of ones from bit 0.
             uint64_t ones = rotated;
             if (ones == 0) continue;
