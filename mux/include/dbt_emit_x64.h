@@ -1080,6 +1080,20 @@ static inline void emit_sqrtsd(emit_t *e, int d, int s) { emit_sse_sd(e, 0x51, d
 static inline void emit_minsd(emit_t *e, int d, int s) { emit_sse_sd(e, 0x5D, d, s); }
 static inline void emit_maxsd(emit_t *e, int d, int s) { emit_sse_sd(e, 0x5F, d, s); }
 
+// Bitwise ops on packed doubles (66 0F ..).  Used to merge the two operand
+// orders of MINSD/MAXSD, which is what makes signed zeros come out right.
+// Like emit_sse_sd, no REX: correct for XMM0-7, which is all the register
+// pools hand out (fc_host_xmm is XMM2-7, XMM0/XMM1 are scratch).
+static inline void emit_sse_pd(emit_t *e, uint8_t op, int dst, int src) {
+    emit_byte(e, 0x66);
+    emit_byte(e, 0x0F);
+    emit_byte(e, op);
+    emit_byte(e, modrm(0x03, dst, src));
+}
+
+static inline void emit_andpd(emit_t *e, int d, int s) { emit_sse_pd(e, 0x54, d, s); }
+static inline void emit_orpd(emit_t *e, int d, int s)  { emit_sse_pd(e, 0x56, d, s); }
+
 // movsd xmm, xmm — register-to-register move (no-op if same)
 static inline void emit_movsd_xmm(emit_t *e, int dst, int src) {
     if (dst != src) emit_sse_sd(e, 0x10, dst, src);
@@ -1227,6 +1241,62 @@ static inline void emit_canon_nan_d(emit_t *e, int xmm) {
     emit_mov_r64_imm64(e, X64_RAX, 0x7FF8000000000000ull);
     emit_cmovcc(e, CMOV_P, X64_RCX, X64_RAX);
     emit_movq_xmm_r64(e, xmm, X64_RCX);
+}
+
+// FMIN.D / FMAX.D with RISC-V semantics (#1357).  is_max selects FMAX.
+//
+// MINSD/MAXSD return their SECOND source whenever either operand is NaN, and
+// also when the two compare equal.  Mapping rs1/rs2 straight onto them is
+// therefore wrong twice over: a NaN in rs2 is returned instead of the number,
+// and zeros of opposite sign come out order-dependent.  A backend doing that
+// gets the rs1 cases right purely by accident.
+//
+// RISC-V wants: the number beats a NaN whether quiet or signalling; only when
+// BOTH operands are NaN is the result canonical; and fmin(-0,+0) is -0 with
+// fmax(+0,-0) being +0, in either operand order.
+//
+// Branchless, in two stages.
+//
+// Stage 1 -- the numeric answer, signed zeros included.  Evaluate MINSD in
+// both operand orders and merge: OR for min, AND for max.  When the operands
+// differ numerically both orders yield the same value and the merge is the
+// identity; when they are zeros of opposite sign the two orders yield -0 and
+// +0, and OR gives -0 while AND gives +0, which is exactly the rule.  NaN
+// inputs make this stage produce garbage, which stage 2 discards.
+//
+// Stage 2 -- NaN selection, in the integer domain (no XMM scratch beyond the
+// two already in use; RAX/RCX/RDX are outside rc_host_regs).  Two CMOVs pick
+// the other operand when one is NaN.  With both NaN they leave a NaN behind,
+// and that is the ONLY way a NaN survives -- if exactly one operand was NaN
+// the result is by then the other, non-NaN, operand.  So canonicalising the
+// result handles the both-NaN case and nothing else, and emit_canon_nan_d
+// already does precisely that.
+//
+static inline void emit_fminmax_d(emit_t *e, int xd, int xs1, int xs2,
+                                  int is_max) {
+    emit_movsd_xmm(e, 0 /*XMM0*/, xs1);
+    emit_movsd_xmm(e, 1 /*XMM1*/, xs2);
+    if (is_max) {
+        emit_maxsd(e, 0, 1);        // XMM0 = maxsd(s1, s2)
+        emit_maxsd(e, 1, xs1);      // XMM1 = maxsd(s2, s1)
+        emit_andpd(e, 0, 1);
+    } else {
+        emit_minsd(e, 0, 1);        // XMM0 = minsd(s1, s2)
+        emit_minsd(e, 1, xs1);      // XMM1 = minsd(s2, s1)
+        emit_orpd(e, 0, 1);
+    }
+
+    emit_movq_r64_xmm(e, X64_RCX, 0);       // candidate = numeric result
+    emit_movq_r64_xmm(e, X64_RAX, xs1);
+    emit_movq_r64_xmm(e, X64_RDX, xs2);
+    emit_ucomisd(e, xs2, xs2);
+    emit_cmovcc(e, CMOV_P, X64_RCX, X64_RAX);   // rs2 NaN -> rs1
+    emit_ucomisd(e, xs1, xs1);
+    emit_cmovcc(e, CMOV_P, X64_RCX, X64_RDX);   // rs1 NaN -> rs2
+    emit_movq_xmm_r64(e, 0, X64_RCX);
+
+    emit_canon_nan_d(e, 0);                 // fires only when both were NaN
+    emit_movsd_xmm(e, xd, 0);
 }
 
 // Spill/reload the rounded double through ctx.fp_scratch.

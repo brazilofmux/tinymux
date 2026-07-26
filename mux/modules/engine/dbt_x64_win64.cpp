@@ -2732,12 +2732,7 @@ no_addr_fusion:
                 int xs1 = fc_read(&e, &fc, insn.rs1);
                 int xs2 = fc_read(&e, &fc, insn.rs2);
                 int xd  = fc_write(&e, &fc, insn.rd);
-                emit_movsd_xmm(&e, XMM0, xs1);
-                if (insn.funct3 == 0)
-                    emit_minsd(&e, XMM0, xs2);
-                else
-                    emit_maxsd(&e, XMM0, xs2);
-                emit_movsd_xmm(&e, xd, XMM0);
+                emit_fminmax_d(&e, xd, xs1, xs2, insn.funct3 != 0);
                 break;
             }
             case FP_FCMP: { // FEQ.D / FLT.D / FLE.D

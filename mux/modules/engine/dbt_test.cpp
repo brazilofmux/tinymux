@@ -2680,14 +2680,57 @@ static void test_fp_minmax_snan() {
                 CHECK_EQ(desc, run_code_dbt_fbits(code, 3), VALS[i].bits);
             }
         }
+        // A QUIET NaN must lose to a real value just as the signalling one
+        // does.  Worth asserting separately: MINSD/MAXSD return their second
+        // source on any NaN, so a backend can be wrong here for exactly the
+        // same reason without any sNaN being involved (#1357).
+        for (size_t i = 0; i < sizeof(VALS)/sizeof(VALS[0]); i++) {
+            for (int swap = 0; swap <= 1; swap++) {
+                std::vector<uint32_t> code =
+                    build(swap ? VALS[i].bits : QNAN,
+                          swap ? QNAN : VALS[i].bits, is_max);
+                char desc[160];
+                snprintf(desc, sizeof(desc), "%s(qNaN,%s) qNaN in %s: interp",
+                         op, VALS[i].name, swap ? "rs2" : "rs1");
+                CHECK_EQ(desc, run_code(code).state.f[3], VALS[i].bits);
+                snprintf(desc, sizeof(desc), "%s(qNaN,%s) qNaN in %s: DBT",
+                         op, VALS[i].name, swap ? "rs2" : "rs1");
+                CHECK_EQ(desc, run_code_dbt_fbits(code, 3), VALS[i].bits);
+            }
+        }
         // Both NaN -> canonical.  Without this the fix could be "always take
-        // the other operand", which would be wrong here.
-        std::vector<uint32_t> both = build(SIGNAN, QNAN, is_max);
-        char d2[160];
-        snprintf(d2, sizeof(d2), "%s(sNaN,qNaN) both NaN: interp", op);
-        CHECK_EQ(d2, run_code(both).state.f[3], QNAN);
-        snprintf(d2, sizeof(d2), "%s(sNaN,qNaN) both NaN: DBT", op);
-        CHECK_EQ(d2, run_code_dbt_fbits(both, 3), QNAN);
+        // the other operand", which would be wrong here.  Both orders: with
+        // only (sNaN,qNaN), a backend that returns its second source passes
+        // by accident, because that source already holds the value expected.
+        for (int swap = 0; swap <= 1; swap++) {
+            std::vector<uint32_t> both = build(swap ? QNAN : SIGNAN,
+                                               swap ? SIGNAN : QNAN, is_max);
+            char d2[160];
+            snprintf(d2, sizeof(d2), "%s(%s,%s) both NaN: interp", op,
+                     swap ? "qNaN" : "sNaN", swap ? "sNaN" : "qNaN");
+            CHECK_EQ(d2, run_code(both).state.f[3], QNAN);
+            snprintf(d2, sizeof(d2), "%s(%s,%s) both NaN: DBT", op,
+                     swap ? "qNaN" : "sNaN", swap ? "sNaN" : "qNaN");
+            CHECK_EQ(d2, run_code_dbt_fbits(both, 3), QNAN);
+        }
+        // Zeros of opposite sign.  RISC-V is specific where IEEE minNum is
+        // not: fmin returns -0.0 and fmax returns +0.0, regardless of operand
+        // order.  MINSD/MAXSD return their second source when the operands
+        // compare equal, so this is order-sensitive on x86 for the same
+        // reason the NaN cases are.
+        for (int swap = 0; swap <= 1; swap++) {
+            const uint64_t PLUSZERO = 0ULL;
+            std::vector<uint32_t> zc = build(swap ? PLUSZERO : NEGZERO,
+                                             swap ? NEGZERO : PLUSZERO, is_max);
+            uint64_t want = is_max ? PLUSZERO : NEGZERO;
+            char d3[160];
+            snprintf(d3, sizeof(d3), "%s(%s,%s) signed zero: interp", op,
+                     swap ? "+0.0" : "-0.0", swap ? "-0.0" : "+0.0");
+            CHECK_EQ(d3, run_code(zc).state.f[3], want);
+            snprintf(d3, sizeof(d3), "%s(%s,%s) signed zero: DBT", op,
+                     swap ? "+0.0" : "-0.0", swap ? "-0.0" : "+0.0");
+            CHECK_EQ(d3, run_code_dbt_fbits(zc, 3), want);
+        }
     }
 }
 
