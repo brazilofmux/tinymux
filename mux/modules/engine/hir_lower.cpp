@@ -4323,9 +4323,15 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
             return r;
         }
 
+    // #1242: Unknown AST node types must refuse the compile, not
+    // lower to an empty string.  Emitting "" deleted user text with no
+    // error — the failure mode behind the #1237 semicolon drop, and
+    // the worst outcome on the parity ranking (silent corruption).
+    // overflowed bails before codegen; the AST evaluator handles it.
+    //
     default: {
-        uint64_t addr = rc.pool_str("");
-        return h.emit_sconst(addr, "");
+        h.overflowed = true;
+        return -1;
     }
     }
 }
