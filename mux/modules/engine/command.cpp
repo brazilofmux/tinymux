@@ -1310,7 +1310,21 @@ static bool process_hook(dbref executor, CMDENT *cmdp, int key, bool save_flg)
         {
             if ((aflags & AF_NOEVAL) || NoEval(mudconf.hook_obj))
             {
-                // NOEVAL hook content is data, not code -- treat as true.
+                // NOEVAL means "use this attribute's text literally", not
+                // "this attribute has no opinion".  Returning true here
+                // discarded the content outright, so a NOEVAL permit or
+                // ignore hook allowed every command -- a permission control
+                // silently disabled, and indistinguishable from having no
+                // hook configured at all (#1280).
+                //
+                // Derive the boolean from the unevaluated text instead.  That
+                // is what the rest of the NOEVAL work does: eval_boolexp,
+                // added in the same commit (4cb904fcc) and the only other
+                // boolean consumer in its list, compares the raw text rather
+                // than short-circuiting.  A literal "0" or "#-1 ..." hook now
+                // blocks as written.
+                //
+                retval = xlate(atext);
             }
             else
             {
