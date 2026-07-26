@@ -836,34 +836,36 @@ static void ast_eval_sequence_children(const ASTNode *node,
     //
     bool armed = (eval & EV_FCHECK) != 0;
 
-    // What spends that opportunity differs by region kind (#1238).
+    // Any non-space child spends it.  2.13 checks only the first '('
+    // it reaches, and a dispatched call clears EV_FCHECK for whatever
+    // follows (mux/src/eval.cpp:1677):
     //
-    // Without EV_FMAND, 2.13 checks only the first '(' it reaches, so
-    // any preceding text spends the opportunity and a later call emits
-    // as literal.
-    //
-    // With EV_FMAND the candidate name is the accumulated OUTPUT rather
-    // than a token, so text before a call does NOT spend it — 2.13
-    // folds that text into the name instead:
-    //
-    //     [x add(1,2) y]          ->  #-1 FUNCTION (X ADD) NOT FOUND
-    //
-    // Only a call spends it there, matching the unconditional
-    // `eval &= ~EV_FCHECK` after a dispatch (mux/src/eval.cpp:1677):
-    //
+    //     [strcat(x add(1,2) y)]  ->  x add(1,2) y
     //     [add(1,2) mul(3,4)]     ->  3 mul(3,4)
     //     [add(1,2) zz mul(3,4)]  ->  3 zz mul(3,4)
     //
-    const bool fmand = (eval & EV_FMAND) != 0;
-
+    // The rule is uniform across region kinds.  #1238 briefly made
+    // EV_FMAND regions special so that text before a call would not
+    // spend the opportunity: 2.13's candidate name there is the
+    // accumulated OUTPUT, and it folds preceding text into the name
+    // ([x add(1,2) y] -> "#-1 FUNCTION (X ADD) NOT FOUND").  That
+    // existed to avoid settling an unadjudicated shape by accident.
+    //
+    // It has since been settled the other way (#1246): the span-name
+    // error is not the target, literal text is the better answer, and
+    // the compiled route — which never modelled the span — is the
+    // reference.  With the distinction gone both routes agree:
+    //
+    //     [x add(1,2) y]          ->  x add(1,2) y
+    //     [zz mul(2,3)]           ->  zz mul(2,3)
+    //
     for (size_t i = first; i < last; i++)
     {
         const ASTNode *child = node->children[i].get();
 
         int childEval = eval;
         if (  !armed
-           || (  !fmand
-              && child->type != AST_FUNCCALL))
+           || child->type != AST_FUNCCALL)
         {
             childEval = eval & ~EV_FCHECK;
         }
@@ -874,11 +876,7 @@ static void ast_eval_sequence_children(const ASTNode *node,
         if (  armed
            && child->type != AST_SPACE)
         {
-            if (  !fmand
-               || child->type == AST_FUNCCALL)
-            {
-                armed = false;
-            }
+            armed = false;
         }
     }
 }
