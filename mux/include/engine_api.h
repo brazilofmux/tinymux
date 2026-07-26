@@ -173,5 +173,9 @@ struct lua_jit_counters {
 };
 void jit_lua_get_stats(lua_jit_counters *out);
 void jit_lua_reset_stats(void);
+// Drop every in-process Lua compiled_program so a code_cache flush is not
+// followed by runs that still hold native code from the previous build.
+//
+void jit_lua_clear_cache(void);
 
 #endif // ENGINE_API_H

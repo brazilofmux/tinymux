@@ -61,6 +61,15 @@ void jit_lua_reset_stats(void) {
     s_lua_jit_stats = {};
 }
 
+void jit_lua_clear_cache(void) {
+    const size_t n = s_lua_cache.size();
+    s_lua_cache.clear();
+    // Count each dropped entry as an invalidation so jitstats() shows the
+    // flush happened; operators comparing before/after can see the drop.
+    //
+    s_lua_jit_stats.invalidations += n;
+}
+
 // ---------------------------------------------------------------
 // Compile a Lua bytecode blob to a compiled_program.
 // ---------------------------------------------------------------

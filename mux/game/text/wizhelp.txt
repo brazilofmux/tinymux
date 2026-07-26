@@ -3233,7 +3233,7 @@ IDLE_WIZ_DARK
 & JITSTATS()
 JITSTATS()
 
-  FUNCTION: jitstats([reset])
+  FUNCTION: jitstats([reset|flush])
 
   Returns internal counters from the softcode JIT compiler, including cache
   hits/misses, bailout reasons, and total compile/compile failures.  Use the
@@ -3246,6 +3246,12 @@ JITSTATS()
   invisible: every failure falls back to the Lua interpreter, so lua()
   keeps returning correct results.  lua_run_fail rising while lua_run_ok
   stays at zero means the JIT compiles but never executes.
+
+  Use the literal argument `flush` to wipe the persisted SQLite code_cache
+  table and every in-process softcode/Lua compiled program.  That is the
+  supported way to clear JIT native code after an engine rebuild when
+  blob_hash alone does not cover the change (codegen, not the Tier-2 blob).
+  Returns `OK` on success.
 
   Related Topics: astbench(), rvbench().
 

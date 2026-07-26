@@ -264,6 +264,42 @@ void cache_discard_writes(void)
     s_code_cache_write_index.clear();
 }
 
+// Drop only OP_CODE_CACHE_PUT ops, preserving attribute put/del.  Rebuilds
+// s_attr_write_index because erasing mid-queue would leave stale indices.
+//
+void cache_discard_code_cache_writes(void)
+{
+    if (s_code_cache_write_index.empty())
+    {
+        return;
+    }
+
+    vector<CacheWriteOp> kept;
+    kept.reserve(s_write_queue.size() - s_code_cache_write_index.size());
+    for (auto &op : s_write_queue)
+    {
+        if (op.op != CacheWriteOp::OP_CODE_CACHE_PUT)
+        {
+            kept.push_back(std::move(op));
+        }
+    }
+    s_write_queue = std::move(kept);
+    s_code_cache_write_index.clear();
+
+    s_attr_write_index.clear();
+    for (size_t i = 0; i < s_write_queue.size(); ++i)
+    {
+        const CacheWriteOp &op = s_write_queue[i];
+        if (op.op == CacheWriteOp::OP_PUT || op.op == CacheWriteOp::OP_DEL)
+        {
+            Aname nam;
+            nam.object  = op.object;
+            nam.attrnum = op.attrnum;
+            s_attr_write_index[nam] = i;
+        }
+    }
+}
+
 // Merge pending (not yet flushed) attribute numbers into attrnums for
 // atr_head/atr_next enumeration.  Adds dirty non-tombstone cache entries
 // and queued OP_PUTs; excludes tombstoned attrs and queued OP_DELs.
