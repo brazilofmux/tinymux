@@ -872,7 +872,18 @@ static bool ParseThreeLetters(const UTF8 **pp, int *piHash)
     // Parse space-separate token.
     //
     const UTF8 *q = p;
-    int iHash = 0;
+
+    // Accumulate unsigned.  A signed left shift into the sign bit is
+    // undefined, and this loop runs over the whole token before the
+    // three-letter check below -- so a longer alpha token overflowed an int
+    // here (#1456).  UBSan caught it on a four-letter one:
+    //
+    //   left shift of 1095782985 by 8 places cannot be represented in 'int'
+    //
+    // No accepted input changes value: a three-letter token occupies 24
+    // bits, and anything longer is rejected before iHash is stored.
+    //
+    uint32_t iHash = 0;
     while (*q && *q != ' ')
     {
         if (!mux_isalpha(*q))
@@ -881,7 +892,7 @@ static bool ParseThreeLetters(const UTF8 **pp, int *piHash)
         }
         // ASCII-only: month abbreviations are always ASCII.
         //
-        iHash = (iHash << 8) | mux_toupper_ascii(*q);
+        iHash = (iHash << 8) | static_cast<uint32_t>(mux_toupper_ascii(*q));
         q++;
     }
 
@@ -901,7 +912,7 @@ static bool ParseThreeLetters(const UTF8 **pp, int *piHash)
     }
 
     *pp = p;
-    *piHash = iHash;
+    *piHash = static_cast<int>(iHash);
     return true;
 }
 
