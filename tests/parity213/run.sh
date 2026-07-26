@@ -73,7 +73,72 @@ if [ -z "${PARITY_SKIP_SELFTEST:-}" ]; then
 fi
 
 WORK=$(mktemp -d "${TMPDIR:-/tmp}/parity213.XXXXXX") || exit 2
-trap 'rm -rf "$WORK"' EXIT
+
+# Server lifecycle (#1355).
+#
+# Each probe leg takes minutes, so for most of a run there is a live netmux
+# on a scratch port.  Two things were missing:
+#
+#   The pid files lived under $WORK, which the EXIT trap deletes -- so an
+#   interrupted run lost the only record of what it had started.  The pid
+#   list therefore lives outside $WORK.
+#
+#   Only EXIT was trapped, and a shell killed by SIGINT does not reliably
+#   run it.  Observed: Ctrl-C left both a netmux holding its port and the
+#   scratch directory on disk.  INT/TERM/HUP are trapped explicitly.
+#
+# Servers are started with setsid where available so each is a process
+# group leader and can be reaped as a group -- 2.13 spawns a `slave`
+# helper that plain `kill $pid` would leave behind.
+#
+PIDS=$(mktemp "${TMPDIR:-/tmp}/parity213.pids.XXXXXX") || { rm -rf "$WORK"; exit 2; }
+if command -v setsid >/dev/null 2>&1; then SETSID=setsid; else SETSID=; fi
+
+# stop_one <pid> — signal the group, falling back to the bare pid when the
+# process never became a group leader (no setsid).  Drops it from the
+# tracking list so a later sweep cannot signal a recycled pid.
+stop_one() {
+    kill -TERM -- "-$1" 2>/dev/null || kill -TERM "$1" 2>/dev/null
+    # Note grep exits 1 when it keeps nothing, which is the usual case with
+    # a single server tracked -- so the mv must not be gated on its status.
+    if [ -f "$PIDS" ]; then
+        grep -v "^$1\$" "$PIDS" > "$PIDS.tmp" 2>/dev/null
+        mv "$PIDS.tmp" "$PIDS" 2>/dev/null || rm -f "$PIDS.tmp"
+    fi
+}
+
+# run_probe <outfile> — one probe pass, as a background child under `wait`
+# rather than in the foreground.  A trapped signal is only delivered once
+# the current foreground command finishes, and a probe leg runs for minutes
+# -- so with probe.py in the foreground an interrupt sat pending behind it
+# and the server stayed up regardless of the trap.  `wait` is
+# interruptible, which is what makes the cleanup below reachable at all.
+# Both the first pass and the #1368 retry go through here; a retry left in
+# the foreground would reopen the same window for another few minutes.
+run_probe() {
+    python3 "$SCRIPT_DIR/probe.py" "$_p" "$CORPUS" > "$1" &
+    _probe=$!
+    wait "$_probe"
+}
+
+cleanup() {
+    if [ -f "$PIDS" ]; then
+        while read -r _cp; do
+            [ -n "$_cp" ] || continue
+            kill -TERM -- "-$_cp" 2>/dev/null || kill -TERM "$_cp" 2>/dev/null
+        done < "$PIDS"
+        sleep 0.4
+        while read -r _cp; do
+            [ -n "$_cp" ] || continue
+            kill -KILL -- "-$_cp" 2>/dev/null || kill -KILL "$_cp" 2>/dev/null
+        done < "$PIDS"
+        rm -f "$PIDS" "$PIDS.tmp"
+    fi
+    rm -rf "$WORK"
+}
+trap 'cleanup' EXIT
+trap 'cleanup; exit 130' INT
+trap 'cleanup; exit 143' TERM HUP
 
 free_port() {
     python3 -c 'import socket;s=socket.socket();s.bind(("127.0.0.1",0));print(s.getsockname()[1]);s.close()'
@@ -101,22 +166,42 @@ probe_engine() {
         [ -n "$_extra" ] && printf '%s\n' "$_extra"
     } > "$_w/t.conf"
 
-    ( cd "$_w" && LD_LIBRARY_PATH="$_bin" ./bin/netmux -c t.conf > netmux.log 2>&1 &
-      echo $! > "$_w/pid" )
+    # Background the subshell as a whole and `exec` inside it, so the pid we
+    # record IS netmux.  Backgrounding an AND-list instead -- `( cd $w && cmd
+    # & echo $! )` -- makes $! name a wrapper subshell rather than the server
+    # on any shell that does not exec-optimize the tail of a subshell: dash
+    # (Debian/Ubuntu /bin/sh) does, bash 3.2 (macOS /bin/sh) does not, so the
+    # recorded pid was netmux's *parent* here and every kill below hit the
+    # wrapper while the server survived.  `exec` makes it true by
+    # construction rather than by optimization, on every shell.
+    #
+    ( cd "$_w" && LD_LIBRARY_PATH="$_bin" exec $SETSID ./bin/netmux -c t.conf > netmux.log 2>&1 ) &
+    _pid=$!
+    echo "$_pid" > "$_w/pid"
+    # Record it outside $WORK before waiting on it: everything from here to
+    # the kill below is interruptible, and $WORK does not survive that.
+    [ -n "$_pid" ] && echo "$_pid" >> "$PIDS"
 
+    # Wait for the port.  The sleep is the wait -- settimeout only bounds a
+    # connect that hangs, and a connect to a port nobody is listening on is
+    # refused immediately, so without it the loop spends its whole budget in
+    # about two seconds of python3 startup, and spends *less* on a faster
+    # host.  netmux has to bind and load a database; 40 x 0.25s gives that a
+    # stable ten seconds for a quarter of the process spawns.
     _up=0
     for _i in $(seq 1 40); do
         if python3 -c "import socket,sys;s=socket.socket();s.settimeout(0.4);sys.exit(0 if s.connect_ex(('127.0.0.1',$_p))==0 else 1)" 2>/dev/null; then
             _up=1; break
         fi
+        sleep 0.25
     done
     if [ "$_up" -eq 0 ]; then
         echo "  $_label: FAILED to start (see $_w/netmux.log)"
-        [ -f "$_w/pid" ] && kill "$(cat "$_w/pid")" 2>/dev/null
+        [ -n "$_pid" ] && stop_one "$_pid"
         return 1
     fi
 
-    python3 "$SCRIPT_DIR/probe.py" "$_p" "$CORPUS" > "$_out"
+    run_probe "$_out"
     _blank=$(grep -c '<NO-OUTPUT>' "$_out" || true)
 
     # A dropped row is rare and has never reproduced on demand, so one
@@ -125,7 +210,7 @@ probe_engine() {
     # is discarded rather than trusted.
     if [ "$_blank" -gt 0 ]; then
         echo "  $_label: $_blank row(s) with no output, retrying once"
-        python3 "$SCRIPT_DIR/probe.py" "$_p" "$CORPUS" > "$_out.retry"
+        run_probe "$_out.retry"
         _blank2=$(grep -c '<NO-OUTPUT>' "$_out.retry" || true)
         if [ "$_blank2" -lt "$_blank" ]; then
             mv -f "$_out.retry" "$_out"
@@ -135,7 +220,7 @@ probe_engine() {
         fi
     fi
 
-    [ -f "$_w/pid" ] && kill "$(cat "$_w/pid")" 2>/dev/null
+    [ -n "$_pid" ] && stop_one "$_pid"
     sleep 0.4
     _n=$(wc -l < "$_out")
     echo "  $_label: $_n shapes ($_blank with no output)"
