@@ -124,7 +124,7 @@ mux_alarm::~mux_alarm()
  */
 void mux_alarm::sleep(CLinearTimeDelta sleep_period)
 {
-    // Same int64_t / clamp path as set() — avoid long truncation (#1289).
+    // Same int64_t / clamp path as set() — avoid long truncation (#1290).
     using ms_rep = std::chrono::milliseconds::rep;
     constexpr int64_t k100nsPerMs = 10000;
     int64_t ms64 = sleep_period.Return100ns() / k100nsPerMs;

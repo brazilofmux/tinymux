@@ -253,7 +253,7 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
 
     // Walk freelist; drop only corrupt entries rather than clearing the
     // entire freelist (old path leaked every still-valid free buffer —
-    // Pass H1 residual #1289).
+    // Pass H1 residual #1290).
     //
     while (!pools[poolnum].free_stack.empty())
     {
@@ -347,7 +347,7 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
     POOLHDR *ph;
     POOLFTR *pf;
 
-    // Same freelist discipline as pool_alloc: drop only the bad entry (#1289).
+    // Same freelist discipline as pool_alloc: drop only the bad entry (#1290).
     //
     while (!pools[POOL_LBUF].free_stack.empty())
     {

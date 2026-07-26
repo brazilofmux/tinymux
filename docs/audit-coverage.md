@@ -54,7 +54,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| B1 | Epoll / select / kqueue / wselect / IOCP | `mux/ganl/src/*_network_engine.cpp` | med | Pass 1–2 + residual 2026-07-26 | deep | #942–#947 held; #1289 dual-stack V6ONLY warn on kqueue/IOCP/wselect |
+| B1 | Epoll / select / kqueue / wselect / IOCP | `mux/ganl/src/*_network_engine.cpp` | med | Pass 1–2 + residual 2026-07-26 | deep | #942–#947 held; #1290 dual-stack V6ONLY warn on kqueue/IOCP/wselect |
 | B2 | IOCP / wselect | `iocp_*`, `wselect_*` | med | Pass 2 Windows | deep | FD_SETSIZE accept leak, IOCP desc cap |
 | B3 | OpenSSL transport | `openssl_transport.cpp` | med | earlier TLS work | partial | Renegotiation disabled; re-read chunking |
 | B4 | Schannel transport | `schannel_transport.cpp` | med | Pass 2 | deep | EXTRA loop, handle init (#1067–#1068); nits remain |
@@ -113,7 +113,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| H1 | Alloc / string / time | `mux/lib/alloc.*`, `stringutil.*`, `timeutil.*`, `alarm.*` | med | residual 2026-07-26 | deep | #1289 freelist drop-one not wipe-all; alarm/sleep int64 ms clamp |
+| H1 | Alloc / string / time | `mux/lib/alloc.*`, `stringutil.*`, `timeutil.*`, `alarm.*` | med | residual 2026-07-26 | deep | #1290 freelist drop-one not wipe-all; alarm/sleep int64 ms clamp |
 | H2 | Color / Ragel | `color_ops.rl`, color path | med | generated-file discipline | thin | Edit `.rl` only |
 | H3 | UTF-8 / collation | `utf/`, `utf8tables.*`, `unicode_*` | large | — | deferred | Generated tables; deep Unicode later |
 | H4 | Platform abstraction | `platform.cpp`, design-platform-interface | small | — | thin | |
@@ -175,7 +175,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 8 | 2026-07 | E5 object/player/flags/powers + C5 speech/look/move/create | Highs #1179–#1181; Mediums #1182–#1188 open (not yet fixed) |
 | Pass 9 | 2026-07 | F3 engine comsys/mail vs F1/F2 modules | Highs #1189–#1193; Mediums #1194–#1199 open (not yet fixed) |
 
-| Pass B1/H1 residual | 2026-07-26 | engines + alloc/alarm | #1289 freelist, alarm ms, dual-stack warn |
+| Pass B1/H1 residual | 2026-07-26 | engines + alloc/alarm | #1290 freelist, alarm ms, dual-stack warn |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -240,6 +240,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 8 E5+C5 filed #1179–#1188; E5/C5 deep; rotation → Pass 9 F3 (or Fix Pass 8 Highs) |
 | 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
 
-| 2026-07-26 | Pass B1/H1 residual: freelist + alarm + dual-stack #1289; B1/H1 → deep |
+| 2026-07-26 | Pass B1/H1 residual: freelist + alarm + dual-stack #1290; B1/H1 → deep |
 
 Update this table when the map structure changes.
