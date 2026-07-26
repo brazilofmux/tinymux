@@ -158,6 +158,8 @@ test-scenario: install
 # Opt-in, NOT part of `make test`: divergences currently exist (#1214),
 # so this is a measurement tool rather than a pass/fail gate.
 test-parity213: install
+	@echo "==> Checking the adjudicator itself (#1368)"
+	bash tests/parity213/selftest_adjudicate.sh
 	@echo "==> Running 2.13/2.14 parser parity jig"
 	sh tests/parity213/run.sh
 

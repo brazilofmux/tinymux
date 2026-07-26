@@ -117,10 +117,27 @@ probe_engine() {
     fi
 
     python3 "$SCRIPT_DIR/probe.py" "$_p" "$CORPUS" > "$_out"
+    _blank=$(grep -c '<NO-OUTPUT>' "$_out" || true)
+
+    # A dropped row is rare and has never reproduced on demand, so one
+    # retry against the still-running server usually clears it (#1368).
+    # Keep whichever attempt measured more shapes; a retry that does worse
+    # is discarded rather than trusted.
+    if [ "$_blank" -gt 0 ]; then
+        echo "  $_label: $_blank row(s) with no output, retrying once"
+        python3 "$SCRIPT_DIR/probe.py" "$_p" "$CORPUS" > "$_out.retry"
+        _blank2=$(grep -c '<NO-OUTPUT>' "$_out.retry" || true)
+        if [ "$_blank2" -lt "$_blank" ]; then
+            mv -f "$_out.retry" "$_out"
+            _blank=$_blank2
+        else
+            rm -f "$_out.retry"
+        fi
+    fi
+
     [ -f "$_w/pid" ] && kill "$(cat "$_w/pid")" 2>/dev/null
     sleep 0.4
     _n=$(wc -l < "$_out")
-    _blank=$(grep -c '<NO-OUTPUT>' "$_out" || true)
     echo "  $_label: $_n shapes ($_blank with no output)"
     return 0
 }
@@ -165,6 +182,20 @@ adjudicate() {
         {
             name=$1; r13=$2; jit=$4; ast=$6
             v = (name in V) ? V[name] : ""
+
+            # A leg that dropped this row measured nothing for it.  That is
+            # a failed measurement rather than an answer from any engine,
+            # and must never become a verdict: treating the sentinel as a
+            # value turned a perfectly satisfied shape into a false
+            # VIOLATED (#1368).  Count it separately and let the caller
+            # re-run.  (No apostrophes in here: this comment lives inside
+            # a single-quoted awk program.)
+            if (r13 == "<NO-OUTPUT>" || jit == "<NO-OUTPUT>" || ast == "<NO-OUTPUT>") {
+                um++
+                uml = uml sprintf("    %-22s 2.13=%-22s JIT=%-22s AST=%s\n", name, "\047"r13"\047", "\047"jit"\047", "\047"ast"\047")
+                next
+            }
+
             internal = (jit != ast)
             diverged = (r13 != jit || r13 != ast)
             if (v == "") {
@@ -190,7 +221,12 @@ adjudicate() {
             if (nn)  { printf "  needs-new:     %d  (verdict \047neither\047)\n", nn; printf "%s", nl }
             if (pp)  { printf "  pinned:        %d  (deferred by decision)\n", pp; printf "%s", pl }
             if (un)  { printf "  UNADJUDICATED: %d  (divergent, no verdict yet)\n", un; printf "%s", unl }
-            exit (vio > 0)
+            if (um)  { printf "  UNMEASURED:    %d  (a leg dropped the row -- re-run, this is not a divergence)\n", um; printf "%s", uml }
+            # 1 = a real verdict violation, 2 = incomplete measurement.
+            # Distinct so an unmeasured row is never read as a divergence.
+            if (vio > 0) exit 1
+            if (um > 0)  exit 2
+            exit 0
         }
     '
 }
@@ -234,12 +270,27 @@ if [ "$HAVE213" -eq 1 ]; then
     report "$WORK/r213.txt" "$WORK/ast.txt" "2.13" "AST" || true
     echo
     echo "Verdicts:"
-    adjudicate "$WORK/r213.txt" "$WORK/jit.txt" "$WORK/ast.txt" "$CORPUS" || rc=1
+    adjudicate "$WORK/r213.txt" "$WORK/jit.txt" "$WORK/ast.txt" "$CORPUS"
+    _adj=$?
+    # 1 = verdict violation (a real divergence), 2 = a leg dropped a row.
+    # Both fail the run, but they mean different things and must not read
+    # the same: an unmeasured row costs a re-run, not a debugging session
+    # chasing a divergence that was never there (#1368).
+    if [ "$_adj" -eq 1 ]; then
+        rc=1
+    elif [ "$_adj" -eq 2 ]; then
+        rc=1
+        UNMEASURED=1
+    fi
 fi
 
 echo
 if [ "$rc" -eq 0 ]; then
     echo "OK: no verdict violated"
+elif [ "${UNMEASURED:-0}" -eq 1 ]; then
+    echo "MEASUREMENT INCOMPLETE — a leg dropped one or more rows; re-run."
+    echo "This is NOT a divergence: the shapes listed under UNMEASURED were"
+    echo "never measured, so nothing is known about them either way."
 else
     echo "VERDICT VIOLATED — see above."
 fi
