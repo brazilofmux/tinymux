@@ -32,7 +32,8 @@
 # harness talks to a live server.
 #
 # Usage:  run.sh [corpus-file]
-# Exit:   0 = no divergence, 1 = divergence, 2 = setup error.
+# Exit:   0 = no divergence, 1 = verdict violated, 2 = setup error,
+#         3 = measurement incomplete (a probe lost a row; re-run).
 #
 set -u
 
@@ -165,6 +166,15 @@ adjudicate() {
         {
             name=$1; r13=$2; jit=$4; ast=$6
             v = (name in V) ? V[name] : ""
+            # A lost row is not an answer.  Feeding the sentinel into the
+            # verdict logic turned a dropped probe row into a VIOLATED for a
+            # shape that measures fine on a re-run (#1368) -- the one failure
+            # this harness must never have, since it exists to be an oracle.
+            if (r13 == "<NO-OUTPUT>" || jit == "<NO-OUTPUT>" || ast == "<NO-OUTPUT>") {
+                um++
+                uml = uml sprintf("    %-22s 2.13=%-26s JIT=%-26s AST=%s\n", name, "\047"r13"\047", "\047"jit"\047", "\047"ast"\047")
+                next
+            }
             internal = (jit != ast)
             diverged = (r13 != jit || r13 != ast)
             if (v == "") {
@@ -190,7 +200,11 @@ adjudicate() {
             if (nn)  { printf "  needs-new:     %d  (verdict \047neither\047)\n", nn; printf "%s", nl }
             if (pp)  { printf "  pinned:        %d  (deferred by decision)\n", pp; printf "%s", pl }
             if (un)  { printf "  UNADJUDICATED: %d  (divergent, no verdict yet)\n", un; printf "%s", unl }
-            exit (vio > 0)
+            if (um)  { printf "  UNMEASURED:    %d  (probe lost a row -- NOT a divergence)\n", um; printf "%s", uml }
+            # 1 = a real verdict violation, 3 = nothing violated but the
+            # measurement is incomplete.  Kept distinct so an incomplete run
+            # is never read as a finding.
+            exit (vio > 0 ? 1 : (um > 0 ? 3 : 0))
         }
     '
 }
@@ -234,12 +248,19 @@ if [ "$HAVE213" -eq 1 ]; then
     report "$WORK/r213.txt" "$WORK/ast.txt" "2.13" "AST" || true
     echo
     echo "Verdicts:"
-    adjudicate "$WORK/r213.txt" "$WORK/jit.txt" "$WORK/ast.txt" "$CORPUS" || rc=1
+    adjudicate "$WORK/r213.txt" "$WORK/jit.txt" "$WORK/ast.txt" "$CORPUS"
+    _arc=$?
+    if   [ "$_arc" -eq 1 ]; then rc=1
+    elif [ "$_arc" -eq 3 ]; then rc=3
+    fi
 fi
 
 echo
 if [ "$rc" -eq 0 ]; then
     echo "OK: no verdict violated"
+elif [ "$rc" -eq 3 ]; then
+    echo "MEASUREMENT INCOMPLETE — a probe lost a row; re-run before reading"
+    echo "anything into the result.  No verdict was violated."
 else
     echo "VERDICT VIOLATED — see above."
 fi
