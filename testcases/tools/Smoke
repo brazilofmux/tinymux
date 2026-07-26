@@ -261,8 +261,16 @@ if [ -n "$MUX_CRASH" ]; then
     CRASHES=$((CRASHES + 1))
 fi
 
+# Skipped is a real per-case outcome (JIT off, module unloaded, etc.).  It
+# is not a failure, but it is a verdict — without counting it, a case that
+# never logs Succeeded/Failed/Skipped is invisible (#1396).
+SKIPPED=$(grep -c 'Skipped' smoke.log || true)
+: "${SKIPPED:=0}"
+VERDICTS=$((SUCCEEDED + FAILED + SKIPPED))
+
 echo "  Succeeded: $SUCCEEDED"
 echo "  Failed:    $FAILED"
+echo "  Skipped:   $SKIPPED"
 echo "  Crashes:   $CRASHES"
 if [ -n "$MUX_CRASH" ]; then
     echo "  Crash:     $MUX_CRASH"
@@ -288,19 +296,29 @@ echo "  Log lines: $(wc -l < smoke.log)"
 # instead of through the upload, so it cannot shrink the same way.  A
 # disagreement between the two means the upload did not store what was
 # generated, and that is now a failure rather than a silence.
+#
+# Format (post-#1396): one line per test, "name expected_verdicts".  Older
+# name-only manifests still work for the file-count check; the verdict
+# column is what makes silent case loss visible.
 EXPECTED=$(grep -oE 'SUITE-EXPECTED: [0-9]+' smoke.log | grep -oE '[0-9]+' | head -1)
 DISPATCHED=$(grep -c 'SUITE-DISPATCH:' smoke.log || true)
 ENDED=$(grep -c 'Ending SmokeMUX' smoke.log || true)
 GENERATED=0
+EXPECTED_VERDICTS=0
 if [ -r suite.manifest ]; then
     GENERATED=$(grep -c . suite.manifest || true)
+    # Sum second column when present; ignore name-only lines.
+    EXPECTED_VERDICTS=$(awk 'NF >= 2 { n += $2 } END { print n+0 }' suite.manifest)
 fi
-: "${EXPECTED:=0}" "${DISPATCHED:=0}" "${ENDED:=0}" "${GENERATED:=0}"
+: "${EXPECTED:=0}" "${DISPATCHED:=0}" "${ENDED:=0}" "${GENERATED:=0}" "${EXPECTED_VERDICTS:=0}"
 
 if [ "$GENERATED" -gt 0 ]; then
     echo "  Dispatched: $DISPATCHED / $GENERATED generated (database says $EXPECTED)"
 else
     echo "  Dispatched: $DISPATCHED / $EXPECTED expected"
+fi
+if [ "$EXPECTED_VERDICTS" -gt 0 ]; then
+    echo "  Verdicts:   $VERDICTS / $EXPECTED_VERDICTS expected (Succeeded+Failed+Skipped)"
 fi
 
 INCOMPLETE=false
@@ -312,11 +330,25 @@ if [ "$GENERATED" -gt 0 ] && [ "$EXPECTED" -ne "$GENERATED" ]; then
 fi
 if [ "$GENERATED" -gt 0 ] && [ "$DISPATCHED" -lt "$GENERATED" ]; then INCOMPLETE=true; fi
 
+VERDICT_LOSS=false
+if [ "$EXPECTED_VERDICTS" -gt 0 ] && [ "$VERDICTS" -lt "$EXPECTED_VERDICTS" ]; then
+    VERDICT_LOSS=true
+    INCOMPLETE=true
+fi
+
 if $LOST; then
     echo "  SUITE LOSS: the generator emitted $GENERATED test names but the"
     echo "              database holds $EXPECTED.  The upload did not store"
     echo "              what was generated, so the missing tests never ran"
     echo "              and the runtime count agreed with the loss (#1387)."
+fi
+
+if $VERDICT_LOSS; then
+    echo "  VERDICT LOSS: the suite logged $VERDICTS outcomes but the generator"
+    echo "                counted $EXPECTED_VERDICTS Succeeded branches in the"
+    echo "                sources.  Cases that dispatch and then log neither"
+    echo "                Succeeded, Failed, nor Skipped shrink the total while"
+    echo "                still printing ALL TESTS PASSED (#1396)."
 fi
 
 if $INCOMPLETE; then
@@ -327,7 +359,8 @@ if $INCOMPLETE; then
     # them here is part of why #1387 was hard to see from the failure output
     # -- the names it called missing were not the ones that had gone.
     if [ -r suite.manifest ]; then
-        sort -u suite.manifest > "smoke.expected.$$"
+        # First field only — works for both "name" and "name count" lines.
+        awk '{print $1}' suite.manifest | sort -u > "smoke.expected.$$"
     elif [ -r "$TC/smoke.mux" ]; then
         awk '/&suite.list.[12] smoke=/{grab=1;next} /^-/{grab=0} grab{gsub(/\\/,"");print}' \
             "$TC/smoke.mux" | tr ' ' '\n' | grep -v '^$' | sort -u > "smoke.expected.$$"

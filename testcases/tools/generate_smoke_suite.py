@@ -20,6 +20,10 @@ PCREATE_RE = re.compile(r"@pcreate\s+([A-Za-z0-9_]+)=")
 DIG_RE = re.compile(r"@dig\s+([A-Za-z0-9_]+)(?:=\S+)?(?=[;\s]|$)")
 OPEN_RE = re.compile(r"@open\s+([A-Za-z0-9_]+)=")
 ATTRIB_SET_RE = re.compile(r"attrib_set\((test_[A-Za-z0-9_]+)/([A-Za-z0-9_]+)\s*,")
+# One "Succeeded" @log per assertion case.  The matching Failed branch is
+# not counted: at runtime exactly one of Succeeded / Failed / Skipped is
+# emitted per case (#1396).
+SUCCEEDED_LOG_RE = re.compile(r"@log\s+smoke=.*Succeeded", re.IGNORECASE)
 
 
 def discover_names(tc_dir: Path):
@@ -27,6 +31,26 @@ def discover_names(tc_dir: Path):
         path.stem for path in tc_dir.glob("*.mux")
         if path.name not in EXCLUDED
     )
+
+
+def count_expected_verdicts(tc_dir: Path, test_name: str) -> int:
+    """How many verdict lines this file should emit when every case runs.
+
+    Counts non-comment @log smoke=...Succeeded lines.  Each assertion case
+    has one Succeeded branch and usually one Failed branch in source; only
+    one of Succeeded/Failed/Skipped is logged at runtime, so the Succeeded
+    count is the expected per-case total (#1396).
+    """
+    path = tc_dir / f"{test_name}.mux"
+    if not path.is_file():
+        return 0
+    n = 0
+    for raw_line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if raw_line.lstrip().startswith("#"):
+            continue
+        if SUCCEEDED_LOG_RE.search(raw_line):
+            n += 1
+    return n
 
 
 def wrap_names(names, width=78):
@@ -151,7 +175,8 @@ def main() -> int:
     print("-")
     emit_suite_attr("suite.list.1", first)
     emit_suite_attr("suite.list.2", second)
-    # Also record the names in a plain file, outside the upload stream.
+    # Also record the names (and per-file expected verdict counts) in a plain
+    # file, outside the upload stream.
     #
     # The runtime SUITE-EXPECTED is computed from the attributes the upload
     # stores, so it agrees with whatever the database ended up holding --
@@ -159,11 +184,16 @@ def main() -> int:
     # files behind a clean "Dispatched: 261 / 261".  A count that came
     # through the same path it is meant to validate cannot detect a loss on
     # that path.  This one never enters the database.
+    #
+    # The second column is the expected number of Succeeded|Failed|Skipped
+    # log lines for that file (#1396).  A case that dispatches but logs no
+    # verdict is invisible to Succeeded/Failed greps and used to leave
+    # "ALL N TESTS PASSED" while N quietly shrank.
     manifest = os.environ.get("SMOKE_SUITE_MANIFEST")
     if manifest:
         with open(manifest, "w", encoding="utf-8") as fh:
             for name in first + second:
-                fh.write(name + "\n")
+                fh.write(f"{name} {count_expected_verdicts(tc_dir, name)}\n")
     for name in names:
         emit_cleanup_attr(name, collect_cleanup_manifest(tc_dir, name))
     return 0
