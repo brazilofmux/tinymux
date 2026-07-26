@@ -124,6 +124,22 @@ block_entry_t *dbt_cache_lookup(dbt_state_t *dbt, uint64_t pc) {
 void dbt_cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code) {
     uint32_t set = cache_set(pc);
     block_entry_t *base = &dbt->cache[set * BLOCK_CACHE_WAYS];
+    // An entry for this pc already exists — update it in place rather than
+    // consuming a second way (#1153).  Intrinsic blocks are inserted twice:
+    // try_emit_intrinsic() in the backend inserts before returning, and
+    // every caller of dbt_backend_translate_block() inserts the result
+    // again.  Without this, one intrinsic occupied two of the four ways in
+    // its set, and a set holding two such duplicates could FIFO-evict a
+    // live block that still had room.  The match condition mirrors
+    // dbt_cache_lookup so an empty way (guest_pc 0, native_code null) is
+    // never mistaken for an entry.
+    //
+    for (size_t w = 0; w < BLOCK_CACHE_WAYS; w++) {
+        if (base[w].guest_pc == pc && base[w].native_code) {
+            base[w].native_code = code;
+            return;
+        }
+    }
     // Use first empty way.
     for (size_t w = 0; w < BLOCK_CACHE_WAYS; w++) {
         if (base[w].guest_pc == 0) {
