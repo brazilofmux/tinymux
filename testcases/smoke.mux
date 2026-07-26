@@ -1,54 +1,35 @@
 #
 # smoke.mux - Automated testing infrastructure.
 #
+# suite.list.1 / suite.list.2 / suite.expected are filled by
+# tools/generate_smoke_suite.py (appended last by Makesmoke).  Do not
+# hardcode the test inventory here — a second stale list made #1387
+# silent when the generator's override could not match this object.
+#
+# Keep smoke in inventory (do not `drop` it).  Later fixtures such as
+# topology_fn teleport the wizard; a dropped smoke is left behind and
+# becomes unmatchable, so every subsequent `&attr smoke=...` is a no-op
+# and the generator's full suite never lands (#1387).
+#
 @create smoke
 -
 @set smoke=INHERIT QUIET
 -
+#
+# Placeholders so @startup is valid if the generator is omitted; Makesmoke
+# always appends the generator which overwrites these.
+#
 &suite.list.1 smoke=
-  abs_fn accent_fn acos_fn add_fn after_fn alphamax_fn alphamin_fn \
-  and_fn andbool_fn assert_cmd asin_fn atan_fn atan2_fn attrib_set_fn \
-  band_fn baseconv_fn before_fn benchmark_fn between_fn bnand_fn bor_fn \
-  bound_fn butlast_fn bxor_fn cachestats_fn \
-  cand_fn candbool_fn caplist_fn capstr_fn case_fn cat_fn ceil_fn center_fn \
-  chaninfo_fn chanuser_fn chanusers_fn \
-  choose_fn chr_fn citer_fn clone_fn cmogrifier_fn cmd_say columns_fn comp_fn convtime_fn \
-  connlog_fn cor_fn corbool_fn cos_fn cpad_fn crc32_fn crc32obj_fn cron_fn ctu_fn \
-  dec_fn delete_fn delextract_fn digest_fn digittime_fn dist2d_fn dist3d_fn dolist_cmd dynhelp_fn \
-  e_fn edit_fn elements_fn encode64_fn eq_fn escape_fn exp3_fn exp_fn exptime_fn extract_fn \
-  fdiv_fn first_fn firstof_fn floor_fn floordiv_fn fmod_fn fpprop_fn \
-  grab_fn graball_fn graphemes_fn gt_fn gte_fn \
-  hmac_fn iadd_fn iabs_fn idiv_fn imul_fn inc_fn index_fn insert_fn \
-  if_cmd include_fn isalpha_fn isdbref_fn isign_fn isint_fn isjson_fn \
-  isnum_fn israt_fn isub_fn isword_fn itemize_fn \
-  json_fn lambda_fn letq_fn pocvm2_fn
+  shutdown
 -
 &suite.list.2 smoke=
-  ladd_fn lband_fn land_fn last_fn lcstr_fn ldelete_fn limath_fn linsert_fn ljust_fn lmax_fn lmin_fn \
-  ln_fn lnum_fn locate_poss lock_fn lockencode_fn log_fn lor_fn lxor_fn lpad_fn lpos_fn lt_fn lte_fn \
-  mailinfo_fn mailsend_fn match_fn matchall_fn max_fn mean_fn median_fn \
-  member_fn merge_fn mid_fn min_fn misc_builtin_fn mod_fn moon_fn mul_fn \
-  ncon_fn neq_fn noeval_fn not_fn objid_fn oemit_fn or_fn orbool_fn ord_fn \
-  paginate_fn parsedate_fn parser_fn parenmatch_fn pi_fn pickrand_fn pos_fn posn_fn power_fn printf_fn protect_fn \
-  reglattr_fn regmatch_fn remainder_fn remove_fn repeat_fn replace_fn rest_fn reverse_fn revwords_fn \
-  right_fn rjust_fn roman_fn route_fn round_fn rpad_fn \
-  sandbox_fn secure_fn setdiff_fn setinter_fn setunion_fn sha1_fn shl_fn shr_fn \
-  search_eval_fn \
-  shuffle_fn sign_fn sin_fn singletime_fn sort_fn sortkey_fn soundex_fn space_fn spellnum_fn \
-  splice_fn sqrt_fn squish_fn stddev_fn strcat_fn strdelete_fn strip_fn stripansi_fn strlen_fn \
-  strmatch_fn strmem_fn strdistance_fn strset_fn strsort_fn strtrunc_fn \
-  sub_fn subnetmatch_fn switch_cmd switch_fn \
-  t_fn table_fn tan_fn tr_fn translate_fn trigger_cmd trim_fn trunc_fn \
-  ucstr_fn unique_fn unsetq_fn url_escape_fn \
-  vadd_fn vcross_fn vdot_fn vmag_fn vmul_fn vsub_fn vunit_fn version_fn \
-  visual_width_fn vwidth_fn wait_cmd while_fn wordend_fn wordpos_fn words_fn \
-  wordstart_fn wrap_fn wrapcolumns_fn xor_fn zip_fn jit_parity_fn \
-  jit_fold_parity_fn jit_route_parity_fn jit_coverage_fn \
-  tier2_parity_fn jitstats_fn overflow_inject_fn correctness_fn lua_fn shutdown
+-
+&suite.expected smoke=
+  0
 -
 @startup smoke=
   @log smoke=Starting SmokeMUX;
-  @log smoke=SUITE-EXPECTED: [add(words(v(suite.list.1)),words(v(suite.list.2)))];
+  @log smoke=SUITE-EXPECTED: [v(suite.expected)];
   @drain me;
   @dolist v(suite.list.1)=
   {
@@ -66,8 +47,6 @@
     @log smoke=SUITE-DISPATCH: %0 tcs=[words(lattr(test_%0/tr.tc*))];
     @dolist lattr(test_%0/tr.tc*)=@trig test_%0/##
   }
--
-drop smoke
 -
 #
 # End of smoke.mux

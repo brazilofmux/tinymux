@@ -293,9 +293,12 @@ if [ "$ENDED" -eq 0 ]; then INCOMPLETE=true; fi
 if $INCOMPLETE; then
     echo "  INCOMPLETE: the suite did not run every test (chain stalled or"
     echo "              muxscript exited before the queue drained)."
-    if [ -r "$TC/smoke.mux" ]; then
-        awk '/&suite.list.[12] smoke=/{grab=1;next} /^-/{grab=0} grab{gsub(/\\/,"");print}' \
-            "$TC/smoke.mux" | tr ' ' '\n' | grep -v '^$' | sort -u > "smoke.expected.$$"
+    # Prefer the generator's inventory (authoritative) over smoke.mux
+    # placeholders — hardcoded lists were removed for #1387.
+    if [ -x "$TC/tools/generate_smoke_suite.py" ] || command -v python3 >/dev/null 2>&1; then
+        python3 "$TC/tools/generate_smoke_suite.py" 2>/dev/null \
+            | awk '/&suite.list.[12] smoke=/{grab=1;next} /^-/{grab=0} grab{gsub(/\\/,"");print}' \
+            | tr ' ' '\n' | grep -v '^$' | sort -u > "smoke.expected.$$"
         grep -oE 'SUITE-DISPATCH: [^ ]+' smoke.log | awk '{print $2}' | sort -u > "smoke.dispatched.$$"
         MISSING=$(comm -23 "smoke.expected.$$" "smoke.dispatched.$$" | tr '\n' ' ')
         rm -f "smoke.expected.$$" "smoke.dispatched.$$"
