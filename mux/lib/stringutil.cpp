@@ -6727,17 +6727,32 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                         // leaves the offending spec visible in the output where
                         // someone can see it (#1429).
                         //
-                        iFmt += utf8_FirstByte[pFmt[iFmt]];
-                        ncpFmt--;
-
-                        size_t nSpec = iFmt - iFmtSpec;
-                        if (nLimit < iBuffer + nSpec)
+                        // Echo the rest of the format verbatim and stop.
+                        //
+                        // Stopping is not optional.  No va_arg was consumed
+                        // for this spec, so every later conversion would read
+                        // the WRONG argument, and there is no way to
+                        // resynchronize without knowing what the unknown spec
+                        // would have taken.  For "%+d|%d" that is merely
+                        // garbage, but for "%+d|%s" it hands an int to the %s
+                        // path as a UTF8* and dereferences it -- measured, a
+                        // SIGSEGV.  Continuing would trade a clean abort for a
+                        // wild pointer, which is not the improvement this
+                        // change is for.
+                        //
+                        // Echoing the whole remainder rather than only the
+                        // characters consumed so far keeps the evidence intact
+                        // -- the offending spec appears in full, along with the
+                        // text after it -- while interpreting nothing further.
+                        //
+                        size_t nRest = strlen(reinterpret_cast<const char *>(pFmt) + iFmtSpec);
+                        if (nLimit < iBuffer + nRest)
                         {
-                            goto done;
+                            nRest = nLimit - iBuffer;
                         }
-                        memcpy(pBuffer + iBuffer, pFmt + iFmtSpec, nSpec);
-                        iBuffer += nSpec;
-                        break;
+                        memcpy(pBuffer + iBuffer, pFmt + iFmtSpec, nRest);
+                        iBuffer += nRest;
+                        goto done;
                     }
                 }
             }

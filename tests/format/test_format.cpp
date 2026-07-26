@@ -312,6 +312,16 @@ static void test_unimplemented_survive(void)
         g_fail++;
         printf("not ok - text after unimplemented spec lost: [%s]\n", tail.c_str());
     }
+
+    // The argument-shift hazard, which is why recovery stops rather than
+    // continues.  An unimplemented spec consumes no va_arg, so a later
+    // conversion reads the wrong one -- harmless for %d, fatal for %s, which
+    // takes the int as a UTF8* and dereferences it.  Measured: continuing
+    // SIGSEGVs here.  Reaching the end of this function at all is the test.
+    //
+    report("shift-int",    "%+d|%d", mux_fmt("%+d|%d", 42, 7),        "%+d|%d");
+    report("shift-string", "%+d|%s", mux_fmt("%+d|%s", 42, "TAIL"),   "%+d|%s");
+    report("shift-lead",   "x%as",   mux_fmt("x%as", 1.5),            "x%as");
 }
 
 int main(void)
