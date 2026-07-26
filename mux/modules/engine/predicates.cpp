@@ -174,6 +174,51 @@ bool can_see(dbref player, dbref thing, bool can_see_loc)
               && MyopicExam(player, thing)));
 }
 
+// Read A_RQUOTA as the 32-bit quantity the rest of the quota system treats
+// it as.
+//
+// The quota domain is 32-bit by construction everywhere else: pay_quota and
+// mung_quotas hold it in int, do_quota parses into int, destroy_obj's refund
+// is int, and both writers format into a UTF8[I32BUF_SIZE].  But the stored
+// attribute is just text, and mux_atoi64 will parse whatever is in it -- so a
+// corrupted or hand-crafted A_RQUOTA delivers a value no caller can represent.
+//
+// Widening the callers instead was the alternative, and is wrong: it would
+// make one writer able to store a value every other reader still truncates,
+// which converts a visible error into silent drift.  Clamping keeps the
+// domain honest and identical on LP64 and LLP64 (#1408).
+//
+static int quota_from_attr(const UTF8 *pQuota)
+{
+    int64_t q = mux_atoi64(pQuota);
+    if (q > INT32_MAX)
+    {
+        return INT32_MAX;
+    }
+    if (q < INT32_MIN)
+    {
+        return INT32_MIN;
+    }
+    return static_cast<int>(q);
+}
+
+// Add two quota quantities without overflowing int.  Both operands are
+// already in range; their sum need not be.
+//
+static int quota_add(int a, int b)
+{
+    int64_t sum = static_cast<int64_t>(a) + static_cast<int64_t>(b);
+    if (sum > INT32_MAX)
+    {
+        return INT32_MAX;
+    }
+    if (sum < INT32_MIN)
+    {
+        return INT32_MIN;
+    }
+    return static_cast<int>(sum);
+}
+
 static bool pay_quota(dbref who, int cost)
 {
     // If no cost, succeed
@@ -188,11 +233,11 @@ static bool pay_quota(dbref who, int cost)
     dbref aowner;
     int aflags;
     LBuf quota_str = LBuf_Adopt(atr_get("pay_quota.200", Owner(who), A_RQUOTA, &aowner, &aflags));
-    int quota = mux_atoi64(quota_str);
+    int quota = quota_from_attr(quota_str);
 
     // enough to build?  Wizards always have enough.
     //
-    quota -= cost;
+    quota = quota_add(quota, -cost);
     if (  quota < 0
        && !Free_Quota(who)
        && !Free_Quota(Owner(who)))
@@ -275,7 +320,12 @@ void add_quota(dbref who, int payment)
     UTF8 buf[I32BUF_SIZE];
 
     LBuf quota = LBuf_Adopt(atr_get("add_quota.288", who, A_RQUOTA, &aowner, &aflags));
-    mux_ltoa(mux_atoi64(quota) + payment, buf);
+
+    // mux_ltoa takes long, so passing the int64_t from mux_atoi64 directly
+    // narrowed it -- a no-op on LP64, but on LLP64 the high word was dropped
+    // and a stored 8589934592 came back as 1 (#1408).
+    //
+    mux_ltoa(quota_add(quota_from_attr(quota), payment), buf);
     atr_add_raw(who, A_RQUOTA, buf);
 }
 
