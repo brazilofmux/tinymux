@@ -117,7 +117,12 @@ fi
 
 rm -rf "$DATA" logs text smoke.fail
 rm -f smoke.conf alias.conf compat.conf shutdown.status
-rm -f bin "$OUTPUT_FLAT" netmux.log
+rm -f "$OUTPUT_FLAT" netmux.log
+# rm -rf, not rm -f: `ln -s` on a directory makes a real copy on some
+# platforms (Git Bash on Windows), and `rm -f` cannot remove a directory.
+# Left behind, the [ ! -e bin ] guard below would then skip refreshing it
+# and every later run would silently test the FIRST run's binaries.
+rm -rf bin
 
 # ---------------------------------------------------------------------------
 # Create fresh environment.
@@ -126,7 +131,8 @@ rm -f bin "$OUTPUT_FLAT" netmux.log
 mkdir "$DATA"
 mkdir -p logs text
 
-[ ! -e bin ] && ln -s "$BIN" bin
+# Unconditional: a stale bin/ must never survive into a later run.
+rm -rf bin && ln -s "$BIN" bin
 cp "$REPO_ROOT/mux/game/alias.conf" .
 cp "$REPO_ROOT/mux/game/compat.conf" .
 
@@ -247,7 +253,7 @@ if [ $EXIT_CODE -eq 0 ] && [ -r "$OUTPUT_FLAT" ]; then
     # Success: remove everything except smoke.flat.
     rm -f smoke.conf alias.conf compat.conf shutdown.status netmux.log
     rm -rf "$DATA" logs text
-    rm -f bin
+    rm -rf bin
     echo "=== Makesmoke: SUCCESS ==="
 else
     # Failure: collect artifacts.
@@ -262,7 +268,7 @@ else
     # Clean up runtime state even on failure.
     rm -f smoke.conf alias.conf compat.conf shutdown.status
     rm -rf "$DATA" logs text
-    rm -f bin
+    rm -rf bin
     echo "=== Makesmoke: FAILED (artifacts in smoke.fail/) ==="
     exit 1
 fi
