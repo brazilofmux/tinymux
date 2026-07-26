@@ -87,7 +87,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | E1 | SQLite / sqlitedb | `sqlitedb.cpp`, `sqlite_backend.cpp` | large | Pass 1, #1073 | deep | Schema gate, prepare, load paths |
-| E2 | Attr cache / write queue | `attrcache.cpp` | med | Pass 1, residual notes | partial | Flush errors; code-cache coalesce residual |
+| E2 | Attr cache / write queue | `attrcache.cpp` | med | Pass 1 + residual 2026-07-26 | deep | Flush-on-fail leaves queue; #1284 code-cache coalesce + preloaded-miss Get |
 | E3 | Flatfile R/W | `db.cpp`, `db_rw.cpp` | large | Pass 1 import flush | partial | Import/export edges |
 | E4 | Command queue | `cque.cpp`, `timer.cpp`, `cron.cpp` | large | Pass 1, #1080 | deep | OOM refund, depth, runaway money |
 | E5 | Object / player / flags | `object.cpp`, `player*.cpp`, `flags.cpp`, `powers.cpp` | large | Pass 8 | deep | #1179–#1180 High; #1182–#1185 Medium open |
@@ -178,6 +178,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass B1/H1 residual | 2026-07-26 | engines + alloc/alarm | #1290 freelist, alarm ms, dual-stack warn |
 | Pass D4 residual | 2026-07-26 | lua_mod bridges | #1287 mux.pennies/iswizard/isconnected match softcode perms; string.dump removed |
 | Pass 11 | 2026-07-26 | B3 OpenSSL + B4 Schannel residual | #1282 wire-buffer caps + OpenSSL cipher pin; prior #948–#952/#1067–#1068 still held |
+| Pass E2 residual | 2026-07-26 | attrcache write queue | #1284 code-cache coalesce by source_hash; preloaded miss no longer re-Gets |
 
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -246,6 +247,7 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Residual scout C6+G2+F4 deep; #1294–#1296 boolexp NUL, COM guards, muxescape/muxscript |
 | 2026-07-26 | Pass A8 residual: stubslave parent write remainder + Win32 DNS queue caps; A8 → deep |
 | 2026-07-26 | Pass 12 C3: @include executor fix #1279; NOEVAL hook issue #1280; C3 → deep |
+| 2026-07-26 | Pass E2 residual: code-cache write coalesce + preloaded-miss path #1284; E2 → deep |
 | 2026-07-26 | Pass B1/H1 residual: freelist + alarm + dual-stack #1290; B1/H1 → deep |
 | 2026-07-26 | Pass D4 residual: Lua bridge Examinable gates + string.dump #1287; D4 → deep |
 | 2026-07-26 | Pass 11 B3/B4: TLS wire-buffer caps + OpenSSL cipher pin #1282; B3 deep |
