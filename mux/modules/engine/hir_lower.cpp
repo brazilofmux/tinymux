@@ -1385,6 +1385,11 @@ static int hir_lower_argument(hir_program &h, rv_compiler &rc,
             parts.push_back(hir_lower_node(h, rc, child->children[i].get()));
         }
         if (parts.size() == 1) return parts[0];
+        // A refused child lowering leaves -1 in the vector; indexing the
+        // per-instruction arrays with it is out of bounds (#1440).
+        for (int p : parts) {
+            if (p < 0) return -1;
+        }
         for (auto &p : parts) {
             if (h.ty[p] == TY_INT) {
                 p = h.emit(HIR_ITOA, TY_STRING, p);
@@ -3547,6 +3552,10 @@ general_lowering:
     // ---------------------------------------------------------------
 
     // Convert any TY_INT or TY_FLOAT args to strings for ECALL.
+    // A refused child lowering leaves -1 here; see #1440.
+    for (int ai : args) {
+        if (ai < 0) return -1;
+    }
     for (auto &ai : args) {
         if (h.ty[ai] == TY_INT) {
             ai = h.emit(HIR_ITOA, TY_STRING, ai);
@@ -3718,6 +3727,9 @@ literal_strcat:
     // truncated or corrupted argument lists.
     //
     for (int ai = 0; ai < nargs; ai++) {
+        if (args[ai] < 0) return -1;      // refused child lowering (#1440)
+    }
+    for (int ai = 0; ai < nargs; ai++) {
         if (h.ty[args[ai]] == TY_INT) {
             args[ai] = h.emit(HIR_ITOA, TY_STRING, args[ai]);
         } else if (h.ty[args[ai]] == TY_FLOAT) {
@@ -3851,6 +3863,11 @@ literal_strcat:
     int i = h.emit_call(TY_STRING, fidx,
                          args.data(), nargs,
                          fidx == 0 ? &upper : nullptr);
+    // emit_call returns -1 when the instruction or carg pool overflows and
+    // sets h.overflowed; indexing with it is out of bounds (#1440).
+    if (i < 0) {
+        return -1;
+    }
     if (t2addr) {
         h.tier2_addr[i] = t2addr;
         h.tier2_calls++;
