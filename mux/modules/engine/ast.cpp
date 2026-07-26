@@ -827,6 +827,20 @@ static bool ast_is_malformed_qsubst(const ASTNode *node)
 // did, so the rule was dead for exactly the case that matters, a call
 // sitting mid-argument (#1214).  Shared here so the two cannot drift.
 //
+// Set when a lookup fails under EV_FMAND, to stop the rest of the region
+// from being emitted (#1247).  2.13 does this with `*bufc = oldp; break;`
+// in its single eval loop (mux/src/eval.cpp:1497); 2.14 evaluates a tree,
+// so the failure has to be signalled from the funccall node up to the
+// sequence that contains it.
+//
+// Scoped the same way as the FCHECK opportunity: saved and cleared when
+// entering an eval-bracket region, consumed by the nearest enclosing
+// EV_FMAND sequence, restored on the way out.  That keeps an inner
+// region's failure from aborting an outer one, and keeps a failure inside
+// a u()'d attribute from escaping into its caller.
+//
+static bool s_fmand_abort = false;
+
 static void ast_eval_sequence_children(const ASTNode *node,
     size_t first, size_t last, UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
@@ -872,6 +886,19 @@ static void ast_eval_sequence_children(const ASTNode *node,
 
         ast_eval_node(child, buff, bufc,
             executor, caller, enactor, childEval, cargs, ncargs);
+
+        // A failed mandatory lookup ends the region.  Everything after it
+        // would be literal text by both engines' rules anyway (a dispatched
+        // call already spends the recognition opportunity), so nothing
+        // evaluable is lost -- but emitting it makes the diagnostic read as
+        // though part of the region had succeeded (#1247).
+        //
+        if (  (eval & EV_FMAND)
+           && s_fmand_abort)
+        {
+            s_fmand_abort = false;
+            break;
+        }
 
         if (  armed
            && child->type != AST_SPACE)
@@ -2098,6 +2125,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             safe_str(T("#-1 FUNCTION ("), buff, bufc);
             safe_str(TempFun, buff, bufc);
             safe_str(T(") NOT FOUND"), buff, bufc);
+            s_fmand_abort = true;
         }
         else
         {
@@ -2487,9 +2515,17 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             mudstate.nStackNest++;
             if (!node->children.empty())
             {
+                // Confine the abort signal to this region (#1247): an
+                // inner [...] that fails must not truncate the region
+                // containing it, and neither must a failure inside an
+                // attribute reached from here.
+                //
+                bool saved_abort = s_fmand_abort;
+                s_fmand_abort = false;
                 ast_eval_node(node->children[0].get(), buff, bufc,
                     executor, caller, enactor,
                     eval | EV_FCHECK | EV_FMAND, cargs, ncargs);
+                s_fmand_abort = saved_abort;
             }
             mudstate.nStackNest--;
         }

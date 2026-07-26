@@ -1089,6 +1089,15 @@ static int emit_qreg_read(hir_program &h, rv_compiler &rc, int rn)
 int  s_compile_eval;
 bool s_fcheck_available;
 
+// s_fmand_abort: set when a lookup fails under EV_FMAND, to stop the rest
+// of the region from being emitted (#1247).  The AST route signals this
+// from the funccall up to its sequence; here the unknown function is
+// resolved at lowering time, so the sequence simply stops concatenating
+// children after the one that failed.  Scoped like s_fcheck_available:
+// saved and cleared at an eval-bracket boundary, consumed by the nearest
+// enclosing EV_FMAND sequence.
+bool s_fmand_abort;
+
 // Tier 3 compile-time state: deps collector and inline depth.
 // Set by compile_expression() before calling hir_lower_node().
 //
@@ -1221,6 +1230,16 @@ static int hir_lower_sequence(hir_program &h, rv_compiler &rc,
     for (size_t idx = first; idx < last; idx++) {
         auto &child = node->children[idx];
         children.push_back(hir_lower_node(h, rc, child.get()));
+
+        // A failed mandatory lookup ends the region (#1247).  Everything
+        // after it is literal text by both engines' rules anyway, so no
+        // evaluation is lost -- but emitting it makes the diagnostic read
+        // as though part of the region had succeeded.
+        if (  (s_compile_eval & EV_FMAND)
+           && s_fmand_abort) {
+            s_fmand_abort = false;
+            break;
+        }
 
         // After the first non-space child, consume FCHECK for siblings.
         if (strip_fcheck && child->type != AST_SPACE) {
@@ -3537,11 +3556,13 @@ general_lowering:
 
     if (fidx == 0 && !is_known_function(upper.c_str())) {
         if (s_compile_eval & EV_FMAND) {
-            // Mandatory function context: produce error message.
+            // Mandatory function context: produce error message, and end
+            // the region -- see s_fmand_abort (#1247).
             std::string err = "#-1 FUNCTION (";
             err += upper;
             err += ") NOT FOUND";
             uint64_t addr = rc.pool_str(err);
+            s_fmand_abort = true;
             return h.emit_sconst(addr, err);
         }
 
@@ -3866,9 +3887,12 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
             // Eval brackets are FMAND context — function calls inside
             // [...] are always dispatched, never literal.
             bool saved_fcheck = s_fcheck_available;
+            bool saved_abort = s_fmand_abort;
             s_fcheck_available = true;
+            s_fmand_abort = false;
             int r = hir_lower_node(h, rc, node->children[0].get());
             s_fcheck_available = saved_fcheck;
+            s_fmand_abort = saved_abort;
             return r;
         }
         {

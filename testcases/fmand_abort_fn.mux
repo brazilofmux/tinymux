@@ -1,0 +1,152 @@
+#
+# fmand_abort_fn.mux - Test Cases for the EV_FMAND failed-lookup abort.
+#
+# When a function lookup fails inside an eval-bracket region, 2.13 emits
+# the diagnostic and stops evaluating the rest of that region
+# (mux/src/eval.cpp:1497 -- `*bufc = oldp; break;`).  2.14 emitted the
+# diagnostic and carried on, so the remainder of the region was appended
+# after the error (#1247):
+#
+#   [qqnofn(1) add(1,2) tail]
+#     2.13   #-1 FUNCTION (QQNOFN) NOT FOUND
+#     2.14   #-1 FUNCTION (QQNOFN) NOT FOUND add(1,2) tail
+#
+# The tail is LITERAL text on both engines, not an evaluated result -- a
+# call already spent the region's one recognition opportunity, which is
+# the rule disarm_fn.mux covers.  So nothing evaluable was being lost;
+# what the trailing text cost was readability, by making the diagnostic
+# look as though part of the region had produced output.
+#
+# The measurement that settled this is in tests/parity213 (FM_FAIL_*),
+# against a real 2.13.0.15.
+#
+# The patterns below avoid parentheses in the EXPECTED strings and use
+# wildcards instead -- the diagnostic contains "(QQNOFN)", and expected
+# text containing '(' is the hazard documented in arity_fn.mux.
+#
+# ROUTE: both routes changed, and both are checked.  The AST route
+# signals the failure from the funccall up to its enclosing sequence;
+# the compiled route resolves the unknown name at lowering time and
+# stops concatenating.  A default `make test` covers the compiled route
+# and the dual-toggle run
+#   SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke
+# covers the other.  qqnofn/qqnofn2 are deliberately Z-free, since the
+# harness marker is ZZ and the diagnostic uppercases the name.
+#
+@create test_fmand_abort_fn
+-
+@set test_fmand_abort_fn=INHERIT QUIET
+-
+&tr.tc000 test_fmand_abort_fn=
+  @log smoke=Beginning fmand_abort test cases.;
+  &r.abort me=[qqnofn(1) add(1,2) tail];
+  &r.text me=[qqnofn(1) hello];
+  &r.twice me=[qqnofn(1) qqnofn2(1)];
+  &r.ok me=[add(1,2) mul(2,3)];
+  &r.only me=[qqnofn(1)];
+  &r.two me=[qqnofn(1) x][add(1,2)];
+  &r.inner me=[a [qqnofn(1) x] c];
+  &r.arg me=[strcat(qqnofn(1) x)];
+  &r.name me=[hello qqnofn(1)]
+-
+#
+# Test Case #1 - A failed lookup ends the region.  Asserted in both
+# directions: the diagnostic must appear AND the trailing text must not.
+#
+# The values come from tr.tc000, where each expression is a real
+# top-level eval-bracket region.  Written inline inside cand() instead,
+# the expression sits in a function argument whose FCHECK opportunity is
+# already spent and where EV_FMAND is cleared, so the lookup would never
+# be attempted and the case could not reproduce the defect.
+#
+&tr.tc001 test_fmand_abort_fn=
+  @if cand(
+        strmatch(v(r.abort), #-1 FUNCTION*NOT FOUND),
+        not(strmatch(v(r.abort), *tail*)),
+        strmatch(v(r.text), #-1 FUNCTION*NOT FOUND),
+        not(strmatch(v(r.text), *hello*)),
+        strmatch(v(r.twice), #-1 FUNCTION*NOT FOUND),
+        not(strmatch(v(r.twice), *qqnofn2*))
+      )=
+  {
+    @log smoke=TC001: missing function ends the region. Succeeded.
+  },
+  {
+    @log smoke=TC001: missing function ends the region. Failed (abort=[v(r.abort)] text=[v(r.text)] twice=[v(r.twice)]).
+  }
+-
+#
+# Test Case #2 - A SUCCESSFUL first call still emits its literal tail.
+# Guards the opposite direction, so a change that truncates every region
+# cannot pass by making TC001 trivially true.
+#
+# Deliberately a pure control: it passes with the fix and WITHOUT it.
+# An earlier draft also asserted the aborting shape here, which made it
+# fail against the unfixed engine -- and a control that only holds in
+# one state is not a control.
+#
+&tr.tc002 test_fmand_abort_fn=
+  @if cand(
+        strmatch(v(r.ok), 3 mul*),
+        strmatch(v(r.only), #-1 FUNCTION*NOT FOUND)
+      )=
+  {
+    @log smoke=TC002: successful call keeps its literal tail. Succeeded.
+  },
+  {
+    @log smoke=TC002: successful call keeps its literal tail. Failed (ok=[v(r.ok)] only=[v(r.only)]).
+  }
+-
+#
+# Test Case #3 - The abort ends ONE region.  A later bracket still
+# evaluates, and an inner region must not truncate its parent.  These
+# are the shapes that fail if the signal leaks out of its region.
+#
+&tr.tc003 test_fmand_abort_fn=
+  @if cand(
+        strmatch(v(r.two), #-1 FUNCTION*NOT FOUND3),
+        not(strmatch(v(r.two), *x*)),
+        strmatch(v(r.inner), a #-1 FUNCTION*NOT FOUND c)
+      )=
+  {
+    @log smoke=TC003: abort is confined to one region. Succeeded.
+  },
+  {
+    @log smoke=TC003: abort is confined to one region. Failed (two=[v(r.two)] inner=[v(r.inner)]).
+  }
+-
+#
+# Test Case #4 - Nothing aborts where no lookup is attempted.
+#
+# Inside a function argument EV_FMAND is cleared, so the call is literal
+# and no diagnostic is produced.  And a call preceded by text in its own
+# region is literal too, which is the #1246 family -- 2.13 folds the
+# preceding text into the name and reports a lookup 2.14 never attempts,
+# so this shape keeps 2.14's answer and must stay untouched by the
+# abort rule.
+#
+&tr.tc004 test_fmand_abort_fn=
+  @if cand(
+        not(strmatch(v(r.arg), *NOT FOUND*)),
+        strmatch(v(r.arg), qqnofn*x),
+        not(strmatch(v(r.name), *NOT FOUND*)),
+        strmatch(v(r.name), hello qqnofn*)
+      )=
+  {
+    @log smoke=TC004: no abort where no lookup is attempted. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: no abort where no lookup is attempted. Failed (arg=[v(r.arg)] name=[v(r.name)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_fmand_abort_fn=
+  @log smoke=End fmand_abort test cases.;
+  @notify smoke
+-
+drop test_fmand_abort_fn
+-
+#
+# End of Test Cases
+#
