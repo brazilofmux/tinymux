@@ -1,0 +1,249 @@
+#
+# listscan_fn.mux - Coverage for list-by-type, dice, grep and server-info.
+#
+# Fifteen builtins with no reference anywhere in the corpus (#1160):
+#
+#   lthings  lplayers  lrooms  lwho  lflags
+#   die  distribute
+#   grep  grepi
+#   time  starttime  stats  dumping  restarts  money
+#
+# Grouped because they share a softcode-facing "look around / roll /
+# search / ask the server" shape and need only a small room+things fixture
+# (no live peers, mail, SQL or comsys).  LWHO and LPLAYERS may legitimately
+# be empty under muxscript if nothing is connected in the room; those
+# cases pin "does not error", not a particular WHO list.
+#
+# Conventions (from misc_builtin_fn.mux / topology_fn.mux):
+#   - No parenthesised text in EXPECTED strings (#1249).
+#   - Membership / range / relationship assertions where values vary.
+#
+@create test_listscan_fn
+-
+@set test_listscan_fn=INHERIT QUIET
+-
+#
+# Fixture: two rooms linked by an exit, two things in room A.  Dbrefs are
+# stored on the test object so cases never hardcode numbers.
+#
+think [setq(0, create(Listscan_Room_A, 10, r))][attrib_set(test_listscan_fn/room_a, %q0)]
+-
+think [setq(0, create(Listscan_Room_B, 10, r))][attrib_set(test_listscan_fn/room_b, %q0)]
+-
+think [setq(0, create(Listscan_Thing_1, 10))][attrib_set(test_listscan_fn/thing_1, %q0)]
+-
+think [setq(0, create(Listscan_Thing_2, 10))][attrib_set(test_listscan_fn/thing_2, %q0)]
+-
+#
+# @open puts the exit in the opener's location, so this has to move -- but
+# `me` is the shared smoke runner, and every later file in the suite runs as
+# the same object.  Save the original location first and go back to it
+# below, or the move leaks into everything that follows (#1386).
+#
+think [attrib_set(test_listscan_fn/saved_loc, [loc(me)])]
+-
+@tel me=[get(test_listscan_fn/room_a)]
+-
+@open listscan_exit_ab=[get(test_listscan_fn/room_b)]
+-
+think [attrib_set(test_listscan_fn/exit_ab, [lastcreate(me, e)])]
+-
+@tel me=[get(test_listscan_fn/saved_loc)]
+-
+@tel [get(test_listscan_fn/thing_1)]=[get(test_listscan_fn/room_a)]
+-
+@tel [get(test_listscan_fn/thing_2)]=[get(test_listscan_fn/room_a)]
+-
+#
+# Attributes for grep/grepi: one case-sensitive hit, one only under grepi.
+#
+&d.alpha test_listscan_fn=needle in a haystack
+-
+&d.beta test_listscan_fn=NEEDLE upper only
+-
+&d.gamma test_listscan_fn=nothing interesting here
+-
+&tr.tc000 test_listscan_fn=
+  @log smoke=Beginning listscan function test cases.
+-
+#
+# Test Case #1 - lthings() lists non-player contents.
+#
+&tr.tc001 test_listscan_fn=
+  @if cand(
+        gt(member(lthings(get(me/room_a)), get(me/thing_1)), 0),
+        gt(member(lthings(get(me/room_a)), get(me/thing_2)), 0)
+      )=
+  {
+    @log smoke=TC001: lthings lists room things. Succeeded.
+  },
+  {
+    @log smoke=TC001: lthings lists room things. Failed ([lthings(get(me/room_a))] lacks [get(me/thing_1)] or [get(me/thing_2)]).
+  }
+-
+#
+# Test Case #2 - lplayers() does not error on a controlled room.
+#
+# The list may be empty under muxscript; the pin is that it is not a
+# permission or match failure.
+#
+&tr.tc002 test_listscan_fn=
+  @if not(strmatch(setr(0, lplayers(get(me/room_a))), #-1*))=
+  {
+    @log smoke=TC002: lplayers does not error. Succeeded.
+  },
+  {
+    @log smoke=TC002: lplayers does not error. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - lrooms() reaches the linked room at depth 1.
+#
+&tr.tc003 test_listscan_fn=
+  @if gt(member(setr(0, lrooms(get(me/room_a), 1)), get(me/room_b)), 0)=
+  {
+    @log smoke=TC003: lrooms finds the linked room. Succeeded.
+  },
+  {
+    @log smoke=TC003: lrooms finds the linked room. Failed (%q0 expected [get(me/room_b)]).
+  }
+-
+#
+# Test Case #4 - lwho() returns without error.
+#
+# Under muxscript the WHO list may be empty; under a live netmux it usually
+# is not.  Either way it must not be a #-1 error.
+#
+&tr.tc004 test_listscan_fn=
+  @if not(strmatch(setr(0, lwho()), #-1*))=
+  {
+    @log smoke=TC004: lwho does not error. Succeeded.
+  },
+  {
+    @log smoke=TC004: lwho does not error. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - lflags() spells out flag names, not only the flag string.
+#
+# The test object was set INHERIT QUIET; at least INHERIT must appear in
+# the long form.  Avoid asserting the full list: flag sets grow.
+#
+&tr.tc005 test_listscan_fn=
+  @if strmatch(setr(0, lflags(me)), *INHERIT*)=
+  {
+    @log smoke=TC005: lflags names object flags. Succeeded.
+  },
+  {
+    @log smoke=TC005: lflags names object flags. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - die() sums rolls; zero count and bad sides are defined.
+#
+# die(1,1) is always 1.  die(0,6) is 0.  die(2,6) lands in 2..12.
+# A third TRUE arg returns the individual rolls rather than the sum.
+#
+&tr.tc006 test_listscan_fn=
+  @if cand(
+        eq(die(1, 1), 1),
+        eq(die(0, 6), 0),
+        gte(setr(0, die(2, 6)), 2),
+        lte(%q0, 12),
+        eq(words(setr(1, die(3, 4, 1))), 3)
+      )=
+  {
+    @log smoke=TC006: die rolls and edge cases. Succeeded.
+  },
+  {
+    @log smoke=TC006: die rolls and edge cases. Failed (d21=%q0 list=%q1).
+  }
+-
+#
+# Test Case #7 - distribute() partitions points across bins.
+#
+# Sum of the bins must equal the point total; bin count must match.
+# Out-of-range args return a range error rather than a list.
+#
+&tr.tc007 test_listscan_fn=
+  @if cand(
+        eq(words(setr(0, distribute(10, 4, |)), |), 4),
+        eq(add(extract(%q0, 1, 1, |), extract(%q0, 2, 1, |), extract(%q0, 3, 1, |), extract(%q0, 4, 1, |)), 10),
+        strmatch(setr(1, distribute(-1, 2)), #-1*)
+      )=
+  {
+    @log smoke=TC007: distribute partitions points. Succeeded.
+  },
+  {
+    @log smoke=TC007: distribute partitions points. Failed (bins=%q0 err=%q1).
+  }
+-
+#
+# Test Case #8 - grep() is case-sensitive; grepi() is not.
+#
+# d.alpha holds lowercase "needle"; d.beta holds "NEEDLE".  grep must see
+# only alpha; grepi must see both.
+#
+&tr.tc008 test_listscan_fn=
+  @if cand(
+        strmatch(setr(0, grep(me, d.*, needle)), *d.alpha*),
+        not(strmatch(%q0, *d.beta*)),
+        strmatch(setr(1, grepi(me, d.*, needle)), *d.alpha*),
+        strmatch(%q1, *d.beta*)
+      )=
+  {
+    @log smoke=TC008: grep and grepi case handling. Succeeded.
+  },
+  {
+    @log smoke=TC008: grep and grepi case handling. Failed (grep=%q0 grepi=%q1).
+  }
+-
+#
+# Test Case #9 - time() and starttime() return non-empty date strings.
+#
+&tr.tc009 test_listscan_fn=
+  @if cand(
+        gt(strlen(setr(0, time())), 0),
+        gt(strlen(setr(1, starttime())), 0),
+        not(strmatch(%q0, #-1*)),
+        not(strmatch(%q1, #-1*))
+      )=
+  {
+    @log smoke=TC009: time and starttime return strings. Succeeded.
+  },
+  {
+    @log smoke=TC009: time and starttime return strings. Failed (time=%q0 start=%q1).
+  }
+-
+#
+# Test Case #10 - stats(), dumping(), restarts(), money().
+#
+# dumping() is 0 outside a forked dump.  restarts() and money() are
+# integers.  stats() returns a non-empty word list of counts.
+#
+&tr.tc010 test_listscan_fn=
+  @if cand(
+        gt(words(setr(0, stats())), 0),
+        eq(dumping(), 0),
+        isint(setr(1, restarts())),
+        gte(%q1, 0),
+        isint(setr(2, money(me)))
+      )=
+  {
+    @log smoke=TC010: stats dumping restarts money. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC010: stats dumping restarts money. Failed (stats=%q0 restarts=%q1 money=%q2 dump=[dumping()]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_listscan_fn=
+  @log smoke=End listscan function test cases.;
+  @notify smoke
+-
+drop test_listscan_fn
+-
+#
+# End of Test Cases
+#
