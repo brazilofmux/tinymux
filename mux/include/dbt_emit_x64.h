@@ -582,6 +582,7 @@ static constexpr uint8_t CMOV_L  = 0x4C;
 static constexpr uint8_t CMOV_GE = 0x4D;
 static constexpr uint8_t CMOV_B  = 0x42;
 static constexpr uint8_t CMOV_AE = 0x43;
+static constexpr uint8_t CMOV_P  = 0x4A;   // parity: unordered (NaN)
 
 static inline void emit_cmovcc(emit_t *e, uint8_t cc, int dst, int src) {
     emit_byte(e, rex(1, reg_hi(dst), 0, reg_hi(src)));
@@ -1127,5 +1128,106 @@ static inline void emit_movq_xmm_r64(emit_t *e, int xmm, int r64) {
     emit_byte(e, 0x6E);
     emit_byte(e, modrm(0x03, xmm, r64));
 }
+
+// RISC-V FCVT.{W,WU,L,LU}.D semantics on x86-64 (#1313/#1314).
+//
+// CVTTSD2SI answers a single "integer indefinite" sentinel (0x80000000 /
+// 0x8000000000000000) for NaN, both infinities and every out-of-range
+// value alike, and is signed.  RISC-V instead requires NaN -> the
+// destination type's MAXIMUM, saturation at both ends, and sign-extension
+// of W results even for the unsigned form.  One instruction therefore
+// cannot express it.
+//
+// The fix-ups test the SOURCE double rather than the converted integer,
+// because the sentinel has already collapsed the cases the spec separates
+// -- +inf, NaN and 2^63 all arrive as the same bit pattern.
+//
+// Ordering is load-bearing.  UCOMISD sets CF for "below" *and* for
+// unordered, so a NaN would take the low-side saturation; the NaN fix-up
+// therefore runs last and overwrites it.
+//
+// form matches the RISC-V rs2 selector: 0=W, 1=WU, 2=L, 3=LU.
+// Scratch: RAX, RCX, XMM0, XMM1 -- all documented as never cached.
+//
+static inline void emit_rv_fcvt_d(emit_t *e, int dst, int xsrc, int form)
+{
+    const uint64_t D_2P31  = 0x41E0000000000000ull;  //  2^31
+    const uint64_t D_N2P31 = 0xC1E0000000000000ull;  // -2^31
+    const uint64_t D_2P32  = 0x41F0000000000000ull;  //  2^32
+    const uint64_t D_2P63  = 0x43E0000000000000ull;  //  2^63
+    const uint64_t D_2P64  = 0x43F0000000000000ull;  //  2^64
+
+    emit_cvttsd2si_r64(e, dst, xsrc);
+
+    if (0 == form) {                       // FCVT.W.D
+        emit_mov_r64_imm64(e, X64_RCX, D_N2P31);
+        emit_movq_xmm_r64(e, 1, X64_RCX);
+        emit_ucomisd(e, xsrc, 1);
+        emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFF80000000ull);
+        emit_cmovcc(e, CMOV_B, dst, X64_RCX);        // x < -2^31
+        emit_mov_r64_imm64(e, X64_RCX, D_2P31);
+        emit_movq_xmm_r64(e, 1, X64_RCX);
+        emit_ucomisd(e, xsrc, 1);
+        emit_mov_r64_imm64(e, X64_RCX, 0x000000007FFFFFFFull);
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^31
+        emit_ucomisd(e, xsrc, xsrc);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> INT32_MAX
+    } else if (1 == form) {                // FCVT.WU.D
+        emit_xor_r64(e, X64_RCX, X64_RCX);
+        emit_movq_xmm_r64(e, 1, X64_RCX);            // 0.0
+        emit_ucomisd(e, xsrc, 1);
+        // MOV, not XOR: XOR writes flags and would destroy the CF the
+        // CMOV below depends on.
+        emit_mov_r64_imm64(e, X64_RCX, 0ull);
+        emit_cmovcc(e, CMOV_B, dst, X64_RCX);        // x < 0 -> 0
+        emit_mov_r64_imm64(e, X64_RCX, D_2P32);
+        emit_movq_xmm_r64(e, 1, X64_RCX);
+        emit_ucomisd(e, xsrc, 1);
+        emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFFFFFFFFFFull);
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^32
+        emit_ucomisd(e, xsrc, xsrc);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> all ones
+        emit_movsxd(e, dst, dst);                    // RV64 sign-extends W
+    } else if (2 == form) {                // FCVT.L.D
+        // The low side needs no fix-up: CVTTSD2SI already yields
+        // INT64_MIN for -inf and for x <= -2^63, which is the RISC-V
+        // answer.
+        emit_mov_r64_imm64(e, X64_RCX, D_2P63);
+        emit_movq_xmm_r64(e, 1, X64_RCX);
+        emit_ucomisd(e, xsrc, 1);
+        emit_mov_r64_imm64(e, X64_RCX, 0x7FFFFFFFFFFFFFFFull);
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^63
+        emit_ucomisd(e, xsrc, xsrc);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> INT64_MAX
+    } else {                               // FCVT.LU.D
+        // CVTTSD2SI is signed, so 2^63 <= x < 2^64 needs the bias
+        // identity: trunc(x) == trunc(x - 2^63) + 2^63.
+        emit_mov_r64_imm64(e, X64_RCX, D_2P63);
+        emit_movq_xmm_r64(e, 1, X64_RCX);
+        emit_movsd_xmm(e, 0, xsrc);
+        emit_subsd(e, 0, 1);
+        emit_cvttsd2si_r64(e, X64_RCX, 0);
+        emit_mov_r64_imm64(e, X64_RAX, 0x8000000000000000ull);
+        emit_add_r64(e, X64_RCX, X64_RAX);
+        emit_ucomisd(e, xsrc, 1);
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^63
+        emit_mov_r64_imm64(e, X64_RCX, D_2P64);
+        emit_movq_xmm_r64(e, 1, X64_RCX);
+        emit_ucomisd(e, xsrc, 1);
+        emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFFFFFFFFFFull);
+        emit_cmovcc(e, CMOV_AE, dst, X64_RCX);       // x >= 2^64
+        emit_xor_r64(e, X64_RCX, X64_RCX);
+        emit_movq_xmm_r64(e, 1, X64_RCX);            // 0.0
+        emit_ucomisd(e, xsrc, 1);
+        // MOV, not XOR: XOR writes flags and would destroy the CF the
+        // CMOV below depends on.
+        emit_mov_r64_imm64(e, X64_RCX, 0ull);
+        emit_cmovcc(e, CMOV_B, dst, X64_RCX);        // x < 0 -> 0
+        emit_mov_r64_imm64(e, X64_RCX, 0xFFFFFFFFFFFFFFFFull);
+        emit_ucomisd(e, xsrc, xsrc);
+        emit_cmovcc(e, CMOV_P, dst, X64_RCX);        // NaN -> all ones
+    }
+}
+
 
 #endif // DBT_EMIT_X64_H

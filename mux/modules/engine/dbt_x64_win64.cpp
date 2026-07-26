@@ -2824,11 +2824,10 @@ no_addr_fusion:
             case FP_FCVTW: { // FCVT.W.D / FCVT.WU.D / FCVT.L.D / FCVT.LU.D
                 int xs1 = fc_read(&e, &fc, insn.rs1);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : X64_RAX;
-                emit_cvttsd2si_r64(&e, rd, xs1);
-                // For W variants, sign-extend 32→64
-                if (insn.rs2 == 0 || insn.rs2 == 1) { // FCVT.W.D / FCVT.WU.D
-                    emit_movsxd(&e, rd, rd);
-                }
+                // RISC-V saturation and NaN semantics; a bare
+                // CVTTSD2SI plus sign-extend was wrong on 10 of the 12
+                // spec cases (#1313/#1314).
+                emit_rv_fcvt_d(&e, rd, xs1, insn.rs2);
                 break;
             }
             case FP_FCVTDW: { // FCVT.D.W / FCVT.D.WU / FCVT.D.L / FCVT.D.LU
