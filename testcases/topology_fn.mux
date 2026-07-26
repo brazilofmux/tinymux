@@ -38,11 +38,20 @@ think [setq(0, create(Topo_Parent, 10))][attrib_set(test_topology_fn/parent_obj,
 #
 # Exit A -> B: teleport to the source room, @open, then record the dbref.
 #
+# @open puts the exit in the opener's location, so this has to move -- but
+# `me` is the shared smoke runner, and every later file in the suite runs as
+# the same object.  Save the original location first and go back to it
+# below, or the move leaks into everything that follows.
+#
+think [attrib_set(test_topology_fn/saved_loc, [loc(me)])]
+-
 @tel me=[get(test_topology_fn/room_a)]
 -
 @open topo_exit_ab=[get(test_topology_fn/room_b)]
 -
 think [attrib_set(test_topology_fn/exit_ab, [lastcreate(me, e)])]
+-
+@tel me=[get(test_topology_fn/saved_loc)]
 -
 #
 # Put both things in room A and parent the first one.
