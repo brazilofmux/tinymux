@@ -166,9 +166,18 @@ probe_engine() {
         [ -n "$_extra" ] && printf '%s\n' "$_extra"
     } > "$_w/t.conf"
 
-    ( cd "$_w" && LD_LIBRARY_PATH="$_bin" $SETSID ./bin/netmux -c t.conf > netmux.log 2>&1 &
-      echo $! > "$_w/pid" )
-    _pid=$(cat "$_w/pid" 2>/dev/null)
+    # Background the subshell as a whole and `exec` inside it, so the pid we
+    # record IS netmux.  Backgrounding an AND-list instead -- `( cd $w && cmd
+    # & echo $! )` -- makes $! name a wrapper subshell rather than the server
+    # on any shell that does not exec-optimize the tail of a subshell: dash
+    # (Debian/Ubuntu /bin/sh) does, bash 3.2 (macOS /bin/sh) does not, so the
+    # recorded pid was netmux's *parent* here and every kill below hit the
+    # wrapper while the server survived.  `exec` makes it true by
+    # construction rather than by optimization, on every shell.
+    #
+    ( cd "$_w" && LD_LIBRARY_PATH="$_bin" exec $SETSID ./bin/netmux -c t.conf > netmux.log 2>&1 ) &
+    _pid=$!
+    echo "$_pid" > "$_w/pid"
     # Record it outside $WORK before waiting on it: everything from here to
     # the kill below is interruptible, and $WORK does not survive that.
     [ -n "$_pid" ] && echo "$_pid" >> "$PIDS"
