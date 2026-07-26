@@ -75,9 +75,12 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
         return false;
     }
 
-    // For multi-block programs, run SSA construction and optimization.
+    // Always build block ranges (block_last starts at -1 until CFG is
+    // computed).  Without this, single-block Lua programs skip every HIR
+    // insn in hir_codegen and leave final_out=0 (#1309 empty folds).
+    //
+    hir_build_cfg(*h);
     if (h->n_blocks > 1) {
-        hir_build_cfg(*h);
         hir_ssa_construct(*h);
         hir_optimize(*h);
     } else {
@@ -89,6 +92,9 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     hir_codegen(*h, rc_state);
 
     // Build compiled_program output.
+    // Include rc_state.needs_jit: codegen may force runtime for results that
+    // live only in registers (ITOA path), even when lowering saw no ecalls.
+    //
     out->memory = std::move(rc_state.memory);
     out->memory_size = rv_compiler::MEM_SIZE;
     out->out_addr = rc_state.final_out;
@@ -103,7 +109,33 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     out->ecalls = h->ecalls;
     out->tier2_calls = 0;
     out->native_ops = h->native_ops;
-    out->needs_jit = h->needs_jit;
+    out->needs_jit = h->needs_jit || rc_state.needs_jit;
+
+    // Classify CARGS/SUBST refs (mux.args[N] → emit_sref) so
+    // run_cached_program populates the guest slots this program reads.
+    // Same pass as softcode compile_expression.
+    //
+    out->subst_mask = 0;
+    out->cargs_used = 0;
+    for (uint64_t a : h->sref_addrs) {
+        if (  a >= rv_compiler::CARGS_BASE
+           && a < rv_compiler::CARGS_BASE
+                  + static_cast<uint64_t>(rv_compiler::MAX_CARGS)
+                    * rv_compiler::CARGS_SLOT) {
+            int idx = static_cast<int>(
+                (a - rv_compiler::CARGS_BASE) / rv_compiler::CARGS_SLOT);
+            if (idx + 1 > out->cargs_used) {
+                out->cargs_used = idx + 1;
+            }
+        } else if (  a >= rv_compiler::SUBST_BASE
+                  && a < rv_compiler::SUBST_BASE
+                         + static_cast<uint64_t>(rv_compiler::SUBST_COUNT)
+                           * rv_compiler::SUBST_SLOT) {
+            int slot = static_cast<int>(
+                (a - rv_compiler::SUBST_BASE) / rv_compiler::SUBST_SLOT);
+            out->subst_mask |= (UINT64_C(1) << slot);
+        }
+    }
 
     delete h;
     return true;

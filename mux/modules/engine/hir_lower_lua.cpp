@@ -337,7 +337,10 @@ static void find_block_starts(const lua_bc_proto *proto,
         case OP_LUA_RETURN:
         case OP_LUA_RETURN0:
         case OP_LUA_RETURN1:
-            if (pc + 1 < n) is_leader[pc + 1] = true;
+            // Do NOT mark pc+1 as a leader.  Lua always appends a trailing
+            // return after an explicit one; treating it as a new block made
+            // every returning chunk multi_block (budget STORE_Q + SSA) and
+            // contributed to the #1309 hang class on otherwise linear code.
             break;
         default:
             break;
@@ -358,6 +361,41 @@ static int assign_blocks(const std::vector<bool> &is_leader,
         pc_to_block[pc] = block_count - 1;
     }
     return block_count;
+}
+
+// ---------------------------------------------------------------
+// Helper: coerce a return value to TY_STRING for HIR_RET.
+//
+// Known ICONST/FCONST fold to SCONST digit strings so pure `return 42`
+// can take the folded (needs_jit=false) path.  Runtime ITOA/FTOA is only
+// used when the value is not a compile-time constant (#1309).
+// ---------------------------------------------------------------
+
+static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
+    if (rv < 0) return -1;
+    if (h.ty[rv] == TY_STRING) {
+        return rv;
+    }
+    if (h.ty[rv] == TY_INT) {
+        if (h.kind[rv] == HIR_ICONST) {
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%lld",
+                     static_cast<long long>(h.val[rv]));
+            uint64_t addr = rc.pool_str(buf, strlen(buf));
+            return h.emit_sconst(addr, buf);
+        }
+        return h.emit(HIR_ITOA, TY_STRING, rv);
+    }
+    if (h.ty[rv] == TY_FLOAT) {
+        if (h.kind[rv] == HIR_FCONST) {
+            char buf[64];
+            snprintf(buf, sizeof(buf), "%.17g", h.fval[rv]);
+            uint64_t addr = rc.pool_str(buf, strlen(buf));
+            return h.emit_sconst(addr, buf);
+        }
+        return h.emit(HIR_FTOA, TY_STRING, rv);
+    }
+    return rv;
 }
 
 // ---------------------------------------------------------------
@@ -631,7 +669,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             } \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == MMOP) pc++; \
+            /* Do NOT pc++ past MMBIN here: the for-loop already advances
+             * pc, so an extra increment skips the following RETURN and
+             * leaves the chunk without a proper HIR_RET (#1309 hang).
+             * MMBIN* cases below are intentional no-ops. */ \
+            (void)MMOP; \
             break; \
         }
 
@@ -653,8 +695,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, rc_val);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
-                pc++;
+            // MMBIN follows as a no-op case — do not double-advance pc.
             break;
         }
 
@@ -672,8 +713,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
             if (lua_reg[A] < 0) return -1;
             h.ecalls++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
-                pc++;
             break;
         }
 
@@ -693,8 +732,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             }
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
-                pc++;
             break;
         }
 
@@ -711,7 +748,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, rc_val); \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN) pc++; \
+            /* MMBIN is a no-op case — do not double-advance pc (#1309). */ \
             break; \
         }
 
@@ -730,8 +767,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_BNOT, TY_INT, rb);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBIN)
-                pc++;
             break;
         }
 
@@ -746,8 +781,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_SHR, TY_INT, rb, imm);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINI)
-                pc++;
             break;
         }
 
@@ -761,8 +794,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_SHL, TY_INT, rb, imm);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINI)
-                pc++;
             break;
         }
 
@@ -781,8 +812,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, kval); \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK) \
-                pc++; \
             break; \
         }
 
@@ -914,6 +943,32 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // A = dest, B = table register, C = integer key.
             int tbl = lua_reg[insn.B()];
             if (tbl < 0) return -1;
+
+            // mux.args[N] (1-based) → softcode CARGS slot N-1.  The mux.*
+            // bridge lowers `mux`/`args` to SCONST sentinels rather than a
+            // live Lua table; treating those as stack indices for
+            // HIR_LUA_GETI caused runaway DBT dispatch (#1309).
+            //
+            if (tbl >= 0 && h.kind[tbl] == HIR_SCONST) {
+                if (h.sval[tbl] == "mux.args") {
+                    int key = insn.C();
+                    if (key < 1 || key > rv_compiler::MAX_CARGS) {
+                        return -1;
+                    }
+                    uint64_t carg_addr = rv_compiler::CARGS_BASE
+                        + static_cast<uint64_t>(key - 1)
+                          * rv_compiler::CARGS_SLOT;
+                    h.needs_jit = true;
+                    lua_reg[A] = h.emit_sref(carg_addr);
+                    if (lua_reg[A] < 0) return -1;
+                    break;
+                }
+                // Other mux.* tables are not indexable on the JIT path yet.
+                if (h.sval[tbl].rfind("mux.", 0) == 0) {
+                    return -1;
+                }
+            }
+
             int key = h.emit_iconst(insn.C());
             if (key < 0) return -1;
 
@@ -991,6 +1046,23 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int tbl = lua_reg[insn.B()];
             int key = lua_reg[insn.C()];
             if (tbl < 0 || key < 0) return -1;
+
+            // mux.args[k] with compile-time integer key → CARGS (see GETTABI).
+            //
+            if (  h.kind[tbl] == HIR_SCONST
+               && h.sval[tbl] == "mux.args"
+               && h.kind[key] == HIR_ICONST) {
+                int k = static_cast<int>(h.val[key]);
+                if (k < 1 || k > rv_compiler::MAX_CARGS) {
+                    return -1;
+                }
+                uint64_t carg_addr = rv_compiler::CARGS_BASE
+                    + static_cast<uint64_t>(k - 1) * rv_compiler::CARGS_SLOT;
+                h.needs_jit = true;
+                lua_reg[A] = h.emit_sref(carg_addr);
+                if (lua_reg[A] < 0) return -1;
+                break;
+            }
 
             if (h.ty[key] == TY_INT && pinned_tbl_reg >= 0
                 && insn.B() == pinned_tbl_reg) {
@@ -1129,8 +1201,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             }
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINI)
-                pc++;
             break;
         }
 
@@ -1160,8 +1230,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             } \
             if (lua_reg[A] < 0) return -1; \
             h.native_ops++; \
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK) \
-                pc++; \
             break; \
         }
 
@@ -1187,8 +1255,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, kval);
             if (lua_reg[A] < 0) return -1;
             h.native_ops++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK)
-                pc++;
             break;
         }
 
@@ -1209,8 +1275,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
             if (lua_reg[A] < 0) return -1;
             h.ecalls++;
-            if (pc + 1 < n && proto->code[pc + 1].opcode() == OP_LUA_MMBINK)
-                pc++;
             break;
         }
 
@@ -1582,47 +1646,52 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         }
 
         // ---- Return ----
+        //
+        // Lua always appends a trailing OP_RETURN / RETURN0 after an
+        // explicit return (and after the last statement of a chunk).
+        // That second return is dead once we have already emitted HIR_RET
+        // for the real value.  Updating result_val from it overwrote a
+        // correct "hello" / 42 with an empty SCONST, so folded Lua JIT
+        // programs always produced empty strings (#1309).
+        //
+        // Emit HIR_RET for every opcode (keeps block structure), but only
+        // the first return value becomes h.result.
 
-        case OP_LUA_RETURN0:
-            result_val = h.emit_sconst(rc.pool_str("", 0), "");
-            if (result_val < 0) return -1;
-            h.emit(HIR_RET, TY_VOID, result_val);
+        case OP_LUA_RETURN0: {
+            int rv = h.emit_sconst(rc.pool_str("", 0), "");
+            if (rv < 0) return -1;
+            h.emit(HIR_RET, TY_VOID, rv);
+            if (result_val < 0) {
+                result_val = rv;
+            }
             break;
+        }
 
         case OP_LUA_RETURN1: {
-            int rv = lua_reg[A];
+            int rv = return_as_string(h, rc, lua_reg[A]);
             if (rv < 0) return -1;
-            if (h.ty[rv] == TY_INT) {
-                rv = h.emit(HIR_ITOA, TY_STRING, rv);
-                if (rv < 0) return -1;
-            } else if (h.ty[rv] == TY_FLOAT) {
-                rv = h.emit(HIR_FTOA, TY_STRING, rv);
-                if (rv < 0) return -1;
+            h.emit(HIR_RET, TY_VOID, rv);
+            if (result_val < 0) {
+                result_val = rv;
             }
-            result_val = rv;
-            h.emit(HIR_RET, TY_VOID, result_val);
             break;
         }
 
         case OP_LUA_RETURN: {
             int nret = insn.B() - 1;
             if (nret < 0) return -1;
+            int rv;
             if (nret == 0) {
-                result_val = h.emit_sconst(rc.pool_str("", 0), "");
-                if (result_val < 0) return -1;
-            } else {
-                int rv = lua_reg[A];
+                rv = h.emit_sconst(rc.pool_str("", 0), "");
                 if (rv < 0) return -1;
-                if (h.ty[rv] == TY_INT) {
-                    rv = h.emit(HIR_ITOA, TY_STRING, rv);
-                    if (rv < 0) return -1;
-                } else if (h.ty[rv] == TY_FLOAT) {
-                    rv = h.emit(HIR_FTOA, TY_STRING, rv);
-                    if (rv < 0) return -1;
-                }
+            } else {
+                rv = return_as_string(h, rc, lua_reg[A]);
+                if (rv < 0) return -1;
+            }
+            h.emit(HIR_RET, TY_VOID, rv);
+            if (result_val < 0) {
                 result_val = rv;
             }
-            h.emit(HIR_RET, TY_VOID, result_val);
             break;
         }
 
