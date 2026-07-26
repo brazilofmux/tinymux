@@ -649,6 +649,25 @@ static inline void emit_nop(emit_t *e) {
     emit_inst(e, 0xD503201F);
 }
 
+// MRS Xt, FPCR / MSR FPCR, Xt — read and write the FP control register.
+//
+// Used for FPCR.DN (bit 25, "Default NaN"), which is what makes ARM's NaN
+// handling match RISC-V's: with DN clear, an operation given a NaN operand
+// propagates that operand's payload, while RISC-V requires the canonical
+// quiet NaN 0x7FF8000000000000 for any result that is a NaN.  Setting one
+// bit gets that for the whole arithmetic surface, rather than testing and
+// patching the result of every individual FP instruction.
+//
+static constexpr uint64_t A64_FPCR_DN = 1ULL << 25;
+
+static inline void emit_mrs_fpcr(emit_t *e, int xt) {
+    emit_inst(e, 0xD53B4400 | static_cast<uint32_t>(xt));
+}
+
+static inline void emit_msr_fpcr(emit_t *e, int xt) {
+    emit_inst(e, 0xD51B4400 | static_cast<uint32_t>(xt));
+}
+
 // ---------------------------------------------------------------
 // Branch patching
 // ---------------------------------------------------------------
@@ -810,6 +829,39 @@ static inline void emit_fcvtzs_w32_d(emit_t *e, int wd, int dn) {
 
 static inline void emit_fcvtzu_w32_d(emit_t *e, int wd, int dn) {
     emit_inst(e, 0x1E790000 | (dn << 5) | wd);
+}
+
+// Directed double->integer converts, parameterised by ARM rounding mode.
+//
+//   sf | 0011110 | type=01 | 1 | rmode[20:19] | opcode[18:16] | 000000 | Rn | Rd
+//
+// rmode picks the direction and opcode picks signedness, except that the
+// ties-away form lives at rmode=00 with opcode 100/101 rather than getting
+// an rmode of its own.  The FCVTZS/FCVTZU helpers above are the rmode=11
+// case of this and are kept because most call sites want exactly that.
+//
+// This exists because RISC-V selects the rounding mode per instruction and
+// ARM selects it per opcode, so honouring the guest's rm field means
+// choosing a different instruction rather than setting a mode bit (#1320).
+//
+static constexpr int A64_FCVT_RMODE_N = 0;  // nearest, ties to even
+static constexpr int A64_FCVT_RMODE_P = 1;  // toward +inf
+static constexpr int A64_FCVT_RMODE_M = 2;  // toward -inf
+static constexpr int A64_FCVT_RMODE_Z = 3;  // toward zero
+static constexpr int A64_FCVT_OP_S    = 0;  // signed result
+static constexpr int A64_FCVT_OP_U    = 1;  // unsigned result
+static constexpr int A64_FCVT_OP_AS   = 4;  // FCVTAS: nearest, ties away
+static constexpr int A64_FCVT_OP_AU   = 5;  // FCVTAU
+
+static inline void emit_fcvt_int_d(emit_t *e, int rd, int dn,
+                                   bool is64, int rmode, int opcode) {
+    uint32_t w = 0x1E600000u | (static_cast<uint32_t>(rmode) << 19)
+               | (static_cast<uint32_t>(opcode) << 16)
+               | (static_cast<uint32_t>(dn) << 5) | static_cast<uint32_t>(rd);
+    if (is64) {
+        w |= 0x80000000u;
+    }
+    emit_inst(e, w);
 }
 
 // FMOV Xd, Dn — bitwise move double to int64

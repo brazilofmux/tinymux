@@ -323,6 +323,65 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
     dbt->trace_guest_pc_filter = false;
 }
 
+// Reclaim the program region of the code buffer after a translation was
+// declined for want of space.
+//
+// This is the same reclaim dbt_reset() performs on its preserve-blob branch
+// (evict the cache entries above the blob, drop pending chains, rewind
+// code_used), made available mid-run.  Without it a full buffer is terminal:
+// dbt_run returns -1 and nothing ever rewinds code_used, so every later
+// program fails to translate too and the JIT is dead for the life of the
+// process — including for programs that have nothing to do with whatever
+// filled the buffer (#1315).
+//
+// Safe at the point it is called from — the dispatch loop, after the
+// trampoline has returned and before the next block is entered, so no
+// translated block is live on the host stack.  Blob translations and
+// intrinsics are preserved, guest state is untouched, and execution resumes
+// from ctx.next_pc; the only cost is re-translating program blocks.  The
+// exposure to a blob block that was backpatched directly into a program
+// block is the same one dbt_reset() already carries between programs.
+//
+// Bounded to MAX_RECLAIMS_PER_RUN per dbt_run.  One reclaim clears whatever
+// earlier programs left behind, which is the case worth recovering from.  If
+// the same run fills the buffer again afterwards then its own live blocks do
+// not fit, and no further reclaim can help — it would just re-translate the
+// same code and exhaust again.  Measured: without this bound a Lua program
+// that does not fit reclaimed 2217 times in a single run and burned ~16s of
+// CPU before the dispatch limit stopped it.  Declining promptly instead lets
+// the caller fall back to the interpreter, which is both correct and fast.
+//
+// Returns false when there is nothing to reclaim (no blob boundary yet,
+// already rewound, or the per-run budget is spent) so the caller retries at
+// most once per translation and cannot spin.
+//
+static constexpr uint32_t MAX_RECLAIMS_PER_RUN = 1;
+
+static bool dbt_reclaim_program_code(dbt_state_t *dbt) {
+    if (  0 == dbt->blob_code_end
+       || dbt->code_used <= dbt->blob_code_end
+       || dbt->reclaims_this_run >= MAX_RECLAIMS_PER_RUN) {
+        return false;
+    }
+
+    uint8_t *blob_end = dbt->code_buf + dbt->blob_code_end;
+    for (size_t i = 0; i < BLOCK_CACHE_SIZE; i++) {
+        if (dbt->cache[i].native_code >= blob_end) {
+            dbt->cache[i].guest_pc = 0;
+            dbt->cache[i].native_code = nullptr;
+        }
+    }
+    dbt->patches.clear();
+    dbt->pending_patch_targets.clear();
+    dbt->code_used = dbt->blob_code_end;
+    dbt->code_reclaims++;
+    dbt->reclaims_this_run++;
+
+    jit_write_begin();
+    dbt_flush_code(dbt, dbt->blob_code_end);
+    return true;
+}
+
 // Lightweight re-run: update only the ECALL callback and clear the CPU
 // context.  Keeps the block cache and translated code intact — safe when
 // the guest code region is unchanged between runs.
@@ -537,6 +596,7 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     dbt->ctx = {};
     dbt->ctx.next_pc = entry_pc;
     dbt->ctx.x[2] = stack_top; // SP
+    dbt->reclaims_this_run = 0;
     // Publish the guest bound for the intrinsic stubs' pointer check
     // (#1151).  Set here, after the ctx wipe, because dbt_reset can change
     // memory_size between runs while blob translations survive.
@@ -606,11 +666,39 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
             }
         } else {
             jit_write_begin();
+            dbt->xlate_fail = dbt_state_t::XLATE_OK;
             code = dbt_backend_translate_block(dbt, pc);
+            // Reclaim only on buffer-full.  Refuse (#1323) also returns
+            // nullptr; reclaiming then would wipe live program blocks and
+            // mis-count code_full (#1331 review).
+            //
+            if (  !code
+               && dbt->xlate_fail == dbt_state_t::XLATE_FULL
+               && dbt_reclaim_program_code(dbt)) {
+                // Buffer filled with program translations.  Reclaim them
+                // and retry once before declining (#1315).
+                jit_write_begin();
+                dbt->xlate_fail = dbt_state_t::XLATE_OK;
+                code = dbt_backend_translate_block(dbt, pc);
+            }
             if (!code) {
+                if (dbt->xlate_fail == dbt_state_t::XLATE_FULL) {
+                    dbt->code_full++;
+                    if (1 == dbt->code_full) {
+                        // Say so once.  Declining is otherwise invisible:
+                        // the caller falls back to the interpreter and
+                        // still produces correct output.
+                        fprintf(stderr, "dbt: code buffer full at pc=0x%llX "
+                                "(used=%u blob=%u cap=%u); JIT declining\n",
+                                static_cast<unsigned long long>(pc),
+                                static_cast<unsigned>(dbt->code_used),
+                                static_cast<unsigned>(dbt->blob_code_end),
+                                static_cast<unsigned>(CODE_BUF_SIZE));
+                    }
+                }
                 dbt_flush_code(dbt, dbt->code_used);
                 dbt->dispatch_count = dispatch_count;
-                return -1;  // code buffer full
+                return -1;  // full (after reclaim) or refuse
             }
             dbt_cache_insert(dbt, pc, code);
 
@@ -705,11 +793,35 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
             }
         } else {
             jit_write_begin();
+            dbt->xlate_fail = dbt_state_t::XLATE_OK;
             code = dbt_backend_translate_block(dbt, pc);
+            if (  !code
+               && dbt->xlate_fail == dbt_state_t::XLATE_FULL
+               && dbt_reclaim_program_code(dbt)) {
+                // Buffer filled with program translations.  Reclaim them
+                // and retry once before declining (#1315 / #1331).
+                jit_write_begin();
+                dbt->xlate_fail = dbt_state_t::XLATE_OK;
+                code = dbt_backend_translate_block(dbt, pc);
+            }
             if (!code) {
+                if (dbt->xlate_fail == dbt_state_t::XLATE_FULL) {
+                    dbt->code_full++;
+                    if (1 == dbt->code_full) {
+                        // Say so once.  Declining is otherwise invisible:
+                        // the caller falls back to the interpreter and
+                        // still produces correct output.
+                        fprintf(stderr, "dbt: code buffer full at pc=0x%llX "
+                                "(used=%u blob=%u cap=%u); JIT declining\n",
+                                static_cast<unsigned long long>(pc),
+                                static_cast<unsigned>(dbt->code_used),
+                                static_cast<unsigned>(dbt->blob_code_end),
+                                static_cast<unsigned>(CODE_BUF_SIZE));
+                    }
+                }
                 dbt_flush_code(dbt, dbt->code_used);
                 dbt->dispatch_count = dispatch_count;
-                return -1;  // code buffer full
+                return -1;  // full (after reclaim) or refuse
             }
             dbt_cache_insert(dbt, pc, code);
 

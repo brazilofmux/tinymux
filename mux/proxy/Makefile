@@ -109,11 +109,19 @@ $(TEST_TARGET): $(TEST_OBJS)
 test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
+# -MMD -MP emits a .d per object listing the headers it included, so a
+# header-only edit rebuilds its dependents.  Without this the rule below
+# only ever compared the .o against its .cpp: editing work_queue.h left a
+# stale proxy_regression.o and the suite silently tested the old header
+# (#1286).
 %.o: %.cpp
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c -o $@ $<
+
+-include $(OBJS:.o=.d) $(TEST_OBJS:.o=.d)
 
 clean:
 	rm -f $(OBJS) $(TARGET) $(TEST_OBJS) $(TEST_TARGET)
+	rm -f $(OBJS:.o=.d) $(TEST_OBJS:.o=.d)
 ifeq ($(GRPC),1)
 	rm -f $(PROTO_SRCS) $(PROTO_HDRS) $(PROTO_STAMP)
 endif

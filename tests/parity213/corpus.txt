@@ -277,3 +277,46 @@ XN_DEEP|[strcat((a [b (c] d) e))]|2.13
 XN_PAREN_FIRST|[strcat((a [b) c])]|neither
 XN_COMMA_CROSS|[strcat((a, [b), c])]|neither
 XN_FN_CROSS|[strcat((add(1,2) [x) y])]|neither
+
+# ===================================================================
+# EV_FMAND failed lookup (#1247).  When a function lookup FAILS at
+# eval-bracket top level, 2.13 emits the diagnostic and stops
+# evaluating the rest of the region; 2.14 emits it and continues.
+#
+# Measured 2026-07-26 on Windows (2.13.0.15 win32 binary distribution
+# against 2.14 at e19db6b5e): 5 of 8 diverge, the two 2.14 routes
+# byte-identical throughout.  Route participation was verified with
+# jitstats() rather than assumed -- eval_handled is nonzero for every
+# shape here with jit_eval_brackets=1, and eval_attempts is 0 with it
+# off, so both routes really do run these.
+#
+# Left UNADJUDICATED per the issue: the choice is between 2.13's abort
+# (better debuggability -- one clear error, no plausible-looking tail)
+# and 2.14's continue (both routes already agree, and it is what
+# ships).  See the README ranking; this is rank 3 versus rank 2.
+#
+# The dummy callee is deliberately Z-free: the harness marker is ZZ and
+# the diagnostic uppercases the name into the output line.
+#
+# --- the core shape: does the error stop the region? ---
+FM_FAIL_ABORT|[qqnofn(1) add(1,2)]
+FM_FAIL_ABORT_TAIL|[qqnofn(1) add(1,2) tail]
+FM_FAIL_TEXT|[qqnofn(1) hello]
+FM_FAIL_TWICE|[qqnofn(1) qqnofn2(1)]
+#
+# FM_FAIL_NAME is NOT continue-vs-abort, and is the reason this family
+# cannot be fixed by teaching 2.14 to stop.  2.13's name is the whole
+# accumulated output before the '(' -- here "HELLO QQNOFN" -- so it
+# reports a failed lookup that 2.14 never attempts at all (2.14 passes
+# the text through literally).  An abort rule alone would still not
+# reproduce 2.13 here; matching it needs the accumulated-name model,
+# which is what the tokenizer cannot express.
+FM_FAIL_NAME|[hello qqnofn(1)]
+#
+# Controls -- these agree on all three engines and must keep agreeing.
+# FM_OK_THEN_FAIL and FM_OK_TWICE both show the one-recognition-
+# opportunity-per-region rule already matching: the second call is
+# literal on every engine.
+FM_FAIL_ONLY|[qqnofn(1)]|both
+FM_OK_THEN_FAIL|[add(1,2) qqnofn(1)]|both
+FM_OK_TWICE|[add(1,2) mul(2,3)]|both

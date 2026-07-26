@@ -224,6 +224,26 @@ static uint32_t ECALL() {
     return i_type(OP_SYSTEM, 0, 0, 0, 0);
 }
 
+// CSR immediates (SYSTEM, funct3 5-7): rs1 field is the zimm.
+//
+static uint32_t CSRRWI(uint8_t rd, uint16_t csr, uint8_t zimm) {
+    return i_type(OP_SYSTEM, rd, 5, zimm, csr);
+}
+static uint32_t CSRRSI(uint8_t rd, uint16_t csr, uint8_t zimm) {
+    return i_type(OP_SYSTEM, rd, 6, zimm, csr);
+}
+static uint32_t CSRRCI(uint8_t rd, uint16_t csr, uint8_t zimm) {
+    return i_type(OP_SYSTEM, rd, 7, zimm, csr);
+}
+// CSR register forms (SYSTEM, funct3 1-3).
+//
+static uint32_t CSRRW(uint8_t rd, uint16_t csr, uint8_t rs1) {
+    return i_type(OP_SYSTEM, rd, 1, rs1, csr);
+}
+static uint32_t CSRRS(uint8_t rd, uint16_t csr, uint8_t rs1) {
+    return i_type(OP_SYSTEM, rd, 2, rs1, csr);
+}
+
 // Convenience: ADDW rd, rs1, rs2
 static uint32_t ADDW(uint8_t rd, uint8_t rs1, uint8_t rs2) {
     return r_type(OP_REG32, rd, ALU_ADD, rs1, rs2, 0x00);
@@ -1262,6 +1282,193 @@ static void test_fp_fma() {
     CHECK_FEQ("FNMADD.D -(3*5)-7", fnmadd_r, -22.0);
 }
 
+// #1333: CSR access must not be misdecoded as ECALL/EBREAK, and the
+// fflags/frm/fcsr trio must round-trip on both interpreter and DBT.
+//
+static void test_csr_fcsr_family() {
+    printf("test_csr_fcsr_family...\n");
+
+    // CSRRWI frm, 1  → fcsr.frm = 1 (RTZ)
+    // CSRRWI fflags, 0x1F → set all exception flags
+    // CSRRS  x5, fcsr, x0 → read full fcsr into x5 (should be 0x3F)
+    // CSRRWI frm, 0 → clear frm
+    // CSRRS  x6, fcsr, x0 → read fcsr (should be 0x1F — flags remain)
+    // CSRRW  x7, fflags, x0 → read fflags, write 0
+    // exit with a0 = x5, a1 = x6, a2 = x7
+    //
+    std::vector<uint32_t> code = {
+        CSRRWI(0, 0x002, 1),       // frm = 1
+        CSRRWI(0, 0x001, 0x1F),    // fflags = 0x1F
+        CSRRS(5, 0x003, 0),        // x5 = fcsr
+        CSRRWI(0, 0x002, 0),       // frm = 0
+        CSRRS(6, 0x003, 0),        // x6 = fcsr
+        CSRRW(7, 0x001, 0),        // x7 = fflags; fflags = 0
+        ADDI(10, 5, 0),            // a0 = x5
+        ADDI(11, 6, 0),            // a1 = x6
+        ADDI(12, 7, 0),            // a2 = x7
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    // Interpreter path.
+    //
+    {
+        const size_t MEM_SIZE = 4096;
+        std::vector<uint8_t> memory(MEM_SIZE, 0);
+        for (size_t i = 0; i < code.size(); i++) {
+            memcpy(memory.data() + i * 4, &code[i], 4);
+        }
+        rv64_state_t state{};
+        rv64_memory_t mem = { memory.data(), MEM_SIZE };
+        int rc = rv64_interp_run(&state, &mem, test_ecall, nullptr);
+        CHECK_EQ("csr interp: exit rc", static_cast<uint64_t>(rc), 0x3FULL);
+        CHECK_EQ("csr interp: fcsr after frm=1|fflags", state.x[5], 0x3FULL);
+        CHECK_EQ("csr interp: fcsr after frm clear", state.x[6], 0x1FULL);
+        CHECK_EQ("csr interp: fflags readback", state.x[7], 0x1FULL);
+        CHECK_EQ("csr interp: fcsr final", static_cast<uint64_t>(state.fcsr), 0ULL);
+    }
+
+    // DBT path.
+    //
+    {
+        const size_t MEM_SIZE = 64 * 1024;
+        std::vector<uint8_t> memory(MEM_SIZE, 0);
+        for (size_t i = 0; i < code.size(); i++) {
+            memcpy(memory.data() + i * 4, &code[i], 4);
+        }
+        dbt_state_t dbt;
+        if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+            g_tests_run++;
+            g_tests_failed++;
+            fprintf(stderr, "  FAIL: test_csr_fcsr_family: dbt_init\n");
+            return;
+        }
+        dbt.max_dispatch = 10000;
+        g_dbt_exit_ctx = {};
+        int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+        // dbt_test_ecall2 returns 0; results live in the exit context.
+        //
+        g_tests_run++;
+        if (rc == 0) {
+            g_tests_passed++;
+        } else {
+            g_tests_failed++;
+            fprintf(stderr, "  FAIL: csr dbt: dbt_run rc=%d, expected 0\n", rc);
+        }
+        CHECK_EQ("csr dbt: a0 (x5 snapshot)", g_dbt_exit_ctx.x[10], 0x3FULL);
+        CHECK_EQ("csr dbt: fcsr after frm=1|fflags", g_dbt_exit_ctx.x[5], 0x3FULL);
+        CHECK_EQ("csr dbt: fcsr after frm clear", g_dbt_exit_ctx.x[6], 0x1FULL);
+        CHECK_EQ("csr dbt: fflags readback", g_dbt_exit_ctx.x[7], 0x1FULL);
+        CHECK_EQ("csr dbt: fcsr final",
+                 static_cast<uint64_t>(g_dbt_exit_ctx.fcsr), 0ULL);
+        // Must not have burned the dispatch budget (old livelock path).
+        //
+        g_tests_run++;
+        if (dbt.dispatch_count < 100) {
+            g_tests_passed++;
+        } else {
+            g_tests_failed++;
+            fprintf(stderr,
+                    "  FAIL: csr dbt: dispatch_count=%llu (suspected livelock)\n",
+                    static_cast<unsigned long long>(dbt.dispatch_count));
+        }
+        dbt_cleanup(&dbt);
+    }
+}
+
+// #1333: CSR number 0x001 (fflags) must never be taken as EBREAK.
+//
+static void test_csr_fflags_not_ebreak() {
+    printf("test_csr_fflags_not_ebreak...\n");
+
+    std::vector<uint32_t> code = {
+        CSRRWI(0, 0x001, 3),   // fflags = 3
+        CSRRS(10, 0x001, 0),   // a0 = fflags
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_csr_fflags_not_ebreak: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 10000;
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    // Pre-fix: dbt_run returned -1 with "EBREAK at 0x0".  Now it should
+    // exit via ECALL with a0 = 3 (dbt_test_ecall2 returns 0; check ctx).
+    //
+    g_tests_run++;
+    if (rc == 0) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr,
+                "  FAIL: csr fflags: dbt_run rc=%d (pre-fix: -1 EBREAK)\n",
+                rc);
+    }
+    CHECK_EQ("csr fflags: a0", g_dbt_exit_ctx.x[10], 3ULL);
+    CHECK_EQ("csr fflags: fcsr",
+             static_cast<uint64_t>(g_dbt_exit_ctx.fcsr), 3ULL);
+    dbt_cleanup(&dbt);
+}
+
+// #1333: unsupported CSR numbers refuse the block (no same-PC spin).
+//
+static void test_unsupported_csr_refuses_block() {
+    printf("test_unsupported_csr_refuses_block...\n");
+
+    // cycle (0xC00) is not implemented.
+    //
+    std::vector<uint32_t> code = {
+        CSRRS(5, 0xC00, 0),
+        ADDI(10, 5, 0),
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_unsupported_csr_refuses_block: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 1000;
+
+    jit_write_begin();
+    uint8_t *native = dbt_backend_translate_block(&dbt, 0);
+    CHECK_EQ("unsupported csr: translate returns null",
+             reinterpret_cast<uintptr_t>(native), 0ULL);
+
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == -1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr,
+                "  FAIL: unsupported csr: dbt_run rc=%d, expected -1\n", rc);
+    }
+    dbt_cleanup(&dbt);
+}
+
 // #1323: unhandled guest instructions must refuse block translation, not
 // silently advance past the insn (leaving rd stale) or spin at the same PC.
 // FCLASS.D (funct3=1) is unimplemented on every host backend today.
@@ -1298,10 +1505,14 @@ static void test_unhandled_refuses_block() {
 
     // Translate of the entry block must fail — not produce a runnable stub.
     //
+    dbt.xlate_fail = dbt_state_t::XLATE_OK;
     jit_write_begin();
     uint8_t *native = dbt_backend_translate_block(&dbt, 0);
     CHECK_EQ("unhandled refuse: translate returns null",
              reinterpret_cast<uintptr_t>(native), 0ULL);
+    CHECK_EQ("unhandled refuse: xlate_fail is REFUSE",
+             static_cast<uint64_t>(dbt.xlate_fail),
+             static_cast<uint64_t>(dbt_state_t::XLATE_REFUSE));
 
     // dbt_run must not silently skip to the sentinel (a0 == 0x0BEE).
     //
@@ -1318,6 +1529,113 @@ static void test_unhandled_refuses_block() {
     // If skip were still in effect, ecall would exit with a0 = 0x0BEE.
     CHECK_EQ("unhandled refuse: sentinel not executed",
              g_dbt_exit_ctx.x[10], 0ULL);
+    // Refuse must not be miscounted as buffer-full (#1331).
+    //
+    CHECK_EQ("unhandled refuse: code_full stays 0", dbt.code_full, 0ULL);
+    CHECK_EQ("unhandled refuse: code_reclaims stays 0", dbt.code_reclaims, 0ULL);
+
+    dbt_cleanup(&dbt);
+}
+
+// #1331: a refuse after program code is already in the buffer must not
+// reclaim that region (would burn the 1/run thrash budget and wipe live
+// translations for a non-occupancy failure).
+//
+static void test_refuse_does_not_reclaim() {
+    printf("test_refuse_does_not_reclaim...\n");
+
+    // Block A at 0: ADDI; ECALL — fills some program space.
+    // Block B at 0x40: unhandled FCLASS then ECALL — refuse.
+    //
+    std::vector<uint32_t> code_a = {
+        ADDI(10, 0, 7),
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+    std::vector<uint32_t> code_b = {
+        r_type(OP_FP, 5, 1, 0, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        ADDI(10, 0, 0),
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code_a.size(); i++) {
+        memcpy(memory.data() + i * 4, &code_a[i], 4);
+    }
+    const uint64_t block_b_pc = 0x40;
+    for (size_t i = 0; i < code_b.size(); i++) {
+        memcpy(memory.data() + block_b_pc + i * 4, &code_b[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_refuse_does_not_reclaim: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 10000;
+
+    // Translate block A successfully so code_used > 0 (and > blob if any).
+    //
+    jit_write_begin();
+    uint8_t *a = dbt_backend_translate_block(&dbt, 0);
+    g_tests_run++;
+    if (a) {
+        g_tests_passed++;
+        dbt_cache_insert(&dbt, 0, a);
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: refuse/reclaim: block A translate failed\n");
+        dbt_cleanup(&dbt);
+        return;
+    }
+    const uint32_t used_after_a = dbt.code_used;
+    const uint64_t reclaims_before = dbt.code_reclaims;
+
+    // Pretend a blob boundary exists below A so reclaim would be eligible
+    // if we wrongly treated refuse as FULL.
+    //
+    dbt.blob_code_end = 1;
+    dbt.reclaims_this_run = 0;
+
+    dbt.xlate_fail = dbt_state_t::XLATE_OK;
+    jit_write_begin();
+    uint8_t *b = dbt_backend_translate_block(&dbt, block_b_pc);
+    CHECK_EQ("refuse/reclaim: B returns null",
+             reinterpret_cast<uintptr_t>(b), 0ULL);
+    CHECK_EQ("refuse/reclaim: B is REFUSE",
+             static_cast<uint64_t>(dbt.xlate_fail),
+             static_cast<uint64_t>(dbt_state_t::XLATE_REFUSE));
+
+    // Drive the dispatch path that used to reclaim on any null: start at B.
+    //
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, block_b_pc, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == -1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: refuse/reclaim: dbt_run rc=%d, expected -1\n",
+                rc);
+    }
+    CHECK_EQ("refuse/reclaim: code_full stays 0", dbt.code_full, 0ULL);
+    CHECK_EQ("refuse/reclaim: no reclaim", dbt.code_reclaims, reclaims_before);
+    // Program region for A must still be present (code_used not rewound
+    // to blob_code_end=1).
+    //
+    g_tests_run++;
+    if (dbt.code_used >= used_after_a) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr,
+                "  FAIL: refuse/reclaim: code_used=%u rewound below %u\n",
+                dbt.code_used, used_after_a);
+    }
 
     dbt_cleanup(&dbt);
 }
@@ -2031,6 +2349,262 @@ static void test_intrinsic_alloc() {
     CHECK_EQ("alloc: guest ptr store/load round-trip", g_dbt_exit_ctx.x[6], 0x5AULL);
 }
 
+
+// ---------------------------------------------------------------
+// FCVT rounding modes (#1320)
+// ---------------------------------------------------------------
+//
+// RISC-V selects the rounding mode per instruction; ARM selects it per
+// opcode.  The backend used FCVTZS/FCVTZU for everything, which truncates,
+// so RNE -- the default, and what the assembler emits when no mode is
+// written -- behaved as RTZ and turned 1.5 into 1.
+//
+// Expected values come from qemu-riscv64 executing the same instructions,
+// not from the interpreter: until #1319 the interpreter truncated too, so
+// a differential check against it would have agreed and proved nothing.
+// Inputs are the ones that discriminate between modes -- halfway ties in
+// both parities and both signs, a value above and below the halfway point,
+// and the boundary where rounding pushes the result out of int32 range.
+// Saturation and NaN are covered by test_fcvt_nan_and_range above (#1313).
+//
+struct fcvt_rm_row_t {
+    uint64_t in;        // input double, as bits
+    uint8_t  sel;       // rs2: 0=W 1=WU 2=L 3=LU
+    uint64_t expect[5]; // by rounding mode: RNE RTZ RDN RUP RMM
+};
+
+static const fcvt_rm_row_t FCVT_RM_GOLDEN[] = {
+    { 0x3FE0000000000000ULL, 0, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.w.d 
+    { 0x3FE0000000000000ULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.wu.d
+    { 0x3FE0000000000000ULL, 2, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.l.d 
+    { 0x3FE0000000000000ULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.lu.d
+    { 0x3FF8000000000000ULL, 0, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.w.d 
+    { 0x3FF8000000000000ULL, 1, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.wu.d
+    { 0x3FF8000000000000ULL, 2, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.l.d 
+    { 0x3FF8000000000000ULL, 3, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.lu.d
+    { 0x4004000000000000ULL, 0, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.w.d 
+    { 0x4004000000000000ULL, 1, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.wu.d
+    { 0x4004000000000000ULL, 2, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.l.d 
+    { 0x4004000000000000ULL, 3, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.lu.d
+    { 0x4004CCCCCCCCCCCDULL, 0, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.w.d 
+    { 0x4004CCCCCCCCCCCDULL, 1, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.wu.d
+    { 0x4004CCCCCCCCCCCDULL, 2, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.l.d 
+    { 0x4004CCCCCCCCCCCDULL, 3, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.lu.d
+    { 0xC004000000000000ULL, 0, { 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.5      fcvt.w.d 
+    { 0xC004000000000000ULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.5      fcvt.wu.d
+    { 0xC004000000000000ULL, 2, { 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.5      fcvt.l.d 
+    { 0xC004000000000000ULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.5      fcvt.lu.d
+    { 0xC004CCCCCCCCCCCDULL, 0, { 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.6      fcvt.w.d 
+    { 0xC004CCCCCCCCCCCDULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.6      fcvt.wu.d
+    { 0xC004CCCCCCCCCCCDULL, 2, { 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.6      fcvt.l.d 
+    { 0xC004CCCCCCCCCCCDULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.6      fcvt.lu.d
+    { 0x400C000000000000ULL, 0, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.w.d 
+    { 0x400C000000000000ULL, 1, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.wu.d
+    { 0x400C000000000000ULL, 2, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.l.d 
+    { 0x400C000000000000ULL, 3, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.lu.d
+    { 0xBFE0000000000000ULL, 0, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL } },  // -0.5      fcvt.w.d 
+    { 0xBFE0000000000000ULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -0.5      fcvt.wu.d
+    { 0xBFE0000000000000ULL, 2, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL } },  // -0.5      fcvt.l.d 
+    { 0xBFE0000000000000ULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -0.5      fcvt.lu.d
+    { 0x41DFFFFFFFE00000ULL, 0, { 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL } },  // 2^31-0.5  fcvt.w.d 
+    { 0x41DFFFFFFFE00000ULL, 1, { 0xFFFFFFFF80000000ULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0xFFFFFFFF80000000ULL, 0xFFFFFFFF80000000ULL } },  // 2^31-0.5  fcvt.wu.d
+    { 0x41DFFFFFFFE00000ULL, 2, { 0x0000000080000000ULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x0000000080000000ULL, 0x0000000080000000ULL } },  // 2^31-0.5  fcvt.l.d 
+    { 0x41DFFFFFFFE00000ULL, 3, { 0x0000000080000000ULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x0000000080000000ULL, 0x0000000080000000ULL } },  // 2^31-0.5  fcvt.lu.d
+};
+
+// Run one FCVT through the DBT.  `frm` is only consulted when rm == 7, and
+// is seeded straight into ctx because the DBT cannot execute a CSR write to
+// set it (see #1333); dbt_run wipes ctx, so this goes in through dbt_resume.
+static uint64_t run_fcvt_dbt(uint64_t in, uint8_t sel, uint8_t rm, uint8_t frm) {
+    const size_t MEM_SIZE = 64 * 1024;
+    const uint64_t DATA = 0x400;   // must fit a signed 12-bit ADDI immediate
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    memcpy(memory.data() + DATA, &in, 8);
+
+    const uint32_t code[4] = {
+        ADDI(9, 0, (int32_t)DATA),
+        (uint32_t)(0x07u | (1u << 7) | (3u << 12) | (9u << 15)),      // FLD f1,0(x9)
+        (uint32_t)(0xC2000000u | (5u << 7) | ((uint32_t)rm << 12)
+                   | (1u << 15) | ((uint32_t)sel << 20) | 0x53u),     // FCVT x5,f1
+        ECALL()
+    };
+    memcpy(memory.data(), code, sizeof(code));
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        return ~0ULL;
+    }
+    dbt.max_dispatch = 1000000;
+    dbt.ctx = {};
+    dbt.ctx.x[2] = MEM_SIZE - 16;
+    dbt.ctx.mem_size = MEM_SIZE;
+    dbt.ctx.fcsr = (uint32_t)(frm & 7u) << 5;
+    dbt_resume(&dbt, 0);
+    dbt_cleanup(&dbt);
+    return g_dbt_exit_ctx.x[5];
+}
+
+static void test_fcvt_rounding_modes() {
+    printf("test_fcvt_rounding_modes...\n");
+    static const char *RM_NAME[5] = { "rne", "rtz", "rdn", "rup", "rmm" };
+    static const char *CVT[4] = { "fcvt.w.d", "fcvt.wu.d",
+                                  "fcvt.l.d", "fcvt.lu.d" };
+    const size_t n = sizeof(FCVT_RM_GOLDEN) / sizeof(FCVT_RM_GOLDEN[0]);
+    char desc[160];
+    for (size_t i = 0; i < n; i++) {
+        const fcvt_rm_row_t &row = FCVT_RM_GOLDEN[i];
+        for (uint8_t rm = 0; rm < 5; rm++) {
+            // Static mode: the rm field selects directly.
+            uint64_t got = run_fcvt_dbt(row.in, row.sel, rm, 0);
+            snprintf(desc, sizeof(desc), "DBT %s %s in=0x%llX -> 0x%llX (got 0x%llX)",
+                     CVT[row.sel], RM_NAME[rm], (unsigned long long)row.in,
+                     (unsigned long long)row.expect[rm], (unsigned long long)got);
+            CHECK_EQ(desc, got, row.expect[rm]);
+
+            // Dynamic mode: rm=7 must resolve to the same answer through
+            // fcsr.frm.  This is the encoding the assembler emits by
+            // default, so it is the common case rather than the exotic one.
+            got = run_fcvt_dbt(row.in, row.sel, 7, rm);
+            snprintf(desc, sizeof(desc), "DBT %s dyn frm=%s in=0x%llX -> 0x%llX (got 0x%llX)",
+                     CVT[row.sel], RM_NAME[rm], (unsigned long long)row.in,
+                     (unsigned long long)row.expect[rm], (unsigned long long)got);
+            CHECK_EQ(desc, got, row.expect[rm]);
+        }
+    }
+}
+
+// #1338: superblock side exits must not drop dirty FP state.
+//
+// Fuzzer seed-7 shape: a counted loop with two forward branches and an
+// fdiv on the fall-through of the first.  Every iteration that executes
+// fdiv then takes the second side exit (bgeu), so without an FP flush at
+// side-exit points the NaN never lands in ctx.f[4].
+//
+static void test_1338_superblock_side_exit_fp() {
+    printf("test_1338_superblock_side_exit_fp...\n");
+
+    // Guest words from the issue (plus a7=93 so the interpreter ecall exits).
+    //
+    std::vector<uint32_t> code = {
+        0x40000493u, // addi x9, x0, 1024
+        0x00500413u, // addi x8, x0, 5
+        0x00D35463u, // bge  x6, x13, +8   (skip fdiv when x6>=x13)
+        0x1A140253u, // fdiv.d f4, f8, f1  (0/0 -> canonical NaN)
+        0x01B37663u, // bgeu x6, x27, +12  (always taken while both stay 0)
+        0xFFF00693u, // addi x13, x0, -1
+        0x03569693u, // slli x13, x13, 53
+        0x7FF68693u, // addi x13, x13, 2047
+        0xFFF40413u, // addi x8, x8, -1
+        0xFE0412E3u, // bne  x8, x0, -28   (back edge to bge)
+        0x05D00893u, // addi x17, x0, 93   (a7 = exit)
+        0x00000073u, // ecall
+    };
+
+    TestResult ir = run_code(code);
+    const uint64_t f4_i = ir.state.f[4];
+    const uint64_t x13_i = ir.state.x[13];
+    CHECK_EQ("1338: interp f4 is canonical NaN", f4_i, 0x7FF8000000000000ULL);
+    CHECK_EQ("1338: interp x13", x13_i, 0x27FBULL);
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_1338: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 1000000;
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == 0) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_1338: dbt_run rc=%d\n", rc);
+    }
+
+    uint64_t f4_d = 0;
+    memcpy(&f4_d, &g_dbt_exit_ctx.f[4], 8);
+    CHECK_EQ("1338: dbt f4 matches interp (not dropped on side exit)",
+             f4_d, f4_i);
+    CHECK_EQ("1338: dbt x13 matches", g_dbt_exit_ctx.x[13], x13_i);
+    // The bug is superblock-specific; require we actually formed one so
+    // the test cannot pass by silently disabling superblocks.
+    //
+    g_tests_run++;
+    if (dbt.superblock_count >= 1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_1338: expected a superblock, got %llu\n",
+                static_cast<unsigned long long>(dbt.superblock_count));
+    }
+    dbt_cleanup(&dbt);
+}
+
+// NaN canonicalisation (#1337).
+//
+// RISC-V returns the canonical quiet NaN 0x7FF8000000000000 from any
+// operation that produces a NaN.  It never propagates an operand's payload,
+// which is what both hosts do by default and what both routes therefore
+// used to do: `fadd.d` of a payload-carrying NaN returned that payload.
+//
+// The interpreter canonicalises explicitly; the a64 backend runs translated
+// code with FPCR.DN set, which makes the hardware do it for the whole
+// arithmetic surface.  Both are checked here because the differential
+// fuzzer cannot distinguish "both correct" from "both wrong in the same
+// way" -- and before this they were wrong in the same way.  Expected values
+// are from qemu-riscv64.
+//
+// Not covered here: FMIN/FMAX given a signalling NaN, where RISC-V returns
+// the *number* and ARM returns a NaN whatever DN says.  Separate defect.
+//
+static void test_fp_nan_canonicalisation() {
+    printf("test_fp_nan_canonicalisation...\n");
+    const uint64_t CANON = 0x7FF8000000000000ULL;
+
+    struct { const char *name; uint8_t f5; } OPS[] = {
+        { "fadd.d", FP_FADD }, { "fsub.d", FP_FSUB },
+        { "fmul.d", FP_FMUL }, { "fdiv.d", FP_FDIV },
+    };
+
+    for (size_t i = 0; i < sizeof(OPS)/sizeof(OPS[0]); i++) {
+        for (int swap = 0; swap <= 1; swap++) {
+            // Put the payload NaN in one operand and 1.0 in the other, so
+            // the result is a NaN produced from a NaN input -- which is the
+            // case that propagates a payload rather than generating a fresh
+            // canonical one.
+            std::vector<uint32_t> code = {
+                LUI(6, 0x2000),
+                ADDI(5, 0, -1),
+                r_type(OP_FP, 1, 0, 5, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f1 = payload NaN
+                ADDI(7, 0, 0x3FF),
+                SLLI(7, 7, 52),
+                r_type(OP_FP, 2, 0, 7, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f2 = 1.0
+                r_type(OP_FP, 3, 0, swap ? 2 : 1, swap ? 1 : 2,
+                       (uint8_t)((OPS[i].f5 << 2) | FP_FMT_D)),
+                ECALL()
+            };
+            char desc[128];
+            uint64_t interp = run_code(code).state.f[3];
+            uint64_t dbt    = run_code_dbt_fbits(code, 3);
+            snprintf(desc, sizeof(desc), "%s %s payload NaN: interpreter canonicalises",
+                     OPS[i].name, swap ? "rs2" : "rs1");
+            CHECK_EQ(desc, interp, CANON);
+            snprintf(desc, sizeof(desc), "%s %s payload NaN: DBT canonicalises",
+                     OPS[i].name, swap ? "rs2" : "rs1");
+            CHECK_EQ(desc, dbt, CANON);
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2068,12 +2642,19 @@ int main(int argc, char *argv[]) {
     test_fp_fma();
     test_fp_fclass();
     test_unhandled_refuses_block();
+    test_refuse_does_not_reclaim();
+    test_csr_fcsr_family();
+    test_csr_fflags_not_ebreak();
+    test_unsupported_csr_refuses_block();
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
     test_selfloop_pressure_forward_branch();
     test_selfloop_pressure_regw_rs2();
     test_selfloop_pressure_fp_int_rd();
     test_fsgnj_rd_aliases_rs2();
+    test_fcvt_rounding_modes();
+    test_1338_superblock_side_exit_fp();
+    test_fp_nan_canonicalisation();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
@@ -2115,3 +2696,4 @@ int main(int argc, char *argv[]) {
 
     return (g_tests_failed > 0 || elf_failures > 0 || dbt_failures > 0) ? 1 : 0;
 }
+

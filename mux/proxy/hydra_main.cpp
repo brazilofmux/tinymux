@@ -551,6 +551,13 @@ int main(int argc, char* argv[]) {
     }
 
     LOG_INFO("Drain complete, shutting down");
+#ifdef GRPC_ENABLED
+    // Nothing will drain the work queue after this point, so release any
+    // gRPC thread parked on a full queue before ~GrpcServer's Shutdown()
+    // starts waiting for in-flight RPCs to finish (#1286).
+    //
+    workQueue.stop();
+#endif
     engine->shutdown();
     accounts.shutdown();
     logShutdown();

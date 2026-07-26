@@ -227,6 +227,70 @@ bool dbt_resolve_direct_jalr_target(uint64_t pc,
                                      uint64_t *target_out,
                                      uint64_t *return_pc_out);
 
+// Apply a CSR access against ctx->fcsr.  Matches the interpreter's
+// fflags (0x001) / frm (0x002) / fcsr (0x003) support (#1333).
+// src is rs1 for CSRRW/CSRRS/CSRRC, or the zimm for CSRRWI/CSRRSI/CSRRCI.
+// On success writes the prior CSR value into ctx->x[rd] (if rd != 0)
+// and updates fcsr; returns 0.  Returns -1 for unsupported CSR numbers
+// or illegal funct3 (backends must refuse those at translate time).
+//
+// Inline so the multi-backend `test_chain` binary (which does not link
+// dbt.cpp) still resolves the symbol when backends emit host calls to it.
+//
+static inline int dbt_csr_apply(rv64_ctx_t *ctx, uint32_t csr_addr,
+                                uint32_t funct3, uint64_t src, uint32_t rd)
+{
+    uint64_t csr_val = 0;
+    switch (csr_addr)
+    {
+    case 0x001: csr_val = ctx->fcsr & 0x1Fu; break;
+    case 0x002: csr_val = (ctx->fcsr >> 5) & 0x7u; break;
+    case 0x003: csr_val = ctx->fcsr & 0xFFu; break;
+    default:
+        return -1;
+    }
+
+    uint64_t new_val = csr_val;
+    switch (funct3)
+    {
+    case 1: // CSRRW
+    case 5: // CSRRWI
+        new_val = src;
+        break;
+    case 2: // CSRRS
+    case 6: // CSRRSI
+        new_val = csr_val | src;
+        break;
+    case 3: // CSRRC
+    case 7: // CSRRCI
+        new_val = csr_val & ~src;
+        break;
+    default:
+        return -1;
+    }
+
+    if (rd)
+    {
+        ctx->x[rd] = csr_val;
+    }
+    switch (csr_addr)
+    {
+    case 0x001:
+        ctx->fcsr = (ctx->fcsr & ~0x1Fu)
+                  | (static_cast<uint32_t>(new_val) & 0x1Fu);
+        break;
+    case 0x002:
+        ctx->fcsr = (ctx->fcsr & ~0xE0u)
+                  | ((static_cast<uint32_t>(new_val) & 0x7u) << 5);
+        break;
+    case 0x003:
+        ctx->fcsr = static_cast<uint32_t>(new_val) & 0xFFu;
+        break;
+    }
+    ctx->x[0] = 0;
+    return 0;
+}
+
 // Trace helpers.
 bool dbt_trace_translate_enabled(const dbt_state_t *dbt, uint64_t guest_pc);
 void dbt_trace_translate_pc(dbt_state_t *dbt, uint64_t guest_pc,
@@ -244,7 +308,23 @@ void dbt_backend_emit_trampoline(dbt_state_t *dbt);
 
 // Translate a single RV64 block to native host code.
 // Returns pointer to native code, or nullptr on failure.
+// On nullptr the backend must set dbt->xlate_fail to XLATE_FULL (capacity)
+// or XLATE_REFUSE (unhandled insn); dbt_run only reclaims on FULL (#1331).
+//
 uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc);
+
+// Helpers for backends: set fail reason and return nullptr.
+//
+static inline uint8_t *dbt_xlate_full(dbt_state_t *dbt)
+{
+    dbt->xlate_fail = dbt_state_t::XLATE_FULL;
+    return nullptr;
+}
+static inline uint8_t *dbt_xlate_refuse(dbt_state_t *dbt)
+{
+    dbt->xlate_fail = dbt_state_t::XLATE_REFUSE;
+    return nullptr;
+}
 
 // Backpatch a single JMP/branch instruction in the code buffer.
 // Platform-specific because the patch format differs (x86-64 rel32

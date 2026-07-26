@@ -481,6 +481,8 @@ void hir_const_fold(hir_program &h) {
                     case FMATH_POW:   r = ::pow(a, b);   break;
                     case FMATH_ATAN2: r = ::atan2(a, b); break;
                     case FMATH_FMOD:  r = ::fmod(a, b);  break;
+                    case FMATH_FMAX:  r = ::fmax(a, b);  break;
+                    case FMATH_FMIN:  r = ::fmin(a, b);  break;
                     default: goto no_fold2;
                     }
                     h.kind[i] = HIR_FCONST;
