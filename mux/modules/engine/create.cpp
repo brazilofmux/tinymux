@@ -696,7 +696,7 @@ void do_create
         return;
     }
     else if (  nargs == 2
-            && (cost = mux_atol(coststr)) < 0)
+            && (cost = mux_atoi64(coststr)) < 0)
     {
         notify_quiet(executor, T("You can\xE2\x80\x99t create an object for less than nothing!"));
         return;
@@ -819,7 +819,7 @@ void do_clone
     const dbref new_owner = (key & CLONE_PRESERVE) ? Owner(thing) : Owner(executor);
     if (key & CLONE_SET_COST)
     {
-        cost = mux_atol(arg2);
+        cost = mux_atoi64(arg2);
         if (cost < mudconf.createmin)
             cost = mudconf.createmin;
         if (cost > mudconf.createmax)

@@ -312,7 +312,7 @@ static bool ReadListOfNumbers(FILE* fp, const int cnt, int anum[])
                 || ('-' == p[0]
                     && mux_isdigit(p[1])))
             {
-                anum[i] = mux_atol(p);
+                anum[i] = mux_atoi64(p);
                 do
                 {
                     p++;
@@ -461,7 +461,7 @@ void load_comsystem_V5(FILE* fp)
     {
         return;
     }
-    nc = mux_atol(temp);
+    nc = mux_atoi64(temp);
 
     for (int i = 0; i < nc; i++)
     {
@@ -607,7 +607,7 @@ void load_comsystem_V4(FILE* fp)
     {
         return;
     }
-    nc = mux_atol(temp);
+    nc = mux_atoi64(temp);
 
     for (int i = 0; i < nc; i++)
     {
@@ -754,7 +754,7 @@ void load_comsystem_V0123(FILE* fp)
     {
         // +V2 has colored headers.
         //
-        ver = mux_atol(temp + 2);
+        ver = mux_atoi64(temp + 2);
         if (ver < 1 || 3 < ver)
         {
             return;
@@ -764,7 +764,7 @@ void load_comsystem_V0123(FILE* fp)
     }
     else
     {
-        nc = mux_atol(temp);
+        nc = mux_atoi64(temp);
     }
 
     for (int i = 0; i < nc; i++)
@@ -1595,7 +1595,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
         int nRecall = DFLT_RECALL_REQUEST;
         if (arg2[4] == ' ')
         {
-            nRecall = mux_atol(arg2 + 5);
+            nRecall = mux_atoi64(arg2 + 5);
         }
         do_comlast(player, ch, nRecall);
     }
@@ -1837,7 +1837,7 @@ void SendChannelMessage
             && pattr->number)
         {
             LBuf maxbuf = LBuf_Adopt(atr_get("SendChannelMessage.1141", obj, pattr->number, &aowner, &aflags));
-            logmax = mux_atol(maxbuf);
+            logmax = mux_atoi64(maxbuf);
         }
 
         if (0 < logmax)
@@ -2125,7 +2125,7 @@ void do_comlast(dbref player, struct channel* ch, int arg)
         && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
     {
         LBuf maxbuf = LBuf_Adopt(atr_get("do_comlast.1408", obj, pattr->number, &aowner, &aflags));
-        logmax = mux_atol(maxbuf);
+        logmax = mux_atoi64(maxbuf);
     }
 
     if (logmax < 1)
@@ -2174,7 +2174,7 @@ static bool do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* arg)
     int value = 0;
     if (nullptr == arg
         || !is_integer(arg, nullptr)
-        || ((value = mux_atol(arg)) != 0
+        || ((value = mux_atoi64(arg)) != 0
             && value != 1))
     {
         // arg is not "0" and not "1".
@@ -2229,7 +2229,7 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     int value;
     if (!*arg
         || !is_integer(arg, nullptr)
-        || (value = mux_atol(arg)) > MAX_RECALL_REQUEST)
+        || (value = mux_atoi64(arg)) > MAX_RECALL_REQUEST)
     {
         return false;
     }
@@ -2256,7 +2256,7 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     dbref aowner;
     int aflags;
     LBuf oldvalue = LBuf_Adopt(atr_get("do_chanlog.1477", ch->chan_obj, atr, &aowner, &aflags));
-    const int oldnum = mux_atol(oldvalue);
+    const int oldnum = mux_atoi64(oldvalue);
     if (value < oldnum)
     {
         for (int count = 0; count <= oldnum; count++)
@@ -3406,7 +3406,7 @@ void do_editchannel
 
     case EDIT_CHANNEL_CCHARGE:
         {
-            const int c_charge = mux_atol(arg2);
+            const int c_charge = mux_atoi64(arg2);
             if (0 <= c_charge
                 && c_charge <= MAX_COST)
             {
@@ -4216,8 +4216,8 @@ FUNCTION(fun_channels)
 
     int pg_offset = 0;
     int pg_limit  = 0;
-    if (nfargs >= 3) pg_offset = mux_atol(fargs[2]);
-    if (nfargs >= 4) pg_limit  = mux_atol(fargs[3]);
+    if (nfargs >= 3) pg_offset = mux_atoi64(fargs[2]);
+    if (nfargs >= 4) pg_limit  = mux_atoi64(fargs[3]);
     if (pg_offset < 0) pg_offset = 0;
     if (pg_limit < 0)  pg_limit = 0;
 
@@ -4441,7 +4441,7 @@ FUNCTION(fun_cbuffer)
             int aflags;
             LBuf maxbuf = LBuf_Adopt(atr_get("fun_cbuffer", ch->chan_obj,
                 pattr->number, &aowner, &aflags));
-            logmax = mux_atol(maxbuf);
+            logmax = mux_atoi64(maxbuf);
         }
     }
     safe_str(mux_ltoa_t(logmax), buff, bufc);
@@ -4644,7 +4644,7 @@ FUNCTION(fun_crecall)
         int aflags;
         LBuf maxbuf = LBuf_Adopt(atr_get("fun_crecall", ch->chan_obj,
             pattr->number, &aowner, &aflags));
-        logmax = mux_atol(maxbuf);
+        logmax = mux_atoi64(maxbuf);
     }
     if (logmax < 1)
     {
@@ -4656,7 +4656,7 @@ FUNCTION(fun_crecall)
     int nLines = 1;
     if (nfargs >= 2 && fargs[1][0] != '\0')
     {
-        nLines = mux_atol(fargs[1]);
+        nLines = mux_atoi64(fargs[1]);
         if (nLines < 1) nLines = 1;
         if (nLines > logmax) nLines = logmax;
     }
@@ -4808,7 +4808,7 @@ FUNCTION(fun_chaninfo)
                 int aflags;
                 LBuf maxbuf = LBuf_Adopt(atr_get("fun_chaninfo", ch->chan_obj,
                     pattr->number, &aowner, &aflags));
-                logmax = mux_atol(maxbuf);
+                logmax = mux_atoi64(maxbuf);
             }
         }
         safe_str(mux_ltoa_t(logmax), buff, bufc);
@@ -4972,8 +4972,8 @@ FUNCTION(fun_chanusers)
 
     int pg_offset = 0;
     int pg_limit  = 0;
-    if (nfargs >= 4) pg_offset = mux_atol(fargs[3]);
-    if (nfargs >= 5) pg_limit  = mux_atol(fargs[4]);
+    if (nfargs >= 4) pg_offset = mux_atoi64(fargs[3]);
+    if (nfargs >= 5) pg_limit  = mux_atoi64(fargs[4]);
     if (pg_offset < 0) pg_offset = 0;
     if (pg_limit < 0)  pg_limit = 0;
 

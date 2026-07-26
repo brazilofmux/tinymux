@@ -458,7 +458,7 @@ static void update_newobjects(dbref player, dbref object_num, int object_type)
               nullptr != ptr && i < 4;
               ptr = st.parse(), i++)
         {
-            object_list[i] = mux_atol(ptr);
+            object_list[i] = mux_atoi64(ptr);
         }
     }
 
@@ -1261,7 +1261,7 @@ static void purge_going(void)
             }
             else
             {
-                dbref player = static_cast<dbref>(mux_atol(p));
+                dbref player = static_cast<dbref>(mux_atoi64(p));
                 // #1183: A_DESTROYER is wizard-writable and may be stale or
                 // corrupt; never chown inventory to a non-owner dbref.
                 //

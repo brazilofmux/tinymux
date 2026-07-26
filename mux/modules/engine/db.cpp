@@ -535,7 +535,7 @@ FWDLIST *fwdlist_load(dbref player, UTF8 *atext)
                    && mux_isdigit(*dp))
                 {
                     bool fail;
-                    dbref target = mux_atol(dp);
+                    dbref target = mux_atoi64(dp);
                     if (mudstate.bStandAlone)
                     {
                         fail = !Good_obj(target);
@@ -1098,7 +1098,7 @@ void do_fixdb
         res = noisy_match_result();
         break;
     case FIXDB_PENNIES:
-        res = mux_atol(arg2);
+        res = mux_atoi64(arg2);
         break;
     }
 
@@ -3140,7 +3140,7 @@ dbref parse_dbref(const UTF8 *s)
 
             if ('\0' == *p)
             {
-                int x = mux_atol(s);
+                int x = mux_atoi64(s);
                 return ((x >= 0) ? x : NOTHING);
             }
         }
@@ -3148,7 +3148,7 @@ dbref parse_dbref(const UTF8 *s)
         {
             // Parse objid format: dbref:timestamp
             //
-            int x = mux_atol(s);
+            int x = mux_atoi64(s);
             if (x < 0)
             {
                 return NOTHING;

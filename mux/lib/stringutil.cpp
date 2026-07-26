@@ -1240,7 +1240,7 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
             }
             if (0 == nSpaces)
             {
-                rgb.r = mux_atol(p+i-nDigits);
+                rgb.r = mux_atoi64(p+i-nDigits);
                 if (rgb.r < 0 || 255 < rgb.r)
                 {
                     return false;
@@ -1248,7 +1248,7 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
             }
             else
             {
-                rgb.g = mux_atol(p+i-nDigits);
+                rgb.g = mux_atoi64(p+i-nDigits);
                 if (rgb.g < 0 || 255 < rgb.g)
                 {
                     return false;
@@ -1272,7 +1272,7 @@ bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb)
     {
         return false;
     }
-    rgb.b = mux_atol(p+n-nDigits-1);
+    rgb.b = mux_atoi64(p+n-nDigits-1);
     if (rgb.b < 0 || 255 < rgb.b)
     {
         return false;

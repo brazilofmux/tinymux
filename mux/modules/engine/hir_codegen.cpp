@@ -1329,7 +1329,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 if (  h.kind[s1] == HIR_SCONST
                    && !h.runtime_ref[s1]) {
                     int64_t v = static_cast<int64_t>(
-                        mux_atol(u8(h.sval[s1])));
+                        mux_atoi64(u8(h.sval[s1])));
                     rv_load_i64(rc.code, dest, v);
                 } else {
                     // SCONST runtime_ref: loc.addr was set from h.val (guest

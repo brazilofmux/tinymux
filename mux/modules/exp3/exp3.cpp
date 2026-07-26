@@ -62,8 +62,8 @@
  *    exposed as a separate interface.
  *
  * 7. DBREF PARSING — The module receives fargs as strings.  Converting
- *    "#123" to a dbref requires mux_atol() and Good_obj() validation.
- *    mux_atol() is in stringutil.cpp (netmux-internal).  Good_obj()
+ *    "#123" to a dbref requires mux_atoi64() and Good_obj() validation.
+ *    mux_atoi64() is in stringutil.cpp (netmux-internal).  Good_obj()
  *    needs db_top (netmux-internal).  Even basic argument validation
  *    requires netmux cooperation.
  *
@@ -145,7 +145,7 @@ static void safe_ltoa(int val, UTF8 *buff, UTF8 **bufp)
 }
 
 // Parse a dbref from a string like "#123".  Returns -1 on failure.
-// WALL: This is a crude approximation.  The real mux_atol() and Good_obj()
+// WALL: This is a crude approximation.  The real mux_atoi64() and Good_obj()
 // are in netmux.  We can't validate that the dbref actually exists without
 // db_top, which is inaccessible.
 //

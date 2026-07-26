@@ -573,7 +573,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     {
         if (is_integer(name, nullptr))
         {
-            victim = mux_atol(name);
+            victim = mux_atoi64(name);
         }
         else
         {
@@ -656,7 +656,7 @@ void do_poor(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         return;
     }
 
-    int amt = mux_atol(arg1);
+    int amt = mux_atoi64(arg1);
     int curamt;
     dbref a;
     DO_WHOLE_DB(a)

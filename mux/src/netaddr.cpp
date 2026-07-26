@@ -576,7 +576,7 @@ bool parse_site_threshold(UTF8 *str, unsigned long *pulThreshold)
         return true;
     }
 
-    const long lThreshold = mux_atol(pLast);
+    const long lThreshold = mux_atoi64(pLast);
     if (lThreshold < 0)
     {
         return false;
@@ -696,7 +696,7 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
             return nullptr;
         }
 
-        num_leading_bits = mux_atol(mask_txt);
+        num_leading_bits = mux_atoi64(mask_txt);
     }
 
     n = 0;
@@ -857,7 +857,7 @@ static bool convert_service(const UTF8 *string, long *result)
     {
         return false;
     }
-    *result = mux_atol(string);
+    *result = mux_atoi64(string);
     return *result >= 0;
 }
 

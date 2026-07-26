@@ -480,7 +480,7 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
     {
         long result;
         if (  !aFields[i]
-           || (result = mux_atol(aFields[i])) < 0)
+           || (result = mux_atoi64(aFields[i])) < 0)
         {
             result = 0;
         }
@@ -518,7 +518,7 @@ long fetch_ConnectionInfoField(dbref target, int iField)
 
     long result;
     if (  !aFields[iField]
-       || (result = mux_atol(aFields[iField])) < 0)
+       || (result = mux_atoi64(aFields[iField])) < 0)
     {
         result = 0;
     }

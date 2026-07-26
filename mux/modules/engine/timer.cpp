@@ -245,7 +245,7 @@ void do_timewarp(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     int secs;
 
-    secs = mux_atol(arg);
+    secs = mux_atoi64(arg);
 
     // Sem/Wait queues
     //

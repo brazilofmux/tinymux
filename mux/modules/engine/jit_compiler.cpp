@@ -4821,7 +4821,7 @@ FUNCTION(fun__restore_cargs)
 
     if (!s_current_ecall_ctx || nfargs < 1) return;
 
-    int idx = mux_atol(fargs[0]);
+    int idx = mux_atoi64(fargs[0]);
     if (idx >= 0 && idx < MAX_CARG_SAVE_DEPTH
         && s_carg_save_stack[idx].in_use)
     {
@@ -4864,7 +4864,7 @@ FUNCTION(fun__set_ncargs)
 
     if (!s_current_ecall_ctx || nfargs < 1) return;
 
-    int n = mux_atol(fargs[0]);
+    int n = mux_atoi64(fargs[0]);
     if (n < 0) n = 0;
     if (n > 10) n = 10;
 
@@ -4895,7 +4895,7 @@ FUNCTION(fun__write_carg)
 
     if (!s_current_ecall_ctx || nfargs < 2) return;
 
-    int idx = mux_atol(fargs[0]);
+    int idx = mux_atoi64(fargs[0]);
     if (idx < 0 || idx >= 10) return;
 
     uint64_t dst = rv_compiler::CARGS_BASE
@@ -5319,7 +5319,7 @@ FUNCTION(fun_rvbench)
 
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
-    int iterations = mux_atol(fargs[1]);
+    int iterations = mux_atoi64(fargs[1]);
     if (iterations < 1) iterations = 1;
     if (iterations > 1000000) iterations = 1000000;
 

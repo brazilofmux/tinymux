@@ -330,7 +330,7 @@ static int dbnum(UTF8 *dbr)
     }
     else
     {
-        return mux_atol(dbr + 1);
+        return mux_atoi64(dbr + 1);
     }
 }
 
@@ -564,7 +564,7 @@ static FUNCTION(fun_rand)
     case 1:
         if (is_integer(fargs[0], &nDigits))
         {
-            int num = mux_atol(fargs[0]);
+            int num = mux_atoi64(fargs[0]);
             if (num < 1)
             {
                 safe_chr('0', buff, bufc);
@@ -584,8 +584,8 @@ static FUNCTION(fun_rand)
         if (  is_integer(fargs[0], &nDigits)
            && is_integer(fargs[1], &nDigits))
         {
-            int lower = mux_atol(fargs[0]);
-            int higher = mux_atol(fargs[1]);
+            int lower = mux_atoi64(fargs[0]);
+            int higher = mux_atoi64(fargs[1]);
             if (  lower <= higher
                && static_cast<unsigned int>(higher-lower) <= INT32_MAX)
             {
@@ -635,7 +635,7 @@ static FUNCTION(fun_time)
     int nPrecision = 0;
     if (nfargs == 2)
     {
-        nPrecision = mux_atol(fargs[1]);
+        nPrecision = mux_atoi64(fargs[1]);
     }
     const UTF8 *temp = ltaNow.ReturnDateString(nPrecision);
     safe_str(temp, buff, bufc);
@@ -674,7 +674,7 @@ static FUNCTION(fun_secs)
     int nPrecision = 0;
     if (nfargs == 2)
     {
-        nPrecision = mux_atol(fargs[1]);
+        nPrecision = mux_atoi64(fargs[1]);
     }
     safe_str(ltaNow.ReturnSecondsString(nPrecision), buff, bufc);
 }
@@ -714,7 +714,7 @@ static FUNCTION(fun_convsecs)
         int nPrecision = 0;
         if (nfargs == 3)
         {
-            nPrecision = mux_atol(fargs[2]);
+            nPrecision = mux_atoi64(fargs[2]);
         }
         const UTF8 *temp = lta.ReturnDateString(nPrecision);
         safe_str(temp, buff, bufc);
@@ -763,7 +763,7 @@ static FUNCTION(fun_convtime)
         int nPrecision = 0;
         if (nfargs == 3)
         {
-            nPrecision = mux_atol(fargs[2]);
+            nPrecision = mux_atoi64(fargs[2]);
         }
         safe_str(lta.ReturnSecondsString(nPrecision), buff, bufc);
     }
@@ -2162,10 +2162,10 @@ FUNCTION(fun_successes)
     int ver = 1;
     if (3 <= nfargs)
     {
-        ver = mux_atol(fargs[2]);
+        ver = mux_atoi64(fargs[2]);
     }
 
-    int num_dice   = mux_atol(fargs[0]);
+    int num_dice   = mux_atoi64(fargs[0]);
 
     if (0 == num_dice)
     {
@@ -2181,7 +2181,7 @@ FUNCTION(fun_successes)
     }
     else
     {
-        int difficulty = mux_atol(fargs[1]);
+        int difficulty = mux_atoi64(fargs[1]);
         int successes = 0;
         if (1 == ver)
         {
@@ -2680,8 +2680,8 @@ static FUNCTION(fun_mid)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atol(fargs[1]);
-    int nMid   = mux_atol(fargs[2]);
+    int iStart = mux_atoi64(fargs[1]);
+    int nMid   = mux_atoi64(fargs[2]);
 
     if (nMid < 0)
     {
@@ -2740,7 +2740,7 @@ static FUNCTION(fun_right)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int nRight = mux_atol(fargs[1]);
+    int nRight = mux_atoi64(fargs[1]);
     if (nRight < 0)
     {
         safe_range(buff, bufc);
@@ -3003,7 +3003,7 @@ static FUNCTION(fun_v)
 
     // Leading digit, process as argument number.
     //
-    int i = mux_atol(fargs[0]);
+    int i = mux_atoi64(fargs[0]);
     if (  0 <= i
        && i < ncargs
        && nullptr != cargs[i])
@@ -3245,7 +3245,7 @@ static FUNCTION(fun_rloc)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int levels = mux_atol(fargs[1]);
+    int levels = mux_atoi64(fargs[1]);
     if (levels > mudconf.ntfy_nest_lim)
     {
         levels = mudconf.ntfy_nest_lim;
@@ -3568,8 +3568,8 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    int iFirstWord = mux_atol(fargs[1]);
-    int nWordsToCopy = mux_atol(fargs[2]);
+    int iFirstWord = mux_atoi64(fargs[1]);
+    int nWordsToCopy = mux_atoi64(fargs[2]);
 
     if (  iFirstWord < 1
        || nWordsToCopy < 1)
@@ -3726,8 +3726,8 @@ static FUNCTION(fun_index)
 
     s = fargs[0];
     c = *fargs[1];
-    start = mux_atol(fargs[2]);
-    end = mux_atol(fargs[3]);
+    start = mux_atoi64(fargs[2]);
+    end = mux_atoi64(fargs[3]);
 
     if ((start < 1) || (end < 1) || (*s == '\0'))
     {
@@ -4098,7 +4098,7 @@ static FUNCTION(fun_cansee)
     int mode;
     if (nfargs == 3)
     {
-        mode = mux_atol(fargs[2]);
+        mode = mux_atoi64(fargs[2]);
         switch (mode)
         {
         case ACTION_IS_STATIONARY:
@@ -4362,7 +4362,7 @@ FUNCTION(fun_entrances)
         {
             p++;
         }
-        i = mux_atol(p);
+        i = mux_atoi64(p);
         if (Good_dbref(i))
         {
             low_bound = i;
@@ -4377,7 +4377,7 @@ FUNCTION(fun_entrances)
         {
             p++;
         }
-        i = mux_atol(p);
+        i = mux_atoi64(p);
         if (Good_dbref(i))
         {
             high_bound = i;
@@ -4706,7 +4706,7 @@ static FUNCTION(fun_posn)
     const unsigned char *pStr = reinterpret_cast<const unsigned char *>(fargs[1]);
     size_t nStr = strlen(reinterpret_cast<const char *>(pStr));
 
-    int iN = mux_atol(fargs[2]);
+    int iN = mux_atoi64(fargs[2]);
     if (iN < 1)
     {
         safe_nothing(buff, bufc);
@@ -4943,7 +4943,7 @@ int DecodeListOfIntegers(UTF8 *pIntegerList, int ai[])
           && n < MAX_WORDS)
     {
         UTF8 *curr = split_token(&cp, sepSpace);
-        ai[n++] = mux_atol(curr);
+        ai[n++] = mux_atoi64(curr);
     }
     return n;
 }
@@ -5233,7 +5233,7 @@ static FUNCTION(fun_wordpos)
 
     size_t nBytes;
     UTF8 *cp = strip_color(fargs[0], &nBytes, nullptr);
-    unsigned int charpos = mux_atol(fargs[1]);
+    unsigned int charpos = mux_atoi64(fargs[1]);
 
     // charpos is a 1-based grapheme (character) position, matching this
     // function's documentation and the grapheme-correct wordstart()/wordend().
@@ -5290,7 +5290,7 @@ static FUNCTION(fun_wordstart)
         return;
     }
 
-    int iWord = mux_atol(fargs[1]);
+    int iWord = mux_atoi64(fargs[1]);
     if (iWord < 1)
     {
         safe_nothing(buff, bufc);
@@ -5341,7 +5341,7 @@ static FUNCTION(fun_wordend)
         return;
     }
 
-    int iWord = mux_atol(fargs[1]);
+    int iWord = mux_atoi64(fargs[1]);
     if (iWord < 1)
     {
         safe_nothing(buff, bufc);
@@ -5749,8 +5749,8 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atol(fargs[1]);
-    int nDelete = mux_atol(fargs[2]);
+    int iStart = mux_atoi64(fargs[1]);
+    int nDelete = mux_atoi64(fargs[2]);
 
     if (nDelete < 0)
     {
@@ -6465,7 +6465,7 @@ static FUNCTION(fun_lnum)
     int step = 1;
     if (nfargs == 1)
     {
-        top = mux_atol(fargs[0]) - 1;
+        top = mux_atoi64(fargs[0]) - 1;
         if (top < 0)
         {
             return;
@@ -6473,11 +6473,11 @@ static FUNCTION(fun_lnum)
     }
     else
     {
-        bot = mux_atol(fargs[0]);
-        top = mux_atol(fargs[1]);
+        bot = mux_atoi64(fargs[0]);
+        top = mux_atoi64(fargs[1]);
         if (nfargs == 4)
         {
-            step = mux_atol(fargs[3]);
+            step = mux_atoi64(fargs[3]);
             if (step < 1)
             {
                 step = 1;
@@ -7363,7 +7363,7 @@ static FUNCTION(fun_repeat)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int times = mux_atol(fargs[1]);
+    int times = mux_atoi64(fargs[1]);
     if (times < 1 || *fargs[0] == '\0')
     {
         // Legal but no work to do.
@@ -7595,7 +7595,7 @@ static void iter_value(UTF8 *buff, UTF8 **bufc, UTF8 *fargs[], int nfargs, bool 
     int number = 0;
     if (nfargs > 0)
     {
-        number = mux_atol(fargs[0]);
+        number = mux_atoi64(fargs[0]);
         if (number < 0)
         {
             number = 0;
@@ -7890,7 +7890,7 @@ static FUNCTION(fun_choose)
     int ip[LBUF_SIZE/2];
     for (i = 0; i < n_weights; i++)
     {
-        int num = mux_atol(weights[i]);
+        int num = mux_atoi64(weights[i]);
         if (num < 0)
         {
             num = 0;
@@ -7959,8 +7959,8 @@ FUNCTION(fun_distribute)
 
     const int points_limit = 1000000;
     const int bins_limit   = 2000;
-    int points = mux_atol(fargs[0]);
-    int bins   = mux_atol(fargs[1]);
+    int points = mux_atoi64(fargs[0]);
+    int bins   = mux_atoi64(fargs[1]);
     if (  points < 0
        || points_limit < points
        || bins <= 0
@@ -8904,7 +8904,7 @@ static FUNCTION(fun_space)
     }
     else
     {
-        num = mux_atol(fargs[0]);
+        num = mux_atoi64(fargs[0]);
         if (num == 0)
         {
             // If 'space(0)', 'space(00)', ..., then allow num == 0,
@@ -8936,7 +8936,7 @@ static FUNCTION(fun_height)
     long nHeight = 24;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = mux_atol(fargs[0]);
+        SOCKET s = mux_atoi64(fargs[0]);
         DESC* d = find_desc_by_socket(s);
         if (nullptr != d)
         {
@@ -8972,7 +8972,7 @@ static FUNCTION(fun_width)
     long nWidth = 78;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = mux_atol(fargs[0]);
+        SOCKET s = mux_atoi64(fargs[0]);
         DESC* d = find_desc_by_socket(s);
         if (nullptr != d)
         {
@@ -9008,7 +9008,7 @@ static FUNCTION(fun_colordepth)
     dbref target = NOTHING;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = mux_atol(fargs[0]);
+        SOCKET s = mux_atoi64(fargs[0]);
         DESC* d = find_desc_by_socket(s);
         if (nullptr != d)
         {
@@ -9067,7 +9067,7 @@ static FUNCTION(fun_idle)
     long nIdle = -1;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = mux_atol(fargs[0]);
+        SOCKET s = mux_atoi64(fargs[0]);
         DESC *d = find_desc_by_socket(s);
         if (  nullptr != d
            && (  desc_player(d) == executor
@@ -9109,7 +9109,7 @@ static FUNCTION(fun_conn)
     long nConnected = -1;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = mux_atol(fargs[0]);
+        SOCKET s = mux_atoi64(fargs[0]);
         DESC *d = find_desc_by_socket(s);
         if (  nullptr != d
            && (  desc_player(d) == executor
@@ -9151,7 +9151,7 @@ static FUNCTION(fun_terminfo)
     DESC *d = nullptr;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = mux_atol(fargs[0]);
+        SOCKET s = mux_atoi64(fargs[0]);
         d = find_desc_by_socket(s);
 
         if (  nullptr != d
@@ -10234,7 +10234,7 @@ static void centerjustcombo
     // Range-check the width before narrowing to LBUF_OFFSET (uint16_t
     // at this LBUF_SIZE) — casting first wraps widths mod 65536, letting
     // e.g. 999999 slip under the limit as 16959 (#860).
-    long lWidth = mux_atol(strip_color(fargs[1]));
+    long lWidth = mux_atoi64(strip_color(fargs[1]));
     if (0 == lWidth)
     {
         return;
@@ -10498,7 +10498,7 @@ static FUNCTION(fun_printf)
         case 'd':
         case 'i':
             {
-                long v = mux_atol(pArg);
+                long v = mux_atoi64(pArg);
                 mux_ltoa(v, valBuf);
             }
             break;
@@ -11475,7 +11475,7 @@ static FUNCTION(fun_wrap)
     if (  2 <= nfargs
        && '\0' != fargs[1][0])
     {
-        nWidth = mux_atol(fargs[1]);
+        nWidth = mux_atoi64(fargs[1]);
         if (  nWidth < 1
            || nWidth >= LBUF_SIZE)
         {
@@ -11542,7 +11542,7 @@ static FUNCTION(fun_wrap)
     if (  6 <= nfargs
        && '\0' != fargs[5][0])
     {
-        nHanging = mux_atol(fargs[5]);
+        nHanging = mux_atoi64(fargs[5]);
     }
 
     // ARG 7: Output separator. Default: line break.
@@ -11569,7 +11569,7 @@ static FUNCTION(fun_wrap)
     if (  8 <= nfargs
        && '\0' != fargs[7][0])
     {
-        nFirstWidth = mux_atol(fargs[7]);
+        nFirstWidth = mux_atoi64(fargs[7]);
         if (  nFirstWidth < 1
            || nFirstWidth >= LBUF_SIZE)
         {
@@ -11881,7 +11881,7 @@ static FUNCTION(fun_digittime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int tt = mux_atoi64(fargs[0]);
     safe_str(digit_format(tt), buff, bufc);
 }
 
@@ -11898,7 +11898,7 @@ static FUNCTION(fun_singletime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int tt = mux_atoi64(fargs[0]);
     safe_str(time_format_2(tt), buff, bufc);
 }
 
@@ -11915,7 +11915,7 @@ static FUNCTION(fun_exptime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int tt = mux_atoi64(fargs[0]);
     safe_str(expand_time(tt), buff, bufc);
 }
 
@@ -11932,7 +11932,7 @@ static FUNCTION(fun_writetime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int tt = mux_atoi64(fargs[0]);
     safe_str(write_time(tt), buff, bufc);
 }
 
@@ -11951,7 +11951,7 @@ static FUNCTION(fun_cmds)
     long nCmds = -1;
     if (is_rational(fargs[0]))
     {
-        SOCKET s = mux_atol(fargs[0]);
+        SOCKET s = mux_atoi64(fargs[0]);
         DESC *d = find_desc_by_socket(s);
         if (  nullptr != d
            && (  desc_player(d) == executor
@@ -12780,7 +12780,7 @@ static FUNCTION(fun_connlog)
     int limit = 10;
     if (nfargs >= 2)
     {
-        limit = mux_atol(fargs[1]);
+        limit = mux_atoi64(fargs[1]);
         if (limit < 1) limit = 1;
         if (limit > 100) limit = 100;
     }
@@ -12837,7 +12837,7 @@ static FUNCTION(fun_addrlog)
     int limit = 10;
     if (nfargs >= 2)
     {
-        limit = mux_atol(fargs[1]);
+        limit = mux_atoi64(fargs[1]);
         if (limit < 1) limit = 1;
         if (limit > 100) limit = 100;
     }
@@ -14114,7 +14114,7 @@ static FUNCTION(fun_linsert)
 
     UTF8 *arr[LBUF_SIZE / 2];
     int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
-    int pos = mux_atol(fargs[1]);
+    int pos = mux_atoi64(fargs[1]);
 
     if (pos < 0)
     {
@@ -14164,8 +14164,8 @@ static FUNCTION(fun_strdelete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atol(fargs[1]);
-    int nDelete = mux_atol(fargs[2]);
+    int iStart = mux_atoi64(fargs[1]);
+    int nDelete = mux_atoi64(fargs[2]);
 
     if (iStart < 0)
     {
@@ -14211,7 +14211,7 @@ static FUNCTION(fun_strinsert)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iPos = mux_atol(fargs[1]);
+    int iPos = mux_atoi64(fargs[1]);
     if (iPos < 0)
     {
         iPos = 0;
@@ -14271,8 +14271,8 @@ static FUNCTION(fun_strreplace)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atol(fargs[1]);
-    int nCount = mux_atol(fargs[2]);
+    int iStart = mux_atoi64(fargs[1]);
+    int nCount = mux_atoi64(fargs[2]);
 
     if (iStart < 0)
     {
@@ -14697,7 +14697,7 @@ static FUNCTION(fun_lreplace)
 
     UTF8 *arr[LBUF_SIZE / 2];
     int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
-    int pos = mux_atol(fargs[1]);
+    int pos = mux_atoi64(fargs[1]);
 
     if (pos < 0 || pos >= nWords)
     {
@@ -14732,7 +14732,7 @@ static FUNCTION(fun_benchmark)
     UNUSED_PARAMETER(fp);
     UNUSED_PARAMETER(caller);
 
-    int iterations = mux_atol(fargs[1]);
+    int iterations = mux_atoi64(fargs[1]);
     if (iterations < 1)
     {
         safe_str(T("#-1 ITERATIONS MUST BE POSITIVE"), buff, bufc);
@@ -14802,8 +14802,8 @@ static FUNCTION(fun__check_u_perm)
         return;
     }
 
-    dbref thing = mux_atol(fargs[0]);
-    int attr_num = mux_atol(fargs[1]);
+    dbref thing = mux_atoi64(fargs[0]);
+    int attr_num = mux_atoi64(fargs[1]);
 
     if (!Good_obj(thing))
     {
@@ -14897,7 +14897,7 @@ static FUNCTION(fun__restore_qregs)
 
     if (nfargs < 1) return;
 
-    int idx = mux_atol(fargs[0]);
+    int idx = mux_atoi64(fargs[0]);
     if (idx >= 0 && idx < MAX_QREG_SAVE_DEPTH
         && s_qreg_save_stack[idx].in_use)
     {

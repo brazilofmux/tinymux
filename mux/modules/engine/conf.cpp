@@ -604,7 +604,7 @@ static CF_HAND(cf_int_array)
         int unused;
         if (is_integer(p, &unused))
         {
-            aPorts[nPorts++] = mux_atol(p);
+            aPorts[nPorts++] = mux_atoi64(p);
         }
     }
 
@@ -629,7 +629,7 @@ static CF_HAND(cf_int)
 
     // Copy the numeric value to the parameter.
     //
-    *vp = mux_atol(str);
+    *vp = mux_atoi64(str);
     return 0;
 }
 
@@ -648,7 +648,7 @@ static CF_HAND(cf_live_driver_int)
     UNUSED_PARAMETER(player);
     UNUSED_PARAMETER(cmd);
 
-    *vp = mux_atol(str);
+    *vp = mux_atoi64(str);
     if (  !mudstate.bReadingConfiguration
        && nullptr != g_driver_config_sync_fn)
     {
@@ -769,7 +769,7 @@ static CF_HAND(cf_dbref)
 
     // Copy the numeric value to the parameter.
     //
-    *vp = mux_atol(p);
+    *vp = mux_atoi64(p);
 
     // guest_char_num and player_starting_room are both in the driver basket
     // and read live (the guest-login gate and where a newly created player is

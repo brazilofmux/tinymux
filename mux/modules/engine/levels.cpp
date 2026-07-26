@@ -842,7 +842,7 @@ void did_it_rlevel
             charges = atr_pget(thing, A_CHARGES, &aowner, &aflags);
             if (*charges)
             {
-                num = mux_atol(charges);
+                num = mux_atoi64(charges);
                 if (num > 0)
                 {
                     buff = alloc_sbuf("did_it.charges");

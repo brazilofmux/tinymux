@@ -68,8 +68,8 @@ static inline bool two_int9(const std::string &a, const std::string &b,
     int nDigits;
     if (is_integer(u8(a), &nDigits) && nDigits <= 9
         && is_integer(u8(b), &nDigits) && nDigits <= 9) {
-        va = mux_atol(u8(a));
-        vb = mux_atol(u8(b));
+        va = mux_atoi64(u8(a));
+        vb = mux_atoi64(u8(b));
         return true;
     }
     return false;
@@ -159,7 +159,7 @@ static bool try_fold(const std::string &func_name,
         }
         if (all_int) {
             long sum = 0;
-            for (int i = 0; i < nargs; i++) sum += mux_atol(u8(args[i]));
+            for (int i = 0; i < nargs; i++) sum += mux_atoi64(u8(args[i]));
             result = format_long(sum);
         } else {
             std::vector<double> vals;
@@ -315,7 +315,7 @@ static bool try_fold(const std::string &func_name,
             r = 0.0;
         }
 #endif
-        int frac = mux_atol(u8(args[1]));
+        int frac = mux_atoi64(u8(args[1]));
         result = reinterpret_cast<const char *>(mux_ftoa(r, true, frac));
         return true;
     }
@@ -615,8 +615,8 @@ static bool try_fold(const std::string &func_name,
     // --- MID(string, start, count) ---
     // Uses co_mid_cluster (grapheme clusters) to match fun_mid.
     if (upper == "MID" && nargs == 3) {
-        int iStart = static_cast<int>(mux_atol(u8(args[1])));
-        int nMid   = static_cast<int>(mux_atol(u8(args[2])));
+        int iStart = static_cast<int>(mux_atoi64(u8(args[1])));
+        int nMid   = static_cast<int>(mux_atoi64(u8(args[2])));
         if (nMid < 0) {
             iStart += 1 + nMid;
             nMid = -nMid;
@@ -672,8 +672,8 @@ static bool try_fold(const std::string &func_name,
     if (upper == "EXTRACT" && nargs >= 3 && nargs <= 5
         && (nargs < 4 || args[3].size() <= 1)
         && (nargs < 5 || args[4].size() <= 1)) {
-        int iFirst = static_cast<int>(mux_atol(u8(args[1])));
-        int nWords = static_cast<int>(mux_atol(u8(args[2])));
+        int iFirst = static_cast<int>(mux_atoi64(u8(args[1])));
+        int nWords = static_cast<int>(mux_atoi64(u8(args[2])));
         if (iFirst < 1 || nWords < 1) {
             result = "";
             return true;
@@ -697,7 +697,7 @@ static bool try_fold(const std::string &func_name,
 
     // --- REPEAT(string, count) ---
     if (upper == "REPEAT" && nargs == 2) {
-        int count = static_cast<int>(mux_atol(u8(args[1])));
+        int count = static_cast<int>(mux_atoi64(u8(args[1])));
         if (count <= 0) {
             result = "";
             return true;
@@ -777,8 +777,8 @@ static bool try_fold(const std::string &func_name,
     // --- DELETE(string, start, count) ---
     // Uses co_delete_cluster (grapheme clusters) to match fun_delete.
     if (upper == "DELETE" && nargs == 3) {
-        int iStart = static_cast<int>(mux_atol(u8(args[1])));
-        int nDel   = static_cast<int>(mux_atol(u8(args[2])));
+        int iStart = static_cast<int>(mux_atoi64(u8(args[1])));
+        int nDel   = static_cast<int>(mux_atoi64(u8(args[2])));
         if (nDel < 0) {
             iStart += 1 + nDel;
             nDel = -nDel;
@@ -803,7 +803,7 @@ static bool try_fold(const std::string &func_name,
     // --- RIGHT(string, count) ---
     // Uses co_cluster_count + co_mid_cluster to match fun_right.
     if (upper == "RIGHT" && nargs == 2) {
-        int nRight = static_cast<int>(mux_atol(u8(args[1])));
+        int nRight = static_cast<int>(mux_atoi64(u8(args[1])));
         if (nRight < 0) {
             result = "#-1 OUT OF RANGE";
             return true;
@@ -1581,7 +1581,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         if (h.ty[cond] != TY_INT) {
             if (h.is_const(cond)) {
                 // Genuine compile-time literal: fold using the interpreter's
-                // own truth test.  mux_atol() is not xlate() — "abc", "#5"
+                // own truth test.  mux_atoi64() is not xlate() — "abc", "#5"
                 // and "0abc" are all true but atol to 0, so the fold used to
                 // pick the else arm for them.
                 //
@@ -1745,7 +1745,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             if (h.ty[cond] != TY_INT) {
                 if (h.kind[cond] == HIR_SCONST) {
                     int64_t v = static_cast<int64_t>(
-                        mux_atol(u8(h.sval[cond])));
+                        mux_atoi64(u8(h.sval[cond])));
                     cond = h.emit_iconst(v);
                 } else if (h.ty[cond] == TY_FLOAT) {
                     cond = h.emit(HIR_FTOI, TY_INT, cond);
@@ -2969,7 +2969,7 @@ general_lowering:
     auto ensure_hi = [&](int ai) -> int {
         if (h.ty[ai] == TY_INT) return ai;
         if (h.kind[ai] == HIR_SCONST) {
-            int64_t v = static_cast<int64_t>(mux_atol(u8(h.sval[ai])));
+            int64_t v = static_cast<int64_t>(mux_atoi64(u8(h.sval[ai])));
             return h.emit_iconst(v);
         }
         return h.emit(HIR_ATOI, TY_INT, ai);
