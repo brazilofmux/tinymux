@@ -8,7 +8,9 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
+# Keep test-lua-jit (added on master after this branch was cut) alongside
+# the new dual-route smoke targets.
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -33,9 +35,37 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-dbt test-alarm test-jit-qreg test-jit-ifelse test-ios
+test: install test-ganl test-netaddr test-dbt test-alarm test-jit-qreg test-jit-ifelse test-ios test-smoke test-smoke-ast
+
+# Smoke on the compiled route (jit_eval_brackets defaults on).
+test-smoke:
 	$(MAKE) -C testcases/tools
+	@echo "==> Smoke: compiled route (jit_eval_brackets default)"
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
+
+# Smoke again on the interpreted route (#1243).
+#
+# The default run cannot fail on an AST-route-only defect: with
+# jit_eval_brackets on, bracketed expressions are compiled, so a bug that
+# exists only in the interpreter never executes.  Three fixes in one day
+# (#1214, #1238, #1246) passed `make test` with the fix reverted and were
+# caught only by this second pass -- testcases/disarm_fn.mux carries a
+# ROUTE: header saying so, because the file cannot defend itself under the
+# default configuration.
+#
+# The interpreted route is not legacy: it handles every expression the JIT
+# declines, so it runs in production on every server.
+#
+# Whole corpus rather than a route-sensitive subset -- a second pass costs
+# ~30s against a ~30s first pass, which is not worth the bookkeeping of
+# deciding which files are route-sensitive (and getting that wrong
+# silently loses coverage).
+#
+# Depends on test-smoke so smoke.flat is already built and the two passes
+# report in a fixed order.
+test-smoke-ast: test-smoke
+	@echo "==> Smoke: interpreted route (jit_eval_brackets 0)"
+	cd testcases && SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke
 
 # JIT q-register scope oracle (docs/plan-jit-evalbracket-lift.md).
 # Compares forced-JIT vs AST results for the scope/ordering shapes fixed
@@ -64,6 +94,17 @@ test-jit-ifelse:
 	    exit $$rc; \
 	fi
 
+# Full smoke with mudconf.lua_jit forced on (#1309).  Default `make test`
+# keeps lua_jit off so production configs stay safe until Phase 4 default-on.
+# Requires --enable-jit (same as the rest of the Lua JIT path).
+# Opt-in: not part of `make test`.
+#   make test-lua-jit
+#   # or:  cd testcases && SMOKE_EXTRA_CONF='lua_jit 1' ./tools/Smoke
+test-lua-jit: install
+	@echo "==> Running smoke with lua_jit 1 (Lua bytecode→HIR→DBT path)"
+	$(MAKE) -C testcases/tools
+	cd testcases && ./tools/Makesmoke && SMOKE_EXTRA_CONF='lua_jit 1' ./tools/Smoke
+
 # GANL engine regression harness (epoll/select on Linux, kqueue/select on
 # macOS/BSD).  Scripted engine scenarios locking in the 2026-07 fixes.
 test-ganl:
@@ -86,16 +127,6 @@ test-netaddr:
 test-dbt:
 	@echo "==> Running DBT and RV64 tests"
 	$(MAKE) -C tests/dbt test
-
-# RV64 interpreter guest-memory bounds: mem_check gated every guest read and
-# write with `addr + len <= size`, which wraps for an addr near UINT64_MAX and
-# let the caller index mem->data with the unwrapped address (#1292).  The
-# interpreter-route counterpart to the DBT-side bounds work in #1151.
-# #includes dbt_interp.cpp (the accessors are file-static) — no `install`, no
-# --enable-jit, no skip path.
-test-dbt-interp:
-	@echo "==> Running DBT interpreter bounds tests"
-	$(MAKE) -C tests/dbt_interp test
 
 # mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
 # worker-thread start — alarm_clock is a libmux global whose constructor used

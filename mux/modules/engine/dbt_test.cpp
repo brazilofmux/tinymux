@@ -23,6 +23,8 @@
 #include "dbt_decoder.h"
 #include "dbt_elf64.h"
 #include "dbt.h"
+#include "dbt_internal.h"
+#include "dbt_jit_mem.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -316,6 +318,31 @@ static uint64_t run_code_dbt(const std::vector<uint32_t>& code, int reg) {
     dbt_run(&dbt, 0, MEM_SIZE - 16);
     dbt_cleanup(&dbt);
     return g_dbt_exit_ctx.x[reg];
+}
+
+// As run_code_dbt, but returns an FP register's raw bits.  rv64_ctx_t::f is
+// double[32] where rv64_state_t::f is uint64_t[32], so the bits are copied
+// out rather than converted: the sign-manipulation tests below differ only
+// in the sign bit of a value whose magnitude is unchanged, and comparing as
+// double would call -1.0 and +1.0 unequal but -0.0 and +0.0 equal — hiding
+// exactly the class of bug being tested.
+static uint64_t run_code_dbt_fbits(const std::vector<uint32_t>& code, int freg) {
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        return ~0ULL;
+    }
+    dbt.max_dispatch = 1000000;
+    dbt_run(&dbt, 0, MEM_SIZE - 16);
+    dbt_cleanup(&dbt);
+    uint64_t bits;
+    memcpy(&bits, &g_dbt_exit_ctx.f[freg], sizeof(bits));
+    return bits;
 }
 
 // ---------------------------------------------------------------
@@ -1098,6 +1125,86 @@ static void test_fp_sign_inject() {
     CHECK_FEQ("FSGNJX.D", fsgnjx_r, -42.0);
 }
 
+// #1313 / #1314: FCVT.{W,WU,L,LU}.D for NaN and the infinities.
+//
+// RISC-V and the host ISAs disagree here, so BOTH routes must be checked and
+// the expected values must come from the RISC-V unprivileged spec ("Invalid
+// Operation" / out-of-range table), not from either implementation:
+//
+//   NaN   -> the destination type's MAXIMUM (not 0, which is what ARM
+//            FCVTZS/FCVTZU and x86 CVTTSD2SI give)
+//   +inf  -> destination maximum
+//   -inf  -> destination minimum (0 for the unsigned forms)
+//
+// and every 32-bit (W/WU) result is SIGN-extended to 64 bits on RV64 --
+// including the unsigned form, so fcvt.wu.d(+inf) is 0xFFFFFFFF_FFFFFFFF.
+//
+// The differential fuzzer structurally cannot find the NaN unsigned rows:
+// the interpreter and the a64 backend were wrong in the same direction, so
+// the two routes agreed with each other (#1314).
+static void check_fcvt_case(const char *what, uint64_t bits, int rs2,
+                            uint64_t expected) {
+    // Build the double in an integer register, FMV it across, convert, and
+    // leave the result in x5.  Constructed in-register because run_code_dbt
+    // has no data segment.
+    // A byte at a time: ADDI's immediate is 12-bit SIGNED (max 2047), so a
+    // 16-bit chunk does not fit and a naive split still overflows.  Every
+    // byte is <= 255 and always encodes cleanly.
+    std::vector<uint32_t> code;
+    code.push_back(ADDI(1, 0, 0));
+    for (int shift = 56; shift >= 0; shift -= 8) {
+        code.push_back(SLLI(1, 1, 8));
+        uint8_t byte = static_cast<uint8_t>((bits >> shift) & 0xFF);
+        if (byte) {
+            code.push_back(ADDI(2, 0, static_cast<int32_t>(byte)));
+            code.push_back(r_type(0x33, 1, 0, 1, 2, 0));   // ADD x1, x1, x2
+        }
+    }
+    code.push_back(r_type(OP_FP, 1, 0, 1, 0, (FP_FMVDX << 2) | FP_FMT_D));
+    // The W/WU/L/LU variant lives in the rs2 field; funct3 is the
+    // rounding mode (0 = RNE).
+    code.push_back(r_type(OP_FP, 5, 0, 1, rs2, (FP_FCVTW << 2) | FP_FMT_D));
+    code.push_back(ADDI(17, 0, 93));
+    code.push_back(ADDI(10, 0, 0));
+    code.push_back(ECALL());
+
+    TestResult r = run_code(code);
+    char desc[128];
+    snprintf(desc, sizeof(desc), "%s: interp", what);
+    CHECK_EQ(desc, r.state.x[5], expected);
+
+    snprintf(desc, sizeof(desc), "%s: DBT", what);
+    CHECK_EQ(desc, run_code_dbt(code, 5), expected);
+}
+
+static void test_fp_cvt_nan_inf() {
+    printf("test_fp_cvt_nan_inf...\n");
+
+    const uint64_t PINF = 0x7FF0000000000000ULL;
+    const uint64_t NINF = 0xFFF0000000000000ULL;
+    const uint64_t QNAN = 0x7FF8000000000000ULL;
+
+    // fcvt.w.d  (rs2=0) — signed 32, sign-extended
+    check_fcvt_case("fcvt.w.d(+inf)",  PINF, 0, 0x000000007FFFFFFFULL);
+    check_fcvt_case("fcvt.w.d(-inf)",  NINF, 0, 0xFFFFFFFF80000000ULL);
+    check_fcvt_case("fcvt.w.d(NaN)",   QNAN, 0, 0x000000007FFFFFFFULL);
+
+    // fcvt.wu.d (rs2=1) — unsigned 32, still SIGN-extended
+    check_fcvt_case("fcvt.wu.d(+inf)", PINF, 1, 0xFFFFFFFFFFFFFFFFULL);
+    check_fcvt_case("fcvt.wu.d(-inf)", NINF, 1, 0x0000000000000000ULL);
+    check_fcvt_case("fcvt.wu.d(NaN)",  QNAN, 1, 0xFFFFFFFFFFFFFFFFULL);
+
+    // fcvt.l.d  (rs2=2) — signed 64
+    check_fcvt_case("fcvt.l.d(+inf)",  PINF, 2, 0x7FFFFFFFFFFFFFFFULL);
+    check_fcvt_case("fcvt.l.d(-inf)",  NINF, 2, 0x8000000000000000ULL);
+    check_fcvt_case("fcvt.l.d(NaN)",   QNAN, 2, 0x7FFFFFFFFFFFFFFFULL);
+
+    // fcvt.lu.d (rs2=3) — unsigned 64
+    check_fcvt_case("fcvt.lu.d(+inf)", PINF, 3, 0xFFFFFFFFFFFFFFFFULL);
+    check_fcvt_case("fcvt.lu.d(-inf)", NINF, 3, 0x0000000000000000ULL);
+    check_fcvt_case("fcvt.lu.d(NaN)",  QNAN, 3, 0xFFFFFFFFFFFFFFFFULL);
+}
+
 static void test_fp_fma() {
     printf("test_fp_fma...\n");
 
@@ -1153,6 +1260,66 @@ static void test_fp_fma() {
     CHECK_FEQ("FMSUB.D 3*5-7", fmsub_r, 8.0);
     CHECK_FEQ("FNMSUB.D -(3*5)+7", fnmsub_r, -8.0);
     CHECK_FEQ("FNMADD.D -(3*5)-7", fnmadd_r, -22.0);
+}
+
+// #1323: unhandled guest instructions must refuse block translation, not
+// silently advance past the insn (leaving rd stale) or spin at the same PC.
+// FCLASS.D (funct3=1) is unimplemented on every host backend today.
+//
+static void test_unhandled_refuses_block() {
+    printf("test_unhandled_refuses_block...\n");
+
+    // Poison x5, then an unhandled FCLASS.D that would write x5, then a
+    // sentinel that only runs if the unhandled insn was skipped, then exit.
+    //
+    std::vector<uint32_t> code = {
+        ADDI(5, 0, 0x55AA),                                    // x5 = poison
+        r_type(OP_FP, 5, 1, 0, 0, (FP_FCLASS << 2) | FP_FMT_D), // FCLASS.D x5, f0
+        ADDI(5, 0, 0x0BEE),                                    // sentinel if skip
+        ADDI(10, 5, 0),                                        // a0 = x5
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_unhandled_refuses_block: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 10000;
+
+    // Translate of the entry block must fail — not produce a runnable stub.
+    //
+    jit_write_begin();
+    uint8_t *native = dbt_backend_translate_block(&dbt, 0);
+    CHECK_EQ("unhandled refuse: translate returns null",
+             reinterpret_cast<uintptr_t>(native), 0ULL);
+
+    // dbt_run must not silently skip to the sentinel (a0 == 0x0BEE).
+    //
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == -1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: unhandled refuse: dbt_run rc=%d, expected -1\n",
+                rc);
+    }
+    // If skip were still in effect, ecall would exit with a0 = 0x0BEE.
+    CHECK_EQ("unhandled refuse: sentinel not executed",
+             g_dbt_exit_ctx.x[10], 0ULL);
+
+    dbt_cleanup(&dbt);
 }
 
 static void test_fp_fclass() {
@@ -1408,6 +1575,123 @@ static void test_selfloop_register_pressure() {
     uint64_t dbt    = run_code_dbt(code, SUM);
     CHECK_EQ("self-loop regpressure: interpreter", interp, 21);  // 1+2+3+4+5+6
     CHECK_EQ("self-loop regpressure: DBT matches interpreter", dbt, interp);
+}
+
+// The over-commit guard is only as good as the pressure estimate feeding
+// it, and three separate paths used to slip past it.  Each loop below is
+// arranged so the *estimate* lands on exactly the four free non-pinned
+// slots — so the superblock is admitted — while the body actually touches
+// more.  The back edge re-enters at warm_entry, past the preload, so an
+// evicted preloaded register makes later iterations read a host register
+// that now holds something else; the value that leaks in is usually the
+// loop counter.  Each is differential against the interpreter *and* pinned
+// to a hand-computed constant, so it cannot pass by both routes agreeing
+// on a wrong answer.
+
+static void test_selfloop_pressure_forward_branch() {
+    printf("test_selfloop_pressure_forward_branch...\n");
+    // The scan stopped accumulating pressure at the first forward branch and
+    // then followed the branch *target*, while the emitter records the taken
+    // path as a cold side exit and keeps translating the fall-through.
+    // Everything after the branch was therefore invisible to the estimate:
+    // it saw only {x5,x9,x6,x7} and admitted a body touching nine registers.
+    std::vector<uint32_t> code = {
+        ADDI(9, 0, 1000),     // loop-invariant addend: preloaded, then evicted
+        ADDI(8, 0, 5),        // trip count
+        // loop:
+        ADD(5, 5, 9),         // x5 += 1000 — reads the preloaded x9
+        BNE(6, 7, 24),        // forward branch to the decrement; never taken
+        ADDI(20, 20, 1),
+        ADDI(21, 21, 2),
+        ADDI(22, 22, 3),
+        ADDI(23, 23, 4),
+        ADDI(24, 24, 5),
+        ADDI(8, 8, -1),
+        BNE(8, 0, -32),
+        ECALL()
+    };
+    uint64_t interp = run_code(code).state.x[5];
+    uint64_t dbt    = run_code_dbt(code, 5);
+    CHECK_EQ("selfloop fwd-branch: interpreter", interp, 5000);  // 5 * 1000
+    CHECK_EQ("selfloop fwd-branch: DBT matches interpreter", dbt, interp);
+}
+
+static void test_selfloop_pressure_regw_rs2() {
+    printf("test_selfloop_pressure_regw_rs2...\n");
+    // rc_mark_used listed rs2 for OP_REG but not OP_REG32, so SUBW's second
+    // source went uncounted.  x12 is a2 — a pinned register — which keeps the
+    // undercounted estimate at exactly the four free slots.
+    std::vector<uint32_t> code = {
+        ADDI(24, 0, 100),
+        ADDI(21, 0, 30),
+        ADDI(8, 0, 4),
+        // loop:
+        SUBW(1, 24, 21),                  // x1 = 70
+        r_type(OP_REG, 12, 1, 7, 0, 0),   // SLL x12, x7, x0 — pinned destination
+        ADDI(8, 8, -1),
+        BNE(8, 0, -12),
+        ECALL()
+    };
+    uint64_t interp = run_code(code).state.x[1];
+    uint64_t dbt    = run_code_dbt(code, 1);
+    CHECK_EQ("selfloop SUBW rs2: interpreter", interp, 70);  // 100 - 30
+    CHECK_EQ("selfloop SUBW rs2: DBT matches interpreter", dbt, interp);
+}
+
+static void test_selfloop_pressure_fp_int_rd() {
+    printf("test_selfloop_pressure_fp_int_rd...\n");
+    // FEQ/FLT/FLE, FCVT.W/WU/L/LU and FCLASS/FMV.X write an *integer* rd and
+    // so occupy an integer cache slot, but rc_mark_referenced only took rd
+    // for the integer opcodes.
+    std::vector<uint32_t> code = {
+        ADDI(8, 0, 5),
+        ADDI(5, 0, 42),
+        ADDI(6, 0, 7),
+        // loop:
+        ADD(7, 5, 6),                                          // x7 = 49
+        r_type(OP_FP, 4, 2, 0, 0, (FP_FCMP << 2) | FP_FMT_D),  // FEQ.D x4, f0, f0
+        ADDI(8, 8, -1),
+        BNE(8, 0, -12),
+        ECALL()
+    };
+    uint64_t interp = run_code(code).state.x[7];
+    uint64_t dbt    = run_code_dbt(code, 7);
+    CHECK_EQ("selfloop FP int-rd: interpreter", interp, 49);  // 42 + 7
+    CHECK_EQ("selfloop FP int-rd: DBT matches interpreter", dbt, interp);
+}
+
+// FSGNJ.D/FSGNJN.D take the magnitude from rs1 and the sign from rs2 by
+// writing ABS(rs1) into rd and then testing rs2's sign.  When rd == rs2 the
+// register cache hands out one host register for both, so the ABS destroyed
+// the very sign about to be tested — and the sign bit of an absolute value
+// is always clear, so the branch resolved the same way every time and the
+// result was -|rs1| regardless of rs2.  The rs1 == rs2 shortcut in that code
+// is a different aliasing case and never covered this one.  Golden values
+// cross-checked against qemu-riscv64.
+static void test_fsgnj_rd_aliases_rs2() {
+    printf("test_fsgnj_rd_aliases_rs2...\n");
+    for (int funct3 = 0; funct3 <= 1; funct3++) {
+        std::vector<uint32_t> code = {
+            ADDI(5, 0, -1),
+            r_type(OP_FP, 3, 0, 5, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f3 = all ones
+            ADDI(6, 0, 0x3FF),
+            SLLI(6, 6, 52),
+            r_type(OP_FP, 4, 0, 6, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f4 = +1.0
+            // FSGNJ[N].D f3, f4, f3 — rd aliases rs2.
+            r_type(OP_FP, 3, (uint8_t)funct3, 4, 3, (FP_FSGNJ << 2) | FP_FMT_D),
+            ECALL()
+        };
+        // rs2's sign bit is set: FSGNJ copies it (-1.0), FSGNJN inverts (+1.0).
+        uint64_t want = (funct3 == 0) ? 0xBFF0000000000000ULL
+                                      : 0x3FF0000000000000ULL;
+        uint64_t interp = run_code(code).state.f[3];
+        uint64_t dbt    = run_code_dbt_fbits(code, 3);
+        CHECK_EQ(funct3 == 0 ? "FSGNJ.D rd==rs2: interpreter"
+                             : "FSGNJN.D rd==rs2: interpreter", interp, want);
+        CHECK_EQ(funct3 == 0 ? "FSGNJ.D rd==rs2: DBT matches interpreter"
+                             : "FSGNJN.D rd==rs2: DBT matches interpreter",
+                 dbt, interp);
+    }
 }
 
 // Load/store with rs1 == x0 and a nonzero immediate (absolute small-address
@@ -1780,10 +2064,16 @@ int main(int argc, char *argv[]) {
     test_fp_fsqrt();
     test_fp_minmax();
     test_fp_sign_inject();
+    test_fp_cvt_nan_inf();
     test_fp_fma();
     test_fp_fclass();
+    test_unhandled_refuses_block();
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
+    test_selfloop_pressure_forward_branch();
+    test_selfloop_pressure_regw_rs2();
+    test_selfloop_pressure_fp_int_rd();
+    test_fsgnj_rd_aliases_rs2();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();

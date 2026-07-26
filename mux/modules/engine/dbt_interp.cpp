@@ -42,6 +42,60 @@ static inline uint64_t fp_box_d(double d) {
     return bits;
 }
 
+// RISC-V rounding modes, as encoded in the rm field (funct3) of the FP
+// instructions.  7 means "dynamic": take the mode from fcsr.frm instead.
+//
+static constexpr int RM_RNE = 0;  // nearest, ties to even
+static constexpr int RM_RTZ = 1;  // toward zero
+static constexpr int RM_RDN = 2;  // down (toward -inf)
+static constexpr int RM_RUP = 3;  // up (toward +inf)
+static constexpr int RM_RMM = 4;  // nearest, ties to max magnitude
+static constexpr int RM_DYN = 7;  // use fcsr.frm
+
+static inline int rv_effective_rm(uint8_t funct3, uint32_t fcsr) {
+    return (funct3 == RM_DYN) ? static_cast<int>((fcsr >> 5) & 0x7)
+                              : static_cast<int>(funct3);
+}
+
+// Round a double to an integral double under an explicit RISC-V rounding
+// mode.
+//
+// Deliberately not nearbyint()/rint(): those follow the *host* floating
+// point environment, which would make the guest's rounding mode whatever
+// the host happens to be set to, and would silently differ between the
+// interpreter and a JIT that encodes the mode into the instruction.
+//
+// The arithmetic is exact.  `frac` is computed by subtracting an exactly
+// representable truncation, and once |a| >= 2^52 a double has no
+// fractional part at all, so frac is zero and the value is returned
+// unchanged.
+//
+static inline double rv_round_to_int(double a, int rm) {
+    if (!std::isfinite(a)) {
+        return a;
+    }
+    const double t = std::trunc(a);
+    const double frac = a - t;
+    if (frac == 0.0) {
+        return t;
+    }
+    const double away = t + ((a < 0.0) ? -1.0 : 1.0);
+    switch (rm) {
+    case RM_RTZ: return t;
+    case RM_RDN: return (frac < 0.0) ? away : t;
+    case RM_RUP: return (frac > 0.0) ? away : t;
+    case RM_RMM: return (std::fabs(frac) >= 0.5) ? away : t;
+    case RM_RNE:
+    default: {
+        const double af = std::fabs(frac);
+        if (af > 0.5) return away;
+        if (af < 0.5) return t;
+        // Exact tie: pick the even neighbour.
+        return (std::fmod(t, 2.0) == 0.0) ? t : away;
+    }
+    }
+}
+
 // ---------------------------------------------------------------
 // Memory access — little-endian, bounds-checked
 // ---------------------------------------------------------------
@@ -814,6 +868,18 @@ int rv64_interp_run(rv64_state_t *state, rv64_memory_t *mem,
                 // FCVT.L.D (rs2=2), FCVT.LU.D (rs2=3)
                 //
                 double a = fp_unbox_d(state->f[insn.rs1]);
+                // Round to an integral value first, under the instruction's
+                // rounding mode, and only then range-check.  Two reasons:
+                // the conversion is defined to round rather than truncate
+                // (a plain C cast is RTZ, so every mode but RTZ was wrong),
+                // and the valid domain is specified in terms of the value
+                // *after* rounding -- 2147483647.5 under RNE becomes 2^31,
+                // which is out of range for FCVT.W.D even though the
+                // unrounded value is not.
+                if (!std::isnan(a)) {
+                    a = rv_round_to_int(a,
+                            rv_effective_rm(insn.funct3, state->fcsr));
+                }
                 uint64_t r = 0;
                 switch (insn.rs2) {
                 case 0: {
@@ -828,8 +894,16 @@ int rv64_interp_run(rv64_state_t *state, rv64_memory_t *mem,
                 }
                 case 1: {
                     // FCVT.WU.D — double to unsigned int32, sign-extend to 64
+                    // NaN converts to the destination's MAXIMUM, not to 0
+                    // (RISC-V unpriv spec, "Invalid Operation" table) -- it is
+                    // only *negative* input that gives 0.  Folding the two
+                    // together made fcvt.wu.d(NaN) yield 0 instead of
+                    // 0xFFFFFFFF_FFFFFFFF (#1314).  The differential fuzzer
+                    // could not see this: the a64 backend was wrong the same
+                    // way, so both routes agreed.
                     uint32_t v;
-                    if (std::isnan(a) || a < 0.0) v = 0;
+                    if (std::isnan(a)) v = UINT32_MAX;
+                    else if (a < 0.0) v = 0;
                     else if (a >= 4294967296.0) v = UINT32_MAX;
                     else v = static_cast<uint32_t>(a);
                     r = sext32(v);
@@ -847,8 +921,10 @@ int rv64_interp_run(rv64_state_t *state, rv64_memory_t *mem,
                 }
                 case 3: {
                     // FCVT.LU.D — double to unsigned int64
+                    // NaN -> maximum, negative -> 0; see FCVT.WU.D (#1314).
                     uint64_t v;
-                    if (std::isnan(a) || a < 0.0) v = 0;
+                    if (std::isnan(a)) v = UINT64_MAX;
+                    else if (a < 0.0) v = 0;
                     else if (a >= 18446744073709551616.0) v = UINT64_MAX;
                     else v = static_cast<uint64_t>(a);
                     r = v;

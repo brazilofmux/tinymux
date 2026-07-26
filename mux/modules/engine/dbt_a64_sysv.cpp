@@ -807,6 +807,11 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     // emit can be rolled back (#1147).
     const size_t patches_before = dbt->patches.size();
 
+    // Set when an unhandled guest insn is hit; the whole block is refused
+    // rather than emitting exit_with_pc(same) (spin) or a silent skip (#1323).
+    //
+    bool refuse_unhandled = false;
+
     uint8_t *block_start = dbt->code_buf + dbt->code_used;
 
     emit_t e;
@@ -838,16 +843,27 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             memcpy(&w, dbt->memory + scan_pc, 4);
             rv64_insn_t si;
             rv64_decode(w, &si);
-            if (!past_first_branch) {
-                rc_mark_used(si, used);
-                rc_mark_referenced(si, referenced);
-            }
+            // Preload candidates are the registers read before the first
+            // branch.  Slot pressure is every register the body touches:
+            // the back edge re-enters at warm_entry, which is *past* the
+            // preload, so any eviction of a preloaded slot inside the body
+            // leaves the second and later iterations reading a host
+            // register that now holds some other guest register.  Counting
+            // only the pre-branch prefix under-reports that pressure and
+            // admits exactly the loops that go wrong.
+            if (!past_first_branch) rc_mark_used(si, used);
+            rc_mark_referenced(si, referenced);
             if (si.opcode == OP_BRANCH) {
                 uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
                 if (target == guest_pc) { self_loop = true; break; }
                 if (si.imm < 0) break;
                 past_first_branch = true;
-                scan_pc = target;
+                // Follow the fall-through, not the target: for a forward
+                // branch inside a self-loop the emitter records the taken
+                // path as a cold side-exit stub and continues with the
+                // fall-through, so the fall-through is what lands in the
+                // loop body and what determines slot pressure.
+                scan_pc += 4;
                 continue;
             }
             if (si.opcode == OP_JAL) {
@@ -1923,13 +1939,20 @@ no_addr_fusion:
                 int fs2 = fc_read(&e, &fc, insn.rs2);
                 int fd = fc_write(&e, &fc, insn.rd);
                 switch (insn.funct3) {
+                // Capture fs2's sign into X0 *before* writing fd.  When
+                // rd == rs2 the cache hands out the same host register for
+                // both, so emitting the FABS first destroys the very sign
+                // being tested: X0 then holds |fs1|, whose sign bit is
+                // always clear, and the conditional branch below always
+                // resolves the same way.  The rs1 == rs2 shortcut above is
+                // a different aliasing case and does not cover this one.
                 case 0: // FSGNJ.D — copy sign of fs2
                     if (insn.rs1 == insn.rs2) {
                         emit_fmov_d(&e, fd, fs1);  // FMV.D
                     } else {
                         // ABS(fs1) with sign of fs2: use bit manipulation
-                        emit_fabs_d(&e, fd, fs1);
                         emit_fmov_x64_d(&e, A64_X0, fs2);
+                        emit_fabs_d(&e, fd, fs1);
                         // Test sign bit of fs2
                         emit_cmp_r64_imm(&e, A64_X0, 0);
                         uint32_t skip = emit_b_cond(&e, A64_COND_GE, 0);
@@ -1941,8 +1964,8 @@ no_addr_fusion:
                     if (insn.rs1 == insn.rs2) {
                         emit_fneg_d(&e, fd, fs1);  // FNEG.D
                     } else {
-                        emit_fabs_d(&e, fd, fs1);
                         emit_fmov_x64_d(&e, A64_X0, fs2);
+                        emit_fabs_d(&e, fd, fs1);
                         emit_cmp_r64_imm(&e, A64_X0, 0);
                         uint32_t skip = emit_b_cond(&e, A64_COND_LT, 0);
                         emit_fneg_d(&e, fd, fd);
@@ -1996,26 +2019,54 @@ no_addr_fusion:
             }
             case FP_FCVTW: {
                 // FCVT int ← double
+                // RISC-V and ARM disagree on both out-of-range and NaN, so
+                // neither FCVTZS nor FCVTZU can be used bare here (#1313):
+                //
+                //   * ARM saturates at the destination width.  The W forms
+                //     were converting at 64-bit width and then narrowing, so
+                //     fcvt.w.d(+inf) gave -1 (0x7FFF_FFFF_FFFF_FFFF truncated
+                //     to 0xFFFFFFFF, sign-extended) instead of 0x7FFFFFFF,
+                //     and fcvt.w.d(-inf) gave 0 instead of 0x80000000.  Use
+                //     the 32-bit forms so ARM saturates where RISC-V does.
+                //
+                //   * RV64 sign-extends a 32-bit result even for the
+                //     *unsigned* form, so fcvt.wu.d(+inf) is
+                //     0xFFFFFFFF_FFFFFFFF.  The old MOV Wd,Wd zero-extended
+                //     and produced 0x00000000_FFFFFFFF.
+                //
+                //   * ARM returns 0 for NaN; RISC-V returns the destination
+                //     type's MAXIMUM.  Nothing in the convert expresses that,
+                //     so test for unordered and select explicitly below.
+                //
                 int fs1 = fc_read(&e, &fc, insn.rs1);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
+                uint64_t nan_result;
                 if (insn.rs2 == 0) {
-                    // FCVT.W.D — double to signed 32-bit
-                    emit_fcvtzs_x64_d(&e, rd, fs1);
+                    // FCVT.W.D — double to signed 32-bit, sign-extended.
+                    emit_fcvtzs_w32_d(&e, rd, fs1);
                     emit_sxtw(&e, rd, rd);
+                    nan_result = 0x000000007FFFFFFFULL;   // INT32_MAX
                 } else if (insn.rs2 == 1) {
-                    // FCVT.WU.D — double to unsigned 32-bit
-                    // FCVTZU Xd, Dn (unsigned conversion)
-                    emit_inst(&e, 0x9E790000 | (fs1 << 5) | rd);
-                    // Zero-extend 32→64: use MOV Wd, Wd
-                    emit_mov_r32(&e, rd, rd);
+                    // FCVT.WU.D — double to unsigned 32-bit, sign-extended.
+                    emit_fcvtzu_w32_d(&e, rd, fs1);
+                    emit_sxtw(&e, rd, rd);
+                    nan_result = 0xFFFFFFFFFFFFFFFFULL;   // sext(UINT32_MAX)
                 } else if (insn.rs2 == 2) {
-                    // FCVT.L.D — double to signed 64-bit
+                    // FCVT.L.D — double to signed 64-bit.
                     emit_fcvtzs_x64_d(&e, rd, fs1);
+                    nan_result = 0x7FFFFFFFFFFFFFFFULL;   // INT64_MAX
                 } else {
-                    // FCVT.LU.D — double to unsigned 64-bit
-                    // Use unsigned variant (FCVTZU)
-                    emit_inst(&e, 0x9E790000 | (fs1 << 5) | rd);
+                    // FCVT.LU.D — double to unsigned 64-bit.
+                    emit_fcvtzu_x64_d(&e, rd, fs1);
+                    nan_result = 0xFFFFFFFFFFFFFFFFULL;   // UINT64_MAX
                 }
+                // NaN → destination maximum.  FCMP of a value against itself
+                // is unordered exactly when it is NaN, and VS reads that as
+                // "overflow"/unordered.  X17 is the documented IP1 scratch,
+                // used the same way by the guest-address clamp above.
+                emit_mov_r64_imm64(&e, A64_X17, nan_result);
+                emit_fcmp_d(&e, fs1, fs1);
+                emit_csel(&e, rd, A64_X17, rd, A64_COND_VS);
                 break;
             }
             case FP_FCVTDW: {
@@ -2048,10 +2099,8 @@ no_addr_fusion:
                     int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : A64_X1;
                     emit_fmov_x64_d(&e, rd, fs1);
                 } else {
-                    // FCLASS.D (funct3==1) — not yet implemented.
-                    // Exit to dispatcher to avoid wrong architectural state.
-                    rc_flush(&e, &rc); fc_flush(&e, &fc);
-                    emit_exit_with_pc(&e, pc);
+                    // FCLASS.D (funct3==1) — not yet implemented (#1323).
+                    refuse_unhandled = true;
                     goto done;
                 }
                 break;
@@ -2064,9 +2113,8 @@ no_addr_fusion:
                 break;
             }
             default:
-                // Unhandled FP opcode — exit to dispatcher.
-                rc_flush(&e, &rc); fc_flush(&e, &fc);
-                emit_exit_with_pc(&e, pc);
+                // Unhandled FP opcode (#1323).
+                refuse_unhandled = true;
                 goto done;
             }
             pc += 4;
@@ -2083,7 +2131,8 @@ no_addr_fusion:
                 // EBREAK — set bit 1 signal
                 emit_exit_with_pc(&e, pc | 2);
             } else {
-                emit_exit_with_pc(&e, pc);
+                // Unsupported SYSTEM variant — refuse the block (#1323).
+                refuse_unhandled = true;
             }
             goto done;
         }
@@ -2094,9 +2143,9 @@ no_addr_fusion:
             continue;
 
         default:
-            // Unknown opcode — exit to dispatcher.
-            rc_flush(&e, &rc); fc_flush(&e, &fc);
-            emit_exit_with_pc(&e, pc);
+            // Unknown opcode — refuse the block (#1323).  Emitting
+            // exit_with_pc(same pc) spun the dispatcher forever.
+            refuse_unhandled = true;
             goto done;
         }
     }
@@ -2106,6 +2155,11 @@ no_addr_fusion:
     emit_exit_chained(&e, dbt, pc);
 
 done:
+    if (refuse_unhandled) {
+        dbt_rollback_patches(dbt, patches_before);
+        return nullptr;
+    }
+
     // Emit cold stubs for superblock side exits.
     for (int i = 0; i < num_side_exits; i++) {
         emit_patch_b19(&e, side_exits[i].jcc_patch, emit_pos(&e));

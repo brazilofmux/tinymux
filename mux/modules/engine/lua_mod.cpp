@@ -1201,6 +1201,13 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
 {
     if (nullptr == m_pIJITCompile) return false;
 
+    // Safety gate (#1309): Lua JIT is off by default until the never-run
+    // lowering/codegen path is green.  When off, fall through to the Lua
+    // interpreter — same behavior as before the loader fix made the JIT
+    // reachable.
+    //
+    if (!mudconf.lua_jit) return false;
+
     // Already tried and failed?
     if (entry.jit_eligible) {
         // Already have a compiled key? Run it.

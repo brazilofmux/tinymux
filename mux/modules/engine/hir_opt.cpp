@@ -99,8 +99,13 @@ void hir_const_fold(hir_program &h) {
             switch (h.kind[i]) {
 
             // ATOI of SCONST → ICONST.
+            // Skip runtime_ref slots (CARGS/SUBST / mux.args): empty sval
+            // would fold to 0 and poison arithmetic (#1309).
+            //
             case HIR_ATOI:
-                if (s1 >= 0 && h.kind[s1] == HIR_SCONST) {
+                if (  s1 >= 0
+                   && h.kind[s1] == HIR_SCONST
+                   && !h.runtime_ref[s1]) {
                     int64_t v;
                     parse_int(h.sval[s1], v);
                     h.kind[i] = HIR_ICONST;

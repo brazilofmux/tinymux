@@ -57,24 +57,35 @@ rename = -Ddbt_backend_backpatch_jmp=$(1)_backpatch_jmp \
 
 ELF = $(ENGINE)/dbt_rt/test_rv64.elf
 
+# Engine headers every target here compiles against.  Listed explicitly as
+# prerequisites because the code under test lives outside this directory:
+# without them, editing dbt_internal.h (which holds rc_loop_overcommits and
+# the register-cache sizing) rebuilds nothing and the suite reports a pass
+# from a stale binary.
+ENGINE_HDRS = $(INCDIR)/dbt.h $(INCDIR)/dbt_internal.h \
+              $(INCDIR)/dbt_interp.h $(INCDIR)/dbt_decoder.h \
+              $(INCDIR)/dbt_host.h $(INCDIR)/dbt_elf64.h \
+              $(INCDIR)/dbt_emit_a64.h $(INCDIR)/dbt_emit_x64.h \
+              $(INCDIR)/dbt_jit_mem.h
+
 all: test_chain test_cache test_interp dbt_test
 
 # --- chain: all three backends, byte inspection only -----------------
-test_chain.o: test_chain.cpp
+test_chain.o: test_chain.cpp $(ENGINE_HDRS)
 	$(DRIVER) -c -o $@ $<
-be_a64.o: $(ENGINE)/dbt_a64_sysv.cpp
+be_a64.o: $(ENGINE)/dbt_a64_sysv.cpp $(ENGINE_HDRS)
 	$(COMPILE) $(call rename,a64) -c -o $@ $<
-be_x64sysv.o: $(ENGINE)/dbt_x64_sysv.cpp
+be_x64sysv.o: $(ENGINE)/dbt_x64_sysv.cpp $(ENGINE_HDRS)
 	$(COMPILE) $(call rename,x64sysv) -c -o $@ $<
-be_win64.o: $(ENGINE)/dbt_x64_win64.cpp
+be_win64.o: $(ENGINE)/dbt_x64_win64.cpp $(ENGINE_HDRS)
 	$(COMPILE) $(call rename,win64) -c -o $@ $<
 test_chain: test_chain.o be_a64.o be_x64sysv.o be_win64.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # --- cache: dbt.cpp against aborting backend stubs -------------------
-test_cache.o: test_cache.cpp
+test_cache.o: test_cache.cpp $(ENGINE_HDRS)
 	$(DRIVER) -c -o $@ $<
-dbt_shared.o: $(ENGINE)/dbt.cpp
+dbt_shared.o: $(ENGINE)/dbt.cpp $(ENGINE_HDRS)
 	$(COMPILE) -c -o $@ $<
 test_cache: test_cache.o dbt_shared.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
@@ -86,20 +97,28 @@ test_cache: test_cache.o dbt_shared.o
 # library.  It cannot share a link with `exec`, which compiles the same
 # TU normally, or with `cache`/`chain`, whose backends are stubbed or
 # renamed (#1292).
-test_interp.o: test_interp.cpp $(ENGINE)/dbt_interp.cpp
+test_interp.o: test_interp.cpp $(ENGINE)/dbt_interp.cpp $(ENGINE_HDRS)
 	$(COMPILE) -I$(ENGINE) -c -o $@ $<
 test_interp: test_interp.o
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # --- exec: real execution, host backend only -------------------------
+#
+# dbt_test compiles its sources in one step rather than via .o files, so it
+# needs those sources named as prerequisites.  A recipe with no
+# prerequisites is only ever run once: make then reports the binary up to
+# date forever, and every later engine change is "tested" by whichever
+# binary happened to be built first.
 EXEC_SRCS = $(ENGINE)/dbt_test.cpp $(ENGINE)/dbt_interp.cpp \
             $(ENGINE)/dbt_elf64.cpp $(ENGINE)/dbt.cpp \
             $(ENGINE)/$(HOST_BACKEND).cpp
-dbt_test:
+
 ifeq ($(HOST_BACKEND),)
+dbt_test:
 	@echo "SKIP: no DBT backend for host '$(ARCH)' (configure.ac supports"
 	@echo "      x86_64 and aarch64).  Execution tests cannot run here."
 else
+dbt_test: $(EXEC_SRCS) $(ENGINE_HDRS)
 	$(COMPILE) -o $@ $(EXEC_SRCS)
 endif
 

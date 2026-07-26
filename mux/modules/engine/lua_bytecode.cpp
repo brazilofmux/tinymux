@@ -7,6 +7,7 @@
 
 #include "lua_bytecode.h"
 
+#include <climits>
 #include <cstring>
 
 // Lua 5.4 dump signature and magic values.
@@ -99,10 +100,17 @@ struct bc_reader {
         return v;
     }
 
+    // Lua 5.4 encodes int with the same base-128 varint as size_t:
+    // lundump.c defines loadInt() as cast_int(loadUnsigned(S, INT_MAX)),
+    // sharing loadUnsigned() with loadSize().  Reading four raw bytes
+    // consumed 4 where the stream had 1 for a typical small value, which
+    // desynchronised everything after `linedefined` and made every proto
+    // fail to load -- so the Lua JIT compiled nothing at all (#1278).
     int read_int() {
-        int v = 0;
-        read_bytes(&v, 4);
-        return v;
+        size_t v = read_size();
+        if (!ok) return 0;
+        if (v > static_cast<size_t>(INT_MAX)) { ok = false; return 0; }
+        return static_cast<int>(v);
     }
 
     std::string read_string() {
