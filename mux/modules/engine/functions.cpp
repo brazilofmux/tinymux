@@ -10234,7 +10234,11 @@ static void centerjustcombo
     // Range-check the width before narrowing to LBUF_OFFSET (uint16_t
     // at this LBUF_SIZE) — casting first wraps widths mod 65536, letting
     // e.g. 999999 slip under the limit as 16959 (#860).
-    long lWidth = mux_atoi64(strip_color(fargs[1]));
+    //
+    // int64_t, not long: long is 32-bit on LLP64, so the check wrapped mod
+    // 2^32 and reintroduced exactly the #860 defect at a higher threshold.
+    // ljust(x,4294967396) came out as width 100 on Windows (#1402).
+    int64_t lWidth = mux_atoi64(strip_color(fargs[1]));
     if (0 == lWidth)
     {
         return;
@@ -10498,8 +10502,11 @@ static FUNCTION(fun_printf)
         case 'd':
         case 'i':
             {
-                long v = mux_atoi64(pArg);
-                mux_ltoa(v, valBuf);
+                // int64_t, not long: long is 32-bit on LLP64, so printf()
+                // rendered any multiple of 2^32 as 0 on Windows (#1402).
+                //
+                int64_t v = mux_atoi64(pArg);
+                mux_i64toa(v, valBuf);
             }
             break;
 
