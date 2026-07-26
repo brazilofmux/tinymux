@@ -54,3 +54,23 @@ margin (~1 MB at 1024). Verified SIGSEGV-before / survives-after across depths
 - **Attr-key type punning** (`reinterpret_cast<UTF8*>(b->sub1)`): intentional
   union-style reuse; the key is `StringClone`d in `test_atr` and freed by
   `free_boolexp`.
+
+## Finding — oversize key missing NUL after truncate (FIXED)
+
+`parse_boolexp` capped `n` to `sizeof(parsestore)-1` then `memcpy(..., n+1)`.
+When the source was longer than the cap, that copied a full buffer of payload
+bytes with **no** terminating NUL; the recursive-descent scanner could walk past
+`parsestore`. Production set/eval paths usually feed LBUF-bounded strings, but
+the truncate path was still wrong.
+
+**Fix:** `memcpy(parsestore, buf, n); parsestore[n] = '\0';`
+
+## Residual (by design / not defect)
+
+- **Empty / unparseable stored key → open** (`eval_boolexp_atr` treats
+  `TRUE_BOOLEXP` as true). Empty unlocked is intentional; corrupt keys that
+  re-parse as open are the historical MUSH fail-open. `@lock` / `lock()` reject
+  bad keys at set time; `AF_IS_LOCK` blocks ordinary `&` attribute sets.
+  `IObjectInfo::AtrAddRaw` can still write raw lock text (trusted modules only).
+- **Eval locks run softcode** (`BOOLEXP_EVAL`) with register save/restore and
+  `bCanReadAttr` / `AF_NOEVAL` gates — intentional side-effect surface.

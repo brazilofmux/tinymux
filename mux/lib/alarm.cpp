@@ -10,6 +10,8 @@
 #include "config.h"
 #include "core.h"
 
+#include <limits>
+
 mux_alarm alarm_clock;
 
 /*! \brief Alarm Clock Thread Procedure.
@@ -122,8 +124,22 @@ mux_alarm::~mux_alarm()
  */
 void mux_alarm::sleep(CLinearTimeDelta sleep_period)
 {
+    // Same int64_t / clamp path as set() — avoid long truncation (#1290).
+    using ms_rep = std::chrono::milliseconds::rep;
+    constexpr int64_t k100nsPerMs = 10000;
+    int64_t ms64 = sleep_period.Return100ns() / k100nsPerMs;
+    if (ms64 < 0)
+    {
+        ms64 = 0;
+    }
+    const auto ms_max = static_cast<int64_t>(
+        (std::numeric_limits<ms_rep>::max)());
+    if (ms64 > ms_max)
+    {
+        ms64 = ms_max;
+    }
     std::this_thread::sleep_for(
-        std::chrono::milliseconds(sleep_period.ReturnMilliseconds()));
+        std::chrono::milliseconds(static_cast<ms_rep>(ms64)));
 }
 
 /*! \brief Surrenders a little time.
@@ -143,8 +159,24 @@ void mux_alarm::surrender_slice()
 void mux_alarm::set(CLinearTimeDelta alarm_period)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    alarm_period_ = std::chrono::milliseconds(
-        alarm_period.ReturnMilliseconds());
+    // ReturnMilliseconds() is long and can truncate on Win32 when the
+    // delta exceeds LONG_MAX ms (~24.8 days).  Derive ms from 100ns ticks
+    // with int64_t and clamp to chrono::milliseconds' range (#1290).
+    //
+    using ms_rep = std::chrono::milliseconds::rep;
+    constexpr int64_t k100nsPerMs = 10000;
+    int64_t ms64 = alarm_period.Return100ns() / k100nsPerMs;
+    if (ms64 < 0)
+    {
+        ms64 = 0;
+    }
+    const auto ms_max = static_cast<int64_t>(
+        (std::numeric_limits<ms_rep>::max)());
+    if (ms64 > ms_max)
+    {
+        ms64 = ms_max;
+    }
+    alarm_period_ = std::chrono::milliseconds(static_cast<ms_rep>(ms64));
     alarmed.store(false);
     alarm_set_ = true;
     wake_ = true;

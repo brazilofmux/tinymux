@@ -163,7 +163,13 @@ ListenerHandle KqueueNetworkEngine::createListener(const std::string& host, uint
 
         if (ai->ai_family == AF_INET6) {
             int disable = 0;
-            setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
+            // Match epoll/select (#739 residual / Pass B1): dual-stack failure
+            // must not be silent — listener still binds IPv6-only.
+            if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable)) == -1) {
+                int v6Err = errno;
+                std::cerr << "[Kqueue:" << fd << "] WARNING: setsockopt(IPV6_V6ONLY=0) failed; "
+                          << "listener will accept IPv6 only: " << strerror(v6Err) << std::endl;
+            }
         }
 
         if (bind(fd, ai->ai_addr, static_cast<socklen_t>(ai->ai_addrlen)) == -1) {

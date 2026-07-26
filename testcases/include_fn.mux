@@ -229,19 +229,51 @@
   {
     @if strmatch(setr(9,get(me/tc010_result)),INCVAL)=
     {
-      @log smoke=TC010: pipe inside include. Succeeded.;
-      @trig me/tr.done
+      @log smoke=TC010: pipe inside include. Succeeded.
     },
     {
-      @log smoke=TC010: pipe inside include. Failed (%q9).;
-      @trig me/tr.done
+      @log smoke=TC010: pipe inside include. Failed (%q9).
     }
+  }
+-
+#
+# Test Case #11 - @include runs as the *includer*, not the source object (#1279).
+# Create a foreign library object with a VISUAL attr that would set a flag on
+# "me".  If include ran as the library, the flag would land on the library;
+# it must land on the includer (test_include_fn).
+#
+@create lib_include_fn
+-
+@set lib_include_fn=INHERIT QUIET
+-
+&LIB_MARK lib_include_fn=@set me=DARK
+-
+@set lib_include_fn/LIB_MARK=VISUAL
+-
+&tr.tc011 test_include_fn=
+  @set me=!DARK;
+  @set lib_include_fn=!DARK;
+  @include lib_include_fn/LIB_MARK;
+  @if cand(
+        hasflag(me,DARK),
+        not(hasflag(lib_include_fn,DARK))
+      )=
+  {
+    @log smoke=TC011: include runs as includer not source. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC011: include runs as includer not source. Failed (me_dark=[hasflag(me,DARK)] lib_dark=[hasflag(lib_include_fn,DARK)]).;
+    @trig me/tr.done
   }
 -
 &tr.done test_include_fn=
   @log smoke=End include test cases.;
   @notify smoke
 -
+drop lib_include_fn
+-
+
 drop test_include_fn
 -
 #

@@ -251,7 +251,11 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
     POOLHDR *ph;
     POOLFTR *pf;
 
-    if (!pools[poolnum].free_stack.empty())
+    // Walk freelist; drop only corrupt entries rather than clearing the
+    // entire freelist (old path leaked every still-valid free buffer —
+    // Pass H1 residual #1290).
+    //
+    while (!pools[poolnum].free_stack.empty())
     {
         char *raw = pools[poolnum].free_stack.back();
         pools[poolnum].free_stack.pop_back();
@@ -263,38 +267,34 @@ UTF8 *pool_alloc(int poolnum, const UTF8 *tag, const UTF8 *file, const int line)
         {
             pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Alloc"),
                 T("corrupted buffer header on freelist"), file, line);
-
-            // Discard the corrupted freelist and fall through to allocate new.
-            //
-            pools[poolnum].num_lost += pools[poolnum].free_stack.size() + 1;
-            pools[poolnum].free_stack.clear();
+            pools[poolnum].num_lost++;
+            // raw is abandoned (still tracked in all_buffers for diagnostics).
+            continue;
         }
-        else
+
+        // Check for corrupted footer, just report and fix it.
+        //
+        if (pf->magicnum != pools[poolnum].poolmagic)
         {
-            // Check for corrupted footer, just report and fix it.
-            //
-            if (pf->magicnum != pools[poolnum].poolmagic)
-            {
-                pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Alloc"),
-                    T("corrupted buffer footer"), file, line);
-                pf->magicnum = pools[poolnum].poolmagic;
-            }
-
-            ph->u.buf_tag = tag;
-            pools[poolnum].tot_alloc++;
-            pools[poolnum].num_alloc++;
-
-            // If the buffer was modified after it was last freed, log it.
-            //
-            auto pui = reinterpret_cast<unsigned *>(p);
-            if (*pui != pools[poolnum].poolmagic)
-            {
-                pool_err(T("BUG"), LOG_PROBLEMS, poolnum, tag, ph, T("Alloc"),
-                    T("buffer modified after free"), file, line);
-            }
-            *pui = 0;
-            return p;
+            pool_err(T("BUG"), LOG_ALWAYS, poolnum, tag, ph, T("Alloc"),
+                T("corrupted buffer footer"), file, line);
+            pf->magicnum = pools[poolnum].poolmagic;
         }
+
+        ph->u.buf_tag = tag;
+        pools[poolnum].tot_alloc++;
+        pools[poolnum].num_alloc++;
+
+        // If the buffer was modified after it was last freed, log it.
+        //
+        auto pui = reinterpret_cast<unsigned *>(p);
+        if (*pui != pools[poolnum].poolmagic)
+        {
+            pool_err(T("BUG"), LOG_PROBLEMS, poolnum, tag, ph, T("Alloc"),
+                T("buffer modified after free"), file, line);
+        }
+        *pui = 0;
+        return p;
     }
 
     // Allocate a new buffer from the system.
@@ -347,7 +347,9 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
     POOLHDR *ph;
     POOLFTR *pf;
 
-    if (!pools[POOL_LBUF].free_stack.empty())
+    // Same freelist discipline as pool_alloc: drop only the bad entry (#1290).
+    //
+    while (!pools[POOL_LBUF].free_stack.empty())
     {
         char *raw = pools[POOL_LBUF].free_stack.back();
         pools[POOL_LBUF].free_stack.pop_back();
@@ -359,32 +361,29 @@ UTF8 *pool_alloc_lbuf(const UTF8 *tag, const UTF8 *file, const int line)
         {
             pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, tag, ph, T("Alloc"),
                 T("corrupted buffer header on freelist"), file, line);
-
-            pools[POOL_LBUF].num_lost += pools[POOL_LBUF].free_stack.size() + 1;
-            pools[POOL_LBUF].free_stack.clear();
+            pools[POOL_LBUF].num_lost++;
+            continue;
         }
-        else
+
+        if (pf->magicnum != pools[POOL_LBUF].poolmagic)
         {
-            if (pf->magicnum != pools[POOL_LBUF].poolmagic)
-            {
-                pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, tag, ph, T("Alloc"),
-                    T("corrupted buffer footer"), file, line);
-                pf->magicnum = pools[POOL_LBUF].poolmagic;
-            }
-
-            ph->u.buf_tag = tag;
-            pools[POOL_LBUF].tot_alloc++;
-            pools[POOL_LBUF].num_alloc++;
-
-            auto pui = reinterpret_cast<unsigned *>(p);
-            if (*pui != pools[POOL_LBUF].poolmagic)
-            {
-                pool_err(T("BUG"), LOG_PROBLEMS, POOL_LBUF, tag, ph, T("Alloc"),
-                    T("buffer modified after free"), file, line);
-            }
-            *pui = 0;
-            return p;
+            pool_err(T("BUG"), LOG_ALWAYS, POOL_LBUF, tag, ph, T("Alloc"),
+                T("corrupted buffer footer"), file, line);
+            pf->magicnum = pools[POOL_LBUF].poolmagic;
         }
+
+        ph->u.buf_tag = tag;
+        pools[POOL_LBUF].tot_alloc++;
+        pools[POOL_LBUF].num_alloc++;
+
+        auto pui = reinterpret_cast<unsigned *>(p);
+        if (*pui != pools[POOL_LBUF].poolmagic)
+        {
+            pool_err(T("BUG"), LOG_PROBLEMS, POOL_LBUF, tag, ph, T("Alloc"),
+                T("buffer modified after free"), file, line);
+        }
+        *pui = 0;
+        return p;
     }
 
     char *raw = nullptr;

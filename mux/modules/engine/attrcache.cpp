@@ -74,6 +74,8 @@ struct CacheWriteOp
 
 static vector<CacheWriteOp> s_write_queue;
 static unordered_map<Aname, size_t, AnameHasher> s_attr_write_index;
+// OP_CODE_CACHE_PUT is keyed by source_hash, not Aname (#1284 residual).
+static unordered_map<string, size_t> s_code_cache_write_index;
 static bool s_flush_scheduled = false;
 static const size_t WRITE_QUEUE_THRESHOLD = 50;
 
@@ -248,6 +250,7 @@ bool cache_flush_writes(void)
     }
     s_write_queue.clear();
     s_attr_write_index.clear();
+    s_code_cache_write_index.clear();
     return true;
 }
 
@@ -258,6 +261,7 @@ void cache_discard_writes(void)
 {
     s_write_queue.clear();
     s_attr_write_index.clear();
+    s_code_cache_write_index.clear();
 }
 
 // Merge pending (not yet flushed) attribute numbers into attrnums for
@@ -397,7 +401,22 @@ void cache_queue_code_cache_put(
     op.cc_deps.assign(static_cast<const char *>(deps_blob),
                       static_cast<const char *>(deps_blob) + deps_len);
 
-    s_write_queue.push_back(std::move(op));
+    // Coalesce by source_hash: JIT recompiles of the same softcode would
+    // otherwise stack full memory/code blobs in the write queue (audit
+    // residual / Pass E2 #1284).  Keep the newest put at the same index.
+    //
+    {
+        const auto it = s_code_cache_write_index.find(op.cc_source_hash);
+        if (it != s_code_cache_write_index.end())
+        {
+            s_write_queue[it->second] = std::move(op);
+        }
+        else
+        {
+            s_code_cache_write_index[op.cc_source_hash] = s_write_queue.size();
+            s_write_queue.push_back(std::move(op));
+        }
+    }
 
     if (s_write_queue.size() >= WRITE_QUEUE_THRESHOLD)
     {
@@ -590,45 +609,57 @@ const UTF8 *cache_get(Aname *nam, size_t *pLen, dbref *owner, int *flags)
     // 2 individual Gets (~3.6 us each), and most code that touches
     // one attribute on an object will touch more.
     //
-    if (!mudstate.bStandAlone
-        && !cache_obj_preloaded(static_cast<dbref>(nam->object), true))
+    if (!mudstate.bStandAlone)
     {
-        cache_preload_obj(static_cast<dbref>(nam->object), true);
-
-        // Retry the cache — the attribute should be there now.
-        //
-        const auto it2 = mudstate.attribute_lru_cache_map.find(*nam);
-        if (it2 != mudstate.attribute_lru_cache_map.end())
+        const dbref obj = static_cast<dbref>(nam->object);
+        if (!cache_obj_preloaded(obj, true))
         {
-            if (it2->second.tombstone)
-            {
-                *pLen = 0;
-                *owner = NOTHING;
-                *flags = 0;
-                return nullptr;
-            }
-
-            // Don't count as a hit — the miss already counted.
-            //
-            auto &list2 = it2->second.dirty
-                ? mudstate.attribute_pinned_list
-                : mudstate.attribute_lru_cache_list;
-            list2.splice(list2.end(), list2, it2->second.lru_it);
-            *pLen = it2->second.data.size();
-            *owner = it2->second.attr_owner;
-            *flags = it2->second.attr_flags;
-            return it2->second.data.data();
+            cache_preload_obj(obj, true);
         }
 
-        // Attribute genuinely doesn't exist on this object.
+        // After a successful full preload the map is authoritative: a
+        // miss means the attr does not exist.  Re-hitting SQLite for
+        // every known-missing attr was the residual (#1284).  If
+        // preload failed, the object is still not marked preloaded and
+        // we fall through to a single Get below.
         //
-        *pLen = 0;
-        *owner = NOTHING;
-        *flags = 0;
-        return nullptr;
+        if (cache_obj_preloaded(obj, true))
+        {
+            const auto it2 = mudstate.attribute_lru_cache_map.find(*nam);
+            if (it2 != mudstate.attribute_lru_cache_map.end())
+            {
+                if (it2->second.tombstone)
+                {
+                    *pLen = 0;
+                    *owner = NOTHING;
+                    *flags = 0;
+                    return nullptr;
+                }
+
+                // Don't count as a hit — the miss already counted.
+                //
+                auto &list2 = it2->second.dirty
+                    ? mudstate.attribute_pinned_list
+                    : mudstate.attribute_lru_cache_list;
+                list2.splice(list2.end(), list2, it2->second.lru_it);
+                *pLen = it2->second.data.size();
+                *owner = it2->second.attr_owner;
+                *flags = it2->second.attr_flags;
+                return it2->second.data.data();
+            }
+
+            // Definitive miss after successful preload.
+            //
+            *pLen = 0;
+            *owner = NOTHING;
+            *flags = 0;
+            return nullptr;
+        }
+        // else: preload failed — single Get as recovery.
     }
 
-    // Standalone mode: single-attribute load (no cache).
+    // Standalone mode, or online recovery after a failed bulk preload:
+    // single-attribute load.
     //
     size_t nLength = 0;
     int db_owner = NOTHING;

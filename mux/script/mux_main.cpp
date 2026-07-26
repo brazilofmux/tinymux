@@ -1711,8 +1711,19 @@ int main(int argc, char *argv[])
             g_gamedir, g_player);
 
     // Mark the player as connected so raw_notify() delivers output.
+    // Reject invalid -p early rather than ProcessCommand'ing a garbage dbref.
     //
-    g_pEngine->MarkConnected(g_player);
+    if (MUX_FAILED(g_pEngine->MarkConnected(g_player)))
+    {
+        fprintf(stderr,
+                "muxscript: player #%d is not a valid player object\n",
+                g_player);
+        g_pEngine->Shutdown();
+        g_pEngine->Release();
+        mux_RevokeClassObjects(NUM_SCRIPT_CLASSES, script_classes);
+        mux_FinalizeModuleLibrary();
+        return 1;
+    }
 
     // Run script.
     if (eval_expr)

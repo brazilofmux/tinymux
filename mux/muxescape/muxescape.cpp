@@ -90,12 +90,23 @@ static void emit_literal_segment(const unsigned char *ts, const unsigned char *t
     }
 }
 
+// Cap offline tool input so a accidental huge redirect cannot OOM the host.
+// Message bodies for @mail/page are far smaller; 16 MiB is generous.
+//
+static constexpr size_t MUXESCAPE_MAX_INPUT = 16u * 1024u * 1024u;
+
 static bool read_all(FILE *fp, std::vector<char> &buf)
 {
     char chunk[4096];
     while (true) {
         size_t n = std::fread(chunk, 1, sizeof(chunk), fp);
         if (n > 0) {
+            if (buf.size() + n > MUXESCAPE_MAX_INPUT) {
+                std::fprintf(stderr,
+                    "muxescape: input exceeds %zu byte limit\n",
+                    MUXESCAPE_MAX_INPUT);
+                return false;
+            }
             buf.insert(buf.end(), chunk, chunk + n);
         }
         if (n < sizeof(chunk)) {
@@ -109,11 +120,11 @@ static bool read_all(FILE *fp, std::vector<char> &buf)
 }
 
 
-#line 144 "muxescape.rl"
+#line 155 "muxescape.rl"
 
 
 
-#line 112 "muxescape.cpp"
+#line 128 "muxescape.cpp"
 static const int muxescape_start = 0;
 static const int muxescape_first_final = 0;
 static const int muxescape_error = -1;
@@ -121,7 +132,7 @@ static const int muxescape_error = -1;
 static const int muxescape_en_main = 0;
 
 
-#line 147 "muxescape.rl"
+#line 158 "muxescape.rl"
 
 static void process_buffer(const unsigned char *data, size_t len)
 {
@@ -141,7 +152,7 @@ static void process_buffer(const unsigned char *data, size_t len)
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
     
-#line 136 "muxescape.cpp"
+#line 156 "muxescape.cpp"
 	{
 	cs = muxescape_start;
 	ts = 0;
@@ -149,40 +160,40 @@ static void process_buffer(const unsigned char *data, size_t len)
 	act = 0;
 	}
 
-#line 166 "muxescape.rl"
+#line 177 "muxescape.rl"
     
-#line 142 "muxescape.cpp"
+#line 166 "muxescape.cpp"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr5:
-#line 133 "muxescape.rl"
+#line 144 "muxescape.rl"
 	{te = p;p--;{
         emit_literal_segment(ts, te);
     }}
 	goto st0;
 tr6:
-#line 121 "muxescape.rl"
+#line 132 "muxescape.rl"
 	{te = p;p--;{
         emit_repeat_run("%t", static_cast<size_t>(te - ts));
     }}
 	goto st0;
 tr7:
-#line 125 "muxescape.rl"
+#line 136 "muxescape.rl"
 	{te = p;p--;{
         emit_repeat_run("%r", logical_newlines(ts, te));
     }}
 	goto st0;
 tr8:
-#line 117 "muxescape.rl"
+#line 128 "muxescape.rl"
 	{te = p;p--;{
         emit_spaces_run(ts, te);
     }}
 	goto st0;
 tr9:
-#line 129 "muxescape.rl"
+#line 140 "muxescape.rl"
 	{te = p;p--;{
         emit_escaped_segment(ts, te);
     }}
@@ -195,7 +206,7 @@ st0:
 case 0:
 #line 1 "NONE"
 	{ts = p;}
-#line 178 "muxescape.cpp"
+#line 210 "muxescape.cpp"
 	switch( (*p) ) {
 		case 9u: goto st2;
 		case 10u: goto st3;
@@ -300,7 +311,7 @@ case 5:
 
 	}
 
-#line 167 "muxescape.rl"
+#line 178 "muxescape.rl"
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif
