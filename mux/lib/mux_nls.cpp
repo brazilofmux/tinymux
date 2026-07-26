@@ -11,6 +11,27 @@
 #include <locale.h>
 #endif
 
+#if defined(HAVE_NLS)
+// gettext("") is not identity: the empty msgid stores the .mo header
+// (Project-Id-Version, …). T("") is idiomatic empty-UTF8 throughout
+// the tree (~80 sites); those must stay empty (#1443).
+//
+LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid)
+{
+    if (  nullptr == msgid
+       || '\0' == msgid[0])
+    {
+        // Preserve pointer identity for nullptr / empty-string literals
+        // so emptiness tests and StringClone(T("")) keep working.
+        //
+        return msgid;
+    }
+
+    return reinterpret_cast<const UTF8 *>(
+        gettext(reinterpret_cast<const char *>(msgid)));
+}
+#endif
+
 LIBMUX_API void mux_nls_init(const UTF8 *locale_dir)
 {
 #if defined(HAVE_NLS)

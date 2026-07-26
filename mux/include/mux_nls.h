@@ -3,6 +3,14 @@
  *
  * Softcode diagnostics (#-1 …) are a stable English ABI — use S_().
  * Player-facing notifies use T(), which becomes gettext when HAVE_NLS.
+ *
+ * Caveats (see also #1443, #1444):
+ * - Never call gettext on "" — that msgid is the catalog header.
+ * - T() is still applied tree-wide as a UTF-8 cast; flipping it to
+ *   gettext is the Phase 1 spike. #1444 discusses opt-in prose macros.
+ * - Static tables that use T("name") with HAVE_NLS become dynamic
+ *   initialisers (gettext call before bindtextdomain); unbound gettext
+ *   returns the msgid, so identifiers stay English until rebound.
  */
 
 #ifndef MUX_NLS_H
@@ -11,15 +19,13 @@
 // UTF8 is defined in config.h before this header is included.
 
 #if defined(HAVE_NLS)
-#include <libintl.h>
-// Player / staff prose (notify paths). Call only after mux_nls_init, or
-// rebind globals via mux_nls_refresh_messages — never at static init.
+// Helper (not a ternary macro): empty msgids must not reach gettext —
+// the empty key holds .mo metadata (#1443). Also evaluates the argument
+// once, so expression call sites stay safe.
 //
-// Cast msgid to const char* for gettext: call sites and macros (e.g.
-// STARTLOG) sometimes pass UTF8* or nest T() when the old cast was
-// idempotent.
-//
-#define T(x)  (reinterpret_cast<const UTF8 *>(gettext(reinterpret_cast<const char *>(x))))
+LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid);
+
+#define T(x)  (mux_gettext(reinterpret_cast<const UTF8 *>(x)))
 // Softcode / machine tokens — never translate.
 #define S_(x) (reinterpret_cast<const UTF8 *>(x))
 // Mark-only for xgettext; stores the English msgid (no gettext call).
