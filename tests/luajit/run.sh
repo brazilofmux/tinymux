@@ -25,6 +25,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 BIN="$REPO_ROOT/mux/game/bin"
 WORK="$SCRIPT_DIR/work"
+FAILSEQ=0
 
 if command -v timeout >/dev/null 2>&1; then
     TIMEOUT="timeout 60"
@@ -81,6 +82,9 @@ EOF
         echo "think RESULT|[lua(probe/A,2,3)]"
         echo "@shutdown"
       } > in.txt
+      # A core is only written if the shell allowed one, and it lands in
+      # this directory because it is the crashing process's cwd.
+      ulimit -c unlimited 2>/dev/null || true
       LD_LIBRARY_PATH="$BIN" $TIMEOUT "$BIN/muxscript" -g . -c p.conf < in.txt > out.log 2>&1
       echo "$?" > rc.txt
     )
@@ -88,6 +92,23 @@ EOF
     rc=$(cat "$WORK/rc.txt" 2>/dev/null || echo 99)
     res=$(grep -oE "^RESULT\|.*" "$WORK/out.log" 2>/dev/null | head -1)
     res=${res#RESULT|}
+
+    # Keep the evidence.  The next run_one starts with rm -rf "$WORK", and
+    # the core, out.log and scratch database all live in there -- so a
+    # failure used to be reported with nothing left to diagnose it from.
+    # That is what stalled #1433: an intermittent crash at roughly 0.4% per
+    # process, with the core deleted before anyone could read it (#1446).
+    #
+    # Same convention as tools/Smoke's smoke.fail/.
+    #
+    if [ "$rc" != "0" ]; then
+        FAILDIR="$SCRIPT_DIR/work.fail.$$.$FAILSEQ"
+        FAILSEQ=$((FAILSEQ + 1))
+        rm -rf "$FAILDIR"
+        if mv "$WORK" "$FAILDIR" 2>/dev/null; then
+            echo "  artifacts kept in $FAILDIR" >&2
+        fi
+    fi
     echo "$rc|$res"
 }
 

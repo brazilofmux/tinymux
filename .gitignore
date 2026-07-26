@@ -115,6 +115,11 @@ testcases/smoke.flat
 testcases/suite.manifest
 testcases/smoke.expected.*
 testcases/smoke.dispatched.*
+# tests/luajit keeps the workdir when a chunk crashes, so the core and
+# log survive for diagnosis (#1446).
+tests/luajit/work/
+tests/luajit/work.fail.*/
+
 testcases/smoke.conf
 testcases/alias.conf
 testcases/compat.conf
