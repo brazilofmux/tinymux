@@ -74,9 +74,15 @@ struct reg_cache_t {
 // pre-loading at warm_entry are the ones *read* early in the loop, so it
 // must track sources only.  Marking destinations here would preload
 // write-only registers and skew the warm cache layout.
+// OP_REG32 (ADDW/SUBW/SLLW/M*W) reads rs2 as an integer register exactly
+// as OP_REG does; leaving it out under-counted the loop's pressure by one
+// slot per *W instruction, which is enough to admit a superblock that then
+// evicts a preloaded register.  The FP opcodes are deliberately absent:
+// their rs2 names an FP register, which the integer cache does not hold.
 static inline void rc_mark_used(const rv64_insn_t &si, int used[32]) {
     if (si.rs1) used[si.rs1] = 1;
-    if ((si.opcode == OP_REG || si.opcode == OP_BRANCH || si.opcode == OP_STORE)
+    if ((si.opcode == OP_REG || si.opcode == OP_REG32
+         || si.opcode == OP_BRANCH || si.opcode == OP_STORE)
         && si.rs2)
         used[si.rs2] = 1;
 }
@@ -94,6 +100,20 @@ static inline void rc_mark_referenced(const rv64_insn_t &si, int referenced[32])
     case OP_LUI: case OP_AUIPC: case OP_JAL: case OP_JALR:
     case OP_LOAD: case OP_IMM: case OP_REG: case OP_IMM32: case OP_REG32:
         if (si.rd) referenced[si.rd] = 1;
+        break;
+    case OP_FP:
+        // Most OP_FP forms write an FP register, which costs no integer
+        // slot.  Three families write an *integer* rd and do occupy one:
+        // the comparisons (FEQ/FLT/FLE), the float→int converts
+        // (FCVT.W/WU/L/LU) and FCLASS/FMV.X.  Omitting them under-counts
+        // the same way OP_REG32's rs2 did.
+        switch (si.funct7 >> 2) {
+        case FP_FCMP: case FP_FCVTW: case FP_FCLASS:
+            if (si.rd) referenced[si.rd] = 1;
+            break;
+        default:
+            break;
+        }
         break;
     default:
         break;

@@ -318,6 +318,31 @@ static uint64_t run_code_dbt(const std::vector<uint32_t>& code, int reg) {
     return g_dbt_exit_ctx.x[reg];
 }
 
+// As run_code_dbt, but returns an FP register's raw bits.  rv64_ctx_t::f is
+// double[32] where rv64_state_t::f is uint64_t[32], so the bits are copied
+// out rather than converted: the sign-manipulation tests below differ only
+// in the sign bit of a value whose magnitude is unchanged, and comparing as
+// double would call -1.0 and +1.0 unequal but -0.0 and +0.0 equal — hiding
+// exactly the class of bug being tested.
+static uint64_t run_code_dbt_fbits(const std::vector<uint32_t>& code, int freg) {
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        return ~0ULL;
+    }
+    dbt.max_dispatch = 1000000;
+    dbt_run(&dbt, 0, MEM_SIZE - 16);
+    dbt_cleanup(&dbt);
+    uint64_t bits;
+    memcpy(&bits, &g_dbt_exit_ctx.f[freg], sizeof(bits));
+    return bits;
+}
+
 // ---------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------
@@ -1410,6 +1435,123 @@ static void test_selfloop_register_pressure() {
     CHECK_EQ("self-loop regpressure: DBT matches interpreter", dbt, interp);
 }
 
+// The over-commit guard is only as good as the pressure estimate feeding
+// it, and three separate paths used to slip past it.  Each loop below is
+// arranged so the *estimate* lands on exactly the four free non-pinned
+// slots — so the superblock is admitted — while the body actually touches
+// more.  The back edge re-enters at warm_entry, past the preload, so an
+// evicted preloaded register makes later iterations read a host register
+// that now holds something else; the value that leaks in is usually the
+// loop counter.  Each is differential against the interpreter *and* pinned
+// to a hand-computed constant, so it cannot pass by both routes agreeing
+// on a wrong answer.
+
+static void test_selfloop_pressure_forward_branch() {
+    printf("test_selfloop_pressure_forward_branch...\n");
+    // The scan stopped accumulating pressure at the first forward branch and
+    // then followed the branch *target*, while the emitter records the taken
+    // path as a cold side exit and keeps translating the fall-through.
+    // Everything after the branch was therefore invisible to the estimate:
+    // it saw only {x5,x9,x6,x7} and admitted a body touching nine registers.
+    std::vector<uint32_t> code = {
+        ADDI(9, 0, 1000),     // loop-invariant addend: preloaded, then evicted
+        ADDI(8, 0, 5),        // trip count
+        // loop:
+        ADD(5, 5, 9),         // x5 += 1000 — reads the preloaded x9
+        BNE(6, 7, 24),        // forward branch to the decrement; never taken
+        ADDI(20, 20, 1),
+        ADDI(21, 21, 2),
+        ADDI(22, 22, 3),
+        ADDI(23, 23, 4),
+        ADDI(24, 24, 5),
+        ADDI(8, 8, -1),
+        BNE(8, 0, -32),
+        ECALL()
+    };
+    uint64_t interp = run_code(code).state.x[5];
+    uint64_t dbt    = run_code_dbt(code, 5);
+    CHECK_EQ("selfloop fwd-branch: interpreter", interp, 5000);  // 5 * 1000
+    CHECK_EQ("selfloop fwd-branch: DBT matches interpreter", dbt, interp);
+}
+
+static void test_selfloop_pressure_regw_rs2() {
+    printf("test_selfloop_pressure_regw_rs2...\n");
+    // rc_mark_used listed rs2 for OP_REG but not OP_REG32, so SUBW's second
+    // source went uncounted.  x12 is a2 — a pinned register — which keeps the
+    // undercounted estimate at exactly the four free slots.
+    std::vector<uint32_t> code = {
+        ADDI(24, 0, 100),
+        ADDI(21, 0, 30),
+        ADDI(8, 0, 4),
+        // loop:
+        SUBW(1, 24, 21),                  // x1 = 70
+        r_type(OP_REG, 12, 1, 7, 0, 0),   // SLL x12, x7, x0 — pinned destination
+        ADDI(8, 8, -1),
+        BNE(8, 0, -12),
+        ECALL()
+    };
+    uint64_t interp = run_code(code).state.x[1];
+    uint64_t dbt    = run_code_dbt(code, 1);
+    CHECK_EQ("selfloop SUBW rs2: interpreter", interp, 70);  // 100 - 30
+    CHECK_EQ("selfloop SUBW rs2: DBT matches interpreter", dbt, interp);
+}
+
+static void test_selfloop_pressure_fp_int_rd() {
+    printf("test_selfloop_pressure_fp_int_rd...\n");
+    // FEQ/FLT/FLE, FCVT.W/WU/L/LU and FCLASS/FMV.X write an *integer* rd and
+    // so occupy an integer cache slot, but rc_mark_referenced only took rd
+    // for the integer opcodes.
+    std::vector<uint32_t> code = {
+        ADDI(8, 0, 5),
+        ADDI(5, 0, 42),
+        ADDI(6, 0, 7),
+        // loop:
+        ADD(7, 5, 6),                                          // x7 = 49
+        r_type(OP_FP, 4, 2, 0, 0, (FP_FCMP << 2) | FP_FMT_D),  // FEQ.D x4, f0, f0
+        ADDI(8, 8, -1),
+        BNE(8, 0, -12),
+        ECALL()
+    };
+    uint64_t interp = run_code(code).state.x[7];
+    uint64_t dbt    = run_code_dbt(code, 7);
+    CHECK_EQ("selfloop FP int-rd: interpreter", interp, 49);  // 42 + 7
+    CHECK_EQ("selfloop FP int-rd: DBT matches interpreter", dbt, interp);
+}
+
+// FSGNJ.D/FSGNJN.D take the magnitude from rs1 and the sign from rs2 by
+// writing ABS(rs1) into rd and then testing rs2's sign.  When rd == rs2 the
+// register cache hands out one host register for both, so the ABS destroyed
+// the very sign about to be tested — and the sign bit of an absolute value
+// is always clear, so the branch resolved the same way every time and the
+// result was -|rs1| regardless of rs2.  The rs1 == rs2 shortcut in that code
+// is a different aliasing case and never covered this one.  Golden values
+// cross-checked against qemu-riscv64.
+static void test_fsgnj_rd_aliases_rs2() {
+    printf("test_fsgnj_rd_aliases_rs2...\n");
+    for (int funct3 = 0; funct3 <= 1; funct3++) {
+        std::vector<uint32_t> code = {
+            ADDI(5, 0, -1),
+            r_type(OP_FP, 3, 0, 5, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f3 = all ones
+            ADDI(6, 0, 0x3FF),
+            SLLI(6, 6, 52),
+            r_type(OP_FP, 4, 0, 6, 0, (FP_FMVDX << 2) | FP_FMT_D),  // f4 = +1.0
+            // FSGNJ[N].D f3, f4, f3 — rd aliases rs2.
+            r_type(OP_FP, 3, (uint8_t)funct3, 4, 3, (FP_FSGNJ << 2) | FP_FMT_D),
+            ECALL()
+        };
+        // rs2's sign bit is set: FSGNJ copies it (-1.0), FSGNJN inverts (+1.0).
+        uint64_t want = (funct3 == 0) ? 0xBFF0000000000000ULL
+                                      : 0x3FF0000000000000ULL;
+        uint64_t interp = run_code(code).state.f[3];
+        uint64_t dbt    = run_code_dbt_fbits(code, 3);
+        CHECK_EQ(funct3 == 0 ? "FSGNJ.D rd==rs2: interpreter"
+                             : "FSGNJN.D rd==rs2: interpreter", interp, want);
+        CHECK_EQ(funct3 == 0 ? "FSGNJ.D rd==rs2: DBT matches interpreter"
+                             : "FSGNJN.D rd==rs2: DBT matches interpreter",
+                 dbt, interp);
+    }
+}
+
 // Load/store with rs1 == x0 and a nonzero immediate (absolute small-address
 // access).  The a64 backend's rc_read(x0) returns scratch X0; materializing
 // the offset into X0 before the address add clobbered the base, computing
@@ -1784,6 +1926,10 @@ int main(int argc, char *argv[]) {
     test_fp_fclass();
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
+    test_selfloop_pressure_forward_branch();
+    test_selfloop_pressure_regw_rs2();
+    test_selfloop_pressure_fp_int_rd();
+    test_fsgnj_rd_aliases_rs2();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();

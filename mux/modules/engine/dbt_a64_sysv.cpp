@@ -838,16 +838,27 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             memcpy(&w, dbt->memory + scan_pc, 4);
             rv64_insn_t si;
             rv64_decode(w, &si);
-            if (!past_first_branch) {
-                rc_mark_used(si, used);
-                rc_mark_referenced(si, referenced);
-            }
+            // Preload candidates are the registers read before the first
+            // branch.  Slot pressure is every register the body touches:
+            // the back edge re-enters at warm_entry, which is *past* the
+            // preload, so any eviction of a preloaded slot inside the body
+            // leaves the second and later iterations reading a host
+            // register that now holds some other guest register.  Counting
+            // only the pre-branch prefix under-reports that pressure and
+            // admits exactly the loops that go wrong.
+            if (!past_first_branch) rc_mark_used(si, used);
+            rc_mark_referenced(si, referenced);
             if (si.opcode == OP_BRANCH) {
                 uint64_t target = scan_pc + static_cast<int64_t>(si.imm);
                 if (target == guest_pc) { self_loop = true; break; }
                 if (si.imm < 0) break;
                 past_first_branch = true;
-                scan_pc = target;
+                // Follow the fall-through, not the target: for a forward
+                // branch inside a self-loop the emitter records the taken
+                // path as a cold side-exit stub and continues with the
+                // fall-through, so the fall-through is what lands in the
+                // loop body and what determines slot pressure.
+                scan_pc += 4;
                 continue;
             }
             if (si.opcode == OP_JAL) {
@@ -1923,13 +1934,20 @@ no_addr_fusion:
                 int fs2 = fc_read(&e, &fc, insn.rs2);
                 int fd = fc_write(&e, &fc, insn.rd);
                 switch (insn.funct3) {
+                // Capture fs2's sign into X0 *before* writing fd.  When
+                // rd == rs2 the cache hands out the same host register for
+                // both, so emitting the FABS first destroys the very sign
+                // being tested: X0 then holds |fs1|, whose sign bit is
+                // always clear, and the conditional branch below always
+                // resolves the same way.  The rs1 == rs2 shortcut above is
+                // a different aliasing case and does not cover this one.
                 case 0: // FSGNJ.D — copy sign of fs2
                     if (insn.rs1 == insn.rs2) {
                         emit_fmov_d(&e, fd, fs1);  // FMV.D
                     } else {
                         // ABS(fs1) with sign of fs2: use bit manipulation
-                        emit_fabs_d(&e, fd, fs1);
                         emit_fmov_x64_d(&e, A64_X0, fs2);
+                        emit_fabs_d(&e, fd, fs1);
                         // Test sign bit of fs2
                         emit_cmp_r64_imm(&e, A64_X0, 0);
                         uint32_t skip = emit_b_cond(&e, A64_COND_GE, 0);
@@ -1941,8 +1959,8 @@ no_addr_fusion:
                     if (insn.rs1 == insn.rs2) {
                         emit_fneg_d(&e, fd, fs1);  // FNEG.D
                     } else {
-                        emit_fabs_d(&e, fd, fs1);
                         emit_fmov_x64_d(&e, A64_X0, fs2);
+                        emit_fabs_d(&e, fd, fs1);
                         emit_cmp_r64_imm(&e, A64_X0, 0);
                         uint32_t skip = emit_b_cond(&e, A64_COND_LT, 0);
                         emit_fneg_d(&e, fd, fd);
