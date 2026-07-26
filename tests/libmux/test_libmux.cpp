@@ -90,6 +90,31 @@ static inline void safe_chr_impl(UTF8 c, UTF8 *buff, UTF8 **bufp)
 // Test infrastructure
 // ---------------------------------------------------------------------------
 
+
+// ---------------------------------------------------------------------------
+// Module transport (libmux.cpp).  Declared locally, as above, rather than
+// pulling in libmux.h, which needs the driver's config/type chain.
+// ---------------------------------------------------------------------------
+
+#define QUEUE_BLOCK_SIZE 32768
+typedef struct QueueBlock {
+    struct QueueBlock *pNext;
+    struct QueueBlock *pPrev;
+    char   *pBuffer;
+    size_t  nBuffer;
+    char    aBuffer[QUEUE_BLOCK_SIZE];
+} QUEUE_BLOCK;
+typedef struct { QUEUE_BLOCK *pHead; QUEUE_BLOCK *pTail; size_t nBytes; } QUEUE_INFO;
+typedef int MUX_RESULT;
+#define MUX_E_NOTREADY (-8)
+
+extern "C" void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
+extern "C" void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p);
+extern "C" void Pipe_EmptyQueue(QUEUE_INFO *pqi);
+extern "C" MUX_RESULT Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqi);
+extern "C" MUX_RESULT Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqi);
+
 static int g_pass = 0;
 static int g_fail = 0;
 
@@ -722,6 +747,49 @@ static void test_grapheme_baselines()
     ASSERT_EQ(vwidth(E_MAN),   (size_t)2);
 }
 
+
+// ---------------------------------------------------------------------------
+// Module transport used before mux_InitModuleLibraryPump (#1340)
+// ---------------------------------------------------------------------------
+//
+// The three Pipe_Send* entry points are exported, and everything they reach
+// -- both queues and the pump callback -- is null until the hosting process
+// installs a transport.  Pipe_AppendBytes checks its length and its source
+// pointer but not its queue, and the receive path calls the pump through a
+// bare function pointer, so calling any of them first used to be an
+// immediate segfault with no diagnostic.
+//
+// That is how muxscript built with --enable-stubslave died: it reached the
+// module transport without ever calling init_stubslave(), and took signal 11
+// at the first module test.  #1332 made it boot the slave, which removed
+// that particular trigger but left the entry points reachable by anything
+// else that gets here early.
+//
+// This test runs before any transport is installed -- nothing else in this
+// binary installs one -- so it exercises exactly that state.  A regression
+// does not fail these assertions, it *crashes the whole test binary*, which
+// is itself a clear enough signal.
+//
+static void test_pipe_send_without_pump_is_not_ready()
+{
+    static QUEUE_INFO qi;
+    Pipe_InitializeQueueInfo(&qi);
+    const uint8_t payload[4] = { 1, 2, 3, 4 };
+
+    Pipe_AppendBytes(&qi, sizeof(payload), payload);
+    ASSERT_EQ(Pipe_SendCallPacketAndWait(1, &qi), MUX_E_NOTREADY);
+
+    Pipe_EmptyQueue(&qi);
+    Pipe_AppendBytes(&qi, sizeof(payload), payload);
+    ASSERT_EQ(Pipe_SendMsgPacket(1, &qi), MUX_E_NOTREADY);
+
+    Pipe_EmptyQueue(&qi);
+    Pipe_AppendBytes(&qi, sizeof(payload), payload);
+    ASSERT_EQ(Pipe_SendDiscPacket(1, &qi), MUX_E_NOTREADY);
+
+    Pipe_EmptyQueue(&qi);
+}
+
 int main()
 {
     printf("libmux Unit Tests\n");
@@ -803,6 +871,9 @@ int main()
     RUN_TEST(test_grapheme_regional_indicator_flag);
     RUN_TEST(test_copy_columns_color_inside_cluster);
     RUN_TEST(test_grapheme_baselines);
+
+    printf("\n--- module transport before init (#1340) ---\n");
+    RUN_TEST(test_pipe_send_without_pump_is_not_ready);
 
     printf("\n=================\n");
     printf("Results: %d passed, %d failed\n", g_pass, g_fail);
