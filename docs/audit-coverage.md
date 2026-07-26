@@ -174,7 +174,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 7 | 2026-07 | D2 HIR + D3 DBT | Highs #1143–#1148 → #1156; Mediums #1149–#1153 residual; also JIT float/ifelse Highs #1157/#1159 closed separately |
 | Pass 8 | 2026-07 | E5 object/player/flags/powers + C5 speech/look/move/create | Highs #1179–#1181; Mediums #1182–#1188 open (not yet fixed) |
 | Pass 9 | 2026-07 | F3 engine comsys/mail vs F1/F2 modules | Highs #1189–#1193; Mediums #1194–#1199 largely fixed in follow-up PRs |
-| Pass 7 re-scout | 2026-07-26 | D2 HIR + D3 DBT residual | No new D3 Highs; D2 filed #1258 (HIR_NEG no codegen), #1259 (INC/DEC fold UB), #1260 (max/min/sign/bound int path). Left #1151/#1153 to existing owners. |
+| Pass 7 re-scout | 2026-07-26 | D2 HIR + D3 DBT residual | No new D3 Highs; D2 filed #1258 (HIR_NEG no codegen), #1259 (INC/DEC fold UB), #1260 (max/min/sign/bound int path). Left #1151/#1153 to existing owners (both since closed). |
 
 | Pass B1/H1 residual | 2026-07-26 | engines + alloc/alarm | #1290 freelist, alarm ms, dual-stack warn |
 | Pass D4 residual | 2026-07-26 | lua_mod bridges | #1287 mux.pennies/iswizard/isconnected match softcode perms; string.dump removed |
@@ -192,8 +192,8 @@ Revisit is expected. Suggested order balances **new surface** with **re-sweeps**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | **D2 fix queue** #1258–#1260 (+ land #1255/#1256 if open) | Fresh re-scout findings; #1258 is High if Lua JIT UNM is live |
-| **Then** | **#1151 / #1153** D3 residual (if free) | Guest bounds + intrinsic cache double-insert |
+| **Now** | **D2 fix queue**: #1258/#1259 and #1255/#1256 closed; **#1260** (max/min/sign/bound int path) remains | Fresh re-scout findings |
+| **Then** | **#1292** D3/interpreter residual (`mem_check` wrap) | #1151/#1153 closed; this is what is left |
 | **Pass 10** | **I2 deep + I6** remaining gRPC surface + regression expansion | Pass 4 closed; residual depth |
 | **Pass 11** | **B3 + B4 nits + B6** OpenSSL re-read + Schannel residual + harness | Windows/Linux TLS depth |
 | **Pass 12** | **C3** done (#1279/#1280) | Fix queue / residual Mediums |
