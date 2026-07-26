@@ -112,6 +112,9 @@ testcases/smoke.log
 # builder's libc collation, so tracking it churned ~722 lines per platform
 # swap.  Build it locally, or copy one between boxes (#1205).
 testcases/smoke.flat
+testcases/suite.manifest
+testcases/smoke.expected.*
+testcases/smoke.dispatched.*
 testcases/smoke.conf
 testcases/alias.conf
 testcases/compat.conf
