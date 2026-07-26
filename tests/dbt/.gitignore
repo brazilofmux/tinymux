@@ -1,0 +1,4 @@
+test_chain
+test_cache
+dbt_test
+*.o

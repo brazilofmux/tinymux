@@ -35,7 +35,7 @@
 // backend fails loudly instead of quietly testing something else.
 //
 static void die_unreachable(const char *who) {
-    fprintf(stderr, "test_dbt_cache: %s was called from the cache path.\n"
+    fprintf(stderr, "test_cache: %s was called from the cache path.\n"
             "These stubs are no longer safe.\n", who);
     abort();
 }

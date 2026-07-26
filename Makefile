@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -28,14 +28,12 @@ clean:
 	$(MAKE) -C mux clean
 	$(MAKE) -C testcases/tools clean
 	$(MAKE) -C mux/ganl/tests clean
-	$(MAKE) -C tests/dbt_chain clean
-	$(MAKE) -C tests/dbt_exec clean
-	$(MAKE) -C tests/dbt_cache clean
+	$(MAKE) -C tests/dbt clean
 
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-dbt-chain test-dbt-cache test-dbt-exec test-alarm test-jit-qreg test-jit-ifelse test-ios
+test: install test-ganl test-netaddr test-dbt test-alarm test-jit-qreg test-jit-ifelse test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -79,37 +77,15 @@ test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
 
-# DBT block-chaining patch encode/decode tests (#1152).  Asserts that
-# dbt_backend_decode_jmp_target is the exact inverse of
-# dbt_backend_backpatch_jmp, which is what dbt_resolve_chains relies on to
-# tell an unresolved site from a live one.  Builds all three backends
-# (a64_sysv, x64_sysv, x64_win64) into one binary on every host — the #1152
-# bug survived precisely because nothing exercised the affected backend.
-# Compiles the backend sources directly, so it needs neither `install` nor
-# --enable-jit and cannot degrade into testing nothing.
-test-dbt-chain:
-	@echo "==> Running DBT chain patch encode/decode tests"
-	$(MAKE) -C tests/dbt_chain test
-
-# DBT block cache tests (#1153).  The 4-way cache had no dedupe by guest_pc
-# while intrinsic blocks are inserted twice (once by try_emit_intrinsic, once
-# by every caller of dbt_backend_translate_block), so two intrinsics sharing a
-# set filled all four ways with two distinct blocks and evicted live ones.
-# Compiles dbt.cpp directly against backend stubs — no `install`, no
-# --enable-jit, no skip path.
-test-dbt-cache:
-	@echo "==> Running DBT block cache tests"
-	$(MAKE) -C tests/dbt_cache test
-
-# RV64 execution tests (interpreter + DBT).  mux/modules/engine/dbt_test.cpp
-# had never been in any build — no Makefile.am entry, no CI — so it only ran
-# if someone typed the compile line from its header by hand.  That left no
-# automated RV64 *execution* coverage at all, the same "nothing exercises it"
-# gap behind #1152/#1153/#1151.  Builds the host backend (this one executes
-# translated code, unlike tests/dbt_chain) and skips loudly off x86_64/aarch64.
-test-dbt-exec:
-	@echo "==> Running RV64 execution tests (interpreter + DBT)"
-	$(MAKE) -C tests/dbt_exec test
+# DBT and RV64 tests (tests/dbt): chain patch encode/decode across all three
+# backends (#1152), block cache dedupe and eviction (#1153), and the RV64
+# execution harness -- interpreter plus DBT, host backend only since it runs
+# what it translates.  Three binaries because each needs a different link.
+# All compile engine sources directly: no `install`, no --enable-jit, and no
+# skip path except `exec` on a host with no backend.
+test-dbt:
+	@echo "==> Running DBT and RV64 tests"
+	$(MAKE) -C tests/dbt test
 
 # mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
 # worker-thread start — alarm_clock is a libmux global whose constructor used
