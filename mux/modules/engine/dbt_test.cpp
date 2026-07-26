@@ -2841,6 +2841,76 @@ static void test_fp_compare_semantics() {
     }
 }
 
+// MULH / MULHSU / MULHU against x0 (#1361).
+//
+// x0 is materialised as RAX-as-zero, so the host register for a guest x0
+// operand IS RAX -- the same register the dividend is loaded into.  The
+// high multiplies loaded rs1 into RAX first, destroying the zero, and then
+// multiplied by "rs2" (still RAX), squaring rs1.  MULHSU also re-read rs2
+// after the multiply, where RAX holds the low half of the product.
+//
+// test_mul_div_rem() covers this family but never with x0 as an operand,
+// which is exactly why it survived.  Both routes are asserted: the
+// interpreter is correct here, so an interpreter-only check proves nothing
+// about the backend (#1359).
+//
+static void test_mulh_x0() {
+    printf("test_mulh_x0...\n");
+
+    // f3 = MULH-family(rs1, rs2) for the given funct3, via x0 in one or
+    // both operand positions.  Anything times zero is zero -- including
+    // the high half -- so every expectation below is 0.
+    auto build = [](int64_t v, int shift, int funct3,
+                    int rs1_is_x0, int rs2_is_x0) {
+        std::vector<uint32_t> code;
+        // x14 = v << shift.  ADDI's immediate is 12-bit signed, so the
+        // magnitude comes from the shift rather than from repeated adds.
+        code.push_back(ADDI(14, 0, (int32_t)v));
+        if (shift) code.push_back(SLLI(14, 14, shift));
+        code.push_back(r_type(0x33, 4, funct3, rs1_is_x0 ? 0 : 14,
+                              rs2_is_x0 ? 0 : 14, 0x01));
+        code.push_back(ECALL());
+        return code;
+    };
+
+    struct { const char *nm; int f3; } OPS[] = {
+        { "mulh",   1 }, { "mulhsu", 2 }, { "mulhu",  3 },
+    };
+    // Negative values matter for MULHSU: the sign of rs1 drives the
+    // correction term that read the clobbered register.
+    //
+    // The shifts are load-bearing for MULH.  Squaring a small rs1 leaves a
+    // zero high half, so the broken form returns the right answer anyway --
+    // MULH only diverges once |rs1| exceeds 2^32 and rs1*rs1 overflows 64
+    // bits.  Without these rows this test would pass against the bug.
+    struct { int64_t v; int shift; } VALS[] = {
+        { -7, 0 }, { -1, 0 }, { 1, 0 }, { 2047, 0 }, { -2048, 0 },
+        { -7, 34 }, { 1023, 40 }, { -1, 63 }, { 3, 62 },
+    };
+
+    for (size_t o = 0; o < sizeof(OPS)/sizeof(OPS[0]); o++) {
+        for (size_t i = 0; i < sizeof(VALS)/sizeof(VALS[0]); i++) {
+            struct { const char *pos; int a, b; } P[] = {
+                { "rs2=x0",  0, 1 }, { "rs1=x0",  1, 0 }, { "both=x0", 1, 1 },
+            };
+            for (size_t p = 0; p < 3; p++) {
+                std::vector<uint32_t> code =
+                    build(VALS[i].v, VALS[i].shift, OPS[o].f3,
+                          P[p].a, P[p].b);
+                char desc[160];
+                snprintf(desc, sizeof(desc), "%s(%lld<<%d,%s): interp",
+                         OPS[o].nm, (long long)VALS[i].v, VALS[i].shift,
+                         P[p].pos);
+                CHECK_EQ(desc, run_code(code).state.x[4], 0);
+                snprintf(desc, sizeof(desc), "%s(%lld<<%d,%s): DBT",
+                         OPS[o].nm, (long long)VALS[i].v, VALS[i].shift,
+                         P[p].pos);
+                CHECK_EQ(desc, run_code_dbt(code, 4), 0);
+            }
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2893,6 +2963,7 @@ int main(int argc, char *argv[]) {
     test_fp_nan_canonicalisation();
     test_fp_minmax_snan();
     test_fp_compare_semantics();
+    test_mulh_x0();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
