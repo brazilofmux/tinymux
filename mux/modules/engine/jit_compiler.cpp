@@ -5158,6 +5158,31 @@ FUNCTION(fun_jitstats)
             (unsigned long long)s_jit_stats.noeval_top[i].count);
     }
 
+    // Append DBT code-buffer occupancy (#1315).  The Tier-2 blob is
+    // pretranslated once and preserved across every dbt_reset, so
+    // dbt_blob_bytes is a permanent reservation out of dbt_code_cap and
+    // what remains is all any program will ever get.  That cost is
+    // backend-specific -- the same blob is not the same number of host
+    // bytes on Win64, x64 SysV and aarch64 -- so it wants measuring per
+    // platform rather than assuming one constant suits every backend.
+    //
+    // dbt_code_full counting up means translations are being declined for
+    // want of space; dbt_code_reclaims counts the mid-run recoveries that
+    // keep such a decline local to one program instead of permanent.
+    if (n < static_cast<int>(LBUF_SIZE) - 256) {
+        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
+            " dbt_code_cap=%u"
+            " dbt_blob_bytes=%u"
+            " dbt_code_used=%u"
+            " dbt_code_reclaims=%llu"
+            " dbt_code_full=%llu",
+            static_cast<unsigned>(CODE_BUF_SIZE),
+            static_cast<unsigned>(s_dbt_ready ? s_persistent_dbt.blob_code_end : 0),
+            static_cast<unsigned>(s_dbt_ready ? s_persistent_dbt.code_used : 0),
+            static_cast<unsigned long long>(s_dbt_ready ? s_persistent_dbt.code_reclaims : 0),
+            static_cast<unsigned long long>(s_dbt_ready ? s_persistent_dbt.code_full : 0));
+    }
+
     safe_str(tmp, buff, bufc);
 }
 

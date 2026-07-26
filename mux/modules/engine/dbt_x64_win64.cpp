@@ -983,7 +983,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
 
             dbt->intrinsics[i].emitter(&e, dbt->intrinsics[i].host_fn);
 
-            if (e.offset > e.capacity) return nullptr;
+            if (e.offset > e.capacity) return dbt_xlate_full(dbt);
 
             dbt->code_used += e.offset;
             dbt->intrinsic_hits++;
@@ -996,7 +996,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
             return block_start;
         }
     }
-    return nullptr;
+    return nullptr; // not an intrinsic — not a translate failure
 }
 
 // ---------------------------------------------------------------
@@ -2925,9 +2925,11 @@ no_addr_fusion:
             // (rd left stale).  dbt_run never single-steps the interpreter,
             // so "fallback" was a silent skip.  Returning nullptr lets the
             // caller decline compiled execution instead of running wrong code.
+            // XLATE_REFUSE so dbt_run does not reclaim as if the buffer were
+            // full (#1331).
             //
             dbt_rollback_patches(dbt, patches_before);
-            return nullptr;
+            return dbt_xlate_refuse(dbt);
         }
     }
 
@@ -2990,7 +2992,7 @@ done:
 
     if (e.offset > e.capacity) {
         dbt_rollback_patches(dbt, patches_before);
-        return nullptr;
+        return dbt_xlate_full(dbt);
     }
     dbt->blocks_translated++;
     dbt->insns_translated += count;
