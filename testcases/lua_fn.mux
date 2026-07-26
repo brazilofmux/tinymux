@@ -965,11 +965,44 @@
     setr(0,lua(me/LUA_TBLIDX)),
     55)=
   {
-    @log smoke=TC058: lua for-loop table index arithmetic. Succeeded.;
+    @log smoke=TC058: lua for-loop table index arithmetic. Succeeded.
+  },
+  {
+    @log smoke=TC058: lua for-loop table index arithmetic. Failed (%q0).
+  }
+-
+#
+# Test 59: runtime HIR_NEG of INT64_MIN via args (#1258).
+# Forces the non-constant UNM path (no ICONST fold).  Two's-complement
+# wrap: -INT64_MIN stays INT64_MIN, matching RV64 SUB dest,x0,rs.
+#
+&tr.tc059 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_NEG_ARG,-9223372036854775808)),
+    -9223372036854775808)=
+  {
+    @log smoke=TC059: lua runtime NEG of INT64_MIN wraps. Succeeded.
+  },
+  {
+    @log smoke=TC059: lua runtime NEG of INT64_MIN wraps. Failed (%q0).
+  }
+-
+#
+# Test 60: const-fold HIR_NEG of math.mininteger (#1258).
+# Fold must not evaluate -INT64_MIN as C++ UB; keep INT64_MIN.
+#
+&LUA_NEG_MININT test_lua_fn=return -math.mininteger
+-
+&tr.tc060 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_NEG_MININT)),
+    -9223372036854775808)=
+  {
+    @log smoke=TC060: lua fold NEG of mininteger. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC058: lua for-loop table index arithmetic. Failed (%q0).;
+    @log smoke=TC060: lua fold NEG of mininteger. Failed (%q0).;
     @trig me/tr.done
   }
 -

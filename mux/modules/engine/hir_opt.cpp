@@ -352,10 +352,14 @@ void hir_const_fold(hir_program &h) {
                 break;
 
             // NEG of ICONST.
+            // -INT64_MIN is C++ UB (same class as #805 / #1150).  Keep
+            // INT64_MIN to match two's-complement wrap from RV64 SUB
+            // dest,x0,rs and i64Division's INT64_MIN/-1 style.  (#1258)
             case HIR_NEG:
                 if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
                     h.kind[i] = HIR_ICONST;
-                    h.val[i] = -h.val[s1];
+                    h.val[i] = (h.val[s1] == INT64_MIN)
+                               ? INT64_MIN : -h.val[s1];
                     h.src1[i] = -1;
                     changed = true;
                 }
