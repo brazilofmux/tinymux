@@ -334,10 +334,14 @@ void hir_const_fold(hir_program &h) {
                 break;
 
             // INC / DEC of ICONST.
+            // Signed overflow is C++ UB; softcode/runtime wrap via
+            // ADDI (two's complement).  Fold with unsigned intermediate
+            // so INT64_MAX+1 / INT64_MIN-1 match wrap (#1259).
             case HIR_INC:
                 if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
                     h.kind[i] = HIR_ICONST;
-                    h.val[i] = h.val[s1] + 1;
+                    h.val[i] = static_cast<int64_t>(
+                        static_cast<uint64_t>(h.val[s1]) + 1u);
                     h.src1[i] = -1;
                     changed = true;
                 }
@@ -345,7 +349,8 @@ void hir_const_fold(hir_program &h) {
             case HIR_DEC:
                 if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
                     h.kind[i] = HIR_ICONST;
-                    h.val[i] = h.val[s1] - 1;
+                    h.val[i] = static_cast<int64_t>(
+                        static_cast<uint64_t>(h.val[s1]) - 1u);
                     h.src1[i] = -1;
                     changed = true;
                 }
