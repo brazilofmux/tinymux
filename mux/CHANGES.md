@@ -44,6 +44,22 @@ evaluation.
    (#1238).  Note this is user-visible: `[strcat(x add(1,2) y)]` now
    returns `x add(1,2) y` rather than `x 3 y`, and
    `[add(1,2) mul(3,4)]` returns `3 mul(3,4)` rather than `3 12`.
+ - The rule is now uniform across region kinds (#1246).  It briefly
+   applied only outside eval brackets, because 2.13 treats a bracket's
+   candidate function name as the accumulated *output* and folds
+   preceding text into it — `[x add(1,2) y]` yields
+   `#-1 FUNCTION (X ADD) NOT FOUND` there.  2.14's tokenizer cannot
+   express that, and the two 2.14 routes disagreed on the shape.
+   Settled in favour of literal text, which is the compiled route's
+   answer and the better one: `[x add(1,2) y]` returns `x add(1,2) y`.
+   Also resolves the same divergence for inline `subeval()` (#1162) and
+   restores 2.13's verbatim echo for `[strcat(x (add(1,2) y)]`.
+ - **The two evaluation routes now agree on every shape in the parity
+   corpus** — 128 of 128, with no unadjudicated divergences left.  The
+   only remaining disagreements with 2.13 are deliberate: nine pinned
+   `name (args)` shapes and two where 2.13 reports an error and 2.14
+   prints plausible text, which is an open design question rather than
+   a defect.
  - Nested parentheses are balanced when scanning function arguments
    (#1219).
  - `ifelse()`/`if()` conditions are decided with `xlate()` rather than
@@ -118,6 +134,30 @@ These bound what an unauthenticated or abusive source can consume.
  - Tier-2 wrapper audit: interpreter-mirror fixes across the rv64
    wrappers, including `fun_after`/`fun_before` (#993, #980), `wordpos`
    UTF-8 (#989) and `maxArgsParsed` catenation (#988).
+ - **An unrecognized AST node type no longer compiles to an empty
+   string** (#1242).  The lowering's `default:` arm turned "the compiler
+   does not know this node" into silent deletion of user text — the
+   failure mode behind the dropped semicolons above.  It now declines
+   the compile so the interpreter handles the expression, making the
+   next missing case cost performance rather than correctness.
+ - A failed PHI argument reservation overflows the program instead of
+   silently doing nothing, which had let sibling PHIs share argument
+   slots and read each other's values (#1149).  The capacity flag is
+   also now checked *after* SSA construction: it had only one reader, at
+   the end of lowering, so any limit reached during SSA was recorded and
+   never acted on.
+ - Softcode `abs()` lowers through the float path rather than integer
+   `HIR_ABS` (#1150).  `abs()` is a float function (`mux_atof`), so the
+   native integer form modelled the wrong function; `iabs()` keeps its
+   integer semantics and its range check.  Constant folding of `HIR_ABS`
+   also skips `INT64_MIN`, where negation is undefined behaviour.
+ - Chain patch sites are decoded per backend rather than as x86-64
+   `rel32` unconditionally (#1152).  On AArch64 the site is a `B imm26`
+   word — displacement in words, measured from the instruction — so the
+   decode produced noise, never matched the stub offset, and
+   `dbt_resolve_chains` classified every site as already resolved.  The
+   x86-64 decode is unchanged; the entire behavioural effect is on
+   AArch64.
 
 ## Comsys, @mail, and Module Storage
 
@@ -206,6 +246,22 @@ across the engine, networking, JIT and module surfaces.
    flag predicates, pronouns/art/time formats, and jit_diff corpus shapes
    for float, branch and nested evaluation.
  - `testcases/smoke.flat` is no longer tracked (#1205); it is generated.
+ - **A DBT chain-patch harness** (`tests/dbt_chain`, `make test-dbt-chain`,
+   part of `make test`) asserts that the branch decode is the exact
+   inverse of the encode.  It builds *all three* backends — a64_sysv,
+   x64_sysv, x64_win64 — into one binary on every host, because #1152
+   survived precisely by living in a backend nobody exercised, and it has
+   no skip path that could quietly degrade into testing nothing.  Round
+   trips alone are not enough: they still pass when encoder and decoder
+   are wrong in the same way, so the anchors are golden byte patterns
+   taken from a disassembler rather than from the code under test.
+ - Error-path assertions no longer embed parenthesised error text
+   (#1249).  `#-1 FUNCTION (RIGHT) EXPECTS 2 ARGUMENTS` written inside
+   another function argument truncated at the first `)`, and the leaked
+   tail closed the enclosing `cand()` early — so the failing condition
+   was dropped and arity cases passed *vacuously*, on exactly the tests
+   written to catch those bugs.  Rewritten with a wildcard in place of
+   the name, with the convention recorded in `testcases/tools/README.md`.
  - Surveys and design docs added for the queue, per-resource defenses, and
    the JIT eval-bracket lift plan.
 
@@ -213,11 +269,15 @@ across the engine, networking, JIT and module surfaces.
 
  - AST-route-only parser defects cannot fail CI: `make test` exercises the
    compiled route, so a defect present only on the interpreted route
-   passes silently.  Two fixes this cycle were guarded only by a
+   passes silently.  Three fixes this cycle were guarded only by a
    `jit_eval_brackets 0` run (#1243).
- - The HIR lowering's default arm turns a missing node case into silent
-   data loss rather than a fallback; it should decline to compile instead
-   (#1242).
+ - 2.13 aborts the rest of an eval-bracket region when a function lookup
+   fails there; 2.14 continues (#1247).
+ - Function-argument parenthesis matching is a depth counter rather than
+   2.13's closer stack, which differ on unbalanced input (#1248).
+ - `abs(-9223372036854775808)` returns a negative value on both routes:
+   the magnitude exceeds `INT64_MAX` by one and formatting wraps.
+   Pre-existing, and `iabs()` already rejects the same domain (#1255).
 
 # Changes in 2.14.0.9 (2026-JUL-14):
 
