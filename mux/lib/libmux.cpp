@@ -1727,6 +1727,29 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QU
     }
 }
 
+// True once mux_InitModuleLibraryPump() has supplied the transport.
+//
+// The three Pipe_Send* entry points below are exported, and everything they
+// touch -- both queues and the pump callback -- is null until the hosting
+// process installs it.  Pipe_AppendBytes checks its length and source but
+// not its queue, and Pipe_SendReceive calls the pump through a bare
+// function pointer, so calling any of them beforehand is an immediate
+// segfault with no diagnostic.
+//
+// That is not hypothetical.  muxscript built with --enable-stubslave used
+// to reach the module transport without ever calling init_stubslave(), and
+// died on signal 11 at the first module test (#1340).  #1332 made it boot
+// the slave, which removed the trigger but left this reachable by anything
+// else that gets here early.  Failing cleanly is cheap; the caller already
+// has to handle a failed transport.
+//
+static bool Pipe_PumpReady(void)
+{
+    return (  nullptr != g_fpPipePump
+           && nullptr != g_pQueue_In
+           && nullptr != g_pQueue_Out);
+}
+
 static MUX_RESULT Pipe_SendReceive(uint32_t iReturnChannel, QUEUE_INFO *pqi)
 {
     MUX_RESULT mr = MUX_S_OK;
@@ -1751,6 +1774,10 @@ static void Pipe_WriteHeader(uint8_t type, uint32_t nChannel, uint32_t nPayload)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
+    if (!Pipe_PumpReady())
+    {
+        return MUX_E_NOTREADY;
+    }
     uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
     Pipe_WriteHeader(FRAME_CALL, nChannel, nPayload);
     Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
@@ -1759,6 +1786,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t nCh
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
+    if (!Pipe_PumpReady())
+    {
+        return MUX_E_NOTREADY;
+    }
     uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
     Pipe_WriteHeader(FRAME_MSG, nChannel, nPayload);
     Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
@@ -1767,6 +1798,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, Q
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
+    if (!Pipe_PumpReady())
+    {
+        return MUX_E_NOTREADY;
+    }
     uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
     Pipe_WriteHeader(FRAME_DISC, nChannel, nPayload);
     Pipe_AppendQueue(g_pQueue_Out, pqiFrame);
