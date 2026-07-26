@@ -237,10 +237,13 @@ static bool try_fold(const std::string &func_name,
     }
 
     // --- INC(a) / DEC(a) ---
+    // Defined two's-complement wrap (matches ADDI / overflow_inject TC005).
+    // Do not use signed +1/-1 — that is C++ UB at INT64_MAX/MIN (#1259).
     if (upper == "INC") {
         int64_t v = (nargs >= 1) ? mux_atoi64(u8(args[0])) : 0;
         UTF8 buf[64]; UTF8 *bufc = buf;
-        safe_i64toa(v + 1, buf, &bufc);
+        safe_i64toa(static_cast<int64_t>(static_cast<uint64_t>(v) + 1u),
+                    buf, &bufc);
         *bufc = '\0';
         result = reinterpret_cast<const char *>(buf);
         return true;
@@ -248,7 +251,8 @@ static bool try_fold(const std::string &func_name,
     if (upper == "DEC") {
         int64_t v = (nargs >= 1) ? mux_atoi64(u8(args[0])) : 0;
         UTF8 buf[64]; UTF8 *bufc = buf;
-        safe_i64toa(v - 1, buf, &bufc);
+        safe_i64toa(static_cast<int64_t>(static_cast<uint64_t>(v) - 1u),
+                    buf, &bufc);
         *bufc = '\0';
         result = reinterpret_cast<const char *>(buf);
         return true;
@@ -256,6 +260,17 @@ static bool try_fold(const std::string &func_name,
 
     // --- ABS(a) ---
     if (upper == "ABS" && nargs == 1) {
+        // #1255: |INT64_MIN| cannot format via fval as a non-negative int64.
+        // Match fun_abs / iabs and refuse the domain at const-fold too.
+        //
+        int nDigits = 0;
+        if (  is_integer(u8(args[0]), &nDigits)
+           && 0 < nDigits
+           && mux_atoi64(u8(args[0])) == INT64_MIN)
+        {
+            result = reinterpret_cast<const char *>(OUT_OF_RANGE);
+            return true;
+        }
         double d = mux_atof(u8(args[0]));
         result = format_double(fabs(d));
         return true;
@@ -883,6 +898,7 @@ static bool try_fold(const std::string &func_name,
 // (fun_abs/fun_max/fun_min/fun_bound use mux_atof + fval), so e.g.
 // abs(2.5)=2.5 — marking them known_int caused a downstream native int op
 // to ATOI-truncate the float (#826).  They live in returns_float instead.
+// SIGN stays: fun_sign is float-computed (#1260) but always emits -1/0/1.
 //
 bool returns_int(const std::string &upper) {
     return upper == "RAND" || upper == "STRLEN" || upper == "WORDS"
@@ -3152,38 +3168,15 @@ general_lowering:
         return r;
     }
 
-    // ABS is intentionally NOT lowered to integer HIR_ABS (#1150).
-    // Softcode abs() is float (mux_atof/fval); HIR_ABS is signed-integer
-    // magnitude and is UB on INT64_MIN.  The float path (s_fp_unary →
-    // fabs / FMATH_FABS) matches the interpreter for both ints and
-    // decimals.  iabs() remains an ECALL (and rejects INT64_MIN, #1114).
+    // ABS: softcode abs() is float — see s_fp_unary (fabs).  Integer
+    // HIR_ABS was removed (#1150 / #1256).  iabs() remains an ECALL (#1114).
 
-    // SIGN: sign of integer (-1, 0, 1).
-    if (upper == "SIGN" && nargs == 1 && h.is_int(args[0])) {
-        int a = ensure_hi(args[0]);
-        int r = h.emit(HIR_SIGN, TY_INT, a);
-        h.native_ops++;
-        h.needs_jit = true;
-        return r;
-    }
-
-    // MAX / MIN: binary integer max/min.
-    if (upper == "MAX" && nargs == 2 && all_int()) {
-        int a = ensure_hi(args[0]);
-        int b = ensure_hi(args[1]);
-        int r = h.emit(HIR_MAX, TY_INT, a, b);
-        h.native_ops++;
-        h.needs_jit = true;
-        return r;
-    }
-    if (upper == "MIN" && nargs == 2 && all_int()) {
-        int a = ensure_hi(args[0]);
-        int b = ensure_hi(args[1]);
-        int r = h.emit(HIR_MIN, TY_INT, a, b);
-        h.native_ops++;
-        h.needs_jit = true;
-        return r;
-    }
+    // SIGN / MAX / MIN / BOUND are intentionally NOT lowered to integer
+    // HIR_SIGN / HIR_MAX / HIR_MIN (#1260).  Interpreter fun_sign /
+    // fun_max / fun_min / fun_bound are float (mux_atof + fval); the
+    // prior is_int / all_int native path diverged at type edges and
+    // near 2^53.  Constants still fold via try_fold (float); runtime
+    // falls through to ECALL.  Integer isign() stays ECALL.
 
     // IDIV: integer division (truncate toward zero).
     // Match interpreter: idiv(x,0) returns "#-1 DIVIDE BY ZERO".
@@ -3201,18 +3194,6 @@ general_lowering:
         int b = ensure_hi(args[1]);
         int r = h.emit(HIR_DIV, TY_INT, a, b);
         h.native_ops++;
-        h.needs_jit = true;
-        return r;
-    }
-
-    // BOUND: clamp x to [lo, hi] — synthesized as max(lo, min(hi, x)).
-    if (upper == "BOUND" && nargs == 3 && all_int()) {
-        int x = ensure_hi(args[0]);
-        int lo = ensure_hi(args[1]);
-        int hi = ensure_hi(args[2]);
-        int clamped_hi = h.emit(HIR_MIN, TY_INT, x, hi);
-        int r = h.emit(HIR_MAX, TY_INT, clamped_hi, lo);
-        h.native_ops += 2;
         h.needs_jit = true;
         return r;
     }

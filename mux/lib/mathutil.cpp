@@ -232,12 +232,30 @@ void fval(UTF8 *buff, UTF8 **bufc, double result)
 #endif // HAVE_IEEE_FP_FORMAT
         double rIntegerPart;
         double rFractionalPart = modf(result, &rIntegerPart);
+
+        // The upper bound must be compared against 2^63, not INT64_MAX.
+        // INT64_MAX (2^63-1) is not representable as a double and
+        // converts to exactly 2^63, so `rIntegerPart <= INT64_MAX`
+        // accepted 2^63 itself.  The cast is then undefined and yields
+        // INT64_MIN on x86-64 and AArch64 alike, so every whole result
+        // at or above 2^63 printed as -9223372036854775808 —
+        // max(9223372036854775807,0) and abs(-9223372036854775807)
+        // both returned a negative number.  2^63 is exactly
+        // representable, so the strict `<` is the exact boundary.
+        //
+        // INT64_MIN is exactly representable, so `<=` is right there.
+        //
+        // int64_t rather than long: long is 32-bit on Win64, which
+        // would silently narrow this fast path to +/-2^31 and format
+        // the same value differently across platforms.
+        //
+        static const double dTwoPow63 = 9223372036854775808.0;
         if (  0.0 == rFractionalPart
-           && LONG_MIN <= rIntegerPart
-           && rIntegerPart <= LONG_MAX)
+           && static_cast<double>(INT64_MIN) <= rIntegerPart
+           && rIntegerPart < dTwoPow63)
         {
-            long i = static_cast<long>(rIntegerPart);
-            safe_ltoa(i, buff, bufc);
+            int64_t i = static_cast<int64_t>(rIntegerPart);
+            safe_i64toa(i, buff, bufc);
         }
         else
         {

@@ -57,7 +57,26 @@
     @log smoke=TC003: abs malformed inputs. Succeeded.
   },
   {
-    @log smoke=TC003: abs malformed inputs. Failed (abs(foo)=[abs(foo)] abs()=[abs()] abs(+)=[abs(+)]).;
+    @log smoke=TC003: abs malformed inputs. Failed (abs(foo)=[abs(foo)] abs()=[abs()] abs(+)=[abs(+)]).
+  }
+-
+#
+# Test Case #4 - INT64_MIN is out of domain (#1255).  |INT64_MIN| cannot
+# format as a non-negative int64 via fval; reject like iabs (#1114).
+# INT64_MIN+1 still works.  Match #-1* so the assertion stays paren-safe.
+#
+&tr.tc004 test_abs_fn=
+  @if cand(
+        strmatch(abs(-9223372036854775808), #-1*),
+        eq(abs(-9223372036854775807), 9223372036854775807),
+        eq(abs(9223372036854775807), 9223372036854775807)
+      )=
+  {
+    @log smoke=TC004: abs() INT64_MIN out of range. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: abs() INT64_MIN out of range. Failed (abs(MIN)=[abs(-9223372036854775808)] abs(MIN+1)=[abs(-9223372036854775807)]).;
     @trig me/tr.done
   }
 -
