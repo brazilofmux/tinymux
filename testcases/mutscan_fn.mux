@@ -79,16 +79,25 @@ think [attrib_set(test_mutscan_fn/exit_open, [lastcreate(me, e)])]
 #
 # Test Case #2 - successes() is WoD-style dice; pin edges and range.
 #
-# successes(0, N) is 0.  A positive pool at difficulty 2 returns a value
-# between -N and N (botches can go negative in some versions).  Non-integers
-# error.
+# successes(0, N) is 0 and a non-integer pool errors -- both deterministic.
+#
+# The roll itself is not.  The output range is implementation-defined: this
+# family of rules counts a 10 as two successes, so a pool of N can exceed N,
+# and measuring successes(5, 2) over 400 samples here gives 0..6.  The
+# original bound of N was therefore wrong rather than merely tight, and the
+# case failed whenever the roll came up 6 -- it passed review and CI on the
+# rolls that happened to land low.
+#
+# The guard below is 2N either way: loose enough that no legal roll can trip
+# it, tight enough to still catch a garbage return.  It is a sanity bound,
+# not a specification of the distribution.
 #
 &tr.tc002 test_mutscan_fn=
   @if cand(
         eq(successes(0, 6), 0),
         strmatch(setr(0, successes(foo, 6)), #-1*),
-        gte(setr(1, successes(5, 2)), -5),
-        lte(%q1, 5),
+        gte(setr(1, successes(5, 2)), -10),
+        lte(%q1, 10),
         isint(%q1)
       )=
   {
