@@ -576,7 +576,9 @@ bool parse_site_threshold(UTF8 *str, unsigned long *pulThreshold)
         return true;
     }
 
-    const long lThreshold = mux_atoi64(pLast);
+    // int64_t, not long: long is 32-bit on LLP64 (#1402).
+    //
+    const int64_t lThreshold = mux_atoi64(pLast);
     if (lThreshold < 0)
     {
         return false;

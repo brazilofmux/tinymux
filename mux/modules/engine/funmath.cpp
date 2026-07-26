@@ -58,12 +58,12 @@ FUNCTION(fun_add)
 
     // We can do it the fast way.
     //
-    long sum = 0;
+    int64_t sum = 0;
     for (i = 0; i < nArgs; i++)
     {
         sum += mux_atoi64(fargs[i]);
     }
-    safe_ltoa(sum, buff, bufc);
+    safe_i64toa(sum, buff, bufc);
 }
 
 FUNCTION(fun_ladd)
@@ -134,11 +134,9 @@ FUNCTION(fun_sub)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        int iResult;
-        long a = mux_atoi64(fargs[0]);
-        long b = mux_atoi64(fargs[1]);
-        iResult = a - b;
-        safe_ltoa(iResult, buff, bufc);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
+        safe_i64toa(a - b, buff, bufc);
     }
     else
     {
@@ -227,8 +225,8 @@ FUNCTION(fun_gt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atoi64(fargs[0]);
-        long b = mux_atoi64(fargs[1]);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
         bResult = (a > b);
     }
     else
@@ -257,8 +255,8 @@ FUNCTION(fun_gte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atoi64(fargs[0]);
-        long b = mux_atoi64(fargs[1]);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
         bResult = (a >= b);
     }
     else
@@ -287,8 +285,8 @@ FUNCTION(fun_lt)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atoi64(fargs[0]);
-        long b = mux_atoi64(fargs[1]);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
         bResult = (a < b);
     }
     else
@@ -317,8 +315,8 @@ FUNCTION(fun_lte)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atoi64(fargs[0]);
-        long b = mux_atoi64(fargs[1]);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
         bResult = (a <= b);
     }
     else
@@ -347,8 +345,8 @@ FUNCTION(fun_eq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atoi64(fargs[0]);
-        long b = mux_atoi64(fargs[1]);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
         bResult = (a == b);
     }
     else
@@ -380,8 +378,8 @@ FUNCTION(fun_neq)
        && is_integer(fargs[1], &nDigits)
        && nDigits <= 9)
     {
-        long a = mux_atoi64(fargs[0]);
-        long b = mux_atoi64(fargs[1]);
+        int64_t a = mux_atoi64(fargs[0]);
+        int64_t b = mux_atoi64(fargs[1]);
         bResult = (a != b);
     }
     else
@@ -896,7 +894,7 @@ FUNCTION(fun_shl)
     {
         // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
         //
-        long  b = mux_atoi64(fargs[1]);
+        int64_t b = mux_atoi64(fargs[1]);
         if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);
@@ -933,7 +931,7 @@ FUNCTION(fun_shr)
     {
         // #1109: shift count must be in [0, 63] for int64_t — larger is UB.
         //
-        long  b = mux_atoi64(fargs[1]);
+        int64_t b = mux_atoi64(fargs[1]);
         if (0 <= b && b < 64)
         {
             int64_t a = mux_atoi64(fargs[0]);

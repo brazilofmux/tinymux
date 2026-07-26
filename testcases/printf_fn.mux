@@ -123,11 +123,28 @@
         strmatch(printf(%%.999999999999s,abcdef), abcdef)
       )=
   {
-    @log smoke=TC007: printf() overflow-length width/precision. Succeeded.;
+    @log smoke=TC007: printf() overflow-length width/precision. Succeeded.
+  },
+  {
+    @log smoke=TC007: printf() overflow-length width/precision. Failed (w12=[printf(%%999999999999s,hi)] wneg=[printf(%%2147483648s,hi)] wsilent=[printf(%%4294967306s,hi)] phuge=[printf(%%.999999999999s,abcdef)]).
+  }
+-
+#
+# Test Case #8 - %%d / %%i must not truncate through long on LLP64 (#1402).
+# 2^32 is non-zero; printing it as 0 is the Windows long-sink failure mode.
+#
+&tr.tc008 test_printf_fn=
+  @if cand(
+        strmatch(printf(%%d,4294967296),4294967296),
+        strmatch(printf(%%i,4294967296),4294967296),
+        strmatch(printf(%%d,42),42)
+      )=
+  {
+    @log smoke=TC008: printf %%d full 64-bit value. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC007: printf() overflow-length width/precision. Failed (w12=[printf(%%999999999999s,hi)] wneg=[printf(%%2147483648s,hi)] wsilent=[printf(%%4294967306s,hi)] phuge=[printf(%%.999999999999s,abcdef)]).;
+    @log smoke=TC008: printf %%d full 64-bit value. Failed (d=[printf(%%d,4294967296)] i=[printf(%%i,4294967296)] ok=[printf(%%d,42)]).;
     @trig me/tr.done
   }
 -

@@ -496,14 +496,18 @@ double mux_atof(const UTF8 *szString, bool bStrict)
             {
                 // This 'floating-point' number is just an integer.
                 //
-                ret = static_cast<double>(mux_atol(pfr.pDigitsA));
+                // mux_atoi64: long is 32-bit on LLP64; nDigitsA is at most
+                // 9 here so either holds the value, but keep the wider API
+                // so a future digit-limit raise cannot reintroduce #1402.
+                //
+                ret = static_cast<double>(mux_atoi64(pfr.pDigitsA));
             }
             else
             {
                 // This 'floating-point' number is fixed-point.
                 //
-                double rA = static_cast<double>(mux_atol(pfr.pDigitsA));
-                double rB = static_cast<double>(mux_atol(pfr.pDigitsB));
+                double rA = static_cast<double>(mux_atoi64(pfr.pDigitsA));
+                double rB = static_cast<double>(mux_atoi64(pfr.pDigitsB));
                 double rScale = powerstab[pfr.nDigitsB];
                 ret = rA + rB/rScale;
 
