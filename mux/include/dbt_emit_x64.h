@@ -1128,4 +1128,136 @@ static inline void emit_movq_xmm_r64(emit_t *e, int xmm, int r64) {
     emit_byte(e, modrm(0x03, xmm, r64));
 }
 
+// ROUNDSD xmm_dst, xmm_src, imm8 (66 0F 3A 0B /r ib) — SSE4.1.
+// imm8[1:0]: 00 nearest-even, 01 down, 10 up, 11 toward-zero.
+// imm8[3]=0 selects the immediate mode rather than MXCSR.
+//
+static constexpr int X64_ROUND_RNE = 0;
+static constexpr int X64_ROUND_RDN = 1;
+static constexpr int X64_ROUND_RUP = 2;
+static constexpr int X64_ROUND_RTZ = 3;
+
+static inline void emit_roundsd(emit_t *e, int dst, int src, int mode) {
+    emit_byte(e, 0x66);
+    if (reg_hi(dst) || reg_hi(src)) {
+        emit_byte(e, rex(0, reg_hi(dst), 0, reg_hi(src)));
+    }
+    emit_byte(e, 0x0F);
+    emit_byte(e, 0x3A);
+    emit_byte(e, 0x0B);
+    emit_byte(e, modrm(0x03, dst, src));
+    emit_byte(e, static_cast<uint8_t>(mode & 3));
+}
+
+// Round a double in src_xmm into XMM0 under an explicit RISC-V rounding
+// mode (0..4).  RNE/RDN/RUP/RTZ map onto ROUNDSD; RMM (ties away from
+// zero) has no SSE encoding and is lowered as
+// copysign(trunc(|x| + 0.5), x), which is exact for every finite value
+// the FCVT family can round (ties cannot occur once |x| >= 2^52).
+//
+// Clobbers XMM0, XMM1, RAX, RCX, RDX.  XMM0/XMM1 are the documented FP
+// scratches; RAX/RCX/RDX are the documented integer scratches.
+//
+static inline void emit_rv_round_integral_d(emit_t *e, int src_xmm, int rm) {
+    if (rm == 1) {
+        // RTZ — leave the value alone; CVTTSD2SI truncates.
+        emit_movsd_xmm(e, 0 /*XMM0*/, src_xmm);
+        return;
+    }
+    if (rm == 0) {
+        emit_roundsd(e, 0, src_xmm, X64_ROUND_RNE);
+        return;
+    }
+    if (rm == 2) {
+        emit_roundsd(e, 0, src_xmm, X64_ROUND_RDN);
+        return;
+    }
+    if (rm == 3) {
+        emit_roundsd(e, 0, src_xmm, X64_ROUND_RUP);
+        return;
+    }
+    // RMM (rm == 4), and any reserved value treated as RNE by the
+    // interpreter's default — only 4 is expected here.
+    //
+    // XMM0 = copysign(trunc(fabs(src) + 0.5), src)
+    emit_movq_r64_xmm(e, X64_RAX, src_xmm);
+    emit_mov_r64(e, X64_RCX, X64_RAX);                 // keep original bits
+    emit_mov_r64_imm64(e, X64_RDX, 0x7FFFFFFFFFFFFFFFULL);
+    emit_and_r64(e, X64_RAX, X64_RDX);                  // clear sign
+    emit_movq_xmm_r64(e, 0 /*XMM0*/, X64_RAX);
+    emit_mov_r64_imm64(e, X64_RAX, 0x3FE0000000000000ULL); // 0.5
+    emit_movq_xmm_r64(e, 1 /*XMM1*/, X64_RAX);
+    emit_addsd(e, 0, 1);
+    emit_roundsd(e, 0, 0, X64_ROUND_RTZ);
+    emit_mov_r64_imm64(e, X64_RDX, 0x8000000000000000ULL);
+    emit_and_r64(e, X64_RCX, X64_RDX);                  // original sign bit
+    emit_movq_r64_xmm(e, X64_RAX, 0);
+    emit_or_r64(e, X64_RAX, X64_RCX);
+    emit_movq_xmm_r64(e, 0, X64_RAX);
+}
+
+// Truncating convert of the already-rounded value in XMM0.
+// form is the RISC-V rs2 selector: 0=W, 1=WU, 2=L, 3=LU.
+// Saturation / NaN / unsigned-range fix-ups are #1329/#1334 — this only
+// applies the rm-selected rounding that master was missing (#1320).
+//
+static inline void emit_fcvt_from_rounded_d(emit_t *e, int dst, int form) {
+    emit_cvttsd2si_r64(e, dst, 0 /*XMM0*/);
+    if (form == 0 || form == 1) {
+        // RV64 sign-extends a 32-bit FCVT.W{,U}.D result.
+        emit_movsxd(e, dst, dst);
+    }
+}
+
+// FCVT.{W,WU,L,LU}.D with the instruction's rounding mode.
+//
+// rm is insn.funct3: 0..4 static, 7 dynamic (read fcsr.frm at run time).
+// Dynamic is the common encoding — the assembler emits it whenever the
+// source does not name a mode — so it cannot be treated as exotic.
+// Layout matches the a64 backend: frm=0 (RNE, the reset value) is the
+// fall-through; reserved frm values land there too.
+//
+// Clobbers XMM0, XMM1, RAX, RCX, RDX.
+//
+static inline void emit_fcvt_float_to_int_d(emit_t *e, int dst, int src_xmm,
+                                            int form, int rm) {
+    if (rm >= 0 && rm <= 4) {
+        emit_rv_round_integral_d(e, src_xmm, rm);
+        emit_fcvt_from_rounded_d(e, dst, form);
+        return;
+    }
+
+    // Dynamic rm=7 (and any other unexpected encoding): read fcsr.frm.
+    // mov eax, dword [rbx + CTX_FCSR_OFF]
+    emit_byte(e, 0x8B);
+    emit_byte(e, modrm(0x02, X64_RAX, X64_RBX));
+    emit_u32(e, static_cast<uint32_t>(CTX_FCSR_OFF));
+    emit_shr_r32_imm(e, X64_RAX, 5);
+    emit_and_r64_imm(e, X64_RAX, 7);
+
+    uint32_t to_mode[5] = { 0, 0, 0, 0, 0 };
+    for (int m = 1; m <= 4; m++) {
+        emit_cmp_r64_imm(e, X64_RAX, m);
+        to_mode[m] = emit_jcc_rel32(e, JCC_E);
+    }
+    // Fall-through: RNE (frm=0) and reserved 5/6.
+    emit_rv_round_integral_d(e, src_xmm, 0);
+    emit_fcvt_from_rounded_d(e, dst, form);
+    uint32_t to_done[5] = { 0, 0, 0, 0, 0 };
+    to_done[0] = emit_jmp_rel32(e);
+    for (int m = 1; m <= 4; m++) {
+        emit_patch_rel32(e, to_mode[m], emit_pos(e));
+        emit_rv_round_integral_d(e, src_xmm, m);
+        emit_fcvt_from_rounded_d(e, dst, form);
+        if (m != 4) {
+            to_done[m] = emit_jmp_rel32(e);
+        }
+    }
+    const uint32_t done = emit_pos(e);
+    emit_patch_rel32(e, to_done[0], done);
+    for (int m = 1; m <= 3; m++) {
+        emit_patch_rel32(e, to_done[m], done);
+    }
+}
+
 #endif // DBT_EMIT_X64_H

@@ -2547,6 +2547,8 @@ static void test_1338_superblock_side_exit_fp() {
                 static_cast<unsigned long long>(dbt.superblock_count));
     }
     dbt_cleanup(&dbt);
+}
+
 // NaN canonicalisation (#1337).
 //
 // RISC-V returns the canonical quiet NaN 0x7FF8000000000000 from any

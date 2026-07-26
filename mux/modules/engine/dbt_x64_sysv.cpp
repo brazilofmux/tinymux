@@ -2824,13 +2824,15 @@ no_addr_fusion:
                 break;
             }
             case FP_FCVTW: { // FCVT.W.D / FCVT.WU.D / FCVT.L.D / FCVT.LU.D
+                // Honour insn.funct3 (rm).  A bare CVTTSD2SI is always RTZ,
+                // so RNE — the default, and what the assembler emits when
+                // no mode is written — was wrong on every fractional input
+                // (#1320).  SSE has directed ROUNDSD for four of the five
+                // modes; RMM and dynamic frm=fcsr are handled inside the
+                // shared helper.  Saturation/NaN remain #1329.
                 int xs1 = fc_read(&e, &fc, insn.rs1);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : X64_RAX;
-                emit_cvttsd2si_r64(&e, rd, xs1);
-                // For W variants, sign-extend 32→64
-                if (insn.rs2 == 0 || insn.rs2 == 1) { // FCVT.W.D / FCVT.WU.D
-                    emit_movsxd(&e, rd, rd);
-                }
+                emit_fcvt_float_to_int_d(&e, rd, xs1, insn.rs2, insn.funct3);
                 break;
             }
             case FP_FCVTDW: { // FCVT.D.W / FCVT.D.WU / FCVT.D.L / FCVT.D.LU
