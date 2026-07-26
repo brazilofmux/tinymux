@@ -1516,6 +1516,21 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
+            // NEG: integer negate as SUB dest, x0, rs.
+            // Two's-complement wrap: -INT64_MIN stays INT64_MIN (matches
+            // RV64 SUB and the const-fold guard in hir_opt).  (#1258)
+            case HIR_NEG: {
+                int s1 = h.src1[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_SUB(dest, 0, r1));  // dest = 0 - r1
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
             // SIGN: returns -1, 0, or 1.
             // SLT t0, rs, x0   (t0 = 1 if rs < 0)
             // SLT dest, x0, rs (dest = 1 if rs > 0, i.e., 0 < rs)
