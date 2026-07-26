@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-asan test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -117,6 +117,40 @@ test-lua-jit: install
 test-lua-ecall: install
 	@echo "==> Running Lua JIT ECALL fault-containment tests"
 	bash tests/luajit/run.sh
+
+# Run the suites against a sanitizer build (#1440).
+#
+# Requires configuring with --enable-sanitizers and a CLEAN rebuild --
+# changing configure flags does not by itself trigger one, so a stale tree
+# silently reports a normal build's results:
+#
+#   cd mux && ./configure --enable-jit --enable-realitylvls \
+#       --enable-wodrealms --enable-sanitizers
+#   cd .. && make clean && make install && make test-asan
+#
+# Opt-in, NOT part of `make test`: it needs its own build, and ASan runs
+# roughly 2-3x slower, which is why the timeouts below are raised.
+#
+# detect_leaks is OFF by default.  A long-lived server legitimately does
+# not free everything at exit, and LeakSanitizer's nonzero exit status at
+# shutdown makes Makesmoke report "muxscript failed" before a single test
+# runs.  Leak-hunting is a separate exercise:
+#
+#   ASAN_OPTIONS=detect_leaks=1 make test-asan
+#
+test-asan:
+	@if ! ldd mux/modules/engine/engine.so 2>/dev/null | grep -qi asan; then 	    echo "ERROR: this tree is not a sanitizer build."; 	    echo "       cd mux && ./configure ... --enable-sanitizers"; 	    echo "       cd .. && make clean && make install"; 	    exit 1; 	fi
+	@echo "==> Running the suites under AddressSanitizer/UBSan"
+	$(MAKE) -C tests/format test
+	$(MAKE) -C tests/netaddr test
+	$(MAKE) -C tests/dbt test
+	$(MAKE) -C testcases/tools
+	cd testcases && ASAN_OPTIONS=$${ASAN_OPTIONS:-detect_leaks=0} \
+	    UBSAN_OPTIONS=$${UBSAN_OPTIONS:-print_stacktrace=1} \
+	    ./tools/Makesmoke && \
+	    ASAN_OPTIONS=$${ASAN_OPTIONS:-detect_leaks=0} \
+	    UBSAN_OPTIONS=$${UBSAN_OPTIONS:-print_stacktrace=1} \
+	    ./tools/Smoke --activity-timeout 180 --wallclock-timeout 2400
 
 # GANL engine regression harness (epoll/select on Linux, kqueue/select on
 # macOS/BSD).  Scripted engine scenarios locking in the 2026-07 fixes.

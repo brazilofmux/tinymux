@@ -149,6 +149,36 @@ AC_ARG_ENABLE(
   ])
 AC_SUBST(INLINESQL)
 
+AC_MSG_CHECKING(whether to build with sanitizers)
+AC_ARG_ENABLE(
+  [sanitizers],
+  AS_HELP_STRING([--enable-sanitizers],[build with AddressSanitizer and UndefinedBehaviorSanitizer (default is NO; diagnostic builds only, never for release)]),
+  [
+    if test "x$enableval" = "xno"; then
+      AC_MSG_RESULT(no)
+    else
+      dnl Appended to CXXFLAGS/CFLAGS/LDFLAGS rather than substituted into
+      dnl each Makefile.am: sanitizers must reach both the compile and the
+      dnl link of every object, and every Makefile here already honours
+      dnl these three.  A new AC_SUBST would have to be added by hand to
+      dnl each one, and a missed link is a confusing undefined-symbol
+      dnl failure rather than a quiet loss of coverage.
+      dnl
+      dnl -fno-omit-frame-pointer is what makes the reports name the frames
+      dnl that matter; without it an ASan trace through -O2 code is often
+      dnl unattributable.
+      SANITIZER_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+      CFLAGS="$CFLAGS $SANITIZER_FLAGS"
+      CXXFLAGS="$CXXFLAGS $SANITIZER_FLAGS"
+      LDFLAGS="$LDFLAGS $SANITIZER_FLAGS"
+      AC_DEFINE([TINYMUX_SANITIZERS], [1], [Define if built with sanitizers.])
+      AC_MSG_RESULT(yes)
+    fi
+  ],
+  [
+    AC_MSG_RESULT(no)
+  ])
+
 AC_MSG_CHECKING(whether to perform expensive self-checking)
 AC_ARG_ENABLE(
   [selfcheck],
