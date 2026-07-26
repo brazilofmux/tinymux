@@ -1,5 +1,6 @@
 #include "wselect_network_engine.h"
 #include "connection.h"
+#include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <vector>
@@ -200,7 +201,17 @@ namespace ganl {
 
             if (ai->ai_family == AF_INET6) {
                 int v6Only = options.dualStack ? 0 : 1;
-                ::setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, reinterpret_cast<const char*>(&v6Only), sizeof(v6Only));
+                // Pass B1 residual (#739 family): dual-stack failure must not
+                // be silent when dualStack was requested.
+                if (::setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                        reinterpret_cast<const char*>(&v6Only), sizeof(v6Only)) == SOCKET_ERROR
+                    && options.dualStack) {
+                    int v6Err = WSAGetLastError();
+                    std::cerr << "[WSelect:" << sock
+                              << "] WARNING: setsockopt(IPV6_V6ONLY=0) failed; "
+                              << "listener will accept IPv6 only: "
+                              << getErrorString(translateError(v6Err)) << std::endl;
+                }
             }
 
             if (!setNonBlocking(sock, error)) {
