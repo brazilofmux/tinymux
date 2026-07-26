@@ -1,13 +1,47 @@
 #
 # protect_fn.mux - Test Cases for @protect.
 #
-# These tests are minimal because @protect sets attributes on the
-# executor (Wizard player), which is harder to verify from a triggered
-# attribute context. The core functionality is best tested interactively.
+# @protect stores protected player names on the executor in A_PROTECTNAME
+# ("ProtectName"), pipe-delimited so that names containing spaces survive
+# when player_name_spaces is on.  That attribute is the observable side
+# effect, and it is what these cases assert against.
+#
+# Why the setup runs at file scope rather than inside a case: do_protect
+# refuses a non-player executor outright --
+#
+#     if (!isPlayer(executor)) { notify(...); return; }
+#
+# -- and inside `@trig test_protect_fn/tr.tc001` the executor is the test
+# object, which is a thing.  Commands at file scope run as the uploading
+# wizard PLAYER (#1), so that is the only context here where @protect does
+# anything at all.  This is the same shape as powersee_fn's @power.
+#
+# The previous version of this file logged
+#
+#     TC001: @protect command exists. Succeeded.
+#
+# with no command run at all -- it would have passed if @protect had been
+# deleted from the source.  ProtectName is AF_WIZARD, and the test object
+# reads it as a wizard by way of INHERIT plus a wizard owner.
 #
 @create test_protect_fn
 -
 @set test_protect_fn=INHERIT QUIET
+-
+#
+# Setup, as #1: add two names, then remove one.  Doing both here means
+# TC002 can assert that /del is subtractive rather than merely that it
+# ran.
+#
+@protect SmokeProtectAlpha
+-
+@protect SmokeProtectBeta
+-
+think [attrib_set(test_protect_fn/after_add, [get(%#/ProtectName)])]
+-
+@protect/del SmokeProtectAlpha
+-
+think [attrib_set(test_protect_fn/after_del, [get(%#/ProtectName)])]
 -
 #
 # Beginning of Test Cases
@@ -16,15 +50,49 @@
   @log smoke=Beginning @protect test cases.
 -
 #
-# Test Case #1 - @protect exists as a command (doesn't error).
+# Test Case #1 - @protect records the name it was given.
 #
 &tr.tc001 test_protect_fn=
-  @log smoke=TC001: @protect command exists. Succeeded.;
-  @trig me/tr.done
+  @if cand(
+        strmatch(setr(0, get(me/after_add)), *SmokeProtectAlpha*),
+        strmatch(%q0, *SmokeProtectBeta*)
+      )=
+  {
+    @log smoke=TC001: protect add records the name. Succeeded.
+  },
+  {
+    @log smoke=TC001: protect add records the name. Failed (after_add=%q0).
+  }
+-
+#
+# Test Case #2 - @protect/del removes only the name it was given.
+#
+# Asserted in both directions on purpose: a /del that wiped the whole
+# attribute would satisfy "Alpha is gone" while being plainly wrong.
+#
+&tr.tc002 test_protect_fn=
+  @if cand(
+        not(strmatch(setr(0, get(me/after_del)), *SmokeProtectAlpha*)),
+        strmatch(%q0, *SmokeProtectBeta*)
+      )=
+  {
+    @log smoke=TC002: protect del is subtractive. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: protect del is subtractive. Failed (after_del=%q0).;
+    @trig me/tr.done
+  }
 -
 &tr.done test_protect_fn=
   @log smoke=End @protect test cases.;
   @notify smoke
+-
+#
+# Leave #1 as we found it: ProtectName is on the shared runner, not on the
+# test object, so the generated SUITE.CLEANUP does not reach it.
+#
+@protect/del SmokeProtectBeta
 -
 drop test_protect_fn
 -
