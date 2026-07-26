@@ -32,6 +32,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   renames — #1152 survived because nothing exercised the affected backend, so
   host-only coverage is not enough here. Compiles the backend sources directly:
   needs neither `install` nor `--enable-jit`, and has no skip path.
+- DBT block cache: `make test-dbt-cache` (also part of `make test`);
+  `tests/dbt_cache/` covers `dbt_cache_insert`/`dbt_cache_lookup` dedupe and
+  FIFO eviction (#1153). Compiles `dbt.cpp` against backend stubs — no
+  `install`, no `--enable-jit`, no skip path.
 - Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
   spins a throwaway netmux and drives `$`-command `%0..%9` captures over a
   socket (`tests/scenario/`) — the path muxscript can't reach

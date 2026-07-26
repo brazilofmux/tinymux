@@ -8,7 +8,7 @@
 #   make test         — run smoke tests (build + install first)
 #   make hooks        — install git hooks (done automatically on first build)
 
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt-chain test-dbt-cache test-alarm test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -29,11 +29,12 @@ clean:
 	$(MAKE) -C testcases/tools clean
 	$(MAKE) -C mux/ganl/tests clean
 	$(MAKE) -C tests/dbt_chain clean
+	$(MAKE) -C tests/dbt_cache clean
 
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-dbt-chain test-alarm test-jit-qreg test-jit-ifelse test-ios
+test: install test-ganl test-netaddr test-dbt-chain test-dbt-cache test-alarm test-jit-qreg test-jit-ifelse test-ios
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && ./tools/Smoke
 
@@ -88,6 +89,16 @@ test-netaddr:
 test-dbt-chain:
 	@echo "==> Running DBT chain patch encode/decode tests"
 	$(MAKE) -C tests/dbt_chain test
+
+# DBT block cache tests (#1153).  The 4-way cache had no dedupe by guest_pc
+# while intrinsic blocks are inserted twice (once by try_emit_intrinsic, once
+# by every caller of dbt_backend_translate_block), so two intrinsics sharing a
+# set filled all four ways with two distinct blocks and evicted live ones.
+# Compiles dbt.cpp directly against backend stubs — no `install`, no
+# --enable-jit, no skip path.
+test-dbt-cache:
+	@echo "==> Running DBT block cache tests"
+	$(MAKE) -C tests/dbt_cache test
 
 # mux_alarm unit tests: the per-command wall-clock abort.  Guards the lazy
 # worker-thread start — alarm_clock is a libmux global whose constructor used
