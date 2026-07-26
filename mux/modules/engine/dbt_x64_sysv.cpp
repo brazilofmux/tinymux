@@ -2678,6 +2678,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_addsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2687,6 +2688,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_subsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2696,6 +2698,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_mulsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2705,6 +2708,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_divsd(&e, XMM0, xs2);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2713,6 +2717,7 @@ no_addr_fusion:
                 int xd  = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, XMM0, xs1);
                 emit_sqrtsd(&e, XMM0, XMM0);
+                emit_canon_nan_d(&e, XMM0);
                 emit_movsd_xmm(&e, xd, XMM0);
                 break;
             }
@@ -2824,13 +2829,18 @@ no_addr_fusion:
                 break;
             }
             case FP_FCVTW: { // FCVT.W.D / FCVT.WU.D / FCVT.L.D / FCVT.LU.D
+                // Honour insn.funct3 (rm).  A bare CVTTSD2SI is always RTZ,
+                // so RNE — the default, and what the assembler emits when
+                // no mode is written — was wrong on every fractional input
+                // (#1320).  SSE has directed ROUNDSD for four of the five
+                // modes; RMM and dynamic frm=fcsr are handled inside the
+                // shared helper.  Saturation/NaN remain #1329.
                 int xs1 = fc_read(&e, &fc, insn.rs1);
                 int rd = insn.rd ? rc_write(&e, &rc, insn.rd) : X64_RAX;
-                emit_cvttsd2si_r64(&e, rd, xs1);
-                // For W variants, sign-extend 32→64
-                if (insn.rs2 == 0 || insn.rs2 == 1) { // FCVT.W.D / FCVT.WU.D
-                    emit_movsxd(&e, rd, rd);
-                }
+                // Rounding mode (#1320) plus RISC-V saturation/NaN
+                // semantics (#1329): emit_fcvt_float_to_int_d rounds per
+                // rm into XMM0 and then saturates the rounded value.
+                emit_fcvt_float_to_int_d(&e, rd, xs1, insn.rs2, insn.funct3);
                 break;
             }
             case FP_FCVTDW: { // FCVT.D.W / FCVT.D.WU / FCVT.D.L / FCVT.D.LU
@@ -2882,6 +2892,7 @@ no_addr_fusion:
             case OP_FNMSUB: {
                 // -(rs1*rs2) + rs3 = rs3 - (rs1*rs2)
                 emit_subsd(&e, XMM1, XMM0);
+                emit_canon_nan_d(&e, XMM1);
                 int xd = fc_write(&e, &fc, insn.rd);
                 emit_movsd_xmm(&e, xd, XMM1);
                 pc += 4;
@@ -2900,6 +2911,7 @@ no_addr_fusion:
                 emit_byte(&e, modrm(0x03, XMM0, XMM1));
                 break;
             }
+            emit_canon_nan_d(&e, XMM0);
             { int xd = fc_write(&e, &fc, insn.rd);
               emit_movsd_xmm(&e, xd, XMM0); }
             pc += 4;
