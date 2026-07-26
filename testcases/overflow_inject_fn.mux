@@ -18,20 +18,28 @@
 -
 #
 # Test Case #1 - power() overflow and identity.
-# power() uses host pow(double,double) + fval formatter, so the
-# string representation of power(2,63) near INT64_MAX varies by
-# platform (libm rounding + double-to-string formatting).
+# power() uses host pow(double,double) + the fval formatter.
 #
-# AArch64/GCC:  "9223372036854775807 1.8446744073709552E19 1 1"
-#   SHA1 = 7F1844D36AF2F0285C0E6C278966A62C054802B8
-# AMD64/GCC:    "-9223372036854775808 1.8446744073709552E19 1 1"
-#   SHA1 = A89ADB199FA00CC6068DF814D25EB950AD2DBADB
-#   power(2,63) wraps to INT64_MIN (double→int64 overflow on AMD64).
+# This case previously accepted either of two platform-dependent
+# answers for power(2,63):
+#
+#   AArch64/GCC:  "9223372036854775807 ..."   (saturating)
+#   AMD64/GCC:    "-9223372036854775808 ..."  (wrapping)
+#
+# Both were wrong, and the second was the #1255 defect rather than a
+# platform difference: fval compared the integer part against
+# INT64_MAX, which is not representable as a double and rounds to
+# 2**63, so 2**63 itself passed the range check and the cast wrapped.
+# The test tolerated the bug instead of catching it -- power(2,63) is
+# a positive quantity and neither accepted string was correct for it.
+#
+# fval now rejects magnitudes at or above 2**63 and formats them, so
+# power(2,63) is 9.223372036854776E18 on every platform and this case
+# is no longer platform-dependent.
 #
 &tr.tc001 test_overflow_inject_fn=
   @if cor(
-        strmatch([cat(power(2,63),power(2,64),power(2,0),power(0,0))], 9223372036854775807%b1.8446744073709552E19%b1%b1),
-        strmatch([cat(power(2,63),power(2,64),power(2,0),power(0,0))], -9223372036854775808%b1.8446744073709552E19%b1%b1)
+        strmatch([cat(power(2,63),power(2,64),power(2,0),power(0,0))], 9.223372036854776E18%b1.8446744073709552E19%b1%b1)
       )=
   {
     @log smoke=TC001: power overflow/identity. Succeeded.;
