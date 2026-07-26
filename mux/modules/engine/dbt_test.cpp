@@ -1298,10 +1298,14 @@ static void test_unhandled_refuses_block() {
 
     // Translate of the entry block must fail — not produce a runnable stub.
     //
+    dbt.xlate_fail = dbt_state_t::XLATE_OK;
     jit_write_begin();
     uint8_t *native = dbt_backend_translate_block(&dbt, 0);
     CHECK_EQ("unhandled refuse: translate returns null",
              reinterpret_cast<uintptr_t>(native), 0ULL);
+    CHECK_EQ("unhandled refuse: xlate_fail is REFUSE",
+             static_cast<uint64_t>(dbt.xlate_fail),
+             static_cast<uint64_t>(dbt_state_t::XLATE_REFUSE));
 
     // dbt_run must not silently skip to the sentinel (a0 == 0x0BEE).
     //
@@ -1318,6 +1322,113 @@ static void test_unhandled_refuses_block() {
     // If skip were still in effect, ecall would exit with a0 = 0x0BEE.
     CHECK_EQ("unhandled refuse: sentinel not executed",
              g_dbt_exit_ctx.x[10], 0ULL);
+    // Refuse must not be miscounted as buffer-full (#1331).
+    //
+    CHECK_EQ("unhandled refuse: code_full stays 0", dbt.code_full, 0ULL);
+    CHECK_EQ("unhandled refuse: code_reclaims stays 0", dbt.code_reclaims, 0ULL);
+
+    dbt_cleanup(&dbt);
+}
+
+// #1331: a refuse after program code is already in the buffer must not
+// reclaim that region (would burn the 1/run thrash budget and wipe live
+// translations for a non-occupancy failure).
+//
+static void test_refuse_does_not_reclaim() {
+    printf("test_refuse_does_not_reclaim...\n");
+
+    // Block A at 0: ADDI; ECALL — fills some program space.
+    // Block B at 0x40: unhandled FCLASS then ECALL — refuse.
+    //
+    std::vector<uint32_t> code_a = {
+        ADDI(10, 0, 7),
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+    std::vector<uint32_t> code_b = {
+        r_type(OP_FP, 5, 1, 0, 0, (FP_FCLASS << 2) | FP_FMT_D),
+        ADDI(10, 0, 0),
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code_a.size(); i++) {
+        memcpy(memory.data() + i * 4, &code_a[i], 4);
+    }
+    const uint64_t block_b_pc = 0x40;
+    for (size_t i = 0; i < code_b.size(); i++) {
+        memcpy(memory.data() + block_b_pc + i * 4, &code_b[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_refuse_does_not_reclaim: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 10000;
+
+    // Translate block A successfully so code_used > 0 (and > blob if any).
+    //
+    jit_write_begin();
+    uint8_t *a = dbt_backend_translate_block(&dbt, 0);
+    g_tests_run++;
+    if (a) {
+        g_tests_passed++;
+        dbt_cache_insert(&dbt, 0, a);
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: refuse/reclaim: block A translate failed\n");
+        dbt_cleanup(&dbt);
+        return;
+    }
+    const uint32_t used_after_a = dbt.code_used;
+    const uint64_t reclaims_before = dbt.code_reclaims;
+
+    // Pretend a blob boundary exists below A so reclaim would be eligible
+    // if we wrongly treated refuse as FULL.
+    //
+    dbt.blob_code_end = 1;
+    dbt.reclaims_this_run = 0;
+
+    dbt.xlate_fail = dbt_state_t::XLATE_OK;
+    jit_write_begin();
+    uint8_t *b = dbt_backend_translate_block(&dbt, block_b_pc);
+    CHECK_EQ("refuse/reclaim: B returns null",
+             reinterpret_cast<uintptr_t>(b), 0ULL);
+    CHECK_EQ("refuse/reclaim: B is REFUSE",
+             static_cast<uint64_t>(dbt.xlate_fail),
+             static_cast<uint64_t>(dbt_state_t::XLATE_REFUSE));
+
+    // Drive the dispatch path that used to reclaim on any null: start at B.
+    //
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, block_b_pc, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == -1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: refuse/reclaim: dbt_run rc=%d, expected -1\n",
+                rc);
+    }
+    CHECK_EQ("refuse/reclaim: code_full stays 0", dbt.code_full, 0ULL);
+    CHECK_EQ("refuse/reclaim: no reclaim", dbt.code_reclaims, reclaims_before);
+    // Program region for A must still be present (code_used not rewound
+    // to blob_code_end=1).
+    //
+    g_tests_run++;
+    if (dbt.code_used >= used_after_a) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr,
+                "  FAIL: refuse/reclaim: code_used=%u rewound below %u\n",
+                dbt.code_used, used_after_a);
+    }
 
     dbt_cleanup(&dbt);
 }
@@ -2068,6 +2179,7 @@ int main(int argc, char *argv[]) {
     test_fp_fma();
     test_fp_fclass();
     test_unhandled_refuses_block();
+    test_refuse_does_not_reclaim();
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
     test_selfloop_pressure_forward_branch();

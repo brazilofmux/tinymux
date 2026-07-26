@@ -611,7 +611,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
             e.capacity = CODE_BUF_SIZE - dbt->code_used;
 
             dbt->intrinsics[i].emitter(&e, dbt->intrinsics[i].host_fn);
-            if (e.offset > e.capacity) return nullptr;
+            if (e.offset > e.capacity) return dbt_xlate_full(dbt);
 
             dbt->code_used += e.offset;
             dbt->intrinsic_hits++;
@@ -619,7 +619,7 @@ static uint8_t *try_emit_intrinsic(dbt_state_t *dbt, uint64_t guest_pc) {
             return block_start;
         }
     }
-    return nullptr;
+    return nullptr; // not an intrinsic — not a translate failure
 }
 
 // ---------------------------------------------------------------
@@ -2156,8 +2156,11 @@ no_addr_fusion:
 
 done:
     if (refuse_unhandled) {
+        // XLATE_REFUSE: dbt_run must not reclaim / count as buffer full
+        // (#1331).
+        //
         dbt_rollback_patches(dbt, patches_before);
-        return nullptr;
+        return dbt_xlate_refuse(dbt);
     }
 
     // Emit cold stubs for superblock side exits.
@@ -2183,7 +2186,7 @@ done:
 
     if (e.offset > e.capacity) {
         dbt_rollback_patches(dbt, patches_before);
-        return nullptr;
+        return dbt_xlate_full(dbt);
     }
 
     dbt->code_used += e.offset;

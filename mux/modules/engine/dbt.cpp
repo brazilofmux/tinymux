@@ -666,30 +666,39 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
             }
         } else {
             jit_write_begin();
+            dbt->xlate_fail = dbt_state_t::XLATE_OK;
             code = dbt_backend_translate_block(dbt, pc);
+            // Reclaim only on buffer-full.  Refuse (#1323) also returns
+            // nullptr; reclaiming then would wipe live program blocks and
+            // mis-count code_full (#1331 review).
+            //
             if (  !code
+               && dbt->xlate_fail == dbt_state_t::XLATE_FULL
                && dbt_reclaim_program_code(dbt)) {
                 // Buffer filled with program translations.  Reclaim them
                 // and retry once before declining (#1315).
                 jit_write_begin();
+                dbt->xlate_fail = dbt_state_t::XLATE_OK;
                 code = dbt_backend_translate_block(dbt, pc);
             }
             if (!code) {
-                dbt->code_full++;
-                if (1 == dbt->code_full) {
-                    // Say so once.  Declining is otherwise invisible: the
-                    // caller falls back to the interpreter and still
-                    // produces correct output.
-                    fprintf(stderr, "dbt: code buffer full at pc=0x%llX "
-                            "(used=%u blob=%u cap=%u); JIT declining\n",
-                            static_cast<unsigned long long>(pc),
-                            static_cast<unsigned>(dbt->code_used),
-                            static_cast<unsigned>(dbt->blob_code_end),
-                            static_cast<unsigned>(CODE_BUF_SIZE));
+                if (dbt->xlate_fail == dbt_state_t::XLATE_FULL) {
+                    dbt->code_full++;
+                    if (1 == dbt->code_full) {
+                        // Say so once.  Declining is otherwise invisible:
+                        // the caller falls back to the interpreter and
+                        // still produces correct output.
+                        fprintf(stderr, "dbt: code buffer full at pc=0x%llX "
+                                "(used=%u blob=%u cap=%u); JIT declining\n",
+                                static_cast<unsigned long long>(pc),
+                                static_cast<unsigned>(dbt->code_used),
+                                static_cast<unsigned>(dbt->blob_code_end),
+                                static_cast<unsigned>(CODE_BUF_SIZE));
+                    }
                 }
                 dbt_flush_code(dbt, dbt->code_used);
                 dbt->dispatch_count = dispatch_count;
-                return -1;  // code buffer full even after reclaim
+                return -1;  // full (after reclaim) or refuse
             }
             dbt_cache_insert(dbt, pc, code);
 
@@ -784,30 +793,35 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
             }
         } else {
             jit_write_begin();
+            dbt->xlate_fail = dbt_state_t::XLATE_OK;
             code = dbt_backend_translate_block(dbt, pc);
             if (  !code
+               && dbt->xlate_fail == dbt_state_t::XLATE_FULL
                && dbt_reclaim_program_code(dbt)) {
                 // Buffer filled with program translations.  Reclaim them
-                // and retry once before declining (#1315).
+                // and retry once before declining (#1315 / #1331).
                 jit_write_begin();
+                dbt->xlate_fail = dbt_state_t::XLATE_OK;
                 code = dbt_backend_translate_block(dbt, pc);
             }
             if (!code) {
-                dbt->code_full++;
-                if (1 == dbt->code_full) {
-                    // Say so once.  Declining is otherwise invisible: the
-                    // caller falls back to the interpreter and still
-                    // produces correct output.
-                    fprintf(stderr, "dbt: code buffer full at pc=0x%llX "
-                            "(used=%u blob=%u cap=%u); JIT declining\n",
-                            static_cast<unsigned long long>(pc),
-                            static_cast<unsigned>(dbt->code_used),
-                            static_cast<unsigned>(dbt->blob_code_end),
-                            static_cast<unsigned>(CODE_BUF_SIZE));
+                if (dbt->xlate_fail == dbt_state_t::XLATE_FULL) {
+                    dbt->code_full++;
+                    if (1 == dbt->code_full) {
+                        // Say so once.  Declining is otherwise invisible:
+                        // the caller falls back to the interpreter and
+                        // still produces correct output.
+                        fprintf(stderr, "dbt: code buffer full at pc=0x%llX "
+                                "(used=%u blob=%u cap=%u); JIT declining\n",
+                                static_cast<unsigned long long>(pc),
+                                static_cast<unsigned>(dbt->code_used),
+                                static_cast<unsigned>(dbt->blob_code_end),
+                                static_cast<unsigned>(CODE_BUF_SIZE));
+                    }
                 }
                 dbt_flush_code(dbt, dbt->code_used);
                 dbt->dispatch_count = dispatch_count;
-                return -1;  // code buffer full even after reclaim
+                return -1;  // full (after reclaim) or refuse
             }
             dbt_cache_insert(dbt, pc, code);
 

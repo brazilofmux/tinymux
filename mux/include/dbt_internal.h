@@ -244,7 +244,23 @@ void dbt_backend_emit_trampoline(dbt_state_t *dbt);
 
 // Translate a single RV64 block to native host code.
 // Returns pointer to native code, or nullptr on failure.
+// On nullptr the backend must set dbt->xlate_fail to XLATE_FULL (capacity)
+// or XLATE_REFUSE (unhandled insn); dbt_run only reclaims on FULL (#1331).
+//
 uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc);
+
+// Helpers for backends: set fail reason and return nullptr.
+//
+static inline uint8_t *dbt_xlate_full(dbt_state_t *dbt)
+{
+    dbt->xlate_fail = dbt_state_t::XLATE_FULL;
+    return nullptr;
+}
+static inline uint8_t *dbt_xlate_refuse(dbt_state_t *dbt)
+{
+    dbt->xlate_fail = dbt_state_t::XLATE_REFUSE;
+    return nullptr;
+}
 
 // Backpatch a single JMP/branch instruction in the code buffer.
 // Platform-specific because the patch format differs (x86-64 rel32

@@ -152,7 +152,22 @@ struct dbt_state_t {
     uint64_t inline_calls;       // Tier 2 calls inlined via native CALL
     uint64_t code_reclaims;      // program-region reclaims after a full buffer
     uint64_t code_full;          // translations declined with the buffer full
-    uint32_t reclaims_this_run;  // reclaims since dbt_run entry (thrash bound)
+    // Reclaims since the most recent dbt_run entry.  Intentionally NOT
+    // reset by dbt_resume — one thrash budget covers a run/resume sequence
+    // for a single softcode program (#1315).
+    //
+    uint32_t reclaims_this_run;
+
+    // Why the last dbt_backend_translate_block returned nullptr.
+    // FULL = code buffer capacity; REFUSE = unhandled insn (#1323).
+    // dbt_run only reclaims / counts code_full on FULL (#1331 review).
+    //
+    enum : uint8_t {
+        XLATE_OK     = 0,
+        XLATE_FULL   = 1,
+        XLATE_REFUSE = 2
+    };
+    uint8_t xlate_fail;
 
     // ECALL callback — same signature as the interpreter.
     // Return >= 0 to exit, < 0 to continue.
