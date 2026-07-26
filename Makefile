@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -130,6 +130,36 @@ test-ganl:
 test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
+
+# Run the high-coverage suites against a sanitizer build (#1440).
+#
+# Deliberately does NOT reconfigure.  Silently replacing the tree's build
+# settings would be rude, and a sanitizer build is not what anyone wants left
+# behind.  Configure one yourself first:
+#
+#   cd mux && ./configure <your usual flags> \
+#       CFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1" \
+#       CXXFLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g -O1" \
+#       LDFLAGS="-fsanitize=address,undefined"
+#
+# then `make clean && make install` from the repo root.  The clean matters:
+# objects left from a non-sanitizer build link fine but are not instrumented,
+# which reads as a clean run.
+#
+# The value is concentrated in the suites that execute the most engine code.
+# ASan reports a bad access only when something reaches it, so this multiplies
+# the coverage already there rather than substituting for it.
+test-asan:
+	@if ! grep -q 'fsanitize' mux/config.status 2>/dev/null; then \
+	    echo "==> test-asan: this tree is not configured with sanitizers."; \
+	    echo "    See the recipe above this target in the Makefile."; \
+	    exit 1; \
+	fi
+	@echo "==> Running the high-coverage suites under sanitizers"
+	$(MAKE) test-format
+	$(MAKE) test-dbt
+	$(MAKE) test-smoke
+	$(MAKE) test-smoke-ast
 
 # mux_vsnprintf differential tests: %i, %o and the floating-point conversions
 # against the platform snprintf as an oracle.  These conversions used to fall

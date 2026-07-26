@@ -1575,6 +1575,19 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Lower the condition (always evaluated).
         int cond = hir_lower_node(h, rc, node->children[0].get());
 
+        // hir_lower_node returns -1 to REFUSE the compile (unknown AST node
+        // type, #1242) and sets h.overflowed.  Indexing with it reads before the
+        // per-instruction arrays: kind[] is the FIRST member of hir_program, so
+        // h.kind[-1] is four bytes before the struct.  AddressSanitizer reports it
+        // as a stack-buffer-overflow; without a sanitizer it is a silent garbage
+        // read that decides a branch.  Propagate the refusal -- no rollback is
+        // needed, since overflowed abandons the compile before codegen and the AST
+        // evaluator takes the expression.
+        //
+        if (cond < 0) {
+            return -1;
+        }
+
         // Ensure condition is integer.  The interpreter decides this
         // condition with xlate() (fun_ifelse in funceval.cpp), so anything
         // we fold or emit here has to agree with xlate() exactly (#1157).
@@ -1740,6 +1753,19 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         for (int ai = 0; ai < nfargs; ai++) {
             int cond = hir_lower_node(h, rc, node->children[ai].get());
+
+            // hir_lower_node returns -1 to REFUSE the compile (unknown AST node
+            // type, #1242) and sets h.overflowed.  Indexing with it reads before the
+            // per-instruction arrays: kind[] is the FIRST member of hir_program, so
+            // h.kind[-1] is four bytes before the struct.  AddressSanitizer reports it
+            // as a stack-buffer-overflow; without a sanitizer it is a silent garbage
+            // read that decides a branch.  Propagate the refusal -- no rollback is
+            // needed, since overflowed abandons the compile before codegen and the AST
+            // evaluator takes the expression.
+            //
+            if (cond < 0) {
+                return -1;
+            }
 
             // Ensure condition is integer.
             if (h.ty[cond] != TY_INT) {
@@ -2585,6 +2611,17 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         // has been lowered, so it gets the highest
                         // block number.  All edges to merge are forward.
                         int merge_block = h.new_block();
+
+                        // Same refusal check as the ifelse and and/or
+                        // sites above.  h.ty[-1] lands INSIDE the struct
+                        // (ty[] is not the first member), so this one reads
+                        // garbage silently rather than tripping a sanitizer
+                        // -- which is exactly why it wants the guard rather
+                        // than waiting to be caught.
+                        //
+                        if (body_result < 0) {
+                            return -1;
+                        }
 
                         // u() merge is always TY_STRING (fallback is
                         // fun_u). Coerce a native float/int body before
