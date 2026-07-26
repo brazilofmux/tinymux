@@ -218,19 +218,6 @@ void hir_const_fold(hir_program &h) {
                     changed = true;
                 }
                 break;
-            case HIR_ABS:
-                // Softcode abs() no longer lowers to HIR_ABS (#1150); this
-                // fold remains for any residual integer ABS.  -INT64_MIN is
-                // C++ UB (same class as #805 / #1114) — skip the fold.
-                //
-                if (s1 >= 0 && h.kind[s1] == HIR_ICONST
-                    && h.val[s1] != INT64_MIN) {
-                    h.kind[i] = HIR_ICONST;
-                    h.val[i] = (h.val[s1] < 0) ? -h.val[s1] : h.val[s1];
-                    h.src1[i] = -1;
-                    changed = true;
-                }
-                break;
             case HIR_SIGN:
                 if (s1 >= 0 && h.kind[s1] == HIR_ICONST) {
                     h.kind[i] = HIR_ICONST;
@@ -703,7 +690,7 @@ static bool is_pure_op(hir_kind k) {
     // a sibling path may be visited after the merge that it must invalidate.
     switch (k) {
         case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV:
-        case HIR_REM: case HIR_NEG: case HIR_ABS: case HIR_SIGN:
+        case HIR_REM: case HIR_NEG: case HIR_SIGN:
         case HIR_MAX: case HIR_MIN:
         case HIR_EQ: case HIR_NE: case HIR_LT: case HIR_LE:
         case HIR_GT: case HIR_GE:

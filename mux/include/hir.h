@@ -36,7 +36,10 @@ enum hir_kind {
     HIR_DIV,        // src1 / src2 (signed integer division)
     HIR_REM,        // src1 % src2
     HIR_NEG,        // -src1
-    HIR_ABS,        // |src1| (branchless absolute value)
+    // HIR_ABS removed (#1256): softcode abs() is float (fabs); the integer
+    // branchless ABS codegen corrupted INT64_MIN into non-numeric text, and
+    // nothing emitted HIR_ABS after #1150.  Future native iabs() must use a
+    // guarded lowering (#1114), not resurrect this opcode.
     HIR_SIGN,       // sign(src1): -1, 0, or 1
     HIR_MAX,        // max(src1, src2)
     HIR_MIN,        // min(src1, src2)
