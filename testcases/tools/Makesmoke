@@ -108,7 +108,26 @@ fi
 
 if [ ! -x "$SCRIPT_DIR/unformat" ]; then
     echo "Building unformat..."
-    make -C "$SCRIPT_DIR"
+    if command -v make >/dev/null 2>&1; then
+        make -C "$SCRIPT_DIR"
+    elif [ -x "$SCRIPT_DIR/build-msvc.sh" ]; then
+        # Windows boxes that can build TinyMUX have Visual Studio but no
+        # make, gcc or cc, so tools/Makefile cannot run there (#1347).
+        echo "make not found; falling back to MSVC."
+        "$SCRIPT_DIR/build-msvc.sh" unformat
+    else
+        echo "ERROR: cannot build unformat: no make, and no build-msvc.sh."
+        exit 1
+    fi
+fi
+
+# The build above may have failed without the shell noticing, and an unformat
+# that is missing here produces an empty flatfile a hundred lines later, which
+# reads like a corpus problem rather than a toolchain one.  [ -x ] resolves
+# the .exe suffix transparently under Git Bash, so this covers both platforms.
+if [ ! -x "$SCRIPT_DIR/unformat" ]; then
+    echo "ERROR: unformat still not present after the build step."
+    exit 1
 fi
 
 # ---------------------------------------------------------------------------

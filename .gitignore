@@ -183,6 +183,13 @@ mux/ganl/tests/ganl_engine_tests.dSYM/
 mux/ganl/tests/ganl_tests.err
 testcases/soak.log
 
+# tools/ build products. The Unix build makes extensionless binaries; the
+# MSVC fallback in build-msvc.sh makes .exe plus an .obj alongside them.
+testcases/tools/unformat
+testcases/tools/reformat
+testcases/tools/*.exe
+testcases/tools/*.obj
+
 # Core dumps (e.g. from a crash investigation under `ulimit -c unlimited`)
 core
 core.*
