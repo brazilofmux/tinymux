@@ -1,6 +1,6 @@
 # Makefile — DBT and RV64 tests.
 #
-# Three binaries rather than one, because each needs a genuinely different
+# Five binaries rather than one, because each needs a genuinely different
 # link and they cannot coexist in a single image:
 #
 #   chain  all three backends at once, with their colliding strong symbols
@@ -15,14 +15,19 @@
 #          share a link with `exec`, which compiles that TU normally.
 #   exec   the RV64 execution harness: interpreter and DBT, host backend
 #          only, because this one actually runs the code it translates.
+#   fuzz   instruction-level differential fuzzer: random RV64 sequences
+#          through the interpreter and through the DBT, comparing all 32
+#          integer and 32 FP registers.  Same link as exec, minus the ELF
+#          loader and the hand-assembled cases.
 #
-# All three compile engine sources directly, so none needs a prior
+# All of them compile engine sources directly, so none needs a prior
 # `make install` or --enable-jit, and none has a skip path that could
-# quietly degrade into testing nothing.  `exec` is the exception on host
-# support: it skips loudly off x86_64/aarch64 because it must execute.
+# quietly degrade into testing nothing.  `exec` and `fuzz` are the
+# exceptions on host support: they skip loudly off x86_64/aarch64 because
+# they must execute what they translate.
 #
 # Build: make          Run: make test
-# Individually:        make chain | make cache | make interp | make exec
+# Individually:        make chain | cache | interp | exec | fuzz
 
 CXX       = g++
 CXXFLAGS  = -std=c++17 -g -O2
@@ -68,7 +73,7 @@ ENGINE_HDRS = $(INCDIR)/dbt.h $(INCDIR)/dbt_internal.h \
               $(INCDIR)/dbt_emit_a64.h $(INCDIR)/dbt_emit_x64.h \
               $(INCDIR)/dbt_jit_mem.h
 
-all: test_chain test_cache test_interp dbt_test
+all: test_chain test_cache test_interp dbt_test fuzz_diff
 
 # --- chain: all three backends, byte inspection only -----------------
 test_chain.o: test_chain.cpp $(ENGINE_HDRS)
@@ -113,13 +118,22 @@ EXEC_SRCS = $(ENGINE)/dbt_test.cpp $(ENGINE)/dbt_interp.cpp \
             $(ENGINE)/dbt_elf64.cpp $(ENGINE)/dbt.cpp \
             $(ENGINE)/$(HOST_BACKEND).cpp
 
+# --- fuzz: instruction-level differential fuzzer ---------------------
+# Same link as exec minus the ELF loader and the hand-assembled cases.
+FUZZ_SRCS = fuzz_diff.cpp $(ENGINE)/dbt_interp.cpp $(ENGINE)/dbt.cpp \
+            $(ENGINE)/$(HOST_BACKEND).cpp
+
 ifeq ($(HOST_BACKEND),)
 dbt_test:
 	@echo "SKIP: no DBT backend for host '$(ARCH)' (configure.ac supports"
 	@echo "      x86_64 and aarch64).  Execution tests cannot run here."
+fuzz_diff:
+	@echo "SKIP: no DBT backend for host '$(ARCH)'."
 else
 dbt_test: $(EXEC_SRCS) $(ENGINE_HDRS)
 	$(COMPILE) -o $@ $(EXEC_SRCS)
+fuzz_diff: $(FUZZ_SRCS) $(ENGINE_HDRS)
+	$(COMPILE) -o $@ $(FUZZ_SRCS)
 endif
 
 chain: test_chain
@@ -144,9 +158,19 @@ else
 	fi
 endif
 
-test: chain cache interp exec
+# A small default keeps `make test` quick, and the corpus is deterministic,
+# so a CI failure reproduces exactly.  Soak with more:
+#   DBT_FUZZ_ITERS=20000 DBT_FUZZ_SEED=7 make -C tests/dbt fuzz
+fuzz: fuzz_diff
+ifeq ($(HOST_BACKEND),)
+	@echo "==> Skipping DBT fuzz (unsupported host '$(ARCH)')"
+else
+	./fuzz_diff
+endif
+
+test: chain cache interp exec fuzz
 
 clean:
-	rm -f *.o test_chain test_cache dbt_test
+	rm -f *.o test_chain test_cache test_interp dbt_test fuzz_diff
 
-.PHONY: all test chain cache exec clean
+.PHONY: all test chain cache interp exec fuzz clean
