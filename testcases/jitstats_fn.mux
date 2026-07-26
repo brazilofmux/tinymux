@@ -211,6 +211,70 @@
     @log smoke=TC005: jitstats flush from compiled code. Skipped (JIT not enabled).
   }
 -
+#
+# Test Case #6 - the Lua JIT actually EXECUTES compiled code (#1426).
+#
+# TC004 asserts on attempts (lua_run_ok + lua_run_fail), and a declined run
+# increments lua_run_fail, so it passes whether the compiled path ran or
+# refused to.  Worse, under the suite's own config lua_jit is off -- neither
+# smoke.conf sets it -- so TC004 takes its "stays out under lua_jit 0" branch
+# and the compiled Lua path is never exercised at all.  lua_run_ok is the
+# only counter that proves compiled Lua executed.
+#
+# Two config changes are needed and both are server-wide, so (like TC019 in
+# jit_parity_fn.mux and nested_depth.mux) the juggling happens in SETUP: at
+# Makesmoke bake time, as #1, storing results in attributes for the case to
+# assert.  Doing it at run time would toggle globals under every other test
+# in the suite.
+#
+#   lua_jit 1           - otherwise nothing is compiled at all.
+#   jit_eval_brackets 0 - fun_lua is ECALLed from inside a DBT program, and
+#                         the #1326 reentrancy guard then declines every run.
+#                         With brackets off the guard does not fire.
+#
+# Both are restored via the #$ idiom, so a failure here cannot leave the
+# rest of the suite running under a different configuration.
+#
+# This is the signal that turns red if the Lua JIT silently goes back
+# offline, and the one that will turn green on its own once #1326 is lifted
+# and the brackets-0 workaround can be dropped.
+#
+@switch [config(lua_jit)]=*,
+  {
+    &PRE_LUA_JIT test_jitstats_fn=#$;
+    @switch [config(jit_eval_brackets)]=*,
+      {
+        &PRE_BRACKETS test_jitstats_fn=#$;
+        @admin lua_jit=1;
+        @admin jit_eval_brackets=0;
+        &LJ_OK_BEFORE test_jitstats_fn=[u(test_jitstats_fn/tr.lj_ok)];
+        &LJ_RESULT test_jitstats_fn=[lua(test_jitstats_fn/LJ_ADD,2,3)];
+        &LJ_OK_AFTER test_jitstats_fn=[u(test_jitstats_fn/tr.lj_ok)];
+        @admin jit_eval_brackets=#$
+      };
+    @admin lua_jit=#$
+  }
+-
+&tr.tc006 test_jitstats_fn=
+  @if cand(u(me/tr.has_jit),u(me/tr.has_lua))=
+  {
+    @if cand(
+          strmatch(get(me/LJ_RESULT),5),
+          gt(get(me/LJ_OK_AFTER),get(me/LJ_OK_BEFORE)),
+          strmatch(config(lua_jit),get(me/PRE_LUA_JIT)),
+          strmatch(config(jit_eval_brackets),get(me/PRE_BRACKETS))
+        )=
+    {
+      @log smoke=TC006: lua JIT executes compiled code. Succeeded (lua_run_ok [get(me/LJ_OK_BEFORE)] to [get(me/LJ_OK_AFTER)]).
+    },
+    {
+      @log smoke=TC006: lua JIT executes compiled code. Failed (result=[get(me/LJ_RESULT)] lua_run_ok [get(me/LJ_OK_BEFORE)] to [get(me/LJ_OK_AFTER)] lua_jit=[config(lua_jit)]/[get(me/PRE_LUA_JIT)] brackets=[config(jit_eval_brackets)]/[get(me/PRE_BRACKETS)]).
+    }
+  },
+  {
+    @log smoke=TC006: lua JIT executes compiled code. Skipped (JIT or Lua not available).
+  }
+-
 &tr.done test_jitstats_fn=
   @log smoke=End jitstats() test cases.;
   @notify smoke
