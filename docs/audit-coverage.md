@@ -79,7 +79,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
 | D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 | deep | Highs #1143–#1146 → #1156; residual Mediums #1149–#1150 |
 | D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 | deep | Highs #1147–#1148 → #1156; residual Mediums #1151–#1153 |
-| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | Pass 3 ECALL | partial | Softlib bridges hardened; module surface remains |
+| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | Pass 3 + residual 2026-07-26 | deep | #1287 pennies/iswizard/isconnected Examinable gates; string.dump nilled |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
 ### E — Persistence & queue
@@ -175,6 +175,8 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass 8 | 2026-07 | E5 object/player/flags/powers + C5 speech/look/move/create | Highs #1179–#1181; Mediums #1182–#1188 open (not yet fixed) |
 | Pass 9 | 2026-07 | F3 engine comsys/mail vs F1/F2 modules | Highs #1189–#1193; Mediums #1194–#1199 open (not yet fixed) |
 
+| Pass D4 residual | 2026-07-26 | lua_mod bridges | #1287 mux.pennies/iswizard/isconnected match softcode perms; string.dump removed |
+
 Also useful historical surveys (pre-hardening-month):  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
 
@@ -237,5 +239,7 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-25 | Pass 7 Highs closed (#1156); Mediums #1149–#1153 residual; D2/D3 deep |
 | 2026-07-25 | Pass 8 E5+C5 filed #1179–#1188; E5/C5 deep; rotation → Pass 9 F3 (or Fix Pass 8 Highs) |
 | 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
+
+| 2026-07-26 | Pass D4 residual: Lua bridge Examinable gates + string.dump #1287; D4 → deep |
 
 Update this table when the map structure changes.
