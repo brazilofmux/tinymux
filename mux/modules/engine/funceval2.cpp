@@ -1236,7 +1236,7 @@ FUNCTION(fun_die)
     }
 
     if (  3 <= nfargs
-       && isTRUE(mux_atol(fargs[2])))
+       && isTRUE(mux_atoi64(fargs[2])))
     {
         ITL pContext;
         ItemToList_Init(&pContext, buff, bufc);
