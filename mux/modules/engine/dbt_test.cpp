@@ -2031,6 +2031,130 @@ static void test_intrinsic_alloc() {
     CHECK_EQ("alloc: guest ptr store/load round-trip", g_dbt_exit_ctx.x[6], 0x5AULL);
 }
 
+
+// ---------------------------------------------------------------
+// FCVT rounding modes (#1320)
+// ---------------------------------------------------------------
+//
+// RISC-V selects the rounding mode per instruction; ARM selects it per
+// opcode.  The backend used FCVTZS/FCVTZU for everything, which truncates,
+// so RNE -- the default, and what the assembler emits when no mode is
+// written -- behaved as RTZ and turned 1.5 into 1.
+//
+// Expected values come from qemu-riscv64 executing the same instructions,
+// not from the interpreter: until #1319 the interpreter truncated too, so
+// a differential check against it would have agreed and proved nothing.
+// Inputs are the ones that discriminate between modes -- halfway ties in
+// both parities and both signs, a value above and below the halfway point,
+// and the boundary where rounding pushes the result out of int32 range.
+// Saturation and NaN are covered by test_fcvt_nan_and_range above (#1313).
+//
+struct fcvt_rm_row_t {
+    uint64_t in;        // input double, as bits
+    uint8_t  sel;       // rs2: 0=W 1=WU 2=L 3=LU
+    uint64_t expect[5]; // by rounding mode: RNE RTZ RDN RUP RMM
+};
+
+static const fcvt_rm_row_t FCVT_RM_GOLDEN[] = {
+    { 0x3FE0000000000000ULL, 0, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.w.d 
+    { 0x3FE0000000000000ULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.wu.d
+    { 0x3FE0000000000000ULL, 2, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.l.d 
+    { 0x3FE0000000000000ULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000001ULL } },  // 0.5       fcvt.lu.d
+    { 0x3FF8000000000000ULL, 0, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.w.d 
+    { 0x3FF8000000000000ULL, 1, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.wu.d
+    { 0x3FF8000000000000ULL, 2, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.l.d 
+    { 0x3FF8000000000000ULL, 3, { 0x0000000000000002ULL, 0x0000000000000001ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000002ULL } },  // 1.5       fcvt.lu.d
+    { 0x4004000000000000ULL, 0, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.w.d 
+    { 0x4004000000000000ULL, 1, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.wu.d
+    { 0x4004000000000000ULL, 2, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.l.d 
+    { 0x4004000000000000ULL, 3, { 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.5       fcvt.lu.d
+    { 0x4004CCCCCCCCCCCDULL, 0, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.w.d 
+    { 0x4004CCCCCCCCCCCDULL, 1, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.wu.d
+    { 0x4004CCCCCCCCCCCDULL, 2, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.l.d 
+    { 0x4004CCCCCCCCCCCDULL, 3, { 0x0000000000000003ULL, 0x0000000000000002ULL, 0x0000000000000002ULL, 0x0000000000000003ULL, 0x0000000000000003ULL } },  // 2.6       fcvt.lu.d
+    { 0xC004000000000000ULL, 0, { 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.5      fcvt.w.d 
+    { 0xC004000000000000ULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.5      fcvt.wu.d
+    { 0xC004000000000000ULL, 2, { 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.5      fcvt.l.d 
+    { 0xC004000000000000ULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.5      fcvt.lu.d
+    { 0xC004CCCCCCCCCCCDULL, 0, { 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.6      fcvt.w.d 
+    { 0xC004CCCCCCCCCCCDULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.6      fcvt.wu.d
+    { 0xC004CCCCCCCCCCCDULL, 2, { 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL, 0xFFFFFFFFFFFFFFFEULL, 0xFFFFFFFFFFFFFFFDULL } },  // -2.6      fcvt.l.d 
+    { 0xC004CCCCCCCCCCCDULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -2.6      fcvt.lu.d
+    { 0x400C000000000000ULL, 0, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.w.d 
+    { 0x400C000000000000ULL, 1, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.wu.d
+    { 0x400C000000000000ULL, 2, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.l.d 
+    { 0x400C000000000000ULL, 3, { 0x0000000000000004ULL, 0x0000000000000003ULL, 0x0000000000000003ULL, 0x0000000000000004ULL, 0x0000000000000004ULL } },  // 3.5       fcvt.lu.d
+    { 0xBFE0000000000000ULL, 0, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL } },  // -0.5      fcvt.w.d 
+    { 0xBFE0000000000000ULL, 1, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -0.5      fcvt.wu.d
+    { 0xBFE0000000000000ULL, 2, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL, 0x0000000000000000ULL, 0xFFFFFFFFFFFFFFFFULL } },  // -0.5      fcvt.l.d 
+    { 0xBFE0000000000000ULL, 3, { 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL, 0x0000000000000000ULL } },  // -0.5      fcvt.lu.d
+    { 0x41DFFFFFFFE00000ULL, 0, { 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL } },  // 2^31-0.5  fcvt.w.d 
+    { 0x41DFFFFFFFE00000ULL, 1, { 0xFFFFFFFF80000000ULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0xFFFFFFFF80000000ULL, 0xFFFFFFFF80000000ULL } },  // 2^31-0.5  fcvt.wu.d
+    { 0x41DFFFFFFFE00000ULL, 2, { 0x0000000080000000ULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x0000000080000000ULL, 0x0000000080000000ULL } },  // 2^31-0.5  fcvt.l.d 
+    { 0x41DFFFFFFFE00000ULL, 3, { 0x0000000080000000ULL, 0x000000007FFFFFFFULL, 0x000000007FFFFFFFULL, 0x0000000080000000ULL, 0x0000000080000000ULL } },  // 2^31-0.5  fcvt.lu.d
+};
+
+// Run one FCVT through the DBT.  `frm` is only consulted when rm == 7, and
+// is seeded straight into ctx because the DBT cannot execute a CSR write to
+// set it (see #1333); dbt_run wipes ctx, so this goes in through dbt_resume.
+static uint64_t run_fcvt_dbt(uint64_t in, uint8_t sel, uint8_t rm, uint8_t frm) {
+    const size_t MEM_SIZE = 64 * 1024;
+    const uint64_t DATA = 0x400;   // must fit a signed 12-bit ADDI immediate
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    memcpy(memory.data() + DATA, &in, 8);
+
+    const uint32_t code[4] = {
+        ADDI(9, 0, (int32_t)DATA),
+        (uint32_t)(0x07u | (1u << 7) | (3u << 12) | (9u << 15)),      // FLD f1,0(x9)
+        (uint32_t)(0xC2000000u | (5u << 7) | ((uint32_t)rm << 12)
+                   | (1u << 15) | ((uint32_t)sel << 20) | 0x53u),     // FCVT x5,f1
+        ECALL()
+    };
+    memcpy(memory.data(), code, sizeof(code));
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        return ~0ULL;
+    }
+    dbt.max_dispatch = 1000000;
+    dbt.ctx = {};
+    dbt.ctx.x[2] = MEM_SIZE - 16;
+    dbt.ctx.mem_size = MEM_SIZE;
+    dbt.ctx.fcsr = (uint32_t)(frm & 7u) << 5;
+    dbt_resume(&dbt, 0);
+    dbt_cleanup(&dbt);
+    return g_dbt_exit_ctx.x[5];
+}
+
+static void test_fcvt_rounding_modes() {
+    printf("test_fcvt_rounding_modes...\n");
+    static const char *RM_NAME[5] = { "rne", "rtz", "rdn", "rup", "rmm" };
+    static const char *CVT[4] = { "fcvt.w.d", "fcvt.wu.d",
+                                  "fcvt.l.d", "fcvt.lu.d" };
+    const size_t n = sizeof(FCVT_RM_GOLDEN) / sizeof(FCVT_RM_GOLDEN[0]);
+    char desc[160];
+    for (size_t i = 0; i < n; i++) {
+        const fcvt_rm_row_t &row = FCVT_RM_GOLDEN[i];
+        for (uint8_t rm = 0; rm < 5; rm++) {
+            // Static mode: the rm field selects directly.
+            uint64_t got = run_fcvt_dbt(row.in, row.sel, rm, 0);
+            snprintf(desc, sizeof(desc), "DBT %s %s in=0x%llX -> 0x%llX (got 0x%llX)",
+                     CVT[row.sel], RM_NAME[rm], (unsigned long long)row.in,
+                     (unsigned long long)row.expect[rm], (unsigned long long)got);
+            CHECK_EQ(desc, got, row.expect[rm]);
+
+            // Dynamic mode: rm=7 must resolve to the same answer through
+            // fcsr.frm.  This is the encoding the assembler emits by
+            // default, so it is the common case rather than the exotic one.
+            got = run_fcvt_dbt(row.in, row.sel, 7, rm);
+            snprintf(desc, sizeof(desc), "DBT %s dyn frm=%s in=0x%llX -> 0x%llX (got 0x%llX)",
+                     CVT[row.sel], RM_NAME[rm], (unsigned long long)row.in,
+                     (unsigned long long)row.expect[rm], (unsigned long long)got);
+            CHECK_EQ(desc, got, row.expect[rm]);
+        }
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -2074,6 +2198,7 @@ int main(int argc, char *argv[]) {
     test_selfloop_pressure_regw_rs2();
     test_selfloop_pressure_fp_int_rd();
     test_fsgnj_rd_aliases_rs2();
+    test_fcvt_rounding_modes();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();
