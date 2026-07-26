@@ -1,0 +1,227 @@
+#
+# mutscan_fn.mux - Coverage for softcode mutators and command/string helpers.
+#
+# Thirteen builtins with no reference anywhere in the corpus (#1160):
+#
+#   ledit  successes  trace  poll  textfile
+#   lattrcmds  lcmds
+#   wipe  link  tel  trigger  destroy  prompt
+#
+# These are reachable under muxscript without live peers, mail, SQL or
+# comsys.  Mutators create their own disposable objects and leave the
+# harness object intact.  astbench() is deliberately omitted: it trips an
+# assert in stringutil under muxscript on this tree.
+#
+# Conventions: no parenthesised EXPECTED strings (#1249); relationship
+# assertions where results are random or environment-dependent.
+#
+@create test_mutscan_fn
+-
+@set test_mutscan_fn=INHERIT QUIET
+-
+#
+# $-command attribute so lattrcmds/lcmds have something real to list.
+#
+&CMD test_mutscan_fn=$mscan *: @pemit %#=mscan
+-
+#
+# Attrs for wipe() — only d.drop should vanish when wiping me/d.drop.
+#
+&d.keep test_mutscan_fn=stay
+-
+&d.drop test_mutscan_fn=go
+-
+#
+# Rooms/things/exits for tel, link, wipe targets.  create needs arity 2/3.
+#
+think [setq(0, create(Mutscan_Room_A, 10, r))][attrib_set(test_mutscan_fn/room_a, %q0)]
+-
+think [setq(0, create(Mutscan_Room_B, 10, r))][attrib_set(test_mutscan_fn/room_b, %q0)]
+-
+think [setq(0, create(Mutscan_Thing, 10))][attrib_set(test_mutscan_fn/thing, %q0)]
+-
+@tel [get(test_mutscan_fn/thing)]=[get(test_mutscan_fn/room_a)]
+-
+@tel me=[get(test_mutscan_fn/room_a)]
+-
+@open mutscan_exit_open
+-
+think [attrib_set(test_mutscan_fn/exit_open, [lastcreate(me, e)])]
+-
+&tr.tc000 test_mutscan_fn=
+  @log smoke=Beginning mutscan function test cases.
+-
+#
+# Test Case #1 - ledit() replaces a substring.
+#
+&tr.tc001 test_mutscan_fn=
+  @if cand(
+        strmatch(setr(0, ledit(hello world, world, there)), hello there),
+        strmatch(setr(1, ledit(a-b-c, b, X, -)), a-X-c)
+      )=
+  {
+    @log smoke=TC001: ledit replaces substrings. Succeeded.
+  },
+  {
+    @log smoke=TC001: ledit replaces substrings. Failed (one=%q0 two=%q1).
+  }
+-
+#
+# Test Case #2 - successes() is WoD-style dice; pin edges and range.
+#
+# successes(0, N) is 0.  A positive pool at difficulty 2 returns a value
+# between -N and N (botches can go negative in some versions).  Non-integers
+# error.
+#
+&tr.tc002 test_mutscan_fn=
+  @if cand(
+        eq(successes(0, 6), 0),
+        strmatch(setr(0, successes(foo, 6)), #-1*),
+        gte(setr(1, successes(5, 2)), -5),
+        lte(%q1, 5),
+        isint(%q1)
+      )=
+  {
+    @log smoke=TC002: successes edges and range. Succeeded.
+  },
+  {
+    @log smoke=TC002: successes edges and range. Failed (err=%q0 roll=%q1).
+  }
+-
+#
+# Test Case #3 - trace() evaluates and returns the result.
+#
+&tr.tc003 test_mutscan_fn=
+  @if eq(trace(add(2, 3)), 5)=
+  {
+    @log smoke=TC003: trace evaluates expression. Succeeded.
+  },
+  {
+    @log smoke=TC003: trace evaluates expression. Failed ([trace(add(2, 3))]).
+  }
+-
+#
+# Test Case #4 - poll() returns the current poll/Doing string without error.
+#
+&tr.tc004 test_mutscan_fn=
+  @if not(strmatch(setr(0, poll()), #-1*))=
+  {
+    @log smoke=TC004: poll does not error. Succeeded.
+  },
+  {
+    @log smoke=TC004: poll does not error. Failed (%q0).
+  }
+-
+#
+# Test Case #5 - textfile() reads a help topic from the configured helpfile.
+#
+# Smoke configures raw_helpfile help text/smokehelp with a "help" topic.
+#
+&tr.tc005 test_mutscan_fn=
+  @if cand(
+        gt(strlen(setr(0, textfile(help, help))), 0),
+        not(strmatch(%q0, #-1*))
+      )=
+  {
+    @log smoke=TC005: textfile reads help topic. Succeeded.
+  },
+  {
+    @log smoke=TC005: textfile reads help topic. Failed (%q0).
+  }
+-
+#
+# Test Case #6 - lattrcmds() and lcmds() see the $-command attribute.
+#
+&tr.tc006 test_mutscan_fn=
+  @if cand(
+        strmatch(setr(0, lattrcmds(me)), *CMD*),
+        strmatch(setr(1, lcmds(me)), *mscan*)
+      )=
+  {
+    @log smoke=TC006: lattrcmds and lcmds list commands. Succeeded.
+  },
+  {
+    @log smoke=TC006: lattrcmds and lcmds list commands. Failed (lattr=%q0 lcmds=%q1).
+  }
+-
+#
+# Test Case #7 - wipe() clears matching attributes only.
+#
+&tr.tc007 test_mutscan_fn=
+  @if cand(
+        strmatch(get(me/d.keep), stay),
+        strmatch(get(me/d.drop), go),
+        not(strmatch(setr(0, wipe(me/d.drop)), #-1*)),
+        strmatch(get(me/d.keep), stay),
+        eq(strlen(get(me/d.drop)), 0)
+      )=
+  {
+    @log smoke=TC007: wipe clears matching attrs only. Succeeded.
+  },
+  {
+    @log smoke=TC007: wipe clears matching attrs only. Failed (wipe=%q0 keep=[get(me/d.keep)] drop=[get(me/d.drop)]).
+  }
+-
+#
+# Test Case #8 - link() sets an exit destination; tel() moves a thing.
+#
+&tr.tc008 test_mutscan_fn=
+  @if cand(
+        eq(loc(get(me/exit_open)), #-1),
+        not(strmatch(setr(0, link(get(me/exit_open), get(me/room_b))), #-1*)),
+        eq(loc(get(me/exit_open)), get(me/room_b)),
+        not(strmatch(setr(1, tel(get(me/thing), get(me/room_b))), #-1*)),
+        eq(loc(get(me/thing)), get(me/room_b))
+      )=
+  {
+    @log smoke=TC008: link and tel relocate. Succeeded.
+  },
+  {
+    @log smoke=TC008: link and tel relocate. Failed (link=%q0 tel=%q1 eloc=[loc(get(me/exit_open))] tloc=[loc(get(me/thing))]).
+  }
+-
+#
+# Test Case #9 - trigger() fires an attribute without error.
+#
+&tr.ping test_mutscan_fn=
+  @set me=QUIET
+-
+&tr.tc009 test_mutscan_fn=
+  @if not(strmatch(setr(0, trigger(me/tr.ping)), #-1*))=
+  {
+    @log smoke=TC009: trigger fires attribute. Succeeded.
+  },
+  {
+    @log smoke=TC009: trigger fires attribute. Failed (%q0).
+  }
+-
+#
+# Test Case #10 - destroy() removes a disposable object; prompt() is non-error.
+#
+# destroy() is only used on a thing created for this case.  prompt() may
+# write to the session; the return value must still not be a hard error.
+#
+&tr.tc010 test_mutscan_fn=
+  @if cand(
+        t(setr(9, create(Mutscan_Doomed, 10))),
+        not(strmatch(setr(0, destroy(%q9)), #-1*)),
+        not(strmatch(setr(1, prompt(me, ping)), #-1*))
+      )=
+  {
+    @log smoke=TC010: destroy and prompt. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC010: destroy and prompt. Failed (dest=%q0 prompt=%q1 doomed=%q9).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_mutscan_fn=
+  @log smoke=End mutscan function test cases.;
+  @notify smoke
+-
+drop test_mutscan_fn
+-
+#
+# End of Test Cases
+#
