@@ -23,6 +23,8 @@
 #include "dbt_decoder.h"
 #include "dbt_elf64.h"
 #include "dbt.h"
+#include "dbt_internal.h"
+#include "dbt_jit_mem.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -1260,6 +1262,66 @@ static void test_fp_fma() {
     CHECK_FEQ("FNMADD.D -(3*5)-7", fnmadd_r, -22.0);
 }
 
+// #1323: unhandled guest instructions must refuse block translation, not
+// silently advance past the insn (leaving rd stale) or spin at the same PC.
+// FCLASS.D (funct3=1) is unimplemented on every host backend today.
+//
+static void test_unhandled_refuses_block() {
+    printf("test_unhandled_refuses_block...\n");
+
+    // Poison x5, then an unhandled FCLASS.D that would write x5, then a
+    // sentinel that only runs if the unhandled insn was skipped, then exit.
+    //
+    std::vector<uint32_t> code = {
+        ADDI(5, 0, 0x55AA),                                    // x5 = poison
+        r_type(OP_FP, 5, 1, 0, 0, (FP_FCLASS << 2) | FP_FMT_D), // FCLASS.D x5, f0
+        ADDI(5, 0, 0x0BEE),                                    // sentinel if skip
+        ADDI(10, 5, 0),                                        // a0 = x5
+        ADDI(17, 0, 93),
+        ECALL()
+    };
+
+    const size_t MEM_SIZE = 64 * 1024;
+    std::vector<uint8_t> memory(MEM_SIZE, 0);
+    for (size_t i = 0; i < code.size(); i++) {
+        memcpy(memory.data() + i * 4, &code[i], 4);
+    }
+
+    dbt_state_t dbt;
+    if (dbt_init(&dbt, memory.data(), MEM_SIZE, dbt_test_ecall2, nullptr) != 0) {
+        g_tests_run++;
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: test_unhandled_refuses_block: dbt_init\n");
+        return;
+    }
+    dbt.max_dispatch = 10000;
+
+    // Translate of the entry block must fail — not produce a runnable stub.
+    //
+    jit_write_begin();
+    uint8_t *native = dbt_backend_translate_block(&dbt, 0);
+    CHECK_EQ("unhandled refuse: translate returns null",
+             reinterpret_cast<uintptr_t>(native), 0ULL);
+
+    // dbt_run must not silently skip to the sentinel (a0 == 0x0BEE).
+    //
+    g_dbt_exit_ctx = {};
+    int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+    g_tests_run++;
+    if (rc == -1) {
+        g_tests_passed++;
+    } else {
+        g_tests_failed++;
+        fprintf(stderr, "  FAIL: unhandled refuse: dbt_run rc=%d, expected -1\n",
+                rc);
+    }
+    // If skip were still in effect, ecall would exit with a0 = 0x0BEE.
+    CHECK_EQ("unhandled refuse: sentinel not executed",
+             g_dbt_exit_ctx.x[10], 0ULL);
+
+    dbt_cleanup(&dbt);
+}
+
 static void test_fp_fclass() {
     printf("test_fp_fclass...\n");
 
@@ -2005,6 +2067,7 @@ int main(int argc, char *argv[]) {
     test_fp_cvt_nan_inf();
     test_fp_fma();
     test_fp_fclass();
+    test_unhandled_refuses_block();
     test_fp_fmv_dx();
     test_selfloop_register_pressure();
     test_selfloop_pressure_forward_branch();
