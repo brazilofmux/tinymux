@@ -3186,6 +3186,46 @@ private:
     static inline std::list<int> s_ack_queue;
 };
 
+// eval_ecall status (#1423).  dbt_run continues on a negative return and
+// stops on a non-negative one, passing that value out; 0 is success, since
+// ECALL_EXIT returns the guest's exit code.  Any positive value therefore
+// reaches handle_dbt_run_status as a plain failure, so run_cached_program
+// returns false without harvesting the guest's output buffer and CLuaMod
+// falls back to the Lua VM.  Declining is always safe: the interpreter
+// produces the same answer, and produces the right error message when the
+// chunk really is at fault.
+//
+static constexpr int ECALL_DECLINE = 1;
+
+// A Lua error raised inside an ECALL has no protected call frame anywhere
+// above it, so luaD_throw() reaches the default panic handler and abort()s
+// the process (#1423).  lua_geti/lua_seti/lua_getfield/lua_setfield can all
+// raise: on a stack index that is out of range or holds a non-table, and
+// through an __index/__newindex metamethod.  None of the inputs are
+// trustworthy -- the stack index arrives in a guest register, and on the
+// string bridge it is atoi() of guest-supplied text.
+//
+// So every table op checks its target first and then uses the raw accessors,
+// which cannot raise.  A target carrying a metatable is declined rather than
+// guessed at: raw access would silently skip __index/__newindex, and the
+// interpreter fallback runs them correctly.  Nothing in the engine module
+// installs a metatable today, so this declines no path that works now.
+//
+static bool ecall_lua_plain_table(lua_State *L, int idx)
+{
+    if (idx <= 0 || idx > lua_gettop(L)) {
+        return false;
+    }
+    if (!lua_istable(L, idx)) {
+        return false;
+    }
+    if (lua_getmetatable(L, idx)) {
+        lua_pop(L, 1);
+        return false;
+    }
+    return true;
+}
+
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     eval_ctx *ec = static_cast<eval_ctx *>(user_data);
     uint64_t syscall_num = ctx->x[17];
@@ -3279,7 +3319,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                     const char *s = farg_cstr(1);
                     if (s) key = atoll(s);
                 }
-                lua_geti(L, tbl_idx, key);
+                if (!ecall_lua_plain_table(L, tbl_idx)) {
+                    return ECALL_DECLINE;
+                }
+                lua_rawgeti(L, tbl_idx, key);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 if (lua_isinteger(L, -1)) {
                     int n = snprintf(out, out_size, "%lld",
@@ -3341,7 +3384,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                         lua_pushstring(L, "");
                     }
                 }
-                lua_seti(L, tbl_idx, key);
+                if (!ecall_lua_plain_table(L, tbl_idx)) {
+                    return ECALL_DECLINE;
+                }
+                lua_rawseti(L, tbl_idx, key);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 out[0] = '\0';
                 ctx->x[10] = 0;
@@ -3360,7 +3406,11 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                     const char *s = farg_cstr(1);
                     if (s) field = s;
                 }
-                lua_getfield(L, tbl_idx, field);
+                if (!ecall_lua_plain_table(L, tbl_idx)) {
+                    return ECALL_DECLINE;
+                }
+                lua_pushstring(L, field);
+                lua_rawget(L, tbl_idx);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 if (lua_isinteger(L, -1)) {
                     int n = snprintf(out, out_size, "%lld",
@@ -3421,7 +3471,14 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                         lua_pushstring(L, "");
                     }
                 }
-                lua_setfield(L, tbl_idx, field);
+                if (!ecall_lua_plain_table(L, tbl_idx)) {
+                    return ECALL_DECLINE;
+                }
+                // lua_setfield pops the value; the raw form wants key then
+                // value, so push the key and swap it under the value.
+                lua_pushstring(L, field);
+                lua_insert(L, -2);
+                lua_rawset(L, tbl_idx);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 out[0] = '\0';
                 ctx->x[10] = 0;
@@ -3997,9 +4054,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 int64_t *dest = (len > 0)
                     ? reinterpret_cast<int64_t *>(ec->memory + dest_addr)
                     : nullptr;
+                if (len > 0 && !ecall_lua_plain_table(L, tbl_idx)) {
+                    return ECALL_DECLINE;
+                }
                 bool ok = (len > 0);
                 for (int ii = 1; ii <= len; ii++) {
-                    lua_geti(L, tbl_idx, ii);
+                    lua_rawgeti(L, tbl_idx, ii);
                     if (lua_isinteger(L, -1)) {
                         dest[ii - 1] = lua_tointeger(L, -1);
                     } else {
@@ -4466,7 +4526,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
         uint64_t out_addr = ctx->x[12];
 
-        lua_geti(L, tbl_idx, key);
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
+        lua_rawgeti(L, tbl_idx, key);
 
         // Convert the result to a string and write to guest memory.
         if (out_addr && out_addr < ec->memory_size - 256) {
@@ -4513,9 +4576,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (!guest_strnlen(ec->memory, ec->memory_size, val_addr, &vlen)) {
             return -1;
         }
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
         lua_pushlstring(L, reinterpret_cast<const char *>(ec->memory + val_addr),
                         vlen);
-        lua_seti(L, tbl_idx, key);
+        lua_rawseti(L, tbl_idx, key);
         return -1;
     }
 
@@ -4534,7 +4600,11 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // guest_strnlen proves a NUL exists within guest memory.
         const char *key = reinterpret_cast<const char *>(
             ec->memory + key_addr);
-        lua_getfield(L, tbl_idx, key);
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
+        lua_pushstring(L, key);
+        lua_rawget(L, tbl_idx);
 
         // Convert result to string in guest memory.
         if (out_addr && out_addr < ec->memory_size - 256) {
@@ -4582,9 +4652,14 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
         const char *key = reinterpret_cast<const char *>(
             ec->memory + key_addr);
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
+        // Raw form wants key then value on the stack.
+        lua_pushstring(L, key);
         lua_pushlstring(L, reinterpret_cast<const char *>(ec->memory + val_addr),
                         vlen);
-        lua_setfield(L, tbl_idx, key);
+        lua_rawset(L, tbl_idx);
         return -1;
     }
 
@@ -4605,7 +4680,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
-        lua_geti(L, tbl_idx, key);
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
+        lua_rawgeti(L, tbl_idx, key);
         if (lua_isinteger(L, -1)) {
             ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
             ctx->x[11] = 1;  // ok
@@ -4624,8 +4702,11 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         int tbl_idx = static_cast<int>(ctx->x[10]);
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
         lua_Integer val = static_cast<lua_Integer>(ctx->x[12]);
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
         lua_pushinteger(L, val);
-        lua_seti(L, tbl_idx, key);
+        lua_rawseti(L, tbl_idx, key);
         return -1;
     }
 
@@ -4637,6 +4718,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         uint64_t dest_addr = ctx->x[11];
         int max_elems = static_cast<int>(ctx->x[12]);
 
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
         int len = static_cast<int>(lua_rawlen(L, tbl_idx));
         if (max_elems < 0) {
             max_elems = 0;
@@ -4658,7 +4742,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         int64_t *dest = reinterpret_cast<int64_t *>(ec->memory + dest_addr);
         for (int i = 1; i <= len; i++) {
-            lua_geti(L, tbl_idx, i);
+            lua_rawgeti(L, tbl_idx, i);
             if (lua_isinteger(L, -1)) {
                 dest[i - 1] = lua_tointeger(L, -1);
             } else {
@@ -4689,10 +4773,13 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             return -1;
         }
 
+        if (len > 0 && !ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
         int64_t *src = reinterpret_cast<int64_t *>(ec->memory + src_addr);
         for (int i = 0; i < len; i++) {
             lua_pushinteger(L, src[i]);
-            lua_seti(L, tbl_idx, i + 1);
+            lua_rawseti(L, tbl_idx, i + 1);
         }
         return -1;
     }

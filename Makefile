@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-dbt test-alarm test-jit-qreg test-jit-ifelse test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -104,6 +104,19 @@ test-lua-jit: install
 	@echo "==> Running smoke with lua_jit 1 (Lua bytecode→HIR→DBT path)"
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && SMOKE_EXTRA_CONF='lua_jit 1' ./tools/Smoke
+
+# Fault containment for the Lua JIT's ECALL table ops (#1423): a Lua chunk
+# must not be able to abort the process.  Part of `make test` -- it is a crash
+# regression, and it is cheap.
+#
+# Unlike test-lua-jit above, this sets jit_eval_brackets 0 as well.  That
+# matters: with eval brackets compiled, fun_lua is ECALLed from inside a DBT
+# program, run_cached_program refuses the nested run (#1326), and the Lua JIT
+# executes nothing at all -- so `lua_jit 1` on its own cannot reach any of
+# this code.  See #1426.
+test-lua-ecall: install
+	@echo "==> Running Lua JIT ECALL fault-containment tests"
+	bash tests/luajit/run.sh
 
 # GANL engine regression harness (epoll/select on Linux, kqueue/select on
 # macOS/BSD).  Scripted engine scenarios locking in the 2026-07 fixes.
