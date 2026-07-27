@@ -57,7 +57,7 @@ static bool sp_ok(dbref player)
     if (  Gagged(player)
        && !Wizard(player))
     {
-        notify(player, T("Sorry. Gagged players cannot speak."));
+        notify(player, M_("Sorry. Gagged players cannot speak."));
         return false;
     }
 
@@ -65,7 +65,7 @@ static bool sp_ok(dbref player)
     {
         if (Robot(player) && !Controls(player, Location(player)))
         {
-            notify(player, T("Sorry, robots may not speak in public."));
+            notify(player, M_("Sorry, robots may not speak in public."));
             return false;
         }
     }
@@ -73,7 +73,7 @@ static bool sp_ok(dbref player)
     {
         if (!could_doit(player, Location(player), A_LSPEECH))
         {
-            notify(player, T("Sorry, you may not speak in this place."));
+            notify(player, M_("Sorry, you may not speak in this place."));
             return false;
         }
     }
@@ -775,11 +775,11 @@ void do_page
         if (  nargs == 1
            && arg1[0] == '\0')
         {
-            notify(executor, T("You have not paged anyone."));
+            notify(executor, M_("You have not paged anyone."));
         }
         else
         {
-            notify(executor, T("No one to page."));
+            notify(executor, M_("No one to page."));
         }
         return;
     }
@@ -1042,25 +1042,25 @@ void do_pemit_single
         switch (key)
         {
         case PEMIT_WHISPER:
-            notify(player, T("Whisper to whom?"));
+            notify(player, M_("Whisper to whom?"));
             break;
 
         case PEMIT_PEMIT:
-            notify(player, T("Emit to whom?"));
+            notify(player, M_("Emit to whom?"));
             break;
 
         case PEMIT_OEMIT:
-            notify(player, T("Emit except to whom?"));
+            notify(player, M_("Emit except to whom?"));
             break;
 
         default:
-            notify(player, T("Sorry."));
+            notify(player, M_("Sorry."));
             break;
         }
         break;
 
     case AMBIGUOUS:
-        notify(player, T("I don’t know who you mean!"));
+        notify(player, M_("I don’t know who you mean!"));
         break;
 
     default:
@@ -1089,7 +1089,7 @@ void do_pemit_single
            && (  !mudconf.pemit_any
               || key != PEMIT_PEMIT))
         {
-            notify(player, T("You are too far away to do that."));
+            notify(player, M_("You are too far away to do that."));
             return;
         }
         if (  bDoContents
@@ -1409,7 +1409,7 @@ void do_pemit_list
             }
             else
             {
-                notify(player, T("You are too far away to do that."));
+                notify(player, M_("You are too far away to do that."));
             }
         }
     }
@@ -1491,7 +1491,7 @@ void do_pemit_whisper
     {
         if ('\0' == recipient[0])
         {
-            notify(executor, T("No one to whisper to."));
+            notify(executor, M_("No one to whisper to."));
             return;
         }
         message = recipient;
