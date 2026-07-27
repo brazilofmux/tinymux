@@ -4345,8 +4345,29 @@ size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
     {
         nLen = TrimPartialSequence(left, src);
     }
-    memcpy(*bufc, src, nLen);
-    *bufc += nLen;
+
+    // memcpy's second argument must be a valid pointer even when the count is
+    // zero -- passing null is undefined behaviour, not a no-op, and the
+    // compiler may infer from the call that src cannot be null and delete a
+    // later check for it.
+    //
+    // This is reached: translate_string() substitutes MU_Substitutes[code],
+    // and entry 4 is { 0, nullptr } -- a deliberate "substitute nothing".  A
+    // (pointer, length) pair with length zero is a perfectly good empty
+    // string, so the caller is not wrong and the guard belongs here, where it
+    // also covers the other 58 call sites (#1458).
+    //
+    // Instrumenting a full smoke run measured 2,392,544 calls, 4 of them with
+    // a null src -- rare enough to sit unnoticed, frequent enough to be real.
+    //
+    // A null src with a NON-zero count stays undefined on purpose: that is a
+    // caller bug, and silencing it here would hide it.
+    //
+    if (0 != nLen)
+    {
+        memcpy(*bufc, src, nLen);
+        *bufc += nLen;
+    }
     return nLen;
 }
 
