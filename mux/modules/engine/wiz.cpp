@@ -30,7 +30,7 @@ static void do_teleport_single
     if (  !Good_obj(victim)
        || isRoom(victim))
     {
-        notify_quiet(executor, T("You can’t teleport that."));
+        notify_quiet(executor, M_("You can’t teleport that."));
         return;
     }
 
@@ -50,7 +50,7 @@ static void do_teleport_single
     {
         if (isExit(victim))
         {
-            notify_quiet(executor, T("Bad destination."));
+            notify_quiet(executor, M_("Bad destination."));
         }
         else
         {
@@ -69,19 +69,19 @@ static void do_teleport_single
     {
     case NOTHING:
 
-        notify_quiet(executor, T("No match."));
+        notify_quiet(executor, M_("No match."));
         return;
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, T("I don’t know which destination you mean!"));
+        notify_quiet(executor, M_("I don’t know which destination you mean!"));
         return;
 
     default:
 
         if (victim == destination)
         {
-            notify_quiet(executor, T("Bad destination."));
+            notify_quiet(executor, M_("Bad destination."));
             return;
         }
     }
@@ -117,7 +117,7 @@ static void do_teleport_single
     {
         // @Teleporting into garbage is never permitted.
         //
-        notify_quiet(executor, T("Bad destination."));
+        notify_quiet(executor, M_("Bad destination."));
         return;
     }
     else if (Has_contents(destination))
@@ -154,7 +154,7 @@ static void do_teleport_single
                 {
                     if (!Quiet(executor))
                     {
-                        notify_quiet(executor, T("Teleported."));
+                        notify_quiet(executor, M_("Teleported."));
                     }
                 }
             }
@@ -178,7 +178,7 @@ static void do_teleport_single
         {
             if (executor != victim)
             {
-                notify_quiet(executor, T("Bad destination."));
+                notify_quiet(executor, M_("Bad destination."));
             }
             did_it(victim, destination,
                    A_TFAIL, T("You can’t teleport there!"),
@@ -193,7 +193,7 @@ static void do_teleport_single
             }
             else
             {
-                notify_quiet(executor, T("I can’t find that exit."));
+                notify_quiet(executor, M_("I can’t find that exit."));
             }
         }
     }
@@ -379,12 +379,12 @@ void do_toad
 
     if (!isPlayer(victim))
     {
-        notify_quiet(executor, T("Try @destroy instead."));
+        notify_quiet(executor, M_("Try @destroy instead."));
         return;
     }
     if (No_Destroy(victim))
     {
-        notify_quiet(executor, T("You can’t toad that player."));
+        notify_quiet(executor, M_("You can’t toad that player."));
         return;
     }
     if (  nargs == 2
@@ -500,7 +500,7 @@ void do_newpassword
     dbref victim = lookup_player(executor, name, false);
     if (victim == NOTHING)
     {
-        notify_quiet(executor, T("No such player."));
+        notify_quiet(executor, M_("No such player."));
         return;
     }
     const UTF8 *pmsg;
@@ -533,7 +533,7 @@ void do_newpassword
         }
         if (!bCan)
         {
-            notify_quiet(executor, T("You cannot change that player’s password."));
+            notify_quiet(executor, M_("You cannot change that player’s password."));
             return;
         }
     }
@@ -546,7 +546,7 @@ void do_newpassword
     // It's ok, do it.
     //
     ChangePassword(victim, password);
-    notify_quiet(executor, T("Password changed."));
+    notify_quiet(executor, M_("Password changed."));
     LBuf buf = LBuf_Src("do_newpassword");
     UTF8 *bp = buf;
     safe_tprintf_str(buf, &bp, T("Your password has been changed by %s."), Moniker(executor));
@@ -577,7 +577,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
         else
         {
-            notify_quiet(executor, T("That’s not a number!"));
+            notify_quiet(executor, M_("That’s not a number!"));
             return;
         }
         STARTLOG(LOG_WIZARD, "WIZ", "BOOT");
@@ -599,14 +599,14 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
         if (God(victim))
         {
-            notify_quiet(executor, T("You cannot boot that player!"));
+            notify_quiet(executor, M_("You cannot boot that player!"));
             return;
         }
         if (  (  !isPlayer(victim)
               && !God(executor))
            || executor == victim)
         {
-            notify_quiet(executor, T("You can only boot off other players!"));
+            notify_quiet(executor, M_("You can only boot off other players!"));
             return;
         }
         STARTLOG(LOG_WIZARD, "WIZ", "BOOT");
@@ -688,7 +688,7 @@ void do_cut(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     if (Good_obj(object))
     {
         s_Next(object, NOTHING);
-        notify_quiet(executor, T("Cut."));
+        notify_quiet(executor, M_("Cut."));
     }
 }
 
@@ -722,7 +722,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         mux_strncpy(mudconf.motd_msg, message, sizeof(mudconf.motd_msg)-1);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Set: MOTD."));
+            notify_quiet(executor, M_("Set: MOTD."));
         }
         break;
 
@@ -731,7 +731,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         mux_strncpy(mudconf.wizmotd_msg, message, sizeof(mudconf.wizmotd_msg)-1);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Set: Wizard MOTD."));
+            notify_quiet(executor, M_("Set: Wizard MOTD."));
         }
         break;
 
@@ -740,7 +740,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         mux_strncpy(mudconf.downmotd_msg, message, sizeof(mudconf.downmotd_msg)-1);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Set: Down MOTD."));
+            notify_quiet(executor, M_("Set: Down MOTD."));
         }
         break;
 
@@ -749,7 +749,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         mux_strncpy(mudconf.fullmotd_msg, message, sizeof(mudconf.fullmotd_msg)-1);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Set: Full MOTD."));
+            notify_quiet(executor, M_("Set: Full MOTD."));
         }
         break;
 
@@ -759,11 +759,11 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         {
             if (!is_brief)
             {
-                notify_quiet(executor, T("----- motd file -----"));
+                notify_quiet(executor, M_("----- motd file -----"));
                 fcache_send(executor, FC_MOTD);
-                notify_quiet(executor, T("----- wizmotd file -----"));
+                notify_quiet(executor, M_("----- wizmotd file -----"));
                 fcache_send(executor, FC_WIZMOTD);
-                notify_quiet(executor, T("----- motd messages -----"));
+                notify_quiet(executor, M_("----- motd messages -----"));
             }
             notify_quiet(executor, tprintf(T("MOTD: %s"), mudconf.motd_msg));
             notify_quiet( executor,
@@ -789,7 +789,7 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     default:
 
-        notify_quiet(executor, T("Illegal combination of switches."));
+        notify_quiet(executor, M_("Illegal combination of switches."));
     }
 }
 
@@ -823,7 +823,7 @@ void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     int flagvalue;
     if (!search_nametab(executor, enable_names, flag, &flagvalue))
     {
-        notify_quiet(executor, T("I don’t know about that flag."));
+        notify_quiet(executor, M_("I don’t know about that flag."));
     }
     else if (key == GLOB_ENABLE)
     {
@@ -849,7 +849,7 @@ void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, U
         ENDLOG;
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Enabled."));
+            notify_quiet(executor, M_("Enabled."));
         }
     }
     else if (key == GLOB_DISABLE)
@@ -872,11 +872,11 @@ void do_global(dbref executor, dbref caller, dbref enactor, int eval, int key, U
         ENDLOG;
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Disabled."));
+            notify_quiet(executor, M_("Disabled."));
         }
     }
     else
     {
-        notify_quiet(executor, T("Illegal combination of switches."));
+        notify_quiet(executor, M_("Illegal combination of switches."));
     }
 }
