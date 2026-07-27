@@ -2919,6 +2919,31 @@ static void discover_comsys_mail_modules(void)
         mudstate.pIComsysControl = nullptr;
     }
 
+    // Say which implementation is live, both ways (#1581).
+    //
+    // comsys has two implementations -- this module and the engine's built-in
+    // (mux/modules/engine/comsys.cpp) -- and they demonstrably disagree: the
+    // module never wrote HISTORY_n until #1569, and still differs on
+    // LOG_TIMESTAMPS (#1585) and four MOGRIFY hooks (#1572).  Until now
+    // nothing said which one a given server got: the two inner failure paths
+    // logged, but "the module is not there at all" fell through in silence and
+    // success said nothing either.
+    //
+    // That silence is why #1564 took a multi-session investigation and why the
+    // same test file passed on one platform and failed on another at the
+    // commit that added it.  One line at startup makes it a glance.
+    //
+    // fprintf(stderr), not STARTLOG or Log.tinyprintf.  Neither reaches
+    // anything at this point in LoadGame -- I checked both, including the
+    // neighbouring Log.tinyprintf("LOADING: ...") calls, and none of them
+    // produce output the harness or an operator can see.  Which also means
+    // the STARTLOG failure paths above this have never been visible to
+    // anyone.  stderr is what the SQLite migration notices already use from
+    // this same phase, and the smoke harness captures it.
+    //
+    fprintf(stderr, "Comsys: using %s implementation.\n",
+        (nullptr != mudstate.pIComsysControl) ? "module" : "built-in engine");
+
     // Mail module.
     //
     mr = mux_CreateInstance(CID_Mail, nullptr, UseSameProcess,
@@ -2964,6 +2989,20 @@ static void discover_comsys_mail_modules(void)
     {
         mudstate.pIMailControl = nullptr;
     }
+
+    // Same for mail -- two implementations, and #1587 records them disagreeing
+    // on message size (#1581).
+    //
+    // fprintf(stderr), not STARTLOG or Log.tinyprintf.  Neither reaches
+    // anything at this point in LoadGame -- I checked both, including the
+    // neighbouring Log.tinyprintf("LOADING: ...") calls, and none of them
+    // produce output the harness or an operator can see.  Which also means
+    // the STARTLOG failure paths above this have never been visible to
+    // anyone.  stderr is what the SQLite migration notices already use from
+    // this same phase, and the smoke harness captures it.
+    //
+    fprintf(stderr, "Mail: using %s implementation.\n",
+        (nullptr != mudstate.pIMailControl) ? "module" : "built-in engine");
 }
 
 MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
