@@ -159,6 +159,36 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #9 - Widths that overflow 32 bits (#1407).
+#
+# TC008 guards the LBUF boundary, but every width it uses fits in an int,
+# so nothing there can catch a 32-bit narrowing.  The Tier-2 blob's
+# parse_justify_width called satoi() and range-checked the RESULT, so a
+# width above 2^32 wrapped before the check and padded the wrapped count:
+# ljust(x,4294967396) returned 100 columns on the JIT route while the AST
+# route returned the error.  4294967296 is worse -- it wraps to 0, which
+# the blob reads as "no width" and returns empty.
+#
+# The host side takes int64_t from mux_atoi64 for the same reason (#1402,
+# where long is 32-bit on LLP64), so both routes must agree here on every
+# platform.  This case fails against an un-regenerated softlib.rv64, which
+# is the point: the blob is a prebuilt artifact and a source fix in
+# mux/rv64/src/softlib.c does nothing until it is rebuilt.
+#
+&tr.tc009 test_ljust_fn=
+  @if cand(
+        strmatch(setr(0, ljust(x,4294967396)), #-1 OUT OF RANGE),
+        strmatch(setr(1, ljust(x,4294967296)), #-1 OUT OF RANGE),
+        strmatch(setr(2, ljust(x,8589934692)), #-1 OUT OF RANGE)
+      )=
+  {
+    @log smoke=TC009: ljust width above 32 bits. Succeeded.
+  },
+  {
+    @log smoke=TC009: ljust width above 32 bits. Failed (plus100=%q0 len=[strlen(%q0)] exact=%q1 wide=%q2).
+  }
+-
 &tr.done test_ljust_fn=
   @log smoke=End ljust() test cases.;
   @notify smoke

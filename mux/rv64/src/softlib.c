@@ -348,6 +348,7 @@ static int sitoa(char *buf, int val);
 static int satoi(const char *s);
 static int sisspace(char c);
 static int sis_integer(const char *s);
+static long long satoll(const char *s);
 
 /* String<->double intrinsic stubs (defined near the math wrappers;
  * the DBT replaces them with host mux_atof / fval). */
@@ -988,10 +989,15 @@ size_t co_split_words(const unsigned char *data, size_t len,
  * range error.  The width is range-checked BEFORE any narrowing, matching
  * the host's fix for the uint16 wraparound (ljust(x,999999) used to pad
  * 16959 columns).  Returns -1 for "emit nothing", -2 for "emit
- * #-1 OUT OF RANGE", else the width. */
+ * #-1 OUT OF RANGE", else the width.
+ *
+ * satoll, not satoi: satoi is 32-bit, so it narrowed before the range
+ * check rather than after it, which is the same shape of defect #782
+ * fixed here and #860 fixed on the host.  ljust(x,4294967396) padded
+ * 100 columns instead of erroring (#1402). */
 static long parse_justify_width(const char *s) {
     if (!sis_integer(s)) return -1;
-    int w = satoi(s);
+    long long w = satoll(s);
     if (w == 0) return -1;
     if (w < 0 || w >= LBUF_SIZE) return -2;
     return (long)w;
