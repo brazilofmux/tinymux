@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-nls test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-nls test-nls-runtime test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-vacuous test-narrowing test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -80,6 +80,25 @@ test-smoke-ast: test-smoke
 test-vacuous:
 	@echo "==> Checking for smoke cases that cannot fail"
 	cd testcases && python3 tools/check_vacuous.py
+
+# Runtime oracle for the xx pseudo-locale (#1523).
+#
+# test-nls above is the static half -- markings, catalogue coverage, .pot
+# freshness -- and that is where the risk that has actually bitten lives.  This
+# is the half that shows translation happens at all: nothing else in the suite
+# observes notify() prose, so the whole translatable surface is otherwise
+# invisible to it.
+#
+# The point is the pairing, not the LANGUAGE=xx run on its own.  A smoke run
+# with LANGUAGE=xx is green whether the catalogue is correct, corrupt or absent
+# -- measured on #1523 with the catalogue in a directory the server never opens
+# -- so it is only evidence if something also asserts that removing the
+# catalogue takes the translations away.  Both directions are checked.
+#
+# Skips cleanly without --enable-nls or without msgfmt.
+test-nls-runtime:
+	@echo "==> Running NLS runtime oracle (xx pseudo-locale)"
+	bash tests/nls/run.sh
 
 # 64-bit parse into a narrower destination (#1402).
 #
