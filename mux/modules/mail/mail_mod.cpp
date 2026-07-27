@@ -69,7 +69,7 @@ static MUX_CLASS_INFO mail_classes[] =
 // Required by libmux ModuleLoad — without this, bLoaded stays false and
 // CreateInstance never finds the class (#1191 root cause).
 //
-extern "C" MUX_RESULT DCL_API mux_CanUnloadNow(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
 {
     if (  0 == g_cComponents
        && 0 == g_cServerLocks)
@@ -79,7 +79,7 @@ extern "C" MUX_RESULT DCL_API mux_CanUnloadNow(void)
     return MUX_S_FALSE;
 }
 
-extern "C" MUX_RESULT DCL_API mux_Register(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
     MUX_RESULT mr = MUX_E_UNEXPECTED;
 
@@ -91,12 +91,12 @@ extern "C" MUX_RESULT DCL_API mux_Register(void)
     return mr;
 }
 
-extern "C" MUX_RESULT DCL_API mux_Unregister(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
     return mux_RevokeClassObjects(NUM_CLASSES, mail_classes);
 }
 
-extern "C" MUX_RESULT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 

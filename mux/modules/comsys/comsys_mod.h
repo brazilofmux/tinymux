@@ -195,6 +195,8 @@ private:
     void do_processcom(dbref player, const UTF8 *channel, UTF8 *msg);
     void SendChannelMessage(dbref executor, struct channel *ch,
         const UTF8 *msg, bool bJoinLeaveMsg);
+    // Recall-buffer write, mirroring the engine's HISTORY_n logging (#1564).
+    void RecordChannelHistory(struct channel *ch, const UTF8 *msg);
     void do_joinchannel(dbref player, struct channel *ch);
     void do_leavechannel(dbref player, struct channel *ch);
     void do_comwho(dbref player, struct channel *ch);
