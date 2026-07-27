@@ -768,6 +768,13 @@ static bool try_emit_inline_call(emit_t *e, reg_cache_t *rc, fp_cache_t *fc,
 
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
                                uint64_t target_pc) {
+    // A backward target closes a loop; leaving through the trampoline keeps
+    // the dispatch loop's watchdogs in play (#1571).
+    if (!dbt_chain_allowed(dbt, target_pc)) {
+        emit_exit_with_pc(e, target_pc);
+        return;
+    }
+
     block_entry_t *be = dbt_cache_lookup(dbt, target_pc);
     bool known = (be != nullptr);
 
@@ -800,6 +807,7 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
 // At any branch/jump, flush register cache and exit.
 
 uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
+    dbt->cur_block_pc = guest_pc;   // #1571 back-edge test
     uint8_t *intrinsic = try_emit_intrinsic(dbt, guest_pc);
     if (intrinsic) return intrinsic;
 

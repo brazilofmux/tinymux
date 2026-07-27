@@ -250,6 +250,21 @@ struct dbt_state_t {
     // only reads a pointer it was handed.
     const std::atomic<bool> *alarm_flag = nullptr;
 
+    // Guest PC of the block currently being translated (#1571).
+    //
+    // Block chaining patches a block's exit to branch straight into another
+    // block's native code, which is the point of it -- but for a *backward*
+    // target that builds a loop the dispatch loop never sees again, and both
+    // watchdogs live there: max_dispatch and alarm_flag are only read at the
+    // top of dbt_run's loop.  A guest loop built entirely out of chained
+    // back-edges therefore runs forever with every counter still and no
+    // wall-clock abort, which is not "best effort" -- it is unbounded.
+    //
+    // Backends set this at the top of dbt_backend_translate_block and consult
+    // dbt_chain_allowed() before emitting a direct branch, so a back-edge
+    // leaves through the trampoline instead and the loop is watched again.
+    uint64_t cur_block_pc = 0;
+
     // Inline CALL cold-exit diagnostics.
     //
     uint64_t cold_exit_count;

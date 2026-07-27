@@ -188,6 +188,26 @@ block_entry_t *dbt_cache_lookup(dbt_state_t *dbt, uint64_t pc);
 void dbt_cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code);
 
 // Block chain resolution.
+// May a block exit to target_pc be chained straight into native code?
+//
+// No, when the target is at or below the block being translated: that is a
+// back-edge, and chaining it closes a loop the dispatch loop never re-enters.
+// Both watchdogs -- max_dispatch and alarm_flag -- are read only at the top of
+// dbt_run's loop, so such a loop is bounded by nothing at all (#1571).
+//
+// Forward chaining, which is what makes straight-line guest code fast, is
+// untouched.  Only the branch that closes a loop pays a dispatch, and that is
+// the one place a bound is worth having.
+//
+// Inline in the header because test_chain links the three backends without
+// dbt.cpp, and a one-line predicate should not force that binary to grow a
+// dependency on the whole dispatcher.
+//
+static inline bool dbt_chain_allowed(const dbt_state_t *dbt,
+                                     uint64_t target_pc) {
+    return target_pc > dbt->cur_block_pc;
+}
+
 void dbt_backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
                            uint8_t *native_code);
 

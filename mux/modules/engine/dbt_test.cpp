@@ -3052,6 +3052,67 @@ static void test_a64_mirrors_x64_defects() {
     }
 }
 
+
+// #1571: a guest loop must remain observable to the dispatch loop.
+//
+// Block chaining patches a block's exit to branch straight into another
+// block's native code.  For a *forward* target that is exactly what makes
+// straight-line guest code fast.  For a *backward* target it closes a loop
+// that never returns to dbt_run's dispatch loop -- and that loop is where both
+// watchdogs live: max_dispatch is counted there and alarm_flag is polled there.
+// A chained back-edge therefore ran forever with every counter still, no
+// wall-clock abort, and no ECALL activity: the process simply stopped, and
+// every instrument the JIT has reported that nothing was happening.
+//
+// The assertion is deliberately weak on *how* it stops and strong on *that* it
+// stops: dbt_run must return rather than spin.  If this regresses, the symptom
+// is a hung test run rather than a failed one, so the printf below is the last
+// thing anyone will see -- say what it means.
+static void test_1571_backedge_is_watched() {
+    printf("test_1571_backedge_is_watched...\n");
+    printf("  (if this hangs, a back-edge is being chained again -- #1571)\n");
+
+    const size_t MEM_SIZE = 64 * 1024;
+
+    // Two shapes, because they take different paths through the emitter.
+    //
+    //   self:  a branch back into the block currently being translated, so
+    //          dbt_cache_lookup misses and a patch site is recorded.
+    //   pair:  a branch back to a block already translated, so the emitter
+    //          takes the "known target" path and patches immediately.
+    // BEQ x0, x0 is always taken, so it is an unconditional branch.
+    struct { const char *name; std::vector<uint32_t> code; } cases[] = {
+        { "two-block loop",
+          { ADDI(1, 1, 1),                         // 0: x1 += 1
+            BEQ(0, 0, 4),                          // 4: -> 8 (forward)
+            BEQ(0, 0, -8) } },                     // 8: -> 0 (back-edge)
+    };
+
+    for (auto &c : cases) {
+        std::vector<uint8_t> memory(MEM_SIZE, 0);
+        for (size_t i = 0; i < c.code.size(); i++) {
+            memcpy(memory.data() + i * 4, &c.code[i], 4);
+        }
+
+        dbt_state_t dbt;
+        if (dbt_init(&dbt, memory.data(), MEM_SIZE,
+                     dbt_test_ecall2, nullptr) != 0) {
+            CHECK_EQ(c.name, 1, 0);   // init failure is a test failure
+            continue;
+        }
+        // Small enough that a watched loop trips it quickly; an unwatched one
+        // never reaches the check at all.
+        dbt.max_dispatch = 50000;
+        int rc = dbt_run(&dbt, 0, MEM_SIZE - 16);
+        dbt_cleanup(&dbt);
+
+        // -2 is the dispatch-limit return.  Any return at all proves the loop
+        // stayed observable; requiring -2 specifically also proves it was the
+        // watchdog that stopped it rather than the guest falling out.
+        CHECK_EQ(c.name, rc, -2);
+    }
+}
+
 int main(int argc, char *argv[]) {
     printf("RV64IMD Interpreter Test Suite\n");
     printf("==============================\n\n");
@@ -3110,6 +3171,7 @@ int main(int argc, char *argv[]) {
     // both hosts keep the shape (#1364 rebased on #1358/#1360/#1363).
     //
     test_a64_mirrors_x64_defects();
+    test_1571_backedge_is_watched();
     test_x0_base_load_store();
     test_x0_operand_alu();
     test_slt_branch_fusion_x0();

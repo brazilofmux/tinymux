@@ -1296,6 +1296,13 @@ uint32_t dbt_backend_decode_jmp_target(const uint8_t *code_buf,
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
                                uint64_t target_pc) {
     // Check if target is already translated (4-way lookup).
+    // A backward target closes a loop; leaving through the trampoline keeps
+    // the dispatch loop's watchdogs in play (#1571).
+    if (!dbt_chain_allowed(dbt, target_pc)) {
+        emit_exit_with_pc(e, target_pc);
+        return;
+    }
+
     block_entry_t *be = dbt_cache_lookup(dbt, target_pc);
     bool known = (be != nullptr);
 
@@ -1336,6 +1343,7 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
 // ---------------------------------------------------------------
 
 uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
+    dbt->cur_block_pc = guest_pc;   // #1571 back-edge test
     // Check for intrinsic recognition before normal translation.
     // If guest_pc is a known intrinsic, emit a native stub block.
     //
