@@ -2017,6 +2017,16 @@ int main(int argc, char *argv[])
                               nullptr, false);
     if (MUX_FAILED(mr))
     {
+        // A harness driving muxscript needs to know that the config never
+        // loaded, not just that "LoadGame failed" (#1601).  Before this was
+        // fatal, an unreadable config produced a green run against the
+        // compiled-in defaults -- indistinguishable from a real one.
+        //
+        if (MUX_E_NOTFOUND == mr)
+        {
+            fprintf(stderr, "muxscript: cannot read configuration file '%s'\n",
+                conffile);
+        }
         fprintf(stderr, "muxscript: LoadGame failed (%d)\n", mr);
         g_pEngine->Release();
 #if defined(STUB_SLAVE) && defined(HAVE_WORKING_FORK)

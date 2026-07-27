@@ -1860,6 +1860,25 @@ static CF_HAND(cf_include)
     LBuf buf = LBuf_Src("cf_include");
     if (nullptr == fgets(reinterpret_cast<char *>(buf.get()), LBUF_SIZE, fp))
     {
+        // Distinguish "nothing to read" from "could not read" (#1601).
+        // fopen succeeds on a directory on both Linux and macOS, and the
+        // read then fails with EISDIR -- so `-c somedir` used to look
+        // exactly like an empty file and be silently accepted, leaving the
+        // game on compiled-in defaults.  An empty regular file sets feof
+        // with no error and stays deliberately valid: it is the supported
+        // way to ask for the defaults on purpose.
+        //
+        bool bReadFailed = (0 != ferror(fp));
+
+        // The original early return here skipped the fclose that the normal
+        // path below does, leaking the handle for every empty include.
+        //
+        mux_fclose(fp);
+        if (bReadFailed)
+        {
+            cf_log_notfound(player, cmd, T("Readable config file"), str);
+            return -1;
+        }
         return 0;
     }
     while (!feof(fp))

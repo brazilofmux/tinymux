@@ -1097,7 +1097,11 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
         }
     }
 
-    RecordChannelHistory(ch, msg);
+    // Engine only evaluates MOGRIFY`* for non-join/leave traffic
+    // (comsys.cpp:1701).  Pass that through so join/leave history is not
+    // suppressed by a sticky NOBUFFER=1 under the module alone.
+    //
+    RecordChannelHistory(executor, ch, msg, bJoinLeaveMsg);
 }
 
 // ---------------------------------------------------------------------------
@@ -1130,8 +1134,94 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
 // one with strftime.  @cset/timestamp_logs sets or clears the attribute;
 // without this consult it reported success while history stayed plain.
 //
-void CComsysMod::RecordChannelHistory(struct channel *ch, const UTF8 *msg)
+// MOGRIFY`NOBUFFER (#1572).
+//
+// The engine evaluates the hook with three arguments -- channel name, message,
+// and the sender as "#<dbref>" -- and skips the recall buffer when the result
+// is true by xlate() (comsys.cpp:1727).  The module can do the same: it already
+// holds mux_IEvaluator, whose EvalWithArgs exists for exactly this (the
+// interface comment cites MOGRIFY`BLOCK, #1194).
+//
+// Evaluated via EvalWithArgs (same path as blocked_by_mogrify), with xlate-
+// style truth on the result so "0" and empty stay off.  A hook added now
+// should match the engine rather than invent a second meaning.
+//
+bool CComsysMod::nobuffer_by_mogrify(dbref executor, struct channel *ch,
+    const UTF8 *msg)
 {
+    if (  nullptr == ch
+       || ch->chan_obj < 0
+       || nullptr == m_pIAttributeAccess
+       || nullptr == m_pIEvaluator
+       || nullptr == msg)
+    {
+        return false;
+    }
+
+    bool bValid = false;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->IsValid(ch->chan_obj, &bValid);
+    }
+    if (!bValid)
+    {
+        return false;
+    }
+
+    UTF8 expr[MOD_LBUF_SIZE];
+    size_t nExpr = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(1, ch->chan_obj,
+        T("MOGRIFY`NOBUFFER"), expr, sizeof(expr) - 1, &nExpr);
+    if (MUX_FAILED(mr) || 0 == nExpr)
+    {
+        return false;
+    }
+    expr[nExpr] = '\0';
+
+    UTF8 sdrBuf[32];
+    snprintf(reinterpret_cast<char *>(sdrBuf), sizeof(sdrBuf), "#%d",
+             static_cast<int>(executor));
+    const UTF8 *args[3] = { ch->name, msg, sdrBuf };
+
+    UTF8 result[MOD_LBUF_SIZE];
+    size_t nResult = 0;
+    // Match call_mogrifier / blocked_by_mogrify: evaluate as the channel
+    // object with the speaker as enactor (comsys.cpp:1342).
+    //
+    mr = m_pIEvaluator->EvalWithArgs(ch->chan_obj, ch->chan_obj, executor,
+        expr, args, 3, result, sizeof(result) - 1, &nResult);
+    if (MUX_FAILED(mr) || 0 == nResult)
+    {
+        return false;
+    }
+    result[nResult] = '\0';
+
+    // Approximate xlate() (functions.cpp) for the common 0/1/empty results
+    // without pulling engine-private xlate into the module.  Leading "#-" is
+    // false; bare "#N" is true; "0" is false; other non-empty is true.
+    //
+    const char *p = reinterpret_cast<const char *>(result);
+    while (' ' == *p) p++;
+    if ('\0' == *p) return false;
+    if ('#' == *p) return ('-' != p[1]);
+    if ('0' == p[0] && '\0' == p[1]) return false;
+    return true;
+}
+
+void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
+    const UTF8 *msg, bool bJoinLeaveMsg)
+{
+    // MOGRIFY`NOBUFFER keeps a line out of the recall buffer (#1572).  The
+    // engine honours it; the module did not, so a channel that suppressed
+    // history under the engine still recorded it under the module.
+    // Join/leave is not evaluated by the engine either (comsys.cpp:1701).
+    //
+    if (  !bJoinLeaveMsg
+       && nobuffer_by_mogrify(executor, ch, msg))
+    {
+        return;
+    }
+
     if (  nullptr == m_pIAttributeAccess
        || nullptr == m_pIObjectInfo
        || nullptr == ch

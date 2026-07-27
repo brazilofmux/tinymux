@@ -361,6 +361,7 @@ typedef struct MatchState {
   const char *p_end;  /* end ('\0') of pattern */
   lua_State *L;
   int matchdepth;  /* control for recursive depth (to avoid C stack overflow) */
+  unsigned steps;  /* total 'match' calls, for the interrupt below (TinyMUX) */
   unsigned char level;  /* total number of captures (finished or unfinished) */
   struct {
     const char *init;
@@ -377,6 +378,35 @@ static const char *match (MatchState *ms, const char *s, const char *p);
 #if !defined(MAXCCALLS)
 #define MAXCCALLS	200
 #endif
+
+
+/*
+** TinyMUX local change (#1591) -- a wall-clock escape for the matcher.
+**
+** MAXCCALLS above bounds recursion DEPTH, which is what stops a C stack
+** overflow.  It does not bound running time: a pattern like 'a-a-a-...-b'
+** against a string of 'a's backtracks exponentially in BREADTH, so depth
+** stays comfortably under 200 while the number of 'match' calls goes to
+** 2^n.  Measured on the host, a 26-byte subject with 25 'a-' segments ran
+** past 45 seconds with the process pinned at 100%.
+**
+** lua_sethook(LUA_MASKCOUNT) cannot help: it counts VM instructions and
+** does not fire inside a C function, and the whole search happens inside
+** one call to str_find_aux.  So the check has to live here.
+**
+** The host installs lua_match_interrupt; it returns non-zero to abort the
+** current match.  Left NULL -- the default -- this file behaves exactly as
+** stock Lua 5.4 and mux/lua54 still builds standalone.
+**
+** MATCH_INTERRUPT_MASK is a power-of-two-minus-one throttle on how often
+** the callback runs.  An ordinary pattern never reaches it, so the common
+** path costs one increment and one predictable branch.
+*/
+#if !defined(MATCH_INTERRUPT_MASK)
+#define MATCH_INTERRUPT_MASK	0xFFFFu
+#endif
+
+int (*lua_match_interrupt) (lua_State *L) = NULL;
 
 
 #define L_ESC		'%'
@@ -570,6 +600,11 @@ static const char *match_capture (MatchState *ms, const char *s, int l) {
 static const char *match (MatchState *ms, const char *s, const char *p) {
   if (l_unlikely(ms->matchdepth-- == 0))
     luaL_error(ms->L, "pattern too complex");
+  /* TinyMUX (#1591): bound running time, not just depth.  See MAXCCALLS. */
+  if (l_unlikely((++ms->steps & MATCH_INTERRUPT_MASK) == 0
+                 && lua_match_interrupt != NULL
+                 && lua_match_interrupt(ms->L)))
+    luaL_error(ms->L, "cpu limited");
   init: /* using goto to optimize tail recursion */
   if (p != ms->p_end) {  /* end of pattern? */
     switch (*p) {
@@ -758,6 +793,11 @@ static void prepstate (MatchState *ms, lua_State *L,
                        const char *s, size_t ls, const char *p, size_t lp) {
   ms->L = L;
   ms->matchdepth = MAXCCALLS;
+  /* TinyMUX (#1591): reset per call, NOT in reprepstate -- a scan that
+  ** retries from every position in a long subject is slow in aggregate
+  ** even when each individual attempt is cheap, and the budget is meant
+  ** to bound the whole call. */
+  ms->steps = 0;
   ms->src_init = s;
   ms->src_end = s + ls;
   ms->p_end = p + lp;
