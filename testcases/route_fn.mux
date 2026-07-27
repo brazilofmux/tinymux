@@ -61,15 +61,15 @@ think [parent(get(test_route_fn/room_child), get(test_route_fn/room_parent))]
 #     Unreachable direct gateway: P_dead -> Q1
 #     Reachable alternate route: P2 -> R1 -> Q1
 #
-think [setq(0, create(Route_Zone_X))][attrib_set(test_route_fn/zone_x, %q0)]
+think [setq(0, create(Route_Zone_X, 10))][attrib_set(test_route_fn/zone_x, %q0)]
 -
-think [setq(0, create(Route_Zone_Y))][attrib_set(test_route_fn/zone_y, %q0)]
+think [setq(0, create(Route_Zone_Y, 10))][attrib_set(test_route_fn/zone_y, %q0)]
 -
-think [setq(0, create(Route_Zone_P))][attrib_set(test_route_fn/zone_p, %q0)]
+think [setq(0, create(Route_Zone_P, 10))][attrib_set(test_route_fn/zone_p, %q0)]
 -
-think [setq(0, create(Route_Zone_Q))][attrib_set(test_route_fn/zone_q, %q0)]
+think [setq(0, create(Route_Zone_Q, 10))][attrib_set(test_route_fn/zone_q, %q0)]
 -
-think [setq(0, create(Route_Zone_R))][attrib_set(test_route_fn/zone_r, %q0)]
+think [setq(0, create(Route_Zone_R, 10))][attrib_set(test_route_fn/zone_r, %q0)]
 -
 think [setq(0, create(Route_Room_X1, 10, r))][set(%q0, NAVIGABLE)][attrib_set(test_route_fn/room_x1, %q0)]
 -

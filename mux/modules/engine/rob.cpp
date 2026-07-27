@@ -43,18 +43,18 @@ void do_kill
     switch (victim)
     {
     case NOTHING:
-        notify(executor, T("I don\xE2\x80\x99t see that player here."));
+        notify(executor, M_("I don\xE2\x80\x99t see that player here."));
         break;
 
     case AMBIGUOUS:
-        notify(executor, T("I don\xE2\x80\x99t know who you mean!"));
+        notify(executor, M_("I don\xE2\x80\x99t know who you mean!"));
         break;
 
     default:
         if (  !isPlayer(victim)
            && !isThing(victim))
         {
-            notify(executor, T("Sorry, you can only kill players and things."));
+            notify(executor, M_("Sorry, you can only kill players and things."));
             break;
         }
         if (  (  Haven(Location(victim))
@@ -63,7 +63,7 @@ void do_kill
               && !Controls(executor, Location(victim)))
            || Unkillable(victim))
         {
-            notify(executor, T("Sorry."));
+            notify(executor, M_("Sorry."));
             break;
         }
 
@@ -98,7 +98,7 @@ void do_kill
         {
             // Failure: notify player and victim only.
             //
-            notify(executor, T("Your murder attempt failed."));
+            notify(executor, M_("Your murder attempt failed."));
             {
                 LBuf buf1 = LBuf_Src("do_kill.failed");
                 mux_sprintf(buf1, LBUF_SIZE, T("%s tried to kill you!"), Moniker(executor));
@@ -149,7 +149,7 @@ void do_kill
                 {
                     if (!Quiet(victim))
                     {
-                        notify(Owner(victim), T("Halted."));
+                        notify(Owner(victim), M_("Halted."));
                     }
                 }
             }
@@ -175,7 +175,7 @@ void do_kill
                 }
                 else
                 {
-                    notify(victim, T("Your insurance policy has been revoked."));
+                    notify(victim, M_("Your insurance policy has been revoked."));
                 }
             }
         }
@@ -203,21 +203,21 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
     switch (thing)
     {
     case NOTHING:
-        notify(giver, T("You don\xE2\x80\x99t have that!"));
+        notify(giver, M_("You don\xE2\x80\x99t have that!"));
         return;
 
     case AMBIGUOUS:
-        notify(giver, T("I don\xE2\x80\x99t know which you mean!"));
+        notify(giver, M_("I don\xE2\x80\x99t know which you mean!"));
         return;
     }
     if (thing == giver)
     {
-        notify(giver, T("You can\xE2\x80\x99t give yourself away!"));
+        notify(giver, M_("You can\xE2\x80\x99t give yourself away!"));
         return;
     }
     if (thing == recipient)
     {
-        notify(giver, T("You can\xE2\x80\x99t give an object to itself."));
+        notify(giver, M_("You can\xE2\x80\x99t give an object to itself."));
         return;
     }
     if (  (!isThing(thing) && !isPlayer(thing))
@@ -262,7 +262,7 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
         LBuf str = LBuf_Src("do_give.thing.ok");
         mux_strncpy(str, Moniker(giver), LBUF_SIZE-1);
         notify_with_cause_ooc(recipient, giver, tprintf(T("%s gave you %s."), str.get(), Moniker(thing)), MSG_SRC_GIVE);
-        notify(giver, T("Given."));
+        notify(giver, M_("Given."));
         notify_with_cause_ooc(thing, giver, tprintf(T("%s gave you to %s."), str.get(), Moniker(recipient)), MSG_SRC_GIVE);
     }
     did_it(giver, thing, A_DROP, nullptr, A_ODROP, nullptr, A_ADROP, 0, nullptr, 0);
@@ -326,7 +326,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         //
         if (amount < cost)
         {
-            notify(giver, T("Feeling poor today?"));
+            notify(giver, M_("Feeling poor today?"));
             giveto(giver, amount);
             return;
         }
@@ -414,22 +414,22 @@ void do_give
     switch (recipient)
     {
     case NOTHING:
-        notify(executor, T("Give to whom?"));
+        notify(executor, M_("Give to whom?"));
         return;
 
     case AMBIGUOUS:
-        notify(executor, T("I don\xE2\x80\x99t know who you mean!"));
+        notify(executor, M_("I don\xE2\x80\x99t know who you mean!"));
         return;
     }
 
     if (isExit(recipient))
     {
-        notify(executor, T("You can\xE2\x80\x99t give anything to an exit."));
+        notify(executor, M_("You can\xE2\x80\x99t give anything to an exit."));
         return;
     }
     if (Guest(recipient))
     {
-        notify(executor, T("Guests really don\xE2\x80\x99t need money or anything."));
+        notify(executor, M_("Guests really don\xE2\x80\x99t need money or anything."));
         return;
     }
     if (is_rational(amnt))
