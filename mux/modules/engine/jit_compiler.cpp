@@ -5590,9 +5590,15 @@ FUNCTION(fun_rvbench)
 
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
-    int iterations = mux_atoi64(fargs[1]);
-    if (iterations < 1) iterations = 1;
-    if (iterations > 1000000) iterations = 1000000;
+    // Clamp in 64-bit before narrowing; see the note in fun_astbench.
+    // rvbench(expr, 4294967296) otherwise truncated to 0 and then got
+    // bumped to 1 by the floor below -- a request 4000x above the cap
+    // silently becoming the smallest legal run (#1402).
+    //
+    int64_t iRequested = mux_atoi64(fargs[1]);
+    if (iRequested < 1) iRequested = 1;
+    if (iRequested > 1000000) iRequested = 1000000;
+    int iterations = static_cast<int>(iRequested);
 
     // Verify both paths produce the same result.
     compiled_program prog = compile_expression(expr, nLen);

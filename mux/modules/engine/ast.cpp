@@ -3021,9 +3021,16 @@ FUNCTION(fun_astbench)
 
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
-    int iterations = mux_atoi64(fargs[1]);
-    if (nLen == 0 || iterations < 1) return;
-    if (iterations > 100000) iterations = 100000;
+    // Clamp in 64-bit BEFORE narrowing.  Narrowing first truncates, so
+    // astbench(expr, 4294967296) became 0 iterations and returned nothing,
+    // and 4294967297 became exactly 1 -- while the cap below claims to be
+    // limiting the caller to 100000.  A request far above the cap has to
+    // land ON the cap, not wrap past it (#1402).
+    //
+    int64_t iRequested = mux_atoi64(fargs[1]);
+    if (nLen == 0 || iRequested < 1) return;
+    if (iRequested > 100000) iRequested = 100000;
+    int iterations = static_cast<int>(iRequested);
 
     // Parse once (shared by both paths).
     auto ast = ast_parse_string(expr, nLen);
