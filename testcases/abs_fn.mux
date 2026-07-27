@@ -21,8 +21,7 @@
         eq(abs(0), 0)
       )=
   {
-    @log smoke=TC001: abs basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: abs basic operations. Succeeded.
   },
   {
     @log smoke=TC001: abs basic operations. Failed (abs(5)=[abs(5)] abs(-5)=[abs(-5)] abs(0)=[abs(0)]).;

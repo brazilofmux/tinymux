@@ -658,7 +658,7 @@ static void do_lua(dbref executor, dbref caller, dbref enactor, int eval,
 
     if (nullptr == mudstate.pILuaControl)
     {
-        notify(executor, T("Lua module is not loaded."));
+        notify(executor, M_("Lua module is not loaded."));
         return;
     }
 
@@ -681,7 +681,7 @@ static void do_lua(dbref executor, dbref caller, dbref enactor, int eval,
     {
         if (!Wizard(executor))
         {
-            notify(executor, T("Permission denied."));
+            notify(executor, M_("Permission denied."));
             return;
         }
         UTF8 result[8000];
@@ -714,7 +714,7 @@ static void do_lua(dbref executor, dbref caller, dbref enactor, int eval,
     }
     if (!Good_obj(obj))
     {
-        notify(executor, T("No such object."));
+        notify(executor, M_("No such object."));
         return;
     }
 
@@ -1449,7 +1449,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     //
     if (Invalid_Objtype(executor))
     {
-        notify(executor, T("Command incompatible with executor type."));
+        notify(executor, M_("Command incompatible with executor type."));
         return;
     }
 
@@ -1467,12 +1467,12 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
        && Protect(CA_GBL_BUILD)
        && !(mudconf.control_flags & CF_BUILD))
     {
-        notify(executor, T("Sorry, building is not allowed now."));
+        notify(executor, M_("Sorry, building is not allowed now."));
         return;
     }
     if (Protect(CA_GBL_INTERP) && !(mudconf.control_flags & CF_INTERP))
     {
-        notify(executor, T("Sorry, queueing and triggering are not allowed now."));
+        notify(executor, M_("Sorry, queueing and triggering are not allowed now."));
         return;
     }
 
@@ -1527,7 +1527,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             {
                 if (i == 1)
                 {
-                    notify(executor, T("Illegal combination of switches."));
+                    notify(executor, M_("Illegal combination of switches."));
                     return;
                 }
                 i = 1;
@@ -2977,7 +2977,7 @@ UTF8 *process_command
         {
             // We use LowerCaseCommand for another purpose.
             //
-            notify(executor, T("Huh?  (Type “help” for help.)"));
+            notify(executor, M_("Huh?  (Type “help” for help.)"));
             STARTLOG(LOG_BADCOMMANDS, "CMD", "BAD");
             log_name_and_loc(executor);
             log_text(T(" entered: "));
@@ -4370,7 +4370,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
         }
         else
         {
-            notify(executor, T("Lua module is not loaded."));
+            notify(executor, M_("Lua module is not loaded."));
         }
         break;
 #ifdef REALITY_LVLS
@@ -4488,12 +4488,12 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                 LBuf atrpt1 = LBuf_Adopt(atr_get("do_icmd.4060", target, A_CMDCHECK, &aowner, &aflags));
                 if (*atrpt1.get())
                 {
-                    notify(player, T("Location CmdCheck attribute is:"));
+                    notify(player, M_("Location CmdCheck attribute is:"));
                     notify(player, atrpt1);
                 }
                 else
                 {
-                    notify(player, T("Location CmdCheck attribute is empty."));
+                    notify(player, M_("Location CmdCheck attribute is empty."));
                 }
             }
             notify(player, T("@icmd: Done."));
@@ -4509,7 +4509,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                 notify(player, T("@icmd: Bad Location."));
                 return;
             }
-            notify(player, T("Scanning all locations and zones from your current location:"));
+            notify(player, M_("Scanning all locations and zones from your current location:"));
             bool bFound = false;
             {
                 LBuf atrpt2 = LBuf_Adopt(atr_get("do_icmd.4086", target, A_CMDCHECK, &aowner, &aflags));
@@ -4585,22 +4585,22 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         {
             if (CmdCheck(target))
             {
-                notify(player, T("CmdCheck is active."));
+                notify(player, M_("CmdCheck is active."));
             }
             else
             {
-                notify(player, T("CmdCheck is not active."));
+                notify(player, M_("CmdCheck is not active."));
             }
             {
                 LBuf atrpt4 = LBuf_Adopt(atr_get("do_icmd.4166", target, A_CMDCHECK, &aowner, &aflags));
                 if (*atrpt4.get())
                 {
-                    notify(player, T("CmdCheck attribute is:"));
+                    notify(player, M_("CmdCheck attribute is:"));
                     notify(player, atrpt4);
                 }
                 else
                 {
-                    notify(player, T("CmdCheck attribute is empty."));
+                    notify(player, M_("CmdCheck attribute is empty."));
                 }
             }
             notify(player, T("@icmd: Done."));
@@ -4829,21 +4829,21 @@ void do_train(const dbref executor, const dbref caller, const dbref enactor, con
 
     if (0 < mudstate.train_nest_lev)
     {
-        notify(executor, T("Train cannot be used to teach command, train."));
+        notify(executor, M_("Train cannot be used to teach command, train."));
         return;
     }
     mudstate.train_nest_lev++;
     const dbref loc = Location(executor);
     if (!Good_obj(loc))
     {
-        notify(executor, T("Bad location."));
+        notify(executor, M_("Bad location."));
         mudstate.train_nest_lev--;
         return;
     }
     if (  !string
        || !*string)
     {
-        notify(executor, T("Train requires an argument."));
+        notify(executor, M_("Train requires an argument."));
         mudstate.train_nest_lev--;
         return;
     }
@@ -4880,7 +4880,7 @@ void do_moniker(const dbref executor, const dbref caller, const dbref enactor, c
     if (  instr == nullptr
        || instr[0] == '\0')
     {
-        notify_quiet(executor, T("Moniker cleared."));
+        notify_quiet(executor, M_("Moniker cleared."));
         s_Moniker(thing, nullptr);
     }
     else
@@ -4889,7 +4889,7 @@ void do_moniker(const dbref executor, const dbref caller, const dbref enactor, c
         if (  !Quiet(executor)
            && !Quiet(thing))
         {
-            notify_quiet(executor, T("Moniker set."));
+            notify_quiet(executor, M_("Moniker set."));
         }
     }
     set_modified(thing);

@@ -363,7 +363,7 @@ void do_log
 
     if (!bValid)
     {
-        notify(executor, T("Syntax: @log file=message"));
+        notify(executor, M_("Syntax: @log file=message"));
         return;
     }
 
@@ -381,7 +381,7 @@ void do_log
         }
     }
 
-    notify(executor, T("Not a valid log file."));
+    notify(executor, M_("Not a valid log file."));
     return;
 }
 
@@ -734,7 +734,7 @@ void do_logrotate(dbref executor, dbref caller, dbref enactor, int eval, int key
     ENDLOG;
 
     Log.Rotate();
-    notify(executor, T("Log file rotated."));
+    notify(executor, M_("Log file rotated."));
 }
 
 CLogFile::~CLogFile(void)

@@ -897,8 +897,17 @@ FUNCTION(fun_shl)
         int64_t b = mux_atoi64(fargs[1]);
         if (0 <= b && b < 64)
         {
+            // #1472: bounding the count is necessary but not sufficient.
+            // Left-shifting a negative value is undefined however small the
+            // count, and so is shifting a bit into or past the sign bit --
+            // shl(-2,1), shl(1,63) and shl(3,63) all reach it.  Shift in
+            // uint64_t, where the operation is defined as the modular one
+            // this function already documents, and convert back.  Every
+            // result is bit-for-bit what the wrap produced before.
+            //
             int64_t a = mux_atoi64(fargs[0]);
-            safe_i64toa(a << b, buff, bufc);
+            uint64_t ua = static_cast<uint64_t>(a) << b;
+            safe_i64toa(static_cast<int64_t>(ua), buff, bufc);
         }
         else if (b < 0)
         {
@@ -963,7 +972,11 @@ FUNCTION(fun_inc)
 
     if (nfargs == 1)
     {
-        safe_i64toa(mux_atoi64(fargs[0]) + 1, buff, bufc);
+        // #1472: wraps at INT64_MAX, which is signed overflow.  Add in
+        // uint64_t for the same wrap without the undefined behaviour.
+        //
+        uint64_t v = static_cast<uint64_t>(mux_atoi64(fargs[0]));
+        safe_i64toa(static_cast<int64_t>(v + 1), buff, bufc);
     }
     else
     {
@@ -982,7 +995,11 @@ FUNCTION(fun_dec)
 
     if (nfargs == 1)
     {
-        safe_i64toa(mux_atoi64(fargs[0]) - 1, buff, bufc);
+        // #1472: wraps at INT64_MIN, which is signed overflow.  Subtract in
+        // uint64_t for the same wrap without the undefined behaviour.
+        //
+        uint64_t v = static_cast<uint64_t>(mux_atoi64(fargs[0]));
+        safe_i64toa(static_cast<int64_t>(v - 1), buff, bufc);
     }
     else
     {

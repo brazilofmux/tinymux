@@ -26,8 +26,7 @@
         strmatch(repeat(x,5), xxxxx)
       )=
   {
-    @log smoke=TC001: repeat basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: repeat basic operations. Succeeded.
   },
   {
     @log smoke=TC001: repeat basic operations. Failed (repeat(ab%,3)=[repeat(ab,3)] repeat(x%,5)=[repeat(x,5)]).;

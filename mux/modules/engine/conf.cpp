@@ -514,7 +514,7 @@ static int cf_status_from_succfail(dbref player, UTF8 *cmd, int success, int fai
         }
         else
         {
-            notify(player, T("Nothing to set"));
+            notify(player, M_("Nothing to set"));
         }
     }
     return -1;
@@ -895,7 +895,7 @@ static CF_HAND(cf_string)
         }
         else
         {
-            notify(player, T("String truncated"));
+            notify(player, M_("String truncated"));
         }
         retval = 1;
     }
@@ -954,7 +954,7 @@ static CF_HAND(cf_string_dyn)
         }
         else
         {
-            notify(player, T("String truncated"));
+            notify(player, M_("String truncated"));
         }
         retval = 1;
     }
@@ -2396,7 +2396,7 @@ void do_admin
     int i = cf_set(kw, value, executor);
     if ((i >= 0) && !Quiet(executor))
     {
-        notify(executor, T("Set."));
+        notify(executor, M_("Set."));
     }
     ValidateConfigurationDbrefs();
 }

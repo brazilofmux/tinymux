@@ -21,8 +21,7 @@
         eq(lt(1,1), 0)
       )=
   {
-    @log smoke=TC001: lt basic comparisons. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: lt basic comparisons. Succeeded.
   },
   {
     @log smoke=TC001: lt basic comparisons. Failed (lt(1%,2)=[lt(1,2)] lt(2%,1)=[lt(2,1)] lt(1%,1)=[lt(1,1)]).;

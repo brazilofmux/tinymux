@@ -228,24 +228,39 @@ fi
 #
 # Checking the log catches the whole class rather than that one instance.
 #
-# Reported rather than fatal: there are 9 pre-existing occurrences from
-# route_fn's teleport window (#1457) whose consequences are not yet
-# established, and reddening a green build on evidence nobody has triaged
-# would train people to ignore the check.  It should become fatal once that
-# baseline is zero.  The apostrophe is U+2019, not ASCII.
+# Fatal, as of the baseline reaching zero.  It was introduced as a warning
+# because 9 occurrences existed whose consequences nobody had triaged, and
+# reddening a green build on untriaged evidence trains people to ignore the
+# check.  Those 9 turned out to be one bug: route_fn's create() calls were
+# missing their cost argument, so the zone rooms were never created and the
+# @tel targets that followed resolved to nothing (#1460).  With the cause
+# fixed rather than tolerated, a warning nobody has to act on is worth less
+# than a gate, so this is now an error.
+#
+# If a legitimate case for a non-zero count ever appears, do not reintroduce a
+# numeric baseline: a threshold silently accepts a NEW loss whenever an old one
+# is fixed, which is how the count would drift back up unnoticed.  Fix the file
+# or exclude it explicitly by name.
+#
+# The apostrophe is U+2019, not ASCII, so match on the ASCII tail only.
 #
 NOMATCH=$(grep -c "see that here" netmux.log 2>/dev/null || true)
 : "${NOMATCH:=0}"
 if [ "$NOMATCH" -gt 0 ]; then
-    echo "WARNING: $NOMATCH upload command(s) could not find their target."
-    echo "         A .mux file that moves #1 out of #0 and does not put it back"
-    echo "         makes every later '&attr <obj>=' a silent no-op -- which is"
-    echo "         how #1387 lost 46 of 307 test files while reporting a clean"
-    echo "         'Dispatched: 261 / 261'.  The offending file is the one whose"
-    echo "         output immediately precedes the first occurrence in"
-    echo "         netmux.log."
-    echo "         Baseline at the time of writing is 9, from route_fn (#1457);"
-    echo "         a number above that means something new is being lost."
+    echo "ERROR: $NOMATCH upload command(s) could not find their target."
+    echo "       A .mux file that moves #1 out of #0 and does not put it back"
+    echo "       makes every later '&attr <obj>=' a silent no-op -- which is"
+    echo "       how #1387 lost 46 of 307 test files while reporting a clean"
+    echo "       'Dispatched: 261 / 261'.  The offending file is the one whose"
+    echo "       output immediately precedes the first occurrence in"
+    echo "       netmux.log:"
+    echo
+    grep -n -B6 "see that here" netmux.log 2>/dev/null | head -20 | sed 's/^/         /'
+    echo
+    echo "       A test that must move #1 has to put it back -- save the"
+    echo "       location first (@tel me=[loc(me)] restores nothing once you"
+    echo "       have already moved) rather than assuming #0."
+    exit 1
 fi
 
 # ---------------------------------------------------------------------------

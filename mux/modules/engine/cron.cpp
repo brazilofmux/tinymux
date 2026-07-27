@@ -741,12 +741,12 @@ void do_cron(dbref executor, dbref caller, dbref enactor, int eval,
     ATTR *pattr;
     if (!parse_attrib(executor, objattr, &thing, &pattr))
     {
-        notify(executor, T("No match."));
+        notify(executor, M_("No match."));
         return;
     }
     if (NOTHING == thing || nullptr == pattr)
     {
-        notify(executor, T("No match."));
+        notify(executor, M_("No match."));
         return;
     }
     if (!Controls(executor, thing))
@@ -758,15 +758,15 @@ void do_cron(dbref executor, dbref caller, dbref enactor, int eval,
     int retcode = cron_add(executor, thing, pattr->number, timestr);
     if (0 == retcode)
     {
-        notify(executor, T("Syntax errors. No cron entry made."));
+        notify(executor, M_("Syntax errors. No cron entry made."));
     }
     else if (-1 == retcode)
     {
-        notify(executor, T("That cron entry already exists."));
+        notify(executor, M_("That cron entry already exists."));
     }
     else
     {
-        notify(executor, T("Cron entry added."));
+        notify(executor, M_("Cron entry added."));
     }
 }
 
@@ -800,12 +800,12 @@ void do_crondel(dbref executor, dbref caller, dbref enactor, int eval,
         ATTR *pattr;
         if (!parse_attrib(executor, objattr, &thing, &pattr))
         {
-            notify(executor, T("No match."));
+            notify(executor, M_("No match."));
             return;
         }
         if (NOTHING == thing || nullptr == pattr)
         {
-            notify(executor, T("No match."));
+            notify(executor, M_("No match."));
             return;
         }
         atr = pattr->number;
@@ -819,7 +819,7 @@ void do_crondel(dbref executor, dbref caller, dbref enactor, int eval,
         thing = match_result();
         if (!Good_obj(thing))
         {
-            notify(executor, T("No match."));
+            notify(executor, M_("No match."));
             return;
         }
     }
@@ -855,7 +855,7 @@ void do_crontab(dbref executor, dbref caller, dbref enactor, int eval,
         thing = match_result();
         if (!Good_obj(thing))
         {
-            notify(executor, T("No match."));
+            notify(executor, M_("No match."));
             return;
         }
         if (!Controls(executor, thing))

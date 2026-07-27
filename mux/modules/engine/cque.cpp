@@ -101,7 +101,7 @@ void process_command_list_inline(dbref executor, dbref caller, dbref enactor,
 {
     if (mudstate.include_nest_lev >= MAX_INCLUDE_NEST)
     {
-        notify(executor, T("Include nesting limit exceeded."));
+        notify(executor, M_("Include nesting limit exceeded."));
         return;
     }
     mudstate.include_nest_lev++;
@@ -311,7 +311,7 @@ static void Task_RunQueueEntry(void *pEntry, const int iUnused)
                     ltaEnd.GetUTC();
                     if (alarm_clock.alarmed)
                     {
-                        notify(executor, T("GAME: Expensive activity abbreviated."));
+                        notify(executor, M_("GAME: Expensive activity abbreviated."));
 
                         // The command has already returned by this point --
                         // polling loops abbreviated it mid-run -- so the HALT
@@ -739,12 +739,12 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
     {
         if (key & HALT_ALL)
         {
-            notify(executor, T("Can’t specify /pid and /all"));
+            notify(executor, M_("Can’t specify /pid and /all"));
             return;
         }
         if (!target || !*target)
         {
-            notify(executor, T("You must specify a PID."));
+            notify(executor, M_("You must specify a PID."));
             return;
         }
         const UTF8 *p = target;
@@ -754,7 +754,7 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
         }
         if ('\0' == *p || '-' == *p)
         {
-            notify(executor, T("PID must be a non-negative integer."));
+            notify(executor, M_("PID must be a non-negative integer."));
             return;
         }
         if ('+' == *p)
@@ -770,7 +770,7 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
             const uint64_t digit = static_cast<uint64_t>(*p - '0');
             if (pid > (UINT64_MAX - digit) / 10U)
             {
-                notify(executor, T("PID is out of range."));
+                notify(executor, M_("PID is out of range."));
                 return;
             }
             pid = 10U * pid + digit;
@@ -783,7 +783,7 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
         if (  !bHaveDigits
            || '\0' != *p)
         {
-            notify(executor, T("PID must be a non-negative integer."));
+            notify(executor, M_("PID must be a non-negative integer."));
             return;
         }
         const int numhalted = halt_que_pid(executor, pid);
@@ -791,7 +791,7 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
         {
             if (0 == numhalted)
             {
-                notify(Owner(executor), T("No queue entry with that PID was found."));
+                notify(Owner(executor), M_("No queue entry with that PID was found."));
             }
             else
             {
@@ -835,7 +835,7 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
         }
         if (key & HALT_ALL)
         {
-            notify(executor, T("Can’t specify a target and /all"));
+            notify(executor, M_("Can’t specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))
@@ -1107,11 +1107,11 @@ void do_notify
             {
                 if (NFY_DRAIN == (key & NFY_MASK))
                 {
-                    notify_quiet(executor, T("Drained."));
+                    notify_quiet(executor, M_("Drained."));
                 }
                 else
                 {
-                    notify_quiet(executor, T("Notified."));
+                    notify_quiet(executor, M_("Notified."));
                 }
             }
         }
@@ -1152,7 +1152,7 @@ static BQUE *setup_que
     }
     if (!payfor(executor, cost))
     {
-        notify(Owner(executor), T("Not enough money to queue command."));
+        notify(Owner(executor), M_("Not enough money to queue command."));
         return nullptr;
     }
 
@@ -1651,7 +1651,7 @@ void do_wait
                     atr = mkattr(executor, EventAttributeName);
                     if (atr <= 0)
                     {
-                        notify_quiet(executor, T("Invalid attribute."));
+                        notify_quiet(executor, M_("Invalid attribute."));
                         return;
                     }
                     ap = atr_num(atr);
@@ -1680,7 +1680,7 @@ void do_wait
         int num = 0;
         if (!add_to(thing, 1, atr, &num))
         {
-            notify_quiet(executor, T("Semaphore update failed."));
+            notify_quiet(executor, M_("Semaphore update failed."));
             return;
         }
         if (num <= 0)
@@ -1723,7 +1723,7 @@ void do_query
 
     if (nullptr == mudstate.pIQueryControl)
     {
-        notify_quiet(executor, T("Query server is not available."));
+        notify_quiet(executor, M_("Query server is not available."));
         return;
     }
 
@@ -1737,7 +1737,7 @@ void do_query
         if (!(  parse_attrib(executor, dbref_attr, &thing, &pattr)
              && nullptr != pattr))
         {
-            notify_quiet(executor, T("No match."));
+            notify_quiet(executor, M_("No match."));
             return;
         }
 
@@ -1752,7 +1752,7 @@ void do_query
 
         if (nullptr == pQuery)
         {
-            notify(executor, T("QUERY: No Query."));
+            notify(executor, M_("QUERY: No Query."));
             return;
         }
 
@@ -1761,7 +1761,7 @@ void do_query
     }
     else
     {
-        notify_quiet(executor, T("At least one query option is required."));
+        notify_quiet(executor, M_("At least one query option is required."));
     }
 }
 
@@ -1887,7 +1887,7 @@ static int CallBack_ShowWait(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, T("----- Wait Queue -----"));
+            notify(Show_Player, M_("----- Wait Queue -----"));
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp, p->m_Ticket);
@@ -1913,7 +1913,7 @@ static int CallBack_ShowSemaphore(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, T("----- Semaphore Queue -----"));
+            notify(Show_Player, M_("----- Semaphore Queue -----"));
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp, p->m_Ticket);
@@ -1939,7 +1939,7 @@ int CallBack_ShowSQLQueries(PTASK_RECORD p)
         }
         if (Show_bFirstLine)
         {
-            notify(Show_Player, T("----- SQL Queries -----"));
+            notify(Show_Player, M_("----- SQL Queries -----"));
             Show_bFirstLine = false;
         }
         ShowPsLine(tmp, p->m_Ticket);
@@ -1993,7 +1993,7 @@ void do_ps(const dbref executor, const dbref caller, const dbref enactor, const 
         }
         if (key & PS_ALL)
         {
-            notify(executor, T("Can’t specify a target and /all"));
+            notify(executor, M_("Can’t specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))
@@ -2020,7 +2020,7 @@ void do_ps(const dbref executor, const dbref caller, const dbref enactor, const 
         break;
 
     default:
-        notify(executor, T("Illegal combination of switches."));
+        notify(executor, M_("Illegal combination of switches."));
         return;
     }
 
@@ -2044,7 +2044,7 @@ void do_ps(const dbref executor, const dbref caller, const dbref enactor, const 
     scheduler.TraverseOrdered(CallBack_ShowSQLQueries);
     if (Wizard(executor))
     {
-        notify(executor, T("----- System Queue -----"));
+        notify(executor, M_("----- System Queue -----"));
         scheduler.TraverseOrdered(CallBack_ShowDispatches);
     }
 
@@ -2099,7 +2099,7 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
         const int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(executor, T("Warning: automatic dequeueing is disabled."));
+            notify(executor, M_("Warning: automatic dequeueing is disabled."));
             scheduler.SetMinPriority(PRIORITY_CF_DEQUEUE_ENABLED);
         }
         CLinearTimeAbsolute lsaNow;
@@ -2119,7 +2119,7 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
-            notify(executor, T("Warning: automatic dequeueing is disabled."));
+            notify(executor, M_("Warning: automatic dequeueing is disabled."));
         }
 
         scheduler.TraverseUnordered(CallBack_Warp);
@@ -2138,7 +2138,7 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
         }
         else
         {
-            notify(executor, T("Object queue appended to player queue."));
+            notify(executor, M_("Object queue appended to player queue."));
         }
     }
 }

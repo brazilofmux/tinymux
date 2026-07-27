@@ -939,7 +939,7 @@ void do_attribute
 
     if (nullptr == va)
     {
-        notify(executor, T("No such user-named attribute."));
+        notify(executor, M_("No such user-named attribute."));
         return;
     }
 
@@ -997,7 +997,7 @@ void do_attribute
 
             if (success && !Quiet(executor))
             {
-                notify(executor, T("Attribute access changed."));
+                notify(executor, M_("Attribute access changed."));
             }
         }
         break;
@@ -1016,7 +1016,7 @@ void do_attribute
             pName = MakeCanonicalAttributeName(value, &nName, &bValid);
             if (!bValid)
             {
-                notify(executor, T("Attribute rename failed."));
+                notify(executor, M_("Attribute rename failed."));
                 return;
             }
 
@@ -1027,17 +1027,17 @@ void do_attribute
             if (  va2
                && va2 != va)
             {
-                notify(executor, T("An attribute with that name already exists."));
+                notify(executor, M_("An attribute with that name already exists."));
                 return;
             }
 
             if (vattr_rename_LEN(OldName, nOldName, pName, nName) == nullptr)
             {
-                notify(executor, T("Attribute rename failed."));
+                notify(executor, M_("Attribute rename failed."));
             }
             else
             {
-                notify(executor, T("Attribute renamed."));
+                notify(executor, M_("Attribute renamed."));
             }
         }
         break;
@@ -1047,7 +1047,7 @@ void do_attribute
         // Remove the attribute.
         //
         vattr_delete_LEN(pName, nName);
-        notify(executor, T("Attribute deleted."));
+        notify(executor, M_("Attribute deleted."));
         break;
     }
 }
@@ -1153,7 +1153,7 @@ void do_fixdb
         {
             if (!ValidatePlayerName(arg2))
             {
-                notify(executor, T("That’s not a good name for a player."));
+                notify(executor, M_("That’s not a good name for a player."));
                 return;
             }
 
@@ -1162,7 +1162,7 @@ void do_fixdb
             if (  lookup_player_name(pValidName, bAlias) != NOTHING
                || bAlias)
             {
-                notify(executor, T("That name is already in use or is an alias."));
+                notify(executor, M_("That name is already in use or is an alias."));
                 return;
             }
 
@@ -1189,7 +1189,7 @@ void do_fixdb
             pValidName = MakeCanonicalObjectName(arg2, &nTmp, &bValid, 0);
             if (!bValid)
             {
-                notify(executor, T("That is not a reasonable name."));
+                notify(executor, M_("That is not a reasonable name."));
                 return;
             }
             s_Name(thing, pValidName);

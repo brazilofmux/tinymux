@@ -280,7 +280,7 @@ bool canpayfees(dbref player, dbref who, int pennies, int quota)
         {
             if (player == who)
             {
-                notify(player, T("Sorry, your building contract has run out."));
+                notify(player, M_("Sorry, your building contract has run out."));
             }
             else
             {
@@ -1005,7 +1005,7 @@ void do_addcommand
        || (  pName[0] == '_'
           && pName[1] == '_'))
     {
-        notify(player, T("That is not a valid command name."));
+        notify(player, M_("That is not a valid command name."));
         return;
     }
 
@@ -1016,7 +1016,7 @@ void do_addcommand
     if (  !parse_attrib(player, command, &thing, &pattr)
        || !pattr)
     {
-        notify(player, T("No such attribute."));
+        notify(player, M_("No such attribute."));
         return;
     }
     if (!See_attr(player, thing, pattr))
@@ -1210,7 +1210,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
 
     if (!didit)
     {
-        notify(player, T("No added commands found in command table."));
+        notify(player, M_("No added commands found in command table."));
     }
 }
 
@@ -1238,7 +1238,7 @@ void do_delcommand
 
     if (!*name)
     {
-        notify(player, T("Sorry."));
+        notify(player, M_("Sorry."));
         return;
     }
 
@@ -1250,7 +1250,7 @@ void do_delcommand
         if (  !parse_attrib(player, command, &thing, &pattr)
            || !pattr)
         {
-            notify(player, T("No such attribute."));
+            notify(player, M_("No such attribute."));
             return;
         }
         if (!See_attr(player, thing, pattr))
@@ -1325,7 +1325,7 @@ void do_delcommand
             MEMFREE(old);
             old = nullptr;
             cache_prefix_cmds();
-            notify(player, T("Done."));
+            notify(player, M_("Done."));
         }
         else
         {
@@ -1368,16 +1368,16 @@ void do_delcommand
                         old = nullptr;
                     }
                     cache_prefix_cmds();
-                    notify(player, T("Done."));
+                    notify(player, M_("Done."));
                     return;
                 }
             }
-            notify(player, T("Command not found in command table."));
+            notify(player, M_("Command not found in command table."));
         }
     }
     else
     {
-        notify(player, T("Command not found in command table."));
+        notify(player, M_("Command not found in command table."));
     }
 }
 
@@ -1411,17 +1411,17 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
     if (  !Good_obj(doer)
        || !isPlayer(doer))
     {
-        notify(player, T("That is not a player."));
+        notify(player, M_("That is not a player."));
         return;
     }
     if (!Connected(doer))
     {
-        notify(player, T("That player is not connected."));
+        notify(player, M_("That player is not connected."));
         return;
     }
     if (!player_has_program(doer))
     {
-        notify(player, T("Player is not in an @program."));
+        notify(player, M_("Player is not in an @program."));
         return;
     }
 
@@ -1442,7 +1442,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
     }
     atr_clr(doer, A_PROGCMD);
     notify(player, T("@program cleared."));
-    notify(doer, T("Your @program has been terminated."));
+    notify(doer, M_("Your @program has been terminated."));
 }
 
 void do_prog
@@ -1470,7 +1470,7 @@ void do_prog
     if (  !name
        || !*name)
     {
-        notify(player, T("No players specified."));
+        notify(player, M_("No players specified."));
         return;
     }
 
@@ -1485,12 +1485,12 @@ void do_prog
     if (  !Good_obj(doer)
        || !isPlayer(doer))
     {
-        notify(player, T("That is not a player."));
+        notify(player, M_("That is not a player."));
         return;
     }
     if (!Connected(doer))
     {
-        notify(player, T("That player is not connected."));
+        notify(player, M_("That player is not connected."));
         return;
     }
 
@@ -1498,7 +1498,7 @@ void do_prog
     //
     if (player_has_program(doer))
     {
-        notify(player, T("Input already pending."));
+        notify(player, M_("Input already pending."));
         return;
     }
 
@@ -1553,13 +1553,13 @@ void do_prog
         }
         else
         {
-            notify(player, T("Attribute not present on object."));
+            notify(player, M_("Attribute not present on object."));
             return;
         }
     }
     else
     {
-        notify(player, T("No such attribute."));
+        notify(player, M_("No such attribute."));
         return;
     }
 
@@ -1606,7 +1606,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
-        notify(executor, T("Dumping. Please try again later."));
+        notify(executor, M_("Dumping. Please try again later."));
         bDenied = true;
     }
 #endif // HAVE_WORKING_FORK
@@ -1614,7 +1614,7 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
     if (!mudstate.bCanRestart)
     {
-        notify(executor, T("Server just started. Please try again in a few seconds."));
+        notify(executor, M_("Server just started. Please try again in a few seconds."));
         bDenied = true;
     }
     if (bDenied)
@@ -2739,7 +2739,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (  !victim_str
        || !*victim_str)
     {
-        notify(executor, T("Nothing to do."));
+        notify(executor, M_("Nothing to do."));
         return;
     }
 
@@ -2783,7 +2783,7 @@ void do_verb(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (!Controls(executor, actor))
     {
-        notify_quiet(executor, T("Permission denied,"));
+        notify_quiet(executor, M_("Permission denied,"));
         return;
     }
 

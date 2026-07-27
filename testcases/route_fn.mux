@@ -346,6 +346,49 @@ think [attrib_set(test_route_fn/exit_r1q1, [lastcreate(me, e)])]
   }
 -
 #
+# Test Case #12a - Verify the phase-2 zone fixture (#1498).
+#
+# The seven zone-named cases below (TC013-TC019) pass whether or not the
+# zones exist.  That is not a defect in them: zone partitioning is an
+# implementation strategy for table size and invalidation (see
+# docs/design-routing.md), so a correct router returns the same next hop
+# either way.  No black-box route() assertion can observe zoning, which is
+# why #1491's broken create() -- leaving zone_x..zone_r holding
+# "#-1 FUNCTION (CREATE) EXPECTS 2 OR 3 ARGUMENTS" and every @chzone
+# failing -- went unnoticed while all seven stayed green.
+#
+# So the control belongs on the fixture rather than on the routing answer.
+# This case fails if the zone objects were not created, or if the @chzone
+# calls did not take, which is precisely what TC013-TC019 cannot detect.
+# Without it, those seven silently stop exercising the cross-zone gateway
+# path and still report success.
+#
+&tr.tc012a test_route_fn=
+  @if and(
+        and(
+          isdbref(v(zone_x)), isdbref(v(zone_y)), isdbref(v(zone_p)),
+          isdbref(v(zone_q)), isdbref(v(zone_r))
+        ),
+        and(
+          strmatch(zone(v(room_x1)), v(zone_x)),
+          strmatch(zone(v(room_x2)), v(zone_x)),
+          strmatch(zone(v(room_y1)), v(zone_y)),
+          strmatch(zone(v(room_y2)), v(zone_y)),
+          strmatch(zone(v(room_p1)), v(zone_p)),
+          strmatch(zone(v(room_p2)), v(zone_p)),
+          strmatch(zone(v(room_pdead)), v(zone_p)),
+          strmatch(zone(v(room_q1)), v(zone_q)),
+          strmatch(zone(v(room_r1)), v(zone_r))
+        )
+      )=
+  {
+    @log smoke=TC012a: route zone fixture. Succeeded.
+  },
+  {
+    @log smoke=TC012a: route zone fixture. Failed (zx=[v(zone_x)] zy=[v(zone_y)] zp=[v(zone_p)] zq=[v(zone_q)] zr=[v(zone_r)] x1z=[zone(v(room_x1))] y1z=[zone(v(room_y1))] p1z=[zone(v(room_p1))] q1z=[zone(v(room_q1))] r1z=[zone(v(room_r1))]).
+  }
+-
+#
 # Test Case #13 - same-zone route within Zone_X.
 #
 &tr.tc013 test_route_fn=

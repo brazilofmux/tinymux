@@ -21,8 +21,7 @@
         eq(or(1,1), 1)
       )=
   {
-    @log smoke=TC001: or basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: or basic operations. Succeeded.
   },
   {
     @log smoke=TC001: or basic operations. Failed (or(1%,0)=[or(1,0)] or(0%,0)=[or(0,0)] or(1%,1)=[or(1,1)]).;

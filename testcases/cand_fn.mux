@@ -20,8 +20,7 @@
         eq(cand(1,0,1), 0)
       )=
   {
-    @log smoke=TC001: cand() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: cand() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: cand() basic operations. Failed (cand(1%,1%,1)=[cand(1,1,1)] cand(1%,0%,1)=[cand(1,0,1)]).;
