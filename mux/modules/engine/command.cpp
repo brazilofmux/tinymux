@@ -4149,6 +4149,28 @@ static void list_modules(dbref executor)
             }
             pISlaveControl->Release();
         }
+        else
+        {
+            // Say so, rather than printing nothing (#1535).
+            //
+            // Without this the whole slave section vanished on failure, and
+            // @list modules answered as if the slave held no modules -- while
+            // the slave process demonstrably had them mapped.  The operator
+            // could not tell "nothing is loaded there" from "I could not ask",
+            // which on the release build (--enable-stubslave) is the only
+            // question this command exists to answer about the slave.
+            //
+            // It fails every time today: the interface is created a second
+            // time here, the slave's reply frame comes back empty, and
+            // mux_UnmarshalInterface reports MUX_E_CLASSNOTAVAILABLE (-3).
+            // Measured on aarch64 with a module confirmed loaded in the slave
+            // via /proc/<pid>/maps.  That defect is not fixed here -- this
+            // only stops it being invisible.
+            //
+            raw_notify(executor, tprintf(
+                T("Could not query the stubslave module list (error %d)."),
+                static_cast<int>(mr)));
+        }
     }
 #endif
 }
