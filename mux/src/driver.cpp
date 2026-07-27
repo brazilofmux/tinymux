@@ -497,6 +497,16 @@ int DCL_CDECL main(int argc, char *argv[])
 
     if (MUX_FAILED(mr))
     {
+        // Name the config file when that is what failed (#1601).  The
+        // generic "LoadGame failed (-9)" gives an operator nothing to act
+        // on, and this is the one startup failure most likely to be a
+        // simple typo in the path.
+        //
+        if (MUX_E_NOTFOUND == mr)
+        {
+            fprintf(stderr, "FATAL: cannot read configuration file '%s'.\n",
+                reinterpret_cast<const char *>(conffile));
+        }
         fprintf(stderr, "FATAL: Game engine LoadGame failed (%d).\n", mr);
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         g_pILog->log_text(tprintf(T("Game engine LoadGame failed (%d)."), mr));

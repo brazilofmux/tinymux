@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-nls test-nls-runtime test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -120,6 +120,18 @@ test-nls-runtime:
 test-narrowing:
 	@echo "==> Running narrowing-destination tests"
 	bash tests/narrowing/run.sh
+
+# An unreadable configuration file must be fatal (#1601).  cf_read()'s return
+# was discarded in LoadGame, so netmux came up on compiled-in defaults --
+# listening, on the wrong database -- and muxscript reported success, which
+# made every harness probe indistinguishable from the thing under test.
+#
+# Pins the two deliberately non-fatal cases too (unknown directive, empty
+# file); those are the ones a later "make config errors fatal" change would
+# break.  Needs only muxscript, so it runs on any built tree.
+test-config:
+	@echo "==> Running configuration-error tests"
+	bash tests/config/run.sh
 
 # JIT q-register scope oracle (docs/plan-jit-evalbracket-lift.md).
 # Compares forced-JIT vs AST results for the scope/ordering shapes fixed
