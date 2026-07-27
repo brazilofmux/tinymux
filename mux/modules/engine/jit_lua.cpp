@@ -18,6 +18,7 @@
 #include <atomic>
 #include <cstring>
 #include <cstdio>
+#include <cstdlib>
 #include <unordered_map>
 #include <vector>
 #include <string>
@@ -76,15 +77,31 @@ void jit_lua_clear_cache(void) {
 
 static bool compile_lua_bytecode(const uint8_t *data, size_t len,
                                   compiled_program *out) {
+    // TINYMUX_DUMP_HIR covered only the softcode JIT, so nothing on this path
+    // was visible: neither the block layout nor, more basically, whether a
+    // chunk compiled at all.  A declined chunk runs on the interpreter and so
+    // agrees with it trivially, which reads as a pass when comparing the two
+    // — the reason the declines below are reported and not just the dumps.
+    //
+    const char *dump_env = getenv("TINYMUX_DUMP_HIR");
+    bool bDump = (dump_env && *dump_env != '0');
+
     // Deserialize.
     lua_bc_chunk chunk;
     if (!lua_bc_load(data, len, &chunk)) {
+        if (bDump) {
+            printf("\n--- Lua JIT: declined, bytecode failed to load ---\n");
+        }
         return false;
     }
 
     // Fast eligibility check — reject before allocating HIR/RV64 state.
     lua_bc_reject reason = lua_bc_eligible(&chunk.main);
     if (reason != LUA_BC_ELIGIBLE) {
+        if (bDump) {
+            printf("\n--- Lua JIT: %s declined by eligibility: %s ---\n",
+                   chunk.main.source.c_str(), lua_bc_reject_name(reason));
+        }
         return false;
     }
 
@@ -97,8 +114,22 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     // Lower Lua bytecode to HIR.
     int result = hir_lower_lua_proto(*h, rc_state, &chunk.main);
     if (result < 0) {
+        if (bDump) {
+            printf("\n--- Lua JIT: %s declined by lowering"
+                   " (%d bytecode insns) ---\n",
+                   chunk.main.source.c_str(),
+                   static_cast<int>(chunk.main.code.size()));
+        }
         delete h;
         return false;
+    }
+
+    if (bDump) {
+        printf("\n--- Lua JIT Compilation: %s (%d bytecode insns) ---\n",
+               chunk.main.source.c_str(),
+               static_cast<int>(chunk.main.code.size()));
+        printf("Phase 1: HIR Lowering\n");
+        hir_dump(*h);
     }
 
     // Always build block ranges (block_last starts at -1 until CFG is
@@ -106,12 +137,25 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     // insn in hir_codegen and leave final_out=0 (#1309 empty folds).
     //
     hir_build_cfg(*h);
+    if (bDump) {
+        printf("Phase 2: CFG (%d blocks)\n", h->n_blocks);
+        hir_dump(*h);
+    }
     if (h->n_blocks > 1) {
         hir_ssa_construct(*h);
+        if (bDump) {
+            printf("Phase 2b: SSA Construction\n");
+            hir_dump(*h);
+        }
         hir_optimize(*h);
     } else {
         // Single block: just constant folding.
         hir_const_fold(*h);
+    }
+    if (bDump) {
+        printf("Phase 3: %s\n",
+               h->n_blocks > 1 ? "SSA Optimization" : "Constant Folding");
+        hir_dump(*h);
     }
 
     // Code generation: HIR → RV64.
