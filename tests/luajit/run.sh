@@ -144,6 +144,14 @@ EXEC_CASES=(
     'local a=mux.args[1]+0 local t=(a>1) return t'
     'local a=mux.args[1]+0 local b=mux.args[2]+0 return a+b*2'
     'local a=mux.args[1]+0 return (a+1)*(a-1)'
+    # ---- #1488: integral floats keep the ".0" (Lua float subtype) ----
+    'return 3.0'
+    'local a=1.5 local b=2.5 return a+b'
+    'local a=1.5 return a+1.25'
+    'local a=mux.args[1]+0.0 return a+0.0'
+    # ---- #1561 + #1538: runtime ^ must compile (tier2 loaded) and agree ----
+    'local a=mux.args[1]+0 return a ^ 2'
+    'local a=mux.args[1]+0 local b=mux.args[2]+0 return a ^ b'
 )
 
 keep_work() {

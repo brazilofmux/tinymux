@@ -866,6 +866,10 @@ static void tier2_lazy_init() {
     s_blob_version = sha1_hex_parts(parts, sizes, 2);
 }
 
+void tier2_ensure(void) {
+    tier2_lazy_init();
+}
+
 // Maximum AST_FUNCCALL nesting depth of a parse tree (#1002).
 static int ast_max_funccall_depth(const ASTNode *node)
 {

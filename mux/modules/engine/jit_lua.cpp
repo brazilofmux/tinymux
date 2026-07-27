@@ -86,6 +86,15 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     const char *dump_env = getenv("TINYMUX_DUMP_HIR");
     bool bDump = (dump_env && *dump_env != '0');
 
+    // Softcode entry points load the Tier 2 blob; the Lua path used not to.
+    // With jit_eval_brackets 0 (required for Lua JIT under #1326) softcode
+    // never hits jit_eval, so the blob stayed unloaded and every `^` that
+    // needs tier2_sym_addr("pow") declined at lowering (#1561).  Ensure once
+    // here so native FP lowers can resolve symbols; missing softlib still
+    // leaves s_tier2.loaded false and those ops decline cleanly.
+    //
+    tier2_ensure();
+
     // Deserialize.
     lua_bc_chunk chunk;
     if (!lua_bc_load(data, len, &chunk)) {
