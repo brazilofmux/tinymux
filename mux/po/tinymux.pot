@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 10:59+0000\n"
+"POT-Creation-Date: 2026-07-27 05:34-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -119,6 +119,100 @@ msgstr ""
 msgid "Weird object type cannot be destroyed."
 msgstr ""
 
+#: modules/engine/look.cpp:1313
+msgid "You see nothing special."
+msgstr ""
+
+#: modules/engine/look.cpp:1501 modules/engine/look.cpp:2028
+#: modules/engine/look.cpp:2142
+msgid "Contents:"
+msgstr ""
+
+#: modules/engine/look.cpp:1526
+msgid "You can’t look outside."
+msgstr ""
+
+#: modules/engine/look.cpp:1615
+msgid "Carrying:"
+msgstr ""
+
+#: modules/engine/look.cpp:1684
+msgid "Attr list: "
+msgstr ""
+
+#: modules/engine/look.cpp:1793 modules/engine/look.cpp:1954
+msgid "<Too far away to get a good look>"
+msgstr ""
+
+#: modules/engine/look.cpp:1800
+msgid "No matching attributes found."
+msgstr ""
+
+#: modules/engine/look.cpp:2046 modules/engine/look.cpp:2076
+#: modules/engine/look.cpp:2208
+msgid "Exits:"
+msgstr ""
+
+#: modules/engine/look.cpp:2056 modules/engine/look.cpp:2086
+msgid "No exits."
+msgstr ""
+
+#: modules/engine/look.cpp:2122
+msgid "Destination: *UNLINKED*"
+msgstr ""
+
+#: modules/engine/look.cpp:2192
+msgid "You aren’t carrying anything."
+msgstr ""
+
+#: modules/engine/look.cpp:2196
+msgid "You are carrying:"
+msgstr ""
+
+#: modules/engine/look.cpp:2603
+msgid "Sweeping location..."
+msgstr ""
+
+#: modules/engine/look.cpp:2636
+msgid "Sweeping exits..."
+msgstr ""
+
+#: modules/engine/look.cpp:2648
+msgid "Sweeping inventory..."
+msgstr ""
+
+#: modules/engine/look.cpp:2660
+msgid "Sweeping carried exits..."
+msgstr ""
+
+#: modules/engine/look.cpp:2666
+msgid "Sweep complete."
+msgstr ""
+
+#: modules/engine/look.cpp:2774
+msgid "What command do you want to scan for?"
+msgstr ""
+
+#: modules/engine/look.cpp:2803
+msgid "Check yourself and your inventory:"
+msgstr ""
+
+#: modules/engine/look.cpp:2818
+msgid "Check your location and its contents:"
+msgstr ""
+
+#: modules/engine/look.cpp:2841
+msgid "Checking zone:"
+msgstr ""
+
+#: modules/engine/look.cpp:2887
+msgid "Checking master room:"
+msgstr ""
+
+#: modules/engine/look.cpp:2902
+msgid "Scan complete."
+msgstr ""
+
 #: modules/engine/match.cpp:17 modules/engine/match.cpp:34
 msgid "I don’t see that here."
 msgstr ""
@@ -221,6 +315,7 @@ msgid "I don’t see that player here."
 msgstr ""
 
 #: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
+#: modules/engine/speech.cpp:1063
 msgid "I don’t know who you mean!"
 msgstr ""
 
@@ -228,7 +323,7 @@ msgstr ""
 msgid "Sorry, you can only kill players and things."
 msgstr ""
 
-#: modules/engine/rob.cpp:66
+#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
 msgid "Sorry."
 msgstr ""
 
@@ -479,4 +574,44 @@ msgstr ""
 
 #: modules/engine/set.cpp:2501
 msgid "That’s not a good name for an attribute."
+msgstr ""
+
+#: modules/engine/speech.cpp:60
+msgid "Sorry. Gagged players cannot speak."
+msgstr ""
+
+#: modules/engine/speech.cpp:68
+msgid "Sorry, robots may not speak in public."
+msgstr ""
+
+#: modules/engine/speech.cpp:76
+msgid "Sorry, you may not speak in this place."
+msgstr ""
+
+#: modules/engine/speech.cpp:778
+msgid "You have not paged anyone."
+msgstr ""
+
+#: modules/engine/speech.cpp:782
+msgid "No one to page."
+msgstr ""
+
+#: modules/engine/speech.cpp:1045
+msgid "Whisper to whom?"
+msgstr ""
+
+#: modules/engine/speech.cpp:1049
+msgid "Emit to whom?"
+msgstr ""
+
+#: modules/engine/speech.cpp:1053
+msgid "Emit except to whom?"
+msgstr ""
+
+#: modules/engine/speech.cpp:1092 modules/engine/speech.cpp:1412
+msgid "You are too far away to do that."
+msgstr ""
+
+#: modules/engine/speech.cpp:1494
+msgid "No one to whisper to."
 msgstr ""

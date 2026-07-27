@@ -1310,7 +1310,7 @@ static void look_simple(dbref player, dbref thing, bool obey_terse)
     int pattr = (obey_terse && Terse(player)) ? 0 : iDescDefault;
     if (!show_a_desc(player, thing))
     {
-        notify(player, T("You see nothing special."));
+        notify(player, M_("You see nothing special."));
 #ifdef REALITY_LVLS
         did_it_rlevel(player, thing, 0, nullptr, A_ODESC, nullptr, iADescDefault,
             0, nullptr, 0);
@@ -1498,7 +1498,7 @@ void look_in(dbref player, dbref loc, int key)
     if (  !is_terse
        || mudconf.terse_contents)
     {
-        look_contents(player, loc, T("Contents:"), CONTENTS_LOCAL);
+        look_contents(player, loc, M_("Contents:"), CONTENTS_LOCAL);
     }
     if (  (key & LK_SHOWEXIT)
        && (  !is_terse
@@ -1523,7 +1523,7 @@ static void look_here
             if (  isRoom(thing)
                || Opaque(thing))
             {
-                notify_quiet(executor, T("You can’t look outside."));
+                notify_quiet(executor, M_("You can’t look outside."));
                 return;
             }
             thing = Location(thing);
@@ -1612,7 +1612,7 @@ void do_look(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                && (  mudconf.terse_contents
                   || !Terse(executor)))
             {
-                look_contents(executor, thing,T("Carrying:"), CONTENTS_NESTED);
+                look_contents(executor, thing,M_("Carrying:"), CONTENTS_NESTED);
             }
             break;
 
@@ -1681,7 +1681,7 @@ static void debug_examine(dbref player, dbref thing)
 
     buf = alloc_lbuf("debug_dexamine");
     cp = buf;
-    safe_str(T("Attr list: "), buf, &cp);
+    safe_str(M_("Attr list: "), buf, &cp);
 
     unsigned char *as;
     for (ca = atr_head(thing, &as); ca; ca = atr_next(&as))
@@ -1790,14 +1790,14 @@ static void exam_wildattrs
             }
             else
             {
-                notify(player, T("<Too far away to get a good look>"));
+                notify(player, M_("<Too far away to get a good look>"));
             }
         }
         free_lbuf(buf);
     }
     if (!got_any)
     {
-        notify_quiet(player, T("No matching attributes found."));
+        notify_quiet(player, M_("No matching attributes found."));
     }
 }
 
@@ -1951,7 +1951,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     }
     else
     {
-        notify(executor, T("<Too far away to get a good look>"));
+        notify(executor, M_("<Too far away to get a good look>"));
     }
 
     if (control)
@@ -2025,7 +2025,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         //
         if (Contents(thing) != NOTHING)
         {
-            notify(executor, T("Contents:"));
+            notify(executor, M_("Contents:"));
             DOLIST(content, Contents(thing))
             {
                 buf2 = unparse_object(executor, content, false);
@@ -2043,7 +2043,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(executor, T("Exits:"));
+                notify(executor, M_("Exits:"));
                 DOLIST(exit, Exits(thing))
                 {
                     buf2 = unparse_object(executor, exit, false);
@@ -2053,7 +2053,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
             else
             {
-                notify(executor, T("No exits."));
+                notify(executor, M_("No exits."));
             }
 
             // print dropto if present
@@ -2073,7 +2073,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             if (Exits(thing) != NOTHING)
             {
-                notify(executor, T("Exits:"));
+                notify(executor, M_("Exits:"));
                 DOLIST(exit, Exits(thing))
                 {
                     buf2 = unparse_object(executor, exit, false);
@@ -2083,7 +2083,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             }
             else
             {
-                notify(executor, T("No exits."));
+                notify(executor, M_("No exits."));
             }
 
             // Print home
@@ -2119,7 +2119,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             case NOTHING:
                 // Special case. unparse_object() normally returns -1 as '*NOTHING*'.
                 //
-                notify(executor, T("Destination: *UNLINKED*"));
+                notify(executor, M_("Destination: *UNLINKED*"));
                 break;
 
             default:
@@ -2139,7 +2139,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
     {
         if (Has_contents(thing))
         {
-            look_contents(executor, thing, T("Contents:"), CONTENTS_REMOTE);
+            look_contents(executor, thing, M_("Contents:"), CONTENTS_REMOTE);
         }
         if (!isExit(thing))
         {
@@ -2189,11 +2189,11 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int eval, int key
     thing = Contents(executor);
     if (thing == NOTHING)
     {
-        notify(executor, T("You aren’t carrying anything."));
+        notify(executor, M_("You aren’t carrying anything."));
     }
     else
     {
-        notify(executor, T("You are carrying:"));
+        notify(executor, M_("You are carrying:"));
         DOLIST(thing, thing)
         {
             buff = unparse_object(executor, thing, true);
@@ -2205,7 +2205,7 @@ void do_inventory(dbref executor, dbref caller, dbref enactor, int eval, int key
     thing = Exits(executor);
     if (thing != NOTHING)
     {
-        notify(executor, T("Exits:"));
+        notify(executor, M_("Exits:"));
         e = buff = alloc_lbuf("look_exits");
         DOLIST(thing, thing)
         {
@@ -2600,7 +2600,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     //
     if (where_key & SWEEP_HERE)
     {
-        notify(executor, T("Sweeping location..."));
+        notify(executor, M_("Sweeping location..."));
         if (Has_location(sweeploc))
         {
             here = Location(sweeploc);
@@ -2633,7 +2633,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     if (  (where_key & SWEEP_EXITS)
        && Has_location(sweeploc))
     {
-        notify(executor, T("Sweeping exits..."));
+        notify(executor, M_("Sweeping exits..."));
         for (here = Exits(Location(sweeploc)); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
@@ -2645,7 +2645,7 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     if (  (where_key & SWEEP_ME)
        && Has_contents(sweeploc))
     {
-        notify(executor, T("Sweeping inventory..."));
+        notify(executor, M_("Sweeping inventory..."));
         for (here = Contents(sweeploc); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
@@ -2657,13 +2657,13 @@ void do_sweep(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     if (  (where_key & SWEEP_EXITS)
        && Has_exits(sweeploc))
     {
-        notify(executor, T("Sweeping carried exits..."));
+        notify(executor, M_("Sweeping carried exits..."));
         for (here = Exits(sweeploc); here != NOTHING; here = Next(here))
         {
             sweep_check(executor, here, what_key, false);
         }
     }
-    notify(executor, T("Sweep complete."));
+    notify(executor, M_("Sweep complete."));
 }
 
 // scan_check: For a single object, find all $-command attrs whose pattern
@@ -2771,7 +2771,7 @@ void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (!command || !*command)
     {
-        notify(executor, T("What command do you want to scan for?"));
+        notify(executor, M_("What command do you want to scan for?"));
         return;
     }
 
@@ -2800,7 +2800,7 @@ void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     //
     if (key & SCAN_SELF)
     {
-        notify(executor, T("Check yourself and your inventory:"));
+        notify(executor, M_("Check yourself and your inventory:"));
         scan_check(executor, executor, lcmd, command);
         if (Has_contents(executor))
         {
@@ -2815,7 +2815,7 @@ void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     //
     if (key & SCAN_ROOM)
     {
-        notify(executor, T("Check your location and its contents:"));
+        notify(executor, M_("Check your location and its contents:"));
         if (Has_location(executor))
         {
             dbref loc = Location(executor);
@@ -2838,7 +2838,7 @@ void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     if (  (key & SCAN_ZONE)
        && mudconf.have_zones)
     {
-        notify(executor, T("Checking zone:"));
+        notify(executor, M_("Checking zone:"));
         if (Has_location(executor))
         {
             dbref loc = Location(executor);
@@ -2884,7 +2884,7 @@ void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     //
     if (key & SCAN_GLOBALS)
     {
-        notify(executor, T("Checking master room:"));
+        notify(executor, M_("Checking master room:"));
         if (  Good_obj(mudconf.master_room)
            && Has_contents(mudconf.master_room))
         {
@@ -2899,7 +2899,7 @@ void do_scan(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         }
     }
 
-    notify(executor, T("Scan complete."));
+    notify(executor, M_("Scan complete."));
 }
 
 /* Output the sequence of commands needed to duplicate the specified
