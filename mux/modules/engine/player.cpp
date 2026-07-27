@@ -186,12 +186,15 @@ void record_login
     {
         if (login_info.new_bad > 0)
         {
-            notify(player, M_(""));
+            // Empty notify = blank line. Never M_("") — gettext("") is the
+            // catalog header (#1443).
+            //
+            notify(player, T(""));
             notify(player, tprintf(T("**** %d failed connect%s since your last successful connect. ****"),
                 login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
             notify(player, tprintf(T("Most recent attempt was from %s on %s."),
                 login_info.bad[0].host, login_info.bad[0].dtm));
-            notify(player, M_(""));
+            notify(player, T(""));
             login_info.new_bad = 0;
         }
         if (  login_info.good[0].host

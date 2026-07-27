@@ -5,7 +5,6 @@
 # This file is distributed under the same license as the TinyMUX package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#: modules/engine/player.cpp:189 modules/engine/player.cpp:194
 #, fuzzy
 msgid ""
 msgstr ""
@@ -263,71 +262,71 @@ msgstr ""
 msgid "You can’t leave."
 msgstr ""
 
-#: modules/engine/player.cpp:960 modules/engine/rob.cpp:66
+#: modules/engine/player.cpp:963 modules/engine/rob.cpp:66
 msgid "Sorry."
 msgstr ""
 
-#: modules/engine/player.cpp:965
+#: modules/engine/player.cpp:968
 msgid "Password changed."
 msgstr ""
 
-#: modules/engine/player.cpp:1014
+#: modules/engine/player.cpp:1017
 msgid "I couldn’t find that player."
 msgstr ""
 
-#: modules/engine/player.cpp:1435
+#: modules/engine/player.cpp:1438
 msgid "Only players may use @protect."
 msgstr ""
 
-#: modules/engine/player.cpp:1486
+#: modules/engine/player.cpp:1489
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1501
+#: modules/engine/player.cpp:1504
 msgid "No such player."
 msgstr ""
 
-#: modules/engine/player.cpp:1509
+#: modules/engine/player.cpp:1512
 msgid "No protected names."
 msgstr ""
 
-#: modules/engine/player.cpp:1536
+#: modules/engine/player.cpp:1539
 msgid "Protect what name?"
 msgstr ""
 
-#: modules/engine/player.cpp:1563 modules/engine/player.cpp:1660
+#: modules/engine/player.cpp:1566 modules/engine/player.cpp:1663
 msgid "That name is not in your protected list."
 msgstr ""
 
-#: modules/engine/player.cpp:1575
+#: modules/engine/player.cpp:1578
 msgid "That name is already in use."
 msgstr ""
 
-#: modules/engine/player.cpp:1596
+#: modules/engine/player.cpp:1599
 msgid "That name is already in use or is illegal, alias cleared."
 msgstr ""
 
-#: modules/engine/player.cpp:1609
+#: modules/engine/player.cpp:1612
 msgid "You have no alias set."
 msgstr ""
 
-#: modules/engine/player.cpp:1633
+#: modules/engine/player.cpp:1636
 msgid "You have no protected names."
 msgstr ""
 
-#: modules/engine/player.cpp:1674
+#: modules/engine/player.cpp:1677
 msgid "That is not a valid player name."
 msgstr ""
 
-#: modules/engine/player.cpp:1680
+#: modules/engine/player.cpp:1683
 msgid "That name is not allowed."
 msgstr ""
 
-#: modules/engine/player.cpp:1696
+#: modules/engine/player.cpp:1699
 msgid "That name is already in your protected list."
 msgstr ""
 
-#: modules/engine/player.cpp:1713
+#: modules/engine/player.cpp:1716
 msgid "That name is already protected by another player."
 msgstr ""
 
