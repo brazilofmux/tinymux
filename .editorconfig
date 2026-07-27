@@ -1,0 +1,35 @@
+# EditorConfig — https://editorconfig.org
+#
+# Deliberately minimal.  This file exists for ONE reason: to stop editors
+# writing a UTF-8 BOM.
+#
+# Visual Studio saves a file as "UTF-8 with signature" when it needs to
+# represent a non-ASCII character and the file had none before.  That is
+# harmless for MSVC, which accepts a BOM, but it is invisible churn in
+# diffs, it varies by who last opened the file, and a BOM is fatal to any
+# file that is executed rather than compiled -- a shell script or a .mux
+# corpus file with a BOM does not work.
+#
+# The risk is about to grow: #1499 adds /utf-8 so source prose can be
+# written as characters instead of \xE2\x80\x99 escapes, which is exactly
+# the condition that makes Visual Studio start adding signatures.
+#
+# `charset = utf-8` means UTF-8 WITHOUT a BOM; `utf-8-bom` is the spelling
+# for with.  Visual Studio honours this, as do VS Code, CLion, Sublime and
+# most others.
+#
+# Note for anyone reaching for git instead: git cannot do this.
+# core.autocrlf is line endings only, and .gitattributes'
+# working-tree-encoding converts encodings rather than stripping a
+# signature -- setting it to UTF-16 would ADD one.  Stripping a BOM in git
+# needs a custom clean filter, which every clone has to configure locally.
+# An .editorconfig needs no setup and fixes it at the point it happens.
+#
+# Nothing else is set here on purpose.  Indentation, line endings and
+# trailing whitespace are left to existing practice and to the code-style
+# rules in CLAUDE.md, so this file cannot reformat anything by surprise.
+
+root = true
+
+[*]
+charset = utf-8
