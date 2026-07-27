@@ -7,12 +7,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - `--enable-jit` defaults to NO. Without it the JIT is never built, and the
     `jit_parity`/`jit_diff` tests silently exercise only the interpreter.
   - For release builds add `--enable-stubslave`; omit for smoke testing
+  - **No `CPPFLAGS`/`LDFLAGS` needed on any platform** for this line. PCRE2 and
+    OpenSSL are found via `pkg-config`. The one exception is `--enable-nls` on
+    macOS — gettext ships no `.pc` file, so add
+    `CPPFLAGS="-I$(brew --prefix)/include" LDFLAGS="-L$(brew --prefix)/lib"`.
 - **Build everything from repo root**: `make install`
   - Builds libmux.so, netmux, engine.so, all modules, creates game/bin symlinks
   - This is the standard workflow — always build from the repo root
 - Clean: `make clean` or `make realclean`
 - Run server: `cd mux/game && ./bin/netmux`
 - **Do NOT build from mux/src/ directly** — that only builds netmux, not engine.so or modules
+- **Always `make clean` after changing configure flags.** A partially-built
+  tree (stale `muxscript`, fresh `engine.so`) produces failures that describe
+  nothing real — ASan's "Interceptors are not working" is the usual tell.
+
+Platform prerequisites (Debian/Ubuntu and Homebrew package lists), autotools
+version constraints for regenerating `configure`, and a symptom→cause table
+live in [`docs/building.md`](docs/building.md). Read it before running
+`autoconf`/`automake`: `configure` comes from autoconf **2.73** and the
+`Makefile.in` files from automake **1.16.5**, and regenerating with a different
+version churns whole files (#1477). Prefer expressing build changes in
+`configure.ac` over `Makefile.am` for exactly that reason.
 
 ## Testing
 - Run smoke tests: `make test` (from repo root — builds, installs, then tests)

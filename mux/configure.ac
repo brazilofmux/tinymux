@@ -323,7 +323,19 @@ AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
 
 dnl NLS library probes — after C++17 / system-extensions setup (#1477).
 if test "x$nls_enabled" = "xyes"; then
-  AC_CHECK_HEADERS([libintl.h], [], [AC_MSG_ERROR([--enable-nls requires libintl.h])])
+  dnl No pkg-config rescue is possible here the way there is for PCRE2 and
+  dnl OpenSSL: GNU gettext ships no .pc file, so a Homebrew install lands in a
+  dnl prefix the compiler does not search and cannot be discovered
+  dnl automatically.  --enable-nls on macOS therefore still needs the paths
+  dnl passed in; say so rather than leaving the builder to guess.
+  AC_CHECK_HEADERS([libintl.h], [],
+    [AC_MSG_ERROR([--enable-nls requires libintl.h.  On Debian/Ubuntu it comes
+with libc6-dev, since glibc provides gettext.  With Homebrew, install gettext
+and re-run configure with the prefix passed in explicitly -- /opt/homebrew on
+Apple Silicon, /usr/local on Intel:
+  CPPFLAGS=-I/opt/homebrew/include LDFLAGS=-L/opt/homebrew/lib
+gettext installs no pkg-config metadata, so unlike PCRE2 and OpenSSL it cannot
+be located automatically.])])
   dnl glibc provides gettext in libc; some systems need -lintl.
   AC_SEARCH_LIBS([gettext], [intl], [], [AC_MSG_ERROR([--enable-nls requires gettext in libc or libintl])])
   AC_CHECK_FUNCS([bind_textdomain_codeset])
@@ -337,10 +349,59 @@ AC_SEARCH_LIBS([socket],[socket inet])
 AC_SEARCH_LIBS([gethostbyname],[socket nsl bind])
 AC_SEARCH_LIBS([inet_addr],[nsl])
 AC_SEARCH_LIBS([sqrt],[m])
-AC_CHECK_LIB([pcre2-8], [pcre2_compile_8],
-    [PCRE2_LIBS="-lpcre2-8"],
-    [AC_MSG_ERROR([PCRE2 library not found])])
+dnl PCRE2 ships no autoconf macro of its own, so ask pkg-config first.  That is
+dnl what finds prefixes the compiler does not search by default -- Homebrew's
+dnl /opt/homebrew on Apple Silicon and /usr/local on Intel, pkgsrc, and the like.
+dnl Without it a Mac with `brew install pcre2` fails the pcre2.h probe further
+dnl down unless the builder hands over CPPFLAGS/LDFLAGS by hand.  OpenSSL already
+dnl goes through PKG_CHECK_MODULES; this puts PCRE2 on the same footing.
+dnl
+dnl Fold the discovered include path into CPPFLAGS rather than substituting a
+dnl PCRE2_CFLAGS into every Makefile.in: CPPFLAGS already propagates everywhere,
+dnl and the pcre2.h probe below preprocesses against it.  pkg-config emits its
+dnl own -L in PCRE2_LIBS, so no LDFLAGS handling is needed here.
+dnl
+dnl Fall back to the historical link check when no .pc file is installed, so
+dnl platforms shipping PCRE2 without pkg-config metadata keep building.
+PKG_CHECK_MODULES([PCRE2], [libpcre2-8],
+    [CPPFLAGS="$CPPFLAGS $PCRE2_CFLAGS"],
+    [AC_CHECK_LIB([pcre2-8], [pcre2_compile_8],
+        [PCRE2_LIBS="-lpcre2-8"],
+        [AC_MSG_ERROR([PCRE2 library not found])])])
 AC_SUBST(PCRE2_LIBS)
+dnl Find OpenSSL before anything probes it.  Everything below this point that
+dnl asks a question about OpenSSL -- the SSL_new and EVP_sha256 link checks
+dnl immediately following, and the AC_CHECK_FUNCS(EVP_MD_CTX_create
+dnl EVP_MD_CTX_new SHA_Init) further down -- works by compiling and linking a
+dnl test program.  With OpenSSL's include and library paths out of scope those
+dnl probes do not error, they simply answer "no", and a "no" from the EVP pair
+dnl is not benign: modules/engine/funmath.cpp turns it into
+dnl
+dnl     #error Need EVP_MD_CTX_new() or EVP_MD_CTX_create().
+dnl
+dnl so the failure lands hundreds of lines away from its cause, in a source
+dnl file, during make.
+dnl
+dnl This block lived just above AC_OUTPUT until now -- roughly 460 lines after
+dnl the first thing that needed it.  It went unnoticed because it only matters
+dnl where OpenSSL sits outside the compiler's default search path (Homebrew's
+dnl /opt/homebrew rather than /usr/include), and builders on exactly those
+dnl systems were already passing CPPFLAGS/LDFLAGS by hand to satisfy PCRE2,
+dnl which incidentally satisfied OpenSSL too.  With PCRE2 now finding itself
+dnl via pkg-config, that accident is gone.
+dnl
+dnl Fold the include path into CPPFLAGS so it reaches every compile, including
+dnl subdirectories whose AM_CPPFLAGS forgets to name $(OPENSSL_CFLAGS) -- ganl/
+dnl is one, and its src/openssl_transport.cpp includes <openssl/ssl.h>.  Take
+dnl only the -L entries into LDFLAGS: OPENSSL_LIBS also carries -lssl -lcrypto,
+dnl and putting those in LDFLAGS would link them into every binary whether or
+dnl not it wants them.
+PKG_CHECK_MODULES([OPENSSL], [openssl], [],
+  [AC_MSG_ERROR([OpenSSL development libraries not found. Install openssl and pkg-config.])]
+)
+CPPFLAGS="$CPPFLAGS $OPENSSL_CFLAGS"
+LDFLAGS="$LDFLAGS `$PKG_CONFIG --libs-only-L openssl`"
+
 dnl Probe real OpenSSL entry points instead of main() so HAVE_LIBSSL/HAVE_LIBCRYPTO
 dnl reflect usable libraries rather than any archive with a dummy main symbol.
 AC_CHECK_LIB([ssl], [SSL_new])
@@ -442,7 +503,10 @@ AC_PREPROC_IFELSE(
   ],
   [
     AC_MSG_RESULT([no])
-    AC_MSG_ERROR([pcre2.h header not found, please install PCRE2 development files])
+    AC_MSG_ERROR([pcre2.h header not found.  Install the PCRE2 development
+files (Debian/Ubuntu: libpcre2-dev, Homebrew: pcre2).  If they are installed
+somewhere pkg-config cannot see, either point PKG_CONFIG_PATH at the directory
+holding libpcre2-8.pc or pass CPPFLAGS=-I... and LDFLAGS=-L... directly.])
   ]
 )
 AS_MESSAGE([checking for sys_errlist decl...])
@@ -788,10 +852,8 @@ AC_CONFIG_FILES([
     ganl/Makefile
 ])
 
-PKG_CHECK_MODULES([OPENSSL], [openssl], [],
-  [AC_MSG_ERROR([OpenSSL development libraries not found. Install openssl and pkg-config.])]
-)
-
+dnl OpenSSL itself is discovered much earlier, next to the other library
+dnl checks -- see the comment there for why the ordering matters.
 AC_SUBST([OPENSSL_CFLAGS])
 AC_SUBST([OPENSSL_LIBS])
 
