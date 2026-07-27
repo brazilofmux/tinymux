@@ -98,6 +98,13 @@ AC_SUBST(TINYMUX_JIT)
 
 dnl Native Language Support (GNU gettext / libintl) for server notifies.
 dnl Optional: English-only builds remain first-class on all platforms (#1419).
+dnl
+dnl Only AC_ARG_ENABLE lives here. AC_CHECK_HEADERS / AC_SEARCH_LIBS expand at
+dnl m4 time even inside a shell "if", and if they run before AC_PROG_CXX /
+dnl AC_USE_SYSTEM_EXTENSIONS they poison the later C++17 probe (#1477).
+dnl Probes that need a working C toolchain are deferred until after
+dnl AX_CXX_COMPILE_STDCXX below.
+dnl
 AC_MSG_CHECKING(whether to enable NLS / gettext)
 AC_ARG_ENABLE(
   [nls],
@@ -115,13 +122,6 @@ AC_ARG_ENABLE(
     nls_enabled=no
     AC_MSG_RESULT(no)
   ])
-if test "x$nls_enabled" = "xyes"; then
-  AC_CHECK_HEADERS([libintl.h], [], [AC_MSG_ERROR([--enable-nls requires libintl.h])])
-  dnl glibc provides gettext in libc; some systems need -lintl.
-  AC_SEARCH_LIBS([gettext], [intl], [], [AC_MSG_ERROR([--enable-nls requires gettext in libc or libintl])])
-  AC_CHECK_FUNCS([bind_textdomain_codeset])
-  AC_DEFINE([HAVE_NLS], [1], [Define if GNU gettext NLS is enabled.])
-fi
 AM_CONDITIONAL([NLS_ENABLED], [test "x$nls_enabled" = "xyes"])
 
 AC_MSG_CHECKING(whether to enable gRPC support for Hydra proxy)
@@ -320,6 +320,15 @@ AC_SUBST(DBT_BACKEND)
 AC_USE_SYSTEM_EXTENSIONS
 m4_include([m4/ax_cxx_compile_stdcxx.m4])
 AX_CXX_COMPILE_STDCXX([17], [noext], [mandatory])
+
+dnl NLS library probes — after C++17 / system-extensions setup (#1477).
+if test "x$nls_enabled" = "xyes"; then
+  AC_CHECK_HEADERS([libintl.h], [], [AC_MSG_ERROR([--enable-nls requires libintl.h])])
+  dnl glibc provides gettext in libc; some systems need -lintl.
+  AC_SEARCH_LIBS([gettext], [intl], [], [AC_MSG_ERROR([--enable-nls requires gettext in libc or libintl])])
+  AC_CHECK_FUNCS([bind_textdomain_codeset])
+  AC_DEFINE([HAVE_NLS], [1], [Define if GNU gettext NLS is enabled.])
+fi
 
 # Checks for libraries.
 #
