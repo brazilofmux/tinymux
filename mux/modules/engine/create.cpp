@@ -31,13 +31,13 @@ static dbref parse_linkable_room(const dbref player, const UTF8 *room_name)
     //
     if (!Good_obj(room))
     {
-        notify_quiet(player, T("That\xE2\x80\x99s not a valid object."));
+        notify_quiet(player, M_("That\xE2\x80\x99s not a valid object."));
         return NOTHING;
     }
     else if (  !Has_contents(room)
             || !Linkable(player, room))
     {
-        notify_quiet(player, T("You can\xE2\x80\x99t link to that."));
+        notify_quiet(player, M_("You can\xE2\x80\x99t link to that."));
         return NOTHING;
     }
     else
@@ -58,7 +58,7 @@ static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *link
     if (  nullptr == direction
        || '\0' == direction[0])
     {
-        notify_quiet(player, T("Open where?"));
+        notify_quiet(player, M_("Open where?"));
         return;
     }
     else if (!Controls(player, loc))
@@ -92,7 +92,7 @@ static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *link
 
     // and we're done
     //
-    notify_quiet(player, T("Opened."));
+    notify_quiet(player, M_("Opened."));
 
     // See if we should do a link
     //
@@ -109,7 +109,7 @@ static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *link
         if (  !Link_Anywhere(player)
            && !could_doit(player, loc, A_LLINK))
         {
-            notify_quiet(player, T("You can\xE2\x80\x99t link to there."));
+            notify_quiet(player, M_("You can\xE2\x80\x99t link to there."));
             return;
         }
 
@@ -124,7 +124,7 @@ static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *link
         else
         {
             s_Location(exit, loc);
-            notify_quiet(player, T("Linked."));
+            notify_quiet(player, M_("Linked."));
             route_invalidate();
         }
     }
@@ -249,7 +249,7 @@ void link_exit(const dbref player, const dbref exit, const dbref dest)
     s_Location(exit, dest);
     if (!Quiet(player))
     {
-        notify_quiet(player, T("Linked."));
+        notify_quiet(player, M_("Linked."));
     }
     route_invalidate();
 }
@@ -331,7 +331,7 @@ void do_link
         }
         if (!Has_contents(room))
         {
-            notify_quiet(executor, T("Can\xE2\x80\x99t link to an exit."));
+            notify_quiet(executor, M_("Can\xE2\x80\x99t link to an exit."));
             break;
         }
         if (  !can_set_home(executor, thing, room)
@@ -341,7 +341,7 @@ void do_link
         }
         else if (room == HOME)
         {
-            notify_quiet(executor, T("Can\xE2\x80\x99t set home to home."));
+            notify_quiet(executor, M_("Can\xE2\x80\x99t set home to home."));
         }
         else
         {
@@ -390,7 +390,7 @@ void do_link
         if (  room != HOME
            && !isRoom(room))
         {
-            notify_quiet(executor, T("That is not a room!"));
+            notify_quiet(executor, M_("That is not a room!"));
         }
         else if (  room != HOME
                 && !Link_Anywhere(executor)
@@ -523,7 +523,7 @@ void do_parent
         {
             if (curr == thing)
             {
-                notify_quiet(executor, T("You can\xE2\x80\x99t have yourself as a parent!"));
+                notify_quiet(executor, M_("You can\xE2\x80\x99t have yourself as a parent!"));
                 return;
             }
         }
@@ -599,11 +599,11 @@ void do_parent
     {
         if (NOTHING == parent)
         {
-            notify_quiet(executor, T("Parent cleared."));
+            notify_quiet(executor, M_("Parent cleared."));
         }
         else
         {
-            notify_quiet(executor, T("Parent set."));
+            notify_quiet(executor, M_("Parent set."));
         }
     }
 }
@@ -623,7 +623,7 @@ void do_dig(const dbref executor, const dbref caller, const dbref enactor, const
     //
     if (!name || !*name)
     {
-        notify_quiet(executor, T("Dig what?"));
+        notify_quiet(executor, M_("Dig what?"));
         return;
     }
     const dbref room = create_obj(executor, TYPE_ROOM, name, 0);
@@ -692,13 +692,13 @@ void do_create
     int cost = 0;
     if (!name || !*name)
     {
-        notify_quiet(executor, T("Create what?"));
+        notify_quiet(executor, M_("Create what?"));
         return;
     }
     else if (  nargs == 2
             && (cost = mux_atoi64(coststr)) < 0)
     {
-        notify_quiet(executor, T("You can\xE2\x80\x99t create an object for less than nothing!"));
+        notify_quiet(executor, M_("You can\xE2\x80\x99t create an object for less than nothing!"));
         return;
     }
     const dbref thing = create_obj(executor, TYPE_THING, name, cost);
@@ -786,7 +786,7 @@ void do_clone
     }
     if (isPlayer(thing))
     {
-        notify_quiet(executor, T("You cannot clone players!"));
+        notify_quiet(executor, M_("You cannot clone players!"));
         return;
     }
 
@@ -1046,7 +1046,7 @@ void do_pcreate
         notify_quiet(executor,
             tprintf(T("New robot \xE2\x80\x98%s\xE2\x80\x99 (#%d) created with password \xE2\x80\x98%s\xE2\x80\x99"),
                 name, newplayer, pass));
-        notify_quiet(executor, T("Your robot has arrived."));
+        notify_quiet(executor, M_("Your robot has arrived."));
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
         log_name(newplayer);
         log_text(T(" created by "));
@@ -1092,12 +1092,12 @@ static bool can_destroy_player(dbref player, dbref victim)
 {
     if (!Wizard(player))
     {
-        notify_quiet(player, T("Sorry, no suicide allowed."));
+        notify_quiet(player, M_("Sorry, no suicide allowed."));
         return false;
     }
     if (RealWizard(victim))
     {
-        notify_quiet(player, T("Even you can\xE2\x80\x99t do that!"));
+        notify_quiet(player, M_("Even you can\xE2\x80\x99t do that!"));
         return false;
     }
     return true;
@@ -1208,7 +1208,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
        && !(key & DEST_OVERRIDE)
        && !(isThing(thing) && Destroy_ok(thing)))
     {
-        notify_quiet(executor, T("Sorry, that object is protected.  Use @destroy/override to destroy it."));
+        notify_quiet(executor, M_("Sorry, that object is protected.  Use @destroy/override to destroy it."));
         return;
     }
 
@@ -1216,7 +1216,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
     //
     if (Indestructible(thing))
     {
-        notify_quiet(executor, T("That object is indestructible."));
+        notify_quiet(executor, M_("That object is indestructible."));
         return;
     }
 
@@ -1224,7 +1224,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
     //
     if (!destroyable(thing))
     {
-        notify_quiet(executor, T("You can\xE2\x80\x99t destroy that!"));
+        notify_quiet(executor, M_("You can\xE2\x80\x99t destroy that!"));
         return;
     }
 
@@ -1260,7 +1260,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
         switch (Typeof(thing))
         {
         case TYPE_ROOM:
-            notify_all(thing, executor, T("The room shakes and begins to crumble."));
+            notify_all(thing, executor, M_("The room shakes and begins to crumble."));
             break;
 
         case TYPE_PLAYER:
@@ -1272,7 +1272,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
                 // take care of this more immediately.
                 //
                 bInstant = true;
-                notify(executor, T("Player has a lot of attributes. Performing destruction immediately."));
+                notify(executor, M_("Player has a lot of attributes. Performing destruction immediately."));
                 break;
             }
 
@@ -1285,7 +1285,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
             break;
 
         default:
-            notify(executor, T("Weird object type cannot be destroyed."));
+            notify(executor, M_("Weird object type cannot be destroyed."));
             return;
         }
 
@@ -1354,7 +1354,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
             break;
 
         default:
-            notify(executor, T("Weird object type cannot be destroyed."));
+            notify(executor, M_("Weird object type cannot be destroyed."));
             return;
         }
     }
