@@ -168,12 +168,12 @@ void do_quota
 
     if (!(mudconf.quotas || Quota(executor)))
     {
-        notify_quiet(executor, T("Quotas are not enabled."));
+        notify_quiet(executor, M_("Quotas are not enabled."));
         return;
     }
     if ((key & QUOTA_TOT) && (key & QUOTA_REM))
     {
-        notify_quiet(executor, T("Illegal combination of switches."));
+        notify_quiet(executor, M_("Illegal combination of switches."));
         return;
     }
 
@@ -227,7 +227,7 @@ void do_quota
         who = lookup_player(executor, arg1, true);
         if (!Good_obj(who))
         {
-            notify_quiet(executor, T("Not found."));
+            notify_quiet(executor, M_("Not found."));
             return;
         }
     }

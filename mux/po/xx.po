@@ -1,4 +1,4 @@
-# Pseudo-locale for NLS smoke (Phase 1 spike, #1419).
+# Pseudo-locale for NLS smoke (Phase 1/2, #1419).
 msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
@@ -7,5 +7,95 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "That’s not a valid object."
+msgstr "[xx] That’s not a valid object."
+
+msgid "You can’t link to that."
+msgstr "[xx] You can’t link to that."
+
+msgid "Open where?"
+msgstr "[xx] Open where?"
+
+msgid "Opened."
+msgstr "[xx] Opened."
+
+msgid "You can’t link to there."
+msgstr "[xx] You can’t link to there."
+
+msgid "Linked."
+msgstr "[xx] Linked."
+
+msgid "Can’t link to an exit."
+msgstr "[xx] Can’t link to an exit."
+
+msgid "Can’t set home to home."
+msgstr "[xx] Can’t set home to home."
+
+msgid "That is not a room!"
+msgstr "[xx] That is not a room!"
+
+msgid "You can’t have yourself as a parent!"
+msgstr "[xx] You can’t have yourself as a parent!"
+
+msgid "Parent cleared."
+msgstr "[xx] Parent cleared."
+
+msgid "Parent set."
+msgstr "[xx] Parent set."
+
+msgid "Dig what?"
+msgstr "[xx] Dig what?"
+
+msgid "Create what?"
+msgstr "[xx] Create what?"
+
+msgid "You can’t create an object for less than nothing!"
+msgstr "[xx] You can’t create an object for less than nothing!"
+
+msgid "You cannot clone players!"
+msgstr "[xx] You cannot clone players!"
+
+msgid "Your robot has arrived."
+msgstr "[xx] Your robot has arrived."
+
+msgid "Sorry, no suicide allowed."
+msgstr "[xx] Sorry, no suicide allowed."
+
+msgid "Even you can’t do that!"
+msgstr "[xx] Even you can’t do that!"
+
+msgid "Sorry, that object is protected.  Use @destroy/override to destroy it."
+msgstr "[xx] Sorry, that object is protected.  Use @destroy/override to destroy it."
+
+msgid "That object is indestructible."
+msgstr "[xx] That object is indestructible."
+
+msgid "You can’t destroy that!"
+msgstr "[xx] You can’t destroy that!"
+
+msgid "The room shakes and begins to crumble."
+msgstr "[xx] The room shakes and begins to crumble."
+
+msgid "Player has a lot of attributes. Performing destruction immediately."
+msgstr "[xx] Player has a lot of attributes. Performing destruction immediately."
+
+msgid "Weird object type cannot be destroyed."
+msgstr "[xx] Weird object type cannot be destroyed."
+
+msgid "I don’t see that here."
+msgstr "[xx] I don’t see that here."
+
+msgid "I don’t know which one you mean!"
+msgstr "[xx] I don’t know which one you mean!"
+
 msgid "Permission denied."
 msgstr "[xx] Permission denied."
+
+msgid "Quotas are not enabled."
+msgstr "[xx] Quotas are not enabled."
+
+msgid "Illegal combination of switches."
+msgstr "[xx] Illegal combination of switches."
+
+msgid "Not found."
+msgstr "[xx] Not found."
