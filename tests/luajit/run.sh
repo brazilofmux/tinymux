@@ -42,6 +42,15 @@ fi
 # Chunks that reach the raising Lua C API calls in eval_ecall: table index by
 # integer and by name, table store both ways, and the array pin/unpin path.
 # t[2] on the currently-mislowered constructor is the one that aborted.
+#
+# These are fault-containment cases: the contract is that the process survives.
+# Divergence is reported rather than fatal, because a wrong answer here belongs
+# to the lowering bugs (#1421/#1422/#1424/#1425), not to containment, and this
+# list must not go red for a bug it does not own.
+#
+# As of #1518 every one of them happens to agree as well -- but by *declining*,
+# not by lowering correctly.  The four #1424 shapes are therefore also listed in
+# AGREE_CASES below, where agreement is enforced; see the note there.
 CASES=(
     'local t={10,20,30} return t[2]'
     'local t={a=7} return t.a'
@@ -118,6 +127,29 @@ AGREE_CASES=(
     # drop ".0" (#1488), which is a different bug.
     'local a=mux.args[1]+0 return (a ^ 2) == 4'
     'local a=mux.args[1]+0 local b=mux.args[2]+0 return (a ^ b) == 8'
+    # ---- #1424's four shapes, whose symptoms #1518 closed ----
+    #
+    # These used to be the loudest failures in the corpus: `#t` returned 22 --
+    # the Lua *stack index* leaking out as a value -- for any table, and
+    # `t[2]` aborted the process outright.  Measured on master after #1518, all
+    # four agree with the interpreter.
+    #
+    # They agree by NOT RUNNING.  Three fail at run time and fall back
+    # (lua_run_fail moves, lua_run_ok does not) and `t.a` declines at compile
+    # time.  The lowering underneath is still wrong -- handles are still
+    # indistinguishable from values, which is #1519's representation problem --
+    # so what is pinned here is the *containment*, not correctness.
+    #
+    # Listed as fatal because losing the containment is what let a stack index
+    # be returned as a length, and a differential test is the only thing that
+    # sees it: both the garbage and the abort produced no error marker.  If the
+    # bridge is ever brought up, these should start agreeing for the right
+    # reason and lua_run_ok should move instead -- which this list will not
+    # notice, so re-measure the counters rather than trusting a green run.
+    'local t={1,2,3} return #t'
+    'local t={1,2,3} table.insert(t,4) return #t'
+    'local t={10,20,30} return t[2]'
+    'local t={a=7} return t.a'
 )
 
 
