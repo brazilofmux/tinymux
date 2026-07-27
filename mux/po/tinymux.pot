@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 12:38+0000\n"
+"POT-Creation-Date: 2026-07-27 06:53-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: modules/engine/command.cpp:661 modules/engine/command.cpp:4373
+#: modules/engine/command.cpp:661 modules/engine/command.cpp:4395
 msgid "Lua module is not loaded."
 msgstr ""
 
@@ -199,98 +199,98 @@ msgstr ""
 msgid "Modules:"
 msgstr ""
 
-#: modules/engine/command.cpp:4164
+#: modules/engine/command.cpp:4186
 msgid "Reality levels:"
 msgstr ""
 
-#: modules/engine/command.cpp:4171
+#: modules/engine/command.cpp:4193
 msgid "--Completed."
 msgstr ""
 
-#: modules/engine/command.cpp:4475 modules/engine/command.cpp:4509
+#: modules/engine/command.cpp:4497 modules/engine/command.cpp:4531
 msgid "@icmd: Bad Location."
 msgstr ""
 
-#: modules/engine/command.cpp:4481
+#: modules/engine/command.cpp:4503
 msgid "@icmd: Location - All cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4482 modules/engine/command.cpp:4499
-#: modules/engine/command.cpp:4545 modules/engine/command.cpp:4574
-#: modules/engine/command.cpp:4581 modules/engine/command.cpp:4606
-#: modules/engine/command.cpp:4818
+#: modules/engine/command.cpp:4504 modules/engine/command.cpp:4521
+#: modules/engine/command.cpp:4567 modules/engine/command.cpp:4596
+#: modules/engine/command.cpp:4603 modules/engine/command.cpp:4628
+#: modules/engine/command.cpp:4840
 msgid "@icmd: Done."
 msgstr ""
 
-#: modules/engine/command.cpp:4491
+#: modules/engine/command.cpp:4513
 msgid "Location CmdCheck attribute is:"
 msgstr ""
 
-#: modules/engine/command.cpp:4496
+#: modules/engine/command.cpp:4518
 msgid "Location CmdCheck attribute is empty."
 msgstr ""
 
-#: modules/engine/command.cpp:4512
+#: modules/engine/command.cpp:4534
 msgid "Scanning all locations and zones from your current location:"
 msgstr ""
 
-#: modules/engine/command.cpp:4543
+#: modules/engine/command.cpp:4565
 msgid "@icmd: Location - No icmds found at current location."
 msgstr ""
 
-#: modules/engine/command.cpp:4563
+#: modules/engine/command.cpp:4585
 msgid "@icmd: Bad player."
 msgstr ""
 
-#: modules/engine/command.cpp:4573
+#: modules/engine/command.cpp:4595
 msgid "@icmd: All cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4580
+#: modules/engine/command.cpp:4602
 msgid "@icmd: Activated."
 msgstr ""
 
-#: modules/engine/command.cpp:4588
+#: modules/engine/command.cpp:4610
 msgid "CmdCheck is active."
 msgstr ""
 
-#: modules/engine/command.cpp:4592
+#: modules/engine/command.cpp:4614
 msgid "CmdCheck is not active."
 msgstr ""
 
-#: modules/engine/command.cpp:4598
+#: modules/engine/command.cpp:4620
 msgid "CmdCheck attribute is:"
 msgstr ""
 
-#: modules/engine/command.cpp:4603
+#: modules/engine/command.cpp:4625
 msgid "CmdCheck attribute is empty."
 msgstr ""
 
-#: modules/engine/command.cpp:4832
+#: modules/engine/command.cpp:4854
 msgid "Train cannot be used to teach command, train."
 msgstr ""
 
-#: modules/engine/command.cpp:4839
+#: modules/engine/command.cpp:4861
 msgid "Bad location."
 msgstr ""
 
-#: modules/engine/command.cpp:4846
+#: modules/engine/command.cpp:4868
 msgid "Train requires an argument."
 msgstr ""
 
-#: modules/engine/command.cpp:4883
+#: modules/engine/command.cpp:4905
 msgid "Moniker cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4892
+#: modules/engine/command.cpp:4914
 msgid "Moniker set."
 msgstr ""
 
-#: modules/engine/command.cpp:4995
+#: modules/engine/command.cpp:5017
 msgid "@hook: Non-existent command name given."
 msgstr ""
 
-#: modules/engine/command.cpp:5002
+#: modules/engine/command.cpp:5024
 msgid "@hook: Incompatible switches."
 msgstr ""
 
@@ -1386,7 +1386,8 @@ msgstr ""
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1504 modules/engine/wiz.cpp:503
+#: modules/engine/player.cpp:1504 modules/engine/predicates.cpp:2923
+#: modules/engine/wiz.cpp:503
 msgid "No such player."
 msgstr ""
 
@@ -1463,6 +1464,10 @@ msgstr ""
 msgid "Sorry, your building contract has run out."
 msgstr ""
 
+#: modules/engine/predicates.cpp:288
+msgid "Sorry, that player’s building contract has run out."
+msgstr ""
+
 #: modules/engine/predicates.cpp:1008
 msgid "That is not a valid command name."
 msgstr ""
@@ -1490,6 +1495,10 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:1424
 msgid "Player is not in an @program."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1444
+msgid "@program cleared."
 msgstr ""
 
 #: modules/engine/predicates.cpp:1445
@@ -1525,6 +1534,42 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:2786
 msgid "Permission denied,"
+msgstr ""
+
+#: modules/engine/predicates.cpp:2960
+msgid "-------------------------------------------------------"
+msgstr ""
+
+#: modules/engine/predicates.cpp:2975
+msgid "GAME: No references found."
+msgstr ""
+
+#: modules/engine/predicates.cpp:2980
+msgid "---------------- End of Reference List ----------------"
+msgstr ""
+
+#: modules/engine/predicates.cpp:3094
+msgid "References requested too quickly."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3139
+msgid "Reference cleared."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3143
+msgid "Reference updated."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3147
+msgid "That reference already exists."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3151
+msgid "No such reference to clear."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3155
+msgid "Reference added."
 msgstr ""
 
 #: modules/engine/quota.cpp:171
