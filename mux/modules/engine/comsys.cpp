@@ -1852,9 +1852,29 @@ void SendChannelMessage
             const int atr = mkattr(GOD, p);
             if (0 < atr)
             {
+                // Read the VALUE, not merely presence (#1585).
+                //
+                // The engine writes "1" to enable and atr_clr()s to disable, so
+                // for engine-written data presence and a non-empty value say the
+                // same thing.  The comsys *module* cannot clear: the only lever
+                // mux_IAttributeAccess gives it is SetAttribute, so it disables
+                // by writing "" (comsys_mod.cpp:2742).  A presence test reads
+                // that as ON, so a channel whose timestamps were turned off
+                // under the module came back on under the engine.
+                //
+                // Non-empty is also what the module uses to read it
+                // (comsys_mod.cpp:1126), so both implementations now agree:
+                // "1" is on, empty or absent is off.
+                //
                 pattr = atr_str(T("LOG_TIMESTAMPS"));
-                if (pattr
-                    && atr_get_info(obj, pattr->number, &aowner, &aflags))
+                bool bTimestamps = false;
+                if (pattr)
+                {
+                    LBuf tsbuf = LBuf_Adopt(atr_get("SendChannelMessage.LOG_TIMESTAMPS",
+                        obj, pattr->number, &aowner, &aflags));
+                    bTimestamps = ('\0' != *tsbuf.get());
+                }
+                if (bTimestamps)
                 {
                     CLinearTimeAbsolute ltaNow;
                     ltaNow.GetLocal();
