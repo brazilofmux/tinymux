@@ -841,7 +841,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
-        // Lua `^` (OP_POW) always produces a float.  Uses ECALL to pow().
+        // Lua `^` (OP_POW) always produces a float.  Native FCALL2 to the
+        // tier-2 `pow` blob — same path softcode power() uses — not the
+        // string-bridge ECALL __LUA_POW.  That ECALL read both args with
+        // atof(farg_cstr()), but HIR_CALL marshals TY_FLOAT as the raw
+        // double storage address; low bytes are 0x00 so atof sees "" → 0
+        // and every runtime ^ became pow(0,0) == 1 (#1538).  Constant ^
+        // never hit it (Lua folds those to LOADF).
         case OP_LUA_POW: {
             int rb = lua_reg[insn.B()];
             int rc_val = lua_reg[insn.C()];
@@ -849,12 +855,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             rb = promote_to_float(h, rb);
             rc_val = promote_to_float(h, rc_val);
             if (rb < 0 || rc_val < 0) return -1;
-            // Emit as a CALL to __lua_pow (ECALL-based).
-            std::string name("__LUA_POW");
-            int args[] = { rb, rc_val };
-            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            uint64_t addr = tier2_sym_addr("pow");
+            if (!addr) return -1;
+            lua_reg[A] = h.emit(HIR_FCALL2, TY_FLOAT, rb, rc_val,
+                                static_cast<int64_t>(addr));
             if (lua_reg[A] < 0) return -1;
-            h.ecalls++;
+            h.func_idx[lua_reg[A]] = FMATH_POW;
+            h.native_ops++;
             break;
         }
 
@@ -1400,7 +1407,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
-        // POWK: exponentiation with constant — always float, ECALL.
+        // POWK: exponentiation with constant K — always float.  Same
+        // native FCALL2 as OP_POW (#1538); do not string-bridge.
         case OP_LUA_POWK: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
@@ -1412,11 +1420,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             rb = promote_to_float(h, rb);
             kval = promote_to_float(h, kval);
             if (rb < 0 || kval < 0) return -1;
-            std::string name("__LUA_POW");
-            int args[] = { rb, kval };
-            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            uint64_t addr = tier2_sym_addr("pow");
+            if (!addr) return -1;
+            lua_reg[A] = h.emit(HIR_FCALL2, TY_FLOAT, rb, kval,
+                                static_cast<int64_t>(addr));
             if (lua_reg[A] < 0) return -1;
-            h.ecalls++;
+            h.func_idx[lua_reg[A]] = FMATH_POW;
+            h.native_ops++;
             break;
         }
 
