@@ -59,7 +59,15 @@ WIN_ELF=$(cygpath -w "$ELF")
 # throughout the engine sources.  These are code under test, not code written
 # here -- the Makefile makes the same split, applying -Wall -Wextra to the
 # drivers only so real failures stay visible.
-CF="/nologo /EHsc /O2 /std:c++17 /DHAVE_CONFIG_H /DTINYMUX_JIT /DWIN32 /DNDEBUG /DUNICODE /D_CRT_SECURE_NO_WARNINGS /wd4267 /wd4244 /wd4146 /I\"$WIN_INC\""
+#
+# /utf-8: without it MSVC reads source in the system ANSI code page.  Every
+# DBT source already carries non-ASCII bytes -- em dashes in the commentary
+# describing the backends -- so this is not prophylactic.  CP1252 happens to
+# round-trip those bytes, which is why a US/Western box never noticed, but a
+# DBCS locale (932/936/949/950) reads the lead byte and swallows what follows,
+# and the file does not compile at all.  Matches the flag now carried by all
+# fourteen vcxproj and by the other two build-msvc.sh scripts (#1499).
+CF="/nologo /EHsc /O2 /std:c++17 /utf-8 /DHAVE_CONFIG_H /DTINYMUX_JIT /DWIN32 /DNDEBUG /DUNICODE /D_CRT_SECURE_NO_WARNINGS /wd4267 /wd4244 /wd4146 /I\"$WIN_INC\""
 
 # Windows x64 is Win64 ABI, NOT SysV -- see the header note.
 HOST_BACKEND=dbt_x64_win64
