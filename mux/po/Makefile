@@ -1,12 +1,21 @@
 # Server-message catalog tools (#1419 / #1473).
 # Not part of the main autoconf recursive build — run from mux/po as needed.
 
+# Every .po in this directory is a locale; adding one needs no edit here.
+LOCALES := $(patsubst %.po,%,$(wildcard *.po))
+
+# mo-<lang> is deliberately NOT .PHONY: GNU make skips implicit/pattern rule
+# search for phony targets, so declaring it phony makes `mo` print "Nothing to
+# be done".  No mo-<lang> file is ever created, so it rebuilds every time.
 .PHONY: pot mo check-tools help
 
 help:
 	@echo "Targets:"
 	@echo "  pot   - regenerate tinymux.pot from M_()/N_() (xgettext)"
-	@echo "  mo    - build game/locale/xx/LC_MESSAGES/tinymux.mo from xx.po"
+	@echo "  mo    - build every locale into game/locale/<lang>/LC_MESSAGES/"
+	@echo "  mo-<lang> - build one locale"
+	@echo
+	@echo "locales: $(LOCALES)"
 
 check-tools:
 	@command -v xgettext >/dev/null || { echo "need xgettext (gettext)"; exit 1; }
@@ -27,7 +36,9 @@ pot: check-tools
 # catalogue -- including translators working outside the repo, who are the
 # people most likely to introduce the mismatch and least likely to run the
 # suite.
-mo: check-tools
-	mkdir -p ../game/locale/xx/LC_MESSAGES
-	msgfmt -c -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
-	@echo "wrote ../game/locale/xx/LC_MESSAGES/tinymux.mo"
+mo: $(addprefix mo-,$(LOCALES))
+
+mo-%: %.po check-tools
+	mkdir -p ../game/locale/$*/LC_MESSAGES
+	msgfmt -c -o ../game/locale/$*/LC_MESSAGES/tinymux.mo $*.po
+	@echo "wrote ../game/locale/$*/LC_MESSAGES/tinymux.mo"

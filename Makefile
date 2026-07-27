@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -99,6 +99,26 @@ test-vacuous:
 test-nls-runtime:
 	@echo "==> Running NLS runtime oracle (xx pseudo-locale)"
 	bash tests/nls/run.sh
+
+# Runtime oracle for a real translated locale (#1419).
+#
+# test-nls-runtime above uses xx, which is English with a prefix.  It proves
+# the gettext plumbing works and cannot prove anything about translation:
+# because xx preserves argument order, every message it renders would render
+# identically under a broken implementation of argument handling.  That blind
+# spot is why Korean was chosen as the second locale over Spanish -- Korean is
+# SOV with postpositions and reorders arguments where an SVO language does not.
+#
+# One of the four cases deliberately asserts a DEFECT: msgfmt -c accepts %N$
+# positional specs, so a translator who reorders correctly gets a clean build,
+# and then mux_vsnprintf stops at the '$' and echoes the format literally.  The
+# case is written to FAIL once positional arguments are supported, which is the
+# signal to drop the fuzzy markers in ko.po.
+#
+# Skips cleanly without --enable-nls or without msgfmt.
+test-nls-ko:
+	@echo "==> Running NLS runtime oracle (ko, real locale)"
+	bash tests/nls/run_ko.sh
 
 # 64-bit parse into a narrower destination (#1402).
 #

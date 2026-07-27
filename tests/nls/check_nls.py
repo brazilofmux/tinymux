@@ -179,13 +179,60 @@ def check_half_marking(root):
     return findings
 
 
-def check_catalogues(root, pot):
-    """Every msgid translated in every catalogue, and no fuzzy entries.
+def po_header(path):
+    """Header field dict from the leading empty-msgid entry."""
+    fields = {}
+    with open(path, encoding="utf-8") as fh:
+        started = False
+        for line in fh:
+            line = line.strip()
+            if line.startswith("msgid "):
+                if started:
+                    break
+                started = _lit(line[6:]) == ""
+                continue
+            if not started or not line.startswith(('"', "msgstr")):
+                continue
+            for part in _lit(line[7:] if line.startswith("msgstr") else line).split("\\n"):
+                if ":" in part:
+                    k, v = part.split(":", 1)
+                    fields[k.strip().lower()] = v.strip()
+    return fields
 
-    Fuzzy matters more than it looks: msgfmt DROPS fuzzy entries when building
-    the .mo, silently.  A catalogue regenerated with a plain `msgmerge -U`
-    inherits fuzzy matches for its new strings and then ships with those
-    strings untranslated, while every count in the .po still looks complete.
+
+def catalogue_policy(path):
+    """'complete' or 'partial' -- how strictly to judge coverage.
+
+    Declared per catalogue in the .po header as X-Tinymux-Catalogue.  It is a
+    real distinction, not a way to silence the check:
+
+      complete  the catalogue is generated mechanically and every msgid must be
+                translated (xx, the pseudo-locale).  A gap there means the
+                marking or generation pipeline broke, which is exactly what
+                this check exists to catch.
+
+      partial   a human translation.  Partial coverage is the normal gettext
+                state -- untranslated msgids fall back to English by design --
+                and `fuzzy` is the standard marker a translator uses for "needs
+                work", which msgmerge also sets on its own.  Failing the build
+                on either would mean no human locale could ever be committed
+                except complete and perfect, so nobody would commit one.
+
+    Defaults to partial: a new human catalogue that forgets the header gets the
+    lenient policy, which is the safe direction.  Structural errors (stale or
+    missing msgids, format-sequence mismatches) stay fatal under both.
+    """
+    return po_header(path).get("x-tinymux-catalogue", "partial").lower()
+
+
+def check_catalogues(root, pot):
+    """Catalogue integrity, judged against each catalogue's declared policy.
+
+    Fuzzy matters more than it looks under a 'complete' policy: msgfmt DROPS
+    fuzzy entries when building the .mo, silently.  A catalogue regenerated
+    with a plain `msgmerge -U` inherits fuzzy matches for its new strings and
+    then ships with those strings untranslated, while every count in the .po
+    still looks complete.
     """
     findings = []
     ids = {m for m, _, _ in pot}
@@ -200,18 +247,47 @@ def check_catalogues(root, pot):
         untranslated = [m for m, s, _ in entries if not s]
         missing = ids - have
         extra = have - ids
+
+        # Structural: fatal regardless of policy.  A stale msgid is dead weight
+        # a translator will keep maintaining; a missing one means the catalogue
+        # was never msgmerge'd against the current .pot.
         for m in sorted(missing)[:5]:
             findings.append("%s: missing msgid %r (in .pot, not in catalogue)"
                             % (name, m))
         for m in sorted(extra)[:5]:
             findings.append("%s: stale msgid %r (in catalogue, not in .pot)"
                             % (name, m))
-        for m in sorted(fuzzy)[:5]:
-            findings.append("%s: fuzzy msgid %r -- msgfmt will DROP this"
-                            % (name, m))
-        for m in sorted(untranslated)[:5]:
-            findings.append("%s: untranslated msgid %r" % (name, m))
+
+        if catalogue_policy(path) == "complete":
+            for m in sorted(fuzzy)[:5]:
+                findings.append("%s: fuzzy msgid %r -- msgfmt will DROP this"
+                                % (name, m))
+            for m in sorted(untranslated)[:5]:
+                findings.append("%s: untranslated msgid %r" % (name, m))
     return findings
+
+
+def coverage_report(root, pot):
+    """Per-catalogue coverage, printed whether or not anything failed.
+
+    Partial coverage is allowed but should never be invisible: a locale
+    quietly rotting from 90% to 40% as the .pot grows is a real regression,
+    and without a number nobody would notice it in a diff.
+    """
+    lines = []
+    total = len({m for m, _, _ in pot})
+    po_dir = os.path.join(root, "mux", "po")
+    for name in sorted(os.listdir(po_dir)):
+        if not name.endswith(".po"):
+            continue
+        path = os.path.join(po_dir, name)
+        entries = parse_po(path)
+        done = len([m for m, s, f in entries if s and not f])
+        fuzzy = len([m for m, _, f in entries if f])
+        pct = (100.0 * done / total) if total else 0.0
+        lines.append("  %-10s %4d/%-4d (%5.1f%%) translated, %2d fuzzy  [%s]"
+                     % (name, done, total, pct, fuzzy, catalogue_policy(path)))
+    return lines
 
 
 def check_pot_fresh(root, pot):
@@ -281,8 +357,9 @@ def main():
          "file, so a translated game renders both languages at once."),
         ("catalogue integrity",
          check_catalogues(root, pot),
-         "Every .pot msgid must appear translated and non-fuzzy in each "
-         "catalogue -- msgfmt drops fuzzy entries without saying so."),
+         "Stale and missing msgids are errors in every catalogue.  Under an "
+         "X-Tinymux-Catalogue: complete policy, fuzzy and untranslated entries "
+         "are too -- msgfmt drops fuzzy entries without saying so."),
         (".pot freshness",
          check_pot_fresh(root, pot),
          "The .pot does not match what the sources mark.  Strings marked but "
@@ -299,6 +376,11 @@ def main():
                 print("  %s" % f)
             print("  %s" % advice)
             print()
+
+    print("=== NLS guard: catalogue coverage ===")
+    for line in coverage_report(root, pot):
+        print(line)
+    print()
 
     if total:
         print("=== NLS guard: %d finding(s) ===" % total)
