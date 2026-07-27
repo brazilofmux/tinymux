@@ -1,4 +1,4 @@
-# Server-message catalogs (NLS, #1419 / #1444)
+# Server-message catalogs (NLS, #1419 / #1444 / #1473)
 
 See `docs/plan-server-i18n.md`.
 
@@ -13,16 +13,28 @@ See `docs/plan-server-i18n.md`.
 
 Maintaining translations is ongoing cost. Prefer **small, deliberate `M_()` sites** over bulk extraction of every `T()`.
 
-Extract (once the pipeline exists):
+## Regenerate the template (`.pot`)
+
+Requires GNU gettext (`xgettext`). From the repo:
 
 ```bash
-xgettext -kM_ -kN_ -o tinymux.pot …
+make -C mux/po pot
+# or:  mux/po/update-pot.sh
+```
+
+This scans `mux/{include,lib,src,modules}` for **`M_`** and **`N_`** only and writes `tinymux.pot`.
+
+After marking new prose, re-run `pot`, then merge into language files:
+
+```bash
+msgmerge -U xx.po tinymux.pot   # update existing .po against new pot
 ```
 
 ## Build a binary catalog
 
 ```bash
-msgfmt -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
+make -C mux/po mo
+# or:  msgfmt -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
 ```
 
 ## Runtime
@@ -49,7 +61,7 @@ Without `--enable-nls`, catalogs are ignored and English is compiled in.
 
 ## Sample pseudo-locale
 
-`xx.po` translates `Permission denied.` → `[xx] Permission denied.` for manual checks only — the smoke suite must keep English (`LANG=C` / `LANGUAGE=`).
+`xx.po` translates selected strings (e.g. `Permission denied.` → `[xx] Permission denied.`) for manual checks only — the smoke suite must keep English (`LANG=C` / `LANGUAGE=`).
 
 ## Softcode ABI
 
@@ -58,3 +70,25 @@ Without `--enable-nls`, catalogs are ignored and English is compiled in.
 ## Empty strings (#1443)
 
 `gettext("")` returns the catalog **header**, not `""`. `M_()` goes through `mux_gettext`, which leaves empty msgids (and `nullptr`) untouched. `T("")` is only a cast and never hits gettext.
+
+## Testing (#1476)
+
+**English suite / smoke (NLS-on builds):** never set `LANGUAGE=xx`. Prefer:
+
+```bash
+cd mux
+./configure --enable-realitylvls --enable-wodrealms --enable-jit --enable-nls
+# from repo root
+make install
+env -u LANGUAGE LANG=C LC_ALL=C make test
+# or: cd testcases && env -u LANGUAGE LANG=C ./tools/Makesmoke && env -u LANGUAGE LANG=C ./tools/Smoke
+```
+
+**Catalog smoke (manual, not the suite):** process-wide locale must be non-C for `LANGUAGE` to apply:
+
+```bash
+cd mux/game
+printf 'think [div(1,0)]\n@shutdown\n' | \
+  LC_ALL=en_US.UTF-8 LANGUAGE=xx ./bin/muxscript --readonly -g .
+# softcode stays English: #-1 DIVIDE BY ZERO
+```
