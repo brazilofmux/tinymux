@@ -436,6 +436,32 @@ public:
     virtual MUX_RESULT DeletePlayerChannel(int who, const UTF8 *alias) = 0;
     virtual MUX_RESULT DeleteAllPlayerChannels(int who) = 0;
     virtual MUX_RESULT ClearComsysTables(void) = 0;
+
+    // Write an engine-owned attribute on a channel's object (#1585, #1620).
+    //
+    // The engine writes these as GOD with AF_CONST, and bCanSetAttr denies
+    // AF_CONST in every branch -- God included, unlike every other flag it
+    // checks.  So the module's permission-checked SetAttribute is refused,
+    // and a channel whose timestamps or history the engine wrote first could
+    // never be changed from the other side.  That is #1585, and #1620 is the
+    // same refusal reaching HISTORY_%d once the ring wraps onto an
+    // engine-written slot.
+    //
+    // Rather than weaken AF_CONST globally or drop it here, the module asks
+    // the engine to perform the write.  The engine owns the attribute layer;
+    // an attribute add is its operation to make, and it is acting on its own
+    // data rather than on a player's.
+    //
+    // Scope is deliberately narrow: the channel is named, so the engine
+    // resolves the object itself and the module cannot direct this at an
+    // arbitrary dbref.  Player-owned attributes are NOT covered and keep
+    // going through the permission-checked mux_IAttributeAccess, which is
+    // the correct path for anything a player owns.
+    //
+    // An empty value clears, matching atr_add's own semantics.
+    //
+    virtual MUX_RESULT SetChannelAttr(const UTF8 *channel_name,
+        const UTF8 *pAttrName, const UTF8 *pValue) = 0;
 };
 
 interface mux_IMailStorage : public mux_IUnknown

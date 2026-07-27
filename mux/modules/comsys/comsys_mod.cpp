@@ -1293,8 +1293,15 @@ void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
     // instead of vanishing, which is the difference between #1564 taking an
     // investigation and taking a log grep.
     //
-    MUX_RESULT mrHist = m_pIAttributeAccess->SetAttribute(1, ch->chan_obj,
-        histattr, payload);
+    // Through the engine (#1620).  The permission-checked route is refused
+    // by the AF_CONST the engine puts on these, so a slot the engine wrote
+    // first was frozen against the module forever once the ring wrapped
+    // onto it -- and num_messages kept counting, which is #1564's symptom
+    // arriving by a second route.
+    //
+    MUX_RESULT mrHist = (nullptr != m_pIStorage)
+        ? m_pIStorage->SetChannelAttr(ch->name, histattr, payload)
+        : MUX_E_FAIL;
     if (MUX_FAILED(mrHist) && nullptr != m_pILog)
     {
         bool fStarted;
@@ -2789,12 +2796,15 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                     UTF8 histattr[64];
                     snprintf(reinterpret_cast<char *>(histattr),
                              sizeof(histattr), "HISTORY_%d", count);
-                    if (MUX_FAILED(m_pIAttributeAccess->SetAttribute(
-                            executor, ch->chan_obj, histattr, T(""))))
+                    if (nullptr == m_pIStorage
+                        || MUX_FAILED(m_pIStorage->SetChannelAttr(ch->name,
+                               histattr, T(""))))
                     {
-                        // Engine-written slots carry AF_CONST and refuse
-                        // (#1620).  Shrinking the ring then leaves stale
-                        // history above the new maximum.
+                        // Engine-written slots used to refuse here (#1620),
+                        // leaving stale history above the new maximum.  Going
+                        // through the engine removes that cause; anything
+                        // still failing is a real storage failure and is
+                        // still reported rather than swallowed.
                         //
                         bStale = true;
                     }
@@ -2806,8 +2816,9 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             UTF8 vbuf[32];
             snprintf(reinterpret_cast<char *>(vbuf), sizeof(vbuf),
                      "%d", value);
-            if (MUX_FAILED(m_pIAttributeAccess->SetAttribute(
-                    executor, ch->chan_obj, T("MAX_LOG"), vbuf)))
+            if (nullptr == m_pIStorage
+                || MUX_FAILED(m_pIStorage->SetChannelAttr(ch->name,
+                       T("MAX_LOG"), vbuf)))
             {
                 snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
                          "@cset: Failed.  Could not set the maximum for %s "
@@ -2882,9 +2893,10 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             // Reporting "set." after a refusal told the player the opposite
             // of what happened, and is how the divergence stayed hidden.
             //
-            MUX_RESULT mrTs = m_pIAttributeAccess->SetAttribute(
-                executor, ch->chan_obj, T("LOG_TIMESTAMPS"),
-                value ? T("1") : T(""));
+            MUX_RESULT mrTs = (nullptr != m_pIStorage)
+                ? m_pIStorage->SetChannelAttr(ch->name, T("LOG_TIMESTAMPS"),
+                      value ? T("1") : T(""))
+                : MUX_E_FAIL;
             if (MUX_FAILED(mrTs))
             {
                 snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),

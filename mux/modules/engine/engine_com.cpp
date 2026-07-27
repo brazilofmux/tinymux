@@ -5105,6 +5105,8 @@ public:
     virtual MUX_RESULT DeletePlayerChannel(int who, const UTF8 *alias);
     virtual MUX_RESULT DeleteAllPlayerChannels(int who);
     virtual MUX_RESULT ClearComsysTables(void);
+    virtual MUX_RESULT SetChannelAttr(const UTF8 *channel_name,
+        const UTF8 *pAttrName, const UTF8 *pValue);
 
     CComsysStorage(void);
     virtual ~CComsysStorage();
@@ -5232,6 +5234,47 @@ MUX_RESULT CComsysStorage::SyncChannel(const UTF8 *name, const UTF8 *header,
         ok = pDb->PutMeta("has_comsys", 1);
     }
     return ok ? MUX_S_OK : MUX_E_FAIL;
+}
+
+// Write an engine-owned attribute on a channel object, as GOD (#1585/#1620).
+//
+// This bypasses bCanSetAttr deliberately, and that is the whole point: the
+// engine is the owner of these attributes and of the permission check, and it
+// is writing its own data rather than a player's.  The module cannot reach
+// atr_add itself, and its permission-checked route is refused by the AF_CONST
+// the engine sets.
+//
+// The channel is named rather than passed as a dbref so the engine resolves
+// the object, which keeps this from being a general "write any attribute
+// anywhere as GOD" hole.
+//
+MUX_RESULT CComsysStorage::SetChannelAttr(const UTF8 *channel_name,
+    const UTF8 *pAttrName, const UTF8 *pValue)
+{
+    if (nullptr == channel_name || nullptr == pAttrName)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    struct channel *ch = select_channel(const_cast<UTF8 *>(channel_name));
+    if (nullptr == ch || !Good_obj(ch->chan_obj))
+    {
+        return MUX_E_NOTFOUND;
+    }
+
+    const int atr = mkattr(GOD, pAttrName);
+    if (atr <= 0)
+    {
+        return MUX_E_FAIL;
+    }
+
+    // atr_add treats an empty value as a delete, which is how the engine has
+    // always cleared these -- so the module gets the same two operations the
+    // engine has, through one call.
+    //
+    atr_add(ch->chan_obj, atr, (nullptr != pValue) ? pValue : T(""), GOD,
+            AF_CONST | AF_NOPROG | AF_NOPARSE);
+    return MUX_S_OK;
 }
 
 MUX_RESULT CComsysStorage::SyncChannelUser(const UTF8 *channel_name, int who,
