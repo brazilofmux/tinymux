@@ -21,8 +21,7 @@
         eq(dec(-3), -4)
       )=
   {
-    @log smoke=TC001: dec basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: dec basic operations. Succeeded.
   },
   {
     @log smoke=TC001: dec basic operations. Failed (dec(5)=[dec(5)] dec(0)=[dec(0)] dec(-3)=[dec(-3)]).;
@@ -39,11 +38,31 @@
         eq(dec(foo),-1)
       )=
   {
-    @log smoke=TC002: dec decimal and coercion cases. Succeeded.;
+    @log smoke=TC002: dec decimal and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: dec decimal and coercion cases. Failed (dec(1.5)=[dec(1.5)] dec(-0.5)=[dec(-0.5)] dec()=[dec()] dec(foo)=[dec(foo)]).
+  }
+-
+#
+# Test Case #3 - 64-bit boundary (#1472).  dec() wraps at INT64_MIN rather
+# than saturating or erroring.  That wrap is the historical behavior and is
+# pinned here; the fix for #1472 removed the signed overflow that produced
+# it without changing the value.
+#
+&tr.tc003 test_dec_fn=
+  @if cand(
+        eq(dec(-9223372036854775808), 9223372036854775807),
+        eq(dec(9223372036854775807), 9223372036854775806),
+        eq(dec(0), -1),
+        eq(dec(-9223372036854775807), -9223372036854775808)
+      )=
+  {
+    @log smoke=TC003: dec 64-bit boundary wrap. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: dec decimal and coercion cases. Failed (dec(1.5)=[dec(1.5)] dec(-0.5)=[dec(-0.5)] dec()=[dec()] dec(foo)=[dec(foo)]).;
+    @log smoke=TC003: dec 64-bit boundary wrap. Failed (dec(min)=[dec(-9223372036854775808)] dec(max)=[dec(9223372036854775807)] dec(0)=[dec(0)] dec(min+1)=[dec(-9223372036854775807)]).;
     @trig me/tr.done
   }
 -
