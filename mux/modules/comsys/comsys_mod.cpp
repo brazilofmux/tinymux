@@ -1237,80 +1237,75 @@ void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
         return;
     }
 
-    UTF8 valbuf[64];
-    size_t nLen = 0;
-    int logmax = 0;
-    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(1, ch->chan_obj,
-        T("MAX_LOG"), valbuf, sizeof(valbuf) - 1, &nLen);
-    if (MUX_SUCCEEDED(mr) && 0 < nLen)
+    // Channel history is rows now, not HISTORY_%d attributes (#1589).
+    //
+    // The module deliberately keeps no store of its own: one implementation
+    // writing rows while the other writes attributes would be a worse seam
+    // than the one this closes, so both go through the same storage.
+    //
+    if (nullptr == m_pIStorage)
     {
-        valbuf[nLen] = '\0';
-        logmax = atoi(reinterpret_cast<const char *>(valbuf));
+        return;
     }
 
-    if (logmax < 1)
+    int max_count = 0;
+    int max_age = 0;
+    if (MUX_FAILED(m_pIStorage->GetChannelRetention(ch->name, &max_count,
+            &max_age)))
     {
-        // Channel does not log; do_crecall reports the same condition.
+        return;
+    }
+
+    if (max_count < 1)
+    {
+        // Channel does not log.  Zero carries MAX_LOG's meaning forward: not
+        // logging, rather than unlimited.
         //
         return;
     }
 
-    UTF8 histattr[64];
-    snprintf(reinterpret_cast<char *>(histattr), sizeof(histattr),
-             "HISTORY_%d", ((ch->num_messages % logmax) + logmax) % logmax);
-
-    const UTF8 *payload = msg;
-    UTF8 stamped[MOD_LBUF_SIZE];
-    UTF8 tsattr[64];
-    size_t nTs = 0;
-    mr = m_pIAttributeAccess->GetAttribute(1, ch->chan_obj,
-        T("LOG_TIMESTAMPS"), tsattr, sizeof(tsattr) - 1, &nTs);
-    // Engine uses atr_get_info (presence); @cset clears by writing "".
-    // Treat non-empty as on, empty/missing as off.
+    // ReturnSeconds() is seconds since the Unix epoch and GetLocal() is
+    // GetUTC() shifted by the local offset, so the difference is the offset
+    // itself.  Stored rather than rendered into the text: LOG_TIMESTAMPS
+    // becomes a read-time choice over all of a channel's history, the same
+    // as on the engine side.
     //
-    if (MUX_SUCCEEDED(mr) && 0 < nTs)
+    CLinearTimeAbsolute ltaUTC;
+    CLinearTimeAbsolute ltaLocal;
+    ltaUTC.GetUTC();
+    ltaLocal.GetLocal();
+
+    const int64_t ts = static_cast<int64_t>(ltaUTC.ReturnSeconds());
+    const int tz = static_cast<int>(
+        static_cast<int64_t>(ltaLocal.ReturnSeconds()) - ts);
+
+    MUX_RESULT mrHist = m_pIStorage->AddChannelHistory(ch->name, ts, tz,
+        static_cast<int>(executor), msg);
+    if (MUX_FAILED(mrHist))
     {
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetLocal();
-        // Same shape as comsys.cpp:1857-1865.
+        // Kept from #1624: a refused write says so rather than vanishing.
+        // The AF_CONST refusal that motivated it cannot happen any more --
+        // there is no attribute to freeze -- but a storage failure still can.
         //
-        snprintf(reinterpret_cast<char *>(stamped), sizeof(stamped),
-                 "[%s] %s",
-                 reinterpret_cast<const char *>(ltaNow.ReturnDateString(0)),
-                 reinterpret_cast<const char *>(msg));
-        payload = stamped;
+        if (nullptr != m_pILog)
+        {
+            bool fStarted;
+            m_pILog->start_log(&fStarted, LOG_ALWAYS, T("COM"), T("HIST"));
+            if (fStarted)
+            {
+                UTF8 logbuf[256];
+                snprintf(reinterpret_cast<char *>(logbuf), sizeof(logbuf),
+                    "Comsys module: channel history write failed for %s "
+                    "(result %d); message not recorded.",
+                    reinterpret_cast<const char *>(ch->name), mrHist);
+                m_pILog->log_text(logbuf);
+                m_pILog->end_log();
+            }
+        }
+        return;
     }
 
-    // Check the write (#1620).  SetAttribute is permission-checked, and the
-    // engine writes these same attributes as GOD with AF_CONST -- which
-    // bCanSetAttr denies in every branch, God included.  So on a game that
-    // ever ran the built-in comsys, a HISTORY_n slot the engine wrote is
-    // refused here forever once the ring wraps onto it.  num_messages is a
-    // relational column and keeps counting, so the counter and the history
-    // silently diverge: exactly #1564's symptom, from a different cause.
-    //
-    // This does not make the write land.  It makes a lost message say so
-    // instead of vanishing, which is the difference between #1564 taking an
-    // investigation and taking a log grep.
-    //
-    MUX_RESULT mrHist = m_pIAttributeAccess->SetAttribute(1, ch->chan_obj,
-        histattr, payload);
-    if (MUX_FAILED(mrHist) && nullptr != m_pILog)
-    {
-        bool fStarted;
-        m_pILog->start_log(&fStarted, LOG_ALWAYS, T("COM"), T("HIST"));
-        if (fStarted)
-        {
-            UTF8 logbuf[256];
-            snprintf(reinterpret_cast<char *>(logbuf), sizeof(logbuf),
-                "Comsys module: channel history write refused (%s on #%d, "
-                "result %d); message not recorded.",
-                reinterpret_cast<const char *>(histattr),
-                static_cast<int>(ch->chan_obj), mrHist);
-            m_pILog->log_text(logbuf);
-            m_pILog->end_log();
-        }
-    }
+    m_pIStorage->ExpireChannelHistory(ch->name, max_count, max_age, ts);
 }
 
 // ---------------------------------------------------------------------------
@@ -1559,20 +1554,18 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
 
     const dbref obj = ch->chan_obj;
 
-    // Read MAX_LOG attribute to determine logging depth.
+    // Retention lives on the channel row now (#1589).
     //
-    UTF8 valbuf[64];
-    size_t nLen = 0;
-    int logmax = 0;
-    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, obj,
-        T("MAX_LOG"), valbuf, sizeof(valbuf) - 1, &nLen);
-    if (MUX_SUCCEEDED(mr) && 0 < nLen)
+    if (nullptr == m_pIStorage)
     {
-        valbuf[nLen] = '\0';
-        logmax = atoi(reinterpret_cast<const char *>(valbuf));
+        m_pINotify->RawNotify(player, T("Channel does not log."));
+        return;
     }
 
-    if (logmax < 1)
+    int max_count = 0;
+    int max_age = 0;
+    m_pIStorage->GetChannelRetention(ch->name, &max_count, &max_age);
+    if (max_count < 1)
     {
         m_pINotify->RawNotify(player, T("Channel does not log."));
         return;
@@ -1582,12 +1575,36 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
     {
         arg = 1;
     }
-    if (arg > logmax)
+    if (arg > max_count)
     {
-        arg = logmax;
+        arg = max_count;
     }
 
-    int histnum = ch->num_messages - arg;
+    // LOG_TIMESTAMPS still lives on the channel object -- it moves to a
+    // column in stage 2 -- but it is applied HERE now rather than baked into
+    // the text at write time, so it governs all of a channel's history
+    // instead of only the part written since it was last toggled.
+    //
+    bool bTimestamps = false;
+    {
+        UTF8 tsattr[64];
+        size_t nTs = 0;
+        if (MUX_SUCCEEDED(m_pIAttributeAccess->GetAttribute(player, obj,
+                T("LOG_TIMESTAMPS"), tsattr, sizeof(tsattr) - 1, &nTs))
+            && 0 < nTs)
+        {
+            bTimestamps = true;
+        }
+    }
+
+    // Offset in force right now, used only for rows that recorded none.
+    //
+    CLinearTimeAbsolute ltaU;
+    CLinearTimeAbsolute ltaL;
+    ltaU.GetUTC();
+    ltaL.GetLocal();
+    const int64_t tzNow = static_cast<int64_t>(ltaL.ReturnSeconds())
+                        - static_cast<int64_t>(ltaU.ReturnSeconds());
 
     UTF8 msg[MOD_LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
@@ -1595,23 +1612,46 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
              reinterpret_cast<const char *>(ch->header));
     m_pINotify->RawNotify(player, msg);
 
-    for (int count = 0; count < arg; count++)
+    // Context for the C callback: a std::function cannot cross the .so
+    // boundary, so state travels as a struct pointer the same way
+    // LoadAllChannels does.
+    //
+    struct RecallCtx
     {
-        histnum++;
-        UTF8 attrname[64];
-        snprintf(reinterpret_cast<char *>(attrname), sizeof(attrname),
-                 "HISTORY_%d", ((histnum % logmax) + logmax) % logmax);
+        CComsysMod *self;
+        dbref       player;
+        bool        bTimestamps;
+        int64_t     tzNow;
+    } ctx = { this, player, bTimestamps, tzNow };
 
-        UTF8 message[MOD_LBUF_SIZE];
-        size_t msgLen = 0;
-        mr = m_pIAttributeAccess->GetAttribute(player, obj,
-            attrname, message, sizeof(message) - 1, &msgLen);
-        if (MUX_SUCCEEDED(mr) && 0 < msgLen)
+    m_pIStorage->LoadChannelHistory(ch->name, arg, 0, MUX_ANY_SPEAKER,
+        [](void *pv, int64_t, int64_t ts, int tz, int, const UTF8 *message)
         {
-            message[msgLen] = '\0';
-            m_pINotify->RawNotify(player, message);
-        }
-    }
+            RecallCtx *c = static_cast<RecallCtx *>(pv);
+
+            // ts == 0 marks a row imported from the old attribute ring: its
+            // text already carries whatever timestamp was baked in, and we
+            // do not know the real one to substitute.
+            //
+            if (c->bTimestamps && 0 != ts)
+            {
+                const int64_t off = (MUX_UNKNOWN_TZ != tz)
+                                  ? static_cast<int64_t>(tz) : c->tzNow;
+                CLinearTimeAbsolute lta;
+                lta.SetSeconds(ts + off);
+
+                UTF8 line[MOD_LBUF_SIZE];
+                snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                    "[%s] %s",
+                    reinterpret_cast<const char *>(lta.ReturnDateString(0)),
+                    reinterpret_cast<const char *>(message));
+                c->self->m_pINotify->RawNotify(c->player, line);
+            }
+            else
+            {
+                c->self->m_pINotify->RawNotify(c->player, message);
+            }
+        }, &ctx);
 
     snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
              "%s -- End Comsys Recall --",
@@ -2749,11 +2789,6 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 break;
             }
 
-            // Set when shrinking the ring leaves entries we could not clear
-            // (#1620); reported with the result rather than swallowed.
-            //
-            bool bStale = false;
-
             bool bObjValid = false;
             if (NOTHING != ch->chan_obj && nullptr != m_pIObjectInfo)
             {
@@ -2766,67 +2801,50 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 break;
             }
 
-            // Read old MAX_LOG value.
+            // Retention is a column on the channel row now, not MAX_LOG on
+            // the channel object (#1589).  The attribute is deliberately no
+            // longer written on either side: mirroring the value into two
+            // stores is precisely the split this work removes.
             //
-            UTF8 oldbuf[64];
-            size_t nOldLen = 0;
-            int oldnum = 0;
-            MUX_RESULT mr2 = m_pIAttributeAccess->GetAttribute(
-                executor, ch->chan_obj, T("MAX_LOG"),
-                oldbuf, sizeof(oldbuf) - 1, &nOldLen);
-            if (MUX_SUCCEEDED(mr2) && 0 < nOldLen)
+            if (nullptr == m_pIStorage)
             {
-                oldbuf[nOldLen] = '\0';
-                oldnum = atoi(reinterpret_cast<const char *>(oldbuf));
+                msg = reinterpret_cast<const UTF8 *>(
+                    "@cset: Failed.  Channel storage is unavailable.");
+                break;
             }
 
-            // If reducing, clear old HISTORY_N attributes.
+            int oldnum = 0;
+            int max_age = 0;
+            m_pIStorage->GetChannelRetention(ch->name, &oldnum, &max_age);
+
+            if (MUX_FAILED(m_pIStorage->SetChannelRetention(ch->name, value,
+                    max_age)))
+            {
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Failed.  Could not set the maximum for %s.",
+                         reinterpret_cast<const char *>(pChannel));
+                msg = msgbuf;
+                break;
+            }
+
+            // Shrinking used to mean clearing HISTORY_%d attributes above the
+            // new maximum, which #1620 made unreliable: engine-written slots
+            // carried AF_CONST and refused, leaving stale history that recall
+            // would still find and no way to report it beyond a hedge in the
+            // success message.  Expiring rows cannot be refused, so the hedge
+            // is gone with the failure mode that needed it.
             //
             if (value < oldnum)
             {
-                for (int count = 0; count <= oldnum; count++)
-                {
-                    UTF8 histattr[64];
-                    snprintf(reinterpret_cast<char *>(histattr),
-                             sizeof(histattr), "HISTORY_%d", count);
-                    if (MUX_FAILED(m_pIAttributeAccess->SetAttribute(
-                            executor, ch->chan_obj, histattr, T(""))))
-                    {
-                        // Engine-written slots carry AF_CONST and refuse
-                        // (#1620).  Shrinking the ring then leaves stale
-                        // history above the new maximum.
-                        //
-                        bStale = true;
-                    }
-                }
+                CLinearTimeAbsolute ltaUTC;
+                ltaUTC.GetUTC();
+                m_pIStorage->ExpireChannelHistory(ch->name, value, max_age,
+                    static_cast<int64_t>(ltaUTC.ReturnSeconds()));
             }
 
-            // Set MAX_LOG.
-            //
-            UTF8 vbuf[32];
-            snprintf(reinterpret_cast<char *>(vbuf), sizeof(vbuf),
-                     "%d", value);
-            if (MUX_FAILED(m_pIAttributeAccess->SetAttribute(
-                    executor, ch->chan_obj, T("MAX_LOG"), vbuf)))
-            {
-                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
-                         "@cset: Failed.  Could not set the maximum for %s "
-                         "(the attribute is not writable here).",
-                         reinterpret_cast<const char *>(pChannel));
-            }
-            else if (bStale)
-            {
-                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
-                         "@cset: Channel %s maximum history set, but older "
-                         "entries could not be cleared.",
-                         reinterpret_cast<const char *>(pChannel));
-            }
-            else
-            {
-                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
-                         "@cset: Channel %s maximum history set.",
-                         reinterpret_cast<const char *>(pChannel));
-            }
+            snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                     "@cset: Channel %s maximum history set.",
+                     reinterpret_cast<const char *>(pChannel));
             msg = msgbuf;
         }
         break;

@@ -389,6 +389,25 @@ typedef void (*PFN_CHANNEL_CB)(void *context,
     int type, int temp1, int temp2, int charge, int charge_who,
     int amount_col, int num_messages, int chan_obj);
 
+// Channel history rows (#1589).  ts is UTC epoch seconds; tz_offset is
+// seconds east of UTC as the server stood at the write, or
+// MUX_UNKNOWN_TZ when the row predates the column.
+//
+typedef void (*PFN_CHANNEL_HISTORY_CB)(void *context,
+    int64_t id, int64_t ts, int tz_offset, int speaker,
+    const UTF8 *message);
+
+// Speaker filter meaning "any".  Not -1: rows imported from the old
+// attribute ring genuinely carry speaker -1, so asking for those is a real
+// query rather than a request for everything.
+//
+#define MUX_ANY_SPEAKER  (-2)
+
+// tz_offset for a row whose offset was never recorded.  Not 0, which is a
+// perfectly valid offset and would claim the row was written in UTC.
+//
+#define MUX_UNKNOWN_TZ   (INT_MIN)
+
 typedef void (*PFN_CHANNEL_USER_CB)(void *context,
     const UTF8 *channel_name, int who,
     bool is_on, bool comtitle_status, bool gag_join_leave,
@@ -436,6 +455,42 @@ public:
     virtual MUX_RESULT DeletePlayerChannel(int who, const UTF8 *alias) = 0;
     virtual MUX_RESULT DeleteAllPlayerChannels(int who) = 0;
     virtual MUX_RESULT ClearComsysTables(void) = 0;
+
+    // Channel history (#1589).
+    //
+    // Appended rather than folded into SyncChannel: adding parameters to an
+    // existing method would break any module built against the old vtable,
+    // whereas new methods at the end do not.
+    //
+    // The module cannot reach CSQLiteDB directly, and it must not keep its
+    // own history store -- one implementation writing rows while the other
+    // writes attributes is a worse seam than the one this replaces.
+    //
+    virtual MUX_RESULT AddChannelHistory(const UTF8 *channel_name,
+        int64_t ts, int tz_offset, int speaker, const UTF8 *message) = 0;
+
+    // Newest `limit` rows, oldest first.  limit <= 0 is all, since <= 0 is
+    // no time bound, speaker MUX_ANY_SPEAKER is no speaker bound.
+    //
+    virtual MUX_RESULT LoadChannelHistory(const UTF8 *channel_name,
+        int limit, int64_t since, int speaker,
+        PFN_CHANNEL_HISTORY_CB pfn, void *context) = 0;
+
+    // Retained count -- what cmsgs() answers now.
+    //
+    virtual MUX_RESULT CountChannelHistory(const UTF8 *channel_name,
+        int *pnCount) = 0;
+
+    virtual MUX_RESULT ExpireChannelHistory(const UTF8 *channel_name,
+        int max_count, int max_age, int64_t now) = 0;
+
+    // Retention: count 0 means not logging (MAX_LOG's meaning), age 0 means
+    // no age bound.
+    //
+    virtual MUX_RESULT GetChannelRetention(const UTF8 *channel_name,
+        int *max_count, int *max_age) = 0;
+    virtual MUX_RESULT SetChannelRetention(const UTF8 *channel_name,
+        int max_count, int max_age) = 0;
 };
 
 interface mux_IMailStorage : public mux_IUnknown

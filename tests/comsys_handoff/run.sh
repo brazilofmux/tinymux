@@ -125,43 +125,107 @@ run_as() {
 val() { sed -n "s/^$1=//p" "$WORK/out" | head -1 | tr -d '\r'; }
 
 # ---------------------------------------------------------------------------
-# Seed under the ENGINE: a logging channel with one message in the ring.
+# Seed under the ENGINE.  Membership persists in the database, so addcom here
+# is what lets every later run call crecall(), which requires it.
 # ---------------------------------------------------------------------------
 run_as engine '@ccreate hchan
 @create HObj
 @cset/object hchan=HObj
 @cset/log hchan=10
 @cset/timestamp_logs hchan=1
+addcom h=hchan
 @cemit hchan=EngineWrote
-think TS=[get(HObj/LOG_TIMESTAMPS)]'
+think TS=[get(HObj/LOG_TIMESTAMPS)]
+think BUF=[cbuffer(hchan)]'
 
 [ "$(val TS)" = "1" ] \
     && ok "engine enables timestamp logging" \
     || nope "engine enables timestamp logging" "TS=$(val TS)"
 
-# ---------------------------------------------------------------------------
-# The module must READ what the engine wrote.  This is the direction #1564
-# broke: the module kept its own counter and never wrote the history the
-# engine's reader looked for.
-# ---------------------------------------------------------------------------
-run_as module 'think TS=[get(HObj/LOG_TIMESTAMPS)]
-think H1=[get(HObj/HISTORY_1)]'
+[ "$(val BUF)" = "10" ] \
+    && ok "engine records retention on the channel row" \
+    || nope "engine records retention on the channel row" "BUF=$(val BUF)"
 
-[ "$(val TS)" = "1" ] \
-    && ok "module reads the flag the engine set" \
-    || nope "module reads the flag the engine set" "TS=$(val TS)"
+# ---------------------------------------------------------------------------
+# The module must READ what the engine wrote -- through crecall(), which is
+# the supported interface.  Asserting on get(<chanobj>/HISTORY_n) is what this
+# file used to do, and that was only ever right while history WAS attributes.
+# ---------------------------------------------------------------------------
+run_as module 'think BUF=[cbuffer(hchan)]
+think REC=[crecall(hchan,5,|)]'
 
-case "$(val H1)" in
+[ "$(val BUF)" = "10" ] \
+    && ok "module reads the retention the engine set" \
+    || nope "module reads the retention the engine set" "BUF=$(val BUF)"
+
+case "$(val REC)" in
     *EngineWrote*) ok "module reads history the engine wrote" ;;
-    *) nope "module reads history the engine wrote" "H1=$(val H1)" ;;
+    *) nope "module reads history the engine wrote" "REC=$(val REC)" ;;
 esac
 
 # ---------------------------------------------------------------------------
-# #1585 -- the module must be able to turn the flag back off.
-#
-# It cannot: the engine wrote the attribute as GOD with AF_CONST, and
-# bCanSetAttr denies AF_CONST in every branch, God included.  Since #1624 the
-# module at least says so instead of reporting success.
+# The module writes, and the ENGINE must see it.  This is the direction #1564
+# broke: the module kept a counter and never wrote what the engine's reader
+# looked for.
+# ---------------------------------------------------------------------------
+run_as module '@cemit hchan=ModuleWrote'
+run_as engine 'think REC=[crecall(hchan,5,|)]
+think COUNT=[cmsgs(hchan)]'
+
+case "$(val REC)" in
+    *ModuleWrote*) ok "engine reads history the module wrote" ;;
+    *) nope "engine reads history the module wrote" "REC=$(val REC)" ;;
+esac
+
+# Both messages, in order, from one store.  Under the ring these came from
+# two places that had no way to agree.
+case "$(val REC)" in
+    *EngineWrote*ModuleWrote*) ok "both implementations' messages, in order" ;;
+    *) nope "both implementations' messages, in order" "REC=$(val REC)" ;;
+esac
+
+# ---------------------------------------------------------------------------
+# #1620 -- the module writing after the engine.  Under the ring, a slot the
+# engine had written carried AF_CONST and refused the module's write forever
+# once the ring wrapped onto it.  There is no attribute to freeze now, so this
+# asserts normally rather than carrying a TODO.
+# ---------------------------------------------------------------------------
+run_as module '@cemit hchan=Wrap2
+@cemit hchan=Wrap3
+@cemit hchan=Wrap4
+@cemit hchan=Wrap5
+@cemit hchan=Wrap6
+@cemit hchan=Wrap7
+@cemit hchan=Wrap8
+@cemit hchan=Wrap9
+@cemit hchan=Wrap10
+@cemit hchan=Wrap11
+think REC=[crecall(hchan,20,|)]
+think COUNT=[cmsgs(hchan)]'
+
+case "$(val REC)" in
+    *Wrap11*) ok "module keeps writing past the point the ring would wrap" ;;
+    *) nope "module keeps writing past the point the ring would wrap" \
+            "REC=$(val REC)" ;;
+esac
+
+# Retention is 10, so the oldest entries must have gone -- and cmsgs() is the
+# retained count now, not a monotonic total, so it must agree with it.
+case "$(val REC)" in
+    *EngineWrote*) nope "retention expires the oldest entries" \
+                        "EngineWrote survived a 10-entry limit" ;;
+    *) ok "retention expires the oldest entries" ;;
+esac
+
+[ "$(val COUNT)" = "10" ] \
+    && ok "cmsgs() reports the retained count, matching retention" \
+    || nope "cmsgs() reports the retained count, matching retention" \
+            "COUNT=$(val COUNT), expected 10"
+
+# ---------------------------------------------------------------------------
+# #1585 -- the module still cannot clear a flag the engine set, because
+# LOG_TIMESTAMPS is still an attribute.  It moves to a column in stage 2;
+# until then this stays TODO.
 # ---------------------------------------------------------------------------
 run_as module '@cset/timestamp_logs hchan=0
 think TS=[get(HObj/LOG_TIMESTAMPS)]'
@@ -170,55 +234,13 @@ if [ -z "$(val TS)" ]; then
     todo "module can clear a flag the engine set" "#1585" "pass"
 else
     todo "module can clear a flag the engine set" "#1585" "fail" \
-         "TS=$(val TS) -- refused by AF_CONST; fixed when channel config"
+         "TS=$(val TS) -- refused by AF_CONST; fixed when channel config moves"
 fi
 
 grep -q "@cset: Failed" "$WORK/out" \
     && ok "the refusal is reported rather than reported as success (#1624)" \
     || nope "the refusal is reported rather than reported as success (#1624)" \
             "no failure message in the output"
-
-# ---------------------------------------------------------------------------
-# #1620 -- the module must be able to overwrite a history slot the engine
-# wrote, once the ring wraps onto it.  MAX_LOG is 10 and the engine's message
-# landed in slot 1, so message 11 targets it.
-# ---------------------------------------------------------------------------
-run_as module '@cemit hchan=Mod2
-@cemit hchan=Mod3
-@cemit hchan=Mod4
-@cemit hchan=Mod5
-@cemit hchan=Mod6
-@cemit hchan=Mod7
-@cemit hchan=Mod8
-@cemit hchan=Mod9
-@cemit hchan=Mod10
-@cemit hchan=Mod11
-think H1=[get(HObj/HISTORY_1)]
-think H2=[get(HObj/HISTORY_2)]'
-
-case "$(val H1)" in
-    *EngineWrote*) todo "module overwrites an engine-written history slot" \
-                        "#1620" "fail" \
-                        "slot still holds the engine's message; the wrap write was refused" ;;
-    *) todo "module overwrites an engine-written history slot" "#1620" "pass" ;;
-esac
-
-# Control: a slot the module owns is writable, so the case above is about
-# provenance and not about the module having lost the ability to write.
-case "$(val H2)" in
-    *Mod*) ok "module rewrites a slot it owns (control)" ;;
-    *) nope "module rewrites a slot it owns (control)" "H2=$(val H2)" ;;
-esac
-
-# ---------------------------------------------------------------------------
-# And back the other way: the engine must read what the module wrote.
-# ---------------------------------------------------------------------------
-run_as engine 'think H3=[get(HObj/HISTORY_3)]'
-
-case "$(val H3)" in
-    *Mod*) ok "engine reads history the module wrote" ;;
-    *) nope "engine reads history the module wrote" "H3=$(val H3)" ;;
-esac
 
 echo "=== comsys handoff: $npass passed, $nfail failed, $ntodo known-failing"\
      "($nbonus unexpectedly passing) ==="

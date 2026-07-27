@@ -5105,6 +5105,19 @@ public:
     virtual MUX_RESULT DeletePlayerChannel(int who, const UTF8 *alias);
     virtual MUX_RESULT DeleteAllPlayerChannels(int who);
     virtual MUX_RESULT ClearComsysTables(void);
+    virtual MUX_RESULT AddChannelHistory(const UTF8 *channel_name,
+        int64_t ts, int tz_offset, int speaker, const UTF8 *message);
+    virtual MUX_RESULT LoadChannelHistory(const UTF8 *channel_name,
+        int limit, int64_t since, int speaker,
+        PFN_CHANNEL_HISTORY_CB pfn, void *context);
+    virtual MUX_RESULT CountChannelHistory(const UTF8 *channel_name,
+        int *pnCount);
+    virtual MUX_RESULT ExpireChannelHistory(const UTF8 *channel_name,
+        int max_count, int max_age, int64_t now);
+    virtual MUX_RESULT GetChannelRetention(const UTF8 *channel_name,
+        int *max_count, int *max_age);
+    virtual MUX_RESULT SetChannelRetention(const UTF8 *channel_name,
+        int max_count, int max_age);
 
     CComsysStorage(void);
     virtual ~CComsysStorage();
@@ -5232,6 +5245,98 @@ MUX_RESULT CComsysStorage::SyncChannel(const UTF8 *name, const UTF8 *header,
         ok = pDb->PutMeta("has_comsys", 1);
     }
     return ok ? MUX_S_OK : MUX_E_FAIL;
+}
+
+// Channel history (#1589).  Thin pass-through: the module has no route to
+// CSQLiteDB, and giving it a second store of its own is exactly the seam
+// this work removes.
+//
+MUX_RESULT CComsysStorage::AddChannelHistory(const UTF8 *channel_name,
+    int64_t ts, int tz_offset, int speaker, const UTF8 *message)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+    // MUX_UNKNOWN_TZ and CSQLiteDB::UNKNOWN_TZ are the same value; the ABI
+    // spells it without naming a C++ class the module cannot see.
+    //
+    return pDb->AddChannelHistory(channel_name, ts, tz_offset,
+        static_cast<dbref>(speaker), message)
+        ? MUX_S_OK : MUX_E_FAIL;
+}
+
+MUX_RESULT CComsysStorage::LoadChannelHistory(const UTF8 *channel_name,
+    int limit, int64_t since, int speaker,
+    PFN_CHANNEL_HISTORY_CB pfn, void *context)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb || nullptr == pfn)
+    {
+        return MUX_E_FAIL;
+    }
+
+    // std::function on this side, plain function pointer plus context across
+    // the boundary -- same shape as LoadAllChannels above, and for the same
+    // reason: a std::function cannot cross an .so boundary safely.
+    //
+    bool ok = pDb->LoadChannelHistory(channel_name, limit, since,
+        static_cast<dbref>(speaker),
+        [pfn, context](int64_t id, int64_t ts, int tz, dbref who,
+                       const UTF8 *message)
+        {
+            pfn(context, id, ts, tz, static_cast<int>(who), message);
+        });
+    return ok ? MUX_S_OK : MUX_E_FAIL;
+}
+
+MUX_RESULT CComsysStorage::CountChannelHistory(const UTF8 *channel_name,
+    int *pnCount)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb || nullptr == pnCount)
+    {
+        return MUX_E_FAIL;
+    }
+    *pnCount = pDb->CountChannelHistory(channel_name);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CComsysStorage::ExpireChannelHistory(const UTF8 *channel_name,
+    int max_count, int max_age, int64_t now)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+    return pDb->ExpireChannelHistory(channel_name, max_count, max_age, now)
+        ? MUX_S_OK : MUX_E_FAIL;
+}
+
+MUX_RESULT CComsysStorage::GetChannelRetention(const UTF8 *channel_name,
+    int *max_count, int *max_age)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+    return pDb->GetChannelRetention(channel_name, max_count, max_age)
+        ? MUX_S_OK : MUX_E_FAIL;
+}
+
+MUX_RESULT CComsysStorage::SetChannelRetention(const UTF8 *channel_name,
+    int max_count, int max_age)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+    return pDb->SetChannelRetention(channel_name, max_count, max_age)
+        ? MUX_S_OK : MUX_E_FAIL;
 }
 
 MUX_RESULT CComsysStorage::SyncChannelUser(const UTF8 *channel_name, int who,
