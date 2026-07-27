@@ -22,6 +22,7 @@
 #include "config.h"
 #include "libmux.h"
 #include "modules.h"
+#include "timeutil.h"
 #include "comsys_mod.h"
 
 #include <atomic>
@@ -1122,6 +1123,13 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
 // member who will not usually control the channel object, so passing the
 // executor through would fail bCanSetAttr for most messages.
 //
+// LOG_TIMESTAMPS (#1570): when the attribute is present and non-empty on the
+// channel object, wrap the line as the engine does -- "[%s] %s" with
+// CLinearTimeAbsolute::ReturnDateString(0).  libmux exports that class, so
+// the module can match the engine's format rather than inventing a second
+// one with strftime.  @cset/timestamp_logs sets or clears the attribute;
+// without this consult it reported success while history stayed plain.
+//
 void CComsysMod::RecordChannelHistory(struct channel *ch, const UTF8 *msg)
 {
     if (  nullptr == m_pIAttributeAccess
@@ -1160,7 +1168,30 @@ void CComsysMod::RecordChannelHistory(struct channel *ch, const UTF8 *msg)
     UTF8 histattr[64];
     snprintf(reinterpret_cast<char *>(histattr), sizeof(histattr),
              "HISTORY_%d", ((ch->num_messages % logmax) + logmax) % logmax);
-    m_pIAttributeAccess->SetAttribute(1, ch->chan_obj, histattr, msg);
+
+    const UTF8 *payload = msg;
+    UTF8 stamped[MOD_LBUF_SIZE];
+    UTF8 tsattr[64];
+    size_t nTs = 0;
+    mr = m_pIAttributeAccess->GetAttribute(1, ch->chan_obj,
+        T("LOG_TIMESTAMPS"), tsattr, sizeof(tsattr) - 1, &nTs);
+    // Engine uses atr_get_info (presence); @cset clears by writing "".
+    // Treat non-empty as on, empty/missing as off.
+    //
+    if (MUX_SUCCEEDED(mr) && 0 < nTs)
+    {
+        CLinearTimeAbsolute ltaNow;
+        ltaNow.GetLocal();
+        // Same shape as comsys.cpp:1857-1865.
+        //
+        snprintf(reinterpret_cast<char *>(stamped), sizeof(stamped),
+                 "[%s] %s",
+                 reinterpret_cast<const char *>(ltaNow.ReturnDateString(0)),
+                 reinterpret_cast<const char *>(msg));
+        payload = stamped;
+    }
+
+    m_pIAttributeAccess->SetAttribute(1, ch->chan_obj, histattr, payload);
 }
 
 // ---------------------------------------------------------------------------
