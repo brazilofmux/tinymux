@@ -220,7 +220,7 @@ void helpindex_load(dbref player)
     if (  player != NOTHING
        && !Quiet(player))
     {
-        notify(player, T("Cache for help indexes refreshed."));
+        notify(player, M_("Cache for help indexes refreshed."));
     }
 }
 
@@ -394,7 +394,7 @@ static void help_write(dbref executor, UTF8 *topic_arg, int iHelpfile)
         }
         else
         {
-            notify(executor, T("Sorry, that function is temporarily unavailable."));
+            notify(executor, M_("Sorry, that function is temporarily unavailable."));
         }
     }
     else
@@ -437,7 +437,7 @@ void do_help(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (!ValidateHelpFileIndex(iHelpfile))
     {
-        notify(executor, T("No such indexed file found."));
+        notify(executor, M_("No such indexed file found."));
         return;
     }
     help_write(executor, message, iHelpfile);

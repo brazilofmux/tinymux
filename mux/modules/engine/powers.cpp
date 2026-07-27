@@ -242,11 +242,11 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
         {
             if (bNegate)
             {
-                notify(player, T("You must specify a power to clear."));
+                notify(player, M_("You must specify a power to clear."));
             }
             else
             {
-                notify(player, T("You must specify a power to set."));
+                notify(player, M_("You must specify a power to set."));
             }
         }
         else
@@ -254,7 +254,7 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
             POWERENT *fp = find_power(target, power);
             if (fp == nullptr)
             {
-                notify(player, T("I don’t understand that power."));
+                notify(player, M_("I don’t understand that power."));
             }
             else
             {
@@ -273,12 +273,12 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
                     }
                     else if (!(key & SET_QUIET) && !Quiet(player))
                     {
-                        notify(player, (bNegate ? T("Cleared.") : T("Set.")));
+                        notify(player, (bNegate ? M_("Cleared.") : M_("Set.")));
                     }
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (bNegate ? T("Already cleared.") : T("Already set.")));
+                    notify(player, (bNegate ? M_("Already cleared.") : M_("Already set.")));
                 }
             }
         }

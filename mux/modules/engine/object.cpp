@@ -625,7 +625,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
         pValidName = name;
         if (!badname_check(buff))
         {
-            notify(player, T("That name is not allowed."));
+            notify(player, M_("That name is not allowed."));
             free_lbuf(buff);
             return NOTHING;
         }
@@ -634,7 +634,7 @@ dbref create_obj(dbref player, int objtype, const UTF8 *name, int cost)
             okname = ValidatePlayerName(buff);
             if (!okname)
             {
-                notify(player, T("That’s a silly name for a player."));
+                notify(player, M_("That’s a silly name for a player."));
                 free_lbuf(buff);
                 return NOTHING;
             }
@@ -968,7 +968,7 @@ void destroy_obj(dbref obj)
            && !Quiet(obj)
            && !Quiet(owner))
         {
-            notify(owner, T("Halted."));
+            notify(owner, M_("Halted."));
         }
         nfy_que(obj, 0, NFY_DRAIN, 0);
 
@@ -2300,6 +2300,6 @@ void do_dbck(dbref executor, dbref caller, dbref enactor, int eval, int key)
        && executor != NOTHING
        && !Quiet(executor))
     {
-        notify(executor, T("Done."));
+        notify(executor, M_("Done."));
     }
 }
