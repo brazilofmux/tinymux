@@ -3043,32 +3043,34 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
 
     // A config file that cannot be opened is fatal (#1601).
     //
-    // cf_read() has always returned cf_include()'s -1 for this, and this --
-    // its only call site -- discarded it.  LoadGame then returned MUX_S_OK and
-    // both callers took the success branch, so netmux booted and *listened* on
-    // compiled-in defaults, against whatever database those name rather than
-    // the one the operator asked for; muxscript printed "loaded game from" and
-    // exited 0, so a harness could not tell a run against the intended
-    // database from one against an empty default.
+    // cf_read() returns -1 when the top-level configuration file could not
+    // be opened (or, after the ferror check in cf_include, when a path that
+    // fopen accepts cannot be read -- e.g. a directory on Linux/macOS).
+    // Errors in individual directives take a different route: cf_include
+    // calls cf_set() per line and discards its return, so a config carrying
+    // a directive this build no longer recognizes still reads as success.
+    // That asymmetry is deliberate -- games carry config files forward across
+    // releases, and refusing to boot over one stale line would be worse than
+    // logging it.  An empty regular file also succeeds and is the supported
+    // way to ask for compiled-in defaults on purpose.
     //
-    // -1 means exactly "could not open the file": cf_include returns it only
-    // for that and for being called outside configuration reading, and an
-    // unparseable *directive* inside a file that does exist returns 0 and stays
-    // non-fatal.  That distinction is deliberate -- games carry old config
-    // files naming directives this build no longer knows, and refusing to boot
-    // over one would be a compatibility break; failing to find the file at all
-    // is never what anyone wanted.
+    // Discarding this return made an unreadable config silently non-fatal:
+    // netmux booted and *listened* on compiled-in defaults; muxscript printed
+    // "loaded game from" and exited 0.  Callers already refuse on MUX_FAILED.
     //
-    // Reported on stderr as well as through the log: cf_log_notfound's
-    // STARTLOG is not visible at this point in LoadGame for muxscript, which
-    // is half of why this stayed hidden.
+    // stderr: STARTLOG is not visible at this phase under muxscript, which is
+    // half of why the defect stayed hidden.  Callers also name the file.
     //
     if (0 != cf_read())
     {
         fprintf(stderr,
-            "FATAL: cannot read config file '%s' -- refusing to start on "
-            "compiled-in defaults.\n",
+            "FATAL: cannot read configuration file '%s' -- refusing to start "
+            "on compiled-in defaults.\n",
             reinterpret_cast<const char *>(mudconf.config_file));
+        STARTLOG(LOG_ALWAYS, "CNF", "LOAD");
+        log_printf(T("Fatal: configuration file '%s' could not be read."),
+            mudconf.config_file);
+        ENDLOG;
         return MUX_E_NOTFOUND;
     }
 
