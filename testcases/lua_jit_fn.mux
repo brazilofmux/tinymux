@@ -55,6 +55,42 @@
   [after(grab(jitstats(),lua_invalidations=*),=)]
 -
 #
+# Run the string-then-arith sequence with the Lua JIT actually able to
+# execute, and record what happened for tr.s007 to assert on.
+#
+# This has to sit at file top level rather than inside the triggered case.
+# @admin in a triggered attribute body does not take effect before the
+# [lua(...)] in the same command list, so the chunk would run with lua_jit
+# still 0 and lua_run_ok would never advance -- the same constraint
+# jitstats_fn.mux documents for its TC006.
+#
+# Why lua_run_ok rather than attempts: a declined run increments
+# lua_run_fail, so attempts advance whether the JIT executed the chunk or
+# refused it.  Asserting attempts cannot tell "ran compiled code" from
+# "declined every time", which is the whole of #1426.  jit_eval_brackets 0
+# is required because #1326's reentrancy guard declines every run when
+# fun_lua is reached from inside a DBT program.
+#
+@switch [config(lua_jit)]=*,
+  {
+    &SEQ_PRE_LUA_JIT test_lua_jit_fn=#$;
+    @switch [config(jit_eval_brackets)]=*,
+      {
+        &SEQ_PRE_BRACKETS test_lua_jit_fn=#$;
+        @admin lua_jit=1;
+        @admin jit_eval_brackets=0;
+        &SEQ_OK_BEFORE test_lua_jit_fn=[u(test_lua_jit_fn/tr.lj_ok)];
+        &SEQ_STR test_lua_jit_fn=[lua(test_lua_jit_fn/LJ_STR)];
+        &SEQ_RESULT test_lua_jit_fn=[lua(test_lua_jit_fn/LJ_ADD,2,3)];
+        &SEQ_OK_AFTER test_lua_jit_fn=[u(test_lua_jit_fn/tr.lj_ok)];
+        @admin jit_eval_brackets=#$;
+        &SEQ_POST_BRACKETS test_lua_jit_fn=[config(jit_eval_brackets)]
+      };
+    @admin lua_jit=#$;
+    &SEQ_POST_LUA_JIT test_lua_jit_fn=[config(lua_jit)]
+  }
+-
+#
 # Single harness entry: discoverability requires tr.tc*.
 #
 &tr.tc001 test_lua_jit_fn=
@@ -220,30 +256,26 @@
 # Step 7 - Under lua_jit 1, string-then-arith must attempt the Lua JIT path.
 #
 &tr.s007 test_lua_jit_fn=
-  @if cand(u(me/tr.has_jit),strmatch(config(lua_jit),1))=
+  @if cand(u(me/tr.has_jit),strmatch(get(me/SEQ_OK_AFTER),?*))=
   {
-    @if strmatch(
-          setr(3,[null(setr(0,u(me/tr.lj_try)))][null(lua(me/LJ_STR))][lua(me/LJ_ADD,2,3)][null(setr(1,u(me/tr.lj_try)))]),
-          5
+    @if cand(
+          strmatch(get(me/SEQ_STR),hello),
+          strmatch(get(me/SEQ_RESULT),5),
+          gt(get(me/SEQ_OK_AFTER),get(me/SEQ_OK_BEFORE)),
+          strmatch(get(me/SEQ_POST_LUA_JIT),get(me/SEQ_PRE_LUA_JIT)),
+          strmatch(get(me/SEQ_POST_BRACKETS),get(me/SEQ_PRE_BRACKETS))
         )=
     {
-      @if gt(%q1,%q0)=
-      {
-        @log smoke=TC007: string-arith sequence engages Lua JIT. Succeeded (attempts %q0 to %q1).;
-        @trig me/tr.done
-      },
-      {
-        @log smoke=TC007: string-arith sequence engages Lua JIT. Failed (attempts flat at %q0).;
-        @trig me/tr.done
-      }
+      @log smoke=TC007: string-arith sequence executes on the Lua JIT. Succeeded (lua_run_ok [get(me/SEQ_OK_BEFORE)] to [get(me/SEQ_OK_AFTER)]).;
+      @trig me/tr.done
     },
     {
-      @log smoke=TC007: string-arith sequence engages Lua JIT. Failed (final lua result not 5).;
+      @log smoke=TC007: string-arith sequence executes on the Lua JIT. Failed (str=[get(me/SEQ_STR)] result=[get(me/SEQ_RESULT)] lua_run_ok [get(me/SEQ_OK_BEFORE)] to [get(me/SEQ_OK_AFTER)] lua_jit=[get(me/SEQ_POST_LUA_JIT)]/[get(me/SEQ_PRE_LUA_JIT)] brackets=[get(me/SEQ_POST_BRACKETS)]/[get(me/SEQ_PRE_BRACKETS)]).;
       @trig me/tr.done
     }
   },
   {
-    @log smoke=TC007: string-arith sequence engages Lua JIT. Skipped (need JIT and lua_jit 1).;
+    @log smoke=TC007: string-arith sequence executes on the Lua JIT. Skipped (JIT not available).;
     @trig me/tr.done
   }
 -

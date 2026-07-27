@@ -304,6 +304,8 @@ fi
 crashes=0
 surv_div=0
 agree_wrong=0
+agree_declined=0
+agree_executed=0
 exec_wrong=0
 exec_no_run=0
 n=0
@@ -349,6 +351,9 @@ for chunk in "${AGREE_CASES[@]}"; do
         agree_wrong=$((agree_wrong+1))
     elif [ "$jok" = "0" ]; then
         verdict="ok (declined/compile-fail; interp answered)"
+        agree_declined=$((agree_declined+1))
+    else
+        agree_executed=$((agree_executed+1))
     fi
     printf '%-48s %-4s %-10s %-10s %-8s %s\n' \
         "${chunk:0:48}" "$jrc" "${ires:0:10}" "${jres:0:10}" "$jok" "$verdict"
@@ -385,6 +390,15 @@ total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]}))
 echo
 echo "chunks: $total   crashes: $crashes   survive_diverges: $surv_div"
 echo "agree_wrong: $agree_wrong   exec_wrong: $exec_wrong   exec_no_run: $exec_no_run"
+
+# Executed vs declined, separately (#1426).
+#
+# A declined chunk agrees with the interpreter because the interpreter
+# answered it -- correct behaviour, and indistinguishable from coverage in a
+# pass/fail count.  Reporting them apart stops "38/38 agree" standing in for
+# "the compiler saw 38 chunks", which it does not: it saw the executed ones.
+#
+echo "agree_executed: $agree_executed   agree_declined: $agree_declined   (of ${#AGREE_CASES[@]} AGREE chunks)"
 
 if [ "$crashes" -ne 0 ] || [ "$agree_wrong" -ne 0 ] \
    || [ "$exec_wrong" -ne 0 ] || [ "$exec_no_run" -ne 0 ]; then
