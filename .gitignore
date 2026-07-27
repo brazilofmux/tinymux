@@ -215,3 +215,8 @@ testcases/tools/*.obj
 core
 core.*
 vgcore.*
+
+# Test harness scratch directories.  These are created and removed by the
+# drivers, but a run that fails leaves one behind -- and `git add -A` then
+# sweeps in a whole throwaway game, symlinks and SQLite WAL included.
+tests/*/work/

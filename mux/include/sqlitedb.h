@@ -177,6 +177,71 @@ public:
         const UTF8 *channel_name)> PlayerChannelCallback;
     bool LoadAllPlayerChannels(PlayerChannelCallback cb);
 
+    // Channel history (#1589).
+    //
+    // Rows rather than the HISTORY_%d attribute ring: `id` IS the
+    // chronological sequence, so nothing has to reconstruct order from a
+    // modulo position, and retention becomes a DELETE rather than an
+    // overwrite-in-place.
+    //
+    // Retention is per-channel, by count and/or age; 0 means unlimited for
+    // either.  Rows imported from the old ring carry ts = 0 ("age unknown")
+    // and are exempt from age expiry -- an upgrade must never delete history
+    // it merely could not date.
+    //
+    // Every field the write site has: when, who, and what.  The per-receiver
+    // mogrified and CHATFORMAT variants deliberately are NOT stored -- they
+    // differ per listener, so there is no single row that is any of them.
+    //
+    // ts is UTC epoch seconds.  tz_offset is seconds east of UTC as the
+    // server stood when the message was written, or UNKNOWN_TZ for "not
+    // known" -- which is a real state for rows imported from the old ring,
+    // and the reason the column is NULLable rather than defaulted to 0 (a
+    // perfectly valid offset).
+    //
+    // UTC answers "what instant", which is what ordering and expiry need.
+    // The offset additionally answers "what did the wall clock say", so a
+    // message can be re-rendered as it actually appeared instead of sliding
+    // an hour when it is read in the other half of the year.
+    //
+    static const int UNKNOWN_TZ = INT_MIN;
+
+    bool AddChannelHistory(const UTF8 *channel_name, int64_t ts,
+                           int tz_offset, dbref speaker,
+                           const UTF8 *message);
+
+    typedef std::function<void(int64_t id, int64_t ts, int tz_offset,
+                               dbref speaker,
+                               const UTF8 *message)> ChannelHistoryCallback;
+
+    // Speaker filter meaning "any".  Cannot be NOTHING: rows imported from
+    // the old ring genuinely have speaker -1, and filtering for those is a
+    // legitimate query rather than a request for everything.
+    //
+    static const dbref ANY_SPEAKER = -2;
+
+    // Most recent `limit` entries, handed back OLDEST FIRST -- the order
+    // crecall prints.  limit <= 0 means all; since <= 0 means no time bound;
+    // speaker ANY_SPEAKER means no speaker bound.
+    //
+    bool LoadChannelHistory(const UTF8 *channel_name, int limit,
+                            int64_t since, dbref speaker,
+                            ChannelHistoryCallback cb);
+
+    // Retained count.  This is what cmsgs() answers now: "how many messages
+    // can I recall", not a monotonic total (#1589).
+    //
+    int  CountChannelHistory(const UTF8 *channel_name);
+
+    bool ExpireChannelHistory(const UTF8 *channel_name, int max_count,
+                              int max_age, int64_t now);
+    bool DeleteChannelHistory(const UTF8 *channel_name);
+
+    bool SetChannelRetention(const UTF8 *channel_name, int max_count,
+                             int max_age);
+    bool GetChannelRetention(const UTF8 *channel_name, int *max_count,
+                             int *max_age);
+
     // Mail operations (bulk sync + write-through).
     //
     bool SyncMailHeader(int to_player, int from_player, int body_number,
@@ -350,6 +415,14 @@ private:
     // Comsys statements.
     //
     sqlite3_stmt *m_stmtChannelSync;
+    sqlite3_stmt *m_stmtChanHistAdd;
+    sqlite3_stmt *m_stmtChanHistLoad;
+    sqlite3_stmt *m_stmtChanHistCount;
+    sqlite3_stmt *m_stmtChanHistExpireCount;
+    sqlite3_stmt *m_stmtChanHistExpireAge;
+    sqlite3_stmt *m_stmtChanHistDelete;
+    sqlite3_stmt *m_stmtChanRetentionSet;
+    sqlite3_stmt *m_stmtChanRetentionGet;
     sqlite3_stmt *m_stmtChannelUserSync;
     sqlite3_stmt *m_stmtPlayerChannelSync;
     sqlite3_stmt *m_stmtChannelLoadAll;

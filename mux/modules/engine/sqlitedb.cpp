@@ -52,6 +52,14 @@ CSQLiteDB::CSQLiteDB()
       m_stmtMetaPut(nullptr),
       m_stmtMetaGet(nullptr),
       m_stmtChannelSync(nullptr),
+      m_stmtChanHistAdd(nullptr),
+      m_stmtChanHistLoad(nullptr),
+      m_stmtChanHistCount(nullptr),
+      m_stmtChanHistExpireCount(nullptr),
+      m_stmtChanHistExpireAge(nullptr),
+      m_stmtChanHistDelete(nullptr),
+      m_stmtChanRetentionSet(nullptr),
+      m_stmtChanRetentionGet(nullptr),
       m_stmtChannelUserSync(nullptr),
       m_stmtPlayerChannelSync(nullptr),
       m_stmtChannelLoadAll(nullptr),
@@ -388,7 +396,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 13;
+    static const int CURRENT_SCHEMA_VERSION = 14;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -757,6 +765,146 @@ bool CSQLiteDB::MigrateSchema()
         version = 13;
     }
 
+    if (version < 14)
+    {
+        // Channel history becomes rows, instead of a ring of HISTORY_%d
+        // attributes on the channel object (#1589).
+        //
+        // The ring straddled two stores: num_messages was a column here and
+        // the messages it counted were attributes over there, with no
+        // relationship between them.  Nothing could notice the two
+        // disagreeing, which is #1564; and the attributes carry AF_CONST, so
+        // whichever implementation did not write them first cannot overwrite
+        // them, which is #1620.  Both dissolve once the messages are rows.
+        //
+        // Design notes, because they are not obvious from the DDL:
+        //
+        //   * A rowid table with AUTOINCREMENT, not WITHOUT ROWID: the id IS
+        //     the chronological sequence, which is what the ring encoded
+        //     positionally and got wrong.
+        //
+        //   * ON DELETE CASCADE matches channel_users and player_channels, so
+        //     dropping a channel drops its history without a second call that
+        //     someone will forget.
+        //
+        //   * The timestamp is a COLUMN, not a prefix on the text.  The ring
+        //     baked it in at write time (comsys.cpp: "[%s] %s"), so toggling
+        //     LOG_TIMESTAMPS only affected messages written afterwards and a
+        //     channel's history stayed permanently mixed.  As a column it is
+        //     a display choice applied to all of it, which is what the flag
+        //     reads like it should mean.
+        //
+        //   * `ts` is UTC epoch seconds.  Not negotiable and not a detail:
+        //     the ring recorded ltaNow.GetLocal() rendered into text, with no
+        //     zone alongside it, so after a DST change or a server move those
+        //     strings no longer identify an instant and nothing can recover
+        //     which one they meant.  connlog already stores epoch integers;
+        //     comsys history and mail were the holdouts.
+        //
+        //   * `tz_offset` is seconds east of UTC as the server stood at the
+        //     moment of writing, and is NULLable because "unknown" is a real
+        //     state -- imported rows have no way to know.  UTC alone answers
+        //     "what instant", which is what sorting and expiry need; the
+        //     offset additionally answers "what did the clock on the wall
+        //     say", so history can be re-rendered as it actually appeared
+        //     rather than shifting by an hour when read in the other half of
+        //     the year.  One integer now, unrecoverable later.
+        //
+        //   * `speaker` is captured because the executor is right there at the
+        //     write and cannot be recovered later: adding the column after the
+        //     fact would need another migration and would still have nothing
+        //     to backfill it with.  It turns "what did this player say here"
+        //     into a query instead of a string search.
+        //
+        //   * Rows imported from the ring get ts = 0 and speaker = -1.  Their
+        //     text still carries whatever timestamp was baked into it, so ts
+        //     = 0 does double duty: exempt from age expiry (below) AND
+        //     "already formatted, do not prepend a second one".  One guard,
+        //     not a special case scattered through the readers.
+        //
+        //   * Imported rows get ts = 0, meaning "age unknown".  Age-based
+        //     expiry must therefore treat 0 as exempt: an upgrade that
+        //     silently deleted a game's channel history because it could not
+        //     date it would be a far worse bug than the ones being fixed.
+        //
+        //   * The HISTORY_%d attributes are deliberately NOT deleted here.
+        //     They go inert -- nothing reads them after this -- but leaving
+        //     them means a migration that reconstructs the ring incorrectly
+        //     is recoverable rather than terminal.  A later cleanup migration
+        //     can drop them once this has run in anger.
+        //
+        // Reconstructing the order is the only subtle part.  The ring stores
+        // message k in slot k mod L, so the slot index is not chronological:
+        // with L = 10 and num_messages = 11, slot 1 holds message 11 while
+        // slot 2 still holds message 2.  For slot s the sequence number is
+        // the largest k <= N with k = s (mod L), i.e.
+        //
+        //     k = N - ((N - s) mod L)
+        //
+        // s <= N always holds -- before the ring fills, message k lands in
+        // slot k -- so the modulo never sees a negative and C truncation is
+        // not a hazard here.
+        //
+        const char *migration_v14 =
+            "BEGIN;"
+
+            "CREATE TABLE IF NOT EXISTS channel_history ("
+            "    id           INTEGER PRIMARY KEY AUTOINCREMENT,"
+            "    channel_name TEXT NOT NULL"
+            "        REFERENCES channels(name) ON DELETE CASCADE ON UPDATE CASCADE,"
+            "    ts           INTEGER NOT NULL DEFAULT 0,"
+            "    tz_offset    INTEGER,"
+            "    speaker      INTEGER NOT NULL DEFAULT -1,"
+            "    message      TEXT NOT NULL"
+            ");"
+
+            "CREATE INDEX IF NOT EXISTS idx_channel_history_chan"
+            "    ON channel_history(channel_name, id);"
+
+            // Retention is per-channel: games want a busy public channel and
+            // a quiet staff channel to keep different amounts.  0 means
+            // unlimited for both.
+            //
+            "ALTER TABLE channels ADD COLUMN history_max_count INTEGER NOT NULL DEFAULT 0;"
+            "ALTER TABLE channels ADD COLUMN history_max_age INTEGER NOT NULL DEFAULT 0;"
+
+            // Seed the count limit from MAX_LOG, so an upgraded game keeps
+            // the retention it already had.
+            //
+            "UPDATE channels SET history_max_count = COALESCE(("
+            "    SELECT CAST(CAST(a.value AS TEXT) AS INTEGER)"
+            "      FROM attributes a JOIN attrnames n ON n.attrnum = a.attrnum"
+            "     WHERE a.object = channels.chan_obj AND n.name = 'MAX_LOG'"
+            "), 0) WHERE chan_obj >= 0;"
+
+            // GLOB rather than LIKE: '_' is a wildcard in LIKE and a literal
+            // in GLOB, so this matches HISTORY_3 without an ESCAPE clause.
+            //
+            "INSERT INTO channel_history"
+            "        (channel_name, ts, tz_offset, speaker, message)"
+            "  SELECT c.name, 0, NULL, -1, CAST(a.value AS TEXT)"
+            "    FROM channels c"
+            "    JOIN attributes a ON a.object = c.chan_obj"
+            "    JOIN attrnames n ON n.attrnum = a.attrnum"
+            "   WHERE c.chan_obj >= 0"
+            "     AND c.history_max_count > 0"
+            "     AND n.name GLOB 'HISTORY_*'"
+            "   ORDER BY c.name,"
+            "            c.num_messages - ((c.num_messages -"
+            "                CAST(substr(n.name, 9) AS INTEGER))"
+            "                % c.history_max_count);"
+
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 14);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v14, 14))
+        {
+            return false;
+        }
+        version = 14;
+    }
+
     // Log any FK violations (informational, not fatal).
     //
     if (SQLITE_OK == sqlite3_prepare_v2(m_db,
@@ -986,6 +1134,85 @@ bool CSQLiteDB::PrepareStatements()
         return false;
     }
 
+    // ---- channel history (#1589) --------------------------------------
+
+    if (!Prepare(m_db,
+        "INSERT INTO channel_history "
+        "(channel_name, ts, tz_offset, speaker, message) "
+        "VALUES (?,?,?,?,?)",
+        &m_stmtChanHistAdd))
+    {
+        return false;
+    }
+
+    // Newest `?2` rows, handed back oldest-first: the inner query picks the
+    // tail by descending id, the outer restores reading order.  LIMIT -1 is
+    // SQLite for "no limit", which is what a caller asking for <= 0 means.
+    //
+    if (!Prepare(m_db,
+        "SELECT id, ts, tz_offset, speaker, message FROM ("
+        "  SELECT id, ts, tz_offset, speaker, message FROM channel_history"
+        "   WHERE channel_name = ?1"
+        "     AND (?3 <= 0 OR ts >= ?3)"
+        "     AND (?4 = -2 OR speaker = ?4)"
+        "   ORDER BY id DESC LIMIT ?2"
+        ") ORDER BY id ASC",
+        &m_stmtChanHistLoad))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT COUNT(*) FROM channel_history WHERE channel_name = ?",
+        &m_stmtChanHistCount))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "DELETE FROM channel_history WHERE channel_name = ?1 AND id NOT IN ("
+        "  SELECT id FROM channel_history"
+        "   WHERE channel_name = ?1 ORDER BY id DESC LIMIT ?2)",
+        &m_stmtChanHistExpireCount))
+    {
+        return false;
+    }
+
+    // ts > 0 is the guard for rows imported from the old ring: they carry
+    // ts = 0 meaning "age unknown", and must not be swept by an age policy
+    // that has no idea how old they really are.
+    //
+    if (!Prepare(m_db,
+        "DELETE FROM channel_history"
+        " WHERE channel_name = ?1 AND ts > 0 AND ts < ?2",
+        &m_stmtChanHistExpireAge))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "DELETE FROM channel_history WHERE channel_name = ?",
+        &m_stmtChanHistDelete))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "UPDATE channels SET history_max_count = ?, history_max_age = ?"
+        " WHERE name = ?",
+        &m_stmtChanRetentionSet))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "SELECT history_max_count, history_max_age FROM channels"
+        " WHERE name = ?",
+        &m_stmtChanRetentionGet))
+    {
+        return false;
+    }
+
     if (!Prepare(m_db,
         "INSERT OR REPLACE INTO channel_users "
         "(channel_name, who, is_on, comtitle_status, gag_join_leave, title) "
@@ -1203,6 +1430,14 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtMetaPut);
     Finalize(&m_stmtMetaGet);
     Finalize(&m_stmtChannelSync);
+    Finalize(&m_stmtChanHistAdd);
+    Finalize(&m_stmtChanHistLoad);
+    Finalize(&m_stmtChanHistCount);
+    Finalize(&m_stmtChanHistExpireCount);
+    Finalize(&m_stmtChanHistExpireAge);
+    Finalize(&m_stmtChanHistDelete);
+    Finalize(&m_stmtChanRetentionSet);
+    Finalize(&m_stmtChanRetentionGet);
     Finalize(&m_stmtChannelUserSync);
     Finalize(&m_stmtPlayerChannelSync);
     Finalize(&m_stmtChannelLoadAll);
@@ -2311,6 +2546,160 @@ bool CSQLiteDB::SyncChannel(const UTF8 *name, const UTF8 *header,
     int rc = sqlite3_step(m_stmtChannelSync);
     sqlite3_reset(m_stmtChannelSync);
     return SQLITE_DONE == rc;
+}
+
+// ---------------------------------------------------------------------------
+// Channel history (#1589).
+//
+// The ring these replace stored message k in HISTORY_(k mod L), so the slot
+// index was not chronological and the count lived in a different store from
+// the messages.  Here `id` is the sequence, and retention is a DELETE.
+// ---------------------------------------------------------------------------
+
+bool CSQLiteDB::AddChannelHistory(const UTF8 *channel_name, int64_t ts,
+    int tz_offset, dbref speaker, const UTF8 *message)
+{
+    sqlite3_bind_text(m_stmtChanHistAdd, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    sqlite3_bind_int64(m_stmtChanHistAdd, 2, ts);
+    if (UNKNOWN_TZ == tz_offset)
+    {
+        sqlite3_bind_null(m_stmtChanHistAdd, 3);
+    }
+    else
+    {
+        sqlite3_bind_int(m_stmtChanHistAdd, 3, tz_offset);
+    }
+    sqlite3_bind_int(m_stmtChanHistAdd, 4, static_cast<int>(speaker));
+    sqlite3_bind_text(m_stmtChanHistAdd, 5,
+        reinterpret_cast<const char *>(message), -1, SQLITE_STATIC);
+
+    int rc = sqlite3_step(m_stmtChanHistAdd);
+    sqlite3_reset(m_stmtChanHistAdd);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::LoadChannelHistory(const UTF8 *channel_name, int limit,
+    int64_t since, dbref speaker, ChannelHistoryCallback cb)
+{
+    sqlite3_bind_text(m_stmtChanHistLoad, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    sqlite3_bind_int(m_stmtChanHistLoad, 2, (0 < limit) ? limit : -1);
+    sqlite3_bind_int64(m_stmtChanHistLoad, 3, since);
+    sqlite3_bind_int(m_stmtChanHistLoad, 4, static_cast<int>(speaker));
+
+    int rc;
+    while (SQLITE_ROW == (rc = sqlite3_step(m_stmtChanHistLoad)))
+    {
+        const unsigned char *msg = sqlite3_column_text(m_stmtChanHistLoad, 4);
+
+        // NULL is "offset not known", which is distinct from an offset of
+        // zero.  Collapsing the two would render an imported row as though
+        // it had been written in UTC.
+        //
+        int tz = UNKNOWN_TZ;
+        if (SQLITE_NULL != sqlite3_column_type(m_stmtChanHistLoad, 2))
+        {
+            tz = sqlite3_column_int(m_stmtChanHistLoad, 2);
+        }
+
+        cb(sqlite3_column_int64(m_stmtChanHistLoad, 0),
+           sqlite3_column_int64(m_stmtChanHistLoad, 1),
+           tz,
+           static_cast<dbref>(sqlite3_column_int(m_stmtChanHistLoad, 3)),
+           reinterpret_cast<const UTF8 *>(msg ? msg :
+               reinterpret_cast<const unsigned char *>("")));
+    }
+    sqlite3_reset(m_stmtChanHistLoad);
+    return SQLITE_DONE == rc;
+}
+
+int CSQLiteDB::CountChannelHistory(const UTF8 *channel_name)
+{
+    sqlite3_bind_text(m_stmtChanHistCount, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+
+    int n = 0;
+    if (SQLITE_ROW == sqlite3_step(m_stmtChanHistCount))
+    {
+        n = sqlite3_column_int(m_stmtChanHistCount, 0);
+    }
+    sqlite3_reset(m_stmtChanHistCount);
+    return n;
+}
+
+// Apply both policies.  Either may be 0, meaning unlimited, and a caller
+// with both set gets both -- they are independent, not alternatives: a
+// channel can want "the last 50 messages, but nothing older than a week".
+//
+bool CSQLiteDB::ExpireChannelHistory(const UTF8 *channel_name, int max_count,
+    int max_age, int64_t now)
+{
+    bool bOk = true;
+
+    if (0 < max_count)
+    {
+        sqlite3_bind_text(m_stmtChanHistExpireCount, 1,
+            reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+        sqlite3_bind_int(m_stmtChanHistExpireCount, 2, max_count);
+        bOk = (SQLITE_DONE == sqlite3_step(m_stmtChanHistExpireCount)) && bOk;
+        sqlite3_reset(m_stmtChanHistExpireCount);
+    }
+
+    if (0 < max_age)
+    {
+        sqlite3_bind_text(m_stmtChanHistExpireAge, 1,
+            reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+        sqlite3_bind_int64(m_stmtChanHistExpireAge, 2, now - max_age);
+        bOk = (SQLITE_DONE == sqlite3_step(m_stmtChanHistExpireAge)) && bOk;
+        sqlite3_reset(m_stmtChanHistExpireAge);
+    }
+
+    return bOk;
+}
+
+bool CSQLiteDB::DeleteChannelHistory(const UTF8 *channel_name)
+{
+    sqlite3_bind_text(m_stmtChanHistDelete, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    int rc = sqlite3_step(m_stmtChanHistDelete);
+    sqlite3_reset(m_stmtChanHistDelete);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::SetChannelRetention(const UTF8 *channel_name, int max_count,
+    int max_age)
+{
+    sqlite3_bind_int(m_stmtChanRetentionSet, 1, max_count);
+    sqlite3_bind_int(m_stmtChanRetentionSet, 2, max_age);
+    sqlite3_bind_text(m_stmtChanRetentionSet, 3,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    int rc = sqlite3_step(m_stmtChanRetentionSet);
+    sqlite3_reset(m_stmtChanRetentionSet);
+    return SQLITE_DONE == rc;
+}
+
+bool CSQLiteDB::GetChannelRetention(const UTF8 *channel_name, int *max_count,
+    int *max_age)
+{
+    sqlite3_bind_text(m_stmtChanRetentionGet, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+
+    bool bFound = false;
+    if (SQLITE_ROW == sqlite3_step(m_stmtChanRetentionGet))
+    {
+        if (nullptr != max_count)
+        {
+            *max_count = sqlite3_column_int(m_stmtChanRetentionGet, 0);
+        }
+        if (nullptr != max_age)
+        {
+            *max_age = sqlite3_column_int(m_stmtChanRetentionGet, 1);
+        }
+        bFound = true;
+    }
+    sqlite3_reset(m_stmtChanRetentionGet);
+    return bFound;
 }
 
 bool CSQLiteDB::SyncChannelUser(const UTF8 *channel_name, int who,

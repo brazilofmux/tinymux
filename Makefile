@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-history test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-history
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -95,6 +95,20 @@ test-smoke-builtin: test-smoke
 test-comsys-handoff:
 	@echo "==> Running comsys/mail cross-implementation handoff tests"
 	bash tests/comsys_handoff/run.sh
+
+# Schema and query semantics for channel_history (#1589 stage 1).
+#
+# The C++ around these queries is bind/step/reset, so what can actually be
+# wrong is the SQL: the v14 import has to turn a modulo ring back into
+# chronological order, and age expiry has to EXEMPT rows it could not date --
+# an upgrade that quietly deleted a game's channel history would be worse
+# than the bugs being fixed.
+#
+# Extracts both the migration and the prepared statements from the source, so
+# the test cannot pass against a copy of SQL the server no longer runs.
+test-comsys-history:
+	@echo "==> Running comsys history schema tests"
+	bash tests/comsys_history/run.sh
 
 # Static guard: no smoke case may be incapable of failing (#1434 family).
 #
