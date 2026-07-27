@@ -63,6 +63,51 @@ if [ ! -r "$PO" ]; then
     exit 0
 fi
 
+# gettext ignores LANGUAGE when the process locale is C/POSIX.  Prefer a
+# real UTF-8 locale; if the host has none, try a user-localedef under
+# $HOME/.locale (same recipe as mux/po/README.md).  Without that, SKIP
+# rather than fail on a packaging gap.
+#
+# gettext ignores LANGUAGE when the process locale is C/POSIX.  Prefer a
+# real non-C UTF-8 locale.  `locale` exits 0 even when LC_ALL is invalid
+# (it falls back and prints warnings on stderr), so do not probe with a
+# bare `locale` call -- use locale -a, then a user-localedef under
+# $HOME/.locale if needed (mux/po/README.md).
+#
+NLS_LOCALE=""
+NLS_LOCPATH=""
+if command -v locale >/dev/null 2>&1; then
+    # System-installed names vary: en_US.utf8 vs en_US.UTF-8.
+    for cand in $(locale -a 2>/dev/null | grep -E 'en_US\.(utf8|UTF-8)$' || true); do
+        NLS_LOCALE="$cand"
+        break
+    done
+fi
+if [ -z "$NLS_LOCALE" ]; then
+    USER_LOCALE_DIR="${HOME}/.locale"
+    USER_LOCALE="en_US.UTF-8"
+    if [ ! -d "$USER_LOCALE_DIR/$USER_LOCALE" ]; then
+        if command -v localedef >/dev/null 2>&1; then
+            mkdir -p "$USER_LOCALE_DIR"
+            localedef -f UTF-8 -i en_US "$USER_LOCALE_DIR/$USER_LOCALE" 2>/dev/null || true
+        fi
+    fi
+    if [ -d "$USER_LOCALE_DIR/$USER_LOCALE" ]; then
+        if LOCPATH="$USER_LOCALE_DIR" LC_ALL="$USER_LOCALE" locale charmap 2>/dev/null | grep -qi utf; then
+            # Confirm setlocale did not fall back (no "Cannot set" on stderr).
+            if ! LOCPATH="$USER_LOCALE_DIR" LC_ALL="$USER_LOCALE" locale 2>&1 | grep -q 'Cannot set'; then
+                NLS_LOCALE="$USER_LOCALE"
+                NLS_LOCPATH="$USER_LOCALE_DIR"
+            fi
+        fi
+    fi
+fi
+if [ -z "$NLS_LOCALE" ]; then
+    echo "SKIP: no non-C UTF-8 locale available (install en_US.UTF-8, or"
+    echo "      localedef -f UTF-8 -i en_US \$HOME/.locale/en_US.UTF-8)."
+    exit 0
+fi
+
 # The three messages below are M_()-marked and reachable as God with no
 # fixture: @moniker set/clear, and an unknown command.  "Huh?" also carries
 # typographic quotes, so it exercises the UTF-8 catalogue path rather than a
@@ -105,7 +150,7 @@ include compat.conf
 EOF
       printf '%s\n' "$CMDS" > in.txt
       # LC_ALL must name a real locale or LANGUAGE is ignored by gettext.
-      LC_ALL=en_US.UTF-8 LANGUAGE="$langset" LD_LIBRARY_PATH="$BIN" \
+      LOCPATH="${NLS_LOCPATH:-${LOCPATH-}}" LC_ALL="$NLS_LOCALE" LANGUAGE="$langset" LD_LIBRARY_PATH="$BIN" \
         $TIMEOUT "$BIN/muxscript" -g . -c p.conf < in.txt > out.log 2>&1
     )
     local n tok
