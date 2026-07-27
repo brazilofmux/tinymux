@@ -1113,7 +1113,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, UTF8 *attr
            && !Quiet(player)
            && !Quiet(thing))
         {
-            notify_quiet(player, T("Set."));
+            notify_quiet(player, M_("Set."));
         }
     }
     else
