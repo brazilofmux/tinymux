@@ -21,8 +21,7 @@
         eq(lte(2,1), 0)
       )=
   {
-    @log smoke=TC001: lte basic comparisons. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: lte basic comparisons. Succeeded.
   },
   {
     @log smoke=TC001: lte basic comparisons. Failed (lte(1%,2)=[lte(1,2)] lte(1%,1)=[lte(1,1)] lte(2%,1)=[lte(2,1)]).;

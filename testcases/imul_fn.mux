@@ -20,8 +20,7 @@
         eq(imul(2,3,4), 24)
       )=
   {
-    @log smoke=TC001: imul() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: imul() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: imul() basic operations. Failed (imul(2%,3)=[imul(2,3)] imul(2%,3%,4)=[imul(2,3,4)]).;

@@ -21,8 +21,7 @@
         eq(isnum(abc), 0)
       )=
   {
-    @log smoke=TC001: isnum basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: isnum basic operations. Succeeded.
   },
   {
     @log smoke=TC001: isnum basic operations. Failed (isnum(5)=[isnum(5)] isnum(5.5)=[isnum(5.5)] isnum(abc)=[isnum(abc)]).;

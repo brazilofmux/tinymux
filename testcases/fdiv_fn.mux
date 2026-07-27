@@ -21,8 +21,7 @@
         strmatch(fdiv(1,0), +Inf)
       )=
   {
-    @log smoke=TC001: fdiv basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: fdiv basic operations. Succeeded.
   },
   {
     @log smoke=TC001: fdiv basic operations. Failed (fdiv(10%,3)=[fdiv(10,3)] fdiv(-10%,3)=[fdiv(-10,3)] fdiv(1%,0)=[fdiv(1,0)]).;

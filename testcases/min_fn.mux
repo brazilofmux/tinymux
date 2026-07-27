@@ -20,8 +20,7 @@
         eq(min(-1,-5,-3), -5)
       )=
   {
-    @log smoke=TC001: min basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: min basic operations. Succeeded.
   },
   {
     @log smoke=TC001: min basic operations. Failed (min(1%,5%,3)=[min(1,5,3)] min(-1%,-5%,-3)=[min(-1,-5,-3)]).;

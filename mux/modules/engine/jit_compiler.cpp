@@ -3226,6 +3226,28 @@ static bool ecall_lua_plain_table(lua_State *L, int idx)
     return true;
 }
 
+// The Lua lowering's bridge ECALLs are dispatched by name and all live in a
+// reserved "__lua_" namespace (hir_lower_lua.cpp).  Recognising the namespace
+// -- rather than just a leading "__" -- is what lets the dispatch below fail
+// closed on an unimplemented bridge name without swallowing a softcode
+// function that happens to start with an underscore, which @function permits.
+//
+// Case-insensitive on purpose.  The names the lowering emits are lower case
+// and the comparisons in the dispatch are upper case, which is the defect
+// behind #1512; a prefix test that agreed with only one of the two spellings
+// would re-create the same trap for the next name added.
+//
+static bool is_lua_bridge_name(const UTF8 *s) {
+    static const char prefix[] = "__lua_";
+    for (size_t i = 0; i < sizeof(prefix) - 1; i++) {
+        // A short name fails on the NUL, before reading past it.
+        if (tolower(static_cast<unsigned char>(s[i])) != prefix[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     eval_ctx *ec = static_cast<eval_ctx *>(user_data);
     uint64_t syscall_num = ctx->x[17];
@@ -3274,7 +3296,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         const UTF8 *func_name = ec->memory + name_addr;
 
         // Intercept __lua_* internal functions for Lua VM table ops.
-        if (ec->lua_state && func_name[0] == '_' && func_name[1] == '_') {
+        if (ec->lua_state && is_lua_bridge_name(func_name)) {
             const char *fn = reinterpret_cast<const char *>(func_name);
             lua_State *L = static_cast<lua_State *>(ec->lua_state);
 
@@ -4080,6 +4102,35 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 }
                 return -1;
             }
+
+            // Fail closed on an unrecognised __lua_* name (#1512).
+            //
+            // Falling through from here reaches the softcode function
+            // dispatch below, which upper-cases the name and looks it up in
+            // builtin_functions/ufunc_htab.  No __lua_* name is a softcode
+            // function, so the lookup misses and the ECALL hands back the
+            // *string* "#-1 FUNCTION NOT FOUND" as this call's value -- and
+            // that value then flows on as data.  `local x=tonumber(a) return
+            // x+1` produced 1, and `return x*2` produced 0, because the error
+            // string coerces to zero in arithmetic: wrong answers, not error
+            // markers.
+            //
+            // It is not hypothetical.  Every name the lowering emits is lower
+            // case ("__lua_getglobal") and every comparison above is upper
+            // case ("__LUA_GETGLOBAL"), so the entire named bridge --
+            // getglobal/setglobal/getenv, call/get_result, getfield/setfield,
+            // geti/seti, newtable, pin_array, tfor_call -- has never once
+            // been reached.  The case mismatch alone was survivable; what
+            // made it produce silent corruption instead of a visible failure
+            // is this fall-through.
+            //
+            // ECALL_DECLINE stops dbt_run with a failure status, so
+            // run_cached_program returns false without harvesting output and
+            // the caller re-evaluates on the interpreter -- the same
+            // containment contract the table ops use (#1423).  A name this
+            // block does not implement now costs the JIT, never correctness.
+            //
+            return ECALL_DECLINE;
         }
         size_t nCased;
         UTF8 *pCased = mux_strupr(func_name, nCased);

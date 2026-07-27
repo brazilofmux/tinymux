@@ -22,8 +22,7 @@
         eq(ceil(4.0), 4)
       )=
   {
-    @log smoke=TC001: ceil basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: ceil basic operations. Succeeded.
   },
   {
     @log smoke=TC001: ceil basic operations. Failed (ceil(4.2)=[ceil(4.2)] ceil(-4.2)=[ceil(-4.2)] ceil(0)=[ceil(0)] ceil(4.0)=[ceil(4.0)]).;

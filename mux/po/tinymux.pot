@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 11:50+0000\n"
+"POT-Creation-Date: 2026-07-27 06:03-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,6 +18,89 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: modules/engine/command.cpp:661 modules/engine/command.cpp:4373
+msgid "Lua module is not loaded."
+msgstr ""
+
+#: modules/engine/command.cpp:684 modules/engine/match.cpp:19
+#: modules/engine/match.cpp:36
+msgid "Permission denied."
+msgstr ""
+
+#: modules/engine/command.cpp:717
+msgid "No such object."
+msgstr ""
+
+#: modules/engine/command.cpp:1452
+msgid "Command incompatible with executor type."
+msgstr ""
+
+#: modules/engine/command.cpp:1470
+msgid "Sorry, building is not allowed now."
+msgstr ""
+
+#: modules/engine/command.cpp:1475
+msgid "Sorry, queueing and triggering are not allowed now."
+msgstr ""
+
+#: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2023
+#: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
+#: modules/engine/wiz.cpp:792 modules/engine/wiz.cpp:880
+msgid "Illegal combination of switches."
+msgstr ""
+
+#: modules/engine/command.cpp:2980
+msgid "Huh?  (Type “help” for help.)"
+msgstr ""
+
+#: modules/engine/command.cpp:4491
+msgid "Location CmdCheck attribute is:"
+msgstr ""
+
+#: modules/engine/command.cpp:4496
+msgid "Location CmdCheck attribute is empty."
+msgstr ""
+
+#: modules/engine/command.cpp:4512
+msgid "Scanning all locations and zones from your current location:"
+msgstr ""
+
+#: modules/engine/command.cpp:4588
+msgid "CmdCheck is active."
+msgstr ""
+
+#: modules/engine/command.cpp:4592
+msgid "CmdCheck is not active."
+msgstr ""
+
+#: modules/engine/command.cpp:4598
+msgid "CmdCheck attribute is:"
+msgstr ""
+
+#: modules/engine/command.cpp:4603
+msgid "CmdCheck attribute is empty."
+msgstr ""
+
+#: modules/engine/command.cpp:4832
+msgid "Train cannot be used to teach command, train."
+msgstr ""
+
+#: modules/engine/command.cpp:4839
+msgid "Bad location."
+msgstr ""
+
+#: modules/engine/command.cpp:4846
+msgid "Train requires an argument."
+msgstr ""
+
+#: modules/engine/command.cpp:4883
+msgid "Moniker cleared."
+msgstr ""
+
+#: modules/engine/command.cpp:4892
+msgid "Moniker set."
+msgstr ""
 
 #: modules/engine/conf.cpp:517
 msgid "Nothing to set"
@@ -28,11 +111,111 @@ msgid "String truncated"
 msgstr ""
 
 #: modules/engine/conf.cpp:2399 modules/engine/flags.cpp:825
+#: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
 #: modules/engine/session.cpp:300 modules/engine/session.cpp:328
 #: modules/engine/set.cpp:427 modules/engine/set.cpp:492
 #: modules/engine/set.cpp:1169 modules/engine/set.cpp:1327
 msgid "Set."
+msgstr ""
+
+#: modules/engine/cque.cpp:104
+msgid "Include nesting limit exceeded."
+msgstr ""
+
+#: modules/engine/cque.cpp:314
+msgid "GAME: Expensive activity abbreviated."
+msgstr ""
+
+#: modules/engine/cque.cpp:742
+msgid "Can’t specify /pid and /all"
+msgstr ""
+
+#: modules/engine/cque.cpp:747
+msgid "You must specify a PID."
+msgstr ""
+
+#: modules/engine/cque.cpp:757 modules/engine/cque.cpp:786
+msgid "PID must be a non-negative integer."
+msgstr ""
+
+#: modules/engine/cque.cpp:773
+msgid "PID is out of range."
+msgstr ""
+
+#: modules/engine/cque.cpp:794
+msgid "No queue entry with that PID was found."
+msgstr ""
+
+#: modules/engine/cque.cpp:838 modules/engine/cque.cpp:1996
+msgid "Can’t specify a target and /all"
+msgstr ""
+
+#: modules/engine/cque.cpp:1110
+msgid "Drained."
+msgstr ""
+
+#: modules/engine/cque.cpp:1114
+msgid "Notified."
+msgstr ""
+
+#: modules/engine/cque.cpp:1155
+msgid "Not enough money to queue command."
+msgstr ""
+
+#: modules/engine/cque.cpp:1654
+msgid "Invalid attribute."
+msgstr ""
+
+#: modules/engine/cque.cpp:1683
+msgid "Semaphore update failed."
+msgstr ""
+
+#: modules/engine/cque.cpp:1726
+msgid "Query server is not available."
+msgstr ""
+
+#: modules/engine/cque.cpp:1740 modules/engine/cron.cpp:744
+#: modules/engine/cron.cpp:749 modules/engine/cron.cpp:803
+#: modules/engine/cron.cpp:808 modules/engine/cron.cpp:822
+#: modules/engine/cron.cpp:858 modules/engine/set.cpp:1184
+#: modules/engine/set.cpp:1511 modules/engine/set.cpp:1568
+#: modules/engine/set.cpp:2010 modules/engine/set.cpp:2086
+#: modules/engine/set.cpp:2148 modules/engine/set.cpp:2256
+#: modules/engine/wiz.cpp:72
+msgid "No match."
+msgstr ""
+
+#: modules/engine/cque.cpp:1755
+msgid "QUERY: No Query."
+msgstr ""
+
+#: modules/engine/cque.cpp:1764
+msgid "At least one query option is required."
+msgstr ""
+
+#: modules/engine/cque.cpp:1890
+msgid "----- Wait Queue -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:1916
+msgid "----- Semaphore Queue -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:1942
+msgid "----- SQL Queries -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:2047
+msgid "----- System Queue -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:2102 modules/engine/cque.cpp:2122
+msgid "Warning: automatic dequeueing is disabled."
+msgstr ""
+
+#: modules/engine/cque.cpp:2141
+msgid "Object queue appended to player queue."
 msgstr ""
 
 #: modules/engine/create.cpp:34
@@ -135,16 +318,6 @@ msgstr ""
 msgid "Weird object type cannot be destroyed."
 msgstr ""
 
-#: modules/engine/cron.cpp:744 modules/engine/cron.cpp:749
-#: modules/engine/cron.cpp:803 modules/engine/cron.cpp:808
-#: modules/engine/cron.cpp:822 modules/engine/cron.cpp:858
-#: modules/engine/set.cpp:1184 modules/engine/set.cpp:1511
-#: modules/engine/set.cpp:1568 modules/engine/set.cpp:2010
-#: modules/engine/set.cpp:2086 modules/engine/set.cpp:2148
-#: modules/engine/set.cpp:2256
-msgid "No match."
-msgstr ""
-
 #: modules/engine/cron.cpp:761
 msgid "Syntax errors. No cron entry made."
 msgstr ""
@@ -213,7 +386,8 @@ msgstr ""
 msgid "I do not understand that flag."
 msgstr ""
 
-#: modules/engine/flags.cpp:825 modules/engine/powers.cpp:276
+#: modules/engine/flags.cpp:825 modules/engine/levels.cpp:343
+#: modules/engine/levels.cpp:444 modules/engine/powers.cpp:276
 #: modules/engine/set.cpp:1323
 msgid "Cleared."
 msgstr ""
@@ -263,6 +437,23 @@ msgstr ""
 
 #: modules/engine/help.cpp:440
 msgid "No such indexed file found."
+msgstr ""
+
+#: modules/engine/levels.cpp:281 modules/engine/levels.cpp:382
+#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
+msgid "I don’t know what you want to set!"
+msgstr ""
+
+#: modules/engine/levels.cpp:325 modules/engine/levels.cpp:426
+msgid "You must specify a reality level to clear."
+msgstr ""
+
+#: modules/engine/levels.cpp:329 modules/engine/levels.cpp:430
+msgid "You must specify a reality level to set."
+msgstr ""
+
+#: modules/engine/levels.cpp:337 modules/engine/levels.cpp:438
+msgid "No such reality level."
 msgstr ""
 
 #: modules/engine/log.cpp:366
@@ -380,10 +571,6 @@ msgstr ""
 msgid "I don’t know which one you mean!"
 msgstr ""
 
-#: modules/engine/match.cpp:19 modules/engine/match.cpp:36
-msgid "Permission denied."
-msgstr ""
-
 #: modules/engine/move.cpp:406
 msgid "You can’t teleport that out!"
 msgstr ""
@@ -468,16 +655,18 @@ msgstr ""
 msgid "Halted."
 msgstr ""
 
-#: modules/engine/object.cpp:2303
+#: modules/engine/object.cpp:2303 modules/engine/predicates.cpp:1328
+#: modules/engine/predicates.cpp:1371 modules/engine/walkdb.cpp:1347
+#: modules/engine/walkdb.cpp:1382
 msgid "Done."
 msgstr ""
 
-#: modules/engine/player.cpp:963 modules/engine/rob.cpp:66
-#: modules/engine/speech.cpp:1057
+#: modules/engine/player.cpp:963 modules/engine/predicates.cpp:1241
+#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
 msgid "Sorry."
 msgstr ""
 
-#: modules/engine/player.cpp:968
+#: modules/engine/player.cpp:968 modules/engine/wiz.cpp:549
 msgid "Password changed."
 msgstr ""
 
@@ -494,7 +683,7 @@ msgstr ""
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1504
+#: modules/engine/player.cpp:1504 modules/engine/wiz.cpp:503
 msgid "No such player."
 msgstr ""
 
@@ -551,15 +740,79 @@ msgstr ""
 msgid "I don’t understand that power."
 msgstr ""
 
+#: modules/engine/predicates.cpp:283
+msgid "Sorry, your building contract has run out."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1008
+msgid "That is not a valid command name."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1019 modules/engine/predicates.cpp:1253
+#: modules/engine/predicates.cpp:1562
+msgid "No such attribute."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1213
+msgid "No added commands found in command table."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1375 modules/engine/predicates.cpp:1380
+msgid "Command not found in command table."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1414 modules/engine/predicates.cpp:1488
+msgid "That is not a player."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1419 modules/engine/predicates.cpp:1493
+msgid "That player is not connected."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1424
+msgid "Player is not in an @program."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1445
+msgid "Your @program has been terminated."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1473
+msgid "No players specified."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1501
+msgid "Input already pending."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1556 modules/engine/set.cpp:533
+#: modules/engine/set.cpp:630 modules/engine/set.cpp:917
+#: modules/engine/set.cpp:1266
+msgid "Attribute not present on object."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1609
+msgid "Dumping. Please try again later."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1617
+msgid "Server just started. Please try again in a few seconds."
+msgstr ""
+
+#: modules/engine/predicates.cpp:2742 modules/engine/set.cpp:1587
+#: modules/engine/set.cpp:1997
+msgid "Nothing to do."
+msgstr ""
+
+#: modules/engine/predicates.cpp:2786
+msgid "Permission denied,"
+msgstr ""
+
 #: modules/engine/quota.cpp:171
 msgid "Quotas are not enabled."
 msgstr ""
 
-#: modules/engine/quota.cpp:176
-msgid "Illegal combination of switches."
-msgstr ""
-
-#: modules/engine/quota.cpp:230
+#: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:322
 msgid "Not found."
 msgstr ""
 
@@ -676,11 +929,6 @@ msgstr ""
 msgid "Invalid forwardlist."
 msgstr ""
 
-#: modules/engine/set.cpp:533 modules/engine/set.cpp:630
-#: modules/engine/set.cpp:917 modules/engine/set.cpp:1266
-msgid "Attribute not present on object."
-msgstr ""
-
 #: modules/engine/set.cpp:544
 msgid "Attribute locked."
 msgstr ""
@@ -741,20 +989,12 @@ msgstr ""
 msgid "Players always own themselves."
 msgstr ""
 
-#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
-msgid "I don’t know what you want to set!"
-msgstr ""
-
 #: modules/engine/set.cpp:1258
 msgid "You can’t set that!"
 msgstr ""
 
 #: modules/engine/set.cpp:1356
 msgid "Couldn’t create attribute."
-msgstr ""
-
-#: modules/engine/set.cpp:1587 modules/engine/set.cpp:1997
-msgid "Nothing to do."
 msgstr ""
 
 #: modules/engine/set.cpp:1677
@@ -827,4 +1067,177 @@ msgstr ""
 
 #: modules/engine/speech.cpp:1494
 msgid "No one to whisper to."
+msgstr ""
+
+#: modules/engine/walk.cpp:353
+msgid "Walk cancelled."
+msgstr ""
+
+#: modules/engine/walk.cpp:361
+msgid "Only things can walk."
+msgstr ""
+
+#: modules/engine/walk.cpp:369
+msgid "Walk where?"
+msgstr ""
+
+#: modules/engine/walk.cpp:378
+msgid "That’s not a valid destination."
+msgstr ""
+
+#: modules/engine/walk.cpp:442
+msgid "Patrol cancelled."
+msgstr ""
+
+#: modules/engine/walk.cpp:448
+msgid "Only things can patrol."
+msgstr ""
+
+#: modules/engine/walk.cpp:454
+msgid "Patrol where?"
+msgstr ""
+
+#: modules/engine/walk.cpp:483
+msgid "Patrol requires at least two waypoints."
+msgstr ""
+
+#: modules/engine/walkdb.cpp:75
+msgid "That’s terrific, but what should I do with the list?"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:87
+msgid "The delimiter must be a single character!"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:210
+msgid "***End of List***"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:472
+msgid "Victim must be a player."
+msgstr ""
+
+#: modules/engine/walkdb.cpp:848
+msgid "You need a search warrant to do that!"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1182
+msgid ""
+"\n"
+"ROOMS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1207
+msgid ""
+"\n"
+"EXITS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1250
+msgid ""
+"\n"
+"OBJECTS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1285
+msgid ""
+"\n"
+"PLAYERS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1309
+msgid "Nothing found."
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1506
+msgid "Day   Hours     Players  Total"
+msgstr ""
+
+#: modules/engine/wiz.cpp:33
+msgid "You can’t teleport that."
+msgstr ""
+
+#: modules/engine/wiz.cpp:53 modules/engine/wiz.cpp:84
+#: modules/engine/wiz.cpp:120 modules/engine/wiz.cpp:181
+msgid "Bad destination."
+msgstr ""
+
+#: modules/engine/wiz.cpp:77
+msgid "I don’t know which destination you mean!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:157
+msgid "Teleported."
+msgstr ""
+
+#: modules/engine/wiz.cpp:196
+msgid "I can’t find that exit."
+msgstr ""
+
+#: modules/engine/wiz.cpp:382
+msgid "Try @destroy instead."
+msgstr ""
+
+#: modules/engine/wiz.cpp:387
+msgid "You can’t toad that player."
+msgstr ""
+
+#: modules/engine/wiz.cpp:536
+msgid "You cannot change that player’s password."
+msgstr ""
+
+#: modules/engine/wiz.cpp:580
+msgid "That’s not a number!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:602
+msgid "You cannot boot that player!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:609
+msgid "You can only boot off other players!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:691
+msgid "Cut."
+msgstr ""
+
+#: modules/engine/wiz.cpp:725
+msgid "Set: MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:734
+msgid "Set: Wizard MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:743
+msgid "Set: Down MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:752
+msgid "Set: Full MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:762
+msgid "----- motd file -----"
+msgstr ""
+
+#: modules/engine/wiz.cpp:764
+msgid "----- wizmotd file -----"
+msgstr ""
+
+#: modules/engine/wiz.cpp:766
+msgid "----- motd messages -----"
+msgstr ""
+
+#: modules/engine/wiz.cpp:826
+msgid "I don’t know about that flag."
+msgstr ""
+
+#: modules/engine/wiz.cpp:852
+msgid "Enabled."
+msgstr ""
+
+#: modules/engine/wiz.cpp:875
+msgid "Disabled."
 msgstr ""

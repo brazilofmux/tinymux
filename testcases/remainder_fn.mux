@@ -20,8 +20,7 @@
         eq(remainder(-10,3), -1)
       )=
   {
-    @log smoke=TC001: remainder() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: remainder() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: remainder() basic operations. Failed (remainder(10%,3)=[remainder(10,3)] remainder(-10%,3)=[remainder(-10,3)]).;

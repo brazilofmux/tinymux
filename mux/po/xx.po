@@ -1,596 +1,1243 @@
-# Pseudo-locale for NLS smoke (#1419).
+# TinyMUX server-message template (#1419 / #1473).
+# Opt-in M_()/N_() only — not T() casts or S_() softcode ABI.
+# Regenerate:  make -C mux/po pot   or   ./update-pot.sh
+#
+# This file is distributed under the same license as the TinyMUX package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
-"Language: xx\n"
+"Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
+"POT-Creation-Date: 2026-07-27 06:03-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Nothing to set"
-msgstr "[xx] Nothing to set"
-
-msgid "String truncated"
-msgstr "[xx] String truncated"
-
-msgid "Set."
-msgstr "[xx] Set."
-
-msgid "That’s not a valid object."
-msgstr "[xx] That’s not a valid object."
-
-msgid "You can’t link to that."
-msgstr "[xx] You can’t link to that."
-
-msgid "Open where?"
-msgstr "[xx] Open where?"
-
-msgid "Opened."
-msgstr "[xx] Opened."
-
-msgid "You can’t link to there."
-msgstr "[xx] You can’t link to there."
-
-msgid "Linked."
-msgstr "[xx] Linked."
-
-msgid "Can’t link to an exit."
-msgstr "[xx] Can’t link to an exit."
-
-msgid "Can’t set home to home."
-msgstr "[xx] Can’t set home to home."
-
-msgid "That is not a room!"
-msgstr "[xx] That is not a room!"
-
-msgid "You can’t have yourself as a parent!"
-msgstr "[xx] You can’t have yourself as a parent!"
-
-msgid "Parent cleared."
-msgstr "[xx] Parent cleared."
-
-msgid "Parent set."
-msgstr "[xx] Parent set."
-
-msgid "Dig what?"
-msgstr "[xx] Dig what?"
-
-msgid "Create what?"
-msgstr "[xx] Create what?"
-
-msgid "You can’t create an object for less than nothing!"
-msgstr "[xx] You can’t create an object for less than nothing!"
-
-msgid "You cannot clone players!"
-msgstr "[xx] You cannot clone players!"
-
-msgid "Your robot has arrived."
-msgstr "[xx] Your robot has arrived."
-
-msgid "Sorry, no suicide allowed."
-msgstr "[xx] Sorry, no suicide allowed."
-
-msgid "Even you can’t do that!"
-msgstr "[xx] Even you can’t do that!"
-
-msgid "Sorry, that object is protected.  Use @destroy/override to destroy it."
-msgstr "[xx] Sorry, that object is protected.  Use @destroy/override to destroy it."
-
-msgid "That object is indestructible."
-msgstr "[xx] That object is indestructible."
-
-msgid "You can’t destroy that!"
-msgstr "[xx] You can’t destroy that!"
-
-msgid "The room shakes and begins to crumble."
-msgstr "[xx] The room shakes and begins to crumble."
-
-msgid "Player has a lot of attributes. Performing destruction immediately."
-msgstr "[xx] Player has a lot of attributes. Performing destruction immediately."
-
-msgid "Weird object type cannot be destroyed."
-msgstr "[xx] Weird object type cannot be destroyed."
-
-msgid "No match."
-msgstr "[xx] No match."
-
-msgid "Syntax errors. No cron entry made."
-msgstr "[xx] Syntax errors. No cron entry made."
-
-msgid "That cron entry already exists."
-msgstr "[xx] That cron entry already exists."
-
-msgid "Cron entry added."
-msgstr "[xx] Cron entry added."
-
-msgid "No such user-named attribute."
-msgstr "[xx] No such user-named attribute."
-
-msgid "Attribute access changed."
-msgstr "[xx] Attribute access changed."
-
-msgid "Attribute rename failed."
-msgstr "[xx] Attribute rename failed."
-
-msgid "An attribute with that name already exists."
-msgstr "[xx] An attribute with that name already exists."
-
-msgid "Attribute renamed."
-msgstr "[xx] Attribute renamed."
-
-msgid "Attribute deleted."
-msgstr "[xx] Attribute deleted."
-
-msgid "That’s not a good name for a player."
-msgstr "[xx] That’s not a good name for a player."
-
-msgid "That name is already in use or is an alias."
-msgstr "[xx] That name is already in use or is an alias."
-
-msgid "That is not a reasonable name."
-msgstr "[xx] That is not a reasonable name."
-
-msgid "You cannot make God mortal."
-msgstr "[xx] You cannot make God mortal."
-
-msgid "Your object has been spared from destruction."
-msgstr "[xx] Your object has been spared from destruction."
-
-msgid "You must specify a flag to clear."
-msgstr "[xx] You must specify a flag to clear."
-
-msgid "You must specify a flag to set."
-msgstr "[xx] You must specify a flag to set."
-
-msgid "I do not understand that flag."
-msgstr "[xx] I do not understand that flag."
-
-msgid "Cleared."
-msgstr "[xx] Cleared."
-
-msgid "Already cleared."
-msgstr "[xx] Already cleared."
-
-msgid "Already set."
-msgstr "[xx] Already set."
-
-msgid "Special flags cannot be modified with flag_access."
-msgstr "[xx] Special flags cannot be modified with flag_access."
-
-msgid "Extra argument ignored."
-msgstr "[xx] Extra argument ignored."
-
-msgid "Error: You can’t remove the present flag name from the hash table."
-msgstr "[xx] Error: You can’t remove the present flag name from the hash table."
-
-msgid "Error: Bad flagname given or flag not found."
-msgstr "[xx] Error: Bad flagname given or flag not found."
-
-msgid "You must specify a flag and a name."
-msgstr "[xx] You must specify a flag and a name."
-
-msgid "Flag name changed."
-msgstr "[xx] Flag name changed."
-
-msgid "Cache for help indexes refreshed."
-msgstr "[xx] Cache for help indexes refreshed."
-
-msgid "Sorry, that function is temporarily unavailable."
-msgstr "[xx] Sorry, that function is temporarily unavailable."
-
-msgid "No such indexed file found."
-msgstr "[xx] No such indexed file found."
-
-msgid "Syntax: @log file=message"
-msgstr "[xx] Syntax: @log file=message"
-
-msgid "Not a valid log file."
-msgstr "[xx] Not a valid log file."
-
-msgid "Log file rotated."
-msgstr "[xx] Log file rotated."
-
-msgid "You see nothing special."
-msgstr "[xx] You see nothing special."
-
-msgid "Contents:"
-msgstr "[xx] Contents:"
-
-msgid "You can’t look outside."
-msgstr "[xx] You can’t look outside."
-
-msgid "Carrying:"
-msgstr "[xx] Carrying:"
-
-msgid "Attr list: "
-msgstr "[xx] Attr list: "
-
-msgid "<Too far away to get a good look>"
-msgstr "[xx] <Too far away to get a good look>"
-
-msgid "No matching attributes found."
-msgstr "[xx] No matching attributes found."
-
-msgid "Exits:"
-msgstr "[xx] Exits:"
-
-msgid "No exits."
-msgstr "[xx] No exits."
-
-msgid "Destination: *UNLINKED*"
-msgstr "[xx] Destination: *UNLINKED*"
-
-msgid "You aren’t carrying anything."
-msgstr "[xx] You aren’t carrying anything."
-
-msgid "You are carrying:"
-msgstr "[xx] You are carrying:"
-
-msgid "Sweeping location..."
-msgstr "[xx] Sweeping location..."
-
-msgid "Sweeping exits..."
-msgstr "[xx] Sweeping exits..."
-
-msgid "Sweeping inventory..."
-msgstr "[xx] Sweeping inventory..."
-
-msgid "Sweeping carried exits..."
-msgstr "[xx] Sweeping carried exits..."
-
-msgid "Sweep complete."
-msgstr "[xx] Sweep complete."
-
-msgid "What command do you want to scan for?"
-msgstr "[xx] What command do you want to scan for?"
-
-msgid "Check yourself and your inventory:"
-msgstr "[xx] Check yourself and your inventory:"
-
-msgid "Check your location and its contents:"
-msgstr "[xx] Check your location and its contents:"
-
-msgid "Checking zone:"
-msgstr "[xx] Checking zone:"
-
-msgid "Checking master room:"
-msgstr "[xx] Checking master room:"
-
-msgid "Scan complete."
-msgstr "[xx] Scan complete."
-
-msgid "I don’t see that here."
-msgstr "[xx] I don’t see that here."
-
-msgid "I don’t know which one you mean!"
-msgstr "[xx] I don’t know which one you mean!"
-
+#: modules/engine/command.cpp:661 modules/engine/command.cpp:4373
+msgid "Lua module is not loaded."
+msgstr "[xx] Lua module is not loaded."
+
+#: modules/engine/command.cpp:684 modules/engine/match.cpp:19
+#: modules/engine/match.cpp:36
 msgid "Permission denied."
 msgstr "[xx] Permission denied."
 
-msgid "You can’t teleport that out!"
-msgstr "[xx] You can’t teleport that out!"
+#: modules/engine/command.cpp:717
+msgid "No such object."
+msgstr "[xx] No such object."
 
-msgid "You can’t go that way."
-msgstr "[xx] You can’t go that way."
+#: modules/engine/command.cpp:1452
+msgid "Command incompatible with executor type."
+msgstr "[xx] Command incompatible with executor type."
 
-msgid "You are already home."
-msgstr "[xx] You are already home."
+#: modules/engine/command.cpp:1470
+msgid "Sorry, building is not allowed now."
+msgstr "[xx] Sorry, building is not allowed now."
 
-msgid "There’s no place like home..."
-msgstr "[xx] There’s no place like home..."
+#: modules/engine/command.cpp:1475
+msgid "Sorry, queueing and triggering are not allowed now."
+msgstr "[xx] Sorry, queueing and triggering are not allowed now."
 
-msgid "I don’t know which way you mean!"
-msgstr "[xx] I don’t know which way you mean!"
-
-msgid "You already have that!"
-msgstr "[xx] You already have that!"
-
-msgid "You cannot get yourself!"
-msgstr "[xx] You cannot get yourself!"
-
-msgid "Taken."
-msgstr "[xx] Taken."
-
-msgid "Exit taken."
-msgstr "[xx] Exit taken."
-
-msgid "You can’t take that!"
-msgstr "[xx] You can’t take that!"
-
-msgid "You don’t have that!"
-msgstr "[xx] You don’t have that!"
-
-msgid "I don’t know which you mean!"
-msgstr "[xx] I don’t know which you mean!"
-
-msgid "You can’t drop that."
-msgstr "[xx] You can’t drop that."
-
-msgid "Dropped."
-msgstr "[xx] Dropped."
-
-msgid "Exit dropped."
-msgstr "[xx] Exit dropped."
-
-msgid "You can’t enter yourself!"
-msgstr "[xx] You can’t enter yourself!"
-
-msgid "You can’t leave."
-msgstr "[xx] You can’t leave."
-
-msgid "That name is not allowed."
-msgstr "[xx] That name is not allowed."
-
-msgid "That’s a silly name for a player."
-msgstr "[xx] That’s a silly name for a player."
-
-msgid "Halted."
-msgstr "[xx] Halted."
-
-msgid "Done."
-msgstr "[xx] Done."
-
-msgid "Sorry."
-msgstr "[xx] Sorry."
-
-msgid "Password changed."
-msgstr "[xx] Password changed."
-
-msgid "I couldn’t find that player."
-msgstr "[xx] I couldn’t find that player."
-
-msgid "Only players may use @protect."
-msgstr "[xx] Only players may use @protect."
-
-msgid "No protected names in the database."
-msgstr "[xx] No protected names in the database."
-
-msgid "No such player."
-msgstr "[xx] No such player."
-
-msgid "No protected names."
-msgstr "[xx] No protected names."
-
-msgid "Protect what name?"
-msgstr "[xx] Protect what name?"
-
-msgid "That name is not in your protected list."
-msgstr "[xx] That name is not in your protected list."
-
-msgid "That name is already in use."
-msgstr "[xx] That name is already in use."
-
-msgid "That name is already in use or is illegal, alias cleared."
-msgstr "[xx] That name is already in use or is illegal, alias cleared."
-
-msgid "You have no alias set."
-msgstr "[xx] You have no alias set."
-
-msgid "You have no protected names."
-msgstr "[xx] You have no protected names."
-
-msgid "That is not a valid player name."
-msgstr "[xx] That is not a valid player name."
-
-msgid "That name is already in your protected list."
-msgstr "[xx] That name is already in your protected list."
-
-msgid "That name is already protected by another player."
-msgstr "[xx] That name is already protected by another player."
-
-msgid "You must specify a power to clear."
-msgstr "[xx] You must specify a power to clear."
-
-msgid "You must specify a power to set."
-msgstr "[xx] You must specify a power to set."
-
-msgid "I don’t understand that power."
-msgstr "[xx] I don’t understand that power."
-
-msgid "Quotas are not enabled."
-msgstr "[xx] Quotas are not enabled."
-
+#: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2023
+#: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
+#: modules/engine/wiz.cpp:792 modules/engine/wiz.cpp:880
 msgid "Illegal combination of switches."
 msgstr "[xx] Illegal combination of switches."
 
-msgid "Not found."
-msgstr "[xx] Not found."
+#: modules/engine/command.cpp:2980
+msgid "Huh?  (Type “help” for help.)"
+msgstr "[xx] Huh?  (Type “help” for help.)"
 
-msgid "I don’t see that player here."
-msgstr "[xx] I don’t see that player here."
+#: modules/engine/command.cpp:4491
+msgid "Location CmdCheck attribute is:"
+msgstr "[xx] Location CmdCheck attribute is:"
 
-msgid "I don’t know who you mean!"
-msgstr "[xx] I don’t know who you mean!"
+#: modules/engine/command.cpp:4496
+msgid "Location CmdCheck attribute is empty."
+msgstr "[xx] Location CmdCheck attribute is empty."
 
-msgid "Sorry, you can only kill players and things."
-msgstr "[xx] Sorry, you can only kill players and things."
+#: modules/engine/command.cpp:4512
+msgid "Scanning all locations and zones from your current location:"
+msgstr "[xx] Scanning all locations and zones from your current location:"
 
-msgid "Your murder attempt failed."
-msgstr "[xx] Your murder attempt failed."
+#: modules/engine/command.cpp:4588
+msgid "CmdCheck is active."
+msgstr "[xx] CmdCheck is active."
 
-msgid "Your insurance policy has been revoked."
-msgstr "[xx] Your insurance policy has been revoked."
+#: modules/engine/command.cpp:4592
+msgid "CmdCheck is not active."
+msgstr "[xx] CmdCheck is not active."
 
-msgid "You can’t give yourself away!"
-msgstr "[xx] You can’t give yourself away!"
+#: modules/engine/command.cpp:4598
+msgid "CmdCheck attribute is:"
+msgstr "[xx] CmdCheck attribute is:"
 
-msgid "You can’t give an object to itself."
-msgstr "[xx] You can’t give an object to itself."
+#: modules/engine/command.cpp:4603
+msgid "CmdCheck attribute is empty."
+msgstr "[xx] CmdCheck attribute is empty."
 
-msgid "Given."
-msgstr "[xx] Given."
+#: modules/engine/command.cpp:4832
+msgid "Train cannot be used to teach command, train."
+msgstr "[xx] Train cannot be used to teach command, train."
 
-msgid "Feeling poor today?"
-msgstr "[xx] Feeling poor today?"
+#: modules/engine/command.cpp:4839
+msgid "Bad location."
+msgstr "[xx] Bad location."
 
-msgid "Give to whom?"
-msgstr "[xx] Give to whom?"
+#: modules/engine/command.cpp:4846
+msgid "Train requires an argument."
+msgstr "[xx] Train requires an argument."
 
-msgid "You can’t give anything to an exit."
-msgstr "[xx] You can’t give anything to an exit."
+#: modules/engine/command.cpp:4883
+msgid "Moniker cleared."
+msgstr "[xx] Moniker cleared."
 
-msgid "Guests really don’t need money or anything."
-msgstr "[xx] Guests really don’t need money or anything."
+#: modules/engine/command.cpp:4892
+msgid "Moniker set."
+msgstr "[xx] Moniker set."
 
-msgid "Not connected."
-msgstr "[xx] Not connected."
+#: modules/engine/conf.cpp:517
+msgid "Nothing to set"
+msgstr "[xx] Nothing to set"
 
-msgid "Zones disabled."
-msgstr "[xx] Zones disabled."
+#: modules/engine/conf.cpp:898 modules/engine/conf.cpp:957
+msgid "String truncated"
+msgstr "[xx] String truncated"
 
-msgid "Invalid zone object type."
-msgstr "[xx] Invalid zone object type."
+#: modules/engine/conf.cpp:2399 modules/engine/flags.cpp:825
+#: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
+#: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
+#: modules/engine/session.cpp:300 modules/engine/session.cpp:328
+#: modules/engine/set.cpp:427 modules/engine/set.cpp:492
+#: modules/engine/set.cpp:1169 modules/engine/set.cpp:1327
+msgid "Set."
+msgstr "[xx] Set."
 
-msgid "You don’t have the power to shift reality."
-msgstr "[xx] You don’t have the power to shift reality."
+#: modules/engine/cque.cpp:104
+msgid "Include nesting limit exceeded."
+msgstr "[xx] Include nesting limit exceeded."
 
-msgid "You cannot move that object to that zone."
-msgstr "[xx] You cannot move that object to that zone."
+#: modules/engine/cque.cpp:314
+msgid "GAME: Expensive activity abbreviated."
+msgstr "[xx] GAME: Expensive activity abbreviated."
 
-msgid "Only rooms may be zoned to other rooms."
-msgstr "[xx] Only rooms may be zoned to other rooms."
+#: modules/engine/cque.cpp:742
+msgid "Can’t specify /pid and /all"
+msgstr "[xx] Can’t specify /pid and /all"
 
-msgid "Zone changed."
-msgstr "[xx] Zone changed."
+#: modules/engine/cque.cpp:747
+msgid "You must specify a PID."
+msgstr "[xx] You must specify a PID."
 
-msgid "Give it what new name?"
-msgstr "[xx] Give it what new name?"
+#: modules/engine/cque.cpp:757 modules/engine/cque.cpp:786
+msgid "PID must be a non-negative integer."
+msgstr "[xx] PID must be a non-negative integer."
 
-msgid "You can’t use that name."
-msgstr "[xx] You can’t use that name."
+#: modules/engine/cque.cpp:773
+msgid "PID is out of range."
+msgstr "[xx] PID is out of range."
 
-msgid "That name is protected by another player."
-msgstr "[xx] That name is protected by another player."
+#: modules/engine/cque.cpp:794
+msgid "No queue entry with that PID was found."
+msgstr "[xx] No queue entry with that PID was found."
 
-msgid "Name set."
-msgstr "[xx] Name set."
+#: modules/engine/cque.cpp:838 modules/engine/cque.cpp:1996
+msgid "Can’t specify a target and /all"
+msgstr "[xx] Can’t specify a target and /all"
 
-msgid "Alias removed."
-msgstr "[xx] Alias removed."
+#: modules/engine/cque.cpp:1110
+msgid "Drained."
+msgstr "[xx] Drained."
 
-msgid "That’s a silly name for a player!"
-msgstr "[xx] That’s a silly name for a player!"
+#: modules/engine/cque.cpp:1114
+msgid "Notified."
+msgstr "[xx] Notified."
 
-msgid "Alias set."
-msgstr "[xx] Alias set."
+#: modules/engine/cque.cpp:1155
+msgid "Not enough money to queue command."
+msgstr "[xx] Not enough money to queue command."
 
-msgid "Forwardlist removed."
-msgstr "[xx] Forwardlist removed."
+#: modules/engine/cque.cpp:1654
+msgid "Invalid attribute."
+msgstr "[xx] Invalid attribute."
 
-msgid "Invalid forwardlist."
-msgstr "[xx] Invalid forwardlist."
+#: modules/engine/cque.cpp:1683
+msgid "Semaphore update failed."
+msgstr "[xx] Semaphore update failed."
 
-msgid "Attribute not present on object."
-msgstr "[xx] Attribute not present on object."
+#: modules/engine/cque.cpp:1726
+msgid "Query server is not available."
+msgstr "[xx] Query server is not available."
 
-msgid "Attribute locked."
-msgstr "[xx] Attribute locked."
+#: modules/engine/cque.cpp:1740 modules/engine/cron.cpp:744
+#: modules/engine/cron.cpp:749 modules/engine/cron.cpp:803
+#: modules/engine/cron.cpp:808 modules/engine/cron.cpp:822
+#: modules/engine/cron.cpp:858 modules/engine/set.cpp:1184
+#: modules/engine/set.cpp:1511 modules/engine/set.cpp:1568
+#: modules/engine/set.cpp:2010 modules/engine/set.cpp:2086
+#: modules/engine/set.cpp:2148 modules/engine/set.cpp:2256
+#: modules/engine/wiz.cpp:72
+msgid "No match."
+msgstr "[xx] No match."
 
-msgid "I don’t see what you want to lock!"
-msgstr "[xx] I don’t see what you want to lock!"
+#: modules/engine/cque.cpp:1755
+msgid "QUERY: No Query."
+msgstr "[xx] QUERY: No Query."
 
-msgid "I don’t know which one you want to lock!"
-msgstr "[xx] I don’t know which one you want to lock!"
+#: modules/engine/cque.cpp:1764
+msgid "At least one query option is required."
+msgstr "[xx] At least one query option is required."
 
-msgid "You can’t lock that!"
-msgstr "[xx] You can’t lock that!"
+#: modules/engine/cque.cpp:1890
+msgid "----- Wait Queue -----"
+msgstr "[xx] ----- Wait Queue -----"
 
-msgid "I don’t understand that key."
-msgstr "[xx] I don’t understand that key."
+#: modules/engine/cque.cpp:1916
+msgid "----- Semaphore Queue -----"
+msgstr "[xx] ----- Semaphore Queue -----"
 
-msgid "Locked."
-msgstr "[xx] Locked."
+#: modules/engine/cque.cpp:1942
+msgid "----- SQL Queries -----"
+msgstr "[xx] ----- SQL Queries -----"
 
-msgid "Attribute unlocked."
-msgstr "[xx] Attribute unlocked."
+#: modules/engine/cque.cpp:2047
+msgid "----- System Queue -----"
+msgstr "[xx] ----- System Queue -----"
 
-msgid "Unlocked."
-msgstr "[xx] Unlocked."
+#: modules/engine/cque.cpp:2102 modules/engine/cque.cpp:2122
+msgid "Warning: automatic dequeueing is disabled."
+msgstr "[xx] Warning: automatic dequeueing is disabled."
 
-msgid "Unlink what?"
-msgstr "[xx] Unlink what?"
+#: modules/engine/cque.cpp:2141
+msgid "Object queue appended to player queue."
+msgstr "[xx] Object queue appended to player queue."
 
-msgid "Unlinked."
-msgstr "[xx] Unlinked."
+#: modules/engine/create.cpp:34
+msgid "That’s not a valid object."
+msgstr "[xx] That’s not a valid object."
 
-msgid "Dropto removed."
-msgstr "[xx] Dropto removed."
+#: modules/engine/create.cpp:40
+msgid "You can’t link to that."
+msgstr "[xx] You can’t link to that."
 
-msgid "You can’t unlink that!"
-msgstr "[xx] You can’t unlink that!"
+#: modules/engine/create.cpp:61
+msgid "Open where?"
+msgstr "[xx] Open where?"
 
-msgid "Attribute owner changed."
-msgstr "[xx] Attribute owner changed."
+#: modules/engine/create.cpp:95
+msgid "Opened."
+msgstr "[xx] Opened."
 
-msgid "You shouldn’t be rummaging through the garbage."
-msgstr "[xx] You shouldn’t be rummaging through the garbage."
+#: modules/engine/create.cpp:112
+msgid "You can’t link to there."
+msgstr "[xx] You can’t link to there."
 
-msgid "Players always own themselves."
-msgstr "[xx] Players always own themselves."
+#: modules/engine/create.cpp:127 modules/engine/create.cpp:252
+msgid "Linked."
+msgstr "[xx] Linked."
 
+#: modules/engine/create.cpp:334
+msgid "Can’t link to an exit."
+msgstr "[xx] Can’t link to an exit."
+
+#: modules/engine/create.cpp:344
+msgid "Can’t set home to home."
+msgstr "[xx] Can’t set home to home."
+
+#: modules/engine/create.cpp:393
+msgid "That is not a room!"
+msgstr "[xx] That is not a room!"
+
+#: modules/engine/create.cpp:526
+msgid "You can’t have yourself as a parent!"
+msgstr "[xx] You can’t have yourself as a parent!"
+
+#: modules/engine/create.cpp:602
+msgid "Parent cleared."
+msgstr "[xx] Parent cleared."
+
+#: modules/engine/create.cpp:606
+msgid "Parent set."
+msgstr "[xx] Parent set."
+
+#: modules/engine/create.cpp:626
+msgid "Dig what?"
+msgstr "[xx] Dig what?"
+
+#: modules/engine/create.cpp:695
+msgid "Create what?"
+msgstr "[xx] Create what?"
+
+#: modules/engine/create.cpp:701
+msgid "You can’t create an object for less than nothing!"
+msgstr "[xx] You can’t create an object for less than nothing!"
+
+#: modules/engine/create.cpp:789
+msgid "You cannot clone players!"
+msgstr "[xx] You cannot clone players!"
+
+#: modules/engine/create.cpp:1049
+msgid "Your robot has arrived."
+msgstr "[xx] Your robot has arrived."
+
+#: modules/engine/create.cpp:1095
+msgid "Sorry, no suicide allowed."
+msgstr "[xx] Sorry, no suicide allowed."
+
+#: modules/engine/create.cpp:1100
+msgid "Even you can’t do that!"
+msgstr "[xx] Even you can’t do that!"
+
+#: modules/engine/create.cpp:1211
+msgid "Sorry, that object is protected.  Use @destroy/override to destroy it."
+msgstr "[xx] Sorry, that object is protected.  Use @destroy/override to destroy it."
+
+#: modules/engine/create.cpp:1219
+msgid "That object is indestructible."
+msgstr "[xx] That object is indestructible."
+
+#: modules/engine/create.cpp:1227
+msgid "You can’t destroy that!"
+msgstr "[xx] You can’t destroy that!"
+
+#: modules/engine/create.cpp:1263
+msgid "The room shakes and begins to crumble."
+msgstr "[xx] The room shakes and begins to crumble."
+
+#: modules/engine/create.cpp:1275
+msgid "Player has a lot of attributes. Performing destruction immediately."
+msgstr "[xx] Player has a lot of attributes. Performing destruction immediately."
+
+#: modules/engine/create.cpp:1288 modules/engine/create.cpp:1357
+msgid "Weird object type cannot be destroyed."
+msgstr "[xx] Weird object type cannot be destroyed."
+
+#: modules/engine/cron.cpp:761
+msgid "Syntax errors. No cron entry made."
+msgstr "[xx] Syntax errors. No cron entry made."
+
+#: modules/engine/cron.cpp:765
+msgid "That cron entry already exists."
+msgstr "[xx] That cron entry already exists."
+
+#: modules/engine/cron.cpp:769
+msgid "Cron entry added."
+msgstr "[xx] Cron entry added."
+
+#: modules/engine/db.cpp:942
+msgid "No such user-named attribute."
+msgstr "[xx] No such user-named attribute."
+
+#: modules/engine/db.cpp:1000
+msgid "Attribute access changed."
+msgstr "[xx] Attribute access changed."
+
+#: modules/engine/db.cpp:1019 modules/engine/db.cpp:1036
+msgid "Attribute rename failed."
+msgstr "[xx] Attribute rename failed."
+
+#: modules/engine/db.cpp:1030
+msgid "An attribute with that name already exists."
+msgstr "[xx] An attribute with that name already exists."
+
+#: modules/engine/db.cpp:1040
+msgid "Attribute renamed."
+msgstr "[xx] Attribute renamed."
+
+#: modules/engine/db.cpp:1050
+msgid "Attribute deleted."
+msgstr "[xx] Attribute deleted."
+
+#: modules/engine/db.cpp:1156
+msgid "That’s not a good name for a player."
+msgstr "[xx] That’s not a good name for a player."
+
+#: modules/engine/db.cpp:1165
+msgid "That name is already in use or is an alias."
+msgstr "[xx] That name is already in use or is an alias."
+
+#: modules/engine/db.cpp:1192 modules/engine/set.cpp:295
+msgid "That is not a reasonable name."
+msgstr "[xx] That is not a reasonable name."
+
+#: modules/engine/flags.cpp:26
+msgid "You cannot make God mortal."
+msgstr "[xx] You cannot make God mortal."
+
+#: modules/engine/flags.cpp:195
+msgid "Your object has been spared from destruction."
+msgstr "[xx] Your object has been spared from destruction."
+
+#: modules/engine/flags.cpp:779
+msgid "You must specify a flag to clear."
+msgstr "[xx] You must specify a flag to clear."
+
+#: modules/engine/flags.cpp:783
+msgid "You must specify a flag to set."
+msgstr "[xx] You must specify a flag to set."
+
+#: modules/engine/flags.cpp:791
+msgid "I do not understand that flag."
+msgstr "[xx] I do not understand that flag."
+
+#: modules/engine/flags.cpp:825 modules/engine/levels.cpp:343
+#: modules/engine/levels.cpp:444 modules/engine/powers.cpp:276
+#: modules/engine/set.cpp:1323
+msgid "Cleared."
+msgstr "[xx] Cleared."
+
+#: modules/engine/flags.cpp:830 modules/engine/powers.cpp:281
+#: modules/engine/set.cpp:1289
+msgid "Already cleared."
+msgstr "[xx] Already cleared."
+
+#: modules/engine/flags.cpp:830 modules/engine/powers.cpp:281
+#: modules/engine/set.cpp:1293
+msgid "Already set."
+msgstr "[xx] Already set."
+
+#: modules/engine/flags.cpp:1158
+msgid "Special flags cannot be modified with flag_access."
+msgstr "[xx] Special flags cannot be modified with flag_access."
+
+#: modules/engine/flags.cpp:1413
+msgid "Extra argument ignored."
+msgstr "[xx] Extra argument ignored."
+
+#: modules/engine/flags.cpp:1436
+msgid "Error: You can’t remove the present flag name from the hash table."
+msgstr "[xx] Error: You can’t remove the present flag name from the hash table."
+
+#: modules/engine/flags.cpp:1441 modules/engine/flags.cpp:1446
+#: modules/engine/flags.cpp:1462
+msgid "Error: Bad flagname given or flag not found."
+msgstr "[xx] Error: Bad flagname given or flag not found."
+
+#: modules/engine/flags.cpp:1453
+msgid "You must specify a flag and a name."
+msgstr "[xx] You must specify a flag and a name."
+
+#: modules/engine/flags.cpp:1458
+msgid "Flag name changed."
+msgstr "[xx] Flag name changed."
+
+#: modules/engine/help.cpp:223
+msgid "Cache for help indexes refreshed."
+msgstr "[xx] Cache for help indexes refreshed."
+
+#: modules/engine/help.cpp:397
+msgid "Sorry, that function is temporarily unavailable."
+msgstr "[xx] Sorry, that function is temporarily unavailable."
+
+#: modules/engine/help.cpp:440
+msgid "No such indexed file found."
+msgstr "[xx] No such indexed file found."
+
+#: modules/engine/levels.cpp:281 modules/engine/levels.cpp:382
+#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
 msgid "I don’t know what you want to set!"
 msgstr "[xx] I don’t know what you want to set!"
 
-msgid "You can’t set that!"
-msgstr "[xx] You can’t set that!"
+#: modules/engine/levels.cpp:325 modules/engine/levels.cpp:426
+msgid "You must specify a reality level to clear."
+msgstr "[xx] You must specify a reality level to clear."
 
-msgid "Couldn’t create attribute."
-msgstr "[xx] Couldn’t create attribute."
+#: modules/engine/levels.cpp:329 modules/engine/levels.cpp:430
+msgid "You must specify a reality level to set."
+msgstr "[xx] You must specify a reality level to set."
 
+#: modules/engine/levels.cpp:337 modules/engine/levels.cpp:438
+msgid "No such reality level."
+msgstr "[xx] No such reality level."
+
+#: modules/engine/log.cpp:366
+msgid "Syntax: @log file=message"
+msgstr "[xx] Syntax: @log file=message"
+
+#: modules/engine/log.cpp:384
+msgid "Not a valid log file."
+msgstr "[xx] Not a valid log file."
+
+#: modules/engine/log.cpp:737
+msgid "Log file rotated."
+msgstr "[xx] Log file rotated."
+
+#: modules/engine/look.cpp:1313
+msgid "You see nothing special."
+msgstr "[xx] You see nothing special."
+
+#: modules/engine/look.cpp:1501 modules/engine/look.cpp:2028
+#: modules/engine/look.cpp:2142
+msgid "Contents:"
+msgstr "[xx] Contents:"
+
+#: modules/engine/look.cpp:1526
+msgid "You can’t look outside."
+msgstr "[xx] You can’t look outside."
+
+#: modules/engine/look.cpp:1615
+msgid "Carrying:"
+msgstr "[xx] Carrying:"
+
+#: modules/engine/look.cpp:1684
+msgid "Attr list: "
+msgstr "[xx] Attr list: "
+
+#: modules/engine/look.cpp:1793 modules/engine/look.cpp:1954
+msgid "<Too far away to get a good look>"
+msgstr "[xx] <Too far away to get a good look>"
+
+#: modules/engine/look.cpp:1800
+msgid "No matching attributes found."
+msgstr "[xx] No matching attributes found."
+
+#: modules/engine/look.cpp:2046 modules/engine/look.cpp:2076
+#: modules/engine/look.cpp:2208
+msgid "Exits:"
+msgstr "[xx] Exits:"
+
+#: modules/engine/look.cpp:2056 modules/engine/look.cpp:2086
+msgid "No exits."
+msgstr "[xx] No exits."
+
+#: modules/engine/look.cpp:2122
+msgid "Destination: *UNLINKED*"
+msgstr "[xx] Destination: *UNLINKED*"
+
+#: modules/engine/look.cpp:2192
+msgid "You aren’t carrying anything."
+msgstr "[xx] You aren’t carrying anything."
+
+#: modules/engine/look.cpp:2196
+msgid "You are carrying:"
+msgstr "[xx] You are carrying:"
+
+#: modules/engine/look.cpp:2603
+msgid "Sweeping location..."
+msgstr "[xx] Sweeping location..."
+
+#: modules/engine/look.cpp:2636
+msgid "Sweeping exits..."
+msgstr "[xx] Sweeping exits..."
+
+#: modules/engine/look.cpp:2648
+msgid "Sweeping inventory..."
+msgstr "[xx] Sweeping inventory..."
+
+#: modules/engine/look.cpp:2660
+msgid "Sweeping carried exits..."
+msgstr "[xx] Sweeping carried exits..."
+
+#: modules/engine/look.cpp:2666
+msgid "Sweep complete."
+msgstr "[xx] Sweep complete."
+
+#: modules/engine/look.cpp:2774
+msgid "What command do you want to scan for?"
+msgstr "[xx] What command do you want to scan for?"
+
+#: modules/engine/look.cpp:2803
+msgid "Check yourself and your inventory:"
+msgstr "[xx] Check yourself and your inventory:"
+
+#: modules/engine/look.cpp:2818
+msgid "Check your location and its contents:"
+msgstr "[xx] Check your location and its contents:"
+
+#: modules/engine/look.cpp:2841
+msgid "Checking zone:"
+msgstr "[xx] Checking zone:"
+
+#: modules/engine/look.cpp:2887
+msgid "Checking master room:"
+msgstr "[xx] Checking master room:"
+
+#: modules/engine/look.cpp:2902
+msgid "Scan complete."
+msgstr "[xx] Scan complete."
+
+#: modules/engine/match.cpp:17 modules/engine/match.cpp:34
+msgid "I don’t see that here."
+msgstr "[xx] I don’t see that here."
+
+#: modules/engine/match.cpp:18 modules/engine/match.cpp:35
+#: modules/engine/set.cpp:698
+msgid "I don’t know which one you mean!"
+msgstr "[xx] I don’t know which one you mean!"
+
+#: modules/engine/move.cpp:406
+msgid "You can’t teleport that out!"
+msgstr "[xx] You can’t teleport that out!"
+
+#: modules/engine/move.cpp:570 modules/engine/move.cpp:577
+#: modules/engine/move.cpp:665 modules/engine/move.cpp:674
+msgid "You can’t go that way."
+msgstr "[xx] You can’t go that way."
+
+#: modules/engine/move.cpp:617
+msgid "You are already home."
+msgstr "[xx] You are already home."
+
+#: modules/engine/move.cpp:646
+msgid "There’s no place like home..."
+msgstr "[xx] There’s no place like home..."
+
+#: modules/engine/move.cpp:668
+msgid "I don’t know which way you mean!"
+msgstr "[xx] I don’t know which way you mean!"
+
+#: modules/engine/move.cpp:757 modules/engine/move.cpp:808
+msgid "You already have that!"
+msgstr "[xx] You already have that!"
+
+#: modules/engine/move.cpp:768
+msgid "You cannot get yourself!"
+msgstr "[xx] You cannot get yourself!"
+
+#: modules/engine/move.cpp:778 modules/engine/move.cpp:781
+msgid "Taken."
+msgstr "[xx] Taken."
+
+#: modules/engine/move.cpp:828
+msgid "Exit taken."
+msgstr "[xx] Exit taken."
+
+#: modules/engine/move.cpp:834
+msgid "You can’t take that!"
+msgstr "[xx] You can’t take that!"
+
+#: modules/engine/move.cpp:869 modules/engine/rob.cpp:206
+#: modules/engine/set.cpp:1003
+msgid "You don’t have that!"
+msgstr "[xx] You don’t have that!"
+
+#: modules/engine/move.cpp:873 modules/engine/rob.cpp:210
+#: modules/engine/set.cpp:1008
+msgid "I don’t know which you mean!"
+msgstr "[xx] I don’t know which you mean!"
+
+#: modules/engine/move.cpp:888 modules/engine/move.cpp:927
+#: modules/engine/move.cpp:951
+msgid "You can’t drop that."
+msgstr "[xx] You can’t drop that."
+
+#: modules/engine/move.cpp:896 modules/engine/move.cpp:911
+msgid "Dropped."
+msgstr "[xx] Dropped."
+
+#: modules/engine/move.cpp:946
+msgid "Exit dropped."
+msgstr "[xx] Exit dropped."
+
+#: modules/engine/move.cpp:973
+msgid "You can’t enter yourself!"
+msgstr "[xx] You can’t enter yourself!"
+
+#: modules/engine/move.cpp:1040 modules/engine/move.cpp:1057
+msgid "You can’t leave."
+msgstr "[xx] You can’t leave."
+
+#: modules/engine/object.cpp:628 modules/engine/player.cpp:1683
+msgid "That name is not allowed."
+msgstr "[xx] That name is not allowed."
+
+#: modules/engine/object.cpp:637
+msgid "That’s a silly name for a player."
+msgstr "[xx] That’s a silly name for a player."
+
+#: modules/engine/object.cpp:971 modules/engine/rob.cpp:152
+msgid "Halted."
+msgstr "[xx] Halted."
+
+#: modules/engine/object.cpp:2303 modules/engine/predicates.cpp:1328
+#: modules/engine/predicates.cpp:1371 modules/engine/walkdb.cpp:1347
+#: modules/engine/walkdb.cpp:1382
+msgid "Done."
+msgstr "[xx] Done."
+
+#: modules/engine/player.cpp:963 modules/engine/predicates.cpp:1241
+#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
+msgid "Sorry."
+msgstr "[xx] Sorry."
+
+#: modules/engine/player.cpp:968 modules/engine/wiz.cpp:549
+msgid "Password changed."
+msgstr "[xx] Password changed."
+
+#: modules/engine/player.cpp:1017 modules/engine/set.cpp:923
+#: modules/engine/set.cpp:1065
+msgid "I couldn’t find that player."
+msgstr "[xx] I couldn’t find that player."
+
+#: modules/engine/player.cpp:1438
+msgid "Only players may use @protect."
+msgstr "[xx] Only players may use @protect."
+
+#: modules/engine/player.cpp:1489
+msgid "No protected names in the database."
+msgstr "[xx] No protected names in the database."
+
+#: modules/engine/player.cpp:1504 modules/engine/wiz.cpp:503
+msgid "No such player."
+msgstr "[xx] No such player."
+
+#: modules/engine/player.cpp:1512
+msgid "No protected names."
+msgstr "[xx] No protected names."
+
+#: modules/engine/player.cpp:1539
+msgid "Protect what name?"
+msgstr "[xx] Protect what name?"
+
+#: modules/engine/player.cpp:1566 modules/engine/player.cpp:1663
+msgid "That name is not in your protected list."
+msgstr "[xx] That name is not in your protected list."
+
+#: modules/engine/player.cpp:1578 modules/engine/set.cpp:246
+#: modules/engine/set.cpp:383
+msgid "That name is already in use."
+msgstr "[xx] That name is already in use."
+
+#: modules/engine/player.cpp:1599
+msgid "That name is already in use or is illegal, alias cleared."
+msgstr "[xx] That name is already in use or is illegal, alias cleared."
+
+#: modules/engine/player.cpp:1612
+msgid "You have no alias set."
+msgstr "[xx] You have no alias set."
+
+#: modules/engine/player.cpp:1636
+msgid "You have no protected names."
+msgstr "[xx] You have no protected names."
+
+#: modules/engine/player.cpp:1677
+msgid "That is not a valid player name."
+msgstr "[xx] That is not a valid player name."
+
+#: modules/engine/player.cpp:1699
+msgid "That name is already in your protected list."
+msgstr "[xx] That name is already in your protected list."
+
+#: modules/engine/player.cpp:1716
+msgid "That name is already protected by another player."
+msgstr "[xx] That name is already protected by another player."
+
+#: modules/engine/powers.cpp:245
+msgid "You must specify a power to clear."
+msgstr "[xx] You must specify a power to clear."
+
+#: modules/engine/powers.cpp:249
+msgid "You must specify a power to set."
+msgstr "[xx] You must specify a power to set."
+
+#: modules/engine/powers.cpp:257
+msgid "I don’t understand that power."
+msgstr "[xx] I don’t understand that power."
+
+#: modules/engine/predicates.cpp:283
+msgid "Sorry, your building contract has run out."
+msgstr "[xx] Sorry, your building contract has run out."
+
+#: modules/engine/predicates.cpp:1008
+msgid "That is not a valid command name."
+msgstr "[xx] That is not a valid command name."
+
+#: modules/engine/predicates.cpp:1019 modules/engine/predicates.cpp:1253
+#: modules/engine/predicates.cpp:1562
+msgid "No such attribute."
+msgstr "[xx] No such attribute."
+
+#: modules/engine/predicates.cpp:1213
+msgid "No added commands found in command table."
+msgstr "[xx] No added commands found in command table."
+
+#: modules/engine/predicates.cpp:1375 modules/engine/predicates.cpp:1380
+msgid "Command not found in command table."
+msgstr "[xx] Command not found in command table."
+
+#: modules/engine/predicates.cpp:1414 modules/engine/predicates.cpp:1488
+msgid "That is not a player."
+msgstr "[xx] That is not a player."
+
+#: modules/engine/predicates.cpp:1419 modules/engine/predicates.cpp:1493
+msgid "That player is not connected."
+msgstr "[xx] That player is not connected."
+
+#: modules/engine/predicates.cpp:1424
+msgid "Player is not in an @program."
+msgstr "[xx] Player is not in an @program."
+
+#: modules/engine/predicates.cpp:1445
+msgid "Your @program has been terminated."
+msgstr "[xx] Your @program has been terminated."
+
+#: modules/engine/predicates.cpp:1473
+msgid "No players specified."
+msgstr "[xx] No players specified."
+
+#: modules/engine/predicates.cpp:1501
+msgid "Input already pending."
+msgstr "[xx] Input already pending."
+
+#: modules/engine/predicates.cpp:1556 modules/engine/set.cpp:533
+#: modules/engine/set.cpp:630 modules/engine/set.cpp:917
+#: modules/engine/set.cpp:1266
+msgid "Attribute not present on object."
+msgstr "[xx] Attribute not present on object."
+
+#: modules/engine/predicates.cpp:1609
+msgid "Dumping. Please try again later."
+msgstr "[xx] Dumping. Please try again later."
+
+#: modules/engine/predicates.cpp:1617
+msgid "Server just started. Please try again in a few seconds."
+msgstr "[xx] Server just started. Please try again in a few seconds."
+
+#: modules/engine/predicates.cpp:2742 modules/engine/set.cpp:1587
+#: modules/engine/set.cpp:1997
 msgid "Nothing to do."
 msgstr "[xx] Nothing to do."
 
+#: modules/engine/predicates.cpp:2786
+msgid "Permission denied,"
+msgstr "[xx] Permission denied,"
+
+#: modules/engine/quota.cpp:171
+msgid "Quotas are not enabled."
+msgstr "[xx] Quotas are not enabled."
+
+#: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:322
+msgid "Not found."
+msgstr "[xx] Not found."
+
+#: modules/engine/rob.cpp:46
+msgid "I don’t see that player here."
+msgstr "[xx] I don’t see that player here."
+
+#: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
+#: modules/engine/speech.cpp:1063
+msgid "I don’t know who you mean!"
+msgstr "[xx] I don’t know who you mean!"
+
+#: modules/engine/rob.cpp:57
+msgid "Sorry, you can only kill players and things."
+msgstr "[xx] Sorry, you can only kill players and things."
+
+#: modules/engine/rob.cpp:101
+msgid "Your murder attempt failed."
+msgstr "[xx] Your murder attempt failed."
+
+#: modules/engine/rob.cpp:178
+msgid "Your insurance policy has been revoked."
+msgstr "[xx] Your insurance policy has been revoked."
+
+#: modules/engine/rob.cpp:215
+msgid "You can’t give yourself away!"
+msgstr "[xx] You can’t give yourself away!"
+
+#: modules/engine/rob.cpp:220
+msgid "You can’t give an object to itself."
+msgstr "[xx] You can’t give an object to itself."
+
+#: modules/engine/rob.cpp:265
+msgid "Given."
+msgstr "[xx] Given."
+
+#: modules/engine/rob.cpp:329
+msgid "Feeling poor today?"
+msgstr "[xx] Feeling poor today?"
+
+#: modules/engine/rob.cpp:417
+msgid "Give to whom?"
+msgstr "[xx] Give to whom?"
+
+#: modules/engine/rob.cpp:427
+msgid "You can’t give anything to an exit."
+msgstr "[xx] You can’t give anything to an exit."
+
+#: modules/engine/rob.cpp:432
+msgid "Guests really don’t need money or anything."
+msgstr "[xx] Guests really don’t need money or anything."
+
+#: modules/engine/session.cpp:290 modules/engine/session.cpp:305
+msgid "Not connected."
+msgstr "[xx] Not connected."
+
+#: modules/engine/set.cpp:83
+msgid "Zones disabled."
+msgstr "[xx] Zones disabled."
+
+#: modules/engine/set.cpp:112
+msgid "Invalid zone object type."
+msgstr "[xx] Invalid zone object type."
+
+#: modules/engine/set.cpp:122
+msgid "You don’t have the power to shift reality."
+msgstr "[xx] You don’t have the power to shift reality."
+
+#: modules/engine/set.cpp:139
+msgid "You cannot move that object to that zone."
+msgstr "[xx] You cannot move that object to that zone."
+
+#: modules/engine/set.cpp:149
+msgid "Only rooms may be zoned to other rooms."
+msgstr "[xx] Only rooms may be zoned to other rooms."
+
+#: modules/engine/set.cpp:181
+msgid "Zone changed."
+msgstr "[xx] Zone changed."
+
+#: modules/engine/set.cpp:216
+msgid "Give it what new name?"
+msgstr "[xx] Give it what new name?"
+
+#: modules/engine/set.cpp:228
+msgid "You can’t use that name."
+msgstr "[xx] You can’t use that name."
+
+#: modules/engine/set.cpp:234
+msgid "That name is protected by another player."
+msgstr "[xx] That name is protected by another player."
+
+#: modules/engine/set.cpp:269 modules/engine/set.cpp:305
+msgid "Name set."
+msgstr "[xx] Name set."
+
+#: modules/engine/set.cpp:374
+msgid "Alias removed."
+msgstr "[xx] Alias removed."
+
+#: modules/engine/set.cpp:388
+msgid "That’s a silly name for a player!"
+msgstr "[xx] That’s a silly name for a player!"
+
+#: modules/engine/set.cpp:400
+msgid "Alias set."
+msgstr "[xx] Alias set."
+
+#: modules/engine/set.cpp:479
+msgid "Forwardlist removed."
+msgstr "[xx] Forwardlist removed."
+
+#: modules/engine/set.cpp:484
+msgid "Invalid forwardlist."
+msgstr "[xx] Invalid forwardlist."
+
+#: modules/engine/set.cpp:544
+msgid "Attribute locked."
+msgstr "[xx] Attribute locked."
+
+#: modules/engine/set.cpp:560
+msgid "I don’t see what you want to lock!"
+msgstr "[xx] I don’t see what you want to lock!"
+
+#: modules/engine/set.cpp:564
+msgid "I don’t know which one you want to lock!"
+msgstr "[xx] I don’t know which one you want to lock!"
+
+#: modules/engine/set.cpp:570
+msgid "You can’t lock that!"
+msgstr "[xx] You can’t lock that!"
+
+#: modules/engine/set.cpp:585
+msgid "I don’t understand that key."
+msgstr "[xx] I don’t understand that key."
+
+#: modules/engine/set.cpp:599
+msgid "Locked."
+msgstr "[xx] Locked."
+
+#: modules/engine/set.cpp:641
+msgid "Attribute unlocked."
+msgstr "[xx] Attribute unlocked."
+
+#: modules/engine/set.cpp:664
+msgid "Unlocked."
+msgstr "[xx] Unlocked."
+
+#: modules/engine/set.cpp:693
+msgid "Unlink what?"
+msgstr "[xx] Unlink what?"
+
+#: modules/engine/set.cpp:720
+msgid "Unlinked."
+msgstr "[xx] Unlinked."
+
+#: modules/engine/set.cpp:731
+msgid "Dropto removed."
+msgstr "[xx] Dropto removed."
+
+#: modules/engine/set.cpp:737
+msgid "You can’t unlink that!"
+msgstr "[xx] You can’t unlink that!"
+
+#: modules/engine/set.cpp:981
+msgid "Attribute owner changed."
+msgstr "[xx] Attribute owner changed."
+
+#: modules/engine/set.cpp:1061
+msgid "You shouldn’t be rummaging through the garbage."
+msgstr "[xx] You shouldn’t be rummaging through the garbage."
+
+#: modules/engine/set.cpp:1070
+msgid "Players always own themselves."
+msgstr "[xx] Players always own themselves."
+
+#: modules/engine/set.cpp:1258
+msgid "You can’t set that!"
+msgstr "[xx] You can’t set that!"
+
+#: modules/engine/set.cpp:1356
+msgid "Couldn’t create attribute."
+msgstr "[xx] Couldn’t create attribute."
+
+#: modules/engine/set.cpp:1677
 msgid "Not copied anywhere. Non-existent attribute."
 msgstr "[xx] Not copied anywhere. Non-existent attribute."
 
+#: modules/engine/set.cpp:1703
 msgid "Could not remove old attribute. Non-existent attribute."
 msgstr "[xx] Could not remove old attribute. Non-existent attribute."
 
+#: modules/engine/set.cpp:2062 modules/engine/set.cpp:2123
 msgid "No matching attributes."
 msgstr "[xx] No matching attributes."
 
+#: modules/engine/set.cpp:2092
 msgid "SAFE objects may not be @wiped."
 msgstr "[xx] SAFE objects may not be @wiped."
 
+#: modules/engine/set.cpp:2131
 msgid "Wiped."
 msgstr "[xx] Wiped."
 
+#: modules/engine/set.cpp:2232
 msgid "Triggered."
 msgstr "[xx] Triggered."
 
+#: modules/engine/set.cpp:2415 modules/engine/set.cpp:2445
 msgid "You can’t figure out how to use that."
 msgstr "[xx] You can’t figure out how to use that."
 
+#: modules/engine/set.cpp:2501
 msgid "That’s not a good name for an attribute."
 msgstr "[xx] That’s not a good name for an attribute."
 
+#: modules/engine/speech.cpp:60
 msgid "Sorry. Gagged players cannot speak."
 msgstr "[xx] Sorry. Gagged players cannot speak."
 
+#: modules/engine/speech.cpp:68
 msgid "Sorry, robots may not speak in public."
 msgstr "[xx] Sorry, robots may not speak in public."
 
+#: modules/engine/speech.cpp:76
 msgid "Sorry, you may not speak in this place."
 msgstr "[xx] Sorry, you may not speak in this place."
 
+#: modules/engine/speech.cpp:778
 msgid "You have not paged anyone."
 msgstr "[xx] You have not paged anyone."
 
+#: modules/engine/speech.cpp:782
 msgid "No one to page."
 msgstr "[xx] No one to page."
 
+#: modules/engine/speech.cpp:1045
 msgid "Whisper to whom?"
 msgstr "[xx] Whisper to whom?"
 
+#: modules/engine/speech.cpp:1049
 msgid "Emit to whom?"
 msgstr "[xx] Emit to whom?"
 
+#: modules/engine/speech.cpp:1053
 msgid "Emit except to whom?"
 msgstr "[xx] Emit except to whom?"
 
+#: modules/engine/speech.cpp:1092 modules/engine/speech.cpp:1412
 msgid "You are too far away to do that."
 msgstr "[xx] You are too far away to do that."
 
+#: modules/engine/speech.cpp:1494
 msgid "No one to whisper to."
 msgstr "[xx] No one to whisper to."
+
+#: modules/engine/walk.cpp:353
+msgid "Walk cancelled."
+msgstr "[xx] Walk cancelled."
+
+#: modules/engine/walk.cpp:361
+msgid "Only things can walk."
+msgstr "[xx] Only things can walk."
+
+#: modules/engine/walk.cpp:369
+msgid "Walk where?"
+msgstr "[xx] Walk where?"
+
+#: modules/engine/walk.cpp:378
+msgid "That’s not a valid destination."
+msgstr "[xx] That’s not a valid destination."
+
+#: modules/engine/walk.cpp:442
+msgid "Patrol cancelled."
+msgstr "[xx] Patrol cancelled."
+
+#: modules/engine/walk.cpp:448
+msgid "Only things can patrol."
+msgstr "[xx] Only things can patrol."
+
+#: modules/engine/walk.cpp:454
+msgid "Patrol where?"
+msgstr "[xx] Patrol where?"
+
+#: modules/engine/walk.cpp:483
+msgid "Patrol requires at least two waypoints."
+msgstr "[xx] Patrol requires at least two waypoints."
+
+#: modules/engine/walkdb.cpp:75
+msgid "That’s terrific, but what should I do with the list?"
+msgstr "[xx] That’s terrific, but what should I do with the list?"
+
+#: modules/engine/walkdb.cpp:87
+msgid "The delimiter must be a single character!"
+msgstr "[xx] The delimiter must be a single character!"
+
+#: modules/engine/walkdb.cpp:210
+msgid "***End of List***"
+msgstr "[xx] ***End of List***"
+
+#: modules/engine/walkdb.cpp:472
+msgid "Victim must be a player."
+msgstr "[xx] Victim must be a player."
+
+#: modules/engine/walkdb.cpp:848
+msgid "You need a search warrant to do that!"
+msgstr "[xx] You need a search warrant to do that!"
+
+#: modules/engine/walkdb.cpp:1182
+msgid ""
+"\n"
+"ROOMS:"
+msgstr "\n[xx] ROOMS:"
+
+#: modules/engine/walkdb.cpp:1207
+msgid ""
+"\n"
+"EXITS:"
+msgstr "\n[xx] EXITS:"
+
+#: modules/engine/walkdb.cpp:1250
+msgid ""
+"\n"
+"OBJECTS:"
+msgstr "\n[xx] OBJECTS:"
+
+#: modules/engine/walkdb.cpp:1285
+msgid ""
+"\n"
+"PLAYERS:"
+msgstr "\n[xx] PLAYERS:"
+
+#: modules/engine/walkdb.cpp:1309
+msgid "Nothing found."
+msgstr "[xx] Nothing found."
+
+#: modules/engine/walkdb.cpp:1506
+msgid "Day   Hours     Players  Total"
+msgstr "[xx] Day   Hours     Players  Total"
+
+#: modules/engine/wiz.cpp:33
+msgid "You can’t teleport that."
+msgstr "[xx] You can’t teleport that."
+
+#: modules/engine/wiz.cpp:53 modules/engine/wiz.cpp:84
+#: modules/engine/wiz.cpp:120 modules/engine/wiz.cpp:181
+msgid "Bad destination."
+msgstr "[xx] Bad destination."
+
+#: modules/engine/wiz.cpp:77
+msgid "I don’t know which destination you mean!"
+msgstr "[xx] I don’t know which destination you mean!"
+
+#: modules/engine/wiz.cpp:157
+msgid "Teleported."
+msgstr "[xx] Teleported."
+
+#: modules/engine/wiz.cpp:196
+msgid "I can’t find that exit."
+msgstr "[xx] I can’t find that exit."
+
+#: modules/engine/wiz.cpp:382
+msgid "Try @destroy instead."
+msgstr "[xx] Try @destroy instead."
+
+#: modules/engine/wiz.cpp:387
+msgid "You can’t toad that player."
+msgstr "[xx] You can’t toad that player."
+
+#: modules/engine/wiz.cpp:536
+msgid "You cannot change that player’s password."
+msgstr "[xx] You cannot change that player’s password."
+
+#: modules/engine/wiz.cpp:580
+msgid "That’s not a number!"
+msgstr "[xx] That’s not a number!"
+
+#: modules/engine/wiz.cpp:602
+msgid "You cannot boot that player!"
+msgstr "[xx] You cannot boot that player!"
+
+#: modules/engine/wiz.cpp:609
+msgid "You can only boot off other players!"
+msgstr "[xx] You can only boot off other players!"
+
+#: modules/engine/wiz.cpp:691
+msgid "Cut."
+msgstr "[xx] Cut."
+
+#: modules/engine/wiz.cpp:725
+msgid "Set: MOTD."
+msgstr "[xx] Set: MOTD."
+
+#: modules/engine/wiz.cpp:734
+msgid "Set: Wizard MOTD."
+msgstr "[xx] Set: Wizard MOTD."
+
+#: modules/engine/wiz.cpp:743
+msgid "Set: Down MOTD."
+msgstr "[xx] Set: Down MOTD."
+
+#: modules/engine/wiz.cpp:752
+msgid "Set: Full MOTD."
+msgstr "[xx] Set: Full MOTD."
+
+#: modules/engine/wiz.cpp:762
+msgid "----- motd file -----"
+msgstr "[xx] ----- motd file -----"
+
+#: modules/engine/wiz.cpp:764
+msgid "----- wizmotd file -----"
+msgstr "[xx] ----- wizmotd file -----"
+
+#: modules/engine/wiz.cpp:766
+msgid "----- motd messages -----"
+msgstr "[xx] ----- motd messages -----"
+
+#: modules/engine/wiz.cpp:826
+msgid "I don’t know about that flag."
+msgstr "[xx] I don’t know about that flag."
+
+#: modules/engine/wiz.cpp:852
+msgid "Enabled."
+msgstr "[xx] Enabled."
+
+#: modules/engine/wiz.cpp:875
+msgid "Disabled."
+msgstr "[xx] Disabled."

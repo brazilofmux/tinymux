@@ -42,12 +42,10 @@
         strmatch([cat(power(2,63),power(2,64),power(2,0),power(0,0))], 9.223372036854776E18%b1.8446744073709552E19%b1%b1)
       )=
   {
-    @log smoke=TC001: power overflow/identity. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: power overflow/identity. Succeeded.
   },
   {
-    @log smoke=TC001: power overflow/identity. Failed (actual=.[cat(power(2,63),power(2,64),power(2,0),power(0,0))].).;
-    @trig me/tr.done
+    @log smoke=TC001: power overflow/identity. Failed (actual=.[cat(power(2,63),power(2,64),power(2,0),power(0,0))].).
   }
 -
 #
@@ -61,12 +59,10 @@
 &tr.tc002 test_overflow_inject_fn=
   @if strmatch([cat( mul(9223372036854775807,2), add(9223372036854775807,1), idiv(1,0), mod(1,0) )], 1.844674407370954E19%b9223372036854769664%b#-1%bDIVIDE%bBY%bZERO%b0)=
   {
-    @log smoke=TC002: mul/add overflow and div-by-zero. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC002: mul/add overflow and div-by-zero. Succeeded.
   },
   {
-    @log smoke=TC002: mul/add overflow and div-by-zero. Failed (actual=.[cat( mul(9223372036854775807,2), add(9223372036854775807,1), idiv(1,0), mod(1,0) )].).;
-    @trig me/tr.done
+    @log smoke=TC002: mul/add overflow and div-by-zero. Failed (actual=.[cat( mul(9223372036854775807,2), add(9223372036854775807,1), idiv(1,0), mod(1,0) )].).
   }
 -
 #
@@ -77,12 +73,10 @@
 &tr.tc003 test_overflow_inject_fn=
   @if strmatch([cat( sub(-9223372036854775807,2), mul(-9223372036854775807,2), add(-9223372036854775808,0) )], -9.22337203685478E18%b-1.844674407370957E19%b-9.22337203685478E18)=
   {
-    @log smoke=TC003: negative boundary sub/mul/add. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC003: negative boundary sub/mul/add. Succeeded.
   },
   {
-    @log smoke=TC003: negative boundary sub/mul/add. Failed (actual=.[cat( sub(-9223372036854775807,2), mul(-9223372036854775807,2), add(-9223372036854775808,0) )].).;
-    @trig me/tr.done
+    @log smoke=TC003: negative boundary sub/mul/add. Failed (actual=.[cat( sub(-9223372036854775807,2), mul(-9223372036854775807,2), add(-9223372036854775808,0) )].).
   }
 -
 #
@@ -101,12 +95,10 @@
 &tr.tc004 test_overflow_inject_fn=
   @if strmatch([cat(shl(1,62),shl(1,63),shr(-1,1))], 4611686018427387904%b-9223372036854775808%b-1)=
   {
-    @log smoke=TC004: shl/shr boundary. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC004: shl/shr boundary. Succeeded.
   },
   {
-    @log smoke=TC004: shl/shr boundary. Failed (actual=.[cat(shl(1,62),shl(1,63),shr(-1,1))].).;
-    @trig me/tr.done
+    @log smoke=TC004: shl/shr boundary. Failed (actual=.[cat(shl(1,62),shl(1,63),shr(-1,1))].).
   }
 -
 #
@@ -116,12 +108,10 @@
 &tr.tc005 test_overflow_inject_fn=
   @if strmatch([cat( inc(9223372036854775807), dec(-9223372036854775808) )], -9223372036854775808%b9223372036854775807)=
   {
-    @log smoke=TC005: inc/dec boundary. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC005: inc/dec boundary. Succeeded.
   },
   {
-    @log smoke=TC005: inc/dec boundary. Failed (actual=.[cat( inc(9223372036854775807), dec(-9223372036854775808) )].).;
-    @trig me/tr.done
+    @log smoke=TC005: inc/dec boundary. Failed (actual=.[cat( inc(9223372036854775807), dec(-9223372036854775808) )].).
   }
 -
 #
@@ -137,12 +127,10 @@
         eq(sign(9223372036854775807), 1)
       )=
   {
-    @log smoke=TC006: abs/sign boundary. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC006: abs/sign boundary. Succeeded.
   },
   {
-    @log smoke=TC006: abs/sign boundary. Failed (actual=.[cat( abs(-9223372036854775808), sign(-9223372036854775808), sign(9223372036854775807) )].).;
-    @trig me/tr.done
+    @log smoke=TC006: abs/sign boundary. Failed (actual=.[cat( abs(-9223372036854775808), sign(-9223372036854775808), sign(9223372036854775807) )].).
   }
 -
 #
@@ -151,12 +139,10 @@
 &tr.tc007 test_overflow_inject_fn=
   @if strmatch([cat( isnum(9223372036854775807), isint(9223372036854775807), isnum(1.8446744073709552E19) )], 1%b1%b1)=
   {
-    @log smoke=TC007: isnum/isint large values. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC007: isnum/isint large values. Succeeded.
   },
   {
-    @log smoke=TC007: isnum/isint large values. Failed (actual=.[cat( isnum(9223372036854775807), isint(9223372036854775807), isnum(1.8446744073709552E19) )].).;
-    @trig me/tr.done
+    @log smoke=TC007: isnum/isint large values. Failed (actual=.[cat( isnum(9223372036854775807), isint(9223372036854775807), isnum(1.8446744073709552E19) )].).
   }
 -
 #
@@ -166,12 +152,10 @@
 &tr.tc008 test_overflow_inject_fn=
   @if strmatch([[edit(abc%rdef,%r,NL)] [edit(abc%tdef,%t,TAB)]], abcNLdef%babcTABdef)=
   {
-    @log smoke=TC008: newline/tab in edit. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC008: newline/tab in edit. Succeeded.
   },
   {
-    @log smoke=TC008: newline/tab in edit. Failed (actual=.[[edit(abc%rdef,%r,NL)] [edit(abc%tdef,%t,TAB)]].).;
-    @trig me/tr.done
+    @log smoke=TC008: newline/tab in edit. Failed (actual=.[[edit(abc%rdef,%r,NL)] [edit(abc%tdef,%t,TAB)]].).
   }
 -
 #
@@ -181,12 +165,10 @@
 &tr.tc009 test_overflow_inject_fn=
   @if strmatch([[secure(%[haval(crash)%])] [secure(%%)]], %bhaval%bcrash%b%b%b%b)=
   {
-    @log smoke=TC009: secure() injection prevention. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC009: secure() injection prevention. Succeeded.
   },
   {
-    @log smoke=TC009: secure() injection prevention. Failed (actual=.[[secure(%[haval(crash)%])] [secure(%%)]].).;
-    @trig me/tr.done
+    @log smoke=TC009: secure() injection prevention. Failed (actual=.[[secure(%[haval(crash)%])] [secure(%%)]].).
   }
 -
 #
@@ -198,12 +180,10 @@
 &tr.tc010 test_overflow_inject_fn=
   @if strmatch([[setq(0,A)][localize([setq(0,B)][localize([setq(0,C)]%q0)]%q0)]%q0], CBA)=
   {
-    @log smoke=TC010: localize register scoping. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC010: localize register scoping. Succeeded.
   },
   {
-    @log smoke=TC010: localize register scoping. Failed (actual=.[[setq(0,A)][localize([setq(0,B)][localize([setq(0,C)]%q0)]%q0)]%q0].).;
-    @trig me/tr.done
+    @log smoke=TC010: localize register scoping. Failed (actual=.[[setq(0,A)][localize([setq(0,B)][localize([setq(0,C)]%q0)]%q0)]%q0].).
   }
 -
 #
@@ -212,12 +192,10 @@
 &tr.tc011 test_overflow_inject_fn=
   @if strmatch([cat(iter(a|b|c,strlen(##),|,|))], 1|1|1)=
   {
-    @log smoke=TC011: iter with pipe delimiter. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC011: iter with pipe delimiter. Succeeded.
   },
   {
-    @log smoke=TC011: iter with pipe delimiter. Failed (actual=.[cat(iter(a|b|c,strlen(##),|,|))].).;
-    @trig me/tr.done
+    @log smoke=TC011: iter with pipe delimiter. Failed (actual=.[cat(iter(a|b|c,strlen(##),|,|))].).
   }
 -
 #
@@ -231,12 +209,10 @@
 &tr.tc012 test_overflow_inject_fn=
   @if strmatch(strlen(scramble(repeat(a,20000))),20000)=
   {
-    @log smoke=TC012: scramble large-input bounds. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC012: scramble large-input bounds. Succeeded.
   },
   {
-    @log smoke=TC012: scramble large-input bounds. Failed (actual=.[strlen(scramble(repeat(a,20000)))].).;
-    @trig me/tr.done
+    @log smoke=TC012: scramble large-input bounds. Failed (actual=.[strlen(scramble(repeat(a,20000)))].).
   }
 -
 #
@@ -248,12 +224,10 @@
 &tr.tc013 test_overflow_inject_fn=
   @if strmatch(strlen(shuffle(repeat(|,20000),|,|)),20000)=
   {
-    @log smoke=TC013: shuffle large-input bounds. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC013: shuffle large-input bounds. Succeeded.
   },
   {
-    @log smoke=TC013: shuffle large-input bounds. Failed (actual=.[strlen(shuffle(repeat(|,20000),|,|))].).;
-    @trig me/tr.done
+    @log smoke=TC013: shuffle large-input bounds. Failed (actual=.[strlen(shuffle(repeat(|,20000),|,|))].).
   }
 -
 #
