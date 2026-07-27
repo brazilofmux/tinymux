@@ -20,8 +20,7 @@
         eq(mod(-10,3), 2)
       )=
   {
-    @log smoke=TC001: mod basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: mod basic operations. Succeeded.
   },
   {
     @log smoke=TC001: mod basic operations. Failed (mod(10%,3)=[mod(10,3)] mod(-10%,3)=[mod(-10,3)]).;

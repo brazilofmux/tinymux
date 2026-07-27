@@ -21,8 +21,7 @@
         eq(floor(0), 0)
       )=
   {
-    @log smoke=TC001: floor basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: floor basic operations. Succeeded.
   },
   {
     @log smoke=TC001: floor basic operations. Failed (floor(4.7)=[floor(4.7)] floor(-4.7)=[floor(-4.7)] floor(0)=[floor(0)]).;

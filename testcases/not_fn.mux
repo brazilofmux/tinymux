@@ -21,8 +21,7 @@
         eq(not(5), 0)
       )=
   {
-    @log smoke=TC001: not basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: not basic operations. Succeeded.
   },
   {
     @log smoke=TC001: not basic operations. Failed (not(0)=[not(0)] not(1)=[not(1)] not(5)=[not(5)]).;

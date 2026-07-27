@@ -20,8 +20,7 @@
         eq(isword(123), 0)
       )=
   {
-    @log smoke=TC001: isword() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: isword() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: isword() basic operations. Failed (isword(hello)=[isword(hello)] isword(123)=[isword(123)]).;

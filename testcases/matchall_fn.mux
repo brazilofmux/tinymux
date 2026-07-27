@@ -20,8 +20,7 @@
         strmatch(matchall(one two three,*o*),1 2)
       )=
   {
-    @log smoke=TC001: matchall() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: matchall() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: matchall() basic operations. Failed (matchall(t*)=[matchall(one two three,t*)] matchall(*o*)=[matchall(one two three,*o*)]).;

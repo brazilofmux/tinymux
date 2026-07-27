@@ -20,8 +20,7 @@
         eq(neq(1,2), 1)
       )=
   {
-    @log smoke=TC001: neq basic comparisons. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: neq basic comparisons. Succeeded.
   },
   {
     @log smoke=TC001: neq basic comparisons. Failed (neq(1%,1)=[neq(1,1)] neq(1%,2)=[neq(1,2)]).;
