@@ -285,25 +285,25 @@ void do_plusemail(dbref executor, dbref cause, dbref enactor, int eval, int key,
     if (  !Wizard(executor)
        && ThrottleEmail(executor))
     {
-        notify(executor, T("@email: Too many emails sent recently."));
+        notify(executor, M_("@email: Too many emails sent recently."));
         return;
     }
 
     if ('\0' == mudconf.mail_server[0])
     {
-        notify(executor, T("@email: Not configured"));
+        notify(executor, M_("@email: Not configured"));
         return;
     }
 
     if (!arg1 || !*arg1)
     {
-        notify(executor, T("@email: I don’t know who you want to e-mail!"));
+        notify(executor, M_("@email: I don’t know who you want to e-mail!"));
         return;
     }
 
     if (!arg2 || !*arg2)
     {
-        notify(executor, T("@email: Not sending an empty e-mail!"));
+        notify(executor, M_("@email: Not sending an empty e-mail!"));
         return;
     }
 
