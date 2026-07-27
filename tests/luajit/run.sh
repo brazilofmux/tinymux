@@ -49,7 +49,12 @@ fi
 
 # ---------------------------------------------------------------------------
 # SURVIVE — table ops and anything that has historically aborted (#1423).
-# Result divergence is reported, not fatal (open bugs #1424 etc.).
+# Result divergence is reported, not fatal.
+#
+# As of #1518 these also happen to *agree* with the interpreter -- but by
+# declining, not by lowering correctly.  The four #1424 shapes are therefore
+# also listed in AGREE_CASES below, where agreement is enforced; see the note
+# there (#1557).
 # ---------------------------------------------------------------------------
 SURVIVE_CASES=(
     'local t={10,20,30} return t[2]'
@@ -99,6 +104,16 @@ AGREE_CASES=(
     # Loops: currently decline; still must not invent a wrong answer.
     'local s=0 for i=1,4 do s=s+i end return s'
     'local i=0 repeat i=i+1 until i>=5 return i'
+    # ---- #1424's four shapes, whose symptoms #1518 closed (#1557) ----
+    #
+    # Used to return stack-index garbage (22) or abort.  Now agree by
+    # declining / run-fail, not by correct lowering (#1519).  Fatal here so
+    # containment cannot regress silently.  Re-measure lua_run_ok when the
+    # bridge is brought up -- green alone does not mean they execute.
+    'local t={1,2,3} return #t'
+    'local t={1,2,3} table.insert(t,4) return #t'
+    'local t={10,20,30} return t[2]'
+    'local t={a=7} return t.a'
 )
 
 # ---------------------------------------------------------------------------

@@ -4378,7 +4378,7 @@ void do_list(dbref executor, dbref caller, dbref enactor, int eval, const int ke
             mudstate.pILuaControl->GetStats(&nCalls, &nErrors,
                 &nInsnHits, &nMemHits, &nBytes,
                 &nCacheHits, &nCacheMisses, &nCacheEntries);
-            notify(executor, tprintf(T("Lua module loaded (Lua 5.4).")));
+            notify(executor, M_("Lua module loaded (Lua 5.4)."));
             notify(executor, tprintf(T("  Lua JIT:          %s"),
                 mudconf.lua_jit ? T("enabled") : T("disabled (default)")));
             notify(executor, tprintf(T("  Calls:            %zu"), nCalls));

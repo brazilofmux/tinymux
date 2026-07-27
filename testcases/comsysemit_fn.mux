@@ -1,0 +1,184 @@
+#
+# comsysemit_fn.mux - Test Cases for cemit, crecall, and cmds.
+#
+# comsys_fn.mux (#1160) covers the ten channel *query* functions.  These
+# three were left with no coverage: cemit is a side effect with no useful
+# return value, crecall needs a history buffer, and cmds is a counter.
+#
+# Fixture names here (cetest / ceobj / cea) are deliberately distinct from
+# comsys_fn.mux's (cstest / csobj / cs) so the two files cannot collide.
+#
+@create test_comsysemit_fn
+-
+@set test_comsysemit_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+# The channel object is NOT optional here, and the reason is worth
+# recording: @cset/log refuses to set a history buffer on a channel with
+# no object attached, and the refusal blames the value --
+#
+#     @cset/log cetest=20
+#     "Maximum history must be a number less than or equal to 200."
+#
+# -- for a value that plainly satisfies that condition.  Attach an object
+# with @cset/object first and the identical command succeeds.  Without the
+# buffer, cbuffer stays 0 and crecall returns empty on a channel that
+# clearly has traffic, which reads like a broken crecall rather than a
+# missing prerequisite.
+#
+&tr.tc000 test_comsysemit_fn=
+  @log smoke=Beginning comsysemit test cases.;
+  @ccreate cetest;
+  @cset/public cetest=on;
+  @cset/header cetest=<CE>;
+  @create ceobj;
+  @cset/object cetest=ceobj;
+  @cset/log cetest=20;
+  addcom cea=cetest;
+  cea alpha line;
+  cea beta line
+-
+#
+# Test Case #1 - the history buffer is actually set.  This is crecall's
+# precondition, so it is asserted separately: if it fails, the crecall
+# cases below are testing the empty case and not what they claim.
+#
+&tr.tc001 test_comsysemit_fn=
+  @if eq(cbuffer(cetest), 20)=
+  {
+    @log smoke=TC001: history buffer set for crecall. Succeeded.
+  },
+  {
+    @log smoke=TC001: history buffer set for crecall. Failed (buffer=[cbuffer(cetest)]).
+  }
+-
+#
+# Test Case #2 - crecall returns channel history, and that history holds a
+# line we put on the channel.
+#
+&tr.tc002 test_comsysemit_fn=
+  @if strmatch(crecall(cetest,5), *beta line*)=
+  {
+    @log smoke=TC002: crecall returns history. Succeeded.
+  },
+  {
+    @log smoke=TC002: crecall returns history. Failed (recall=[crecall(cetest,5)]).
+  }
+-
+#
+# Test Case #3 - crecall returns something for a channel with history and
+# nothing for one without, which is the distinction the buffer creates.
+#
+&tr.tc003 test_comsysemit_fn=
+  @if t(strlen(crecall(cetest,5)))=
+  {
+    @log smoke=TC003: crecall non-empty with a buffer. Succeeded.
+  },
+  {
+    @log smoke=TC003: crecall non-empty with a buffer. Failed (len=[strlen(crecall(cetest,5))]).
+  }
+-
+#
+# Test Case #4 - crecall on a channel that does not exist errors.
+#
+&tr.tc004 test_comsysemit_fn=
+  @if strmatch(crecall(nosuchchanxyzzy), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC004: crecall rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC004: crecall rejects an unknown channel. Failed (got=[crecall(nosuchchanxyzzy)]).
+  }
+-
+#
+# Test Case #5 - cemit is a side effect whose return value carries no
+# verdict, so it is asserted through cmsgs: the channel's message count
+# must advance by exactly one.
+#
+# Without a check like this the only available test of cemit is that it
+# does not error, which is the vacuous shape #1380 warns about for the
+# whole emit family.
+#
+&tr.tc005 test_comsysemit_fn=
+  &ce.before me=[cmsgs(cetest)];
+  @cemit cetest=Emitted probe line;
+  &ce.after me=[cmsgs(cetest)];
+  @if eq(sub(v(ce.after), v(ce.before)), 1)=
+  {
+    @log smoke=TC005: cemit advances cmsgs by one. Succeeded.
+  },
+  {
+    @log smoke=TC005: cemit advances cmsgs by one. Failed (before=[v(ce.before)] after=[v(ce.after)]).
+  }
+-
+#
+# Test Case #6 - and the emitted text actually reaches the channel, not
+# merely the counter.  Counting alone would pass if cemit incremented and
+# delivered nothing.
+#
+&tr.tc006 test_comsysemit_fn=
+  @if strmatch(crecall(cetest,5), *Emitted probe line*)=
+  {
+    @log smoke=TC006: cemit text reaches the history. Succeeded.
+  },
+  {
+    @log smoke=TC006: cemit text reaches the history. Failed (recall=[crecall(cetest,5)]).
+  }
+-
+#
+# Test Case #7 - cmds is PLAYER-scoped, not member-scoped.
+#
+# This object is on the channel -- every case above depends on that -- yet
+# cmds(me) is -1, while cmds on a real player returns a count.  Being a
+# member is not what cmds keys on.  Pinning the contrast rather than just
+# the working half: a change that made cmds answer for any member would
+# look like a fix and would silently alter what the counter means.
+#
+# The player's count is not asserted against a fixed value; it climbs as
+# the suite runs.
+#
+&tr.tc007 test_comsysemit_fn=
+  @if cand(
+        isint(cmds(Wizard)),
+        gte(cmds(Wizard), 0),
+        eq(cmds(me), -1)
+      )=
+  {
+    @log smoke=TC007: cmds is player-scoped, not member-scoped. Succeeded.
+  },
+  {
+    @log smoke=TC007: cmds is player-scoped, not member-scoped. Failed (player=[cmds(Wizard)] member=[cmds(me)]).
+  }
+-
+#
+# Test Case #8 - cmds answers -1 for an unknown player rather than a
+# "#-1 ..." error string, so callers testing with isint() see a number
+# either way.  Pinned as observed; a caller may well depend on it.
+#
+# Last test case, so it signals completion from both branches (#1495).
+#
+&tr.tc008 test_comsysemit_fn=
+  @if cand(
+        eq(cmds(NoSuchPlayerXYZZY), -1),
+        isint(cmds(NoSuchPlayerXYZZY))
+      )=
+  {
+    @log smoke=TC008: cmds returns -1 for an unknown player. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC008: cmds returns -1 for an unknown player. Failed (got=[cmds(NoSuchPlayerXYZZY)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_comsysemit_fn=
+  @log smoke=End comsysemit test cases.;
+  @notify smoke
+-
+drop test_comsysemit_fn
+-
+#
+# End of Test Cases
+#

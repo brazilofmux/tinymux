@@ -3093,7 +3093,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
     }
 
     if (email_channel_) {
-        notify(executor, T("@email: Another email is already in progress."));
+        notify(executor, M_("@email: Another email is already in progress."));
         return false;
     }
 
@@ -3138,7 +3138,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
     mux_freeaddrinfo(servinfo);
 
     if (IS_INVALID_SOCKET(sockFd)) {
-        notify(executor, T("@email: Unable to connect to mailserver, aborting!"));
+        notify(executor, M_("@email: Unable to connect to mailserver, aborting!"));
         return false;
     }
 
@@ -3164,7 +3164,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
         static_cast<int>(sockFd), channel.get(), error);
     if (handle == ganl::InvalidConnectionHandle) {
         SOCKET_CLOSE(sockFd);
-        notify(executor, T("@email: Unable to register socket with network engine."));
+        notify(executor, M_("@email: Unable to register socket with network engine."));
         return false;
     }
 
@@ -3183,7 +3183,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
 #endif
            ) {
             networkEngine_->closeConnection(handle);
-            notify(executor, T("@email: Unable to connect to mailserver, aborting!"));
+            notify(executor, M_("@email: Unable to connect to mailserver, aborting!"));
             return false;
         }
     }
@@ -3192,7 +3192,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
     // (socket becomes writable = connected).
     if (!networkEngine_->postWrite(handle, nullptr, 0, channel.get(), error)) {
         networkEngine_->closeConnection(handle);
-        notify(executor, T("@email: Unable to register socket with network engine."));
+        notify(executor, M_("@email: Unable to register socket with network engine."));
         return false;
     }
 
@@ -3231,7 +3231,7 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
                 socklen_t errlen = sizeof(sockerr);
                 if (getsockopt(email_channel_->fd, SOL_SOCKET, SO_ERROR,
                                reinterpret_cast<char*>(&sockerr), &errlen) < 0 || sockerr != 0) {
-                    errorMsg = T("@email: Unable to connect to mailserver, aborting!");
+                    errorMsg = M_("@email: Unable to connect to mailserver, aborting!");
                     needCleanup = true;
                 } else {
                     email_channel_->state = EmailChannel::State::WaitGreeting;
@@ -4157,8 +4157,8 @@ void do_startslave(dbref executor, dbref caller, dbref enactor,
 
     g_GanlAdapter.shutdown_dns_slave();
     if (g_GanlAdapter.start_dns_slave()) {
-        notify(executor, T("DNS slave restarted."));
+        notify(executor, M_("DNS slave restarted."));
     } else {
-        notify(executor, T("DNS slave failed to start."));
+        notify(executor, M_("DNS slave failed to start."));
     }
 }

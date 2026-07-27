@@ -2428,7 +2428,7 @@ void do_addcom
     comsys_t* c = get_comsys(executor);
     if (static_cast<int>(c->aliases.size()) >= MAX_ALIASES_PER_PLAYER)
     {
-        raw_notify(executor, tprintf(T("Sorry, but you have reached the maximum number of aliases allowed.")));
+        raw_notify(executor, M_("Sorry, but you have reached the maximum number of aliases allowed."));
         return;
     }
 
