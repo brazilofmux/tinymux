@@ -147,9 +147,27 @@ def emit_cleanup_attr(test_name: str, commands):
 #
 _VERDICT_LOG = re.compile(r"@log\s+smoke=\s*(TC[0-9]+[a-z]?)[:.]?([^\n;]*)")
 
+# Wording that means "this run did not succeed".  Deliberately loose and
+# case-insensitive, because the corpus does not use one spelling:
+#
+#   nested_depth  "probes failed (pre=...)"        lowercase
+#   paginate_fn   "Third mail failed."             lowercase
+#   parser_fn     "Skipped (divergence observed)"  a parity probe whose
+#                                                  non-success outcome is Skipped
+#   shl_fn        "Legacy behavior."               documents the old behaviour
+#
+# A case-sensitive test for "Failed" reports all four as unable to fail, which
+# is wrong -- they each have a real non-success branch.  Reading only the
+# capitalised verdict word is the mistake to avoid here.
+_NON_SUCCESS = re.compile(r"fail|skipped|legacy|not (?:run|available)", re.I)
 
-def count_expected_verdicts(tc_dir: Path) -> int:
-    total = 0
+
+def classify_labels(tc_dir: Path):
+    """Yield (filename, label, has_success, has_non_success) per tr.tc* label.
+
+    Single parse shared by the expected-verdict count and the vacuous-case
+    check, so the two cannot drift apart in how they read the corpus.
+    """
     for path in sorted(tc_dir.glob("*.mux")):
         if path.name == "0upload.mux":
             continue
@@ -157,11 +175,19 @@ def count_expected_verdicts(tc_dir: Path) -> int:
         by_label = collections.defaultdict(list)
         for m in _VERDICT_LOG.finditer(text):
             by_label[m.group(1)].append(m.group(2))
-        total += sum(
-            1 for msgs in by_label.values()
-            if any("Succeeded" in m for m in msgs)
-        )
-    return total
+        for label, msgs in sorted(by_label.items()):
+            yield (
+                path.name,
+                label,
+                any("Succeeded" in m for m in msgs),
+                any(_NON_SUCCESS.search(m) for m in msgs),
+            )
+
+
+def count_expected_verdicts(tc_dir: Path) -> int:
+    return sum(
+        1 for _, _, has_success, _ in classify_labels(tc_dir) if has_success
+    )
 
 
 def main() -> int:
