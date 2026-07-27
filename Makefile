@@ -159,17 +159,17 @@ test-lua-jit: install
 	$(MAKE) -C testcases/tools
 	cd testcases && ./tools/Makesmoke && SMOKE_EXTRA_CONF='lua_jit 1' ./tools/Smoke
 
-# Fault containment for the Lua JIT's ECALL table ops (#1423): a Lua chunk
-# must not be able to abort the process.  Part of `make test` -- it is a crash
-# regression, and it is cheap.
+# Lua JIT differential harness (#1423 / #1426 / #1512): SURVIVE / AGREE / EXEC.
+# Part of `make test`.  Cheap, and the only place that requires lua_run_ok to
+# advance so a decline cannot masquerade as a pass (#1426).
 #
 # Unlike test-lua-jit above, this sets jit_eval_brackets 0 as well.  That
 # matters: with eval brackets compiled, fun_lua is ECALLed from inside a DBT
 # program, run_cached_program refuses the nested run (#1326), and the Lua JIT
 # executes nothing at all -- so `lua_jit 1` on its own cannot reach any of
-# this code.  See #1426.
+# this code.
 test-lua-ecall: install
-	@echo "==> Running Lua JIT ECALL fault-containment tests"
+	@echo "==> Running Lua JIT differential harness (survive/agree/exec)"
 	bash tests/luajit/run.sh
 
 # GANL engine regression harness (epoll/select on Linux, kqueue/select on
