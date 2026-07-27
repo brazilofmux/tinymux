@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-nls test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-vacuous test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-format test-nls test-vacuous test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -240,6 +240,20 @@ test-asan:
 test-format:
 	@echo "==> Running mux_vsnprintf format tests"
 	$(MAKE) -C tests/format test
+
+# NLS marking and catalogue guard (tests/nls): softcode ABI tokens and printf
+# conversions must never become translatable, a literal must not be M_() in one
+# place and T() in another within one file, every catalogue must cover the .pot
+# with no fuzzy entries (msgfmt drops those silently), and the .pot must match
+# what the sources actually mark.  Static -- no build, no server, no catalogue
+# needs installing (#1505).
+#
+# Runs whether or not the tree was configured --enable-nls: the marking is in
+# the sources either way, and a slice that breaks it should not be able to hide
+# behind an English-only build.
+test-nls:
+	@echo "==> Running NLS marking/catalogue guard"
+	python3 tests/nls/check_nls.py
 
 # DBT and RV64 tests (tests/dbt): chain patch encode/decode across all three
 # backends (#1152), block cache dedupe and eviction (#1153), and the RV64
