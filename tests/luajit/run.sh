@@ -112,7 +112,14 @@ AGREE_CASES=(
     # Control.  No global anywhere, so this one really does run compiled;
     # it fails if the fix over-reaches and declines everything.
     'local x=mux.args[1]+0 return x*2'
+    # Runtime ^ must not string-bridge TY_FLOAT storage (#1538).  Lua folds
+    # constant ^ away, so the operand has to be runtime.  Compare with ==
+    # rather than printing the float: FTOA of an integral float may still
+    # drop ".0" (#1488), which is a different bug.
+    'local a=mux.args[1]+0 return (a ^ 2) == 4'
+    'local a=mux.args[1]+0 local b=mux.args[2]+0 return (a ^ b) == 8'
 )
+
 
 # Preserve a failed run's directory instead of deleting it (#1446).
 #
