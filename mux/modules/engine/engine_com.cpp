@@ -3040,7 +3040,37 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     {
         mudconf.config_file = StringClone(configFile);
     }
-    cf_read();
+
+    // A config file that cannot be opened is fatal (#1601).
+    //
+    // cf_read() has always returned cf_include()'s -1 for this, and this --
+    // its only call site -- discarded it.  LoadGame then returned MUX_S_OK and
+    // both callers took the success branch, so netmux booted and *listened* on
+    // compiled-in defaults, against whatever database those name rather than
+    // the one the operator asked for; muxscript printed "loaded game from" and
+    // exited 0, so a harness could not tell a run against the intended
+    // database from one against an empty default.
+    //
+    // -1 means exactly "could not open the file": cf_include returns it only
+    // for that and for being called outside configuration reading, and an
+    // unparseable *directive* inside a file that does exist returns 0 and stays
+    // non-fatal.  That distinction is deliberate -- games carry old config
+    // files naming directives this build no longer knows, and refusing to boot
+    // over one would be a compatibility break; failing to find the file at all
+    // is never what anyone wanted.
+    //
+    // Reported on stderr as well as through the log: cf_log_notfound's
+    // STARTLOG is not visible at this point in LoadGame for muxscript, which
+    // is half of why this stayed hidden.
+    //
+    if (0 != cf_read())
+    {
+        fprintf(stderr,
+            "FATAL: cannot read config file '%s' -- refusing to start on "
+            "compiled-in defaults.\n",
+            reinterpret_cast<const char *>(mudconf.config_file));
+        return MUX_E_NOTFOUND;
+    }
 
     // Optional gettext domain for server notifies (#1419).  Softcode #-1
     // diagnostics use S_() and stay English.  Locale packs live under
