@@ -49,7 +49,7 @@ static MUX_CLASS_INFO comsys_classes[] =
 // Required by libmux ModuleLoad — without this, bLoaded stays false and
 // CreateInstance never finds the class (#1191 root cause).
 //
-extern "C" MUX_RESULT DCL_API mux_CanUnloadNow(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CanUnloadNow(void)
 {
     if (  0 == g_cComponents
        && 0 == g_cServerLocks)
@@ -59,7 +59,7 @@ extern "C" MUX_RESULT DCL_API mux_CanUnloadNow(void)
     return MUX_S_FALSE;
 }
 
-extern "C" MUX_RESULT DCL_API mux_Register(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Register(void)
 {
     MUX_RESULT mr = MUX_E_UNEXPECTED;
 
@@ -71,12 +71,12 @@ extern "C" MUX_RESULT DCL_API mux_Register(void)
     return mr;
 }
 
-extern "C" MUX_RESULT DCL_API mux_Unregister(void)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_Unregister(void)
 {
     return mux_RevokeClassObjects(NUM_CLASSES, comsys_classes);
 }
 
-extern "C" MUX_RESULT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
+extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid, MUX_IID iid, void **ppv)
 {
     MUX_RESULT mr = MUX_E_CLASSNOTAVAILABLE;
 
@@ -1095,6 +1095,72 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
             m_pINotify->RawNotify(user.who, msg);
         }
     }
+
+    RecordChannelHistory(ch, msg);
+}
+
+// ---------------------------------------------------------------------------
+// Append a message to the channel's recall buffer (#1564).
+//
+// The engine's SendChannelMessage writes HISTORY_n at comsys.cpp:1851.  The
+// module never did, so do_crecall above read HISTORY_n attributes that
+// nothing wrote: recall came back empty on a channel with obvious traffic,
+// with cmsgs and cbuffer both reporting healthy values because those come
+// from elsewhere.  Silent, and invisible to any test that did not read the
+// history back.
+//
+// The index must be num_messages % logmax computed AFTER the increment in
+// the caller, which is exactly what do_crecall's read expects.
+//
+// Join and leave messages are logged too.  The engine guards its logging
+// block only on the channel object being valid, not on bJoinLeaveMsg, and
+// its recall output does include "has joined this channel".
+//
+// GOD (dbref 1) is the executor, matching both the engine -- which writes
+// with atr_add(..., GOD, ...) -- and this module's existing use of a GOD
+// executor for channel-object attributes.  The speaker is an ordinary
+// member who will not usually control the channel object, so passing the
+// executor through would fail bCanSetAttr for most messages.
+//
+void CComsysMod::RecordChannelHistory(struct channel *ch, const UTF8 *msg)
+{
+    if (  nullptr == m_pIAttributeAccess
+       || nullptr == m_pIObjectInfo
+       || nullptr == ch
+       || nullptr == msg)
+    {
+        return;
+    }
+
+    bool bValid = false;
+    m_pIObjectInfo->IsValid(ch->chan_obj, &bValid);
+    if (!bValid)
+    {
+        return;
+    }
+
+    UTF8 valbuf[64];
+    size_t nLen = 0;
+    int logmax = 0;
+    MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(1, ch->chan_obj,
+        T("MAX_LOG"), valbuf, sizeof(valbuf) - 1, &nLen);
+    if (MUX_SUCCEEDED(mr) && 0 < nLen)
+    {
+        valbuf[nLen] = '\0';
+        logmax = atoi(reinterpret_cast<const char *>(valbuf));
+    }
+
+    if (logmax < 1)
+    {
+        // Channel does not log; do_crecall reports the same condition.
+        //
+        return;
+    }
+
+    UTF8 histattr[64];
+    snprintf(reinterpret_cast<char *>(histattr), sizeof(histattr),
+             "HISTORY_%d", ((ch->num_messages % logmax) + logmax) % logmax);
+    m_pIAttributeAccess->SetAttribute(1, ch->chan_obj, histattr, msg);
 }
 
 // ---------------------------------------------------------------------------
