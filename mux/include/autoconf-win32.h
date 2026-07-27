@@ -25,6 +25,9 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 /* #undef HAVE_ARPA_INET_H */
 
+/* Define to 1 if you have `bind_textdomain_codeset'. */
+/* #undef HAVE_BIND_TEXTDOMAIN_CODESET */
+
 /* Define to 1 if you have the `crypt' function. */
 /* #undef HAVE_CRYPT */
 
@@ -151,6 +154,9 @@
 /* Define to 1 if you have the `mysqlclient' library (-lmysqlclient). */
 /* #undef HAVE_LIBMYSQLCLIENT */
 
+/* Define to 1 if you have <libintl.h>. */
+/* #undef HAVE_LIBINTL_H */
+
 /* Define to 1 if you have the `ssl' library (-lssl). */
 /* #undef HAVE_LIBSSL */
 
@@ -189,6 +195,13 @@
 
 /* Define to 1 if you have the <netdb.h> header file. */
 /* #undef HAVE_NETDB_H */
+
+/* Define if GNU gettext NLS is enabled. */
+/* Deliberately off on Windows: there is no libintl in the MSVC build, so
+   mux_nls.h takes its non-NLS branch and T()/S_()/N_()/M_() stay plain
+   UTF-8 casts (#1419).  Enabling it would need libintl vendored and
+   mux_nls.cpp's bindtextdomain path tested. */
+/* #undef HAVE_NLS */
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 /* #undef HAVE_NETINET_IN_H */

@@ -26,6 +26,10 @@
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 /* #undef HAVE_NDIR_H */
 
+/* Define if GNU gettext NLS is enabled. */
+/* Deliberately off on Windows -- see mux/include/autoconf-win32.h (#1419). */
+/* #undef HAVE_NLS */
+
 /* Define to 1 if you have the <stdint.h> header file. */
 /* #undef HAVE_STDINT_H */
 
