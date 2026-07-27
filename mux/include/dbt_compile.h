@@ -218,6 +218,10 @@ struct rv_compiler {
     uint64_t fargs_pool_limit; // upper bound for fargs pool
     uint64_t out_pool;      // next free byte in output area
     uint64_t final_out;     // guest addr or tagged frame-relative output ref
+    // Common slot every HIR_RET writes into, for programs with more than one
+    // reachable return.  0 when unused (single-block programs keep the
+    // compile-time result and its constant folding).  See #1486.
+    uint64_t ret_out;
 
     // Statistics.
     int folds;              // number of constant-folded calls
@@ -330,6 +334,7 @@ struct rv_compiler {
                     fargs_pool_limit(FARGS_LIMIT),
                     out_pool(STACK_TOP - 8),
                     final_out(0),
+                    ret_out(0),
                     folds(0),
                     ecalls(0),
                     native_ops(0),
@@ -351,6 +356,7 @@ struct rv_compiler {
           fargs_pool_limit(fp_lim),
           out_pool(op ? op : STACK_TOP - 8),
           final_out(0),
+          ret_out(0),
           folds(0),
           ecalls(0),
           native_ops(0),

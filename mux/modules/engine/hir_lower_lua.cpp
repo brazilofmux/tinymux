@@ -483,7 +483,16 @@ static int emit_cmp_branch(hir_program &h, int cmp, int k_bit,
                             const std::vector<int> &pc_to_block,
                             int cur_hir_block, int n) {
     if (cmp < 0) return -1;
-    if (k_bit) {
+    // Lua's conditional ops are "if (cond ~= k) then pc++", and that pc++
+    // skips the JMP which follows.  So the JMP is taken exactly when
+    // cond == k, and falling through to pc+2 is the cond != k case.
+    // true_target below is the JMP's destination, so the branch condition
+    // must be (cond == k): negate when k is 0, not when it is 1 (#1486).
+    //
+    // OP_EQK carries the opposite convention -- it has no JMP to fuse, so its
+    // true_target is the skip -- and negating on k is correct there.  The two
+    // look alike and mean opposite things.
+    if (!k_bit) {
         cmp = h.emit(HIR_NOT, TY_INT, cmp);
         if (cmp < 0) return -1;
     }

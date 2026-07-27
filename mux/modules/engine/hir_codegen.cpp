@@ -1233,6 +1233,27 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
     compute_live_ranges(h, str_intervals, needs_output_buffer);
     output_alloc_result str_alloc = allocate_output_buffers(rc, str_intervals);
 
+    // 2b. A program with branches can reach more than one HIR_RET, and which
+    // one runs is only known at runtime.  The result location, though, is
+    // fixed at compile time (h.result, set from the *first* return), so the
+    // answer used to come from the first return site no matter which one
+    // executed -- the branch was taken correctly and the value ignored
+    // (#1486).  Give every return one shared slot to write into.
+    //
+    // Only for multi-block programs.  A single block runs top to bottom and
+    // exits at its first HIR_RET, so first-return *is* the executed return
+    // there, and keeping the compile-time result preserves constant folding
+    // for straight-line chunks like `return 42`.
+    //
+    if (h.n_blocks > 1) {
+        for (int i = 0; i < h.n_insns; i++) {
+            if (h.kind[i] == HIR_RET && h.src1[i] >= 0) {
+                rc.ret_out = rc.alloc_output();
+                break;
+            }
+        }
+    }
+
     // 3. Allocate 8-byte guest memory slots for FP values.
     //    Simple bump allocation — no register caching for FP in HIR.
     //    Each FP value gets a slot; operations load/store via FLD/FSD.
@@ -2043,9 +2064,32 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
-            case HIR_RET:
+            case HIR_RET: {
+                // Materialize this return's value into the shared slot before
+                // exiting, so the value follows the path actually taken
+                // (#1486).  Mirrors the string-PHI copy above.
+                int rv = h.src1[i];
+                if (rc.ret_out != 0 && rv >= 0) {
+                    if (loc[rv].in_reg) {
+                        rv_load_guest_addr(rc.code, 10, rc.ret_out);
+                        rv_emit_itoa(rc.code, loc[rv].reg, 10);
+                    } else if (loc[rv].spill_slot >= 0) {
+                        emit_spill_load(rc.code, RA_SCRATCH, loc[rv].spill_slot);
+                        rv_load_guest_addr(rc.code, 10, rc.ret_out);
+                        rv_emit_itoa(rc.code, RA_SCRATCH, 10);
+                    } else {
+                        rv_load_guest_addr(rc.code, 7, rc.ret_out);   // t2 = dest
+                        rv_load_guest_addr(rc.code, 6, loc[rv].addr); // t1 = src
+                        rv_emit_strcpy(rc.code, 7, 6);
+                    }
+                    // The answer is now produced by executing this code, so
+                    // the program can no longer be served by a compile-time
+                    // fold.
+                    rc.needs_jit = true;
+                }
                 rv_emit_exit(rc.code);
                 break;
+            }
 
             case HIR_SETQ_SYNC: {
                 // Emit ECALL_SETQ_PACK: a0 = reg_num, a1 = value_addr, a2 = length.
@@ -2104,9 +2148,13 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
         }
     }
 
-    // Set the result location in the rv_compiler.
+    // Set the result location in the rv_compiler.  When the returns write to
+    // a shared slot, that slot is the answer and h.result -- which names only
+    // the first return site -- must not override it (#1486).
     int ri = h.result;
-    if (ri >= 0) {
+    if (rc.ret_out != 0) {
+        rc.final_out = rc.ret_out;
+    } else if (ri >= 0) {
         if (loc[ri].in_reg) {
             if (!rc.needs_jit && h.kind[ri] == HIR_ICONST) {
                 // Constant integer with no runtime code — convert to
