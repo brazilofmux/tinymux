@@ -49,4 +49,15 @@ private:
     CSQLiteDB m_db;
 };
 
+// Derive the ".sqlite" sibling of a database path: replace a trailing
+// ".db" with ".sqlite", otherwise append ".sqlite".
+//
+// Returns false, leaving buf untouched, when the result would not fit.
+// Both callers previously open-coded this with strcpy/strcat into a
+// SIZEOF_PATHNAME buffer, which overflows for an input_database near the
+// configured maximum -- the conf value may itself be SIZEOF_PATHNAME-1
+// long, and ".sqlite" needs seven more bytes plus a terminator (#1411).
+//
+bool derive_sqlite_path(char *buf, size_t buflen, const UTF8 *indb);
+
 #endif // !SQLITE_BACKEND_H

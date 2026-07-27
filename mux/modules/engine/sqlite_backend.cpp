@@ -123,3 +123,39 @@ void CSQLiteBackend::Tick()
     //
     m_db.Optimize();
 }
+
+bool derive_sqlite_path(char *buf, size_t buflen, const UTF8 *indb)
+{
+    if (  nullptr == buf
+       || 0 == buflen
+       || nullptr == indb)
+    {
+        return false;
+    }
+
+    static const char suffix[] = ".sqlite";
+    const size_t nSuffix = sizeof(suffix) - 1;
+
+    const char *pIn = reinterpret_cast<const char *>(indb);
+    size_t nIn = strlen(pIn);
+
+    // A trailing ".db" is replaced rather than appended to, so the base is
+    // shorter than the input in that case.  Note this still grows the path:
+    // three characters out, seven in.
+    //
+    size_t nBase = nIn;
+    if (  3 < nIn
+       && 0 == strcmp(pIn + nIn - 3, ".db"))
+    {
+        nBase = nIn - 3;
+    }
+
+    if (buflen < nBase + nSuffix + 1)
+    {
+        return false;
+    }
+
+    memcpy(buf, pIn, nBase);
+    memcpy(buf + nBase, suffix, nSuffix + 1);
+    return true;
+}
