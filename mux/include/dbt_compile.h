@@ -538,6 +538,22 @@ struct eval_ctx {
     // ~0 when unknown (direct/uncached runs).
     uint64_t qreg_mask;
 
+    // Lua JIT: where the last multi-result bridge call left its results,
+    // and how many (#1519).
+    //
+    // __LUA_GET_RESULT used to try to infer this from lua_gettop(), which
+    // cannot work -- its own comment circled the point for fifty lines and
+    // gave up ("Without total, I can't compute this").  The count was never
+    // unknowable: __LUA_CALL asks lua_pcall for exactly one result, and
+    // __LUA_TFOR_CALL receives nresults as an argument.  Nothing wrote it
+    // down between the call and the read.
+    //
+    // Lives here rather than in a static because runs nest (#1326): an inner
+    // chunk would clobber a single slot.  lua_result_count == 0 means no
+    // result block is live, and a read in that state fails closed.
+    int      lua_result_base;   // absolute stack index of result 1
+    int      lua_result_count;  // 0 = none live
+
     // Lua JIT: opaque pointer to lua_State.
     // Non-null when running a JIT-compiled Lua program — allows ECALL
     // handlers to call back into the Lua VM for unsupported operations.
