@@ -20,8 +20,7 @@
         eq(max(-1,-5,-3), -1)
       )=
   {
-    @log smoke=TC001: max basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: max basic operations. Succeeded.
   },
   {
     @log smoke=TC001: max basic operations. Failed (max(1%,5%,3)=[max(1,5,3)] max(-1%,-5%,-3)=[max(-1,-5,-3)]).;

@@ -21,8 +21,7 @@
         eq(iadd(), 0)
       )=
   {
-    @log smoke=TC001: iadd() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: iadd() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: iadd() basic operations. Failed (iadd(1%,2)=[iadd(1,2)] iadd(1%,2%,3)=[iadd(1,2,3)] iadd()=[iadd()]).;
