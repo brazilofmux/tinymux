@@ -135,12 +135,17 @@ run_as engine '@ccreate hchan
 @cset/timestamp_logs hchan=1
 addcom h=hchan
 @cemit hchan=EngineWrote
-think TS=[get(HObj/LOG_TIMESTAMPS)]
-think BUF=[cbuffer(hchan)]'
+think BUF=[cbuffer(hchan)]
+think REC=[crecall(hchan,1,|)]'
 
-[ "$(val TS)" = "1" ] \
-    && ok "engine enables timestamp logging" \
-    || nope "engine enables timestamp logging" "TS=$(val TS)"
+# Asserted through recall output rather than get(HObj/LOG_TIMESTAMPS): the
+# flag is a column now (stage 2) and the attribute, where it still exists at
+# all, is inert.  Reading it would test storage that no longer decides
+# anything -- and would keep passing after the flag stopped mattering.
+case "$(val REC)" in
+    \[*\]*EngineWrote*) ok "engine enables timestamp logging" ;;
+    *) nope "engine enables timestamp logging" "REC=$(val REC)" ;;
+esac
 
 [ "$(val BUF)" = "10" ] \
     && ok "engine records retention on the channel row" \
@@ -223,24 +228,48 @@ esac
             "COUNT=$(val COUNT), expected 10"
 
 # ---------------------------------------------------------------------------
-# #1585 -- the module still cannot clear a flag the engine set, because
-# LOG_TIMESTAMPS is still an attribute.  It moves to a column in stage 2;
-# until then this stays TODO.
+# #1585 -- the module clearing a flag the ENGINE set.
+#
+# This was the last TODO in this file.  As an attribute the engine wrote it as
+# GOD with AF_CONST, bCanSetAttr denies AF_CONST in every branch including
+# God's, and the module's permission-checked write was refused -- so the flag
+# could not be turned off from the side that had not set it.  It is a column
+# now and there are no permission bits to refuse with.
+#
+# Asserted through BEHAVIOUR rather than through get(HObj/LOG_TIMESTAMPS):
+# the attribute still exists on upgraded games but is inert, so reading it
+# would test the wrong thing and would keep passing after the flag stopped
+# meaning anything.  What matters is whether recall renders a timestamp.
 # ---------------------------------------------------------------------------
+run_as module '@cemit hchan=TimestampProbe
+think REC=[crecall(hchan,1,|)]'
+
+case "$(val REC)" in
+    \[*\]*TimestampProbe*) ok "timestamps the engine enabled apply under the module" ;;
+    *) nope "timestamps the engine enabled apply under the module" \
+            "REC=$(val REC)" ;;
+esac
+
 run_as module '@cset/timestamp_logs hchan=0
-think TS=[get(HObj/LOG_TIMESTAMPS)]'
+@cemit hchan=AfterClear
+think REC=[crecall(hchan,1,|)]'
 
-if [ -z "$(val TS)" ]; then
-    todo "module can clear a flag the engine set" "#1585" "pass"
-else
-    todo "module can clear a flag the engine set" "#1585" "fail" \
-         "TS=$(val TS) -- refused by AF_CONST; fixed when channel config moves"
-fi
+case "$(val REC)" in
+    \[*\]*) nope "module can clear a flag the engine set (#1585)" \
+                  "still timestamped: REC=$(val REC)" ;;
+    *AfterClear*) ok "module can clear a flag the engine set (#1585)" ;;
+    *) nope "module can clear a flag the engine set (#1585)" "REC=$(val REC)" ;;
+esac
 
-grep -q "@cset: Failed" "$WORK/out" \
-    && ok "the refusal is reported rather than reported as success (#1624)" \
-    || nope "the refusal is reported rather than reported as success (#1624)" \
-            "no failure message in the output"
+# And the ENGINE must see the module's change -- the direction that was
+# impossible before, and the whole point of moving config off attributes.
+run_as engine 'think REC=[crecall(hchan,1,|)]'
+
+case "$(val REC)" in
+    \[*\]*) nope "engine sees the flag the module cleared" \
+                  "still timestamped: REC=$(val REC)" ;;
+    *) ok "engine sees the flag the module cleared" ;;
+esac
 
 echo "=== comsys handoff: $npass passed, $nfail failed, $ntodo known-failing"\
      "($nbonus unexpectedly passing) ==="

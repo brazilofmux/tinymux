@@ -1580,22 +1580,12 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
         arg = max_count;
     }
 
-    // LOG_TIMESTAMPS still lives on the channel object -- it moves to a
-    // column in stage 2 -- but it is applied HERE now rather than baked into
-    // the text at write time, so it governs all of a channel's history
+    // A column now (#1589 stage 2), and applied HERE rather than baked into
+    // the text at write time -- so it governs all of a channel's history
     // instead of only the part written since it was last toggled.
     //
     bool bTimestamps = false;
-    {
-        UTF8 tsattr[64];
-        size_t nTs = 0;
-        if (MUX_SUCCEEDED(m_pIAttributeAccess->GetAttribute(player, obj,
-                T("LOG_TIMESTAMPS"), tsattr, sizeof(tsattr) - 1, &nTs))
-            && 0 < nTs)
-        {
-            bTimestamps = true;
-        }
-    }
+    m_pIStorage->GetChannelLogTimestamps(ch->name, &bTimestamps);
 
     // Offset in force right now, used only for rows that recorded none.
     //
@@ -2877,14 +2867,21 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 break;
             }
 
-            // Verify logging is enabled (MAX_LOG exists).
+            // Verify logging is enabled -- from the channel row (#1589).
             //
-            UTF8 logbuf[64];
-            size_t nLogLen = 0;
-            MUX_RESULT mr2 = m_pIAttributeAccess->GetAttribute(
-                executor, ch->chan_obj, T("MAX_LOG"),
-                logbuf, sizeof(logbuf) - 1, &nLogLen);
-            if (MUX_FAILED(mr2) || 0 == nLogLen)
+            // This gate used to ask whether the MAX_LOG attribute existed.
+            // Nothing writes that attribute any more, so the gate rejected
+            // every channel configured after the migration and
+            // @cset/timestamp_logs silently stopped working.  The engine had
+            // the identical gate and the identical failure; both are fixed
+            // the same way.
+            //
+            int ts_max_count = 0;
+            int ts_max_age = 0;
+            if (nullptr == m_pIStorage
+                || MUX_FAILED(m_pIStorage->GetChannelRetention(ch->name,
+                       &ts_max_count, &ts_max_age))
+                || ts_max_count < 1)
             {
                 snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
                          "@cset: Failed.  Is logging enabled for %s?",
@@ -2900,14 +2897,20 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             // Reporting "set." after a refusal told the player the opposite
             // of what happened, and is how the divergence stayed hidden.
             //
-            MUX_RESULT mrTs = m_pIAttributeAccess->SetAttribute(
-                executor, ch->chan_obj, T("LOG_TIMESTAMPS"),
-                value ? T("1") : T(""));
+            // A column now (#1589 stage 2).  This write is what #1585 was
+            // about: as an attribute the engine had written it as GOD with
+            // AF_CONST, bCanSetAttr denies AF_CONST in every branch, and the
+            // module's write was refused -- so a channel whose timestamps
+            // the engine turned on could never be turned off from here.  A
+            // column has no permission bits to refuse with.
+            //
+            MUX_RESULT mrTs = m_pIStorage->SetChannelLogTimestamps(ch->name,
+                0 != value);
             if (MUX_FAILED(mrTs))
             {
                 snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
                          "@cset: Failed.  Timestamp logging for %s could not "
-                         "be changed (the attribute is not writable here).",
+                         "be changed.",
                          reinterpret_cast<const char *>(pChannel));
             }
             else

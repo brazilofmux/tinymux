@@ -491,6 +491,15 @@ public:
         int *max_count, int *max_age) = 0;
     virtual MUX_RESULT SetChannelRetention(const UTF8 *channel_name,
         int max_count, int max_age) = 0;
+
+    // Whether recall renders timestamps (#1589 stage 2).  A column, so it
+    // has no permission bits with which to refuse the caller -- which is
+    // what #1585 was.
+    //
+    virtual MUX_RESULT GetChannelLogTimestamps(const UTF8 *channel_name,
+        bool *pbOn) = 0;
+    virtual MUX_RESULT SetChannelLogTimestamps(const UTF8 *channel_name,
+        bool bOn) = 0;
 };
 
 interface mux_IMailStorage : public mux_IUnknown

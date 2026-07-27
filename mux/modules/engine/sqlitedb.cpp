@@ -60,6 +60,8 @@ CSQLiteDB::CSQLiteDB()
       m_stmtChanHistDelete(nullptr),
       m_stmtChanRetentionSet(nullptr),
       m_stmtChanRetentionGet(nullptr),
+      m_stmtChanTsGet(nullptr),
+      m_stmtChanTsSet(nullptr),
       m_stmtChannelUserSync(nullptr),
       m_stmtPlayerChannelSync(nullptr),
       m_stmtChannelLoadAll(nullptr),
@@ -396,7 +398,7 @@ static bool RunMigration(sqlite3 *db, const char *sql, int target_version)
 
 bool CSQLiteDB::MigrateSchema()
 {
-    static const int CURRENT_SCHEMA_VERSION = 14;
+    static const int CURRENT_SCHEMA_VERSION = 15;
 
     int version = 0;
     sqlite3_stmt *stmt = nullptr;
@@ -913,6 +915,55 @@ bool CSQLiteDB::MigrateSchema()
         version = 14;
     }
 
+    if (version < 15)
+    {
+        // Channel CONFIG joins channel history in the channel row (#1589
+        // stage 2).  LOG_TIMESTAMPS was the last piece of engine-owned
+        // channel state living as an attribute, and it is what keeps #1585
+        // open: the engine writes the attribute as GOD with AF_CONST, and
+        // bCanSetAttr denies AF_CONST in every branch including God's, so
+        // the module's permission-checked write is refused and the flag
+        // cannot be turned off from the side that did not set it.
+        //
+        // A column has no permission bits to refuse, so the whole class goes
+        // away rather than being worked around.
+        //
+        // What deliberately does NOT move: MOGRIFY`* and CHATFORMAT.  Those
+        // are game-authored softcode, not server configuration, and
+        // attributes are exactly the right home for them.  The line stage 2
+        // draws is ownership -- engine-owned config becomes columns, and code
+        // the game wrote stays where the game can edit it.
+        //
+        // Seeded from the attribute by the same "non-empty is on" rule both
+        // implementations settled on in #1604, so an upgraded game keeps the
+        // setting it had.  The attribute is left in place, inert, on the same
+        // reasoning as HISTORY_%d: a wrong migration should be recoverable.
+        //
+        const char *migration_v15 =
+            "BEGIN;"
+
+            "ALTER TABLE channels ADD COLUMN log_timestamps INTEGER NOT NULL DEFAULT 0;"
+
+            "UPDATE channels SET log_timestamps = 1"
+            " WHERE chan_obj >= 0"
+            "   AND EXISTS ("
+            "       SELECT 1 FROM attributes a"
+            "         JOIN attrnames n ON n.attrnum = a.attrnum"
+            "        WHERE a.object = channels.chan_obj"
+            "          AND n.name = 'LOG_TIMESTAMPS'"
+            "          AND length(CAST(a.value AS TEXT)) > 0);"
+
+            "INSERT OR REPLACE INTO metadata(key, value)"
+            "    VALUES('schema_version', 15);"
+            "COMMIT;";
+
+        if (!RunMigration(m_db, migration_v15, 15))
+        {
+            return false;
+        }
+        version = 15;
+    }
+
     // Log any FK violations (informational, not fatal).
     //
     if (SQLITE_OK == sqlite3_prepare_v2(m_db,
@@ -1222,6 +1273,20 @@ bool CSQLiteDB::PrepareStatements()
     }
 
     if (!Prepare(m_db,
+        "SELECT log_timestamps FROM channels WHERE name = ?",
+        &m_stmtChanTsGet))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
+        "UPDATE channels SET log_timestamps = ? WHERE name = ?",
+        &m_stmtChanTsSet))
+    {
+        return false;
+    }
+
+    if (!Prepare(m_db,
         "INSERT OR REPLACE INTO channel_users "
         "(channel_name, who, is_on, comtitle_status, gag_join_leave, title) "
         "VALUES (?,?,?,?,?,?)",
@@ -1446,6 +1511,8 @@ void CSQLiteDB::FinalizeStatements()
     Finalize(&m_stmtChanHistDelete);
     Finalize(&m_stmtChanRetentionSet);
     Finalize(&m_stmtChanRetentionGet);
+    Finalize(&m_stmtChanTsGet);
+    Finalize(&m_stmtChanTsSet);
     Finalize(&m_stmtChannelUserSync);
     Finalize(&m_stmtPlayerChannelSync);
     Finalize(&m_stmtChannelLoadAll);
@@ -2672,6 +2739,34 @@ bool CSQLiteDB::DeleteChannelHistory(const UTF8 *channel_name)
         reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
     int rc = sqlite3_step(m_stmtChanHistDelete);
     sqlite3_reset(m_stmtChanHistDelete);
+    return SQLITE_DONE == rc;
+}
+
+// Channel logging config that is not retention (#1589 stage 2).  Separate
+// accessors rather than more out-parameters on the retention pair: the read
+// paths want the flag and not the limits, and the write paths the reverse.
+//
+bool CSQLiteDB::GetChannelLogTimestamps(const UTF8 *channel_name)
+{
+    sqlite3_bind_text(m_stmtChanTsGet, 1,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+
+    bool bOn = false;
+    if (SQLITE_ROW == sqlite3_step(m_stmtChanTsGet))
+    {
+        bOn = (0 != sqlite3_column_int(m_stmtChanTsGet, 0));
+    }
+    sqlite3_reset(m_stmtChanTsGet);
+    return bOn;
+}
+
+bool CSQLiteDB::SetChannelLogTimestamps(const UTF8 *channel_name, bool bOn)
+{
+    sqlite3_bind_int(m_stmtChanTsSet, 1, bOn ? 1 : 0);
+    sqlite3_bind_text(m_stmtChanTsSet, 2,
+        reinterpret_cast<const char *>(channel_name), -1, SQLITE_STATIC);
+    int rc = sqlite3_step(m_stmtChanTsSet);
+    sqlite3_reset(m_stmtChanTsSet);
     return SQLITE_DONE == rc;
 }
 

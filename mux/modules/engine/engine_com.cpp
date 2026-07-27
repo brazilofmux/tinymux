@@ -5118,6 +5118,10 @@ public:
         int *max_count, int *max_age);
     virtual MUX_RESULT SetChannelRetention(const UTF8 *channel_name,
         int max_count, int max_age);
+    virtual MUX_RESULT GetChannelLogTimestamps(const UTF8 *channel_name,
+        bool *pbOn);
+    virtual MUX_RESULT SetChannelLogTimestamps(const UTF8 *channel_name,
+        bool bOn);
 
     CComsysStorage(void);
     virtual ~CComsysStorage();
@@ -5336,6 +5340,30 @@ MUX_RESULT CComsysStorage::SetChannelRetention(const UTF8 *channel_name,
         return MUX_E_FAIL;
     }
     return pDb->SetChannelRetention(channel_name, max_count, max_age)
+        ? MUX_S_OK : MUX_E_FAIL;
+}
+
+MUX_RESULT CComsysStorage::GetChannelLogTimestamps(const UTF8 *channel_name,
+    bool *pbOn)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb || nullptr == pbOn)
+    {
+        return MUX_E_FAIL;
+    }
+    *pbOn = pDb->GetChannelLogTimestamps(channel_name);
+    return MUX_S_OK;
+}
+
+MUX_RESULT CComsysStorage::SetChannelLogTimestamps(const UTF8 *channel_name,
+    bool bOn)
+{
+    CSQLiteDB *pDb = sqlite_storage_db();
+    if (nullptr == pDb)
+    {
+        return MUX_E_FAIL;
+    }
+    return pDb->SetChannelLogTimestamps(channel_name, bOn)
         ? MUX_S_OK : MUX_E_FAIL;
 }
 

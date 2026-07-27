@@ -2171,16 +2171,8 @@ void do_comlast(dbref player, struct channel* ch, int arg)
     // A row with ts == 0 came from the old ring and already carries whatever
     // timestamp was baked into its text.
     //
-    bool bTimestamps = false;
-    ATTR *pattr = atr_str(T("LOG_TIMESTAMPS"));
-    if (pattr && Good_obj(ch->chan_obj))
-    {
-        dbref aowner;
-        int aflags;
-        LBuf tsbuf = LBuf_Adopt(atr_get("do_comlast.LOG_TIMESTAMPS",
-            ch->chan_obj, pattr->number, &aowner, &aflags));
-        bTimestamps = ('\0' != *tsbuf.get());
-    }
+    CSQLiteDB &sqldbTs = g_pSQLiteBackend->GetDB();
+    const bool bTimestamps = sqldbTs.GetChannelLogTimestamps(ch->name);
 
     CLinearTimeAbsolute ltaU, ltaL;
     ltaU.GetUTC();
@@ -2266,20 +2258,18 @@ static ChanLogResult do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* ar
         return CHANLOG_NOT_LOGGING;
     }
 
-    const int atr = mkattr(GOD, T("LOG_TIMESTAMPS"));
-    if (atr <= 0)
+    // A column now, not an AF_CONST attribute (#1589 stage 2).
+    //
+    // The attribute is what kept #1585 open: written as GOD with AF_CONST,
+    // which bCanSetAttr denies in every branch including God's, so the
+    // module's permission-checked write was refused and the flag could not
+    // be cleared from the side that had not set it.  A column has nothing to
+    // refuse with, so both implementations can now turn it off.
+    //
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    if (!sqldb.SetChannelLogTimestamps(ch->name, 0 != value))
     {
         return CHANLOG_INTERNAL;
-    }
-
-    if (value)
-    {
-        atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
-                AF_CONST | AF_NOPROG | AF_NOPARSE);
-    }
-    else
-    {
-        atr_clr(ch->chan_obj, atr);
     }
 
     return CHANLOG_OK;
@@ -4783,16 +4773,7 @@ FUNCTION(fun_crecall)
     // setting governs all of a channel's history instead of only the part
     // written since it was last toggled (#1589).
     //
-    bool bTimestamps = false;
-    ATTR *pattr = atr_str(T("LOG_TIMESTAMPS"));
-    if (pattr && Good_obj(ch->chan_obj))
-    {
-        dbref aowner;
-        int aflags;
-        LBuf tsbuf = LBuf_Adopt(atr_get("fun_crecall.LOG_TIMESTAMPS",
-            ch->chan_obj, pattr->number, &aowner, &aflags));
-        bTimestamps = ('\0' != *tsbuf.get());
-    }
+    const bool bTimestamps = sqldb.GetChannelLogTimestamps(ch->name);
 
     // The offset in force right now, used only for rows that did not record
     // their own.  Computed once rather than per row.

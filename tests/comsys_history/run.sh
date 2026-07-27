@@ -48,7 +48,12 @@ s = open(src, encoding='utf-8').read()
 m = re.search(r'%s =\n(.*?);\n' % re.escape(ident), s, re.S)
 if not m:
     sys.exit("could not find %s" % ident)
-print(''.join(re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(1))).replace('\\"', '"'))
+# Strip // comments FIRST.  Prose inside a comment can contain quotes -- the
+# migration explains that 0 does not mean "keep everything" -- and a literal
+# scanner run over the raw block splices that prose into the SQL.  Same
+# treatment extract_stmt already applies, for the same reason.
+body = re.sub(r'//[^\n]*', '', m.group(1))
+print(''.join(re.findall(r'"((?:[^"\\]|\\.)*)"', body)).replace('\\"', '"'))
 PY
 }
 

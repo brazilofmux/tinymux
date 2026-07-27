@@ -252,6 +252,15 @@ public:
     bool GetChannelRetention(const UTF8 *channel_name, int *max_count,
                              int *max_age);
 
+    // Whether recall renders timestamps for this channel.  A column rather
+    // than an attribute (#1589 stage 2): the attribute carried AF_CONST, and
+    // bCanSetAttr denies that in every branch, so whichever implementation
+    // did not write it first could never change it -- #1585.  A column has
+    // no permission bits to refuse.
+    //
+    bool GetChannelLogTimestamps(const UTF8 *channel_name);
+    bool SetChannelLogTimestamps(const UTF8 *channel_name, bool bOn);
+
     // Mail operations (bulk sync + write-through).
     //
     bool SyncMailHeader(int to_player, int from_player, int body_number,
@@ -433,6 +442,8 @@ private:
     sqlite3_stmt *m_stmtChanHistDelete;
     sqlite3_stmt *m_stmtChanRetentionSet;
     sqlite3_stmt *m_stmtChanRetentionGet;
+    sqlite3_stmt *m_stmtChanTsGet;
+    sqlite3_stmt *m_stmtChanTsSet;
     sqlite3_stmt *m_stmtChannelUserSync;
     sqlite3_stmt *m_stmtPlayerChannelSync;
     sqlite3_stmt *m_stmtChannelLoadAll;
