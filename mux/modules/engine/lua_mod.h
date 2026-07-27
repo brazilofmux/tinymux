@@ -81,9 +81,11 @@ private:
     size_t m_nMemPeak;
     bool   m_bMemExceeded;
 
-    // Wall-clock abort (#1591).  Set by InsnCountHook when alarm_clock has
-    // fired, so Run() can answer "#-1 CPU LIMITED" -- the same text the AST
-    // evaluator and the JIT produce -- rather than wrapping it as a Lua error.
+    // Wall-clock abort (#1591).  Set by InsnCountHook (VM instructions) or
+    // MatchInterrupt (inside the pattern matcher, where the count hook cannot
+    // reach) when alarm_clock has fired, so Run() can answer
+    // "#-1 CPU LIMITED" -- the same text the AST evaluator and the JIT
+    // produce -- rather than wrapping it as a Lua error.
     bool   m_bCpuLimited;
 
     // Instruction accounting for the hook.  The hook now fires every
@@ -128,6 +130,12 @@ private:
         UTF8 *pResult, size_t nResultMax, size_t *pnResultLen);
 
     static void InsnCountHook(lua_State *L, lua_Debug *ar);
+
+    // The C-function half of the same budget (#1591).  InsnCountHook cannot
+    // fire inside string.find, so lstrlib.c calls this instead; a static
+    // member for the same reason InsnCountHook is one -- it needs
+    // m_bCpuLimited to turn the abort into "#-1 CPU LIMITED".
+    static int MatchInterrupt(lua_State *L);
     static void *LuaAlloc(void *ud, void *ptr, size_t osize, size_t nsize);
 
 public:

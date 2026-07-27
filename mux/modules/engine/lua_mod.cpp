@@ -648,6 +648,42 @@ void *CLuaMod::LuaAlloc(void *ud, void *ptr, size_t osize, size_t nsize)
 // the remaining half of #1591 and needs the matcher itself to count, the way
 // quick_wild already does with mudstate.wild_invk_ctr.
 //
+// Wall-clock escape for the Lua pattern matcher (#1591).
+//
+// InsnCountHook below cannot cover this: lua_sethook(LUA_MASKCOUNT) counts VM
+// instructions and does not fire inside a C function, and a pathological
+// pattern spends all its time inside one call to string.find.  lstrlib.c's
+// own MAXCCALLS bounds recursion depth, which stops a stack overflow but not
+// exponential backtracking -- that grows in breadth, so depth stays under 200
+// while the matcher runs unbounded.
+//
+// lstrlib.c calls this every MATCH_INTERRUPT_MASK+1 match() steps when the
+// pointer is installed.  Returning non-zero raises "cpu limited" there, which
+// lands in the same m_bCpuLimited path as the instruction hook, so the caller
+// still sees "#-1 CPU LIMITED" -- one budget, one message, all four routes.
+//
+extern "C" int (*lua_match_interrupt)(lua_State *L);
+
+int CLuaMod::MatchInterrupt(lua_State *L)
+{
+    if (!alarm_clock.alarmed)
+    {
+        return 0;
+    }
+
+    // Same instance recovery as InsnCountHook.  Flagging the module is what
+    // turns the Lua error into the softcode answer; without it the player
+    // would get a raw "#-1 LUA ERROR: cpu limited" instead.
+    void *ud = nullptr;
+    lua_getallocf(L, &ud);
+    CLuaMod *self = static_cast<CLuaMod *>(ud);
+    if (nullptr != self)
+    {
+        self->m_bCpuLimited = true;
+    }
+    return 1;
+}
+
 void CLuaMod::InsnCountHook(lua_State *L, lua_Debug *ar)
 {
     (void)ar;
@@ -827,6 +863,12 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     m_nInsnUsed = 0;
     lua_sethook(L, InsnCountHook, LUA_MASKCOUNT, m_nInsnPoll);
 
+    // Cover the C-function gap the count hook cannot reach (#1591).  Set on
+    // every call rather than once at startup: the pointer lives in lstrlib.c
+    // and costs nothing to reassign, and this way it cannot be left dangling
+    // by a module unload.
+    lua_match_interrupt = CLuaMod::MatchInterrupt;
+
     // Call the chunk (it's below the mux table stuff we just popped).
     //
     int status = lua_pcall(L, 0, 1, 0);
@@ -834,6 +876,7 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     // Remove the hook.
     //
     lua_sethook(L, nullptr, 0, 0);
+    lua_match_interrupt = nullptr;
 
     // Clear execution context.
     //
