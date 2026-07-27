@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 06:00-0600\n"
+"POT-Creation-Date: 2026-07-27 06:03-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -102,6 +102,23 @@ msgstr ""
 msgid "Moniker set."
 msgstr ""
 
+#: modules/engine/conf.cpp:517
+msgid "Nothing to set"
+msgstr ""
+
+#: modules/engine/conf.cpp:898 modules/engine/conf.cpp:957
+msgid "String truncated"
+msgstr ""
+
+#: modules/engine/conf.cpp:2399 modules/engine/flags.cpp:825
+#: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
+#: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
+#: modules/engine/session.cpp:300 modules/engine/session.cpp:328
+#: modules/engine/set.cpp:427 modules/engine/set.cpp:492
+#: modules/engine/set.cpp:1169 modules/engine/set.cpp:1327
+msgid "Set."
+msgstr ""
+
 #: modules/engine/cque.cpp:104
 msgid "Include nesting limit exceeded."
 msgstr ""
@@ -158,7 +175,10 @@ msgstr ""
 msgid "Query server is not available."
 msgstr ""
 
-#: modules/engine/cque.cpp:1740 modules/engine/set.cpp:1184
+#: modules/engine/cque.cpp:1740 modules/engine/cron.cpp:744
+#: modules/engine/cron.cpp:749 modules/engine/cron.cpp:803
+#: modules/engine/cron.cpp:808 modules/engine/cron.cpp:822
+#: modules/engine/cron.cpp:858 modules/engine/set.cpp:1184
 #: modules/engine/set.cpp:1511 modules/engine/set.cpp:1568
 #: modules/engine/set.cpp:2010 modules/engine/set.cpp:2086
 #: modules/engine/set.cpp:2148 modules/engine/set.cpp:2256
@@ -298,6 +318,54 @@ msgstr ""
 msgid "Weird object type cannot be destroyed."
 msgstr ""
 
+#: modules/engine/cron.cpp:761
+msgid "Syntax errors. No cron entry made."
+msgstr ""
+
+#: modules/engine/cron.cpp:765
+msgid "That cron entry already exists."
+msgstr ""
+
+#: modules/engine/cron.cpp:769
+msgid "Cron entry added."
+msgstr ""
+
+#: modules/engine/db.cpp:942
+msgid "No such user-named attribute."
+msgstr ""
+
+#: modules/engine/db.cpp:1000
+msgid "Attribute access changed."
+msgstr ""
+
+#: modules/engine/db.cpp:1019 modules/engine/db.cpp:1036
+msgid "Attribute rename failed."
+msgstr ""
+
+#: modules/engine/db.cpp:1030
+msgid "An attribute with that name already exists."
+msgstr ""
+
+#: modules/engine/db.cpp:1040
+msgid "Attribute renamed."
+msgstr ""
+
+#: modules/engine/db.cpp:1050
+msgid "Attribute deleted."
+msgstr ""
+
+#: modules/engine/db.cpp:1156
+msgid "That’s not a good name for a player."
+msgstr ""
+
+#: modules/engine/db.cpp:1165
+msgid "That name is already in use or is an alias."
+msgstr ""
+
+#: modules/engine/db.cpp:1192 modules/engine/set.cpp:295
+msgid "That is not a reasonable name."
+msgstr ""
+
 #: modules/engine/flags.cpp:26
 msgid "You cannot make God mortal."
 msgstr ""
@@ -319,22 +387,18 @@ msgid "I do not understand that flag."
 msgstr ""
 
 #: modules/engine/flags.cpp:825 modules/engine/levels.cpp:343
-#: modules/engine/levels.cpp:444 modules/engine/set.cpp:1323
+#: modules/engine/levels.cpp:444 modules/engine/powers.cpp:276
+#: modules/engine/set.cpp:1323
 msgid "Cleared."
 msgstr ""
 
-#: modules/engine/flags.cpp:825 modules/engine/levels.cpp:348
-#: modules/engine/levels.cpp:449 modules/engine/set.cpp:427
-#: modules/engine/set.cpp:492 modules/engine/set.cpp:1169
-#: modules/engine/set.cpp:1327
-msgid "Set."
-msgstr ""
-
-#: modules/engine/flags.cpp:830 modules/engine/set.cpp:1289
+#: modules/engine/flags.cpp:830 modules/engine/powers.cpp:281
+#: modules/engine/set.cpp:1289
 msgid "Already cleared."
 msgstr ""
 
-#: modules/engine/flags.cpp:830 modules/engine/set.cpp:1293
+#: modules/engine/flags.cpp:830 modules/engine/powers.cpp:281
+#: modules/engine/set.cpp:1293
 msgid "Already set."
 msgstr ""
 
@@ -363,6 +427,18 @@ msgstr ""
 msgid "Flag name changed."
 msgstr ""
 
+#: modules/engine/help.cpp:223
+msgid "Cache for help indexes refreshed."
+msgstr ""
+
+#: modules/engine/help.cpp:397
+msgid "Sorry, that function is temporarily unavailable."
+msgstr ""
+
+#: modules/engine/help.cpp:440
+msgid "No such indexed file found."
+msgstr ""
+
 #: modules/engine/levels.cpp:281 modules/engine/levels.cpp:382
 #: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
 msgid "I don’t know what you want to set!"
@@ -378,6 +454,18 @@ msgstr ""
 
 #: modules/engine/levels.cpp:337 modules/engine/levels.cpp:438
 msgid "No such reality level."
+msgstr ""
+
+#: modules/engine/log.cpp:366
+msgid "Syntax: @log file=message"
+msgstr ""
+
+#: modules/engine/log.cpp:384
+msgid "Not a valid log file."
+msgstr ""
+
+#: modules/engine/log.cpp:737
+msgid "Log file rotated."
 msgstr ""
 
 #: modules/engine/look.cpp:1313
@@ -555,6 +643,24 @@ msgstr ""
 msgid "You can’t leave."
 msgstr ""
 
+#: modules/engine/object.cpp:628 modules/engine/player.cpp:1683
+msgid "That name is not allowed."
+msgstr ""
+
+#: modules/engine/object.cpp:637
+msgid "That’s a silly name for a player."
+msgstr ""
+
+#: modules/engine/object.cpp:971 modules/engine/rob.cpp:152
+msgid "Halted."
+msgstr ""
+
+#: modules/engine/object.cpp:2303 modules/engine/predicates.cpp:1328
+#: modules/engine/predicates.cpp:1371 modules/engine/walkdb.cpp:1347
+#: modules/engine/walkdb.cpp:1382
+msgid "Done."
+msgstr ""
+
 #: modules/engine/player.cpp:963 modules/engine/predicates.cpp:1241
 #: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
 msgid "Sorry."
@@ -614,16 +720,24 @@ msgstr ""
 msgid "That is not a valid player name."
 msgstr ""
 
-#: modules/engine/player.cpp:1683
-msgid "That name is not allowed."
-msgstr ""
-
 #: modules/engine/player.cpp:1699
 msgid "That name is already in your protected list."
 msgstr ""
 
 #: modules/engine/player.cpp:1716
 msgid "That name is already protected by another player."
+msgstr ""
+
+#: modules/engine/powers.cpp:245
+msgid "You must specify a power to clear."
+msgstr ""
+
+#: modules/engine/powers.cpp:249
+msgid "You must specify a power to set."
+msgstr ""
+
+#: modules/engine/powers.cpp:257
+msgid "I don’t understand that power."
 msgstr ""
 
 #: modules/engine/predicates.cpp:283
@@ -641,11 +755,6 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:1213
 msgid "No added commands found in command table."
-msgstr ""
-
-#: modules/engine/predicates.cpp:1328 modules/engine/predicates.cpp:1371
-#: modules/engine/walkdb.cpp:1347 modules/engine/walkdb.cpp:1382
-msgid "Done."
 msgstr ""
 
 #: modules/engine/predicates.cpp:1375 modules/engine/predicates.cpp:1380
@@ -724,10 +833,6 @@ msgstr ""
 msgid "Your murder attempt failed."
 msgstr ""
 
-#: modules/engine/rob.cpp:152
-msgid "Halted."
-msgstr ""
-
 #: modules/engine/rob.cpp:178
 msgid "Your insurance policy has been revoked."
 msgstr ""
@@ -758,6 +863,10 @@ msgstr ""
 
 #: modules/engine/rob.cpp:432
 msgid "Guests really don’t need money or anything."
+msgstr ""
+
+#: modules/engine/session.cpp:290 modules/engine/session.cpp:305
+msgid "Not connected."
 msgstr ""
 
 #: modules/engine/set.cpp:83
@@ -798,10 +907,6 @@ msgstr ""
 
 #: modules/engine/set.cpp:269 modules/engine/set.cpp:305
 msgid "Name set."
-msgstr ""
-
-#: modules/engine/set.cpp:295
-msgid "That is not a reasonable name."
 msgstr ""
 
 #: modules/engine/set.cpp:374

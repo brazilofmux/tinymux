@@ -282,12 +282,12 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             if (  !bQuiet
                && !Quiet(executor))
             {
-                notify(executor, T("Set."));
+                notify(executor, M_("Set."));
             }
         }
         else
         {
-            notify(executor, T("Not connected."));
+            notify(executor, M_("Not connected."));
         }
     }
     else if (key == DOING_UNIQUE)
@@ -297,12 +297,12 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             if (  !bQuiet
                && !Quiet(executor))
             {
-                notify(executor, T("Set."));
+                notify(executor, M_("Set."));
             }
         }
         else
         {
-            notify(executor, T("Not connected."));
+            notify(executor, M_("Not connected."));
         }
     }
     else if (key == DOING_HEADER)
@@ -325,7 +325,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         if (  !bQuiet
            && !Quiet(executor))
         {
-            notify(executor, T("Set."));
+            notify(executor, M_("Set."));
         }
     }
     else // if (key == DOING_POLL)
