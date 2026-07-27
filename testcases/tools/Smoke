@@ -102,7 +102,8 @@ fi
 # before it could be read.
 #
 rm -rf "$DATA" logs text
-rm -f smoke.conf alias.conf compat.conf shutdown.status
+rm -f smoke.conf alias.conf compat.conf shutdown.status modprobe.in modprobe.log modprobe.conf
+rm -rf modprobe.d
 rm -f smoke.log netmux.log
 rm -rf bin
 
@@ -173,6 +174,63 @@ else
     echo "Exit code: $dbconvert_rc"
     cat netmux.log
     exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Preflight: every module smoke.conf asks for must actually be loaded.
+#
+# A module that fails to load is completely silent (#1572).  The engine
+# carries a built-in comsys, so when comsys_mod does not load the built-in
+# services the channel commands, the run proceeds normally, and nothing in
+# netmux.log says which implementation answered.  Measured: the 31 comsys
+# cases pass identically with and without the module, so the corpus cannot
+# tell them apart -- and the two implementations demonstrably differ (#1572
+# lists five divergences).
+#
+# That is exactly how #1564/#1569 reached master: the module silently did
+# not load on Windows, the built-in answered, and the suite was green.
+#
+# `@list modules` reports each as "(loaded)" or "(unloaded)".  Ask it in a
+# throwaway read-only run against the same config, before trusting anything
+# the suite reports.
+# ---------------------------------------------------------------------------
+
+WANT_MODULES=$(sed -n 's/^module[[:space:]]\{1,\}\([A-Za-z0-9_]\{1,\}\).*/\1/p' smoke.conf)
+if [ -n "$WANT_MODULES" ]; then
+    echo "Preflight: checking modules load..."
+    # Its own empty database, so @startup does not fire and the suite is not
+    # run twice.  Only the module lines are carried over from smoke.conf.
+    rm -rf modprobe.d; mkdir -p modprobe.d
+    {
+        echo "input_database  modprobe.d/p.db"
+        echo "output_database modprobe.d/p.db.new"
+        echo "crash_database  modprobe.d/p.db.CRASH"
+        echo "mail_database   modprobe.d/mail.db"
+        echo "comsys_database modprobe.d/comsys.db"
+        echo "port 2861"
+        echo "mud_name SmokeModProbe"
+        echo "include alias.conf"
+        echo "include compat.conf"
+        grep -E '^module[[:space:]]' smoke.conf
+    } > modprobe.conf
+    printf '@list modules\n@shutdown\n' > modprobe.in
+    "$BIN/muxscript" -g . -c modprobe.conf --readonly < modprobe.in > modprobe.log 2>&1 || true
+    modfail=0
+    for m in $WANT_MODULES; do
+        if ! grep -qE "^$m \(loaded\)" modprobe.log; then
+            echo "ERROR: smoke.conf asks for module '$m', but it is not loaded."
+            modfail=1
+        fi
+    done
+    if [ "$modfail" -ne 0 ]; then
+        echo
+        echo "The suite would still pass: the engine's built-in implementations"
+        echo "answer when a module is absent, so the tests exercise the wrong"
+        echo "side silently.  See #1572.  Reported modules:"
+        sed -n '/^Modules:/,/^$/p' modprobe.log | sed 's/^/  /'
+        exit 1
+    fi
+    rm -rf modprobe.in modprobe.log modprobe.conf modprobe.d
 fi
 
 # ---------------------------------------------------------------------------
@@ -426,7 +484,8 @@ fi
 # Clean up runtime state.
 # ---------------------------------------------------------------------------
 
-rm -f smoke.conf alias.conf compat.conf shutdown.status
+rm -f smoke.conf alias.conf compat.conf shutdown.status modprobe.in modprobe.log modprobe.conf
+rm -rf modprobe.d
 rm -rf "$DATA" logs text
 rm -f netmux.log
 rm -rf bin
