@@ -280,6 +280,120 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
 // Pass 1: find basic block boundaries
 // ---------------------------------------------------------------
 
+// The block leaders a single instruction induces, written into out[] (at most
+// two).  find_block_starts() and lua_bool_fuse_at() both consult this, so the
+// two passes cannot disagree about where the blocks are -- a disagreement is
+// what #1421 was: the lowering skipped past a leader the CFG had recorded.
+static int insn_leaders(const lua_bc_proto *proto, int pc, int n, int out[2]) {
+    const lua_bc_instruction &insn = proto->code[pc];
+    int cnt = 0;
+
+    switch (insn.opcode()) {
+    case OP_LUA_JMP:
+        out[cnt++] = pc + 1 + insn.sJ();
+        out[cnt++] = pc + 1;
+        break;
+    case OP_LUA_FORLOOP:
+    case OP_LUA_FORPREP:
+    case OP_LUA_TFORPREP:
+    case OP_LUA_TFORLOOP:
+        out[cnt++] = pc + 1 + insn.sBx();
+        out[cnt++] = pc + 1;
+        break;
+    case OP_LUA_EQ:
+    case OP_LUA_LT:
+    case OP_LUA_LE:
+    case OP_LUA_EQI:
+    case OP_LUA_LTI:
+    case OP_LUA_LEI:
+    case OP_LUA_GTI:
+    case OP_LUA_GEI:
+    case OP_LUA_TEST:
+    case OP_LUA_TESTSET:
+        // "if (cond ~= k) then pc++" -- the skip lands at pc+2, and the JMP
+        // it skipped is its own block.
+        out[cnt++] = pc + 1;
+        out[cnt++] = pc + 2;
+        break;
+    case OP_LUA_LFALSESKIP:
+        // "R[A] := false; pc++".  The skip is control flow, not a linear
+        // step: the instruction it jumps over belongs to the other path.
+        // Lowering it as a bare pc++ swallowed that leader whole (#1421).
+        out[cnt++] = pc + 1;
+        out[cnt++] = pc + 2;
+        break;
+    case OP_LUA_RETURN:
+    case OP_LUA_RETURN0:
+    case OP_LUA_RETURN1:
+        // Do NOT mark pc+1 as a leader.  Lua always appends a trailing
+        // return after an explicit one; treating it as a new block made
+        // every returning chunk multi_block (budget STORE_Q + SSA) and
+        // contributed to the #1309 hang class on otherwise linear code.
+        break;
+    default:
+        break;
+    }
+
+    // Drop out-of-range targets; malformed bytecode is declined elsewhere.
+    int keep = 0;
+    for (int i = 0; i < cnt; i++) {
+        if (out[i] > 0 && out[i] < n) out[keep++] = out[i];
+    }
+    return keep;
+}
+
+// Is `pc` the head of the four-instruction idiom Lua emits to materialize a
+// condition as a value (lcode.c exp2reg / code_loadbool)?
+//
+//     pc   : <test>          if (cond ~= k) then pc++
+//     pc+1 : JMP -> pc+3
+//     pc+2 : LFALSESKIP A    R[A] := false; pc++   (skips pc+3)
+//     pc+3 : LOADTRUE  A     R[A] := true
+//
+// The whole run is just  R[A] = (cond == k)  with no control flow, so fusing
+// it to a bare comparison is both correct and branchless.  A compound
+// condition (`a<b and c<d`) patches its own jump list into pc+2/pc+3, and
+// then the run is a real join and must not be fused -- so require that
+// nothing outside the run enters it.
+//
+// Only the comparison opcodes are fused.  TEST/TESTSET are excluded: TESTSET
+// also copies R[B] into R[A] on the taken path, so its value is not simply
+// the branch condition.
+static bool lua_bool_fuse_at(const lua_bc_proto *proto, int pc, int n,
+                             int *dst_reg) {
+    switch (proto->code[pc].opcode()) {
+    case OP_LUA_EQ:  case OP_LUA_LT:  case OP_LUA_LE:
+    case OP_LUA_EQI: case OP_LUA_LTI: case OP_LUA_LEI:
+    case OP_LUA_GTI: case OP_LUA_GEI:
+        break;
+    default:
+        return false;
+    }
+    if (pc + 3 >= n) return false;
+
+    const lua_bc_instruction &jmp = proto->code[pc + 1];
+    const lua_bc_instruction &lfs = proto->code[pc + 2];
+    const lua_bc_instruction &ltr = proto->code[pc + 3];
+    if (jmp.opcode() != OP_LUA_JMP) return false;
+    if (pc + 2 + jmp.sJ() != pc + 3) return false;
+    if (lfs.opcode() != OP_LUA_LFALSESKIP) return false;
+    if (ltr.opcode() != OP_LUA_LOADTRUE) return false;
+    if (lfs.A() != ltr.A()) return false;
+
+    // No entry into pc+1 .. pc+3 from outside the run itself.
+    for (int j = 0; j < n; j++) {
+        if (j >= pc && j <= pc + 2) continue;   // the run's own branches
+        int tgt[2];
+        int cnt = insn_leaders(proto, j, n, tgt);
+        for (int i = 0; i < cnt; i++) {
+            if (tgt[i] >= pc + 1 && tgt[i] <= pc + 3) return false;
+        }
+    }
+
+    *dst_reg = lfs.A();
+    return true;
+}
+
 static void find_block_starts(const lua_bc_proto *proto,
                                std::vector<bool> &is_leader) {
     int n = static_cast<int>(proto->code.size());
@@ -287,64 +401,16 @@ static void find_block_starts(const lua_bc_proto *proto,
     if (n > 0) is_leader[0] = true;
 
     for (int pc = 0; pc < n; pc++) {
-        const lua_bc_instruction &insn = proto->code[pc];
-        int op = insn.opcode();
-
-        switch (op) {
-        case OP_LUA_JMP: {
-            int target = pc + 1 + insn.sJ();
-            if (target >= 0 && target < n) is_leader[target] = true;
-            if (pc + 1 < n) is_leader[pc + 1] = true;
-            break;
+        int dst;
+        if (lua_bool_fuse_at(proto, pc, n, &dst)) {
+            // Fused to a value in pass 2 -- the run has no control flow, so
+            // it must not induce leaders here either.
+            pc += 3;
+            continue;
         }
-        case OP_LUA_FORLOOP: {
-            int target = pc + 1 + insn.sBx();
-            if (target >= 0 && target < n) is_leader[target] = true;
-            if (pc + 1 < n) is_leader[pc + 1] = true;
-            break;
-        }
-        case OP_LUA_FORPREP: {
-            int target = pc + 1 + insn.sBx();
-            if (target >= 0 && target < n) is_leader[target] = true;
-            if (pc + 1 < n) is_leader[pc + 1] = true;
-            break;
-        }
-        case OP_LUA_TFORPREP: {
-            int target = pc + 1 + insn.sBx();
-            if (target >= 0 && target < n) is_leader[target] = true;
-            if (pc + 1 < n) is_leader[pc + 1] = true;
-            break;
-        }
-        case OP_LUA_TFORLOOP: {
-            int target = pc + 1 + insn.sBx();
-            if (target >= 0 && target < n) is_leader[target] = true;
-            if (pc + 1 < n) is_leader[pc + 1] = true;
-            break;
-        }
-        case OP_LUA_EQ:
-        case OP_LUA_LT:
-        case OP_LUA_LE:
-        case OP_LUA_EQI:
-        case OP_LUA_LTI:
-        case OP_LUA_LEI:
-        case OP_LUA_GTI:
-        case OP_LUA_GEI:
-        case OP_LUA_TEST:
-        case OP_LUA_TESTSET:
-            if (pc + 1 < n) is_leader[pc + 1] = true;
-            if (pc + 2 < n) is_leader[pc + 2] = true;
-            break;
-        case OP_LUA_RETURN:
-        case OP_LUA_RETURN0:
-        case OP_LUA_RETURN1:
-            // Do NOT mark pc+1 as a leader.  Lua always appends a trailing
-            // return after an explicit one; treating it as a new block made
-            // every returning chunk multi_block (budget STORE_Q + SSA) and
-            // contributed to the #1309 hang class on otherwise linear code.
-            break;
-        default:
-            break;
-        }
+        int tgt[2];
+        int cnt = insn_leaders(proto, pc, n, tgt);
+        for (int i = 0; i < cnt; i++) is_leader[tgt[i]] = true;
     }
 }
 
@@ -478,10 +544,13 @@ static bool either_float(hir_program &h, int a, int b) {
 //   compare → optional negate (k bit) → read JMP → emit BRC
 // ---------------------------------------------------------------
 
+static inline bool lua_reg_in_range(int idx);   // defined with pass 2
+
 static int emit_cmp_branch(hir_program &h, int cmp, int k_bit,
-                            const lua_bc_proto *proto, int pc,
+                            const lua_bc_proto *proto, int &pc,
                             const std::vector<int> &pc_to_block,
-                            int cur_hir_block, int n) {
+                            int cur_hir_block, int n,
+                            int *lua_reg, bool multi_block) {
     if (cmp < 0) return -1;
     // Lua's conditional ops are "if (cond ~= k) then pc++", and that pc++
     // skips the JMP which follows.  So the JMP is taken exactly when
@@ -496,6 +565,22 @@ static int emit_cmp_branch(hir_program &h, int cmp, int k_bit,
         cmp = h.emit(HIR_NOT, TY_INT, cmp);
         if (cmp < 0) return -1;
     }
+
+    // The condition used as a *value* rather than as a branch: `cmp` already
+    // is (cond == k), which is exactly what the LFALSESKIP/LOADTRUE pair
+    // computes, so drop the whole run and keep the comparison (#1421).
+    int dst;
+    if (lua_reg != nullptr && lua_bool_fuse_at(proto, pc, n, &dst)) {
+        if (!lua_reg_in_range(dst)) return -1;
+        lua_reg[dst] = cmp;
+        pc += 2;    // LFALSESKIP and LOADTRUE; the caller steps over the JMP
+        return 0;
+    }
+
+    // Only a real branch needs more than one block.  This guard sits after the
+    // fuse on purpose: fusing removes the chunk's only branch, so `return a<b`
+    // is single-block by construction and would otherwise decline here.
+    if (!multi_block) return -1;
     if (pc + 1 >= n) return -1;
     const lua_bc_instruction &jmp_insn = proto->code[pc + 1];
     if (jmp_insn.opcode() != OP_LUA_JMP) return -1;
@@ -667,11 +752,29 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         }
 
         case OP_LUA_LOADFALSE:
-        case OP_LUA_LFALSESKIP:
             lua_reg[A] = h.emit_iconst(0);
             if (lua_reg[A] < 0) return -1;
-            if (op == OP_LUA_LFALSESKIP) pc++;
             break;
+
+        // "R[A] := false; pc++".  When this pairs with LOADTRUE purely to
+        // turn a condition into a value, the run is fused away before we get
+        // here (lua_bool_fuse_at).  What is left is a genuine two-way join,
+        // so the skip has to be an explicit branch.  Lowering it as a linear
+        // pc++ stepped over a block leader: the skipped path's entire body
+        // was emitted into this block and the other block was left empty, so
+        // the chunk returned the false arm's value -- or, once every RET got
+        // its own output slot, nothing at all (#1421).
+        case OP_LUA_LFALSESKIP: {
+            lua_reg[A] = h.emit_iconst(0);
+            if (lua_reg[A] < 0) return -1;
+            if (!multi_block) return -1;
+            int target = pc + 2;
+            int target_blk = (target > 0 && target < n) ? pc_to_block[target] : -1;
+            if (target_blk < 0) return -1;
+            h.emit(HIR_BR, TY_VOID, -1, -1, target_blk);
+            h.add_edge(cur_hir_block, target_blk);
+            break;
+        }
 
         case OP_LUA_LOADTRUE:
             lua_reg[A] = h.emit_iconst(1);
@@ -1345,9 +1448,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 cmp = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
             } \
             h.native_ops++; \
-            if (!multi_block) return -1; \
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block, \
-                                cur_hir_block, n) < 0) return -1; \
+                                cur_hir_block, n, lua_reg, multi_block) < 0) \
+                return -1; \
             pc++; \
             break; \
         }
@@ -1375,9 +1478,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 return -1; \
             } \
             h.native_ops++; \
-            if (!multi_block) return -1; \
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block, \
-                                cur_hir_block, n) < 0) return -1; \
+                                cur_hir_block, n, lua_reg, multi_block) < 0) \
+                return -1; \
             pc++; \
             break; \
         }
@@ -1461,9 +1564,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 return -1;
             }
             h.native_ops++;
-            if (!multi_block) return -1;
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
-                                cur_hir_block, n) < 0) return -1;
+                                cur_hir_block, n, lua_reg, multi_block) < 0)
+                return -1;
             pc++;
             break;
         }
@@ -1489,9 +1592,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 return -1;
             }
             h.native_ops++;
-            if (!multi_block) return -1;
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
-                                cur_hir_block, n) < 0) return -1;
+                                cur_hir_block, n, lua_reg, multi_block) < 0)
+                return -1;
             pc++;
             break;
         }
@@ -1502,9 +1605,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[A];
             if (rb < 0) return -1;
             int cmp = h.emit(HIR_BOOL, TY_INT, rb);
-            if (!multi_block) return -1;
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
-                                cur_hir_block, n) < 0) return -1;
+                                cur_hir_block, n, nullptr, multi_block) < 0)
+                return -1;
             pc++;
             break;
         }
@@ -1514,9 +1617,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (rb < 0) return -1;
             int cmp = h.emit(HIR_BOOL, TY_INT, rb);
             lua_reg[A] = rb;  // Simplified: always copy.
-            if (!multi_block) return -1;
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
-                                cur_hir_block, n) < 0) return -1;
+                                cur_hir_block, n, nullptr, multi_block) < 0)
+                return -1;
             pc++;
             break;
         }
@@ -2066,6 +2169,31 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     }
 
     if (result_val < 0) return -1;
+
+    // Every block a branch can reach must have been lowered into.  A
+    // reachable-but-empty block means some opcode's control flow was modelled
+    // as a linear step and swallowed a block leader whole: the skipped path's
+    // body ends up in the wrong block, and the block the branch actually
+    // targets is a hole.  That was #1421 (OP_LFALSESKIP), and the same shape
+    // is available to any future opcode that advances pc by hand.  Catching
+    // it here makes the whole class decline instead of silently answering
+    // with the other arm's value (#1501).
+    {
+        bool has_insn[HIR_MAX_BLOCKS];
+        memset(has_insn, 0, sizeof(has_insn));
+        for (int i = 0; i < h.n_insns; i++) {
+            int b = h.blk[i];
+            if (b >= 0 && b < HIR_MAX_BLOCKS) has_insn[b] = true;
+        }
+        for (int b = 0; b < h.n_blocks && b < HIR_MAX_BLOCKS; b++) {
+            if (!has_insn[b]) continue;    // b unreachable itself; harmless
+            for (int s = 0; s < h.block_nsucc[b]; s++) {
+                int t = h.block_succ[b][s];
+                if (t >= 0 && t < h.n_blocks && !has_insn[t]) return -1;
+            }
+        }
+    }
+
     h.result = result_val;
     // ecalls/native_ops force a runtime path.  Also keep needs_jit if
     // lowering already set it (mux.args → CARGS srefs have no ecall/native
