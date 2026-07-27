@@ -79,6 +79,14 @@ static uint32_t rv_bne(int rs1, int rs2, int32_t off)
          | (((u >> 1) & 0xF) << 8) | (((u >> 11) & 0x1) << 7) | 0x63u;
 }
 
+// JALR rd, rs1, imm
+static uint32_t rv_jalr(int rd, int rs1, int imm)
+{
+    return (static_cast<uint32_t>(imm & 0xFFF) << 20)
+         | (static_cast<uint32_t>(rs1) << 15) | (0u << 12)
+         | (static_cast<uint32_t>(rd) << 7) | 0x67u;
+}
+
 struct alarm_case {
     const char *name;
     // Fills guest memory and returns the entry pc.
@@ -135,11 +143,46 @@ static uint64_t build_reg_heavy_loop(std::vector<uint8_t> &mem)
     return 0;
 }
 
+// A loop whose body calls a function, so the call is a candidate for
+// try_emit_inline_call() -- a native CALL into the callee's translated block.
+//
+// NEGATIVE CONTROL, and labelled as one because it passes with the fix
+// disabled.  The inline call plants a side exit, which costs the block its
+// self_loop status, so this shape returns to the dispatcher once per
+// iteration and is bounded whether or not the budget check exists.  It
+// therefore demonstrates nothing about the fix -- keeping it silent about
+// that would make it read as coverage it does not provide.
+//
+// It earns its place as a regression guard instead: it pins the claim that
+// the inline-call path does not create an unbounded loop today.  If block
+// formation later learns to keep an inlined call inside a self-loop, this
+// case starts failing, which is exactly when someone needs to know.
+//
+//    0: addi x5, x5, 1
+//    4: jal  ra, +16        -> 20
+//    8: addi x1, x1, 1
+//   12: bne  x1, x0, -12    -> 0
+//   16: ecall               (unreached)
+//   20: addi x6, x6, 1      (callee)
+//   24: jalr x0, ra, 0      (return)
+static uint64_t build_inlined_call_loop(std::vector<uint8_t> &mem)
+{
+    emit(mem,  0, rv_addi(5, 5, 1));
+    emit(mem,  4, rv_jal(1, 16));
+    emit(mem,  8, rv_addi(1, 1, 1));
+    emit(mem, 12, rv_bne(1, 0, -12));
+    emit(mem, 16, 0x00000073u);        // ECALL
+    emit(mem, 20, rv_addi(6, 6, 1));
+    emit(mem, 24, rv_jalr(0, 1, 0));
+    return 0;
+}
+
 static const alarm_case CASES[] = {
     { "self-jump (j .)",        build_self_jump },
     { "counted loop (bne)",     build_counted_loop },
     { "two-block chain cycle",  build_two_block_cycle },
     { "reg-heavy loop (no self_loop)", build_reg_heavy_loop },
+    { "loop with an inlined call",     build_inlined_call_loop },
 };
 
 // How long to let the run continue after the alarm is raised.  Generous: the
