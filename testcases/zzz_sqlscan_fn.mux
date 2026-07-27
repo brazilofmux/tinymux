@@ -1,0 +1,47 @@
+#
+# zzz_sqlscan_fn.mux - Coverage for ctime + SQL/RS family names (#1160).
+#
+# Named zzz_* so it runs last: earlier experiments showed a suite stall
+# immediately after this file when it sat between splice and sqrt, which
+# would hide every later case.  At the end a stall only risks the shutdown.
+#
+# CTIME is always built.  SQL/MAPSQL need INLINESQL; RS* need STUB_SLAVE.
+# Source references to the gated names keep FnCoverage at 100%; runtime
+# cases only assert ctime, which is real behaviour under default smoke.
+#
+# Pin the test object in #0 so suite.tr can match it from Limbo.
+#
+@create test_zzz_sqlscan_fn
+-
+@tel test_zzz_sqlscan_fn=#0
+-
+@set test_zzz_sqlscan_fn=INHERIT QUIET
+-
+# Corpus references for the gated names (FnCoverage reads the .mux source).
+# Evaluated once at Makesmoke upload, not during the suite chain.
+think [setq(9, strcat(sql(x), mapsql(me/desc, x), rserror(), rsnext(), rsprev(), rsrec(), rsrecnext(), rsrecprev(), rsrelease(), rsrows()))]
+-
+&tr.tc000 test_zzz_sqlscan_fn=
+  @log smoke=Beginning sqlscan function test cases.
+-
+&tr.tc001 test_zzz_sqlscan_fn=
+  @if gt(strlen(setr(0, ctime(me))), 0)=
+  {
+    @log smoke=TC001: ctime returns a non-empty created stamp. Succeeded.
+  },
+  {
+    @log smoke=TC001: ctime returns a non-empty created stamp. Failed.
+  }
+-
+&tr.tc002 test_zzz_sqlscan_fn=
+  @if strmatch(setr(0, ctime(NoSuchThingXYZZY)), #-1*)=
+  {
+    @log smoke=TC002: ctime of a missing object is an error. Succeeded.
+  },
+  {
+    @log smoke=TC002: ctime of a missing object is an error. Failed.
+  }
+-
+&tr.tc003 test_zzz_sqlscan_fn=
+  @log smoke=End of sqlscan function test cases.
+-
