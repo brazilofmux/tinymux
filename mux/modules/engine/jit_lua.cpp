@@ -101,6 +101,19 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
         return false;
     }
 
+    // The Lua path never consulted h->overflowed (#1501).  It checked only the
+    // -1 returned by hir_lower_lua_proto, which catches a refusal the lowering
+    // propagated all the way out and misses one a consumer swallowed -- and
+    // then ran SSA, the optimizer and codegen over a program whose lowering had
+    // stopped partway.  compile_expression has had this check since #859; the
+    // Lua entry point is the same pipeline and needs it too, plus the
+    // consumer-side refused_index() half.
+    //
+    if (h->overflowed || h->refused_index()) {
+        delete h;
+        return false;
+    }
+
     // Always build block ranges (block_last starts at -1 until CFG is
     // computed).  Without this, single-block Lua programs skip every HIR
     // insn in hir_codegen and leave final_out=0 (#1309 empty folds).
@@ -112,6 +125,15 @@ static bool compile_lua_bytecode(const uint8_t *data, size_t len,
     } else {
         // Single block: just constant folding.
         hir_const_fold(*h);
+    }
+
+    // SSA construction and the optimizer can exhaust capacity themselves, after
+    // the check above has already run -- the same reason compile_expression
+    // re-checks between phases (#1149).
+    //
+    if (h->overflowed || h->refused_index()) {
+        delete h;
+        return false;
     }
 
     // Code generation: HIR → RV64.
