@@ -347,6 +347,60 @@ fi
 # Print summary.
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Pin which comsys/mail implementation actually answered (#1581).
+#
+# The module preflight above proves each configured module LOADED.  It does
+# not prove the module is the one servicing channels and mail:
+# discover_comsys_mail_modules() calls mux_CreateInstance and falls back to
+# the engine's built-in when that fails, so "loaded" and "live" are separate
+# facts.  #1593 made the engine say which it chose -- but on stderr, which
+# lands in netmux.log and is deleted on a green run, so the answer existed
+# and was thrown away.
+#
+# Both halves matter.  Report it into smoke.log so anyone reading the
+# artifact can see which code the numbers describe, and fail when the
+# configuration asked for a module and the built-in answered anyway --
+# that silent fallback is how #1564 stayed hidden through a whole
+# investigation.
+# ---------------------------------------------------------------------------
+
+IMPL_LINES=$(grep -h 'using .* implementation' netmux.log 2>/dev/null | sort -u)
+if [ -n "$IMPL_LINES" ]; then
+    echo ""
+    echo "=== Implementations in this run ==="
+    printf '%s\n' "$IMPL_LINES"
+    printf '%s\n' "$IMPL_LINES" >> smoke.log
+fi
+
+IMPL_BAD=""
+case "$WANT_MODULES" in
+    *comsys_mod*)
+        case "$IMPL_LINES" in
+            *"Comsys: using built-in"*)
+                IMPL_BAD="$IMPL_BAD comsys" ;;
+        esac ;;
+esac
+case "$WANT_MODULES" in
+    *mail_mod*)
+        case "$IMPL_LINES" in
+            *"Mail: using built-in"*)
+                IMPL_BAD="$IMPL_BAD mail" ;;
+        esac ;;
+esac
+
+if [ -n "$IMPL_BAD" ]; then
+    echo ""
+    echo "=== Smoke: FAILED (implementation fallback) ==="
+    echo "smoke.conf asks for the module, but the built-in engine answered"
+    echo "for:$IMPL_BAD"
+    echo ""
+    echo "The module loaded (the preflight above passed) but"
+    echo "discover_comsys_mail_modules() still fell back.  The results below"
+    echo "describe the built-in implementation, not the one under test."
+    exit 1
+fi
+
 echo ""
 echo "=== Smoke Test Results ==="
 SUCCEEDED=$(grep -c 'Succeeded' smoke.log || true)
