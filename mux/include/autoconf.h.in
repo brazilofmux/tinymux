@@ -24,49 +24,52 @@
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
-/* Define to 1 if you have the `crypt' function. */
+/* Define to 1 if you have the 'bind_textdomain_codeset' function. */
+#undef HAVE_BIND_TEXTDOMAIN_CODESET
+
+/* Define to 1 if you have the 'crypt' function. */
 #undef HAVE_CRYPT
 
 /* define if the compiler supports basic C++17 syntax */
 #undef HAVE_CXX17
 
-/* Define to 1 if you have the declaration of `sys_siglist', and to 0 if you
+/* Define to 1 if you have the declaration of 'sys_siglist', and to 0 if you
    don't. */
 #undef HAVE_DECL_SYS_SIGLIST
 
-/* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
+/* Define to 1 if you have the declaration of 'tzname', and to 0 if you don't.
    */
 #undef HAVE_DECL_TZNAME
 
 /* Define if the character special file /dev/urandom is present. */
 #undef HAVE_DEV_URANDOM
 
-/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+/* Define to 1 if you have the <dirent.h> header file, and it defines 'DIR'.
    */
 #undef HAVE_DIRENT_H
 
 /* Define if dlopen exists. */
 #undef HAVE_DLOPEN
 
-/* Define to 1 if you don't have `vprintf' but do have `_doprnt.' */
+/* Define to 1 if you don't have 'vprintf' but do have '_doprnt.' */
 #undef HAVE_DOPRNT
 
-/* Define to 1 if you have the `epoll_create' function. */
+/* Define to 1 if you have the 'epoll_create' function. */
 #undef HAVE_EPOLL_CREATE
 
-/* Define to 1 if you have the `epoll_ctl' function. */
+/* Define to 1 if you have the 'epoll_ctl' function. */
 #undef HAVE_EPOLL_CTL
 
-/* Define to 1 if you have the `epoll_wait' function. */
+/* Define to 1 if you have the 'epoll_wait' function. */
 #undef HAVE_EPOLL_WAIT
 
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
-/* Define to 1 if you have the `EVP_MD_CTX_create' function. */
+/* Define to 1 if you have the 'EVP_MD_CTX_create' function. */
 #undef HAVE_EVP_MD_CTX_CREATE
 
-/* Define to 1 if you have the `EVP_MD_CTX_new' function. */
+/* Define to 1 if you have the 'EVP_MD_CTX_new' function. */
 #undef HAVE_EVP_MD_CTX_NEW
 
 /* Define to 1 if you have the <fcntl.h> header file. */
@@ -84,31 +87,31 @@
 /* Define to 1 if you have the <float.h> header file. */
 #undef HAVE_FLOAT_H
 
-/* Define to 1 if you have the `fork' function. */
+/* Define to 1 if you have the 'fork' function. */
 #undef HAVE_FORK
 
 /* Define to 1 if you have the <fpu_control.h> header file. */
 #undef HAVE_FPU_CONTROL_H
 
-/* Define to 1 if you have the `getaddrinfo' function. */
+/* Define to 1 if you have the 'getaddrinfo' function. */
 #undef HAVE_GETADDRINFO
 
-/* Define to 1 if you have the `getdtablesize' function. */
+/* Define to 1 if you have the 'getdtablesize' function. */
 #undef HAVE_GETDTABLESIZE
 
-/* Define to 1 if you have the `gethostbyaddr' function. */
+/* Define to 1 if you have the 'gethostbyaddr' function. */
 #undef HAVE_GETHOSTBYADDR
 
-/* Define to 1 if you have the `gethostbyname' function. */
+/* Define to 1 if you have the 'gethostbyname' function. */
 #undef HAVE_GETHOSTBYNAME
 
-/* Define to 1 if you have the `getnameinfo' function. */
+/* Define to 1 if you have the 'getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
 
-/* Define to 1 if you have the `getrusage' function. */
+/* Define to 1 if you have the 'getrusage' function. */
 #undef HAVE_GETRUSAGE
 
-/* Define to 1 if you have the `gettimeofday' function. */
+/* Define to 1 if you have the 'gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
 /* Define to 1 if you have the <ieeefp.h> header file. */
@@ -123,10 +126,10 @@
 /* Define if your system has the in6_addr type. */
 #undef HAVE_IN6_ADDR
 
-/* Define to 1 if you have the `inet_ntop' function. */
+/* Define to 1 if you have the 'inet_ntop' function. */
 #undef HAVE_INET_NTOP
 
-/* Define to 1 if you have the `inet_pton' function. */
+/* Define to 1 if you have the 'inet_pton' function. */
 #undef HAVE_INET_PTON
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -138,19 +141,22 @@
 /* Define if your system has the in_addr_t type. */
 #undef HAVE_IN_ADDR_T
 
-/* Define to 1 if you have the `kevent' function. */
+/* Define to 1 if you have the 'kevent' function. */
 #undef HAVE_KEVENT
 
-/* Define to 1 if you have the `kqueue' function. */
+/* Define to 1 if you have the 'kqueue' function. */
 #undef HAVE_KQUEUE
 
-/* Define to 1 if you have the `crypto' library (-lcrypto). */
+/* Define to 1 if you have the 'crypto' library (-lcrypto). */
 #undef HAVE_LIBCRYPTO
 
-/* Define to 1 if you have the `mysqlclient' library (-lmysqlclient). */
+/* Define to 1 if you have the <libintl.h> header file. */
+#undef HAVE_LIBINTL_H
+
+/* Define to 1 if you have the 'mysqlclient' library (-lmysqlclient). */
 #undef HAVE_LIBMYSQLCLIENT
 
-/* Define to 1 if you have the `ssl' library (-lssl). */
+/* Define to 1 if you have the 'ssl' library (-lssl). */
 #undef HAVE_LIBSSL
 
 /* Define to 1 if you have the <limits.h> header file. */
@@ -159,10 +165,10 @@
 /* Define if struct linger is defined. */
 #undef HAVE_LINGER
 
-/* Define to 1 if you have the `localtime_r' function. */
+/* Define to 1 if you have the 'localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
-/* Define to 1 if you have the `log2' function. */
+/* Define to 1 if you have the 'log2' function. */
 #undef HAVE_LOG2
 
 /* Define to 1 if you have the <malloc.h> header file. */
@@ -180,10 +186,10 @@
 /* Define if mysql.h exists. */
 #undef HAVE_MYSQL_H
 
-/* Define to 1 if you have the `nanosleep' function. */
+/* Define to 1 if you have the 'nanosleep' function. */
 #undef HAVE_NANOSLEEP
 
-/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
+/* Define to 1 if you have the <ndir.h> header file, and it defines 'DIR'. */
 #undef HAVE_NDIR_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
@@ -191,6 +197,9 @@
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
+
+/* Define if GNU gettext NLS is enabled. */
+#undef HAVE_NLS
 
 /* Define if pcre2.h exists. */
 #undef HAVE_PCRE2_H
@@ -201,16 +210,16 @@
 /* Define if pwrite exists. */
 #undef HAVE_PWRITE
 
-/* Define to 1 if you have the `select' function. */
+/* Define to 1 if you have the 'select' function. */
 #undef HAVE_SELECT
 
-/* Define to 1 if you have the `setitimer' function. */
+/* Define to 1 if you have the 'setitimer' function. */
 #undef HAVE_SETITIMER
 
-/* Define to 1 if you have the `setrlimit' function. */
+/* Define to 1 if you have the 'setrlimit' function. */
 #undef HAVE_SETRLIMIT
 
-/* Define to 1 if you have the `SHA_Init' function. */
+/* Define to 1 if you have the 'SHA_Init' function. */
 #undef HAVE_SHA_INIT
 
 /* Define if your system has the sockaddr_in type. */
@@ -222,10 +231,10 @@
 /* Define if your system has the sockaddr_storage type. */
 #undef HAVE_SOCKADDR_STORAGE
 
-/* Define to 1 if you have the `socket' function. */
+/* Define to 1 if you have the 'socket' function. */
 #undef HAVE_SOCKET
 
-/* Define to 1 if you have the `srandom' function. */
+/* Define to 1 if you have the 'srandom' function. */
 #undef HAVE_SRANDOM
 
 /* Define to 1 if you have the <stddef.h> header file. */
@@ -249,10 +258,10 @@
 /* Define if signal handlers have a struct sigcontext as their third arg. */
 #undef HAVE_STRUCT_SIGCONTEXT
 
-/* Define to 1 if `tm_zone' is a member of `struct tm'. */
+/* Define to 1 if 'tm_zone' is a member of 'struct tm'. */
 #undef HAVE_STRUCT_TM_TM_ZONE
 
-/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
+/* Define to 1 if you have the <sys/dir.h> header file, and it defines 'DIR'.
    */
 #undef HAVE_SYS_DIR_H
 
@@ -271,7 +280,7 @@
 /* Define to 1 if you have the <sys/ioctl.h> header file. */
 #undef HAVE_SYS_IOCTL_H
 
-/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
+/* Define to 1 if you have the <sys/ndir.h> header file, and it defines 'DIR'.
    */
 #undef HAVE_SYS_NDIR_H
 
@@ -299,39 +308,39 @@
 /* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
 #undef HAVE_SYS_WAIT_H
 
-/* Define to 1 if your `struct tm' has `tm_zone'. Deprecated, use
-   `HAVE_STRUCT_TM_TM_ZONE' instead. */
+/* Define to 1 if your 'struct tm' has 'tm_zone'. Deprecated, use
+   'HAVE_STRUCT_TM_TM_ZONE' instead. */
 #undef HAVE_TM_ZONE
 
-/* Define to 1 if you don't have `tm_zone' but do have the external array
-   `tzname'. */
+/* Define to 1 if you don't have 'tm_zone' but do have the external array
+   'tzname'. */
 #undef HAVE_TZNAME
 
-/* Define to 1 if you have the `tzset' function. */
+/* Define to 1 if you have the 'tzset' function. */
 #undef HAVE_TZSET
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to 1 if you have the `usleep' function. */
+/* Define to 1 if you have the 'usleep' function. */
 #undef HAVE_USLEEP
 
-/* Define to 1 if you have the `vfork' function. */
+/* Define to 1 if you have the 'vfork' function. */
 #undef HAVE_VFORK
 
 /* Define to 1 if you have the <vfork.h> header file. */
 #undef HAVE_VFORK_H
 
-/* Define to 1 if you have the `vprintf' function. */
+/* Define to 1 if you have the 'vprintf' function. */
 #undef HAVE_VPRINTF
 
 /* Define to 1 if you have the <wchar.h> header file. */
 #undef HAVE_WCHAR_H
 
-/* Define to 1 if `fork' works. */
+/* Define to 1 if 'fork' works. */
 #undef HAVE_WORKING_FORK
 
-/* Define to 1 if `vfork' works. */
+/* Define to 1 if 'vfork' works. */
 #undef HAVE_WORKING_VFORK
 
 /* Define is ieeefp.h is useable. */
@@ -393,31 +402,31 @@
 /* Define if calling signal with SIGCHLD when handling SIGCHLD blows chow. */
 #undef SIGNAL_SIGCHLD_BRAINDAMAGE
 
-/* The size of `int', as computed by sizeof. */
+/* The size of 'int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of `long', as computed by sizeof. */
+/* The size of 'long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of `long long', as computed by sizeof. */
+/* The size of 'long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
-/* The size of `short', as computed by sizeof. */
+/* The size of 'short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
-/* The size of `unsigned int', as computed by sizeof. */
+/* The size of 'unsigned int', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_INT
 
-/* The size of `unsigned long', as computed by sizeof. */
+/* The size of 'unsigned long', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_LONG
 
-/* The size of `unsigned long long', as computed by sizeof. */
+/* The size of 'unsigned long long', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_LONG_LONG
 
-/* The size of `unsigned short', as computed by sizeof. */
+/* The size of 'unsigned short', as computed by sizeof. */
 #undef SIZEOF_UNSIGNED_SHORT
 
-/* The size of `void *', as computed by sizeof. */
+/* The size of 'void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
 /* Define if platform computes integer quotient as the smallest integer
@@ -427,17 +436,21 @@
 /* Define if socklen_t is defined. */
 #undef SOCKLEN_T_DCL
 
-/* Define to 1 if all of the C90 standard headers exist (not just the ones
+/* Define to 1 if all of the C89 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
-/* Define to 1 if your <sys/time.h> declares `struct tm'. */
+/* Define to 1 if your <sys/time.h> declares 'struct tm'. */
 #undef TM_IN_SYS_TIME
 
-/* Enable extensions on AIX 3, Interix.  */
+/* Enable extensions on AIX, Interix, z/OS.  */
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
+#endif
+/* Enable extensions on Cosmopolitan Libc. */
+#ifndef _COSMO_SOURCE
+# undef _COSMO_SOURCE
 #endif
 /* Enable general extensions on macOS.  */
 #ifndef _DARWIN_C_SOURCE
@@ -496,11 +509,15 @@
 #ifndef __STDC_WANT_IEC_60559_DFP_EXT__
 # undef __STDC_WANT_IEC_60559_DFP_EXT__
 #endif
+/* Enable extensions specified by C23 Annex F.  */
+#ifndef __STDC_WANT_IEC_60559_EXT__
+# undef __STDC_WANT_IEC_60559_EXT__
+#endif
 /* Enable extensions specified by ISO/IEC TS 18661-4:2015.  */
 #ifndef __STDC_WANT_IEC_60559_FUNCS_EXT__
 # undef __STDC_WANT_IEC_60559_FUNCS_EXT__
 #endif
-/* Enable extensions specified by ISO/IEC TS 18661-3:2015.  */
+/* Enable extensions specified by C23 Annex H and ISO/IEC TS 18661-3:2015.  */
 #ifndef __STDC_WANT_IEC_60559_TYPES_EXT__
 # undef __STDC_WANT_IEC_60559_TYPES_EXT__
 #endif
@@ -544,23 +561,23 @@
 /* Define if Unknown Endian. */
 #undef WORDS_UNKNOWN
 
-/* Define to empty if `const' does not conform to ANSI C. */
+/* Define to empty if 'const' does not conform to ANSI C. */
 #undef const
 
-/* Define to `__inline__' or `__inline' if that's what the C compiler
+/* Define to '__inline__' or '__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
 #undef inline
 #endif
 
-/* Define to `long int' if <sys/types.h> does not define. */
+/* Define to 'long int' if <sys/types.h> does not define. */
 #undef off_t
 
 /* Define as a signed integer type capable of holding a process identifier. */
 #undef pid_t
 
-/* Define to `unsigned int' if <sys/types.h> does not define. */
+/* Define as 'unsigned int' if <stddef.h> doesn't define. */
 #undef size_t
 
-/* Define as `fork' if `vfork' does not work. */
+/* Define as 'fork' if 'vfork' does not work. */
 #undef vfork

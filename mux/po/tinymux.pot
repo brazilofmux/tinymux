@@ -1,0 +1,22 @@
+# TinyMUX server-message template (Phase 1 spike, #1419 / #1444).
+# Opt-in M_()/N_() only — not T() casts. Softcode #-1 uses S_() (ABI).
+msgid ""
+msgstr ""
+"Project-Id-Version: TinyMUX 2.14\n"
+"Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
+"Language-Team: none\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: modules/engine/match.cpp
+msgid "I don’t see that here."
+msgstr ""
+
+#: modules/engine/match.cpp
+msgid "I don’t know which one you mean!"
+msgstr ""
+
+#: modules/engine/match.cpp
+msgid "Permission denied."
+msgstr ""

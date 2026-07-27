@@ -421,7 +421,10 @@ typedef uint16_t UTF16;
 #endif // WIN32
 typedef uint32_t UTF32;
 
-#define T(x)    (reinterpret_cast<const UTF8 *>(x))
+// T() / S_() / N_() — see mux_nls.h and docs/plan-server-i18n.md (#1419).
+// Softcode #-1 diagnostics must use S_() so NLS cannot break the ABI.
+//
+#include "mux_nls.h"
 
 #ifndef SMALLEST_INT_GTE_NEG_QUOTIENT
 #define LARGEST_INT_LTE_NEG_QUOTIENT
