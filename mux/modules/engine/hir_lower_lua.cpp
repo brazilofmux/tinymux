@@ -2095,11 +2095,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 // General Lua function call via __lua_call ECALL.
                 // func_reg holds the function reference (Lua stack index
                 // as string, from __lua_getglobal/__lua_getfield).
+                //
+                // It must actually be one.  Now that a call result is a
+                // TY_STRING value rather than a handle, `f()()` would
+                // otherwise hand the marshalled text of the inner result to
+                // the ECALL as though it were a stack index.
+                if (!lua_is_handle(h, func_reg)) return -1;
                 std::vector<int> call_args;
                 call_args.push_back(func_reg);
                 for (auto &a : args) call_args.push_back(a);
                 std::string name("__lua_call");
-                call_val = h.emit_call(TY_LUA_HANDLE, 0,
+                // __LUA_CALL returns the *value*, not a reference to it: it
+                // marshals result 1 into the output buffer exactly as the
+                // bridge path above does, then pops the Lua stack, leaving
+                // nothing behind.  Typing it TY_LUA_HANDLE described the
+                // wrong thing and cost every chunk that consumed a call
+                // result, since return_as_string declines a handle (#1579).
+                // `return f()` had the answer already marshalled in hand and
+                // declined anyway.
+                call_val = h.emit_call(TY_STRING, 0,
                     call_args.data(),
                     static_cast<int>(call_args.size()),
                     &name);
@@ -2111,21 +2125,17 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 lua_reg[A] = call_val;
             }
 
-            // Multi-return: for nresults > 1, fetch additional results
-            // from the Lua stack via __lua_get_result.
-            if (!is_bridge && nresults > 1) {
-                for (int r = 1; r < nresults; r++) {
-                    if (!lua_reg_in_range(A + r)) return -1;
-                    int ridx = h.emit_iconst(r + 1);
-                    if (ridx < 0) return -1;
-                    std::string rname("__lua_get_result");
-                    int rargs[] = { ridx };
-                    lua_reg[A + r] = h.emit_call(TY_LUA_HANDLE, 0,
-                        rargs, 1, &rname);
-                    if (lua_reg[A + r] < 0) return -1;
-                    h.ecalls++;
-                }
-            }
+            // Multi-return: results 2..n do not exist to be fetched.
+            //
+            // __LUA_CALL runs lua_pcall(L, nargs, 1, 0) -- one result, always,
+            // regardless of nresults -- and then pops it.  The old code here
+            // emitted __lua_get_result for r >= 2 against a stack that held
+            // nothing of the call's, and the handler read the top of stack
+            // unconditionally, so `local a,b = f()` gave b whatever unrelated
+            // value happened to be there.  Declining is the honest answer
+            // until pcall is told how many results the caller wants and stops
+            // popping them (#1519).
+            if (!is_bridge && nresults > 1) return -1;
             break;
         }
 
