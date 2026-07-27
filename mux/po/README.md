@@ -42,8 +42,20 @@ msgmerge -U xx.po tinymux.pot   # update existing .po against new pot
 
 ```bash
 make -C mux/po mo
-# or:  msgfmt -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
+# or:  msgfmt -c -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
 ```
+
+**Keep the `-c`.** It is `--check`, and for a `c-format` entry it verifies that
+the translation uses the same conversions as the msgid. Without it `msgfmt`
+will happily compile a catalogue in which `"You give %d %s to %s."` has been
+translated with `%s` where the `%d` was — and `mux_vsnprintf` then walks the
+integer argument as a `UTF8 *`. That is a **SIGSEGV on an ordinary `give`
+command**, not a formatting glitch; it was measured that way while the format
+slices were being designed.
+
+`make test` runs the same check over every `.po` in the tree
+(`tests/nls/check_nls.py`), but a translator building a catalogue outside the
+repo never runs the suite. The flag is what protects them.
 
 ## Runtime
 
