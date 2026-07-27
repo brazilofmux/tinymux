@@ -1,0 +1,181 @@
+#
+# verb_fn.mux - Test Cases for verb().
+#
+# The last uncovered function in #1380's mutator family; mutscan_fn.mux
+# covers destroy/wipe/link/tel/trigger/ledit but not this one.
+#
+# verb() is a side effect whose return value carries no verdict, so a test
+# that only checked it did not error would be the vacuous shape #1380 warns
+# about.  Every case below asserts through an observable instead: the
+# action attribute writes a marker, and the marker is read back.
+#
+# Signature, from do_verb (predicates.cpp:2728) and fun_verb
+# (funceval.cpp:727), which passes fargs[0] as the victim and fargs+1 as
+# the argument list:
+#
+#   verb(<victim>,<actor>,<what>,<whatd>,<owhat>,<owhatd>,<awhat>,<args>)
+#
+# The action runs only when the executor Controls the actor.  This object
+# is both victim and actor, so that holds without extra fixtures.
+#
+# TIMING, which the first draft of this file got wrong twice:
+#
+# The <awhat> action is QUEUED, not run inline.  Reading the marker in the
+# same expression that calls verb() reads it before the action has run --
+# the positive case failed with the marker visibly set in its own failure
+# message.  Worse, it makes the NEGATIVE cases vacuous: "marker is still
+# empty" is true immediately whether or not the action was going to run.
+#
+# So every case here defers its check into @wait, the same shape if_cmd.mux
+# uses for queued results, and each case uses its OWN marker attribute so
+# the deferred checks cannot race each other.
+#
+# Note also the %%0 in VACT2 below.  tr.tc000 is itself an evaluated
+# attribute body, so a bare [v(0)] there would be substituted while the
+# action is being STORED -- writing an empty action, and giving TC002 a
+# convincing-looking failure that has nothing to do with verb().  %%0
+# stores a literal %0 for the action to expand when it eventually runs.
+#
+@create test_verb_fn
+-
+@set test_verb_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_verb_fn=
+  @log smoke=Beginning verb() test cases.;
+  &VACT1 test_verb_fn=&VR1 me=fired;
+  &VACT2 test_verb_fn=&VR2 me=%%0;
+  &VACT5 test_verb_fn=&VR5 me=fired;
+  &VACT6 test_verb_fn=&VR6 me=fired;
+  &VR1 test_verb_fn=;
+  &VR2 test_verb_fn=;
+  &VR5 test_verb_fn=;
+  &VR6 test_verb_fn=
+-
+#
+# Test Case #1 - the action attribute named as <awhat> actually runs.
+#
+# The case worth having: VR1 is empty until the action sets it, so a verb()
+# that quietly did nothing would leave it empty rather than passing for
+# want of an error.
+#
+&tr.tc001 test_verb_fn=
+  &VR1 me=;
+  &sink me=[verb(me,me,,,,,VACT1)];
+  @wait 0.3=
+  {
+    @if strmatch(v(VR1), fired)=
+    {
+      @log smoke=TC001: verb runs the action attribute. Succeeded.
+    },
+    {
+      @log smoke=TC001: verb runs the action attribute. Failed (ran=.[v(VR1)].).
+    }
+  }
+-
+#
+# Test Case #2 - the eighth argument is parsed into the action's %0.
+#
+&tr.tc002 test_verb_fn=
+  &VR2 me=;
+  &sink me=[verb(me,me,,,,,VACT2,hello)];
+  @wait 0.3=
+  {
+    @if strmatch(v(VR2), hello)=
+    {
+      @log smoke=TC002: verb passes args to the action. Succeeded.
+    },
+    {
+      @log smoke=TC002: verb passes args to the action. Failed (arg=.[v(VR2)].).
+    }
+  }
+-
+#
+# Test Case #3 - verb() itself returns nothing.  It reports problems by
+# notifying the executor, never through the return value, so softcode
+# cannot branch on whether it worked -- the same constraint cemit() has.
+#
+&tr.tc003 test_verb_fn=
+  @if eq(strlen(verb(me,me,,,,,VACT1)), 0)=
+  {
+    @log smoke=TC003: verb returns nothing. Succeeded.
+  },
+  {
+    @log smoke=TC003: verb returns nothing. Failed (len=[strlen(verb(me,me,,,,,VACT1))]).
+  }
+-
+#
+# Test Case #4 - arity.  One argument is the documented minimum and eight
+# the maximum, so zero must be rejected by name.
+#
+&tr.tc004 test_verb_fn=
+  @if strmatch(verb(), #-1 FUNCTION (VERB) EXPECTS BETWEEN 1 AND 8 ARGUMENTS)=
+  {
+    @log smoke=TC004: verb rejects zero arguments. Succeeded.
+  },
+  {
+    @log smoke=TC004: verb rejects zero arguments. Failed (got=[verb()]).
+  }
+-
+#
+# Test Case #5 - a victim that does not match runs no action.
+#
+# The negative half of TC001, and it only means anything because the check
+# is deferred: do_verb bails after the victim match fails, so VR5 must
+# still be empty AFTER the queue has drained.  A change that ran the action
+# before resolving the victim would pass TC001 and fail here.
+#
+&tr.tc005 test_verb_fn=
+  &VR5 me=;
+  &sink me=[verb(NoSuchThingXYZZY,me,,,,,VACT5)];
+  @wait 0.3=
+  {
+    @if eq(strlen(v(VR5)), 0)=
+    {
+      @log smoke=TC005: verb runs nothing for an unmatched victim. Succeeded.
+    },
+    {
+      @log smoke=TC005: verb runs nothing for an unmatched victim. Failed (ran=.[v(VR5)].).
+    }
+  }
+-
+#
+# Test Case #6 - an <awhat> naming an attribute that does not exist is
+# ignored rather than erroring.
+#
+# do_verb looks the name up with atr_str and leaves awhat unset when it
+# misses, so nothing runs and nothing complains.  Pinned because it is the
+# difference between "typo silently does nothing" and "typo is reported",
+# and softcode may rely on the quiet form.
+#
+# Last test case, so it signals completion from both branches (#1495).
+# The signal goes inside the @wait, or the file would report completion
+# before its own check had run.
+#
+&tr.tc006 test_verb_fn=
+  &VR6 me=;
+  &sink me=[verb(me,me,,,,,NOSUCHATTRXYZZY)];
+  @wait 0.3=
+  {
+    @if eq(strlen(v(VR6)), 0)=
+    {
+      @log smoke=TC006: verb ignores an unknown action attribute. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC006: verb ignores an unknown action attribute. Failed (ran=.[v(VR6)].).;
+      @trig me/tr.done
+    }
+  }
+-
+&tr.done test_verb_fn=
+  @log smoke=End verb() test cases.;
+  @notify smoke
+-
+drop test_verb_fn
+-
+#
+# End of Test Cases
+#
