@@ -1281,7 +1281,36 @@ void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
         payload = stamped;
     }
 
-    m_pIAttributeAccess->SetAttribute(1, ch->chan_obj, histattr, payload);
+    // Check the write (#1620).  SetAttribute is permission-checked, and the
+    // engine writes these same attributes as GOD with AF_CONST -- which
+    // bCanSetAttr denies in every branch, God included.  So on a game that
+    // ever ran the built-in comsys, a HISTORY_n slot the engine wrote is
+    // refused here forever once the ring wraps onto it.  num_messages is a
+    // relational column and keeps counting, so the counter and the history
+    // silently diverge: exactly #1564's symptom, from a different cause.
+    //
+    // This does not make the write land.  It makes a lost message say so
+    // instead of vanishing, which is the difference between #1564 taking an
+    // investigation and taking a log grep.
+    //
+    MUX_RESULT mrHist = m_pIAttributeAccess->SetAttribute(1, ch->chan_obj,
+        histattr, payload);
+    if (MUX_FAILED(mrHist) && nullptr != m_pILog)
+    {
+        bool fStarted;
+        m_pILog->start_log(&fStarted, LOG_ALWAYS, T("COM"), T("HIST"));
+        if (fStarted)
+        {
+            UTF8 logbuf[256];
+            snprintf(reinterpret_cast<char *>(logbuf), sizeof(logbuf),
+                "Comsys module: channel history write refused (%s on #%d, "
+                "result %d); message not recorded.",
+                reinterpret_cast<const char *>(histattr),
+                static_cast<int>(ch->chan_obj), mrHist);
+            m_pILog->log_text(logbuf);
+            m_pILog->end_log();
+        }
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -2720,6 +2749,11 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 break;
             }
 
+            // Set when shrinking the ring leaves entries we could not clear
+            // (#1620); reported with the result rather than swallowed.
+            //
+            bool bStale = false;
+
             bool bObjValid = false;
             if (NOTHING != ch->chan_obj && nullptr != m_pIObjectInfo)
             {
@@ -2755,8 +2789,15 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                     UTF8 histattr[64];
                     snprintf(reinterpret_cast<char *>(histattr),
                              sizeof(histattr), "HISTORY_%d", count);
-                    m_pIAttributeAccess->SetAttribute(
-                        executor, ch->chan_obj, histattr, T(""));
+                    if (MUX_FAILED(m_pIAttributeAccess->SetAttribute(
+                            executor, ch->chan_obj, histattr, T(""))))
+                    {
+                        // Engine-written slots carry AF_CONST and refuse
+                        // (#1620).  Shrinking the ring then leaves stale
+                        // history above the new maximum.
+                        //
+                        bStale = true;
+                    }
                 }
             }
 
@@ -2765,12 +2806,27 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             UTF8 vbuf[32];
             snprintf(reinterpret_cast<char *>(vbuf), sizeof(vbuf),
                      "%d", value);
-            m_pIAttributeAccess->SetAttribute(
-                executor, ch->chan_obj, T("MAX_LOG"), vbuf);
-
-            snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
-                     "@cset: Channel %s maximum history set.",
-                     reinterpret_cast<const char *>(pChannel));
+            if (MUX_FAILED(m_pIAttributeAccess->SetAttribute(
+                    executor, ch->chan_obj, T("MAX_LOG"), vbuf)))
+            {
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Failed.  Could not set the maximum for %s "
+                         "(the attribute is not writable here).",
+                         reinterpret_cast<const char *>(pChannel));
+            }
+            else if (bStale)
+            {
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Channel %s maximum history set, but older "
+                         "entries could not be cleared.",
+                         reinterpret_cast<const char *>(pChannel));
+            }
+            else
+            {
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Channel %s maximum history set.",
+                         reinterpret_cast<const char *>(pChannel));
+            }
             msg = msgbuf;
         }
         break;
@@ -2821,20 +2877,27 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
 
             // Set or clear LOG_TIMESTAMPS.
             //
-            if (value)
+            // #1585: this write is refused when the engine set the attribute
+            // (GOD + AF_CONST, which bCanSetAttr denies in every branch).
+            // Reporting "set." after a refusal told the player the opposite
+            // of what happened, and is how the divergence stayed hidden.
+            //
+            MUX_RESULT mrTs = m_pIAttributeAccess->SetAttribute(
+                executor, ch->chan_obj, T("LOG_TIMESTAMPS"),
+                value ? T("1") : T(""));
+            if (MUX_FAILED(mrTs))
             {
-                m_pIAttributeAccess->SetAttribute(
-                    executor, ch->chan_obj, T("LOG_TIMESTAMPS"), T("1"));
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Failed.  Timestamp logging for %s could not "
+                         "be changed (the attribute is not writable here).",
+                         reinterpret_cast<const char *>(pChannel));
             }
             else
             {
-                m_pIAttributeAccess->SetAttribute(
-                    executor, ch->chan_obj, T("LOG_TIMESTAMPS"), T(""));
+                snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
+                         "@cset: Channel %s timestamp logging set.",
+                         reinterpret_cast<const char *>(pChannel));
             }
-
-            snprintf(reinterpret_cast<char *>(msgbuf), sizeof(msgbuf),
-                     "@cset: Channel %s timestamp logging set.",
-                     reinterpret_cast<const char *>(pChannel));
             msg = msgbuf;
         }
         break;

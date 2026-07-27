@@ -1244,7 +1244,42 @@ void CMailMod::set_player_folder(dbref player, int fnum)
     }
     UTF8 buf[16];
     snprintf(reinterpret_cast<char *>(buf), sizeof(buf), "%d", fnum);
-    m_pIAttributeAccess->SetAttribute(1, player, T("Mailcurf"), buf);
+    set_attr_checked(player, T("Mailcurf"), buf, T("current folder"));
+}
+
+// Write an attribute and say so when the write is refused (#1620).
+//
+// SetAttribute is permission-checked.  The engine writes some of the same
+// attributes as GOD with AF_CONST, which bCanSetAttr denies in every branch
+// -- so on a game that has run both implementations these writes can fail,
+// and every call site here used to discard the result.  A refused folder
+// write means the player's folder list silently reverts, which looks like
+// the command never ran.
+//
+// This does not make the write land; it makes the loss visible.
+//
+void CMailMod::set_attr_checked(dbref player, const UTF8 *pAttr,
+    const UTF8 *pValue, const UTF8 *pWhere)
+{
+    MUX_RESULT mr = m_pIAttributeAccess->SetAttribute(1, player, pAttr,
+        pValue);
+    if (MUX_FAILED(mr) && nullptr != m_pILog)
+    {
+        bool fStarted;
+        m_pILog->start_log(&fStarted, LOG_ALWAYS, T("MAI"), T("ATTR"));
+        if (fStarted)
+        {
+            UTF8 logbuf[256];
+            snprintf(reinterpret_cast<char *>(logbuf), sizeof(logbuf),
+                "Mail module: %s write refused (%s on #%d, result %d); "
+                "change not saved.",
+                reinterpret_cast<const char *>(pWhere),
+                reinterpret_cast<const char *>(pAttr),
+                static_cast<int>(player), mr);
+            m_pILog->log_text(logbuf);
+            m_pILog->end_log();
+        }
+    }
 }
 
 const UTF8 *CMailMod::get_folder_name(dbref player, int fld)
@@ -1398,9 +1433,8 @@ void CMailMod::add_folder_name(dbref player, int fld, const UTF8 *name)
     {
         // No existing folders — just set the new record.
         //
-        m_pIAttributeAccess->SetAttribute(1, player,
-            T("Mailfolders"),
-            reinterpret_cast<const UTF8 *>(record));
+        set_attr_checked(player, T("Mailfolders"),
+            reinterpret_cast<const UTF8 *>(record), T("folder list"));
         return;
     }
 
@@ -1448,7 +1482,7 @@ void CMailMod::add_folder_name(dbref player, int fld, const UTF8 *name)
         }
         aNew[nNew] = '\0';
 
-        m_pIAttributeAccess->SetAttribute(1, player, T("Mailfolders"), aNew);
+        set_attr_checked(player, T("Mailfolders"), aNew, T("folder list"));
     }
     else
     {
@@ -1462,8 +1496,8 @@ void CMailMod::add_folder_name(dbref player, int fld, const UTF8 *name)
             memcpy(aNew, aFolders, nOld);
             aNew[nOld] = ' ';
             memcpy(aNew + nOld + 1, record, nRec + 1);
-            m_pIAttributeAccess->SetAttribute(1, player,
-                T("Mailfolders"), aNew);
+            set_attr_checked(player, T("Mailfolders"), aNew,
+                T("folder list"));
         }
     }
 }
