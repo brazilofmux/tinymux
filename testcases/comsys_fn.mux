@@ -1,0 +1,319 @@
+#
+# comsys_fn.mux - Test Cases for the comsys channel query functions.
+#
+# Covers ten builtins that had zero references anywhere in the corpus
+# (#1160): cowner, cusers, cmsgs, cdesc, cflags, cstatus, cbuffer, chanobj,
+# comalias and comtitle.
+#
+# Channels are created here rather than relied upon from the database, for
+# the same reason chaninfo_fn.mux does it: comsys data does not survive the
+# flatfile round-trip the smoke harness uses, so anything these cases need
+# must be built at run time.
+#
+# Both halves of each function are exercised -- the value it returns for a
+# real channel, and the #-1 token it returns for one that does not exist.
+# The error paths matter more than they look: those tokens are softcode ABI,
+# not prose, so a game can and does string-compare them.  They are the reason
+# these strings are S_() rather than M_() in comsys.cpp, and a test that only
+# covered the happy path would let a rename through.
+#
+@create test_comsys_fn
+-
+@set test_comsys_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_comsys_fn=
+  @log smoke=Beginning comsys test cases.;
+  @ccreate cstest;
+  @cset/public cstest=on;
+  @cset/header cstest=<CS>;
+  addcom cs=cstest;
+  @ccreate csobj;
+  @create Comsys_Channel_Object;
+  @describe Comsys_Channel_Object=A test channel.;
+  @cset/object csobj=Comsys_Channel_Object;
+  @create Comsys_Outsider
+-
+#
+# Test Case #1 - cowner() names the channel's owner.
+#
+# Created by #1 (the smoke runner), so the owner is #1.
+#
+&tr.tc001 test_comsys_fn=
+  @if strmatch(setr(0, cowner(cstest)), [num(test_comsys_fn)])=
+  {
+    @log smoke=TC001: cowner returns the owner. Succeeded.
+  },
+  {
+    @log smoke=TC001: cowner returns the owner. Failed (owner=%q0, expected [num(test_comsys_fn)]).
+  }
+-
+#
+# Test Case #2 - cowner() on a channel that does not exist.
+#
+&tr.tc002 test_comsys_fn=
+  @if strmatch(setr(0, cowner(nosuchchannel)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC002: cowner rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC002: cowner rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #3 - cusers() counts the members.
+#
+# tc000 issued one addcom, so the count is 1.  Asserting the exact number
+# rather than ">0" is deliberate: a leak that added the same user twice
+# would still be non-zero.
+#
+&tr.tc003 test_comsys_fn=
+  @if eq(setr(0, cusers(cstest)), 1)=
+  {
+    @log smoke=TC003: cusers counts members. Succeeded.
+  },
+  {
+    @log smoke=TC003: cusers counts members. Failed (users=%q0, expected 1).
+  }
+-
+#
+# Test Case #4 - cusers() on an unknown channel.
+#
+&tr.tc004 test_comsys_fn=
+  @if strmatch(setr(0, cusers(nosuchchannel)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC004: cusers rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC004: cusers rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #5 - cmsgs() returns a number.
+#
+# The count is whatever traffic the channel has seen, so this asserts the
+# shape rather than a value: an integer, not a #-1 token.
+#
+&tr.tc005 test_comsys_fn=
+  @if isnum(setr(0, cmsgs(cstest)))=
+  {
+    @log smoke=TC005: cmsgs returns a count. Succeeded.
+  },
+  {
+    @log smoke=TC005: cmsgs returns a count. Failed (msgs=%q0).
+  }
+-
+#
+# Test Case #6 - cmsgs() on an unknown channel.
+#
+&tr.tc006 test_comsys_fn=
+  @if strmatch(setr(0, cmsgs(nosuchchannel)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC006: cmsgs rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC006: cmsgs rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #7 - cdesc() returns the description set in tc000.
+#
+&tr.tc007 test_comsys_fn=
+  @if strmatch(setr(0, cdesc(csobj)), A test channel.)=
+  {
+    @log smoke=TC007: cdesc returns the description. Succeeded.
+  },
+  {
+    @log smoke=TC007: cdesc returns the description. Failed (desc=%q0).
+  }
+-
+#
+# Test Case #8 - cdesc() on an unknown channel.
+#
+&tr.tc008 test_comsys_fn=
+  @if strmatch(setr(0, cdesc(nosuchchannel)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC008: cdesc rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC008: cdesc rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #9 - cflags() reports the flags, and public was set in tc000.
+#
+&tr.tc009 test_comsys_fn=
+  @if match(setr(0, cflags(cstest)), *P*)=
+  {
+    @log smoke=TC009: cflags reports the public flag. Succeeded.
+  },
+  {
+    @log smoke=TC009: cflags reports the public flag. Failed (flags=%q0).
+  }
+-
+#
+# Test Case #10 - cflags() on an unknown channel.
+#
+&tr.tc010 test_comsys_fn=
+  @if strmatch(setr(0, cflags(nosuchchannel)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC010: cflags rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC010: cflags rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #11 - cstatus() reports On for a joined channel.
+#
+&tr.tc011 test_comsys_fn=
+  @if strmatch(setr(0, cstatus(cstest,test_comsys_fn)), On)=
+  {
+    @log smoke=TC011: cstatus reports On. Succeeded.
+  },
+  {
+    @log smoke=TC011: cstatus reports On. Failed (status=%q0).
+  }
+-
+#
+# Test Case #12 - cstatus() on an unknown channel.
+#
+&tr.tc012 test_comsys_fn=
+  @if strmatch(setr(0, cstatus(nosuchchannel,test_comsys_fn)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC012: cstatus rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC012: cstatus rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #13 - cbuffer() returns the retention size as a number.
+#
+&tr.tc013 test_comsys_fn=
+  @if isnum(setr(0, cbuffer(cstest)))=
+  {
+    @log smoke=TC013: cbuffer returns a size. Succeeded.
+  },
+  {
+    @log smoke=TC013: cbuffer returns a size. Failed (buffer=%q0).
+  }
+-
+#
+# Test Case #14 - cbuffer() on an unknown channel.
+#
+&tr.tc014 test_comsys_fn=
+  @if strmatch(setr(0, cbuffer(nosuchchannel)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC014: cbuffer rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC014: cbuffer rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #15 - chanobj() with no channel object attached.
+#
+# cstest was created without @cset/object, so chanobj returns the bare #-1
+# rather than a dbref -- and notably NOT "#-1 CHANNEL NOT FOUND", which is
+# what an unknown channel gives.  The two are different answers to different
+# questions and the distinction is worth pinning.
+#
+&tr.tc015 test_comsys_fn=
+  @if strmatch(setr(0, chanobj(cstest)), #-1)=
+  {
+    @log smoke=TC015: chanobj with no object attached. Succeeded.
+  },
+  {
+    @log smoke=TC015: chanobj with no object attached. Failed (obj=%q0).
+  }
+-
+#
+# Test Case #16 - chanobj() on an unknown channel gives the other token.
+#
+&tr.tc016 test_comsys_fn=
+  @if strmatch(setr(0, chanobj(nosuchchannel)), #-1 CHANNEL NOT FOUND)=
+  {
+    @log smoke=TC016: chanobj rejects an unknown channel. Succeeded.
+  },
+  {
+    @log smoke=TC016: chanobj rejects an unknown channel. Failed (got=%q0).
+  }
+-
+#
+# Test Case #17 - comalias() returns the alias tc000 joined with.
+#
+&tr.tc017 test_comsys_fn=
+  @if strmatch(setr(0, comalias(test_comsys_fn,cstest)), cs)=
+  {
+    @log smoke=TC017: comalias returns the alias. Succeeded.
+  },
+  {
+    @log smoke=TC017: comalias returns the alias. Failed (alias=%q0, expected cs).
+  }
+-
+#
+# Test Case #18 - comalias() distinguishes its two failure modes.
+#
+# A bad object and a bad channel give different tokens, and the object is
+# checked first.  Both are asserted so a future refactor cannot collapse
+# them into one message without a test noticing.
+#
+&tr.tc018 test_comsys_fn=
+  @if cand(
+        strmatch(setr(0, comalias(#-99,cstest)), #-1 OBJECT DOES NOT EXIST),
+        strmatch(setr(1, comalias(test_comsys_fn,nosuchchannel)), #-1 CHANNEL DOES NOT EXIST)
+      )=
+  {
+    @log smoke=TC018: comalias distinguishes bad object from bad channel. Succeeded.
+  },
+  {
+    @log smoke=TC018: comalias distinguishes bad object from bad channel. Failed (obj=%q0 chan=%q1).
+  }
+-
+#
+# Test Case #19 - comtitle() on a member with no title set.
+#
+# Asserted as a zero length rather than strmatch(..., ) against an empty
+# literal: a trailing empty argument is dropped by the parser, so the
+# strmatch form silently becomes a one-argument call and cannot pass.
+#
+&tr.tc019 test_comsys_fn=
+  @if eq(strlen(setr(0, comtitle(test_comsys_fn,cstest))), 0)=
+  {
+    @log smoke=TC019: comtitle with no title set. Succeeded.
+  },
+  {
+    @log smoke=TC019: comtitle with no title set. Failed (title=%q0).
+  }
+-
+#
+# Test Case #20 - comtitle() rejects an object that is not on the channel.
+#
+# Comsys_Outsider is created in tc000 and never joins, so it is a valid
+# object that is not a member -- the third of comtitle's three answers.  A
+# dedicated object rather than #1, so the case cannot start passing or failing
+# because some other test file joined the runner to a channel.
+#
+&tr.tc020 test_comsys_fn=
+  @if strmatch(setr(0, comtitle(Comsys_Outsider,cstest)), #-1 OBJECT NOT ON THAT CHANNEL)=
+  {
+    @log smoke=TC020: comtitle rejects a non-member. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC020: comtitle rejects a non-member. Failed (got=%q0).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_comsys_fn=
+  @log smoke=End comsys test cases.;
+  @notify smoke
+-
+drop test_comsys_fn
+-
+#
+# End of Test Cases
+#
