@@ -1170,7 +1170,7 @@ void list_cache_stats(dbref player)
     format_size(szSize, sizeof(szSize), static_cast<int64_t>(cache_size));
     format_size(szMax, sizeof(szMax), mudconf.max_cache_size);
 
-    notify(player, T("--- Attribute Cache ---"));
+    notify(player, M_("--- Attribute Cache ---"));
     notify(player, tprintf(T("Entries: %lu   Size: %s   Max: %s   Preload depth: %d"),
         static_cast<unsigned long>(nEntries),
         szSize, szMax,
@@ -1187,7 +1187,7 @@ void list_cache_stats(dbref player)
 
     CSQLiteDB::Stats st = g_pSQLiteBackend->GetDB().GetStats();
 
-    notify(player, T("--- SQLite Storage ---"));
+    notify(player, M_("--- SQLite Storage ---"));
     notify(player, tprintf(T("Attr gets: %llu   puts: %llu   dels: %llu   bulk loads: %llu"),
         static_cast<unsigned long long>(st.attr_gets),
         static_cast<unsigned long long>(st.attr_puts),

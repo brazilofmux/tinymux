@@ -15748,7 +15748,7 @@ void do_function
     UTF8 *pName = MakeCanonicalUserFunctionName(fname, &nLen, &bValid);
     if (!bValid)
     {
-        notify_quiet(executor, T("Function name is not valid."));
+        notify_quiet(executor, M_("Function name is not valid."));
         return;
     }
 
@@ -15758,7 +15758,7 @@ void do_function
     const auto it = mudstate.builtin_functions.find(name);
     if (it != mudstate.builtin_functions.end())
     {
-        notify_quiet(executor, T("Function already defined in builtin function table."));
+        notify_quiet(executor, M_("Function already defined in builtin function table."));
         return;
     }
 
@@ -15802,7 +15802,7 @@ void do_function
     //
     if (!pattr)
     {
-        notify_quiet(executor, T("No such attribute."));
+        notify_quiet(executor, M_("No such attribute."));
         return;
     }
 

@@ -4490,7 +4490,7 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
 
         if (!(mudconf.control_flags & CF_LOGIN))
         {
-            raw_notify(player, T("*** Logins are disabled."));
+            raw_notify(player, M_("*** Logins are disabled."));
         }
     }
 
@@ -4504,7 +4504,7 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
         atr_get_str_LEN(buf, player, A_LPAGE, &aowner, &aflags, &nLen);
         if (nLen)
         {
-            raw_notify(player, T("Your PAGE LOCK is set.  You may be unable to receive some pages."));
+            raw_notify(player, M_("Your PAGE LOCK is set.  You may be unable to receive some pages."));
         }
     }
 
