@@ -88,7 +88,18 @@ fi
 # Clean ALL prior state unconditionally.
 # ---------------------------------------------------------------------------
 
-rm -rf "$DATA" logs text smoke.fail
+# smoke.fail is deliberately NOT cleared here.  It is the only record of the
+# previous failure, and the run that would delete it is usually a clean one --
+# so "does it happen again?", the natural next thing to do after a crash,
+# destroys the evidence for the crash you are asking about (#1544).
+#
+# Nothing accumulates: the failure collector below does rm -rf smoke.fail
+# before it writes, so a NEW failure still replaces the old artifacts.  Only a
+# SUCCESSFUL run now leaves them alone.
+#
+# Same defect class as #1446, which fixed it for tests/luajit.
+#
+rm -rf "$DATA" logs text
 rm -f smoke.conf alias.conf compat.conf shutdown.status
 rm -f smoke.log netmux.log
 rm -rf bin
