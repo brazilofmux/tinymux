@@ -1,0 +1,235 @@
+#
+# mailmisc_fn.mux - Test Cases for mailfrom, mailsubj, mailsize,
+#                   mailreview, and malias.
+#
+# These five had no corpus coverage at all (#1380).  Every assertion below
+# was established by probing a live server rather than by reading the
+# source, so what is pinned is what the server does.
+#
+@create test_mailmisc_fn
+-
+@set test_mailmisc_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+# The executor for an INHERIT object is the object itself, but mailsend
+# delivers as the owner (#1).  So the ONE-argument forms of mailfrom and
+# mailsubj read this object's own (empty) mailbox and return
+# "#-1 NO SUCH MESSAGE".  Every case below uses the two-argument form and
+# names the mailbox explicitly -- the same reason mailinfo_fn.mux queries
+# #1 throughout.
+#
+&tr.tc000 test_mailmisc_fn=
+  @log smoke=Beginning mailmisc test cases.;
+  @if t(mailsend(Wizard,MailMisc Test,MailMisc probe body.))=
+  {
+    @log smoke=TC000: mailsend for testing. Sent.
+  },
+  {
+    @log smoke=TC000: mailsend for testing. FAILED to send.
+  }
+-
+#
+# Test Case #1 - mailfrom(<player>,<msg>) returns the sender as a dbref.
+#
+&tr.tc001 test_mailmisc_fn=
+  @if isdbref(mailfrom(Wizard,last(maillist(#1))))=
+  {
+    @log smoke=TC001: mailfrom returns a dbref. Succeeded.
+  },
+  {
+    @log smoke=TC001: mailfrom returns a dbref. Failed (from=[mailfrom(Wizard,last(maillist(#1)))]).
+  }
+-
+#
+# Test Case #2 - mailfrom agrees with mailinfo(...,from,...) for the same
+# message.  Two independent readers of one field must not disagree.
+#
+&tr.tc002 test_mailmisc_fn=
+  @if strmatch(mailfrom(Wizard,last(maillist(#1))), mailinfo(last(maillist(#1)),from,#1))=
+  {
+    @log smoke=TC002: mailfrom agrees with mailinfo. Succeeded.
+  },
+  {
+    @log smoke=TC002: mailfrom agrees with mailinfo. Failed (mailfrom=[mailfrom(Wizard,last(maillist(#1)))] mailinfo=[mailinfo(last(maillist(#1)),from,#1)]).
+  }
+-
+#
+# Test Case #3 - a message number that cannot exist is an error, not an
+# empty string.
+#
+&tr.tc003 test_mailmisc_fn=
+  @if strmatch(mailfrom(Wizard,999999), #-1 NO SUCH MESSAGE)=
+  {
+    @log smoke=TC003: mailfrom bad message number. Succeeded.
+  },
+  {
+    @log smoke=TC003: mailfrom bad message number. Failed (got=[mailfrom(Wizard,999999)]).
+  }
+-
+#
+# Test Case #4 - an unknown player is a distinct error from an unknown
+# message, so a caller can tell which argument was wrong.
+#
+&tr.tc004 test_mailmisc_fn=
+  @if strmatch(mailfrom(NoSuchPlayerXYZZY,1), #-1 NO SUCH PLAYER)=
+  {
+    @log smoke=TC004: mailfrom bad player. Succeeded.
+  },
+  {
+    @log smoke=TC004: mailfrom bad player. Failed (got=[mailfrom(NoSuchPlayerXYZZY,1)]).
+  }
+-
+#
+# Test Case #5 - mailsubj returns the subject the message was sent with.
+#
+&tr.tc005 test_mailmisc_fn=
+  @if strmatch(mailsubj(Wizard,last(maillist(#1))), MailMisc Test)=
+  {
+    @log smoke=TC005: mailsubj returns the subject. Succeeded.
+  },
+  {
+    @log smoke=TC005: mailsubj returns the subject. Failed (subj=[mailsubj(Wizard,last(maillist(#1)))]).
+  }
+-
+#
+# Test Case #6 - mailsubj agrees with mailinfo(...,subject,...).
+#
+&tr.tc006 test_mailmisc_fn=
+  @if strmatch(mailsubj(Wizard,last(maillist(#1))), mailinfo(last(maillist(#1)),subject,#1))=
+  {
+    @log smoke=TC006: mailsubj agrees with mailinfo. Succeeded.
+  },
+  {
+    @log smoke=TC006: mailsubj agrees with mailinfo. Failed (mailsubj=[mailsubj(Wizard,last(maillist(#1)))] mailinfo=[mailinfo(last(maillist(#1)),subject,#1)]).
+  }
+-
+#
+# Test Case #7 - bad message number errors the same way mailfrom does.
+#
+&tr.tc007 test_mailmisc_fn=
+  @if strmatch(mailsubj(Wizard,999999), #-1 NO SUCH MESSAGE)=
+  {
+    @log smoke=TC007: mailsubj bad message number. Succeeded.
+  },
+  {
+    @log smoke=TC007: mailsubj bad message number. Failed (got=[mailsubj(Wizard,999999)]).
+  }
+-
+#
+# Test Case #8 - mailsize takes a mailbox (not a message) and reports a
+# positive integer for a mailbox holding at least one message.
+#
+# Deliberately NOT asserted: any arithmetic relation between mailsize and
+# mailinfo(...,size,...).  They were observed to differ by one for a
+# single-message mailbox and the reason is not documented, so pinning a
+# relation here would pin a guess.
+#
+&tr.tc008 test_mailmisc_fn=
+  @if cand(
+        isint(mailsize(#1)),
+        gt(mailsize(#1), 0),
+        gte(mailcount(#1), 1)
+      )=
+  {
+    @log smoke=TC008: mailsize positive integer. Succeeded.
+  },
+  {
+    @log smoke=TC008: mailsize positive integer. Failed (size=[mailsize(#1)] count=[mailcount(#1)]).
+  }
+-
+#
+# Test Case #9 - mailsize on an unknown player errors.
+#
+&tr.tc009 test_mailmisc_fn=
+  @if strmatch(mailsize(NoSuchPlayerXYZZY), #-1 NO SUCH PLAYER)=
+  {
+    @log smoke=TC009: mailsize bad player. Succeeded.
+  },
+  {
+    @log smoke=TC009: mailsize bad player. Failed (got=[mailsize(NoSuchPlayerXYZZY)]).
+  }
+-
+#
+# Test Case #10 - mailreview is scoped to the EXECUTOR as sender, not to
+# the named mailbox.
+#
+# This is the case worth having.  mailcount(#1) counts what is in #1's
+# mailbox; mailreview(Wizard) counts what THIS OBJECT sent to Wizard,
+# which is nothing -- even though the mail above was delivered as the
+# owner.  The two therefore disagree on purpose, and a change that made
+# mailreview read the mailbox instead would look like an improvement while
+# silently altering who can see whose mail.
+#
+# Note the one-argument form returns a COUNT, not a list of message
+# numbers: as #1 with three messages sent it returns 3, not "1 2 3".
+#
+&tr.tc010 test_mailmisc_fn=
+  @if cand(
+        eq(mailreview(Wizard), 0),
+        gte(mailcount(#1), 1)
+      )=
+  {
+    @log smoke=TC010: mailreview is sender-scoped. Succeeded.
+  },
+  {
+    @log smoke=TC010: mailreview is sender-scoped. Failed (review=[mailreview(Wizard)] count=[mailcount(#1)]).
+  }
+-
+#
+# Test Case #11 - mailreview on an unknown player errors.
+#
+&tr.tc011 test_mailmisc_fn=
+  @if strmatch(mailreview(NoSuchPlayerXYZZY), #-1 NO SUCH PLAYER)=
+  {
+    @log smoke=TC011: mailreview bad player. Succeeded.
+  },
+  {
+    @log smoke=TC011: mailreview bad player. Failed (got=[mailreview(NoSuchPlayerXYZZY)]).
+  }
+-
+#
+# Test Case #12 - malias() with no argument reports the aliases owned by
+# the executor.  This object owns none, and the empty case must be an
+# empty list rather than an error.
+#
+&tr.tc012 test_mailmisc_fn=
+  @if cand(
+        eq(words(malias()), 0),
+        not(strmatch(malias(), #-1*))
+      )=
+  {
+    @log smoke=TC012: malias empty for an owner with none. Succeeded.
+  },
+  {
+    @log smoke=TC012: malias empty for an owner with none. Failed (got=[malias()]).
+  }
+-
+#
+# Test Case #13 - malias takes an OBJECT, not an alias name.  Passing
+# something that is not an object is a match failure; this is the case
+# that catches anyone "fixing" it to accept *<alias>.
+#
+# Last test case, so it signals completion from both branches (#1495).
+#
+&tr.tc013 test_mailmisc_fn=
+  @if strmatch(malias(*NoSuchAliasXYZZY), #-1*)=
+  {
+    @log smoke=TC013: malias rejects a non-object argument. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC013: malias rejects a non-object argument. Failed (got=[malias(*NoSuchAliasXYZZY)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_mailmisc_fn=
+  @log smoke=End mailmisc test cases.;
+  @notify smoke
+-
+drop test_mailmisc_fn
+-
+#
+# End of Test Cases
+#
