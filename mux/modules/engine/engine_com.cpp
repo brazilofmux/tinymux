@@ -3040,7 +3040,34 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     {
         mudconf.config_file = StringClone(configFile);
     }
-    cf_read();
+
+    // cf_read() reports exactly one condition: -1 when the top-level
+    // configuration file could not be opened at all (cf_include's fopen
+    // path).  Errors in individual directives take a different route --
+    // cf_include calls cf_set() per line and discards its return -- so a
+    // config carrying a directive this build no longer recognizes still
+    // reads as success.  That asymmetry is deliberate and worth keeping:
+    // games carry config files forward across releases, and refusing to
+    // boot over one stale line would be worse than logging it.
+    //
+    // Discarding this return, however, made an unreadable config silently
+    // non-fatal (#1601).  The game came up on compiled-in defaults -- the
+    // default port, the default database, mud_name "MUX" -- and reported
+    // success.  On a live server a mistyped -c path therefore meant
+    // listening on 2860 and serving whatever database the defaults named,
+    // while the real one sat untouched.
+    //
+    // A deployment that genuinely wants the compiled-in defaults can point
+    // -c at an empty file: it opens, yields no directives, and succeeds.
+    //
+    if (0 != cf_read())
+    {
+        STARTLOG(LOG_ALWAYS, "CNF", "LOAD");
+        log_printf(T("Fatal: configuration file '%s' could not be read."),
+            mudconf.config_file);
+        ENDLOG;
+        return MUX_E_NOTFOUND;
+    }
 
     // Optional gettext domain for server notifies (#1419).  Softcode #-1
     // diagnostics use S_() and stay English.  Locale packs live under
