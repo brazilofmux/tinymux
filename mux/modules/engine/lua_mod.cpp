@@ -644,9 +644,8 @@ void *CLuaMod::LuaAlloc(void *ud, void *ptr, size_t osize, size_t nsize)
 // the bound that agrees with everything else.
 //
 // This does NOT bound time spent inside a C function; the hook cannot fire
-// there.  Lua's pattern matcher can run unboundedly on a small input, which is
-// the remaining half of #1591 and needs the matcher itself to count, the way
-// quick_wild already does with mudstate.wild_invk_ctr.
+// there.  The pattern-matcher half of #1591 is MatchInterrupt below, installed
+// into lstrlib.c for the same pcall window.
 //
 // Wall-clock escape for the Lua pattern matcher (#1591).
 //
