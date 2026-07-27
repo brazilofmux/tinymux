@@ -842,6 +842,26 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         }
 
         // Lua `^` (OP_POW) always produces a float.  Native FCALL2 to the
+        // No HAVE_IEEE_FP_SNAN guard here, deliberately (#1556).
+        //
+        // Softcode POWER declines the native path when that macro is undefined
+        // (hir_lower.cpp) because fun_power has a *MUX output convention* on
+        // such builds: a negative base yields the literal string "Ind" rather
+        // than whatever the FP library produces.  That is softcode's answer
+        // format, not a trap-avoidance measure.
+        //
+        // Lua has no such convention.  luai_numpow (lua54/llimits.h) is
+        // `(b == 2) ? a*a : pow(a, b)` on every platform, so the Lua
+        // *interpreter* calls pow() directly whether or not the macro is
+        // defined.  Mirroring softcode's guard here would therefore make the
+        // compiled path diverge from the Lua interpreter, which is the opposite
+        // of what the guard achieves for softcode.
+        //
+        // Measured on a build with HAVE_IEEE_FP_SNAN forced off: softcode
+        // power(-2,0.5) answers "Ind" while Lua (-2)^0.5 answers "nan", in the
+        // interpreter, with no JIT involved.  The two languages disagree by
+        // design and the compiled path must follow Lua, not softcode.
+        //
         // tier-2 `pow` blob — same path softcode power() uses — not the
         // string-bridge ECALL __LUA_POW.  That ECALL read both args with
         // atof(farg_cstr()), but HIR_CALL marshals TY_FLOAT as the raw
@@ -1409,6 +1429,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         // POWK: exponentiation with constant K — always float.  Same
         // native FCALL2 as OP_POW (#1538); do not string-bridge.
+        // Same reasoning as OP_LUA_POW above: no HAVE_IEEE_FP_SNAN guard,
+        // because Lua's interpreter has no "Ind" convention to match (#1556).
         case OP_LUA_POWK: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
