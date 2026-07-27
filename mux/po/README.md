@@ -1,4 +1,4 @@
-# Server-message catalogs (NLS, #1419 / #1444)
+# Server-message catalogs (NLS, #1419 / #1444 / #1473)
 
 See `docs/plan-server-i18n.md`.
 
@@ -13,16 +13,28 @@ See `docs/plan-server-i18n.md`.
 
 Maintaining translations is ongoing cost. Prefer **small, deliberate `M_()` sites** over bulk extraction of every `T()`.
 
-Extract (once the pipeline exists):
+## Regenerate the template (`.pot`)
+
+Requires GNU gettext (`xgettext`). From the repo:
 
 ```bash
-xgettext -kM_ -kN_ -o tinymux.pot …
+make -C mux/po pot
+# or:  mux/po/update-pot.sh
+```
+
+This scans `mux/{include,lib,src,modules}` for **`M_`** and **`N_`** only and writes `tinymux.pot`.
+
+After marking new prose, re-run `pot`, then merge into language files:
+
+```bash
+msgmerge -U xx.po tinymux.pot   # update existing .po against new pot
 ```
 
 ## Build a binary catalog
 
 ```bash
-msgfmt -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
+make -C mux/po mo
+# or:  msgfmt -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
 ```
 
 ## Runtime
@@ -49,7 +61,7 @@ Without `--enable-nls`, catalogs are ignored and English is compiled in.
 
 ## Sample pseudo-locale
 
-`xx.po` translates `Permission denied.` → `[xx] Permission denied.` for manual checks only — the smoke suite must keep English (`LANG=C` / `LANGUAGE=`).
+`xx.po` translates selected strings (e.g. `Permission denied.` → `[xx] Permission denied.`) for manual checks only — the smoke suite must keep English (`LANG=C` / `LANGUAGE=`).
 
 ## Softcode ABI
 
