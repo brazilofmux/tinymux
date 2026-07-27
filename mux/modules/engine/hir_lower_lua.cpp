@@ -547,6 +547,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     int lua_reg[MAX_LUA_REGS];
     memset(lua_reg, -1, sizeof(lua_reg));
 
+    // Snapshot of lua_reg as it stood on entry to the current block, so a
+    // block transition can tell which registers this block wrote.  See the
+    // dominance note at the transition below (#1422).
+    int blk_entry_reg[MAX_LUA_REGS];
+    memcpy(blk_entry_reg, lua_reg, sizeof(blk_entry_reg));
+
     int cur_hir_block = 0;
     h.cur_block = 0;
     int result_val = -1;
@@ -578,6 +584,30 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         h.add_edge(cur_hir_block, new_block);
                     }
                 }
+                // A plain HIR value is usable across blocks only where its
+                // defining block dominates the use.  Nothing merges values
+                // at a join: hir_ssa_construct() inserts PHIs only for
+                // q-register traffic, which is exactly why the numeric for
+                // loop routes its index through STORE_Q/LOAD_Q (see the
+                // FORPREP comment below).  The entry block dominates every
+                // reachable block; no other block here is known to.  So
+                // drop any register this block wrote before leaving it --
+                // the "< 0" guards then decline the chunk instead of
+                // compiling a wrong answer (#1422).
+                //
+                // Without this, the last-lowered write simply won.  A
+                // not-taken branch's assignment leaked past the join
+                // (`if x>2 then t=2 end` yielded 2 for x=1), and a loop
+                // body's update was invisible to the next iteration
+                // (`while i<10 do i=i+1 end` yielded 0, not 10).
+                if (cur_hir_block != 0) {
+                    for (int r = 0; r < MAX_LUA_REGS; r++) {
+                        if (lua_reg[r] != blk_entry_reg[r]) {
+                            lua_reg[r] = -1;
+                        }
+                    }
+                }
+                memcpy(blk_entry_reg, lua_reg, sizeof(blk_entry_reg));
                 cur_hir_block = new_block;
                 h.cur_block = new_block;
             }
