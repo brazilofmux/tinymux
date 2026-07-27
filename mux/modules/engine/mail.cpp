@@ -3085,7 +3085,7 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
         // First, we should fixup the reference counts.
         //
         {
-            raw_notify(player, tprintf(T("Re-counting mailbag reference counts.")));
+            raw_notify(player, M_("Re-counting mailbag reference counts."));
             std::vector<int> ai(mudstate.mail_db_top, 0);
 
             DO_WHOLE_DB(thing)
@@ -3122,7 +3122,7 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
 
         }
 
-        raw_notify(player, tprintf(T("Removing @mail that is associated with non-players.")));
+        raw_notify(player, M_("Removing @mail that is associated with non-players."));
 
         // Now, remove all mail to non-good or non-players, or mail that
         // points to non-existent mailbag items.
@@ -3956,7 +3956,7 @@ void check_mail(dbref player, int folder, bool silent)
     }
     else if (!silent)
     {
-        raw_notify(player, tprintf(T("\r\nMAIL: You have no mail.\r\n")));
+        raw_notify(player, M_("\r\nMAIL: You have no mail.\r\n"));
     }
     if (gc > 0)
     {
