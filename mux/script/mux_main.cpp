@@ -1479,6 +1479,31 @@ static bool init_stubslave_for_script(void)
 
 #endif // STUB_SLAVE && HAVE_WORKING_FORK
 
+// Unwind whatever init_com() established, in reverse (#1598).
+//
+// These failure paths used to return straight to main, which returns 2
+// without touching the module library -- unlike the LoadGame failure path
+// just below, which revokes the class objects and finalizes the library
+// first.  So a failed engine load left the library initialized and the
+// script classes registered.  Nothing is known to break as a result; the
+// asymmetry was simply unintended, and an exit path that leaves a loaded
+// module library behind is not a thing to rely on.
+//
+// This is NOT the fix for the hang reported in #1598, which did not
+// reproduce on aarch64 or arm64 -- muxscript exits 2 in ~20ms with a
+// deliberately broken engine.so, before and after this change.  The
+// alarm_clock join cannot explain a muxscript hang either: the worker is
+// lazy since #1035 and muxscript never arms it (#1597).
+//
+static void init_com_unwind(bool bClassesRegistered)
+{
+    if (bClassesRegistered)
+    {
+        mux_RevokeClassObjects(NUM_SCRIPT_CLASSES, script_classes);
+    }
+    mux_FinalizeModuleLibrary();
+}
+
 static MUX_RESULT init_com(void)
 {
     MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess);
@@ -1494,6 +1519,7 @@ static MUX_RESULT init_com(void)
     if (MUX_FAILED(mr))
     {
         fprintf(stderr, "muxscript: mux_RegisterClassObjects failed (%d)\n", mr);
+        init_com_unwind(false);
         return mr;
     }
 
@@ -1524,6 +1550,7 @@ static MUX_RESULT init_com(void)
 #else
         fprintf(stderr, "muxscript: cannot load engine (%d) path=%s\n", mr, engine_path);
 #endif
+        init_com_unwind(true);
         return mr;
     }
 
@@ -1534,6 +1561,7 @@ static MUX_RESULT init_com(void)
     if (MUX_FAILED(mr) || !g_pEngine)
     {
         fprintf(stderr, "muxscript: cannot create IGameEngine (%d)\n", mr);
+        init_com_unwind(true);
         return mr;
     }
     return MUX_S_OK;
