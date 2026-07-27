@@ -733,7 +733,7 @@ void do_cron(dbref executor, dbref caller, dbref enactor, int eval,
 
     if (!timestr || !*timestr)
     {
-        notify(executor, T("Usage: @cron <object>/<attribute> = <timestring>"));
+        notify(executor, M_("Usage: @cron <object>/<attribute> = <timestring>"));
         return;
     }
 
@@ -783,7 +783,7 @@ void do_crondel(dbref executor, dbref caller, dbref enactor, int eval,
 
     if (!objattr || !*objattr)
     {
-        notify(executor, T("Usage: @crondel <object>[/<attribute>]"));
+        notify(executor, M_("Usage: @crondel <object>[/<attribute>]"));
         return;
     }
 

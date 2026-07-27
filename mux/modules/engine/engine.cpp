@@ -26,11 +26,11 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.dumping)
     {
-        notify(executor, T("Dumping in progress. Try again later."));
+        notify(executor, M_("Dumping in progress. Try again later."));
         return;
     }
 #endif
-    notify(executor, T("Dumping..."));
+    notify(executor, M_("Dumping..."));
     fork_and_dump(key);
 }
 

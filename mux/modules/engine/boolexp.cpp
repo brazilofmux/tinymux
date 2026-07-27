@@ -119,7 +119,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 log_name_and_loc(player);
                 log_text(T(": Lock exceeded recursion limit."));
                 ENDLOG;
-                notify(player, T("Sorry, broken lock!"));
+                notify(player, M_("Sorry, broken lock!"));
             }
             mudstate.lock_nest_lev--;
             return false;
@@ -141,7 +141,7 @@ bool eval_boolexp(dbref player, dbref thing, dbref from, BOOLEXP *b)
                 log_text(buff);
                 free_mbuf(buff);
                 ENDLOG;
-                notify(player, T("Sorry, broken lock!"));
+                notify(player, M_("Sorry, broken lock!"));
             }
             mudstate.lock_nest_lev--;
             return false;
@@ -659,7 +659,7 @@ static BOOLEXP *parse_boolexp_F(void)
                 {
                     if (!mudstate.bStandAlone)
                     {
-                        notify(parse_player, T("Unknown lock type."));
+                        notify(parse_player, M_("Unknown lock type."));
                     }
                     free_boolexp(b2);
                     return TRUE_BOOLEXP;

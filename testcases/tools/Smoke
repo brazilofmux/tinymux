@@ -88,16 +88,18 @@ fi
 # Clean ALL prior state unconditionally.
 # ---------------------------------------------------------------------------
 
-# smoke.fail is deliberately NOT cleared here.  It is the only record of the
-# previous failure, and the run that would delete it is usually a clean one --
-# so "does it happen again?", the natural next thing to do after a crash,
-# destroys the evidence for the crash you are asking about (#1544).
+# smoke.fail is deliberately NOT removed here (#1446's lesson, second
+# instance).  It is the only surviving record of the previous failure, and
+# the failure-collection path below already clears it before writing a new
+# one -- so a new failure still replaces the old, but a *successful* run no
+# longer destroys evidence on its way past.
 #
-# Nothing accumulates: the failure collector below does rm -rf smoke.fail
-# before it writes, so a NEW failure still replaces the old artifacts.  Only a
-# SUCCESSFUL run now leaves them alone.
-#
-# Same defect class as #1446, which fixed it for tests/luajit.
+# This matters most for exactly the bugs it kept eating: #1433 is an
+# intermittent SEGV at roughly 0.4% per process and #1340 is a crash that
+# stopped reproducing, and for both of those a backtrace and the tail of
+# smoke.log are the whole game.  Observed live -- a route-2 SEGV was
+# collected into smoke.fail/ and then deleted by the next (clean) run
+# before it could be read.
 #
 rm -rf "$DATA" logs text
 rm -f smoke.conf alias.conf compat.conf shutdown.status

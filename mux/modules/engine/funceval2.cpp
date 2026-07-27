@@ -885,7 +885,7 @@ FUNCTION(fun_step)
     if (  step_size < 1
        || NUM_ENV_VARS < step_size)
     {
-        notify(executor, T("Illegal step size."));
+        notify(executor, M_("Illegal step size."));
         return;
     }
 
