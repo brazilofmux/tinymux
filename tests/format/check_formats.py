@@ -119,17 +119,17 @@ def split_args(inner):
 
 
 # Wrappers that are a pure cast, so a literal inside one is still a
-# compile-time constant.  All three expand to reinterpret_cast<const UTF8 *>
-# (mux_nls.h:25/29/33), which is why the S_() rename in #1480 was a no-op at
-# runtime but broke this guard until S_ was listed here.
+# compile-time constant.  T / S_ / N_ expand to reinterpret_cast<const UTF8 *>
+# (mux_nls.h:25/29/33).  M_() expands to mux_gettext(...) under HAVE_NLS, so
+# the *runtime* format comes from the .mo -- but the *source* literal is still
+# the msgid, and that is what rule 1 checks here.
 #
-# M_() is deliberately NOT in this list.  It expands to mux_gettext(...), so
-# the string comes out of the .mo catalog at run time -- the conversions in it
-# are chosen by whoever wrote the translation, not by anything in this tree.  A
-# translated format string is the classic i18n format-string hazard, so a
-# format argument wrapped in M_() is a genuine finding rather than a false
-# positive, and must keep failing.
-CONST_CAST_WRAPPERS = ("T", "S_", "N_")
+# Translated formats are the classic i18n format-string hazard.  This guard
+# alone cannot see the .mo; tests/nls/check_nls.py is the load-bearing half
+# and requires every catalogue msgstr to carry the same conversion sequence
+# as its msgid (#1419 Phase 3, format-string slices).  Allowing M_ here is
+# what makes those slices possible without lying to rule 1.
+CONST_CAST_WRAPPERS = ("T", "S_", "N_", "M_")
 
 
 def _literal_only(expr):

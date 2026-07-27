@@ -6,10 +6,18 @@ See `docs/plan-server-i18n.md`.
 
 | Macro | Role | In `.pot`? |
 |-------|------|------------|
-| **`M_("…")`** | Player/staff prose (opt-in) | Yes — primary keyword |
+| **`M_("…")`** | Player/staff prose (opt-in), including format templates | Yes — primary keyword |
 | **`N_("…")`** | Static msgid storage before `M_()` rebind | Yes — same strings as `M_` |
-| **`T("…")`** | UTF-8 cast only (names, formats, internals) | **No** |
+| **`T("…")`** | UTF-8 cast only (names, internals) | **No** |
 | **`S_("…")`** | Softcode / machine ABI (`#-1 …`) | **No** |
+
+### Format strings (Phase 3)
+
+Whole notify sentences that take arguments are marked as
+`tprintf(M_("You give %d %s to %s."), …)` (same for `mux_sprintf` /
+`raw_broadcast`). Translators must keep the same conversion types in the
+same order — `mux_vsnprintf` has no positional `%1$s` yet. `make test-nls`
+rejects a msgstr whose conversion sequence differs from its msgid.
 
 Maintaining translations is ongoing cost. Prefer **small, deliberate `M_()` sites** over bulk extraction of every `T()`.
 

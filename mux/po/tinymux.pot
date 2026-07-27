@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 07:15-0600\n"
+"POT-Creation-Date: 2026-07-27 13:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -354,80 +354,80 @@ msgstr ""
 msgid "Channel does not log."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2396 modules/engine/comsys.cpp:2406
+#: modules/engine/comsys.cpp:2418 modules/engine/comsys.cpp:2428
 msgid "You need to specify a valid alias."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2411
+#: modules/engine/comsys.cpp:2433
 msgid "You need to specify a channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2425
+#: modules/engine/comsys.cpp:2447
 msgid "Sorry, this channel type does not allow you to join."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2431
+#: modules/engine/comsys.cpp:2453
 msgid "Sorry, but you have reached the maximum number of aliases allowed."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2483
+#: modules/engine/comsys.cpp:2505
 msgid "Need an alias to delete."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2527
+#: modules/engine/comsys.cpp:2549
 msgid "Unable to find that alias."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2588
+#: modules/engine/comsys.cpp:2610
 msgid "You must specify a channel to create."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2636
+#: modules/engine/comsys.cpp:2658
 msgid "Channel name is too long."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2732
+#: modules/engine/comsys.cpp:2754
 msgid "Warning: Only public channels and your channels will be shown."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2746
+#: modules/engine/comsys.cpp:2768
 msgid "*** Channel       Header          Owner           Access  Users Msgs"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2834 modules/engine/comsys.cpp:4065
+#: modules/engine/comsys.cpp:2856 modules/engine/comsys.cpp:4111
 msgid "-- End of list of Channels --"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2866
+#: modules/engine/comsys.cpp:2888
 msgid "Need an alias to do comtitle."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2875
+#: modules/engine/comsys.cpp:2897
 msgid "Unknown alias."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2892
+#: modules/engine/comsys.cpp:2914
 msgid "You can not turn off comtitles on that channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2921
+#: modules/engine/comsys.cpp:2943
 msgid "Illegal comsys alias, please delete."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2961
+#: modules/engine/comsys.cpp:2983
 msgid "Alias           Channel            Status   Title"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2992
+#: modules/engine/comsys.cpp:3014
 msgid "-- End of comlist --"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3073
+#: modules/engine/comsys.cpp:3095
 msgid "Only options available are: on, off and who."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3398 modules/engine/comsys.cpp:3414
-#: modules/engine/comsys.cpp:3744 modules/engine/conf.cpp:2399
+#: modules/engine/comsys.cpp:3420 modules/engine/comsys.cpp:3436
+#: modules/engine/comsys.cpp:3766 modules/engine/conf.cpp:2399
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -437,59 +437,59 @@ msgstr ""
 msgid "Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3402
+#: modules/engine/comsys.cpp:3424
 msgid "Invalid player."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3418
+#: modules/engine/comsys.cpp:3440
 msgid "That is not a reasonable cost."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3440
+#: modules/engine/comsys.cpp:3462
 msgid "@cpflags: Unknown Flag."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3448
+#: modules/engine/comsys.cpp:3470
 msgid "@cpflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3453
+#: modules/engine/comsys.cpp:3475
 msgid "@cpflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3476
+#: modules/engine/comsys.cpp:3498
 msgid "@coflags: Unknown Flag."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3484
+#: modules/engine/comsys.cpp:3506
 msgid "@coflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3489
+#: modules/engine/comsys.cpp:3511
 msgid "@coflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3804
+#: modules/engine/comsys.cpp:3850
 msgid "@cboot: Unknown channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3810
+#: modules/engine/comsys.cpp:3856
 msgid "@cboot: You are not on that channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3816
+#: modules/engine/comsys.cpp:3862
 msgid "@cboot: You can’t do that!"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3889
+#: modules/engine/comsys.cpp:3935
 msgid "That channel does not exist."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3966
+#: modules/engine/comsys.cpp:4012
 msgid "*** Channel       Owner           Header"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3970
+#: modules/engine/comsys.cpp:4016
 msgid "*** Channel       Owner           Description"
 msgstr ""
 
@@ -756,20 +756,20 @@ msgstr ""
 msgid "That is not a reasonable name."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4493
-msgid "*** Logins are disabled."
-msgstr ""
-
-#: modules/engine/engine_com.cpp:4507
-msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
-msgstr ""
-
 #: modules/engine/engine.cpp:29
 msgid "Dumping in progress. Try again later."
 msgstr ""
 
 #: modules/engine/engine.cpp:33
 msgid "Dumping..."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4493
+msgid "*** Logins are disabled."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4507
+msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
 msgstr ""
 
 #: modules/engine/flags.cpp:26
@@ -1691,8 +1691,58 @@ msgstr ""
 msgid "Sorry, you can only kill players and things."
 msgstr ""
 
+#: modules/engine/rob.cpp:89
+#, c-format
+msgid "You don’t have enough %s."
+msgstr ""
+
 #: modules/engine/rob.cpp:101
 msgid "Your murder attempt failed."
+msgstr ""
+
+#: modules/engine/rob.cpp:104
+#, c-format
+msgid "%s tried to kill you!"
+msgstr ""
+
+#: modules/engine/rob.cpp:111
+#, c-format
+msgid "[Suspect] %s tried to kill %s(#%d)."
+msgstr ""
+
+#: modules/engine/rob.cpp:117
+#, c-format
+msgid "[Suspect] %s <via %s(#%d)> tried to kill %s(#%d)."
+msgstr ""
+
+#: modules/engine/rob.cpp:135
+#, c-format
+msgid "[Suspect] %s killed %s(#%d)."
+msgstr ""
+
+#: modules/engine/rob.cpp:140
+#, c-format
+msgid "[Suspect] %s <via %s(#%d)> killed %s(#%d)."
+msgstr ""
+
+#: modules/engine/rob.cpp:144
+#, c-format
+msgid "You killed %s!"
+msgstr ""
+
+#: modules/engine/rob.cpp:145
+#, c-format
+msgid "killed %s!"
+msgstr ""
+
+#: modules/engine/rob.cpp:161
+#, c-format
+msgid "%s killed you!"
+msgstr ""
+
+#: modules/engine/rob.cpp:171
+#, c-format
+msgid "Your insurance policy pays %d %s."
 msgstr ""
 
 #: modules/engine/rob.cpp:178
@@ -1707,12 +1757,77 @@ msgstr ""
 msgid "You can’t give an object to itself."
 msgstr ""
 
+#: modules/engine/rob.cpp:264
+#, c-format
+msgid "%s gave you %s."
+msgstr ""
+
 #: modules/engine/rob.cpp:265
 msgid "Given."
 msgstr ""
 
+#: modules/engine/rob.cpp:266
+#, c-format
+msgid "%s gave you to %s."
+msgstr ""
+
+#: modules/engine/rob.cpp:280
+#, c-format
+msgid "You look through your pockets. Nope, no negative %s."
+msgstr ""
+
+#: modules/engine/rob.cpp:286
+#, c-format
+msgid "You must specify a positive number of %s."
+msgstr ""
+
+#: modules/engine/rob.cpp:295
+#, c-format
+msgid "That player doesn’t need that many %s!"
+msgstr ""
+
+#: modules/engine/rob.cpp:301
+#, c-format
+msgid "%s won’t take your money."
+msgstr ""
+
+#: modules/engine/rob.cpp:310
+#, c-format
+msgid "You don’t have that many %s to give!"
+msgstr ""
+
 #: modules/engine/rob.cpp:329
 msgid "Feeling poor today?"
+msgstr ""
+
+#: modules/engine/rob.cpp:350
+#, c-format
+msgid "You give a %s to %s."
+msgstr ""
+
+#: modules/engine/rob.cpp:351
+#, c-format
+msgid "%s gives you a %s."
+msgstr ""
+
+#: modules/engine/rob.cpp:355
+#, c-format
+msgid "You give %d %s to %s."
+msgstr ""
+
+#: modules/engine/rob.cpp:356
+#, c-format
+msgid "%s gives you %d %s."
+msgstr ""
+
+#: modules/engine/rob.cpp:365
+#, c-format
+msgid "You get 1 %s in change."
+msgstr ""
+
+#: modules/engine/rob.cpp:370
+#, c-format
+msgid "You get %d %s in change."
 msgstr ""
 
 #: modules/engine/rob.cpp:417
