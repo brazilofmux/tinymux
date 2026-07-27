@@ -178,6 +178,16 @@ void dbt_cache_insert(dbt_state_t *dbt, uint64_t pc, uint8_t *code) {
 // Block chaining
 // ---------------------------------------------------------------
 
+// Translate one block, publishing its entry PC for the duration so the
+// backend can tell a back-edge from a forward exit (#1571).
+//
+static uint8_t *dbt_translate_block_at(dbt_state_t *dbt, uint64_t pc) {
+    dbt->translating_pc = pc;
+    uint8_t *code = dbt_backend_translate_block(dbt, pc);
+    dbt->translating_pc = DBT_NO_TRANSLATION;
+    return code;
+}
+
 // Backpatch all pending exits that target the given guest PC.
 //
 void dbt_backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
@@ -512,7 +522,7 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
         // (function-call discovery) doesn't nest write-mode toggles.
         if (!dbt_cache_lookup(dbt, pc)) {
             jit_write_begin();
-            uint8_t *code = dbt_backend_translate_block(dbt, pc);
+            uint8_t *code = dbt_translate_block_at(dbt, pc);
             if (!code) {
                 dbt_flush_code(dbt, dbt->code_used);
                 continue;
@@ -606,6 +616,11 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
     for (;;) {
         dispatch_count++;
 
+        // Refill the self-loop back-edge budget (#1571).  A block with a
+        // native back-edge decrements this per iteration and returns here at
+        // zero, so the two guards below actually get a chance to run.
+        dbt->ctx.loop_budget = DBT_LOOP_BUDGET;
+
         if (dbt->max_dispatch && dispatch_count > dbt->max_dispatch) {
             dbt->dispatch_count = dispatch_count;
             fprintf(stderr, "dbt: dispatch limit exceeded (%llu)\n",
@@ -667,7 +682,7 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
         } else {
             jit_write_begin();
             dbt->xlate_fail = dbt_state_t::XLATE_OK;
-            code = dbt_backend_translate_block(dbt, pc);
+            code = dbt_translate_block_at(dbt, pc);
             // Reclaim only on buffer-full.  Refuse (#1323) also returns
             // nullptr; reclaiming then would wipe live program blocks and
             // mis-count code_full (#1331 review).
@@ -679,7 +694,7 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
                 // and retry once before declining (#1315).
                 jit_write_begin();
                 dbt->xlate_fail = dbt_state_t::XLATE_OK;
-                code = dbt_backend_translate_block(dbt, pc);
+                code = dbt_translate_block_at(dbt, pc);
             }
             if (!code) {
                 if (dbt->xlate_fail == dbt_state_t::XLATE_FULL) {
@@ -733,6 +748,11 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
     for (;;) {
         dispatch_count++;
 
+        // Refill the self-loop back-edge budget (#1571).  A block with a
+        // native back-edge decrements this per iteration and returns here at
+        // zero, so the two guards below actually get a chance to run.
+        dbt->ctx.loop_budget = DBT_LOOP_BUDGET;
+
         if (dbt->max_dispatch && dispatch_count > dbt->max_dispatch) {
             dbt->dispatch_count = dispatch_count;
             fprintf(stderr, "dbt: dispatch limit exceeded (%llu)\n",
@@ -794,7 +814,7 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
         } else {
             jit_write_begin();
             dbt->xlate_fail = dbt_state_t::XLATE_OK;
-            code = dbt_backend_translate_block(dbt, pc);
+            code = dbt_translate_block_at(dbt, pc);
             if (  !code
                && dbt->xlate_fail == dbt_state_t::XLATE_FULL
                && dbt_reclaim_program_code(dbt)) {
@@ -802,7 +822,7 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
                 // and retry once before declining (#1315 / #1331).
                 jit_write_begin();
                 dbt->xlate_fail = dbt_state_t::XLATE_OK;
-                code = dbt_backend_translate_block(dbt, pc);
+                code = dbt_translate_block_at(dbt, pc);
             }
             if (!code) {
                 if (dbt->xlate_fail == dbt_state_t::XLATE_FULL) {

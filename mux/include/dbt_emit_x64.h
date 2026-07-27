@@ -998,6 +998,36 @@ static inline void emit_exit_with_pc(emit_t *e, uint64_t next_pc) {
     emit_ret(e);
 }
 
+// Back-edge budget check for a self-loop block (#1571).
+//
+// Emitted at the block's loop entry, which every back-edge targets, so one
+// site covers them all.  Decrements ctx.loop_budget and, at zero, exits to
+// the dispatcher with next_pc set to the loop head -- where max_dispatch and
+// alarm_flag are polled and the budget refilled.  Without it, a self-loop
+// block never returns to dbt_run and neither guard is ever consulted again.
+//
+// Safe here because ctx is coherent at the loop entry: the pre-loads before
+// it leave the register cache clean, and every back-edge flushes before
+// jumping.  RV64 has no guest flags, so clobbering host flags is free.
+//
+static inline void emit_loop_budget_check(emit_t *e, uint64_t loop_pc) {
+    // dec qword [rbx + CTX_LOOP_BUDGET_OFF]
+    emit_byte(e, rex(1, 0, 0, 0));
+    emit_byte(e, 0xFF);
+    emit_byte(e, modrm(0x02, 1, X64_RBX));
+    emit_u32(e, CTX_LOOP_BUDGET_OFF);
+
+    // jnz over the exit (short: the exit is at most 12 bytes).
+    emit_byte(e, 0x75);
+    uint32_t jnz_disp = emit_pos(e);
+    emit_byte(e, 0);                  // placeholder
+
+    emit_exit_with_pc(e, loop_pc);
+    emit_byte(e, 0xC3);               // ret
+
+    e->buf[jnz_disp] = static_cast<uint8_t>(emit_pos(e) - jnz_disp - 1);
+}
+
 // Store r64 as next_pc and return (for indirect jumps).
 //
 static inline void emit_exit_indirect(emit_t *e, int host_reg) {

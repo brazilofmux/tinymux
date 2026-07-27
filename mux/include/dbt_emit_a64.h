@@ -905,6 +905,29 @@ static inline void emit_exit_with_pc(emit_t *e, uint64_t next_pc) {
     emit_ret(e);
 }
 
+// Back-edge budget check for a self-loop block (#1571).
+//
+// Emitted at the block's loop entry, which every back-edge targets, so one
+// site covers them all.  Decrements ctx.loop_budget and, at zero, exits to
+// the dispatcher with next_pc set to the loop head -- where max_dispatch and
+// alarm_flag are polled and the budget refilled.  Without it, a self-loop
+// block never returns to dbt_run and neither guard is ever consulted again.
+//
+// X0 is the emitter scratch here, matching emit_exit_with_pc just above.  ctx
+// is coherent at the loop entry: the pre-loads before it leave the register
+// cache clean, and every back-edge flushes before branching.
+//
+static inline void emit_loop_budget_check(emit_t *e, uint64_t loop_pc) {
+    emit_ldr_x64_imm(e, A64_X0, A64_X19, CTX_LOOP_BUDGET_OFF);
+    emit_sub_r64_imm(e, A64_X0, A64_X0, 1);
+    emit_str_x64_imm(e, A64_X0, A64_X19, CTX_LOOP_BUDGET_OFF);
+
+    // Still budget left: skip the exit.
+    uint32_t cbnz_pos = emit_cbnz_x64(e, A64_X0, 0);
+    emit_exit_with_pc(e, loop_pc);
+    emit_patch_b19(e, cbnz_pos, emit_pos(e));
+}
+
 // Store next_pc = host_reg and return to trampoline.
 static inline void emit_exit_indirect(emit_t *e, int host_reg) {
     emit_str_x64_imm(e, host_reg, A64_X19, CTX_NEXT_PC_OFF);

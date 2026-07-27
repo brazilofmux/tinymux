@@ -73,7 +73,7 @@ ENGINE_HDRS = $(INCDIR)/dbt.h $(INCDIR)/dbt_internal.h \
               $(INCDIR)/dbt_emit_a64.h $(INCDIR)/dbt_emit_x64.h \
               $(INCDIR)/dbt_jit_mem.h
 
-all: test_chain test_cache test_interp dbt_test fuzz_diff
+all: test_chain test_cache test_interp dbt_test fuzz_diff test_alarm
 
 # --- chain: all three backends, byte inspection only -----------------
 test_chain.o: test_chain.cpp $(ENGINE_HDRS)
@@ -123,17 +123,26 @@ EXEC_SRCS = $(ENGINE)/dbt_test.cpp $(ENGINE)/dbt_interp.cpp \
 FUZZ_SRCS = fuzz_diff.cpp $(ENGINE)/dbt_interp.cpp $(ENGINE)/dbt.cpp \
             $(ENGINE)/$(HOST_BACKEND).cpp
 
+# --- alarm: guest loops must stay inside dbt_run's safety nets (#1571) ---
+# Same link as fuzz: dbt.cpp plus the host backend, no ELF loader.
+ALARM_SRCS = test_alarm.cpp $(ENGINE)/dbt_interp.cpp $(ENGINE)/dbt.cpp \
+             $(ENGINE)/$(HOST_BACKEND).cpp
+
 ifeq ($(HOST_BACKEND),)
 dbt_test:
 	@echo "SKIP: no DBT backend for host '$(ARCH)' (configure.ac supports"
 	@echo "      x86_64 and aarch64).  Execution tests cannot run here."
 fuzz_diff:
 	@echo "SKIP: no DBT backend for host '$(ARCH)'."
+test_alarm:
+	@echo "SKIP: no DBT backend for host '$(ARCH)'."
 else
 dbt_test: $(EXEC_SRCS) $(ENGINE_HDRS)
 	$(COMPILE) -o $@ $(EXEC_SRCS)
 fuzz_diff: $(FUZZ_SRCS) $(ENGINE_HDRS)
 	$(COMPILE) -o $@ $(FUZZ_SRCS)
+test_alarm: $(ALARM_SRCS) $(ENGINE_HDRS)
+	$(COMPILE) -o $@ $(ALARM_SRCS) -lpthread
 endif
 
 chain: test_chain
@@ -161,6 +170,9 @@ endif
 # A small default keeps `make test` quick, and the corpus is deterministic,
 # so a CI failure reproduces exactly.  Soak with more:
 #   DBT_FUZZ_ITERS=20000 DBT_FUZZ_SEED=7 make -C tests/dbt fuzz
+alarm: test_alarm
+	./test_alarm
+
 fuzz: fuzz_diff
 ifeq ($(HOST_BACKEND),)
 	@echo "==> Skipping DBT fuzz (unsupported host '$(ARCH)')"
@@ -168,7 +180,7 @@ else
 	./fuzz_diff
 endif
 
-test: chain cache interp exec fuzz
+test: chain cache interp exec fuzz alarm
 
 clean:
 	rm -f *.o test_chain test_cache test_interp dbt_test fuzz_diff
