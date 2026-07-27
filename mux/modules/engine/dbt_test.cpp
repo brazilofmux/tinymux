@@ -29,9 +29,23 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <unistd.h>
 #include <cmath>
 #include <vector>
+
+// The only thing this harness wants from <unistd.h> is write(), for the
+// RV64 SYS_write emulation below.  MSVC has it as _write() in <io.h> and
+// has no ssize_t, so name both portably rather than sprinkling #ifdef at
+// the two call sites (#1441).
+//
+#if defined(_WIN32)
+#include <io.h>
+typedef int dbt_ssize_t;
+#define dbt_write _write
+#else
+#include <unistd.h>
+typedef ssize_t dbt_ssize_t;
+#define dbt_write write
+#endif
 
 // ---------------------------------------------------------------
 // Test infrastructure
@@ -1735,8 +1749,8 @@ static int elf_ecall(rv64_state_t *state, void *user_data) {
             state->x[10] = static_cast<uint64_t>(-1LL);
             return -1;
         }
-        ssize_t written = write(static_cast<int>(fd),
-                                mem->data + buf, static_cast<size_t>(len));
+        dbt_ssize_t written = dbt_write(static_cast<int>(fd),
+                                mem->data + buf, static_cast<unsigned int>(len));
         state->x[10] = static_cast<uint64_t>(written);
         return -1; // continue
     }
@@ -1798,8 +1812,8 @@ static int dbt_elf_ecall2(rv64_ctx_t *ctx, void *user_data) {
             ctx->x[10] = static_cast<uint64_t>(-1LL);
             return -1;
         }
-        ssize_t written = write(static_cast<int>(fd),
-                                ec->memory + buf, static_cast<size_t>(len));
+        dbt_ssize_t written = dbt_write(static_cast<int>(fd),
+                                ec->memory + buf, static_cast<unsigned int>(len));
         ctx->x[10] = static_cast<uint64_t>(written);
         return -1;
     }

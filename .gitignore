@@ -161,6 +161,23 @@ tests/color_ops/tables_ascii.c
 tests/color_ops/tables_extra.c
 tests/color_ops/test_color_ops
 
+# tests/ build products. The Unix harnesses make extensionless binaries;
+# the MSVC builders (tests/build-msvc.sh, tests/dbt/build-msvc.sh) make
+# .exe plus .obj, and stage libmux.dll beside the exe since Windows has no
+# rpath equivalent.
+tests/*/*.exe
+tests/*/*.obj
+tests/*/*.pdb
+tests/*/*.ilk
+tests/*/libmux.dll
+tests/dbt/test_chain
+tests/dbt/test_cache
+tests/dbt/test_interp
+tests/dbt/dbt_test
+tests/dbt/fuzz_diff
+tests/netaddr/test_netaddr
+tests/alarm/test_alarm
+
 # External project symlinks
 riscv
 slow-32
