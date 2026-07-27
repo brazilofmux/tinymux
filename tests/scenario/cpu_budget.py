@@ -12,20 +12,18 @@
 #
 # WHAT TO ASSERT, which is the part that is easy to get wrong (#1602):
 #
-# A runaway command typed at a descriptor does NOT come back as
-# "#-1 CPU LIMITED".  It is abandoned, and the wrapper tells the player
+# Both mechanisms fire, together, at the budget:
 #
-#     GAME: Expensive activity abbreviated.        (net.cpp:2638)
+#     #-1 CPU LIMITED                        (ast.cpp:2182)
+#     GAME: Expensive activity abbreviated.  (net.cpp:2638)
 #
-# "#-1 CPU LIMITED" is a different mechanism -- ast.cpp:2182 emits it when a
-# function call is *entered* while the alarm is already set, so it lands
-# inside a result that still gets returned.  Both are real; only the second
-# produces output from the aborted command.
-#
-# The practical consequence for this file: an aborted command emits NO
-# marker, because the command that would have printed it is the one being
-# killed.  Waiting for a marker therefore always runs to the timeout.  Every
-# case below that expects an abort waits for the notice instead.
+# ast.cpp:2182 emits its marker when a function is entered while the alarm is
+# already set; safe_str has written it into the buffer by then, so the abort
+# does not suppress it.  What the abort DOES lose is the literal text around
+# it -- `@pemit me=TAG<expr>` comes back as a bare "#-1 CPU LIMITED", with no
+# TAG< wrapper.  So an assertion anchored on a tag can never match on the
+# aborted path and will burn its whole timeout, which is what #1602 was.
+# These cases wait for the notice, which needs no wrapper to be recognizable.
 #
 # Timing was measured with a probe either side of drv_ProcessCommand: with
 # lag_limit 1 the alarm fires at 1.001s, so these cases are fast and cannot
@@ -139,8 +137,8 @@ def main():
               "got=%r" % (got,))
 
         # 3. THE case.  An expensive command is cut short, and the player is
-        #    told so.  Waiting on ABORT_NOTICE, not on a marker: the marker
-        #    never arrives because the @pemit is what gets abandoned.
+        #    told so.  Wait on ABORT_NOTICE, not on a TAG< marker: the abort
+        #    still delivers "#-1 CPU LIMITED", but the TAG wrapping is lost.
         t0 = time.monotonic()
         sendline(wiz, "@pemit me=X<%s>" % EXPENSIVE)
         buf = read_for(wiz, ABORT_NOTICE, ABORT_WAIT)
