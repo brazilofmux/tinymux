@@ -80,6 +80,27 @@ make_temp() {
     printf '%s\n' "$tmp"
 }
 
+# Collect what a failure left behind, then clear the runtime state.
+#
+# A function rather than a tail block because not every failure reaches the
+# end of the script: the upload no-match gate exits early (#1516), and an
+# early exit that skips this leaves smoke.fail/ holding the PREVIOUS run's
+# artifacts -- which, now that a clean run no longer deletes them (#1544),
+# would be silently misleading rather than merely absent.
+collect_failure_artifacts() {
+    echo "Collecting failure artifacts into smoke.fail/..."
+    rm -rf smoke.fail
+    mkdir -p smoke.fail
+    for f in netmux.log smoke.conf; do
+        [ -r "$f" ] && cp "$f" smoke.fail/ 2>/dev/null || true
+    done
+    cp "$DATA"/*.log smoke.fail/ 2>/dev/null || true
+    cp "$DATA"/*.sqlite smoke.fail/ 2>/dev/null || true
+    rm -f smoke.conf alias.conf compat.conf shutdown.status
+    rm -rf "$DATA" logs text
+    rm -rf bin
+}
+
 cleanup_temps() {
     if [ ${#TMP_FILES[@]} -gt 0 ]; then
         rm -f "${TMP_FILES[@]}"
@@ -273,6 +294,8 @@ if [ "$NOMATCH" -gt 0 ]; then
     echo "       A test that must move #1 has to put it back -- save the"
     echo "       location first (@tel me=[loc(me)] restores nothing once you"
     echo "       have already moved) rather than assuming #0."
+    collect_failure_artifacts
+    echo "=== Makesmoke: FAILED (artifacts in smoke.fail/) ==="
     exit 1
 fi
 
@@ -345,19 +368,7 @@ if [ $EXIT_CODE -eq 0 ] && [ -r "$OUTPUT_FLAT" ]; then
     rm -rf bin
     echo "=== Makesmoke: SUCCESS ==="
 else
-    # Failure: collect artifacts.
-    echo "Collecting failure artifacts into smoke.fail/..."
-    rm -rf smoke.fail
-    mkdir -p smoke.fail
-    for f in netmux.log smoke.conf; do
-        [ -r "$f" ] && cp "$f" smoke.fail/ 2>/dev/null || true
-    done
-    cp "$DATA"/*.log smoke.fail/ 2>/dev/null || true
-    cp "$DATA"/*.sqlite smoke.fail/ 2>/dev/null || true
-    # Clean up runtime state even on failure.
-    rm -f smoke.conf alias.conf compat.conf shutdown.status
-    rm -rf "$DATA" logs text
-    rm -rf bin
+    collect_failure_artifacts
     echo "=== Makesmoke: FAILED (artifacts in smoke.fail/) ==="
     exit 1
 fi
