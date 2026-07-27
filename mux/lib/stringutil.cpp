@@ -3534,7 +3534,7 @@ static LITERAL_STRING_STRUCT MU_Substitutes[NUM_MU_SUBS] =
     { 1, T(" ")  },  // 1
     { 2, T("%t") },  // 2
     { 2, T("%r") },  // 3
-    { 0, nullptr },  // 4
+    { 0, T("") },    // 4 -- emit nothing (\r); empty, not null (#1458)
     { 2, T("%b") },  // 5
     { 2, T("%%") },  // 6
     { 2, T("%(") },  // 7
@@ -4340,34 +4340,31 @@ void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
 
 size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
 {
+    // A null src is UB for memcpy even when nLen is zero -- the standard
+    // requires valid pointers regardless of the length (C17 7.24.1p2), and
+    // UBSan reports it as "null pointer passed as argument 2" (#1458).
+    //
+    // Guarding here rather than only at the one caller that does it: the
+    // sibling helpers safe_copy_str, safe_copy_str_lbuf and utf8_safe_chr
+    // all already return early on a null src, so tolerating it is the
+    // established convention among these functions and safe_copy_buf was
+    // the one outlier.  It also covers the TrimPartialSequence call below,
+    // which would dereference src outright had a caller passed null with a
+    // non-zero length.
+    //
+    if (nullptr == src)
+    {
+        return 0;
+    }
+
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
     {
         nLen = TrimPartialSequence(left, src);
     }
 
-    // memcpy's second argument must be a valid pointer even when the count is
-    // zero -- passing null is undefined behaviour, not a no-op, and the
-    // compiler may infer from the call that src cannot be null and delete a
-    // later check for it.
-    //
-    // This is reached: translate_string() substitutes MU_Substitutes[code],
-    // and entry 4 is { 0, nullptr } -- a deliberate "substitute nothing".  A
-    // (pointer, length) pair with length zero is a perfectly good empty
-    // string, so the caller is not wrong and the guard belongs here, where it
-    // also covers the other 58 call sites (#1458).
-    //
-    // Instrumenting a full smoke run measured 2,392,544 calls, 4 of them with
-    // a null src -- rare enough to sit unnoticed, frequent enough to be real.
-    //
-    // A null src with a NON-zero count stays undefined on purpose: that is a
-    // caller bug, and silencing it here would hide it.
-    //
-    if (0 != nLen)
-    {
-        memcpy(*bufc, src, nLen);
-        *bufc += nLen;
-    }
+    memcpy(*bufc, src, nLen);
+    *bufc += nLen;
     return nLen;
 }
 
