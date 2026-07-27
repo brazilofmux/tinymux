@@ -19,7 +19,7 @@
         strmatch(printf(Hello %%s!, World),Hello World!),
         strmatch(printf(%%d items, 42),42 items),
         strmatch(printf(%%05d, 7),00007),
-        strmatch(printf(%%%%),%),
+        strmatch(printf(%%%%),%%),
         strmatch(printf(%%c, Hello),H)
       )=
   {

@@ -417,7 +417,7 @@
     @log smoke=TC022: edge unterminated angled %-subst parity. Succeeded (possibly fixed).;
   },
   {
-    @log smoke=TC022: edge unterminated angled %-subst divergence observed (%q0 vs %q1).;
+    @log smoke=TC022: edge unterminated angled %-subst Skipped (divergence observed: %q0 vs %q1).;
   }
 -
 #
@@ -437,7 +437,7 @@
     @log smoke=TC023: edge unknown color fallback parity. Succeeded (possibly fixed).;
   },
   {
-    @log smoke=TC023: edge unknown color fallback divergence observed (%q0 vs %q1).;
+    @log smoke=TC023: edge unknown color fallback Skipped (divergence observed: %q0 vs %q1).;
   }
 -
 #
@@ -566,7 +566,7 @@
     @log smoke=TC030: edge malformed %= forms parity. Succeeded (possibly fixed).;
   },
   {
-    @log smoke=TC030: edge malformed %= forms divergence observed (%q0 vs %q1).;
+    @log smoke=TC030: edge malformed %= forms Skipped (divergence observed: %q0 vs %q1).;
   }
 -
 #
@@ -605,7 +605,7 @@
     @log smoke=TC032: edge deep brace/paren mismatch parity. Succeeded (possibly fixed).;
   },
   {
-    @log smoke=TC032: edge deep brace/paren mismatch divergence observed (%q0 vs %q1).;
+    @log smoke=TC032: edge deep brace/paren mismatch Skipped (divergence observed: %q0 vs %q1).;
   }
 -
 #

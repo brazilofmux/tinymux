@@ -292,10 +292,31 @@ EXPECTED=$(grep -oE 'SUITE-EXPECTED: [0-9]+' smoke.log | grep -oE '[0-9]+' | hea
 DISPATCHED=$(grep -c 'SUITE-DISPATCH:' smoke.log || true)
 ENDED=$(grep -c 'Ending SmokeMUX' smoke.log || true)
 GENERATED=0
+EXPECTED_VERDICTS=0
 if [ -r suite.manifest ]; then
-    GENERATED=$(grep -c . suite.manifest || true)
+    GENERATED=$(grep -c '^[^#]' suite.manifest || true)
+    EXPECTED_VERDICTS=$(sed -n 's/^#expected-verdicts //p' suite.manifest | head -1)
 fi
 : "${EXPECTED:=0}" "${DISPATCHED:=0}" "${ENDED:=0}" "${GENERATED:=0}"
+: "${EXPECTED_VERDICTS:=0}"
+
+# Verdict accounting (#1396).  SUCCEEDED and FAILED are grep counts over the
+# log, so a case that dispatches and then logs neither is counted in neither
+# and the run still reports ALL TESTS PASSED -- reintroducing #1386's defect
+# lost 149 assertions exactly that way, silently.  INCOMPLETE does not cover
+# it either: that guards dispatch, which is per-FILE, and a file can dispatch
+# and still lose individual cases.
+#
+# The expected count comes from the generator, out of band, for the same
+# reason the suite manifest does: a number derived from the run cannot detect
+# the run losing something.
+#
+# Skipped counts as conclusive.  Eleven cases report it instead of a verdict
+# on builds without the JIT or Lua, and those builds must not read as a loss.
+# The test is a deficit only -- reporting more than expected is not a fault.
+SKIPPED=$(grep -c 'Skipped' smoke.log || true)
+: "${SKIPPED:=0}"
+VERDICTS=$((SUCCEEDED + FAILED + SKIPPED))
 
 if [ "$GENERATED" -gt 0 ]; then
     echo "  Dispatched: $DISPATCHED / $GENERATED generated (database says $EXPECTED)"
@@ -311,6 +332,18 @@ if [ "$GENERATED" -gt 0 ] && [ "$EXPECTED" -ne "$GENERATED" ]; then
     LOST=true; INCOMPLETE=true
 fi
 if [ "$GENERATED" -gt 0 ] && [ "$DISPATCHED" -lt "$GENERATED" ]; then INCOMPLETE=true; fi
+
+VERDICT_LOSS=false
+if [ "$EXPECTED_VERDICTS" -gt 0 ] && [ "$VERDICTS" -lt "$EXPECTED_VERDICTS" ]; then
+    VERDICT_LOSS=true; INCOMPLETE=true
+fi
+
+if $VERDICT_LOSS; then
+    echo "  VERDICT LOSS: the sources contain $EXPECTED_VERDICTS verdict-reporting"
+    echo "                cases but the run logged $VERDICTS.  Cases dispatched"
+    echo "                and then reported nothing, so they were counted"
+    echo "                neither as passed nor as failed (#1396)."
+fi
 
 if $LOST; then
     echo "  SUITE LOSS: the generator emitted $GENERATED test names but the"
