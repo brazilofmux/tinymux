@@ -118,9 +118,24 @@ def split_args(inner):
     return parts
 
 
+# Wrappers that are a pure cast, so a literal inside one is still a
+# compile-time constant.  All three expand to reinterpret_cast<const UTF8 *>
+# (mux_nls.h:25/29/33), which is why the S_() rename in #1480 was a no-op at
+# runtime but broke this guard until S_ was listed here.
+#
+# M_() is deliberately NOT in this list.  It expands to mux_gettext(...), so
+# the string comes out of the .mo catalog at run time -- the conversions in it
+# are chosen by whoever wrote the translation, not by anything in this tree.  A
+# translated format string is the classic i18n format-string hazard, so a
+# format argument wrapped in M_() is a genuine finding rather than a false
+# positive, and must keep failing.
+CONST_CAST_WRAPPERS = ("T", "S_", "N_")
+
+
 def _literal_only(expr):
     """True if expr is built purely from string literals and const macros."""
-    stripped = re.sub(r'\bT\s*\(', '(', expr)
+    stripped = re.sub(r'\b(?:' + '|'.join(CONST_CAST_WRAPPERS) + r')\s*\(',
+                      '(', expr)
     for name in CONST_MACROS:
         stripped = stripped.replace(name, '""')
     stripped = LIT.sub('""', stripped)
