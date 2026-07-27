@@ -3309,7 +3309,33 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         // Intercept __lua_* internal functions for Lua VM table ops.
         if (ec->lua_state && is_lua_bridge_name(func_name)) {
-            const char *fn = reinterpret_cast<const char *>(func_name);
+            // The gate above is deliberately case-insensitive, but every
+            // dispatch below is a case-sensitive strcmp against an upper-case
+            // literal -- and hir_lower_lua emits these names in lower case
+            // ("__lua_call").  So a name could get past the gate, match none
+            // of the thirteen comparisons, and fall out to the bail at the
+            // bottom.  Normalise once here so the two halves agree (#1519).
+            //
+            // This was unobservable until a chunk could reach the ECALL at
+            // all: consumers of a bridge result declined at lowering, so the
+            // comparisons were never run against a real name.
+            char fnbuf[64];
+            size_t fnlen = name_len < sizeof(fnbuf) - 1
+                         ? name_len : sizeof(fnbuf) - 1;
+            for (size_t i = 0; i < fnlen; i++) {
+                fnbuf[i] = static_cast<char>(toupper(
+                    static_cast<unsigned char>(func_name[i])));
+            }
+            fnbuf[fnlen] = '\0';
+            const char *fn = fnbuf;
+            // Which bridge ECALLs a chunk actually reaches is otherwise
+            // invisible: a decline inside any handler just surfaces as
+            // lua_run_fail, indistinguishable from every other cause.
+            // TINYMUX_TRACE_LUA_ECALL=1 names them in order, which is how the
+            // remaining #1519 blocker was located.
+            if (getenv("TINYMUX_TRACE_LUA_ECALL")) {
+                fprintf(stderr, "LUAECALL: enter %s\n", fn);
+            }
             lua_State *L = static_cast<lua_State *>(ec->lua_state);
 
             // Safe farg C-string loader for this softlib block (#1071).
@@ -3613,11 +3639,17 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 // fargs[0]=func_ref (stack idx as string or global name),
                 // fargs[1..n]=arguments as strings.
                 // Returns: result as string.
+                //
+                // Every failure below declines rather than answering with an
+                // empty string.  An empty result is indistinguishable from a
+                // successful call that returned "", so writing one here makes
+                // a failed call flow on as data: `tostring(42)` answered ""
+                // and `tonumber(a)*2` answered 0 -- wrong answers, reported
+                // as run_ok.  Declining hands the chunk back to the
+                // interpreter, which is the containment #1512 established for
+                // this block (#1519).
                 if (nfargs < 1) {
-                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
-                    out[0] = '\0';
-                    ctx->x[10] = 0;
-                    return -1;
+                    return ECALL_DECLINE;
                 }
 
                 // Get the function reference.
@@ -3637,10 +3669,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
                 if (!lua_isfunction(L, -1)) {
                     lua_pop(L, 1);
-                    char *out = reinterpret_cast<char *>(ec->memory + out_addr);
-                    out[0] = '\0';
-                    ctx->x[10] = 0;
-                    return -1;
+                    return ECALL_DECLINE;
                 }
 
                 // Push arguments.
@@ -3668,9 +3697,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 if (status != LUA_OK) {
                     lua_pop(L, 1);  // pop error
-                    out[0] = '\0';
-                    ctx->x[10] = 0;
-                    return -1;
+                    return ECALL_DECLINE;
                 }
 
                 // Marshal result.
@@ -3700,8 +3727,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                     out[1] = '\0';
                     ctx->x[10] = 1;
                 } else {
-                    out[0] = '\0';
-                    ctx->x[10] = 0;
+                    // nil, table, function, userdata: no string form this
+                    // block can hand back that the caller could tell apart
+                    // from a real "".  nil in particular is a routine Lua
+                    // answer -- tonumber("abc") -- so it must not become one.
+                    lua_pop(L, 1);
+                    return ECALL_DECLINE;
                 }
                 lua_pop(L, 1);
                 return -1;
@@ -4011,6 +4042,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             // containment contract the table ops use (#1423).  A name this
             // block does not implement now costs the JIT, never correctness.
             //
+            if (getenv("TINYMUX_TRACE_LUA_ECALL")) {
+                fprintf(stderr, "LUAECALL: UNHANDLED %s\n", fn);
+            }
             return ECALL_DECLINE;
         }
         size_t nCased;
