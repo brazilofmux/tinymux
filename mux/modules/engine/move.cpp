@@ -671,7 +671,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         quiet = 0;
         if ((key & MOVE_QUIET) && Controls(executor, exit))
             quiet = HUSH_EXIT;
-        move_exit(executor, exit, false, T("You can\xE2\x80\x99t go that way."), quiet);
+        move_exit(executor, exit, false, M_("You can\xE2\x80\x99t go that way."), quiet);
     }
 }
 
@@ -778,7 +778,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
             notify(thing, M_("Taken."));
             oattr = quiet ? 0 : A_OSUCC;
             aattr = quiet ? 0 : A_ASUCC;
-            did_it(executor, thing, A_SUCC, T("Taken."), oattr, nullptr,
+            did_it(executor, thing, A_SUCC, M_("Taken."), oattr, nullptr,
                    aattr, 0, nullptr, 0);
         }
         else
@@ -885,7 +885,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
               && !Wizard(executor))
            || !could_doit(executor, thing, A_LDROP))
         {
-            did_it(executor, thing, A_DFAIL, T("You can\xE2\x80\x99t drop that."),
+            did_it(executor, thing, A_DFAIL, M_("You can\xE2\x80\x99t drop that."),
                    A_ODFAIL, nullptr, A_ADFAIL, 0, nullptr, 0);
             return;
         }
@@ -908,7 +908,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             safe_tprintf_str(buf, &bp, T("dropped %s."), Moniker(thing));
             oattr = quiet ? 0 : A_ODROP;
             aattr = quiet ? 0 : A_ADROP;
-            did_it(executor, thing, A_DROP, T("Dropped."), oattr, buf,
+            did_it(executor, thing, A_DROP, M_("Dropped."), oattr, buf,
                    aattr, 0, nullptr, 0);
         }
 
@@ -1054,7 +1054,7 @@ void do_leave(dbref executor, dbref caller, dbref enactor, int eval, int key)
     {
         int oattr = quiet ? 0 : A_OLFAIL;
         int aattr = quiet ? 0 : A_ALFAIL;
-        did_it(executor, loc, A_LFAIL, T("You can\xE2\x80\x99t leave."),
+        did_it(executor, loc, A_LFAIL, M_("You can\xE2\x80\x99t leave."),
                oattr, nullptr, aattr, 0, nullptr, 0);
     }
 }

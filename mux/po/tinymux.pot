@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 01:58+0000\n"
+"POT-Creation-Date: 2026-07-26 20:23-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -136,7 +136,7 @@ msgid "You can’t teleport that out!"
 msgstr ""
 
 #: modules/engine/move.cpp:570 modules/engine/move.cpp:577
-#: modules/engine/move.cpp:665
+#: modules/engine/move.cpp:665 modules/engine/move.cpp:674
 msgid "You can’t go that way."
 msgstr ""
 
@@ -160,7 +160,7 @@ msgstr ""
 msgid "You cannot get yourself!"
 msgstr ""
 
-#: modules/engine/move.cpp:778
+#: modules/engine/move.cpp:778 modules/engine/move.cpp:781
 msgid "Taken."
 msgstr ""
 
@@ -180,12 +180,13 @@ msgstr ""
 msgid "I don’t know which you mean!"
 msgstr ""
 
-#: modules/engine/move.cpp:896
-msgid "Dropped."
+#: modules/engine/move.cpp:888 modules/engine/move.cpp:927
+#: modules/engine/move.cpp:951
+msgid "You can’t drop that."
 msgstr ""
 
-#: modules/engine/move.cpp:927 modules/engine/move.cpp:951
-msgid "You can’t drop that."
+#: modules/engine/move.cpp:896 modules/engine/move.cpp:911
+msgid "Dropped."
 msgstr ""
 
 #: modules/engine/move.cpp:946
@@ -196,7 +197,7 @@ msgstr ""
 msgid "You can’t enter yourself!"
 msgstr ""
 
-#: modules/engine/move.cpp:1040
+#: modules/engine/move.cpp:1040 modules/engine/move.cpp:1057
 msgid "You can’t leave."
 msgstr ""
 
