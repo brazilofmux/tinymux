@@ -768,11 +768,11 @@ static bool try_emit_inline_call(emit_t *e, reg_cache_t *rc, fp_cache_t *fc,
 
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
                                uint64_t target_pc) {
-    // A backward target closes a loop; leaving through the trampoline keeps
-    // the dispatch loop's watchdogs in play (#1571).
+    // A backward target closes a loop the dispatch loop would never see
+    // again, so budget it rather than refusing to chain (#1571).  Refusing
+    // costs a dispatch per iteration; this costs four instructions.
     if (!dbt_chain_allowed(dbt, target_pc)) {
-        emit_exit_with_pc(e, target_pc);
-        return;
+        emit_loop_budget_check(e, target_pc);
     }
 
     block_entry_t *be = dbt_cache_lookup(dbt, target_pc);
@@ -1151,8 +1151,14 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             // Superblock: SLT+branch back-edge to loop start.
             if (self_loop && target == guest_pc) {
                 rc_flush(&e, &rc); fc_flush(&e, &fc);
+                // Taken edge is the back-edge: budget it (#1571).
                 uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
-                emit_patch_b19(&e, bcond_patch, warm_entry);
+                uint32_t fallthru2 = emit_b(&e, 0);
+                emit_patch_b19(&e, bcond_patch, emit_pos(&e));
+                emit_loop_budget_check(&e, guest_pc);
+                uint32_t back2 = emit_b(&e, 0);
+                emit_patch_b26(&e, back2, warm_entry);
+                emit_patch_b26(&e, fallthru2, emit_pos(&e));
                 emit_exit_chained(&e, dbt, branch_pc + 4);
                 dbt->insns_fused++;
                 count++;
@@ -1403,6 +1409,7 @@ no_addr_fusion:
             // Superblock: unconditional backward jump to loop start.
             if (self_loop && insn.rd == 0 && target == guest_pc) {
                 rc_flush(&e, &rc); fc_flush(&e, &fc);
+                emit_loop_budget_check(&e, guest_pc);   // #1571
                 uint32_t b_patch = emit_b(&e, 0);
                 emit_patch_b26(&e, b_patch, warm_entry);
                 goto done;
@@ -1495,8 +1502,15 @@ no_addr_fusion:
                 int rs2 = rc_read(&e, &rc, insn.rs2);
                 rc_flush(&e, &rc); fc_flush(&e, &fc);
                 emit_cmp_r64(&e, rs1, rs2);
+                // Taken edge is the back-edge, so budget it (#1571): branch
+                // to a stub that decrements and only then re-enters the loop.
                 uint32_t bcond_patch = emit_b_cond(&e, cond, 0);
-                emit_patch_b19(&e, bcond_patch, warm_entry);
+                uint32_t fallthru = emit_b(&e, 0);
+                emit_patch_b19(&e, bcond_patch, emit_pos(&e));
+                emit_loop_budget_check(&e, guest_pc);
+                uint32_t back = emit_b(&e, 0);
+                emit_patch_b26(&e, back, warm_entry);
+                emit_patch_b26(&e, fallthru, emit_pos(&e));
                 // Fall-through = loop exit.
                 emit_exit_chained(&e, dbt, pc + 4);
                 goto done;

@@ -3082,6 +3082,8 @@ static void test_1571_backedge_is_watched() {
     //          takes the "known target" path and patches immediately.
     // BEQ x0, x0 is always taken, so it is an unconditional branch.
     struct { const char *name; std::vector<uint32_t> code; } cases[] = {
+        { "self-loop",
+          { BEQ(0, 0, 0) } },                      // 0: -> 0 (superblock)
         { "two-block loop",
           { ADDI(1, 1, 1),                         // 0: x1 += 1
             BEQ(0, 0, 4),                          // 4: -> 8 (forward)

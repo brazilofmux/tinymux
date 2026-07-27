@@ -55,6 +55,20 @@ struct rv64_ctx_t {
     // rounded value is spilled here and reloaded for the saturation tests
     // that follow.  Appended, so no existing CTX_* offset moves.
     double   fp_scratch;
+
+    // Loop budget (#1571).  Decremented by the watchdog check the backends
+    // emit at every back-edge; when it reaches zero the block exits to the
+    // dispatch loop, which is the only place max_dispatch is counted and
+    // alarm_flag is polled.
+    //
+    // Without it a guest loop is unbounded: block chaining and self-loop
+    // formation both keep execution in native code across the back-edge, so
+    // neither watchdog is ever read and a runaway loop hangs the process with
+    // every counter still.  dbt_run reloads this on each dispatch, so the
+    // budget is per-entry rather than per-run.
+    //
+    // Appended, so no existing CTX_* offset moves.
+    uint64_t loop_budget;
 };
 
 // Context offsets for JIT emitter.
@@ -68,6 +82,13 @@ static constexpr int CTX_FCSR_OFF    = 784;
 static constexpr int CTX_MEM_SIZE_OFF   = 792;
 static constexpr int CTX_MEM_CLAMPS_OFF = 800;
 static constexpr int CTX_FP_SCRATCH_OFF = 808;
+static constexpr int CTX_LOOP_BUDGET_OFF = 816;
+
+// How many back-edges a block may take before returning to the dispatch loop
+// (#1571).  Large enough that the check costs a few instructions per thousand
+// iterations rather than a dispatch per iteration; small enough that a runaway
+// loop reaches max_dispatch and the wall-clock alarm promptly.
+static constexpr uint64_t DBT_LOOP_BUDGET = 1024;
 
 // The offsets above are hand-maintained against rv64_ctx_t.  A mismatch
 // would silently make every emitted ctx access read the wrong field, so
@@ -82,6 +103,8 @@ static_assert(offsetof(rv64_ctx_t, fcsr) == CTX_FCSR_OFF,
               "CTX_FCSR_OFF out of step with rv64_ctx_t");
 static_assert(offsetof(rv64_ctx_t, next_pc) == CTX_NEXT_PC_OFF,
               "CTX_NEXT_PC_OFF out of step with rv64_ctx_t");
+static_assert(offsetof(rv64_ctx_t, loop_budget) == CTX_LOOP_BUDGET_OFF,
+              "CTX_LOOP_BUDGET_OFF out of step with rv64_ctx_t");
 
 // Block cache entry — exactly 16 bytes for inline JIT lookup.
 // R13 points to cache[0] during execution.

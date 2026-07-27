@@ -1298,6 +1298,12 @@ static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
     // Check if target is already translated (4-way lookup).
     // A backward target closes a loop; leaving through the trampoline keeps
     // the dispatch loop's watchdogs in play (#1571).
+    //
+    // The a64 backend budgets the back-edge in emitted code instead, which is
+    // much cheaper.  Porting that here needs the same four-instruction
+    // sequence against CTX_LOOP_BUDGET_OFF plus a host to run it on; until
+    // then these backends take the correct-but-slower route rather than the
+    // fast-and-unwatched one.
     if (!dbt_chain_allowed(dbt, target_pc)) {
         emit_exit_with_pc(e, target_pc);
         return;

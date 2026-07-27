@@ -627,6 +627,12 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
             return -3;
         }
 
+        // Re-arm the back-edge budget for this entry (#1571).  Blocks
+        // decrement it and exit here when it runs out, which is what keeps
+        // max_dispatch and alarm_flag -- both read above -- in play for a
+        // guest loop that would otherwise never come back.
+        dbt->ctx.loop_budget = DBT_LOOP_BUDGET;
+
         uint64_t pc = dbt->ctx.next_pc;
 
         // ECALL signal: bit 0 set.
@@ -753,6 +759,12 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
             dbt->dispatch_count = dispatch_count;
             return -3;
         }
+
+        // Re-arm the back-edge budget for this entry (#1571).  Blocks
+        // decrement it and exit here when it runs out, which is what keeps
+        // max_dispatch and alarm_flag -- both read above -- in play for a
+        // guest loop that would otherwise never come back.
+        dbt->ctx.loop_budget = DBT_LOOP_BUDGET;
 
         uint64_t pc = dbt->ctx.next_pc;
 

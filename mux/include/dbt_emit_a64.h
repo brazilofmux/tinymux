@@ -905,6 +905,32 @@ static inline void emit_exit_with_pc(emit_t *e, uint64_t next_pc) {
     emit_ret(e);
 }
 
+// Back-edge watchdog (#1571).
+//
+// Emitted immediately before a backward branch -- the chained kind and the
+// self-loop kind alike.  Decrements ctx.loop_budget and, when it reaches zero,
+// leaves to the dispatch loop with next_pc = target_pc so the run resumes
+// exactly where it was.
+//
+// This exists because both watchdogs live in that dispatch loop: max_dispatch
+// is counted there and alarm_flag is polled there.  Block chaining and
+// self-loop formation each keep execution in native code across the back-edge,
+// so without this a guest loop is read by neither and runs forever with every
+// counter still -- no dispatch growth, no alarm, no ECALL activity.
+//
+// Four instructions on the taken path, against a full dispatch round trip per
+// iteration if the back-edge were simply refused.  X0 is the established
+// scratch here (emit_exit_with_pc and emit_cmp_ctx_imm32 both use it) and the
+// register cache is flushed before any back-edge, so it is free.
+static inline void emit_loop_budget_check(emit_t *e, uint64_t target_pc) {
+    emit_ldr_x64_imm(e, A64_X0, A64_X19, CTX_LOOP_BUDGET_OFF);
+    emit_sub_r64_imm(e, A64_X0, A64_X0, 1);
+    emit_str_x64_imm(e, A64_X0, A64_X19, CTX_LOOP_BUDGET_OFF);
+    uint32_t keep_going = emit_cbnz_x64(e, A64_X0, 0);
+    emit_exit_with_pc(e, target_pc);
+    emit_patch_b19(e, keep_going, emit_pos(e));
+}
+
 // Store next_pc = host_reg and return to trampoline.
 static inline void emit_exit_indirect(emit_t *e, int host_reg) {
     emit_str_x64_imm(e, host_reg, A64_X19, CTX_NEXT_PC_OFF);
