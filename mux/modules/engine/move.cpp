@@ -403,7 +403,7 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
                 else
                 {
                     failmsg = T("You can\xE2\x80\x99t be teleported out!");
-                    notify_quiet(cause, T("You can\xE2\x80\x99t teleport that out!"));
+                    notify_quiet(cause, M_("You can\xE2\x80\x99t teleport that out!"));
                 }
 
                 did_it(thing, src,
@@ -567,14 +567,14 @@ void move_exit(dbref player, dbref exit, bool divest, const UTF8 *failmsg, int h
         case TYPE_THING:
             if (Going(loc))
             {
-                notify(player, T("You can\xE2\x80\x99t go that way."));
+                notify(player, M_("You can\xE2\x80\x99t go that way."));
                 return;
             }
             move_via_exit(player, loc, NOTHING, exit, hush);
             divest_object(player);
             break;
         case TYPE_EXIT:
-            notify(player, T("You can\xE2\x80\x99t go that way."));
+            notify(player, M_("You can\xE2\x80\x99t go that way."));
             return;
         }
     }
@@ -614,7 +614,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
            && NOTHING != dest
            && loc == dest)
         {
-            notify(executor, T("You are already home."));
+            notify(executor, M_("You are already home."));
         }
         else
         {
@@ -643,7 +643,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             //
             for (int i = 0; i < 3; i++)
             {
-                notify(executor, T("There\xE2\x80\x99s no place like home..."));
+                notify(executor, M_("There\xE2\x80\x99s no place like home..."));
             }
             move_via_generic(executor, HOME, NOTHING, 0);
             divest_object(executor);
@@ -662,10 +662,10 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     switch (exit)
     {
     case NOTHING:       // Try to force the object
-        notify(executor, T("You can\xE2\x80\x99t go that way."));
+        notify(executor, M_("You can\xE2\x80\x99t go that way."));
         break;
     case AMBIGUOUS:
-        notify(executor, T("I don\xE2\x80\x99t know which way you mean!"));
+        notify(executor, M_("I don\xE2\x80\x99t know which way you mean!"));
         break;
     default:
         quiet = 0;
@@ -754,7 +754,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         //
         if (thingloc == executor)
         {
-            notify(executor, T("You already have that!"));
+            notify(executor, M_("You already have that!"));
             break;
         }
         if (  (key & GET_QUIET)
@@ -765,7 +765,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
 
         if (thing == executor)
         {
-            notify(executor, T("You cannot get yourself!"));
+            notify(executor, M_("You cannot get yourself!"));
         }
         else if (could_doit(executor, thing, A_LOCK))
         {
@@ -775,7 +775,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
                     Moniker(thing)));
             }
             move_via_generic(thing, executor, executor, 0);
-            notify(thing, T("Taken."));
+            notify(thing, M_("Taken."));
             oattr = quiet ? 0 : A_OSUCC;
             aattr = quiet ? 0 : A_ASUCC;
             did_it(executor, thing, A_SUCC, T("Taken."), oattr, nullptr,
@@ -805,7 +805,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         thingloc = Exits(thing);
         if (thingloc == executor)
         {
-            notify(executor, T("You already have that!"));
+            notify(executor, M_("You already have that!"));
             break;
         }
 
@@ -825,13 +825,13 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         s_Exits(thing, executor);
         if (!Quiet(executor))
         {
-            notify(executor, T("Exit taken."));
+            notify(executor, M_("Exit taken."));
         }
         break;
 
     default:
 
-        notify(executor, T("You can\xE2\x80\x99t take that!"));
+        notify(executor, M_("You can\xE2\x80\x99t take that!"));
         break;
     }
 }
@@ -866,11 +866,11 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     switch (thing = match_result())
     {
     case NOTHING:
-        notify(executor, T("You don\xE2\x80\x99t have that!"));
+        notify(executor, M_("You don\xE2\x80\x99t have that!"));
         return;
 
     case AMBIGUOUS:
-        notify(executor, T("I don\xE2\x80\x99t know which you mean!"));
+        notify(executor, M_("I don\xE2\x80\x99t know which you mean!"));
         return;
     }
 
@@ -893,7 +893,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         // Move it
         //
         move_via_generic(thing, Location(executor), executor, 0);
-        notify(thing, T("Dropped."));
+        notify(thing, M_("Dropped."));
 
         quiet = false;
         if (  (key & DROP_QUIET)
@@ -924,7 +924,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         if (  Exits(thing) != executor
            && !Wizard(executor))
         {
-            notify(executor, T("You can\xE2\x80\x99t drop that."));
+            notify(executor, M_("You can\xE2\x80\x99t drop that."));
             return;
         }
 
@@ -943,12 +943,12 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
         if (!Quiet(executor))
         {
-            notify(executor, T("Exit dropped."));
+            notify(executor, M_("Exit dropped."));
         }
         break;
 
     default:
-        notify(executor, T("You can\xE2\x80\x99t drop that."));
+        notify(executor, M_("You can\xE2\x80\x99t drop that."));
         break;
     }
 }
@@ -970,7 +970,7 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
     }
     else if (player == thing)
     {
-        notify(player, T("You can\xE2\x80\x99t enter yourself!"));
+        notify(player, M_("You can\xE2\x80\x99t enter yourself!"));
     }
     else if (could_doit(player, thing, A_LENTER))
     {
@@ -1037,7 +1037,7 @@ void do_leave(dbref executor, dbref caller, dbref enactor, int eval, int key)
        || !Good_obj(newLoc = Location(loc))
        || Going(newLoc))
     {
-        notify(executor, T("You can\xE2\x80\x99t leave."));
+        notify(executor, M_("You can\xE2\x80\x99t leave."));
         return;
     }
     int quiet = 0;
