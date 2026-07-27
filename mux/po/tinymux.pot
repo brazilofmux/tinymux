@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 00:46+0000\n"
+"POT-Creation-Date: 2026-07-26 20:23-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -131,6 +131,76 @@ msgstr ""
 msgid "Permission denied."
 msgstr ""
 
+#: modules/engine/move.cpp:406
+msgid "You can’t teleport that out!"
+msgstr ""
+
+#: modules/engine/move.cpp:570 modules/engine/move.cpp:577
+#: modules/engine/move.cpp:665 modules/engine/move.cpp:674
+msgid "You can’t go that way."
+msgstr ""
+
+#: modules/engine/move.cpp:617
+msgid "You are already home."
+msgstr ""
+
+#: modules/engine/move.cpp:646
+msgid "There’s no place like home..."
+msgstr ""
+
+#: modules/engine/move.cpp:668
+msgid "I don’t know which way you mean!"
+msgstr ""
+
+#: modules/engine/move.cpp:757 modules/engine/move.cpp:808
+msgid "You already have that!"
+msgstr ""
+
+#: modules/engine/move.cpp:768
+msgid "You cannot get yourself!"
+msgstr ""
+
+#: modules/engine/move.cpp:778 modules/engine/move.cpp:781
+msgid "Taken."
+msgstr ""
+
+#: modules/engine/move.cpp:828
+msgid "Exit taken."
+msgstr ""
+
+#: modules/engine/move.cpp:834
+msgid "You can’t take that!"
+msgstr ""
+
+#: modules/engine/move.cpp:869 modules/engine/rob.cpp:206
+msgid "You don’t have that!"
+msgstr ""
+
+#: modules/engine/move.cpp:873 modules/engine/rob.cpp:210
+msgid "I don’t know which you mean!"
+msgstr ""
+
+#: modules/engine/move.cpp:888 modules/engine/move.cpp:927
+#: modules/engine/move.cpp:951
+msgid "You can’t drop that."
+msgstr ""
+
+#: modules/engine/move.cpp:896 modules/engine/move.cpp:911
+msgid "Dropped."
+msgstr ""
+
+#: modules/engine/move.cpp:946
+msgid "Exit dropped."
+msgstr ""
+
+#: modules/engine/move.cpp:973
+msgid "You can’t enter yourself!"
+msgstr ""
+
+#: modules/engine/move.cpp:1040 modules/engine/move.cpp:1057
+msgid "You can’t leave."
+msgstr ""
+
 #: modules/engine/quota.cpp:171
 msgid "Quotas are not enabled."
 msgstr ""
@@ -141,4 +211,60 @@ msgstr ""
 
 #: modules/engine/quota.cpp:230
 msgid "Not found."
+msgstr ""
+
+#: modules/engine/rob.cpp:46
+msgid "I don’t see that player here."
+msgstr ""
+
+#: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
+msgid "I don’t know who you mean!"
+msgstr ""
+
+#: modules/engine/rob.cpp:57
+msgid "Sorry, you can only kill players and things."
+msgstr ""
+
+#: modules/engine/rob.cpp:66
+msgid "Sorry."
+msgstr ""
+
+#: modules/engine/rob.cpp:101
+msgid "Your murder attempt failed."
+msgstr ""
+
+#: modules/engine/rob.cpp:152
+msgid "Halted."
+msgstr ""
+
+#: modules/engine/rob.cpp:178
+msgid "Your insurance policy has been revoked."
+msgstr ""
+
+#: modules/engine/rob.cpp:215
+msgid "You can’t give yourself away!"
+msgstr ""
+
+#: modules/engine/rob.cpp:220
+msgid "You can’t give an object to itself."
+msgstr ""
+
+#: modules/engine/rob.cpp:265
+msgid "Given."
+msgstr ""
+
+#: modules/engine/rob.cpp:329
+msgid "Feeling poor today?"
+msgstr ""
+
+#: modules/engine/rob.cpp:417
+msgid "Give to whom?"
+msgstr ""
+
+#: modules/engine/rob.cpp:427
+msgid "You can’t give anything to an exit."
+msgstr ""
+
+#: modules/engine/rob.cpp:432
+msgid "Guests really don’t need money or anything."
 msgstr ""
