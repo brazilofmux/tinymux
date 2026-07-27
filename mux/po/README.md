@@ -70,3 +70,25 @@ Without `--enable-nls`, catalogs are ignored and English is compiled in.
 ## Empty strings (#1443)
 
 `gettext("")` returns the catalog **header**, not `""`. `M_()` goes through `mux_gettext`, which leaves empty msgids (and `nullptr`) untouched. `T("")` is only a cast and never hits gettext.
+
+## Testing (#1476)
+
+**English suite / smoke (NLS-on builds):** never set `LANGUAGE=xx`. Prefer:
+
+```bash
+cd mux
+./configure --enable-realitylvls --enable-wodrealms --enable-jit --enable-nls
+# from repo root
+make install
+env -u LANGUAGE LANG=C LC_ALL=C make test
+# or: cd testcases && env -u LANGUAGE LANG=C ./tools/Makesmoke && env -u LANGUAGE LANG=C ./tools/Smoke
+```
+
+**Catalog smoke (manual, not the suite):** process-wide locale must be non-C for `LANGUAGE` to apply:
+
+```bash
+cd mux/game
+printf 'think [div(1,0)]\n@shutdown\n' | \
+  LC_ALL=en_US.UTF-8 LANGUAGE=xx ./bin/muxscript --readonly -g .
+# softcode stays English: #-1 DIVIDE BY ZERO
+```
