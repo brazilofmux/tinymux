@@ -459,6 +459,9 @@ void lua_format_double(double d, char *buf, size_t sz) {
 
 static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
     if (rv < 0) return -1;
+    // Returning a handle would hand the caller a stack index as though it
+    // were the value it points at (#1579).
+    if (h.ty[rv] == TY_LUA_HANDLE) return -1;
     if (h.ty[rv] == TY_STRING) {
         return rv;
     }
@@ -566,6 +569,18 @@ static bool either_float(hir_program &h, int a, int b) {
 // ---------------------------------------------------------------
 
 static inline bool lua_reg_in_range(int idx);   // defined with pass 2
+
+// A Lua handle is a reference into the VM, not a value (#1579).  Arithmetic,
+// comparison, length, concatenation and returning are all illegal on one, so
+// decline the chunk rather than let a stack index flow on as though it were
+// the thing it points at -- which is what made `#t` answer 22 (#1424).
+//
+// Declining here is strictly better than the run-time bail that #1518's
+// fail-closed intercept produces today: it costs no compile-and-run, and it
+// does not depend on the bridge ECALL names staying unimplemented.
+static inline bool lua_is_handle(const hir_program &h, int v) {
+    return v >= 0 && h.ty[v] == TY_LUA_HANDLE;
+}
 
 static int emit_cmp_branch(hir_program &h, int cmp, int k_bit,
                             const lua_bc_proto *proto, int &pc,
@@ -824,6 +839,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[insn.B()]; \
             int rc_val = lua_reg[insn.C()]; \
             if (rb < 0 || rc_val < 0) return -1; \
+            if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
             if (either_float(h, rb, rc_val)) { \
                 rb = promote_to_float(h, rb); \
                 rc_val = promote_to_float(h, rc_val); \
@@ -939,6 +955,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[insn.B()]; \
             int rc_val = lua_reg[insn.C()]; \
             if (rb < 0 || rc_val < 0) return -1; \
+            if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
             rb = promote_to_int(h, rb); \
             rc_val = promote_to_int(h, rc_val); \
             if (rb < 0 || rc_val < 0) return -1; \
@@ -999,6 +1016,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         { \
             int rb = lua_reg[insn.B()]; \
             if (rb < 0) return -1; \
+            if (lua_is_handle(h, rb)) return -1; \
             rb = promote_to_int(h, rb); \
             if (rb < 0) return -1; \
             int kidx = insn.C(); \
@@ -1044,6 +1062,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_LEN: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            // `#` on a VM reference is what returned 22 for a three-element
+            // table: the stack index, measured as though it were the value
+            // (#1424, #1579).  The TY_STRING branch below would already miss
+            // it now that handles are typed, but say so rather than rely on
+            // falling off the end of a type test.
+            if (lua_is_handle(h, rb)) return -1;
             // For TY_STRING: emit strlen-like ECALL.
             // For other types: would need lua_State to call __len metamethod.
             if (h.ty[rb] == TY_STRING) {
@@ -1071,6 +1095,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // result in R(A).
             int nvals = insn.B();
             if (nvals < 1) return -1;
+            // Concatenating a handle would splice a stack index into the
+            // text (#1579).
+            for (int ci = 0; ci < nvals; ci++) {
+                if (!lua_reg_in_range(A + ci)) return -1;
+                if (lua_is_handle(h, lua_reg[A + ci])) return -1;
+            }
             if (nvals == 1) {
                 // Single value — no-op (just ensure it's a string).
                 int rv = lua_reg[A];
@@ -1128,7 +1158,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // We model this as an HIR_CALL to a special function.
             std::string name("__lua_newtable");
             int args[] = { v_narr, v_nrec };
-            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
             if (lua_reg[A] < 0) return -1;
             // Mark this as known-integer (it's a stack index).
             h.known_int[lua_reg[A]] = true;
@@ -1281,7 +1311,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 }
                 std::string name("__lua_geti");
                 int args[] = { tbl, key };
-                lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+                lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
                 if (lua_reg[A] < 0) return -1;
             }
             h.ecalls++;
@@ -1315,7 +1345,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (key_val < 0) return -1;
                 std::string name("__lua_getfield");
                 int args[] = { table_reg, key_val };
-                lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+                lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
                 if (lua_reg[A] < 0) return -1;
                 h.ecalls++;
             }
@@ -1407,6 +1437,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         { \
             int rb = lua_reg[insn.B()]; \
             if (rb < 0) return -1; \
+            if (lua_is_handle(h, rb)) return -1; \
             int kidx = insn.C(); \
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size())) \
                 return -1; \
@@ -1488,6 +1519,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[A]; \
             int rc_val = lua_reg[insn.B()]; \
             if (rb < 0 || rc_val < 0) return -1; \
+            if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
             int cmp; \
             if (either_float(h, rb, rc_val)) { \
                 rb = promote_to_float(h, rb); \
@@ -1519,6 +1551,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         { \
             int rb = lua_reg[A]; \
             if (rb < 0) return -1; \
+            if (lua_is_handle(h, rb)) return -1; \
             int cmp; \
             if (h.ty[rb] == TY_FLOAT) { \
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB())); \
@@ -1949,7 +1982,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (key_val < 0) return -1;
                 std::string name("__lua_getglobal");
                 int args[] = { key_val };
-                lua_reg[A] = h.emit_call(TY_STRING, 0, args, 1, &name);
+                lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 1, &name);
                 if (lua_reg[A] < 0) return -1;
                 h.ecalls++;
             }
@@ -2004,7 +2037,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (key_val < 0) return -1;
             std::string name("__lua_getfield");
             int args[] = { tbl, key_val };
-            lua_reg[A] = h.emit_call(TY_STRING, 0, args, 2, &name);
+            lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
             if (lua_reg[A] < 0) return -1;
             h.ecalls++;
             break;
@@ -2066,7 +2099,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 call_args.push_back(func_reg);
                 for (auto &a : args) call_args.push_back(a);
                 std::string name("__lua_call");
-                call_val = h.emit_call(TY_STRING, 0,
+                call_val = h.emit_call(TY_LUA_HANDLE, 0,
                     call_args.data(),
                     static_cast<int>(call_args.size()),
                     &name);
@@ -2087,7 +2120,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     if (ridx < 0) return -1;
                     std::string rname("__lua_get_result");
                     int rargs[] = { ridx };
-                    lua_reg[A + r] = h.emit_call(TY_STRING, 0,
+                    lua_reg[A + r] = h.emit_call(TY_LUA_HANDLE, 0,
                         rargs, 1, &rname);
                     if (lua_reg[A + r] < 0) return -1;
                     h.ecalls++;
@@ -2159,7 +2192,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (ridx < 0) return -1;
                 std::string rname("__lua_get_result");
                 int rargs[] = { ridx };
-                lua_reg[A + 4 + r] = h.emit_call(TY_STRING, 0,
+                lua_reg[A + 4 + r] = h.emit_call(TY_LUA_HANDLE, 0,
                     rargs, 1, &rname);
                 if (lua_reg[A + 4 + r] < 0) return -1;
                 h.ecalls++;
