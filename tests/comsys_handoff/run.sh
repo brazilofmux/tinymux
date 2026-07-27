@@ -166,17 +166,19 @@ esac
 run_as module '@cset/timestamp_logs hchan=0
 think TS=[get(HObj/LOG_TIMESTAMPS)]'
 
-if [ -z "$(val TS)" ]; then
-    todo "module can clear a flag the engine set" "#1585" "pass"
-else
-    todo "module can clear a flag the engine set" "#1585" "fail" \
-         "TS=$(val TS) -- refused by AF_CONST; fixed when channel config"
-fi
+[ -z "$(val TS)" ] \
+    && ok "module can clear a flag the engine set (#1585)" \
+    || nope "module can clear a flag the engine set (#1585)" \
+            "TS=$(val TS) -- still set after the module cleared it"
 
-grep -q "@cset: Failed" "$WORK/out" \
-    && ok "the refusal is reported rather than reported as success (#1624)" \
-    || nope "the refusal is reported rather than reported as success (#1624)" \
-            "no failure message in the output"
+# The clear must be reported as a success now, since it IS one.  This case
+# replaces the #1624 assertion that a REFUSAL was reported honestly: there is
+# no refusal left to report, and asserting on the old failure text would fail
+# for the right reason in the wrong direction.
+grep -q "@cset: Channel .* timestamp logging set" "$WORK/out" \
+    && ok "the clear reports success, because it now is one" \
+    || nope "the clear reports success, because it now is one" \
+            "no success message in the output"
 
 # ---------------------------------------------------------------------------
 # #1620 -- the module must be able to overwrite a history slot the engine
@@ -197,10 +199,9 @@ think H1=[get(HObj/HISTORY_1)]
 think H2=[get(HObj/HISTORY_2)]'
 
 case "$(val H1)" in
-    *EngineWrote*) todo "module overwrites an engine-written history slot" \
-                        "#1620" "fail" \
+    *EngineWrote*) nope "module overwrites an engine-written history slot (#1620)" \
                         "slot still holds the engine's message; the wrap write was refused" ;;
-    *) todo "module overwrites an engine-written history slot" "#1620" "pass" ;;
+    *) ok "module overwrites an engine-written history slot (#1620)" ;;
 esac
 
 # Control: a slot the module owns is writable, so the case above is about
