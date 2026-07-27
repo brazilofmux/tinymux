@@ -733,7 +733,7 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
 #if defined(HAVE_WORKING_FORK)
     if (mudstate.write_protect)
     {
-        Log.tinyprintf(T("cache_put((%d,%d), \xE2\x80\x98%s\xE2\x80\x99, %u) while database is write-protected" ENDLINE),
+        Log.tinyprintf(T("cache_put((%d,%d), ‘%s’, %u) while database is write-protected" ENDLINE),
             nam->object, nam->attrnum, value, len);
         return false;
     }

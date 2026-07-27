@@ -644,7 +644,7 @@ void tcache_finish(void)
     {
         TCENT *xp = tcache_head;
         tcache_head = xp->next;
-        notify(Owner(xp->player), tprintf(T("%s(#%d)} \xE2\x80\x98%s\xE2\x80\x99 -> \xE2\x80\x98%s\xE2\x80\x99"), Name(xp->player),
+        notify(Owner(xp->player), tprintf(T("%s(#%d)} ‘%s’ -> ‘%s’"), Name(xp->player),
             xp->player, xp->orig, xp->result));
         free_lbuf(xp->orig);
         free_lbuf(xp->result);

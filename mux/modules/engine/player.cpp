@@ -1011,7 +1011,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (target == NOTHING)
     {
-        notify(executor, T("I couldn\xE2\x80\x99t find that player."));
+        notify(executor, T("I couldn’t find that player."));
     }
     else if (!(  WizRoy(executor)
               || Controls(executor, target)))
@@ -1589,7 +1589,7 @@ void do_protect
         atr_add(executor, A_ALIAS, arg1, Owner(executor), aflags);
         if (add_player_name(executor, arg1, true))
         {
-            notify(executor, tprintf(T("Alias set to \xE2\x80\x98%s\xE2\x80\x99."), arg1));
+            notify(executor, tprintf(T("Alias set to ‘%s’."), arg1));
         }
         else
         {
@@ -1612,14 +1612,14 @@ void do_protect
 
         if (0 != string_compare(oldalias, arg1))
         {
-            notify(executor, tprintf(T("Your alias is \xE2\x80\x98%s\xE2\x80\x99, not \xE2\x80\x98%s\xE2\x80\x99."),
+            notify(executor, tprintf(T("Your alias is ‘%s’, not ‘%s’."),
                 oldalias.get(), arg1));
             return;
         }
 
         delete_player_name(executor, oldalias, true);
         atr_clr(executor, A_ALIAS);
-        notify(executor, tprintf(T("Alias \xE2\x80\x98%s\xE2\x80\x99 removed."), oldalias.get()));
+        notify(executor, tprintf(T("Alias ‘%s’ removed."), oldalias.get()));
         return;
     }
 
@@ -1662,7 +1662,7 @@ void do_protect
         else
         {
             atr_add_raw(executor, A_PROTECTNAME, newlist);
-            notify(executor, tprintf(T("Name \xE2\x80\x98%s\xE2\x80\x99 removed from protected list."), arg1));
+            notify(executor, tprintf(T("Name ‘%s’ removed from protected list."), arg1));
         }
         return;
     }
@@ -1727,5 +1727,5 @@ void do_protect
     *np = '\0';
 
     atr_add_raw(executor, A_PROTECTNAME, newlist);
-    notify(executor, tprintf(T("Name \xE2\x80\x98%s\xE2\x80\x99 added to protected list."), arg1));
+    notify(executor, tprintf(T("Name ‘%s’ added to protected list."), arg1));
 }

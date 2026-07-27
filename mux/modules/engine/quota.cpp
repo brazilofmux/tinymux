@@ -199,7 +199,7 @@ void do_quota
         {
             STARTLOG(LOG_WIZARD, "WIZ", "QUOTA");
             log_name(executor);
-            log_text(T(" changed everyone\xE2\x80\x99s quota"));
+            log_text(T(" changed everyone’s quota"));
             ENDLOG;
         }
         DO_WHOLE_DB(i)

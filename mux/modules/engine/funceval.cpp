@@ -599,13 +599,13 @@ FUNCTION(fun_pose)
             }
             if (saystring)
             {
-                safe_tprintf_str(buff, bufc, T("%s %s \xE2\x80\x9C%s\xE2\x80\x9D"),
+                safe_tprintf_str(buff, bufc, T("%s %s “%s”"),
                     Moniker(target), saystring, message);
                 free_lbuf(saystring);
             }
             else
             {
-                safe_tprintf_str(buff, bufc, T("%s says, \xE2\x80\x9C%s\xE2\x80\x9D"),
+                safe_tprintf_str(buff, bufc, T("%s says, “%s”"),
                     Moniker(target), message);
             }
         }
@@ -1095,7 +1095,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, UTF8 *attr
     if (!Good_obj(thing))
     {
         safe_noperm(buff, bufc);
-        notify_quiet(player, T("You shouldn\xE2\x80\x99t be rummaging through the garbage."));
+        notify_quiet(player, T("You shouldn’t be rummaging through the garbage."));
         return;
     }
 

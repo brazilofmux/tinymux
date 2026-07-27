@@ -2291,14 +2291,14 @@ MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
         if (Wizard(player))
         {
             raw_notify(player, tprintf(
-                T("Warning: %s can\xE2\x80\x99t return your mail."),
+                T("Warning: %s can’t return your mail."),
                 Moniker(target)));
             *pResult = true;
         }
         else
         {
             raw_notify(player, tprintf(
-                T("Sorry, %s can\xE2\x80\x99t return your mail."),
+                T("Sorry, %s can’t return your mail."),
                 Moniker(target)));
             *pResult = false;
         }
@@ -3071,7 +3071,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                     mudstate.pIQueryControl = nullptr;
 
                     STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-                    log_printf(T("Couldn\xE2\x80\x99t connect sink to server (%d)."), mr);
+                    log_printf(T("Couldn’t connect sink to server (%d)."), mr);
                     ENDLOG;
                 }
             }
@@ -3081,7 +3081,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
                 mudstate.pIQueryControl = nullptr;
 
                 STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-                log_printf(T("Couldn\xE2\x80\x99t create Query Sink (%d)."), mr);
+                log_printf(T("Couldn’t create Query Sink (%d)."), mr);
                 ENDLOG;
             }
         }
@@ -3091,14 +3091,14 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
             mudstate.pIQueryControl = nullptr;
 
             STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-            log_printf(T("Couldn\xE2\x80\x99t connect to Query Server (%d)."), mr);
+            log_printf(T("Couldn’t connect to Query Server (%d)."), mr);
             ENDLOG;
         }
     }
     else
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text(T("Couldn\xE2\x80\x99t create interface to Query Server."));
+        log_text(T("Couldn’t create interface to Query Server."));
         ENDLOG;
     }
 
@@ -3139,7 +3139,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     if (HF_OPEN_STATUS_ERROR == ccPageFile)
     {
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        log_text(T("Couldn\xE2\x80\x99t open storage backend."));
+        log_text(T("Couldn’t open storage backend."));
         ENDLOG;
         return MUX_E_FAIL;
     }
@@ -3218,7 +3218,7 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
         if (ccInFile != LOAD_GAME_SUCCESS)
         {
             STARTLOG(LOG_ALWAYS, "INI", "LOAD")
-            log_text(T("Couldn\xE2\x80\x99t load: "));
+            log_text(T("Couldn’t load: "));
             log_text(mudconf.indb);
             ENDLOG
             return MUX_E_FAIL;
@@ -3939,7 +3939,7 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
     int cc = init_dbfile(basename);
     if (cc == HF_OPEN_STATUS_ERROR)
     {
-        mux_fprintf(stderr, T("Can\xE2\x80\x99t open SQLite database.\n"));
+        mux_fprintf(stderr, T("Can’t open SQLite database.\n"));
         return MUX_E_FAIL;
     }
 

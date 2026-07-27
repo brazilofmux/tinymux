@@ -1429,11 +1429,11 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
                     MEMFREE(flag_name_entity->flagname);
                     flag_name_entity->flagname = const_cast<UTF8*>(flag_name_entity->pOrigName);
                     mudstate.flag_names_map.erase(it);
-                    notify(executor, tprintf(T("Flag name \xE2\x80\x98%s\xE2\x80\x99 removed from the hash table."), canonical_flag_name));
+                    notify(executor, tprintf(T("Flag name ‘%s’ removed from the hash table."), canonical_flag_name));
                 }
                 else
                 {
-                    notify(executor, T("Error: You can\xE2\x80\x99t remove the present flag name from the hash table."));
+                    notify(executor, T("Error: You can’t remove the present flag name from the hash table."));
                 }
             }
             else

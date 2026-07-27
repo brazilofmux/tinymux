@@ -1362,7 +1362,7 @@ public:
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             UTF8* buff = alloc_lbuf("ganl_auth.badconnect");
-            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, user);
+            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to ‘%s’"), d->socket, d->addr, user);
             g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;

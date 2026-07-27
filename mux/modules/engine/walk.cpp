@@ -239,7 +239,7 @@ static void dispatch_WalkEntry(void *pArg, int iUnused)
             else
             {
                 notify(wp->executor,
-                    tprintf(T("%s can\xE2\x80\x99t find a route from here."),
+                    tprintf(T("%s can’t find a route from here."),
                             Moniker(wp->npc)));
             }
         }
@@ -375,7 +375,7 @@ void do_walk(dbref executor, dbref caller, dbref enactor, int eval,
     dbref dest = noisy_match_result();
     if (!Good_obj(dest) || !isRoom(dest))
     {
-        notify_quiet(executor, T("That\xE2\x80\x99s not a valid destination."));
+        notify_quiet(executor, T("That’s not a valid destination."));
         return;
     }
 
@@ -471,7 +471,7 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
         if (!Good_obj(room) || !isRoom(room))
         {
             notify(executor,
-                tprintf(T("\xE2\x80\x9C%s\xE2\x80\x9D is not a valid room."),
+                tprintf(T("“%s” is not a valid room."),
                         token));
             return;
         }

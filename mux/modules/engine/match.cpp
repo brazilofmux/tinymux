@@ -14,8 +14,8 @@
 // Static init stores English msgids with N_() (no gettext). After
 // mux_nls_init, mux_nls_refresh_messages() rebinds via M_().
 //
-const UTF8 *NOMATCH_MESSAGE      = N_("I don\xE2\x80\x99t see that here.");
-const UTF8 *AMBIGUOUS_MESSAGE    = N_("I don\xE2\x80\x99t know which one you mean!");
+const UTF8 *NOMATCH_MESSAGE      = N_("I don’t see that here.");
+const UTF8 *AMBIGUOUS_MESSAGE    = N_("I don’t know which one you mean!");
 const UTF8 *NOPERM_MESSAGE       = N_("Permission denied.");
 const UTF8 *FUNC_FAIL_MESSAGE    = S_("#-1");
 const UTF8 *FUNC_NOMATCH_MESSAGE = S_("#-1 NO MATCH");
@@ -31,8 +31,8 @@ void mux_nls_refresh_messages(void)
 #if defined(HAVE_NLS)
     // Re-resolve opted-in prose now that textdomain is bound.
     //
-    NOMATCH_MESSAGE   = M_("I don\xE2\x80\x99t see that here.");
-    AMBIGUOUS_MESSAGE = M_("I don\xE2\x80\x99t know which one you mean!");
+    NOMATCH_MESSAGE   = M_("I don’t see that here.");
+    AMBIGUOUS_MESSAGE = M_("I don’t know which one you mean!");
     NOPERM_MESSAGE    = M_("Permission denied.");
 #endif
 }

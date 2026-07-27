@@ -43,11 +43,11 @@ void do_kill
     switch (victim)
     {
     case NOTHING:
-        notify(executor, M_("I don\xE2\x80\x99t see that player here."));
+        notify(executor, M_("I don’t see that player here."));
         break;
 
     case AMBIGUOUS:
-        notify(executor, M_("I don\xE2\x80\x99t know who you mean!"));
+        notify(executor, M_("I don’t know who you mean!"));
         break;
 
     default:
@@ -86,7 +86,7 @@ void do_kill
             //
             if (!payfor(executor, cost))
             {
-                notify(executor, tprintf(T("You don\xE2\x80\x99t have enough %s."), mudconf.many_coins));
+                notify(executor, tprintf(T("You don’t have enough %s."), mudconf.many_coins));
                 return;
             }
         }
@@ -203,21 +203,21 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
     switch (thing)
     {
     case NOTHING:
-        notify(giver, M_("You don\xE2\x80\x99t have that!"));
+        notify(giver, M_("You don’t have that!"));
         return;
 
     case AMBIGUOUS:
-        notify(giver, M_("I don\xE2\x80\x99t know which you mean!"));
+        notify(giver, M_("I don’t know which you mean!"));
         return;
     }
     if (thing == giver)
     {
-        notify(giver, M_("You can\xE2\x80\x99t give yourself away!"));
+        notify(giver, M_("You can’t give yourself away!"));
         return;
     }
     if (thing == recipient)
     {
-        notify(giver, M_("You can\xE2\x80\x99t give an object to itself."));
+        notify(giver, M_("You can’t give an object to itself."));
         return;
     }
     if (  (!isThing(thing) && !isPlayer(thing))
@@ -232,7 +232,7 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
     {
         LBuf str = LBuf_Src("do_give.gfail");
         UTF8 *sp = str.get();
-        safe_str(T("You can\xE2\x80\x99t give "), str, &sp);
+        safe_str(T("You can’t give "), str, &sp);
         safe_str(Moniker(thing), str, &sp);
         safe_str(T(" away."), str, &sp);
         *sp = '\0';
@@ -246,7 +246,7 @@ static void give_thing(dbref giver, dbref recipient, int key, UTF8 *what)
         LBuf str = LBuf_Src("do_give.rfail");
         UTF8 *sp = str.get();
         safe_str(Moniker(recipient), str, &sp);
-        safe_str(T(" doesn\xE2\x80\x99t want "), str, &sp);
+        safe_str(T(" doesn’t want "), str, &sp);
         safe_str(Moniker(thing), str, &sp);
         safe_chr('.', str, &sp);
         *sp = '\0';
@@ -292,13 +292,13 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
         if (  isPlayer(recipient)
            && (Pennies(recipient) + amount > mudconf.paylimit))
         {
-            notify(giver, tprintf(T("That player doesn\xE2\x80\x99t need that many %s!"),
+            notify(giver, tprintf(T("That player doesn’t need that many %s!"),
                 mudconf.many_coins));
             return;
         }
         if (!could_doit(giver, recipient, A_LUSE))
         {
-            notify(giver, tprintf(T("%s won\xE2\x80\x99t take your money."), Moniker(recipient)));
+            notify(giver, tprintf(T("%s won’t take your money."), Moniker(recipient)));
             return;
         }
     }
@@ -307,7 +307,7 @@ static void give_money(dbref giver, dbref recipient, int key, int amount)
     //
     if (!payfor(giver, amount))
     {
-        notify(giver, tprintf(T("You don\xE2\x80\x99t have that many %s to give!"),
+        notify(giver, tprintf(T("You don’t have that many %s to give!"),
             mudconf.many_coins));
         return;
     }
@@ -418,18 +418,18 @@ void do_give
         return;
 
     case AMBIGUOUS:
-        notify(executor, M_("I don\xE2\x80\x99t know who you mean!"));
+        notify(executor, M_("I don’t know who you mean!"));
         return;
     }
 
     if (isExit(recipient))
     {
-        notify(executor, M_("You can\xE2\x80\x99t give anything to an exit."));
+        notify(executor, M_("You can’t give anything to an exit."));
         return;
     }
     if (Guest(recipient))
     {
-        notify(executor, M_("Guests really don\xE2\x80\x99t need money or anything."));
+        notify(executor, M_("Guests really don’t need money or anything."));
         return;
     }
     if (is_rational(amnt))
