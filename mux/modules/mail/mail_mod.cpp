@@ -393,6 +393,13 @@ int CMailMod::new_mail_message(const UTF8 *message, int number)
         nLen = MOD_LBUF_SIZE - 1;
     }
 
+    // Allocating a new body, or loading an existing one back from storage?
+    // The engine splits these into two functions -- MessageAdd() allocates
+    // and takes a reference, new_mail_message() loads and does not -- and
+    // this one does both, so the distinction has to be captured here (#1587).
+    //
+    const bool bAllocating = (NOTHING == number);
+
     // If number is NOTHING (-1), find a free slot.
     //
     if (NOTHING == number)
@@ -430,6 +437,25 @@ int CMailMod::new_mail_message(const UTF8 *message, int number)
 
     struct mail_body &pm = m_mail_list[number];
     pm.m_pMessage.assign(reinterpret_cast<const char *>(message), nLen);
+
+    // Take the creation reference (#1587).  The engine does this in
+    // MessageAdd and says so above it: "This function returns a reference to
+    // the message and the reference count is increased to reflect that."
+    // Without it the arithmetic on a send is 0 -> Inc per recipient -> Dec
+    // once at the end of mail_to_list, so a single-recipient message returns
+    // to zero the instant it is sent and the body is freed.  Two recipients
+    // survived undercounted by one, and died when the first of them cleared
+    // their copy.
+    //
+    // Only when allocating.  On load the per-header MessageReferenceInc in
+    // the storage callback already counts every reference there is, and
+    // taking another here would leak every body for the life of the process.
+    //
+    if (bAllocating)
+    {
+        pm.m_nRefs = 0;
+        MessageReferenceInc(number);
+    }
 
     // #1192: Persist body + mail_db_top on live creates.  Skipped while
     // m_bLoading so SQLite load does not write back through itself.
@@ -601,7 +627,27 @@ void CMailMod::sqlite_wt_delete_mail_body(int number)
 {
     if (m_bLoading || nullptr == m_pIStorage) return;
 
-    m_pIStorage->DeleteMailBody(number);
+    // Check the result (#1587).  mail_headers.body_number REFERENCES
+    // mail_bodies(number), so deleting a body a header still points at is
+    // refused with a foreign-key violation -- and this discarded that,
+    // which is the only reason the refcount bug above did not destroy mail
+    // outright.  A delete that cannot happen is a fact worth knowing rather
+    // than an accident worth relying on.  The engine's equivalent logs it.
+    //
+    if (MUX_FAILED(m_pIStorage->DeleteMailBody(number)) && nullptr != m_pILog)
+    {
+        bool fStarted;
+        m_pILog->start_log(&fStarted, LOG_ALWAYS, T("MAI"), T("BODY"));
+        if (fStarted)
+        {
+            UTF8 buf[160];
+            snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
+                "Mail module: body %d could not be deleted; a header still "
+                "references it.", number);
+            m_pILog->log_text(buf);
+            m_pILog->end_log();
+        }
+    }
     bump_revision();
 }
 

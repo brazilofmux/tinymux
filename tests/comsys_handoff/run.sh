@@ -96,7 +96,8 @@ $2
 EOF
 }
 write_conf engine ""
-write_conf module "module comsys_mod"
+write_conf module "module comsys_mod
+module mail_mod"
 
 # Run a command stream under $1 (engine|module) and leave output in $WORK/out.
 # Aborts the whole file if the implementation is not the one requested: a
@@ -107,9 +108,24 @@ run_as() {
     ( cd "$WORK" || exit 1
       LD_LIBRARY_PATH="$BIN" $TIMEOUT "$BIN/muxscript" -g . -c "$which.conf" \
           < in.txt > out 2>&1 )
-    local want
-    if [ "$which" = "module" ]; then want="Comsys: using module implementation."
-    else want="Comsys: using built-in engine implementation."; fi
+    # BOTH lines are checked.  An earlier version asserted only the comsys
+    # one, and the module config did not load mail_mod at all -- so every
+    # mail assertion below ran against the engine in both configurations and
+    # proved nothing about the module.  That is precisely the failure this
+    # file exists to catch, occurring inside the file itself.
+    local want wantmail
+    if [ "$which" = "module" ]; then
+        want="Comsys: using module implementation."
+        wantmail="Mail: using module implementation."
+    else
+        want="Comsys: using built-in engine implementation."
+        wantmail="Mail: using built-in engine implementation."
+    fi
+    if ! grep -qF "$wantmail" "$WORK/out"; then
+        echo "Bail out!  wanted '$wantmail' but the run reported:"
+        grep -h "using .* implementation" "$WORK/out" | sed 's/^/    /'
+        exit 1
+    fi
     if ! grep -qF "$want" "$WORK/out"; then
         echo "Bail out!  wanted '$want' but the run reported:"
         grep -h "using .* implementation" "$WORK/out" | sed 's/^/    /'
@@ -220,6 +236,63 @@ case "$(val H3)" in
     *Mod*) ok "engine reads history the module wrote" ;;
     *) nope "engine reads history the module wrote" "H3=$(val H3)" ;;
 esac
+
+# ---------------------------------------------------------------------------
+# Mail: a message sent under one implementation must be readable under both,
+# IN THE SAME SESSION (#1587).
+#
+# The bug this pins was invisible to the corpus and nearly invisible on disk.
+# CMailMod::new_mail_message omitted the creation reference the engine's
+# MessageAdd takes, so a single-recipient send went 0 -> Inc -> Dec and the
+# body was freed the moment it was sent.  The SQLite delete that followed was
+# refused by mail_headers.body_number REFERENCES mail_bodies(number), and the
+# module discarded that result -- so the row survived by accident and a
+# RESTART read the message back correctly.
+#
+# That is why this asserts within one session.  A test that sent, restarted,
+# and then read would have passed against the bug.
+# ---------------------------------------------------------------------------
+run_as module '@mail Wizard=Handoff Subject
+-Mail body probe.
+@mail/send
+@mail 1
+think MSZ=[strlen(mailreview(#1,1))]
+think MINFO=[mailinfo(1,size,#1)]'
+
+# Assert on the @mail COMMAND, which is the module's own read path.  An
+# earlier draft of this case checked mailreview() instead and would not have
+# caught the bug at all: mailreview is fun_mailreview in functions.cpp, an
+# ENGINE function reading the engine's store, and the engine's store was
+# never the broken one.  The module's command path is what failed.
+grep -q "does not exist in the database" "$WORK/out" \
+    && nope "module: @mail reads the body in the session it was sent" \
+            "module answered 'does not exist in the database'" \
+    || ok "module: @mail reads the body in the session it was sent"
+
+grep -q "Mail body probe" "$WORK/out" \
+    && ok "module: @mail renders the body text" \
+    || nope "module: @mail renders the body text" "body absent from output"
+
+[ "$(val MSZ)" = "16" ] \
+    && ok "module: body is stored at the size it was sent" \
+    || nope "module: body is stored at the size it was sent" \
+            "MSZ=$(val MSZ), expected 16"
+
+[ "$(val MSZ)" = "$(val MINFO)" ] \
+    && ok "module: mailreview and mailinfo agree on size" \
+    || nope "module: mailreview and mailinfo agree on size" \
+            "MSZ=$(val MSZ) MINFO=$(val MINFO)"
+
+# And the engine must read the same message at the same size.  The engine
+# used to join an empty signature with "%s %s", so every body from a player
+# with no A_SIGNATURE gained a trailing space and read one byte long.
+run_as engine 'think MSZ=[strlen(mailreview(#1,1))]
+think MINFO=[mailinfo(1,size,#1)]'
+
+[ "$(val MSZ)" = "16" ] \
+    && ok "engine reads the module's message at the same size" \
+    || nope "engine reads the module's message at the same size" \
+            "MSZ=$(val MSZ), expected 16 -- a trailing byte is #1587"
 
 echo "=== comsys handoff: $npass passed, $nfail failed, $ntodo known-failing"\
      "($nbonus unexpectedly passing) ==="

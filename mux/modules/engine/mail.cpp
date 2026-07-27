@@ -395,7 +395,16 @@ static int add_mail_message(dbref player, UTF8 *message)
 
     // Save message body and return a reference to it.
     //
-    int number = MessageAdd(tprintf(T("%s %s"), message, execstr));
+    // Join with a space only when there IS a signature (#1587).  The
+    // unconditional "%s %s" appended a trailing space to every message sent
+    // by a player with no A_SIGNATURE -- which is most of them -- so a
+    // 32-character body read back as 33, and mailinfo(...,size,...)
+    // faithfully reported the inflated length.  The comsys module already
+    // guards this; the engine did not, and the module was the correct one.
+    //
+    int number = ('\0' != execstr[0])
+               ? MessageAdd(tprintf(T("%s %s"), message, execstr))
+               : MessageAdd(message);
     free_lbuf(atrstr);
     free_lbuf(execstr);
     return number;
