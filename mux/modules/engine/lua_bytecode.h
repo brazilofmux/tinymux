@@ -123,13 +123,24 @@ struct lua_bc_instruction {
     int A()      const { return (raw >> 7) & 0xFF; }
     int k()      const { return (raw >> 15) & 0x1; }
     int B()      const { return (raw >> 16) & 0xFF; }
-    int sB()     const { return B() - 128; }       // signed B field
+    int sB()     const { return B() - 127; }       // signed B field, OFFSET_sB
     int C()      const { return (raw >> 24) & 0xFF; }
-    int sC()     const { return C() - 128; }       // signed C field
+    // Lua's signed fields are excess-K with K = MAXARG_x >> 1, i.e.
+    // ((1 << SIZE_x) - 1) >> 1 -- one LESS than 2^(SIZE_x - 1)
+    // (lua54/lopcodes.h:72-92).  Three of the four here used the power of
+    // two instead and were each one too large (#1422):
+    //
+    //   sC   128 -> 127          sB   128 -> 127
+    //   sJ   1<<24 -> 16777215   sBx  65535, already correct
+    //
+    // sC made every immediate one low, so `i = i + 1` lowered as
+    // `i = i + 0` and loop bodies appeared to have no effect.  sJ is the
+    // jump displacement, so every branch target was off by one instruction.
+    int sC()     const { return C() - 127; }       // signed C field
     int Bx()     const { return (raw >> 15) & 0x1FFFF; }  // bits 15-31
     int sBx()    const { return Bx() - 65535; }     // offset = (2^17 - 1) / 2
     int Ax()     const { return (raw >> 7) & 0x1FFFFFF; }
-    int sJ()     const { return static_cast<int>((raw >> 7) & 0x1FFFFFF) - (1 << 24); }
+    int sJ()     const { return static_cast<int>((raw >> 7) & 0x1FFFFFF) - 16777215; }
 };
 
 // ---------------------------------------------------------------
