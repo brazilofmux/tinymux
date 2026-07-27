@@ -55,7 +55,26 @@ struct rv64_ctx_t {
     // rounded value is spilled here and reloaded for the saturation tests
     // that follow.  Appended, so no existing CTX_* offset moves.
     double   fp_scratch;
+    // Back-edge iteration budget (#1571).  A self-loop block emits its own
+    // back-edge as a native jump and never returns to dbt_run's dispatch
+    // loop -- which is the only place max_dispatch and alarm_flag are polled.
+    // Without a bound, a guest loop pins the process at 100% with no limit
+    // tripped, no alarm, and no counter moving; on a live server that is a
+    // hang that serves no player and logs nothing.  The block decrements this
+    // at its loop entry and exits to the dispatcher at zero, where both
+    // guards are checked and the budget is refilled.  Appended, so no
+    // existing CTX_* offset moves.
+    uint64_t loop_budget;
 };
+
+// Sentinel for dbt_state_t::translating_pc when no block is being translated.
+static constexpr uint64_t DBT_NO_TRANSLATION = ~static_cast<uint64_t>(0);
+
+// Iterations a self-loop block may run between dispatcher visits.  Large
+// enough that the per-iteration cost is a decrement and a not-taken branch,
+// small enough that the alarm is observed promptly: a trivial loop runs this
+// in well under a millisecond.
+static constexpr uint64_t DBT_LOOP_BUDGET = 65536;
 
 // Context offsets for JIT emitter.
 //
@@ -68,6 +87,7 @@ static constexpr int CTX_FCSR_OFF    = 784;
 static constexpr int CTX_MEM_SIZE_OFF   = 792;
 static constexpr int CTX_MEM_CLAMPS_OFF = 800;
 static constexpr int CTX_FP_SCRATCH_OFF = 808;
+static constexpr int CTX_LOOP_BUDGET_OFF = 816;
 
 // The offsets above are hand-maintained against rv64_ctx_t.  A mismatch
 // would silently make every emitted ctx access read the wrong field, so
@@ -82,6 +102,8 @@ static_assert(offsetof(rv64_ctx_t, fcsr) == CTX_FCSR_OFF,
               "CTX_FCSR_OFF out of step with rv64_ctx_t");
 static_assert(offsetof(rv64_ctx_t, next_pc) == CTX_NEXT_PC_OFF,
               "CTX_NEXT_PC_OFF out of step with rv64_ctx_t");
+static_assert(offsetof(rv64_ctx_t, loop_budget) == CTX_LOOP_BUDGET_OFF,
+              "CTX_LOOP_BUDGET_OFF out of step with rv64_ctx_t");
 
 // Block cache entry — exactly 16 bytes for inline JIT lookup.
 // R13 points to cache[0] during execution.
@@ -249,6 +271,24 @@ struct dbt_state_t {
     // dbt_test harness leaves it null.  dbt.cpp stays engine-independent — it
     // only reads a pointer it was handed.
     const std::atomic<bool> *alarm_flag = nullptr;
+
+    // Guest entry PC of the block currently being translated, or 0 when no
+    // translation is in progress.  dbt.cpp sets this around every
+    // dbt_backend_translate_block() call so the backends can recognise a
+    // back-edge -- an exit whose target is at or below the block's own entry
+    // -- without threading the source PC through every emit site.
+    //
+    // Back-edges must not be chained.  Chaining chases the exit straight into
+    // native code, and max_dispatch and alarm_flag are polled *only* at the
+    // top of dbt_run's dispatch loop, so a chained loop is watched by nothing:
+    // the process pins at 100% with no limit tripped, no alarm, and no counter
+    // moving.  Forward chaining keeps its throughput; only the loop edge pays
+    // a trampoline round-trip, which is exactly where a bound is wanted (#1571).
+    //
+    // DBT_NO_TRANSLATION when idle -- *not* 0, because a block legitimately
+    // starting at guest PC 0 would then look like "no translation in
+    // progress" and its back-edge would be chained after all.
+    uint64_t translating_pc = DBT_NO_TRANSLATION;
 
     // Inline CALL cold-exit diagnostics.
     //

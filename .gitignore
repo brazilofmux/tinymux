@@ -175,6 +175,7 @@ tests/dbt/test_cache
 tests/dbt/test_interp
 tests/dbt/dbt_test
 tests/dbt/fuzz_diff
+tests/dbt/test_alarm
 tests/netaddr/test_netaddr
 tests/alarm/test_alarm
 

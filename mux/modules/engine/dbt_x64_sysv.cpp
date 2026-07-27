@@ -1288,6 +1288,19 @@ uint32_t dbt_backend_decode_jmp_target(const uint8_t *code_buf,
 //
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
                                uint64_t target_pc) {
+    // A back-edge must not be chained (#1571).  Chaining sends the exit
+    // straight into native code, and max_dispatch / alarm_flag are polled
+    // only at the top of dbt_run's dispatch loop -- so a chained loop is
+    // watched by nothing and the process pins at 100% with every counter
+    // still.  Exit to the trampoline instead: the loop then pays one
+    // dispatcher round-trip per iteration, which is exactly where a bound
+    // belongs.  Forward chaining is untouched.
+    if (   dbt->translating_pc != DBT_NO_TRANSLATION
+        && target_pc <= dbt->translating_pc) {
+        emit_exit_with_pc(e, target_pc);
+        return;
+    }
+
     // Check if target is already translated (4-way lookup).
     block_entry_t *be = dbt_cache_lookup(dbt, target_pc);
     bool known = (be != nullptr);
@@ -1476,6 +1489,12 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             }
 
             warm_entry = emit_pos(&e);
+
+            // Bound the loop (#1571).  Every back-edge targets warm_entry, so
+            // one check here covers them all; without it the block spins in
+            // native code and dbt_run's dispatch loop -- the only place
+            // max_dispatch and alarm_flag are polled -- is never reached again.
+            emit_loop_budget_check(&e, guest_pc);
         }
     }
 
