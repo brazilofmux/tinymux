@@ -17,6 +17,7 @@
 #include "dbt.h"
 #include "dbt_decoder.h"
 #include "engine_api.h"
+#include "hir_lower_lua.h"
 #include "sha1.h"
 
 #include "../../rv64/rv64blob.h"
@@ -4308,6 +4309,27 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             fval(buf, &bufc, val);
             *bufc = '\0';
             size_t len = bufc - buf;
+            if (len > 63) len = 63;
+            memcpy(out, buf, len);
+            out[len] = '\0';
+        }
+        return -1;
+    }
+
+    case ECALL_LUA_FTOA: {
+        // a0 = double bits (via FMV.X.D), a1 = output guest address.
+        // Same shape as ECALL_FTOA, but rendered Lua's way: "%.14g" plus a
+        // trailing ".0" when the result looks like an integer, so a Lua float
+        // keeps its subtype in the result string (#1488).
+        double val;
+        uint64_t bits = ctx->x[10];
+        memcpy(&val, &bits, 8);
+        uint64_t out_addr = ctx->x[11];
+        if (out_addr < ec->memory_size - 64) {
+            char *out = reinterpret_cast<char *>(ec->memory + out_addr);
+            char buf[64];
+            lua_format_double(val, buf, sizeof(buf));
+            size_t len = strlen(buf);
             if (len > 63) len = 63;
             memcpy(out, buf, len);
             out[len] = '\0';

@@ -45,4 +45,11 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto);
 int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         const lua_bc_proto *proto);
 
+// Render a double the way Lua's tostring does: LUA_NUMBER_FMT ("%.14g"),
+// with ".0" appended when the result looks like an integer, so an integral
+// float stays distinguishable from an integer (#1488).  Shared with the
+// ECALL_LUA_FTOA host handler, which must agree with the compile-time fold.
+//
+void lua_format_double(double d, char *buf, size_t sz);
+
 #endif // HIR_LOWER_LUA_H
