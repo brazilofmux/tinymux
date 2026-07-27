@@ -350,7 +350,7 @@ void do_walk(dbref executor, dbref caller, dbref enactor, int eval,
     if (key & WALK_STOP)
     {
         walk_clr(npc);
-        notify_quiet(executor, T("Walk cancelled."));
+        notify_quiet(executor, M_("Walk cancelled."));
         return;
     }
 
@@ -358,7 +358,7 @@ void do_walk(dbref executor, dbref caller, dbref enactor, int eval,
     //
     if (!isThing(npc))
     {
-        notify_quiet(executor, T("Only things can walk."));
+        notify_quiet(executor, M_("Only things can walk."));
         return;
     }
 
@@ -366,7 +366,7 @@ void do_walk(dbref executor, dbref caller, dbref enactor, int eval,
     //
     if (!where || !*where)
     {
-        notify_quiet(executor, T("Walk where?"));
+        notify_quiet(executor, M_("Walk where?"));
         return;
     }
 
@@ -375,7 +375,7 @@ void do_walk(dbref executor, dbref caller, dbref enactor, int eval,
     dbref dest = noisy_match_result();
     if (!Good_obj(dest) || !isRoom(dest))
     {
-        notify_quiet(executor, T("That’s not a valid destination."));
+        notify_quiet(executor, M_("That’s not a valid destination."));
         return;
     }
 
@@ -439,19 +439,19 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
     if (key & WALK_STOP)
     {
         walk_clr(npc);
-        notify_quiet(executor, T("Patrol cancelled."));
+        notify_quiet(executor, M_("Patrol cancelled."));
         return;
     }
 
     if (!isThing(npc))
     {
-        notify_quiet(executor, T("Only things can patrol."));
+        notify_quiet(executor, M_("Only things can patrol."));
         return;
     }
 
     if (!waypoint_str || !*waypoint_str)
     {
-        notify_quiet(executor, T("Patrol where?"));
+        notify_quiet(executor, M_("Patrol where?"));
         return;
     }
 
@@ -480,7 +480,7 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
 
     if (waypoints.size() < 2)
     {
-        notify_quiet(executor, T("Patrol requires at least two waypoints."));
+        notify_quiet(executor, M_("Patrol requires at least two waypoints."));
         return;
     }
 

@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 05:59-0600\n"
+"POT-Creation-Date: 2026-07-27 06:00-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,8 +45,8 @@ msgid "Sorry, queueing and triggering are not allowed now."
 msgstr "[xx] Sorry, queueing and triggering are not allowed now."
 
 #: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2023
-#: modules/engine/quota.cpp:176 modules/engine/wiz.cpp:792
-#: modules/engine/wiz.cpp:880
+#: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
+#: modules/engine/wiz.cpp:792 modules/engine/wiz.cpp:880
 msgid "Illegal combination of switches."
 msgstr "[xx] Illegal combination of switches."
 
@@ -318,11 +318,13 @@ msgstr "[xx] You must specify a flag to set."
 msgid "I do not understand that flag."
 msgstr "[xx] I do not understand that flag."
 
-#: modules/engine/flags.cpp:825 modules/engine/set.cpp:1323
+#: modules/engine/flags.cpp:825 modules/engine/levels.cpp:343
+#: modules/engine/levels.cpp:444 modules/engine/set.cpp:1323
 msgid "Cleared."
 msgstr "[xx] Cleared."
 
-#: modules/engine/flags.cpp:825 modules/engine/set.cpp:427
+#: modules/engine/flags.cpp:825 modules/engine/levels.cpp:348
+#: modules/engine/levels.cpp:449 modules/engine/set.cpp:427
 #: modules/engine/set.cpp:492 modules/engine/set.cpp:1169
 #: modules/engine/set.cpp:1327
 msgid "Set."
@@ -360,6 +362,23 @@ msgstr "[xx] You must specify a flag and a name."
 #: modules/engine/flags.cpp:1458
 msgid "Flag name changed."
 msgstr "[xx] Flag name changed."
+
+#: modules/engine/levels.cpp:281 modules/engine/levels.cpp:382
+#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
+msgid "I don’t know what you want to set!"
+msgstr "[xx] I don’t know what you want to set!"
+
+#: modules/engine/levels.cpp:325 modules/engine/levels.cpp:426
+msgid "You must specify a reality level to clear."
+msgstr "[xx] You must specify a reality level to clear."
+
+#: modules/engine/levels.cpp:329 modules/engine/levels.cpp:430
+msgid "You must specify a reality level to set."
+msgstr "[xx] You must specify a reality level to set."
+
+#: modules/engine/levels.cpp:337 modules/engine/levels.cpp:438
+msgid "No such reality level."
+msgstr "[xx] No such reality level."
 
 #: modules/engine/look.cpp:1313
 msgid "You see nothing special."
@@ -625,6 +644,7 @@ msgid "No added commands found in command table."
 msgstr "[xx] No added commands found in command table."
 
 #: modules/engine/predicates.cpp:1328 modules/engine/predicates.cpp:1371
+#: modules/engine/walkdb.cpp:1347 modules/engine/walkdb.cpp:1382
 msgid "Done."
 msgstr "[xx] Done."
 
@@ -683,7 +703,7 @@ msgstr "[xx] Permission denied,"
 msgid "Quotas are not enabled."
 msgstr "[xx] Quotas are not enabled."
 
-#: modules/engine/quota.cpp:230
+#: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:322
 msgid "Not found."
 msgstr "[xx] Not found."
 
@@ -864,10 +884,6 @@ msgstr "[xx] You shouldn’t be rummaging through the garbage."
 msgid "Players always own themselves."
 msgstr "[xx] Players always own themselves."
 
-#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
-msgid "I don’t know what you want to set!"
-msgstr "[xx] I don’t know what you want to set!"
-
 #: modules/engine/set.cpp:1258
 msgid "You can’t set that!"
 msgstr "[xx] You can’t set that!"
@@ -947,6 +963,90 @@ msgstr "[xx] You are too far away to do that."
 #: modules/engine/speech.cpp:1494
 msgid "No one to whisper to."
 msgstr "[xx] No one to whisper to."
+
+#: modules/engine/walk.cpp:353
+msgid "Walk cancelled."
+msgstr "[xx] Walk cancelled."
+
+#: modules/engine/walk.cpp:361
+msgid "Only things can walk."
+msgstr "[xx] Only things can walk."
+
+#: modules/engine/walk.cpp:369
+msgid "Walk where?"
+msgstr "[xx] Walk where?"
+
+#: modules/engine/walk.cpp:378
+msgid "That’s not a valid destination."
+msgstr "[xx] That’s not a valid destination."
+
+#: modules/engine/walk.cpp:442
+msgid "Patrol cancelled."
+msgstr "[xx] Patrol cancelled."
+
+#: modules/engine/walk.cpp:448
+msgid "Only things can patrol."
+msgstr "[xx] Only things can patrol."
+
+#: modules/engine/walk.cpp:454
+msgid "Patrol where?"
+msgstr "[xx] Patrol where?"
+
+#: modules/engine/walk.cpp:483
+msgid "Patrol requires at least two waypoints."
+msgstr "[xx] Patrol requires at least two waypoints."
+
+#: modules/engine/walkdb.cpp:75
+msgid "That’s terrific, but what should I do with the list?"
+msgstr "[xx] That’s terrific, but what should I do with the list?"
+
+#: modules/engine/walkdb.cpp:87
+msgid "The delimiter must be a single character!"
+msgstr "[xx] The delimiter must be a single character!"
+
+#: modules/engine/walkdb.cpp:210
+msgid "***End of List***"
+msgstr "[xx] ***End of List***"
+
+#: modules/engine/walkdb.cpp:472
+msgid "Victim must be a player."
+msgstr "[xx] Victim must be a player."
+
+#: modules/engine/walkdb.cpp:848
+msgid "You need a search warrant to do that!"
+msgstr "[xx] You need a search warrant to do that!"
+
+#: modules/engine/walkdb.cpp:1182
+msgid ""
+"\n"
+"ROOMS:"
+msgstr "\n[xx] ROOMS:"
+
+#: modules/engine/walkdb.cpp:1207
+msgid ""
+"\n"
+"EXITS:"
+msgstr "\n[xx] EXITS:"
+
+#: modules/engine/walkdb.cpp:1250
+msgid ""
+"\n"
+"OBJECTS:"
+msgstr "\n[xx] OBJECTS:"
+
+#: modules/engine/walkdb.cpp:1285
+msgid ""
+"\n"
+"PLAYERS:"
+msgstr "\n[xx] PLAYERS:"
+
+#: modules/engine/walkdb.cpp:1309
+msgid "Nothing found."
+msgstr "[xx] Nothing found."
+
+#: modules/engine/walkdb.cpp:1506
+msgid "Day   Hours     Players  Total"
+msgstr "[xx] Day   Hours     Players  Total"
 
 #: modules/engine/wiz.cpp:33
 msgid "You can’t teleport that."
