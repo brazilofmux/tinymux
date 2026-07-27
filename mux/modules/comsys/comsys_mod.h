@@ -197,7 +197,7 @@ private:
         const UTF8 *msg, bool bJoinLeaveMsg);
     // Recall-buffer write, mirroring the engine's HISTORY_n logging (#1564).
     void RecordChannelHistory(dbref executor, struct channel *ch,
-        const UTF8 *msg);
+        const UTF8 *msg, bool bJoinLeaveMsg);
 
     // MOGRIFY`NOBUFFER (#1572): true when the channel object's hook says this
     // line must not reach the recall buffer.
