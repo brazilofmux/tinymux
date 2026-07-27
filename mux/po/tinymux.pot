@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 09:26-0600\n"
+"POT-Creation-Date: 2026-07-27 16:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -836,20 +836,20 @@ msgstr ""
 msgid "That is not a reasonable name."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4493
-msgid "*** Logins are disabled."
-msgstr ""
-
-#: modules/engine/engine_com.cpp:4507
-msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
-msgstr ""
-
 #: modules/engine/engine.cpp:29
 msgid "Dumping in progress. Try again later."
 msgstr ""
 
 #: modules/engine/engine.cpp:33
 msgid "Dumping..."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4493
+msgid "*** Logins are disabled."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4507
+msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
 msgstr ""
 
 #: modules/engine/flags.cpp:26
@@ -975,6 +975,11 @@ msgstr ""
 msgid "Log file rotated."
 msgstr ""
 
+#: modules/engine/look.cpp:553
+#, c-format
+msgid "%s leads to %s."
+msgstr ""
+
 #: modules/engine/look.cpp:1313
 msgid "You see nothing special."
 msgstr ""
@@ -992,6 +997,81 @@ msgstr ""
 msgid "Carrying:"
 msgstr ""
 
+#: modules/engine/look.cpp:1647
+#, c-format
+msgid "Number  = %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1653
+#, c-format
+msgid "Name    = %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1654
+#, c-format
+msgid "Location= %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1655
+#, c-format
+msgid "Contents= %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1656
+#, c-format
+msgid "Exits   = %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1657
+#, c-format
+msgid "Link    = %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1658
+#, c-format
+msgid "Next    = %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1659
+#, c-format
+msgid "Owner   = %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1660
+#, c-format
+msgid "Pennies = %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1661
+#, c-format
+msgid "Zone    = %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1663
+#, c-format
+msgid "Flags   = %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1666
+#, c-format
+msgid "Powers  = %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1670
+#, c-format
+msgid "RxLevel = %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1673
+#, c-format
+msgid "TxLevel = %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1679
+#, c-format
+msgid "Lock    = %s"
+msgstr ""
+
 #: modules/engine/look.cpp:1684
 msgid "Attr list: "
 msgstr ""
@@ -1004,6 +1084,46 @@ msgstr ""
 msgid "No matching attributes found."
 msgstr ""
 
+#: modules/engine/look.cpp:1919 modules/engine/look.cpp:2157
+#, c-format
+msgid "%s is owned by %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1925 modules/engine/look.cpp:2162
+#, c-format
+msgid "Owned by %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1980
+#, c-format
+msgid "Owner: %s  Key: %s %s: %d"
+msgstr ""
+
+#: modules/engine/look.cpp:1988
+#, c-format
+msgid "Zone: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:1998
+#, c-format
+msgid "Parent: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:2002
+#, c-format
+msgid "Powers: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:2008
+#, c-format
+msgid "RxLevel: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:2011
+#, c-format
+msgid "TxLevel: %s"
+msgstr ""
+
 #: modules/engine/look.cpp:2046 modules/engine/look.cpp:2076
 #: modules/engine/look.cpp:2208
 msgid "Exits:"
@@ -1013,8 +1133,38 @@ msgstr ""
 msgid "No exits."
 msgstr ""
 
+#: modules/engine/look.cpp:2064
+#, c-format
+msgid "Dropped objects go to: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:2093
+#, c-format
+msgid "Home: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:2105
+#, c-format
+msgid "Location: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:2112
+#, c-format
+msgid "Source: %s"
+msgstr ""
+
 #: modules/engine/look.cpp:2122
 msgid "Destination: *UNLINKED*"
+msgstr ""
+
+#: modules/engine/look.cpp:2127
+#, c-format
+msgid "Destination: %s"
+msgstr ""
+
+#: modules/engine/look.cpp:2175
+#, c-format
+msgid "You have %d %s."
 msgstr ""
 
 #: modules/engine/look.cpp:2192
@@ -1023,6 +1173,42 @@ msgstr ""
 
 #: modules/engine/look.cpp:2196
 msgid "You are carrying:"
+msgstr ""
+
+#: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
+#: modules/engine/speech.cpp:565
+#, c-format
+msgid "You don’t have enough %s."
+msgstr ""
+
+#: modules/engine/look.cpp:2297
+#, c-format
+msgid "%s [dropto]"
+msgstr ""
+
+#: modules/engine/look.cpp:2307
+#, c-format
+msgid "%s [home]"
+msgstr ""
+
+#: modules/engine/look.cpp:2319
+#, c-format
+msgid "%s [parent]"
+msgstr ""
+
+#: modules/engine/look.cpp:2340
+#, c-format
+msgid "%s [forward]"
+msgstr ""
+
+#: modules/engine/look.cpp:2348
+#, c-format
+msgid "%d entrance%s found."
+msgstr ""
+
+#: modules/engine/look.cpp:2540 modules/engine/look.cpp:2552
+#, c-format
+msgid "  %s is listening. [%s]"
 msgstr ""
 
 #: modules/engine/look.cpp:2603
@@ -1067,6 +1253,16 @@ msgstr ""
 
 #: modules/engine/look.cpp:2902
 msgid "Scan complete."
+msgstr ""
+
+#: modules/engine/look.cpp:3124
+#, c-format
+msgid "@lock/%s %s=%s"
+msgstr ""
+
+#: modules/engine/look.cpp:3142
+#, c-format
+msgid "@wait 0={%c%s %s=%s}"
 msgstr ""
 
 #: modules/engine/mail.cpp:380
@@ -1547,8 +1743,23 @@ msgstr ""
 msgid "Done."
 msgstr ""
 
+#: modules/engine/player.cpp:193
+#, c-format
+msgid "**** %d failed connect%s since your last successful connect. ****"
+msgstr ""
+
+#: modules/engine/player.cpp:195
+#, c-format
+msgid "Most recent attempt was from %s on %s."
+msgstr ""
+
+#: modules/engine/player.cpp:205
+#, c-format
+msgid "Last connect was from %s on %s."
+msgstr ""
+
 #: modules/engine/player.cpp:963 modules/engine/predicates.cpp:1241
-#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
+#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1072
 msgid "Sorry."
 msgstr ""
 
@@ -1556,9 +1767,24 @@ msgstr ""
 msgid "Password changed."
 msgstr ""
 
+#: modules/engine/player.cpp:985
+#, c-format
+msgid "     From: %s   On: %s"
+msgstr ""
+
 #: modules/engine/player.cpp:1017 modules/engine/set.cpp:923
 #: modules/engine/set.cpp:1065
 msgid "I couldn’t find that player."
+msgstr ""
+
+#: modules/engine/player.cpp:1030
+#, c-format
+msgid "Total successful connects: %d"
+msgstr ""
+
+#: modules/engine/player.cpp:1035
+#, c-format
+msgid "Total failed connects: %d"
 msgstr ""
 
 #: modules/engine/player.cpp:1438
@@ -1578,6 +1804,11 @@ msgstr ""
 msgid "No protected names."
 msgstr ""
 
+#: modules/engine/player.cpp:1531
+#, c-format
+msgid "Protected names for %s: %s"
+msgstr ""
+
 #: modules/engine/player.cpp:1539
 msgid "Protect what name?"
 msgstr ""
@@ -1591,6 +1822,11 @@ msgstr ""
 msgid "That name is already in use."
 msgstr ""
 
+#: modules/engine/player.cpp:1595
+#, c-format
+msgid "Alias set to ‘%s’."
+msgstr ""
+
 #: modules/engine/player.cpp:1599
 msgid "That name is already in use or is illegal, alias cleared."
 msgstr ""
@@ -1599,8 +1835,23 @@ msgstr ""
 msgid "You have no alias set."
 msgstr ""
 
+#: modules/engine/player.cpp:1618
+#, c-format
+msgid "Your alias is ‘%s’, not ‘%s’."
+msgstr ""
+
+#: modules/engine/player.cpp:1625
+#, c-format
+msgid "Alias ‘%s’ removed."
+msgstr ""
+
 #: modules/engine/player.cpp:1636
 msgid "You have no protected names."
+msgstr ""
+
+#: modules/engine/player.cpp:1668
+#, c-format
+msgid "Name ‘%s’ removed from protected list."
 msgstr ""
 
 #: modules/engine/player.cpp:1677
@@ -1611,8 +1862,18 @@ msgstr ""
 msgid "That name is already in your protected list."
 msgstr ""
 
+#: modules/engine/player.cpp:1708
+#, c-format
+msgid "You may only protect %d names."
+msgstr ""
+
 #: modules/engine/player.cpp:1716
 msgid "That name is already protected by another player."
+msgstr ""
+
+#: modules/engine/player.cpp:1733
+#, c-format
+msgid "Name ‘%s’ added to protected list."
 msgstr ""
 
 #: modules/engine/plusemail.cpp:288
@@ -1763,17 +2024,12 @@ msgid "I don’t see that player here."
 msgstr ""
 
 #: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
-#: modules/engine/speech.cpp:1063
+#: modules/engine/speech.cpp:1078
 msgid "I don’t know who you mean!"
 msgstr ""
 
 #: modules/engine/rob.cpp:57
 msgid "Sorry, you can only kill players and things."
-msgstr ""
-
-#: modules/engine/rob.cpp:89
-#, c-format
-msgid "You don’t have enough %s."
 msgstr ""
 
 #: modules/engine/rob.cpp:101
@@ -2155,6 +2411,64 @@ msgstr ""
 msgid "Sorry, you may not speak in this place."
 msgstr ""
 
+#: modules/engine/speech.cpp:214 modules/engine/speech.cpp:217
+#: modules/engine/speech.cpp:219 modules/engine/speech.cpp:1219
+#, c-format
+msgid "%s %s “%s”"
+msgstr ""
+
+#: modules/engine/speech.cpp:225 modules/engine/speech.cpp:1213
+#, c-format
+msgid "You say, “%s”"
+msgstr ""
+
+#: modules/engine/speech.cpp:227 modules/engine/speech.cpp:229
+#: modules/engine/speech.cpp:1225
+#, c-format
+msgid "%s says, “%s”"
+msgstr ""
+
+#: modules/engine/speech.cpp:498
+#, c-format
+msgid "%s message from %s: %s"
+msgstr ""
+
+#: modules/engine/speech.cpp:501
+#, c-format
+msgid "[%d:%02d] %s message sent to %s."
+msgstr ""
+
+#: modules/engine/speech.cpp:526 modules/engine/speech.cpp:537
+#: modules/engine/speech.cpp:1151 modules/engine/speech.cpp:1482
+#, c-format
+msgid "Sorry, %s is not connected."
+msgstr ""
+
+#: modules/engine/speech.cpp:542
+#, c-format
+msgid "Sorry, %s is not accepting pages."
+msgstr ""
+
+#: modules/engine/speech.cpp:556
+#, c-format
+msgid "Sorry, %s can’t return your page."
+msgstr ""
+
+#: modules/engine/speech.cpp:571
+#, c-format
+msgid "Warning: %s can’t return your page."
+msgstr ""
+
+#: modules/engine/speech.cpp:643 modules/engine/speech.cpp:666
+#, c-format
+msgid "I don’t recognize “%s”."
+msgstr ""
+
+#: modules/engine/speech.cpp:704
+#, c-format
+msgid "I don’t recognize #%d."
+msgstr ""
+
 #: modules/engine/speech.cpp:778
 msgid "You have not paged anyone."
 msgstr ""
@@ -2163,24 +2477,129 @@ msgstr ""
 msgid "No one to page."
 msgstr ""
 
-#: modules/engine/speech.cpp:1045
+#: modules/engine/speech.cpp:823
+#, c-format
+msgid "You last paged %s."
+msgstr ""
+
+#: modules/engine/speech.cpp:892
+#, c-format
+msgid "From afar, %s pages you."
+msgstr ""
+
+#: modules/engine/speech.cpp:897
+#, c-format
+msgid "From afar, %s pages %s."
+msgstr ""
+
+#: modules/engine/speech.cpp:900
+#, c-format
+msgid "You page %s."
+msgstr ""
+
+#: modules/engine/speech.cpp:909
+#, c-format
+msgid "From afar, to %s: %s %s"
+msgstr ""
+
+#: modules/engine/speech.cpp:914
+#, c-format
+msgid "From afar, %s %s"
+msgstr ""
+
+#: modules/engine/speech.cpp:917
+#, c-format
+msgid "Long distance to %s: %s %s"
+msgstr ""
+
+#: modules/engine/speech.cpp:924
+#, c-format
+msgid "From afar, to %s: %s%s"
+msgstr ""
+
+#: modules/engine/speech.cpp:929
+#, c-format
+msgid "From afar, %s%s"
+msgstr ""
+
+#: modules/engine/speech.cpp:932
+#, c-format
+msgid "Long distance to %s: %s%s"
+msgstr ""
+
+#: modules/engine/speech.cpp:939
+#, c-format
+msgid "To %s, %s pages: %s"
+msgstr ""
+
+#: modules/engine/speech.cpp:944
+#, c-format
+msgid "%s pages: %s"
+msgstr ""
+
+#: modules/engine/speech.cpp:947
+#, c-format
+msgid "You paged %s with ‘%s’"
+msgstr ""
+
+#: modules/engine/speech.cpp:991
+#, c-format
+msgid "You sense %s%s%s"
+msgstr ""
+
+#: modules/engine/speech.cpp:1060
 msgid "Whisper to whom?"
 msgstr ""
 
-#: modules/engine/speech.cpp:1049
+#: modules/engine/speech.cpp:1064
 msgid "Emit to whom?"
 msgstr ""
 
-#: modules/engine/speech.cpp:1053
+#: modules/engine/speech.cpp:1068
 msgid "Emit except to whom?"
 msgstr ""
 
-#: modules/engine/speech.cpp:1092 modules/engine/speech.cpp:1412
+#: modules/engine/speech.cpp:1107 modules/engine/speech.cpp:1427
 msgid "You are too far away to do that."
 msgstr ""
 
-#: modules/engine/speech.cpp:1494
+#: modules/engine/speech.cpp:1184
+#, c-format
+msgid "%s whispers “%s”"
+msgstr ""
+
+#: modules/engine/speech.cpp:1473
+#, c-format
+msgid "Sorry, you are too far away to contact %s."
+msgstr ""
+
+#: modules/engine/speech.cpp:1509
 msgid "No one to whisper to."
+msgstr ""
+
+#: modules/engine/speech.cpp:1717 modules/engine/speech.cpp:1729
+#, c-format
+msgid "%s senses “%s%s”"
+msgstr ""
+
+#: modules/engine/speech.cpp:1724
+#, c-format
+msgid "%s senses “%s %s”"
+msgstr ""
+
+#: modules/engine/speech.cpp:1735 modules/engine/speech.cpp:1796
+#, c-format
+msgid "You whisper “%s” to %s."
+msgstr ""
+
+#: modules/engine/speech.cpp:1778 modules/engine/speech.cpp:1790
+#, c-format
+msgid "%s sense “%s%s”"
+msgstr ""
+
+#: modules/engine/speech.cpp:1785
+#, c-format
+msgid "%s sense “%s %s”"
 msgstr ""
 
 #: modules/engine/vattr.cpp:127

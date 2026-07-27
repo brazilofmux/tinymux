@@ -550,7 +550,7 @@ static void look_exits(dbref player, dbref loc, const UTF8 *exit_name)
                         ; // Nothing.
                     }
                     *e = '\0';
-                    notify(player, tprintf(T("%s leads to %s."), buff, Moniker(Location(thing))));
+                    notify(player, tprintf(M_("%s leads to %s."), buff, Moniker(Location(thing))));
                 }
             }
         }
@@ -1644,39 +1644,39 @@ static void debug_examine(dbref player, dbref thing)
     ATTR *pattr;
     UTF8 *cp;
 
-    notify(player, tprintf(T("Number  = %d"), thing));
+    notify(player, tprintf(M_("Number  = %d"), thing));
     if (!Good_obj(thing))
     {
         return;
     }
 
-    notify(player, tprintf(T("Name    = %s"), Name(thing)));
-    notify(player, tprintf(T("Location= %d"), Location(thing)));
-    notify(player, tprintf(T("Contents= %d"), Contents(thing)));
-    notify(player, tprintf(T("Exits   = %d"), Exits(thing)));
-    notify(player, tprintf(T("Link    = %d"), Link(thing)));
-    notify(player, tprintf(T("Next    = %d"), Next(thing)));
-    notify(player, tprintf(T("Owner   = %d"), Owner(thing)));
-    notify(player, tprintf(T("Pennies = %d"), Pennies(thing)));
-    notify(player, tprintf(T("Zone    = %d"), Zone(thing)));
+    notify(player, tprintf(M_("Name    = %s"), Name(thing)));
+    notify(player, tprintf(M_("Location= %d"), Location(thing)));
+    notify(player, tprintf(M_("Contents= %d"), Contents(thing)));
+    notify(player, tprintf(M_("Exits   = %d"), Exits(thing)));
+    notify(player, tprintf(M_("Link    = %d"), Link(thing)));
+    notify(player, tprintf(M_("Next    = %d"), Next(thing)));
+    notify(player, tprintf(M_("Owner   = %d"), Owner(thing)));
+    notify(player, tprintf(M_("Pennies = %d"), Pennies(thing)));
+    notify(player, tprintf(M_("Zone    = %d"), Zone(thing)));
     buf = flag_description(player, thing);
-    notify(player, tprintf(T("Flags   = %s"), buf));
+    notify(player, tprintf(M_("Flags   = %s"), buf));
     free_mbuf(buf);
     buf = powers_list(player, thing);
-    notify(player, tprintf(T("Powers  = %s"), buf));
+    notify(player, tprintf(M_("Powers  = %s"), buf));
     free_lbuf(buf);
 #ifdef REALITY_LVLS
     buf = rxlevel_description(player, thing);
-    notify(player, tprintf(T("RxLevel = %s"), buf));
+    notify(player, tprintf(M_("RxLevel = %s"), buf));
     free_lbuf(buf);
     buf = txlevel_description(player, thing);
-    notify(player, tprintf(T("TxLevel = %s"), buf));
+    notify(player, tprintf(M_("TxLevel = %s"), buf));
     free_lbuf(buf);
 #endif // REALITY_LVLS
     buf = atr_get("debug_examine.1530", thing, A_LOCK, &aowner, &aflags);
     pBoolExp = parse_boolexp(player, buf, true);
     free_lbuf(buf);
-    notify(player, tprintf(T("Lock    = %s"), unparse_boolexp(player, pBoolExp)));
+    notify(player, tprintf(M_("Lock    = %s"), unparse_boolexp(player, pBoolExp)));
     free_boolexp(pBoolExp);
 
     buf = alloc_lbuf("debug_dexamine");
@@ -1916,13 +1916,13 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                 buf2 = alloc_lbuf("do_examine.pub_name");
                 mux_strncpy(buf2, Moniker(thing), LBUF_SIZE-1);
                 notify(executor,
-                    tprintf(T("%s is owned by %s"),
+                    tprintf(M_("%s is owned by %s"),
                     buf2, Moniker(Owner(thing))));
                 free_lbuf(buf2);
             }
             else
             {
-                notify(executor, tprintf(T("Owned by %s"), Moniker(Owner(thing))));
+                notify(executor, tprintf(M_("Owned by %s"), Moniker(Owner(thing))));
             }
             return;
         }
@@ -1977,7 +1977,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         buf = unparse_boolexp(executor, pBoolExp);
         free_boolexp(pBoolExp);
         mux_strncpy(buf2, Moniker(Owner(thing)), LBUF_SIZE-1);
-        notify(executor, tprintf(T("Owner: %s  Key: %s %s: %d"), buf2, buf, capCoins, Pennies(thing)));
+        notify(executor, tprintf(M_("Owner: %s  Key: %s %s: %d"), buf2, buf, capCoins, Pennies(thing)));
         free_lbuf(buf2);
 
         // Print the zone
@@ -1985,7 +1985,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         if (mudconf.have_zones)
         {
             buf2 = unparse_object(executor, Zone(thing), false);
-            notify(executor, tprintf(T("Zone: %s"), buf2));
+            notify(executor, tprintf(M_("Zone: %s"), buf2));
             free_lbuf(buf2);
         }
 
@@ -1995,20 +1995,20 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         if (loc != NOTHING)
         {
             buf2 = unparse_object(executor, loc, false);
-            notify(executor, tprintf(T("Parent: %s"), buf2));
+            notify(executor, tprintf(M_("Parent: %s"), buf2));
             free_lbuf(buf2);
         }
         buf2 = powers_list(executor, thing);
-        notify(executor, tprintf(T("Powers: %s"), buf2));
+        notify(executor, tprintf(M_("Powers: %s"), buf2));
         free_lbuf(buf2);
 #ifdef REALITY_LVLS
         // Show Rx and Tx levels.
         //
         buf2 = rxlevel_description(executor, thing);
-        notify(executor, tprintf(T("RxLevel: %s"), buf2));
+        notify(executor, tprintf(M_("RxLevel: %s"), buf2));
         free_mbuf(buf2);
         buf2 = txlevel_description(executor, thing);
-        notify(executor, tprintf(T("TxLevel: %s"), buf2));
+        notify(executor, tprintf(M_("TxLevel: %s"), buf2));
         free_mbuf(buf2);
 #endif // REALITY_LVLS
     }
@@ -2061,7 +2061,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             if (Dropto(thing) != NOTHING)
             {
                 buf2 = unparse_object(executor, Dropto(thing), false);
-                notify(executor, tprintf(T("Dropped objects go to: %s"), buf2));
+                notify(executor, tprintf(M_("Dropped objects go to: %s"), buf2));
                 free_lbuf(buf2);
             }
             break;
@@ -2090,7 +2090,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
             //
             loc = Home(thing);
             buf2 = unparse_object(executor, loc, false);
-            notify(executor, tprintf(T("Home: %s"), buf2));
+            notify(executor, tprintf(M_("Home: %s"), buf2));
             free_lbuf(buf2);
 
             // print location if player can link to it
@@ -2102,14 +2102,14 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
                   || Linkable(executor, loc)))
             {
                 buf2 = unparse_object(executor, loc, false);
-                notify(executor, tprintf(T("Location: %s"), buf2));
+                notify(executor, tprintf(M_("Location: %s"), buf2));
                 free_lbuf(buf2);
             }
             break;
 
         case TYPE_EXIT:
             buf2 = unparse_object(executor, Exits(thing), false);
-            notify(executor, tprintf(T("Source: %s"), buf2));
+            notify(executor, tprintf(M_("Source: %s"), buf2));
             free_lbuf(buf2);
 
             // print destination.
@@ -2124,7 +2124,7 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
 
             default:
                 buf2 = unparse_object(executor, Location(thing), false);
-                notify(executor, tprintf(T("Destination: %s"), buf2));
+                notify(executor, tprintf(M_("Destination: %s"), buf2));
                 free_lbuf(buf2);
                 break;
             }
@@ -2154,12 +2154,12 @@ void do_examine(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         {
             buf2 = alloc_lbuf("do_examine.pub_name");
             mux_strncpy(buf2, Moniker(thing), LBUF_SIZE-1);
-            notify(executor, tprintf(T("%s is owned by %s"), buf2, Moniker(Owner(thing))));
+            notify(executor, tprintf(M_("%s is owned by %s"), buf2, Moniker(Owner(thing))));
             free_lbuf(buf2);
         }
         else
         {
-            notify(executor, tprintf(T("Owned by %s"), Moniker(Owner(thing))));
+            notify(executor, tprintf(M_("Owned by %s"), Moniker(Owner(thing))));
         }
     }
 }
@@ -2172,7 +2172,7 @@ void do_score(dbref executor, dbref caller, dbref enactor, int eval, int key)
     UNUSED_PARAMETER(key);
 
     int nPennies = Pennies(executor);
-    notify(executor, tprintf(T("You have %d %s."), nPennies,
+    notify(executor, tprintf(M_("You have %d %s."), nPennies,
         (1 == nPennies) ?  mudconf.one_coin : mudconf.many_coins));
 }
 
@@ -2268,7 +2268,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        notify(executor, tprintf(T("You don’t have enough %s."),
+        notify(executor, tprintf(M_("You don’t have enough %s."),
             mudconf.many_coins));
         return;
     }
@@ -2294,7 +2294,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
                 if (Dropto(i) == thing)
                 {
                     exit = unparse_object(executor, i, false);
-                    notify(executor, tprintf(T("%s [dropto]"), exit));
+                    notify(executor, tprintf(M_("%s [dropto]"), exit));
                     free_lbuf(exit);
                     count++;
                 }
@@ -2304,7 +2304,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
                 if (Home(i) == thing)
                 {
                     exit = unparse_object(executor, i, false);
-                    notify(executor, tprintf(T("%s [home]"), exit));
+                    notify(executor, tprintf(M_("%s [home]"), exit));
                     free_lbuf(exit);
                     count++;
                 }
@@ -2316,7 +2316,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
             if (Parent(i) == thing)
             {
                 exit = unparse_object(executor, i, false);
-                notify(executor, tprintf(T("%s [parent]"), exit));
+                notify(executor, tprintf(M_("%s [parent]"), exit));
                 free_lbuf(exit);
                 count++;
             }
@@ -2337,7 +2337,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
                         continue;
                     }
                     exit = unparse_object(executor, i, false);
-                    notify(executor, tprintf(T("%s [forward]"), exit));
+                    notify(executor, tprintf(M_("%s [forward]"), exit));
                     free_lbuf(exit);
                     count++;
                 }
@@ -2345,7 +2345,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
         }
     }
     free_lbuf(message);
-    notify(executor, tprintf(T("%d entrance%s found."), count,
+    notify(executor, tprintf(M_("%d entrance%s found."), count,
         (count == 1) ? "" : "s"));
 }
 
@@ -2537,7 +2537,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
 
         if (!isExit(what))
         {
-            notify(player, tprintf(T("  %s is listening. [%s]"),
+            notify(player, tprintf(M_("  %s is listening. [%s]"),
                 Moniker(what), buf));
         }
         else
@@ -2549,7 +2549,7 @@ static void sweep_check(dbref player, dbref what, int key, bool is_loc)
                 ; // Nothing.
             }
             *bp = '\0';
-            notify(player, tprintf(T("  %s is listening. [%s]"), buf2, buf));
+            notify(player, tprintf(M_("  %s is listening. [%s]"), buf2, buf));
             free_lbuf(buf2);
         }
         free_lbuf(buf);
@@ -3121,7 +3121,7 @@ void do_decomp
                 pBoolExp = parse_boolexp(executor, got, true);
                 UTF8 *ltext = unparse_boolexp_decompile(executor, pBoolExp);
                 free_boolexp(pBoolExp);
-                notify(executor, tprintf(T("@lock/%s %s=%s"), pattr->name,
+                notify(executor, tprintf(M_("@lock/%s %s=%s"), pattr->name,
                     pShortAndStrippedName, ltext));
             }
             else
@@ -3139,7 +3139,7 @@ void do_decomp
                 }
                 else
                 {
-                    notify(executor, tprintf(T("@wait 0={%c%s %s=%s}"), ((ca < A_USER_START) ?
+                    notify(executor, tprintf(M_("@wait 0={%c%s %s=%s}"), ((ca < A_USER_START) ?
                         '@' : '&'), buff, pShortAndStrippedName, translate_string(got, true)));
                 }
 
