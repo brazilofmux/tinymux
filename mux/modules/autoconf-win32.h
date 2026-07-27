@@ -27,8 +27,11 @@
 /* #undef HAVE_NDIR_H */
 
 /* Define if GNU gettext NLS is enabled. */
-/* Deliberately off on Windows -- see mux/include/autoconf-win32.h (#1419). */
-/* #undef HAVE_NLS */
+/* Served by mux_nls.cpp's built-in catalog reader on Windows, not libintl
+   -- see mux/include/autoconf-win32.h (#1419).  Must match that file: the
+   modules call M_() too, and a mismatch would translate the server's
+   messages but not the modules'. */
+#define HAVE_NLS 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
 /* #undef HAVE_STDINT_H */
