@@ -563,7 +563,7 @@ static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
         auto ph = reinterpret_cast<POOLHDR *>(raw);
         if (ph->magicnum != pools[poolnum].poolmagic)
         {
-            alloc_notify(player, T("*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"));
+            alloc_notify(player, M_("*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"));
             alloc_notify(player, tprintf(T("%d free %s (before corruption)"),
                        numfree, text));
             return;
@@ -583,7 +583,7 @@ static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
 
 void list_bufstats(dbref player)
 {
-    alloc_notify(player, T("Buffer Stats  Size      InUse      Total           Allocs   Lost"));
+    alloc_notify(player, M_("Buffer Stats  Size      InUse      Total           Allocs   Lost"));
     for (int i = 0; i < NUM_POOLS; i++)
     {
         UTF8 buff[MBUF_SIZE];
