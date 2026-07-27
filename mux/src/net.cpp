@@ -2635,7 +2635,7 @@ void do_command(DESC *d, UTF8 *command)
         ltaEnd.GetUTC();
         if (alarm_clock.alarmed)
         {
-            notify(d->player, T("GAME: Expensive activity abbreviated."));
+            notify(d->player, M_("GAME: Expensive activity abbreviated."));
 
             // Same exemption as the queue-side guard in cque.cpp: use
             // Wizard() (via drv_Wizard — owner inheritance), not the raw
@@ -3634,8 +3634,8 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
 
 void mux_subnets::listinfo(dbref player)
 {
-    notify(player, T("----- Site Access -----"));
-    notify(player, T("Address                                            Status"));
+    notify(player, M_("----- Site Access -----"));
+    notify(player, M_("Address                                            Status"));
 
     UTF8 *sAddress = alloc_lbuf("list_sites.addr");
     UTF8 *sControl = alloc_lbuf("list_sites.control");

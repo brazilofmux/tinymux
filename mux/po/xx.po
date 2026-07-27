@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 07:12-0600\n"
+"POT-Creation-Date: 2026-07-27 07:15-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -505,7 +505,7 @@ msgstr "[xx] String truncated"
 msgid "Include nesting limit exceeded."
 msgstr "[xx] Include nesting limit exceeded."
 
-#: modules/engine/cque.cpp:314
+#: modules/engine/cque.cpp:314 src/net.cpp:2638
 msgid "GAME: Expensive activity abbreviated."
 msgstr "[xx] GAME: Expensive activity abbreviated."
 
@@ -2103,3 +2103,32 @@ msgstr "[xx] Enabled."
 #: modules/engine/wiz.cpp:900
 msgid "Disabled."
 msgstr "[xx] Disabled."
+
+#: src/ganl_adapter.cpp:3096
+msgid "@email: Another email is already in progress."
+msgstr "[xx] @email: Another email is already in progress."
+
+#: src/ganl_adapter.cpp:3141 src/ganl_adapter.cpp:3186
+#: src/ganl_adapter.cpp:3234
+msgid "@email: Unable to connect to mailserver, aborting!"
+msgstr "[xx] @email: Unable to connect to mailserver, aborting!"
+
+#: src/ganl_adapter.cpp:3167 src/ganl_adapter.cpp:3195
+msgid "@email: Unable to register socket with network engine."
+msgstr "[xx] @email: Unable to register socket with network engine."
+
+#: src/ganl_adapter.cpp:4160
+msgid "DNS slave restarted."
+msgstr "[xx] DNS slave restarted."
+
+#: src/ganl_adapter.cpp:4162
+msgid "DNS slave failed to start."
+msgstr "[xx] DNS slave failed to start."
+
+#: src/net.cpp:3637
+msgid "----- Site Access -----"
+msgstr "[xx] ----- Site Access -----"
+
+#: src/net.cpp:3638
+msgid "Address                                            Status"
+msgstr "[xx] Address                                            Status"
