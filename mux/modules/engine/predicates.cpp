@@ -285,7 +285,7 @@ bool canpayfees(dbref player, dbref who, int pennies, int quota)
             else
             {
                 notify(player,
-                    T("Sorry, that player’s building contract has run out."));
+                    M_("Sorry, that player’s building contract has run out."));
             }
             return false;
         }
@@ -1441,7 +1441,7 @@ void do_quitprog(dbref player, dbref caller, dbref enactor, int eval, int key, U
         program = nullptr;
     }
     atr_clr(doer, A_PROGCMD);
-    notify(player, T("@program cleared."));
+    notify(player, M_("@program cleared."));
     notify(doer, M_("Your @program has been terminated."));
 }
 
@@ -2920,7 +2920,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
         target = lookup_player(executor, reference_name, 1);
         if (!Good_obj(target))
         {
-            raw_notify(executor, T("No such player."));
+            raw_notify(executor, M_("No such player."));
             return;
         }
 
@@ -2957,7 +2957,7 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
                 raw_notify(executor, tprintf(T("%-12s %-20s %-20s"),
                             T("Reference"), T("Target"), T("Owner")));
                 raw_notify(executor,
-                        T("-------------------------------------------------------"));
+                        M_("-------------------------------------------------------"));
             }
 
             UTF8 *object_buf =
@@ -2972,12 +2972,12 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
 
     if (!match_found)
     {
-        raw_notify(executor, T("GAME: No references found."));
+        raw_notify(executor, M_("GAME: No references found."));
     }
     else
     {
         raw_notify(executor,
-                T("---------------- End of Reference List ----------------"));
+                M_("---------------- End of Reference List ----------------"));
     }
 }
 
@@ -3091,7 +3091,7 @@ void do_reference
             if (  !Wizard(executor)
                && ThrottleReferences(executor))
             {
-                raw_notify(executor, T("References requested too quickly."));
+                raw_notify(executor, M_("References requested too quickly."));
                 return;
             }
         }
@@ -3136,23 +3136,23 @@ void do_reference
 
     if (Delete == eOperation)
     {
-        raw_notify(executor, T("Reference cleared."));
+        raw_notify(executor, M_("Reference cleared."));
     }
     else if (Update == eOperation)
     {
-        raw_notify(executor, T("Reference updated."));
+        raw_notify(executor, M_("Reference updated."));
     }
     else if (Redundant == eOperation)
     {
-        raw_notify(executor, T("That reference already exists."));
+        raw_notify(executor, M_("That reference already exists."));
     }
     else if (NotFound == eOperation)
     {
-        raw_notify(executor, T("No such reference to clear."));
+        raw_notify(executor, M_("No such reference to clear."));
     }
     else if (Add == eOperation)
     {
-        raw_notify(executor, T("Reference added."));
+        raw_notify(executor, M_("Reference added."));
     }
     else if (OutOfMemory == eOperation)
     {

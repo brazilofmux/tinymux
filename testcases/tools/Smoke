@@ -88,7 +88,20 @@ fi
 # Clean ALL prior state unconditionally.
 # ---------------------------------------------------------------------------
 
-rm -rf "$DATA" logs text smoke.fail
+# smoke.fail is deliberately NOT removed here (#1446's lesson, second
+# instance).  It is the only surviving record of the previous failure, and
+# the failure-collection path below already clears it before writing a new
+# one -- so a new failure still replaces the old, but a *successful* run no
+# longer destroys evidence on its way past.
+#
+# This matters most for exactly the bugs it kept eating: #1433 is an
+# intermittent SEGV at roughly 0.4% per process and #1340 is a crash that
+# stopped reproducing, and for both of those a backtrace and the tail of
+# smoke.log are the whole game.  Observed live -- a route-2 SEGV was
+# collected into smoke.fail/ and then deleted by the next (clean) run
+# before it could be read.
+#
+rm -rf "$DATA" logs text
 rm -f smoke.conf alias.conf compat.conf shutdown.status
 rm -f smoke.log netmux.log
 rm -rf bin
