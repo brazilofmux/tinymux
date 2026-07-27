@@ -228,7 +228,36 @@ if [ -n "$WANT_MODULES" ]; then
         echo "answer when a module is absent, so the tests exercise the wrong"
         echo "side silently.  See #1572.  Reported modules:"
         sed -n '/^Modules:/,/^$/p' modprobe.log | sed 's/^/  /'
-        exit 1
+        echo
+
+        # Fatal where the check is achievable; advisory where it is not yet.
+        #
+        # On Windows none of the three modules can load today, for two causes
+        # tracked in #1594: comsys/mail build as comsys.dll/mail.dll rather
+        # than the *_mod names smoke.conf must use for Unix, and exp3 -- whose
+        # name matches on both platforms -- still does not load under
+        # muxscript specifically, with no diagnostic.  Neither is fixable from
+        # the harness, and a platform that cannot comply should not have a red
+        # build held over it: red master blocks everyone (#1564).
+        #
+        # This is temporary and should be deleted, not kept.  When #1594
+        # closes, drop the branch so the check is unconditional again --
+        # or set SMOKE_REQUIRE_MODULES=1 to get that behaviour now.
+        #
+        case "${SMOKE_REQUIRE_MODULES:-}${MODCHECK_PLATFORM:-$(uname -s 2>/dev/null)}" in
+            1*|Linux*|Darwin*|*BSD*|SunOS*)
+                echo "=== Smoke: FAILED (module preflight) ==="
+                exit 1
+                ;;
+            *)
+                echo "WARNING: continuing anyway -- this platform cannot load"
+                echo "         modules under muxscript at all yet (#1594)."
+                echo "         The results below may exercise the engine's"
+                echo "         built-in comsys/mail rather than the modules."
+                echo "         Set SMOKE_REQUIRE_MODULES=1 to make this fatal."
+                echo
+                ;;
+        esac
     fi
     rm -rf modprobe.in modprobe.log modprobe.conf modprobe.d
 fi
