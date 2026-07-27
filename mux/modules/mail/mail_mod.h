@@ -233,6 +233,11 @@ private:
     bool mail_match(struct mail *mp, struct mail_selector &ms, int num);
     int  player_folder(dbref player);
     void set_player_folder(dbref player, int fnum);
+    // Attribute write that reports a refusal instead of discarding it
+    // (#1620).  All four Mailcurf/Mailfolders writes go through this.
+    void set_attr_checked(dbref player, const UTF8 *pAttr,
+        const UTF8 *pValue, const UTF8 *pWhere);
+
     const UTF8 *get_folder_name(dbref player, int fld);
     int  get_folder_number(dbref player, const UTF8 *name);
     int  parse_folder(dbref player, const UTF8 *folder_string);
