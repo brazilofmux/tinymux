@@ -197,11 +197,14 @@
 /* #undef HAVE_NETDB_H */
 
 /* Define if GNU gettext NLS is enabled. */
-/* Deliberately off on Windows: there is no libintl in the MSVC build, so
-   mux_nls.h takes its non-NLS branch and T()/S_()/N_()/M_() stay plain
-   UTF-8 casts (#1419).  Enabling it would need libintl vendored and
-   mux_nls.cpp's bindtextdomain path tested. */
-/* #undef HAVE_NLS */
+/* On Windows this is served by mux_nls.cpp's built-in catalog reader, not
+   by libintl: HAVE_LIBINTL_H stays undefined above, which is what selects
+   that path.  It reads the same game/locale/<lang>/LC_MESSAGES/tinymux.mo
+   catalogs libintl would, honours LC_ALL/LC_MESSAGES/LANG in the same
+   order, and returns the msgid unchanged when no catalog matches -- so a
+   build with no catalogs installed behaves exactly as it did before this
+   was defined (#1419). */
+#define HAVE_NLS 1
 
 /* Define to 1 if you have the <netinet/in.h> header file. */
 /* #undef HAVE_NETINET_IN_H */
