@@ -82,6 +82,66 @@ msgstr "[xx] Player has a lot of attributes. Performing destruction immediately.
 msgid "Weird object type cannot be destroyed."
 msgstr "[xx] Weird object type cannot be destroyed."
 
+msgid "You see nothing special."
+msgstr "[xx] You see nothing special."
+
+msgid "Contents:"
+msgstr "[xx] Contents:"
+
+msgid "You can’t look outside."
+msgstr "[xx] You can’t look outside."
+
+msgid "No matching attributes found."
+msgstr "[xx] No matching attributes found."
+
+msgid "Exits:"
+msgstr "[xx] Exits:"
+
+msgid "No exits."
+msgstr "[xx] No exits."
+
+msgid "Destination: *UNLINKED*"
+msgstr "[xx] Destination: *UNLINKED*"
+
+msgid "You aren’t carrying anything."
+msgstr "[xx] You aren’t carrying anything."
+
+msgid "You are carrying:"
+msgstr "[xx] You are carrying:"
+
+msgid "Sweeping location..."
+msgstr "[xx] Sweeping location..."
+
+msgid "Sweeping exits..."
+msgstr "[xx] Sweeping exits..."
+
+msgid "Sweeping inventory..."
+msgstr "[xx] Sweeping inventory..."
+
+msgid "Sweeping carried exits..."
+msgstr "[xx] Sweeping carried exits..."
+
+msgid "Sweep complete."
+msgstr "[xx] Sweep complete."
+
+msgid "What command do you want to scan for?"
+msgstr "[xx] What command do you want to scan for?"
+
+msgid "Check yourself and your inventory:"
+msgstr "[xx] Check yourself and your inventory:"
+
+msgid "Check your location and its contents:"
+msgstr "[xx] Check your location and its contents:"
+
+msgid "Checking zone:"
+msgstr "[xx] Checking zone:"
+
+msgid "Checking master room:"
+msgstr "[xx] Checking master room:"
+
+msgid "Scan complete."
+msgstr "[xx] Scan complete."
+
 msgid "I don’t see that here."
 msgstr "[xx] I don’t see that here."
 
@@ -127,11 +187,11 @@ msgstr "[xx] You don’t have that!"
 msgid "I don’t know which you mean!"
 msgstr "[xx] I don’t know which you mean!"
 
-msgid "Dropped."
-msgstr "[xx] Dropped."
-
 msgid "You can’t drop that."
 msgstr "[xx] You can’t drop that."
+
+msgid "Dropped."
+msgstr "[xx] Dropped."
 
 msgid "Exit dropped."
 msgstr "[xx] Exit dropped."
@@ -192,3 +252,33 @@ msgstr "[xx] You can’t give anything to an exit."
 
 msgid "Guests really don’t need money or anything."
 msgstr "[xx] Guests really don’t need money or anything."
+
+msgid "Sorry. Gagged players cannot speak."
+msgstr "[xx] Sorry. Gagged players cannot speak."
+
+msgid "Sorry, robots may not speak in public."
+msgstr "[xx] Sorry, robots may not speak in public."
+
+msgid "Sorry, you may not speak in this place."
+msgstr "[xx] Sorry, you may not speak in this place."
+
+msgid "You have not paged anyone."
+msgstr "[xx] You have not paged anyone."
+
+msgid "No one to page."
+msgstr "[xx] No one to page."
+
+msgid "Whisper to whom?"
+msgstr "[xx] Whisper to whom?"
+
+msgid "Emit to whom?"
+msgstr "[xx] Emit to whom?"
+
+msgid "Emit except to whom?"
+msgstr "[xx] Emit except to whom?"
+
+msgid "You are too far away to do that."
+msgstr "[xx] You are too far away to do that."
+
+msgid "No one to whisper to."
+msgstr "[xx] No one to whisper to."
