@@ -80,7 +80,7 @@ void do_chzone
 
     if (!mudconf.have_zones)
     {
-        notify(executor, T("Zones disabled."));
+        notify(executor, M_("Zones disabled."));
         return;
     }
     init_match(executor, name, NOTYPE);
@@ -109,7 +109,7 @@ void do_chzone
         if (  !isThing(zone)
            && !isRoom(zone))
         {
-            notify(executor, T("Invalid zone object type."));
+            notify(executor, M_("Invalid zone object type."));
             return;
         }
     }
@@ -119,7 +119,7 @@ void do_chzone
        && !check_zone_handler(executor, thing, true)
        && db[executor].owner != db[thing].owner)
     {
-        notify(executor, T("You don’t have the power to shift reality."));
+        notify(executor, M_("You don’t have the power to shift reality."));
         return;
     }
 
@@ -136,7 +136,7 @@ void do_chzone
        && !Controls(executor, zone)
        && db[executor].owner != db[zone].owner)
     {
-        notify(executor, T("You cannot move that object to that zone."));
+        notify(executor, M_("You cannot move that object to that zone."));
         return;
     }
 
@@ -146,7 +146,7 @@ void do_chzone
        && isRoom(zone)
        && !isRoom(thing))
     {
-        notify(executor, T("Only rooms may be zoned to other rooms."));
+        notify(executor, M_("Only rooms may be zoned to other rooms."));
         return;
     }
 
@@ -178,7 +178,7 @@ void do_chzone
         Powers(thing) = 0;
         Powers2(thing) = 0;
     }
-    notify(executor, T("Zone changed."));
+    notify(executor, M_("Zone changed."));
 }
 
 void do_name
@@ -213,7 +213,7 @@ void do_name
     if (  nargs < 2
        || '\0' == newname[0])
     {
-        notify_quiet(executor, T("Give it what new name?"));
+        notify_quiet(executor, M_("Give it what new name?"));
         return;
     }
 
@@ -225,13 +225,13 @@ void do_name
         if (  !ValidatePlayerName(buff)
            || !badname_check(buff))
         {
-            notify_quiet(executor, T("You can’t use that name."));
+            notify_quiet(executor, M_("You can’t use that name."));
             free_lbuf(buff);
             return;
         }
         if (!protectname_check(buff, thing))
         {
-            notify_quiet(executor, T("That name is protected by another player."));
+            notify_quiet(executor, M_("That name is protected by another player."));
             free_lbuf(buff);
             return;
         }
@@ -243,7 +243,7 @@ void do_name
                && (  jwho != thing
                   || bAlias))
             {
-                notify_quiet(executor, T("That name is already in use."));
+                notify_quiet(executor, M_("That name is already in use."));
                 free_lbuf(buff);
                 return;
             }
@@ -266,7 +266,7 @@ void do_name
         add_player_name(thing, Name(thing), false);
         if (!Quiet(executor) && !Quiet(thing))
         {
-            notify_quiet(executor, T("Name set."));
+            notify_quiet(executor, M_("Name set."));
         }
         free_lbuf(buff);
         return;
@@ -292,7 +292,7 @@ void do_name
 
         if (!bValid)
         {
-            notify_quiet(executor, T("That is not a reasonable name."));
+            notify_quiet(executor, M_("That is not a reasonable name."));
             return;
         }
 
@@ -302,7 +302,7 @@ void do_name
         set_modified(thing);
         if (!Quiet(executor) && !Quiet(thing))
         {
-            notify_quiet(executor, T("Name set."));
+            notify_quiet(executor, M_("Name set."));
         }
     }
 }
@@ -371,7 +371,7 @@ void do_alias
             atr_clr(thing, A_ALIAS);
             if (!Quiet(executor))
             {
-                notify_quiet(executor, T("Alias removed."));
+                notify_quiet(executor, M_("Alias removed."));
             }
         }
         else if (  (nPlayer = lookup_player_name(trimalias, bAlias)) != NOTHING
@@ -380,12 +380,12 @@ void do_alias
         {
             // Make sure new alias isn't already in use.
             //
-            notify_quiet(executor, T("That name is already in use."));
+            notify_quiet(executor, M_("That name is already in use."));
         }
         else if ( !(  badname_check(trimalias)
                    && ValidatePlayerName(trimalias)))
         {
-            notify_quiet(executor, T("That’s a silly name for a player!"));
+            notify_quiet(executor, M_("That’s a silly name for a player!"));
         }
         else
         {
@@ -397,7 +397,7 @@ void do_alias
             {
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, T("Alias set."));
+                    notify_quiet(executor, M_("Alias set."));
                 }
             }
             else
@@ -424,7 +424,7 @@ void do_alias
             atr_add(thing, A_ALIAS, alias, Owner(executor), aflags);
             if (!Quiet(executor))
             {
-                notify_quiet(executor, T("Set."));
+                notify_quiet(executor, M_("Set."));
             }
         }
     }
@@ -476,12 +476,12 @@ void do_forwardlist
         set_modified(thing);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Forwardlist removed."));
+            notify_quiet(executor, M_("Forwardlist removed."));
         }
     }
     else if (!fwdlist_ck(executor, thing, A_FORWARDLIST, newlist))
     {
-        notify_quiet(executor, T("Invalid forwardlist."));
+        notify_quiet(executor, M_("Invalid forwardlist."));
         return;
     }
     else
@@ -489,7 +489,7 @@ void do_forwardlist
         atr_add(thing, A_FORWARDLIST, newlist, Owner(executor), aflags);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Set."));
+            notify_quiet(executor, M_("Set."));
         }
     }
 }
@@ -530,7 +530,7 @@ void do_lock
         int aflags;
         if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
-            notify_quiet(executor, T("Attribute not present on object."));
+            notify_quiet(executor, M_("Attribute not present on object."));
             return;
         }
 
@@ -541,7 +541,7 @@ void do_lock
             if (  !Quiet(executor)
                && !Quiet(thing))
             {
-                notify_quiet(executor, T("Attribute locked."));
+                notify_quiet(executor, M_("Attribute locked."));
             }
         }
         else
@@ -557,17 +557,17 @@ void do_lock
     switch (thing)
     {
     case NOTHING:
-        notify_quiet(executor, T("I don’t see what you want to lock!"));
+        notify_quiet(executor, M_("I don’t see what you want to lock!"));
         return;
 
     case AMBIGUOUS:
-        notify_quiet(executor, T("I don’t know which one you want to lock!"));
+        notify_quiet(executor, M_("I don’t know which one you want to lock!"));
         return;
 
     default:
         if (!Controls(executor, thing))
         {
-            notify_quiet(executor, T("You can’t lock that!"));
+            notify_quiet(executor, M_("You can’t lock that!"));
             return;
         }
         if (NoModify(thing) && !WizRoy(executor))
@@ -582,7 +582,7 @@ void do_lock
     struct boolexp *okey = parse_boolexp(executor, pRestrictedKeyText, false);
     if (okey == TRUE_BOOLEXP)
     {
-        notify_quiet(executor, T("I don’t understand that key."));
+        notify_quiet(executor, M_("I don’t understand that key."));
     }
     else
     {
@@ -596,7 +596,7 @@ void do_lock
         if (  !Quiet(executor)
            && !Quiet(thing))
         {
-            notify_quiet(executor, T("Locked."));
+            notify_quiet(executor, M_("Locked."));
         }
     }
     free_boolexp(okey);
@@ -627,7 +627,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, U
         int aflags;
         if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
-            notify_quiet(executor, T("Attribute not present on object."));
+            notify_quiet(executor, M_("Attribute not present on object."));
             return;
         }
 
@@ -638,7 +638,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             if (  !Quiet(executor)
                && !Quiet(thing))
             {
-                notify_quiet(executor, T("Attribute unlocked."));
+                notify_quiet(executor, M_("Attribute unlocked."));
             }
         }
         else
@@ -661,7 +661,7 @@ void do_unlock(dbref executor, dbref caller, dbref enactor, int eval, int key, U
         set_modified(thing);
         if (!Quiet(executor) && !Quiet(thing))
         {
-            notify_quiet(executor, T("Unlocked."));
+            notify_quiet(executor, M_("Unlocked."));
         }
     }
 }
@@ -690,12 +690,12 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     {
     case NOTHING:
 
-        notify_quiet(executor, T("Unlink what?"));
+        notify_quiet(executor, M_("Unlink what?"));
         break;
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, T("I don’t know which one you mean!"));
+        notify_quiet(executor, M_("I don’t know which one you mean!"));
         break;
 
     default:
@@ -717,7 +717,7 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, U
                 s_Location(exit, NOTHING);
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, T("Unlinked."));
+                    notify_quiet(executor, M_("Unlinked."));
                 }
                 giveto(Owner(exit), mudconf.linkcost);
                 route_invalidate();
@@ -728,13 +728,13 @@ void do_unlink(dbref executor, dbref caller, dbref enactor, int eval, int key, U
                 s_Dropto(exit, NOTHING);
                 if (!Quiet(executor))
                 {
-                    notify_quiet(executor, T("Dropto removed."));
+                    notify_quiet(executor, M_("Dropto removed."));
                 }
                 break;
 
             default:
 
-                notify_quiet(executor, T("You can’t unlink that!"));
+                notify_quiet(executor, M_("You can’t unlink that!"));
                 break;
             }
         }
@@ -914,13 +914,13 @@ void do_chown
         int   aflags;
         if (!atr_get_info(thing, ap->number, &aowner, &aflags))
         {
-            notify_quiet(executor, T("Attribute not present on object."));
+            notify_quiet(executor, M_("Attribute not present on object."));
             return;
         }
         bDoit = false;
         if (nOwnerNew == NOTHING)
         {
-            notify_quiet(executor, T("I couldn’t find that player."));
+            notify_quiet(executor, M_("I couldn’t find that player."));
         }
         else if (  God(thing)
                 && !God(executor))
@@ -978,7 +978,7 @@ void do_chown
         atr_add(thing, ap->number, buff, nOwnerNew, aflags);
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Attribute owner changed."));
+            notify_quiet(executor, M_("Attribute owner changed."));
         }
         return;
     }
@@ -1000,12 +1000,12 @@ void do_chown
     {
     case NOTHING:
 
-        notify_quiet(executor, T("You don’t have that!"));
+        notify_quiet(executor, M_("You don’t have that!"));
         return;
 
     case AMBIGUOUS:
 
-        notify_quiet(executor, T("I don’t know which you mean!"));
+        notify_quiet(executor, M_("I don’t know which you mean!"));
         return;
     }
     nOwnerOrig = Owner(thing);
@@ -1058,16 +1058,16 @@ void do_chown
     if (  isGarbage(thing)
        && bPlayerControlsThing)
     {
-        notify_quiet(executor, T("You shouldn’t be rummaging through the garbage."));
+        notify_quiet(executor, M_("You shouldn’t be rummaging through the garbage."));
     }
     else if (nOwnerNew == NOTHING)
     {
-        notify_quiet(executor, T("I couldn’t find that player."));
+        notify_quiet(executor, M_("I couldn’t find that player."));
     }
     else if (  isPlayer(thing)
             && !God(executor))
     {
-        notify_quiet(executor, T("Players always own themselves."));
+        notify_quiet(executor, M_("Players always own themselves."));
     }
     else if (  (  !bPlayerControlsThing
                && !Chown_Any(executor)
@@ -1166,7 +1166,7 @@ static void set_attr_internal(dbref player, dbref thing, int attrnum, const UTF8
            && !Quiet(player)
            && !Quiet(thing))
         {
-            notify_quiet(player, T("Set."));
+            notify_quiet(player, M_("Set."));
         }
     }
     else
@@ -1181,7 +1181,7 @@ bool copy_attr(dbref executor, attr_info &src, attr_info &dest, int key)
        || !Good_obj(dest.m_object)
        || nullptr == src.m_attr)
     {
-        notify_quiet(executor, T("No match."));
+        notify_quiet(executor, M_("No match."));
         return false;
     }
     if (  nullptr == dest.m_attr
@@ -1237,7 +1237,7 @@ void do_set
             if (  !flagname
                || flagname[0] == '\0')
             {
-                notify_quiet(executor, T("I don’t know what you want to set!"));
+                notify_quiet(executor, M_("I don’t know what you want to set!"));
                 return;
             }
 
@@ -1255,7 +1255,7 @@ void do_set
             int flagvalue;
             if (!search_nametab(executor, indiv_attraccess_nametab, flagname, &flagvalue))
             {
-                notify_quiet(executor, T("You can’t set that!"));
+                notify_quiet(executor, M_("You can’t set that!"));
                 return;
             }
 
@@ -1263,7 +1263,7 @@ void do_set
             //
             if (!atr_get_info(thing, pattr->number, &aowner, &aflags))
             {
-                notify_quiet(executor, T("Attribute not present on object."));
+                notify_quiet(executor, M_("Attribute not present on object."));
                 return;
             }
 
@@ -1286,11 +1286,11 @@ void do_set
                 {
                     if (clear)
                     {
-                        notify_quiet(executor, T("Already cleared."));
+                        notify_quiet(executor, M_("Already cleared."));
                     }
                     else
                     {
-                        notify_quiet(executor, T("Already set."));
+                        notify_quiet(executor, M_("Already set."));
                     }
                 }
                 return;
@@ -1320,11 +1320,11 @@ void do_set
             {
                 if (clear)
                 {
-                    notify_quiet(executor, T("Cleared."));
+                    notify_quiet(executor, M_("Cleared."));
                 }
                 else
                 {
-                    notify_quiet(executor, T("Set."));
+                    notify_quiet(executor, M_("Set."));
                 }
             }
             return;
@@ -1353,7 +1353,7 @@ void do_set
         int atr = mkattr(executor, flagname);
         if (atr <= 0)
         {
-            notify_quiet(executor, T("Couldn’t create attribute."));
+            notify_quiet(executor, M_("Couldn’t create attribute."));
             return;
         }
         pattr = atr_num(atr);
@@ -1415,7 +1415,7 @@ void do_power
     if (  !flag
        || !*flag)
     {
-        notify_quiet(executor, T("I don’t know what you want to set!"));
+        notify_quiet(executor, M_("I don’t know what you want to set!"));
         return;
     }
 
@@ -1508,7 +1508,7 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         if (!parse_attrib_wild(executor, oldpair, &thing, false, false, false))
         {
             olist_pop();
-            notify_quiet(executor, T("No match."));
+            notify_quiet(executor, M_("No match."));
             return;
         }
 
@@ -1565,7 +1565,7 @@ void do_cpattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
         else
         {
-            notify_quiet(executor, T("No match."));
+            notify_quiet(executor, M_("No match."));
         }
     }
 }
@@ -1584,7 +1584,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
     //
     if (nargs < 2)
     {
-        notify_quiet(executor, T("Nothing to do."));
+        notify_quiet(executor, M_("Nothing to do."));
         return;
     }
 
@@ -1674,7 +1674,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
         else
         {
-            notify_quiet(executor, T("Not copied anywhere. Non-existent attribute."));
+            notify_quiet(executor, M_("Not copied anywhere. Non-existent attribute."));
         }
     }
     else if (  in_anum > 0
@@ -1700,7 +1700,7 @@ void do_mvattr(dbref executor, dbref caller, dbref enactor, int eval, int key,
         }
         else
         {
-            notify_quiet(executor, T("Could not remove old attribute. Non-existent attribute."));
+            notify_quiet(executor, M_("Could not remove old attribute. Non-existent attribute."));
         }
     }
 }
@@ -1994,7 +1994,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (  nargs < 1
        || !*args[0])
     {
-        notify_quiet(executor, T("Nothing to do."));
+        notify_quiet(executor, M_("Nothing to do."));
         return;
     }
     from = args[0];
@@ -2007,7 +2007,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
        || !*it
        || !parse_attrib_wild(executor, it, &thing, false, false, false))
     {
-        notify_quiet(executor, T("No match."));
+        notify_quiet(executor, M_("No match."));
         return;
     }
 
@@ -2059,7 +2059,7 @@ void do_edit(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (!bGotOne)
     {
-        notify_quiet(executor, T("No matching attributes."));
+        notify_quiet(executor, M_("No matching attributes."));
     }
     else
     {
@@ -2083,13 +2083,13 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
        || !*it
        || !parse_attrib_wild(executor, it, &thing, false, false, true))
     {
-        notify_quiet(executor, T("No match."));
+        notify_quiet(executor, M_("No match."));
         return;
     }
     if (  mudconf.safe_wipe
        && has_flag(NOTHING, thing, T("SAFE")))
     {
-        notify_quiet(executor, T("SAFE objects may not be @wiped."));
+        notify_quiet(executor, M_("SAFE objects may not be @wiped."));
         return;
     }
 
@@ -2120,7 +2120,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (!bGotOne)
     {
-        notify_quiet(executor, T("No matching attributes."));
+        notify_quiet(executor, M_("No matching attributes."));
     }
     else
     {
@@ -2128,7 +2128,7 @@ void do_wipe(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         handle_ears(thing, could_hear, Hearer(thing));
         if (!Quiet(executor))
         {
-            notify_quiet(executor, T("Wiped."));
+            notify_quiet(executor, M_("Wiped."));
         }
     }
 }
@@ -2145,7 +2145,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (!( parse_attrib(executor, object, &thing, &pattr)
         && pattr))
     {
-        notify_quiet(executor, T("No match."));
+        notify_quiet(executor, M_("No match."));
         return;
     }
 
@@ -2229,7 +2229,7 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (  !(key & TRIG_QUIET)
        && !Quiet(executor))
     {
-        notify_quiet(executor, T("Triggered."));
+        notify_quiet(executor, M_("Triggered."));
     }
 }
 
@@ -2253,7 +2253,7 @@ void do_include(dbref executor, dbref caller, dbref enactor, int eval, int key,
     if (!( parse_attrib(executor, object, &thing, &pattr)
         && pattr))
     {
-        notify_quiet(executor, T("No match."));
+        notify_quiet(executor, M_("No match."));
         return;
     }
 
@@ -2412,7 +2412,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     if (!could_doit(executor, thing, A_LUSE))
     {
         did_it(executor, thing, A_UFAIL,
-               T("You can’t figure out how to use that."),
+               M_("You can’t figure out how to use that."),
                A_OUFAIL, nullptr, A_AUFAIL, 0, nullptr, 0);
         return;
     }
@@ -2442,7 +2442,7 @@ void do_use(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
     }
     else
     {
-        notify_quiet(executor, T("You can’t figure out how to use that."));
+        notify_quiet(executor, M_("You can’t figure out how to use that."));
     }
 }
 
@@ -2498,7 +2498,7 @@ void do_setvattr
 
     if (anum <= 0)
     {
-        notify_quiet(executor, T("That’s not a good name for an attribute."));
+        notify_quiet(executor, M_("That’s not a good name for an attribute."));
         return;
     }
     do_setattr(executor, caller, enactor, 0, anum, 2, s, arg2, nullptr, 0);
