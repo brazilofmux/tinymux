@@ -350,18 +350,19 @@ void do_link
             s_Home(thing, nHomeNew);
             if (!Quiet(executor))
             {
-                LBuf buff1 = LBuf_Src("do_link.notify");
-                UTF8 *bp = buff1.get();
-
-                UTF8 *p;
-                p = tprintf(M_("Home of %s(#%d) changed from "), Name(thing), thing);
-                safe_str(p, buff1, &bp);
-                p = tprintf(M_("%s(#%d) to "), Name(nHomeOrig), nHomeOrig);
-                safe_str(p, buff1, &bp);
-                p = tprintf(M_("%s(#%d)."), Name(nHomeNew), nHomeNew);
-                safe_str(p, buff1, &bp);
-                *bp = '\0';
-                notify_quiet(executor, buff1);
+                // One msgid for one sentence.  Assembling this from three
+                // M_() fragments made the clause order untranslatable: a
+                // translator cannot move "changed from" relative to the
+                // subject, the trailing spaces are load-bearing and invisible
+                // in a PO editor, and "%s(#%d) to " carries no context at all
+                // on its own.  Whole-sentence formats are the point of the
+                // Phase 3 slices (#1419).
+                //
+                notify_quiet(executor, tprintf(
+                    M_("Home of %s(#%d) changed from %s(#%d) to %s(#%d)."),
+                    Name(thing), thing,
+                    Name(nHomeOrig), nHomeOrig,
+                    Name(nHomeNew), nHomeNew));
             }
         }
         break;
@@ -407,18 +408,13 @@ void do_link
             s_Dropto(thing, room);
             if (!Quiet(executor))
             {
-                LBuf buff1 = LBuf_Src("do_link2.notify");
-                UTF8 *bp = buff1.get();
-
-                UTF8 *p;
-                p = tprintf(M_("Dropto of %s(#%d) changed from "), Name(thing), thing);
-                safe_str(p, buff1, &bp);
-                p = tprintf(M_("%s(#%d) to "), Name(nDroptoOrig), nDroptoOrig);
-                safe_str(p, buff1, &bp);
-                p = tprintf(M_("%s(#%d)."), Name(nDroptoNew), nDroptoNew);
-                safe_str(p, buff1, &bp);
-                *bp = '\0';
-                notify_quiet(executor, buff1);
+                // Same whole-sentence treatment as the home case above (#1419).
+                //
+                notify_quiet(executor, tprintf(
+                    M_("Dropto of %s(#%d) changed from %s(#%d) to %s(#%d)."),
+                    Name(thing), thing,
+                    Name(nDroptoOrig), nDroptoOrig,
+                    Name(nDroptoNew), nDroptoNew));
             }
         }
         break;
