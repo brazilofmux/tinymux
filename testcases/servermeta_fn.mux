@@ -1,9 +1,9 @@
 #
 # servermeta_fn.mux - Coverage for server and descriptor meta builtins.
 #
-# Sixteen builtins with no reference anywhere in the corpus (#1160):
+# Seventeen builtins with no reference anywhere in the corpus (#1160):
 #
-#   restartsecs  restarttime  mtime  writetime
+#   restartsecs  restarttime  ctime  mtime  writetime
 #   motd  doing  beep  fcount
 #   colordepth  height  terminfo
 #   host  idle  ports  siteinfo  lports
@@ -117,11 +117,42 @@
         not(strmatch(setr(4, lports()), #-1*))
       )=
   {
-    @log smoke=TC005: host idle ports siteinfo lports. Succeeded.;
+    @log smoke=TC005: host idle ports siteinfo lports. Succeeded.
+  },
+  {
+    @log smoke=TC005: host idle ports siteinfo lports. Failed (host=%q0 idle=%q1 ports=%q2 site=%q3 lports=%q4).
+  }
+-
+#
+# Test Case #6 - ctime(), the last builtin in the corpus with no reference
+# at all outside the SQL family (#1160).
+#
+# fun_ctime has three branches and this exercises each, because "returns
+# something" would pass on any of them:
+#
+#   nfargs == 1, Examinable   -> the object's CREATED attribute
+#   nfargs == 0               -> the same for the executor, via a
+#                                different path that does not match a name
+#   bad object                -> a match failure, not an empty string
+#
+# The third is the one worth having: safe_match_result must answer #-1
+# rather than falling through to an empty CREATED, which is how a
+# not-found object would otherwise read as a legitimately blank timestamp.
+#
+&tr.tc006 test_servermeta_fn=
+  @if cand(
+        gt(strlen(setr(0, ctime(me))), 0),
+        not(strmatch(%q0, #-1*)),
+        gt(strlen(setr(1, ctime())), 0),
+        not(strmatch(%q1, #-1*)),
+        strmatch(setr(2, ctime(no_such_object_here_1160)), #-1*)
+      )=
+  {
+    @log smoke=TC006: ctime self no-arg and bad object. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: host idle ports siteinfo lports. Failed (host=%q0 idle=%q1 ports=%q2 site=%q3 lports=%q4).;
+    @log smoke=TC006: ctime self no-arg and bad object. Failed (self=%q0 noarg=%q1 bad=%q2).;
     @trig me/tr.done
   }
 -
