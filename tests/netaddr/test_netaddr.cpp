@@ -15,10 +15,20 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
-#include <arpa/inet.h>   // inet_pton, for building test sockaddrs
 
 #include "autoconf.h"
 #include "config.h"
+
+// inet_pton, for building test sockaddrs.  On Windows it comes from
+// <ws2tcpip.h>, which config.h has already included above along with
+// winsock2.h in the required order; <arpa/inet.h> does not exist there.
+// config.h therefore has to precede this, which is why the include moved
+// below it rather than being wrapped in place (#1441).
+//
+#if !defined(WIN32)
+#include <arpa/inet.h>
+#endif
+
 #include "alloc.h"
 
 // --- Driver-global stubs ---------------------------------------------------
@@ -232,6 +242,23 @@ static void expect_addr(const char *subnet, MUX_SOCKADDR addr, bool inside,
 
 int main()
 {
+    // Windows requires winsock to be initialised before getaddrinfo and
+    // inet_pton will do anything.  netmux does this during startup, so
+    // netaddr.cpp itself has no reason to; a standalone harness does.
+    //
+    // Without it the IPv4 cases still pass -- they never enter the resolver --
+    // while every IPv6 parse_subnet() fails, which reads convincingly like an
+    // IPv6 bug rather than an uninitialised library (#1441).
+    //
+#if defined(WIN32)
+    WSADATA wsa;
+    if (0 != WSAStartup(MAKEWORD(2, 2), &wsa))
+    {
+        printf("FATAL: WSAStartup failed\n");
+        return 1;
+    }
+#endif
+
     pool_init(POOL_LBUF, LBUF_SIZE);
 
     // --- #799: nested CIDRs that share a base address -----------------------
