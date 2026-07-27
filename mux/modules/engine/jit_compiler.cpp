@@ -3790,6 +3790,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 if (status != LUA_OK) {
                     lua_pop(L, 1);
+                    // No live result block on failure (#1519).
+                    ec->lua_result_count = 0;
                     out[0] = '\0';
                     ctx->x[10] = 0;
                     return -1;
