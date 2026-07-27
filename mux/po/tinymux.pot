@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 06:54-0600\n"
+"POT-Creation-Date: 2026-07-27 12:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -489,7 +489,7 @@ msgstr ""
 msgid "Include nesting limit exceeded."
 msgstr ""
 
-#: modules/engine/cque.cpp:314
+#: modules/engine/cque.cpp:314 src/net.cpp:2638
 msgid "GAME: Expensive activity abbreviated."
 msgstr ""
 
@@ -740,20 +740,20 @@ msgstr ""
 msgid "That is not a reasonable name."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4493
-msgid "*** Logins are disabled."
-msgstr ""
-
-#: modules/engine/engine_com.cpp:4507
-msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
-msgstr ""
-
 #: modules/engine/engine.cpp:29
 msgid "Dumping in progress. Try again later."
 msgstr ""
 
 #: modules/engine/engine.cpp:33
 msgid "Dumping..."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4493
+msgid "*** Logins are disabled."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4507
+msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
 msgstr ""
 
 #: modules/engine/flags.cpp:26
@@ -2074,4 +2074,32 @@ msgstr ""
 
 #: modules/engine/wiz.cpp:900
 msgid "Disabled."
+msgstr ""
+
+#: src/ganl_adapter.cpp:3096
+msgid "@email: Another email is already in progress."
+msgstr ""
+
+#: src/ganl_adapter.cpp:3141 src/ganl_adapter.cpp:3186
+msgid "@email: Unable to connect to mailserver, aborting!"
+msgstr ""
+
+#: src/ganl_adapter.cpp:3167 src/ganl_adapter.cpp:3195
+msgid "@email: Unable to register socket with network engine."
+msgstr ""
+
+#: src/ganl_adapter.cpp:4160
+msgid "DNS slave restarted."
+msgstr ""
+
+#: src/ganl_adapter.cpp:4162
+msgid "DNS slave failed to start."
+msgstr ""
+
+#: src/net.cpp:3637
+msgid "----- Site Access -----"
+msgstr ""
+
+#: src/net.cpp:3638
+msgid "Address                                            Status"
 msgstr ""
