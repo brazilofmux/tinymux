@@ -308,7 +308,15 @@ FUNCTION(fun_hasquota)
         int aflags;
         dbref aowner;
         LBuf quota = LBuf_Adopt(atr_get("fun_hasquota.313", who, A_RQUOTA, &aowner, &aflags));
-        int rq = mux_atoi64(quota);
+        // int64_t, not int (#1402).  Both sides of this comparison come from
+        // mux_atoi64, but only the request kept its width -- narrowing the
+        // stored quota made the two operands disagree about their own range.
+        // Measured before this change, with RQUOTA=4294967296 the value
+        // truncated to 0 and hasquota(player,1) answered 0, denying a player
+        // holding four billion quota; RQUOTA=2147483648 truncated to INT_MIN
+        // and denied every request outright.
+        //
+        int64_t rq = mux_atoi64(quota);
         bResult = (rq >= mux_atoi64(fargs[1]));
     }
     safe_bool(bResult, buff, bufc);

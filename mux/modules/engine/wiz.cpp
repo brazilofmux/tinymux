@@ -656,7 +656,32 @@ void do_poor(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         return;
     }
 
-    int amt = mux_atoi64(arg1);
+    // Clamp rather than narrow (#1402).
+    //
+    // The limit is compared against Pennies(), which is int, so a value outside
+    // int range cannot describe any wealth a player is able to hold -- an
+    // over-large limit reads as "reduce nobody" and must behave that way.
+    // `int amt = mux_atoi64(arg1)` instead wrapped, and turned the argument
+    // into its own opposite: measured before this change, `@poor 4294967296`
+    // truncated to 0 and set *every* player's money to zero, and
+    // `@poor 2147483648` truncated to INT_MIN and left every player holding
+    // -2147483648 pennies.  is_rational() above accepts both, and nothing
+    // downstream range-checks, so the wrap was the whole of the arithmetic.
+    //
+    // Same shape as fun_shl's defeated `0 <= b && b < 64` in #1404: the
+    // truncation happens before anything can judge the value.  Here there was
+    // no check at all to defeat, which is why it corrupted instead of erroring.
+    //
+    int64_t wanted = mux_atoi64(arg1);
+    if (INT_MAX < wanted)
+    {
+        wanted = INT_MAX;
+    }
+    else if (wanted < INT_MIN)
+    {
+        wanted = INT_MIN;
+    }
+    int amt = static_cast<int>(wanted);
     int curamt;
     dbref a;
     DO_WHOLE_DB(a)

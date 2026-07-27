@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-nls test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-nls test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-vacuous test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-format test-nls test-vacuous test-narrowing test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -80,6 +80,27 @@ test-smoke-ast: test-smoke
 test-vacuous:
 	@echo "==> Checking for smoke cases that cannot fail"
 	cd testcases && python3 tools/check_vacuous.py
+
+# 64-bit parse into a narrower destination (#1402).
+#
+# mux_atoi64() returns int64_t; storing that somewhere narrower truncates
+# BEFORE anything can judge the value, so a range check placed after it passes
+# on input it was written to reject.  #1404 fixed three instances (justify
+# width, printf %d, fun_shl's count); these cover @poor and hasquota().
+#
+# Not smoke cases, for two different reasons: @poor is CA_GOD and walks the
+# whole database, so a tr.tc* case would be refused and would also rewrite
+# every other test's money; hasquota() needs `quotas yes`, which smoke
+# deliberately runs without (powersee_fn.mux TC005 asserts the disabled path).
+# Each case therefore gets a throwaway game, as tests/luajit does.
+#
+# Worth knowing where these can fail: `int` is 32-bit everywhere, so these run
+# meaningfully on every host.  The rest of #1402 is `long`, which is 64-bit on
+# LP64 -- that half cannot fail on Linux or macOS at all, so its coverage only
+# means something on Windows.
+test-narrowing:
+	@echo "==> Running narrowing-destination tests"
+	bash tests/narrowing/run.sh
 
 # JIT q-register scope oracle (docs/plan-jit-evalbracket-lift.md).
 # Compares forced-JIT vs AST results for the scope/ordering shapes fixed
