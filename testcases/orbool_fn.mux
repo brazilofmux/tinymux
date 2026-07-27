@@ -20,8 +20,7 @@
         eq(orbool(0,1,0), 1)
       )=
   {
-    @log smoke=TC001: orbool() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: orbool() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: orbool() basic operations. Failed (orbool(0%,0%,0)=[orbool(0,0,0)] orbool(0%,1%,0)=[orbool(0,1,0)]).;

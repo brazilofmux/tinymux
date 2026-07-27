@@ -21,8 +21,7 @@
         eq(round(2.5,0), 2)
       )=
   {
-    @log smoke=TC001: round basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: round basic operations. Succeeded.
   },
   {
     @log smoke=TC001: round basic operations. Failed (round(2.345%,2)=[round(2.345,2)] round(-2.345%,2)=[round(-2.345,2)] round(2.5%,0)=[round(2.5,0)]).;

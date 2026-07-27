@@ -21,8 +21,7 @@
         eq(isint(abc), 0)
       )=
   {
-    @log smoke=TC001: isint basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: isint basic operations. Succeeded.
   },
   {
     @log smoke=TC001: isint basic operations. Failed (isint(5)=[isint(5)] isint(5.5)=[isint(5.5)] isint(abc)=[isint(abc)]).;

@@ -21,8 +21,7 @@
         eq(gte(1,2), 0)
       )=
   {
-    @log smoke=TC001: gte basic comparisons. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: gte basic comparisons. Succeeded.
   },
   {
     @log smoke=TC001: gte basic comparisons. Failed (gte(2%,1)=[gte(2,1)] gte(1%,1)=[gte(1,1)] gte(1%,2)=[gte(1,2)]).;

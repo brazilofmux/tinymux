@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 11:49+0000\n"
+"POT-Creation-Date: 2026-07-27 05:59-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,7 +44,9 @@ msgstr ""
 msgid "Sorry, queueing and triggering are not allowed now."
 msgstr ""
 
-#: modules/engine/command.cpp:1530 modules/engine/quota.cpp:176
+#: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2023
+#: modules/engine/quota.cpp:176 modules/engine/wiz.cpp:792
+#: modules/engine/wiz.cpp:880
 msgid "Illegal combination of switches."
 msgstr ""
 
@@ -98,6 +100,102 @@ msgstr ""
 
 #: modules/engine/command.cpp:4892
 msgid "Moniker set."
+msgstr ""
+
+#: modules/engine/cque.cpp:104
+msgid "Include nesting limit exceeded."
+msgstr ""
+
+#: modules/engine/cque.cpp:314
+msgid "GAME: Expensive activity abbreviated."
+msgstr ""
+
+#: modules/engine/cque.cpp:742
+msgid "Can’t specify /pid and /all"
+msgstr ""
+
+#: modules/engine/cque.cpp:747
+msgid "You must specify a PID."
+msgstr ""
+
+#: modules/engine/cque.cpp:757 modules/engine/cque.cpp:786
+msgid "PID must be a non-negative integer."
+msgstr ""
+
+#: modules/engine/cque.cpp:773
+msgid "PID is out of range."
+msgstr ""
+
+#: modules/engine/cque.cpp:794
+msgid "No queue entry with that PID was found."
+msgstr ""
+
+#: modules/engine/cque.cpp:838 modules/engine/cque.cpp:1996
+msgid "Can’t specify a target and /all"
+msgstr ""
+
+#: modules/engine/cque.cpp:1110
+msgid "Drained."
+msgstr ""
+
+#: modules/engine/cque.cpp:1114
+msgid "Notified."
+msgstr ""
+
+#: modules/engine/cque.cpp:1155
+msgid "Not enough money to queue command."
+msgstr ""
+
+#: modules/engine/cque.cpp:1654
+msgid "Invalid attribute."
+msgstr ""
+
+#: modules/engine/cque.cpp:1683
+msgid "Semaphore update failed."
+msgstr ""
+
+#: modules/engine/cque.cpp:1726
+msgid "Query server is not available."
+msgstr ""
+
+#: modules/engine/cque.cpp:1740 modules/engine/set.cpp:1184
+#: modules/engine/set.cpp:1511 modules/engine/set.cpp:1568
+#: modules/engine/set.cpp:2010 modules/engine/set.cpp:2086
+#: modules/engine/set.cpp:2148 modules/engine/set.cpp:2256
+#: modules/engine/wiz.cpp:72
+msgid "No match."
+msgstr ""
+
+#: modules/engine/cque.cpp:1755
+msgid "QUERY: No Query."
+msgstr ""
+
+#: modules/engine/cque.cpp:1764
+msgid "At least one query option is required."
+msgstr ""
+
+#: modules/engine/cque.cpp:1890
+msgid "----- Wait Queue -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:1916
+msgid "----- Semaphore Queue -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:1942
+msgid "----- SQL Queries -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:2047
+msgid "----- System Queue -----"
+msgstr ""
+
+#: modules/engine/cque.cpp:2102 modules/engine/cque.cpp:2122
+msgid "Warning: automatic dequeueing is disabled."
+msgstr ""
+
+#: modules/engine/cque.cpp:2141
+msgid "Object queue appended to player queue."
 msgstr ""
 
 #: modules/engine/create.cpp:34
@@ -443,7 +541,7 @@ msgstr ""
 msgid "Sorry."
 msgstr ""
 
-#: modules/engine/player.cpp:968
+#: modules/engine/player.cpp:968 modules/engine/wiz.cpp:549
 msgid "Password changed."
 msgstr ""
 
@@ -460,7 +558,7 @@ msgstr ""
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1504
+#: modules/engine/player.cpp:1504 modules/engine/wiz.cpp:503
 msgid "No such player."
 msgstr ""
 
@@ -766,13 +864,6 @@ msgstr ""
 msgid "Players always own themselves."
 msgstr ""
 
-#: modules/engine/set.cpp:1184 modules/engine/set.cpp:1511
-#: modules/engine/set.cpp:1568 modules/engine/set.cpp:2010
-#: modules/engine/set.cpp:2086 modules/engine/set.cpp:2148
-#: modules/engine/set.cpp:2256
-msgid "No match."
-msgstr ""
-
 #: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
 msgid "I don’t know what you want to set!"
 msgstr ""
@@ -855,4 +946,93 @@ msgstr ""
 
 #: modules/engine/speech.cpp:1494
 msgid "No one to whisper to."
+msgstr ""
+
+#: modules/engine/wiz.cpp:33
+msgid "You can’t teleport that."
+msgstr ""
+
+#: modules/engine/wiz.cpp:53 modules/engine/wiz.cpp:84
+#: modules/engine/wiz.cpp:120 modules/engine/wiz.cpp:181
+msgid "Bad destination."
+msgstr ""
+
+#: modules/engine/wiz.cpp:77
+msgid "I don’t know which destination you mean!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:157
+msgid "Teleported."
+msgstr ""
+
+#: modules/engine/wiz.cpp:196
+msgid "I can’t find that exit."
+msgstr ""
+
+#: modules/engine/wiz.cpp:382
+msgid "Try @destroy instead."
+msgstr ""
+
+#: modules/engine/wiz.cpp:387
+msgid "You can’t toad that player."
+msgstr ""
+
+#: modules/engine/wiz.cpp:536
+msgid "You cannot change that player’s password."
+msgstr ""
+
+#: modules/engine/wiz.cpp:580
+msgid "That’s not a number!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:602
+msgid "You cannot boot that player!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:609
+msgid "You can only boot off other players!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:691
+msgid "Cut."
+msgstr ""
+
+#: modules/engine/wiz.cpp:725
+msgid "Set: MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:734
+msgid "Set: Wizard MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:743
+msgid "Set: Down MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:752
+msgid "Set: Full MOTD."
+msgstr ""
+
+#: modules/engine/wiz.cpp:762
+msgid "----- motd file -----"
+msgstr ""
+
+#: modules/engine/wiz.cpp:764
+msgid "----- wizmotd file -----"
+msgstr ""
+
+#: modules/engine/wiz.cpp:766
+msgid "----- motd messages -----"
+msgstr ""
+
+#: modules/engine/wiz.cpp:826
+msgid "I don’t know about that flag."
+msgstr ""
+
+#: modules/engine/wiz.cpp:852
+msgid "Enabled."
+msgstr ""
+
+#: modules/engine/wiz.cpp:875
+msgid "Disabled."
 msgstr ""

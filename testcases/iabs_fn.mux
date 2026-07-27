@@ -21,8 +21,7 @@
         eq(iabs(0), 0)
       )=
   {
-    @log smoke=TC001: iabs() basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: iabs() basic operations. Succeeded.
   },
   {
     @log smoke=TC001: iabs() basic operations. Failed (iabs(-5)=[iabs(-5)] iabs(5)=[iabs(5)] iabs(0)=[iabs(0)]).;

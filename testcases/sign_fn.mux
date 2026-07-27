@@ -21,8 +21,7 @@
         eq(sign(5), 1)
       )=
   {
-    @log smoke=TC001: sign basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: sign basic operations. Succeeded.
   },
   {
     @log smoke=TC001: sign basic operations. Failed (sign(-5)=[sign(-5)] sign(0)=[sign(0)] sign(5)=[sign(5)]).;
