@@ -2165,7 +2165,26 @@ void do_comlast(dbref player, struct channel* ch, int arg)
 
 // Turn channel history timestamping on or off for the given channel.
 //
-static bool do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* arg)
+// Why these report a reason rather than a bool: both functions can fail for
+// several unrelated reasons, and do_chopen printed one message for all of
+// them -- so setting a history buffer on a channel with no object attached
+// complained that the VALUE was out of range.  "20" plainly satisfies "less
+// than or equal to 200", and the same command succeeds once an object is
+// attached, so the message sent people looking at the argument (#1555).
+//
+// It misleads twice over, because the downstream symptom does not point back
+// here either: until the buffer is set, cbuffer() reports 0 and crecall()
+// returns empty on a channel with obvious traffic, with no error at all.
+//
+enum chanlog_result
+{
+    CHANLOG_OK = 0,
+    CHANLOG_BAD_VALUE,    // not an integer, or outside the permitted range
+    CHANLOG_NO_OBJECT,    // channel has no @cset/object attached
+    CHANLOG_NO_ATTR       // the backing attribute could not be resolved
+};
+
+static chanlog_result do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* arg)
 {
     UNUSED_PARAMETER(player);
 
@@ -2179,7 +2198,7 @@ static bool do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* arg)
     {
         // arg is not "0" and not "1".
         //
-        return false;
+        return CHANLOG_BAD_VALUE;
     }
 
     struct channel* ch = select_channel(channel);
@@ -2187,7 +2206,7 @@ static bool do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* arg)
     {
         // No channel object has been set.
         //
-        return false;
+        return CHANLOG_NO_OBJECT;
     }
 
     dbref aowner;
@@ -2198,13 +2217,13 @@ static bool do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* arg)
     {
         // Logging isn't enabled.
         //
-        return false;
+        return CHANLOG_NO_ATTR;
     }
 
     const int atr = mkattr(GOD, T("LOG_TIMESTAMPS"));
     if (atr <= 0)
     {
-        return false;
+        return CHANLOG_NO_ATTR;
     }
 
     if (value)
@@ -2217,12 +2236,12 @@ static bool do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* arg)
         atr_clr(ch->chan_obj, atr);
     }
 
-    return true;
+    return CHANLOG_OK;
 }
 
 // Set number of entries for channel logging.
 //
-static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
+static chanlog_result do_chanlog(dbref player, UTF8* channel, UTF8* arg)
 {
     UNUSED_PARAMETER(player);
 
@@ -2231,7 +2250,7 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
         || !is_integer(arg, nullptr)
         || (value = mux_atoi64(arg)) > MAX_RECALL_REQUEST)
     {
-        return false;
+        return CHANLOG_BAD_VALUE;
     }
 
     if (value < 0)
@@ -2244,13 +2263,13 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     {
         // No channel object has been set.
         //
-        return false;
+        return CHANLOG_NO_OBJECT;
     }
 
     const int atr = mkattr(GOD, T("MAX_LOG"));
     if (atr <= 0)
     {
-        return false;
+        return CHANLOG_NO_ATTR;
     }
 
     dbref aowner;
@@ -2270,7 +2289,7 @@ static bool do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     }
     atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
             AF_CONST | AF_NOPROG | AF_NOPARSE);
-    return true;
+    return CHANLOG_OK;
 }
 
 // #1191: When the comsys module owns live channel state, softcode still
@@ -3745,24 +3764,44 @@ void do_chopen
         break;
 
     case CSET_LOG:
-        if (do_chanlog(executor, chan, value))
+        switch (do_chanlog(executor, chan, value))
         {
+        case CHANLOG_OK:
             msg = tprintf(T("@cset: Channel %s maximum history set."), chan);
-        }
-        else
-        {
+            break;
+
+        case CHANLOG_NO_OBJECT:
+            msg = tprintf(T("@cset: Channel %s has no channel object; set one with @cset/object before setting a history buffer."), chan);
+            break;
+
+        case CHANLOG_NO_ATTR:
+            msg = tprintf(T("@cset: Channel %s history could not be stored on its channel object."), chan);
+            break;
+
+        default:
             msg = tprintf(T("@cset: Maximum history must be a number less than or equal to %d."), MAX_RECALL_REQUEST);
+            break;
         }
         break;
 
     case CSET_LOG_TIME:
-        if (do_chanlog_timestamps(executor, chan, value))
+        switch (do_chanlog_timestamps(executor, chan, value))
         {
+        case CHANLOG_OK:
             msg = tprintf(T("@cset: Channel %s timestamp logging set."), chan);
-        }
-        else
-        {
-            msg = tprintf(T("@cset: Failed.  Is logging enabled for %s?"), chan);
+            break;
+
+        case CHANLOG_NO_OBJECT:
+            msg = tprintf(T("@cset: Channel %s has no channel object; set one with @cset/object before enabling timestamp logging."), chan);
+            break;
+
+        case CHANLOG_NO_ATTR:
+            msg = tprintf(T("@cset: Channel %s has no history buffer; set one with @cset/log before enabling timestamp logging."), chan);
+            break;
+
+        default:
+            msg = M_("@cset: Timestamp logging must be 0 or 1.");
+            break;
         }
     }
     sqlite_wt_channel(ch);

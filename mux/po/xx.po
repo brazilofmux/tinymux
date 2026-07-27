@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 07:15-0600\n"
+"POT-Creation-Date: 2026-07-27 07:21-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -354,80 +354,80 @@ msgstr "[xx] Channel does not have an object."
 msgid "Channel does not log."
 msgstr "[xx] Channel does not log."
 
-#: modules/engine/comsys.cpp:2396 modules/engine/comsys.cpp:2406
+#: modules/engine/comsys.cpp:2415 modules/engine/comsys.cpp:2425
 msgid "You need to specify a valid alias."
 msgstr "[xx] You need to specify a valid alias."
 
-#: modules/engine/comsys.cpp:2411
+#: modules/engine/comsys.cpp:2430
 msgid "You need to specify a channel."
 msgstr "[xx] You need to specify a channel."
 
-#: modules/engine/comsys.cpp:2425
+#: modules/engine/comsys.cpp:2444
 msgid "Sorry, this channel type does not allow you to join."
 msgstr "[xx] Sorry, this channel type does not allow you to join."
 
-#: modules/engine/comsys.cpp:2431
+#: modules/engine/comsys.cpp:2450
 msgid "Sorry, but you have reached the maximum number of aliases allowed."
 msgstr "[xx] Sorry, but you have reached the maximum number of aliases allowed."
 
-#: modules/engine/comsys.cpp:2483
+#: modules/engine/comsys.cpp:2502
 msgid "Need an alias to delete."
 msgstr "[xx] Need an alias to delete."
 
-#: modules/engine/comsys.cpp:2527
+#: modules/engine/comsys.cpp:2546
 msgid "Unable to find that alias."
 msgstr "[xx] Unable to find that alias."
 
-#: modules/engine/comsys.cpp:2588
+#: modules/engine/comsys.cpp:2607
 msgid "You must specify a channel to create."
 msgstr "[xx] You must specify a channel to create."
 
-#: modules/engine/comsys.cpp:2636
+#: modules/engine/comsys.cpp:2655
 msgid "Channel name is too long."
 msgstr "[xx] Channel name is too long."
 
-#: modules/engine/comsys.cpp:2732
+#: modules/engine/comsys.cpp:2751
 msgid "Warning: Only public channels and your channels will be shown."
 msgstr "[xx] Warning: Only public channels and your channels will be shown."
 
-#: modules/engine/comsys.cpp:2746
+#: modules/engine/comsys.cpp:2765
 msgid "*** Channel       Header          Owner           Access  Users Msgs"
 msgstr "[xx] *** Channel       Header          Owner           Access  Users Msgs"
 
-#: modules/engine/comsys.cpp:2834 modules/engine/comsys.cpp:4065
+#: modules/engine/comsys.cpp:2853 modules/engine/comsys.cpp:4104
 msgid "-- End of list of Channels --"
 msgstr "[xx] -- End of list of Channels --"
 
-#: modules/engine/comsys.cpp:2866
+#: modules/engine/comsys.cpp:2885
 msgid "Need an alias to do comtitle."
 msgstr "[xx] Need an alias to do comtitle."
 
-#: modules/engine/comsys.cpp:2875
+#: modules/engine/comsys.cpp:2894
 msgid "Unknown alias."
 msgstr "[xx] Unknown alias."
 
-#: modules/engine/comsys.cpp:2892
+#: modules/engine/comsys.cpp:2911
 msgid "You can not turn off comtitles on that channel."
 msgstr "[xx] You can not turn off comtitles on that channel."
 
-#: modules/engine/comsys.cpp:2921
+#: modules/engine/comsys.cpp:2940
 msgid "Illegal comsys alias, please delete."
 msgstr "[xx] Illegal comsys alias, please delete."
 
-#: modules/engine/comsys.cpp:2961
+#: modules/engine/comsys.cpp:2980
 msgid "Alias           Channel            Status   Title"
 msgstr "[xx] Alias           Channel            Status   Title"
 
-#: modules/engine/comsys.cpp:2992
+#: modules/engine/comsys.cpp:3011
 msgid "-- End of comlist --"
 msgstr "[xx] -- End of comlist --"
 
-#: modules/engine/comsys.cpp:3073
+#: modules/engine/comsys.cpp:3092
 msgid "Only options available are: on, off and who."
 msgstr "[xx] Only options available are: on, off and who."
 
-#: modules/engine/comsys.cpp:3398 modules/engine/comsys.cpp:3414
-#: modules/engine/comsys.cpp:3744 modules/engine/conf.cpp:2399
+#: modules/engine/comsys.cpp:3417 modules/engine/comsys.cpp:3433
+#: modules/engine/comsys.cpp:3763 modules/engine/conf.cpp:2399
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -437,59 +437,63 @@ msgstr "[xx] Only options available are: on, off and who."
 msgid "Set."
 msgstr "[xx] Set."
 
-#: modules/engine/comsys.cpp:3402
+#: modules/engine/comsys.cpp:3421
 msgid "Invalid player."
 msgstr "[xx] Invalid player."
 
-#: modules/engine/comsys.cpp:3418
+#: modules/engine/comsys.cpp:3437
 msgid "That is not a reasonable cost."
 msgstr "[xx] That is not a reasonable cost."
 
-#: modules/engine/comsys.cpp:3440
+#: modules/engine/comsys.cpp:3459
 msgid "@cpflags: Unknown Flag."
 msgstr "[xx] @cpflags: Unknown Flag."
 
-#: modules/engine/comsys.cpp:3448
+#: modules/engine/comsys.cpp:3467
 msgid "@cpflags: Set."
 msgstr "[xx] @cpflags: Set."
 
-#: modules/engine/comsys.cpp:3453
+#: modules/engine/comsys.cpp:3472
 msgid "@cpflags: Cleared."
 msgstr "[xx] @cpflags: Cleared."
 
-#: modules/engine/comsys.cpp:3476
+#: modules/engine/comsys.cpp:3495
 msgid "@coflags: Unknown Flag."
 msgstr "[xx] @coflags: Unknown Flag."
 
-#: modules/engine/comsys.cpp:3484
+#: modules/engine/comsys.cpp:3503
 msgid "@coflags: Set."
 msgstr "[xx] @coflags: Set."
 
-#: modules/engine/comsys.cpp:3489
+#: modules/engine/comsys.cpp:3508
 msgid "@coflags: Cleared."
 msgstr "[xx] @coflags: Cleared."
 
-#: modules/engine/comsys.cpp:3804
+#: modules/engine/comsys.cpp:3803
+msgid "@cset: Timestamp logging must be 0 or 1."
+msgstr "[xx] @cset: Timestamp logging must be 0 or 1."
+
+#: modules/engine/comsys.cpp:3843
 msgid "@cboot: Unknown channel."
 msgstr "[xx] @cboot: Unknown channel."
 
-#: modules/engine/comsys.cpp:3810
+#: modules/engine/comsys.cpp:3849
 msgid "@cboot: You are not on that channel."
 msgstr "[xx] @cboot: You are not on that channel."
 
-#: modules/engine/comsys.cpp:3816
+#: modules/engine/comsys.cpp:3855
 msgid "@cboot: You can’t do that!"
 msgstr "[xx] @cboot: You can’t do that!"
 
-#: modules/engine/comsys.cpp:3889
+#: modules/engine/comsys.cpp:3928
 msgid "That channel does not exist."
 msgstr "[xx] That channel does not exist."
 
-#: modules/engine/comsys.cpp:3966
+#: modules/engine/comsys.cpp:4005
 msgid "*** Channel       Owner           Header"
 msgstr "[xx] *** Channel       Owner           Header"
 
-#: modules/engine/comsys.cpp:3970
+#: modules/engine/comsys.cpp:4009
 msgid "*** Channel       Owner           Description"
 msgstr "[xx] *** Channel       Owner           Description"
 
