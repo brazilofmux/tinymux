@@ -127,11 +127,11 @@ msgstr "[xx] You don’t have that!"
 msgid "I don’t know which you mean!"
 msgstr "[xx] I don’t know which you mean!"
 
-msgid "Dropped."
-msgstr "[xx] Dropped."
-
 msgid "You can’t drop that."
 msgstr "[xx] You can’t drop that."
+
+msgid "Dropped."
+msgstr "[xx] Dropped."
 
 msgid "Exit dropped."
 msgstr "[xx] Exit dropped."
@@ -192,3 +192,156 @@ msgstr "[xx] You can’t give anything to an exit."
 
 msgid "Guests really don’t need money or anything."
 msgstr "[xx] Guests really don’t need money or anything."
+
+msgid "Zones disabled."
+msgstr "[xx] Zones disabled."
+
+msgid "Invalid zone object type."
+msgstr "[xx] Invalid zone object type."
+
+msgid "You don’t have the power to shift reality."
+msgstr "[xx] You don’t have the power to shift reality."
+
+msgid "You cannot move that object to that zone."
+msgstr "[xx] You cannot move that object to that zone."
+
+msgid "Only rooms may be zoned to other rooms."
+msgstr "[xx] Only rooms may be zoned to other rooms."
+
+msgid "Zone changed."
+msgstr "[xx] Zone changed."
+
+msgid "Give it what new name?"
+msgstr "[xx] Give it what new name?"
+
+msgid "You can’t use that name."
+msgstr "[xx] You can’t use that name."
+
+msgid "That name is protected by another player."
+msgstr "[xx] That name is protected by another player."
+
+msgid "That name is already in use."
+msgstr "[xx] That name is already in use."
+
+msgid "Name set."
+msgstr "[xx] Name set."
+
+msgid "That is not a reasonable name."
+msgstr "[xx] That is not a reasonable name."
+
+msgid "Alias removed."
+msgstr "[xx] Alias removed."
+
+msgid "That’s a silly name for a player!"
+msgstr "[xx] That’s a silly name for a player!"
+
+msgid "Alias set."
+msgstr "[xx] Alias set."
+
+msgid "Set."
+msgstr "[xx] Set."
+
+msgid "Forwardlist removed."
+msgstr "[xx] Forwardlist removed."
+
+msgid "Invalid forwardlist."
+msgstr "[xx] Invalid forwardlist."
+
+msgid "Attribute not present on object."
+msgstr "[xx] Attribute not present on object."
+
+msgid "Attribute locked."
+msgstr "[xx] Attribute locked."
+
+msgid "I don’t see what you want to lock!"
+msgstr "[xx] I don’t see what you want to lock!"
+
+msgid "I don’t know which one you want to lock!"
+msgstr "[xx] I don’t know which one you want to lock!"
+
+msgid "You can’t lock that!"
+msgstr "[xx] You can’t lock that!"
+
+msgid "I don’t understand that key."
+msgstr "[xx] I don’t understand that key."
+
+msgid "Locked."
+msgstr "[xx] Locked."
+
+msgid "Attribute unlocked."
+msgstr "[xx] Attribute unlocked."
+
+msgid "Unlocked."
+msgstr "[xx] Unlocked."
+
+msgid "Unlink what?"
+msgstr "[xx] Unlink what?"
+
+msgid "Unlinked."
+msgstr "[xx] Unlinked."
+
+msgid "Dropto removed."
+msgstr "[xx] Dropto removed."
+
+msgid "You can’t unlink that!"
+msgstr "[xx] You can’t unlink that!"
+
+msgid "I couldn’t find that player."
+msgstr "[xx] I couldn’t find that player."
+
+msgid "Attribute owner changed."
+msgstr "[xx] Attribute owner changed."
+
+msgid "You shouldn’t be rummaging through the garbage."
+msgstr "[xx] You shouldn’t be rummaging through the garbage."
+
+msgid "Players always own themselves."
+msgstr "[xx] Players always own themselves."
+
+msgid "No match."
+msgstr "[xx] No match."
+
+msgid "I don’t know what you want to set!"
+msgstr "[xx] I don’t know what you want to set!"
+
+msgid "You can’t set that!"
+msgstr "[xx] You can’t set that!"
+
+msgid "Already cleared."
+msgstr "[xx] Already cleared."
+
+msgid "Already set."
+msgstr "[xx] Already set."
+
+msgid "Cleared."
+msgstr "[xx] Cleared."
+
+msgid "Couldn’t create attribute."
+msgstr "[xx] Couldn’t create attribute."
+
+msgid "Nothing to do."
+msgstr "[xx] Nothing to do."
+
+msgid "Not copied anywhere. Non-existent attribute."
+msgstr "[xx] Not copied anywhere. Non-existent attribute."
+
+msgid "Could not remove old attribute. Non-existent attribute."
+msgstr "[xx] Could not remove old attribute. Non-existent attribute."
+
+msgid "No matching attributes."
+msgstr "[xx] No matching attributes."
+
+msgid "SAFE objects may not be @wiped."
+msgstr "[xx] SAFE objects may not be @wiped."
+
+msgid "Wiped."
+msgstr "[xx] Wiped."
+
+msgid "Triggered."
+msgstr "[xx] Triggered."
+
+msgid "You can’t figure out how to use that."
+msgstr "[xx] You can’t figure out how to use that."
+
+msgid "That’s not a good name for an attribute."
+msgstr "[xx] That’s not a good name for an attribute."
