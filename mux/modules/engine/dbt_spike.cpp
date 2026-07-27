@@ -48,7 +48,7 @@ CONFDATA  mudconf;
 // funmath.eo (not used by fun_add/sub/mul at runtime).
 // ---------------------------------------------------------------
 
-const UTF8 *OUT_OF_RANGE = T("#-1 OUT OF RANGE");
+const UTF8 *OUT_OF_RANGE = S_("#-1 OUT OF RANGE");
 
 mux_subnets::mux_subnets() : msnRoot(nullptr) {}
 mux_subnets::~mux_subnets() {}

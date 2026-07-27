@@ -2971,7 +2971,7 @@ FUNCTION(fun_doing)
         const dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
-            safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
+            safe_str(S_("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
 
@@ -2985,7 +2985,7 @@ FUNCTION(fun_doing)
                 return;
             }
         }
-        safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
+        safe_str(S_("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
     }
 }
 
@@ -3019,7 +3019,7 @@ FUNCTION(fun_host)
         const dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
-            safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
+            safe_str(S_("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
         d = find_desc_by_player(victim);
@@ -3033,11 +3033,11 @@ FUNCTION(fun_host)
     }
     if (isPort)
     {
-        safe_str(T("#-1 NOT AN ACTIVE PORT"), buff, bufc);
+        safe_str(S_("#-1 NOT AN ACTIVE PORT"), buff, bufc);
     }
     else
     {
-        safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
+        safe_str(S_("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
     }
 }
 
@@ -3074,7 +3074,7 @@ FUNCTION(fun_siteinfo)
         const dbref victim = lookup_player(executor, fargs[0], true);
         if (victim == NOTHING)
         {
-            safe_str(T("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
+            safe_str(S_("#-1 PLAYER DOES NOT EXIST"), buff, bufc);
             return;
         }
         d = find_desc_by_player(victim);
@@ -3104,11 +3104,11 @@ FUNCTION(fun_siteinfo)
 
     if (isPort)
     {
-        safe_str(T("#-1 NOT AN ACTIVE PORT"), buff, bufc);
+        safe_str(S_("#-1 NOT AN ACTIVE PORT"), buff, bufc);
     }
     else
     {
-        safe_str(T("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
+        safe_str(S_("#-1 NOT A CONNECTED PLAYER"), buff, bufc);
     }
 }
 

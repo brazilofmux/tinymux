@@ -468,11 +468,11 @@ void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
         }
         else
         {
-            safe_str(T("#-1 ERROR"), buff, bufc);
+            safe_str(S_("#-1 ERROR"), buff, bufc);
         }
     }
     else
     {
-        safe_str(T("#-1 TOPIC DOES NOT EXIST"), buff, bufc);
+        safe_str(S_("#-1 TOPIC DOES NOT EXIST"), buff, bufc);
     }
 }

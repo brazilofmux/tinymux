@@ -2112,7 +2112,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     {
         if (eval & EV_FMAND)
         {
-            safe_str(T("#-1 FUNCTION ("), buff, bufc);
+            safe_str(S_("#-1 FUNCTION ("), buff, bufc);
             safe_str(TempFun, buff, bufc);
             safe_str(T(") NOT FOUND"), buff, bufc);
         }
@@ -2133,15 +2133,15 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 
     if (mudconf.func_nest_lim <= mudstate.func_nest_lev)
     {
-        safe_str(T("#-1 FUNCTION RECURSION LIMIT EXCEEDED"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION RECURSION LIMIT EXCEEDED"), buff, bufc);
     }
     else if (mudconf.func_invk_lim <= mudstate.func_invk_ctr)
     {
-        safe_str(T("#-1 FUNCTION INVOCATION LIMIT EXCEEDED"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION INVOCATION LIMIT EXCEEDED"), buff, bufc);
     }
     else if (Going(executor))
     {
-        safe_str(T("#-1 BAD EXECUTOR"), buff, bufc);
+        safe_str(S_("#-1 BAD EXECUTOR"), buff, bufc);
     }
     else if (!check_access(executor, ufp ? ufp->perms : fp->perms))
     {
@@ -2153,7 +2153,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     }
     else if (alarm_clock.alarmed)
     {
-        safe_str(T("#-1 CPU LIMITED"), buff, bufc);
+        safe_str(S_("#-1 CPU LIMITED"), buff, bufc);
     }
     else if (ufp)
     {
@@ -2339,19 +2339,19 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             if (fp->minArgs == fp->maxArgs)
             {
                 safe_tprintf_str(buff, bufc,
-                    T("#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS"),
+                    S_("#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS"),
                     fp->name, fp->minArgs);
             }
             else if (fp->minArgs + 1 == fp->maxArgs)
             {
                 safe_tprintf_str(buff, bufc,
-                    T("#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS"),
+                    S_("#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS"),
                     fp->name, fp->minArgs, fp->maxArgs);
             }
             else
             {
                 safe_tprintf_str(buff, bufc,
-                    T("#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS"),
+                    S_("#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS"),
                     fp->name, fp->minArgs, fp->maxArgs);
             }
         }
@@ -2939,7 +2939,7 @@ FUNCTION(fun_asteval)
     UNUSED_PARAMETER(ncargs);
 
     if (nfargs < 1) {
-        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 TOO FEW ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -2979,7 +2979,7 @@ FUNCTION(fun_astbench)
     UNUSED_PARAMETER(ncargs);
 
     if (nfargs < 2) {
-        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 TOO FEW ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -2992,7 +2992,7 @@ FUNCTION(fun_astbench)
     // Parse once (shared by both paths).
     auto ast = ast_parse_string(expr, nLen);
     if (!ast) {
-        safe_str(T("#-1 PARSE FAILED"), buff, bufc);
+        safe_str(S_("#-1 PARSE FAILED"), buff, bufc);
         return;
     }
 

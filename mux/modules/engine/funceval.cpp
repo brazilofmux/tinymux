@@ -142,7 +142,7 @@ FUNCTION(fun_cwho)
     struct channel *ch = select_channel(fargs[0]);
     if (!ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !Comm_All(executor)
@@ -286,7 +286,7 @@ FUNCTION(fun_zone)
 
     if (!mudconf.have_zones)
     {
-        safe_str(T("#-1 ZONES DISABLED"), buff, bufc);
+        safe_str(S_("#-1 ZONES DISABLED"), buff, bufc);
         return;
     }
     dbref it = match_thing_quiet(executor, fargs[0]);
@@ -414,7 +414,7 @@ FUNCTION(fun_prompt)
     dbref target = match_thing(executor, fargs[0]);
     if (!Good_obj(target))
     {
-        safe_str(T("#-1 NO MATCH"), buff, bufc);
+        safe_str(S_("#-1 NO MATCH"), buff, bufc);
         return;
     }
     if (!Controls(executor, target) && !nearby(executor, target))
@@ -752,7 +752,7 @@ FUNCTION(fun_create)
 
     if (!name || !*name)
     {
-        safe_str(T("#-1 ILLEGAL NAME"), buff, bufc);
+        safe_str(S_("#-1 ILLEGAL NAME"), buff, bufc);
         return;
     }
     if (nfargs >= 3 && *fargs[2])
@@ -883,7 +883,7 @@ FUNCTION(fun_clone)
     }
     if (isPlayer(thing))
     {
-        safe_str(T("#-1 CANNOT CLONE PLAYERS"), buff, bufc);
+        safe_str(S_("#-1 CANNOT CLONE PLAYERS"), buff, bufc);
         return;
     }
 
@@ -1074,7 +1074,7 @@ FUNCTION(fun_textfile)
     if (  !cmdp
        || cmdp->handler != do_help)
     {
-        safe_str(T("#-1 NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -1154,7 +1154,7 @@ FUNCTION(fun_set)
             //
             if (flagname[0] == '\0')
             {
-                safe_str(T("#-1 UNSPECIFIED PARAMETER"), buff, bufc);
+                safe_str(S_("#-1 UNSPECIFIED PARAMETER"), buff, bufc);
                 return;
             }
 
@@ -1172,7 +1172,7 @@ FUNCTION(fun_set)
             int flagvalue;
             if (!search_nametab(executor, indiv_attraccess_nametab, flagname, &flagvalue))
             {
-                safe_str(T("#-1 CANNOT SET"), buff, bufc);
+                safe_str(S_("#-1 CANNOT SET"), buff, bufc);
                 return;
             }
 
@@ -1180,7 +1180,7 @@ FUNCTION(fun_set)
             //
             if (!atr_get_info(thing, pattr->number, &aowner, &aflags))
             {
-                safe_str(T("#-1 ATTRIBUTE NOT PRESENT ON OBJECT"), buff, bufc);
+                safe_str(S_("#-1 ATTRIBUTE NOT PRESENT ON OBJECT"), buff, bufc);
                 return;
             }
 
@@ -1230,7 +1230,7 @@ FUNCTION(fun_set)
         int atr = mkattr(executor, fargs[1]);
         if (atr <= 0)
         {
-            safe_str(T("#-1 UNABLE TO CREATE ATTRIBUTE"), buff, bufc);
+            safe_str(S_("#-1 UNABLE TO CREATE ATTRIBUTE"), buff, bufc);
             return;
         }
         pattr = atr_num(atr);
@@ -1303,7 +1303,7 @@ FUNCTION(fun_attrib_set)
     dbref thing;
     if (!parse_thing_slash(executor, fargs[0], &pAttrName, &thing))
     {
-        safe_str(T("#-1 BAD ARGUMENT FORMAT TO ATTRIB_SET"), buff, bufc);
+        safe_str(S_("#-1 BAD ARGUMENT FORMAT TO ATTRIB_SET"), buff, bufc);
         return;
     }
     if (!Good_obj(thing))
@@ -1317,7 +1317,7 @@ FUNCTION(fun_attrib_set)
     int atr = mkattr(executor, pAttrName);
     if (atr <= 0)
     {
-        safe_str(T("#-1 UNABLE TO CREATE ATTRIBUTE"), buff, bufc);
+        safe_str(S_("#-1 UNABLE TO CREATE ATTRIBUTE"), buff, bufc);
         return;
     }
     ATTR *pattr = atr_num(atr);
@@ -1482,7 +1482,7 @@ static void scan_zone
 {
     if (!mudconf.have_zones)
     {
-        safe_str(T("#-1 ZONES DISABLED"), buff, bufc);
+        safe_str(S_("#-1 ZONES DISABLED"), buff, bufc);
         return;
     }
 
@@ -1585,7 +1585,7 @@ FUNCTION(fun_zchildren)
 
     if (!mudconf.have_zones)
     {
-        safe_str(T("#-1 ZONES DISABLED"), buff, bufc);
+        safe_str(S_("#-1 ZONES DISABLED"), buff, bufc);
         return;
     }
 
@@ -1718,7 +1718,7 @@ FUNCTION(fun_letq)
 {
     if (nfargs < 3 || (nfargs % 2) != 1)
     {
-        safe_str(T("#-1 FUNCTION (LETQ) EXPECTS AN ODD NUMBER OF ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION (LETQ) EXPECTS AN ODD NUMBER OF ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -1765,7 +1765,7 @@ FUNCTION(fun_letq)
             }
             else
             {
-                safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+                safe_str(S_("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
                 bError = true;
                 break;
             }
@@ -1881,7 +1881,7 @@ FUNCTION(fun_zfun)
 
     if (!mudconf.have_zones)
     {
-        safe_str(T("#-1 ZONES DISABLED"), buff, bufc);
+        safe_str(S_("#-1 ZONES DISABLED"), buff, bufc);
         return;
     }
 
@@ -1902,7 +1902,7 @@ FUNCTION(fun_zfun)
 
     if (!Good_obj(zone))
     {
-        safe_str(T("#-1 INVALID ZONE"), buff, bufc);
+        safe_str(S_("#-1 INVALID ZONE"), buff, bufc);
         return;
     }
 
@@ -1911,7 +1911,7 @@ FUNCTION(fun_zfun)
     int attrib = get_atr(pAttrName);
     if (!attrib)
     {
-        safe_str(T("#-1 NO SUCH USER FUNCTION"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH USER FUNCTION"), buff, bufc);
         return;
     }
     dbref aowner;
@@ -2064,7 +2064,7 @@ FUNCTION(fun_table)
         }
         else
         {
-            safe_str(T("#-1 SEPARATOR MUST BE ONE CHARACTER"), buff, bufc);
+            safe_str(S_("#-1 SEPARATOR MUST BE ONE CHARACTER"), buff, bufc);
             return;
         }
     }
@@ -2080,7 +2080,7 @@ FUNCTION(fun_table)
         }
         else
         {
-            safe_str(T("#-1 DELIMITER MUST BE ONE CHARACTER"), buff, bufc);
+            safe_str(S_("#-1 DELIMITER MUST BE ONE CHARACTER"), buff, bufc);
             return;
         }
     }
@@ -2536,7 +2536,7 @@ FUNCTION(fun_mail)
                 playerask = match_thing_quiet(executor, fargs[0]);
                 if (!isPlayer(playerask))
                 {
-                    safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+                    safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
                     return;
                 }
             }
@@ -2564,7 +2564,7 @@ FUNCTION(fun_mail)
         playerask = lookup_player(executor, fargs[0], true);
         if (playerask == NOTHING)
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
         else if (  (playerask == executor && !mudstate.nObjEvalNest)
@@ -2582,7 +2582,7 @@ FUNCTION(fun_mail)
     if (  num < 1
        || !isPlayer(playerask))
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
         return;
     }
 
@@ -2604,7 +2604,7 @@ FUNCTION(fun_mail)
     }
     else
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
     }
 }
 
@@ -2620,7 +2620,7 @@ FUNCTION(fun_mailsize)
     dbref playerask = lookup_player(executor, fargs[0], 1);
     if (!Good_obj(playerask))
     {
-        safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
     }
     else if (  executor == playerask
             || Wizard(executor))
@@ -2661,7 +2661,7 @@ FUNCTION(fun_mailsubj)
         playerask = lookup_player(executor, fargs[0], 1);
         if (NOTHING == playerask)
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
         else if (  executor == playerask
@@ -2679,7 +2679,7 @@ FUNCTION(fun_mailsubj)
     if (  num < 1
        || !isPlayer(playerask))
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
     }
     else
     {
@@ -2690,7 +2690,7 @@ FUNCTION(fun_mailsubj)
         }
         else
         {
-            safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
         }
     }
 }
@@ -2724,7 +2724,7 @@ FUNCTION(fun_mailfrom)
         playerask = lookup_player(executor, fargs[0], true);
         if (playerask == NOTHING)
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
         if (  playerask == executor
@@ -2742,7 +2742,7 @@ FUNCTION(fun_mailfrom)
     if (  num < 1
        || !isPlayer(playerask))
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
         return;
     }
 
@@ -2755,7 +2755,7 @@ FUNCTION(fun_mailfrom)
 
     // Ran off the end of the list without finding anything.
     //
-    safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+    safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
@@ -2775,13 +2775,13 @@ FUNCTION(fun_mailreview)
     dbref target = lookup_player(executor, fargs[0], true);
     if (target == NOTHING)
     {
-        safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
         return;
     }
 
     if (!isPlayer(target))
     {
-        safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
         return;
     }
 
@@ -2816,7 +2816,7 @@ FUNCTION(fun_mailreview)
         int num = mux_atoi64(fargs[1]);
         if (num < 1)
         {
-            safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
             return;
         }
 
@@ -2837,7 +2837,7 @@ FUNCTION(fun_mailreview)
                 }
             }
         }
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
     }
 }
 
@@ -2865,7 +2865,7 @@ FUNCTION(fun_mailcount)
         playerask = lookup_player(executor, fargs[0], true);
         if (!Good_obj(playerask) || !isPlayer(playerask))
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
     }
@@ -2905,7 +2905,7 @@ FUNCTION(fun_mailstats)
         playerask = lookup_player(executor, fargs[0], true);
         if (!Good_obj(playerask) || !isPlayer(playerask))
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
     }
@@ -2945,7 +2945,7 @@ FUNCTION(fun_maillist)
         playerask = lookup_player(executor, fargs[0], true);
         if (!Good_obj(playerask) || !isPlayer(playerask))
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
     }
@@ -3014,7 +3014,7 @@ FUNCTION(fun_mailinfo)
         playerask = lookup_player(executor, fargs[2], true);
         if (!Good_obj(playerask) || !isPlayer(playerask))
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
     }
@@ -3056,14 +3056,14 @@ FUNCTION(fun_mailinfo)
 
     if (num < 1 || !isPlayer(playerask))
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
         return;
     }
 
     struct mail *mp = mail_fetch(playerask, num);
     if (nullptr == mp)
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
         return;
     }
 
@@ -3123,7 +3123,7 @@ FUNCTION(fun_mailinfo)
     }
     else
     {
-        safe_str(T("#-1 INVALID FIELD"), buff, bufc);
+        safe_str(S_("#-1 INVALID FIELD"), buff, bufc);
     }
 }
 
@@ -3149,7 +3149,7 @@ FUNCTION(fun_mailflags)
         playerask = lookup_player(executor, fargs[1], true);
         if (!Good_obj(playerask) || !isPlayer(playerask))
         {
-            safe_str(T("#-1 NO SUCH PLAYER"), buff, bufc);
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
             return;
         }
     }
@@ -3166,14 +3166,14 @@ FUNCTION(fun_mailflags)
 
     if (num < 1 || !isPlayer(playerask))
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
         return;
     }
 
     struct mail *mp = mail_fetch(playerask, num);
     if (nullptr == mp)
     {
-        safe_str(T("#-1 NO SUCH MESSAGE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
         return;
     }
 
@@ -3901,7 +3901,7 @@ FUNCTION(fun_soundex)
        || !mux_isalpha(fargs[0][0])
        || strchr(reinterpret_cast<const char*>(fargs[0]), ' '))
     {
-        safe_str(T("#-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION (SOUNDEX) REQUIRES A SINGLE WORD ARGUMENT"), buff, bufc);
         return;
     }
 
@@ -3929,7 +3929,7 @@ FUNCTION(fun_soundlike)
        || !fargs[1][0] || !mux_isalpha(fargs[1][0])
        || strchr(reinterpret_cast<const char*>(fargs[1]), ' '))
     {
-        safe_str(T("#-1 FUNCTION (SOUNDLIKE) REQUIRES SINGLE WORD ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION (SOUNDLIKE) REQUIRES SINGLE WORD ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -4235,7 +4235,7 @@ FUNCTION(fun_subnetmatch)
     //
     if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[0]), &addr) != 1)
     {
-        safe_str(T("#-1 INVALID IP ADDRESS"), buff, bufc);
+        safe_str(S_("#-1 INVALID IP ADDRESS"), buff, bufc);
         return;
     }
 
@@ -4246,19 +4246,19 @@ FUNCTION(fun_subnetmatch)
         UTF8 *slash = (UTF8*)strchr(reinterpret_cast<char*>(fargs[1]), '/');
         if (!slash)
         {
-            safe_str(T("#-1 INVALID CIDR NOTATION"), buff, bufc);
+            safe_str(S_("#-1 INVALID CIDR NOTATION"), buff, bufc);
             return;
         }
         *slash = '\0';
         if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[1]), &net) != 1)
         {
-            safe_str(T("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
+            safe_str(S_("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
             return;
         }
         int bits = mux_atoi64(slash + 1);
         if (bits < 0 || bits > 32)
         {
-            safe_str(T("#-1 INVALID PREFIX LENGTH"), buff, bufc);
+            safe_str(S_("#-1 INVALID PREFIX LENGTH"), buff, bufc);
             return;
         }
         if (bits == 0)
@@ -4276,12 +4276,12 @@ FUNCTION(fun_subnetmatch)
         //
         if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[1]), &net) != 1)
         {
-            safe_str(T("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
+            safe_str(S_("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
             return;
         }
         if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[2]), &mask) != 1)
         {
-            safe_str(T("#-1 INVALID NETMASK"), buff, bufc);
+            safe_str(S_("#-1 INVALID NETMASK"), buff, bufc);
             return;
         }
     }

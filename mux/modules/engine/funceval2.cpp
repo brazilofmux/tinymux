@@ -675,7 +675,7 @@ FUNCTION(fun_lastcreate)
 
     if ('\0' == newobject_string[0])
     {
-        safe_str(T("#-1"), buff, bufc);
+        safe_str(S_("#-1"), buff, bufc);
         return;
     }
 
@@ -948,7 +948,7 @@ FUNCTION(fun_foreach)
     if (  nfargs != 2
        && nfargs != 4)
     {
-        safe_str(T("#-1 FUNCTION (FOREACH) EXPECTS 2 OR 4 ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION (FOREACH) EXPECTS 2 OR 4 ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -1147,7 +1147,7 @@ FUNCTION(fun_munge)
     if (  nullptr != pKey
        || nullptr != pValue)
     {
-        safe_str(T("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
+        safe_str(S_("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
         free_lbuf(atext);
         return;
     }
@@ -1513,7 +1513,7 @@ static void mux_Pack1(int64_t val, int iRadixTo, bool fPennBehavior, UTF8 *buff,
     else if (  val < 0
             && 63 <= iRadixTo)
     {
-        safe_str(T("#-1 NEGATIVE NUMBER IS NOT REPRESENTABLE IN OUTPUT RADIX"), buff, bufc);
+        safe_str(S_("#-1 NEGATIVE NUMBER IS NOT REPRESENTABLE IN OUTPUT RADIX"), buff, bufc);
     }
     else
     {
@@ -1553,7 +1553,7 @@ FUNCTION(fun_unpack)
            || (iRadix = mux_atoi64(fargs[1])) < 2
            || 64 < iRadix)
         {
-            safe_str(T("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
+            safe_str(S_("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
             return;
         }
     }
@@ -1567,7 +1567,7 @@ FUNCTION(fun_unpack)
     int64_t val;
     if (!mux_Unpack(fargs[0], val, iRadix, 10, fPennBehavior))
     {
-        safe_str(T("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
+        safe_str(S_("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
     }
     else
     {
@@ -1589,7 +1589,7 @@ FUNCTION(fun_pack)
     if (  !is_integer(fargs[0], nullptr)
        || (2 <= nfargs && !is_integer(fargs[1], nullptr)))
     {
-        safe_str(T("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
         return;
     }
     int64_t val = mux_atoi64(fargs[0]);
@@ -1603,7 +1603,7 @@ FUNCTION(fun_pack)
         if (  iRadix < 2
            || 64 < iRadix)
         {
-            safe_str(T("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
+            safe_str(S_("#-1 RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
             return;
         }
     }
@@ -1631,7 +1631,7 @@ FUNCTION(fun_baseconv)
     if (  !is_integer(fargs[1], nullptr)
        || !is_integer(fargs[2], nullptr))
     {
-        safe_str(T("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENTS MUST BE NUMBERS"), buff, bufc);
         return;
     }
 
@@ -1639,21 +1639,21 @@ FUNCTION(fun_baseconv)
     if (  iRadixFrom < 2
        || 64 < iRadixFrom)
     {
-        safe_str(T("#-1 INPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
+        safe_str(S_("#-1 INPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
         return;
     }
     int iRadixTo = mux_atoi64(fargs[2]);
     if (  iRadixTo < 2
        || 64 < iRadixTo)
     {
-        safe_str(T("#-1 OUTPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
+        safe_str(S_("#-1 OUTPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
         return;
     }
 
     int64_t val;
     if (!mux_Unpack(fargs[0], val, iRadixFrom, iRadixTo, true))
     {
-        safe_str(T("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
+        safe_str(S_("#-1 NUMBER IS NOT VALID FOR INPUT RADIX"), buff, bufc);
     }
     else
     {
@@ -1756,12 +1756,12 @@ static void grep_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[],
     //
     if (!fargs[1] || !*fargs[1])
     {
-        safe_str(T("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
         return;
     }
     if (!fargs[2] || !*fargs[2])
     {
-        safe_str(T("#-1 INVALID GREP PATTERN"), buff, bufc);
+        safe_str(S_("#-1 INVALID GREP PATTERN"), buff, bufc);
         return;
     }
     UTF8 *tp = grep_util(executor, it, fargs[1], fargs[2], strlen(reinterpret_cast<char *>(fargs[2])), bCaseInsens);
@@ -1815,7 +1815,7 @@ static UTF8 *regrep_util(dbref player, dbref thing, const UTF8 *pattern,
     {
         olist_pop();
         UTF8 *tbuf1 = alloc_lbuf("regrep_util");
-        mux_strncpy(tbuf1, T("#-1 REGEXP ERROR"), LBUF_SIZE-1);
+        mux_strncpy(tbuf1, S_("#-1 REGEXP ERROR"), LBUF_SIZE-1);
         return tbuf1;
     }
     pcre2_match_data *match_data =
@@ -1827,7 +1827,7 @@ static UTF8 *regrep_util(dbref player, dbref thing, const UTF8 *pattern,
         pcre2_code_free(re);
         olist_pop();
         UTF8 *tbuf1 = alloc_lbuf("regrep_util");
-        mux_strncpy(tbuf1, T("#-1 REGEXP MATCH DATA ERROR"), LBUF_SIZE-1);
+        mux_strncpy(tbuf1, S_("#-1 REGEXP MATCH DATA ERROR"), LBUF_SIZE-1);
         return tbuf1;
     }
 
@@ -1882,12 +1882,12 @@ static void regrep_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
 
     if (!fargs[1] || !*fargs[1])
     {
-        safe_str(T("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
         return;
     }
     if (!fargs[2] || !*fargs[2])
     {
-        safe_str(T("#-1 INVALID GREP PATTERN"), buff, bufc);
+        safe_str(S_("#-1 INVALID GREP PATTERN"), buff, bufc);
         return;
     }
     UTF8 *tp = regrep_util(executor, it, fargs[1], fargs[2], bCaseInsens);
@@ -2082,7 +2082,7 @@ FUNCTION(fun_hastype)
     }
     else
     {
-        safe_str(T("#-1 NO SUCH TYPE"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH TYPE"), buff, bufc);
         return;
     }
     safe_bool(bResult, buff, bufc);
@@ -2178,7 +2178,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
         PCRE2_UCHAR errbuf[256];
         pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
 
-        safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
+        safe_str(S_("#-1 REGEXP ERROR "), buff, bufc);
         safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
         return;
     }
@@ -2188,7 +2188,7 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
     if (!match_data)
     {
         pcre2_code_free(re);
-        safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+        safe_str(S_("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
         return;
     }
 
@@ -2368,7 +2368,7 @@ static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 
         PCRE2_UCHAR errbuf[256];
         pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
 
-        safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
+        safe_str(S_("#-1 REGEXP ERROR "), buff, bufc);
         safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
         return;
     }
@@ -2378,7 +2378,7 @@ static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 
     if (!match_data)
     {
         pcre2_code_free(re);
-        safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+        safe_str(S_("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
         return;
     }
 
@@ -2616,7 +2616,7 @@ static void real_regedit(UTF8 *fargs[], int nfargs, UTF8 *buff,
 
             free_lbuf(inbuf);
             free_lbuf(outbuf);
-            safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
+            safe_str(S_("#-1 REGEXP ERROR "), buff, bufc);
             safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
             return;
         }
@@ -2628,7 +2628,7 @@ static void real_regedit(UTF8 *fargs[], int nfargs, UTF8 *buff,
             pcre2_code_free(re);
             free_lbuf(inbuf);
             free_lbuf(outbuf);
-            safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+            safe_str(S_("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
             return;
         }
 
@@ -2905,7 +2905,7 @@ FUNCTION(fun_lrooms)
     }
     else if (!isRoom(room))
     {
-        safe_str(T("#-1 FIRST ARGUMENT MUST BE A ROOM"), buff, bufc);
+        safe_str(S_("#-1 FIRST ARGUMENT MUST BE A ROOM"), buff, bufc);
         return;
     }
 
@@ -2915,7 +2915,7 @@ FUNCTION(fun_lrooms)
         N = mux_atoi64(fargs[1]);
         if (N < 0)
         {
-            safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"),
+            safe_str(S_("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"),
                 buff, bufc);
             return;
         }
@@ -2924,7 +2924,7 @@ FUNCTION(fun_lrooms)
             // Maybe this can be turned into a config parameter to prevent
             // misuse by putting in really large values.
             //
-            safe_str(T("#-1 SECOND ARGUMENT IS TOO LARGE"), buff, bufc);
+            safe_str(S_("#-1 SECOND ARGUMENT IS TOO LARGE"), buff, bufc);
             return;
         }
     }
@@ -3019,7 +3019,7 @@ FUNCTION(fun_route)
             }
             else
             {
-                safe_str(T("#-2"), buff, bufc);
+                safe_str(S_("#-2"), buff, bufc);
                 return;
             }
         }

@@ -4506,7 +4506,7 @@ const UTF8 *do_mail_send_softcode(dbref player, UTF8 *recipients, UTF8 *subject,
         {
             return nullptr;
         }
-        return (nullptr != err) ? err : T("#-1 MAIL SEND FAILED");
+        return (nullptr != err) ? err : S_("#-1 MAIL SEND FAILED");
     }
 
     // Resolve to the owning player — softcode may run on a non-player object.
@@ -4514,28 +4514,28 @@ const UTF8 *do_mail_send_softcode(dbref player, UTF8 *recipients, UTF8 *subject,
     player = Owner(player);
     if (!Good_obj(player) || !isPlayer(player))
     {
-        return T("#-1 NOT A PLAYER");
+        return S_("#-1 NOT A PLAYER");
     }
     if (!recipients || !*recipients)
     {
-        return T("#-1 NO RECIPIENTS");
+        return S_("#-1 NO RECIPIENTS");
     }
     if (!subject || !*subject)
     {
-        return T("#-1 NO SUBJECT");
+        return S_("#-1 NO SUBJECT");
     }
     if (!message || !*message)
     {
-        return T("#-1 NO MESSAGE");
+        return S_("#-1 NO MESSAGE");
     }
     if (Flags2(player) & PLAYER_MAILS)
     {
-        return T("#-1 MAIL ALREADY IN PROGRESS");
+        return S_("#-1 MAIL ALREADY IN PROGRESS");
     }
     if (  !Wizard(player)
        && ThrottleMail(player))
     {
-        return T("#-1 TOO MUCH MAIL SENT");
+        return S_("#-1 TOO MUCH MAIL SENT");
     }
 
     UTF8 *numlist = make_numlist(player, recipients, false);
@@ -4545,7 +4545,7 @@ const UTF8 *do_mail_send_softcode(dbref player, UTF8 *recipients, UTF8 *subject,
         {
             free_lbuf(numlist);
         }
-        return T("#-1 NO VALID RECIPIENTS");
+        return S_("#-1 NO VALID RECIPIENTS");
     }
 
     mail_to_list(player, numlist, subject, message, 0, true);

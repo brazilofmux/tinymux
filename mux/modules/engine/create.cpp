@@ -1126,7 +1126,7 @@ static void ProcessMasterRoomADestroy(const dbref destroyer, const dbref thing)
         break;
 
     default:
-        xargs[1] = T("#-1");
+        xargs[1] = S_("#-1");
         break;
     }
 

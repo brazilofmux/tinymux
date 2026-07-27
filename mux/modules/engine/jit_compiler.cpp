@@ -975,7 +975,7 @@ static bool handle_dbt_run_status(int rc, UTF8 *out, size_t out_size,
             // Mirror AST's alarm path (ast_eval_function): emit
             // "#-1 CPU LIMITED" rather than returning false and letting
             // the AST short-circuit produce an empty string.
-            const UTF8 *kMsg = T("#-1 CPU LIMITED");
+            const UTF8 *kMsg = S_("#-1 CPU LIMITED");
             size_t n = strlen(reinterpret_cast<const char *>(kMsg));
             if (n >= out_size) {
                 n = out_size - 1;
@@ -5217,7 +5217,7 @@ FUNCTION(fun_jitstats)
     UNUSED_PARAMETER(ncargs);
 
     if (!Wizard(executor)) {
-        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
         return;
     }
 
@@ -5243,7 +5243,7 @@ FUNCTION(fun_jitstats)
             //
 #if defined(HAVE_WORKING_FORK)
             if (mudstate.write_protect) {
-                safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+                safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
                 return;
             }
 #endif
@@ -5265,7 +5265,7 @@ FUNCTION(fun_jitstats)
                 s_code_cache_flush_pending = true;
             }
             if (!ok) {
-                safe_str(T("#-1 CODE CACHE FLUSH FAILED"), buff, bufc);
+                safe_str(S_("#-1 CODE CACHE FLUSH FAILED"), buff, bufc);
                 return;
             }
             safe_str(T("OK"), buff, bufc);
@@ -5502,7 +5502,7 @@ FUNCTION(fun_rvbench)
     JITArena::gc();
 
     if (nfargs < 2) {
-        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 TOO FEW ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -5515,7 +5515,7 @@ FUNCTION(fun_rvbench)
     // Verify both paths produce the same result.
     compiled_program prog = compile_expression(expr, nLen);
     if (!prog.ok) {
-        safe_str(T("#-1 COMPILATION FAILED"), buff, bufc);
+        safe_str(S_("#-1 COMPILATION FAILED"), buff, bufc);
         return;
     }
     tier2_install(prog.memory, rv_compiler::BLOB_BASE);
@@ -5772,7 +5772,7 @@ FUNCTION(fun_pocvm2)
     UNUSED_PARAMETER(ncargs);
 
     if (!Wizard(executor)) {
-        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
         return;
     }
 
@@ -5790,7 +5790,7 @@ FUNCTION(fun_pocvm2)
         auto a = s_pvm.compile(
             reinterpret_cast<const UTF8 *>(expr_a), strlen(expr_a));
         if (!a.entry_pc) {
-            safe_str(T("#-1 FUNC A COMPILE FAILED"), buff, bufc);
+            safe_str(S_("#-1 FUNC A COMPILE FAILED"), buff, bufc);
             return;
         }
         func_a_entry = a.entry_pc;
@@ -5801,7 +5801,7 @@ FUNCTION(fun_pocvm2)
         auto b = s_pvm.compile(
             reinterpret_cast<const UTF8 *>(expr_b), strlen(expr_b));
         if (!b.entry_pc) {
-            safe_str(T("#-1 FUNC B COMPILE FAILED"), buff, bufc);
+            safe_str(S_("#-1 FUNC B COMPILE FAILED"), buff, bufc);
             return;
         }
         func_b_entry = b.entry_pc;
@@ -5852,7 +5852,7 @@ FUNCTION(fun_pocvm2)
     }
 
     if (!s_pvm.ensure_dbt()) {
-        safe_str(T("#-1 DBT INIT FAILED"), buff, bufc);
+        safe_str(S_("#-1 DBT INIT FAILED"), buff, bufc);
         return;
     }
 
