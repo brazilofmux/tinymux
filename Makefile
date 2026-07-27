@@ -162,6 +162,37 @@ test-netaddr:
 # cost rather than for a defect.  The timeouts are raised as well, since an
 # instrumented smoke run legitimately takes several times longer.
 ASAN_SMOKE_EXCLUDE = rvbench_fn
+
+# tests/format, tests/netaddr and tests/alarm build their own binaries with
+# their own hardcoded CXXFLAGS, so they are NOT instrumented even on an
+# --enable-sanitizers tree -- and each links libmux.  An uninstrumented binary
+# that then loads an instrumented libmux.so is refused outright:
+#
+#     ASan runtime does not come first in initial library list; you should
+#     either link runtime to your application or manually preload it with
+#     LD_PRELOAD.
+#     make[2]: *** [Makefile:42: test] Error 1
+#
+# which on Linux killed this target at its FIRST leg, before any instrumented
+# engine code ran.  It goes unnoticed on macOS, where ASan is a dylib and
+# interposes without a preload.
+#
+# Preloading the runtime is ASan's own remedy for that message.  The path is
+# resolved rather than hardcoded (it is compiler- and version-specific) and
+# left empty when it cannot be found, so a platform where the mechanism differs
+# -- macOS wants DYLD_INSERT_LIBRARIES -- degrades to the previous behaviour
+# instead of failing on a bogus LD_PRELOAD.
+#
+# Measured: test-format, test-netaddr and test-alarm each exit 2 with that
+# message without the preload and pass with it.  test-dbt is included for
+# symmetry but does not need it -- it compiles the engine sources directly
+# rather than linking libmux, so it never loads an instrumented library and
+# passes either way.  Harmless there, and it stops being a special case if that
+# harness ever grows a libmux dependency.
+ASAN_RUNTIME := $(shell p=$$(g++ -print-file-name=libasan.so 2>/dev/null); \
+                        [ -n "$$p" ] && [ -e "$$p" ] && echo "$$p")
+ASAN_PRELOAD := $(if $(ASAN_RUNTIME),LD_PRELOAD=$(ASAN_RUNTIME),)
+
 test-asan:
 	@if ! grep -q 'fsanitize' mux/config.status 2>/dev/null; then \
 	    echo "==> test-asan: this tree is not configured with sanitizers."; \
@@ -169,10 +200,10 @@ test-asan:
 	    exit 1; \
 	fi
 	@echo "==> Running the suites under sanitizers"
-	$(MAKE) test-format
-	$(MAKE) test-netaddr
-	$(MAKE) test-alarm
-	$(MAKE) test-dbt
+	$(ASAN_PRELOAD) $(MAKE) test-format
+	$(ASAN_PRELOAD) $(MAKE) test-netaddr
+	$(ASAN_PRELOAD) $(MAKE) test-alarm
+	$(ASAN_PRELOAD) $(MAKE) test-dbt
 	$(MAKE) test-ganl
 	$(MAKE) test-jit-qreg
 	$(MAKE) test-jit-ifelse
