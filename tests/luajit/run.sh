@@ -52,6 +52,68 @@ CASES=(
     'return mux.args[1] + mux.args[2]'
 )
 
+# Chunks that MUST agree with the interpreter (#1512).
+#
+# Every one of these reads a global -- a standard-library table, a bare
+# base-library function, or a constant like math.pi -- so every one routes
+# through the lowering's named Lua-bridge ECALLs (__lua_getglobal,
+# __lua_getfield, __lua_call).  None of those names is reachable: the lowering
+# emits them lower case, eval_ecall compares them upper case.  The mismatch by
+# itself would have been harmless, because an unreachable ECALL should decline.
+# What made it a correctness bug is where the unmatched name went next -- on to
+# the softcode function dispatch, which returned the *string*
+# "#-1 FUNCTION NOT FOUND" as the call's value, and that string then flowed on
+# as data.  `local x=tonumber(a) return x+1` answered 1 and `return x*2`
+# answered 0, because the error text coerces to zero in arithmetic.  Wrong
+# answers, not error markers, and a code_cache row for each.
+#
+# So unlike CASES above, a divergence here is a FAILURE, not a report.  The
+# contract is agreement, and it is met by declining: eval_ecall now fails
+# closed on an unimplemented bridge name, dbt_run stops, and the interpreter
+# answers.  Expect lua_run_fail to move, not lua_run_ok.
+#
+# Deliberately NOT smoke cases.  Under the default config fun_lua is ECALLed
+# from inside a DBT program and run_cached_program refuses a nested run
+# (#1326), so on the smoke route the Lua JIT declines every chunk and these
+# would agree with the interpreter trivially -- passing without executing the
+# thing they exist to check (#1426).  They need this script's
+# `jit_eval_brackets 0`.
+#
+# Tail position matters, which is why several of these bind through a local
+# first: Lua compiles `return f(x)` to OP_TAILCALL, which lua_bc_eligible
+# rejects outright, so the tail form declines before lowering and cannot reach
+# the bridge at all.  `local x=f(...) return x` is the form that compiles.
+#
+AGREE_CASES=(
+    'local x=tostring(42) return x'
+    'local x=type(42) return x'
+    'local x=tonumber("17") return x'
+    'local x=math.floor(3.7) return x'
+    'local x=math.max(3,9) return x'
+    'local x=string.upper("ab") return x'
+    'local x=string.sub("hello",2,3) return x'
+    'local x=string.format("%d",7) return x'
+    'local x=table.concat({1,2,3},",") return x'
+    'local x=select("#",1,2,3) return x'
+    'local x=math.pi return x'
+    'local x=math.maxinteger return x'
+    # The silent-corruption shape from the issue: the failed call leaves the
+    # destination holding the error string, and arithmetic on it proceeds.
+    'local x=tonumber(mux.args[1]) return x'
+    'local x=tonumber(mux.args[1]) return x+1'
+    'local x=tonumber(mux.args[1]) return x*2'
+    'local x=math.floor(3.7) return x+1'
+    'local x=string.len("hello") return x*2'
+    # A global read that is not a call at all -- GETTABUP + GETFIELD, no CALL.
+    'return math.huge'
+    # os is not in the sandbox, so the interpreter errors.  The compiled path
+    # must reproduce the error, not invent a value: this answered 0 before.
+    'return os.time()>0'
+    # Control.  No global anywhere, so this one really does run compiled;
+    # it fails if the fix over-reaches and declines everything.
+    'local x=mux.args[1]+0 return x*2'
+)
+
 # Preserve a failed run's directory instead of deleting it (#1446).
 #
 # The crashing process's cwd IS $WORK, so the core lands there, next to
@@ -185,9 +247,45 @@ for chunk in "${CASES[@]}"; do
     printf '%-46s %-6s %-10s %-10s %s\n' "${chunk:0:46}" "$jrc" "${ires:0:10}" "${jres:0:10}" "$verdict"
 done
 
+# Second pass: the chunks whose contract is agreement, not just survival.
+echo
+printf '%-46s %-6s %-10s %-10s %s\n' 'chunk (must agree, #1512)' rc interp jit verdict
+wrong=0
+for chunk in "${AGREE_CASES[@]}"; do
+    n=$((n+1))
+    split3 "$(run_one 0 "$chunk" "ainterp$n")"; irc=$R_RC; ires=$R_RES; ikept=$R_KEPT
+    split3 "$(run_one 1 "$chunk" "ajit$n")";    jrc=$R_RC; jres=$R_RES; jkept=$R_KEPT
+
+    verdict="ok"
+    if [ "$jrc" != "0" ]; then
+        verdict="FAIL: compiled path died (rc=$jrc)"
+        [ -n "$jkept" ] && verdict="$verdict evidence=$jkept"
+        fails=$((fails+1))
+    elif [ "$irc" != "0" ]; then
+        verdict="FAIL: interpreter died (rc=$irc)"
+        [ -n "$ikept" ] && verdict="$verdict evidence=$ikept"
+        fails=$((fails+1))
+    elif [ "$ires" != "$jres" ]; then
+        verdict="FAIL: diverges (#1512) interp=$ires jit=$jres"
+        wrong=$((wrong+1))
+    fi
+    printf '%-46s %-6s %-10s %-10s %s\n' "${chunk:0:46}" "$jrc" "${ires:0:10}" "${jres:0:10}" "$verdict"
+done
+
 rm -rf "$WORK"
 echo
-echo "chunks: ${#CASES[@]}   crashes: $fails   divergences: $diverged"
+echo "chunks: $((${#CASES[@]} + ${#AGREE_CASES[@]}))   crashes: $fails" \
+     "  divergences: $diverged (reported)   $wrong (fatal)"
+if [ "$wrong" -ne 0 ]; then
+    echo "=== tests/luajit: FAILED ($wrong chunk(s) disagreed with the" \
+         "interpreter) ==="
+    echo "A compiled Lua chunk answered differently from the interpreter."
+    echo "See #1512: an unimplemented named bridge ECALL must decline, so the"
+    echo "interpreter answers.  Check that eval_ecall still fails closed on an"
+    echo "unmatched __lua_* name instead of falling through to the softcode"
+    echo "function dispatch."
+    exit 1
+fi
 if [ "$fails" -ne 0 ]; then
     echo "=== tests/luajit: FAILED ($fails chunk(s) killed the process) ==="
     echo "Preserved workdirs (core, out.log, scratch db) for each failure:"

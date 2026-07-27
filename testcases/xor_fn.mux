@@ -21,8 +21,7 @@
         eq(xor(0,0), 0)
       )=
   {
-    @log smoke=TC001: xor basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: xor basic operations. Succeeded.
   },
   {
     @log smoke=TC001: xor basic operations. Failed (xor(1%,0)=[xor(1,0)] xor(1%,1)=[xor(1,1)] xor(0%,0)=[xor(0,0)]).;

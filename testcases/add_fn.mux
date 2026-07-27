@@ -21,8 +21,7 @@
         eq(add(-1,1), 0)
       )=
   {
-    @log smoke=TC001: add basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: add basic operations. Succeeded.
   },
   {
     @log smoke=TC001: add basic operations. Failed (add(1%,2)=[add(1,2)] add(1%,2%,3)=[add(1,2,3)] add(-1%,1)=[add(-1,1)]).;
@@ -39,12 +38,10 @@
         eq(add(foo,2),2)
       )=
   {
-    @log smoke=TC002: add decimal and coercion cases. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC002: add decimal and coercion cases. Succeeded.
   },
   {
-    @log smoke=TC002: add decimal and coercion cases. Failed (add(1.5%,2.25)=[add(1.5,2.25)] add(-5%,2%,1)=[add(-5,2,1)] add()=[add()] add(foo%,2)=[add(foo,2)]).;
-    @trig me/tr.done
+    @log smoke=TC002: add decimal and coercion cases. Failed (add(1.5%,2.25)=[add(1.5,2.25)] add(-5%,2%,1)=[add(-5,2,1)] add()=[add()] add(foo%,2)=[add(foo,2)]).
   }
 -
 #
@@ -62,12 +59,10 @@
         strmatch(add(sqrt(1.5),0),[sqrt(1.5)])
       )=
   {
-    @log smoke=TC003: add identity preserves the operand. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC003: add identity preserves the operand. Succeeded.
   },
   {
-    @log smoke=TC003: add identity preserves the operand. Failed (a=[add(1.224744871391589,0)] b=[add(2.449489742783178,0)] sq=[add(sqrt(1.5),0)]/[sqrt(1.5)]).;
-    @trig me/tr.done
+    @log smoke=TC003: add identity preserves the operand. Failed (a=[add(1.224744871391589,0)] b=[add(2.449489742783178,0)] sq=[add(sqrt(1.5),0)]/[sqrt(1.5)]).
   }
 -
 #
