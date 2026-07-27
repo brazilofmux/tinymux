@@ -3956,7 +3956,11 @@ void check_mail(dbref player, int folder, bool silent)
     }
     else if (!silent)
     {
-        raw_notify(player, M_("\r\nMAIL: You have no mail.\r\n"));
+        // Blank lines stay T("") (#1443); prose is M_ without embedded CR (#1419).
+        //
+        raw_notify(player, T(""));
+        raw_notify(player, M_("MAIL: You have no mail."));
+        raw_notify(player, T(""));
     }
     if (gc > 0)
     {
