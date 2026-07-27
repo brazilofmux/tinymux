@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 06:53-0600\n"
+"POT-Creation-Date: 2026-07-27 06:54-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,6 +18,22 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: modules/engine/attrcache.cpp:1173
+msgid "--- Attribute Cache ---"
+msgstr ""
+
+#: modules/engine/attrcache.cpp:1190
+msgid "--- SQLite Storage ---"
+msgstr ""
+
+#: modules/engine/boolexp.cpp:122 modules/engine/boolexp.cpp:144
+msgid "Sorry, broken lock!"
+msgstr ""
+
+#: modules/engine/boolexp.cpp:662
+msgid "Unknown lock type."
+msgstr ""
 
 #: modules/engine/command.cpp:661 modules/engine/command.cpp:4395
 msgid "Lua module is not loaded."
@@ -668,6 +684,10 @@ msgstr ""
 msgid "Weird object type cannot be destroyed."
 msgstr ""
 
+#: modules/engine/cron.cpp:736
+msgid "Usage: @cron <object>/<attribute> = <timestring>"
+msgstr ""
+
 #: modules/engine/cron.cpp:761
 msgid "Syntax errors. No cron entry made."
 msgstr ""
@@ -678,6 +698,10 @@ msgstr ""
 
 #: modules/engine/cron.cpp:769
 msgid "Cron entry added."
+msgstr ""
+
+#: modules/engine/cron.cpp:786
+msgid "Usage: @crondel <object>[/<attribute>]"
 msgstr ""
 
 #: modules/engine/db.cpp:942
@@ -714,6 +738,22 @@ msgstr ""
 
 #: modules/engine/db.cpp:1192 modules/engine/set.cpp:295
 msgid "That is not a reasonable name."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4493
+msgid "*** Logins are disabled."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4507
+msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
+msgstr ""
+
+#: modules/engine/engine.cpp:29
+msgid "Dumping in progress. Try again later."
+msgstr ""
+
+#: modules/engine/engine.cpp:33
+msgid "Dumping..."
 msgstr ""
 
 #: modules/engine/flags.cpp:26
@@ -775,6 +815,27 @@ msgstr ""
 
 #: modules/engine/flags.cpp:1458
 msgid "Flag name changed."
+msgstr ""
+
+#: modules/engine/funceval.cpp:1098 modules/engine/set.cpp:1061
+msgid "You shouldn’t be rummaging through the garbage."
+msgstr ""
+
+#: modules/engine/funceval2.cpp:888
+msgid "Illegal step size."
+msgstr ""
+
+#: modules/engine/functions.cpp:15751
+msgid "Function name is not valid."
+msgstr ""
+
+#: modules/engine/functions.cpp:15761
+msgid "Function already defined in builtin function table."
+msgstr ""
+
+#: modules/engine/functions.cpp:15805 modules/engine/predicates.cpp:1019
+#: modules/engine/predicates.cpp:1253 modules/engine/predicates.cpp:1562
+msgid "No such attribute."
 msgstr ""
 
 #: modules/engine/help.cpp:223
@@ -1274,6 +1335,20 @@ msgstr ""
 msgid "I don’t know which one you mean!"
 msgstr ""
 
+#: modules/engine/mguests.cpp:425
+msgid ""
+"--------------------------- Current Guests Listing "
+"---------------------------"
+msgstr ""
+
+#: modules/engine/mguests.cpp:426
+msgid "*Guest #  : Name            dbref  Status     Last Site"
+msgstr ""
+
+#: modules/engine/mguests.cpp:427
+msgid "------------------------------------------------------------------------------"
+msgstr ""
+
 #: modules/engine/move.cpp:406
 msgid "You can’t teleport that out!"
 msgstr ""
@@ -1470,11 +1545,6 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:1008
 msgid "That is not a valid command name."
-msgstr ""
-
-#: modules/engine/predicates.cpp:1019 modules/engine/predicates.cpp:1253
-#: modules/engine/predicates.cpp:1562
-msgid "No such attribute."
 msgstr ""
 
 #: modules/engine/predicates.cpp:1213
@@ -1745,10 +1815,6 @@ msgstr ""
 msgid "Attribute owner changed."
 msgstr ""
 
-#: modules/engine/set.cpp:1061
-msgid "You shouldn’t be rummaging through the garbage."
-msgstr ""
-
 #: modules/engine/set.cpp:1070
 msgid "Players always own themselves."
 msgstr ""
@@ -1831,6 +1897,10 @@ msgstr ""
 
 #: modules/engine/speech.cpp:1494
 msgid "No one to whisper to."
+msgstr ""
+
+#: modules/engine/vattr.cpp:127
+msgid "@dbclean: SQLite error during orphan purge."
 msgstr ""
 
 #: modules/engine/walk.cpp:353

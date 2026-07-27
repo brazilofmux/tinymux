@@ -422,9 +422,9 @@ bool CGuests::CheckGuest(dbref player)
 //
 void CGuests::ListAll(dbref player)
 {
-    notify(player, T("--------------------------- Current Guests Listing ---------------------------"));
-    notify(player, T("*Guest #  : Name            dbref  Status     Last Site"));
-    notify(player, T("------------------------------------------------------------------------------"));\
+    notify(player, M_("--------------------------- Current Guests Listing ---------------------------"));
+    notify(player, M_("*Guest #  : Name            dbref  Status     Last Site"));
+    notify(player, M_("------------------------------------------------------------------------------"));\
     LBuf buff = LBuf_Src("CGuests-ListAll");
     int i;
     LBuf LastSite = LBuf_Src("CGuests-LastSite");

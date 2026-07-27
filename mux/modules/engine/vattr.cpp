@@ -124,7 +124,7 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
     int purged = g_pSQLiteBackend->GetDB().PurgeOrphanedAttrNames();
     if (purged < 0)
     {
-        notify(executor, T("@dbclean: SQLite error during orphan purge."));
+        notify(executor, M_("@dbclean: SQLite error during orphan purge."));
         return;
     }
 
