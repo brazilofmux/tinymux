@@ -170,14 +170,132 @@ static constexpr int HIR_MAX_PARGS  = 4096;
 static constexpr int HIR_MAX_PREDS  = 2048;
 static constexpr int HIR_NUM_QREGS  = 14;   // 0-9 = user %q, 10-13 = compiler internal
 
+// ---------------------------------------------------------------
+// hir_slot — a parallel array that refuses an out-of-range index
+// ---------------------------------------------------------------
+//
+// The lowering signals refusal by returning -1: hir_lower_node for an AST node
+// it will not compile (#1242), emit/emit_call/emit_strcat/emit_phi/new_block on
+// a capacity limit.  Every consumer that indexes a per-instruction array with
+// such a value must check first, and three separate rounds of per-site guards
+// (#1440, #1449, #1457/#1470) each found producers the previous round had
+// missed.  #1501 is the argument for stopping there.
+//
+// The reason it kept recurring is that the guards are invisible at the point of
+// danger: nothing about `h.ty[p]` says p might be -1, so a fast path added ahead
+// of an existing guard is unprotected by construction.  That is exactly what
+// #1470 found -- builtin fast paths indexing the args before the guarded ECALL
+// fall-through reached them -- and near-identical loops 80 lines apart had also
+// drifted (#1457).
+//
+// So the check moves into the subscript, where it cannot be forgotten:
+//
+//   * A negative or too-large index yields a scratch element instead of reading
+//     or writing past the array.  `h.ty[-1]` was reading the last int of the
+//     preceding member and `h.known_int[-1] = true` was writing to it.
+//   * The access is recorded, and refused_index() makes the whole program
+//     unusable.  This half is what keeps the change honest: making a bad
+//     subscript merely *defined* would turn a sanitizer report into a silently
+//     wrong compile, which is worse than the bug.  Refusing declines the
+//     compile and the AST evaluator answers, the same contract h.overflowed
+//     already has.
+//
+// Deliberately not mux_assert: it aborts in release builds, and the project is
+// moving away from it.  Declining is the failure mode this codebase wants.
+//
+// operator[] takes int, not size_t, on purpose -- an implicit conversion of -1
+// to size_t at the call site would make the sign test unreachable.
+//
+// The element parameter is ElemT, not T: mux_nls.h defines a function-style
+// macro T(x) for the UTF-8 cast, so a parameter named T turns `T()` into
+// `(reinterpret_cast<const UTF8 *>())` and the header stops compiling.
+//
+template <typename ElemT, int N>
+struct hir_slot {
+    ElemT &operator[](int i) {
+        if (static_cast<unsigned int>(i) >= static_cast<unsigned int>(N)) {
+            refused = true;
+            scratch = ElemT();
+            return scratch;
+        }
+        return data[i];
+    }
+    const ElemT &operator[](int i) const {
+        if (static_cast<unsigned int>(i) >= static_cast<unsigned int>(N)) {
+            refused = true;
+            scratch = ElemT();
+            return scratch;
+        }
+        return data[i];
+    }
+
+    ElemT data[N];
+
+    // Absorbs a refused access.  Reset on every refusal so a read cannot see
+    // what an earlier refused write left behind.
+    mutable ElemT scratch;
+
+    // mutable so a const subscript can still record the refusal; a const read
+    // through a bad index is exactly as much of a defect as a write.
+    //
+    // Initialised here as well as in hir_program::init(), so a slot that is
+    // ever added without being added to HIR_INSN_SLOTS still starts clean.
+    // Both compile entry points construct a fresh hir_program and call init()
+    // exactly once, so the two are redundant today by design.
+    mutable bool refused = false;
+};
+
+// hir_slot hands back a value-initialised element for a refused subscript, so
+// what T() means decides whether a refused read can be mistaken for real data.
+// Both enums are ordered so that zero is the inert case -- HIR_NOP is not a
+// constant, TY_VOID is not a value-carrying type -- which keeps a refused read
+// from steering a consumer down a live branch before refused_index() is
+// consulted.  Asserted rather than assumed, because it is an ordering property
+// of two enums maintained for other reasons (#1501).
+//
+static_assert(HIR_NOP == static_cast<hir_kind>(0),
+              "hir_slot's refused element must not read as a live hir_kind");
+static_assert(TY_VOID == static_cast<hir_type>(0),
+              "hir_slot's refused element must not read as a live hir_type");
+
+// The per-instruction slots, listed once and expanded twice: the refusal reset
+// in init() and the aggregation in refused_index().
+//
+// The declarations themselves are deliberately NOT generated from this list --
+// several carry documentation worth more than the deduplication, and burying it
+// in a macro body would cost more than it saves.  So the list is the single
+// place that reset and aggregation agree on, not a single source of truth for
+// the struct: adding a slot means adding it here too.  `refused` also has a
+// default member initialiser, so a slot missing from this list still starts
+// false on a fresh program -- it just would not be reported.
+//
+#define HIR_INSN_SLOTS(X)          \
+    X(hir_kind, kind)              \
+    X(hir_type, ty)                \
+    X(int,      src1)              \
+    X(int,      src2)              \
+    X(int64_t,  val)               \
+    X(int,      blk)               \
+    X(bool,     known_int)         \
+    X(bool,     known_float)       \
+    X(bool,     runtime_ref)       \
+    X(double,   fval)              \
+    X(int,      cbase)             \
+    X(int,      cnargs)            \
+    X(int,      func_idx)          \
+    X(uint64_t, tier2_addr)        \
+    X(int,      pbase)             \
+    X(int,      pnargs)
+
 struct hir_program {
-    // Per-instruction arrays.
-    hir_kind kind[HIR_MAX_INSNS];
-    hir_type ty[HIR_MAX_INSNS];
-    int      src1[HIR_MAX_INSNS];       // operand 1 (insn index, -1 = none)
-    int      src2[HIR_MAX_INSNS];       // operand 2 (insn index, -1 = none)
-    int64_t  val[HIR_MAX_INSNS];        // immediate or metadata
-    int      blk[HIR_MAX_INSNS];        // containing basic block
+    // Per-instruction arrays.  See HIR_INSN_SLOTS / hir_slot above: the
+    // subscript refuses an out-of-range index rather than trusting callers.
+    hir_slot<hir_kind, HIR_MAX_INSNS> kind;
+    hir_slot<hir_type, HIR_MAX_INSNS> ty;
+    hir_slot<int, HIR_MAX_INSNS>      src1;   // operand 1 (insn index, -1 = none)
+    hir_slot<int, HIR_MAX_INSNS>      src2;   // operand 2 (insn index, -1 = none)
+    hir_slot<int64_t, HIR_MAX_INSNS>  val;    // immediate or metadata
+    hir_slot<int, HIR_MAX_INSNS>      blk;    // containing basic block
 
     // String values for SCONST (compile-time known strings).
     // Indexed by instruction index.  Empty for non-SCONST insns.
@@ -193,21 +311,21 @@ struct hir_program {
 
     // Known-integer flag: true if a TY_STRING result is known to
     // parse as an integer (e.g., ECALL result from strlen/eq/gt).
-    bool known_int[HIR_MAX_INSNS];
+    hir_slot<bool, HIR_MAX_INSNS> known_int;
 
     // Known-float flag: true if a TY_STRING result is known to
     // parse as a floating-point number (e.g., ECALL result from
     // sin/cos/fdiv).  Enables downstream float promotion without
     // runtime string parsing.
-    bool known_float[HIR_MAX_INSNS];
+    hir_slot<bool, HIR_MAX_INSNS> known_float;
 
     // Runtime-reference flag: true if an SCONST points to a
     // runtime-populated address (CARGS_BASE, SUBST_BASE) rather
     // than a true compile-time constant.  Prevents constant folding.
-    bool runtime_ref[HIR_MAX_INSNS];
+    hir_slot<bool, HIR_MAX_INSNS> runtime_ref;
 
     // Float values for FCONST (compile-time known doubles).
-    double fval[HIR_MAX_INSNS];
+    hir_slot<double, HIR_MAX_INSNS> fval;
 
     int n_insns;
 
@@ -218,15 +336,15 @@ struct hir_program {
     //   carg[cbase[i]..cbase[i]+cnargs[i]-1] = argument insn indices
     //
     int carg[HIR_MAX_CARGS];
-    int cbase[HIR_MAX_INSNS];
-    int cnargs[HIR_MAX_INSNS];
+    hir_slot<int, HIR_MAX_INSNS> cbase;
+    hir_slot<int, HIR_MAX_INSNS> cnargs;
     int n_cargs;
 
     // For HIR_CALL: function index (engine_api index) or 0 for string-based.
-    int func_idx[HIR_MAX_INSNS];
+    hir_slot<int, HIR_MAX_INSNS> func_idx;
 
     // For HIR_CALL: Tier 2 blob guest address, or 0 for ECALL.
-    uint64_t tier2_addr[HIR_MAX_INSNS];
+    hir_slot<uint64_t, HIR_MAX_INSNS> tier2_addr;
 
     // PHI arguments (flattened array, M2+).
     // For HIR_PHI at instruction i:
@@ -237,8 +355,8 @@ struct hir_program {
     //
     int pblk[HIR_MAX_PARGS];
     int pval[HIR_MAX_PARGS];
-    int pbase[HIR_MAX_INSNS];
-    int pnargs[HIR_MAX_INSNS];
+    hir_slot<int, HIR_MAX_INSNS> pbase;
+    hir_slot<int, HIR_MAX_INSNS> pnargs;
     int n_pargs;
 
     // ---------------------------------------------------------------
@@ -296,7 +414,28 @@ struct hir_program {
     // compile_expression checks this and aborts to the interpreter.
     bool overflowed;
 
+    // True once any per-instruction subscript refused an out-of-range index
+    // (#1501).  Read alongside overflowed at every point that decides whether
+    // a compile may proceed; the two mean the same thing to a caller -- this
+    // program is not safe to use -- and differ only in what noticed.
+    //
+    // overflowed is set by the *producer* of a -1, so it catches capacity
+    // limits and the #1242 unknown-node refusal.  This one is set by the
+    // *consumer*, so it also catches a refusal that no producer flagged, which
+    // is the half the per-site guards kept missing.
+    //
+    bool refused_index() const {
+        bool r = false;
+#define HIR_SLOT_OR(ElemT, name) r = r || name.refused;
+        HIR_INSN_SLOTS(HIR_SLOT_OR)
+#undef HIR_SLOT_OR
+        return r;
+    }
+
     void init() {
+#define HIR_SLOT_RESET(ElemT, name) name.refused = false;
+        HIR_INSN_SLOTS(HIR_SLOT_RESET)
+#undef HIR_SLOT_RESET
         n_insns = 0;
         n_cargs = 0;
         n_pargs = 0;
@@ -512,7 +651,17 @@ struct hir_program {
     }
 
     // Get string value of a constant (SCONST or ICONST formatted).
+    //
+    // Guarded explicitly rather than leaning on the slot: sval is a
+    // std::vector, so sval[-1] is undefined behaviour that hir_slot cannot
+    // intercept.  Reaching it requires kind[i] to read as HIR_SCONST, which a
+    // refused subscript will not do -- but that is a property of HIR_NOP being
+    // the zero value, which is exactly the kind of thing an enum reorder
+    // silently changes.  The static_asserts below pin it; this guard means the
+    // function is correct even if they are ever relaxed.
+    //
     std::string const_str(int i) const {
+        if (i < 0 || i >= n_insns) return "";
         if (kind[i] == HIR_SCONST) return sval[i];
         if (kind[i] == HIR_ICONST) return std::to_string(val[i]);
         return "";

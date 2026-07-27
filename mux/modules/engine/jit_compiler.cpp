@@ -1072,7 +1072,12 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // If any HIR capacity limit was hit during lowering, the program
     // contains -1 instruction/block indices that later phases would
     // dereference (#859).  Bail out — the AST evaluator handles it.
-    if (h.overflowed) {
+    // refused_index() is the consumer-side half of the same condition (#1501):
+    // overflowed says a producer handed out -1, refused_index() says something
+    // then used it as a subscript.  Either way this program is not safe to
+    // codegen, and the AST evaluator answers instead.
+    //
+    if (h.overflowed || h.refused_index()) {
         s_jit_stats.compile_fail++;
         return prog;  // prog.ok is still false
     }
@@ -1110,7 +1115,7 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
         // written and never read: renaming and codegen proceed over a
         // program whose PHI insertion stopped partway.
         //
-        if (h.overflowed) {
+        if (h.overflowed || h.refused_index()) {
             s_jit_stats.compile_fail++;
             return prog;  // prog.ok is still false
         }
