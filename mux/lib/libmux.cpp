@@ -923,7 +923,18 @@ static MUX_RESULT libmux_CanUnloadNow(void)
 {
     // libmux can never truly unload while the process is running.
     //
-    return MUX_S_OK;
+    // MUX_S_FALSE, not MUX_S_OK: mux_ModuleMaintenance() unloads a module
+    // when CanUnloadNow returns success and is not MUX_S_FALSE, so S_OK is
+    // the answer "yes, unload me" -- the opposite of what the comment above
+    // has always said.  Returning it revoked libmux's own registered classes
+    // (CID_SlaveControlPSFactory and the two Query PS factories) at the
+    // first maintenance tick, after which every cross-process unmarshal of
+    // IID_ISlaveControl failed MUX_E_CLASSNOTAVAILABLE -- which is why
+    // @list modules could reach the slave during config parsing and not
+    // afterwards, and why it printed "libmux (unloaded)" while saying so
+    // (#1535).
+    //
+    return MUX_S_FALSE;
 }
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibrary(process_context ctx)
