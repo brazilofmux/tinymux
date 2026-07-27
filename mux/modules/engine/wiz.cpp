@@ -442,16 +442,16 @@ void do_toad
     buf = alloc_mbuf("do_toad");
     const UTF8 *pVictimMoniker = Moniker(victim);
     const UTF8 *pVictimName = Name(victim);
-    mux_sprintf(buf, MBUF_SIZE, T("%s has been turned into a slimy toad!"),
+    mux_sprintf(buf, MBUF_SIZE, M_("%s has been turned into a slimy toad!"),
         pVictimMoniker);
     notify_except2(loc, executor, victim, executor, buf);
-    mux_sprintf(buf, MBUF_SIZE, T("You toaded %s! (%d objects @chowned)"),
+    mux_sprintf(buf, MBUF_SIZE, M_("You toaded %s! (%d objects @chowned)"),
         pVictimMoniker, count + 1);
     notify_quiet(executor, buf);
 
     // Zap the name from the name hash table.
     //
-    mux_sprintf(buf, MBUF_SIZE, T("a slimy toad named %s"), pVictimMoniker);
+    mux_sprintf(buf, MBUF_SIZE, M_("a slimy toad named %s"), pVictimMoniker);
     delete_player_name(victim, pVictimName, false);
     s_Name(victim, buf);
     free_mbuf(buf);
@@ -471,7 +471,7 @@ void do_toad
     //
     ReleaseAllResources(victim);
 
-    buf = tprintf(T("%d connection%s closed."), count, (count == 1 ? "" : "s"));
+    buf = tprintf(M_("%d connection%s closed."), count, (count == 1 ? "" : "s"));
     notify_quiet(executor, buf);
 }
 
@@ -614,7 +614,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         log_text(T(" was @booted by "));
         log_name(executor);
         ENDLOG;
-        notify_quiet(executor, tprintf(T("You booted %s off!"), Moniker(victim)));
+        notify_quiet(executor, tprintf(M_("You booted %s off!"), Moniker(victim)));
     }
 
     const UTF8 *buf;
@@ -624,7 +624,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     }
     else
     {
-        buf = tprintf(T("%s gently shows you the door."), Moniker(executor));
+        buf = tprintf(M_("%s gently shows you the door."), Moniker(executor));
     }
 
     if (key & BOOT_PORT)
@@ -635,7 +635,7 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     {
         count = boot_off(victim, buf);
     }
-    notify_quiet(executor, tprintf(T("%d connection%s closed."), count, (count == 1 ? "" : "s")));
+    notify_quiet(executor, tprintf(M_("%d connection%s closed."), count, (count == 1 ? "" : "s")));
 }
 
 // ---------------------------------------------------------------------------
@@ -790,13 +790,13 @@ void do_motd(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
                 fcache_send(executor, FC_WIZMOTD);
                 notify_quiet(executor, M_("----- motd messages -----"));
             }
-            notify_quiet(executor, tprintf(T("MOTD: %s"), mudconf.motd_msg));
+            notify_quiet(executor, tprintf(M_("MOTD: %s"), mudconf.motd_msg));
             notify_quiet( executor,
-                          tprintf(T("Wizard MOTD: %s"), mudconf.wizmotd_msg) );
+                          tprintf(M_("Wizard MOTD: %s"), mudconf.wizmotd_msg) );
             notify_quiet( executor,
-                          tprintf(T("Down MOTD: %s"), mudconf.downmotd_msg) );
+                          tprintf(M_("Down MOTD: %s"), mudconf.downmotd_msg) );
             notify_quiet( executor,
-                          tprintf(T("Full MOTD: %s"), mudconf.fullmotd_msg) );
+                          tprintf(M_("Full MOTD: %s"), mudconf.fullmotd_msg) );
         }
         else
         {

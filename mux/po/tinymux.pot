@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 13:56+0000\n"
+"POT-Creation-Date: 2026-07-27 09:26-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -620,6 +620,11 @@ msgstr ""
 msgid "You can’t link to there."
 msgstr ""
 
+#: modules/engine/create.cpp:121
+#, c-format
+msgid "You don’t have enough %s to link."
+msgstr ""
+
 #: modules/engine/create.cpp:127 modules/engine/create.cpp:252
 msgid "Linked."
 msgstr ""
@@ -632,72 +637,147 @@ msgstr ""
 msgid "Can’t set home to home."
 msgstr ""
 
-#: modules/engine/create.cpp:393
+#: modules/engine/create.cpp:362
+#, c-format
+msgid "Home of %s(#%d) changed from %s(#%d) to %s(#%d)."
+msgstr ""
+
+#: modules/engine/create.cpp:394
 msgid "That is not a room!"
 msgstr ""
 
-#: modules/engine/create.cpp:526
+#: modules/engine/create.cpp:414
+#, c-format
+msgid "Dropto of %s(#%d) changed from %s(#%d) to %s(#%d)."
+msgstr ""
+
+#: modules/engine/create.cpp:522
 msgid "You can’t have yourself as a parent!"
 msgstr ""
 
-#: modules/engine/create.cpp:602
+#: modules/engine/create.cpp:598
 msgid "Parent cleared."
 msgstr ""
 
-#: modules/engine/create.cpp:606
+#: modules/engine/create.cpp:602
 msgid "Parent set."
 msgstr ""
 
-#: modules/engine/create.cpp:626
+#: modules/engine/create.cpp:622
 msgid "Dig what?"
 msgstr ""
 
-#: modules/engine/create.cpp:695
+#: modules/engine/create.cpp:640
+#, c-format
+msgid "%s created as room #%d."
+msgstr ""
+
+#: modules/engine/create.cpp:691
 msgid "Create what?"
 msgstr ""
 
-#: modules/engine/create.cpp:701
+#: modules/engine/create.cpp:697
 msgid "You can’t create an object for less than nothing!"
 msgstr ""
 
-#: modules/engine/create.cpp:789
+#: modules/engine/create.cpp:710
+#, c-format
+msgid "%s created as object #%d"
+msgstr ""
+
+#: modules/engine/create.cpp:785
 msgid "You cannot clone players!"
 msgstr ""
 
-#: modules/engine/create.cpp:1049
+#: modules/engine/create.cpp:796
+#, c-format
+msgid "You don’t control %s, ignoring /parent."
+msgstr ""
+
+#: modules/engine/create.cpp:910
+#, c-format
+msgid "%s cloned as %s, new copy is object #%d."
+msgstr ""
+
+#: modules/engine/create.cpp:916
+#, c-format
+msgid "%s cloned, new copy is object #%d."
+msgstr ""
+
+#: modules/engine/create.cpp:1034
+#, c-format
+msgid "Failure creating ‘%s’.  %s"
+msgstr ""
+
+#: modules/engine/create.cpp:1043
+#, c-format
+msgid "New robot ‘%s’ (#%d) created with password ‘%s’"
+msgstr ""
+
+#: modules/engine/create.cpp:1045
 msgid "Your robot has arrived."
 msgstr ""
 
-#: modules/engine/create.cpp:1095
+#: modules/engine/create.cpp:1056
+#, c-format
+msgid "New player ‘%s’ (#%d) created with password ‘%s’"
+msgstr ""
+
+#: modules/engine/create.cpp:1091
 msgid "Sorry, no suicide allowed."
 msgstr ""
 
-#: modules/engine/create.cpp:1100
+#: modules/engine/create.cpp:1096
 msgid "Even you can’t do that!"
 msgstr ""
 
-#: modules/engine/create.cpp:1211
+#: modules/engine/create.cpp:1207
 msgid "Sorry, that object is protected.  Use @destroy/override to destroy it."
 msgstr ""
 
-#: modules/engine/create.cpp:1219
+#: modules/engine/create.cpp:1215
 msgid "That object is indestructible."
 msgstr ""
 
-#: modules/engine/create.cpp:1227
+#: modules/engine/create.cpp:1223
 msgid "You can’t destroy that!"
 msgstr ""
 
-#: modules/engine/create.cpp:1263
+#: modules/engine/create.cpp:1241
+#, c-format
+msgid "No sense beating a dead %s."
+msgstr ""
+
+#: modules/engine/create.cpp:1259
 msgid "The room shakes and begins to crumble."
 msgstr ""
 
-#: modules/engine/create.cpp:1275
+#: modules/engine/create.cpp:1271
 msgid "Player has a lot of attributes. Performing destruction immediately."
 msgstr ""
 
-#: modules/engine/create.cpp:1288 modules/engine/create.cpp:1357
+#: modules/engine/create.cpp:1279
+#, c-format
+msgid "The %s shakes and begins to crumble."
+msgstr ""
+
+#: modules/engine/create.cpp:1284 modules/engine/create.cpp:1353
 msgid "Weird object type cannot be destroyed."
+msgstr ""
+
+#: modules/engine/create.cpp:1293
+#, c-format
+msgid "You will be rewarded shortly for %s(#%d)."
+msgstr ""
+
+#: modules/engine/create.cpp:1308 modules/engine/create.cpp:1314
+#, c-format
+msgid "Destroyed %s(#%d)."
+msgstr ""
+
+#: modules/engine/create.cpp:1321
+#, c-format
+msgid "Destroyed %s’s %s(#%d)."
 msgstr ""
 
 #: modules/engine/cron.cpp:736
@@ -756,20 +836,20 @@ msgstr ""
 msgid "That is not a reasonable name."
 msgstr ""
 
-#: modules/engine/engine.cpp:29
-msgid "Dumping in progress. Try again later."
-msgstr ""
-
-#: modules/engine/engine.cpp:33
-msgid "Dumping..."
-msgstr ""
-
 #: modules/engine/engine_com.cpp:4493
 msgid "*** Logins are disabled."
 msgstr ""
 
 #: modules/engine/engine_com.cpp:4507
 msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
+msgstr ""
+
+#: modules/engine/engine.cpp:29
+msgid "Dumping in progress. Try again later."
+msgstr ""
+
+#: modules/engine/engine.cpp:33
+msgid "Dumping..."
 msgstr ""
 
 #: modules/engine/flags.cpp:26
@@ -1882,6 +1962,11 @@ msgstr ""
 msgid "That name is protected by another player."
 msgstr ""
 
+#: modules/engine/set.cpp:261
+#, c-format
+msgid "[Suspect] %s renamed to %s"
+msgstr ""
+
 #: modules/engine/set.cpp:269 modules/engine/set.cpp:305
 msgid "Name set."
 msgstr ""
@@ -1962,6 +2047,16 @@ msgstr ""
 msgid "Players always own themselves."
 msgstr ""
 
+#: modules/engine/set.cpp:1121
+#, c-format
+msgid "Warning: @chown/nostrip on %s(#%d) leaves ROYALTY privilege intact."
+msgstr ""
+
+#: modules/engine/set.cpp:1130
+#, c-format
+msgid "Warning: @chown/nostrip on %s(#%d) leaves INHERIT privilege intact."
+msgstr ""
+
 #: modules/engine/set.cpp:1258
 msgid "You can’t set that!"
 msgstr ""
@@ -1970,12 +2065,48 @@ msgstr ""
 msgid "Couldn’t create attribute."
 msgstr ""
 
+#: modules/engine/set.cpp:1633
+#, c-format
+msgid "%s: That’s not a good name for an attribute."
+msgstr ""
+
+#: modules/engine/set.cpp:1639 modules/engine/set.cpp:1652
+#: modules/engine/set.cpp:2049
+#, c-format
+msgid "%s: Permission denied."
+msgstr ""
+
+#: modules/engine/set.cpp:1660
+#, c-format
+msgid "%s: Set."
+msgstr ""
+
+#: modules/engine/set.cpp:1673
+#, c-format
+msgid "%s: Not copied anywhere. Not cleared."
+msgstr ""
+
 #: modules/engine/set.cpp:1677
 msgid "Not copied anywhere. Non-existent attribute."
 msgstr ""
 
+#: modules/engine/set.cpp:1691
+#, c-format
+msgid "%s: Cleared."
+msgstr ""
+
+#: modules/engine/set.cpp:1697
+#, c-format
+msgid "%s: Could not remove old attribute.  Permission denied."
+msgstr ""
+
 #: modules/engine/set.cpp:1703
 msgid "Could not remove old attribute. Non-existent attribute."
+msgstr ""
+
+#: modules/engine/set.cpp:2037
+#, c-format
+msgid "Set - %s: %s"
 msgstr ""
 
 #: modules/engine/set.cpp:2062 modules/engine/set.cpp:2123
@@ -1996,6 +2127,16 @@ msgstr ""
 
 #: modules/engine/set.cpp:2415 modules/engine/set.cpp:2445
 msgid "You can’t figure out how to use that."
+msgstr ""
+
+#: modules/engine/set.cpp:2438
+#, c-format
+msgid "You use %s"
+msgstr ""
+
+#: modules/engine/set.cpp:2439
+#, c-format
+msgid "uses %s"
 msgstr ""
 
 #: modules/engine/set.cpp:2501
@@ -2159,6 +2300,26 @@ msgstr ""
 msgid "You can’t toad that player."
 msgstr ""
 
+#: modules/engine/wiz.cpp:445
+#, c-format
+msgid "%s has been turned into a slimy toad!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:448
+#, c-format
+msgid "You toaded %s! (%d objects @chowned)"
+msgstr ""
+
+#: modules/engine/wiz.cpp:454
+#, c-format
+msgid "a slimy toad named %s"
+msgstr ""
+
+#: modules/engine/wiz.cpp:474 modules/engine/wiz.cpp:638
+#, c-format
+msgid "%d connection%s closed."
+msgstr ""
+
 #: modules/engine/wiz.cpp:536
 msgid "You cannot change that player’s password."
 msgstr ""
@@ -2173,6 +2334,16 @@ msgstr ""
 
 #: modules/engine/wiz.cpp:609
 msgid "You can only boot off other players!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:617
+#, c-format
+msgid "You booted %s off!"
+msgstr ""
+
+#: modules/engine/wiz.cpp:627
+#, c-format
+msgid "%s gently shows you the door."
 msgstr ""
 
 #: modules/engine/wiz.cpp:716
@@ -2205,6 +2376,26 @@ msgstr ""
 
 #: modules/engine/wiz.cpp:791
 msgid "----- motd messages -----"
+msgstr ""
+
+#: modules/engine/wiz.cpp:793
+#, c-format
+msgid "MOTD: %s"
+msgstr ""
+
+#: modules/engine/wiz.cpp:795
+#, c-format
+msgid "Wizard MOTD: %s"
+msgstr ""
+
+#: modules/engine/wiz.cpp:797
+#, c-format
+msgid "Down MOTD: %s"
+msgstr ""
+
+#: modules/engine/wiz.cpp:799
+#, c-format
+msgid "Full MOTD: %s"
 msgstr ""
 
 #: modules/engine/wiz.cpp:851
