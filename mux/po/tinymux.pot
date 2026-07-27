@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 11:47+0000\n"
+"POT-Creation-Date: 2026-07-27 05:59-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,6 +18,89 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+
+#: modules/engine/command.cpp:661 modules/engine/command.cpp:4373
+msgid "Lua module is not loaded."
+msgstr ""
+
+#: modules/engine/command.cpp:684 modules/engine/match.cpp:19
+#: modules/engine/match.cpp:36
+msgid "Permission denied."
+msgstr ""
+
+#: modules/engine/command.cpp:717
+msgid "No such object."
+msgstr ""
+
+#: modules/engine/command.cpp:1452
+msgid "Command incompatible with executor type."
+msgstr ""
+
+#: modules/engine/command.cpp:1470
+msgid "Sorry, building is not allowed now."
+msgstr ""
+
+#: modules/engine/command.cpp:1475
+msgid "Sorry, queueing and triggering are not allowed now."
+msgstr ""
+
+#: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2023
+#: modules/engine/quota.cpp:176 modules/engine/wiz.cpp:792
+#: modules/engine/wiz.cpp:880
+msgid "Illegal combination of switches."
+msgstr ""
+
+#: modules/engine/command.cpp:2980
+msgid "Huh?  (Type “help” for help.)"
+msgstr ""
+
+#: modules/engine/command.cpp:4491
+msgid "Location CmdCheck attribute is:"
+msgstr ""
+
+#: modules/engine/command.cpp:4496
+msgid "Location CmdCheck attribute is empty."
+msgstr ""
+
+#: modules/engine/command.cpp:4512
+msgid "Scanning all locations and zones from your current location:"
+msgstr ""
+
+#: modules/engine/command.cpp:4588
+msgid "CmdCheck is active."
+msgstr ""
+
+#: modules/engine/command.cpp:4592
+msgid "CmdCheck is not active."
+msgstr ""
+
+#: modules/engine/command.cpp:4598
+msgid "CmdCheck attribute is:"
+msgstr ""
+
+#: modules/engine/command.cpp:4603
+msgid "CmdCheck attribute is empty."
+msgstr ""
+
+#: modules/engine/command.cpp:4832
+msgid "Train cannot be used to teach command, train."
+msgstr ""
+
+#: modules/engine/command.cpp:4839
+msgid "Bad location."
+msgstr ""
+
+#: modules/engine/command.cpp:4846
+msgid "Train requires an argument."
+msgstr ""
+
+#: modules/engine/command.cpp:4883
+msgid "Moniker cleared."
+msgstr ""
+
+#: modules/engine/command.cpp:4892
+msgid "Moniker set."
+msgstr ""
 
 #: modules/engine/cque.cpp:104
 msgid "Include nesting limit exceeded."
@@ -101,11 +184,6 @@ msgstr ""
 
 #: modules/engine/cque.cpp:1942
 msgid "----- SQL Queries -----"
-msgstr ""
-
-#: modules/engine/cque.cpp:2023 modules/engine/quota.cpp:176
-#: modules/engine/wiz.cpp:792 modules/engine/wiz.cpp:880
-msgid "Illegal combination of switches."
 msgstr ""
 
 #: modules/engine/cque.cpp:2047
@@ -386,10 +464,6 @@ msgstr ""
 msgid "I don’t know which one you mean!"
 msgstr ""
 
-#: modules/engine/match.cpp:19 modules/engine/match.cpp:36
-msgid "Permission denied."
-msgstr ""
-
 #: modules/engine/move.cpp:406
 msgid "You can’t teleport that out!"
 msgstr ""
@@ -462,8 +536,8 @@ msgstr ""
 msgid "You can’t leave."
 msgstr ""
 
-#: modules/engine/player.cpp:963 modules/engine/rob.cpp:66
-#: modules/engine/speech.cpp:1057
+#: modules/engine/player.cpp:963 modules/engine/predicates.cpp:1241
+#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
 msgid "Sorry."
 msgstr ""
 
@@ -531,6 +605,78 @@ msgstr ""
 
 #: modules/engine/player.cpp:1716
 msgid "That name is already protected by another player."
+msgstr ""
+
+#: modules/engine/predicates.cpp:283
+msgid "Sorry, your building contract has run out."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1008
+msgid "That is not a valid command name."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1019 modules/engine/predicates.cpp:1253
+#: modules/engine/predicates.cpp:1562
+msgid "No such attribute."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1213
+msgid "No added commands found in command table."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1328 modules/engine/predicates.cpp:1371
+msgid "Done."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1375 modules/engine/predicates.cpp:1380
+msgid "Command not found in command table."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1414 modules/engine/predicates.cpp:1488
+msgid "That is not a player."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1419 modules/engine/predicates.cpp:1493
+msgid "That player is not connected."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1424
+msgid "Player is not in an @program."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1445
+msgid "Your @program has been terminated."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1473
+msgid "No players specified."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1501
+msgid "Input already pending."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1556 modules/engine/set.cpp:533
+#: modules/engine/set.cpp:630 modules/engine/set.cpp:917
+#: modules/engine/set.cpp:1266
+msgid "Attribute not present on object."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1609
+msgid "Dumping. Please try again later."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1617
+msgid "Server just started. Please try again in a few seconds."
+msgstr ""
+
+#: modules/engine/predicates.cpp:2742 modules/engine/set.cpp:1587
+#: modules/engine/set.cpp:1997
+msgid "Nothing to do."
+msgstr ""
+
+#: modules/engine/predicates.cpp:2786
+msgid "Permission denied,"
 msgstr ""
 
 #: modules/engine/quota.cpp:171
@@ -658,11 +804,6 @@ msgstr ""
 msgid "Invalid forwardlist."
 msgstr ""
 
-#: modules/engine/set.cpp:533 modules/engine/set.cpp:630
-#: modules/engine/set.cpp:917 modules/engine/set.cpp:1266
-msgid "Attribute not present on object."
-msgstr ""
-
 #: modules/engine/set.cpp:544
 msgid "Attribute locked."
 msgstr ""
@@ -733,10 +874,6 @@ msgstr ""
 
 #: modules/engine/set.cpp:1356
 msgid "Couldn’t create attribute."
-msgstr ""
-
-#: modules/engine/set.cpp:1587 modules/engine/set.cpp:1997
-msgid "Nothing to do."
 msgstr ""
 
 #: modules/engine/set.cpp:1677
