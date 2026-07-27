@@ -3231,7 +3231,7 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
                 socklen_t errlen = sizeof(sockerr);
                 if (getsockopt(email_channel_->fd, SOL_SOCKET, SO_ERROR,
                                reinterpret_cast<char*>(&sockerr), &errlen) < 0 || sockerr != 0) {
-                    errorMsg = T("@email: Unable to connect to mailserver, aborting!");
+                    errorMsg = M_("@email: Unable to connect to mailserver, aborting!");
                     needCleanup = true;
                 } else {
                     email_channel_->state = EmailChannel::State::WaitGreeting;
