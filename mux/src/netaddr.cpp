@@ -472,7 +472,13 @@ mux_subnet::SubnetComparison mux_subnet::compare_to(MUX_SOCKADDR *msa) const
         {
             struct in6_addr ia6{};
             msa->get_address(&ia6);
-#if defined(HAVE_IN_ADDR) && defined(IN6_IS_ADDR_V4MAPPED)
+// IN6_IS_ADDR_V4MAPPED is a MACRO in glibc's <netinet/in.h>, but the Windows
+// SDK declares it as an inline function in <ws2ipdef.h>.  defined() is false
+// for a function, so this whole block silently vanished from every Windows
+// build even though the facility is present and usable -- taking the #800
+// ban-bypass protection with it.  Accept WIN32 explicitly (#1441).
+//
+#if defined(HAVE_IN_ADDR) && (defined(IN6_IS_ADDR_V4MAPPED) || defined(WIN32))
             if (IN6_IS_ADDR_V4MAPPED(&ia6))
             {
                 // An IPv4-mapped IPv6 address (::ffff:a.b.c.d), as delivered by
