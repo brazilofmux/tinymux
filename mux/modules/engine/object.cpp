@@ -513,7 +513,7 @@ static void ProcessMasterRoomACreate(dbref creator, dbref thing)
         break;
 
     default:
-        xargs[1] = T("#-1");
+        xargs[1] = S_("#-1");
         break;
     }
 

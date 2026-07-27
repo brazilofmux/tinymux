@@ -1959,7 +1959,7 @@ bool get_obj_and_lock(dbref player, const UTF8 *what, dbref *it, ATTR **attr, UT
         //
         if (!search_nametab(player, lock_sw, what + i + 1, &anum))
         {
-            safe_str(T("#-1 LOCK NOT FOUND"), errmsg, bufc);
+            safe_str(S_("#-1 LOCK NOT FOUND"), errmsg, bufc);
             return false;
         }
     }
@@ -1975,7 +1975,7 @@ bool get_obj_and_lock(dbref player, const UTF8 *what, dbref *it, ATTR **attr, UT
     *attr = atr_num(anum);
     if (nullptr == *attr)
     {
-        safe_str(T("#-1 LOCK NOT FOUND"), errmsg, bufc);
+        safe_str(S_("#-1 LOCK NOT FOUND"), errmsg, bufc);
         return false;
     }
     return true;

@@ -280,7 +280,7 @@ FUNCTION(fun_hasquota)
 
     if (!mudconf.quotas)
     {
-        safe_str(T("#-1 Quotas are not enabled."), buff, bufc);
+        safe_str(S_("#-1 Quotas are not enabled."), buff, bufc);
         return;
     }
 
@@ -289,7 +289,7 @@ FUNCTION(fun_hasquota)
     dbref who = lookup_player(executor, fargs[0], true);
     if (!Good_obj(who))
     {
-        safe_str(T("#-1 NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 NOT FOUND"), buff, bufc);
         return;
     }
 

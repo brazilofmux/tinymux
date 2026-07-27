@@ -5600,22 +5600,22 @@ MUX_RESULT CMailMod::SoftcodeSend(dbref player, const UTF8 *recipients,
 
     if (player < 0)
     {
-        *ppError = T("#-1 NOT A PLAYER");
+        *ppError = S_("#-1 NOT A PLAYER");
         return MUX_E_INVALIDARG;
     }
     if (nullptr == recipients || '\0' == recipients[0])
     {
-        *ppError = T("#-1 NO RECIPIENTS");
+        *ppError = S_("#-1 NO RECIPIENTS");
         return MUX_E_INVALIDARG;
     }
     if (nullptr == subject || '\0' == subject[0])
     {
-        *ppError = T("#-1 NO SUBJECT");
+        *ppError = S_("#-1 NO SUBJECT");
         return MUX_E_INVALIDARG;
     }
     if (nullptr == message || '\0' == message[0])
     {
-        *ppError = T("#-1 NO MESSAGE");
+        *ppError = S_("#-1 NO MESSAGE");
         return MUX_E_INVALIDARG;
     }
 
@@ -5638,7 +5638,7 @@ MUX_RESULT CMailMod::SoftcodeSend(dbref player, const UTF8 *recipients,
         }
         if (!bIsPlayer)
         {
-            *ppError = T("#-1 NOT A PLAYER");
+            *ppError = S_("#-1 NOT A PLAYER");
             return MUX_E_INVALIDARG;
         }
     }
@@ -5649,7 +5649,7 @@ MUX_RESULT CMailMod::SoftcodeSend(dbref player, const UTF8 *recipients,
         m_pIMailDelivery->IsComposing(player, &bComposing);
         if (bComposing)
         {
-            *ppError = T("#-1 MAIL ALREADY IN PROGRESS");
+            *ppError = S_("#-1 MAIL ALREADY IN PROGRESS");
             return MUX_E_FAIL;
         }
         bool bWiz = false;
@@ -5663,7 +5663,7 @@ MUX_RESULT CMailMod::SoftcodeSend(dbref player, const UTF8 *recipients,
             m_pIMailDelivery->ThrottleCheck(player, &bThrottled);
             if (bThrottled)
             {
-                *ppError = T("#-1 TOO MUCH MAIL SENT");
+                *ppError = S_("#-1 TOO MUCH MAIL SENT");
                 return MUX_E_FAIL;
             }
         }
@@ -5672,7 +5672,7 @@ MUX_RESULT CMailMod::SoftcodeSend(dbref player, const UTF8 *recipients,
     std::string numlist = make_numlist(player, recipients, false);
     if (numlist.empty())
     {
-        *ppError = T("#-1 NO VALID RECIPIENTS");
+        *ppError = S_("#-1 NO VALID RECIPIENTS");
         return MUX_E_FAIL;
     }
 
@@ -5682,7 +5682,7 @@ MUX_RESULT CMailMod::SoftcodeSend(dbref player, const UTF8 *recipients,
     UTF8 *numlist_copy = static_cast<UTF8 *>(malloc(nLen));
     if (nullptr == numlist_copy)
     {
-        *ppError = T("#-1 OUT OF MEMORY");
+        *ppError = S_("#-1 OUT OF MEMORY");
         return MUX_E_OUTOFMEMORY;
     }
     memcpy(numlist_copy, numlist.c_str(), nLen);

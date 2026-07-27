@@ -431,13 +431,13 @@ bool delim_check
             }
             else
             {
-                safe_str(T("#-1 SEPARATOR IS TOO LARGE"), buff, bufc);
+                safe_str(S_("#-1 SEPARATOR IS TOO LARGE"), buff, bufc);
                 bSuccess = false;
             }
         }
         else
         {
-            safe_str(T("#-1 SEPARATOR MUST BE ONE CHARACTER"), buff, bufc);
+            safe_str(S_("#-1 SEPARATOR MUST BE ONE CHARACTER"), buff, bufc);
             bSuccess = false;
         }
 
@@ -576,7 +576,7 @@ static FUNCTION(fun_rand)
         }
         else
         {
-            safe_str(T("#-1 ARGUMENT MUST BE INTEGER"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENT MUST BE INTEGER"), buff, bufc);
         }
         break;
 
@@ -598,7 +598,7 @@ static FUNCTION(fun_rand)
         }
         else
         {
-            safe_str(T("#-1 ARGUMENT MUST BE INTEGER"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENT MUST BE INTEGER"), buff, bufc);
         }
         break;
     }
@@ -721,7 +721,7 @@ static FUNCTION(fun_convsecs)
     }
     else
     {
-        safe_str(T("#-1 INVALID DATE"), buff, bufc);
+        safe_str(S_("#-1 INVALID DATE"), buff, bufc);
     }
 }
 
@@ -769,7 +769,7 @@ static FUNCTION(fun_convtime)
     }
     else
     {
-        safe_str(T("#-1 INVALID DATE"), buff, bufc);
+        safe_str(S_("#-1 INVALID DATE"), buff, bufc);
     }
 }
 
@@ -2155,7 +2155,7 @@ FUNCTION(fun_successes)
     if (  !is_integer(fargs[0], nullptr)
        || !is_integer(fargs[1], nullptr))
     {
-        safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
         return;
     }
 
@@ -2173,11 +2173,11 @@ FUNCTION(fun_successes)
     }
     else if (num_dice < 0)
     {
-        safe_str(T("#-1 NUMBER OF DICE SHOULD BE > 0"), buff, bufc);
+        safe_str(S_("#-1 NUMBER OF DICE SHOULD BE > 0"), buff, bufc);
     }
     else if (100 < num_dice)
     {
-        safe_str(T("#-1 TOO MANY DICE FOR ME TO ROLL"), buff, bufc);
+        safe_str(S_("#-1 TOO MANY DICE FOR ME TO ROLL"), buff, bufc);
     }
     else
     {
@@ -2192,11 +2192,11 @@ FUNCTION(fun_successes)
                 break;
 
             case NUMBER_TOO_LARGE:
-                safe_str(T("#-1 INVALID SUCCESS TABLE"), buff, bufc);
+                safe_str(S_("#-1 INVALID SUCCESS TABLE"), buff, bufc);
                 break;
 
             default:
-                safe_str(T("#-1 UNKNOWN ERROR"), buff, bufc);
+                safe_str(S_("#-1 UNKNOWN ERROR"), buff, bufc);
                 break;
             }
         }
@@ -3426,7 +3426,7 @@ static FUNCTION(fun_fullname)
         if (  !nearby_or_control(executor, it)
            && !isPlayer(it))
         {
-            safe_str(T("#-1 TOO FAR AWAY TO SEE"), buff, bufc);
+            safe_str(S_("#-1 TOO FAR AWAY TO SEE"), buff, bufc);
             return;
         }
     }
@@ -3472,7 +3472,7 @@ static FUNCTION(fun_name)
                && !isPlayer(it)
                && !Long_Fingers(executor))
             {
-                safe_str(T("#-1 TOO FAR AWAY TO SEE"), buff, bufc);
+                safe_str(S_("#-1 TOO FAR AWAY TO SEE"), buff, bufc);
                 return;
             }
         }
@@ -4421,7 +4421,7 @@ FUNCTION(fun_entrances)
                 break;
 
             default:
-                safe_str(T("#-1 INVALID TYPE"), buff, bufc);
+                safe_str(S_("#-1 INVALID TYPE"), buff, bufc);
                 return;
             }
         }
@@ -5054,7 +5054,7 @@ static FUNCTION(fun_remove)
     if (co_search(pWord, nWordLen,
                   reinterpret_cast<const unsigned char *>(sep.str), sep.n))
     {
-        safe_str(T("#-1 CAN ONLY REMOVE ONE ELEMENT"), buff, bufc);
+        safe_str(S_("#-1 CAN ONLY REMOVE ONE ELEMENT"), buff, bufc);
         return;
     }
 
@@ -5410,7 +5410,7 @@ static FUNCTION(fun_type)
         safe_str(T("THING"), buff, bufc);
         break;
     default:
-        safe_str(T("#-1 ILLEGAL TYPE"), buff, bufc);
+        safe_str(S_("#-1 ILLEGAL TYPE"), buff, bufc);
     }
 }
 
@@ -5549,13 +5549,13 @@ static FUNCTION(fun_hasrxlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str(T("#-1 NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 NOT FOUND"), buff, bufc);
         return;
     }
     rl = find_rlevel(fargs[1]);
     if (!rl)
     {
-        safe_str(T("#-1 INVALID RLEVEL"), buff, bufc);
+        safe_str(S_("#-1 INVALID RLEVEL"), buff, bufc);
         return;
     }
     if (Examinable(executor, it))
@@ -5571,7 +5571,7 @@ static FUNCTION(fun_hasrxlevel)
     }
     else
     {
-        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
     }
 }
 
@@ -5583,13 +5583,13 @@ static FUNCTION(fun_hastxlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str(T("#-1 NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 NOT FOUND"), buff, bufc);
         return;
     }
     rl = find_rlevel(fargs[1]);
     if (!rl)
     {
-        safe_str(T("#-1 INVALID RLEVEL"), buff, bufc);
+        safe_str(S_("#-1 INVALID RLEVEL"), buff, bufc);
         return;
     }
     if (Examinable(executor, it))
@@ -5605,7 +5605,7 @@ static FUNCTION(fun_hastxlevel)
     }
     else
     {
-        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
     }
 }
 
@@ -5626,7 +5626,7 @@ static FUNCTION(fun_listrlevels)
     }
     if (mudconf.no_levels < 1)
     {
-        safe_str(T("#-1 NO REALITY LEVELS DEFINED"), buff, bufc);
+        safe_str(S_("#-1 NO REALITY LEVELS DEFINED"), buff, bufc);
     }
     else
     {
@@ -5652,7 +5652,7 @@ static FUNCTION(fun_rxlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str(T("#-1 NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 NOT FOUND"), buff, bufc);
         return;
     }
     if (Examinable(executor, it))
@@ -5672,7 +5672,7 @@ static FUNCTION(fun_rxlevel)
     }
     else
     {
-        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
     }
 }
 
@@ -5686,7 +5686,7 @@ static FUNCTION(fun_txlevel)
     it = match_thing(executor, fargs[0]);
     if (!Good_obj(it))
     {
-        safe_str(T("#-1 NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 NOT FOUND"), buff, bufc);
         return;
     }
     if (Examinable(executor, it))
@@ -5706,7 +5706,7 @@ static FUNCTION(fun_txlevel)
     }
     else
     {
-        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
     }
 }
 #endif // REALITY_LVLS
@@ -5848,7 +5848,7 @@ static FUNCTION(fun_lock)
             struct boolexp *okey = parse_boolexp(executor, fargs[1], false);
             if (okey == TRUE_BOOLEXP)
             {
-                safe_str(T("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
+                safe_str(S_("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
                 return;
             }
             atr_add_raw(it, pattr->number,
@@ -5931,7 +5931,7 @@ static FUNCTION(fun_elock)
     }
     else
     {
-        safe_str(T("#-1 TOO FAR AWAY"), buff, bufc);
+        safe_str(S_("#-1 TOO FAR AWAY"), buff, bufc);
     }
 }
 
@@ -5961,7 +5961,7 @@ static FUNCTION(fun_lockencode)
     BOOLEXP *okey = parse_boolexp(executor, fargs[0], false);
     if (okey == TRUE_BOOLEXP)
     {
-        safe_str(T("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
+        safe_str(S_("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
         return;
     }
 
@@ -5994,7 +5994,7 @@ static FUNCTION(fun_lockdecode)
     BOOLEXP *okey = parse_boolexp(executor, fargs[0], true);
     if (okey == TRUE_BOOLEXP)
     {
-        safe_str(T("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
+        safe_str(S_("#-1 I DON'T UNDERSTAND THAT KEY"), buff, bufc);
         return;
     }
 
@@ -6747,13 +6747,13 @@ static FUNCTION(fun_dynhelp)
 
     if (bAmbiguous)
     {
-        safe_str(T("#-1 AMBIGUOUS TOPIC"), buff, bufc);
+        safe_str(S_("#-1 AMBIGUOUS TOPIC"), buff, bufc);
         return;
     }
 
     if (nullptr == match)
     {
-        safe_str(T("#-1 NO SUCH TOPIC"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH TOPIC"), buff, bufc);
         return;
     }
 
@@ -6792,7 +6792,7 @@ static void reglattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
 
     if (!fargs[1] || !*fargs[1])
     {
-        safe_str(T("#-1 INVALID REGEXP"), buff, bufc);
+        safe_str(S_("#-1 INVALID REGEXP"), buff, bufc);
         return;
     }
 
@@ -6816,7 +6816,7 @@ static void reglattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
     {
         PCRE2_UCHAR errbuf[256];
         pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
-        safe_str(T("#-1 REGEXP ERROR "), buff, bufc);
+        safe_str(S_("#-1 REGEXP ERROR "), buff, bufc);
         safe_str(reinterpret_cast<UTF8 *>(errbuf), buff, bufc);
         return;
     }
@@ -6825,7 +6825,7 @@ static void reglattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
     if (!match_data)
     {
         pcre2_code_free(re);
-        safe_str(T("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
+        safe_str(S_("#-1 REGEXP MATCH DATA ERROR"), buff, bufc);
         return;
     }
 
@@ -7157,7 +7157,7 @@ static FUNCTION(fun_search)
     SEARCH searchparm;
     if (!search_setup(executor, pArg, &searchparm))
     {
-        safe_str(T("#-1 ERROR DURING SEARCH"), buff, bufc);
+        safe_str(S_("#-1 ERROR DURING SEARCH"), buff, bufc);
         return;
     }
 
@@ -7206,14 +7206,14 @@ static FUNCTION(fun_stats)
         who = lookup_player(executor, fargs[0], true);
         if (who == NOTHING)
         {
-            safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+            safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
             return;
         }
     }
     STATS statinfo;
     if (!get_stats(executor, who, &statinfo))
     {
-        safe_str(T("#-1 ERROR GETTING STATS"), buff, bufc);
+        safe_str(S_("#-1 ERROR GETTING STATS"), buff, bufc);
         return;
     }
     safe_tprintf_str(buff, bufc, T("%d %d %d %d %d %d"), statinfo.s_total, statinfo.s_rooms,
@@ -7242,7 +7242,7 @@ static FUNCTION(fun_merge)
     if (  !utf8_strlen(fargs[2], n)
        || 1 < n)
     {
-        safe_str(T("#-1 TOO MANY CHARACTERS"), buff, bufc);
+        safe_str(S_("#-1 TOO MANY CHARACTERS"), buff, bufc);
         return;
     }
 
@@ -7259,7 +7259,7 @@ static FUNCTION(fun_merge)
     size_t vlenB = co_visible_length(pB, lenB);
     if (vlenA != vlenB)
     {
-        safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
+        safe_str(S_("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
     }
     else
     {
@@ -7295,13 +7295,13 @@ static FUNCTION(fun_splice)
     //
     if (countwords(fargs[2], sep) > 1)
     {
-        safe_str(T("#-1 TOO MANY WORDS"), buff, bufc);
+        safe_str(S_("#-1 TOO MANY WORDS"), buff, bufc);
         return;
     }
     int words = countwords(fargs[0], sep);
     if (words != countwords(fargs[1], sep))
     {
-        safe_str(T("#-1 NUMBER OF WORDS MUST BE EQUAL"), buff, bufc);
+        safe_str(S_("#-1 NUMBER OF WORDS MUST BE EQUAL"), buff, bufc);
         return;
     }
 
@@ -7391,7 +7391,7 @@ static FUNCTION(fun_repeat)
             if (  times > LBUF_SIZE - 1
                || nSize > LBUF_SIZE - 1)
             {
-                safe_str(T("#-1 STRING TOO LONG"), buff, bufc);
+                safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
             }
             else
             {
@@ -7879,7 +7879,7 @@ static FUNCTION(fun_choose)
 
     if (n_elems != n_weights)
     {
-        safe_str(T("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
+        safe_str(S_("#-1 LISTS MUST BE OF EQUAL SIZE"), buff, bufc);
         return;
     }
 
@@ -7904,7 +7904,7 @@ static FUNCTION(fun_choose)
             int sum_next = sum + num;
             if (sum_next < sum)
             {
-                safe_str(T("#-1 OVERFLOW"), buff, bufc);
+                safe_str(S_("#-1 OVERFLOW"), buff, bufc);
                 return;
             }
             sum = sum_next;
@@ -7947,13 +7947,13 @@ FUNCTION(fun_distribute)
     //
     if (!is_integer(fargs[0], nullptr))
     {
-        safe_str(T("#-1 ARG1 IS NOT AN INTEGER"), buff, bufc);
+        safe_str(S_("#-1 ARG1 IS NOT AN INTEGER"), buff, bufc);
         return;
     }
 
     if (!is_integer(fargs[1], nullptr))
     {
-        safe_str(T("#-1 ARG2 IS NOT AN INTEGER"), buff, bufc);
+        safe_str(S_("#-1 ARG2 IS NOT AN INTEGER"), buff, bufc);
         return;
     }
 
@@ -8019,7 +8019,7 @@ FUNCTION(fun_sql)
 
     if (!mush_database)
     {
-        safe_str(T("#-1 NO DATABASE"), buff, bufc);
+        safe_str(S_("#-1 NO DATABASE"), buff, bufc);
         return;
     }
 
@@ -8046,13 +8046,13 @@ FUNCTION(fun_sql)
 
     if (mysql_ping(mush_database))
     {
-        safe_str(T("#-1 SQL UNAVAILABLE"), buff, bufc);
+        safe_str(S_("#-1 SQL UNAVAILABLE"), buff, bufc);
         return;
     }
 
     if (mysql_real_query(mush_database, reinterpret_cast<char *>(cp), strlen(reinterpret_cast<char *>(cp))))
     {
-        safe_str(T("#-1 QUERY ERROR"), buff, bufc);
+        safe_str(S_("#-1 QUERY ERROR"), buff, bufc);
         return;
     }
 
@@ -8130,7 +8130,7 @@ FUNCTION(fun_mapsql)
 
     if (!mush_database)
     {
-        safe_str(T("#-1 NO DATABASE"), buff, bufc);
+        safe_str(S_("#-1 NO DATABASE"), buff, bufc);
         return;
     }
 
@@ -8164,7 +8164,7 @@ FUNCTION(fun_mapsql)
     if (mysql_ping(mush_database))
     {
         free_lbuf(atext);
-        safe_str(T("#-1 SQL UNAVAILABLE"), buff, bufc);
+        safe_str(S_("#-1 SQL UNAVAILABLE"), buff, bufc);
         return;
     }
 
@@ -8172,7 +8172,7 @@ FUNCTION(fun_mapsql)
             strlen(reinterpret_cast<char *>(cp))))
     {
         free_lbuf(atext);
-        safe_str(T("#-1 QUERY ERROR"), buff, bufc);
+        safe_str(S_("#-1 QUERY ERROR"), buff, bufc);
         return;
     }
 
@@ -10698,7 +10698,7 @@ static FUNCTION(fun_setq)
 
     if (nfargs < 2 || (nfargs % 2) != 0)
     {
-        safe_str(T("#-1 FUNCTION (SETQ) EXPECTS AN EVEN NUMBER OF ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION (SETQ) EXPECTS AN EVEN NUMBER OF ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -10720,7 +10720,7 @@ static FUNCTION(fun_setq)
             }
             else
             {
-                safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+                safe_str(S_("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
                 return;
             }
         }
@@ -10738,7 +10738,7 @@ static FUNCTION(fun_setr)
 
     if (nfargs < 2 || (nfargs % 2) != 0)
     {
-        safe_str(T("#-1 FUNCTION (SETR) EXPECTS AN EVEN NUMBER OF ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION (SETR) EXPECTS AN EVEN NUMBER OF ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -10768,7 +10768,7 @@ static FUNCTION(fun_setr)
             }
             else
             {
-                safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+                safe_str(S_("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
                 return;
             }
         }
@@ -10807,7 +10807,7 @@ static FUNCTION(fun_r)
         }
         else
         {
-            safe_str(T("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
+            safe_str(S_("#-1 INVALID GLOBAL REGISTER"), buff, bufc);
         }
     }
 }
@@ -10833,7 +10833,7 @@ static FUNCTION(fun_rserror)
             break;
 
         case QS_NO_SESSION:
-            safe_str(T("#-2 NO SESSION"), buff, bufc);
+            safe_str(S_("#-2 NO SESSION"), buff, bufc);
             break;
 
         case QS_SQL_UNAVAILABLE:
@@ -10851,7 +10851,7 @@ static FUNCTION(fun_rserror)
     }
     else
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
     }
 }
 
@@ -10872,7 +10872,7 @@ static FUNCTION(fun_rsrelease)
     }
     else
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
     }
 }
 
@@ -10892,7 +10892,7 @@ static FUNCTION(fun_rsrows)
     }
     else
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
     }
 }
 
@@ -10913,7 +10913,7 @@ static FUNCTION(fun_rsnext)
         if (  i < 0
            || (nRows = mudstate.pResultsSet->GetRowCount()) <= i)
         {
-            safe_str(T("#-1 END OF TABLE"), buff, bufc);
+            safe_str(S_("#-1 END OF TABLE"), buff, bufc);
         }
         else
         {
@@ -10923,7 +10923,7 @@ static FUNCTION(fun_rsnext)
     }
     else
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
     }
 }
 
@@ -10944,7 +10944,7 @@ static FUNCTION(fun_rsprev)
         if (  i < 0
            || (nRows = mudstate.pResultsSet->GetRowCount()) <= i)
         {
-            safe_str(T("#-1 END OF TABLE"), buff, bufc);
+            safe_str(S_("#-1 END OF TABLE"), buff, bufc);
         }
         else
         {
@@ -10954,7 +10954,7 @@ static FUNCTION(fun_rsprev)
     }
     else
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
     }
 }
 
@@ -10970,7 +10970,7 @@ FUNCTION(fun_rsrec)
 
     if (nullptr == mudstate.pResultsSet)
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
         return;
     }
 
@@ -10978,7 +10978,7 @@ FUNCTION(fun_rsrec)
     if (  mudstate.iRow < 0
        || (nRows = mudstate.pResultsSet->GetRowCount()) <= mudstate.iRow)
     {
-        safe_str(T("#-1 END OF TABLE"), buff, bufc);
+        safe_str(S_("#-1 END OF TABLE"), buff, bufc);
     }
 
     SEP sepColumn;
@@ -11017,7 +11017,7 @@ FUNCTION(fun_rsrecnext)
 
     if (!mudstate.pResultsSet)
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
         return;
     }
 
@@ -11031,7 +11031,7 @@ FUNCTION(fun_rsrecnext)
     if (  mudstate.iRow < 0
        || (nRows = mudstate.pResultsSet->GetRowCount()) <= mudstate.iRow)
     {
-        safe_str(T("#-1 END OF TABLE"), buff, bufc);
+        safe_str(S_("#-1 END OF TABLE"), buff, bufc);
         return;
     }
 
@@ -11072,7 +11072,7 @@ FUNCTION(fun_rsrecprev)
 
     if (!mudstate.pResultsSet)
     {
-        safe_str(T("#-1 NO RESULTS SET"), buff, bufc);
+        safe_str(S_("#-1 NO RESULTS SET"), buff, bufc);
         return;
     }
 
@@ -11086,7 +11086,7 @@ FUNCTION(fun_rsrecprev)
     if (  mudstate.iRow < 0
        || (nRows = mudstate.pResultsSet->GetRowCount()) <= mudstate.iRow)
     {
-        safe_str(T("#-1 END OF TABLE"), buff, bufc);
+        safe_str(S_("#-1 END OF TABLE"), buff, bufc);
         return;
     }
 
@@ -11521,7 +11521,7 @@ static FUNCTION(fun_wrap)
             break;
 
         default:
-            safe_str(T("#-1 INVALID JUSTIFICATION SPECIFIED"), buff, bufc);
+            safe_str(S_("#-1 INVALID JUSTIFICATION SPECIFIED"), buff, bufc);
             return;
         }
     }
@@ -12045,7 +12045,7 @@ static FUNCTION(fun_conntotal)
     }
     else
     {
-        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
     }
 }
 
@@ -12074,7 +12074,7 @@ static FUNCTION(fun_connmax)
     }
     else
     {
-        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
     }
 }
 
@@ -12097,7 +12097,7 @@ static FUNCTION(fun_connlast)
     }
     else
     {
-        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
     }
 }
 
@@ -12125,7 +12125,7 @@ static FUNCTION(fun_connnum)
     }
     else
     {
-        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
     }
 }
 
@@ -12149,7 +12149,7 @@ static FUNCTION(fun_connleft)
     }
     else
     {
-        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
     }
 }
 
@@ -12436,7 +12436,7 @@ static FUNCTION(fun_ord)
     UTF8 *p = strip_color(fargs[0], &nBytes, nullptr);
     if (0 == nBytes)
     {
-        safe_str(T("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
+        safe_str(S_("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
         return;
     }
 
@@ -12445,7 +12445,7 @@ static FUNCTION(fun_ord)
     mux_cursor cluster = utf8_next_grapheme(p, nBytes);
     if (0 == cluster.m_byte)
     {
-        safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+        safe_str(S_("#-1 STRING IS INVALID"), buff, bufc);
         return;
     }
 
@@ -12456,10 +12456,10 @@ static FUNCTION(fun_ord)
         mux_cursor second = utf8_next_grapheme(p + cluster.m_byte, nBytes - cluster.m_byte);
         if (0 < second.m_byte)
         {
-            safe_str(T("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
+            safe_str(S_("#-1 FUNCTION EXPECTS ONE CHARACTER"), buff, bufc);
             return;
         }
-        safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+        safe_str(S_("#-1 STRING IS INVALID"), buff, bufc);
         return;
     }
 
@@ -12473,7 +12473,7 @@ static FUNCTION(fun_ord)
         UTF32 ch = ConvertFromUTF8(q);
         if (UNI_EOF == ch)
         {
-            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            safe_str(S_("#-1 STRING IS INVALID"), buff, bufc);
             return;
         }
         if (!bFirst)
@@ -12520,7 +12520,7 @@ static FUNCTION(fun_graphemes)
         mux_cursor cluster = utf8_next_grapheme(p, nRemaining);
         if (0 == cluster.m_byte)
         {
-            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            safe_str(S_("#-1 STRING IS INVALID"), buff, bufc);
             return;
         }
 
@@ -12628,7 +12628,7 @@ static FUNCTION(fun_strdistance)
     //
     if (sLen > 4000 || tLen > 4000)
     {
-        safe_str(T("#-1 STRINGS TOO LONG"), buff, bufc);
+        safe_str(S_("#-1 STRINGS TOO LONG"), buff, bufc);
         return;
     }
 
@@ -12776,7 +12776,7 @@ static FUNCTION(fun_connlog)
     dbref target = lookup_player(executor, fargs[0], true);
     if (!Good_obj(target))
     {
-        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -12926,7 +12926,7 @@ static FUNCTION(fun_chr)
         }
         if (!mux_isdigit(*pArg))
         {
-            safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
             return;
         }
 
@@ -12936,7 +12936,7 @@ static FUNCTION(fun_chr)
             const uint64_t digit = static_cast<uint64_t>(*pArg - '0');
             if (uValue > (UINT64_MAX - digit) / 10ULL)
             {
-                safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+                safe_str(S_("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
                 return;
             }
             uValue = 10ULL * uValue + digit;
@@ -12947,7 +12947,7 @@ static FUNCTION(fun_chr)
         //
         if ('\0' != *pArg && !mux_isspace(*pArg))
         {
-            safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
             return;
         }
 
@@ -12956,7 +12956,7 @@ static FUNCTION(fun_chr)
         {
             if (uValue > (static_cast<uint64_t>(INT64_MAX) + 1ULL))
             {
-                safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+                safe_str(S_("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
                 return;
             }
             if (uValue == (static_cast<uint64_t>(INT64_MAX) + 1ULL))
@@ -12972,7 +12972,7 @@ static FUNCTION(fun_chr)
         {
             if (uValue > static_cast<uint64_t>(INT64_MAX))
             {
-                safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+                safe_str(S_("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
                 return;
             }
             iValue = static_cast<int64_t>(uValue);
@@ -12983,7 +12983,7 @@ static FUNCTION(fun_chr)
            || (  static_cast<UTF32>(iValue) >= UNI_SUR_HIGH_START
               && static_cast<UTF32>(iValue) <= UNI_SUR_LOW_END))
         {
-            safe_str(T("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENT OUT OF RANGE"), buff, bufc);
             return;
         }
 
@@ -12991,7 +12991,7 @@ static FUNCTION(fun_chr)
         UTF8 *p = ConvertToUTF8(ch);
         if (!mux_isprint(p))
         {
-            safe_str(T("#-1 UNPRINTABLE CHARACTER"), buff, bufc);
+            safe_str(S_("#-1 UNPRINTABLE CHARACTER"), buff, bufc);
             return;
         }
 
@@ -13010,7 +13010,7 @@ static FUNCTION(fun_chr)
 
     if (!bAny)
     {
-        safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
         return;
     }
 
@@ -13147,13 +13147,13 @@ static FUNCTION(fun_accent)
     if (  !utf8_strlen(p, n0)
        || !utf8_strlen(q, n1))
     {
-        safe_str(T("#-1 STRINGS ARE INVALID"), buff, bufc);
+        safe_str(S_("#-1 STRINGS ARE INVALID"), buff, bufc);
         return;
     }
 
     if (n0 != n1)
     {
-        safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
+        safe_str(S_("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
         return;
     }
 
@@ -13338,11 +13338,11 @@ static FUNCTION(fun_tr)
 
         if (fClusters != tClusters)
         {
-            safe_str(T("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
+            safe_str(S_("#-1 STRING LENGTHS MUST BE EQUAL"), buff, bufc);
         }
         else if (fClusters > MAX_TR_CLUSTERS)
         {
-            safe_str(T("#-1 TOO MANY CLUSTERS"), buff, bufc);
+            safe_str(S_("#-1 TOO MANY CLUSTERS"), buff, bufc);
         }
         else
         {
@@ -13375,7 +13375,7 @@ static FUNCTION(fun_gmcp)
     dbref target = lookup_player(executor, fargs[0], true);
     if (NOTHING == target)
     {
-        safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -13383,7 +13383,7 @@ static FUNCTION(fun_gmcp)
        && !Wizard(executor)
        && !Controls(executor, target))
     {
-        safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+        safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
         return;
     }
 
@@ -13404,7 +13404,7 @@ static FUNCTION(fun_lua)
 
     if (nullptr == mudstate.pILuaControl)
     {
-        safe_str(T("#-1 LUA MODULE NOT LOADED"), buff, bufc);
+        safe_str(S_("#-1 LUA MODULE NOT LOADED"), buff, bufc);
         return;
     }
 
@@ -13413,7 +13413,7 @@ static FUNCTION(fun_lua)
     UTF8 *pSlash = (UTF8 *)strchr((const char *)fargs[0], '/');
     if (nullptr == pSlash)
     {
-        safe_str(T("#-1 NO ATTRIBUTE SPECIFIED"), buff, bufc);
+        safe_str(S_("#-1 NO ATTRIBUTE SPECIFIED"), buff, bufc);
         return;
     }
     *pSlash = '\0';
@@ -13430,7 +13430,7 @@ static FUNCTION(fun_lua)
     }
     if (!Good_obj(obj))
     {
-        safe_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+        safe_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
         return;
     }
 
@@ -13459,7 +13459,7 @@ static FUNCTION(fun_lua)
     }
     else
     {
-        safe_str(T("#-1 LUA ERROR"), buff, bufc);
+        safe_str(S_("#-1 LUA ERROR"), buff, bufc);
     }
 }
 
@@ -13513,7 +13513,7 @@ static FUNCTION(fun_mean)
 
     if (nfargs < 1)
     {
-        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 TOO FEW ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -13541,7 +13541,7 @@ static FUNCTION(fun_median)
 
     if (nfargs < 1)
     {
-        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 TOO FEW ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -13772,12 +13772,12 @@ static FUNCTION(fun_strsort)
         mux_cursor cluster = utf8_next_grapheme(pCur, nRemaining);
         if (0 == cluster.m_byte)
         {
-            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            safe_str(S_("#-1 STRING IS INVALID"), buff, bufc);
             return;
         }
         if (nClusters >= LBUF_SIZE)
         {
-            safe_str(T("#-1 STRING TOO LONG"), buff, bufc);
+            safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
             return;
         }
         clusters[nClusters].p = pCur;
@@ -13842,7 +13842,7 @@ static FUNCTION(fun_strunique)
         mux_cursor cluster = utf8_next_grapheme(pCur, nRemaining);
         if (0 == cluster.m_byte)
         {
-            safe_str(T("#-1 STRING IS INVALID"), buff, bufc);
+            safe_str(S_("#-1 STRING IS INVALID"), buff, bufc);
             return;
         }
 
@@ -13863,7 +13863,7 @@ static FUNCTION(fun_strunique)
         {
             if (nSeen >= LBUF_SIZE)
             {
-                safe_str(T("#-1 STRING TOO LONG"), buff, bufc);
+                safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
                 return;
             }
             safe_copy_buf(pCur, cluster.m_byte, buff, bufc);
@@ -13969,13 +13969,13 @@ static FUNCTION(fun_strunion)
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
-        safe_str(n1 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        safe_str(n1 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
     int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
     if (n2 < 0)
     {
-        safe_str(n2 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        safe_str(n2 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
 
@@ -14027,13 +14027,13 @@ static FUNCTION(fun_strdiff)
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
-        safe_str(n1 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        safe_str(n1 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
     int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
     if (n2 < 0)
     {
-        safe_str(n2 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        safe_str(n2 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
 
@@ -14075,13 +14075,13 @@ static FUNCTION(fun_strinter)
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
-        safe_str(n1 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        safe_str(n1 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
     int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
     if (n2 < 0)
     {
-        safe_str(n2 == -1 ? T("#-1 STRING IS INVALID") : T("#-1 STRING TOO LONG"), buff, bufc);
+        safe_str(n2 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
 
@@ -14713,7 +14713,7 @@ static FUNCTION(fun_lreplace)
 
     if (pos < 0 || pos >= nWords)
     {
-        safe_str(T("#-1 POSITION OUT OF RANGE"), buff, bufc);
+        safe_str(S_("#-1 POSITION OUT OF RANGE"), buff, bufc);
         return;
     }
 
@@ -14747,7 +14747,7 @@ static FUNCTION(fun_benchmark)
     int iterations = mux_atoi64(fargs[1]);
     if (iterations < 1)
     {
-        safe_str(T("#-1 ITERATIONS MUST BE POSITIVE"), buff, bufc);
+        safe_str(S_("#-1 ITERATIONS MUST BE POSITIVE"), buff, bufc);
         return;
     }
     if (iterations > 10000) iterations = 10000;

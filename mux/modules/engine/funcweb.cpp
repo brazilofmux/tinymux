@@ -145,7 +145,7 @@ FUNCTION(fun_decode64)
     }
     if (nPad > 2)
     {
-        safe_str(T("#-1 INVALID BASE64"), buff, bufc);
+        safe_str(S_("#-1 INVALID BASE64"), buff, bufc);
         return;
     }
 
@@ -158,7 +158,7 @@ FUNCTION(fun_decode64)
         uint8_t v = b64_decode_table[pIn[i]];
         if (0xFF == v)
         {
-            safe_str(T("#-1 INVALID BASE64"), buff, bufc);
+            safe_str(S_("#-1 INVALID BASE64"), buff, bufc);
             return;
         }
         accum = (accum << 6) | v;
@@ -191,7 +191,7 @@ FUNCTION(fun_decode64)
     {
         // A single base64 char is invalid (not enough bits for a byte).
         //
-        safe_str(T("#-1 INVALID BASE64"), buff, bufc);
+        safe_str(S_("#-1 INVALID BASE64"), buff, bufc);
         return;
     }
 }
@@ -226,7 +226,7 @@ FUNCTION(fun_hmac)
     const EVP_MD *md = EVP_get_digestbyname(pAlgo);
     if (nullptr == md)
     {
-        safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
+        safe_str(S_("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
         return;
     }
 
@@ -243,7 +243,7 @@ FUNCTION(fun_hmac)
                         reinterpret_cast<const unsigned char *>(pMsg), nMsg,
                         result, &result_len))
     {
-        safe_str(T("#-1 HMAC FAILED"), buff, bufc);
+        safe_str(S_("#-1 HMAC FAILED"), buff, bufc);
         return;
     }
 
@@ -253,7 +253,7 @@ FUNCTION(fun_hmac)
 #else
     UNUSED_PARAMETER(nfargs);
     UNUSED_PARAMETER(fargs);
-    safe_str(T("#-1 HMAC REQUIRES SSL"), buff, bufc);
+    safe_str(S_("#-1 HMAC REQUIRES SSL"), buff, bufc);
 #endif // UNIX_DIGEST
 }
 
@@ -662,7 +662,7 @@ FUNCTION(fun_isjson)
         }
         else
         {
-            safe_str(T("#-1 UNKNOWN JSON TYPE"), buff, bufc);
+            safe_str(S_("#-1 UNKNOWN JSON TYPE"), buff, bufc);
             return;
         }
         safe_chr(bMatch ? '1' : '0', buff, bufc);
@@ -707,7 +707,7 @@ static bool json_sql_exec(
     sqlite3 *db = json_db();
     if (nullptr == db)
     {
-        safe_str(T("#-1 INTERNAL ERROR"), buff, bufc);
+        safe_str(S_("#-1 INTERNAL ERROR"), buff, bufc);
         return false;
     }
 
@@ -715,7 +715,7 @@ static bool json_sql_exec(
     int rc = sqlite3_prepare_v2(db, sql, -1, &pStmt, nullptr);
     if (SQLITE_OK != rc)
     {
-        safe_str(T("#-1 INTERNAL ERROR"), buff, bufc);
+        safe_str(S_("#-1 INTERNAL ERROR"), buff, bufc);
         return false;
     }
 
@@ -747,15 +747,15 @@ static bool json_sql_exec(
     const char *pErr = sqlite3_errmsg(db);
     if (pErr && strstr(pErr, "malformed JSON"))
     {
-        safe_str(T("#-1 INVALID JSON"), buff, bufc);
+        safe_str(S_("#-1 INVALID JSON"), buff, bufc);
     }
     else if (pErr && strstr(pErr, "json"))
     {
-        safe_str(T("#-1 JSON ERROR"), buff, bufc);
+        safe_str(S_("#-1 JSON ERROR"), buff, bufc);
     }
     else
     {
-        safe_str(T("#-1 JSON ERROR"), buff, bufc);
+        safe_str(S_("#-1 JSON ERROR"), buff, bufc);
     }
     sqlite3_finalize(pStmt);
     return false;
@@ -881,7 +881,7 @@ FUNCTION(fun_json)
                     // this function's own output, not the whole buffer.
                     //
                     *bufc = pStart;
-                    safe_str(T("#-1 ODD NUMBER OF ELEMENTS"), buff, bufc);
+                    safe_str(S_("#-1 ODD NUMBER OF ELEMENTS"), buff, bufc);
                     free_lbuf(pList);
                     return;
                 }
@@ -905,7 +905,7 @@ FUNCTION(fun_json)
     }
     else
     {
-        safe_str(T("#-1 UNKNOWN JSON TYPE"), buff, bufc);
+        safe_str(S_("#-1 UNKNOWN JSON TYPE"), buff, bufc);
     }
 }
 
@@ -993,7 +993,7 @@ FUNCTION(fun_json_query)
     }
     else
     {
-        safe_str(T("#-1 UNKNOWN QUERY TYPE"), buff, bufc);
+        safe_str(S_("#-1 UNKNOWN QUERY TYPE"), buff, bufc);
     }
 }
 
@@ -1018,7 +1018,7 @@ FUNCTION(fun_json_mod)
 
     if (nfargs < 3)
     {
-        safe_str(T("#-1 TOO FEW ARGUMENTS"), buff, bufc);
+        safe_str(S_("#-1 TOO FEW ARGUMENTS"), buff, bufc);
         return;
     }
 
@@ -1054,7 +1054,7 @@ FUNCTION(fun_json_mod)
     }
     else
     {
-        safe_str(T("#-1 UNKNOWN OPERATION"), buff, bufc);
+        safe_str(S_("#-1 UNKNOWN OPERATION"), buff, bufc);
     }
 }
 

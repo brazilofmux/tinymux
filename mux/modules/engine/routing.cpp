@@ -930,7 +930,7 @@ void route_query(dbref executor, dbref source, dbref destination,
     {
         if (!Wizard(executor))
         {
-            safe_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+            safe_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
             return;
         }
         route_invalidate();
@@ -943,7 +943,7 @@ void route_query(dbref executor, dbref source, dbref destination,
        || !Good_obj(destination)
        || !isRoom(destination))
     {
-        safe_str(T("#-2"), buff, bufc);
+        safe_str(S_("#-2"), buff, bufc);
         return;
     }
 
@@ -961,7 +961,7 @@ void route_query(dbref executor, dbref source, dbref destination,
         }
         else
         {
-            safe_str(T("#-1"), buff, bufc);
+            safe_str(S_("#-1"), buff, bufc);
         }
         return;
     }
@@ -975,7 +975,7 @@ void route_query(dbref executor, dbref source, dbref destination,
     if (  g_all_navigable.find(source) == g_all_navigable.end()
        || g_all_navigable.find(destination) == g_all_navigable.end())
     {
-        safe_str(T("#-1 NOT NAVIGABLE"), buff, bufc);
+        safe_str(S_("#-1 NOT NAVIGABLE"), buff, bufc);
         return;
     }
 
@@ -993,21 +993,21 @@ void route_query(dbref executor, dbref source, dbref destination,
         auto zt_it = g_zone_tables.find(src_zone);
         if (zt_it == g_zone_tables.end())
         {
-            safe_str(T("#-1 NO ROUTE"), buff, bufc);
+            safe_str(S_("#-1 NO ROUTE"), buff, bufc);
             return;
         }
 
         dbref next_exit = zone_next_hop(zt_it->second, source, destination);
         if (next_exit == NOTHING)
         {
-            safe_str(T("#-1 NO ROUTE"), buff, bufc);
+            safe_str(S_("#-1 NO ROUTE"), buff, bufc);
             return;
         }
 
         if (  (options & ROUTE_OPT_LOCKED)
            && !could_doit(executor, next_exit, A_LOCK))
         {
-            safe_str(T("#-1 EXIT IMPASSABLE"), buff, bufc);
+            safe_str(S_("#-1 EXIT IMPASSABLE"), buff, bufc);
             return;
         }
 
@@ -1023,7 +1023,7 @@ void route_query(dbref executor, dbref source, dbref destination,
     route_get_path(source, destination, path);
     if (path.empty())
     {
-        safe_str(T("#-1 NO ROUTE"), buff, bufc);
+        safe_str(S_("#-1 NO ROUTE"), buff, bufc);
         return;
     }
 
@@ -1032,7 +1032,7 @@ void route_query(dbref executor, dbref source, dbref destination,
     if (  (options & ROUTE_OPT_LOCKED)
        && !could_doit(executor, path[0], A_LOCK))
     {
-        safe_str(T("#-1 EXIT IMPASSABLE"), buff, bufc);
+        safe_str(S_("#-1 EXIT IMPASSABLE"), buff, bufc);
         return;
     }
 

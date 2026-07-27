@@ -4084,7 +4084,7 @@ FUNCTION(fun_comtitle)
         victim = match_result();
         if (!Good_obj(victim))
         {
-            safe_str(T("#-1 OBJECT DOES NOT EXIST"), buff, bufc);
+            safe_str(S_("#-1 OBJECT DOES NOT EXIST"), buff, bufc);
             return;
         }
     }
@@ -4092,7 +4092,7 @@ FUNCTION(fun_comtitle)
     struct channel* chn = select_channel(fargs[1]);
     if (!chn)
     {
-        safe_str(T("#-1 CHANNEL DOES NOT EXIST"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL DOES NOT EXIST"), buff, bufc);
         return;
     }
 
@@ -4125,7 +4125,7 @@ FUNCTION(fun_comtitle)
         safe_str(reinterpret_cast<const UTF8 *>(user->title.c_str()), buff, bufc);
         return;
     }
-    safe_str(T("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
+    safe_str(S_("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
 }
 
 // Returns a player's comsys alias for a named channel.
@@ -4147,7 +4147,7 @@ FUNCTION(fun_comalias)
         victim = match_result();
         if (!Good_obj(victim))
         {
-            safe_str(T("#-1 OBJECT DOES NOT EXIST"), buff, bufc);
+            safe_str(S_("#-1 OBJECT DOES NOT EXIST"), buff, bufc);
             return;
         }
     }
@@ -4155,7 +4155,7 @@ FUNCTION(fun_comalias)
     struct channel* chn = select_channel(fargs[1]);
     if (!chn)
     {
-        safe_str(T("#-1 CHANNEL DOES NOT EXIST"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL DOES NOT EXIST"), buff, bufc);
         return;
     }
 
@@ -4184,7 +4184,7 @@ FUNCTION(fun_comalias)
             }
         }
     }
-    safe_str(T("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
+    safe_str(S_("#-1 OBJECT NOT ON THAT CHANNEL"), buff, bufc);
 }
 
 // Returns a list of channels.
@@ -4209,7 +4209,7 @@ FUNCTION(fun_channels)
         if (who == NOTHING
             && mux_stricmp(fargs[0], T("all")) != 0)
         {
-            safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+            safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
             return;
         }
     }
@@ -4268,7 +4268,7 @@ FUNCTION(fun_chanobj)
     struct channel* ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4279,7 +4279,7 @@ FUNCTION(fun_chanobj)
     }
     else
     {
-        safe_str(T("#-1"), buff, bufc);
+        safe_str(S_("#-1"), buff, bufc);
     }
 }
 
@@ -4299,7 +4299,7 @@ FUNCTION(fun_cowner)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4309,7 +4309,7 @@ FUNCTION(fun_cowner)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4332,7 +4332,7 @@ FUNCTION(fun_cmogrifier)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4340,7 +4340,7 @@ FUNCTION(fun_cmogrifier)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4350,7 +4350,7 @@ FUNCTION(fun_cmogrifier)
     }
     else
     {
-        safe_str(T("#-1"), buff, bufc);
+        safe_str(S_("#-1"), buff, bufc);
     }
 }
 
@@ -4366,14 +4366,14 @@ FUNCTION(fun_cusers)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !(ch->type & CHANNEL_PUBLIC)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4392,14 +4392,14 @@ FUNCTION(fun_cmsgs)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !(ch->type & CHANNEL_PUBLIC)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4418,14 +4418,14 @@ FUNCTION(fun_cbuffer)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !(ch->type & CHANNEL_PUBLIC)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4459,14 +4459,14 @@ FUNCTION(fun_cdesc)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !(ch->type & CHANNEL_PUBLIC)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4495,14 +4495,14 @@ FUNCTION(fun_cflags)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !(ch->type & CHANNEL_PUBLIC)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4513,13 +4513,13 @@ FUNCTION(fun_cflags)
         dbref target = match_thing(executor, fargs[1]);
         if (!Good_obj(target))
         {
-            safe_str(T("#-1 NO MATCH"), buff, bufc);
+            safe_str(S_("#-1 NO MATCH"), buff, bufc);
             return;
         }
         struct comuser *user = select_user(ch, target);
         if (nullptr == user)
         {
-            safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+            safe_str(S_("#-1 NOT ON CHANNEL"), buff, bufc);
             return;
         }
         // Return user flags: on/off, gag, comtitle status.
@@ -4559,21 +4559,21 @@ FUNCTION(fun_cstatus)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !(ch->type & CHANNEL_PUBLIC)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
     dbref target = match_thing(executor, fargs[1]);
     if (!Good_obj(target))
     {
-        safe_str(T("#-1 NO MATCH"), buff, bufc);
+        safe_str(S_("#-1 NO MATCH"), buff, bufc);
         return;
     }
 
@@ -4609,14 +4609,14 @@ FUNCTION(fun_crecall)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
     if (  !(ch->type & CHANNEL_PUBLIC)
        && !Comm_All(executor)
        && !Controls(executor, ch->charge_who))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4625,7 +4625,7 @@ FUNCTION(fun_crecall)
     struct comuser *user = select_user(ch, executor);
     if (nullptr == user || !user->bUserIsOn)
     {
-        safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+        safe_str(S_("#-1 NOT ON CHANNEL"), buff, bufc);
         return;
     }
 
@@ -4718,7 +4718,7 @@ FUNCTION(fun_chaninfo)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4727,7 +4727,7 @@ FUNCTION(fun_chaninfo)
        && !Controls(executor, ch->charge_who)
        && nullptr == select_user(ch, executor))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4758,7 +4758,7 @@ FUNCTION(fun_chaninfo)
         }
         else
         {
-            safe_str(T("#-1"), buff, bufc);
+            safe_str(S_("#-1"), buff, bufc);
         }
     }
     else if (0 == mux_stricmp(field, T("type")))
@@ -4827,7 +4827,7 @@ FUNCTION(fun_chaninfo)
     }
     else
     {
-        safe_str(T("#-1 INVALID FIELD"), buff, bufc);
+        safe_str(S_("#-1 INVALID FIELD"), buff, bufc);
     }
 }
 
@@ -4878,7 +4878,7 @@ FUNCTION(fun_chanfind)
             }
         }
     }
-    safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+    safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
 }
 
 // ---------------------------------------------------------------------------
@@ -4908,7 +4908,7 @@ FUNCTION(fun_chanusers)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4917,7 +4917,7 @@ FUNCTION(fun_chanusers)
        && !Controls(executor, ch->charge_who)
        && nullptr == select_user(ch, executor))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -4965,7 +4965,7 @@ FUNCTION(fun_chanusers)
         }
         else
         {
-            safe_str(T("#-1 INVALID FIELD"), buff, bufc);
+            safe_str(S_("#-1 INVALID FIELD"), buff, bufc);
             return;
         }
     }
@@ -5077,7 +5077,7 @@ FUNCTION(fun_chanuser)
     struct channel *ch = select_channel(fargs[0]);
     if (nullptr == ch)
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -5088,7 +5088,7 @@ FUNCTION(fun_chanuser)
        && !Controls(executor, ch->charge_who)
        && nullptr == select_user(ch, executor))
     {
-        safe_str(T("#-1 CHANNEL NOT FOUND"), buff, bufc);
+        safe_str(S_("#-1 CHANNEL NOT FOUND"), buff, bufc);
         return;
     }
 
@@ -5102,7 +5102,7 @@ FUNCTION(fun_chanuser)
         victim = match_result();
         if (!Good_obj(victim))
         {
-            safe_str(T("#-1 PLAYER NOT FOUND"), buff, bufc);
+            safe_str(S_("#-1 PLAYER NOT FOUND"), buff, bufc);
             return;
         }
     }
@@ -5138,7 +5138,7 @@ FUNCTION(fun_chanuser)
                 }
             }
         }
-        safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+        safe_str(S_("#-1 NOT ON CHANNEL"), buff, bufc);
         return;
     }
 
@@ -5160,7 +5160,7 @@ FUNCTION(fun_chanuser)
     struct comuser *user = select_user(ch, victim);
     if (nullptr == user)
     {
-        safe_str(T("#-1 NOT ON CHANNEL"), buff, bufc);
+        safe_str(S_("#-1 NOT ON CHANNEL"), buff, bufc);
         return;
     }
 
@@ -5205,7 +5205,7 @@ FUNCTION(fun_chanuser)
     }
     else
     {
-        safe_str(T("#-1 INVALID FIELD"), buff, bufc);
+        safe_str(S_("#-1 INVALID FIELD"), buff, bufc);
     }
 }
 

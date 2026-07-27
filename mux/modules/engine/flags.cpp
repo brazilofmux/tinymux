@@ -849,7 +849,7 @@ UTF8 *decode_flags(dbref player, FLAGSET *fs)
 
     if (!Good_obj(player))
     {
-        mux_strncpy(buf, T("#-2 ERROR"), SBUF_SIZE-1);
+        mux_strncpy(buf, S_("#-2 ERROR"), SBUF_SIZE-1);
         return buf;
     }
     int flagtype = fs->word[FLAG_WORD1] & TYPE_MASK;

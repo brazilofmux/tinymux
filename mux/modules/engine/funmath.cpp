@@ -575,7 +575,7 @@ FUNCTION(fun_lmath)
         {
             if (g_aDoubles[i] == 0.0)
             {
-                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                safe_str(S_("#-1 DIVIDE BY ZERO"), buff, bufc);
                 return;
             }
             result /= g_aDoubles[i];
@@ -590,7 +590,7 @@ FUNCTION(fun_lmath)
             int64_t divisor = static_cast<int64_t>(g_aDoubles[i]);
             if (divisor == 0)
             {
-                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                safe_str(S_("#-1 DIVIDE BY ZERO"), buff, bufc);
                 return;
             }
             result = i64Mod(result, divisor);
@@ -632,7 +632,7 @@ FUNCTION(fun_lmath)
         //
         if (alarm_clock.alarmed)
         {
-            safe_str(T("#-1 CPU LIMITED"), buff, bufc);
+            safe_str(S_("#-1 CPU LIMITED"), buff, bufc);
             return;
         }
         std::sort(g_aDoubles, g_aDoubles + n);
@@ -660,7 +660,7 @@ FUNCTION(fun_lmath)
     }
     else
     {
-        safe_str(T("#-1 UNKNOWN OPERATION"), buff, bufc);
+        safe_str(S_("#-1 UNKNOWN OPERATION"), buff, bufc);
     }
 }
 
@@ -697,13 +697,13 @@ FUNCTION(fun_limath)
     {
         if (static_cast<int>(vals.size()) >= MAX_WORDS)
         {
-            safe_str(T("#-1 LIST TOO LONG"), buff, bufc);
+            safe_str(S_("#-1 LIST TOO LONG"), buff, bufc);
             return;
         }
         UTF8 *curr = split_token(&cp, sep);
         if (!is_integer(curr, nullptr))
         {
-            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
         vals.push_back(mux_atoi64(curr));
@@ -753,7 +753,7 @@ FUNCTION(fun_limath)
         {
             if (vals[i] == 0)
             {
-                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                safe_str(S_("#-1 DIVIDE BY ZERO"), buff, bufc);
                 return;
             }
             result = i64Division(result, vals[i]);
@@ -767,7 +767,7 @@ FUNCTION(fun_limath)
         {
             if (vals[i] == 0)
             {
-                safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+                safe_str(S_("#-1 DIVIDE BY ZERO"), buff, bufc);
                 return;
             }
             result = i64Mod(result, vals[i]);
@@ -804,7 +804,7 @@ FUNCTION(fun_limath)
         //
         if (alarm_clock.alarmed)
         {
-            safe_str(T("#-1 CPU LIMITED"), buff, bufc);
+            safe_str(S_("#-1 CPU LIMITED"), buff, bufc);
             return;
         }
         std::sort(vals.begin(), vals.end());
@@ -824,7 +824,7 @@ FUNCTION(fun_limath)
     }
     else
     {
-        safe_str(T("#-1 UNKNOWN OPERATION"), buff, bufc);
+        safe_str(S_("#-1 UNKNOWN OPERATION"), buff, bufc);
     }
 }
 
@@ -903,16 +903,16 @@ FUNCTION(fun_shl)
         else if (b < 0)
         {
             // Keep historical wording for smoke tests (0 is allowed).
-            safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+            safe_str(S_("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
         }
         else
         {
-            safe_str(T("#-1 SECOND ARGUMENT MUST BE LESS THAN 64"), buff, bufc);
+            safe_str(S_("#-1 SECOND ARGUMENT MUST BE LESS THAN 64"), buff, bufc);
         }
     }
     else
     {
-        safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
     }
 }
 
@@ -939,16 +939,16 @@ FUNCTION(fun_shr)
         }
         else if (b < 0)
         {
-            safe_str(T("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+            safe_str(S_("#-1 SECOND ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
         }
         else
         {
-            safe_str(T("#-1 SECOND ARGUMENT MUST BE LESS THAN 64"), buff, bufc);
+            safe_str(S_("#-1 SECOND ARGUMENT MUST BE LESS THAN 64"), buff, bufc);
         }
     }
     else
     {
-        safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
     }
 }
 
@@ -1074,7 +1074,7 @@ FUNCTION(fun_idiv)
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
-        safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+        safe_str(S_("#-1 DIVIDE BY ZERO"), buff, bufc);
     }
     else
     {
@@ -1099,7 +1099,7 @@ FUNCTION(fun_floordiv)
     bot = mux_atoi64(fargs[1]);
     if (bot == 0)
     {
-        safe_str(T("#-1 DIVIDE BY ZERO"), buff, bufc);
+        safe_str(S_("#-1 DIVIDE BY ZERO"), buff, bufc);
     }
     else
     {
@@ -1345,7 +1345,7 @@ static void handle_vectors
            && (  n == 1
               || m == 1)))
     {
-        safe_str(T("#-1 VECTORS MUST BE SAME DIMENSIONS"), buff, bufc);
+        safe_str(S_("#-1 VECTORS MUST BE SAME DIMENSIONS"), buff, bufc);
         return;
     }
 
@@ -1520,7 +1520,7 @@ static void handle_vectors
         //
         if (n != 3)
         {
-            safe_str(T("#-1 VECTORS MUST BE DIMENSION OF 3"), buff, bufc);
+            safe_str(S_("#-1 VECTORS MUST BE DIMENSION OF 3"), buff, bufc);
         }
         else
         {
@@ -1542,7 +1542,7 @@ static void handle_vectors
 
         // If we reached this, we're in trouble.
         //
-        safe_str(T("#-1 UNIMPLEMENTED"), buff, bufc);
+        safe_str(S_("#-1 UNIMPLEMENTED"), buff, bufc);
     }
 }
 
@@ -1701,7 +1701,7 @@ FUNCTION(fun_vunit)
 
     if (res <= 0)
     {
-        safe_str(T("#-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR"),
+        safe_str(S_("#-1 CANNOT MAKE UNIT VECTOR FROM ZERO-LENGTH VECTOR"),
             buff, bufc);
         return;
     }
@@ -2259,7 +2259,7 @@ FUNCTION(fun_log)
     if (  kOther == kBase
        && base <= 1)
     {
-        safe_str(T("#-1 BASE OUT OF RANGE"), buff, bufc);
+        safe_str(S_("#-1 BASE OUT OF RANGE"), buff, bufc);
         return;
     }
 
@@ -3008,7 +3008,7 @@ void CSpellNum::SpellNum(const UTF8 *number, UTF8 *buff_arg, UTF8 **bufc_arg)
        || nA >= 16
        || nB >= 15)
     {
-        safe_str(T("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENT MUST BE A NUMBER"), buff, bufc);
         return;
     }
 
@@ -3093,7 +3093,7 @@ FUNCTION(fun_roman)
     //
     if (*number || nA < 1)
     {
-        safe_str(T("#-1 ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENT MUST BE A POSITIVE NUMBER"), buff, bufc);
         return;
     }
     else if (  nA > 4
@@ -3262,7 +3262,7 @@ FUNCTION(fun_lband)
             UTF8 *curr = split_token(&cp, sep);
             if (!is_integer(curr, nullptr))
             {
-                safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+                safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
                 return;
             }
             val &= mux_atoi64(curr);
@@ -3295,7 +3295,7 @@ FUNCTION(fun_lbor)
             UTF8 *curr = split_token(&cp, sep);
             if (!is_integer(curr, nullptr))
             {
-                safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+                safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
                 return;
             }
             val |= mux_atoi64(curr);
@@ -3328,7 +3328,7 @@ FUNCTION(fun_lbxor)
             UTF8 *curr = split_token(&cp, sep);
             if (!is_integer(curr, nullptr))
             {
-                safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+                safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
                 return;
             }
             val ^= mux_atoi64(curr);
@@ -3355,7 +3355,7 @@ FUNCTION(fun_band)
         }
         else
         {
-            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
     }
@@ -3380,7 +3380,7 @@ FUNCTION(fun_bor)
         }
         else
         {
-            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
     }
@@ -3406,7 +3406,7 @@ FUNCTION(fun_bnand)
     }
     else
     {
-        safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+        safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
     }
 }
 
@@ -3428,7 +3428,7 @@ FUNCTION(fun_bxor)
         }
         else
         {
-            safe_str(T("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
+            safe_str(S_("#-1 ARGUMENTS MUST BE INTEGERS"), buff, bufc);
             return;
         }
     }
@@ -3484,7 +3484,7 @@ void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
     }
     if (!mux_sha1_digest(const_cast<const UTF8 **>(fargs), lens.data(), nfargs, md, &len))
     {
-        safe_str(T("#-1 UNSUPPORTED"), buff, bufc);
+        safe_str(S_("#-1 UNSUPPORTED"), buff, bufc);
         return;
     }
     safe_hex(md, len, true, buff, bufc);
@@ -3524,7 +3524,7 @@ FUNCTION(fun_digest)
     const EVP_MD *mp = EVP_get_digestbyname(reinterpret_cast<const char *>(fargs[0]));
     if (nullptr == mp)
     {
-        safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
+        safe_str(S_("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
         return;
     }
 
@@ -3554,7 +3554,7 @@ FUNCTION(fun_digest)
     }
     else
     {
-        safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
+        safe_str(S_("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
     }
 #endif // UNIX_DIGEST
 }

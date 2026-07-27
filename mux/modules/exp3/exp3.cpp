@@ -484,7 +484,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                 UTF8 *pSlash = (UTF8 *)strchr((const char *)fargs[0], '/');
                 if (nullptr == pSlash)
                 {
-                    safe_copy_str(T("#-1 NO ATTR NAME"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO ATTR NAME"), buff, bufc);
                     break;
                 }
                 *pSlash = '\0';
@@ -494,11 +494,11 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
 
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pIAttributeAccess)
             {
-                safe_copy_str(T("#-1 NO ATTRIBUTE ACCESS INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO ATTRIBUTE ACCESS INTERFACE"), buff, bufc);
             }
             else
             {
@@ -508,15 +508,15 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                     executor, obj, pAttrName, value, sizeof(value), &nLen);
                 if (MUX_E_INVALIDARG == mr)
                 {
-                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
                 }
                 else if (MUX_E_NOTFOUND == mr)
                 {
-                    safe_copy_str(T("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
                 }
                 else if (MUX_E_PERMISSION == mr)
                 {
-                    safe_copy_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+                    safe_copy_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
                 }
                 else if (MUX_SUCCEEDED(mr))
                 {
@@ -531,11 +531,11 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pIObjectInfo)
             {
-                safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
             }
             else
             {
@@ -543,7 +543,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                 m_pIObjectInfo->IsValid(obj, &bValid);
                 if (!bValid)
                 {
-                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
                 }
                 else
                 {
@@ -563,18 +563,18 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pINotify)
             {
-                safe_copy_str(T("#-1 NO NOTIFY INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO NOTIFY INTERFACE"), buff, bufc);
             }
             else
             {
                 MUX_RESULT mr = m_pINotify->Notify(obj, fargs[1]);
                 if (MUX_FAILED(mr))
                 {
-                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
                 }
             }
         }
@@ -585,11 +585,11 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pIObjectInfo)
             {
-                safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
             }
             else
             {
@@ -597,7 +597,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                 m_pIObjectInfo->IsValid(obj, &bValid);
                 if (!bValid)
                 {
-                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
                 }
                 else
                 {
@@ -615,11 +615,11 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pIObjectInfo)
             {
-                safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
             }
             else
             {
@@ -627,7 +627,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                 m_pIObjectInfo->IsValid(obj, &bValid);
                 if (!bValid)
                 {
-                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
                 }
                 else
                 {
@@ -645,11 +645,11 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pIEvaluator)
             {
-                safe_copy_str(T("#-1 NO EVALUATOR INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO EVALUATOR INTERFACE"), buff, bufc);
             }
             else
             {
@@ -664,7 +664,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                 }
                 else
                 {
-                    safe_copy_str(T("#-1 EVAL FAILED"), buff, bufc);
+                    safe_copy_str(S_("#-1 EVAL FAILED"), buff, bufc);
                 }
             }
         }
@@ -675,11 +675,11 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
             int obj = parse_dbref(fargs[0]);
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pIObjectInfo)
             {
-                safe_copy_str(T("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO OBJECT INFO INTERFACE"), buff, bufc);
             }
             else
             {
@@ -687,7 +687,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                 m_pIObjectInfo->IsValid(obj, &bValid);
                 if (!bValid)
                 {
-                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
                 }
                 else
                 {
@@ -711,7 +711,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
             UTF8 *pSlash = (UTF8 *)strchr((const char *)fargs[0], '/');
             if (nullptr == pSlash)
             {
-                safe_copy_str(T("#-1 NO ATTR NAME"), buff, bufc);
+                safe_copy_str(S_("#-1 NO ATTR NAME"), buff, bufc);
                 break;
             }
             *pSlash = '\0';
@@ -720,11 +720,11 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
 
             if (obj < 0)
             {
-                safe_copy_str(T("#-1 INVALID DBREF"), buff, bufc);
+                safe_copy_str(S_("#-1 INVALID DBREF"), buff, bufc);
             }
             else if (nullptr == m_pIAttributeAccess)
             {
-                safe_copy_str(T("#-1 NO ATTRIBUTE WRITE INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO ATTRIBUTE WRITE INTERFACE"), buff, bufc);
             }
             else
             {
@@ -732,15 +732,15 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                     executor, obj, pAttrName, fargs[1]);
                 if (MUX_E_INVALIDARG == mr)
                 {
-                    safe_copy_str(T("#-1 NO SUCH OBJECT"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH OBJECT"), buff, bufc);
                 }
                 else if (MUX_E_NOTFOUND == mr)
                 {
-                    safe_copy_str(T("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
+                    safe_copy_str(S_("#-1 NO SUCH ATTRIBUTE"), buff, bufc);
                 }
                 else if (MUX_E_PERMISSION == mr)
                 {
-                    safe_copy_str(T("#-1 PERMISSION DENIED"), buff, bufc);
+                    safe_copy_str(S_("#-1 PERMISSION DENIED"), buff, bufc);
                 }
                 // On success, return empty (like @set).
             }
@@ -751,7 +751,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
         {
             if (nullptr == m_pIHelpSystem)
             {
-                safe_copy_str(T("#-1 NO HELP SYSTEM INTERFACE"), buff, bufc);
+                safe_copy_str(S_("#-1 NO HELP SYSTEM INTERFACE"), buff, bufc);
             }
             else
             {
@@ -766,7 +766,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                         fargs[0], &iHelpfile);
                     if (MUX_FAILED(mr))
                     {
-                        safe_copy_str(T("#-1 NO SUCH HELPFILE"), buff, bufc);
+                        safe_copy_str(S_("#-1 NO SUCH HELPFILE"), buff, bufc);
                         break;
                     }
                     pTopic = fargs[1];
@@ -787,7 +787,7 @@ MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                 }
                 else
                 {
-                    safe_copy_str(T("#-1 TOPIC NOT FOUND"), buff, bufc);
+                    safe_copy_str(S_("#-1 TOPIC NOT FOUND"), buff, bufc);
                 }
             }
         }
