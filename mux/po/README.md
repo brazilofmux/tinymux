@@ -19,6 +19,51 @@ Whole notify sentences that take arguments are marked as
 same order — `mux_vsnprintf` has no positional `%1$s` yet. `make test-nls`
 rejects a msgstr whose conversion sequence differs from its msgid.
 
+### Mark whole sentences — all of it or none of it
+
+A sentence assembled from several pieces must be marked **entirely or not at
+all**. Marking one piece of an assembled sentence makes the output *worse*
+than leaving the whole thing unmarked, because an unmarked sentence is at
+least consistently English.
+
+This is real, not hypothetical — `speech.cpp` built its page echo as
+
+```c
+safe_str(T("From afar, "), omessage, &omp);                                // English
+safe_tprintf_str(omessage, &omp, M_("to %s: "), aFriendly.get());          // translated
+safe_tprintf_str(omessage, &omp, T("%s %s"), Moniker(executor), pMessage); // English
+```
+
+which renders two languages in one line under any catalogue.
+
+Fragments are a problem even when every piece *is* marked. `create.cpp` once
+had
+
+```
+"Home of %s(#%d) changed from "  +  "%s(#%d) to "  +  "%s(#%d)."
+```
+
+Three msgids for one sentence freezes English clause order — a translator
+cannot move "changed from" relative to the subject, and languages that invert
+from/to or put the verb last cannot express it. The trailing spaces are
+load-bearing and invisible in most PO editors. And `"%s(#%d) to "` gives a
+translator no context for what "to" joins. Both were folded into single
+six-conversion formats.
+
+When a piece is conditional, use one whole sentence per branch rather than a
+fragment in the middle:
+
+```c
+if (bQualified)
+    ... M_("From afar, to %s: %s %s"), who, actor, msg);
+else
+    ... M_("From afar, %s %s"), actor, msg);
+```
+
+**No automated check catches this.** `make test-nls` sees a perfectly valid
+msgid either way; the guard cannot know the sentence continues in the next
+call. It is a review habit.
+
 Maintaining translations is ongoing cost. Prefer **small, deliberate `M_()` sites** over bulk extraction of every `T()`.
 
 ## Regenerate the template (`.pot`)
