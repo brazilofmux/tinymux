@@ -6712,31 +6712,42 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                         // way (@list cache and astbench), and both were fixed
                         // at the call site rather than here (#1429).
                         //
-                        // Echo the spec literally instead and carry on.  A
-                        // bounded formatter already truncates when it runs out
-                        // of room, so callers are written against "imperfect
-                        // output" and not against "no server".  Emitting it
-                        // rather than dropping it also leaves the evidence in
-                        // the output, where it is visible without a debugger.
+                        // Echo the remainder of the format verbatim and STOP
+                        // interpreting.  A bounded formatter already truncates
+                        // when it runs out of room, so callers are written
+                        // against "imperfect output" and not against "no
+                        // server"; emitting the text rather than dropping it
+                        // leaves the evidence visible without a debugger.
                         //
-                        // Caveat: no va_arg was consumed for this spec, so any
-                        // later conversion in the same format string takes a
-                        // shifted argument.  That is inherent to recovering at
-                        // all without fully parsing an unknown spec, and it is
-                        // still strictly better than terminating.
+                        // Stopping is the part that is not optional.  No
+                        // va_arg was consumed for this spec, so every LATER
+                        // conversion in the same format string would read the
+                        // wrong argument, and there is no way to resynchronise
+                        // without knowing what the unknown spec would have
+                        // taken.  Continuing was measured (#1445):
                         //
-                        size_t d = utf8_FirstByte[pFmt[iFmt]];
-                        size_t nSpec = (iFmt - iFmtSpec) + d;
-                        if (nLimit < iBuffer + nSpec)
+                        //   "%+d|%d"  11, 22       -> "%+d|11"   wrong arg
+                        //   "%+d|%s"  11, "tail"   -> SIGSEGV
+                        //
+                        // The second hands an int to the %s path as a UTF8*
+                        // and dereferences it.  That trades a clean abort for
+                        // a wild pointer, which is not an improvement -- so
+                        // recovery stops at the first spec it cannot parse.
+                        //
+                        // Echoing the whole remainder rather than just this
+                        // spec keeps the evidence intact: the offending spec
+                        // appears in full, with the text that followed it,
+                        // while nothing further is interpreted.
+                        //
+                        size_t nRest =
+                            strlen(reinterpret_cast<const char *>(pFmt) + iFmtSpec);
+                        if (nLimit < iBuffer + nRest)
                         {
-                            goto done;
+                            nRest = nLimit - iBuffer;
                         }
-                        memcpy(pBuffer + iBuffer, pFmt + iFmtSpec, nSpec);
-                        iBuffer += nSpec;
-
-                        iFmt += d;
-                        ncpFmt--;
-                        break;
+                        memcpy(pBuffer + iBuffer, pFmt + iFmtSpec, nRest);
+                        iBuffer += nRest;
+                        goto done;
                     }
                 }
             }
