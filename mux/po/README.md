@@ -45,14 +45,51 @@ After marking new prose, re-run `pot`, then merge into language files:
 
 ```bash
 msgmerge -U xx.po tinymux.pot   # update existing .po against new pot
+msgmerge -U ko.po tinymux.pot   # ...and every other catalogue
 ```
 
 ## Build a binary catalog
 
 ```bash
-make -C mux/po mo
-# or:  msgfmt -c -o ../game/locale/xx/LC_MESSAGES/tinymux.mo xx.po
+make -C mux/po mo        # every locale
+make -C mux/po mo-ko     # just one
 ```
+
+`mo` builds every `*.po` in this directory, so adding a locale needs no
+Makefile edit.
+
+## Adding a language
+
+1. `msginit -i tinymux.pot -l <lang> -o <lang>.po` (or copy the header from
+   `ko.po`), then translate.
+2. Declare the coverage policy in the header. Human catalogues want:
+
+   ```
+   "X-Tinymux-Catalogue: partial\n"
+   ```
+
+   `partial` (the default when the field is absent) allows untranslated and
+   `fuzzy` entries — the normal gettext states, since untranslated msgids fall
+   back to English. `complete` demands 100% and no fuzzy, and is meant for
+   `xx`, which is generated mechanically and where a gap means the marking
+   pipeline broke. Structural errors — stale msgids, missing msgids, and
+   conversion-sequence mismatches — are fatal under **both** policies.
+3. `make -C mux/po mo-<lang>`, then `make test-nls` for the static checks.
+
+### Argument order
+
+`mux_vsnprintf` has no positional-argument support: it stops at the `$` in
+`%1$s` and echoes the rest of the format literally. `msgfmt -c` **accepts**
+`%N$` (measured), so this is not caught at build time — the translator who
+reorders correctly gets a clean build and a broken message, while the one who
+reorders *without* `%N$` gets a build error.
+
+Until that is fixed, a message with two or more conversions can only be
+translated in the English argument order. Where the target language genuinely
+reorders, record the correct translation with `%N$` and mark the entry
+`fuzzy`, so `msgfmt` excludes it and the message falls back to English; see the
+seven such entries in `ko.po`. `tests/nls/run_ko.sh` case 4 pins the current
+behaviour and will fail once positional support lands.
 
 **Keep the `-c`.** It is `--check`, and for a `c-format` entry it verifies that
 the translation uses the same conversions as the msgid. Without it `msgfmt`
