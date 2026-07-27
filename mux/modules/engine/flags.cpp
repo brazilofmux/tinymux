@@ -23,7 +23,7 @@ static bool fh_any(dbref target, dbref player, FLAG flag, int fflags, bool reset
        && flag == WIZARD
        && fflags == FLAG_WORD1)
     {
-        notify(player, T("You cannot make God mortal."));
+        notify(player, M_("You cannot make God mortal."));
         return false;
     }
 
@@ -192,7 +192,7 @@ static bool fh_going_bit(dbref target, dbref player, FLAG flag, int fflags, bool
        && reset
        && (Typeof(target) != TYPE_GARBAGE))
     {
-        notify(player, T("Your object has been spared from destruction."));
+        notify(player, M_("Your object has been spared from destruction."));
         return (fh_any(target, player, flag, fflags, reset));
     }
     if (!God(player))
@@ -776,11 +776,11 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
         {
             if (bNegate)
             {
-                notify(player, T("You must specify a flag to clear."));
+                notify(player, M_("You must specify a flag to clear."));
             }
             else
             {
-                notify(player, T("You must specify a flag to set."));
+                notify(player, M_("You must specify a flag to set."));
             }
         }
         else
@@ -788,7 +788,7 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
             FLAGNAMEENT *fp = find_flag(flag);
             if (!fp)
             {
-                notify(player, T("I do not understand that flag."));
+                notify(player, M_("I do not understand that flag."));
             }
             else
             {
@@ -822,12 +822,12 @@ void flag_set(dbref target, dbref player, UTF8 *flag, int key)
                     }
                     else if (!(key & SET_QUIET) && !Quiet(player))
                     {
-                        notify(player, (bClearSet ? T("Cleared.") : T("Set.")));
+                        notify(player, (bClearSet ? M_("Cleared.") : M_("Set.")));
                     }
                 }
                 else if (!(key & SET_QUIET) && !Quiet(player))
                 {
-                    notify(player, (bClearSet ? T("Already cleared.") : T("Already set.")));
+                    notify(player, (bClearSet ? M_("Already cleared.") : M_("Already set.")));
                 }
             }
         }
@@ -1155,7 +1155,7 @@ CF_HAND(cf_flag_access)
         log_text(fp->flagname);
         ENDLOG;
 
-        notify(player, T("Special flags cannot be modified with flag_access."));
+        notify(player, M_("Special flags cannot be modified with flag_access."));
 
         return -1;
     }
@@ -1410,7 +1410,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
     {
         if (nargs == 2)
         {
-            notify(executor, T("Extra argument ignored."));
+            notify(executor, M_("Extra argument ignored."));
         }
         int flag_name_length;
         bool valid;
@@ -1433,33 +1433,33 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
                 }
                 else
                 {
-                    notify(executor, T("Error: You can’t remove the present flag name from the hash table."));
+                    notify(executor, M_("Error: You can’t remove the present flag name from the hash table."));
                 }
             }
             else
             {
-                notify(executor, T("Error: Bad flagname given or flag not found."));
+                notify(executor, M_("Error: Bad flagname given or flag not found."));
             }
         }
         else
         {
-            notify(executor, T("Error: Bad flagname given or flag not found."));
+            notify(executor, M_("Error: Bad flagname given or flag not found."));
         }
     }
     else
     {
         if (nargs < 2)
         {
-            notify(executor, T("You must specify a flag and a name."));
+            notify(executor, M_("You must specify a flag and a name."));
             return;
         }
         if (flag_rename(existing_flag_name, new_flag_name))
         {
-            notify(executor, T("Flag name changed."));
+            notify(executor, M_("Flag name changed."));
         }
         else
         {
-            notify(executor, T("Error: Bad flagname given or flag not found."));
+            notify(executor, M_("Error: Bad flagname given or flag not found."));
         }
     }
 }

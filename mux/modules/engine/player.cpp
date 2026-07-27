@@ -186,12 +186,12 @@ void record_login
     {
         if (login_info.new_bad > 0)
         {
-            notify(player, T(""));
+            notify(player, M_(""));
             notify(player, tprintf(T("**** %d failed connect%s since your last successful connect. ****"),
                 login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
             notify(player, tprintf(T("Most recent attempt was from %s on %s."),
                 login_info.bad[0].host, login_info.bad[0].dtm));
-            notify(player, T(""));
+            notify(player, M_(""));
             login_info.new_bad = 0;
         }
         if (  login_info.good[0].host
@@ -957,12 +957,12 @@ void do_password
     if (  !*target
        || !check_pass(executor, oldpass))
     {
-        notify(executor, T("Sorry."));
+        notify(executor, M_("Sorry."));
     }
     else if (ok_password(newpass, &pmsg))
     {
         ChangePassword(executor, newpass);
-        notify(executor,T("Password changed."));
+        notify(executor,M_("Password changed."));
     }
     else
     {
@@ -1011,7 +1011,7 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (target == NOTHING)
     {
-        notify(executor, T("I couldn’t find that player."));
+        notify(executor, M_("I couldn’t find that player."));
     }
     else if (!(  WizRoy(executor)
               || Controls(executor, target)))
@@ -1432,7 +1432,7 @@ void do_protect
 
     if (!isPlayer(executor))
     {
-        notify(executor, T("Only players may use @protect."));
+        notify(executor, M_("Only players may use @protect."));
         return;
     }
 
@@ -1483,7 +1483,7 @@ void do_protect
         }
         if (!found_any)
         {
-            notify(executor, T("No protected names in the database."));
+            notify(executor, M_("No protected names in the database."));
         }
         return;
     }
@@ -1498,7 +1498,7 @@ void do_protect
             target = lookup_player(executor, arg1, true);
             if (NOTHING == target)
             {
-                notify(executor, T("No such player."));
+                notify(executor, M_("No such player."));
                 return;
             }
         }
@@ -1506,7 +1506,7 @@ void do_protect
         LBuf pProtect = LBuf_Adopt(atr_pget(target, A_PROTECTNAME, &aowner, &aflags));
         if ('\0' == pProtect[0])
         {
-            notify(executor, T("No protected names."));
+            notify(executor, M_("No protected names."));
         }
         else
         {
@@ -1533,7 +1533,7 @@ void do_protect
     if (  nullptr == arg1
        || '\0' == arg1[0])
     {
-        notify(executor, T("Protect what name?"));
+        notify(executor, M_("Protect what name?"));
         return;
     }
 
@@ -1560,7 +1560,7 @@ void do_protect
 
         if (!found)
         {
-            notify(executor, T("That name is not in your protected list."));
+            notify(executor, M_("That name is not in your protected list."));
             return;
         }
 
@@ -1572,7 +1572,7 @@ void do_protect
            && (  nPlayer != executor
               || !bAlias))
         {
-            notify(executor, T("That name is already in use."));
+            notify(executor, M_("That name is already in use."));
             return;
         }
 
@@ -1593,7 +1593,7 @@ void do_protect
         }
         else
         {
-            notify(executor, T("That name is already in use or is illegal, alias cleared."));
+            notify(executor, M_("That name is already in use or is illegal, alias cleared."));
             atr_clr(executor, A_ALIAS);
         }
         return;
@@ -1606,7 +1606,7 @@ void do_protect
         LBuf oldalias = LBuf_Adopt(atr_pget(executor, A_ALIAS, &aowner, &aflags));
         if ('\0' == oldalias[0])
         {
-            notify(executor, T("You have no alias set."));
+            notify(executor, M_("You have no alias set."));
             return;
         }
 
@@ -1630,7 +1630,7 @@ void do_protect
         LBuf pProtect = LBuf_Adopt(atr_pget(executor, A_PROTECTNAME, &aowner, &aflags));
         if ('\0' == pProtect[0])
         {
-            notify(executor, T("You have no protected names."));
+            notify(executor, M_("You have no protected names."));
             return;
         }
 
@@ -1657,7 +1657,7 @@ void do_protect
 
         if (!found)
         {
-            notify(executor, T("That name is not in your protected list."));
+            notify(executor, M_("That name is not in your protected list."));
         }
         else
         {
@@ -1671,13 +1671,13 @@ void do_protect
     //
     if (!ValidatePlayerName(arg1))
     {
-        notify(executor, T("That is not a valid player name."));
+        notify(executor, M_("That is not a valid player name."));
         return;
     }
 
     if (!badname_check(arg1))
     {
-        notify(executor, T("That name is not allowed."));
+        notify(executor, M_("That name is not allowed."));
         return;
     }
 
@@ -1693,7 +1693,7 @@ void do_protect
         {
             if (0 == string_compare(token, arg1))
             {
-                notify(executor, T("That name is already in your protected list."));
+                notify(executor, M_("That name is already in your protected list."));
                 return;
             }
             count++;
@@ -1710,7 +1710,7 @@ void do_protect
     //
     if (!protectname_check(arg1, executor))
     {
-        notify(executor, T("That name is already protected by another player."));
+        notify(executor, M_("That name is already protected by another player."));
         return;
     }
 
