@@ -4149,6 +4149,21 @@ static void list_modules(dbref executor)
             }
             pISlaveControl->Release();
         }
+        else
+        {
+            // Say so.  Without this the entire slave section vanishes and
+            // @list modules positively suggests the answer is "none" -- it
+            // prints the in-process modules and stops, with nothing to
+            // distinguish "the slave has no modules" from "we could not ask"
+            // (#1535).
+            //
+            // That distinction matters because --enable-stubslave is the
+            // release configuration, so the operators most affected are the
+            // ones running in production.
+            //
+            raw_notify(executor, tprintf(T("(stubslave module list unavailable: mux_CreateInstance returned %d)"),
+                static_cast<int>(mr)));
+        }
     }
 #endif
 }
