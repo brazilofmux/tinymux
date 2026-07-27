@@ -1,10 +1,20 @@
-# Pseudo-locale for NLS smoke (#1419).
-# Opt-in M_()/N_() only — rebuilt from tinymux.pot, not msgmerge.
+# TinyMUX server-message template (#1419 / #1473).
+# Opt-in M_()/N_() only — not T() casts or S_() softcode ABI.
+# Regenerate:  make -C mux/po pot   or   ./update-pot.sh
 #
+# This file is distributed under the same license as the TinyMUX package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
-"Language: xx\n"
+"Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
+"POT-Creation-Date: 2026-07-27 07:12-0600\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -70,7 +80,7 @@ msgstr "[xx] Illegal combination of switches."
 
 #: modules/engine/command.cpp:2980
 msgid "Huh?  (Type “help” for help.)"
-msgstr "[xx] Huh?  (Type âhelpâ for help.)"
+msgstr "[xx] Huh?  (Type “help” for help.)"
 
 #: modules/engine/command.cpp:3719
 msgid "The deposit is refunded when the command is run or canceled."
@@ -103,24 +113,24 @@ msgstr "[xx] The @Listen/@Ahear attribute set works on player objects."
 
 #: modules/engine/command.cpp:3793
 msgid "The ‘examine’ command lists the flag names for the object’s flags."
-msgstr "[xx] The âexamineâ command lists the flag names for the objectâs flags."
+msgstr "[xx] The ‘examine’ command lists the flag names for the object’s flags."
 
 #: modules/engine/command.cpp:3796
 msgid ""
 "The ‘look’ command shows visible attributes in addition to the description."
-msgstr "[xx] The âlookâ command shows visible attributes in addition to the description."
+msgstr "[xx] The ‘look’ command shows visible attributes in addition to the description."
 
 #: modules/engine/command.cpp:3798
 msgid "The ‘look’ command lists DARK objects owned by you."
-msgstr "[xx] The âlookâ command lists DARK objects owned by you."
+msgstr "[xx] The ‘look’ command lists DARK objects owned by you."
 
 #: modules/engine/command.cpp:3800
 msgid "The ‘look’ command shows disconnected players."
-msgstr "[xx] The âlookâ command shows disconnected players."
+msgstr "[xx] The ‘look’ command shows disconnected players."
 
 #: modules/engine/command.cpp:3802
 msgid "The ‘look’ command obeys the TERSE flag."
-msgstr "[xx] The âlookâ command obeys the TERSE flag."
+msgstr "[xx] The ‘look’ command obeys the TERSE flag."
 
 #: modules/engine/command.cpp:3805
 msgid ""
@@ -134,11 +144,11 @@ msgstr "[xx] Trace output is presented bottom-up (subexpressions first)."
 #: modules/engine/command.cpp:3813
 msgid ""
 "The ‘whisper’ command lets others in the room with you know you whispered."
-msgstr "[xx] The âwhisperâ command lets others in the room with you know you whispered."
+msgstr "[xx] The ‘whisper’ command lets others in the room with you know you whispered."
 
 #: modules/engine/command.cpp:3815
 msgid "The ‘@pemit’ command may be used to emit to faraway players."
-msgstr "[xx] The â@pemitâ command may be used to emit to faraway players."
+msgstr "[xx] The ‘@pemit’ command may be used to emit to faraway players."
 
 #: modules/engine/command.cpp:3817
 msgid "The TERSE flag suppresses listing the contents of a location."
@@ -155,15 +165,15 @@ msgstr "[xx] The TERSE flag suppresses enter/leave/succ/drop messages generated 
 
 #: modules/engine/command.cpp:3824
 msgid "The ‘flags()’ function will return the flags of any object."
-msgstr "[xx] The âflags()â function will return the flags of any object."
+msgstr "[xx] The ‘flags()’ function will return the flags of any object."
 
 #: modules/engine/command.cpp:3827
 msgid "The ‘get()’ function will return the description of faraway objects,"
-msgstr "[xx] The âget()â function will return the description of faraway objects,"
+msgstr "[xx] The ‘get()’ function will return the description of faraway objects,"
 
 #: modules/engine/command.cpp:3829
 msgid "The ‘name()’ function will return the name of faraway objects."
-msgstr "[xx] The âname()â function will return the name of faraway objects."
+msgstr "[xx] The ‘name()’ function will return the name of faraway objects."
 
 #: modules/engine/command.cpp:3834
 msgid "Players may @sweep dark locations."
@@ -220,6 +230,10 @@ msgstr "[xx] Reality levels:"
 #: modules/engine/command.cpp:4193
 msgid "--Completed."
 msgstr "[xx] --Completed."
+
+#: modules/engine/command.cpp:4381
+msgid "Lua module loaded (Lua 5.4)."
+msgstr "[xx] Lua module loaded (Lua 5.4)."
 
 #: modules/engine/command.cpp:4497 modules/engine/command.cpp:4531
 msgid "@icmd: Bad Location."
@@ -352,6 +366,10 @@ msgstr "[xx] You need to specify a channel."
 msgid "Sorry, this channel type does not allow you to join."
 msgstr "[xx] Sorry, this channel type does not allow you to join."
 
+#: modules/engine/comsys.cpp:2431
+msgid "Sorry, but you have reached the maximum number of aliases allowed."
+msgstr "[xx] Sorry, but you have reached the maximum number of aliases allowed."
+
 #: modules/engine/comsys.cpp:2483
 msgid "Need an alias to delete."
 msgstr "[xx] Need an alias to delete."
@@ -461,7 +479,7 @@ msgstr "[xx] @cboot: You are not on that channel."
 
 #: modules/engine/comsys.cpp:3816
 msgid "@cboot: You can’t do that!"
-msgstr "[xx] @cboot: You canât do that!"
+msgstr "[xx] @cboot: You can’t do that!"
 
 #: modules/engine/comsys.cpp:3889
 msgid "That channel does not exist."
@@ -493,7 +511,7 @@ msgstr "[xx] GAME: Expensive activity abbreviated."
 
 #: modules/engine/cque.cpp:742
 msgid "Can’t specify /pid and /all"
-msgstr "[xx] Canât specify /pid and /all"
+msgstr "[xx] Can’t specify /pid and /all"
 
 #: modules/engine/cque.cpp:747
 msgid "You must specify a PID."
@@ -513,7 +531,7 @@ msgstr "[xx] No queue entry with that PID was found."
 
 #: modules/engine/cque.cpp:838 modules/engine/cque.cpp:1996
 msgid "Can’t specify a target and /all"
-msgstr "[xx] Canât specify a target and /all"
+msgstr "[xx] Can’t specify a target and /all"
 
 #: modules/engine/cque.cpp:1110
 msgid "Drained."
@@ -584,11 +602,11 @@ msgstr "[xx] Object queue appended to player queue."
 
 #: modules/engine/create.cpp:34
 msgid "That’s not a valid object."
-msgstr "[xx] Thatâs not a valid object."
+msgstr "[xx] That’s not a valid object."
 
 #: modules/engine/create.cpp:40
 msgid "You can’t link to that."
-msgstr "[xx] You canât link to that."
+msgstr "[xx] You can’t link to that."
 
 #: modules/engine/create.cpp:61
 msgid "Open where?"
@@ -600,7 +618,7 @@ msgstr "[xx] Opened."
 
 #: modules/engine/create.cpp:112
 msgid "You can’t link to there."
-msgstr "[xx] You canât link to there."
+msgstr "[xx] You can’t link to there."
 
 #: modules/engine/create.cpp:127 modules/engine/create.cpp:252
 msgid "Linked."
@@ -608,11 +626,11 @@ msgstr "[xx] Linked."
 
 #: modules/engine/create.cpp:334
 msgid "Can’t link to an exit."
-msgstr "[xx] Canât link to an exit."
+msgstr "[xx] Can’t link to an exit."
 
 #: modules/engine/create.cpp:344
 msgid "Can’t set home to home."
-msgstr "[xx] Canât set home to home."
+msgstr "[xx] Can’t set home to home."
 
 #: modules/engine/create.cpp:393
 msgid "That is not a room!"
@@ -620,7 +638,7 @@ msgstr "[xx] That is not a room!"
 
 #: modules/engine/create.cpp:526
 msgid "You can’t have yourself as a parent!"
-msgstr "[xx] You canât have yourself as a parent!"
+msgstr "[xx] You can’t have yourself as a parent!"
 
 #: modules/engine/create.cpp:602
 msgid "Parent cleared."
@@ -640,7 +658,7 @@ msgstr "[xx] Create what?"
 
 #: modules/engine/create.cpp:701
 msgid "You can’t create an object for less than nothing!"
-msgstr "[xx] You canât create an object for less than nothing!"
+msgstr "[xx] You can’t create an object for less than nothing!"
 
 #: modules/engine/create.cpp:789
 msgid "You cannot clone players!"
@@ -656,7 +674,7 @@ msgstr "[xx] Sorry, no suicide allowed."
 
 #: modules/engine/create.cpp:1100
 msgid "Even you can’t do that!"
-msgstr "[xx] Even you canât do that!"
+msgstr "[xx] Even you can’t do that!"
 
 #: modules/engine/create.cpp:1211
 msgid "Sorry, that object is protected.  Use @destroy/override to destroy it."
@@ -668,7 +686,7 @@ msgstr "[xx] That object is indestructible."
 
 #: modules/engine/create.cpp:1227
 msgid "You can’t destroy that!"
-msgstr "[xx] You canât destroy that!"
+msgstr "[xx] You can’t destroy that!"
 
 #: modules/engine/create.cpp:1263
 msgid "The room shakes and begins to crumble."
@@ -728,7 +746,7 @@ msgstr "[xx] Attribute deleted."
 
 #: modules/engine/db.cpp:1156
 msgid "That’s not a good name for a player."
-msgstr "[xx] Thatâs not a good name for a player."
+msgstr "[xx] That’s not a good name for a player."
 
 #: modules/engine/db.cpp:1165
 msgid "That name is already in use or is an alias."
@@ -738,14 +756,6 @@ msgstr "[xx] That name is already in use or is an alias."
 msgid "That is not a reasonable name."
 msgstr "[xx] That is not a reasonable name."
 
-#: modules/engine/engine.cpp:29
-msgid "Dumping in progress. Try again later."
-msgstr "[xx] Dumping in progress. Try again later."
-
-#: modules/engine/engine.cpp:33
-msgid "Dumping..."
-msgstr "[xx] Dumping..."
-
 #: modules/engine/engine_com.cpp:4493
 msgid "*** Logins are disabled."
 msgstr "[xx] *** Logins are disabled."
@@ -753,6 +763,14 @@ msgstr "[xx] *** Logins are disabled."
 #: modules/engine/engine_com.cpp:4507
 msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
 msgstr "[xx] Your PAGE LOCK is set.  You may be unable to receive some pages."
+
+#: modules/engine/engine.cpp:29
+msgid "Dumping in progress. Try again later."
+msgstr "[xx] Dumping in progress. Try again later."
+
+#: modules/engine/engine.cpp:33
+msgid "Dumping..."
+msgstr "[xx] Dumping..."
 
 #: modules/engine/flags.cpp:26
 msgid "You cannot make God mortal."
@@ -800,7 +818,7 @@ msgstr "[xx] Extra argument ignored."
 
 #: modules/engine/flags.cpp:1436
 msgid "Error: You can’t remove the present flag name from the hash table."
-msgstr "[xx] Error: You canât remove the present flag name from the hash table."
+msgstr "[xx] Error: You can’t remove the present flag name from the hash table."
 
 #: modules/engine/flags.cpp:1441 modules/engine/flags.cpp:1446
 #: modules/engine/flags.cpp:1462
@@ -817,7 +835,7 @@ msgstr "[xx] Flag name changed."
 
 #: modules/engine/funceval.cpp:1098 modules/engine/set.cpp:1061
 msgid "You shouldn’t be rummaging through the garbage."
-msgstr "[xx] You shouldnât be rummaging through the garbage."
+msgstr "[xx] You shouldn’t be rummaging through the garbage."
 
 #: modules/engine/funceval2.cpp:888
 msgid "Illegal step size."
@@ -851,7 +869,7 @@ msgstr "[xx] No such indexed file found."
 #: modules/engine/levels.cpp:281 modules/engine/levels.cpp:382
 #: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
 msgid "I don’t know what you want to set!"
-msgstr "[xx] I donât know what you want to set!"
+msgstr "[xx] I don’t know what you want to set!"
 
 #: modules/engine/levels.cpp:325 modules/engine/levels.cpp:426
 msgid "You must specify a reality level to clear."
@@ -888,7 +906,7 @@ msgstr "[xx] Contents:"
 
 #: modules/engine/look.cpp:1526
 msgid "You can’t look outside."
-msgstr "[xx] You canât look outside."
+msgstr "[xx] You can’t look outside."
 
 #: modules/engine/look.cpp:1615
 msgid "Carrying:"
@@ -921,7 +939,7 @@ msgstr "[xx] Destination: *UNLINKED*"
 
 #: modules/engine/look.cpp:2192
 msgid "You aren’t carrying anything."
-msgstr "[xx] You arenât carrying anything."
+msgstr "[xx] You aren’t carrying anything."
 
 #: modules/engine/look.cpp:2196
 msgid "You are carrying:"
@@ -973,7 +991,7 @@ msgstr "[xx] Scan complete."
 
 #: modules/engine/mail.cpp:380
 msgid "MAIL: You probably did not intend to send a @mail saying ‘clear’."
-msgstr "[xx] MAIL: You probably did not intend to send a @mail saying âclearâ."
+msgstr "[xx] MAIL: You probably did not intend to send a @mail saying ‘clear’."
 
 #: modules/engine/mail.cpp:735
 msgid "MAIL: Invalid message range"
@@ -1006,11 +1024,11 @@ msgstr "[xx] MAIL: Invalid player or trying to send @mail to a @malias without a
 
 #: modules/engine/mail.cpp:957
 msgid "MAIL: A isn’t enough (all?)"
-msgstr "[xx] MAIL: A isnât enough (all?)"
+msgstr "[xx] MAIL: A isn’t enough (all?)"
 
 #: modules/engine/mail.cpp:969
 msgid "MAIL: AL isn’t enough (all?)"
-msgstr "[xx] MAIL: AL isnât enough (all?)"
+msgstr "[xx] MAIL: AL isn’t enough (all?)"
 
 #: modules/engine/mail.cpp:1015
 msgid "MAIL: U is ambiguous (urgent or unread?)"
@@ -1034,7 +1052,7 @@ msgstr "[xx] MAIL: Illegal folder name"
 
 #: modules/engine/mail.cpp:1349 modules/engine/mail.cpp:1428
 msgid "MAIL: You don’t have any matching messages!"
-msgstr "[xx] MAIL: You donât have any matching messages!"
+msgstr "[xx] MAIL: You don’t have any matching messages!"
 
 #: modules/engine/mail.cpp:1395
 msgid "MAIL: Invalid folder specification"
@@ -1049,14 +1067,14 @@ msgid "MAIL: Mail aliases must be of the form *<name>."
 msgstr "[xx] MAIL: Mail aliases must be of the form *<name>."
 
 #: modules/engine/mail.cpp:1657 modules/engine/mail.cpp:2138
-#: modules/engine/mail.cpp:5615
+#: modules/engine/mail.cpp:5619
 msgid "MAIL: No such folder."
 msgstr "[xx] MAIL: No such folder."
 
 #: modules/engine/mail.cpp:1740 modules/engine/mail.cpp:1974
 #: modules/engine/mail.cpp:2070
 msgid "MAIL: You don’t have that many matching messages!"
-msgstr "[xx] MAIL: You donât have that many matching messages!"
+msgstr "[xx] MAIL: You don’t have that many matching messages!"
 
 #: modules/engine/mail.cpp:1802
 msgid "MAIL: You have no unread messages in that folder."
@@ -1066,8 +1084,8 @@ msgstr "[xx] MAIL: You have no unread messages in that folder."
 msgid "MAIL: You have no matching messages."
 msgstr "[xx] MAIL: You have no matching messages."
 
-#: modules/engine/mail.cpp:1992 modules/engine/mail.cpp:4094
-#: modules/engine/mail.cpp:5152
+#: modules/engine/mail.cpp:1992 modules/engine/mail.cpp:4098
+#: modules/engine/mail.cpp:5156
 msgid "MAIL: No such player."
 msgstr "[xx] MAIL: No such player."
 
@@ -1079,21 +1097,21 @@ msgstr "[xx] MAIL: Mailbox purged."
 msgid "MAIL: No players specified."
 msgstr "[xx] MAIL: No players specified."
 
-#: modules/engine/mail.cpp:2365 modules/engine/mail.cpp:4273
+#: modules/engine/mail.cpp:2365 modules/engine/mail.cpp:4277
 msgid "MAIL: I do not know whom you want to mail."
 msgstr "[xx] MAIL: I do not know whom you want to mail."
 
-#: modules/engine/mail.cpp:2370 modules/engine/mail.cpp:4491
+#: modules/engine/mail.cpp:2370 modules/engine/mail.cpp:4495
 msgid "MAIL: No subject."
 msgstr "[xx] MAIL: No subject."
 
 #: modules/engine/mail.cpp:2375 modules/engine/mail.cpp:2405
-#: modules/engine/mail.cpp:2451 modules/engine/mail.cpp:4474
+#: modules/engine/mail.cpp:2451 modules/engine/mail.cpp:4478
 msgid "MAIL: Mail message already in progress."
 msgstr "[xx] MAIL: Mail message already in progress."
 
 #: modules/engine/mail.cpp:2381 modules/engine/mail.cpp:2421
-#: modules/engine/mail.cpp:2462 modules/engine/mail.cpp:4480
+#: modules/engine/mail.cpp:2462 modules/engine/mail.cpp:4484
 msgid "MAIL: Too much @mail sent recently."
 msgstr "[xx] MAIL: Too much @mail sent recently."
 
@@ -1107,15 +1125,15 @@ msgstr "[xx] MAIL: To whom should I forward?"
 
 #: modules/engine/mail.cpp:2427 modules/engine/mail.cpp:2468
 msgid "MAIL: I don’t understand that message number."
-msgstr "[xx] MAIL: I donât understand that message number."
+msgstr "[xx] MAIL: I don’t understand that message number."
 
 #: modules/engine/mail.cpp:2433
 msgid "MAIL: You can’t forward non-existent messages."
-msgstr "[xx] MAIL: You canât forward non-existent messages."
+msgstr "[xx] MAIL: You can’t forward non-existent messages."
 
 #: modules/engine/mail.cpp:2474
 msgid "MAIL: You can’t reply to non-existent messages."
-msgstr "[xx] MAIL: You canât reply to non-existent messages."
+msgstr "[xx] MAIL: You can’t reply to non-existent messages."
 
 #: modules/engine/mail.cpp:2479
 msgid "MAIL: The original sender no longer exists."
@@ -1153,9 +1171,17 @@ msgstr "[xx] Some mailbag items are referred to less often than the mailbag item
 msgid "Mail sanity check completed."
 msgstr "[xx] Mail sanity check completed."
 
+#: modules/engine/mail.cpp:3088
+msgid "Re-counting mailbag reference counts."
+msgstr "[xx] Re-counting mailbag reference counts."
+
 #: modules/engine/mail.cpp:3120
 msgid "Some reference counts were wrong [FIXED]."
 msgstr "[xx] Some reference counts were wrong [FIXED]."
+
+#: modules/engine/mail.cpp:3125
+msgid "Removing @mail that is associated with non-players."
+msgstr "[xx] Removing @mail that is associated with non-players."
 
 #: modules/engine/mail.cpp:3147
 msgid "Mail sanity fix completed."
@@ -1173,165 +1199,169 @@ msgstr "[xx] The post office protects privacy!"
 msgid "MAIL: Invalid mail command."
 msgstr "[xx] MAIL: Invalid mail command."
 
-#: modules/engine/mail.cpp:4027
+#: modules/engine/mail.cpp:3962
+msgid "MAIL: You have no mail."
+msgstr "[xx] MAIL: You have no mail."
+
+#: modules/engine/mail.cpp:4031
 msgid "MAIL: What alias do you want to create?."
 msgstr "[xx] MAIL: What alias do you want to create?."
 
-#: modules/engine/mail.cpp:4123
+#: modules/engine/mail.cpp:4127
 msgid "MAIL: Invalid mail alias."
 msgstr "[xx] MAIL: Invalid mail alias."
 
-#: modules/engine/mail.cpp:4163 modules/engine/mail.cpp:4816
-#: modules/engine/mail.cpp:4887 modules/engine/mail.cpp:4919
-#: modules/engine/mail.cpp:4980 modules/engine/mail.cpp:5061
+#: modules/engine/mail.cpp:4167 modules/engine/mail.cpp:4820
+#: modules/engine/mail.cpp:4891 modules/engine/mail.cpp:4923
+#: modules/engine/mail.cpp:4984 modules/engine/mail.cpp:5065
 msgid "MAIL: Permission denied."
 msgstr "[xx] MAIL: Permission denied."
 
-#: modules/engine/mail.cpp:4232
+#: modules/engine/mail.cpp:4236
 msgid "Name         Description                              Owner"
 msgstr "[xx] Name         Description                              Owner"
 
-#: modules/engine/mail.cpp:4242
+#: modules/engine/mail.cpp:4246
 msgid "*****  End of Mail Aliases *****"
 msgstr "[xx] *****  End of Mail Aliases *****"
 
-#: modules/engine/mail.cpp:4268
+#: modules/engine/mail.cpp:4272
 msgid "MAIL: No mail message in progress."
 msgstr "[xx] MAIL: No mail message in progress."
 
-#: modules/engine/mail.cpp:4464
+#: modules/engine/mail.cpp:4468
 msgid "MAIL: I don’t know who you want to mail."
-msgstr "[xx] MAIL: I donât know who you want to mail."
+msgstr "[xx] MAIL: I don’t know who you want to mail."
 
-#: modules/engine/mail.cpp:4469
+#: modules/engine/mail.cpp:4473
 msgid "MAIL: No message."
 msgstr "[xx] MAIL: No message."
 
-#: modules/engine/mail.cpp:4569
+#: modules/engine/mail.cpp:4573
 msgid "MAIL: No message started."
 msgstr "[xx] MAIL: No message started."
 
-#: modules/engine/mail.cpp:4578
+#: modules/engine/mail.cpp:4582
 msgid "MAIL: No recipients."
 msgstr "[xx] MAIL: No recipients."
 
-#: modules/engine/mail.cpp:4586
+#: modules/engine/mail.cpp:4590
 msgid "MAIL: The body of this message is empty.  Use - to add to the message."
 msgstr "[xx] MAIL: The body of this message is empty.  Use - to add to the message."
 
-#: modules/engine/mail.cpp:4606
+#: modules/engine/mail.cpp:4610
 msgid "MAIL: Message aborted."
 msgstr "[xx] MAIL: Message aborted."
 
-#: modules/engine/mail.cpp:4620
+#: modules/engine/mail.cpp:4624
 msgid "No text prepended."
 msgstr "[xx] No text prepended."
 
-#: modules/engine/mail.cpp:4659 modules/engine/mail.cpp:4720
-#: modules/engine/mail.cpp:4739 modules/engine/mail.cpp:4747
+#: modules/engine/mail.cpp:4663 modules/engine/mail.cpp:4724
+#: modules/engine/mail.cpp:4743 modules/engine/mail.cpp:4751
 msgid "MAIL: No message in progress."
 msgstr "[xx] MAIL: No message in progress."
 
-#: modules/engine/mail.cpp:4681
+#: modules/engine/mail.cpp:4685
 msgid "No text added."
 msgstr "[xx] No text added."
 
-#: modules/engine/mail.cpp:4733
+#: modules/engine/mail.cpp:4737
 msgid "Text edited."
 msgstr "[xx] Text edited."
 
-#: modules/engine/mail.cpp:4807
+#: modules/engine/mail.cpp:4811
 msgid "MAIL: Description changed."
 msgstr "[xx] MAIL: Description changed."
 
-#: modules/engine/mail.cpp:4811
+#: modules/engine/mail.cpp:4815
 msgid "MAIL: Description is not valid."
 msgstr "[xx] MAIL: Description is not valid."
 
-#: modules/engine/mail.cpp:4824
+#: modules/engine/mail.cpp:4828
 msgid "MAIL: You cannot do that!"
 msgstr "[xx] MAIL: You cannot do that!"
 
-#: modules/engine/mail.cpp:4842
+#: modules/engine/mail.cpp:4846
 msgid "MAIL: I do not see that here."
 msgstr "[xx] MAIL: I do not see that here."
 
-#: modules/engine/mail.cpp:4847
+#: modules/engine/mail.cpp:4851
 msgid "MAIL: Owner changed for alias."
 msgstr "[xx] MAIL: Owner changed for alias."
 
-#: modules/engine/mail.cpp:4869
+#: modules/engine/mail.cpp:4873
 msgid "MAIL: Only players may be added."
 msgstr "[xx] MAIL: Only players may be added."
 
-#: modules/engine/mail.cpp:4881 modules/engine/mail.cpp:4934
+#: modules/engine/mail.cpp:4885 modules/engine/mail.cpp:4938
 msgid "MAIL: I do not see that person here."
 msgstr "[xx] MAIL: I do not see that person here."
 
-#: modules/engine/mail.cpp:4894
+#: modules/engine/mail.cpp:4898
 msgid "MAIL: That person is already on the list."
 msgstr "[xx] MAIL: That person is already on the list."
 
-#: modules/engine/mail.cpp:4961
+#: modules/engine/mail.cpp:4965
 msgid "MAIL: That name already exists!"
 msgstr "[xx] MAIL: That name already exists!"
 
-#: modules/engine/mail.cpp:4971
+#: modules/engine/mail.cpp:4975
 msgid "MAIL: I cannot find that alias!"
 msgstr "[xx] MAIL: I cannot find that alias!"
 
-#: modules/engine/mail.cpp:4995
+#: modules/engine/mail.cpp:4999
 msgid "MAIL: Mailing Alias renamed."
 msgstr "[xx] MAIL: Mailing Alias renamed."
 
-#: modules/engine/mail.cpp:4999
+#: modules/engine/mail.cpp:5003
 msgid "MAIL: Alias is not valid."
 msgstr "[xx] MAIL: Alias is not valid."
 
-#: modules/engine/mail.cpp:5025
+#: modules/engine/mail.cpp:5029
 msgid "MAIL: Alias Deleted."
 msgstr "[xx] MAIL: Alias Deleted."
 
-#: modules/engine/mail.cpp:5043
+#: modules/engine/mail.cpp:5047
 msgid "Num  Name         Description                              Owner"
 msgstr "[xx] Num  Name         Description                              Owner"
 
-#: modules/engine/mail.cpp:5054
+#: modules/engine/mail.cpp:5058
 msgid "***** End of Mail Aliases *****"
 msgstr "[xx] ***** End of Mail Aliases *****"
 
-#: modules/engine/mail.cpp:5175
+#: modules/engine/mail.cpp:5179
 msgid "MAIL: Mail retracted."
 msgstr "[xx] MAIL: Mail retracted."
 
-#: modules/engine/mail.cpp:5179
+#: modules/engine/mail.cpp:5183
 msgid "MAIL: That message has been read."
 msgstr "[xx] MAIL: That message has been read."
 
-#: modules/engine/mail.cpp:5189
+#: modules/engine/mail.cpp:5193
 msgid "MAIL: No matching messages."
 msgstr "[xx] MAIL: No matching messages."
 
-#: modules/engine/mail.cpp:5251
+#: modules/engine/mail.cpp:5255
 msgid "MAIL: That @malias command is not available."
 msgstr "[xx] MAIL: That @malias command is not available."
 
-#: modules/engine/mail.cpp:5323
+#: modules/engine/mail.cpp:5327
 msgid "MAIL: That @mail command is not available."
 msgstr "[xx] MAIL: That @mail command is not available."
 
-#: modules/engine/mail.cpp:5652
+#: modules/engine/mail.cpp:5656
 msgid "MAIL: That folder command is not available."
 msgstr "[xx] MAIL: That folder command is not available."
 
 #: modules/engine/match.cpp:17 modules/engine/match.cpp:34
 msgid "I don’t see that here."
-msgstr "[xx] I donât see that here."
+msgstr "[xx] I don’t see that here."
 
 #: modules/engine/match.cpp:18 modules/engine/match.cpp:35
 #: modules/engine/set.cpp:698
 msgid "I don’t know which one you mean!"
-msgstr "[xx] I donât know which one you mean!"
+msgstr "[xx] I don’t know which one you mean!"
 
 #: modules/engine/mguests.cpp:425
 msgid ""
@@ -1349,12 +1379,12 @@ msgstr "[xx] -------------------------------------------------------------------
 
 #: modules/engine/move.cpp:406
 msgid "You can’t teleport that out!"
-msgstr "[xx] You canât teleport that out!"
+msgstr "[xx] You can’t teleport that out!"
 
 #: modules/engine/move.cpp:570 modules/engine/move.cpp:577
 #: modules/engine/move.cpp:665 modules/engine/move.cpp:674
 msgid "You can’t go that way."
-msgstr "[xx] You canât go that way."
+msgstr "[xx] You can’t go that way."
 
 #: modules/engine/move.cpp:617
 msgid "You are already home."
@@ -1362,11 +1392,11 @@ msgstr "[xx] You are already home."
 
 #: modules/engine/move.cpp:646
 msgid "There’s no place like home..."
-msgstr "[xx] Thereâs no place like home..."
+msgstr "[xx] There’s no place like home..."
 
 #: modules/engine/move.cpp:668
 msgid "I don’t know which way you mean!"
-msgstr "[xx] I donât know which way you mean!"
+msgstr "[xx] I don’t know which way you mean!"
 
 #: modules/engine/move.cpp:757 modules/engine/move.cpp:808
 msgid "You already have that!"
@@ -1386,22 +1416,22 @@ msgstr "[xx] Exit taken."
 
 #: modules/engine/move.cpp:834
 msgid "You can’t take that!"
-msgstr "[xx] You canât take that!"
+msgstr "[xx] You can’t take that!"
 
 #: modules/engine/move.cpp:869 modules/engine/rob.cpp:206
 #: modules/engine/set.cpp:1003
 msgid "You don’t have that!"
-msgstr "[xx] You donât have that!"
+msgstr "[xx] You don’t have that!"
 
 #: modules/engine/move.cpp:873 modules/engine/rob.cpp:210
 #: modules/engine/set.cpp:1008
 msgid "I don’t know which you mean!"
-msgstr "[xx] I donât know which you mean!"
+msgstr "[xx] I don’t know which you mean!"
 
 #: modules/engine/move.cpp:888 modules/engine/move.cpp:927
 #: modules/engine/move.cpp:951
 msgid "You can’t drop that."
-msgstr "[xx] You canât drop that."
+msgstr "[xx] You can’t drop that."
 
 #: modules/engine/move.cpp:896 modules/engine/move.cpp:911
 msgid "Dropped."
@@ -1413,11 +1443,11 @@ msgstr "[xx] Exit dropped."
 
 #: modules/engine/move.cpp:973
 msgid "You can’t enter yourself!"
-msgstr "[xx] You canât enter yourself!"
+msgstr "[xx] You can’t enter yourself!"
 
 #: modules/engine/move.cpp:1040 modules/engine/move.cpp:1057
 msgid "You can’t leave."
-msgstr "[xx] You canât leave."
+msgstr "[xx] You can’t leave."
 
 #: modules/engine/object.cpp:628 modules/engine/player.cpp:1683
 msgid "That name is not allowed."
@@ -1425,7 +1455,7 @@ msgstr "[xx] That name is not allowed."
 
 #: modules/engine/object.cpp:637
 msgid "That’s a silly name for a player."
-msgstr "[xx] Thatâs a silly name for a player."
+msgstr "[xx] That’s a silly name for a player."
 
 #: modules/engine/object.cpp:971 modules/engine/rob.cpp:152
 msgid "Halted."
@@ -1449,7 +1479,7 @@ msgstr "[xx] Password changed."
 #: modules/engine/player.cpp:1017 modules/engine/set.cpp:923
 #: modules/engine/set.cpp:1065
 msgid "I couldn’t find that player."
-msgstr "[xx] I couldnât find that player."
+msgstr "[xx] I couldn’t find that player."
 
 #: modules/engine/player.cpp:1438
 msgid "Only players may use @protect."
@@ -1515,7 +1545,7 @@ msgstr "[xx] @email: Not configured"
 
 #: modules/engine/plusemail.cpp:300
 msgid "@email: I don’t know who you want to e-mail!"
-msgstr "[xx] @email: I donât know who you want to e-mail!"
+msgstr "[xx] @email: I don’t know who you want to e-mail!"
 
 #: modules/engine/plusemail.cpp:306
 msgid "@email: Not sending an empty e-mail!"
@@ -1531,7 +1561,7 @@ msgstr "[xx] You must specify a power to set."
 
 #: modules/engine/powers.cpp:257
 msgid "I don’t understand that power."
-msgstr "[xx] I donât understand that power."
+msgstr "[xx] I don’t understand that power."
 
 #: modules/engine/predicates.cpp:283
 msgid "Sorry, your building contract has run out."
@@ -1539,7 +1569,7 @@ msgstr "[xx] Sorry, your building contract has run out."
 
 #: modules/engine/predicates.cpp:288
 msgid "Sorry, that player’s building contract has run out."
-msgstr "[xx] Sorry, that playerâs building contract has run out."
+msgstr "[xx] Sorry, that player’s building contract has run out."
 
 #: modules/engine/predicates.cpp:1008
 msgid "That is not a valid command name."
@@ -1650,12 +1680,12 @@ msgstr "[xx] Not found."
 
 #: modules/engine/rob.cpp:46
 msgid "I don’t see that player here."
-msgstr "[xx] I donât see that player here."
+msgstr "[xx] I don’t see that player here."
 
 #: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
 #: modules/engine/speech.cpp:1063
 msgid "I don’t know who you mean!"
-msgstr "[xx] I donât know who you mean!"
+msgstr "[xx] I don’t know who you mean!"
 
 #: modules/engine/rob.cpp:57
 msgid "Sorry, you can only kill players and things."
@@ -1671,11 +1701,11 @@ msgstr "[xx] Your insurance policy has been revoked."
 
 #: modules/engine/rob.cpp:215
 msgid "You can’t give yourself away!"
-msgstr "[xx] You canât give yourself away!"
+msgstr "[xx] You can’t give yourself away!"
 
 #: modules/engine/rob.cpp:220
 msgid "You can’t give an object to itself."
-msgstr "[xx] You canât give an object to itself."
+msgstr "[xx] You can’t give an object to itself."
 
 #: modules/engine/rob.cpp:265
 msgid "Given."
@@ -1691,11 +1721,11 @@ msgstr "[xx] Give to whom?"
 
 #: modules/engine/rob.cpp:427
 msgid "You can’t give anything to an exit."
-msgstr "[xx] You canât give anything to an exit."
+msgstr "[xx] You can’t give anything to an exit."
 
 #: modules/engine/rob.cpp:432
 msgid "Guests really don’t need money or anything."
-msgstr "[xx] Guests really donât need money or anything."
+msgstr "[xx] Guests really don’t need money or anything."
 
 #: modules/engine/session.cpp:290 modules/engine/session.cpp:305
 msgid "Not connected."
@@ -1711,7 +1741,7 @@ msgstr "[xx] Invalid zone object type."
 
 #: modules/engine/set.cpp:122
 msgid "You don’t have the power to shift reality."
-msgstr "[xx] You donât have the power to shift reality."
+msgstr "[xx] You don’t have the power to shift reality."
 
 #: modules/engine/set.cpp:139
 msgid "You cannot move that object to that zone."
@@ -1731,7 +1761,7 @@ msgstr "[xx] Give it what new name?"
 
 #: modules/engine/set.cpp:228
 msgid "You can’t use that name."
-msgstr "[xx] You canât use that name."
+msgstr "[xx] You can’t use that name."
 
 #: modules/engine/set.cpp:234
 msgid "That name is protected by another player."
@@ -1747,7 +1777,7 @@ msgstr "[xx] Alias removed."
 
 #: modules/engine/set.cpp:388
 msgid "That’s a silly name for a player!"
-msgstr "[xx] Thatâs a silly name for a player!"
+msgstr "[xx] That’s a silly name for a player!"
 
 #: modules/engine/set.cpp:400
 msgid "Alias set."
@@ -1767,19 +1797,19 @@ msgstr "[xx] Attribute locked."
 
 #: modules/engine/set.cpp:560
 msgid "I don’t see what you want to lock!"
-msgstr "[xx] I donât see what you want to lock!"
+msgstr "[xx] I don’t see what you want to lock!"
 
 #: modules/engine/set.cpp:564
 msgid "I don’t know which one you want to lock!"
-msgstr "[xx] I donât know which one you want to lock!"
+msgstr "[xx] I don’t know which one you want to lock!"
 
 #: modules/engine/set.cpp:570
 msgid "You can’t lock that!"
-msgstr "[xx] You canât lock that!"
+msgstr "[xx] You can’t lock that!"
 
 #: modules/engine/set.cpp:585
 msgid "I don’t understand that key."
-msgstr "[xx] I donât understand that key."
+msgstr "[xx] I don’t understand that key."
 
 #: modules/engine/set.cpp:599
 msgid "Locked."
@@ -1807,7 +1837,7 @@ msgstr "[xx] Dropto removed."
 
 #: modules/engine/set.cpp:737
 msgid "You can’t unlink that!"
-msgstr "[xx] You canât unlink that!"
+msgstr "[xx] You can’t unlink that!"
 
 #: modules/engine/set.cpp:981
 msgid "Attribute owner changed."
@@ -1819,11 +1849,11 @@ msgstr "[xx] Players always own themselves."
 
 #: modules/engine/set.cpp:1258
 msgid "You can’t set that!"
-msgstr "[xx] You canât set that!"
+msgstr "[xx] You can’t set that!"
 
 #: modules/engine/set.cpp:1356
 msgid "Couldn’t create attribute."
-msgstr "[xx] Couldnât create attribute."
+msgstr "[xx] Couldn’t create attribute."
 
 #: modules/engine/set.cpp:1677
 msgid "Not copied anywhere. Non-existent attribute."
@@ -1851,11 +1881,11 @@ msgstr "[xx] Triggered."
 
 #: modules/engine/set.cpp:2415 modules/engine/set.cpp:2445
 msgid "You can’t figure out how to use that."
-msgstr "[xx] You canât figure out how to use that."
+msgstr "[xx] You can’t figure out how to use that."
 
 #: modules/engine/set.cpp:2501
 msgid "That’s not a good name for an attribute."
-msgstr "[xx] Thatâs not a good name for an attribute."
+msgstr "[xx] That’s not a good name for an attribute."
 
 #: modules/engine/speech.cpp:60
 msgid "Sorry. Gagged players cannot speak."
@@ -1915,7 +1945,7 @@ msgstr "[xx] Walk where?"
 
 #: modules/engine/walk.cpp:378
 msgid "That’s not a valid destination."
-msgstr "[xx] Thatâs not a valid destination."
+msgstr "[xx] That’s not a valid destination."
 
 #: modules/engine/walk.cpp:442
 msgid "Patrol cancelled."
@@ -1935,7 +1965,7 @@ msgstr "[xx] Patrol requires at least two waypoints."
 
 #: modules/engine/walkdb.cpp:75
 msgid "That’s terrific, but what should I do with the list?"
-msgstr "[xx] Thatâs terrific, but what should I do with the list?"
+msgstr "[xx] That’s terrific, but what should I do with the list?"
 
 #: modules/engine/walkdb.cpp:87
 msgid "The delimiter must be a single character!"
@@ -1957,33 +1987,25 @@ msgstr "[xx] You need a search warrant to do that!"
 msgid ""
 "\n"
 "ROOMS:"
-msgstr ""
-"\n"
-"[xx] ROOMS:"
+msgstr "\n[xx] ROOMS:"
 
 #: modules/engine/walkdb.cpp:1207
 msgid ""
 "\n"
 "EXITS:"
-msgstr ""
-"\n"
-"[xx] EXITS:"
+msgstr "\n[xx] EXITS:"
 
 #: modules/engine/walkdb.cpp:1250
 msgid ""
 "\n"
 "OBJECTS:"
-msgstr ""
-"\n"
-"[xx] OBJECTS:"
+msgstr "\n[xx] OBJECTS:"
 
 #: modules/engine/walkdb.cpp:1285
 msgid ""
 "\n"
 "PLAYERS:"
-msgstr ""
-"\n"
-"[xx] PLAYERS:"
+msgstr "\n[xx] PLAYERS:"
 
 #: modules/engine/walkdb.cpp:1309
 msgid "Nothing found."
@@ -1995,7 +2017,7 @@ msgstr "[xx] Day   Hours     Players  Total"
 
 #: modules/engine/wiz.cpp:33
 msgid "You can’t teleport that."
-msgstr "[xx] You canât teleport that."
+msgstr "[xx] You can’t teleport that."
 
 #: modules/engine/wiz.cpp:53 modules/engine/wiz.cpp:84
 #: modules/engine/wiz.cpp:120 modules/engine/wiz.cpp:181
@@ -2004,7 +2026,7 @@ msgstr "[xx] Bad destination."
 
 #: modules/engine/wiz.cpp:77
 msgid "I don’t know which destination you mean!"
-msgstr "[xx] I donât know which destination you mean!"
+msgstr "[xx] I don’t know which destination you mean!"
 
 #: modules/engine/wiz.cpp:157
 msgid "Teleported."
@@ -2012,7 +2034,7 @@ msgstr "[xx] Teleported."
 
 #: modules/engine/wiz.cpp:196
 msgid "I can’t find that exit."
-msgstr "[xx] I canât find that exit."
+msgstr "[xx] I can’t find that exit."
 
 #: modules/engine/wiz.cpp:382
 msgid "Try @destroy instead."
@@ -2020,15 +2042,15 @@ msgstr "[xx] Try @destroy instead."
 
 #: modules/engine/wiz.cpp:387
 msgid "You can’t toad that player."
-msgstr "[xx] You canât toad that player."
+msgstr "[xx] You can’t toad that player."
 
 #: modules/engine/wiz.cpp:536
 msgid "You cannot change that player’s password."
-msgstr "[xx] You cannot change that playerâs password."
+msgstr "[xx] You cannot change that player’s password."
 
 #: modules/engine/wiz.cpp:580
 msgid "That’s not a number!"
-msgstr "[xx] Thatâs not a number!"
+msgstr "[xx] That’s not a number!"
 
 #: modules/engine/wiz.cpp:602
 msgid "You cannot boot that player!"
@@ -2072,7 +2094,7 @@ msgstr "[xx] ----- motd messages -----"
 
 #: modules/engine/wiz.cpp:851
 msgid "I don’t know about that flag."
-msgstr "[xx] I donât know about that flag."
+msgstr "[xx] I don’t know about that flag."
 
 #: modules/engine/wiz.cpp:877
 msgid "Enabled."
@@ -2081,4 +2103,3 @@ msgstr "[xx] Enabled."
 #: modules/engine/wiz.cpp:900
 msgid "Disabled."
 msgstr "[xx] Disabled."
-
