@@ -15080,7 +15080,7 @@ static FUN builtin_function_list[] =
     {T("CMOGRIFIER"),  fun_cmogrifier, MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CMSGS"),       fun_cmsgs,      MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("COWNER"),      fun_cowner,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
-    {T("CRECALL"),     fun_crecall,    MAX_ARG, 1,       3,         0, CA_PUBLIC},
+    {T("CRECALL"),     fun_crecall,    MAX_ARG, 1,       5,         0, CA_PUBLIC},
     {T("CSTATUS"),     fun_cstatus,    MAX_ARG, 2,       2,         0, CA_PUBLIC},
     {T("CUSERS"),      fun_cusers,     MAX_ARG, 1,       1,         0, CA_PUBLIC},
     {T("CHILDREN"),    fun_children,   MAX_ARG, 1,       1,         0, CA_PUBLIC},

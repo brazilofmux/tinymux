@@ -862,8 +862,16 @@ bool CSQLiteDB::MigrateSchema()
             "    ON channel_history(channel_name, id);"
 
             // Retention is per-channel: games want a busy public channel and
-            // a quiet staff channel to keep different amounts.  0 means
-            // unlimited for both.
+            // a quiet staff channel to keep different amounts.
+            //
+            // history_max_count carries MAX_LOG's meaning forward unchanged,
+            // and that includes ZERO MEANING OFF, not unlimited.  Reading 0
+            // as "keep everything" would silently start unbounded history on
+            // every channel that had logging switched off -- which is most of
+            // them, since DFLT_MAX_LOG is 0.
+            //
+            // history_max_age is a bound, not a switch: 0 there means "no age
+            // limit", and it only applies to channels that are logging at all.
             //
             "ALTER TABLE channels ADD COLUMN history_max_count INTEGER NOT NULL DEFAULT 0;"
             "ALTER TABLE channels ADD COLUMN history_max_age INTEGER NOT NULL DEFAULT 0;"

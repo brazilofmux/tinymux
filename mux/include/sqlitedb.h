@@ -184,10 +184,20 @@ public:
     // modulo position, and retention becomes a DELETE rather than an
     // overwrite-in-place.
     //
-    // Retention is per-channel, by count and/or age; 0 means unlimited for
-    // either.  Rows imported from the old ring carry ts = 0 ("age unknown")
-    // and are exempt from age expiry -- an upgrade must never delete history
-    // it merely could not date.
+    // Retention is per-channel.
+    //
+    //   history_max_count  0 = not logging at all (MAX_LOG's meaning, carried
+    //                      forward), N = keep the newest N.  Zero is NOT
+    //                      "unlimited": DFLT_MAX_LOG is 0, so reading it that
+    //                      way would start unbounded history on every channel
+    //                      that had logging off.
+    //   history_max_age    0 = no age bound; N = drop entries older than N
+    //                      seconds.  A bound rather than a switch, and only
+    //                      meaningful where count says we are logging.
+    //
+    // Rows imported from the old ring carry ts = 0 ("age unknown") and are
+    // exempt from age expiry -- an upgrade must never delete history it
+    // merely could not date.
     //
     // Every field the write site has: when, who, and what.  The per-receiver
     // mogrified and CHATFORMAT variants deliberately are NOT stored -- they

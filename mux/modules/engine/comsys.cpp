@@ -34,6 +34,26 @@ static void ensure_comsys_softcode_sync(void);
 
 #define SQLITE_COMSYS_WRITABLE() (!mudstate.bSQLiteLoading)
 
+// Retention count for a channel, from the channel row (#1589).
+//
+// Replaces reading MAX_LOG off the channel object, which is no longer
+// written -- mirroring retention into both an attribute and a column would
+// re-create the two-sources-of-truth split this work removes.  Zero keeps
+// MAX_LOG's meaning: not logging, rather than unlimited.
+//
+static int chan_history_max(const struct channel *ch)
+{
+    if (nullptr == ch)
+    {
+        return 0;
+    }
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    int max_count = 0;
+    int max_age = 0;
+    sqldb.GetChannelRetention(ch->name, &max_count, &max_age);
+    return max_count;
+}
+
 static void sqlite_wt_channel(struct channel *ch)
 {
     if (!SQLITE_COMSYS_WRITABLE()) return;
@@ -1829,70 +1849,57 @@ void SendChannelMessage
     if (  Good_obj(obj)
        && !bMogNobuffer)
     {
-        dbref aowner;
-        int aflags;
-        int logmax = DFLT_MAX_LOG;
-        ATTR* pattr = atr_str(T("MAX_LOG"));
-        if (pattr
-            && pattr->number)
-        {
-            LBuf maxbuf = LBuf_Adopt(atr_get("SendChannelMessage.1141", obj, pattr->number, &aowner, &aflags));
-            logmax = mux_atoi64(maxbuf);
-        }
+        // Channel history is rows now, not a ring of HISTORY_%d attributes
+        // on the channel object (#1589).
+        //
+        // Three things change here and each removes a class of bug:
+        //
+        //   * Retention comes from the channel row, so the count that bounds
+        //     history and the history itself live in one store.  The ring put
+        //     them in two with nothing to notice them disagreeing, which is
+        //     what #1564 was.
+        //
+        //   * No attribute is written, so AF_CONST cannot freeze a slot
+        //     against the other implementation -- #1620.
+        //
+        //   * The timestamp is stored as UTC alongside the offset in force,
+        //     rather than rendered into the text.  LOG_TIMESTAMPS becomes a
+        //     display choice at read time over ALL of a channel's history,
+        //     instead of something baked in permanently at write time that
+        //     left history mixed either side of a toggle.
+        //
+        // history_max_count keeps MAX_LOG's meaning, zero included: zero is
+        // "not logging", not "keep everything".
+        //
+        int max_count = 0;
+        int max_age = 0;
+        CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+        sqldb.GetChannelRetention(ch->name, &max_count, &max_age);
 
-        if (0 < logmax)
+        if (0 < max_count)
         {
-            if (logmax > MAX_RECALL_REQUEST)
+            if (max_count > MAX_RECALL_REQUEST)
             {
-                logmax = MAX_RECALL_REQUEST;
-                atr_add(ch->chan_obj, pattr->number, mux_ltoa_t(logmax), GOD,
-                        AF_CONST | AF_NOPROG | AF_NOPARSE);
+                max_count = MAX_RECALL_REQUEST;
+                sqldb.SetChannelRetention(ch->name, max_count, max_age);
             }
-            const UTF8* p = tprintf(T("HISTORY_%d"), iMod(ch->num_messages, logmax));
-            const int atr = mkattr(GOD, p);
-            if (0 < atr)
-            {
-                // Read the VALUE, not merely presence (#1585).
-                //
-                // The engine writes "1" to enable and atr_clr()s to disable, so
-                // for engine-written data presence and a non-empty value say the
-                // same thing.  The comsys *module* cannot clear: the only lever
-                // mux_IAttributeAccess gives it is SetAttribute, so it disables
-                // by writing "" (comsys_mod.cpp:2742).  A presence test reads
-                // that as ON, so a channel whose timestamps were turned off
-                // under the module came back on under the engine.
-                //
-                // Non-empty is also what the module uses to read it
-                // (comsys_mod.cpp:1126), so both implementations now agree:
-                // "1" is on, empty or absent is off.
-                //
-                pattr = atr_str(T("LOG_TIMESTAMPS"));
-                bool bTimestamps = false;
-                if (pattr)
-                {
-                    LBuf tsbuf = LBuf_Adopt(atr_get("SendChannelMessage.LOG_TIMESTAMPS",
-                        obj, pattr->number, &aowner, &aflags));
-                    bTimestamps = ('\0' != *tsbuf.get());
-                }
-                if (bTimestamps)
-                {
-                    CLinearTimeAbsolute ltaNow;
-                    ltaNow.GetLocal();
 
-                    // Save message in history with timestamp.
-                    //
-                    LBuf temp = LBuf_Src("chan_history");
-                    mux_sprintf(temp, LBUF_SIZE, T("[%s] %s"), ltaNow.ReturnDateString(0), msgNormal);
-                    atr_add(ch->chan_obj, atr, temp, GOD, AF_CONST | AF_NOPROG | AF_NOPARSE);
-                }
-                else
-                {
-                    // Save message in history without timestamp.
-                    //
-                    atr_add(ch->chan_obj, atr, msgNormal, GOD,
-                            AF_CONST | AF_NOPROG | AF_NOPARSE);
-                }
-            }
+            // ReturnSeconds() is seconds since the Unix epoch, and GetLocal()
+            // is GetUTC() shifted by the local offset -- so the difference is
+            // the offset itself, in seconds east of UTC, as it stands right
+            // now rather than as it will stand when this is read back.
+            //
+            CLinearTimeAbsolute ltaUTC;
+            CLinearTimeAbsolute ltaLocal;
+            ltaUTC.GetUTC();
+            ltaLocal.GetLocal();
+
+            const int64_t ts = static_cast<int64_t>(ltaUTC.ReturnSeconds());
+            const int tz = static_cast<int>(
+                static_cast<int64_t>(ltaLocal.ReturnSeconds()) - ts);
+
+            sqldb.AddChannelHistory(ch->name, ts, tz, executor, msgNormal);
+            sqldb.ExpireChannelHistory(ch->name, max_count, max_age, ts);
         }
     }
     else if (ch->chan_obj != NOTHING)
@@ -2133,20 +2140,9 @@ void do_comlast(dbref player, struct channel* ch, int arg)
         return;
     }
 
-    dbref aowner;
-    int aflags;
-    const dbref obj = ch->chan_obj;
-    int logmax = MAX_RECALL_REQUEST;
-
-    // Lookup depth of logging.
+    // Lookup depth of logging (#1589: the channel row, not MAX_LOG).
     //
-    ATTR* pattr = atr_str(T("MAX_LOG"));
-    if (pattr
-        && (atr_get_info(obj, pattr->number, &aowner, &aflags)))
-    {
-        LBuf maxbuf = LBuf_Adopt(atr_get("do_comlast.1408", obj, pattr->number, &aowner, &aflags));
-        logmax = mux_atoi64(maxbuf);
-    }
+    int logmax = chan_history_max(ch);
 
     if (logmax < 1)
     {
@@ -2164,21 +2160,52 @@ void do_comlast(dbref player, struct channel* ch, int arg)
         arg = logmax;
     }
 
-    int histnum = ch->num_messages - arg;
-
     raw_notify(player, tprintf(T("%s -- Begin Comsys Recall --"), ch->header));
 
-    for (int count = 0; count < arg; count++)
+    // Rows rather than a walk over HISTORY_%d slots (#1589).  The ring made
+    // this arithmetic -- num_messages minus the request, modulo the ring size
+    // -- and got it wrong whenever the two stores disagreed about how many
+    // messages there had been.  The query cannot disagree with itself.
+    //
+    // Timestamps are applied here, at read time, from the stored UTC value.
+    // A row with ts == 0 came from the old ring and already carries whatever
+    // timestamp was baked into its text.
+    //
+    bool bTimestamps = false;
+    ATTR *pattr = atr_str(T("LOG_TIMESTAMPS"));
+    if (pattr && Good_obj(ch->chan_obj))
     {
-        histnum++;
-        pattr = atr_str(tprintf(T("HISTORY_%d"), iMod(histnum, logmax)));
-        if (pattr)
-        {
-            LBuf message = LBuf_Adopt(atr_get("do_comlast.1436", obj, pattr->number,
-                                    &aowner, &aflags));
-            raw_notify(player, message);
-        }
+        dbref aowner;
+        int aflags;
+        LBuf tsbuf = LBuf_Adopt(atr_get("do_comlast.LOG_TIMESTAMPS",
+            ch->chan_obj, pattr->number, &aowner, &aflags));
+        bTimestamps = ('\0' != *tsbuf.get());
     }
+
+    CLinearTimeAbsolute ltaU, ltaL;
+    ltaU.GetUTC();
+    ltaL.GetLocal();
+    const int64_t tzNow = static_cast<int64_t>(ltaL.ReturnSeconds())
+                        - static_cast<int64_t>(ltaU.ReturnSeconds());
+
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    sqldb.LoadChannelHistory(ch->name, arg, 0, CSQLiteDB::ANY_SPEAKER,
+        [&](int64_t, int64_t ts, int tz, dbref, const UTF8 *message)
+        {
+            if (bTimestamps && 0 != ts)
+            {
+                const int64_t off = (CSQLiteDB::UNKNOWN_TZ != tz)
+                                  ? static_cast<int64_t>(tz) : tzNow;
+                CLinearTimeAbsolute lta;
+                lta.SetSeconds(ts + off);
+                raw_notify(player, tprintf(T("[%s] %s"),
+                    lta.ReturnDateString(0), message));
+            }
+            else
+            {
+                raw_notify(player, message);
+            }
+        });
 
     raw_notify(player, tprintf(T("%s -- End Comsys Recall --"), ch->header));
 }
@@ -2230,13 +2257,11 @@ static ChanLogResult do_chanlog_timestamps(dbref player, UTF8* channel, UTF8* ar
         return CHANLOG_NO_OBJECT;
     }
 
-    dbref aowner;
-    int aflags;
-    ATTR* pattr = atr_str(T("MAX_LOG"));
-    if (nullptr == pattr
-        || !atr_get_info(ch->chan_obj, pattr->number, &aowner, &aflags))
+    if (chan_history_max(ch) < 1)
     {
-        // Logging isn't enabled.
+        // Logging isn't enabled (#1589: asked of the channel row now; the
+        // MAX_LOG attribute is no longer written, so gating on its presence
+        // rejected every channel configured after the migration).
         //
         return CHANLOG_NOT_LOGGING;
     }
@@ -2289,29 +2314,36 @@ static ChanLogResult do_chanlog(dbref player, UTF8* channel, UTF8* arg)
         return CHANLOG_NO_OBJECT;
     }
 
-    const int atr = mkattr(GOD, T("MAX_LOG"));
-    if (atr <= 0)
+    // Retention is a column on the channel row now, not MAX_LOG on the
+    // channel object (#1589).  MAX_LOG is deliberately no longer written:
+    // mirroring the value into both stores would re-create exactly the
+    // two-sources-of-truth split this work removes.  The attribute survives
+    // on existing objects, inert, until a cleanup migration drops it.
+    //
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+
+    int oldcount = 0;
+    int max_age = 0;
+    sqldb.GetChannelRetention(ch->name, &oldcount, &max_age);
+
+    if (!sqldb.SetChannelRetention(ch->name, value, max_age))
     {
         return CHANLOG_INTERNAL;
     }
 
-    dbref aowner;
-    int aflags;
-    LBuf oldvalue = LBuf_Adopt(atr_get("do_chanlog.1477", ch->chan_obj, atr, &aowner, &aflags));
-    const int oldnum = mux_atoi64(oldvalue);
-    if (value < oldnum)
+    // Shrinking used to mean clearing HISTORY_%d attributes above the new
+    // maximum.  Now it means expiring rows, and doing it here rather than
+    // waiting for the next message so that `@cset/log <chan>=5` is visible
+    // immediately rather than on whenever somebody next speaks.
+    //
+    if (value < oldcount)
     {
-        for (int count = 0; count <= oldnum; count++)
-        {
-            ATTR* hist = atr_str(tprintf(T("HISTORY_%d"), count));
-            if (hist)
-            {
-                atr_clr(ch->chan_obj, hist->number);
-            }
-        }
+        CLinearTimeAbsolute ltaUTC;
+        ltaUTC.GetUTC();
+        sqldb.ExpireChannelHistory(ch->name, value, max_age,
+            static_cast<int64_t>(ltaUTC.ReturnSeconds()));
     }
-    atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
-            AF_CONST | AF_NOPROG | AF_NOPARSE);
+
     return CHANLOG_OK;
 }
 
@@ -4469,7 +4501,16 @@ FUNCTION(fun_cmsgs)
         return;
     }
 
-    safe_str(mux_ltoa_t(ch->num_messages), buff, bufc);
+    // cmsgs() answers "how many messages can I recall" (#1589).
+    //
+    // It used to return num_messages, a monotonic count of everything ever
+    // said on the channel, which had no relationship to what recall could
+    // actually produce -- and the two diverged silently, which is #1564.
+    // The retained count cannot disagree with the history because it IS the
+    // history, counted.
+    //
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    safe_str(mux_ltoa_t(sqldb.CountChannelHistory(ch->name)), buff, bufc);
 }
 
 FUNCTION(fun_cbuffer)
@@ -4495,22 +4536,10 @@ FUNCTION(fun_cbuffer)
         return;
     }
 
-    // Buffer size is the MAX_LOG attribute on the channel object.
+    // Buffer size is the channel's retention count (#1589).  It no longer
+    // needs a channel object at all -- history is keyed by channel name.
     //
-    int logmax = 0;
-    if (Good_obj(ch->chan_obj))
-    {
-        ATTR *pattr = atr_str(T("MAX_LOG"));
-        if (pattr && pattr->number)
-        {
-            dbref aowner;
-            int aflags;
-            LBuf maxbuf = LBuf_Adopt(atr_get("fun_cbuffer", ch->chan_obj,
-                pattr->number, &aowner, &aflags));
-            logmax = mux_atoi64(maxbuf);
-        }
-    }
-    safe_str(mux_ltoa_t(logmax), buff, bufc);
+    safe_str(mux_ltoa_t(chan_history_max(ch)), buff, bufc);
 }
 
 FUNCTION(fun_cdesc)
@@ -4695,36 +4724,28 @@ FUNCTION(fun_crecall)
         return;
     }
 
-    // Get buffer depth from channel object.
+    // Retention bounds how much there is to recall, and lives on the channel
+    // row now rather than as MAX_LOG on the channel object (#1589).
     //
-    if (!Good_obj(ch->chan_obj))
+    CSQLiteDB &sqldb = g_pSQLiteBackend->GetDB();
+    int max_count = 0;
+    int max_age = 0;
+    sqldb.GetChannelRetention(ch->name, &max_count, &max_age);
+    if (max_count < 1)
     {
+        // Zero is "not logging", carried forward from MAX_LOG.
+        //
         return;
     }
 
-    ATTR *pattr = atr_str(T("MAX_LOG"));
-    int logmax = 0;
-    if (pattr && pattr->number)
-    {
-        dbref aowner;
-        int aflags;
-        LBuf maxbuf = LBuf_Adopt(atr_get("fun_crecall", ch->chan_obj,
-            pattr->number, &aowner, &aflags));
-        logmax = mux_atoi64(maxbuf);
-    }
-    if (logmax < 1)
-    {
-        return;
-    }
-
-    // Number of lines to recall (default 1, max logmax).
+    // Number of lines to recall (default 1, bounded by retention).
     //
     int nLines = 1;
     if (nfargs >= 2 && fargs[1][0] != '\0')
     {
         nLines = mux_atoi64(fargs[1]);
         if (nLines < 1) nLines = 1;
-        if (nLines > logmax) nLines = logmax;
+        if (nLines > max_count) nLines = max_count;
     }
 
     // Output separator (default newline).
@@ -4733,37 +4754,82 @@ FUNCTION(fun_crecall)
     sep.n = 1;
     sep.str[0] = '\r';
     sep.str[1] = '\0';
-    if (nfargs >= 3)
+    if (nfargs >= 3 && fargs[2][0] != '\0')
     {
         memcpy(sep.str, fargs[2], strlen(reinterpret_cast<char *>(fargs[2])) + 1);
         sep.n = strlen(reinterpret_cast<char *>(fargs[2]));
     }
 
-    int histnum = ch->num_messages - nLines;
-    bool bFirst = true;
-    for (int count = 0; count < nLines; count++)
+    // Optional filters, which the ring could not express at all: a modulo
+    // slot cannot be searched by time or by speaker (#1589).
+    //
+    int64_t since = 0;
+    if (nfargs >= 4 && fargs[3][0] != '\0')
     {
-        histnum++;
-        const UTF8 *attrname = tprintf(T("HISTORY_%d"),
-            ((histnum % logmax) + logmax) % logmax);
-        int atr = mkattr(GOD, attrname);
-        if (0 < atr)
+        since = mux_atoi64(fargs[3]);
+    }
+    dbref who = CSQLiteDB::ANY_SPEAKER;
+    if (nfargs >= 5 && fargs[4][0] != '\0')
+    {
+        who = match_thing_quiet(executor, fargs[4]);
+        if (!Good_obj(who))
         {
-            dbref aowner;
-            int aflags;
-            LBuf msg = LBuf_Adopt(atr_get("fun_crecall", ch->chan_obj,
-                atr, &aowner, &aflags));
-            if ('\0' != msg[0])
-            {
-                if (!bFirst)
-                {
-                    safe_copy_buf(sep.str, sep.n, buff, bufc);
-                }
-                safe_str(msg, buff, bufc);
-                bFirst = false;
-            }
+            safe_str(S_("#-1 NO SUCH PLAYER"), buff, bufc);
+            return;
         }
     }
+
+    // Timestamps are applied HERE rather than baked in at write time, so the
+    // setting governs all of a channel's history instead of only the part
+    // written since it was last toggled (#1589).
+    //
+    bool bTimestamps = false;
+    ATTR *pattr = atr_str(T("LOG_TIMESTAMPS"));
+    if (pattr && Good_obj(ch->chan_obj))
+    {
+        dbref aowner;
+        int aflags;
+        LBuf tsbuf = LBuf_Adopt(atr_get("fun_crecall.LOG_TIMESTAMPS",
+            ch->chan_obj, pattr->number, &aowner, &aflags));
+        bTimestamps = ('\0' != *tsbuf.get());
+    }
+
+    // The offset in force right now, used only for rows that did not record
+    // their own.  Computed once rather than per row.
+    //
+    CLinearTimeAbsolute ltaU, ltaL;
+    ltaU.GetUTC();
+    ltaL.GetLocal();
+    const int64_t tzNow = static_cast<int64_t>(ltaL.ReturnSeconds())
+                        - static_cast<int64_t>(ltaU.ReturnSeconds());
+
+    bool bFirst = true;
+    sqldb.LoadChannelHistory(ch->name, nLines, since, who,
+        [&](int64_t, int64_t ts, int tz, dbref, const UTF8 *message)
+        {
+            if (!bFirst)
+            {
+                safe_copy_buf(sep.str, sep.n, buff, bufc);
+            }
+            bFirst = false;
+
+            // ts == 0 means this row came from the old attribute ring, whose
+            // text already carries whatever timestamp was baked into it.
+            // Prepending a second one would be wrong twice over -- it would
+            // duplicate, and it would invent a date we do not know.
+            //
+            if (bTimestamps && 0 != ts)
+            {
+                const int64_t off = (CSQLiteDB::UNKNOWN_TZ != tz)
+                                  ? static_cast<int64_t>(tz) : tzNow;
+                CLinearTimeAbsolute lta;
+                lta.SetSeconds(ts + off);
+                safe_str(T("["), buff, bufc);
+                safe_str(lta.ReturnDateString(0), buff, bufc);
+                safe_str(T("] "), buff, bufc);
+            }
+            safe_str(message, buff, bufc);
+        });
 }
 
 // ---------------------------------------------------------------------------
@@ -4864,20 +4930,7 @@ FUNCTION(fun_chaninfo)
     }
     else if (0 == mux_stricmp(field, T("buffer")))
     {
-        int logmax = 0;
-        if (Good_obj(ch->chan_obj))
-        {
-            ATTR *pattr = atr_str(T("MAX_LOG"));
-            if (pattr && pattr->number)
-            {
-                dbref aowner;
-                int aflags;
-                LBuf maxbuf = LBuf_Adopt(atr_get("fun_chaninfo", ch->chan_obj,
-                    pattr->number, &aowner, &aflags));
-                logmax = mux_atoi64(maxbuf);
-            }
-        }
-        safe_str(mux_ltoa_t(logmax), buff, bufc);
+        safe_str(mux_ltoa_t(chan_history_max(ch)), buff, bufc);
     }
     else if (0 == mux_stricmp(field, T("canjoin")))
     {
