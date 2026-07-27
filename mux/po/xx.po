@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 05:34-0600\n"
+"POT-Creation-Date: 2026-07-27 05:36-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -118,6 +118,69 @@ msgstr "[xx] Player has a lot of attributes. Performing destruction immediately.
 #: modules/engine/create.cpp:1288 modules/engine/create.cpp:1357
 msgid "Weird object type cannot be destroyed."
 msgstr "[xx] Weird object type cannot be destroyed."
+
+#: modules/engine/flags.cpp:26
+msgid "You cannot make God mortal."
+msgstr "[xx] You cannot make God mortal."
+
+#: modules/engine/flags.cpp:195
+msgid "Your object has been spared from destruction."
+msgstr "[xx] Your object has been spared from destruction."
+
+#: modules/engine/flags.cpp:779
+msgid "You must specify a flag to clear."
+msgstr "[xx] You must specify a flag to clear."
+
+#: modules/engine/flags.cpp:783
+msgid "You must specify a flag to set."
+msgstr "[xx] You must specify a flag to set."
+
+#: modules/engine/flags.cpp:791
+msgid "I do not understand that flag."
+msgstr "[xx] I do not understand that flag."
+
+#: modules/engine/flags.cpp:825 modules/engine/set.cpp:1323
+msgid "Cleared."
+msgstr "[xx] Cleared."
+
+#: modules/engine/flags.cpp:825 modules/engine/set.cpp:427
+#: modules/engine/set.cpp:492 modules/engine/set.cpp:1169
+#: modules/engine/set.cpp:1327
+msgid "Set."
+msgstr "[xx] Set."
+
+#: modules/engine/flags.cpp:830 modules/engine/set.cpp:1289
+msgid "Already cleared."
+msgstr "[xx] Already cleared."
+
+#: modules/engine/flags.cpp:830 modules/engine/set.cpp:1293
+msgid "Already set."
+msgstr "[xx] Already set."
+
+#: modules/engine/flags.cpp:1158
+msgid "Special flags cannot be modified with flag_access."
+msgstr "[xx] Special flags cannot be modified with flag_access."
+
+#: modules/engine/flags.cpp:1413
+msgid "Extra argument ignored."
+msgstr "[xx] Extra argument ignored."
+
+#: modules/engine/flags.cpp:1436
+msgid "Error: You can’t remove the present flag name from the hash table."
+msgstr "[xx] Error: You can’t remove the present flag name from the hash table."
+
+#: modules/engine/flags.cpp:1441 modules/engine/flags.cpp:1446
+#: modules/engine/flags.cpp:1462
+msgid "Error: Bad flagname given or flag not found."
+msgstr "[xx] Error: Bad flagname given or flag not found."
+
+#: modules/engine/flags.cpp:1453
+msgid "You must specify a flag and a name."
+msgstr "[xx] You must specify a flag and a name."
+
+#: modules/engine/flags.cpp:1458
+msgid "Flag name changed."
+msgstr "[xx] Flag name changed."
 
 #: modules/engine/look.cpp:1313
 msgid "You see nothing special."
@@ -298,6 +361,77 @@ msgstr "[xx] You can’t enter yourself!"
 msgid "You can’t leave."
 msgstr "[xx] You can’t leave."
 
+#: modules/engine/player.cpp:963 modules/engine/rob.cpp:66
+#: modules/engine/speech.cpp:1057
+msgid "Sorry."
+msgstr "[xx] Sorry."
+
+#: modules/engine/player.cpp:968
+msgid "Password changed."
+msgstr "[xx] Password changed."
+
+#: modules/engine/player.cpp:1017 modules/engine/set.cpp:923
+#: modules/engine/set.cpp:1065
+msgid "I couldn’t find that player."
+msgstr "[xx] I couldn’t find that player."
+
+#: modules/engine/player.cpp:1438
+msgid "Only players may use @protect."
+msgstr "[xx] Only players may use @protect."
+
+#: modules/engine/player.cpp:1489
+msgid "No protected names in the database."
+msgstr "[xx] No protected names in the database."
+
+#: modules/engine/player.cpp:1504
+msgid "No such player."
+msgstr "[xx] No such player."
+
+#: modules/engine/player.cpp:1512
+msgid "No protected names."
+msgstr "[xx] No protected names."
+
+#: modules/engine/player.cpp:1539
+msgid "Protect what name?"
+msgstr "[xx] Protect what name?"
+
+#: modules/engine/player.cpp:1566 modules/engine/player.cpp:1663
+msgid "That name is not in your protected list."
+msgstr "[xx] That name is not in your protected list."
+
+#: modules/engine/player.cpp:1578 modules/engine/set.cpp:246
+#: modules/engine/set.cpp:383
+msgid "That name is already in use."
+msgstr "[xx] That name is already in use."
+
+#: modules/engine/player.cpp:1599
+msgid "That name is already in use or is illegal, alias cleared."
+msgstr "[xx] That name is already in use or is illegal, alias cleared."
+
+#: modules/engine/player.cpp:1612
+msgid "You have no alias set."
+msgstr "[xx] You have no alias set."
+
+#: modules/engine/player.cpp:1636
+msgid "You have no protected names."
+msgstr "[xx] You have no protected names."
+
+#: modules/engine/player.cpp:1677
+msgid "That is not a valid player name."
+msgstr "[xx] That is not a valid player name."
+
+#: modules/engine/player.cpp:1683
+msgid "That name is not allowed."
+msgstr "[xx] That name is not allowed."
+
+#: modules/engine/player.cpp:1699
+msgid "That name is already in your protected list."
+msgstr "[xx] That name is already in your protected list."
+
+#: modules/engine/player.cpp:1716
+msgid "That name is already protected by another player."
+msgstr "[xx] That name is already protected by another player."
+
 #: modules/engine/quota.cpp:171
 msgid "Quotas are not enabled."
 msgstr "[xx] Quotas are not enabled."
@@ -322,10 +456,6 @@ msgstr "[xx] I don’t know who you mean!"
 #: modules/engine/rob.cpp:57
 msgid "Sorry, you can only kill players and things."
 msgstr "[xx] Sorry, you can only kill players and things."
-
-#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
-msgid "Sorry."
-msgstr "[xx] Sorry."
 
 #: modules/engine/rob.cpp:101
 msgid "Your murder attempt failed."
@@ -403,10 +533,6 @@ msgstr "[xx] You can’t use that name."
 msgid "That name is protected by another player."
 msgstr "[xx] That name is protected by another player."
 
-#: modules/engine/set.cpp:246 modules/engine/set.cpp:383
-msgid "That name is already in use."
-msgstr "[xx] That name is already in use."
-
 #: modules/engine/set.cpp:269 modules/engine/set.cpp:305
 msgid "Name set."
 msgstr "[xx] Name set."
@@ -426,11 +552,6 @@ msgstr "[xx] That’s a silly name for a player!"
 #: modules/engine/set.cpp:400
 msgid "Alias set."
 msgstr "[xx] Alias set."
-
-#: modules/engine/set.cpp:427 modules/engine/set.cpp:492
-#: modules/engine/set.cpp:1169 modules/engine/set.cpp:1327
-msgid "Set."
-msgstr "[xx] Set."
 
 #: modules/engine/set.cpp:479
 msgid "Forwardlist removed."
@@ -493,10 +614,6 @@ msgstr "[xx] Dropto removed."
 msgid "You can’t unlink that!"
 msgstr "[xx] You can’t unlink that!"
 
-#: modules/engine/set.cpp:923 modules/engine/set.cpp:1065
-msgid "I couldn’t find that player."
-msgstr "[xx] I couldn’t find that player."
-
 #: modules/engine/set.cpp:981
 msgid "Attribute owner changed."
 msgstr "[xx] Attribute owner changed."
@@ -523,18 +640,6 @@ msgstr "[xx] I don’t know what you want to set!"
 #: modules/engine/set.cpp:1258
 msgid "You can’t set that!"
 msgstr "[xx] You can’t set that!"
-
-#: modules/engine/set.cpp:1289
-msgid "Already cleared."
-msgstr "[xx] Already cleared."
-
-#: modules/engine/set.cpp:1293
-msgid "Already set."
-msgstr "[xx] Already set."
-
-#: modules/engine/set.cpp:1323
-msgid "Cleared."
-msgstr "[xx] Cleared."
 
 #: modules/engine/set.cpp:1356
 msgid "Couldn’t create attribute."
