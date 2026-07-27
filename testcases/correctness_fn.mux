@@ -30,12 +30,10 @@
 &tr.tc001 test_correctness_fn=
   @if strmatch(xor(4294967296),1)=
   {
-    @log smoke=TC001: xor 64-bit truthiness. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: xor 64-bit truthiness. Succeeded.
   },
   {
-    @log smoke=TC001: xor 64-bit truthiness. Failed (actual=.[xor(4294967296)].).;
-    @trig me/tr.done
+    @log smoke=TC001: xor 64-bit truthiness. Failed (actual=.[xor(4294967296)].).
   }
 -
 #
@@ -48,12 +46,10 @@
 &tr.tc002 test_correctness_fn=
   @if strmatch(wrapcolumns(abcdefghij,4,1),abcd*efgh*ij*)=
   {
-    @log smoke=TC002: wrapcolumns hard-break preserves chars. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC002: wrapcolumns hard-break preserves chars. Succeeded.
   },
   {
-    @log smoke=TC002: wrapcolumns hard-break preserves chars. Failed (actual=.[wrapcolumns(abcdefghij,4,1)].).;
-    @trig me/tr.done
+    @log smoke=TC002: wrapcolumns hard-break preserves chars. Failed (actual=.[wrapcolumns(abcdefghij,4,1)].).
   }
 -
 #
@@ -67,12 +63,10 @@
 &tr.tc003 test_correctness_fn=
   @if strmatch(switch(foo,#$,MATCHED,NOMATCH),NOMATCH)=
   {
-    @log smoke=TC003: switch #$ pattern scoping. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC003: switch #$ pattern scoping. Succeeded.
   },
   {
-    @log smoke=TC003: switch #$ pattern scoping. Failed (actual=.[switch(foo,#$,MATCHED,NOMATCH)].).;
-    @trig me/tr.done
+    @log smoke=TC003: switch #$ pattern scoping. Failed (actual=.[switch(foo,#$,MATCHED,NOMATCH)].).
   }
 -
 #
@@ -84,12 +78,10 @@
 &tr.tc004 test_correctness_fn=
   @if strmatch(step(corrstep_helper/STEPCHK,x,1),corrstep_helper)=
   {
-    @log smoke=TC004: step evaluation-object identity. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC004: step evaluation-object identity. Succeeded.
   },
   {
-    @log smoke=TC004: step evaluation-object identity. Failed (actual=.[step(corrstep_helper/STEPCHK,x,1)].).;
-    @trig me/tr.done
+    @log smoke=TC004: step evaluation-object identity. Failed (actual=.[step(corrstep_helper/STEPCHK,x,1)].).
   }
 -
 #

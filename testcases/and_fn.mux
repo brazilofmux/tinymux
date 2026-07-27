@@ -21,8 +21,7 @@
         eq(and(0,0), 0)
       )=
   {
-    @log smoke=TC001: and basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: and basic operations. Succeeded.
   },
   {
     @log smoke=TC001: and basic operations. Failed (and(1%,1)=[and(1,1)] and(1%,0)=[and(1,0)] and(0%,0)=[and(0,0)]).;
