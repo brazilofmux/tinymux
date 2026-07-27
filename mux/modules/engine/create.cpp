@@ -118,7 +118,7 @@ static void open_exit(const dbref player, dbref loc, UTF8 *direction, UTF8 *link
         if (!payfor(player, mudconf.linkcost))
         {
             notify_quiet(player,
-                tprintf(T("You don’t have enough %s to link."),
+                tprintf(M_("You don’t have enough %s to link."),
                     mudconf.many_coins));
         }
         else
@@ -354,11 +354,11 @@ void do_link
                 UTF8 *bp = buff1.get();
 
                 UTF8 *p;
-                p = tprintf(T("Home of %s(#%d) changed from "), Name(thing), thing);
+                p = tprintf(M_("Home of %s(#%d) changed from "), Name(thing), thing);
                 safe_str(p, buff1, &bp);
-                p = tprintf(T("%s(#%d) to "), Name(nHomeOrig), nHomeOrig);
+                p = tprintf(M_("%s(#%d) to "), Name(nHomeOrig), nHomeOrig);
                 safe_str(p, buff1, &bp);
-                p = tprintf(T("%s(#%d)."), Name(nHomeNew), nHomeNew);
+                p = tprintf(M_("%s(#%d)."), Name(nHomeNew), nHomeNew);
                 safe_str(p, buff1, &bp);
                 *bp = '\0';
                 notify_quiet(executor, buff1);
@@ -411,11 +411,11 @@ void do_link
                 UTF8 *bp = buff1.get();
 
                 UTF8 *p;
-                p = tprintf(T("Dropto of %s(#%d) changed from "), Name(thing), thing);
+                p = tprintf(M_("Dropto of %s(#%d) changed from "), Name(thing), thing);
                 safe_str(p, buff1, &bp);
-                p = tprintf(T("%s(#%d) to "), Name(nDroptoOrig), nDroptoOrig);
+                p = tprintf(M_("%s(#%d) to "), Name(nDroptoOrig), nDroptoOrig);
                 safe_str(p, buff1, &bp);
-                p = tprintf(T("%s(#%d)."), Name(nDroptoNew), nDroptoNew);
+                p = tprintf(M_("%s(#%d)."), Name(nDroptoNew), nDroptoNew);
                 safe_str(p, buff1, &bp);
                 *bp = '\0';
                 notify_quiet(executor, buff1);
@@ -641,7 +641,7 @@ void do_dig(const dbref executor, const dbref caller, const dbref enactor, const
         p = p->pNext;
     }
 
-    notify(executor, tprintf(T("%s created as room #%d."), name, room));
+    notify(executor, tprintf(M_("%s created as room #%d."), name, room));
 
     UTF8 *buff = alloc_sbuf("do_dig");
     if (  nargs >= 1
@@ -711,7 +711,7 @@ void do_create
     s_Home(thing, new_home(executor));
     if (!Quiet(executor))
     {
-        notify(executor, tprintf(T("%s created as object #%d"), Name(thing), thing));
+        notify(executor, tprintf(M_("%s created as object #%d"), Name(thing), thing));
     }
 
     local_data_create(thing);
@@ -797,7 +797,7 @@ void do_clone
        && (key & CLONE_FROM_PARENT))
     {
         notify_quiet(executor,
-              tprintf(T("You don’t control %s, ignoring /parent."),
+              tprintf(M_("You don’t control %s, ignoring /parent."),
                   Name(thing)));
         key &= ~CLONE_FROM_PARENT;
     }
@@ -911,13 +911,13 @@ void do_clone
         if (arg2 && *arg2)
         {
             notify(executor,
-             tprintf(T("%s cloned as %s, new copy is object #%d."),
+             tprintf(M_("%s cloned as %s, new copy is object #%d."),
                  Name(thing), arg2, clone));
         }
         else
         {
             notify(executor,
-                   tprintf(T("%s cloned, new copy is object #%d."),
+                   tprintf(M_("%s cloned, new copy is object #%d."),
                        Name(thing), clone));
         }
     }
@@ -1035,7 +1035,7 @@ void do_pcreate
     const dbref newplayer = create_player(name, pass, executor, isrobot, &pmsg);
     if (newplayer == NOTHING)
     {
-        notify_quiet(executor, tprintf(T("Failure creating ‘%s’.  %s"), name, pmsg));
+        notify_quiet(executor, tprintf(M_("Failure creating ‘%s’.  %s"), name, pmsg));
         return;
     }
     AddToPublicChannel(newplayer);
@@ -1044,7 +1044,7 @@ void do_pcreate
     {
         move_object(newplayer, Location(executor));
         notify_quiet(executor,
-            tprintf(T("New robot ‘%s’ (#%d) created with password ‘%s’"),
+            tprintf(M_("New robot ‘%s’ (#%d) created with password ‘%s’"),
                 name, newplayer, pass));
         notify_quiet(executor, M_("Your robot has arrived."));
         STARTLOG(LOG_PCREATES, "CRE", "ROBOT");
@@ -1057,7 +1057,7 @@ void do_pcreate
     {
         move_object(newplayer, mudconf.start_room);
         notify_quiet(executor,
-               tprintf(T("New player ‘%s’ (#%d) created with password ‘%s’"),
+               tprintf(M_("New player ‘%s’ (#%d) created with password ‘%s’"),
                    name, newplayer, pass));
         STARTLOG(LOG_PCREATES | LOG_WIZARD, "WIZ", "PCREA");
         log_name(newplayer);
@@ -1242,7 +1242,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
     {
         if (!mudconf.destroy_going_now)
         {
-            notify_quiet(executor, tprintf(T("No sense beating a dead %s."), pCased));
+            notify_quiet(executor, tprintf(M_("No sense beating a dead %s."), pCased));
             return;
         }
         key |= DEST_INSTANT;
@@ -1280,7 +1280,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
 
         case TYPE_EXIT:
         case TYPE_THING:
-            notify(executor, tprintf(T("The %s shakes and begins to crumble."),
+            notify(executor, tprintf(M_("The %s shakes and begins to crumble."),
                 pCased));
             break;
 
@@ -1294,7 +1294,7 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
            && !Quiet(ThingOwner))
         {
             notify_quiet(ThingOwner,
-                tprintf(T("You will be rewarded shortly for %s(#%d)."),
+                tprintf(M_("You will be rewarded shortly for %s(#%d)."),
                 Moniker(thing), thing));
         }
     }
@@ -1309,20 +1309,20 @@ void do_destroy(const dbref executor, const dbref caller, dbref enactor, const i
             {
                 if (!Quiet(thing))
                 {
-                    notify(executor, tprintf(T("Destroyed %s(#%d)."),
+                    notify(executor, tprintf(M_("Destroyed %s(#%d)."),
                         Moniker(thing), thing));
                 }
             }
             else if (ThingOwner == thing)
             {
-                notify(executor, tprintf(T("Destroyed %s(#%d)."),
+                notify(executor, tprintf(M_("Destroyed %s(#%d)."),
                     Moniker(thing), thing));
             }
             else
             {
                 LBuf tname = LBuf_Src("destroy_obj");
                 mux_strncpy(tname, Moniker(ThingOwner), LBUF_SIZE-1);
-                notify(executor, tprintf(T("Destroyed %s’s %s(#%d)."),
+                notify(executor, tprintf(M_("Destroyed %s’s %s(#%d)."),
                     tname.get(), Moniker(thing), thing));
             }
         }
