@@ -91,6 +91,15 @@ msgstr "[xx] Contents:"
 msgid "You can’t look outside."
 msgstr "[xx] You can’t look outside."
 
+msgid "Carrying:"
+msgstr "[xx] Carrying:"
+
+msgid "Attr list: "
+msgstr "[xx] Attr list: "
+
+msgid "<Too far away to get a good look>"
+msgstr "[xx] <Too far away to get a good look>"
+
 msgid "No matching attributes found."
 msgstr "[xx] No matching attributes found."
 

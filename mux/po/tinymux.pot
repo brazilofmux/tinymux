@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 02:37+0000\n"
+"POT-Creation-Date: 2026-07-27 11:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -130,6 +130,18 @@ msgstr ""
 
 #: modules/engine/look.cpp:1526
 msgid "You can’t look outside."
+msgstr ""
+
+#: modules/engine/look.cpp:1615
+msgid "Carrying:"
+msgstr ""
+
+#: modules/engine/look.cpp:1684
+msgid "Attr list: "
+msgstr ""
+
+#: modules/engine/look.cpp:1793 modules/engine/look.cpp:1954
+msgid "<Too far away to get a good look>"
 msgstr ""
 
 #: modules/engine/look.cpp:1800
