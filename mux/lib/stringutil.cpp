@@ -3534,7 +3534,7 @@ static LITERAL_STRING_STRUCT MU_Substitutes[NUM_MU_SUBS] =
     { 1, T(" ")  },  // 1
     { 2, T("%t") },  // 2
     { 2, T("%r") },  // 3
-    { 0, nullptr },  // 4
+    { 0, T("") },    // 4 -- emit nothing (\r); empty, not null (#1458)
     { 2, T("%b") },  // 5
     { 2, T("%%") },  // 6
     { 2, T("%(") },  // 7
@@ -4340,6 +4340,23 @@ void safe_copy_str_lbuf(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
 
 size_t safe_copy_buf(const UTF8 *src, size_t nLen, UTF8 *buff, UTF8 **bufc)
 {
+    // A null src is UB for memcpy even when nLen is zero -- the standard
+    // requires valid pointers regardless of the length (C17 7.24.1p2), and
+    // UBSan reports it as "null pointer passed as argument 2" (#1458).
+    //
+    // Guarding here rather than only at the one caller that does it: the
+    // sibling helpers safe_copy_str, safe_copy_str_lbuf and utf8_safe_chr
+    // all already return early on a null src, so tolerating it is the
+    // established convention among these functions and safe_copy_buf was
+    // the one outlier.  It also covers the TrimPartialSequence call below,
+    // which would dereference src outright had a caller passed null with a
+    // non-zero length.
+    //
+    if (nullptr == src)
+    {
+        return 0;
+    }
+
     size_t left = LBUF_SIZE - (*bufc - buff) - 1;
     if (left < nLen)
     {
