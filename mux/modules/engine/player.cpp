@@ -190,9 +190,9 @@ void record_login
             // catalog header (#1443).
             //
             notify(player, T(""));
-            notify(player, tprintf(T("**** %d failed connect%s since your last successful connect. ****"),
+            notify(player, tprintf(M_("**** %d failed connect%s since your last successful connect. ****"),
                 login_info.new_bad, (login_info.new_bad == 1 ? "" : "s")));
-            notify(player, tprintf(T("Most recent attempt was from %s on %s."),
+            notify(player, tprintf(M_("Most recent attempt was from %s on %s."),
                 login_info.bad[0].host, login_info.bad[0].dtm));
             notify(player, T(""));
             login_info.new_bad = 0;
@@ -202,7 +202,7 @@ void record_login
            && login_info.good[0].dtm
            && *login_info.good[0].dtm)
         {
-            notify(player, tprintf(T("Last connect was from %s on %s."),
+            notify(player, tprintf(M_("Last connect was from %s on %s."),
                 login_info.good[0].host, login_info.good[0].dtm));
         }
 
@@ -982,7 +982,7 @@ static void disp_from_on(dbref player, const UTF8 *dtm_str, const UTF8 *host_str
     if (dtm_str && *dtm_str && host_str && *host_str)
     {
         notify(player,
-               tprintf(T("     From: %s   On: %s"), dtm_str, host_str));
+               tprintf(M_("     From: %s   On: %s"), dtm_str, host_str));
     }
 }
 
@@ -1027,12 +1027,12 @@ void do_last(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         LDATA login_info;
         decrypt_logindata(atrbuf, &login_info);
 
-        notify(executor, tprintf(T("Total successful connects: %d"), login_info.tot_good));
+        notify(executor, tprintf(M_("Total successful connects: %d"), login_info.tot_good));
         for (i = 0; i < NUM_GOOD; i++)
         {
             disp_from_on(executor, login_info.good[i].host, login_info.good[i].dtm);
         }
-        notify(executor, tprintf(T("Total failed connects: %d"), login_info.tot_bad));
+        notify(executor, tprintf(M_("Total failed connects: %d"), login_info.tot_bad));
         for (i = 0; i < NUM_BAD; i++)
         {
             disp_from_on(executor, login_info.bad[i].host, login_info.bad[i].dtm);
@@ -1528,7 +1528,7 @@ void do_protect
                 safe_str(token, display, &dp);
             }
             *dp = '\0';
-            notify(executor, tprintf(T("Protected names for %s: %s"), Name(target), display.get()));
+            notify(executor, tprintf(M_("Protected names for %s: %s"), Name(target), display.get()));
         }
         return;
     }
@@ -1592,7 +1592,7 @@ void do_protect
         atr_add(executor, A_ALIAS, arg1, Owner(executor), aflags);
         if (add_player_name(executor, arg1, true))
         {
-            notify(executor, tprintf(T("Alias set to ‘%s’."), arg1));
+            notify(executor, tprintf(M_("Alias set to ‘%s’."), arg1));
         }
         else
         {
@@ -1615,14 +1615,14 @@ void do_protect
 
         if (0 != string_compare(oldalias, arg1))
         {
-            notify(executor, tprintf(T("Your alias is ‘%s’, not ‘%s’."),
+            notify(executor, tprintf(M_("Your alias is ‘%s’, not ‘%s’."),
                 oldalias.get(), arg1));
             return;
         }
 
         delete_player_name(executor, oldalias, true);
         atr_clr(executor, A_ALIAS);
-        notify(executor, tprintf(T("Alias ‘%s’ removed."), oldalias.get()));
+        notify(executor, tprintf(M_("Alias ‘%s’ removed."), oldalias.get()));
         return;
     }
 
@@ -1665,7 +1665,7 @@ void do_protect
         else
         {
             atr_add_raw(executor, A_PROTECTNAME, newlist);
-            notify(executor, tprintf(T("Name ‘%s’ removed from protected list."), arg1));
+            notify(executor, tprintf(M_("Name ‘%s’ removed from protected list."), arg1));
         }
         return;
     }
@@ -1705,7 +1705,7 @@ void do_protect
 
     if (count >= mudconf.max_name_protect)
     {
-        notify(executor, tprintf(T("You may only protect %d names."), mudconf.max_name_protect));
+        notify(executor, tprintf(M_("You may only protect %d names."), mudconf.max_name_protect));
         return;
     }
 
@@ -1730,5 +1730,5 @@ void do_protect
     *np = '\0';
 
     atr_add_raw(executor, A_PROTECTNAME, newlist);
-    notify(executor, tprintf(T("Name ‘%s’ added to protected list."), arg1));
+    notify(executor, tprintf(M_("Name ‘%s’ added to protected list."), arg1));
 }
