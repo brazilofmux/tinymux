@@ -378,10 +378,38 @@ UT_UNKNOWN_TOP|a(b|both
 # the diagnostic uppercases the name into the output line.
 #
 # --- the core shape: does the error stop the region? ---
-FM_FAIL_ABORT|[qqnofn(1) add(1,2)]
-FM_FAIL_ABORT_TAIL|[qqnofn(1) add(1,2) tail]
-FM_FAIL_TEXT|[qqnofn(1) hello]
-FM_FAIL_TWICE|[qqnofn(1) qqnofn2(1)]
+#
+# Adjudicated 2.13 and implemented (#1247).  The measurement that settled
+# it: 2.14 never evaluated the tail either -- it emitted it as LITERAL
+# text, because a call already spent the region's recognition
+# opportunity.  FM_OK_TWICE below shows the same rule after a SUCCESSFUL
+# call, and all three engines agree there.  So the difference was only
+# whether the literal tail is emitted or dropped, not continue-vs-abort,
+# and dropping it costs no evaluation while stopping the diagnostic from
+# reading as though part of the region had succeeded.
+FM_FAIL_ABORT|[qqnofn(1) add(1,2)]|2.13
+FM_FAIL_ABORT_TAIL|[qqnofn(1) add(1,2) tail]|2.13
+FM_FAIL_TEXT|[qqnofn(1) hello]|2.13
+FM_FAIL_TWICE|[qqnofn(1) qqnofn2(1)]|2.13
+#
+# Containment.  The abort must end ONE region and nothing else -- these
+# are the shapes that fail if the signal leaks (#1247).
+#
+#   FM_ABORT_TWO_REGIONS   a later bracket still evaluates
+#   FM_ABORT_MIDDLE        text and regions on both sides survive
+#   FM_ABORT_INNER         an inner [...] must not truncate its parent
+#   FM_ABORT_IN_ARG        EV_FMAND is cleared inside arguments, so the
+#                          call is literal there and nothing aborts
+#
+# FM_ABORT_INNER puts the failing call FIRST in the inner region on
+# purpose.  Written as `[a [b qqnofn(1)] c]` it tests nothing: the text
+# before the call makes it literal on 2.14 (#1246), so no lookup is ever
+# attempted and the abort cannot fire either way.  That shape is the
+# FM_FAIL_NAME family and is already covered there.
+FM_ABORT_TWO_REGIONS|[qqnofn(1) x][add(1,2)]|both
+FM_ABORT_MIDDLE|[add(1,2)] [qqnofn(1) z] [mul(2,3)]|both
+FM_ABORT_INNER|[a [qqnofn(1) x] c]|both
+FM_ABORT_IN_ARG|[strcat(qqnofn(1) x)]|both
 #
 # FM_FAIL_NAME is NOT continue-vs-abort, and is the reason this family
 # cannot be fixed by teaching 2.14 to stop.  2.13's name is the whole
