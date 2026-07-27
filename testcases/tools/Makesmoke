@@ -213,6 +213,41 @@ if ! "$TIMEOUT_CMD" 120 "$BIN/muxscript" -g . -c smoke.conf < "$TMP" > netmux.lo
     EXIT_CODE=1
 fi
 
+# A command that could not find its target during the upload (#1391, item 4).
+#
+# `&attr obj=...` resolves a bare name through the executor's inventory and
+# the contents of its room -- there is no location-independent lookup.  So any
+# file that leaves #1 outside #0 makes every later `&attr smoke=...` a silent
+# no-op, and the generated suite override is the last thing in the stream.
+#
+# That is exactly how #1387 lost 46 of 307 test files while reporting
+# "Dispatched: 261 / 261 expected": the failures are visible in this log as a
+# run of "I don't see that here." and nothing was reading them.  #1386 fixed
+# the file that did it and #1395 removed the coupling, but `@open` REQUIRES
+# moving the opener, so this remains a natural thing for a future test to do.
+#
+# Checking the log catches the whole class rather than that one instance.
+#
+# Reported rather than fatal: there are 9 pre-existing occurrences from
+# route_fn's teleport window (#1457) whose consequences are not yet
+# established, and reddening a green build on evidence nobody has triaged
+# would train people to ignore the check.  It should become fatal once that
+# baseline is zero.  The apostrophe is U+2019, not ASCII.
+#
+NOMATCH=$(grep -c "see that here" netmux.log 2>/dev/null || true)
+: "${NOMATCH:=0}"
+if [ "$NOMATCH" -gt 0 ]; then
+    echo "WARNING: $NOMATCH upload command(s) could not find their target."
+    echo "         A .mux file that moves #1 out of #0 and does not put it back"
+    echo "         makes every later '&attr <obj>=' a silent no-op -- which is"
+    echo "         how #1387 lost 46 of 307 test files while reporting a clean"
+    echo "         'Dispatched: 261 / 261'.  The offending file is the one whose"
+    echo "         output immediately precedes the first occurrence in"
+    echo "         netmux.log."
+    echo "         Baseline at the time of writing is 9, from route_fn (#1457);"
+    echo "         a number above that means something new is being lost."
+fi
+
 # ---------------------------------------------------------------------------
 # Export flatfile from SQLite via dbconvert.
 # ---------------------------------------------------------------------------
