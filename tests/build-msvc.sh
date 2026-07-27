@@ -71,7 +71,10 @@ WIN_LIB=$(cygpath -w "$BIN_RELEASE/libmux.lib")
 # WIN32/NDEBUG/UNICODE match what the vcxproj files define; config.h selects
 # its Windows branch on WIN32 and errors out on the Unix networking path
 # without it.
-CLFLAGS="/nologo /EHsc /O2 /std:c++17 /W3 /DWIN32 /DNDEBUG /DUNICODE /D_CRT_SECURE_NO_WARNINGS"
+# /utf-8: without it MSVC reads source in the system code page.  CP1252
+# happens to round-trip UTF-8 bytes, but a DBCS locale (932/936/949/950)
+# reads them as lead bytes and the source does not compile at all (#1499).
+CLFLAGS="/nologo /EHsc /O2 /std:c++17 /utf-8 /W3 /DWIN32 /DNDEBUG /DUNICODE /D_CRT_SECURE_NO_WARNINGS"
 
 fail=0
 for t in $TARGETS; do

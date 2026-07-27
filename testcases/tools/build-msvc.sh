@@ -67,6 +67,8 @@ for t in $TARGETS; do
     fi
     echo "cl $t.c -> $t.exe"
 
+    # /utf-8            source and execution charset, so UTF-8 prose is not
+    #                   read through the system code page (#1499).
     # /FI msvc_compat.h  defines away ragel's __attribute__((unused)).
     # /wd4189 /wd4101    unreferenced local, which is what that attribute
     #                    was suppressing on the gcc side.
@@ -89,7 +91,7 @@ for t in $TARGETS; do
         echo "call \"$VCVARS\" >nul 2>nul"
         echo "if errorlevel 1 exit /b 1"
         echo "cd /d \"$WIN_DIR\""
-        echo "cl /nologo /O2 /W3 /wd4189 /wd4101 /D_CRT_SECURE_NO_WARNINGS /FI msvc_compat.h /Fe:$t.exe /Fo:$t.obj $t.c"
+        echo "cl /nologo /O2 /utf-8 /W3 /wd4189 /wd4101 /D_CRT_SECURE_NO_WARNINGS /FI msvc_compat.h /Fe:$t.exe /Fo:$t.obj $t.c"
     } > "$BAT"
 
     cmd.exe //c "$(cygpath -w "$BAT" 2>/dev/null || echo "$BAT")" \
