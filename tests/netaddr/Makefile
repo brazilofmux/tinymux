@@ -9,7 +9,28 @@
 # Run:   make test
 
 CXX      = g++
-CXXFLAGS = -std=c++17 -g -O2 -Wall -Wextra -fPIC
+
+# This island is the only one that links an object built by the MAIN build
+# rather than compiling everything itself.  On a tree configured
+# --enable-sanitizers that object is instrumented and carries undefined
+# __asan_* references, so linking it into an uninstrumented binary fails in
+# ld -- before anything runs, which is why the LD_PRELOAD that rescues the
+# other islands cannot help here (#1522).
+#
+# tests/format, tests/alarm and tests/dbt build every object themselves and
+# link libmux as a shared library, so they never see the undefined symbols
+# and are unaffected.
+#
+# Take the flags from the tree's own config.status rather than hardcoding a
+# set: a tree configured with a different sanitizer selection gets that
+# selection, and an ordinary tree gets an empty string and builds exactly as
+# before.  Instrumenting the island is also the more useful answer -- the code
+# under test here (mux_subnet::compare_to, parse_subnet) then runs
+# instrumented, which is the point of a sanitizer run.
+MUX_SANITIZE := $(shell grep -oE '\-fsanitize=[a-z,]+|\-fno-omit-frame-pointer' \
+                  ../../mux/config.status 2>/dev/null | sort -u | tr '\n' ' ')
+
+CXXFLAGS = -std=c++17 -g -O2 -Wall -Wextra -fPIC $(MUX_SANITIZE)
 INCDIR   = ../../mux/include
 LIBDIR   = ../../mux/lib
 NETADDR_O = ../../mux/src/netmux-netaddr.o

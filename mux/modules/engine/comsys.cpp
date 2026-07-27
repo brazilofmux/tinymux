@@ -1542,7 +1542,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
 {
     if (!*arg2)
     {
-        raw_notify(player, T("No message."));
+        raw_notify(player, M_("No message."));
         return;
     }
     if (3500 < strlen(reinterpret_cast<const char*>(arg2)))
@@ -1558,14 +1558,14 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
     struct comuser* user = select_user(ch, player);
     if (!user)
     {
-        raw_notify(player, T("You are not listed as on that channel.  Delete this alias and readd."));
+        raw_notify(player, M_("You are not listed as on that channel.  Delete this alias and readd."));
         return;
     }
 
     if (Gagged(player)
         && !Wizard(player))
     {
-        raw_notify(player, T("GAGGED players may not speak on channels."));
+        raw_notify(player, M_("GAGGED players may not speak on channels."));
         return;
     }
 
@@ -1601,7 +1601,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
     }
     else if (!test_transmit_access(player, ch))
     {
-        raw_notify(player, T("That channel type cannot be transmitted on."));
+        raw_notify(player, M_("That channel type cannot be transmitted on."));
     }
     else
     {
@@ -2061,7 +2061,7 @@ static void do_comwho_line
 
 void do_comwho(dbref player, struct channel* ch)
 {
-    raw_notify(player, T("-- Players --"));
+    raw_notify(player, M_("-- Players --"));
     for (auto &kv : ch->users)
     {
         comuser &user = kv.second;
@@ -2083,7 +2083,7 @@ void do_comwho(dbref player, struct channel* ch)
             }
         }
     }
-    raw_notify(player, T("-- Objects --"));
+    raw_notify(player, M_("-- Objects --"));
     for (auto &kv : ch->users)
     {
         comuser &user = kv.second;
@@ -2109,7 +2109,7 @@ void do_comlast(dbref player, struct channel* ch, int arg)
     //
     if (!Good_obj(ch->chan_obj))
     {
-        raw_notify(player, T("Channel does not have an object."));
+        raw_notify(player, M_("Channel does not have an object."));
         return;
     }
 
@@ -2130,7 +2130,7 @@ void do_comlast(dbref player, struct channel* ch, int arg)
 
     if (logmax < 1)
     {
-        raw_notify(player, T("Channel does not log."));
+        raw_notify(player, M_("Channel does not log."));
         return;
     }
 
@@ -2393,7 +2393,7 @@ void do_addcom
         }
         else
         {
-            raw_notify(executor, T("You need to specify a valid alias."));
+            raw_notify(executor, M_("You need to specify a valid alias."));
         }
         return;
     }
@@ -2403,12 +2403,12 @@ void do_addcom
     UTF8* pValidAlias = MakeCanonicalComAlias(arg1, &nValidAlias, &bValidAlias);
     if (!bValidAlias)
     {
-        raw_notify(executor, T("You need to specify a valid alias."));
+        raw_notify(executor, M_("You need to specify a valid alias."));
         return;
     }
     if ('\0' == channel[0])
     {
-        raw_notify(executor, T("You need to specify a channel."));
+        raw_notify(executor, M_("You need to specify a channel."));
         return;
     }
 
@@ -2422,7 +2422,7 @@ void do_addcom
     }
     if (!test_join_access(executor, ch))
     {
-        raw_notify(executor, T("Sorry, this channel type does not allow you to join."));
+        raw_notify(executor, M_("Sorry, this channel type does not allow you to join."));
         return;
     }
     comsys_t* c = get_comsys(executor);
@@ -2480,7 +2480,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
 
     if (!arg1)
     {
-        raw_notify(executor, T("Need an alias to delete."));
+        raw_notify(executor, M_("Need an alias to delete."));
         return;
     }
     comsys_t* c = get_comsys(executor);
@@ -2524,7 +2524,7 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             return;
         }
     }
-    raw_notify(executor, T("Unable to find that alias."));
+    raw_notify(executor, M_("Unable to find that alias."));
 }
 
 // Process a complete unsubscribe for a player from a particular channel.
@@ -2585,7 +2585,7 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
 
     if ('\0' == channel[0])
     {
-        raw_notify(executor, T("You must specify a channel to create."));
+        raw_notify(executor, M_("You must specify a channel to create."));
         return;
     }
 
@@ -2633,7 +2633,7 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
 
     if (nNameNoANSI > MAX_CHANNEL_LEN)
     {
-        raw_notify(executor, T("Channel name is too long."));
+        raw_notify(executor, M_("Channel name is too long."));
         delete newchannel;
         return;
     }
@@ -2729,7 +2729,7 @@ static void do_listchannels(dbref player, UTF8* pattern)
     const bool perm = Comm_All(player);
     if (!perm)
     {
-        raw_notify(player, T("Warning: Only public channels and your channels will be shown."));
+        raw_notify(player, M_("Warning: Only public channels and your channels will be shown."));
     }
 
     bool bWild;
@@ -2743,7 +2743,7 @@ static void do_listchannels(dbref player, UTF8* pattern)
         bWild = false;
     }
 
-    raw_notify(player, T("*** Channel       Header          Owner           Access  Users Msgs"));
+    raw_notify(player, M_("*** Channel       Header          Owner           Access  Users Msgs"));
 
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
@@ -2831,7 +2831,7 @@ static void do_listchannels(dbref player, UTF8* pattern)
             }
         }
     }
-    raw_notify(player, T("-- End of list of Channels --"));
+    raw_notify(player, M_("-- End of list of Channels --"));
 }
 
 void do_comtitle
@@ -2863,7 +2863,7 @@ void do_comtitle
 
     if (!*arg1)
     {
-        raw_notify(executor, T("Need an alias to do comtitle."));
+        raw_notify(executor, M_("Need an alias to do comtitle."));
         return;
     }
 
@@ -2872,7 +2872,7 @@ void do_comtitle
 
     if (channel[0] == '\0')
     {
-        raw_notify(executor, T("Unknown alias."));
+        raw_notify(executor, M_("Unknown alias."));
         return;
     }
     struct channel* ch = select_channel(channel);
@@ -2889,7 +2889,7 @@ void do_comtitle
                 }
                 else
                 {
-                    raw_notify(executor, T("You can not turn off comtitles on that channel."));
+                    raw_notify(executor, M_("You can not turn off comtitles on that channel."));
                 }
             }
             else if (key == COMTITLE_ON)
@@ -2918,7 +2918,7 @@ void do_comtitle
     }
     else
     {
-        raw_notify(executor, T("Illegal comsys alias, please delete."));
+        raw_notify(executor, M_("Illegal comsys alias, please delete."));
     }
 }
 
@@ -2958,7 +2958,7 @@ void do_comlist
         bWild = false;
     }
 
-    raw_notify(executor, T("Alias           Channel            Status   Title"));
+    raw_notify(executor, M_("Alias           Channel            Status   Title"));
 
     const comsys_t* c = get_comsys(executor);
     for (size_t i = 0; i < c->aliases.size(); i++)
@@ -2989,7 +2989,7 @@ void do_comlist
                            chanName));
         }
     }
-    raw_notify(executor, T("-- End of comlist --"));
+    raw_notify(executor, M_("-- End of comlist --"));
 }
 
 // Cleanup channels owned by the player.
@@ -3070,7 +3070,7 @@ void do_allcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
         && strcmp(reinterpret_cast<char*>(arg1), "on") != 0
         && strcmp(reinterpret_cast<char*>(arg1), "off") != 0)
     {
-        raw_notify(executor, T("Only options available are: on, off and who."));
+        raw_notify(executor, M_("Only options available are: on, off and who."));
         return;
     }
 
@@ -3395,11 +3395,11 @@ void do_editchannel
             if (Good_obj(who))
             {
                 ch->charge_who = who;
-                raw_notify(executor, T("Set."));
+                raw_notify(executor, M_("Set."));
             }
             else
             {
-                raw_notify(executor, T("Invalid player."));
+                raw_notify(executor, M_("Invalid player."));
             }
         }
         break;
@@ -3411,11 +3411,11 @@ void do_editchannel
                 && c_charge <= MAX_COST)
             {
                 ch->charge = c_charge;
-                raw_notify(executor, T("Set."));
+                raw_notify(executor, M_("Set."));
             }
             else
             {
-                raw_notify(executor, T("That is not a reasonable cost."));
+                raw_notify(executor, M_("That is not a reasonable cost."));
             }
         }
         break;
@@ -3437,7 +3437,7 @@ void do_editchannel
             }
             else
             {
-                raw_notify(executor, T("@cpflags: Unknown Flag."));
+                raw_notify(executor, M_("@cpflags: Unknown Flag."));
             }
 
             if (access)
@@ -3445,12 +3445,12 @@ void do_editchannel
                 if (add_remove)
                 {
                     ch->type |= access;
-                    raw_notify(executor, T("@cpflags: Set."));
+                    raw_notify(executor, M_("@cpflags: Set."));
                 }
                 else
                 {
                     ch->type &= ~access;
-                    raw_notify(executor, T("@cpflags: Cleared."));
+                    raw_notify(executor, M_("@cpflags: Cleared."));
                 }
             }
         }
@@ -3473,7 +3473,7 @@ void do_editchannel
             }
             else
             {
-                raw_notify(executor, T("@coflags: Unknown Flag."));
+                raw_notify(executor, M_("@coflags: Unknown Flag."));
             }
 
             if (access)
@@ -3481,12 +3481,12 @@ void do_editchannel
                 if (add_remove)
                 {
                     ch->type |= access;
-                    raw_notify(executor, T("@coflags: Set."));
+                    raw_notify(executor, M_("@coflags: Set."));
                 }
                 else
                 {
                     ch->type &= ~access;
-                    raw_notify(executor, T("@coflags: Cleared."));
+                    raw_notify(executor, M_("@coflags: Cleared."));
                 }
             }
         }
@@ -3741,7 +3741,7 @@ void do_chopen
 
     case CSET_HEADER:
         do_cheader(executor, chan, value);
-        msg = T("Set.");
+        msg = M_("Set.");
         break;
 
     case CSET_LOG:
@@ -3801,19 +3801,19 @@ void do_chboot
     struct channel* ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(executor, T("@cboot: Unknown channel."));
+        raw_notify(executor, M_("@cboot: Unknown channel."));
         return;
     }
     struct comuser* user = select_user(ch, executor);
     if (!user)
     {
-        raw_notify(executor, T("@cboot: You are not on that channel."));
+        raw_notify(executor, M_("@cboot: You are not on that channel."));
         return;
     }
     if (!Controls(executor, ch->charge_who)
         && !Comm_All(executor))
     {
-        raw_notify(executor, T("@cboot: You can’t do that!"));
+        raw_notify(executor, M_("@cboot: You can’t do that!"));
         return;
     }
     const dbref thing = match_thing(executor, victim);
@@ -3886,7 +3886,7 @@ void do_cheader(const dbref player, UTF8* channel, const UTF8* header)
     struct channel* ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(player, T("That channel does not exist."));
+        raw_notify(player, M_("That channel does not exist."));
         return;
     }
     if (!Controls(player, ch->charge_who)
@@ -3963,11 +3963,11 @@ void do_chanlist
 
     if (key & CLIST_HEADERS)
     {
-        raw_notify(executor, T("*** Channel       Owner           Header"));
+        raw_notify(executor, M_("*** Channel       Owner           Header"));
     }
     else
     {
-        raw_notify(executor, T("*** Channel       Owner           Description"));
+        raw_notify(executor, M_("*** Channel       Owner           Description"));
     }
 
     bool bWild;
@@ -4062,7 +4062,7 @@ void do_chanlist
             }
         }
     }
-    raw_notify(executor, T("-- End of list of Channels --"));
+    raw_notify(executor, M_("-- End of list of Channels --"));
 }
 
 // Returns a player's comtitle for a named channel.
