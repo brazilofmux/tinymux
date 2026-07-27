@@ -38,8 +38,61 @@ WORK=$(mktemp -d "${TMPDIR:-/tmp}/fncov.XXXXXX") || exit 2
 trap 'rm -rf "$WORK"' EXIT
 
 # Registered builtins: the { T("NAME"), fun_... } table entries.
-grep -oE '\{[[:space:]]*T\("[A-Z0-9_]+"\)[[:space:]]*,[[:space:]]*fun_' "$FUNCTIONS" \
-    | sed 's/.*T("//; s/").*//' | sort -u > "$WORK/all"
+#
+# The table is not flat.  Some entries sit inside #if blocks and are absent
+# from builds that do not define the guard, and counting those as gaps makes
+# the number wrong in the direction that matters: it reports work no test
+# could do, because in this configuration the function does not exist and
+# answers "#-1 FUNCTION (NAME) NOT FOUND".
+#
+# So resolve each guard against what this build actually defines rather than
+# assuming.  Two sources, because the macros come from two places: -D flags
+# in the engine Makefile (REALITY_LVLS, WOD_REALMS, TINYMUX_JIT) and
+# autoconf's header (HAVE_*, and STUB_SLAVE when --enable-stubslave is on).
+#
+# Today this splits out ten names -- the SQL/recordset family behind
+# STUB_SLAVE and INLINESQL, neither of which the smoke build defines.  They
+# are reported separately rather than dropped: "cannot be covered in this
+# build" is a different fact from "nobody wrote a test", and a reader chasing
+# #1160 needs to tell them apart.
+#
+# Guards are assumed non-nested and single-macro.  Verified against the
+# table as it stands: every #if inside it is one of #if defined(INLINESQL),
+# #if defined(STUB_SLAVE), #if defined(TINYMUX_JIT), #ifdef REALITY_LVLS,
+# #ifdef TINYMUX_JIT.  A compound guard such as #if defined(A) || defined(B)
+# would be read as A alone, so if one is ever added here this needs
+# revisiting -- the failure would be silent, which is why it is written down
+# rather than left to be rediscovered.
+{
+    grep -ohE '[-]D[A-Za-z_][A-Za-z0-9_]*' \
+        "$REPO/mux/modules/engine/Makefile" 2>/dev/null | sed 's/^-D//'
+    sed -n 's/^#define[[:space:]]\{1,\}\([A-Za-z_][A-Za-z0-9_]*\).*/\1/p' \
+        "$REPO/mux/src/autoconf.h" 2>/dev/null
+} | sort -u > "$WORK/defined"
+
+awk '
+    /^#if[[:space:]]+defined\(/ {
+        g = $0; sub(/.*defined\(/, "", g); sub(/\).*/, "", g); guard = g; next
+    }
+    /^#ifdef[[:space:]]/  { guard = $2; next }
+    /^#if[[:space:]]/     { guard = "?";  next }
+    /^#endif/             { guard = "";   next }
+    match($0, /\{[[:space:]]*T\("[A-Z0-9_]+"\)[[:space:]]*,[[:space:]]*fun_/) {
+        n = $0; sub(/.*T\("/, "", n); sub(/"\).*/, "", n)
+        print (guard == "" ? "-" : guard) " " n
+    }
+' "$FUNCTIONS" | sort -u > "$WORK/tagged"
+
+: > "$WORK/all"; : > "$WORK/guarded"
+while read -r g n; do
+    if [ "$g" = "-" ] || grep -qx "$g" "$WORK/defined"; then
+        printf '%s\n' "$n" >> "$WORK/all"
+    else
+        printf '%s (%s)\n' "$n" "$g" >> "$WORK/guarded"
+    fi
+done < "$WORK/tagged"
+sort -u -o "$WORK/all" "$WORK/all"
+sort -u -o "$WORK/guarded" "$WORK/guarded"
 
 # Names beginning with _ are internal helpers reached only from generated
 # softcode, never written by a user, so they are excluded from the ratio
@@ -59,6 +112,7 @@ done < "$WORK/user"
 
 n_all=$(wc -l < "$WORK/user")
 n_int=$(wc -l < "$WORK/internal")
+n_grd=$(wc -l < "$WORK/guarded")
 n_unc=$(wc -l < "$WORK/uncovered")
 n_cov=$((n_all - n_unc))
 pct=$(( n_cov * 100 / (n_all > 0 ? n_all : 1) ))
@@ -68,6 +122,7 @@ printf '  user-callable builtins : %d\n' "$n_all"
 printf '  referenced in a test   : %d (%d%%)\n' "$n_cov" "$pct"
 printf '  no reference at all    : %d\n' "$n_unc"
 printf '  internal helpers (excluded): %d\n' "$n_int"
+printf '  absent from this build (excluded): %d\n' "$n_grd"
 
 # Tier 1 — the eval/composition family.  #1160 singled these out because
 # the JIT does its most aggressive work here (nested compilation, carg
@@ -93,6 +148,12 @@ if [ "$MODE" = "--list" ]; then
     fold -s -w 72 < "$WORK/uncovered" | sed 's/^/  /'
     tr '\n' ' ' < "$WORK/uncovered" | fold -s -w 72 | sed 's/^/  /'
     echo
+    if [ "$n_grd" -gt 0 ]; then
+        echo
+        echo "Excluded -- guarded by a macro this build does not define, so"
+        echo "no test in the corpus can reference them:"
+        sed 's/^/  /' < "$WORK/guarded"
+    fi
 fi
 
 if [ "$MODE" = "--tier1" ] && [ -n "$t1_missing" ]; then
