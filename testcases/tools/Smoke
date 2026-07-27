@@ -360,7 +360,10 @@ if $INCOMPLETE; then
     # them here is part of why #1387 was hard to see from the failure output
     # -- the names it called missing were not the ones that had gone.
     if [ -r suite.manifest ]; then
-        sort -u suite.manifest > "smoke.expected.$$"
+        # Skip the leading #expected-verdicts line: it is metadata, not a
+        # test name, and listing it as "never dispatched" sent a reader
+        # looking for a test called "#expected-verdicts 1508".
+        grep '^[^#]' suite.manifest | sort -u > "smoke.expected.$$"
     elif [ -r "$TC/smoke.mux" ]; then
         awk '/&suite.list.[12] smoke=/{grab=1;next} /^-/{grab=0} grab{gsub(/\\/,"");print}' \
             "$TC/smoke.mux" | tr ' ' '\n' | grep -v '^$' | sort -u > "smoke.expected.$$"

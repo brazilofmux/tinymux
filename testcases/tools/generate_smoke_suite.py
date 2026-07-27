@@ -130,7 +130,14 @@ def emit_cleanup_attr(test_name: str, commands):
     print("-")
 
 
-# One expected verdict per tr.tc* label that has a verdict-logging branch.
+# One expected verdict per tr.tc* label that has a SUCCEEDED branch.
+#
+# Not "Succeeded or Failed": a label with only a Failed branch is a GUARD, not
+# a case.  cron_fn's tr.guard logs TC00x solely when the cron chain stalls, so
+# in a healthy run it correctly never fires -- but counting it made the run
+# report a one-verdict deficit and turned master red (no issue; found while
+# verifying #1485).  A label carrying a Succeeded branch is a case and must
+# report every run; one carrying only Failed exists to be silent.
 #
 # Labels whose only output is diagnostic (banner cases, the benchmark files
 # that report numbers) are not counted, so they do not need to be special
@@ -152,7 +159,7 @@ def count_expected_verdicts(tc_dir: Path) -> int:
             by_label[m.group(1)].append(m.group(2))
         total += sum(
             1 for msgs in by_label.values()
-            if any(("Succeeded" in m or "Failed" in m) for m in msgs)
+            if any("Succeeded" in m for m in msgs)
         )
     return total
 
