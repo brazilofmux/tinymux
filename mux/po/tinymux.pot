@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 10:49+0000\n"
+"POT-Creation-Date: 2026-07-27 05:36-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -139,19 +139,21 @@ msgstr ""
 msgid "I do not understand that flag."
 msgstr ""
 
-#: modules/engine/flags.cpp:825
+#: modules/engine/flags.cpp:825 modules/engine/set.cpp:1323
 msgid "Cleared."
 msgstr ""
 
-#: modules/engine/flags.cpp:825
+#: modules/engine/flags.cpp:825 modules/engine/set.cpp:427
+#: modules/engine/set.cpp:492 modules/engine/set.cpp:1169
+#: modules/engine/set.cpp:1327
 msgid "Set."
 msgstr ""
 
-#: modules/engine/flags.cpp:830
+#: modules/engine/flags.cpp:830 modules/engine/set.cpp:1289
 msgid "Already cleared."
 msgstr ""
 
-#: modules/engine/flags.cpp:830
+#: modules/engine/flags.cpp:830 modules/engine/set.cpp:1293
 msgid "Already set."
 msgstr ""
 
@@ -180,11 +182,106 @@ msgstr ""
 msgid "Flag name changed."
 msgstr ""
 
+#: modules/engine/look.cpp:1313
+msgid "You see nothing special."
+msgstr ""
+
+#: modules/engine/look.cpp:1501 modules/engine/look.cpp:2028
+#: modules/engine/look.cpp:2142
+msgid "Contents:"
+msgstr ""
+
+#: modules/engine/look.cpp:1526
+msgid "You can’t look outside."
+msgstr ""
+
+#: modules/engine/look.cpp:1615
+msgid "Carrying:"
+msgstr ""
+
+#: modules/engine/look.cpp:1684
+msgid "Attr list: "
+msgstr ""
+
+#: modules/engine/look.cpp:1793 modules/engine/look.cpp:1954
+msgid "<Too far away to get a good look>"
+msgstr ""
+
+#: modules/engine/look.cpp:1800
+msgid "No matching attributes found."
+msgstr ""
+
+#: modules/engine/look.cpp:2046 modules/engine/look.cpp:2076
+#: modules/engine/look.cpp:2208
+msgid "Exits:"
+msgstr ""
+
+#: modules/engine/look.cpp:2056 modules/engine/look.cpp:2086
+msgid "No exits."
+msgstr ""
+
+#: modules/engine/look.cpp:2122
+msgid "Destination: *UNLINKED*"
+msgstr ""
+
+#: modules/engine/look.cpp:2192
+msgid "You aren’t carrying anything."
+msgstr ""
+
+#: modules/engine/look.cpp:2196
+msgid "You are carrying:"
+msgstr ""
+
+#: modules/engine/look.cpp:2603
+msgid "Sweeping location..."
+msgstr ""
+
+#: modules/engine/look.cpp:2636
+msgid "Sweeping exits..."
+msgstr ""
+
+#: modules/engine/look.cpp:2648
+msgid "Sweeping inventory..."
+msgstr ""
+
+#: modules/engine/look.cpp:2660
+msgid "Sweeping carried exits..."
+msgstr ""
+
+#: modules/engine/look.cpp:2666
+msgid "Sweep complete."
+msgstr ""
+
+#: modules/engine/look.cpp:2774
+msgid "What command do you want to scan for?"
+msgstr ""
+
+#: modules/engine/look.cpp:2803
+msgid "Check yourself and your inventory:"
+msgstr ""
+
+#: modules/engine/look.cpp:2818
+msgid "Check your location and its contents:"
+msgstr ""
+
+#: modules/engine/look.cpp:2841
+msgid "Checking zone:"
+msgstr ""
+
+#: modules/engine/look.cpp:2887
+msgid "Checking master room:"
+msgstr ""
+
+#: modules/engine/look.cpp:2902
+msgid "Scan complete."
+msgstr ""
+
 #: modules/engine/match.cpp:17 modules/engine/match.cpp:34
 msgid "I don’t see that here."
 msgstr ""
 
 #: modules/engine/match.cpp:18 modules/engine/match.cpp:35
+#: modules/engine/set.cpp:698
 msgid "I don’t know which one you mean!"
 msgstr ""
 
@@ -234,10 +331,12 @@ msgid "You can’t take that!"
 msgstr ""
 
 #: modules/engine/move.cpp:869 modules/engine/rob.cpp:206
+#: modules/engine/set.cpp:1003
 msgid "You don’t have that!"
 msgstr ""
 
 #: modules/engine/move.cpp:873 modules/engine/rob.cpp:210
+#: modules/engine/set.cpp:1008
 msgid "I don’t know which you mean!"
 msgstr ""
 
@@ -263,6 +362,7 @@ msgid "You can’t leave."
 msgstr ""
 
 #: modules/engine/player.cpp:963 modules/engine/rob.cpp:66
+#: modules/engine/speech.cpp:1057
 msgid "Sorry."
 msgstr ""
 
@@ -270,7 +370,8 @@ msgstr ""
 msgid "Password changed."
 msgstr ""
 
-#: modules/engine/player.cpp:1017
+#: modules/engine/player.cpp:1017 modules/engine/set.cpp:923
+#: modules/engine/set.cpp:1065
 msgid "I couldn’t find that player."
 msgstr ""
 
@@ -298,7 +399,8 @@ msgstr ""
 msgid "That name is not in your protected list."
 msgstr ""
 
-#: modules/engine/player.cpp:1578
+#: modules/engine/player.cpp:1578 modules/engine/set.cpp:246
+#: modules/engine/set.cpp:383
 msgid "That name is already in use."
 msgstr ""
 
@@ -347,6 +449,7 @@ msgid "I don’t see that player here."
 msgstr ""
 
 #: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
+#: modules/engine/speech.cpp:1063
 msgid "I don’t know who you mean!"
 msgstr ""
 
@@ -392,4 +495,228 @@ msgstr ""
 
 #: modules/engine/rob.cpp:432
 msgid "Guests really don’t need money or anything."
+msgstr ""
+
+#: modules/engine/set.cpp:83
+msgid "Zones disabled."
+msgstr ""
+
+#: modules/engine/set.cpp:112
+msgid "Invalid zone object type."
+msgstr ""
+
+#: modules/engine/set.cpp:122
+msgid "You don’t have the power to shift reality."
+msgstr ""
+
+#: modules/engine/set.cpp:139
+msgid "You cannot move that object to that zone."
+msgstr ""
+
+#: modules/engine/set.cpp:149
+msgid "Only rooms may be zoned to other rooms."
+msgstr ""
+
+#: modules/engine/set.cpp:181
+msgid "Zone changed."
+msgstr ""
+
+#: modules/engine/set.cpp:216
+msgid "Give it what new name?"
+msgstr ""
+
+#: modules/engine/set.cpp:228
+msgid "You can’t use that name."
+msgstr ""
+
+#: modules/engine/set.cpp:234
+msgid "That name is protected by another player."
+msgstr ""
+
+#: modules/engine/set.cpp:269 modules/engine/set.cpp:305
+msgid "Name set."
+msgstr ""
+
+#: modules/engine/set.cpp:295
+msgid "That is not a reasonable name."
+msgstr ""
+
+#: modules/engine/set.cpp:374
+msgid "Alias removed."
+msgstr ""
+
+#: modules/engine/set.cpp:388
+msgid "That’s a silly name for a player!"
+msgstr ""
+
+#: modules/engine/set.cpp:400
+msgid "Alias set."
+msgstr ""
+
+#: modules/engine/set.cpp:479
+msgid "Forwardlist removed."
+msgstr ""
+
+#: modules/engine/set.cpp:484
+msgid "Invalid forwardlist."
+msgstr ""
+
+#: modules/engine/set.cpp:533 modules/engine/set.cpp:630
+#: modules/engine/set.cpp:917 modules/engine/set.cpp:1266
+msgid "Attribute not present on object."
+msgstr ""
+
+#: modules/engine/set.cpp:544
+msgid "Attribute locked."
+msgstr ""
+
+#: modules/engine/set.cpp:560
+msgid "I don’t see what you want to lock!"
+msgstr ""
+
+#: modules/engine/set.cpp:564
+msgid "I don’t know which one you want to lock!"
+msgstr ""
+
+#: modules/engine/set.cpp:570
+msgid "You can’t lock that!"
+msgstr ""
+
+#: modules/engine/set.cpp:585
+msgid "I don’t understand that key."
+msgstr ""
+
+#: modules/engine/set.cpp:599
+msgid "Locked."
+msgstr ""
+
+#: modules/engine/set.cpp:641
+msgid "Attribute unlocked."
+msgstr ""
+
+#: modules/engine/set.cpp:664
+msgid "Unlocked."
+msgstr ""
+
+#: modules/engine/set.cpp:693
+msgid "Unlink what?"
+msgstr ""
+
+#: modules/engine/set.cpp:720
+msgid "Unlinked."
+msgstr ""
+
+#: modules/engine/set.cpp:731
+msgid "Dropto removed."
+msgstr ""
+
+#: modules/engine/set.cpp:737
+msgid "You can’t unlink that!"
+msgstr ""
+
+#: modules/engine/set.cpp:981
+msgid "Attribute owner changed."
+msgstr ""
+
+#: modules/engine/set.cpp:1061
+msgid "You shouldn’t be rummaging through the garbage."
+msgstr ""
+
+#: modules/engine/set.cpp:1070
+msgid "Players always own themselves."
+msgstr ""
+
+#: modules/engine/set.cpp:1184 modules/engine/set.cpp:1511
+#: modules/engine/set.cpp:1568 modules/engine/set.cpp:2010
+#: modules/engine/set.cpp:2086 modules/engine/set.cpp:2148
+#: modules/engine/set.cpp:2256
+msgid "No match."
+msgstr ""
+
+#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
+msgid "I don’t know what you want to set!"
+msgstr ""
+
+#: modules/engine/set.cpp:1258
+msgid "You can’t set that!"
+msgstr ""
+
+#: modules/engine/set.cpp:1356
+msgid "Couldn’t create attribute."
+msgstr ""
+
+#: modules/engine/set.cpp:1587 modules/engine/set.cpp:1997
+msgid "Nothing to do."
+msgstr ""
+
+#: modules/engine/set.cpp:1677
+msgid "Not copied anywhere. Non-existent attribute."
+msgstr ""
+
+#: modules/engine/set.cpp:1703
+msgid "Could not remove old attribute. Non-existent attribute."
+msgstr ""
+
+#: modules/engine/set.cpp:2062 modules/engine/set.cpp:2123
+msgid "No matching attributes."
+msgstr ""
+
+#: modules/engine/set.cpp:2092
+msgid "SAFE objects may not be @wiped."
+msgstr ""
+
+#: modules/engine/set.cpp:2131
+msgid "Wiped."
+msgstr ""
+
+#: modules/engine/set.cpp:2232
+msgid "Triggered."
+msgstr ""
+
+#: modules/engine/set.cpp:2415 modules/engine/set.cpp:2445
+msgid "You can’t figure out how to use that."
+msgstr ""
+
+#: modules/engine/set.cpp:2501
+msgid "That’s not a good name for an attribute."
+msgstr ""
+
+#: modules/engine/speech.cpp:60
+msgid "Sorry. Gagged players cannot speak."
+msgstr ""
+
+#: modules/engine/speech.cpp:68
+msgid "Sorry, robots may not speak in public."
+msgstr ""
+
+#: modules/engine/speech.cpp:76
+msgid "Sorry, you may not speak in this place."
+msgstr ""
+
+#: modules/engine/speech.cpp:778
+msgid "You have not paged anyone."
+msgstr ""
+
+#: modules/engine/speech.cpp:782
+msgid "No one to page."
+msgstr ""
+
+#: modules/engine/speech.cpp:1045
+msgid "Whisper to whom?"
+msgstr ""
+
+#: modules/engine/speech.cpp:1049
+msgid "Emit to whom?"
+msgstr ""
+
+#: modules/engine/speech.cpp:1053
+msgid "Emit except to whom?"
+msgstr ""
+
+#: modules/engine/speech.cpp:1092 modules/engine/speech.cpp:1412
+msgid "You are too far away to do that."
+msgstr ""
+
+#: modules/engine/speech.cpp:1494
+msgid "No one to whisper to."
 msgstr ""
