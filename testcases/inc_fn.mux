@@ -21,8 +21,7 @@
         eq(inc(-3), -2)
       )=
   {
-    @log smoke=TC001: inc basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: inc basic operations. Succeeded.
   },
   {
     @log smoke=TC001: inc basic operations. Failed (inc(5)=[inc(5)] inc(0)=[inc(0)] inc(-3)=[inc(-3)]).;
@@ -39,11 +38,31 @@
         eq(inc(foo),1)
       )=
   {
-    @log smoke=TC002: inc decimal and coercion cases. Succeeded.;
+    @log smoke=TC002: inc decimal and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: inc decimal and coercion cases. Failed (inc(1.5)=[inc(1.5)] inc(-0.5)=[inc(-0.5)] inc()=[inc()] inc(foo)=[inc(foo)]).
+  }
+-
+#
+# Test Case #3 - 64-bit boundary (#1472).  inc() wraps at INT64_MAX rather
+# than saturating or erroring.  That wrap is the historical behavior and is
+# pinned here; the fix for #1472 removed the signed overflow that produced
+# it without changing the value.
+#
+&tr.tc003 test_inc_fn=
+  @if cand(
+        eq(inc(9223372036854775807), -9223372036854775808),
+        eq(inc(-9223372036854775808), -9223372036854775807),
+        eq(inc(-1), 0),
+        eq(inc(9223372036854775806), 9223372036854775807)
+      )=
+  {
+    @log smoke=TC003: inc 64-bit boundary wrap. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: inc decimal and coercion cases. Failed (inc(1.5)=[inc(1.5)] inc(-0.5)=[inc(-0.5)] inc()=[inc()] inc(foo)=[inc(foo)]).;
+    @log smoke=TC003: inc 64-bit boundary wrap. Failed (inc(max)=[inc(9223372036854775807)] inc(min)=[inc(-9223372036854775808)] inc(-1)=[inc(-1)] inc(max-1)=[inc(9223372036854775806)]).;
     @trig me/tr.done
   }
 -

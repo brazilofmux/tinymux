@@ -120,11 +120,34 @@
         eq(shl(1,5), 32)
       )=
   {
-    @log smoke=TC007: shl rejects truncated-large shift counts. Succeeded.;
+    @log smoke=TC007: shl rejects truncated-large shift counts. Succeeded.
+  },
+  {
+    @log smoke=TC007: shl rejects truncated-large shift counts. Failed (2^32=[shl(1,4294967296)] 2^32+4=[shl(1,4294967300)] ok=[shl(1,5)]).
+  }
+-
+#
+# Test Case #8 - Shifting into or past the sign bit (#1472).  Bounding the
+# shift count (#1109) does not by itself make the shift defined: a negative
+# left operand is undefined at any count, and so is shifting a bit into the
+# sign bit.  The results below are the modular ones this function has always
+# produced, and must not change -- softcode may depend on the wrap.
+#
+&tr.tc008 test_shl_fn=
+  @if cand(
+        eq(shl(1,63), -9223372036854775808),
+        eq(shl(3,63), -9223372036854775808),
+        eq(shl(-1,63), -9223372036854775808),
+        eq(shl(-9223372036854775808,1), 0),
+        eq(shl(-2,1), -4),
+        eq(shl(-2,0), -2)
+      )=
+  {
+    @log smoke=TC008: shl sign-bit and negative-operand wrap. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC007: shl rejects truncated-large shift counts. Failed (2^32=[shl(1,4294967296)] 2^32+4=[shl(1,4294967300)] ok=[shl(1,5)]).;
+    @log smoke=TC008: shl sign-bit and negative-operand wrap. Failed (shl(1%,63)=[shl(1,63)] shl(3%,63)=[shl(3,63)] shl(-1%,63)=[shl(-1,63)] shl(min%,1)=[shl(-9223372036854775808,1)] shl(-2%,1)=[shl(-2,1)] shl(-2%,0)=[shl(-2,0)]).;
     @trig me/tr.done
   }
 -
