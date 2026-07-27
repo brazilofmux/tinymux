@@ -141,6 +141,27 @@ enum hir_type {
     TY_INT,         // 64-bit integer (in RV64 integer register)
     TY_FLOAT,       // 64-bit double (in RV64 FP register)
     TY_STRING,      // string (guest memory address)
+
+    // A reference into the Lua VM -- a stack index, not a value (#1579).
+    //
+    // The members above name where a value *lives*, which is the right
+    // lattice for MUSHCode, where everything is semantically a string.  Lua
+    // is typed, and forcing it through a representation lattice is what made
+    // a global holding the integer 22 and a table at stack index 22 come back
+    // byte-identical: both were TY_STRING.  `#t` answering 22 was that.
+    //
+    // Representationally this is still a string buffer, so codegen treats it
+    // exactly like TY_STRING and needs no new machinery.  Semantically it is
+    // opaque: illegal in arithmetic, comparison, length and concatenation,
+    // and illegal as a returned value.  Those uses now decline at lowering
+    // time instead of reaching the bridge.
+    //
+    // That rejection is the point.  #1518 currently prevents the same wrong
+    // answers, but only incidentally -- it fails closed because the bridge
+    // ECALL names are unimplemented, and that protection evaporates the
+    // moment #1519 implements them.  This makes it a property of the type.
+    //
+    TY_LUA_HANDLE,
 };
 
 // ---------------------------------------------------------------

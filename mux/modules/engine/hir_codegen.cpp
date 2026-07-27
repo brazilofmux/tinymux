@@ -702,7 +702,9 @@ struct reg_alloc_result {
 };
 
 static bool needs_output_buffer(hir_program &h, int i) {
-    if (h.ty[i] != TY_STRING) return false;
+    // A Lua handle is represented as a string buffer (#1579); only its
+    // semantics differ, and those are enforced in the Lua lowerer.
+    if (h.ty[i] != TY_STRING && h.ty[i] != TY_LUA_HANDLE) return false;
     switch (h.kind[i]) {
     case HIR_CALL:
     case HIR_STRCAT:
@@ -2287,6 +2289,7 @@ static const char *hir_type_name(hir_type t) {
     case TY_VOID:   return "void";
     case TY_INT:    return "int";
     case TY_FLOAT:  return "flt";
+    case TY_LUA_HANDLE: return "lhnd";
     case TY_STRING: return "str";
     default:        return "???";
     }
