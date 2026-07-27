@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 06:25-0600\n"
+"POT-Creation-Date: 2026-07-27 12:39+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1194,7 +1194,8 @@ msgstr ""
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1504 modules/engine/wiz.cpp:503
+#: modules/engine/player.cpp:1504 modules/engine/predicates.cpp:2923
+#: modules/engine/wiz.cpp:503
 msgid "No such player."
 msgstr ""
 
@@ -1271,6 +1272,10 @@ msgstr ""
 msgid "Sorry, your building contract has run out."
 msgstr ""
 
+#: modules/engine/predicates.cpp:288
+msgid "Sorry, that player’s building contract has run out."
+msgstr ""
+
 #: modules/engine/predicates.cpp:1008
 msgid "That is not a valid command name."
 msgstr ""
@@ -1298,6 +1303,10 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:1424
 msgid "Player is not in an @program."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1444
+msgid "@program cleared."
 msgstr ""
 
 #: modules/engine/predicates.cpp:1445
@@ -1333,6 +1342,42 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:2786
 msgid "Permission denied,"
+msgstr ""
+
+#: modules/engine/predicates.cpp:2960
+msgid "-------------------------------------------------------"
+msgstr ""
+
+#: modules/engine/predicates.cpp:2975
+msgid "GAME: No references found."
+msgstr ""
+
+#: modules/engine/predicates.cpp:2980
+msgid "---------------- End of Reference List ----------------"
+msgstr ""
+
+#: modules/engine/predicates.cpp:3094
+msgid "References requested too quickly."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3139
+msgid "Reference cleared."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3143
+msgid "Reference updated."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3147
+msgid "That reference already exists."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3151
+msgid "No such reference to clear."
+msgstr ""
+
+#: modules/engine/predicates.cpp:3155
+msgid "Reference added."
 msgstr ""
 
 #: modules/engine/quota.cpp:171
