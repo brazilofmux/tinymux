@@ -699,7 +699,7 @@ static void do_lua(dbref executor, dbref caller, dbref enactor, int eval,
         const_cast<char *>(strchr(reinterpret_cast<const char *>(arg1), '/')));
     if (nullptr == pSlash)
     {
-        notify(executor, T("Usage: @lua <object>/<attribute>"));
+        notify(executor, M_("Usage: @lua <object>/<attribute>"));
         return;
     }
     *pSlash = '\0';
@@ -3716,7 +3716,7 @@ static void list_costs(dbref player)
         raw_notify(player,
                tprintf(T("A %d %s deposit is charged for putting a command on the queue."),
                    mudconf.waitcost, mudconf.one_coin));
-        raw_notify(player, T("The deposit is refunded when the command is run or canceled."));
+        raw_notify(player, M_("The deposit is refunded when the command is run or canceled."));
     }
     if (mudconf.sacfactor == 0)
     {
@@ -3742,7 +3742,7 @@ static void list_costs(dbref player)
     }
     raw_notify(player, tprintf(T("The value of an object is %s."), buff));
     if (mudconf.clone_copy_cost)
-        raw_notify(player, T("The default value of cloned objects is the value of the original object."));
+        raw_notify(player, M_("The default value of cloned objects is the value of the original object."));
     else
         raw_notify(player, tprintf(T("The default value of cloned objects is %d %s."),
                 mudconf.createmin, coin_name(mudconf.createmin)));
@@ -3779,70 +3779,70 @@ static void list_options(dbref player)
     ltaNow.GetUTC();
 
     if (mudconf.quotas)
-        raw_notify(player, T("Building quotas are enforced."));
+        raw_notify(player, M_("Building quotas are enforced."));
     if (mudconf.name_spaces)
-        raw_notify(player, T("Player names may contain spaces."));
+        raw_notify(player, M_("Player names may contain spaces."));
     else
-        raw_notify(player, T("Player names may not contain spaces."));
+        raw_notify(player, M_("Player names may not contain spaces."));
     if (!mudconf.robot_speak)
-        raw_notify(player, T("Robots are not allowed to speak in public areas."));
+        raw_notify(player, M_("Robots are not allowed to speak in public areas."));
     if (mudconf.player_listen)
-        raw_notify(player, T("The @Listen/@Ahear attribute set works on player objects."));
+        raw_notify(player, M_("The @Listen/@Ahear attribute set works on player objects."));
     if (mudconf.ex_flags)
     {
-        raw_notify(player, T("The ‘examine’ command lists the flag names for the object’s flags."));
+        raw_notify(player, M_("The ‘examine’ command lists the flag names for the object’s flags."));
     }
     if (!mudconf.quiet_look)
-        raw_notify(player, T("The ‘look’ command shows visible attributes in addition to the description."));
+        raw_notify(player, M_("The ‘look’ command shows visible attributes in addition to the description."));
     if (mudconf.see_own_dark)
-        raw_notify(player, T("The ‘look’ command lists DARK objects owned by you."));
+        raw_notify(player, M_("The ‘look’ command lists DARK objects owned by you."));
     if (!mudconf.dark_sleepers)
-        raw_notify(player, T("The ‘look’ command shows disconnected players."));
+        raw_notify(player, M_("The ‘look’ command shows disconnected players."));
     if (mudconf.terse_look)
-        raw_notify(player, T("The ‘look’ command obeys the TERSE flag."));
+        raw_notify(player, M_("The ‘look’ command obeys the TERSE flag."));
     if (mudconf.trace_topdown)
     {
-        raw_notify(player, T("Trace output is presented top-down (whole expression first, then sub-exprs)."));
+        raw_notify(player, M_("Trace output is presented top-down (whole expression first, then sub-exprs)."));
         raw_notify(player, tprintf(T("Only %d lines of trace output are displayed."), mudconf.trace_limit));
     }
     else
     {
-        raw_notify(player, T("Trace output is presented bottom-up (subexpressions first)."));
+        raw_notify(player, M_("Trace output is presented bottom-up (subexpressions first)."));
     }
     if (!mudconf.quiet_whisper)
-        raw_notify(player, T("The ‘whisper’ command lets others in the room with you know you whispered."));
+        raw_notify(player, M_("The ‘whisper’ command lets others in the room with you know you whispered."));
     if (mudconf.pemit_players)
-        raw_notify(player, T("The ‘@pemit’ command may be used to emit to faraway players."));
+        raw_notify(player, M_("The ‘@pemit’ command may be used to emit to faraway players."));
     if (!mudconf.terse_contents)
-        raw_notify(player, T("The TERSE flag suppresses listing the contents of a location."));
+        raw_notify(player, M_("The TERSE flag suppresses listing the contents of a location."));
     if (!mudconf.terse_exits)
-        raw_notify(player, T("The TERSE flag suppresses listing obvious exits in a location."));
+        raw_notify(player, M_("The TERSE flag suppresses listing obvious exits in a location."));
     if (!mudconf.terse_movemsg)
-        raw_notify(player, T("The TERSE flag suppresses enter/leave/succ/drop messages generated by moving."));
+        raw_notify(player, M_("The TERSE flag suppresses enter/leave/succ/drop messages generated by moving."));
     if (mudconf.pub_flags)
     {
-        raw_notify(player, T("The ‘flags()’ function will return the flags of any object."));
+        raw_notify(player, M_("The ‘flags()’ function will return the flags of any object."));
     }
     if (mudconf.read_rem_desc)
-        raw_notify(player, T("The ‘get()’ function will return the description of faraway objects,"));
+        raw_notify(player, M_("The ‘get()’ function will return the description of faraway objects,"));
     if (mudconf.read_rem_name)
-        raw_notify(player, T("The ‘name()’ function will return the name of faraway objects."));
+        raw_notify(player, M_("The ‘name()’ function will return the name of faraway objects."));
     raw_notify(player, tprintf(T("The default switch for the ‘@switch’ command is %s."), switchd[mudconf.switch_df_all]));
 
     raw_notify(player, tprintf(T("The default switch for the ‘examine’ command is %s."), examd[mudconf.exam_public]));
     if (mudconf.sweep_dark)
-        raw_notify(player, T("Players may @sweep dark locations."));
+        raw_notify(player, M_("Players may @sweep dark locations."));
     if (mudconf.fascist_tport)
-        raw_notify(player, T("You may only @teleport out of locations that are JUMP_OK or that you control."));
+        raw_notify(player, M_("You may only @teleport out of locations that are JUMP_OK or that you control."));
     raw_notify(player,
            tprintf(T("Players may have at most %d commands in the queue at one time."),
                mudconf.queuemax));
     if (mudconf.match_mine)
     {
         if (mudconf.match_mine_pl)
-            raw_notify(player, T("All objects search themselves for $-commands."));
+            raw_notify(player, M_("All objects search themselves for $-commands."));
         else
-            raw_notify(player, T("Objects other than players search themselves for $-commands."));
+            raw_notify(player, M_("Objects other than players search themselves for $-commands."));
     }
     if (!Wizard(player))
         return;
@@ -3855,17 +3855,17 @@ static void list_options(dbref player)
            tprintf(T("%d commands are run from the queue when there is net activity."),
                mudconf.active_q_chunk));
     if (mudconf.idle_wiz_dark)
-        raw_notify(player, T("Wizards idle for longer than the default timeout are automatically set DARK."));
+        raw_notify(player, M_("Wizards idle for longer than the default timeout are automatically set DARK."));
     if (mudconf.safe_unowned)
-        raw_notify(player, T("Objects not owned by you are automatically considered SAFE."));
+        raw_notify(player, M_("Objects not owned by you are automatically considered SAFE."));
     if (mudconf.paranoid_alloc)
-        raw_notify(player, T("The buffer pools are checked for consistency on each allocate or free."));
+        raw_notify(player, M_("The buffer pools are checked for consistency on each allocate or free."));
     if (mudconf.cache_names)
-        raw_notify(player, T("A separate name cache is used."));
+        raw_notify(player, M_("A separate name cache is used."));
 #if defined(HAVE_WORKING_FORK)
     if (mudconf.fork_dump)
     {
-        raw_notify(player, T("Database dumps are performed by a fork()ed process."));
+        raw_notify(player, M_("Database dumps are performed by a fork()ed process."));
     }
 #endif // HAVE_WORKING_FORK
     if (mudconf.max_players >= 0)
@@ -4004,7 +4004,7 @@ static void list_hashstat_abbreviated(const dbref player, const UTF8* tab_name, 
 
 static void list_hashstats(const dbref player)
 {
-    raw_notify(player, T("Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long"));
+    raw_notify(player, M_("Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long"));
     list_hashstat_abbreviated(player, T("Commands"), static_cast<int>(mudstate.command_htab.size()));
     list_hashstat_abbreviated(player, T("Logout Cmds"), static_cast<int>(mudstate.logout_cmd_htab.size()));
     list_hashstat_abbreviated(player, T("Functions"), static_cast<int>(mudstate.builtin_functions.size()));;
@@ -4112,7 +4112,7 @@ static void list_process(dbref player)
 //
 static void list_modules(dbref executor)
 {
-    raw_notify(executor, T("Modules:"));
+    raw_notify(executor, M_("Modules:"));
     int i;
     for (i = 0; ; i++)
     {
@@ -4149,6 +4149,28 @@ static void list_modules(dbref executor)
             }
             pISlaveControl->Release();
         }
+        else
+        {
+            // Say so, rather than printing nothing (#1535).
+            //
+            // Without this the whole slave section vanished on failure, and
+            // @list modules answered as if the slave held no modules -- while
+            // the slave process demonstrably had them mapped.  The operator
+            // could not tell "nothing is loaded there" from "I could not ask",
+            // which on the release build (--enable-stubslave) is the only
+            // question this command exists to answer about the slave.
+            //
+            // It fails every time today: the interface is created a second
+            // time here, the slave's reply frame comes back empty, and
+            // mux_UnmarshalInterface reports MUX_E_CLASSNOTAVAILABLE (-3).
+            // Measured on aarch64 with a module confirmed loaded in the slave
+            // via /proc/<pid>/maps.  That defect is not fixed here -- this
+            // only stops it being invisible.
+            //
+            raw_notify(executor, tprintf(
+                T("Could not query the stubslave module list (error %d)."),
+                static_cast<int>(mr)));
+        }
     }
 #endif
 }
@@ -4161,14 +4183,14 @@ static void list_modules(dbref executor)
 static void list_rlevels(dbref player)
 {
     int i;
-    raw_notify(player, T("Reality levels:"));
+    raw_notify(player, M_("Reality levels:"));
     for (i = 0; i < mudconf.no_levels; ++i)
     {
         raw_notify(player, tprintf(T("    Level: %-20.20s    Value: 0x%08x     Desc: %s"),
             mudconf.reality_level[i].name, mudconf.reality_level[i].value,
                 mudconf.reality_level[i].attr));
     }
-    raw_notify(player, T("--Completed."));
+    raw_notify(player, M_("--Completed."));
 }
 #endif // REALITY_LVLS
 
@@ -4472,14 +4494,14 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
               || !( isRoom(target)
                  || isThing(target))))
         {
-            notify(player, T("@icmd: Bad Location."));
+            notify(player, M_("@icmd: Bad Location."));
             return;
         }
         if (key == ICMD_CROOM)
         {
             atr_clr(target, A_CMDCHECK);
-            notify(player, T("@icmd: Location - All cleared."));
-            notify(player, T("@icmd: Done."));
+            notify(player, M_("@icmd: Location - All cleared."));
+            notify(player, M_("@icmd: Done."));
             return;
         }
         else if (key == ICMD_LROOM)
@@ -4496,7 +4518,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                     notify(player, M_("Location CmdCheck attribute is empty."));
                 }
             }
-            notify(player, T("@icmd: Done."));
+            notify(player, M_("@icmd: Done."));
             return;
         }
         else if (key == ICMD_LALLROOM)
@@ -4506,7 +4528,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                || Going(target)
                || isPlayer(target))
             {
-                notify(player, T("@icmd: Bad Location."));
+                notify(player, M_("@icmd: Bad Location."));
                 return;
             }
             notify(player, M_("Scanning all locations and zones from your current location:"));
@@ -4540,9 +4562,9 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             }
             if (!bFound)
             {
-                notify(player, T("@icmd: Location - No icmds found at current location."));
+                notify(player, M_("@icmd: Location - No icmds found at current location."));
             }
-            notify(player, T("@icmd: Done."));
+            notify(player, M_("@icmd: Done."));
             return;
         }
         else if (key == ICMD_IROOM)
@@ -4560,7 +4582,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
         target = lookup_player(player, name, false);
         if (!Good_obj(target) || God(target))
         {
-            notify(player, T("@icmd: Bad player."));
+            notify(player, M_("@icmd: Bad player."));
             return;
         }
         if ((key == ICMD_OFF) || (key == ICMD_CLEAR))
@@ -4570,15 +4592,15 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             {
                 atr_clr(target, A_CMDCHECK);
             }
-            notify(player, T("@icmd: All cleared."));
-            notify(player, T("@icmd: Done."));
+            notify(player, M_("@icmd: All cleared."));
+            notify(player, M_("@icmd: Done."));
             return;
         }
         else if (key == ICMD_ON)
         {
             s_Flags(target, FLAG_WORD3, Flags3(target) | CMDCHECK);
-            notify(player, T("@icmd: Activated."));
-            notify(player, T("@icmd: Done."));
+            notify(player, M_("@icmd: Activated."));
+            notify(player, M_("@icmd: Done."));
             return;
         }
         else if (key == ICMD_CHECK)
@@ -4603,7 +4625,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
                     notify(player, M_("CmdCheck attribute is empty."));
                 }
             }
-            notify(player, T("@icmd: Done."));
+            notify(player, M_("@icmd: Done."));
             return;
         }
     }
@@ -4815,7 +4837,7 @@ void do_icmd(dbref player, dbref cause, dbref enactor, int eval, int key,
             notify(player, tprintf(T("@icmd:%s %s."), (loc_set == -1) ? T("") : T(" Location -"), message));
         }
     }
-    notify(player, T("@icmd: Done."));
+    notify(player, M_("@icmd: Done."));
 }
 
 // do_train: show someone else in the same room what code you're entering and the result
@@ -4992,14 +5014,14 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
         }
         if (!cmdp)
         {
-            notify(executor, T("@hook: Non-existent command name given."));
+            notify(executor, M_("@hook: Non-existent command name given."));
             return;
         }
     }
     if (  (key & CEF_HOOK_CLEAR)
        && (key & CEF_HOOK_LIST))
     {
-        notify(executor, T("@hook: Incompatible switches."));
+        notify(executor, M_("@hook: Incompatible switches."));
         return;
     }
 
