@@ -2916,6 +2916,20 @@ static void discover_comsys_mail_modules(void)
     }
     else
     {
+        // Not an error: no comsys module present means the built-in engine
+        // implementation stays in charge, which is the common case.  But it
+        // is a CHOICE, and it used to be made in silence (#1581).
+        //
+        // The two implementations do not behave identically -- #1564 (the
+        // module never wrote channel history), #1570/#1585 (LOG_TIMESTAMPS)
+        // and #1572 (four MOGRIFY hooks) are all live divergences.  So a
+        // log that says which one is running turns "these tests mean
+        // different things on different machines" from a multi-session
+        // investigation into one line of a startup log.
+        //
+        STARTLOG(LOG_ALWAYS, "INI", "MOD");
+        log_printf(T("Comsys: using the built-in engine implementation (no module; mr=%d)."), mr);
+        ENDLOG;
         mudstate.pIComsysControl = nullptr;
     }
 
@@ -2962,6 +2976,14 @@ static void discover_comsys_mail_modules(void)
     }
     else
     {
+        // Same reasoning as the comsys branch above (#1581).  #1587 is the
+        // mail-side divergence: with the module active, sends are delegated
+        // to it while @mail reads still go through the engine's store, so
+        // which implementation is live decides whether mail is readable.
+        //
+        STARTLOG(LOG_ALWAYS, "INI", "MOD");
+        log_printf(T("Mail: using the built-in engine implementation (no module; mr=%d)."), mr);
+        ENDLOG;
         mudstate.pIMailControl = nullptr;
     }
 }
