@@ -901,23 +901,34 @@ void do_page
         break;
 
     case 2:
-        safe_str(T("From afar, "), omessage, &omp);
+        // Whole sentences: the recipient list is conditional, so two
+        // msgids rather than T/M_ fragment assembly (see #1575 / #1588).
+        //
         if (!bBlind && nValid > 1)
         {
-            safe_tprintf_str(omessage, &omp, M_("to %s: "), aFriendly.get());
+            safe_tprintf_str(omessage, &omp, M_("From afar, to %s: %s %s"),
+                aFriendly.get(), Moniker(executor), pMessage);
         }
-        safe_tprintf_str(omessage, &omp, T("%s %s"), Moniker(executor), pMessage);
+        else
+        {
+            safe_tprintf_str(omessage, &omp, M_("From afar, %s %s"),
+                Moniker(executor), pMessage);
+        }
         safe_tprintf_str(imessage, &imp, M_("Long distance to %s: %s %s"),
             aFriendly.get(), Moniker(executor), pMessage);
         break;
 
     case 3:
-        safe_str(T("From afar, "), omessage, &omp);
         if (!bBlind && nValid > 1)
         {
-            safe_tprintf_str(omessage, &omp, M_("to %s: "), aFriendly.get());
+            safe_tprintf_str(omessage, &omp, M_("From afar, to %s: %s%s"),
+                aFriendly.get(), Moniker(executor), pMessage);
         }
-        safe_tprintf_str(omessage, &omp, T("%s%s"), Moniker(executor), pMessage);
+        else
+        {
+            safe_tprintf_str(omessage, &omp, M_("From afar, %s%s"),
+                Moniker(executor), pMessage);
+        }
         safe_tprintf_str(imessage, &imp, M_("Long distance to %s: %s%s"),
             aFriendly.get(), Moniker(executor), pMessage);
         break;
@@ -925,10 +936,14 @@ void do_page
     default:
         if (!bBlind && nValid > 1)
         {
-            safe_tprintf_str(omessage, &omp, M_("To %s, "), aFriendly.get());
+            safe_tprintf_str(omessage, &omp, M_("To %s, %s pages: %s"),
+                aFriendly.get(), Moniker(executor), pMessage);
         }
-        safe_tprintf_str(omessage, &omp, M_("%s pages: %s"), Moniker(executor),
-            pMessage);
+        else
+        {
+            safe_tprintf_str(omessage, &omp, M_("%s pages: %s"),
+                Moniker(executor), pMessage);
+        }
         safe_tprintf_str(imessage, &imp, M_("You paged %s with ‘%s’"),
             aFriendly.get(), pMessage);
         break;

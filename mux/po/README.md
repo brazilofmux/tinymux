@@ -19,6 +19,15 @@ Whole notify sentences that take arguments are marked as
 same order — `mux_vsnprintf` has no positional `%1$s` yet. `make test-nls`
 rejects a msgstr whose conversion sequence differs from its msgid.
 
+**Mark whole sentences.** If a sentence is assembled from pieces, either mark
+*all* of it or *none* of it. A fragment is only safe under `M_()` when every
+other piece of that sentence is also `M_()` and the assembly order is fixed
+for all languages. Marking one piece while a neighbour stays `T()` guarantees
+mixed-language output under a translated catalogue — worse than leaving the
+whole sentence English. Prefer two whole-sentence msgids over a conditional
+fragment (see #1575, #1588). The static guards cannot catch this; it is a
+review habit.
+
 Maintaining translations is ongoing cost. Prefer **small, deliberate `M_()` sites** over bulk extraction of every `T()`.
 
 ## Regenerate the template (`.pot`)

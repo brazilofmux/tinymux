@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 16:01+0000\n"
+"POT-Creation-Date: 2026-07-27 16:15+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1794,7 +1794,7 @@ msgid "Last connect was from %s on %s."
 msgstr "[xx] Last connect was from %s on %s."
 
 #: modules/engine/player.cpp:963 modules/engine/predicates.cpp:1241
-#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1057
+#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1072
 msgid "Sorry."
 msgstr "[xx] Sorry."
 
@@ -2059,7 +2059,7 @@ msgid "I don’t see that player here."
 msgstr "[xx] I don’t see that player here."
 
 #: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
-#: modules/engine/speech.cpp:1063
+#: modules/engine/speech.cpp:1078
 msgid "I don’t know who you mean!"
 msgstr "[xx] I don’t know who you mean!"
 
@@ -2449,18 +2449,18 @@ msgid "Sorry, you may not speak in this place."
 msgstr "[xx] Sorry, you may not speak in this place."
 
 #: modules/engine/speech.cpp:214 modules/engine/speech.cpp:217
-#: modules/engine/speech.cpp:219 modules/engine/speech.cpp:1204
+#: modules/engine/speech.cpp:219 modules/engine/speech.cpp:1219
 #, c-format
 msgid "%s %s “%s”"
 msgstr "[xx] %s %s “%s”"
 
-#: modules/engine/speech.cpp:225 modules/engine/speech.cpp:1198
+#: modules/engine/speech.cpp:225 modules/engine/speech.cpp:1213
 #, c-format
 msgid "You say, “%s”"
 msgstr "[xx] You say, “%s”"
 
 #: modules/engine/speech.cpp:227 modules/engine/speech.cpp:229
-#: modules/engine/speech.cpp:1210
+#: modules/engine/speech.cpp:1225
 #, c-format
 msgid "%s says, “%s”"
 msgstr "[xx] %s says, “%s”"
@@ -2476,7 +2476,7 @@ msgid "[%d:%02d] %s message sent to %s."
 msgstr "[xx] [%d:%02d] %s message sent to %s."
 
 #: modules/engine/speech.cpp:526 modules/engine/speech.cpp:537
-#: modules/engine/speech.cpp:1136 modules/engine/speech.cpp:1467
+#: modules/engine/speech.cpp:1151 modules/engine/speech.cpp:1482
 #, c-format
 msgid "Sorry, %s is not connected."
 msgstr "[xx] Sorry, %s is not connected."
@@ -2534,92 +2534,107 @@ msgstr "[xx] From afar, %s pages %s."
 msgid "You page %s."
 msgstr "[xx] You page %s."
 
-#: modules/engine/speech.cpp:907 modules/engine/speech.cpp:918
+#: modules/engine/speech.cpp:909
 #, c-format
-msgid "to %s: "
-msgstr "[xx] to %s: "
+msgid "From afar, to %s: %s %s"
+msgstr "[xx] From afar, to %s: %s %s"
 
-#: modules/engine/speech.cpp:910
+#: modules/engine/speech.cpp:914
+#, c-format
+msgid "From afar, %s %s"
+msgstr "[xx] From afar, %s %s"
+
+#: modules/engine/speech.cpp:917
 #, c-format
 msgid "Long distance to %s: %s %s"
 msgstr "[xx] Long distance to %s: %s %s"
 
-#: modules/engine/speech.cpp:921
+#: modules/engine/speech.cpp:924
+#, c-format
+msgid "From afar, to %s: %s%s"
+msgstr "[xx] From afar, to %s: %s%s"
+
+#: modules/engine/speech.cpp:929
+#, c-format
+msgid "From afar, %s%s"
+msgstr "[xx] From afar, %s%s"
+
+#: modules/engine/speech.cpp:932
 #, c-format
 msgid "Long distance to %s: %s%s"
 msgstr "[xx] Long distance to %s: %s%s"
 
-#: modules/engine/speech.cpp:928
+#: modules/engine/speech.cpp:939
 #, c-format
-msgid "To %s, "
-msgstr "[xx] To %s, "
+msgid "To %s, %s pages: %s"
+msgstr "[xx] To %s, %s pages: %s"
 
-#: modules/engine/speech.cpp:930
+#: modules/engine/speech.cpp:944
 #, c-format
 msgid "%s pages: %s"
 msgstr "[xx] %s pages: %s"
 
-#: modules/engine/speech.cpp:932
+#: modules/engine/speech.cpp:947
 #, c-format
 msgid "You paged %s with ‘%s’"
 msgstr "[xx] You paged %s with ‘%s’"
 
-#: modules/engine/speech.cpp:976
+#: modules/engine/speech.cpp:991
 #, c-format
 msgid "You sense %s%s%s"
 msgstr "[xx] You sense %s%s%s"
 
-#: modules/engine/speech.cpp:1045
+#: modules/engine/speech.cpp:1060
 msgid "Whisper to whom?"
 msgstr "[xx] Whisper to whom?"
 
-#: modules/engine/speech.cpp:1049
+#: modules/engine/speech.cpp:1064
 msgid "Emit to whom?"
 msgstr "[xx] Emit to whom?"
 
-#: modules/engine/speech.cpp:1053
+#: modules/engine/speech.cpp:1068
 msgid "Emit except to whom?"
 msgstr "[xx] Emit except to whom?"
 
-#: modules/engine/speech.cpp:1092 modules/engine/speech.cpp:1412
+#: modules/engine/speech.cpp:1107 modules/engine/speech.cpp:1427
 msgid "You are too far away to do that."
 msgstr "[xx] You are too far away to do that."
 
-#: modules/engine/speech.cpp:1169
+#: modules/engine/speech.cpp:1184
 #, c-format
 msgid "%s whispers “%s”"
 msgstr "[xx] %s whispers “%s”"
 
-#: modules/engine/speech.cpp:1458
+#: modules/engine/speech.cpp:1473
 #, c-format
 msgid "Sorry, you are too far away to contact %s."
 msgstr "[xx] Sorry, you are too far away to contact %s."
 
-#: modules/engine/speech.cpp:1494
+#: modules/engine/speech.cpp:1509
 msgid "No one to whisper to."
 msgstr "[xx] No one to whisper to."
 
-#: modules/engine/speech.cpp:1702 modules/engine/speech.cpp:1714
+#: modules/engine/speech.cpp:1717 modules/engine/speech.cpp:1729
 #, c-format
 msgid "%s senses “%s%s”"
 msgstr "[xx] %s senses “%s%s”"
 
-#: modules/engine/speech.cpp:1709
+#: modules/engine/speech.cpp:1724
 #, c-format
 msgid "%s senses “%s %s”"
 msgstr "[xx] %s senses “%s %s”"
 
-#: modules/engine/speech.cpp:1720 modules/engine/speech.cpp:1781
+#: modules/engine/speech.cpp:1735 modules/engine/speech.cpp:1796
 #, c-format
 msgid "You whisper “%s” to %s."
 msgstr "[xx] You whisper “%s” to %s."
 
-#: modules/engine/speech.cpp:1763 modules/engine/speech.cpp:1775
+#: modules/engine/speech.cpp:1778 modules/engine/speech.cpp:1790
 #, c-format
 msgid "%s sense “%s%s”"
 msgstr "[xx] %s sense “%s%s”"
 
-#: modules/engine/speech.cpp:1770
+#: modules/engine/speech.cpp:1785
 #, c-format
 msgid "%s sense “%s %s”"
 msgstr "[xx] %s sense “%s %s”"
@@ -2887,3 +2902,11 @@ msgstr "[xx] ----- Site Access -----"
 #: src/net.cpp:3638
 msgid "Address                                            Status"
 msgstr "[xx] Address                                            Status"
+
+#, c-format
+#~ msgid "to %s: "
+#~ msgstr "[xx] to %s: "
+
+#, c-format
+#~ msgid "To %s, "
+#~ msgstr "[xx] To %s, "
