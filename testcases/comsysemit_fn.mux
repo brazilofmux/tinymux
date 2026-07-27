@@ -5,6 +5,12 @@
 # three were left with no coverage: cemit is a side effect with no useful
 # return value, crecall needs a history buffer, and cmds is a counter.
 #
+# cemit is covered twice over, because it has two entry points that do not
+# share a code path: @cemit the command (TC005/TC006) and cemit() the
+# function (TC009-TC011).  fun_cemit runs check_command(executor, "@cemit")
+# and only then delegates to do_cemit, so driving the command alone tests
+# neither the function nor its permission gate.
+#
 # Fixture names here (cetest / ceobj / cea) are deliberately distinct from
 # comsys_fn.mux's (cstest / csobj / cs) so the two files cannot collide.
 #
@@ -157,19 +163,74 @@
 # "#-1 ..." error string, so callers testing with isint() see a number
 # either way.  Pinned as observed; a caller may well depend on it.
 #
-# Last test case, so it signals completion from both branches (#1495).
-#
 &tr.tc008 test_comsysemit_fn=
   @if cand(
         eq(cmds(NoSuchPlayerXYZZY), -1),
         isint(cmds(NoSuchPlayerXYZZY))
       )=
   {
-    @log smoke=TC008: cmds returns -1 for an unknown player. Succeeded.;
+    @log smoke=TC008: cmds returns -1 for an unknown player. Succeeded.
+  },
+  {
+    @log smoke=TC008: cmds returns -1 for an unknown player. Failed (got=[cmds(NoSuchPlayerXYZZY)]).
+  }
+-
+#
+# Test Case #9 - cemit() the FUNCTION, which TC005/TC006 did not reach.
+#
+# Those two drive @cemit, the command.  fun_cemit is a separate entry point:
+# it runs check_command(executor, "@cemit") and only then delegates to
+# do_cemit, so the command path exercises neither the function nor its
+# permission gate.  Claiming cemit coverage while testing only the command
+# was my mistake in the commit that added this file; this is the repair.
+#
+&tr.tc009 test_comsysemit_fn=
+  &ce.fbefore me=[cmsgs(cetest)];
+  &ce.fsink me=[cemit(cetest,Function emit line)];
+  &ce.fafter me=[cmsgs(cetest)];
+  @if eq(sub(v(ce.fafter), v(ce.fbefore)), 1)=
+  {
+    @log smoke=TC009: cemit() function advances cmsgs by one. Succeeded.
+  },
+  {
+    @log smoke=TC009: cemit() function advances cmsgs by one. Failed (before=[v(ce.fbefore)] after=[v(ce.fafter)]).
+  }
+-
+#
+# Test Case #10 - and its text reaches the channel, not just the counter.
+#
+&tr.tc010 test_comsysemit_fn=
+  @if strmatch(crecall(cetest,5), *Function emit line*)=
+  {
+    @log smoke=TC010: cemit() function text reaches the history. Succeeded.
+  },
+  {
+    @log smoke=TC010: cemit() function text reaches the history. Failed (recall=[crecall(cetest,5)]).
+  }
+-
+#
+# Test Case #11 - cemit() returns nothing on success AND nothing for a
+# channel that does not exist, so the return value cannot be used to tell
+# them apart.  The failure is reported by notifying the executor instead.
+#
+# Pinned because it is a real constraint on softcode: there is no way to
+# branch on whether a cemit worked.  Anyone tempted to "fix" cemit by
+# returning #-1 on failure would be making a compatibility change, and
+# this case makes that visible rather than discovering it downstream.
+#
+# Last test case, so it signals completion from both branches (#1495).
+#
+&tr.tc011 test_comsysemit_fn=
+  @if cand(
+        eq(strlen(cemit(cetest,Return value probe)), 0),
+        eq(strlen(cemit(nosuchchanxyzzy,Return value probe)), 0)
+      )=
+  {
+    @log smoke=TC011: cemit() returns nothing either way. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC008: cmds returns -1 for an unknown player. Failed (got=[cmds(NoSuchPlayerXYZZY)]).;
+    @log smoke=TC011: cemit() returns nothing either way. Failed (ok=[strlen(cemit(cetest,Return value probe))] bad=[strlen(cemit(nosuchchanxyzzy,Return value probe))]).;
     @trig me/tr.done
   }
 -
