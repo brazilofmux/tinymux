@@ -238,6 +238,22 @@ case "$(val H3)" in
 esac
 
 # ---------------------------------------------------------------------------
+# NOT COVERED HERE: the MOGRIFY hooks and per-player CHATFORMAT (#1572).
+#
+# The implementation is verified -- tests/comsys_mogrify/run.sh drives both
+# sides and asserts they agree -- but it does not belong in this file.  This
+# driver's whole shape is "establish state under one implementation, read it
+# under the other", and channel DELIVERY cannot be tested that way: bConnected
+# is runtime state set when a player joins during that process and is not
+# persisted, so a run that inherits membership from an earlier run delivers to
+# nobody.  That briefly looked like "the module never delivers at all"; it
+# does, verified over a real socket against netmux.
+#
+# Hooks that affect delivery therefore need each side to join and speak within
+# one process, which is a different harness, not a case in this one.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
 # Mail: a message sent under one implementation must be readable under both,
 # IN THE SAME SESSION (#1587).
 #

@@ -1083,6 +1083,53 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
         return;
     }
 
+    // MOGRIFY`MESSAGE / `OVERRIDE / `FORMAT, and per-player CHATFORMAT
+    // (#1572).  Only BLOCK and NOBUFFER were implemented here; the other
+    // three hooks and CHATFORMAT were silently ignored, so a channel
+    // configured with them behaved differently depending on which
+    // implementation happened to be live.
+    //
+    // Order and precedence follow the engine exactly (comsys.cpp:1705-1822),
+    // because "mostly the same" is what produced the divergence in the first
+    // place.
+    //
+    UTF8 sdrBuf[32];
+    snprintf(reinterpret_cast<char *>(sdrBuf), sizeof(sdrBuf), "#%d",
+             static_cast<int>(executor));
+
+    UTF8 mogMsg[MOD_LBUF_SIZE];
+    UTF8 mogFmt[MOD_LBUF_SIZE];
+    mogMsg[0] = '\0';
+    mogFmt[0] = '\0';
+    bool bMogOverride = false;
+
+    // The engine evaluates these only for non-join/leave traffic
+    // (comsys.cpp:1701).
+    //
+    if (!bJoinLeaveMsg)
+    {
+        const UTF8 *mog_args[3] = { ch->name, msg, sdrBuf };
+
+        mogrify_eval(ch, executor, T("MESSAGE"), mog_args, 3,
+                     mogMsg, sizeof(mogMsg));
+
+        UTF8 ovr[MOD_LBUF_SIZE];
+        if (mogrify_eval(ch, executor, T("OVERRIDE"), mog_args, 3,
+                         ovr, sizeof(ovr)))
+        {
+            bMogOverride = mogrify_truthy(ovr);
+        }
+
+        // FORMAT sees the message AFTER MESSAGE may have replaced it.
+        //
+        const UTF8 *fmt_msg = ('\0' != mogMsg[0]) ? mogMsg : msg;
+        const UTF8 *fmt_args[3] = { ch->name, fmt_msg, sdrBuf };
+        mogrify_eval(ch, executor, T("FORMAT"), fmt_args, 3,
+                     mogFmt, sizeof(mogFmt));
+    }
+
+    const UTF8 *effMsg = ('\0' != mogMsg[0]) ? mogMsg : msg;
+
     for (auto &kv : ch->users)
     {
         comuser &user = kv.second;
@@ -1093,7 +1140,51 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
         if (user.bConnected && user.bUserIsOn
             && test_receive_access(user.who, ch))
         {
-            m_pINotify->RawNotify(user.who, msg);
+            // Channel-wide FORMAT wins outright when OVERRIDE is set.
+            //
+            if ('\0' != mogFmt[0] && bMogOverride)
+            {
+                m_pINotify->RawNotify(user.who, mogFmt);
+                continue;
+            }
+
+            // Per-player CHATFORMAT, unless OVERRIDE suppresses it.
+            //
+            if (!bMogOverride && nullptr != m_pIEvaluator)
+            {
+                UTF8 chatfmt[MOD_LBUF_SIZE];
+                size_t nFmt = 0;
+                if (MUX_SUCCEEDED(m_pIAttributeAccess->GetAttribute(
+                        user.who, user.who, T("CHATFORMAT"),
+                        chatfmt, sizeof(chatfmt) - 1, &nFmt))
+                    && 0 < nFmt)
+                {
+                    chatfmt[nFmt] = '\0';
+                    if ('\0' != chatfmt[0])
+                    {
+                        const UTF8 *cfa[3] = { ch->name, effMsg, sdrBuf };
+                        UTF8 fmtbuf[MOD_LBUF_SIZE];
+                        size_t nOut = 0;
+                        if (MUX_SUCCEEDED(m_pIEvaluator->EvalWithArgs(
+                                user.who, user.who, executor, chatfmt,
+                                cfa, 3, fmtbuf, sizeof(fmtbuf) - 1, &nOut)))
+                        {
+                            fmtbuf[nOut] = '\0';
+                            m_pINotify->RawNotify(user.who, fmtbuf);
+                            continue;
+                        }
+                    }
+                }
+            }
+
+            if ('\0' != mogFmt[0])
+            {
+                m_pINotify->RawNotify(user.who, mogFmt);
+            }
+            else
+            {
+                m_pINotify->RawNotify(user.who, effMsg);
+            }
         }
     }
 
@@ -1146,6 +1237,84 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
 // style truth on the result so "0" and empty stay off.  A hook added now
 // should match the engine rather than invent a second meaning.
 //
+// Evaluate MOGRIFY`<suffix> on the channel object (#1572).
+//
+// The engine's call_mogrifier (comsys.cpp:1307) reads the attribute and runs
+// it with mux_exec as the channel object, with the speaker as enactor.  This
+// is that, through the module's evaluator interface.  A GOD executor is used
+// for the attribute READ so AF_DARK channel-object attributes are visible --
+// the speaker is an ordinary member and usually cannot see them.
+//
+bool CComsysMod::mogrify_eval(struct channel *ch, dbref executor,
+    const UTF8 *suffix, const UTF8 *args[], int nargs,
+    UTF8 *out, size_t outsz)
+{
+    if (nullptr != out && 0 < outsz)
+    {
+        out[0] = '\0';
+    }
+    if (  nullptr == ch
+       || ch->chan_obj < 0
+       || nullptr == out
+       || nullptr == m_pIAttributeAccess
+       || nullptr == m_pIEvaluator)
+    {
+        return false;
+    }
+
+    bool bValid = false;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->IsValid(ch->chan_obj, &bValid);
+    }
+    if (!bValid)
+    {
+        return false;
+    }
+
+    UTF8 aname[64];
+    snprintf(reinterpret_cast<char *>(aname), sizeof(aname), "MOGRIFY`%s",
+             reinterpret_cast<const char *>(suffix));
+
+    UTF8 expr[MOD_LBUF_SIZE];
+    size_t nExpr = 0;
+    if (MUX_FAILED(m_pIAttributeAccess->GetAttribute(1, ch->chan_obj, aname,
+            expr, sizeof(expr) - 1, &nExpr))
+        || 0 == nExpr)
+    {
+        return false;
+    }
+    expr[nExpr] = '\0';
+    if ('\0' == expr[0])
+    {
+        return false;
+    }
+
+    size_t nResult = 0;
+    if (MUX_FAILED(m_pIEvaluator->EvalWithArgs(ch->chan_obj, ch->chan_obj,
+            executor, expr, args, nargs, out, outsz - 1, &nResult)))
+    {
+        out[0] = '\0';
+        return false;
+    }
+    out[nResult] = '\0';
+    return true;
+}
+
+// Approximate xlate() (functions.cpp) for the common 0/1/empty results
+// without pulling engine-private xlate into the module.  Leading "#-" is
+// false; bare "#N" is true; "0" is false; other non-empty is true.
+//
+bool CComsysMod::mogrify_truthy(const UTF8 *result)
+{
+    const char *p = reinterpret_cast<const char *>(result);
+    while (' ' == *p) p++;
+    if ('\0' == *p) return false;
+    if ('#' == *p) return ('-' != p[1]);
+    if ('0' == p[0] && '\0' == p[1]) return false;
+    return true;
+}
+
 bool CComsysMod::nobuffer_by_mogrify(dbref executor, struct channel *ch,
     const UTF8 *msg)
 {

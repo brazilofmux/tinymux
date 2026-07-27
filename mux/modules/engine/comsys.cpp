@@ -1676,15 +1676,32 @@ void SendChannelMessage
     ch->num_messages++;
     sqlite_wt_channel(ch);
 
-    // Look up the CHATFORMAT attribute number once (lazy init).
+    // Look up the CHATFORMAT attribute number, caching only SUCCESS (#1572).
+    //
+    // This used to latch on the first attempt whatever the outcome.
+    // CHATFORMAT is a vattr, created the first time any player sets one, so
+    // on a game where no player had one before the first channel message the
+    // number cached as 0 and CHATFORMAT was ignored for the entire life of
+    // the process -- including for every player who set one afterwards.
+    // Restarting fixed it, which is exactly the shape that never gets
+    // reported as a bug.
+    //
+    // Measured: with CHATFORMAT set before any channel traffic both
+    // implementations honoured it; set after, the engine ignored it and the
+    // module did not, which is how this surfaced.
+    //
+    // Caching only a hit keeps the fast path -- one lookup ever, once some
+    // player has a CHATFORMAT -- and costs a failed atr_str per message only
+    // on games where nobody uses the feature at all.
     //
     static int s_chatformat_atr = 0;
-    static bool s_chatformat_init = false;
-    if (!s_chatformat_init)
+    if (0 == s_chatformat_atr)
     {
         ATTR *pattr = atr_str(T("CHATFORMAT"));
-        s_chatformat_atr = pattr ? pattr->number : 0;
-        s_chatformat_init = true;
+        if (nullptr != pattr)
+        {
+            s_chatformat_atr = pattr->number;
+        }
     }
 
     // Evaluate mogrifier attributes on the channel object, if present.
