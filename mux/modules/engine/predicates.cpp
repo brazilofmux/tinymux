@@ -264,12 +264,12 @@ bool canpayfees(dbref player, dbref who, int pennies, int quota)
     {
         if (player == who)
         {
-            notify(player, tprintf(T("Sorry, you don\xE2\x80\x99t have enough %s."),
+            notify(player, tprintf(T("Sorry, you don’t have enough %s."),
                        mudconf.many_coins));
         }
         else
         {
-            notify(player, tprintf(T("Sorry, that player doesn\xE2\x80\x99t have enough %s."),
+            notify(player, tprintf(T("Sorry, that player doesn’t have enough %s."),
                 mudconf.many_coins));
         }
         return false;
@@ -285,7 +285,7 @@ bool canpayfees(dbref player, dbref who, int pennies, int quota)
             else
             {
                 notify(player,
-                    T("Sorry, that player\xE2\x80\x99s building contract has run out."));
+                    T("Sorry, that player’s building contract has run out."));
             }
             return false;
         }

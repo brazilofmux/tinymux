@@ -4464,7 +4464,7 @@ FUNCTION(fun_entrances)
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        notify(executor, tprintf(T("You don\xE2\x80\x99t have enough %s."),
+        notify(executor, tprintf(T("You don’t have enough %s."),
             mudconf.many_coins));
         safe_nothing(buff, bufc);
         return;
@@ -11401,7 +11401,7 @@ static FUNCTION(fun_error)
     }
     else
     {
-        safe_str(T("Huh?  (Type \xE2\x80\x9Chelp\xE2\x80\x9D for help.)"), buff, bufc);
+        safe_str(T("Huh?  (Type “help” for help.)"), buff, bufc);
     }
 }
 

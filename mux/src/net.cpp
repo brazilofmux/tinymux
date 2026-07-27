@@ -2252,7 +2252,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "THR");
                 buff = alloc_lbuf("check_conn.LOG.throttle");
                 mux_sprintf(buff, LBUF_SIZE,
-                    T("[%u/%s] Throttled connect to \xE2\x80\x98%s\xE2\x80\x99: failure budget spent, %ds remaining."),
+                    T("[%u/%s] Throttled connect to ‘%s’: failure budget spent, %ds remaining."),
                     d->socket, d->addr, user, nWait);
                 g_pILog->log_text(buff);
                 free_lbuf(buff);
@@ -2297,7 +2297,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
-            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, user);
+            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to ‘%s’"), d->socket, d->addr, user);
             g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;
@@ -2488,7 +2488,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 queue_write(d, T("\r\n"));
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
-                mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of \xE2\x80\x98%s\xE2\x80\x99 failed"), d->socket, d->addr, user);
+                mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of ‘%s’ failed"), d->socket, d->addr, user);
                 g_pILog->log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
@@ -2532,7 +2532,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
         buff = alloc_mbuf("check_conn.LOG.bad");
         msg[150] = '\0';
-        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Failed connect: \xE2\x80\x98%s\xE2\x80\x99"), d->socket, d->addr, msg);
+        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Failed connect: ‘%s’"), d->socket, d->addr, msg);
         g_pILog->log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -2600,7 +2600,7 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
         {
             UTF8 buf[LBUF_SIZE * 2];
             STARTLOG(LOG_BUGS, "BUG", "PARSE");
-            mux_sprintf(buf, sizeof(buf), T("Logged-out command with no handler: \xE2\x80\x98%s\xE2\x80\x99"), g_debug_cmd);
+            mux_sprintf(buf, sizeof(buf), T("Logged-out command with no handler: ‘%s’"), g_debug_cmd);
             g_pILog->log_text(buf);
             ENDLOG;
         }

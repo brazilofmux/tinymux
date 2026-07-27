@@ -21,42 +21,42 @@ extern "C" {
 }
 
 const UTF8 *DASH_LINE =
-    T("\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93");
+    T("––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "–––");
 
 const char *MAIL_LINE =
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––"
       "   MAIL: %s   "
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93";
+      "––––––"
+      "––––––"
+      "––––––";
 
 const char *FOLDER_LINE =
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "–––"
         "   MAIL: Folder %d   "
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93"
-      "\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93\xE2\x80\x93";
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––––"
+      "––––";
 
 #define SIZEOF_MALIAS 13
 #define WIDTHOF_MALIASDESC 40
@@ -377,9 +377,7 @@ static int add_mail_message(dbref player, UTF8 *message)
 {
     if (!mux_stricmp(message, T("clear")))
     {
-        // Using \230 instead \x98 because \x98c is making gcc choke.
-        //
-        raw_notify(player, T("MAIL: You probably did not intend to send a @mail saying \xE2\x80\230clear\xE2\x80\x99."));
+        raw_notify(player, T("MAIL: You probably did not intend to send a @mail saying ‘clear’."));
         return NOTHING;
     }
 
@@ -944,7 +942,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
             switch (*p)
             {
             case '\0':
-                raw_notify(player, T("MAIL: A isn\xE2\x80\x99t enough (all?)"));
+                raw_notify(player, T("MAIL: A isn’t enough (all?)"));
                 return false;
 
             case 'l':
@@ -956,7 +954,7 @@ static bool parse_msglist(UTF8 *msglist, struct mail_selector *ms, dbref player)
                 switch (*p)
                 {
                 case '\0':
-                    raw_notify(player, T("MAIL: AL isn\xE2\x80\x99t enough (all?)"));
+                    raw_notify(player, T("MAIL: AL isn’t enough (all?)"));
                     return false;
 
                 case 'l':
@@ -1190,7 +1188,7 @@ static void do_mail_change_folder(dbref player, UTF8 *fld, UTF8 *newname)
         }
 
         add_folder_name(player, pfld, newname);
-        raw_notify(player, tprintf(T("MAIL: Folder %d now named \xE2\x80\x98%s\xE2\x80\x99"), pfld,
+        raw_notify(player, tprintf(T("MAIL: Folder %d now named ‘%s’"), pfld,
                     newname));
     }
     else
@@ -1336,7 +1334,7 @@ static void do_mail_flags(dbref player, UTF8 *msglist, mail_flag flag, bool nega
     {
         // Ran off the end of the list without finding anything.
         //
-        raw_notify(player, T("MAIL: You don\xE2\x80\x99t have any matching messages!"));
+        raw_notify(player, T("MAIL: You don’t have any matching messages!"));
     }
 }
 
@@ -1415,7 +1413,7 @@ static void do_mail_file(dbref player, UTF8 *msglist, UTF8 *folder)
     {
         // Ran off the end of the list without finding anything.
         //
-        raw_notify(player, T("MAIL: You don\xE2\x80\x99t have any matching messages!"));
+        raw_notify(player, T("MAIL: You don’t have any matching messages!"));
     }
 }
 
@@ -1727,7 +1725,7 @@ static void do_mail_read(dbref player, UTF8 *arg1, UTF8 *arg2)
         // Ran off the end of the list without finding anything.
         //
         raw_notify(player,
-                T("MAIL: You don\xE2\x80\x99t have that many matching messages!"));
+                T("MAIL: You don’t have that many matching messages!"));
     }
 }
 
@@ -1961,7 +1959,7 @@ static void do_mail_review_all(dbref player, UTF8 *msglist)
         if (!j)
         {
             raw_notify(player,
-                    T("MAIL: You don\xE2\x80\x99t have that many matching messages!"));
+                    T("MAIL: You don’t have that many matching messages!"));
         }
     }
 }
@@ -2057,7 +2055,7 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
             // Ran off the end of the list without finding anything.
             //
             raw_notify(player,
-                    T("MAIL: You don\xE2\x80\x99t have that many matching messages!"));
+                    T("MAIL: You don’t have that many matching messages!"));
         }
     }
 }
@@ -2265,13 +2263,13 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             if (nResult == GMA_NOTFOUND)
             {
                 raw_notify(player,
-                        tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 does not exist."), head));
+                        tprintf(T("MAIL: Alias ‘%s’ does not exist."), head));
                 return nullptr;
             }
             else if (nResult == GMA_INVALIDFORM)
             {
                 raw_notify(player,
-                        tprintf(T("MAIL: \xE2\x80\x98%s\xE2\x80\x99 is a badly-formed alias."), head));
+                        tprintf(T("MAIL: ‘%s’ is a badly-formed alias."), head));
                 return nullptr;
             }
             for (size_t i = 0;
@@ -2299,7 +2297,7 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             }
             else
             {
-                raw_notify(player, tprintf(T("MAIL: \xE2\x80\x98%s\xE2\x80\x99 does not exist."), head));
+                raw_notify(player, tprintf(T("MAIL: ‘%s’ does not exist."), head));
                 return nullptr;
             }
         }
@@ -2383,7 +2381,7 @@ static void do_expmail_start(dbref player, UTF8 *arg, UTF8 *subject)
     atr_clr(player, A_MAILMSG);
     Flags2(player) |= PLAYER_MAILS;
     UTF8 *names = make_namelist(player, tolist);
-    raw_notify(player, tprintf(T("MAIL: You are sending mail to \xE2\x80\x98%s\xE2\x80\x99."), names));
+    raw_notify(player, tprintf(T("MAIL: You are sending mail to ‘%s’."), names));
     free_lbuf(names);
     free_lbuf(tolist);
 }
@@ -2414,13 +2412,13 @@ static void do_mail_fwd(dbref player, UTF8 *msg, UTF8 *tolist)
     int num = mux_atoi64(msg);
     if (!num)
     {
-        raw_notify(player, T("MAIL: I don\xE2\x80\x99t understand that message number."));
+        raw_notify(player, T("MAIL: I don’t understand that message number."));
         return;
     }
     struct mail *mp = mail_fetch(player, num);
     if (!mp)
     {
-        raw_notify(player, T("MAIL: You can\xE2\x80\x99t forward non-existent messages."));
+        raw_notify(player, T("MAIL: You can’t forward non-existent messages."));
         return;
     }
     do_expmail_start(player, tolist, tprintf(T("%s (fwd from %s)"), utf8(mp->subject), Moniker(mp->from)));
@@ -2455,13 +2453,13 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
     int num = mux_atoi64(msg);
     if (!num)
     {
-        raw_notify(player, T("MAIL: I don\xE2\x80\x99t understand that message number."));
+        raw_notify(player, T("MAIL: I don’t understand that message number."));
         return;
     }
     struct mail *mp = mail_fetch(player, num);
     if (!mp)
     {
-        raw_notify(player, T("MAIL: You can\xE2\x80\x99t reply to non-existent messages."));
+        raw_notify(player, T("MAIL: You can’t reply to non-existent messages."));
         return;
     }
     if (!mail_from_player(mp->from, mp))
@@ -2738,12 +2736,12 @@ static bool mail_check(dbref player, dbref target)
     {
         if (Wizard(player))
         {
-            raw_notify(player, tprintf(T("Warning: %s can\xE2\x80\x99t return your mail."), Moniker(target)));
+            raw_notify(player, tprintf(T("Warning: %s can’t return your mail."), Moniker(target)));
             return true;
         }
         else
         {
-            raw_notify(player, tprintf(T("Sorry, %s can\xE2\x80\x99t return your mail."), Moniker(target)));
+            raw_notify(player, tprintf(T("Sorry, %s can’t return your mail."), Moniker(target)));
             return false;
         }
     }
@@ -2851,7 +2849,7 @@ static void send_mail
         if (total > mudconf.mail_max_per_player)
         {
             raw_notify(player,
-                tprintf(T("MAIL: %s\xE2\x80\x99s mailbox is full (%d messages)."),
+                tprintf(T("MAIL: %s’s mailbox is full (%d messages)."),
                     Moniker(target), total - 1));
             MessageReferenceDec(number);
             lst.pop_back();  // undo the emplace
@@ -3579,7 +3577,7 @@ static void load_mail_V6(FILE *fp)
     }
     else
     {
-        Log.WriteString(T("ERROR: Couldn\xE2\x80\x99t find Begin MALIAS." ENDLINE));
+        Log.WriteString(T("ERROR: Couldn’t find Begin MALIAS." ENDLINE));
     }
 }
 
@@ -3649,7 +3647,7 @@ static void load_mail_V5(FILE *fp)
     }
     else
     {
-        Log.WriteString(T("ERROR: Couldn\xE2\x80\x99t find Begin MALIAS." ENDLINE));
+        Log.WriteString(T("ERROR: Couldn’t find Begin MALIAS." ENDLINE));
     }
 }
 
@@ -3825,7 +3823,7 @@ static void load_malias(FILE *fp, bool bConvert)
     }
     else
     {
-        Log.WriteString(T("ERROR: Couldn\xE2\x80\x99t find Begin MALIAS." ENDLINE));
+        Log.WriteString(T("ERROR: Couldn’t find Begin MALIAS." ENDLINE));
         return;
     }
 }
@@ -3971,12 +3969,12 @@ static void do_malias_send
     malias_t *m = get_malias(player, tolist, &nResult);
     if (nResult == GMA_INVALIDFORM)
     {
-        raw_notify(player, tprintf(T("MAIL: I can\xE2\x80\x99t figure out from \xE2\x80\x98%s\xE2\x80\x99 who you want to mail to."), tolist));
+        raw_notify(player, tprintf(T("MAIL: I can’t figure out from ‘%s’ who you want to mail to."), tolist));
         return;
     }
     else if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), tolist));
+        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), tolist));
         return;
     }
 
@@ -4020,7 +4018,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     else if (nResult == GMA_FOUND)
     {
         raw_notify(player,
-                tprintf(T("MAIL: Mail Alias \xE2\x80\x98%s\xE2\x80\x99 already exists."), alias));
+                tprintf(T("MAIL: Mail Alias ‘%s’ already exists."), alias));
         return;
     }
 
@@ -4132,7 +4130,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     malias.push_back(std::move(pt));
     sqlite_wt_sync_all_aliases();
 
-    raw_notify(player, tprintf(T("MAIL: Alias set \xE2\x80\x98%s\xE2\x80\x99 defined."), alias));
+    raw_notify(player, tprintf(T("MAIL: Alias set ‘%s’ defined."), alias));
 }
 
 static void do_malias_list(dbref player, UTF8 *alias)
@@ -4141,7 +4139,7 @@ static void do_malias_list(dbref player, UTF8 *alias)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
+        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4283,7 +4281,7 @@ static void do_mail_cc(dbref player, UTF8 *arg, bool bBlind)
 
     atr_add_raw(player, A_MAILTO, fulllist);
     UTF8 *names = make_namelist(player, fulllist);
-    raw_notify(player, tprintf(T("MAIL: You are sending mail to \xE2\x80\x98%s\xE2\x80\x99."), names));
+    raw_notify(player, tprintf(T("MAIL: You are sending mail to ‘%s’."), names));
     free_lbuf(names);
     free_lbuf(tolist);
     free_lbuf(fulllist);
@@ -4451,7 +4449,7 @@ static void do_mail_quick(dbref player, UTF8 *arg1, UTF8 *arg2)
 {
     if (!arg1 || !*arg1)
     {
-        raw_notify(player, T("MAIL: I don\xE2\x80\x99t know who you want to mail."));
+        raw_notify(player, T("MAIL: I don’t know who you want to mail."));
         return;
     }
     if (!arg2 || !*arg2)
@@ -4769,7 +4767,7 @@ static void do_malias_desc(dbref player, UTF8 *alias, UTF8 *desc)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
+        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4819,7 +4817,7 @@ static void do_malias_chown(dbref player, UTF8 *alias, UTF8 *owner)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
+        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4843,7 +4841,7 @@ static void do_malias_add(dbref player, UTF8 *alias, UTF8 *person)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
+        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     else if (nResult != GMA_FOUND)
@@ -4897,7 +4895,7 @@ static void do_malias_remove(dbref player, UTF8 *alias, UTF8 *person)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
+        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4996,7 +4994,7 @@ static void do_malias_delete(dbref player, UTF8 *alias)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
+        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -5019,7 +5017,7 @@ static void do_malias_delete(dbref player, UTF8 *alias)
         }
     }
 
-    raw_notify(player, tprintf(T("MAIL: Alias \xE2\x80\x98%s\xE2\x80\x99 not found."), alias));
+    raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
 }
 
 static void do_malias_adminlist(dbref player)

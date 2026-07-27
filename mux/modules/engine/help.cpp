@@ -128,7 +128,7 @@ static void helpindex_read(int iHelpfile)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         LBuf p = LBuf_Src("helpindex_read.LOG");
-        mux_sprintf(p.get(), LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
+        mux_sprintf(p.get(), LBUF_SIZE, T("Can’t open %s for reading."), szTextFilename);
         log_text(p);
         ENDLOG;
         return;
@@ -269,11 +269,11 @@ static void ReportMatchedTopics(dbref executor, const UTF8 *topic, StringPtrMap 
 
     if (!matched)
     {
-        notify(executor, tprintf(T("No entry for \xE2\x80\x98%s\xE2\x80\x99."), topic));
+        notify(executor, tprintf(T("No entry for ‘%s’."), topic));
     }
     else
     {
-        notify(executor, tprintf(T("Here are the entries which match \xE2\x80\x98%s\xE2\x80\x99:"), topic));
+        notify(executor, tprintf(T("Here are the entries which match ‘%s’:"), topic));
         *buffp = '\0';
         notify(executor, topic_list);
     }
@@ -292,7 +292,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         LBuf line = LBuf_Src("ReportTopic.open");
-        mux_sprintf(line.get(), LBUF_SIZE, T("Can\xE2\x80\x99t open %s for reading."), szTextFilename);
+        mux_sprintf(line.get(), LBUF_SIZE, T("Can’t open %s for reading."), szTextFilename);
         log_text(line);
         ENDLOG;
         return false;

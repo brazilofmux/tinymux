@@ -739,7 +739,7 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
     {
         if (key & HALT_ALL)
         {
-            notify(executor, T("Can\xE2\x80\x99t specify /pid and /all"));
+            notify(executor, T("Can’t specify /pid and /all"));
             return;
         }
         if (!target || !*target)
@@ -835,7 +835,7 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
         }
         if (key & HALT_ALL)
         {
-            notify(executor, T("Can\xE2\x80\x99t specify a target and /all"));
+            notify(executor, T("Can’t specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))
@@ -1856,9 +1856,9 @@ static void ShowPsLine(const BQUE *tmp, const uint64_t pid)
             {
                 safe_str(T("; Arg"), bufp, &bp);
                 safe_chr(static_cast<UTF8>(i + '0'), bufp, &bp);
-                safe_str(T("=\xE2\x80\x98"), bufp, &bp);
+                safe_str(T("=‘"), bufp, &bp);
                 safe_str(tmp->env[i], bufp, &bp);
-                safe_str(T("\xE2\x80\x99"), bufp, &bp);
+                safe_str(T("’"), bufp, &bp);
             }
         }
         *bp = '\0';
@@ -1993,7 +1993,7 @@ void do_ps(const dbref executor, const dbref caller, const dbref enactor, const 
         }
         if (key & PS_ALL)
         {
-            notify(executor, T("Can\xE2\x80\x99t specify a target and /all"));
+            notify(executor, T("Can’t specify a target and /all"));
             return;
         }
         if (isPlayer(obj_targ))

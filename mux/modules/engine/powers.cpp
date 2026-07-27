@@ -254,7 +254,7 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
             POWERENT *fp = find_power(target, power);
             if (fp == nullptr)
             {
-                notify(player, T("I don\xE2\x80\x99t understand that power."));
+                notify(player, T("I don’t understand that power."));
             }
             else
             {

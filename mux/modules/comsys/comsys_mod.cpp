@@ -1530,7 +1530,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         if (nullptr != m_pINotify)
         {
             m_pINotify->RawNotify(player,
-                T("You don\xE2\x80\x99t have enough coins."));
+                T("You don’t have enough coins."));
         }
         return;
     }
@@ -1593,10 +1593,10 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
     }
     else
     {
-        // Say: "<header> <name> says, \xe2\x80\x9c<text>\xe2\x80\x9d"
+        // Say: "<header> <name> says, “<text>”"
         //
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "%s %s says, \xE2\x80\x9C%s\xE2\x80\x9D",
+                 "%s %s says, “%s”",
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pMoniker),
                  pPose);
@@ -2078,7 +2078,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
         }
         sqlite_wt_channel_user(ch->name, *user);
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "Title set to \xE2\x80\x98%s\xE2\x80\x99 on channel %s.",
+                 "Title set to ‘%s’ on channel %s.",
                  user->title.c_str(),
                  reinterpret_cast<const char *>(ch->name));
         break;
@@ -2869,7 +2869,7 @@ MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
     {
         m_pINotify->Notify(executor,
             reinterpret_cast<const UTF8 *>(
-                "@cboot: You can\xE2\x80\x99t do that!"));
+                "@cboot: You can’t do that!"));
         return MUX_S_OK;
     }
 

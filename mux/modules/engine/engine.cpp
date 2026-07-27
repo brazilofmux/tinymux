@@ -39,9 +39,9 @@ void do_dump(dbref executor, dbref caller, dbref enactor, int eval, int key)
 void report(void)
 {
     STARTLOG(LOG_BUGS, "BUG", "INFO");
-    log_text(T("Command: \xE2\x80\x98"));
+    log_text(T("Command: ‘"));
     log_text(g_debug_cmd);
-    log_text(T("\xE2\x80\x99"));
+    log_text(T("’"));
     ENDLOG;
     if (Good_obj(mudstate.curr_executor))
     {
