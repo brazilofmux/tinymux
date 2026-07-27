@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -66,6 +66,20 @@ test-smoke:
 test-smoke-ast: test-smoke
 	@echo "==> Smoke: interpreted route (jit_eval_brackets 0)"
 	cd testcases && SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke
+
+# The same corpus against the engine's BUILT-IN comsys/mail instead of the
+# modules (#1589 stage 0).
+#
+# Both implementations ship, both are reachable, and they demonstrably differ:
+# #1564, #1585 and #1620 are each a bug that only exists when the two
+# disagree.  Every run before this one exercised whichever implementation the
+# platform resolved -- Windows the built-in, Unix the modules -- so half the
+# shipped code had no coverage on any given box.
+#
+# Reuses smoke.flat, so this costs a run of the corpus and no rebuild.
+test-smoke-builtin: test-smoke
+	@echo "==> Smoke: engine built-in comsys/mail (no modules)"
+	cd testcases && SMOKE_OMIT_MODULES="comsys_mod mail_mod" ./tools/Smoke
 
 # Static guard: no smoke case may be incapable of failing (#1434 family).
 #

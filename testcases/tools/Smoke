@@ -148,6 +148,31 @@ module comsys_mod
 module mail_mod
 _EOF
 
+# Optionally drop module directives, so the suite can be run against the
+# engine's BUILT-IN comsys/mail instead of the modules (#1589 stage 0).
+#
+# Both implementations exist and they demonstrably differ -- #1564, #1585 and
+# #1620 are all bugs that only appear when the two disagree, and none of them
+# is visible to a run that exercises one side.  Until now there was no way to
+# ask for the other side at all: the module directives are written into the
+# heredoc above and SMOKE_EXTRA_CONF only appends, so every run tested
+# whichever implementation the platform happened to resolve.
+#
+# Filtering here rather than making the heredoc conditional keeps the two
+# checks downstream honest: the module preflight and the implementation guard
+# both read `module` lines back out of smoke.conf, so removing the line makes
+# them correctly expect -- and require -- the built-in.
+#
+#   SMOKE_OMIT_MODULES="comsys_mod mail_mod" ./tools/Smoke
+#
+if [ -n "${SMOKE_OMIT_MODULES:-}" ]; then
+    for _mod in $SMOKE_OMIT_MODULES; do
+        grep -v "^module[[:space:]]\{1,\}${_mod}[[:space:]]*$" smoke.conf \
+            > smoke.conf.tmp && mv smoke.conf.tmp smoke.conf
+    done
+    echo "Running WITHOUT modules:$SMOKE_OMIT_MODULES"
+fi
+
 # Optional extra conf directives (e.g. running the whole suite with
 # the Phase 4 JIT bracket toggle on:
 #   SMOKE_EXTRA_CONF="jit_eval_brackets 1" ./tools/Smoke ).
