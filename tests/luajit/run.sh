@@ -95,10 +95,10 @@ AGREE_CASES=(
     'local x=string.len("hello") return x*2'
     'return math.huge'
     'return os.time()>0'
-    # Runtime ^: must not answer pow(0,0)==1 (#1538).  May still compile-fail
-    # and fall back to the interpreter; agreement is required either way.
-    'local a=mux.args[1]+0 return a ^ 2'
-    'local a=mux.args[1]+0 local b=mux.args[2]+0 return a ^ b'
+    # Runtime ^ used to answer pow(0,0)==1 here (#1538).  The strict form of
+    # both chunks now lives in EXEC: once #1561 loads tier2 on the Lua path
+    # they compile and run, so "agreement, decline allowed" is strictly
+    # weaker than what EXEC already pins.
     'local a=mux.args[1]+0 return (a ^ 2) == 4'
     'local a=mux.args[1]+0 local b=mux.args[2]+0 return (a ^ b) == 8'
     # Loops: currently decline; still must not invent a wrong answer.
@@ -114,6 +114,17 @@ AGREE_CASES=(
     'local t={1,2,3} table.insert(t,4) return #t'
     'local t={10,20,30} return t[2]'
     'local t={a=7} return t.a'
+    # ---- math.type: the subtype as Lua reports it (#1488) ----
+    #
+    # AGREE, not EXEC: math.type is a field read on a library table, so it
+    # routes through the unimplemented named bridge and declines (#1519).
+    # Worth pinning anyway -- it is the only check that the subtype is right
+    # *inside* Lua rather than just in the rendered result, and it is the
+    # case that showed `^` was float all along and the "8" came from the
+    # constant fold.  Re-measure lua_run_ok when the bridge comes up.
+    'return math.type(3.0)'
+    'return math.type(3)'
+    'return math.type(2^3)'
 )
 
 # ---------------------------------------------------------------------------
@@ -152,6 +163,50 @@ EXEC_CASES=(
     # ---- #1561 + #1538: runtime ^ must compile (tier2 loaded) and agree ----
     'local a=mux.args[1]+0 return a ^ 2'
     'local a=mux.args[1]+0 local b=mux.args[2]+0 return a ^ b'
+
+    # ---- Integer/float subtype (#1488) ----
+    #
+    # Lua 5.4's integer/float distinction is observable -- tostring(3.0) is
+    # "3.0", and one float operand makes the whole expression float -- and
+    # the compiled path used to discard it in three places at once.  These
+    # are EXEC rather than AGREE on purpose: every one of them executed
+    # compiled code while answering wrongly, so a decline here would hide
+    # the bug rather than fix it.
+    #
+    # Lua constant-folds arithmetic on literals, so most of these reach the
+    # JIT already collapsed into a single LOADF -- which is exactly how the
+    # bug stayed hidden.  `return 4 / 2` lowered to a bare ICONST 2, with no
+    # FDIV anywhere in the HIR to notice.
+    'return -3.0'
+    'return 1e3'
+    'return 2.0 + 2.0'
+    'return 4 / 2'
+    'return 7 / 2'
+    'return 7 // 2'
+    'return 7.0 // 2.0'
+    # Non-integral: pins the format itself ("%.14g", not "%.17g"), which the
+    # ".0" cases cannot see.
+    'return 2^0.5'
+    'return 2 ^ 3'
+    'return 3.0 == 3'
+    'return 1/0 > 0'
+    # Runtime floats, so the ECALL formatter is exercised and not just the
+    # compile-time fold.  The two must agree, which is why they share
+    # lua_format_double().
+    'local a=mux.args[1]+0 return a / 2'
+    'local a=mux.args[1]+0 return a * 1.0'
+    'local a=mux.args[1]+0 return a + 0.0'
+    'local a=mux.args[1]+0 return a//1'
+
+    # ---- string -> number coercion (#1425) ----
+    #
+    # Already correct; pinned because the reported symptom ("3" + 4 == 6) was
+    # an arithmetic answer that was simply wrong, and nothing else covers it.
+    'return "3" + 4'
+    'return "3" * 2'
+    'return "10" - 1'
+    'return "2" + "5"'
+    'local a=mux.args[1].."" return a + 4'
 )
 
 keep_work() {
