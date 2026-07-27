@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 12:10+0000\n"
+"POT-Creation-Date: 2026-07-27 06:25-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -46,7 +46,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2023
 #: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
-#: modules/engine/wiz.cpp:792 modules/engine/wiz.cpp:880
+#: modules/engine/wiz.cpp:817 modules/engine/wiz.cpp:905
 msgid "Illegal combination of switches."
 msgstr ""
 
@@ -720,6 +720,359 @@ msgstr ""
 msgid "Scan complete."
 msgstr ""
 
+#: modules/engine/mail.cpp:380
+msgid "MAIL: You probably did not intend to send a @mail saying ‘clear’."
+msgstr ""
+
+#: modules/engine/mail.cpp:735
+msgid "MAIL: Invalid message range"
+msgstr ""
+
+#: modules/engine/mail.cpp:736
+msgid "MAIL: Invalid message number"
+msgstr ""
+
+#: modules/engine/mail.cpp:737
+msgid "MAIL: Invalid age"
+msgstr ""
+
+#: modules/engine/mail.cpp:738
+msgid "MAIL: Invalid dbref #"
+msgstr ""
+
+#: modules/engine/mail.cpp:739
+msgid "MAIL: Invalid player"
+msgstr ""
+
+#: modules/engine/mail.cpp:740
+msgid "MAIL: Invalid message specification"
+msgstr ""
+
+#: modules/engine/mail.cpp:741
+msgid ""
+"MAIL: Invalid player or trying to send @mail to a @malias without a subject"
+msgstr ""
+
+#: modules/engine/mail.cpp:957
+msgid "MAIL: A isn’t enough (all?)"
+msgstr ""
+
+#: modules/engine/mail.cpp:969
+msgid "MAIL: AL isn’t enough (all?)"
+msgstr ""
+
+#: modules/engine/mail.cpp:1015
+msgid "MAIL: U is ambiguous (urgent or unread?)"
+msgstr ""
+
+#: modules/engine/mail.cpp:1078
+msgid "MAIL: M is ambiguous (mass or me?)"
+msgstr ""
+
+#: modules/engine/mail.cpp:1182
+msgid "MAIL: What folder is that?"
+msgstr ""
+
+#: modules/engine/mail.cpp:1191
+msgid "MAIL: Folder name too long"
+msgstr ""
+
+#: modules/engine/mail.cpp:1198
+msgid "MAIL: Illegal folder name"
+msgstr ""
+
+#: modules/engine/mail.cpp:1349 modules/engine/mail.cpp:1428
+msgid "MAIL: You don’t have any matching messages!"
+msgstr ""
+
+#: modules/engine/mail.cpp:1395
+msgid "MAIL: Invalid folder specification"
+msgstr ""
+
+#: modules/engine/mail.cpp:1530
+msgid "MAIL: Mail aliases must be of the form *<name> or #<num>."
+msgstr ""
+
+#: modules/engine/mail.cpp:1534
+msgid "MAIL: Mail aliases must be of the form *<name>."
+msgstr ""
+
+#: modules/engine/mail.cpp:1657 modules/engine/mail.cpp:2138
+#: modules/engine/mail.cpp:5615
+msgid "MAIL: No such folder."
+msgstr ""
+
+#: modules/engine/mail.cpp:1740 modules/engine/mail.cpp:1974
+#: modules/engine/mail.cpp:2070
+msgid "MAIL: You don’t have that many matching messages!"
+msgstr ""
+
+#: modules/engine/mail.cpp:1802
+msgid "MAIL: You have no unread messages in that folder."
+msgstr ""
+
+#: modules/engine/mail.cpp:1918
+msgid "MAIL: You have no matching messages."
+msgstr ""
+
+#: modules/engine/mail.cpp:1992 modules/engine/mail.cpp:4094
+#: modules/engine/mail.cpp:5152
+msgid "MAIL: No such player."
+msgstr ""
+
+#: modules/engine/mail.cpp:2217
+msgid "MAIL: Mailbox purged."
+msgstr ""
+
+#: modules/engine/mail.cpp:2329
+msgid "MAIL: No players specified."
+msgstr ""
+
+#: modules/engine/mail.cpp:2365 modules/engine/mail.cpp:4273
+msgid "MAIL: I do not know whom you want to mail."
+msgstr ""
+
+#: modules/engine/mail.cpp:2370 modules/engine/mail.cpp:4491
+msgid "MAIL: No subject."
+msgstr ""
+
+#: modules/engine/mail.cpp:2375 modules/engine/mail.cpp:2405
+#: modules/engine/mail.cpp:2451 modules/engine/mail.cpp:4474
+msgid "MAIL: Mail message already in progress."
+msgstr ""
+
+#: modules/engine/mail.cpp:2381 modules/engine/mail.cpp:2421
+#: modules/engine/mail.cpp:2462 modules/engine/mail.cpp:4480
+msgid "MAIL: Too much @mail sent recently."
+msgstr ""
+
+#: modules/engine/mail.cpp:2410 modules/engine/mail.cpp:2456
+msgid "MAIL: No message list."
+msgstr ""
+
+#: modules/engine/mail.cpp:2415
+msgid "MAIL: To whom should I forward?"
+msgstr ""
+
+#: modules/engine/mail.cpp:2427 modules/engine/mail.cpp:2468
+msgid "MAIL: I don’t understand that message number."
+msgstr ""
+
+#: modules/engine/mail.cpp:2433
+msgid "MAIL: You can’t forward non-existent messages."
+msgstr ""
+
+#: modules/engine/mail.cpp:2474
+msgid "MAIL: You can’t reply to non-existent messages."
+msgstr ""
+
+#: modules/engine/mail.cpp:2479
+msgid "MAIL: The original sender no longer exists."
+msgstr ""
+
+#: modules/engine/mail.cpp:2780
+msgid "MAIL: You cannot send mail to non-existent people."
+msgstr ""
+
+#: modules/engine/mail.cpp:2899
+msgid "The postal service issues a warrant for your arrest."
+msgstr ""
+
+#: modules/engine/mail.cpp:2912
+msgid "You annihilate the post office. All messages cleared."
+msgstr ""
+
+#: modules/engine/mail.cpp:2975
+msgid "Go get some bugspray."
+msgstr ""
+
+#: modules/engine/mail.cpp:3074
+msgid ""
+"Some mailbag items are referred to more often than the mailbag item "
+"indicates."
+msgstr ""
+
+#: modules/engine/mail.cpp:3078
+msgid ""
+"Some mailbag items are referred to less often than the mailbag item "
+"indicates."
+msgstr ""
+
+#: modules/engine/mail.cpp:3081
+msgid "Mail sanity check completed."
+msgstr ""
+
+#: modules/engine/mail.cpp:3120
+msgid "Some reference counts were wrong [FIXED]."
+msgstr ""
+
+#: modules/engine/mail.cpp:3147
+msgid "Mail sanity fix completed."
+msgstr ""
+
+#: modules/engine/mail.cpp:3151
+msgid "That is not a debugging option."
+msgstr ""
+
+#: modules/engine/mail.cpp:3209
+msgid "The post office protects privacy!"
+msgstr ""
+
+#: modules/engine/mail.cpp:3414
+msgid "MAIL: Invalid mail command."
+msgstr ""
+
+#: modules/engine/mail.cpp:4027
+msgid "MAIL: What alias do you want to create?."
+msgstr ""
+
+#: modules/engine/mail.cpp:4123
+msgid "MAIL: Invalid mail alias."
+msgstr ""
+
+#: modules/engine/mail.cpp:4163 modules/engine/mail.cpp:4816
+#: modules/engine/mail.cpp:4887 modules/engine/mail.cpp:4919
+#: modules/engine/mail.cpp:4980 modules/engine/mail.cpp:5061
+msgid "MAIL: Permission denied."
+msgstr ""
+
+#: modules/engine/mail.cpp:4232
+msgid "Name         Description                              Owner"
+msgstr ""
+
+#: modules/engine/mail.cpp:4242
+msgid "*****  End of Mail Aliases *****"
+msgstr ""
+
+#: modules/engine/mail.cpp:4268
+msgid "MAIL: No mail message in progress."
+msgstr ""
+
+#: modules/engine/mail.cpp:4464
+msgid "MAIL: I don’t know who you want to mail."
+msgstr ""
+
+#: modules/engine/mail.cpp:4469
+msgid "MAIL: No message."
+msgstr ""
+
+#: modules/engine/mail.cpp:4569
+msgid "MAIL: No message started."
+msgstr ""
+
+#: modules/engine/mail.cpp:4578
+msgid "MAIL: No recipients."
+msgstr ""
+
+#: modules/engine/mail.cpp:4586
+msgid "MAIL: The body of this message is empty.  Use - to add to the message."
+msgstr ""
+
+#: modules/engine/mail.cpp:4606
+msgid "MAIL: Message aborted."
+msgstr ""
+
+#: modules/engine/mail.cpp:4620
+msgid "No text prepended."
+msgstr ""
+
+#: modules/engine/mail.cpp:4659 modules/engine/mail.cpp:4720
+#: modules/engine/mail.cpp:4739 modules/engine/mail.cpp:4747
+msgid "MAIL: No message in progress."
+msgstr ""
+
+#: modules/engine/mail.cpp:4681
+msgid "No text added."
+msgstr ""
+
+#: modules/engine/mail.cpp:4733
+msgid "Text edited."
+msgstr ""
+
+#: modules/engine/mail.cpp:4807
+msgid "MAIL: Description changed."
+msgstr ""
+
+#: modules/engine/mail.cpp:4811
+msgid "MAIL: Description is not valid."
+msgstr ""
+
+#: modules/engine/mail.cpp:4824
+msgid "MAIL: You cannot do that!"
+msgstr ""
+
+#: modules/engine/mail.cpp:4842
+msgid "MAIL: I do not see that here."
+msgstr ""
+
+#: modules/engine/mail.cpp:4847
+msgid "MAIL: Owner changed for alias."
+msgstr ""
+
+#: modules/engine/mail.cpp:4869
+msgid "MAIL: Only players may be added."
+msgstr ""
+
+#: modules/engine/mail.cpp:4881 modules/engine/mail.cpp:4934
+msgid "MAIL: I do not see that person here."
+msgstr ""
+
+#: modules/engine/mail.cpp:4894
+msgid "MAIL: That person is already on the list."
+msgstr ""
+
+#: modules/engine/mail.cpp:4961
+msgid "MAIL: That name already exists!"
+msgstr ""
+
+#: modules/engine/mail.cpp:4971
+msgid "MAIL: I cannot find that alias!"
+msgstr ""
+
+#: modules/engine/mail.cpp:4995
+msgid "MAIL: Mailing Alias renamed."
+msgstr ""
+
+#: modules/engine/mail.cpp:4999
+msgid "MAIL: Alias is not valid."
+msgstr ""
+
+#: modules/engine/mail.cpp:5025
+msgid "MAIL: Alias Deleted."
+msgstr ""
+
+#: modules/engine/mail.cpp:5043
+msgid "Num  Name         Description                              Owner"
+msgstr ""
+
+#: modules/engine/mail.cpp:5054
+msgid "***** End of Mail Aliases *****"
+msgstr ""
+
+#: modules/engine/mail.cpp:5175
+msgid "MAIL: Mail retracted."
+msgstr ""
+
+#: modules/engine/mail.cpp:5179
+msgid "MAIL: That message has been read."
+msgstr ""
+
+#: modules/engine/mail.cpp:5189
+msgid "MAIL: No matching messages."
+msgstr ""
+
+#: modules/engine/mail.cpp:5251
+msgid "MAIL: That @malias command is not available."
+msgstr ""
+
+#: modules/engine/mail.cpp:5323
+msgid "MAIL: That @mail command is not available."
+msgstr ""
+
+#: modules/engine/mail.cpp:5652
+msgid "MAIL: That folder command is not available."
+msgstr ""
+
 #: modules/engine/match.cpp:17 modules/engine/match.cpp:34
 msgid "I don’t see that here."
 msgstr ""
@@ -884,6 +1237,22 @@ msgstr ""
 
 #: modules/engine/player.cpp:1716
 msgid "That name is already protected by another player."
+msgstr ""
+
+#: modules/engine/plusemail.cpp:288
+msgid "@email: Too many emails sent recently."
+msgstr ""
+
+#: modules/engine/plusemail.cpp:294
+msgid "@email: Not configured"
+msgstr ""
+
+#: modules/engine/plusemail.cpp:300
+msgid "@email: I don’t know who you want to e-mail!"
+msgstr ""
+
+#: modules/engine/plusemail.cpp:306
+msgid "@email: Not sending an empty e-mail!"
 msgstr ""
 
 #: modules/engine/powers.cpp:245
@@ -1356,46 +1725,46 @@ msgstr ""
 msgid "You can only boot off other players!"
 msgstr ""
 
-#: modules/engine/wiz.cpp:691
+#: modules/engine/wiz.cpp:716
 msgid "Cut."
 msgstr ""
 
-#: modules/engine/wiz.cpp:725
+#: modules/engine/wiz.cpp:750
 msgid "Set: MOTD."
 msgstr ""
 
-#: modules/engine/wiz.cpp:734
+#: modules/engine/wiz.cpp:759
 msgid "Set: Wizard MOTD."
 msgstr ""
 
-#: modules/engine/wiz.cpp:743
+#: modules/engine/wiz.cpp:768
 msgid "Set: Down MOTD."
 msgstr ""
 
-#: modules/engine/wiz.cpp:752
+#: modules/engine/wiz.cpp:777
 msgid "Set: Full MOTD."
 msgstr ""
 
-#: modules/engine/wiz.cpp:762
+#: modules/engine/wiz.cpp:787
 msgid "----- motd file -----"
 msgstr ""
 
-#: modules/engine/wiz.cpp:764
+#: modules/engine/wiz.cpp:789
 msgid "----- wizmotd file -----"
 msgstr ""
 
-#: modules/engine/wiz.cpp:766
+#: modules/engine/wiz.cpp:791
 msgid "----- motd messages -----"
 msgstr ""
 
-#: modules/engine/wiz.cpp:826
+#: modules/engine/wiz.cpp:851
 msgid "I don’t know about that flag."
 msgstr ""
 
-#: modules/engine/wiz.cpp:852
+#: modules/engine/wiz.cpp:877
 msgid "Enabled."
 msgstr ""
 
-#: modules/engine/wiz.cpp:875
+#: modules/engine/wiz.cpp:900
 msgid "Disabled."
 msgstr ""
