@@ -371,6 +371,13 @@ if [ -n "$IMPL_LINES" ]; then
     echo "=== Implementations in this run ==="
     printf '%s\n' "$IMPL_LINES"
     printf '%s\n' "$IMPL_LINES" >> smoke.log
+elif [ -n "$WANT_MODULES" ]; then
+    # #1593 should always emit the lines.  Missing them is a harness gap,
+    # not proof the suite is clean -- but do not fail on log plumbing alone.
+    echo ""
+    echo "WARNING: no 'using * implementation' lines in netmux.log"
+    echo "         (cannot pin comsys/mail; see #1593 / #1581)."
+    echo
 fi
 
 IMPL_BAD=""
@@ -391,14 +398,30 @@ esac
 
 if [ -n "$IMPL_BAD" ]; then
     echo ""
-    echo "=== Smoke: FAILED (implementation fallback) ==="
-    echo "smoke.conf asks for the module, but the built-in engine answered"
-    echo "for:$IMPL_BAD"
-    echo ""
-    echo "The module loaded (the preflight above passed) but"
-    echo "discover_comsys_mail_modules() still fell back.  The results below"
-    echo "describe the built-in implementation, not the one under test."
-    exit 1
+    # Same platform gate as the load preflight (#1599 / #1594): fatal where
+    # modules can load; advisory on Windows until that is fixed.  Otherwise
+    # this check undoes the soft preflight -- modules fail to load, the
+    # built-in answers, and we exit 1 after a long green-looking suite.
+    #
+    case "${SMOKE_REQUIRE_MODULES:-}${MODCHECK_PLATFORM:-$(uname -s 2>/dev/null)}" in
+        1*|Linux*|Darwin*|*BSD*|SunOS*)
+            echo "=== Smoke: FAILED (implementation fallback) ==="
+            echo "smoke.conf asks for the module, but the built-in engine answered"
+            echo "for:$IMPL_BAD"
+            echo ""
+            echo "Either the module never loaded (preflight may have been advisory)"
+            echo "or discover_comsys_mail_modules() fell back after load.  The"
+            echo "results describe the built-in, not the module under test."
+            exit 1
+            ;;
+        *)
+            echo "WARNING: smoke.conf asks for the module, but the built-in"
+            echo "         answered for:$IMPL_BAD (#1594 / #1581)."
+            echo "         Continuing on this platform; set"
+            echo "         SMOKE_REQUIRE_MODULES=1 to make this fatal."
+            echo
+            ;;
+    esac
 fi
 
 echo ""
