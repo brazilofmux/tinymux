@@ -9,13 +9,12 @@ contributors, and the failure modes are not the kind a reviewer reliably spots.
 
 What this does NOT check, and why:
 
-  Format specifiers reaching a format function through a translation.  That
-  hazard is already closed structurally, and better than this file could close
-  it: tests/format/check_formats.py rejects M_() at every format call site,
-  because M_ is deliberately absent from its CONST_CAST_WRAPPERS.  A translated
-  format therefore cannot reach mux_vsnprintf at all (#1492).  A msgid that
-  merely CONTAINS a conversion is still worth flagging -- see check 4 -- but
-  the load-bearing guard is the other file.
+  Whether mux_vsnprintf implements every conversion a msgid uses -- that is
+  tests/format/check_formats.py rule 1, which unwraps M_()/T()/S_()/N_() and
+  checks the source literal.  What THIS file owns for formats is the other
+  half of the Phase-3 contract: every catalogue msgstr for a format msgid
+  must carry the same conversion sequence (type and order).  Without that,
+  a bad .mo is a live format-string bug at runtime (#1492 / #1419).
 
 Exit status is 0 when everything passes, 1 on the first category with findings.
 Run standalone or via `make test-nls`.
@@ -112,14 +111,46 @@ def check_abi_tokens(pot):
     return [("%s" % m) for m in bad]
 
 
-def check_format_specs(pot):
-    """A conversion inside a msgid is at best fragile, at worst a crash."""
-    bad = []
-    for msgid, _, _ in pot:
-        specs = FORMAT_PATTERN.findall(msgid)
-        if specs:
-            bad.append("%s   [%s]" % (msgid, " ".join(specs)))
-    return bad
+def conversion_sequence(s):
+    """Ordered list of printf conversion characters (%% excluded).
+
+    Used to compare a msgid against its msgstr: translators may reorder
+    words, but must not drop, invent, or change conversion types.  mux_vsnprintf
+    has no positional-arg support yet, so order of conversions must match too.
+    Width and flags may differ (`%d` vs `%02d`); only the type letter matters.
+    """
+    # Strip %% so they are not mistaken for a conversion start.
+    s = s.replace("%%", "")
+    return [m[-1] for m in FORMAT_PATTERN.findall(s)]
+
+
+def check_format_catalogues(root, pot):
+    """Every translated format msgid keeps the same conversion sequence."""
+    findings = []
+    fmt_ids = {m: conversion_sequence(m) for m, _, _ in pot
+               if conversion_sequence(m)}
+    if not fmt_ids:
+        return findings
+    po_dir = os.path.join(root, "mux", "po")
+    if not os.path.isdir(po_dir):
+        return findings
+    for name in sorted(os.listdir(po_dir)):
+        if not name.endswith(".po"):
+            continue
+        path = os.path.join(po_dir, name)
+        for msgid, msgstr, fuzzy in parse_po(path):
+            if msgid not in fmt_ids:
+                continue
+            if fuzzy or not msgstr:
+                # check_catalogues already reports fuzzy/untranslated.
+                continue
+            got = conversion_sequence(msgstr)
+            want = fmt_ids[msgid]
+            if got != want:
+                findings.append(
+                    "%s: format mismatch for %r -- msgid %s, msgstr %s"
+                    % (name, msgid, want, got))
+    return findings
 
 
 def check_half_marking(root):
@@ -238,11 +269,12 @@ def main():
          check_abi_tokens(pot),
          "A '#-1 ...' token is what softcode string-compares against.  "
          "Translating it breaks every game that tests for it.  Use S_()."),
-        ("printf conversions in translatable strings",
-         check_format_specs(pot),
-         "A translation can reorder, drop or invent conversions, and the "
-         "source literal does not reveal what the .mo actually ships.  "
-         "Keep formats out of M_(); format first, then translate the parts."),
+        ("printf conversions in catalogue translations",
+         check_format_catalogues(root, pot),
+         "A format msgid is fine in the pot (Phase 3), but its msgstr must "
+         "carry the same conversion sequence -- same types, same order.  "
+         "mux_vsnprintf has no positional args, and a mismatched .mo is a "
+         "live format-string bug at runtime."),
         ("half-marked literals",
          check_half_marking(root),
          "The same text is M_() in one place and T() in another within one "

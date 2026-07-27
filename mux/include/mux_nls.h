@@ -3,9 +3,12 @@
  *
  * Macro roles (keep these distinct — catalogs are maintenance cost):
  *
- *   T(x)   UTF-8 cast only. Command/function/attr names, formats, internals.
+ *   T(x)   UTF-8 cast only. Command/function/attr names, internals.
  *          Never runs gettext. Safe at static init.
- *   M_(x)  Player/staff prose. gettext when HAVE_NLS. Opt-in only.
+ *   M_(x)  Player/staff prose, including whole-sentence format templates
+ *          used as tprintf/mux_sprintf/raw_broadcast formats. gettext when
+ *          HAVE_NLS. Opt-in only. Catalogues must preserve conversion
+ *          sequences (tests/nls/check_nls.py).
  *   S_(x)  Softcode / machine ABI (#-1 …). Never translated.
  *   N_(x)  Mark-only for xgettext when the msgid is stored before runtime
  *          lookup (static globals re-bound via M_ after mux_nls_init).
