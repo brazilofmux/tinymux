@@ -437,6 +437,26 @@ static int assign_blocks(const std::vector<bool> &is_leader,
 // used when the value is not a compile-time constant (#1309).
 // ---------------------------------------------------------------
 
+// Render a double the way Lua's own tostring does (lobject.c tostringbuff).
+// Lua formats with LUA_NUMBER_FMT -- "%.14g" for the double build -- and then
+// appends ".0" to anything that came out looking like an integer, so a float
+// whose value happens to be integral prints as "3.0" and stays distinguishable
+// from the integer 3.  The compiled path used "%.17g" and never appended,
+// so every integral float lost its subtype and every other float printed more
+// digits than the interpreter (#1488).
+//
+void lua_format_double(double d, char *buf, size_t sz) {
+    snprintf(buf, sz, "%.14g", d);
+    if (buf[strspn(buf, "-0123456789")] == '\0') {
+        size_t len = strlen(buf);
+        if (len + 3 <= sz) {
+            buf[len]     = '.';
+            buf[len + 1] = '0';
+            buf[len + 2] = '\0';
+        }
+    }
+}
+
 static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
     if (rv < 0) return -1;
     if (h.ty[rv] == TY_STRING) {
@@ -455,11 +475,14 @@ static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
     if (h.ty[rv] == TY_FLOAT) {
         if (h.kind[rv] == HIR_FCONST) {
             char buf[64];
-            snprintf(buf, sizeof(buf), "%.17g", h.fval[rv]);
+            lua_format_double(h.fval[rv], buf, sizeof(buf));
             uint64_t addr = rc.pool_str(buf, strlen(buf));
             return h.emit_sconst(addr, buf);
         }
-        return h.emit(HIR_FTOA, TY_STRING, rv);
+        // Lua float, so Lua's rendering -- not HIR_FTOA, which formats the
+        // MUX way and would drop the ".0" at run time just as the fold used
+        // to at compile time (#1488).
+        return h.emit(HIR_LUA_FTOA, TY_STRING, rv);
     }
     return rv;
 }
@@ -479,16 +502,14 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
         return h.emit_iconst(1);
     case LUA_BC_TINT:
         return h.emit_iconst(k.ival);
-    case LUA_BC_TFLOAT: {
-        // Integer-valued floats (e.g. 2.0) → emit as ICONST for
-        // compatibility with integer arithmetic.  Non-integer floats
-        // (e.g. 3.14) → emit as FCONST.
-        double v = k.fval;
-        if (v == floor(v) && v >= -9.22e18 && v <= 9.22e18) {
-            return h.emit_iconst(static_cast<int64_t>(v));
-        }
-        return h.emit_fconst(v);
-    }
+    case LUA_BC_TFLOAT:
+        // A Lua float stays a float even when its value is integral.  This
+        // used to demote 2.0 to ICONST "for compatibility with integer
+        // arithmetic", but Lua 5.4's integer/float distinction is observable
+        // -- tostring(2.0) is "2.0", math.type(2.0) is "float", and a float
+        // operand makes the whole expression float.  Demoting it made
+        // `a * 1.0` an integer multiply and `a + 0.0` print "3" (#1488).
+        return h.emit_fconst(k.fval);
     case LUA_BC_TSHRSTR:
     case LUA_BC_TLNGSTR: {
         uint64_t addr = rc.pool_str(k.sval.c_str(), k.sval.size());
@@ -725,8 +746,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (lua_reg[A] < 0) return -1;
             break;
 
+        // LOADF loads a *float* whose value is the signed immediate.  It
+        // carried an integer immediate, and the lowering took it at face
+        // value and emitted an integer constant -- so `return 3.0` produced
+        // the integer 3, and every Lua constant expression that folds to an
+        // integral float (`4/2`, `2^3`, `7.0//2.0`, `1e3`, `-3.0`) lost its
+        // float subtype before the JIT ever did any arithmetic.  It also made
+        // `a * 1.0` an integer multiply (#1488).
         case OP_LUA_LOADF:
-            lua_reg[A] = h.emit_iconst(insn.sBx());
+            lua_reg[A] = h.emit_fconst(static_cast<double>(insn.sBx()));
             if (lua_reg[A] < 0) return -1;
             break;
 

@@ -708,6 +708,7 @@ static bool needs_output_buffer(hir_program &h, int i) {
     case HIR_STRCAT:
     case HIR_ITOA:
     case HIR_FTOA:
+    case HIR_LUA_FTOA:
     case HIR_PHI:
     case HIR_COPY:
         return true;
@@ -1847,7 +1848,10 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             }
 
             // FTOA: double → string.  Use ECALL to format.
-            case HIR_FTOA: {
+            // HIR_LUA_FTOA is the same sequence against a host formatter
+            // that follows Lua's tostring rules instead of MUX's (#1488).
+            case HIR_FTOA:
+            case HIR_LUA_FTOA: {
                 uint64_t a1 = loc[h.src1[i]].addr;
                 uint64_t out_addr = loc[i].addr;
                 // Load double bits into a0 via FMV.X.D.
@@ -1855,7 +1859,9 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
                 rc.code.push_back(rv_FMV_X_D(10, 0));  // a0 = double bits
                 rv_load_guest_addr(rc.code, 11, out_addr);    // a1 = output buffer
-                rv_load_val(rc.code, 17, 0x140);        // a7 = ECALL_FTOA
+                rv_load_val(rc.code, 17,
+                            (h.kind[i] == HIR_LUA_FTOA) ? ECALL_LUA_FTOA
+                                                        : ECALL_FTOA);
                 rc.code.push_back(rv_ECALL());
                 break;
             }
@@ -2248,6 +2254,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_ITOF:       return "ITOF";
     case HIR_FTOI:       return "FTOI";
     case HIR_FTOA:       return "FTOA";
+    case HIR_LUA_FTOA:   return "LUA_FTOA";
     case HIR_ATOF:       return "ATOF";
     case HIR_FCONST:     return "FCONST";
     case HIR_FADD:       return "FADD";

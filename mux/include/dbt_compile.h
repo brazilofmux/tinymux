@@ -189,6 +189,13 @@ extern std::string s_blob_version;
 // Tier 2 functions used across translation units.
 uint64_t tier2_lookup(const std::string &mux_name);
 uint64_t tier2_sym_addr(const char *blob_name);
+
+// Load softlib.rv64 on first use.  Softcode compile entry points already
+// call this; the Lua path must too, or every blob symbol lookup (e.g. pow
+// for Lua `^`) declines in the only configuration where the Lua JIT runs
+// (jit_eval_brackets 0, so softcode never hits jit_eval) (#1561).
+//
+void tier2_ensure(void);
 // Accepts both guest_memory_t and std::vector<uint8_t>.
 template<typename Vec>
 void tier2_install(Vec &memory, uint64_t guest_base);

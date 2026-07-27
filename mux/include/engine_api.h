@@ -38,6 +38,7 @@ static constexpr uint64_t ECALL_DMA_ACK       = 0x121; // -> a0=window (next fre
 // Float/double conversion ECALLs.
 static constexpr uint64_t ECALL_FTOA          = 0x140; // a0=double bits, a1=output addr
 static constexpr uint64_t ECALL_ATOF          = 0x141; // a0=string addr → fa0=double
+static constexpr uint64_t ECALL_LUA_FTOA      = 0x142; // a0=double bits, a1=output addr (Lua tostring rules)
 
 // Database query ECALLs — leaf lookups, no softcode evaluation.
 static constexpr uint64_t ECALL_GOOD_OBJ      = 0x150; // a0=dbref → a0=0/1

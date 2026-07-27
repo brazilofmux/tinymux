@@ -87,6 +87,7 @@ enum hir_kind {
     HIR_ITOF,       // int → float (FCVT.D.L)
     HIR_FTOI,       // float → int (FCVT.L.D, truncate toward zero)
     HIR_FTOA,       // float → string (ECALL-based)
+    HIR_LUA_FTOA,   // float → string, Lua's tostring rules (#1488)
     HIR_ATOF,       // string → float (ECALL-based)
 
     // String comparison
