@@ -278,7 +278,7 @@ void do_rxlevel
 
     if (!arg || !*arg)
     {
-        notify_quiet(executor, T("I don’t know what you want to set!"));
+        notify_quiet(executor, M_("I don’t know what you want to set!"));
         return;
     }
 
@@ -322,11 +322,11 @@ void do_rxlevel
         {
             if (negate)
             {
-                notify(executor, T("You must specify a reality level to clear."));
+                notify(executor, M_("You must specify a reality level to clear."));
             }
             else
             {
-                notify(executor, T("You must specify a reality level to set."));
+                notify(executor, M_("You must specify a reality level to set."));
             }
             return;
         }
@@ -334,18 +334,18 @@ void do_rxlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(executor, T("No such reality level."));
+            notify(executor, M_("No such reality level."));
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(executor, T("Cleared."));
+            notify(executor, M_("Cleared."));
         }
         else
         {
             ormask |= result;
-            notify(executor, T("Set."));
+            notify(executor, M_("Set."));
         }
     }
 
@@ -379,7 +379,7 @@ void do_txlevel
 
     if (!arg || !*arg)
     {
-        notify_quiet(executor, T("I don’t know what you want to set!"));
+        notify_quiet(executor, M_("I don’t know what you want to set!"));
         return;
     }
 
@@ -423,11 +423,11 @@ void do_txlevel
         {
             if (negate)
             {
-                notify(executor, T("You must specify a reality level to clear."));
+                notify(executor, M_("You must specify a reality level to clear."));
             }
             else
             {
-                notify(executor, T("You must specify a reality level to set."));
+                notify(executor, M_("You must specify a reality level to set."));
             }
             return;
         }
@@ -435,18 +435,18 @@ void do_txlevel
         RLEVEL result = find_rlevel(lname);
         if (!result)
         {
-            notify(executor, T("No such reality level."));
+            notify(executor, M_("No such reality level."));
             continue;
         }
         if (negate)
         {
             andmask &= ~result;
-            notify(executor, T("Cleared."));
+            notify(executor, M_("Cleared."));
         }
         else
         {
             ormask |= result;
-            notify(executor, T("Set."));
+            notify(executor, M_("Set."));
         }
     }
 

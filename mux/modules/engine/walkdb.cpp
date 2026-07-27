@@ -72,7 +72,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
 
     if (!list || *list == '\0')
     {
-        notify(executor, T("That’s terrific, but what should I do with the list?"));
+        notify(executor, M_("That’s terrific, but what should I do with the list?"));
         return;
     }
     UTF8 *objstring, delimiter = ' ';
@@ -84,7 +84,7 @@ void do_dolist(dbref executor, dbref caller, dbref enactor, int eval, int key,
         UTF8 *tempstr = parse_to(&curr, ' ', EV_STRIP_CURLY);
         if (1 < strlen(reinterpret_cast<char *>(tempstr)))
         {
-            notify(executor, T("The delimiter must be a single character!"));
+            notify(executor, M_("The delimiter must be a single character!"));
             return;
         }
         delimiter = *tempstr;
@@ -207,7 +207,7 @@ void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             free_lbuf(buff);
         }
     }
-    notify(executor, T("***End of List***"));
+    notify(executor, M_("***End of List***"));
 }
 
 // ---------------------------------------------------------------------------
@@ -319,14 +319,14 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         owner = lookup_player(executor, name, true);
         if (owner == NOTHING)
         {
-            notify(executor, T("Not found."));
+            notify(executor, M_("Not found."));
             return;
         }
         break;
 
     default:
 
-        notify(executor, T("Illegal combination of switches."));
+        notify(executor, M_("Illegal combination of switches."));
         return;
     }
 
@@ -469,7 +469,7 @@ void do_chownall
     }
     else if (!isPlayer(victim))
     {
-        notify(executor, T("Victim must be a player."));
+        notify(executor, M_("Victim must be a player."));
         return;
     }
 
@@ -845,7 +845,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
        && (parm->s_rst_owner != player)
        && (parm->s_rst_owner != ANY_OWNER))
     {
-        notify(player, T("You need a search warrant to do that!"));
+        notify(player, M_("You need a search warrant to do that!"));
         return false;
     }
 
@@ -1179,7 +1179,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             {
                 flag = false;
                 destitute = false;
-                notify(executor, T("\nROOMS:"));
+                notify(executor, M_("\nROOMS:"));
             }
             buff = unparse_object(executor, thing, false);
             notify(executor, buff);
@@ -1204,7 +1204,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             {
                 flag = false;
                 destitute = false;
-                notify(executor, T("\nEXITS:"));
+                notify(executor, M_("\nEXITS:"));
             }
             from = Exits(thing);
             to = Location(thing);
@@ -1247,7 +1247,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             {
                 flag = false;
                 destitute = false;
-                notify(executor, T("\nOBJECTS:"));
+                notify(executor, M_("\nOBJECTS:"));
             }
             bp = outbuf;
             buff = unparse_object(executor, thing, false);
@@ -1282,7 +1282,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
             {
                 flag = false;
                 destitute = false;
-                notify(executor, T("\nPLAYERS:"));
+                notify(executor, M_("\nPLAYERS:"));
             }
             bp = outbuf;
             buff = unparse_object(executor, thing, 0);
@@ -1306,7 +1306,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     //
     if (destitute)
     {
-        notify(executor, T("Nothing found."));
+        notify(executor, M_("Nothing found."));
     }
     else
     {
@@ -1344,7 +1344,7 @@ void do_markall(dbref executor, dbref caller, dbref enactor, int eval, int key)
     }
     if (!Quiet(executor))
     {
-        notify(executor, T("Done."));
+        notify(executor, M_("Done."));
     }
 }
 
@@ -1379,7 +1379,7 @@ void do_apply_marked( dbref executor, dbref caller, dbref enactor, int eval,
     free_sbuf(buff);
     if (!Quiet(executor))
     {
-        notify(executor, T("Done."));
+        notify(executor, M_("Done."));
     }
 }
 
@@ -1503,7 +1503,7 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
     }
 
     int iHour, nSum = 0;
-    notify(executor, T("Day   Hours     Players  Total"));
+    notify(executor, M_("Day   Hours     Players  Total"));
     for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += HOURS_PER_PERIOD)
     {
         nSum += nBin[i];

@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 05:36-0600\n"
+"POT-Creation-Date: 2026-07-27 11:50+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -139,11 +139,13 @@ msgstr ""
 msgid "I do not understand that flag."
 msgstr ""
 
-#: modules/engine/flags.cpp:825 modules/engine/set.cpp:1323
+#: modules/engine/flags.cpp:825 modules/engine/levels.cpp:343
+#: modules/engine/levels.cpp:444 modules/engine/set.cpp:1323
 msgid "Cleared."
 msgstr ""
 
-#: modules/engine/flags.cpp:825 modules/engine/set.cpp:427
+#: modules/engine/flags.cpp:825 modules/engine/levels.cpp:348
+#: modules/engine/levels.cpp:449 modules/engine/set.cpp:427
 #: modules/engine/set.cpp:492 modules/engine/set.cpp:1169
 #: modules/engine/set.cpp:1327
 msgid "Set."
@@ -180,6 +182,23 @@ msgstr ""
 
 #: modules/engine/flags.cpp:1458
 msgid "Flag name changed."
+msgstr ""
+
+#: modules/engine/levels.cpp:281 modules/engine/levels.cpp:382
+#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
+msgid "I don’t know what you want to set!"
+msgstr ""
+
+#: modules/engine/levels.cpp:325 modules/engine/levels.cpp:426
+msgid "You must specify a reality level to clear."
+msgstr ""
+
+#: modules/engine/levels.cpp:329 modules/engine/levels.cpp:430
+msgid "You must specify a reality level to set."
+msgstr ""
+
+#: modules/engine/levels.cpp:337 modules/engine/levels.cpp:438
+msgid "No such reality level."
 msgstr ""
 
 #: modules/engine/look.cpp:1313
@@ -436,11 +455,11 @@ msgstr ""
 msgid "Quotas are not enabled."
 msgstr ""
 
-#: modules/engine/quota.cpp:176
+#: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
 msgid "Illegal combination of switches."
 msgstr ""
 
-#: modules/engine/quota.cpp:230
+#: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:322
 msgid "Not found."
 msgstr ""
 
@@ -633,10 +652,6 @@ msgstr ""
 msgid "No match."
 msgstr ""
 
-#: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
-msgid "I don’t know what you want to set!"
-msgstr ""
-
 #: modules/engine/set.cpp:1258
 msgid "You can’t set that!"
 msgstr ""
@@ -719,4 +734,92 @@ msgstr ""
 
 #: modules/engine/speech.cpp:1494
 msgid "No one to whisper to."
+msgstr ""
+
+#: modules/engine/walk.cpp:353
+msgid "Walk cancelled."
+msgstr ""
+
+#: modules/engine/walk.cpp:361
+msgid "Only things can walk."
+msgstr ""
+
+#: modules/engine/walk.cpp:369
+msgid "Walk where?"
+msgstr ""
+
+#: modules/engine/walk.cpp:378
+msgid "That’s not a valid destination."
+msgstr ""
+
+#: modules/engine/walk.cpp:442
+msgid "Patrol cancelled."
+msgstr ""
+
+#: modules/engine/walk.cpp:448
+msgid "Only things can patrol."
+msgstr ""
+
+#: modules/engine/walk.cpp:454
+msgid "Patrol where?"
+msgstr ""
+
+#: modules/engine/walk.cpp:483
+msgid "Patrol requires at least two waypoints."
+msgstr ""
+
+#: modules/engine/walkdb.cpp:75
+msgid "That’s terrific, but what should I do with the list?"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:87
+msgid "The delimiter must be a single character!"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:210
+msgid "***End of List***"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:472
+msgid "Victim must be a player."
+msgstr ""
+
+#: modules/engine/walkdb.cpp:848
+msgid "You need a search warrant to do that!"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1182
+msgid ""
+"\n"
+"ROOMS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1207
+msgid ""
+"\n"
+"EXITS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1250
+msgid ""
+"\n"
+"OBJECTS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1285
+msgid ""
+"\n"
+"PLAYERS:"
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1309
+msgid "Nothing found."
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1347 modules/engine/walkdb.cpp:1382
+msgid "Done."
+msgstr ""
+
+#: modules/engine/walkdb.cpp:1506
+msgid "Day   Hours     Players  Total"
 msgstr ""
