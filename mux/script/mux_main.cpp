@@ -1481,19 +1481,19 @@ static bool init_stubslave_for_script(void)
 
 // Unwind whatever init_com() established, in reverse (#1598).
 //
-// The failure paths below used to return straight to main, which returns 2
-// without touching the module library -- unlike the LoadGame failure path just
-// after it, which revokes the class objects and finalizes the library before
-// returning.  So a failed engine load left the library initialized and the
-// script classes registered, and the process then exited through the static
-// teardown of a half-torn-down libmux.
+// These failure paths used to return straight to main, which returns 2
+// without touching the module library -- unlike the LoadGame failure path
+// just below, which revokes the class objects and finalizes the library
+// first.  So a failed engine load left the library initialized and the
+// script classes registered.  Nothing is known to break as a result; the
+// asymmetry was simply unintended, and an exit path that leaves a loaded
+// module library behind is not a thing to rely on.
 //
-// That matters because alarm_clock is a namespace-scope global *in libmux.so*
-// and its destructor joins the alarm thread (alarm.cpp).  Teardown that runs
-// against inconsistent library state is exactly where a join can fail to be
-// woken -- which presents as "muxscript printed the diagnostic and then never
-// exited", the report in #1598.  A prompt non-zero exit is the contract a
-// harness needs; leaving the library up on the way out is what puts it at risk.
+// This is NOT the fix for the hang reported in #1598, which did not
+// reproduce on aarch64 or arm64 -- muxscript exits 2 in ~20ms with a
+// deliberately broken engine.so, before and after this change.  The
+// alarm_clock join cannot explain a muxscript hang either: the worker is
+// lazy since #1035 and muxscript never arms it (#1597).
 //
 static void init_com_unwind(bool bClassesRegistered)
 {
