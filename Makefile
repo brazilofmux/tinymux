@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -80,6 +80,21 @@ test-smoke-ast: test-smoke
 test-smoke-builtin: test-smoke
 	@echo "==> Smoke: engine built-in comsys/mail (no modules)"
 	cd testcases && SMOKE_OMIT_MODULES="comsys_mod mail_mod" ./tools/Smoke
+
+# comsys/mail state written by one implementation and read by the other
+# (#1589 stage 0b).
+#
+# test-smoke-builtin makes the other implementation reachable; it does not
+# make a divergence detectable.  The corpus scores 1561/1561 against BOTH,
+# so it cannot tell them apart -- and every bug in this area (#1564, #1585,
+# #1620) exists only when one implementation reads state the other wrote,
+# which no single run can produce.
+#
+# Carries TODO markers for the two divergences that are still open.  A TODO
+# that starts PASSING fails the run, so the fix cannot land silently.
+test-comsys-handoff:
+	@echo "==> Running comsys/mail cross-implementation handoff tests"
+	bash tests/comsys_handoff/run.sh
 
 # Static guard: no smoke case may be incapable of failing (#1434 family).
 #
