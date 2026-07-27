@@ -627,9 +627,50 @@ void *CLuaMod::LuaAlloc(void *ud, void *ptr, size_t osize, size_t nsize)
 // Instruction count hook — enforces execution limits.
 // =========================================================================
 
+// Fires every m_nInsnPoll VM instructions (#1591).
+//
+// The Lua module used to bound a chunk only by its own instruction and memory
+// limits, neither of which is what the rest of the server bounds on: softcode
+// bounds on wall time.  alarm_clock is armed per command
+// (alarm_clock.set(mudconf.max_cmdsecs) in cque.cpp), the AST evaluator polls
+// it and answers "#-1 CPU LIMITED", and the JIT is handed the same flag as
+// dbt->alarm_flag.  Lua referenced it nowhere, so lua() ignored max_cmdsecs
+// entirely.
+//
+// Shape borrowed from the JIT's guest-loop budget (#1571): count cheaply, do
+// the real check periodically.  The hook fires on a poll interval rather than
+// once at the limit, checks the alarm, and only then accounts instructions --
+// so the instruction limit keeps its previous meaning while wall time becomes
+// the bound that agrees with everything else.
+//
+// This does NOT bound time spent inside a C function; the hook cannot fire
+// there.  Lua's pattern matcher can run unboundedly on a small input, which is
+// the remaining half of #1591 and needs the matcher itself to count, the way
+// quick_wild already does with mudstate.wild_invk_ctr.
+//
 void CLuaMod::InsnCountHook(lua_State *L, lua_Debug *ar)
 {
     (void)ar;
+
+    // The allocator ud is the module instance (lua_newstate(LuaAlloc, this)).
+    void *ud = nullptr;
+    lua_getallocf(L, &ud);
+    CLuaMod *self = static_cast<CLuaMod *>(ud);
+
+    if (nullptr != self)
+    {
+        if (alarm_clock.alarmed)
+        {
+            self->m_bCpuLimited = true;
+            luaL_error(L, "cpu limited");
+        }
+
+        self->m_nInsnUsed += self->m_nInsnPoll;
+        if (self->m_nInsnUsed < self->m_nInsnLimit)
+        {
+            return;
+        }
+    }
     luaL_error(L, "instruction limit exceeded");
 }
 
@@ -772,7 +813,19 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     // Set instruction count hook.
     //
     m_bMemExceeded = false;
-    lua_sethook(L, InsnCountHook, LUA_MASKCOUNT, m_nInsnLimit);
+    m_bCpuLimited = false;
+
+    // Poll often enough to notice the alarm, but never less often than the
+    // instruction limit itself -- a small configured limit must still fire
+    // where it always did.
+    m_nInsnPoll = (m_nInsnLimit < LUA_ALARM_POLL_INSNS)
+                ? m_nInsnLimit : LUA_ALARM_POLL_INSNS;
+    if (m_nInsnPoll < 1)
+    {
+        m_nInsnPoll = 1;
+    }
+    m_nInsnUsed = 0;
+    lua_sethook(L, InsnCountHook, LUA_MASKCOUNT, m_nInsnPoll);
 
     // Call the chunk (it's below the mux table stuff we just popped).
     //
@@ -792,6 +845,25 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
         // Error.
         const char *errmsg = lua_tostring(L, -1);
         if (nullptr == errmsg) errmsg = "unknown error";
+
+        if (m_bCpuLimited)
+        {
+            // Answer exactly as the AST evaluator and the JIT do, rather than
+            // wrapping it as a Lua error: one budget, one message (#1591).
+            m_stats.cpu_limit_hits++;
+            m_stats.errors++;
+            const UTF8 *kMsg = S_("#-1 CPU LIMITED");
+            size_t n = strlen(reinterpret_cast<const char *>(kMsg));
+            if (n >= nResultMax)
+            {
+                n = nResultMax - 1;
+            }
+            memcpy(pResult, kMsg, n);
+            pResult[n] = '\0';
+            *pnResultLen = n;
+            lua_pop(L, 1);
+            return MUX_S_OK;
+        }
 
         if (m_bMemExceeded)
         {
@@ -868,6 +940,9 @@ CLuaMod::CLuaMod(void) : m_cRef(1),
     m_pIJITCompile(nullptr),
     m_L(nullptr),
     m_nInsnLimit(LUA_DEFAULT_INSN_LIMIT),
+    m_bCpuLimited(false),
+    m_nInsnPoll(LUA_ALARM_POLL_INSNS),
+    m_nInsnUsed(0),
     m_nMemLimit(LUA_DEFAULT_MEM_LIMIT),
     m_nMemUsed(0),
     m_nMemPeak(0),

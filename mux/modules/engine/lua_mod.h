@@ -31,6 +31,12 @@ extern "C" {
 // Default resource limits.
 //
 #define LUA_DEFAULT_INSN_LIMIT   100000
+
+// How often the instruction hook fires so the wall-clock alarm is polled
+// (#1591).  Small enough that a chunk notices the alarm promptly, large enough
+// that the hook is not the cost of running Lua.  The instruction limit is
+// accounted across polls, so this does not change what that limit means.
+#define LUA_ALARM_POLL_INSNS     2000
 #define LUA_DEFAULT_MEM_LIMIT    1048576   // 1 MB
 #define LUA_DEFAULT_CACHE_SIZE   256
 
@@ -42,6 +48,7 @@ struct lua_mod_stats
     size_t errors;
     size_t insn_limit_hits;
     size_t mem_limit_hits;
+    size_t cpu_limit_hits;   // wall-clock aborts (#1591)
     size_t peak_mem_bytes;
     size_t cache_hits;
     size_t cache_misses;
@@ -73,6 +80,18 @@ private:
     size_t m_nMemUsed;
     size_t m_nMemPeak;
     bool   m_bMemExceeded;
+
+    // Wall-clock abort (#1591).  Set by InsnCountHook when alarm_clock has
+    // fired, so Run() can answer "#-1 CPU LIMITED" -- the same text the AST
+    // evaluator and the JIT produce -- rather than wrapping it as a Lua error.
+    bool   m_bCpuLimited;
+
+    // Instruction accounting for the hook.  The hook now fires every
+    // m_nInsnPoll instructions rather than once at the limit, so that the
+    // alarm is polled periodically; m_nInsnUsed accumulates toward
+    // m_nInsnLimit so the instruction limit keeps its old meaning.
+    int    m_nInsnPoll;
+    int    m_nInsnUsed;
 
     // Execution statistics.
     //
