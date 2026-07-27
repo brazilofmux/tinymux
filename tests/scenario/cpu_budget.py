@@ -51,6 +51,20 @@ EXPENSIVE = "[strlen(iter(lnum(1,600),[strlen(iter(lnum(1,600),##))]))]"
 
 ABORT_NOTICE = "Expensive activity abbreviated"
 
+# The Lua route answers with the softcode token rather than the descriptor
+# notice: lua() returns a value, so the abort surfaces through the module's
+# m_bCpuLimited path (#1591).  Same budget, same text as the AST evaluator
+# and the JIT.
+CPU_LIMITED = "#-1 CPU LIMITED"
+
+# A Lua pattern that backtracks exponentially: 25 lazy "a-" segments against
+# 26 a's, with a "b" that never matches.  Small strings, no memory pressure,
+# and every second of it is spent inside string.find -- a C function, where
+# lua_sethook(LUA_MASKCOUNT) does not fire.  Before the step budget in
+# lstrlib.c this ran past 45s with the process pinned at 100%.
+LUA_RUNAWAY = ("local s=string.rep('a',26) return tostring(s:find('"
+               + "a-" * 25 + "b'))")
+
 # lag_limit 1 aborts at ~1.0s; 8s is slack for a loaded CI box without
 # risking a long hang if the mechanism regresses.
 ABORT_WAIT = 8.0
@@ -164,6 +178,55 @@ def main():
         check(got is not None and got.isdigit() and int(got) > 0,
               "the same command completes under a %ds budget" % HIGH_BUDGET,
               "got=%r" % (got,))
+
+        # 6-9. The same budget on the Lua route (#1591).  The instruction
+        #      hook cannot reach a C function, so string.find was unbounded
+        #      even after the alarm poll landed; lstrlib.c now carries a step
+        #      budget beside its existing recursion-depth guard.
+        #
+        #      Control first, and a skip rather than a failure if lua() is
+        #      not available in this build -- an absent module is not a
+        #      regression, and a test that cannot tell the two apart is worse
+        #      than no test.
+        sendline(wiz, "@admin lag_limit=1")
+        read_for(wiz, None, 1.0)
+        sendline(wiz, "&CPUOK me=return 42")
+        read_for(wiz, None, 0.6)
+        got = probe(wiz, "LO", "[lua(me/CPUOK)]")
+        if got != "42":
+            print("# lua() unavailable here (got %r) -- skipping Lua cases"
+                  % (got,))
+        else:
+            check(True, "lua() answers under a 1s budget (control)")
+
+            sendline(wiz, "&CPUPAT me=%s" % LUA_RUNAWAY)
+            read_for(wiz, None, 0.6)
+
+            # Wait on the token, not a TAG< marker, for the same reason as
+            # case 3: the aborted command loses the literal text around its
+            # result.  That is exactly what #1602 got wrong.
+            t0 = time.monotonic()
+            sendline(wiz, "@pemit me=P<[lua(me/CPUPAT)]>")
+            buf = read_for(wiz, CPU_LIMITED, ABORT_WAIT)
+            elapsed = time.monotonic() - t0
+            check(CPU_LIMITED in buf,
+                  "a runaway Lua pattern is stopped by the 1s budget",
+                  "no CPU-limited answer within %.1fs" % elapsed)
+
+            check(elapsed < 6.0,
+                  "the Lua stop happens on the budget, not on completion",
+                  "took %.1fs with a 1s budget" % elapsed)
+
+            # And the budget did not cost ordinary pattern matching.  Without
+            # this, the two cases above would also pass if the step budget
+            # simply broke string.find outright.
+            sendline(wiz, "&CPUFIND me=return tostring(string.find("
+                          "'hello world','wor'))")
+            read_for(wiz, None, 0.6)
+            got = probe(wiz, "LF", "[lua(me/CPUFIND)]")
+            check(got == "7",
+                  "an ordinary Lua pattern is unaffected by the budget",
+                  "got=%r" % (got,))
 
     finally:
         # Leave the budget where the rest of the suite expects it.  Other
