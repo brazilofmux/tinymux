@@ -669,10 +669,10 @@ static void do_lua(dbref executor, dbref caller, dbref enactor, int eval,
         mudstate.pILuaControl->GetStats(&nCalls, &nErrors,
             &nInsnHits, &nMemHits, &nBytes,
             &nCacheHits, &nCacheMisses, &nCacheEntries);
-        notify(executor, tprintf(T("Lua stats: %zu calls, %zu errors, "
+        notify(executor, tprintf(M_("Lua stats: %zu calls, %zu errors, "
             "%zu insn-limit hits, %zu mem-limit hits, %zu bytes used"),
             nCalls, nErrors, nInsnHits, nMemHits, nBytes));
-        notify(executor, tprintf(T("Cache: %zu entries, %zu hits, %zu misses"),
+        notify(executor, tprintf(M_("Cache: %zu entries, %zu hits, %zu misses"),
             nCacheEntries, nCacheHits, nCacheMisses));
         return;
     }
@@ -1513,7 +1513,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
                 if (xkey == -1)
                 {
                     notify(executor,
-                       tprintf(T("Unrecognized switch ‘%s’ for command ‘%s’."),
+                       tprintf(M_("Unrecognized switch ‘%s’ for command ‘%s’."),
                        switchp, cmdp->cmdname));
                     return;
                 }
@@ -1542,7 +1542,7 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
     }
     else if (switchp && !(cmdp->callseq & CS_ADDED))
     {
-        notify(executor, tprintf(T("Command %s does not take switches."),
+        notify(executor, tprintf(M_("Command %s does not take switches."),
             cmdp->cmdname));
         return;
     }
@@ -3641,17 +3641,17 @@ static void list_costs(dbref player)
         mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.room_quota);
     }
     notify(player,
-           tprintf(T("Digging a room costs %d %s%s."),
+           tprintf(M_("Digging a room costs %d %s%s."),
                mudconf.digcost, coin_name(mudconf.digcost), buff));
     if (mudconf.quotas)
     {
         mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.exit_quota);
     }
     notify(player,
-           tprintf(T("Opening a new exit costs %d %s%s."),
+           tprintf(M_("Opening a new exit costs %d %s%s."),
                mudconf.opencost, coin_name(mudconf.opencost), buff));
     notify(player,
-           tprintf(T("Linking an exit, home, or dropto costs %d %s."),
+           tprintf(M_("Linking an exit, home, or dropto costs %d %s."),
                mudconf.linkcost, coin_name(mudconf.linkcost)));
     if (mudconf.quotas)
     {
@@ -3660,14 +3660,14 @@ static void list_costs(dbref player)
     if (mudconf.createmin == mudconf.createmax)
     {
         raw_notify(player,
-               tprintf(T("Creating a new thing costs %d %s%s."),
+               tprintf(M_("Creating a new thing costs %d %s%s."),
                    mudconf.createmin,
                    coin_name(mudconf.createmin), buff));
     }
     else
     {
         raw_notify(player,
-        tprintf(T("Creating a new thing costs between %d and %d %s%s."),
+        tprintf(M_("Creating a new thing costs between %d and %d %s%s."),
             mudconf.createmin, mudconf.createmax,
             mudconf.many_coins, buff));
     }
@@ -3676,7 +3676,7 @@ static void list_costs(dbref player)
         mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.player_quota);
     }
     notify(player,
-           tprintf(T("Creating a robot costs %d %s%s."),
+           tprintf(M_("Creating a robot costs %d %s%s."),
                mudconf.robotcost, coin_name(mudconf.robotcost), buff));
     if (mudconf.killmin == mudconf.killmax)
     {
@@ -3685,13 +3685,13 @@ static void list_costs(dbref player)
         {
             chance = (mudconf.killmin * 100) / mudconf.killguarantee;
         }
-        raw_notify(player, tprintf(T("Killing costs %d %s, with a %d%% chance of success."),
+        raw_notify(player, tprintf(M_("Killing costs %d %s, with a %d%% chance of success."),
             mudconf.killmin, coin_name(mudconf.digcost), chance));
     }
     else
     {
         int cost_surething;
-        raw_notify(player, tprintf(T("Killing costs between %d and %d %s."),
+        raw_notify(player, tprintf(M_("Killing costs between %d and %d %s."),
             mudconf.killmin, mudconf.killmax, mudconf.many_coins));
         if (0 < mudconf.killguarantee)
         {
@@ -3701,20 +3701,20 @@ static void list_costs(dbref player)
         {
             cost_surething = mudconf.killmin;
         }
-        raw_notify(player, tprintf(T("You must spend %d %s to guarantee success."),
+        raw_notify(player, tprintf(M_("You must spend %d %s to guarantee success."),
             cost_surething, coin_name(cost_surething)));
     }
     raw_notify(player,
-           tprintf(T("Computationally expensive commands and functions (ie: @entrances, @find, @search, @stats (with an argument or switch), search(), and stats()) cost %d %s."),
+           tprintf(M_("Computationally expensive commands and functions (ie: @entrances, @find, @search, @stats (with an argument or switch), search(), and stats()) cost %d %s."),
             mudconf.searchcost, coin_name(mudconf.searchcost)));
     if (mudconf.machinecost > 0)
         raw_notify(player,
-           tprintf(T("Each command run from the queue costs 1/%d %s."),
+           tprintf(M_("Each command run from the queue costs 1/%d %s."),
                mudconf.machinecost, mudconf.one_coin));
     if (mudconf.waitcost > 0)
     {
         raw_notify(player,
-               tprintf(T("A %d %s deposit is charged for putting a command on the queue."),
+               tprintf(M_("A %d %s deposit is charged for putting a command on the queue."),
                    mudconf.waitcost, mudconf.one_coin));
         raw_notify(player, M_("The deposit is refunded when the command is run or canceled."));
     }
@@ -3740,11 +3740,11 @@ static void list_costs(dbref player)
         else
             mux_sprintf(buff, MBUF_SIZE, T("<create cost> / %d"), mudconf.sacfactor);
     }
-    raw_notify(player, tprintf(T("The value of an object is %s."), buff));
+    raw_notify(player, tprintf(M_("The value of an object is %s."), buff));
     if (mudconf.clone_copy_cost)
         raw_notify(player, M_("The default value of cloned objects is the value of the original object."));
     else
-        raw_notify(player, tprintf(T("The default value of cloned objects is %d %s."),
+        raw_notify(player, tprintf(M_("The default value of cloned objects is %d %s."),
                 mudconf.createmin, coin_name(mudconf.createmin)));
 
     free_mbuf(buff);
@@ -3803,7 +3803,7 @@ static void list_options(dbref player)
     if (mudconf.trace_topdown)
     {
         raw_notify(player, M_("Trace output is presented top-down (whole expression first, then sub-exprs)."));
-        raw_notify(player, tprintf(T("Only %d lines of trace output are displayed."), mudconf.trace_limit));
+        raw_notify(player, tprintf(M_("Only %d lines of trace output are displayed."), mudconf.trace_limit));
     }
     else
     {
@@ -3827,15 +3827,15 @@ static void list_options(dbref player)
         raw_notify(player, M_("The ‘get()’ function will return the description of faraway objects,"));
     if (mudconf.read_rem_name)
         raw_notify(player, M_("The ‘name()’ function will return the name of faraway objects."));
-    raw_notify(player, tprintf(T("The default switch for the ‘@switch’ command is %s."), switchd[mudconf.switch_df_all]));
+    raw_notify(player, tprintf(M_("The default switch for the ‘@switch’ command is %s."), switchd[mudconf.switch_df_all]));
 
-    raw_notify(player, tprintf(T("The default switch for the ‘examine’ command is %s."), examd[mudconf.exam_public]));
+    raw_notify(player, tprintf(M_("The default switch for the ‘examine’ command is %s."), examd[mudconf.exam_public]));
     if (mudconf.sweep_dark)
         raw_notify(player, M_("Players may @sweep dark locations."));
     if (mudconf.fascist_tport)
         raw_notify(player, M_("You may only @teleport out of locations that are JUMP_OK or that you control."));
     raw_notify(player,
-           tprintf(T("Players may have at most %d commands in the queue at one time."),
+           tprintf(M_("Players may have at most %d commands in the queue at one time."),
                mudconf.queuemax));
     if (mudconf.match_mine)
     {
@@ -3849,10 +3849,10 @@ static void list_options(dbref player)
     buff = alloc_mbuf("list_options");
 
     raw_notify(player,
-           tprintf(T("%d commands are run from the queue when there is no net activity."),
+           tprintf(M_("%d commands are run from the queue when there is no net activity."),
                mudconf.queue_chunk));
     raw_notify(player,
-           tprintf(T("%d commands are run from the queue when there is net activity."),
+           tprintf(M_("%d commands are run from the queue when there is net activity."),
                mudconf.active_q_chunk));
     if (mudconf.idle_wiz_dark)
         raw_notify(player, M_("Wizards idle for longer than the default timeout are automatically set DARK."));
@@ -3870,24 +3870,24 @@ static void list_options(dbref player)
 #endif // HAVE_WORKING_FORK
     if (mudconf.max_players >= 0)
         raw_notify(player,
-        tprintf(T("There may be at most %d players logged in at once."),
+        tprintf(M_("There may be at most %d players logged in at once."),
             mudconf.max_players));
     if (mudconf.quotas)
         mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.start_quota);
     else
         *buff = '\0';
     raw_notify(player,
-           tprintf(T("New players are given %d %s to start with."),
+           tprintf(M_("New players are given %d %s to start with."),
                mudconf.paystart, mudconf.many_coins));
     raw_notify(player,
-           tprintf(T("Players are given %d %s each day they connect."),
+           tprintf(M_("Players are given %d %s each day they connect."),
                mudconf.paycheck, mudconf.many_coins));
     raw_notify(player,
-      tprintf(T("Earning money is difficult if you have more than %d %s."),
+      tprintf(M_("Earning money is difficult if you have more than %d %s."),
           mudconf.paylimit, mudconf.many_coins));
     if (mudconf.payfind > 0)
         raw_notify(player,
-               tprintf(T("Players have a 1 in %d chance of finding a %s each time they move."),
+               tprintf(M_("Players have a 1 in %d chance of finding a %s each time they move."),
                    mudconf.payfind, mudconf.one_coin));
     raw_notify(player,
            tprintf(T("The head of the object freelist is #%d."),

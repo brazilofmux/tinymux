@@ -264,12 +264,12 @@ bool canpayfees(dbref player, dbref who, int pennies, int quota)
     {
         if (player == who)
         {
-            notify(player, tprintf(T("Sorry, you don’t have enough %s."),
+            notify(player, tprintf(M_("Sorry, you don’t have enough %s."),
                        mudconf.many_coins));
         }
         else
         {
-            notify(player, tprintf(T("Sorry, that player doesn’t have enough %s."),
+            notify(player, tprintf(M_("Sorry, that player doesn’t have enough %s."),
                 mudconf.many_coins));
         }
         return false;
@@ -1041,7 +1041,7 @@ void do_addcommand
             if (  entry.thing == thing
                && entry.atr == pattr->number)
             {
-                notify(player, tprintf(T("%s already added."), pName));
+                notify(player, tprintf(M_("%s already added."), pName));
                 return;
             }
         }
@@ -1127,7 +1127,7 @@ void do_addcommand
     // We reset the one letter commands here so you can overload them.
     //
     cache_prefix_cmds();
-    notify(player, tprintf(T("Command %s added."), pName));
+    notify(player, tprintf(M_("Command %s added."), pName));
 }
 
 void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
@@ -1174,7 +1174,7 @@ void do_listcommands(dbref player, dbref caller, dbref enactor, int eval,
         }
         else
         {
-            notify(player, tprintf(T("%s not found in command table."), pCased));
+            notify(player, tprintf(M_("%s not found in command table."), pCased));
         }
         return;
     }
