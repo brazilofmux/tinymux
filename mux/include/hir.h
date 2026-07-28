@@ -712,25 +712,32 @@ struct hir_program {
 // Almost every instruction keeps its operands in src1/src2, with the
 // CALL/STRCAT and PHI side arrays as the two documented exceptions that
 // operand walkers already special-case.  HIR_LUA_SETI is a third
-// exception and a much easier one to miss: seti(tbl,key,value) and
-// setfield(tbl,key,value) both park the VALUE here
-// and the VALUE is an instruction index parked in val[] (see the
-// HIR_LUA_SETI case in hir_codegen.cpp, which reads it back as `s3`).
+// exception and a much easier one to miss: seti/setfield park the VALUE
+// here; CALL_INT packs nargs in the low 8 bits and the *second* arg's
+// instruction index above that (src2 holds the first arg).  A walker that
+// misses either treats the operand as dead -- DCE / regalloc reuse -- while
+// the ECALL still expects it (#1711 was that shape for field keys).
 //
-// A walker that misses it will treat the stored value as dead, so DCE
-// can NOP it and the register allocator can reuse its register while
-// the SETI still expects it.  val[] is a plain integer for every other
-// opcode -- for HIR_LUA_ALOAD it is a guest ADDRESS -- so this must
-// stay strictly gated on the opcode.
+// val[] is a plain integer for every other opcode -- for HIR_LUA_ALOAD it
+// is a guest ADDRESS -- so this must stay strictly gated on the opcode.
 //
 // Returns the operand's instruction index, or -1 when there is none.
+// CALL_INT exposes only arg1 this way; a true N-ary operand list is the
+// longer-term fix the #1519 call path argues for.
+//
 inline int hir_val_operand(const hir_program &h, int i) {
     if (i < 0 || i >= h.n_insns) return -1;
-    if (h.kind[i] != HIR_LUA_SETI && h.kind[i] != HIR_LUA_SETFIELD) {
-        return -1;
+    if (h.kind[i] == HIR_LUA_SETI || h.kind[i] == HIR_LUA_SETFIELD) {
+        int v = static_cast<int>(h.val[i]);
+        return (v >= 0 && v < h.n_insns) ? v : -1;
     }
-    int v = static_cast<int>(h.val[i]);
-    return (v >= 0 && v < h.n_insns) ? v : -1;
+    if (h.kind[i] == HIR_LUA_CALL_INT) {
+        // low 8 = nargs; high bits = a1_insn + 1 (0 means "no second arg").
+        //
+        int a1i = static_cast<int>(h.val[i] >> 8) - 1;
+        return (a1i >= 0 && a1i < h.n_insns) ? a1i : -1;
+    }
+    return -1;
 }
 
 // SSA construction (hir_ssa.cpp).
