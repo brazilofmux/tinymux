@@ -47,6 +47,15 @@ CONV_WITH_POS = re.compile(
     r'%(?:(\d+)\$)?[-+ #0]*(?:\d+|\*)?(?:\.(?:\d+|\*))?'
     r'(?:hh|h|ll|l|z|j|t|L)?([diouxXeEfgGaAcspn])')
 
+# Pre-spaced multi-column table headers (#1667 Phase 5 / #1648).  Three or
+# more label-like fields separated by 2+ spaces, no printf conversions.
+# Layout belongs in mux_table_*; baking column spacing into a single msgid
+# cannot be translated under CJK or after a stop change.
+#
+MULTI_SPACE = re.compile(r'  +')
+TABLE_CHROME = re.compile(r'^[\s*\-\u2013\u2014\u2500=+_]+$')
+TABLE_LABEL = re.compile(r'^[A-Za-z0-9*#]')
+
 MARK_RE = r'(?:M_|T)\s*\(\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)'
 
 
@@ -144,6 +153,51 @@ def check_abi_tokens(pot):
         if ABI_PATTERN.search(msgid):
             bad.append(msgid)
     return [("%s" % m) for m in bad]
+
+
+def looks_like_table_header_blob(s):
+    """True if s looks like a pre-spaced multi-column table header.
+
+    Heuristic: three or more non-empty fields split on 2+ spaces, each
+    starting like a column label, no printf conversions, not pure chrome.
+    See docs/design-tabular-notifies.md Phase 5.
+    """
+    if not s or FORMAT_PATTERN.search(s):
+        return False
+    if len(s) < 12:
+        return False
+    if TABLE_CHROME.match(s):
+        return False
+    fields = [p for p in MULTI_SPACE.split(s.strip()) if p.strip()]
+    if len(fields) < 3:
+        return False
+    labelish = sum(1 for f in fields if TABLE_LABEL.match(f.strip()))
+    return labelish >= 3
+
+
+def check_table_header_blobs(root, pot):
+    """Ban pre-spaced multi-column headers in the pot and in M_() sources.
+
+    Phase 4 converted known tables to mux_table_*.  This check keeps new ones
+    from shipping as a single spaced msgid again.
+    """
+    findings = []
+    for msgid, _, _ in pot:
+        if looks_like_table_header_blob(msgid):
+            findings.append("pot: pre-spaced table header msgid %r" % msgid)
+
+    mark_m = re.compile(r'M_\s*\(\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)')
+    for path in source_files(root):
+        try:
+            text = open(path, encoding="utf-8", errors="replace").read()
+        except OSError:
+            continue
+        for m in mark_m.finditer(text):
+            lit = _lit(m.group(1))
+            if looks_like_table_header_blob(lit):
+                findings.append("%s: M_() pre-spaced table header %r"
+                                % (os.path.relpath(path, root), lit))
+    return findings
 
 
 def conversion_sequence(s):
@@ -420,6 +474,11 @@ def main():
          check_half_marking(root),
          "The same text is M_() in one place and T() in another within one "
          "file, so a translated game renders both languages at once."),
+        ("pre-spaced multi-column table headers",
+         check_table_header_blobs(root, pot),
+         "Column spacing belongs in mux_table_*, not in a single msgid.  "
+         "Compose headers from per-label M_() strings (docs/design-tabular-"
+         "notifies.md Phase 5 / #1648 / #1667)."),
         ("catalogue integrity",
          check_catalogues(root, pot),
          "Stale and missing msgids are errors in every catalogue.  Under an "

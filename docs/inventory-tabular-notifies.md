@@ -307,8 +307,7 @@ API. Product default may still be the built-in until #1614 directives land.
 ownership is **libmux** so dual paths and engine-only staff tables share one
 API. See `design-tabular-notifies.md` §4.
 
-**Phase 3 (layout API):** `mux_table_append_*` / `mux_table_emit_fields` in
-libmux; modules call them. **Not** yet: converting blob headers or engine
-`PadField` tables (Phase 4).
+**Phase 3–5:** layout API in libmux; columnar families converted; NLS guard
+bans new pre-spaced multi-column header msgids (`tests/nls/check_nls.py`).
 
-**Next:** Phase 4 — convert table families (both dual paths in one change).
+**Remaining outside this epic’s grid scope:** B3/B4 mail multi-line forms.
