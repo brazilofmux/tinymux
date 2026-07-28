@@ -28,6 +28,12 @@
 #
 # This file is distributed under the same license as the TinyMUX package.
 #
+# Mail tranche: the "MAIL:" prefix is deliberately NOT translated.  It is a
+# subsystem tag rather than prose -- parallel to the @mail command name,
+# which stays English, and to "@icmd:" which this catalogue family already
+# leaves alone.  Only the sentence after it is translated.
+#
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
@@ -1523,27 +1529,27 @@ msgstr ""
 #: modules/engine/engine_com.cpp:2304 modules/engine/mail.cpp:2746
 #, c-format
 msgid "Sorry, %s is not accepting mail."
-msgstr ""
+msgstr "Lo siento, %s no acepta correo."
 
 #: modules/engine/engine_com.cpp:2316 modules/engine/mail.cpp:2761
 #, c-format
 msgid "Warning: %s can’t return your mail."
-msgstr ""
+msgstr "Aviso: %s no puede responderte."
 
 #: modules/engine/engine_com.cpp:2323 modules/engine/mail.cpp:2766
 #, c-format
 msgid "Sorry, %s can’t return your mail."
-msgstr ""
+msgstr "Lo siento, %s no puede responderte."
 
 #: modules/engine/engine_com.cpp:2351 modules/engine/mail.cpp:2894
 #, c-format
 msgid "MAIL: You sent your message to %s."
-msgstr ""
+msgstr "MAIL: Has enviado tu mensaje a %s."
 
 #: modules/engine/engine_com.cpp:2356 modules/engine/mail.cpp:2898
 #, c-format
 msgid "MAIL: You have a new message from %s. Subject: %s"
-msgstr ""
+msgstr "MAIL: Tienes un mensaje nuevo de %s. Asunto: %s"
 
 #: modules/engine/engine_com.cpp:4586
 msgid "*** Logins are disabled."
@@ -2057,35 +2063,35 @@ msgstr ""
 msgid ""
 "MAIL: This mail message does not exist in the database. Please alert your "
 "admin."
-msgstr ""
+msgstr "MAIL: Este mensaje no existe en la base de datos.  Avisa a un administrador."
 
 #: modules/engine/mail.cpp:381 modules/mail/mail_mod.cpp:3135
 msgid "MAIL: You probably did not intend to send a @mail saying ‘clear’."
-msgstr ""
+msgstr "MAIL: Probablemente no querías enviar un @mail que dijera ‘clear’."
 
 #: modules/engine/mail.cpp:745 modules/mail/mail_mod.cpp:1120
 msgid "MAIL: Invalid message range"
-msgstr ""
+msgstr "MAIL: Rango de mensajes no válido"
 
 #: modules/engine/mail.cpp:746 modules/mail/mail_mod.cpp:1121
 msgid "MAIL: Invalid message number"
-msgstr ""
+msgstr "MAIL: Número de mensaje no válido"
 
 #: modules/engine/mail.cpp:747 modules/mail/mail_mod.cpp:1122
 msgid "MAIL: Invalid age"
-msgstr ""
+msgstr "MAIL: Antigüedad no válida"
 
 #: modules/engine/mail.cpp:748 modules/mail/mail_mod.cpp:1123
 msgid "MAIL: Invalid dbref #"
-msgstr ""
+msgstr "MAIL: Referencia de objeto no válida"
 
 #: modules/engine/mail.cpp:749 modules/mail/mail_mod.cpp:1124
 msgid "MAIL: Invalid player"
-msgstr ""
+msgstr "MAIL: Jugador no válido"
 
 #: modules/engine/mail.cpp:750 modules/mail/mail_mod.cpp:1125
 msgid "MAIL: Invalid message specification"
-msgstr ""
+msgstr "MAIL: Especificación de mensaje no válida"
 
 #: modules/engine/mail.cpp:751 modules/mail/mail_mod.cpp:1126
 msgid ""
@@ -2111,184 +2117,184 @@ msgstr ""
 #: modules/engine/mail.cpp:1162 modules/mail/mail_mod.cpp:1925
 #, c-format
 msgid "MAIL: 0 messages in folder %d [%s]."
-msgstr ""
+msgstr "MAIL: 0 mensajes en la carpeta %d [%s]."
 
 #: modules/engine/mail.cpp:1170 modules/mail/mail_mod.cpp:1944
 #, c-format
 msgid "MAIL: Current folder is %d [%s]."
-msgstr ""
+msgstr "MAIL: La carpeta actual es %d [%s]."
 
 #: modules/engine/mail.cpp:1192 modules/mail/mail_mod.cpp:1859
 msgid "MAIL: What folder is that?"
-msgstr ""
+msgstr "MAIL: ¿Qué carpeta es esa?"
 
 #: modules/engine/mail.cpp:1201 modules/mail/mail_mod.cpp:1869
 msgid "MAIL: Folder name too long"
-msgstr ""
+msgstr "MAIL: El nombre de la carpeta es demasiado largo"
 
 #: modules/engine/mail.cpp:1208 modules/mail/mail_mod.cpp:1877
 msgid "MAIL: Illegal folder name"
-msgstr ""
+msgstr "MAIL: Nombre de carpeta no permitido"
 
 #: modules/engine/mail.cpp:1213 modules/mail/mail_mod.cpp:1884
 #, c-format
 msgid "MAIL: Folder %d now named ‘%s’"
-msgstr ""
+msgstr "MAIL: La carpeta %d ahora se llama ‘%s’"
 
 #: modules/engine/mail.cpp:1221 modules/mail/mail_mod.cpp:1895
 #, c-format
 msgid "MAIL: Current folder set to %d [%s]."
-msgstr ""
+msgstr "MAIL: Carpeta actual cambiada a %d [%s]."
 
 #: modules/engine/mail.cpp:1331 modules/engine/mail.cpp:1342
 #: modules/engine/mail.cpp:1347 modules/mail/mail_mod.cpp:4828
 #: modules/mail/mail_mod.cpp:4840 modules/mail/mail_mod.cpp:4846
 #, c-format
 msgid "MAIL: Msg #%d %s."
-msgstr ""
+msgstr "MAIL: Mensaje #%d %s."
 
 #: modules/engine/mail.cpp:1338 modules/mail/mail_mod.cpp:4835
 #, c-format
 msgid "MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."
-msgstr ""
+msgstr "MAIL: ¡Mensaje sin leer #%d borrado! Usa @mail/unclear %d para recuperarlo."
 
 #: modules/engine/mail.cpp:1359 modules/engine/mail.cpp:1438
 #: modules/mail/mail_mod.cpp:4867 modules/mail/mail_mod.cpp:5310
 msgid "MAIL: You don’t have any matching messages!"
-msgstr ""
+msgstr "MAIL: ¡No tienes ningún mensaje que coincida!"
 
 #: modules/engine/mail.cpp:1405 modules/mail/mail_mod.cpp:5276
 msgid "MAIL: Invalid folder specification"
-msgstr ""
+msgstr "MAIL: Especificación de carpeta no válida"
 
 #: modules/engine/mail.cpp:1428 modules/mail/mail_mod.cpp:5300
 #, c-format
 msgid "MAIL: Msg %d filed in folder %d"
-msgstr ""
+msgstr "MAIL: Mensaje %d archivado en la carpeta %d"
 
 #: modules/engine/mail.cpp:1540 modules/mail/mail_mod.cpp:4099
 msgid "MAIL: Mail aliases must be of the form *<name> or #<num>."
-msgstr ""
+msgstr "MAIL: Los alias de correo deben tener la forma *<nombre> o #<núm>."
 
 #: modules/engine/mail.cpp:1544 modules/mail/mail_mod.cpp:4104
 msgid "MAIL: Mail aliases must be of the form *<name>."
-msgstr ""
+msgstr "MAIL: Los alias de correo deben tener la forma *<nombre>."
 
 #: modules/engine/mail.cpp:1667 modules/engine/mail.cpp:2148
 #: modules/engine/mail.cpp:5708 modules/mail/mail_mod.cpp:2027
 msgid "MAIL: No such folder."
-msgstr ""
+msgstr "MAIL: No existe esa carpeta."
 
 #: modules/engine/mail.cpp:1750 modules/engine/mail.cpp:1984
 #: modules/engine/mail.cpp:2080 modules/mail/mail_mod.cpp:2146
 #: modules/mail/mail_mod.cpp:2279 modules/mail/mail_mod.cpp:5162
 msgid "MAIL: You don’t have that many matching messages!"
-msgstr ""
+msgstr "MAIL: ¡No tienes tantos mensajes que coincidan!"
 
 #: modules/engine/mail.cpp:1812 modules/mail/mail_mod.cpp:5222
 msgid "MAIL: You have no unread messages in that folder."
-msgstr ""
+msgstr "MAIL: No tienes mensajes sin leer en esa carpeta."
 
 #: modules/engine/mail.cpp:1928 modules/mail/mail_mod.cpp:2084
 msgid "MAIL: You have no matching messages."
-msgstr ""
+msgstr "MAIL: No tienes mensajes que coincidan."
 
 #: modules/engine/mail.cpp:2002 modules/engine/mail.cpp:4146
 #: modules/engine/mail.cpp:5245 modules/mail/mail_mod.cpp:2166
 #: modules/mail/mail_mod.cpp:2182 modules/mail/mail_mod.cpp:2293
 #: modules/mail/mail_mod.cpp:2335 modules/mail/mail_mod.cpp:4202
 msgid "MAIL: No such player."
-msgstr ""
+msgstr "MAIL: No existe ese jugador."
 
 #: modules/engine/mail.cpp:2227 modules/mail/mail_mod.cpp:5246
 msgid "MAIL: Mailbox purged."
-msgstr ""
+msgstr "MAIL: Buzón vaciado."
 
 #: modules/engine/mail.cpp:2288 modules/mail/mail_mod.cpp:2680
 #, c-format
 msgid "MAIL: Alias ‘%s’ does not exist."
-msgstr ""
+msgstr "MAIL: El alias ‘%s’ no existe."
 
 #: modules/engine/mail.cpp:2294 modules/mail/mail_mod.cpp:2691
 #, c-format
 msgid "MAIL: ‘%s’ is a badly-formed alias."
-msgstr ""
+msgstr "MAIL: ‘%s’ es un alias mal formado."
 
 #: modules/engine/mail.cpp:2322 modules/mail/mail_mod.cpp:2735
 #, c-format
 msgid "MAIL: ‘%s’ does not exist."
-msgstr ""
+msgstr "MAIL: ‘%s’ no existe."
 
 #: modules/engine/mail.cpp:2339 modules/mail/mail_mod.cpp:2613
 #: modules/mail/mail_mod.cpp:2757
 msgid "MAIL: No players specified."
-msgstr ""
+msgstr "MAIL: No se ha indicado ningún jugador."
 
 #: modules/engine/mail.cpp:2375 modules/engine/mail.cpp:4332
 #: modules/mail/mail_mod.cpp:3220 modules/mail/mail_mod.cpp:3418
 msgid "MAIL: I do not know whom you want to mail."
-msgstr ""
+msgstr "MAIL: No sé a quién quieres escribir."
 
 #: modules/engine/mail.cpp:2380 modules/engine/mail.cpp:4550
 #: modules/mail/mail_mod.cpp:3228 modules/mail/mail_mod.cpp:3528
 msgid "MAIL: No subject."
-msgstr ""
+msgstr "MAIL: Sin asunto."
 
 #: modules/engine/mail.cpp:2385 modules/engine/mail.cpp:2415
 #: modules/engine/mail.cpp:2461 modules/engine/mail.cpp:4533
 #: modules/mail/mail_mod.cpp:3244 modules/mail/mail_mod.cpp:3487
 #: modules/mail/mail_mod.cpp:3569 modules/mail/mail_mod.cpp:3684
 msgid "MAIL: Mail message already in progress."
-msgstr ""
+msgstr "MAIL: Ya hay un mensaje en curso."
 
 #: modules/engine/mail.cpp:2391 modules/engine/mail.cpp:2431
 #: modules/engine/mail.cpp:2472 modules/engine/mail.cpp:4539
 #: modules/mail/mail_mod.cpp:3268 modules/mail/mail_mod.cpp:3508
 #: modules/mail/mail_mod.cpp:3607 modules/mail/mail_mod.cpp:3713
 msgid "MAIL: Too much @mail sent recently."
-msgstr ""
+msgstr "MAIL: Se ha enviado demasiado @mail recientemente."
 
 #: modules/engine/mail.cpp:2406 modules/engine/mail.cpp:4355
 #: modules/mail/mail_mod.cpp:3307 modules/mail/mail_mod.cpp:3448
 #, c-format
 msgid "MAIL: You are sending mail to ‘%s’."
-msgstr ""
+msgstr "MAIL: Estás enviando correo a ‘%s’."
 
 #: modules/engine/mail.cpp:2420 modules/engine/mail.cpp:2466
 #: modules/mail/mail_mod.cpp:3577 modules/mail/mail_mod.cpp:3692
 msgid "MAIL: No message list."
-msgstr ""
+msgstr "MAIL: No hay lista de mensajes."
 
 #: modules/engine/mail.cpp:2425 modules/mail/mail_mod.cpp:3586
 msgid "MAIL: To whom should I forward?"
-msgstr ""
+msgstr "MAIL: ¿A quién debo reenviarlo?"
 
 #: modules/engine/mail.cpp:2437 modules/engine/mail.cpp:2478
 #: modules/mail/mail_mod.cpp:3619 modules/mail/mail_mod.cpp:3725
 msgid "MAIL: I don’t understand that message number."
-msgstr ""
+msgstr "MAIL: No entiendo ese número de mensaje."
 
 #: modules/engine/mail.cpp:2443 modules/mail/mail_mod.cpp:3630
 msgid "MAIL: You can’t forward non-existent messages."
-msgstr ""
+msgstr "MAIL: No puedes reenviar mensajes que no existen."
 
 #: modules/engine/mail.cpp:2446 modules/mail/mail_mod.cpp:3640
 #, c-format
 msgid "%s (fwd from %s)"
-msgstr ""
+msgstr "%s (reenviado de %s)"
 
 #: modules/engine/mail.cpp:2484 modules/mail/mail_mod.cpp:3736
 msgid "MAIL: You can’t reply to non-existent messages."
-msgstr ""
+msgstr "MAIL: No puedes responder a mensajes que no existen."
 
 #: modules/engine/mail.cpp:2489 modules/mail/mail_mod.cpp:3746
 msgid "MAIL: The original sender no longer exists."
-msgstr ""
+msgstr "MAIL: El remitente original ya no existe."
 
 #: modules/engine/mail.cpp:2533 modules/mail/mail_mod.cpp:3811
 #, c-format
 msgid "Re: %s"
-msgstr ""
+msgstr "Re: %s"
 
 #: modules/engine/mail.cpp:2543 modules/mail/mail_mod.cpp:3833
 #, c-format
@@ -2302,39 +2308,39 @@ msgstr ""
 
 #: modules/engine/mail.cpp:2790 modules/mail/mail_mod.cpp:2479
 msgid "MAIL: You cannot send mail to non-existent people."
-msgstr ""
+msgstr "MAIL: No puedes enviar correo a personas que no existen."
 
 #: modules/engine/mail.cpp:2874 modules/mail/mail_mod.cpp:2580
 #, c-format
 msgid "MAIL: %s’s mailbox is full (%d messages)."
-msgstr ""
+msgstr "MAIL: El buzón de %s está lleno (%d mensajes)."
 
 #: modules/engine/mail.cpp:2909 modules/mail/mail_mod.cpp:2398
 msgid "The postal service issues a warrant for your arrest."
-msgstr ""
+msgstr "El servicio postal emite una orden de arresto contra ti."
 
 #: modules/engine/mail.cpp:2922 modules/mail/mail_mod.cpp:2424
 msgid "You annihilate the post office. All messages cleared."
-msgstr ""
+msgstr "Aniquilas la oficina de correos.  Todos los mensajes han sido borrados."
 
 #: modules/engine/mail.cpp:2985
 msgid "Go get some bugspray."
-msgstr ""
+msgstr "Ve a por un insecticida."
 
 #: modules/engine/mail.cpp:3001
 #, c-format
 msgid "%s: no such player."
-msgstr ""
+msgstr "%s: no existe ese jugador."
 
 #: modules/engine/mail.cpp:3006
 #, c-format
 msgid "Let %s clear their own @mail."
-msgstr ""
+msgstr "Deja que %s borre su propio @mail."
 
 #: modules/engine/mail.cpp:3011
 #, c-format
 msgid "Mail cleared for %s(#%d)."
-msgstr ""
+msgstr "Correo borrado para %s(#%d)."
 
 #: modules/engine/mail.cpp:3038
 #, c-format

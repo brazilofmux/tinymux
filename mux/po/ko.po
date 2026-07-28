@@ -16,6 +16,11 @@
 #
 # This file is distributed under the same license as the TinyMUX package.
 #
+# 메일 항목: "MAIL:" 접두사는 의도적으로 번역하지 않았습니다.  이는 산문이
+# 아니라 하위 시스템 태그이며, 영어로 유지되는 @mail 명령어 이름 및 이미
+# 그대로 두는 "@icmd:"와 같은 방식입니다.
+#
+#
 # Extended (#1419, second tranche): the moment-to-moment player loop --
 # movement, taking and dropping, giving, speech, paging, looking and the
 # common refusals.  Still partial and still not native-reviewed.
@@ -1533,27 +1538,27 @@ msgstr ""
 #: modules/engine/engine_com.cpp:2304 modules/engine/mail.cpp:2746
 #, c-format
 msgid "Sorry, %s is not accepting mail."
-msgstr ""
+msgstr "죄송합니다, %s님은 메일을 받지 않습니다."
 
 #: modules/engine/engine_com.cpp:2316 modules/engine/mail.cpp:2761
 #, c-format
 msgid "Warning: %s can’t return your mail."
-msgstr ""
+msgstr "경고: %s님은 답장할 수 없습니다."
 
 #: modules/engine/engine_com.cpp:2323 modules/engine/mail.cpp:2766
 #, c-format
 msgid "Sorry, %s can’t return your mail."
-msgstr ""
+msgstr "죄송합니다, %s님은 답장할 수 없습니다."
 
 #: modules/engine/engine_com.cpp:2351 modules/engine/mail.cpp:2894
 #, c-format
 msgid "MAIL: You sent your message to %s."
-msgstr ""
+msgstr "MAIL: %s님에게 메시지를 보냈습니다."
 
 #: modules/engine/engine_com.cpp:2356 modules/engine/mail.cpp:2898
 #, c-format
 msgid "MAIL: You have a new message from %s. Subject: %s"
-msgstr ""
+msgstr "MAIL: %s님에게서 새 메시지가 왔습니다. 제목: %s"
 
 #: modules/engine/engine_com.cpp:4586
 msgid "*** Logins are disabled."
@@ -2066,7 +2071,7 @@ msgstr ""
 msgid ""
 "MAIL: This mail message does not exist in the database. Please alert your "
 "admin."
-msgstr ""
+msgstr "MAIL: 이 메시지는 데이터베이스에 존재하지 않습니다.  관리자에게 알려 주세요."
 
 #: modules/engine/mail.cpp:381 modules/mail/mail_mod.cpp:3135
 msgid "MAIL: You probably did not intend to send a @mail saying ‘clear’."
@@ -2074,27 +2079,27 @@ msgstr ""
 
 #: modules/engine/mail.cpp:745 modules/mail/mail_mod.cpp:1120
 msgid "MAIL: Invalid message range"
-msgstr ""
+msgstr "MAIL: 메시지 범위가 잘못되었습니다"
 
 #: modules/engine/mail.cpp:746 modules/mail/mail_mod.cpp:1121
 msgid "MAIL: Invalid message number"
-msgstr ""
+msgstr "MAIL: 메시지 번호가 잘못되었습니다"
 
 #: modules/engine/mail.cpp:747 modules/mail/mail_mod.cpp:1122
 msgid "MAIL: Invalid age"
-msgstr ""
+msgstr "MAIL: 기간이 잘못되었습니다"
 
 #: modules/engine/mail.cpp:748 modules/mail/mail_mod.cpp:1123
 msgid "MAIL: Invalid dbref #"
-msgstr ""
+msgstr "MAIL: 사물 번호가 잘못되었습니다"
 
 #: modules/engine/mail.cpp:749 modules/mail/mail_mod.cpp:1124
 msgid "MAIL: Invalid player"
-msgstr ""
+msgstr "MAIL: 플레이어가 잘못되었습니다"
 
 #: modules/engine/mail.cpp:750 modules/mail/mail_mod.cpp:1125
 msgid "MAIL: Invalid message specification"
-msgstr ""
+msgstr "MAIL: 메시지 지정이 잘못되었습니다"
 
 #: modules/engine/mail.cpp:751 modules/mail/mail_mod.cpp:1126
 msgid ""
@@ -2120,34 +2125,34 @@ msgstr ""
 #: modules/engine/mail.cpp:1162 modules/mail/mail_mod.cpp:1925
 #, c-format
 msgid "MAIL: 0 messages in folder %d [%s]."
-msgstr ""
+msgstr "MAIL: 폴더 %d [%s]에 메시지가 없습니다."
 
 #: modules/engine/mail.cpp:1170 modules/mail/mail_mod.cpp:1944
 #, c-format
 msgid "MAIL: Current folder is %d [%s]."
-msgstr ""
+msgstr "MAIL: 현재 폴더는 %d [%s]입니다."
 
 #: modules/engine/mail.cpp:1192 modules/mail/mail_mod.cpp:1859
 msgid "MAIL: What folder is that?"
-msgstr ""
+msgstr "MAIL: 그것은 어떤 폴더입니까?"
 
 #: modules/engine/mail.cpp:1201 modules/mail/mail_mod.cpp:1869
 msgid "MAIL: Folder name too long"
-msgstr ""
+msgstr "MAIL: 폴더 이름이 너무 깁니다"
 
 #: modules/engine/mail.cpp:1208 modules/mail/mail_mod.cpp:1877
 msgid "MAIL: Illegal folder name"
-msgstr ""
+msgstr "MAIL: 폴더 이름이 잘못되었습니다"
 
 #: modules/engine/mail.cpp:1213 modules/mail/mail_mod.cpp:1884
 #, c-format
 msgid "MAIL: Folder %d now named ‘%s’"
-msgstr ""
+msgstr "MAIL: 폴더 %d의 이름을 ‘%s’(으)로 바꿨습니다"
 
 #: modules/engine/mail.cpp:1221 modules/mail/mail_mod.cpp:1895
 #, c-format
 msgid "MAIL: Current folder set to %d [%s]."
-msgstr ""
+msgstr "MAIL: 현재 폴더를 %d [%s](으)로 설정했습니다."
 
 #: modules/engine/mail.cpp:1331 modules/engine/mail.cpp:1342
 #: modules/engine/mail.cpp:1347 modules/mail/mail_mod.cpp:4828
@@ -2159,140 +2164,140 @@ msgstr ""
 #: modules/engine/mail.cpp:1338 modules/mail/mail_mod.cpp:4835
 #, c-format
 msgid "MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."
-msgstr ""
+msgstr "MAIL: 읽지 않은 메시지 #%d을(를) 삭제했습니다! 복구하려면 @mail/unclear %d을(를) 사용하세요."
 
 #: modules/engine/mail.cpp:1359 modules/engine/mail.cpp:1438
 #: modules/mail/mail_mod.cpp:4867 modules/mail/mail_mod.cpp:5310
 msgid "MAIL: You don’t have any matching messages!"
-msgstr ""
+msgstr "MAIL: 일치하는 메시지가 없습니다!"
 
 #: modules/engine/mail.cpp:1405 modules/mail/mail_mod.cpp:5276
 msgid "MAIL: Invalid folder specification"
-msgstr ""
+msgstr "MAIL: 폴더 지정이 잘못되었습니다"
 
 #: modules/engine/mail.cpp:1428 modules/mail/mail_mod.cpp:5300
 #, c-format
 msgid "MAIL: Msg %d filed in folder %d"
-msgstr ""
+msgstr "MAIL: 메시지 %d을(를) 폴더 %d에 보관했습니다"
 
 #: modules/engine/mail.cpp:1540 modules/mail/mail_mod.cpp:4099
 msgid "MAIL: Mail aliases must be of the form *<name> or #<num>."
-msgstr ""
+msgstr "MAIL: 메일 별칭은 *<이름> 또는 #<번호> 형식이어야 합니다."
 
 #: modules/engine/mail.cpp:1544 modules/mail/mail_mod.cpp:4104
 msgid "MAIL: Mail aliases must be of the form *<name>."
-msgstr ""
+msgstr "MAIL: 메일 별칭은 *<이름> 형식이어야 합니다."
 
 #: modules/engine/mail.cpp:1667 modules/engine/mail.cpp:2148
 #: modules/engine/mail.cpp:5708 modules/mail/mail_mod.cpp:2027
 msgid "MAIL: No such folder."
-msgstr ""
+msgstr "MAIL: 그런 폴더가 없습니다."
 
 #: modules/engine/mail.cpp:1750 modules/engine/mail.cpp:1984
 #: modules/engine/mail.cpp:2080 modules/mail/mail_mod.cpp:2146
 #: modules/mail/mail_mod.cpp:2279 modules/mail/mail_mod.cpp:5162
 msgid "MAIL: You don’t have that many matching messages!"
-msgstr ""
+msgstr "MAIL: 일치하는 메시지가 그만큼 많지 않습니다!"
 
 #: modules/engine/mail.cpp:1812 modules/mail/mail_mod.cpp:5222
 msgid "MAIL: You have no unread messages in that folder."
-msgstr ""
+msgstr "MAIL: 그 폴더에는 읽지 않은 메시지가 없습니다."
 
 #: modules/engine/mail.cpp:1928 modules/mail/mail_mod.cpp:2084
 msgid "MAIL: You have no matching messages."
-msgstr ""
+msgstr "MAIL: 일치하는 메시지가 없습니다."
 
 #: modules/engine/mail.cpp:2002 modules/engine/mail.cpp:4146
 #: modules/engine/mail.cpp:5245 modules/mail/mail_mod.cpp:2166
 #: modules/mail/mail_mod.cpp:2182 modules/mail/mail_mod.cpp:2293
 #: modules/mail/mail_mod.cpp:2335 modules/mail/mail_mod.cpp:4202
 msgid "MAIL: No such player."
-msgstr ""
+msgstr "MAIL: 그런 플레이어가 없습니다."
 
 #: modules/engine/mail.cpp:2227 modules/mail/mail_mod.cpp:5246
 msgid "MAIL: Mailbox purged."
-msgstr ""
+msgstr "MAIL: 사서함을 비웠습니다."
 
 #: modules/engine/mail.cpp:2288 modules/mail/mail_mod.cpp:2680
 #, c-format
 msgid "MAIL: Alias ‘%s’ does not exist."
-msgstr ""
+msgstr "MAIL: 별칭 ‘%s’이(가) 존재하지 않습니다."
 
 #: modules/engine/mail.cpp:2294 modules/mail/mail_mod.cpp:2691
 #, c-format
 msgid "MAIL: ‘%s’ is a badly-formed alias."
-msgstr ""
+msgstr "MAIL: ‘%s’은(는) 잘못된 형식의 별칭입니다."
 
 #: modules/engine/mail.cpp:2322 modules/mail/mail_mod.cpp:2735
 #, c-format
 msgid "MAIL: ‘%s’ does not exist."
-msgstr ""
+msgstr "MAIL: ‘%s’이(가) 존재하지 않습니다."
 
 #: modules/engine/mail.cpp:2339 modules/mail/mail_mod.cpp:2613
 #: modules/mail/mail_mod.cpp:2757
 msgid "MAIL: No players specified."
-msgstr ""
+msgstr "MAIL: 지정된 플레이어가 없습니다."
 
 #: modules/engine/mail.cpp:2375 modules/engine/mail.cpp:4332
 #: modules/mail/mail_mod.cpp:3220 modules/mail/mail_mod.cpp:3418
 msgid "MAIL: I do not know whom you want to mail."
-msgstr ""
+msgstr "MAIL: 누구에게 메일을 보내려는지 알 수 없습니다."
 
 #: modules/engine/mail.cpp:2380 modules/engine/mail.cpp:4550
 #: modules/mail/mail_mod.cpp:3228 modules/mail/mail_mod.cpp:3528
 msgid "MAIL: No subject."
-msgstr ""
+msgstr "MAIL: 제목이 없습니다."
 
 #: modules/engine/mail.cpp:2385 modules/engine/mail.cpp:2415
 #: modules/engine/mail.cpp:2461 modules/engine/mail.cpp:4533
 #: modules/mail/mail_mod.cpp:3244 modules/mail/mail_mod.cpp:3487
 #: modules/mail/mail_mod.cpp:3569 modules/mail/mail_mod.cpp:3684
 msgid "MAIL: Mail message already in progress."
-msgstr ""
+msgstr "MAIL: 이미 작성 중인 메시지가 있습니다."
 
 #: modules/engine/mail.cpp:2391 modules/engine/mail.cpp:2431
 #: modules/engine/mail.cpp:2472 modules/engine/mail.cpp:4539
 #: modules/mail/mail_mod.cpp:3268 modules/mail/mail_mod.cpp:3508
 #: modules/mail/mail_mod.cpp:3607 modules/mail/mail_mod.cpp:3713
 msgid "MAIL: Too much @mail sent recently."
-msgstr ""
+msgstr "MAIL: 최근에 @mail을 너무 많이 보냈습니다."
 
 #: modules/engine/mail.cpp:2406 modules/engine/mail.cpp:4355
 #: modules/mail/mail_mod.cpp:3307 modules/mail/mail_mod.cpp:3448
 #, c-format
 msgid "MAIL: You are sending mail to ‘%s’."
-msgstr ""
+msgstr "MAIL: ‘%s’님에게 메일을 보내는 중입니다."
 
 #: modules/engine/mail.cpp:2420 modules/engine/mail.cpp:2466
 #: modules/mail/mail_mod.cpp:3577 modules/mail/mail_mod.cpp:3692
 msgid "MAIL: No message list."
-msgstr ""
+msgstr "MAIL: 메시지 목록이 없습니다."
 
 #: modules/engine/mail.cpp:2425 modules/mail/mail_mod.cpp:3586
 msgid "MAIL: To whom should I forward?"
-msgstr ""
+msgstr "MAIL: 누구에게 전달할까요?"
 
 #: modules/engine/mail.cpp:2437 modules/engine/mail.cpp:2478
 #: modules/mail/mail_mod.cpp:3619 modules/mail/mail_mod.cpp:3725
 msgid "MAIL: I don’t understand that message number."
-msgstr ""
+msgstr "MAIL: 그 메시지 번호를 이해할 수 없습니다."
 
 #: modules/engine/mail.cpp:2443 modules/mail/mail_mod.cpp:3630
 msgid "MAIL: You can’t forward non-existent messages."
-msgstr ""
+msgstr "MAIL: 존재하지 않는 메시지는 전달할 수 없습니다."
 
 #: modules/engine/mail.cpp:2446 modules/mail/mail_mod.cpp:3640
 #, c-format
 msgid "%s (fwd from %s)"
-msgstr ""
+msgstr "%s (%s님이 전달함)"
 
 #: modules/engine/mail.cpp:2484 modules/mail/mail_mod.cpp:3736
 msgid "MAIL: You can’t reply to non-existent messages."
-msgstr ""
+msgstr "MAIL: 존재하지 않는 메시지에는 답장할 수 없습니다."
 
 #: modules/engine/mail.cpp:2489 modules/mail/mail_mod.cpp:3746
 msgid "MAIL: The original sender no longer exists."
-msgstr ""
+msgstr "MAIL: 원래 보낸 사람이 더 이상 존재하지 않습니다."
 
 #: modules/engine/mail.cpp:2533 modules/mail/mail_mod.cpp:3811
 #, c-format
@@ -2311,20 +2316,20 @@ msgstr ""
 
 #: modules/engine/mail.cpp:2790 modules/mail/mail_mod.cpp:2479
 msgid "MAIL: You cannot send mail to non-existent people."
-msgstr ""
+msgstr "MAIL: 존재하지 않는 사람에게는 메일을 보낼 수 없습니다."
 
 #: modules/engine/mail.cpp:2874 modules/mail/mail_mod.cpp:2580
 #, c-format
 msgid "MAIL: %s’s mailbox is full (%d messages)."
-msgstr ""
+msgstr "MAIL: %s님의 사서함이 가득 찼습니다 (메시지 %d개)."
 
 #: modules/engine/mail.cpp:2909 modules/mail/mail_mod.cpp:2398
 msgid "The postal service issues a warrant for your arrest."
-msgstr ""
+msgstr "우편 서비스가 당신에 대한 체포 영장을 발부합니다."
 
 #: modules/engine/mail.cpp:2922 modules/mail/mail_mod.cpp:2424
 msgid "You annihilate the post office. All messages cleared."
-msgstr ""
+msgstr "우체국을 파괴했습니다.  모든 메시지가 삭제되었습니다."
 
 #: modules/engine/mail.cpp:2985
 msgid "Go get some bugspray."
@@ -2333,17 +2338,17 @@ msgstr ""
 #: modules/engine/mail.cpp:3001
 #, c-format
 msgid "%s: no such player."
-msgstr ""
+msgstr "%s: 그런 플레이어가 없습니다."
 
 #: modules/engine/mail.cpp:3006
 #, c-format
 msgid "Let %s clear their own @mail."
-msgstr ""
+msgstr "%s님이 직접 @mail을 삭제하도록 하세요."
 
 #: modules/engine/mail.cpp:3011
 #, c-format
 msgid "Mail cleared for %s(#%d)."
-msgstr ""
+msgstr "%s(#%d)의 메일을 삭제했습니다."
 
 #: modules/engine/mail.cpp:3038
 #, c-format
