@@ -756,14 +756,10 @@ inline int hir_val_operand(const hir_program &h, int i) {
         int v = static_cast<int>(h.val[i]);
         return (v >= 0 && v < h.n_insns) ? v : -1;
     }
-    if (h.kind[i] == HIR_LUA_CALL_INT) {
-        // low 8 = nargs; high bits = a1_insn + 1 (0 means "no second arg").
-        //
-        int a1i = static_cast<int>(h.val[i] >> 8) - 1;
-        return (a1i >= 0 && a1i < h.n_insns) ? a1i : -1;
-    }
-    if (h.kind[i] == HIR_LUA_CALL_STR) {
-        // low 8 = nargs, next 8 = argkind bits, from 16 up = a1_insn + 1.
+    if (h.kind[i] == HIR_LUA_CALL_INT || h.kind[i] == HIR_LUA_CALL_STR) {
+        // One layout for both: low 8 = nargs, next 8 = argkind bits, from
+        // 16 up = a1_insn + 1 (0 meaning "no second argument").  They differ
+        // in RESULT type only.
         //
         int a1i = static_cast<int>(h.val[i] >> 16) - 1;
         return (a1i >= 0 && a1i < h.n_insns) ? a1i : -1;
@@ -832,10 +828,8 @@ inline void hir_operand_set(hir_program &h, int i, int slot, int r) {
     case HIR_SLOT_VAL:
         if (h.kind[i] == HIR_LUA_SETI || h.kind[i] == HIR_LUA_SETFIELD) {
             h.val[i] = r;
-        } else if (h.kind[i] == HIR_LUA_CALL_INT) {
-            const int64_t nargs = h.val[i] & 0xFF;
-            h.val[i] = nargs | (static_cast<int64_t>(r + 1) << 8);
-        } else if (h.kind[i] == HIR_LUA_CALL_STR) {
+        } else if (h.kind[i] == HIR_LUA_CALL_INT
+                || h.kind[i] == HIR_LUA_CALL_STR) {
             const int64_t low = h.val[i] & 0xFFFF;   // nargs + argkinds
             h.val[i] = low | (static_cast<int64_t>(r + 1) << 16);
         }

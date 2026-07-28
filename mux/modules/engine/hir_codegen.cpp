@@ -1490,23 +1490,34 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 // on hir_val_operand -- this is a THIRD shape for val[] and
                 // is exactly the seam that wants a real operand list.
                 int s1 = h.src1[i], s2 = h.src2[i];
-                int nargs = static_cast<int>(h.val[i] & 0xFF);
-                int a1i = static_cast<int>(h.val[i] >> 8) - 1;
+                int packed = static_cast<int>(h.val[i]);
+                int nargs = packed & 0xFF;
+                int a1i = (packed >> 16) - 1;
                 uint8_t reg = int_alloc.reg[i];
                 bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
                 uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 rc.code.push_back(rv_ADDI(10, fn_r, 0));
+                // Argument setup is identical to CALL_STR; only the result
+                // handling below differs.
                 if (nargs >= 1 && s2 >= 0) {
-                    uint8_t a0r = ra_get_reg(rc, loc, s2, 28);
-                    rc.code.push_back(rv_ADDI(12, a0r, 0));
+                    if (h.kind[s2] == HIR_SCONST) {
+                        rv_load_guest_addr(rc.code, 12, loc[s2].addr);
+                    } else {
+                        uint8_t a0r = ra_get_reg(rc, loc, s2, 28);
+                        rc.code.push_back(rv_ADDI(12, a0r, 0));
+                    }
                 }
                 if (nargs >= 2 && a1i >= 0) {
-                    uint8_t a1r = ra_get_reg(rc, loc, a1i, 29);
-                    rc.code.push_back(rv_ADDI(13, a1r, 0));
+                    if (h.kind[a1i] == HIR_SCONST) {
+                        rv_load_guest_addr(rc.code, 13, loc[a1i].addr);
+                    } else {
+                        uint8_t a1r = ra_get_reg(rc, loc, a1i, 29);
+                        rc.code.push_back(rv_ADDI(13, a1r, 0));
+                    }
                 }
-                rc.code.push_back(rv_ADDI(11, 0, nargs));
+                rv_load_i64(rc.code, 11, packed & 0xFFFF);
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_CALL_INT)));
                 rc.code.push_back(rv_ECALL());

@@ -618,6 +618,61 @@ static inline bool lua_reg_in_range(int idx);   // defined with pass 2
 // Declining here is strictly better than the run-time bail that #1518's
 // fail-closed intercept produces today: it costs no compile-and-run, and it
 // does not depend on the bridge ECALL names staying unimplemented.
+// Where a callable handle may come from.
+//
+// GETFIELD_REF is a library member -- math.floor.  GETGLOBAL is the global
+// itself -- tostring, which is a function rather than a table.  Both give a
+// stack index typed TY_LUA_HANDLE and the ECALL checks lua_isfunction before
+// calling, so a global that turns out to be a TABLE (math, called rather
+// than indexed) declines there rather than being rejected here.  The
+// lowering does not know which globals are functions and should not learn.
+//
+// Does this callee return an integer, or a string?
+//
+// HIR result types are STATIC and Lua's are not: math.max(3,9) and
+// tostring(42) take the same argument shapes and return different types, so
+// nothing about the call site distinguishes them.  Until the type system can
+// say "handle to a function returning T", the callee's NAME is the only
+// thing that carries it.
+//
+// A whitelist is honest about that rather than pretending: a name not on it
+// declines, and declining is always correct.  Adding a name is a claim about
+// the standard library, so the list stays short and each entry is one a
+// declining test would otherwise cover.
+//
+// This is a stopgap the type system should subsume.  It is the second place
+// the lowering guesses what a handle points at -- the first being
+// GETFIELD_REF vs GETFIELD_INT by provenance -- and both want the same fix.
+//
+static bool lua_callee_returns_int(const std::string &name) {
+    static const char *kIntReturning[] = {
+        "floor", "ceil", "max", "min", "abs", "tointeger",
+        "len", "byte", "maxinteger", "mininteger",
+        "tonumber",   // integer when the argument is an integer literal
+    };
+    for (const char *n : kIntReturning) {
+        if (name == n) return true;
+    }
+    return false;
+}
+
+// Name behind a callable handle: the SCONST key of the GETFIELD_REF or
+// GETGLOBAL that produced it.
+//
+static std::string lua_callee_name(const hir_program &h, int v) {
+    if (v < 0 || v >= h.n_insns) return "";
+    int keyv = (h.kind[v] == HIR_LUA_GETGLOBAL) ? h.src1[v] : h.src2[v];
+    if (keyv < 0 || keyv >= h.n_insns) return "";
+    if (h.kind[keyv] != HIR_SCONST) return "";
+    return h.sval[keyv];
+}
+
+static inline bool lua_callable_source(const hir_program &h, int v) {
+    if (v < 0 || v >= h.n_insns) return false;
+    return h.kind[v] == HIR_LUA_GETFIELD_REF
+        || h.kind[v] == HIR_LUA_GETGLOBAL;
+}
+
 static inline bool lua_is_handle(const hir_program &h, int v) {
     return v >= 0 && h.ty[v] == TY_LUA_HANDLE;
 }
@@ -2185,7 +2240,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // for when something needs it.
             if (!is_bridge && nresults == 1 && nargs >= 1 && nargs <= 2
                 && func_reg >= 0
-                && h.kind[func_reg] == HIR_LUA_GETFIELD_REF) {
+                && lua_callable_source(h, func_reg)) {
                 int a0 = -1, a1 = -1, kinds = 0;
                 bool ok = true;
                 for (int i = 0; i < nargs && ok; i++) {
@@ -2203,7 +2258,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     }
                     if (0 == i) a0 = areg; else a1 = areg;
                 }
-                if (ok && (kinds != 0)) {
+                if (ok && !lua_callee_returns_int(
+                        lua_callee_name(h, func_reg))) {
                     int64_t packed = static_cast<int64_t>(nargs)
                                    | (static_cast<int64_t>(kinds) << 8)
                                    | (static_cast<int64_t>(a1 + 1) << 16);
@@ -2224,23 +2280,29 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // declines, which is what it already did.
             if (!is_bridge && nresults == 1 && nargs >= 0 && nargs <= 2
                 && func_reg >= 0
-                && h.kind[func_reg] == HIR_LUA_GETFIELD_REF) {
-                int a0 = -1, a1 = -1;
+                && lua_callable_source(h, func_reg)) {
+                int a0 = -1, a1 = -1, kinds = 0;
                 bool ok = true;
                 for (int i = 0; i < nargs && ok; i++) {
                     if (!lua_reg_in_range(A + 1 + i)) { ok = false; break; }
                     int areg = lua_reg[A + 1 + i];
-                    if (areg < 0 || h.ty[areg] != TY_INT
-                        || lua_is_handle(h, areg)) { ok = false; break; }
+                    if (areg < 0 || lua_is_handle(h, areg)) {
+                        ok = false; break;
+                    }
+                    if (h.ty[areg] == TY_INT) {
+                        // integer: kind bit stays 0
+                    } else if (h.kind[areg] == HIR_SCONST) {
+                        kinds |= (1 << i);
+                    } else {
+                        ok = false; break;
+                    }
                     if (0 == i) a0 = areg; else a1 = areg;
                 }
                 if (ok) {
-                    // nargs in the low 8 bits, arg1's insn index above it.
-                    // src1=fn, src2=arg0.  A third operand with no room in
-                    // src1/src2 -- the same crowding that put SETI's value
-                    // in val[], now with a count beside it.
+                    // Shared layout with CALL_STR: nargs, argkinds, arg1.
                     int64_t packed = static_cast<int64_t>(nargs)
-                                   | (static_cast<int64_t>(a1 + 1) << 8);
+                                   | (static_cast<int64_t>(kinds) << 8)
+                                   | (static_cast<int64_t>(a1 + 1) << 16);
                     lua_reg[A] = h.emit(HIR_LUA_CALL_INT, TY_INT,
                                         func_reg, a0, packed);
                     if (lua_reg[A] < 0) return -1;
