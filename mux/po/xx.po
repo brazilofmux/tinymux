@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 14:25+0000\n"
+"POT-Creation-Date: 2026-07-28 14:47+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -435,11 +435,29 @@ msgstr "[xx] Channel name is too long."
 msgid "Warning: Only public channels and your channels will be shown."
 msgstr "[xx] Warning: Only public channels and your channels will be shown."
 
-#: modules/engine/comsys.cpp:2806
-msgid "*** Channel       Header          Owner           Access  Users Msgs"
-msgstr ""
-"[xx] *** Channel       Header          Owner           Access  Users "
-"Msgs[xx] *** Channel       Header          Owner           Access  Users Msgs"
+#: modules/engine/comsys.cpp:2821 modules/engine/comsys.cpp:4070
+msgid "Channel"
+msgstr "[xx] Channel"
+
+#: modules/engine/comsys.cpp:2824 modules/engine/comsys.cpp:4076
+msgid "Header"
+msgstr "[xx] Header"
+
+#: modules/engine/comsys.cpp:2827 modules/engine/comsys.cpp:4073
+msgid "Owner"
+msgstr "[xx] Owner"
+
+#: modules/engine/comsys.cpp:2830
+msgid "Access"
+msgstr "[xx] Access"
+
+#: modules/engine/comsys.cpp:2835
+msgid "Users"
+msgstr "[xx] Users"
+
+#: modules/engine/comsys.cpp:2838
+msgid "Msgs"
+msgstr "[xx] Msgs"
 
 #: modules/engine/comsys.cpp:2903 modules/engine/comsys.cpp:4186
 msgid "-- End of list of Channels --"
@@ -531,18 +549,6 @@ msgstr "[xx] @cboot: You can’t do that!"
 #: modules/engine/comsys.cpp:3982
 msgid "That channel does not exist."
 msgstr "[xx] That channel does not exist."
-
-#: modules/engine/comsys.cpp:4070
-msgid "Channel"
-msgstr "[xx] Channel"
-
-#: modules/engine/comsys.cpp:4073
-msgid "Owner"
-msgstr "[xx] Owner"
-
-#: modules/engine/comsys.cpp:4076
-msgid "Header"
-msgstr "[xx] Header"
 
 #: modules/engine/comsys.cpp:4076
 msgid "Description"
@@ -3322,6 +3328,12 @@ msgstr "[xx] ----- Site Access -----"
 #: src/net.cpp:3638
 msgid "Address                                            Status"
 msgstr "[xx] Address                                            Status"
+
+#~ msgid "*** Channel       Header          Owner           Access  Users Msgs"
+#~ msgstr ""
+#~ "[xx] *** Channel       Header          Owner           Access  Users "
+#~ "Msgs[xx] *** Channel       Header          Owner           Access  Users "
+#~ "Msgs"
 
 #~ msgid "*** Channel       Owner           Header"
 #~ msgstr "[xx] *** Channel       Owner           Header"

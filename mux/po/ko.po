@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 14:25+0000\n"
+"POT-Creation-Date: 2026-07-28 14:47+0000\n"
 "PO-Revision-Date: 2026-07-27 00:00+0000\n"
 "Last-Translator: unassigned <tinymux@googlegroups.com>\n"
 "Language-Team: Korean <tinymux@googlegroups.com>\n"
@@ -412,8 +412,28 @@ msgstr ""
 msgid "Warning: Only public channels and your channels will be shown."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2806
-msgid "*** Channel       Header          Owner           Access  Users Msgs"
+#: modules/engine/comsys.cpp:2821 modules/engine/comsys.cpp:4070
+msgid "Channel"
+msgstr ""
+
+#: modules/engine/comsys.cpp:2824 modules/engine/comsys.cpp:4076
+msgid "Header"
+msgstr ""
+
+#: modules/engine/comsys.cpp:2827 modules/engine/comsys.cpp:4073
+msgid "Owner"
+msgstr ""
+
+#: modules/engine/comsys.cpp:2830
+msgid "Access"
+msgstr ""
+
+#: modules/engine/comsys.cpp:2835
+msgid "Users"
+msgstr ""
+
+#: modules/engine/comsys.cpp:2838
+msgid "Msgs"
 msgstr ""
 
 #: modules/engine/comsys.cpp:2903 modules/engine/comsys.cpp:4186
@@ -505,18 +525,6 @@ msgstr "@cboot: 그렇게 할 수 없습니다!"
 
 #: modules/engine/comsys.cpp:3982
 msgid "That channel does not exist."
-msgstr ""
-
-#: modules/engine/comsys.cpp:4070
-msgid "Channel"
-msgstr ""
-
-#: modules/engine/comsys.cpp:4073
-msgid "Owner"
-msgstr ""
-
-#: modules/engine/comsys.cpp:4076
-msgid "Header"
 msgstr ""
 
 #: modules/engine/comsys.cpp:4076
