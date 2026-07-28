@@ -1,7 +1,7 @@
 # Design: NLS-safe multi-column notifies
 
-**Status:** **implemented** for columnar player/staff tables (Phases 0–5).  
-Mail multi-line forms (inventory B3/B4) remain a separate form-layout concern.  
+**Status:** **implemented** for columnar player/staff tables and B3 mail list lines (Phases 0–5 + B3).  
+Mail multi-line **forms** (inventory B4) remain a separate form-layout concern.  
 **Related:** #1648, #1649, #1419, #1614, #1667.
 
 ---
@@ -183,7 +183,7 @@ Slow by design. Each phase is a separate decision to start.
 | **1 — Inventory** | Full list of multi-column player tables | Done — [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md) |
 | **2 — Ownership** | Product ownership + layout ownership recorded | Done — §4 (#1614 B-by-completion + layout in libmux) |
 | **3 — Layout API** | Column descriptor + emit-header / emit-cell on `co_copy_field` in **libmux**; retire duplicated `append_ljust_field` | Done — `mux/include/mux_table.h`, `mux/lib/mux_table.c`; modules use it; `tests/table` |
-| **4 — Convert by family** | One table family per change; both dual paths in the same change; delete blob msgids from pot | **Done** for columnar tables (A*, B1–B2, C1–C9). B3/B4 mail forms are not grids — out of this epic’s Phase 4 scope. |
+| **4 — Convert by family** | One table family per change; both dual paths in the same change; delete blob msgids from pot | **Done** for columnar tables (A*, B1–B2, C1–C9) and B3 mail folder/review list lines. B4 multi-line read/detail forms remain out of grid scope. |
 | **5 — Guardrails** | `check_nls.py` ban on pre-spaced multi-column header msgids | Done — `looks_like_table_header_blob` over pot + `M_()` sources |
 
 **Do not** open a PR that only rewrites `@clist/full`’s header string.
@@ -194,7 +194,7 @@ Slow by design. Each phase is a separate decision to start.
 
 1. **Do not reintroduce** pre-spaced multi-column header msgids — Phase 4 converted the known grids; Phase 5 fails the NLS guard if a new one appears.
 2. Translate **per-label** msgids only (`Channel`, `Owner`, `Name`, …); chrome (`*** `, ` | `) stays in C.
-3. Mail multi-line **forms** (B3/B4: From/At/Subject blocks) are not columnar tables; they may still use format templates with fixed English labels until a separate form-layout pass.
+3. Mail multi-line **forms** (B4: From/At/Fldr/Subject detail blocks) are not columnar tables; they may still use format templates with fixed English labels until a separate form-layout pass. B3 list lines use `mux_table` for the From/Sub fields.
 
 ---
 

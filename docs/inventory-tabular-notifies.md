@@ -102,10 +102,10 @@
 |--|--------|--------|
 | File | `mail.cpp` list/review paths | `mail_mod.cpp` list helpers |
 | Header | Folder banner `MAIL_LINE` / dash lines — not a column schema header | Similar banners |
-| Rows | e.g. `[%s] %-3d (%4d) From: %s Sub: %s` with `trimmed_name` / STT subject | `append_ljust_field` for From (16), time (25), etc. on detail headers |
-| Shape | **Labeled freeform** / semi-table — not the same “blob header vs PadField stops” bug, but still multi-field layout |
-| Translate? | Format strings with mixed labels — convert later as forms, not Phase-4 “grid” first cut |
-| Dual | **Yes** |
+| Rows | **Converted (#1667 Phase 4 B3)** — `format_mail_list_line_sub` / `_at`: From **16** display cols via `mux_table_append_ljust`; Sub trunc **25** via `mux_table_append_trunc`; At freeform time + Conn | Same (`format_mail_list_line` / `format_mail_list_line_at`) |
+| Shape | Single-line semi-table; labels stay English format fragments until a form-layout pass | Same |
+| Translate? | Labels still in C format chrome (`From:`, `Sub:`, `At:`) — not per-label pot entries yet |
+| Dual | **Yes** — both paths converted together |
 
 ### B4. Mail read / detail block
 
@@ -276,7 +276,8 @@ Order optimizes **dual-parity pain × NLS risk × player visibility**:
 4. **A4** `@cwho` — dual; labels already separable  
 5. **B1–B2** mail aliases — dual blob  
 6. **C1, C2, C4, C8, C3** staff tables — engine-only blobs  
-7. **B3–B4, C5–C7, C9** freeform / forms — later  
+7. **B3** mail list lines — **done**; **B4** multi-line forms — later  
+
 
 **Do not** convert only the module or only the engine for A/B. Phase 2: both
 sides of a dual family convert in the same change via the **libmux** layout
@@ -310,4 +311,4 @@ API. See `design-tabular-notifies.md` §4.
 **Phase 3–5:** layout API in libmux; columnar families converted; NLS guard
 bans new pre-spaced multi-column header msgids (`tests/nls/check_nls.py`).
 
-**Remaining outside this epic’s grid scope:** B3/B4 mail multi-line forms.
+**Remaining outside this epic’s grid scope:** B4 mail multi-line read/detail forms.

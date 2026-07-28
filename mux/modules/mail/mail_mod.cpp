@@ -61,9 +61,13 @@ static size_t mail_sprintf(UTF8 *buf, size_t nBuf, const UTF8 *fmt, ...)
     return n;
 }
 
-// Folder list / review summary line:
-//   [flags] iii (ssss) From: name............ Sub: subject...
+// Folder list / review summary line (#1667 Phase 4 B3):
+//   [flags] iii (ssss) From: name(16) Sub:/At: tail
+// From uses display-column width via mux_table (not printf codepoints).
 //
+static const size_t kMailListFromCols = 16;
+static const size_t kMailListSubCols  = 25;
+
 static void format_mail_list_line(
     UTF8 *line, size_t nLine,
     const UTF8 *status, int i, size_t nSize,
@@ -80,9 +84,36 @@ static void format_mail_list_line(
             i, nSize);
         pos = pos_after(line, nLine, pos);
     }
-    pos = append_ljust_field(line, nLine, pos, from, 16);
+    pos = append_ljust_field(line, nLine, pos, from, kMailListFromCols);
     pos = append_bytes(line, nLine, pos, " Sub: ");
-    append_trunc_field(line, nLine, pos, subject, 25);
+    append_trunc_field(line, nLine, pos, subject, kMailListSubCols);
+}
+
+static void format_mail_list_line_at(
+    UTF8 *line, size_t nLine,
+    const UTF8 *status, int i, size_t nSize,
+    const UTF8 *from, const UTF8 *time_str, const UTF8 *conn_tag)
+{
+    size_t pos = 0;
+    pos = append_bytes(line, nLine, pos, "[");
+    pos = append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(status));
+    pos = append_bytes(line, nLine, pos, "] ");
+    if (pos < nLine)
+    {
+        mux_sprintf(line + pos, nLine - pos, T("%-3d (%4zu) From: "),
+            i, nSize);
+        pos = pos_after(line, nLine, pos);
+    }
+    pos = append_ljust_field(line, nLine, pos, from, kMailListFromCols);
+    pos = append_bytes(line, nLine, pos, " At: ");
+    pos = append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(
+            (nullptr != time_str) ? time_str : T("")));
+    pos = append_bytes(line, nLine, pos, " ");
+    pos = append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(
+            (nullptr != conn_tag) ? conn_tag : T("")));
 }
 
 // Read / review detail header.  subject_cols 0 means no visual truncate
@@ -1987,8 +2018,6 @@ void CMailMod::ListMailInFolderNumber(dbref player, int folder_num,
                 i++;
                 if (mail_match(mp, ms, i))
                 {
-                    UTF8 *time = mail_list_time(
-                        reinterpret_cast<const UTF8 *>(mp->time.c_str()));
                     size_t nSize = MessageFetchSize(mp->number);
 
                     UTF8 szFromName[64];
@@ -5043,27 +5072,10 @@ void CMailMod::do_mail_list(dbref player, const UTF8 *arg1,
                     get_player_name(mp->from, szFromName, sizeof(szFromName));
 
                     UTF8 line[MOD_LBUF_SIZE];
-                    size_t pos = 0;
-                    pos = append_bytes(line, sizeof(line), pos, "[");
-                    pos = append_bytes(line, sizeof(line), pos,
-                        reinterpret_cast<const char *>(status_chars(mp)));
-                    pos = append_bytes(line, sizeof(line), pos, "] ");
-                    if (pos < sizeof(line))
-                    {
-                        mux_sprintf(line + pos, sizeof(line) - pos,
-                            T("%-3d (%4zu) From: "), i, nSize);
-                        pos = pos_after(line, sizeof(line), pos);
-                    }
-                    pos = append_ljust_field(line, sizeof(line), pos,
-                        szFromName, 16);
-                    pos = append_bytes(line, sizeof(line), pos, " At: ");
-                    if (pos < sizeof(line))
-                    {
-                        mux_sprintf(line + pos, sizeof(line) - pos, T("%s %s"),
-                            time,
-                            is_connected_visible(mp->from, player)
-                                ? T("Conn") : T(" "));
-                    }
+                    format_mail_list_line_at(line, sizeof(line),
+                        status_chars(mp), i, nSize, szFromName, time,
+                        is_connected_visible(mp->from, player)
+                            ? T("Conn") : T(" "));
                     m_pINotify->RawNotify(player, line);
                 }
             }

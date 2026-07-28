@@ -19,7 +19,7 @@
  MAIL: You sent your message to Wizard.
  MAIL: You have a new message from Wizard. Subject: Subject One
  –––––––––––––––––––––––––––   MAIL: Folder 0   ––––––––––––––––––––––––––––
--[N------] 1   (  26) From:  At: <DATE> Conn
+-[N------] 1   (  26) From:                  At: <DATE> Conn
 +[N------] 1   (  26) From: Wizard           At: <DATE> Conn
  –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
  –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
@@ -39,7 +39,7 @@
  MAIL: 1 messages in folder 0 [unnamed] (0 unread, 0 cleared).
  MAIL: Current folder is 0 [unnamed].
  –––––––––––––––––––––––––––   MAIL: Folder 0   ––––––––––––––––––––––––––––
--[-------] 1   (  26) From:  Sub: Subject One
+-[-------] 1   (  26) From:                  Sub: Subject One
 +[-------] 1   (  26) From: Wizard           Sub: Subject One
  –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
  You have left channel cchan.
