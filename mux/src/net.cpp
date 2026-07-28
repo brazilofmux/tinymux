@@ -18,6 +18,7 @@
 #include "driver_log.h"
 #include "driver_bridge.h"
 #include "ganl_adapter.h"
+#include "mux_table.h"
 
 extern "C" {
 #include "color_ops.h"
@@ -3624,8 +3625,17 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
     }
     *bufc = '\0';
 
+    // Site access row (#1667 Phase 4 C2): address 50 + freeform status.
+    //
+    static const size_t kSiteAddrCols = 50;
     mux_sprintf(sAddress, LBUF_SIZE, T("%s/%d"), sLine, nLeadingBits);
-    mux_sprintf(sLine, LBUF_SIZE, T("%-50s %s"), sAddress, sControl);
+    {
+        size_t pos = 0;
+        pos = mux_table_append_ljust(sLine, LBUF_SIZE, pos, sAddress, kSiteAddrCols);
+        pos = mux_table_append_bytes(sLine, LBUF_SIZE, pos, " ");
+        pos = mux_table_append_bytes(sLine, LBUF_SIZE, pos,
+            reinterpret_cast<const char *>(sControl));
+    }
     notify(player, sLine);
 
     listinfo(player, sLine, sAddress, sControl, p->pnInside);
@@ -3634,8 +3644,19 @@ void mux_subnets::listinfo(dbref player, UTF8 *sLine, UTF8 *sAddress, UTF8 *sCon
 
 void mux_subnets::listinfo(dbref player)
 {
+    static const size_t kSiteAddrCols = 50;
+
     notify(player, M_("----- Site Access -----"));
-    notify(player, M_("Address                                            Status"));
+    {
+        UTF8 header[LBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Address"), kSiteAddrCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Status")));
+        notify(player, header);
+    }
 
     UTF8 *sAddress = alloc_lbuf("list_sites.addr");
     UTF8 *sControl = alloc_lbuf("list_sites.control");

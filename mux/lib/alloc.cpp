@@ -15,6 +15,7 @@
 #include "config.h"
 #include "core.h"
 #include "modules.h"
+#include "mux_table.h"
 
 #include <algorithm>
 #include <unordered_set>
@@ -583,18 +584,77 @@ static void pool_trace(const dbref player, const int poolnum, const UTF8 *text)
 
 void list_bufstats(dbref player)
 {
-    alloc_notify(player, M_("Buffer Stats  Size      InUse      Total           Allocs   Lost"));
+    // Buffer pool table (#1667 Phase 4 C4).  Name is left-justified; numeric
+    // columns keep fixed-width right justification via RightJustifyNumber
+    // (mux_vsnprintf has no %* width — #1429).
+    //
+    static const size_t kBufNameCols   = 12;
+    static const size_t kBufSizeCols   = 5;
+    static const size_t kBufInUseCols  = 10;
+    static const size_t kBufTotalCols  = 10;
+    static const size_t kBufAllocsCols = 16;
+    static const size_t kBufLostCols   = 6;
+
+    {
+        UTF8 header[MBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Buffer Stats"), kBufNameCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Size"), kBufSizeCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("InUse"), kBufInUseCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Total"), kBufTotalCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Allocs"), kBufAllocsCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Lost"), kBufLostCols);
+        alloc_notify(player, header);
+    }
     for (int i = 0; i < NUM_POOLS; i++)
     {
         UTF8 buff[MBUF_SIZE];
-        UTF8 *p = buff;
-
-        p += LeftJustifyString(p,  12, poolnames[i]);                   *p++ = ' ';
-        p += RightJustifyNumber(p,  5, static_cast<int64_t>(pools[i].pool_client_size), ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 10, static_cast<int64_t>(pools[i].num_alloc),        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 10, static_cast<int64_t>(pools[i].max_alloc),        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p, 16, static_cast<int64_t>(pools[i].tot_alloc),        ' '); *p++ = ' ';
-        p += RightJustifyNumber(p,  6, static_cast<int64_t>(pools[i].num_lost),         ' '); *p = '\0';
+        UTF8 num[24];
+        size_t pos = 0;
+        size_t nw;
+        pos = mux_table_append_ljust(buff, sizeof(buff), pos,
+            poolnames[i], kBufNameCols);
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos, " ");
+        nw = RightJustifyNumber(num, kBufSizeCols,
+            static_cast<int64_t>(pools[i].pool_client_size), ' ');
+        num[nw] = '\0';
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos,
+            reinterpret_cast<const char *>(num));
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos, " ");
+        nw = RightJustifyNumber(num, kBufInUseCols,
+            static_cast<int64_t>(pools[i].num_alloc), ' ');
+        num[nw] = '\0';
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos,
+            reinterpret_cast<const char *>(num));
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos, " ");
+        nw = RightJustifyNumber(num, kBufTotalCols,
+            static_cast<int64_t>(pools[i].max_alloc), ' ');
+        num[nw] = '\0';
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos,
+            reinterpret_cast<const char *>(num));
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos, " ");
+        nw = RightJustifyNumber(num, kBufAllocsCols,
+            static_cast<int64_t>(pools[i].tot_alloc), ' ');
+        num[nw] = '\0';
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos,
+            reinterpret_cast<const char *>(num));
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos, " ");
+        nw = RightJustifyNumber(num, kBufLostCols,
+            static_cast<int64_t>(pools[i].num_lost), ' ');
+        num[nw] = '\0';
+        pos = mux_table_append_bytes(buff, sizeof(buff), pos,
+            reinterpret_cast<const char *>(num));
         alloc_notify(player, buff);
     }
 }

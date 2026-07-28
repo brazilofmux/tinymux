@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "mux_table.h"
 
 #include "sqlite_backend.h"
 
@@ -1503,7 +1504,25 @@ void do_report(dbref executor, dbref caller, dbref enactor, int eval, int key)
     }
 
     int iHour, nSum = 0;
-    notify(executor, M_("Day   Hours     Players  Total"));
+    // Activity report (#1667 Phase 4 C8) — freeform numeric columns with
+    // separate header labels (no pre-spaced blob).
+    //
+    {
+        UTF8 header[MBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Day")));
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "   ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Hours")));
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "     ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Players")));
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "  ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Total")));
+        notify(executor, header);
+    }
     for (i = 0, iHour = 0; i < NPERIODS; i++, iHour += HOURS_PER_PERIOD)
     {
         nSum += nBin[i];

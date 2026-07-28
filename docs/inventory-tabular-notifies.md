@@ -122,9 +122,9 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | | |
 |--|--|
 | File | `mguests.cpp` `CGuests::ListAll` |
-| Header | **Blob** `M_("*Guest #  : Name            dbref  Status     Last Site")` (+ rule lines) |
-| Rows | `mux_sprintf` `Guest %-3d: %-15s #%-5d %-10s %s` |
-| Translate? | **No (blob)** for header until converted |
+| Header | **Converted (#1667 Phase 4)** — per-label Guest / # / Name / dbref / Status / Last Site |
+| Rows | `mux_table_*` (num 3, name 15, dbref 5, status 10) |
+| Translate? | **Per-label** |
 | Dual | No |
 
 ### C2. Site access (`@list site` / subnet list)
@@ -132,9 +132,9 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | | |
 |--|--|
 | File | `src/net.cpp` `mux_subnets::listinfo` |
-| Header | **Blob** `M_("Address                                            Status")` |
-| Rows | `%-50s %s` address/control |
-| Translate? | **No (blob)** |
+| Header | **Converted** — `Address` (50) + `Status` freeform |
+| Rows | `mux_table_append_ljust` address 50 + freeform control |
+| Translate? | **Per-label** |
 | Dual | No |
 
 ### C3. `@list hashstat` (abbreviated)
@@ -142,9 +142,9 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | | |
 |--|--|
 | File | `command.cpp` `list_hashstats` |
-| Header | **Blob** `M_("Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long")` |
-| Rows | `LeftJustifyString` name 13 + entry count — **header columns do not match abbreviated rows** (header is legacy full-stat wording) |
-| Translate? | **No (blob)**; note header/row mismatch even in English |
+| Header | **Converted** — `Name` (13) + `Entries` (11); old full-stat blob dropped (it never matched the rows) |
+| Rows | name 13 + right-just entries 11 via `RightJustifyNumber` |
+| Translate? | **Per-label** |
 | Dual | No |
 
 ### C4. Buffer pool stats
@@ -152,9 +152,9 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | | |
 |--|--|
 | File | `lib/alloc.cpp` `list_bufstats` |
-| Header | **Blob** `M_("Buffer Stats  Size      InUse      Total           Allocs   Lost")` |
-| Rows | `LeftJustifyString` / `RightJustifyNumber` fixed widths 12 / 5 / 10 / 10 / 16 / 6 |
-| Translate? | **No (blob)** |
+| Header | **Converted** — Buffer Stats / Size / InUse / Total / Allocs / Lost |
+| Rows | name 12 ljust + numeric fields right-just via `RightJustifyNumber` |
+| Translate? | **Per-label** |
 | Dual | No |
 
 ### C5. `@list ref` / reference list
@@ -192,9 +192,9 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | | |
 |--|--|
 | File | `walkdb.cpp` |
-| Header | **Blob** `M_("Day   Hours     Players  Total")` |
-| Rows | `%3d %03d - %03d: %6d %6d` |
-| Translate? | **No (blob)** |
+| Header | **Converted** — separate Day / Hours / Players / Total labels |
+| Rows | unchanged numeric `mux_sprintf` layout |
+| Translate? | **Per-label** |
 | Dual | No |
 
 ### C9. Level dump (command.cpp)
@@ -225,17 +225,17 @@ From `mux/po/tinymux.pot` at inventory time (grep for multi-space column-like ms
 
 | msgid | Family |
 |-------|--------|
-| `Buffer Stats  Size      InUse      Total           Allocs   Lost` | C4 |
+| ~~`Buffer Stats  Size      InUse      Total           Allocs   Lost`~~ | C4 — **removed** Phase 4 |
 | ~~`*** Channel       Header          Owner           Access  Users Msgs`~~ | A1 — **removed** Phase 4 (per-label) |
 | ~~`Alias           Channel            Status   Title`~~ | A3 — **removed** Phase 4 (per-label) |
 | ~~`*** Channel       Owner           Header`~~ | A2 — **removed** Phase 4 (per-label) |
 | ~~`*** Channel       Owner           Description`~~ | A2 — **removed** Phase 4 (per-label) |
 | ~~`Name         Description                              Owner`~~ | B1 — **removed** Phase 4 |
 | ~~`Num  Name         Description                              Owner`~~ | B2 — **removed** Phase 4 |
-| `*Guest #  : Name            dbref  Status     Last Site` | C1 |
-| `Day   Hours     Players  Total` | C8 |
-| `Address                                            Status` | C2 |
-| `Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long` | C3 |
+| ~~`*Guest #  : Name            dbref  Status     Last Site`~~ | C1 — **removed** Phase 4 |
+| ~~`Day   Hours     Players  Total`~~ | C8 — **removed** Phase 4 |
+| ~~`Address                                            Status`~~ | C2 — **removed** Phase 4 |
+| ~~`Hash Stats    Size    Num     Del       Lookups…`~~ | C3 — **removed** Phase 4 (header now matches rows) |
 
 **Translator rule:** leave all of the above `msgstr ""` until that family is converted under #1667 Phase 4.
 
