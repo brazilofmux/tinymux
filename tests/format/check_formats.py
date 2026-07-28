@@ -108,7 +108,7 @@ BAN_LEGACY = {
     "mux/modules/engine/match.cpp": 2,
     "mux/modules/engine/predicates.cpp": 2,
     "mux/modules/exp3/exp3.cpp": 1,
-    "mux/modules/mail/mail_mod.cpp": 85,
+    "mux/modules/mail/mail_mod.cpp": 73,
     "mux/src/ganl_adapter.cpp": 1,
     "mux/src/websocket.cpp": 1,
 }

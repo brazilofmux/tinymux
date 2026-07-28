@@ -24,6 +24,7 @@
 #include "mail_mod.h"
 #include "mux_nls.h"
 #include "mux_format.h"
+#include "color_ops.h"
 
 #include <algorithm>
 #include <atomic>
@@ -38,6 +39,216 @@
 #define strcasecmp  _stricmp
 #define strtok_r    strtok_s
 #endif
+
+// ---------------------------------------------------------------------------
+// Column layout via co_copy_field (#1649 / #1653).
+//
+// Same contract as comsys_mod: %-N.Ns / %.Ns on player names and subjects
+// must measure display columns, cut on grapheme clusters, and close color.
+// ---------------------------------------------------------------------------
+
+// Append a left-justified field of nCols display columns at buf[pos].
+// Truncates by grapheme cluster; pads with spaces.  nBuf includes the
+// trailing NUL.  Returns the new write position.
+//
+static size_t append_ljust_field(
+    UTF8 *buf, size_t nBuf, size_t pos,
+    const UTF8 *text, size_t nCols)
+{
+    if (pos + 1 >= nBuf)
+    {
+        if (0 < nBuf)
+        {
+            buf[nBuf - 1] = '\0';
+        }
+        return pos;
+    }
+
+    const unsigned char *src = (nullptr != text)
+        ? reinterpret_cast<const unsigned char *>(text)
+        : reinterpret_cast<const unsigned char *>("");
+
+    co_field fld = co_copy_field(
+        reinterpret_cast<unsigned char *>(buf + pos),
+        nBuf - pos, src, nullptr, nCols);
+
+    pos += fld.bytes;
+    size_t cols = fld.columns;
+    while (  cols < nCols
+          && pos + 1 < nBuf)
+    {
+        buf[pos++] = ' ';
+        cols++;
+    }
+    if (pos < nBuf)
+    {
+        buf[pos] = '\0';
+    }
+    return pos;
+}
+
+// Truncate to nCols display columns without padding (printf %.Ns).
+//
+static size_t append_trunc_field(
+    UTF8 *buf, size_t nBuf, size_t pos,
+    const UTF8 *text, size_t nCols)
+{
+    if (pos + 1 >= nBuf)
+    {
+        if (0 < nBuf)
+        {
+            buf[nBuf - 1] = '\0';
+        }
+        return pos;
+    }
+
+    const unsigned char *src = (nullptr != text)
+        ? reinterpret_cast<const unsigned char *>(text)
+        : reinterpret_cast<const unsigned char *>("");
+
+    co_field fld = co_copy_field(
+        reinterpret_cast<unsigned char *>(buf + pos),
+        nBuf - pos, src, nullptr, nCols);
+
+    pos += fld.bytes;
+    if (pos < nBuf)
+    {
+        buf[pos] = '\0';
+    }
+    return pos;
+}
+
+// Append a C-string literal (separators, fixed labels).  Returns new pos.
+//
+static size_t append_bytes(
+    UTF8 *buf, size_t nBuf, size_t pos, const char *lit)
+{
+    if (nullptr == lit)
+    {
+        return pos;
+    }
+    while (  '\0' != *lit
+          && pos + 1 < nBuf)
+    {
+        buf[pos++] = static_cast<UTF8>(*lit++);
+    }
+    if (pos < nBuf)
+    {
+        buf[pos] = '\0';
+    }
+    return pos;
+}
+
+// Advance pos to the end of a NUL-terminated prefix just written into buf.
+//
+static size_t pos_after(UTF8 *buf, size_t nBuf, size_t pos)
+{
+    while (  pos < nBuf
+          && '\0' != buf[pos])
+    {
+        pos++;
+    }
+    return pos;
+}
+
+// Folder list / review summary line:
+//   [flags] iii (ssss) From: name............ Sub: subject...
+//
+static void format_mail_list_line(
+    UTF8 *line, size_t nLine,
+    const UTF8 *status, int i, size_t nSize,
+    const UTF8 *from, const UTF8 *subject)
+{
+    size_t pos = 0;
+    pos = append_bytes(line, nLine, pos, "[");
+    pos = append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(status));
+    pos = append_bytes(line, nLine, pos, "] ");
+    if (pos < nLine)
+    {
+        mux_sprintf(line + pos, nLine - pos, T("%-3d (%4zu) From: "),
+            i, nSize);
+        pos = pos_after(line, nLine, pos);
+    }
+    pos = append_ljust_field(line, nLine, pos, from, 16);
+    pos = append_bytes(line, nLine, pos, " Sub: ");
+    append_trunc_field(line, nLine, pos, subject, 25);
+}
+
+// Read / review detail header.  subject_cols 0 means no visual truncate
+// (full subject, still buffer-capped by co_copy_field / mux assembly).
+//
+static void format_mail_detail_header(
+    UTF8 *hdr, size_t nHdr,
+    int i, const UTF8 *from, const UTF8 *time_str, bool bConn,
+    int folder,
+    const UTF8 *status_lead,
+    const char *extra1, const char *extra2, const char *extra3,
+    const char *extra4, const char *extra5, const char *extra6,
+    const UTF8 *subject, size_t subject_cols)
+{
+    size_t pos = 0;
+    if (pos < nHdr)
+    {
+        mux_sprintf(hdr + pos, nHdr - pos, T("%-3d         From:  "), i);
+        pos = pos_after(hdr, nHdr, pos);
+    }
+    pos = append_ljust_field(hdr, nHdr, pos, from, 16);
+    pos = append_bytes(hdr, nHdr, pos, "  At: ");
+    pos = append_ljust_field(hdr, nHdr, pos, time_str, 25);
+    pos = append_bytes(hdr, nHdr, pos, bConn ? " (Conn)" : "      ");
+    pos = append_bytes(hdr, nHdr, pos, "\r\n");
+    if (pos < nHdr)
+    {
+        mux_sprintf(hdr + pos, nHdr - pos,
+            T("Fldr   : %-2d Status: %s%s%s%s%s%s%s\r\nSubject: "),
+            folder,
+            status_lead,
+            (nullptr != extra1) ? extra1 : "",
+            (nullptr != extra2) ? extra2 : "",
+            (nullptr != extra3) ? extra3 : "",
+            (nullptr != extra4) ? extra4 : "",
+            (nullptr != extra5) ? extra5 : "",
+            (nullptr != extra6) ? extra6 : "");
+        pos = pos_after(hdr, nHdr, pos);
+    }
+    if (0 == subject_cols)
+    {
+        // Full subject into the remainder; codepoint-safe via mux_sprintf.
+        //
+        if (pos < nHdr)
+        {
+            mux_sprintf(hdr + pos, nHdr - pos, T("%s"),
+                (nullptr != subject) ? subject : T(""));
+        }
+    }
+    else
+    {
+        append_trunc_field(hdr, nHdr, pos, subject, subject_cols);
+    }
+}
+
+// "To: name" banner used by @mail/review.
+//
+static void format_mail_to_banner(UTF8 *hdr, size_t nHdr, const UTF8 *name)
+{
+    size_t pos = 0;
+    pos = append_bytes(hdr, nHdr, pos,
+        "–––––"
+        "–––––"
+        "–––––"
+        "–––––"
+        "–––"
+        "   To: ");
+    pos = append_ljust_field(hdr, nHdr, pos, name, 25);
+    append_bytes(hdr, nHdr, pos,
+        "   "
+        "–––––"
+        "–––––"
+        "–––––"
+        "–––––"
+        "–––");
+}
 
 // En-dash line for mail display borders.
 //
@@ -1879,12 +2090,9 @@ void CMailMod::ListMailInFolderNumber(dbref player, int folder_num,
                     get_player_name(mp->from, szFromName, sizeof(szFromName));
 
                     UTF8 line[MOD_LBUF_SIZE];
-                    snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                        "[%s] %-3d (%4zu) From: %-16s Sub: %.25s",
-                        reinterpret_cast<const char *>(status_chars(mp)),
-                        i, nSize,
-                        reinterpret_cast<const char *>(szFromName),
-                        mp->subject.c_str());
+                    format_mail_list_line(line, sizeof(line),
+                        status_chars(mp), i, nSize, szFromName,
+                        reinterpret_cast<const UTF8 *>(mp->subject.c_str()));
                     m_pINotify->RawNotify(player, line);
                 }
             }
@@ -1947,19 +2155,7 @@ void CMailMod::do_mail_review_all(dbref player, const UTF8 *msglist)
                         get_player_name(target, szName, sizeof(szName));
 
                         UTF8 hdr[MOD_LBUF_SIZE];
-                        snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
-                                 "–––––"
-                                 "–––––"
-                                 "–––––"
-                                 "–––––"
-                                 "–––"
-                                 "   To: %-25s   "
-                                 "–––––"
-                                 "–––––"
-                                 "–––––"
-                                 "–––––"
-                                 "–––",
-                                 reinterpret_cast<const char *>(szName));
+                        format_mail_to_banner(hdr, sizeof(hdr), szName);
                         m_pINotify->RawNotify(player, hdr);
                         bHeader = true;
                     }
@@ -1969,12 +2165,9 @@ void CMailMod::do_mail_review_all(dbref player, const UTF8 *msglist)
 
                     size_t nSize = MessageFetchSize(mp->number);
                     UTF8 line[MOD_LBUF_SIZE];
-                    snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                             "[%s] %-3d (%4zu) From: %-16s Sub: %.25s",
-                             reinterpret_cast<const char *>(status_chars(mp)),
-                             i, nSize,
-                             reinterpret_cast<const char *>(szFromName),
-                             mp->subject.c_str());
+                    format_mail_list_line(line, sizeof(line),
+                        status_chars(mp), i, nSize, szFromName,
+                        reinterpret_cast<const UTF8 *>(mp->subject.c_str()));
                     m_pINotify->RawNotify(player, line);
                 }
             }
@@ -2019,23 +2212,20 @@ void CMailMod::do_mail_review_all(dbref player, const UTF8 *msglist)
                         m_pINotify->RawNotify(player, MOD_DASH_LINE);
 
                         UTF8 hdr[MOD_LBUF_SIZE];
-                        snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
-                            "%-3d         From:  %-16s  At: %-25s  %s\r\n"
-                            "Fldr   : %-2d Status: %s%s%s%s%s%s%s\r\n"
-                            "Subject: %.65s",
-                            i,
-                            reinterpret_cast<const char *>(szFromName),
-                            mp->time.c_str(),
-                            is_connected_visible(mp->from, player) ? " (Conn)" : "      ",
+                        format_mail_detail_header(hdr, sizeof(hdr),
+                            i, szFromName,
+                            reinterpret_cast<const UTF8 *>(mp->time.c_str()),
+                            is_connected_visible(mp->from, player),
                             0,
-                            Read(mp)     ? "Read"    : "Unread",
+                            Read(mp) ? T("Read") : T("Unread"),
                             Cleared(mp)  ? " Cleared" : "",
                             Urgent(mp)   ? " Urgent"  : "",
                             Mass(mp)     ? " Mass"    : "",
                             Forward(mp)  ? " Forward" : "",
                             M_Safe(mp)   ? " Safe"    : "",
                             Tagged(mp)   ? " Tagged"  : "",
-                            mp->subject.c_str());
+                            reinterpret_cast<const UTF8 *>(mp->subject.c_str()),
+                            65);
                         m_pINotify->RawNotify(player, hdr);
                         m_pINotify->RawNotify(player, MOD_DASH_LINE);
                         m_pINotify->RawNotify(player, body);
@@ -2099,19 +2289,7 @@ void CMailMod::do_mail_review(dbref player, const UTF8 *name,
         get_player_name(target, szName, sizeof(szName));
 
         UTF8 hdr[MOD_LBUF_SIZE];
-        snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
-                 "–––––"
-                 "–––––"
-                 "–––––"
-                 "–––––"
-                 "–––"
-                 "   To: %-25s   "
-                 "–––––"
-                 "–––––"
-                 "–––––"
-                 "–––––"
-                 "–––",
-                 reinterpret_cast<const char *>(szName));
+        format_mail_to_banner(hdr, sizeof(hdr), szName);
         m_pINotify->RawNotify(player, hdr);
 
         std::list<mail> *pList = MailList(target);
@@ -2129,12 +2307,9 @@ void CMailMod::do_mail_review(dbref player, const UTF8 *name,
 
                     size_t nSize = MessageFetchSize(mp->number);
                     UTF8 line[MOD_LBUF_SIZE];
-                    snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                             "[%s] %-3d (%4zu) From: %-16s Sub: %.25s",
-                             reinterpret_cast<const char *>(status_chars(mp)),
-                             i, nSize,
-                             reinterpret_cast<const char *>(szFromName),
-                             mp->subject.c_str());
+                    format_mail_list_line(line, sizeof(line),
+                        status_chars(mp), i, nSize, szFromName,
+                        reinterpret_cast<const UTF8 *>(mp->subject.c_str()));
                     m_pINotify->RawNotify(player, line);
                 }
             }
@@ -2171,23 +2346,20 @@ void CMailMod::do_mail_review(dbref player, const UTF8 *name,
                         m_pINotify->RawNotify(player, MOD_DASH_LINE);
 
                         UTF8 hdr2[MOD_LBUF_SIZE];
-                        snprintf(reinterpret_cast<char *>(hdr2), sizeof(hdr2),
-                            "%-3d         From:  %-16s  At: %-25s  %s\r\n"
-                            "Fldr   : %-2d Status: %s%s%s%s%s%s%s\r\n"
-                            "Subject: %.65s",
-                            i,
-                            reinterpret_cast<const char *>(szFromName),
-                            mp->time.c_str(),
-                            is_connected_visible(mp->from, player) ? " (Conn)" : "      ",
+                        format_mail_detail_header(hdr2, sizeof(hdr2),
+                            i, szFromName,
+                            reinterpret_cast<const UTF8 *>(mp->time.c_str()),
+                            is_connected_visible(mp->from, player),
                             0,
-                            Read(mp)     ? "Read"    : "Unread",
+                            Read(mp) ? T("Read") : T("Unread"),
                             Cleared(mp)  ? " Cleared" : "",
                             Urgent(mp)   ? " Urgent"  : "",
                             Mass(mp)     ? " Mass"    : "",
                             Forward(mp)  ? " Forward" : "",
                             M_Safe(mp)   ? " Safe"    : "",
                             Tagged(mp)   ? " Tagged"  : "",
-                            mp->subject.c_str());
+                            reinterpret_cast<const UTF8 *>(mp->subject.c_str()),
+                            65);
                         m_pINotify->RawNotify(player, hdr2);
                         m_pINotify->RawNotify(player, MOD_DASH_LINE);
                         m_pINotify->RawNotify(player, body);
@@ -4284,11 +4456,14 @@ void CMailMod::do_malias_list_all(dbref player)
             get_player_name(m->owner, szOwner, sizeof(szOwner));
 
             UTF8 line[256];
-            snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                     "%-12s %-40s %-15.15s",
-                     m->name.c_str(),
-                     m->desc.c_str(),
-                     reinterpret_cast<const char *>(szOwner));
+            size_t pos = 0;
+            pos = append_ljust_field(line, sizeof(line), pos,
+                reinterpret_cast<const UTF8 *>(m->name.c_str()), 12);
+            pos = append_bytes(line, sizeof(line), pos, " ");
+            pos = append_ljust_field(line, sizeof(line), pos,
+                reinterpret_cast<const UTF8 *>(m->desc.c_str()), 40);
+            pos = append_bytes(line, sizeof(line), pos, " ");
+            pos = append_ljust_field(line, sizeof(line), pos, szOwner, 15);
             m_pINotify->RawNotify(player, line);
         }
     }
@@ -4313,12 +4488,20 @@ void CMailMod::do_malias_adminlist(dbref player)
         get_player_name(m->owner, szOwner, sizeof(szOwner));
 
         UTF8 line[256];
-        snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                 "%-4d %-12s %-40s %-15.15s",
-                 static_cast<int>(i),
-                 m->name.c_str(),
-                 m->desc.c_str(),
-                 reinterpret_cast<const char *>(szOwner));
+        size_t pos = 0;
+        if (pos < sizeof(line))
+        {
+            mux_sprintf(line + pos, sizeof(line) - pos, T("%-4d "),
+                static_cast<int>(i));
+            pos = pos_after(line, sizeof(line), pos);
+        }
+        pos = append_ljust_field(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(m->name.c_str()), 12);
+        pos = append_bytes(line, sizeof(line), pos, " ");
+        pos = append_ljust_field(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(m->desc.c_str()), 40);
+        pos = append_bytes(line, sizeof(line), pos, " ");
+        pos = append_ljust_field(line, sizeof(line), pos, szOwner, 15);
         m_pINotify->RawNotify(player, line);
     }
     m_pINotify->RawNotify(player, T("***** End of Mail Aliases *****"));
@@ -4969,13 +5152,27 @@ void CMailMod::do_mail_list(dbref player, const UTF8 *arg1,
                     get_player_name(mp->from, szFromName, sizeof(szFromName));
 
                     UTF8 line[MOD_LBUF_SIZE];
-                    snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                        "[%s] %-3d (%4zu) From: %-16s At: %s %s",
-                        reinterpret_cast<const char *>(status_chars(mp)),
-                        i, nSize,
-                        reinterpret_cast<const char *>(szFromName),
-                        reinterpret_cast<const char *>(time),
-                        is_connected_visible(mp->from, player) ? "Conn" : " ");
+                    size_t pos = 0;
+                    pos = append_bytes(line, sizeof(line), pos, "[");
+                    pos = append_bytes(line, sizeof(line), pos,
+                        reinterpret_cast<const char *>(status_chars(mp)));
+                    pos = append_bytes(line, sizeof(line), pos, "] ");
+                    if (pos < sizeof(line))
+                    {
+                        mux_sprintf(line + pos, sizeof(line) - pos,
+                            T("%-3d (%4zu) From: "), i, nSize);
+                        pos = pos_after(line, sizeof(line), pos);
+                    }
+                    pos = append_ljust_field(line, sizeof(line), pos,
+                        szFromName, 16);
+                    pos = append_bytes(line, sizeof(line), pos, " At: ");
+                    if (pos < sizeof(line))
+                    {
+                        mux_sprintf(line + pos, sizeof(line) - pos, T("%s %s"),
+                            time,
+                            is_connected_visible(mp->from, player)
+                                ? T("Conn") : T(" "));
+                    }
                     m_pINotify->RawNotify(player, line);
                 }
             }
@@ -5039,23 +5236,20 @@ void CMailMod::do_mail_read(dbref player, const UTF8 *arg1,
                     get_player_name(mp->from, szFromName, sizeof(szFromName));
 
                     UTF8 hdr[MOD_LBUF_SIZE];
-                    snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
-                        "%-3d         From:  %-16s  At: %-25s  %s\r\n"
-                        "Fldr   : %-2d Status: %s%s%s%s%s%s%s\r\n"
-                        "Subject: %s",
-                        i,
-                        reinterpret_cast<const char *>(szFromName),
-                        mp->time.c_str(),
-                        is_connected_visible(mp->from, player) ? " (Conn)" : "      ",
+                    format_mail_detail_header(hdr, sizeof(hdr),
+                        i, szFromName,
+                        reinterpret_cast<const UTF8 *>(mp->time.c_str()),
+                        is_connected_visible(mp->from, player),
                         folder,
-                        Read(mp)     ? "Read"    : "Unread",
+                        Read(mp) ? T("Read") : T("Unread"),
                         Cleared(mp)  ? " Cleared" : "",
                         Urgent(mp)   ? " Urgent"  : "",
                         Mass(mp)     ? " Mass"    : "",
                         Forward(mp)  ? " Forward" : "",
                         M_Safe(mp)   ? " Safe"    : "",
                         Tagged(mp)   ? " Tagged"  : "",
-                        mp->subject.c_str());
+                        reinterpret_cast<const UTF8 *>(mp->subject.c_str()),
+                        0);
                     m_pINotify->RawNotify(player, hdr);
                     m_pINotify->RawNotify(player, MOD_DASH_LINE);
                     m_pINotify->RawNotify(player, body);
@@ -5106,21 +5300,20 @@ void CMailMod::do_mail_next(dbref player)
                     get_player_name(mp->from, szFromName, sizeof(szFromName));
 
                     UTF8 hdr[MOD_LBUF_SIZE];
-                    snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
-                        "%-3d         From:  %-16s  At: %-25s  %s\r\n"
-                        "Fldr   : %-2d Status: Unread%s%s%s%s%s\r\n"
-                        "Subject: %s",
-                        i,
-                        reinterpret_cast<const char *>(szFromName),
-                        mp->time.c_str(),
-                        is_connected_visible(mp->from, player) ? " (Conn)" : "      ",
+                    format_mail_detail_header(hdr, sizeof(hdr),
+                        i, szFromName,
+                        reinterpret_cast<const UTF8 *>(mp->time.c_str()),
+                        is_connected_visible(mp->from, player),
                         folder,
+                        T("Unread"),
                         Urgent(mp)   ? " Urgent"  : "",
                         Mass(mp)     ? " Mass"    : "",
                         Forward(mp)  ? " Forward" : "",
                         M_Safe(mp)   ? " Safe"    : "",
                         Tagged(mp)   ? " Tagged"  : "",
-                        mp->subject.c_str());
+                        "",
+                        reinterpret_cast<const UTF8 *>(mp->subject.c_str()),
+                        0);
                     m_pINotify->RawNotify(player, hdr);
                     m_pINotify->RawNotify(player, MOD_DASH_LINE);
                     m_pINotify->RawNotify(player, body);
