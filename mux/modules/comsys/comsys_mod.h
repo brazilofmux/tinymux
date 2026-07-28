@@ -209,6 +209,13 @@ private:
         const UTF8 *suffix, const UTF8 *args[], int nargs,
         UTF8 *out, size_t outsz);
 
+    // Comtitle + name, as the engine's BuildChannelMessage renders it
+    // (#1640).  Caller supplies the buffer; see the definition for the
+    // eval_comtitle caveat.
+    //
+    void channel_speaker_name(const struct comuser *user, bool bSpoof,
+        UTF8 *speaker, size_t speakersz);
+
     // xlate() approximation shared by the boolean hooks.
     //
     static bool mogrify_truthy(const UTF8 *result);

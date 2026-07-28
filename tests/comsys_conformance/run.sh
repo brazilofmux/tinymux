@@ -252,7 +252,7 @@ if diff -q "$BASELINE" "$WORK/current.diff" >/dev/null 2>&1; then
     n=$(grep -c '^[-+][^-+]' "$BASELINE" || true)
     echo "=== comsys conformance: PASSED ==="
     echo "    Output matches the recorded baseline: $n known-divergent line(s),"
-    echo "    tracked in #1631, #1637 and #1640.  No new divergence."
+    echo "    tracked in #1631, #1637 and #1640 item 2.  No new divergence."
     rm -rf "$WORK"
     exit 0
 fi
