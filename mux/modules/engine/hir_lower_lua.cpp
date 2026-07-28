@@ -2373,30 +2373,42 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // disagree about a name the way the twin gated branches this
             // replaces could (d5e5e86e0).
             //
-            // Arguments may be integers, CONSTANT strings, or floats --
-            // constant or runtime -- with TWO kind bits per argument
-            // telling codegen and the handler what each register carries
-            // (0 integer, 1 string address, 2 double as raw bits over the
-            // FMV.X.D lane).  Floats travel honestly rather than as
-            // rendered text because coercion would lie to a type-sensitive
-            // callee: math.type("3.0") is nil, not "float".  A runtime
-            // string argument would need its own guest buffer and is left
-            // for when something needs it.
+            // Arguments may be integers, CONSTANT strings, floats --
+            // constant or runtime -- or Lua HANDLES, with TWO kind bits
+            // per argument telling codegen and the handler what each
+            // register carries (0 integer, 1 string address, 2 double as
+            // raw bits over the FMV.X.D lane, 3 stack reference).  Floats
+            // travel honestly rather than as rendered text because
+            // coercion would lie to a type-sensitive callee:
+            // math.type("3.0") is nil, not "float".  A handle argument is
+            // the index for a lua_pushvalue -- the one use of a handle
+            // that is ABOUT the thing it points at (#1579), which is what
+            // table.insert(t,4) needs.  A runtime string argument would
+            // need its own guest buffer and is left for when something
+            // needs it.
+            //
+            // nresults == 0 is a call FOR the effect -- table.insert --
+            // and takes CALL_VOID: no result register, no result-type
+            // claim to check, and the destination Lua registers become
+            // dead exactly as the VM's would.
             const lua_referent fref = lua_referent_of(lua_ref, func_reg);
             // The string form keeps its historical one-argument floor; the
-            // integer form allows zero.
-            const int min_args = (TY_INT == fref.returns) ? 0 : 1;
-            if (!is_bridge && nresults == 1 && fref.callable
-                && nargs >= min_args && nargs <= 2) {
-                int a0 = -1, a1 = -1, kinds = 0;
+            // integer form and the effect-only form allow zero.
+            const int min_args =
+                (0 == nresults || TY_INT == fref.returns) ? 0 : 1;
+            if (!is_bridge && fref.callable
+                && (0 == nresults || 1 == nresults)
+                && nargs >= min_args && nargs <= 3) {
+                int cargs[3] = { -1, -1, -1 };
+                int kinds = 0;
                 bool ok = true;
                 for (int i = 0; i < nargs && ok; i++) {
                     if (!lua_reg_in_range(A + 1 + i)) { ok = false; break; }
                     int areg = lua_reg[A + 1 + i];
-                    if (areg < 0 || lua_is_handle(h, areg)) {
-                        ok = false; break;
-                    }
-                    if (h.ty[areg] == TY_INT) {
+                    if (areg < 0) { ok = false; break; }
+                    if (lua_is_handle(h, areg)) {
+                        kinds |= (3 << (2 * i));   // stack reference
+                    } else if (h.ty[areg] == TY_INT) {
                         // integer: kind 0
                     } else if (h.kind[areg] == HIR_SCONST) {
                         kinds |= (1 << (2 * i));   // string address
@@ -2405,21 +2417,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     } else {
                         ok = false; break;
                     }
-                    if (0 == i) a0 = areg; else a1 = areg;
+                    cargs[i] = areg;
                 }
                 if (ok) {
-                    // Shared layout: nargs, argkinds, arg1.
-                    int64_t packed = static_cast<int64_t>(nargs)
-                                   | (static_cast<int64_t>(kinds) << 8)
-                                   | (static_cast<int64_t>(a1 + 1) << 16);
-                    if (TY_INT == fref.returns) {
-                        lua_reg[A] = h.emit(HIR_LUA_CALL_INT, TY_INT,
-                                            func_reg, a0, packed);
+                    // Arguments ride the carg[] list; val[] carries only
+                    // the kind bits.
+                    if (0 == nresults) {
+                        if (h.emit_lua_call(HIR_LUA_CALL_VOID, TY_VOID,
+                                func_reg, cargs, nargs, kinds) < 0) {
+                            return -1;
+                        }
+                        lua_reg[A] = -1;
+                    } else if (TY_INT == fref.returns) {
+                        lua_reg[A] = h.emit_lua_call(HIR_LUA_CALL_INT,
+                            TY_INT, func_reg, cargs, nargs, kinds);
                         if (lua_reg[A] < 0) return -1;
                         h.known_int[lua_reg[A]] = true;
                     } else {
-                        lua_reg[A] = h.emit(HIR_LUA_CALL_STR, TY_STRING,
-                                            func_reg, a0, packed);
+                        lua_reg[A] = h.emit_lua_call(HIR_LUA_CALL_STR,
+                            TY_STRING, func_reg, cargs, nargs, kinds);
                         if (lua_reg[A] < 0) return -1;
                     }
                     h.ecalls++;

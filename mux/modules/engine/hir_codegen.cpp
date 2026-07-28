@@ -1156,20 +1156,25 @@ static void ra_set_loc(rv_compiler &rc, hir_loc *loc,
     }
 }
 
-// Emit the argument setup shared by HIR_LUA_CALL_INT and HIR_LUA_CALL_STR.
-// One emitter for the one encoding (see ecall_lua_push_call_args in
-// jit_compiler.cpp): two bits per argument -- 0 is an integer via
-// ra_get_reg into x12+j, 1 is an SCONST's guest address into x12+j, 2 is a
-// double loaded from its FP slot and moved as raw bits into x12+j over the
-// FMV.X.D lane ECALL_LUA_FTOA already proved on both execution routes.
-// The kind bits the lowering packed are the single source of truth here;
-// re-deriving them from h.kind/h.ty would be a second opinion that could
-// disagree with what the handler will decode.
+// Emit the argument setup shared by the three HIR_LUA_CALL_* variants.
+// The arguments come off the instruction's carg[] list; the kind bits in
+// val[] say what each register carries (see ecall_lua_push_call_args in
+// jit_compiler.cpp): 0 is an integer via ra_get_reg into x12+j, 1 is an
+// SCONST's guest address into x12+j, 2 is a double loaded from its FP
+// slot and moved as raw bits into x12+j over the FMV.X.D lane
+// ECALL_LUA_FTOA already proved on both execution routes.  The kind bits
+// the lowering set are the single source of truth here; re-deriving them
+// from h.kind/h.ty would be a second opinion that could disagree with
+// what the handler will decode.
 //
-static void emit_lua_call_args(rv_compiler &rc, hir_loc *loc,
-                               int nargs, int kinds, int s2, int a1i) {
-    for (int j = 0; j < nargs && j < 2; j++) {
-        const int v = (0 == j) ? s2 : a1i;
+// Returns nargs | kinds<<8, the a1 payload every call variant sends.
+//
+static int emit_lua_call_args(rv_compiler &rc, hir_program &h,
+                              hir_loc *loc, int i) {
+    const int nargs = h.cnargs[i];
+    const int kinds = static_cast<int>(h.val[i]) & 0xFF;
+    for (int j = 0; j < nargs && j < 3; j++) {
+        const int v = h.carg[h.cbase[i] + j];
         if (v < 0) continue;
         const uint8_t xd = static_cast<uint8_t>(12 + j);
         switch ((kinds >> (2 * j)) & 3) {
@@ -1189,6 +1194,7 @@ static void emit_lua_call_args(rv_compiler &rc, hir_loc *loc,
         }
         }
     }
+    return (nargs & 0xFF) | (kinds << 8);
 }
 
 // Emit PHI copies: when branching from from_blk to to_blk,
@@ -1487,21 +1493,16 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             }
 
             case HIR_LUA_CALL_STR: {
-                // a0=fn, a1=nargs|kinds, a2=arg0, a3=arg1,
-                // a4=out addr, a5=out size.  Result is TY_STRING, so its
-                // guest buffer is the output slot the allocator already
-                // assigned -- OUT_SLOT bytes, passed explicitly.
-                int s1 = h.src1[i], s2 = h.src2[i];
-                int packed = static_cast<int>(h.val[i]);
-                int nargs = packed & 0xFF;
-                int a1i = (packed >> 16) - 1;
-                uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                // a0=fn, a1=nargs|kinds, a2..a4=args, a5=out addr,
+                // a6=out size.  Result is TY_STRING, so its guest buffer
+                // is the output slot the allocator already assigned --
+                // OUT_SLOT bytes, passed explicitly.
+                uint8_t fn_r = ra_get_reg(rc, loc, h.src1[i], RA_SCRATCH);
                 rc.code.push_back(rv_ADDI(10, fn_r, 0));
-                emit_lua_call_args(rc, loc, nargs, (packed >> 8) & 0xFF,
-                                   s2, a1i);
-                rv_load_i64(rc.code, 11, packed & 0xFFFF);
-                rv_load_guest_addr(rc.code, 14, loc[i].addr);
-                rv_load_i64(rc.code, 15, rv_compiler::OUT_SLOT);
+                int a1val = emit_lua_call_args(rc, h, loc, i);
+                rv_load_i64(rc.code, 11, a1val);
+                rv_load_guest_addr(rc.code, 15, loc[i].addr);
+                rv_load_i64(rc.code, 16, rv_compiler::OUT_SLOT);
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_CALL_STR)));
                 rc.code.push_back(rv_ECALL());
@@ -1509,32 +1510,40 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
             }
 
             case HIR_LUA_CALL_INT: {
-                // a0=fn idx, a1=nargs, a2=arg0, a3=arg1 -> a0=int result.
-                // nargs and the args are packed into val[]: low 8 bits are
-                // the count, the two operands are src1(fn)/src2(arg0) with
-                // arg1 in the upper bits as an insn index.  See the comment
-                // on hir_val_operand -- this is a THIRD shape for val[] and
-                // is exactly the seam that wants a real operand list.
-                int s1 = h.src1[i], s2 = h.src2[i];
-                int packed = static_cast<int>(h.val[i]);
-                int nargs = packed & 0xFF;
-                int a1i = (packed >> 16) - 1;
+                // a0=fn idx, a1=nargs|kinds, a2..a4=args -> a0=int result.
+                // Arguments come off the carg[] list; see emit_lua_call in
+                // hir.h for why there is no packed operand any more.
                 uint8_t reg = int_alloc.reg[i];
                 bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
                 uint8_t dest = spilled ? RA_SCRATCH : reg;
                 if (!dest) break;
-                uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                uint8_t fn_r = ra_get_reg(rc, loc, h.src1[i], RA_SCRATCH);
                 rc.code.push_back(rv_ADDI(10, fn_r, 0));
                 // Argument setup is identical to CALL_STR -- one emitter;
                 // only the result handling below differs.
-                emit_lua_call_args(rc, loc, nargs, (packed >> 8) & 0xFF,
-                                   s2, a1i);
-                rv_load_i64(rc.code, 11, packed & 0xFFFF);
+                int a1val = emit_lua_call_args(rc, h, loc, i);
+                rv_load_i64(rc.code, 11, a1val);
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_CALL_INT)));
                 rc.code.push_back(rv_ECALL());
                 rc.code.push_back(rv_ADDI(dest, 10, 0));
                 ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_CALL_VOID: {
+                // a0=fn idx, a1=nargs|kinds, a2..a4=args; no result.  The
+                // call is FOR its side effect -- table.insert -- which is
+                // why the opcode sits in has_side_effects(): an
+                // unused-result call DCE may NOP is precisely the one this
+                // exists to keep (#1145's SETI lesson).
+                uint8_t fn_r = ra_get_reg(rc, loc, h.src1[i], RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, fn_r, 0));
+                int a1val = emit_lua_call_args(rc, h, loc, i);
+                rv_load_i64(rc.code, 11, a1val);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_CALL_VOID)));
+                rc.code.push_back(rv_ECALL());
                 break;
             }
 
@@ -2504,6 +2513,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LUA_GETFIELD_REF: return "LUA_GETFIELD_REF";
     case HIR_LUA_CALL_INT: return "LUA_CALL_INT";
     case HIR_LUA_CALL_STR: return "LUA_CALL_STR";
+    case HIR_LUA_CALL_VOID: return "LUA_CALL_VOID";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
     case HIR_LUA_GETFIELD_FLT: return "LUA_GETFIELD_FLT";
     case HIR_LUA_SETFIELD: return "LUA_SETFIELD";

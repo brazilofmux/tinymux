@@ -3352,8 +3352,19 @@ static bool ecall_lua_push_call_args(lua_State *L, const rv64_ctx_t *ctx,
             lua_pushnumber(L, d);
             break;
         }
-        default:
-            return false;
+        default: {
+            // Kind 3: a Lua stack reference -- the register holds the
+            // stack index a handle-typed value carries.  lua_pushvalue is
+            // the one honest use of a handle as an argument: the VALUE it
+            // refers to is pushed, never the index as a number (#1579).
+            // Absolute indices stay valid as later arguments push.
+            const int idx = static_cast<int>(raw);
+            if (idx <= 0 || idx > lua_gettop(L)) {
+                return false;
+            }
+            lua_pushvalue(L, idx);
+            break;
+        }
         }
     }
     return true;
@@ -4081,17 +4092,17 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // ECALL states its buffer size explicitly and clamps to it.
         //
         // Argument kinds are two bits each; see ecall_lua_push_call_args.
-        // Two arguments is the current ceiling, matching CALL_INT.
+        // Three arguments is the ceiling, matching CALL_INT and CALL_VOID.
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int fn_idx  = static_cast<int>(ctx->x[10]);
         int nargs   = static_cast<int>(ctx->x[11] & 0xFF);
         int kinds   = static_cast<int>((ctx->x[11] >> 8) & 0xFF);
-        uint64_t out_addr = ctx->x[14];
-        uint64_t out_size = ctx->x[15];
+        uint64_t out_addr = ctx->x[15];
+        uint64_t out_size = ctx->x[16];
 
         if (fn_idx <= 0 || fn_idx > lua_gettop(L)
-            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 2
+            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 3
             || 0 == out_size
             || !guest_range_ok(out_addr, out_size, ec->memory_size)) {
             ctx->x[11] = 0;
@@ -4156,7 +4167,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         int nargs  = static_cast<int>(ctx->x[11] & 0xFF);
         int kinds  = static_cast<int>((ctx->x[11] >> 8) & 0xFF);
         if (fn_idx <= 0 || fn_idx > lua_gettop(L)
-            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 2) {
+            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 3) {
             ctx->x[11] = 0;
             return ECALL_DECLINE;
         }
@@ -4184,6 +4195,37 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
         ctx->x[11] = 1;
         lua_settop(L, base);
+        return -1;
+    }
+
+    case ECALL_LUA_CALL_VOID: {
+        // Call for effect: same encoding as CALL_INT/CALL_STR, result
+        // discarded.  pcall is asked for zero results, so there is no
+        // result type to check -- the call either completed or declines.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int fn_idx = static_cast<int>(ctx->x[10]);
+        int nargs  = static_cast<int>(ctx->x[11] & 0xFF);
+        int kinds  = static_cast<int>((ctx->x[11] >> 8) & 0xFF);
+        if (fn_idx <= 0 || fn_idx > lua_gettop(L)
+            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 3) {
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        int base = lua_gettop(L);
+        lua_pushvalue(L, fn_idx);
+        if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        if (LUA_OK != lua_pcall(L, nargs, 0, 0)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        lua_settop(L, base);
+        ctx->x[11] = 1;
         return -1;
     }
 

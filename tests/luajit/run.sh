@@ -156,7 +156,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=8
+AGREE_DECLINE_BUDGET=5
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -280,6 +280,16 @@ EXEC_CASES=(
     # register cannot survive an add against it.
     'local x=math.pi return x*2'
     'local x=math.maxinteger return x-1'
+
+    # Call-surface: three arguments (string.sub), a HANDLE argument
+    # (kind 3 -- the ECALL pushes the value the stack index refers to,
+    # which is table.concat's table), and a call for EFFECT (CALL_VOID,
+    # nresults=0 -- table.insert).  The insert case reads the INSERTED
+    # element, not #t: a void call that silently never ran still leaves
+    # #t plausible-looking, but t[2] answers nil.
+    'local x=string.sub("world",2,4) return x'
+    'local x=table.concat({10,20},"-") return x'
+    'local t={5} table.insert(t,6) return t[2]'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
