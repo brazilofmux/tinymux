@@ -3242,7 +3242,14 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
                     count++;
                 }
             }
-            raw_notify(player, tprintf(T("There are %d messages in the mail spool."), count));
+            // MN_() rather than T() (#1631): these were never marked, so mail
+            // stats were untranslatable; and "There are 1 messages" was the
+            // #1622 shape -- English morphology decided in C.  One change
+            // fixes both.
+            //
+            raw_notify(player, tprintf(MN_("There is %d message in the mail spool.",
+                                           "There are %d messages in the mail spool.",
+                                           count), count));
             return;
         }
         else if (full == 1)
@@ -3268,7 +3275,9 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
                 }
             }
             raw_notify(player,
-                   tprintf(T("MAIL: There are %d msgs in the mail spool, %d unread, %d cleared."),
+                   tprintf(MN_("MAIL: There is %d msg in the mail spool, %d unread, %d cleared.",
+                               "MAIL: There are %d msgs in the mail spool, %d unread, %d cleared.",
+                               fc + fr + fu),
                        fc + fr + fu, fu, fc));
             return;
         }
@@ -3304,9 +3313,15 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
                     }
                 }
             }
-            raw_notify(player, tprintf(T("MAIL: There are %d old msgs in the mail spool, totalling %d characters."), fr, fchars));
-            raw_notify(player, tprintf(T("MAIL: There are %d new msgs in the mail spool, totalling %d characters."), fu, tchars));
-            raw_notify(player, tprintf(T("MAIL: There are %d cleared msgs in the mail spool, totalling %d characters."), fc, cchars));
+            raw_notify(player, tprintf(MN_("MAIL: There is %d old msg in the mail spool, totalling %d characters.",
+                                           "MAIL: There are %d old msgs in the mail spool, totalling %d characters.",
+                                           fr), fr, fchars));
+            raw_notify(player, tprintf(MN_("MAIL: There is %d new msg in the mail spool, totalling %d characters.",
+                                           "MAIL: There are %d new msgs in the mail spool, totalling %d characters.",
+                                           fu), fu, tchars));
+            raw_notify(player, tprintf(MN_("MAIL: There is %d cleared msg in the mail spool, totalling %d characters.",
+                                           "MAIL: There are %d cleared msgs in the mail spool, totalling %d characters.",
+                                           fc), fc, cchars));
             return;
         }
     }
@@ -3333,8 +3348,12 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
                 }
             }
         }
-        raw_notify(player, tprintf(T("%s sent %d messages."), Moniker(target), fr));
-        raw_notify(player, tprintf(T("%s has %d messages."), Moniker(target), tr));
+        raw_notify(player, tprintf(MN_("%s sent %d message.",
+                                       "%s sent %d messages.", fr),
+                                   Moniker(target), fr));
+        raw_notify(player, tprintf(MN_("%s has %d message.",
+                                       "%s has %d messages.", tr),
+                                   Moniker(target), tr));
         return;
     }
 
@@ -3396,28 +3415,36 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
         }
     }
 
-    raw_notify(player, tprintf(T("Mail statistics for %s:"), Moniker(target)));
+    raw_notify(player, tprintf(M_("Mail statistics for %s:"), Moniker(target)));
 
     if (full == 1)
     {
-        raw_notify(player, tprintf(T("%d messages sent, %d unread, %d cleared."),
+        raw_notify(player, tprintf(MN_("%d message sent, %d unread, %d cleared.",
+                                       "%d messages sent, %d unread, %d cleared.",
+                                       fr + fu + fc),
                        fc + fr + fu, fu, fc));
-        raw_notify(player, tprintf(T("%d messages received, %d unread, %d cleared."),
+        raw_notify(player, tprintf(MN_("%d message received, %d unread, %d cleared.",
+                                       "%d messages received, %d unread, %d cleared.",
+                                       tr + tu + tc),
                        tc + tr + tu, tu, tc));
     }
     else
     {
         raw_notify(player,
-               tprintf(T("%d messages sent, %d unread, %d cleared, totalling %d characters."),
+               tprintf(MN_("%d message sent, %d unread, %d cleared, totalling %d characters.",
+                           "%d messages sent, %d unread, %d cleared, totalling %d characters.",
+                           fr + fu + fc),
                    fc + fr + fu, fu, fc, fchars));
         raw_notify(player,
-               tprintf(T("%d messages received, %d unread, %d cleared, totalling %d characters."),
+               tprintf(MN_("%d message received, %d unread, %d cleared, totalling %d characters.",
+                           "%d messages received, %d unread, %d cleared, totalling %d characters.",
+                           tr + tu + tc),
                    tc + tr + tu, tu, tc, tchars));
     }
 
     if (tc + tr + tu > 0)
     {
-        raw_notify(player, tprintf(T("Last is dated %s"), last));
+        raw_notify(player, tprintf(M_("Last is dated %s"), last));
     }
 }
 
