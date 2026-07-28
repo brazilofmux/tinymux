@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <cctype>
 #include <cmath>
+#include <map>
 #include <vector>
 #include <string>
 
@@ -618,59 +619,68 @@ static inline bool lua_reg_in_range(int idx);   // defined with pass 2
 // Declining here is strictly better than the run-time bail that #1518's
 // fail-closed intercept produces today: it costs no compile-and-run, and it
 // does not depend on the bridge ECALL names staying unimplemented.
-// Where a callable handle may come from.
 //
-// GETFIELD_REF is a library member -- math.floor.  GETGLOBAL is the global
-// itself -- tostring, which is a function rather than a table.  Both give a
-// stack index typed TY_LUA_HANDLE and the ECALL checks lua_isfunction before
-// calling, so a global that turns out to be a TABLE (math, called rather
-// than indexed) declines there rather than being rejected here.  The
-// lowering does not know which globals are functions and should not learn.
+// What a handle refers to -- its REFERENT -- tracked per HIR value while
+// lowering.  The type system says "handle"; this says handle to WHAT, which
+// is the question two decision sites had each been answering by inspecting
+// provenance:
 //
-// Does this callee return an integer, or a string?
+//   * OP_LUA_GETFIELD chose GETFIELD_REF vs GETFIELD_INT by whether the
+//     table handle's producing instruction was GETGLOBAL, and
+//   * OP_LUA_CALL chose CALL_INT vs CALL_STR by walking back to the SCONST
+//     key that named the callee and consulting a whitelist -- which then had
+//     to gate BOTH branches (d5e5e86e0), or a name skipping one could fall
+//     through and claim the other's result type.
 //
-// HIR result types are STATIC and Lua's are not: math.max(3,9) and
-// tostring(42) take the same argument shapes and return different types, so
-// nothing about the call site distinguishes them.  Until the type system can
-// say "handle to a function returning T", the callee's NAME is the only
-// thing that carries it.
+// Now the claim is made once, where the handle is created, and the decision
+// sites read it.  A claim is ELIGIBILITY, not soundness: every ECALL
+// verifies at runtime (lua_isfunction before calling, lua_isinteger and
+// LUA_TSTRING on results) and declines to the interpreter on a miss, so a
+// wrong claim costs a bail, never a wrong answer.  That is what lets
+// TY_STRING be the open default for a name nothing here knows -- a
+// game-defined global that does return a string compiles and runs, and one
+// that does not declines exactly where it always did.
 //
-// A whitelist is honest about that rather than pretending: a name not on it
-// declines, and declining is always correct.  Adding a name is a claim about
-// the standard library, so the list stays short and each entry is one a
-// declining test would otherwise cover.
+struct lua_referent {
+    // Field reads: false means members are values (GETFIELD_INT -- the
+    // NEWTABLE shape), true means members are references (GETFIELD_REF --
+    // the library shape).  GETGLOBAL results are the only handles whose
+    // fields are taken by reference, same as the provenance test chose.
+    bool fields_are_refs = false;
+
+    // Calls: may one be attempted, and what does it claim to return?
+    // TY_INT and TY_STRING are the two marshallings that exist; a handle
+    // that never received a callable claim declines the call at compile
+    // time, which is where a NEWTABLE or a nested-field handle lands.
+    bool callable = false;
+    hir_type returns = TY_VOID;
+};
+
+typedef std::map<int, lua_referent> lua_ref_map;
+
+static lua_referent lua_referent_of(const lua_ref_map &m, int v) {
+    lua_ref_map::const_iterator it = m.find(v);
+    return (it == m.end()) ? lua_referent() : it->second;
+}
+
+// The standard-library knowledge, in one place: what does calling NAME
+// return?  HIR result types are static and Lua's are not -- math.max(3,9)
+// and tostring(42) take the same argument shapes and return different
+// types -- so the name is the only thing that carries it, and this list is
+// a claim about the standard library.  Names claiming TY_INT stay few and
+// deliberate; everything else claims TY_STRING, the open default the
+// runtime check makes safe.
 //
-// This is a stopgap the type system should subsume.  It is the second place
-// the lowering guesses what a handle points at -- the first being
-// GETFIELD_REF vs GETFIELD_INT by provenance -- and both want the same fix.
-//
-static bool lua_callee_returns_int(const std::string &name) {
+static hir_type lua_call_claim(const std::string &name) {
     static const char *kIntReturning[] = {
         "floor", "ceil", "max", "min", "abs", "tointeger",
         "len", "byte", "maxinteger", "mininteger",
         "tonumber",   // integer when the argument is an integer literal
     };
     for (const char *n : kIntReturning) {
-        if (name == n) return true;
+        if (name == n) return TY_INT;
     }
-    return false;
-}
-
-// Name behind a callable handle: the SCONST key of the GETFIELD_REF or
-// GETGLOBAL that produced it.
-//
-static std::string lua_callee_name(const hir_program &h, int v) {
-    if (v < 0 || v >= h.n_insns) return "";
-    int keyv = (h.kind[v] == HIR_LUA_GETGLOBAL) ? h.src1[v] : h.src2[v];
-    if (keyv < 0 || keyv >= h.n_insns) return "";
-    if (h.kind[keyv] != HIR_SCONST) return "";
-    return h.sval[keyv];
-}
-
-static inline bool lua_callable_source(const hir_program &h, int v) {
-    if (v < 0 || v >= h.n_insns) return false;
-    return h.kind[v] == HIR_LUA_GETFIELD_REF
-        || h.kind[v] == HIR_LUA_GETGLOBAL;
+    return TY_STRING;
 }
 
 static inline bool lua_is_handle(const hir_program &h, int v) {
@@ -771,6 +781,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     // Lua register → HIR value map.
     int lua_reg[MAX_LUA_REGS];
     memset(lua_reg, -1, sizeof(lua_reg));
+
+    // HIR value → referent claim, for TY_LUA_HANDLE values.  Keyed by HIR
+    // value id, so it is indifferent to blocks and to which Lua register a
+    // handle currently sits in.  A handle with no entry gets the default:
+    // fields are values, calls decline.
+    lua_ref_map lua_ref;
 
     // Snapshot of lua_reg as it stood on entry to the current block, so a
     // block transition can tell which registers this block wrote.  See the
@@ -1486,23 +1502,26 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
                 int key_val = h.emit_sconst(key_addr, k.sval);
                 if (key_val < 0) return -1;
-                // Which variant depends on what the table IS.  A library
-                // table arrives from GETGLOBAL and its members are
-                // functions, so take a reference; a data table arrives from
-                // NEWTABLE and its members are values, so take the value.
-                //
-                // This is a heuristic on provenance, not a type.  It is
-                // honest for the shapes that exist today and it is the
-                // second place this pass has had to guess what a handle
-                // points at -- the type system knows "handle" but not
-                // "handle to what".
-                const bool from_global =
-                    (h.kind[table_reg] == HIR_LUA_GETGLOBAL);
+                // Which variant depends on what the table IS -- its
+                // referent.  A library table's members are functions, so
+                // take a reference; a data table's members are values, so
+                // take the value.  The claim was recorded where the handle
+                // was created; a member reference gets its own claim here,
+                // from the member's name, so a later call reads it instead
+                // of walking back to this key.
+                const lua_referent tref = lua_referent_of(lua_ref, table_reg);
                 lua_reg[A] = h.emit(
-                    from_global ? HIR_LUA_GETFIELD_REF : HIR_LUA_GETFIELD,
-                    from_global ? TY_LUA_HANDLE : TY_INT,
+                    tref.fields_are_refs ? HIR_LUA_GETFIELD_REF
+                                         : HIR_LUA_GETFIELD,
+                    tref.fields_are_refs ? TY_LUA_HANDLE : TY_INT,
                     table_reg, key_val);
                 if (lua_reg[A] < 0) return -1;
+                if (tref.fields_are_refs) {
+                    lua_referent m;
+                    m.callable = true;
+                    m.returns = lua_call_claim(k.sval);
+                    lua_ref[lua_reg[A]] = m;
+                }
                 h.known_int[lua_reg[A]] = true;
                 h.ecalls++;
             }
@@ -2155,6 +2174,16 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 lua_reg[A] = h.emit(HIR_LUA_GETGLOBAL, TY_LUA_HANDLE,
                                     key_val);
                 if (lua_reg[A] < 0) return -1;
+                // A global's referent is not knowable here -- `math` is a
+                // table, `tostring` is a function, and a game can rebind
+                // either -- so claim both capabilities and let each use's
+                // runtime check settle it: field reads take references,
+                // calls are allowed with the result type the name claims.
+                lua_referent g;
+                g.fields_are_refs = true;
+                g.callable = true;
+                g.returns = lua_call_claim(k.sval);
+                lua_ref[lua_reg[A]] = g;
                 h.known_int[lua_reg[A]] = true;
                 h.ecalls++;
             }
@@ -2229,60 +2258,26 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 && h.sval[func_reg].size() >= 4
                 && h.sval[func_reg].substr(0, 4) == "mux.");
 
-            // String-returning call on a library function.  Same chain as
-            // the integer form; the result lands in the output slot the
-            // allocator gives a TY_STRING value, and the ECALL is told that
-            // slot's SIZE rather than assuming it (#1679).
+            // Direct call on a handle with a callable claim.  CALL_INT and
+            // CALL_STR share one argument encoding (nargs, argkind bits,
+            // arg registers) and differ only in how the result comes back:
+            // in a register, or marshalled into an output slot whose SIZE
+            // the ECALL is told rather than assumes (#1679).  Which one to
+            // emit is the handle's claimed result type, recorded where the
+            // handle was created -- one claim, so the two variants cannot
+            // disagree about a name the way the twin gated branches this
+            // replaces could (d5e5e86e0).
             //
             // Arguments may be integers or CONSTANT strings; the kind bits
             // tell the handler which register holds which.  A runtime
             // string argument would need its own guest buffer and is left
             // for when something needs it.
-            if (!is_bridge && nresults == 1 && nargs >= 1 && nargs <= 2
-                && func_reg >= 0
-                && lua_callable_source(h, func_reg)) {
-                int a0 = -1, a1 = -1, kinds = 0;
-                bool ok = true;
-                for (int i = 0; i < nargs && ok; i++) {
-                    if (!lua_reg_in_range(A + 1 + i)) { ok = false; break; }
-                    int areg = lua_reg[A + 1 + i];
-                    if (areg < 0 || lua_is_handle(h, areg)) {
-                        ok = false; break;
-                    }
-                    if (h.ty[areg] == TY_INT) {
-                        // integer: kind bit stays 0
-                    } else if (h.kind[areg] == HIR_SCONST) {
-                        kinds |= (1 << i);
-                    } else {
-                        ok = false; break;
-                    }
-                    if (0 == i) a0 = areg; else a1 = areg;
-                }
-                if (ok && !lua_callee_returns_int(
-                        lua_callee_name(h, func_reg))) {
-                    int64_t packed = static_cast<int64_t>(nargs)
-                                   | (static_cast<int64_t>(kinds) << 8)
-                                   | (static_cast<int64_t>(a1 + 1) << 16);
-                    lua_reg[A] = h.emit(HIR_LUA_CALL_STR, TY_STRING,
-                                        func_reg, a0, packed);
-                    if (lua_reg[A] < 0) return -1;
-                    h.ecalls++;
-                    for (int i = A + 1; i < A + 1 + nargs; i++) {
-                        if (lua_reg_in_range(i)) lua_reg[i] = -1;
-                    }
-                    break;
-                }
-            }
-
-            // Integer result: same argument encoding as CALL_STR, opposite
-            // result type.  Gated on the callee whitelist so a string-
-            // returning name that skipped the CALL_STR branch (e.g. nargs 0)
-            // cannot fall through and claim TY_INT.
-            //
-            if (!is_bridge && nresults == 1 && nargs >= 0 && nargs <= 2
-                && func_reg >= 0
-                && lua_callable_source(h, func_reg)
-                && lua_callee_returns_int(lua_callee_name(h, func_reg))) {
+            const lua_referent fref = lua_referent_of(lua_ref, func_reg);
+            // The string form keeps its historical one-argument floor; the
+            // integer form allows zero.
+            const int min_args = (TY_INT == fref.returns) ? 0 : 1;
+            if (!is_bridge && nresults == 1 && fref.callable
+                && nargs >= min_args && nargs <= 2) {
                 int a0 = -1, a1 = -1, kinds = 0;
                 bool ok = true;
                 for (int i = 0; i < nargs && ok; i++) {
@@ -2301,14 +2296,20 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     if (0 == i) a0 = areg; else a1 = areg;
                 }
                 if (ok) {
-                    // Shared layout with CALL_STR: nargs, argkinds, arg1.
+                    // Shared layout: nargs, argkinds, arg1.
                     int64_t packed = static_cast<int64_t>(nargs)
                                    | (static_cast<int64_t>(kinds) << 8)
                                    | (static_cast<int64_t>(a1 + 1) << 16);
-                    lua_reg[A] = h.emit(HIR_LUA_CALL_INT, TY_INT,
-                                        func_reg, a0, packed);
-                    if (lua_reg[A] < 0) return -1;
-                    h.known_int[lua_reg[A]] = true;
+                    if (TY_INT == fref.returns) {
+                        lua_reg[A] = h.emit(HIR_LUA_CALL_INT, TY_INT,
+                                            func_reg, a0, packed);
+                        if (lua_reg[A] < 0) return -1;
+                        h.known_int[lua_reg[A]] = true;
+                    } else {
+                        lua_reg[A] = h.emit(HIR_LUA_CALL_STR, TY_STRING,
+                                            func_reg, a0, packed);
+                        if (lua_reg[A] < 0) return -1;
+                    }
                     h.ecalls++;
                     for (int i = A + 1; i < A + 1 + nargs; i++) {
                         if (lua_reg_in_range(i)) lua_reg[i] = -1;
