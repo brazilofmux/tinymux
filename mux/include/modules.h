@@ -88,6 +88,8 @@ const MUX_CID CID_HelpSystem           = UINT64_C(0x00000002C4D6E832);
 const MUX_IID IID_IHelpSystem          = UINT64_C(0x0000000238A9F157);
 const MUX_CID CID_Platform             = UINT64_C(0x00000002D7A1F3E5);
 const MUX_IID IID_IPlatform            = UINT64_C(0x00000002A3B5C7D9);
+const MUX_CID CID_GameConfig           = UINT64_C(0x00000002E7C31A54);
+const MUX_IID IID_IGameConfig          = UINT64_C(0x00000002F8D42B65);
 
 interface mux_ILog : public mux_IUnknown
 {
@@ -381,6 +383,35 @@ public:
     // atr is an attribute number (e.g. A_LOCK, A_LUSE, A_LENTER).
     //
     virtual MUX_RESULT CouldDoit(dbref who, dbref what, int atr, bool *pResult) = 0;
+};
+
+// Game-policy configuration a module may need (#1654).
+//
+// Query at CALL time, never cache at Initialize: @admin changes these while
+// the game runs, and a boot-time snapshot is #1613's bug -- the server
+// reports Set. while the module keeps stale values.  The struct is a
+// snapshot; the call is cheap; take a fresh one per command.
+//
+// Versioning: zero the struct, set cbSize = sizeof(GAME_CONFIG), then call.
+// The engine fills every field it knows that fits within cbSize, so an older
+// module keeps working against a newer engine and a newer module against an
+// older engine sees zeros for fields that engine never heard of (hence the
+// memset -- zero must be a safe default for every future field).
+//
+struct GAME_CONFIG
+{
+    size_t  cbSize;             // caller: sizeof(GAME_CONFIG)
+
+    int     searchcost;         // cost of whole-DB commands (@mail/stats)
+    bool    eval_comtitle;      // are comtitles evaluated as code?
+    UTF8    one_coin[32];       // singular coin name ("penny")
+    UTF8    many_coins[32];     // plural coin name ("pennies")
+};
+
+interface mux_IGameConfig : public mux_IUnknown
+{
+public:
+    virtual MUX_RESULT GetGameConfig(GAME_CONFIG *pConfig) = 0;
 };
 
 // Storage interfaces — engine-provided access to the shared SQLite
