@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 15:16+0000\n"
+"POT-Creation-Date: 2026-07-28 15:19+0000\n"
 "PO-Revision-Date: 2026-07-28 14:58+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -511,6 +511,12 @@ msgstr "[xx] @hook: Incompatible switches."
 msgid "No message."
 msgstr "[xx] No message."
 
+#: modules/engine/comsys.cpp:1556 modules/engine/comsys.cpp:2597
+#: modules/engine/comsys.cpp:3232 modules/engine/comsys.cpp:3470
+#, c-format
+msgid "Unknown channel %s."
+msgstr "[xx] Unknown channel %s."
+
 #: modules/engine/comsys.cpp:1562
 msgid "You are not listed as on that channel.  Delete this alias and readd."
 msgstr ""
@@ -520,9 +526,37 @@ msgstr ""
 msgid "GAGGED players may not speak on channels."
 msgstr "[xx] GAGGED players may not speak on channels."
 
+#: modules/engine/comsys.cpp:1583
+#, c-format
+msgid "You must be on %s to do that."
+msgstr "[xx] You must be on %s to do that."
+
 #: modules/engine/comsys.cpp:1605
 msgid "That channel type cannot be transmitted on."
 msgstr "[xx] That channel type cannot be transmitted on."
+
+#: modules/engine/comsys.cpp:1611 modules/engine/functions.cpp:4467
+#: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
+#: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:192
+#: modules/engine/walkdb.cpp:230
+#, c-format
+msgid "You don’t have enough %s."
+msgstr "[xx] You don’t have enough %s."
+
+#: modules/engine/comsys.cpp:1979
+#, c-format
+msgid "Too many people on channel %s already."
+msgstr "[xx] Too many people on channel %s already."
+
+#: modules/engine/comsys.cpp:2010
+#, c-format
+msgid "You are already on channel %s."
+msgstr "[xx] You are already on channel %s."
+
+#: modules/engine/comsys.cpp:2030 modules/engine/comsys.cpp:2618
+#, c-format
+msgid "You have left channel %s."
+msgstr "[xx] You have left channel %s."
 
 #: modules/engine/comsys.cpp:2102
 msgid "-- Players --"
@@ -532,6 +566,12 @@ msgstr "[xx] -- Players --"
 msgid "-- Objects --"
 msgstr "[xx] -- Objects --"
 
+#: modules/engine/comsys.cpp:2141 modules/engine/comsys.cpp:3242
+#: modules/engine/comsys.cpp:3262
+#, c-format
+msgid "-- %s --"
+msgstr "[xx] -- %s --"
+
 #: modules/engine/comsys.cpp:2150
 msgid "Channel does not have an object."
 msgstr "[xx] Channel does not have an object."
@@ -540,6 +580,16 @@ msgstr "[xx] Channel does not have an object."
 msgid "Channel does not log."
 msgstr "[xx] Channel does not log."
 
+#: modules/engine/comsys.cpp:2187
+#, c-format
+msgid "%s -- Begin Comsys Recall --"
+msgstr "[xx] %s -- Begin Comsys Recall --"
+
+#: modules/engine/comsys.cpp:2201
+#, c-format
+msgid "%s -- End Comsys Recall --"
+msgstr "[xx] %s -- End Comsys Recall --"
+
 #: modules/engine/comsys.cpp:2456 modules/engine/comsys.cpp:2466
 msgid "You need to specify a valid alias."
 msgstr "[xx] You need to specify a valid alias."
@@ -547,6 +597,11 @@ msgstr "[xx] You need to specify a valid alias."
 #: modules/engine/comsys.cpp:2471
 msgid "You need to specify a channel."
 msgstr "[xx] You need to specify a channel."
+
+#: modules/engine/comsys.cpp:2480
+#, c-format
+msgid "Channel %s does not exist yet."
+msgstr "[xx] Channel %s does not exist yet."
 
 #: modules/engine/comsys.cpp:2485
 msgid "Sorry, this channel type does not allow you to join."
@@ -557,9 +612,24 @@ msgid "Sorry, but you have reached the maximum number of aliases allowed."
 msgstr ""
 "[xx] Sorry, but you have reached the maximum number of aliases allowed."
 
+#: modules/engine/comsys.cpp:2502
+#, c-format
+msgid "That alias is already in use for channel %s."
+msgstr "[xx] That alias is already in use for channel %s."
+
+#: modules/engine/comsys.cpp:2522
+#, c-format
+msgid "Channel %s added with alias %s."
+msgstr "[xx] Channel %s added with alias %s."
+
 #: modules/engine/comsys.cpp:2543
 msgid "Need an alias to delete."
 msgstr "[xx] Need an alias to delete."
+
+#: modules/engine/comsys.cpp:2571 modules/engine/comsys.cpp:2577
+#, c-format
+msgid "Alias %s for channel %s deleted."
+msgstr "[xx] Alias %s for channel %s deleted."
 
 #: modules/engine/comsys.cpp:2587
 msgid "Unable to find that alias."
@@ -572,6 +642,26 @@ msgstr "[xx] You must specify a channel to create."
 #: modules/engine/comsys.cpp:2696
 msgid "Channel name is too long."
 msgstr "[xx] Channel name is too long."
+
+#: modules/engine/comsys.cpp:2706
+#, c-format
+msgid "Channel %s already exists."
+msgstr "[xx] Channel %s already exists."
+
+#: modules/engine/comsys.cpp:2726
+#, c-format
+msgid "Channel %s created."
+msgstr "[xx] Channel %s created."
+
+#: modules/engine/comsys.cpp:2763
+#, c-format
+msgid "Could not find channel %s."
+msgstr "[xx] Could not find channel %s."
+
+#: modules/engine/comsys.cpp:2783
+#, c-format
+msgid "Channel %s destroyed."
+msgstr "[xx] Channel %s destroyed."
 
 #: modules/engine/comsys.cpp:2792
 msgid "Warning: Only public channels and your channels will be shown."
@@ -614,9 +704,34 @@ msgstr "[xx] Need an alias to do comtitle."
 msgid "Unknown alias."
 msgstr "[xx] Unknown alias."
 
+#: modules/engine/comsys.cpp:2956
+#, c-format
+msgid "Comtitles are now off for channel %s"
+msgstr "[xx] Comtitles are now off for channel %s"
+
 #: modules/engine/comsys.cpp:2961
 msgid "You can not turn off comtitles on that channel."
 msgstr "[xx] You can not turn off comtitles on that channel."
+
+#: modules/engine/comsys.cpp:2966
+#, c-format
+msgid "Comtitles are now on for channel %s"
+msgstr "[xx] Comtitles are now on for channel %s"
+
+#: modules/engine/comsys.cpp:2971
+#, c-format
+msgid "Join/leave messages are now gagged for channel %s"
+msgstr "[xx] Join/leave messages are now gagged for channel %s"
+
+#: modules/engine/comsys.cpp:2976
+#, c-format
+msgid "Join/leave messages are now ungagged for channel %s"
+msgstr "[xx] Join/leave messages are now ungagged for channel %s"
+
+#: modules/engine/comsys.cpp:2983
+#, c-format
+msgid "Title set to ‘%s’ on channel %s."
+msgstr "[xx] Title set to ‘%s’ on channel %s."
 
 #: modules/engine/comsys.cpp:2990
 msgid "Illegal comsys alias, please delete."
@@ -633,6 +748,12 @@ msgstr "[xx] Status"
 #: modules/engine/comsys.cpp:3050
 msgid "Title"
 msgstr "[xx] Title"
+
+#: modules/engine/comsys.cpp:3088 modules/engine/comsys.cpp:3325
+#: modules/engine/comsys.cpp:3331
+#, c-format
+msgid "Bad Comsys Alias: %s for Channel: %s"
+msgstr "[xx] Bad Comsys Alias: %s for Channel: %s"
 
 #: modules/engine/comsys.cpp:3093
 msgid "-- End of comlist --"
@@ -685,6 +806,107 @@ msgstr "[xx] @coflags: Set."
 msgid "@coflags: Cleared."
 msgstr "[xx] @coflags: Cleared."
 
+#: modules/engine/comsys.cpp:3720
+#, c-format
+msgid "Channel %s does not exist."
+msgstr "[xx] Channel %s does not exist."
+
+#: modules/engine/comsys.cpp:3776
+#, c-format
+msgid "@cset: Channel %s does not exist."
+msgstr "[xx] @cset: Channel %s does not exist."
+
+#: modules/engine/comsys.cpp:3792
+#, c-format
+msgid "@cset: Channel %s placed on the public listings."
+msgstr "[xx] @cset: Channel %s placed on the public listings."
+
+#: modules/engine/comsys.cpp:3797
+#, c-format
+msgid "@cset: Channel %s taken off the public listings."
+msgstr "[xx] @cset: Channel %s taken off the public listings."
+
+#: modules/engine/comsys.cpp:3802
+#, c-format
+msgid "@cset: Channel %s now sends connect/disconnect msgs."
+msgstr "[xx] @cset: Channel %s now sends connect/disconnect msgs."
+
+#: modules/engine/comsys.cpp:3807
+#, c-format
+msgid "@cset: Channel %s connect/disconnect msgs muted."
+msgstr "[xx] @cset: Channel %s connect/disconnect msgs muted."
+
+#: modules/engine/comsys.cpp:3812
+#, c-format
+msgid "@cset: Channel %s set spoofable."
+msgstr "[xx] @cset: Channel %s set spoofable."
+
+#: modules/engine/comsys.cpp:3817
+#, c-format
+msgid "@cset: Channel %s set unspoofable."
+msgstr "[xx] @cset: Channel %s set unspoofable."
+
+#: modules/engine/comsys.cpp:3828
+#, c-format
+msgid "Channel %s is now disassociated from any channel object."
+msgstr "[xx] Channel %s is now disassociated from any channel object."
+
+#: modules/engine/comsys.cpp:3834
+#, c-format
+msgid "Channel %s is now using %s as channel object."
+msgstr "[xx] Channel %s is now using %s as channel object."
+
+#: modules/engine/comsys.cpp:3852
+#, c-format
+msgid "@cset: Channel %s maximum history set."
+msgstr "[xx] @cset: Channel %s maximum history set."
+
+#: modules/engine/comsys.cpp:3856
+#, c-format
+msgid ""
+"@cset: Channel %s has no channel object.  Use @cset/object to set one before "
+"setting a history buffer."
+msgstr "[xx] @cset: Channel %s has no channel object.  Use @cset/object to set one before setting a history buffer."
+
+#: modules/engine/comsys.cpp:3860
+#, c-format
+msgid "@cset: Could not set maximum history for channel %s."
+msgstr "[xx] @cset: Could not set maximum history for channel %s."
+
+#: modules/engine/comsys.cpp:3864
+#, c-format
+msgid "@cset: Maximum history must be a number less than or equal to %d."
+msgstr "[xx] @cset: Maximum history must be a number less than or equal to %d."
+
+#: modules/engine/comsys.cpp:3873
+#, c-format
+msgid "@cset: Channel %s timestamp logging set."
+msgstr "[xx] @cset: Channel %s timestamp logging set."
+
+#: modules/engine/comsys.cpp:3877
+#, c-format
+msgid "@cset: Timestamp logging for channel %s must be 0 or 1."
+msgstr "[xx] @cset: Timestamp logging for channel %s must be 0 or 1."
+
+#: modules/engine/comsys.cpp:3881
+#, c-format
+msgid ""
+"@cset: Channel %s has no channel object.  Use @cset/object to set one before "
+"enabling timestamp logging."
+msgstr "[xx] @cset: Channel %s has no channel object.  Use @cset/object to set one before enabling timestamp logging."
+
+#: modules/engine/comsys.cpp:3885
+#, c-format
+msgid ""
+"@cset: Channel %s has no history buffer.  Use @cset/log to set one before "
+"enabling timestamp logging."
+msgstr "[xx] @cset: Channel %s has no history buffer.  Use @cset/log to set one before enabling timestamp logging."
+
+#: modules/engine/comsys.cpp:3889
+#, c-format
+msgid "@cset: Could not set timestamp logging for channel %s."
+msgstr "[xx] @cset: Could not set timestamp logging for channel %s."
+
 #: modules/engine/comsys.cpp:3929
 msgid "@cboot: Unknown channel."
 msgstr "[xx] @cboot: Unknown channel."
@@ -696,6 +918,16 @@ msgstr "[xx] @cboot: You are not on that channel."
 #: modules/engine/comsys.cpp:3941
 msgid "@cboot: You can’t do that!"
 msgstr "[xx] @cboot: You can’t do that!"
+
+#: modules/engine/comsys.cpp:3953
+#, c-format
+msgid "@cboot: %s is not on the channel."
+msgstr "[xx] @cboot: %s is not on the channel."
+
+#: modules/engine/comsys.cpp:3958
+#, c-format
+msgid "You boot %s off channel %s."
+msgstr "[xx] You boot %s off channel %s."
 
 #: modules/engine/comsys.cpp:4014
 msgid "That channel does not exist."
@@ -1321,6 +1553,11 @@ msgstr "[xx] You shouldn’t be rummaging through the garbage."
 msgid "Illegal step size."
 msgstr "[xx] Illegal step size."
 
+#: modules/engine/functions.cpp:15737
+#, c-format
+msgid "Total User-Defined Functions: %d"
+msgstr "[xx] Total User-Defined Functions: %d"
+
 #: modules/engine/functions.cpp:15751
 msgid "Function name is not valid."
 msgstr "[xx] Function name is not valid."
@@ -1329,10 +1566,25 @@ msgstr "[xx] Function name is not valid."
 msgid "Function already defined in builtin function table."
 msgstr "[xx] Function already defined in builtin function table."
 
+#: modules/engine/functions.cpp:15775
+#, c-format
+msgid "Function %s not found."
+msgstr "[xx] Function %s not found."
+
+#: modules/engine/functions.cpp:15788
+#, c-format
+msgid "Function %s deleted."
+msgstr "[xx] Function %s deleted."
+
 #: modules/engine/functions.cpp:15805 modules/engine/predicates.cpp:1019
 #: modules/engine/predicates.cpp:1253 modules/engine/predicates.cpp:1562
 msgid "No such attribute."
 msgstr "[xx] No such attribute."
+
+#: modules/engine/functions.cpp:15846
+#, c-format
+msgid "Function %s defined."
+msgstr "[xx] Function %s defined."
 
 #: modules/engine/help.cpp:131 modules/engine/help.cpp:295
 #, c-format
@@ -1600,13 +1852,6 @@ msgstr "[xx] You aren’t carrying anything."
 msgid "You are carrying:"
 msgstr "[xx] You are carrying:"
 
-#: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
-#: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:192
-#: modules/engine/walkdb.cpp:230
-#, c-format
-msgid "You don’t have enough %s."
-msgstr "[xx] You don’t have enough %s."
-
 #: modules/engine/look.cpp:2288
 #, c-format
 msgid "%s (%s)"
@@ -1703,6 +1948,12 @@ msgstr "[xx] @lock/%s %s=%s"
 msgid "@wait 0={%c%s %s=%s}"
 msgstr "[xx] @wait 0={%c%s %s=%s}"
 
+#: modules/engine/mail.cpp:317 modules/engine/mail.cpp:326
+msgid ""
+"MAIL: This mail message does not exist in the database. Please alert your "
+"admin."
+msgstr "[xx] MAIL: This mail message does not exist in the database. Please alert your admin."
+
 #: modules/engine/mail.cpp:380
 msgid "MAIL: You probably did not intend to send a @mail saying ‘clear’."
 msgstr "[xx] MAIL: You probably did not intend to send a @mail saying ‘clear’."
@@ -1753,6 +2004,11 @@ msgstr "[xx] MAIL: U is ambiguous (urgent or unread?)"
 #: modules/engine/mail.cpp:1087
 msgid "MAIL: M is ambiguous (mass or me?)"
 msgstr "[xx] MAIL: M is ambiguous (mass or me?)"
+
+#: modules/engine/mail.cpp:1161
+#, c-format
+msgid "MAIL: 0 messages in folder %d [%s]."
+msgstr "[xx] MAIL: 0 messages in folder %d [%s]."
 
 #: modules/engine/mail.cpp:1169
 #, c-format
@@ -1840,6 +2096,16 @@ msgstr "[xx] MAIL: No such player."
 msgid "MAIL: Mailbox purged."
 msgstr "[xx] MAIL: Mailbox purged."
 
+#: modules/engine/mail.cpp:2287
+#, c-format
+msgid "MAIL: Alias ‘%s’ does not exist."
+msgstr "[xx] MAIL: Alias ‘%s’ does not exist."
+
+#: modules/engine/mail.cpp:2293
+#, c-format
+msgid "MAIL: ‘%s’ is a badly-formed alias."
+msgstr "[xx] MAIL: ‘%s’ is a badly-formed alias."
+
 #: modules/engine/mail.cpp:2321
 #, c-format
 msgid "MAIL: ‘%s’ does not exist."
@@ -1888,6 +2154,11 @@ msgstr "[xx] MAIL: I don’t understand that message number."
 msgid "MAIL: You can’t forward non-existent messages."
 msgstr "[xx] MAIL: You can’t forward non-existent messages."
 
+#: modules/engine/mail.cpp:2445
+#, c-format
+msgid "%s (fwd from %s)"
+msgstr "[xx] %s (fwd from %s)"
+
 #: modules/engine/mail.cpp:2483
 msgid "MAIL: You can’t reply to non-existent messages."
 msgstr "[xx] MAIL: You can’t reply to non-existent messages."
@@ -1895,6 +2166,21 @@ msgstr "[xx] MAIL: You can’t reply to non-existent messages."
 #: modules/engine/mail.cpp:2488
 msgid "MAIL: The original sender no longer exists."
 msgstr "[xx] MAIL: The original sender no longer exists."
+
+#: modules/engine/mail.cpp:2532
+#, c-format
+msgid "Re: %s"
+msgstr "[xx] Re: %s"
+
+#: modules/engine/mail.cpp:2542
+#, c-format
+msgid ""
+"On %s, %s wrote:\r\n"
+"\r\n"
+"%s\r\n"
+"\r\n"
+"********** End of included message from %s\r\n"
+msgstr "[xx] On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n"
 
 #: modules/engine/mail.cpp:2736
 #, c-format
@@ -1924,6 +2210,21 @@ msgstr "[xx] Sorry, %s can’t return your mail."
 #: modules/engine/mail.cpp:2789
 msgid "MAIL: You cannot send mail to non-existent people."
 msgstr "[xx] MAIL: You cannot send mail to non-existent people."
+
+#: modules/engine/mail.cpp:2873
+#, c-format
+msgid "MAIL: %s’s mailbox is full (%d messages)."
+msgstr "[xx] MAIL: %s’s mailbox is full (%d messages)."
+
+#: modules/engine/mail.cpp:2893
+#, c-format
+msgid "MAIL: You sent your message to %s."
+msgstr "[xx] MAIL: You sent your message to %s."
+
+#: modules/engine/mail.cpp:2897
+#, c-format
+msgid "MAIL: You have a new message from %s. Subject: %s"
+msgstr "[xx] MAIL: You have a new message from %s. Subject: %s"
 
 #: modules/engine/mail.cpp:2908
 msgid "The postal service issues a warrant for your arrest."
@@ -2153,6 +2454,11 @@ msgstr "[xx] Last is dated %s"
 msgid "MAIL: Invalid mail command."
 msgstr "[xx] MAIL: Invalid mail command."
 
+#: modules/engine/mail.cpp:3997
+#, c-format
+msgid "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n"
+msgstr "[xx] MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n"
+
 #: modules/engine/mail.cpp:4002
 #, c-format
 msgid "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."
@@ -2162,19 +2468,62 @@ msgstr "[xx] MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."
 msgid "MAIL: You have no mail."
 msgstr "[xx] MAIL: You have no mail."
 
+#: modules/engine/mail.cpp:4014
+#, c-format
+msgid "URGENT MAIL: You have %d urgent messages in folder %d [%s]."
+msgstr "[xx] URGENT MAIL: You have %d urgent messages in folder %d [%s]."
+
+#: modules/engine/mail.cpp:4035
+#, c-format
+msgid "MAIL: I can’t figure out from ‘%s’ who you want to mail to."
+msgstr "[xx] MAIL: I can’t figure out from ‘%s’ who you want to mail to."
+
+#: modules/engine/mail.cpp:4040 modules/engine/mail.cpp:4205
+#: modules/engine/mail.cpp:4833 modules/engine/mail.cpp:4883
+#: modules/engine/mail.cpp:4907 modules/engine/mail.cpp:4961
+#: modules/engine/mail.cpp:5060 modules/engine/mail.cpp:5083
+#, c-format
+msgid "MAIL: Alias ‘%s’ not found."
+msgstr "[xx] MAIL: Alias ‘%s’ not found."
+
+#: modules/engine/mail.cpp:4060
+#, c-format
+msgid "Alias Error: Bad Player %d for %s"
+msgstr "[xx] Alias Error: Bad Player %d for %s"
+
 #: modules/engine/mail.cpp:4078
 msgid "MAIL: What alias do you want to create?."
 msgstr "[xx] MAIL: What alias do you want to create?."
 
+#: modules/engine/mail.cpp:4084
+#, c-format
+msgid "MAIL: Mail Alias ‘%s’ already exists."
+msgstr "[xx] MAIL: Mail Alias ‘%s’ already exists."
+
+#: modules/engine/mail.cpp:4151
+#, c-format
+msgid "MAIL: %s added to alias %s"
+msgstr "[xx] MAIL: %s added to alias %s"
+
 #: modules/engine/mail.cpp:4174
 msgid "MAIL: Invalid mail alias."
 msgstr "[xx] MAIL: Invalid mail alias."
+
+#: modules/engine/mail.cpp:4196
+#, c-format
+msgid "MAIL: Alias set ‘%s’ defined."
+msgstr "[xx] MAIL: Alias set ‘%s’ defined."
 
 #: modules/engine/mail.cpp:4214 modules/engine/mail.cpp:4867
 #: modules/engine/mail.cpp:4938 modules/engine/mail.cpp:4970
 #: modules/engine/mail.cpp:5031 modules/engine/mail.cpp:5112
 msgid "MAIL: Permission denied."
 msgstr "[xx] MAIL: Permission denied."
+
+#: modules/engine/mail.cpp:4220
+#, c-format
+msgid "MAIL: Alias *%s: "
+msgstr "[xx] MAIL: Alias *%s: "
 
 #: modules/engine/mail.cpp:4283
 msgid "Name         Description                              Owner"
@@ -2217,6 +2566,11 @@ msgstr "[xx] MAIL: Message aborted."
 msgid "No text prepended."
 msgstr "[xx] No text prepended."
 
+#: modules/engine/mail.cpp:4706
+#, c-format
+msgid "%d/%d characters prepended."
+msgstr "[xx] %d/%d characters prepended."
+
 #: modules/engine/mail.cpp:4710 modules/engine/mail.cpp:4771
 #: modules/engine/mail.cpp:4790 modules/engine/mail.cpp:4798
 msgid "MAIL: No message in progress."
@@ -2226,9 +2580,21 @@ msgstr "[xx] MAIL: No message in progress."
 msgid "No text added."
 msgstr "[xx] No text added."
 
+#: modules/engine/mail.cpp:4767
+#, c-format
+msgid "%d/%d characters added."
+msgstr "[xx] %d/%d characters added."
+
 #: modules/engine/mail.cpp:4784
 msgid "Text edited."
 msgstr "[xx] Text edited."
+
+#: modules/engine/mail.cpp:4817
+#, c-format
+msgid ""
+"From:  %s  Subject: %s\n"
+"To: %s"
+msgstr "[xx] From:  %s  Subject: %s\nTo: %s"
 
 #: modules/engine/mail.cpp:4858
 msgid "MAIL: Description changed."
@@ -2262,6 +2628,21 @@ msgstr "[xx] MAIL: I do not see that person here."
 msgid "MAIL: That person is already on the list."
 msgstr "[xx] MAIL: That person is already on the list."
 
+#: modules/engine/mail.cpp:4952
+#, c-format
+msgid "MAIL: %s added to %s"
+msgstr "[xx] MAIL: %s added to %s"
+
+#: modules/engine/mail.cpp:4996
+#, c-format
+msgid "MAIL: %s removed from alias %s."
+msgstr "[xx] MAIL: %s removed from alias %s."
+
+#: modules/engine/mail.cpp:5001
+#, c-format
+msgid "MAIL: %s is not a member of alias %s."
+msgstr "[xx] MAIL: %s is not a member of alias %s."
+
 #: modules/engine/mail.cpp:5012
 msgid "MAIL: That name already exists!"
 msgstr "[xx] MAIL: That name already exists!"
@@ -2290,6 +2671,16 @@ msgstr "[xx] Num  Name         Description                              Owner"
 msgid "***** End of Mail Aliases *****"
 msgstr "[xx] ***** End of Mail Aliases *****"
 
+#: modules/engine/mail.cpp:5116
+#, c-format
+msgid "MAIL: Number of mail aliases defined: %d"
+msgstr "[xx] MAIL: Number of mail aliases defined: %d"
+
+#: modules/engine/mail.cpp:5118
+#, c-format
+msgid "MAIL: Vector capacity: %d"
+msgstr "[xx] MAIL: Vector capacity: %d"
+
 #: modules/engine/mail.cpp:5226
 msgid "MAIL: Mail retracted."
 msgstr "[xx] MAIL: Mail retracted."
@@ -2301,6 +2692,11 @@ msgstr "[xx] MAIL: That message has been read."
 #: modules/engine/mail.cpp:5240
 msgid "MAIL: No matching messages."
 msgstr "[xx] MAIL: No matching messages."
+
+#: modules/engine/mail.cpp:5252
+#, c-format
+msgid "MAIL: Mail alias %s not found."
+msgstr "[xx] MAIL: Mail alias %s not found."
 
 #: modules/engine/mail.cpp:5302
 msgid "MAIL: That @malias command is not available."

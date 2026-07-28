@@ -4464,7 +4464,7 @@ FUNCTION(fun_entrances)
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        notify(executor, tprintf(T("You don’t have enough %s."),
+        notify(executor, tprintf(M_("You don’t have enough %s."),
             mudconf.many_coins));
         safe_nothing(buff, bufc);
         return;
@@ -15734,7 +15734,7 @@ void do_function
             "----------------------------", "--------",
             "------------------------------", "--- "));
 
-        notify(executor, tprintf(T("Total User-Defined Functions: %d"), count));
+        notify(executor, tprintf(M_("Total User-Defined Functions: %d"), count));
         return;
     }
 
@@ -15772,7 +15772,7 @@ void do_function
         ufp = (it_ufunc != mudstate.ufunc_htab.end()) ? static_cast<UFUN*>(it_ufunc->second) : nullptr;
         if (nullptr == ufp)
         {
-            notify_quiet(executor, tprintf(T("Function %s not found."), pName));
+            notify_quiet(executor, tprintf(M_("Function %s not found."), pName));
         }
         else
         {
@@ -15785,7 +15785,7 @@ void do_function
                     break;
                 }
             }
-            notify_quiet(executor, tprintf(T("Function %s deleted."), pName));
+            notify_quiet(executor, tprintf(M_("Function %s deleted."), pName));
         }
         return;
     }
@@ -15843,7 +15843,7 @@ void do_function
     ufp->flags = key;
     if (!Quiet(executor))
     {
-        notify_quiet(executor, tprintf(T("Function %s defined."), pName));
+        notify_quiet(executor, tprintf(M_("Function %s defined."), pName));
     }
 }
 
