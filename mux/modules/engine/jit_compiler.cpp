@@ -4121,7 +4121,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int fn_idx = static_cast<int>(ctx->x[10]);
-        int nargs = static_cast<int>(ctx->x[11]);
+        int nargs  = static_cast<int>(ctx->x[11] & 0xFF);
+        int kinds  = static_cast<int>((ctx->x[11] >> 8) & 0xFF);
         if (fn_idx <= 0 || fn_idx > lua_gettop(L)
             || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 2) {
             ctx->x[11] = 0;
@@ -4129,10 +4130,26 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
         int base = lua_gettop(L);
         lua_pushvalue(L, fn_idx);
-        if (nargs >= 1) lua_pushinteger(L,
-            static_cast<lua_Integer>(ctx->x[12]));
-        if (nargs >= 2) lua_pushinteger(L,
-            static_cast<lua_Integer>(ctx->x[13]));
+        // Same argument encoding as CALL_STR: kind bit j selects integer in
+        // the register or guest address of a string.  The two differ only in
+        // the RESULT type, so they have no business differing in how
+        // arguments arrive -- tonumber("17") returns an integer from a
+        // string argument and needs both halves.
+        for (int j = 0; j < nargs; j++) {
+            uint64_t raw = (0 == j) ? ctx->x[12] : ctx->x[13];
+            if (kinds & (1 << j)) {
+                const char *sarg = guest_cstr(ec->memory, ec->memory_size,
+                                              raw);
+                if (nullptr == sarg) {
+                    lua_settop(L, base);
+                    ctx->x[11] = 0;
+                    return ECALL_DECLINE;
+                }
+                lua_pushstring(L, sarg);
+            } else {
+                lua_pushinteger(L, static_cast<lua_Integer>(raw));
+            }
+        }
         if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
             lua_settop(L, base);
             ctx->x[11] = 0;

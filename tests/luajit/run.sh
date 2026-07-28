@@ -149,7 +149,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=23
+AGREE_DECLINE_BUDGET=15
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -220,6 +220,22 @@ EXEC_CASES=(
     'local x=string.upper("ab") return x'
     'local x=string.lower("AB") return x'
     'local x=string.rep("ab",2) return x'
+
+    # BARE globals -- the callee is the global itself, a function rather
+    # than a library table, so the handle comes from GETGLOBAL instead of
+    # GETFIELD_REF.
+    #
+    # tostring and tonumber are the pair that matters: identical argument
+    # shapes, opposite result types.  HIR result types are static and Lua's
+    # are not, so the lowering routes on the callee NAME -- an
+    # implementation that inferred the result type from the arguments
+    # cannot pass both.
+    #
+    # tonumber("17") additionally takes a STRING and returns an INTEGER,
+    # which is why the two call ECALLs share one argument encoding.
+    'local x=tostring(42) return x'
+    'local x=tonumber("17") return x'
+    'local x=type(42) return x'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
