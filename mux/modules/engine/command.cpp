@@ -4007,7 +4007,11 @@ static void list_hashstat_abbreviated(const dbref player, const UTF8* tab_name, 
     size_t pos = 0;
     pos = mux_table_append_ljust(buff, sizeof(buff), pos, tab_name, kHashNameCols);
     pos = mux_table_append_bytes(buff, sizeof(buff), pos, " ");
-    mux_sprintf(num, sizeof(num), T("%*d"), static_cast<int>(kHashEntriesCols), entries);
+    // RightJustifyNumber — mux_vsnprintf has no %* width (#1429).
+    //
+    size_t nw = RightJustifyNumber(num, kHashEntriesCols,
+        static_cast<int64_t>(entries), ' ');
+    num[nw] = '\0';
     pos = mux_table_append_bytes(buff, sizeof(buff), pos,
         reinterpret_cast<const char *>(num));
     raw_notify(player, buff);

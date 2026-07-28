@@ -143,7 +143,7 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 |--|--|
 | File | `command.cpp` `list_hashstats` |
 | Header | **Converted** — `Name` (13) + `Entries` (11); old full-stat blob dropped (it never matched the rows) |
-| Rows | name 13 + right-just entries 11 via `mux_sprintf` |
+| Rows | name 13 + right-just entries 11 via `RightJustifyNumber` |
 | Translate? | **Per-label** |
 | Dual | No |
 
@@ -153,7 +153,7 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 |--|--|
 | File | `lib/alloc.cpp` `list_bufstats` |
 | Header | **Converted** — Buffer Stats / Size / InUse / Total / Allocs / Lost |
-| Rows | name 12 ljust + numeric fields right-just `%*d` / `%*lld` |
+| Rows | name 12 ljust + numeric fields right-just via `RightJustifyNumber` |
 | Translate? | **Per-label** |
 | Dual | No |
 

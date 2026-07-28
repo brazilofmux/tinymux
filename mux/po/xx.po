@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 17:27+0000\n"
+"POT-Creation-Date: 2026-07-28 17:33+0000\n"
 "PO-Revision-Date: 2026-07-28 14:58+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -20,13 +20,33 @@ msgstr ""
 "X-Tinymux-Catalogue: complete\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/alloc.cpp:566
+#: lib/alloc.cpp:567
 msgid "*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"
 msgstr "[xx] *** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"
 
-#: lib/alloc.cpp:586
-msgid "Buffer Stats  Size      InUse      Total           Allocs   Lost"
-msgstr "[xx] Buffer Stats  Size      InUse      Total           Allocs   Lost"
+#: lib/alloc.cpp:602
+msgid "Buffer Stats"
+msgstr "[xx] Buffer Stats"
+
+#: lib/alloc.cpp:605
+msgid "Size"
+msgstr "[xx] Size"
+
+#: lib/alloc.cpp:608
+msgid "InUse"
+msgstr "[xx] InUse"
+
+#: lib/alloc.cpp:611 modules/engine/walkdb.cpp:1523
+msgid "Total"
+msgstr "[xx] Total"
+
+#: lib/alloc.cpp:614
+msgid "Allocs"
+msgstr "[xx] Allocs"
+
+#: lib/alloc.cpp:617
+msgid "Lost"
+msgstr "[xx] Lost"
 
 #: modules/engine/attrcache.cpp:1173
 msgid "--- Attribute Cache ---"
@@ -54,11 +74,11 @@ msgstr "[xx] I don’t know which %s you mean!"
 msgid "Unknown lock type."
 msgstr "[xx] Unknown lock type."
 
-#: modules/engine/command.cpp:661 modules/engine/command.cpp:4395
+#: modules/engine/command.cpp:662 modules/engine/command.cpp:4415
 msgid "Lua module is not loaded."
 msgstr "[xx] Lua module is not loaded."
 
-#: modules/engine/command.cpp:672
+#: modules/engine/command.cpp:673
 #, c-format
 msgid ""
 "Lua stats: %zu calls, %zu errors, %zu insn-limit hits, %zu mem-limit hits, "
@@ -67,102 +87,102 @@ msgstr ""
 "[xx] Lua stats: %zu calls, %zu errors, %zu insn-limit hits, %zu mem-limit "
 "hits, %zu bytes used"
 
-#: modules/engine/command.cpp:675
+#: modules/engine/command.cpp:676
 #, c-format
 msgid "Cache: %zu entries, %zu hits, %zu misses"
 msgstr "[xx] Cache: %zu entries, %zu hits, %zu misses"
 
-#: modules/engine/command.cpp:684 modules/engine/match.cpp:19
+#: modules/engine/command.cpp:685 modules/engine/match.cpp:19
 #: modules/engine/match.cpp:36
 msgid "Permission denied."
 msgstr "[xx] Permission denied."
 
-#: modules/engine/command.cpp:702
+#: modules/engine/command.cpp:703
 msgid "Usage: @lua <object>/<attribute>"
 msgstr "[xx] Usage: @lua <object>/<attribute>"
 
-#: modules/engine/command.cpp:717
+#: modules/engine/command.cpp:718
 msgid "No such object."
 msgstr "[xx] No such object."
 
-#: modules/engine/command.cpp:1452
+#: modules/engine/command.cpp:1453
 msgid "Command incompatible with executor type."
 msgstr "[xx] Command incompatible with executor type."
 
-#: modules/engine/command.cpp:1470
+#: modules/engine/command.cpp:1471
 msgid "Sorry, building is not allowed now."
 msgstr "[xx] Sorry, building is not allowed now."
 
-#: modules/engine/command.cpp:1475
+#: modules/engine/command.cpp:1476
 msgid "Sorry, queueing and triggering are not allowed now."
 msgstr "[xx] Sorry, queueing and triggering are not allowed now."
 
-#: modules/engine/command.cpp:1516
+#: modules/engine/command.cpp:1517
 #, c-format
 msgid "Unrecognized switch ‘%s’ for command ‘%s’."
 msgstr "[xx] Unrecognized switch ‘%s’ for command ‘%s’."
 
-#: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2029
-#: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
+#: modules/engine/command.cpp:1531 modules/engine/cque.cpp:2029
+#: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:330
 #: modules/engine/wiz.cpp:820 modules/engine/wiz.cpp:908
 msgid "Illegal combination of switches."
 msgstr "[xx] Illegal combination of switches."
 
-#: modules/engine/command.cpp:1545
+#: modules/engine/command.cpp:1546
 #, c-format
 msgid "Command %s does not take switches."
 msgstr "[xx] Command %s does not take switches."
 
-#: modules/engine/command.cpp:2980
+#: modules/engine/command.cpp:2981
 msgid "Huh?  (Type “help” for help.)"
 msgstr "[xx] Huh?  (Type “help” for help.)"
 
-#: modules/engine/command.cpp:3644
+#: modules/engine/command.cpp:3645
 #, c-format
 msgid "Digging a room costs %d %s%s."
 msgstr "[xx] Digging a room costs %d %s%s."
 
-#: modules/engine/command.cpp:3651
+#: modules/engine/command.cpp:3652
 #, c-format
 msgid "Opening a new exit costs %d %s%s."
 msgstr "[xx] Opening a new exit costs %d %s%s."
 
-#: modules/engine/command.cpp:3654
+#: modules/engine/command.cpp:3655
 #, c-format
 msgid "Linking an exit, home, or dropto costs %d %s."
 msgstr "[xx] Linking an exit, home, or dropto costs %d %s."
 
-#: modules/engine/command.cpp:3663
+#: modules/engine/command.cpp:3664
 #, c-format
 msgid "Creating a new thing costs %d %s%s."
 msgstr "[xx] Creating a new thing costs %d %s%s."
 
-#: modules/engine/command.cpp:3670
+#: modules/engine/command.cpp:3671
 #, c-format
 msgid "Creating a new thing costs between %d and %d %s%s."
 msgstr "[xx] Creating a new thing costs between %d and %d %s%s."
 
-#: modules/engine/command.cpp:3679
+#: modules/engine/command.cpp:3680
 #, c-format
 msgid "Creating a robot costs %d %s%s."
 msgstr "[xx] Creating a robot costs %d %s%s."
 
-#: modules/engine/command.cpp:3688
+#: modules/engine/command.cpp:3689
 #, c-format
 msgid "Killing costs %d %s, with a %d%% chance of success."
 msgstr "[xx] Killing costs %d %s, with a %d%% chance of success."
 
-#: modules/engine/command.cpp:3694
+#: modules/engine/command.cpp:3695
 #, c-format
 msgid "Killing costs between %d and %d %s."
 msgstr "[xx] Killing costs between %d and %d %s."
 
-#: modules/engine/command.cpp:3704
+#: modules/engine/command.cpp:3705
 #, c-format
 msgid "You must spend %d %s to guarantee success."
 msgstr "[xx] You must spend %d %s to guarantee success."
 
-#: modules/engine/command.cpp:3708
+#: modules/engine/command.cpp:3709
 #, c-format
 msgid ""
 "Computationally expensive commands and functions (ie: @entrances, @find, "
@@ -173,337 +193,340 @@ msgstr ""
 "@find, @search, @stats (with an argument or switch), search(), and stats()) "
 "cost %d %s."
 
-#: modules/engine/command.cpp:3712
+#: modules/engine/command.cpp:3713
 #, c-format
 msgid "Each command run from the queue costs 1/%d %s."
 msgstr "[xx] Each command run from the queue costs 1/%d %s."
 
-#: modules/engine/command.cpp:3717
+#: modules/engine/command.cpp:3718
 #, c-format
 msgid "A %d %s deposit is charged for putting a command on the queue."
 msgstr "[xx] A %d %s deposit is charged for putting a command on the queue."
 
-#: modules/engine/command.cpp:3719
+#: modules/engine/command.cpp:3720
 msgid "The deposit is refunded when the command is run or canceled."
 msgstr "[xx] The deposit is refunded when the command is run or canceled."
 
-#: modules/engine/command.cpp:3743
+#: modules/engine/command.cpp:3744
 #, c-format
 msgid "The value of an object is %s."
 msgstr "[xx] The value of an object is %s."
 
-#: modules/engine/command.cpp:3745
+#: modules/engine/command.cpp:3746
 msgid ""
 "The default value of cloned objects is the value of the original object."
 msgstr ""
 "[xx] The default value of cloned objects is the value of the original object."
 
-#: modules/engine/command.cpp:3747
+#: modules/engine/command.cpp:3748
 #, c-format
 msgid "The default value of cloned objects is %d %s."
 msgstr "[xx] The default value of cloned objects is %d %s."
 
-#: modules/engine/command.cpp:3782
+#: modules/engine/command.cpp:3783
 msgid "Building quotas are enforced."
 msgstr "[xx] Building quotas are enforced."
 
-#: modules/engine/command.cpp:3784
+#: modules/engine/command.cpp:3785
 msgid "Player names may contain spaces."
 msgstr "[xx] Player names may contain spaces."
 
-#: modules/engine/command.cpp:3786
+#: modules/engine/command.cpp:3787
 msgid "Player names may not contain spaces."
 msgstr "[xx] Player names may not contain spaces."
 
-#: modules/engine/command.cpp:3788
+#: modules/engine/command.cpp:3789
 msgid "Robots are not allowed to speak in public areas."
 msgstr "[xx] Robots are not allowed to speak in public areas."
 
-#: modules/engine/command.cpp:3790
+#: modules/engine/command.cpp:3791
 msgid "The @Listen/@Ahear attribute set works on player objects."
 msgstr "[xx] The @Listen/@Ahear attribute set works on player objects."
 
-#: modules/engine/command.cpp:3793
+#: modules/engine/command.cpp:3794
 msgid "The ‘examine’ command lists the flag names for the object’s flags."
 msgstr ""
 "[xx] The ‘examine’ command lists the flag names for the object’s flags."
 
-#: modules/engine/command.cpp:3796
+#: modules/engine/command.cpp:3797
 msgid ""
 "The ‘look’ command shows visible attributes in addition to the description."
 msgstr ""
 "[xx] The ‘look’ command shows visible attributes in addition to the "
 "description."
 
-#: modules/engine/command.cpp:3798
+#: modules/engine/command.cpp:3799
 msgid "The ‘look’ command lists DARK objects owned by you."
 msgstr "[xx] The ‘look’ command lists DARK objects owned by you."
 
-#: modules/engine/command.cpp:3800
+#: modules/engine/command.cpp:3801
 msgid "The ‘look’ command shows disconnected players."
 msgstr "[xx] The ‘look’ command shows disconnected players."
 
-#: modules/engine/command.cpp:3802
+#: modules/engine/command.cpp:3803
 msgid "The ‘look’ command obeys the TERSE flag."
 msgstr "[xx] The ‘look’ command obeys the TERSE flag."
 
-#: modules/engine/command.cpp:3805
+#: modules/engine/command.cpp:3806
 msgid ""
 "Trace output is presented top-down (whole expression first, then sub-exprs)."
 msgstr ""
 "[xx] Trace output is presented top-down (whole expression first, then sub-"
 "exprs)."
 
-#: modules/engine/command.cpp:3806
+#: modules/engine/command.cpp:3807
 #, c-format
 msgid "Only %d lines of trace output are displayed."
 msgstr "[xx] Only %d lines of trace output are displayed."
 
-#: modules/engine/command.cpp:3810
+#: modules/engine/command.cpp:3811
 msgid "Trace output is presented bottom-up (subexpressions first)."
 msgstr "[xx] Trace output is presented bottom-up (subexpressions first)."
 
-#: modules/engine/command.cpp:3813
+#: modules/engine/command.cpp:3814
 msgid ""
 "The ‘whisper’ command lets others in the room with you know you whispered."
 msgstr ""
 "[xx] The ‘whisper’ command lets others in the room with you know you "
 "whispered."
 
-#: modules/engine/command.cpp:3815
+#: modules/engine/command.cpp:3816
 msgid "The ‘@pemit’ command may be used to emit to faraway players."
 msgstr "[xx] The ‘@pemit’ command may be used to emit to faraway players."
 
-#: modules/engine/command.cpp:3817
+#: modules/engine/command.cpp:3818
 msgid "The TERSE flag suppresses listing the contents of a location."
 msgstr "[xx] The TERSE flag suppresses listing the contents of a location."
 
-#: modules/engine/command.cpp:3819
+#: modules/engine/command.cpp:3820
 msgid "The TERSE flag suppresses listing obvious exits in a location."
 msgstr "[xx] The TERSE flag suppresses listing obvious exits in a location."
 
-#: modules/engine/command.cpp:3821
+#: modules/engine/command.cpp:3822
 msgid ""
 "The TERSE flag suppresses enter/leave/succ/drop messages generated by moving."
 msgstr ""
 "[xx] The TERSE flag suppresses enter/leave/succ/drop messages generated by "
 "moving."
 
-#: modules/engine/command.cpp:3824
+#: modules/engine/command.cpp:3825
 msgid "The ‘flags()’ function will return the flags of any object."
 msgstr "[xx] The ‘flags()’ function will return the flags of any object."
 
-#: modules/engine/command.cpp:3827
+#: modules/engine/command.cpp:3828
 msgid "The ‘get()’ function will return the description of faraway objects,"
 msgstr ""
 "[xx] The ‘get()’ function will return the description of faraway objects,"
 
-#: modules/engine/command.cpp:3829
+#: modules/engine/command.cpp:3830
 msgid "The ‘name()’ function will return the name of faraway objects."
 msgstr "[xx] The ‘name()’ function will return the name of faraway objects."
 
-#: modules/engine/command.cpp:3830
+#: modules/engine/command.cpp:3831
 #, c-format
 msgid "The default switch for the ‘@switch’ command is %s."
 msgstr "[xx] The default switch for the ‘@switch’ command is %s."
 
-#: modules/engine/command.cpp:3832
+#: modules/engine/command.cpp:3833
 #, c-format
 msgid "The default switch for the ‘examine’ command is %s."
 msgstr "[xx] The default switch for the ‘examine’ command is %s."
 
-#: modules/engine/command.cpp:3834
+#: modules/engine/command.cpp:3835
 msgid "Players may @sweep dark locations."
 msgstr "[xx] Players may @sweep dark locations."
 
-#: modules/engine/command.cpp:3836
+#: modules/engine/command.cpp:3837
 msgid ""
 "You may only @teleport out of locations that are JUMP_OK or that you control."
 msgstr ""
 "[xx] You may only @teleport out of locations that are JUMP_OK or that you "
 "control."
 
-#: modules/engine/command.cpp:3838
+#: modules/engine/command.cpp:3839
 #, c-format
 msgid "Players may have at most %d commands in the queue at one time."
 msgstr "[xx] Players may have at most %d commands in the queue at one time."
 
-#: modules/engine/command.cpp:3843
+#: modules/engine/command.cpp:3844
 msgid "All objects search themselves for $-commands."
 msgstr "[xx] All objects search themselves for $-commands."
 
-#: modules/engine/command.cpp:3845
+#: modules/engine/command.cpp:3846
 msgid "Objects other than players search themselves for $-commands."
 msgstr "[xx] Objects other than players search themselves for $-commands."
 
-#: modules/engine/command.cpp:3852
+#: modules/engine/command.cpp:3853
 #, c-format
 msgid "%d commands are run from the queue when there is no net activity."
 msgstr "[xx] %d commands are run from the queue when there is no net activity."
 
-#: modules/engine/command.cpp:3855
+#: modules/engine/command.cpp:3856
 #, c-format
 msgid "%d commands are run from the queue when there is net activity."
 msgstr "[xx] %d commands are run from the queue when there is net activity."
 
-#: modules/engine/command.cpp:3858
+#: modules/engine/command.cpp:3859
 msgid ""
 "Wizards idle for longer than the default timeout are automatically set DARK."
 msgstr ""
 "[xx] Wizards idle for longer than the default timeout are automatically set "
 "DARK."
 
-#: modules/engine/command.cpp:3860
+#: modules/engine/command.cpp:3861
 msgid "Objects not owned by you are automatically considered SAFE."
 msgstr "[xx] Objects not owned by you are automatically considered SAFE."
 
-#: modules/engine/command.cpp:3862
+#: modules/engine/command.cpp:3863
 msgid "The buffer pools are checked for consistency on each allocate or free."
 msgstr ""
 "[xx] The buffer pools are checked for consistency on each allocate or free."
 
-#: modules/engine/command.cpp:3864
+#: modules/engine/command.cpp:3865
 msgid "A separate name cache is used."
 msgstr "[xx] A separate name cache is used."
 
-#: modules/engine/command.cpp:3868
+#: modules/engine/command.cpp:3869
 msgid "Database dumps are performed by a fork()ed process."
 msgstr "[xx] Database dumps are performed by a fork()ed process."
 
-#: modules/engine/command.cpp:3873
+#: modules/engine/command.cpp:3874
 #, c-format
 msgid "There may be at most %d players logged in at once."
 msgstr "[xx] There may be at most %d players logged in at once."
 
-#: modules/engine/command.cpp:3880
+#: modules/engine/command.cpp:3881
 #, c-format
 msgid "New players are given %d %s to start with."
 msgstr "[xx] New players are given %d %s to start with."
 
-#: modules/engine/command.cpp:3883
+#: modules/engine/command.cpp:3884
 #, c-format
 msgid "Players are given %d %s each day they connect."
 msgstr "[xx] Players are given %d %s each day they connect."
 
-#: modules/engine/command.cpp:3886
+#: modules/engine/command.cpp:3887
 #, c-format
 msgid "Earning money is difficult if you have more than %d %s."
 msgstr "[xx] Earning money is difficult if you have more than %d %s."
 
-#: modules/engine/command.cpp:3890
+#: modules/engine/command.cpp:3891
 #, c-format
 msgid "Players have a 1 in %d chance of finding a %s each time they move."
 msgstr ""
 "[xx] Players have a 1 in %d chance of finding a %s each time they move."
 
-#: modules/engine/command.cpp:4007
-msgid ""
-"Hash Stats    Size    Num     Del       Lookups          Hits        Probes "
-"Long"
-msgstr ""
-"[xx] Hash Stats    Size    Num     Del       Lookups          Hits        "
-"Probes Long"
+#: modules/engine/command.cpp:4022 modules/engine/comsys.cpp:3255
+#: modules/engine/mail.cpp:4278 modules/engine/mail.cpp:5116
+#: modules/engine/mguests.cpp:446 modules/mail/mail_mod.cpp:4330
+#: modules/mail/mail_mod.cpp:4384
+msgid "Name"
+msgstr "[xx] Name"
 
-#: modules/engine/command.cpp:4115
+#: modules/engine/command.cpp:4025
+msgid "Entries"
+msgstr "[xx] Entries"
+
+#: modules/engine/command.cpp:4135
 msgid "Modules:"
 msgstr "[xx] Modules:"
 
-#: modules/engine/command.cpp:4186
+#: modules/engine/command.cpp:4206
 msgid "Reality levels:"
 msgstr "[xx] Reality levels:"
 
-#: modules/engine/command.cpp:4193
+#: modules/engine/command.cpp:4213
 msgid "--Completed."
 msgstr "[xx] --Completed."
 
-#: modules/engine/command.cpp:4381
+#: modules/engine/command.cpp:4401
 msgid "Lua module loaded (Lua 5.4)."
 msgstr "[xx] Lua module loaded (Lua 5.4)."
 
-#: modules/engine/command.cpp:4497 modules/engine/command.cpp:4531
+#: modules/engine/command.cpp:4517 modules/engine/command.cpp:4551
 msgid "@icmd: Bad Location."
 msgstr "[xx] @icmd: Bad Location."
 
-#: modules/engine/command.cpp:4503
+#: modules/engine/command.cpp:4523
 msgid "@icmd: Location - All cleared."
 msgstr "[xx] @icmd: Location - All cleared."
 
-#: modules/engine/command.cpp:4504 modules/engine/command.cpp:4521
-#: modules/engine/command.cpp:4567 modules/engine/command.cpp:4596
-#: modules/engine/command.cpp:4603 modules/engine/command.cpp:4628
-#: modules/engine/command.cpp:4840
+#: modules/engine/command.cpp:4524 modules/engine/command.cpp:4541
+#: modules/engine/command.cpp:4587 modules/engine/command.cpp:4616
+#: modules/engine/command.cpp:4623 modules/engine/command.cpp:4648
+#: modules/engine/command.cpp:4860
 msgid "@icmd: Done."
 msgstr "[xx] @icmd: Done."
 
-#: modules/engine/command.cpp:4513
+#: modules/engine/command.cpp:4533
 msgid "Location CmdCheck attribute is:"
 msgstr "[xx] Location CmdCheck attribute is:"
 
-#: modules/engine/command.cpp:4518
+#: modules/engine/command.cpp:4538
 msgid "Location CmdCheck attribute is empty."
 msgstr "[xx] Location CmdCheck attribute is empty."
 
-#: modules/engine/command.cpp:4534
+#: modules/engine/command.cpp:4554
 msgid "Scanning all locations and zones from your current location:"
 msgstr "[xx] Scanning all locations and zones from your current location:"
 
-#: modules/engine/command.cpp:4565
+#: modules/engine/command.cpp:4585
 msgid "@icmd: Location - No icmds found at current location."
 msgstr "[xx] @icmd: Location - No icmds found at current location."
 
-#: modules/engine/command.cpp:4585
+#: modules/engine/command.cpp:4605
 msgid "@icmd: Bad player."
 msgstr "[xx] @icmd: Bad player."
 
-#: modules/engine/command.cpp:4595
+#: modules/engine/command.cpp:4615
 msgid "@icmd: All cleared."
 msgstr "[xx] @icmd: All cleared."
 
-#: modules/engine/command.cpp:4602
+#: modules/engine/command.cpp:4622
 msgid "@icmd: Activated."
 msgstr "[xx] @icmd: Activated."
 
-#: modules/engine/command.cpp:4610
+#: modules/engine/command.cpp:4630
 msgid "CmdCheck is active."
 msgstr "[xx] CmdCheck is active."
 
-#: modules/engine/command.cpp:4614
+#: modules/engine/command.cpp:4634
 msgid "CmdCheck is not active."
 msgstr "[xx] CmdCheck is not active."
 
-#: modules/engine/command.cpp:4620
+#: modules/engine/command.cpp:4640
 msgid "CmdCheck attribute is:"
 msgstr "[xx] CmdCheck attribute is:"
 
-#: modules/engine/command.cpp:4625
+#: modules/engine/command.cpp:4645
 msgid "CmdCheck attribute is empty."
 msgstr "[xx] CmdCheck attribute is empty."
 
-#: modules/engine/command.cpp:4854
+#: modules/engine/command.cpp:4874
 msgid "Train cannot be used to teach command, train."
 msgstr "[xx] Train cannot be used to teach command, train."
 
-#: modules/engine/command.cpp:4861
+#: modules/engine/command.cpp:4881
 msgid "Bad location."
 msgstr "[xx] Bad location."
 
-#: modules/engine/command.cpp:4868
+#: modules/engine/command.cpp:4888
 msgid "Train requires an argument."
 msgstr "[xx] Train requires an argument."
 
-#: modules/engine/command.cpp:4905
+#: modules/engine/command.cpp:4925
 msgid "Moniker cleared."
 msgstr "[xx] Moniker cleared."
 
-#: modules/engine/command.cpp:4914
+#: modules/engine/command.cpp:4934
 msgid "Moniker set."
 msgstr "[xx] Moniker set."
 
-#: modules/engine/command.cpp:5017
+#: modules/engine/command.cpp:5037
 msgid "@hook: Non-existent command name given."
 msgstr "[xx] @hook: Non-existent command name given."
 
-#: modules/engine/command.cpp:5024
+#: modules/engine/command.cpp:5044
 msgid "@hook: Incompatible switches."
 msgstr "[xx] @hook: Incompatible switches."
 
@@ -537,8 +560,8 @@ msgstr "[xx] That channel type cannot be transmitted on."
 
 #: modules/engine/comsys.cpp:1611 modules/engine/functions.cpp:4467
 #: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
-#: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:192
-#: modules/engine/walkdb.cpp:230
+#: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:193
+#: modules/engine/walkdb.cpp:231
 #, c-format
 msgid "You don’t have enough %s."
 msgstr "[xx] You don’t have enough %s."
@@ -677,7 +700,7 @@ msgid "Header"
 msgstr "[xx] Header"
 
 #: modules/engine/comsys.cpp:2827 modules/engine/comsys.cpp:4131
-#: modules/engine/mail.cpp:4300 modules/engine/mail.cpp:5138
+#: modules/engine/mail.cpp:4284 modules/engine/mail.cpp:5122
 #: modules/mail/mail_mod.cpp:4336 modules/mail/mail_mod.cpp:4390
 msgid "Owner"
 msgstr "[xx] Owner"
@@ -744,6 +767,7 @@ msgid "Alias"
 msgstr "[xx] Alias"
 
 #: modules/engine/comsys.cpp:3047 modules/engine/comsys.cpp:3258
+#: modules/engine/mguests.cpp:453 src/net.cpp:3657
 msgid "Status"
 msgstr "[xx] Status"
 
@@ -764,12 +788,6 @@ msgstr "[xx] -- End of comlist --"
 #: modules/engine/comsys.cpp:3174
 msgid "Only options available are: on, off and who."
 msgstr "[xx] Only options available are: on, off and who."
-
-#: modules/engine/comsys.cpp:3255 modules/engine/mail.cpp:4294
-#: modules/engine/mail.cpp:5132 modules/mail/mail_mod.cpp:4330
-#: modules/mail/mail_mod.cpp:4384
-msgid "Name"
-msgstr "[xx] Name"
 
 #: modules/engine/comsys.cpp:3261
 msgid "Player"
@@ -951,8 +969,8 @@ msgstr "[xx] You boot %s off channel %s."
 msgid "That channel does not exist."
 msgstr "[xx] That channel does not exist."
 
-#: modules/engine/comsys.cpp:4134 modules/engine/mail.cpp:4297
-#: modules/engine/mail.cpp:5135 modules/mail/mail_mod.cpp:4333
+#: modules/engine/comsys.cpp:4134 modules/engine/mail.cpp:4281
+#: modules/engine/mail.cpp:5119 modules/mail/mail_mod.cpp:4333
 #: modules/mail/mail_mod.cpp:4387
 msgid "Description"
 msgstr "[xx] Description"
@@ -979,7 +997,7 @@ msgstr "[xx] String truncated"
 msgid "Include nesting limit exceeded."
 msgstr "[xx] Include nesting limit exceeded."
 
-#: modules/engine/cque.cpp:314 src/net.cpp:2638
+#: modules/engine/cque.cpp:314 src/net.cpp:2639
 msgid "GAME: Expensive activity abbreviated."
 msgstr "[xx] GAME: Expensive activity abbreviated."
 
@@ -2130,7 +2148,7 @@ msgid "MAIL: Mail aliases must be of the form *<name>."
 msgstr "[xx] MAIL: Mail aliases must be of the form *<name>."
 
 #: modules/engine/mail.cpp:1667 modules/engine/mail.cpp:2148
-#: modules/engine/mail.cpp:5724 modules/mail/mail_mod.cpp:2027
+#: modules/engine/mail.cpp:5708 modules/mail/mail_mod.cpp:2027
 msgid "MAIL: No such folder."
 msgstr "[xx] MAIL: No such folder."
 
@@ -2149,7 +2167,7 @@ msgid "MAIL: You have no matching messages."
 msgstr "[xx] MAIL: You have no matching messages."
 
 #: modules/engine/mail.cpp:2002 modules/engine/mail.cpp:4146
-#: modules/engine/mail.cpp:5261 modules/mail/mail_mod.cpp:2166
+#: modules/engine/mail.cpp:5245 modules/mail/mail_mod.cpp:2166
 #: modules/mail/mail_mod.cpp:2182 modules/mail/mail_mod.cpp:2293
 #: modules/mail/mail_mod.cpp:2335 modules/mail/mail_mod.cpp:4202
 msgid "MAIL: No such player."
@@ -2179,31 +2197,31 @@ msgstr "[xx] MAIL: ‘%s’ does not exist."
 msgid "MAIL: No players specified."
 msgstr "[xx] MAIL: No players specified."
 
-#: modules/engine/mail.cpp:2375 modules/engine/mail.cpp:4348
+#: modules/engine/mail.cpp:2375 modules/engine/mail.cpp:4332
 #: modules/mail/mail_mod.cpp:3220 modules/mail/mail_mod.cpp:3418
 msgid "MAIL: I do not know whom you want to mail."
 msgstr "[xx] MAIL: I do not know whom you want to mail."
 
-#: modules/engine/mail.cpp:2380 modules/engine/mail.cpp:4566
+#: modules/engine/mail.cpp:2380 modules/engine/mail.cpp:4550
 #: modules/mail/mail_mod.cpp:3228 modules/mail/mail_mod.cpp:3528
 msgid "MAIL: No subject."
 msgstr "[xx] MAIL: No subject."
 
 #: modules/engine/mail.cpp:2385 modules/engine/mail.cpp:2415
-#: modules/engine/mail.cpp:2461 modules/engine/mail.cpp:4549
+#: modules/engine/mail.cpp:2461 modules/engine/mail.cpp:4533
 #: modules/mail/mail_mod.cpp:3244 modules/mail/mail_mod.cpp:3487
 #: modules/mail/mail_mod.cpp:3569 modules/mail/mail_mod.cpp:3684
 msgid "MAIL: Mail message already in progress."
 msgstr "[xx] MAIL: Mail message already in progress."
 
 #: modules/engine/mail.cpp:2391 modules/engine/mail.cpp:2431
-#: modules/engine/mail.cpp:2472 modules/engine/mail.cpp:4555
+#: modules/engine/mail.cpp:2472 modules/engine/mail.cpp:4539
 #: modules/mail/mail_mod.cpp:3268 modules/mail/mail_mod.cpp:3508
 #: modules/mail/mail_mod.cpp:3607 modules/mail/mail_mod.cpp:3713
 msgid "MAIL: Too much @mail sent recently."
 msgstr "[xx] MAIL: Too much @mail sent recently."
 
-#: modules/engine/mail.cpp:2406 modules/engine/mail.cpp:4371
+#: modules/engine/mail.cpp:2406 modules/engine/mail.cpp:4355
 #: modules/mail/mail_mod.cpp:3307 modules/mail/mail_mod.cpp:3448
 #, c-format
 msgid "MAIL: You are sending mail to ‘%s’."
@@ -2524,9 +2542,9 @@ msgid "MAIL: I can’t figure out from ‘%s’ who you want to mail to."
 msgstr "[xx] MAIL: I can’t figure out from ‘%s’ who you want to mail to."
 
 #: modules/engine/mail.cpp:4041 modules/engine/mail.cpp:4206
-#: modules/engine/mail.cpp:4857 modules/engine/mail.cpp:4907
-#: modules/engine/mail.cpp:4931 modules/engine/mail.cpp:4985
-#: modules/engine/mail.cpp:5084 modules/engine/mail.cpp:5107
+#: modules/engine/mail.cpp:4841 modules/engine/mail.cpp:4891
+#: modules/engine/mail.cpp:4915 modules/engine/mail.cpp:4969
+#: modules/engine/mail.cpp:5068 modules/engine/mail.cpp:5091
 #: modules/mail/mail_mod.cpp:4253 modules/mail/mail_mod.cpp:4428
 #: modules/mail/mail_mod.cpp:4481 modules/mail/mail_mod.cpp:4516
 #: modules/mail/mail_mod.cpp:4594 modules/mail/mail_mod.cpp:4711
@@ -2563,9 +2581,9 @@ msgstr "[xx] MAIL: Invalid mail alias."
 msgid "MAIL: Alias set ‘%s’ defined."
 msgstr "[xx] MAIL: Alias set ‘%s’ defined."
 
-#: modules/engine/mail.cpp:4215 modules/engine/mail.cpp:4891
-#: modules/engine/mail.cpp:4962 modules/engine/mail.cpp:4994
-#: modules/engine/mail.cpp:5055 modules/engine/mail.cpp:5170
+#: modules/engine/mail.cpp:4215 modules/engine/mail.cpp:4875
+#: modules/engine/mail.cpp:4946 modules/engine/mail.cpp:4978
+#: modules/engine/mail.cpp:5039 modules/engine/mail.cpp:5154
 #: modules/mail/mail_mod.cpp:4270 modules/mail/mail_mod.cpp:4444
 #: modules/mail/mail_mod.cpp:4533 modules/mail/mail_mod.cpp:4611
 #: modules/mail/mail_mod.cpp:4686 modules/mail/mail_mod.cpp:4753
@@ -2577,69 +2595,69 @@ msgstr "[xx] MAIL: Permission denied."
 msgid "MAIL: Alias *%s: "
 msgstr "[xx] MAIL: Alias *%s: "
 
-#: modules/engine/mail.cpp:4317 modules/mail/mail_mod.cpp:4359
+#: modules/engine/mail.cpp:4301 modules/mail/mail_mod.cpp:4359
 msgid "*****  End of Mail Aliases *****"
 msgstr "[xx] *****  End of Mail Aliases *****"
 
-#: modules/engine/mail.cpp:4343 modules/mail/mail_mod.cpp:3409
+#: modules/engine/mail.cpp:4327 modules/mail/mail_mod.cpp:3409
 msgid "MAIL: No mail message in progress."
 msgstr "[xx] MAIL: No mail message in progress."
 
-#: modules/engine/mail.cpp:4539 modules/mail/mail_mod.cpp:3462
+#: modules/engine/mail.cpp:4523 modules/mail/mail_mod.cpp:3462
 msgid "MAIL: I don’t know who you want to mail."
 msgstr "[xx] MAIL: I don’t know who you want to mail."
 
-#: modules/engine/mail.cpp:4544 modules/mail/mail_mod.cpp:3470
+#: modules/engine/mail.cpp:4528 modules/mail/mail_mod.cpp:3470
 msgid "MAIL: No message."
 msgstr "[xx] MAIL: No message."
 
-#: modules/engine/mail.cpp:4644 modules/mail/mail_mod.cpp:3326
+#: modules/engine/mail.cpp:4628 modules/mail/mail_mod.cpp:3326
 #: modules/mail/mail_mod.cpp:3870
 msgid "MAIL: No message started."
 msgstr "[xx] MAIL: No message started."
 
-#: modules/engine/mail.cpp:4653 modules/mail/mail_mod.cpp:3351
+#: modules/engine/mail.cpp:4637 modules/mail/mail_mod.cpp:3351
 msgid "MAIL: No recipients."
 msgstr "[xx] MAIL: No recipients."
 
-#: modules/engine/mail.cpp:4661 modules/mail/mail_mod.cpp:3361
+#: modules/engine/mail.cpp:4645 modules/mail/mail_mod.cpp:3361
 msgid "MAIL: The body of this message is empty.  Use - to add to the message."
 msgstr ""
 "[xx] MAIL: The body of this message is empty.  Use - to add to the message."
 
-#: modules/engine/mail.cpp:4681 modules/mail/mail_mod.cpp:3390
+#: modules/engine/mail.cpp:4665 modules/mail/mail_mod.cpp:3390
 msgid "MAIL: Message aborted."
 msgstr "[xx] MAIL: Message aborted."
 
-#: modules/engine/mail.cpp:4695
+#: modules/engine/mail.cpp:4679
 msgid "No text prepended."
 msgstr "[xx] No text prepended."
 
-#: modules/engine/mail.cpp:4730
+#: modules/engine/mail.cpp:4714
 #, c-format
 msgid "%d/%d characters prepended."
 msgstr "[xx] %d/%d characters prepended."
 
-#: modules/engine/mail.cpp:4734 modules/engine/mail.cpp:4795
-#: modules/engine/mail.cpp:4814 modules/engine/mail.cpp:4822
+#: modules/engine/mail.cpp:4718 modules/engine/mail.cpp:4779
+#: modules/engine/mail.cpp:4798 modules/engine/mail.cpp:4806
 #: modules/mail/mail_mod.cpp:3917
 msgid "MAIL: No message in progress."
 msgstr "[xx] MAIL: No message in progress."
 
-#: modules/engine/mail.cpp:4756
+#: modules/engine/mail.cpp:4740
 msgid "No text added."
 msgstr "[xx] No text added."
 
-#: modules/engine/mail.cpp:4791
+#: modules/engine/mail.cpp:4775
 #, c-format
 msgid "%d/%d characters added."
 msgstr "[xx] %d/%d characters added."
 
-#: modules/engine/mail.cpp:4808 modules/mail/mail_mod.cpp:4001
+#: modules/engine/mail.cpp:4792 modules/mail/mail_mod.cpp:4001
 msgid "Text edited."
 msgstr "[xx] Text edited."
 
-#: modules/engine/mail.cpp:4841
+#: modules/engine/mail.cpp:4825
 #, c-format
 msgid ""
 "From:  %s  Subject: %s\n"
@@ -2648,118 +2666,118 @@ msgstr ""
 "[xx] From:  %s  Subject: %s\n"
 "To: %s"
 
-#: modules/engine/mail.cpp:4882 modules/mail/mail_mod.cpp:4464
+#: modules/engine/mail.cpp:4866 modules/mail/mail_mod.cpp:4464
 msgid "MAIL: Description changed."
 msgstr "[xx] MAIL: Description changed."
 
-#: modules/engine/mail.cpp:4886 modules/mail/mail_mod.cpp:4450
+#: modules/engine/mail.cpp:4870 modules/mail/mail_mod.cpp:4450
 msgid "MAIL: Description is not valid."
 msgstr "[xx] MAIL: Description is not valid."
 
-#: modules/engine/mail.cpp:4899 modules/mail/mail_mod.cpp:4472
+#: modules/engine/mail.cpp:4883 modules/mail/mail_mod.cpp:4472
 msgid "MAIL: You cannot do that!"
 msgstr "[xx] MAIL: You cannot do that!"
 
-#: modules/engine/mail.cpp:4917 modules/mail/mail_mod.cpp:4500
+#: modules/engine/mail.cpp:4901 modules/mail/mail_mod.cpp:4500
 msgid "MAIL: I do not see that here."
 msgstr "[xx] MAIL: I do not see that here."
 
-#: modules/engine/mail.cpp:4922 modules/mail/mail_mod.cpp:4505
+#: modules/engine/mail.cpp:4906 modules/mail/mail_mod.cpp:4505
 msgid "MAIL: Owner changed for alias."
 msgstr "[xx] MAIL: Owner changed for alias."
 
-#: modules/engine/mail.cpp:4944 modules/mail/mail_mod.cpp:4548
+#: modules/engine/mail.cpp:4928 modules/mail/mail_mod.cpp:4548
 msgid "MAIL: Only players may be added."
 msgstr "[xx] MAIL: Only players may be added."
 
-#: modules/engine/mail.cpp:4956 modules/engine/mail.cpp:5009
+#: modules/engine/mail.cpp:4940 modules/engine/mail.cpp:4993
 #: modules/mail/mail_mod.cpp:4560 modules/mail/mail_mod.cpp:4628
 msgid "MAIL: I do not see that person here."
 msgstr "[xx] MAIL: I do not see that person here."
 
-#: modules/engine/mail.cpp:4969 modules/mail/mail_mod.cpp:4569
+#: modules/engine/mail.cpp:4953 modules/mail/mail_mod.cpp:4569
 msgid "MAIL: That person is already on the list."
 msgstr "[xx] MAIL: That person is already on the list."
 
-#: modules/engine/mail.cpp:4976 modules/mail/mail_mod.cpp:4580
+#: modules/engine/mail.cpp:4960 modules/mail/mail_mod.cpp:4580
 #, c-format
 msgid "MAIL: %s added to %s"
 msgstr "[xx] MAIL: %s added to %s"
 
-#: modules/engine/mail.cpp:5020 modules/mail/mail_mod.cpp:4643
+#: modules/engine/mail.cpp:5004 modules/mail/mail_mod.cpp:4643
 #, c-format
 msgid "MAIL: %s removed from alias %s."
 msgstr "[xx] MAIL: %s removed from alias %s."
 
-#: modules/engine/mail.cpp:5025 modules/mail/mail_mod.cpp:4653
+#: modules/engine/mail.cpp:5009 modules/mail/mail_mod.cpp:4653
 #, c-format
 msgid "MAIL: %s is not a member of alias %s."
 msgstr "[xx] MAIL: %s is not a member of alias %s."
 
-#: modules/engine/mail.cpp:5036 modules/mail/mail_mod.cpp:4667
+#: modules/engine/mail.cpp:5020 modules/mail/mail_mod.cpp:4667
 msgid "MAIL: That name already exists!"
 msgstr "[xx] MAIL: That name already exists!"
 
-#: modules/engine/mail.cpp:5046 modules/mail/mail_mod.cpp:4677
+#: modules/engine/mail.cpp:5030 modules/mail/mail_mod.cpp:4677
 msgid "MAIL: I cannot find that alias!"
 msgstr "[xx] MAIL: I cannot find that alias!"
 
-#: modules/engine/mail.cpp:5070 modules/mail/mail_mod.cpp:4696
+#: modules/engine/mail.cpp:5054 modules/mail/mail_mod.cpp:4696
 msgid "MAIL: Mailing Alias renamed."
 msgstr "[xx] MAIL: Mailing Alias renamed."
 
-#: modules/engine/mail.cpp:5074 modules/mail/mail_mod.cpp:4700
+#: modules/engine/mail.cpp:5058 modules/mail/mail_mod.cpp:4700
 msgid "MAIL: Alias is not valid."
 msgstr "[xx] MAIL: Alias is not valid."
 
-#: modules/engine/mail.cpp:5100 modules/mail/mail_mod.cpp:4729
+#: modules/engine/mail.cpp:5084 modules/mail/mail_mod.cpp:4729
 msgid "MAIL: Alias Deleted."
 msgstr "[xx] MAIL: Alias Deleted."
 
-#: modules/engine/mail.cpp:5129 modules/mail/mail_mod.cpp:4381
+#: modules/engine/mail.cpp:5113 modules/mail/mail_mod.cpp:4381
 msgid "Num"
 msgstr "[xx] Num"
 
-#: modules/engine/mail.cpp:5163 modules/mail/mail_mod.cpp:4417
+#: modules/engine/mail.cpp:5147 modules/mail/mail_mod.cpp:4417
 msgid "***** End of Mail Aliases *****"
 msgstr "[xx] ***** End of Mail Aliases *****"
 
-#: modules/engine/mail.cpp:5174 modules/mail/mail_mod.cpp:4757
+#: modules/engine/mail.cpp:5158 modules/mail/mail_mod.cpp:4757
 #, c-format
 msgid "MAIL: Number of mail aliases defined: %d"
 msgstr "[xx] MAIL: Number of mail aliases defined: %d"
 
-#: modules/engine/mail.cpp:5176
+#: modules/engine/mail.cpp:5160
 #, c-format
 msgid "MAIL: Vector capacity: %d"
 msgstr "[xx] MAIL: Vector capacity: %d"
 
-#: modules/engine/mail.cpp:5284 modules/mail/mail_mod.cpp:2363
+#: modules/engine/mail.cpp:5268 modules/mail/mail_mod.cpp:2363
 msgid "MAIL: Mail retracted."
 msgstr "[xx] MAIL: Mail retracted."
 
-#: modules/engine/mail.cpp:5288 modules/mail/mail_mod.cpp:2369
+#: modules/engine/mail.cpp:5272 modules/mail/mail_mod.cpp:2369
 msgid "MAIL: That message has been read."
 msgstr "[xx] MAIL: That message has been read."
 
-#: modules/engine/mail.cpp:5298 modules/mail/mail_mod.cpp:2380
+#: modules/engine/mail.cpp:5282 modules/mail/mail_mod.cpp:2380
 msgid "MAIL: No matching messages."
 msgstr "[xx] MAIL: No matching messages."
 
-#: modules/engine/mail.cpp:5310 modules/mail/mail_mod.cpp:2306
+#: modules/engine/mail.cpp:5294 modules/mail/mail_mod.cpp:2306
 #, c-format
 msgid "MAIL: Mail alias %s not found."
 msgstr "[xx] MAIL: Mail alias %s not found."
 
-#: modules/engine/mail.cpp:5360
+#: modules/engine/mail.cpp:5344
 msgid "MAIL: That @malias command is not available."
 msgstr "[xx] MAIL: That @malias command is not available."
 
-#: modules/engine/mail.cpp:5432
+#: modules/engine/mail.cpp:5416
 msgid "MAIL: That @mail command is not available."
 msgstr "[xx] MAIL: That @mail command is not available."
 
-#: modules/engine/mail.cpp:5761
+#: modules/engine/mail.cpp:5745
 msgid "MAIL: That folder command is not available."
 msgstr "[xx] MAIL: That folder command is not available."
 
@@ -2772,15 +2790,15 @@ msgstr "[xx] I don’t see that here."
 msgid "I don’t know which one you mean!"
 msgstr "[xx] I don’t know which one you mean!"
 
-#: modules/engine/mguests.cpp:133 modules/engine/mguests.cpp:212
+#: modules/engine/mguests.cpp:134 modules/engine/mguests.cpp:213
 msgid "Error creating guest, please try again later.\n"
 msgstr "[xx] Error creating guest, please try again later.\n"
 
-#: modules/engine/mguests.cpp:206
+#: modules/engine/mguests.cpp:207
 msgid "All guests are currently busy, please try again later.\n"
 msgstr "[xx] All guests are currently busy, please try again later.\n"
 
-#: modules/engine/mguests.cpp:425
+#: modules/engine/mguests.cpp:434
 msgid ""
 "--------------------------- Current Guests Listing "
 "---------------------------"
@@ -2788,22 +2806,34 @@ msgstr ""
 "[xx] --------------------------- Current Guests Listing "
 "---------------------------"
 
-#: modules/engine/mguests.cpp:426
-msgid "*Guest #  : Name            dbref  Status     Last Site"
-msgstr "[xx] *Guest #  : Name            dbref  Status     Last Site"
+#: modules/engine/mguests.cpp:440
+msgid "Guest"
+msgstr "[xx] Guest"
 
-#: modules/engine/mguests.cpp:427
+#: modules/engine/mguests.cpp:443
+msgid "#"
+msgstr "[xx] #"
+
+#: modules/engine/mguests.cpp:450
+msgid "dbref"
+msgstr "[xx] dbref"
+
+#: modules/engine/mguests.cpp:456
+msgid "Last Site"
+msgstr "[xx] Last Site"
+
+#: modules/engine/mguests.cpp:459
 msgid "------------------------------------------------------------------------------"
 msgstr ""
 "[xx] "
 "------------------------------------------------------------------------------"
 
-#: modules/engine/mguests.cpp:444
+#: modules/engine/mguests.cpp:495
 #, c-format
 msgid "*** Guest %d (#%d) is an invalid object!"
 msgstr "[xx] *** Guest %d (#%d) is an invalid object!"
 
-#: modules/engine/mguests.cpp:448
+#: modules/engine/mguests.cpp:499
 #, c-format
 msgid ""
 "-----------------------------  Total Guests: %-3d "
@@ -2992,8 +3022,8 @@ msgid "You own a floating room: %s(#%d)"
 msgstr "[xx] You own a floating room: %s(#%d)"
 
 #: modules/engine/object.cpp:2303 modules/engine/predicates.cpp:1328
-#: modules/engine/predicates.cpp:1371 modules/engine/walkdb.cpp:1347
-#: modules/engine/walkdb.cpp:1382
+#: modules/engine/predicates.cpp:1371 modules/engine/walkdb.cpp:1348
+#: modules/engine/walkdb.cpp:1383
 msgid "Done."
 msgstr "[xx] Done."
 
@@ -3322,7 +3352,7 @@ msgstr "[xx]  Quota: UNLIMITED  Used: %9d"
 msgid "Quotas are not enabled."
 msgstr "[xx] Quotas are not enabled."
 
-#: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:322
+#: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:323
 msgid "Not found."
 msgstr "[xx] Not found."
 
@@ -4014,82 +4044,82 @@ msgstr "[xx] Patrol requires at least two waypoints."
 msgid "%s begins patrolling %d waypoints."
 msgstr "[xx] %s begins patrolling %d waypoints."
 
-#: modules/engine/walkdb.cpp:75
+#: modules/engine/walkdb.cpp:76
 msgid "That’s terrific, but what should I do with the list?"
 msgstr "[xx] That’s terrific, but what should I do with the list?"
 
-#: modules/engine/walkdb.cpp:87
+#: modules/engine/walkdb.cpp:88
 msgid "The delimiter must be a single character!"
 msgstr "[xx] The delimiter must be a single character!"
 
-#: modules/engine/walkdb.cpp:210
+#: modules/engine/walkdb.cpp:211
 msgid "***End of List***"
 msgstr "[xx] ***End of List***"
 
-#: modules/engine/walkdb.cpp:315
+#: modules/engine/walkdb.cpp:316
 #, c-format
 msgid "The universe contains %d objects (next free is #%d)."
 msgstr "[xx] The universe contains %d objects (next free is #%d)."
 
-#: modules/engine/walkdb.cpp:339
+#: modules/engine/walkdb.cpp:340
 #, c-format
 msgid "%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"
 msgstr ""
 "[xx] %d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"
 
-#: modules/engine/walkdb.cpp:472
+#: modules/engine/walkdb.cpp:473
 msgid "Victim must be a player."
 msgstr "[xx] Victim must be a player."
 
-#: modules/engine/walkdb.cpp:494
+#: modules/engine/walkdb.cpp:495
 #, c-format
 msgid "%d objects @chowned."
 msgstr "[xx] %d objects @chowned."
 
-#: modules/engine/walkdb.cpp:503
+#: modules/engine/walkdb.cpp:504
 msgid "The mark commands are not allowed while DB cleaning is enabled."
 msgstr "[xx] The mark commands are not allowed while DB cleaning is enabled."
 
-#: modules/engine/walkdb.cpp:505
+#: modules/engine/walkdb.cpp:506
 msgid "Use the ‘@disable cleaning’ command to disable automatic cleaning."
 msgstr ""
 "[xx] Use the ‘@disable cleaning’ command to disable automatic cleaning."
 
-#: modules/engine/walkdb.cpp:507
+#: modules/engine/walkdb.cpp:508
 msgid "Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."
 msgstr ""
 "[xx] Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."
 
-#: modules/engine/walkdb.cpp:599
+#: modules/engine/walkdb.cpp:600
 #, c-format
 msgid "%s: No such player"
 msgstr "[xx] %s: No such player"
 
-#: modules/engine/walkdb.cpp:795
+#: modules/engine/walkdb.cpp:796
 #, c-format
 msgid "%s: unknown type"
 msgstr "[xx] %s: unknown type"
 
-#: modules/engine/walkdb.cpp:837
+#: modules/engine/walkdb.cpp:838
 #, c-format
 msgid "%s: unknown class"
 msgstr "[xx] %s: unknown class"
 
-#: modules/engine/walkdb.cpp:848
+#: modules/engine/walkdb.cpp:849
 msgid "You need a search warrant to do that!"
 msgstr "[xx] You need a search warrant to do that!"
 
-#: modules/engine/walkdb.cpp:857
+#: modules/engine/walkdb.cpp:858
 #, c-format
 msgid "You don’t have enough %s to search. (You need %d)"
 msgstr "[xx] You don’t have enough %s to search. (You need %d)"
 
-#: modules/engine/walkdb.cpp:1122
+#: modules/engine/walkdb.cpp:1123
 #, c-format
 msgid "%d objects %smarked"
 msgstr "[xx] %d objects %smarked"
 
-#: modules/engine/walkdb.cpp:1182
+#: modules/engine/walkdb.cpp:1183
 msgid ""
 "\n"
 "ROOMS:"
@@ -4097,7 +4127,7 @@ msgstr ""
 "[xx] \n"
 "ROOMS:"
 
-#: modules/engine/walkdb.cpp:1207
+#: modules/engine/walkdb.cpp:1208
 msgid ""
 "\n"
 "EXITS:"
@@ -4105,7 +4135,7 @@ msgstr ""
 "[xx] \n"
 "EXITS:"
 
-#: modules/engine/walkdb.cpp:1250
+#: modules/engine/walkdb.cpp:1251
 msgid ""
 "\n"
 "OBJECTS:"
@@ -4113,7 +4143,7 @@ msgstr ""
 "[xx] \n"
 "OBJECTS:"
 
-#: modules/engine/walkdb.cpp:1285
+#: modules/engine/walkdb.cpp:1286
 msgid ""
 "\n"
 "PLAYERS:"
@@ -4121,11 +4151,11 @@ msgstr ""
 "[xx] \n"
 "PLAYERS:"
 
-#: modules/engine/walkdb.cpp:1309
+#: modules/engine/walkdb.cpp:1310
 msgid "Nothing found."
 msgstr "[xx] Nothing found."
 
-#: modules/engine/walkdb.cpp:1314
+#: modules/engine/walkdb.cpp:1315
 #, c-format
 msgid ""
 "\n"
@@ -4134,9 +4164,17 @@ msgstr ""
 "[xx] \n"
 "Found:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
 
-#: modules/engine/walkdb.cpp:1506
-msgid "Day   Hours     Players  Total"
-msgstr "[xx] Day   Hours     Players  Total"
+#: modules/engine/walkdb.cpp:1514
+msgid "Day"
+msgstr "[xx] Day"
+
+#: modules/engine/walkdb.cpp:1517
+msgid "Hours"
+msgstr "[xx] Hours"
+
+#: modules/engine/walkdb.cpp:1520
+msgid "Players"
+msgstr "[xx] Players"
 
 #: modules/engine/wiz.cpp:33
 msgid "You can’t teleport that."
@@ -4337,13 +4375,33 @@ msgstr "[xx] DNS slave restarted."
 msgid "DNS slave failed to start."
 msgstr "[xx] DNS slave failed to start."
 
-#: src/net.cpp:3637
+#: src/net.cpp:3649
 msgid "----- Site Access -----"
 msgstr "[xx] ----- Site Access -----"
 
-#: src/net.cpp:3638
-msgid "Address                                            Status"
-msgstr "[xx] Address                                            Status"
+#: src/net.cpp:3654
+msgid "Address"
+msgstr "[xx] Address"
+
+#~ msgid "Buffer Stats  Size      InUse      Total           Allocs   Lost"
+#~ msgstr ""
+#~ "[xx] Buffer Stats  Size      InUse      Total           Allocs   Lost"
+
+#~ msgid ""
+#~ "Hash Stats    Size    Num     Del       Lookups          Hits        "
+#~ "Probes Long"
+#~ msgstr ""
+#~ "[xx] Hash Stats    Size    Num     Del       Lookups          Hits        "
+#~ "Probes Long"
+
+#~ msgid "*Guest #  : Name            dbref  Status     Last Site"
+#~ msgstr "[xx] *Guest #  : Name            dbref  Status     Last Site"
+
+#~ msgid "Day   Hours     Players  Total"
+#~ msgstr "[xx] Day   Hours     Players  Total"
+
+#~ msgid "Address                                            Status"
+#~ msgstr "[xx] Address                                            Status"
 
 #~ msgid "Name         Description                              Owner"
 #~ msgstr "[xx] Name         Description                              Owner"
