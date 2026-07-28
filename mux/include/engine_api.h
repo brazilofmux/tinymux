@@ -81,6 +81,9 @@ static constexpr uint64_t ECALL_LUA_SETI_INT = 0x309; // a0=tbl_idx, a1=key, a2=
 static constexpr uint64_t ECALL_LUA_LEN_INT  = 0x30A; // a0=tbl_idx → a0=len, a1=ok
 static constexpr uint64_t ECALL_LUA_GETFIELD_INT = 0x30B; // a0=tbl_idx, a1=key addr → a0=value, a1=ok
 static constexpr uint64_t ECALL_LUA_SETFIELD_INT = 0x30C; // a0=tbl_idx, a1=key addr, a2=value
+static constexpr uint64_t ECALL_LUA_GETGLOBAL = 0x30D; // a0=key addr → a0=stack_idx, a1=ok
+static constexpr uint64_t ECALL_LUA_GETFIELD_REF = 0x30E; // a0=tbl_idx, a1=key addr → a0=stack_idx, a1=ok
+static constexpr uint64_t ECALL_LUA_CALL_INT = 0x30F; // a0=fn_idx, a1=nargs, a2=args addr → a0=int result, a1=ok
 
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls

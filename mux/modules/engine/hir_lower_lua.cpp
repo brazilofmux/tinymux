@@ -1431,8 +1431,22 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
                 int key_val = h.emit_sconst(key_addr, k.sval);
                 if (key_val < 0) return -1;
-                lua_reg[A] = h.emit(HIR_LUA_GETFIELD, TY_INT,
-                                    table_reg, key_val);
+                // Which variant depends on what the table IS.  A library
+                // table arrives from GETGLOBAL and its members are
+                // functions, so take a reference; a data table arrives from
+                // NEWTABLE and its members are values, so take the value.
+                //
+                // This is a heuristic on provenance, not a type.  It is
+                // honest for the shapes that exist today and it is the
+                // second place this pass has had to guess what a handle
+                // points at -- the type system knows "handle" but not
+                // "handle to what".
+                const bool from_global =
+                    (h.kind[table_reg] == HIR_LUA_GETGLOBAL);
+                lua_reg[A] = h.emit(
+                    from_global ? HIR_LUA_GETFIELD_REF : HIR_LUA_GETFIELD,
+                    from_global ? TY_LUA_HANDLE : TY_INT,
+                    table_reg, key_val);
                 if (lua_reg[A] < 0) return -1;
                 h.known_int[lua_reg[A]] = true;
                 h.ecalls++;
@@ -2083,10 +2097,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
                 int key_val = h.emit_sconst(key_addr, k.sval);
                 if (key_val < 0) return -1;
-                std::string name("__lua_getglobal");
-                int args[] = { key_val };
-                lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 1, &name);
+                lua_reg[A] = h.emit(HIR_LUA_GETGLOBAL, TY_LUA_HANDLE,
+                                    key_val);
                 if (lua_reg[A] < 0) return -1;
+                h.known_int[lua_reg[A]] = true;
                 h.ecalls++;
             }
             break;
@@ -2159,6 +2173,41 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 && h.kind[func_reg] == HIR_SCONST
                 && h.sval[func_reg].size() >= 4
                 && h.sval[func_reg].substr(0, 4) == "mux.");
+
+            // Integer call on a handle from GETFIELD_REF: the narrow
+            // first cut.  Integer args, integer result, nothing marshalled.
+            // Everything else falls through to the old path below and
+            // declines, which is what it already did.
+            if (!is_bridge && nresults == 1 && nargs >= 0 && nargs <= 2
+                && func_reg >= 0
+                && h.kind[func_reg] == HIR_LUA_GETFIELD_REF) {
+                int a0 = -1, a1 = -1;
+                bool ok = true;
+                for (int i = 0; i < nargs && ok; i++) {
+                    if (!lua_reg_in_range(A + 1 + i)) { ok = false; break; }
+                    int areg = lua_reg[A + 1 + i];
+                    if (areg < 0 || h.ty[areg] != TY_INT
+                        || lua_is_handle(h, areg)) { ok = false; break; }
+                    if (0 == i) a0 = areg; else a1 = areg;
+                }
+                if (ok) {
+                    // nargs in the low 8 bits, arg1's insn index above it.
+                    // src1=fn, src2=arg0.  A third operand with no room in
+                    // src1/src2 -- the same crowding that put SETI's value
+                    // in val[], now with a count beside it.
+                    int64_t packed = static_cast<int64_t>(nargs)
+                                   | (static_cast<int64_t>(a1 + 1) << 8);
+                    lua_reg[A] = h.emit(HIR_LUA_CALL_INT, TY_INT,
+                                        func_reg, a0, packed);
+                    if (lua_reg[A] < 0) return -1;
+                    h.known_int[lua_reg[A]] = true;
+                    h.ecalls++;
+                    for (int i = A + 1; i < A + 1 + nargs; i++) {
+                        if (lua_reg_in_range(i)) lua_reg[i] = -1;
+                    }
+                    break;
+                }
+            }
 
             // Convert arguments to strings.
             std::vector<int> args;

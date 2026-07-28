@@ -149,7 +149,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=29
+AGREE_DECLINE_BUDGET=26
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -193,6 +193,19 @@ EXEC_CASES=(
     # instead of 7.
     'local t={a=3,b=4} return t.a+t.b'
     'local t={} t.x=5 t.y=6 return t.x*10+t.y'
+
+    # Library call: GETGLOBAL -> GETFIELD_REF -> CALL_INT, three ECALLs
+    # sharing live Lua stack state inside one compiled run.  Every earlier
+    # increment touched at most two, and #1519 flagged that discipline as
+    # needing proof rather than assumption.
+    #
+    # TWO ARGUMENTS on purpose, and asymmetric ones: max(3,9) and min(3,9)
+    # give different answers, so an implementation that passes only the
+    # first argument, or swaps them, cannot pass both.  One argument would
+    # prove as little here as one key did for table fields.
+    'local x=math.max(3,9) return x'
+    'local x=math.min(3,9) return x'
+    'local x=math.abs(-7) return x'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

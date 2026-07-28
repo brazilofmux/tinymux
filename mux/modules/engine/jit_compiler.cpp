@@ -3982,6 +3982,90 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_GETGLOBAL: {
+        // a0 = guest addr of a NUL-terminated name -> a0 = stack index of
+        // the global, a1 = ok.  Returns a HANDLE: a library table or a
+        // function has no value form, which is the same reason NEWTABLE
+        // returns one.  It rides in a register, typed, never as text.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[10]);
+        if (nullptr == key) { ctx->x[11] = 0; return ECALL_DECLINE; }
+        lua_getglobal(L, key);
+        if (lua_isnil(L, -1)) {
+            lua_pop(L, 1);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
+        ctx->x[11] = 1;
+        return -1;
+    }
+
+    case ECALL_LUA_GETFIELD_REF: {
+        // a0=tbl_idx, a1=key addr -> a0=stack index of the field, a1=ok.
+        // The value-returning GETFIELD_INT declines a non-integer field;
+        // this is the variant for when the field IS the thing you want a
+        // reference to, which is what a library member is.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
+        if (nullptr == key || tbl_idx <= 0 || tbl_idx > lua_gettop(L)
+            || !lua_istable(L, tbl_idx)) {
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        lua_getfield(L, tbl_idx, key);
+        if (lua_isnil(L, -1)) {
+            lua_pop(L, 1);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
+        ctx->x[11] = 1;
+        return -1;
+    }
+
+    case ECALL_LUA_CALL_INT: {
+        // a0=fn stack idx, a1=nargs (0..2), a2=arg0, a3=arg1, integers.
+        // -> a0 = integer result, a1 = ok.
+        //
+        // Deliberately narrow: integer in, integer out, so this exercises
+        // the whole global->field->call chain without also deciding how a
+        // string result is marshalled.  Anything else declines and the
+        // interpreter answers.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int fn_idx = static_cast<int>(ctx->x[10]);
+        int nargs = static_cast<int>(ctx->x[11]);
+        if (fn_idx <= 0 || fn_idx > lua_gettop(L)
+            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 2) {
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        int base = lua_gettop(L);
+        lua_pushvalue(L, fn_idx);
+        if (nargs >= 1) lua_pushinteger(L,
+            static_cast<lua_Integer>(ctx->x[12]));
+        if (nargs >= 2) lua_pushinteger(L,
+            static_cast<lua_Integer>(ctx->x[13]));
+        if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        if (!lua_isinteger(L, -1)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
+        ctx->x[11] = 1;
+        lua_settop(L, base);
+        return -1;
+    }
+
     case ECALL_LUA_GETFIELD_INT: {
         // String-keyed read: a0=tbl_idx, a1=guest addr of a NUL-terminated
         // key -> a0=value, a1=ok.  The key travels as an address into the
