@@ -2191,7 +2191,7 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 // This keeps the result in the string pool (low memory)
                 // so it survives SQLite cache persistence.
                 char buf[32];
-                snprintf(buf, sizeof(buf), "%lld",
+                mux_snprintf(reinterpret_cast<UTF8 *>(buf), sizeof(buf), T("%lld"),
                          static_cast<long long>(h.val[ri]));
                 uint64_t addr = rc.pool_str(buf, strlen(buf));
                 rc.final_out = addr;

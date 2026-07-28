@@ -486,7 +486,7 @@ static int assign_blocks(const std::vector<bool> &is_leader,
 // digits than the interpreter (#1488).
 //
 void lua_format_double(double d, char *buf, size_t sz) {
-    snprintf(buf, sz, "%.14g", d);
+    mux_snprintf(reinterpret_cast<UTF8 *>(buf), sz, T("%.14g"), d);
     if (buf[strspn(buf, "-0123456789")] == '\0') {
         size_t len = strlen(buf);
         if (len + 3 <= sz) {
@@ -508,7 +508,7 @@ static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
     if (h.ty[rv] == TY_INT) {
         if (h.kind[rv] == HIR_ICONST) {
             char buf[32];
-            snprintf(buf, sizeof(buf), "%lld",
+            mux_snprintf(reinterpret_cast<UTF8 *>(buf), sizeof(buf), T("%lld"),
                      static_cast<long long>(h.val[rv]));
             uint64_t addr = rc.pool_str(buf, strlen(buf));
             return h.emit_sconst(addr, buf);
