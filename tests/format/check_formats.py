@@ -140,6 +140,11 @@ CONST_MACROS = ("ENDLINE", "MAIL_LINE", "FOLDER_LINE")
 ALLOWED_NONLITERAL = {
     "pFmt",
     "pRoomAnnounceFmt",
+    # BuildChannelAnnounce (#1723): an M_()-resolved whole-sentence
+    # announcement format.  Same class as the two above -- the catalogue is
+    # the source, and check_nls.py verifies every msgstr keeps the msgid's
+    # conversion types, which is the property this guard exists to protect.
+    "pChannelAnnounceFmt",
     "pMonitorAnnounceFmt",
     "tf1_case_table[iCase].specs[iWidth]",
 }

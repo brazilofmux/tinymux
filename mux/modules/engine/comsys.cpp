@@ -1347,6 +1347,160 @@ static UTF8 *call_mogrifier
     return result.release();
 }
 
+// Speaker portion of a channel line: the comtitle (evaluated as code when
+// eval_comtitle is set) and the speaker's name, with SPOOF replacing the
+// name by the title.  Extracted from BuildChannelMessage so the join/leave
+// announcements can compose a whole translatable sentence around the same
+// speaker text (#1723) instead of appending a pose fragment to it.
+//
+// Appends into the caller's buffers via safe_* pointers.  pncptr may be
+// null (SPOOF has no no-comtitle variant).
+//
+static void BuildChannelSpeaker
+(
+    const bool bSpoof,
+    const struct comuser* user,
+    UTF8* spkNormal,
+    UTF8** pnptr,
+    UTF8* spkNoComtitle,
+    UTF8** pncptr
+)
+{
+    const bool hasComTitle = !user->title.empty();
+
+    if (hasComTitle && (user->ComTitleStatus || bSpoof))
+    {
+        if (mudconf.eval_comtitle)
+        {
+            // Evaluate the comtitle as code.
+            //
+            LBuf TempToEval = LBuf_Src("eval_comtitle");
+            mux_strncpy(TempToEval, reinterpret_cast<const UTF8 *>(user->title.c_str()), LBUF_SIZE - 1);
+            mux_exec(TempToEval, LBUF_SIZE - 1, spkNormal, pnptr, user->who, user->who, user->who,
+                     EV_FCHECK | EV_EVAL | EV_TOP, nullptr, 0);
+        }
+        else
+        {
+            safe_str(reinterpret_cast<const UTF8 *>(user->title.c_str()), spkNormal, pnptr);
+        }
+        if (!bSpoof)
+        {
+            safe_chr(' ', spkNormal, pnptr);
+            safe_str(Moniker(user->who), spkNormal, pnptr);
+            safe_str(Moniker(user->who), spkNoComtitle, pncptr);
+        }
+    }
+    else
+    {
+        safe_str(Moniker(user->who), spkNormal, pnptr);
+        if (!bSpoof)
+        {
+            safe_str(Moniker(user->who), spkNoComtitle, pncptr);
+        }
+    }
+}
+
+// A whole-sentence channel announcement (#1723).  Join and leave are the
+// server speaking about an event -- unlike speech, which is scaffolding
+// around a player's own words -- so they are translatable sentences:
+// pChannelAnnounceFmt is an M_()-resolved format with one %s, which receives the
+// comtitle-decorated speaker.  These are the same msgids the comsys module
+// has always used, so the two implementations converge (#1614) and the
+// existing catalogue entries serve both.
+//
+// SPEECHMOD is still honoured, as the old pose path did -- but %0 is now
+// the whole announcement ("Jess has joined this channel.") rather than the
+// bare verb phrase, because the verb phrase no longer exists as a unit.
+// Run per variant, so an evaluated attribute now evaluates once per
+// audience rather than once in total.
+//
+static void BuildChannelAnnounce
+(
+    const bool bSpoof,
+    const UTF8* pHeader,
+    const struct comuser* user,
+    const dbref ch_obj,
+    const UTF8* pChannelAnnounceFmt,
+    UTF8** messNormal,
+    UTF8** messNoComtitle
+)
+{
+    UTF8 *spkNormal = alloc_lbuf("BCA.spkN");
+    UTF8 *spkNoComtitle = nullptr;
+    UTF8 *snp = spkNormal;
+    UTF8 *sncp = nullptr;
+    if (!bSpoof)
+    {
+        spkNoComtitle = alloc_lbuf("BCA.spkNC");
+        sncp = spkNoComtitle;
+    }
+    BuildChannelSpeaker(bSpoof, user, spkNormal, &snp, spkNoComtitle, &sncp);
+    *snp = '\0';
+    if (nullptr != sncp)
+    {
+        *sncp = '\0';
+    }
+
+    bool bChannelSpeechMod = false;
+    if (Good_obj(ch_obj))
+    {
+        dbref aowner;
+        int aflags;
+        LBuf test_attr = LBuf_Adopt(atr_get("BuildChannelAnnounce.1", ch_obj,
+                                  A_SPEECHMOD, &aowner, &aflags));
+        if ('\0' != test_attr[0])
+        {
+            bChannelSpeechMod = true;
+        }
+    }
+
+    struct
+    {
+        const UTF8 *pSpeaker;
+        UTF8 **ppMess;
+        const char *pTag;
+    } variants[2] = {
+        { spkNormal,     messNormal,     "BCA.messNormal" },
+        { spkNoComtitle, messNoComtitle, "BCA.messNoComtitle" },
+    };
+
+    for (int i = 0; i < 2; i++)
+    {
+        if (nullptr == variants[i].pSpeaker)
+        {
+            *variants[i].ppMess = nullptr;
+            continue;
+        }
+        UTF8 *sentence = alloc_lbuf("BCA.sentence");
+        UTF8 *sp = sentence;
+        safe_tprintf_str(sentence, &sp, pChannelAnnounceFmt, variants[i].pSpeaker);
+        *sp = '\0';
+
+        UTF8 *modded = modSpeech(bChannelSpeechMod ? ch_obj : user->who,
+            sentence, true, T("channel/pose"));
+
+        *variants[i].ppMess = alloc_lbuf(variants[i].pTag);
+        UTF8 *mp = *variants[i].ppMess;
+        safe_str(pHeader, *variants[i].ppMess, &mp);
+        safe_chr(' ', *variants[i].ppMess, &mp);
+        safe_str(nullptr != modded ? modded : sentence,
+                 *variants[i].ppMess, &mp);
+        *mp = '\0';
+
+        if (nullptr != modded)
+        {
+            free_lbuf(modded);
+        }
+        free_lbuf(sentence);
+    }
+
+    free_lbuf(spkNormal);
+    if (nullptr != spkNoComtitle)
+    {
+        free_lbuf(spkNoComtitle);
+    }
+}
+
 static void BuildChannelMessage
 (
     const bool bSpoof,
@@ -1367,10 +1521,6 @@ static void BuildChannelMessage
         *messNoComtitle = alloc_lbuf("BCM.messNoComtitle");
     }
 
-    // Comtitle Check.
-    //
-    const bool hasComTitle = !user->title.empty();
-
     UTF8* mnptr = *messNormal; // Message without comtitle removal.
     UTF8* mncptr = *messNoComtitle; // Message with comtitle removal.
 
@@ -1382,40 +1532,8 @@ static void BuildChannelMessage
         safe_chr(' ', *messNoComtitle, &mncptr);
     }
 
-    // Don't evaluate a title if there isn't one to parse or evaluation of
-    // comtitles is disabled.  If they're set spoof, ComTitleStatus doesn't
-    // matter.
-    //
-    if (hasComTitle && (user->ComTitleStatus || bSpoof))
-    {
-        if (mudconf.eval_comtitle)
-        {
-            // Evaluate the comtitle as code.
-            //
-            LBuf TempToEval = LBuf_Src("eval_comtitle");
-            mux_strncpy(TempToEval, reinterpret_cast<const UTF8 *>(user->title.c_str()), LBUF_SIZE - 1);
-            mux_exec(TempToEval, LBUF_SIZE - 1, *messNormal, &mnptr, user->who, user->who, user->who,
-                     EV_FCHECK | EV_EVAL | EV_TOP, nullptr, 0);
-        }
-        else
-        {
-            safe_str(reinterpret_cast<const UTF8 *>(user->title.c_str()), *messNormal, &mnptr);
-        }
-        if (!bSpoof)
-        {
-            safe_chr(' ', *messNormal, &mnptr);
-            safe_str(Moniker(user->who), *messNormal, &mnptr);
-            safe_str(Moniker(user->who), *messNoComtitle, &mncptr);
-        }
-    }
-    else
-    {
-        safe_str(Moniker(user->who), *messNormal, &mnptr);
-        if (!bSpoof)
-        {
-            safe_str(Moniker(user->who), *messNoComtitle, &mncptr);
-        }
-    }
+    BuildChannelSpeaker(bSpoof, user, *messNormal, &mnptr,
+                        *messNoComtitle, &mncptr);
 
     bool bChannelSayString = false;
     bool bChannelSpeechMod = false;
@@ -2014,9 +2132,9 @@ void do_joinchannel(const dbref player, struct channel* ch)
     if (!Hidden(player))
     {
         UTF8 *messNormal, *messNoComtitle;
-        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                            ch->chan_obj, T(":has joined this channel."), &messNormal,
-                            &messNoComtitle);
+        BuildChannelAnnounce((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+                             ch->chan_obj, M_("%s has joined this channel."),
+                             &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
     }
     ChannelMOTD(ch->chan_obj, user->who, attr);
@@ -2034,9 +2152,9 @@ void do_leavechannel(dbref player, struct channel* ch)
         if (!Hidden(player))
         {
             UTF8 *messNormal, *messNoComtitle;
-            BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
-                                ch->chan_obj, T(":has left this channel."), &messNormal,
-                                &messNoComtitle);
+            BuildChannelAnnounce((ch->type & CHANNEL_SPOOF) != 0, ch->header, user,
+                                 ch->chan_obj, M_("%s has left this channel."),
+                                 &messNormal, &messNoComtitle);
             SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
         }
         ChannelMOTD(ch->chan_obj, user->who, A_COMOFF);
@@ -2609,10 +2727,10 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
                     && !Hidden(player))
                 {
                     UTF8 *messNormal, *messNoComtitle;
-                    BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0,
+                    BuildChannelAnnounce((ch->type & CHANNEL_SPOOF) != 0,
                                         ch->header, &user, ch->chan_obj,
-                                        T(":has left this channel."), &messNormal,
-                                        &messNoComtitle);
+                                        M_("%s has left this channel."),
+                                        &messNormal, &messNoComtitle);
                     SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
                 }
                 raw_notify(player, tprintf(M_("You have left channel %s."),
@@ -3304,9 +3422,9 @@ static void do_comdisconnectraw_notify(const dbref player, UTF8* chan)
         && !Hidden(player))
     {
         UTF8 *messNormal, *messNoComtitle;
-        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-                            ch->chan_obj, T(":has disconnected."), &messNormal,
-                            &messNoComtitle);
+        BuildChannelAnnounce((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
+                             ch->chan_obj, M_("%s has disconnected."),
+                             &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
     }
 }
@@ -3326,9 +3444,9 @@ static void do_comconnectraw_notify(const dbref player, UTF8* chan)
         && !Hidden(player))
     {
         UTF8 *messNormal, *messNoComtitle;
-        BuildChannelMessage((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
-                            ch->chan_obj, T(":has connected."), &messNormal,
-                            &messNoComtitle);
+        BuildChannelAnnounce((ch->type & CHANNEL_SPOOF) != 0, ch->header, cu,
+                             ch->chan_obj, M_("%s has connected."),
+                             &messNormal, &messNoComtitle);
         SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
     }
 }
