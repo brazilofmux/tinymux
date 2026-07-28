@@ -1554,6 +1554,45 @@ static MUX_RESULT init_com(void)
         return mr;
     }
 
+    // Turn logging on.  Until #1633 nothing here ever did, and CLogFile's
+    // constructor leaves bEnabled false, so CLogFile::WriteBuffer dropped
+    // every byte -- meaning every STARTLOG in the server was a no-op under
+    // muxscript.  Not just module diagnostics: the whole channel.  netmux
+    // does this at driver.cpp:404 and has all along, which is why the same
+    // config reports "Module bogusnothere not found" there and nothing here.
+    //
+    // Consequences that were live before this: cf_module HAS diagnosed an
+    // unloadable module since forever (cf_log_notfound, conf.cpp), and that
+    // line had never once reached a human -- #1594 was diagnosed from
+    // silence that was not real silence.  And #1620/#1629/#1630 all deliver
+    // "log the refused write", which no harness could assert.
+    //
+    // stderr rather than a log file: tools/Smoke redirects muxscript's
+    // stderr into netmux.log and greps it, so that is where a driver can
+    // already see it.  A <basename>-<timestamp>.log file would land where
+    // nothing looks and would need Makesmoke taught to clean it up.
+    //
+    // The interface is released immediately on purpose.  The log state lives
+    // in the engine's global CLogFile, not in this pointer, so holding a
+    // reference for the process lifetime would buy nothing but teardown
+    // paths to get wrong.
+    //
+    mux_ILog *pILog = nullptr;
+    if (  MUX_SUCCEEDED(mux_CreateInstance(CID_Log, nullptr, UseSameProcess,
+                                           IID_ILog,
+                                           reinterpret_cast<void **>(&pILog)))
+       && nullptr != pILog)
+    {
+        pILog->SetBasename(T("-"));
+        pILog->StartLogging();
+        pILog->Release();
+    }
+    else
+    {
+        fprintf(stderr, "muxscript: logging unavailable; server diagnostics "
+                        "will be silent (#1633)\n");
+    }
+
     // Create IGameEngine via COM.
     mr = mux_CreateInstance(CID_GameEngine, nullptr, UseSameProcess,
                             IID_IGameEngine,
