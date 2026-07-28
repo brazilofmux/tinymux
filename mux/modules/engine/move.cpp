@@ -85,7 +85,7 @@ static void process_leave_loc(dbref thing, dbref dest, dbref cause, bool canhear
 #else
             notify_except2(loc, thing, thing, cause,
 #endif // REALITY_LVLS
-                       tprintf(T("%s has left."), Moniker(thing)));
+                       tprintf(M_("%s has left."), Moniker(thing)));
         }
     }
 }
@@ -158,7 +158,7 @@ static void process_enter_loc(dbref thing, dbref src, dbref cause, bool canhear,
 #else
         notify_except2(loc, thing, thing, cause,
 #endif // REALITY_LVLS
-                   tprintf(T("%s has arrived."), Moniker(thing)));
+                   tprintf(M_("%s has arrived."), Moniker(thing)));
     }
 }
 
@@ -220,7 +220,7 @@ void move_object(dbref thing, dbref dest)
        && RandomINT32(0, mudconf.payfind-1) == 0)
     {
         giveto(thing, 1);
-        notify(thing, tprintf(T("You found a %s!"), mudconf.one_coin));
+        notify(thing, tprintf(M_("You found a %s!"), mudconf.one_coin));
     }
 }
 
@@ -398,11 +398,11 @@ bool move_via_teleport(dbref thing, dbref dest, dbref cause, int hush)
                 if (  thing == cause
                    || NOTHING == cause)
                 {
-                    failmsg = T("You can’t teleport out!");
+                    failmsg = M_("You can’t teleport out!");
                 }
                 else
                 {
-                    failmsg = T("You can’t be teleported out!");
+                    failmsg = M_("You can’t be teleported out!");
                     notify_quiet(cause, M_("You can’t teleport that out!"));
                 }
 
@@ -636,7 +636,7 @@ void do_move(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
             {
                 // Tell all
                 //
-                notify_except(loc, executor, executor, tprintf(T("%s goes home."), Moniker(executor)), 0);
+                notify_except(loc, executor, executor, tprintf(M_("%s goes home."), Moniker(executor)), 0);
             }
 
             // Give the player the messages
@@ -771,7 +771,7 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
         {
             if (thingloc != playerloc)
             {
-                notify(thingloc, tprintf(T("%s was taken from you."),
+                notify(thingloc, tprintf(M_("%s was taken from you."),
                     Moniker(thing)));
             }
             move_via_generic(thing, executor, executor, 0);
@@ -787,11 +787,11 @@ void do_get(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
             aattr = quiet ? 0 : A_AFAIL;
             if (thingloc != playerloc)
             {
-                failmsg = T("You can’t take that from there.");
+                failmsg = M_("You can’t take that from there.");
             }
             else
             {
-                failmsg = T("You can’t pick that up.");
+                failmsg = M_("You can’t pick that up.");
             }
             did_it(executor, thing, A_FAIL, failmsg, oattr, nullptr, aattr,
                 0, nullptr, 0);
@@ -905,7 +905,7 @@ void do_drop(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
         {
             LBuf buf = LBuf_Src("do_drop.did_it");
             bp = buf.get();
-            safe_tprintf_str(buf, &bp, T("dropped %s."), Moniker(thing));
+            safe_tprintf_str(buf, &bp, M_("dropped %s."), Moniker(thing));
             oattr = quiet ? 0 : A_ODROP;
             aattr = quiet ? 0 : A_ADROP;
             did_it(executor, thing, A_DROP, M_("Dropped."), oattr, buf,
@@ -984,7 +984,7 @@ void do_enter_internal(dbref player, dbref thing, bool quiet)
     {
         oattr = quiet ? 0 : A_OEFAIL;
         aattr = quiet ? 0 : A_AEFAIL;
-        did_it(player, thing, A_EFAIL, T("You can’t enter that."),
+        did_it(player, thing, A_EFAIL, M_("You can’t enter that."),
                oattr, nullptr, aattr, 0, nullptr, 0);
     }
 }
