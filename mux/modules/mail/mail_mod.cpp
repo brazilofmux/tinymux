@@ -22,6 +22,8 @@
 #include "libmux.h"
 #include "modules.h"
 #include "mail_mod.h"
+#include "mux_nls.h"
+#include "mux_format.h"
 
 #include <algorithm>
 #include <atomic>
@@ -5227,24 +5229,221 @@ void CMailMod::do_mail_file(dbref player, const UTF8 *msglist,
 }
 
 // ---------------------------------------------------------------------------
-// @mail/stats — personal mail statistics.
+// @mail/stats, @mail/dstats, @mail/fstats — mail statistics.
+//
+// #1631: this was one invented per-player summary served identically for all
+// three switches, ignoring both the [<player>] argument and the wizard gate.
+// The engine (modules/engine/mail.cpp do_mail_stats) is the oracle here: three
+// cumulative detail levels, an optional target, and "no target from a wizard"
+// meaning the whole spool rather than the caller.  Mirror it.
+//
+// One deliberate divergence remains: the engine charges mudconf.searchcost via
+// payfor() before doing the work, and no module-visible interface exposes that
+// value (DRIVER_CONFIG is driver/network config only).  payfor() exempts
+// wizards outright, and every cross-player query is wizard-gated, so this is
+// only reachable by a non-wizard running stats on themselves on a game with a
+// nonzero searchcost.  Tracked separately rather than bent into an ABI change
+// here.
 // ---------------------------------------------------------------------------
 
-void CMailMod::do_mail_stats(dbref player, int folder)
+void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
 {
-    int fc = 0, fr = 0, fu = 0, tc = 0;
-    size_t fs = 0;
+    int fc = 0, fr = 0, fu = 0, tc = 0, tr = 0, tu = 0, count = 0;
+    size_t cchars = 0, fchars = 0, tchars = 0;
+    UTF8 msg[MOD_LBUF_SIZE];
 
-    std::list<mail> *pList = MailList(player);
-    if (pList)
+    if (nullptr == m_pIObjectInfo)
     {
-        for (auto &m : *pList)
+        m_pINotify->RawNotify(player, M_("MAIL: Mail statistics are unavailable."));
+        return;
+    }
+
+    bool bWizard = false;
+    m_pIObjectInfo->IsWizard(player, &bWizard);
+
+    // Resolve the target.  bAll stands in for the engine's AMBIGUOUS: no name
+    // from a wizard means the whole spool rather than a particular player.
+    //
+    bool bAll = false;
+    dbref target = NOTHING;
+    if (  nullptr == name
+       || '\0' == *name)
+    {
+        if (bWizard)
+        {
+            bAll = true;
+        }
+        else
+        {
+            target = player;
+        }
+    }
+    else if (NUMBER_TOKEN == *name)
+    {
+        target = static_cast<dbref>(strtol(
+            reinterpret_cast<const char *>(name) + 1, nullptr, 10));
+        bool bPlayer = false;
+        if (  MUX_FAILED(m_pIObjectInfo->IsPlayer(target, &bPlayer))
+           || !bPlayer)
+        {
+            target = NOTHING;
+        }
+    }
+    else if (0 == strcasecmp(reinterpret_cast<const char *>(name), "me"))
+    {
+        target = player;
+    }
+    else
+    {
+        m_pIObjectInfo->LookupPlayer(player, name, true, &target);
+    }
+
+    if (  !bAll
+       && NOTHING == target)
+    {
+        m_pIObjectInfo->MatchThing(player, name, &target);
+    }
+    if (  !bAll
+       && NOTHING == target)
+    {
+        mux_sprintf(msg, sizeof(msg), M_("%s: No such player."),
+                    (nullptr != name) ? name : T(""));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+    if (  !bWizard
+       && target != player)
+    {
+        m_pINotify->RawNotify(player, M_("The post office protects privacy!"));
+        return;
+    }
+
+    if (bAll)
+    {
+        // Stats for all.
+        //
+        if (0 == full)
+        {
+            for (auto &it : m_mail_htab)
+            {
+                count += static_cast<int>(it.second.size());
+            }
+            mux_sprintf(msg, sizeof(msg),
+                MN_("There is %d message in the mail spool.",
+                    "There are %d messages in the mail spool.", count),
+                count);
+            m_pINotify->RawNotify(player, msg);
+            return;
+        }
+
+        for (auto &it : m_mail_htab)
+        {
+            for (auto &m : it.second)
+            {
+                struct mail *mp = &m;
+                if (Cleared(mp))
+                {
+                    fc++;
+                    cchars += MessageFetchSize(mp->number) + 1;
+                }
+                else if (Read(mp))
+                {
+                    fr++;
+                    fchars += MessageFetchSize(mp->number) + 1;
+                }
+                else
+                {
+                    fu++;
+                    tchars += MessageFetchSize(mp->number) + 1;
+                }
+            }
+        }
+
+        if (1 == full)
+        {
+            mux_sprintf(msg, sizeof(msg),
+                MN_("MAIL: There is %d msg in the mail spool, %d unread, %d cleared.",
+                    "MAIL: There are %d msgs in the mail spool, %d unread, %d cleared.",
+                    fc + fr + fu),
+                fc + fr + fu, fu, fc);
+            m_pINotify->RawNotify(player, msg);
+            return;
+        }
+
+        mux_sprintf(msg, sizeof(msg),
+            MN_("MAIL: There is %d old msg in the mail spool, totalling %d characters.",
+                "MAIL: There are %d old msgs in the mail spool, totalling %d characters.",
+                fr),
+            fr, static_cast<int>(fchars));
+        m_pINotify->RawNotify(player, msg);
+        mux_sprintf(msg, sizeof(msg),
+            MN_("MAIL: There is %d new msg in the mail spool, totalling %d characters.",
+                "MAIL: There are %d new msgs in the mail spool, totalling %d characters.",
+                fu),
+            fu, static_cast<int>(tchars));
+        m_pINotify->RawNotify(player, msg);
+        mux_sprintf(msg, sizeof(msg),
+            MN_("MAIL: There is %d cleared msg in the mail spool, totalling %d characters.",
+                "MAIL: There are %d cleared msgs in the mail spool, totalling %d characters.",
+                fc),
+            fc, static_cast<int>(cchars));
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+
+    // Individual stats.  Mail *to* the target lives in the target's own list,
+    // but the "sent by target" side needs the full sweep.
+    //
+    const UTF8 *pMoniker = nullptr;
+    m_pIObjectInfo->GetMoniker(target, &pMoniker);
+    if (nullptr == pMoniker)
+    {
+        pMoniker = T("");
+    }
+
+    if (0 == full)
+    {
+        for (auto &it : m_mail_htab)
+        {
+            for (auto &m : it.second)
+            {
+                if (m.from == target)
+                {
+                    fr++;
+                }
+                if (m.to == target)
+                {
+                    tr++;
+                }
+            }
+        }
+        mux_sprintf(msg, sizeof(msg),
+            MN_("%s sent %d message.", "%s sent %d messages.", fr),
+            pMoniker, fr);
+        m_pINotify->RawNotify(player, msg);
+        mux_sprintf(msg, sizeof(msg),
+            MN_("%s has %d message.", "%s has %d messages.", tr),
+            pMoniker, tr);
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+
+    // More detailed message count.
+    //
+    UTF8 last[50];
+    last[0] = '\0';
+    for (auto &it : m_mail_htab)
+    {
+        for (auto &m : it.second)
         {
             struct mail *mp = &m;
-            if (0 == folder || Folder(mp) == folder)
+            if (mp->from == target)
             {
-                fc++;
-                if (Read(mp))
+                if (Cleared(mp))
+                {
+                    fc++;
+                }
+                else if (Read(mp))
                 {
                     fr++;
                 }
@@ -5252,20 +5451,78 @@ void CMailMod::do_mail_stats(dbref player, int folder)
                 {
                     fu++;
                 }
+                if (2 == full)
+                {
+                    fchars += MessageFetchSize(mp->number) + 1;
+                }
+            }
+            if (mp->to == target)
+            {
+                if (  !tr
+                   && !tu)
+                {
+                    mux_strncpy(last, reinterpret_cast<const UTF8 *>(
+                        mp->time.c_str()), sizeof(last) - 1);
+                }
                 if (Cleared(mp))
                 {
                     tc++;
                 }
-                fs += MessageFetchSize(mp->number);
+                else if (Read(mp))
+                {
+                    tr++;
+                }
+                else
+                {
+                    tu++;
+                }
+                if (2 == full)
+                {
+                    tchars += MessageFetchSize(mp->number) + 1;
+                }
             }
         }
     }
 
-    UTF8 msg[MOD_LBUF_SIZE];
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "MAIL: %d messages (%d read, %d unread, %d cleared). %zu bytes total.",
-             fc, fr, fu, tc, fs);
+    mux_sprintf(msg, sizeof(msg), M_("Mail statistics for %s:"), pMoniker);
     m_pINotify->RawNotify(player, msg);
+
+    if (1 == full)
+    {
+        mux_sprintf(msg, sizeof(msg),
+            MN_("%d message sent, %d unread, %d cleared.",
+                "%d messages sent, %d unread, %d cleared.",
+                fr + fu + fc),
+            fc + fr + fu, fu, fc);
+        m_pINotify->RawNotify(player, msg);
+        mux_sprintf(msg, sizeof(msg),
+            MN_("%d message received, %d unread, %d cleared.",
+                "%d messages received, %d unread, %d cleared.",
+                tr + tu + tc),
+            tc + tr + tu, tu, tc);
+        m_pINotify->RawNotify(player, msg);
+    }
+    else
+    {
+        mux_sprintf(msg, sizeof(msg),
+            MN_("%d message sent, %d unread, %d cleared, totalling %d characters.",
+                "%d messages sent, %d unread, %d cleared, totalling %d characters.",
+                fr + fu + fc),
+            fc + fr + fu, fu, fc, static_cast<int>(fchars));
+        m_pINotify->RawNotify(player, msg);
+        mux_sprintf(msg, sizeof(msg),
+            MN_("%d message received, %d unread, %d cleared, totalling %d characters.",
+                "%d messages received, %d unread, %d cleared, totalling %d characters.",
+                tr + tu + tc),
+            tc + tr + tu, tu, tc, static_cast<int>(tchars));
+        m_pINotify->RawNotify(player, msg);
+    }
+
+    if (0 < tc + tr + tu)
+    {
+        mux_sprintf(msg, sizeof(msg), M_("Last is dated %s"), last);
+        m_pINotify->RawNotify(player, msg);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -5394,15 +5651,15 @@ MUX_RESULT CMailMod::MailCommand(dbref executor, int key,
         return MUX_S_OK;
 
     case MAIL_STATS:
-        do_mail_stats(executor, 0);
+        do_mail_stats(executor, pArg1, 0);
         return MUX_S_OK;
 
     case MAIL_DSTATS:
-        do_mail_stats(executor, 0);
+        do_mail_stats(executor, pArg1, 1);
         return MUX_S_OK;
 
     case MAIL_FSTATS:
-        do_mail_stats(executor, 0);
+        do_mail_stats(executor, pArg1, 2);
         return MUX_S_OK;
 
     case MAIL_REVIEW:

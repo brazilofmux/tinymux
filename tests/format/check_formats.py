@@ -20,6 +20,25 @@ Two things are checked, over every wrapper that routes to mux_vsnprintf:
      would be a format-string bug.  Constants assembled from literals,
      ternaries between literals, and named macros are fine.
 
+A third check bans the C library's printf family outright, because (1) and (2)
+are guards you opt into by calling a wrapper -- and code that calls snprintf()
+directly is not merely unguarded, it is wrong.  mux_vsnprintf advances a whole
+codepoint at a time and stops before emitting a partial one; snprintf counts
+bytes, and C11 7.21.6.5 (buffer limit) and 7.21.6.1p8 (%s precision counts
+BYTES) both cut mid-sequence.  Measured on "日本語\U0001f3b2" into an 8-byte buffer,
+snprintf emits E6 97 A5 E6 9C AC E8 -- a lone lead byte, invalid UTF-8, sent
+to a player.  Every one of these call sites interpolates player-settable text
+into a fixed buffer, so that is the ordinary case and not a corner.
+
+The ban is a ratchet, not a flag day: LEGACY freezes the count per file, so
+existing code stays green while any NEW call site fails the build.  The
+numbers may only go DOWN.  Lowering one is a change to this file, which is the
+point -- the backlog is visible and countable instead of drifting upward.
+Note that the two big offenders are loadable modules, which is not a
+coincidence: stringutil.h cannot be included from a module (its inlines want
+Ragel tables only the engine links), so the correct primitive was unreachable
+at compile time until mux_format.h.
+
 Exit 1 on a finding, 0 otherwise.  No output on success beyond a count.
 """
 import re
@@ -53,6 +72,50 @@ WRAPPERS = {
 OK_CONV = set("dsuxXpc%ioeEfFgG")
 OK_LEN = {"", "l", "ll", "z"}
 OK_FLAGS = set("-0")
+
+# The C library's printf family.  Not a wrapper list -- a ban list.  The
+# lookbehind is what lets mux_sprintf/mux_vsnprintf through.
+#
+BANNED = re.compile(
+    r"(?<![A-Za-z0-9_])(vsnprintf|snprintf|vsprintf|sprintf)\s*\(")
+
+# Ragel and similar emit these; the fix belongs in the .rl, not the output,
+# and the output is chmod a-w on disk.  See docs/generated-files.md.
+#
+BAN_GENERATED = ("mux/lib/color_ops.c",)
+
+# Frozen counts.  MAY SHRINK, MUST NOT GROW.  A file absent here must have
+# zero.  Counted line-locally (text after // ignored) so the number is stable
+# and cannot desync the way a whole-file comment/string stripper does.
+#
+BAN_LEGACY = {
+    "mux/lib/mux_nls.cpp": 1,
+    # 78, not 77: #1640 landed 7 new sites while this guard was being written
+    # -- which is the drift it exists to stop, observed inside one merge.  Six
+    # were plain "%s" of a player name and are converted.  The two left format
+    # channel-list columns with "%-13.13s"-style byte precision; mux_sprintf
+    # counts CODEPOINTS there, so converting them silently rewidens every CJK
+    # column.  That is #1649's call to make, not this guard's.
+    #
+    "mux/modules/comsys/comsys_mod.cpp": 78,
+    "mux/modules/engine/ast.cpp": 3,
+    "mux/modules/engine/attrcache.cpp": 4,
+    "mux/modules/engine/dbt_test.cpp": 22,
+    "mux/modules/engine/dbt_x64_div_harness.c": 1,
+    "mux/modules/engine/functions.cpp": 1,
+    "mux/modules/engine/hir_codegen.cpp": 1,
+    "mux/modules/engine/hir_lower.cpp": 3,
+    "mux/modules/engine/hir_lower_lua.cpp": 2,
+    "mux/modules/engine/jit_compiler.cpp": 26,
+    "mux/modules/engine/lua_mod.cpp": 6,
+    "mux/modules/engine/mail.cpp": 2,
+    "mux/modules/engine/match.cpp": 2,
+    "mux/modules/engine/predicates.cpp": 2,
+    "mux/modules/exp3/exp3.cpp": 1,
+    "mux/modules/mail/mail_mod.cpp": 85,
+    "mux/src/ganl_adapter.cpp": 1,
+    "mux/src/websocket.cpp": 1,
+}
 
 SPEC = re.compile(r"%([-+ #0]*)([0-9*]*)(\.[0-9*]*)?(hh|h|ll|l|z|j|t|L|q)?(.)")
 LIT = re.compile(r'"((?:[^"\\]|\\.)*)"')
@@ -242,6 +305,39 @@ def main():
 
     findings = []
     examined = 0
+
+    # Ban check, before the wrapper checks: a raw snprintf() is not a bad
+    # format string, it is the wrong function.  See BANNED above.
+    #
+    banned_total = 0
+    for path in sorted(files):
+        rel = os.path.relpath(path, root).replace("\\", "/")
+        if rel in BAN_GENERATED:
+            continue
+        n = 0
+        with open(path, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                n += len(BANNED.findall(line.split("//", 1)[0]))
+        banned_total += n
+        allowed = BAN_LEGACY.get(rel, 0)
+        if n > allowed:
+            findings.append(
+                "%s: %d raw snprintf/sprintf/vsnprintf call site(s), was %d. "
+                "These truncate on byte boundaries and can emit half a UTF-8 "
+                "sequence to a player; use mux_sprintf (mux_format.h), which "
+                "is codepoint-atomic and is checked by this guard"
+                % (rel, n, allowed))
+        elif n < allowed:
+            findings.append(
+                "%s: down to %d raw call site(s) from %d -- good; lower "
+                "BAN_LEGACY in %s to %d to keep the ratchet tight"
+                % (rel, n, allowed, os.path.basename(__file__), n))
+    for rel in sorted(BAN_LEGACY):
+        if not os.path.exists(os.path.join(root, rel)):
+            findings.append(
+                "%s: listed in BAN_LEGACY but does not exist; remove the entry"
+                % rel)
+
     for path in sorted(files):
         with open(path, encoding="utf-8", errors="replace") as fh:
             src = fh.read()
@@ -301,8 +397,10 @@ def main():
             print("  " + f)
         return 1
 
-    print("=== format guard: %d call sites, all constant and supported ==="
-          % examined)
+    print("=== format guard: %d call sites, all constant and supported; "
+          "%d legacy raw printf-family sites remain (ratchet: may only fall) "
+          "==="
+          % (examined, banned_total))
     return 0
 
 

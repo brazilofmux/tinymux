@@ -24,6 +24,7 @@
 #include "modules.h"
 #include "timeutil.h"
 #include "comsys_mod.h"
+#include "mux_format.h"
 
 #include <atomic>
 #include <cstdarg>
@@ -1114,9 +1115,8 @@ void CComsysMod::do_delcomchannel(dbref player, const UTF8 *channel,
         // "^You have left channel" stopped firing (#1640).
         //
         UTF8 note[256];
-        snprintf(reinterpret_cast<char *>(note), sizeof(note),
-                 "You have left channel %s.",
-                 reinterpret_cast<const char *>(channel));
+        mux_sprintf(note, sizeof(note),
+                    T("You have left channel %s."), channel);
         m_pINotify->RawNotify(player, note);
     }
 
@@ -1360,8 +1360,7 @@ void CComsysMod::channel_speaker_name(const struct comuser *user,
     if (  user->title.empty()
        || (!user->ComTitleStatus && !bSpoof))
     {
-        snprintf(reinterpret_cast<char *>(speaker), speakersz, "%s",
-                 reinterpret_cast<const char *>(pName));
+        mux_sprintf(speaker, speakersz, T("%s"), pName);
         return;
     }
 
@@ -1375,20 +1374,17 @@ void CComsysMod::channel_speaker_name(const struct comuser *user,
     {
         // Fall back to the literal title rather than losing it.
         //
-        snprintf(reinterpret_cast<char *>(title), sizeof(title), "%s",
-                 user->title.c_str());
+        mux_sprintf(title, sizeof(title), T("%s"),
+                    reinterpret_cast<const UTF8 *>(user->title.c_str()));
     }
 
     if (bSpoof)
     {
-        snprintf(reinterpret_cast<char *>(speaker), speakersz, "%s",
-                 reinterpret_cast<const char *>(title));
+        mux_sprintf(speaker, speakersz, T("%s"), title);
     }
     else
     {
-        snprintf(reinterpret_cast<char *>(speaker), speakersz, "%s %s",
-                 reinterpret_cast<const char *>(title),
-                 reinterpret_cast<const char *>(pName));
+        mux_sprintf(speaker, speakersz, T("%s %s"), title, pName);
     }
 }
 
@@ -1716,9 +1712,8 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
         {
             m_pIObjectInfo->GetMoniker(player, &pName);
         }
-        snprintf(reinterpret_cast<char *>(speaker), sizeof(speaker), "%s",
-                 reinterpret_cast<const char *>(
-                     nullptr != pName ? pName : T("???")));
+        mux_sprintf(speaker, sizeof(speaker), T("%s"),
+                    nullptr != pName ? pName : T("???"));
     }
 
     UTF8 msg[MOD_LBUF_SIZE];
