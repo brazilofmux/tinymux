@@ -919,12 +919,9 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
 
         m_stats.errors++;
 
-        int n = snprintf(reinterpret_cast<char *>(pResult), nResultMax,
-            "#-1 LUA ERROR: %s", errmsg);
-        if (n < 0) n = 0;
-        if (static_cast<size_t>(n) >= nResultMax) n = static_cast<int>(nResultMax - 1);
-        pResult[n] = '\0';
-        *pnResultLen = static_cast<size_t>(n);
+        size_t n = mux_snprintf(pResult, nResultMax,
+            T("#-1 LUA ERROR: %s"), errmsg);
+        *pnResultLen = n;
 
         lua_pop(L, 1);
         return false;
@@ -1420,12 +1417,9 @@ MUX_RESULT CLuaMod::CallAttr(dbref executor, dbref caller, dbref enactor,
         pAttrName, source, sizeof(source), &nSource);
     if (MUX_FAILED(mr))
     {
-        int n = snprintf(reinterpret_cast<char *>(pResult), nResultMax,
-            "#-1 LUA ERROR: cannot read attribute");
-        if (n < 0) n = 0;
-        if (static_cast<size_t>(n) >= nResultMax) n = static_cast<int>(nResultMax - 1);
-        pResult[n] = '\0';
-        *pnResultLen = static_cast<size_t>(n);
+        size_t n = mux_snprintf(pResult, nResultMax,
+            T("#-1 LUA ERROR: cannot read attribute"));
+        *pnResultLen = n;
         return MUX_S_OK;
     }
 
@@ -1441,9 +1435,8 @@ MUX_RESULT CLuaMod::CallAttr(dbref executor, dbref caller, dbref enactor,
     // Compile (or load from cache).
     //
     char chunkname[128];
-    snprintf(chunkname, sizeof(chunkname), "@#%d/%s",
-        static_cast<int>(obj),
-        reinterpret_cast<const char *>(pAttrName));
+    mux_snprintf(reinterpret_cast<UTF8 *>(chunkname), sizeof(chunkname),
+        T("@#%d/%s"), static_cast<int>(obj), pAttrName);
 
     if (!LoadCached(reinterpret_cast<const char *>(source), nSource,
                     chunkname))
@@ -1451,12 +1444,9 @@ MUX_RESULT CLuaMod::CallAttr(dbref executor, dbref caller, dbref enactor,
         const char *errmsg = lua_tostring(m_L, -1);
         if (nullptr == errmsg) errmsg = "compile error";
         m_stats.errors++;
-        int n = snprintf(reinterpret_cast<char *>(pResult), nResultMax,
-            "#-1 LUA ERROR: %s", errmsg);
-        if (n < 0) n = 0;
-        if (static_cast<size_t>(n) >= nResultMax) n = static_cast<int>(nResultMax - 1);
-        pResult[n] = '\0';
-        *pnResultLen = static_cast<size_t>(n);
+        size_t n = mux_snprintf(pResult, nResultMax,
+            T("#-1 LUA ERROR: %s"), errmsg);
+        *pnResultLen = n;
         lua_pop(m_L, 1);
         return MUX_S_OK;
     }
@@ -1500,12 +1490,9 @@ MUX_RESULT CLuaMod::Eval(dbref executor, dbref caller, dbref enactor,
         m_pIPermissions->IsWizard(executor, &bWizard);
         if (!bWizard)
         {
-            int n = snprintf(reinterpret_cast<char *>(pResult), nResultMax,
-                "#-1 LUA ERROR: wizard-only");
-            if (n < 0) n = 0;
-            if (static_cast<size_t>(n) >= nResultMax) n = static_cast<int>(nResultMax - 1);
-            pResult[n] = '\0';
-            *pnResultLen = static_cast<size_t>(n);
+            size_t n = mux_snprintf(pResult, nResultMax,
+                T("#-1 LUA ERROR: wizard-only"));
+            *pnResultLen = n;
             return MUX_S_OK;
         }
     }
@@ -1518,12 +1505,9 @@ MUX_RESULT CLuaMod::Eval(dbref executor, dbref caller, dbref enactor,
         const char *errmsg = lua_tostring(m_L, -1);
         if (nullptr == errmsg) errmsg = "compile error";
         m_stats.errors++;
-        int n = snprintf(reinterpret_cast<char *>(pResult), nResultMax,
-            "#-1 LUA ERROR: %s", errmsg);
-        if (n < 0) n = 0;
-        if (static_cast<size_t>(n) >= nResultMax) n = static_cast<int>(nResultMax - 1);
-        pResult[n] = '\0';
-        *pnResultLen = static_cast<size_t>(n);
+        size_t n = mux_snprintf(pResult, nResultMax,
+            T("#-1 LUA ERROR: %s"), errmsg);
+        *pnResultLen = n;
         lua_pop(m_L, 1);
         return MUX_S_OK;
     }

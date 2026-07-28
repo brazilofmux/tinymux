@@ -3754,16 +3754,16 @@ literal_strcat:
         if (fp && (nargs < fp->minArgs || nargs > fp->maxArgs)) {
             char errbuf[256];
             if (fp->minArgs == fp->maxArgs) {
-                snprintf(errbuf, sizeof(errbuf),
-                    "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
+                mux_snprintf(reinterpret_cast<UTF8 *>(errbuf), sizeof(errbuf),
+                    T("#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS"),
                     upper.c_str(), fp->minArgs);
             } else if (fp->minArgs + 1 == fp->maxArgs) {
-                snprintf(errbuf, sizeof(errbuf),
-                    "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
+                mux_snprintf(reinterpret_cast<UTF8 *>(errbuf), sizeof(errbuf),
+                    T("#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS"),
                     upper.c_str(), fp->minArgs, fp->maxArgs);
             } else {
-                snprintf(errbuf, sizeof(errbuf),
-                    "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
+                mux_snprintf(reinterpret_cast<UTF8 *>(errbuf), sizeof(errbuf),
+                    T("#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS"),
                     upper.c_str(), fp->minArgs, fp->maxArgs);
             }
             uint64_t addr = rc.pool_str(errbuf);

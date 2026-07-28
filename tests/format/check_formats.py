@@ -98,13 +98,15 @@ BAN_LEGACY = {
     #
     "mux/modules/engine/ast.cpp": 3,
     "mux/modules/engine/attrcache.cpp": 4,
+    # dbt_test and the div harness are standalone binaries: tests/dbt builds
+    # them with "$(COMPILE) -o $@ $(SRCS)" and links no libmux, so mux_snprintf
+    # is not reachable and these cannot reach zero without changing that build.
+    # Frozen rather than exempted -- an exemption would let new sites in, and
+    # the count still may not grow.  Neither writes player-facing text.
+    #
     "mux/modules/engine/dbt_test.cpp": 22,
     "mux/modules/engine/dbt_x64_div_harness.c": 1,
     "mux/modules/engine/functions.cpp": 1,
-    "mux/modules/engine/hir_codegen.cpp": 1,
-    "mux/modules/engine/hir_lower.cpp": 3,
-    "mux/modules/engine/hir_lower_lua.cpp": 2,
-    "mux/modules/engine/lua_mod.cpp": 6,
     "mux/modules/engine/mail.cpp": 2,
     "mux/modules/engine/match.cpp": 2,
     "mux/modules/engine/predicates.cpp": 2,
