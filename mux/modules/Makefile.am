@@ -4,7 +4,21 @@
 
 SUBDIRS = engine
 
+# -Wformat, and only -Wformat (#1630).  comsys_mod and mail_mod declare
+# __attribute__((format(printf,...))) on their log_storage_failure helpers, and
+# without this flag that attribute checks nothing: -Wformat is off by default
+# and these modules are compiled with neither -Wall nor -W.  #1634 landed the
+# attribute and stated the format strings had been type-checked; they had not
+# been, and could not have been.  A guard that never fires is worse than no
+# guard, because it reads as coverage.
+#
+# Measured before adding: all five modules built here are already clean under
+# -Wformat, so this costs no new warnings today.  Not -Wall -- that has not
+# been audited on this tree and would land a wall of pre-existing noise in an
+# unrelated change.
+#
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdir)/sqlite \
+    -Wformat \
     $(WOD_REALMS) $(REALITY_LVLS) $(STUB_SLAVE) \
     $(SELFCHECK) $(INLINESQL) $(SQL_INCLUDE) $(SSL) $(OPENSSL_CFLAGS)
 

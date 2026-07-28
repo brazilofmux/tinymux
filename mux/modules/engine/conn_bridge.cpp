@@ -547,11 +547,34 @@ void desc_reload(dbref player)
     }
 }
 
+// Terminate cbuff before delegating (#1637).
+//
+// Every other bridge in this file returns void or a number, so "no connection
+// manager, do nothing" is a complete answer for them.  This one has an out
+// parameter, and a path that leaves the CALLER'S buffer uninitialised is then
+// printed: mail.cpp alone has eight sites handing a bare
+// UTF8 szFromName[MBUF_SIZE] straight to tprintf("%s").
+//
+// Under muxscript g_pConnMgr is not null -- it is CScriptConnectionManager --
+// but that stub's TrimmedName ignores cbuff entirely.  The same @mail read
+// printed "From:  " in one run and "From: p" in another, and in a third the
+// garbage terminated the format early so At:, Fldr:, Status: and Subject:
+// vanished from the message header entirely.  Non-deterministic output from
+// uninitialised stack, not a formatting bug.
+//
+// netmux's real connection manager fills the name, so live games were never
+// hit -- only muxscript, which is what the entire test suite runs on.
+//
+// Terminating unconditionally covers null manager, the muxscript stub, and a
+// TrimmedName that fails partway: an empty name is wrong, but it is
+// deterministic and it is a string.
+//
 LBUF_OFFSET trimmed_name(const dbref player, UTF8 cbuff[MBUF_SIZE],
     const LBUF_OFFSET nMin, const LBUF_OFFSET nMax,
     const LBUF_OFFSET nPad)
 {
     unsigned short result = 0;
+    cbuff[0] = '\0';
     if (g_pConnMgr)
     {
         g_pConnMgr->TrimmedName(player, cbuff, MBUF_SIZE, nMin, nMax,

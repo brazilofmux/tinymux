@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -106,6 +106,25 @@ test-comsys-handoff:
 test-comsys-mogrify:
 	@echo "==> Running comsys MOGRIFY/CHATFORMAT comparison"
 	bash tests/comsys_mogrify/run.sh
+
+# Whole-output differential across both implementations (#1614 step 4).
+#
+# The third shape, and the one the other two cannot cover.  handoff tests
+# STORED state; mogrify tests DELIVERY.  Neither runs a command and compares
+# what it printed -- so the module ignoring @clist/full, dropping comtitle
+# from speech and join/leave, and answering @mail/stats, /dstats and /fstats
+# with one identical line all sat in master unreported (#1631, #1640), along
+# with two engine-side defects found the same way (#1637, #1639).
+#
+# Assertions can only catch divergences someone thought to write a case for,
+# which is how those survived.  This diffs the entire output against a
+# recorded baseline, so a divergence in a command nobody was thinking about
+# still fails the run -- and a known divergence that DISAPPEARS fails it too,
+# because the baseline is then lying.  Regenerate with --bless, after reading
+# the delta.
+test-comsys-conformance:
+	@echo "==> Running comsys/mail whole-output conformance diff"
+	bash tests/comsys_conformance/run.sh
 
 # Static guard: no smoke case may be incapable of failing (#1434 family).
 #
