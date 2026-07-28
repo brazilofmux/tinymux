@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 18:06+0000\n"
+"POT-Creation-Date: 2026-07-28 18:11+0000\n"
 "PO-Revision-Date: 2026-07-27 00:00+0000\n"
 "Last-Translator: unassigned <tinymux@googlegroups.com>\n"
 "Language-Team: Korean <tinymux@googlegroups.com>\n"
@@ -4454,4 +4454,73 @@ msgstr ""
 #: modules/engine/engine_com.cpp:4654
 #, c-format
 msgid "[Suspect] %s has reconnected."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:3321
+#, c-format
+msgid "%d is not a valid channel object."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:1762 modules/comsys/comsys_mod.cpp:1765
+#, c-format
+msgid "%s has joined this channel."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:1112 modules/comsys/comsys_mod.cpp:1114
+#: modules/comsys/comsys_mod.cpp:1802 modules/comsys/comsys_mod.cpp:1804
+#, c-format
+msgid "%s has left this channel."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:3446
+#, c-format
+msgid "@cset: Channel %s maximum history set, but older entries could not be cleared."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:3440
+#, c-format
+msgid "@cset: Failed.  Could not set the maximum for %s (the attribute is not writable here)."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:3481 modules/comsys/comsys_mod.cpp:3497
+#, c-format
+msgid "@cset: Failed.  Is logging enabled for %s?"
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:3517
+#, c-format
+msgid "@cset: Failed.  Timestamp logging for %s could not be changed (the attribute is not writable here)."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:3313
+#, c-format
+msgid "Channel %s is now using %s(#%d) as channel object."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:2951
+msgid "No description."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:4120
+msgid "That channel already exists."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:4107
+msgid "You do not have permission to create channels."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:4198
+msgid "You do not have permission to destroy that channel."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:2120
+msgid "You don’t have enough coins."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:4167
+msgid "You must specify a channel to destroy."
+msgstr ""
+
+#: modules/comsys/comsys_mod.cpp:2999
+msgid "You must specify a channel."
 msgstr ""
