@@ -1941,10 +1941,22 @@ void CMailMod::DoListMailBrief(dbref player)
         if (rc + uc > 0)
         {
             UTF8 msg[256];
-            mux_sprintf(msg, sizeof(msg), M_("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."),
+            // Three lines rather than one (#1717): four counts in one sentence
+            // cannot be pluralised, since MN_ chooses one form from one n.
+            //
+            mux_sprintf(msg, sizeof(msg),
+                     MN_("MAIL: %d message in folder %d [%s].",
+                         "MAIL: %d messages in folder %d [%s].", rc + uc),
                      rc + uc, folder,
-                     reinterpret_cast<const char *>(get_folder_name(player, folder)),
-                     uc, cc);
+                     reinterpret_cast<const char *>(get_folder_name(player, folder)));
+            m_pINotify->RawNotify(player, msg);
+            mux_sprintf(msg, sizeof(msg),
+                     MN_("MAIL: %d unread message.",
+                         "MAIL: %d unread messages.", uc), uc);
+            m_pINotify->RawNotify(player, msg);
+            mux_sprintf(msg, sizeof(msg),
+                     MN_("MAIL: %d cleared message.",
+                         "MAIL: %d cleared messages.", cc), cc);
             m_pINotify->RawNotify(player, msg);
         }
         else
@@ -5940,10 +5952,19 @@ MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
     if (rc + uc > 0)
     {
         UTF8 msg[256];
-        mux_sprintf(msg, sizeof(msg), M_("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."),
+        mux_sprintf(msg, sizeof(msg),
+                 MN_("MAIL: %d message in folder %d [%s].",
+                     "MAIL: %d messages in folder %d [%s].", rc + uc),
                  rc + uc, folder,
-                 reinterpret_cast<const char *>(get_folder_name(player, folder)),
-                 uc, cc);
+                 reinterpret_cast<const char *>(get_folder_name(player, folder)));
+        m_pINotify->RawNotify(player, msg);
+        mux_sprintf(msg, sizeof(msg),
+                 MN_("MAIL: %d unread message.",
+                     "MAIL: %d unread messages.", uc), uc);
+        m_pINotify->RawNotify(player, msg);
+        mux_sprintf(msg, sizeof(msg),
+                 MN_("MAIL: %d cleared message.",
+                     "MAIL: %d cleared messages.", cc), cc);
         m_pINotify->RawNotify(player, msg);
     }
     else if (!silent)
