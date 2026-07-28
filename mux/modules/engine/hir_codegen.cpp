@@ -416,18 +416,38 @@ static void rv_emit_itoa(std::vector<uint32_t> &code,
                           uint8_t val_reg, uint8_t buf_reg) {
     constexpr uint8_t t0=5, t1=6, t2=7, t3=28, t4=29, t5=30, t6=31;
 
+    // Digits are accumulated in NEGATIVE space (#1326 / TC059).
+    //
+    // The obvious shape -- write '-', negate, then emit '0' + (v % 10) -- is
+    // wrong for exactly one input.  -INT64_MIN is not representable, so the
+    // negation wraps and leaves the value negative; REM then yields negative
+    // digits and '0' + (-d) writes the character d places BELOW '0'.
+    // -9223372036854775808 came out as -'..--).0-*(+,))+(0(, each byte off
+    // by twice its digit.
+    //
+    // Negating a POSITIVE value can never overflow, so normalize the other
+    // way: make the value non-positive and negate each digit instead, where
+    // the magnitude is at most 9.  INT64_MIN then needs no special case.
+    //
     code.push_back(rv_ADDI(t0, buf_reg, 0));           //  0: wr = buf
     code.push_back(rv_ADDI(t1, val_reg, 0));            //  1: t1 = val
     size_t bge_pos = code.size();
-    code.push_back(0);                                  //  2: BGE → skip_neg (patch)
+    code.push_back(0);                                  //  2: BGE → nonneg (patch)
     code.push_back(rv_ADDI(t4, 0, 45));                //  3: t4 = '-'
     code.push_back(rv_SB(t0, t4, 0));                  //  4: write '-'
     code.push_back(rv_ADDI(t0, t0, 1));                //  5: advance wr
-    code.push_back(rv_SUB(t1, 0, t1));                 //  6: negate
+    size_t j_norm = code.size();
+    code.push_back(0);                                  //  6: J → skip_neg (patch)
+    // nonneg: value is >= 0, so negating it is safe and makes both paths
+    // agree that t1 <= 0 from here on.
+    size_t nonneg = code.size();
+    code[bge_pos] = rv_BGE(t1, 0,
+        static_cast<int32_t>((nonneg - bge_pos) * 4));
+    code.push_back(rv_SUB(t1, 0, t1));                 //  7: t1 = -t1
     // skip_neg:
     size_t skip_neg = code.size();
-    code[bge_pos] = rv_BGE(t1, 0,
-        static_cast<int32_t>((skip_neg - bge_pos) * 4));
+    code[j_norm] = rv_BEQ(0, 0,
+        static_cast<int32_t>((skip_neg - j_norm) * 4));
 
     code.push_back(rv_ADDI(t5, t0, 0));                //  7: digit_start = wr
     size_t bne_nz = code.size();
@@ -443,8 +463,9 @@ static void rv_emit_itoa(std::vector<uint32_t> &code,
     code[bne_nz] = rv_BNE(t1, 0,
         static_cast<int32_t>((digit_loop - bne_nz) * 4));
     code.push_back(rv_ADDI(t3, 0, 10));                // 13: t3 = 10
-    code.push_back(rv_REM(t2, t1, t3));                // 14: t2 = val % 10
-    code.push_back(rv_DIV(t1, t1, t3));                // 15: t1 = val / 10
+    code.push_back(rv_REM(t2, t1, t3));                // 14: t2 = val % 10 (<= 0)
+    code.push_back(rv_DIV(t1, t1, t3));                // 15: t1 = val / 10 (<= 0)
+    code.push_back(rv_SUB(t2, 0, t2));                 // 15a: digit = -t2, 0..9
     code.push_back(rv_ADDI(t2, t2, 48));               // 16: '0' + digit
     code.push_back(rv_SB(t0, t2, 0));                  // 17: write digit
     code.push_back(rv_ADDI(t0, t0, 1));                // 18: advance

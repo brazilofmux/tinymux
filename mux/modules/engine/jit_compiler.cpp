@@ -1241,8 +1241,6 @@ static uint64_t resolve_runtime_out_addr(uint64_t out_addr, uint64_t entry_sp) {
 // the cost to one-time initialization.
 // ---------------------------------------------------------------
 
-static dbt_state_t s_persistent_dbt;
-static bool s_dbt_ready = false;
 
 static int dbt_trace_mask_from_env() {
     const char *env = getenv("TINYMUX_DBT_TRACE");
@@ -1281,23 +1279,80 @@ static void dbt_configure_trace_from_env(dbt_state_t *dbt) {
     dbt->trace_guest_pc_filter = true;
 }
 
+// One complete execution context for a cached program: the guest memory the
+// program is materialized into, and the DBT that translates and runs it.
+//
+// There are two (#1326).  Everything in here is per-execution state that a
+// nested run would otherwise destroy for the run above it: a nested program
+// materializes its own code/strings over the outer program's, and resetting
+// the shared DBT throws away the outer program's translated blocks while its
+// frames are still live.  That is why run_cached_program used to refuse
+// outright, which made softcode JIT -> fun_lua -> Lua JIT fall back to the
+// Lua interpreter for every nested call.
+//
+// Index is the nesting depth, so depth 0 is softcode's and depth 1 is the
+// nested (in practice Lua) one.  Depth 2 still refuses: a second nesting
+// would need a third context, and nothing reaches it today.
+//
+// The cost is nothing until nesting actually happens.  Both the buffer
+// (MEM_SIZE) and the DBT's code buffer (CODE_BUF_SIZE) are allocated on first
+// use -- vector::resize and dbt_init respectively -- so an installation whose
+// softcode never calls lua() never pays for the second context.
+//
+struct jit_run_vm {
+    // Guest memory a program is materialized into.  Tier 2 is installed once,
+    // when the buffer is first sized.
+    guest_memory_t buffer;
+    bool           buffer_ready = false;
+
+    // program_id whose compact blobs (code/str/fargs) currently occupy
+    // `buffer`.  materialize_program sets it; run_cached_program skips the
+    // blob memcpy when the buffer already holds the program being run.
+    // 0 = unknown/none (program_ids start at 1).
+    uint64_t       buffer_program_id = 0;
+
+    // The DBT translating out of `buffer`, and the program its blocks were
+    // translated for.  Matching program_id means dbt_rerun can keep them.
+    dbt_state_t    dbt;
+    bool           dbt_ready = false;
+    uint64_t       dbt_last_program_id = 0;
+};
+
+// Deepest nesting level that has its own context.  run_cached_program refuses
+// beyond this.  Sizes s_vm below, which s_run_cached_depth indexes -- raising
+// this must not be able to leave the array behind it.
+//
+static constexpr int JIT_MAX_RUN_DEPTH = 2;
+
+static jit_run_vm s_vm[JIT_MAX_RUN_DEPTH];
+
+// Current nesting depth of run_cached_program, and therefore the index of the
+// first context NOT in use by a live run.  Declared here rather than beside
+// run_cached_program because the compile path needs it too: materializing into
+// a context that a shallower run owns overwrites the memory that run is
+// executing out of (#1326).
+static int s_run_cached_depth = 0;
+
 // Release the persistent DBT state on shutdown.
 //
 void dbt_compile_cleanup(void) {
-    if (s_dbt_ready) {
-        dbt_cleanup(&s_persistent_dbt);
-        s_dbt_ready = false;
+    for (int i = 0; i < JIT_MAX_RUN_DEPTH; i++) {
+        if (s_vm[i].dbt_ready) {
+            dbt_cleanup(&s_vm[i].dbt);
+            s_vm[i].dbt_ready = false;
+        }
     }
 }
 
 // Get a reset DBT state, initializing on first use.
 // Returns nullptr on allocation failure.
 //
-static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
+static dbt_state_t *get_dbt(jit_run_vm *vm,
+                             uint8_t *memory, size_t memory_size,
                              int (*ecall_fn)(rv64_ctx_t *, void *),
                              void *ecall_user) {
-    dbt_state_t *dbt = &s_persistent_dbt;
-    if (!s_dbt_ready) {
+    dbt_state_t *dbt = &vm->dbt;
+    if (!vm->dbt_ready) {
         if (dbt_init(dbt, memory, memory_size, ecall_fn, ecall_user) != 0) {
             return nullptr;
         }
@@ -1309,7 +1364,7 @@ static dbt_state_t *get_dbt(uint8_t *memory, size_t memory_size,
         dbt->max_dispatch = md_env ? strtoull(md_env, nullptr, 0) : 10000000;
         dbt->alarm_flag = &alarm_clock.alarmed;  // wall-clock abort (#JIT-alarm)
 
-        s_dbt_ready = true;
+        vm->dbt_ready = true;
         return dbt;
     }
     // Reset for new program: keep mmap'd code buffer + cache allocation.
@@ -1702,26 +1757,13 @@ static constexpr size_t COMPILE_CACHE_MIN_LEN = 8;
 // Track which program the DBT was last set up for, so we can
 // use dbt_rerun (fast) instead of dbt_reset (slow) on cache hits.
 //
-static uint64_t s_dbt_last_program_id = 0;
 static uint64_t s_next_program_id = 1;
 
-// Shared runtime buffer — a single 4MB guest memory used for all
-// cached program executions.  Tier 2 is installed once at init.
-//
-static guest_memory_t s_runtime_buffer;
-static bool s_runtime_buffer_ready = false;
-
-// program_id whose compact blobs (code/str/fargs) currently occupy the
-// shared runtime buffer.  materialize_program sets this; run_cached_program
-// skips the blob memcpy when the buffer already holds the program being run.
-// 0 = unknown/none (program_ids start at 1).
-static uint64_t s_runtime_buffer_program_id = 0;
-
-static void runtime_buffer_init() {
-    if (s_runtime_buffer_ready) return;
-    s_runtime_buffer.resize(rv_compiler::MEM_SIZE);
-    tier2_install(s_runtime_buffer, rv_compiler::BLOB_BASE);
-    s_runtime_buffer_ready = true;
+static void runtime_buffer_init(jit_run_vm *vm) {
+    if (vm->buffer_ready) return;
+    vm->buffer.resize(rv_compiler::MEM_SIZE);
+    tier2_install(vm->buffer, rv_compiler::BLOB_BASE);
+    vm->buffer_ready = true;
 }
 
 // Compact a compiled_program: extract the occupied regions into
@@ -1773,25 +1815,25 @@ static void compact_program(compiled_program &prog) {
 // Copies code, string pool, and fargs blobs into the buffer.
 // Tier 2 is already installed permanently.
 //
-static void materialize_program(const compiled_program &prog) {
-    runtime_buffer_init();
+static void materialize_program(jit_run_vm *vm, const compiled_program &prog) {
+    runtime_buffer_init(vm);
 
     // Record which program now occupies the shared buffer so a subsequent
     // re-run of the same program can skip this copy (see run_cached_program).
-    s_runtime_buffer_program_id = prog.program_id;
+    vm->buffer_program_id = prog.program_id;
 
     if (!prog.code_blob.empty()) {
-        memcpy(s_runtime_buffer.data() + prog.entry_pc,
+        memcpy(vm->buffer.data() + prog.entry_pc,
                prog.code_blob.data(), prog.code_blob.size());
     }
 
     if (!prog.str_blob.empty()) {
-        memcpy(s_runtime_buffer.data() + rv_compiler::STR_BASE,
+        memcpy(vm->buffer.data() + rv_compiler::STR_BASE,
                prog.str_blob.data(), prog.str_blob.size());
     }
 
     if (!prog.fargs_blob.empty()) {
-        memcpy(s_runtime_buffer.data() + rv_compiler::FARGS_BASE,
+        memcpy(vm->buffer.data() + rv_compiler::FARGS_BASE,
                prog.fargs_blob.data(), prog.fargs_blob.size());
     }
 }
@@ -1951,20 +1993,38 @@ static compiled_program reconstruct_from_cache(
     // runtime buffer (e.g. the non-NUL DSCRATCH doubles area) and walk the
     // string copy's strlen past the end of the 4 MB buffer (OOB read).
     if (!prog.needs_jit && prog.ok) {
-        runtime_buffer_init();
-        materialize_program(prog);
+        // A dedicated context, never one of the run contexts (#1326).
+        //
+        // This path only needs somewhere to read a folded string back out of,
+        // but it is reachable *while runs are live*: compile_cached() is called
+        // from jit_eval(), jit_eval() from the AST evaluator, and the AST
+        // evaluator from ECALLs inside a running program.  Materializing into a
+        // context a live run owns overwrites the code and string pool that run
+        // is executing out of, and the symptom is not a wrong answer -- the
+        // corrupted guest code loops inside a single translated block, so
+        // neither max_dispatch nor the ECALL path nor the alarm ever notices.
+        // It just stops.
+        //
+        // Picking "the first context not in use" does not work either: at the
+        // depth where runs are refused there is no free context to pick, and
+        // clamping lands on one that is live.  So this owns its own, allocated
+        // on first use like the others.
+        static jit_run_vm s_fold_vm;
+        jit_run_vm *vm = &s_fold_vm;
+        runtime_buffer_init(vm);
+        materialize_program(vm, prog);
         uint64_t out_addr = rv_compiler::resolve_output_addr(
             prog.out_addr, rv_compiler::STACK_TOP);
         if (out_addr < static_cast<uint64_t>(rv_compiler::STR_BASE)
             || out_addr >= prog.str_pool_end
-            || prog.str_pool_end > s_runtime_buffer.size()) {
+            || prog.str_pool_end > vm->buffer.size()) {
             // Folded out_addr outside the materialized string pool — the
             // record is corrupt; reject it so the caller recompiles.
             prog.ok = false;
             return prog;
         }
         const char *p = reinterpret_cast<const char *>(
-            s_runtime_buffer.data() + out_addr);
+            vm->buffer.data() + out_addr);
         size_t maxlen = static_cast<size_t>(prog.str_pool_end - out_addr);
         const void *nul = memchr(p, '\0', maxlen);
         size_t n = nul ? static_cast<size_t>(
@@ -2183,8 +2243,11 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         if (!it->second.prog.deps.empty()
             && !deps_are_fresh(it->second.prog))
         {
-            if (s_dbt_last_program_id == it->second.prog.program_id) {
-                s_dbt_last_program_id = 0;
+            for (int vi = 0; vi < JIT_MAX_RUN_DEPTH; vi++) {
+                if (s_vm[vi].dbt_last_program_id
+                    == it->second.prog.program_id) {
+                    s_vm[vi].dbt_last_program_id = 0;
+                }
             }
             s_compile_lru.erase(it->second.lru_it);
             s_compile_cache.erase(it);
@@ -2246,9 +2309,16 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
     while (s_compile_cache.size() >= COMPILE_CACHE_MAX) {
         auto &victim_key = s_compile_lru.back();
         auto vit = s_compile_cache.find(victim_key);
-        if (vit != s_compile_cache.end()
-            && s_dbt_last_program_id == vit->second.prog.program_id) {
-            s_dbt_last_program_id = 0;
+        if (vit != s_compile_cache.end()) {
+            // Evicting a program must clear it from every context that has
+            // translated blocks for it, or a later program reusing the id
+            // would be run against stale translations (#1326).
+            for (int vi = 0; vi < JIT_MAX_RUN_DEPTH; vi++) {
+                if (s_vm[vi].dbt_last_program_id
+                    == vit->second.prog.program_id) {
+                    s_vm[vi].dbt_last_program_id = 0;
+                }
+            }
         }
         s_compile_cache.erase(victim_key);
         s_compile_lru.pop_back();
@@ -2600,7 +2670,6 @@ static shared_heap_t s_shared_heap;
 // Lua TryJIT must not dbt_reset/rerun the shared persistent DBT while the
 // outer softcode program is live (#1309 nested corruption / hang).
 //
-static int s_run_cached_depth = 0;
 
 // Deferred half of jitstats(flush) (#1316).
 //
@@ -2626,8 +2695,10 @@ static void jit_flush_memory_caches(void)
 {
     s_compile_cache.clear();
     s_compile_lru.clear();
-    s_dbt_last_program_id = 0;
-    s_runtime_buffer_program_id = 0;
+    for (int i = 0; i < JIT_MAX_RUN_DEPTH; i++) {
+        s_vm[i].dbt_last_program_id = 0;
+        s_vm[i].buffer_program_id = 0;
+    }
     jit_lua_clear_cache();
 }
 
@@ -2657,12 +2728,21 @@ bool run_cached_program(compiled_program *prog,
                         int ncargs,
                         int eval,
                         void *lua_state) {
-    if (s_run_cached_depth > 0) {
-        // Nested JIT run: refuse and let the caller fall back (Lua VM
-        // for fun_lua).  Outer softcode keeps its DBT translations.
-        //
+    // Each nesting level gets its own guest buffer and DBT (#1326), so a
+    // nested run no longer has to be refused.  It used to be: softcode JIT
+    // ECALL -> fun_lua -> Lua JIT would have materialized its program over the
+    // outer program's memory and reset the shared DBT under the outer
+    // program's live frames, so run_cached_program declined and Lua fell back
+    // to its interpreter for every nested call -- which is every call, since
+    // eval brackets are compiled by default.
+    //
+    // Beyond the contexts we have, still refuse.  The fallback is correct, so
+    // running out of depth costs speed and nothing else.
+    //
+    if (s_run_cached_depth >= JIT_MAX_RUN_DEPTH) {
         return false;
     }
+    jit_run_vm *vm = &s_vm[s_run_cached_depth];
 
     // #1002 depth watermark (see jit_eval; repeated here for callers
     // that bypass it, e.g. rvbench).
@@ -2707,20 +2787,20 @@ bool run_cached_program(compiled_program *prog,
     // are re-patched by the program's own code on every run.  program_id is a
     // unique monotonic counter; the tracker is reset whenever any other program
     // is materialized into the buffer (materialize_program sets it).
-    if (s_runtime_buffer_program_id != prog->program_id) {
-        materialize_program(*prog);
+    if (vm->buffer_program_id != prog->program_id) {
+        materialize_program(vm, *prog);
     }
 
     // Reset writable blob state (data + BSS) for clean re-run.
     if (s_tier2.loaded) {
-        tier2_reset_writable(s_runtime_buffer, rv_compiler::BLOB_BASE);
+        tier2_reset_writable(vm->buffer, rv_compiler::BLOB_BASE);
     }
 
     // Clear output buffers: NUL the first byte of each slot.
     {
         uint64_t addr = rv_compiler::STACK_TOP - 8 - rv_compiler::OUT_SLOT;
         while (addr >= prog->out_pool_end) {
-            s_runtime_buffer[addr] = 0;
+            vm->buffer[addr] = 0;
             addr -= rv_compiler::OUT_SLOT;
         }
     }
@@ -2741,10 +2821,10 @@ bool run_cached_program(compiled_program *prog,
             if (len >= static_cast<size_t>(rv_compiler::CARGS_SLOT)) {
                 return false;
             }
-            memcpy(s_runtime_buffer.data() + slot, cargs[i], len);
-            s_runtime_buffer[slot + len] = 0;
+            memcpy(vm->buffer.data() + slot, cargs[i], len);
+            vm->buffer[slot + len] = 0;
         } else {
-            s_runtime_buffer[slot] = 0;
+            vm->buffer[slot] = 0;
         }
     }
 
@@ -2756,10 +2836,10 @@ bool run_cached_program(compiled_program *prog,
             size_t len = strlen(reinterpret_cast<const char *>(value));
             if (len >= static_cast<size_t>(rv_compiler::SUBST_SLOT))
                 len = rv_compiler::SUBST_SLOT - 1;
-            memcpy(s_runtime_buffer.data() + slot, value, len);
-            s_runtime_buffer[slot + len] = 0;
+            memcpy(vm->buffer.data() + slot, value, len);
+            vm->buffer[slot + len] = 0;
         } else {
-            s_runtime_buffer[slot] = 0;
+            vm->buffer[slot] = 0;
         }
     };
 
@@ -2803,7 +2883,7 @@ bool run_cached_program(compiled_program *prog,
     }
 
     // %q global registers (+ the long-register bitmap, #996).
-    marshal_qregs_to_slots(s_runtime_buffer.data(), prog->subst_mask);
+    marshal_qregs_to_slots(vm->buffer.data(), prog->subst_mask);
 
     // %m — last command.
     if (subst_used(rv_compiler::SUBST_LASTCMD)) {
@@ -2829,7 +2909,7 @@ bool run_cached_program(compiled_program *prog,
     }
 
     eval_ctx ec;
-    ec.memory = s_runtime_buffer.data();
+    ec.memory = vm->buffer.data();
     ec.memory_size = rv_compiler::MEM_SIZE;
     ec.executor = executor;
     ec.caller = caller_db;
@@ -2843,17 +2923,17 @@ bool run_cached_program(compiled_program *prog,
     ec.pvm = nullptr;
 
     dbt_state_t *dbt;
-    if (s_dbt_ready && s_dbt_last_program_id == prog->program_id) {
+    if (vm->dbt_ready && vm->dbt_last_program_id == prog->program_id) {
         // Same program as last time — keep translated blocks.
-        dbt = &s_persistent_dbt;
+        dbt = &vm->dbt;
         dbt_rerun(dbt, eval_ecall, &ec);
     } else {
         // Different program — reset and re-translate program blocks.
         // Blob translations persist via blob_code_end.
-        dbt = get_dbt(s_runtime_buffer.data(), rv_compiler::MEM_SIZE,
+        dbt = get_dbt(vm, vm->buffer.data(), rv_compiler::MEM_SIZE,
                        eval_ecall, &ec);
         if (!dbt) return false;
-        s_dbt_last_program_id = prog->program_id;
+        vm->dbt_last_program_id = prog->program_id;
         if (dbt->blob_code_end == 0) {
             pretranslate_tier2(dbt);
             dbt->blob_code_end = dbt->code_used;
@@ -2874,12 +2954,12 @@ bool run_cached_program(compiled_program *prog,
     uint64_t out_addr = resolve_runtime_out_addr(
         prog->out_addr, rv_compiler::STACK_TOP);
     size_t n = 0;
-    if (!guest_strnlen(s_runtime_buffer.data(), s_runtime_buffer.size(),
+    if (!guest_strnlen(vm->buffer.data(), vm->buffer.size(),
                        out_addr, &n)) {
         return false;
     }
     if (n >= out_size) n = out_size - 1;
-    memcpy(out, s_runtime_buffer.data() + out_addr, n);
+    memcpy(out, vm->buffer.data() + out_addr, n);
     out[n] = '\0';
     return true;
 }
@@ -5104,7 +5184,8 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
     // DBT state is initialized.  compile_cached calls tier2_lazy_init,
     // but the DBT infrastructure (mmap, block cache) may not be safe
     // to initialize during early startup (config loading, @startup).
-    // The s_dbt_ready flag is set after the first successful get_dbt.
+    // The per-context dbt_ready flag is set after the first successful
+    // get_dbt.
     //
     // The loaded check must be OUTSIDE the init-once conditional: with
     // it inside, only the first call declined when the blob was missing
@@ -5349,6 +5430,27 @@ FUNCTION(fun_jitstats)
     // dbt_code_full counting up means translations are being declined for
     // want of space; dbt_code_reclaims counts the mid-run recoveries that
     // keep such a decline local to one program instead of permanent.
+    //
+    // Summed over every initialized run context, not just depth 0 (#1326).
+    // Each nesting depth owns a separate DBT with a separate code buffer, so
+    // reading only s_vm[0] hides a nested Lua run filling its own -- and
+    // dbt_code_full is precisely the signal that would be hidden.  cap is
+    // summed the same way so used/cap stays a ratio of the same population;
+    // a context that has not been initialized has no buffer to report.
+    //
+    unsigned long long dbt_cap = 0, dbt_blob = 0, dbt_used = 0;
+    unsigned long long dbt_reclaims = 0, dbt_full = 0;
+    for (int i = 0; i < JIT_MAX_RUN_DEPTH; i++) {
+        if (!s_vm[i].dbt_ready) {
+            continue;
+        }
+        dbt_cap      += CODE_BUF_SIZE;
+        dbt_blob     += s_vm[i].dbt.blob_code_end;
+        dbt_used     += s_vm[i].dbt.code_used;
+        dbt_reclaims += s_vm[i].dbt.code_reclaims;
+        dbt_full     += s_vm[i].dbt.code_full;
+    }
+
     if (n < static_cast<int>(LBUF_SIZE) - 256) {
         n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
             " dbt_code_cap=%u"
@@ -5356,11 +5458,11 @@ FUNCTION(fun_jitstats)
             " dbt_code_used=%u"
             " dbt_code_reclaims=%llu"
             " dbt_code_full=%llu",
-            static_cast<unsigned>(CODE_BUF_SIZE),
-            static_cast<unsigned>(s_dbt_ready ? s_persistent_dbt.blob_code_end : 0),
-            static_cast<unsigned>(s_dbt_ready ? s_persistent_dbt.code_used : 0),
-            static_cast<unsigned long long>(s_dbt_ready ? s_persistent_dbt.code_reclaims : 0),
-            static_cast<unsigned long long>(s_dbt_ready ? s_persistent_dbt.code_full : 0));
+            static_cast<unsigned>(dbt_cap),
+            static_cast<unsigned>(dbt_blob),
+            static_cast<unsigned>(dbt_used),
+            static_cast<unsigned long long>(dbt_reclaims),
+            static_cast<unsigned long long>(dbt_full));
     }
 
     safe_str(tmp, buff, bufc);
@@ -5447,11 +5549,14 @@ static bool run_compiled(compiled_program &prog,
     ec.pvm = nullptr;
 
     dbt_state_t *dbt;
-    if (reuse_dbt && s_dbt_ready) {
-        dbt = &s_persistent_dbt;
+    // Depth-0 context.  This path runs out of prog.memory rather than the
+    // context's own buffer (dbt_reset rebinds it), and is not reached from a
+    // nested run, so it keeps using the outer context's DBT as it always has.
+    if (reuse_dbt && s_vm[0].dbt_ready) {
+        dbt = &s_vm[0].dbt;
         dbt_rerun(dbt, eval_ecall, &ec);
     } else {
-        dbt = get_dbt(prog.memory.data(), prog.memory_size,
+        dbt = get_dbt(&s_vm[0], prog.memory.data(), prog.memory_size,
                        eval_ecall, &ec);
         if (!dbt) return false;
         if (dbt->blob_code_end == 0) {
@@ -5555,8 +5660,8 @@ FUNCTION(fun_rvbench)
         std::string key = compile_cache_key(expr, nLen, EV_FMAND | EV_EVAL);
         auto cit = s_compile_cache.find(key);
         if (cit != s_compile_cache.end()) {
-            if (s_dbt_last_program_id == cit->second.prog.program_id) {
-                s_dbt_last_program_id = 0;
+            if (s_vm[0].dbt_last_program_id == cit->second.prog.program_id) {
+                s_vm[0].dbt_last_program_id = 0;
             }
             s_compile_lru.erase(cit->second.lru_it);
             s_compile_cache.erase(cit);
@@ -5578,15 +5683,15 @@ FUNCTION(fun_rvbench)
     double per_native = native_us / iterations;
     double per_compile = compile_each_us / iterations;
     double per_cached = cached_us / iterations;
-    uint64_t disp = s_persistent_dbt.dispatch_count;
-    uint64_t sb = s_persistent_dbt.superblock_count;
-    uint64_t se = s_persistent_dbt.side_exits_total;
-    uint64_t ic = s_persistent_dbt.inline_calls;
-    uint64_t ih = s_persistent_dbt.intrinsic_hits;
-    uint64_t ce = s_persistent_dbt.cold_exit_count;
-    uint64_t ce_actual = s_persistent_dbt.cold_exit_actual;
-    uint64_t ce_expected = s_persistent_dbt.cold_exit_expected;
-    uint64_t ce_from = s_persistent_dbt.last_exit_from;
+    uint64_t disp = s_vm[0].dbt.dispatch_count;
+    uint64_t sb = s_vm[0].dbt.superblock_count;
+    uint64_t se = s_vm[0].dbt.side_exits_total;
+    uint64_t ic = s_vm[0].dbt.inline_calls;
+    uint64_t ih = s_vm[0].dbt.intrinsic_hits;
+    uint64_t ce = s_vm[0].dbt.cold_exit_count;
+    uint64_t ce_actual = s_vm[0].dbt.cold_exit_actual;
+    uint64_t ce_expected = s_vm[0].dbt.cold_exit_expected;
+    uint64_t ce_from = s_vm[0].dbt.last_exit_from;
 
     LBuf report = LBuf_Src("rvbench");
     snprintf(reinterpret_cast<char *>(report.get()), LBUF_SIZE,

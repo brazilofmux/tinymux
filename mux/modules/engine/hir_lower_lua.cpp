@@ -100,6 +100,7 @@ const char *lua_bc_reject_name(lua_bc_reject reason) {
     case LUA_BC_HAS_NESTED_PROTOS: return "has nested protos";
     case LUA_BC_UNSUPPORTED_OP:    return "unsupported opcode";
     case LUA_BC_HAS_NON_INT_CONST: return "non-integer float constant";
+    case LUA_BC_HAS_LOOP:          return "backward branch (unbounded on host)";
     }
     return "unknown";
 }
@@ -270,6 +271,45 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         // --- Everything else is unsupported ---
         default:
             return LUA_BC_UNSUPPORTED_OP;
+        }
+    }
+
+    // Backward branch -- reject (#1326).
+    //
+    // Instruction and memory limits are enforced by CLuaMod::InsnCountHook,
+    // which is a Lua VM hook: it does not exist on the compiled path.  There
+    // RunCompiled has only max_dispatch and the wall-clock alarm, and a loop
+    // that spins inside a single translated block issues no dispatches at
+    // all, so neither necessarily bounds it.
+    //
+    // That was harmless while the reentrancy refusal sent every nested lua()
+    // to the interpreter.  Once nesting is allowed under production brackets
+    // `while true do end` compiles and runs, and TC009 -- which asserts
+    // "#-1 LUA ERROR: ... instruction limit" -- got an empty string instead:
+    // the configured limit silently stopped applying.
+    //
+    // Reject rather than bound it here.  A compiled-path budget mapped onto
+    // the same error surface is the better answer and is a design question
+    // (#1571 covers the equivalent gap for softcode); declining costs only
+    // the acceleration of looping chunks, and the interpreter keeps both the
+    // correct answer and the limit.  Bounded loops are rejected too: trip
+    // counts are not known here, and guessing on the unsafe side is how this
+    // was reachable in the first place.
+    //
+    for (int pc = 0; pc < n; pc++) {
+        const lua_bc_instruction &insn = proto->code[pc];
+        switch (insn.opcode()) {
+        case OP_LUA_JMP:
+            if (pc + 1 + insn.sJ() <= pc) return LUA_BC_HAS_LOOP;
+            break;
+
+        // These branch backwards by construction -- they are the loop edge.
+        case OP_LUA_FORLOOP:
+        case OP_LUA_TFORLOOP:
+            return LUA_BC_HAS_LOOP;
+
+        default:
+            break;
         }
     }
 
@@ -1068,6 +1108,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // it now that handles are typed, but say so rather than rely on
             // falling off the end of a type test.
             if (lua_is_handle(h, rb)) return -1;
+
+            // A mux.* table is carried through lowering as an SCONST holding
+            // its NAME -- "mux.args" is a sentinel, not text the program can
+            // see.  It is not a handle, and it IS TY_STRING, so both guards
+            // above wave it through and the STRLEN below measures the
+            // sentinel: `#mux.args` answered 8 (strlen "mux.args") where the
+            // interpreter answers the argument count.
+            //
+            // Harmless while #1326's reentrancy refusal sent every nested
+            // lua() to the interpreter; live the moment nesting is allowed
+            // under production brackets, which is what made TC020 regress.
+            // Decline and let the interpreter answer -- lowering it properly
+            // means resolving to the call's ncargs, which is #1519's work.
+            //
+            if (  h.kind[rb] == HIR_SCONST
+               && h.sval[rb].rfind("mux.", 0) == 0) {
+                return -1;
+            }
+
             // For TY_STRING: emit strlen-like ECALL.
             // For other types: would need lua_State to call __len metamethod.
             if (h.ty[rb] == TY_STRING) {
