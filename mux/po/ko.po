@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 15:15+0000\n"
+"POT-Creation-Date: 2026-07-28 15:16+0000\n"
 "PO-Revision-Date: 2026-07-27 00:00+0000\n"
 "Last-Translator: unassigned <tinymux@googlegroups.com>\n"
 "Language-Team: Korean <tinymux@googlegroups.com>\n"
@@ -1112,8 +1112,18 @@ msgid "%d cron entry matched."
 msgid_plural "%d cron entries matched."
 msgstr[0] ""
 
+#: modules/engine/db.cpp:557
+#, c-format
+msgid "Cannot forward to #%d: Permission denied."
+msgstr ""
+
 #: modules/engine/db.cpp:942
 msgid "No such user-named attribute."
+msgstr ""
+
+#: modules/engine/db.cpp:990
+#, c-format
+msgid "Unknown permission: %s."
 msgstr ""
 
 #: modules/engine/db.cpp:1000
@@ -1136,6 +1146,36 @@ msgstr ""
 msgid "Attribute deleted."
 msgstr ""
 
+#: modules/engine/db.cpp:1112
+#, c-format
+msgid "Owner set to #%d"
+msgstr ""
+
+#: modules/engine/db.cpp:1119
+#, c-format
+msgid "Location set to #%d"
+msgstr ""
+
+#: modules/engine/db.cpp:1126
+#, c-format
+msgid "Contents set to #%d"
+msgstr ""
+
+#: modules/engine/db.cpp:1133
+#, c-format
+msgid "Exits set to #%d"
+msgstr ""
+
+#: modules/engine/db.cpp:1140
+#, c-format
+msgid "Next set to #%d"
+msgstr ""
+
+#: modules/engine/db.cpp:1147
+#, c-format
+msgid "Pennies set to %d"
+msgstr ""
+
 #: modules/engine/db.cpp:1156
 msgid "That’s not a good name for a player."
 msgstr "플레이어 이름으로 적합하지 않습니다."
@@ -1148,6 +1188,11 @@ msgstr ""
 msgid "That is not a reasonable name."
 msgstr ""
 
+#: modules/engine/db.cpp:1199
+#, c-format
+msgid "Name set to %s"
+msgstr ""
+
 #: modules/engine/engine.cpp:29
 msgid "Dumping in progress. Try again later."
 msgstr ""
@@ -1155,6 +1200,11 @@ msgstr ""
 #: modules/engine/engine.cpp:33
 msgid "Dumping..."
 msgstr "저장하는 중..."
+
+#: modules/engine/engine.cpp:1332 modules/engine/engine.cpp:1338
+#, c-format
+msgid "Counted %d objects using %ld msecs over %d seconds."
+msgstr ""
 
 #: modules/engine/engine_com.cpp:4586
 msgid "*** Logins are disabled."
@@ -1538,6 +1588,11 @@ msgstr ""
 msgid "You don’t have enough %s."
 msgstr ""
 
+#: modules/engine/look.cpp:2288
+#, c-format
+msgid "%s (%s)"
+msgstr ""
+
 #: modules/engine/look.cpp:2297
 #, c-format
 msgid "%s [dropto]"
@@ -1587,6 +1642,11 @@ msgstr ""
 
 #: modules/engine/look.cpp:2666
 msgid "Sweep complete."
+msgstr ""
+
+#: modules/engine/look.cpp:2758
+#, c-format
+msgid "  %s  [%d: %s]"
 msgstr ""
 
 #: modules/engine/look.cpp:2774
@@ -3170,6 +3230,23 @@ msgstr ""
 #, c-format
 msgid "%s says, “%s”"
 msgstr "%s님이 말합니다, “%s”"
+
+#: modules/engine/speech.cpp:236 modules/engine/speech.cpp:238
+#: modules/engine/speech.cpp:1246
+#, c-format
+msgid "%s %s"
+msgstr ""
+
+#: modules/engine/speech.cpp:244 modules/engine/speech.cpp:246
+#: modules/engine/speech.cpp:1260
+#, c-format
+msgid "%s%s"
+msgstr ""
+
+#: modules/engine/speech.cpp:433
+#, c-format
+msgid "%s%s%s%s"
+msgstr ""
 
 #: modules/engine/speech.cpp:498
 #, c-format

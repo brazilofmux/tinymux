@@ -554,7 +554,7 @@ FWDLIST *fwdlist_load(dbref player, UTF8 *atext)
                         if (!mudstate.bStandAlone)
                         {
                             notify(player,
-                                tprintf(T("Cannot forward to #%d: Permission denied."),
+                                tprintf(M_("Cannot forward to #%d: Permission denied."),
                                 target));
                         }
                     }
@@ -987,7 +987,7 @@ void do_attribute
                 }
                 else
                 {
-                    notify(executor, tprintf(T("Unknown permission: %s."), sp));
+                    notify(executor, tprintf(M_("Unknown permission: %s."), sp));
                 }
 
                 // Get the next token.
@@ -1109,42 +1109,42 @@ void do_fixdb
 
         s_Owner(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf(T("Owner set to #%d"), res));
+            notify(executor, tprintf(M_("Owner set to #%d"), res));
         break;
 
     case FIXDB_LOC:
 
         s_Location(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf(T("Location set to #%d"), res));
+            notify(executor, tprintf(M_("Location set to #%d"), res));
         break;
 
     case FIXDB_CON:
 
         s_Contents(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf(T("Contents set to #%d"), res));
+            notify(executor, tprintf(M_("Contents set to #%d"), res));
         break;
 
     case FIXDB_EXITS:
 
         s_Exits(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf(T("Exits set to #%d"), res));
+            notify(executor, tprintf(M_("Exits set to #%d"), res));
         break;
 
     case FIXDB_NEXT:
 
         s_Next(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf(T("Next set to #%d"), res));
+            notify(executor, tprintf(M_("Next set to #%d"), res));
         break;
 
     case FIXDB_PENNIES:
 
         s_Pennies(thing, res);
         if (!Quiet(executor))
-            notify(executor, tprintf(T("Pennies set to %d"), res));
+            notify(executor, tprintf(M_("Pennies set to %d"), res));
         break;
 
     case FIXDB_NAME:
@@ -1196,7 +1196,7 @@ void do_fixdb
         }
         if (!Quiet(executor))
         {
-            notify(executor, tprintf(T("Name set to %s"), pValidName));
+            notify(executor, tprintf(M_("Name set to %s"), pValidName));
         }
         break;
     }
