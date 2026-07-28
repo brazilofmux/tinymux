@@ -5539,20 +5539,26 @@ void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
             for (auto &m : it.second)
             {
                 struct mail *mp = &m;
+                // MessageFetchSize returns std::string::size() — no terminator
+                // is in the count.  The +1 here was a phantom byte that made
+                // the module disagree with the engine after #1639 removed the
+                // same +1 from mail.cpp, and with @mail/list / mailinfo(size)
+                // about how big the same message is (#1652).
+                //
                 if (Cleared(mp))
                 {
                     fc++;
-                    cchars += MessageFetchSize(mp->number) + 1;
+                    cchars += MessageFetchSize(mp->number);
                 }
                 else if (Read(mp))
                 {
                     fr++;
-                    fchars += MessageFetchSize(mp->number) + 1;
+                    fchars += MessageFetchSize(mp->number);
                 }
                 else
                 {
                     fu++;
-                    tchars += MessageFetchSize(mp->number) + 1;
+                    tchars += MessageFetchSize(mp->number);
                 }
             }
         }
@@ -5651,7 +5657,7 @@ void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
                 }
                 if (2 == full)
                 {
-                    fchars += MessageFetchSize(mp->number) + 1;
+                    fchars += MessageFetchSize(mp->number);
                 }
             }
             if (mp->to == target)
@@ -5676,7 +5682,7 @@ void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
                 }
                 if (2 == full)
                 {
-                    tchars += MessageFetchSize(mp->number) + 1;
+                    tchars += MessageFetchSize(mp->number);
                 }
             }
         }

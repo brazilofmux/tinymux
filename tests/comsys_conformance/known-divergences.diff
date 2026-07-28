@@ -24,7 +24,7 @@
  -- cchan --
  Alias           Channel            Status   Title
  c               cchan              on  con  Tester
-@@ -48,19 +56,18 @@
+@@ -48,12 +56,11 @@
  MAIL: You sent your message to Wizard.
  MAIL: You have a new message from Wizard. Subject: Subject One
  –––––––––––––––––––––––––––   MAIL: Folder 0   ––––––––––––––––––––––––––––
@@ -39,14 +39,6 @@
  Subject: Subject One
  –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
  Body of the first message.
- –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
- There is 1 message in the mail spool.
- MAIL: There is 1 msg in the mail spool, 0 unread, 0 cleared.
--MAIL: There is 1 old msg in the mail spool, totalling 26 characters.
-+MAIL: There is 1 old msg in the mail spool, totalling 27 characters.
- MAIL: There are 0 new msgs in the mail spool, totalling 0 characters.
- MAIL: There are 0 cleared msgs in the mail spool, totalling 0 characters.
- MAIL: Msg #1 tagged.
 @@ -77,11 +84,11 @@
  Num  Name         Description                              Owner
  ***** End of Mail Aliases *****
