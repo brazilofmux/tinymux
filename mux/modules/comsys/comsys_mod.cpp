@@ -563,7 +563,7 @@ void CComsysMod::do_comconnectraw_notify(dbref player, const UTF8 *chan)
         }
 
         mux_sprintf(msg, sizeof(msg),
-                 T("%s %s has connected."),
+                 M_("%s %s has connected."),
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pName));
 
@@ -609,7 +609,7 @@ void CComsysMod::do_comdisconnectraw_notify(dbref player, const UTF8 *chan)
         }
 
         mux_sprintf(msg, sizeof(msg),
-                 T("%s %s has disconnected."),
+                 M_("%s %s has disconnected."),
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pName));
 
@@ -3788,14 +3788,14 @@ MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
 
     UTF8 msg[MOD_LBUF_SIZE];
     mux_sprintf(msg, sizeof(msg),
-             T("You boot %s off channel %s."),
+             M_("You boot %s off channel %s."),
              pVictMoniker ? reinterpret_cast<const char *>(pVictMoniker)
                           : "???",
              reinterpret_cast<const char *>(ch->name));
     m_pINotify->Notify(executor, msg);
 
     mux_sprintf(msg, sizeof(msg),
-             T("%s boots you off channel %s."),
+             M_("%s boots you off channel %s."),
              pExecMoniker ? reinterpret_cast<const char *>(pExecMoniker)
                           : "???",
              reinterpret_cast<const char *>(ch->name));
@@ -3806,7 +3806,7 @@ MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
         // Broadcast boot message to channel.
         //
         mux_sprintf(msg, sizeof(msg),
-                 T("%s %s boots %s off the channel."),
+                 M_("%s %s boots %s off the channel."),
                  reinterpret_cast<const char *>(ch->header),
                  pExecMoniker ? reinterpret_cast<const char *>(pExecMoniker)
                               : "???",

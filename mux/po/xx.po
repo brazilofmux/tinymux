@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 17:38+0000\n"
+"POT-Creation-Date: 2026-07-28 18:06+0000\n"
 "PO-Revision-Date: 2026-07-28 14:58+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -4461,3 +4461,121 @@ msgstr "[xx] Address"
 
 #~ msgid "Alias           Channel            Status   Title"
 #~ msgstr "[xx] Alias           Channel            Status   Title"
+
+#: modules/comsys/comsys_mod.cpp:3809
+#, c-format
+msgid "%s %s boots %s off the channel."
+msgstr "[xx] %s %s boots %s off the channel."
+
+#: modules/comsys/comsys_mod.cpp:566
+#, c-format
+msgid "%s %s has connected."
+msgstr "[xx] %s %s has connected."
+
+#: modules/comsys/comsys_mod.cpp:612
+#, c-format
+msgid "%s %s has disconnected."
+msgstr "[xx] %s %s has disconnected."
+
+#: modules/comsys/comsys_mod.cpp:3798 modules/engine/comsys.cpp:3986
+#, c-format
+msgid "%s boots you off channel %s."
+msgstr "[xx] %s boots you off channel %s."
+
+#: modules/engine/engine_com.cpp:4629
+#, c-format
+msgid "%s has connected."
+msgstr "[xx] %s has connected."
+
+#: modules/engine/engine_com.cpp:4817
+#, c-format
+msgid "%s has disconnected."
+msgstr "[xx] %s has disconnected."
+
+#: modules/engine/engine_com.cpp:4942
+#, c-format
+msgid "%s has partially disconnected."
+msgstr "[xx] %s has partially disconnected."
+
+#: modules/engine/engine_com.cpp:4649
+#, c-format
+msgid "%s has reconnected."
+msgstr "[xx] %s has reconnected."
+
+#: src/ganl_adapter.cpp:3113
+#, c-format
+msgid "@email: Unable to resolve hostname %s!"
+msgstr "[xx] @email: Unable to resolve hostname %s!"
+
+#: modules/engine/engine_com.cpp:4634
+#, c-format
+msgid "GAME: %s has DARK-connected."
+msgstr "[xx] GAME: %s has DARK-connected."
+
+#: modules/engine/engine_com.cpp:4638
+#, c-format
+msgid "GAME: %s has connected."
+msgstr "[xx] GAME: %s has connected."
+
+#: modules/engine/engine_com.cpp:4841
+#, c-format
+msgid "GAME: %s has disconnected. <%s>"
+msgstr "[xx] GAME: %s has disconnected. <%s>"
+
+#: modules/engine/engine_com.cpp:4963
+#, c-format
+msgid "GAME: %s has partially disconnected."
+msgstr "[xx] GAME: %s has partially disconnected."
+
+#: modules/engine/engine_com.cpp:4650
+#, c-format
+msgid "GAME: %s has reconnected."
+msgstr "[xx] GAME: %s has reconnected."
+
+#: src/ganl_adapter.cpp:2472
+#, c-format
+msgid "GAME: Caught signal %s, exiting."
+msgstr "[xx] GAME: Caught signal %s, exiting."
+
+#: modules/engine/predicates.cpp:1633
+#, c-format
+msgid "GAME: Restart by %s, please wait."
+msgstr "[xx] GAME: Restart by %s, please wait."
+
+#: modules/engine/predicates.cpp:1631
+#, c-format
+msgid "GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"
+msgstr "[xx] GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"
+
+#: src/net.cpp:4315
+msgid "GAME: Restart finished."
+msgstr "[xx] GAME: Restart finished."
+
+#: modules/engine/engine.cpp:1408
+#, c-format
+msgid "GAME: Shutdown by %s"
+msgstr "[xx] GAME: Shutdown by %s"
+
+#: modules/engine/log.cpp:583
+msgid "GAME: Unable to write to the log.  The disk may be full."
+msgstr "[xx] GAME: Unable to write to the log.  The disk may be full."
+
+#: modules/engine/engine_com.cpp:4643
+#, c-format
+msgid "[Suspect] %s has connected."
+msgstr "[xx] [Suspect] %s has connected."
+
+#: modules/engine/engine_com.cpp:4812
+#, c-format
+msgid "[Suspect] %s has disconnected."
+msgstr "[xx] [Suspect] %s has disconnected."
+
+#: modules/engine/engine_com.cpp:4938
+#, c-format
+msgid "[Suspect] %s has partially disconnected."
+msgstr "[xx] [Suspect] %s has partially disconnected."
+
+#: modules/engine/engine_com.cpp:4654
+#, c-format
+msgid "[Suspect] %s has reconnected."
+msgstr "[xx] [Suspect] %s has reconnected."

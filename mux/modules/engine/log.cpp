@@ -580,7 +580,7 @@ void CLogFile::Flush(void)
         if (!fSuccess)
         {
             raw_broadcast(WIZARD,
-                T("GAME: Unable to write to the log.  The disk may be full."));
+                M_("GAME: Unable to write to the log.  The disk may be full."));
         }
 
         if (m_nSize > FILE_SIZE_TRIGGER)

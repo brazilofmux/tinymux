@@ -1174,7 +1174,7 @@ void do_fixdb
 
             if (Suspect(executor))
             {
-                raw_broadcast(WIZARD, T("[Suspect] %s renamed to %s"),
+                raw_broadcast(WIZARD, M_("[Suspect] %s renamed to %s"),
                     Name(thing), pValidName);
             }
 
