@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 15:25+0000\n"
+"POT-Creation-Date: 2026-07-28 15:45+0000\n"
 "PO-Revision-Date: 2026-07-28 14:58+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Tinymux-Catalogue: complete\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: lib/alloc.cpp:566
 msgid "*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"
@@ -1470,6 +1470,41 @@ msgstr "[xx] Dumping..."
 msgid "Counted %d objects using %ld msecs over %d seconds."
 msgstr "[xx] Counted %d objects using %ld msecs over %d seconds."
 
+#: modules/engine/engine_com.cpp:2296 modules/engine/mail.cpp:2736
+#, c-format
+msgid "MAIL: Reject message from %s: %s"
+msgstr "[xx] MAIL: Reject message from %s: %s"
+
+#: modules/engine/engine_com.cpp:2298 modules/engine/mail.cpp:2738
+#, c-format
+msgid "[%d:%02d] MAIL: Reject message sent to %s."
+msgstr "[xx] [%d:%02d] MAIL: Reject message sent to %s."
+
+#: modules/engine/engine_com.cpp:2304 modules/engine/mail.cpp:2745
+#, c-format
+msgid "Sorry, %s is not accepting mail."
+msgstr "[xx] Sorry, %s is not accepting mail."
+
+#: modules/engine/engine_com.cpp:2316 modules/engine/mail.cpp:2760
+#, c-format
+msgid "Warning: %s can’t return your mail."
+msgstr "[xx] Warning: %s can’t return your mail."
+
+#: modules/engine/engine_com.cpp:2323 modules/engine/mail.cpp:2765
+#, c-format
+msgid "Sorry, %s can’t return your mail."
+msgstr "[xx] Sorry, %s can’t return your mail."
+
+#: modules/engine/engine_com.cpp:2351 modules/engine/mail.cpp:2893
+#, c-format
+msgid "MAIL: You sent your message to %s."
+msgstr "[xx] MAIL: You sent your message to %s."
+
+#: modules/engine/engine_com.cpp:2356 modules/engine/mail.cpp:2897
+#, c-format
+msgid "MAIL: You have a new message from %s. Subject: %s"
+msgstr "[xx] MAIL: You have a new message from %s. Subject: %s"
+
 #: modules/engine/engine_com.cpp:4586
 msgid "*** Logins are disabled."
 msgstr "[xx] *** Logins are disabled."
@@ -1963,6 +1998,7 @@ msgid "@wait 0={%c%s %s=%s}"
 msgstr "[xx] @wait 0={%c%s %s=%s}"
 
 #: modules/engine/mail.cpp:317 modules/engine/mail.cpp:326
+#: modules/mail/mail_mod.cpp:614 modules/mail/mail_mod.cpp:620
 msgid ""
 "MAIL: This mail message does not exist in the database. Please alert your "
 "admin."
@@ -1970,35 +2006,35 @@ msgstr ""
 "[xx] MAIL: This mail message does not exist in the database. Please alert "
 "your admin."
 
-#: modules/engine/mail.cpp:380
+#: modules/engine/mail.cpp:380 modules/mail/mail_mod.cpp:3135
 msgid "MAIL: You probably did not intend to send a @mail saying ‘clear’."
 msgstr "[xx] MAIL: You probably did not intend to send a @mail saying ‘clear’."
 
-#: modules/engine/mail.cpp:744
+#: modules/engine/mail.cpp:744 modules/mail/mail_mod.cpp:1120
 msgid "MAIL: Invalid message range"
 msgstr "[xx] MAIL: Invalid message range"
 
-#: modules/engine/mail.cpp:745
+#: modules/engine/mail.cpp:745 modules/mail/mail_mod.cpp:1121
 msgid "MAIL: Invalid message number"
 msgstr "[xx] MAIL: Invalid message number"
 
-#: modules/engine/mail.cpp:746
+#: modules/engine/mail.cpp:746 modules/mail/mail_mod.cpp:1122
 msgid "MAIL: Invalid age"
 msgstr "[xx] MAIL: Invalid age"
 
-#: modules/engine/mail.cpp:747
+#: modules/engine/mail.cpp:747 modules/mail/mail_mod.cpp:1123
 msgid "MAIL: Invalid dbref #"
 msgstr "[xx] MAIL: Invalid dbref #"
 
-#: modules/engine/mail.cpp:748
+#: modules/engine/mail.cpp:748 modules/mail/mail_mod.cpp:1124
 msgid "MAIL: Invalid player"
 msgstr "[xx] MAIL: Invalid player"
 
-#: modules/engine/mail.cpp:749
+#: modules/engine/mail.cpp:749 modules/mail/mail_mod.cpp:1125
 msgid "MAIL: Invalid message specification"
 msgstr "[xx] MAIL: Invalid message specification"
 
-#: modules/engine/mail.cpp:750
+#: modules/engine/mail.cpp:750 modules/mail/mail_mod.cpp:1126
 msgid ""
 "MAIL: Invalid player or trying to send @mail to a @malias without a subject"
 msgstr ""
@@ -2013,7 +2049,7 @@ msgstr "[xx] MAIL: A isn’t enough (all?)"
 msgid "MAIL: AL isn’t enough (all?)"
 msgstr "[xx] MAIL: AL isn’t enough (all?)"
 
-#: modules/engine/mail.cpp:1024
+#: modules/engine/mail.cpp:1024 modules/mail/mail_mod.cpp:1339
 msgid "MAIL: U is ambiguous (urgent or unread?)"
 msgstr "[xx] MAIL: U is ambiguous (urgent or unread?)"
 
@@ -2021,174 +2057,189 @@ msgstr "[xx] MAIL: U is ambiguous (urgent or unread?)"
 msgid "MAIL: M is ambiguous (mass or me?)"
 msgstr "[xx] MAIL: M is ambiguous (mass or me?)"
 
-#: modules/engine/mail.cpp:1161
+#: modules/engine/mail.cpp:1161 modules/mail/mail_mod.cpp:1925
 #, c-format
 msgid "MAIL: 0 messages in folder %d [%s]."
 msgstr "[xx] MAIL: 0 messages in folder %d [%s]."
 
-#: modules/engine/mail.cpp:1169
+#: modules/engine/mail.cpp:1169 modules/mail/mail_mod.cpp:1944
 #, c-format
 msgid "MAIL: Current folder is %d [%s]."
 msgstr "[xx] MAIL: Current folder is %d [%s]."
 
-#: modules/engine/mail.cpp:1191
+#: modules/engine/mail.cpp:1191 modules/mail/mail_mod.cpp:1859
 msgid "MAIL: What folder is that?"
 msgstr "[xx] MAIL: What folder is that?"
 
-#: modules/engine/mail.cpp:1200
+#: modules/engine/mail.cpp:1200 modules/mail/mail_mod.cpp:1869
 msgid "MAIL: Folder name too long"
 msgstr "[xx] MAIL: Folder name too long"
 
-#: modules/engine/mail.cpp:1207
+#: modules/engine/mail.cpp:1207 modules/mail/mail_mod.cpp:1877
 msgid "MAIL: Illegal folder name"
 msgstr "[xx] MAIL: Illegal folder name"
 
-#: modules/engine/mail.cpp:1212
+#: modules/engine/mail.cpp:1212 modules/mail/mail_mod.cpp:1884
 #, c-format
 msgid "MAIL: Folder %d now named ‘%s’"
 msgstr "[xx] MAIL: Folder %d now named ‘%s’"
 
-#: modules/engine/mail.cpp:1220
+#: modules/engine/mail.cpp:1220 modules/mail/mail_mod.cpp:1895
 #, c-format
 msgid "MAIL: Current folder set to %d [%s]."
 msgstr "[xx] MAIL: Current folder set to %d [%s]."
 
 #: modules/engine/mail.cpp:1330 modules/engine/mail.cpp:1341
-#: modules/engine/mail.cpp:1346
+#: modules/engine/mail.cpp:1346 modules/mail/mail_mod.cpp:4789
+#: modules/mail/mail_mod.cpp:4801 modules/mail/mail_mod.cpp:4807
 #, c-format
 msgid "MAIL: Msg #%d %s."
 msgstr "[xx] MAIL: Msg #%d %s."
 
-#: modules/engine/mail.cpp:1337
+#: modules/engine/mail.cpp:1337 modules/mail/mail_mod.cpp:4796
 #, c-format
 msgid "MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."
 msgstr "[xx] MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."
 
 #: modules/engine/mail.cpp:1358 modules/engine/mail.cpp:1437
+#: modules/mail/mail_mod.cpp:4828 modules/mail/mail_mod.cpp:5271
 msgid "MAIL: You don’t have any matching messages!"
 msgstr "[xx] MAIL: You don’t have any matching messages!"
 
-#: modules/engine/mail.cpp:1404
+#: modules/engine/mail.cpp:1404 modules/mail/mail_mod.cpp:5237
 msgid "MAIL: Invalid folder specification"
 msgstr "[xx] MAIL: Invalid folder specification"
 
-#: modules/engine/mail.cpp:1427
+#: modules/engine/mail.cpp:1427 modules/mail/mail_mod.cpp:5261
 #, c-format
 msgid "MAIL: Msg %d filed in folder %d"
 msgstr "[xx] MAIL: Msg %d filed in folder %d"
 
-#: modules/engine/mail.cpp:1539
+#: modules/engine/mail.cpp:1539 modules/mail/mail_mod.cpp:4099
 msgid "MAIL: Mail aliases must be of the form *<name> or #<num>."
 msgstr "[xx] MAIL: Mail aliases must be of the form *<name> or #<num>."
 
-#: modules/engine/mail.cpp:1543
+#: modules/engine/mail.cpp:1543 modules/mail/mail_mod.cpp:4104
 msgid "MAIL: Mail aliases must be of the form *<name>."
 msgstr "[xx] MAIL: Mail aliases must be of the form *<name>."
 
 #: modules/engine/mail.cpp:1666 modules/engine/mail.cpp:2147
-#: modules/engine/mail.cpp:5666
+#: modules/engine/mail.cpp:5666 modules/mail/mail_mod.cpp:2027
 msgid "MAIL: No such folder."
 msgstr "[xx] MAIL: No such folder."
 
 #: modules/engine/mail.cpp:1749 modules/engine/mail.cpp:1983
-#: modules/engine/mail.cpp:2079
+#: modules/engine/mail.cpp:2079 modules/mail/mail_mod.cpp:2146
+#: modules/mail/mail_mod.cpp:2279 modules/mail/mail_mod.cpp:5123
 msgid "MAIL: You don’t have that many matching messages!"
 msgstr "[xx] MAIL: You don’t have that many matching messages!"
 
-#: modules/engine/mail.cpp:1811
+#: modules/engine/mail.cpp:1811 modules/mail/mail_mod.cpp:5183
 msgid "MAIL: You have no unread messages in that folder."
 msgstr "[xx] MAIL: You have no unread messages in that folder."
 
-#: modules/engine/mail.cpp:1927
+#: modules/engine/mail.cpp:1927 modules/mail/mail_mod.cpp:2084
 msgid "MAIL: You have no matching messages."
 msgstr "[xx] MAIL: You have no matching messages."
 
 #: modules/engine/mail.cpp:2001 modules/engine/mail.cpp:4145
-#: modules/engine/mail.cpp:5203
+#: modules/engine/mail.cpp:5203 modules/mail/mail_mod.cpp:2166
+#: modules/mail/mail_mod.cpp:2182 modules/mail/mail_mod.cpp:2293
+#: modules/mail/mail_mod.cpp:2335 modules/mail/mail_mod.cpp:4202
 msgid "MAIL: No such player."
 msgstr "[xx] MAIL: No such player."
 
-#: modules/engine/mail.cpp:2226
+#: modules/engine/mail.cpp:2226 modules/mail/mail_mod.cpp:5207
 msgid "MAIL: Mailbox purged."
 msgstr "[xx] MAIL: Mailbox purged."
 
-#: modules/engine/mail.cpp:2287
+#: modules/engine/mail.cpp:2287 modules/mail/mail_mod.cpp:2680
 #, c-format
 msgid "MAIL: Alias ‘%s’ does not exist."
 msgstr "[xx] MAIL: Alias ‘%s’ does not exist."
 
-#: modules/engine/mail.cpp:2293
+#: modules/engine/mail.cpp:2293 modules/mail/mail_mod.cpp:2691
 #, c-format
 msgid "MAIL: ‘%s’ is a badly-formed alias."
 msgstr "[xx] MAIL: ‘%s’ is a badly-formed alias."
 
-#: modules/engine/mail.cpp:2321
+#: modules/engine/mail.cpp:2321 modules/mail/mail_mod.cpp:2735
 #, c-format
 msgid "MAIL: ‘%s’ does not exist."
 msgstr "[xx] MAIL: ‘%s’ does not exist."
 
-#: modules/engine/mail.cpp:2338
+#: modules/engine/mail.cpp:2338 modules/mail/mail_mod.cpp:2613
+#: modules/mail/mail_mod.cpp:2757
 msgid "MAIL: No players specified."
 msgstr "[xx] MAIL: No players specified."
 
 #: modules/engine/mail.cpp:2374 modules/engine/mail.cpp:4324
+#: modules/mail/mail_mod.cpp:3220 modules/mail/mail_mod.cpp:3418
 msgid "MAIL: I do not know whom you want to mail."
 msgstr "[xx] MAIL: I do not know whom you want to mail."
 
 #: modules/engine/mail.cpp:2379 modules/engine/mail.cpp:4542
+#: modules/mail/mail_mod.cpp:3228 modules/mail/mail_mod.cpp:3528
 msgid "MAIL: No subject."
 msgstr "[xx] MAIL: No subject."
 
 #: modules/engine/mail.cpp:2384 modules/engine/mail.cpp:2414
 #: modules/engine/mail.cpp:2460 modules/engine/mail.cpp:4525
+#: modules/mail/mail_mod.cpp:3244 modules/mail/mail_mod.cpp:3487
+#: modules/mail/mail_mod.cpp:3569 modules/mail/mail_mod.cpp:3684
 msgid "MAIL: Mail message already in progress."
 msgstr "[xx] MAIL: Mail message already in progress."
 
 #: modules/engine/mail.cpp:2390 modules/engine/mail.cpp:2430
 #: modules/engine/mail.cpp:2471 modules/engine/mail.cpp:4531
+#: modules/mail/mail_mod.cpp:3268 modules/mail/mail_mod.cpp:3508
+#: modules/mail/mail_mod.cpp:3607 modules/mail/mail_mod.cpp:3713
 msgid "MAIL: Too much @mail sent recently."
 msgstr "[xx] MAIL: Too much @mail sent recently."
 
 #: modules/engine/mail.cpp:2405 modules/engine/mail.cpp:4347
+#: modules/mail/mail_mod.cpp:3307 modules/mail/mail_mod.cpp:3448
 #, c-format
 msgid "MAIL: You are sending mail to ‘%s’."
 msgstr "[xx] MAIL: You are sending mail to ‘%s’."
 
 #: modules/engine/mail.cpp:2419 modules/engine/mail.cpp:2465
+#: modules/mail/mail_mod.cpp:3577 modules/mail/mail_mod.cpp:3692
 msgid "MAIL: No message list."
 msgstr "[xx] MAIL: No message list."
 
-#: modules/engine/mail.cpp:2424
+#: modules/engine/mail.cpp:2424 modules/mail/mail_mod.cpp:3586
 msgid "MAIL: To whom should I forward?"
 msgstr "[xx] MAIL: To whom should I forward?"
 
 #: modules/engine/mail.cpp:2436 modules/engine/mail.cpp:2477
+#: modules/mail/mail_mod.cpp:3619 modules/mail/mail_mod.cpp:3725
 msgid "MAIL: I don’t understand that message number."
 msgstr "[xx] MAIL: I don’t understand that message number."
 
-#: modules/engine/mail.cpp:2442
+#: modules/engine/mail.cpp:2442 modules/mail/mail_mod.cpp:3630
 msgid "MAIL: You can’t forward non-existent messages."
 msgstr "[xx] MAIL: You can’t forward non-existent messages."
 
-#: modules/engine/mail.cpp:2445
+#: modules/engine/mail.cpp:2445 modules/mail/mail_mod.cpp:3640
 #, c-format
 msgid "%s (fwd from %s)"
 msgstr "[xx] %s (fwd from %s)"
 
-#: modules/engine/mail.cpp:2483
+#: modules/engine/mail.cpp:2483 modules/mail/mail_mod.cpp:3736
 msgid "MAIL: You can’t reply to non-existent messages."
 msgstr "[xx] MAIL: You can’t reply to non-existent messages."
 
-#: modules/engine/mail.cpp:2488
+#: modules/engine/mail.cpp:2488 modules/mail/mail_mod.cpp:3746
 msgid "MAIL: The original sender no longer exists."
 msgstr "[xx] MAIL: The original sender no longer exists."
 
-#: modules/engine/mail.cpp:2532
+#: modules/engine/mail.cpp:2532 modules/mail/mail_mod.cpp:3811
 #, c-format
 msgid "Re: %s"
 msgstr "[xx] Re: %s"
 
-#: modules/engine/mail.cpp:2542
+#: modules/engine/mail.cpp:2542 modules/mail/mail_mod.cpp:3833
 #, c-format
 msgid ""
 "On %s, %s wrote:\r\n"
@@ -2203,55 +2254,20 @@ msgstr ""
 "\r\n"
 "********** End of included message from %s\r\n"
 
-#: modules/engine/mail.cpp:2736
-#, c-format
-msgid "MAIL: Reject message from %s: %s"
-msgstr "[xx] MAIL: Reject message from %s: %s"
-
-#: modules/engine/mail.cpp:2738
-#, c-format
-msgid "[%d:%02d] MAIL: Reject message sent to %s."
-msgstr "[xx] [%d:%02d] MAIL: Reject message sent to %s."
-
-#: modules/engine/mail.cpp:2745
-#, c-format
-msgid "Sorry, %s is not accepting mail."
-msgstr "[xx] Sorry, %s is not accepting mail."
-
-#: modules/engine/mail.cpp:2760
-#, c-format
-msgid "Warning: %s can’t return your mail."
-msgstr "[xx] Warning: %s can’t return your mail."
-
-#: modules/engine/mail.cpp:2765
-#, c-format
-msgid "Sorry, %s can’t return your mail."
-msgstr "[xx] Sorry, %s can’t return your mail."
-
-#: modules/engine/mail.cpp:2789
+#: modules/engine/mail.cpp:2789 modules/mail/mail_mod.cpp:2479
 msgid "MAIL: You cannot send mail to non-existent people."
 msgstr "[xx] MAIL: You cannot send mail to non-existent people."
 
-#: modules/engine/mail.cpp:2873
+#: modules/engine/mail.cpp:2873 modules/mail/mail_mod.cpp:2580
 #, c-format
 msgid "MAIL: %s’s mailbox is full (%d messages)."
 msgstr "[xx] MAIL: %s’s mailbox is full (%d messages)."
 
-#: modules/engine/mail.cpp:2893
-#, c-format
-msgid "MAIL: You sent your message to %s."
-msgstr "[xx] MAIL: You sent your message to %s."
-
-#: modules/engine/mail.cpp:2897
-#, c-format
-msgid "MAIL: You have a new message from %s. Subject: %s"
-msgstr "[xx] MAIL: You have a new message from %s. Subject: %s"
-
-#: modules/engine/mail.cpp:2908
+#: modules/engine/mail.cpp:2908 modules/mail/mail_mod.cpp:2398
 msgid "The postal service issues a warrant for your arrest."
 msgstr "[xx] The postal service issues a warrant for your arrest."
 
-#: modules/engine/mail.cpp:2921
+#: modules/engine/mail.cpp:2921 modules/mail/mail_mod.cpp:2424
 msgid "You annihilate the post office. All messages cleared."
 msgstr "[xx] You annihilate the post office. All messages cleared."
 
@@ -2349,12 +2365,12 @@ msgstr "[xx] Mail sanity fix completed."
 msgid "That is not a debugging option."
 msgstr "[xx] That is not a debugging option."
 
-#: modules/engine/mail.cpp:3213 modules/mail/mail_mod.cpp:5354
+#: modules/engine/mail.cpp:3213 modules/mail/mail_mod.cpp:5353
 #, c-format
 msgid "%s: No such player."
 msgstr "[xx] %s: No such player."
 
-#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5362
+#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5361
 msgid "The post office protects privacy!"
 msgstr "[xx] The post office protects privacy!"
 
@@ -2363,14 +2379,14 @@ msgstr "[xx] The post office protects privacy!"
 msgid "Finding mail stats costs %d %s."
 msgstr "[xx] Finding mail stats costs %d %s."
 
-#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5377
+#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5376
 #, c-format
 msgid "There is %d message in the mail spool."
 msgid_plural "There are %d messages in the mail spool."
 msgstr[0] "[xx] There is %d message in the mail spool."
 msgstr[1] "[xx] There are %d messages in the mail spool."
 
-#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5416
+#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5415
 #, c-format
 msgid "MAIL: There is %d msg in the mail spool, %d unread, %d cleared."
 msgid_plural ""
@@ -2380,7 +2396,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] MAIL: There are %d msgs in the mail spool, %d unread, %d cleared."
 
-#: modules/engine/mail.cpp:3316 modules/mail/mail_mod.cpp:5425
+#: modules/engine/mail.cpp:3316 modules/mail/mail_mod.cpp:5424
 #, c-format
 msgid "MAIL: There is %d old msg in the mail spool, totalling %d characters."
 msgid_plural ""
@@ -2390,7 +2406,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] MAIL: There are %d old msgs in the mail spool, totalling %d characters."
 
-#: modules/engine/mail.cpp:3319 modules/mail/mail_mod.cpp:5431
+#: modules/engine/mail.cpp:3319 modules/mail/mail_mod.cpp:5430
 #, c-format
 msgid "MAIL: There is %d new msg in the mail spool, totalling %d characters."
 msgid_plural ""
@@ -2400,7 +2416,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] MAIL: There are %d new msgs in the mail spool, totalling %d characters."
 
-#: modules/engine/mail.cpp:3322 modules/mail/mail_mod.cpp:5437
+#: modules/engine/mail.cpp:3322 modules/mail/mail_mod.cpp:5436
 #, c-format
 msgid ""
 "MAIL: There is %d cleared msg in the mail spool, totalling %d characters."
@@ -2413,40 +2429,40 @@ msgstr[1] ""
 "[xx] MAIL: There are %d cleared msgs in the mail spool, totalling %d "
 "characters."
 
-#: modules/engine/mail.cpp:3351 modules/mail/mail_mod.cpp:5472
+#: modules/engine/mail.cpp:3351 modules/mail/mail_mod.cpp:5471
 #, c-format
 msgid "%s sent %d message."
 msgid_plural "%s sent %d messages."
 msgstr[0] "[xx] %s sent %d message."
 msgstr[1] "[xx] %s sent %d messages."
 
-#: modules/engine/mail.cpp:3354 modules/mail/mail_mod.cpp:5476
+#: modules/engine/mail.cpp:3354 modules/mail/mail_mod.cpp:5475
 #, c-format
 msgid "%s has %d message."
 msgid_plural "%s has %d messages."
 msgstr[0] "[xx] %s has %d message."
 msgstr[1] "[xx] %s has %d messages."
 
-#: modules/engine/mail.cpp:3418 modules/mail/mail_mod.cpp:5538
+#: modules/engine/mail.cpp:3418 modules/mail/mail_mod.cpp:5537
 #, c-format
 msgid "Mail statistics for %s:"
 msgstr "[xx] Mail statistics for %s:"
 
-#: modules/engine/mail.cpp:3422 modules/mail/mail_mod.cpp:5544
+#: modules/engine/mail.cpp:3422 modules/mail/mail_mod.cpp:5543
 #, c-format
 msgid "%d message sent, %d unread, %d cleared."
 msgid_plural "%d messages sent, %d unread, %d cleared."
 msgstr[0] "[xx] %d message sent, %d unread, %d cleared."
 msgstr[1] "[xx] %d messages sent, %d unread, %d cleared."
 
-#: modules/engine/mail.cpp:3426 modules/mail/mail_mod.cpp:5550
+#: modules/engine/mail.cpp:3426 modules/mail/mail_mod.cpp:5549
 #, c-format
 msgid "%d message received, %d unread, %d cleared."
 msgid_plural "%d messages received, %d unread, %d cleared."
 msgstr[0] "[xx] %d message received, %d unread, %d cleared."
 msgstr[1] "[xx] %d messages received, %d unread, %d cleared."
 
-#: modules/engine/mail.cpp:3434 modules/mail/mail_mod.cpp:5559
+#: modules/engine/mail.cpp:3434 modules/mail/mail_mod.cpp:5558
 #, c-format
 msgid "%d message sent, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
@@ -2456,7 +2472,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] %d messages sent, %d unread, %d cleared, totalling %d characters."
 
-#: modules/engine/mail.cpp:3439 modules/mail/mail_mod.cpp:5565
+#: modules/engine/mail.cpp:3439 modules/mail/mail_mod.cpp:5564
 #, c-format
 msgid "%d message received, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
@@ -2466,12 +2482,12 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] %d messages received, %d unread, %d cleared, totalling %d characters."
 
-#: modules/engine/mail.cpp:3447 modules/mail/mail_mod.cpp:5574
+#: modules/engine/mail.cpp:3447 modules/mail/mail_mod.cpp:5573
 #, c-format
 msgid "Last is dated %s"
 msgstr "[xx] Last is dated %s"
 
-#: modules/engine/mail.cpp:3461
+#: modules/engine/mail.cpp:3461 modules/mail/mail_mod.cpp:5591
 msgid "MAIL: Invalid mail command."
 msgstr "[xx] MAIL: Invalid mail command."
 
@@ -2480,7 +2496,8 @@ msgstr "[xx] MAIL: Invalid mail command."
 msgid "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n"
 msgstr "[xx] MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n"
 
-#: modules/engine/mail.cpp:4002
+#: modules/engine/mail.cpp:4002 modules/mail/mail_mod.cpp:1913
+#: modules/mail/mail_mod.cpp:5886
 #, c-format
 msgid "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."
 msgstr "[xx] MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."
@@ -2489,7 +2506,8 @@ msgstr "[xx] MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."
 msgid "MAIL: You have no mail."
 msgstr "[xx] MAIL: You have no mail."
 
-#: modules/engine/mail.cpp:4014
+#: modules/engine/mail.cpp:4014 modules/mail/mail_mod.cpp:1934
+#: modules/mail/mail_mod.cpp:5900
 #, c-format
 msgid "URGENT MAIL: You have %d urgent messages in folder %d [%s]."
 msgstr "[xx] URGENT MAIL: You have %d urgent messages in folder %d [%s]."
@@ -2503,6 +2521,10 @@ msgstr "[xx] MAIL: I can’t figure out from ‘%s’ who you want to mail to."
 #: modules/engine/mail.cpp:4833 modules/engine/mail.cpp:4883
 #: modules/engine/mail.cpp:4907 modules/engine/mail.cpp:4961
 #: modules/engine/mail.cpp:5060 modules/engine/mail.cpp:5083
+#: modules/mail/mail_mod.cpp:4253 modules/mail/mail_mod.cpp:4389
+#: modules/mail/mail_mod.cpp:4442 modules/mail/mail_mod.cpp:4477
+#: modules/mail/mail_mod.cpp:4555 modules/mail/mail_mod.cpp:4672
+#: modules/mail/mail_mod.cpp:4700
 #, c-format
 msgid "MAIL: Alias ‘%s’ not found."
 msgstr "[xx] MAIL: Alias ‘%s’ not found."
@@ -2512,25 +2534,25 @@ msgstr "[xx] MAIL: Alias ‘%s’ not found."
 msgid "Alias Error: Bad Player %d for %s"
 msgstr "[xx] Alias Error: Bad Player %d for %s"
 
-#: modules/engine/mail.cpp:4078
+#: modules/engine/mail.cpp:4078 modules/mail/mail_mod.cpp:4119
 msgid "MAIL: What alias do you want to create?."
 msgstr "[xx] MAIL: What alias do you want to create?."
 
-#: modules/engine/mail.cpp:4084
+#: modules/engine/mail.cpp:4084 modules/mail/mail_mod.cpp:4125
 #, c-format
 msgid "MAIL: Mail Alias ‘%s’ already exists."
 msgstr "[xx] MAIL: Mail Alias ‘%s’ already exists."
 
-#: modules/engine/mail.cpp:4151
+#: modules/engine/mail.cpp:4151 modules/mail/mail_mod.cpp:4209
 #, c-format
 msgid "MAIL: %s added to alias %s"
 msgstr "[xx] MAIL: %s added to alias %s"
 
-#: modules/engine/mail.cpp:4174
+#: modules/engine/mail.cpp:4174 modules/mail/mail_mod.cpp:4229
 msgid "MAIL: Invalid mail alias."
 msgstr "[xx] MAIL: Invalid mail alias."
 
-#: modules/engine/mail.cpp:4196
+#: modules/engine/mail.cpp:4196 modules/mail/mail_mod.cpp:4241
 #, c-format
 msgid "MAIL: Alias set ‘%s’ defined."
 msgstr "[xx] MAIL: Alias set ‘%s’ defined."
@@ -2538,48 +2560,52 @@ msgstr "[xx] MAIL: Alias set ‘%s’ defined."
 #: modules/engine/mail.cpp:4214 modules/engine/mail.cpp:4867
 #: modules/engine/mail.cpp:4938 modules/engine/mail.cpp:4970
 #: modules/engine/mail.cpp:5031 modules/engine/mail.cpp:5112
+#: modules/mail/mail_mod.cpp:4270 modules/mail/mail_mod.cpp:4405
+#: modules/mail/mail_mod.cpp:4494 modules/mail/mail_mod.cpp:4572
+#: modules/mail/mail_mod.cpp:4647 modules/mail/mail_mod.cpp:4714
 msgid "MAIL: Permission denied."
 msgstr "[xx] MAIL: Permission denied."
 
-#: modules/engine/mail.cpp:4220
+#: modules/engine/mail.cpp:4220 modules/mail/mail_mod.cpp:4276
 #, c-format
 msgid "MAIL: Alias *%s: "
 msgstr "[xx] MAIL: Alias *%s: "
 
-#: modules/engine/mail.cpp:4283
+#: modules/engine/mail.cpp:4283 modules/mail/mail_mod.cpp:4322
 msgid "Name         Description                              Owner"
 msgstr "[xx] Name         Description                              Owner"
 
-#: modules/engine/mail.cpp:4293
+#: modules/engine/mail.cpp:4293 modules/mail/mail_mod.cpp:4341
 msgid "*****  End of Mail Aliases *****"
 msgstr "[xx] *****  End of Mail Aliases *****"
 
-#: modules/engine/mail.cpp:4319
+#: modules/engine/mail.cpp:4319 modules/mail/mail_mod.cpp:3409
 msgid "MAIL: No mail message in progress."
 msgstr "[xx] MAIL: No mail message in progress."
 
-#: modules/engine/mail.cpp:4515
+#: modules/engine/mail.cpp:4515 modules/mail/mail_mod.cpp:3462
 msgid "MAIL: I don’t know who you want to mail."
 msgstr "[xx] MAIL: I don’t know who you want to mail."
 
-#: modules/engine/mail.cpp:4520
+#: modules/engine/mail.cpp:4520 modules/mail/mail_mod.cpp:3470
 msgid "MAIL: No message."
 msgstr "[xx] MAIL: No message."
 
-#: modules/engine/mail.cpp:4620
+#: modules/engine/mail.cpp:4620 modules/mail/mail_mod.cpp:3326
+#: modules/mail/mail_mod.cpp:3870
 msgid "MAIL: No message started."
 msgstr "[xx] MAIL: No message started."
 
-#: modules/engine/mail.cpp:4629
+#: modules/engine/mail.cpp:4629 modules/mail/mail_mod.cpp:3351
 msgid "MAIL: No recipients."
 msgstr "[xx] MAIL: No recipients."
 
-#: modules/engine/mail.cpp:4637
+#: modules/engine/mail.cpp:4637 modules/mail/mail_mod.cpp:3361
 msgid "MAIL: The body of this message is empty.  Use - to add to the message."
 msgstr ""
 "[xx] MAIL: The body of this message is empty.  Use - to add to the message."
 
-#: modules/engine/mail.cpp:4657
+#: modules/engine/mail.cpp:4657 modules/mail/mail_mod.cpp:3390
 msgid "MAIL: Message aborted."
 msgstr "[xx] MAIL: Message aborted."
 
@@ -2594,6 +2620,7 @@ msgstr "[xx] %d/%d characters prepended."
 
 #: modules/engine/mail.cpp:4710 modules/engine/mail.cpp:4771
 #: modules/engine/mail.cpp:4790 modules/engine/mail.cpp:4798
+#: modules/mail/mail_mod.cpp:3917
 msgid "MAIL: No message in progress."
 msgstr "[xx] MAIL: No message in progress."
 
@@ -2606,7 +2633,7 @@ msgstr "[xx] No text added."
 msgid "%d/%d characters added."
 msgstr "[xx] %d/%d characters added."
 
-#: modules/engine/mail.cpp:4784
+#: modules/engine/mail.cpp:4784 modules/mail/mail_mod.cpp:4001
 msgid "Text edited."
 msgstr "[xx] Text edited."
 
@@ -2619,82 +2646,83 @@ msgstr ""
 "[xx] From:  %s  Subject: %s\n"
 "To: %s"
 
-#: modules/engine/mail.cpp:4858
+#: modules/engine/mail.cpp:4858 modules/mail/mail_mod.cpp:4425
 msgid "MAIL: Description changed."
 msgstr "[xx] MAIL: Description changed."
 
-#: modules/engine/mail.cpp:4862
+#: modules/engine/mail.cpp:4862 modules/mail/mail_mod.cpp:4411
 msgid "MAIL: Description is not valid."
 msgstr "[xx] MAIL: Description is not valid."
 
-#: modules/engine/mail.cpp:4875
+#: modules/engine/mail.cpp:4875 modules/mail/mail_mod.cpp:4433
 msgid "MAIL: You cannot do that!"
 msgstr "[xx] MAIL: You cannot do that!"
 
-#: modules/engine/mail.cpp:4893
+#: modules/engine/mail.cpp:4893 modules/mail/mail_mod.cpp:4461
 msgid "MAIL: I do not see that here."
 msgstr "[xx] MAIL: I do not see that here."
 
-#: modules/engine/mail.cpp:4898
+#: modules/engine/mail.cpp:4898 modules/mail/mail_mod.cpp:4466
 msgid "MAIL: Owner changed for alias."
 msgstr "[xx] MAIL: Owner changed for alias."
 
-#: modules/engine/mail.cpp:4920
+#: modules/engine/mail.cpp:4920 modules/mail/mail_mod.cpp:4509
 msgid "MAIL: Only players may be added."
 msgstr "[xx] MAIL: Only players may be added."
 
 #: modules/engine/mail.cpp:4932 modules/engine/mail.cpp:4985
+#: modules/mail/mail_mod.cpp:4521 modules/mail/mail_mod.cpp:4589
 msgid "MAIL: I do not see that person here."
 msgstr "[xx] MAIL: I do not see that person here."
 
-#: modules/engine/mail.cpp:4945
+#: modules/engine/mail.cpp:4945 modules/mail/mail_mod.cpp:4530
 msgid "MAIL: That person is already on the list."
 msgstr "[xx] MAIL: That person is already on the list."
 
-#: modules/engine/mail.cpp:4952
+#: modules/engine/mail.cpp:4952 modules/mail/mail_mod.cpp:4541
 #, c-format
 msgid "MAIL: %s added to %s"
 msgstr "[xx] MAIL: %s added to %s"
 
-#: modules/engine/mail.cpp:4996
+#: modules/engine/mail.cpp:4996 modules/mail/mail_mod.cpp:4604
 #, c-format
 msgid "MAIL: %s removed from alias %s."
 msgstr "[xx] MAIL: %s removed from alias %s."
 
-#: modules/engine/mail.cpp:5001
+#: modules/engine/mail.cpp:5001 modules/mail/mail_mod.cpp:4614
 #, c-format
 msgid "MAIL: %s is not a member of alias %s."
 msgstr "[xx] MAIL: %s is not a member of alias %s."
 
-#: modules/engine/mail.cpp:5012
+#: modules/engine/mail.cpp:5012 modules/mail/mail_mod.cpp:4628
 msgid "MAIL: That name already exists!"
 msgstr "[xx] MAIL: That name already exists!"
 
-#: modules/engine/mail.cpp:5022
+#: modules/engine/mail.cpp:5022 modules/mail/mail_mod.cpp:4638
 msgid "MAIL: I cannot find that alias!"
 msgstr "[xx] MAIL: I cannot find that alias!"
 
-#: modules/engine/mail.cpp:5046
+#: modules/engine/mail.cpp:5046 modules/mail/mail_mod.cpp:4657
 msgid "MAIL: Mailing Alias renamed."
 msgstr "[xx] MAIL: Mailing Alias renamed."
 
-#: modules/engine/mail.cpp:5050
+#: modules/engine/mail.cpp:5050 modules/mail/mail_mod.cpp:4661
 msgid "MAIL: Alias is not valid."
 msgstr "[xx] MAIL: Alias is not valid."
 
-#: modules/engine/mail.cpp:5076
+#: modules/engine/mail.cpp:5076 modules/mail/mail_mod.cpp:4690
 msgid "MAIL: Alias Deleted."
 msgstr "[xx] MAIL: Alias Deleted."
 
-#: modules/engine/mail.cpp:5094
+#: modules/engine/mail.cpp:5094 modules/mail/mail_mod.cpp:4353
 msgid "Num  Name         Description                              Owner"
 msgstr "[xx] Num  Name         Description                              Owner"
 
-#: modules/engine/mail.cpp:5105
+#: modules/engine/mail.cpp:5105 modules/mail/mail_mod.cpp:4378
 msgid "***** End of Mail Aliases *****"
 msgstr "[xx] ***** End of Mail Aliases *****"
 
-#: modules/engine/mail.cpp:5116
+#: modules/engine/mail.cpp:5116 modules/mail/mail_mod.cpp:4718
 #, c-format
 msgid "MAIL: Number of mail aliases defined: %d"
 msgstr "[xx] MAIL: Number of mail aliases defined: %d"
@@ -2704,19 +2732,19 @@ msgstr "[xx] MAIL: Number of mail aliases defined: %d"
 msgid "MAIL: Vector capacity: %d"
 msgstr "[xx] MAIL: Vector capacity: %d"
 
-#: modules/engine/mail.cpp:5226
+#: modules/engine/mail.cpp:5226 modules/mail/mail_mod.cpp:2363
 msgid "MAIL: Mail retracted."
 msgstr "[xx] MAIL: Mail retracted."
 
-#: modules/engine/mail.cpp:5230
+#: modules/engine/mail.cpp:5230 modules/mail/mail_mod.cpp:2369
 msgid "MAIL: That message has been read."
 msgstr "[xx] MAIL: That message has been read."
 
-#: modules/engine/mail.cpp:5240
+#: modules/engine/mail.cpp:5240 modules/mail/mail_mod.cpp:2380
 msgid "MAIL: No matching messages."
 msgstr "[xx] MAIL: No matching messages."
 
-#: modules/engine/mail.cpp:5252
+#: modules/engine/mail.cpp:5252 modules/mail/mail_mod.cpp:2306
 #, c-format
 msgid "MAIL: Mail alias %s not found."
 msgstr "[xx] MAIL: Mail alias %s not found."
@@ -4254,7 +4282,35 @@ msgstr "[xx] Enabled."
 msgid "Disabled."
 msgstr "[xx] Disabled."
 
-#: modules/mail/mail_mod.cpp:5302
+#: modules/mail/mail_mod.cpp:2418
+#, c-format
+msgid "MAIL: ** MAIL PURGE ** done by #%d."
+msgstr "[xx] MAIL: ** MAIL PURGE ** done by #%d."
+
+#: modules/mail/mail_mod.cpp:3547
+msgid "MAIL: Out of memory, message not sent."
+msgstr "[xx] MAIL: Out of memory, message not sent."
+
+#: modules/mail/mail_mod.cpp:3892
+#, c-format
+msgid "MAIL: To: %s"
+msgstr "[xx] MAIL: To: %s"
+
+#: modules/mail/mail_mod.cpp:3896
+#, c-format
+msgid "MAIL: Subject: %s"
+msgstr "[xx] MAIL: Subject: %s"
+
+#: modules/mail/mail_mod.cpp:3939
+msgid "MAIL: Nothing to edit."
+msgstr "[xx] MAIL: Nothing to edit."
+
+#: modules/mail/mail_mod.cpp:4721
+#, c-format
+msgid "MAIL: Allocated slots %d"
+msgstr "[xx] MAIL: Allocated slots %d"
+
+#: modules/mail/mail_mod.cpp:5301
 msgid "MAIL: Mail statistics are unavailable."
 msgstr "[xx] MAIL: Mail statistics are unavailable."
 
