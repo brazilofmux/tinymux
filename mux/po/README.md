@@ -122,6 +122,37 @@ export LANGUAGE=xx
 ./bin/netmux
 ```
 
+### Selecting a language for the game (preferred)
+
+`LANGUAGE` above is fine for a shell session, but it is **not** how to
+configure a server, for two reasons: it is the one server-wide setting that
+would live outside `netmux.conf`, and it does not work on every platform.
+`LANGUAGE` is a GNU gettext convention — the built-in catalogue reader used
+where there is no `<libintl.h>` (MSVC/Windows) reads only `LC_ALL`,
+`LC_MESSAGES` and `LANG`, so `export LANGUAGE=ko` there selects nothing and
+the server runs English with no diagnostic (#1702).
+
+Use the directive instead. It behaves identically on every platform:
+
+```
+language ko
+```
+
+in `netmux.conf`, naming `game/locale/ko/LC_MESSAGES/tinymux.mo`. It
+overrides the environment when set; leaving it out keeps the environment
+behaviour above unchanged.
+
+It also does not require the host to have that locale installed, and it
+works under the `C` locale — the catalogue is opened by path rather than
+selected through the system's locale machinery. That matters because a bare
+service environment is the normal case for a server, and GNU gettext
+suppresses translation outright under `C`/`POSIX` no matter what is set.
+
+Since #1702 the reader is the same on every platform (the built-in MO reader;
+`libintl` is no longer used for lookup), so `LANGUAGE`, `LC_ALL`,
+`LC_MESSAGES` and `LANG` are honoured in gettext's documented order
+everywhere — including Windows, which previously ignored `LANGUAGE`.
+
 On minimal hosts without `en_US.UTF-8` installed, generate a user locale:
 
 ```bash
