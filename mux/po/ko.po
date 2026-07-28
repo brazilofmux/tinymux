@@ -90,12 +90,12 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:566
 #, c-format
 msgid "%s %s has connected."
-msgstr ""
+msgstr "%s %s님이 접속했습니다."
 
 #: modules/comsys/comsys_mod.cpp:612
 #, c-format
 msgid "%s %s has disconnected."
-msgstr ""
+msgstr "%s %s님이 접속을 종료했습니다."
 
 #: modules/comsys/comsys_mod.cpp:645 modules/comsys/comsys_mod.cpp:655
 #: modules/comsys/comsys_mod.cpp:2587 modules/engine/comsys.cpp:3088
@@ -108,28 +108,28 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:1802 modules/comsys/comsys_mod.cpp:1804
 #, c-format
 msgid "%s has left this channel."
-msgstr ""
+msgstr "%s님이 이 채널에서 나갔습니다."
 
 #: modules/comsys/comsys_mod.cpp:1130 modules/comsys/comsys_mod.cpp:1783
 #: modules/engine/comsys.cpp:2030 modules/engine/comsys.cpp:2618
 #, c-format
 msgid "You have left channel %s."
-msgstr ""
+msgstr "채널 %s에서 나갔습니다."
 
 #: modules/comsys/comsys_mod.cpp:1708 modules/engine/comsys.cpp:1979
 #, c-format
 msgid "Too many people on channel %s already."
-msgstr ""
+msgstr "채널 %s에 이미 사람이 너무 많습니다."
 
 #: modules/comsys/comsys_mod.cpp:1740 modules/engine/comsys.cpp:2010
 #, c-format
 msgid "You are already on channel %s."
-msgstr ""
+msgstr "이미 채널 %s에 있습니다."
 
 #: modules/comsys/comsys_mod.cpp:1762 modules/comsys/comsys_mod.cpp:1765
 #, c-format
 msgid "%s has joined this channel."
-msgstr ""
+msgstr "%s님이 이 채널에 참여했습니다."
 
 #: modules/comsys/comsys_mod.cpp:1835 modules/engine/comsys.cpp:2102
 msgid "-- Players --"
@@ -141,11 +141,11 @@ msgstr "-- 사물 --"
 
 #: modules/comsys/comsys_mod.cpp:1927 modules/engine/comsys.cpp:2150
 msgid "Channel does not have an object."
-msgstr ""
+msgstr "채널에 연결된 사물이 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:1948 modules/engine/comsys.cpp:2171
 msgid "Channel does not log."
-msgstr ""
+msgstr "채널이 기록을 남기지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:1965 modules/engine/comsys.cpp:2187
 #, c-format
@@ -167,7 +167,7 @@ msgstr "메시지가 없습니다."
 #: modules/engine/comsys.cpp:3496
 #, c-format
 msgid "Unknown channel %s."
-msgstr ""
+msgstr "알 수 없는 채널 %s입니다."
 
 #: modules/comsys/comsys_mod.cpp:2035 modules/engine/comsys.cpp:1562
 msgid "You are not listed as on that channel.  Delete this alias and readd."
@@ -176,19 +176,19 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:2060 modules/engine/comsys.cpp:1583
 #, c-format
 msgid "You must be on %s to do that."
-msgstr ""
+msgstr "그렇게 하려면 %s에 있어야 합니다."
 
 #: modules/comsys/comsys_mod.cpp:2096 modules/engine/comsys.cpp:1569
 msgid "GAGGED players may not speak on channels."
-msgstr ""
+msgstr "재갈이 물린 플레이어는 채널에서 말할 수 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:2108 modules/engine/comsys.cpp:1605
 msgid "That channel type cannot be transmitted on."
-msgstr ""
+msgstr "그 유형의 채널에서는 송신할 수 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:2120
 msgid "You don’t have enough coins."
-msgstr ""
+msgstr "동전이 충분하지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:2177 modules/engine/speech.cpp:227
 #: modules/engine/speech.cpp:229 modules/engine/speech.cpp:1225
@@ -198,7 +198,7 @@ msgstr "%s님이 “%s”(이)라고 말합니다."
 
 #: modules/comsys/comsys_mod.cpp:2478 modules/engine/comsys.cpp:3174
 msgid "Only options available are: on, off and who."
-msgstr ""
+msgstr "사용할 수 있는 옵션은 on, off, who뿐입니다."
 
 #: modules/comsys/comsys_mod.cpp:2524 modules/engine/comsys.cpp:3041
 msgid "Alias"
@@ -223,11 +223,11 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:2540 modules/comsys/comsys_mod.cpp:2594
 #: modules/engine/comsys.cpp:3093
 msgid "-- End of comlist --"
-msgstr ""
+msgstr "-- comlist 끝 --"
 
 #: modules/comsys/comsys_mod.cpp:2610 modules/engine/comsys.cpp:2935
 msgid "Need an alias to do comtitle."
-msgstr ""
+msgstr "comtitle을 사용하려면 별칭이 필요합니다."
 
 #: modules/comsys/comsys_mod.cpp:2620 modules/engine/comsys.cpp:2944
 msgid "Unknown alias."
@@ -235,40 +235,40 @@ msgstr "알 수 없는 별칭입니다."
 
 #: modules/comsys/comsys_mod.cpp:2631 modules/engine/comsys.cpp:2990
 msgid "Illegal comsys alias, please delete."
-msgstr ""
+msgstr "잘못된 comsys 별칭입니다. 삭제해 주세요."
 
 #: modules/comsys/comsys_mod.cpp:2651 modules/engine/comsys.cpp:2956
 #, c-format
 msgid "Comtitles are now off for channel %s"
-msgstr ""
+msgstr "채널 %s의 comtitle이 해제되었습니다"
 
 #: modules/comsys/comsys_mod.cpp:2657 modules/engine/comsys.cpp:2961
 msgid "You can not turn off comtitles on that channel."
-msgstr ""
+msgstr "그 채널에서는 comtitle을 해제할 수 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:2665 modules/engine/comsys.cpp:2966
 #, c-format
 msgid "Comtitles are now on for channel %s"
-msgstr ""
+msgstr "채널 %s의 comtitle이 설정되었습니다"
 
 #: modules/comsys/comsys_mod.cpp:2673 modules/engine/comsys.cpp:2971
 #, c-format
 msgid "Join/leave messages are now gagged for channel %s"
-msgstr ""
+msgstr "채널 %s의 참여/퇴장 메시지가 숨겨졌습니다"
 
 #: modules/comsys/comsys_mod.cpp:2681 modules/engine/comsys.cpp:2976
 #, c-format
 msgid "Join/leave messages are now ungagged for channel %s"
-msgstr ""
+msgstr "채널 %s의 참여/퇴장 메시지가 다시 표시됩니다"
 
 #: modules/comsys/comsys_mod.cpp:2699 modules/engine/comsys.cpp:2983
 #, c-format
 msgid "Title set to ‘%s’ on channel %s."
-msgstr ""
+msgstr "채널 %2$s에 칭호 ‘%1$s’을(를) 설정했습니다."
 
 #: modules/comsys/comsys_mod.cpp:2731 modules/engine/comsys.cpp:2792
 msgid "Warning: Only public channels and your channels will be shown."
-msgstr ""
+msgstr "경고: 공개 채널과 본인의 채널만 표시됩니다."
 
 #: modules/comsys/comsys_mod.cpp:2747 modules/comsys/comsys_mod.cpp:2890
 #: modules/engine/comsys.cpp:2824 modules/engine/comsys.cpp:4134
@@ -298,7 +298,7 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:2847 modules/comsys/comsys_mod.cpp:2986
 #: modules/engine/comsys.cpp:2903 modules/engine/comsys.cpp:4244
 msgid "-- End of list of Channels --"
-msgstr ""
+msgstr "-- 채널 목록 끝 --"
 
 #: modules/comsys/comsys_mod.cpp:2890 modules/engine/comsys.cpp:4134
 #: modules/engine/mail.cpp:4336 modules/engine/mail.cpp:5174
@@ -308,11 +308,11 @@ msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:2955
 msgid "No description."
-msgstr ""
+msgstr "설명이 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:3003
 msgid "You must specify a channel."
-msgstr ""
+msgstr "채널을 지정해야 합니다."
 
 #: modules/comsys/comsys_mod.cpp:3044 modules/comsys/comsys_mod.cpp:3178
 #: modules/comsys/comsys_mod.cpp:3234 modules/comsys/comsys_mod.cpp:3564
@@ -335,22 +335,22 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:3156 modules/engine/comsys.cpp:3746
 #, c-format
 msgid "Channel %s does not exist."
-msgstr ""
+msgstr "채널 %s이(가) 존재하지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:3220 modules/engine/comsys.cpp:3802
 #, c-format
 msgid "@cset: Channel %s does not exist."
-msgstr ""
+msgstr "@cset: 채널 %s이(가) 존재하지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:3246 modules/engine/comsys.cpp:3818
 #, c-format
 msgid "@cset: Channel %s placed on the public listings."
-msgstr ""
+msgstr "@cset: 채널 %s을(를) 공개 목록에 올렸습니다."
 
 #: modules/comsys/comsys_mod.cpp:3254 modules/engine/comsys.cpp:3823
 #, c-format
 msgid "@cset: Channel %s taken off the public listings."
-msgstr ""
+msgstr "@cset: 채널 %s을(를) 공개 목록에서 내렸습니다."
 
 #: modules/comsys/comsys_mod.cpp:3262 modules/engine/comsys.cpp:3828
 #, c-format
@@ -365,27 +365,27 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:3278 modules/engine/comsys.cpp:3838
 #, c-format
 msgid "@cset: Channel %s set spoofable."
-msgstr ""
+msgstr "@cset: 채널 %s에서 위장을 허용합니다."
 
 #: modules/comsys/comsys_mod.cpp:3286 modules/engine/comsys.cpp:3843
 #, c-format
 msgid "@cset: Channel %s set unspoofable."
-msgstr ""
+msgstr "@cset: 채널 %s에서 위장을 허용하지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:3307 modules/engine/comsys.cpp:3854
 #, c-format
 msgid "Channel %s is now disassociated from any channel object."
-msgstr ""
+msgstr "채널 %s이(가) 더 이상 어떤 사물과도 연결되어 있지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:3316
 #, c-format
 msgid "Channel %s is now using %s(#%d) as channel object."
-msgstr ""
+msgstr "채널 %1$s이(가) 이제 %2$s(#%3$d)을(를) 채널 사물로 사용합니다."
 
 #: modules/comsys/comsys_mod.cpp:3324
 #, c-format
 msgid "%d is not a valid channel object."
-msgstr ""
+msgstr "%d은(는) 올바른 채널 사물이 아닙니다."
 
 #: modules/comsys/comsys_mod.cpp:3443
 #, c-format
@@ -404,7 +404,7 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:3455 modules/engine/comsys.cpp:3878
 #, c-format
 msgid "@cset: Channel %s maximum history set."
-msgstr ""
+msgstr "@cset: 채널 %s의 최대 기록을 설정했습니다."
 
 #: modules/comsys/comsys_mod.cpp:3484 modules/comsys/comsys_mod.cpp:3500
 #, c-format
@@ -421,22 +421,22 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:3526 modules/engine/comsys.cpp:3899
 #, c-format
 msgid "@cset: Channel %s timestamp logging set."
-msgstr ""
+msgstr "@cset: 채널 %s의 시각 기록을 설정했습니다."
 
 #: modules/comsys/comsys_mod.cpp:3777 modules/engine/comsys.cpp:3979
 #, c-format
 msgid "@cboot: %s is not on the channel."
-msgstr ""
+msgstr "@cboot: %s님은 채널에 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:3793 modules/engine/comsys.cpp:3984
 #, c-format
 msgid "You boot %s off channel %s."
-msgstr ""
+msgstr "%2$s 채널에서 %1$s님을 내보냈습니다."
 
 #: modules/comsys/comsys_mod.cpp:3800 modules/engine/comsys.cpp:3986
 #, c-format
 msgid "%s boots you off channel %s."
-msgstr ""
+msgstr "%1$s님이 %2$s 채널에서 당신을 내보냈습니다."
 
 #: modules/comsys/comsys_mod.cpp:3811
 #, c-format
@@ -446,82 +446,82 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:3886 modules/comsys/comsys_mod.cpp:3908
 #: modules/engine/comsys.cpp:2456 modules/engine/comsys.cpp:2466
 msgid "You need to specify a valid alias."
-msgstr ""
+msgstr "올바른 별칭을 지정해야 합니다."
 
 #: modules/comsys/comsys_mod.cpp:3895 modules/engine/comsys.cpp:2471
 msgid "You need to specify a channel."
-msgstr ""
+msgstr "채널을 지정해야 합니다."
 
 #: modules/comsys/comsys_mod.cpp:3920 modules/engine/comsys.cpp:2480
 #, c-format
 msgid "Channel %s does not exist yet."
-msgstr ""
+msgstr "채널 %s이(가) 아직 존재하지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:3932 modules/engine/comsys.cpp:2485
 msgid "Sorry, this channel type does not allow you to join."
-msgstr ""
+msgstr "죄송합니다, 이 유형의 채널에는 참여할 수 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:3944 modules/engine/comsys.cpp:2491
 msgid "Sorry, but you have reached the maximum number of aliases allowed."
-msgstr ""
+msgstr "죄송합니다, 허용된 별칭의 최대 개수에 도달했습니다."
 
 #: modules/comsys/comsys_mod.cpp:3960 modules/engine/comsys.cpp:2502
 #, c-format
 msgid "That alias is already in use for channel %s."
-msgstr ""
+msgstr "그 별칭은 이미 채널 %s에 사용 중입니다."
 
 #: modules/comsys/comsys_mod.cpp:3989 modules/engine/comsys.cpp:2522
 #, c-format
 msgid "Channel %s added with alias %s."
-msgstr ""
+msgstr "채널 %1$s을(를) 별칭 %2$s(으)로 추가했습니다."
 
 #: modules/comsys/comsys_mod.cpp:4005 modules/engine/comsys.cpp:2543
 msgid "Need an alias to delete."
-msgstr ""
+msgstr "삭제할 별칭이 필요합니다."
 
 #: modules/comsys/comsys_mod.cpp:4043 modules/engine/comsys.cpp:2571
 #: modules/engine/comsys.cpp:2577
 #, c-format
 msgid "Alias %s for channel %s deleted."
-msgstr ""
+msgstr "채널 %2$s의 별칭 %1$s을(를) 삭제했습니다."
 
 #: modules/comsys/comsys_mod.cpp:4056 modules/engine/comsys.cpp:2587
 msgid "Unable to find that alias."
-msgstr ""
+msgstr "그 별칭을 찾을 수 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:4093 modules/engine/comsys.cpp:2648
 msgid "You must specify a channel to create."
-msgstr ""
+msgstr "만들 채널을 지정해야 합니다."
 
 #: modules/comsys/comsys_mod.cpp:4109
 msgid "You do not have permission to create channels."
-msgstr ""
+msgstr "채널을 만들 권한이 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:4122
 msgid "That channel already exists."
-msgstr ""
+msgstr "그 채널은 이미 존재합니다."
 
 #: modules/comsys/comsys_mod.cpp:4154 modules/engine/comsys.cpp:2726
 #, c-format
 msgid "Channel %s created."
-msgstr ""
+msgstr "채널 %s을(를) 만들었습니다."
 
 #: modules/comsys/comsys_mod.cpp:4169
 msgid "You must specify a channel to destroy."
-msgstr ""
+msgstr "삭제할 채널을 지정해야 합니다."
 
 #: modules/comsys/comsys_mod.cpp:4180 modules/engine/comsys.cpp:4040
 msgid "That channel does not exist."
-msgstr ""
+msgstr "그 채널이 존재하지 않습니다."
 
 #: modules/comsys/comsys_mod.cpp:4200
 msgid "You do not have permission to destroy that channel."
-msgstr ""
+msgstr "그 채널을 삭제할 권한이 없습니다."
 
 #: modules/comsys/comsys_mod.cpp:4248 modules/engine/comsys.cpp:2783
 #, c-format
 msgid "Channel %s destroyed."
-msgstr ""
+msgstr "채널 %s을(를) 삭제했습니다."
 
 #: modules/engine/attrcache.cpp:1173
 msgid "--- Attribute Cache ---"
@@ -1012,17 +1012,17 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:2696
 msgid "Channel name is too long."
-msgstr ""
+msgstr "채널 이름이 너무 깁니다."
 
 #: modules/engine/comsys.cpp:2706
 #, c-format
 msgid "Channel %s already exists."
-msgstr ""
+msgstr "채널 %s이(가) 이미 존재합니다."
 
 #: modules/engine/comsys.cpp:2763
 #, c-format
 msgid "Could not find channel %s."
-msgstr ""
+msgstr "채널 %s을(를) 찾을 수 없습니다."
 
 #: modules/engine/comsys.cpp:3525 modules/engine/comsys.cpp:3541
 #: modules/engine/comsys.cpp:3871 modules/engine/conf.cpp:2464
@@ -1037,15 +1037,15 @@ msgstr "설정되었습니다."
 
 #: modules/engine/comsys.cpp:3529
 msgid "Invalid player."
-msgstr ""
+msgstr "플레이어가 잘못되었습니다."
 
 #: modules/engine/comsys.cpp:3545
 msgid "That is not a reasonable cost."
-msgstr ""
+msgstr "적절한 비용이 아닙니다."
 
 #: modules/engine/comsys.cpp:3567
 msgid "@cpflags: Unknown Flag."
-msgstr ""
+msgstr "@cpflags: 알 수 없는 플래그입니다."
 
 #: modules/engine/comsys.cpp:3575
 msgid "@cpflags: Set."
@@ -1057,7 +1057,7 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:3603
 msgid "@coflags: Unknown Flag."
-msgstr ""
+msgstr "@coflags: 알 수 없는 플래그입니다."
 
 #: modules/engine/comsys.cpp:3611
 msgid "@coflags: Set."
@@ -1070,7 +1070,7 @@ msgstr ""
 #: modules/engine/comsys.cpp:3860
 #, c-format
 msgid "Channel %s is now using %s as channel object."
-msgstr ""
+msgstr "채널 %1$s이(가) 이제 %2$s을(를) 채널 사물로 사용합니다."
 
 #: modules/engine/comsys.cpp:3882
 #, c-format
@@ -1082,17 +1082,17 @@ msgstr ""
 #: modules/engine/comsys.cpp:3886
 #, c-format
 msgid "@cset: Could not set maximum history for channel %s."
-msgstr ""
+msgstr "@cset: 채널 %s의 최대 기록을 설정할 수 없습니다."
 
 #: modules/engine/comsys.cpp:3890
 #, c-format
 msgid "@cset: Maximum history must be a number less than or equal to %d."
-msgstr ""
+msgstr "@cset: 최대 기록은 %d 이하의 숫자여야 합니다."
 
 #: modules/engine/comsys.cpp:3903
 #, c-format
 msgid "@cset: Timestamp logging for channel %s must be 0 or 1."
-msgstr ""
+msgstr "@cset: 채널 %s의 시각 기록은 0 또는 1이어야 합니다."
 
 #: modules/engine/comsys.cpp:3907
 #, c-format
@@ -1111,15 +1111,15 @@ msgstr ""
 #: modules/engine/comsys.cpp:3915
 #, c-format
 msgid "@cset: Could not set timestamp logging for channel %s."
-msgstr ""
+msgstr "@cset: 채널 %s의 시각 기록을 설정할 수 없습니다."
 
 #: modules/engine/comsys.cpp:3955
 msgid "@cboot: Unknown channel."
-msgstr ""
+msgstr "@cboot: 알 수 없는 채널입니다."
 
 #: modules/engine/comsys.cpp:3961
 msgid "@cboot: You are not on that channel."
-msgstr ""
+msgstr "@cboot: 그 채널에 있지 않습니다."
 
 #: modules/engine/comsys.cpp:3967
 msgid "@cboot: You can’t do that!"
