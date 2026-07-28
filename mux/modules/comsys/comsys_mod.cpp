@@ -25,6 +25,7 @@
 #include "timeutil.h"
 #include "comsys_mod.h"
 #include "mux_format.h"
+#include "color_ops.h"
 
 #include <atomic>
 #include <cstdarg>
@@ -35,6 +36,76 @@
 #ifdef _MSC_VER
 #define strcasecmp _stricmp
 #endif
+
+// ---------------------------------------------------------------------------
+// Column layout via co_copy_field (#1649 / #1653).
+//
+// %-N.Ns with snprintf is wrong twice: precision is bytes (mid-sequence
+// cuts on CJK/emoji), and even mux_sprintf's codepoint precision is not
+// display width.  co_copy_field is the Unicode 16.0 path — cluster-safe,
+// visual-width columns, color-close on truncate, hard byte cap.
+// ---------------------------------------------------------------------------
+
+// Append a left-justified field of nCols display columns at buf[pos].
+// Truncates by grapheme cluster; pads with spaces.  nBuf includes the
+// trailing NUL.  Returns the new write position.
+//
+static size_t append_ljust_field(
+    UTF8 *buf, size_t nBuf, size_t pos,
+    const UTF8 *text, size_t nCols)
+{
+    if (pos + 1 >= nBuf)
+    {
+        if (0 < nBuf)
+        {
+            buf[nBuf - 1] = '\0';
+        }
+        return pos;
+    }
+
+    const unsigned char *src = (nullptr != text)
+        ? reinterpret_cast<const unsigned char *>(text)
+        : reinterpret_cast<const unsigned char *>("");
+
+    co_field fld = co_copy_field(
+        reinterpret_cast<unsigned char *>(buf + pos),
+        nBuf - pos, src, nullptr, nCols);
+
+    pos += fld.bytes;
+    size_t cols = fld.columns;
+    while (  cols < nCols
+          && pos + 1 < nBuf)
+    {
+        buf[pos++] = ' ';
+        cols++;
+    }
+    if (pos < nBuf)
+    {
+        buf[pos] = '\0';
+    }
+    return pos;
+}
+
+// Append a C-string literal (ASCII flags, separators).  Returns new pos.
+//
+static size_t append_bytes(
+    UTF8 *buf, size_t nBuf, size_t pos, const char *lit)
+{
+    if (nullptr == lit)
+    {
+        return pos;
+    }
+    while (  '\0' != *lit
+          && pos + 1 < nBuf)
+    {
+        buf[pos++] = static_cast<UTF8>(*lit++);
+    }
+    if (pos < nBuf)
+    {
+        buf[pos] = '\0';
+    }
+    return pos;
+}
 
 // Module bookkeeping.
 //
@@ -2490,15 +2561,26 @@ MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
                 continue;
             }
 
+            // Alias/channel columns: visual width via co_copy_field.
+            // Status/title trail is free-form; mux_sprintf for the rest.
+            //
             UTF8 msg[256];
-            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                     "%-15.15s %-18.18s %s %s%s %s",
-                     ca.alias.c_str(),
-                     ca.channel.c_str(),
-                     user->bUserIsOn ? "on " : "off",
-                     user->ComTitleStatus ? "con " : "coff",
-                     user->bGagJoinLeave ? " gag" : "",
-                     user->title.c_str());
+            size_t pos = 0;
+            pos = append_ljust_field(msg, sizeof(msg), pos,
+                reinterpret_cast<const UTF8 *>(ca.alias.c_str()), 15);
+            pos = append_bytes(msg, sizeof(msg), pos, " ");
+            pos = append_ljust_field(msg, sizeof(msg), pos,
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()), 18);
+            pos = append_bytes(msg, sizeof(msg), pos, " ");
+            if (pos < sizeof(msg))
+            {
+                mux_sprintf(msg + pos, sizeof(msg) - pos,
+                    T("%s %s%s %s"),
+                    user->bUserIsOn ? T("on ") : T("off"),
+                    user->ComTitleStatus ? T("con ") : T("coff"),
+                    user->bGagJoinLeave ? T(" gag") : T(""),
+                    reinterpret_cast<const UTF8 *>(user->title.c_str()));
+            }
             m_pINotify->RawNotify(executor, msg);
         }
         else
@@ -2715,20 +2797,41 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
                 pHeader = T("-");
             }
 
+            // Match the engine's do_listchannels column widths (13/15/15)
+            // with co_copy_field so CJK and emoji measure in display
+            // columns, not bytes (#1649).
+            //
             UTF8 line[256];
-            snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                     "%c%c%c %-13.13s %-15.15s %-15.15s %c%c%c   %5d %4d",
-                     (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
-                     (ch->type & CHANNEL_LOUD) ? 'L' : '-',
-                     (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
-                     reinterpret_cast<const char *>(ch->name),
-                     reinterpret_cast<const char *>(pHeader),
-                     reinterpret_cast<const char *>(pOwnerName),
-                     test_join_access(executor, ch)     ? 'J' : '-',
-                     test_transmit_access(executor, ch) ? 'X' : '-',
-                     test_receive_access(executor, ch)  ? 'R' : '-',
-                     static_cast<int>(ch->users.size()),
-                     ch->num_messages);
+            size_t pos = 0;
+            char flags[5];
+            flags[0] = (ch->type & CHANNEL_PUBLIC) ? 'P' : '-';
+            flags[1] = (ch->type & CHANNEL_LOUD)   ? 'L' : '-';
+            flags[2] = (ch->type & CHANNEL_SPOOF)  ? 'S' : '-';
+            flags[3] = ' ';
+            flags[4] = '\0';
+            pos = append_bytes(line, sizeof(line), pos, flags);
+            pos = append_ljust_field(line, sizeof(line), pos, ch->name, 13);
+            pos = append_bytes(line, sizeof(line), pos, " ");
+            pos = append_ljust_field(line, sizeof(line), pos, pHeader, 15);
+            pos = append_bytes(line, sizeof(line), pos, " ");
+            pos = append_ljust_field(line, sizeof(line), pos, pOwnerName, 15);
+            pos = append_bytes(line, sizeof(line), pos, " ");
+            char jxr[8];
+            jxr[0] = test_join_access(executor, ch)     ? 'J' : '-';
+            jxr[1] = test_transmit_access(executor, ch) ? 'X' : '-';
+            jxr[2] = test_receive_access(executor, ch)  ? 'R' : '-';
+            jxr[3] = ' ';
+            jxr[4] = ' ';
+            jxr[5] = ' ';
+            jxr[6] = '\0';
+            pos = append_bytes(line, sizeof(line), pos, jxr);
+            if (pos < sizeof(line))
+            {
+                mux_sprintf(line + pos, sizeof(line) - pos,
+                    T("%5d %4d"),
+                    static_cast<int>(ch->users.size()),
+                    ch->num_messages);
+            }
             m_pINotify->RawNotify(executor, line);
         }
 
@@ -2800,22 +2903,26 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
             ? reinterpret_cast<const char *>(ch->header)
             : "No description.";
 
-        // The description field is truncated at 45 and padded out to column
-        // 79, as the engine's do_chanlist does with StripTabsAndTruncate +
-        // PadField.  The module left it unpadded, so every line of a plain
-        // @clist differed from the engine's by trailing whitespace -- found
-        // by the command-surface diff rather than reported in #1640, and
-        // invisible to any eyeball comparison.
+        // Description/header truncated and padded to 45 display columns —
+        // engine uses StripTabsAndTruncate + PadField; module uses the
+        // Unicode 16 cluster path (co_copy_field).  Trailing pad matters
+        // for command-surface parity with the engine (#1640).
         //
         UTF8 line[256];
-        snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                 "%c%c%c %-13.13s %-15.15s %-45.45s",
-                 (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
-                 (ch->type & CHANNEL_LOUD) ? 'L' : '-',
-                 (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
-                 reinterpret_cast<const char *>(ch->name),
-                 reinterpret_cast<const char *>(pOwnerName),
-                 pDesc);
+        size_t pos = 0;
+        char flags[5];
+        flags[0] = (ch->type & CHANNEL_PUBLIC) ? 'P' : '-';
+        flags[1] = (ch->type & CHANNEL_LOUD)   ? 'L' : '-';
+        flags[2] = (ch->type & CHANNEL_SPOOF)  ? 'S' : '-';
+        flags[3] = ' ';
+        flags[4] = '\0';
+        pos = append_bytes(line, sizeof(line), pos, flags);
+        pos = append_ljust_field(line, sizeof(line), pos, ch->name, 13);
+        pos = append_bytes(line, sizeof(line), pos, " ");
+        pos = append_ljust_field(line, sizeof(line), pos, pOwnerName, 15);
+        pos = append_bytes(line, sizeof(line), pos, " ");
+        pos = append_ljust_field(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(pDesc), 45);
         m_pINotify->RawNotify(executor, line);
     }
 
@@ -2887,9 +2994,15 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
              "-- %s --", reinterpret_cast<const char *>(ch->name));
     m_pINotify->RawNotify(executor, msg);
 
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "%-29.29s %-6.6s %-6.6s", "Name", "Status", "Player");
-    m_pINotify->RawNotify(executor, msg);
+    {
+        size_t pos = 0;
+        pos = append_ljust_field(msg, sizeof(msg), pos, T("Name"), 29);
+        pos = append_bytes(msg, sizeof(msg), pos, " ");
+        pos = append_ljust_field(msg, sizeof(msg), pos, T("Status"), 6);
+        pos = append_bytes(msg, sizeof(msg), pos, " ");
+        pos = append_ljust_field(msg, sizeof(msg), pos, T("Player"), 6);
+        m_pINotify->RawNotify(executor, msg);
+    }
 
     for (auto &kv : ch->users)
     {
@@ -2926,11 +3039,14 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
             m_pIObjectInfo->IsPlayer(user.who, &bPlayer);
         }
 
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "%-29.29s %-6.6s %-6.6s",
-                 reinterpret_cast<const char *>(pName),
-                 user.bUserIsOn ? "on " : "off",
-                 bPlayer ? "yes" : "no ");
+        size_t pos = 0;
+        pos = append_ljust_field(msg, sizeof(msg), pos, pName, 29);
+        pos = append_bytes(msg, sizeof(msg), pos, " ");
+        pos = append_ljust_field(msg, sizeof(msg), pos,
+            user.bUserIsOn ? T("on ") : T("off"), 6);
+        pos = append_bytes(msg, sizeof(msg), pos, " ");
+        pos = append_ljust_field(msg, sizeof(msg), pos,
+            bPlayer ? T("yes") : T("no "), 6);
         m_pINotify->RawNotify(executor, msg);
     }
 
