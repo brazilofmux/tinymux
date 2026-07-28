@@ -4214,6 +4214,37 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_GETFIELD_FLT: {
+        // The float twin of GETFIELD_INT: a0=tbl_idx, a1=guest key addr
+        // -> a0=double as raw bits, a1=ok.  The bits ride the integer
+        // register (the FMV.X.D lane); codegen stores them straight into
+        // the value's FP slot.  Only a genuine float comes back --
+        // lua_isnumber alone would coerce "3.7" and integers, and each of
+        // those already has its own honest route.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
+        if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        lua_pushstring(L, key);
+        lua_rawget(L, tbl_idx);
+        if (LUA_TNUMBER == lua_type(L, -1) && !lua_isinteger(L, -1)) {
+            double d = lua_tonumber(L, -1);
+            uint64_t bits;
+            memcpy(&bits, &d, 8);
+            ctx->x[10] = bits;
+            ctx->x[11] = 1;
+        } else {
+            ctx->x[11] = 0;
+        }
+        lua_pop(L, 1);
+        if (0 == ctx->x[11]) return ECALL_DECLINE;
+        return -1;
+    }
+
     case ECALL_LUA_SETFIELD_INT: {
         // a0=tbl_idx, a1=guest key addr, a2=integer value.
         if (!ec->lua_state) return -1;

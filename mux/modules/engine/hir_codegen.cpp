@@ -860,6 +860,11 @@ static bool needs_fp_reg(hir_program &h, int i) {
     case HIR_ITOF:
     case HIR_ATOF:
     case HIR_FCALL1: case HIR_FCALL2:
+    // The first Lua opcode producing TY_FLOAT.  Omitting a float producer
+    // here is the FP twin of the needs_int_reg() trap above: no slot is
+    // allocated, loc[].addr stays 0, and the FSD after the ECALL silently
+    // writes guest address 0 (#1159's failure shape).
+    case HIR_LUA_GETFIELD_FLT:
         return true;
     case HIR_PHI:
         return h.ty[i] == TY_FLOAT;
@@ -1555,6 +1560,25 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ECALL());
                 rc.code.push_back(rv_ADDI(dest, 10, 0));
                 ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_GETFIELD_FLT: {
+                // a0=tbl_idx, a1=key addr -> a0=double BITS, a1=ok.  The
+                // result's home is its FP slot, so store the bits there
+                // directly; no integer register is allocated or needed.
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));
+                // SCONST key: materialize the pool address, as GETFIELD
+                // does and for the same reason (stale-register trap).
+                if (h.kind[s2] != HIR_SCONST) break;
+                rv_load_guest_addr(rc.code, 11, loc[s2].addr);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_GETFIELD_FLT)));
+                rc.code.push_back(rv_ECALL());
+                rv_load_guest_addr(rc.code, RA_SCRATCH, loc[i].addr);
+                rc.code.push_back(rv_SD(RA_SCRATCH, 10, 0));
                 break;
             }
 
@@ -2481,6 +2505,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LUA_CALL_INT: return "LUA_CALL_INT";
     case HIR_LUA_CALL_STR: return "LUA_CALL_STR";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
+    case HIR_LUA_GETFIELD_FLT: return "LUA_GETFIELD_FLT";
     case HIR_LUA_SETFIELD: return "LUA_SETFIELD";
     case HIR_LUA_GETI:   return "LUA_GETI";
     case HIR_LUA_SETI:   return "LUA_SETI";

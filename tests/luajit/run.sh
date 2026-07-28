@@ -156,7 +156,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=11
+AGREE_DECLINE_BUDGET=8
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -271,6 +271,15 @@ EXEC_CASES=(
     'local x=math.type(3.0) return x'
     'local x=math.floor(2.5)+math.floor(3.25) return x'
     'local x=math.floor(mux.args[1]+0.5) return x'
+
+    # VALUE members of a library table -- math.pi is a float, math.maxinteger
+    # an integer, so the referent's member claim picks GETFIELD_FLT or
+    # GETFIELD (INT) on the library table instead of a reference nothing
+    # could consume.  Each value is USED in arithmetic, not just returned:
+    # a slot that was never written (the #1159 address-0 shape) or a stale
+    # register cannot survive an add against it.
+    'local x=math.pi return x*2'
+    'local x=math.maxinteger return x-1'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
