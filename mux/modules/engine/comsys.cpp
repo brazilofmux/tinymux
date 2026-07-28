@@ -2874,9 +2874,16 @@ static void do_listchannels(dbref player, UTF8* pattern)
                 safe_chr(bCanJoin ? 'J' : '-', temp, &bp);
                 safe_chr(bCanXmit ? 'X' : '-', temp, &bp);
                 safe_chr(bCanRecv ? 'R' : '-', temp, &bp);
-                iPos = mux_field(
-                    static_cast<unsigned int>(bp - temp.get()),
-                    static_cast<unsigned int>(bp - temp.get()));
+
+                // Advance both counters by the three characters just written,
+                // rather than resetting the COLUMN to the BYTE offset.  Those
+                // two are equal only while every field so far has been plain
+                // ASCII; a colored channel header makes the byte offset larger,
+                // PadField then believes it is already past column 56, and the
+                // Users column shifts left.  Found under @clist/full with an
+                // ANSI header (#1640 / poached from #1650).
+                //
+                iPos += mux_field(3, 3);
                 iPos = PadField(temp, LBUF_SIZE - 1, 56, iPos);
                 bp = temp.get() + iPos.m_byte;
 

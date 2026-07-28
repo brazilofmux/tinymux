@@ -420,9 +420,14 @@ bool CComsysMod::LoadChannels(void)
             }
             if (nullptr != header)
             {
-                strncpy(reinterpret_cast<char *>(ch->header),
-                        reinterpret_cast<const char *>(header), MAX_HEADER_LEN);
-                ch->header[MAX_HEADER_LEN] = '\0';
+                // Same path as CSET_HEADER: column + byte cap, not strncpy.
+                //
+                co_copy_field(
+                    reinterpret_cast<unsigned char *>(ch->header),
+                    sizeof(ch->header),
+                    reinterpret_cast<const unsigned char *>(header),
+                    nullptr,
+                    MAX_HEADER_LEN);
             }
 
             ch->type         = type;
@@ -3023,15 +3028,39 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
             }
         }
 
-        const UTF8 *pName = nullptr;
+        // The engine renders unparse_object() here -- "Wizard(#1PcW)" -- and
+        // the module used the bare name (#1640 item 2).  UnparseObject owns
+        // Examinable() plus the CHOWN_OK/JUMP_OK/LINK_OK/DESTROY_OK/ABODE
+        // exceptions; GetFlags/DecodeFlags cannot rebuild that.  Poached
+        // from #1650; layout stays on co_copy_field (#1656).
+        //
+        UTF8 unparsed[MOD_LBUF_SIZE];
+        unparsed[0] = '\0';
         if (nullptr != m_pIObjectInfo)
         {
-            m_pIObjectInfo->GetName(user.who, &pName);
+            m_pIObjectInfo->UnparseObject(executor, user.who, false,
+                unparsed, sizeof(unparsed));
         }
-        if (nullptr == pName)
+        if ('\0' == unparsed[0])
         {
-            pName = T("???");
+            const UTF8 *pName = nullptr;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->GetName(user.who, &pName);
+            }
+            mux_sprintf(unparsed, sizeof(unparsed), T("%s"),
+                (nullptr != pName) ? pName : T("???"));
         }
+
+        // Engine strips color before the Name column so width arithmetic is
+        // honest (comsys.cpp:3213).  Match that for parity; co_copy_field
+        // would preserve color, which would be better layout but a new
+        // divergence from the engine's deliberate strip.
+        //
+        unsigned char plain[MOD_LBUF_SIZE];
+        size_t nPlain = co_strip_color(plain, unparsed,
+            strlen(reinterpret_cast<char *>(unparsed)));
+        plain[nPlain < sizeof(plain) ? nPlain : sizeof(plain) - 1] = '\0';
 
         bool bPlayer = false;
         if (nullptr != m_pIObjectInfo)
@@ -3040,7 +3069,8 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
         }
 
         size_t pos = 0;
-        pos = append_ljust_field(msg, sizeof(msg), pos, pName, 29);
+        pos = append_ljust_field(msg, sizeof(msg), pos,
+            reinterpret_cast<const UTF8 *>(plain), 29);
         pos = append_bytes(msg, sizeof(msg), pos, " ");
         pos = append_ljust_field(msg, sizeof(msg), pos,
             user.bUserIsOn ? T("on ") : T("off"), 6);
@@ -3261,10 +3291,20 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             }
             else
             {
-                strncpy(reinterpret_cast<char *>(ch->header),
-                        reinterpret_cast<const char *>(pValue),
-                        MAX_HEADER_LEN);
-                ch->header[MAX_HEADER_LEN] = '\0';
+                // Store through co_copy_field, not strncpy (#1640 / #1650).
+                // The raw copy persisted uncollapsed ANSI (extra resets
+                // between codes under the module, not the engine) and
+                // truncated at MAX_HEADER_LEN *bytes*, which can split a
+                // codepoint or a color PUA in half.  Column + hard byte
+                // cap match the engine's header budget without depending
+                // on StripTabsAndTruncate.
+                //
+                co_copy_field(
+                    reinterpret_cast<unsigned char *>(ch->header),
+                    sizeof(ch->header),
+                    reinterpret_cast<const unsigned char *>(pValue),
+                    nullptr,
+                    MAX_HEADER_LEN);
             }
             msg = reinterpret_cast<const UTF8 *>("Set.");
         }
