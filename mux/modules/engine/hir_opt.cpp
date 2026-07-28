@@ -543,6 +543,8 @@ void hir_copy_prop(hir_program &h) {
             // val[] slot is a plain index for SETI/SETFIELD but PACKED with
             // nargs for CALL_INT, and the previous `h.val[i] = r` preserved
             // neither.
+            // val[] and argument lists (CALL/STRCAT carg[], PHI pval[]).
+            //
             for (int sl = HIR_SLOT_VAL; sl < hir_operand_count(h, i); sl++) {
                 int cur = hir_operand_get(h, i, sl);
                 if (cur < 0) continue;
@@ -550,17 +552,6 @@ void hir_copy_prop(hir_program &h) {
                 if (r != cur) {
                     hir_operand_set(h, i, sl, r);
                     changed = true;
-                }
-            }
-            // Propagate through PHI arguments.
-            if (h.kind[i] == HIR_PHI) {
-                int base = h.pbase[i];
-                for (int j = 0; j < h.pnargs[i]; j++) {
-                    int r = resolve_copy(h, h.pval[base + j]);
-                    if (r != h.pval[base + j]) {
-                        h.pval[base + j] = r;
-                        changed = true;
-                    }
                 }
             }
         }
@@ -616,24 +607,14 @@ void hir_dce(hir_program &h) {
             if (!used[i]) continue;
 
             // Every operand, whatever slot it lives in.  BRC's src2 is a
-            // block number and the accessor already refuses it.
+            // block number and the accessor already refuses it.  PHI args
+            // are ARG slots via hir_operand_count.
+            //
             for (int sl = 0; sl < hir_operand_count(h, i); sl++) {
                 int a = hir_operand_get(h, i, sl);
                 if (a >= 0 && !used[a]) {
                     used[a] = true;
                     changed = true;
-                }
-            }
-
-            // PHI arguments.
-            if (h.kind[i] == HIR_PHI) {
-                int base = h.pbase[i];
-                for (int j = 0; j < h.pnargs[i]; j++) {
-                    int a = h.pval[base + j];
-                    if (a >= 0 && !used[a]) {
-                        used[a] = true;
-                        changed = true;
-                    }
                 }
             }
         }
