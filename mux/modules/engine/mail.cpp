@@ -4046,13 +4046,31 @@ void check_mail(dbref player, int folder, bool silent)
     count_mail(player, folder, &rc, &uc, &cc);
     urgent_mail(player, folder, &gc);
 #ifdef MAIL_ALL_FOLDERS
+    // Three lines rather than one (#1717).  Four independent counts in one
+    // sentence cannot be pluralised: MN_(s, p, n) chooses one form from one
+    // n, and in Russian each of those nouns needs its own.  Split so every
+    // count governs its own sentence, which is the only shape gettext can
+    // express -- and which also fixes "1 messages" in English.
+    //
     raw_notify(player,
-           tprintf(M_("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n"),
-               rc + uc, folder, get_folder_name(player, folder), uc, cc));
+           tprintf(MN_("MAIL: %d message in folder %d [%s].",
+                       "MAIL: %d messages in folder %d [%s].", rc + uc),
+               rc + uc, folder, get_folder_name(player, folder)));
+    raw_notify(player, tprintf(MN_("MAIL: %d unread message.",
+                                   "MAIL: %d unread messages.", uc), uc));
+    raw_notify(player, tprintf(MN_("MAIL: %d cleared message.",
+                                   "MAIL: %d cleared messages.", cc), cc));
 #else // MAIL_ALL_FOLDERS
     if (rc + uc > 0)
     {
-        raw_notify(player, tprintf(M_("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."), rc + uc, folder, get_folder_name(player, folder), uc, cc));
+        raw_notify(player,
+            tprintf(MN_("MAIL: %d message in folder %d [%s].",
+                        "MAIL: %d messages in folder %d [%s].", rc + uc),
+                rc + uc, folder, get_folder_name(player, folder)));
+        raw_notify(player, tprintf(MN_("MAIL: %d unread message.",
+                                       "MAIL: %d unread messages.", uc), uc));
+        raw_notify(player, tprintf(MN_("MAIL: %d cleared message.",
+                                       "MAIL: %d cleared messages.", cc), cc));
     }
     else if (!silent)
     {

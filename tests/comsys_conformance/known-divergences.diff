@@ -30,13 +30,15 @@
  Subject: Subject One
  –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
  Body of the first message.
-@@ -77,11 +84,11 @@
+@@ -77,13 +84,13 @@
  Num  Name         Description                              Owner          
  ***** End of Mail Aliases *****
  MAIL: Number of mail aliases defined: 0
 -MAIL: Vector capacity: 0
 +MAIL: Allocated slots 0
- MAIL: 1 messages in folder 0 [unnamed] (0 unread, 0 cleared).
+ MAIL: 1 message in folder 0 [unnamed].
+ MAIL: 0 unread messages.
+ MAIL: 0 cleared messages.
  MAIL: Current folder is 0 [unnamed].
  –––––––––––––––––––––––––––   MAIL: Folder 0   ––––––––––––––––––––––––––––
 -[-------] 1   (  26) From:                  Sub: Subject One
@@ -44,7 +46,7 @@
  –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
  You have left channel cchan.
  Alias c for channel cchan deleted.
-@@ -89,3 +96,5 @@
+@@ -91,3 +98,5 @@
  <TS> Conform DMP/DUMP : Dumping: data/netmux.db.new.#1#
  <TS> Conform DMP/SQLT : SQLite checkpoint (no flatfile).
  <TS> Conform DMP/DONE : Dump complete: data/netmux.db.new.#1#
