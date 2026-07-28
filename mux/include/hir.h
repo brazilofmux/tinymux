@@ -111,6 +111,7 @@ enum hir_kind {
     HIR_LUA_CALL_INT, // call(fn_idx, nargs, args_addr): ECALL → TY_INT
     HIR_LUA_CALL_STR, // call(fn_idx, args): ECALL → TY_STRING into an out slot
     HIR_LUA_GETFIELD, // getfield(tbl_idx, key_addr): ECALL → TY_INT
+    HIR_LUA_GETFIELD_FLT, // getfield(tbl_idx, key_addr): ECALL → TY_FLOAT (bits over FMV lane)
     HIR_LUA_SETFIELD, // setfield(tbl_idx, key_addr, val): ECALL
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
     HIR_LUA_SETI,   // seti(tbl_idx, key, val): ECALL (no string marshal)

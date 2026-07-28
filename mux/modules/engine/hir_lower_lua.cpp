@@ -659,6 +659,25 @@ static inline bool lua_reg_in_range(int idx);   // defined with pass 2
 // game-defined global that does return a string compiles and runs, and one
 // that does not declines exactly where it always did.
 //
+// A library member that is a VALUE rather than a function -- math.pi,
+// math.maxinteger.  Reading one takes the value directly (GETFIELD_INT /
+// GETFIELD_FLT on the library table) instead of a reference nothing could
+// consume.  Function members deliberately do NOT appear here: their return
+// claims stay in lua_call_claim, so each fact lives once.
+//
+struct lua_lib_value {
+    const char *name;
+    hir_type ty;    // TY_INT or TY_FLOAT
+};
+
+static const lua_lib_value k_lua_math_values[] = {
+    {"maxinteger", TY_INT},
+    {"mininteger", TY_INT},
+    {"pi",         TY_FLOAT},
+    {"huge",       TY_FLOAT},
+    {nullptr,      TY_VOID},
+};
+
 struct lua_referent {
     // Field reads: false means members are values (GETFIELD_INT -- the
     // NEWTABLE shape), true means members are references (GETFIELD_REF --
@@ -672,7 +691,22 @@ struct lua_referent {
     // time, which is where a NEWTABLE or a nested-field handle lands.
     bool callable = false;
     hir_type returns = TY_VOID;
+
+    // Known VALUE members, for a recognized standard-library table; null
+    // for everything else.  Like every claim here it is eligibility only:
+    // a game that rebinds math.pi to a string declines at the runtime
+    // check, not answers wrongly.
+    const lua_lib_value *values = nullptr;
 };
+
+static hir_type lua_lib_value_type(const lua_referent &t,
+                                   const std::string &key) {
+    if (nullptr == t.values) return TY_VOID;
+    for (const lua_lib_value *v = t.values; v->name != nullptr; v++) {
+        if (key == v->name) return v->ty;
+    }
+    return TY_VOID;
+}
 
 typedef std::map<int, lua_referent> lua_ref_map;
 
@@ -1528,6 +1562,24 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 // from the member's name, so a later call reads it instead
                 // of walking back to this key.
                 const lua_referent tref = lua_referent_of(lua_ref, table_reg);
+                const hir_type vty = lua_lib_value_type(tref, k.sval);
+                if (TY_VOID != vty) {
+                    // A known VALUE member of a library table -- math.pi,
+                    // math.maxinteger -- so take the value itself; a
+                    // reference would be a handle nothing downstream can
+                    // consume.  The runtime check keeps a rebound member
+                    // honest: wrong type, decline.
+                    lua_reg[A] = h.emit(
+                        (TY_FLOAT == vty) ? HIR_LUA_GETFIELD_FLT
+                                          : HIR_LUA_GETFIELD,
+                        vty, table_reg, key_val);
+                    if (lua_reg[A] < 0) return -1;
+                    if (TY_INT == vty) {
+                        h.known_int[lua_reg[A]] = true;
+                    }
+                    h.ecalls++;
+                    break;
+                }
                 lua_reg[A] = h.emit(
                     tref.fields_are_refs ? HIR_LUA_GETFIELD_REF
                                          : HIR_LUA_GETFIELD,
@@ -2219,6 +2271,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 g.fields_are_refs = true;
                 g.callable = true;
                 g.returns = lua_call_claim(k.sval);
+                if (k.sval == "math") {
+                    g.values = k_lua_math_values;
+                }
                 lua_ref[lua_reg[A]] = g;
                 h.known_int[lua_reg[A]] = true;
                 h.ecalls++;
@@ -2318,8 +2373,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // disagree about a name the way the twin gated branches this
             // replaces could (d5e5e86e0).
             //
-            // Arguments may be integers or CONSTANT strings; the kind bits
-            // tell the handler which register holds which.  A runtime
+            // Arguments may be integers, CONSTANT strings, or floats --
+            // constant or runtime -- with TWO kind bits per argument
+            // telling codegen and the handler what each register carries
+            // (0 integer, 1 string address, 2 double as raw bits over the
+            // FMV.X.D lane).  Floats travel honestly rather than as
+            // rendered text because coercion would lie to a type-sensitive
+            // callee: math.type("3.0") is nil, not "float".  A runtime
             // string argument would need its own guest buffer and is left
             // for when something needs it.
             const lua_referent fref = lua_referent_of(lua_ref, func_reg);
@@ -2337,9 +2397,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         ok = false; break;
                     }
                     if (h.ty[areg] == TY_INT) {
-                        // integer: kind bit stays 0
+                        // integer: kind 0
                     } else if (h.kind[areg] == HIR_SCONST) {
-                        kinds |= (1 << i);
+                        kinds |= (1 << (2 * i));   // string address
+                    } else if (h.ty[areg] == TY_FLOAT) {
+                        kinds |= (2 << (2 * i));   // double, raw bits
                     } else {
                         ok = false; break;
                     }

@@ -860,6 +860,11 @@ static bool needs_fp_reg(hir_program &h, int i) {
     case HIR_ITOF:
     case HIR_ATOF:
     case HIR_FCALL1: case HIR_FCALL2:
+    // The first Lua opcode producing TY_FLOAT.  Omitting a float producer
+    // here is the FP twin of the needs_int_reg() trap above: no slot is
+    // allocated, loc[].addr stays 0, and the FSD after the ECALL silently
+    // writes guest address 0 (#1159's failure shape).
+    case HIR_LUA_GETFIELD_FLT:
         return true;
     case HIR_PHI:
         return h.ty[i] == TY_FLOAT;
@@ -1148,6 +1153,41 @@ static void ra_set_loc(rv_compiler &rc, hir_loc *loc,
         loc[i].reg = 0;
         loc[i].in_reg = false;
         loc[i].spill_slot = slot;
+    }
+}
+
+// Emit the argument setup shared by HIR_LUA_CALL_INT and HIR_LUA_CALL_STR.
+// One emitter for the one encoding (see ecall_lua_push_call_args in
+// jit_compiler.cpp): two bits per argument -- 0 is an integer via
+// ra_get_reg into x12+j, 1 is an SCONST's guest address into x12+j, 2 is a
+// double loaded from its FP slot and moved as raw bits into x12+j over the
+// FMV.X.D lane ECALL_LUA_FTOA already proved on both execution routes.
+// The kind bits the lowering packed are the single source of truth here;
+// re-deriving them from h.kind/h.ty would be a second opinion that could
+// disagree with what the handler will decode.
+//
+static void emit_lua_call_args(rv_compiler &rc, hir_loc *loc,
+                               int nargs, int kinds, int s2, int a1i) {
+    for (int j = 0; j < nargs && j < 2; j++) {
+        const int v = (0 == j) ? s2 : a1i;
+        if (v < 0) continue;
+        const uint8_t xd = static_cast<uint8_t>(12 + j);
+        switch ((kinds >> (2 * j)) & 3) {
+        case 1:
+            rv_load_guest_addr(rc.code, xd, loc[v].addr);
+            break;
+        case 2:
+            rv_load_guest_addr(rc.code, RA_SCRATCH, loc[v].addr);
+            rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
+            rc.code.push_back(rv_FMV_X_D(xd, 0));
+            break;
+        default: {
+            uint8_t r = ra_get_reg(rc, loc, v,
+                                   static_cast<uint8_t>(28 + j));
+            rc.code.push_back(rv_ADDI(xd, r, 0));
+            break;
+        }
+        }
     }
 }
 
@@ -1457,22 +1497,8 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int a1i = (packed >> 16) - 1;
                 uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 rc.code.push_back(rv_ADDI(10, fn_r, 0));
-                if (nargs >= 1 && s2 >= 0) {
-                    if (h.kind[s2] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 12, loc[s2].addr);
-                    } else {
-                        uint8_t r = ra_get_reg(rc, loc, s2, 28);
-                        rc.code.push_back(rv_ADDI(12, r, 0));
-                    }
-                }
-                if (nargs >= 2 && a1i >= 0) {
-                    if (h.kind[a1i] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 13, loc[a1i].addr);
-                    } else {
-                        uint8_t r = ra_get_reg(rc, loc, a1i, 29);
-                        rc.code.push_back(rv_ADDI(13, r, 0));
-                    }
-                }
+                emit_lua_call_args(rc, loc, nargs, (packed >> 8) & 0xFF,
+                                   s2, a1i);
                 rv_load_i64(rc.code, 11, packed & 0xFFFF);
                 rv_load_guest_addr(rc.code, 14, loc[i].addr);
                 rv_load_i64(rc.code, 15, rv_compiler::OUT_SLOT);
@@ -1499,24 +1525,10 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 if (!dest) break;
                 uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 rc.code.push_back(rv_ADDI(10, fn_r, 0));
-                // Argument setup is identical to CALL_STR; only the result
-                // handling below differs.
-                if (nargs >= 1 && s2 >= 0) {
-                    if (h.kind[s2] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 12, loc[s2].addr);
-                    } else {
-                        uint8_t a0r = ra_get_reg(rc, loc, s2, 28);
-                        rc.code.push_back(rv_ADDI(12, a0r, 0));
-                    }
-                }
-                if (nargs >= 2 && a1i >= 0) {
-                    if (h.kind[a1i] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 13, loc[a1i].addr);
-                    } else {
-                        uint8_t a1r = ra_get_reg(rc, loc, a1i, 29);
-                        rc.code.push_back(rv_ADDI(13, a1r, 0));
-                    }
-                }
+                // Argument setup is identical to CALL_STR -- one emitter;
+                // only the result handling below differs.
+                emit_lua_call_args(rc, loc, nargs, (packed >> 8) & 0xFF,
+                                   s2, a1i);
                 rv_load_i64(rc.code, 11, packed & 0xFFFF);
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_CALL_INT)));
@@ -1548,6 +1560,25 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ECALL());
                 rc.code.push_back(rv_ADDI(dest, 10, 0));
                 ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_GETFIELD_FLT: {
+                // a0=tbl_idx, a1=key addr -> a0=double BITS, a1=ok.  The
+                // result's home is its FP slot, so store the bits there
+                // directly; no integer register is allocated or needed.
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));
+                // SCONST key: materialize the pool address, as GETFIELD
+                // does and for the same reason (stale-register trap).
+                if (h.kind[s2] != HIR_SCONST) break;
+                rv_load_guest_addr(rc.code, 11, loc[s2].addr);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_GETFIELD_FLT)));
+                rc.code.push_back(rv_ECALL());
+                rv_load_guest_addr(rc.code, RA_SCRATCH, loc[i].addr);
+                rc.code.push_back(rv_SD(RA_SCRATCH, 10, 0));
                 break;
             }
 
@@ -2474,6 +2505,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LUA_CALL_INT: return "LUA_CALL_INT";
     case HIR_LUA_CALL_STR: return "LUA_CALL_STR";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
+    case HIR_LUA_GETFIELD_FLT: return "LUA_GETFIELD_FLT";
     case HIR_LUA_SETFIELD: return "LUA_SETFIELD";
     case HIR_LUA_GETI:   return "LUA_GETI";
     case HIR_LUA_SETI:   return "LUA_SETI";
