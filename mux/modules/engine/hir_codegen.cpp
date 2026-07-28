@@ -809,6 +809,12 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_ICONST:
     case HIR_ATOI:
     case HIR_STRCMP:
+    // NEWTABLE's result is a Lua stack index -- an integer as far as the
+    // machine is concerned, and it must live in a register for SETI/GETI to
+    // consume.  Omitting it here does not fail loudly: the codegen's
+    // `if (!dest) break;` emits nothing, so the ECALL silently never runs
+    // and the consumer reads a garbage index (measured: SETI got idx=0).
+    case HIR_LUA_NEWTABLE:
     case HIR_LUA_GETI:
     case HIR_LUA_ALOAD:
     case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
@@ -1429,6 +1435,31 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ECALL());
                 // Result in a0 (x10). Success flag in a1 (x11) — ignored for now.
                 rc.code.push_back(rv_ADDI(dest, 10, 0));   // dest = a0
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_NEWTABLE: {
+                // Dedicated ECALL: a0=narr, a1=nrec -> a0=stack_idx.
+                //
+                // The result IS a stack index, so table creation has no
+                // value form -- but it rides in a register as a typed
+                // TY_LUA_HANDLE rather than as a decimal string in guest
+                // memory, which is what keeps it distinguishable from an
+                // integer downstream (#1519).
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t narr_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, narr_r, 0));   // a0 = narr
+                uint8_t nrec_r = ra_get_reg(rc, loc, s2, 28);
+                rc.code.push_back(rv_ADDI(11, nrec_r, 0));   // a1 = nrec
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_NEWTABLE)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));     // dest = a0
                 ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
@@ -2270,6 +2301,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_DEC:        return "DEC";
     case HIR_ATOI:       return "ATOI";
     case HIR_STRCMP:      return "STRCMP";
+    case HIR_LUA_NEWTABLE: return "LUA_NEWTABLE";
     case HIR_LUA_GETI:   return "LUA_GETI";
     case HIR_LUA_SETI:   return "LUA_SETI";
     case HIR_LUA_ALOAD:  return "LUA_ALOAD";

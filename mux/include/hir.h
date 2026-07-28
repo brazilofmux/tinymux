@@ -94,6 +94,17 @@ enum hir_kind {
     HIR_STRCMP,      // strcmp(src1, src2): -1/0/1 (inline RV64 byte compare)
 
     // Lua table access (dedicated ECALL, integer fast-path)
+    //
+    // "no string marshal" is the whole point.  The alternative mechanism --
+    // a named HIR_CALL lowered to an ECALL that passed a Lua stack INDEX
+    // through guest memory as a decimal string -- is what made `#t` answer
+    // 22 (#1424): a string "22" is indistinguishable from the value 22, so
+    // an index flowed onward as though it were the thing it points at.
+    // These carry the index in a register as a typed value instead, which
+    // lua_is_handle can then refuse to let escape into arithmetic (#1579).
+    // The named mechanism is gone (#1519); this is the only one.
+    //
+    HIR_LUA_NEWTABLE, // newtable(narr, nrec): ECALL → TY_LUA_HANDLE
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
     HIR_LUA_SETI,   // seti(tbl_idx, key, val): ECALL (no string marshal)
     HIR_LUA_ALOAD,  // native array load: val[key] from pinned array (no ECALL)
