@@ -64,12 +64,11 @@
 | | Engine | Module |
 |--|--------|--------|
 | File | `comsys.cpp` `do_channelwho` | `comsys_mod.cpp` `ChanWho` |
-| Header | **Label+fmt** `tprintf(T("%-29.29s %-6.6s %-6.6s"), "Name", "Status", "Player")` — labels not `M_` | **Label+field** `append_ljust_field` with `T_("Name")` etc. (29 / 6 / 6) |
-| Cell primitive | `%-29.29s` + `strip_color(unparse_object)` | `co_copy_field` path + `UnparseObject` / strip |
+| Header | **Converted (#1667 Phase 4)** — `M_("Name")` / `Status` / `Player` via `mux_table_*` | Same with `T_()` |
+| Cell primitive | `mux_table_*` + `strip_color(unparse_object)` | `mux_table_*` + `UnparseObject` + `strip_color` |
 | Columns | name **29** · status **6** · player **6** | Same |
-| Translate? | Labels should become `M_()` when converted; **not** a pre-spaced single msgid today | Same |
-| Dual | **Yes** |
-| Notes | Already half-modern on module; engine still printf-width (codepoints, not display cols). Conversion = shared schema for both. |
+| Translate? | **Per-label** Name, Status, Player | Same |
+| Dual | **Yes** — both paths converted together |
 
 ---
 

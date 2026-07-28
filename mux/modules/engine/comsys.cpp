@@ -3239,8 +3239,28 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
         return;
     }
 
+    // @cwho schema (#1667 Phase 4 A4) — shared with module ChanWho:
+    // name 29 / status 6 / player 6 via mux_table_* (display columns, not
+    // printf codepoint width).  Labels are separate msgids.
+    //
+    static const size_t kCwhoNameCols   = 29;
+    static const size_t kCwhoStatusCols = 6;
+    static const size_t kCwhoPlayerCols = 6;
+
     raw_notify(executor, tprintf(M_("-- %s --"), ch->name));
-    raw_notify(executor, tprintf(T("%-29.29s %-6.6s %-6.6s"), "Name", "Status", "Player"));
+    {
+        UTF8 header[SBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Name"), kCwhoNameCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Status"), kCwhoStatusCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Player"), kCwhoPlayerCols);
+        raw_notify(executor, header);
+    }
     for (auto &kv : ch->users)
     {
         const comuser &user = kv.second;
@@ -3250,11 +3270,17 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
                 || Wizard_Who(executor)
                 || See_Hidden(executor)))
         {
-            thread_local UTF8 temp[SBUF_SIZE];
+            UTF8 temp[SBUF_SIZE];
             UTF8* buff = unparse_object(executor, user.who, false);
-            mux_sprintf(temp, sizeof(temp), T("%-29.29s %-6.6s %-6.6s"), strip_color(buff),
-                        user.bUserIsOn ? "on " : "off",
-                        isPlayer(user.who) ? "yes" : "no ");
+            size_t pos = 0;
+            pos = mux_table_append_ljust(temp, sizeof(temp), pos,
+                strip_color(buff), kCwhoNameCols);
+            pos = mux_table_append_bytes(temp, sizeof(temp), pos, " ");
+            pos = mux_table_append_ljust(temp, sizeof(temp), pos,
+                user.bUserIsOn ? T("on ") : T("off"), kCwhoStatusCols);
+            pos = mux_table_append_bytes(temp, sizeof(temp), pos, " ");
+            pos = mux_table_append_ljust(temp, sizeof(temp), pos,
+                isPlayer(user.who) ? T("yes") : T("no "), kCwhoPlayerCols);
             raw_notify(executor, temp);
             free_lbuf(buff);
         }
