@@ -1076,27 +1076,48 @@ void CComsysMod::do_delcomchannel(dbref player, const UTF8 *channel,
         return;
     }
 
-    if (user->bUserIsOn)
+    // Disconnect from the channel's view first, exactly as the engine does
+    // before it builds the leave message (#1640).  The ordering is load
+    // bearing: SendChannelMessage delivers only to users that are both
+    // bConnected and bUserIsOn, so once this has run the leaving player no
+    // longer receives their own departure line.  The engine still *emits*
+    // the broadcast; it simply reaches nobody when the leaver was the only
+    // member.  Doing this by matching the mechanism rather than by
+    // special-casing the output keeps the busy-channel case right too,
+    // where the line must still reach everyone else.
+    //
+    do_comdisconnectchannel(player, channel);
+
+    if (!bQuiet && nullptr != m_pINotify)
     {
-        if (!bQuiet && nullptr != m_pINotify)
+        // The broadcast is suppressed for Hidden players, matching the
+        // engine (#1640).  The module announced them.
+        //
+        if (user->bUserIsOn && !is_hidden(player))
         {
-            const UTF8 *pName = nullptr;
-            if (nullptr != m_pIObjectInfo)
-            {
-                m_pIObjectInfo->GetMoniker(player, &pName);
-            }
-            if (nullptr == pName)
-            {
-                pName = T("???");
-            }
+            UTF8 speaker[MOD_LBUF_SIZE];
+            channel_speaker_name(user, (ch->type & CHANNEL_SPOOF) != 0,
+                speaker, sizeof(speaker));
 
             UTF8 msg[MOD_LBUF_SIZE];
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "%s %s has left this channel.",
                      reinterpret_cast<const char *>(ch->header),
-                     reinterpret_cast<const char *>(pName));
+                     reinterpret_cast<const char *>(speaker));
             SendChannelMessage(player, ch, msg, true);
         }
+
+        // The engine sends the leaving player a personal confirmation as
+        // well as the broadcast; the module sent only the broadcast, so on
+        // a busy channel a player's own confirmation was replaced by a line
+        // that reads as traffic -- and any trigger matching
+        // "^You have left channel" stopped firing (#1640).
+        //
+        UTF8 note[256];
+        snprintf(reinterpret_cast<char *>(note), sizeof(note),
+                 "You have left channel %s.",
+                 reinterpret_cast<const char *>(channel));
+        m_pINotify->RawNotify(player, note);
     }
 
     ch->users.erase(player);
@@ -1293,6 +1314,84 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
 // for the attribute READ so AF_DARK channel-object attributes are visible --
 // the speaker is an ordinary member and usually cannot see them.
 //
+// Speaker name for a channel line: comtitle plus name, or just the name
+// (#1640).  The engine builds this in BuildChannelMessage and the module did
+// not build it at all -- it used the bare moniker everywhere, so a channel
+// where everyone had set a comtitle looked different depending on which
+// implementation was live.  Same shape as #1572.
+//
+// The engine's rule, which this mirrors: apply the title when there is one
+// and ComTitleStatus is on (or the channel is SPOOF, where the status does
+// not matter); on a SPOOF channel the title *replaces* the name rather than
+// preceding it.
+//
+// Caveat, stated rather than hidden: the engine consults
+// mudconf.eval_comtitle (default **true**) and evaluates the title as code.
+// A module has no route to that flag -- config reaches modules only as
+// Initialize() parameters, the way mail receives mail_expiration -- so this
+// always evaluates, matching the default. On a game that sets
+// `eval_comtitle no` a title containing softcode will still be evaluated
+// here. That is a narrower divergence than dropping the title entirely, and
+// closing it needs the flag plumbed through Initialize (an interface change,
+// so out of scope for this fix).
+//
+// The caller supplies the buffer: a static would be clobbered by any nested
+// use, and these strings are built while another is still being formatted.
+//
+void CComsysMod::channel_speaker_name(const struct comuser *user,
+    bool bSpoof, UTF8 *speaker, size_t speakersz)
+{
+    if (nullptr == speaker || 0 == speakersz)
+    {
+        return;
+    }
+    speaker[0] = '\0';
+
+    const UTF8 *pName = nullptr;
+    if (nullptr != m_pIObjectInfo)
+    {
+        m_pIObjectInfo->GetMoniker(user->who, &pName);
+    }
+    if (nullptr == pName)
+    {
+        pName = T("???");
+    }
+
+    if (  user->title.empty()
+       || (!user->ComTitleStatus && !bSpoof))
+    {
+        snprintf(reinterpret_cast<char *>(speaker), speakersz, "%s",
+                 reinterpret_cast<const char *>(pName));
+        return;
+    }
+
+    UTF8 title[MOD_LBUF_SIZE];
+    title[0] = '\0';
+    size_t nResult = 0;
+    if (  nullptr == m_pIEvaluator
+       || MUX_FAILED(m_pIEvaluator->EvalWithArgs(user->who, user->who,
+              user->who, reinterpret_cast<const UTF8 *>(user->title.c_str()),
+              nullptr, 0, title, sizeof(title) - 1, &nResult)))
+    {
+        // Fall back to the literal title rather than losing it.
+        //
+        snprintf(reinterpret_cast<char *>(title), sizeof(title), "%s",
+                 user->title.c_str());
+    }
+
+    if (bSpoof)
+    {
+        snprintf(reinterpret_cast<char *>(speaker), speakersz, "%s",
+                 reinterpret_cast<const char *>(title));
+    }
+    else
+    {
+        snprintf(reinterpret_cast<char *>(speaker), speakersz, "%s %s",
+                 reinterpret_cast<const char *>(title),
+                 reinterpret_cast<const char *>(pName));
+    }
+}
+
 bool CComsysMod::mogrify_eval(struct channel *ch, dbref executor,
     const UTF8 *suffix, const UTF8 *args[], int nargs,
     UTF8 *out, size_t outsz)
@@ -1601,21 +1700,32 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
         return;
     }
 
-    const UTF8 *pName = nullptr;
-    if (nullptr != m_pIObjectInfo)
+    // Comtitle applies to join/leave too, as it does in the engine (#1640).
+    //
+    UTF8 speaker[MOD_LBUF_SIZE];
+    struct comuser *joined = select_user(ch, player);
+    if (nullptr != joined)
     {
-        m_pIObjectInfo->GetMoniker(player, &pName);
+        channel_speaker_name(joined, (ch->type & CHANNEL_SPOOF) != 0,
+            speaker, sizeof(speaker));
     }
-    if (nullptr == pName)
+    else
     {
-        pName = T("???");
+        const UTF8 *pName = nullptr;
+        if (nullptr != m_pIObjectInfo)
+        {
+            m_pIObjectInfo->GetMoniker(player, &pName);
+        }
+        snprintf(reinterpret_cast<char *>(speaker), sizeof(speaker), "%s",
+                 reinterpret_cast<const char *>(
+                     nullptr != pName ? pName : T("???")));
     }
 
     UTF8 msg[MOD_LBUF_SIZE];
     snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
              "%s %s has joined this channel.",
              reinterpret_cast<const char *>(ch->header),
-             reinterpret_cast<const char *>(pName));
+             reinterpret_cast<const char *>(speaker));
     SendChannelMessage(player, ch, msg, true);
 }
 
@@ -1642,21 +1752,15 @@ void CComsysMod::do_leavechannel(dbref player, struct channel *ch)
         //
         if (!is_hidden(player))
         {
-            const UTF8 *pName = nullptr;
-            if (nullptr != m_pIObjectInfo)
-            {
-                m_pIObjectInfo->GetMoniker(player, &pName);
-            }
-            if (nullptr == pName)
-            {
-                pName = T("???");
-            }
+            UTF8 speaker[MOD_LBUF_SIZE];
+            channel_speaker_name(user, (ch->type & CHANNEL_SPOOF) != 0,
+                speaker, sizeof(speaker));
 
             UTF8 msg[MOD_LBUF_SIZE];
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "%s %s has left this channel.",
                      reinterpret_cast<const char *>(ch->header),
-                     reinterpret_cast<const char *>(pName));
+                     reinterpret_cast<const char *>(speaker));
             SendChannelMessage(player, ch, msg, true);
         }
 
@@ -1982,17 +2086,12 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         return;
     }
 
-    // Build and send the message.
+    // Build and send the message.  Speaker includes comtitle when set
+    // (#1640) -- the same rule as join/leave, via channel_speaker_name.
     //
-    const UTF8 *pMoniker = nullptr;
-    if (nullptr != m_pIObjectInfo)
-    {
-        m_pIObjectInfo->GetMoniker(player, &pMoniker);
-    }
-    if (nullptr == pMoniker)
-    {
-        pMoniker = T("???");
-    }
+    UTF8 speaker[MOD_LBUF_SIZE];
+    channel_speaker_name(user, (ch->type & CHANNEL_SPOOF) != 0,
+        speaker, sizeof(speaker));
 
     UTF8 msg[MOD_LBUF_SIZE];
     const char *pPose = reinterpret_cast<const char *>(arg2);
@@ -2008,7 +2107,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "%s %s%s",
                      reinterpret_cast<const char *>(ch->header),
-                     reinterpret_cast<const char *>(pMoniker),
+                     reinterpret_cast<const char *>(speaker),
                      pPose);
         }
         else
@@ -2016,7 +2115,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
             snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                      "%s %s %s",
                      reinterpret_cast<const char *>(ch->header),
-                     reinterpret_cast<const char *>(pMoniker),
+                     reinterpret_cast<const char *>(speaker),
                      pPose);
         }
     }
@@ -2028,7 +2127,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "%s %s%s",
                  reinterpret_cast<const char *>(ch->header),
-                 reinterpret_cast<const char *>(pMoniker),
+                 reinterpret_cast<const char *>(speaker),
                  pPose);
     }
     else
@@ -2038,7 +2137,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
                  "%s %s says, “%s”",
                  reinterpret_cast<const char *>(ch->header),
-                 reinterpret_cast<const char *>(pMoniker),
+                 reinterpret_cast<const char *>(speaker),
                  pPose);
     }
 
@@ -2548,6 +2647,101 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
         return MUX_E_FAIL;
     }
 
+    bool bWild = (nullptr != pPattern && '\0' != *pPattern);
+
+    // @clist/full (#1640).  do_chanlist hands the key to us before it looks
+    // at CLIST_FULL, so when the module is live this is the only place the
+    // switch can be honoured -- and it was not, so /full silently produced
+    // the default listing and lost Header, Access, Users and Msgs.  Column
+    // stops match the engine's do_listchannels: 4 / 18 / 34 / 50 / 56.
+    //
+    if (key & CLIST_FULL)
+    {
+        bool bCommAll = false;
+        if (nullptr != m_pIPermissions)
+        {
+            m_pIPermissions->HasCommAll(executor, &bCommAll);
+        }
+        if (!bCommAll)
+        {
+            m_pINotify->RawNotify(executor,
+                T("Warning: Only public channels and your channels will be shown."));
+        }
+
+        m_pINotify->RawNotify(executor,
+            T("*** Channel       Header          Owner           Access  Users Msgs"));
+
+        for (auto &kv : m_channels)
+        {
+            struct channel *ch = kv.second.get();
+
+            if (bWild && nullptr == strstr(
+                    reinterpret_cast<const char *>(ch->name),
+                    reinterpret_cast<const char *>(pPattern)))
+            {
+                continue;
+            }
+
+            // The engine also shows a channel to anyone on it, which the
+            // default listing above does not check.  Matching it here
+            // rather than "fixing" the other path: that would be a
+            // behaviour change outside this issue.
+            //
+            bool bVisible = bCommAll || ((ch->type & CHANNEL_PUBLIC) != 0);
+            if (!bVisible && nullptr != m_pIPermissions)
+            {
+                bool bControls = false;
+                m_pIPermissions->HasControl(executor, ch->charge_who,
+                    &bControls);
+                bVisible = bControls;
+            }
+            if (!bVisible)
+            {
+                bVisible = (nullptr != select_user(ch, executor));
+            }
+            if (!bVisible)
+            {
+                continue;
+            }
+
+            const UTF8 *pOwnerName = nullptr;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->GetMoniker(ch->charge_who, &pOwnerName);
+            }
+            if (nullptr == pOwnerName)
+            {
+                pOwnerName = T("???");
+            }
+
+            const UTF8 *pHeader = ch->header;
+            if ('\0' == pHeader[0])
+            {
+                pHeader = T("-");
+            }
+
+            UTF8 line[256];
+            snprintf(reinterpret_cast<char *>(line), sizeof(line),
+                     "%c%c%c %-13.13s %-15.15s %-15.15s %c%c%c   %5d %4d",
+                     (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
+                     (ch->type & CHANNEL_LOUD) ? 'L' : '-',
+                     (ch->type & CHANNEL_SPOOF) ? 'S' : '-',
+                     reinterpret_cast<const char *>(ch->name),
+                     reinterpret_cast<const char *>(pHeader),
+                     reinterpret_cast<const char *>(pOwnerName),
+                     test_join_access(executor, ch)     ? 'J' : '-',
+                     test_transmit_access(executor, ch) ? 'X' : '-',
+                     test_receive_access(executor, ch)  ? 'R' : '-',
+                     static_cast<int>(ch->users.size()),
+                     ch->num_messages);
+            m_pINotify->RawNotify(executor, line);
+        }
+
+        m_pINotify->RawNotify(executor,
+            T("-- End of list of Channels --"));
+        return MUX_S_OK;
+    }
+
     if (key & CLIST_HEADERS)
     {
         m_pINotify->RawNotify(executor,
@@ -2558,8 +2752,6 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
         m_pINotify->RawNotify(executor,
             T("*** Channel       Owner           Description"));
     }
-
-    bool bWild = (nullptr != pPattern && '\0' != *pPattern);
 
     for (auto &kv : m_channels)
     {
@@ -2613,9 +2805,16 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
             ? reinterpret_cast<const char *>(ch->header)
             : "No description.";
 
+        // The description field is truncated at 45 and padded out to column
+        // 79, as the engine's do_chanlist does with StripTabsAndTruncate +
+        // PadField.  The module left it unpadded, so every line of a plain
+        // @clist differed from the engine's by trailing whitespace -- found
+        // by the command-surface diff rather than reported in #1640, and
+        // invisible to any eyeball comparison.
+        //
         UTF8 line[256];
         snprintf(reinterpret_cast<char *>(line), sizeof(line),
-                 "%c%c%c %-13.13s %-15.15s %s",
+                 "%c%c%c %-13.13s %-15.15s %-45.45s",
                  (ch->type & CHANNEL_PUBLIC) ? 'P' : '-',
                  (ch->type & CHANNEL_LOUD) ? 'L' : '-',
                  (ch->type & CHANNEL_SPOOF) ? 'S' : '-',

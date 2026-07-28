@@ -145,27 +145,24 @@ build when it stops being accurate in either direction. Summary:
 
 | # | Behaviour | Engine | Module | Issue |
 |---|---|---|---|---|
-| 1 | `@clist/full` | Header, Access, Users, Msgs columns | switch ignored; prints the default listing | #1640 |
-| 2 | `@cwho` | `Wizard(#1PcW)` | `Wizard` — no dbref or flags | #1640 |
-| 3 | comtitle in **speech** | `HDR Tester Wizard says, "…"` | comtitle dropped | #1640 |
-| 4 | comtitle in join/leave | `HDR Tester Wizard has left…` | comtitle dropped | #1640 |
-| 5 | `delcom` feedback | `You have left channel cchan.` | channel broadcast instead | #1640 |
-| 6 | `@clist` column padding | padded to fixed width | not padded | #1640 |
-| 7 | `@mail/stats` | spool-wide total | per-player breakdown | #1631 |
-| 8 | `@mail/dstats` | spool detail | identical to `/stats` | #1631 |
-| 9 | `@mail/fstats` | old/new/cleared byte totals | identical to `/stats` | #1631 |
-| 10 | `@mail` sender name | empty under muxscript (stub `TrimmedName` leaves buffer empty after #1637 fix) | renders the name | #1637 |
-| 11 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
-| 12 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
-| 13 | shutdown diagnostics | silent | logs module shutdown | — |
+| 1 | `@cwho` | `Wizard(#1PcW)` | `Wizard` — no dbref or flags | #1640 item 2 |
+| 2 | `@mail/stats` | spool-wide total | per-player breakdown | #1631 |
+| 3 | `@mail/dstats` | spool detail | identical to `/stats` | #1631 |
+| 4 | `@mail/fstats` | old/new/cleared byte totals | identical to `/stats` | #1631 |
+| 5 | `@mail` sender name | empty under muxscript (stub `TrimmedName`) | renders the name | #1637 |
+| 6 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
+| 7 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
+| 8 | module lifecycle logs | silent | load / shutdown lines | — |
 
-Row 10 for the engine `@mail/fstats` phantom `+1` byte (#1639) was removed when
-that bug closed: engine and module now agree on message size; `/fstats` still
-differs from the module in *shape* (row 9 / #1631).
+Closed by #1647 (items 1, 3, 4 of #1640, plus padding and speech comtitle):
+`@clist/full`, comtitle on speech/join/leave, `delcom` personal confirmation,
+and `@clist` description padding. Baseline shrank **39 → 29** divergent lines.
 
-Rows 7–9 and 10 are the ones where the **module is the more correct side**,
-which cuts against #1614's "the module is strictly behind" reading. Worth
-holding onto when the decision is made.
+Row 1 remains because `unparse_object` / `Examinable()` (incl. `check_zone`)
+is not on a module interface; needs an ABI addition, not a softcode approx.
+
+Rows 2–4 and 5 are where the **module is the more correct side** for player
+UX (#1631 product decision still open; #1637 empty From is a harness stub).
 
 ## Adding a row
 
