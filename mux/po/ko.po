@@ -2669,16 +2669,16 @@ msgid_plural ""
 msgstr[0] ""
 
 #: modules/engine/mail.cpp:3404 modules/mail/mail_mod.cpp:5540
-#, fuzzy, c-format
+#, c-format
 msgid "%s sent %d message."
 msgid_plural "%s sent %d messages."
-msgstr[0] "메시지가 없습니다."
+msgstr[0] "%1$s님이 메시지 %2$d개를 보냈습니다."
 
 #: modules/engine/mail.cpp:3407 modules/mail/mail_mod.cpp:5544
-#, fuzzy, c-format
+#, c-format
 msgid "%s has %d message."
 msgid_plural "%s has %d messages."
-msgstr[0] "메시지가 없습니다."
+msgstr[0] "%1$s님에게 메시지가 %2$d개 있습니다."
 
 #: modules/engine/mail.cpp:3471 modules/mail/mail_mod.cpp:5606
 #, c-format
@@ -2712,9 +2712,9 @@ msgid_plural ""
 msgstr[0] ""
 
 #: modules/engine/mail.cpp:3500 modules/mail/mail_mod.cpp:5642
-#, fuzzy, c-format
+#, c-format
 msgid "Last is dated %s"
-msgstr "%s은(는) %s님의 소유입니다"
+msgstr "마지막 메시지의 날짜는 %s입니다"
 
 #: modules/engine/mail.cpp:3514 modules/mail/mail_mod.cpp:5660
 msgid "MAIL: Invalid mail command."
@@ -4428,10 +4428,10 @@ msgid "a slimy toad named %s"
 msgstr ""
 
 #: modules/engine/wiz.cpp:477 modules/engine/wiz.cpp:642
-#, fuzzy, c-format
+#, c-format
 msgid "%d connection closed."
 msgid_plural "%d connections closed."
-msgstr[0] "접속되어 있지 않습니다."
+msgstr[0] "접속 %d개를 종료했습니다."
 
 #: modules/engine/wiz.cpp:540
 msgid "You cannot change that player’s password."
