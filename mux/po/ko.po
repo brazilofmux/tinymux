@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 14:47+0000\n"
+"POT-Creation-Date: 2026-07-28 14:58+0000\n"
 "PO-Revision-Date: 2026-07-27 00:00+0000\n"
 "Last-Translator: unassigned <tinymux@googlegroups.com>\n"
 "Language-Team: Korean <tinymux@googlegroups.com>\n"
@@ -69,6 +69,18 @@ msgstr ""
 msgid "Lua module is not loaded."
 msgstr ""
 
+#: modules/engine/command.cpp:672
+#, c-format
+msgid ""
+"Lua stats: %zu calls, %zu errors, %zu insn-limit hits, %zu mem-limit hits, "
+"%zu bytes used"
+msgstr ""
+
+#: modules/engine/command.cpp:675
+#, c-format
+msgid "Cache: %zu entries, %zu hits, %zu misses"
+msgstr ""
+
 #: modules/engine/command.cpp:684 modules/engine/match.cpp:19
 #: modules/engine/match.cpp:36
 msgid "Permission denied."
@@ -94,23 +106,106 @@ msgstr "죄송합니다, 지금은 건축이 허용되지 않습니다."
 msgid "Sorry, queueing and triggering are not allowed now."
 msgstr ""
 
+#: modules/engine/command.cpp:1516
+#, c-format
+msgid "Unrecognized switch ‘%s’ for command ‘%s’."
+msgstr ""
+
 #: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2029
 #: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
 #: modules/engine/wiz.cpp:820 modules/engine/wiz.cpp:908
 msgid "Illegal combination of switches."
 msgstr "스위치 조합이 잘못되었습니다."
 
+#: modules/engine/command.cpp:1545
+#, c-format
+msgid "Command %s does not take switches."
+msgstr ""
+
 #: modules/engine/command.cpp:2980
 msgid "Huh?  (Type “help” for help.)"
 msgstr "네?  (도움말을 보려면 “help”를 입력하세요.)"
+
+#: modules/engine/command.cpp:3644
+#, c-format
+msgid "Digging a room costs %d %s%s."
+msgstr ""
+
+#: modules/engine/command.cpp:3651
+#, c-format
+msgid "Opening a new exit costs %d %s%s."
+msgstr ""
+
+#: modules/engine/command.cpp:3654
+#, c-format
+msgid "Linking an exit, home, or dropto costs %d %s."
+msgstr ""
+
+#: modules/engine/command.cpp:3663
+#, c-format
+msgid "Creating a new thing costs %d %s%s."
+msgstr ""
+
+#: modules/engine/command.cpp:3670
+#, c-format
+msgid "Creating a new thing costs between %d and %d %s%s."
+msgstr ""
+
+#: modules/engine/command.cpp:3679
+#, c-format
+msgid "Creating a robot costs %d %s%s."
+msgstr ""
+
+#: modules/engine/command.cpp:3688
+#, c-format
+msgid "Killing costs %d %s, with a %d%% chance of success."
+msgstr ""
+
+#: modules/engine/command.cpp:3694
+#, c-format
+msgid "Killing costs between %d and %d %s."
+msgstr ""
+
+#: modules/engine/command.cpp:3704
+#, c-format
+msgid "You must spend %d %s to guarantee success."
+msgstr ""
+
+#: modules/engine/command.cpp:3708
+#, c-format
+msgid ""
+"Computationally expensive commands and functions (ie: @entrances, @find, "
+"@search, @stats (with an argument or switch), search(), and stats()) cost %d "
+"%s."
+msgstr ""
+
+#: modules/engine/command.cpp:3712
+#, c-format
+msgid "Each command run from the queue costs 1/%d %s."
+msgstr ""
+
+#: modules/engine/command.cpp:3717
+#, c-format
+msgid "A %d %s deposit is charged for putting a command on the queue."
+msgstr ""
 
 #: modules/engine/command.cpp:3719
 msgid "The deposit is refunded when the command is run or canceled."
 msgstr ""
 
+#: modules/engine/command.cpp:3743
+#, c-format
+msgid "The value of an object is %s."
+msgstr ""
+
 #: modules/engine/command.cpp:3745
 msgid ""
 "The default value of cloned objects is the value of the original object."
+msgstr ""
+
+#: modules/engine/command.cpp:3747
+#, c-format
+msgid "The default value of cloned objects is %d %s."
 msgstr ""
 
 #: modules/engine/command.cpp:3782
@@ -159,6 +254,11 @@ msgid ""
 "Trace output is presented top-down (whole expression first, then sub-exprs)."
 msgstr ""
 
+#: modules/engine/command.cpp:3806
+#, c-format
+msgid "Only %d lines of trace output are displayed."
+msgstr ""
+
 #: modules/engine/command.cpp:3810
 msgid "Trace output is presented bottom-up (subexpressions first)."
 msgstr ""
@@ -197,6 +297,16 @@ msgstr ""
 msgid "The ‘name()’ function will return the name of faraway objects."
 msgstr ""
 
+#: modules/engine/command.cpp:3830
+#, c-format
+msgid "The default switch for the ‘@switch’ command is %s."
+msgstr ""
+
+#: modules/engine/command.cpp:3832
+#, c-format
+msgid "The default switch for the ‘examine’ command is %s."
+msgstr ""
+
 #: modules/engine/command.cpp:3834
 msgid "Players may @sweep dark locations."
 msgstr ""
@@ -206,12 +316,27 @@ msgid ""
 "You may only @teleport out of locations that are JUMP_OK or that you control."
 msgstr ""
 
+#: modules/engine/command.cpp:3838
+#, c-format
+msgid "Players may have at most %d commands in the queue at one time."
+msgstr ""
+
 #: modules/engine/command.cpp:3843
 msgid "All objects search themselves for $-commands."
 msgstr ""
 
 #: modules/engine/command.cpp:3845
 msgid "Objects other than players search themselves for $-commands."
+msgstr ""
+
+#: modules/engine/command.cpp:3852
+#, c-format
+msgid "%d commands are run from the queue when there is no net activity."
+msgstr ""
+
+#: modules/engine/command.cpp:3855
+#, c-format
+msgid "%d commands are run from the queue when there is net activity."
 msgstr ""
 
 #: modules/engine/command.cpp:3858
@@ -233,6 +358,31 @@ msgstr ""
 
 #: modules/engine/command.cpp:3868
 msgid "Database dumps are performed by a fork()ed process."
+msgstr ""
+
+#: modules/engine/command.cpp:3873
+#, c-format
+msgid "There may be at most %d players logged in at once."
+msgstr ""
+
+#: modules/engine/command.cpp:3880
+#, c-format
+msgid "New players are given %d %s to start with."
+msgstr ""
+
+#: modules/engine/command.cpp:3883
+#, c-format
+msgid "Players are given %d %s each day they connect."
+msgstr ""
+
+#: modules/engine/command.cpp:3886
+#, c-format
+msgid "Earning money is difficult if you have more than %d %s."
+msgstr ""
+
+#: modules/engine/command.cpp:3890
+#, c-format
+msgid "Players have a 1 in %d chance of finding a %s each time they move."
 msgstr ""
 
 #: modules/engine/command.cpp:4007
@@ -620,6 +770,66 @@ msgstr ""
 msgid "At least one query option is required."
 msgstr ""
 
+#: modules/engine/cque.cpp:1795
+#, c-format
+msgid "[%d]auto-@dump"
+msgstr ""
+
+#: modules/engine/cque.cpp:1799
+#, c-format
+msgid "[%d]auto-@dbck"
+msgstr ""
+
+#: modules/engine/cque.cpp:1803
+#, c-format
+msgid "[%d]Check for idle players"
+msgstr ""
+
+#: modules/engine/cque.cpp:1807
+#, c-format
+msgid "[%d]Test for @daily time"
+msgstr ""
+
+#: modules/engine/cque.cpp:1811
+#, c-format
+msgid "[%d]Keep Alive"
+msgstr ""
+
+#: modules/engine/cque.cpp:1815
+#, c-format
+msgid "[%d]Database cache tick"
+msgstr ""
+
+#: modules/engine/cque.cpp:1819
+#, c-format
+msgid "[%d]Further command quota"
+msgstr ""
+
+#: modules/engine/cque.cpp:1834
+#, c-format
+msgid "[PID %llu][#%d/%d]%s:%s"
+msgstr ""
+
+#: modules/engine/cque.cpp:1841
+#, c-format
+msgid "[PID %llu][%d]%s:%s"
+msgstr ""
+
+#: modules/engine/cque.cpp:1847
+#, c-format
+msgid "[PID %llu][#%d]%s:%s"
+msgstr ""
+
+#: modules/engine/cque.cpp:1853
+#, c-format
+msgid "[PID %llu]%s:%s"
+msgstr ""
+
+#: modules/engine/cque.cpp:1872
+#, c-format
+msgid "   Enactor: %s%s"
+msgstr ""
+
 #: modules/engine/cque.cpp:1896
 msgid "----- Wait Queue -----"
 msgstr ""
@@ -638,6 +848,21 @@ msgstr ""
 
 #: modules/engine/cque.cpp:2108 modules/engine/cque.cpp:2128
 msgid "Warning: automatic dequeueing is disabled."
+msgstr ""
+
+#: modules/engine/cque.cpp:2119
+#, c-format
+msgid "%d commands processed."
+msgstr ""
+
+#: modules/engine/cque.cpp:2139
+#, c-format
+msgid "WaitQ timer advanced %d seconds."
+msgstr ""
+
+#: modules/engine/cque.cpp:2143
+#, c-format
+msgid "WaitQ timer set back %d seconds."
 msgstr ""
 
 #: modules/engine/cque.cpp:2147
@@ -1405,6 +1630,11 @@ msgstr ""
 msgid "MAIL: M is ambiguous (mass or me?)"
 msgstr ""
 
+#: modules/engine/mail.cpp:1169
+#, c-format
+msgid "MAIL: Current folder is %d [%s]."
+msgstr ""
+
 #: modules/engine/mail.cpp:1191
 msgid "MAIL: What folder is that?"
 msgstr ""
@@ -1417,12 +1647,38 @@ msgstr ""
 msgid "MAIL: Illegal folder name"
 msgstr ""
 
+#: modules/engine/mail.cpp:1212
+#, c-format
+msgid "MAIL: Folder %d now named ‘%s’"
+msgstr ""
+
+#: modules/engine/mail.cpp:1220
+#, c-format
+msgid "MAIL: Current folder set to %d [%s]."
+msgstr ""
+
+#: modules/engine/mail.cpp:1330 modules/engine/mail.cpp:1341
+#: modules/engine/mail.cpp:1346
+#, c-format
+msgid "MAIL: Msg #%d %s."
+msgstr ""
+
+#: modules/engine/mail.cpp:1337
+#, c-format
+msgid "MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."
+msgstr ""
+
 #: modules/engine/mail.cpp:1358 modules/engine/mail.cpp:1437
 msgid "MAIL: You don’t have any matching messages!"
 msgstr ""
 
 #: modules/engine/mail.cpp:1404
 msgid "MAIL: Invalid folder specification"
+msgstr ""
+
+#: modules/engine/mail.cpp:1427
+#, c-format
+msgid "MAIL: Msg %d filed in folder %d"
 msgstr ""
 
 #: modules/engine/mail.cpp:1539
@@ -1460,6 +1716,11 @@ msgstr ""
 msgid "MAIL: Mailbox purged."
 msgstr ""
 
+#: modules/engine/mail.cpp:2321
+#, c-format
+msgid "MAIL: ‘%s’ does not exist."
+msgstr ""
+
 #: modules/engine/mail.cpp:2338
 msgid "MAIL: No players specified."
 msgstr ""
@@ -1480,6 +1741,11 @@ msgstr ""
 #: modules/engine/mail.cpp:2390 modules/engine/mail.cpp:2430
 #: modules/engine/mail.cpp:2471 modules/engine/mail.cpp:4531
 msgid "MAIL: Too much @mail sent recently."
+msgstr ""
+
+#: modules/engine/mail.cpp:2405 modules/engine/mail.cpp:4347
+#, c-format
+msgid "MAIL: You are sending mail to ‘%s’."
 msgstr ""
 
 #: modules/engine/mail.cpp:2419 modules/engine/mail.cpp:2465
@@ -1506,6 +1772,31 @@ msgstr ""
 msgid "MAIL: The original sender no longer exists."
 msgstr ""
 
+#: modules/engine/mail.cpp:2736
+#, c-format
+msgid "MAIL: Reject message from %s: %s"
+msgstr ""
+
+#: modules/engine/mail.cpp:2738
+#, c-format
+msgid "[%d:%02d] MAIL: Reject message sent to %s."
+msgstr ""
+
+#: modules/engine/mail.cpp:2745
+#, c-format
+msgid "Sorry, %s is not accepting mail."
+msgstr ""
+
+#: modules/engine/mail.cpp:2760
+#, c-format
+msgid "Warning: %s can’t return your mail."
+msgstr ""
+
+#: modules/engine/mail.cpp:2765
+#, c-format
+msgid "Sorry, %s can’t return your mail."
+msgstr ""
+
 #: modules/engine/mail.cpp:2789
 msgid "MAIL: You cannot send mail to non-existent people."
 msgstr ""
@@ -1520,6 +1811,48 @@ msgstr ""
 
 #: modules/engine/mail.cpp:2984
 msgid "Go get some bugspray."
+msgstr ""
+
+#: modules/engine/mail.cpp:3000
+#, c-format
+msgid "%s: no such player."
+msgstr ""
+
+#: modules/engine/mail.cpp:3005
+#, c-format
+msgid "Let %s clear their own @mail."
+msgstr ""
+
+#: modules/engine/mail.cpp:3010
+#, c-format
+msgid "Mail cleared for %s(#%d)."
+msgstr ""
+
+#: modules/engine/mail.cpp:3037
+#, c-format
+msgid "Bad object #%d has mail."
+msgstr ""
+
+#: modules/engine/mail.cpp:3041
+#, c-format
+msgid "Bad object #%d has mail which refers to a non-existent mailbag item."
+msgstr ""
+
+#: modules/engine/mail.cpp:3048
+#, c-format
+msgid "%s(#%d) has mail, but is not a player."
+msgstr ""
+
+#: modules/engine/mail.cpp:3053
+#, c-format
+msgid ""
+"%s(#%d) is not a player, but has mail which refers to a non-existent mailbag "
+"item."
+msgstr ""
+
+#: modules/engine/mail.cpp:3059
+#, c-format
+msgid "%s(#%d) has mail which refers to a non-existent mailbag item."
 msgstr ""
 
 #: modules/engine/mail.cpp:3083
@@ -1550,6 +1883,11 @@ msgstr ""
 msgid "Removing @mail that is associated with non-players."
 msgstr ""
 
+#: modules/engine/mail.cpp:3151
+#, c-format
+msgid "Fixing mail for #%d."
+msgstr ""
+
 #: modules/engine/mail.cpp:3156
 msgid "Mail sanity fix completed."
 msgstr ""
@@ -1558,8 +1896,18 @@ msgstr ""
 msgid "That is not a debugging option."
 msgstr ""
 
+#: modules/engine/mail.cpp:3213 modules/mail/mail_mod.cpp:5354
+#, c-format
+msgid "%s: No such player."
+msgstr ""
+
 #: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5362
 msgid "The post office protects privacy!"
+msgstr ""
+
+#: modules/engine/mail.cpp:3226
+#, c-format
+msgid "Finding mail stats costs %d %s."
 msgstr ""
 
 #: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5377
@@ -1647,6 +1995,11 @@ msgstr "%s은(는) %s님의 소유입니다"
 
 #: modules/engine/mail.cpp:3461
 msgid "MAIL: Invalid mail command."
+msgstr ""
+
+#: modules/engine/mail.cpp:4002
+#, c-format
+msgid "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."
 msgstr ""
 
 #: modules/engine/mail.cpp:4009
@@ -2208,6 +2561,16 @@ msgstr ""
 msgid "I don’t understand that power."
 msgstr ""
 
+#: modules/engine/predicates.cpp:267
+#, c-format
+msgid "Sorry, you don’t have enough %s."
+msgstr ""
+
+#: modules/engine/predicates.cpp:272
+#, c-format
+msgid "Sorry, that player doesn’t have enough %s."
+msgstr ""
+
 #: modules/engine/predicates.cpp:283
 msgid "Sorry, your building contract has run out."
 msgstr ""
@@ -2218,6 +2581,21 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:1008
 msgid "That is not a valid command name."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1044
+#, c-format
+msgid "%s already added."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1130
+#, c-format
+msgid "Command %s added."
+msgstr ""
+
+#: modules/engine/predicates.cpp:1177
+#, c-format
+msgid "%s not found in command table."
 msgstr ""
 
 #: modules/engine/predicates.cpp:1213
@@ -3200,11 +3578,6 @@ msgstr "비활성화되었습니다."
 
 #: modules/mail/mail_mod.cpp:5302
 msgid "MAIL: Mail statistics are unavailable."
-msgstr ""
-
-#: modules/mail/mail_mod.cpp:5354
-#, c-format
-msgid "%s: No such player."
 msgstr ""
 
 #: src/ganl_adapter.cpp:3096

@@ -1166,7 +1166,7 @@ static void DoListMailBrief(dbref player)
 
     int current_folder = player_folder(player);
 
-    raw_notify(player, tprintf(T("MAIL: Current folder is %d [%s]."),
+    raw_notify(player, tprintf(M_("MAIL: Current folder is %d [%s]."),
                 current_folder, get_folder_name(player, current_folder)));
 }
 
@@ -1209,7 +1209,7 @@ static void do_mail_change_folder(dbref player, UTF8 *fld, UTF8 *newname)
         }
 
         add_folder_name(player, pfld, newname);
-        raw_notify(player, tprintf(T("MAIL: Folder %d now named ‘%s’"), pfld,
+        raw_notify(player, tprintf(M_("MAIL: Folder %d now named ‘%s’"), pfld,
                     newname));
     }
     else
@@ -1217,7 +1217,7 @@ static void do_mail_change_folder(dbref player, UTF8 *fld, UTF8 *newname)
         // Set a new folder
         //
         set_player_folder(player, pfld);
-        raw_notify(player, tprintf(T("MAIL: Current folder set to %d [%s]."),
+        raw_notify(player, tprintf(M_("MAIL: Current folder set to %d [%s]."),
                        pfld, get_folder_name(player, pfld)));
     }
 }
@@ -1327,23 +1327,23 @@ static void do_mail_flags(dbref player, UTF8 *msglist, mail_flag flag, bool nega
                 switch (flag)
                 {
                 case M_TAG:
-                    raw_notify(player, tprintf(T("MAIL: Msg #%d %s."), i,
+                    raw_notify(player, tprintf(M_("MAIL: Msg #%d %s."), i,
                                 negate ? "untagged" : "tagged"));
                     break;
 
                 case M_CLEARED:
                     if (Unread(mp) && !negate)
                     {
-                        raw_notify(player, tprintf(T("MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."), i, i));
+                        raw_notify(player, tprintf(M_("MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."), i, i));
                     }
                     else
                     {
-                        raw_notify(player, tprintf(T("MAIL: Msg #%d %s."), i, negate ? "uncleared" : "cleared"));
+                        raw_notify(player, tprintf(M_("MAIL: Msg #%d %s."), i, negate ? "uncleared" : "cleared"));
                     }
                     break;
 
                 case M_SAFE:
-                    raw_notify(player, tprintf(T("MAIL: Msg #%d %s."), i,
+                    raw_notify(player, tprintf(M_("MAIL: Msg #%d %s."), i,
                         negate ? "marked unsafe" : "marked safe"));
                     break;
                 }
@@ -1424,7 +1424,7 @@ static void do_mail_file(dbref player, UTF8 *msglist, UTF8 *folder)
                 mp->read &= M_FMASK;
                 mp->read |= FolderBit(foldernum);
                 sqlite_wt_update_mail_flags(mp);
-                raw_notify(player, tprintf(T("MAIL: Msg %d filed in folder %d"), i,
+                raw_notify(player, tprintf(M_("MAIL: Msg %d filed in folder %d"), i,
                             foldernum));
             }
         }
@@ -2318,7 +2318,7 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             }
             else
             {
-                raw_notify(player, tprintf(T("MAIL: ‘%s’ does not exist."), head));
+                raw_notify(player, tprintf(M_("MAIL: ‘%s’ does not exist."), head));
                 return nullptr;
             }
         }
@@ -2402,7 +2402,7 @@ static void do_expmail_start(dbref player, UTF8 *arg, UTF8 *subject)
     atr_clr(player, A_MAILMSG);
     Flags2(player) |= PLAYER_MAILS;
     UTF8 *names = make_namelist(player, tolist);
-    raw_notify(player, tprintf(T("MAIL: You are sending mail to ‘%s’."), names));
+    raw_notify(player, tprintf(M_("MAIL: You are sending mail to ‘%s’."), names));
     free_lbuf(names);
     free_lbuf(tolist);
 }
@@ -2733,16 +2733,16 @@ static void mail_return(dbref player, dbref target)
             FIELDEDTIME ft;
             ltaNow.ReturnFields(&ft);
 
-            raw_notify(player, tprintf(T("MAIL: Reject message from %s: %s"),
+            raw_notify(player, tprintf(M_("MAIL: Reject message from %s: %s"),
                 Moniker(target), str2));
-            raw_notify(target, tprintf(T("[%d:%02d] MAIL: Reject message sent to %s."),
+            raw_notify(target, tprintf(M_("[%d:%02d] MAIL: Reject message sent to %s."),
                 ft.iHour, ft.iMinute, Moniker(player)));
         }
         free_lbuf(str2);
     }
     else
     {
-        raw_notify(player, tprintf(T("Sorry, %s is not accepting mail."), Moniker(target)));
+        raw_notify(player, tprintf(M_("Sorry, %s is not accepting mail."), Moniker(target)));
     }
     free_lbuf(str);
 }
@@ -2757,12 +2757,12 @@ static bool mail_check(dbref player, dbref target)
     {
         if (Wizard(player))
         {
-            raw_notify(player, tprintf(T("Warning: %s can’t return your mail."), Moniker(target)));
+            raw_notify(player, tprintf(M_("Warning: %s can’t return your mail."), Moniker(target)));
             return true;
         }
         else
         {
-            raw_notify(player, tprintf(T("Sorry, %s can’t return your mail."), Moniker(target)));
+            raw_notify(player, tprintf(M_("Sorry, %s can’t return your mail."), Moniker(target)));
             return false;
         }
     }
@@ -2997,17 +2997,17 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
         }
         if (target == NOTHING)
         {
-            raw_notify(player, tprintf(T("%s: no such player."), victim));
+            raw_notify(player, tprintf(M_("%s: no such player."), victim));
             return;
         }
         if (Wizard(target))
         {
-            raw_notify(player, tprintf(T("Let %s clear their own @mail."), Moniker(target)));
+            raw_notify(player, tprintf(M_("Let %s clear their own @mail."), Moniker(target)));
             return;
         }
         do_mail_clear(target, nullptr);
         do_mail_purge(target);
-        raw_notify(player, tprintf(T("Mail cleared for %s(#%d)."), Moniker(target), target));
+        raw_notify(player, tprintf(M_("Mail cleared for %s(#%d)."), Moniker(target), target));
         return;
     }
     else if (string_prefix(T("sanity"), action))
@@ -3034,29 +3034,29 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
                 {
                     if (bGoodReference)
                     {
-                        raw_notify(player, tprintf(T("Bad object #%d has mail."), mp->to));
+                        raw_notify(player, tprintf(M_("Bad object #%d has mail."), mp->to));
                     }
                     else
                     {
-                        raw_notify(player, tprintf(T("Bad object #%d has mail which refers to a non-existent mailbag item."), mp->to));
+                        raw_notify(player, tprintf(M_("Bad object #%d has mail which refers to a non-existent mailbag item."), mp->to));
                     }
                 }
                 else if (!isPlayer(mp->to))
                 {
                     if (bGoodReference)
                     {
-                        raw_notify(player, tprintf(T("%s(#%d) has mail, but is not a player."),
+                        raw_notify(player, tprintf(M_("%s(#%d) has mail, but is not a player."),
                                  Moniker(mp->to), mp->to));
                     }
                     else
                     {
-                        raw_notify(player, tprintf(T("%s(#%d) is not a player, but has mail which refers to a non-existent mailbag item."),
+                        raw_notify(player, tprintf(M_("%s(#%d) is not a player, but has mail which refers to a non-existent mailbag item."),
                              Moniker(mp->to), mp->to));
                     }
                 }
                 else if (!bGoodReference)
                 {
-                    raw_notify(player, tprintf(T("%s(#%d) has mail which refers to a non-existent mailbag item."), Moniker(mp->to), mp->to));
+                    raw_notify(player, tprintf(M_("%s(#%d) has mail which refers to a non-existent mailbag item."), Moniker(mp->to), mp->to));
                 }
             }
         }
@@ -3148,7 +3148,7 @@ static void do_mail_debug(dbref player, UTF8 *action, UTF8 *victim)
                 {
                     // Delete this item.
                     //
-                    raw_notify(player, tprintf(T("Fixing mail for #%d."), mp->to));
+                    raw_notify(player, tprintf(M_("Fixing mail for #%d."), mp->to));
                     ml.RemoveItem();
                 }
             }
@@ -3210,7 +3210,7 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
     }
     if (target == NOTHING)
     {
-        raw_notify(player, tprintf(T("%s: No such player."), name));
+        raw_notify(player, tprintf(M_("%s: No such player."), name));
         return;
     }
     if (!ExpMail(player) && (target != player))
@@ -3223,7 +3223,7 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
     //
     if (!payfor(player, mudconf.searchcost))
     {
-        raw_notify(player, tprintf(T("Finding mail stats costs %d %s."),
+        raw_notify(player, tprintf(M_("Finding mail stats costs %d %s."),
                        mudconf.searchcost,
                        (mudconf.searchcost == 1) ? mudconf.one_coin : mudconf.many_coins));
         return;
@@ -3999,7 +3999,7 @@ void check_mail(dbref player, int folder, bool silent)
 #else // MAIL_ALL_FOLDERS
     if (rc + uc > 0)
     {
-        raw_notify(player, tprintf(T("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."), rc + uc, folder, get_folder_name(player, folder), uc, cc));
+        raw_notify(player, tprintf(M_("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."), rc + uc, folder, get_folder_name(player, folder), uc, cc));
     }
     else if (!silent)
     {
@@ -4344,7 +4344,7 @@ static void do_mail_cc(dbref player, UTF8 *arg, bool bBlind)
 
     atr_add_raw(player, A_MAILTO, fulllist);
     UTF8 *names = make_namelist(player, fulllist);
-    raw_notify(player, tprintf(T("MAIL: You are sending mail to ‘%s’."), names));
+    raw_notify(player, tprintf(M_("MAIL: You are sending mail to ‘%s’."), names));
     free_lbuf(names);
     free_lbuf(tolist);
     free_lbuf(fulllist);

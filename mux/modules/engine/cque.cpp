@@ -1792,31 +1792,31 @@ static int CallBack_ShowDispatches(const PTASK_RECORD p)
     CLinearTimeDelta ltd = p->ltaWhen - Show_lsaNow;
     if (p->fpTask == dispatch_DatabaseDump)
     {
-        notify(Show_Player, tprintf(T("[%d]auto-@dump"), ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(M_("[%d]auto-@dump"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_FreeListReconstruction)
     {
-        notify(Show_Player, tprintf(T("[%d]auto-@dbck"), ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(M_("[%d]auto-@dbck"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_IdleCheck)
     {
-        notify(Show_Player, tprintf(T("[%d]Check for idle players"), ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(M_("[%d]Check for idle players"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_CheckEvents)
     {
-        notify(Show_Player, tprintf(T("[%d]Test for @daily time"), ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(M_("[%d]Test for @daily time"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_KeepAlive)
     {
-        notify(Show_Player, tprintf(T("[%d]Keep Alive"), ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(M_("[%d]Keep Alive"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == dispatch_CacheTick)
     {
-        notify(Show_Player, tprintf(T("[%d]Database cache tick"), ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(M_("[%d]Database cache tick"), ltd.ReturnSeconds()));
     }
     else if (p->fpTask == Task_ProcessCommand)
     {
-        notify(Show_Player, tprintf(T("[%d]Further command quota"), ltd.ReturnSeconds()));
+        notify(Show_Player, tprintf(M_("[%d]Further command quota"), ltd.ReturnSeconds()));
     }
     else
     {
@@ -1831,26 +1831,26 @@ static void ShowPsLine(const BQUE *tmp, const uint64_t pid)
     if (tmp->IsTimed && Good_obj(tmp->u.s.sem))
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf(T("[PID %llu][#%d/%d]%s:%s"),
+        notify(Show_Player, tprintf(M_("[PID %llu][#%d/%d]%s:%s"),
             static_cast<unsigned long long>(pid), tmp->u.s.sem,
             ltd.ReturnSeconds(), bufp, tmp->comm));
     }
     else if (tmp->IsTimed)
     {
         CLinearTimeDelta ltd = tmp->waittime - Show_lsaNow;
-        notify(Show_Player, tprintf(T("[PID %llu][%d]%s:%s"),
+        notify(Show_Player, tprintf(M_("[PID %llu][%d]%s:%s"),
             static_cast<unsigned long long>(pid), ltd.ReturnSeconds(), bufp,
             tmp->comm));
     }
     else if (Good_obj(tmp->u.s.sem))
     {
-        notify(Show_Player, tprintf(T("[PID %llu][#%d]%s:%s"),
+        notify(Show_Player, tprintf(M_("[PID %llu][#%d]%s:%s"),
             static_cast<unsigned long long>(pid), tmp->u.s.sem, bufp,
             tmp->comm));
     }
     else
     {
-        notify(Show_Player, tprintf(T("[PID %llu]%s:%s"),
+        notify(Show_Player, tprintf(M_("[PID %llu]%s:%s"),
             static_cast<unsigned long long>(pid), bufp, tmp->comm));
     }
     UTF8 *bp = bufp;
@@ -1869,7 +1869,7 @@ static void ShowPsLine(const BQUE *tmp, const uint64_t pid)
         }
         *bp = '\0';
         bp = unparse_object(Show_Player, tmp->enactor, false);
-        notify(Show_Player, tprintf(T("   Enactor: %s%s"), bp, bufp));
+        notify(Show_Player, tprintf(M_("   Enactor: %s%s"), bp, bufp));
         free_lbuf(bp);
     }
     free_lbuf(bufp);
@@ -2116,7 +2116,7 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
 
         if (!Quiet(executor))
         {
-            notify(executor, tprintf(T("%d commands processed."), ncmds));
+            notify(executor, tprintf(M_("%d commands processed."), ncmds));
         }
     }
     else if (key == QUEUE_WARP)
@@ -2136,11 +2136,11 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
         }
         if (0 < iWarp)
         {
-            notify(executor, tprintf(T("WaitQ timer advanced %d seconds."), iWarp));
+            notify(executor, tprintf(M_("WaitQ timer advanced %d seconds."), iWarp));
         }
         else if (iWarp < 0)
         {
-            notify(executor, tprintf(T("WaitQ timer set back %d seconds."), iWarp));
+            notify(executor, tprintf(M_("WaitQ timer set back %d seconds."), iWarp));
         }
         else
         {
