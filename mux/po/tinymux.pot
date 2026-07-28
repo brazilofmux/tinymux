@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 21:05-0600\n"
+"POT-Creation-Date: 2026-07-27 22:56-0600\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -73,7 +73,7 @@ msgstr ""
 msgid "Sorry, queueing and triggering are not allowed now."
 msgstr ""
 
-#: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2023
+#: modules/engine/command.cpp:1530 modules/engine/cque.cpp:2029
 #: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:329
 #: modules/engine/wiz.cpp:820 modules/engine/wiz.cpp:908
 msgid "Illegal combination of switches."
@@ -395,40 +395,40 @@ msgstr ""
 msgid "*** Channel       Header          Owner           Access  Users Msgs"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2893 modules/engine/comsys.cpp:4148
+#: modules/engine/comsys.cpp:2902 modules/engine/comsys.cpp:4157
 msgid "-- End of list of Channels --"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2925
+#: modules/engine/comsys.cpp:2934
 msgid "Need an alias to do comtitle."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2934
+#: modules/engine/comsys.cpp:2943
 msgid "Unknown alias."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2951
+#: modules/engine/comsys.cpp:2960
 msgid "You can not turn off comtitles on that channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:2980
+#: modules/engine/comsys.cpp:2989
 msgid "Illegal comsys alias, please delete."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3020
+#: modules/engine/comsys.cpp:3029
 msgid "Alias           Channel            Status   Title"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3051
+#: modules/engine/comsys.cpp:3060
 msgid "-- End of comlist --"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3132
+#: modules/engine/comsys.cpp:3141
 msgid "Only options available are: on, off and who."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3457 modules/engine/comsys.cpp:3473
-#: modules/engine/comsys.cpp:3803 modules/engine/conf.cpp:2418
+#: modules/engine/comsys.cpp:3466 modules/engine/comsys.cpp:3482
+#: modules/engine/comsys.cpp:3812 modules/engine/conf.cpp:2418
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -438,59 +438,59 @@ msgstr ""
 msgid "Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3461
+#: modules/engine/comsys.cpp:3470
 msgid "Invalid player."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3477
+#: modules/engine/comsys.cpp:3486
 msgid "That is not a reasonable cost."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3499
+#: modules/engine/comsys.cpp:3508
 msgid "@cpflags: Unknown Flag."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3507
+#: modules/engine/comsys.cpp:3516
 msgid "@cpflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3512
+#: modules/engine/comsys.cpp:3521
 msgid "@cpflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3535
+#: modules/engine/comsys.cpp:3544
 msgid "@coflags: Unknown Flag."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3543
+#: modules/engine/comsys.cpp:3552
 msgid "@coflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3548
+#: modules/engine/comsys.cpp:3557
 msgid "@coflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3887
+#: modules/engine/comsys.cpp:3896
 msgid "@cboot: Unknown channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3893
+#: modules/engine/comsys.cpp:3902
 msgid "@cboot: You are not on that channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3899
+#: modules/engine/comsys.cpp:3908
 msgid "@cboot: You can’t do that!"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3972
+#: modules/engine/comsys.cpp:3981
 msgid "That channel does not exist."
 msgstr ""
 
-#: modules/engine/comsys.cpp:4049
+#: modules/engine/comsys.cpp:4058
 msgid "*** Channel       Owner           Header"
 msgstr ""
 
-#: modules/engine/comsys.cpp:4053
+#: modules/engine/comsys.cpp:4062
 msgid "*** Channel       Owner           Description"
 msgstr ""
 
@@ -530,35 +530,42 @@ msgstr ""
 msgid "No queue entry with that PID was found."
 msgstr ""
 
-#: modules/engine/cque.cpp:838 modules/engine/cque.cpp:1996
+#: modules/engine/cque.cpp:800 modules/engine/cque.cpp:862
+#, c-format
+msgid "%d queue entry removed."
+msgid_plural "%d queue entries removed."
+msgstr[0] ""
+msgstr[1] ""
+
+#: modules/engine/cque.cpp:841 modules/engine/cque.cpp:2002
 msgid "Can’t specify a target and /all"
 msgstr ""
 
-#: modules/engine/cque.cpp:1110
+#: modules/engine/cque.cpp:1116
 msgid "Drained."
 msgstr ""
 
-#: modules/engine/cque.cpp:1114
+#: modules/engine/cque.cpp:1120
 msgid "Notified."
 msgstr ""
 
-#: modules/engine/cque.cpp:1155
+#: modules/engine/cque.cpp:1161
 msgid "Not enough money to queue command."
 msgstr ""
 
-#: modules/engine/cque.cpp:1654
+#: modules/engine/cque.cpp:1660
 msgid "Invalid attribute."
 msgstr ""
 
-#: modules/engine/cque.cpp:1683
+#: modules/engine/cque.cpp:1689
 msgid "Semaphore update failed."
 msgstr ""
 
-#: modules/engine/cque.cpp:1726
+#: modules/engine/cque.cpp:1732
 msgid "Query server is not available."
 msgstr ""
 
-#: modules/engine/cque.cpp:1740 modules/engine/cron.cpp:744
+#: modules/engine/cque.cpp:1746 modules/engine/cron.cpp:744
 #: modules/engine/cron.cpp:749 modules/engine/cron.cpp:803
 #: modules/engine/cron.cpp:808 modules/engine/cron.cpp:822
 #: modules/engine/cron.cpp:858 modules/engine/set.cpp:1184
@@ -569,35 +576,35 @@ msgstr ""
 msgid "No match."
 msgstr ""
 
-#: modules/engine/cque.cpp:1755
+#: modules/engine/cque.cpp:1761
 msgid "QUERY: No Query."
 msgstr ""
 
-#: modules/engine/cque.cpp:1764
+#: modules/engine/cque.cpp:1770
 msgid "At least one query option is required."
 msgstr ""
 
-#: modules/engine/cque.cpp:1890
+#: modules/engine/cque.cpp:1896
 msgid "----- Wait Queue -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:1916
+#: modules/engine/cque.cpp:1922
 msgid "----- Semaphore Queue -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:1942
+#: modules/engine/cque.cpp:1948
 msgid "----- SQL Queries -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:2047
+#: modules/engine/cque.cpp:2053
 msgid "----- System Queue -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:2102 modules/engine/cque.cpp:2122
+#: modules/engine/cque.cpp:2108 modules/engine/cque.cpp:2128
 msgid "Warning: automatic dequeueing is disabled."
 msgstr ""
 
-#: modules/engine/cque.cpp:2141
+#: modules/engine/cque.cpp:2147
 msgid "Object queue appended to player queue."
 msgstr ""
 
@@ -837,11 +844,11 @@ msgstr ""
 msgid "That is not a reasonable name."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4564
+#: modules/engine/engine_com.cpp:4586
 msgid "*** Logins are disabled."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4578
+#: modules/engine/engine_com.cpp:4600
 msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
 msgstr ""
 
@@ -914,12 +921,12 @@ msgstr ""
 msgid "Flag name changed."
 msgstr ""
 
-#: modules/engine/funceval.cpp:1098 modules/engine/set.cpp:1061
-msgid "You shouldn’t be rummaging through the garbage."
-msgstr ""
-
 #: modules/engine/funceval2.cpp:888
 msgid "Illegal step size."
+msgstr ""
+
+#: modules/engine/funceval.cpp:1098 modules/engine/set.cpp:1061
+msgid "You shouldn’t be rummaging through the garbage."
 msgstr ""
 
 #: modules/engine/functions.cpp:15751
@@ -1346,7 +1353,7 @@ msgid "MAIL: Mail aliases must be of the form *<name>."
 msgstr ""
 
 #: modules/engine/mail.cpp:1666 modules/engine/mail.cpp:2147
-#: modules/engine/mail.cpp:5655
+#: modules/engine/mail.cpp:5666
 msgid "MAIL: No such folder."
 msgstr ""
 
@@ -1363,8 +1370,8 @@ msgstr ""
 msgid "MAIL: You have no matching messages."
 msgstr ""
 
-#: modules/engine/mail.cpp:2001 modules/engine/mail.cpp:4134
-#: modules/engine/mail.cpp:5192
+#: modules/engine/mail.cpp:2001 modules/engine/mail.cpp:4145
+#: modules/engine/mail.cpp:5203
 msgid "MAIL: No such player."
 msgstr ""
 
@@ -1376,21 +1383,21 @@ msgstr ""
 msgid "MAIL: No players specified."
 msgstr ""
 
-#: modules/engine/mail.cpp:2374 modules/engine/mail.cpp:4313
+#: modules/engine/mail.cpp:2374 modules/engine/mail.cpp:4324
 msgid "MAIL: I do not know whom you want to mail."
 msgstr ""
 
-#: modules/engine/mail.cpp:2379 modules/engine/mail.cpp:4531
+#: modules/engine/mail.cpp:2379 modules/engine/mail.cpp:4542
 msgid "MAIL: No subject."
 msgstr ""
 
 #: modules/engine/mail.cpp:2384 modules/engine/mail.cpp:2414
-#: modules/engine/mail.cpp:2460 modules/engine/mail.cpp:4514
+#: modules/engine/mail.cpp:2460 modules/engine/mail.cpp:4525
 msgid "MAIL: Mail message already in progress."
 msgstr ""
 
 #: modules/engine/mail.cpp:2390 modules/engine/mail.cpp:2430
-#: modules/engine/mail.cpp:2471 modules/engine/mail.cpp:4520
+#: modules/engine/mail.cpp:2471 modules/engine/mail.cpp:4531
 msgid "MAIL: Too much @mail sent recently."
 msgstr ""
 
@@ -1470,18 +1477,18 @@ msgstr ""
 msgid "That is not a debugging option."
 msgstr ""
 
-#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5317
+#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5515
 msgid "The post office protects privacy!"
 msgstr ""
 
-#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5332
+#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5530
 #, c-format
 msgid "There is %d message in the mail spool."
 msgid_plural "There are %d messages in the mail spool."
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5365
+#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5563
 #, c-format
 msgid "MAIL: There is %d msg in the mail spool, %d unread, %d cleared."
 msgid_plural ""
@@ -1489,7 +1496,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3309 modules/mail/mail_mod.cpp:5374
+#: modules/engine/mail.cpp:3316 modules/mail/mail_mod.cpp:5572
 #, c-format
 msgid "MAIL: There is %d old msg in the mail spool, totalling %d characters."
 msgid_plural ""
@@ -1497,7 +1504,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3312 modules/mail/mail_mod.cpp:5380
+#: modules/engine/mail.cpp:3319 modules/mail/mail_mod.cpp:5578
 #, c-format
 msgid "MAIL: There is %d new msg in the mail spool, totalling %d characters."
 msgid_plural ""
@@ -1505,7 +1512,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3315 modules/mail/mail_mod.cpp:5386
+#: modules/engine/mail.cpp:3322 modules/mail/mail_mod.cpp:5584
 #, c-format
 msgid ""
 "MAIL: There is %d cleared msg in the mail spool, totalling %d characters."
@@ -1514,40 +1521,40 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3344 modules/mail/mail_mod.cpp:5421
+#: modules/engine/mail.cpp:3351 modules/mail/mail_mod.cpp:5619
 #, c-format
 msgid "%s sent %d message."
 msgid_plural "%s sent %d messages."
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3347 modules/mail/mail_mod.cpp:5425
+#: modules/engine/mail.cpp:3354 modules/mail/mail_mod.cpp:5623
 #, c-format
 msgid "%s has %d message."
 msgid_plural "%s has %d messages."
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3407 modules/mail/mail_mod.cpp:5487
+#: modules/engine/mail.cpp:3418 modules/mail/mail_mod.cpp:5685
 #, c-format
 msgid "Mail statistics for %s:"
 msgstr ""
 
-#: modules/engine/mail.cpp:3411 modules/mail/mail_mod.cpp:5493
+#: modules/engine/mail.cpp:3422 modules/mail/mail_mod.cpp:5691
 #, c-format
 msgid "%d message sent, %d unread, %d cleared."
 msgid_plural "%d messages sent, %d unread, %d cleared."
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3415 modules/mail/mail_mod.cpp:5499
+#: modules/engine/mail.cpp:3426 modules/mail/mail_mod.cpp:5697
 #, c-format
 msgid "%d message received, %d unread, %d cleared."
 msgid_plural "%d messages received, %d unread, %d cleared."
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3423 modules/mail/mail_mod.cpp:5508
+#: modules/engine/mail.cpp:3434 modules/mail/mail_mod.cpp:5706
 #, c-format
 msgid "%d message sent, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
@@ -1555,7 +1562,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3428 modules/mail/mail_mod.cpp:5514
+#: modules/engine/mail.cpp:3439 modules/mail/mail_mod.cpp:5712
 #, c-format
 msgid "%d message received, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
@@ -1563,167 +1570,167 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/mail.cpp:3436 modules/mail/mail_mod.cpp:5523
+#: modules/engine/mail.cpp:3447 modules/mail/mail_mod.cpp:5721
 #, c-format
 msgid "Last is dated %s"
 msgstr ""
 
-#: modules/engine/mail.cpp:3450
+#: modules/engine/mail.cpp:3461
 msgid "MAIL: Invalid mail command."
 msgstr ""
 
-#: modules/engine/mail.cpp:3998
+#: modules/engine/mail.cpp:4009
 msgid "MAIL: You have no mail."
 msgstr ""
 
-#: modules/engine/mail.cpp:4067
+#: modules/engine/mail.cpp:4078
 msgid "MAIL: What alias do you want to create?."
 msgstr ""
 
-#: modules/engine/mail.cpp:4163
+#: modules/engine/mail.cpp:4174
 msgid "MAIL: Invalid mail alias."
 msgstr ""
 
-#: modules/engine/mail.cpp:4203 modules/engine/mail.cpp:4856
-#: modules/engine/mail.cpp:4927 modules/engine/mail.cpp:4959
-#: modules/engine/mail.cpp:5020 modules/engine/mail.cpp:5101
+#: modules/engine/mail.cpp:4214 modules/engine/mail.cpp:4867
+#: modules/engine/mail.cpp:4938 modules/engine/mail.cpp:4970
+#: modules/engine/mail.cpp:5031 modules/engine/mail.cpp:5112
 msgid "MAIL: Permission denied."
 msgstr ""
 
-#: modules/engine/mail.cpp:4272
+#: modules/engine/mail.cpp:4283
 msgid "Name         Description                              Owner"
 msgstr ""
 
-#: modules/engine/mail.cpp:4282
+#: modules/engine/mail.cpp:4293
 msgid "*****  End of Mail Aliases *****"
 msgstr ""
 
-#: modules/engine/mail.cpp:4308
+#: modules/engine/mail.cpp:4319
 msgid "MAIL: No mail message in progress."
 msgstr ""
 
-#: modules/engine/mail.cpp:4504
+#: modules/engine/mail.cpp:4515
 msgid "MAIL: I don’t know who you want to mail."
 msgstr ""
 
-#: modules/engine/mail.cpp:4509
+#: modules/engine/mail.cpp:4520
 msgid "MAIL: No message."
 msgstr ""
 
-#: modules/engine/mail.cpp:4609
+#: modules/engine/mail.cpp:4620
 msgid "MAIL: No message started."
 msgstr ""
 
-#: modules/engine/mail.cpp:4618
+#: modules/engine/mail.cpp:4629
 msgid "MAIL: No recipients."
 msgstr ""
 
-#: modules/engine/mail.cpp:4626
+#: modules/engine/mail.cpp:4637
 msgid "MAIL: The body of this message is empty.  Use - to add to the message."
 msgstr ""
 
-#: modules/engine/mail.cpp:4646
+#: modules/engine/mail.cpp:4657
 msgid "MAIL: Message aborted."
 msgstr ""
 
-#: modules/engine/mail.cpp:4660
+#: modules/engine/mail.cpp:4671
 msgid "No text prepended."
 msgstr ""
 
-#: modules/engine/mail.cpp:4699 modules/engine/mail.cpp:4760
-#: modules/engine/mail.cpp:4779 modules/engine/mail.cpp:4787
+#: modules/engine/mail.cpp:4710 modules/engine/mail.cpp:4771
+#: modules/engine/mail.cpp:4790 modules/engine/mail.cpp:4798
 msgid "MAIL: No message in progress."
 msgstr ""
 
-#: modules/engine/mail.cpp:4721
+#: modules/engine/mail.cpp:4732
 msgid "No text added."
 msgstr ""
 
-#: modules/engine/mail.cpp:4773
+#: modules/engine/mail.cpp:4784
 msgid "Text edited."
 msgstr ""
 
-#: modules/engine/mail.cpp:4847
+#: modules/engine/mail.cpp:4858
 msgid "MAIL: Description changed."
 msgstr ""
 
-#: modules/engine/mail.cpp:4851
+#: modules/engine/mail.cpp:4862
 msgid "MAIL: Description is not valid."
 msgstr ""
 
-#: modules/engine/mail.cpp:4864
+#: modules/engine/mail.cpp:4875
 msgid "MAIL: You cannot do that!"
 msgstr ""
 
-#: modules/engine/mail.cpp:4882
+#: modules/engine/mail.cpp:4893
 msgid "MAIL: I do not see that here."
 msgstr ""
 
-#: modules/engine/mail.cpp:4887
+#: modules/engine/mail.cpp:4898
 msgid "MAIL: Owner changed for alias."
 msgstr ""
 
-#: modules/engine/mail.cpp:4909
+#: modules/engine/mail.cpp:4920
 msgid "MAIL: Only players may be added."
 msgstr ""
 
-#: modules/engine/mail.cpp:4921 modules/engine/mail.cpp:4974
+#: modules/engine/mail.cpp:4932 modules/engine/mail.cpp:4985
 msgid "MAIL: I do not see that person here."
 msgstr ""
 
-#: modules/engine/mail.cpp:4934
+#: modules/engine/mail.cpp:4945
 msgid "MAIL: That person is already on the list."
 msgstr ""
 
-#: modules/engine/mail.cpp:5001
+#: modules/engine/mail.cpp:5012
 msgid "MAIL: That name already exists!"
 msgstr ""
 
-#: modules/engine/mail.cpp:5011
+#: modules/engine/mail.cpp:5022
 msgid "MAIL: I cannot find that alias!"
 msgstr ""
 
-#: modules/engine/mail.cpp:5035
+#: modules/engine/mail.cpp:5046
 msgid "MAIL: Mailing Alias renamed."
 msgstr ""
 
-#: modules/engine/mail.cpp:5039
+#: modules/engine/mail.cpp:5050
 msgid "MAIL: Alias is not valid."
 msgstr ""
 
-#: modules/engine/mail.cpp:5065
+#: modules/engine/mail.cpp:5076
 msgid "MAIL: Alias Deleted."
 msgstr ""
 
-#: modules/engine/mail.cpp:5083
+#: modules/engine/mail.cpp:5094
 msgid "Num  Name         Description                              Owner"
 msgstr ""
 
-#: modules/engine/mail.cpp:5094
+#: modules/engine/mail.cpp:5105
 msgid "***** End of Mail Aliases *****"
 msgstr ""
 
-#: modules/engine/mail.cpp:5215
+#: modules/engine/mail.cpp:5226
 msgid "MAIL: Mail retracted."
 msgstr ""
 
-#: modules/engine/mail.cpp:5219
+#: modules/engine/mail.cpp:5230
 msgid "MAIL: That message has been read."
 msgstr ""
 
-#: modules/engine/mail.cpp:5229
+#: modules/engine/mail.cpp:5240
 msgid "MAIL: No matching messages."
 msgstr ""
 
-#: modules/engine/mail.cpp:5291
+#: modules/engine/mail.cpp:5302
 msgid "MAIL: That @malias command is not available."
 msgstr ""
 
-#: modules/engine/mail.cpp:5363
+#: modules/engine/mail.cpp:5374
 msgid "MAIL: That @mail command is not available."
 msgstr ""
 
-#: modules/engine/mail.cpp:5692
+#: modules/engine/mail.cpp:5703
 msgid "MAIL: That folder command is not available."
 msgstr ""
 
@@ -2705,6 +2712,13 @@ msgstr ""
 msgid "@dbclean: SQLite error during orphan purge."
 msgstr ""
 
+#: modules/engine/vattr.cpp:153
+#, c-format
+msgid "@dbclean: %d orphaned attribute name purged."
+msgid_plural "@dbclean: %d orphaned attribute names purged."
+msgstr[0] ""
+msgstr[1] ""
+
 #: modules/engine/walk.cpp:353
 msgid "Walk cancelled."
 msgstr ""
@@ -2930,11 +2944,11 @@ msgstr ""
 msgid "Disabled."
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:5257
+#: modules/mail/mail_mod.cpp:5455
 msgid "MAIL: Mail statistics are unavailable."
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:5309
+#: modules/mail/mail_mod.cpp:5507
 #, c-format
 msgid "%s: No such player."
 msgstr ""
