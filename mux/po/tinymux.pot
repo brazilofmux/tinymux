@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 13:05+0000\n"
+"POT-Creation-Date: 2026-07-28 13:57+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -438,7 +438,7 @@ msgid "Only options available are: on, off and who."
 msgstr ""
 
 #: modules/engine/comsys.cpp:3466 modules/engine/comsys.cpp:3482
-#: modules/engine/comsys.cpp:3812 modules/engine/conf.cpp:2418
+#: modules/engine/comsys.cpp:3812 modules/engine/conf.cpp:2459
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -508,7 +508,7 @@ msgstr ""
 msgid "Nothing to set"
 msgstr ""
 
-#: modules/engine/conf.cpp:898 modules/engine/conf.cpp:957
+#: modules/engine/conf.cpp:939 modules/engine/conf.cpp:998
 msgid "String truncated"
 msgstr ""
 
@@ -922,11 +922,6 @@ msgstr ""
 #: modules/engine/flags.cpp:1308
 #, c-format
 msgid "%c: Flag unknown or not valid for specified object type"
-msgstr ""
-
-#: modules/engine/flags.cpp:1350
-#, c-format
-msgid "@set %s=%s"
 msgstr ""
 
 #: modules/engine/flags.cpp:1413
@@ -2196,11 +2191,6 @@ msgstr ""
 
 #: modules/engine/powers.cpp:257
 msgid "I don’t understand that power."
-msgstr ""
-
-#: modules/engine/powers.cpp:431
-#, c-format
-msgid "@power %s=%s"
 msgstr ""
 
 #: modules/engine/predicates.cpp:283

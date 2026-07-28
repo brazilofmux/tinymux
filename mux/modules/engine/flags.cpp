@@ -1347,7 +1347,7 @@ void decompile_flags(dbref player, dbref thing, UTF8 *thingname)
 
         // Report this flag.
         //
-        notify(player, tprintf(M_("@set %s=%s"), thingname, fp->flagname));
+        notify(player, tprintf(T("@set %s=%s"), thingname, fp->flagname));
     }
 }
 

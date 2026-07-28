@@ -428,6 +428,6 @@ void decompile_powers(dbref player, dbref thing, UTF8 *thingname)
 
         // We made it this far, report this power.
         //
-        notify(player, tprintf(M_("@power %s=%s"), thingname, fp->powername));
+        notify(player, tprintf(T("@power %s=%s"), thingname, fp->powername));
     }
 }
