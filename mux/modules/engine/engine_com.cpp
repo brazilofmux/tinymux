@@ -860,6 +860,8 @@ public:
     virtual MUX_RESULT GiveTo(dbref who, int amount);
     virtual MUX_RESULT GetPureName(dbref obj, const UTF8 **ppName);
     virtual MUX_RESULT DecodeFlags(dbref player, dbref obj, UTF8 **ppStr);
+    virtual MUX_RESULT UnparseObject(dbref player, dbref target,
+        bool bObeyMyopic, UTF8 *pBuf, size_t nBufMax);
 
     virtual MUX_RESULT IsWizard(dbref obj, bool *pResult);
     virtual MUX_RESULT IsWizRoy(dbref obj, bool *pResult);
@@ -1188,6 +1190,26 @@ MUX_RESULT CObjectInfo::DecodeFlags(dbref player, dbref obj, UTF8 **ppStr)
         return MUX_E_INVALIDARG;
     }
     *ppStr = decode_flags(player, &(db[obj].fs));
+    return MUX_S_OK;
+}
+
+MUX_RESULT CObjectInfo::UnparseObject(dbref player, dbref target,
+    bool bObeyMyopic, UTF8 *pBuf, size_t nBufMax)
+{
+    if (  nullptr == pBuf
+       || 0 == nBufMax)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    pBuf[0] = '\0';
+
+    UTF8 *pName = unparse_object(player, target, bObeyMyopic);
+    if (nullptr == pName)
+    {
+        return MUX_E_FAIL;
+    }
+    mux_strncpy(pBuf, pName, nBufMax - 1);
+    free_lbuf(pName);
     return MUX_S_OK;
 }
 

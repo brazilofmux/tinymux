@@ -90,10 +90,9 @@ BAN_GENERATED = ("mux/lib/color_ops.c",)
 #
 BAN_LEGACY = {
     "mux/lib/mux_nls.cpp": 1,
-    # Column-layout sites (%-N.Ns) moved to co_copy_field (#1649 path);
-    # remaining are plain assembly still on snprintf.
+    # comsys_mod: 0 after #1640/#1656 — columns via co_copy_field, plain
+    # assembly via mux_sprintf (mux_format.h).
     #
-    "mux/modules/comsys/comsys_mod.cpp": 73,
     "mux/modules/engine/ast.cpp": 3,
     "mux/modules/engine/attrcache.cpp": 4,
     "mux/modules/engine/dbt_test.cpp": 22,
