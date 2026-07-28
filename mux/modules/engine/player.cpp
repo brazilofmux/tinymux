@@ -1482,7 +1482,7 @@ void do_protect
                     safe_str(token, display, &dp);
                 }
                 *dp = '\0';
-                notify(executor, tprintf(T("%s: %s"), Name(i), display.get()));
+                notify(executor, tprintf(M_("%s: %s"), Name(i), display.get()));
                 found_any = true;
             }
         }

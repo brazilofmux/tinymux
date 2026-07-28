@@ -551,7 +551,7 @@ void do_newpassword
     notify_quiet(executor, M_("Password changed."));
     LBuf buf = LBuf_Src("do_newpassword");
     UTF8 *bp = buf;
-    safe_tprintf_str(buf, &bp, T("Your password has been changed by %s."), Moniker(executor));
+    safe_tprintf_str(buf, &bp, M_("Your password has been changed by %s."), Moniker(executor));
     notify_quiet(victim, buf);
 }
 
