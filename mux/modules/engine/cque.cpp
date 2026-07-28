@@ -795,7 +795,10 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
             }
             else
             {
-                notify(Owner(executor), tprintf(T("%d queue entr%s removed."), numhalted, numhalted == 1 ? "y" : "ies"));
+                // #1661 / #1622: count goes to the catalogue, not English y/ies.
+                //
+                notify(Owner(executor), tprintf(MN_("%d queue entry removed.",
+                    "%d queue entries removed.", numhalted), numhalted));
             }
         }
         return;
@@ -854,7 +857,10 @@ void do_halt(const dbref executor, const dbref caller, dbref enactor, const int 
     {
         return;
     }
-    notify(Owner(executor), tprintf(T("%d queue entr%s removed."), numhalted, numhalted == 1 ? "y" : "ies"));
+    // #1661 / #1622: count goes to the catalogue, not English y/ies.
+    //
+    notify(Owner(executor), tprintf(MN_("%d queue entry removed.",
+        "%d queue entries removed.", numhalted), numhalted));
 }
 
 static int Notify_Key;

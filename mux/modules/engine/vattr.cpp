@@ -148,8 +148,10 @@ void do_dbclean(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
     g_pSQLiteBackend->GetDB().Analyze();
 
-    notify(executor, tprintf(T("@dbclean: %d orphaned attribute name%s purged."),
-        purged, (purged == 1) ? "" : "s"));
+    // #1661 / #1622: count goes to the catalogue, not an English "s".
+    //
+    notify(executor, tprintf(MN_("@dbclean: %d orphaned attribute name purged.",
+        "@dbclean: %d orphaned attribute names purged.", purged), purged));
 }
 
 void vattr_delete_LEN(UTF8 *pName, size_t nName)
