@@ -56,6 +56,8 @@ WRAPPERS = {
     "tinyprintf": 0,         # log.cpp   (CLogFile method)
     "log_printf": 0,         # log.cpp
     "cf_log_syntax": 2,      # conf.cpp
+    # Local length-returning wrapper over mux_vsnprintf in mail_mod.cpp.
+    "mail_sprintf": 2,
 }
 
 # What mux_vsnprintf implements, as of #1416.
@@ -107,7 +109,8 @@ BAN_LEGACY = {
     "mux/modules/engine/match.cpp": 2,
     "mux/modules/engine/predicates.cpp": 2,
     "mux/modules/exp3/exp3.cpp": 1,
-    "mux/modules/mail/mail_mod.cpp": 73,
+    # mail_mod: 0 after #1653 — player-facing assembly via mux_sprintf /
+    # mail_sprintf (mux_format.h); columns already on co_copy_field.
     "mux/src/ganl_adapter.cpp": 1,
     "mux/src/websocket.cpp": 1,
 }

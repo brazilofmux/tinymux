@@ -151,6 +151,19 @@ static size_t pos_after(UTF8 *buf, size_t nBuf, size_t pos)
     return pos;
 }
 
+// mux_sprintf is void; call sites that need the written length (bp += …,
+// truncation checks against remain) go through this.  Returns bytes written
+// excluding the trailing NUL — the same contract as mux_vsnprintf.
+//
+static size_t mail_sprintf(UTF8 *buf, size_t nBuf, const UTF8 *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    size_t n = mux_vsnprintf(buf, nBuf, fmt, ap);
+    va_end(ap);
+    return n;
+}
+
 // Folder list / review summary line:
 //   [flags] iii (ssss) From: name............ Sub: subject...
 //
@@ -591,8 +604,7 @@ void CMailMod::mail_db_grow(int newtop)
             if (fStarted)
             {
                 UTF8 buf[128];
-                snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
-                         "mail_db_grow: refusing absurd mail size %d.", newtop);
+                mux_sprintf(buf, sizeof(buf), T("mail_db_grow: refusing absurd mail size %d."), newtop);
                 m_pILog->log_text(buf);
                 m_pILog->end_log();
             }
@@ -690,8 +702,7 @@ int CMailMod::new_mail_message(const UTF8 *message, int number)
         if (fStarted)
         {
             UTF8 buf[128];
-            snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
-                     "new_mail_message: Mail message %d truncated.", number);
+            mux_sprintf(buf, sizeof(buf), T("new_mail_message: Mail message %d truncated."), number);
             m_pILog->log_text(buf);
             m_pILog->end_log();
         }
@@ -805,7 +816,8 @@ void CMailMod::log_storage_failure(MUX_RESULT mr, const char *fmt, ...)
     char detail[192];
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(detail, sizeof(detail), fmt, ap);
+    mux_vsnprintf(reinterpret_cast<UTF8 *>(detail), sizeof(detail),
+        reinterpret_cast<const UTF8 *>(fmt), ap);
     va_end(ap);
 
     bool fStarted;
@@ -813,8 +825,7 @@ void CMailMod::log_storage_failure(MUX_RESULT mr, const char *fmt, ...)
     if (fStarted)
     {
         UTF8 buf[256];
-        snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
-            "Mail module: storage write refused: %s; result %d.",
+        mux_sprintf(buf, sizeof(buf), T("Mail module: storage write refused: %s; result %d."),
             detail, mr);
         m_pILog->log_text(buf);
         m_pILog->end_log();
@@ -909,9 +920,8 @@ void CMailMod::sqlite_wt_delete_mail_body(int number)
         if (fStarted)
         {
             UTF8 buf[160];
-            snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
-                "Mail module: body %d could not be deleted; a header still "
-                "references it.", number);
+            mux_sprintf(buf, sizeof(buf), T("Mail module: body %d could not be deleted; a header still "
+                "references it."), number);
             m_pILog->log_text(buf);
             m_pILog->end_log();
         }
@@ -951,12 +961,9 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
                 *bp++ = ' ';
                 remain--;
             }
-            int n = snprintf(bp, remain, "%d", m->list[j]);
-            if (n < 0)
-            {
-                break;
-            }
-            if (static_cast<size_t>(n) >= remain)
+            size_t n = mail_sprintf(reinterpret_cast<UTF8 *>(bp), remain,
+                T("%d"), m->list[j]);
+            if (n + 1 >= remain)
             {
                 // Truncated — leave the partial write and stop.
                 //
@@ -965,7 +972,7 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
                 break;
             }
             bp += n;
-            remain -= static_cast<size_t>(n);
+            remain -= n;
         }
         *bp = '\0';
 
@@ -1560,7 +1567,7 @@ void CMailMod::set_player_folder(dbref player, int fnum)
         return;
     }
     UTF8 buf[16];
-    snprintf(reinterpret_cast<char *>(buf), sizeof(buf), "%d", fnum);
+    mux_sprintf(buf, sizeof(buf), T("%d"), fnum);
     set_attr_checked(player, T("Mailcurf"), buf, T("current folder"));
 }
 
@@ -1587,9 +1594,8 @@ void CMailMod::set_attr_checked(dbref player, const UTF8 *pAttr,
         if (fStarted)
         {
             UTF8 logbuf[256];
-            snprintf(reinterpret_cast<char *>(logbuf), sizeof(logbuf),
-                "Mail module: %s write refused (%s on #%d, result %d); "
-                "change not saved.",
+            mux_sprintf(logbuf, sizeof(logbuf), T("Mail module: %s write refused (%s on #%d, result %d); "
+                "change not saved."),
                 reinterpret_cast<const char *>(pWhere),
                 reinterpret_cast<const char *>(pAttr),
                 static_cast<int>(player), mr);
@@ -1619,7 +1625,8 @@ const UTF8 *CMailMod::get_folder_name(dbref player, int fld)
     // Build pattern "N:" where N is the folder number.
     //
     char pattern[16];
-    snprintf(pattern, sizeof(pattern), "%d:", fld);
+    mux_sprintf(reinterpret_cast<UTF8 *>(pattern), sizeof(pattern),
+        T("%d:"), fld);
     size_t nPattern = strlen(pattern);
 
     const char *found = strstr(reinterpret_cast<const char *>(aFolders), pattern);
@@ -1736,7 +1743,8 @@ void CMailMod::add_folder_name(dbref player, int fld, const UTF8 *name)
     // Build the new record "N:NAME:N" upper-cased.
     //
     char record[FOLDER_NAME_LEN + 16];
-    snprintf(record, sizeof(record), "%d:", fld);
+    mux_sprintf(reinterpret_cast<UTF8 *>(record), sizeof(record),
+        T("%d:"), fld);
     size_t rlen = strlen(record);
     const char *s = reinterpret_cast<const char *>(name);
     while (*s && rlen < sizeof(record) - 8)
@@ -1744,7 +1752,8 @@ void CMailMod::add_folder_name(dbref player, int fld, const UTF8 *name)
         record[rlen++] = toupper(*s);
         s++;
     }
-    snprintf(record + rlen, sizeof(record) - rlen, ":%d", fld);
+    mux_sprintf(reinterpret_cast<UTF8 *>(record + rlen),
+        sizeof(record) - rlen, T(":%d"), fld);
 
     if (0 == nFolders)
     {
@@ -1758,7 +1767,8 @@ void CMailMod::add_folder_name(dbref player, int fld, const UTF8 *name)
     // Build pattern "N:" to find existing entry.
     //
     char pattern[16];
-    snprintf(pattern, sizeof(pattern), "%d:", fld);
+    mux_sprintf(reinterpret_cast<UTF8 *>(pattern), sizeof(pattern),
+        T("%d:"), fld);
 
     char *found = strstr(reinterpret_cast<char *>(aFolders), pattern);
     if (nullptr != found)
@@ -1974,8 +1984,7 @@ void CMailMod::do_mail_change_folder(dbref player, const UTF8 *fld,
         add_folder_name(player, pfld, newname);
 
         UTF8 msg[128];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Folder %d now named ‘%s’",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Folder %d now named ‘%s’"),
                  pfld, reinterpret_cast<const char *>(newname));
         m_pINotify->RawNotify(player, msg);
     }
@@ -1986,8 +1995,7 @@ void CMailMod::do_mail_change_folder(dbref player, const UTF8 *fld,
         set_player_folder(player, pfld);
 
         UTF8 msg[128];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Current folder set to %d [%s].",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Current folder set to %d [%s]."),
                  pfld,
                  reinterpret_cast<const char *>(get_folder_name(player, pfld)));
         m_pINotify->RawNotify(player, msg);
@@ -2005,8 +2013,7 @@ void CMailMod::DoListMailBrief(dbref player)
         if (rc + uc > 0)
         {
             UTF8 msg[256];
-            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                     "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).",
+            mux_sprintf(msg, sizeof(msg), T("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."),
                      rc + uc, folder,
                      reinterpret_cast<const char *>(get_folder_name(player, folder)),
                      uc, cc);
@@ -2018,8 +2025,7 @@ void CMailMod::DoListMailBrief(dbref player)
             if (0 != strcmp(reinterpret_cast<const char *>(fname), "unnamed"))
             {
                 UTF8 msg[256];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                         "MAIL: 0 messages in folder %d [%s].",
+                mux_sprintf(msg, sizeof(msg), T("MAIL: 0 messages in folder %d [%s]."),
                          folder, reinterpret_cast<const char *>(fname));
                 m_pINotify->RawNotify(player, msg);
             }
@@ -2028,8 +2034,7 @@ void CMailMod::DoListMailBrief(dbref player)
         if (gc > 0)
         {
             UTF8 msg[256];
-            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                     "URGENT MAIL: You have %d urgent messages in folder %d [%s].",
+            mux_sprintf(msg, sizeof(msg), T("URGENT MAIL: You have %d urgent messages in folder %d [%s]."),
                      gc, folder,
                      reinterpret_cast<const char *>(get_folder_name(player, folder)));
             m_pINotify->RawNotify(player, msg);
@@ -2039,8 +2044,7 @@ void CMailMod::DoListMailBrief(dbref player)
     int current_folder = player_folder(player);
 
     UTF8 msg[256];
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "MAIL: Current folder is %d [%s].",
+    mux_sprintf(msg, sizeof(msg), T("MAIL: Current folder is %d [%s]."),
              current_folder,
              reinterpret_cast<const char *>(get_folder_name(player, current_folder)));
     m_pINotify->RawNotify(player, msg);
@@ -2060,8 +2064,7 @@ void CMailMod::ListMailInFolderNumber(dbref player, int folder_num,
     }
 
     UTF8 hdr[MOD_LBUF_SIZE];
-    snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
-             "––––––"
+    mux_sprintf(hdr, sizeof(hdr), T("––––––"
              "––––––"
              "––––––"
              "––––––"
@@ -2071,7 +2074,7 @@ void CMailMod::ListMailInFolderNumber(dbref player, int folder_num,
              "––––––"
              "––––––"
              "––––––"
-             "––––",
+             "––––"),
              folder_num);
     m_pINotify->RawNotify(player, hdr);
 
@@ -2273,8 +2276,7 @@ void CMailMod::do_mail_review(dbref player, const UTF8 *name,
         // Prefix with '*' for player lookup.
         //
         UTF8 namebuf[256];
-        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
-                 "*%s", reinterpret_cast<const char *>(name));
+        mux_sprintf(namebuf, sizeof(namebuf), T("*%s"), reinterpret_cast<const char *>(name));
         m_pIObjectInfo->MatchThing(player, namebuf, &target);
     }
 
@@ -2404,8 +2406,7 @@ void CMailMod::do_mail_retract(dbref player, const UTF8 *name,
         if (nResult == GMA_NOTFOUND)
         {
             UTF8 msg[256];
-            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                     "MAIL: Mail alias %s not found.",
+            mux_sprintf(msg, sizeof(msg), T("MAIL: Mail alias %s not found."),
                      reinterpret_cast<const char *>(name));
             m_pINotify->RawNotify(player, msg);
             return;
@@ -2415,8 +2416,7 @@ void CMailMod::do_mail_retract(dbref player, const UTF8 *name,
             for (size_t k = 0; k < m->list.size(); k++)
             {
                 UTF8 dbrefbuf[32];
-                snprintf(reinterpret_cast<char *>(dbrefbuf),
-                         sizeof(dbrefbuf), "#%d", m->list[k]);
+                mux_sprintf(dbrefbuf, sizeof(dbrefbuf), T("#%d"), m->list[k]);
                 do_mail_retract(player, dbrefbuf, msglist);
             }
         }
@@ -2429,8 +2429,7 @@ void CMailMod::do_mail_retract(dbref player, const UTF8 *name,
     if (nullptr != m_pIObjectInfo)
     {
         UTF8 namebuf[256];
-        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
-                 "*%s", reinterpret_cast<const char *>(name));
+        mux_sprintf(namebuf, sizeof(namebuf), T("*%s"), reinterpret_cast<const char *>(name));
         m_pIObjectInfo->MatchThing(player, namebuf, &target);
     }
 
@@ -2519,8 +2518,7 @@ void CMailMod::do_mail_nuke(dbref player)
     }
 
     UTF8 msg[128];
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "MAIL: ** MAIL PURGE ** done by #%d.", player);
+    mux_sprintf(msg, sizeof(msg), T("MAIL: ** MAIL PURGE ** done by #%d."), player);
     if (nullptr != m_pILog)
     {
         m_pILog->log_text(msg);
@@ -2682,8 +2680,7 @@ void CMailMod::send_mail
                 get_player_name(target, targetname, sizeof(targetname));
 
                 UTF8 msg[2 * MOD_LBUF_SIZE];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                    "MAIL: %s’s mailbox is full (%d messages).",
+                mux_sprintf(msg, sizeof(msg), T("MAIL: %s’s mailbox is full (%d messages)."),
                     targetname, total - 1);
                 if (nullptr != m_pINotify)
                 {
@@ -2783,8 +2780,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
             if (nResult == GMA_NOTFOUND)
             {
                 UTF8 msg[2 * MOD_LBUF_SIZE];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                    "MAIL: Alias ‘%s’ does not exist.",
+                mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ does not exist."),
                     reinterpret_cast<const char *>(head));
                 if (nullptr != m_pINotify)
                 {
@@ -2795,8 +2791,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
             else if (nResult == GMA_INVALIDFORM)
             {
                 UTF8 msg[2 * MOD_LBUF_SIZE];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                    "MAIL: ‘%s’ is a badly-formed alias.",
+                mux_sprintf(msg, sizeof(msg), T("MAIL: ‘%s’ is a badly-formed alias."),
                     reinterpret_cast<const char *>(head));
                 if (nullptr != m_pINotify)
                 {
@@ -2816,8 +2811,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
             UTF8 lookup[MOD_LBUF_SIZE + 1];
             if (*head != '*')
             {
-                snprintf(reinterpret_cast<char *>(lookup), sizeof(lookup),
-                    "*%s", reinterpret_cast<const char *>(head));
+                mux_sprintf(lookup, sizeof(lookup), T("*%s"), reinterpret_cast<const char *>(head));
             }
             else
             {
@@ -2841,8 +2835,7 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
             else
             {
                 UTF8 msg[2 * MOD_LBUF_SIZE];
-                snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                    "MAIL: ‘%s’ does not exist.",
+                mux_sprintf(msg, sizeof(msg), T("MAIL: ‘%s’ does not exist."),
                     reinterpret_cast<const char *>(head));
                 if (nullptr != m_pINotify)
                 {
@@ -2908,13 +2901,8 @@ std::string CMailMod::make_numlist(dbref player, const UTF8 *arg, bool bBlind)
                 *rp++ = '!';
                 remain--;
             }
-            int n = snprintf(reinterpret_cast<char *>(rp), remain,
-                "%d", aRecip[i]);
-            if (n < 0)
-            {
-                break;
-            }
-            if (static_cast<size_t>(n) >= remain)
+            size_t n = mail_sprintf(rp, remain, T("%d"), aRecip[i]);
+            if (n + 1 >= remain)
             {
                 // Truncated incomplete number — discard it.
                 *rp = '\0';
@@ -3306,8 +3294,7 @@ int CMailMod::add_mail_message(dbref player, const UTF8 *message)
     UTF8 combined[MOD_LBUF_SIZE];
     if (sigeval[0] != '\0')
     {
-        snprintf(reinterpret_cast<char *>(combined), sizeof(combined),
-            "%s %s",
+        mux_sprintf(combined, sizeof(combined), T("%s %s"),
             reinterpret_cast<const char *>(message),
             reinterpret_cast<const char *>(sigeval));
     }
@@ -3421,8 +3408,7 @@ void CMailMod::do_expmail_start(dbref player, const UTF8 *arg,
     if (nullptr != m_pINotify)
     {
         UTF8 msg[MOD_LBUF_SIZE];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-            "MAIL: You are sending mail to ‘%s’.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: You are sending mail to ‘%s’."),
             names.c_str());
         m_pINotify->RawNotify(player, msg);
     }
@@ -3563,8 +3549,7 @@ void CMailMod::do_mail_cc(dbref player, const UTF8 *arg, bool bBlind)
     if (nullptr != m_pINotify)
     {
         UTF8 msg[MOD_LBUF_SIZE];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-            "MAIL: You are sending mail to ‘%s’.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: You are sending mail to ‘%s’."),
             names.c_str());
         m_pINotify->RawNotify(player, msg);
     }
@@ -3756,8 +3741,7 @@ void CMailMod::do_mail_fwd(dbref player, const UTF8 *msg,
     UTF8 fromname[MOD_LBUF_SIZE];
     get_player_name(mp->from, fromname, sizeof(fromname));
     UTF8 subj[2 * MOD_LBUF_SIZE];
-    snprintf(reinterpret_cast<char *>(subj), sizeof(subj),
-        "%s (fwd from %s)",
+    mux_sprintf(subj, sizeof(subj), T("%s (fwd from %s)"),
         mp->subject.c_str(),
         reinterpret_cast<const char *>(fromname));
 
@@ -3782,8 +3766,7 @@ void CMailMod::do_mail_fwd(dbref player, const UTF8 *msg,
         iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
     }
     UTF8 flagbuf[16];
-    snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
-        "%d", iFlag);
+    mux_sprintf(flagbuf, sizeof(flagbuf), T("%d"), iFlag);
     set_comp_attr(player, MOD_A_MAILFLAGS, flagbuf);
 }
 
@@ -3913,15 +3896,13 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
         {
             *bp++ = ' ';
         }
-        bp += snprintf(reinterpret_cast<char *>(bp),
-            sizeof(tolist) - (bp - tolist),
-            "#%d", mp->from);
+        bp += mail_sprintf(bp, sizeof(tolist) - (bp - tolist),
+            T("#%d"), mp->from);
     }
     else
     {
-        bp += snprintf(reinterpret_cast<char *>(bp),
-            sizeof(tolist) - (bp - tolist),
-            "#%d", mp->from);
+        bp += mail_sprintf(bp, sizeof(tolist) - (bp - tolist),
+            T("#%d"), mp->from);
     }
     *bp = '\0';
 
@@ -3931,8 +3912,7 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
     UTF8 subj[MOD_LBUF_SIZE];
     if (strncmp(pSubject, "Re:", 3))
     {
-        snprintf(reinterpret_cast<char *>(subj), sizeof(subj),
-            "Re: %s", pSubject);
+        mux_sprintf(subj, sizeof(subj), T("Re: %s"), pSubject);
     }
     else
     {
@@ -3954,8 +3934,7 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
         const char *pTime = mp->time.c_str();
 
         UTF8 body[4 * MOD_LBUF_SIZE];
-        snprintf(reinterpret_cast<char *>(body), sizeof(body),
-            "On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n",
+        mux_sprintf(body, sizeof(body), T("On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n"),
             pTime,
             reinterpret_cast<const char *>(fromname),
             pMessage ? reinterpret_cast<const char *>(pMessage) : "",
@@ -3975,8 +3954,7 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
         iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
     }
     UTF8 flagbuf[16];
-    snprintf(reinterpret_cast<char *>(flagbuf), sizeof(flagbuf),
-        "%d", iFlag);
+    mux_sprintf(flagbuf, sizeof(flagbuf), T("%d"), iFlag);
     set_comp_attr(player, MOD_A_MAILFLAGS, flagbuf);
 }
 
@@ -4015,13 +3993,11 @@ void CMailMod::do_mail_proof(dbref player)
     if (nullptr != m_pINotify)
     {
         UTF8 msg[MOD_LBUF_SIZE];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-            "MAIL: To: %s",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: To: %s"),
             names.c_str());
         m_pINotify->RawNotify(player, msg);
 
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-            "MAIL: Subject: %s",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Subject: %s"),
             reinterpret_cast<const char *>(aMailSub));
         m_pINotify->RawNotify(player, msg);
 
@@ -4250,8 +4226,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
     if (nResult == GMA_FOUND)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Mail Alias ‘%s’ already exists.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Mail Alias ‘%s’ already exists."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
         return;
@@ -4316,8 +4291,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
         else if (nullptr != m_pIObjectInfo)
         {
             UTF8 namebuf[MOD_LBUF_SIZE + 1];
-            snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
-                     "*%s", head);
+            mux_sprintf(namebuf, sizeof(namebuf), T("*%s"), head);
             m_pIObjectInfo->MatchThing(player, namebuf, &target);
         }
 
@@ -4336,8 +4310,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
             UTF8 addmsg[256];
             UTF8 szName[64];
             get_player_name(target, szName, sizeof(szName));
-            snprintf(reinterpret_cast<char *>(addmsg), sizeof(addmsg),
-                     "MAIL: %s added to alias %s",
+            mux_sprintf(addmsg, sizeof(addmsg), T("MAIL: %s added to alias %s"),
                      reinterpret_cast<const char *>(szName),
                      reinterpret_cast<const char *>(alias));
             m_pINotify->RawNotify(player, addmsg);
@@ -4369,8 +4342,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
     sqlite_wt_sync_all_aliases();
 
     UTF8 msg[256];
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "MAIL: Alias set ‘%s’ defined.",
+    mux_sprintf(msg, sizeof(msg), T("MAIL: Alias set ‘%s’ defined."),
              reinterpret_cast<const char *>(alias));
     m_pINotify->RawNotify(player, msg);
 }
@@ -4382,8 +4354,7 @@ void CMailMod::do_malias_list(dbref player, const UTF8 *alias)
     if (nResult == GMA_NOTFOUND)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Alias ‘%s’ not found.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ not found."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
         return;
@@ -4405,27 +4376,26 @@ void CMailMod::do_malias_list(dbref player, const UTF8 *alias)
     }
 
     UTF8 buf[MOD_LBUF_SIZE];
-    char *bp = reinterpret_cast<char *>(buf);
-    bp += snprintf(bp, sizeof(buf), "MAIL: Alias *%s: ",
-                   m->name.c_str());
+    UTF8 *bp = buf;
+    bp += mail_sprintf(bp, sizeof(buf), T("MAIL: Alias *%s: "),
+        reinterpret_cast<const UTF8 *>(m->name.c_str()));
 
     for (int i = static_cast<int>(m->list.size()) - 1; i >= 0; i--)
     {
         UTF8 szName[64];
         get_player_name(m->list[i], szName, sizeof(szName));
-        const char *n = reinterpret_cast<const char *>(szName);
-        size_t remain = sizeof(buf) - (bp - reinterpret_cast<char *>(buf));
+        size_t remain = sizeof(buf) - static_cast<size_t>(bp - buf);
         if (remain < 64)
         {
             break;
         }
-        if (strchr(n, ' '))
+        if (strchr(reinterpret_cast<const char *>(szName), ' '))
         {
-            bp += snprintf(bp, remain, "\"%s\" ", n);
+            bp += mail_sprintf(bp, remain, T("\"%s\" "), szName);
         }
         else
         {
-            bp += snprintf(bp, remain, "%s ", n);
+            bp += mail_sprintf(bp, remain, T("%s "), szName);
         }
     }
     m_pINotify->RawNotify(player, buf);
@@ -4520,8 +4490,7 @@ void CMailMod::do_malias_desc(dbref player, const UTF8 *alias,
     if (nResult == GMA_NOTFOUND)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Alias ‘%s’ not found.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ not found."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
         return;
@@ -4574,8 +4543,7 @@ void CMailMod::do_malias_chown(dbref player, const UTF8 *alias,
     if (nResult == GMA_NOTFOUND)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Alias ‘%s’ not found.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ not found."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
         return;
@@ -4589,8 +4557,7 @@ void CMailMod::do_malias_chown(dbref player, const UTF8 *alias,
     if (nullptr != m_pIObjectInfo)
     {
         UTF8 namebuf[256];
-        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
-                 "*%s", reinterpret_cast<const char *>(owner));
+        mux_sprintf(namebuf, sizeof(namebuf), T("*%s"), reinterpret_cast<const char *>(owner));
         m_pIObjectInfo->MatchThing(player, namebuf, &target);
     }
     if (NOTHING == target)
@@ -4611,8 +4578,7 @@ void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
     if (nResult == GMA_NOTFOUND)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Alias ‘%s’ not found.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ not found."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
         return;
@@ -4651,8 +4617,7 @@ void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
     if (NOTHING == thing && nullptr != m_pIObjectInfo)
     {
         UTF8 namebuf[256];
-        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
-                 "*%s", reinterpret_cast<const char *>(person));
+        mux_sprintf(namebuf, sizeof(namebuf), T("*%s"), reinterpret_cast<const char *>(person));
         m_pIObjectInfo->MatchThing(player, namebuf, &thing);
     }
     if (NOTHING == thing)
@@ -4677,8 +4642,7 @@ void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
     UTF8 szName[64];
     get_player_name(thing, szName, sizeof(szName));
     UTF8 msg[256];
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "MAIL: %s added to %s",
+    mux_sprintf(msg, sizeof(msg), T("MAIL: %s added to %s"),
              reinterpret_cast<const char *>(szName),
              m->name.c_str());
     m_pINotify->RawNotify(player, msg);
@@ -4692,8 +4656,7 @@ void CMailMod::do_malias_remove(dbref player, const UTF8 *alias,
     if (nResult == GMA_NOTFOUND)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Alias ‘%s’ not found.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ not found."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
         return;
@@ -4722,8 +4685,7 @@ void CMailMod::do_malias_remove(dbref player, const UTF8 *alias,
     if (NOTHING == thing && nullptr != m_pIObjectInfo)
     {
         UTF8 namebuf[256];
-        snprintf(reinterpret_cast<char *>(namebuf), sizeof(namebuf),
-                 "*%s", reinterpret_cast<const char *>(person));
+        mux_sprintf(namebuf, sizeof(namebuf), T("*%s"), reinterpret_cast<const char *>(person));
         m_pIObjectInfo->MatchThing(player, namebuf, &thing);
     }
     if (NOTHING == thing)
@@ -4743,8 +4705,7 @@ void CMailMod::do_malias_remove(dbref player, const UTF8 *alias,
         UTF8 szName[64];
         get_player_name(thing, szName, sizeof(szName));
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: %s removed from alias %s.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: %s removed from alias %s."),
                  reinterpret_cast<const char *>(szName),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
@@ -4754,8 +4715,7 @@ void CMailMod::do_malias_remove(dbref player, const UTF8 *alias,
         UTF8 szName[64];
         get_player_name(thing, szName, sizeof(szName));
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: %s is not a member of alias %s.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: %s is not a member of alias %s."),
                  reinterpret_cast<const char *>(szName),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
@@ -4813,8 +4773,7 @@ void CMailMod::do_malias_delete(dbref player, const UTF8 *alias)
     if (nResult == GMA_NOTFOUND)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Alias ‘%s’ not found.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ not found."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
         return;
@@ -4842,8 +4801,7 @@ void CMailMod::do_malias_delete(dbref player, const UTF8 *alias)
     if (!done)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: Alias ‘%s’ not found.",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: Alias ‘%s’ not found."),
                  reinterpret_cast<const char *>(alias));
         m_pINotify->RawNotify(player, msg);
     }
@@ -4861,12 +4819,10 @@ void CMailMod::do_malias_status(dbref player)
         return;
     }
     UTF8 msg[128];
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "MAIL: Number of mail aliases defined: %d",
+    mux_sprintf(msg, sizeof(msg), T("MAIL: Number of mail aliases defined: %d"),
              static_cast<int>(m_malias.size()));
     m_pINotify->RawNotify(player, msg);
-    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-             "MAIL: Allocated slots %d",
+    mux_sprintf(msg, sizeof(msg), T("MAIL: Allocated slots %d"),
              static_cast<int>(m_malias.capacity()));
     m_pINotify->RawNotify(player, msg);
 }
@@ -4934,29 +4890,25 @@ void CMailMod::do_mail_flags(dbref player, const UTF8 *msglist,
                     switch (flag)
                     {
                     case M_TAG:
-                        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                                 "MAIL: Msg #%d %s.", i,
+                        mux_sprintf(msg, sizeof(msg), T("MAIL: Msg #%d %s."), i,
                                  negate ? "untagged" : "tagged");
                         break;
 
                     case M_CLEARED:
                         if (Unread(mp) && !negate)
                         {
-                            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                                     "MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover.",
+                            mux_sprintf(msg, sizeof(msg), T("MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."),
                                      i, i);
                         }
                         else
                         {
-                            snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                                     "MAIL: Msg #%d %s.", i,
+                            mux_sprintf(msg, sizeof(msg), T("MAIL: Msg #%d %s."), i,
                                      negate ? "uncleared" : "cleared");
                         }
                         break;
 
                     case M_SAFE:
-                        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                                 "MAIL: Msg #%d %s.", i,
+                        mux_sprintf(msg, sizeof(msg), T("MAIL: Msg #%d %s."), i,
                                  negate ? "marked unsafe" : "marked safe");
                         break;
 
@@ -5055,7 +5007,7 @@ void CMailMod::get_player_name(dbref who, UTF8 *buf, size_t bufsize)
     }
     else
     {
-        snprintf(reinterpret_cast<char *>(buf), bufsize, "#%d", who);
+        mux_sprintf(buf, bufsize, T("#%d"), who);
     }
 }
 
@@ -5121,8 +5073,7 @@ void CMailMod::do_mail_list(dbref player, const UTF8 *arg1,
     }
 
     UTF8 hdr[MOD_LBUF_SIZE];
-    snprintf(reinterpret_cast<char *>(hdr), sizeof(hdr),
-             "––––––"
+    mux_sprintf(hdr, sizeof(hdr), T("––––––"
              "––––––"
              "––––––"
              "––––––"
@@ -5132,7 +5083,7 @@ void CMailMod::do_mail_list(dbref player, const UTF8 *arg1,
              "––––––"
              "––––––"
              "––––––"
-             "––––",
+             "––––"),
              folder);
     m_pINotify->RawNotify(player, hdr);
 
@@ -5411,8 +5362,7 @@ void CMailMod::do_mail_file(dbref player, const UTF8 *msglist,
                     sqlite_wt_update_mail_flags(mp);
 
                     UTF8 msg[128];
-                    snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                             "MAIL: Msg %d filed in folder %d", i, foldernum);
+                    mux_sprintf(msg, sizeof(msg), T("MAIL: Msg %d filed in folder %d"), i, foldernum);
                     m_pINotify->RawNotify(player, msg);
                 }
             }
@@ -6037,8 +5987,7 @@ MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
     if (rc + uc > 0)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).",
+        mux_sprintf(msg, sizeof(msg), T("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared)."),
                  rc + uc, folder,
                  reinterpret_cast<const char *>(get_folder_name(player, folder)),
                  uc, cc);
@@ -6052,8 +6001,7 @@ MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
     if (gc > 0)
     {
         UTF8 msg[256];
-        snprintf(reinterpret_cast<char *>(msg), sizeof(msg),
-                 "URGENT MAIL: You have %d urgent messages in folder %d [%s].",
+        mux_sprintf(msg, sizeof(msg), T("URGENT MAIL: You have %d urgent messages in folder %d [%s]."),
                  gc, folder,
                  reinterpret_cast<const char *>(get_folder_name(player, folder)));
         m_pINotify->RawNotify(player, msg);
