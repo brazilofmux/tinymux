@@ -14,7 +14,7 @@
 # each notify() the executor with a distinct message, and notify() to an
 # object IS observable from softcode: give the object MONITOR plus a
 # @listen pattern and its @aahear fires with the text in %0.  @crontab's
-# "Matched N cron entries." then reports the real length of the in-memory
+# "N cron entries matched." then reports the real length of the in-memory
 # list, so add and delete become verifiable state changes rather than
 # commands that merely did not crash.
 #
@@ -22,8 +22,8 @@
 #
 #  1. The @listen pattern must be a bare *.  @listen fills %0..%9 with the
 #     WILDCARD matches, not the whole line, so a pattern of *cron* yields
-#     only the text before "cron" -- "Matched 3 cron entries." arrives as
-#     "Matched 3 ".  Filtering happens in the handler instead.
+#     only the text before "cron" -- "3 cron entries matched." arrives as
+#     "3 ".  Filtering happens in the handler instead.
 #
 #  2. The entries are placed on a separate object, qsched, whose name
 #     contains no "cron".  @crontab prints one line per entry as
@@ -121,12 +121,12 @@
 # entry is actually in the list".
 #
 &tr.s004 test_cron_fn=
-  @if strmatch(setr(0, get(me/HEARD)), Matched 3 cron entries.)=
+  @if strmatch(setr(0, get(me/HEARD)), 3 cron entries matched.)=
   {
     @log smoke=TC004: @crontab counts the added entries. Succeeded.
   },
   {
-    @log smoke=TC004: @crontab counts the added entries. Failed (heard=%q0, expected Matched 3 cron entries.).
+    @log smoke=TC004: @crontab counts the added entries. Failed (heard=%q0, expected 3 cron entries matched.).
   };
   &NEXT me=tr.s005;
   @cron qsched/FIRE_ME = 0 * * * *
@@ -163,12 +163,12 @@
 # Test Case #7 - @crondel removes every entry for the attribute.
 #
 &tr.s007 test_cron_fn=
-  @if strmatch(setr(0, get(me/HEARD)), Removed 3 cron entries.)=
+  @if strmatch(setr(0, get(me/HEARD)), 3 cron entries removed.)=
   {
     @log smoke=TC007: @crondel removes the attribute's entries. Succeeded.
   },
   {
-    @log smoke=TC007: @crondel removes the attribute's entries. Failed (heard=%q0, expected Removed 3 cron entries.).
+    @log smoke=TC007: @crondel removes the attribute's entries. Failed (heard=%q0, expected 3 cron entries removed.).
   };
   &NEXT me=tr.s008;
   @crontab qsched
@@ -177,7 +177,7 @@
 # Test Case #8 - and the list is empty afterwards.
 #
 &tr.s008 test_cron_fn=
-  @if strmatch(setr(0, get(me/HEARD)), Matched 0 cron entries.)=
+  @if strmatch(setr(0, get(me/HEARD)), 0 cron entries matched.)=
   {
     @log smoke=TC008: @crontab is empty after @crondel. Succeeded.
   },
