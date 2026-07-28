@@ -35,14 +35,17 @@ ABI_PATTERN = re.compile(r'#-\d')
 # check from crying wolf over ordinary game prose.
 FORMAT_PATTERN = re.compile(r'%[-+ #0-9.*]*[diouxXeEfgGaAcspn]')
 
-# POSIX positional conversions (%1$s, %2$d, …).  mux_vsnprintf does not
-# implement them yet (#1623): msgfmt -c accepts them, the runtime #1429 path
-# echoes the remainder of the format and drops the arguments.  A non-fuzzy
-# msgstr that ships with %N$ is therefore a clean-build / broken-game pair.
-# Reject those until support lands; then DELETE this check (and un-fuzzy the
-# seven Korean reorderings that are parked fuzzy-only for that reason).
+# POSIX positional conversions (%1$s, %2$d, …) — supported by mux_vsnprintf
+# since #1623 piece 2.  Still useful for parsing catalogue forms.
 #
 POSITIONAL_PATTERN = re.compile(r'%\d+\$')
+
+# Full conversion with optional position, for position-aware catalogue checks.
+# Group 1 = N in %N$ (or None); group 2 = type letter.
+#
+CONV_WITH_POS = re.compile(
+    r'%(?:(\d+)\$)?[-+ #0]*(?:\d+|\*)?(?:\.(?:\d+|\*))?'
+    r'(?:hh|h|ll|l|z|j|t|L)?([diouxXeEfgGaAcspn])')
 
 MARK_RE = r'(?:M_|T)\s*\(\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)'
 
@@ -146,62 +149,38 @@ def check_abi_tokens(pot):
 def conversion_sequence(s):
     """Ordered list of printf conversion characters (%% excluded).
 
-    Used to compare a msgid against its msgstr: translators may reorder
-    words, but must not drop, invent, or change conversion types.  mux_vsnprintf
-    has no positional-arg support yet (#1623), so order of conversions must
-    match too.  Width and flags may differ (`%d` vs `%02d`); only the type
-    letter matters.
-
-    When %N$ support lands, this must compare by position number rather than
-    left-to-right order, and check_positional_unsupported must go.
+    Sequential forms: left-to-right order.  Prefer conversion_by_position()
+    for catalogue comparison once %N$ is in play (#1623).
     """
-    # Strip %% so they are not mistaken for a conversion start.
     s = s.replace("%%", "")
     return [m[-1] for m in FORMAT_PATTERN.findall(s)]
 
 
-def check_positional_unsupported(root):
-    """Reject non-fuzzy msgstrs that use %N$ while the runtime cannot (#1623).
+def conversion_by_position(s):
+    """Map 1-based argument index -> conversion type letter.
 
-    msgfmt -c *accepts* positional reordering and *rejects* plain reordering
-    of multi-conversion msgids.  The correct translator move is therefore the
-    one that produces a clean build and a destroyed runtime message (#1429
-    stop policy).  Fail the build instead.
-
-    Fuzzy entries are allowed to keep %N$: msgfmt drops fuzzy, and the seven
-    Korean reorderings in ko.po are parked fuzzy until mux_vsnprintf learns
-    positional args.  Un-fuzzy + implement + remove this check is one change.
+    Sequential conversions get indices 1, 2, 3… in appearance order.
+    Positional %N$ uses N.  Translators may reorder *words* with %N$ but must
+    keep the same type at each index as the msgid (#1623).
     """
-    findings = []
-    po_dir = os.path.join(root, "mux", "po")
-    if not os.path.isdir(po_dir):
-        return findings
-    for name in sorted(os.listdir(po_dir)):
-        if not name.endswith(".po"):
-            continue
-        path = os.path.join(po_dir, name)
-        for msgid, msgstrs, fuzzy in parse_po(path):
-            if fuzzy:
-                continue
-            for i, msgstr in enumerate(msgstrs):
-                if not msgstr or not POSITIONAL_PATTERN.search(msgstr):
-                    continue
-                form = ("msgstr[%d]" % i) if len(msgstrs) > 1 else "msgstr"
-                findings.append(
-                    "%s: %s for %r uses %%N$ positional conversion(s); "
-                    "mux_vsnprintf does not support them yet (#1623) — "
-                    "msgfmt accepts this and the runtime silently corrupts "
-                    "the message.  Leave the entry fuzzy until support lands, "
-                    "or keep English argument order."
-                    % (name, form, msgid))
-    return findings
+    s = s.replace("%%", "")
+    out = {}
+    next_seq = 1
+    for m in CONV_WITH_POS.finditer(s):
+        if m.group(1):
+            pos = int(m.group(1))
+        else:
+            pos = next_seq
+            next_seq += 1
+        out[pos] = m.group(2)
+    return out
 
 
 def check_format_catalogues(root, pot):
-    """Every translated format msgid keeps the same conversion sequence."""
+    """Every translated format msgid keeps the same conversions by position."""
     findings = []
-    fmt_ids = {m: conversion_sequence(m) for m, _, _ in pot
-               if conversion_sequence(m)}
+    fmt_ids = {m: conversion_by_position(m) for m, _, _ in pot
+               if conversion_by_position(m)}
     if not fmt_ids:
         return findings
     po_dir = os.path.join(root, "mux", "po")
@@ -217,24 +196,19 @@ def check_format_catalogues(root, pot):
             if fuzzy or not any(msgstrs):
                 # check_catalogues already reports fuzzy/untranslated.
                 continue
-            # Skip forms that use %N$ — check_positional_unsupported owns
-            # that failure; FORMAT_PATTERN cannot parse them into a sequence.
-            #
+            # Every plural form takes the same arguments, so every form must
+            # carry the same conversion types at the same positions (#1622,
+            # #1623).
             for msgstr in msgstrs:
                 if not msgstr:
                     continue
-                if POSITIONAL_PATTERN.search(msgstr):
-                    continue
-                # Every plural form takes the same arguments, so every form must
-                # carry the same conversion sequence as the msgid (#1622).
-                got = conversion_sequence(msgstr)
+                got = conversion_by_position(msgstr)
                 want = fmt_ids[msgid]
                 if got != want:
                     findings.append(
                         "%s: format mismatch for %r -- msgid %s, msgstr %s"
                         % (name, msgid, want, got))
     return findings
-
 def check_half_marking(root):
     """The same literal marked in one place and cast in another, same file.
 
@@ -436,19 +410,12 @@ def main():
          check_abi_tokens(pot),
          "A '#-1 ...' token is what softcode string-compares against.  "
          "Translating it breaks every game that tests for it.  Use S_()."),
-        ("positional %%N$ in non-fuzzy translations (#1623)",
-         check_positional_unsupported(root),
-         "mux_vsnprintf has no %%N$ support.  msgfmt -c accepts positional "
-         "reordering and rejects plain reordering, so the correct translator "
-         "move is the one that ships a broken message.  Keep the entry fuzzy "
-         "until support lands (see the seven Korean reorderings), or preserve "
-         "English argument order.  Remove this check when implementing %%N$."),
         ("printf conversions in catalogue translations",
          check_format_catalogues(root, pot),
          "A format msgid is fine in the pot (Phase 3), but its msgstr must "
-         "carry the same conversion sequence -- same types, same order.  "
-         "mux_vsnprintf has no positional args, and a mismatched .mo is a "
-         "live format-string bug at runtime."),
+         "carry the same conversion types at the same argument positions "
+         "(%%N$ reordering is allowed; changing or dropping a type is not).  "
+         "A mismatched .mo is a live format-string bug at runtime."),
         ("half-marked literals",
          check_half_marking(root),
          "The same text is M_() in one place and T() in another within one "

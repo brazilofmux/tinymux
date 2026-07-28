@@ -6272,12 +6272,377 @@ static size_t mux_format_double(UTF8 *pScratch, size_t nScratch, double dval,
     return q;
 }
 
+// ---------------------------------------------------------------------------
+// POSIX %N$ positional arguments for mux_vsnprintf (#1623).
+//
+// gettext catalogues reorder multi-conversion msgids with %1$s / %2$d.  The
+// sequential path below cannot resynchronise a va_list cursor, so positional
+// formats are handled by: (1) scanning every conversion for its 1-based index
+// and type, (2) pulling arguments 1..max from va_list in index order, (3)
+// formatting with those saved values.  The sequential path is unchanged when
+// the format has no %N$.
+//
+// Mix of positional and non-positional conversions (other than %%) is rejected
+// with the #1429 stop policy.
+// ---------------------------------------------------------------------------
+
+#define MUX_PRINTF_MAX_ARGS 32
+
+enum mux_printf_akind
+{
+    MPA_NONE = 0,
+    MPA_INT,
+    MPA_LONG,
+    MPA_I64,
+    MPA_UINT,
+    MPA_ULONG,
+    MPA_U64,
+    MPA_STR,
+    MPA_PTR,
+    MPA_DOUBLE,
+    MPA_CHAR
+};
+
+struct mux_printf_arg
+{
+    mux_printf_akind kind;
+    union
+    {
+        int i;
+        long l;
+        int64_t i64;
+        unsigned int u;
+        unsigned long ul;
+        uint64_t u64;
+        UTF8 *s;
+        void *p;
+        double d;
+        unsigned int c;
+    } v;
+};
+
+// True if pFmt contains at least one %N$ conversion (N >= 1).
+//
+static bool mux_fmt_has_positional(const UTF8 *pFmt)
+{
+    if (nullptr == pFmt)
+    {
+        return false;
+    }
+    for (const UTF8 *p = pFmt; '\0' != *p; p++)
+    {
+        if ('%' != *p)
+        {
+            continue;
+        }
+        p++;
+        if ('\0' == *p)
+        {
+            break;
+        }
+        if ('%' == *p)
+        {
+            continue;
+        }
+        // Position is the first field after '%': digits then '$'.
+        //
+        if (  *p < '1'
+           || *p > '9')
+        {
+            continue;
+        }
+        while (  *p >= '0'
+              && *p <= '9')
+        {
+            p++;
+        }
+        if ('$' == *p)
+        {
+            return true;
+        }
+        if ('\0' == *p)
+        {
+            break;
+        }
+    }
+    return false;
+}
+
+// Map a conversion letter + nLongs to an argument kind.
+//
+static mux_printf_akind mux_fmt_arg_kind(UTF8 ch, int nLongs)
+{
+    switch (ch)
+    {
+    case 'd':
+    case 'i':
+        if (0 == nLongs)
+        {
+            return MPA_INT;
+        }
+        if (1 == nLongs)
+        {
+            return MPA_LONG;
+        }
+        if (2 == nLongs)
+        {
+            return MPA_I64;
+        }
+        return MPA_NONE;
+
+    case 'u':
+    case 'o':
+    case 'x':
+    case 'X':
+        if (0 == nLongs)
+        {
+            return MPA_UINT;
+        }
+        if (1 == nLongs)
+        {
+            return MPA_ULONG;
+        }
+        if (2 == nLongs)
+        {
+            return MPA_U64;
+        }
+        return MPA_NONE;
+
+    case 's':
+        return (0 == nLongs) ? MPA_STR : MPA_NONE;
+
+    case 'p':
+        return (0 == nLongs) ? MPA_PTR : MPA_NONE;
+
+    case 'f':
+    case 'F':
+    case 'e':
+    case 'E':
+    case 'g':
+    case 'G':
+        return MPA_DOUBLE;
+
+    case 'c':
+        return MPA_CHAR;
+
+    default:
+        return MPA_NONE;
+    }
+}
+
+// Scan pFmt for every conversion: record kind[pos] (1-based).  *pMaxPos is
+// the highest index referenced.  Returns false on mix of positional and
+// sequential, type conflict, or an unparseable conversion.
+//
+static bool mux_fmt_scan_kinds(
+    const UTF8 *pFmt, mux_printf_akind *kinds, int *pMaxPos)
+{
+    for (int i = 0; i <= MUX_PRINTF_MAX_ARGS; i++)
+    {
+        kinds[i] = MPA_NONE;
+    }
+    *pMaxPos = 0;
+
+    bool bAnyPos = false;
+    bool bAnySeq = false;
+    int nNextSeq = 1;
+
+    size_t ncpFmt = 0;
+    if (  nullptr == pFmt
+       || !utf8_strlen(pFmt, ncpFmt))
+    {
+        return true;
+    }
+
+    size_t iFmt = 0;
+    while (0 != ncpFmt)
+    {
+        if ('%' != pFmt[iFmt])
+        {
+            size_t d = utf8_FirstByte[pFmt[iFmt]];
+            iFmt += d;
+            ncpFmt--;
+            continue;
+        }
+
+        iFmt++;
+        ncpFmt--;
+        if (0 == ncpFmt)
+        {
+            return false;
+        }
+        if ('%' == pFmt[iFmt])
+        {
+            iFmt++;
+            ncpFmt--;
+            continue;
+        }
+
+        int nPos = 0;
+        int nLongs = 0;
+
+        // Optional N$
+        //
+        if (  pFmt[iFmt] >= '1'
+           && pFmt[iFmt] <= '9')
+        {
+            size_t j = iFmt;
+            size_t n = 0;
+            size_t nDig = 0;
+            while (  nDig < ncpFmt
+                  && pFmt[j] >= '0'
+                  && pFmt[j] <= '9')
+            {
+                n = 10 * n + static_cast<size_t>(pFmt[j] - '0');
+                j++;
+                nDig++;
+            }
+            if (  nDig < ncpFmt
+               && '$' == pFmt[j]
+               && n > 0
+               && n <= MUX_PRINTF_MAX_ARGS)
+            {
+                nPos = static_cast<int>(n);
+                iFmt = j + 1;
+                ncpFmt -= nDig + 1;
+                bAnyPos = true;
+            }
+        }
+        if (0 == nPos)
+        {
+            nPos = nNextSeq++;
+            bAnySeq = true;
+        }
+
+        if (  bAnyPos
+           && bAnySeq)
+        {
+            return false;
+        }
+
+        // Skip flags / width / precision / length to the type letter.
+        //
+        while (0 != ncpFmt)
+        {
+            UTF8 ch = pFmt[iFmt];
+            if (  'd' == ch || 'i' == ch || 's' == ch || 'u' == ch
+               || 'o' == ch || 'x' == ch || 'X' == ch || 'p' == ch
+               || 'f' == ch || 'F' == ch || 'e' == ch || 'E' == ch
+               || 'g' == ch || 'G' == ch || 'c' == ch)
+            {
+                mux_printf_akind k = mux_fmt_arg_kind(ch, nLongs);
+                if (MPA_NONE == k)
+                {
+                    return false;
+                }
+                if (  MPA_NONE != kinds[nPos]
+                   && kinds[nPos] != k)
+                {
+                    return false;
+                }
+                kinds[nPos] = k;
+                if (nPos > *pMaxPos)
+                {
+                    *pMaxPos = nPos;
+                }
+                iFmt++;
+                ncpFmt--;
+                break;
+            }
+            else if ('l' == ch)
+            {
+                nLongs++;
+                iFmt++;
+                ncpFmt--;
+            }
+            else if ('z' == ch)
+            {
+                nLongs = (sizeof(size_t) == sizeof(unsigned long)) ? 1 : 2;
+                iFmt++;
+                ncpFmt--;
+            }
+            else if (  ('0' <= ch && ch <= '9')
+                    || '.' == ch
+                    || '-' == ch
+                    || '+' == ch
+                    || ' ' == ch
+                    || '#' == ch
+                    || '*' == ch)
+            {
+                // Width, precision, flags — including '*' which we do not
+                // support as a value but must skip past if present.
+                //
+                iFmt++;
+                ncpFmt--;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+static bool mux_fmt_fill_args(
+    mux_printf_akind *kinds, int nMaxPos, va_list va, mux_printf_arg *args)
+{
+    for (int i = 1; i <= nMaxPos; i++)
+    {
+        args[i].kind = kinds[i];
+        switch (kinds[i])
+        {
+        case MPA_INT:
+            args[i].v.i = va_arg(va, int);
+            break;
+        case MPA_LONG:
+            args[i].v.l = va_arg(va, long);
+            break;
+        case MPA_I64:
+            args[i].v.i64 = va_arg(va, int64_t);
+            break;
+        case MPA_UINT:
+            args[i].v.u = va_arg(va, unsigned int);
+            break;
+        case MPA_ULONG:
+            args[i].v.ul = va_arg(va, unsigned long);
+            break;
+        case MPA_U64:
+            args[i].v.u64 = va_arg(va, uint64_t);
+            break;
+        case MPA_STR:
+            args[i].v.s = va_arg(va, UTF8 *);
+            break;
+        case MPA_PTR:
+            args[i].v.p = va_arg(va, void *);
+            break;
+        case MPA_DOUBLE:
+            args[i].v.d = va_arg(va, double);
+            break;
+        case MPA_CHAR:
+            args[i].v.c = va_arg(va, unsigned int);
+            break;
+        case MPA_NONE:
+            // Gap in the position list — leave zeroed; a later conversion
+            // that references it will fail closed.
+            //
+            break;
+        default:
+            return false;
+        }
+    }
+    return true;
+}
+
 // mux_vsnprintf - Is an sprintf-like function that will not overflow
 // a buffer of specific size. The size is give by count, and count
 // should be chosen to include the '\0' termination.
 //
 // Returns: A number from 0 to count-1 that is the string length of
 // the returned (possibly truncated) buffer.
+//
+// Supports POSIX %N$ positional conversions (#1623) when the format uses
+// them; sequential formats keep the original single-pass path.
 //
 size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, va_list va)
 {
@@ -6288,6 +6653,32 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
     }
     size_t nLimit = nBuffer-1;
 
+    // Positional mode: materialise args, then format with saved values.
+    //
+    mux_printf_arg posArgs[MUX_PRINTF_MAX_ARGS + 1];
+    bool bPositional = false;
+    int nMaxPos = 0;
+    memset(posArgs, 0, sizeof(posArgs));
+
+    if (  nullptr != pFmt
+       && mux_fmt_has_positional(pFmt))
+    {
+        mux_printf_akind kinds[MUX_PRINTF_MAX_ARGS + 1];
+        if (  !mux_fmt_scan_kinds(pFmt, kinds, &nMaxPos)
+           || nMaxPos < 1
+           || nMaxPos > MUX_PRINTF_MAX_ARGS
+           || !mux_fmt_fill_args(kinds, nMaxPos, va, posArgs))
+        {
+            // Unparseable or mixed positional/sequential — #1429 stop:
+            // emit nothing beyond an empty string rather than walk va_list
+            // wrong.  Callers already tolerate truncation.
+            //
+            pBuffer[0] = '\0';
+            return 0;
+        }
+        bPositional = true;
+    }
+
     // Rather than copy a character at a time, some copies are deferred and performed in a single request.
     //
     size_t iFmtDeferred = 0;
@@ -6296,6 +6687,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
     size_t iBuffer = 0;
     size_t ncpFmt;
     size_t iFmt = 0;
+    int nNextSeq = 1;
     if (  nullptr != pFmt
        && utf8_strlen(pFmt, ncpFmt))
     {
@@ -6356,6 +6748,7 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                 bool bSawPeriod = false;
                 bool bPrecision = false;
                 int nLongs = 0;
+                int nArgPos = 0;
 
                 // Where this conversion spec starts, so an unimplemented one
                 // can be echoed literally rather than killing the process
@@ -6365,6 +6758,35 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
 
                 iFmt++;
                 ncpFmt--;
+
+                // Optional POSIX position N$ immediately after '%' (#1623).
+                //
+                if (  bPositional
+                   && 0 != ncpFmt
+                   && pFmt[iFmt] >= '1'
+                   && pFmt[iFmt] <= '9')
+                {
+                    size_t j = iFmt;
+                    size_t n = 0;
+                    size_t nDig = 0;
+                    while (  nDig < ncpFmt
+                          && pFmt[j] >= '0'
+                          && pFmt[j] <= '9')
+                    {
+                        n = 10 * n + static_cast<size_t>(pFmt[j] - '0');
+                        j++;
+                        nDig++;
+                    }
+                    if (  nDig < ncpFmt
+                       && '$' == pFmt[j]
+                       && n > 0
+                       && n <= MUX_PRINTF_MAX_ARGS)
+                    {
+                        nArgPos = static_cast<int>(n);
+                        iFmt = j + 1;
+                        ncpFmt -= nDig + 1;
+                    }
+                }
 
                 while (0 != ncpFmt)
                 {
@@ -6386,6 +6808,25 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                         UTF8 *pBuff = Buff;
                         UTF8 FBuff[MUX_FLOAT_SCRATCH];
 
+                        // Resolve which saved arg (positional) or va_arg
+                        // (sequential) to consume.
+                        //
+                        const mux_printf_arg *pArg = nullptr;
+                        if (bPositional)
+                        {
+                            if (0 == nArgPos)
+                            {
+                                nArgPos = nNextSeq++;
+                            }
+                            if (  nArgPos < 1
+                               || nArgPos > nMaxPos
+                               || MPA_NONE == posArgs[nArgPos].kind)
+                            {
+                                goto done;
+                            }
+                            pArg = &posArgs[nArgPos];
+                        }
+
                         if (  'd' == pFmt[iFmt]
                            || 'i' == pFmt[iFmt])
                         {
@@ -6393,17 +6834,20 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             //
                             if (0 == nLongs)
                             {
-                                int i = va_arg(va, int);
+                                int i = (nullptr != pArg) ? pArg->v.i
+                                                          : va_arg(va, int);
                                 cbBuff = cpBuff = mux_ltoa(i, Buff);
                             }
                             else if (1 == nLongs)
                             {
-                                long int i = va_arg(va, long int);
+                                long int i = (nullptr != pArg) ? pArg->v.l
+                                                               : va_arg(va, long int);
                                 cbBuff = cpBuff = mux_ltoa(i, Buff);
                             }
                             else if (2 == nLongs)
                             {
-                                int64_t i = va_arg(va, int64_t);
+                                int64_t i = (nullptr != pArg) ? pArg->v.i64
+                                                              : va_arg(va, int64_t);
                                 cbBuff = cpBuff = mux_i64toa(i, Buff);
                             }
                             else
@@ -6415,7 +6859,8 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                         {
                             // Obtain and validate argument.
                             //
-                            pBuff = va_arg(va, UTF8 *);
+                            pBuff = (nullptr != pArg) ? pArg->v.s
+                                                      : va_arg(va, UTF8 *);
                             if (  !utf8_strlen(pBuff, cpBuff)
                                || 0 != nLongs)
                             {
@@ -6453,7 +6898,8 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                                 uintptr_t ui;
                                 void *pv;
                             } u;
-                            u.pv = va_arg(va, void *);
+                            u.pv = (nullptr != pArg) ? pArg->v.p
+                                                     : va_arg(va, void *);
 #if SIZEOF_UINT_PTR <= SIZEOF_UNSIGNED_LONG
                             cbBuff = cpBuff = mux_utox(u.ui, Buff, true);
 #elif SIZEOF_UINT_PTR <= SIZEOF_UNSIGNED_LONG_LONG
@@ -6486,7 +6932,8 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             // printf, and "%Lf" never reaches here because 'L'
                             // is not parsed as a length modifier.
                             //
-                            double dval = va_arg(va, double);
+                            double dval = (nullptr != pArg) ? pArg->v.d
+                                                            : va_arg(va, double);
                             int nPrec = bSawPeriod ? static_cast<int>(nPrecision) : 6;
 
                             bool bOverflow = false;
@@ -6510,17 +6957,20 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                             //
                             if (0 == nLongs)
                             {
-                                unsigned int ui = va_arg(va, unsigned int);
+                                unsigned int ui = (nullptr != pArg) ? pArg->v.u
+                                                                    : va_arg(va, unsigned int);
                                 cbBuff = cpBuff = bOct?mux_utoo(ui, Buff):(bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff));
                             }
                             else if (1 == nLongs)
                             {
-                                unsigned long int ui = va_arg(va, unsigned long int);
+                                unsigned long int ui = (nullptr != pArg) ? pArg->v.ul
+                                                                         : va_arg(va, unsigned long int);
                                 cbBuff = cpBuff = bOct?mux_utoo(ui, Buff):(bHex?mux_utox(ui, Buff, bUpper):mux_utoa(ui, Buff));
                             }
                             else if (2 == nLongs)
                             {
-                                uint64_t ui = va_arg(va, uint64_t);
+                                uint64_t ui = (nullptr != pArg) ? pArg->v.u64
+                                                                : va_arg(va, uint64_t);
                                 cbBuff = cpBuff = bOct?mux_ui64too(ui, Buff):(bHex?mux_ui64tox(ui, Buff, bUpper):mux_ui64toa(ui, Buff));
                             }
                             else
@@ -6693,7 +7143,25 @@ size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, 
                     }
                     else if ('c' == pFmt[iFmt])
                     {
-                        unsigned int ch = va_arg(va, unsigned int);
+                        unsigned int ch;
+                        if (bPositional)
+                        {
+                            if (0 == nArgPos)
+                            {
+                                nArgPos = nNextSeq++;
+                            }
+                            if (  nArgPos < 1
+                               || nArgPos > nMaxPos
+                               || MPA_CHAR != posArgs[nArgPos].kind)
+                            {
+                                goto done;
+                            }
+                            ch = posArgs[nArgPos].v.c;
+                        }
+                        else
+                        {
+                            ch = va_arg(va, unsigned int);
+                        }
                         if (nLimit < iBuffer + 1)
                         {
                             goto done;
