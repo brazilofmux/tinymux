@@ -264,6 +264,27 @@ Ship at least: empty or English catalog, and one sample language for CI (e.g. `x
 - Prefer whole sentences in `T("…")` rather than concatenating translated fragments.
 - Use `ngettext` for true plurals (`1 coin` / `N coins`).
 - Existing `tprintf(T("…%s…"), …)` stays valid if translators keep format specifiers; add a CI check for `%` consistency.
+- Positional arguments (`%N$`) are a separate runtime/toolchain problem (#1623); do not conflate them with layout.
+
+### 6.6 Multi-column tables (presentation constraint)
+
+Some notifies are **tables**: a header line plus aligned data rows. Today a few
+headers ship as **one msgid with column spacing baked into English** (e.g.
+`*** Channel       Header          Owner …`), while rows use independent
+`PadField` / `co_copy_field` stops in C. A translator cannot keep those aligned
+under CJK or after a stop change — see #1648.
+
+**Policy until converted:**
+
+1. **Do not translate** pre-spaced multi-column header msgids; leave `msgstr ""`
+   so English passthrough preserves layout.
+2. **Do not** “fix” one header in isolation or translate with hand-counted
+   spaces — that is a partial migration and extra work later.
+3. **Do it right** means: column schema (shared widths), one msgid per label,
+   same cell primitive for header and rows (`co_copy_field`), and a single
+   ownership path for dual comsys/mail (#1614) or shared layout in libmux.
+
+Full design, phases, and inventory starter: [`design-tabular-notifies.md`](design-tabular-notifies.md).
 
 ---
 
@@ -297,6 +318,7 @@ Ship at least: empty or English catalog, and one sample language for CI (e.g. `x
 | macOS dylib | Homebrew gettext rpath |
 | Who maintains `.po`? | Upstream ships infrastructure + English; community translations |
 | Modules (comsys/mail) | Same rules; extract with core |
+| Pre-spaced table headers | Do not translate; convert only via tabular layout design (#1648 / `design-tabular-notifies.md`) |
 | Proxy / Hydra | Out of scope unless we extend the epic later |
 
 ---
