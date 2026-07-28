@@ -12,11 +12,11 @@ docs/LIMITS.md
 docs/PATCHES.md
 docs/REALMS.md
 game/alias.conf
-game/bin/comsys.dll
+game/bin/comsys_mod.dll
 game/bin/engine.dll
 game/bin/exp3.dll
 game/bin/libmux.dll
-game/bin/mail.dll
+game/bin/mail_mod.dll
 game/bin/msvcp140.dll
 game/bin/muxscript.exe
 game/bin/netmux.exe
