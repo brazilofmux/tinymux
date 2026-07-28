@@ -3280,20 +3280,27 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
                 struct mail *mp;
                 for (mp = ml.FirstItem(); !ml.IsEnd(); mp = ml.NextItem())
                 {
+                    // These were MessageFetchSize() + 1, counting a NUL that
+                    // MessageFetchSize does not report -- it returns
+                    // std::string::size().  That made @mail/fstats disagree
+                    // with @mail/list, mailinfo(size) and the mail module
+                    // about how big the same message is, by one byte per
+                    // message (#1639).
+                    //
                     if (Cleared(mp))
                     {
                         fc++;
-                        cchars += MessageFetchSize(mp->number) + 1;
+                        cchars += MessageFetchSize(mp->number);
                     }
                     else if (Read(mp))
                     {
                         fr++;
-                        fchars += MessageFetchSize(mp->number) + 1;
+                        fchars += MessageFetchSize(mp->number);
                     }
                     else
                     {
                         fu++;
-                        tchars += MessageFetchSize(mp->number) + 1;
+                        tchars += MessageFetchSize(mp->number);
                     }
                 }
             }
@@ -3354,9 +3361,13 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
                 {
                     fu++;
                 }
+                // Same phantom byte as the whole-DB branch above (#1639).
+                // The report named only the three sites there; these two,
+                // reached by @mail/fstats <player>, had it as well.
+                //
                 if (full == 2)
                 {
-                    fchars += MessageFetchSize(mp->number) + 1;
+                    fchars += MessageFetchSize(mp->number);
                 }
             }
             if (mp->to == target)
@@ -3379,7 +3390,7 @@ static void do_mail_stats(dbref player, UTF8 *name, int full)
                 }
                 if (full == 2)
                 {
-                    tchars += MessageFetchSize(mp->number) + 1;
+                    tchars += MessageFetchSize(mp->number);
                 }
             }
         }
