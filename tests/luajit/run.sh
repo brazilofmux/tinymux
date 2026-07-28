@@ -18,10 +18,21 @@
 #                    globals/stdlib so they can compile without the Lua-VM
 #                    bridge ECALLs.
 #
-#   Config: lua_jit 1 alone is not enough under default softcode JIT —
-#   fun_lua is ECALLed from a DBT program and run_cached_program refuses a
-#   nested run (#1326).  jit_eval_brackets 0 is required so the compiled
-#   Lua path actually executes.
+#   NESTED_CASES   — the EXEC contract with jit_eval_brackets ON, the
+#                    production default.  Until #1326 the Lua JIT could not
+#                    run there at all: fun_lua is ECALLed from a DBT program
+#                    and run_cached_program refused the nested run, so every
+#                    chunk fell back to the VM and every result still matched.
+#                    Nothing covered that path, which is why it stayed broken.
+#
+#   Config: before #1326, jit_eval_brackets 0 was required for the compiled
+#   Lua path to execute at all.  It is still what EXEC uses, to isolate
+#   lowering from nesting; NESTED is the tier that holds the default config.
+#
+#   DECLINE BUDGET: AGREE allows a decline, because the interpreter answering
+#   is correct behaviour.  That makes 32-of-34-declining and 0-of-34-declining
+#   the same colour, so the count is ratcheted below rather than left to be
+#   eyeballed: it may fall, never rise.
 #
 #   Deliberately not smoke: smoke cannot set that config without changing
 #   the softcode-JIT surface, and result-only smoke is green when the
@@ -131,6 +142,19 @@ AGREE_CASES=(
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
 # ---------------------------------------------------------------------------
+# How many AGREE chunks are expected to decline rather than execute.
+#
+# A decline is safe (the interpreter answers) and so cannot be a hard error
+# -- but it is also not coverage, and a pass/fail count cannot tell the two
+# apart.  Freezing the number is what makes progress and regression both
+# visible: lowering it is the measure of #1519's bridge work landing, and a
+# rise means something that used to compile stopped.
+#
+# MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
+# tests/format/check_formats.py (#1631/#1653).
+#
+AGREE_DECLINE_BUDGET=32
+
 # NESTED: the same contract as EXEC, but with jit_eval_brackets ON -- the
 # production default, and the configuration in which the Lua JIT could not
 # run at all until #1326.
@@ -447,9 +471,23 @@ echo "nested_wrong: $nested_wrong   nested_no_run: $nested_no_run   (of ${#NESTE
 #
 echo "agree_executed: $agree_executed   agree_declined: $agree_declined   (of ${#AGREE_CASES[@]} AGREE chunks)"
 
+decline_budget_fail=0
+if [ "$agree_declined" -gt "$AGREE_DECLINE_BUDGET" ]; then
+    echo "  DECLINE BUDGET: $agree_declined declined, budget $AGREE_DECLINE_BUDGET."
+    echo "  Something that used to compile now declines.  The results still"
+    echo "  match because the interpreter answered, so only this count sees it."
+    decline_budget_fail=1
+elif [ "$agree_declined" -lt "$AGREE_DECLINE_BUDGET" ]; then
+    echo "  DECLINE BUDGET: down to $agree_declined from $AGREE_DECLINE_BUDGET -- good."
+    echo "  Lower AGREE_DECLINE_BUDGET in this file to $agree_declined to keep"
+    echo "  the ratchet tight, in the same commit as whatever improved it."
+    decline_budget_fail=1
+fi
+
 if [ "$crashes" -ne 0 ] || [ "$agree_wrong" -ne 0 ] \
    || [ "$exec_wrong" -ne 0 ] || [ "$exec_no_run" -ne 0 ] \
-   || [ "$nested_wrong" -ne 0 ] || [ "$nested_no_run" -ne 0 ]; then
+   || [ "$nested_wrong" -ne 0 ] || [ "$nested_no_run" -ne 0 ] \
+   || [ "$decline_budget_fail" -ne 0 ]; then
     echo "=== tests/luajit: FAILED ==="
     if [ "$crashes" -ne 0 ]; then
         echo "  process deaths: preserved work.fail.* dirs next to this script"
