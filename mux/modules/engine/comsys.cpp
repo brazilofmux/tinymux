@@ -2803,7 +2803,41 @@ static void do_listchannels(dbref player, UTF8* pattern)
         bWild = false;
     }
 
-    raw_notify(player, M_("*** Channel       Header          Owner           Access  Users Msgs"));
+    // @clist/full column schema (#1667 Phase 4 A1) — shared with module
+    // ChanListFull: "*** "/PLS (4) + name 13 + header 15 + owner 15 +
+    // Access field 6 (JXR + pad) + freeform users/msgs.  Header labels are
+    // separate msgids; both paths use mux_table_* so they cannot drift.
+    //
+    static const size_t kFullNameCols   = 13;
+    static const size_t kFullHeaderCols = 15;
+    static const size_t kFullOwnerCols  = 15;
+    static const size_t kFullAccessCols = 6;
+
+    {
+        UTF8 header[LBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "*** ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Channel"), kFullNameCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Header"), kFullHeaderCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Owner"), kFullOwnerCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Access"), kFullAccessCols);
+        // Freeform count labels (historical "Access  Users Msgs" spacing).
+        //
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "  ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Users")));
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Msgs")));
+        raw_notify(player, header);
+    }
 
     for (auto it = mudstate.channel_names.begin(); it != mudstate.channel_names.end(); ++it)
     {
@@ -2817,86 +2851,52 @@ static void do_listchannels(dbref player, UTF8* pattern)
             if (  !bWild
                || quick_wild(pattern, ch->name))
             {
-                // Determine effective access for the querying player
-                // based on both flags and locks.
-                //
                 bool bCanJoin = test_join_access(player, ch);
                 bool bCanXmit = test_transmit_access(player, ch);
                 bool bCanRecv = test_receive_access(player, ch);
 
-                LBuf temp = LBuf_Src("do_listchannels");
-                UTF8* bp = temp;
-
-                // PLS flags.
-                //
-                safe_chr((ch->type & CHANNEL_PUBLIC) ? 'P' : '-', temp, &bp);
-                safe_chr((ch->type & CHANNEL_LOUD)   ? 'L' : '-', temp, &bp);
-                safe_chr((ch->type & CHANNEL_SPOOF)  ? 'S' : '-', temp, &bp);
-                safe_chr(' ', temp, &bp);
-
-                // Channel name (13 cols).
-                //
-                mux_field iPos(4, 4);
-                iPos += StripTabsAndTruncate(ch->name,
-                    temp.get() + iPos.m_byte,
-                    (LBUF_SIZE - 1) - iPos.m_byte,
-                    13);
-                bp = temp.get() + iPos.m_byte;
-                iPos = PadField(temp, LBUF_SIZE - 1, 18, iPos);
-                bp = temp.get() + iPos.m_byte;
-
-                // Header (15 cols).
-                //
                 const UTF8 *pHeader = ch->header;
                 if ('\0' == pHeader[0])
                 {
                     pHeader = T("-");
                 }
-                iPos += StripTabsAndTruncate(pHeader,
-                    temp.get() + iPos.m_byte,
-                    (LBUF_SIZE - 1) - iPos.m_byte,
-                    15);
-                bp = temp.get() + iPos.m_byte;
-                iPos = PadField(temp, LBUF_SIZE - 1, 34, iPos);
-                bp = temp.get() + iPos.m_byte;
 
-                // Owner name (15 cols).
-                //
-                iPos += StripTabsAndTruncate(Moniker(ch->charge_who),
-                    temp.get() + iPos.m_byte,
-                    (LBUF_SIZE - 1) - iPos.m_byte,
-                    15);
-                bp = temp.get() + iPos.m_byte;
-                iPos = PadField(temp, LBUF_SIZE - 1, 50, iPos);
-                bp = temp.get() + iPos.m_byte;
+                UTF8 line[LBUF_SIZE];
+                size_t pos = 0;
+                line[pos++] = (ch->type & CHANNEL_PUBLIC) ? 'P' : '-';
+                line[pos++] = (ch->type & CHANNEL_LOUD)   ? 'L' : '-';
+                line[pos++] = (ch->type & CHANNEL_SPOOF)  ? 'S' : '-';
+                line[pos++] = ' ';
+                line[pos] = '\0';
 
-                // Effective access JXR (3 cols + 2 spaces).
-                //
-                safe_chr(bCanJoin ? 'J' : '-', temp, &bp);
-                safe_chr(bCanXmit ? 'X' : '-', temp, &bp);
-                safe_chr(bCanRecv ? 'R' : '-', temp, &bp);
+                pos = mux_table_append_ljust(line, sizeof(line), pos,
+                    ch->name, kFullNameCols);
+                pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+                pos = mux_table_append_ljust(line, sizeof(line), pos,
+                    pHeader, kFullHeaderCols);
+                pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+                pos = mux_table_append_ljust(line, sizeof(line), pos,
+                    Moniker(ch->charge_who), kFullOwnerCols);
+                pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
 
-                // Advance both counters by the three characters just written,
-                // rather than resetting the COLUMN to the BYTE offset.  Those
-                // two are equal only while every field so far has been plain
-                // ASCII; a colored channel header makes the byte offset larger,
-                // PadField then believes it is already past column 56, and the
-                // Users column shifts left.  Found by running @clist/full under
-                // both implementations with an ANSI header (#1640) -- invisible
-                // to any ASCII test, and an instance of exactly what #1649 is
-                // about.
+                UTF8 access[4];
+                access[0] = bCanJoin ? 'J' : '-';
+                access[1] = bCanXmit ? 'X' : '-';
+                access[2] = bCanRecv ? 'R' : '-';
+                access[3] = '\0';
+                // Access is 6 display cols (JXR + pad); counts follow with no
+                // extra separator — same as historical PadField-to-56 stop.
                 //
-                iPos += mux_field(3, 3);
-                iPos = PadField(temp, LBUF_SIZE - 1, 56, iPos);
-                bp = temp.get() + iPos.m_byte;
-
-                // Users and Messages.
-                //
-                mux_sprintf(bp, (LBUF_SIZE - 1) - (bp - temp.get()),
-                    T("%5d %4d"),
-                    static_cast<int>(ch->users.size()),
-                    ch->num_messages);
-                raw_notify(player, temp);
+                pos = mux_table_append_ljust(line, sizeof(line), pos,
+                    access, kFullAccessCols);
+                if (pos < sizeof(line))
+                {
+                    mux_sprintf(line + pos, sizeof(line) - pos,
+                        T("%5d %4d"),
+                        static_cast<int>(ch->users.size()),
+                        ch->num_messages);
+                }
+                raw_notify(player, line);
             }
         }
     }

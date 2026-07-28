@@ -2695,13 +2695,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// @clist/full — mirrors the engine's do_listchannels (comsys.cpp:2786).
-//
-// Column stops are the engine's: flags at 0, name at 4 (13 wide), header at
-// 18 (15), owner at 34 (15), effective JXR access at 50, then "%5d %4d" from
-// 56.  Written as explicit field widths rather than PadField because the
-// module has no mux_field; for the ASCII this listing produces the two agree
-// byte for byte, which is the property being tested.
+// @clist/full — same schema as engine do_listchannels (#1667 Phase 4 A1).
 // ---------------------------------------------------------------------------
 
 MUX_RESULT CComsysMod::ChanListFull(dbref executor, const UTF8 *pPattern)
@@ -2718,8 +2712,32 @@ MUX_RESULT CComsysMod::ChanListFull(dbref executor, const UTF8 *pPattern)
             T("Warning: Only public channels and your channels will be shown."));
     }
 
-    m_pINotify->RawNotify(executor,
-        T("*** Channel       Header          Owner           Access  Users Msgs"));
+    static const size_t kFullNameCols   = 13;
+    static const size_t kFullHeaderCols = 15;
+    static const size_t kFullOwnerCols  = 15;
+    static const size_t kFullAccessCols = 6;
+
+    {
+        UTF8 header[256];
+        size_t pos = 0;
+        pos = append_bytes(header, sizeof(header), pos, "*** ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Channel"), kFullNameCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Header"), kFullHeaderCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Owner"), kFullOwnerCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Access"), kFullAccessCols);
+        pos = append_bytes(header, sizeof(header), pos, "  ");
+        pos = append_bytes(header, sizeof(header), pos, "Users");
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_bytes(header, sizeof(header), pos, "Msgs");
+        m_pINotify->RawNotify(executor, header);
+    }
 
     const bool bWild = (nullptr != pPattern && '\0' != *pPattern);
 
@@ -2769,12 +2787,6 @@ MUX_RESULT CComsysMod::ChanListFull(dbref executor, const UTF8 *pPattern)
             pHeader = T("-");
         }
 
-        // Column stops are the engine's (do_listchannels): name at 4, header
-        // at 18, owner at 34, access at 50, counts from 56.  Built with the
-        // same primitives, so a colored moniker or a fullwidth channel name
-        // lands identically on both sides -- which printf field widths could
-        // not have delivered, and my first attempt at this did not (#1649).
-        //
         UTF8 line[MOD_LBUF_SIZE];
         size_t pos = 0;
         line[pos++] = (ch->type & CHANNEL_PUBLIC) ? 'P' : '-';
@@ -2783,20 +2795,25 @@ MUX_RESULT CComsysMod::ChanListFull(dbref executor, const UTF8 *pPattern)
         line[pos++] = ' ';
         line[pos] = '\0';
 
-        pos = append_ljust_field(line, sizeof(line), pos, ch->name, 13);
+        pos = append_ljust_field(line, sizeof(line), pos, ch->name,
+            kFullNameCols);
         pos = append_bytes(line, sizeof(line), pos, " ");
-        pos = append_ljust_field(line, sizeof(line), pos, pHeader, 15);
+        pos = append_ljust_field(line, sizeof(line), pos, pHeader,
+            kFullHeaderCols);
         pos = append_bytes(line, sizeof(line), pos, " ");
-        pos = append_ljust_field(line, sizeof(line), pos, pOwnerName, 15);
+        pos = append_ljust_field(line, sizeof(line), pos, pOwnerName,
+            kFullOwnerCols);
         pos = append_bytes(line, sizeof(line), pos, " ");
 
-        char access[4];
+        UTF8 access[4];
         access[0] = test_join_access(executor, ch)     ? 'J' : '-';
         access[1] = test_transmit_access(executor, ch) ? 'X' : '-';
         access[2] = test_receive_access(executor, ch)  ? 'R' : '-';
         access[3] = '\0';
-        pos = append_bytes(line, sizeof(line), pos, access);
-        pos = append_bytes(line, sizeof(line), pos, "   ");
+        // Access is 6 cols (JXR + pad); counts follow with no extra separator.
+        //
+        pos = append_ljust_field(line, sizeof(line), pos, access,
+            kFullAccessCols);
         if (pos < sizeof(line))
         {
             mux_sprintf(line + pos, sizeof(line) - pos,

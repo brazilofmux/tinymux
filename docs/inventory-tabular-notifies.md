@@ -31,13 +31,11 @@
 | | Engine | Module |
 |--|--------|--------|
 | File | `modules/engine/comsys.cpp` `do_listchannels` | `modules/comsys/comsys_mod.cpp` `ChanListFull` |
-| Header | **Blob** `M_("*** Channel       Header          Owner           Access  Users Msgs")` | **Blob** same English via `T_(...)` (not always `M_`) |
-| Cell primitive | `StripTabsAndTruncate` + `PadField` | `append_ljust_field` → `co_copy_field` |
-| Columns (display) | PLS(4) · name **13** · header **15** · owner **15** · JXR(3) · users/msgs free | Same intent: name 13, header 15, owner 15, then access + counts |
-| Absolute stops (engine) | Pad to cols **18, 34, 50, 56** after fields | Space-separated fields (no `PadField` absolute stops) |
-| Pot | `tinymux.pot` msgid present | Module string may not be extracted if only `T_` |
-| Translate? | **No (blob)** | **No (blob)** |
-| Dual | **Yes** |
+| Header | **Converted (#1667 Phase 4)** — `"*** "` + per-label `Channel` / `Header` / `Owner` / `Access` / freeform `Users` `Msgs` | Same via `T_()` labels |
+| Cell primitive | `mux_table_*` on `co_copy_field` | `mux_table_*` (aliases) |
+| Columns | PLS/`*** ` (4) · name **13** · header **15** · owner **15** · access **6** (JXR+pad) · freeform counts | Same |
+| Translate? | **Per-label** — do not reintroduce the full-line blob | Same |
+| Dual | **Yes** — both paths converted together |
 
 ### A2. `@clist` / `@clist/headers` — short channel directory
 
@@ -228,7 +226,7 @@ From `mux/po/tinymux.pot` at inventory time (grep for multi-space column-like ms
 | msgid | Family |
 |-------|--------|
 | `Buffer Stats  Size      InUse      Total           Allocs   Lost` | C4 |
-| `*** Channel       Header          Owner           Access  Users Msgs` | A1 |
+| ~~`*** Channel       Header          Owner           Access  Users Msgs`~~ | A1 — **removed** Phase 4 (per-label) |
 | `Alias           Channel            Status   Title` | A3 |
 | ~~`*** Channel       Owner           Header`~~ | A2 — **removed** Phase 4 (per-label) |
 | ~~`*** Channel       Owner           Description`~~ | A2 — **removed** Phase 4 (per-label) |
