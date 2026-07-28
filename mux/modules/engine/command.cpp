@@ -13,6 +13,7 @@
 #include "externs.h"
 #include "ganl_stub.h"
 #include "walk.h"
+#include "mux_table.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
@@ -3992,19 +3993,38 @@ static void list_vattrs(dbref player, UTF8 *s_mask)
 
 // list_hashstats: List information from hash tables
 //
+// Hash table size list (#1667 Phase 4 C3).  The old full-stat header
+// (Size/Num/Del/Lookups/…) did not match the abbreviated rows (name +
+// entry count only).  Header and rows now share one schema.
+//
+static const size_t kHashNameCols    = 13;
+static const size_t kHashEntriesCols = 11;
+
 static void list_hashstat_abbreviated(const dbref player, const UTF8* tab_name, const int entries)
 {
     UTF8 buff[MBUF_SIZE];
-    UTF8* p = buff;
-
-    p += LeftJustifyString(p, 13, tab_name); *p++ = ' ';
-    p += RightJustifyNumber(p, 11, entries, ' '); *p = '\0';
+    UTF8 num[16];
+    size_t pos = 0;
+    pos = mux_table_append_ljust(buff, sizeof(buff), pos, tab_name, kHashNameCols);
+    pos = mux_table_append_bytes(buff, sizeof(buff), pos, " ");
+    mux_sprintf(num, sizeof(num), T("%*d"), static_cast<int>(kHashEntriesCols), entries);
+    pos = mux_table_append_bytes(buff, sizeof(buff), pos,
+        reinterpret_cast<const char *>(num));
     raw_notify(player, buff);
 }
 
 static void list_hashstats(const dbref player)
 {
-    raw_notify(player, M_("Hash Stats    Size    Num     Del       Lookups          Hits        Probes Long"));
+    {
+        UTF8 header[MBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Name"), kHashNameCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Entries"), kHashEntriesCols);
+        raw_notify(player, header);
+    }
     list_hashstat_abbreviated(player, T("Commands"), static_cast<int>(mudstate.command_htab.size()));
     list_hashstat_abbreviated(player, T("Logout Cmds"), static_cast<int>(mudstate.logout_cmd_htab.size()));
     list_hashstat_abbreviated(player, T("Functions"), static_cast<int>(mudstate.builtin_functions.size()));;

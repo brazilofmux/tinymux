@@ -11,6 +11,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "mux_table.h"
 
 #define GUEST_HYSTERESIS 20
 
@@ -422,9 +423,40 @@ bool CGuests::CheckGuest(dbref player)
 //
 void CGuests::ListAll(dbref player)
 {
+    // @list guests schema (#1667 Phase 4 C1): sticky * / space, "Guest ",
+    // index 3, name 15, dbref 5 (with #), status 10, site freeform.
+    //
+    static const size_t kGuestNumCols    = 3;
+    static const size_t kGuestNameCols   = 15;
+    static const size_t kGuestDbrefCols  = 5;
+    static const size_t kGuestStatusCols = 10;
+
     notify(player, M_("--------------------------- Current Guests Listing ---------------------------"));
-    notify(player, M_("*Guest #  : Name            dbref  Status     Last Site"));
-    notify(player, M_("------------------------------------------------------------------------------"));\
+    {
+        UTF8 header[LBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "*");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Guest")));
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("#"), kGuestNumCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, ": ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Name"), kGuestNameCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "#");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("dbref"), kGuestDbrefCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Status"), kGuestStatusCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Last Site")));
+        notify(player, header);
+    }
+    notify(player, M_("------------------------------------------------------------------------------"));
     LBuf buff = LBuf_Src("CGuests-ListAll");
     int i;
     LBuf LastSite = LBuf_Src("CGuests-LastSite");
@@ -433,11 +465,30 @@ void CGuests::ListAll(dbref player)
         dbref aowner;
         int aflags;
         atr_get_str(LastSite, Guests[i], A_LASTSITE, &aowner, &aflags);
-        mux_sprintf(buff, LBUF_SIZE, T("%sGuest %-3d: %-15s #%-5d %-10s %s"),
-                (i<mudconf.min_guests ? "*" : " "),
-                i, Name(Guests[i]), Guests[i],
-                (Connected(Guests[i]) ? "Online" : "NotOnline"),
-                LastSite.get());
+
+        UTF8 numbuf[8];
+        UTF8 dbrefbuf[16];
+        mux_sprintf(numbuf, sizeof(numbuf), T("%d"), i);
+        mux_sprintf(dbrefbuf, sizeof(dbrefbuf), T("%d"), Guests[i]);
+
+        size_t pos = 0;
+        pos = mux_table_append_bytes(buff, LBUF_SIZE, pos,
+            (i < mudconf.min_guests) ? "*" : " ");
+        pos = mux_table_append_bytes(buff, LBUF_SIZE, pos, "Guest ");
+        pos = mux_table_append_ljust(buff, LBUF_SIZE, pos, numbuf, kGuestNumCols);
+        pos = mux_table_append_bytes(buff, LBUF_SIZE, pos, ": ");
+        pos = mux_table_append_ljust(buff, LBUF_SIZE, pos, Name(Guests[i]),
+            kGuestNameCols);
+        pos = mux_table_append_bytes(buff, LBUF_SIZE, pos, " #");
+        pos = mux_table_append_ljust(buff, LBUF_SIZE, pos, dbrefbuf,
+            kGuestDbrefCols);
+        pos = mux_table_append_bytes(buff, LBUF_SIZE, pos, " ");
+        pos = mux_table_append_ljust(buff, LBUF_SIZE, pos,
+            Connected(Guests[i]) ? T("Online") : T("NotOnline"),
+            kGuestStatusCols);
+        pos = mux_table_append_bytes(buff, LBUF_SIZE, pos, " ");
+        pos = mux_table_append_bytes(buff, LBUF_SIZE, pos,
+            reinterpret_cast<const char *>(LastSite.get()));
         notify(player, buff);
         if (!Good_obj(Guests[i]))
         {
