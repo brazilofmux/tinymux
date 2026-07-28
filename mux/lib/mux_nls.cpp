@@ -808,12 +808,37 @@ LIBMUX_API void mux_nls_init(const UTF8 *locale_dir, const UTF8 *language)
                             && '\0' != language[0]);
     if (bDirective)
     {
+        // Catalogue name only: [A-Za-z0-9_-]+.  Reject path separators so a
+        // god-set `language` cannot escape locale_dir via `..` or `/`
+        // (#1702).
+        //
         size_t i = 0;
-        while (  '\0' != language[i]
-              && i + 1 < sizeof(lang))
+        while ('\0' != language[i] && i + 1 < sizeof(lang))
         {
-            lang[i] = static_cast<char>(language[i]);
+            const unsigned char c = language[i];
+            if (  !(  (c >= 'A' && c <= 'Z')
+                   || (c >= 'a' && c <= 'z')
+                   || (c >= '0' && c <= '9')
+                   || '_' == c
+                   || '-' == c))
+            {
+                fprintf(stderr,
+                    "NLS: 'language %s' is not a valid catalogue name"
+                    " (use a bare code such as ko or xx)."
+                    "  Continuing in English.\n",
+                    reinterpret_cast<const char *>(language));
+                return;
+            }
+            lang[i] = static_cast<char>(c);
             i++;
+        }
+        if (0 == i || '\0' != language[i])
+        {
+            fprintf(stderr,
+                "NLS: 'language %s' is empty or too long."
+                "  Continuing in English.\n",
+                reinterpret_cast<const char *>(language));
+            return;
         }
         lang[i] = '\0';
     }
