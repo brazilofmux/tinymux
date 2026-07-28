@@ -471,7 +471,9 @@ void do_toad
     //
     ReleaseAllResources(victim);
 
-    buf = tprintf(M_("%d connection%s closed."), count, (count == 1 ? "" : "s"));
+    // #1622: the count goes to the catalogue, not an English suffix.
+    buf = tprintf(MN_("%d connection closed.",
+                      "%d connections closed.", count), count);
     notify_quiet(executor, buf);
 }
 
@@ -635,7 +637,8 @@ void do_boot(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     {
         count = boot_off(victim, buf);
     }
-    notify_quiet(executor, tprintf(M_("%d connection%s closed."), count, (count == 1 ? "" : "s")));
+    notify_quiet(executor, tprintf(MN_("%d connection closed.",
+                                       "%d connections closed.", count), count));
 }
 
 // ---------------------------------------------------------------------------

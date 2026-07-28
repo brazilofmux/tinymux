@@ -286,6 +286,28 @@ LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid)
     return msgid;
 }
 
+// Plural lookup on the built-in catalogue path (#1622).
+//
+// Deliberately NOT translated here.  A .mo stores a plural entry's original
+// as "singular\0plural" and its translation as "form0\0form1\0...", and
+// choosing between the forms means parsing the Plural-Forms expression out
+// of the catalogue header and evaluating it.  This reader does neither.
+//
+// Guessing form 0 would be right for the nplurals=1 languages (Korean,
+// Japanese, Chinese) and quietly wrong for every other -- Russian would get
+// the singular for 2..4.  Returning English is wrong in a way a translator
+// can see and report; returning the wrong Russian form is not.
+//
+// The real gettext path below does this properly, and that is the path every
+// platform with libintl takes.  This one is the MSVC fallback (#1580).
+//
+LIBMUX_API const UTF8 *mux_ngettext(const UTF8 *msgid,
+                                    const UTF8 *msgid_plural,
+                                    unsigned long n)
+{
+    return (1 == n) ? msgid : msgid_plural;
+}
+
 #elif defined(HAVE_NLS)
 // Used by M_() only. gettext("") is not identity: the empty msgid stores
 // the .mo header (Project-Id-Version, …). Guard so a mistaken M_("")
@@ -302,6 +324,25 @@ LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid)
 
     return reinterpret_cast<const UTF8 *>(
         gettext(reinterpret_cast<const char *>(msgid)));
+}
+
+// Plural-aware lookup (#1622).  ngettext picks the form using the
+// catalogue's own Plural-Forms rule, which is the entire point: the count
+// crosses the boundary, not a pre-computed English suffix.
+//
+LIBMUX_API const UTF8 *mux_ngettext(const UTF8 *msgid,
+                                    const UTF8 *msgid_plural,
+                                    unsigned long n)
+{
+    if (  nullptr == msgid
+       || '\0' == msgid[0])
+    {
+        return msgid;
+    }
+
+    return reinterpret_cast<const UTF8 *>(
+        ngettext(reinterpret_cast<const char *>(msgid),
+                 reinterpret_cast<const char *>(msgid_plural), n));
 }
 #endif
 

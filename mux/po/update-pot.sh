@@ -39,6 +39,7 @@ xgettext \
     --language=C++ \
     --from-code=UTF-8 \
     --keyword=M_ \
+    --keyword=MN_:1,2 \
     --keyword=N_ \
     --add-comments=TRANSLATORS \
     --package-name=TinyMUX \

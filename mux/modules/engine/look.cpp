@@ -2345,8 +2345,8 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
         }
     }
     free_lbuf(message);
-    notify(executor, tprintf(M_("%d entrance%s found."), count,
-        (count == 1) ? "" : "s"));
+    notify(executor, tprintf(MN_("%d entrance found.",
+                                 "%d entrances found.", count), count));
 }
 
 // Check the current location for bugs.
