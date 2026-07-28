@@ -4173,32 +4173,32 @@ msgid ""
 "\n"
 "ROOMS:"
 msgstr ""
-"[xx] \n"
-"ROOMS:"
+"\n"
+"[xx] ROOMS:"
 
 #: modules/engine/walkdb.cpp:1208
 msgid ""
 "\n"
 "EXITS:"
 msgstr ""
-"[xx] \n"
-"EXITS:"
+"\n"
+"[xx] EXITS:"
 
 #: modules/engine/walkdb.cpp:1251
 msgid ""
 "\n"
 "OBJECTS:"
 msgstr ""
-"[xx] \n"
-"OBJECTS:"
+"\n"
+"[xx] OBJECTS:"
 
 #: modules/engine/walkdb.cpp:1286
 msgid ""
 "\n"
 "PLAYERS:"
 msgstr ""
-"[xx] \n"
-"PLAYERS:"
+"\n"
+"[xx] PLAYERS:"
 
 #: modules/engine/walkdb.cpp:1310
 msgid "Nothing found."
@@ -4210,8 +4210,8 @@ msgid ""
 "\n"
 "Found:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
 msgstr ""
-"[xx] \n"
-"Found:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
+"\n"
+"[xx] Found:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
 
 #: modules/engine/walkdb.cpp:1514
 msgid "Day"
