@@ -582,7 +582,7 @@ void display_flagtab(dbref player)
 
     LBuf buf = LBuf_Src("display_flagtab");
     UTF8 *bp = buf.get();
-    safe_str(T("Flags:"), buf, &bp);
+    safe_str(M_("Flags:"), buf, &bp);
     for (fp = gen_flag_names; fp->flagname; fp++)
     {
         FLAGBITENT *fbe = fp->fbe;
@@ -1262,7 +1262,7 @@ bool convert_flags(dbref player, UTF8 *flaglist, FLAGSET *fset, FLAG *p_type)
                 if (  type != NOTYPE
                    && type != i)
                 {
-                    UTF8 *p = tprintf(T("%c: Conflicting type specifications."),
+                    UTF8 *p = tprintf(M_("%c: Conflicting type specifications."),
                         *s);
                     notify(player, p);
                     return false;
@@ -1305,7 +1305,7 @@ bool convert_flags(dbref player, UTF8 *flaglist, FLAGSET *fset, FLAG *p_type)
         if (!handled)
         {
             notify(player,
-                   tprintf(T("%c: Flag unknown or not valid for specified object type"),
+                   tprintf(M_("%c: Flag unknown or not valid for specified object type"),
                        *s));
             return false;
         }
@@ -1347,7 +1347,7 @@ void decompile_flags(dbref player, dbref thing, UTF8 *thingname)
 
         // Report this flag.
         //
-        notify(player, tprintf(T("@set %s=%s"), thingname, fp->flagname));
+        notify(player, tprintf(M_("@set %s=%s"), thingname, fp->flagname));
     }
 }
 
@@ -1429,7 +1429,7 @@ void do_flag(dbref executor, dbref caller, dbref enactor, int eval, int key, int
                     MEMFREE(flag_name_entity->flagname);
                     flag_name_entity->flagname = const_cast<UTF8*>(flag_name_entity->pOrigName);
                     mudstate.flag_names_map.erase(it);
-                    notify(executor, tprintf(T("Flag name ‘%s’ removed from the hash table."), canonical_flag_name));
+                    notify(executor, tprintf(M_("Flag name ‘%s’ removed from the hash table."), canonical_flag_name));
                 }
                 else
                 {

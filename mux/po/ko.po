@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 23:30-0600\n"
+"POT-Creation-Date: 2026-07-28 13:05+0000\n"
 "PO-Revision-Date: 2026-07-27 00:00+0000\n"
 "Last-Translator: unassigned <tinymux@googlegroups.com>\n"
 "Language-Team: Korean <tinymux@googlegroups.com>\n"
@@ -50,6 +50,16 @@ msgstr ""
 #: modules/engine/boolexp.cpp:122 modules/engine/boolexp.cpp:144
 msgid "Sorry, broken lock!"
 msgstr "죄송합니다, 잠금이 손상되었습니다!"
+
+#: modules/engine/boolexp.cpp:485
+#, c-format
+msgid "I don’t see %s here."
+msgstr ""
+
+#: modules/engine/boolexp.cpp:491
+#, c-format
+msgid "I don’t know which %s you mean!"
+msgstr ""
 
 #: modules/engine/boolexp.cpp:662
 msgid "Unknown lock type."
@@ -856,14 +866,6 @@ msgstr ""
 msgid "That is not a reasonable name."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4586
-msgid "*** Logins are disabled."
-msgstr ""
-
-#: modules/engine/engine_com.cpp:4600
-msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
-msgstr ""
-
 #: modules/engine/engine.cpp:29
 msgid "Dumping in progress. Try again later."
 msgstr ""
@@ -872,12 +874,24 @@ msgstr ""
 msgid "Dumping..."
 msgstr "저장하는 중..."
 
+#: modules/engine/engine_com.cpp:4586
+msgid "*** Logins are disabled."
+msgstr ""
+
+#: modules/engine/engine_com.cpp:4600
+msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
+msgstr ""
+
 #: modules/engine/flags.cpp:26
 msgid "You cannot make God mortal."
 msgstr ""
 
 #: modules/engine/flags.cpp:195
 msgid "Your object has been spared from destruction."
+msgstr ""
+
+#: modules/engine/flags.cpp:585
+msgid "Flags:"
 msgstr ""
 
 #: modules/engine/flags.cpp:779
@@ -912,8 +926,28 @@ msgstr "이미 설정되어 있습니다."
 msgid "Special flags cannot be modified with flag_access."
 msgstr ""
 
+#: modules/engine/flags.cpp:1265
+#, c-format
+msgid "%c: Conflicting type specifications."
+msgstr ""
+
+#: modules/engine/flags.cpp:1308
+#, c-format
+msgid "%c: Flag unknown or not valid for specified object type"
+msgstr ""
+
+#: modules/engine/flags.cpp:1350
+#, c-format
+msgid "@set %s=%s"
+msgstr ""
+
 #: modules/engine/flags.cpp:1413
 msgid "Extra argument ignored."
+msgstr ""
+
+#: modules/engine/flags.cpp:1432
+#, c-format
+msgid "Flag name ‘%s’ removed from the hash table."
 msgstr ""
 
 #: modules/engine/flags.cpp:1436
@@ -933,13 +967,13 @@ msgstr ""
 msgid "Flag name changed."
 msgstr ""
 
-#: modules/engine/funceval2.cpp:888
-msgid "Illegal step size."
-msgstr "단계 크기가 잘못되었습니다."
-
 #: modules/engine/funceval.cpp:1098 modules/engine/set.cpp:1061
 msgid "You shouldn’t be rummaging through the garbage."
 msgstr ""
+
+#: modules/engine/funceval2.cpp:888
+msgid "Illegal step size."
+msgstr "단계 크기가 잘못되었습니다."
 
 #: modules/engine/functions.cpp:15751
 msgid "Function name is not valid."
@@ -1932,9 +1966,54 @@ msgstr ""
 msgid "That’s a silly name for a player."
 msgstr ""
 
+#: modules/engine/object.cpp:648
+#, c-format
+msgid "The name %s is already taken."
+msgstr ""
+
+#: modules/engine/object.cpp:663
+#, c-format
+msgid "That’s a silly name for %s!"
+msgstr ""
+
 #: modules/engine/object.cpp:971 modules/engine/rob.cpp:152
 msgid "Halted."
 msgstr "중지되었습니다."
+
+#: modules/engine/object.cpp:1030
+#, c-format
+msgid "You get back your %d %s deposit for %s(#%d)."
+msgstr ""
+
+#: modules/engine/object.cpp:1224
+#, c-format
+msgid "(%d objects @chowned to you)"
+msgstr ""
+
+#: modules/engine/object.cpp:1434
+#, c-format
+msgid "Parent cleared on %s(#%d)"
+msgstr ""
+
+#: modules/engine/object.cpp:1466
+#, c-format
+msgid "Zone cleared on %s(#%d)"
+msgstr ""
+
+#: modules/engine/object.cpp:1588
+#, c-format
+msgid "Home reset on %s(#%d)"
+msgstr ""
+
+#: modules/engine/object.cpp:1643
+#, c-format
+msgid "Dropto removed from %s(#%d)"
+msgstr ""
+
+#: modules/engine/object.cpp:2238
+#, c-format
+msgid "You own a floating room: %s(#%d)"
+msgstr ""
 
 #: modules/engine/object.cpp:2303 modules/engine/predicates.cpp:1328
 #: modules/engine/predicates.cpp:1371 modules/engine/walkdb.cpp:1347
@@ -1989,6 +2068,11 @@ msgstr ""
 
 #: modules/engine/player.cpp:1440
 msgid "Only players may use @protect."
+msgstr ""
+
+#: modules/engine/player.cpp:1485
+#, c-format
+msgid "%s: %s"
 msgstr ""
 
 #: modules/engine/player.cpp:1491
@@ -3015,6 +3099,11 @@ msgstr[0] "접속되어 있지 않습니다."
 
 #: modules/engine/wiz.cpp:538
 msgid "You cannot change that player’s password."
+msgstr ""
+
+#: modules/engine/wiz.cpp:554
+#, c-format
+msgid "Your password has been changed by %s."
 msgstr ""
 
 #: modules/engine/wiz.cpp:582
