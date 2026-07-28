@@ -1183,7 +1183,7 @@ msgid "Destination: %s"
 msgstr ""
 
 #: modules/engine/look.cpp:2175
-#, fuzzy, c-format
+#, c-format
 msgid "You have %d %s."
 msgstr "%2$s을(를) %1$d개 가지고 있습니다."
 
@@ -2182,7 +2182,7 @@ msgid "%s killed you!"
 msgstr ""
 
 #: modules/engine/rob.cpp:171
-#, fuzzy, c-format
+#, c-format
 msgid "Your insurance policy pays %d %s."
 msgstr "보험금으로 %2$s %1$d개를 지급합니다."
 
@@ -2242,7 +2242,7 @@ msgid "Feeling poor today?"
 msgstr ""
 
 #: modules/engine/rob.cpp:350
-#, fuzzy, c-format
+#, c-format
 msgid "You give a %s to %s."
 msgstr "%2$s에게 %1$s을(를) 줍니다."
 
@@ -2252,12 +2252,12 @@ msgid "%s gives you a %s."
 msgstr "%s님이 당신에게 %s을(를) 줍니다."
 
 #: modules/engine/rob.cpp:355
-#, fuzzy, c-format
+#, c-format
 msgid "You give %d %s to %s."
 msgstr "%3$s에게 %2$s %1$d개를 줍니다."
 
 #: modules/engine/rob.cpp:356
-#, fuzzy, c-format
+#, c-format
 msgid "%s gives you %d %s."
 msgstr "%1$s이(가) 당신에게 %3$s %2$d개를 줍니다."
 
@@ -2267,7 +2267,7 @@ msgid "You get 1 %s in change."
 msgstr ""
 
 #: modules/engine/rob.cpp:370
-#, fuzzy, c-format
+#, c-format
 msgid "You get %d %s in change."
 msgstr "거스름돈으로 %2$s %1$d개를 받습니다."
 
@@ -2693,7 +2693,7 @@ msgid "%s senses “%s %s”"
 msgstr ""
 
 #: modules/engine/speech.cpp:1735 modules/engine/speech.cpp:1796
-#, fuzzy, c-format
+#, c-format
 msgid "You whisper “%s” to %s."
 msgstr "%2$s에게 “%1$s”라고 속삭입니다."
 

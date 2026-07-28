@@ -2,10 +2,9 @@
 # Extract M_() / MN_() / N_() msgids into tinymux.pot (#1473 / #1419 Phase 2a).
 # T() and S_() are intentionally not keywords — catalogs stay opt-in.
 #
-# Translators: mux_vsnprintf does not support POSIX %N$ positional arguments
-# yet (#1623).  msgfmt -c accepts them; the runtime does not.  Prefer English
-# argument order, or leave reordering fuzzy until support lands.
-# tests/nls/check_nls.py rejects non-fuzzy msgstrs that use %N$.
+# Translators: mux_vsnprintf supports POSIX %N$ positional arguments (#1623).
+# Reorder multi-conversion msgids with %1$s / %2$d as needed; keep the same
+# conversion type at each argument index as the msgid.
 #
 set -euo pipefail
 

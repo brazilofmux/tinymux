@@ -15,17 +15,11 @@
 #     1  ko catalogue present, LANGUAGE=ko   -> Korean prose appears
 #     2  ko catalogue absent,  LANGUAGE=ko   -> English returns (anti-vacuity)
 #     3  source-order Korean for a 2-argument message -> arguments substitute
-#     4  reordered Korean, same message, positional specs -> DOES NOT WORK
+#     4  reordered Korean, same message, positional specs -> substitutes
 #
-#   Case 4 pins a known defect rather than a desired behaviour.  msgfmt -c
-#   accepts %N$ (measured), so a translator gets a clean build and a broken
-#   game; mux_vsnprintf stops at the '$' and echoes the rest of the format
-#   literally (#1429 stop policy, stringutil.cpp).  The 7 reordering entries in
-#   ko.po are therefore marked fuzzy so msgfmt excludes them.
-#
-#   When positional support lands, case 4 FLIPS TO FAILING.  That is intended:
-#   it is the reminder to drop the fuzzy markers in ko.po and re-point this
-#   case at the substituted text.  Do not "fix" it by deleting the case.
+#   Case 4 used to pin the #1623 defect (mux_vsnprintf had no %N$).  Positional
+#   support is in; the seven Korean reorderings are un-fuzzied.  Case 4 now
+#   requires substituted text, not a literal %2$d echo.
 #
 #   Mechanics inherited from run.sh: mux_nls_init() binds the domain against
 #   the relative path "locale", and muxscript chdir()s to its -g directory, so
@@ -220,19 +214,16 @@ else
     report "3  2-arg message, source order" "FAIL" "no substituted Korean line; got: ${line:-<none>}"
 fi
 
-# 4. The same message reordered with positional specs.  msgfmt accepts this
-#    (measured), so nothing upstream of the runtime objects -- and then
-#    mux_vsnprintf cannot parse '$' and echoes the remainder verbatim.
-#
-#    ASSERTS THE BUG.  See the header: when %N$ is supported this must fail.
+# 4. The same message reordered with positional specs (#1623).  Substitution
+#    must place kowidget and the dbref correctly despite Korean SOV order.
 out=$(run_case positional)
 line=$(printf '%s' "$out" | grep -F '만들었습니다' | head -1)
 if printf '%s' "$line" | grep -qF '%2$d'; then
-    report "4  same message, positional (%N\$)" "ok (bug present, as expected)" \
+    report "4  same message, positional (%N\$)" "FAIL" \
+           "literal %2\$d still present — positional support regressed: ${line:-<none>}"
+elif printf '%s' "$line" | grep -q 'kowidget' && printf '%s' "$line" | grep -qE '#[0-9]+'; then
+    report "4  same message, positional (%N\$)" "ok" \
            "$(printf '%s' "$line" | tr -d '\r')"
-elif printf '%s' "$line" | grep -q 'kowidget'; then
-    report "4  same message, positional (%N\$)" "FAIL — positional args now WORK" \
-           "Drop the 7 fuzzy markers in mux/po/ko.po and update this case."
 else
     report "4  same message, positional (%N\$)" "FAIL" "unexpected output: ${line:-<none>}"
 fi
@@ -244,6 +235,5 @@ if [ "$fails" -ne 0 ]; then
     exit 1
 fi
 echo "=== tests/nls (ko): PASSED (4 cases) ==="
-echo "    Korean renders and substitutes; argument reordering does not work and"
-echo "    is pinned by case 4.  See #1419."
+echo "    Korean renders, substitutes, and reorders arguments via %N$ (#1623)."
 exit 0

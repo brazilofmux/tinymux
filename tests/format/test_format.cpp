@@ -360,6 +360,33 @@ static void test_unimplemented_stops(void)
     report("stops", "%d then %a", mux_fmt("%d then %a", 7, 1.5), "7 then %a");
 }
 
+// POSIX %N$ positional conversions (#1623).  gettext catalogues reorder
+// multi-conversion msgids this way; the sequential path cannot.
+//
+static void test_positional(void)
+{
+    // Same argument order as the call site; format reorders them.
+    //
+    report("positional", "%2$s %1$d",
+           mux_fmt("%2$s %1$d", 7, "name"), "name 7");
+    report("positional", "%1$s-%2$d-%3$s",
+           mux_fmt("%1$s-%2$d-%3$s", "a", 2, "b"), "a-2-b");
+    report("positional", "%3$s %2$s %1$d",
+           mux_fmt("%3$s %2$s %1$d", 9, "mid", "end"), "end mid 9");
+
+    // The Korean create message shape from tests/nls/run_ko.sh.
+    //
+    report("positional", "사물 #%2$d(으)로 %1$s을(를) 만들었습니다",
+           mux_fmt("사물 #%2$d(으)로 %1$s을(를) 만들었습니다",
+                   "kowidget", 12),
+           "사물 #12(으)로 kowidget을(를) 만들었습니다");
+
+    // Sequential formats must still work (no $).
+    //
+    report("positional", "seq %s %d",
+           mux_fmt("%s %d", "x", 3), "x 3");
+}
+
 int main(void)
 {
     printf("=== mux_vsnprintf differential tests (vs snprintf) ===\n");
@@ -371,6 +398,7 @@ int main(void)
     test_truncation();
     test_unimplemented();
     test_unimplemented_stops();
+    test_positional();
 
     printf("=== %d passed, %d failed ===\n", g_pass, g_fail);
     return (0 == g_fail) ? 0 : 1;
