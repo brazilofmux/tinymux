@@ -1250,7 +1250,7 @@ static void test_insert_at(void) {
     }
 }
 
-/* ---- co_visual_width ---- */
+/* ---- co_visual_width / co_cluster_width ---- */
 
 static void test_visual_width(void) {
     const char *name = "co_visual_width";
@@ -1267,6 +1267,133 @@ static void test_visual_width(void) {
     const unsigned char mix[] = { 'A', 0xE4, 0xB8, 0x96, 'B' };
     check_size(name, "'A世B'",
         co_visual_width(mix, sizeof(mix)), 4);
+
+    /*
+     * Cluster-as-unit (#1649): ZWJ / skin-tone / flags are one glyph, not
+     * the sum of code-point widths.  Policy: max of component widths, with
+     * RI pairs and U+FE0F emoji presentation forced to 2.
+     */
+    /* 👍 U+1F44D = F0 9F 91 8D (typically width 2). */
+    const unsigned char thumbs[] = { 0xF0, 0x9F, 0x91, 0x8D };
+    check_size(name, "👍 alone",
+        co_visual_width(thumbs, sizeof(thumbs)), 2);
+    check_size(name, "co_cluster_width(👍)",
+        co_cluster_width(thumbs, sizeof(thumbs)), 2);
+
+    /* 👍🏽 = thumbs + skin tone U+1F3FD — one cluster, still width 2 not 4. */
+    const unsigned char thumbs_tone[] = {
+        0xF0, 0x9F, 0x91, 0x8D,  /* 👍 */
+        0xF0, 0x9F, 0x8F, 0xBD   /* U+1F3FD */
+    };
+    check_size(name, "👍🏽 skin-tone cluster",
+        co_visual_width(thumbs_tone, sizeof(thumbs_tone)), 2);
+    check_size(name, "co_cluster_width(👍🏽)",
+        co_cluster_width(thumbs_tone, sizeof(thumbs_tone)), 2);
+
+    /* 🇯🇵 flag: two RI code points, forced width 2. */
+    const unsigned char flag_jp[] = {
+        0xF0, 0x9F, 0x87, 0xAF,  /* 🇯 */
+        0xF0, 0x9F, 0x87, 0xB5   /* 🇵 */
+    };
+    check_size(name, "🇯🇵 flag cluster",
+        co_visual_width(flag_jp, sizeof(flag_jp)), 2);
+
+    /* ❤ + U+FE0F: emoji presentation promotes width 1 → 2. */
+    const unsigned char red_heart[] = {
+        0xE2, 0x9D, 0xA4,  /* ❤ U+2764 */
+        0xEF, 0xB8, 0x8F   /* U+FE0F */
+    };
+    check_size(name, "❤️ with VS16",
+        co_visual_width(red_heart, sizeof(red_heart)), 2);
+}
+
+/* ---- co_copy_field (#1649) ---- */
+
+static void test_copy_field(void) {
+    const char *name = "co_copy_field";
+    unsigned char out[LBUF_SIZE];
+    co_field fld;
+
+    /* ASCII: 3 columns. */
+    fld = co_copy_field(out, sizeof(out),
+                        (const unsigned char *)"abcdef", NULL, 3);
+    check_size(name, "ASCII 3 cols bytes", fld.bytes, 3);
+    check_size(name, "ASCII 3 cols columns", fld.columns, 3);
+    check_buf(name, "ASCII 3 cols content", out, fld.bytes,
+              (const unsigned char *)"abc", 3);
+
+    /* Hard byte limit: only room for 2 letters + NUL. */
+    fld = co_copy_field(out, 3,
+                        (const unsigned char *)"abcdef", NULL, 100);
+    check_size(name, "byte cap 2", fld.bytes, 2);
+    check_size(name, "byte cap columns", fld.columns, 2);
+    check_buf(name, "byte cap content", out, fld.bytes,
+              (const unsigned char *)"ab", 2);
+
+    /* Zero capacity. */
+    fld = co_copy_field(out, 0, (const unsigned char *)"hi", NULL, 2);
+    check_size(name, "nOutMax 0 bytes", fld.bytes, 0);
+    check_size(name, "nOutMax 0 columns", fld.columns, 0);
+
+    /* Cluster safety: skin-tone thumbs does not split (need 8 bytes + color). */
+    const unsigned char thumbs_tone[] = {
+        0xF0, 0x9F, 0x91, 0x8D,
+        0xF0, 0x9F, 0x8F, 0xBD
+    };
+    fld = co_copy_field(out, sizeof(out),
+                        thumbs_tone, thumbs_tone + sizeof(thumbs_tone), 2);
+    check_size(name, "skin-tone full cluster columns", fld.columns, 2);
+    check_size(name, "skin-tone full cluster bytes", fld.bytes, 8);
+
+    /* One column of room is not enough for a width-2 emoji — empty. */
+    fld = co_copy_field(out, sizeof(out),
+                        thumbs_tone, thumbs_tone + sizeof(thumbs_tone), 1);
+    check_size(name, "emoji into 1 col = empty", fld.bytes, 0);
+    check_size(name, "emoji into 1 col columns", fld.columns, 0);
+
+    /*
+     * Color close on truncate: FG + "abcdef", take 3 columns into a buffer
+     * that has room for the letters and a RESET but not more text.
+     * FG is 3 bytes; "abc" is 3; RESET is 3 → need 9 + NUL.
+     */
+    unsigned char colored[64];
+    size_t n = 0;
+    n += (size_t)pua_fg(colored + n, 1);   /* 3 bytes */
+    memcpy(colored + n, "abcdef", 6);
+    n += 6;
+    fld = co_copy_field(out, 3 + 3 + 3 + 1, colored, colored + n, 3);
+    check_size(name, "color truncate columns", fld.columns, 3);
+    /* Must end with RESET (U+F500 = EF 94 80). */
+    if (fld.bytes >= 3
+        && out[fld.bytes - 3] == 0xEF
+        && out[fld.bytes - 2] == 0x94
+        && out[fld.bytes - 1] == 0x80) {
+        test_ok(name, "color truncate ends with RESET");
+    } else {
+        test_fail(name, "color truncate missing RESET (bytes=%zu)", fld.bytes);
+    }
+    /* Visible content after strip is "abc". */
+    unsigned char stripped[64];
+    size_t slen = co_strip_color(stripped, out, fld.bytes);
+    check_buf(name, "color truncate visible", stripped, slen,
+              (const unsigned char *)"abc", 3);
+
+    /*
+     * Reserve-for-close: buffer exactly FG + "ab" with no room for RESET
+     * after a third letter would also need RESET.  Asking for 3 columns
+     * must refuse the third letter so we can still close after "ab".
+     * Capacity: 3 (FG) + 2 ("ab") + 3 (RESET) + 1 (NUL) = 9.
+     */
+    fld = co_copy_field(out, 9, colored, colored + n, 3);
+    check_size(name, "reserve close columns", fld.columns, 2);
+    if (fld.bytes >= 3
+        && out[fld.bytes - 3] == 0xEF
+        && out[fld.bytes - 2] == 0x94
+        && out[fld.bytes - 1] == 0x80) {
+        test_ok(name, "reserve close ends with RESET");
+    } else {
+        test_fail(name, "reserve close missing RESET (bytes=%zu)", fld.bytes);
+    }
 }
 
 /* ---- co_center / co_ljust / co_rjust ---- */
@@ -3855,6 +3982,7 @@ static const test_suite_t suites[] = {
     { "replace_at",       test_replace_at },
     { "insert_at",        test_insert_at },
     { "visual_width",     test_visual_width },
+    { "copy_field",       test_copy_field },
     { "justify",          test_justify },
     { "compress",         test_compress },
     { "transform",        test_transform },

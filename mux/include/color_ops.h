@@ -383,18 +383,63 @@ LIBMUX_API int co_console_width(const unsigned char *pCodePoint);
 /*
  * co_visual_width — Total display column width of a PUA-colored string.
  *
- * Skips color PUA codes, sums co_console_width() for visible chars.
- * Accounts for fullwidth (2 columns) and zero-width (0 columns).
+ * Skips color PUA codes.  Width is measured per grapheme cluster (see
+ * co_cluster_width), not per code point, so ZWJ emoji, skin-tone modifiers
+ * and regional-indicator flags each count as one glyph.
  */
 LIBMUX_API size_t co_visual_width(const unsigned char *p, size_t len);
 
 /*
+ * co_cluster_width — Display column width of the first grapheme cluster
+ * in a PUA-colored string (#1649).
+ *
+ * Segments on the color-stripped text (so color inside a cluster cannot
+ * split it), then measures the cluster as a unit: max of its code-point
+ * widths, with RI pairs forced to 2 and U+FE0F (emoji presentation)
+ * promoting an otherwise single-cell base to 2.
+ *
+ * Returns 0 if data is empty / only color.  There is no universal ground
+ * truth for emoji cell width across MUD clients; this is a policy.
+ */
+LIBMUX_API size_t co_cluster_width(const unsigned char *data, size_t len);
+
+/*
+ * co_field — (bytes written, display columns occupied).  C counterpart of
+ * mux_field for the color_ops column-layout path (#1649).
+ */
+typedef struct co_field {
+    size_t bytes;
+    size_t columns;
+} co_field;
+
+/*
+ * co_copy_field — Copy up to nCols display columns into out, with a hard
+ * byte limit, cluster-safe cuts, and color close on truncate (#1649).
+ *
+ * Satisfies the four constraints that no earlier primitive held together:
+ *   1. buffer bytes  — nOutMax is a hard cap (NUL-terminated; needs >= 1)
+ *   2. display columns — nCols, measured per cluster
+ *   3. PUA color — preserves codes; reserves budget for a RESET so a cut
+ *      mid-run never leaves the client in a colored state
+ *   4. grapheme clusters — never cuts inside one
+ *
+ * out/nOutMax: destination; nOutMax is capacity including the trailing NUL.
+ * p/pe:        source range (PUA-colored UTF-8).  pe may be NULL → p + strlen.
+ * nCols:       max display columns of visible content.
+ *
+ * Returns {bytes written excluding NUL, columns of visible content}.
+ * On empty/invalid input returns {0,0} with out[0] = 0 when nOutMax > 0.
+ */
+LIBMUX_API co_field co_copy_field(unsigned char *out, size_t nOutMax,
+                                  const unsigned char *p,
+                                  const unsigned char *pe,
+                                  size_t nCols);
+
+/*
  * co_copy_columns — Copy up to n display columns, preserving color.
  *
- * Like co_copy_visible but counts display columns instead of code points.
- * A fullwidth character counts as 2 columns.  Stops before emitting a
- * character that would exceed the column limit.
- * Returns bytes written to out.
+ * Convenience wrapper around co_copy_field with nOutMax = LBUF_SIZE.
+ * Returns bytes written to out (excluding NUL).
  */
 LIBMUX_API size_t co_copy_columns(unsigned char *out, const unsigned char *p,
                        const unsigned char *pe, size_t ncols);
