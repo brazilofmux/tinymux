@@ -15,15 +15,6 @@
  Channel cchan created.
  CObj created as object #12
  Channel cchan is now using CObj(#12) as channel object.
-@@ -24,7 +32,7 @@
- -- End of list of Channels --
- -- cchan --
- Name                          Status Player
--Wizard(#1PcW)                 on     yes   
-+Wizard                        on     yes   
- -- cchan --
- Alias           Channel            Status   Title
- c               cchan              on  con  Tester
 @@ -48,19 +56,18 @@
  MAIL: You sent your message to Wizard.
  MAIL: You have a new message from Wizard. Subject: Subject One
