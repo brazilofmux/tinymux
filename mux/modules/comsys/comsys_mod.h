@@ -201,6 +201,18 @@ private:
 
     // MOGRIFY`NOBUFFER (#1572): true when the channel object's hook says this
     // line must not reach the recall buffer.
+    // Evaluate MOGRIFY`<suffix> on the channel object (#1572).  Returns
+    // true when the attribute existed and evaluation produced a result;
+    // `out` holds it.  Mirrors the engine's call_mogrifier.
+    //
+    bool mogrify_eval(struct channel *ch, dbref executor,
+        const UTF8 *suffix, const UTF8 *args[], int nargs,
+        UTF8 *out, size_t outsz);
+
+    // xlate() approximation shared by the boolean hooks.
+    //
+    static bool mogrify_truthy(const UTF8 *result);
+
     bool nobuffer_by_mogrify(dbref executor, struct channel *ch,
         const UTF8 *msg);
     void do_joinchannel(dbref player, struct channel *ch);

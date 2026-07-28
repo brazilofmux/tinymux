@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff
+test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -95,6 +95,17 @@ test-smoke-builtin: test-smoke
 test-comsys-handoff:
 	@echo "==> Running comsys/mail cross-implementation handoff tests"
 	bash tests/comsys_handoff/run.sh
+
+# MOGRIFY hooks and per-player CHATFORMAT, compared across both comsys
+# implementations (#1572).
+#
+# Separate from test-comsys-handoff because delivery cannot be tested by that
+# driver's shape: bConnected is runtime state set when a player joins during
+# that process, so a run inheriting membership delivers to nobody.  Each side
+# joins and speaks within one process here.
+test-comsys-mogrify:
+	@echo "==> Running comsys MOGRIFY/CHATFORMAT comparison"
+	bash tests/comsys_mogrify/run.sh
 
 # Static guard: no smoke case may be incapable of failing (#1434 family).
 #
