@@ -154,13 +154,16 @@ build when it stops being accurate in either direction. Summary:
 | 7 | `@mail/stats` | spool-wide total | per-player breakdown | #1631 |
 | 8 | `@mail/dstats` | spool detail | identical to `/stats` | #1631 |
 | 9 | `@mail/fstats` | old/new/cleared byte totals | identical to `/stats` | #1631 |
-| 10 | `@mail/fstats` byte count | **+1 per message** | correct | #1639 |
-| 11 | `@mail` sender name | empty — routed through `g_pConnMgr` | renders the name | #1637 |
-| 12 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
-| 13 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
-| 14 | shutdown diagnostics | silent | logs module shutdown | — |
+| 10 | `@mail` sender name | empty under muxscript (stub `TrimmedName` leaves buffer empty after #1637 fix) | renders the name | #1637 |
+| 11 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
+| 12 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
+| 13 | shutdown diagnostics | silent | logs module shutdown | — |
 
-Rows 7–9 and 11 are the ones where the **module is the more correct side**,
+Row 10 for the engine `@mail/fstats` phantom `+1` byte (#1639) was removed when
+that bug closed: engine and module now agree on message size; `/fstats` still
+differs from the module in *shape* (row 9 / #1631).
+
+Rows 7–9 and 10 are the ones where the **module is the more correct side**,
 which cuts against #1614's "the module is strictly behind" reading. Worth
 holding onto when the decision is made.
 
