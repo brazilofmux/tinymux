@@ -37,7 +37,7 @@ every one is a place the two implementations can answer differently.
 | `ComList` | `comlist` | conformance |
 | `ComTitle` | `comtitle` | conformance **(diverges)** |
 | `ChanList` | `@clist`, `/full`, `/headers` | conformance **(diverges)** |
-| `ChanWho` | `@cwho` | conformance **(diverges)** |
+| `ChanWho` | `@cwho` | conformance (aligned via UnparseObject, #1650) |
 | `CEmit` | `@cemit`, `/noheader` | conformance, handoff |
 | `CSet` | `@cset` ×11 switches | conformance, handoff, mogrify |
 | `EditChannel` | `@editchannel` ×4 flags | conformance (charge only) |
@@ -145,24 +145,22 @@ build when it stops being accurate in either direction. Summary:
 
 | # | Behaviour | Engine | Module | Issue |
 |---|---|---|---|---|
-| 1 | `@cwho` | `Wizard(#1PcW)` | `Wizard` — no dbref or flags | #1640 item 2 |
-| 2 | `@mail/stats` | spool-wide total | per-player breakdown | #1631 |
-| 3 | `@mail/dstats` | spool detail | identical to `/stats` | #1631 |
-| 4 | `@mail/fstats` | old/new/cleared byte totals | identical to `/stats` | #1631 |
-| 5 | `@mail` sender name | empty under muxscript (stub `TrimmedName`) | renders the name | #1637 |
-| 6 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
-| 7 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
-| 8 | module lifecycle logs | silent | load / shutdown lines | — |
+| 1 | `@mail` sender name | empty under muxscript (stub `TrimmedName`) | renders the name | #1637 |
+| 2 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
+| 3 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
+| 4 | module lifecycle logs | silent | load / shutdown lines | — |
 
 Closed by #1647 (items 1, 3, 4 of #1640, plus padding and speech comtitle):
 `@clist/full`, comtitle on speech/join/leave, `delcom` personal confirmation,
 and `@clist` description padding. Baseline shrank **39 → 29** divergent lines.
 
-Row 1 remains because `unparse_object` / `Examinable()` (incl. `check_zone`)
-is not on a module interface; needs an ABI addition, not a softcode approx.
+`@cwho` (item 2 of #1640) closed by #1650: `UnparseObject` on
+`mux_IObjectInfo` + module Name column. Mail `/stats`/`/dstats`/`/fstats`
+aligned by #1655 / #1657 (including the phantom `+1` size). Baseline is now
+**19** known-divergent lines; #1640 is closed.
 
-Rows 2–4 and 5 are where the **module is the more correct side** for player
-UX (#1631 product decision still open; #1637 empty From is a harness stub).
+Row 1 is where the **module is the more correct side** for player UX
+(#1637 empty From is a harness stub under muxscript).
 
 ## Adding a row
 
