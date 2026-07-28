@@ -116,6 +116,66 @@ probe() {
     fi
 }
 
+# Run a command stream against the good config and echo the output.  Separate
+# from probe(), which asserts on the exit code of a config *file* error; this
+# one is about what an in-game @admin does to a running server.
+live_probe() {
+    ( cd "$WORK" || exit 1
+      printf '%s\n' "$2" > in.txt
+      LD_LIBRARY_PATH="$BIN" $TIMEOUT "$BIN/muxscript" -g . -c good.conf \
+          < in.txt > live.log 2>&1 )
+    grep -aE "^$1" "$WORK/live.log" | tr -d '\r'
+}
+
+# A runtime @admin must reach a module holding its own copy of the value.
+#
+# cf_int only writes mudconf.  Subsystems that snapshot at startup -- the
+# driver basket (#1222), the Lua sandbox limits (#1613) -- then keep the
+# boot-time number while @admin answers "Set." and config() reports the new
+# one.  Silent, and worst during an incident: staff tightens a containment
+# knob, the server agrees, nothing changes until the restart the incident is
+# trying to avoid.
+#
+# lua_instruction_limit is the readable case.  The chunk costs ~400k VM
+# instructions, so it straddles the two limits set below: whether it answers
+# or errors *is* whether the module saw the change.
+#
+check_live_limit() {
+    local out
+    out=$(live_probe LIM '@create p
+&SPIN p=local n=0 for i=1,400000 do n=n+1 end return n
+@admin lua_instruction_limit=100000000
+think LIM_raised=[lua(p/SPIN)]
+@admin lua_instruction_limit=1000
+think LIM_lowered=[lua(p/SPIN)]
+think LIM_read=[config(lua_instruction_limit)]')
+
+    case "$out" in
+        *"LIM_raised=400000"*) : ;;
+        *)  echo "FAIL: raising lua_instruction_limit at runtime had no effect"
+            echo "  the module is still using its boot-time limit (#1613)"
+            printf '%s\n' "$out" | sed 's/^/    /'
+            fails=$((fails + 1)); return ;;
+    esac
+    case "$out" in
+        *"LIM_lowered=#-1 LUA ERROR"*) : ;;
+        *)  echo "FAIL: lowering lua_instruction_limit at runtime had no effect"
+            printf '%s\n' "$out" | sed 's/^/    /'
+            fails=$((fails + 1)); return ;;
+    esac
+    # config() renders by handler identity in cf_display(); a live-push
+    # handler it does not know falls through to "#-1 PERMISSION DENIED" for a
+    # reader who has permission.  tests/config/check_display.py guards the
+    # whole class statically -- this is the one end-to-end confirmation.
+    case "$out" in
+        *"LIM_read=1000"*) : ;;
+        *)  echo "FAIL: config(lua_instruction_limit) does not read back"
+            printf '%s\n' "$out" | sed 's/^/    /'
+            fails=$((fails + 1)); return ;;
+    esac
+    echo "ok: lua limits apply at runtime, both directions, and read back"
+}
+
 setup
 
 # 1. The good config is read AND applied.  mud_name proves it: the default is
@@ -144,6 +204,9 @@ probe "unknown directive stays non-fatal" "stale.conf" "ok"
 # 5. An empty file must NOT be fatal -- the documented way to ask for defaults.
 : > "$WORK/empty.conf"
 probe "empty config stays non-fatal" "empty.conf" "ok"
+
+
+check_live_limit
 
 if [ "$fails" -eq 0 ]; then
     echo "=== config: all cases passed ==="

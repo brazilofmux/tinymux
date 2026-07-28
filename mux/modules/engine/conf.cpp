@@ -657,6 +657,47 @@ static CF_HAND(cf_live_driver_int)
     return 0;
 }
 
+// cf_live_lua_int: Set an integer the Lua module holds a private copy of.
+//
+// Same defect as #1222 was for the driver basket, in a different subsystem:
+// SetLimits is pushed once, during module discovery in engine_com.cpp, and
+// CLuaMod keeps m_nInsnLimit / m_nMemLimit thereafter.  A plain cf_int writes
+// mudconf, config() reads the new value back, @admin answers "Set." -- and
+// InsnCountHook goes on comparing against the boot-time number until a
+// restart.  Nothing warns (#1613).
+//
+// These are the containment knobs for a sandbox softcode can enter, so the
+// realistic moment to change one is during an incident: somebody is hammering
+// lua(), staff tightens the limit, the server says Set., and nothing happens
+// until the restart the incident is trying to avoid.
+//
+// Push both, not just the one that changed: SetLimits takes the pair and
+// mudconf holds the current value of each, so re-sending both is free and
+// cannot leave the module holding a mix of old and new.
+//
+static CF_HAND(cf_live_lua_int)
+{
+    UNUSED_PARAMETER(pExtra);
+    UNUSED_PARAMETER(nExtra);
+    UNUSED_PARAMETER(player);
+    UNUSED_PARAMETER(cmd);
+
+    *vp = mux_atoi64(str);
+
+    // bReadingConfiguration gates the boot-time parse, which runs before
+    // module discovery -- pILuaControl is still null there, and discovery
+    // does the initial push itself.
+    //
+    if (  !mudstate.bReadingConfiguration
+       && nullptr != mudstate.pILuaControl)
+    {
+        mudstate.pILuaControl->SetLimits(
+            mudconf.lua_instruction_limit,
+            mudconf.lua_memory_limit);
+    }
+    return 0;
+}
+
 // ---------------------------------------------------------------------------
 // cf_size: Set a size parameter with optional K/M/G suffix.
 // -1 means unlimited.
@@ -2071,8 +2112,8 @@ static CONFPARM conftable[] =
     {T("logout_cmd_access"),         cf_ntab_access, CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(logout_cmdtable),          access_nametab,     0},
     {T("logout_cmd_alias"),          cf_alias,       CA_GOD,    CA_DISABLED, reinterpret_cast<int *>(&mudstate.logout_cmd_htab),nullptr,            0},
     {T("look_obey_terse"),           cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.terse_look),      nullptr,            0},
-    {T("lua_instruction_limit"),     cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.lua_instruction_limit,  nullptr,            0},
-    {T("lua_memory_limit"),          cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.lua_memory_limit,       nullptr,            0},
+    {T("lua_instruction_limit"),     cf_live_lua_int, CA_GOD,    CA_PUBLIC,   &mudconf.lua_instruction_limit,  nullptr,            0},
+    {T("lua_memory_limit"),          cf_live_lua_int, CA_GOD,    CA_PUBLIC,   &mudconf.lua_memory_limit,       nullptr,            0},
     {T("machine_command_cost"),      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.machinecost,            nullptr,            0},
     {T("mail_database"),             cf_string_dyn,  CA_GOD,    CA_GOD,      reinterpret_cast<int *>(&mudconf.mail_db),         nullptr, SIZEOF_PATHNAME},
     {T("mail_expiration"),           cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.mail_expiration,        nullptr,            0},
@@ -2503,7 +2544,25 @@ void cf_display(dbref player, UTF8 *param_name, UTF8 *buff, UTF8 **bufc)
         {
             if (check_access(player, tp->rperms))
             {
-                if (tp->interpreter == cf_int)
+                // The live-push handlers store a plain int at tp->loc exactly
+                // as cf_int does; they differ only in re-pushing the value to
+                // a subsystem holding its own copy.  They have to be listed
+                // here anyway, because this dispatch is by handler IDENTITY:
+                // an unrecognised interpreter falls all the way through to
+                // safe_noperm below and answers "#-1 PERMISSION DENIED".
+                //
+                // That answer is a lie -- check_access() has already passed
+                // by this point -- and it is silent, so converting a knob to
+                // a live handler makes config() stop reading it with no
+                // build or test complaining.  #1222 did exactly that to all
+                // fourteen cf_live_driver_int knobs (max_players,
+                // idle_timeout, retry_limit, output_limit, nospam_connect,
+                // ...), which have been unreadable since; #1613 was about to
+                // do it to the two Lua limits.
+                //
+                if (  tp->interpreter == cf_int
+                   || tp->interpreter == cf_live_driver_int
+                   || tp->interpreter == cf_live_lua_int)
                 {
                     safe_ltoa(*(tp->loc), buff, bufc);
                     return;
