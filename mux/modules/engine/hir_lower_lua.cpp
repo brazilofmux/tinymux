@@ -234,13 +234,18 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         case OP_LUA_RETURN1:
             break;
 
-        // Table/global access and function calls — handled.
+        // Table/global access and function calls — handled.  TAILCALL is
+        // lowered as CALL-then-RETURN: the frame-reuse the real mechanism
+        // exists for does not apply when the callee runs via an ECALL doing
+        // its own pcall, and the chunk-level pcall takes one result either
+        // way.  A k flag (upvalues to close) declines in the lowering.
         case OP_LUA_GETTABUP:
         case OP_LUA_SETTABUP:
         case OP_LUA_GETUPVAL:
         case OP_LUA_SETUPVAL:
         case OP_LUA_SELF:
         case OP_LUA_CALL:
+        case OP_LUA_TAILCALL:
             break;
 
         // Generic for-loop — handled via ECALL.
@@ -265,9 +270,6 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
 
         case OP_LUA_TBC:
             return LUA_BC_HAS_TBC;
-
-        case OP_LUA_TAILCALL:
-            return LUA_BC_HAS_TAILCALL;
 
         // --- Everything else is unsupported ---
         default:
@@ -529,6 +531,22 @@ static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
         return h.emit(HIR_LUA_FTOA, TY_STRING, rv);
     }
     return rv;
+}
+
+// The return half of a lowered OP_TAILCALL: `return f(...)` is the call the
+// OP_LUA_CALL case just emitted, then this.  One helper because the call
+// body has two successful exits (the direct ECALL path and the general
+// path) and both must finish the same way.
+//
+static int lua_tailcall_ret(hir_program &h, rv_compiler &rc, int v,
+                            int &result_val) {
+    int rv = return_as_string(h, rc, v);
+    if (rv < 0) return -1;
+    h.emit(HIR_RET, TY_VOID, rv);
+    if (result_val < 0) {
+        result_val = rv;
+    }
+    return 0;
 }
 
 // ---------------------------------------------------------------
@@ -2105,7 +2123,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
         case OP_LUA_RETURN: {
             int nret = insn.B() - 1;
-            if (nret < 0) return -1;
+            if (nret < 0) {
+                // B == 0 is "return all values from A up" (in-top).  The
+                // one shape that produces it here is the dead trailing
+                // return Lua appends after OP_TAILCALL, whose lowering
+                // already emitted the real HIR_RET and claimed result_val;
+                // give it RETURN0's shape so the block still terminates.
+                // Any other multret return stays declined.
+                if (0 == pc
+                    || OP_LUA_TAILCALL != proto->code[pc - 1].opcode()) {
+                    return -1;
+                }
+                int dead = h.emit_sconst(rc.pool_str("", 0), "");
+                if (dead < 0) return -1;
+                h.emit(HIR_RET, TY_VOID, dead);
+                if (result_val < 0) {
+                    result_val = dead;
+                }
+                break;
+            }
             int rv;
             if (nret == 0) {
                 rv = h.emit_sconst(rc.pool_str("", 0), "");
@@ -2244,12 +2280,26 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
+        case OP_LUA_TAILCALL:
+            // `return f(...)`: the call below, then the return the helper
+            // emits at each successful exit.  The real tail-call mechanism
+            // reuses the caller's frame; nothing here does -- the callee
+            // runs via an ECALL doing its own pcall -- and the chunk-level
+            // pcall asks for one result either way, so a plain call
+            // observes the same thing.  k set means upvalues to close,
+            // which the CLOSURE reject should make impossible; decline
+            // rather than assume.  C is frame correction for the frame
+            // reuse that is not happening.
+            if (insn.k()) return -1;
+            // fall through
         case OP_LUA_CALL: {
             int func_reg = lua_reg[A];
             if (func_reg < 0) return -1;
 
             int nargs = insn.B() - 1;
-            int nresults = insn.C() - 1;
+            // TAILCALL has no C-encoded result count: it returns what the
+            // callee returns, of which the chunk boundary keeps one.
+            int nresults = (OP_LUA_TAILCALL == op) ? 1 : insn.C() - 1;
             if (nargs < 0) return -1;  // Variable args not supported.
 
             // Check for mux.* bridge call pattern.
@@ -2313,6 +2363,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     h.ecalls++;
                     for (int i = A + 1; i < A + 1 + nargs; i++) {
                         if (lua_reg_in_range(i)) lua_reg[i] = -1;
+                    }
+                    if (OP_LUA_TAILCALL == op
+                        && lua_tailcall_ret(h, rc, lua_reg[A],
+                                            result_val) < 0) {
+                        return -1;
                     }
                     break;
                 }
@@ -2397,6 +2452,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // until pcall is told how many results the caller wants and stops
             // popping them (#1519).
             if (!is_bridge && nresults > 1) return -1;
+            if (OP_LUA_TAILCALL == op
+                && lua_tailcall_ret(h, rc, lua_reg[A], result_val) < 0) {
+                return -1;
+            }
             break;
         }
 
