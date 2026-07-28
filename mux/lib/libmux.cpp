@@ -312,7 +312,29 @@ static void ModuleLoad(Module *pModule)
         return;
     }
 
+#if defined(WINDOWS_DYNALIB)
+    // LoadLibrary() does not treat a relative path as relative to the current
+    // directory: it appends the whole relative path to every entry in the DLL
+    // search order.  The current directory is one of those entries -- until
+    // something calls SetDllDirectory(), which removes it.  muxscript does
+    // exactly that so engine.dll can find libmux.dll, and cf_module hands us
+    // ".\\bin\\<name>.dll", so every module configured under muxscript failed
+    // to load (#1594).  netmux never calls SetDllDirectory(), which is why the
+    // identical config worked there and the divergence went unexplained.
+    //
+    // Resolve against the current directory ourselves.  That is what every
+    // caller already assumes, and it no longer depends on the search order.
+    //
+    UTF16 aFullPath[4096];
+    DWORD nFullPath = GetFullPathNameW(pModule->pFileName,
+        sizeof(aFullPath)/sizeof(aFullPath[0]), aFullPath, nullptr);
+    const UTF16 *pPathName = (  0 < nFullPath
+                             && nFullPath < sizeof(aFullPath)/sizeof(aFullPath[0]))
+                           ? aFullPath : pModule->pFileName;
+    pModule->hInst = MOD_OPEN(pPathName);
+#else
     pModule->hInst = MOD_OPEN(pModule->pFileName);
+#endif
     if (nullptr != pModule->hInst)
     {
         pModule->fpGetClassObject = reinterpret_cast<FPGETCLASSOBJECT *>(MOD_SYM(pModule->hInst, "mux_GetClassObject"));

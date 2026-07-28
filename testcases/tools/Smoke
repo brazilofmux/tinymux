@@ -255,34 +255,16 @@ if [ -n "$WANT_MODULES" ]; then
         sed -n '/^Modules:/,/^$/p' modprobe.log | sed 's/^/  /'
         echo
 
-        # Fatal where the check is achievable; advisory where it is not yet.
+        # Unconditional again as of #1594.  It was briefly advisory on Windows,
+        # where no module could load under muxscript at all: comsys/mail built
+        # as comsys.dll/mail.dll instead of the *_mod names smoke.conf needs,
+        # and muxscript's SetDllDirectory() call removed the current directory
+        # from the DLL search order, so cf_module's relative ".\bin\<name>.dll"
+        # resolved nowhere.  Both are fixed; every platform can comply, so a
+        # module that does not load is a failure everywhere.
         #
-        # On Windows none of the three modules can load today, for two causes
-        # tracked in #1594: comsys/mail build as comsys.dll/mail.dll rather
-        # than the *_mod names smoke.conf must use for Unix, and exp3 -- whose
-        # name matches on both platforms -- still does not load under
-        # muxscript specifically, with no diagnostic.  Neither is fixable from
-        # the harness, and a platform that cannot comply should not have a red
-        # build held over it: red master blocks everyone (#1564).
-        #
-        # This is temporary and should be deleted, not kept.  When #1594
-        # closes, drop the branch so the check is unconditional again --
-        # or set SMOKE_REQUIRE_MODULES=1 to get that behaviour now.
-        #
-        case "${SMOKE_REQUIRE_MODULES:-}${MODCHECK_PLATFORM:-$(uname -s 2>/dev/null)}" in
-            1*|Linux*|Darwin*|*BSD*|SunOS*)
-                echo "=== Smoke: FAILED (module preflight) ==="
-                exit 1
-                ;;
-            *)
-                echo "WARNING: continuing anyway -- this platform cannot load"
-                echo "         modules under muxscript at all yet (#1594)."
-                echo "         The results below may exercise the engine's"
-                echo "         built-in comsys/mail rather than the modules."
-                echo "         Set SMOKE_REQUIRE_MODULES=1 to make this fatal."
-                echo
-                ;;
-        esac
+        echo "=== Smoke: FAILED (module preflight) ==="
+        exit 1
     fi
     rm -rf modprobe.in modprobe.log modprobe.conf modprobe.d
 fi
@@ -423,30 +405,16 @@ esac
 
 if [ -n "$IMPL_BAD" ]; then
     echo ""
-    # Same platform gate as the load preflight (#1599 / #1594): fatal where
-    # modules can load; advisory on Windows until that is fixed.  Otherwise
-    # this check undoes the soft preflight -- modules fail to load, the
-    # built-in answers, and we exit 1 after a long green-looking suite.
+    # Unconditional, like the load preflight above (#1599 / #1594).
     #
-    case "${SMOKE_REQUIRE_MODULES:-}${MODCHECK_PLATFORM:-$(uname -s 2>/dev/null)}" in
-        1*|Linux*|Darwin*|*BSD*|SunOS*)
-            echo "=== Smoke: FAILED (implementation fallback) ==="
-            echo "smoke.conf asks for the module, but the built-in engine answered"
-            echo "for:$IMPL_BAD"
-            echo ""
-            echo "Either the module never loaded (preflight may have been advisory)"
-            echo "or discover_comsys_mail_modules() fell back after load.  The"
-            echo "results describe the built-in, not the module under test."
-            exit 1
-            ;;
-        *)
-            echo "WARNING: smoke.conf asks for the module, but the built-in"
-            echo "         answered for:$IMPL_BAD (#1594 / #1581)."
-            echo "         Continuing on this platform; set"
-            echo "         SMOKE_REQUIRE_MODULES=1 to make this fatal."
-            echo
-            ;;
-    esac
+    echo "=== Smoke: FAILED (implementation fallback) ==="
+    echo "smoke.conf asks for the module, but the built-in engine answered"
+    echo "for:$IMPL_BAD"
+    echo ""
+    echo "Either the module never loaded (the preflight should have caught"
+    echo "that) or discover_comsys_mail_modules() fell back after load.  The"
+    echo "results describe the built-in, not the module under test."
+    exit 1
 fi
 
 echo ""
