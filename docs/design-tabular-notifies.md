@@ -34,16 +34,12 @@ A translator cannot fix this from their side:
 2. CJK labels are double-width; character count ≠ display columns.
 3. Changing a stop silently desynchronises every `.po`; `check_nls.py` only checks `%` conversions, and these msgids have none.
 
-Known pot entries of this shape (inventory starter, not complete):
+**Phase 1 inventory (complete listing, pot blobs, dual map, conversion order):**
+[`inventory-tabular-notifies.md`](inventory-tabular-notifies.md).
 
-| msgid (abbrev.) | Source (engine) |
-|-----------------|-----------------|
-| `*** Channel … Header … Owner … Access … Users Msgs` | `comsys.cpp` `@clist/full` |
-| `*** Channel … Owner … Header` | `comsys.cpp` `@clist` headers |
-| `*** Channel … Owner … Description` | `comsys.cpp` `@clist` default |
-| `Alias … Channel … Status … Title` | `comsys.cpp` comlist-style |
-
-Leave these **untranslated** (`msgstr ""`) until converted. Filling them in is how a catalogue looks “broken” when the architecture is.
+Leave pre-spaced multi-column header msgids **untranslated** (`msgstr ""`) until
+Phase 4 converts that family. Filling them in is how a catalogue looks
+“broken” when the architecture is.
 
 ---
 
@@ -104,7 +100,7 @@ Slow by design. Each phase is a separate decision to start.
 | Phase | Deliverable | Exit criteria |
 |-------|-------------|----------------|
 | **0 — Policy (this doc)** | Binary rule written; pot entries known as non-translatable | Maintainers agree leave-alone until right |
-| **1 — Inventory** | Full list of multi-column player tables (comsys, mail, others): header msgid, row stops, engine vs module | No silent tables left out of the epic |
+| **1 — Inventory** | Full list of multi-column player tables (comsys, mail, others): header msgid, row stops, engine vs module | Done — [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md) |
 | **2 — Ownership** | #1614 decision **or** explicit “layout in libmux” ADR | One path to implement against |
 | **3 — Layout API** | Column descriptor + emit-header / emit-cell on `co_copy_field`; single definition of helpers (no third copy-paste of `append_ljust_field`) | Unit tests on width/color/CJK fixtures |
 | **4 — Convert by family** | One table family per change (e.g. `@clist*`, then mail list, …); delete blob msgids from pot; re-bless conformance if needed | Header and rows share descriptors; English output acceptable parity |
@@ -142,3 +138,4 @@ Slow by design. Each phase is a separate decision to start.
 | Date | Decision |
 |------|----------|
 | 2026-07-28 | Adopt leave-alone vs do-right binary. No partial header migrations. Design captured here; implementation waits on inventory + ownership. |
+| 2026-07-28 | Phase 1 inventory written (`inventory-tabular-notifies.md`). Next gate: Phase 2 ownership (#1614 / libmux layout). |

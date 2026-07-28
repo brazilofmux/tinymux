@@ -284,7 +284,8 @@ under CJK or after a stop change — see #1648.
    same cell primitive for header and rows (`co_copy_field`), and a single
    ownership path for dual comsys/mail (#1614) or shared layout in libmux.
 
-Full design, phases, and inventory starter: [`design-tabular-notifies.md`](design-tabular-notifies.md).
+Full design and phases: [`design-tabular-notifies.md`](design-tabular-notifies.md).  
+Phase 1 inventory: [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md).
 
 ---
 
