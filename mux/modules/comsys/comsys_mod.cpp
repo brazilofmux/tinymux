@@ -617,7 +617,7 @@ void CComsysMod::do_comconnectraw_notify(dbref player, const UTF8 *chan)
         }
 
         mux_sprintf(msg, sizeof(msg),
-                 "%s %s has connected.",
+                 T("%s %s has connected."),
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pName));
 
@@ -663,7 +663,7 @@ void CComsysMod::do_comdisconnectraw_notify(dbref player, const UTF8 *chan)
         }
 
         mux_sprintf(msg, sizeof(msg),
-                 "%s %s has disconnected.",
+                 T("%s %s has disconnected."),
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pName));
 
@@ -696,7 +696,7 @@ void CComsysMod::do_comconnectchannel(dbref player, const UTF8 *channel,
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "Bad Comsys Alias: %s for Channel: %s",
+                     T("Bad Comsys Alias: %s for Channel: %s"),
                      alias.c_str(),
                      reinterpret_cast<const char *>(channel));
             m_pINotify->RawNotify(player, msg);
@@ -706,7 +706,7 @@ void CComsysMod::do_comconnectchannel(dbref player, const UTF8 *channel,
     {
         UTF8 msg[256];
         mux_sprintf(msg, sizeof(msg),
-                 "Bad Comsys Alias: %s for Channel: %s",
+                 T("Bad Comsys Alias: %s for Channel: %s"),
                  alias.c_str(),
                  reinterpret_cast<const char *>(channel));
         m_pINotify->RawNotify(player, msg);
@@ -770,7 +770,7 @@ void CComsysMod::log_storage_failure(MUX_RESULT mr, const char *fmt, ...)
     {
         UTF8 buf[256];
         mux_sprintf(buf, sizeof(buf),
-            "Comsys module: storage write refused: %s; result %d.",
+            T("Comsys module: storage write refused: %s; result %d."),
             detail, mr);
         m_pILog->log_text(buf);
         m_pILog->end_log();
@@ -1091,7 +1091,7 @@ bool CComsysMod::blocked_by_mogrify(dbref player, struct channel *ch,
     chattype[1] = '\0';
 
     UTF8 sdrBuf[32];
-    mux_sprintf(sdrBuf, sizeof(sdrBuf), "#%d", player);
+    mux_sprintf(sdrBuf, sizeof(sdrBuf), T("#%d"), player);
 
     const UTF8 *pName = nullptr;
     if (nullptr != m_pIObjectInfo)
@@ -1163,9 +1163,9 @@ void CComsysMod::do_delcomchannel(dbref player, const UTF8 *channel,
             UTF8 msg[MOD_LBUF_SIZE];
             UTF8 msgNoComtitle[MOD_LBUF_SIZE];
             mux_sprintf(msg, sizeof(msg),
-                     "%s has left this channel.",
+                     T("%s has left this channel."),
                      reinterpret_cast<const char *>(pfxNormal));
-            mux_sprintf(msgNoComtitle, sizeof(msgNoComtitle), "%s has left this channel.",
+            mux_sprintf(msgNoComtitle, sizeof(msgNoComtitle), T("%s has left this channel."),
                      reinterpret_cast<const char *>(pfxNoComtitle));
             SendChannelMessage(player, ch, msg,
                 ('\0' != pfxNoComtitle[0]) ? msgNoComtitle : nullptr, true);
@@ -1181,7 +1181,7 @@ void CComsysMod::do_delcomchannel(dbref player, const UTF8 *channel,
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "You have left channel %s.",
+                     T("You have left channel %s."),
                      reinterpret_cast<const char *>(channel));
             m_pINotify->RawNotify(player, msg);
         }
@@ -1254,12 +1254,12 @@ void CComsysMod::BuildSpeakerPrefix(struct channel *ch,
     if (  !bHasComTitle
        || (!user->ComTitleStatus && !bSpoof))
     {
-        mux_sprintf(pNormal, nNormal, "%s %s",
+        mux_sprintf(pNormal, nNormal, T("%s %s"),
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pMoniker));
         if (!bSpoof)
         {
-            mux_sprintf(pNoComtitle, nNoComtitle, "%s",
+            mux_sprintf(pNoComtitle, nNoComtitle, T("%s"),
                      reinterpret_cast<const char *>(pNormal));
         }
         return;
@@ -1272,7 +1272,7 @@ void CComsysMod::BuildSpeakerPrefix(struct channel *ch,
     // papered over.
     //
     UTF8 title[MOD_LBUF_SIZE];
-    mux_sprintf(title, sizeof(title), "%s",
+    mux_sprintf(title, sizeof(title), T("%s"),
              user->title.c_str());
     if (nullptr != m_pIEvaluator)
     {
@@ -1283,7 +1283,7 @@ void CComsysMod::BuildSpeakerPrefix(struct channel *ch,
                 &nOut)))
         {
             evaled[nOut] = '\0';
-            mux_sprintf(title, sizeof(title), "%s",
+            mux_sprintf(title, sizeof(title), T("%s"),
                      reinterpret_cast<const char *>(evaled));
         }
     }
@@ -1292,17 +1292,17 @@ void CComsysMod::BuildSpeakerPrefix(struct channel *ch,
     {
         // The comtitle stands in for the speaker.
         //
-        mux_sprintf(pNormal, nNormal, "%s %s",
+        mux_sprintf(pNormal, nNormal, T("%s %s"),
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(title));
         return;
     }
 
-    mux_sprintf(pNormal, nNormal, "%s %s %s",
+    mux_sprintf(pNormal, nNormal, T("%s %s %s"),
              reinterpret_cast<const char *>(ch->header),
              reinterpret_cast<const char *>(title),
              reinterpret_cast<const char *>(pMoniker));
-    mux_sprintf(pNoComtitle, nNoComtitle, "%s %s",
+    mux_sprintf(pNoComtitle, nNoComtitle, T("%s %s"),
              reinterpret_cast<const char *>(ch->header),
              reinterpret_cast<const char *>(pMoniker));
 }
@@ -1329,7 +1329,7 @@ void CComsysMod::SendChannelMessage(dbref executor, struct channel *ch,
     // place.
     //
     UTF8 sdrBuf[32];
-    mux_sprintf(sdrBuf, sizeof(sdrBuf), "#%d",
+    mux_sprintf(sdrBuf, sizeof(sdrBuf), T("#%d"),
              static_cast<int>(executor));
 
     UTF8 mogMsg[MOD_LBUF_SIZE];
@@ -1526,7 +1526,7 @@ bool CComsysMod::mogrify_eval(struct channel *ch, dbref executor,
     }
 
     UTF8 aname[64];
-    mux_sprintf(aname, sizeof(aname), "MOGRIFY`%s",
+    mux_sprintf(aname, sizeof(aname), T("MOGRIFY`%s"),
              reinterpret_cast<const char *>(suffix));
 
     UTF8 expr[MOD_LBUF_SIZE];
@@ -1601,7 +1601,7 @@ bool CComsysMod::nobuffer_by_mogrify(dbref executor, struct channel *ch,
     expr[nExpr] = '\0';
 
     UTF8 sdrBuf[32];
-    mux_sprintf(sdrBuf, sizeof(sdrBuf), "#%d",
+    mux_sprintf(sdrBuf, sizeof(sdrBuf), T("#%d"),
              static_cast<int>(executor));
     const UTF8 *args[3] = { ch->name, msg, sdrBuf };
 
@@ -1679,7 +1679,7 @@ void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
 
     UTF8 histattr[64];
     mux_sprintf(histattr, sizeof(histattr),
-             "HISTORY_%d", ((ch->num_messages % logmax) + logmax) % logmax);
+             T("HISTORY_%d"), ((ch->num_messages % logmax) + logmax) % logmax);
 
     const UTF8 *payload = msg;
     UTF8 stamped[MOD_LBUF_SIZE];
@@ -1697,7 +1697,7 @@ void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
         // Same shape as comsys.cpp:1857-1865.
         //
         mux_sprintf(stamped, sizeof(stamped),
-                 "[%s] %s",
+                 T("[%s] %s"),
                  reinterpret_cast<const char *>(ltaNow.ReturnDateString(0)),
                  reinterpret_cast<const char *>(msg));
         payload = stamped;
@@ -1732,8 +1732,7 @@ void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
         {
             UTF8 logbuf[256];
             mux_sprintf(logbuf, sizeof(logbuf),
-                "Comsys module: channel history write refused (%s on #%d, "
-                "result %d); message not recorded.",
+                T("Comsys module: channel history write refused (%s on #%d, result %d); message not recorded."),
                 reinterpret_cast<const char *>(histattr),
                 static_cast<int>(ch->chan_obj), mrHist);
             m_pILog->log_text(logbuf);
@@ -1760,7 +1759,7 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
             {
                 UTF8 msg[256];
                 mux_sprintf(msg, sizeof(msg),
-                         "Too many people on channel %s already.",
+                         T("Too many people on channel %s already."),
                          reinterpret_cast<const char *>(ch->name));
                 m_pINotify->RawNotify(player, msg);
             }
@@ -1792,7 +1791,7 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "You are already on channel %s.",
+                     T("You are already on channel %s."),
                      reinterpret_cast<const char *>(ch->name));
             m_pINotify->RawNotify(player, msg);
         }
@@ -1814,10 +1813,10 @@ void CComsysMod::do_joinchannel(dbref player, struct channel *ch)
     UTF8 msg[MOD_LBUF_SIZE];
     UTF8 msgNoComtitle[MOD_LBUF_SIZE];
     mux_sprintf(msg, sizeof(msg),
-             "%s has joined this channel.",
+             T("%s has joined this channel."),
              reinterpret_cast<const char *>(pfxNormal));
     mux_sprintf(msgNoComtitle, sizeof(msgNoComtitle),
-             "%s has joined this channel.",
+             T("%s has joined this channel."),
              reinterpret_cast<const char *>(pfxNoComtitle));
     SendChannelMessage(player, ch, msg,
         ('\0' != pfxNoComtitle[0]) ? msgNoComtitle : nullptr, true);
@@ -1835,7 +1834,7 @@ void CComsysMod::do_leavechannel(dbref player, struct channel *ch)
     {
         UTF8 msg[256];
         mux_sprintf(msg, sizeof(msg),
-                 "You have left channel %s.",
+                 T("You have left channel %s."),
                  reinterpret_cast<const char *>(ch->name));
         m_pINotify->RawNotify(player, msg);
     }
@@ -1854,9 +1853,9 @@ void CComsysMod::do_leavechannel(dbref player, struct channel *ch)
             UTF8 msg[MOD_LBUF_SIZE];
             UTF8 msgNoComtitle[MOD_LBUF_SIZE];
             mux_sprintf(msg, sizeof(msg),
-                     "%s has left this channel.",
+                     T("%s has left this channel."),
                      reinterpret_cast<const char *>(pfxNormal));
-            mux_sprintf(msgNoComtitle, sizeof(msgNoComtitle), "%s has left this channel.",
+            mux_sprintf(msgNoComtitle, sizeof(msgNoComtitle), T("%s has left this channel."),
                      reinterpret_cast<const char *>(pfxNoComtitle));
             SendChannelMessage(player, ch, msg,
                 ('\0' != pfxNoComtitle[0]) ? msgNoComtitle : nullptr, true);
@@ -1954,7 +1953,7 @@ void CComsysMod::do_comwho(dbref player, struct channel *ch)
 
     UTF8 msg[256];
     mux_sprintf(msg, sizeof(msg),
-             "-- %s --", reinterpret_cast<const char *>(ch->name));
+             T("-- %s --"), reinterpret_cast<const char *>(ch->name));
     m_pINotify->RawNotify(player, msg);
 }
 
@@ -2017,7 +2016,7 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
 
     UTF8 msg[MOD_LBUF_SIZE];
     mux_sprintf(msg, sizeof(msg),
-             "%s -- Begin Comsys Recall --",
+             T("%s -- Begin Comsys Recall --"),
              reinterpret_cast<const char *>(ch->header));
     m_pINotify->RawNotify(player, msg);
 
@@ -2026,7 +2025,7 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
         histnum++;
         UTF8 attrname[64];
         mux_sprintf(attrname, sizeof(attrname),
-                 "HISTORY_%d", ((histnum % logmax) + logmax) % logmax);
+                 T("HISTORY_%d"), ((histnum % logmax) + logmax) % logmax);
 
         UTF8 message[MOD_LBUF_SIZE];
         size_t msgLen = 0;
@@ -2040,7 +2039,7 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
     }
 
     mux_sprintf(msg, sizeof(msg),
-             "%s -- End Comsys Recall --",
+             T("%s -- End Comsys Recall --"),
              reinterpret_cast<const char *>(ch->header));
     m_pINotify->RawNotify(player, msg);
 }
@@ -2074,7 +2073,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "Unknown channel %s.",
+                     T("Unknown channel %s."),
                      reinterpret_cast<const char *>(arg1));
             m_pINotify->RawNotify(player, msg);
         }
@@ -2112,7 +2111,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "You must be on %s to do that.",
+                     T("You must be on %s to do that."),
                      reinterpret_cast<const char *>(arg1));
             m_pINotify->RawNotify(player, msg);
         }
@@ -2201,7 +2200,7 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
     // One format string per shape, applied to both prefixes, so the two
     // variants cannot drift apart the way the engine's and the module's did.
     //
-    const char *pFmt;
+    const UTF8 *pFmt;
     if (':' == pPose[0])
     {
         // Pose: "<prefix> <action>", with the leading space already supplied
@@ -2211,11 +2210,11 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         if (' ' == *pPose)
         {
             pPose++;
-            pFmt = "%s%s";
+            pFmt = T("%s%s");
         }
         else
         {
-            pFmt = "%s %s";
+            pFmt = T("%s %s");
         }
     }
     else if (';' == pPose[0])
@@ -2223,13 +2222,13 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
         // Semipose: "<prefix><text>"
         //
         pPose++;
-        pFmt = "%s%s";
+        pFmt = T("%s%s");
     }
     else
     {
         // Say: "<prefix> says, “<text>”"
         //
-        pFmt = "%s says, “%s”";
+        pFmt = T("%s says, “%s”");
     }
 
     mux_sprintf(msg, sizeof(msg), pFmt,
@@ -2620,7 +2619,7 @@ MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "Bad Comsys Alias: %s for Channel: %s",
+                     T("Bad Comsys Alias: %s for Channel: %s"),
                      ca.alias.c_str(),
                      ca.channel.c_str());
             m_pINotify->RawNotify(executor, msg);
@@ -2684,13 +2683,13 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
             user->ComTitleStatus = false;
             sqlite_wt_channel_user(ch->name, *user);
             mux_sprintf(msg, sizeof(msg),
-                     "Comtitles are now off for channel %s",
+                     T("Comtitles are now off for channel %s"),
                      reinterpret_cast<const char *>(ch->name));
         }
         else
         {
             mux_sprintf(msg, sizeof(msg),
-                     "You can not turn off comtitles on that channel.");
+                     T("You can not turn off comtitles on that channel."));
         }
         break;
 
@@ -2698,7 +2697,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
         user->ComTitleStatus = true;
         sqlite_wt_channel_user(ch->name, *user);
         mux_sprintf(msg, sizeof(msg),
-                 "Comtitles are now on for channel %s",
+                 T("Comtitles are now on for channel %s"),
                  reinterpret_cast<const char *>(ch->name));
         break;
 
@@ -2706,7 +2705,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
         user->bGagJoinLeave = true;
         sqlite_wt_channel_user(ch->name, *user);
         mux_sprintf(msg, sizeof(msg),
-                 "Join/leave messages are now gagged for channel %s",
+                 T("Join/leave messages are now gagged for channel %s"),
                  reinterpret_cast<const char *>(ch->name));
         break;
 
@@ -2714,7 +2713,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
         user->bGagJoinLeave = false;
         sqlite_wt_channel_user(ch->name, *user);
         mux_sprintf(msg, sizeof(msg),
-                 "Join/leave messages are now ungagged for channel %s",
+                 T("Join/leave messages are now ungagged for channel %s"),
                  reinterpret_cast<const char *>(ch->name));
         break;
 
@@ -2732,7 +2731,7 @@ MUX_RESULT CComsysMod::ComTitle(dbref executor, const UTF8 *pAlias,
         }
         sqlite_wt_channel_user(ch->name, *user);
         mux_sprintf(msg, sizeof(msg),
-                 "Title set to ‘%s’ on channel %s.",
+                 T("Title set to ‘%s’ on channel %s."),
                  user->title.c_str(),
                  reinterpret_cast<const char *>(ch->name));
         break;
@@ -3023,7 +3022,7 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
     {
         UTF8 msg[256];
         mux_sprintf(msg, sizeof(msg),
-                 "Unknown channel %s.",
+                 T("Unknown channel %s."),
                  reinterpret_cast<const char *>(chanName));
         m_pINotify->RawNotify(executor, msg);
         return MUX_E_NOTFOUND;
@@ -3048,7 +3047,7 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
 
     UTF8 msg[256];
     mux_sprintf(msg, sizeof(msg),
-             "-- %s --", reinterpret_cast<const char *>(ch->name));
+             T("-- %s --"), reinterpret_cast<const char *>(ch->name));
     m_pINotify->RawNotify(executor, msg);
 
     {
@@ -3102,7 +3101,7 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
                 m_pIObjectInfo->GetName(user.who, &pName);
             }
             mux_sprintf(unparsed, sizeof(unparsed),
-                     "%s", reinterpret_cast<const char *>(
+                     T("%s"), reinterpret_cast<const char *>(
                          (nullptr != pName) ? pName : T("???")));
         }
 
@@ -3129,7 +3128,7 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
     }
 
     mux_sprintf(msg, sizeof(msg),
-             "-- %s --", reinterpret_cast<const char *>(ch->name));
+             T("-- %s --"), reinterpret_cast<const char *>(ch->name));
     m_pINotify->RawNotify(executor, msg);
     return MUX_S_OK;
 }
@@ -3153,7 +3152,7 @@ MUX_RESULT CComsysMod::CEmit(dbref executor, const UTF8 *pChannel,
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "Channel %s does not exist.",
+                     T("Channel %s does not exist."),
                      reinterpret_cast<const char *>(pChannel));
             m_pINotify->RawNotify(executor, msg);
         }
@@ -3190,7 +3189,7 @@ MUX_RESULT CComsysMod::CEmit(dbref executor, const UTF8 *pChannel,
     else
     {
         mux_sprintf(msg, sizeof(msg),
-                 "%s %s",
+                 T("%s %s"),
                  reinterpret_cast<const char *>(ch->header),
                  reinterpret_cast<const char *>(pText));
     }
@@ -3217,7 +3216,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
     {
         UTF8 msg[MOD_LBUF_SIZE];
         mux_sprintf(msg, sizeof(msg),
-                 "@cset: Channel %s does not exist.",
+                 T("@cset: Channel %s does not exist."),
                  reinterpret_cast<const char *>(pChannel));
         m_pINotify->Notify(executor, msg);
         return MUX_S_OK;
@@ -3244,7 +3243,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
     case CSET_PUBLIC:
         ch->type |= CHANNEL_PUBLIC;
         mux_sprintf(msgbuf, sizeof(msgbuf),
-                 "@cset: Channel %s placed on the public listings.",
+                 T("@cset: Channel %s placed on the public listings."),
                  reinterpret_cast<const char *>(pChannel));
         msg = msgbuf;
         break;
@@ -3252,7 +3251,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
     case CSET_PRIVATE:
         ch->type &= ~CHANNEL_PUBLIC;
         mux_sprintf(msgbuf, sizeof(msgbuf),
-                 "@cset: Channel %s taken off the public listings.",
+                 T("@cset: Channel %s taken off the public listings."),
                  reinterpret_cast<const char *>(pChannel));
         msg = msgbuf;
         break;
@@ -3260,7 +3259,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
     case CSET_LOUD:
         ch->type |= CHANNEL_LOUD;
         mux_sprintf(msgbuf, sizeof(msgbuf),
-                 "@cset: Channel %s now sends connect/disconnect msgs.",
+                 T("@cset: Channel %s now sends connect/disconnect msgs."),
                  reinterpret_cast<const char *>(pChannel));
         msg = msgbuf;
         break;
@@ -3268,7 +3267,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
     case CSET_QUIET:
         ch->type &= ~CHANNEL_LOUD;
         mux_sprintf(msgbuf, sizeof(msgbuf),
-                 "@cset: Channel %s connect/disconnect msgs muted.",
+                 T("@cset: Channel %s connect/disconnect msgs muted."),
                  reinterpret_cast<const char *>(pChannel));
         msg = msgbuf;
         break;
@@ -3276,7 +3275,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
     case CSET_SPOOF:
         ch->type |= CHANNEL_SPOOF;
         mux_sprintf(msgbuf, sizeof(msgbuf),
-                 "@cset: Channel %s set spoofable.",
+                 T("@cset: Channel %s set spoofable."),
                  reinterpret_cast<const char *>(pChannel));
         msg = msgbuf;
         break;
@@ -3284,7 +3283,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
     case CSET_NOSPOOF:
         ch->type &= ~CHANNEL_SPOOF;
         mux_sprintf(msgbuf, sizeof(msgbuf),
-                 "@cset: Channel %s set unspoofable.",
+                 T("@cset: Channel %s set unspoofable."),
                  reinterpret_cast<const char *>(pChannel));
         msg = msgbuf;
         break;
@@ -3305,7 +3304,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             {
                 ch->chan_obj = NOTHING;
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "Channel %s is now disassociated from any channel object.",
+                         T("Channel %s is now disassociated from any channel object."),
                          reinterpret_cast<const char *>(ch->name));
             }
             else if (bValid)
@@ -3314,7 +3313,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 const UTF8 *pName = nullptr;
                 m_pIObjectInfo->GetName(thing, &pName);
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "Channel %s is now using %s(#%d) as channel object.",
+                         T("Channel %s is now using %s(#%d) as channel object."),
                          reinterpret_cast<const char *>(ch->name),
                          pName ? reinterpret_cast<const char *>(pName) : "???",
                          thing);
@@ -3322,7 +3321,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             else
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "%d is not a valid channel object.", thing);
+                         T("%d is not a valid channel object."), thing);
             }
             msg = msgbuf;
         }
@@ -3336,7 +3335,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 // COLOR_INTENSE = \xEF\x94\x81, COLOR_RESET = \xEF\x94\x80
                 //
                 mux_sprintf(ch->header, sizeof(ch->header),
-                         "\xEF\x94\x81[%s]\xEF\x94\x80",
+                         T("\xEF\x94\x81[%s]\xEF\x94\x80"),
                          reinterpret_cast<const char *>(ch->name));
             }
             else
@@ -3415,7 +3414,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 for (int count = 0; count <= oldnum; count++)
                 {
                     UTF8 histattr[64];
-                    mux_sprintf(histattr, sizeof(histattr), "HISTORY_%d", count);
+                    mux_sprintf(histattr, sizeof(histattr), T("HISTORY_%d"), count);
                     if (nullptr == m_pIStorage
                         || MUX_FAILED(m_pIStorage->SetChannelAttr(ch->name,
                                histattr, T(""))))
@@ -3435,27 +3434,25 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             //
             UTF8 vbuf[32];
             mux_sprintf(vbuf, sizeof(vbuf),
-                     "%d", value);
+                     T("%d"), value);
             if (nullptr == m_pIStorage
                 || MUX_FAILED(m_pIStorage->SetChannelAttr(ch->name,
                        T("MAX_LOG"), vbuf)))
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "@cset: Failed.  Could not set the maximum for %s "
-                         "(the attribute is not writable here).",
+                         T("@cset: Failed.  Could not set the maximum for %s (the attribute is not writable here)."),
                          reinterpret_cast<const char *>(pChannel));
             }
             else if (bStale)
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "@cset: Channel %s maximum history set, but older "
-                         "entries could not be cleared.",
+                         T("@cset: Channel %s maximum history set, but older entries could not be cleared."),
                          reinterpret_cast<const char *>(pChannel));
             }
             else
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "@cset: Channel %s maximum history set.",
+                         T("@cset: Channel %s maximum history set."),
                          reinterpret_cast<const char *>(pChannel));
             }
             msg = msgbuf;
@@ -3484,7 +3481,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             if (!bObjValid)
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "@cset: Failed.  Is logging enabled for %s?",
+                         T("@cset: Failed.  Is logging enabled for %s?"),
                          reinterpret_cast<const char *>(pChannel));
                 msg = msgbuf;
                 break;
@@ -3500,7 +3497,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             if (MUX_FAILED(mr2) || 0 == nLogLen)
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "@cset: Failed.  Is logging enabled for %s?",
+                         T("@cset: Failed.  Is logging enabled for %s?"),
                          reinterpret_cast<const char *>(pChannel));
                 msg = msgbuf;
                 break;
@@ -3520,14 +3517,13 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             if (MUX_FAILED(mrTs))
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "@cset: Failed.  Timestamp logging for %s could not "
-                         "be changed (the attribute is not writable here).",
+                         T("@cset: Failed.  Timestamp logging for %s could not be changed (the attribute is not writable here)."),
                          reinterpret_cast<const char *>(pChannel));
             }
             else
             {
                 mux_sprintf(msgbuf, sizeof(msgbuf),
-                         "@cset: Channel %s timestamp logging set.",
+                         T("@cset: Channel %s timestamp logging set."),
                          reinterpret_cast<const char *>(pChannel));
             }
             msg = msgbuf;
@@ -3551,7 +3547,7 @@ MUX_RESULT CComsysMod::EditChannel(dbref executor, const UTF8 *pChannel,
     {
         UTF8 msg[MOD_LBUF_SIZE];
         mux_sprintf(msg, sizeof(msg),
-                 "Unknown channel %s.",
+                 T("Unknown channel %s."),
                  reinterpret_cast<const char *>(pChannel));
         m_pINotify->Notify(executor, msg);
         return MUX_S_OK;
@@ -3779,7 +3775,7 @@ MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
         m_pIObjectInfo->GetMoniker(thing, &pMoniker);
         UTF8 msg[MOD_LBUF_SIZE];
         mux_sprintf(msg, sizeof(msg),
-                 "@cboot: %s is not on the channel.",
+                 T("@cboot: %s is not on the channel."),
                  pMoniker ? reinterpret_cast<const char *>(pMoniker)
                           : "???");
         m_pINotify->Notify(executor, msg);
@@ -3795,14 +3791,14 @@ MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
 
     UTF8 msg[MOD_LBUF_SIZE];
     mux_sprintf(msg, sizeof(msg),
-             "You boot %s off channel %s.",
+             T("You boot %s off channel %s."),
              pVictMoniker ? reinterpret_cast<const char *>(pVictMoniker)
                           : "???",
              reinterpret_cast<const char *>(ch->name));
     m_pINotify->Notify(executor, msg);
 
     mux_sprintf(msg, sizeof(msg),
-             "%s boots you off channel %s.",
+             T("%s boots you off channel %s."),
              pExecMoniker ? reinterpret_cast<const char *>(pExecMoniker)
                           : "???",
              reinterpret_cast<const char *>(ch->name));
@@ -3813,7 +3809,7 @@ MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
         // Broadcast boot message to channel.
         //
         mux_sprintf(msg, sizeof(msg),
-                 "%s %s boots %s off the channel.",
+                 T("%s %s boots %s off the channel."),
                  reinterpret_cast<const char *>(ch->header),
                  pExecMoniker ? reinterpret_cast<const char *>(pExecMoniker)
                               : "???",
@@ -3922,7 +3918,7 @@ MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "Channel %s does not exist yet.",
+                     T("Channel %s does not exist yet."),
                      reinterpret_cast<const char *>(pChannel));
             m_pINotify->RawNotify(executor, msg);
         }
@@ -3962,7 +3958,7 @@ MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
             {
                 UTF8 msg[256];
                 mux_sprintf(msg, sizeof(msg),
-                         "That alias is already in use for channel %s.",
+                         T("That alias is already in use for channel %s."),
                          ca.channel.c_str());
                 m_pINotify->RawNotify(executor, msg);
             }
@@ -3991,7 +3987,7 @@ MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
     {
         UTF8 msg[256];
         mux_sprintf(msg, sizeof(msg),
-                 "Channel %s added with alias %s.",
+                 T("Channel %s added with alias %s."),
                  reinterpret_cast<const char *>(ch->name),
                  reinterpret_cast<const char *>(pAlias));
         m_pINotify->RawNotify(executor, msg);
@@ -4045,7 +4041,7 @@ MUX_RESULT CComsysMod::DelAlias(dbref executor, const UTF8 *pAlias)
         {
             UTF8 msg[256];
             mux_sprintf(msg, sizeof(msg),
-                     "Alias %s for channel %s deleted.",
+                     T("Alias %s for channel %s deleted."),
                      reinterpret_cast<const char *>(pAlias),
                      it->channel.c_str());
             m_pINotify->RawNotify(executor, msg);
@@ -4138,7 +4134,7 @@ MUX_RESULT CComsysMod::CreateChannel(dbref executor, const UTF8 *pName)
     ch->name[MAX_CHANNEL_LEN] = '\0';
 
     mux_sprintf(ch->header, MAX_HEADER_LEN + 1,
-             "[%s]", reinterpret_cast<const char *>(ch->name));
+             T("[%s]"), reinterpret_cast<const char *>(ch->name));
 
     ch->type = CHANNEL_DEFAULT;
     ch->charge_who = executor;
@@ -4156,7 +4152,7 @@ MUX_RESULT CComsysMod::CreateChannel(dbref executor, const UTF8 *pName)
     {
         UTF8 msg[256];
         mux_sprintf(msg, sizeof(msg),
-                 "Channel %s created.",
+                 T("Channel %s created."),
                  reinterpret_cast<const char *>(pCh->name));
         m_pINotify->RawNotify(executor, msg);
     }
@@ -4250,7 +4246,7 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
     {
         UTF8 msg[256];
         mux_sprintf(msg, sizeof(msg),
-                 "Channel %s destroyed.",
+                 T("Channel %s destroyed."),
                  reinterpret_cast<const char *>(pName));
         m_pINotify->RawNotify(executor, msg);
     }
