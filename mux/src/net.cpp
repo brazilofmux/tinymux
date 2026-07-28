@@ -4312,6 +4312,6 @@ void load_restart_db(void)
 
     mux_fclose(f);
     remove("restart.db");
-    raw_broadcast(0, T("GAME: Restart finished."));
+    raw_broadcast(0, M_("GAME: Restart finished."));
 }
 #endif // HAVE_WORKING_FORK

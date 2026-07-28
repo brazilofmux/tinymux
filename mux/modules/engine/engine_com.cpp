@@ -4626,32 +4626,32 @@ MUX_RESULT CPlayerSession::AnnounceConnect(dbref player, int numConnections,
     const UTF8 *pMonitorAnnounceFmt;
     if (numConnections < 2)
     {
-        pRoomAnnounceFmt = T("%s has connected.");
+        pRoomAnnounceFmt = M_("%s has connected.");
         do_comconnect(player);
         if (  Hidden(player)
            && Can_Hide(player))
         {
-            pMonitorAnnounceFmt = T("GAME: %s has DARK-connected.");
+            pMonitorAnnounceFmt = M_("GAME: %s has DARK-connected.");
         }
         else
         {
-            pMonitorAnnounceFmt = T("GAME: %s has connected.");
+            pMonitorAnnounceFmt = M_("GAME: %s has connected.");
         }
         if (  Suspect(player)
            || isSuspect)
         {
-            raw_broadcast(WIZARD, T("[Suspect] %s has connected."),
+            raw_broadcast(WIZARD, M_("[Suspect] %s has connected."),
                 Moniker(player));
         }
     }
     else
     {
-        pRoomAnnounceFmt = T("%s has reconnected.");
-        pMonitorAnnounceFmt = T("GAME: %s has reconnected.");
+        pRoomAnnounceFmt = M_("%s has reconnected.");
+        pMonitorAnnounceFmt = M_("GAME: %s has reconnected.");
         if (  Suspect(player)
            || isSuspect)
         {
-            raw_broadcast(WIZARD, T("[Suspect] %s has reconnected."),
+            raw_broadcast(WIZARD, M_("[Suspect] %s has reconnected."),
                 Moniker(player));
         }
     }
@@ -4809,12 +4809,12 @@ MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
         if (  Suspect(player)
            || isSuspect)
         {
-            raw_broadcast(WIZARD, T("[Suspect] %s has disconnected."),
+            raw_broadcast(WIZARD, M_("[Suspect] %s has disconnected."),
                 Moniker(player));
         }
         LBuf buf = LBuf_Src("AnnounceDisconnect.only");
 
-        mux_sprintf(buf, LBUF_SIZE, T("%s has disconnected."),
+        mux_sprintf(buf, LBUF_SIZE, M_("%s has disconnected."),
             Moniker(player));
         key = MSG_INV;
         if (  loc != NOTHING
@@ -4838,7 +4838,7 @@ MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
 
         do_mail_purge(player);
 
-        raw_broadcast(MONITOR, T("GAME: %s has disconnected. <%s>"),
+        raw_broadcast(MONITOR, M_("GAME: %s has disconnected. <%s>"),
             Moniker(player), reason);
 
         c_Connected(player);
@@ -4935,11 +4935,11 @@ MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
            || isSuspect)
         {
             raw_broadcast(WIZARD,
-                T("[Suspect] %s has partially disconnected."),
+                M_("[Suspect] %s has partially disconnected."),
                 Moniker(player));
         }
         UTF8 *mbuf = alloc_mbuf("AnnounceDisconnect.partial");
-        mux_sprintf(mbuf, MBUF_SIZE, T("%s has partially disconnected."),
+        mux_sprintf(mbuf, MBUF_SIZE, M_("%s has partially disconnected."),
             Moniker(player));
         key = MSG_INV;
         if (  loc != NOTHING
@@ -4960,7 +4960,7 @@ MUX_RESULT CPlayerSession::AnnounceDisconnect(dbref player,
 #else
         notify_check(player, player, mbuf, key);
 #endif // REALITY_LVLS
-        raw_broadcast(MONITOR, T("GAME: %s has partially disconnected."),
+        raw_broadcast(MONITOR, M_("GAME: %s has partially disconnected."),
             Moniker(player));
         free_mbuf(mbuf);
     }

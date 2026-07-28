@@ -1405,7 +1405,7 @@ void do_shutdown
         return;
     }
 
-    raw_broadcast(0, T("GAME: Shutdown by %s"), Moniker(Owner(executor)));
+    raw_broadcast(0, M_("GAME: Shutdown by %s"), Moniker(Owner(executor)));
     STARTLOG(LOG_ALWAYS, "WIZ", "SHTDN");
     log_text(T("Shutdown by "));
     log_name(executor);

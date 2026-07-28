@@ -2469,7 +2469,7 @@ void GanlAdapter::run_main_loop() {
     if (0 != signum)
     {
         log_signal(signum);
-        raw_broadcast(0, T("GAME: Caught signal %s, exiting."), signal_desc(signum));
+        raw_broadcast(0, M_("GAME: Caught signal %s, exiting."), signal_desc(signum));
         if ('\0' != g_dc.crash_msg[0])
         {
             raw_broadcast(0, T("GAME: %s"), g_dc.crash_msg);
@@ -3110,7 +3110,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
     MUX_ADDRINFO* servinfo = nullptr;
     if (0 != mux_getaddrinfo(pMailServer, reinterpret_cast<const UTF8*>("25"),
                              &hints, &servinfo)) {
-        notify(executor, tprintf(T("@email: Unable to resolve hostname %s!"),
+        notify(executor, tprintf(M_("@email: Unable to resolve hostname %s!"),
             pMailServer));
         return false;
     }

@@ -1628,9 +1628,9 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     }
 
 #ifdef UNIX_SSL
-    raw_broadcast(0, T("GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"), Moniker(Owner(executor)));
+    raw_broadcast(0, M_("GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"), Moniker(Owner(executor)));
 #else
-    raw_broadcast(0, T("GAME: Restart by %s, please wait."), Moniker(Owner(executor)));
+    raw_broadcast(0, M_("GAME: Restart by %s, please wait."), Moniker(Owner(executor)));
 #endif
     STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
     log_text(T("Restart by "));
