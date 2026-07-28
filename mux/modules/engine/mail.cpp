@@ -4240,22 +4240,6 @@ static void do_malias_list(dbref player, UTF8 *alias)
     free_lbuf(buff);
 }
 
-static const UTF8 *Spaces(size_t n)
-{
-    static const UTF8 buffer[42] = "                                         ";
-
-    if (n < sizeof(buffer)-1)
-    {
-        return buffer + (sizeof(buffer)-1) - n;
-    }
-    else
-    {
-        return T("");
-    }
-}
-
-
-
 static void do_malias_list_all(dbref player)
 {
     std::vector<malias_t*> visible;
