@@ -5539,20 +5539,26 @@ void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
             for (auto &m : it.second)
             {
                 struct mail *mp = &m;
+                // No +1: MessageFetchSize is std::string::size() and does
+                // not include a NUL.  The engine dropped the same phantom
+                // in #1639; the module's stats path still had it, so
+                // @mail/fstats disagreed with list sizes and with the
+                // engine by one byte per message (#1652).
+                //
                 if (Cleared(mp))
                 {
                     fc++;
-                    cchars += MessageFetchSize(mp->number) + 1;
+                    cchars += MessageFetchSize(mp->number);
                 }
                 else if (Read(mp))
                 {
                     fr++;
-                    fchars += MessageFetchSize(mp->number) + 1;
+                    fchars += MessageFetchSize(mp->number);
                 }
                 else
                 {
                     fu++;
-                    tchars += MessageFetchSize(mp->number) + 1;
+                    tchars += MessageFetchSize(mp->number);
                 }
             }
         }
@@ -5651,7 +5657,7 @@ void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
                 }
                 if (2 == full)
                 {
-                    fchars += MessageFetchSize(mp->number) + 1;
+                    fchars += MessageFetchSize(mp->number);
                 }
             }
             if (mp->to == target)
@@ -5676,7 +5682,7 @@ void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
                 }
                 if (2 == full)
                 {
-                    tchars += MessageFetchSize(mp->number) + 1;
+                    tchars += MessageFetchSize(mp->number);
                 }
             }
         }
