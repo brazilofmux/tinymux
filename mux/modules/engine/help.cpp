@@ -128,7 +128,7 @@ static void helpindex_read(int iHelpfile)
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "RINDX");
         LBuf p = LBuf_Src("helpindex_read.LOG");
-        mux_sprintf(p.get(), LBUF_SIZE, T("Can’t open %s for reading."), szTextFilename);
+        mux_sprintf(p.get(), LBUF_SIZE, M_("Can’t open %s for reading."), szTextFilename);
         log_text(p);
         ENDLOG;
         return;
@@ -269,11 +269,11 @@ static void ReportMatchedTopics(dbref executor, const UTF8 *topic, StringPtrMap 
 
     if (!matched)
     {
-        notify(executor, tprintf(T("No entry for ‘%s’."), topic));
+        notify(executor, tprintf(M_("No entry for ‘%s’."), topic));
     }
     else
     {
-        notify(executor, tprintf(T("Here are the entries which match ‘%s’:"), topic));
+        notify(executor, tprintf(M_("Here are the entries which match ‘%s’:"), topic));
         *buffp = '\0';
         notify(executor, topic_list);
     }
@@ -292,7 +292,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "OPEN");
         LBuf line = LBuf_Src("ReportTopic.open");
-        mux_sprintf(line.get(), LBUF_SIZE, T("Can’t open %s for reading."), szTextFilename);
+        mux_sprintf(line.get(), LBUF_SIZE, M_("Can’t open %s for reading."), szTextFilename);
         log_text(line);
         ENDLOG;
         return false;
@@ -301,7 +301,7 @@ static bool ReportTopic(dbref executor, struct help_entry *htab_entry, int iHelp
     {
         STARTLOG(LOG_PROBLEMS, "HLP", "SEEK");
         LBuf line = LBuf_Src("ReportTopic.seek");
-        mux_sprintf(line.get(), LBUF_SIZE, T("Seek error in file %s."), szTextFilename);
+        mux_sprintf(line.get(), LBUF_SIZE, M_("Seek error in file %s."), szTextFilename);
         log_text(line);
         ENDLOG;
         mux_fclose(fp);
@@ -411,7 +411,7 @@ static bool ValidateHelpFileIndex(int iHelpfile)
     {
         UTF8 *buf = alloc_mbuf("do_help.LOG");
         STARTLOG(LOG_BUGS, "BUG", "HELP");
-        mux_sprintf(buf, MBUF_SIZE, T("Unknown help file number: %d"), iHelpfile);
+        mux_sprintf(buf, MBUF_SIZE, M_("Unknown help file number: %d"), iHelpfile);
         log_text(buf);
         ENDLOG;
         free_mbuf(buf);

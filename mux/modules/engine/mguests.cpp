@@ -130,7 +130,7 @@ const UTF8 *CGuests::Create(DESC *d)
             guest_player = Guests[i] = MakeGuestChar();
             if (NOTHING == guest_player)
             {
-                queue_string(d, T("Error creating guest, please try again later.\n"));
+                queue_string(d, M_("Error creating guest, please try again later.\n"));
                 return nullptr;
             }
             else
@@ -203,13 +203,13 @@ const UTF8 *CGuests::Create(DESC *d)
 
     if (nGuests >= mudconf.number_guests)
     {
-        queue_string(d, T("All guests are currently busy, please try again later.\n"));
+        queue_string(d, M_("All guests are currently busy, please try again later.\n"));
         return nullptr;
     }
     dbref newGuest = MakeGuestChar();
     if (newGuest == NOTHING)
     {
-        queue_string(d, T("Error creating guest, please try again later.\n"));
+        queue_string(d, M_("Error creating guest, please try again later.\n"));
         return nullptr;
     }
     SizeGuests(nGuests+1);
@@ -441,11 +441,11 @@ void CGuests::ListAll(dbref player)
         notify(player, buff);
         if (!Good_obj(Guests[i]))
         {
-            notify(player, tprintf(T("*** Guest %d (#%d) is an invalid object!"),
+            notify(player, tprintf(M_("*** Guest %d (#%d) is an invalid object!"),
                                    i, Guests[i]));
         }
     }
-    notify(player, tprintf(T("-----------------------------  Total Guests: %-3d -----------------------------"), nGuests));
+    notify(player, tprintf(M_("-----------------------------  Total Guests: %-3d -----------------------------"), nGuests));
 }
 
 void CGuests::AddToGuestChannel(dbref player)

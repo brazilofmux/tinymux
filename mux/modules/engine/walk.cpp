@@ -198,7 +198,7 @@ static void dispatch_WalkEntry(void *pArg, int iUnused)
             if (!wp->quiet && Good_obj(wp->executor))
             {
                 notify(wp->executor,
-                    tprintf(T("%s has arrived at its destination."),
+                    tprintf(M_("%s has arrived at its destination."),
                             Moniker(wp->npc)));
             }
             walk_remove(wp);
@@ -233,13 +233,13 @@ static void dispatch_WalkEntry(void *pArg, int iUnused)
             if (blocked)
             {
                 notify(wp->executor,
-                    tprintf(T("%s was blocked at an exit."),
+                    tprintf(M_("%s was blocked at an exit."),
                             Moniker(wp->npc)));
             }
             else
             {
                 notify(wp->executor,
-                    tprintf(T("%s can’t find a route from here."),
+                    tprintf(M_("%s can’t find a route from here."),
                             Moniker(wp->npc)));
             }
         }
@@ -266,7 +266,7 @@ static void dispatch_WalkEntry(void *pArg, int iUnused)
     // Move the NPC through the exit.
     //
     int hush = wp->quiet ? HUSH_EXIT : 0;
-    move_exit(wp->npc, next_exit, false, T("Blocked."), hush);
+    move_exit(wp->npc, next_exit, false, M_("Blocked."), hush);
 
     // Verify movement actually happened.
     //
@@ -277,7 +277,7 @@ static void dispatch_WalkEntry(void *pArg, int iUnused)
         if (!wp->quiet && Good_obj(wp->executor))
         {
             notify(wp->executor,
-                tprintf(T("%s was blocked at an exit."),
+                tprintf(M_("%s was blocked at an exit."),
                         Moniker(wp->npc)));
         }
 
@@ -300,7 +300,7 @@ static void dispatch_WalkEntry(void *pArg, int iUnused)
         if (!wp->quiet && Good_obj(wp->executor))
         {
             notify(wp->executor,
-                tprintf(T("%s has arrived at its destination."),
+                tprintf(M_("%s has arrived at its destination."),
                         Moniker(wp->npc)));
         }
         walk_remove(wp);
@@ -398,7 +398,7 @@ void do_walk(dbref executor, dbref caller, dbref enactor, int eval,
     if (!wp->quiet)
     {
         notify(executor,
-            tprintf(T("%s begins walking toward #%d."),
+            tprintf(M_("%s begins walking toward #%d."),
                     Moniker(npc), dest));
     }
 
@@ -471,7 +471,7 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
         if (!Good_obj(room) || !isRoom(room))
         {
             notify(executor,
-                tprintf(T("“%s” is not a valid room."),
+                tprintf(M_("“%s” is not a valid room."),
                         token));
             return;
         }
@@ -504,7 +504,7 @@ void do_patrol(dbref executor, dbref caller, dbref enactor, int eval,
     if (!wp->quiet)
     {
         notify(executor,
-            tprintf(T("%s begins patrolling %d waypoints."),
+            tprintf(M_("%s begins patrolling %d waypoints."),
                     Moniker(npc), static_cast<int>(waypoints.size())));
     }
 

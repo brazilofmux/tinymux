@@ -315,7 +315,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
 
         if (nValidDoing == 0)
         {
-            mux_strncpy(mudstate.doing_hdr, T("Doing"), sizeof(mudstate.doing_hdr)-1);
+            mux_strncpy(mudstate.doing_hdr, M_("Doing"), sizeof(mudstate.doing_hdr)-1);
         }
         else
         {
@@ -330,7 +330,7 @@ void do_doing(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
     }
     else // if (key == DOING_POLL)
     {
-        notify(executor, tprintf(T("Poll: %s"), mudstate.doing_hdr));
+        notify(executor, tprintf(M_("Poll: %s"), mudstate.doing_hdr));
     }
 }
 

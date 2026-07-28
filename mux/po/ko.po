@@ -20,7 +20,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-27 22:56-0600\n"
+"POT-Creation-Date: 2026-07-27 23:30-0600\n"
 "PO-Revision-Date: 2026-07-27 00:00+0000\n"
 "Last-Translator: unassigned <tinymux@googlegroups.com>\n"
 "Language-Team: Korean <tinymux@googlegroups.com>\n"
@@ -954,13 +954,38 @@ msgstr ""
 msgid "No such attribute."
 msgstr ""
 
+#: modules/engine/help.cpp:131 modules/engine/help.cpp:295
+#, c-format
+msgid "Can’t open %s for reading."
+msgstr ""
+
 #: modules/engine/help.cpp:223
 msgid "Cache for help indexes refreshed."
+msgstr ""
+
+#: modules/engine/help.cpp:272
+#, c-format
+msgid "No entry for ‘%s’."
+msgstr ""
+
+#: modules/engine/help.cpp:276
+#, c-format
+msgid "Here are the entries which match ‘%s’:"
+msgstr ""
+
+#: modules/engine/help.cpp:304
+#, c-format
+msgid "Seek error in file %s."
 msgstr ""
 
 #: modules/engine/help.cpp:397
 msgid "Sorry, that function is temporarily unavailable."
 msgstr "죄송합니다, 그 함수는 일시적으로 사용할 수 없습니다."
+
+#: modules/engine/help.cpp:414
+#, c-format
+msgid "Unknown help file number: %d"
+msgstr ""
 
 #: modules/engine/help.cpp:440
 msgid "No such indexed file found."
@@ -1488,38 +1513,38 @@ msgstr ""
 msgid "That is not a debugging option."
 msgstr ""
 
-#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5515
+#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5465
 msgid "The post office protects privacy!"
 msgstr ""
 
-#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5530
+#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5480
 #, c-format
 msgid "There is %d message in the mail spool."
 msgid_plural "There are %d messages in the mail spool."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5563
+#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5519
 #, c-format
 msgid "MAIL: There is %d msg in the mail spool, %d unread, %d cleared."
 msgid_plural ""
 "MAIL: There are %d msgs in the mail spool, %d unread, %d cleared."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3316 modules/mail/mail_mod.cpp:5572
+#: modules/engine/mail.cpp:3316 modules/mail/mail_mod.cpp:5528
 #, c-format
 msgid "MAIL: There is %d old msg in the mail spool, totalling %d characters."
 msgid_plural ""
 "MAIL: There are %d old msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3319 modules/mail/mail_mod.cpp:5578
+#: modules/engine/mail.cpp:3319 modules/mail/mail_mod.cpp:5534
 #, c-format
 msgid "MAIL: There is %d new msg in the mail spool, totalling %d characters."
 msgid_plural ""
 "MAIL: There are %d new msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3322 modules/mail/mail_mod.cpp:5584
+#: modules/engine/mail.cpp:3322 modules/mail/mail_mod.cpp:5540
 #, c-format
 msgid ""
 "MAIL: There is %d cleared msg in the mail spool, totalling %d characters."
@@ -1527,50 +1552,50 @@ msgid_plural ""
 "MAIL: There are %d cleared msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3351 modules/mail/mail_mod.cpp:5619
+#: modules/engine/mail.cpp:3351 modules/mail/mail_mod.cpp:5575
 #, fuzzy, c-format
 msgid "%s sent %d message."
 msgid_plural "%s sent %d messages."
 msgstr[0] "메시지가 없습니다."
 
-#: modules/engine/mail.cpp:3354 modules/mail/mail_mod.cpp:5623
+#: modules/engine/mail.cpp:3354 modules/mail/mail_mod.cpp:5579
 #, fuzzy, c-format
 msgid "%s has %d message."
 msgid_plural "%s has %d messages."
 msgstr[0] "메시지가 없습니다."
 
-#: modules/engine/mail.cpp:3418 modules/mail/mail_mod.cpp:5685
+#: modules/engine/mail.cpp:3418 modules/mail/mail_mod.cpp:5641
 #, c-format
 msgid "Mail statistics for %s:"
 msgstr ""
 
-#: modules/engine/mail.cpp:3422 modules/mail/mail_mod.cpp:5691
+#: modules/engine/mail.cpp:3422 modules/mail/mail_mod.cpp:5647
 #, c-format
 msgid "%d message sent, %d unread, %d cleared."
 msgid_plural "%d messages sent, %d unread, %d cleared."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3426 modules/mail/mail_mod.cpp:5697
+#: modules/engine/mail.cpp:3426 modules/mail/mail_mod.cpp:5653
 #, c-format
 msgid "%d message received, %d unread, %d cleared."
 msgid_plural "%d messages received, %d unread, %d cleared."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3434 modules/mail/mail_mod.cpp:5706
+#: modules/engine/mail.cpp:3434 modules/mail/mail_mod.cpp:5662
 #, c-format
 msgid "%d message sent, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
 "%d messages sent, %d unread, %d cleared, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3439 modules/mail/mail_mod.cpp:5712
+#: modules/engine/mail.cpp:3439 modules/mail/mail_mod.cpp:5668
 #, c-format
 msgid "%d message received, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
 "%d messages received, %d unread, %d cleared, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3447 modules/mail/mail_mod.cpp:5721
+#: modules/engine/mail.cpp:3447 modules/mail/mail_mod.cpp:5677
 #, fuzzy, c-format
 msgid "Last is dated %s"
 msgstr "%s은(는) %s님의 소유입니다"
@@ -1743,6 +1768,14 @@ msgstr "여기에는 그것이 보이지 않습니다."
 msgid "I don’t know which one you mean!"
 msgstr "어느 것을 말하는지 알 수 없습니다!"
 
+#: modules/engine/mguests.cpp:133 modules/engine/mguests.cpp:212
+msgid "Error creating guest, please try again later.\n"
+msgstr ""
+
+#: modules/engine/mguests.cpp:206
+msgid "All guests are currently busy, please try again later.\n"
+msgstr ""
+
 #: modules/engine/mguests.cpp:425
 msgid ""
 "--------------------------- Current Guests Listing "
@@ -1757,6 +1790,41 @@ msgstr ""
 msgid "------------------------------------------------------------------------------"
 msgstr ""
 
+#: modules/engine/mguests.cpp:444
+#, c-format
+msgid "*** Guest %d (#%d) is an invalid object!"
+msgstr ""
+
+#: modules/engine/mguests.cpp:448
+#, c-format
+msgid ""
+"-----------------------------  Total Guests: %-3d "
+"-----------------------------"
+msgstr ""
+
+#: modules/engine/move.cpp:88
+#, c-format
+msgid "%s has left."
+msgstr ""
+
+#: modules/engine/move.cpp:161
+#, c-format
+msgid "%s has arrived."
+msgstr ""
+
+#: modules/engine/move.cpp:223
+#, c-format
+msgid "You found a %s!"
+msgstr ""
+
+#: modules/engine/move.cpp:401
+msgid "You can’t teleport out!"
+msgstr ""
+
+#: modules/engine/move.cpp:405
+msgid "You can’t be teleported out!"
+msgstr ""
+
 #: modules/engine/move.cpp:406
 msgid "You can’t teleport that out!"
 msgstr ""
@@ -1768,6 +1836,11 @@ msgstr ""
 
 #: modules/engine/move.cpp:617
 msgid "You are already home."
+msgstr ""
+
+#: modules/engine/move.cpp:639
+#, c-format
+msgid "%s goes home."
 msgstr ""
 
 #: modules/engine/move.cpp:646
@@ -1786,9 +1859,22 @@ msgstr ""
 msgid "You cannot get yourself!"
 msgstr ""
 
+#: modules/engine/move.cpp:774
+#, c-format
+msgid "%s was taken from you."
+msgstr ""
+
 #: modules/engine/move.cpp:778 modules/engine/move.cpp:781
 msgid "Taken."
 msgstr "가져왔습니다."
+
+#: modules/engine/move.cpp:790
+msgid "You can’t take that from there."
+msgstr ""
+
+#: modules/engine/move.cpp:794
+msgid "You can’t pick that up."
+msgstr ""
 
 #: modules/engine/move.cpp:828
 msgid "Exit taken."
@@ -1817,12 +1903,21 @@ msgstr ""
 msgid "Dropped."
 msgstr "내려놓았습니다."
 
+#: modules/engine/move.cpp:908
+#, c-format
+msgid "dropped %s."
+msgstr ""
+
 #: modules/engine/move.cpp:946
 msgid "Exit dropped."
 msgstr "출구를 제거했습니다."
 
 #: modules/engine/move.cpp:973
 msgid "You can’t enter yourself!"
+msgstr ""
+
+#: modules/engine/move.cpp:987
+msgid "You can’t enter that."
 msgstr ""
 
 #: modules/engine/move.cpp:1040 modules/engine/move.cpp:1057
@@ -1997,6 +2092,15 @@ msgstr ""
 msgid "@email: Not sending an empty e-mail!"
 msgstr ""
 
+#: modules/engine/powers.cpp:139
+msgid "Powers:"
+msgstr ""
+
+#: modules/engine/powers.cpp:180
+#, c-format
+msgid "%s: Power not found."
+msgstr ""
+
 #: modules/engine/powers.cpp:245
 msgid "You must specify a power to clear."
 msgstr ""
@@ -2007,6 +2111,11 @@ msgstr ""
 
 #: modules/engine/powers.cpp:257
 msgid "I don’t understand that power."
+msgstr ""
+
+#: modules/engine/powers.cpp:431
+#, c-format
+msgid "@power %s=%s"
 msgstr ""
 
 #: modules/engine/predicates.cpp:283
@@ -2114,6 +2223,16 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:3155
 msgid "Reference added."
+msgstr ""
+
+#: modules/engine/quota.cpp:138
+#, c-format
+msgid " Quota: %9d  Used: %9d"
+msgstr ""
+
+#: modules/engine/quota.cpp:143
+#, c-format
+msgid " Quota: UNLIMITED  Used: %9d"
 msgstr ""
 
 #: modules/engine/quota.cpp:171
@@ -2286,6 +2405,15 @@ msgstr ""
 #: modules/engine/session.cpp:290 modules/engine/session.cpp:305
 msgid "Not connected."
 msgstr "접속되어 있지 않습니다."
+
+#: modules/engine/session.cpp:318
+msgid "Doing"
+msgstr ""
+
+#: modules/engine/session.cpp:333
+#, c-format
+msgid "Poll: %s"
+msgstr ""
 
 #: modules/engine/set.cpp:83
 msgid "Zones disabled."
@@ -2717,6 +2845,25 @@ msgid "@dbclean: %d orphaned attribute name purged."
 msgid_plural "@dbclean: %d orphaned attribute names purged."
 msgstr[0] ""
 
+#: modules/engine/walk.cpp:201 modules/engine/walk.cpp:303
+#, c-format
+msgid "%s has arrived at its destination."
+msgstr ""
+
+#: modules/engine/walk.cpp:236 modules/engine/walk.cpp:280
+#, c-format
+msgid "%s was blocked at an exit."
+msgstr ""
+
+#: modules/engine/walk.cpp:242
+#, c-format
+msgid "%s can’t find a route from here."
+msgstr ""
+
+#: modules/engine/walk.cpp:269
+msgid "Blocked."
+msgstr ""
+
 #: modules/engine/walk.cpp:353
 msgid "Walk cancelled."
 msgstr ""
@@ -2733,6 +2880,11 @@ msgstr "어디로 갈까요?"
 msgid "That’s not a valid destination."
 msgstr ""
 
+#: modules/engine/walk.cpp:401
+#, c-format
+msgid "%s begins walking toward #%d."
+msgstr ""
+
 #: modules/engine/walk.cpp:442
 msgid "Patrol cancelled."
 msgstr ""
@@ -2745,8 +2897,18 @@ msgstr ""
 msgid "Patrol where?"
 msgstr "어디를 순찰할까요?"
 
+#: modules/engine/walk.cpp:474
+#, c-format
+msgid "“%s” is not a valid room."
+msgstr ""
+
 #: modules/engine/walk.cpp:483
 msgid "Patrol requires at least two waypoints."
+msgstr ""
+
+#: modules/engine/walk.cpp:507
+#, c-format
+msgid "%s begins patrolling %d waypoints."
 msgstr ""
 
 #: modules/engine/walkdb.cpp:75
@@ -2941,11 +3103,11 @@ msgstr "활성화되었습니다."
 msgid "Disabled."
 msgstr "비활성화되었습니다."
 
-#: modules/mail/mail_mod.cpp:5455
+#: modules/mail/mail_mod.cpp:5405
 msgid "MAIL: Mail statistics are unavailable."
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:5507
+#: modules/mail/mail_mod.cpp:5457
 #, c-format
 msgid "%s: No such player."
 msgstr ""

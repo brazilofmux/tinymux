@@ -136,7 +136,7 @@ void display_powertab(dbref player)
     UTF8 *bp = buf.get();
     POWERENT *fp;
 
-    safe_str(T("Powers:"), buf, &bp);
+    safe_str(M_("Powers:"), buf, &bp);
     for (fp = gen_powers; fp->powername; fp++)
     {
         if ((fp->listperm & CA_WIZARD) && !Wizard(player))
@@ -177,7 +177,7 @@ bool decode_power(dbref player, UTF8 *powername, POWERSET *pset)
     POWERENT *pent = (it_powers != mudstate.powers_htab.end()) ? static_cast<POWERENT*>(it_powers->second) : nullptr;
     if (!pent)
     {
-        notify(player, tprintf(T("%s: Power not found."), powername));
+        notify(player, tprintf(M_("%s: Power not found."), powername));
         return false;
     }
     if (pent->powerpower & POWER_EXT)
@@ -428,6 +428,6 @@ void decompile_powers(dbref player, dbref thing, UTF8 *thingname)
 
         // We made it this far, report this power.
         //
-        notify(player, tprintf(T("@power %s=%s"), thingname, fp->powername));
+        notify(player, tprintf(M_("@power %s=%s"), thingname, fp->powername));
     }
 }
