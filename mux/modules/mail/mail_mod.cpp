@@ -4316,10 +4316,25 @@ void CMailMod::do_malias_list_all(dbref player)
         }
         if (bOwnerGod || m->owner == player || bGod)
         {
+            // Mail alias list schema (#1667 Phase 4 B1) — same as engine.
+            //
+            static const size_t kAliasNameCols  = 12;
+            static const size_t kAliasDescCols  = 40;
+            static const size_t kAliasOwnerCols = 15;
+
             if (!notified)
             {
-                m_pINotify->RawNotify(player,
-                    M_("Name         Description                              Owner"));
+                UTF8 header[256];
+                size_t pos = 0;
+                pos = append_ljust_field(header, sizeof(header), pos,
+                    M_("Name"), kAliasNameCols);
+                pos = append_bytes(header, sizeof(header), pos, " ");
+                pos = append_ljust_field(header, sizeof(header), pos,
+                    M_("Description"), kAliasDescCols);
+                pos = append_bytes(header, sizeof(header), pos, " ");
+                pos = append_ljust_field(header, sizeof(header), pos,
+                    M_("Owner"), kAliasOwnerCols);
+                m_pINotify->RawNotify(player, header);
                 notified = true;
             }
 
@@ -4329,12 +4344,15 @@ void CMailMod::do_malias_list_all(dbref player)
             UTF8 line[256];
             size_t pos = 0;
             pos = append_ljust_field(line, sizeof(line), pos,
-                reinterpret_cast<const UTF8 *>(m->name.c_str()), 12);
+                reinterpret_cast<const UTF8 *>(m->name.c_str()),
+                kAliasNameCols);
             pos = append_bytes(line, sizeof(line), pos, " ");
             pos = append_ljust_field(line, sizeof(line), pos,
-                reinterpret_cast<const UTF8 *>(m->desc.c_str()), 40);
+                reinterpret_cast<const UTF8 *>(m->desc.c_str()),
+                kAliasDescCols);
             pos = append_bytes(line, sizeof(line), pos, " ");
-            pos = append_ljust_field(line, sizeof(line), pos, szOwner, 15);
+            pos = append_ljust_field(line, sizeof(line), pos, szOwner,
+                kAliasOwnerCols);
             m_pINotify->RawNotify(player, line);
         }
     }
@@ -4349,8 +4367,29 @@ void CMailMod::do_malias_adminlist(dbref player)
         return;
     }
 
-    m_pINotify->RawNotify(player,
-        M_("Num  Name         Description                              Owner"));
+    // Mail alias admin list (#1667 Phase 4 B2).
+    //
+    static const size_t kAliasNumCols   = 4;
+    static const size_t kAliasNameCols  = 12;
+    static const size_t kAliasDescCols  = 40;
+    static const size_t kAliasOwnerCols = 15;
+
+    {
+        UTF8 header[256];
+        size_t pos = 0;
+        pos = append_ljust_field(header, sizeof(header), pos,
+            M_("Num"), kAliasNumCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            M_("Name"), kAliasNameCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            M_("Description"), kAliasDescCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            M_("Owner"), kAliasOwnerCols);
+        m_pINotify->RawNotify(player, header);
+    }
 
     for (size_t i = 0; i < m_malias.size(); i++)
     {
@@ -4360,19 +4399,19 @@ void CMailMod::do_malias_adminlist(dbref player)
 
         UTF8 line[256];
         size_t pos = 0;
-        if (pos < sizeof(line))
-        {
-            mux_sprintf(line + pos, sizeof(line) - pos, T("%-4d "),
-                static_cast<int>(i));
-            pos = pos_after(line, sizeof(line), pos);
-        }
-        pos = append_ljust_field(line, sizeof(line), pos,
-            reinterpret_cast<const UTF8 *>(m->name.c_str()), 12);
+        UTF8 numbuf[8];
+        mux_sprintf(numbuf, sizeof(numbuf), T("%d"), static_cast<int>(i));
+        pos = append_ljust_field(line, sizeof(line), pos, numbuf,
+            kAliasNumCols);
         pos = append_bytes(line, sizeof(line), pos, " ");
         pos = append_ljust_field(line, sizeof(line), pos,
-            reinterpret_cast<const UTF8 *>(m->desc.c_str()), 40);
+            reinterpret_cast<const UTF8 *>(m->name.c_str()), kAliasNameCols);
         pos = append_bytes(line, sizeof(line), pos, " ");
-        pos = append_ljust_field(line, sizeof(line), pos, szOwner, 15);
+        pos = append_ljust_field(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(m->desc.c_str()), kAliasDescCols);
+        pos = append_bytes(line, sizeof(line), pos, " ");
+        pos = append_ljust_field(line, sizeof(line), pos, szOwner,
+            kAliasOwnerCols);
         m_pINotify->RawNotify(player, line);
     }
     m_pINotify->RawNotify(player, M_("***** End of Mail Aliases *****"));
