@@ -5324,8 +5324,9 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
                    && 0 != HOOKMASK(cmdp->flags))
                 {
                     found = true;
-                    show_hook(s_ptrbuff, s_ptr, HOOKMASK(cmdp->flags));
-                    notify(executor, tprintf(T("%-32.32s | %s"), cmdp->cmdname, s_ptrbuff));
+                    // Same C7 schema as the built-in command table.
+                    //
+                    hook_loop(executor, cmdp, s_ptr, s_ptrbuff);
                 }
             }
             free_sbuf(cbuff);
