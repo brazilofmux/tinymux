@@ -2512,8 +2512,25 @@ MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
         return MUX_E_FAIL;
     }
 
-    m_pINotify->RawNotify(executor,
-        T("Alias           Channel            Status   Title"));
+    // comlist schema (#1667 Phase 4 A3) — same as engine do_comlist.
+    //
+    static const size_t kComlistAliasCols   = 15;
+    static const size_t kComlistChannelCols = 18;
+
+    {
+        UTF8 header[256];
+        size_t pos = 0;
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Alias"), kComlistAliasCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Channel"), kComlistChannelCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_bytes(header, sizeof(header), pos, "Status");
+        pos = append_bytes(header, sizeof(header), pos, "   ");
+        pos = append_bytes(header, sizeof(header), pos, "Title");
+        m_pINotify->RawNotify(executor, header);
+    }
 
     auto it = m_comsys.find(executor);
     if (it == m_comsys.end())
@@ -2540,15 +2557,15 @@ MUX_RESULT CComsysMod::ComList(dbref executor, const UTF8 *pPattern)
                 continue;
             }
 
-            // Alias/channel columns: visual width via co_copy_field (#1656).
-            //
             UTF8 msg[256];
             size_t pos = 0;
             pos = append_ljust_field(msg, sizeof(msg), pos,
-                reinterpret_cast<const UTF8 *>(ca.alias.c_str()), 15);
+                reinterpret_cast<const UTF8 *>(ca.alias.c_str()),
+                kComlistAliasCols);
             pos = append_bytes(msg, sizeof(msg), pos, " ");
             pos = append_ljust_field(msg, sizeof(msg), pos,
-                reinterpret_cast<const UTF8 *>(ca.channel.c_str()), 18);
+                reinterpret_cast<const UTF8 *>(ca.channel.c_str()),
+                kComlistChannelCols);
             pos = append_bytes(msg, sizeof(msg), pos, " ");
             if (pos < sizeof(msg))
             {

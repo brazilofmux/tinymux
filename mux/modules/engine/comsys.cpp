@@ -3027,7 +3027,29 @@ void do_comlist
         bWild = false;
     }
 
-    raw_notify(executor, M_("Alias           Channel            Status   Title"));
+    // comlist schema (#1667 Phase 4 A3) — shared with module ComList:
+    // alias 15 + channel 18 + freeform status/title.  Header labels are
+    // separate msgids via mux_table_*.
+    //
+    static const size_t kComlistAliasCols   = 15;
+    static const size_t kComlistChannelCols = 18;
+
+    {
+        UTF8 header[LBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Alias"), kComlistAliasCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Channel"), kComlistChannelCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Status")));
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "   ");
+        pos = mux_table_append_bytes(header, sizeof(header), pos,
+            reinterpret_cast<const char *>(M_("Title")));
+        raw_notify(executor, header);
+    }
 
     const comsys_t* c = get_comsys(executor);
     for (size_t i = 0; i < c->aliases.size(); i++)
@@ -3039,15 +3061,25 @@ void do_comlist
             if (!bWild
                 || quick_wild(pattern, chanName))
             {
-                UTF8* p =
-                    tprintf(T("%-15.15s %-18.18s %s %s%s %s"),
-                            reinterpret_cast<const UTF8 *>(c->aliases[i].alias.c_str()),
-                            chanName,
-                            (user->bUserIsOn ? "on " : "off"),
-                            (user->ComTitleStatus ? "con " : "coff"),
-                            (user->bGagJoinLeave ? " gag" : ""),
-                            reinterpret_cast<const UTF8 *>(user->title.c_str()));
-                raw_notify(executor, p);
+                UTF8 line[LBUF_SIZE];
+                size_t pos = 0;
+                pos = mux_table_append_ljust(line, sizeof(line), pos,
+                    reinterpret_cast<const UTF8 *>(c->aliases[i].alias.c_str()),
+                    kComlistAliasCols);
+                pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+                pos = mux_table_append_ljust(line, sizeof(line), pos,
+                    chanName, kComlistChannelCols);
+                pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+                if (pos < sizeof(line))
+                {
+                    mux_sprintf(line + pos, sizeof(line) - pos,
+                        T("%s %s%s %s"),
+                        (user->bUserIsOn ? T("on ") : T("off")),
+                        (user->ComTitleStatus ? T("con ") : T("coff")),
+                        (user->bGagJoinLeave ? T(" gag") : T("")),
+                        reinterpret_cast<const UTF8 *>(user->title.c_str()));
+                }
+                raw_notify(executor, line);
             }
         }
         else

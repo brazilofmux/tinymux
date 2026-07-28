@@ -182,7 +182,7 @@ Slow by design. Each phase is a separate decision to start.
 | **1 — Inventory** | Full list of multi-column player tables | Done — [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md) |
 | **2 — Ownership** | Product ownership + layout ownership recorded | Done — §4 (#1614 B-by-completion + layout in libmux) |
 | **3 — Layout API** | Column descriptor + emit-header / emit-cell on `co_copy_field` in **libmux**; retire duplicated `append_ljust_field` | Done — `mux/include/mux_table.h`, `mux/lib/mux_table.c`; modules use it; `tests/table` |
-| **4 — Convert by family** | One table family per change; both dual paths in the same change; delete blob msgids from pot | **In progress** — A2 + A1 done; remaining A3/A4/B/C |
+| **4 — Convert by family** | One table family per change; both dual paths in the same change; delete blob msgids from pot | **In progress** — A1–A3 done; remaining A4/B/C |
 | **5 — Guardrails (optional)** | `check_nls.py` or docs: ban new pre-spaced multi-column header msgids | Regressions fail CI |
 
 **Do not** open a PR that only rewrites `@clist/full`’s header string.
@@ -223,3 +223,4 @@ Slow by design. Each phase is a separate decision to start.
 | 2026-07-28 | Phase 3: `mux_table_*` in libmux (`mux_table.h` / `mux_table.c`); comsys_mod and mail_mod drop local `append_*` copies; unit tests in `tests/table`. Phase 4 still owns blob-header conversion and engine dual-path table rewrites. |
 | 2026-07-28 | Phase 4 start: A2 `@clist` / `@clist/headers` — engine + module use shared `mux_table_*` schema (name 13 / owner 15 / third 45 / pad 79); blob headers replaced by `M_("Channel")` etc. |
 | 2026-07-28 | Phase 4 A1: `@clist/full` — engine + module; name 13 / header 15 / owner 15 / access 6 + freeform Users/Msgs; blob full-line header removed. |
+| 2026-07-28 | Phase 4 A3: comlist — engine + module; alias 15 / channel 18 + freeform Status/Title; blob header removed. |
