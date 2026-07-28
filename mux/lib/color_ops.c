@@ -3313,6 +3313,14 @@ size_t co_member(const unsigned char *target, size_t tlen,
 
 /* ---- column-width helpers ---- */
 
+/* Color parsers / emitters defined later; needed by co_copy_field. */
+static int parse_bmp_color(const unsigned char *p, co_ColorState *cs);
+static int parse_smp_color(const unsigned char *p, co_ColorState *cs);
+static size_t emit_transition(unsigned char *wp,
+                              const unsigned char *wp_end,
+                              const co_ColorState *old_cs,
+                              const co_ColorState *new_cs);
+
 /*
  * cluster_console_width — display column width of one grapheme cluster.
  *
@@ -3322,9 +3330,13 @@ size_t co_member(const unsigned char *target, size_t tlen,
  * therefore the widest of its code points, not their sum — so a "family" ZWJ
  * sequence or a modified emoji counts as one wide glyph (2) rather than 4–6.
  *
- * The one exception is a Regional Indicator pair (GB12/13): two RI code
- * points, each East-Asian-Width Neutral (1), render together as a single
- * double-wide flag, so the pair is forced to width 2.
+ * Exceptions that no per-code-point table can express alone (#1649):
+ *   - Regional Indicator pair (GB12/13): two Neutral (1) points render as a
+ *     single double-wide flag → force 2.
+ *   - U+FE0F (emoji presentation selector) after an otherwise single-cell
+ *     base (e.g. ❤) asks clients for the emoji form → force 2.
+ *
+ * There is no ground truth for cluster width on a MUD; this is policy.
  *
  * `cb` is the cluster's byte length as returned by next_grapheme_plain().
  */
@@ -3335,9 +3347,14 @@ static size_t cluster_console_width(const unsigned char *p, size_t cb)
     int baseGCB = -1;
     size_t nCp = 0;
     int wMax = 0;
+    int has_vs16 = 0;
     while (q < pe) {
         const unsigned char *qn = utf8_cp_advance(q, pe);
         if (baseGCB < 0) baseGCB = gcb_get(q, qn);
+        /* U+FE0F = EF B8 8F */
+        if (qn - q == 3 && q[0] == 0xEF && q[1] == 0xB8 && q[2] == 0x8F) {
+            has_vs16 = 1;
+        }
         int w = co_console_width(q);
         if (w > wMax) wMax = w;
         nCp++;
@@ -3346,7 +3363,30 @@ static size_t cluster_console_width(const unsigned char *p, size_t cb)
     if (GCB_Regional_Indicator == baseGCB && nCp >= 2) {
         return 2;
     }
+    if (has_vs16 && wMax < 2) {
+        wMax = 2;
+    }
     return (size_t)wMax;
+}
+
+/*
+ * co_cluster_width — width of the first grapheme cluster in a PUA string.
+ */
+size_t co_cluster_width(const unsigned char *data, size_t len)
+{
+    if (NULL == data || 0 == len) {
+        return 0;
+    }
+    unsigned char plain[LBUF_SIZE];
+    size_t plen = co_strip_color(plain, data, len);
+    if (0 == plen) {
+        return 0;
+    }
+    size_t cb = next_grapheme_plain(plain, plen);
+    if (0 == cb) {
+        return 0;
+    }
+    return cluster_console_width(plain, cb);
 }
 
 /*
@@ -3373,67 +3413,164 @@ size_t co_visual_width(const unsigned char *p, size_t len)
     return cols;
 }
 
+/* Worst-case bytes to return color state to CO_CS_NORMAL (one RESET PUA). */
+#define CO_COLOR_CLOSE_BYTES 3
+
 /*
- * co_copy_columns — Copy up to ncols display columns, preserving color.
- *
- * Stops before emitting a character that would exceed the column limit.
- * Returns bytes written to out.
+ * Measure how many source bytes a cluster will cost, including interleaved
+ * color codes that sit between its visible code points, without writing.
+ * Updates *pp and *cs as if the cluster were copied.
  */
-size_t co_copy_columns(unsigned char *out, const unsigned char *p,
-                       const unsigned char *pe, size_t ncols)
+static size_t measure_cluster_bytes(const unsigned char **pp,
+                                    const unsigned char *pe,
+                                    size_t cplen,
+                                    co_ColorState *cs)
 {
-    /* Segment graphemes on the STRIPPED text so a color code inside a
-     * cluster (e.g. an ansi() reset between an emoji base and its
-     * skin-tone modifier) cannot split it (#787).  Segmenting the raw
-     * buffer saw such a cluster as two, double-charged its width, and
-     * could truncate between base and modifier -- visibly changing the
-     * glyph.  Stripping first keeps this function in exact agreement
-     * with co_visual_width.  Bytes are still copied from the original
-     * buffer, with interleaved color codes passed through. */
+    const unsigned char *p = *pp;
+    size_t copied = 0;
+    size_t nbytes = 0;
+    while (copied < cplen && p < pe) {
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            parse_bmp_color(p, cs);
+            p += 3;
+            nbytes += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
+            parse_smp_color(p, cs);
+            p += 4;
+            nbytes += 4;
+            continue;
+        }
+        /* One visible byte of the cluster. */
+        p++;
+        nbytes++;
+        copied++;
+    }
+    *pp = p;
+    return nbytes;
+}
+
+/*
+ * co_copy_field — column-limited copy with hard byte limit, cluster cuts,
+ * and color close on truncate (#1649).
+ */
+co_field co_copy_field(unsigned char *out, size_t nOutMax,
+                       const unsigned char *p, const unsigned char *pe,
+                       size_t nCols)
+{
+    co_field fld = { 0, 0 };
+
+    if (NULL == out || 0 == nOutMax) {
+        return fld;
+    }
+    out[0] = '\0';
+    if (NULL == p) {
+        return fld;
+    }
+    if (NULL == pe) {
+        pe = p + strlen((const char *)p);
+    }
+    if (p >= pe || 0 == nCols) {
+        return fld;
+    }
+
+    /*
+     * Segment graphemes on the STRIPPED text so a color code inside a
+     * cluster cannot split it (#787).  Bytes are still copied from the
+     * original buffer, with interleaved color codes passed through.
+     */
     unsigned char plain[LBUF_SIZE];
     size_t plen = co_strip_color(plain, p, (size_t)(pe - p));
 
+    /* Capacity excluding the trailing NUL. */
+    size_t usable = nOutMax - 1;
     unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+    const unsigned char *wp_end = out + usable;
+
     size_t cols_emitted = 0;
     size_t pn = 0;
+    co_ColorState cs = CO_CS_NORMAL;
+    co_ColorState normal = CO_CS_NORMAL;
 
     while (p < pe && wp < wp_end) {
-        /* Copy color codes transparently (zero width). */
-        const unsigned char *q = co_skip_color(p, pe);
-        if (q != p) {
-            size_t cb = (size_t)(q - p);
-            if (wp + cb > wp_end) break;
-            memcpy(wp, p, cb);
-            wp += cb;
-            p = q;
+        /* Leading color (zero columns) before the next cluster. */
+        if (p[0] == 0xEF && (p + 2) < pe
+            && p[1] >= 0x94 && p[1] <= 0x9F) {
+            co_ColorState trial = cs;
+            parse_bmp_color(p, &trial);
+            size_t close = co_cs_equal(&trial, &normal) ? 0 : CO_COLOR_CLOSE_BYTES;
+            if ((size_t)(wp_end - wp) < 3 + close) {
+                break;
+            }
+            parse_bmp_color(p, &cs);
+            memcpy(wp, p, 3);
+            wp += 3;
+            p += 3;
+            continue;
+        }
+        if (p[0] == 0xF3 && (p + 3) < pe
+            && p[1] >= 0xB0 && p[1] <= 0xB3) {
+            co_ColorState trial = cs;
+            parse_smp_color(p, &trial);
+            size_t close = co_cs_equal(&trial, &normal) ? 0 : CO_COLOR_CLOSE_BYTES;
+            if ((size_t)(wp_end - wp) < 4 + close) {
+                break;
+            }
+            parse_smp_color(p, &cs);
+            memcpy(wp, p, 4);
+            wp += 4;
+            p += 4;
             continue;
         }
 
-        /* Visible byte: it begins the next cluster of the stripped
-         * text.  Width-check the WHOLE cluster before copying any of
-         * it, so truncation never splits a cluster. */
-        if (pn >= plen) break;
+        if (pn >= plen) {
+            break;
+        }
         size_t cplen = next_grapheme_plain(plain + pn, plen - pn);
-        if (0 == cplen) break;
+        if (0 == cplen) {
+            break;
+        }
 
         size_t w = cluster_console_width(plain + pn, cplen);
-        if (cols_emitted + w > ncols) break;
+        if (cols_emitted + w > nCols) {
+            break;
+        }
 
-        /* Copy cplen visible bytes from the original buffer, passing
-         * any color codes interleaved within the cluster through. */
+        /*
+         * Measure the cluster (color + visible) without writing, and reserve
+         * budget for a RESET if we would stop non-normal afterwards — the
+         * StripTabsAndTruncate reserve-for-close pattern (#1649).
+         */
+        const unsigned char *pProbe = p;
+        co_ColorState csProbe = cs;
+        size_t need = measure_cluster_bytes(&pProbe, pe, cplen, &csProbe);
+        size_t close = co_cs_equal(&csProbe, &normal) ? 0 : CO_COLOR_CLOSE_BYTES;
+        if ((size_t)(wp_end - wp) < need + close) {
+            break;
+        }
+
+        /* Accept: copy for real. */
         size_t copied = 0;
         while (copied < cplen && p < pe) {
-            q = co_skip_color(p, pe);
-            if (q != p) {
-                size_t cb = (size_t)(q - p);
-                if (wp + cb > wp_end) { p = pe; break; }
-                memcpy(wp, p, cb);
-                wp += cb;
-                p = q;
+            if (p[0] == 0xEF && (p + 2) < pe
+                && p[1] >= 0x94 && p[1] <= 0x9F) {
+                parse_bmp_color(p, &cs);
+                memcpy(wp, p, 3);
+                wp += 3;
+                p += 3;
                 continue;
             }
-            if (wp >= wp_end) { p = pe; break; }
+            if (p[0] == 0xF3 && (p + 3) < pe
+                && p[1] >= 0xB0 && p[1] <= 0xB3) {
+                parse_smp_color(p, &cs);
+                memcpy(wp, p, 4);
+                wp += 4;
+                p += 4;
+                continue;
+            }
             *wp++ = *p++;
             copied++;
         }
@@ -3441,17 +3578,26 @@ size_t co_copy_columns(unsigned char *out, const unsigned char *p,
         cols_emitted += w;
     }
 
+    /* Close color if we ended mid-run and have room (reserved above). */
+    if (!co_cs_equal(&cs, &normal) && (size_t)(wp_end - wp) >= CO_COLOR_CLOSE_BYTES) {
+        wp += emit_transition(wp, wp_end, &cs, &normal);
+    }
+
     *wp = '\0';
-    return (size_t)(wp - out);
+    fld.bytes = (size_t)(wp - out);
+    fld.columns = cols_emitted;
+    return fld;
 }
 
-/* Forward declarations for color helpers defined later in file. */
-static int parse_bmp_color(const unsigned char *p, co_ColorState *cs);
-static int parse_smp_color(const unsigned char *p, co_ColorState *cs);
-static size_t emit_transition(unsigned char *wp,
-                              const unsigned char *wp_end,
-                              const co_ColorState *old_cs,
-                              const co_ColorState *new_cs);
+/*
+ * co_copy_columns — legacy entry; wraps co_copy_field with LBUF_SIZE.
+ */
+size_t co_copy_columns(unsigned char *out, const unsigned char *p,
+                       const unsigned char *pe, size_t ncols)
+{
+    co_field fld = co_copy_field(out, LBUF_SIZE, p, pe, ncols);
+    return fld.bytes;
+}
 
 /*
  * strip_crnltab — Remove \r, \n, \t from fill pattern in-place.
@@ -5408,13 +5554,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5201 "color_ops.c"
+#line 5347 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 3941 "color_ops.rl"
+#line 4087 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5428,21 +5574,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5217 "color_ops.c"
+#line 5363 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 3954 "color_ops.rl"
+#line 4100 "color_ops.rl"
     
-#line 5220 "color_ops.c"
+#line 5366 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 3926 "color_ops.rl"
+#line 4072 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5456,9 +5602,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
-#line 3926 "color_ops.rl"
+#line 4072 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5475,7 +5621,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5256 "color_ops.c"
+#line 5402 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5504,62 +5650,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5290 "color_ops.c"
+#line 5436 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5300 "color_ops.c"
+#line 5446 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5310 "color_ops.c"
+#line 5456 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5320 "color_ops.c"
+#line 5466 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5330 "color_ops.c"
+#line 5476 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5577,38 +5723,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5353 "color_ops.c"
+#line 5499 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5363 "color_ops.c"
+#line 5509 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5373 "color_ops.c"
+#line 5519 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5626,14 +5772,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 3925 "color_ops.rl"
+#line 4071 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5396 "color_ops.c"
+#line 5542 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5655,7 +5801,7 @@ case 11:
 	_out: {}
 	}
 
-#line 3955 "color_ops.rl"
+#line 4101 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
