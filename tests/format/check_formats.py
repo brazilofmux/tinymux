@@ -142,8 +142,34 @@ def _literal_only(expr):
     return re.fullmatch(r'[\s()"]*', stripped) is not None and '"' in stripped
 
 
+# MN_(singular, plural, count) is not a cast wrapper and cannot join the list
+# above: its third argument is a runtime count, so the expression as written
+# is not literal-only (#1622).  The first two arguments ARE the format
+# literals, and both must be checked -- each is a format string in its own
+# right, chosen at runtime by the catalogue's plural rule.
+#
+# Rewriting to (singular, plural) leaves both literals in place, so the
+# conversion scan below sees the conversions of both forms rather than only
+# the one that happens to be listed first.
+#
+MN_CALL = re.compile(r'\bMN_\s*\((.*)\)\s*$', re.S)
+
+
+def _strip_mn(f):
+    m = MN_CALL.match(f)
+    if not m:
+        return f
+    args = split_args(m.group(1))
+    if len(args) < 2:
+        return f
+    # Joined with a space, not a comma: adjacent string literals are C++
+    # concatenation, which _literal_only already accepts.  A comma is not in
+    # its allowed character set and would fail the very check this enables.
+    return "(" + " ".join(a.strip() for a in args[:2]) + ")"
+
+
 def is_constant_format(fmt):
-    f = fmt.strip()
+    f = _strip_mn(fmt.strip())
     if not f:
         return True                      # parse artifact, not a call
     if re.match(r'^(const\s+)?(UTF8|char)\s*\*', f):
@@ -247,7 +273,7 @@ def main():
                     % (rel, line, name, fmt.strip()[:60]))
                 continue
 
-            lit = "".join(LIT.findall(fmt))
+            lit = "".join(LIT.findall(_strip_mn(fmt.strip())))
             for sm in SPEC.finditer(lit):
                 flags = sm.group(1) or ""
                 width = sm.group(2) or ""

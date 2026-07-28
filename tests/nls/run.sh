@@ -210,6 +210,75 @@ EOF
 check "LANGUAGE=xx, catalogue absent" "$n" 0 "$tok" \
       "[xx] appeared without a catalogue -- case 2 proves nothing"
 
+# ---------------------------------------------------------------------------
+# 4. The catalogue chooses the plural FORM, not merely a translation (#1622).
+#
+# The [xx] counts above cannot see this.  Both forms are translated, so a
+# build that always returned msgstr[0] -- or one where MN_() fell through to
+# the English ternary -- would score identically on cases 1-3.
+#
+# The count is controlled rather than observed: @entrances reports how many
+# exits lead to a room, so digging one exit gives exactly 1 and digging a
+# second gives exactly 2.  Reading @entrances against the starter database
+# instead would make this depend on that database's exit topology, which is
+# not what is under test.
+# ---------------------------------------------------------------------------
+plural_case() {   # $1 = how many exits to dig
+    rm -rf "$WORK"; mkdir -p "$WORK/data" "$WORK/logs" "$WORK/text"
+    ( cd "$WORK" || exit 1
+      ln -s "$BIN" bin
+      cp "$REPO_ROOT/mux/game/alias.conf" "$REPO_ROOT/mux/game/compat.conf" . 2>/dev/null
+      mkdir -p locale/xx/LC_MESSAGES
+      msgfmt -o locale/xx/LC_MESSAGES/tinymux.mo "$PO" 2>/dev/null
+      cat > p.conf <<EOF
+input_database  data/p.db
+output_database data/p.db.new
+crash_database  data/p.db.CRASH
+mail_database   data/mail.db
+comsys_database data/comsys.db
+port 2901
+mud_name NlsPlural
+command_quota_increment 200000
+command_quota_max 200000
+include alias.conf
+include compat.conf
+EOF
+      # Move INTO the new room before counting: @entrances needs a locally
+      # matchable target, and a freshly dug room is not matchable by name
+      # from where it was dug ("I don't see that here").  Inside it, `here`
+      # resolves and the count is exactly the exits leading in.
+      {
+        echo '@dig Target=to1,back1'
+        echo '@teleport to1'
+        [ "$1" -ge 2 ] && echo '@open two=here'
+        echo '@entrances here'
+        echo '@shutdown'
+      } > in.txt
+      LOCPATH="${NLS_LOCPATH:-${LOCPATH-}}" LC_ALL="$NLS_LOCALE" LANGUAGE=xx \
+        LD_LIBRARY_PATH="$BIN" \
+        $TIMEOUT "$BIN/muxscript" -g . -c p.conf < in.txt > out.log 2>&1
+    )
+    grep -aoE '\[xx\] [0-9]+ entrances? found\.' "$WORK/out.log" 2>/dev/null | head -1
+}
+
+one=$(plural_case 1)
+case "$one" in
+    *"1 entrance found."*)
+        printf '%-34s %-10s %-10s %s\n' "plural: n=1 picks singular" "singular" "singular" "ok" ;;
+    *)
+        printf '%-34s %-10s %-10s %s\n' "plural: n=1 picks singular" "singular" "${one:-<none>}" "FAIL"
+        fails=$((fails+1)) ;;
+esac
+
+two=$(plural_case 2)
+case "$two" in
+    *entrances\ found.*)
+        printf '%-34s %-10s %-10s %s\n' "plural: n>1 picks plural" "plural" "plural" "ok" ;;
+    *)
+        printf '%-34s %-10s %-10s %s\n' "plural: n>1 picks plural" "plural" "${two:-<none>}" "FAIL"
+        fails=$((fails+1)) ;;
+esac
+
 rm -rf "$WORK"
 echo
 if [ "$fails" -ne 0 ]; then
@@ -219,6 +288,6 @@ if [ "$fails" -ne 0 ]; then
     echo "LANGUAGE=xx run can no longer be trusted as evidence.  See #1523."
     exit 1
 fi
-echo "=== tests/nls: PASSED (3 cases; translation observed and shown to depend"
+echo "=== tests/nls: PASSED (5 cases; translation observed and shown to depend"
 echo "    on the catalogue, softcode tokens unchanged throughout) ==="
 exit 0

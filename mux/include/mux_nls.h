@@ -9,6 +9,10 @@
  *          used as tprintf/mux_sprintf/raw_broadcast formats. gettext when
  *          HAVE_NLS. Opt-in only. Catalogues must preserve conversion
  *          sequences (tests/nls/check_nls.py).
+ *   MN_(s,p,n)  Plural-aware prose (#1622). gettext's ngettext when
+ *          HAVE_NLS; the English ternary otherwise. Use whenever a count
+ *          decides the wording -- never compute the suffix at the call site
+ *          and pass it in as %s, which can only ever express English.
  *   S_(x)  Softcode / machine ABI (#-1 …). Never translated.
  *   N_(x)  Mark-only for xgettext when the msgid is stored before runtime
  *          lookup (static globals re-bound via M_ after mux_nls_init).
@@ -42,8 +46,23 @@
 LIBMUX_API const UTF8 *mux_gettext(const UTF8 *msgid);
 
 #define M_(x) (mux_gettext(reinterpret_cast<const UTF8 *>(x)))
+
+// Plural-aware lookup (#1622).  The count is passed to the catalogue rather
+// than resolved here, because "1 vs everything else" is an English rule:
+// Korean and Japanese have one form, Russian and Polish three, Arabic six.
+// A call site that picks the suffix itself can only ever be right for
+// English, and leaves a translator with a %s slot nothing can fill.
+//
+LIBMUX_API const UTF8 *mux_ngettext(const UTF8 *msgid,
+                                    const UTF8 *msgid_plural,
+                                    unsigned long n);
+
+#define MN_(s,p,n) (mux_ngettext(reinterpret_cast<const UTF8 *>(s), \
+                                 reinterpret_cast<const UTF8 *>(p), \
+                                 static_cast<unsigned long>(n)))
 #else
 #define M_(x) (reinterpret_cast<const UTF8 *>(x))
+#define MN_(s,p,n) (reinterpret_cast<const UTF8 *>((1 == (n)) ? (s) : (p)))
 #endif
 
 // Bind domain "tinymux" under locale_dir (typically game/locale).

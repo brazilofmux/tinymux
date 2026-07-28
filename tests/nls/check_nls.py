@@ -44,42 +44,65 @@ def repo_root():
 
 
 def parse_po(path):
-    """Return [(msgid, msgstr, is_fuzzy)] from a .po/.pot, header excluded."""
+    """Return [(msgid, [msgstr, ...], is_fuzzy)] from a .po/.pot.
+
+    Plural entries (#1622) carry msgid_plural and msgstr[0..n-1].  The list
+    is every translation form: one element for a singular entry, nplurals for
+    a plural one.  Treating msgid_plural as a continuation of msgid -- which
+    an earlier version effectively did -- silently welds the two originals
+    into one nonsense key, and every check downstream then compares against a
+    msgid that does not exist.
+
+    The header (empty msgid) is excluded.
+    """
     entries = []
-    msgid = msgstr = None
+    msgid = None
+    msgstrs = []
     fuzzy = False
     pending_fuzzy = False
     target = None
+
+    def flush():
+        if msgid is not None:
+            entries.append((msgid, list(msgstrs) or [""], fuzzy))
+
     with open(path, encoding="utf-8") as fh:
         for line in fh:
             line = line.rstrip("\n")
             if line.startswith("#, ") and "fuzzy" in line:
                 pending_fuzzy = True
                 continue
+            if line.startswith("msgid_plural "):
+                # Recorded only to keep it out of msgid; the singular is the
+                # key everywhere else in this file.
+                target = "plural"
+                continue
             if line.startswith("msgid "):
-                if msgid is not None:
-                    entries.append((msgid, msgstr or "", fuzzy))
+                flush()
                 msgid = _lit(line[6:])
-                msgstr = None
+                msgstrs = []
                 fuzzy = pending_fuzzy
                 pending_fuzzy = False
                 target = "id"
                 continue
+            if line.startswith("msgstr["):
+                msgstrs.append(_lit(line[line.index("]") + 1:]))
+                target = "str"
+                continue
             if line.startswith("msgstr "):
-                msgstr = _lit(line[7:])
+                msgstrs = [_lit(line[7:])]
                 target = "str"
                 continue
             if line.startswith('"'):
                 if target == "id":
                     msgid = (msgid or "") + _lit(line)
-                elif target == "str":
-                    msgstr = (msgstr or "") + _lit(line)
+                elif target == "str" and msgstrs:
+                    msgstrs[-1] += _lit(line)
+                # "plural" continuations are deliberately dropped.
                 continue
             if not line.strip():
                 target = None
-    if msgid is not None:
-        entries.append((msgid, msgstr or "", fuzzy))
-    # The first entry with an empty msgid is the catalogue header.
+    flush()
     return [e for e in entries if e[0] != ""]
 
 
@@ -138,18 +161,23 @@ def check_format_catalogues(root, pot):
         if not name.endswith(".po"):
             continue
         path = os.path.join(po_dir, name)
-        for msgid, msgstr, fuzzy in parse_po(path):
+        for msgid, msgstrs, fuzzy in parse_po(path):
             if msgid not in fmt_ids:
                 continue
-            if fuzzy or not msgstr:
+            if fuzzy or not any(msgstrs):
                 # check_catalogues already reports fuzzy/untranslated.
                 continue
-            got = conversion_sequence(msgstr)
-            want = fmt_ids[msgid]
-            if got != want:
-                findings.append(
-                    "%s: format mismatch for %r -- msgid %s, msgstr %s"
-                    % (name, msgid, want, got))
+            # Every plural form takes the same arguments, so every form must
+            # carry the same conversion sequence as the msgid (#1622).
+            for msgstr in msgstrs:
+                if not msgstr:
+                    continue
+                got = conversion_sequence(msgstr)
+                want = fmt_ids[msgid]
+                if got != want:
+                    findings.append(
+                        "%s: format mismatch for %r -- msgid %s, msgstr %s"
+                        % (name, msgid, want, got))
     return findings
 
 
@@ -244,7 +272,12 @@ def check_catalogues(root, pot):
         entries = parse_po(path)
         have = {m for m, _, _ in entries}
         fuzzy = [m for m, _, f in entries if f]
-        untranslated = [m for m, s, _ in entries if not s]
+        # A list of forms now (#1622).  Empty if nothing is translated;
+        # partially filled is still a defect, since msgfmt will emit the
+        # blank forms and those messages render empty at runtime.
+        untranslated = [m for m, forms, _ in entries if not any(forms)]
+        partial = [m for m, forms, _ in entries
+                   if any(forms) and not all(forms)]
         missing = ids - have
         extra = have - ids
 
@@ -262,6 +295,10 @@ def check_catalogues(root, pot):
             for m in sorted(fuzzy)[:5]:
                 findings.append("%s: fuzzy msgid %r -- msgfmt will DROP this"
                                 % (name, m))
+            for m in sorted(partial)[:5]:
+                findings.append(
+                    "%s: msgid %r has some plural forms translated and some "
+                    "empty -- the empty ones render blank" % (name, m))
             for m in sorted(untranslated)[:5]:
                 findings.append("%s: untranslated msgid %r" % (name, m))
     return findings
@@ -282,7 +319,7 @@ def coverage_report(root, pot):
             continue
         path = os.path.join(po_dir, name)
         entries = parse_po(path)
-        done = len([m for m, s, f in entries if s and not f])
+        done = len([m for m, forms, f in entries if all(forms) and not f])
         fuzzy = len([m for m, _, f in entries if f])
         pct = (100.0 * done / total) if total else 0.0
         lines.append("  %-10s %4d/%-4d (%5.1f%%) translated, %2d fuzzy  [%s]"
