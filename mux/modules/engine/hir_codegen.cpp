@@ -1151,6 +1151,41 @@ static void ra_set_loc(rv_compiler &rc, hir_loc *loc,
     }
 }
 
+// Emit the argument setup shared by HIR_LUA_CALL_INT and HIR_LUA_CALL_STR.
+// One emitter for the one encoding (see ecall_lua_push_call_args in
+// jit_compiler.cpp): two bits per argument -- 0 is an integer via
+// ra_get_reg into x12+j, 1 is an SCONST's guest address into x12+j, 2 is a
+// double loaded from its FP slot and moved as raw bits into x12+j over the
+// FMV.X.D lane ECALL_LUA_FTOA already proved on both execution routes.
+// The kind bits the lowering packed are the single source of truth here;
+// re-deriving them from h.kind/h.ty would be a second opinion that could
+// disagree with what the handler will decode.
+//
+static void emit_lua_call_args(rv_compiler &rc, hir_loc *loc,
+                               int nargs, int kinds, int s2, int a1i) {
+    for (int j = 0; j < nargs && j < 2; j++) {
+        const int v = (0 == j) ? s2 : a1i;
+        if (v < 0) continue;
+        const uint8_t xd = static_cast<uint8_t>(12 + j);
+        switch ((kinds >> (2 * j)) & 3) {
+        case 1:
+            rv_load_guest_addr(rc.code, xd, loc[v].addr);
+            break;
+        case 2:
+            rv_load_guest_addr(rc.code, RA_SCRATCH, loc[v].addr);
+            rc.code.push_back(rv_FLD(0, RA_SCRATCH, 0));
+            rc.code.push_back(rv_FMV_X_D(xd, 0));
+            break;
+        default: {
+            uint8_t r = ra_get_reg(rc, loc, v,
+                                   static_cast<uint8_t>(28 + j));
+            rc.code.push_back(rv_ADDI(xd, r, 0));
+            break;
+        }
+        }
+    }
+}
+
 // Emit PHI copies: when branching from from_blk to to_blk,
 // emit moves for any PHI nodes at the target block.
 //
@@ -1457,22 +1492,8 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 int a1i = (packed >> 16) - 1;
                 uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 rc.code.push_back(rv_ADDI(10, fn_r, 0));
-                if (nargs >= 1 && s2 >= 0) {
-                    if (h.kind[s2] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 12, loc[s2].addr);
-                    } else {
-                        uint8_t r = ra_get_reg(rc, loc, s2, 28);
-                        rc.code.push_back(rv_ADDI(12, r, 0));
-                    }
-                }
-                if (nargs >= 2 && a1i >= 0) {
-                    if (h.kind[a1i] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 13, loc[a1i].addr);
-                    } else {
-                        uint8_t r = ra_get_reg(rc, loc, a1i, 29);
-                        rc.code.push_back(rv_ADDI(13, r, 0));
-                    }
-                }
+                emit_lua_call_args(rc, loc, nargs, (packed >> 8) & 0xFF,
+                                   s2, a1i);
                 rv_load_i64(rc.code, 11, packed & 0xFFFF);
                 rv_load_guest_addr(rc.code, 14, loc[i].addr);
                 rv_load_i64(rc.code, 15, rv_compiler::OUT_SLOT);
@@ -1499,24 +1520,10 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 if (!dest) break;
                 uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
                 rc.code.push_back(rv_ADDI(10, fn_r, 0));
-                // Argument setup is identical to CALL_STR; only the result
-                // handling below differs.
-                if (nargs >= 1 && s2 >= 0) {
-                    if (h.kind[s2] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 12, loc[s2].addr);
-                    } else {
-                        uint8_t a0r = ra_get_reg(rc, loc, s2, 28);
-                        rc.code.push_back(rv_ADDI(12, a0r, 0));
-                    }
-                }
-                if (nargs >= 2 && a1i >= 0) {
-                    if (h.kind[a1i] == HIR_SCONST) {
-                        rv_load_guest_addr(rc.code, 13, loc[a1i].addr);
-                    } else {
-                        uint8_t a1r = ra_get_reg(rc, loc, a1i, 29);
-                        rc.code.push_back(rv_ADDI(13, a1r, 0));
-                    }
-                }
+                // Argument setup is identical to CALL_STR -- one emitter;
+                // only the result handling below differs.
+                emit_lua_call_args(rc, loc, nargs, (packed >> 8) & 0xFF,
+                                   s2, a1i);
                 rv_load_i64(rc.code, 11, packed & 0xFFFF);
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_CALL_INT)));

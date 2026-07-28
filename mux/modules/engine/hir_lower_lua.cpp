@@ -2318,8 +2318,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // disagree about a name the way the twin gated branches this
             // replaces could (d5e5e86e0).
             //
-            // Arguments may be integers or CONSTANT strings; the kind bits
-            // tell the handler which register holds which.  A runtime
+            // Arguments may be integers, CONSTANT strings, or floats --
+            // constant or runtime -- with TWO kind bits per argument
+            // telling codegen and the handler what each register carries
+            // (0 integer, 1 string address, 2 double as raw bits over the
+            // FMV.X.D lane).  Floats travel honestly rather than as
+            // rendered text because coercion would lie to a type-sensitive
+            // callee: math.type("3.0") is nil, not "float".  A runtime
             // string argument would need its own guest buffer and is left
             // for when something needs it.
             const lua_referent fref = lua_referent_of(lua_ref, func_reg);
@@ -2337,9 +2342,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         ok = false; break;
                     }
                     if (h.ty[areg] == TY_INT) {
-                        // integer: kind bit stays 0
+                        // integer: kind 0
                     } else if (h.kind[areg] == HIR_SCONST) {
-                        kinds |= (1 << i);
+                        kinds |= (1 << (2 * i));   // string address
+                    } else if (h.ty[areg] == TY_FLOAT) {
+                        kinds |= (2 << (2 * i));   // double, raw bits
                     } else {
                         ok = false; break;
                     }

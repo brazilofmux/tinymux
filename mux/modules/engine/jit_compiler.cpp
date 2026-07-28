@@ -3316,6 +3316,49 @@ static bool ecall_lua_plain_table(lua_State *L, int idx)
     return true;
 }
 
+// Push the arguments of a compiled Lua call (ECALL_LUA_CALL_INT/_STR).
+// The two result variants share one argument encoding: nargs in a1's low
+// byte, then TWO BITS per argument in the next byte -- 0 is an integer in
+// x[12+j], 1 is the guest address of a NUL-terminated string in x[12+j],
+// 2 is a double as raw bits in x[12+j] (the FMV.X.D lane ECALL_LUA_FTOA
+// already proved on both execution routes).  One decoder shared by both
+// handlers, because two near-identical loops is the drift shape (#1457)
+// the lowering's twin call branches had to be merged out of.
+//
+// Returns false -- caller declines -- on a bad address or an unknown kind.
+// The caller owns stack cleanup, as it also must for a failed pcall.
+//
+static bool ecall_lua_push_call_args(lua_State *L, const rv64_ctx_t *ctx,
+                                     const eval_ctx *ec,
+                                     int nargs, int kinds)
+{
+    for (int j = 0; j < nargs; j++) {
+        const uint64_t raw = ctx->x[12 + j];
+        switch ((kinds >> (2 * j)) & 3) {
+        case 0:
+            lua_pushinteger(L, static_cast<lua_Integer>(raw));
+            break;
+        case 1: {
+            const char *sarg = guest_cstr(ec->memory, ec->memory_size, raw);
+            if (nullptr == sarg) {
+                return false;
+            }
+            lua_pushstring(L, sarg);
+            break;
+        }
+        case 2: {
+            double d;
+            memcpy(&d, &raw, 8);
+            lua_pushnumber(L, d);
+            break;
+        }
+        default:
+            return false;
+        }
+    }
+    return true;
+}
+
 // The Lua lowering's bridge ECALLs are dispatched by name and all live in a
 // reserved "__lua_" namespace (hir_lower_lua.cpp).  Recognising the namespace
 // -- rather than just a leading "__" -- is what lets the dispatch below fail
@@ -4037,9 +4080,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // against a loop that wrote per codepoint -- so a string-producing
         // ECALL states its buffer size explicitly and clamps to it.
         //
-        // argkind bit j: 0 = integer in the register, 1 = guest address of
-        // a NUL-terminated string.  Two arguments is the current ceiling,
-        // matching CALL_INT.
+        // Argument kinds are two bits each; see ecall_lua_push_call_args.
+        // Two arguments is the current ceiling, matching CALL_INT.
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int fn_idx  = static_cast<int>(ctx->x[10]);
@@ -4058,20 +4100,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         int base = lua_gettop(L);
         lua_pushvalue(L, fn_idx);
-        for (int j = 0; j < nargs; j++) {
-            uint64_t raw = (0 == j) ? ctx->x[12] : ctx->x[13];
-            if (kinds & (1 << j)) {
-                const char *sarg = guest_cstr(ec->memory, ec->memory_size,
-                                              raw);
-                if (nullptr == sarg) {
-                    lua_settop(L, base);
-                    ctx->x[11] = 0;
-                    return ECALL_DECLINE;
-                }
-                lua_pushstring(L, sarg);
-            } else {
-                lua_pushinteger(L, static_cast<lua_Integer>(raw));
-            }
+        if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
         }
         if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
             lua_settop(L, base);
@@ -4130,25 +4162,14 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
         int base = lua_gettop(L);
         lua_pushvalue(L, fn_idx);
-        // Same argument encoding as CALL_STR: kind bit j selects integer in
-        // the register or guest address of a string.  The two differ only in
-        // the RESULT type, so they have no business differing in how
-        // arguments arrive -- tonumber("17") returns an integer from a
-        // string argument and needs both halves.
-        for (int j = 0; j < nargs; j++) {
-            uint64_t raw = (0 == j) ? ctx->x[12] : ctx->x[13];
-            if (kinds & (1 << j)) {
-                const char *sarg = guest_cstr(ec->memory, ec->memory_size,
-                                              raw);
-                if (nullptr == sarg) {
-                    lua_settop(L, base);
-                    ctx->x[11] = 0;
-                    return ECALL_DECLINE;
-                }
-                lua_pushstring(L, sarg);
-            } else {
-                lua_pushinteger(L, static_cast<lua_Integer>(raw));
-            }
+        // Same argument encoding as CALL_STR, one decoder for both: the two
+        // differ only in the RESULT type, so they have no business
+        // differing in how arguments arrive -- tonumber("17") returns an
+        // integer from a string argument and needs both halves.
+        if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
         }
         if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
             lua_settop(L, base);

@@ -127,12 +127,12 @@ AGREE_CASES=(
     'local t={a=7} return t.a'
     # ---- math.type: the subtype as Lua reports it (#1488) ----
     #
-    # AGREE, not EXEC: FLOAT constants cannot yet travel as call arguments,
-    # so these decline.  Worth pinning anyway -- it is the only check that
-    # the subtype is right *inside* Lua rather than just in the rendered
-    # result, and it is the case that showed `^` was float all along and the
-    # "8" came from the constant fold.  The integer form, math.type(3), now
-    # executes and lives in EXEC_CASES.
+    # The only check that the subtype is right *inside* Lua rather than
+    # just in the rendered result, and the case that showed `^` was float
+    # all along and the "8" came from the constant fold.  Floats now travel
+    # as call arguments (raw bits over the FMV.X.D lane), so these execute;
+    # math.type("3.0") is nil, which is why they could never be smuggled
+    # as rendered text.
     'return math.type(3.0)'
     'return math.type(2^3)'
 
@@ -156,7 +156,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=15
+AGREE_DECLINE_BUDGET=11
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -260,6 +260,17 @@ EXEC_CASES=(
     'return tonumber("17")'
     'return string.rep("ab",2)'
     'return math.type(3)'
+
+    # FLOAT arguments -- raw double bits over the FMV.X.D lane, kind 2 in
+    # the two-bit argument encoding.  A constant float to each result
+    # variant (floor returns an integer, type returns a string), then a
+    # RUNTIME float, which a constant-folding accident cannot fake.  Two
+    # floor calls with different fractions catch an implementation that
+    # loads one argument slot and reuses it.
+    'local x=math.floor(3.7) return x'
+    'local x=math.type(3.0) return x'
+    'local x=math.floor(2.5)+math.floor(3.25) return x'
+    'local x=math.floor(mux.args[1]+0.5) return x'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
