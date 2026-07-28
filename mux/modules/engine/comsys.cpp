@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "mux_table.h"
 
 #include <algorithm>
 #include <unordered_map>
@@ -4050,17 +4051,43 @@ void do_chanlist
         return;
     }
 
+    // @clist / @clist/headers column schema (#1667 Phase 4 A2).
+    // Prefix 4 cols ("*** " or "PLS "), then name 13 / owner 15 / third 45
+    // with a single space between fields, pad line to 79.  Header and rows
+    // share mux_table_* so labels are separate msgids and cannot drift from
+    // the data stops.  Matches the module ChanList construction.
+    //
+    static const size_t kClistNameCols  = 13;
+    static const size_t kClistOwnerCols = 15;
+    static const size_t kClistThirdCols = 45;
+    static const size_t kClistLineCols  = 79;
+
+    {
+        UTF8 header[MBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_bytes(header, sizeof(header), pos, "*** ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Channel"), kClistNameCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Owner"), kClistOwnerCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            (key & CLIST_HEADERS) ? M_("Header") : M_("Description"),
+            kClistThirdCols);
+        while (pos < kClistLineCols && pos + 1 < sizeof(header))
+        {
+            header[pos++] = ' ';
+        }
+        if (pos < sizeof(header))
+        {
+            header[pos] = '\0';
+        }
+        raw_notify(executor, header);
+    }
+
     dbref owner;
     int flags = 0;
-
-    if (key & CLIST_HEADERS)
-    {
-        raw_notify(executor, M_("*** Channel       Owner           Header"));
-    }
-    else
-    {
-        raw_notify(executor, M_("*** Channel       Owner           Description"));
-    }
 
     bool bWild;
     if (nullptr != pattern
@@ -4121,27 +4148,29 @@ void do_chanlist
                     }
 
                     UTF8* temp = alloc_mbuf("do_chanlist_temp");
-                    mux_sprintf(temp, MBUF_SIZE, T("%c%c%c "),
-                        (ch->type & (CHANNEL_PUBLIC)) ? 'P' : '-',
-                        (ch->type & (CHANNEL_LOUD)) ? 'L' : '-',
-                        (ch->type & (CHANNEL_SPOOF)) ? 'S' : '-');
-                    mux_field iPos(4, 4);
+                    size_t pos = 0;
+                    temp[pos++] = (ch->type & CHANNEL_PUBLIC) ? 'P' : '-';
+                    temp[pos++] = (ch->type & CHANNEL_LOUD)   ? 'L' : '-';
+                    temp[pos++] = (ch->type & CHANNEL_SPOOF)  ? 'S' : '-';
+                    temp[pos++] = ' ';
+                    temp[pos] = '\0';
 
-                    iPos += StripTabsAndTruncate(ch->name,
-                        temp + iPos.m_byte,
-                        (MBUF_SIZE - 1) - iPos.m_byte,
-                        13);
-                    iPos = PadField(temp, MBUF_SIZE - 1, 18, iPos);
-                    iPos += StripTabsAndTruncate(Moniker(ch->charge_who),
-                        temp + iPos.m_byte,
-                        (MBUF_SIZE - 1) - iPos.m_byte,
-                        15);
-                    iPos = PadField(temp, MBUF_SIZE - 1, 34, iPos);
-                    iPos += StripTabsAndTruncate(pBuffer,
-                        temp + iPos.m_byte,
-                        (MBUF_SIZE - 1) - iPos.m_byte,
-                        45);
-                    iPos = PadField(temp, MBUF_SIZE - 1, 79, iPos);
+                    pos = mux_table_append_ljust(temp, MBUF_SIZE, pos,
+                        ch->name, kClistNameCols);
+                    pos = mux_table_append_bytes(temp, MBUF_SIZE, pos, " ");
+                    pos = mux_table_append_ljust(temp, MBUF_SIZE, pos,
+                        Moniker(ch->charge_who), kClistOwnerCols);
+                    pos = mux_table_append_bytes(temp, MBUF_SIZE, pos, " ");
+                    pos = mux_table_append_ljust(temp, MBUF_SIZE, pos,
+                        pBuffer, kClistThirdCols);
+                    while (pos < kClistLineCols && pos + 1 < MBUF_SIZE)
+                    {
+                        temp[pos++] = ' ';
+                    }
+                    if (pos < MBUF_SIZE)
+                    {
+                        temp[pos] = '\0';
+                    }
 
                     raw_notify(executor, temp);
                     free_mbuf(temp);
