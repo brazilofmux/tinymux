@@ -106,6 +106,9 @@ enum hir_kind {
     //
     HIR_LUA_NEWTABLE, // newtable(narr, nrec): ECALL → TY_LUA_HANDLE
     HIR_LUA_LEN,    // len(tbl_idx): ECALL → TY_INT, Lua's # on a table
+    HIR_LUA_GETGLOBAL, // getglobal(key_addr): ECALL → TY_LUA_HANDLE
+    HIR_LUA_GETFIELD_REF, // getfield(tbl_idx, key_addr): ECALL → TY_LUA_HANDLE
+    HIR_LUA_CALL_INT, // call(fn_idx, nargs, args_addr): ECALL → TY_INT
     HIR_LUA_GETFIELD, // getfield(tbl_idx, key_addr): ECALL → TY_INT
     HIR_LUA_SETFIELD, // setfield(tbl_idx, key_addr, val): ECALL
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)

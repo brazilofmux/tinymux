@@ -816,6 +816,9 @@ static bool needs_int_reg(hir_program &h, int i) {
     // and the consumer reads a garbage index (measured: SETI got idx=0).
     case HIR_LUA_NEWTABLE:
     case HIR_LUA_LEN:
+    case HIR_LUA_GETGLOBAL:
+    case HIR_LUA_GETFIELD_REF:
+    case HIR_LUA_CALL_INT:
     case HIR_LUA_GETFIELD:
     case HIR_LUA_GETI:
     case HIR_LUA_ALOAD:
@@ -1417,6 +1420,75 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rv_load_guest_addr(rc.code, 11, a2);
                     rv_emit_strcmp(rc.code, 10, 11, dest);
                 }
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_GETGLOBAL: {
+                // a0 = key addr -> a0 = stack idx.
+                int s1 = h.src1[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                if (h.kind[s1] != HIR_SCONST) break;
+                rv_load_guest_addr(rc.code, 10, loc[s1].addr);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_GETGLOBAL)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_GETFIELD_REF: {
+                // a0=tbl_idx, a1=key addr -> a0=stack idx.
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                if (h.kind[s2] != HIR_SCONST) break;
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));
+                rv_load_guest_addr(rc.code, 11, loc[s2].addr);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_GETFIELD_REF)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_CALL_INT: {
+                // a0=fn idx, a1=nargs, a2=arg0, a3=arg1 -> a0=int result.
+                // nargs and the args are packed into val[]: low 8 bits are
+                // the count, the two operands are src1(fn)/src2(arg0) with
+                // arg1 in the upper bits as an insn index.  See the comment
+                // on hir_val_operand -- this is a THIRD shape for val[] and
+                // is exactly the seam that wants a real operand list.
+                int s1 = h.src1[i], s2 = h.src2[i];
+                int nargs = static_cast<int>(h.val[i] & 0xFF);
+                int a1i = static_cast<int>(h.val[i] >> 8) - 1;
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, fn_r, 0));
+                if (nargs >= 1 && s2 >= 0) {
+                    uint8_t a0r = ra_get_reg(rc, loc, s2, 28);
+                    rc.code.push_back(rv_ADDI(12, a0r, 0));
+                }
+                if (nargs >= 2 && a1i >= 0) {
+                    uint8_t a1r = ra_get_reg(rc, loc, a1i, 29);
+                    rc.code.push_back(rv_ADDI(13, a1r, 0));
+                }
+                rc.code.push_back(rv_ADDI(11, 0, nargs));
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_CALL_INT)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));
                 ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
@@ -2364,6 +2436,9 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_STRCMP:      return "STRCMP";
     case HIR_LUA_NEWTABLE: return "LUA_NEWTABLE";
     case HIR_LUA_LEN:    return "LUA_LEN";
+    case HIR_LUA_GETGLOBAL: return "LUA_GETGLOBAL";
+    case HIR_LUA_GETFIELD_REF: return "LUA_GETFIELD_REF";
+    case HIR_LUA_CALL_INT: return "LUA_CALL_INT";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
     case HIR_LUA_SETFIELD: return "LUA_SETFIELD";
     case HIR_LUA_GETI:   return "LUA_GETI";
