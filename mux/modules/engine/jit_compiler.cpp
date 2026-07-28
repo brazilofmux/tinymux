@@ -3982,6 +3982,28 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_LEN_INT: {
+        // Lua's # on a table: a0=tbl_idx -> a0=length, a1=ok.
+        //
+        // This is #1424's original symptom fixed at the root.  `#t` answered
+        // 22 because the lowering measured a stack INDEX that had been
+        // marshalled out as a decimal string -- strlen of the text, not the
+        // length of the table.  Asking the VM is the only correct answer,
+        // and the index never leaves a register to be mistaken for one.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        if (!ecall_lua_plain_table(L, tbl_idx)) {
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        // rawlen, matching # on a table without a __len metamethod; the
+        // plain-table guard above is what makes that equivalence hold.
+        ctx->x[10] = static_cast<uint64_t>(lua_rawlen(L, tbl_idx));
+        ctx->x[11] = 1;
+        return -1;
+    }
+
     case ECALL_LUA_SETI_INT: {
         // Integer-optimized table set: writes int64 directly.
         if (!ec->lua_state) return -1;

@@ -1104,10 +1104,16 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (rb < 0) return -1;
             // `#` on a VM reference is what returned 22 for a three-element
             // table: the stack index, measured as though it were the value
-            // (#1424, #1579).  The TY_STRING branch below would already miss
-            // it now that handles are typed, but say so rather than rely on
-            // falling off the end of a type test.
-            if (lua_is_handle(h, rb)) return -1;
+            // (#1424, #1579).  Declining kept it correct; asking the VM
+            // makes it fast as well, and the index never leaves a register
+            // where something could measure it as text.
+            if (lua_is_handle(h, rb)) {
+                lua_reg[A] = h.emit(HIR_LUA_LEN, TY_INT, rb);
+                if (lua_reg[A] < 0) return -1;
+                h.known_int[lua_reg[A]] = true;
+                h.ecalls++;
+                break;
+            }
 
             // A mux.* table is carried through lowering as an SCONST holding
             // its NAME -- "mux.args" is a sentinel, not text the program can

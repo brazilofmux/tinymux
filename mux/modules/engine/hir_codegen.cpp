@@ -815,6 +815,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     // `if (!dest) break;` emits nothing, so the ECALL silently never runs
     // and the consumer reads a garbage index (measured: SETI got idx=0).
     case HIR_LUA_NEWTABLE:
+    case HIR_LUA_LEN:
     case HIR_LUA_GETI:
     case HIR_LUA_ALOAD:
     case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
@@ -1415,6 +1416,23 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rv_load_guest_addr(rc.code, 11, a2);
                     rv_emit_strcmp(rc.code, 10, 11, dest);
                 }
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_LEN: {
+                // Dedicated ECALL: a0=tbl_idx -> a0=length.
+                int s1 = h.src1[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));   // a0 = tbl_idx
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_LEN_INT)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));    // dest = a0
                 ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
@@ -2302,6 +2320,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_ATOI:       return "ATOI";
     case HIR_STRCMP:      return "STRCMP";
     case HIR_LUA_NEWTABLE: return "LUA_NEWTABLE";
+    case HIR_LUA_LEN:    return "LUA_LEN";
     case HIR_LUA_GETI:   return "LUA_GETI";
     case HIR_LUA_SETI:   return "LUA_SETI";
     case HIR_LUA_ALOAD:  return "LUA_ALOAD";
