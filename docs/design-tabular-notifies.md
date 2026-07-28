@@ -146,6 +146,30 @@ Phase **3** may design and implement the layout API **in libmux** (headers, help
 
 Conversion order in the inventory still prefers dual families first; both sides of a dual family switch in the **same** change (or immediately paired), both calling libmux — never “module done, engine later.”
 
+### 4.5 Phase 2 exit checklist
+
+- [x] Product ownership not re-litigated; #1614 B-by-completion cited
+- [x] Layout home chosen: **libmux** (not module-only, not engine.so)
+- [x] Rationale covers dual life, C\* staff tables, and existing module→libmux dependency
+- [x] Explicit rejections recorded (B-alone layout, C lockstep, engine-only)
+- [x] Phase 3/4 boundaries stated (API yes; blob translation no; dual families paired)
+
+**Phase 2 is complete when this section is on master.** No code is required for Phase 2.
+
+### 4.6 Phase 3 handoff constraints (ownership only — not the API design)
+
+Phase 3 designs the API. Phase 2 only fixes **where it must live** and **who may call it**:
+
+| Constraint | Detail |
+|------------|--------|
+| **Library** | Implementation links into **libmux** (same binary modules already load). |
+| **Headers** | Declarations must be module-includable without `stringutil.h` / game-state headers — same pattern as `mux_format.h` and `color_ops.h` (e.g. a dedicated `mux_table.h` or an extension of an existing module-safe header). |
+| **Cell primitive** | Built on **`co_copy_field`** already exported from libmux; do not invent a parallel truncator. |
+| **Callers** | At least: `comsys_mod`, `mail_mod`, engine `comsys.cpp` / `mail.cpp` (dual families), and one engine-only C\* path as a smoke of “staff tables can use it.” |
+| **Duplication** | After Phase 3 lands helpers, module-local `append_ljust_field` copies are removed or become thin wrappers — not a third independent implementation. |
+| **NLS** | API composes labels the caller already resolved (`M_()` / `T_()` outside the layout layer). Layout does not call gettext itself. |
+| **Out of Phase 3** | Converting pot blob headers; shipping `module` directives; deleting built-ins. |
+
 ---
 
 ## 5. Phased plan
@@ -195,4 +219,4 @@ Slow by design. Each phase is a separate decision to start.
 |------|----------|
 | 2026-07-28 | Adopt leave-alone vs do-right binary. No partial header migrations. Design captured here; implementation waits on inventory + ownership. |
 | 2026-07-28 | Phase 1 inventory written (`inventory-tabular-notifies.md`). |
-| 2026-07-28 | Phase 2: adopt #1614 product decision (modules → 2.14 default; built-in fallback until directives). Layout API lives in **libmux** (option A), not module-only and not engine-only. Phase 3 unblocked for API design/impl only — not blob translation. |
+| 2026-07-28 | Phase 2: adopt #1614 product decision (modules → 2.14 default; built-in fallback until directives). Layout API lives in **libmux** (option A), not module-only and not engine-only. Phase 3 unblocked for API design/impl only — not blob translation. Exit checklist §4.5; Phase 3 handoff constraints §4.6. |
