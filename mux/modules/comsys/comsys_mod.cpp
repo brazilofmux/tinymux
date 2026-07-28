@@ -3041,6 +3041,12 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
         return MUX_E_PERMISSION;
     }
 
+    // @cwho schema (#1667 Phase 4 A4) — same as engine do_channelwho.
+    //
+    static const size_t kCwhoNameCols   = 29;
+    static const size_t kCwhoStatusCols = 6;
+    static const size_t kCwhoPlayerCols = 6;
+
     UTF8 msg[256];
     mux_sprintf(msg, sizeof(msg),
              T("-- %s --"), reinterpret_cast<const char *>(ch->name));
@@ -3048,11 +3054,14 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
 
     {
         size_t pos = 0;
-        pos = append_ljust_field(msg, sizeof(msg), pos, T("Name"), 29);
+        pos = append_ljust_field(msg, sizeof(msg), pos, T("Name"),
+            kCwhoNameCols);
         pos = append_bytes(msg, sizeof(msg), pos, " ");
-        pos = append_ljust_field(msg, sizeof(msg), pos, T("Status"), 6);
+        pos = append_ljust_field(msg, sizeof(msg), pos, T("Status"),
+            kCwhoStatusCols);
         pos = append_bytes(msg, sizeof(msg), pos, " ");
-        pos = append_ljust_field(msg, sizeof(msg), pos, T("Player"), 6);
+        pos = append_ljust_field(msg, sizeof(msg), pos, T("Player"),
+            kCwhoPlayerCols);
         m_pINotify->RawNotify(executor, msg);
     }
 
@@ -3075,12 +3084,8 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
             }
         }
 
-        // The engine renders unparse_object() here -- "Wizard(#1PcW)" -- and
-        // the module rendered the bare name (#1640).  @cwho is how staff
-        // identify WHICH object is on a channel, so losing the dbref and
-        // flags is not cosmetic.  The visibility rule is Examinable() plus
-        // the CHOWN_OK/JUMP_OK/LINK_OK/DESTROY_OK/ABODE exceptions, which is
-        // why this needs an engine call rather than GetFlags + DecodeFlags.
+        // UnparseObject for name+dbref+flags (#1640).  strip_color so
+        // width arithmetic stays honest on colored monikers.
         //
         UTF8 unparsed[MOD_LBUF_SIZE];
         unparsed[0] = '\0';
@@ -3107,19 +3112,15 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
             m_pIObjectInfo->IsPlayer(user.who, &bPlayer);
         }
 
-        // UnparseObject for the name; columns via co_copy_field (#1656).
-        // strip_color() included so width arithmetic stays honest on
-        // colored monikers -- same strategy as the engine's @cwho.
-        //
         size_t pos = 0;
         pos = append_ljust_field(msg, sizeof(msg), pos,
-            strip_color(unparsed), 29);
+            strip_color(unparsed), kCwhoNameCols);
         pos = append_bytes(msg, sizeof(msg), pos, " ");
         pos = append_ljust_field(msg, sizeof(msg), pos,
-            user.bUserIsOn ? T("on ") : T("off"), 6);
+            user.bUserIsOn ? T("on ") : T("off"), kCwhoStatusCols);
         pos = append_bytes(msg, sizeof(msg), pos, " ");
         pos = append_ljust_field(msg, sizeof(msg), pos,
-            bPlayer ? T("yes") : T("no "), 6);
+            bPlayer ? T("yes") : T("no "), kCwhoPlayerCols);
         m_pINotify->RawNotify(executor, msg);
     }
 
