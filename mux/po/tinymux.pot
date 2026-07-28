@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 17:33+0000\n"
+"POT-Creation-Date: 2026-07-28 17:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -74,7 +74,7 @@ msgstr ""
 msgid "Unknown lock type."
 msgstr ""
 
-#: modules/engine/command.cpp:662 modules/engine/command.cpp:4415
+#: modules/engine/command.cpp:662 modules/engine/command.cpp:4444
 msgid "Lua module is not loaded."
 msgstr ""
 
@@ -394,118 +394,142 @@ msgstr ""
 msgid "Players have a 1 in %d chance of finding a %s each time they move."
 msgstr ""
 
-#: modules/engine/command.cpp:4022 modules/engine/comsys.cpp:3255
+#: modules/engine/command.cpp:4026 modules/engine/comsys.cpp:3255
 #: modules/engine/mail.cpp:4278 modules/engine/mail.cpp:5116
 #: modules/engine/mguests.cpp:446 modules/mail/mail_mod.cpp:4330
 #: modules/mail/mail_mod.cpp:4384
 msgid "Name"
 msgstr ""
 
-#: modules/engine/command.cpp:4025
+#: modules/engine/command.cpp:4029
 msgid "Entries"
 msgstr ""
 
-#: modules/engine/command.cpp:4135
+#: modules/engine/command.cpp:4139
 msgid "Modules:"
 msgstr ""
 
-#: modules/engine/command.cpp:4206
+#: modules/engine/command.cpp:4214
 msgid "Reality levels:"
 msgstr ""
 
-#: modules/engine/command.cpp:4213
+#: modules/engine/command.cpp:4222
+msgid "Level"
+msgstr ""
+
+#: modules/engine/command.cpp:4228
+msgid "Value"
+msgstr ""
+
+#: modules/engine/command.cpp:4236
+msgid "Desc"
+msgstr ""
+
+#: modules/engine/command.cpp:4242
 msgid "--Completed."
 msgstr ""
 
-#: modules/engine/command.cpp:4401
+#: modules/engine/command.cpp:4430
 msgid "Lua module loaded (Lua 5.4)."
 msgstr ""
 
-#: modules/engine/command.cpp:4517 modules/engine/command.cpp:4551
+#: modules/engine/command.cpp:4546 modules/engine/command.cpp:4580
 msgid "@icmd: Bad Location."
 msgstr ""
 
-#: modules/engine/command.cpp:4523
+#: modules/engine/command.cpp:4552
 msgid "@icmd: Location - All cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4524 modules/engine/command.cpp:4541
-#: modules/engine/command.cpp:4587 modules/engine/command.cpp:4616
-#: modules/engine/command.cpp:4623 modules/engine/command.cpp:4648
-#: modules/engine/command.cpp:4860
+#: modules/engine/command.cpp:4553 modules/engine/command.cpp:4570
+#: modules/engine/command.cpp:4616 modules/engine/command.cpp:4645
+#: modules/engine/command.cpp:4652 modules/engine/command.cpp:4677
+#: modules/engine/command.cpp:4889
 msgid "@icmd: Done."
 msgstr ""
 
-#: modules/engine/command.cpp:4533
+#: modules/engine/command.cpp:4562
 msgid "Location CmdCheck attribute is:"
 msgstr ""
 
-#: modules/engine/command.cpp:4538
+#: modules/engine/command.cpp:4567
 msgid "Location CmdCheck attribute is empty."
 msgstr ""
 
-#: modules/engine/command.cpp:4554
+#: modules/engine/command.cpp:4583
 msgid "Scanning all locations and zones from your current location:"
 msgstr ""
 
-#: modules/engine/command.cpp:4585
+#: modules/engine/command.cpp:4614
 msgid "@icmd: Location - No icmds found at current location."
 msgstr ""
 
-#: modules/engine/command.cpp:4605
+#: modules/engine/command.cpp:4634
 msgid "@icmd: Bad player."
 msgstr ""
 
-#: modules/engine/command.cpp:4615
+#: modules/engine/command.cpp:4644
 msgid "@icmd: All cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4622
+#: modules/engine/command.cpp:4651
 msgid "@icmd: Activated."
 msgstr ""
 
-#: modules/engine/command.cpp:4630
+#: modules/engine/command.cpp:4659
 msgid "CmdCheck is active."
 msgstr ""
 
-#: modules/engine/command.cpp:4634
+#: modules/engine/command.cpp:4663
 msgid "CmdCheck is not active."
 msgstr ""
 
-#: modules/engine/command.cpp:4640
+#: modules/engine/command.cpp:4669
 msgid "CmdCheck attribute is:"
 msgstr ""
 
-#: modules/engine/command.cpp:4645
+#: modules/engine/command.cpp:4674
 msgid "CmdCheck attribute is empty."
 msgstr ""
 
-#: modules/engine/command.cpp:4874
+#: modules/engine/command.cpp:4903
 msgid "Train cannot be used to teach command, train."
 msgstr ""
 
-#: modules/engine/command.cpp:4881
+#: modules/engine/command.cpp:4910
 msgid "Bad location."
 msgstr ""
 
-#: modules/engine/command.cpp:4888
+#: modules/engine/command.cpp:4917
 msgid "Train requires an argument."
 msgstr ""
 
-#: modules/engine/command.cpp:4925
+#: modules/engine/command.cpp:4954
 msgid "Moniker cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4934
+#: modules/engine/command.cpp:4963
 msgid "Moniker set."
 msgstr ""
 
-#: modules/engine/command.cpp:5037
+#: modules/engine/command.cpp:5094
 msgid "@hook: Non-existent command name given."
 msgstr ""
 
-#: modules/engine/command.cpp:5044
+#: modules/engine/command.cpp:5101
 msgid "@hook: Incompatible switches."
+msgstr ""
+
+#: modules/engine/command.cpp:5166
+msgid "Built-in Command"
+msgstr ""
+
+#: modules/engine/command.cpp:5169 modules/engine/command.cpp:5242
+msgid "Hook Mask Values"
+msgstr ""
+
+#: modules/engine/command.cpp:5239
+msgid "Built-in Attribute"
 msgstr ""
 
 #: modules/engine/comsys.cpp:1546
@@ -535,7 +559,7 @@ msgstr ""
 msgid "That channel type cannot be transmitted on."
 msgstr ""
 
-#: modules/engine/comsys.cpp:1611 modules/engine/functions.cpp:4467
+#: modules/engine/comsys.cpp:1611 modules/engine/functions.cpp:4468
 #: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
 #: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:193
 #: modules/engine/walkdb.cpp:231
@@ -677,7 +701,8 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:2827 modules/engine/comsys.cpp:4131
 #: modules/engine/mail.cpp:4284 modules/engine/mail.cpp:5122
-#: modules/mail/mail_mod.cpp:4336 modules/mail/mail_mod.cpp:4390
+#: modules/engine/predicates.cpp:2973 modules/mail/mail_mod.cpp:4336
+#: modules/mail/mail_mod.cpp:4390
 msgid "Owner"
 msgstr ""
 
@@ -1593,35 +1618,51 @@ msgstr ""
 msgid "Illegal step size."
 msgstr ""
 
-#: modules/engine/functions.cpp:15737
-#, c-format
-msgid "Total User-Defined Functions: %d"
+#: modules/engine/functions.cpp:15722
+msgid "Function Name"
 msgstr ""
 
-#: modules/engine/functions.cpp:15751
-msgid "Function name is not valid."
+#: modules/engine/functions.cpp:15725
+msgid "DBref#"
 msgstr ""
 
-#: modules/engine/functions.cpp:15761
-msgid "Function already defined in builtin function table."
+#: modules/engine/functions.cpp:15728
+msgid "Attribute"
+msgstr ""
+
+#: modules/engine/functions.cpp:15731
+msgid "Flgs"
 msgstr ""
 
 #: modules/engine/functions.cpp:15775
 #, c-format
+msgid "Total User-Defined Functions: %d"
+msgstr ""
+
+#: modules/engine/functions.cpp:15789
+msgid "Function name is not valid."
+msgstr ""
+
+#: modules/engine/functions.cpp:15799
+msgid "Function already defined in builtin function table."
+msgstr ""
+
+#: modules/engine/functions.cpp:15813
+#, c-format
 msgid "Function %s not found."
 msgstr ""
 
-#: modules/engine/functions.cpp:15788
+#: modules/engine/functions.cpp:15826
 #, c-format
 msgid "Function %s deleted."
 msgstr ""
 
-#: modules/engine/functions.cpp:15805 modules/engine/predicates.cpp:1019
-#: modules/engine/predicates.cpp:1253 modules/engine/predicates.cpp:1562
+#: modules/engine/functions.cpp:15843 modules/engine/predicates.cpp:1020
+#: modules/engine/predicates.cpp:1254 modules/engine/predicates.cpp:1563
 msgid "No such attribute."
 msgstr ""
 
-#: modules/engine/functions.cpp:15846
+#: modules/engine/functions.cpp:15884
 #, c-format
 msgid "Function %s defined."
 msgstr ""
@@ -2949,8 +2990,8 @@ msgstr ""
 msgid "You own a floating room: %s(#%d)"
 msgstr ""
 
-#: modules/engine/object.cpp:2303 modules/engine/predicates.cpp:1328
-#: modules/engine/predicates.cpp:1371 modules/engine/walkdb.cpp:1348
+#: modules/engine/object.cpp:2303 modules/engine/predicates.cpp:1329
+#: modules/engine/predicates.cpp:1372 modules/engine/walkdb.cpp:1348
 #: modules/engine/walkdb.cpp:1383
 msgid "Done."
 msgstr ""
@@ -2972,7 +3013,7 @@ msgstr ""
 msgid "Last connect was from %s on %s."
 msgstr ""
 
-#: modules/engine/player.cpp:965 modules/engine/predicates.cpp:1241
+#: modules/engine/player.cpp:965 modules/engine/predicates.cpp:1242
 #: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1072
 msgid "Sorry."
 msgstr ""
@@ -3014,7 +3055,7 @@ msgstr ""
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1506 modules/engine/predicates.cpp:2923
+#: modules/engine/player.cpp:1506 modules/engine/predicates.cpp:2924
 #: modules/engine/wiz.cpp:505
 msgid "No such player."
 msgstr ""
@@ -3132,135 +3173,143 @@ msgstr ""
 msgid "I don’t understand that power."
 msgstr ""
 
-#: modules/engine/predicates.cpp:267
+#: modules/engine/predicates.cpp:268
 #, c-format
 msgid "Sorry, you don’t have enough %s."
 msgstr ""
 
-#: modules/engine/predicates.cpp:272
+#: modules/engine/predicates.cpp:273
 #, c-format
 msgid "Sorry, that player doesn’t have enough %s."
 msgstr ""
 
-#: modules/engine/predicates.cpp:283
+#: modules/engine/predicates.cpp:284
 msgid "Sorry, your building contract has run out."
 msgstr ""
 
-#: modules/engine/predicates.cpp:288
+#: modules/engine/predicates.cpp:289
 msgid "Sorry, that player’s building contract has run out."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1008
+#: modules/engine/predicates.cpp:1009
 msgid "That is not a valid command name."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1044
+#: modules/engine/predicates.cpp:1045
 #, c-format
 msgid "%s already added."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1130
+#: modules/engine/predicates.cpp:1131
 #, c-format
 msgid "Command %s added."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1177
+#: modules/engine/predicates.cpp:1178
 #, c-format
 msgid "%s not found in command table."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1213
+#: modules/engine/predicates.cpp:1214
 msgid "No added commands found in command table."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1375 modules/engine/predicates.cpp:1380
+#: modules/engine/predicates.cpp:1376 modules/engine/predicates.cpp:1381
 msgid "Command not found in command table."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1414 modules/engine/predicates.cpp:1488
+#: modules/engine/predicates.cpp:1415 modules/engine/predicates.cpp:1489
 msgid "That is not a player."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1419 modules/engine/predicates.cpp:1493
+#: modules/engine/predicates.cpp:1420 modules/engine/predicates.cpp:1494
 msgid "That player is not connected."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1424
+#: modules/engine/predicates.cpp:1425
 msgid "Player is not in an @program."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1444
+#: modules/engine/predicates.cpp:1445
 msgid "@program cleared."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1445
+#: modules/engine/predicates.cpp:1446
 msgid "Your @program has been terminated."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1473
+#: modules/engine/predicates.cpp:1474
 msgid "No players specified."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1501
+#: modules/engine/predicates.cpp:1502
 msgid "Input already pending."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1556 modules/engine/set.cpp:533
+#: modules/engine/predicates.cpp:1557 modules/engine/set.cpp:533
 #: modules/engine/set.cpp:630 modules/engine/set.cpp:917
 #: modules/engine/set.cpp:1266
 msgid "Attribute not present on object."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1609
+#: modules/engine/predicates.cpp:1610
 msgid "Dumping. Please try again later."
 msgstr ""
 
-#: modules/engine/predicates.cpp:1617
+#: modules/engine/predicates.cpp:1618
 msgid "Server just started. Please try again in a few seconds."
 msgstr ""
 
-#: modules/engine/predicates.cpp:2742 modules/engine/set.cpp:1587
+#: modules/engine/predicates.cpp:2743 modules/engine/set.cpp:1587
 #: modules/engine/set.cpp:1997
 msgid "Nothing to do."
 msgstr ""
 
-#: modules/engine/predicates.cpp:2786
+#: modules/engine/predicates.cpp:2787
 msgid "Permission denied,"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2960
+#: modules/engine/predicates.cpp:2967
+msgid "Reference"
+msgstr ""
+
+#: modules/engine/predicates.cpp:2970
+msgid "Target"
+msgstr ""
+
+#: modules/engine/predicates.cpp:2976
 msgid "-------------------------------------------------------"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2975
+#: modules/engine/predicates.cpp:3000
 msgid "GAME: No references found."
 msgstr ""
 
-#: modules/engine/predicates.cpp:2980
+#: modules/engine/predicates.cpp:3005
 msgid "---------------- End of Reference List ----------------"
 msgstr ""
 
-#: modules/engine/predicates.cpp:3094
+#: modules/engine/predicates.cpp:3119
 msgid "References requested too quickly."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3139
+#: modules/engine/predicates.cpp:3164
 msgid "Reference cleared."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3143
+#: modules/engine/predicates.cpp:3168
 msgid "Reference updated."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3147
+#: modules/engine/predicates.cpp:3172
 msgid "That reference already exists."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3151
+#: modules/engine/predicates.cpp:3176
 msgid "No such reference to clear."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3155
+#: modules/engine/predicates.cpp:3180
 msgid "Reference added."
 msgstr ""
 

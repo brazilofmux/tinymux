@@ -4206,13 +4206,38 @@ static void list_modules(dbref executor)
 #ifdef REALITY_LVLS
 static void list_rlevels(dbref player)
 {
+    // Reality levels (#1667 Phase 4 C9): labeled freeform fields with
+    // mux_table name width for the level name.
+    //
+    static const size_t kRlevelNameCols = 20;
     int i;
     raw_notify(player, M_("Reality levels:"));
     for (i = 0; i < mudconf.no_levels; ++i)
     {
-        raw_notify(player, tprintf(T("    Level: %-20.20s    Value: 0x%08x     Desc: %s"),
-            mudconf.reality_level[i].name, mudconf.reality_level[i].value,
-                mudconf.reality_level[i].attr));
+        UTF8 line[LBUF_SIZE];
+        UTF8 valbuf[32];
+        size_t pos = 0;
+        pos = mux_table_append_bytes(line, sizeof(line), pos, "    ");
+        pos = mux_table_append_bytes(line, sizeof(line), pos,
+            reinterpret_cast<const char *>(M_("Level")));
+        pos = mux_table_append_bytes(line, sizeof(line), pos, ": ");
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            mudconf.reality_level[i].name, kRlevelNameCols);
+        pos = mux_table_append_bytes(line, sizeof(line), pos, "    ");
+        pos = mux_table_append_bytes(line, sizeof(line), pos,
+            reinterpret_cast<const char *>(M_("Value")));
+        pos = mux_table_append_bytes(line, sizeof(line), pos, ": ");
+        mux_sprintf(valbuf, sizeof(valbuf), T("0x%08x"),
+            mudconf.reality_level[i].value);
+        pos = mux_table_append_bytes(line, sizeof(line), pos,
+            reinterpret_cast<const char *>(valbuf));
+        pos = mux_table_append_bytes(line, sizeof(line), pos, "     ");
+        pos = mux_table_append_bytes(line, sizeof(line), pos,
+            reinterpret_cast<const char *>(M_("Desc")));
+        pos = mux_table_append_bytes(line, sizeof(line), pos, ": ");
+        pos = mux_table_append_bytes(line, sizeof(line), pos,
+            reinterpret_cast<const char *>(mudconf.reality_level[i].attr));
+        raw_notify(player, line);
     }
     raw_notify(player, M_("--Completed."));
 }
@@ -4965,51 +4990,79 @@ static void show_hook(UTF8 *bf, UTF8 *bfptr, int key)
     *bfptr = '\0';
 }
 
+// @hook list row (#1667 Phase 4 C7): command 32 + " | " + mask freeform.
+// Single-character aliases keep a 1-letter tag and a 30-col description.
+//
+static const size_t kHookCmdCols = 32;
+static const size_t kHookTagCmdCols = 30;
+
 static void hook_loop(const dbref executor, CMDENT *cmdp, UTF8 *s_ptr, UTF8 *s_ptrbuff)
 {
     show_hook(s_ptrbuff, s_ptr, HOOKMASK(cmdp->flags));
-    const UTF8 *pFmt = T("%-32.32s | %s");
     const UTF8 *pCmd = cmdp->cmdname;
+    UTF8 tag = '\0';
     if (  pCmd[0] != '\0'
        && pCmd[1] == '\0')
     {
         switch (pCmd[0])
         {
         case '"':
-            pFmt = T("S %-30.30s | %s");
+            tag = 'S';
             pCmd = T("(‘\"’ hook on ‘say’)");
             break;
         case ':':
-            pFmt = T("P %-30.30s | %s");
+            tag = 'P';
             pCmd = T("(‘:’ hook on ‘pose’)");
             break;
         case ';':
-            pFmt = T("P %-30.30s | %s");
+            tag = 'P';
             pCmd = T("(‘;’ hook on ‘pose’)");
             break;
         case '\\':
-            pFmt = T("E %-30.30s | %s");
+            tag = 'E';
             pCmd = T("(‘\\\\’ hook on ‘@emit’)");
             break;
         case '#':
-            pFmt = T("F %-30.30s | %s");
+            tag = 'F';
             pCmd = T("(‘#’ hook on ‘@force’)");
             break;
         case '&':
-            pFmt = T("V %-30.30s | %s");
+            tag = 'V';
             pCmd = T("(‘&’ hook on ‘@set’)");
             break;
         case '-':
-            pFmt = T("M %-30.30s | %s");
+            tag = 'M';
             pCmd = T("(‘-’ hook on ‘@mail’)");
             break;
         case '~':
-            pFmt = T("M %-30.30s | %s");
+            tag = 'M';
             pCmd = T("(‘~’ hook on ‘@mail’)");
             break;
         }
     }
-    notify(executor, tprintf(pFmt, pCmd, s_ptrbuff));
+
+    UTF8 line[LBUF_SIZE];
+    size_t pos = 0;
+    if ('\0' != tag)
+    {
+        UTF8 tagbuf[4];
+        tagbuf[0] = tag;
+        tagbuf[1] = ' ';
+        tagbuf[2] = '\0';
+        pos = mux_table_append_bytes(line, sizeof(line), pos,
+            reinterpret_cast<const char *>(tagbuf));
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            pCmd, kHookTagCmdCols);
+    }
+    else
+    {
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            pCmd, kHookCmdCols);
+    }
+    pos = mux_table_append_bytes(line, sizeof(line), pos, " | ");
+    pos = mux_table_append_bytes(line, sizeof(line), pos,
+        reinterpret_cast<const char *>(s_ptrbuff));
+    notify(executor, line);
 }
 
 void do_hook(const dbref executor, const dbref caller, const dbref enactor, const int eval, int key, UTF8 *name, const UTF8 *cargs[], int ncargs)
@@ -5106,7 +5159,16 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
             notify(executor, tprintf(T("%.32s-+-%s"),
                        "--------------------------------",
                        "--------------------------------------------"));
-            notify(executor, tprintf(T("%-32s | %s"), "Built-in Command", "Hook Mask Values"));
+            {
+                UTF8 header[LBUF_SIZE];
+                size_t pos = 0;
+                pos = mux_table_append_ljust(header, sizeof(header), pos,
+                    M_("Built-in Command"), kHookCmdCols);
+                pos = mux_table_append_bytes(header, sizeof(header), pos, " | ");
+                pos = mux_table_append_bytes(header, sizeof(header), pos,
+                    reinterpret_cast<const char *>(M_("Hook Mask Values")));
+                notify(executor, header);
+            }
             notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
@@ -5170,7 +5232,16 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
             notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
-            notify(executor, tprintf(T("%-32s | %s"), "Built-in Attribute", "Hook Mask Values"));
+            {
+                UTF8 header[LBUF_SIZE];
+                size_t pos = 0;
+                pos = mux_table_append_ljust(header, sizeof(header), pos,
+                    M_("Built-in Attribute"), kHookCmdCols);
+                pos = mux_table_append_bytes(header, sizeof(header), pos, " | ");
+                pos = mux_table_append_bytes(header, sizeof(header), pos,
+                    reinterpret_cast<const char *>(M_("Hook Mask Values")));
+                notify(executor, header);
+            }
             notify(executor, tprintf(T("%.32s-+-%s"),
                 "--------------------------------",
                 "--------------------------------------------"));
@@ -5253,8 +5324,9 @@ void do_hook(const dbref executor, const dbref caller, const dbref enactor, cons
                    && 0 != HOOKMASK(cmdp->flags))
                 {
                     found = true;
-                    show_hook(s_ptrbuff, s_ptr, HOOKMASK(cmdp->flags));
-                    notify(executor, tprintf(T("%-32.32s | %s"), cmdp->cmdname, s_ptrbuff));
+                    // Same C7 schema as the built-in command table.
+                    //
+                    hook_loop(executor, cmdp, s_ptr, s_ptrbuff);
                 }
             }
             free_sbuf(cbuff);

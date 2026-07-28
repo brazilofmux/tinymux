@@ -11,6 +11,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "mux_table.h"
 
 extern "C" {
 #include "color_ops.h"
@@ -2951,11 +2952,26 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
                 continue;
             }
 
+            // @list ref schema (#1667 Phase 4 C5): name 12 / target 20 / owner 20.
+            //
+            static const size_t kRefNameCols  = 12;
+            static const size_t kRefTargetCols = 20;
+            static const size_t kRefOwnerCols  = 20;
+
             if (!match_found)
             {
                 match_found = true;
-                raw_notify(executor, tprintf(T("%-12s %-20s %-20s"),
-                            T("Reference"), T("Target"), T("Owner")));
+                UTF8 header[LBUF_SIZE];
+                size_t pos = 0;
+                pos = mux_table_append_ljust(header, sizeof(header), pos,
+                    M_("Reference"), kRefNameCols);
+                pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+                pos = mux_table_append_ljust(header, sizeof(header), pos,
+                    M_("Target"), kRefTargetCols);
+                pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+                pos = mux_table_append_ljust(header, sizeof(header), pos,
+                    M_("Owner"), kRefOwnerCols);
+                raw_notify(executor, header);
                 raw_notify(executor,
                         M_("-------------------------------------------------------"));
             }
@@ -2963,8 +2979,17 @@ static void ListReferences(dbref executor, UTF8 *reference_name)
             UTF8 *object_buf =
                 unparse_object(executor, htab_entry->target, false);
 
-            raw_notify(executor, tprintf(T("%-12s %-20s %-20s"), htab_entry->name,
-                        object_buf, Moniker(htab_entry->owner)));
+            UTF8 line[LBUF_SIZE];
+            size_t pos = 0;
+            pos = mux_table_append_ljust(line, sizeof(line), pos,
+                htab_entry->name, kRefNameCols);
+            pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+            pos = mux_table_append_ljust(line, sizeof(line), pos,
+                object_buf, kRefTargetCols);
+            pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+            pos = mux_table_append_ljust(line, sizeof(line), pos,
+                Moniker(htab_entry->owner), kRefOwnerCols);
+            raw_notify(executor, line);
 
             free_lbuf(object_buf);
         }

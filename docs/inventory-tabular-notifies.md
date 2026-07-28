@@ -162,9 +162,9 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | | |
 |--|--|
 | File | `predicates.cpp` |
-| Header | **Label+fmt** `tprintf(T("%-12s %-20s %-20s"), T("Reference"), T("Target"), T("Owner"))` |
-| Rows | Same format |
-| Translate? | Labels already separate strings — better shape; still printf-width not `co_copy_field` |
+| Header | **Converted (#1667 Phase 4)** — Reference / Target / Owner via `mux_table_*` |
+| Rows | name **12** · target **20** · owner **20** |
+| Translate? | **Per-label** |
 | Dual | No |
 
 ### C6. User-defined function list (`@list ufun` / FN_LIST)
@@ -172,19 +172,18 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | | |
 |--|--|
 | File | `functions.cpp` |
-| Header | **Label+fmt** English literals in `tprintf` (`Function Name`, `DBref#`, `Attribute`) — not `M_` |
-| Rows | `%-28.28s` / `#%-7d` / `%-30.30s` + flags |
-| Translate? | Convert later; not pot-blob today if not marked `M_` |
+| Header | **Converted** — Function Name / DBref# / Attribute / Flgs |
+| Rows | name **28** · dbref **8** · attr **30** · flags freeform |
+| Translate? | **Per-label** |
 | Dual | No |
 
-### C7. `@list hooks` style command/attr columns
+### C7. `@hook` list command/attr columns
 
 | | |
 |--|--|
-| File | `command.cpp` (~4947+) |
-| Header | e.g. `%-32s | %s` with `"Built-in Command"` / `"Hook Mask Values"` via `T_` |
-| Rows | `%-32.32s | %s` |
-| Shape | Two-column report |
+| File | `command.cpp` `hook_loop` / list |
+| Header | **Converted** — Built-in Command|Attribute (32) + Hook Mask Values |
+| Rows | command **32** (or tag + **30**) + ` \| ` + mask freeform |
 | Dual | No |
 
 ### C8. Activity report (`do_report` day bins)
@@ -197,11 +196,21 @@ These are player-visible (wizard/staff) but **not** dual comsys/mail. Still subj
 | Translate? | **Per-label** |
 | Dual | No |
 
-### C9. Level dump (command.cpp)
+### C9. Reality levels (`list_rlevels`)
 
 | | |
 |--|--|
-| File | `command.cpp` ~4189 |
+| File | `command.cpp` `list_rlevels` (REALITY_LVLS) |
+| Header | per-row labels Level / Value / Desc via `mux_table_*` |
+| Rows | name **20** + hex value + freeform desc |
+| Dual | No |
+| Status | **Converted (#1667 Phase 4)** |
+
+### C9b. (historical note)
+
+| | |
+|--|--|
+| File | was mis-cited as ~4189; actual rlevel list is under REALITY_LVLS |
 | Shape | `Level: %-20.20s    Value: 0x%08x     Desc: %s` — labeled freeform row, no multi-col header blob |
 | Dual | No |
 
