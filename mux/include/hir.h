@@ -109,6 +109,7 @@ enum hir_kind {
     HIR_LUA_GETGLOBAL, // getglobal(key_addr): ECALL → TY_LUA_HANDLE
     HIR_LUA_GETFIELD_REF, // getfield(tbl_idx, key_addr): ECALL → TY_LUA_HANDLE
     HIR_LUA_CALL_INT, // call(fn_idx, nargs, args_addr): ECALL → TY_INT
+    HIR_LUA_CALL_STR, // call(fn_idx, args): ECALL → TY_STRING into an out slot
     HIR_LUA_GETFIELD, // getfield(tbl_idx, key_addr): ECALL → TY_INT
     HIR_LUA_SETFIELD, // setfield(tbl_idx, key_addr, val): ECALL
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
@@ -761,6 +762,12 @@ inline int hir_val_operand(const hir_program &h, int i) {
         int a1i = static_cast<int>(h.val[i] >> 8) - 1;
         return (a1i >= 0 && a1i < h.n_insns) ? a1i : -1;
     }
+    if (h.kind[i] == HIR_LUA_CALL_STR) {
+        // low 8 = nargs, next 8 = argkind bits, from 16 up = a1_insn + 1.
+        //
+        int a1i = static_cast<int>(h.val[i] >> 16) - 1;
+        return (a1i >= 0 && a1i < h.n_insns) ? a1i : -1;
+    }
     return -1;
 }
 
@@ -828,6 +835,9 @@ inline void hir_operand_set(hir_program &h, int i, int slot, int r) {
         } else if (h.kind[i] == HIR_LUA_CALL_INT) {
             const int64_t nargs = h.val[i] & 0xFF;
             h.val[i] = nargs | (static_cast<int64_t>(r + 1) << 8);
+        } else if (h.kind[i] == HIR_LUA_CALL_STR) {
+            const int64_t low = h.val[i] & 0xFFFF;   // nargs + argkinds
+            h.val[i] = low | (static_cast<int64_t>(r + 1) << 16);
         }
         return;
     default: break;

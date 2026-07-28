@@ -2174,6 +2174,50 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 && h.sval[func_reg].size() >= 4
                 && h.sval[func_reg].substr(0, 4) == "mux.");
 
+            // String-returning call on a library function.  Same chain as
+            // the integer form; the result lands in the output slot the
+            // allocator gives a TY_STRING value, and the ECALL is told that
+            // slot's SIZE rather than assuming it (#1679).
+            //
+            // Arguments may be integers or CONSTANT strings; the kind bits
+            // tell the handler which register holds which.  A runtime
+            // string argument would need its own guest buffer and is left
+            // for when something needs it.
+            if (!is_bridge && nresults == 1 && nargs >= 1 && nargs <= 2
+                && func_reg >= 0
+                && h.kind[func_reg] == HIR_LUA_GETFIELD_REF) {
+                int a0 = -1, a1 = -1, kinds = 0;
+                bool ok = true;
+                for (int i = 0; i < nargs && ok; i++) {
+                    if (!lua_reg_in_range(A + 1 + i)) { ok = false; break; }
+                    int areg = lua_reg[A + 1 + i];
+                    if (areg < 0 || lua_is_handle(h, areg)) {
+                        ok = false; break;
+                    }
+                    if (h.ty[areg] == TY_INT) {
+                        // integer: kind bit stays 0
+                    } else if (h.kind[areg] == HIR_SCONST) {
+                        kinds |= (1 << i);
+                    } else {
+                        ok = false; break;
+                    }
+                    if (0 == i) a0 = areg; else a1 = areg;
+                }
+                if (ok && (kinds != 0)) {
+                    int64_t packed = static_cast<int64_t>(nargs)
+                                   | (static_cast<int64_t>(kinds) << 8)
+                                   | (static_cast<int64_t>(a1 + 1) << 16);
+                    lua_reg[A] = h.emit(HIR_LUA_CALL_STR, TY_STRING,
+                                        func_reg, a0, packed);
+                    if (lua_reg[A] < 0) return -1;
+                    h.ecalls++;
+                    for (int i = A + 1; i < A + 1 + nargs; i++) {
+                        if (lua_reg_in_range(i)) lua_reg[i] = -1;
+                    }
+                    break;
+                }
+            }
+
             // Integer call on a handle from GETFIELD_REF: the narrow
             // first cut.  Integer args, integer result, nothing marshalled.
             // Everything else falls through to the old path below and
