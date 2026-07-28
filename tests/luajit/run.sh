@@ -138,10 +138,6 @@ AGREE_CASES=(
     'return math.type(2^3)'
 )
 
-# ---------------------------------------------------------------------------
-# EXEC — must match AND lua_run_ok must advance (#1426).
-# No globals/stdlib: pure arithmetic / compare / branch on mux.args.
-# ---------------------------------------------------------------------------
 # How many AGREE chunks are expected to decline rather than execute.
 #
 # A decline is safe (the interpreter answers) and so cannot be a hard error
@@ -155,24 +151,10 @@ AGREE_CASES=(
 #
 AGREE_DECLINE_BUDGET=32
 
-# NESTED: the same contract as EXEC, but with jit_eval_brackets ON -- the
-# production default, and the configuration in which the Lua JIT could not
-# run at all until #1326.
-#
-# With brackets compiled, fun_lua is ECALLed from inside a DBT program, so
-# run_cached_program is re-entered.  It used to refuse outright, meaning
-# `lua_jit 1` on its own executed nothing: every chunk fell back to the Lua
-# VM and every assertion here passed by way of the interpreter.  Nothing in
-# the tree covered that path, which is exactly why it stayed broken.
-#
-# Keep these few and cheap.  The point is not lowering coverage -- EXEC above
-# does that -- it is that the nested path executes at all.
-#
-NESTED_CASES=(
-    'return 1'
-    'return mux.args[1] + mux.args[2]'
-    'local a=mux.args[1]+0 return a*3'
-)
+# ---------------------------------------------------------------------------
+# EXEC — must match AND lua_run_ok must advance (#1426).
+# No globals/stdlib: pure arithmetic / compare / branch on mux.args.
+# ---------------------------------------------------------------------------
 
 EXEC_CASES=(
     'return mux.args[1] + mux.args[2]'
@@ -250,6 +232,60 @@ EXEC_CASES=(
     'return "10" - 1'
     'return "2" + "5"'
     'local a=mux.args[1].."" return a + 4'
+)
+
+# ---------------------------------------------------------------------------
+# NESTED — the EXEC contract under jit_eval_brackets ON (#1326).
+# ---------------------------------------------------------------------------
+# NESTED: the same contract as EXEC, but with jit_eval_brackets ON -- the
+# production default, and the configuration in which the Lua JIT could not
+# run at all until #1326.
+#
+# With brackets compiled, fun_lua is ECALLed from inside a DBT program, so
+# run_cached_program is re-entered.  It used to refuse outright, meaning
+# `lua_jit 1` on its own executed nothing: every chunk fell back to the Lua
+# VM and every assertion here passed by way of the interpreter.  Nothing in
+# the tree covered that path, which is exactly why it stayed broken.
+#
+# Keep these few and cheap.  The point is not lowering coverage -- EXEC above
+# does that -- it is that the nested path executes at all.
+#
+NESTED_CASES=(
+    'return 1'
+    'return mux.args[1] + mux.args[2]'
+    'local a=mux.args[1]+0 return a*3'
+
+    # HIR_ITOA on INT64_MIN.  Negating to get a magnitude wraps for exactly
+    # this input, digits come out negative, and '0' + (-d) writes below '0';
+    # the rendered value was -'..--).0-*(+,))+(0().
+    #
+    # run_one passes (2,3), so `-mux.args[1]` is only -2 and never reaches
+    # the one input in 2^64 that fails -- multiply into the overflow instead.
+    # 2 * 2^62 wraps to INT64_MIN, and rendering it is what exercises itoa.
+    'local a=mux.args[1]+0 return a*4611686018427387904'
+)
+
+# NESTED_AGREE — brackets ON, must match the interpreter, decline allowed.
+#
+# The two shapes that regressed when nesting was first enabled and which are
+# now DECLINED rather than compiled.  They cannot go in NESTED_CASES: that
+# tier requires lua_run_ok > 0, and a decline is exactly what makes these
+# correct.  Asserting the answer is the point -- a decline that still returns
+# the wrong thing would be a real failure, and only a comparison sees it.
+#
+# Both produced WRONG ANSWERS, not crashes, and both were invisible to a
+# tier that only ran chunks it happened to get right (#1326 review).
+#
+NESTED_AGREE_CASES=(
+    # `#mux.args`: the table is carried as an SCONST holding its own name, so
+    # OP_LUA_LEN measured the sentinel -- 8, being strlen("mux.args"), where
+    # the interpreter answers the argument count.
+    'return #mux.args'
+
+    # Unbounded loop: instruction limits live in the Lua VM hook, which the
+    # compiled path does not have.  Answered an empty string instead of
+    # "#-1 LUA ERROR: instruction limit exceeded".
+    'while true do end'
 )
 
 keep_work() {
@@ -455,8 +491,34 @@ for chunk in "${NESTED_CASES[@]}"; do
         "$chunk" "$jrc" "$ires" "$jres" "$jok" "$verdict"
 done
 
+printf '\n== NESTED_AGREE (brackets ON: must match; decline OK) ==\n'
+printf '%-48s %-4s %-10s %-10s %-8s %s\n' chunk rc interp jit run_ok verdict
+for chunk in "${NESTED_AGREE_CASES[@]}"; do
+    n=$((n+1))
+    split6 "$(run_one 0 "$chunk" "na0-$n" 1)"; irc=$R_RC; ires=$R_RES
+    split6 "$(run_one 1 "$chunk" "na1-$n" 1)"; jrc=$R_RC; jres=$R_RES; jok=$R_OK; jkept=$R_KEPT
+    verdict="ok"
+    if [ "$jrc" != "0" ]; then
+        verdict="FAIL: died rc=$jrc"
+        [ -n "$jkept" ] && verdict="$verdict evidence=$jkept"
+        crashes=$((crashes+1))
+    elif [ "$irc" != "0" ]; then
+        verdict="FAIL: interp died rc=$irc"
+        crashes=$((crashes+1))
+    elif [ "$ires" != "$jres" ]; then
+        verdict="FAIL: diverges interp=$ires jit=$jres"
+        nested_wrong=$((nested_wrong+1))
+    elif [ "$jok" != "0" ]; then
+        verdict="ok (executed)"
+    else
+        verdict="ok (declined; interp answered)"
+    fi
+    printf '%-48.48s %-4s %-10.10s %-10.10s %-8s %s\n' \
+        "$chunk" "$jrc" "$ires" "$jres" "$jok" "$verdict"
+done
+
 rm -rf "$WORK"
-total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]} + ${#NESTED_CASES[@]}))
+total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]} + ${#NESTED_CASES[@]} + ${#NESTED_AGREE_CASES[@]}))
 echo
 echo "chunks: $total   crashes: $crashes   survive_diverges: $surv_div"
 echo "agree_wrong: $agree_wrong   exec_wrong: $exec_wrong   exec_no_run: $exec_no_run"

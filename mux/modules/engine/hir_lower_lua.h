@@ -23,6 +23,7 @@ enum lua_bc_reject {
     LUA_BC_HAS_NESTED_PROTOS,  // Contains nested function definitions
     LUA_BC_UNSUPPORTED_OP,     // Contains an opcode not in the supported set
     LUA_BC_HAS_NON_INT_CONST, // Float constant not integer-valued (e.g. 3.14)
+    LUA_BC_HAS_LOOP,          // Backward branch: unbounded on the host (#1326)
 };
 
 // Return a human-readable name for a rejection reason.
