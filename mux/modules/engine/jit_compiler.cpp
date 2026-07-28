@@ -4027,6 +4027,89 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_CALL_STR: {
+        // a0=fn stack idx, a1 = nargs | (argkind bits << 8), a2=arg0,
+        // a3=arg1, a4 = guest output address, a5 = its SIZE.
+        // -> a0 = bytes written, a1 = ok.
+        //
+        // The size is passed rather than assumed.  ECALL_ORD (#1679) had a
+        // bound that read like one and was not -- 64 bytes of headroom
+        // against a loop that wrote per codepoint -- so a string-producing
+        // ECALL states its buffer size explicitly and clamps to it.
+        //
+        // argkind bit j: 0 = integer in the register, 1 = guest address of
+        // a NUL-terminated string.  Two arguments is the current ceiling,
+        // matching CALL_INT.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int fn_idx  = static_cast<int>(ctx->x[10]);
+        int nargs   = static_cast<int>(ctx->x[11] & 0xFF);
+        int kinds   = static_cast<int>((ctx->x[11] >> 8) & 0xFF);
+        uint64_t out_addr = ctx->x[14];
+        uint64_t out_size = ctx->x[15];
+
+        if (fn_idx <= 0 || fn_idx > lua_gettop(L)
+            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 2
+            || 0 == out_size
+            || !guest_range_ok(out_addr, out_size, ec->memory_size)) {
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+
+        int base = lua_gettop(L);
+        lua_pushvalue(L, fn_idx);
+        for (int j = 0; j < nargs; j++) {
+            uint64_t raw = (0 == j) ? ctx->x[12] : ctx->x[13];
+            if (kinds & (1 << j)) {
+                const char *sarg = guest_cstr(ec->memory, ec->memory_size,
+                                              raw);
+                if (nullptr == sarg) {
+                    lua_settop(L, base);
+                    ctx->x[11] = 0;
+                    return ECALL_DECLINE;
+                }
+                lua_pushstring(L, sarg);
+            } else {
+                lua_pushinteger(L, static_cast<lua_Integer>(raw));
+            }
+        }
+        if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+
+        // Only an actual string comes back this way.  lua_tolstring would
+        // coerce a number and mutate the stack slot; taking strings only
+        // keeps the conversion rules the interpreter's, not ours.
+        if (LUA_TSTRING != lua_type(L, -1)) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        size_t slen = 0;
+        const char *sres = lua_tolstring(L, -1, &slen);
+        if (nullptr == sres) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        // Decline on overflow rather than truncate: a silently shortened
+        // string is a wrong answer, and the interpreter can produce the
+        // whole thing.
+        if (slen + 1 > out_size) {
+            lua_settop(L, base);
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        memcpy(ec->memory + out_addr, sres, slen);
+        ec->memory[out_addr + slen] = '\0';
+        lua_settop(L, base);
+        ctx->x[10] = static_cast<uint64_t>(slen);
+        ctx->x[11] = 1;
+        return -1;
+    }
+
     case ECALL_LUA_CALL_INT: {
         // a0=fn stack idx, a1=nargs (0..2), a2=arg0, a3=arg1, integers.
         // -> a0 = integer result, a1 = ok.

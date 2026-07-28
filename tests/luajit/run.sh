@@ -149,7 +149,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=26
+AGREE_DECLINE_BUDGET=23
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -206,6 +206,20 @@ EXEC_CASES=(
     'local x=math.max(3,9) return x'
     'local x=math.min(3,9) return x'
     'local x=math.abs(-7) return x'
+
+    # String RESULTS.  The result lands in the output slot the allocator
+    # gives any TY_STRING value and the ECALL is told that slot's size --
+    # ECALL_ORD (#1679) is the reason a string-producing ECALL states its
+    # bound rather than assuming one.
+    #
+    # string.rep takes a string AND an integer, so it covers MIXED argument
+    # kinds: an implementation that treated every argument as one kind
+    # cannot pass it.  (string.sub would have been the obvious choice and is
+    # wrong here -- three arguments, and the ceiling is two, so it declines
+    # and could never be an EXEC case.)
+    'local x=string.upper("ab") return x'
+    'local x=string.lower("AB") return x'
+    'local x=string.rep("ab",2) return x'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

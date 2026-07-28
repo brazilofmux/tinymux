@@ -732,6 +732,12 @@ static bool needs_output_buffer(hir_program &h, int i) {
     case HIR_ITOA:
     case HIR_FTOA:
     case HIR_LUA_FTOA:
+    // CALL_STR writes the library result into this slot and passes
+    // OUT_SLOT as the bound (#1519 / #1679).  Omitting it leaves
+    // loc[i].addr at 0 so every CALL_STR aliases guest address 0 —
+    // sequential single-result tests still pass by luck.
+    //
+    case HIR_LUA_CALL_STR:
     case HIR_PHI:
     case HIR_COPY:
         return true;
@@ -1437,6 +1443,42 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ECALL());
                 rc.code.push_back(rv_ADDI(dest, 10, 0));
                 ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_CALL_STR: {
+                // a0=fn, a1=nargs|kinds, a2=arg0, a3=arg1,
+                // a4=out addr, a5=out size.  Result is TY_STRING, so its
+                // guest buffer is the output slot the allocator already
+                // assigned -- OUT_SLOT bytes, passed explicitly.
+                int s1 = h.src1[i], s2 = h.src2[i];
+                int packed = static_cast<int>(h.val[i]);
+                int nargs = packed & 0xFF;
+                int a1i = (packed >> 16) - 1;
+                uint8_t fn_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, fn_r, 0));
+                if (nargs >= 1 && s2 >= 0) {
+                    if (h.kind[s2] == HIR_SCONST) {
+                        rv_load_guest_addr(rc.code, 12, loc[s2].addr);
+                    } else {
+                        uint8_t r = ra_get_reg(rc, loc, s2, 28);
+                        rc.code.push_back(rv_ADDI(12, r, 0));
+                    }
+                }
+                if (nargs >= 2 && a1i >= 0) {
+                    if (h.kind[a1i] == HIR_SCONST) {
+                        rv_load_guest_addr(rc.code, 13, loc[a1i].addr);
+                    } else {
+                        uint8_t r = ra_get_reg(rc, loc, a1i, 29);
+                        rc.code.push_back(rv_ADDI(13, r, 0));
+                    }
+                }
+                rv_load_i64(rc.code, 11, packed & 0xFFFF);
+                rv_load_guest_addr(rc.code, 14, loc[i].addr);
+                rv_load_i64(rc.code, 15, rv_compiler::OUT_SLOT);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_CALL_STR)));
+                rc.code.push_back(rv_ECALL());
                 break;
             }
 
@@ -2419,6 +2461,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LUA_GETGLOBAL: return "LUA_GETGLOBAL";
     case HIR_LUA_GETFIELD_REF: return "LUA_GETFIELD_REF";
     case HIR_LUA_CALL_INT: return "LUA_CALL_INT";
+    case HIR_LUA_CALL_STR: return "LUA_CALL_STR";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
     case HIR_LUA_SETFIELD: return "LUA_SETFIELD";
     case HIR_LUA_GETI:   return "LUA_GETI";
