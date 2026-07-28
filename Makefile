@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-format test-nls test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity
+test: install test-ganl test-netaddr test-format test-nls test-nls-plural test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -160,6 +160,27 @@ test-vacuous:
 # catalogue takes the translations away.  Both directions are checked.
 #
 # Skips cleanly without --enable-nls or without msgfmt.
+# Unit test for the Plural-Forms evaluator in the built-in catalogue reader
+# (#1702).
+#
+# #1702 made that reader the only catalogue path on every platform, which
+# meant implementing plural selection rather than borrowing ngettext(3).  A
+# bug in that expression evaluator is now everybody's bug, not just Windows'.
+#
+# test-nls-runtime drives plurals through the server, but only reaches the
+# counts a scenario can produce and only the rules the shipped catalogues
+# carry -- neither exercises chained ternaries, %, or the malformed-input
+# paths.  Russian only gets interesting at n=21, and digging 21 exits to test
+# a parser is the wrong shape.
+#
+# Source-only: it compiles mux_nls.cpp directly, so it needs no build and no
+# gettext on the box.
+test-nls-plural:
+	@echo "==> Running NLS Plural-Forms evaluator unit test"
+	@g++ -std=c++17 -O2 -Wall -I mux/include -I mux/lib \
+	    -o tests/nls/test_plural tests/nls/test_plural.cpp
+	@./tests/nls/test_plural
+
 test-nls-runtime:
 	@echo "==> Running NLS runtime oracle (xx pseudo-locale)"
 	bash tests/nls/run.sh

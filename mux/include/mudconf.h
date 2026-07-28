@@ -281,6 +281,9 @@ struct confdata
     UTF8    guests_channel_alias[32]; /* Name of guests channel alias */
     UTF8    many_coins[32];     /* name of many coins (ie. "pennies") */
     UTF8    mud_name[32];       /* Name of the mud */
+    UTF8    language[32];       /* Server-wide message locale (#1702).
+                                 * Empty = follow the environment, which is
+                                 * the pre-#1702 behaviour. */
     UTF8    one_coin[32];       /* name of one coin (ie. "penny") */
     UTF8    public_channel[32]; /* Name of public channel */
     UTF8    public_channel_alias[32]; /* Name of public channel alias */

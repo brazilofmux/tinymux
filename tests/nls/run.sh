@@ -123,10 +123,11 @@ zzzznotacommand
 think TOKEN|[zzzznotafunction(1)]
 @shutdown'
 
-# $1 = LANGUAGE value, $2 = "with-catalogue" | "without-catalogue".
+# $1 = LANGUAGE value, $2 = "with-catalogue" | "without-catalogue",
+# $3 = optional `language` directive for netmux.conf (#1702; empty = omit).
 # Echoes "<xx-count>|<token-line>".
 run_case() {
-    local langset="$1" mode="$2"
+    local langset="$1" mode="$2" directive="${3:-}"
     rm -rf "$WORK"; mkdir -p "$WORK/data" "$WORK/logs" "$WORK/text"
     ( cd "$WORK" || exit 1
       ln -s "$BIN" bin
@@ -148,6 +149,9 @@ command_quota_max 200000
 include alias.conf
 include compat.conf
 EOF
+      if [ -n "$directive" ]; then
+          printf 'language %s\n' "$directive" >> p.conf
+      fi
       printf '%s\n' "$CMDS" > in.txt
       # LC_ALL must name a real locale or LANGUAGE is ignored by gettext.
       LOCPATH="${NLS_LOCPATH:-${LOCPATH-}}" LC_ALL="$NLS_LOCALE" LANGUAGE="$langset" LD_LIBRARY_PATH="$BIN" \
@@ -198,6 +202,29 @@ $(run_case "xx" with-catalogue)
 EOF
 check "LANGUAGE=xx, catalogue present" "$n" 3 "$tok" \
       "marked prose did not translate -- catalogue not found, or M_() not wired"
+
+# 2b. The `language` directive selects the catalogue with NO LANGUAGE set
+#     (#1702).  This is the case an operator actually has: a config file and
+#     whatever environment the init system happened to provide.
+#
+#     It is also the case that distinguishes the directive from the env var.
+#     Case 1 above already proves an empty LANGUAGE yields English, so if
+#     this returns 3 the config file is what selected the catalogue.
+IFS='|' read -r n tok <<EOF
+$(run_case "" with-catalogue xx)
+EOF
+check "language xx directive, no LANGUAGE" "$n" 3 "$tok" \
+      "the netmux.conf directive did not select the catalogue"
+
+# 2c. The directive must OUTRANK the environment, not merely supplement it.
+#     Without this, a server's language still depends on who started it --
+#     the thing the directive exists to stop.  LANGUAGE names a catalogue
+#     that does not exist, so an env-wins implementation yields 0.
+IFS='|' read -r n tok <<EOF
+$(run_case "zz" with-catalogue xx)
+EOF
+check "language xx beats LANGUAGE=zz" "$n" 3 "$tok" \
+      "LANGUAGE overrode the directive, or neither applied"
 
 # 3. LANGUAGE=xx with the catalogue absent: the prefixes must disappear.
 #    This is what makes case 2 mean something.  If this also reported 3, the
@@ -288,6 +315,6 @@ if [ "$fails" -ne 0 ]; then
     echo "LANGUAGE=xx run can no longer be trusted as evidence.  See #1523."
     exit 1
 fi
-echo "=== tests/nls: PASSED (5 cases; translation observed and shown to depend"
+echo "=== tests/nls: PASSED (7 cases; translation observed and shown to depend"
 echo "    on the catalogue, softcode tokens unchanged throughout) ==="
 exit 0

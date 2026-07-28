@@ -3101,7 +3101,10 @@ MUX_RESULT CGameEngine::LoadGame(const UTF8 *configFile,
     // game/locale/<lang>/LC_MESSAGES/tinymux.mo (cwd is typically game/).
     // Path is not a player message — do not run it through T()/gettext.
     //
-    mux_nls_init(reinterpret_cast<const UTF8 *>("locale"));
+    // mudconf.language is populated: this runs after the configuration file
+    // has been read (#1702).  Empty means follow the environment.
+    //
+    mux_nls_init(reinterpret_cast<const UTF8 *>("locale"), mudconf.language);
     mux_nls_refresh_messages();
 
     // Sync function aliases into JIT lookup table now that config

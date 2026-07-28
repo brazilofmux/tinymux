@@ -9,10 +9,11 @@
  *          used as tprintf/mux_sprintf/raw_broadcast formats. gettext when
  *          HAVE_NLS. Opt-in only. Catalogues must preserve conversion
  *          sequences (tests/nls/check_nls.py).
- *   MN_(s,p,n)  Plural-aware prose (#1622). gettext's ngettext when
- *          HAVE_NLS; the English ternary otherwise. Use whenever a count
- *          decides the wording -- never compute the suffix at the call site
- *          and pass it in as %s, which can only ever express English.
+ *   MN_(s,p,n)  Plural-aware prose (#1622). Resolved against the
+ *          catalogue's own Plural-Forms rule when HAVE_NLS (#1702); the
+ *          English ternary otherwise. Use whenever a count decides the
+ *          wording -- never compute the suffix at the call site and pass it
+ *          in as %s, which can only ever express English.
  *   S_(x)  Softcode / machine ABI (#-1 …). Never translated.
  *   N_(x)  Mark-only for xgettext when the msgid is stored before runtime
  *          lookup (static globals re-bound via M_ after mux_nls_init).
@@ -68,7 +69,23 @@ LIBMUX_API const UTF8 *mux_ngettext(const UTF8 *msgid,
 // Bind domain "tinymux" under locale_dir (typically game/locale).
 // No-op when HAVE_NLS is undefined. Safe to call with nullptr (skipped).
 //
-LIBMUX_API void mux_nls_init(const UTF8 *locale_dir);
+// `language` is the netmux.conf `language` directive (#1702): a catalogue
+// name such as "ko", naming game/locale/<language>/LC_MESSAGES/tinymux.mo.
+// nullptr or empty means follow the environment, which is what every
+// configuration written before the directive existed does.
+//
+// It is a PARAMETER rather than an environment variable on purpose.  There is
+// now one catalogue reader on every platform (#1702), and it opens the
+// catalogue by path: selection does not go through the process locale, so it
+// does not inherit gettext's rule that C/POSIX suppresses translation, and
+// it cannot mean different things on different platforms.
+//
+// Passing a value also points at per-player locale later: resolving a
+// catalogue becomes a function OF a language rather than of process state.
+// That was not possible while libintl owned lookup, because its domain
+// binding is process-global.
+//
+LIBMUX_API void mux_nls_init(const UTF8 *locale_dir, const UTF8 *language);
 
 // Re-resolve player-facing global message pointers through M_() after
 // mux_nls_init. Implemented in engine/match.cpp (not libmux). No-op
