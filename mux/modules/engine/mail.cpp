@@ -1830,6 +1830,61 @@ static UTF8 *status_chars(struct mail *mp)
     return res;
 }
 
+// Folder / review summary line (#1667 Phase 4 B3) — same shape as module
+// format_mail_list_line: [flags] n (size) From: name(16) Sub:/At: tail.
+// From uses display-column width via mux_table (not printf codepoints).
+//
+static const size_t kMailListFromCols = 16;
+static const size_t kMailListSubCols  = 25;
+
+static void format_mail_list_line_sub(
+    UTF8 *line, size_t nLine,
+    const UTF8 *status, int i, size_t nSize,
+    const UTF8 *from, const UTF8 *subject)
+{
+    size_t pos = 0;
+    pos = mux_table_append_bytes(line, nLine, pos, "[");
+    pos = mux_table_append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(status));
+    pos = mux_table_append_bytes(line, nLine, pos, "] ");
+    if (pos < nLine)
+    {
+        mux_sprintf(line + pos, nLine - pos, T("%-3d (%4zu) From: "),
+            i, nSize);
+        pos = mux_table_pos_after(line, nLine, pos);
+    }
+    pos = mux_table_append_ljust(line, nLine, pos, from, kMailListFromCols);
+    pos = mux_table_append_bytes(line, nLine, pos, " Sub: ");
+    mux_table_append_trunc(line, nLine, pos, subject, kMailListSubCols);
+}
+
+static void format_mail_list_line_at(
+    UTF8 *line, size_t nLine,
+    const UTF8 *status, int i, size_t nSize,
+    const UTF8 *from, const UTF8 *time_str, const UTF8 *conn_tag)
+{
+    size_t pos = 0;
+    pos = mux_table_append_bytes(line, nLine, pos, "[");
+    pos = mux_table_append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(status));
+    pos = mux_table_append_bytes(line, nLine, pos, "] ");
+    if (pos < nLine)
+    {
+        mux_sprintf(line + pos, nLine - pos, T("%-3d (%4zu) From: "),
+            i, nSize);
+        pos = mux_table_pos_after(line, nLine, pos);
+    }
+    pos = mux_table_append_ljust(line, nLine, pos, from, kMailListFromCols);
+    pos = mux_table_append_bytes(line, nLine, pos, " At: ");
+    pos = mux_table_append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(
+            (nullptr != time_str) ? time_str : T("")));
+    pos = mux_table_append_bytes(line, nLine, pos, " ");
+    pos = mux_table_append_bytes(line, nLine, pos,
+        reinterpret_cast<const char *>(
+            (nullptr != conn_tag) ? conn_tag : T("")));
+}
+
 // Returns true if mp was sent by the current incarnation of player.
 // Guards against recycled dbref: if the mail predates the player's
 // creation, a previous player held this dbref.
@@ -1912,13 +1967,11 @@ static void do_mail_review_all(dbref player, UTF8 *msglist)
 
                     trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                    StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 25);
                     size_t nSize = MessageFetchSize(mp->number);
-                    raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
-                                   status_chars(mp),
-                                   i, nSize,
-                                   szFromName,
-                                   szSubjectBuffer));
+                    UTF8 line[LBUF_SIZE];
+                    format_mail_list_line_sub(line, sizeof(line),
+                        status_chars(mp), i, nSize, szFromName, utf8(mp->subject));
+                    raw_notify(player, line);
                 }
             }
         }
@@ -2023,13 +2076,11 @@ static void do_mail_review(dbref player, UTF8 *name, UTF8 *msglist)
 
                 trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 25);
                 size_t nSize = MessageFetchSize(mp->number);
-                raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
-                               status_chars(mp),
-                               i, nSize,
-                               szFromName,
-                               szSubjectBuffer));
+                UTF8 line[LBUF_SIZE];
+                format_mail_list_line_sub(line, sizeof(line),
+                    status_chars(mp), i, nSize, szFromName, utf8(mp->subject));
+                raw_notify(player, line);
             }
         }
         raw_notify(player, DASH_LINE);
@@ -2165,8 +2216,6 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
         return;
     }
     int i = 0;
-    UTF8 *time;
-    UTF8 szSubjectBuffer[MBUF_SIZE];
 
     raw_notify(player, tprintf(T(FOLDER_LINE), folder));
 
@@ -2180,26 +2229,27 @@ static void do_mail_list(dbref player, UTF8 *arg1, UTF8 *arg2, bool sub)
             i++;
             if (mail_match(mp, ms, i))
             {
-                time = mail_list_time(utf8(mp->time));
                 size_t nSize = MessageFetchSize(mp->number);
 
                 UTF8 szFromName[MBUF_SIZE];
                 trimmed_name(mp->from, szFromName, 16, 16, 0);
 
+                UTF8 line[LBUF_SIZE];
                 if (sub)
                 {
-                    StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer, MBUF_SIZE-1, 25);
-
-                    raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
-                        status_chars(mp), i, nSize, szFromName, szSubjectBuffer));
+                    format_mail_list_line_sub(line, sizeof(line),
+                        status_chars(mp), i, nSize, szFromName, utf8(mp->subject));
                 }
                 else
                 {
-                    raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s At: %s %s"),
+                    UTF8 *time = mail_list_time(utf8(mp->time));
+                    format_mail_list_line_at(line, sizeof(line),
                         status_chars(mp), i, nSize, szFromName, time,
-                            ((Connected(mp->from) && (!Hidden(mp->from) || See_Hidden(player))) ? "Conn" : " ")));
+                        (Connected(mp->from) && (!Hidden(mp->from) || See_Hidden(player)))
+                            ? T("Conn") : T(" "));
+                    free_lbuf(time);
                 }
-                free_lbuf(time);
+                raw_notify(player, line);
             }
         }
     }
@@ -5653,8 +5703,6 @@ static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
         return;
     }
     int i = 0;
-    UTF8 *time;
-    UTF8 szSubjectBuffer[MBUF_SIZE];
 
     raw_notify(player, tprintf(T(FOLDER_LINE), folder_num));
 
@@ -5667,19 +5715,15 @@ static void ListMailInFolderNumber(dbref player, int folder_num, UTF8 *msglist)
             i++;
             if (mail_match(mp, ms, i))
             {
-                time = mail_list_time(utf8(mp->time));
                 size_t nSize = MessageFetchSize(mp->number);
 
                 UTF8 szFromName[MBUF_SIZE];
                 trimmed_name(mp->from, szFromName, 16, 16, 0);
 
-                StripTabsAndTruncate(utf8(mp->subject), szSubjectBuffer,
-                        MBUF_SIZE-1, 25);
-
-                raw_notify(player, tprintf(T("[%s] %-3d (%4d) From: %s Sub: %s"),
-                            status_chars(mp), i, nSize, szFromName,
-                            szSubjectBuffer));
-                free_lbuf(time);
+                UTF8 line[LBUF_SIZE];
+                format_mail_list_line_sub(line, sizeof(line),
+                    status_chars(mp), i, nSize, szFromName, utf8(mp->subject));
+                raw_notify(player, line);
             }
         }
     }
