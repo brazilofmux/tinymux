@@ -441,7 +441,7 @@ void cf_log_notfound(dbref player, const UTF8 *cmd, const UTF8 *thingname, const
     }
     else
     {
-        notify(player, tprintf(T("%s %s not found"), thingname, thing));
+        notify(player, tprintf(M_("%s %s not found"), thingname, thing));
     }
 }
 
@@ -458,7 +458,7 @@ void cf_log_alreadyexists(dbref player, const UTF8* cmd, const UTF8* thingname, 
     }
     else
     {
-        notify(player, tprintf(T("%s %s already exists"), thingname, thing));
+        notify(player, tprintf(M_("%s %s already exists"), thingname, thing));
     }
 }
 

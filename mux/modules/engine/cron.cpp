@@ -831,8 +831,9 @@ void do_crondel(dbref executor, dbref caller, dbref enactor, int eval,
     }
 
     int count = cron_clr(thing, atr);
-    notify(executor, tprintf(T("Removed %d cron %s."), count,
-                             (1 == count) ? "entry" : "entries"));
+    // #1683 / #1622: count goes to the catalogue, not English entry/entries.
+    notify(executor, tprintf(MN_("%d cron entry removed.",
+                                 "%d cron entries removed.", count), count));
 }
 
 void do_crontab(dbref executor, dbref caller, dbref enactor, int eval,
@@ -885,7 +886,7 @@ void do_crontab(dbref executor, dbref caller, dbref enactor, int eval,
 
         if (nullptr == ap)
         {
-            notify(executor, tprintf(T("%s has a cron entry with bad "
+            notify(executor, tprintf(M_("%s has a cron entry with bad "
                                        "attribute number %d."),
                                      pObj, crp->atr));
         }
@@ -899,7 +900,7 @@ void do_crontab(dbref executor, dbref caller, dbref enactor, int eval,
             ltaLocal.ReturnFields(&ft);
 
             notify(executor, tprintf(
-                T("%s/%s: %s  [next: %04d-%02d-%02d %02d:%02d]"),
+                M_("%s/%s: %s  [next: %04d-%02d-%02d %02d:%02d]"),
                 pObj, ap->name, crp->cronstr,
                 ft.iYear, ft.iMonth, ft.iDayOfMonth,
                 ft.iHour, ft.iMinute));
@@ -907,8 +908,8 @@ void do_crontab(dbref executor, dbref caller, dbref enactor, int eval,
         free_lbuf(pObj);
     }
 
-    notify(executor, tprintf(T("Matched %d cron %s."), count,
-                             (1 == count) ? "entry" : "entries"));
+    notify(executor, tprintf(MN_("%d cron entry matched.",
+                                 "%d cron entries matched.", count), count));
 }
 
 // Called during object destruction to clean up cron entries.
