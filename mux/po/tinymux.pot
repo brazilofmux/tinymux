@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 15:19+0000\n"
+"POT-Creation-Date: 2026-07-28 15:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -488,7 +488,7 @@ msgid "No message."
 msgstr ""
 
 #: modules/engine/comsys.cpp:1556 modules/engine/comsys.cpp:2597
-#: modules/engine/comsys.cpp:3232 modules/engine/comsys.cpp:3470
+#: modules/engine/comsys.cpp:3232 modules/engine/comsys.cpp:3496
 #, c-format
 msgid "Unknown channel %s."
 msgstr ""
@@ -541,8 +541,8 @@ msgstr ""
 msgid "-- Objects --"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2141 modules/engine/comsys.cpp:3242
-#: modules/engine/comsys.cpp:3262
+#: modules/engine/comsys.cpp:2141 modules/engine/comsys.cpp:3250
+#: modules/engine/comsys.cpp:3288
 #, c-format
 msgid "-- %s --"
 msgstr ""
@@ -642,15 +642,15 @@ msgid "Warning: Only public channels and your channels will be shown."
 msgstr ""
 
 #: modules/engine/comsys.cpp:2821 modules/engine/comsys.cpp:3044
-#: modules/engine/comsys.cpp:4102
+#: modules/engine/comsys.cpp:4128
 msgid "Channel"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2824 modules/engine/comsys.cpp:4108
+#: modules/engine/comsys.cpp:2824 modules/engine/comsys.cpp:4134
 msgid "Header"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2827 modules/engine/comsys.cpp:4105
+#: modules/engine/comsys.cpp:2827 modules/engine/comsys.cpp:4131
 msgid "Owner"
 msgstr ""
 
@@ -666,7 +666,7 @@ msgstr ""
 msgid "Msgs"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2903 modules/engine/comsys.cpp:4218
+#: modules/engine/comsys.cpp:2903 modules/engine/comsys.cpp:4244
 msgid "-- End of list of Channels --"
 msgstr ""
 
@@ -715,7 +715,7 @@ msgstr ""
 msgid "Alias"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3047
+#: modules/engine/comsys.cpp:3047 modules/engine/comsys.cpp:3258
 msgid "Status"
 msgstr ""
 
@@ -723,8 +723,8 @@ msgstr ""
 msgid "Title"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3088 modules/engine/comsys.cpp:3325
-#: modules/engine/comsys.cpp:3331
+#: modules/engine/comsys.cpp:3088 modules/engine/comsys.cpp:3351
+#: modules/engine/comsys.cpp:3357
 #, c-format
 msgid "Bad Comsys Alias: %s for Channel: %s"
 msgstr ""
@@ -737,8 +737,16 @@ msgstr ""
 msgid "Only options available are: on, off and who."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3499 modules/engine/comsys.cpp:3515
-#: modules/engine/comsys.cpp:3845 modules/engine/conf.cpp:2459
+#: modules/engine/comsys.cpp:3255
+msgid "Name"
+msgstr ""
+
+#: modules/engine/comsys.cpp:3261
+msgid "Player"
+msgstr ""
+
+#: modules/engine/comsys.cpp:3525 modules/engine/comsys.cpp:3541
+#: modules/engine/comsys.cpp:3871 modules/engine/conf.cpp:2459
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -748,166 +756,166 @@ msgstr ""
 msgid "Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3503
+#: modules/engine/comsys.cpp:3529
 msgid "Invalid player."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3519
+#: modules/engine/comsys.cpp:3545
 msgid "That is not a reasonable cost."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3541
+#: modules/engine/comsys.cpp:3567
 msgid "@cpflags: Unknown Flag."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3549
+#: modules/engine/comsys.cpp:3575
 msgid "@cpflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3554
+#: modules/engine/comsys.cpp:3580
 msgid "@cpflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3577
+#: modules/engine/comsys.cpp:3603
 msgid "@coflags: Unknown Flag."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3585
+#: modules/engine/comsys.cpp:3611
 msgid "@coflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3590
+#: modules/engine/comsys.cpp:3616
 msgid "@coflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3720
+#: modules/engine/comsys.cpp:3746
 #, c-format
 msgid "Channel %s does not exist."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3776
+#: modules/engine/comsys.cpp:3802
 #, c-format
 msgid "@cset: Channel %s does not exist."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3792
+#: modules/engine/comsys.cpp:3818
 #, c-format
 msgid "@cset: Channel %s placed on the public listings."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3797
+#: modules/engine/comsys.cpp:3823
 #, c-format
 msgid "@cset: Channel %s taken off the public listings."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3802
+#: modules/engine/comsys.cpp:3828
 #, c-format
 msgid "@cset: Channel %s now sends connect/disconnect msgs."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3807
+#: modules/engine/comsys.cpp:3833
 #, c-format
 msgid "@cset: Channel %s connect/disconnect msgs muted."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3812
+#: modules/engine/comsys.cpp:3838
 #, c-format
 msgid "@cset: Channel %s set spoofable."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3817
+#: modules/engine/comsys.cpp:3843
 #, c-format
 msgid "@cset: Channel %s set unspoofable."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3828
+#: modules/engine/comsys.cpp:3854
 #, c-format
 msgid "Channel %s is now disassociated from any channel object."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3834
+#: modules/engine/comsys.cpp:3860
 #, c-format
 msgid "Channel %s is now using %s as channel object."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3852
+#: modules/engine/comsys.cpp:3878
 #, c-format
 msgid "@cset: Channel %s maximum history set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3856
+#: modules/engine/comsys.cpp:3882
 #, c-format
 msgid ""
 "@cset: Channel %s has no channel object.  Use @cset/object to set one before "
 "setting a history buffer."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3860
+#: modules/engine/comsys.cpp:3886
 #, c-format
 msgid "@cset: Could not set maximum history for channel %s."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3864
+#: modules/engine/comsys.cpp:3890
 #, c-format
 msgid "@cset: Maximum history must be a number less than or equal to %d."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3873
+#: modules/engine/comsys.cpp:3899
 #, c-format
 msgid "@cset: Channel %s timestamp logging set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3877
+#: modules/engine/comsys.cpp:3903
 #, c-format
 msgid "@cset: Timestamp logging for channel %s must be 0 or 1."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3881
+#: modules/engine/comsys.cpp:3907
 #, c-format
 msgid ""
 "@cset: Channel %s has no channel object.  Use @cset/object to set one before "
 "enabling timestamp logging."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3885
+#: modules/engine/comsys.cpp:3911
 #, c-format
 msgid ""
 "@cset: Channel %s has no history buffer.  Use @cset/log to set one before "
 "enabling timestamp logging."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3889
+#: modules/engine/comsys.cpp:3915
 #, c-format
 msgid "@cset: Could not set timestamp logging for channel %s."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3929
+#: modules/engine/comsys.cpp:3955
 msgid "@cboot: Unknown channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3935
+#: modules/engine/comsys.cpp:3961
 msgid "@cboot: You are not on that channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3941
+#: modules/engine/comsys.cpp:3967
 msgid "@cboot: You can’t do that!"
 msgstr ""
 
-#: modules/engine/comsys.cpp:3953
+#: modules/engine/comsys.cpp:3979
 #, c-format
 msgid "@cboot: %s is not on the channel."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3958
+#: modules/engine/comsys.cpp:3984
 #, c-format
 msgid "You boot %s off channel %s."
 msgstr ""
 
-#: modules/engine/comsys.cpp:4014
+#: modules/engine/comsys.cpp:4040
 msgid "That channel does not exist."
 msgstr ""
 
-#: modules/engine/comsys.cpp:4108
+#: modules/engine/comsys.cpp:4134
 msgid "Description"
 msgstr ""
 
