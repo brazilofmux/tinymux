@@ -3984,7 +3984,7 @@ void do_chboot
     raw_notify(executor, tprintf(M_("You boot %s off channel %s."),
                                  Moniker(thing), ch->name));
     raw_notify(thing, tprintf(M_("%s boots you off channel %s."),
-                              Moniker(thing), ch->name));
+                              Moniker(executor), ch->name));
 
     if (!(key & CBOOT_QUIET))
     {
