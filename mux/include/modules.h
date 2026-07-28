@@ -306,6 +306,18 @@ public:
     //
     virtual MUX_RESULT DecodeFlags(dbref player, dbref obj, UTF8 **ppStr) = 0;
 
+    // UnparseObject — "Name(#dbref FLAGS)" as the viewer is entitled to see
+    // it, into a caller-supplied buffer.  The visibility rule is Examinable()
+    // plus the CHOWN_OK/JUMP_OK/LINK_OK/DESTROY_OK/ABODE exceptions, which a
+    // module cannot compute from GetFlags/DecodeFlags alone — so @cwho
+    // rendered a bare name under the comsys module and name+dbref+flags under
+    // the engine (#1640 item 2).  Caller-supplied buffer rather than an
+    // allocation, matching AtrGet: nothing crosses the DLL boundary that has
+    // to be freed on the other side.
+    //
+    virtual MUX_RESULT UnparseObject(dbref player, dbref target,
+        bool bObeyMyopic, UTF8 *pBuf, size_t nBufMax) = 0;
+
     // Compound permission queries — these wrap the complex macro chains
     // (Owner/Inherits/Flags) so the driver doesn't need db[] access.
     //

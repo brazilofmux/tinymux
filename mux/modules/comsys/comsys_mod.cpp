@@ -3023,15 +3023,43 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
             }
         }
 
-        const UTF8 *pName = nullptr;
+        // The engine renders unparse_object() here — "Wizard(#1PcW)" — and
+        // the module rendered the bare name (#1640 item 2).  @cwho is how
+        // staff identify WHICH object is on a channel, so losing the dbref
+        // and flags is not cosmetic.  The visibility rule is Examinable()
+        // plus CHOWN_OK/JUMP_OK/LINK_OK/DESTROY_OK/ABODE, which is why this
+        // needs an engine call rather than GetFlags + DecodeFlags.
+        //
+        // co_strip_color matches the engine composition in comsys.cpp:
+        // @cwho discards color so its width arithmetic is honest, while
+        // @clist two functions away preserves it.  Both are coping
+        // strategies for the primitive #1649 proposes; this path matches
+        // the engine rather than inventing a fresh divergence.
+        //
+        // Buffers are LBUF_SIZE (from color_ops.h), not MOD_LBUF_SIZE:
+        // co_strip_color writes up to LBUF_SIZE-1 bytes.
+        //
+        UTF8 unparsed[LBUF_SIZE];
+        unparsed[0] = '\0';
         if (nullptr != m_pIObjectInfo)
         {
-            m_pIObjectInfo->GetName(user.who, &pName);
+            m_pIObjectInfo->UnparseObject(executor, user.who, false,
+                unparsed, sizeof(unparsed));
         }
-        if (nullptr == pName)
+        if ('\0' == unparsed[0])
         {
-            pName = T("???");
+            const UTF8 *pName = nullptr;
+            if (nullptr != m_pIObjectInfo)
+            {
+                m_pIObjectInfo->GetName(user.who, &pName);
+            }
+            mux_sprintf(unparsed, sizeof(unparsed), T("%s"),
+                (nullptr != pName) ? pName : T("???"));
         }
+
+        UTF8 plain[LBUF_SIZE];
+        co_strip_color(plain, unparsed,
+            strlen(reinterpret_cast<const char *>(unparsed)));
 
         bool bPlayer = false;
         if (nullptr != m_pIObjectInfo)
@@ -3040,7 +3068,7 @@ MUX_RESULT CComsysMod::ChanWho(dbref executor, const UTF8 *pArg)
         }
 
         size_t pos = 0;
-        pos = append_ljust_field(msg, sizeof(msg), pos, pName, 29);
+        pos = append_ljust_field(msg, sizeof(msg), pos, plain, 29);
         pos = append_bytes(msg, sizeof(msg), pos, " ");
         pos = append_ljust_field(msg, sizeof(msg), pos,
             user.bUserIsOn ? T("on ") : T("off"), 6);

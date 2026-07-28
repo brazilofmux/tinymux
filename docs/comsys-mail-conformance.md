@@ -145,24 +145,24 @@ build when it stops being accurate in either direction. Summary:
 
 | # | Behaviour | Engine | Module | Issue |
 |---|---|---|---|---|
-| 1 | `@cwho` | `Wizard(#1PcW)` | `Wizard` — no dbref or flags | #1640 item 2 |
-| 2 | `@mail/stats` | spool-wide total | per-player breakdown | #1631 |
-| 3 | `@mail/dstats` | spool detail | identical to `/stats` | #1631 |
-| 4 | `@mail/fstats` | old/new/cleared byte totals | identical to `/stats` | #1631 |
-| 5 | `@mail` sender name | empty under muxscript (stub `TrimmedName`) | renders the name | #1637 |
-| 6 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
-| 7 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
-| 8 | module lifecycle logs | silent | load / shutdown lines | — |
+| 1 | `@mail/fstats` byte total | totalling 26 | totalling 27 | #1652 |
+| 2 | `@mail` sender name | empty under muxscript (stub `TrimmedName`) | renders the name | #1637 |
+| 3 | `@mail <n>` `To:` line | present | **omitted** | #1637 |
+| 4 | `@mail/debug` label | `Vector capacity: 0` | `Allocated slots 0` | — |
+| 5 | module lifecycle logs | silent | load / shutdown lines | — |
 
 Closed by #1647 (items 1, 3, 4 of #1640, plus padding and speech comtitle):
 `@clist/full`, comtitle on speech/join/leave, `delcom` personal confirmation,
 and `@clist` description padding. Baseline shrank **39 → 29** divergent lines.
 
-Row 1 remains because `unparse_object` / `Examinable()` (incl. `check_zone`)
-is not on a module interface; needs an ABI addition, not a softcode approx.
+Closed by #1655 / #1631: `@mail/stats` / `/dstats` / `/fstats` levels now
+match the engine product shape (module no longer collapses them to one
+breakdown). Remaining `@mail/fstats` off-by-one is #1652 (engine
+`MessageFetchSize`).
 
-Rows 2–4 and 5 are where the **module is the more correct side** for player
-UX (#1631 product decision still open; #1637 empty From is a harness stub).
+Closed for #1640 item 2 (`@cwho` bare name): `mux_IObjectInfo::UnparseObject`
+plus `co_strip_color`, matching the engine's `unparse_object` +
+`strip_color` composition.
 
 ## Adding a row
 
