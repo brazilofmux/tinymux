@@ -191,12 +191,19 @@ EOF
 check "default locale, catalogue present" "$n" 0 "$tok" \
       "translated without LANGUAGE=xx being set"
 
-# 2. LANGUAGE=xx: the same three messages must come back [xx]-prefixed.
+# 2. LANGUAGE=xx: the same marked messages must come back [xx]-prefixed.
 #    This is the only case that demonstrates the feature works.
+#
+#    The count is four, not three, since #1700 marked the shutdown
+#    broadcast -- CMDS ends in @shutdown, so "GAME: Shutdown by %s" is in
+#    the stream too.  It moves whenever a marking lands on prose this
+#    command sequence happens to emit, which is a stale-expectation failure
+#    rather than a real one: check WHICH lines carry [xx] before changing
+#    the number, because a drop is the failure this case exists to catch.
 IFS='|' read -r n tok <<EOF
 $(run_case "xx" with-catalogue)
 EOF
-check "LANGUAGE=xx, catalogue present" "$n" 3 "$tok" \
+check "LANGUAGE=xx, catalogue present" "$n" 4 "$tok" \
       "marked prose did not translate -- catalogue not found, or M_() not wired"
 
 # 3. LANGUAGE=xx with the catalogue absent: the prefixes must disappear.
