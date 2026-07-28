@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 15:05+0000\n"
+"POT-Creation-Date: 2026-07-28 15:15+0000\n"
 "PO-Revision-Date: 2026-07-28 14:58+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -705,6 +705,16 @@ msgstr "[xx] That channel does not exist."
 msgid "Description"
 msgstr "[xx] Description"
 
+#: modules/engine/conf.cpp:444
+#, c-format
+msgid "%s %s not found"
+msgstr "[xx] %s %s not found"
+
+#: modules/engine/conf.cpp:461
+#, c-format
+msgid "%s %s already exists"
+msgstr "[xx] %s %s already exists"
+
 #: modules/engine/conf.cpp:517
 msgid "Nothing to set"
 msgstr "[xx] Nothing to set"
@@ -779,7 +789,7 @@ msgstr "[xx] Query server is not available."
 #: modules/engine/cque.cpp:1746 modules/engine/cron.cpp:744
 #: modules/engine/cron.cpp:749 modules/engine/cron.cpp:803
 #: modules/engine/cron.cpp:808 modules/engine/cron.cpp:822
-#: modules/engine/cron.cpp:858 modules/engine/set.cpp:1184
+#: modules/engine/cron.cpp:859 modules/engine/set.cpp:1184
 #: modules/engine/set.cpp:1511 modules/engine/set.cpp:1568
 #: modules/engine/set.cpp:2010 modules/engine/set.cpp:2086
 #: modules/engine/set.cpp:2148 modules/engine/set.cpp:2256
@@ -1095,6 +1105,30 @@ msgstr "[xx] Cron entry added."
 #: modules/engine/cron.cpp:786
 msgid "Usage: @crondel <object>[/<attribute>]"
 msgstr "[xx] Usage: @crondel <object>[/<attribute>]"
+
+#: modules/engine/cron.cpp:835
+#, c-format
+msgid "%d cron entry removed."
+msgid_plural "%d cron entries removed."
+msgstr[0] "[xx] %d cron entry removed."
+msgstr[1] "[xx] %d cron entries removed."
+
+#: modules/engine/cron.cpp:889
+#, c-format
+msgid "%s has a cron entry with bad attribute number %d."
+msgstr "[xx] %s has a cron entry with bad attribute number %d."
+
+#: modules/engine/cron.cpp:903
+#, c-format
+msgid "%s/%s: %s  [next: %04d-%02d-%02d %02d:%02d]"
+msgstr "[xx] %s/%s: %s  [next: %04d-%02d-%02d %02d:%02d]"
+
+#: modules/engine/cron.cpp:911
+#, c-format
+msgid "%d cron entry matched."
+msgid_plural "%d cron entries matched."
+msgstr[0] "[xx] %d cron entry matched."
+msgstr[1] "[xx] %d cron entries matched."
 
 #: modules/engine/db.cpp:942
 msgid "No such user-named attribute."
@@ -1517,7 +1551,8 @@ msgid "You are carrying:"
 msgstr "[xx] You are carrying:"
 
 #: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
-#: modules/engine/speech.cpp:565
+#: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:192
+#: modules/engine/walkdb.cpp:230
 #, c-format
 msgid "You don’t have enough %s."
 msgstr "[xx] You don’t have enough %s."
@@ -3465,13 +3500,65 @@ msgstr "[xx] The delimiter must be a single character!"
 msgid "***End of List***"
 msgstr "[xx] ***End of List***"
 
+#: modules/engine/walkdb.cpp:315
+#, c-format
+msgid "The universe contains %d objects (next free is #%d)."
+msgstr "[xx] The universe contains %d objects (next free is #%d)."
+
+#: modules/engine/walkdb.cpp:339
+#, c-format
+msgid "%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"
+msgstr "[xx] %d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"
+
 #: modules/engine/walkdb.cpp:472
 msgid "Victim must be a player."
 msgstr "[xx] Victim must be a player."
 
+#: modules/engine/walkdb.cpp:494
+#, c-format
+msgid "%d objects @chowned."
+msgstr "[xx] %d objects @chowned."
+
+#: modules/engine/walkdb.cpp:503
+msgid "The mark commands are not allowed while DB cleaning is enabled."
+msgstr "[xx] The mark commands are not allowed while DB cleaning is enabled."
+
+#: modules/engine/walkdb.cpp:505
+msgid "Use the ‘@disable cleaning’ command to disable automatic cleaning."
+msgstr "[xx] Use the ‘@disable cleaning’ command to disable automatic cleaning."
+
+#: modules/engine/walkdb.cpp:507
+msgid "Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."
+msgstr "[xx] Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."
+
+#: modules/engine/walkdb.cpp:599
+#, c-format
+msgid "%s: No such player"
+msgstr "[xx] %s: No such player"
+
+#: modules/engine/walkdb.cpp:795
+#, c-format
+msgid "%s: unknown type"
+msgstr "[xx] %s: unknown type"
+
+#: modules/engine/walkdb.cpp:837
+#, c-format
+msgid "%s: unknown class"
+msgstr "[xx] %s: unknown class"
+
 #: modules/engine/walkdb.cpp:848
 msgid "You need a search warrant to do that!"
 msgstr "[xx] You need a search warrant to do that!"
+
+#: modules/engine/walkdb.cpp:857
+#, c-format
+msgid "You don’t have enough %s to search. (You need %d)"
+msgstr "[xx] You don’t have enough %s to search. (You need %d)"
+
+#: modules/engine/walkdb.cpp:1122
+#, c-format
+msgid "%d objects %smarked"
+msgstr "[xx] %d objects %smarked"
 
 #: modules/engine/walkdb.cpp:1182
 msgid ""
@@ -3508,6 +3595,13 @@ msgstr ""
 #: modules/engine/walkdb.cpp:1309
 msgid "Nothing found."
 msgstr "[xx] Nothing found."
+
+#: modules/engine/walkdb.cpp:1314
+#, c-format
+msgid ""
+"\n"
+"Found:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
+msgstr "[xx] \nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
 
 #: modules/engine/walkdb.cpp:1506
 msgid "Day   Hours     Players  Total"

@@ -189,7 +189,7 @@ void do_find(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
 
     if (!payfor(executor, mudconf.searchcost))
     {
-        buff = tprintf(T("You don’t have enough %s."), mudconf.many_coins);
+        buff = tprintf(M_("You don’t have enough %s."), mudconf.many_coins);
         notify_quiet(executor, buff);
         return;
     }
@@ -227,7 +227,7 @@ bool get_stats(dbref player, dbref who, STATS *info)
     //
     if (!payfor(player, mudconf.searchcost))
     {
-        notify(player, tprintf(T("You don’t have enough %s."), mudconf.many_coins));
+        notify(player, tprintf(M_("You don’t have enough %s."), mudconf.many_coins));
         return false;
     }
     info->s_total = 0;
@@ -312,7 +312,7 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             {
                 nNextFree = mudstate.db_top;
             }
-            notify(executor, tprintf(T("The universe contains %d objects (next free is #%d)."),
+            notify(executor, tprintf(M_("The universe contains %d objects (next free is #%d)."),
                 mudstate.db_top, nNextFree));
             return;
         }
@@ -336,7 +336,7 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
         return;
     }
     notify(executor,
-        tprintf(T("%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"),
+        tprintf(M_("%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"),
             statinfo.s_total, statinfo.s_rooms, statinfo.s_exits,
             statinfo.s_things, statinfo.s_players,
             statinfo.s_garbage));
@@ -491,7 +491,7 @@ void do_chownall
     int count = chown_all(victim, recipient, executor, key);
     if (!Quiet(executor))
     {
-        notify(executor, tprintf(T("%d objects @chowned."), count));
+        notify(executor, tprintf(M_("%d objects @chowned."), count));
     }
 }
 
@@ -500,11 +500,11 @@ void do_chownall
 static void er_mark_disabled(dbref player)
 {
     notify(player,
-     T("The mark commands are not allowed while DB cleaning is enabled."));
+     M_("The mark commands are not allowed while DB cleaning is enabled."));
     notify(player,
-     T("Use the ‘@disable cleaning’ command to disable automatic cleaning."));
+     M_("Use the ‘@disable cleaning’ command to disable automatic cleaning."));
     notify(player,
-     T("Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."));
+     M_("Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."));
 }
 
 
@@ -596,7 +596,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
 
     if (parm->s_rst_owner == NOTHING)
     {
-        notify(player, tprintf(T("%s: No such player"), pname));
+        notify(player, tprintf(M_("%s: No such player"), pname));
         return false;
     }
 
@@ -792,7 +792,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
             }
             else
             {
-                notify(player, tprintf(T("%s: unknown type"), searchfor));
+                notify(player, tprintf(M_("%s: unknown type"), searchfor));
                 return false;
             }
         }
@@ -834,7 +834,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
 
     if (err)
     {
-        notify(player, tprintf(T("%s: unknown class"), searchtype));
+        notify(player, tprintf(M_("%s: unknown class"), searchtype));
         return false;
     }
 
@@ -854,7 +854,7 @@ bool search_setup(dbref player, UTF8 *searchfor, SEARCH *parm)
     if (!payfor(player, mudconf.searchcost))
     {
         notify(player,
-            tprintf(T("You don’t have enough %s to search. (You need %d)"),
+            tprintf(M_("You don’t have enough %s to search. (You need %d)"),
                  mudconf.many_coins, mudconf.searchcost));
         return false;
     }
@@ -1119,7 +1119,7 @@ static void search_mark(dbref player, int key)
             nchanged++;
         }
     }
-    notify( player, tprintf(T("%d objects %smarked"), nchanged,
+    notify( player, tprintf(M_("%d objects %smarked"), nchanged,
             ((key == SRCH_MARK) ? "" : "un")) );
     return;
 }
@@ -1311,7 +1311,7 @@ void do_search(dbref executor, dbref caller, dbref enactor, int eval, int key, U
     else
     {
         mux_sprintf(outbuf, LBUF_SIZE,
-            T("\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"),
+            M_("\nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"),
             rcount, ecount, tcount, pcount);
         notify(executor, outbuf);
     }
