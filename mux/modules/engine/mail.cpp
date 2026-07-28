@@ -2921,7 +2921,9 @@ static void send_mail
         if (total > mudconf.mail_max_per_player)
         {
             raw_notify(player,
-                tprintf(M_("MAIL: %s’s mailbox is full (%d messages)."),
+                tprintf(MN_("MAIL: %s’s mailbox is full (%d message).",
+                             "MAIL: %s’s mailbox is full (%d messages).",
+                             total - 1),
                     Moniker(target), total - 1));
             MessageReferenceDec(number);
             lst.pop_back();  // undo the emplace
@@ -4062,7 +4064,10 @@ void check_mail(dbref player, int folder, bool silent)
     }
     if (gc > 0)
     {
-        raw_notify(player, tprintf(M_("URGENT MAIL: You have %d urgent messages in folder %d [%s]."), gc, folder, get_folder_name(player, folder)));
+        raw_notify(player, tprintf(MN_(
+            "URGENT MAIL: You have %d urgent message in folder %d [%s].",
+            "URGENT MAIL: You have %d urgent messages in folder %d [%s].", gc),
+            gc, folder, get_folder_name(player, folder)));
     }
 #endif // MAIL_ALL_FOLDERS
 }

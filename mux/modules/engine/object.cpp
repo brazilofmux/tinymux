@@ -1221,7 +1221,9 @@ void destroy_player(dbref player, dbref victim)
 
     move_via_generic(victim, NOTHING, player, 0);
     destroy_obj(victim);
-    notify_quiet(player, tprintf(M_("(%d objects @chowned to you)"), count));
+    notify_quiet(player, tprintf(MN_("(%d object @chowned to you)",
+                                     "(%d objects @chowned to you)", count),
+                                 count));
 }
 
 static void purge_going(void)

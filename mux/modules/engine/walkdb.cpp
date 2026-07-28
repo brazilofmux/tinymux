@@ -313,7 +313,10 @@ void do_stats(dbref executor, dbref caller, dbref enactor, int eval, int key, UT
             {
                 nNextFree = mudstate.db_top;
             }
-            notify(executor, tprintf(M_("The universe contains %d objects (next free is #%d)."),
+            notify(executor, tprintf(MN_(
+                "The universe contains %d object (next free is #%d).",
+                "The universe contains %d objects (next free is #%d).",
+                mudstate.db_top),
                 mudstate.db_top, nNextFree));
             return;
         }
@@ -492,7 +495,8 @@ void do_chownall
     int count = chown_all(victim, recipient, executor, key);
     if (!Quiet(executor))
     {
-        notify(executor, tprintf(M_("%d objects @chowned."), count));
+        notify(executor, tprintf(MN_("%d object @chowned.",
+                                     "%d objects @chowned.", count), count));
     }
 }
 
@@ -1120,8 +1124,21 @@ static void search_mark(dbref player, int key)
             nchanged++;
         }
     }
-    notify( player, tprintf(M_("%d objects %smarked"), nchanged,
-            ((key == SRCH_MARK) ? "" : "un")) );
+    // Two whole sentences rather than "%smarked" with %s = "" / "un"
+    // (#1717).  A translator handed that %s cannot use it -- the prefix is
+    // English morphology, not a word -- and the count needs a plural form on
+    // top.  Same rule as #1575 / #1588: mark the sentence, never a piece.
+    //
+    if (SRCH_MARK == key)
+    {
+        notify(player, tprintf(MN_("%d object marked",
+                                   "%d objects marked", nchanged), nchanged));
+    }
+    else
+    {
+        notify(player, tprintf(MN_("%d object unmarked",
+                                   "%d objects unmarked", nchanged), nchanged));
+    }
     return;
 }
 

@@ -445,7 +445,9 @@ void do_toad
     mux_sprintf(buf, MBUF_SIZE, M_("%s has been turned into a slimy toad!"),
         pVictimMoniker);
     notify_except2(loc, executor, victim, executor, buf);
-    mux_sprintf(buf, MBUF_SIZE, M_("You toaded %s! (%d objects @chowned)"),
+    mux_sprintf(buf, MBUF_SIZE, MN_("You toaded %s! (%d object @chowned)",
+                                    "You toaded %s! (%d objects @chowned)",
+                                    count + 1),
         pVictimMoniker, count + 1);
     notify_quiet(executor, buf);
 
