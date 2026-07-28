@@ -2301,6 +2301,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_DEC:        return "DEC";
     case HIR_ATOI:       return "ATOI";
     case HIR_STRCMP:      return "STRCMP";
+    case HIR_LUA_NEWTABLE: return "LUA_NEWTABLE";
     case HIR_LUA_GETI:   return "LUA_GETI";
     case HIR_LUA_SETI:   return "LUA_SETI";
     case HIR_LUA_ALOAD:  return "LUA_ALOAD";
