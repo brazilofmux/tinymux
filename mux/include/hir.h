@@ -105,6 +105,7 @@ enum hir_kind {
     // The named mechanism is gone (#1519); this is the only one.
     //
     HIR_LUA_NEWTABLE, // newtable(narr, nrec): ECALL → TY_LUA_HANDLE
+    HIR_LUA_LEN,    // len(tbl_idx): ECALL → TY_INT, Lua's # on a table
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
     HIR_LUA_SETI,   // seti(tbl_idx, key, val): ECALL (no string marshal)
     HIR_LUA_ALOAD,  // native array load: val[key] from pinned array (no ECALL)

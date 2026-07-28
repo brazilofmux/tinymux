@@ -149,7 +149,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=31
+AGREE_DECLINE_BUDGET=30
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -175,6 +175,14 @@ EXEC_CASES=(
     # named ECALL and so compiled and then failed on every call.
     'local t={10,20,30} return t[1]+t[3]'
     'local t={4,5} return t[2]'
+
+    # `#t` -- #1424's original symptom, fixed at the root rather than
+    # declined.  It answered 22 for a three-element table because the
+    # lowering measured a stack INDEX that had been marshalled out as a
+    # decimal string: strlen of the text, not the length of the table.
+    # ECALL_LUA_LEN_INT asks the VM, and the index stays in a register.
+    'local t={1,2,3} return #t'
+    'local t={} t[1]=9 t[2]=8 return #t'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
