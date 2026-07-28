@@ -451,6 +451,50 @@ def check_pot_fresh(root, pot):
         os.unlink(backup)
 
 
+def check_msgfmt(root):
+    """Every catalogue must actually compile.
+
+    The other checks in this file reason ABOUT msgfmt -- that it drops fuzzy
+    entries, that a mismatched conversion is a runtime format bug -- but none
+    of them ever RAN it, so a catalogue msgfmt outright refuses could pass
+    every one of them.  That is not hypothetical: xx.po carried five entries
+    where the mechanical "[xx] " prefix landed in front of a leading newline,
+
+        msgid  "\n" "ROOMS:"
+        msgstr "[xx] \n" "ROOMS:"
+
+    and gettext rejects a msgstr whose leading/trailing newlines do not match
+    its msgid, because they are layout.  `make -C mux/po mo` failed on it
+    while this guard reported xx.po as 936/936, 100%, all clean -- so the
+    shipped .mo was a day older than its source and nobody was told.
+
+    msgfmt is the tool that decides whether a catalogue can ship, so ask it.
+    """
+    findings = []
+    po_dir = os.path.join(root, "mux", "po")
+    if not os.path.isdir(po_dir):
+        return findings
+    try:
+        subprocess.run(["msgfmt", "--version"],
+                       capture_output=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        # No gettext here.  Same posture as the .pot freshness check: a
+        # missing toolchain is a skip, not a failure.
+        return findings
+
+    for name in sorted(os.listdir(po_dir)):
+        if not name.endswith(".po"):
+            continue
+        path = os.path.join(po_dir, name)
+        res = subprocess.run(
+            ["msgfmt", "-c", "-o", os.devnull, path],
+            capture_output=True, text=True)
+        if 0 != res.returncode:
+            for line in res.stderr.strip().splitlines():
+                findings.append("%s: %s" % (name, line.strip()))
+    return findings
+
+
 def main():
     root = repo_root()
     pot_path = os.path.join(root, "mux", "po", "tinymux.pot")
@@ -484,6 +528,12 @@ def main():
          "Stale and missing msgids are errors in every catalogue.  Under an "
          "X-Tinymux-Catalogue: complete policy, fuzzy and untranslated entries "
          "are too -- msgfmt drops fuzzy entries without saying so."),
+        ("catalogue compiles (msgfmt -c)",
+         check_msgfmt(root),
+         "msgfmt refuses this catalogue, so `make -C mux/po mo` cannot build "
+         "it and whatever .mo is committed no longer matches its .po.  Every "
+         "other check here reasons about msgfmt without running it, which is "
+         "how a catalogue that cannot ship reported 100% clean."),
         (".pot freshness",
          check_pot_fresh(root, pot),
          "The .pot does not match what the sources mark.  Strings marked but "
