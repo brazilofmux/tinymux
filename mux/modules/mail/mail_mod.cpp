@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstdarg>
 #include <cstring>
 #include <cstdlib>
 #include <cctype>
@@ -568,6 +569,40 @@ void CMailMod::bump_revision(void)
     }
 }
 
+// Report a refused storage write (#1630).  Silent on success, so it can wrap
+// a call directly:  log_storage_failure(m_pIStorage->Foo(k), "Foo(k=%d)", k);
+//
+// The message carries the operation, the key that identifies the row, and the
+// result code, because "a write failed" without the key is not actionable --
+// #1587 needed to know *which* body could not be deleted.
+//
+void CMailMod::log_storage_failure(MUX_RESULT mr, const char *fmt, ...)
+{
+    if (  MUX_SUCCEEDED(mr)
+       || nullptr == m_pILog)
+    {
+        return;
+    }
+
+    char detail[192];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(detail, sizeof(detail), fmt, ap);
+    va_end(ap);
+
+    bool fStarted;
+    m_pILog->start_log(&fStarted, LOG_ALWAYS, T("MAI"), T("DB"));
+    if (fStarted)
+    {
+        UTF8 buf[256];
+        snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
+            "Mail module: storage write refused: %s; result %d.",
+            detail, mr);
+        m_pILog->log_text(buf);
+        m_pILog->end_log();
+    }
+}
+
 void CMailMod::sqlite_wt_insert_mail(struct mail *mp)
 {
     if (m_bLoading || nullptr == m_pIStorage) return;
@@ -580,6 +615,13 @@ void CMailMod::sqlite_wt_insert_mail(struct mail *mp)
         reinterpret_cast<const UTF8 *>(mp->subject.c_str()),
         mp->read, &rowid);
 
+    // The result was already consumed for the rowid, but a failure here
+    // means the message is in memory and not in the database -- it survives
+    // the session and vanishes on restart.  Worth saying so (#1630).
+    //
+    log_storage_failure(mr, "InsertMailHeader(to=#%d, from=#%d, number=%d)",
+        static_cast<int>(mp->to), static_cast<int>(mp->from), mp->number);
+
     mp->sqlite_id = MUX_SUCCEEDED(mr) ? rowid : -1;
     bump_revision();
 }
@@ -588,7 +630,10 @@ void CMailMod::sqlite_wt_update_mail_flags(struct mail *mp)
 {
     if (m_bLoading || nullptr == m_pIStorage || mp->sqlite_id < 0) return;
 
-    m_pIStorage->UpdateMailReadFlags(mp->sqlite_id, mp->read);
+    log_storage_failure(
+        m_pIStorage->UpdateMailReadFlags(mp->sqlite_id, mp->read),
+        "UpdateMailReadFlags(id=%lld, read=%d)",
+        static_cast<long long>(mp->sqlite_id), mp->read);
     bump_revision();
 }
 
@@ -596,7 +641,9 @@ void CMailMod::sqlite_wt_delete_mail(struct mail *mp)
 {
     if (m_bLoading || nullptr == m_pIStorage || mp->sqlite_id < 0) return;
 
-    m_pIStorage->DeleteMailHeader(mp->sqlite_id);
+    log_storage_failure(m_pIStorage->DeleteMailHeader(mp->sqlite_id),
+        "DeleteMailHeader(id=%lld)",
+        static_cast<long long>(mp->sqlite_id));
     bump_revision();
 }
 
@@ -604,7 +651,8 @@ void CMailMod::sqlite_wt_delete_all_mail(int to_player)
 {
     if (m_bLoading || nullptr == m_pIStorage) return;
 
-    m_pIStorage->DeleteAllMailHeaders(to_player);
+    log_storage_failure(m_pIStorage->DeleteAllMailHeaders(to_player),
+        "DeleteAllMailHeaders(to=#%d)", to_player);
     bump_revision();
 }
 
@@ -612,14 +660,16 @@ void CMailMod::sqlite_wt_mail_body(int number, const UTF8 *message)
 {
     if (m_bLoading || nullptr == m_pIStorage) return;
 
-    m_pIStorage->SyncMailBody(number, message);
+    log_storage_failure(m_pIStorage->SyncMailBody(number, message),
+        "SyncMailBody(number=%d)", number);
 
     // Keep the loader gate current (#783 / engine MessageAdd parity):
     // sqlite_load_mail / module Initialize only size bodies from
     // mail_db_top meta.  Without this, in-game module mail is lost on reboot.
     //
-    m_pIStorage->PutMeta(T("mail_db_top"),
-        static_cast<int>(m_mail_list.size()));
+    log_storage_failure(m_pIStorage->PutMeta(T("mail_db_top"),
+            static_cast<int>(m_mail_list.size())),
+        "PutMeta(mail_db_top=%d)", static_cast<int>(m_mail_list.size()));
     bump_revision();
 }
 
@@ -657,7 +707,8 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
 
     // Clear existing aliases.
     //
-    m_pIStorage->ClearMailAliases();
+    log_storage_failure(m_pIStorage->ClearMailAliases(),
+        "ClearMailAliases()");
 
     for (size_t i = 0; i < m_malias.size(); i++)
     {
@@ -700,12 +751,14 @@ void CMailMod::sqlite_wt_sync_all_aliases(void)
         }
         *bp = '\0';
 
-        m_pIStorage->SyncMailAlias(
-            m->owner,
-            reinterpret_cast<const UTF8 *>(m->name.c_str()),
-            reinterpret_cast<const UTF8 *>(m->desc.c_str()),
-            static_cast<int>(m->desc_width),
-            reinterpret_cast<const UTF8 *>(members_buf));
+        log_storage_failure(m_pIStorage->SyncMailAlias(
+                m->owner,
+                reinterpret_cast<const UTF8 *>(m->name.c_str()),
+                reinterpret_cast<const UTF8 *>(m->desc.c_str()),
+                static_cast<int>(m->desc_width),
+                reinterpret_cast<const UTF8 *>(members_buf)),
+            "SyncMailAlias(owner=#%d, name=%s)",
+            static_cast<int>(m->owner), m->name.c_str());
     }
     bump_revision();
 }
