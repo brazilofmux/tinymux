@@ -230,3 +230,4 @@ Slow by design. Each phase is a separate decision to start.
 | 2026-07-28 | Phase 4 C1/C2/C3/C4/C8: staff tables (guests, site access, hashstat aligned header, bufstats, day report). |
 | 2026-07-28 | Phase 4 C5–C7/C9: refs, UDF list, @hook list, reality levels → mux_table. |
 | 2026-07-28 | Phase 5: `check_nls.py` rejects pre-spaced multi-column table header msgids in pot and `M_()` sources. Epic #1667 complete for columnar tables. |
+| 2026-07-28 | Phase 4 B3: mail folder/review list lines — engine + module; From 16 display cols + Sub trunc 25 via mux_table; B4 multi-line forms still open. |
