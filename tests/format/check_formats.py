@@ -90,14 +90,10 @@ BAN_GENERATED = ("mux/lib/color_ops.c",)
 #
 BAN_LEGACY = {
     "mux/lib/mux_nls.cpp": 1,
-    # 78, not 77: #1640 landed 7 new sites while this guard was being written
-    # -- which is the drift it exists to stop, observed inside one merge.  Six
-    # were plain "%s" of a player name and are converted.  The two left format
-    # channel-list columns with "%-13.13s"-style byte precision; mux_sprintf
-    # counts CODEPOINTS there, so converting them silently rewidens every CJK
-    # column.  That is #1649's call to make, not this guard's.
+    # Column-layout sites (%-N.Ns) moved to co_copy_field (#1649 path);
+    # remaining are plain assembly still on snprintf.
     #
-    "mux/modules/comsys/comsys_mod.cpp": 78,
+    "mux/modules/comsys/comsys_mod.cpp": 73,
     "mux/modules/engine/ast.cpp": 3,
     "mux/modules/engine/attrcache.cpp": 4,
     "mux/modules/engine/dbt_test.cpp": 22,
@@ -112,7 +108,7 @@ BAN_LEGACY = {
     "mux/modules/engine/match.cpp": 2,
     "mux/modules/engine/predicates.cpp": 2,
     "mux/modules/exp3/exp3.cpp": 1,
-    "mux/modules/mail/mail_mod.cpp": 85,
+    "mux/modules/mail/mail_mod.cpp": 73,
     "mux/src/ganl_adapter.cpp": 1,
     "mux/src/websocket.cpp": 1,
 }
