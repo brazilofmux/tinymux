@@ -11,6 +11,7 @@
 #include "art_scan.h"
 #include "sqlite_backend.h"
 #include "engine_api.h"
+#include "mux_table.h"
 
 #include <unordered_map>
 
@@ -15707,8 +15708,29 @@ void do_function
        || nullptr == fname
        || '\0' == fname[0])
     {
-        notify(executor, tprintf(T("%-28s   %-8s  %-30s Flgs"),
-            "Function Name", "DBref#", "Attribute"));
+        // UDF list schema (#1667 Phase 4 C6): name 28 / dbref 8 / attr 30 /
+        // flags freeform.
+        //
+        static const size_t kUfunNameCols = 28;
+        static const size_t kUfunDbrefCols = 8;
+        static const size_t kUfunAttrCols = 30;
+
+        {
+            UTF8 header[LBUF_SIZE];
+            size_t pos = 0;
+            pos = mux_table_append_ljust(header, sizeof(header), pos,
+                M_("Function Name"), kUfunNameCols);
+            pos = mux_table_append_bytes(header, sizeof(header), pos, "   ");
+            pos = mux_table_append_ljust(header, sizeof(header), pos,
+                M_("DBref#"), kUfunDbrefCols);
+            pos = mux_table_append_bytes(header, sizeof(header), pos, "  ");
+            pos = mux_table_append_ljust(header, sizeof(header), pos,
+                M_("Attribute"), kUfunAttrCols);
+            pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+            pos = mux_table_append_bytes(header, sizeof(header), pos,
+                reinterpret_cast<const char *>(M_("Flgs")));
+            notify(executor, header);
+        }
         notify(executor, tprintf(T("%28s   %8s  %30s %5s"),
             "----------------------------", "--------",
             "------------------------------", "--- "));
@@ -15722,11 +15744,27 @@ void do_function
             {
                 pName = ap->name;
             }
-            notify(executor, tprintf(T("%-28.28s   #%-7d  %-30.30s  %c%c%c"),
-                reinterpret_cast<const UTF8 *>(ufn.name.c_str()), ufn.obj,
-                pName, ((ufn.flags & FN_PRIV) ? 'W' : '-'),
-                ((ufn.flags & FN_PRES) ? 'p' : '-'),
-                ((ufn.flags & FN_RESTRICT) ? 'R' : '-')));
+            UTF8 line[LBUF_SIZE];
+            UTF8 dbrefbuf[16];
+            size_t pos = 0;
+            pos = mux_table_append_ljust(line, sizeof(line), pos,
+                reinterpret_cast<const UTF8 *>(ufn.name.c_str()), kUfunNameCols);
+            pos = mux_table_append_bytes(line, sizeof(line), pos, "   ");
+            mux_sprintf(dbrefbuf, sizeof(dbrefbuf), T("#%d"), ufn.obj);
+            pos = mux_table_append_ljust(line, sizeof(line), pos,
+                dbrefbuf, kUfunDbrefCols);
+            pos = mux_table_append_bytes(line, sizeof(line), pos, "  ");
+            pos = mux_table_append_ljust(line, sizeof(line), pos,
+                pName, kUfunAttrCols);
+            pos = mux_table_append_bytes(line, sizeof(line), pos, "  ");
+            UTF8 flags[4];
+            flags[0] = (ufn.flags & FN_PRIV) ? 'W' : '-';
+            flags[1] = (ufn.flags & FN_PRES) ? 'p' : '-';
+            flags[2] = (ufn.flags & FN_RESTRICT) ? 'R' : '-';
+            flags[3] = '\0';
+            pos = mux_table_append_bytes(line, sizeof(line), pos,
+                reinterpret_cast<const char *>(flags));
+            notify(executor, line);
             count++;
         }
 
