@@ -207,7 +207,7 @@ check "LANGUAGE=xx, catalogue present" "$n" 4 "$tok" \
       "marked prose did not translate -- catalogue not found, or M_() not wired"
 
 # 3. LANGUAGE=xx with the catalogue absent: the prefixes must disappear.
-#    This is what makes case 2 mean something.  If this also reported 3, the
+#    This is what makes case 2 mean something.  If this also reported 4, the
 #    prefixes were coming from somewhere other than the catalogue; if case 2
 #    reported 0 and this passes, the suite is silently testing English -- the
 #    exact vacuity #1523 was filed about.
