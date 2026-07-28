@@ -1553,7 +1553,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
     struct channel* ch = select_channel(arg1);
     if (!ch)
     {
-        raw_notify(player, tprintf(T("Unknown channel %s."), arg1));
+        raw_notify(player, tprintf(M_("Unknown channel %s."), arg1));
         return;
     }
     struct comuser* user = select_user(ch, player);
@@ -1580,7 +1580,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
     }
     else if (!user->bUserIsOn)
     {
-        raw_notify(player, tprintf(T("You must be on %s to do that."), arg1));
+        raw_notify(player, tprintf(M_("You must be on %s to do that."), arg1));
     }
     else if (!strcmp(reinterpret_cast<const char*>(arg2), "who"))
     {
@@ -1608,7 +1608,7 @@ static void do_processcom(dbref player, UTF8* arg1, UTF8* arg2)
     {
         if (!payfor(player, Guest(player) ? 0 : ch->charge))
         {
-            raw_notify(player, tprintf(T("You don’t have enough %s."), mudconf.many_coins));
+            raw_notify(player, tprintf(M_("You don’t have enough %s."), mudconf.many_coins));
             return;
         }
         ch->amount_col += ch->charge;
@@ -1976,7 +1976,7 @@ void do_joinchannel(const dbref player, struct channel* ch)
     {
         if (static_cast<int>(ch->users.size()) >= MAX_USERS_PER_CHANNEL)
         {
-            raw_notify(player, tprintf(T("Too many people on channel %s already."),
+            raw_notify(player, tprintf(M_("Too many people on channel %s already."),
                                        ch->name));
             return;
         }
@@ -2007,7 +2007,7 @@ void do_joinchannel(const dbref player, struct channel* ch)
     }
     else
     {
-        raw_notify(player, tprintf(T("You are already on channel %s."), ch->name));
+        raw_notify(player, tprintf(M_("You are already on channel %s."), ch->name));
         return;
     }
 
@@ -2027,7 +2027,7 @@ void do_joinchannel(const dbref player, struct channel* ch)
 void do_leavechannel(dbref player, struct channel* ch)
 {
     struct comuser* user = select_user(ch, player);
-    raw_notify(player, tprintf(T("You have left channel %s."), ch->name));
+    raw_notify(player, tprintf(M_("You have left channel %s."), ch->name));
 
     if (user->bUserIsOn)
     {
@@ -2138,7 +2138,7 @@ void do_comwho(dbref player, struct channel* ch)
             }
         }
     }
-    raw_notify(player, tprintf(T("-- %s --"), ch->name));
+    raw_notify(player, tprintf(M_("-- %s --"), ch->name));
 }
 
 void do_comlast(dbref player, struct channel* ch, int arg)
@@ -2184,7 +2184,7 @@ void do_comlast(dbref player, struct channel* ch, int arg)
 
     int histnum = ch->num_messages - arg;
 
-    raw_notify(player, tprintf(T("%s -- Begin Comsys Recall --"), ch->header));
+    raw_notify(player, tprintf(M_("%s -- Begin Comsys Recall --"), ch->header));
 
     for (int count = 0; count < arg; count++)
     {
@@ -2198,7 +2198,7 @@ void do_comlast(dbref player, struct channel* ch, int arg)
         }
     }
 
-    raw_notify(player, tprintf(T("%s -- End Comsys Recall --"), ch->header));
+    raw_notify(player, tprintf(M_("%s -- End Comsys Recall --"), ch->header));
 }
 
 // Turn channel history timestamping on or off for the given channel.
@@ -2477,7 +2477,7 @@ void do_addcom
     {
         UTF8 Buffer[MAX_CHANNEL_LEN + 1];
         StripTabsAndTruncate(channel, Buffer, MAX_CHANNEL_LEN, MAX_CHANNEL_LEN);
-        raw_notify(executor, tprintf(T("Channel %s does not exist yet."), Buffer));
+        raw_notify(executor, tprintf(M_("Channel %s does not exist yet."), Buffer));
         return;
     }
     if (!test_join_access(executor, ch))
@@ -2499,7 +2499,7 @@ void do_addcom
     {
         if (ca.alias == sAlias)
         {
-            const UTF8* p = tprintf(T("That alias is already in use for channel %s."),
+            const UTF8* p = tprintf(M_("That alias is already in use for channel %s."),
                 reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
             raw_notify(executor, p);
             return;
@@ -2519,7 +2519,7 @@ void do_addcom
         do_joinchannel(executor, ch);
     }
 
-    raw_notify(executor, tprintf(T("Channel %s added with alias %s."), channel, pValidAlias));
+    raw_notify(executor, tprintf(M_("Channel %s added with alias %s."), channel, pValidAlias));
 }
 
 void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8* arg1, const UTF8* cargs[],
@@ -2568,13 +2568,13 @@ void do_delcom(dbref executor, dbref caller, dbref enactor, int eval, int key, U
                 do_delcomchannel(executor,
                     const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(it->channel.c_str())),
                     false);
-                raw_notify(executor, tprintf(T("Alias %s for channel %s deleted."),
+                raw_notify(executor, tprintf(M_("Alias %s for channel %s deleted."),
                                              arg1,
                                              reinterpret_cast<const UTF8 *>(it->channel.c_str())));
             }
             else
             {
-                raw_notify(executor, tprintf(T("Alias %s for channel %s deleted."),
+                raw_notify(executor, tprintf(M_("Alias %s for channel %s deleted."),
                                              arg1,
                                              reinterpret_cast<const UTF8 *>(it->channel.c_str())));
             }
@@ -2594,7 +2594,7 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
     struct channel* ch = select_channel(channel);
     if (!ch)
     {
-        raw_notify(player, tprintf(T("Unknown channel %s."), channel));
+        raw_notify(player, tprintf(M_("Unknown channel %s."), channel));
     }
     else
     {
@@ -2615,7 +2615,7 @@ void do_delcomchannel(dbref player, UTF8* channel, bool bQuiet)
                                         &messNoComtitle);
                     SendChannelMessage(player, ch, messNormal, messNoComtitle, true);
                 }
-                raw_notify(player, tprintf(T("You have left channel %s."),
+                raw_notify(player, tprintf(M_("You have left channel %s."),
                                            channel));
             }
 
@@ -2703,7 +2703,7 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
 
     if (select_channel(newchannel->name))
     {
-        raw_notify(executor, tprintf(T("Channel %s already exists."), newchannel->name));
+        raw_notify(executor, tprintf(M_("Channel %s already exists."), newchannel->name));
         delete newchannel;
         return;
     }
@@ -2723,7 +2723,7 @@ void do_createchannel(const dbref executor, const dbref caller, dbref enactor, c
 
     // Report the channel creation using non-ANSI name.
     //
-    raw_notify(executor, tprintf(T("Channel %s created."), newchannel->name));
+    raw_notify(executor, tprintf(M_("Channel %s created."), newchannel->name));
 }
 
 void do_destroychannel
@@ -2760,7 +2760,7 @@ void do_destroychannel
     //
     if (it == mudstate.channel_names.end())
     {
-        raw_notify(executor, tprintf(T("Could not find channel %s."), channel_name));
+        raw_notify(executor, tprintf(M_("Could not find channel %s."), channel_name));
         return;
     }
 
@@ -2780,7 +2780,7 @@ void do_destroychannel
     delete ch;
     ch = nullptr;
     mudstate.channel_names.erase(it);
-    raw_notify(executor, tprintf(T("Channel %s destroyed."), channel_name));
+    raw_notify(executor, tprintf(M_("Channel %s destroyed."), channel_name));
 }
 
 
@@ -2953,7 +2953,7 @@ void do_comtitle
             {
                 if ((ch->type & CHANNEL_SPOOF) == 0)
                 {
-                    raw_notify(executor, tprintf(T("Comtitles are now off for channel %s"), channel));
+                    raw_notify(executor, tprintf(M_("Comtitles are now off for channel %s"), channel));
                     do_setcomtitlestatus(executor, ch, false);
                 }
                 else
@@ -2963,24 +2963,24 @@ void do_comtitle
             }
             else if (key == COMTITLE_ON)
             {
-                raw_notify(executor, tprintf(T("Comtitles are now on for channel %s"), channel));
+                raw_notify(executor, tprintf(M_("Comtitles are now on for channel %s"), channel));
                 do_setcomtitlestatus(executor, ch, true);
             }
             else if (key == COMTITLE_GAG)
             {
-                raw_notify(executor, tprintf(T("Join/leave messages are now gagged for channel %s"), channel));
+                raw_notify(executor, tprintf(M_("Join/leave messages are now gagged for channel %s"), channel));
                 do_setgagjoinleavestatus(executor, ch, true);
             }
             else if (key == COMTITLE_UNGAG)
             {
-                raw_notify(executor, tprintf(T("Join/leave messages are now ungagged for channel %s"), channel));
+                raw_notify(executor, tprintf(M_("Join/leave messages are now ungagged for channel %s"), channel));
                 do_setgagjoinleavestatus(executor, ch, false);
             }
             else
             {
                 UTF8* pValidatedTitleValue = RestrictTitleValue(arg2);
                 do_setnewtitle(executor, ch, pValidatedTitleValue);
-                raw_notify(executor, tprintf(T("Title set to ‘%s’ on channel %s."),
+                raw_notify(executor, tprintf(M_("Title set to ‘%s’ on channel %s."),
                                              pValidatedTitleValue, channel));
             }
         }
@@ -3085,7 +3085,7 @@ void do_comlist
         else
         {
             raw_notify(executor, tprintf(
-                           T("Bad Comsys Alias: %s for Channel: %s"),
+                           M_("Bad Comsys Alias: %s for Channel: %s"),
                            reinterpret_cast<const UTF8 *>(c->aliases[i].alias.c_str()),
                            chanName));
         }
@@ -3229,7 +3229,7 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
     }
     if (nullptr == ch)
     {
-        raw_notify(executor, tprintf(T("Unknown channel %s."), channel));
+        raw_notify(executor, tprintf(M_("Unknown channel %s."), channel));
         return;
     }
     if (!(Comm_All(executor)
@@ -3239,7 +3239,7 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
         return;
     }
 
-    raw_notify(executor, tprintf(T("-- %s --"), ch->name));
+    raw_notify(executor, tprintf(M_("-- %s --"), ch->name));
     raw_notify(executor, tprintf(T("%-29.29s %-6.6s %-6.6s"), "Name", "Status", "Player"));
     for (auto &kv : ch->users)
     {
@@ -3259,7 +3259,7 @@ void do_channelwho(const dbref executor, const dbref caller, dbref enactor, cons
             free_lbuf(buff);
         }
     }
-    raw_notify(executor, tprintf(T("-- %s --"), ch->name));
+    raw_notify(executor, tprintf(M_("-- %s --"), ch->name));
 }
 
 // Assemble and transmit player disconnection messages to the player's active
@@ -3322,13 +3322,13 @@ static void do_comconnectchannel(dbref player, UTF8* channel, const string &alia
         else
         {
             raw_notify(player,
-                       tprintf(T("Bad Comsys Alias: %s for Channel: %s"),
+                       tprintf(M_("Bad Comsys Alias: %s for Channel: %s"),
                                reinterpret_cast<const UTF8 *>(alias.c_str()), channel));
         }
     }
     else
     {
-        raw_notify(player, tprintf(T("Bad Comsys Alias: %s for Channel: %s"),
+        raw_notify(player, tprintf(M_("Bad Comsys Alias: %s for Channel: %s"),
                                    reinterpret_cast<const UTF8 *>(alias.c_str()), channel));
     }
 }
@@ -3467,7 +3467,7 @@ void do_editchannel
     struct channel* ch = select_channel(arg1);
     if (!ch)
     {
-        raw_notify(executor, tprintf(T("Unknown channel %s."), arg1));
+        raw_notify(executor, tprintf(M_("Unknown channel %s."), arg1));
         return;
     }
 
@@ -3717,7 +3717,7 @@ void do_cemit
     struct channel* ch = select_channel(chan);
     if (!ch)
     {
-        raw_notify(executor, tprintf(T("Channel %s does not exist."), chan));
+        raw_notify(executor, tprintf(M_("Channel %s does not exist."), chan));
         return;
     }
     if (!Controls(executor, ch->charge_who)
@@ -3773,7 +3773,7 @@ void do_chopen
     struct channel* ch = select_channel(chan);
     if (!ch)
     {
-        msg = tprintf(T("@cset: Channel %s does not exist."), chan);
+        msg = tprintf(M_("@cset: Channel %s does not exist."), chan);
         raw_notify(executor, msg);
         return;
     }
@@ -3789,32 +3789,32 @@ void do_chopen
     {
     case CSET_PUBLIC:
         ch->type |= CHANNEL_PUBLIC;
-        msg = tprintf(T("@cset: Channel %s placed on the public listings."), chan);
+        msg = tprintf(M_("@cset: Channel %s placed on the public listings."), chan);
         break;
 
     case CSET_PRIVATE:
         ch->type &= ~CHANNEL_PUBLIC;
-        msg = tprintf(T("@cset: Channel %s taken off the public listings."), chan);
+        msg = tprintf(M_("@cset: Channel %s taken off the public listings."), chan);
         break;
 
     case CSET_LOUD:
         ch->type |= CHANNEL_LOUD;
-        msg = tprintf(T("@cset: Channel %s now sends connect/disconnect msgs."), chan);
+        msg = tprintf(M_("@cset: Channel %s now sends connect/disconnect msgs."), chan);
         break;
 
     case CSET_QUIET:
         ch->type &= ~CHANNEL_LOUD;
-        msg = tprintf(T("@cset: Channel %s connect/disconnect msgs muted."), chan);
+        msg = tprintf(M_("@cset: Channel %s connect/disconnect msgs muted."), chan);
         break;
 
     case CSET_SPOOF:
         ch->type |= CHANNEL_SPOOF;
-        msg = tprintf(T("@cset: Channel %s set spoofable."), chan);
+        msg = tprintf(M_("@cset: Channel %s set spoofable."), chan);
         break;
 
     case CSET_NOSPOOF:
         ch->type &= ~CHANNEL_SPOOF;
-        msg = tprintf(T("@cset: Channel %s set unspoofable."), chan);
+        msg = tprintf(M_("@cset: Channel %s set unspoofable."), chan);
         break;
 
     case CSET_OBJECT:
@@ -3825,13 +3825,13 @@ void do_chopen
         if (thing == NOTHING)
         {
             ch->chan_obj = thing;
-            msg = tprintf(T("Channel %s is now disassociated from any channel object."), ch->name);
+            msg = tprintf(M_("Channel %s is now disassociated from any channel object."), ch->name);
         }
         else if (Good_obj(thing))
         {
             ch->chan_obj = thing;
             UTF8* buff = unparse_object(executor, thing, false);
-            msg = tprintf(T("Channel %s is now using %s as channel object."), ch->name, buff);
+            msg = tprintf(M_("Channel %s is now using %s as channel object."), ch->name, buff);
             free_lbuf(buff);
         }
         else
@@ -3849,19 +3849,19 @@ void do_chopen
         switch (do_chanlog(executor, chan, value))
         {
         case CHANLOG_OK:
-            msg = tprintf(T("@cset: Channel %s maximum history set."), chan);
+            msg = tprintf(M_("@cset: Channel %s maximum history set."), chan);
             break;
 
         case CHANLOG_NO_OBJECT:
-            msg = tprintf(T("@cset: Channel %s has no channel object.  Use @cset/object to set one before setting a history buffer."), chan);
+            msg = tprintf(M_("@cset: Channel %s has no channel object.  Use @cset/object to set one before setting a history buffer."), chan);
             break;
 
         case CHANLOG_INTERNAL:
-            msg = tprintf(T("@cset: Could not set maximum history for channel %s."), chan);
+            msg = tprintf(M_("@cset: Could not set maximum history for channel %s."), chan);
             break;
 
         default:
-            msg = tprintf(T("@cset: Maximum history must be a number less than or equal to %d."), MAX_RECALL_REQUEST);
+            msg = tprintf(M_("@cset: Maximum history must be a number less than or equal to %d."), MAX_RECALL_REQUEST);
             break;
         }
         break;
@@ -3870,23 +3870,23 @@ void do_chopen
         switch (do_chanlog_timestamps(executor, chan, value))
         {
         case CHANLOG_OK:
-            msg = tprintf(T("@cset: Channel %s timestamp logging set."), chan);
+            msg = tprintf(M_("@cset: Channel %s timestamp logging set."), chan);
             break;
 
         case CHANLOG_BAD_VALUE:
-            msg = tprintf(T("@cset: Timestamp logging for channel %s must be 0 or 1."), chan);
+            msg = tprintf(M_("@cset: Timestamp logging for channel %s must be 0 or 1."), chan);
             break;
 
         case CHANLOG_NO_OBJECT:
-            msg = tprintf(T("@cset: Channel %s has no channel object.  Use @cset/object to set one before enabling timestamp logging."), chan);
+            msg = tprintf(M_("@cset: Channel %s has no channel object.  Use @cset/object to set one before enabling timestamp logging."), chan);
             break;
 
         case CHANLOG_NOT_LOGGING:
-            msg = tprintf(T("@cset: Channel %s has no history buffer.  Use @cset/log to set one before enabling timestamp logging."), chan);
+            msg = tprintf(M_("@cset: Channel %s has no history buffer.  Use @cset/log to set one before enabling timestamp logging."), chan);
             break;
 
         default:
-            msg = tprintf(T("@cset: Could not set timestamp logging for channel %s."), chan);
+            msg = tprintf(M_("@cset: Could not set timestamp logging for channel %s."), chan);
             break;
         }
     }
@@ -3950,12 +3950,12 @@ void do_chboot
     struct comuser* vu = select_user(ch, thing);
     if (!vu)
     {
-        raw_notify(executor, tprintf(T("@cboot: %s is not on the channel."),
+        raw_notify(executor, tprintf(M_("@cboot: %s is not on the channel."),
                                      Moniker(thing)));
         return;
     }
 
-    raw_notify(executor, tprintf(T("You boot %s off channel %s."),
+    raw_notify(executor, tprintf(M_("You boot %s off channel %s."),
                                  Moniker(thing), ch->name));
     raw_notify(thing, tprintf(T("%s boots you off channel %s."),
                               Moniker(thing), ch->name));

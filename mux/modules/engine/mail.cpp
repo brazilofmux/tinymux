@@ -314,7 +314,7 @@ const UTF8 *MessageFetch(int number)
 {
     if (!mail_index_valid(number))
     {
-        return T("MAIL: This mail message does not exist in the database. Please alert your admin.");
+        return M_("MAIL: This mail message does not exist in the database. Please alert your admin.");
     }
     MessageReferenceCheck(number);
     if (!mail_list[number].m_pMessage.empty())
@@ -323,7 +323,7 @@ const UTF8 *MessageFetch(int number)
     }
     else
     {
-        return T("MAIL: This mail message does not exist in the database. Please alert your admin.");
+        return M_("MAIL: This mail message does not exist in the database. Please alert your admin.");
     }
 }
 
@@ -1158,7 +1158,7 @@ static void DoListMailBrief(dbref player)
             if (strcmp(reinterpret_cast<const char *>(fname), "unnamed") != 0)
             {
                 raw_notify(player, tprintf(
-                    T("MAIL: 0 messages in folder %d [%s]."),
+                    M_("MAIL: 0 messages in folder %d [%s]."),
                     folder, fname));
             }
         }
@@ -2284,13 +2284,13 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             if (nResult == GMA_NOTFOUND)
             {
                 raw_notify(player,
-                        tprintf(T("MAIL: Alias ‘%s’ does not exist."), head));
+                        tprintf(M_("MAIL: Alias ‘%s’ does not exist."), head));
                 return nullptr;
             }
             else if (nResult == GMA_INVALIDFORM)
             {
                 raw_notify(player,
-                        tprintf(T("MAIL: ‘%s’ is a badly-formed alias."), head));
+                        tprintf(M_("MAIL: ‘%s’ is a badly-formed alias."), head));
                 return nullptr;
             }
             for (size_t i = 0;
@@ -2442,7 +2442,7 @@ static void do_mail_fwd(dbref player, UTF8 *msg, UTF8 *tolist)
         raw_notify(player, M_("MAIL: You can’t forward non-existent messages."));
         return;
     }
-    do_expmail_start(player, tolist, tprintf(T("%s (fwd from %s)"), utf8(mp->subject), Moniker(mp->from)));
+    do_expmail_start(player, tolist, tprintf(M_("%s (fwd from %s)"), utf8(mp->subject), Moniker(mp->from)));
     atr_add_raw(player, A_MAILMSG, MessageFetch(mp->number));
     const UTF8 *pValue = atr_get_raw(player, A_MAILFLAGS);
     int iFlag = M_FORWARD;
@@ -2529,7 +2529,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
     const UTF8 *pTime = utf8(mp->time);
     if (strncmp(reinterpret_cast<const char *>(pSubject), "Re:", 3))
     {
-        do_expmail_start(player, tolist, tprintf(T("Re: %s"), pSubject));
+        do_expmail_start(player, tolist, tprintf(M_("Re: %s"), pSubject));
     }
     else
     {
@@ -2539,7 +2539,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
     {
         const UTF8 *pFromName = Moniker(mp->from);
         UTF8 *pMessageBody =
-            tprintf(T("On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n"),
+            tprintf(M_("On %s, %s wrote:\r\n\r\n%s\r\n\r\n********** End of included message from %s\r\n"),
                 pTime, pFromName, pMessage, pFromName);
         atr_add_raw(player, A_MAILMSG, pMessageBody);
     }
@@ -2870,7 +2870,7 @@ static void send_mail
         if (total > mudconf.mail_max_per_player)
         {
             raw_notify(player,
-                tprintf(T("MAIL: %s’s mailbox is full (%d messages)."),
+                tprintf(M_("MAIL: %s’s mailbox is full (%d messages)."),
                     Moniker(target), total - 1));
             MessageReferenceDec(number);
             lst.pop_back();  // undo the emplace
@@ -2890,11 +2890,11 @@ static void send_mail
     if (!silent)
     {
         raw_notify(player,
-                tprintf(T("MAIL: You sent your message to %s."), Moniker(target)));
+                tprintf(M_("MAIL: You sent your message to %s."), Moniker(target)));
     }
 
     raw_notify(target,
-            tprintf(T("MAIL: You have a new message from %s. Subject: %s"),
+            tprintf(M_("MAIL: You have a new message from %s. Subject: %s"),
                 Moniker(player), subject));
 
     did_it(player, target, A_MAIL, nullptr, 0, nullptr, A_AMAIL, 0, nullptr, NOTHING);
@@ -3994,7 +3994,7 @@ void check_mail(dbref player, int folder, bool silent)
     urgent_mail(player, folder, &gc);
 #ifdef MAIL_ALL_FOLDERS
     raw_notify(player,
-           tprintf(T("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n"),
+           tprintf(M_("MAIL: %d messages in folder %d [%s] (%d unread, %d cleared).\r\n"),
                rc + uc, folder, get_folder_name(player, folder), uc, cc));
 #else // MAIL_ALL_FOLDERS
     if (rc + uc > 0)
@@ -4011,7 +4011,7 @@ void check_mail(dbref player, int folder, bool silent)
     }
     if (gc > 0)
     {
-        raw_notify(player, tprintf(T("URGENT MAIL: You have %d urgent messages in folder %d [%s]."), gc, folder, get_folder_name(player, folder)));
+        raw_notify(player, tprintf(M_("URGENT MAIL: You have %d urgent messages in folder %d [%s]."), gc, folder, get_folder_name(player, folder)));
     }
 #endif // MAIL_ALL_FOLDERS
 }
@@ -4032,12 +4032,12 @@ static void do_malias_send
     malias_t *m = get_malias(player, tolist, &nResult);
     if (nResult == GMA_INVALIDFORM)
     {
-        raw_notify(player, tprintf(T("MAIL: I can’t figure out from ‘%s’ who you want to mail to."), tolist));
+        raw_notify(player, tprintf(M_("MAIL: I can’t figure out from ‘%s’ who you want to mail to."), tolist));
         return;
     }
     else if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), tolist));
+        raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), tolist));
         return;
     }
 
@@ -4057,7 +4057,7 @@ static void do_malias_send
         {
             // Complain about it.
             //
-            UTF8 *pMail = tprintf(T("Alias Error: Bad Player %d for %s"), vic, tolist);
+            UTF8 *pMail = tprintf(M_("Alias Error: Bad Player %d for %s"), vic, tolist);
             int iMail = add_mail_message(player, pMail);
             if (iMail != NOTHING)
             {
@@ -4081,7 +4081,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     else if (nResult == GMA_FOUND)
     {
         raw_notify(player,
-                tprintf(T("MAIL: Mail Alias ‘%s’ already exists."), alias));
+                tprintf(M_("MAIL: Mail Alias ‘%s’ already exists."), alias));
         return;
     }
 
@@ -4148,7 +4148,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
         {
             buff = unparse_object(player, target, false);
             raw_notify(player,
-                    tprintf(T("MAIL: %s added to alias %s"), buff, alias));
+                    tprintf(M_("MAIL: %s added to alias %s"), buff, alias));
             pt->list.push_back(target);
             added++;
             free_lbuf(buff);
@@ -4193,7 +4193,7 @@ static void do_malias_create(dbref player, UTF8 *alias, UTF8 *tolist)
     malias.push_back(std::move(pt));
     sqlite_wt_sync_all_aliases();
 
-    raw_notify(player, tprintf(T("MAIL: Alias set ‘%s’ defined."), alias));
+    raw_notify(player, tprintf(M_("MAIL: Alias set ‘%s’ defined."), alias));
 }
 
 static void do_malias_list(dbref player, UTF8 *alias)
@@ -4202,7 +4202,7 @@ static void do_malias_list(dbref player, UTF8 *alias)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
+        raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4217,7 +4217,7 @@ static void do_malias_list(dbref player, UTF8 *alias)
     UTF8 *buff = alloc_lbuf("do_malias_list");
     UTF8 *bp = buff;
 
-    safe_tprintf_str(buff, &bp, T("MAIL: Alias *%s: "), m->name.c_str());
+    safe_tprintf_str(buff, &bp, M_("MAIL: Alias *%s: "), m->name.c_str());
     for (int i = static_cast<int>(m->list.size()) - 1; i > -1; i--)
     {
         const UTF8 *p = Moniker(m->list[i]);
@@ -4703,7 +4703,7 @@ void do_prepend(dbref executor, dbref caller, dbref enactor, int eval, int key, 
         size_t nLen;
 
         atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
-        raw_notify(executor, tprintf(T("%d/%d characters prepended."), nLen, LBUF_SIZE-1));
+        raw_notify(executor, tprintf(M_("%d/%d characters prepended."), nLen, LBUF_SIZE-1));
     }
     else
     {
@@ -4764,7 +4764,7 @@ void do_postpend(dbref executor, dbref caller, dbref enactor, int eval, int key,
         size_t nLen;
 
         atr_get_raw_LEN(executor, A_MAILMSG, &nLen);
-        raw_notify(executor, tprintf(T("%d/%d characters added."), nLen, LBUF_SIZE-1));
+        raw_notify(executor, tprintf(M_("%d/%d characters added."), nLen, LBUF_SIZE-1));
     }
     else
     {
@@ -4814,7 +4814,7 @@ static void do_mail_proof(dbref player)
     trimmed_name(player, szFromName, 16, 16, 0);
 
     raw_notify(player, DASH_LINE);
-    raw_notify(player, tprintf(T("From:  %s  Subject: %s\nTo: %s"),
+    raw_notify(player, tprintf(M_("From:  %s  Subject: %s\nTo: %s"),
             szFromName, szSubjectBuffer, names));
     raw_notify(player, DASH_LINE);
     raw_notify(player, pMailMsg);
@@ -4830,7 +4830,7 @@ static void do_malias_desc(dbref player, UTF8 *alias, UTF8 *desc)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
+        raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4880,7 +4880,7 @@ static void do_malias_chown(dbref player, UTF8 *alias, UTF8 *owner)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
+        raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4904,7 +4904,7 @@ static void do_malias_add(dbref player, UTF8 *alias, UTF8 *person)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
+        raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     else if (nResult != GMA_FOUND)
@@ -4949,7 +4949,7 @@ static void do_malias_add(dbref player, UTF8 *alias, UTF8 *person)
 
     m->list.push_back(thing);
     sqlite_wt_sync_all_aliases();
-    raw_notify(player, tprintf(T("MAIL: %s added to %s"), Moniker(thing), m->name.c_str()));
+    raw_notify(player, tprintf(M_("MAIL: %s added to %s"), Moniker(thing), m->name.c_str()));
 }
 
 static void do_malias_remove(dbref player, UTF8 *alias, UTF8 *person)
@@ -4958,7 +4958,7 @@ static void do_malias_remove(dbref player, UTF8 *alias, UTF8 *person)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
+        raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -4993,12 +4993,12 @@ static void do_malias_remove(dbref player, UTF8 *alias, UTF8 *person)
     {
         m->list.erase(it);
         sqlite_wt_sync_all_aliases();
-        raw_notify(player, tprintf(T("MAIL: %s removed from alias %s."),
+        raw_notify(player, tprintf(M_("MAIL: %s removed from alias %s."),
                    Moniker(thing), alias));
     }
     else
     {
-        raw_notify(player, tprintf(T("MAIL: %s is not a member of alias %s."),
+        raw_notify(player, tprintf(M_("MAIL: %s is not a member of alias %s."),
                    Moniker(thing), alias));
     }
 }
@@ -5057,7 +5057,7 @@ static void do_malias_delete(dbref player, UTF8 *alias)
     malias_t *m = get_malias(player, alias, &nResult);
     if (nResult == GMA_NOTFOUND)
     {
-        raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
+        raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), alias));
         return;
     }
     if (nResult != GMA_FOUND)
@@ -5080,7 +5080,7 @@ static void do_malias_delete(dbref player, UTF8 *alias)
         }
     }
 
-    raw_notify(player, tprintf(T("MAIL: Alias ‘%s’ not found."), alias));
+    raw_notify(player, tprintf(M_("MAIL: Alias ‘%s’ not found."), alias));
 }
 
 static void do_malias_adminlist(dbref player)
@@ -5113,9 +5113,9 @@ static void do_malias_status(dbref player)
     }
     else
     {
-        raw_notify(player, tprintf(T("MAIL: Number of mail aliases defined: %d"),
+        raw_notify(player, tprintf(M_("MAIL: Number of mail aliases defined: %d"),
                        static_cast<int>(malias.size())));
-        raw_notify(player, tprintf(T("MAIL: Vector capacity: %d"),
+        raw_notify(player, tprintf(M_("MAIL: Vector capacity: %d"),
                        static_cast<int>(malias.capacity())));
     }
 }
@@ -5249,7 +5249,7 @@ static void do_mail_retract(dbref player, UTF8 *name, UTF8 *msglist)
         malias_t *m = get_malias(player, name, &pnResult);
         if (pnResult == GMA_NOTFOUND)
         {
-            raw_notify(player, tprintf(T("MAIL: Mail alias %s not found."), name));
+            raw_notify(player, tprintf(M_("MAIL: Mail alias %s not found."), name));
             return;
         }
         if (pnResult == GMA_FOUND)
