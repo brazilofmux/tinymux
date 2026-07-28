@@ -2050,7 +2050,7 @@ CONFIG PARAMETERS (continued)
   ip_address  keepalive_interval  kill_guarantee_cost  kill_max_cost
   kill_min_cost  lag_limit  lag_maximum  lbuf_size  link_cost  list_access
   lock_recursion_limit  log  log_options  logout_cmd_access  logout_cmd_alias
-  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
+  language  look_obey_terse  machine_command_cost  mail_database  mail_ehlo
   mail_expiration  mail_max_per_player  mail_per_hour  email_per_hour
   mail_sendaddr  mail_sendname
   mail_server
@@ -3913,6 +3913,35 @@ MOTD_MESSAGE
   @listmotd command.
 
   Related Topics: @listmotd, @motd, motd_file.
+
+& LANGUAGE
+LANGUAGE
+
+  CONFIG PARAMETER: language <catalogue>
+  DEFAULT: (empty -- follow the environment)
+
+  Selects the language used for server messages, game-wide.  The value names
+  a catalogue installed as game/locale/<catalogue>/LC_MESSAGES/tinymux.mo --
+  for example "language ko" for game/locale/ko.
+
+  Leaving it empty keeps the previous behaviour, where the language comes
+  from the environment (LANGUAGE, LC_ALL, LC_MESSAGES or LANG).  When set,
+  the directive overrides those, so a server's language does not depend on
+  whoever happened to start it.
+
+  Requires a server built with --enable-nls; without it, catalogues are
+  ignored and messages are the compiled-in English.
+
+  The directive does not depend on the host having that locale installed,
+  and it works under the C locale: the catalogue is read from the path
+  above rather than through the system's locale machinery.  A catalogue
+  that is named but cannot be read is reported at startup, and the server
+  continues in English.
+
+  Softcode-visible strings -- the "#-1 ..." error tokens that softcode
+  string-compares against -- are never translated, whatever this is set to.
+
+  Related Topics: mud_name.
 
 & MUD_NAME
 MUD_NAME

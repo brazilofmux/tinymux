@@ -293,6 +293,10 @@ void cf_init(void)
 
     mudconf.vattr_flags = AF_ODARK;
     mux_strncpy(mudconf.mud_name, T("MUX"), sizeof(mudconf.mud_name)-1);
+    // Empty means "follow the environment" -- the behaviour every existing
+    // netmux.conf gets, since none of them set this (#1702).
+    //
+    mudconf.language[0] = '\0';
     mux_strncpy(mudconf.one_coin, T("penny"), sizeof(mudconf.one_coin)-1);
     mux_strncpy(mudconf.many_coins, T("pennies"), sizeof(mudconf.many_coins)-1);
     mudconf.timeslice.SetSeconds(1);
@@ -2132,6 +2136,7 @@ static CONFPARM conftable[] =
     {T("motd_message"),              cf_string,      CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(mudconf.motd_msg),         nullptr,    GBUF_SIZE},
     {T("module"),                    cf_module,      CA_GOD,    CA_WIZARD,   nullptr,                  nullptr,            0},
     {T("mud_name"),                  cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.mud_name),         nullptr,           32},
+    {T("language"),                  cf_string,      CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(mudconf.language),         nullptr,           32},
     {T("newuser_file"),              cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.crea_file),       nullptr, SIZEOF_PATHNAME},
     {T("no_flash"),                  cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&g_no_flash),             nullptr,            0},
     {T("noguest_site"),              cf_site,        CA_GOD,    CA_DISABLED, nullptr,    nullptr,   HC_NOGUEST},

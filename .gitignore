@@ -215,3 +215,4 @@ testcases/tools/*.obj
 core
 core.*
 vgcore.*
+tests/nls/test_plural
