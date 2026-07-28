@@ -196,6 +196,11 @@ static void format_mail_detail_header(
     pos = append_ljust_field(hdr, nHdr, pos, from, 16);
     pos = append_bytes(hdr, nHdr, pos, "  At: ");
     pos = append_ljust_field(hdr, nHdr, pos, time_str, 25);
+    // Format was "At: %-25s  %s" with %s = " (Conn)" / "      ": two
+    // literal spaces between the padded date and the status arg.  Dropping
+    // them shortens the gap from 4 columns to 2 and fails conformance.
+    //
+    pos = append_bytes(hdr, nHdr, pos, "  ");
     pos = append_bytes(hdr, nHdr, pos, bConn ? " (Conn)" : "      ");
     pos = append_bytes(hdr, nHdr, pos, "\r\n");
     if (pos < nHdr)
