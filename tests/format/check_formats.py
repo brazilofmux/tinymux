@@ -51,6 +51,7 @@ WRAPPERS = {
     "tprintf": 0,            # stringutil.cpp
     "safe_tprintf_str": 2,   # stringutil.cpp
     "mux_sprintf": 2,        # stringutil.cpp
+    "mux_snprintf": 2,       # stringutil.cpp (length-returning)
     "mux_fprintf": 1,        # stringutil.cpp
     "raw_broadcast": 1,      # session.cpp
     "tinyprintf": 0,         # log.cpp   (CLogFile method)
@@ -103,7 +104,6 @@ BAN_LEGACY = {
     "mux/modules/engine/hir_codegen.cpp": 1,
     "mux/modules/engine/hir_lower.cpp": 3,
     "mux/modules/engine/hir_lower_lua.cpp": 2,
-    "mux/modules/engine/jit_compiler.cpp": 26,
     "mux/modules/engine/lua_mod.cpp": 6,
     "mux/modules/engine/mail.cpp": 2,
     "mux/modules/engine/match.cpp": 2,

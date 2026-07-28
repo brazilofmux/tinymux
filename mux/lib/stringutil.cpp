@@ -7262,6 +7262,31 @@ void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...)
     va_end(ap);
 }
 
+// As mux_sprintf, but returns the length written -- 0..count-1, the value
+// mux_vsnprintf already computes and mux_sprintf throws away.
+//
+// Callers that append in a loop need it, and until now each grew its own
+// varargs wrapper because only the va_list form returned a length.  There is
+// one in mail_mod.cpp already; the next conversion of a raw snprintf() that
+// uses its return value would have made a third, and identical private
+// copies do not stay identical (see #1667's ADR on append_ljust_field, which
+// is byte-for-byte duplicated across two modules today).
+//
+// Note this is NOT snprintf's return: snprintf answers how much it WOULD
+// have written, so `n >= size` is how callers detect truncation.  This
+// answers how much it DID write, so truncation shows as a short result
+// rather than an over-long one.  Anything ported from snprintf that tests
+// the return against the buffer size has to be re-read, not just renamed.
+//
+size_t DCL_CDECL mux_snprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    size_t n = mux_vsnprintf(buff, count, fmt, ap);
+    va_end(ap);
+    return n;
+}
+
 void DCL_CDECL mux_fprintf(FILE *fp, const UTF8 *fmt, ...)
 {
     if (nullptr != fp)

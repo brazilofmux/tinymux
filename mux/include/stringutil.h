@@ -1719,6 +1719,7 @@ LIBMUX_API void ItemToList_Final(ITL *pContext);
 
 LIBMUX_API size_t DCL_CDECL mux_vsnprintf(UTF8 *pBuffer, size_t nBuffer, const UTF8 *pFmt, va_list va);
 LIBMUX_API void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...);
+LIBMUX_API size_t DCL_CDECL mux_snprintf(UTF8 *buff, size_t count, const UTF8 *fmt, ...);
 LIBMUX_API void DCL_CDECL mux_fprintf(FILE *fp, const UTF8 *fmt, ...);
 LIBMUX_API size_t GetLineTrunc(UTF8 *Buffer, size_t nBuffer, FILE *fp);
 

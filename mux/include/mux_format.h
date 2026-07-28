@@ -39,6 +39,13 @@
 LIBMUX_API void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count,
     const UTF8 *fmt, ...);
 
+// As mux_sprintf, but returns the length WRITTEN (0..count-1).  Note that
+// is not snprintf's return, which is the length it WOULD have written --
+// truncation shows here as a short result, not an over-long one.
+//
+LIBMUX_API size_t DCL_CDECL mux_snprintf(UTF8 *buff, size_t count,
+    const UTF8 *fmt, ...);
+
 // va_list form, for a module's own printf-like wrappers.  A wrapper added here
 // should also be registered in check_formats.py's WRAPPERS so its call sites
 // are checked.

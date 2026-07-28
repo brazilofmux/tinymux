@@ -3002,11 +3002,10 @@ static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
        || (  (ufp->flags & FN_RESTRICT)
           && !Wizard(ec->executor)))
     {
-        int n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
-            out_size, "%s",
-            reinterpret_cast<const char *>(FUNC_NOPERM_MESSAGE));
-        if (n < 0) n = 0;
-        if (static_cast<size_t>(n) >= out_size) n = static_cast<int>(out_size - 1);
+        // mux_snprintf returns what it WROTE, not what it would have, so
+        // snprintf's <0 and >=out_size clamps are gone rather than unused.
+        size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(ec->memory + out_addr),
+            out_size, T("%s"), FUNC_NOPERM_MESSAGE);
         ctx->x[10] = static_cast<uint64_t>(n);
         return -1;
     }
@@ -3117,11 +3116,10 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     if (  fp->name[0] != '_'
        && !check_access(ec->executor, fp->perms))
     {
-        int n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
-            out_size, "%s",
-            reinterpret_cast<const char *>(FUNC_NOPERM_MESSAGE));
-        if (n < 0) n = 0;
-        if (static_cast<size_t>(n) >= out_size) n = static_cast<int>(out_size - 1);
+        // mux_snprintf returns what it WROTE, not what it would have, so
+        // snprintf's <0 and >=out_size clamps are gone rather than unused.
+        size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(ec->memory + out_addr),
+            out_size, T("%s"), FUNC_NOPERM_MESSAGE);
         ctx->x[10] = static_cast<uint64_t>(n);
         return -1;
     }
@@ -3131,17 +3129,17 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
     if (nfargs < fp->minArgs) {
         int n;
         if (fp->minArgs == fp->maxArgs) {
-            n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
-                out_size, "#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS",
-                reinterpret_cast<const char *>(fp->name), fp->minArgs);
+            n = mux_snprintf(reinterpret_cast<UTF8 *>(ec->memory + out_addr),
+                out_size, T("#-1 FUNCTION (%s) EXPECTS %d ARGUMENTS"),
+                fp->name, fp->minArgs);
         } else if (fp->minArgs + 1 == fp->maxArgs) {
-            n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
-                out_size, "#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS",
-                reinterpret_cast<const char *>(fp->name), fp->minArgs, fp->maxArgs);
+            n = mux_snprintf(reinterpret_cast<UTF8 *>(ec->memory + out_addr),
+                out_size, T("#-1 FUNCTION (%s) EXPECTS %d OR %d ARGUMENTS"),
+                fp->name, fp->minArgs, fp->maxArgs);
         } else {
-            n = snprintf(reinterpret_cast<char *>(ec->memory + out_addr),
-                out_size, "#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS",
-                reinterpret_cast<const char *>(fp->name), fp->minArgs, fp->maxArgs);
+            n = mux_snprintf(reinterpret_cast<UTF8 *>(ec->memory + out_addr),
+                out_size, T("#-1 FUNCTION (%s) EXPECTS BETWEEN %d AND %d ARGUMENTS"),
+                fp->name, fp->minArgs, fp->maxArgs);
         }
         if (n < 0) n = 0;
         if (static_cast<size_t>(n) >= out_size) n = static_cast<int>(out_size - 1);
@@ -3442,8 +3440,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 int idx = lua_gettop(L);
                 // Write stack index as result string.
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
-                int n = snprintf(out, out_size, "%d", idx);
-                ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%d"), idx);
+                ctx->x[10] = static_cast<uint64_t>(n);
                 return -1;
             }
 
@@ -3465,9 +3463,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 lua_rawgeti(L, tbl_idx, key);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 if (lua_isinteger(L, -1)) {
-                    int n = snprintf(out, out_size, "%lld",
+                    size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%lld"),
                         static_cast<long long>(lua_tointeger(L, -1)));
-                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                    ctx->x[10] = static_cast<uint64_t>(n);
                 } else if (lua_isnumber(L, -1)) {
                     LBuf buf = LBuf_Src("ecall.geti"); UTF8 *bufc = buf;
                     fval(buf, &bufc, lua_tonumber(L, -1));
@@ -3553,9 +3551,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 lua_rawget(L, tbl_idx);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 if (lua_isinteger(L, -1)) {
-                    int n = snprintf(out, out_size, "%lld",
+                    size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%lld"),
                         static_cast<long long>(lua_tointeger(L, -1)));
-                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                    ctx->x[10] = static_cast<uint64_t>(n);
                 } else if (lua_isnumber(L, -1)) {
                     LBuf buf = LBuf_Src("ecall.getfield"); UTF8 *bufc = buf;
                     fval(buf, &bufc, lua_tonumber(L, -1));
@@ -3630,8 +3628,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS);
                 int idx = lua_gettop(L);
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
-                int n = snprintf(out, out_size, "%d", idx);
-                ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%d"), idx);
+                ctx->x[10] = static_cast<uint64_t>(n);
                 return -1;
             }
 
@@ -3650,13 +3648,13 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                     ty == LUA_TUSERDATA) {
                     // Return Lua stack index as string — GETFIELD/CALL
                     // will use this to reference the object.
-                    int n = snprintf(out, out_size, "%d", idx);
-                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                    size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%d"), idx);
+                    ctx->x[10] = static_cast<uint64_t>(n);
                 } else if (ty == LUA_TNUMBER) {
                     if (lua_isinteger(L, -1)) {
-                        int n = snprintf(out, out_size, "%lld",
+                        size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%lld"),
                             static_cast<long long>(lua_tointeger(L, -1)));
-                        ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                        ctx->x[10] = static_cast<uint64_t>(n);
                     } else {
                         LBuf buf = LBuf_Src("ecall.newobj"); UTF8 *bufc = buf;
                         fval(buf, &bufc, lua_tonumber(L, -1));
@@ -3782,9 +3780,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
                 // Marshal result.
                 if (lua_isinteger(L, -1)) {
-                    int n = snprintf(out, out_size, "%lld",
+                    size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%lld"),
                         static_cast<long long>(lua_tointeger(L, -1)));
-                    ctx->x[10] = static_cast<uint64_t>(n > 0 ? n : 0);
+                    ctx->x[10] = static_cast<uint64_t>(n);
                 } else if (lua_isnumber(L, -1)) {
                     LBuf buf = LBuf_Src("ecall.call"); UTF8 *bufc = buf;
                     fval(buf, &bufc, lua_tonumber(L, -1));
@@ -3923,9 +3921,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                     out[0] = '\0';
                     ctx->x[10] = 0;
                 } else if (lua_isinteger(L, first_pos)) {
-                    int n2 = snprintf(out, out_size, "%lld",
+                    size_t n2 = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%lld"),
                         static_cast<long long>(lua_tointeger(L, first_pos)));
-                    ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
+                    ctx->x[10] = static_cast<uint64_t>(n2);
                 } else if (lua_isnumber(L, first_pos)) {
                     LBuf buf2 = LBuf_Src("ecall.pcall"); UTF8 *bufc2 = buf2;
                     fval(buf2, &bufc2, lua_tonumber(L, first_pos));
@@ -3994,9 +3992,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                         out[0] = '\0';
                         ctx->x[10] = 0;
                     } else if (lua_isinteger(L, pos)) {
-                        int n2 = snprintf(out, out_size, "%lld",
+                        size_t n2 = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%lld"),
                             static_cast<long long>(lua_tointeger(L, pos)));
-                        ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
+                        ctx->x[10] = static_cast<uint64_t>(n2);
                     } else if (lua_isnumber(L, pos)) {
                         LBuf buf2 = LBuf_Src("ecall.getresult"); UTF8 *bufc2 = buf2;
                         fval(buf2, &bufc2, lua_tonumber(L, pos));
@@ -4086,8 +4084,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
                 char *out = reinterpret_cast<char *>(ec->memory + out_addr);
                 if (ok) {
-                    int n2 = snprintf(out, out_size, "%d", len);
-                    ctx->x[10] = static_cast<uint64_t>(n2 > 0 ? n2 : 0);
+                    size_t n2 = mux_snprintf(reinterpret_cast<UTF8 *>(out), out_size, T("%d"), len);
+                    ctx->x[10] = static_cast<uint64_t>(n2);
                 } else {
                     out[0] = '0'; out[1] = '\0';
                     ctx->x[10] = 1;
@@ -4483,7 +4481,29 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         }
 
         // Decode codepoints.
+        //
+        // This loop is fun_ord()'s, transliterated -- but where the
+        // interpreter writes through safe_chr/safe_ltoa, which stop at the
+        // buffer end, this had a bare `op += sprintf(op, ...)` and no bound
+        // at all.  The only check above is `out_addr >= memory_size - 64`,
+        // which reads like it bounds the write and does not: it guarantees
+        // 64 bytes of headroom against a loop that emits up to 8 bytes per
+        // CODEPOINT, and a grapheme cluster is one cluster but any number of
+        // codepoints.
+        //
+        // Measured before the fix, ord() on 'a' followed by N combining
+        // acutes -- one cluster, N+1 codepoints -- wrote linearly with no
+        // cap: N=400 produced 1602 bytes, N=1200 produced 4802, N=3800
+        // produced ~15k.  It did not crash only because out_addr happens to
+        // sit far enough from the end of guest memory; everything past the
+        // result slot was overwritten regardless.  Input is player-supplied.
+        //
+        // Bound by the space that actually exists and stop cleanly, which is
+        // also what the interpreter does when the LBUF fills.
+        //
+        const size_t out_avail = ec->memory_size - out_addr;
         char *op = out;
+        size_t used = 0;
         const UTF8 *q = p;
         const UTF8 *qEnd = p + cluster.m_byte;
         bool bFirst = true;
@@ -4494,8 +4514,16 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
                 ctx->x[10] = static_cast<uint64_t>(-1);
                 return -1;
             }
-            if (!bFirst) *op++ = ' ';
-            op += sprintf(op, "%ld", static_cast<long>(ch));
+            if (!bFirst) {
+                if (used + 2 > out_avail) break;   // separator plus NUL
+                *op++ = ' ';
+                used++;
+            }
+            size_t k = mux_snprintf(reinterpret_cast<UTF8 *>(op),
+                out_avail - used, T("%ld"), static_cast<long>(ch));
+            if (0 == k) break;
+            op += k;
+            used += k;
             bFirst = false;
             size_t nAdv = utf8_FirstByte[static_cast<unsigned char>(*q)];
             if (nAdv < 1 || nAdv >= UTF8_CONTINUE) nAdv = 1;
@@ -4603,9 +4631,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             char *out = reinterpret_cast<char *>(ec->memory + out_addr);
             if (lua_isinteger(L, -1)) {
                 lua_Integer v = lua_tointeger(L, -1);
-                int n = snprintf(out, 256, "%lld",
+                size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), 256, T("%lld"),
                     static_cast<long long>(v));
-                if (n < 0) n = 0;
                 out[n] = '\0';
             } else if (lua_isnumber(L, -1)) {
                 double v = lua_tonumber(L, -1);
@@ -4677,9 +4704,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (out_addr && out_addr < ec->memory_size - 256) {
             char *out = reinterpret_cast<char *>(ec->memory + out_addr);
             if (lua_isinteger(L, -1)) {
-                int n = snprintf(out, 256, "%lld",
+                size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(out), 256, T("%lld"),
                     static_cast<long long>(lua_tointeger(L, -1)));
-                if (n < 0) n = 0;
                 out[n] = '\0';
             } else if (lua_isnumber(L, -1)) {
                 LBuf buf = LBuf_Src("ecall.tgetfield");
@@ -5053,8 +5079,8 @@ FUNCTION(fun__restore_cargs)
         if (nslot + 4 <= s_current_ecall_ctx->memory_size)
         {
             char nbuf[16];
-            int len = snprintf(nbuf, sizeof(nbuf), "%d",
-                               s_carg_save_stack[idx].ncargs);
+            size_t len = mux_snprintf(reinterpret_cast<UTF8 *>(nbuf), sizeof(nbuf),
+                               T("%d"), s_carg_save_stack[idx].ncargs);
             memcpy(s_current_ecall_ctx->memory + nslot, nbuf, len + 1);
         }
     }
@@ -5088,7 +5114,7 @@ FUNCTION(fun__set_ncargs)
     if (slot + 4 <= s_current_ecall_ctx->memory_size)
     {
         char nbuf[16];
-        int len = snprintf(nbuf, sizeof(nbuf), "%d", n);
+        size_t len = mux_snprintf(reinterpret_cast<UTF8 *>(nbuf), sizeof(nbuf), T("%d"), n);
         memcpy(s_current_ecall_ctx->memory + slot, nbuf, len + 1);
     }
 }
@@ -5343,8 +5369,8 @@ FUNCTION(fun_jitstats)
 
     // Format: key=value pairs, newline-separated for readability.
     LBuf tmp = LBuf_Src("jitstats");
-    int n = snprintf(reinterpret_cast<char *>(tmp.get()), LBUF_SIZE,
-        "eval_attempts=%llu "
+    size_t n = mux_snprintf(tmp.get(), LBUF_SIZE,
+        T("eval_attempts=%llu "
         "eval_handled=%llu "
         "eval_bailout=%llu "
         "cache_hit_mem=%llu "
@@ -5366,7 +5392,7 @@ FUNCTION(fun_jitstats)
         "bail_longreg=%llu "
         "bail_depth=%llu "
         "bail_invk=%llu "
-        "bail_alarm=%llu",
+        "bail_alarm=%llu"),
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -5397,13 +5423,13 @@ FUNCTION(fun_jitstats)
     if (n < static_cast<int>(LBUF_SIZE) - 256) {
         lua_jit_counters lj = {};
         jit_lua_get_stats(&lj);
-        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
-            " lua_compile_ok=%llu"
+        n += mux_snprintf(tmp.get() + n, LBUF_SIZE - n,
+            T(" lua_compile_ok=%llu"
             " lua_compile_fail=%llu"
             " lua_run_ok=%llu"
             " lua_run_fail=%llu"
             " lua_cache_hits=%llu"
-            " lua_invalidations=%llu",
+            " lua_invalidations=%llu"),
             (unsigned long long)lj.compile_ok,
             (unsigned long long)lj.compile_fail,
             (unsigned long long)lj.run_ok,
@@ -5414,7 +5440,7 @@ FUNCTION(fun_jitstats)
 
     // Append NOEVAL breakdown.
     for (int i = 0; i < s_jit_stats.noeval_top_used && n < static_cast<int>(LBUF_SIZE) - 64; i++) {
-        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n, " noeval_%s=%llu",
+        n += mux_snprintf(tmp.get() + n, LBUF_SIZE - n, T(" noeval_%s=%llu"),
             s_jit_stats.noeval_top[i].name,
             (unsigned long long)s_jit_stats.noeval_top[i].count);
     }
@@ -5452,12 +5478,12 @@ FUNCTION(fun_jitstats)
     }
 
     if (n < static_cast<int>(LBUF_SIZE) - 256) {
-        n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
-            " dbt_code_cap=%u"
+        n += mux_snprintf(tmp.get() + n, LBUF_SIZE - n,
+            T(" dbt_code_cap=%u"
             " dbt_blob_bytes=%u"
             " dbt_code_used=%u"
             " dbt_code_reclaims=%llu"
-            " dbt_code_full=%llu",
+            " dbt_code_full=%llu"),
             static_cast<unsigned>(dbt_cap),
             static_cast<unsigned>(dbt_blob),
             static_cast<unsigned>(dbt_used),
@@ -5694,11 +5720,11 @@ FUNCTION(fun_rvbench)
     uint64_t ce_from = s_vm[0].dbt.last_exit_from;
 
     LBuf report = LBuf_Src("rvbench");
-    snprintf(reinterpret_cast<char *>(report.get()), LBUF_SIZE,
-        "expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu ih=%llu ce=%llu(a=0x%llX,e=0x%llX,from=0x%llX) | "
+    mux_snprintf(report.get(), LBUF_SIZE,
+        T("expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu ih=%llu ce=%llu(a=0x%llX,e=0x%llX,from=0x%llX) | "
         "native=%.2fus/call | "
         "compile-each=%.2fus/call (%.1fx) | "
-        "cached=%.2fus/call (%.1fx)",
+        "cached=%.2fus/call (%.1fx)"),
         reinterpret_cast<const char *>(expr),
         iterations, prog.folds, prog.ecalls, prog.tier2_calls, prog.native_ops,
         (unsigned long long)disp,
@@ -5985,8 +6011,8 @@ FUNCTION(fun_pocvm2)
         ? s_pvm.result(func_c_out) : "#-1 RUN C FAILED";
 
     LBuf tmp = LBuf_Src("pocvm2");
-    snprintf(reinterpret_cast<char *>(tmp.get()), LBUF_SIZE,
-        "a=%s b=%s c=%s a_pc=0x%llX b_pc=0x%llX c_pc=0x%llX calls=%u",
+    mux_snprintf(tmp.get(), LBUF_SIZE,
+        T("a=%s b=%s c=%s a_pc=0x%llX b_pc=0x%llX c_pc=0x%llX calls=%u"),
         str_a.c_str(), str_b.c_str(), result_c,
         (unsigned long long)func_a_entry,
         (unsigned long long)func_b_entry,
