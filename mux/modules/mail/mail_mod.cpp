@@ -1962,7 +1962,10 @@ void CMailMod::DoListMailBrief(dbref player)
         if (gc > 0)
         {
             UTF8 msg[256];
-            mux_sprintf(msg, sizeof(msg), M_("URGENT MAIL: You have %d urgent messages in folder %d [%s]."),
+            mux_sprintf(msg, sizeof(msg), MN_(
+                     "URGENT MAIL: You have %d urgent message in folder %d [%s].",
+                     "URGENT MAIL: You have %d urgent messages in folder %d [%s].",
+                     gc),
                      gc, folder,
                      reinterpret_cast<const char *>(get_folder_name(player, folder)));
             m_pINotify->RawNotify(player, msg);
@@ -2606,7 +2609,10 @@ void CMailMod::send_mail
                 get_player_name(target, targetname, sizeof(targetname));
 
                 UTF8 msg[2 * MOD_LBUF_SIZE];
-                mux_sprintf(msg, sizeof(msg), M_("MAIL: %s’s mailbox is full (%d messages)."),
+                mux_sprintf(msg, sizeof(msg), MN_(
+                        "MAIL: %s’s mailbox is full (%d message).",
+                        "MAIL: %s’s mailbox is full (%d messages).",
+                        total - 1),
                     targetname, total - 1);
                 if (nullptr != m_pINotify)
                 {
@@ -5952,7 +5958,10 @@ MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
     if (gc > 0)
     {
         UTF8 msg[256];
-        mux_sprintf(msg, sizeof(msg), M_("URGENT MAIL: You have %d urgent messages in folder %d [%s]."),
+        mux_sprintf(msg, sizeof(msg), MN_(
+                     "URGENT MAIL: You have %d urgent message in folder %d [%s].",
+                     "URGENT MAIL: You have %d urgent messages in folder %d [%s].",
+                     gc),
                  gc, folder,
                  reinterpret_cast<const char *>(get_folder_name(player, folder)));
         m_pINotify->RawNotify(player, msg);

@@ -3871,7 +3871,9 @@ static void list_options(dbref player)
 #endif // HAVE_WORKING_FORK
     if (mudconf.max_players >= 0)
         raw_notify(player,
-        tprintf(M_("There may be at most %d players logged in at once."),
+        tprintf(MN_("There may be at most %d player logged in at once.",
+                    "There may be at most %d players logged in at once.",
+                    mudconf.max_players),
             mudconf.max_players));
     if (mudconf.quotas)
         mux_sprintf(buff, MBUF_SIZE, T(" and %d quota"), mudconf.start_quota);
