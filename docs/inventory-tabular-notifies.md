@@ -53,11 +53,11 @@
 | | Engine | Module |
 |--|--------|--------|
 | File | `comsys.cpp` (~3029) | `comsys_mod.cpp` `ComList` |
-| Header | **Blob** `M_("Alias           Channel            Status   Title")` | **Blob** `T_(same)` |
-| Cell primitive | `tprintf` `%-15.15s %-18.18s` + free status/title | `append_ljust_field` 15 / 18 + `mux_sprintf` status trail |
+| Header | **Converted (#1667 Phase 4)** — `Alias` / `Channel` / freeform `Status` `Title` via `mux_table_*` | Same |
+| Cell primitive | `mux_table_*` + freeform status trail | Same |
 | Columns | alias **15** · channel **18** · status/title freeform | Same |
-| Translate? | **No (blob)** | **No (blob)** |
-| Dual | **Yes** |
+| Translate? | **Per-label** Alias, Channel, Status, Title | Same |
+| Dual | **Yes** — both paths converted together |
 
 ### A4. `@cwho` — who is on a channel
 
@@ -227,7 +227,7 @@ From `mux/po/tinymux.pot` at inventory time (grep for multi-space column-like ms
 |-------|--------|
 | `Buffer Stats  Size      InUse      Total           Allocs   Lost` | C4 |
 | ~~`*** Channel       Header          Owner           Access  Users Msgs`~~ | A1 — **removed** Phase 4 (per-label) |
-| `Alias           Channel            Status   Title` | A3 |
+| ~~`Alias           Channel            Status   Title`~~ | A3 — **removed** Phase 4 (per-label) |
 | ~~`*** Channel       Owner           Header`~~ | A2 — **removed** Phase 4 (per-label) |
 | ~~`*** Channel       Owner           Description`~~ | A2 — **removed** Phase 4 (per-label) |
 | `Name         Description                              Owner` | B1 |
