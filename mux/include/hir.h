@@ -108,8 +108,14 @@ enum hir_kind {
     HIR_LUA_LEN,    // len(tbl_idx): ECALL → TY_INT, Lua's # on a table
     HIR_LUA_GETGLOBAL, // getglobal(key_addr): ECALL → TY_LUA_HANDLE
     HIR_LUA_GETFIELD_REF, // getfield(tbl_idx, key_addr): ECALL → TY_LUA_HANDLE
-    HIR_LUA_CALL_INT, // call(fn_idx, nargs, args_addr): ECALL → TY_INT
-    HIR_LUA_CALL_STR, // call(fn_idx, args): ECALL → TY_STRING into an out slot
+    // The three compiled-call variants differ only in how the result comes
+    // back: integer register, string into an out slot, or discarded.  fn is
+    // src1; the arguments live on the carg[] list (emit_lua_call), so every
+    // operand-walking pass sees them through the ARG slots; val[] carries
+    // only the two-bit-per-argument kind encoding the ECALL needs.
+    HIR_LUA_CALL_INT, // call fn(args): ECALL → TY_INT
+    HIR_LUA_CALL_STR, // call fn(args): ECALL → TY_STRING into an out slot
+    HIR_LUA_CALL_VOID, // call fn(args) for effect: ECALL → TY_VOID, result dropped
     HIR_LUA_GETFIELD, // getfield(tbl_idx, key_addr): ECALL → TY_INT
     HIR_LUA_GETFIELD_FLT, // getfield(tbl_idx, key_addr): ECALL → TY_FLOAT (bits over FMV lane)
     HIR_LUA_SETFIELD, // setfield(tbl_idx, key_addr, val): ECALL
@@ -588,6 +594,26 @@ struct hir_program {
         return i;
     }
 
+    // Emit a compiled Lua call (HIR_LUA_CALL_INT / _STR / _VOID).  fn is
+    // src1 and the arguments ride the carg[] list exactly as HIR_CALL's
+    // do, so liveness, DCE and copy propagation see them through the ARG
+    // slots with no packed encoding to know about -- CALL_INT's second
+    // argument was invisible to liveness for want of exactly this
+    // (20d39472f).  val[] carries only the argument-kind bits.
+    int emit_lua_call(hir_kind k, hir_type ret_ty, int fn,
+                      const int *args, int nargs, int kinds) {
+        int i = emit(k, ret_ty, fn);
+        if (i < 0) return -1;
+        if (n_cargs + nargs > HIR_MAX_CARGS) { overflowed = true; return -1; }
+        cbase[i] = n_cargs;
+        cnargs[i] = nargs;
+        for (int j = 0; j < nargs; j++) {
+            carg[n_cargs++] = args[j];
+        }
+        val[i] = kinds;
+        return i;
+    }
+
     // Emit a strcat with arguments.
     int emit_strcat(const int *args, int nargs) {
         int i = emit(HIR_STRCAT, TY_STRING);
@@ -751,19 +777,21 @@ inline int hir_operand_count(const hir_program &h, int i);
 inline int hir_operand_get(const hir_program &h, int i, int slot);
 inline void hir_operand_set(hir_program &h, int i, int slot, int r);
 
+// True for the compiled Lua call kinds, whose arguments live on the
+// carg[] list like HIR_CALL's.  They used to pack an operand into val[]
+// instead, which needed a special case here and another in
+// hir_operand_set -- both gone with the packing.
+//
+inline bool hir_is_lua_call(hir_kind k) {
+    return k == HIR_LUA_CALL_INT || k == HIR_LUA_CALL_STR
+        || k == HIR_LUA_CALL_VOID;
+}
+
 inline int hir_val_operand(const hir_program &h, int i) {
     if (i < 0 || i >= h.n_insns) return -1;
     if (h.kind[i] == HIR_LUA_SETI || h.kind[i] == HIR_LUA_SETFIELD) {
         int v = static_cast<int>(h.val[i]);
         return (v >= 0 && v < h.n_insns) ? v : -1;
-    }
-    if (h.kind[i] == HIR_LUA_CALL_INT || h.kind[i] == HIR_LUA_CALL_STR) {
-        // One layout for both: low 8 = nargs, next 8 = argkind bits, from
-        // 16 up = a1_insn + 1 (0 meaning "no second argument").  They differ
-        // in RESULT type only.
-        //
-        int a1i = static_cast<int>(h.val[i] >> 16) - 1;
-        return (a1i >= 0 && a1i < h.n_insns) ? a1i : -1;
     }
     return -1;
 }
@@ -774,7 +802,8 @@ inline int hir_val_operand(const hir_program &h, int i) {
 inline int hir_operand_count(const hir_program &h, int i) {
     if (i < 0 || i >= h.n_insns) return 0;
     int n = HIR_SLOT_ARG;
-    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT
+        || hir_is_lua_call(h.kind[i])) {
         n += h.cnargs[i];
     } else if (h.kind[i] == HIR_PHI) {
         n += h.pnargs[i];
@@ -797,7 +826,8 @@ inline int hir_operand_get(const hir_program &h, int i, int slot) {
     default: break;
     }
     const int j = slot - HIR_SLOT_ARG;
-    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT
+        || hir_is_lua_call(h.kind[i])) {
         if (j < 0 || j >= h.cnargs[i]) return -1;
         return h.carg[h.cbase[i] + j];
     }
@@ -811,12 +841,12 @@ inline int hir_operand_get(const hir_program &h, int i, int slot) {
 // Write an operand back in whatever encoding its slot uses.
 //
 // The VAL slot is why this exists rather than a bare pointer: SETI and
-// SETFIELD keep a plain instruction index there, but CALL_INT PACKS nargs
-// into the low 8 bits with the operand above it.  Copy propagation used to
-// write `h.val[i] = r` unconditionally, which preserves neither -- a latent
-// hazard rather than an observed failure (I could not construct a chunk
-// where resolve_copy fires on a call argument), and precisely the kind that
-// a per-pass hand-rolled walk keeps re-introducing.
+// SETFIELD keep a plain instruction index there, and any other kind's
+// val[] is not an operand at all -- the Lua calls keep their argument-kind
+// bits there, which a blind `h.val[i] = r` from copy propagation would
+// destroy.  (The calls used to also PACK an operand into val[]'s upper
+// bits, needing a re-packing branch here; their arguments live on the
+// carg[] list now and take the ARG path below like HIR_CALL's.)
 //
 inline void hir_operand_set(hir_program &h, int i, int slot, int r) {
     if (i < 0 || i >= h.n_insns) return;
@@ -829,16 +859,13 @@ inline void hir_operand_set(hir_program &h, int i, int slot, int r) {
     case HIR_SLOT_VAL:
         if (h.kind[i] == HIR_LUA_SETI || h.kind[i] == HIR_LUA_SETFIELD) {
             h.val[i] = r;
-        } else if (h.kind[i] == HIR_LUA_CALL_INT
-                || h.kind[i] == HIR_LUA_CALL_STR) {
-            const int64_t low = h.val[i] & 0xFFFF;   // nargs + argkinds
-            h.val[i] = low | (static_cast<int64_t>(r + 1) << 16);
         }
         return;
     default: break;
     }
     const int j = slot - HIR_SLOT_ARG;
-    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT
+        || hir_is_lua_call(h.kind[i])) {
         if (j >= 0 && j < h.cnargs[i]) h.carg[h.cbase[i] + j] = r;
         return;
     }

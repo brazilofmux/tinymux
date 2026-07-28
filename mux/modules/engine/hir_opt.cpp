@@ -576,10 +576,13 @@ void hir_copy_prop(hir_program &h) {
 
 static bool has_side_effects(hir_kind k) {
     // HIR_LUA_SETI mutates table cells — DCE must keep stores even when
-    // the result (if any) is unused (#1145).
+    // the result (if any) is unused (#1145).  HIR_LUA_CALL_VOID exists
+    // only for its effect (table.insert): it produces no value at all,
+    // so nothing downstream can keep it alive — this line is what does.
     return k == HIR_CALL || k == HIR_STRCAT || k == HIR_STORE_Q
         || k == HIR_SETQ_SYNC
         || k == HIR_LUA_SETI || k == HIR_LUA_SETFIELD
+        || k == HIR_LUA_CALL_VOID
         || k == HIR_RET || k == HIR_BR || k == HIR_BRC;
 }
 
