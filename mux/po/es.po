@@ -38,7 +38,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 15:56-0600\n"
+"POT-Creation-Date: 2026-07-28 16:35-0600\n"
 "PO-Revision-Date: 2026-07-28 18:11+0000\n"
 "Last-Translator: unattributed -- see header\n"
 "Language-Team: none\n"
@@ -88,91 +88,93 @@ msgid "%s %s has disconnected."
 msgstr "%s %s se ha desconectado."
 
 #: modules/comsys/comsys_mod.cpp:645 modules/comsys/comsys_mod.cpp:655
-#: modules/comsys/comsys_mod.cpp:2587 modules/engine/comsys.cpp:3088
-#: modules/engine/comsys.cpp:3351 modules/engine/comsys.cpp:3357
+#: modules/comsys/comsys_mod.cpp:2587 modules/engine/comsys.cpp:3206
+#: modules/engine/comsys.cpp:3469 modules/engine/comsys.cpp:3475
 #, c-format
 msgid "Bad Comsys Alias: %s for Channel: %s"
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:1112 modules/comsys/comsys_mod.cpp:1114
 #: modules/comsys/comsys_mod.cpp:1802 modules/comsys/comsys_mod.cpp:1804
+#: modules/engine/comsys.cpp:2156 modules/engine/comsys.cpp:2732
 #, c-format
 msgid "%s has left this channel."
 msgstr "%s ha salido de este canal."
 
 #: modules/comsys/comsys_mod.cpp:1130 modules/comsys/comsys_mod.cpp:1783
-#: modules/engine/comsys.cpp:2030 modules/engine/comsys.cpp:2618
+#: modules/engine/comsys.cpp:2148 modules/engine/comsys.cpp:2736
 #, c-format
 msgid "You have left channel %s."
 msgstr "Has salido del canal %s."
 
-#: modules/comsys/comsys_mod.cpp:1708 modules/engine/comsys.cpp:1979
+#: modules/comsys/comsys_mod.cpp:1708 modules/engine/comsys.cpp:2097
 #, c-format
 msgid "Too many people on channel %s already."
 msgstr "Ya hay demasiada gente en el canal %s."
 
-#: modules/comsys/comsys_mod.cpp:1740 modules/engine/comsys.cpp:2010
+#: modules/comsys/comsys_mod.cpp:1740 modules/engine/comsys.cpp:2128
 #, c-format
 msgid "You are already on channel %s."
 msgstr "Ya estás en el canal %s."
 
 #: modules/comsys/comsys_mod.cpp:1762 modules/comsys/comsys_mod.cpp:1765
+#: modules/engine/comsys.cpp:2136
 #, c-format
 msgid "%s has joined this channel."
 msgstr "%s se ha unido a este canal."
 
-#: modules/comsys/comsys_mod.cpp:1835 modules/engine/comsys.cpp:2102
+#: modules/comsys/comsys_mod.cpp:1835 modules/engine/comsys.cpp:2220
 msgid "-- Players --"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:1871 modules/engine/comsys.cpp:2124
+#: modules/comsys/comsys_mod.cpp:1871 modules/engine/comsys.cpp:2242
 msgid "-- Objects --"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:1927 modules/engine/comsys.cpp:2150
+#: modules/comsys/comsys_mod.cpp:1927 modules/engine/comsys.cpp:2268
 msgid "Channel does not have an object."
 msgstr "El canal no tiene un objeto asociado."
 
-#: modules/comsys/comsys_mod.cpp:1948 modules/engine/comsys.cpp:2171
+#: modules/comsys/comsys_mod.cpp:1948 modules/engine/comsys.cpp:2289
 msgid "Channel does not log."
 msgstr "El canal no guarda registro."
 
-#: modules/comsys/comsys_mod.cpp:1965 modules/engine/comsys.cpp:2187
+#: modules/comsys/comsys_mod.cpp:1965 modules/engine/comsys.cpp:2305
 #, c-format
 msgid "%s -- Begin Comsys Recall --"
 msgstr "%s -- Inicio del historial del canal --"
 
-#: modules/comsys/comsys_mod.cpp:1988 modules/engine/comsys.cpp:2201
+#: modules/comsys/comsys_mod.cpp:1988 modules/engine/comsys.cpp:2319
 #, c-format
 msgid "%s -- End Comsys Recall --"
 msgstr "%s -- Fin del historial del canal --"
 
-#: modules/comsys/comsys_mod.cpp:2003 modules/engine/comsys.cpp:1546
+#: modules/comsys/comsys_mod.cpp:2003 modules/engine/comsys.cpp:1664
 msgid "No message."
 msgstr "No hay mensajes."
 
 #: modules/comsys/comsys_mod.cpp:2022 modules/comsys/comsys_mod.cpp:3025
-#: modules/comsys/comsys_mod.cpp:3550 modules/engine/comsys.cpp:1556
-#: modules/engine/comsys.cpp:2597 modules/engine/comsys.cpp:3232
-#: modules/engine/comsys.cpp:3496
+#: modules/comsys/comsys_mod.cpp:3550 modules/engine/comsys.cpp:1674
+#: modules/engine/comsys.cpp:2715 modules/engine/comsys.cpp:3350
+#: modules/engine/comsys.cpp:3614
 #, c-format
 msgid "Unknown channel %s."
 msgstr "Canal desconocido %s."
 
-#: modules/comsys/comsys_mod.cpp:2035 modules/engine/comsys.cpp:1562
+#: modules/comsys/comsys_mod.cpp:2035 modules/engine/comsys.cpp:1680
 msgid "You are not listed as on that channel.  Delete this alias and readd."
 msgstr "No figuras en ese canal.  Borra este alias y vuelve a añadirlo."
 
-#: modules/comsys/comsys_mod.cpp:2060 modules/engine/comsys.cpp:1583
+#: modules/comsys/comsys_mod.cpp:2060 modules/engine/comsys.cpp:1701
 #, c-format
 msgid "You must be on %s to do that."
 msgstr "Debes estar en %s para hacer eso."
 
-#: modules/comsys/comsys_mod.cpp:2096 modules/engine/comsys.cpp:1569
+#: modules/comsys/comsys_mod.cpp:2096 modules/engine/comsys.cpp:1687
 msgid "GAGGED players may not speak on channels."
 msgstr "Los jugadores amordazados no pueden hablar en los canales."
 
-#: modules/comsys/comsys_mod.cpp:2108 modules/engine/comsys.cpp:1605
+#: modules/comsys/comsys_mod.cpp:2108 modules/engine/comsys.cpp:1723
 msgid "That channel type cannot be transmitted on."
 msgstr "No se puede transmitir en ese tipo de canal."
 
@@ -186,112 +188,112 @@ msgstr "No tienes suficientes monedas."
 msgid "%s says, “%s”"
 msgstr "%s dice: “%s”"
 
-#: modules/comsys/comsys_mod.cpp:2478 modules/engine/comsys.cpp:3174
+#: modules/comsys/comsys_mod.cpp:2478 modules/engine/comsys.cpp:3292
 msgid "Only options available are: on, off and who."
 msgstr "Las únicas opciones disponibles son: on, off y who."
 
-#: modules/comsys/comsys_mod.cpp:2524 modules/engine/comsys.cpp:3041
+#: modules/comsys/comsys_mod.cpp:2524 modules/engine/comsys.cpp:3159
 msgid "Alias"
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:2527 modules/comsys/comsys_mod.cpp:2744
-#: modules/comsys/comsys_mod.cpp:2884 modules/engine/comsys.cpp:2821
-#: modules/engine/comsys.cpp:3044 modules/engine/comsys.cpp:4128
+#: modules/comsys/comsys_mod.cpp:2884 modules/engine/comsys.cpp:2939
+#: modules/engine/comsys.cpp:3162 modules/engine/comsys.cpp:4246
 msgid "Channel"
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:2530 modules/comsys/comsys_mod.cpp:3064
-#: modules/engine/comsys.cpp:3047 modules/engine/comsys.cpp:3258
+#: modules/engine/comsys.cpp:3165 modules/engine/comsys.cpp:3376
 #: modules/engine/mguests.cpp:453 src/net.cpp:3657
 msgid "Status"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2533 modules/engine/comsys.cpp:3050
+#: modules/comsys/comsys_mod.cpp:2533 modules/engine/comsys.cpp:3168
 msgid "Title"
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:2540 modules/comsys/comsys_mod.cpp:2594
-#: modules/engine/comsys.cpp:3093
+#: modules/engine/comsys.cpp:3211
 msgid "-- End of comlist --"
 msgstr "-- Fin de comlist --"
 
-#: modules/comsys/comsys_mod.cpp:2610 modules/engine/comsys.cpp:2935
+#: modules/comsys/comsys_mod.cpp:2610 modules/engine/comsys.cpp:3053
 msgid "Need an alias to do comtitle."
 msgstr "Necesitas un alias para usar comtitle."
 
-#: modules/comsys/comsys_mod.cpp:2620 modules/engine/comsys.cpp:2944
+#: modules/comsys/comsys_mod.cpp:2620 modules/engine/comsys.cpp:3062
 msgid "Unknown alias."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2631 modules/engine/comsys.cpp:2990
+#: modules/comsys/comsys_mod.cpp:2631 modules/engine/comsys.cpp:3108
 msgid "Illegal comsys alias, please delete."
 msgstr "Alias de comsys no válido, bórralo por favor."
 
-#: modules/comsys/comsys_mod.cpp:2651 modules/engine/comsys.cpp:2956
+#: modules/comsys/comsys_mod.cpp:2651 modules/engine/comsys.cpp:3074
 #, c-format
 msgid "Comtitles are now off for channel %s"
 msgstr "Los comtitles están desactivados para el canal %s"
 
-#: modules/comsys/comsys_mod.cpp:2657 modules/engine/comsys.cpp:2961
+#: modules/comsys/comsys_mod.cpp:2657 modules/engine/comsys.cpp:3079
 msgid "You can not turn off comtitles on that channel."
 msgstr "No puedes desactivar los comtitles en ese canal."
 
-#: modules/comsys/comsys_mod.cpp:2665 modules/engine/comsys.cpp:2966
+#: modules/comsys/comsys_mod.cpp:2665 modules/engine/comsys.cpp:3084
 #, c-format
 msgid "Comtitles are now on for channel %s"
 msgstr "Los comtitles están activados para el canal %s"
 
-#: modules/comsys/comsys_mod.cpp:2673 modules/engine/comsys.cpp:2971
+#: modules/comsys/comsys_mod.cpp:2673 modules/engine/comsys.cpp:3089
 #, c-format
 msgid "Join/leave messages are now gagged for channel %s"
 msgstr "Los mensajes de entrada y salida están silenciados para el canal %s"
 
-#: modules/comsys/comsys_mod.cpp:2681 modules/engine/comsys.cpp:2976
+#: modules/comsys/comsys_mod.cpp:2681 modules/engine/comsys.cpp:3094
 #, c-format
 msgid "Join/leave messages are now ungagged for channel %s"
 msgstr ""
 "Los mensajes de entrada y salida ya no están silenciados para el canal %s"
 
-#: modules/comsys/comsys_mod.cpp:2699 modules/engine/comsys.cpp:2983
+#: modules/comsys/comsys_mod.cpp:2699 modules/engine/comsys.cpp:3101
 #, c-format
 msgid "Title set to ‘%s’ on channel %s."
 msgstr "Título ‘%s’ establecido en el canal %s."
 
-#: modules/comsys/comsys_mod.cpp:2731 modules/engine/comsys.cpp:2792
+#: modules/comsys/comsys_mod.cpp:2731 modules/engine/comsys.cpp:2910
 msgid "Warning: Only public channels and your channels will be shown."
 msgstr "Aviso: Solo se mostrarán los canales públicos y los tuyos."
 
 #: modules/comsys/comsys_mod.cpp:2747 modules/comsys/comsys_mod.cpp:2890
-#: modules/engine/comsys.cpp:2824 modules/engine/comsys.cpp:4134
+#: modules/engine/comsys.cpp:2942 modules/engine/comsys.cpp:4252
 msgid "Header"
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:2750 modules/comsys/comsys_mod.cpp:2887
-#: modules/engine/comsys.cpp:2827 modules/engine/comsys.cpp:4131
+#: modules/engine/comsys.cpp:2945 modules/engine/comsys.cpp:4249
 #: modules/engine/mail.cpp:4357 modules/engine/mail.cpp:5195
 #: modules/engine/predicates.cpp:2973 modules/mail/mail_mod.cpp:4383
 #: modules/mail/mail_mod.cpp:4437
 msgid "Owner"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2753 modules/engine/comsys.cpp:2830
+#: modules/comsys/comsys_mod.cpp:2753 modules/engine/comsys.cpp:2948
 msgid "Access"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2756 modules/engine/comsys.cpp:2835
+#: modules/comsys/comsys_mod.cpp:2756 modules/engine/comsys.cpp:2953
 msgid "Users"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2759 modules/engine/comsys.cpp:2838
+#: modules/comsys/comsys_mod.cpp:2759 modules/engine/comsys.cpp:2956
 msgid "Msgs"
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:2847 modules/comsys/comsys_mod.cpp:2986
-#: modules/engine/comsys.cpp:2903 modules/engine/comsys.cpp:4244
+#: modules/engine/comsys.cpp:3021 modules/engine/comsys.cpp:4362
 msgid "-- End of list of Channels --"
 msgstr "-- Fin de la lista de canales --"
 
-#: modules/comsys/comsys_mod.cpp:2890 modules/engine/comsys.cpp:4134
+#: modules/comsys/comsys_mod.cpp:2890 modules/engine/comsys.cpp:4252
 #: modules/engine/mail.cpp:4354 modules/engine/mail.cpp:5192
 #: modules/mail/mail_mod.cpp:4380 modules/mail/mail_mod.cpp:4434
 msgid "Description"
@@ -313,57 +315,57 @@ msgid "Permission denied."
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:3061 modules/engine/command.cpp:4028
-#: modules/engine/comsys.cpp:3255 modules/engine/mail.cpp:4351
+#: modules/engine/comsys.cpp:3373 modules/engine/mail.cpp:4351
 #: modules/engine/mail.cpp:5189 modules/engine/mguests.cpp:446
 #: modules/mail/mail_mod.cpp:4377 modules/mail/mail_mod.cpp:4431
 msgid "Name"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3067 modules/engine/comsys.cpp:3261
+#: modules/comsys/comsys_mod.cpp:3067 modules/engine/comsys.cpp:3379
 msgid "Player"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3156 modules/engine/comsys.cpp:3746
+#: modules/comsys/comsys_mod.cpp:3156 modules/engine/comsys.cpp:3864
 #, c-format
 msgid "Channel %s does not exist."
 msgstr "El canal %s no existe."
 
-#: modules/comsys/comsys_mod.cpp:3220 modules/engine/comsys.cpp:3802
+#: modules/comsys/comsys_mod.cpp:3220 modules/engine/comsys.cpp:3920
 #, c-format
 msgid "@cset: Channel %s does not exist."
 msgstr "@cset: El canal %s no existe."
 
-#: modules/comsys/comsys_mod.cpp:3246 modules/engine/comsys.cpp:3818
+#: modules/comsys/comsys_mod.cpp:3246 modules/engine/comsys.cpp:3936
 #, c-format
 msgid "@cset: Channel %s placed on the public listings."
 msgstr "@cset: El canal %s aparece ahora en las listas públicas."
 
-#: modules/comsys/comsys_mod.cpp:3254 modules/engine/comsys.cpp:3823
+#: modules/comsys/comsys_mod.cpp:3254 modules/engine/comsys.cpp:3941
 #, c-format
 msgid "@cset: Channel %s taken off the public listings."
 msgstr "@cset: El canal %s ya no aparece en las listas públicas."
 
-#: modules/comsys/comsys_mod.cpp:3262 modules/engine/comsys.cpp:3828
+#: modules/comsys/comsys_mod.cpp:3262 modules/engine/comsys.cpp:3946
 #, c-format
 msgid "@cset: Channel %s now sends connect/disconnect msgs."
 msgstr "@cset: El canal %s ahora envía mensajes de conexión y desconexión."
 
-#: modules/comsys/comsys_mod.cpp:3270 modules/engine/comsys.cpp:3833
+#: modules/comsys/comsys_mod.cpp:3270 modules/engine/comsys.cpp:3951
 #, c-format
 msgid "@cset: Channel %s connect/disconnect msgs muted."
 msgstr "@cset: Mensajes de conexión y desconexión silenciados en el canal %s."
 
-#: modules/comsys/comsys_mod.cpp:3278 modules/engine/comsys.cpp:3838
+#: modules/comsys/comsys_mod.cpp:3278 modules/engine/comsys.cpp:3956
 #, c-format
 msgid "@cset: Channel %s set spoofable."
 msgstr "@cset: El canal %s admite suplantación."
 
-#: modules/comsys/comsys_mod.cpp:3286 modules/engine/comsys.cpp:3843
+#: modules/comsys/comsys_mod.cpp:3286 modules/engine/comsys.cpp:3961
 #, c-format
 msgid "@cset: Channel %s set unspoofable."
 msgstr "@cset: El canal %s no admite suplantación."
 
-#: modules/comsys/comsys_mod.cpp:3307 modules/engine/comsys.cpp:3854
+#: modules/comsys/comsys_mod.cpp:3307 modules/engine/comsys.cpp:3972
 #, c-format
 msgid "Channel %s is now disassociated from any channel object."
 msgstr "El canal %s ya no está asociado a ningún objeto."
@@ -392,7 +394,7 @@ msgid ""
 "cleared."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3455 modules/engine/comsys.cpp:3878
+#: modules/comsys/comsys_mod.cpp:3455 modules/engine/comsys.cpp:3996
 #, c-format
 msgid "@cset: Channel %s maximum history set."
 msgstr "@cset: Historial máximo establecido para el canal %s."
@@ -409,22 +411,22 @@ msgid ""
 "is not writable here)."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3526 modules/engine/comsys.cpp:3899
+#: modules/comsys/comsys_mod.cpp:3526 modules/engine/comsys.cpp:4017
 #, c-format
 msgid "@cset: Channel %s timestamp logging set."
 msgstr "@cset: Marca de tiempo activada en el registro del canal %s."
 
-#: modules/comsys/comsys_mod.cpp:3777 modules/engine/comsys.cpp:3979
+#: modules/comsys/comsys_mod.cpp:3777 modules/engine/comsys.cpp:4097
 #, c-format
 msgid "@cboot: %s is not on the channel."
 msgstr "@cboot: %s no está en el canal."
 
-#: modules/comsys/comsys_mod.cpp:3793 modules/engine/comsys.cpp:3984
+#: modules/comsys/comsys_mod.cpp:3793 modules/engine/comsys.cpp:4102
 #, c-format
 msgid "You boot %s off channel %s."
 msgstr "Expulsas a %s del canal %s."
 
-#: modules/comsys/comsys_mod.cpp:3800 modules/engine/comsys.cpp:3986
+#: modules/comsys/comsys_mod.cpp:3800 modules/engine/comsys.cpp:4104
 #, c-format
 msgid "%s boots you off channel %s."
 msgstr "%s te expulsa del canal %s."
@@ -435,52 +437,52 @@ msgid "%s %s boots %s off the channel."
 msgstr "%s %s expulsa a %s del canal."
 
 #: modules/comsys/comsys_mod.cpp:3886 modules/comsys/comsys_mod.cpp:3908
-#: modules/engine/comsys.cpp:2456 modules/engine/comsys.cpp:2466
+#: modules/engine/comsys.cpp:2574 modules/engine/comsys.cpp:2584
 msgid "You need to specify a valid alias."
 msgstr "Debes indicar un alias válido."
 
-#: modules/comsys/comsys_mod.cpp:3895 modules/engine/comsys.cpp:2471
+#: modules/comsys/comsys_mod.cpp:3895 modules/engine/comsys.cpp:2589
 msgid "You need to specify a channel."
 msgstr "Debes indicar un canal."
 
-#: modules/comsys/comsys_mod.cpp:3920 modules/engine/comsys.cpp:2480
+#: modules/comsys/comsys_mod.cpp:3920 modules/engine/comsys.cpp:2598
 #, c-format
 msgid "Channel %s does not exist yet."
 msgstr "El canal %s todavía no existe."
 
-#: modules/comsys/comsys_mod.cpp:3932 modules/engine/comsys.cpp:2485
+#: modules/comsys/comsys_mod.cpp:3932 modules/engine/comsys.cpp:2603
 msgid "Sorry, this channel type does not allow you to join."
 msgstr "Lo siento, este tipo de canal no permite que te unas."
 
-#: modules/comsys/comsys_mod.cpp:3944 modules/engine/comsys.cpp:2491
+#: modules/comsys/comsys_mod.cpp:3944 modules/engine/comsys.cpp:2609
 msgid "Sorry, but you have reached the maximum number of aliases allowed."
 msgstr "Lo siento, has alcanzado el número máximo de alias permitidos."
 
-#: modules/comsys/comsys_mod.cpp:3960 modules/engine/comsys.cpp:2502
+#: modules/comsys/comsys_mod.cpp:3960 modules/engine/comsys.cpp:2620
 #, c-format
 msgid "That alias is already in use for channel %s."
 msgstr "Ese alias ya está en uso para el canal %s."
 
-#: modules/comsys/comsys_mod.cpp:3989 modules/engine/comsys.cpp:2522
+#: modules/comsys/comsys_mod.cpp:3989 modules/engine/comsys.cpp:2640
 #, c-format
 msgid "Channel %s added with alias %s."
 msgstr "Canal %s añadido con el alias %s."
 
-#: modules/comsys/comsys_mod.cpp:4005 modules/engine/comsys.cpp:2543
+#: modules/comsys/comsys_mod.cpp:4005 modules/engine/comsys.cpp:2661
 msgid "Need an alias to delete."
 msgstr "Necesitas un alias para borrar."
 
-#: modules/comsys/comsys_mod.cpp:4043 modules/engine/comsys.cpp:2571
-#: modules/engine/comsys.cpp:2577
+#: modules/comsys/comsys_mod.cpp:4043 modules/engine/comsys.cpp:2689
+#: modules/engine/comsys.cpp:2695
 #, c-format
 msgid "Alias %s for channel %s deleted."
 msgstr "Alias %s del canal %s borrado."
 
-#: modules/comsys/comsys_mod.cpp:4056 modules/engine/comsys.cpp:2587
+#: modules/comsys/comsys_mod.cpp:4056 modules/engine/comsys.cpp:2705
 msgid "Unable to find that alias."
 msgstr "No se encuentra ese alias."
 
-#: modules/comsys/comsys_mod.cpp:4093 modules/engine/comsys.cpp:2648
+#: modules/comsys/comsys_mod.cpp:4093 modules/engine/comsys.cpp:2766
 msgid "You must specify a channel to create."
 msgstr "Debes indicar un canal para crear."
 
@@ -492,7 +494,7 @@ msgstr "No tienes permiso para crear canales."
 msgid "That channel already exists."
 msgstr "Ese canal ya existe."
 
-#: modules/comsys/comsys_mod.cpp:4154 modules/engine/comsys.cpp:2726
+#: modules/comsys/comsys_mod.cpp:4154 modules/engine/comsys.cpp:2844
 #, c-format
 msgid "Channel %s created."
 msgstr "Canal %s creado."
@@ -501,7 +503,7 @@ msgstr "Canal %s creado."
 msgid "You must specify a channel to destroy."
 msgstr "Debes indicar un canal para destruir."
 
-#: modules/comsys/comsys_mod.cpp:4180 modules/engine/comsys.cpp:4040
+#: modules/comsys/comsys_mod.cpp:4180 modules/engine/comsys.cpp:4158
 msgid "That channel does not exist."
 msgstr "Ese canal no existe."
 
@@ -509,7 +511,7 @@ msgstr "Ese canal no existe."
 msgid "You do not have permission to destroy that channel."
 msgstr "No tienes permiso para destruir ese canal."
 
-#: modules/comsys/comsys_mod.cpp:4248 modules/engine/comsys.cpp:2783
+#: modules/comsys/comsys_mod.cpp:4248 modules/engine/comsys.cpp:2901
 #, c-format
 msgid "Channel %s destroyed."
 msgstr "Canal %s destruido."
@@ -988,7 +990,7 @@ msgstr ""
 msgid "Built-in Attribute"
 msgstr ""
 
-#: modules/engine/comsys.cpp:1611 modules/engine/functions.cpp:4468
+#: modules/engine/comsys.cpp:1729 modules/engine/functions.cpp:4468
 #: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
 #: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:193
 #: modules/engine/walkdb.cpp:231
@@ -996,28 +998,38 @@ msgstr ""
 msgid "You don’t have enough %s."
 msgstr "No tienes suficientes %s."
 
-#: modules/engine/comsys.cpp:2141 modules/engine/comsys.cpp:3250
-#: modules/engine/comsys.cpp:3288
+#: modules/engine/comsys.cpp:2259 modules/engine/comsys.cpp:3368
+#: modules/engine/comsys.cpp:3406
 #, c-format
 msgid "-- %s --"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2696
+#: modules/engine/comsys.cpp:2814
 msgid "Channel name is too long."
 msgstr "El nombre del canal es demasiado largo."
 
-#: modules/engine/comsys.cpp:2706
+#: modules/engine/comsys.cpp:2824
 #, c-format
 msgid "Channel %s already exists."
 msgstr "El canal %s ya existe."
 
-#: modules/engine/comsys.cpp:2763
+#: modules/engine/comsys.cpp:2881
 #, c-format
 msgid "Could not find channel %s."
 msgstr "No se ha encontrado el canal %s."
 
-#: modules/engine/comsys.cpp:3525 modules/engine/comsys.cpp:3541
-#: modules/engine/comsys.cpp:3871 modules/engine/conf.cpp:2464
+#: modules/engine/comsys.cpp:3426 modules/engine/engine_com.cpp:4820
+#, c-format
+msgid "%s has disconnected."
+msgstr "%s se ha desconectado."
+
+#: modules/engine/comsys.cpp:3448 modules/engine/engine_com.cpp:4632
+#, c-format
+msgid "%s has connected."
+msgstr "%s se ha conectado."
+
+#: modules/engine/comsys.cpp:3643 modules/engine/comsys.cpp:3659
+#: modules/engine/comsys.cpp:3989 modules/engine/conf.cpp:2464
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -1027,93 +1039,93 @@ msgstr "No se ha encontrado el canal %s."
 msgid "Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3529
+#: modules/engine/comsys.cpp:3647
 msgid "Invalid player."
 msgstr "Jugador no válido."
 
-#: modules/engine/comsys.cpp:3545
+#: modules/engine/comsys.cpp:3663
 msgid "That is not a reasonable cost."
 msgstr "Ese coste no es razonable."
 
-#: modules/engine/comsys.cpp:3567
+#: modules/engine/comsys.cpp:3685
 msgid "@cpflags: Unknown Flag."
 msgstr "@cpflags: Indicador desconocido."
 
-#: modules/engine/comsys.cpp:3575
+#: modules/engine/comsys.cpp:3693
 msgid "@cpflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3580
+#: modules/engine/comsys.cpp:3698
 msgid "@cpflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3603
+#: modules/engine/comsys.cpp:3721
 msgid "@coflags: Unknown Flag."
 msgstr "@coflags: Indicador desconocido."
 
-#: modules/engine/comsys.cpp:3611
+#: modules/engine/comsys.cpp:3729
 msgid "@coflags: Set."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3616
+#: modules/engine/comsys.cpp:3734
 msgid "@coflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3860
+#: modules/engine/comsys.cpp:3978
 #, c-format
 msgid "Channel %s is now using %s as channel object."
 msgstr "El canal %s usa ahora %s como objeto de canal."
 
-#: modules/engine/comsys.cpp:3882
+#: modules/engine/comsys.cpp:4000
 #, c-format
 msgid ""
 "@cset: Channel %s has no channel object.  Use @cset/object to set one before "
 "setting a history buffer."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3886
+#: modules/engine/comsys.cpp:4004
 #, c-format
 msgid "@cset: Could not set maximum history for channel %s."
 msgstr "@cset: No se ha podido establecer el historial máximo del canal %s."
 
-#: modules/engine/comsys.cpp:3890
+#: modules/engine/comsys.cpp:4008
 #, c-format
 msgid "@cset: Maximum history must be a number less than or equal to %d."
 msgstr "@cset: El historial máximo debe ser un número menor o igual que %d."
 
-#: modules/engine/comsys.cpp:3903
+#: modules/engine/comsys.cpp:4021
 #, c-format
 msgid "@cset: Timestamp logging for channel %s must be 0 or 1."
 msgstr "@cset: La marca de tiempo del canal %s debe ser 0 o 1."
 
-#: modules/engine/comsys.cpp:3907
+#: modules/engine/comsys.cpp:4025
 #, c-format
 msgid ""
 "@cset: Channel %s has no channel object.  Use @cset/object to set one before "
 "enabling timestamp logging."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3911
+#: modules/engine/comsys.cpp:4029
 #, c-format
 msgid ""
 "@cset: Channel %s has no history buffer.  Use @cset/log to set one before "
 "enabling timestamp logging."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3915
+#: modules/engine/comsys.cpp:4033
 #, c-format
 msgid "@cset: Could not set timestamp logging for channel %s."
 msgstr "@cset: No se ha podido establecer la marca de tiempo del canal %s."
 
-#: modules/engine/comsys.cpp:3955
+#: modules/engine/comsys.cpp:4073
 msgid "@cboot: Unknown channel."
 msgstr "@cboot: Canal desconocido."
 
-#: modules/engine/comsys.cpp:3961
+#: modules/engine/comsys.cpp:4079
 msgid "@cboot: You are not on that channel."
 msgstr "@cboot: No estás en ese canal."
 
-#: modules/engine/comsys.cpp:3967
+#: modules/engine/comsys.cpp:4085
 msgid "@cboot: You can’t do that!"
 msgstr ""
 
@@ -1670,11 +1682,6 @@ msgstr ""
 msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4632
-#, c-format
-msgid "%s has connected."
-msgstr ""
-
 #: modules/engine/engine_com.cpp:4637
 #, c-format
 msgid "GAME: %s has DARK-connected."
@@ -1708,11 +1715,6 @@ msgstr ""
 #: modules/engine/engine_com.cpp:4815
 #, c-format
 msgid "[Suspect] %s has disconnected."
-msgstr ""
-
-#: modules/engine/engine_com.cpp:4820
-#, c-format
-msgid "%s has disconnected."
 msgstr ""
 
 #: modules/engine/engine_com.cpp:4844
