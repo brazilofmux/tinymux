@@ -44,12 +44,11 @@
 | | Engine | Module |
 |--|--------|--------|
 | File | `comsys.cpp` `do_chanlist` | `comsys_mod.cpp` `ChanList` |
-| Header | **Blob** `M_("*** Channel       Owner           Header")` or `… Description")` | **Blob** same via `T_` |
-| Cell primitive | STT + `PadField` | `append_ljust_field` |
-| Columns | PLS(4) · name **13** · owner **15** · desc/header **45** · pad to **79** | Same widths; explicit pad to 79 |
-| Stops (engine) | Pad **18, 34, 79** | field widths + pad loop |
-| Translate? | **No (blob)** | **No (blob)** |
-| Dual | **Yes** |
+| Header | **Converted (#1667 Phase 4)** — `"*** "` + `M_("Channel")` / `M_("Owner")` / `M_("Header"\|"Description")` via `mux_table_append_ljust` | Same construction with `T_()` labels |
+| Cell primitive | `mux_table_*` on `co_copy_field` | `mux_table_*` (via module aliases) |
+| Columns | PLS/`*** ` (4) · name **13** · owner **15** · third **45** · pad to **79** | Same |
+| Translate? | **Per-label** `Channel`, `Owner`, `Header`, `Description` — do not reintroduce a pre-spaced blob | Same |
+| Dual | **Yes** — both paths converted together |
 
 ### A3. `comlist` — player’s channel aliases
 
@@ -231,8 +230,8 @@ From `mux/po/tinymux.pot` at inventory time (grep for multi-space column-like ms
 | `Buffer Stats  Size      InUse      Total           Allocs   Lost` | C4 |
 | `*** Channel       Header          Owner           Access  Users Msgs` | A1 |
 | `Alias           Channel            Status   Title` | A3 |
-| `*** Channel       Owner           Header` | A2 |
-| `*** Channel       Owner           Description` | A2 |
+| ~~`*** Channel       Owner           Header`~~ | A2 — **removed** Phase 4 (per-label) |
+| ~~`*** Channel       Owner           Description`~~ | A2 — **removed** Phase 4 (per-label) |
 | `Name         Description                              Owner` | B1 |
 | `Num  Name         Description                              Owner` | B2 |
 | `*Guest #  : Name            dbref  Status     Last Site` | C1 |

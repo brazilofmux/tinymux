@@ -2829,15 +2829,37 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
         return ChanListFull(executor, pPattern);
     }
 
-    if (key & CLIST_HEADERS)
+    // @clist / @clist/headers schema — same as engine do_chanlist
+    // (#1667 Phase 4 A2): "*** "/PLS prefix, name 13, owner 15, third 45,
+    // pad to 79.  Labels are separate msgids via mux_table_append_ljust.
+    //
+    static const size_t kClistNameCols  = 13;
+    static const size_t kClistOwnerCols = 15;
+    static const size_t kClistThirdCols = 45;
+    static const size_t kClistLineCols  = 79;
+
     {
-        m_pINotify->RawNotify(executor,
-            T("*** Channel       Owner           Header"));
-    }
-    else
-    {
-        m_pINotify->RawNotify(executor,
-            T("*** Channel       Owner           Description"));
+        UTF8 header[256];
+        size_t pos = 0;
+        pos = append_bytes(header, sizeof(header), pos, "*** ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Channel"), kClistNameCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            T("Owner"), kClistOwnerCols);
+        pos = append_bytes(header, sizeof(header), pos, " ");
+        pos = append_ljust_field(header, sizeof(header), pos,
+            (key & CLIST_HEADERS) ? T("Header") : T("Description"),
+            kClistThirdCols);
+        while (pos < kClistLineCols && pos + 1 < sizeof(header))
+        {
+            header[pos++] = ' ';
+        }
+        if (pos < sizeof(header))
+        {
+            header[pos] = '\0';
+        }
+        m_pINotify->RawNotify(executor, header);
     }
 
     bool bWild = (nullptr != pPattern && '\0' != *pPattern);
@@ -2890,14 +2912,10 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
             pOwnerName = T("???");
         }
 
-        const char *pDesc = (key & CLIST_HEADERS)
-            ? reinterpret_cast<const char *>(ch->header)
-            : "No description.";
+        const UTF8 *pDesc = (key & CLIST_HEADERS)
+            ? ch->header
+            : T("No description.");
 
-        // Same column stops as the engine's do_chanlist, including the pad to
-        // 79 the module was omitting -- which showed up as a trailing-space
-        // difference on every line of @clist/headers.
-        //
         UTF8 line[MOD_LBUF_SIZE];
         size_t pos = 0;
         line[pos++] = (ch->type & CHANNEL_PUBLIC) ? 'P' : '-';
@@ -2906,17 +2924,15 @@ MUX_RESULT CComsysMod::ChanList(dbref executor, const UTF8 *pPattern,
         line[pos++] = ' ';
         line[pos] = '\0';
 
-        // Stops match the engine's do_chanlist, including pad to column 79
-        // (#1640 / #1656): name 13, owner 15, description/header 45.
-        //
-        pos = append_ljust_field(line, sizeof(line), pos, ch->name, 13);
+        pos = append_ljust_field(line, sizeof(line), pos, ch->name,
+            kClistNameCols);
         pos = append_bytes(line, sizeof(line), pos, " ");
-        pos = append_ljust_field(line, sizeof(line), pos, pOwnerName, 15);
+        pos = append_ljust_field(line, sizeof(line), pos, pOwnerName,
+            kClistOwnerCols);
         pos = append_bytes(line, sizeof(line), pos, " ");
-        pos = append_ljust_field(line, sizeof(line), pos,
-            reinterpret_cast<const UTF8 *>(pDesc), 45);
-        while (  pos < 79
-              && pos + 1 < sizeof(line))
+        pos = append_ljust_field(line, sizeof(line), pos, pDesc,
+            kClistThirdCols);
+        while (pos < kClistLineCols && pos + 1 < sizeof(line))
         {
             line[pos++] = ' ';
         }

@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 13:57+0000\n"
+"POT-Creation-Date: 2026-07-28 14:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -363,118 +363,118 @@ msgstr "[xx] @hook: Non-existent command name given."
 msgid "@hook: Incompatible switches."
 msgstr "[xx] @hook: Incompatible switches."
 
-#: modules/engine/comsys.cpp:1545
+#: modules/engine/comsys.cpp:1546
 msgid "No message."
 msgstr "[xx] No message."
 
-#: modules/engine/comsys.cpp:1561
+#: modules/engine/comsys.cpp:1562
 msgid "You are not listed as on that channel.  Delete this alias and readd."
 msgstr ""
 "[xx] You are not listed as on that channel.  Delete this alias and readd."
 "[xx] You are not listed as on that channel.  Delete this alias and readd."
 
-#: modules/engine/comsys.cpp:1568
+#: modules/engine/comsys.cpp:1569
 msgid "GAGGED players may not speak on channels."
 msgstr "[xx] GAGGED players may not speak on channels."
 
-#: modules/engine/comsys.cpp:1604
+#: modules/engine/comsys.cpp:1605
 msgid "That channel type cannot be transmitted on."
 msgstr "[xx] That channel type cannot be transmitted on."
 
-#: modules/engine/comsys.cpp:2101
+#: modules/engine/comsys.cpp:2102
 msgid "-- Players --"
 msgstr "[xx] -- Players --"
 
-#: modules/engine/comsys.cpp:2123
+#: modules/engine/comsys.cpp:2124
 msgid "-- Objects --"
 msgstr "[xx] -- Objects --"
 
-#: modules/engine/comsys.cpp:2149
+#: modules/engine/comsys.cpp:2150
 msgid "Channel does not have an object."
 msgstr "[xx] Channel does not have an object."
 
-#: modules/engine/comsys.cpp:2170
+#: modules/engine/comsys.cpp:2171
 msgid "Channel does not log."
 msgstr "[xx] Channel does not log."
 
-#: modules/engine/comsys.cpp:2455 modules/engine/comsys.cpp:2465
+#: modules/engine/comsys.cpp:2456 modules/engine/comsys.cpp:2466
 msgid "You need to specify a valid alias."
 msgstr "[xx] You need to specify a valid alias."
 
-#: modules/engine/comsys.cpp:2470
+#: modules/engine/comsys.cpp:2471
 msgid "You need to specify a channel."
 msgstr "[xx] You need to specify a channel."
 
-#: modules/engine/comsys.cpp:2484
+#: modules/engine/comsys.cpp:2485
 msgid "Sorry, this channel type does not allow you to join."
 msgstr "[xx] Sorry, this channel type does not allow you to join."
 
-#: modules/engine/comsys.cpp:2490
+#: modules/engine/comsys.cpp:2491
 msgid "Sorry, but you have reached the maximum number of aliases allowed."
 msgstr ""
 "[xx] Sorry, but you have reached the maximum number of aliases allowed.[xx] "
 "Sorry, but you have reached the maximum number of aliases allowed."
 
-#: modules/engine/comsys.cpp:2542
+#: modules/engine/comsys.cpp:2543
 msgid "Need an alias to delete."
 msgstr "[xx] Need an alias to delete."
 
-#: modules/engine/comsys.cpp:2586
+#: modules/engine/comsys.cpp:2587
 msgid "Unable to find that alias."
 msgstr "[xx] Unable to find that alias."
 
-#: modules/engine/comsys.cpp:2647
+#: modules/engine/comsys.cpp:2648
 msgid "You must specify a channel to create."
 msgstr "[xx] You must specify a channel to create."
 
-#: modules/engine/comsys.cpp:2695
+#: modules/engine/comsys.cpp:2696
 msgid "Channel name is too long."
 msgstr "[xx] Channel name is too long."
 
-#: modules/engine/comsys.cpp:2791
+#: modules/engine/comsys.cpp:2792
 msgid "Warning: Only public channels and your channels will be shown."
 msgstr "[xx] Warning: Only public channels and your channels will be shown."
 
-#: modules/engine/comsys.cpp:2805
+#: modules/engine/comsys.cpp:2806
 msgid "*** Channel       Header          Owner           Access  Users Msgs"
 msgstr ""
 "[xx] *** Channel       Header          Owner           Access  Users "
 "Msgs[xx] *** Channel       Header          Owner           Access  Users Msgs"
 
-#: modules/engine/comsys.cpp:2902 modules/engine/comsys.cpp:4157
+#: modules/engine/comsys.cpp:2903 modules/engine/comsys.cpp:4186
 msgid "-- End of list of Channels --"
 msgstr "[xx] -- End of list of Channels --"
 
-#: modules/engine/comsys.cpp:2934
+#: modules/engine/comsys.cpp:2935
 msgid "Need an alias to do comtitle."
 msgstr "[xx] Need an alias to do comtitle."
 
-#: modules/engine/comsys.cpp:2943
+#: modules/engine/comsys.cpp:2944
 msgid "Unknown alias."
 msgstr "[xx] Unknown alias."
 
-#: modules/engine/comsys.cpp:2960
+#: modules/engine/comsys.cpp:2961
 msgid "You can not turn off comtitles on that channel."
 msgstr "[xx] You can not turn off comtitles on that channel."
 
-#: modules/engine/comsys.cpp:2989
+#: modules/engine/comsys.cpp:2990
 msgid "Illegal comsys alias, please delete."
 msgstr "[xx] Illegal comsys alias, please delete."
 
-#: modules/engine/comsys.cpp:3029
+#: modules/engine/comsys.cpp:3030
 msgid "Alias           Channel            Status   Title"
 msgstr "[xx] Alias           Channel            Status   Title"
 
-#: modules/engine/comsys.cpp:3060
+#: modules/engine/comsys.cpp:3061
 msgid "-- End of comlist --"
 msgstr "[xx] -- End of comlist --"
 
-#: modules/engine/comsys.cpp:3141
+#: modules/engine/comsys.cpp:3142
 msgid "Only options available are: on, off and who."
 msgstr "[xx] Only options available are: on, off and who."
 
-#: modules/engine/comsys.cpp:3466 modules/engine/comsys.cpp:3482
-#: modules/engine/comsys.cpp:3812 modules/engine/conf.cpp:2459
+#: modules/engine/comsys.cpp:3467 modules/engine/comsys.cpp:3483
+#: modules/engine/comsys.cpp:3813 modules/engine/conf.cpp:2459
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -484,61 +484,69 @@ msgstr "[xx] Only options available are: on, off and who."
 msgid "Set."
 msgstr "[xx] Set."
 
-#: modules/engine/comsys.cpp:3470
+#: modules/engine/comsys.cpp:3471
 msgid "Invalid player."
 msgstr "[xx] Invalid player."
 
-#: modules/engine/comsys.cpp:3486
+#: modules/engine/comsys.cpp:3487
 msgid "That is not a reasonable cost."
 msgstr "[xx] That is not a reasonable cost."
 
-#: modules/engine/comsys.cpp:3508
+#: modules/engine/comsys.cpp:3509
 msgid "@cpflags: Unknown Flag."
 msgstr "[xx] @cpflags: Unknown Flag."
 
-#: modules/engine/comsys.cpp:3516
+#: modules/engine/comsys.cpp:3517
 msgid "@cpflags: Set."
 msgstr "[xx] @cpflags: Set."
 
-#: modules/engine/comsys.cpp:3521
+#: modules/engine/comsys.cpp:3522
 msgid "@cpflags: Cleared."
 msgstr "[xx] @cpflags: Cleared."
 
-#: modules/engine/comsys.cpp:3544
+#: modules/engine/comsys.cpp:3545
 msgid "@coflags: Unknown Flag."
 msgstr "[xx] @coflags: Unknown Flag."
 
-#: modules/engine/comsys.cpp:3552
+#: modules/engine/comsys.cpp:3553
 msgid "@coflags: Set."
 msgstr "[xx] @coflags: Set."
 
-#: modules/engine/comsys.cpp:3557
+#: modules/engine/comsys.cpp:3558
 msgid "@coflags: Cleared."
 msgstr "[xx] @coflags: Cleared."
 
-#: modules/engine/comsys.cpp:3896
+#: modules/engine/comsys.cpp:3897
 msgid "@cboot: Unknown channel."
 msgstr "[xx] @cboot: Unknown channel."
 
-#: modules/engine/comsys.cpp:3902
+#: modules/engine/comsys.cpp:3903
 msgid "@cboot: You are not on that channel."
 msgstr "[xx] @cboot: You are not on that channel."
 
-#: modules/engine/comsys.cpp:3908
+#: modules/engine/comsys.cpp:3909
 msgid "@cboot: You can’t do that!"
 msgstr "[xx] @cboot: You can’t do that!"
 
-#: modules/engine/comsys.cpp:3981
+#: modules/engine/comsys.cpp:3982
 msgid "That channel does not exist."
 msgstr "[xx] That channel does not exist."
 
-#: modules/engine/comsys.cpp:4058
-msgid "*** Channel       Owner           Header"
-msgstr "[xx] *** Channel       Owner           Header"
+#: modules/engine/comsys.cpp:4070
+msgid "Channel"
+msgstr "[xx] Channel"
 
-#: modules/engine/comsys.cpp:4062
-msgid "*** Channel       Owner           Description"
-msgstr "[xx] *** Channel       Owner           Description"
+#: modules/engine/comsys.cpp:4073
+msgid "Owner"
+msgstr "[xx] Owner"
+
+#: modules/engine/comsys.cpp:4076
+msgid "Header"
+msgstr "[xx] Header"
+
+#: modules/engine/comsys.cpp:4076
+msgid "Description"
+msgstr "[xx] Description"
 
 #: modules/engine/conf.cpp:517
 msgid "Nothing to set"
@@ -1582,18 +1590,18 @@ msgstr "[xx] Mail sanity fix completed."
 msgid "That is not a debugging option."
 msgstr "[xx] That is not a debugging option."
 
-#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5465
+#: modules/engine/mail.cpp:3218 modules/mail/mail_mod.cpp:5362
 msgid "The post office protects privacy!"
 msgstr "[xx] The post office protects privacy!"
 
-#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5480
+#: modules/engine/mail.cpp:3250 modules/mail/mail_mod.cpp:5377
 #, c-format
 msgid "There is %d message in the mail spool."
 msgid_plural "There are %d messages in the mail spool."
 msgstr[0] "[xx] There is %d message in the mail spool."
 msgstr[1] "[xx] There are %d messages in the mail spool."
 
-#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5519
+#: modules/engine/mail.cpp:3278 modules/mail/mail_mod.cpp:5416
 #, c-format
 msgid "MAIL: There is %d msg in the mail spool, %d unread, %d cleared."
 msgid_plural ""
@@ -1603,7 +1611,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] MAIL: There are %d msgs in the mail spool, %d unread, %d cleared."
 
-#: modules/engine/mail.cpp:3316 modules/mail/mail_mod.cpp:5528
+#: modules/engine/mail.cpp:3316 modules/mail/mail_mod.cpp:5425
 #, c-format
 msgid "MAIL: There is %d old msg in the mail spool, totalling %d characters."
 msgid_plural ""
@@ -1613,7 +1621,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] MAIL: There are %d old msgs in the mail spool, totalling %d characters."
 
-#: modules/engine/mail.cpp:3319 modules/mail/mail_mod.cpp:5534
+#: modules/engine/mail.cpp:3319 modules/mail/mail_mod.cpp:5431
 #, c-format
 msgid "MAIL: There is %d new msg in the mail spool, totalling %d characters."
 msgid_plural ""
@@ -1623,7 +1631,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] MAIL: There are %d new msgs in the mail spool, totalling %d characters."
 
-#: modules/engine/mail.cpp:3322 modules/mail/mail_mod.cpp:5540
+#: modules/engine/mail.cpp:3322 modules/mail/mail_mod.cpp:5437
 #, c-format
 msgid ""
 "MAIL: There is %d cleared msg in the mail spool, totalling %d characters."
@@ -1636,40 +1644,40 @@ msgstr[1] ""
 "[xx] MAIL: There are %d cleared msgs in the mail spool, totalling %d "
 "characters."
 
-#: modules/engine/mail.cpp:3351 modules/mail/mail_mod.cpp:5575
+#: modules/engine/mail.cpp:3351 modules/mail/mail_mod.cpp:5472
 #, c-format
 msgid "%s sent %d message."
 msgid_plural "%s sent %d messages."
 msgstr[0] "[xx] %s sent %d message."
 msgstr[1] "[xx] %s sent %d messages."
 
-#: modules/engine/mail.cpp:3354 modules/mail/mail_mod.cpp:5579
+#: modules/engine/mail.cpp:3354 modules/mail/mail_mod.cpp:5476
 #, c-format
 msgid "%s has %d message."
 msgid_plural "%s has %d messages."
 msgstr[0] "[xx] %s has %d message."
 msgstr[1] "[xx] %s has %d messages."
 
-#: modules/engine/mail.cpp:3418 modules/mail/mail_mod.cpp:5641
+#: modules/engine/mail.cpp:3418 modules/mail/mail_mod.cpp:5538
 #, c-format
 msgid "Mail statistics for %s:"
 msgstr "[xx] Mail statistics for %s:"
 
-#: modules/engine/mail.cpp:3422 modules/mail/mail_mod.cpp:5647
+#: modules/engine/mail.cpp:3422 modules/mail/mail_mod.cpp:5544
 #, c-format
 msgid "%d message sent, %d unread, %d cleared."
 msgid_plural "%d messages sent, %d unread, %d cleared."
 msgstr[0] "[xx] %d message sent, %d unread, %d cleared."
 msgstr[1] "[xx] %d messages sent, %d unread, %d cleared."
 
-#: modules/engine/mail.cpp:3426 modules/mail/mail_mod.cpp:5653
+#: modules/engine/mail.cpp:3426 modules/mail/mail_mod.cpp:5550
 #, c-format
 msgid "%d message received, %d unread, %d cleared."
 msgid_plural "%d messages received, %d unread, %d cleared."
 msgstr[0] "[xx] %d message received, %d unread, %d cleared."
 msgstr[1] "[xx] %d messages received, %d unread, %d cleared."
 
-#: modules/engine/mail.cpp:3434 modules/mail/mail_mod.cpp:5662
+#: modules/engine/mail.cpp:3434 modules/mail/mail_mod.cpp:5559
 #, c-format
 msgid "%d message sent, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
@@ -1679,7 +1687,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] %d messages sent, %d unread, %d cleared, totalling %d characters."
 
-#: modules/engine/mail.cpp:3439 modules/mail/mail_mod.cpp:5668
+#: modules/engine/mail.cpp:3439 modules/mail/mail_mod.cpp:5565
 #, c-format
 msgid "%d message received, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
@@ -1689,7 +1697,7 @@ msgstr[0] ""
 msgstr[1] ""
 "[xx] %d messages received, %d unread, %d cleared, totalling %d characters."
 
-#: modules/engine/mail.cpp:3447 modules/mail/mail_mod.cpp:5677
+#: modules/engine/mail.cpp:3447 modules/mail/mail_mod.cpp:5574
 #, c-format
 msgid "Last is dated %s"
 msgstr "[xx] Last is dated %s"
@@ -3277,11 +3285,11 @@ msgstr "[xx] Enabled."
 msgid "Disabled."
 msgstr "[xx] Disabled."
 
-#: modules/mail/mail_mod.cpp:5405
+#: modules/mail/mail_mod.cpp:5302
 msgid "MAIL: Mail statistics are unavailable."
 msgstr "[xx] MAIL: Mail statistics are unavailable."
 
-#: modules/mail/mail_mod.cpp:5457
+#: modules/mail/mail_mod.cpp:5354
 #, c-format
 msgid "%s: No such player."
 msgstr "[xx] %s: No such player."
@@ -3315,4 +3323,8 @@ msgstr "[xx] ----- Site Access -----"
 msgid "Address                                            Status"
 msgstr "[xx] Address                                            Status"
 
-#, c-format
+#~ msgid "*** Channel       Owner           Header"
+#~ msgstr "[xx] *** Channel       Owner           Header"
+
+#~ msgid "*** Channel       Owner           Description"
+#~ msgstr "[xx] *** Channel       Owner           Description"
