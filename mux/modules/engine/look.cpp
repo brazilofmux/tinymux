@@ -2285,7 +2285,7 @@ void do_entrances(dbref executor, dbref caller, dbref enactor, int eval, int key
                 if (Location(i) == thing)
                 {
                     exit = unparse_object(executor, Exits(i), false);
-                    notify(executor, tprintf(T("%s (%s)"), exit, Moniker(i)));
+                    notify(executor, tprintf(M_("%s (%s)"), exit, Moniker(i)));
                     free_lbuf(exit);
                     count++;
                 }
@@ -2755,7 +2755,7 @@ static void scan_check
     if (count > 0)
     {
         *ap2 = '\0';
-        notify(executor, tprintf(T("  %s  [%d: %s]"),
+        notify(executor, tprintf(M_("  %s  [%d: %s]"),
             unparse_object(executor, thing, false), count, attrlist));
     }
     free_lbuf(attrlist);

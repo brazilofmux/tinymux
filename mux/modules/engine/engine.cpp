@@ -1329,13 +1329,13 @@ static void report_timecheck
     if (yes_screen)
     {
         raw_notify(player,
-            tprintf(T("Counted %d objects using %ld msecs over %d seconds."),
+            tprintf(M_("Counted %d objects using %ld msecs over %d seconds."),
             obj_counted, lTotal, lPeriod));
     }
 
     if (yes_log)
     {
-        Log.tinyprintf(T("Counted %d objects using %ld msecs over %d seconds."),
+        Log.tinyprintf(M_("Counted %d objects using %ld msecs over %d seconds."),
             obj_counted, lTotal, lPeriod);
         end_log();
     }

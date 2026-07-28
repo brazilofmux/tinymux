@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 15:15+0000\n"
+"POT-Creation-Date: 2026-07-28 15:16+0000\n"
 "PO-Revision-Date: 2026-07-28 14:58+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1130,9 +1130,19 @@ msgid_plural "%d cron entries matched."
 msgstr[0] "[xx] %d cron entry matched."
 msgstr[1] "[xx] %d cron entries matched."
 
+#: modules/engine/db.cpp:557
+#, c-format
+msgid "Cannot forward to #%d: Permission denied."
+msgstr "[xx] Cannot forward to #%d: Permission denied."
+
 #: modules/engine/db.cpp:942
 msgid "No such user-named attribute."
 msgstr "[xx] No such user-named attribute."
+
+#: modules/engine/db.cpp:990
+#, c-format
+msgid "Unknown permission: %s."
+msgstr "[xx] Unknown permission: %s."
 
 #: modules/engine/db.cpp:1000
 msgid "Attribute access changed."
@@ -1154,6 +1164,36 @@ msgstr "[xx] Attribute renamed."
 msgid "Attribute deleted."
 msgstr "[xx] Attribute deleted."
 
+#: modules/engine/db.cpp:1112
+#, c-format
+msgid "Owner set to #%d"
+msgstr "[xx] Owner set to #%d"
+
+#: modules/engine/db.cpp:1119
+#, c-format
+msgid "Location set to #%d"
+msgstr "[xx] Location set to #%d"
+
+#: modules/engine/db.cpp:1126
+#, c-format
+msgid "Contents set to #%d"
+msgstr "[xx] Contents set to #%d"
+
+#: modules/engine/db.cpp:1133
+#, c-format
+msgid "Exits set to #%d"
+msgstr "[xx] Exits set to #%d"
+
+#: modules/engine/db.cpp:1140
+#, c-format
+msgid "Next set to #%d"
+msgstr "[xx] Next set to #%d"
+
+#: modules/engine/db.cpp:1147
+#, c-format
+msgid "Pennies set to %d"
+msgstr "[xx] Pennies set to %d"
+
 #: modules/engine/db.cpp:1156
 msgid "That’s not a good name for a player."
 msgstr "[xx] That’s not a good name for a player."
@@ -1166,6 +1206,11 @@ msgstr "[xx] That name is already in use or is an alias."
 msgid "That is not a reasonable name."
 msgstr "[xx] That is not a reasonable name."
 
+#: modules/engine/db.cpp:1199
+#, c-format
+msgid "Name set to %s"
+msgstr "[xx] Name set to %s"
+
 #: modules/engine/engine.cpp:29
 msgid "Dumping in progress. Try again later."
 msgstr "[xx] Dumping in progress. Try again later."
@@ -1173,6 +1218,11 @@ msgstr "[xx] Dumping in progress. Try again later."
 #: modules/engine/engine.cpp:33
 msgid "Dumping..."
 msgstr "[xx] Dumping..."
+
+#: modules/engine/engine.cpp:1332 modules/engine/engine.cpp:1338
+#, c-format
+msgid "Counted %d objects using %ld msecs over %d seconds."
+msgstr "[xx] Counted %d objects using %ld msecs over %d seconds."
 
 #: modules/engine/engine_com.cpp:4586
 msgid "*** Logins are disabled."
@@ -1557,6 +1607,11 @@ msgstr "[xx] You are carrying:"
 msgid "You don’t have enough %s."
 msgstr "[xx] You don’t have enough %s."
 
+#: modules/engine/look.cpp:2288
+#, c-format
+msgid "%s (%s)"
+msgstr "[xx] %s (%s)"
+
 #: modules/engine/look.cpp:2297
 #, c-format
 msgid "%s [dropto]"
@@ -1608,6 +1663,11 @@ msgstr "[xx] Sweeping carried exits..."
 #: modules/engine/look.cpp:2666
 msgid "Sweep complete."
 msgstr "[xx] Sweep complete."
+
+#: modules/engine/look.cpp:2758
+#, c-format
+msgid "  %s  [%d: %s]"
+msgstr "[xx]   %s  [%d: %s]"
 
 #: modules/engine/look.cpp:2774
 msgid "What command do you want to scan for?"
@@ -3237,6 +3297,23 @@ msgstr "[xx] You say, “%s”"
 msgid "%s says, “%s”"
 msgstr "[xx] %s says, “%s”"
 
+#: modules/engine/speech.cpp:236 modules/engine/speech.cpp:238
+#: modules/engine/speech.cpp:1246
+#, c-format
+msgid "%s %s"
+msgstr "[xx] %s %s"
+
+#: modules/engine/speech.cpp:244 modules/engine/speech.cpp:246
+#: modules/engine/speech.cpp:1260
+#, c-format
+msgid "%s%s"
+msgstr "[xx] %s%s"
+
+#: modules/engine/speech.cpp:433
+#, c-format
+msgid "%s%s%s%s"
+msgstr "[xx] %s%s%s%s"
+
 #: modules/engine/speech.cpp:498
 #, c-format
 msgid "%s message from %s: %s"
@@ -3508,7 +3585,8 @@ msgstr "[xx] The universe contains %d objects (next free is #%d)."
 #: modules/engine/walkdb.cpp:339
 #, c-format
 msgid "%d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"
-msgstr "[xx] %d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"
+msgstr ""
+"[xx] %d objects = %d rooms, %d exits, %d things, %d players. (%d garbage)"
 
 #: modules/engine/walkdb.cpp:472
 msgid "Victim must be a player."
@@ -3525,11 +3603,13 @@ msgstr "[xx] The mark commands are not allowed while DB cleaning is enabled."
 
 #: modules/engine/walkdb.cpp:505
 msgid "Use the ‘@disable cleaning’ command to disable automatic cleaning."
-msgstr "[xx] Use the ‘@disable cleaning’ command to disable automatic cleaning."
+msgstr ""
+"[xx] Use the ‘@disable cleaning’ command to disable automatic cleaning."
 
 #: modules/engine/walkdb.cpp:507
 msgid "Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."
-msgstr "[xx] Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."
+msgstr ""
+"[xx] Remember to ‘@mark_all/clear’ before re-enabling automatic cleaning."
 
 #: modules/engine/walkdb.cpp:599
 #, c-format
@@ -3601,7 +3681,9 @@ msgstr "[xx] Nothing found."
 msgid ""
 "\n"
 "Found:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
-msgstr "[xx] \nFound:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
+msgstr ""
+"[xx] \n"
+"Found:  Rooms...%d  Exits...%d  Objects...%d  Players...%d"
 
 #: modules/engine/walkdb.cpp:1506
 msgid "Day   Hours     Players  Total"

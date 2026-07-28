@@ -233,17 +233,17 @@ void do_say(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF8
 
     case SAY_POSE:
 #ifdef REALITY_LVLS
-        notify_except_rlevel(loc, executor, -1, tprintf(T("%s %s"), Moniker(executor), message), MSG_SAYPOSE);
+        notify_except_rlevel(loc, executor, -1, tprintf(M_("%s %s"), Moniker(executor), message), MSG_SAYPOSE);
 #else
-        notify_all_from_inside_saypose(loc, executor, tprintf(T("%s %s"), Moniker(executor), message));
+        notify_all_from_inside_saypose(loc, executor, tprintf(M_("%s %s"), Moniker(executor), message));
 #endif
         break;
 
     case SAY_POSE_NOSPC:
 #ifdef REALITY_LVLS
-        notify_except_rlevel(loc, executor, -1, tprintf(T("%s%s"), Moniker(executor), message), MSG_SAYPOSE);
+        notify_except_rlevel(loc, executor, -1, tprintf(M_("%s%s"), Moniker(executor), message), MSG_SAYPOSE);
 #else
-        notify_all_from_inside_saypose(loc, executor, tprintf(T("%s%s"), Moniker(executor), message));
+        notify_all_from_inside_saypose(loc, executor, tprintf(M_("%s%s"), Moniker(executor), message));
 #endif
         break;
 
@@ -430,7 +430,7 @@ void do_shout(dbref executor, dbref caller, dbref enactor, int eval, int key,
         safe_str(T("”"), buf2, &bp);
         *bp = '\0';
     }
-    p = tprintf(T("%s%s%s%s"), prefix, bEmit ? T("") : Moniker(executor),
+    p = tprintf(M_("%s%s%s%s"), prefix, bEmit ? T("") : Moniker(executor),
         bSpace ? T(" ") : T(""), bPose ? reinterpret_cast<UTF8 *>(message) : reinterpret_cast<UTF8 *>(buf2));
     wall_broadcast(key, executor, p);
     if (!bPose)
@@ -1243,7 +1243,7 @@ void do_pemit_single
             {
                 message = newMessage;
             }
-            p = tprintf(T("%s %s"), Moniker(target), message);
+            p = tprintf(M_("%s %s"), Moniker(target), message);
             notify_all_from_inside(loc, player, p);
             if (newMessage)
             {
@@ -1257,7 +1257,7 @@ void do_pemit_single
             {
                 message = newMessage;
             }
-            p = tprintf(T("%s%s"), Moniker(target), message);
+            p = tprintf(M_("%s%s"), Moniker(target), message);
             notify_all_from_inside(loc, player, p);
             if (newMessage)
             {
