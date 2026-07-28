@@ -95,14 +95,12 @@ sentences" are different problems:
 | | count | note |
 |---|---|---|
 | full sentences (≥20 chars) | 655 | translate directly, no code change |
-| carrying a `%`-spec | 386 | need positional args (`%1$s`) before a translator can reorder |
+| carrying a `%`-spec | 386 | reorder with POSIX `%N$` in the catalogue (`mux_vsnprintf`, #1623) |
 | short fragments (<8 chars) | 35 | `'--- '`, `'Conn'`, `'Exits:'`, `'%s: %s'` — concatenation sites |
 
-The expensive part is not extraction; it is the 386 format strings needing
-positional arguments and the 35 concatenation sites needing restructuring.
-Both are worth doing on their own merits — positional args and whole messages
-are better code whether or not a `.mo` ever ships — so they can be paid for
-before the go/no-go rather than after it.
+Positional formatting is **done** (#1623 / #1669). Remaining cost is catalogue
+work (human locales) and restructuring the 35 concatenation sites into whole
+messages where a language would need different assembly.
 
 ### 4.2 Not every `#-1` message is a literal
 
@@ -264,30 +262,32 @@ Ship at least: empty or English catalog, and one sample language for CI (e.g. `x
 - Prefer whole sentences in `T("…")` rather than concatenating translated fragments.
 - Use `ngettext` for true plurals (`1 coin` / `N coins`).
 - Existing `tprintf(T("…%s…"), …)` stays valid if translators keep format specifiers; add a CI check for `%` consistency.
-- Positional arguments (`%N$`) are a separate runtime/toolchain problem (#1623); do not conflate them with layout.
+- Positional arguments (`%N$`) are supported in `mux_vsnprintf` (#1623); do not
+  conflate them with multi-column **layout** (that was #1648 / #1667).
 
 ### 6.6 Multi-column tables (presentation constraint)
 
-Some notifies are **tables**: a header line plus aligned data rows. Today a few
-headers ship as **one msgid with column spacing baked into English** (e.g.
-`*** Channel       Header          Owner …`), while rows use independent
-`PadField` / `co_copy_field` stops in C. A translator cannot keep those aligned
-under CJK or after a stop change — see #1648.
+Some notifies are **tables**: a header line plus aligned data rows. Historically
+a few headers shipped as **one msgid with column spacing baked into English**
+(e.g. `*** Channel       Header          Owner …`), while rows used independent
+`PadField` / `co_copy_field` stops in C — see #1648.
 
-**Policy until converted:**
+**Status (2026-07-28):** **implemented** for known player/staff grids under
+#1667 (Phases 0–5 + B3 mail list lines). Layout is libmux `mux_table_*` on
+`co_copy_field`; Phase 5 (`check_nls.py`) bans new pre-spaced multi-column
+header msgids. Mail multi-line **forms** (inventory B4) remain a separate
+form-layout concern.
 
-1. **Do not translate** pre-spaced multi-column header msgids; leave `msgstr ""`
-   so English passthrough preserves layout.
+**Policy (unchanged):**
+
+1. **Do not reintroduce** pre-spaced multi-column header msgids.
 2. **Do not** “fix” one header in isolation or translate with hand-counted
-   spaces — that is a partial migration and extra work later.
+   spaces — that is a partial migration.
 3. **Do it right** means: column schema (shared widths), one msgid per label,
-   same cell primitive for header and rows (`co_copy_field`), layout API in
-   **libmux** (so modules, engine fallback, and engine-only staff tables share
-   one path). Product ownership of comsys/mail is #1614 (modules → default;
-   not re-decided here).
+   same cell primitive for header and rows, layout API in **libmux**.
 
-Full design and phases: [`design-tabular-notifies.md`](design-tabular-notifies.md).  
-Phase 1 inventory: [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md).
+Full design: [`design-tabular-notifies.md`](design-tabular-notifies.md).  
+Inventory: [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md).
 
 ---
 
@@ -298,8 +298,8 @@ Phase 1 inventory: [`inventory-tabular-notifies.md`](inventory-tabular-notifies.
 | **0 — Feasibility** (this doc + epic) | Taxonomy, platform matrix, go/no-go | Agreement on softcode ABI freeze |
 | **1 — Plumbing** | Configure detection; `mux_gettext` stub; optional link; `bindtextdomain` to `game/locale`; English passthrough | English-only CI green on Linux/Win/macOS with NLS on and off |
 | **2 — Catalog bootstrap** | `.pot` extraction; mark `S_()` for `#-1` family; first `.po` for a slice of **notify** strings only (e.g. create/destroy/quota) | One non-English sample; smoke suite still English |
-| **3 — Coverage** | Expand notify coverage; docs for translators; packaging | Most `I18N_PLAYER` strings extracted |
-| **4 — Optional** | Help-file localization strategy; per-player locale; log domain | Only if Phase 3 paid off |
+| **3 — Coverage** | Expand notify coverage; docs for translators; packaging | **Mostly done** — ~900+ pot msgids; plurals; `%N$`; tables; residual logs/admin dumps |
+| **4 — Optional** | Help-file localization strategy; per-player locale; log domain | Open — only if product wants them |
 
 **Estimated size (order of magnitude):**
 
@@ -321,7 +321,7 @@ Phase 1 inventory: [`inventory-tabular-notifies.md`](inventory-tabular-notifies.
 | macOS dylib | Homebrew gettext rpath |
 | Who maintains `.po`? | Upstream ships infrastructure + English; community translations |
 | Modules (comsys/mail) | Same rules; extract with core |
-| Pre-spaced table headers | Do not translate; convert only via tabular layout design (#1648 / `design-tabular-notifies.md`) |
+| Pre-spaced table headers | Converted for known grids (#1667); guard bans new ones; B4 mail forms still freeform |
 | Proxy / Hydra | Out of scope unless we extend the epic later |
 
 ---

@@ -15,9 +15,11 @@ See `docs/plan-server-i18n.md`.
 
 Whole notify sentences that take arguments are marked as
 `tprintf(M_("You give %d %s to %s."), …)` (same for `mux_sprintf` /
-`raw_broadcast`). Translators must keep the same conversion types in the
-same order — `mux_vsnprintf` has no positional `%1$s` yet. `make test-nls`
-rejects a msgstr whose conversion sequence differs from its msgid.
+`raw_broadcast`). Translators must keep the same conversion **types** as the
+msgid (same set of `%d` / `%s` / …). Argument **order** may change with
+POSIX positional specs (`%1$s`, `%2$d`, …) — `mux_vsnprintf` supports them
+(#1623 / #1669). `make test-nls` rejects a msgstr whose conversion *types*
+differ from its msgid; reordering via `%N$` is allowed.
 
 **Mark whole sentences.** If a sentence is assembled from pieces, either mark
 *all* of it or *none* of it. A fragment is only safe under `M_()` when every
@@ -78,26 +80,30 @@ Makefile edit.
 
 ### Argument order
 
-`mux_vsnprintf` has no positional-argument support: it stops at the `$` in
-`%1$s` and echoes the rest of the format literally. `msgfmt -c` **accepts**
-`%N$` (measured), so this is not caught at build time — the translator who
-reorders correctly gets a clean build and a broken message, while the one who
-reorders *without* `%N$` gets a build error.
+`mux_vsnprintf` implements POSIX **`%N$` positional** conversions (#1623).
+Multi-argument msgids may reorder for SOV and similar grammars, e.g.:
 
-Until that is fixed, a message with two or more conversions can only be
-translated in the English argument order. Where the target language genuinely
-reorders, record the correct translation with `%N$` and mark the entry
-`fuzzy`, so `msgfmt` excludes it and the message falls back to English; see the
-seven such entries in `ko.po`. `tests/nls/run_ko.sh` case 4 pins the current
-behaviour and will fail once positional support lands.
+```
+msgid  "You give %d %s to %s."
+msgstr "%3$s에게 %2$s %1$d개를 줍니다."
+```
+
+Keep every conversion **type** that appears in the msgid (still enforced by
+`msgfmt -c` and `tests/nls/check_nls.py`). Mixing positional and sequential
+conversions in one format is rejected at runtime (English-safe fallback).
+
+`tests/nls/run_ko.sh` case 4 requires a reordered `%N$` msgstr to substitute
+correctly (not echo a literal `%2$d`). Live Korean reorderings in `ko.po`
+use `%N$` without `fuzzy` for that reason.
 
 **Keep the `-c`.** It is `--check`, and for a `c-format` entry it verifies that
-the translation uses the same conversions as the msgid. Without it `msgfmt`
-will happily compile a catalogue in which `"You give %d %s to %s."` has been
-translated with `%s` where the `%d` was — and `mux_vsnprintf` then walks the
-integer argument as a `UTF8 *`. That is a **SIGSEGV on an ordinary `give`
-command**, not a formatting glitch; it was measured that way while the format
-slices were being designed.
+the translation uses the same conversion **types** as the msgid (order may
+differ when both sides use `%N$` or the same sequential order). Without it
+`msgfmt` will happily compile a catalogue in which `"You give %d %s to %s."`
+has been translated with `%s` where the `%d` was — and `mux_vsnprintf` then
+walks the integer argument as a `UTF8 *`. That is a **SIGSEGV on an ordinary
+`give` command**, not a formatting glitch; it was measured that way while the
+format slices were being designed.
 
 `make test` runs the same check over every `.po` in the tree
 (`tests/nls/check_nls.py`), but a translator building a catalogue outside the
