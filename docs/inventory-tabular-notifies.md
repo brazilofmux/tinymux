@@ -301,5 +301,8 @@ API. Product default may still be the built-in until #1614 directives land.
 ownership is **libmux** so dual paths and engine-only staff tables share one
 API. See `design-tabular-notifies.md` §4.
 
-**Next:** Phase 3 — layout API in libmux (no table conversion until Phase 4;
-dual families convert both sides in one change).
+**Phase 3 (layout API):** `mux_table_append_*` / `mux_table_emit_fields` in
+libmux; modules call them. **Not** yet: converting blob headers or engine
+`PadField` tables (Phase 4).
+
+**Next:** Phase 4 — convert table families (both dual paths in one change).

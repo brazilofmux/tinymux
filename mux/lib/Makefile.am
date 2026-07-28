@@ -17,7 +17,7 @@ LIBMUX_SRC = libmux.cpp \
     strtod.cpp alarm.cpp mathutil.cpp stringutil.cpp alloc.cpp dbutil.cpp \
     mux_nls.cpp
 
-LIBMUX_C_SRC = color_ops.c unicode_tables.c
+LIBMUX_C_SRC = color_ops.c unicode_tables.c mux_table.c
 
 LIBMUX_CXX_OBJS = $(LIBMUX_SRC:.cpp=.lo)
 LIBMUX_C_OBJS = $(LIBMUX_C_SRC:.c=.lo)
