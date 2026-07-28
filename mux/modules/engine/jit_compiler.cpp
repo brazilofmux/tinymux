@@ -1318,7 +1318,13 @@ struct jit_run_vm {
     uint64_t       dbt_last_program_id = 0;
 };
 
-static jit_run_vm s_vm[2];
+// Deepest nesting level that has its own context.  run_cached_program refuses
+// beyond this.  Sizes s_vm below, which s_run_cached_depth indexes -- raising
+// this must not be able to leave the array behind it.
+//
+static constexpr int JIT_MAX_RUN_DEPTH = 2;
+
+static jit_run_vm s_vm[JIT_MAX_RUN_DEPTH];
 
 // Current nesting depth of run_cached_program, and therefore the index of the
 // first context NOT in use by a live run.  Declared here rather than beside
@@ -1326,11 +1332,6 @@ static jit_run_vm s_vm[2];
 // a context that a shallower run owns overwrites the memory that run is
 // executing out of (#1326).
 static int s_run_cached_depth = 0;
-
-
-// Deepest nesting level that has its own context.  run_cached_program refuses
-// beyond this.
-static constexpr int JIT_MAX_RUN_DEPTH = 2;
 
 // Release the persistent DBT state on shutdown.
 //
@@ -5429,6 +5430,27 @@ FUNCTION(fun_jitstats)
     // dbt_code_full counting up means translations are being declined for
     // want of space; dbt_code_reclaims counts the mid-run recoveries that
     // keep such a decline local to one program instead of permanent.
+    //
+    // Summed over every initialized run context, not just depth 0 (#1326).
+    // Each nesting depth owns a separate DBT with a separate code buffer, so
+    // reading only s_vm[0] hides a nested Lua run filling its own -- and
+    // dbt_code_full is precisely the signal that would be hidden.  cap is
+    // summed the same way so used/cap stays a ratio of the same population;
+    // a context that has not been initialized has no buffer to report.
+    //
+    unsigned long long dbt_cap = 0, dbt_blob = 0, dbt_used = 0;
+    unsigned long long dbt_reclaims = 0, dbt_full = 0;
+    for (int i = 0; i < JIT_MAX_RUN_DEPTH; i++) {
+        if (!s_vm[i].dbt_ready) {
+            continue;
+        }
+        dbt_cap      += CODE_BUF_SIZE;
+        dbt_blob     += s_vm[i].dbt.blob_code_end;
+        dbt_used     += s_vm[i].dbt.code_used;
+        dbt_reclaims += s_vm[i].dbt.code_reclaims;
+        dbt_full     += s_vm[i].dbt.code_full;
+    }
+
     if (n < static_cast<int>(LBUF_SIZE) - 256) {
         n += snprintf(reinterpret_cast<char *>(tmp.get()) + n, LBUF_SIZE - n,
             " dbt_code_cap=%u"
@@ -5436,11 +5458,11 @@ FUNCTION(fun_jitstats)
             " dbt_code_used=%u"
             " dbt_code_reclaims=%llu"
             " dbt_code_full=%llu",
-            static_cast<unsigned>(CODE_BUF_SIZE),
-            static_cast<unsigned>(s_vm[0].dbt_ready ? s_vm[0].dbt.blob_code_end : 0),
-            static_cast<unsigned>(s_vm[0].dbt_ready ? s_vm[0].dbt.code_used : 0),
-            static_cast<unsigned long long>(s_vm[0].dbt_ready ? s_vm[0].dbt.code_reclaims : 0),
-            static_cast<unsigned long long>(s_vm[0].dbt_ready ? s_vm[0].dbt.code_full : 0));
+            static_cast<unsigned>(dbt_cap),
+            static_cast<unsigned>(dbt_blob),
+            static_cast<unsigned>(dbt_used),
+            static_cast<unsigned long long>(dbt_reclaims),
+            static_cast<unsigned long long>(dbt_full));
     }
 
     safe_str(tmp, buff, bufc);

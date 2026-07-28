@@ -131,6 +131,25 @@ AGREE_CASES=(
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
 # ---------------------------------------------------------------------------
+# NESTED: the same contract as EXEC, but with jit_eval_brackets ON -- the
+# production default, and the configuration in which the Lua JIT could not
+# run at all until #1326.
+#
+# With brackets compiled, fun_lua is ECALLed from inside a DBT program, so
+# run_cached_program is re-entered.  It used to refuse outright, meaning
+# `lua_jit 1` on its own executed nothing: every chunk fell back to the Lua
+# VM and every assertion here passed by way of the interpreter.  Nothing in
+# the tree covered that path, which is exactly why it stayed broken.
+#
+# Keep these few and cheap.  The point is not lowering coverage -- EXEC above
+# does that -- it is that the nested path executes at all.
+#
+NESTED_CASES=(
+    'return 1'
+    'return mux.args[1] + mux.args[2]'
+    'local a=mux.args[1]+0 return a*3'
+)
+
 EXEC_CASES=(
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
@@ -221,10 +240,10 @@ keep_work() {
     fi
 }
 
-# $1 = lua_jit, $2 = chunk, $3 = tag
+# $1 = lua_jit, $2 = chunk, $3 = tag, $4 = jit_eval_brackets (default 0)
 # Echoes: rc|result|run_ok|run_fail|compile_ok|compile_fail|kept
 run_one() {
-    local mode="$1" chunk="$2" tag="${3:-run}"
+    local mode="$1" chunk="$2" tag="${3:-run}" brackets="${4:-0}"
     rm -rf "$WORK"; mkdir -p "$WORK/data" "$WORK/logs" "$WORK/text"
     ( cd "$WORK" || exit 1
       ulimit -c unlimited 2>/dev/null || true
@@ -243,7 +262,7 @@ command_quota_max 200000
 include alias.conf
 include compat.conf
 lua_jit $mode
-jit_eval_brackets 0
+jit_eval_brackets $brackets
 EOF
       {
         echo "@create probe"
@@ -308,6 +327,8 @@ agree_declined=0
 agree_executed=0
 exec_wrong=0
 exec_no_run=0
+nested_wrong=0
+nested_no_run=0
 n=0
 
 printf '\n== SURVIVE (crash = fail; result diverge = report) ==\n'
@@ -385,11 +406,37 @@ for chunk in "${EXEC_CASES[@]}"; do
         "${chunk:0:48}" "$jrc" "${ires:0:10}" "${jres:0:10}" "$jok" "$verdict"
 done
 
+printf '\n== NESTED (brackets ON: must match AND lua_run_ok>0) ==\n'
+printf '%-48s %-4s %-10s %-10s %-8s %s\n' chunk rc interp jit run_ok verdict
+for chunk in "${NESTED_CASES[@]}"; do
+    n=$((n+1))
+    split6 "$(run_one 0 "$chunk" "n0-$n" 1)"; irc=$R_RC; ires=$R_RES
+    split6 "$(run_one 1 "$chunk" "n1-$n" 1)"; jrc=$R_RC; jres=$R_RES; jok=$R_OK; jfail=$R_FAIL; jkept=$R_KEPT
+    verdict="ok"
+    if [ "$jrc" != "0" ]; then
+        verdict="FAIL: died rc=$jrc"
+        [ -n "$jkept" ] && verdict="$verdict evidence=$jkept"
+        crashes=$((crashes+1))
+    elif [ "$irc" != "0" ]; then
+        verdict="FAIL: interp died rc=$irc"
+        crashes=$((crashes+1))
+    elif [ "$ires" != "$jres" ]; then
+        verdict="FAIL: diverges interp=$ires jit=$jres"
+        nested_wrong=$((nested_wrong+1))
+    elif [ "$jok" = "0" ]; then
+        verdict="FAIL: lua_run_ok=0 nested under bracket JIT (#1326)"
+        nested_no_run=$((nested_no_run+1))
+    fi
+    printf '%-48.48s %-4s %-10.10s %-10.10s %-8s %s\n' \
+        "$chunk" "$jrc" "$ires" "$jres" "$jok" "$verdict"
+done
+
 rm -rf "$WORK"
-total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]}))
+total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]} + ${#NESTED_CASES[@]}))
 echo
 echo "chunks: $total   crashes: $crashes   survive_diverges: $surv_div"
 echo "agree_wrong: $agree_wrong   exec_wrong: $exec_wrong   exec_no_run: $exec_no_run"
+echo "nested_wrong: $nested_wrong   nested_no_run: $nested_no_run   (of ${#NESTED_CASES[@]} NESTED chunks, brackets ON)"
 
 # Executed vs declined, separately (#1426).
 #
@@ -401,7 +448,8 @@ echo "agree_wrong: $agree_wrong   exec_wrong: $exec_wrong   exec_no_run: $exec_n
 echo "agree_executed: $agree_executed   agree_declined: $agree_declined   (of ${#AGREE_CASES[@]} AGREE chunks)"
 
 if [ "$crashes" -ne 0 ] || [ "$agree_wrong" -ne 0 ] \
-   || [ "$exec_wrong" -ne 0 ] || [ "$exec_no_run" -ne 0 ]; then
+   || [ "$exec_wrong" -ne 0 ] || [ "$exec_no_run" -ne 0 ] \
+   || [ "$nested_wrong" -ne 0 ] || [ "$nested_no_run" -ne 0 ]; then
     echo "=== tests/luajit: FAILED ==="
     if [ "$crashes" -ne 0 ]; then
         echo "  process deaths: preserved work.fail.* dirs next to this script"
@@ -412,7 +460,15 @@ if [ "$crashes" -ne 0 ] || [ "$agree_wrong" -ne 0 ] \
         echo "  Fix config (jit_eval_brackets 0) or the lowering, not the assert."
         echo "  See #1426."
     fi
-    if [ "$agree_wrong" -ne 0 ] || [ "$exec_wrong" -ne 0 ]; then
+    if [ "$nested_no_run" -ne 0 ]; then
+        echo "  NESTED cases with lua_run_ok=0: the Lua JIT did not execute"
+        echo "  under jit_eval_brackets 1.  That is the #1326 reentrancy"
+        echo "  refusal in run_cached_program, not a lowering problem -- the"
+        echo "  same chunks execute with brackets off.  Do NOT 'fix' this by"
+        echo "  setting brackets 0 here: brackets on is the production"
+        echo "  default, and covering it is the entire point of this tier."
+    fi
+    if [ "$agree_wrong" -ne 0 ] || [ "$exec_wrong" -ne 0 ] || [ "$nested_wrong" -ne 0 ]; then
         echo "  Result mismatch vs interpreter — see #1512 / open lua/jit bugs."
     fi
     exit 1
