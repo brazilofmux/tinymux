@@ -157,6 +157,18 @@ AGREE_DECLINE_BUDGET=32
 # ---------------------------------------------------------------------------
 
 EXEC_CASES=(
+    # Integer-keyed table store and load on the dedicated-opcode path
+    # (#1519).  These are the first table chunks to EXECUTE rather than
+    # decline: HIR_LUA_NEWTABLE and HIR_LUA_SETI now lower to numbered
+    # ECALLs that carry the stack index in a register, where the mechanism
+    # they replace marshalled it through guest memory as a decimal string
+    # and never completed.
+    #
+    # In EXEC rather than AGREE deliberately: agreement alone is what a
+    # decline also produces, so only lua_run_ok > 0 distinguishes "the JIT
+    # computed this" from "the interpreter did" (#1426).
+    'local t={} t[1]=5 return t[1]'
+    'local t={} t[1]=7 t[2]=9 return t[1]+t[2]'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

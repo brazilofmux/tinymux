@@ -1212,12 +1212,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int v_nrec = h.emit_iconst(nrec);
             if (v_narr < 0 || v_nrec < 0) return -1;
 
-            // Use a raw ECALL sequence: load args, set a7, ecall.
-            // The result (stack index) comes back in a0.
-            // We model this as an HIR_CALL to a special function.
-            std::string name("__lua_newtable");
-            int args[] = { v_narr, v_nrec };
-            lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
+            // Dedicated opcode, not a named HIR_CALL.  The named form went
+            // through an ECALL that marshalled the stack index as a decimal
+            // string; nothing ever completed through it and it is gone
+            // (#1519).  This keeps the index in a register, typed.
+            lua_reg[A] = h.emit(HIR_LUA_NEWTABLE, TY_LUA_HANDLE,
+                                v_narr, v_nrec);
             if (lua_reg[A] < 0) return -1;
             // Mark this as known-integer (it's a stack index).
             h.known_int[lua_reg[A]] = true;
@@ -1266,26 +1266,41 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         }
 
         case OP_LUA_SETTABI: {
-            // A = table register, B = integer key, C = value register.
+            // A = table register, B = integer key, C = value register --
+            // or, when k is set, a CONSTANT index rather than a register.
+            // Reading lua_reg[C] in that case yields -1 and the chunk
+            // declines, which is why `t[1]=5` did: the 5 is a constant.
             int tbl = lua_reg[A];
-            int val = lua_reg[insn.C()];
-            if (tbl < 0 || val < 0) return -1;
-
-            // Convert value to string if needed.
-            if (h.ty[val] == TY_INT) {
-                val = h.emit(HIR_ITOA, TY_STRING, val);
-                if (val < 0) return -1;
-            } else if (h.ty[val] == TY_FLOAT) {
-                val = h.emit(HIR_FTOA, TY_STRING, val);
-                if (val < 0) return -1;
+            if (tbl < 0) return -1;
+            int val;
+            if (insn.k()) {
+                if (insn.C() < 0
+                 || insn.C() >= static_cast<int>(proto->constants.size())) {
+                    return -1;
+                }
+                const lua_bc_constant &kv = proto->constants[insn.C()];
+                if (kv.type != LUA_BC_TINT) return -1;   // ints only, as below
+                val = h.emit_iconst(kv.ival);
+            } else {
+                val = lua_reg[insn.C()];
             }
+            if (val < 0) return -1;
+
+            // Integer values only.  The dedicated ECALL carries the value
+            // in a register (a2), so there is nowhere for a string to ride;
+            // the named form it replaces stringified everything and never
+            // completed (#1519).  Decline the rest rather than invent a
+            // marshalling for it -- the interpreter answers, correctly.
+            if (h.ty[val] != TY_INT) return -1;
+            if (lua_is_handle(h, val)) return -1;
 
             int key = h.emit_iconst(insn.B());
             if (key < 0) return -1;
 
-            std::string name("__lua_seti");
-            int args[] = { tbl, key, val };
-            h.emit_call(TY_STRING, 0, args, 3, &name);
+            // Third operand rides in val[]; see hir_val_operand() in hir.h,
+            // which the liveness walker consults so the register holding the
+            // stored value is not recycled before the ECALL reads it.
+            if (h.emit(HIR_LUA_SETI, TY_VOID, tbl, key, val) < 0) return -1;
             h.ecalls++;
             break;
         }
