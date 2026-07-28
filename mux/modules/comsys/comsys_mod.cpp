@@ -30,6 +30,7 @@
 #include "core.h"
 #include "mux_format.h"
 #include "color_ops.h"
+#include "mux_table.h"
 #include "comsys_mod.h"
 
 #include <atomic>
@@ -42,65 +43,10 @@
 #define strcasecmp _stricmp
 #endif
 
-
-// ---------------------------------------------------------------------------
-// Column layout via co_copy_field (#1649 / #1653 / #1656).
-// ---------------------------------------------------------------------------
-
-static size_t append_ljust_field(
-    UTF8 *buf, size_t nBuf, size_t pos,
-    const UTF8 *text, size_t nCols)
-{
-    if (pos + 1 >= nBuf)
-    {
-        if (0 < nBuf)
-        {
-            buf[nBuf - 1] = '\0';
-        }
-        return pos;
-    }
-
-    const unsigned char *src = (nullptr != text)
-        ? reinterpret_cast<const unsigned char *>(text)
-        : reinterpret_cast<const unsigned char *>("");
-
-    co_field fld = co_copy_field(
-        reinterpret_cast<unsigned char *>(buf + pos),
-        nBuf - pos, src, nullptr, nCols);
-
-    pos += fld.bytes;
-    size_t cols = fld.columns;
-    while (  cols < nCols
-          && pos + 1 < nBuf)
-    {
-        buf[pos++] = ' ';
-        cols++;
-    }
-    if (pos < nBuf)
-    {
-        buf[pos] = '\0';
-    }
-    return pos;
-}
-
-static size_t append_bytes(
-    UTF8 *buf, size_t nBuf, size_t pos, const char *lit)
-{
-    if (nullptr == lit)
-    {
-        return pos;
-    }
-    while (  '\0' != *lit
-          && pos + 1 < nBuf)
-    {
-        buf[pos++] = static_cast<UTF8>(*lit++);
-    }
-    if (pos < nBuf)
-    {
-        buf[pos] = '\0';
-    }
-    return pos;
-}
+// Column layout: libmux mux_table_* on co_copy_field (#1667 Phase 3).
+//
+#define append_ljust_field  mux_table_append_ljust
+#define append_bytes        mux_table_append_bytes
 
 // Module bookkeeping.
 //

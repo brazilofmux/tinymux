@@ -37,7 +37,7 @@ for a in "$@"; do
         *)  TARGETS="$TARGETS $a" ;;
     esac
 done
-[ -n "$TARGETS" ] || TARGETS="format netaddr alarm"
+[ -n "$TARGETS" ] || TARGETS="format netaddr alarm table"
 
 if [ ! -f "$BIN_RELEASE/libmux.lib" ]; then
     echo "ERROR: $BIN_RELEASE/libmux.lib not found. Build netmux.sln first." >&2

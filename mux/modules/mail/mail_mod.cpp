@@ -25,6 +25,7 @@
 #include "mux_nls.h"
 #include "mux_format.h"
 #include "color_ops.h"
+#include "mux_table.h"
 
 #include <algorithm>
 #include <atomic>
@@ -40,116 +41,12 @@
 #define strtok_r    strtok_s
 #endif
 
-// ---------------------------------------------------------------------------
-// Column layout via co_copy_field (#1649 / #1653).
+// Column layout: libmux mux_table_* on co_copy_field (#1667 Phase 3).
 //
-// Same contract as comsys_mod: %-N.Ns / %.Ns on player names and subjects
-// must measure display columns, cut on grapheme clusters, and close color.
-// ---------------------------------------------------------------------------
-
-// Append a left-justified field of nCols display columns at buf[pos].
-// Truncates by grapheme cluster; pads with spaces.  nBuf includes the
-// trailing NUL.  Returns the new write position.
-//
-static size_t append_ljust_field(
-    UTF8 *buf, size_t nBuf, size_t pos,
-    const UTF8 *text, size_t nCols)
-{
-    if (pos + 1 >= nBuf)
-    {
-        if (0 < nBuf)
-        {
-            buf[nBuf - 1] = '\0';
-        }
-        return pos;
-    }
-
-    const unsigned char *src = (nullptr != text)
-        ? reinterpret_cast<const unsigned char *>(text)
-        : reinterpret_cast<const unsigned char *>("");
-
-    co_field fld = co_copy_field(
-        reinterpret_cast<unsigned char *>(buf + pos),
-        nBuf - pos, src, nullptr, nCols);
-
-    pos += fld.bytes;
-    size_t cols = fld.columns;
-    while (  cols < nCols
-          && pos + 1 < nBuf)
-    {
-        buf[pos++] = ' ';
-        cols++;
-    }
-    if (pos < nBuf)
-    {
-        buf[pos] = '\0';
-    }
-    return pos;
-}
-
-// Truncate to nCols display columns without padding (printf %.Ns).
-//
-static size_t append_trunc_field(
-    UTF8 *buf, size_t nBuf, size_t pos,
-    const UTF8 *text, size_t nCols)
-{
-    if (pos + 1 >= nBuf)
-    {
-        if (0 < nBuf)
-        {
-            buf[nBuf - 1] = '\0';
-        }
-        return pos;
-    }
-
-    const unsigned char *src = (nullptr != text)
-        ? reinterpret_cast<const unsigned char *>(text)
-        : reinterpret_cast<const unsigned char *>("");
-
-    co_field fld = co_copy_field(
-        reinterpret_cast<unsigned char *>(buf + pos),
-        nBuf - pos, src, nullptr, nCols);
-
-    pos += fld.bytes;
-    if (pos < nBuf)
-    {
-        buf[pos] = '\0';
-    }
-    return pos;
-}
-
-// Append a C-string literal (separators, fixed labels).  Returns new pos.
-//
-static size_t append_bytes(
-    UTF8 *buf, size_t nBuf, size_t pos, const char *lit)
-{
-    if (nullptr == lit)
-    {
-        return pos;
-    }
-    while (  '\0' != *lit
-          && pos + 1 < nBuf)
-    {
-        buf[pos++] = static_cast<UTF8>(*lit++);
-    }
-    if (pos < nBuf)
-    {
-        buf[pos] = '\0';
-    }
-    return pos;
-}
-
-// Advance pos to the end of a NUL-terminated prefix just written into buf.
-//
-static size_t pos_after(UTF8 *buf, size_t nBuf, size_t pos)
-{
-    while (  pos < nBuf
-          && '\0' != buf[pos])
-    {
-        pos++;
-    }
-    return pos;
-}
+#define append_ljust_field  mux_table_append_ljust
+#define append_trunc_field  mux_table_append_trunc
+#define append_bytes        mux_table_append_bytes
+#define pos_after           mux_table_pos_after
 
 // mux_sprintf is void; call sites that need the written length (bp += …,
 // truncation checks against remain) go through this.  Returns bytes written
