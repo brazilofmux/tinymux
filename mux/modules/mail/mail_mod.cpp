@@ -5942,8 +5942,12 @@ MUX_RESULT CMailMod::CheckMail(dbref player, int folder, bool silent)
     }
     else if (!silent)
     {
-        m_pINotify->RawNotify(player,
-            T("\r\nMAIL: You have no mail.\r\n"));
+        // Blank lines stay bare; prose is M_ without embedded CR (#1443 / #1419).
+        // Matches engine do_mail_count.
+        //
+        m_pINotify->RawNotify(player, T(""));
+        m_pINotify->RawNotify(player, M_("MAIL: You have no mail."));
+        m_pINotify->RawNotify(player, T(""));
     }
     if (gc > 0)
     {
