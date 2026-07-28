@@ -1,58 +1,47 @@
-# Korean translation of TinyMUX server messages (#1419).
+# Spanish translation of TinyMUX server messages (#1419).
 #
-# Conformance locale.  Korean was chosen over Spanish deliberately: it is SOV
-# with postpositions, so it reorders arguments where an SVO language would not,
-# and reordering is the one property the `xx` pseudo-locale cannot test.  See
-# the analysis on #1419.
+# Partial by design.  This covers the moment-to-moment player loop --
+# movement, taking and dropping, giving, speech, paging, looking, the common
+# refusals and the building verbs.  Untranslated msgids fall back to English,
+# which is normal gettext behaviour, so the catalogue is usable at any
+# coverage.
 #
-# This catalogue is partial by design -- it covers the messages that exercise
-# the runtime contract plus the common player-facing set.  Untranslated msgids
-# fall back to English, which is the normal gettext behaviour.
+# NOT NATIVE-REVIEWED.  Written to be grammatical and idiomatic for a MU*
+# register (informal "tu" throughout), but no native speaker has read it.
+# Wording that is merely *correct* is not the same as wording a player would
+# actually use, and the difference is exactly what a native speaker sees at a
+# glance and a non-native one does not.  Corrections are wanted; that is the
+# point of shipping it.
 #
-# NOT NATIVE-REVIEWED.  The Korean here is intended to be structurally correct
-# (particles, argument order, counter placement) so that it exercises the
-# runtime honestly.  A native speaker should review the wording before this is
-# offered to players.
+# Deliberate choices a reviewer should know about, so they can disagree with
+# them on purpose rather than "fix" them by accident:
+#
+#   * Informal "tu", never "usted".  The English is informal and a MU* is not
+#     a bank.
+#   * "coger" is avoided entirely in favour of "tomar" / "recoger".  It is
+#     the ordinary verb for "to take" in Spain and vulgar in much of Latin
+#     America, and a game cannot ask its players which one they are.
+#   * Typographic quotes are kept as the source uses them, so speech renders
+#     consistently with the rest of the game rather than switching to
+#     Spanish angle quotes for translated lines only.
+#   * "page" is rendered "contactar", not left as an English verb.
 #
 # This file is distributed under the same license as the TinyMUX package.
-#
-# Extended (#1419, second tranche): the moment-to-moment player loop --
-# movement, taking and dropping, giving, speech, paging, looking and the
-# common refusals.  Still partial and still not native-reviewed.
-#
-# Two conventions worth a reviewer's attention, because they were CHANGED
-# rather than merely added:
-#
-#   * Speech was "%s님이 말합니다, “%s”" -- verb first, then the quote, which
-#     mirrors English word order.  It is now "%s님이 “%s”(이)라고 말합니다.",
-#     the ordinary Korean quotative.  If the original order was deliberate
-#     (to keep the quote at the end of the line for a client that truncates,
-#     say), revert it and leave a note -- it was not obvious either way.
-#
-#   * The quotative particle needs 이라고 after a consonant and 라고 after a
-#     vowel, and the quoted text is a %s whose ending cannot be known.  It is
-#     written "(이)라고", matching how this file already handles 을(를),
-#     이(가) and (으)로 for the same reason.
-#
-# Giving and counting reorder with %N$ because Korean puts the recipient
-# before the object and the counter after the noun.  That is the property
-# this catalogue exists to exercise (tests/nls/run_ko.sh case 4).
-#
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
 "POT-Creation-Date: 2026-07-28 18:11+0000\n"
-"PO-Revision-Date: 2026-07-27 00:00+0000\n"
-"Last-Translator: unassigned <tinymux@googlegroups.com>\n"
-"Language-Team: Korean <tinymux@googlegroups.com>\n"
-"Language: ko\n"
+"PO-Revision-Date: 2026-07-28 18:11+0000\n"
+"Last-Translator: unattributed -- see header\n"
+"Language-Team: none\n"
+"X-Tinymux-Catalogue: partial\n"
+"Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-"X-Tinymux-Catalogue: partial\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: lib/alloc.cpp:567
 msgid "*** CORRUPTED BUFFER HEADER, ABORTING SCAN ***"
@@ -92,7 +81,7 @@ msgstr ""
 
 #: modules/engine/boolexp.cpp:122 modules/engine/boolexp.cpp:144
 msgid "Sorry, broken lock!"
-msgstr "죄송합니다, 잠금이 손상되었습니다!"
+msgstr ""
 
 #: modules/engine/boolexp.cpp:485
 #, c-format
@@ -127,7 +116,7 @@ msgstr ""
 #: modules/engine/command.cpp:685 modules/engine/match.cpp:19
 #: modules/engine/match.cpp:36
 msgid "Permission denied."
-msgstr "권한이 없습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:703
 msgid "Usage: @lua <object>/<attribute>"
@@ -135,7 +124,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:718
 msgid "No such object."
-msgstr "그런 사물이 없습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:1453
 msgid "Command incompatible with executor type."
@@ -143,7 +132,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:1471
 msgid "Sorry, building is not allowed now."
-msgstr "죄송합니다, 지금은 건축이 허용되지 않습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:1476
 msgid "Sorry, queueing and triggering are not allowed now."
@@ -158,7 +147,7 @@ msgstr ""
 #: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:330
 #: modules/engine/wiz.cpp:820 modules/engine/wiz.cpp:908
 msgid "Illegal combination of switches."
-msgstr "스위치 조합이 잘못되었습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:1546
 #, c-format
@@ -167,7 +156,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:2981
 msgid "Huh?  (Type “help” for help.)"
-msgstr "네?  (도움말을 보려면 “help”를 입력하세요.)"
+msgstr ""
 
 #: modules/engine/command.cpp:3645
 #, c-format
@@ -441,7 +430,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:4139
 msgid "Modules:"
-msgstr "모듈:"
+msgstr ""
 
 #: modules/engine/command.cpp:4214
 msgid "Reality levels:"
@@ -461,7 +450,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:4242
 msgid "--Completed."
-msgstr "--완료했습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:4430
 msgid "Lua module loaded (Lua 5.4)."
@@ -480,7 +469,7 @@ msgstr ""
 #: modules/engine/command.cpp:4652 modules/engine/command.cpp:4677
 #: modules/engine/command.cpp:4889
 msgid "@icmd: Done."
-msgstr "@icmd: 완료했습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:4562
 msgid "Location CmdCheck attribute is:"
@@ -532,7 +521,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:4910
 msgid "Bad location."
-msgstr "위치가 잘못되었습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:4917
 msgid "Train requires an argument."
@@ -544,7 +533,7 @@ msgstr ""
 
 #: modules/engine/command.cpp:4963
 msgid "Moniker set."
-msgstr "별명이 설정되었습니다."
+msgstr ""
 
 #: modules/engine/command.cpp:5094
 msgid "@hook: Non-existent command name given."
@@ -568,7 +557,7 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:1546
 msgid "No message."
-msgstr "메시지가 없습니다."
+msgstr ""
 
 #: modules/engine/comsys.cpp:1556 modules/engine/comsys.cpp:2597
 #: modules/engine/comsys.cpp:3232 modules/engine/comsys.cpp:3496
@@ -599,7 +588,7 @@ msgstr ""
 #: modules/engine/walkdb.cpp:231
 #, c-format
 msgid "You don’t have enough %s."
-msgstr "%s이(가) 충분하지 않습니다."
+msgstr "No tienes suficientes %s."
 
 #: modules/engine/comsys.cpp:1979
 #, c-format
@@ -618,11 +607,11 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:2102
 msgid "-- Players --"
-msgstr "-- 플레이어 --"
+msgstr ""
 
 #: modules/engine/comsys.cpp:2124
 msgid "-- Objects --"
-msgstr "-- 사물 --"
+msgstr ""
 
 #: modules/engine/comsys.cpp:2141 modules/engine/comsys.cpp:3250
 #: modules/engine/comsys.cpp:3288
@@ -762,7 +751,7 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:2944
 msgid "Unknown alias."
-msgstr "알 수 없는 별칭입니다."
+msgstr ""
 
 #: modules/engine/comsys.cpp:2956
 #, c-format
@@ -837,7 +826,7 @@ msgstr ""
 #: modules/engine/set.cpp:427 modules/engine/set.cpp:492
 #: modules/engine/set.cpp:1169 modules/engine/set.cpp:1327
 msgid "Set."
-msgstr "설정되었습니다."
+msgstr ""
 
 #: modules/engine/comsys.cpp:3529
 msgid "Invalid player."
@@ -853,7 +842,7 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:3575
 msgid "@cpflags: Set."
-msgstr "@cpflags: 설정되었습니다."
+msgstr ""
 
 #: modules/engine/comsys.cpp:3580
 msgid "@cpflags: Cleared."
@@ -865,7 +854,7 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:3611
 msgid "@coflags: Set."
-msgstr "@coflags: 설정되었습니다."
+msgstr ""
 
 #: modules/engine/comsys.cpp:3616
 msgid "@coflags: Cleared."
@@ -982,7 +971,7 @@ msgstr ""
 
 #: modules/engine/comsys.cpp:3967
 msgid "@cboot: You can’t do that!"
-msgstr "@cboot: 그렇게 할 수 없습니다!"
+msgstr ""
 
 #: modules/engine/comsys.cpp:3979
 #, c-format
@@ -1016,7 +1005,7 @@ msgstr ""
 
 #: modules/engine/conf.cpp:517
 msgid "Nothing to set"
-msgstr "설정할 것이 없습니다"
+msgstr ""
 
 #: modules/engine/conf.cpp:939 modules/engine/conf.cpp:998
 msgid "String truncated"
@@ -1055,6 +1044,7 @@ msgstr ""
 msgid "%d queue entry removed."
 msgid_plural "%d queue entries removed."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/cque.cpp:841 modules/engine/cque.cpp:2002
 msgid "Can’t specify a target and /all"
@@ -1062,11 +1052,11 @@ msgstr ""
 
 #: modules/engine/cque.cpp:1116
 msgid "Drained."
-msgstr "비웠습니다."
+msgstr ""
 
 #: modules/engine/cque.cpp:1120
 msgid "Notified."
-msgstr "알렸습니다."
+msgstr ""
 
 #: modules/engine/cque.cpp:1161
 msgid "Not enough money to queue command."
@@ -1093,7 +1083,7 @@ msgstr ""
 #: modules/engine/set.cpp:2148 modules/engine/set.cpp:2256
 #: modules/engine/wiz.cpp:72
 msgid "No match."
-msgstr "일치하는 것이 없습니다."
+msgstr ""
 
 #: modules/engine/cque.cpp:1761
 msgid "QUERY: No Query."
@@ -1204,92 +1194,92 @@ msgstr ""
 
 #: modules/engine/create.cpp:34
 msgid "That’s not a valid object."
-msgstr "올바른 사물이 아닙니다."
+msgstr "Eso no es un objeto válido."
 
 #: modules/engine/create.cpp:40
 msgid "You can’t link to that."
-msgstr "그것에 연결할 수 없습니다."
+msgstr "No puedes enlazar a eso."
 
 #: modules/engine/create.cpp:61
 msgid "Open where?"
-msgstr "어디에 열까요?"
+msgstr "¿Abrir dónde?"
 
 #: modules/engine/create.cpp:95
 msgid "Opened."
-msgstr "열었습니다."
+msgstr "Abierto."
 
 #: modules/engine/create.cpp:112
 msgid "You can’t link to there."
-msgstr ""
+msgstr "No puedes enlazar ahí."
 
 #: modules/engine/create.cpp:121
 #, c-format
 msgid "You don’t have enough %s to link."
-msgstr ""
+msgstr "No tienes suficientes %s para enlazar."
 
 #: modules/engine/create.cpp:127 modules/engine/create.cpp:252
 msgid "Linked."
-msgstr "연결되었습니다."
+msgstr "Enlazado."
 
 #: modules/engine/create.cpp:334
 msgid "Can’t link to an exit."
-msgstr "출구에는 연결할 수 없습니다."
+msgstr "No se puede enlazar a una salida."
 
 #: modules/engine/create.cpp:344
 msgid "Can’t set home to home."
-msgstr ""
+msgstr "No se puede fijar la casa a sí misma."
 
 #: modules/engine/create.cpp:362
 #, c-format
 msgid "Home of %s(#%d) changed from %s(#%d) to %s(#%d)."
-msgstr "%s(#%d)의 집이 %s(#%d)에서 %s(#%d)(으)로 변경되었습니다."
+msgstr ""
 
 #: modules/engine/create.cpp:394
 msgid "That is not a room!"
-msgstr "방이 아닙니다!"
+msgstr "¡Eso no es una habitación!"
 
 #: modules/engine/create.cpp:414
 #, c-format
 msgid "Dropto of %s(#%d) changed from %s(#%d) to %s(#%d)."
-msgstr "%s(#%d)의 낙하 지점이 %s(#%d)에서 %s(#%d)(으)로 변경되었습니다."
+msgstr ""
 
 #: modules/engine/create.cpp:522
 msgid "You can’t have yourself as a parent!"
-msgstr ""
+msgstr "¡No puedes ser tu propio padre!"
 
 #: modules/engine/create.cpp:598
 msgid "Parent cleared."
-msgstr "부모가 해제되었습니다."
+msgstr "Padre eliminado."
 
 #: modules/engine/create.cpp:602
 msgid "Parent set."
-msgstr "부모가 설정되었습니다."
+msgstr "Padre establecido."
 
 #: modules/engine/create.cpp:622
 msgid "Dig what?"
-msgstr "어떤 방을 만들까요?"
+msgstr "¿Excavar qué?"
 
 #: modules/engine/create.cpp:640
 #, c-format
 msgid "%s created as room #%d."
-msgstr "%s을(를) 방 #%d(으)로 만들었습니다."
+msgstr ""
 
 #: modules/engine/create.cpp:691
 msgid "Create what?"
-msgstr "무엇을 만들까요?"
+msgstr "¿Crear qué?"
 
 #: modules/engine/create.cpp:697
 msgid "You can’t create an object for less than nothing!"
-msgstr ""
+msgstr "¡No puedes crear un objeto por menos que nada!"
 
 #: modules/engine/create.cpp:710
 #, c-format
 msgid "%s created as object #%d"
-msgstr "%s을(를) 사물 #%d(으)로 만들었습니다"
+msgstr ""
 
 #: modules/engine/create.cpp:785
 msgid "You cannot clone players!"
-msgstr ""
+msgstr "¡No puedes clonar jugadores!"
 
 #: modules/engine/create.cpp:796
 #, c-format
@@ -1299,12 +1289,12 @@ msgstr ""
 #: modules/engine/create.cpp:910
 #, c-format
 msgid "%s cloned as %s, new copy is object #%d."
-msgstr "%s을(를) %s(으)로 복제했으며, 새 사본은 사물 #%d입니다."
+msgstr ""
 
 #: modules/engine/create.cpp:916
 #, c-format
 msgid "%s cloned, new copy is object #%d."
-msgstr "%s을(를) 복제했으며, 새 사본은 사물 #%d입니다."
+msgstr ""
 
 #: modules/engine/create.cpp:1034
 #, c-format
@@ -1314,38 +1304,36 @@ msgstr ""
 #: modules/engine/create.cpp:1043
 #, c-format
 msgid "New robot ‘%s’ (#%d) created with password ‘%s’"
-msgstr "새 로봇 ‘%s’ (#%d)을(를) 비밀번호 ‘%s’(으)로 만들었습니다"
+msgstr ""
 
 #: modules/engine/create.cpp:1045
 msgid "Your robot has arrived."
-msgstr "당신의 로봇이 도착했습니다."
+msgstr "Tu robot ha llegado."
 
 #: modules/engine/create.cpp:1056
 #, c-format
 msgid "New player ‘%s’ (#%d) created with password ‘%s’"
-msgstr "새 플레이어 ‘%s’ (#%d)을(를) 비밀번호 ‘%s’(으)로 만들었습니다"
+msgstr ""
 
 #: modules/engine/create.cpp:1091
 msgid "Sorry, no suicide allowed."
-msgstr "죄송합니다, 자살은 허용되지 않습니다."
+msgstr "Lo siento, no se permite el suicidio."
 
 #: modules/engine/create.cpp:1096
 msgid "Even you can’t do that!"
-msgstr "당신조차도 그렇게 할 수 없습니다!"
+msgstr "¡Ni siquiera tú puedes hacer eso!"
 
 #: modules/engine/create.cpp:1207
 msgid "Sorry, that object is protected.  Use @destroy/override to destroy it."
-msgstr ""
-"죄송합니다, 그 사물은 보호되어 있습니다.  삭제하려면 @destroy/override를 사용"
-"하세요."
+msgstr "Lo siento, ese objeto está protegido.  Usa @destroy/override para destruirlo."
 
 #: modules/engine/create.cpp:1215
 msgid "That object is indestructible."
-msgstr "그 사물은 삭제할 수 없습니다."
+msgstr "Ese objeto es indestructible."
 
 #: modules/engine/create.cpp:1223
 msgid "You can’t destroy that!"
-msgstr "그것을 삭제할 수 없습니다!"
+msgstr "¡No puedes destruir eso!"
 
 #: modules/engine/create.cpp:1241
 #, c-format
@@ -1354,7 +1342,7 @@ msgstr ""
 
 #: modules/engine/create.cpp:1259
 msgid "The room shakes and begins to crumble."
-msgstr ""
+msgstr "La habitación tiembla y comienza a desmoronarse."
 
 #: modules/engine/create.cpp:1271
 msgid "Player has a lot of attributes. Performing destruction immediately."
@@ -1363,7 +1351,7 @@ msgstr ""
 #: modules/engine/create.cpp:1279
 #, c-format
 msgid "The %s shakes and begins to crumble."
-msgstr ""
+msgstr "%s tiembla y comienza a desmoronarse."
 
 #: modules/engine/create.cpp:1284 modules/engine/create.cpp:1353
 msgid "Weird object type cannot be destroyed."
@@ -1377,12 +1365,12 @@ msgstr ""
 #: modules/engine/create.cpp:1308 modules/engine/create.cpp:1314
 #, c-format
 msgid "Destroyed %s(#%d)."
-msgstr "%s(#%d)을(를) 삭제했습니다."
+msgstr ""
 
 #: modules/engine/create.cpp:1321
 #, c-format
 msgid "Destroyed %s’s %s(#%d)."
-msgstr "%s님의 %s(#%d)을(를) 삭제했습니다."
+msgstr ""
 
 #: modules/engine/cron.cpp:736
 msgid "Usage: @cron <object>/<attribute> = <timestring>"
@@ -1409,6 +1397,7 @@ msgstr ""
 msgid "%d cron entry removed."
 msgid_plural "%d cron entries removed."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/cron.cpp:889
 #, c-format
@@ -1425,6 +1414,7 @@ msgstr ""
 msgid "%d cron entry matched."
 msgid_plural "%d cron entries matched."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/db.cpp:557
 #, c-format
@@ -1492,7 +1482,7 @@ msgstr ""
 
 #: modules/engine/db.cpp:1156
 msgid "That’s not a good name for a player."
-msgstr "플레이어 이름으로 적합하지 않습니다."
+msgstr ""
 
 #: modules/engine/db.cpp:1165
 msgid "That name is already in use or is an alias."
@@ -1513,7 +1503,7 @@ msgstr ""
 
 #: modules/engine/engine.cpp:33
 msgid "Dumping..."
-msgstr "저장하는 중..."
+msgstr ""
 
 #: modules/engine/engine.cpp:1332 modules/engine/engine.cpp:1338
 #, c-format
@@ -1591,7 +1581,7 @@ msgstr ""
 #: modules/engine/levels.cpp:444 modules/engine/powers.cpp:276
 #: modules/engine/set.cpp:1323
 msgid "Cleared."
-msgstr "삭제되었습니다."
+msgstr ""
 
 #: modules/engine/flags.cpp:830 modules/engine/powers.cpp:281
 #: modules/engine/set.cpp:1289
@@ -1601,7 +1591,7 @@ msgstr ""
 #: modules/engine/flags.cpp:830 modules/engine/powers.cpp:281
 #: modules/engine/set.cpp:1293
 msgid "Already set."
-msgstr "이미 설정되어 있습니다."
+msgstr ""
 
 #: modules/engine/flags.cpp:1158
 msgid "Special flags cannot be modified with flag_access."
@@ -1649,7 +1639,7 @@ msgstr ""
 
 #: modules/engine/funceval2.cpp:888
 msgid "Illegal step size."
-msgstr "단계 크기가 잘못되었습니다."
+msgstr ""
 
 #: modules/engine/functions.cpp:15722
 msgid "Function Name"
@@ -1693,7 +1683,7 @@ msgstr ""
 #: modules/engine/functions.cpp:15843 modules/engine/predicates.cpp:1020
 #: modules/engine/predicates.cpp:1254 modules/engine/predicates.cpp:1563
 msgid "No such attribute."
-msgstr "그런 속성이 없습니다."
+msgstr "No existe ese atributo."
 
 #: modules/engine/functions.cpp:15884
 #, c-format
@@ -1726,7 +1716,7 @@ msgstr ""
 
 #: modules/engine/help.cpp:397
 msgid "Sorry, that function is temporarily unavailable."
-msgstr "죄송합니다, 그 함수는 일시적으로 사용할 수 없습니다."
+msgstr ""
 
 #: modules/engine/help.cpp:414
 #, c-format
@@ -1740,7 +1730,7 @@ msgstr ""
 #: modules/engine/levels.cpp:281 modules/engine/levels.cpp:382
 #: modules/engine/set.cpp:1240 modules/engine/set.cpp:1418
 msgid "I don’t know what you want to set!"
-msgstr "무엇을 설정하려는지 알 수 없습니다!"
+msgstr ""
 
 #: modules/engine/levels.cpp:325 modules/engine/levels.cpp:426
 msgid "You must specify a reality level to clear."
@@ -1769,24 +1759,24 @@ msgstr ""
 #: modules/engine/look.cpp:553
 #, c-format
 msgid "%s leads to %s."
-msgstr "%s은(는) %s(으)로 이어집니다."
+msgstr "%s lleva a %s."
 
 #: modules/engine/look.cpp:1313
 msgid "You see nothing special."
-msgstr "특별한 것은 보이지 않습니다."
+msgstr "No ves nada especial."
 
 #: modules/engine/look.cpp:1501 modules/engine/look.cpp:2028
 #: modules/engine/look.cpp:2142
 msgid "Contents:"
-msgstr "내용물:"
+msgstr ""
 
 #: modules/engine/look.cpp:1526
 msgid "You can’t look outside."
-msgstr "밖을 볼 수 없습니다."
+msgstr "No puedes mirar afuera."
 
 #: modules/engine/look.cpp:1615
 msgid "Carrying:"
-msgstr "소지품:"
+msgstr ""
 
 #: modules/engine/look.cpp:1647
 #, c-format
@@ -1865,7 +1855,7 @@ msgstr ""
 
 #: modules/engine/look.cpp:1684
 msgid "Attr list: "
-msgstr "속성 목록: "
+msgstr ""
 
 #: modules/engine/look.cpp:1793 modules/engine/look.cpp:1954
 msgid "<Too far away to get a good look>"
@@ -1873,17 +1863,17 @@ msgstr ""
 
 #: modules/engine/look.cpp:1800
 msgid "No matching attributes found."
-msgstr "일치하는 속성을 찾을 수 없습니다."
+msgstr "No se encontraron atributos coincidentes."
 
 #: modules/engine/look.cpp:1919 modules/engine/look.cpp:2157
 #, c-format
 msgid "%s is owned by %s"
-msgstr "%s은(는) %s님의 소유입니다"
+msgstr "%s es propiedad de %s"
 
 #: modules/engine/look.cpp:1925 modules/engine/look.cpp:2162
 #, c-format
 msgid "Owned by %s"
-msgstr "%s님의 소유입니다"
+msgstr "Propiedad de %s"
 
 #: modules/engine/look.cpp:1980
 #, c-format
@@ -1918,11 +1908,11 @@ msgstr ""
 #: modules/engine/look.cpp:2046 modules/engine/look.cpp:2076
 #: modules/engine/look.cpp:2208
 msgid "Exits:"
-msgstr "출구:"
+msgstr ""
 
 #: modules/engine/look.cpp:2056 modules/engine/look.cpp:2086
 msgid "No exits."
-msgstr "출구가 없습니다."
+msgstr "No hay salidas."
 
 #: modules/engine/look.cpp:2064
 #, c-format
@@ -1956,11 +1946,11 @@ msgstr ""
 #: modules/engine/look.cpp:2175
 #, c-format
 msgid "You have %d %s."
-msgstr "%2$s을(를) %1$d개 가지고 있습니다."
+msgstr "Tienes %d %s."
 
 #: modules/engine/look.cpp:2192
 msgid "You aren’t carrying anything."
-msgstr "아무것도 가지고 있지 않습니다."
+msgstr "No llevas nada."
 
 #: modules/engine/look.cpp:2196
 msgid "You are carrying:"
@@ -1996,6 +1986,7 @@ msgstr ""
 msgid "%d entrance found."
 msgid_plural "%d entrances found."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/look.cpp:2540 modules/engine/look.cpp:2552
 #, c-format
@@ -2004,23 +1995,23 @@ msgstr ""
 
 #: modules/engine/look.cpp:2603
 msgid "Sweeping location..."
-msgstr "위치를 살피는 중..."
+msgstr "Rastreando la ubicación..."
 
 #: modules/engine/look.cpp:2636
 msgid "Sweeping exits..."
-msgstr "출구를 살피는 중..."
+msgstr "Rastreando las salidas..."
 
 #: modules/engine/look.cpp:2648
 msgid "Sweeping inventory..."
-msgstr "소지품을 살피는 중..."
+msgstr "Rastreando el inventario..."
 
 #: modules/engine/look.cpp:2660
 msgid "Sweeping carried exits..."
-msgstr ""
+msgstr "Rastreando las salidas transportadas..."
 
 #: modules/engine/look.cpp:2666
 msgid "Sweep complete."
-msgstr "살피기를 완료했습니다."
+msgstr "Rastreo completo."
 
 #: modules/engine/look.cpp:2758
 #, c-format
@@ -2029,7 +2020,7 @@ msgstr ""
 
 #: modules/engine/look.cpp:2774
 msgid "What command do you want to scan for?"
-msgstr ""
+msgstr "¿Qué comando quieres buscar?"
 
 #: modules/engine/look.cpp:2803
 msgid "Check yourself and your inventory:"
@@ -2041,7 +2032,7 @@ msgstr ""
 
 #: modules/engine/look.cpp:2841
 msgid "Checking zone:"
-msgstr "구역 확인 중:"
+msgstr ""
 
 #: modules/engine/look.cpp:2887
 msgid "Checking master room:"
@@ -2049,7 +2040,7 @@ msgstr ""
 
 #: modules/engine/look.cpp:2902
 msgid "Scan complete."
-msgstr "검사를 완료했습니다."
+msgstr "Escaneo completo."
 
 #: modules/engine/look.cpp:3124
 #, c-format
@@ -2432,6 +2423,7 @@ msgstr ""
 msgid "There is %d message in the mail spool."
 msgid_plural "There are %d messages in the mail spool."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3279 modules/mail/mail_mod.cpp:5454
 #, c-format
@@ -2439,6 +2431,7 @@ msgid "MAIL: There is %d msg in the mail spool, %d unread, %d cleared."
 msgid_plural ""
 "MAIL: There are %d msgs in the mail spool, %d unread, %d cleared."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3317 modules/mail/mail_mod.cpp:5463
 #, c-format
@@ -2446,6 +2439,7 @@ msgid "MAIL: There is %d old msg in the mail spool, totalling %d characters."
 msgid_plural ""
 "MAIL: There are %d old msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3320 modules/mail/mail_mod.cpp:5469
 #, c-format
@@ -2453,6 +2447,7 @@ msgid "MAIL: There is %d new msg in the mail spool, totalling %d characters."
 msgid_plural ""
 "MAIL: There are %d new msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3323 modules/mail/mail_mod.cpp:5475
 #, c-format
@@ -2461,18 +2456,21 @@ msgid ""
 msgid_plural ""
 "MAIL: There are %d cleared msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3352 modules/mail/mail_mod.cpp:5510
-#, fuzzy, c-format
+#, c-format
 msgid "%s sent %d message."
 msgid_plural "%s sent %d messages."
-msgstr[0] "메시지가 없습니다."
+msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3355 modules/mail/mail_mod.cpp:5514
-#, fuzzy, c-format
+#, c-format
 msgid "%s has %d message."
 msgid_plural "%s has %d messages."
-msgstr[0] "메시지가 없습니다."
+msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3419 modules/mail/mail_mod.cpp:5576
 #, c-format
@@ -2484,12 +2482,14 @@ msgstr ""
 msgid "%d message sent, %d unread, %d cleared."
 msgid_plural "%d messages sent, %d unread, %d cleared."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3427 modules/mail/mail_mod.cpp:5588
 #, c-format
 msgid "%d message received, %d unread, %d cleared."
 msgid_plural "%d messages received, %d unread, %d cleared."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3435 modules/mail/mail_mod.cpp:5597
 #, c-format
@@ -2497,6 +2497,7 @@ msgid "%d message sent, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
 "%d messages sent, %d unread, %d cleared, totalling %d characters."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3440 modules/mail/mail_mod.cpp:5603
 #, c-format
@@ -2504,11 +2505,12 @@ msgid "%d message received, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
 "%d messages received, %d unread, %d cleared, totalling %d characters."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/mail.cpp:3448 modules/mail/mail_mod.cpp:5612
-#, fuzzy, c-format
+#, c-format
 msgid "Last is dated %s"
-msgstr "%s은(는) %s님의 소유입니다"
+msgstr ""
 
 #: modules/engine/mail.cpp:3462 modules/mail/mail_mod.cpp:5630
 msgid "MAIL: Invalid mail command."
@@ -2644,7 +2646,7 @@ msgstr ""
 
 #: modules/engine/mail.cpp:4740
 msgid "No text added."
-msgstr "추가된 텍스트가 없습니다."
+msgstr ""
 
 #: modules/engine/mail.cpp:4775
 #, c-format
@@ -2653,7 +2655,7 @@ msgstr ""
 
 #: modules/engine/mail.cpp:4792 modules/mail/mail_mod.cpp:4001
 msgid "Text edited."
-msgstr "텍스트를 수정했습니다."
+msgstr ""
 
 #: modules/engine/mail.cpp:4825
 #, c-format
@@ -2779,12 +2781,12 @@ msgstr ""
 
 #: modules/engine/match.cpp:17 modules/engine/match.cpp:34
 msgid "I don’t see that here."
-msgstr "여기에는 그것이 보이지 않습니다."
+msgstr ""
 
 #: modules/engine/match.cpp:18 modules/engine/match.cpp:35
 #: modules/engine/set.cpp:698
 msgid "I don’t know which one you mean!"
-msgstr "어느 것을 말하는지 알 수 없습니다!"
+msgstr ""
 
 #: modules/engine/mguests.cpp:134 modules/engine/mguests.cpp:213
 msgid "Error creating guest, please try again later.\n"
@@ -2835,103 +2837,103 @@ msgstr ""
 #: modules/engine/move.cpp:88
 #, c-format
 msgid "%s has left."
-msgstr "%s이(가) 떠났습니다."
+msgstr "%s se ha ido."
 
 #: modules/engine/move.cpp:161
 #, c-format
 msgid "%s has arrived."
-msgstr "%s이(가) 도착했습니다."
+msgstr "%s ha llegado."
 
 #: modules/engine/move.cpp:223
 #, c-format
 msgid "You found a %s!"
-msgstr "%s을(를) 발견했습니다!"
+msgstr "¡Has encontrado un %s!"
 
 #: modules/engine/move.cpp:401
 msgid "You can’t teleport out!"
-msgstr "밖으로 순간이동할 수 없습니다!"
+msgstr "¡No puedes teletransportarte fuera!"
 
 #: modules/engine/move.cpp:405
 msgid "You can’t be teleported out!"
-msgstr ""
+msgstr "¡No puedes ser teletransportado fuera!"
 
 #: modules/engine/move.cpp:406
 msgid "You can’t teleport that out!"
-msgstr ""
+msgstr "¡No puedes teletransportar eso fuera!"
 
 #: modules/engine/move.cpp:570 modules/engine/move.cpp:577
 #: modules/engine/move.cpp:665 modules/engine/move.cpp:674
 msgid "You can’t go that way."
-msgstr "그쪽으로는 갈 수 없습니다."
+msgstr "No puedes ir por ahí."
 
 #: modules/engine/move.cpp:617
 msgid "You are already home."
-msgstr "이미 집에 있습니다."
+msgstr "Ya estás en casa."
 
 #: modules/engine/move.cpp:639
 #, c-format
 msgid "%s goes home."
-msgstr "%s이(가) 집으로 갑니다."
+msgstr "%s se va a casa."
 
 #: modules/engine/move.cpp:646
 msgid "There’s no place like home..."
-msgstr ""
+msgstr "Como en casa, en ningún sitio..."
 
 #: modules/engine/move.cpp:668
 msgid "I don’t know which way you mean!"
-msgstr "어느 방향을 말하는지 알 수 없습니다!"
+msgstr "¡No sé por dónde quieres ir!"
 
 #: modules/engine/move.cpp:757 modules/engine/move.cpp:808
 msgid "You already have that!"
-msgstr "이미 가지고 있습니다!"
+msgstr "¡Ya tienes eso!"
 
 #: modules/engine/move.cpp:768
 msgid "You cannot get yourself!"
-msgstr "자기 자신을 가져올 수 없습니다!"
+msgstr "¡No puedes tomarte a ti mismo!"
 
 #: modules/engine/move.cpp:774
 #, c-format
 msgid "%s was taken from you."
-msgstr "%s을(를) 빼앗겼습니다."
+msgstr "%s te fue arrebatado."
 
 #: modules/engine/move.cpp:778 modules/engine/move.cpp:781
 msgid "Taken."
-msgstr "가져왔습니다."
+msgstr "Tomado."
 
 #: modules/engine/move.cpp:790
 msgid "You can’t take that from there."
-msgstr "거기에서 그것을 가져올 수 없습니다."
+msgstr "No puedes tomar eso de ahí."
 
 #: modules/engine/move.cpp:794
 msgid "You can’t pick that up."
-msgstr "그것을 주울 수 없습니다."
+msgstr "No puedes recoger eso."
 
 #: modules/engine/move.cpp:828
 msgid "Exit taken."
-msgstr "출구를 사용했습니다."
+msgstr "Salida tomada."
 
 #: modules/engine/move.cpp:834
 msgid "You can’t take that!"
-msgstr "그것을 가져올 수 없습니다!"
+msgstr "¡No puedes tomar eso!"
 
 #: modules/engine/move.cpp:869 modules/engine/rob.cpp:206
 #: modules/engine/set.cpp:1003
 msgid "You don’t have that!"
-msgstr "그것을 가지고 있지 않습니다!"
+msgstr "¡No tienes eso!"
 
 #: modules/engine/move.cpp:873 modules/engine/rob.cpp:210
 #: modules/engine/set.cpp:1008
 msgid "I don’t know which you mean!"
-msgstr "어느 것을 말하는지 알 수 없습니다!"
+msgstr "¡No sé a cuál te refieres!"
 
 #: modules/engine/move.cpp:888 modules/engine/move.cpp:927
 #: modules/engine/move.cpp:951
 msgid "You can’t drop that."
-msgstr "그것을 내려놓을 수 없습니다."
+msgstr "No puedes soltar eso."
 
 #: modules/engine/move.cpp:896 modules/engine/move.cpp:911
 msgid "Dropped."
-msgstr "내려놓았습니다."
+msgstr "Soltado."
 
 #: modules/engine/move.cpp:908
 #, c-format
@@ -2940,19 +2942,19 @@ msgstr ""
 
 #: modules/engine/move.cpp:946
 msgid "Exit dropped."
-msgstr "출구를 제거했습니다."
+msgstr "Salida soltada."
 
 #: modules/engine/move.cpp:973
 msgid "You can’t enter yourself!"
-msgstr "자기 자신에게 들어갈 수 없습니다!"
+msgstr "¡No puedes entrar en ti mismo!"
 
 #: modules/engine/move.cpp:987
 msgid "You can’t enter that."
-msgstr "그것에 들어갈 수 없습니다."
+msgstr "No puedes entrar en eso."
 
 #: modules/engine/move.cpp:1040 modules/engine/move.cpp:1057
 msgid "You can’t leave."
-msgstr "떠날 수 없습니다."
+msgstr "No puedes salir."
 
 #: modules/engine/object.cpp:628 modules/engine/player.cpp:1685
 msgid "That name is not allowed."
@@ -2974,7 +2976,7 @@ msgstr ""
 
 #: modules/engine/object.cpp:971 modules/engine/rob.cpp:152
 msgid "Halted."
-msgstr "중지되었습니다."
+msgstr "Detenido."
 
 #: modules/engine/object.cpp:1030
 #, c-format
@@ -3015,28 +3017,29 @@ msgstr ""
 #: modules/engine/predicates.cpp:1372 modules/engine/walkdb.cpp:1348
 #: modules/engine/walkdb.cpp:1383
 msgid "Done."
-msgstr "완료되었습니다."
+msgstr ""
 
 #: modules/engine/player.cpp:194
 #, c-format
 msgid "**** %d failed connect since your last successful connect. ****"
 msgid_plural "**** %d failed connects since your last successful connect. ****"
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/player.cpp:197
 #, c-format
 msgid "Most recent attempt was from %s on %s."
-msgstr "가장 최근 시도는 %s에서 %s에 있었습니다."
+msgstr ""
 
 #: modules/engine/player.cpp:207
 #, c-format
 msgid "Last connect was from %s on %s."
-msgstr "마지막 접속은 %s에서 %s에 있었습니다."
+msgstr ""
 
 #: modules/engine/player.cpp:965 modules/engine/predicates.cpp:1242
 #: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1072
 msgid "Sorry."
-msgstr "죄송합니다."
+msgstr "Lo siento."
 
 #: modules/engine/player.cpp:970 modules/engine/wiz.cpp:551
 msgid "Password changed."
@@ -3078,7 +3081,7 @@ msgstr ""
 #: modules/engine/player.cpp:1506 modules/engine/predicates.cpp:2924
 #: modules/engine/wiz.cpp:505
 msgid "No such player."
-msgstr "그런 플레이어가 없습니다."
+msgstr "No existe ese jugador."
 
 #: modules/engine/player.cpp:1514
 msgid "No protected names."
@@ -3118,7 +3121,7 @@ msgstr ""
 #: modules/engine/player.cpp:1620
 #, c-format
 msgid "Your alias is ‘%s’, not ‘%s’."
-msgstr "당신의 별칭은 ‘%s’이며, ‘%s’이(가) 아닙니다."
+msgstr ""
 
 #: modules/engine/player.cpp:1627
 #, c-format
@@ -3196,20 +3199,20 @@ msgstr ""
 #: modules/engine/predicates.cpp:268
 #, c-format
 msgid "Sorry, you don’t have enough %s."
-msgstr "죄송합니다, %s이(가) 충분하지 않습니다."
+msgstr "Lo siento, no tienes suficientes %s."
 
 #: modules/engine/predicates.cpp:273
 #, c-format
 msgid "Sorry, that player doesn’t have enough %s."
-msgstr ""
+msgstr "Lo siento, ese jugador no tiene suficientes %s."
 
 #: modules/engine/predicates.cpp:284
 msgid "Sorry, your building contract has run out."
-msgstr ""
+msgstr "Lo siento, tu contrato de construcción se ha agotado."
 
 #: modules/engine/predicates.cpp:289
 msgid "Sorry, that player’s building contract has run out."
-msgstr ""
+msgstr "Lo siento, el contrato de construcción de ese jugador se ha agotado."
 
 #: modules/engine/predicates.cpp:1009
 msgid "That is not a valid command name."
@@ -3240,11 +3243,11 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:1415 modules/engine/predicates.cpp:1489
 msgid "That is not a player."
-msgstr "플레이어가 아닙니다."
+msgstr "Eso no es un jugador."
 
 #: modules/engine/predicates.cpp:1420 modules/engine/predicates.cpp:1494
 msgid "That player is not connected."
-msgstr "그 플레이어는 접속해 있지 않습니다."
+msgstr "Ese jugador no está conectado."
 
 #: modules/engine/predicates.cpp:1425
 msgid "Player is not in an @program."
@@ -3283,7 +3286,7 @@ msgstr ""
 #: modules/engine/predicates.cpp:2743 modules/engine/set.cpp:1587
 #: modules/engine/set.cpp:1997
 msgid "Nothing to do."
-msgstr "할 일이 없습니다."
+msgstr "No hay nada que hacer."
 
 #: modules/engine/predicates.cpp:2787
 msgid "Permission denied,"
@@ -3349,29 +3352,29 @@ msgstr ""
 
 #: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:323
 msgid "Not found."
-msgstr "찾을 수 없습니다."
+msgstr ""
 
 #: modules/engine/rob.cpp:46
 msgid "I don’t see that player here."
-msgstr "여기에는 그 플레이어가 보이지 않습니다."
+msgstr "No veo a ese jugador aquí."
 
 #: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
 #: modules/engine/speech.cpp:1078
 msgid "I don’t know who you mean!"
-msgstr "누구를 말하는지 알 수 없습니다!"
+msgstr "¡No sé a quién te refieres!"
 
 #: modules/engine/rob.cpp:57
 msgid "Sorry, you can only kill players and things."
-msgstr ""
+msgstr "Lo siento, solo puedes matar a jugadores y cosas."
 
 #: modules/engine/rob.cpp:101
 msgid "Your murder attempt failed."
-msgstr ""
+msgstr "Tu intento de asesinato ha fracasado."
 
 #: modules/engine/rob.cpp:104
 #, c-format
 msgid "%s tried to kill you!"
-msgstr ""
+msgstr "¡%s intentó matarte!"
 
 #: modules/engine/rob.cpp:111
 #, c-format
@@ -3396,7 +3399,7 @@ msgstr ""
 #: modules/engine/rob.cpp:144
 #, c-format
 msgid "You killed %s!"
-msgstr ""
+msgstr "¡Has matado a %s!"
 
 #: modules/engine/rob.cpp:145
 #, c-format
@@ -3406,38 +3409,38 @@ msgstr ""
 #: modules/engine/rob.cpp:161
 #, c-format
 msgid "%s killed you!"
-msgstr ""
+msgstr "¡%s te ha matado!"
 
 #: modules/engine/rob.cpp:171
 #, c-format
 msgid "Your insurance policy pays %d %s."
-msgstr "보험금으로 %2$s %1$d개를 지급합니다."
+msgstr "Tu póliza de seguro paga %d %s."
 
 #: modules/engine/rob.cpp:178
 msgid "Your insurance policy has been revoked."
-msgstr ""
+msgstr "Tu póliza de seguro ha sido revocada."
 
 #: modules/engine/rob.cpp:215
 msgid "You can’t give yourself away!"
-msgstr "자기 자신을 줄 수 없습니다!"
+msgstr "¡No puedes entregarte a ti mismo!"
 
 #: modules/engine/rob.cpp:220
 msgid "You can’t give an object to itself."
-msgstr ""
+msgstr "No puedes dar un objeto a sí mismo."
 
 #: modules/engine/rob.cpp:264
 #, c-format
 msgid "%s gave you %s."
-msgstr "%s님이 당신에게 %s을(를) 주었습니다."
+msgstr "%s te dio %s."
 
 #: modules/engine/rob.cpp:265
 msgid "Given."
-msgstr "주었습니다."
+msgstr "Entregado."
 
 #: modules/engine/rob.cpp:266
 #, c-format
 msgid "%s gave you to %s."
-msgstr ""
+msgstr "%s te entregó a %s."
 
 #: modules/engine/rob.cpp:280
 #, c-format
@@ -3447,72 +3450,72 @@ msgstr ""
 #: modules/engine/rob.cpp:286
 #, c-format
 msgid "You must specify a positive number of %s."
-msgstr ""
+msgstr "Debes indicar una cantidad positiva de %s."
 
 #: modules/engine/rob.cpp:295
 #, c-format
 msgid "That player doesn’t need that many %s!"
-msgstr ""
+msgstr "¡Ese jugador no necesita tantos %s!"
 
 #: modules/engine/rob.cpp:301
 #, c-format
 msgid "%s won’t take your money."
-msgstr "%s이(가) 당신의 돈을 받지 않습니다."
+msgstr "%s no aceptará tu dinero."
 
 #: modules/engine/rob.cpp:310
 #, c-format
 msgid "You don’t have that many %s to give!"
-msgstr ""
+msgstr "¡No tienes tantos %s para dar!"
 
 #: modules/engine/rob.cpp:329
 msgid "Feeling poor today?"
-msgstr ""
+msgstr "¿Te sientes pobre hoy?"
 
 #: modules/engine/rob.cpp:350
 #, c-format
 msgid "You give a %s to %s."
-msgstr "%2$s에게 %1$s을(를) 줍니다."
+msgstr "Le das un %s a %s."
 
 #: modules/engine/rob.cpp:351
 #, c-format
 msgid "%s gives you a %s."
-msgstr "%s님이 당신에게 %s을(를) 줍니다."
+msgstr "%s te da un %s."
 
 #: modules/engine/rob.cpp:355
 #, c-format
 msgid "You give %d %s to %s."
-msgstr "%3$s에게 %2$s %1$d개를 줍니다."
+msgstr "Le das %d %s a %s."
 
 #: modules/engine/rob.cpp:356
 #, c-format
 msgid "%s gives you %d %s."
-msgstr "%1$s이(가) 당신에게 %3$s %2$d개를 줍니다."
+msgstr "%s te da %d %s."
 
 #: modules/engine/rob.cpp:365
 #, c-format
 msgid "You get 1 %s in change."
-msgstr "거스름돈으로 %s 1개를 받습니다."
+msgstr "Recibes 1 %s de cambio."
 
 #: modules/engine/rob.cpp:370
 #, c-format
 msgid "You get %d %s in change."
-msgstr "거스름돈으로 %2$s %1$d개를 받습니다."
+msgstr "Recibes %d %s de cambio."
 
 #: modules/engine/rob.cpp:417
 msgid "Give to whom?"
-msgstr "누구에게 줄까요?"
+msgstr "¿Dar a quién?"
 
 #: modules/engine/rob.cpp:427
 msgid "You can’t give anything to an exit."
-msgstr "출구에는 아무것도 줄 수 없습니다."
+msgstr "No puedes dar nada a una salida."
 
 #: modules/engine/rob.cpp:432
 msgid "Guests really don’t need money or anything."
-msgstr ""
+msgstr "Los invitados no necesitan dinero ni nada."
 
 #: modules/engine/session.cpp:290 modules/engine/session.cpp:305
 msgid "Not connected."
-msgstr "접속되어 있지 않습니다."
+msgstr ""
 
 #: modules/engine/session.cpp:318
 msgid "Doing"
@@ -3545,7 +3548,7 @@ msgstr ""
 
 #: modules/engine/set.cpp:181
 msgid "Zone changed."
-msgstr "구역이 변경되었습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:216
 msgid "Give it what new name?"
@@ -3566,11 +3569,11 @@ msgstr ""
 
 #: modules/engine/set.cpp:269 modules/engine/set.cpp:305
 msgid "Name set."
-msgstr "이름이 설정되었습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:374
 msgid "Alias removed."
-msgstr "별칭이 제거되었습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:388
 msgid "That’s a silly name for a player!"
@@ -3578,7 +3581,7 @@ msgstr ""
 
 #: modules/engine/set.cpp:400
 msgid "Alias set."
-msgstr "별칭이 설정되었습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:479
 msgid "Forwardlist removed."
@@ -3610,7 +3613,7 @@ msgstr ""
 
 #: modules/engine/set.cpp:599
 msgid "Locked."
-msgstr "잠갔습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:641
 msgid "Attribute unlocked."
@@ -3618,15 +3621,15 @@ msgstr ""
 
 #: modules/engine/set.cpp:664
 msgid "Unlocked."
-msgstr "잠금이 해제되었습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:693
 msgid "Unlink what?"
-msgstr "무엇의 연결을 해제할까요?"
+msgstr ""
 
 #: modules/engine/set.cpp:720
 msgid "Unlinked."
-msgstr "연결이 해제되었습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:731
 msgid "Dropto removed."
@@ -3716,11 +3719,11 @@ msgstr ""
 
 #: modules/engine/set.cpp:2131
 msgid "Wiped."
-msgstr "지웠습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:2232
 msgid "Triggered."
-msgstr "실행되었습니다."
+msgstr ""
 
 #: modules/engine/set.cpp:2415 modules/engine/set.cpp:2445
 msgid "You can’t figure out how to use that."
@@ -3742,15 +3745,15 @@ msgstr ""
 
 #: modules/engine/speech.cpp:60
 msgid "Sorry. Gagged players cannot speak."
-msgstr "죄송합니다. 재갈이 물린 플레이어는 말할 수 없습니다."
+msgstr "Lo siento. Los jugadores amordazados no pueden hablar."
 
 #: modules/engine/speech.cpp:68
 msgid "Sorry, robots may not speak in public."
-msgstr "죄송합니다, 로봇은 공개적으로 말할 수 없습니다."
+msgstr "Lo siento, los robots no pueden hablar en público."
 
 #: modules/engine/speech.cpp:76
 msgid "Sorry, you may not speak in this place."
-msgstr "죄송합니다, 이곳에서는 말할 수 없습니다."
+msgstr "Lo siento, no puedes hablar en este lugar."
 
 #: modules/engine/speech.cpp:214 modules/engine/speech.cpp:217
 #: modules/engine/speech.cpp:219 modules/engine/speech.cpp:1219
@@ -3761,13 +3764,13 @@ msgstr ""
 #: modules/engine/speech.cpp:225 modules/engine/speech.cpp:1213
 #, c-format
 msgid "You say, “%s”"
-msgstr "“%s”(이)라고 말합니다."
+msgstr "Dices: “%s”"
 
 #: modules/engine/speech.cpp:227 modules/engine/speech.cpp:229
 #: modules/engine/speech.cpp:1225
 #, c-format
 msgid "%s says, “%s”"
-msgstr "%s님이 “%s”(이)라고 말합니다."
+msgstr "%s dice: “%s”"
 
 #: modules/engine/speech.cpp:236 modules/engine/speech.cpp:238
 #: modules/engine/speech.cpp:1246
@@ -3789,7 +3792,7 @@ msgstr ""
 #: modules/engine/speech.cpp:498
 #, c-format
 msgid "%s message from %s: %s"
-msgstr "%s 메시지, 보낸 사람 %s: %s"
+msgstr ""
 
 #: modules/engine/speech.cpp:501
 #, c-format
@@ -3800,27 +3803,27 @@ msgstr ""
 #: modules/engine/speech.cpp:1151 modules/engine/speech.cpp:1482
 #, c-format
 msgid "Sorry, %s is not connected."
-msgstr "죄송합니다, %s님은 접속해 있지 않습니다."
+msgstr "Lo siento, %s no está conectado."
 
 #: modules/engine/speech.cpp:542
 #, c-format
 msgid "Sorry, %s is not accepting pages."
-msgstr "죄송합니다, %s님은 연락을 받지 않습니다."
+msgstr "Lo siento, %s no acepta mensajes."
 
 #: modules/engine/speech.cpp:556
 #, c-format
 msgid "Sorry, %s can’t return your page."
-msgstr ""
+msgstr "Lo siento, %s no puede responderte."
 
 #: modules/engine/speech.cpp:571
 #, c-format
 msgid "Warning: %s can’t return your page."
-msgstr ""
+msgstr "Aviso: %s no puede responderte."
 
 #: modules/engine/speech.cpp:643 modules/engine/speech.cpp:666
 #, c-format
 msgid "I don’t recognize “%s”."
-msgstr "“%s”을(를) 알 수 없습니다."
+msgstr "No reconozco “%s”."
 
 #: modules/engine/speech.cpp:704
 #, c-format
@@ -3829,31 +3832,31 @@ msgstr ""
 
 #: modules/engine/speech.cpp:778
 msgid "You have not paged anyone."
-msgstr "아무에게도 연락하지 않았습니다."
+msgstr "No has contactado con nadie."
 
 #: modules/engine/speech.cpp:782
 msgid "No one to page."
-msgstr "연락할 상대가 없습니다."
+msgstr "No hay nadie a quien contactar."
 
 #: modules/engine/speech.cpp:823
 #, c-format
 msgid "You last paged %s."
-msgstr "마지막으로 %s님에게 연락했습니다."
+msgstr "La última vez contactaste con %s."
 
 #: modules/engine/speech.cpp:892
 #, c-format
 msgid "From afar, %s pages you."
-msgstr "멀리서 %s님이 연락합니다."
+msgstr "Desde lejos, %s te contacta."
 
 #: modules/engine/speech.cpp:897
 #, c-format
 msgid "From afar, %s pages %s."
-msgstr ""
+msgstr "Desde lejos, %s contacta con %s."
 
 #: modules/engine/speech.cpp:900
 #, c-format
 msgid "You page %s."
-msgstr "%s님에게 연락합니다."
+msgstr "Contactas con %s."
 
 #: modules/engine/speech.cpp:909
 #, c-format
@@ -3888,17 +3891,17 @@ msgstr ""
 #: modules/engine/speech.cpp:939
 #, c-format
 msgid "To %s, %s pages: %s"
-msgstr "%s님에게, %s님의 페이지: %s"
+msgstr ""
 
 #: modules/engine/speech.cpp:944
 #, c-format
 msgid "%s pages: %s"
-msgstr "%s님의 페이지: %s"
+msgstr "%s te escribe: %s"
 
 #: modules/engine/speech.cpp:947
 #, c-format
 msgid "You paged %s with ‘%s’"
-msgstr "%s님에게 ‘%s’라고 페이지했습니다."
+msgstr ""
 
 #: modules/engine/speech.cpp:991
 #, c-format
@@ -3907,11 +3910,11 @@ msgstr ""
 
 #: modules/engine/speech.cpp:1060
 msgid "Whisper to whom?"
-msgstr "누구에게 속삭일까요?"
+msgstr "¿Susurrar a quién?"
 
 #: modules/engine/speech.cpp:1064
 msgid "Emit to whom?"
-msgstr "누구에게 보낼까요?"
+msgstr "¿Emitir a quién?"
 
 #: modules/engine/speech.cpp:1068
 msgid "Emit except to whom?"
@@ -3919,21 +3922,21 @@ msgstr ""
 
 #: modules/engine/speech.cpp:1107 modules/engine/speech.cpp:1427
 msgid "You are too far away to do that."
-msgstr "너무 멀리 있어서 그렇게 할 수 없습니다."
+msgstr "Estás demasiado lejos para hacer eso."
 
 #: modules/engine/speech.cpp:1184
 #, c-format
 msgid "%s whispers “%s”"
-msgstr "%s님이 “%s”(이)라고 속삭입니다"
+msgstr "%s susurra “%s”"
 
 #: modules/engine/speech.cpp:1473
 #, c-format
 msgid "Sorry, you are too far away to contact %s."
-msgstr ""
+msgstr "Lo siento, estás demasiado lejos para contactar con %s."
 
 #: modules/engine/speech.cpp:1509
 msgid "No one to whisper to."
-msgstr "속삭일 상대가 없습니다."
+msgstr "No hay nadie a quien susurrar."
 
 #: modules/engine/speech.cpp:1717 modules/engine/speech.cpp:1729
 #, c-format
@@ -3948,7 +3951,7 @@ msgstr ""
 #: modules/engine/speech.cpp:1735 modules/engine/speech.cpp:1796
 #, c-format
 msgid "You whisper “%s” to %s."
-msgstr "%2$s님에게 “%1$s”(이)라고 속삭입니다."
+msgstr "Le susurras “%s” a %s."
 
 #: modules/engine/speech.cpp:1778 modules/engine/speech.cpp:1790
 #, c-format
@@ -3969,6 +3972,7 @@ msgstr ""
 msgid "@dbclean: %d orphaned attribute name purged."
 msgid_plural "@dbclean: %d orphaned attribute names purged."
 msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/walk.cpp:201 modules/engine/walk.cpp:303
 #, c-format
@@ -3999,7 +4003,7 @@ msgstr ""
 
 #: modules/engine/walk.cpp:369
 msgid "Walk where?"
-msgstr "어디로 갈까요?"
+msgstr ""
 
 #: modules/engine/walk.cpp:378
 msgid "That’s not a valid destination."
@@ -4020,7 +4024,7 @@ msgstr ""
 
 #: modules/engine/walk.cpp:454
 msgid "Patrol where?"
-msgstr "어디를 순찰할까요?"
+msgstr ""
 
 #: modules/engine/walk.cpp:474
 #, c-format
@@ -4134,7 +4138,7 @@ msgstr ""
 
 #: modules/engine/walkdb.cpp:1310
 msgid "Nothing found."
-msgstr "아무것도 찾지 못했습니다."
+msgstr ""
 
 #: modules/engine/walkdb.cpp:1315
 #, c-format
@@ -4170,7 +4174,7 @@ msgstr ""
 
 #: modules/engine/wiz.cpp:157
 msgid "Teleported."
-msgstr "순간이동했습니다."
+msgstr ""
 
 #: modules/engine/wiz.cpp:196
 msgid "I can’t find that exit."
@@ -4192,7 +4196,7 @@ msgstr ""
 #: modules/engine/wiz.cpp:448
 #, c-format
 msgid "You toaded %s! (%d objects @chowned)"
-msgstr "%s님을 추방했습니다! (사물 %d개의 소유자가 변경되었습니다)"
+msgstr ""
 
 #: modules/engine/wiz.cpp:454
 #, c-format
@@ -4200,10 +4204,11 @@ msgid "a slimy toad named %s"
 msgstr ""
 
 #: modules/engine/wiz.cpp:475 modules/engine/wiz.cpp:640
-#, fuzzy, c-format
+#, c-format
 msgid "%d connection closed."
 msgid_plural "%d connections closed."
-msgstr[0] "접속되어 있지 않습니다."
+msgstr[0] ""
+msgstr[1] ""
 
 #: modules/engine/wiz.cpp:538
 msgid "You cannot change that player’s password."
@@ -4242,7 +4247,7 @@ msgstr ""
 
 #: modules/engine/wiz.cpp:753
 msgid "Set: MOTD."
-msgstr "설정: MOTD."
+msgstr ""
 
 #: modules/engine/wiz.cpp:762
 msgid "Set: Wizard MOTD."
@@ -4294,11 +4299,11 @@ msgstr ""
 
 #: modules/engine/wiz.cpp:880
 msgid "Enabled."
-msgstr "활성화되었습니다."
+msgstr ""
 
 #: modules/engine/wiz.cpp:903
 msgid "Disabled."
-msgstr "비활성화되었습니다."
+msgstr ""
 
 #: modules/mail/mail_mod.cpp:2418
 #, c-format
@@ -4443,7 +4448,8 @@ msgstr ""
 
 #: modules/engine/predicates.cpp:1631
 #, c-format
-msgid "GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"
+msgid ""
+"GAME: Restart by %s, please wait.  (All SSL connections will be dropped.)"
 msgstr ""
 
 #: src/net.cpp:4315
@@ -4497,12 +4503,16 @@ msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:3446
 #, c-format
-msgid "@cset: Channel %s maximum history set, but older entries could not be cleared."
+msgid ""
+"@cset: Channel %s maximum history set, but older entries could not be "
+"cleared."
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:3440
 #, c-format
-msgid "@cset: Failed.  Could not set the maximum for %s (the attribute is not writable here)."
+msgid ""
+"@cset: Failed.  Could not set the maximum for %s (the attribute is not "
+"writable here)."
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:3481 modules/comsys/comsys_mod.cpp:3497
@@ -4512,7 +4522,9 @@ msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:3517
 #, c-format
-msgid "@cset: Failed.  Timestamp logging for %s could not be changed (the attribute is not writable here)."
+msgid ""
+"@cset: Failed.  Timestamp logging for %s could not be changed (the attribute "
+"is not writable here)."
 msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:3313
