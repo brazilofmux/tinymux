@@ -547,11 +547,34 @@ void desc_reload(dbref player)
     }
 }
 
+// Terminate cbuff before delegating (#1637).
+//
+// Every other bridge in this file returns void or a number, so "no connection
+// manager, do nothing" is a complete answer for them.  This one has an out
+// parameter, and doing nothing leaves the CALLER'S buffer uninitialised --
+// which they then print.  mail.cpp alone has eight such call sites
+// (:1706, :1780, :1907, :1912, :1959, :2014, :2023, :2054), each passing a
+// stack array straight to tprintf("%s").
+//
+// Measured under muxscript, where g_pConnMgr is null: the same @mail read
+// printed "From:  " in one run and "From: p" in another, and in a third the
+// garbage terminated the format early so At:, Fldr:, Status: and Subject:
+// vanished from the message header entirely.  Non-deterministic output from
+// uninitialised stack, not a formatting bug.
+//
+// netmux always has a connection manager, so this never bit a live game --
+// only muxscript, which is what the entire test suite runs on.
+//
+// Terminating unconditionally also covers a TrimmedName that fails partway
+// and leaves cbuff untouched: an empty name is wrong, but it is deterministic
+// and it is a string.
+//
 LBUF_OFFSET trimmed_name(const dbref player, UTF8 cbuff[MBUF_SIZE],
     const LBUF_OFFSET nMin, const LBUF_OFFSET nMax,
     const LBUF_OFFSET nPad)
 {
     unsigned short result = 0;
+    cbuff[0] = '\0';
     if (g_pConnMgr)
     {
         g_pConnMgr->TrimmedName(player, cbuff, MBUF_SIZE, nMin, nMax,

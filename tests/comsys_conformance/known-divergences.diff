@@ -1,0 +1,100 @@
+--- engine
++++ module
+@@ -6,6 +6,14 @@
+ Migrating V4 24-bit color encoding to V5 
+ Error: Couldn’t find data/comsys.db.
+ <TS> Conform INI/LOAD : Load complete.
++<TS> Conform INI/INFO : Comsys module loaded.
++<TS> Conform COM/LOAD : Comsys module: loaded 0 channels from SQLite.
++<TS> Conform INI/MOD  : Comsys module initialized (via engine storage).
++<TS> Conform INI/INFO : Mail module loaded.
++<TS> Conform MAIL/LOAD : Mail module: data loaded from SQLite.
++<TS> Conform INI/MOD  : Mail module initialized (via engine storage).
++<TS> Conform MAIL/INFO : Mail module: startup event.
++<TS> Conform INI/INFO : Comsys module startup complete.
+ Channel cchan created.
+ CObj created as object #12
+ Channel cchan is now using CObj(#12) as channel object.
+@@ -14,17 +22,17 @@
+ Channel cchan added with alias c.
+ Title set to ‘Tester’ on channel cchan.
+ *** Channel       Owner           Description
+---- cchan         Wizard          No description.                              
++--- cchan         Wizard          No description.
+ -- End of list of Channels --
+-*** Channel       Header          Owner           Access  Users Msgs
+---- cchan         HDR             Wizard          JXR       1    1
++*** Channel       Owner           Description
++--- cchan         Wizard          No description.
+ -- End of list of Channels --
+ *** Channel       Owner           Header
+---- cchan         Wizard          HDR                                          
++--- cchan         Wizard          HDR
+ -- End of list of Channels --
+ -- cchan --
+ Name                          Status Player
+-Wizard(#1PcW)                 on     yes   
++Wizard                        on     yes   
+ -- cchan --
+ Alias           Channel            Status   Title
+ c               cchan              on  con  Tester
+@@ -39,30 +47,27 @@
+ @cset: Channel cchan maximum history set.
+ HDR Broadcast one
+ Broadcast two
+-HDR Tester Wizard says, “Spoken one”
++HDR Wizard says, “Spoken one”
+ You have left channel cchan.
+-HDR Tester Wizard has left this channel.
+-HDR Tester Wizard has joined this channel.
++HDR Wizard has left this channel.
++HDR Wizard has joined this channel.
+ MAIL: You are sending mail to ‘Wizard’.
+ 26/32767 characters added.
+ MAIL: You sent your message to Wizard.
+ MAIL: You have a new message from Wizard. Subject: Subject One
+ –––––––––––––––––––––––––––   MAIL: Folder 0   ––––––––––––––––––––––––––––
+-[N------] 1   (  26) From:  At: <DATE> Conn
++[N------] 1   (  26) From: Wizard           At: <DATE> Conn
+ –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+ –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+-1           From:    At: <DATE>    (Conn)
++1           From:  Wizard            At: <DATE>    (Conn)
+ Fldr   : 0  Status: Unread
+-To     : Wizard                                                           
+ Subject: Subject One
+ –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+ Body of the first message.
+ –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+-There are 1 messages in the mail spool.
+-MAIL: There are 1 msgs in the mail spool, 0 unread, 0 cleared.
+-MAIL: There are 1 old msgs in the mail spool, totalling 27 characters.
+-MAIL: There are 0 new msgs in the mail spool, totalling 0 characters.
+-MAIL: There are 0 cleared msgs in the mail spool, totalling 0 characters.
++MAIL: 1 messages (1 read, 0 unread, 0 cleared). 26 bytes total.
++MAIL: 1 messages (1 read, 0 unread, 0 cleared). 26 bytes total.
++MAIL: 1 messages (1 read, 0 unread, 0 cleared). 26 bytes total.
+ MAIL: Msg #1 tagged.
+ MAIL: Msg #1 untagged.
+ MAIL: No message started.
+@@ -77,15 +82,17 @@
+ Num  Name         Description                              Owner
+ ***** End of Mail Aliases *****
+ MAIL: Number of mail aliases defined: 0
+-MAIL: Vector capacity: 0
++MAIL: Allocated slots 0
+ MAIL: 1 messages in folder 0 [unnamed] (0 unread, 0 cleared).
+ MAIL: Current folder is 0 [unnamed].
+ –––––––––––––––––––––––––––   MAIL: Folder 0   ––––––––––––––––––––––––––––
+-[-------] 1   (  26) From:  Sub: Subject One
++[-------] 1   (  26) From: Wizard           Sub: Subject One
+ –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
+-You have left channel cchan.
++HDR Wizard has left this channel.
+ Alias c for channel cchan deleted.
+ Channel cchan destroyed.
+ <TS> Conform DMP/DUMP : Dumping: data/netmux.db.new.#1#
+ <TS> Conform DMP/SQLT : SQLite checkpoint (no flatfile).
+ <TS> Conform DMP/DONE : Dump complete: data/netmux.db.new.#1#
++<TS> Conform MAIL/INFO : Mail module: shutdown event.
++<TS> Conform INI/INFO : Comsys module shutting down.
