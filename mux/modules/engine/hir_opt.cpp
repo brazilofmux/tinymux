@@ -535,7 +535,7 @@ void hir_copy_prop(hir_program &h) {
                     changed = true;
                 }
             }
-            // Propagate through HIR_LUA_SETI's stored value (in val[]).
+            // Propagate through HIR_LUA_SETI/SETFIELD's stored value (val[]).
             int vop = hir_val_operand(h, i);
             if (vop >= 0) {
                 int r = resolve_copy(h, vop);
@@ -591,7 +591,7 @@ static bool has_side_effects(hir_kind k) {
     // the result (if any) is unused (#1145).
     return k == HIR_CALL || k == HIR_STRCAT || k == HIR_STORE_Q
         || k == HIR_SETQ_SYNC
-        || k == HIR_LUA_SETI
+        || k == HIR_LUA_SETI || k == HIR_LUA_SETFIELD
         || k == HIR_RET || k == HIR_BR || k == HIR_BRC;
 }
 

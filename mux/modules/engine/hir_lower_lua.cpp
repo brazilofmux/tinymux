@@ -1423,14 +1423,18 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 lua_reg[A] = h.emit_sconst(addr, name);
                 if (lua_reg[A] < 0) return -1;
             } else {
-                // General table field access via ECALL.
+                // General table field access via the dedicated ECALL.  The
+                // key travels as an ADDRESS into the program's own string
+                // pool; only the integer value comes back, in a register.
+                // Non-integer fields decline inside the handler.
+                if (!lua_is_handle(h, table_reg)) return -1;
                 uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
                 int key_val = h.emit_sconst(key_addr, k.sval);
                 if (key_val < 0) return -1;
-                std::string name("__lua_getfield");
-                int args[] = { table_reg, key_val };
-                lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
+                lua_reg[A] = h.emit(HIR_LUA_GETFIELD, TY_INT,
+                                    table_reg, key_val);
                 if (lua_reg[A] < 0) return -1;
+                h.known_int[lua_reg[A]] = true;
                 h.ecalls++;
             }
             break;
@@ -1463,27 +1467,42 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         // SETFIELD: A = table register, B = key constant index, C = value register.
         case OP_LUA_SETFIELD: {
             int tbl = lua_reg[A];
-            int val = lua_reg[insn.C()];
-            if (tbl < 0 || val < 0) return -1;
+            if (tbl < 0) return -1;
+            // C is a CONSTANT index, not a register, when k is set -- the
+            // same shape that made `t[1]=5` decline on OP_LUA_SETTABI.
+            int val;
+            if (insn.k()) {
+                if (insn.C() < 0
+                 || insn.C() >= static_cast<int>(proto->constants.size())) {
+                    return -1;
+                }
+                const lua_bc_constant &kv = proto->constants[insn.C()];
+                if (kv.type != LUA_BC_TINT) return -1;
+                val = h.emit_iconst(kv.ival);
+            } else {
+                val = lua_reg[insn.C()];
+            }
+            if (val < 0) return -1;
             int kidx = insn.B();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
             const lua_bc_constant &k = proto->constants[kidx];
             if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
                 return -1;
-            if (h.ty[val] == TY_INT) {
-                val = h.emit(HIR_ITOA, TY_STRING, val);
-                if (val < 0) return -1;
-            } else if (h.ty[val] == TY_FLOAT) {
-                val = h.emit(HIR_FTOA, TY_STRING, val);
-                if (val < 0) return -1;
-            }
+            // Integer values only, as for the integer-keyed stores: the
+            // ECALL carries the value in a register.
+            if (h.ty[val] != TY_INT) return -1;
+            if (lua_is_handle(h, val)) return -1;
+            if (!lua_is_handle(h, tbl)) return -1;
+
             uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
             int key_val = h.emit_sconst(key_addr, k.sval);
             if (key_val < 0) return -1;
-            std::string name("__lua_setfield");
-            int args[] = { tbl, key_val, val };
-            h.emit_call(TY_STRING, 0, args, 3, &name);
+            // Value rides in val[]; hir_val_operand() knows about SETFIELD
+            // as well as SETI, which is what keeps the register alive.
+            if (h.emit(HIR_LUA_SETFIELD, TY_VOID, tbl, key_val, val) < 0) {
+                return -1;
+            }
             h.ecalls++;
             break;
         }

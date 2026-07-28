@@ -106,6 +106,8 @@ enum hir_kind {
     //
     HIR_LUA_NEWTABLE, // newtable(narr, nrec): ECALL → TY_LUA_HANDLE
     HIR_LUA_LEN,    // len(tbl_idx): ECALL → TY_INT, Lua's # on a table
+    HIR_LUA_GETFIELD, // getfield(tbl_idx, key_addr): ECALL → TY_INT
+    HIR_LUA_SETFIELD, // setfield(tbl_idx, key_addr, val): ECALL
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
     HIR_LUA_SETI,   // seti(tbl_idx, key, val): ECALL (no string marshal)
     HIR_LUA_ALOAD,  // native array load: val[key] from pinned array (no ECALL)
@@ -707,7 +709,8 @@ struct hir_program {
 // Almost every instruction keeps its operands in src1/src2, with the
 // CALL/STRCAT and PHI side arrays as the two documented exceptions that
 // operand walkers already special-case.  HIR_LUA_SETI is a third
-// exception and a much easier one to miss: it is seti(tbl,key,value)
+// exception and a much easier one to miss: seti(tbl,key,value) and
+// setfield(tbl,key,value) both park the VALUE here
 // and the VALUE is an instruction index parked in val[] (see the
 // HIR_LUA_SETI case in hir_codegen.cpp, which reads it back as `s3`).
 //
@@ -719,7 +722,10 @@ struct hir_program {
 //
 // Returns the operand's instruction index, or -1 when there is none.
 inline int hir_val_operand(const hir_program &h, int i) {
-    if (i < 0 || i >= h.n_insns || h.kind[i] != HIR_LUA_SETI) return -1;
+    if (i < 0 || i >= h.n_insns) return -1;
+    if (h.kind[i] != HIR_LUA_SETI && h.kind[i] != HIR_LUA_SETFIELD) {
+        return -1;
+    }
     int v = static_cast<int>(h.val[i]);
     return (v >= 0 && v < h.n_insns) ? v : -1;
 }

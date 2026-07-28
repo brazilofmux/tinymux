@@ -816,6 +816,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     // and the consumer reads a garbage index (measured: SETI got idx=0).
     case HIR_LUA_NEWTABLE:
     case HIR_LUA_LEN:
+    case HIR_LUA_GETFIELD:
     case HIR_LUA_GETI:
     case HIR_LUA_ALOAD:
     case HIR_ADD: case HIR_SUB: case HIR_MUL: case HIR_DIV: case HIR_REM:
@@ -1417,6 +1418,48 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                     rv_emit_strcmp(rc.code, 10, 11, dest);
                 }
                 ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_GETFIELD: {
+                // a0=tbl_idx, a1=key addr -> a0=value.
+                int s1 = h.src1[i], s2 = h.src2[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));
+                // The key is an SCONST: it lives as loc[].addr with
+                // in_reg=false, so ra_get_reg would hand back a register
+                // that was never loaded.  Materialize the address.  Reading
+                // it through ra_get_reg made every field read return the
+                // LAST value written, because a1 held the same stale
+                // address on every call.
+                if (h.kind[s2] != HIR_SCONST) break;
+                rv_load_guest_addr(rc.code, 11, loc[s2].addr);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_GETFIELD_INT)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_SETFIELD: {
+                // a0=tbl_idx, a1=key addr, a2=value (third operand in val[]).
+                int s1 = h.src1[i], s2 = h.src2[i];
+                int s3 = static_cast<int>(h.val[i]);
+                uint8_t tbl_r = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, tbl_r, 0));
+                // SCONST key: address, not a register.  See GETFIELD above.
+                if (h.kind[s2] != HIR_SCONST) break;
+                uint8_t val_r = ra_get_reg(rc, loc, s3, 29);
+                rc.code.push_back(rv_ADDI(12, val_r, 0));
+                rv_load_guest_addr(rc.code, 11, loc[s2].addr);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_SETFIELD_INT)));
+                rc.code.push_back(rv_ECALL());
                 break;
             }
 
@@ -2321,6 +2364,8 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_STRCMP:      return "STRCMP";
     case HIR_LUA_NEWTABLE: return "LUA_NEWTABLE";
     case HIR_LUA_LEN:    return "LUA_LEN";
+    case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
+    case HIR_LUA_SETFIELD: return "LUA_SETFIELD";
     case HIR_LUA_GETI:   return "LUA_GETI";
     case HIR_LUA_SETI:   return "LUA_SETI";
     case HIR_LUA_ALOAD:  return "LUA_ALOAD";

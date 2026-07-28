@@ -149,7 +149,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=30
+AGREE_DECLINE_BUDGET=29
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -183,6 +183,16 @@ EXEC_CASES=(
     # ECALL_LUA_LEN_INT asks the VM, and the index stays in a register.
     'local t={1,2,3} return #t'
     'local t={} t[1]=9 t[2]=8 return #t'
+
+    # String-keyed fields.  TWO DISTINCT KEYS on purpose: with one key a
+    # broken implementation still looks right, and the first version of this
+    # was broken exactly that way -- the SCONST key lives as loc[].addr with
+    # in_reg=false, so passing it through ra_get_reg left a1 holding the same
+    # stale address on every call and every read returned the LAST value
+    # written.  `t.a` alone answered 7 correctly while `t.a+t.b` answered 8
+    # instead of 7.
+    'local t={a=3,b=4} return t.a+t.b'
+    'local t={} t.x=5 t.y=6 return t.x*10+t.y'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
