@@ -3982,6 +3982,49 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_GETFIELD_INT: {
+        // String-keyed read: a0=tbl_idx, a1=guest addr of a NUL-terminated
+        // key -> a0=value, a1=ok.  The key travels as an address into the
+        // program's own string pool, not as marshalled text, so nothing
+        // downstream can mistake it for a value.
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
+        if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
+            ctx->x[11] = 0;
+            return ECALL_DECLINE;
+        }
+        lua_pushstring(L, key);
+        lua_rawget(L, tbl_idx);
+        if (lua_isinteger(L, -1)) {
+            ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
+            ctx->x[11] = 1;
+        } else {
+            // Non-integer field: decline rather than guess a marshalling.
+            ctx->x[11] = 0;
+        }
+        lua_pop(L, 1);
+        if (0 == ctx->x[11]) return ECALL_DECLINE;
+        return -1;
+    }
+
+    case ECALL_LUA_SETFIELD_INT: {
+        // a0=tbl_idx, a1=guest key addr, a2=integer value.
+        if (!ec->lua_state) return -1;
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int tbl_idx = static_cast<int>(ctx->x[10]);
+        const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
+        lua_Integer val = static_cast<lua_Integer>(ctx->x[12]);
+        if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
+            return ECALL_DECLINE;
+        }
+        lua_pushstring(L, key);
+        lua_pushinteger(L, val);
+        lua_rawset(L, tbl_idx);
+        return -1;
+    }
+
     case ECALL_LUA_LEN_INT: {
         // Lua's # on a table: a0=tbl_idx -> a0=length, a1=ok.
         //
