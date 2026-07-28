@@ -76,7 +76,50 @@ Makefile edit.
    `xx`, which is generated mechanically and where a gap means the marking
    pipeline broke. Structural errors — stale msgids, missing msgids, and
    conversion-sequence mismatches — are fatal under **both** policies.
-3. `make -C mux/po mo-<lang>`, then `make test-nls` for the static checks.
+3. **Check the `Plural-Forms` header.** `msginit -l <lang>` fills this in
+   correctly from gettext's own table; **copying `ko.po`'s header does not** —
+   Korean declares
+
+   ```
+   "Plural-Forms: nplurals=1; plural=0;\n"
+   ```
+
+   which is right for Korean, Japanese and Chinese and collapses every count
+   into one form for anything else. A Russian catalogue that inherited it
+   would render one wording for 1, 2 and 5.
+
+   This became load-bearing in #1702. The server now evaluates that rule
+   itself on every platform rather than borrowing `ngettext(3)`, so it is the
+   sole authority on which form a count selects. (Before, the built-in reader
+   used on Windows ignored the rule and applied English "1 vs many", which
+   masked a wrong header there.)
+
+   You do not have to reason it out: gettext publishes the rule for every
+   language, and `msginit` inserts it. If you are hand-writing a header, copy
+   the `Plural-Forms` line from a catalogue **in your own language**, not from
+   `ko.po`.
+
+4. `make -C mux/po mo-<lang>`, then `make test-nls` for the static checks.
+
+5. **See your work in a running game.** Build the catalogue and point the
+   server at it:
+
+   ```bash
+   make -C mux/po mo-<lang>
+   # in netmux.conf:
+   #   language <lang>
+   cd mux/game && ./bin/netmux -c netmux.conf
+   ```
+
+   The `language` directive (#1702) selects the catalogue by name on every
+   platform and does not require the host to have that locale installed, so
+   this works without `localedef` or a matching `LANG`. Untranslated msgids
+   render in English, so a partial catalogue is immediately usable.
+
+6. Send a pull request. Partial is expected and welcome — see the coverage
+   policy above. A catalogue that is 20% translated and correct is more use
+   than none, and it is far easier for a native speaker to correct wording
+   that exists than to start from an empty file.
 
 ### Argument order
 

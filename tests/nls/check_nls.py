@@ -331,8 +331,54 @@ def catalogue_policy(path):
     Defaults to partial: a new human catalogue that forgets the header gets the
     lenient policy, which is the safe direction.  Structural errors (stale or
     missing msgids, format-sequence mismatches) stay fatal under both.
+
+    An UNRECOGNISED value is not silently lenient -- see check_policy_names.
     """
     return po_header(path).get("x-tinymux-catalogue", "partial").lower()
+
+
+# The policies this file knows how to act on.  Anything else is a typo.
+#
+CATALOGUE_POLICIES = ("complete", "partial")
+
+
+def check_policy_names(root):
+    """A policy value that is not recognised must fail rather than downgrade.
+
+    catalogue_policy() only ever compares == "complete", so every other
+    string -- including "complte" -- takes the lenient path.  That makes a
+    one-character typo silently switch off the strict checks on the one
+    catalogue that exists to prove the pipeline works.
+
+    Measured before this check existed: with xx.po's header typo'd to
+    "complte" AND a translation blanked, the guard reported
+
+        xx.po       974/975  ( 99.9%) translated,  0 fuzzy  [complte]
+        === NLS guard: 975 msgids, 204 source files, all clean ===
+
+    and exited 0.  The typo is visible in that output and nothing acts on it,
+    which is the same "a person has to notice" failure the vacuous-case guard
+    (#1434 family) exists to remove.
+    """
+    findings = []
+    po_dir = os.path.join(root, "mux", "po")
+    if not os.path.isdir(po_dir):
+        return findings
+    for name in sorted(os.listdir(po_dir)):
+        if not name.endswith(".po"):
+            continue
+        path = os.path.join(po_dir, name)
+        hdr = po_header(path)
+        if "x-tinymux-catalogue" not in hdr:
+            # Absent is a deliberate default (partial), not a typo.
+            continue
+        policy = hdr["x-tinymux-catalogue"].lower()
+        if policy not in CATALOGUE_POLICIES:
+            findings.append(
+                "%s: X-Tinymux-Catalogue: %r is not a known policy (%s)"
+                % (name, hdr["x-tinymux-catalogue"],
+                   ", ".join(CATALOGUE_POLICIES)))
+    return findings
 
 
 def check_catalogues(root, pot):
@@ -523,6 +569,11 @@ def main():
          "Column spacing belongs in mux_table_*, not in a single msgid.  "
          "Compose headers from per-label M_() strings (docs/design-tabular-"
          "notifies.md Phase 5 / #1648 / #1667)."),
+        ("catalogue policy names",
+         check_policy_names(root),
+         "An unrecognised X-Tinymux-Catalogue value takes the lenient path, "
+         "so a typo switches off the strict checks without saying so.  Use "
+         "'complete' or 'partial'."),
         ("catalogue integrity",
          check_catalogues(root, pot),
          "Stale and missing msgids are errors in every catalogue.  Under an "
