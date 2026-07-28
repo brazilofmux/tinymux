@@ -149,7 +149,7 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-AGREE_DECLINE_BUDGET=32
+AGREE_DECLINE_BUDGET=31
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -169,6 +169,12 @@ EXEC_CASES=(
     # computed this" from "the interpreter did" (#1426).
     'local t={} t[1]=5 return t[1]'
     'local t={} t[1]=7 t[2]=9 return t[1]+t[2]'
+
+    # Table CONSTRUCTORS, which lower through SETLIST rather than the
+    # SETTABI stores above -- a separate path that was still emitting the
+    # named ECALL and so compiled and then failed on every call.
+    'local t={10,20,30} return t[1]+t[3]'
+    'local t={4,5} return t[2]'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

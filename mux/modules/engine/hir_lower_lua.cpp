@@ -1324,19 +1324,23 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (!lua_reg_in_range(A + j)) return -1;
                 int val = lua_reg[A + j];
                 if (val < 0) return -1;
-                if (h.ty[val] == TY_INT) {
-                    val = h.emit(HIR_ITOA, TY_STRING, val);
-                    if (val < 0) return -1;
-                } else if (h.ty[val] == TY_FLOAT) {
-                    val = h.emit(HIR_FTOA, TY_STRING, val);
-                    if (val < 0) return -1;
-                }
+
+                // Integer elements only, as for OP_LUA_SETTABI: the
+                // dedicated ECALL carries the value in a register, so there
+                // is nowhere for a string to ride.  A constructor holding
+                // anything else declines and the interpreter answers.
+                if (h.ty[val] != TY_INT) return -1;
+                if (lua_is_handle(h, val)) return -1;
+
                 int key = h.emit_iconst(offset + j);
                 if (key < 0) return -1;
 
-                std::string name("__lua_seti");
-                int args[] = { tbl, key, val };
-                h.emit_call(TY_STRING, 0, args, 3, &name);
+                // Third operand rides in val[]; hir_val_operand() in hir.h
+                // is what keeps the liveness walker from recycling the
+                // register before the ECALL reads it.
+                if (h.emit(HIR_LUA_SETI, TY_VOID, tbl, key, val) < 0) {
+                    return -1;
+                }
                 h.ecalls++;
             }
             break;
