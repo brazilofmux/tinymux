@@ -127,15 +127,22 @@ AGREE_CASES=(
     'local t={a=7} return t.a'
     # ---- math.type: the subtype as Lua reports it (#1488) ----
     #
-    # AGREE, not EXEC: math.type is a field read on a library table, so it
-    # routes through the unimplemented named bridge and declines (#1519).
-    # Worth pinning anyway -- it is the only check that the subtype is right
-    # *inside* Lua rather than just in the rendered result, and it is the
-    # case that showed `^` was float all along and the "8" came from the
-    # constant fold.  Re-measure lua_run_ok when the bridge comes up.
+    # AGREE, not EXEC: FLOAT constants cannot yet travel as call arguments,
+    # so these decline.  Worth pinning anyway -- it is the only check that
+    # the subtype is right *inside* Lua rather than just in the rendered
+    # result, and it is the case that showed `^` was float all along and the
+    # "8" came from the constant fold.  The integer form, math.type(3), now
+    # executes and lives in EXEC_CASES.
     'return math.type(3.0)'
-    'return math.type(3)'
     'return math.type(2^3)'
+
+    # Multi-value truncation at the chunk boundary: string.find returns TWO
+    # values and the interpreter's own chunk call is lua_pcall(L, 0, 1, 0),
+    # so both routes must keep exactly the first.  Declines today (a number
+    # comes back where CALL_STR demands a string), but if a numeric call
+    # result ever compiles, this is the case that catches a route that asks
+    # for a different result count than the interpreter does.
+    'return string.find("ab","b")'
 )
 
 # How many AGREE chunks are expected to decline rather than execute.
@@ -236,6 +243,23 @@ EXEC_CASES=(
     'local x=tostring(42) return x'
     'local x=tonumber("17") return x'
     'local x=type(42) return x'
+
+    # TAILCALL -- `return f(...)` with no local temporary, the most common
+    # one-liner shape.  Lua compiles it to OP_TAILCALL plus a dead trailing
+    # `RETURN A 0`, so these prove three things the local-temporary cases
+    # above cannot: the tail call emits the return half at all (a lowering
+    # that emits only the call answers empty), the dead multret return is
+    # recognized as dead instead of declining the chunk, and both result
+    # types survive the shape.  Asymmetric max/min arguments and the
+    # tostring/tonumber pair carry the same discipline as their EXEC
+    # originals -- an implementation that passes one argument, swaps them,
+    # or infers the result type from the arguments cannot pass the set.
+    'return math.max(3,9)'
+    'return math.min(3,9)'
+    'return tostring(42)'
+    'return tonumber("17")'
+    'return string.rep("ab",2)'
+    'return math.type(3)'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
