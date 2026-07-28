@@ -732,6 +732,12 @@ static bool needs_output_buffer(hir_program &h, int i) {
     case HIR_ITOA:
     case HIR_FTOA:
     case HIR_LUA_FTOA:
+    // CALL_STR writes the library result into this slot and passes
+    // OUT_SLOT as the bound (#1519 / #1679).  Omitting it leaves
+    // loc[i].addr at 0 so every CALL_STR aliases guest address 0 —
+    // sequential single-result tests still pass by luck.
+    //
+    case HIR_LUA_CALL_STR:
     case HIR_PHI:
     case HIR_COPY:
         return true;
