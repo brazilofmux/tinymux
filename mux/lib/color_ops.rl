@@ -2051,9 +2051,10 @@ co_field co_copy_field(unsigned char *out, size_t nOutMax,
         }
 
         /*
-         * Measure the cluster (color + visible) without writing, and reserve
-         * budget for a RESET if we would stop non-normal afterwards — the
-         * StripTabsAndTruncate reserve-for-close pattern (#1649).
+         * Measure the cluster (color + visible) without writing, and leave
+         * room for a RESET if stopping here would leave non-normal color.
+         * Color is zero-width state, not a display unit: a column cut that
+         * cannot also close bleeds into whatever follows (#1649).
          */
         const unsigned char *pProbe = p;
         co_ColorState csProbe = cs;
