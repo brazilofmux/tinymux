@@ -26,6 +26,7 @@
 #include "comsys_mod.h"
 
 #include <atomic>
+#include <cstdarg>
 #include <cstring>
 
 // Windows compatibility for POSIX functions.
@@ -675,22 +676,61 @@ void CComsysMod::bump_revision(void)
     }
 }
 
+// Report a refused storage write (#1630).  Silent on success, so it can wrap
+// a call directly:  log_storage_failure(m_pIStorage->Foo(k), "Foo(k=%d)", k);
+//
+// The message carries the operation, the key that identifies the row, and the
+// result code.  #1620's history-write log is the same idea spelled out at one
+// call site; this is that shape made cheap enough to use at all of them.
+//
+void CComsysMod::log_storage_failure(MUX_RESULT mr, const char *fmt, ...)
+{
+    if (  MUX_SUCCEEDED(mr)
+       || nullptr == m_pILog)
+    {
+        return;
+    }
+
+    char detail[192];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(detail, sizeof(detail), fmt, ap);
+    va_end(ap);
+
+    bool fStarted;
+    m_pILog->start_log(&fStarted, LOG_ALWAYS, T("COM"), T("DB"));
+    if (fStarted)
+    {
+        UTF8 buf[256];
+        snprintf(reinterpret_cast<char *>(buf), sizeof(buf),
+            "Comsys module: storage write refused: %s; result %d.",
+            detail, mr);
+        m_pILog->log_text(buf);
+        m_pILog->end_log();
+    }
+}
+
 void CComsysMod::sqlite_wt_channel_user(const UTF8 *channel_name,
     const comuser &user)
 {
     if (nullptr == m_pIStorage) return;
-    m_pIStorage->SyncChannelUser(channel_name, user.who,
-        user.bUserIsOn, user.ComTitleStatus, user.bGagJoinLeave,
-        reinterpret_cast<const UTF8 *>(user.title.c_str()));
+    log_storage_failure(m_pIStorage->SyncChannelUser(channel_name, user.who,
+            user.bUserIsOn, user.ComTitleStatus, user.bGagJoinLeave,
+            reinterpret_cast<const UTF8 *>(user.title.c_str())),
+        "SyncChannelUser(channel=%s, who=#%d)",
+        reinterpret_cast<const char *>(channel_name),
+        static_cast<int>(user.who));
     bump_revision();
 }
 
 void CComsysMod::sqlite_wt_channel(struct channel *ch)
 {
     if (nullptr == m_pIStorage) return;
-    m_pIStorage->SyncChannel(ch->name, ch->header, ch->type,
-        ch->temp1, ch->temp2, ch->charge, ch->charge_who,
-        ch->amount_col, ch->num_messages, ch->chan_obj);
+    log_storage_failure(m_pIStorage->SyncChannel(ch->name, ch->header,
+            ch->type, ch->temp1, ch->temp2, ch->charge, ch->charge_who,
+            ch->amount_col, ch->num_messages, ch->chan_obj),
+        "SyncChannel(channel=%s)",
+        reinterpret_cast<const char *>(ch->name));
     bump_revision();
 }
 
@@ -698,14 +738,20 @@ void CComsysMod::sqlite_wt_player_channel(dbref who, const UTF8 *alias,
     const UTF8 *channel_name)
 {
     if (nullptr == m_pIStorage) return;
-    m_pIStorage->SyncPlayerChannel(who, alias, channel_name);
+    log_storage_failure(
+        m_pIStorage->SyncPlayerChannel(who, alias, channel_name),
+        "SyncPlayerChannel(who=#%d, alias=%s, channel=%s)",
+        static_cast<int>(who), reinterpret_cast<const char *>(alias),
+        reinterpret_cast<const char *>(channel_name));
     bump_revision();
 }
 
 void CComsysMod::sqlite_wt_delete_player_channel(dbref who, const UTF8 *alias)
 {
     if (nullptr == m_pIStorage) return;
-    m_pIStorage->DeletePlayerChannel(who, alias);
+    log_storage_failure(m_pIStorage->DeletePlayerChannel(who, alias),
+        "DeletePlayerChannel(who=#%d, alias=%s)",
+        static_cast<int>(who), reinterpret_cast<const char *>(alias));
     bump_revision();
 }
 
@@ -713,7 +759,9 @@ void CComsysMod::sqlite_wt_delete_channel_user(const UTF8 *channel_name,
     dbref who)
 {
     if (nullptr == m_pIStorage) return;
-    m_pIStorage->DeleteChannelUser(channel_name, who);
+    log_storage_failure(m_pIStorage->DeleteChannelUser(channel_name, who),
+        "DeleteChannelUser(channel=%s, who=#%d)",
+        reinterpret_cast<const char *>(channel_name), static_cast<int>(who));
     bump_revision();
 }
 
@@ -2210,7 +2258,11 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
                 reinterpret_cast<const char *>(it->second->name));
             if (nullptr != m_pIStorage)
             {
-                m_pIStorage->DeleteChannel(it->second->name);
+                log_storage_failure(
+                    m_pIStorage->DeleteChannel(it->second->name),
+                    "DeleteChannel(channel=%s) [owner #%d destroyed]",
+                    reinterpret_cast<const char *>(it->second->name),
+                    static_cast<int>(player));
                 bump_revision();
             }
             it = m_channels.erase(it);
@@ -2255,7 +2307,8 @@ MUX_RESULT CComsysMod::PlayerNuke(dbref player)
     //
     if (nullptr != m_pIStorage)
     {
-        m_pIStorage->DeleteAllPlayerChannels(player);
+        log_storage_failure(m_pIStorage->DeleteAllPlayerChannels(player),
+            "DeleteAllPlayerChannels(who=#%d)", static_cast<int>(player));
     }
 
     return MUX_S_OK;
@@ -3766,7 +3819,9 @@ MUX_RESULT CComsysMod::DestroyChannel(dbref executor, const UTF8 *pName)
     //
     if (nullptr != m_pIStorage)
     {
-        m_pIStorage->DeleteChannel(ch->name);
+        log_storage_failure(m_pIStorage->DeleteChannel(ch->name),
+            "DeleteChannel(channel=%s)",
+            reinterpret_cast<const char *>(ch->name));
         bump_revision();
     }
 

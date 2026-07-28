@@ -349,6 +349,20 @@ private:
 
     // SQLite write-through.
     //
+    // #1630: every write below can be refused -- foreign keys, constraint
+    // violations, a closed database, a full disk -- and discarding the
+    // result lets stored state diverge from memory with nothing to notice.
+    // That is #1587's shape exactly: a delete refused by a foreign key,
+    // silently, for long enough that the symptom took a full investigation.
+    // Checking cannot make a refused write land; it converts an invisible
+    // divergence into a log grep.
+    //
+    void log_storage_failure(MUX_RESULT mr, const char *fmt, ...)
+#if defined(__GNUC__)
+        __attribute__((format(printf, 3, 4)))
+#endif
+        ;
+
     void sqlite_wt_insert_mail(struct mail *mp);
     void sqlite_wt_update_mail_flags(struct mail *mp);
     void sqlite_wt_delete_mail(struct mail *mp);

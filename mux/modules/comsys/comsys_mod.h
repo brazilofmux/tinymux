@@ -219,6 +219,19 @@ private:
     void do_leavechannel(dbref player, struct channel *ch);
     void do_comwho(dbref player, struct channel *ch);
 
+    // #1630: every storage write below can be refused -- foreign keys,
+    // constraint violations, a closed database, a full disk -- and
+    // discarding the result lets stored state diverge from memory with
+    // nothing to notice.  That is the shape of #1564, #1585, #1620 and
+    // #1587.  Checking cannot make a refused write land; it converts an
+    // invisible divergence into a log grep.
+    //
+    void log_storage_failure(MUX_RESULT mr, const char *fmt, ...)
+#if defined(__GNUC__)
+        __attribute__((format(printf, 3, 4)))
+#endif
+        ;
+
     void sqlite_wt_channel_user(const UTF8 *channel_name,
         const comuser &user);
     void sqlite_wt_channel(struct channel *ch);
