@@ -79,21 +79,22 @@
 | | Engine | Module |
 |--|--------|--------|
 | File | `mail.cpp` `do_malias_list_all` | `mail_mod.cpp` `do_malias_list_all` |
-| Header | **Blob** `M_("Name         Description                              Owner")` | **Blob** `T_(same)` |
-| Cell primitive | `%-12s` + `Spaces(40 - desc_width)` + `%-15.15s` moniker | `append_ljust_field` 12 / **40** / 15 |
-| Columns | name **12** · description **40** · owner **15** | Same intent |
-| Translate? | **No (blob)** | **No (blob)** |
-| Dual | **Yes** |
+| Header | **Converted (#1667 Phase 4)** — `Name` / `Description` / `Owner` via `mux_table_*` | Same |
+| Cell primitive | `mux_table_*` | Same |
+| Columns | name **12** · description **40** · owner **15** | Same |
+| Translate? | **Per-label** | Same |
+| Dual | **Yes** — both paths converted together |
 
 ### B2. Mail alias admin list
 
 | | Engine | Module |
 |--|--------|--------|
 | File | `mail.cpp` `do_malias_adminlist` | `mail_mod.cpp` `do_malias_adminlist` |
-| Header | **Blob** `M_("Num  Name         Description                              Owner")` | **Blob** `T_(same)` |
-| Cell primitive | `%-4d %-12s` + spaces/desc + `%-15.15s` | `%-4d` + fields 12 / 40 / 15 |
-| Translate? | **No (blob)** | **No (blob)** |
-| Dual | **Yes** |
+| Header | **Converted (#1667 Phase 4)** — `Num` / `Name` / `Description` / `Owner` | Same |
+| Cell primitive | `mux_table_*` | Same |
+| Columns | num **4** · name **12** · description **40** · owner **15** | Same |
+| Translate? | **Per-label** | Same |
+| Dual | **Yes** — both paths converted together |
 
 ### B3. Mail folder / review list lines
 
@@ -229,8 +230,8 @@ From `mux/po/tinymux.pot` at inventory time (grep for multi-space column-like ms
 | ~~`Alias           Channel            Status   Title`~~ | A3 — **removed** Phase 4 (per-label) |
 | ~~`*** Channel       Owner           Header`~~ | A2 — **removed** Phase 4 (per-label) |
 | ~~`*** Channel       Owner           Description`~~ | A2 — **removed** Phase 4 (per-label) |
-| `Name         Description                              Owner` | B1 |
-| `Num  Name         Description                              Owner` | B2 |
+| ~~`Name         Description                              Owner`~~ | B1 — **removed** Phase 4 |
+| ~~`Num  Name         Description                              Owner`~~ | B2 — **removed** Phase 4 |
 | `*Guest #  : Name            dbref  Status     Last Site` | C1 |
 | `Day   Hours     Players  Total` | C8 |
 | `Address                                            Status` | C2 |

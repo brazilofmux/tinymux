@@ -10,6 +10,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "mux_table.h"
 
 #include <algorithm>
 #include <memory>
@@ -4275,20 +4276,43 @@ static void do_malias_list_all(dbref player)
     };
     std::sort(visible.begin(), visible.end(), cmp);
 
+    // Mail alias list schema (#1667 Phase 4 B1) — shared with module:
+    // name 12 / description 40 / owner 15 via mux_table_*.
+    //
+    static const size_t kAliasNameCols = 12;
+    static const size_t kAliasDescCols = 40;
+    static const size_t kAliasOwnerCols = 15;
+
     bool notified = false;
     for (malias_t *m : visible)
     {
         if (!notified)
         {
-            raw_notify(player, M_("Name         Description                              Owner"));
+            UTF8 header[LBUF_SIZE];
+            size_t pos = 0;
+            pos = mux_table_append_ljust(header, sizeof(header), pos,
+                M_("Name"), kAliasNameCols);
+            pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+            pos = mux_table_append_ljust(header, sizeof(header), pos,
+                M_("Description"), kAliasDescCols);
+            pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+            pos = mux_table_append_ljust(header, sizeof(header), pos,
+                M_("Owner"), kAliasOwnerCols);
+            raw_notify(player, header);
             notified = true;
         }
 
-        const UTF8 *pSpaces = Spaces(40 - m->desc_width);
-
-        UTF8 *p = tprintf(T("%-12s %s%s %-15.15s"),
-            m->name.c_str(), m->desc.c_str(), pSpaces, Moniker(m->owner));
-        raw_notify(player, p);
+        UTF8 line[LBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(m->name.c_str()), kAliasNameCols);
+        pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(m->desc.c_str()), kAliasDescCols);
+        pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            Moniker(m->owner), kAliasOwnerCols);
+        raw_notify(player, line);
     }
     raw_notify(player, M_("*****  End of Mail Aliases *****"));
 }
@@ -5090,16 +5114,50 @@ static void do_malias_adminlist(dbref player)
         do_malias_list_all(player);
         return;
     }
-    raw_notify(player,
-      M_("Num  Name         Description                              Owner"));
+    // Mail alias admin list (#1667 Phase 4 B2) — same widths as B1 plus
+    // a 4-column index prefix.
+    //
+    static const size_t kAliasNumCols   = 4;
+    static const size_t kAliasNameCols  = 12;
+    static const size_t kAliasDescCols  = 40;
+    static const size_t kAliasOwnerCols = 15;
+
+    {
+        UTF8 header[LBUF_SIZE];
+        size_t pos = 0;
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Num"), kAliasNumCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Name"), kAliasNameCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Description"), kAliasDescCols);
+        pos = mux_table_append_bytes(header, sizeof(header), pos, " ");
+        pos = mux_table_append_ljust(header, sizeof(header), pos,
+            M_("Owner"), kAliasOwnerCols);
+        raw_notify(player, header);
+    }
 
     for (size_t i = 0; i < malias.size(); i++)
     {
         malias_t *m = malias[i].get();
-        const UTF8 *pSpaces = Spaces(40 - m->desc_width);
-        raw_notify(player, tprintf(T("%-4d %-12s %s%s %-15.15s"),
-                       static_cast<int>(i), m->name.c_str(), m->desc.c_str(), pSpaces,
-                       Moniker(m->owner)));
+        UTF8 line[LBUF_SIZE];
+        size_t pos = 0;
+        UTF8 numbuf[8];
+        mux_sprintf(numbuf, sizeof(numbuf), T("%d"), static_cast<int>(i));
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            numbuf, kAliasNumCols);
+        pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(m->name.c_str()), kAliasNameCols);
+        pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            reinterpret_cast<const UTF8 *>(m->desc.c_str()), kAliasDescCols);
+        pos = mux_table_append_bytes(line, sizeof(line), pos, " ");
+        pos = mux_table_append_ljust(line, sizeof(line), pos,
+            Moniker(m->owner), kAliasOwnerCols);
+        raw_notify(player, line);
     }
 
     raw_notify(player, M_("***** End of Mail Aliases *****"));

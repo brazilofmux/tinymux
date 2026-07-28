@@ -31,7 +31,7 @@
  –––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––
  Body of the first message.
 @@ -77,11 +84,11 @@
- Num  Name         Description                              Owner
+ Num  Name         Description                              Owner          
  ***** End of Mail Aliases *****
  MAIL: Number of mail aliases defined: 0
 -MAIL: Vector capacity: 0
