@@ -193,8 +193,26 @@ private:
     bool test_transmit_access(dbref player, struct channel *ch);
     bool test_receive_access(dbref player, struct channel *ch);
     void do_processcom(dbref player, const UTF8 *channel, UTF8 *msg);
+
+    // Speaker prefix — "<header> <comtitle> <name>", or "<header> <comtitle>"
+    // on a spoof channel.  The engine's BuildChannelMessage builds two
+    // variants because the listener, not the speaker, decides whether
+    // comtitles are shown; this builds the same pair (#1640).
+    //
+    // pNoComtitle is left empty on a spoof channel, where the engine has no
+    // second variant at all and every listener sees the comtitle.
+    //
+    void BuildSpeakerPrefix(struct channel *ch, const struct comuser *user,
+        UTF8 *pNormal, size_t nNormal, UTF8 *pNoComtitle, size_t nNoComtitle);
+
     void SendChannelMessage(dbref executor, struct channel *ch,
-        const UTF8 *msg, bool bJoinLeaveMsg);
+        const UTF8 *msg, const UTF8 *msgNoComtitle, bool bJoinLeaveMsg);
+
+    // @clist/full — the wide listing with Header/Access/Users/Msgs.  Split
+    // out because it shares nothing with the default listing but the loop
+    // (#1640); the engine splits it the same way (do_listchannels).
+    //
+    MUX_RESULT ChanListFull(dbref executor, const UTF8 *pPattern);
     // Recall-buffer write, mirroring the engine's HISTORY_n logging (#1564).
     void RecordChannelHistory(dbref executor, struct channel *ch,
         const UTF8 *msg, bool bJoinLeaveMsg);

@@ -74,7 +74,8 @@ const MUX_CID CID_Notify                 = UINT64_C(0x00000002B880897B);
 const MUX_IID IID_INotify                = UINT64_C(0x00000002621F4385);
 const MUX_CID CID_ObjectInfo             = UINT64_C(0x00000002251565F1);
 // IID bumped ..6C49 -> ..6C4A when PayFor/GiveTo were added (#1194).
-const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C4A);
+// IID bumped ..6C4A -> ..6C4B when UnparseObject was added (#1640).
+const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C4B);
 const MUX_CID CID_AttributeAccess       = UINT64_C(0x000000024A3E71B5);
 const MUX_IID IID_IAttributeAccess      = UINT64_C(0x00000002D89F42C3);
 const MUX_CID CID_Evaluator             = UINT64_C(0x00000002E7B3A51D);
@@ -305,6 +306,18 @@ public:
     // DecodeFlags — printable flag string (caller must free_sbuf).
     //
     virtual MUX_RESULT DecodeFlags(dbref player, dbref obj, UTF8 **ppStr) = 0;
+
+    // UnparseObject — "Name(#dbref FLAGS)" as the viewer is entitled to see
+    // it, into a caller-supplied buffer.  The visibility rule is Examinable()
+    // plus the CHOWN_OK/JUMP_OK/LINK_OK/DESTROY_OK/ABODE exceptions, which a
+    // module cannot compute from GetFlags/DecodeFlags alone -- so @cwho
+    // rendered a bare name under the comsys module and name+dbref+flags under
+    // the engine (#1640).  Caller-supplied buffer rather than an allocation,
+    // matching AtrGet: nothing crosses the DLL boundary that has to be freed
+    // on the other side.
+    //
+    virtual MUX_RESULT UnparseObject(dbref player, dbref target,
+        bool bObeyMyopic, UTF8 *pBuf, size_t nBufMax) = 0;
 
     // Compound permission queries — these wrap the complex macro chains
     // (Owner/Inherits/Flags) so the driver doesn't need db[] access.
