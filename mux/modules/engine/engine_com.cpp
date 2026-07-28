@@ -2293,15 +2293,15 @@ MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
                 FIELDEDTIME ft;
                 ltaNow.ReturnFields(&ft);
 
-                raw_notify(player, tprintf(T("MAIL: Reject message from %s: %s"),
+                raw_notify(player, tprintf(M_("MAIL: Reject message from %s: %s"),
                     Moniker(target), str2.get()));
-                raw_notify(target, tprintf(T("[%d:%02d] MAIL: Reject message sent to %s."),
+                raw_notify(target, tprintf(M_("[%d:%02d] MAIL: Reject message sent to %s."),
                     ft.iHour, ft.iMinute, Moniker(player)));
             }
         }
         else
         {
-            raw_notify(player, tprintf(T("Sorry, %s is not accepting mail."),
+            raw_notify(player, tprintf(M_("Sorry, %s is not accepting mail."),
                 Moniker(target)));
         }
         *pResult = false;
@@ -2313,14 +2313,14 @@ MUX_RESULT CMailDelivery::MailCheck(dbref player, dbref target, bool *pResult)
         if (Wizard(player))
         {
             raw_notify(player, tprintf(
-                T("Warning: %s can’t return your mail."),
+                M_("Warning: %s can’t return your mail."),
                 Moniker(target)));
             *pResult = true;
         }
         else
         {
             raw_notify(player, tprintf(
-                T("Sorry, %s can’t return your mail."),
+                M_("Sorry, %s can’t return your mail."),
                 Moniker(target)));
             *pResult = false;
         }
@@ -2348,12 +2348,12 @@ MUX_RESULT CMailDelivery::NotifyDelivery(dbref sender, dbref target,
 
     if (!silent)
     {
-        raw_notify(sender, tprintf(T("MAIL: You sent your message to %s."),
+        raw_notify(sender, tprintf(M_("MAIL: You sent your message to %s."),
             Moniker(target)));
     }
 
     raw_notify(target, tprintf(
-        T("MAIL: You have a new message from %s. Subject: %s"),
+        M_("MAIL: You have a new message from %s. Subject: %s"),
         Moniker(sender), subject));
 
     did_it(sender, target, A_MAIL, nullptr, 0, nullptr, A_AMAIL, 0,
