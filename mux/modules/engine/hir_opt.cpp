@@ -535,24 +535,21 @@ void hir_copy_prop(hir_program &h) {
                     changed = true;
                 }
             }
-            // Propagate through HIR_LUA_SETI/SETFIELD's stored value (val[]).
-            int vop = hir_val_operand(h, i);
-            if (vop >= 0) {
-                int r = resolve_copy(h, vop);
-                if (r != vop) {
-                    h.val[i] = r;
+            // Everything that is not src1/src2: the val[] slot and any
+            // argument list, walked through the operand accessors so this
+            // pass does not need to know which opcode keeps what where.
+            //
+            // hir_operand_set matters here as much as the walk does: the
+            // val[] slot is a plain index for SETI/SETFIELD but PACKED with
+            // nargs for CALL_INT, and the previous `h.val[i] = r` preserved
+            // neither.
+            for (int sl = HIR_SLOT_VAL; sl < hir_operand_count(h, i); sl++) {
+                int cur = hir_operand_get(h, i, sl);
+                if (cur < 0) continue;
+                int r = resolve_copy(h, cur);
+                if (r != cur) {
+                    hir_operand_set(h, i, sl, r);
                     changed = true;
-                }
-            }
-            // Propagate through call/strcat arguments.
-            if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
-                int base = h.cbase[i];
-                for (int j = 0; j < h.cnargs[i]; j++) {
-                    int r = resolve_copy(h, h.carg[base + j]);
-                    if (r != h.carg[base + j]) {
-                        h.carg[base + j] = r;
-                        changed = true;
-                    }
                 }
             }
             // Propagate through PHI arguments.
@@ -618,33 +615,13 @@ void hir_dce(hir_program &h) {
         for (int i = 0; i < h.n_insns; i++) {
             if (!used[i]) continue;
 
-            if (h.src1[i] >= 0 && !used[h.src1[i]]) {
-                used[h.src1[i]] = true;
-                changed = true;
-            }
-            // Skip BRC — src2 is a block number, not an insn ref.
-            if (h.src2[i] >= 0 && h.kind[i] != HIR_BRC
-                && !used[h.src2[i]]) {
-                used[h.src2[i]] = true;
-                changed = true;
-            }
-
-            // HIR_LUA_SETI's stored value lives in val[], not src1/src2.
-            int vop = hir_val_operand(h, i);
-            if (vop >= 0 && !used[vop]) {
-                used[vop] = true;
-                changed = true;
-            }
-
-            // Call/strcat arguments.
-            if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
-                int base = h.cbase[i];
-                for (int j = 0; j < h.cnargs[i]; j++) {
-                    int a = h.carg[base + j];
-                    if (a >= 0 && !used[a]) {
-                        used[a] = true;
-                        changed = true;
-                    }
+            // Every operand, whatever slot it lives in.  BRC's src2 is a
+            // block number and the accessor already refuses it.
+            for (int sl = 0; sl < hir_operand_count(h, i); sl++) {
+                int a = hir_operand_get(h, i, sl);
+                if (a >= 0 && !used[a]) {
+                    used[a] = true;
+                    changed = true;
                 }
             }
 

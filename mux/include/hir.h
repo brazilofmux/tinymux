@@ -725,6 +725,30 @@ struct hir_program {
 // CALL_INT exposes only arg1 this way; a true N-ary operand list is the
 // longer-term fix the #1519 call path argues for.
 //
+// Operand slots, so a pass can name where an operand LIVES without knowing
+// which opcode put it there (#1519).
+//
+// Every operand of every instruction is reachable through hir_operand_count
+// / hir_operand_get / hir_operand_set.  Passes that walk operands --
+// copy propagation, DCE, liveness in the register allocator -- used to
+// hand-roll the same sequence: src1, src2, hir_val_operand(), then the
+// carg[] loop.  Three copies of one layout, and each new operand shape had
+// to be added to all three.  CALL_INT's second argument was invisible to
+// liveness for exactly that reason until 20d39472f.
+//
+// Adding a shape now means teaching these three functions, once.
+//
+enum hir_operand_slot {
+    HIR_SLOT_SRC1 = 0,
+    HIR_SLOT_SRC2 = 1,
+    HIR_SLOT_VAL  = 2,   // SETI/SETFIELD value, CALL_INT arg1 (packed)
+    HIR_SLOT_ARG  = 3,   // carg[]/pbase[] lists start here
+};
+
+inline int hir_operand_count(const hir_program &h, int i);
+inline int hir_operand_get(const hir_program &h, int i, int slot);
+inline void hir_operand_set(hir_program &h, int i, int slot, int r);
+
 inline int hir_val_operand(const hir_program &h, int i) {
     if (i < 0 || i >= h.n_insns) return -1;
     if (h.kind[i] == HIR_LUA_SETI || h.kind[i] == HIR_LUA_SETFIELD) {
@@ -738,6 +762,84 @@ inline int hir_val_operand(const hir_program &h, int i) {
         return (a1i >= 0 && a1i < h.n_insns) ? a1i : -1;
     }
     return -1;
+}
+
+// Number of operand slots on instruction i.  ARG slots follow the fixed
+// three, so slot >= HIR_SLOT_ARG indexes carg[]/pbase[].
+//
+inline int hir_operand_count(const hir_program &h, int i) {
+    if (i < 0 || i >= h.n_insns) return 0;
+    int n = HIR_SLOT_ARG;
+    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+        n += h.cnargs[i];
+    } else if (h.kind[i] == HIR_PHI) {
+        n += h.pnargs[i];
+    }
+    return n;
+}
+
+inline int hir_operand_get(const hir_program &h, int i, int slot) {
+    if (i < 0 || i >= h.n_insns) return -1;
+    switch (slot) {
+    case HIR_SLOT_SRC1: return h.src1[i];
+    case HIR_SLOT_SRC2:
+        // BRC keeps a BLOCK NUMBER in src2, not an instruction reference.
+        // DCE knew that and skipped it; nothing else did.  Encoding it here
+        // is the point of this accessor -- a pass that walks operands
+        // should not have to know which opcodes lie about their fields.
+        if (h.kind[i] == HIR_BRC) return -1;
+        return h.src2[i];
+    case HIR_SLOT_VAL:  return hir_val_operand(h, i);
+    default: break;
+    }
+    const int j = slot - HIR_SLOT_ARG;
+    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+        if (j < 0 || j >= h.cnargs[i]) return -1;
+        return h.carg[h.cbase[i] + j];
+    }
+    if (h.kind[i] == HIR_PHI) {
+        if (j < 0 || j >= h.pnargs[i]) return -1;
+        return h.pval[h.pbase[i] + j];
+    }
+    return -1;
+}
+
+// Write an operand back in whatever encoding its slot uses.
+//
+// The VAL slot is why this exists rather than a bare pointer: SETI and
+// SETFIELD keep a plain instruction index there, but CALL_INT PACKS nargs
+// into the low 8 bits with the operand above it.  Copy propagation used to
+// write `h.val[i] = r` unconditionally, which preserves neither -- a latent
+// hazard rather than an observed failure (I could not construct a chunk
+// where resolve_copy fires on a call argument), and precisely the kind that
+// a per-pass hand-rolled walk keeps re-introducing.
+//
+inline void hir_operand_set(hir_program &h, int i, int slot, int r) {
+    if (i < 0 || i >= h.n_insns) return;
+    switch (slot) {
+    case HIR_SLOT_SRC1: h.src1[i] = r; return;
+    case HIR_SLOT_SRC2:
+        if (h.kind[i] == HIR_BRC) return;   // block number, not an operand
+        h.src2[i] = r;
+        return;
+    case HIR_SLOT_VAL:
+        if (h.kind[i] == HIR_LUA_SETI || h.kind[i] == HIR_LUA_SETFIELD) {
+            h.val[i] = r;
+        } else if (h.kind[i] == HIR_LUA_CALL_INT) {
+            const int64_t nargs = h.val[i] & 0xFF;
+            h.val[i] = nargs | (static_cast<int64_t>(r + 1) << 8);
+        }
+        return;
+    default: break;
+    }
+    const int j = slot - HIR_SLOT_ARG;
+    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
+        if (j >= 0 && j < h.cnargs[i]) h.carg[h.cbase[i] + j] = r;
+        return;
+    }
+    if (h.kind[i] == HIR_PHI) {
+        if (j >= 0 && j < h.pnargs[i]) h.pval[h.pbase[i] + j] = r;
+    }
 }
 
 // SSA construction (hir_ssa.cpp).

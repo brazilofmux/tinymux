@@ -896,35 +896,19 @@ static void compute_live_ranges(hir_program &h,
         if (prog_point[i] < 0) continue;
         int pp_i = prog_point[i];
 
-        // src1 is always a value reference.
-        if (h.src1[i] >= 0 && h.src1[i] < h.n_insns) {
-            if (pp_i > last_use[h.src1[i]])
-                last_use[h.src1[i]] = pp_i;
-        }
-
-        // src2 is a value reference EXCEPT for BRC (where it's a block).
-        if (h.kind[i] != HIR_BRC && h.src2[i] >= 0 && h.src2[i] < h.n_insns) {
-            if (pp_i > last_use[h.src2[i]])
-                last_use[h.src2[i]] = pp_i;
-        }
-
-        // HIR_LUA_SETI's stored value lives in val[], not src1/src2.
-        // Without this its live range ends at its definition and the
-        // allocator hands the register to something else before the
-        // store reads it.
-        int vop = hir_val_operand(h, i);
-        if (vop >= 0 && pp_i > last_use[vop]) {
-            last_use[vop] = pp_i;
-        }
-
-        // Call/strcat arguments.
-        if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
-            for (int j = 0; j < h.cnargs[i]; j++) {
-                int arg = h.carg[h.cbase[i] + j];
-                if (arg >= 0 && arg < h.n_insns) {
-                    if (pp_i > last_use[arg])
-                        last_use[arg] = pp_i;
-                }
+        // Every operand extends its definition's live range to here.
+        //
+        // This was three hand-rolled cases -- src1, src2 with a BRC
+        // exception, val[], then the carg[] loop -- duplicated from the two
+        // walks in hir_opt.cpp.  An operand shape the walk missed did not
+        // fail loudly: the live range ended at the definition and the
+        // allocator handed the register to something else while the ECALL
+        // still expected it.  The accessor knows every slot, including that
+        // BRC's src2 is a block number.
+        for (int sl = 0; sl < hir_operand_count(h, i); sl++) {
+            int a = hir_operand_get(h, i, sl);
+            if (a >= 0 && a < h.n_insns && pp_i > last_use[a]) {
+                last_use[a] = pp_i;
             }
         }
 
@@ -979,13 +963,9 @@ static void compute_live_ranges(hir_program &h,
                                     last_use[v] = latch_end;
                             }
                         };
-                        extend(h.src1[i]);
-                        if (h.kind[i] != HIR_BRC)
-                            extend(h.src2[i]);
-                        extend(hir_val_operand(h, i));
-                        if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT) {
-                            for (int j = 0; j < h.cnargs[i]; j++)
-                                extend(h.carg[h.cbase[i] + j]);
+                        for (int sl = 0;
+                             sl < hir_operand_count(h, i); sl++) {
+                            extend(hir_operand_get(h, i, sl));
                         }
                     }
                 }
