@@ -2274,13 +2274,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 }
             }
 
-            // Integer call on a handle from GETFIELD_REF: the narrow
-            // first cut.  Integer args, integer result, nothing marshalled.
-            // Everything else falls through to the old path below and
-            // declines, which is what it already did.
+            // Integer result: same argument encoding as CALL_STR, opposite
+            // result type.  Gated on the callee whitelist so a string-
+            // returning name that skipped the CALL_STR branch (e.g. nargs 0)
+            // cannot fall through and claim TY_INT.
+            //
             if (!is_bridge && nresults == 1 && nargs >= 0 && nargs <= 2
                 && func_reg >= 0
-                && lua_callable_source(h, func_reg)) {
+                && lua_callable_source(h, func_reg)
+                && lua_callee_returns_int(lua_callee_name(h, func_reg))) {
                 int a0 = -1, a1 = -1, kinds = 0;
                 bool ok = true;
                 for (int i = 0; i < nargs && ok; i++) {
