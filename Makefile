@@ -214,6 +214,8 @@ test-narrowing:
 # file); those are the ones a later "make config errors fatal" change would
 # break.  Needs only muxscript, so it runs on any built tree.
 test-config:
+	@echo "==> Running config display guard"
+	python3 tests/config/check_display.py
 	@echo "==> Running configuration-error tests"
 	bash tests/config/run.sh
 
