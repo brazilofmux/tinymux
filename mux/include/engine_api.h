@@ -75,27 +75,12 @@ static constexpr uint64_t ECALL_COMPILE_ATTR  = 0x201;
 // Convention: a0-a3 carry operand guest addresses or values.
 // Results written to guest memory; a0 returns status or integer result.
 //
-static constexpr uint64_t ECALL_LUA_LEN       = 0x300; // a0=src_addr → a0=length (integer)
 static constexpr uint64_t ECALL_LUA_NEWTABLE  = 0x301; // a0=narr, a1=nrec → a0=stack_idx
-static constexpr uint64_t ECALL_LUA_GETI      = 0x302; // a0=table_stk_idx, a1=int_key, a2=out_addr
-static constexpr uint64_t ECALL_LUA_SETI      = 0x303; // a0=table_stk_idx, a1=int_key, a2=val_addr
-static constexpr uint64_t ECALL_LUA_GETFIELD  = 0x304; // a0=table_stk_idx, a1=key_addr, a2=out_addr
-static constexpr uint64_t ECALL_LUA_SETFIELD  = 0x305; // a0=table_stk_idx, a1=key_addr, a2=val_addr
-static constexpr uint64_t ECALL_LUA_POPTABLE  = 0x306; // a0=table_stk_idx (cleanup)
 static constexpr uint64_t ECALL_LUA_GETI_INT = 0x308; // a0=tbl_idx, a1=key → a0=value, a1=ok
 static constexpr uint64_t ECALL_LUA_SETI_INT = 0x309; // a0=tbl_idx, a1=key, a2=value
-static constexpr uint64_t ECALL_LUA_PIN_ARRAY= 0x30A; // a0=tbl_idx, a1=dest, a2=max → a0=count
-static constexpr uint64_t ECALL_LUA_UNPIN    = 0x30B; // a0=tbl_idx, a1=src, a2=count (write-back)
 
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls
-static constexpr uint64_t ECALL_LUA_NAME      = 0x380; // mux.name(dbref)
-static constexpr uint64_t ECALL_LUA_OWNER     = 0x381; // mux.owner(dbref)
-static constexpr uint64_t ECALL_LUA_LOCATION  = 0x382; // mux.location(dbref)
-static constexpr uint64_t ECALL_LUA_GET       = 0x383; // mux.get(dbref, attr)
-static constexpr uint64_t ECALL_LUA_SET       = 0x384; // mux.set(dbref, attr, val)
-static constexpr uint64_t ECALL_LUA_NOTIFY    = 0x385; // mux.notify(dbref, msg)
-static constexpr uint64_t ECALL_LUA_EVAL      = 0x386; // mux.eval(expr)
 static constexpr uint64_t ECALL_LUA_BRIDGE_MAX= 0x38F;
 
 // Alarm check for JIT back-edge budgeting.
