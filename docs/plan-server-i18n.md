@@ -281,8 +281,10 @@ under CJK or after a stop change — see #1648.
 2. **Do not** “fix” one header in isolation or translate with hand-counted
    spaces — that is a partial migration and extra work later.
 3. **Do it right** means: column schema (shared widths), one msgid per label,
-   same cell primitive for header and rows (`co_copy_field`), and a single
-   ownership path for dual comsys/mail (#1614) or shared layout in libmux.
+   same cell primitive for header and rows (`co_copy_field`), layout API in
+   **libmux** (so modules, engine fallback, and engine-only staff tables share
+   one path). Product ownership of comsys/mail is #1614 (modules → default;
+   not re-decided here).
 
 Full design and phases: [`design-tabular-notifies.md`](design-tabular-notifies.md).  
 Phase 1 inventory: [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md).

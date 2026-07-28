@@ -272,7 +272,9 @@ Order optimizes **dual-parity pain × NLS risk × player visibility**:
 6. **C1, C2, C4, C8, C3** staff tables — engine-only blobs  
 7. **B3–B4, C5–C7, C9** freeform / forms — later  
 
-**Do not** convert only the module or only the engine for A/B while dual ownership remains unresolved (#1614).
+**Do not** convert only the module or only the engine for A/B. Phase 2: both
+sides of a dual family convert in the same change via the **libmux** layout
+API. Product default may still be the built-in until #1614 directives land.
 
 ---
 
@@ -294,4 +296,10 @@ Order optimizes **dual-parity pain × NLS risk × player visibility**:
 - [x] Explicit non-goals (D)  
 - [x] Conversion order proposal (G) without starting conversion  
 
-**Next:** Phase 2 of #1667 — ownership (#1614 or layout in libmux). No table conversion PRs until then.
+**Phase 2 (done in design doc §4):** product ownership follows #1614
+(modules become 2.14 default; built-ins fallback until directives). **Layout**
+ownership is **libmux** so dual paths and engine-only staff tables share one
+API. See `design-tabular-notifies.md` §4.
+
+**Next:** Phase 3 — layout API in libmux (no table conversion until Phase 4;
+dual families convert both sides in one change).

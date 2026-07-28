@@ -79,31 +79,86 @@ chrome    = fixed punctuation (***, spaces between fields) — not in the catalo
 
 ---
 
-## 4. Dual implementation (#1614)
+## 4. Dual implementation (#1614) and layout ownership (Phase 2)
 
-“Do it right” for comsys/mail tables **depends on ownership**:
+Two different “ownership” questions. Mixing them is how partial migrations
+happen. Phase 2 answers **both**.
+
+### 4.1 Product ownership (already decided on #1614)
+
+Maintainer decision (2026-07-27 on #1614), abbreviated:
+
+> Finish the migration. The comsys and mail modules become the shipped default
+> in 2.14. (**B-by-completion** — modules are the implementation; built-ins
+> remain the fallback until directives land.)
+
+Sequence already set there: close known gaps → Windows loadable → **then**
+ship `module comsys_mod` / `module mail_mod` in `netmux.conf`. Directives last.
+
+Implications for this epic:
+
+| Fact | Consequence for tables |
+|------|------------------------|
+| Modules are the **destination** for comsys/mail commands | Long-term convert those tables on the **module** path first when Phase 4 runs |
+| Built-ins remain **fallback** until directives land | Engine `@clist` / mail alias paths still execute on stock installs **today** |
+| Softcode functions stay engine-side and read module state | Not a layout issue; handoff harness owns it |
+| Inventory section **C** tables are engine-only forever | Staff lists never “move to a module” |
+
+**Do not** re-open #1614’s A/B/C product choice here. That is settled.
+
+### 4.2 Layout ownership (this epic’s Phase 2 decision)
+
+Options from the original design sketch:
 
 | Option | Implication |
 |--------|-------------|
-| **A. Shared layout in libmux** | Both engine and module call the same emit API; #1614 can stay open longer |
-| **B. Single owner** | #1614 decides which implementation lives; convert tables only there |
-| **C. Convert both in lockstep forever** | Rejected — permanent dual tax |
+| **A. Shared layout in libmux** | Engine and modules call the same emit API |
+| **B. Convert only the product owner** | Modules only for A/B inventory; engine staff tables somehow separate |
+| **C. Lockstep dual forever** | Rejected — permanent dual tax |
 
-Until A or B is chosen, **do not start table conversion PRs**.
+**Decision: A — layout API lives in libmux** (on top of existing `co_copy_field`).
+
+Reasons, given 4.1:
+
+1. **Stock installs still run built-in tables** until #1614 directives land. Converting only the module would leave the default English path on `PadField`/blob headers — a partial migration.
+2. **Inventory C\*** (guests, site, hashstat, bufstats, …) is engine-only and never becomes a module. Without libmux layout, those tables stay a second layout culture forever.
+3. **Modules already depend on libmux** for `co_copy_field` / `mux_sprintf` / `mux_format.h`. Promoting `append_ljust_field` (today copy-pasted in comsys_mod and mail_mod) into libmux is the natural next step, not a new dependency direction.
+4. After modules become default, the same libmux API remains the single implementation; the engine fallback path can call it too, so “fallback” is not a second table stack.
+5. Aligns with [`design-libmux-modules.md`](design-libmux-modules.md) phase 3 (“grow libmux.so — foundational code modules can use directly”).
+
+**Rejected:**
+
+- **B alone** for layout (“only convert modules”) — partial while dual life continues; abandons C\*.
+- **C** — already rejected.
+- Putting layout only in `engine.so` — modules cannot link it (same wall that produced raw `snprintf` before `mux_format.h`).
+
+### 4.3 What Phase 2 does *not* unlock
+
+| Still blocked | Until |
+|---------------|--------|
+| Deleting engine comsys/mail built-ins | #1614 sequence (directives after gaps) |
+| Translating blob headers | Phase 4 per family |
+| Assuming stock games run modules | `netmux.conf` still has zero `module` lines |
+
+### 4.4 What Phase 2 *does* unlock
+
+Phase **3** may design and implement the layout API **in libmux** (headers, helpers, tests). Phase **4** may convert tables **using that API** on whatever path currently emits them (module *and* engine for dual families; engine for C\*), so English output stays one construction, not two.
+
+Conversion order in the inventory still prefers dual families first; both sides of a dual family switch in the **same** change (or immediately paired), both calling libmux — never “module done, engine later.”
 
 ---
 
-## 5. Phased plan (when unblocked)
+## 5. Phased plan
 
 Slow by design. Each phase is a separate decision to start.
 
 | Phase | Deliverable | Exit criteria |
 |-------|-------------|----------------|
 | **0 — Policy (this doc)** | Binary rule written; pot entries known as non-translatable | Maintainers agree leave-alone until right |
-| **1 — Inventory** | Full list of multi-column player tables (comsys, mail, others): header msgid, row stops, engine vs module | Done — [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md) |
-| **2 — Ownership** | #1614 decision **or** explicit “layout in libmux” ADR | One path to implement against |
-| **3 — Layout API** | Column descriptor + emit-header / emit-cell on `co_copy_field`; single definition of helpers (no third copy-paste of `append_ljust_field`) | Unit tests on width/color/CJK fixtures |
-| **4 — Convert by family** | One table family per change (e.g. `@clist*`, then mail list, …); delete blob msgids from pot; re-bless conformance if needed | Header and rows share descriptors; English output acceptable parity |
+| **1 — Inventory** | Full list of multi-column player tables | Done — [`inventory-tabular-notifies.md`](inventory-tabular-notifies.md) |
+| **2 — Ownership** | Product ownership + layout ownership recorded | Done — §4 (#1614 B-by-completion + layout in libmux) |
+| **3 — Layout API** | Column descriptor + emit-header / emit-cell on `co_copy_field` in **libmux**; retire duplicated `append_ljust_field` | Unit tests on width/color/CJK fixtures; modules + engine can include the same header |
+| **4 — Convert by family** | One table family per change; both dual paths in the same change; delete blob msgids from pot | Header and rows share descriptors; English parity; conformance re-bless if needed |
 | **5 — Guardrails (optional)** | `check_nls.py` or docs: ban new pre-spaced multi-column header msgids | Regressions fail CI |
 
 **Do not** open a PR that only rewrites `@clist/full`’s header string.
@@ -126,9 +181,10 @@ Slow by design. Each phase is a separate decision to start.
         ├── #1623 positional %N$          (formats — separate)
         ├── #1622 morphology / wrong side (same family as #1648)
         └── tabular notifies (this doc)
-              ├── #1648 pre-spaced headers     (constraint; leave alone)
+              ├── #1648 pre-spaced headers     (constraint; leave alone until Phase 4)
               ├── #1649 cell primitive         (co_copy_field; mostly done)
-              └── #1614 dual comsys/mail       (gate for Phase 2/4)
+              ├── #1614 product: modules default  (decided; directives last)
+              └── layout API in libmux         (Phase 2; unlocks Phase 3)
 ```
 
 ---
@@ -138,4 +194,5 @@ Slow by design. Each phase is a separate decision to start.
 | Date | Decision |
 |------|----------|
 | 2026-07-28 | Adopt leave-alone vs do-right binary. No partial header migrations. Design captured here; implementation waits on inventory + ownership. |
-| 2026-07-28 | Phase 1 inventory written (`inventory-tabular-notifies.md`). Next gate: Phase 2 ownership (#1614 / libmux layout). |
+| 2026-07-28 | Phase 1 inventory written (`inventory-tabular-notifies.md`). |
+| 2026-07-28 | Phase 2: adopt #1614 product decision (modules → 2.14 default; built-in fallback until directives). Layout API lives in **libmux** (option A), not module-only and not engine-only. Phase 3 unblocked for API design/impl only — not blob translation. |
