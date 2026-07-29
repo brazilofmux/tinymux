@@ -112,9 +112,8 @@ AGREE_CASES=(
     # weaker than what EXEC already pins.
     'local a=mux.args[1]+0 return (a ^ 2) == 4'
     'local a=mux.args[1]+0 local b=mux.args[2]+0 return (a ^ b) == 8'
-    # Numeric for EXECUTES under the back-edge budget (#1732); the
-    # repeat/until backward JMP still declines.  Neither may invent a
-    # wrong answer.
+    # All three loop forms EXECUTE under the back-edge budget (#1732);
+    # none may invent a wrong answer.
     'local s=0 for i=1,4 do s=s+i end return s'
     'local i=0 repeat i=i+1 until i>=5 return i'
     # Budget exhaustion must be the interpreter's error, not a partial
@@ -164,12 +163,11 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-# Of the 5: repeat/until (backward JMP, #1732's next step), os.time
-# (errors on the interpreter too), string.find (result-count pin),
-# select (four arguments), and the budget-exhaustion pin -- which can
-# NEVER execute: both routes end in the instruction-limit error, which
-# is the assertion.
-AGREE_DECLINE_BUDGET=5
+# Of the 4: os.time (errors on the interpreter too), string.find
+# (result-count pin), select (four arguments), and the budget-
+# exhaustion pin -- which can NEVER execute: both routes end in the
+# instruction-limit error, which is the assertion.
+AGREE_DECLINE_BUDGET=4
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -314,6 +312,15 @@ EXEC_CASES=(
     'local s=0 for i=1,4 do s=s+i end return s'
     'local a=0 for i=1,3 do a=a*10+i end return a'
     'local s=7 for i=1,0 do s=99 end return s'
+
+    # while/repeat (#1732): back edges through backward JMP, the same
+    # budget and q-reg routing as the numeric for, with the loop
+    # condition in the user's own bytecode rather than FORLOOP's.  The
+    # geometric case pins a condition on the CARRIED value (s<100, not a
+    # counter), which a stale-reload bug answers wrongly.
+    'local i=0 while i<10 do i=i+1 end return i'
+    'local i=0 repeat i=i+1 until i>=5 return i'
+    'local s=1 while s<100 do s=s*2 end return s'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'
