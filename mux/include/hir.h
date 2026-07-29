@@ -106,6 +106,11 @@ enum hir_kind {
     //
     HIR_LUA_NEWTABLE, // newtable(narr, nrec): ECALL → TY_LUA_HANDLE
     HIR_LUA_LEN,    // len(tbl_idx): ECALL → TY_INT, Lua's # on a table
+    HIR_LUA_INSN_BUDGET, // (): ECALL → TY_INT, the CURRENT lua_instruction_limit.
+                    // Read at run time, never baked as ICONST at lowering:
+                    // a compiled program must not contain a config value, or
+                    // @admin changes miss every cached (and persisted) blob
+                    // -- #1613's bug on the compiled path (#1745).
     HIR_LUA_GETGLOBAL, // getglobal(key_addr): ECALL → TY_LUA_HANDLE
     HIR_LUA_GETFIELD_REF, // getfield(tbl_idx, key_addr): ECALL → TY_LUA_HANDLE
     // The three compiled-call variants differ only in how the result comes

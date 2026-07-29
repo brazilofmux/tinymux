@@ -88,6 +88,7 @@ static constexpr uint64_t ECALL_LUA_CALL_STR = 0x310; // a0=fn_idx, a1=nargs|arg
 static constexpr uint64_t ECALL_LUA_GETFIELD_FLT = 0x311; // a0=tbl_idx, a1=key addr → a0=double bits, a1=ok
 static constexpr uint64_t ECALL_LUA_CALL_VOID = 0x312; // a0=fn_idx, a1=nargs|argkinds, a2..a4=args; result discarded → a1=ok
 static constexpr uint64_t ECALL_LUA_LIMITED  = 0x313; // back-edge budget exhausted: aborts the run (declines to the interpreter)
+static constexpr uint64_t ECALL_LUA_INSN_BUDGET = 0x314; // () -> a0 = current lua_instruction_limit (#1745 runtime rebinding)
 
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls
