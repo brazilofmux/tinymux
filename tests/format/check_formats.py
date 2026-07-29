@@ -92,11 +92,15 @@ BAN_GENERATED = ("mux/lib/color_ops.c",)
 # and cannot desync the way a whole-file comment/string stripper does.
 #
 BAN_LEGACY = {
-    # dbt_test and the div harness are standalone binaries: tests/dbt builds
-    # them with "$(COMPILE) -o $@ $(SRCS)" and links no libmux, so mux_snprintf
-    # is not reachable and these cannot reach zero without changing that build.
-    # Frozen rather than exempted -- an exemption would let new sites in, and
-    # the count still may not grow.  Neither writes player-facing text.
+    # Permanent freeze (#1653 closed): raw snprintf/sprintf/vsnprintf stay
+    # banned from growing in these files.  tests/dbt builds dbt_test and the
+    # div harness without linking libmux, so mux_sprintf is not available
+    # there.  That is accepted -- not a conversion backlog.
+    #
+    # If you touch these sources and need another format call, do something
+    # else (plain write, fixed strings, or rework the test link).  Do not add
+    # a raw printf-family site: the ratchet fails the build when the count
+    # rises.  Lowering the count is fine if a site truly goes away.
     #
     "mux/modules/engine/dbt_test.cpp": 22,
     "mux/modules/engine/dbt_x64_div_harness.c": 1,
