@@ -1,4 +1,6 @@
 #include "autoconf.h"
+#include "config.h"
+#include "mux_format.h"
 #include "ganl_adapter.h"
 #include "modules.h"
 #include "driverstate.h"
@@ -142,7 +144,7 @@ namespace
         std::strncpy(reinterpret_cast<char*>(hostBuf), endpoint.host.c_str(), sizeof(hostBuf) - 1);
         if (endpoint.port != 0)
         {
-            std::snprintf(reinterpret_cast<char*>(portBuf), sizeof(portBuf), "%u", endpoint.port);
+            mux_sprintf(portBuf, sizeof(portBuf), T("%u"), endpoint.port);
         }
 
         MUX_ADDRINFO hints{};

@@ -3115,9 +3115,12 @@ FUNCTION(fun_astbench)
     char ast_buf[32];
     char jit_buf[32];
     char ratio_buf[32];
-    snprintf(ast_buf, sizeof(ast_buf), "%.2f", ast_us);
-    snprintf(jit_buf, sizeof(jit_buf), "%.2f", jit_us);
-    snprintf(ratio_buf, sizeof(ratio_buf), "%.1f", ratio);
+    mux_sprintf(reinterpret_cast<UTF8 *>(ast_buf), sizeof(ast_buf),
+        T("%.2f"), ast_us);
+    mux_sprintf(reinterpret_cast<UTF8 *>(jit_buf), sizeof(jit_buf),
+        T("%.2f"), jit_us);
+    mux_sprintf(reinterpret_cast<UTF8 *>(ratio_buf), sizeof(ratio_buf),
+        T("%.1f"), ratio);
 
     safe_tprintf_str(buff, bufc,
         T("ast=%sus jit=%sus ratio=%sx result=%s"),

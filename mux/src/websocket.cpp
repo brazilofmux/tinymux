@@ -278,29 +278,26 @@ bool ws_process_handshake(DESC *d, const char *data, size_t len)
 
     // Send 101 Switching Protocols.
     //
-    char response[256];
-    int n = snprintf(response, sizeof(response),
-        "HTTP/1.1 101 Switching Protocols\r\n"
-        "Upgrade: websocket\r\n"
-        "Connection: Upgrade\r\n"
-        "Sec-WebSocket-Accept: %s\r\n\r\n",
-        acceptKey);
-    if (n < 0 || static_cast<size_t>(n) >= sizeof(response))
+    UTF8 response[256];
+    // Fixed-format handshake; acceptKey is 28 chars.  mux_snprintf
+    // returns length written (#1653).
+    //
+    const size_t n = mux_snprintf(response, sizeof(response),
+        T("HTTP/1.1 101 Switching Protocols\r\n"
+          "Upgrade: websocket\r\n"
+          "Connection: Upgrade\r\n"
+          "Sec-WebSocket-Accept: %s\r\n\r\n"),
+        reinterpret_cast<const UTF8 *>(acceptKey));
+    if (0 == n || n >= sizeof(response) - 1)
     {
-        // Formatting failed or would have been truncated. Given the
-        // fixed format and the 28-character acceptKey this should be
-        // impossible, but fail closed rather than sending a malformed
-        // or unterminated 101 response — or casting a negative
-        // snprintf return to a huge size_t and reading past the
-        // stack buffer.
+        // Empty or suspiciously full (would-be truncation). Fail closed.
         //
         return ws_handshake_reject(d,
             "HTTP/1.1 500 Internal Server Error\r\n"
             "Content-Length: 0\r\n"
             "Connection: close\r\n\r\n");
     }
-    queue_write_LEN(d, reinterpret_cast<const UTF8 *>(response),
-                    static_cast<size_t>(n));
+    queue_write_LEN(d, response, n);
 
     // Mark as fully upgraded.
     //

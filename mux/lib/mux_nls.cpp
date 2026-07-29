@@ -25,6 +25,7 @@
 // and <libintl.h> is no longer among them -- nothing here calls gettext.
 // setlocale is still used for LC_CTYPE, which is not catalogue selection.
 //
+#include "mux_format.h"
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -849,16 +850,15 @@ LIBMUX_API void mux_nls_init(const UTF8 *locale_dir, const UTF8 *language)
         return;
     }
 
-    char path[1024];
-    const int n = snprintf(path, sizeof(path), "%s/%s/LC_MESSAGES/tinymux.mo",
-                           reinterpret_cast<const char *>(locale_dir), lang);
-    if (  n <= 0
-       || static_cast<size_t>(n) >= sizeof(path))
+    UTF8 path[1024];
+    mux_sprintf(path, sizeof(path), T("%s/%s/LC_MESSAGES/tinymux.mo"),
+        locale_dir, reinterpret_cast<const UTF8 *>(lang));
+    if ('\0' == path[0])
     {
         return;
     }
 
-    if (!mo_load(path))
+    if (!mo_load(reinterpret_cast<const char *>(path)))
     {
         // A catalogue the operator NAMED and that will not load is worth
         // reporting: the alternative is a server silently speaking the wrong
