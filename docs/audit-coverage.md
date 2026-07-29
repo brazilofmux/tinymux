@@ -76,10 +76,10 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
+| D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 14 2026-07-29 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs; **#1791** softcode post-entry no AST re-run after host ECALL (`plan-softcode-post-entry-contract.md`) |
 | D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1258–#1260 closed |
 | D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs closed; #1292 closed |
-| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1751 campaign 2026-07-29 | deep | Post-entry contract shipped; residual typed fidelity + mixed softcode/Lua corpus |
+| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1751 campaign 2026-07-29 | deep | Post-entry contract shipped (`plan-lua-post-entry-contract.md`); residual typed fidelity + mixed softcode/Lua corpus |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
 ### E — Persistence & queue
@@ -145,7 +145,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| K1 | Smoke suite | `testcases/` | large | every fix PR | deep | Grow when behavior changes; Lua seam corpus in flight |
+| K1 | Smoke suite | `testcases/` | large | every fix PR | deep | Grow when behavior changes; Lua seam TC061–078 on master |
 | K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | Pass 14 2026-07-29 | partial | run.sh: 9 drivers + trap cleanup (not just wild_capture); still opt-in via `make test-scenario`; stress/ separate |
 | K3 | Unit islands | `tests/alarm`, `netaddr`, `db`, `libmux` | small | on change | partial | |
 | K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | Pass 14 stamp 2026-07-29 | thin | Present; no defect this pass |
@@ -166,7 +166,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | Pass | When | Focus | Outcome |
 |------|------|-------|---------|
 | Pass 1–13 | 2026-07 | See historical changelog | Many Highs/Mediums closed |
-| **Pass 14** | **2026-07-29** | Dice loop from A7 | #1774 netaddr CIDR; #1778 announce fd leak; B1–B5/B3/B4/A8/C4/I6 residual re-deep; map hygiene |
+| **Pass 14** | **2026-07-29** | Dice loop A7 → full catalog + clients | #1774 CIDR; #1778 announce; **#1788** client buffer caps (all J*); **#1791** softcode post-entry; residual re-deep A–I/F/H; no open product issues at closeout |
 
 Also useful historical surveys:  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -175,16 +175,14 @@ Also useful historical surveys:
 
 ## Recommended rotation (next ~N passes)
 
-**Dice loop (2026-07-29):** start **A7**.  
-Done: server residual re-deep → **full J1–J7 client portfolio pass** (**#1788** buffer caps across all Titan clients + console/tf/win32gui; J7 input_editor scout).  
-**Next:** dual-review remaining client-cap PR; product soak (mixed Lua); H4 signal wiring optional.
+**Pass 14 closed (2026-07-29).** Dice-start A7 completed a full residual re-deep of the server map plus the client portfolio (#1788) and the softcode post-entry sibling (#1791). Parallel Pass 14 docs PRs (#1777, #1781–#1786) are superseded by master map state + this closeout.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Dual-review / merge remaining #1788 client-cap PR | Medium |
-| **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
-| **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
-| **Later** | H4 RegisterSignalHandler; client password storage | Non-blocking tech debt |
+| **Anytime** | **D5** jit_diff soak; `make test` / `make test-scenario` | Continuous confidence |
+| **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak, not map restart |
+| **Later** | H4 RegisterSignalHandler; client password storage (J*) | Non-blocking tech debt |
+| **Pass 15+** | New dice start or product-driven slice | Empty board — invent only with a goal |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -223,5 +221,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
 | 2026-07-29 | **Pass 14 dice loop:** server residual complete; **J1–J7** client portfolio — **#1788** buffer caps across clients; H2/K4 thin stamps |
+| 2026-07-29 | **Pass 14 closeout:** #1790 remaining clients; #1791 softcode post-entry; D1/D4 stamps; rotation table closed; supersede docs PRs #1777/#1781–#1786 |
 
 Update this table when the map structure changes.
