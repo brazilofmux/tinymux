@@ -94,7 +94,8 @@ void child(int s)
                     host_address, ctime(&ct));
             // Ignore short write: this is a one-shot banner tool.
             //
-            (void)write(ns, msg, nmsg);
+            ssize_t nw = write(ns, msg, nmsg);
+            (void)nw;
             sleep(5);
         }
         else
