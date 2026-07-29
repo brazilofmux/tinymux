@@ -188,9 +188,12 @@ AGREE_CASES=(
 # After Phase 1 total GET/SET/LEN: os.time no longer declines (raises a
 # real LUA ERROR on both routes).  Remaining loud: select, budget for-loop,
 # string.find, nested while-true (4) + STATE e1/e2 (2) → 6.
-# Phase 1 revision re-baseline: +1 for the ABSENT-KEY read pin (loud by
-# design until nil is representable; it replaces a measured silent "0").
-POST_ENTRY_LOUD_BUDGET=7
+# Phase 2 revision re-baseline: select and os.time moved to PRE-entry
+# ineligibility (general call path deleted; #1751 rule 1), so loud is
+# down to: budget for-loop, nested while-true (both Phase 3), 
+# string.find (numeric-result totalization), the absent-key pin, and
+# STATE e1/e2.
+POST_ENTRY_LOUD_BUDGET=6
 
 # How many AGREE chunks are expected to decline rather than execute.
 #
@@ -208,9 +211,11 @@ POST_ENTRY_LOUD_BUDGET=7
 # compile-ineligible (#1750), so the interpreter answers honestly.
 # Post-entry sites that used to silent-decline now count under
 # POST_ENTRY_LOUD_BUDGET instead.
-# Phase 1 revision re-baseline: +1 for the escaped-table read pin
-# (plain proof voided by the call argument; interpreter answers).
-AGREE_DECLINE_BUDGET=3
+# Phase 2 revision re-baseline: +2 for select (arity above the typed
+# encoding) and os.time (zero-arg unclaimed call), both pre-entry
+# ineligible now that the general call path is gone -- the interpreter
+# answers each, including its own error for os.time, on both legs.
+AGREE_DECLINE_BUDGET=5
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
