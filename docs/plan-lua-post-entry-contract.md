@@ -95,7 +95,32 @@ These are the open quality / clarity targets after #1751 close:
 2. **Provenance over coercion.** When HIR erases a Lua type, refuse consumers or keep a handle — do not invent softcode truthiness.
 3. **Proof enables typed fast paths** (`plain_proven`, `keys_closed`, call claims). Loss of proof → ineligible or total ECALL, not silent 0.
 4. **Effects are allowed** on the compiled path under the same permissions as the interpreter, because re-run cannot double them.
-5. **New value class ⇒ consumer audit.** Producers are easy; consumers are easy to miss. Emptying a loud bin has repeatedly introduced silent wrongs (#1755, #1756, #1763, #1766 first cut) when a new HIR representation (type-erased string, nil-as-empty-SCONST, …) was not checked at every Lua-semantic use site — including opcodes that look like twins of ones already fixed (EQ vs EQK).
+5. **Equality compares TYPES, not representations.** Lua's `==` is false across types, and HIR erases exactly the distinctions that decide it: `false` and `0` are one ICONST, `nil` and `""` one empty SCONST, and the numeric path coerces `"5"` to `5`. Every equality opcode must classify both sides (`lua_type_class_of_value` / `_of_const`) before comparing. Order comparisons are *not* the same rule — Lua raises on mismatched types there, so they decline.
+
+6. **New value class ⇒ consumer audit.** Producers are easy; consumers are easy to miss. Emptying a loud bin has repeatedly introduced silent wrongs (#1755, #1756, #1763, #1766 first cut) when a new HIR representation (type-erased string, nil-as-empty-SCONST, …) was not checked at every Lua-semantic use site — including opcodes that look like twins of ones already fixed (EQ vs EQK).
+
+
+### Standing assumption: the softcode route has no post-entry decline
+
+Compiled Lua effects are exactly-once (#1767) **because** nothing can re-run
+a chunk after entry. That holds on the Lua side by construction (Phase 4).
+It holds on the *softcode* side — which sits above `[lua(...)]` and was
+explicitly out of scope for this campaign — only as a **derived** property
+of two unrelated designs:
+
+* the softcode depth / invocation / slot bails are checked **before**
+  `dbt_run` (the #1002 watermark design), so they are pre-entry; and
+* after Phase 4 exactly one `return ECALL_DECLINE` remains in
+  `jit_compiler.cpp`, the defensive arm in `run_cached_program` that nothing
+  emits into.
+
+If a softcode ECALL ever gains a post-entry decline, a compiled Lua effect
+beneath it would be delivered again by the AST re-run, and **#1767's premise
+expires silently**. Nothing in the code says so today; this note is the
+record. The durable form is the sibling softcode audit this plan already
+suggests — until then, treat "no post-entry decline on the softcode route"
+as an invariant to check when touching softcode ECALL error paths.
+
 
 ---
 
