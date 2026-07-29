@@ -822,6 +822,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     // and the consumer reads a garbage index (measured: SETI got idx=0).
     case HIR_LUA_NEWTABLE:
     case HIR_LUA_LEN:
+    case HIR_LUA_INSN_BUDGET:
     case HIR_LUA_GETGLOBAL:
     case HIR_LUA_GETFIELD_REF:
     case HIR_LUA_CALL_INT:
@@ -1615,6 +1616,24 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_SETFIELD_INT)));
                 rc.code.push_back(rv_ECALL());
+                break;
+            }
+
+            case HIR_LUA_INSN_BUDGET: {
+                // No-arg ECALL: a0 = the CURRENT lua_instruction_limit.
+                // This exists so the back-edge budget is seeded per run
+                // rather than baked as an ICONST at lowering -- a compiled
+                // program must not contain a config value (#1745, the
+                // #1613 shape on the compiled path).
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_INSN_BUDGET)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));    // dest = a0
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -2519,6 +2538,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_STRCMP:      return "STRCMP";
     case HIR_LUA_NEWTABLE: return "LUA_NEWTABLE";
     case HIR_LUA_LEN:    return "LUA_LEN";
+    case HIR_LUA_INSN_BUDGET: return "LUA_INSN_BUDGET";
     case HIR_LUA_GETGLOBAL: return "LUA_GETGLOBAL";
     case HIR_LUA_GETFIELD_REF: return "LUA_GETFIELD_REF";
     case HIR_LUA_CALL_INT: return "LUA_CALL_INT";

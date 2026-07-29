@@ -1011,9 +1011,17 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     // Initialize back-edge budget counter for loop DoS protection.
     // Uses the same limit as the Lua interpreter's instruction hook.
     // Only needed for multi-block programs (which can have loops).
+    //
+    // Read at RUN time via a dedicated ECALL, never baked as an ICONST of
+    // mudconf.lua_instruction_limit (#1745).  A compiled program is cached
+    // in memory and persisted in code_cache, so a baked value is the limit
+    // that happened to be configured at compile time, forever -- @admin
+    // changes reported Set. and changed nothing, which is #1613's bug
+    // arriving on the compiled path.  The test-config runtime-bounds case
+    // is what caught it, the first time the default-on flip put the
+    // compiled path in its way.
     if (multi_block) {
-        int budget_init = h.emit(HIR_ICONST, TY_INT, -1, -1,
-            static_cast<int64_t>(mudconf.lua_instruction_limit));
+        int budget_init = h.emit(HIR_LUA_INSN_BUDGET, TY_INT);
         h.emit(HIR_STORE_Q, TY_VOID, budget_init, -1, QREG_LUA_BUDGET);
     }
 

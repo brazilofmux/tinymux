@@ -4313,6 +4313,21 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_INSN_BUDGET: {
+        // a0 = the CURRENT lua_instruction_limit.  The whole point is that
+        // this reads mudconf at run time: the program carries no config
+        // value, so @admin lua_instruction_limit takes effect on the next
+        // run of every cached and persisted blob alike (#1745, #1613).
+        int64_t lim = static_cast<int64_t>(mudconf.lua_instruction_limit);
+        if (lim < 1)
+        {
+            lim = 1;   // a zero/negative limit must abort loops, not arm an
+                       // effectively-unbounded unsigned countdown
+        }
+        ctx->x[10] = static_cast<uint64_t>(lim);
+        return -1;
+    }
+
     case ECALL_LUA_LEN_INT: {
         // Lua's # on a table: a0=tbl_idx -> a0=length, a1=ok.
         //

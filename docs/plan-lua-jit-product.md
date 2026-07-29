@@ -121,6 +121,12 @@ with bounded dual contexts rather than unbounded reentrancy.
 | Engage / EXEC under default conf | #1324 era + suite |
 | Default `lua_jit` on | #1745 / #1325 |
 
+### Post-flip regressions (not optional; the flip's own test upgrade at work)
+
+| Found | Fixed | Notes |
+|-------|-------|-------|
+| Baked instruction budget | same PR as this line | Lowering emitted `HIR_ICONST` of `mudconf.lua_instruction_limit`, so cached/persisted programs kept the compile-time limit and `@admin` changes changed nothing (#1613's shape). Caught by test-config's runtime-bounds case the moment default-on put the compiled path in its way — on `--enable-jit` trees only, which is why default-configure validation stayed green. Now a per-run `ECALL_LUA_INSN_BUDGET` read; programs carry no config values. |
+
 ### Residual (optional polish, not product gates)
 
 | Area | Notes |
