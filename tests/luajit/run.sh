@@ -186,6 +186,17 @@ AGREE_CASES=(
     'local x=string.find("ab","b") if x then return "truthy" else return "falsy" end'
     'local x=tostring(0) return not x'
     'local x=tostring(0) return x == "0"'
+
+    # ---- #1768: truth-class tag loss must decline, not invent VALUE ----
+    #
+    # Default for untagged HIR is VALUE (always truthy).  That is correct
+    # for numbers/strings, but if a BOOL/NIL tag is ever lost the value
+    # silently becomes truthy — #1765's bug class through the back door.
+    # These shapes already decline for unrelated reasons; pin them so a
+    # future eligibility change cannot green a wrong answer.
+    'local a=false for i=1,2 do end if a then return "t" else return "f" end'
+    'local t={} t[1]=false if t[1] then return "t" else return "f" end'
+    'local a=false local b=a or 5 return b'
 )
 
 # #1751 Phase 0: post-entry decline is loud (error string), not silent re-run.
@@ -222,7 +233,9 @@ POST_ENTRY_LOUD_BUDGET=2
 # answers each, including its own error for os.time, on both legs.
 # #1764: +5 for CALL_STR result consumed by if/not/== (type-erased;
 # ineligible at lowering, interpreter answers).
-AGREE_DECLINE_BUDGET=10
+# #1768: +3 for truth-class tag-loss shapes (loop-carried false, table
+# false, TESTSET/or) — must agree by decline until tags are carried.
+AGREE_DECLINE_BUDGET=13
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).

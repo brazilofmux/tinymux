@@ -665,14 +665,20 @@ static inline bool lua_is_marshalled_str(const hir_program &h, int v) {
 // integer SNEZ (softcode truthiness), so `local a=0 if a` answered falsy
 // while Lua requires truthy.  Tags restore the distinction at TEST/NOT:
 //
-//   VALUE — numbers, real strings, floats: always truthy in Lua
-//   BOOL  — 0/1 with boolean semantics (LOADTRUE/FALSE, comparisons)
-//   NIL   — always falsy (LOADNIL only; not the empty-string literal)
+//   VALUE   — numbers, real strings, floats: always truthy in Lua
+//   BOOL    — 0/1 with boolean semantics (LOADTRUE/FALSE, comparisons)
+//   NIL     — always falsy (LOADNIL only; not the empty-string literal)
+//   UNKNOWN — tag lost or never known (loop-carried LOAD_Q, …).  TEST/NOT
+//             must decline rather than default to VALUE: the VALUE default
+//             is the unsafe direction (lost BOOL/NIL → silent truthy, the
+//             bug class #1765 fixed, re-entering through the back door).
+//             #1768.
 //
 enum lua_truth : uint8_t {
-    LUA_TRUTH_VALUE = 0,
-    LUA_TRUTH_BOOL  = 1,
-    LUA_TRUTH_NIL   = 2,
+    LUA_TRUTH_VALUE   = 0,
+    LUA_TRUTH_BOOL    = 1,
+    LUA_TRUTH_NIL     = 2,
+    LUA_TRUTH_UNKNOWN = 3,
 };
 
 typedef std::map<int, lua_truth> lua_truth_map;
@@ -686,7 +692,7 @@ static void lua_truth_set(lua_truth_map &m, int v, lua_truth t) {
 static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
                               int v) {
     if (v < 0) {
-        return LUA_TRUTH_VALUE;
+        return LUA_TRUTH_UNKNOWN;
     }
     lua_truth_map::const_iterator it = m.find(v);
     if (it != m.end()) {
@@ -699,7 +705,13 @@ static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
     case HIR_FEQ: case HIR_FLT: case HIR_FLE:
     case HIR_BOOL: case HIR_NOT:
         return LUA_TRUTH_BOOL;
+    // Loop-carried q-register reloads (#1732): the value came from a
+    // store in another block; its truth class was not carried with it.
+    case HIR_LOAD_Q:
+        return LUA_TRUTH_UNKNOWN;
     default:
+        // Untagged ICONST/arith/SCONST: VALUE is correct for numbers and
+        // real strings.  Producers of BOOL/NIL must tag explicitly.
         return LUA_TRUTH_VALUE;
     }
 }
@@ -1204,6 +1216,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         int lv = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, r);
                         if (lv < 0) return -1;
                         h.known_int[lv] = true;
+                        // Truth class did not cross the block boundary
+                        // with the integer payload (#1768).
+                        lua_truth_set(truth_tag, lv, LUA_TRUTH_UNKNOWN);
                         lua_reg[r] = lv;
                     }
                     memcpy(blk_entry_reg, lua_reg, sizeof(blk_entry_reg));
@@ -1531,8 +1546,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // NOT in Lua: false and nil → true (1), everything else → false (0).
             // HIR_NOT is integer zero-test — correct only for BOOL tags.
             // VALUE (including integer 0 and "") is always truthy → NOT 0.
-            // NIL → NOT 1.  Result is itself a boolean.
+            // NIL → NOT 1.  UNKNOWN (tag lost) declines rather than lie (#1768).
+            // Result is itself a boolean.
             const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+            if (tr == LUA_TRUTH_UNKNOWN) {
+                return -1;
+            }
             if (tr == LUA_TRUTH_NIL) {
                 lua_reg[A] = h.emit_iconst(1);
             } else if (tr == LUA_TRUTH_VALUE) {
@@ -2384,8 +2403,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (lua_is_marshalled_str(h, rb)) return -1;
             // Lua: only nil and false are falsy.  VALUE (0, 0.0, "") is
             // always truthy; BOOL uses HIR_BOOL; NIL is always falsy.
+            // UNKNOWN declines — do not invent VALUE (#1768).
             int cmp;
             const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+            if (tr == LUA_TRUTH_UNKNOWN) {
+                return -1;
+            }
             if (tr == LUA_TRUTH_NIL) {
                 cmp = h.emit_iconst(0);
             } else if (tr == LUA_TRUTH_VALUE) {
@@ -2414,6 +2437,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (lua_is_marshalled_str(h, rb)) return -1;
             int cmp;
             const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+            if (tr == LUA_TRUTH_UNKNOWN) {
+                return -1;
+            }
             if (tr == LUA_TRUTH_NIL) {
                 cmp = h.emit_iconst(0);
             } else if (tr == LUA_TRUTH_VALUE) {
@@ -2594,6 +2620,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
             // Load current index from q-register (becomes PHI after SSA).
             int idx = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_LUA_IDX);
+            // Loop index is always a number, but the reload has no truth
+            // tag by construction — mark UNKNOWN so a future if-on-idx
+            // cannot invent VALUE after a lost BOOL (#1768).
+            if (idx >= 0) {
+                lua_truth_set(truth_tag, idx, LUA_TRUTH_UNKNOWN);
+            }
             if (idx < 0) return -1;
 
             // Increment: index = index + step.
