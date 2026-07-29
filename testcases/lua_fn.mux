@@ -1111,6 +1111,95 @@
   }
 -
 #
+# Test 66: softcode truthiness at the boundary (softcode ≠ Lua).
+# Lua "0" is truthy in Lua; softcode t("0") is false.  Document intentional.
+#
+&LUA_SEAM_ZEROSTR test_lua_fn=return "0"
+&LUA_SEAM_HELLO test_lua_fn=return "hello"
+-
+&tr.tc066 test_lua_fn=
+  @switch \
+    and( \
+      not(t(setr(0,lua(me/LUA_SEAM_ZEROSTR)))), \
+      t(setr(1,lua(me/LUA_SEAM_HELLO))))=1,
+  {
+    @log smoke=TC066: seam softcode t() on lua "0"/hello. Succeeded.
+  },
+  {
+    @log smoke=TC066: seam softcode t() on lua "0"/hello. Failed (zero=%q0 hello=%q1).
+  }
+-
+#
+# Test 67: softcode arithmetic on a lua numeric return (marshal as decimal).
+#
+&LUA_SEAM_FORTYONE test_lua_fn=return 41
+-
+&tr.tc067 test_lua_fn=
+  @if strmatch(
+    setr(0,add(lua(me/LUA_SEAM_FORTYONE),1)),
+    42)=
+  {
+    @log smoke=TC067: seam softcode add(lua number,1). Succeeded.
+  },
+  {
+    @log smoke=TC067: seam softcode add(lua number,1). Failed (%q0).
+  }
+-
+#
+# Test 68: lua mux.owner → softcode; pin integer-as-text across the seam.
+# Use object #1 (same fixed target as TC013) so both sides are stable
+# under the smoke suite enactor — nested num(owner(me)) as a strmatch
+# pattern is flaky here (empty soft side under suite dispatch).
+#
+&LUA_SEAM_OWNER test_lua_fn=return mux.owner(1)
+-
+&tr.tc068 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_OWNER)),
+    1)=
+  {
+    @log smoke=TC068: seam lua mux.owner→softcode. Succeeded.
+  },
+  {
+    @log smoke=TC068: seam lua mux.owner→softcode. Failed (%q0).
+  }
+-
+#
+# Test 69: softcode ifelse driven by a lua numeric compare (nest + branch).
+#
+&LUA_SEAM_SCORE test_lua_fn=return tonumber(mux.args[1])
+-
+&tr.tc069 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,ifelse(gt(lua(me/LUA_SEAM_SCORE,20),10),big,small)),big), \
+      strmatch(setr(1,ifelse(gt(lua(me/LUA_SEAM_SCORE,3),10),big,small)),small))=1,
+  {
+    @log smoke=TC069: seam ifelse(gt(lua)). Succeeded.
+  },
+  {
+    @log smoke=TC069: seam ifelse(gt(lua)). Failed (big=%q0 small=%q1).
+  }
+-
+#
+# Test 70: Lua error surfaces through softcode as #-1 LUA ERROR:…
+# Use `return error(...)` so the call is value-producing (CALL_STR); bare
+# `error(...)` is CALL_VOID and must totalize the same way (see engine).
+#
+&LUA_SEAM_ERR test_lua_fn=return error("seam-boom")
+-
+&tr.tc070 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_ERR)),
+    #-1 LUA ERROR:*seam-boom*)=
+  {
+    @log smoke=TC070: seam lua error text. Succeeded.
+  },
+  {
+    @log smoke=TC070: seam lua error text. Failed (%q0).
+  }
+-
+#
 # ---- Seam corpus expansion (residual after #1751 / TC061–065) ----
 # Complementary to in-flight TC066–070 (softcode t()/add/owner/ifelse/error).
 # These pin nest integrity, softcode consumers of marshaled text, and
