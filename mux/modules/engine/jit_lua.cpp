@@ -63,6 +63,17 @@ void jit_lua_get_stats(lua_jit_counters *out) {
     out->post_entry_decline  = s_lua_jit_stats.post_entry_decline;
 }
 
+void jit_lua_note_post_entry_decline(void) {
+    s_lua_jit_stats.post_entry_decline++;
+    s_lua_jit_stats.run_fail++;
+    // A successful RunCompiled may have already counted run_ok; reverse it
+    // when the outer path commits a post-entry fail instead.
+    //
+    if (s_lua_jit_stats.run_ok > 0) {
+        s_lua_jit_stats.run_ok--;
+    }
+}
+
 void jit_lua_reset_stats(void) {
     s_lua_jit_stats = {};
 }

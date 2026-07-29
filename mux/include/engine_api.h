@@ -171,6 +171,10 @@ struct lua_jit_counters {
 };
 void jit_lua_get_stats(lua_jit_counters *out);
 void jit_lua_reset_stats(void);
+// Count a post-entry decline that was committed outside RunCompiled
+// (e.g. effect_refused in TryJIT).  #1751 Phase 0 / 0.5.
+//
+void jit_lua_note_post_entry_decline(void);
 // Drop every in-process Lua compiled_program so a code_cache flush is not
 // followed by runs that still hold native code from the previous build.
 //
