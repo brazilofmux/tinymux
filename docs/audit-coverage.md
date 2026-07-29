@@ -98,7 +98,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |----|--------|-------|------:|-----------|--------|-------|
 | F1 | comsys_mod | `mux/modules/comsys/` | small | Pass 3, 9 | deep | #1084 locks; Pass 9 dual-path with F3 |
 | F2 | mail_mod | `mux/modules/mail/` | med | Pass 2, 9 | deep | MAIL_DB_LIMIT; Pass 9 dual-store |
-| F3 | Engine-in-tree comsys/mail | `engine/comsys.cpp`, `engine/mail.cpp` | large | Pass 9 | deep | Dual path vs modules; #1189–#1191 closed (Pass 14 hygiene) |
+| F3 | Engine-in-tree comsys/mail | `engine/comsys.cpp`, `engine/mail.cpp` | large | Pass 14 scout 2026-07-29 | deep | #1189–#1191 closed; engine reloads from SQLite when module owns state (#1191 comment path); dual-path residual owned |
 | F4 | Module ABI / COM | `engine_com.cpp`, `modules.h` | large | residual C6/G2/F4 | deep | IAttributeAccess/IPermissions gated; #1295 |
 
 ### G — Convert / offline tools
@@ -176,13 +176,13 @@ Also useful historical surveys:
 ## Recommended rotation (next ~N passes)
 
 **Dice loop (2026-07-29):** start **A7**.  
-Done: A7…C2 → **A4** → **A5** → **A6** → E1 scout.  
-**Section A residual re-deep complete** for this pass. **Next: E2–E5 residual**, or **F3** dual-path, or **H2/K4** thin, or wrap to **J5** (iOS partial).
+Done: A…C… → A4/A5/A6 → **E1–E5** residual re-deep → F3 scout.  
+**Sections A + E residual re-deep complete** for this pass. **Next: F1/F2/F4 residual**, or **H1/H2**, or **J5** (iOS partial), or wrap dice toward thin slices.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Dual-review Pass 14 map PRs; land if still open | Hygiene |
-| **Then** | **E2–E5** persistence residual re-deep | Standing loop |
+| **Now** | Dual-review / merge Pass 14 map PR stack | Hygiene |
+| **Then** | **F\*** modules residual or **H1** libmux | Standing loop |
 | **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
 | **Later** | **J\*** clients by platform | After server/proxy confidence |
 | **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
@@ -223,6 +223,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Initial map after Passes 1–3 |
 | 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
-| 2026-07-29 | **Pass 14 dice loop:** A7 #1774; G3 #1778; B*/I6/C1/K2/A2/C2; **A4 telnet + A5 WS + A6 signals** residual re-deep (no new H/M); E1 scout; section A residual pass complete; next E* |
+| 2026-07-29 | **Pass 14 dice loop:** A7 #1774; G3 #1778; B*/I6/C*/A*; **E2–E5** residual re-deep (#1284/#1080/#1180/#1185 held, no new H/M); F3 scout; sections A+E residual complete; next F*/H* |
 
 Update this table when the map structure changes.
