@@ -560,6 +560,13 @@ struct eval_ctx {
     // nullptr for softcode JIT.
     void    *lua_state;
 
+    // Softcode: how many host ECALLs may already have had user-visible
+    // effects (CALL_FUNC, setq, …).  Once >0, mid-run dbt_run failure
+    // must not fall through to a full AST re-run (#1791) — that is the
+    // softcode twin of Lua Phase 4's "no post-entry re-run".
+    //
+    unsigned host_ecalls;
+
     // DBT state pointer — enables ECALL_CALL_COMPILED to re-enter
     // the dispatch loop via dbt_resume for nested function calls.
     // nullptr disables re-entrant calls (falls back to ECALL fun_u).
