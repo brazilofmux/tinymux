@@ -160,11 +160,6 @@ AGREE_CASES=(
     # the interpreter answers.  The EXEC pin for CALL_VOID+proven reads
     # is the pre-escape spelling above.
     'local t={5} table.insert(t,6) return t[2]'
-    # ABSENT-KEY read on a proven table: the value is nil, which a typed
-    # integer slot cannot carry.  Continuing with 0 was a measured silent
-    # wrong answer (jit "0" vs interp ""); loud until nil is
-    # representable.  Counted post_entry_loud.
-    'local t={} t[1]=5 return t[2]'
 
     # Multi-value truncation at the chunk boundary: string.find returns TWO
     # values and the chunk pcall keeps one.  CALL_STR now marshals the first
@@ -187,6 +182,19 @@ AGREE_CASES=(
     'local x=tostring(0) return not x'
     'local x=tostring(0) return x == "0"'
 
+    # ---- #1766 review: a lowered nil must not leak into consumers ----
+    #
+    # Known-absent reads lower to nil (empty SCONST + LUA_TRUTH_NIL).  That
+    # makes nil a value that FLOWS, so every operation Lua rejects on nil
+    # has to reject it here: concat and length RAISE, tostring gives "nil"
+    # not "", and nil compares equal to nothing -- not even a real "".
+    # Each answered wrongly in the first cut of this change.
+    'local t={} t[1]=5 return "a" .. t[2]'
+    'local t={} t[1]=5 return #t[2]'
+    'local t={} t[1]=5 local x=t[2] return tostring(x)'
+    'local t={} t[1]=5 return t[2] == ""'
+    'local t={} t[1]=5 local x=t[2] return x .. "z"'
+
     # ---- #1768: truth-class tag loss must decline, not invent VALUE ----
     #
     # Default for untagged HIR is VALUE (always truthy).  That is correct
@@ -207,9 +215,9 @@ AGREE_CASES=(
 # POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
 # Phases 1–3 empty FAIL sites.  Long-term target is 0.
 #
-# After CALL_STR result marshal (string.find executes): absent-key pin
-# + STATE e2 EFFECT_REFUSED → 2.  e1 is matched pure under current bins.
-POST_ENTRY_LOUD_BUDGET=2
+# Closed key-set nil for known-absent plain GETI (no GETI_INT miss):
+# only STATE e2 EFFECT_REFUSED remains loud.
+POST_ENTRY_LOUD_BUDGET=1
 
 # How many AGREE chunks are expected to decline rather than execute.
 #
@@ -235,7 +243,9 @@ POST_ENTRY_LOUD_BUDGET=2
 # ineligible at lowering, interpreter answers).
 # #1768: +3 for truth-class tag-loss shapes (loop-carried false, table
 # false, TESTSET/or) — must agree by decline until tags are carried.
-AGREE_DECLINE_BUDGET=13
+# #1766 review: +5 nil-consumer pins (concat, len, tostring, ==,
+# concat-via-local) -- all decline; nil has no compiled consumer yet.
+AGREE_DECLINE_BUDGET=18
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -261,6 +271,14 @@ EXEC_CASES=(
     # named ECALL and so compiled and then failed on every call.
     'local t={10,20,30} return t[1]+t[3]'
     'local t={4,5} return t[2]'
+
+    # Known-absent integer key on a plain closed table: keys_closed +
+    # int_keys prove t[2] was never stored, so lowering emits nil (same
+    # empty SCONST + NIL tag as LOADNIL) instead of GETI_INT's post-entry
+    # miss.  EXEC so a decline cannot hide a wrong "0".
+    'local t={} t[1]=5 return t[2]'
+    'local t={10,20} return t[3]'
+    'local t={} t[1]=5 local x=t[2] if x then return "t" else return "f" end'
 
     # `#t` -- #1424's original symptom, fixed at the root rather than
     # declined.  It answered 22 for a three-element table because the

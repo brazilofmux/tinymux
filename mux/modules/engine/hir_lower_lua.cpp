@@ -26,6 +26,7 @@
 #include <cctype>
 #include <cmath>
 #include <map>
+#include <set>
 #include <vector>
 #include <string>
 
@@ -667,7 +668,7 @@ static inline bool lua_is_marshalled_str(const hir_program &h, int v) {
 //
 //   VALUE   — numbers, real strings, floats: always truthy in Lua
 //   BOOL    — 0/1 with boolean semantics (LOADTRUE/FALSE, comparisons)
-//   NIL     — always falsy (LOADNIL only; not the empty-string literal)
+//   NIL     — always falsy (LOADNIL, or a known-absent plain-table read)
 //   UNKNOWN — tag lost or never known (loop-carried LOAD_Q, …).  TEST/NOT
 //             must decline rather than default to VALUE: the VALUE default
 //             is the unsafe direction (lost BOOL/NIL → silent truthy, the
@@ -716,9 +717,28 @@ static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
     }
 }
 
-static int promote_to_float(hir_program &h, int v) {
+// A value KNOWN to be Lua nil at lowering: LOADNIL, or a known-absent
+// read of a plain table with a closed key set.  nil is representable in
+// HIR only as the empty SCONST, which is also a real "" -- the truth tag
+// is what tells them apart, so every consumer Lua would reject on nil
+// must consult it here.
+//
+// Producers are easy to get right and consumers are easy to forget: the
+// first cut of this change taught `"a" .. t[2]` to answer "a" where Lua
+// raises, `#t[2]` to answer 0, and tostring(t[2]) to answer "" instead of
+// "nil".  A new value class needs a consumer audit, not just correct
+// producers (#1751 review note).
+//
+static inline bool lua_is_nil(const hir_program &h, const lua_truth_map &m,
+                              int v) {
+    return lua_truth_of(h, m, v) == LUA_TRUTH_NIL;
+}
+
+static int promote_to_float(hir_program &h, const lua_truth_map &truth, int v) {
     if (v < 0) return -1;
     if (lua_is_marshalled_str(h, v)) return -1;
+    // nil is not a number; ATOI("") would invent 0.
+    if (lua_truth_of(h, truth, v) == LUA_TRUTH_NIL) return -1;
     if (h.ty[v] == TY_FLOAT) return v;
     if (h.ty[v] == TY_INT) {
         return h.emit(HIR_ITOF, TY_FLOAT, v);
@@ -737,9 +757,10 @@ static int promote_to_float(hir_program &h, int v) {
 // TY_FLOAT returns -1 (use promote_to_float instead).
 // ---------------------------------------------------------------
 
-static int promote_to_int(hir_program &h, int v) {
+static int promote_to_int(hir_program &h, const lua_truth_map &truth, int v) {
     if (v < 0) return -1;
     if (lua_is_marshalled_str(h, v)) return -1;
+    if (lua_truth_of(h, truth, v) == LUA_TRUTH_NIL) return -1;
     if (h.ty[v] == TY_INT) return v;
     if (h.ty[v] == TY_STRING) return h.emit(HIR_ATOI, TY_INT, v);
     return -1;
@@ -853,6 +874,14 @@ struct lua_referent {
     // answer 0 where the interpreter answered "s", silently.  Escaping
     // as a call argument clears the proof: the callee can setmetatable.
     bool plain_proven = false;
+
+    // Closed integer-key set for a plain table: every compiled store used
+    // a constant key recorded in int_keys.  A dynamic-key store clears
+    // keys_closed.  When closed, a GETI of a constant key not in the set
+    // is known-absent at lowering — emit nil, no post-entry GETI_INT
+    // miss (the residual loud site for `return t[2]` after `t[1]=5`).
+    bool keys_closed = false;
+    std::set<int64_t> int_keys;
 };
 
 static hir_type lua_lib_value_type(const lua_referent &t,
@@ -869,6 +898,31 @@ typedef std::map<int, lua_referent> lua_ref_map;
 static lua_referent lua_referent_of(const lua_ref_map &m, int v) {
     lua_ref_map::const_iterator it = m.find(v);
     return (it == m.end()) ? lua_referent() : it->second;
+}
+
+// Record a constant integer-key store on a plain table.  No-op if the
+// handle is not plain or keys are already open.
+//
+static void lua_note_int_key_store(lua_ref_map &m, int tbl, int64_t key) {
+    lua_ref_map::iterator it = m.find(tbl);
+    if (it == m.end() || !it->second.plain_proven) {
+        return;
+    }
+    if (!it->second.keys_closed) {
+        return;
+    }
+    it->second.int_keys.insert(key);
+}
+
+// A non-constant integer key store: the closed set is no longer complete.
+//
+static void lua_note_dynamic_int_key_store(lua_ref_map &m, int tbl) {
+    lua_ref_map::iterator it = m.find(tbl);
+    if (it == m.end() || !it->second.plain_proven) {
+        return;
+    }
+    it->second.keys_closed = false;
+    it->second.int_keys.clear();
 }
 
 // The standard-library knowledge, in one place: what does calling NAME
@@ -1341,15 +1395,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (rb < 0 || rc_val < 0) return -1; \
             if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
             if (either_float(h, rb, rc_val)) { \
-                rb = promote_to_float(h, rb); \
-                rc_val = promote_to_float(h, rc_val); \
+                rb = promote_to_float(h, truth_tag, rb); \
+                rc_val = promote_to_float(h, truth_tag, rc_val); \
                 if (rb < 0 || rc_val < 0) return -1; \
                 lua_reg[A] = h.emit(HIR_FP_OP, TY_FLOAT, rb, rc_val); \
             } else if (h.ty[rb] == TY_INT && h.ty[rc_val] == TY_INT) { \
                 lua_reg[A] = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
             } else { \
-                rb = promote_to_int(h, rb); \
-                rc_val = promote_to_int(h, rc_val); \
+                rb = promote_to_int(h, truth_tag, rb); \
+                rc_val = promote_to_int(h, truth_tag, rc_val); \
                 if (rb < 0 || rc_val < 0) return -1; \
                 lua_reg[A] = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
             } \
@@ -1375,8 +1429,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[insn.B()];
             int rc_val = lua_reg[insn.C()];
             if (rb < 0 || rc_val < 0) return -1;
-            rb = promote_to_float(h, rb);
-            rc_val = promote_to_float(h, rc_val);
+            rb = promote_to_float(h, truth_tag, rb);
+            rc_val = promote_to_float(h, truth_tag, rc_val);
             if (rb < 0 || rc_val < 0) return -1;
             lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, rc_val);
             if (lua_reg[A] < 0) return -1;
@@ -1416,8 +1470,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[insn.B()];
             int rc_val = lua_reg[insn.C()];
             if (rb < 0 || rc_val < 0) return -1;
-            rb = promote_to_float(h, rb);
-            rc_val = promote_to_float(h, rc_val);
+            rb = promote_to_float(h, truth_tag, rb);
+            rc_val = promote_to_float(h, truth_tag, rc_val);
             if (rb < 0 || rc_val < 0) return -1;
             uint64_t addr = tier2_sym_addr("pow");
             if (!addr) return -1;
@@ -1437,7 +1491,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             } else if (h.ty[rb] == TY_INT) {
                 lua_reg[A] = h.emit(HIR_NEG, TY_INT, rb);
             } else if (h.ty[rb] == TY_STRING) {
-                rb = promote_to_int(h, rb);
+                rb = promote_to_int(h, truth_tag, rb);
                 if (rb < 0) return -1;
                 lua_reg[A] = h.emit(HIR_NEG, TY_INT, rb);
             } else {
@@ -1456,8 +1510,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rc_val = lua_reg[insn.C()]; \
             if (rb < 0 || rc_val < 0) return -1; \
             if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
-            rb = promote_to_int(h, rb); \
-            rc_val = promote_to_int(h, rc_val); \
+            rb = promote_to_int(h, truth_tag, rb); \
+            rc_val = promote_to_int(h, truth_tag, rc_val); \
             if (rb < 0 || rc_val < 0) return -1; \
             lua_reg[A] = h.emit(HIR_OP, TY_INT, rb, rc_val); \
             if (lua_reg[A] < 0) return -1; \
@@ -1476,7 +1530,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_BNOT: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
-            rb = promote_to_int(h, rb);
+            rb = promote_to_int(h, truth_tag, rb);
             if (rb < 0) return -1;
             lua_reg[A] = h.emit(HIR_BNOT, TY_INT, rb);
             if (lua_reg[A] < 0) return -1;
@@ -1488,7 +1542,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_SHRI: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
-            rb = promote_to_int(h, rb);
+            rb = promote_to_int(h, truth_tag, rb);
             if (rb < 0) return -1;
             int imm = h.emit_iconst(insn.sC());
             if (imm < 0) return -1;
@@ -1501,7 +1555,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_SHLI: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
-            rb = promote_to_int(h, rb);
+            rb = promote_to_int(h, truth_tag, rb);
             if (rb < 0) return -1;
             int imm = h.emit_iconst(insn.sC());
             if (imm < 0) return -1;
@@ -1517,7 +1571,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[insn.B()]; \
             if (rb < 0) return -1; \
             if (lua_is_handle(h, rb)) return -1; \
-            rb = promote_to_int(h, rb); \
+            rb = promote_to_int(h, truth_tag, rb); \
             if (rb < 0) return -1; \
             int kidx = insn.C(); \
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size())) \
@@ -1577,6 +1631,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_LEN: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            // Lua raises "attempt to get length of a nil value"; the
+            // empty SCONST would measure 0 instead.
+            if (lua_is_nil(h, truth_tag, rb)) return -1;
             // `#` on a VM reference is what returned 22 for a three-element
             // table: the stack index, measured as though it were the value
             // (#1424, #1579).  Declining kept it correct; asking the VM
@@ -1640,6 +1697,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             for (int ci = 0; ci < nvals; ci++) {
                 if (!lua_reg_in_range(A + ci)) return -1;
                 if (lua_is_handle(h, lua_reg[A + ci])) return -1;
+                // Lua raises "attempt to concatenate a nil value"; the
+                // empty SCONST would splice in as "".
+                if (lua_is_nil(h, truth_tag, lua_reg[A + ci])) return -1;
             }
             if (nvals == 1) {
                 // Single value — no-op (just ensure it's a string).
@@ -1703,10 +1763,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // Mark this as known-integer (it's a stack index).
             h.known_int[lua_reg[A]] = true;
             // A table born here is PROVEN plain until it escapes as a
-            // call argument; see lua_referent::plain_proven.
+            // call argument; see lua_referent::plain_proven.  keys_closed
+            // starts true with an empty int_keys set — every constant-key
+            // store is recorded until a dynamic-key store opens it.
             {
                 lua_referent nt;
                 nt.plain_proven = true;
+                nt.keys_closed = true;
                 lua_ref[lua_reg[A]] = nt;
             }
             h.ecalls++;
@@ -1750,8 +1813,22 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // non-integer values, and the claim-miss path would continue
             // with 0: a silent wrong answer, proved in review.  Chunk is
             // ineligible instead; the interpreter answers.
-            if (!lua_referent_of(lua_ref, tbl).plain_proven) {
+            const lua_referent tref = lua_referent_of(lua_ref, tbl);
+            if (!tref.plain_proven) {
                 return -1;
+            }
+
+            const int64_t ikey = static_cast<int64_t>(insn.C());
+            // Known-absent under a closed key set: the integer slot cannot
+            // carry nil, and continuing with 0 was a silent wrong answer.
+            // Emit LOADNIL's representation at lowering — no post-entry
+            // GETI_INT miss.
+            if (tref.keys_closed
+                && tref.int_keys.find(ikey) == tref.int_keys.end()) {
+                lua_reg[A] = h.emit_sconst(rc.pool_str("", 0), "");
+                if (lua_reg[A] < 0) return -1;
+                lua_truth_set(truth_tag, lua_reg[A], LUA_TRUTH_NIL);
+                break;
             }
 
             int key = h.emit_iconst(insn.C());
@@ -1808,6 +1885,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // which the liveness walker consults so the register holding the
             // stored value is not recycled before the ECALL reads it.
             if (h.emit(HIR_LUA_SETI, TY_VOID, tbl, key, val) < 0) return -1;
+            // SETTABI's key is always the constant insn.B().
+            lua_note_int_key_store(lua_ref, tbl, static_cast<int64_t>(insn.B()));
             h.ecalls++;
             break;
         }
@@ -1853,6 +1932,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (h.emit(HIR_LUA_SETI, TY_VOID, tbl, key, val) < 0) {
                     return -1;
                 }
+                lua_note_int_key_store(lua_ref, tbl,
+                    static_cast<int64_t>(offset + j));
                 h.ecalls++;
             }
             break;
@@ -1890,6 +1971,20 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 h.native_ops++;
                 h.ecalls--;  // replaces an ECALL
             } else if (h.ty[key] == TY_INT) {
+                // Same plain-proof rule as GETTABI.
+                const lua_referent tref = lua_referent_of(lua_ref, tbl);
+                if (!tref.plain_proven) {
+                    return -1;
+                }
+                // Constant key under a closed set: known-absent → nil.
+                if (h.kind[key] == HIR_ICONST
+                    && tref.keys_closed
+                    && tref.int_keys.find(h.val[key]) == tref.int_keys.end()) {
+                    lua_reg[A] = h.emit_sconst(rc.pool_str("", 0), "");
+                    if (lua_reg[A] < 0) return -1;
+                    lua_truth_set(truth_tag, lua_reg[A], LUA_TRUTH_NIL);
+                    break;
+                }
                 // Integer key: use fast-path ECALL, returns TY_INT.
                 lua_reg[A] = h.emit(HIR_LUA_GETI, TY_INT, tbl, key);
                 if (lua_reg[A] < 0) return -1;
@@ -2111,7 +2206,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (imm_val < 0) return -1;
                 lua_reg[A] = h.emit(HIR_ADD, TY_INT, rb, imm_val);
             } else if (h.ty[rb] == TY_STRING) {
-                rb = promote_to_int(h, rb);
+                rb = promote_to_int(h, truth_tag, rb);
                 if (rb < 0) return -1;
                 int imm_val = h.emit_iconst(insn.sC());
                 if (imm_val < 0) return -1;
@@ -2137,15 +2232,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int kval = emit_lua_constant(h, rc, proto->constants[kidx]); \
             if (kval < 0) return -1; \
             if (either_float(h, rb, kval)) { \
-                rb = promote_to_float(h, rb); \
-                kval = promote_to_float(h, kval); \
+                rb = promote_to_float(h, truth_tag, rb); \
+                kval = promote_to_float(h, truth_tag, kval); \
                 if (rb < 0 || kval < 0) return -1; \
                 lua_reg[A] = h.emit(HIR_FP_OP, TY_FLOAT, rb, kval); \
             } else if (h.ty[rb] == TY_INT && h.ty[kval] == TY_INT) { \
                 lua_reg[A] = h.emit(HIR_INT_OP, TY_INT, rb, kval); \
             } else { \
-                rb = promote_to_int(h, rb); \
-                kval = promote_to_int(h, kval); \
+                rb = promote_to_int(h, truth_tag, rb); \
+                kval = promote_to_int(h, truth_tag, kval); \
                 if (rb < 0 || kval < 0) return -1; \
                 lua_reg[A] = h.emit(HIR_INT_OP, TY_INT, rb, kval); \
             } \
@@ -2170,8 +2265,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 return -1;
             int kval = emit_lua_constant(h, rc, proto->constants[kidx]);
             if (kval < 0) return -1;
-            rb = promote_to_float(h, rb);
-            kval = promote_to_float(h, kval);
+            rb = promote_to_float(h, truth_tag, rb);
+            kval = promote_to_float(h, truth_tag, kval);
             if (rb < 0 || kval < 0) return -1;
             lua_reg[A] = h.emit(HIR_FDIV, TY_FLOAT, rb, kval);
             if (lua_reg[A] < 0) return -1;
@@ -2191,8 +2286,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 return -1;
             int kval = emit_lua_constant(h, rc, proto->constants[kidx]);
             if (kval < 0) return -1;
-            rb = promote_to_float(h, rb);
-            kval = promote_to_float(h, kval);
+            rb = promote_to_float(h, truth_tag, rb);
+            kval = promote_to_float(h, truth_tag, kval);
             if (rb < 0 || kval < 0) return -1;
             uint64_t addr = tier2_sym_addr("pow");
             if (!addr) return -1;
@@ -2217,10 +2312,14 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
             if (lua_is_marshalled_str(h, rb) || lua_is_marshalled_str(h, rc_val)) \
                 return -1; \
+            /* nil compares equal to nothing but nil; as the empty SCONST */ \
+            /* it would compare equal to a real "" (#1766 review). */ \
+            if (lua_is_nil(h, truth_tag, rb) || lua_is_nil(h, truth_tag, rc_val)) \
+                return -1; \
             int cmp; \
             if (either_float(h, rb, rc_val)) { \
-                rb = promote_to_float(h, rb); \
-                rc_val = promote_to_float(h, rc_val); \
+                rb = promote_to_float(h, truth_tag, rb); \
+                rc_val = promote_to_float(h, truth_tag, rc_val); \
                 if (rb < 0 || rc_val < 0) return -1; \
                 cmp = h.emit(HIR_FP_OP, TY_INT, rb, rc_val); \
             } else if (h.ty[rb] == TY_INT && h.ty[rc_val] == TY_INT) { \
@@ -2231,8 +2330,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 int zero = h.emit_iconst(0); \
                 cmp = h.emit(HIR_INT_OP, TY_INT, sc, zero); \
             } else { \
-                rb = promote_to_int(h, rb); \
-                rc_val = promote_to_int(h, rc_val); \
+                rb = promote_to_int(h, truth_tag, rb); \
+                rc_val = promote_to_int(h, truth_tag, rc_val); \
                 if (rb < 0 || rc_val < 0) return -1; \
                 cmp = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
             } \
@@ -2249,6 +2348,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[A]; \
             if (rb < 0) return -1; \
             if (lua_is_handle(h, rb)) return -1; \
+            if (lua_is_nil(h, truth_tag, rb)) return -1; \
             int cmp; \
             if (h.ty[rb] == TY_FLOAT) { \
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB())); \
@@ -2259,7 +2359,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (imm_val < 0) return -1; \
                 cmp = h.emit(HIR_INT_OP, TY_INT, rb, imm_val); \
             } else if (h.ty[rb] == TY_STRING) { \
-                rb = promote_to_int(h, rb); \
+                rb = promote_to_int(h, truth_tag, rb); \
                 if (rb < 0) return -1; \
                 int imm_val = h.emit_iconst(insn.sB()); \
                 if (imm_val < 0) return -1; \
@@ -2292,8 +2392,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (kval < 0) return -1;
             int cmp;
             if (either_float(h, rb, kval)) {
-                rb = promote_to_float(h, rb);
-                kval = promote_to_float(h, kval);
+                rb = promote_to_float(h, truth_tag, rb);
+                kval = promote_to_float(h, truth_tag, kval);
                 if (rb < 0 || kval < 0) return -1;
                 cmp = h.emit(HIR_FEQ, TY_INT, rb, kval);
             } else if (h.ty[rb] == TY_INT && h.ty[kval] == TY_INT) {
@@ -2304,8 +2404,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 int zero = h.emit_iconst(0);
                 cmp = h.emit(HIR_EQ, TY_INT, sc, zero);
             } else {
-                rb = promote_to_int(h, rb);
-                kval = promote_to_int(h, kval);
+                rb = promote_to_int(h, truth_tag, rb);
+                kval = promote_to_int(h, truth_tag, kval);
                 if (rb < 0 || kval < 0) return -1;
                 cmp = h.emit(HIR_EQ, TY_INT, rb, kval);
             }
@@ -2347,7 +2447,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (imm_val < 0) return -1;
                 cmp = h.emit(HIR_GT, TY_INT, rb, imm_val);
             } else if (h.ty[rb] == TY_STRING) {
-                rb = promote_to_int(h, rb);
+                rb = promote_to_int(h, truth_tag, rb);
                 if (rb < 0) return -1;
                 int imm_val = h.emit_iconst(insn.sB());
                 if (imm_val < 0) return -1;
@@ -2375,7 +2475,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (imm_val < 0) return -1;
                 cmp = h.emit(HIR_GE, TY_INT, rb, imm_val);
             } else if (h.ty[rb] == TY_STRING) {
-                rb = promote_to_int(h, rb);
+                rb = promote_to_int(h, truth_tag, rb);
                 if (rb < 0) return -1;
                 int imm_val = h.emit_iconst(insn.sB());
                 if (imm_val < 0) return -1;
@@ -2940,6 +3040,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     if (!lua_reg_in_range(A + 1 + i)) { ok = false; break; }
                     int areg = lua_reg[A + 1 + i];
                     if (areg < 0) { ok = false; break; }
+                    // nil as an argument would arrive as "" -- tostring(nil)
+                    // is "nil", not "".  No kind encodes nil, so decline.
+                    if (lua_is_nil(h, truth_tag, areg)) { ok = false; break; }
                     if (lua_is_handle(h, areg)) {
                         kinds |= (3 << (2 * i));   // stack reference
                         // The callee may setmetatable the table: the
