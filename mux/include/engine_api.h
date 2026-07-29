@@ -95,6 +95,10 @@ static constexpr uint64_t ECALL_LUA_INSN_BUDGET = 0x314; // () -> a0 = current l
 static constexpr uint64_t ECALL_LUA_CALL_VAL = 0x315; // a0=fn, a1=nargs|kinds, a2..a4=args → a0=stack_idx, a1=ok
 static constexpr uint64_t ECALL_LUA_MARSHAL  = 0x316; // a0=stack_idx, a1=out addr, a2=out size → a0=len (fun_lua rules)
 static constexpr uint64_t ECALL_LUA_TOBOOL   = 0x317; // a0=stack_idx → a0=0/1 (Lua truthiness: only nil/false falsy)
+// Lua == for a CALL_VAL handle vs a constant or another handle (#1764 residual).
+// a0=lhs stack_idx, a1=rhs kind (0=int,1=string addr,2=handle,3=nil,4=bool),
+// a2=rhs payload → a0=0/1.
+static constexpr uint64_t ECALL_LUA_EQ       = 0x318;
 
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls

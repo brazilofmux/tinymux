@@ -1357,11 +1357,224 @@
       strmatch(setr(0,lua(me/LUA_SEAM_EMPTY)),), \
       strmatch(setr(1,strlen(lua(me/LUA_SEAM_EMPTY))),0))=1,
   {
-    @log smoke=TC078: seam empty string marshal + strlen. Succeeded.;
+    @log smoke=TC078: seam empty string marshal + strlen. Succeeded.
+  },
+  {
+    @log smoke=TC078: seam empty string marshal + strlen. Failed (s=%q0 len=%q1).
+  }
+-
+#
+# ---- Seam corpus (TC079+) — production nest, softcode host state, ----
+# ---- multi-entry softcode→lua, float/nil/bool edges. Residual after
+# ---- #1751 / softcode post-entry contract (#1791). Concern ends at
+# ---- the softcode↔Lua RV64 seam (ECALL/DMA), not deep DBT.
+#
+# Test 79: softcode u() of an attribute that embeds [lua(...)] —
+# classic softcode-JIT → fun_lua nest under default brackets.
+#
+&SOFT_U_SEAM test_lua_fn=[add(lua(me/LUA_ADD,6,1),3)]
+-
+&tr.tc079 test_lua_fn=
+  @if strmatch(
+    setr(0,u(me/SOFT_U_SEAM)),
+    10)=
+  {
+    @log smoke=TC079: seam softcode u() embeds lua(). Succeeded.
+  },
+  {
+    @log smoke=TC079: seam softcode u() embeds lua(). Failed (%q0).
+  }
+-
+#
+# Test 80: softcode setq survives a nested lua() host ECALL.
+# Softcode #1791 host_ecalls path: SETQ then lua must not stomp %qregs.
+# setq() returns empty; pin via %qN after the lua nest (not setq's return).
+#
+&tr.tc080 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,[setq(8,q-keep)][lua(me/LUA_ADD,4,5)]),9), \
+      strmatch(%q8,q-keep))=1,
+  {
+    @log smoke=TC080: seam softcode setq survives lua(). Succeeded.
+  },
+  {
+    @log smoke=TC080: seam softcode setq survives lua(). Failed (lua=%q0 q8=%q8).
+  }
+-
+#
+# Test 81: object attr written by softcode still readable after lua().
+# Host softcode work + nested lua + softcode read (no double-write).
+#
+&tr.tc081 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,attrib_set(me/SEAM_PRE,before-lua)),), \
+      strmatch(setr(1,lua(me/LUA_ADD,2,2)),4), \
+      strmatch(setr(2,get(me/SEAM_PRE)),before-lua))=1,
+  {
+    @log smoke=TC081: seam softcode attr survives lua(). Succeeded.
+  },
+  {
+    @log smoke=TC081: seam softcode attr survives lua(). Failed (set=%q0 lua=%q1 get=%q2).
+  }
+-
+#
+# Test 82: Lua nil marshals empty; softcode t() is false (≠ Lua truthiness).
+#
+&LUA_SEAM_NIL test_lua_fn=return nil
+-
+&tr.tc082 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,lua(me/LUA_SEAM_NIL)),), \
+      not(t(%q0)), \
+      not(t(lua(me/LUA_SEAM_NIL))))=1,
+  {
+    @log smoke=TC082: seam nil → softcode empty + t() false. Succeeded.
+  },
+  {
+    @log smoke=TC082: seam nil → softcode empty + t() false. Failed (s=%q0).
+  }
+-
+#
+# Test 83: float return through softcode mul (decimal marshal).
+# Pin the marshaled text first; then softcode arithmetic on that text.
+# Softcode has mul/fdiv, not fmul — mul handles decimals (see nested_float_fn).
+#
+&LUA_SEAM_HALF test_lua_fn=return 2.5
+-
+&tr.tc083 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,lua(me/LUA_SEAM_HALF)),2.5*), \
+      strmatch(setr(1,mul(lua(me/LUA_SEAM_HALF),2)),5*))=1,
+  {
+    @log smoke=TC083: seam float → softcode mul. Succeeded.
+  },
+  {
+    @log smoke=TC083: seam float → softcode mul. Failed (lua=%q0 mul=%q1).
+  }
+-
+#
+# Test 84: three softcode args into lua (CARGS multi-slot nest).
+#
+&LUA_SEAM_3 test_lua_fn=return mux.args[1] + mux.args[2] + mux.args[3]
+-
+&tr.tc084 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_3,1,2,3)),
+    6)=
+  {
+    @log smoke=TC084: seam three softcode args → lua. Succeeded.
+  },
+  {
+    @log smoke=TC084: seam three softcode args → lua. Failed (%q0).
+  }
+-
+#
+# Test 85: two separate lua() entries in one softcode expression.
+# Softcode JIT issues two fun_lua ECALLs; each may compile+run.
+#
+&tr.tc085 test_lua_fn=
+  @if strmatch(
+    setr(0,add(lua(me/LUA_ADD,1,2),lua(me/LUA_ADD,3,4))),
+    10)=
+  {
+    @log smoke=TC085: seam softcode add of two lua(). Succeeded.
+  },
+  {
+    @log smoke=TC085: seam softcode add of two lua(). Failed (%q0).
+  }
+-
+#
+# Test 86: softcode first/rest on a multi-word lua return.
+#
+&LUA_SEAM_PAIR test_lua_fn=return "left right"
+-
+&tr.tc086 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,first(lua(me/LUA_SEAM_PAIR))),left), \
+      strmatch(setr(1,rest(lua(me/LUA_SEAM_PAIR))),right))=1,
+  {
+    @log smoke=TC086: seam softcode first/rest on lua. Succeeded.
+  },
+  {
+    @log smoke=TC086: seam softcode first/rest on lua. Failed (f=%q0 r=%q1).
+  }
+-
+#
+# Test 87: softcode after a lua error still sees prior setq (no host stomp).
+# setq() returns empty; embed as a side-effect prefix like TC080.
+#
+&tr.tc087 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,[setq(7,still-here)][lua(me/LUA_SEAM_ERR)]),#-1 LUA ERROR:*seam-boom*), \
+      strmatch(%q7,still-here))=1,
+  {
+    @log smoke=TC087: seam setq survives lua error. Succeeded.
+  },
+  {
+    @log smoke=TC087: seam setq survives lua error. Failed (err=%q0 q7=%q7).
+  }
+-
+#
+# Test 88: softcode → lua → mux.eval(set via softcode) → softcode get.
+# Keep the eval argument constant: runtime string call arguments and SELF
+# (`s:sub`) are deliberately ineligible, which would make this result-only
+# smoke pass through the interpreter while claiming compiled coverage.
+# NESTED and STATE e4 below pin execution and exactly-once effect separately.
+#
+&LUA_SEAM_EVAL_WRITE test_lua_fn= \
+  local x = mux.eval("strcat(attrib_set(me/SEAM_EVAL_WROTE,via-mux-eval),ok)") \
+  return x
+-
+&tr.tc088 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,lua(me/LUA_SEAM_EVAL_WRITE)),ok), \
+      strmatch(setr(1,get(me/SEAM_EVAL_WROTE)),via-mux-eval))=1,
+  {
+    @log smoke=TC088: seam lua→mux.eval→attrib_set→softcode get. Succeeded.
+  },
+  {
+    @log smoke=TC088: seam lua→mux.eval→attrib_set→softcode get. Failed (lua=%q0 get=%q1).
+  }
+-
+#
+# Test 89: softcode match() pattern consumer of a lua string.
+#
+&LUA_SEAM_TOKEN test_lua_fn=return "abc-def-ghi"
+-
+&tr.tc089 test_lua_fn=
+  @if strmatch(
+    setr(0,match(lua(me/LUA_SEAM_TOKEN),*-def-*)),
+    1)=
+  {
+    @log smoke=TC089: seam softcode match on lua string. Succeeded.
+  },
+  {
+    @log smoke=TC089: seam softcode match on lua string. Failed (%q0).
+  }
+-
+#
+# Test 90: softcode switch/case on a lua integer (branch after nest).
+#
+&LUA_SEAM_CODE test_lua_fn=return tonumber(mux.args[1])
+-
+&tr.tc090 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,switch(lua(me/LUA_SEAM_CODE,2),1,one,2,two,other)),two), \
+      strmatch(setr(1,switch(lua(me/LUA_SEAM_CODE,9),1,one,2,two,other)),other))=1,
+  {
+    @log smoke=TC090: seam softcode switch on lua int. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC078: seam empty string marshal + strlen. Failed (s=%q0 len=%q1).;
+    @log smoke=TC090: seam softcode switch on lua int. Failed (t=%q0 o=%q1).;
     @trig me/tr.done
   }
 -

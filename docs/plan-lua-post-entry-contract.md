@@ -85,7 +85,7 @@ These are the open quality / clarity targets after #1751 close:
 | **Typed CALL results** | CALL_VAL leaves results on the VM stack; RET marshals; TOBOOL for if/not | Landed for default STRING claims; remaining: VM `==`/arith on handles, CALL_INT nil |
 | **Runtime absent key** | GETI with non-constant key still may hit residual NONINT loud | Closed-set covers constant keys only; dynamic miss needs nil in a typed or handle slot |
 | **Anytime items 3–5** | Nested `mux.args`/executor stomp; `lua_checkstack`; int-returning bridge claims | Independent small work; does not wait on typed results |
-| **Seam corpus** | Grow softcode ↔ Lua smoke (TC061+) | Answer + state + effects |
+| **Seam corpus** | Softcode ↔ Lua smoke TC061–090; NESTED+STATE e4 in `tests/luajit` | Answer + host setq/attr + multi-entry + mux.eval under brackets |
 | **ECALL_DECLINE ABI** | Optional: assert/unreachable in Lua handlers | Phase 4 left a loud safety net; tightening is polish |
 | **Softcode CALL_FUNC sibling** | Same post-entry audit | **Done** — [#1791](https://github.com/brazilofmux/tinymux/issues/1791) / [`plan-softcode-post-entry-contract.md`](plan-softcode-post-entry-contract.md) |
 

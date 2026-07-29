@@ -462,6 +462,7 @@ static bool lua_bool_fuse_at(const lua_bc_proto *proto, int pc, int n,
                              int *dst_reg) {
     switch (proto->code[pc].opcode()) {
     case OP_LUA_EQ:  case OP_LUA_LT:  case OP_LUA_LE:
+    case OP_LUA_EQK: // same condjump+LFALSESKIP/LOADTRUE shape as EQ (#1764)
     case OP_LUA_EQI: case OP_LUA_LTI: case OP_LUA_LEI:
     case OP_LUA_GTI: case OP_LUA_GEI:
         break;
@@ -1077,9 +1078,9 @@ static int emit_cmp_branch(hir_program &h, int cmp, int k_bit,
     // true_target below is the JMP's destination, so the branch condition
     // must be (cond == k): negate when k is 0, not when it is 1 (#1486).
     //
-    // OP_EQK carries the opposite convention -- it has no JMP to fuse, so its
-    // true_target is the skip -- and negating on k is correct there.  The two
-    // look alike and mean opposite things.
+    // EQK uses the same condjump+JMP shape as EQ/EQI (luaK_codeeq →
+    // condjump), so it shares this polarity.  An older lowering treated
+    // EQK as a bare skip to pc+1/pc+2 with inverted k; that path is gone.
     if (!k_bit) {
         cmp = h.emit(HIR_NOT, TY_INT, cmp);
         if (cmp < 0) return -1;
@@ -2452,12 +2453,41 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
 // CMP_RR: == / order on a marshalled CALL_STR result compares text, not
 // the Lua value (0 == "0", false == "0", ...).  Refuse those (#1764).
+// Stack handles (CALL_VAL and any TY_LUA_HANDLE) use the VM for EQ only
+// (HIR_LUA_EQ); order comparisons still decline.
 #define CMP_RR(HIR_INT_OP, HIR_FP_OP) \
         { \
             int rb = lua_reg[A]; \
             int rc_val = lua_reg[insn.B()]; \
             if (rb < 0 || rc_val < 0) return -1; \
-            if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
+            if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) { \
+                if ((HIR_INT_OP) != HIR_EQ) return -1; \
+                int lhs = rb, rhs = rc_val; \
+                int kind = 2; \
+                if (lua_is_handle(h, rb) && lua_is_handle(h, rc_val)) { \
+                    kind = 2; \
+                } else if (lua_is_handle(h, rb)) { \
+                    lhs = rb; rhs = rc_val; \
+                    if (h.kind[rhs] == HIR_SCONST) kind = 1; \
+                    else if (h.ty[rhs] == TY_INT) kind = 0; \
+                    else return -1; \
+                } else if (lua_is_handle(h, rc_val)) { \
+                    lhs = rc_val; rhs = rb; \
+                    if (h.kind[rhs] == HIR_SCONST) kind = 1; \
+                    else if (h.ty[rhs] == TY_INT) kind = 0; \
+                    else return -1; \
+                } else { \
+                    return -1; \
+                } \
+                int cmp = h.emit(HIR_LUA_EQ, TY_INT, lhs, rhs, kind); \
+                if (cmp < 0) return -1; \
+                h.ecalls++; \
+                if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block, \
+                                    cur_hir_block, n, lua_reg, multi_block) < 0) \
+                    return -1; \
+                pc++; \
+                break; \
+            } \
             if (lua_is_marshalled_str(h, rb) || lua_is_marshalled_str(h, rc_val)) \
                 return -1; \
             /* nil compares equal to nothing but nil; as the empty SCONST */ \
@@ -2531,6 +2561,14 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_LE:  CMP_RR(HIR_LE, HIR_FLE)
 
         // EQK: equality with constant from pool.
+        //
+        // Lua's condjump always pairs EQK with a following JMP (same shape
+        // as EQ/EQI).  Value materialisation is EQK+JMP+LFALSESKIP+LOADTRUE
+        // and is fused via emit_cmp_branch / lua_bool_fuse_at.  Older code
+        // treated EQK as a bare one-instruction skip to pc+1/pc+2 and
+        // declined the fuse shape, so `return x == "0"` never compiled
+        // once x was a CALL_VAL handle (#1764 residual).
+        //
         case OP_LUA_EQK: {
             int rb = lua_reg[A];
             if (rb < 0) return -1;
@@ -2540,6 +2578,48 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
             const lua_bc_constant &kconst = proto->constants[kidx];
+            // Stack-handle left-hand side (CALL_VAL etc.): ask the VM so type
+            // distinctions survive (tostring(0) == "0" true; tonumber("17")
+            // == "17" false).  Match on TY_LUA_HANDLE, not kind==CALL_VAL:
+            // SSA copies / reloads keep the type but not the producer kind.
+            //
+            if (lua_is_handle(h, rb)) {
+                int kind = -1;
+                int rhs = -1;
+                if (kconst.type == LUA_BC_TNIL) {
+                    kind = 3;
+                    rhs = h.emit_iconst(0);
+                } else if (kconst.type == LUA_BC_TFALSE) {
+                    kind = 4;
+                    rhs = h.emit_iconst(0);
+                } else if (kconst.type == LUA_BC_TTRUE) {
+                    kind = 4;
+                    rhs = h.emit_iconst(1);
+                } else if (kconst.type == LUA_BC_TINT) {
+                    kind = 0;
+                    rhs = h.emit_iconst(kconst.ival);
+                } else if (kconst.type == LUA_BC_TFLOAT) {
+                    // Float constant kind not wired for HIR_LUA_EQ yet.
+                    return -1;
+                } else if (  kconst.type == LUA_BC_TSHRSTR
+                          || kconst.type == LUA_BC_TLNGSTR) {
+                    kind = 1;
+                    rhs = emit_lua_constant(h, rc, kconst);
+                } else {
+                    return -1;
+                }
+                if (rhs < 0) return -1;
+                int cmp = h.emit(HIR_LUA_EQ, TY_INT, rb, rhs, kind);
+                if (cmp < 0) return -1;
+                h.ecalls++;
+                // emit_cmp_branch owns k-bit polarity (EQ convention) and
+                // the LFALSESKIP/LOADTRUE fuse for `return x == K`.
+                if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
+                                    cur_hir_block, n, lua_reg, multi_block) < 0)
+                    return -1;
+                pc++;
+                break;
+            }
             // nil is the empty SCONST in HIR, which is also a real "".
             // EQK's string path would make nil == "" true.  Resolve against
             // the pool type (and the lhs tag) before emitting STRCMP:
@@ -2566,21 +2646,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 // true (nil has exactly one value).
                 int cmp = h.emit_iconst((lhs_nil && rhs_nil) ? 1 : 0);
                 if (cmp < 0) return -1;
-                if (insn.k()) {
-                    cmp = h.emit(HIR_NOT, TY_INT, cmp);
-                    if (cmp < 0) return -1;
-                }
-                if (pc + 1 >= n) return -1;
-                if (!multi_block) return -1;
-                int true_target = pc + 2;
-                int false_target = pc + 1;
-                int true_blk = (true_target < n) ? pc_to_block[true_target] : -1;
-                int false_blk = pc_to_block[false_target];
-                if (true_blk < 0 || false_blk < 0) return -1;
-                h.emit(HIR_BRC, TY_VOID, cmp, false_blk, true_blk);
-                h.add_edge(cur_hir_block, true_blk);
-                h.add_edge(cur_hir_block, false_blk);
                 h.native_ops++;
+                if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
+                                    cur_hir_block, n, lua_reg, multi_block) < 0)
+                    return -1;
+                pc++;
                 break;
             }
             int kval = emit_lua_constant(h, rc, kconst);
@@ -2605,22 +2675,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (rb < 0 || kval < 0) return -1;
                 cmp = h.emit(HIR_EQ, TY_INT, rb, kval);
             }
+            if (cmp < 0) return -1;
             h.native_ops++;
-            if (insn.k()) {
-                cmp = h.emit(HIR_NOT, TY_INT, cmp);
-                if (cmp < 0) return -1;
-            }
-            // EQK is NOT followed by JMP — it just skips the next instruction.
-            if (pc + 1 >= n) return -1;
-            if (!multi_block) return -1;
-            int true_target = pc + 2;  // skip next insn
-            int false_target = pc + 1; // execute next insn
-            int true_blk = (true_target < n) ? pc_to_block[true_target] : -1;
-            int false_blk = pc_to_block[false_target];
-            if (true_blk < 0 || false_blk < 0) return -1;
-            h.emit(HIR_BRC, TY_VOID, cmp, false_blk, true_blk);
-            h.add_edge(cur_hir_block, true_blk);
-            h.add_edge(cur_hir_block, false_blk);
+            if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
+                                cur_hir_block, n, lua_reg, multi_block) < 0)
+                return -1;
+            pc++;
             break;
         }
 

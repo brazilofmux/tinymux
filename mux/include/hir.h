@@ -124,6 +124,8 @@ enum hir_kind {
     HIR_LUA_CALL_VAL, // call fn(args): ECALL → TY_LUA_HANDLE (value on VM stack)
     HIR_LUA_MARSHAL,  // marshal stack value → TY_STRING (fun_lua rules, out slot)
     HIR_LUA_TOBOOL,   // Lua truthiness of stack value → TY_INT 0/1
+    HIR_LUA_EQ,       // Lua == of stack value vs const/handle → TY_INT 0/1
+                      // val[] = rhs kind (0=int,1=string,2=handle,3=nil,4=bool)
     HIR_LUA_GETFIELD, // getfield(tbl_idx, key_addr): ECALL → TY_INT
     HIR_LUA_GETFIELD_FLT, // getfield(tbl_idx, key_addr): ECALL → TY_FLOAT (bits over FMV lane)
     HIR_LUA_SETFIELD, // setfield(tbl_idx, key_addr, val): ECALL
