@@ -183,10 +183,9 @@ AGREE_CASES=(
 # POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
 # Phases 1–3 empty FAIL sites.  Long-term target is 0.
 #
-# Phase 3: LIMITED is interpreter-identical (not POST-ENTRY DECLINE).
-# Budget for-loop / while-true match both routes.  Remaining loud under
-# revised Phase 1/2 (restacked 2026-07-29): string.find, absent-key pin,
-# STATE e1/e2 → 4.
+# Phase 3: LIMITED is interpreter-identical.  Phase 4: residual declines
+# still count as loud (POST-ENTRY or "residual decline" text).  Restacked
+# on revised 1/2 (2026-07-29): re-measure — provisional ceiling 4.
 POST_ENTRY_LOUD_BUDGET=4
 
 # How many AGREE chunks are expected to decline rather than execute.
@@ -717,6 +716,14 @@ if [ "$R_OK" = "0" ]; then
     exit 1
 fi
 
+# Committed post-entry fail (no silent re-run): Phase 0 POST-ENTRY DECLINE
+# text, or Phase 4 residual decline rewritten as LUA ERROR.
+#
+is_post_entry_loud() {
+    printf '%s' "$1" | grep -qE \
+        'LUA JIT POST-ENTRY DECLINE|post-entry residual decline'
+}
+
 # True if results agree for differential purposes.
 # Exact match, or both are LUA ERROR with the same core message after
 # stripping the interpreter's `#dbref/ATTR:line:` prefix and a trailing
@@ -797,8 +804,8 @@ for chunk in "${AGREE_CASES[@]}"; do
     elif [ "$irc" != "0" ]; then
         verdict="FAIL: interp died rc=$irc"
         crashes=$((crashes+1))
-    elif printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
-        # Phase 0: committed loud fail on the compiled path (#1751).
+    elif is_post_entry_loud "$jres"; then
+        # Phase 0/4: committed loud fail on the compiled path (#1751).
         verdict="ok (post-entry decline loud; Phase 0)"
         post_entry_loud=$((post_entry_loud+1))
     elif ! results_match "$ires" "$jres"; then
@@ -828,8 +835,8 @@ for chunk in "${EXEC_CASES[@]}"; do
     elif [ "$irc" != "0" ]; then
         verdict="FAIL: interp died rc=$irc"
         crashes=$((crashes+1))
-    elif printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
-        # Phase 0: compiled path entered then failed loud — not a silent
+    elif is_post_entry_loud "$jres"; then
+        # Phase 0/4: compiled path entered then failed loud — not a silent
         # re-run.  Still fails EXEC (must execute and match) until bins empty.
         verdict="FAIL: post-entry decline loud (Phase 0; #1751)"
         exec_post_entry=$((exec_post_entry+1))
@@ -884,8 +891,8 @@ for chunk in "${NESTED_AGREE_CASES[@]}"; do
     elif [ "$irc" != "0" ]; then
         verdict="FAIL: interp died rc=$irc"
         crashes=$((crashes+1))
-    elif printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
-        # Phase 0: loud post-entry decline is honest; not silent re-run (#1751).
+    elif is_post_entry_loud "$jres"; then
+        # Phase 0/4: loud post-entry fail is honest; not silent re-run (#1751).
         verdict="ok (post-entry decline loud; Phase 0)"
         post_entry_loud=$((post_entry_loud+1))
     elif [ "$ires" != "$jres" ]; then
@@ -917,7 +924,7 @@ while [ "$si" -lt "${#STATE_NAMES[@]}" ]; do
     jrc=$R_RC; jres=$R_RES; jstate=$R_STATE; jpings=$R_PINGS; jkept=$R_KEPT; jpostd=$R_POSTD
     verdict="ok"
     jloud=0
-    if printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
+    if is_post_entry_loud "$jres"; then
         jloud=1
     fi
     if [ "$jrc" != "0" ]; then
@@ -932,7 +939,7 @@ while [ "$si" -lt "${#STATE_NAMES[@]}" ]; do
         verdict="FAIL: state diverges interp=$istate jit=$jstate (purity)"
         state_wrong=$((state_wrong+1))
     elif [ "$jloud" = "1" ]; then
-        # Phase 0: loud fail is honest.  State already matched.
+        # Phase 0/4: loud fail is honest.  State already matched.
         verdict="ok (post-entry loud; state pure)"
         state_loud=$((state_loud+1))
         post_entry_loud=$((post_entry_loud+1))
@@ -946,9 +953,11 @@ while [ "$si" -lt "${#STATE_NAMES[@]}" ]; do
     else
         verdict="ok (matched; pure)"
     fi
-    # Surface counter for exhibit paths that commit EFFECT_REFUSED outside
-    # RunCompiled (must still advance lua_post_entry_decline).
-    if [ "$jloud" = "1" ] && [ "${jpostd:-0}" = "0" ]; then
+    # EFFECT_REFUSED still advances lua_post_entry_decline.  Phase 4
+    # residual declines rewrite to LUA ERROR and may not bump that
+    # counter — only require it for the classic POST-ENTRY prefix.
+    if [ "$jloud" = "1" ] && [ "${jpostd:-0}" = "0" ] \
+        && printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
         verdict="FAIL: loud result but lua_post_entry_decline=0"
         state_wrong=$((state_wrong+1))
     fi

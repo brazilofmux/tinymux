@@ -2720,25 +2720,33 @@ void jit_flush_pending_caches(void)
     jit_drain_pending_flush();
 }
 
-// eval_ecall status for Lua post-entry refusal (#1423 / #1751 Phase 0).
+// eval_ecall status for Lua (#1423 / #1751).
 // dbt_run continues on a negative return and stops on a non-negative one;
-// 0 is success.  Positive ECALL_DECLINE means the Lua compiled path could
-// not finish honestly.  After post-entry that is a *committed* loud failure
-// (run_cached_program writes the error; TryJIT must not re-run the
-// interpreter).  Pre-entry fallback is unchanged.
+// 0 is success.  ECALL_LUA_ERROR commits an interpreter-class message.
+// ECALL_DECLINE is retained only as a residual safety net (Phase 4): any
+// remaining site is rewritten to LUA ERROR text and must not re-run.
+// Pre-entry fallback (compile refuse / cache miss) is unchanged.
 //
 static constexpr int ECALL_DECLINE = 1;
-// Phase 1: total table/len op raised under pcall — commit LUA ERROR text.
-//
 static constexpr int ECALL_LUA_ERROR = 2;
 
 static thread_local const char *s_lua_decline_site = nullptr;
 static thread_local char s_lua_ecall_error[256];
 
+// Forward: residual post-entry soft declines become committed errors.
+//
+static int ecall_lua_error_cstr(const char *msg);
+
+// Phase 4: no soft decline.  Name kept for greppability of residual sites.
+//
 static int lua_ecall_decline(const char *site)
 {
     s_lua_decline_site = (nullptr != site) ? site : "UNKNOWN";
-    return ECALL_DECLINE;
+    char buf[160];
+    mux_snprintf(reinterpret_cast<UTF8 *>(buf), sizeof(buf),
+        T("post-entry residual decline (%s)"),
+        reinterpret_cast<const UTF8 *>(s_lua_decline_site));
+    return ecall_lua_error_cstr(buf);
 }
 
 bool run_cached_program(compiled_program *prog,
@@ -2969,10 +2977,13 @@ bool run_cached_program(compiled_program *prog,
 
     int rc = dbt_run(dbt, prog->entry_pc, rv_compiler::STACK_TOP);
 
-    // #1751 Phase 0: post-entry ECALL_DECLINE is a committed loud failure.
-    // Do not return false (that re-runs the whole chunk in the Lua VM).
+    // #1751 Phase 0–4: after dbt_run for a Lua program, never return false
+    // (that re-runs the whole chunk in the Lua VM).  Commit an error text.
     //
     if (rc == ECALL_DECLINE && nullptr != lua_state) {
+        // Residual only: lua_ecall_decline now returns ECALL_LUA_ERROR.
+        // Keep this arm so a stray return ECALL_DECLINE cannot re-run.
+        //
         const char *site = (nullptr != s_lua_decline_site)
             ? s_lua_decline_site : "UNKNOWN";
         if (nullptr != out && 0 < out_size) {
@@ -2980,18 +2991,13 @@ bool run_cached_program(compiled_program *prog,
                 T("#-1 LUA JIT POST-ENTRY DECLINE (%s)"),
                 reinterpret_cast<const UTF8 *>(site));
         }
-        // Visible debt: site name is the bin Phases 1–3 empty.
-        //
         STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
-        log_text(T("Lua post-entry decline (no re-run): "));
+        log_text(T("Lua residual ECALL_DECLINE (no re-run): "));
         log_text(reinterpret_cast<const UTF8 *>(site));
         ENDLOG;
-        return true;  // handled — caller must not re-run the interpreter
+        return true;
     }
 
-    // #1751 Phase 1: total GET/SET/LEN raised a real Lua error under pcall.
-    // Commit the interpreter-class message; no re-run.
-    //
     if (rc == ECALL_LUA_ERROR && nullptr != lua_state) {
         if (nullptr != out && 0 < out_size) {
             mux_strncpy(out,
@@ -3002,6 +3008,18 @@ bool run_cached_program(compiled_program *prog,
     }
 
     if (!handle_dbt_run_status(rc, out, out_size, true)) {
+        // Phase 4: any other post-run failure on the Lua path is committed,
+        // not a silent interpreter re-run.
+        //
+        if (nullptr != lua_state) {
+            if (nullptr != out && 0 < out_size
+                && (out[0] == '\0'
+                    || 0 != strncmp(reinterpret_cast<const char *>(out),
+                                    "#-1", 3))) {
+                mux_snprintf(out, out_size, T("#-1 LUA JIT RUN FAIL"));
+            }
+            return true;
+        }
         return false;
     }
     if (rc == -3) {
@@ -3672,7 +3690,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             if (getenv("TINYMUX_TRACE_LUA_ECALL")) {
                 fprintf(stderr, "LUAECALL: UNHANDLED %s\n", fn);
             }
-            return lua_ecall_decline("UNHANDLED_LUA_BRIDGE");
+            // Phase 4: committed error, not soft decline / re-run.
+            //
+            return ecall_lua_error_cstr("unhandled Lua bridge ECALL");
         }
         size_t nCased;
         UTF8 *pCased = mux_strupr(func_name, nCased);
