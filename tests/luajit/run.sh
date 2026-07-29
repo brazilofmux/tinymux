@@ -477,6 +477,25 @@ EXEC_CASES=(
     'return "10" - 1'
     'return "2" + "5"'
     'local a=mux.args[1].."" return a + 4'
+
+    # ---- Lua truthiness (only nil/false are falsy) ----
+    #
+    # HIR collapses false and integer 0 to the same ICONST 0, and nil and
+    # "" to the same empty SCONST.  HIR_BOOL is integer SNEZ, so
+    # `local a=0 if a` used to answer falsy compiled while the interpreter
+    # answered truthy.  Truth-class tags at lowering restore the distinction.
+    # EXEC on purpose: a decline would hide a silent wrong answer.
+    'local a=0 if a then return "t" else return "f" end'
+    'local a=false if a then return "t" else return "f" end'
+    'local a=nil if a then return "t" else return "f" end'
+    'local a="" if a then return "t" else return "f" end'
+    'local a="0" if a then return "t" else return "f" end'
+    'local a=0.0 if a then return "t" else return "f" end'
+    'local a=1-1 if a then return "t" else return "f" end'
+    'local a=0 return not a'
+    'local a=false return not a'
+    'local a=nil return not a'
+    'local a="" return not a'
 )
 
 # ---------------------------------------------------------------------------
