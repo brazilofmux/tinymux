@@ -157,8 +157,15 @@ think LIM_read=[config(lua_instruction_limit)]')
             printf '%s\n' "$out" | sed 's/^/    /'
             fails=$((fails + 1)); return ;;
     esac
+    # Either error text proves the lowered limit applied.  Pre-#1751 the
+    # compiled run declined and the interpreter re-ran into its own
+    # "#-1 LUA ERROR: ... instruction limit"; under #1751 Phase 0 the
+    # compiled run commits a loud POST-ENTRY DECLINE naming
+    # ECALL_LUA_LIMITED instead (no re-run).  Phase 3 will converge the
+    # text back to the interpreter's; tighten this case then.
     case "$out" in
         *"LIM_lowered=#-1 LUA ERROR"*) : ;;
+        *"LIM_lowered=#-1 LUA JIT POST-ENTRY DECLINE (ECALL_LUA_LIMITED)"*) : ;;
         *)  echo "FAIL: lowering lua_instruction_limit at runtime had no effect"
             printf '%s\n' "$out" | sed 's/^/    /'
             fails=$((fails + 1)); return ;;
