@@ -226,6 +226,18 @@ AGREE_CASES=(
     'return "x" .. mux.args'
     'if mux.args == "mux.args" then return "y" else return "n" end'
     'return #mux'
+    'return mux.args'
+    'return mux'
+    'return mux.args + 1'
+    'return -mux.args'
+    'return mux.args // 2'
+    'return mux.args & 1'
+
+    # Sentinel provenance must not collide with ordinary Lua string text.
+    'return #"mux.args"'
+    'return ("mux.args")[1]'
+    'return type("mux.args")'
+    'if "mux.args" == "mux.args" then return "y" else return "n" end'
 
     # ---- #1768: truth-class tag loss must decline, not invent VALUE ----
     #
@@ -294,9 +306,9 @@ POST_ENTRY_LOUD_BUDGET=0
 # #1771: +1 net from seam-adjacent AGREE pins (owner+1, type(pennies),
 # bad owner, error forms); error() executes after CALL_VOID totalization.
 # May fall, must not rise.
-# #1795: +5 sentinel-escape pins; all decline (the sentinel has no
-# value form on the compiled path -- only mux.args[N] consumes it).
-AGREE_DECLINE_BUDGET=18
+# #1795: sentinel-escape and provenance-collision pins.  Real sentinels
+# decline outside their dedicated fast paths; literal text remains a value.
+AGREE_DECLINE_BUDGET=25
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.

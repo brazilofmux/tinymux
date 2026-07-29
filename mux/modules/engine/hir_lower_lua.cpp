@@ -528,6 +528,15 @@ static int assign_blocks(const std::vector<bool> &is_leader,
     return block_count;
 }
 
+// The mux.* SENTINEL: `mux` and `mux.args` are lowered as SCONSTs holding
+// their own NAMES, not as Lua values.  The separate provenance bit is
+// essential: `"mux.args"` is also perfectly ordinary Lua string text and
+// must never enter the CARGS fast path just because its bytes match.
+//
+static inline bool lua_is_mux_sentinel(const hir_program &h, int v) {
+    return v >= 0 && h.kind[v] == HIR_SCONST && h.lua_mux_sentinel[v];
+}
+
 // ---------------------------------------------------------------
 // Helper: coerce a return value to TY_STRING for HIR_RET.
 //
@@ -558,6 +567,8 @@ void lua_format_double(double d, char *buf, size_t sz) {
 
 static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
     if (rv < 0) return -1;
+    // A mux table sentinel is not the string containing its name.
+    if (lua_is_mux_sentinel(h, rv)) return -1;
     // A CALL_VAL result is a live Lua value on the stack: marshal with
     // fun_lua rules at the softcode boundary (#1764 shape 2).  Other
     // handles (tables, callables) still must not escape as decimal indices.
@@ -664,8 +675,7 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
 // coincidence of the marshal.  #1764: treat the producer as provenance and
 // refuse to consume it under Lua semantics -- the interpreter answers.
 //
-// The mux.* SENTINEL: `mux` and `mux.args` are lowered as SCONSTs holding
-// their own NAMES, not as Lua values.  That fiction is what buys the
+// The mux.* sentinel fiction is what buys the
 // native CARGS fast path -- GETTABI on the "mux.args" sentinel becomes an
 // ALOAD with no ECALL -- and it is sound only while the sentinel is
 // consumed AS a sentinel.  The moment one reaches an operation that treats
@@ -680,13 +690,6 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
 // Same rule as lua_is_marshalled_str and lua_is_nil below: a
 // representation that lies about its type must be refused by every
 // consumer that would believe it.
-//
-static inline bool lua_is_mux_sentinel(const hir_program &h, int v) {
-    if (v < 0 || h.kind[v] != HIR_SCONST) return false;
-    const std::string &s = h.sval[v];
-    return s == "mux" || s.rfind("mux.", 0) == 0;
-}
-
 static inline bool lua_is_marshalled_str(const hir_program &h, int v) {
     return v >= 0 && h.kind[v] == HIR_LUA_CALL_STR;
 }
@@ -838,6 +841,7 @@ static lua_type_class lua_type_class_of_value(const hir_program &h,
 static int promote_to_float(hir_program &h, const lua_truth_map &truth, int v) {
     if (v < 0) return -1;
     if (lua_is_marshalled_str(h, v)) return -1;
+    if (lua_is_mux_sentinel(h, v)) return -1;
     // nil is not a number; ATOI("") would invent 0.
     if (lua_truth_of(h, truth, v) == LUA_TRUTH_NIL) return -1;
     if (h.ty[v] == TY_FLOAT) return v;
@@ -861,6 +865,7 @@ static int promote_to_float(hir_program &h, const lua_truth_map &truth, int v) {
 static int promote_to_int(hir_program &h, const lua_truth_map &truth, int v) {
     if (v < 0) return -1;
     if (lua_is_marshalled_str(h, v)) return -1;
+    if (lua_is_mux_sentinel(h, v)) return -1;
     if (lua_truth_of(h, truth, v) == LUA_TRUTH_NIL) return -1;
     if (h.ty[v] == TY_INT) return v;
     if (h.ty[v] == TY_STRING) return h.emit(HIR_ATOI, TY_INT, v);
@@ -1779,7 +1784,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // count in SUBST_NCARGS for `%+`; reuse it so nested production
             // brackets can compile this shape instead of declining forever.
             //
-            if (  h.kind[rb] == HIR_SCONST
+            if (  lua_is_mux_sentinel(h, rb)
+               && h.kind[rb] == HIR_SCONST
                && h.sval[rb] == "mux.args") {
                 uint64_t addr = rv_compiler::SUBST_BASE
                     + static_cast<uint64_t>(rv_compiler::SUBST_NCARGS)
@@ -1798,8 +1804,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             }
             // Other mux.* sentinels still have no length semantics here.
             //
-            if (  h.kind[rb] == HIR_SCONST
-               && h.sval[rb].rfind("mux.", 0) == 0) {
+            if (lua_is_mux_sentinel(h, rb)) {
                 return -1;
             }
 
@@ -1927,7 +1932,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // live Lua table; treating those as stack indices for
             // HIR_LUA_GETI caused runaway DBT dispatch (#1309).
             //
-            if (tbl >= 0 && h.kind[tbl] == HIR_SCONST) {
+            if (lua_is_mux_sentinel(h, tbl)) {
                 if (h.sval[tbl] == "mux.args") {
                     int key = insn.C();
                     if (key < 1 || key > rv_compiler::MAX_CARGS) {
@@ -2088,7 +2093,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 
             // mux.args[k] with compile-time integer key → CARGS (see GETTABI).
             //
-            if (  h.kind[tbl] == HIR_SCONST
+            if (  lua_is_mux_sentinel(h, tbl)
+               && h.kind[tbl] == HIR_SCONST
                && h.sval[tbl] == "mux.args"
                && h.kind[key] == HIR_ICONST) {
                 int k = static_cast<int>(h.val[key]);
@@ -2168,14 +2174,15 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // eval(obj,attr), mux.name -> name() wanting a "#dbref"), which
             // default-on exposed the day smoke first ran it compiled
             // (#1745: TC013/TC014).
-            const bool mux_sentinel = (table_reg >= 0
-                && h.kind[table_reg] == HIR_SCONST
-                && h.sval[table_reg] == "mux");
+            const bool mux_sentinel =
+                lua_is_mux_sentinel(h, table_reg)
+                && h.sval[table_reg] == "mux";
             if (mux_sentinel && k.sval == "args") {
                 std::string name = "mux." + k.sval;
                 uint64_t addr = rc.pool_str(name.c_str(), name.size());
                 lua_reg[A] = h.emit_sconst(addr, name);
                 if (lua_reg[A] < 0) return -1;
+                h.lua_mux_sentinel[lua_reg[A]] = true;
             } else {
                 if (mux_sentinel) {
                     // Materialize the real global in place of the marker.
@@ -3117,6 +3124,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 // mux.* bridge pattern — sentinel for GETFIELD+CALL.
                 uint64_t addr = rc.pool_str("mux", 3);
                 lua_reg[A] = h.emit_sconst(addr, "mux");
+                if (lua_reg[A] < 0) return -1;
+                h.lua_mux_sentinel[lua_reg[A]] = true;
             } else {
                 // General global access: _ENV[key] via ECALL.
                 // Pushes table/function onto Lua stack, returns stack
