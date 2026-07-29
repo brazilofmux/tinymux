@@ -736,6 +736,18 @@ struct lua_referent {
     bool callable = false;
     hir_type returns = TY_VOID;
 
+    // The callee has side effects the player can observe (mux.notify,
+    // mux.set, and mux.eval, which is arbitrary softcode).  Such a call
+    // never compiles, in ANY form: the CHUNK is the rerun unit, so an
+    // effect delivered by a compiled run followed by any later runtime
+    // decline -- a bad dbref, a result-type miss -- would be delivered
+    // again by the interpreter re-run.  The adversarial review of the
+    // first version proved this empirically with statement-form pemit
+    // followed by a declining read (PR #1750): exactly-once demands the
+    // whole chunk run interpreted.  Compile-time decline costs nothing
+    // real -- ECALL-bound shapes bench at parity anyway (#1741).
+    bool effectful = false;
+
     // Known VALUE members, for a recognized standard-library table; null
     // for everything else.  Like every claim here it is eligibility only:
     // a game that rebinds math.pi to a string declines at the runtime
@@ -1749,14 +1761,39 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (k.type != LUA_BC_TSHRSTR && k.type != LUA_BC_TLNGSTR)
                 return -1;
 
-            // Check for mux.* bridge pattern (already handled above).
-            if (table_reg >= 0 && h.kind[table_reg] == HIR_SCONST
-                && h.sval[table_reg] == "mux") {
+            // mux.* routing.  ONLY mux.args stays on the SCONST sentinel:
+            // GETTABI on the "mux.args" marker is the native CARGS/ALOAD
+            // fast path.  Every other mux member goes through the REAL
+            // global table, so a compiled mux.eval(...) pcalls the same
+            // bridge C function the interpreter calls -- semantics correct
+            // by construction.  The old path mapped the NAME onto the
+            // softcode function table instead (mux.eval -> softcode
+            // eval(obj,attr), mux.name -> name() wanting a "#dbref"), which
+            // default-on exposed the day smoke first ran it compiled
+            // (#1745: TC013/TC014).
+            const bool mux_sentinel = (table_reg >= 0
+                && h.kind[table_reg] == HIR_SCONST
+                && h.sval[table_reg] == "mux");
+            if (mux_sentinel && k.sval == "args") {
                 std::string name = "mux." + k.sval;
                 uint64_t addr = rc.pool_str(name.c_str(), name.size());
                 lua_reg[A] = h.emit_sconst(addr, name);
                 if (lua_reg[A] < 0) return -1;
             } else {
+                if (mux_sentinel) {
+                    // Materialize the real global in place of the marker.
+                    uint64_t mk = rc.pool_str("mux", 3);
+                    int mkey = h.emit_sconst(mk, "mux");
+                    if (mkey < 0) return -1;
+                    int mh = h.emit(HIR_LUA_GETGLOBAL, TY_LUA_HANDLE, mkey);
+                    if (mh < 0) return -1;
+                    lua_referent g;
+                    g.fields_are_refs = true;   // members are functions
+                    g.callable = false;         // the table itself is not
+                    lua_ref[mh] = g;
+                    h.ecalls++;
+                    table_reg = mh;
+                }
                 // General table field access via the dedicated ECALL.  The
                 // key travels as an ADDRESS into the program's own string
                 // pool; only the integer value comes back, in a register.
@@ -1801,6 +1838,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     lua_referent m;
                     m.callable = true;
                     m.returns = lua_call_claim(k.sval);
+                    // Bridge members that act on the world; see the
+                    // effectful field's comment.  eval is on the list
+                    // because it runs arbitrary softcode -- pemit inside
+                    // a mux.eval doubled exactly like a direct pemit in
+                    // the adversarial probe.
+                    m.effectful = (k.sval == "notify" || k.sval == "pemit"
+                                || k.sval == "set" || k.sval == "eval");
                     lua_ref[lua_reg[A]] = m;
                 }
                 h.known_int[lua_reg[A]] = true;
@@ -2615,12 +2659,6 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int nresults = (OP_LUA_TAILCALL == op) ? 1 : insn.C() - 1;
             if (nargs < 0) return -1;  // Variable args not supported.
 
-            // Check for mux.* bridge call pattern.
-            bool is_bridge = (func_reg >= 0
-                && h.kind[func_reg] == HIR_SCONST
-                && h.sval[func_reg].size() >= 4
-                && h.sval[func_reg].substr(0, 4) == "mux.");
-
             // Direct call on a handle with a callable claim.  CALL_INT and
             // CALL_STR share one argument encoding (nargs, argkind bits,
             // arg registers) and differ only in how the result comes back:
@@ -2650,11 +2688,19 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // claim to check, and the destination Lua registers become
             // dead exactly as the VM's would.
             const lua_referent fref = lua_referent_of(lua_ref, func_reg);
+            // An effectful callee declines the whole chunk at COMPILE
+            // time, in every form.  The chunk is the rerun unit: even a
+            // statement-form effect followed by any LATER runtime decline
+            // in the same chunk would be re-delivered by the interpreter
+            // re-run (proved empirically in #1750's adversarial review).
+            if (fref.callable && fref.effectful) {
+                return -1;
+            }
             // The string form keeps its historical one-argument floor; the
             // integer form and the effect-only form allow zero.
             const int min_args =
                 (0 == nresults || TY_INT == fref.returns) ? 0 : 1;
-            if (!is_bridge && fref.callable
+            if (fref.callable
                 && (0 == nresults || 1 == nresults)
                 && nargs >= min_args && nargs <= 3) {
                 int cargs[3] = { -1, -1, -1 };
@@ -2725,51 +2771,41 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 args.push_back(areg);
             }
 
-            int call_val;
-            if (is_bridge) {
-                // mux.* bridge → engine API or softcode function.
-                std::string bridge_name = h.sval[func_reg].substr(4);
-                std::string upper_name;
-                for (char c : bridge_name) {
-                    upper_name += static_cast<char>(toupper(
-                        static_cast<unsigned char>(c)));
-                }
-                int fidx = engine_api_lookup(upper_name.c_str());
-                if (fidx > 0) {
-                    call_val = h.emit_call(TY_STRING, fidx,
-                        args.data(), static_cast<int>(args.size()));
-                } else {
-                    call_val = h.emit_call(TY_STRING, 0,
-                        args.data(), static_cast<int>(args.size()),
-                        &upper_name);
-                }
-            } else {
-                // General Lua function call via __lua_call ECALL.
-                // func_reg holds the function reference (Lua stack index
-                // as string, from __lua_getglobal/__lua_getfield).
-                //
-                // It must actually be one.  Now that a call result is a
-                // TY_STRING value rather than a handle, `f()()` would
-                // otherwise hand the marshalled text of the inner result to
-                // the ECALL as though it were a stack index.
-                if (!lua_is_handle(h, func_reg)) return -1;
-                std::vector<int> call_args;
-                call_args.push_back(func_reg);
-                for (auto &a : args) call_args.push_back(a);
-                std::string name("__lua_call");
-                // __LUA_CALL returns the *value*, not a reference to it: it
-                // marshals result 1 into the output buffer exactly as the
-                // bridge path above does, then pops the Lua stack, leaving
-                // nothing behind.  Typing it TY_LUA_HANDLE described the
-                // wrong thing and cost every chunk that consumed a call
-                // result, since return_as_string declines a handle (#1579).
-                // `return f()` had the answer already marshalled in hand and
-                // declined anyway.
-                call_val = h.emit_call(TY_STRING, 0,
-                    call_args.data(),
-                    static_cast<int>(call_args.size()),
-                    &name);
-            }
+            // General Lua function call via __lua_call ECALL.
+            // func_reg holds the function reference (Lua stack index
+            // as string, from __lua_getglobal/__lua_getfield).
+            //
+            // It must actually be one.  Now that a call result is a
+            // TY_STRING value rather than a handle, `f()()` would
+            // otherwise hand the marshalled text of the inner result to
+            // the ECALL as though it were a stack index.
+            //
+            // (The mux.* name-mapped branch that used to sit here --
+            // engine_api_lookup on the UPPERCASED member name -- is gone:
+            // it called the SOFTCODE function that happened to share the
+            // name, with different argument conventions than the bridge C
+            // function the interpreter calls (mux.eval -> softcode
+            // eval(obj,attr); mux.name(1) -> name() wanting "#1").  mux
+            // members now arrive as real handles via GETGLOBAL, take the
+            // direct-call path above, and pcall the same C function the
+            // interpreter does.)
+            if (!lua_is_handle(h, func_reg)) return -1;
+            std::vector<int> call_args;
+            call_args.push_back(func_reg);
+            for (auto &a : args) call_args.push_back(a);
+            std::string name("__lua_call");
+            // __LUA_CALL returns the *value*, not a reference to it: it
+            // marshals result 1 into the output buffer exactly as the
+            // bridge path above does, then pops the Lua stack, leaving
+            // nothing behind.  Typing it TY_LUA_HANDLE described the
+            // wrong thing and cost every chunk that consumed a call
+            // result, since return_as_string declines a handle (#1579).
+            // `return f()` had the answer already marshalled in hand and
+            // declined anyway.
+            int call_val = h.emit_call(TY_STRING, 0,
+                call_args.data(),
+                static_cast<int>(call_args.size()),
+                &name);
             if (call_val < 0) return -1;
             h.ecalls++;
 
@@ -2787,7 +2823,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // value happened to be there.  Declining is the honest answer
             // until pcall is told how many results the caller wants and stops
             // popping them (#1519).
-            if (!is_bridge && nresults > 1) return -1;
+            if (nresults > 1) return -1;
             if (OP_LUA_TAILCALL == op
                 && lua_tailcall_ret(h, rc, lua_reg[A], result_val) < 0) {
                 return -1;
