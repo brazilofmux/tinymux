@@ -768,17 +768,19 @@ static bool try_emit_inline_call(emit_t *e, reg_cache_t *rc, fp_cache_t *fc,
 
 static void emit_exit_chained(emit_t *e, dbt_state_t *dbt,
                                uint64_t target_pc) {
-    // A back-edge must not be chained (#1571).  Chaining sends the exit
-    // straight into native code, and max_dispatch / alarm_flag are polled
-    // only at the top of dbt_run's dispatch loop -- so a chained loop is
-    // watched by nothing and the process pins at 100% with every counter
-    // still.  Exit to the trampoline instead: the loop then pays one
-    // dispatcher round-trip per iteration, which is exactly where a bound
-    // belongs.  Forward chaining is untouched.
+    // A back-edge chains only through the loop-budget countdown (#1571,
+    // #1741).  Chaining it bare would send the exit straight into native
+    // code with max_dispatch / alarm_flag -- polled only at the top of
+    // dbt_run's dispatch loop -- watched by nothing.  The countdown is
+    // the same bargain the self-loop warm path already made:
+    // DBT_LOOP_BUDGET iterations in native code, then one dispatcher
+    // visit to poll and refill.  Bailing to the trampoline on EVERY
+    // back edge instead is what priced compiled loops at ~7x the Lua
+    // VM's marginal per-iteration cost (#1741's first measurement).
     if (   dbt->translating_pc != DBT_NO_TRANSLATION
         && target_pc <= dbt->translating_pc) {
-        emit_exit_with_pc(e, target_pc);
-        return;
+        emit_loop_budget_check(e, target_pc);
+        // Budget remains: fall through and chain like any forward exit.
     }
 
     block_entry_t *be = dbt_cache_lookup(dbt, target_pc);
