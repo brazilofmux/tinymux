@@ -211,6 +211,35 @@ AGREE_CASES=(
     'local a="5" if a == 5 then return "y" else return "n" end'
     'local a=5 if a == "5" then return "y" else return "n" end'
 
+    # ---- #1795: the mux.* SCONST sentinel must not escape as a value ----
+    #
+    # `mux` and `mux.args` are lowered as SCONSTs holding their own NAMES,
+    # which is what buys the native CARGS fast path for mux.args[N].  The
+    # fiction is sound only while the sentinel is consumed AS a sentinel;
+    # these five consumers believed it and answered with the literal text:
+    # type() said "string", concat spliced "mux.args" in where Lua raises,
+    # == compared against the name, and #mux answered 3 (strlen "mux") --
+    # #1424's shape on a different value class.  All must agree now.
+    # (tostring(mux.args) is deliberately absent: its answer embeds a
+    # heap address, so only a shape comparison could pin it.)
+    'return type(mux.args)'
+    'return type(mux)'
+    'return "x" .. mux.args'
+    'if mux.args == "mux.args" then return "y" else return "n" end'
+    'return #mux'
+    'return mux.args'
+    'return mux'
+    'return mux.args + 1'
+    'return -mux.args'
+    'return mux.args // 2'
+    'return mux.args & 1'
+
+    # Sentinel provenance must not collide with ordinary Lua string text.
+    'return #"mux.args"'
+    'return ("mux.args")[1]'
+    'return type("mux.args")'
+    'if "mux.args" == "mux.args" then return "y" else return "n" end'
+
     # ---- #1768: truth-class tag loss must decline, not invent VALUE ----
     #
     # Default for untagged HIR is VALUE (always truthy).  That is correct
@@ -280,7 +309,10 @@ POST_ENTRY_LOUD_BUDGET=0
 # (12→13 on master before this PR).
 # HIR_LUA_EQ + EQK bool-fuse: tostring(0)=="0" and return nil=="" EXECUTE
 # (13→11 on current master; remaining #1766 are raise/tostring-nil).
-AGREE_DECLINE_BUDGET=11
+# #1795: sentinel-escape and provenance-collision pins add 12 declines.
+# Real sentinels decline outside their dedicated fast paths; literal text
+# remains a value.
+AGREE_DECLINE_BUDGET=23
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.

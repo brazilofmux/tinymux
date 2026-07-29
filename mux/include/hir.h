@@ -337,6 +337,7 @@ static_assert(TY_VOID == static_cast<hir_type>(0),
     X(bool,     known_int)         \
     X(bool,     known_float)       \
     X(bool,     runtime_ref)       \
+    X(bool,     lua_mux_sentinel)   \
     X(double,   fval)              \
     X(int,      cbase)             \
     X(int,      cnargs)            \
@@ -381,6 +382,12 @@ struct hir_program {
     // runtime-populated address (CARGS_BASE, SUBST_BASE) rather
     // than a true compile-time constant.  Prevents constant folding.
     hir_slot<bool, HIR_MAX_INSNS> runtime_ref;
+
+    // Lowering-only provenance for the SCONST placeholders representing
+    // the Lua `mux` and `mux.args` tables.  Their bytes are also valid Lua
+    // string literals, so sval alone cannot distinguish a bridge sentinel
+    // from ordinary program text.
+    hir_slot<bool, HIR_MAX_INSNS> lua_mux_sentinel;
 
     // Float values for FCONST (compile-time known doubles).
     hir_slot<double, HIR_MAX_INSNS> fval;
@@ -549,6 +556,7 @@ struct hir_program {
         known_int[i] = false;
         known_float[i] = false;
         runtime_ref[i] = false;
+        lua_mux_sentinel[i] = false;
         fval[i] = 0.0;
         return i;
     }
