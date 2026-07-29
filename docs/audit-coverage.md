@@ -79,7 +79,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
 | D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1149–#1150 closed; re-scout filed #1258–#1260 (NEG missing codegen, INC/DEC fold UB, max/min/sign/bound int path) — #1258/#1259 closed, **#1260** open; #1255/#1256 abs INT64_MIN follow-ups closed |
 | D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1147–#1148/#1152/#1154 closed; Mediums #1151/#1153 closed since the re-scout; no new D3 High. Residual: **#1292** interpreter `mem_check` wrap |
-| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1309 bring-up | deep | Gate+loader #1310; correctness #1321; smoke 1428 w/ `lua_jit 1`; default still off; engage assert → #1317 |
+| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1309 bring-up + product path | deep | Gate+loader #1310; correctness #1321; nest #1326; default **on** #1745/#1325; engage/EXEC under default conf; residual = optional opcode/corpus polish (see `plan-lua-jit-product.md`) |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
 ### E — Persistence & queue
