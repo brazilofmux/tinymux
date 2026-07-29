@@ -66,7 +66,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 14 2026-07-29 | deep | Survey `docs/survey-eval-parser.md` held: parse_to stack[32] bounded; #840 AST_PARSE_MAX_DEPTH; AST_EVAL_MAX_DEPTH=400; func_nest/invk lim; nest-- on all exits; no new High/Medium |
-| C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1124 closed; re-rotate by family later |
+| C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 14 2026-07-29 | deep | #1106–#1124 closed; Pass 14: no raw sprintf/strcpy residual (mux_sprintf + BAN_LEGACY); family re-rotate still useful for logic |
 | C3 | Commands / hooks | `command.cpp`, `predicates.cpp`, `set.cpp` (@include) | large | Pass 12 2026-07-26 | deep | #1279 @include as includer; #1280 NOEVAL footgun |
 | C4 | Match / wild | `match.cpp`, `wild.cpp` | med | Pass 14 2026-07-29 | deep | Survey + #835–#837 held; invk limit; scenario wild_capture |
 | C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | Pass 8 | deep | #1181, #1186–#1188 **closed** (map stale fixed Pass 14) |
@@ -176,13 +176,13 @@ Also useful historical surveys:
 ## Recommended rotation (next ~N passes)
 
 **Dice loop (2026-07-29):** start **A7**.  
-Done: A7 → A8 → B5 → C4 → B1/B2 → G3 → B3/B4 → I6 → A1/H4 → **C1** → **K2**.  
-**Next: A2** residual re-deep (or C2 family re-rotate / H2 / K4).
+Done: A7 → A8 → B5 → C4 → B1/B2 → G3 → B3/B4 → I6 → A1/H4 → C1 → K2 → **A2** → **C2**.  
+**Next: A4/A5/A6 residual re-deep**, or **H2/K4** thin, or wrap to **E1**.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Dual-review open Pass 14 PRs (#1776, #1779, map PRs) | Land Mediums |
-| **Then** | **A2** DESC/adapter residual re-deep; or **C2** function family re-rotate | Standing loop |
+| **Now** | Dual-review remaining Pass 14 map PRs if open | Hygiene |
+| **Then** | **A4** telnet / **A5** WS residual re-deep | Standing loop |
 | **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
 | **Later** | **J\*** clients by platform | After server/proxy confidence |
 | **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
@@ -223,6 +223,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Initial map after Passes 1–3 |
 | 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
-| 2026-07-29 | **Pass 14 dice loop:** A7 #1774; G3 #1778; B1–B5/B3/B4/A8/C4 residual re-deep; I6 deep; H4 partial; **C1 deep** (eval survey held); **K2** scenario suite noted; A3 #1141 residual note cleared; next A2/C2 |
+| 2026-07-29 | **Pass 14 dice loop:** A7 #1774; G3 #1778; B* residual; I6; H4 partial; C1 deep; K2; A3 #1141; **A2** adapter re-deep (no new H/M); **C2** BAN_LEGACY clean; next A4/A5 |
 
 Update this table when the map structure changes.
