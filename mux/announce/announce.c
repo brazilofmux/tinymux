@@ -31,6 +31,7 @@
 
 #include <sys/resource.h>
 
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,17 +69,39 @@ void child(int s)
         if (ns < 0)
         {
             perror("announce: accept");
-            _exit(1);
+            // Transient accept errors (EMFILE, EINTR, …) must not kill the
+            // listener forever; only hard failures should exit.
+            //
+            if (EINTR == errno)
+            {
+                continue;
+            }
+            sleep(1);
+            continue;
         }
 
-        if (0 == getnameinfo((struct sockaddr *)&sai, bar, host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV))
+        // Always close ns.  Historically getnameinfo failure left the
+        // accepted socket open (no write, no close) — under repeated
+        // failure that exhausts the process fd table and the announcer
+        // stops accepting (#1778, Pass 14 G3).
+        //
+        if (0 == getnameinfo((struct sockaddr *)&sai, bar, host_address,
+                             sizeof(host_address), NULL, 0,
+                             NI_NUMERICHOST | NI_NUMERICSERV))
         {
             time_t ct = time(0L);
-            fprintf(stderr, "CONNECTION made from %s at %s", host_address, ctime(&ct));
-            write(ns, msg, nmsg);
+            fprintf(stderr, "CONNECTION made from %s at %s",
+                    host_address, ctime(&ct));
+            // Ignore short write: this is a one-shot banner tool.
+            //
+            (void)write(ns, msg, nmsg);
             sleep(5);
-            close(ns);
         }
+        else
+        {
+            fprintf(stderr, "announce: getnameinfo failed; dropping connection\n");
+        }
+        close(ns);
     }
 }
 

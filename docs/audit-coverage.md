@@ -47,28 +47,28 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 6 | deep | #1126/#1128/#1131/#1132 closed (#1139; SB overflow via sbOverflow) |
 | A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 3 | deep | Mask, handshake close, backpressure (#1081–#1083) |
 | A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 6 | deep | #1127/#1129 → #1138; #1130/#1136 → #1139 (cores + dump reaps) |
-| A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | unit green | partial | Covered by units; logic re-read optional |
-| A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp`, DNS channel in `ganl_adapter` | small | #1220 + residual 2026-07-26 | deep | Framing #1220; residual stubslave write remainder + Win32 DNS queue caps |
+| A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | Pass 14 2026-07-29 | deep | #799/#800 held; **#1774** CIDR prefix int truncation (PR #1776) |
+| A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp`, DNS channel in `ganl_adapter` | small | Pass 14 2026-07-29 | deep | #1220/#801/#1274/#1275 held; re-read no new High/Medium |
 
 ### B — GANL library
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| B1 | Epoll / select / kqueue / wselect / IOCP | `mux/ganl/src/*_network_engine.cpp` | med | Pass 1–2 + residual 2026-07-26 | deep | #942–#947 held; #1290 dual-stack V6ONLY warn on kqueue/IOCP/wselect |
-| B2 | IOCP / wselect | `iocp_*`, `wselect_*` | med | Pass 2 Windows | deep | FD_SETSIZE accept leak, IOCP desc cap |
+| B1 | Epoll / select / kqueue / wselect / IOCP | `mux/ganl/src/*_network_engine.cpp` | med | Pass 14 2026-07-29 | deep | #942–#947, #946, #943, #1290 V6ONLY warn held all engines; maxEvents write-disarm guards held; no new High/Medium |
+| B2 | IOCP / wselect | `iocp_*`, `wselect_*` | med | Pass 14 2026-07-29 | deep | #1070 accept+FD_SETSIZE close; #1069 IOCP desc path historical; re-read with B1 |
 | B3 | OpenSSL transport | `openssl_transport.cpp` | med | Pass 11 2026-07-26 | deep | #948/#949 held; #1282 read-BIO cap + cipher list pin |
 | B4 | Schannel transport | `schannel_transport.cpp` | med | Pass 2 + Pass 11 | deep | #1067–#1068/#950–#952 held; #1282 handshake/incomplete buffer caps |
-| B5 | Connection / buffers | `connection.cpp`, `io_buffer`, types | med | Pass 2 context | partial | Backlog, write posts |
-| B6 | GANL tests | `mux/ganl/tests/` | small | ongoing | partial | Expand wselect/IOCP cases over time |
+| B5 | Connection / buffers | `connection.cpp`, `io_buffer`, types | med | Pass 14 2026-07-29 | deep | #794 high-water + try/catch in send_data; #953 kMaxBufferSize; re-read no new High/Medium |
+| B6 | GANL tests | `mux/ganl/tests/` | small | Pass 14 2026-07-29 | partial | Harness locks #942–#947/#953/EMFILE + Win accept path; still expand kqueue-only / soak |
 
 ### C — Engine softcode & evaluation
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 2 softcode | partial | elock/lastcreate fixed; full matrix not exhausted |
+| C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 14 scout 2026-07-29 | partial | Spot-check: mux_sprintf/LBUF patterns; no new High this hop; full matrix still open |
 | C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1124 closed (#1121 Highs, #1123 Mediums, #1125 JIT perms); re-rotate by family later |
 | C3 | Commands / hooks | `command.cpp`, `predicates.cpp`, `set.cpp` (@include) | large | Pass 12 2026-07-26 | deep | #1279 @include as includer; #1280 NOEVAL permit/ignore footgun; process_cmdent access-before-handler held |
-| C4 | Match / wild | `match.cpp`, `wild.cpp` | med | scenario tests | partial | Live `$` capture has scenario; re-read matching |
+| C4 | Match / wild | `match.cpp`, `wild.cpp` | med | Pass 14 2026-07-29 | deep | Survey + #835–#837 held; invk limit; scenario wild_capture |
 | C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | Pass 8 | deep | #1181, #1186–#1188 open (clone/preserve, moniker HTML, pagecost order, @open HOME) |
 | C6 | Boolexp / locks | `boolexp.cpp` | med | residual C6/G2/F4 | deep | #839 parse depth; oversize-key NUL (#1294); empty=open by design; AF_IS_LOCK blocks `&` set |
 
@@ -79,7 +79,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
 | D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1149–#1150 closed; re-scout filed #1258–#1260 (NEG missing codegen, INC/DEC fold UB, max/min/sign/bound int path) — #1258/#1259 closed, **#1260** open; #1255/#1256 abs INT64_MIN follow-ups closed |
 | D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1147–#1148/#1152/#1154 closed; Mediums #1151/#1153 closed since the re-scout; no new D3 High. Residual: **#1292** interpreter `mem_check` wrap |
-| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1309 bring-up + product path | deep | Gate+loader #1310; correctness #1321; nest #1326; default **on** #1745/#1325; engage/EXEC under default conf; residual = optional opcode/corpus polish (see `plan-lua-jit-product.md`) |
+| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1751 campaign 2026-07-29 | deep | Post-entry contract shipped; residual typed fidelity + mixed softcode/Lua corpus |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
 ### E — Persistence & queue
@@ -107,7 +107,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |----|--------|-------|------:|-----------|--------|-------|
 | G1 | Omega / format convert | `mux/convert/*` | huge | Pass 1, 3, #1087 | deep | sprintf class largely closed; re-scan new paths |
 | G2 | muxescape / script | `mux/muxescape/`, `mux/script/` | med | residual C6/G2/F4 | deep | #1296 muxescape 16MiB cap; muxscript -p MarkConnected gate |
-| G3 | announce | `mux/announce/` | small | — | thin | |
+| G3 | announce | `mux/announce/` | small | Pass 14 2026-07-29 | deep | **#1778** accept fd leak on getnameinfo fail; accept errors no longer `_exit` |
 
 ### H — libmux / platform / unicode
 
@@ -189,17 +189,17 @@ Also useful historical surveys (pre-hardening-month):
 
 ## Recommended rotation (next ~N passes)
 
-Revisit is expected. Suggested order balances **new surface** with **re-sweeps**.
-**2026-07-26:** prior “Now/Then” rows (#1260–#1270, #1280, #1292, #1275) are **closed**; do not re-queue them as open defects.
+Revisit is expected. Server-first; **J\*** after server/proxy confidence.
+
+**Dice loop (2026-07-29):** start **A7**. Progress: A7 (#1774) → A8 → B5 → C4 → B1/B2 → G3 (#1778) → B6/C1 scout. **Next: B3.**
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Fix **#1411** path helper; resolve **#1408** clamp design | Fresh Pass 13 Medium + documented family |
-| **Then** | Land free PRs: **#1397** Lua engage; dual-review **#1405** races | Higher ROI than inventing Pass 14 |
-| **Then** | **#1407** softlib blob (MacBook) + close #1402 when host+guest done | LLP64/justify family |
-| **Later** | **K2** scenario defaults; **F3** dual-path leftovers if any remain open | Still not D3 |
-| **Pass 14+** | **J\*** clients by platform | After server/proxy confidence |
-| **Anytime** | **D5** jit_diff soak + corpus gaps (#1160); #1247 when kagura free | Continuous / claimed |
+| **Now** | Dual-review **#1776** (#1774), announce fix for **#1778** | Pass 14 Mediums |
+| **Then** | **B3** → **B4** → … continue dice order | Standing audit loop |
+| **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
+| **Later** | **J\*** clients by platform | After server/proxy confidence |
+| **Anytime** | **D5** jit_diff soak | Continuous |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -253,5 +253,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-26 | Pass D4 residual: Lua bridge Examinable gates + string.dump #1287; D4 → deep |
 | 2026-07-26 | Pass 11 B3/B4: TLS wire-buffer caps + OpenSSL cipher pin #1282; B3 deep |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3 re-read deep; #1411 path overflow; #1408 family note; rotation table refreshed (old #126x–#1292 closed) |
+| 2026-07-29 | **Pass 14:** dice A7→#1774; A8/B5/C4/B1/B2 residual re-deep; **G3 #1778** announce fd leak; B6/C1 scout; next B3 |
 
 Update this table when the map structure changes.
