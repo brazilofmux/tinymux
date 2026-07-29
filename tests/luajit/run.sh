@@ -321,6 +321,17 @@ EXEC_CASES=(
     'local i=0 while i<10 do i=i+1 end return i'
     'local i=0 repeat i=i+1 until i>=5 return i'
     'local s=1 while s<100 do s=s*2 end return s'
+
+    # RUNTIME bounds (#1732): `for i=1,n` with n from mux.args.  The
+    # zero-trip decision and the wraparound guard are branches now, not
+    # compile-time facts, and the runtime zero-trip case (init 3 > limit
+    # 1 under a positive step) is the path a constant-fold accident
+    # cannot fake.  Step stays constant -- it fixes the comparison's
+    # direction.  Args are (2,3).
+    'local s=0 for i=1,mux.args[1]+0 do s=s+i end return s'
+    'local s=0 for i=mux.args[1]+0,4 do s=s+1 end return s'
+    'local s=7 for i=mux.args[2]+0,1 do s=99 end return s'
+    'local s=0 for i=mux.args[2]+0,1,-1 do s=s+i end return s'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

@@ -949,27 +949,36 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     h.cur_block = 0;
     int result_val = -1;
 
+    // The shared bail block: its ECALL aborts the whole run to the
+    // interpreter.  Two producers branch here -- back-edge budget
+    // exhaustion, and FORPREP's runtime bounds guard -- and both bails
+    // are rerun-safe: loop protos exclude persistent effects, and the
+    // bounds guard runs before any body effect exists at all.
+    auto ensure_limited_blk = [&]() -> bool {
+        if (limited_blk >= 0) return true;
+        limited_blk = h.new_block();
+        if (limited_blk < 0) return false;
+        int save_blk = h.cur_block;
+        h.cur_block = limited_blk;
+        h.emit(HIR_LUA_LIMITED, TY_VOID);
+        int dead = h.emit_sconst(rc.pool_str("", 0), "");
+        if (dead < 0) return false;
+        h.emit(HIR_RET, TY_VOID, dead);
+        h.cur_block = save_blk;
+        return true;
+    };
+
     // Back-edge budget guard, shared by FORLOOP and backward JMP so the
     // two cannot drift (#1457's lesson): decrement by the loop body's
     // instruction count, and branch to the shared limited block on
-    // exhaustion -- whose ECALL aborts the whole run to the interpreter
-    // rather than exiting the loop with a wrong partial result (#1732).
-    // Leaves the current block set to a fresh continuation block for the
-    // caller's own terminator.  Returns false on emission failure.
+    // exhaustion rather than exiting the loop with a wrong partial
+    // result (#1732).  Leaves the current block set to a fresh
+    // continuation block for the caller's own terminator.  Returns
+    // false on emission failure.
     auto emit_backedge_guard = [&](int body_len) -> bool {
         int budget_ok = emit_budget_check(h, -1, body_len);
         if (budget_ok < 0) return false;
-        if (limited_blk < 0) {
-            limited_blk = h.new_block();
-            if (limited_blk < 0) return false;
-            int save_blk = h.cur_block;
-            h.cur_block = limited_blk;
-            h.emit(HIR_LUA_LIMITED, TY_VOID);
-            int dead = h.emit_sconst(rc.pool_str("", 0), "");
-            if (dead < 0) return false;
-            h.emit(HIR_RET, TY_VOID, dead);
-            h.cur_block = save_blk;
-        }
+        if (!ensure_limited_blk()) return false;
         int cont_blk = h.new_block();
         if (cont_blk < 0) return false;
         h.emit(HIR_BRC, TY_VOID, budget_ok, limited_blk, cont_blk);
@@ -978,6 +987,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         h.cur_block = cont_blk;
         cur_hir_block = cont_blk;
         return true;
+    };
+
+    // Entry-backing seal: decide, once, which registers the q-reg
+    // machinery may reload (see the backing rule above), and freeze
+    // entry_final.  Called from the first block transition -- or from
+    // FORPREP's runtime-bounds path, which SPLITS the entry block with
+    // branches and must finalize entry state before the split so the
+    // next transition's drop-compare does not mistake entry writes for
+    // block-local ones.
+    auto seal_entry_backing = [&]() {
+        if (entry_backing_sealed) return;
+        for (int r = 0; r < 10 && r < MAX_LUA_REGS; r++) {
+            if (qreg_backed[r]
+                && (lua_reg[r] < 0 || h.ty[lua_reg[r]] != TY_INT)) {
+                qreg_backed[r] = false;
+            }
+        }
+        memcpy(entry_final, lua_reg, sizeof(entry_final));
+        entry_backing_sealed = true;
     };
 
     // Initialize back-edge budget counter for loop DoS protection.
@@ -1031,22 +1059,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     }
                 }
                 if (proto_has_loop) {
-                    // Leaving the entry block for the first time: seal the
-                    // backed set.  A register whose FINAL entry value is
-                    // not an integer is unbacked -- its qreg may hold a
-                    // stale int from an earlier write, and a reload would
-                    // resurrect it.
-                    if (!entry_backing_sealed) {
-                        for (int r = 0; r < 10 && r < MAX_LUA_REGS; r++) {
-                            if (qreg_backed[r]
-                                && (lua_reg[r] < 0
-                                    || h.ty[lua_reg[r]] != TY_INT)) {
-                                qreg_backed[r] = false;
-                            }
-                        }
-                        memcpy(entry_final, lua_reg, sizeof(entry_final));
-                        entry_backing_sealed = true;
-                    }
+                    // Leaving the entry block for the first time: seal
+                    // the backed set (see seal_entry_backing; FORPREP's
+                    // runtime-bounds path may have sealed already).
+                    seal_entry_backing();
                     // Every backed register enters the new block through
                     // its qreg; SSA turns the loads into PHIs over the
                     // stores on each incoming path.  ALWAYS -- an entry
@@ -2224,37 +2240,94 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int limit = lua_reg[A + 1];
             int step = lua_reg[A + 2];
             if (init < 0 || limit < 0 || step < 0) return -1;
-            if (h.kind[init] != HIR_ICONST || h.kind[limit] != HIR_ICONST
-                || h.kind[step] != HIR_ICONST) {
-                return -1;
-            }
-            const int64_t vi = h.val[init];
-            const int64_t vl = h.val[limit];
-            const int64_t vs = h.val[step];
+            // The STEP must be a constant either way: it fixes the trip
+            // direction, and with it which comparison FORLOOP emits.
             // step 0 is a runtime error; the interpreter raises it.
+            if (h.kind[step] != HIR_ICONST) return -1;
+            const int64_t vs = h.val[step];
             if (0 == vs) return -1;
             // Stay far from the int64 edge so idx+step cannot wrap.
             const int64_t kEdge = INT64_C(1) << 62;
-            if (vi > kEdge || vi < -kEdge || vl > kEdge || vl < -kEdge
-                || vs > kEdge || vs < -kEdge) {
-                return -1;
-            }
+            if (vs > kEdge || vs < -kEdge) return -1;
 
-            // The body's first pass reads the index before any FORLOOP
-            // runs, so it must be stored here, on the entry side.
-            if (A + 3 >= 10) return -1;
-            h.emit(HIR_STORE_Q, TY_VOID, init, -1, QREG_LUA_IDX);
-            h.emit(HIR_STORE_Q, TY_VOID, init, -1, A + 3);
-
-            const bool zero_trip = (vs > 0) ? (vi > vl) : (vi < vl);
             int body_target = pc + 1;
             int skip_target = pc + 1 + insn.Bx() + 1;
             int body_blk = (body_target < n) ? pc_to_block[body_target] : -1;
             int skip_blk = (skip_target < n) ? pc_to_block[skip_target] : -1;
             if (body_blk < 0 || skip_blk < 0) return -1;
-            int target_blk = zero_trip ? skip_blk : body_blk;
-            h.emit(HIR_BR, TY_VOID, -1, -1, target_blk);
-            h.add_edge(cur_hir_block, target_blk);
+            if (A + 3 >= 10) return -1;
+
+            if (h.kind[init] == HIR_ICONST
+                && h.kind[limit] == HIR_ICONST) {
+                // STATIC bounds: trip direction, zero-trip, and freedom
+                // from wraparound are compile-time facts, and the entry
+                // block stays whole.
+                const int64_t vi = h.val[init];
+                const int64_t vl = h.val[limit];
+                if (vi > kEdge || vi < -kEdge || vl > kEdge
+                    || vl < -kEdge) {
+                    return -1;
+                }
+                // The body's first pass reads the index before any
+                // FORLOOP runs, so it must be stored on the entry side.
+                h.emit(HIR_STORE_Q, TY_VOID, init, -1, QREG_LUA_IDX);
+                h.emit(HIR_STORE_Q, TY_VOID, init, -1, A + 3);
+                const bool zero_trip = (vs > 0) ? (vi > vl) : (vi < vl);
+                int target_blk = zero_trip ? skip_blk : body_blk;
+                h.emit(HIR_BR, TY_VOID, -1, -1, target_blk);
+                h.add_edge(cur_hir_block, target_blk);
+                break;
+            }
+
+            // RUNTIME bounds (#1732): `for i=1,n`.  The zero-trip test
+            // and the wraparound guard become branches.  A value outside
+            // the int64 safety margin bails to the limited block -- a
+            // decline, not an error: the interpreter re-runs the chunk
+            // with its own counter model, and nothing has executed yet,
+            // so the bail is rerun-safe by position alone.
+            if (h.ty[init] != TY_INT || lua_is_handle(h, init)) return -1;
+            if (h.ty[limit] != TY_INT || lua_is_handle(h, limit)) return -1;
+
+            // This path SPLITS the entry block, so entry state must be
+            // finalized first: seal the backing, and re-snapshot
+            // blk_entry_reg so the next transition's drop-compare sees
+            // the split blocks as the same logical entry -- its values
+            // dominate the body exactly as block 0's do.
+            seal_entry_backing();
+            memcpy(blk_entry_reg, lua_reg, sizeof(blk_entry_reg));
+
+            int e_hi = h.emit_iconst(kEdge);
+            int e_lo = h.emit_iconst(-kEdge);
+            if (e_hi < 0 || e_lo < 0) return -1;
+            int b1 = h.emit(HIR_LT, TY_INT, init, e_hi);
+            int b2 = h.emit(HIR_GT, TY_INT, init, e_lo);
+            int b3 = h.emit(HIR_LT, TY_INT, limit, e_hi);
+            int b4 = h.emit(HIR_GT, TY_INT, limit, e_lo);
+            int b12 = h.emit(HIR_BAND, TY_INT, b1, b2);
+            int b34 = h.emit(HIR_BAND, TY_INT, b3, b4);
+            int bounds_ok = h.emit(HIR_BAND, TY_INT, b12, b34);
+            if (bounds_ok < 0) return -1;
+
+            h.emit(HIR_STORE_Q, TY_VOID, init, -1, QREG_LUA_IDX);
+            h.emit(HIR_STORE_Q, TY_VOID, init, -1, A + 3);
+
+            if (!ensure_limited_blk()) return -1;
+            int cont_blk = h.new_block();
+            if (cont_blk < 0) return -1;
+            h.emit(HIR_BRC, TY_VOID, bounds_ok, limited_blk, cont_blk);
+            h.add_edge(cur_hir_block, limited_blk);
+            h.add_edge(cur_hir_block, cont_blk);
+            h.cur_block = cont_blk;
+            cur_hir_block = cont_blk;
+
+            // Runtime zero-trip: run the body iff init is on the limit's
+            // side of the direction the constant step fixes.
+            int cond_run = h.emit((vs > 0) ? HIR_LE : HIR_GE,
+                                  TY_INT, init, limit);
+            if (cond_run < 0) return -1;
+            h.emit(HIR_BRC, TY_VOID, cond_run, skip_blk, body_blk);
+            h.add_edge(cur_hir_block, body_blk);
+            h.add_edge(cur_hir_block, skip_blk);
             break;
         }
 
