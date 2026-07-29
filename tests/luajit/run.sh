@@ -173,8 +173,8 @@ AGREE_CASES=(
     'local x=tostring("") if x then return "truthy" else return "falsy" end'
     'local x=string.find("ab","b") if x then return "truthy" else return "falsy" end'
     'local x=tostring(0) return not x'
-    # x == "0" still declines: equality of a value handle to text is not
-    # yet lowered (needs VM compare).  Agrees via interpreter.
+    # Value-handle == pool string: HIR_LUA_EQ + EQK bool-fuse.  Must stay
+    # true (string "0"), not type-erased or declined.
     'local x=tostring(0) return x == "0"'
 
     # ---- #1766 review: a lowered nil must not leak into consumers ----
@@ -184,6 +184,7 @@ AGREE_CASES=(
     # has to reject it here: concat and length RAISE, tostring gives "nil"
     # not "", and nil compares equal to nothing -- not even a real "".
     # Each answered wrongly in the first cut of this change.
+    # (return t[2] == "" now EXECUTES: type-class false via EQK fuse.)
     'local t={} t[1]=5 return "a" .. t[2]'
     'local t={} t[1]=5 return #t[2]'
     'local t={} t[1]=5 local x=t[2] return tostring(x)'
@@ -275,9 +276,11 @@ POST_ENTRY_LOUD_BUDGET=0
 # doubled and the #1750 corridor was pure pessimism).
 # #1772: -4, CALL_VAL + TOBOOL made the #1764 if/not pins execute (16→12).
 # #1771: +1 net from seam-adjacent AGREE pins (owner+1, type(pennies),
-# bad owner, error forms); error() executes after CALL_VOID totalization.
-# May fall, must not rise.
-AGREE_DECLINE_BUDGET=13
+# bad owner, error forms); error() executes after CALL_VOID totalization
+# (12→13 on master before this PR).
+# HIR_LUA_EQ + EQK bool-fuse: tostring(0)=="0" and return nil=="" EXECUTE
+# (13→11 on current master; remaining #1766 are raise/tostring-nil).
+AGREE_DECLINE_BUDGET=11
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
