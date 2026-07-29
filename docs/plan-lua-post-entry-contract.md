@@ -82,7 +82,7 @@ These are the open quality / clarity targets after #1751 close:
 
 | Goal | Shape | Notes |
 |------|--------|------|
-| **Typed CALL results** | Keep Lua values on the VM stack (handle-style) until softcode boundary | Subsumes #1764’s decline-on-consume for `if`/`==`/arith on CALL_STR text |
+| **Typed CALL results** | CALL_VAL leaves results on the VM stack; RET marshals; TOBOOL for if/not | Landed for default STRING claims; remaining: VM `==`/arith on handles, CALL_INT nil |
 | **Runtime absent key** | GETI with non-constant key still may hit residual NONINT loud | Closed-set covers constant keys only; dynamic miss needs nil in a typed or handle slot |
 | **Anytime items 3–5** | Nested `mux.args`/executor stomp; `lua_checkstack`; int-returning bridge claims | Independent small work; does not wait on typed results |
 | **Seam corpus** | Grow softcode ↔ Lua smoke (TC061+) | Answer + state + effects |

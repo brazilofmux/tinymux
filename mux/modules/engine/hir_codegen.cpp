@@ -738,6 +738,7 @@ static bool needs_output_buffer(hir_program &h, int i) {
     // sequential single-result tests still pass by luck.
     //
     case HIR_LUA_CALL_STR:
+    case HIR_LUA_MARSHAL:
     case HIR_PHI:
     case HIR_COPY:
         return true;
@@ -826,6 +827,8 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_LUA_GETGLOBAL:
     case HIR_LUA_GETFIELD_REF:
     case HIR_LUA_CALL_INT:
+    case HIR_LUA_CALL_VAL:
+    case HIR_LUA_TOBOOL:
     case HIR_LUA_GETFIELD:
     case HIR_LUA_GETI:
     case HIR_LUA_ALOAD:
@@ -1507,6 +1510,56 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_CALL_STR)));
                 rc.code.push_back(rv_ECALL());
+                break;
+            }
+
+            case HIR_LUA_CALL_VAL: {
+                // a0=fn, a1=nargs|kinds, a2..a4=args → a0=stack index.
+                // Result is a live Lua value (handle), not text.
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t fn_r = ra_get_reg(rc, loc, h.src1[i], RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, fn_r, 0));
+                int a1val = emit_lua_call_args(rc, h, loc, i);
+                rv_load_i64(rc.code, 11, a1val);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_CALL_VAL)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_MARSHAL: {
+                // a0=stack idx, a1=out addr, a2=out size.  Result TY_STRING
+                // lives in the output slot.
+                int s1 = h.src1[i];
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, r1, 0));
+                rv_load_guest_addr(rc.code, 11, loc[i].addr);
+                rv_load_i64(rc.code, 12, rv_compiler::OUT_SLOT);
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_MARSHAL)));
+                rc.code.push_back(rv_ECALL());
+                break;
+            }
+
+            case HIR_LUA_TOBOOL: {
+                // a0=stack idx → a0=0/1 Lua truthiness.
+                int s1 = h.src1[i];
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, r1, 0));
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_TOBOOL)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
                 break;
             }
 
@@ -2544,6 +2597,9 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LUA_CALL_INT: return "LUA_CALL_INT";
     case HIR_LUA_CALL_STR: return "LUA_CALL_STR";
     case HIR_LUA_CALL_VOID: return "LUA_CALL_VOID";
+    case HIR_LUA_CALL_VAL: return "LUA_CALL_VAL";
+    case HIR_LUA_MARSHAL: return "LUA_MARSHAL";
+    case HIR_LUA_TOBOOL: return "LUA_TOBOOL";
     case HIR_LUA_LIMITED: return "LUA_LIMITED";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
     case HIR_LUA_GETFIELD_FLT: return "LUA_GETFIELD_FLT";

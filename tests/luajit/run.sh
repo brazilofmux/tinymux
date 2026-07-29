@@ -159,24 +159,22 @@ AGREE_CASES=(
     'local t={5} table.insert(t,6) return t[2]'
 
     # Multi-value truncation at the chunk boundary: string.find returns TWO
-    # values and the chunk pcall keeps one.  CALL_STR now marshals the first
-    # result like fun_lua (integer → "2"), so both routes execute and agree.
+    # values and the chunk pcall keeps one.  CALL_VAL keeps the first result
+    # on the stack; RET marshals like fun_lua (integer → "2").
     'return string.find("ab","b")'
 
-    # ---- #1764: marshalled CALL_STR results must not use MUSH truthiness ----
+    # ---- #1764 / CALL_VAL: typed call results keep Lua truthiness ----
     #
-    # CALL_STR erases the Lua type into text.  Consuming that text with
-    # if / not / == / arithmetic is a string lie: "0", "" and integer 0 are
-    # all truthy in Lua and MUSH-falsy as softcode.  Lowering makes those
-    # ops ineligible; the interpreter answers.  Chunk RETURN of the same
-    # value (string.find above) is fine -- that is the softcode boundary.
-    #
-    # Pins the three issue shapes plus not/== so a silent wrong answer
-    # cannot regress while still allowing decline.
+    # CALL_VAL leaves the value on the VM stack; TEST uses TOBOOL so
+    # tostring(0) / "" / string.find are truthy compiled (not MUSH-falsy).
+    # These EXECUTE under CALL_VAL — still pinned so a regression to
+    # CALL_STR text lies cannot re-enter quietly.
     'local x=tostring(0) if x then return "truthy" else return "falsy" end'
     'local x=tostring("") if x then return "truthy" else return "falsy" end'
     'local x=string.find("ab","b") if x then return "truthy" else return "falsy" end'
     'local x=tostring(0) return not x'
+    # x == "0" still declines: equality of a value handle to text is not
+    # yet lowered (needs VM compare).  Agrees via interpreter.
     'local x=tostring(0) return x == "0"'
 
     # ---- #1766 review: a lowered nil must not leak into consumers ----
@@ -256,8 +254,8 @@ POST_ENTRY_LOUD_BUDGET=0
 # encoding) and os.time (zero-arg unclaimed call), both pre-entry
 # ineligible now that the general call path is gone -- the interpreter
 # answers each, including its own error for os.time, on both legs.
-# #1764: +5 for CALL_STR result consumed by if/not/== (type-erased;
-# ineligible at lowering, interpreter answers).
+# #1764 CALL_VAL: if/not on call results EXECUTE (−4 from prior +5; one
+# pin remains for handle == string text).
 # #1768: +3 for truth-class tag-loss shapes (loop-carried false, table
 # false, TESTSET/or) — must agree by decline until tags are carried.
 # #1766 review: +5 nil-consumer pins (concat, len, tostring, ==,
@@ -265,7 +263,7 @@ POST_ENTRY_LOUD_BUDGET=0
 # #1767: -2, the two mux.eval pins now EXECUTE (effectors are allowed on
 # the compiled path again: Phase 4 removed re-run, so an effect cannot be
 # doubled and the #1750 corridor was pure pessimism).
-AGREE_DECLINE_BUDGET=16
+AGREE_DECLINE_BUDGET=12
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
