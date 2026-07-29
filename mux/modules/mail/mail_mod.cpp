@@ -24,6 +24,7 @@
 #include "mail_mod.h"
 #include "mux_nls.h"
 #include "mux_format.h"
+#include "mathutil.h"
 #include "color_ops.h"
 #include "mux_table.h"
 
@@ -1020,7 +1021,7 @@ bool CMailMod::LoadMailAliases(void)
                 {
                     while (*p == ' ') p++;
                     if (*p == '\0') break;
-                    m->list.push_back(atoi(p));
+                    m->list.push_back(mux_atoi64(reinterpret_cast<const UTF8 *>(p)));
                     while (*p && *p != ' ') p++;
                 }
             }
@@ -1503,7 +1504,7 @@ int CMailMod::player_folder(dbref player)
         return 0;
     }
     buf[nLen] = '\0';
-    return atoi(reinterpret_cast<const char *>(buf));
+    return mux_atoi64(buf);
 }
 
 void CMailMod::set_player_folder(dbref player, int fnum)
@@ -1648,7 +1649,7 @@ int CMailMod::get_folder_number(dbref player, const UTF8 *name)
     {
         p++;
     }
-    return atoi(p);
+    return mux_atoi64(reinterpret_cast<const UTF8 *>(p));
 }
 
 int CMailMod::parse_folder(dbref player, const UTF8 *folder_string)
@@ -1659,7 +1660,7 @@ int CMailMod::parse_folder(dbref player, const UTF8 *folder_string)
     }
     if (isdigit(*folder_string))
     {
-        int fnum = atoi(reinterpret_cast<const char *>(folder_string));
+        int64_t fnum = mux_atoi64(folder_string);
         if (fnum < 0 || fnum > MAX_FOLDERS)
         {
             return -1;
@@ -2923,7 +2924,7 @@ std::string CMailMod::make_namelist(dbref player, const UTF8 *arg)
 
         if (isdigit(static_cast<unsigned char>(*p)))
         {
-            dbref target = atoi(p);
+            dbref target = static_cast<dbref>(mux_atoi64(reinterpret_cast<const UTF8 *>(p)));
             UTF8 name[MOD_LBUF_SIZE];
             get_player_name(target, name, sizeof(name));
 
@@ -3158,7 +3159,7 @@ void CMailMod::mail_to_list(dbref player, UTF8 *list, const UTF8 *subject,
         }
         else
         {
-            dbref target = atoi(reinterpret_cast<const char *>(head));
+            dbref target = static_cast<dbref>(mux_atoi64(head));
             bool bTargetIsPlayer = false;
             if (nullptr != m_pIObjectInfo)
             {
@@ -3433,7 +3434,7 @@ void CMailMod::do_expmail_stop(dbref player, int flags)
     UTF8 *tolist_copy = reinterpret_cast<UTF8 *>(
         strdup(reinterpret_cast<const char *>(aTolist)));
 
-    int combinedFlags = flags | atoi(reinterpret_cast<const char *>(aMailFlags));
+    int combinedFlags = flags | static_cast<int>(mux_atoi64(aMailFlags));
     mail_to_list(player, tolist_copy, aMailSub, aMailMsg, combinedFlags, false);
 
     // Clear composing flag.
@@ -3675,7 +3676,7 @@ void CMailMod::do_mail_fwd(dbref player, const UTF8 *msg,
         }
     }
 
-    int num = atoi(reinterpret_cast<const char *>(msg));
+    int64_t num = mux_atoi64(msg);
     if (!num)
     {
         if (nullptr != m_pINotify)
@@ -3724,7 +3725,7 @@ void CMailMod::do_mail_fwd(dbref player, const UTF8 *msg,
     int iFlag = M_FORWARD;
     if (aFlags[0])
     {
-        iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
+        iFlag |= static_cast<int>(mux_atoi64(aFlags));
     }
     UTF8 flagbuf[16];
     mux_sprintf(flagbuf, sizeof(flagbuf), T("%d"), iFlag);
@@ -3781,7 +3782,7 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
         }
     }
 
-    int num = atoi(reinterpret_cast<const char *>(msg));
+    int64_t num = mux_atoi64(msg);
     if (!num)
     {
         if (nullptr != m_pINotify)
@@ -3833,7 +3834,7 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
             " ", &saveptr);
         while (token)
         {
-            if (atoi(token) != mp->from)
+            if (mux_atoi64(reinterpret_cast<const UTF8 *>(token)) != mp->from)
             {
                 if (bp != tolist)
                 {
@@ -3912,7 +3913,7 @@ void CMailMod::do_mail_reply(dbref player, const UTF8 *msg, bool all,
     int iFlag = M_REPLY;
     if (aFlags[0])
     {
-        iFlag |= atoi(reinterpret_cast<const char *>(aFlags));
+        iFlag |= static_cast<int>(mux_atoi64(aFlags));
     }
     UTF8 flagbuf[16];
     mux_sprintf(flagbuf, sizeof(flagbuf), T("%d"), iFlag);
@@ -4120,7 +4121,7 @@ malias_t *CMailMod::get_malias(dbref player, const UTF8 *alias, int *pnResult)
     {
         if (is_exp_mail(player))
         {
-            int x = atoi(reinterpret_cast<const char *>(alias + 1));
+            int64_t x = mux_atoi64(alias + 1);
             if (x < 0 || x >= static_cast<int>(m_malias.size()))
             {
                 *pnResult = GMA_NOTFOUND;
@@ -4247,7 +4248,7 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
         }
         else if (*head == '#')
         {
-            target = atoi(head + 1);
+            target = static_cast<dbref>(mux_atoi64(reinterpret_cast<const UTF8 *>(head + 1)));
         }
         else if (nullptr != m_pIObjectInfo)
         {
@@ -4602,7 +4603,7 @@ void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
     dbref thing = NOTHING;
     if (nullptr != person && *person == '#')
     {
-        thing = atoi(reinterpret_cast<const char *>(person) + 1);
+        thing = static_cast<dbref>(mux_atoi64(reinterpret_cast<const UTF8 *>(reinterpret_cast<const char *>(person)) + 1));
         bool bPlayer = false;
         if (thing >= 0 && nullptr != m_pIObjectInfo)
         {
@@ -4680,7 +4681,7 @@ void CMailMod::do_malias_remove(dbref player, const UTF8 *alias,
     dbref thing = NOTHING;
     if (nullptr != person && *person == '#')
     {
-        thing = atoi(reinterpret_cast<const char *>(person) + 1);
+        thing = static_cast<dbref>(mux_atoi64(reinterpret_cast<const UTF8 *>(reinterpret_cast<const char *>(person)) + 1));
     }
     if (NOTHING == thing && nullptr != m_pIObjectInfo)
     {
@@ -5057,7 +5058,7 @@ void CMailMod::do_mail_list(dbref player, const UTF8 *arg1,
         //
         if (nullptr != arg1 && isdigit(*arg1))
         {
-            int f = atoi(reinterpret_cast<const char *>(arg1));
+            int64_t f = mux_atoi64(arg1);
             if (f >= 0 && f <= MAX_FOLDERS)
             {
                 folder = f;
@@ -5138,7 +5139,7 @@ void CMailMod::do_mail_read(dbref player, const UTF8 *arg1,
     {
         if (nullptr != arg1 && isdigit(*arg1))
         {
-            int f = atoi(reinterpret_cast<const char *>(arg1));
+            int64_t f = mux_atoi64(arg1);
             if (f >= 0 && f <= MAX_FOLDERS)
             {
                 folder = f;
@@ -5309,10 +5310,10 @@ void CMailMod::do_mail_file(dbref player, const UTF8 *msglist,
 
     // Parse folder number.
     //
-    int foldernum = -1;
+    int64_t foldernum = -1;
     if (nullptr != folder && isdigit(*folder))
     {
-        foldernum = atoi(reinterpret_cast<const char *>(folder));
+        foldernum = mux_atoi64(folder);
         if (foldernum < 0 || foldernum > MAX_FOLDERS)
         {
             foldernum = -1;

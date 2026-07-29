@@ -29,6 +29,7 @@
 //
 #include "core.h"
 #include "mux_format.h"
+#include "mathutil.h"
 #include "color_ops.h"
 #include "mux_table.h"
 #include "comsys_mod.h"
@@ -1639,13 +1640,13 @@ void CComsysMod::RecordChannelHistory(dbref executor, struct channel *ch,
 
     UTF8 valbuf[64];
     size_t nLen = 0;
-    int logmax = 0;
+    int64_t logmax = 0;
     MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(1, ch->chan_obj,
         T("MAX_LOG"), valbuf, sizeof(valbuf) - 1, &nLen);
     if (MUX_SUCCEEDED(mr) && 0 < nLen)
     {
         valbuf[nLen] = '\0';
-        logmax = atoi(reinterpret_cast<const char *>(valbuf));
+        logmax = mux_atoi64(valbuf);
     }
 
     if (logmax < 1)
@@ -1966,13 +1967,13 @@ void CComsysMod::do_comlast(dbref player, struct channel *ch, int arg)
     //
     UTF8 valbuf[64];
     size_t nLen = 0;
-    int logmax = 0;
+    int64_t logmax = 0;
     MUX_RESULT mr = m_pIAttributeAccess->GetAttribute(player, obj,
         T("MAX_LOG"), valbuf, sizeof(valbuf) - 1, &nLen);
     if (MUX_SUCCEEDED(mr) && 0 < nLen)
     {
         valbuf[nLen] = '\0';
-        logmax = atoi(reinterpret_cast<const char *>(valbuf));
+        logmax = mux_atoi64(valbuf);
     }
 
     if (logmax < 1)
@@ -2109,12 +2110,14 @@ void CComsysMod::do_processcom(dbref player, const UTF8 *arg1, UTF8 *arg2)
             || (' ' == arg2[4]
                 && '\0' != arg2[5])))
     {
-        int nRecall = 10; // DFLT_RECALL_REQUEST
+        int64_t nRecall = 10; // DFLT_RECALL_REQUEST
         if (' ' == arg2[4])
         {
-            nRecall = atoi(reinterpret_cast<const char *>(arg2 + 5));
+            nRecall = mux_atoi64(arg2 + 5);
         }
-        do_comlast(player, ch, nRecall);
+        int nRecallI = (nRecall > INT_MAX) ? INT_MAX
+                      : (nRecall < 0) ? 0 : static_cast<int>(nRecall);
+        do_comlast(player, ch, nRecallI);
         return;
     }
 
@@ -3399,7 +3402,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                     "or equal to 200.");
                 break;
             }
-            int value = atoi(reinterpret_cast<const char *>(pValue));
+            int64_t value = mux_atoi64(pValue);
             if (value < 0 || value > 200)
             {
                 msg = reinterpret_cast<const UTF8 *>(
@@ -3429,24 +3432,25 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
             //
             UTF8 oldbuf[64];
             size_t nOldLen = 0;
-            int oldnum = 0;
+            int64_t oldnum = 0;
             MUX_RESULT mr2 = m_pIAttributeAccess->GetAttribute(
                 executor, ch->chan_obj, T("MAX_LOG"),
                 oldbuf, sizeof(oldbuf) - 1, &nOldLen);
             if (MUX_SUCCEEDED(mr2) && 0 < nOldLen)
             {
                 oldbuf[nOldLen] = '\0';
-                oldnum = atoi(reinterpret_cast<const char *>(oldbuf));
+                oldnum = mux_atoi64(oldbuf);
             }
 
             // If reducing, clear old HISTORY_N attributes.
             //
             if (value < oldnum)
             {
-                for (int count = 0; count <= oldnum; count++)
+                for (int64_t count = 0; count <= oldnum; count++)
                 {
                     UTF8 histattr[64];
-                    mux_sprintf(histattr, sizeof(histattr), T("HISTORY_%d"), count);
+                    mux_sprintf(histattr, sizeof(histattr), T("HISTORY_%lld"),
+                        static_cast<long long>(count));
                     if (nullptr == m_pIStorage
                         || MUX_FAILED(m_pIStorage->SetChannelAttr(ch->name,
                                histattr, T(""))))
@@ -3498,7 +3502,7 @@ MUX_RESULT CComsysMod::CSet(dbref executor, const UTF8 *pChannel,
                 msg = reinterpret_cast<const UTF8 *>("@cset: Failed.");
                 break;
             }
-            int value = atoi(reinterpret_cast<const char *>(pValue));
+            int64_t value = mux_atoi64(pValue);
             if (value != 0 && value != 1)
             {
                 msg = reinterpret_cast<const UTF8 *>("@cset: Failed.");
@@ -3635,14 +3639,14 @@ MUX_RESULT CComsysMod::EditChannel(dbref executor, const UTF8 *pChannel,
 
     case EDIT_CHANNEL_CCHARGE:
         {
-            int c_charge = 0;
+            int64_t c_charge = 0;
             if (nullptr != pValue)
             {
-                c_charge = atoi(reinterpret_cast<const char *>(pValue));
+                c_charge = mux_atoi64(pValue);
             }
             if (0 <= c_charge && c_charge <= MAX_COST)
             {
-                ch->charge = c_charge;
+                ch->charge = static_cast<int>(c_charge);
                 m_pINotify->Notify(executor,
                     reinterpret_cast<const UTF8 *>("Set."));
             }
