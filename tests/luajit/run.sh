@@ -603,6 +603,23 @@ NESTED_CASES=(
     # "mux.args" sentinel.  Used to answer 8 compiled / correct only by
     # declining; now executes under production brackets too.
     'return #mux.args'
+
+    # ---- Production softcode↔Lua seam under brackets ON (#1326 / #1791) ----
+    # Softcode JIT ECALLs fun_lua; these must *run*, not only agree via the
+    # interpreter.  Keep cheap: lowering coverage lives in EXEC.
+
+    # Branch on CARGS (softcode passed the args into the nested chunk).
+    'local a=mux.args[1]+0 if a < 5 then return 7 else return 8 end'
+    'if mux.args[1] == "2" then return "yes" else return "no" end'
+
+    # Multi-slot arithmetic the softcode side commonly drives.
+    'local a=mux.args[1]+0 local b=mux.args[2]+0 return a+b*2'
+
+    # Softcode evaluator hop from compiled Lua under production brackets.
+    # mux.eval is a host ECALL on the Lua path; softcode may itself JIT.
+    # Must execute (not decline) so the dual nest is real.
+    'local x=mux.eval("add(2,3)") return x'
+    'return mux.eval("mul(6,7)")'
 )
 
 # NESTED_AGREE — brackets ON, must match the interpreter, decline allowed.
@@ -645,21 +662,27 @@ STATE_NAMES=(
     e1_double_mutation
     e2_coroutine_effect
     e3_metatable_typed_read
+    e4_eval_once
 )
 STATE_SETUP=(
     'N=0 function bump() N=N+1 end return "set"'
     'CO=coroutine.create(function() mux.pemit(1,"PING") end) return "set"'
     'T=setmetatable({},{__index=function() return "s" end}) return "set"'
+    'N=0 return "set"'
 )
 STATE_ACTION=(
     'bump() local y=mux.get(4000,"Q") return tostring(N)'
     'coroutine.resume(CO) return "r"'
     'return T[1]'
+    # Softcode hop from compiled Lua: N must advance once.  A whole-chunk
+    # re-run would leave N=2 (same shape as e1, via mux.eval not mux.get).
+    'N=N+1 local x=mux.eval("add(1,1)") return tostring(N)..":"..tostring(x)'
 )
 STATE_PROBE=(
     'return tostring(N)'
     'return "ok"'
     'return T[2]'
+    'return tostring(N)'
 )
 
 keep_work() {
