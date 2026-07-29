@@ -97,19 +97,25 @@
 # empty; ilev() is a nested-eval depth watermark and is defined offline.
 #
 &tr.tc004 test_emitconn_fn=
-  @if cand(
-        strmatch(setr(0, listrlevels()), #-1*),
-        strmatch(setr(1, hasrxlevel(me, foo)), #-1*),
-        strmatch(setr(2, hastxlevel(me, foo)), #-1*),
-        not(strmatch(setr(3, rxlevel(me)), #-1 NO*)),
-        not(strmatch(setr(4, txlevel(me)), #-1 NO*)),
-        isint(setr(5, ilev()))
-      )=
+  @if strmatch(setr(0, listrlevels()), listrlevels%(%))=
   {
-    @log smoke=TC004: reality offline paths. Succeeded.
+    @log smoke=TC004: reality offline paths. Skipped (reality levels not compiled in; listrlevels%(%) is not a function).
   },
   {
-    @log smoke=TC004: reality offline paths. Failed (list=%q0 hasrx=%q1 hastx=%q2 rx=%q3 tx=%q4 ilev=%q5).
+    @if cand(
+          strmatch(%q0, #-1*),
+          strmatch(setr(1, hasrxlevel(me, foo)), #-1*),
+          strmatch(setr(2, hastxlevel(me, foo)), #-1*),
+          not(strmatch(setr(3, rxlevel(me)), #-1 NO*)),
+          not(strmatch(setr(4, txlevel(me)), #-1 NO*)),
+          isint(setr(5, ilev()))
+        )=
+    {
+      @log smoke=TC004: reality offline paths. Succeeded.
+    },
+    {
+      @log smoke=TC004: reality offline paths. Failed (list=%q0 hasrx=%q1 hastx=%q2 rx=%q3 tx=%q4 ilev=%q5).
+    }
   }
 -
 #

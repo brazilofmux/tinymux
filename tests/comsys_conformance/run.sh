@@ -248,6 +248,16 @@ if [ ! -r "$BASELINE" ]; then
     exit 1
 fi
 
+# Compare CR-blind.  On a Windows checkout with core.autocrlf=true the
+# baseline arrives with CRLF while current.diff is generated with LF, and
+# the byte comparison failed with a delta that was line-for-line identical
+# on screen (#1641).  .gitattributes now pins the baseline to LF, but that
+# only helps checkouts made after the pin; this keeps existing clones
+# working either way.
+#
+tr -d '\r' < "$BASELINE" > "$WORK/baseline.lf"
+BASELINE="$WORK/baseline.lf"
+
 if diff -q "$BASELINE" "$WORK/current.diff" >/dev/null 2>&1; then
     n=$(grep -c '^[-+][^-+]' "$BASELINE" || true)
     echo "=== comsys conformance: PASSED ==="

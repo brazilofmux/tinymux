@@ -19,7 +19,7 @@
 &tr.tc001 test_digest_fn=
   @if strmatch([digest()],*NOT FOUND)=
   {
-    @log smoke=TC001: DIGEST() is not supported on this version. Okay.
+    @log smoke=TC001: Examples. Skipped (digest%(%) not supported on this version).
   },
   {
     @if cand(
@@ -40,7 +40,7 @@
 &tr.tc002 test_digest_fn=
   @if strmatch([digest()],*NOT FOUND)=
   {
-    @log smoke=TC002: DIGEST() is not supported on this version. Okay.
+    @log smoke=TC002: Standard test vectors. Skipped (digest%(%) not supported on this version).
   },
   {
     @if cand(
@@ -64,7 +64,7 @@
 &tr.tc003 test_digest_fn=
   @if strmatch([digest()],*NOT FOUND)=
   {
-    @log smoke=TC003: DIGEST() is not supported on this version. Okay.
+    @log smoke=TC003: Parser-related tests. Skipped (digest%(%) not supported on this version).
   },
   {
     @if cand(
@@ -86,7 +86,7 @@
 &tr.tc004 test_digest_fn=
   @if strmatch([digest()],*NOT FOUND)=
   {
-    @log smoke=TC004: DIGEST() is not supported on this version. Okay.
+    @log smoke=TC004: MD5 test vectors. Skipped (digest%(%) not supported on this version).
   },
   {
     @if digest(md5)=
@@ -108,7 +108,7 @@
       }
     },
     {
-      @log smoke=TC004: MD5 is not supported in this version. Okay.
+      @log smoke=TC004: MD5 test vectors. Skipped (MD5 not supported in this version).
     }
   }
 -
@@ -126,8 +126,18 @@
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: digest() unsupported-type error path. Failed (sha_1=[digest(sha_1,abc)] bogus=[digest(bogus,abc)] sha-1=[digest(sha-1,abc)]).;
-    @trig me/tr.done
+    @if cand(
+          strmatch(digest(sha-1,abc), #-1 UNSUPPORTED DIGEST TYPE),
+          strmatch(digest(sha1,abc), A9993E364706816ABA3E25717850C26C9CD0D89D)
+        )=
+    {
+      @log smoke=TC005: digest() unsupported-type error path. Skipped (no OpenSSL: only the built-in sha1 name, no EVP aliases).;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC005: digest() unsupported-type error path. Failed (sha_1=[digest(sha_1,abc)] bogus=[digest(bogus,abc)] sha-1=[digest(sha-1,abc)]).;
+      @trig me/tr.done
+    }
   }
 -
 &tr.done test_digest_fn=

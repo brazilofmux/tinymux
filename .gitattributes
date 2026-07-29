@@ -4,3 +4,9 @@
 # TOC files are read by shell scripts and must also have LF endings.
 win32/TOC.* text eol=lf
 unix/TOC.* text eol=lf
+
+# The conformance baseline is byte-compared against LF output the harness
+# generates, so a CRLF checkout (core.autocrlf=true on Windows) made every
+# line differ and the run failed with a delta that was visually identical
+# (#1641).
+tests/comsys_conformance/known-divergences.diff text eol=lf

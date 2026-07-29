@@ -64,7 +64,7 @@
     }
   },
   {
-    @log smoke=TC003: Unicode is not supported on this version. Okay.
+    @log smoke=TC003: Unicode is not supported on this version. Skipped.
   }
 -
 #
@@ -84,7 +84,7 @@
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: Unicode is not supported on this version. Okay.;
+    @log smoke=TC004: Unicode is not supported on this version. Skipped.;
     @trig me/tr.done
   }
 -

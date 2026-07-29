@@ -21,7 +21,7 @@
 &tr.tc001 test_rpad_fn=
   @if strmatch([rpad()],*NOT FOUND)=
   {
-    @log smoke=TC001: RPAD() is not supported on this version. Okay.
+    @log smoke=TC001: RPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -42,7 +42,7 @@
 &tr.tc002 test_rpad_fn=
   @if strmatch([rpad()],*NOT FOUND)=
   {
-    @log smoke=TC002: RPAD() is not supported on this version. Okay.
+    @log smoke=TC002: RPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -64,7 +64,7 @@
 &tr.tc003 test_rpad_fn=
   @if strmatch([rpad()],*NOT FOUND)=
   {
-    @log smoke=TC003: RPAD() is not supported on this version. Okay.
+    @log smoke=TC003: RPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -86,7 +86,7 @@
 &tr.tc004 test_rpad_fn=
   @if strmatch([rpad()],*NOT FOUND)=
   {
-    @log smoke=TC004: RPAD() is not supported on this version. Okay.
+    @log smoke=TC004: RPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -108,7 +108,7 @@
 &tr.tc005 test_rpad_fn=
   @if strmatch([rpad()],*NOT FOUND)=
   {
-    @log smoke=TC005: RPAD() is not supported on this version. Okay.;
+    @log smoke=TC005: RPAD() is not supported on this version. Skipped.;
     @trig me/tr.done
   },
   {

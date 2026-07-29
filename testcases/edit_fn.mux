@@ -52,7 +52,7 @@
 &tr.tc003 test_edit_fn=
   @if strmatch(translate(edit(%xra,b,b),p),a)=
   {
-      @log smoke=TC003: Regressions. edit() strips color. Okay.
+      @log smoke=TC003: Regressions. edit() strips color. Skipped.
   },
   {
     @if gt(strlen(translate(edit(|%xr||,|,%r),p)), 0)=
@@ -70,7 +70,7 @@
 &tr.tc004 test_edit_fn=
   @if strmatch(translate(edit(%xra,b,b),p),a)=
   {
-      @log smoke=TC004: Single Change. edit() strips color. Okay.
+      @log smoke=TC004: Single Change. edit() strips color. Skipped.
   },
   {
     @if cand(
@@ -91,7 +91,7 @@
 &tr.tc005 test_edit_fn=
   @if strmatch(translate(edit(%xra,b,b),p),a)=
   {
-      @log smoke=TC005: Multiple Changes. edit() strips color. Okay.
+      @log smoke=TC005: Multiple Changes. edit() strips color. Skipped.
   },
   {
     @if cand(
