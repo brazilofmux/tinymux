@@ -24,6 +24,29 @@
 #define HAVE_NLS 1
 #include "mux_nls.cpp"
 
+// mux_nls.cpp calls mux_sprintf (the #1653 snprintf ban), which lives in
+// libmux -- and this test deliberately links nothing, because reaching the
+// anonymous-namespace plural_eval() means being in mux_nls.cpp's own
+// translation unit.  So supply the symbol here, vsnprintf-backed.
+//
+// Faithful for this test's purposes: the only mux_sprintf caller in
+// mux_nls.cpp is the catalogue-path build in mux_nls_init(), which no test
+// below exercises -- the linker merely needs the definition.  The real
+// mux_sprintf differs from vsnprintf at UTF-8 truncation boundaries; if a
+// tested path ever starts formatting player-visible text through this stub,
+// stop stubbing and link the real one.
+//
+#include <cstdarg>
+extern "C++" void DCL_CDECL mux_sprintf(UTF8 *buff, size_t count,
+                                        const UTF8 *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(reinterpret_cast<char *>(buff), count,
+              reinterpret_cast<const char *>(fmt), ap);
+    va_end(ap);
+}
+
 #include <cstdio>
 #include <cstring>
 
