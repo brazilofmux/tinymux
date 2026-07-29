@@ -182,6 +182,19 @@ AGREE_CASES=(
     'local x=tostring(0) return not x'
     'local x=tostring(0) return x == "0"'
 
+    # ---- #1766 review: a lowered nil must not leak into consumers ----
+    #
+    # Known-absent reads lower to nil (empty SCONST + LUA_TRUTH_NIL).  That
+    # makes nil a value that FLOWS, so every operation Lua rejects on nil
+    # has to reject it here: concat and length RAISE, tostring gives "nil"
+    # not "", and nil compares equal to nothing -- not even a real "".
+    # Each answered wrongly in the first cut of this change.
+    'local t={} t[1]=5 return "a" .. t[2]'
+    'local t={} t[1]=5 return #t[2]'
+    'local t={} t[1]=5 local x=t[2] return tostring(x)'
+    'local t={} t[1]=5 return t[2] == ""'
+    'local t={} t[1]=5 local x=t[2] return x .. "z"'
+
     # ---- #1768: truth-class tag loss must decline, not invent VALUE ----
     #
     # Default for untagged HIR is VALUE (always truthy).  That is correct
@@ -230,7 +243,9 @@ POST_ENTRY_LOUD_BUDGET=1
 # ineligible at lowering, interpreter answers).
 # #1768: +3 for truth-class tag-loss shapes (loop-carried false, table
 # false, TESTSET/or) — must agree by decline until tags are carried.
-AGREE_DECLINE_BUDGET=13
+# #1766 review: +5 nil-consumer pins (concat, len, tostring, ==,
+# concat-via-local) -- all decline; nil has no compiled consumer yet.
+AGREE_DECLINE_BUDGET=18
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).

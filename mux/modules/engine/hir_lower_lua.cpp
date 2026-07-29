@@ -717,6 +717,23 @@ static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
     }
 }
 
+// A value KNOWN to be Lua nil at lowering: LOADNIL, or a known-absent
+// read of a plain table with a closed key set.  nil is representable in
+// HIR only as the empty SCONST, which is also a real "" -- the truth tag
+// is what tells them apart, so every consumer Lua would reject on nil
+// must consult it here.
+//
+// Producers are easy to get right and consumers are easy to forget: the
+// first cut of this change taught `"a" .. t[2]` to answer "a" where Lua
+// raises, `#t[2]` to answer 0, and tostring(t[2]) to answer "" instead of
+// "nil".  A new value class needs a consumer audit, not just correct
+// producers (#1751 review note).
+//
+static inline bool lua_is_nil(const hir_program &h, const lua_truth_map &m,
+                              int v) {
+    return lua_truth_of(h, m, v) == LUA_TRUTH_NIL;
+}
+
 static int promote_to_float(hir_program &h, const lua_truth_map &truth, int v) {
     if (v < 0) return -1;
     if (lua_is_marshalled_str(h, v)) return -1;
@@ -1614,6 +1631,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_LEN: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            // Lua raises "attempt to get length of a nil value"; the
+            // empty SCONST would measure 0 instead.
+            if (lua_is_nil(h, truth_tag, rb)) return -1;
             // `#` on a VM reference is what returned 22 for a three-element
             // table: the stack index, measured as though it were the value
             // (#1424, #1579).  Declining kept it correct; asking the VM
@@ -1677,6 +1697,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             for (int ci = 0; ci < nvals; ci++) {
                 if (!lua_reg_in_range(A + ci)) return -1;
                 if (lua_is_handle(h, lua_reg[A + ci])) return -1;
+                // Lua raises "attempt to concatenate a nil value"; the
+                // empty SCONST would splice in as "".
+                if (lua_is_nil(h, truth_tag, lua_reg[A + ci])) return -1;
             }
             if (nvals == 1) {
                 // Single value — no-op (just ensure it's a string).
@@ -2289,6 +2312,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
             if (lua_is_marshalled_str(h, rb) || lua_is_marshalled_str(h, rc_val)) \
                 return -1; \
+            /* nil compares equal to nothing but nil; as the empty SCONST */ \
+            /* it would compare equal to a real "" (#1766 review). */ \
+            if (lua_is_nil(h, truth_tag, rb) || lua_is_nil(h, truth_tag, rc_val)) \
+                return -1; \
             int cmp; \
             if (either_float(h, rb, rc_val)) { \
                 rb = promote_to_float(h, truth_tag, rb); \
@@ -2321,6 +2348,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[A]; \
             if (rb < 0) return -1; \
             if (lua_is_handle(h, rb)) return -1; \
+            if (lua_is_nil(h, truth_tag, rb)) return -1; \
             int cmp; \
             if (h.ty[rb] == TY_FLOAT) { \
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB())); \
@@ -3012,6 +3040,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     if (!lua_reg_in_range(A + 1 + i)) { ok = false; break; }
                     int areg = lua_reg[A + 1 + i];
                     if (areg < 0) { ok = false; break; }
+                    // nil as an argument would arrive as "" -- tostring(nil)
+                    // is "nil", not "".  No kind encodes nil, so decline.
+                    if (lua_is_nil(h, truth_tag, areg)) { ok = false; break; }
                     if (lua_is_handle(h, areg)) {
                         kinds |= (3 << (2 * i));   // stack reference
                         // The callee may setmetatable the table: the
