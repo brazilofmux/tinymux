@@ -113,7 +113,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| H1 | Alloc / string / time | `mux/lib/alloc.*`, `stringutil.*`, `timeutil.*`, `alarm.*` | med | residual 2026-07-26 | deep | #1290 freelist drop-one; alarm int64 ms clamp |
+| H1 | Alloc / string / time | `mux/lib/alloc.*`, `stringutil.*`, `timeutil.*`, `alarm.*` | med | Pass 14 2026-07-29 | deep | #1290 freelist drop-one-not-wipe; alarm ms int64 clamp; i64FloorDivision INT64_MIN/-1 guard (#805); no new High/Medium |
 | H2 | Color / Ragel | `color_ops.rl`, color path | med | generated-file discipline | thin | Edit `.rl` only |
 | H3 | UTF-8 / collation | `utf/`, `utf8tables.*`, `unicode_*` | large | — | deferred | Generated tables; deep Unicode later |
 | H4 | Platform abstraction | `platform.cpp`, design-platform-interface | small | Pass 14 scout 2026-07-29 | partial | BootHelper/Reap/Maximize used; RegisterSignalHandler incomplete (stored, never invoked; Win SetConsoleCtrl TODO); not product-breaking today — signals still in signals.cpp |
@@ -176,16 +176,16 @@ Also useful historical surveys:
 ## Recommended rotation (next ~N passes)
 
 **Dice loop (2026-07-29):** start **A7**.  
-Done: A…C… → A4/A5/A6 → **E1–E5** residual re-deep → F3 scout.  
-**Sections A + E residual re-deep complete** for this pass. **Next: F1/F2/F4 residual**, or **H1/H2**, or **J5** (iOS partial), or wrap dice toward thin slices.
+Done: A…E… → **F1/F2/F4** → **H1** → G2 stamp.  
+**Server residual re-deep largely complete** for this pass (A–H core). **Next: H2/H4 thin polish**, **K3/K4**, or begin **J\*** clients (J5 partial first).
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Dual-review / merge Pass 14 map PR stack | Hygiene |
-| **Then** | **F\*** modules residual or **H1** libmux | Standing loop |
+| **Now** | Merge Pass 14 map PR stack if still open | Hygiene |
+| **Then** | **J5** iOS / **J1** console — first client slices | Prefs: after server depth |
 | **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
-| **Later** | **J\*** clients by platform | After server/proxy confidence |
 | **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
+| **Thin** | H2 color (edit .rl only), K4 packaging | Low urgency |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -223,6 +223,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Initial map after Passes 1–3 |
 | 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
-| 2026-07-29 | **Pass 14 dice loop:** A7 #1774; G3 #1778; B*/I6/C*/A*; **E2–E5** residual re-deep (#1284/#1080/#1180/#1185 held, no new H/M); F3 scout; sections A+E residual complete; next F*/H* |
+| 2026-07-29 | **Pass 14 dice loop:** A–E residual; **F1/F2/F4** modules + **H1** libmux re-deep (locks, MAIL_DB_LIMIT, #1295, freelist #1290 held, no new H/M); G2 stamp; server core residual pass largely complete; next J* or thin H2/K4 |
 
 Update this table when the map structure changes.
