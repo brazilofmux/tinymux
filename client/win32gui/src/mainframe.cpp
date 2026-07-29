@@ -474,6 +474,14 @@ void CMainFrame::HandleSlashCommand(const std::string& input) {
 }
 
 void CMainFrame::ProcessHydraTriggerText(TabState& ts, const std::string& text) {
+    // #1788: cap reassembly — stream without newlines must not grow unbound.
+    static constexpr size_t kMaxHydraLine = 64 * 1024;
+    if (ts.hydra_line_buffer.size() + text.size() > kMaxHydraLine) {
+        ts.hydra_line_buffer.clear();
+        FinalizeHydraTriggerLine(ts,
+            "[Hydra] Dropped oversized line (no newline within buffer cap).");
+        return;
+    }
     ts.hydra_line_buffer += text;
 
     size_t nl = 0;

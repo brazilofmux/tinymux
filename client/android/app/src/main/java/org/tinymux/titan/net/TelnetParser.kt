@@ -9,6 +9,9 @@ class TelnetParser(private val sendRaw: (ByteArray) -> Unit) {
         const val ECHO: Int = 1; const val SGA: Int = 3; const val TTYPE: Int = 24
         const val NAWS: Int = 31; const val CHARSET: Int = 42
         const val MSSP: Int = 70; const val GMCP: Int = 201
+        // #1788: match server-side discipline
+        const val MAX_LINE_BYTES: Int = 64 * 1024
+        const val MAX_SB_BYTES: Int = 4096
     }
 
     private enum class State { DATA, IAC, WILL, WONT, DO, DONT, SB, SB_DATA, SB_IAC }
@@ -16,6 +19,7 @@ class TelnetParser(private val sendRaw: (ByteArray) -> Unit) {
     private var state = State.DATA
     private var sbOption = 0
     private val sbBuf = mutableListOf<Byte>()
+    private var sbOverflow = false
     private val lineBuf = StringBuilder()
 
     var remoteEcho = false; private set
@@ -60,12 +64,29 @@ class TelnetParser(private val sendRaw: (ByteArray) -> Unit) {
                     }; state = State.DATA
                 }
                 State.DONT -> { if (c == NAWS) nawsAgreed = false; state = State.DATA }
-                State.SB -> { sbOption = c; sbBuf.clear(); state = State.SB_DATA }
-                State.SB_DATA -> if (c == IAC) state = State.SB_IAC else sbBuf.add(c.toByte())
+                State.SB -> {
+                    sbOption = c; sbBuf.clear(); sbOverflow = false; state = State.SB_DATA
+                }
+                State.SB_DATA -> if (c == IAC) {
+                    state = State.SB_IAC
+                } else if (sbBuf.size < MAX_SB_BYTES) {
+                    sbBuf.add(c.toByte())
+                } else {
+                    sbOverflow = true // stay in SB until SE (#1131 / #1788)
+                }
                 State.SB_IAC -> when (c) {
-                    SE -> { handleSubneg(); state = State.DATA }
-                    IAC -> { sbBuf.add(0xFF.toByte()); state = State.SB_DATA }
-                    else -> state = State.DATA
+                    SE -> {
+                        if (!sbOverflow) handleSubneg()
+                        sbBuf.clear(); sbOverflow = false; state = State.DATA
+                    }
+                    IAC -> {
+                        if (sbBuf.size < MAX_SB_BYTES) sbBuf.add(0xFF.toByte())
+                        else sbOverflow = true
+                        state = State.SB_DATA
+                    }
+                    else -> {
+                        sbBuf.clear(); sbOverflow = false; state = State.DATA
+                    }
                 }
             }
         }
@@ -76,9 +97,10 @@ class TelnetParser(private val sendRaw: (ByteArray) -> Unit) {
             val line = lineBuf.toString().trimEnd('\r')
             onLine?.invoke(line)
             lineBuf.clear()
-        } else {
+        } else if (lineBuf.length < MAX_LINE_BYTES) {
             lineBuf.append(c.toChar())
         }
+        // else: drop until newline resets the line
     }
 
     private fun send(cmd: Int, opt: Int) = sendRaw(byteArrayOf(IAC.toByte(), cmd.toByte(), opt.toByte()))
