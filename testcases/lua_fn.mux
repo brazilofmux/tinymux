@@ -1522,20 +1522,19 @@
 -
 #
 # Test 88: softcode → lua → mux.eval(set via softcode) → softcode get.
-# Effect through the softcode evaluator under the Lua compiled path
-# (#1791 host ECALL from softcode, effect from eval).
+# Keep the eval argument constant: runtime string call arguments and SELF
+# (`s:sub`) are deliberately ineligible, which would make this result-only
+# smoke pass through the interpreter while claiming compiled coverage.
+# NESTED and STATE e4 below pin execution and exactly-once effect separately.
 #
 &LUA_SEAM_EVAL_WRITE test_lua_fn= \
-  local s = tostring(mux.args[1]) \
-  if s:sub(1,1) == "#" then s = s:sub(2) end \
-  local id = "#" .. s \
-  mux.eval("attrib_set(" .. id .. "/SEAM_EVAL_WROTE,via-mux-eval)") \
-  return "ok"
+  local x = mux.eval("strcat(attrib_set(me/SEAM_EVAL_WROTE,via-mux-eval),ok)") \
+  return x
 -
 &tr.tc088 test_lua_fn=
   @switch \
     and( \
-      strmatch(setr(0,lua(me/LUA_SEAM_EVAL_WRITE,num(me))),ok), \
+      strmatch(setr(0,lua(me/LUA_SEAM_EVAL_WRITE)),ok), \
       strmatch(setr(1,get(me/SEAM_EVAL_WROTE)),via-mux-eval))=1,
   {
     @log smoke=TC088: seam lua→mux.eval→attrib_set→softcode get. Succeeded.
