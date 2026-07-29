@@ -169,13 +169,13 @@ AGREE_CASES=(
 # AGREE may count those as post_entry_loud rather than diverge, with a budget
 # that may only fall as Phases 1–3 empty the FAIL sites.
 #
-# Count of AGREE + NESTED_AGREE chunks that commit a loud
+# Count of AGREE + NESTED_AGREE + STATE chunks that commit a loud
 # POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
 # Phases 1–3 empty FAIL sites.  Long-term target is 0.
 #
-# Baseline after Phase 0 wiring (2026-07-29): select, os.time,
-# budget for-loop, string.find, nested while-true → 5.
-POST_ENTRY_LOUD_BUDGET=5
+# Baseline after Phase 0 + 0.5 (2026-07-29): select, os.time,
+# budget for-loop, string.find, nested while-true (5) + STATE e1/e2 (2) → 7.
+POST_ENTRY_LOUD_BUDGET=7
 
 # How many AGREE chunks are expected to decline rather than execute.
 #
@@ -496,6 +496,42 @@ NESTED_AGREE_CASES=(
     'while true do end'
 )
 
+# ---------------------------------------------------------------------------
+# STATE — purity oracle (#1751 Phase 0.5 / exhibits on the issue).
+#
+# Multi-step: setup chunk, action chunk, then a state probe.  Answer-only
+# differential harnesses miss these: both routes can return the same string
+# while persistent Lua state or delivered effects diverge under
+# decline-then-rerun.
+#
+# Contract under Phase 0:
+#   * process lives
+#   * STATE (persistent globals) matches across legs — the double-mutation
+#     detector (exhibit 1: N must not be 2 when the interpreter left 1)
+#   * action RESULT matches, OR the JIT leg is a loud
+#     POST-ENTRY DECLINE (honest fail; no silent re-run)
+#   * if both legs succeed without loud fail, effect markers (PING) match
+#
+# When later bins empty the FAIL sites, both legs succeed with matching
+# state and effects — the oracle stays green either way.
+# ---------------------------------------------------------------------------
+STATE_NAMES=(
+    e1_double_mutation
+    e2_coroutine_effect
+)
+STATE_SETUP=(
+    'N=0 function bump() N=N+1 end return "set"'
+    'CO=coroutine.create(function() mux.pemit(1,"PING") end) return "set"'
+)
+STATE_ACTION=(
+    'bump() local y=mux.get(4000,"Q") return tostring(N)'
+    'coroutine.resume(CO) return "r"'
+)
+STATE_PROBE=(
+    'return tostring(N)'
+    'return "ok"'
+)
+
 keep_work() {
     local rc="$1" tag="$2"
     if [ "$rc" = "0" ] || [ ! -d "$WORK" ]; then
@@ -506,6 +542,79 @@ keep_work() {
     if mv "$WORK" "$dest" 2>/dev/null; then
         printf '%s' "$dest"
     fi
+}
+
+# $1 = lua_jit, $2 = setup chunk, $3 = action chunk, $4 = state probe,
+# $5 = tag.  Multi-step purity run (#1751 Phase 0.5).
+# Echoes: rc|setup|action|state|pings|post_decline|kept
+run_state() {
+    local mode="$1" setup="$2" action="$3" probe="$4" tag="${5:-state}"
+    rm -rf "$WORK"; mkdir -p "$WORK/data" "$WORK/logs" "$WORK/text"
+    ( cd "$WORK" || exit 1
+      ulimit -c unlimited 2>/dev/null || true
+      ln -s "$BIN" bin
+      cp "$REPO_ROOT/mux/game/alias.conf" "$REPO_ROOT/mux/game/compat.conf" . 2>/dev/null
+      cat > p.conf <<EOF
+input_database  data/p.db
+output_database data/p.db.new
+crash_database  data/p.db.CRASH
+mail_database   data/mail.db
+comsys_database data/comsys.db
+port 2879
+mud_name LuaJitState
+command_quota_increment 200000
+command_quota_max 200000
+include alias.conf
+include compat.conf
+lua_jit $mode
+jit_eval_brackets 0
+EOF
+      {
+        echo "@create probe"
+        echo "&SETUP probe=$setup"
+        echo "&ACTION probe=$action"
+        echo "&PROBE probe=$probe"
+        echo "think SETUP|[lua(probe/SETUP)]"
+        echo "think RESULT|[lua(probe/ACTION)]"
+        echo "think STATE|[lua(probe/PROBE)]"
+        echo "think STATS|[jitstats()]"
+        echo "@shutdown"
+      } > in.txt
+      LD_LIBRARY_PATH="$BIN" $TIMEOUT "$BIN/muxscript" -g . -c p.conf < in.txt > out.log 2>&1
+      echo "$?" > rc.txt
+    )
+    local rc setup_res action_res state_res pings postd kept stats
+    rc=$(cat "$WORK/rc.txt" 2>/dev/null || echo 99)
+    setup_res=$(grep -oE "^SETUP\|.*" "$WORK/out.log" 2>/dev/null | head -1)
+    setup_res=${setup_res#SETUP|}
+    setup_res=$(printf '%s' "$setup_res" | tr -d '\r')
+    action_res=$(grep -oE "^RESULT\|.*" "$WORK/out.log" 2>/dev/null | head -1)
+    action_res=${action_res#RESULT|}
+    action_res=$(printf '%s' "$action_res" | tr -d '\r')
+    state_res=$(grep -oE "^STATE\|.*" "$WORK/out.log" 2>/dev/null | head -1)
+    state_res=${state_res#STATE|}
+    state_res=$(printf '%s' "$state_res" | tr -d '\r')
+    # Effect marker from exhibit 2: mux.pemit(1,"PING") prints a bare PING
+    # line.  muxscript logs are CRLF; match optional CR.  grep -c prints 0
+    # even when it exits 1 on no match — do not `|| echo 0` (that doubles).
+    pings=$(grep -cE $'^PING\r?$' "$WORK/out.log" 2>/dev/null)
+    pings=${pings:-0}
+    stats=$(grep -oE "^STATS\|.*" "$WORK/out.log" 2>/dev/null | head -1)
+    stats=${stats#STATS|}
+    postd=$(printf '%s' "$stats" | grep -oE 'lua_post_entry_decline=[0-9]+' | head -1 | cut -d= -f2)
+    : "${postd:=0}"
+    kept=$(keep_work "$rc" "$tag")
+    echo "$rc|$setup_res|$action_res|$state_res|$pings|$postd|$kept"
+}
+
+split_state() {
+    R_RC=${1%%|*}; local r=${1#*|}
+    R_SETUP=${r%%|*}; r=${r#*|}
+    R_RES=${r%%|*}; r=${r#*|}
+    R_STATE=${r%%|*}; r=${r#*|}
+    R_PINGS=${r%%|*}; r=${r#*|}
+    R_POSTD=${r%%|*}; r=${r#*|}
+    R_KEPT=$r
 }
 
 # $1 = lua_jit, $2 = chunk, $3 = tag, $4 = jit_eval_brackets (default 0)
@@ -740,12 +849,70 @@ for chunk in "${NESTED_AGREE_CASES[@]}"; do
         "$chunk" "$jrc" "$ires" "$jres" "$jok" "$verdict"
 done
 
+printf '\n== STATE (purity oracle: persistent state + effects; #1751 Phase 0.5) ==\n'
+printf '%-22s %-4s %-10s %-10s %-8s %-8s %s\n' case rc i_state j_state i_ping j_ping verdict
+state_wrong=0
+state_loud=0
+si=0
+while [ "$si" -lt "${#STATE_NAMES[@]}" ]; do
+    name="${STATE_NAMES[$si]}"
+    setup="${STATE_SETUP[$si]}"
+    action="${STATE_ACTION[$si]}"
+    probe="${STATE_PROBE[$si]}"
+    n=$((n+1))
+    split_state "$(run_state 0 "$setup" "$action" "$probe" "st0-$name")"
+    irc=$R_RC; ires=$R_RES; istate=$R_STATE; ipings=$R_PINGS
+    split_state "$(run_state 1 "$setup" "$action" "$probe" "st1-$name")"
+    jrc=$R_RC; jres=$R_RES; jstate=$R_STATE; jpings=$R_PINGS; jkept=$R_KEPT; jpostd=$R_POSTD
+    verdict="ok"
+    jloud=0
+    if printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
+        jloud=1
+    fi
+    if [ "$jrc" != "0" ]; then
+        verdict="FAIL: died rc=$jrc"
+        [ -n "$jkept" ] && verdict="$verdict evidence=$jkept"
+        crashes=$((crashes+1))
+    elif [ "$irc" != "0" ]; then
+        verdict="FAIL: interp died rc=$irc"
+        crashes=$((crashes+1))
+    elif [ "$istate" != "$jstate" ]; then
+        # Exhibit 1 shape: silent double-mutation (interp N=1, jit N=2).
+        verdict="FAIL: state diverges interp=$istate jit=$jstate (purity)"
+        state_wrong=$((state_wrong+1))
+    elif [ "$jloud" = "1" ]; then
+        # Phase 0: loud fail is honest.  State already matched.
+        verdict="ok (post-entry loud; state pure)"
+        state_loud=$((state_loud+1))
+        post_entry_loud=$((post_entry_loud+1))
+    elif [ "$ires" != "$jres" ]; then
+        verdict="FAIL: result diverges interp=$ires jit=$jres"
+        state_wrong=$((state_wrong+1))
+    elif [ "$ipings" != "$jpings" ]; then
+        # Both routes "succeeded" but effects differ (exhibit 2 silent loss).
+        verdict="FAIL: effect count interp=$ipings jit=$jpings"
+        state_wrong=$((state_wrong+1))
+    else
+        verdict="ok (matched; pure)"
+    fi
+    # Surface counter for exhibit paths that commit EFFECT_REFUSED outside
+    # RunCompiled (must still advance lua_post_entry_decline).
+    if [ "$jloud" = "1" ] && [ "${jpostd:-0}" = "0" ]; then
+        verdict="FAIL: loud result but lua_post_entry_decline=0"
+        state_wrong=$((state_wrong+1))
+    fi
+    printf '%-22s %-4s %-10s %-10s %-8s %-8s %s\n' \
+        "$name" "$jrc" "${istate:0:10}" "${jstate:0:10}" "$ipings" "$jpings" "$verdict"
+    si=$((si+1))
+done
+
 rm -rf "$WORK"
-total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]} + ${#NESTED_CASES[@]} + ${#NESTED_AGREE_CASES[@]}))
+total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]} + ${#NESTED_CASES[@]} + ${#NESTED_AGREE_CASES[@]} + ${#STATE_NAMES[@]}))
 echo
 echo "chunks: $total   crashes: $crashes   survive_diverges: $surv_div"
 echo "agree_wrong: $agree_wrong   exec_wrong: $exec_wrong   exec_no_run: $exec_no_run   exec_post_entry: $exec_post_entry"
 echo "nested_wrong: $nested_wrong   nested_no_run: $nested_no_run   (of ${#NESTED_CASES[@]} NESTED chunks, brackets ON)"
+echo "state_wrong: $state_wrong   state_loud: $state_loud   (of ${#STATE_NAMES[@]} STATE purity cases)"
 
 # Executed vs declined, separately (#1426).
 #
@@ -754,7 +921,7 @@ echo "nested_wrong: $nested_wrong   nested_no_run: $nested_no_run   (of ${#NESTE
 # pass/fail count.  Reporting them apart stops "38/38 agree" standing in for
 # "the compiler saw 38 chunks", which it does not: it saw the executed ones.
 #
-echo "agree_executed: $agree_executed   agree_declined: $agree_declined   post_entry_loud: $post_entry_loud   (of ${#AGREE_CASES[@]} AGREE chunks)"
+echo "agree_executed: $agree_executed   agree_declined: $agree_declined   post_entry_loud: $post_entry_loud   (of ${#AGREE_CASES[@]} AGREE + STATE loud)"
 
 decline_budget_fail=0
 if [ "$agree_declined" -gt "$AGREE_DECLINE_BUDGET" ]; then
@@ -783,6 +950,7 @@ if [ "$crashes" -ne 0 ] || [ "$agree_wrong" -ne 0 ] \
    || [ "$exec_wrong" -ne 0 ] || [ "$exec_no_run" -ne 0 ] \
    || [ "$exec_post_entry" -ne 0 ] \
    || [ "$nested_wrong" -ne 0 ] || [ "$nested_no_run" -ne 0 ] \
+   || [ "$state_wrong" -ne 0 ] \
    || [ "$decline_budget_fail" -ne 0 ] \
    || [ "$post_entry_budget_fail" -ne 0 ]; then
     echo "=== tests/luajit: FAILED ==="
@@ -803,6 +971,11 @@ if [ "$crashes" -ne 0 ] || [ "$agree_wrong" -ne 0 ] \
         echo "  setting brackets 0 here: brackets on is the production"
         echo "  default, and covering it is the entire point of this tier."
     fi
+    if [ "$state_wrong" -ne 0 ]; then
+        echo "  STATE purity oracle failed (#1751 exhibits / Phase 0.5)."
+        echo "  Persistent Lua state or delivered effects diverged, or a loud"
+        echo "  fail did not advance lua_post_entry_decline."
+    fi
     if [ "$agree_wrong" -ne 0 ] || [ "$exec_wrong" -ne 0 ] || [ "$nested_wrong" -ne 0 ]; then
         echo "  Result mismatch vs interpreter — see #1512 / open lua/jit bugs."
     fi
@@ -812,4 +985,5 @@ echo "=== tests/luajit: PASSED ==="
 echo "  SURVIVE: no crashes ($surv_div reported divergences, non-fatal)"
 echo "  AGREE:   all match interpreter (decline allowed)"
 echo "  EXEC:    all match and lua_run_ok advanced (#1426)"
+echo "  STATE:   purity oracle green (#1751 Phase 0.5; $state_loud loud-ok)"
 exit 0

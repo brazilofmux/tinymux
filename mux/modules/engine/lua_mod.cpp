@@ -12,6 +12,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "engine_api.h"
 #include "libmux.h"
 #include "modules.h"
 #include "lua_mod.h"
@@ -1421,6 +1422,7 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
                 if (nullptr != pnResultLen) {
                     *pnResultLen = n;
                 }
+                jit_lua_note_post_entry_decline();
                 STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
                 log_text(T("Lua post-entry decline (no re-run): EFFECT_REFUSED"));
                 ENDLOG;
@@ -1500,6 +1502,7 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
         if (nullptr != pnResultLen) {
             *pnResultLen = n;
         }
+        jit_lua_note_post_entry_decline();
         STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
         log_text(T("Lua post-entry decline (no re-run): EFFECT_REFUSED"));
         ENDLOG;
