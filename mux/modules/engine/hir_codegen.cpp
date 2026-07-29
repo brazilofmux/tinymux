@@ -829,6 +829,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_LUA_CALL_INT:
     case HIR_LUA_CALL_VAL:
     case HIR_LUA_TOBOOL:
+    case HIR_LUA_EQ:
     case HIR_LUA_GETFIELD:
     case HIR_LUA_GETI:
     case HIR_LUA_ALOAD:
@@ -1557,6 +1558,45 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 rc.code.push_back(rv_ADDI(10, r1, 0));
                 rc.code.push_back(rv_ADDI(17, 0,
                     static_cast<int32_t>(ECALL_LUA_TOBOOL)));
+                rc.code.push_back(rv_ECALL());
+                rc.code.push_back(rv_ADDI(dest, 10, 0));
+                ra_set_loc(rc, loc, int_alloc, i, dest);
+                break;
+            }
+
+            case HIR_LUA_EQ: {
+                // a0=lhs handle, a1=kind, a2=rhs → a0=0/1 under Lua ==.
+                int s1 = h.src1[i], s2 = h.src2[i];
+                int kind = static_cast<int>(h.val[i]);
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (!dest) break;
+                uint8_t r1 = ra_get_reg(rc, loc, s1, RA_SCRATCH);
+                rc.code.push_back(rv_ADDI(10, r1, 0));
+                rv_load_i64(rc.code, 11, kind);
+                if (kind == 1) {
+                    // String constant: guest address of the pool string.
+                    if (h.kind[s2] != HIR_SCONST) break;
+                    rv_load_guest_addr(rc.code, 12, loc[s2].addr);
+                } else if (kind == 0 || kind == 4) {
+                    // Integer / bool payload in ICONST val, or register.
+                    if (h.kind[s2] == HIR_ICONST) {
+                        rv_load_i64(rc.code, 12, h.val[s2]);
+                    } else {
+                        uint8_t r2 = ra_get_reg(rc, loc, s2, 29);
+                        rc.code.push_back(rv_ADDI(12, r2, 0));
+                    }
+                } else if (kind == 2) {
+                    uint8_t r2 = ra_get_reg(rc, loc, s2, 29);
+                    rc.code.push_back(rv_ADDI(12, r2, 0));
+                } else if (kind == 3) {
+                    rv_load_i64(rc.code, 12, 0);
+                } else {
+                    break;
+                }
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_EQ)));
                 rc.code.push_back(rv_ECALL());
                 rc.code.push_back(rv_ADDI(dest, 10, 0));
                 ra_set_loc(rc, loc, int_alloc, i, dest);
@@ -2600,6 +2640,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LUA_CALL_VAL: return "LUA_CALL_VAL";
     case HIR_LUA_MARSHAL: return "LUA_MARSHAL";
     case HIR_LUA_TOBOOL: return "LUA_TOBOOL";
+    case HIR_LUA_EQ: return "LUA_EQ";
     case HIR_LUA_LIMITED: return "LUA_LIMITED";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
     case HIR_LUA_GETFIELD_FLT: return "LUA_GETFIELD_FLT";

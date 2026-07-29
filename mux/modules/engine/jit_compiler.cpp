@@ -4453,6 +4453,65 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_EQ: {
+        // a0=lhs stack idx, a1=rhs kind, a2=rhs payload → a0=0/1 under Lua ==.
+        // Kind: 0=int, 1=string guest addr, 2=handle stack idx, 3=nil, 4=bool.
+        // Keeps type distinctions that a marshal-then-STRCMP would erase
+        // (tonumber("17") == "17" is false; tostring(0) == "0" is true).
+        //
+        if (!ec->lua_state) { ctx->x[10] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int lhs = static_cast<int>(ctx->x[10]);
+        int kind = static_cast<int>(ctx->x[11]);
+        uint64_t rhs = ctx->x[12];
+        if (!ecall_lua_stack_index_ok(L, lhs)) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        const int base = lua_gettop(L);
+        lua_pushvalue(L, lhs);
+        switch (kind) {
+        case 0:
+            lua_pushinteger(L, static_cast<lua_Integer>(
+                static_cast<int64_t>(rhs)));
+            break;
+        case 1: {
+            const char *s = guest_cstr(ec->memory, ec->memory_size, rhs);
+            if (nullptr == s) {
+                lua_settop(L, base);
+                ctx->x[10] = 0;
+                return -1;
+            }
+            lua_pushstring(L, s);
+            break;
+        }
+        case 2: {
+            int ridx = static_cast<int>(rhs);
+            if (!ecall_lua_stack_index_ok(L, ridx)) {
+                lua_settop(L, base);
+                ctx->x[10] = 0;
+                return -1;
+            }
+            lua_pushvalue(L, ridx);
+            break;
+        }
+        case 3:
+            lua_pushnil(L);
+            break;
+        case 4:
+            lua_pushboolean(L, rhs != 0);
+            break;
+        default:
+            lua_settop(L, base);
+            ctx->x[10] = 0;
+            return -1;
+        }
+        const int eq = lua_compare(L, -2, -1, LUA_OPEQ);
+        lua_settop(L, base);
+        ctx->x[10] = eq ? 1 : 0;
+        return -1;
+    }
+
     case ECALL_LUA_CALL_INT: {
         // a0=fn stack idx, a1=nargs (0..2), a2=arg0, a3=arg1, integers.
         // -> a0 = integer result, a1 = ok.
