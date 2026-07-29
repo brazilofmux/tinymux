@@ -390,6 +390,23 @@ async function testHydraReconnectCreatesNewWebSocket() {
     assert.strictEqual(env.FakeWebSocket.instances.length, 2);
 }
 
+// #1788: oversized IAC SB is discarded; following line still parses.
+async function testTelnetOversizedSubnegotiationDiscarded() {
+    const { TelnetParser } = loadScript('js/telnet.js', ['TelnetParser']).exports;
+    const sent = [];
+    const lines = [];
+    const parser = new TelnetParser(bytes => sent.push(Array.from(bytes)));
+    parser.onLine = line => lines.push(line);
+
+    const data = [255, 250, 201]; // IAC SB GMCP
+    for (let i = 0; i < 5000; i++) data.push(0x41);
+    data.push(255, 240); // IAC SE
+    for (const ch of 'ok\n') data.push(ch.charCodeAt(0));
+    parser.process(new Uint8Array(data));
+
+    assert.deepStrictEqual(lines, ['ok']);
+}
+
 async function main() {
     const tests = [
         testSettingsPasswordMigration,
@@ -397,6 +414,7 @@ async function main() {
         testHydraSessionResumeSkipsAuthenticate,
         testHydraFallbackSubscribePath,
         testHydraReconnectCreatesNewWebSocket,
+        testTelnetOversizedSubnegotiationDiscarded,
     ];
 
     for (const fn of tests) {

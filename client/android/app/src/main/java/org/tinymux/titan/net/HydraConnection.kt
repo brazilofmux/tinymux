@@ -576,27 +576,36 @@ class HydraConnection(
         mainDispatcher: CoroutineDispatcher
     ) {
         val completedLines = mutableListOf<String>()
+        // #1788: cap reassembly — stream without newlines must not grow unbound.
+        val maxLineBytes = 64 * 1024
         synchronized(outputLock) {
-            outputBuffer.append(output.text)
-
-            var newline = outputBuffer.indexOf("\n")
-            while (newline >= 0) {
-                var line = outputBuffer.substring(0, newline)
-                outputBuffer.delete(0, newline + 1)
-                if (line.endsWith("\r")) {
-                    line = line.dropLast(1)
-                }
-                completedLines.add(line)
-                newline = outputBuffer.indexOf("\n")
-            }
-
-            if (output.endOfRecord && outputBuffer.isNotEmpty()) {
-                var line = outputBuffer.toString()
+            if (outputBuffer.length + output.text.length > maxLineBytes) {
                 outputBuffer.clear()
-                if (line.endsWith("\r")) {
-                    line = line.dropLast(1)
+                completedLines.add(
+                    "[Hydra] Dropped oversized line (no newline within buffer cap)."
+                )
+            } else {
+                outputBuffer.append(output.text)
+
+                var newline = outputBuffer.indexOf("\n")
+                while (newline >= 0) {
+                    var line = outputBuffer.substring(0, newline)
+                    outputBuffer.delete(0, newline + 1)
+                    if (line.endsWith("\r")) {
+                        line = line.dropLast(1)
+                    }
+                    completedLines.add(line)
+                    newline = outputBuffer.indexOf("\n")
                 }
-                completedLines.add(line)
+
+                if (output.endOfRecord && outputBuffer.isNotEmpty()) {
+                    var line = outputBuffer.toString()
+                    outputBuffer.clear()
+                    if (line.endsWith("\r")) {
+                        line = line.dropLast(1)
+                    }
+                    completedLines.add(line)
+                }
             }
         }
 

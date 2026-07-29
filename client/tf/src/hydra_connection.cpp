@@ -842,7 +842,15 @@ void HydraConnection::cmdStatus(const std::string& args) {
 // ---- Reader thread with reconnect ----
 
 void HydraConnection::processGameOutput(const GameOutput& out) {
+    // #1788: cap reassembly — stream without newlines must not grow unbound.
+    static constexpr size_t kMaxLine = 64 * 1024;
     if (!out.text().empty()) {
+        if (lineBuf_.size() + out.text().size() > kMaxLine) {
+            lineBuf_.clear();
+            outputQueue_.push(
+                "[Hydra] Dropped oversized line (no newline within buffer cap).");
+            return;
+        }
         lineBuf_.append(out.text());
 
         size_t start = 0;

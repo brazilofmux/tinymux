@@ -12,12 +12,18 @@ const TEL = {
     CHARSET_REQUEST: 1, CHARSET_ACCEPTED: 2, CHARSET_REJECTED: 3,
 };
 
+// #1788: match server-side discipline — hostile servers must not grow
+// browser heap without bound (no CR/LF stream or oversized IAC SB).
+const MAX_LINE_BYTES = 64 * 1024;
+const MAX_SB_BYTES = 4096;
+
 class TelnetParser {
     constructor(sendRaw) {
         this.sendRaw = sendRaw;  // function(Uint8Array)
         this.state = 'DATA';
         this.sbOption = 0;
         this.sbBuf = [];
+        this.sbOverflow = false;
         this.remoteEcho = false;
         this.nawsAgreed = false;
         this.nawsWidth = 80;
@@ -81,20 +87,27 @@ class TelnetParser {
             case 'SB':
                 this.sbOption = c;
                 this.sbBuf = [];
+                this.sbOverflow = false;
                 this.state = 'SB_DATA';
                 break;
             case 'SB_DATA':
                 if (c === TEL.IAC) this.state = 'SB_IAC';
-                else this.sbBuf.push(c);
+                else if (this.sbBuf.length < MAX_SB_BYTES) this.sbBuf.push(c);
+                else this.sbOverflow = true; // stay in SB until SE
                 break;
             case 'SB_IAC':
                 if (c === TEL.SE) {
-                    this._handleSubneg();
+                    if (!this.sbOverflow) this._handleSubneg();
+                    this.sbBuf = [];
+                    this.sbOverflow = false;
                     this.state = 'DATA';
                 } else if (c === TEL.IAC) {
-                    this.sbBuf.push(0xFF);
+                    if (this.sbBuf.length < MAX_SB_BYTES) this.sbBuf.push(0xFF);
+                    else this.sbOverflow = true;
                     this.state = 'SB_DATA';
                 } else {
+                    this.sbBuf = [];
+                    this.sbOverflow = false;
                     this.state = 'DATA';
                 }
                 break;
@@ -108,9 +121,10 @@ class TelnetParser {
             if (line.endsWith('\r')) line = line.slice(0, -1);
             if (this.onLine) this.onLine(line);
             this.lineBuf = '';
-        } else {
+        } else if (this.lineBuf.length < MAX_LINE_BYTES) {
             this.lineBuf += String.fromCharCode(c);
         }
+        // else: drop until newline resets the line
     }
 
     _send(cmd, opt) {

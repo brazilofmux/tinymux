@@ -469,8 +469,15 @@ class HydraConnection {
     }
 
     _processGameOutput(output) {
+        // #1788: cap reassembly — stream without newlines must not grow unbound.
+        const MAX_LINE = 64 * 1024;
         const text = output.text || '';
         if (text) {
+            if ((this._lineBuf.length + text.length) > MAX_LINE) {
+                this._lineBuf = '';
+                this._emit('% [Hydra] Dropped oversized line (no newline within buffer cap).');
+                return;
+            }
             this._lineBuf += text;
             const parts = this._lineBuf.split('\n');
             this._lineBuf = parts.pop();
@@ -1066,11 +1073,19 @@ class HydraConnection {
 
             const reader = resp.body.getReader();
             let buffer = new Uint8Array(0);
+            // #1788: cap grpc-web reassembly and single-frame size.
+            const MAX_FRAME = 1024 * 1024;
+            const MAX_PENDING = 2 * 1024 * 1024;
 
             while (this.connected) {
                 const {done, value} = await reader.read();
                 if (done) break;
 
+                if (buffer.length + value.length > MAX_PENDING) {
+                    this._emit('% [Hydra] Stream reassembly exceeded cap; disconnecting.');
+                    this.disconnect();
+                    return;
+                }
                 const newBuf = new Uint8Array(buffer.length + value.length);
                 newBuf.set(buffer);
                 newBuf.set(value, buffer.length);
@@ -1081,6 +1096,12 @@ class HydraConnection {
                     const flag = buffer[pos];
                     const len = (buffer[pos+1] << 24) | (buffer[pos+2] << 16)
                               | (buffer[pos+3] << 8)  | buffer[pos+4];
+                    // Unsigned 32-bit length; reject absurd frames.
+                    if (len < 0 || len > MAX_FRAME) {
+                        this._emit('% [Hydra] Oversized grpc-web frame; disconnecting.');
+                        this.disconnect();
+                        return;
+                    }
                     if (pos + 5 + len > buffer.length) break;
 
                     const payload = buffer.slice(pos + 5, pos + 5 + len);

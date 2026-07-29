@@ -110,6 +110,9 @@ private:
     TelState tel_state_ = TelState::DATA;
     uint8_t sb_option_ = 0;
     std::string sb_buf_;
+    bool sb_overflow_ = false;  // #1788: oversized SB truncated; discard on SE
+    static constexpr size_t kMaxLine = 64 * 1024;
+    static constexpr size_t kMaxSb = 4096;
 
     // Whether remote has requested echo suppression
     bool remote_echo_ = false;

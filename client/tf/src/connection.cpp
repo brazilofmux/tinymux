@@ -394,7 +394,8 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
         case TelState::DATA:
             if (b == TEL_IAC) {
                 tel_state_ = TelState::IAC;
-            } else {
+            } else if (line_buf_.size() < kMaxLine) {
+                // #1788: drop further bytes until newline resets the line
                 line_buf_ += (char)b;
             }
             break;
@@ -406,7 +407,12 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
             case TEL_DO:   tel_state_ = TelState::DO;   break;
             case TEL_DONT: tel_state_ = TelState::DONT; break;
             case TEL_SB:   tel_state_ = TelState::SB;   break;
-            case TEL_IAC:  line_buf_ += (char)255; tel_state_ = TelState::DATA; break;
+            case TEL_IAC:
+                if (line_buf_.size() < kMaxLine) {
+                    line_buf_ += (char)255;
+                }
+                tel_state_ = TelState::DATA;
+                break;
             default:       tel_state_ = TelState::DATA; break;
             }
             break;
@@ -456,23 +462,27 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
         case TelState::SB:
             sb_option_ = b;
             sb_buf_.clear();
+            sb_overflow_ = false;
             tel_state_ = TelState::SB_DATA;
             break;
 
         case TelState::SB_DATA:
             if (b == TEL_IAC) {
                 tel_state_ = TelState::SB_IAC;
-            } else {
+            } else if (sb_buf_.size() < kMaxSb) {
                 sb_buf_ += (char)b;
+            } else {
+                // Stay in SB until SE (#1131 / #1788).
+                sb_overflow_ = true;
             }
             break;
 
         case TelState::SB_IAC:
             if (b == TEL_SE) {
-                // Process subnegotiation
-                if (sb_option_ == TELOPT_TTYPE && !sb_buf_.empty() && (uint8_t)sb_buf_[0] == TELQUAL_SEND) {
+                // Process subnegotiation (skip if overflow truncated).
+                if (!sb_overflow_ && sb_option_ == TELOPT_TTYPE && !sb_buf_.empty() && (uint8_t)sb_buf_[0] == TELQUAL_SEND) {
                     send_subneg_ttype();
-                } else if (sb_option_ == TELOPT_CHARSET && sb_buf_.size() >= 2 &&
+                } else if (!sb_overflow_ && sb_option_ == TELOPT_CHARSET && sb_buf_.size() >= 2 &&
                            (uint8_t)sb_buf_[0] == CHARSET_REQUEST) {
                     char sep = sb_buf_[1];
                     size_t start = 2;
@@ -511,7 +521,7 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                         }
                     }
                     if (!accepted) send_subneg_charset(false);
-                } else if (sb_option_ == TELOPT_MCCP2 && sb_buf_.empty()) {
+                } else if (!sb_overflow_ && sb_option_ == TELOPT_MCCP2 && sb_buf_.empty()) {
                     // MCCP v2: everything after IAC SE is zlib-compressed.
                     mccp_start();
                     tel_state_ = TelState::DATA;
@@ -519,11 +529,19 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                     // and must go through inflate before telnet processing.
                     return consumed;
                 }
+                sb_buf_.clear();
+                sb_overflow_ = false;
                 tel_state_ = TelState::DATA;
             } else if (b == TEL_IAC) {
-                sb_buf_ += (char)255;
+                if (sb_buf_.size() < kMaxSb) {
+                    sb_buf_ += (char)255;
+                } else {
+                    sb_overflow_ = true;
+                }
                 tel_state_ = TelState::SB_DATA;
             } else {
+                sb_buf_.clear();
+                sb_overflow_ = false;
                 tel_state_ = TelState::DATA;
             }
             break;

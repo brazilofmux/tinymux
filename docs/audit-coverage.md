@@ -114,7 +114,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | H1 | Alloc / string / time | `mux/lib/alloc.*`, `stringutil.*`, `timeutil.*`, `alarm.*` | med | Pass 14 2026-07-29 | deep | #1290 freelist drop-one-not-wipe; alarm ms int64 clamp; i64FloorDivision INT64_MIN/-1 guard (#805); no new High/Medium |
-| H2 | Color / Ragel | `color_ops.rl`, color path | med | Pass 14 stamp 2026-07-29 | thin | Edit `.rl` only; BAN_LEGACY / generated-files discipline; no deep re-audit this pass |
+| H2 | Color / Ragel | `color_ops.rl`, color path | med | Pass 14 stamp 2026-07-29 | thin | Edit `.rl` only; BAN_LEGACY / generated-files discipline |
 | H3 | UTF-8 / collation | `utf/`, `utf8tables.*`, `unicode_*` | large | — | deferred | Generated tables; deep Unicode later |
 | H4 | Platform abstraction | `platform.cpp`, design-platform-interface | small | Pass 14 scout 2026-07-29 | partial | BootHelper/Reap/Maximize used; RegisterSignalHandler incomplete (stored, never invoked; Win SetConsoleCtrl TODO); not product-breaking today — signals still in signals.cpp |
 
@@ -133,13 +133,13 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| J1 | Console client | `client/console/` | med | Pass 14 2026-07-29 | partial | IOCP+Schannel+Hydra; **#1788** line buffer caps; hydra passwords in worlds.txt (chmod 600 Unix; residual Windows ACL); no unit tests in make test |
-| J2 | Win32 GUI | `client/win32gui/` | med | — | deferred | |
-| J3 | Web client | `client/web/` | med | — | deferred | |
-| J4 | Android Titan | `client/android/` | large | build-only notes | deferred | Resume path untested (status-2.14) |
-| J5 | iOS Titan | `client/ios/` | large | Pass 14 2026-07-29 | partial | Keychain worlds/TOFU; `swift test` via `make test-ios`; **#1788** TelnetParser/Hydra line+SB caps; parser/model units only (no live socket suite) |
-| J6 | TinyFugue port | `client/tf/` | med | — | deferred | |
-| J7 | Shared client bits | `client/shared/` | small | — | deferred | |
+| J1 | Console client | `client/console/` | med | Pass 14 2026-07-29 | partial | IOCP+Schannel+Hydra; **#1788** line caps (PR #1789); hydra pw in worlds.txt (chmod 600 Unix) |
+| J2 | Win32 GUI | `client/win32gui/` | med | Pass 14 2026-07-29 | partial | **#1788** Hydra line reassembly cap; output scrollback MAX_LINES |
+| J3 | Web client | `client/web/` | med | Pass 14 2026-07-29 | partial | **#1788** telnet line/SB + Hydra line + grpc-web frame caps; passwords sessionStorage |
+| J4 | Android Titan | `client/android/` | large | Pass 14 2026-07-29 | partial | **#1788** TelnetParser/Hydra caps; resume path untested |
+| J5 | iOS Titan | `client/ios/` | large | Pass 14 2026-07-29 | partial | Keychain worlds/TOFU; **#1788** caps (PR #1789); `make test-ios` units |
+| J6 | TinyFugue port | `client/tf/` | med | Pass 14 2026-07-29 | partial | **#1788** line_buf_/sb_buf_ + Hydra lineBuf caps; MCCP preserved |
+| J7 | Shared client bits | `client/shared/` | small | Pass 14 2026-07-29 | partial | input_editor grapheme editing; MAX_HISTORY 500; no unbounded line defect (editor is local input) |
 
 ### K — Tests, packaging, docs tooling
 
@@ -148,7 +148,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | K1 | Smoke suite | `testcases/` | large | every fix PR | deep | Grow when behavior changes; Lua seam corpus in flight |
 | K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | Pass 14 2026-07-29 | partial | run.sh: 9 drivers + trap cleanup (not just wild_capture); still opt-in via `make test-scenario`; stress/ separate |
 | K3 | Unit islands | `tests/alarm`, `netaddr`, `db`, `libmux` | small | on change | partial | |
-| K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | Pass 14 stamp 2026-07-29 | thin | Present; no packaging defect filed this pass |
+| K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | Pass 14 stamp 2026-07-29 | thin | Present; no defect this pass |
 | K5 | Parser research | `parser/` | small | — | deferred | Not production runtime |
 | K6 | Worldbuilder / tools | `tools/worldbuilder/` | — | — | deferred | |
 | K7 | Generated-file discipline | see `docs/generated-files.md` | — | standing | process | Never hand-edit outputs |
@@ -176,16 +176,15 @@ Also useful historical surveys:
 ## Recommended rotation (next ~N passes)
 
 **Dice loop (2026-07-29):** start **A7**.  
-Done: server A–H residual → **J1/J5** first client pass (**#1788**) → H2/K4 thin stamps.  
-**Next: J3 web / J6 TF / J2 Win32 GUI**, or **J4 Android**, or residual **H4** signal wiring.
+Done: server residual re-deep → **full J1–J7 client portfolio pass** (**#1788** buffer caps across all Titan clients + console/tf/win32gui; J7 input_editor scout).  
+**Next:** dual-review remaining client-cap PR; product soak (mixed Lua); H4 signal wiring optional.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Dual-review **#1788** client buffer caps | Medium |
-| **Then** | **J3** web client or **J6** TinyFugue | Client portfolio |
+| **Now** | Dual-review / merge remaining #1788 client-cap PR | Medium |
 | **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
 | **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
-| **Later** | H4 RegisterSignalHandler complete | Incomplete API, non-blocking |
+| **Later** | H4 RegisterSignalHandler; client password storage | Non-blocking tech debt |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -223,6 +222,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Initial map after Passes 1–3 |
 | 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
-| 2026-07-29 | **Pass 14 dice loop:** server A–H residual complete; **J1/J5** client pass filed **#1788** (unbounded line/SB buffers) + caps; H2/K4 thin stamps; next J3/J6 or H4 |
+| 2026-07-29 | **Pass 14 dice loop:** server residual complete; **J1–J7** client portfolio — **#1788** buffer caps across clients; H2/K4 thin stamps |
 
 Update this table when the map structure changes.
