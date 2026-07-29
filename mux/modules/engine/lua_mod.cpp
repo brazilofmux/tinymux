@@ -805,12 +805,21 @@ void CLuaMod::DestroyLuaState(void)
 // Lua call path (#1745 follow-up), both routes must stage the same context.
 //
 // ctx is caller-owned: the registry holds a lightuserdata pointing at it,
-// so it must outlive the run.  Clear with lua_clear_exec_context.
+// so it must outlive the run.  Returns the PREVIOUS registry value so the
+// teardown can restore rather than clear: nested runs (softcode -> lua
+// under brackets can re-enter) used to stomp the outer run's context to
+// nil, which #1750's adversarial review measured as a route-dependent
+// divergence.  Restore with lua_restore_exec_context.
 //
-static void lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
+static lua_exec_ctx *lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
     dbref executor, dbref caller, dbref enactor,
     const UTF8 *pArgs[], int nArgs)
 {
+    lua_getfield(L, LUA_REGISTRYINDEX, LUA_EXEC_CTX_KEY);
+    lua_exec_ctx *prev =
+        static_cast<lua_exec_ctx *>(lua_touserdata(L, -1));
+    lua_pop(L, 1);
+
     ctx.executor = executor;
     ctx.caller = caller;
     ctx.enactor = enactor;
@@ -851,11 +860,20 @@ static void lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
     }
     lua_setfield(L, -2, "args");
     lua_pop(L, 1);  // pop mux table
+
+    return prev;
 }
 
-static void lua_clear_exec_context(lua_State *L)
+static void lua_restore_exec_context(lua_State *L, lua_exec_ctx *prev)
 {
-    lua_pushnil(L);
+    if (prev != nullptr)
+    {
+        lua_pushlightuserdata(L, prev);
+    }
+    else
+    {
+        lua_pushnil(L);
+    }
     lua_setfield(L, LUA_REGISTRYINDEX, LUA_EXEC_CTX_KEY);
 }
 
@@ -867,7 +885,9 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     // context and call it.
 
     lua_exec_ctx ctx;
-    lua_setup_exec_context(L, ctx, executor, caller, enactor, pArgs, nArgs);
+    lua_exec_ctx *prev_ctx =
+        lua_setup_exec_context(L, ctx, executor, caller, enactor,
+                               pArgs, nArgs);
 
     // Set instruction count hook.
     //
@@ -901,7 +921,7 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     lua_sethook(L, nullptr, 0, 0);
     lua_match_interrupt = nullptr;
 
-    lua_clear_exec_context(L);
+    lua_restore_exec_context(L, prev_ctx);
 
     if (status != LUA_OK)
     {
@@ -1354,12 +1374,13 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
             // mux fields through ordinary Lua calls now, and without this
             // they saw a cleared registry and the PREVIOUS run's mux table.
             lua_exec_ctx jit_ctx;
-            lua_setup_exec_context(m_L, jit_ctx, executor, caller, enactor,
-                                   pArgs, nArgs);
+            lua_exec_ctx *prev_ctx =
+                lua_setup_exec_context(m_L, jit_ctx, executor, caller,
+                                       enactor, pArgs, nArgs);
             MUX_RESULT mr = m_pIJITCompile->RunCompiled(entry.jit_key,
                 executor, caller, enactor, pArgs, nArgs,
                 pResult, nResultMax, pnResultLen, m_L);
-            lua_clear_exec_context(m_L);
+            lua_restore_exec_context(m_L, prev_ctx);
             lua_settop(m_L, saved_top);  // restore stack
             if (MUX_E_NOTFOUND != mr) {
                 return MUX_SUCCEEDED(mr);
@@ -1415,11 +1436,12 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
     // exactly as on the cached-key path above.
     int saved_top = lua_gettop(m_L);
     lua_exec_ctx jit_ctx;
-    lua_setup_exec_context(m_L, jit_ctx, executor, caller, enactor,
-                           pArgs, nArgs);
+    lua_exec_ctx *prev_ctx =
+        lua_setup_exec_context(m_L, jit_ctx, executor, caller, enactor,
+                               pArgs, nArgs);
     mr = m_pIJITCompile->RunCompiled(key, executor, caller, enactor,
         pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
-    lua_clear_exec_context(m_L);
+    lua_restore_exec_context(m_L, prev_ctx);
     lua_settop(m_L, saved_top);  // restore stack
     return MUX_SUCCEEDED(mr);
 }

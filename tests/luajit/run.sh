@@ -143,6 +143,19 @@ AGREE_CASES=(
     'return math.type(3.0)'
     'return math.type(2^3)'
 
+    # mux.* bridge semantics under default-on (#1745, TC013/TC014's
+    # shape).  mux.name is PURE and executes compiled, pcalling the same
+    # bridge C function the interpreter calls.  mux.eval is EFFECTFUL --
+    # arbitrary softcode -- and must DECLINE in every form: the chunk is
+    # the rerun unit, so an effect delivered compiled plus any later
+    # runtime decline would be delivered again by the interpreter re-run
+    # (proved empirically in #1750's adversarial review, statement-form
+    # pemit + declining read).  Assert the ANSWER here; if an eval case
+    # ever starts executing, the exactly-once argument must be re-made,
+    # not waved through.
+    'local x=mux.eval("add(2,3)") return x'
+    'return mux.eval("add(10,20)")'
+
     # Multi-value truncation at the chunk boundary: string.find returns TWO
     # values and the interpreter's own chunk call is lua_pcall(L, 0, 1, 0),
     # so both routes must keep exactly the first.  Declines today (a number
@@ -163,11 +176,12 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-# Of the 4: os.time (errors on the interpreter too), string.find
-# (result-count pin), select (four arguments), and the budget-
-# exhaustion pin -- which can NEVER execute: both routes end in the
-# instruction-limit error, which is the assertion.
-AGREE_DECLINE_BUDGET=4
+# Of the 6: os.time (errors on the interpreter too), string.find
+# (result-count pin), select (four arguments), the budget-exhaustion
+# pin (both routes end in the instruction-limit error), and the two
+# mux.eval pins -- effectful members may NEVER execute compiled
+# (exactly-once, #1750), so these four+two are permanent by design.
+AGREE_DECLINE_BUDGET=6
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -333,16 +347,12 @@ EXEC_CASES=(
     'local s=7 for i=mux.args[2]+0,1 do s=99 end return s'
     'local s=0 for i=mux.args[2]+0,1,-1 do s=s+i end return s'
 
-    # mux.* bridge members call the REAL bridge C functions (#1745
-    # follow-up): compiled mux.eval pcalls the same function the
-    # interpreter calls, with the execution context staged for the
-    # compiled run.  The old path name-mapped onto SOFTCODE functions --
-    # mux.eval("add(10,20)") reached softcode eval(obj,attr) and echoed
-    # its argument -- which smoke TC014 caught the first day default-on
-    # ran it compiled.  Both spellings pinned: local-then-return and the
-    # tail call.
-    'local x=mux.eval("add(2,3)") return x'
-    'return mux.eval("add(10,20)")'
+    # A PURE mux bridge member executes compiled, pcalling the same C
+    # function the interpreter calls (#1745/#1750).  Equality with the
+    # interpreter is the assertion, so no name is hardcoded; EXEC's
+    # lua_run_ok requirement is what proves the compiled path ran.
+    'local x=mux.name(1) return x'
+
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

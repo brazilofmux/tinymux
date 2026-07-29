@@ -737,11 +737,15 @@ struct lua_referent {
     hir_type returns = TY_VOID;
 
     // The callee has side effects the player can observe (mux.notify,
-    // mux.set).  Such a call may compile ONLY in statement form
-    // (nresults == 0, CALL_VOID): a result-consuming form would pcall --
-    // effect delivered -- then decline on the result type, and the
-    // interpreter re-run would deliver the effect TWICE.  Compile-time
-    // decline keeps it exactly-once on the interpreter.
+    // mux.set, and mux.eval, which is arbitrary softcode).  Such a call
+    // never compiles, in ANY form: the CHUNK is the rerun unit, so an
+    // effect delivered by a compiled run followed by any later runtime
+    // decline -- a bad dbref, a result-type miss -- would be delivered
+    // again by the interpreter re-run.  The adversarial review of the
+    // first version proved this empirically with statement-form pemit
+    // followed by a declining read (PR #1750): exactly-once demands the
+    // whole chunk run interpreted.  Compile-time decline costs nothing
+    // real -- ECALL-bound shapes bench at parity anyway (#1741).
     bool effectful = false;
 
     // Known VALUE members, for a recognized standard-library table; null
@@ -1834,10 +1838,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     lua_referent m;
                     m.callable = true;
                     m.returns = lua_call_claim(k.sval);
-                    // Bridge members that act on the world rather than
-                    // return a value; see the effectful field's comment.
+                    // Bridge members that act on the world; see the
+                    // effectful field's comment.  eval is on the list
+                    // because it runs arbitrary softcode -- pemit inside
+                    // a mux.eval doubled exactly like a direct pemit in
+                    // the adversarial probe.
                     m.effectful = (k.sval == "notify" || k.sval == "pemit"
-                                || k.sval == "set");
+                                || k.sval == "set" || k.sval == "eval");
                     lua_ref[lua_reg[A]] = m;
                 }
                 h.known_int[lua_reg[A]] = true;
@@ -2681,12 +2688,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // claim to check, and the destination Lua registers become
             // dead exactly as the VM's would.
             const lua_referent fref = lua_referent_of(lua_ref, func_reg);
-            // An effectful callee whose result is consumed must decline at
-            // COMPILE time: pcall-then-type-decline would deliver the
-            // effect and then hand the chunk to the interpreter to deliver
-            // it again.  Statement form (CALL_VOID) has no result check
-            // and stays exactly-once.
-            if (fref.callable && fref.effectful && 0 != nresults) {
+            // An effectful callee declines the whole chunk at COMPILE
+            // time, in every form.  The chunk is the rerun unit: even a
+            // statement-form effect followed by any LATER runtime decline
+            // in the same chunk would be re-delivered by the interpreter
+            // re-run (proved empirically in #1750's adversarial review).
+            if (fref.callable && fref.effectful) {
                 return -1;
             }
             // The string form keeps its historical one-argument floor; the
