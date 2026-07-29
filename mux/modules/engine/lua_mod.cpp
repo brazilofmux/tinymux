@@ -1412,14 +1412,26 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
                 pResult, nResultMax, pnResultLen, m_L);
             lua_restore_exec_context(m_L, prev_ctx);
             lua_settop(m_L, saved_top);  // restore stack
-            // An attempted effect fails the compiled run unconditionally
-            // -- even a "successful" mr, which is what a chunk that
-            // pcall-swallowed the refusal error produces.  The interpreter
-            // re-runs from scratch and is the only effector.
+            // #1751 Phase 0: post-entry failures commit loud — no interpreter
+            // re-run.  effect_refused is post-entry (effect was attempted).
+            //
             if (jit_ctx.effect_refused) {
-                return false;
+                size_t n = mux_snprintf(pResult, nResultMax,
+                    T("#-1 LUA JIT POST-ENTRY DECLINE (EFFECT_REFUSED)"));
+                if (nullptr != pnResultLen) {
+                    *pnResultLen = n;
+                }
+                STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
+                log_text(T("Lua post-entry decline (no re-run): EFFECT_REFUSED"));
+                ENDLOG;
+                return true;
             }
             if (MUX_E_NOTFOUND != mr) {
+                // S_OK: success or committed post-entry decline (pResult set).
+                // E_FAIL: other run failure — pre-Phase-0 used to re-run the
+                // interpreter; still do for non-decline failures until bins
+                // are emptied.  Post-entry decline returns S_OK above.
+                //
                 return MUX_SUCCEEDED(mr);
             }
 
@@ -1480,10 +1492,18 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
         pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
     lua_restore_exec_context(m_L, prev_ctx);
     lua_settop(m_L, saved_top);  // restore stack
-    // Same rule as the cached-key site: an attempted effect fails the
-    // compiled run regardless of mr.
+    // Same Phase 0 rule as the cached-key site.
+    //
     if (jit_ctx.effect_refused) {
-        return false;
+        size_t n = mux_snprintf(pResult, nResultMax,
+            T("#-1 LUA JIT POST-ENTRY DECLINE (EFFECT_REFUSED)"));
+        if (nullptr != pnResultLen) {
+            *pnResultLen = n;
+        }
+        STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
+        log_text(T("Lua post-entry decline (no re-run): EFFECT_REFUSED"));
+        ENDLOG;
+        return true;
     }
     return MUX_SUCCEEDED(mr);
 }

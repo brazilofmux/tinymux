@@ -41,6 +41,10 @@ struct lua_jit_stats {
     uint64_t run_fail;
     uint64_t cache_hits;
     uint64_t invalidations;
+    // #1751 Phase 0: post-entry ECALL_DECLINE committed as loud error
+    // (no interpreter re-run).  Correct long-term value is zero.
+    //
+    uint64_t post_entry_decline;
 };
 
 static lua_jit_stats s_lua_jit_stats = {};
@@ -50,12 +54,13 @@ static lua_jit_stats s_lua_jit_stats = {};
 //
 void jit_lua_get_stats(lua_jit_counters *out) {
     if (nullptr == out) return;
-    out->compile_ok    = s_lua_jit_stats.compile_ok;
-    out->compile_fail  = s_lua_jit_stats.compile_fail;
-    out->run_ok        = s_lua_jit_stats.run_ok;
-    out->run_fail      = s_lua_jit_stats.run_fail;
-    out->cache_hits    = s_lua_jit_stats.cache_hits;
-    out->invalidations = s_lua_jit_stats.invalidations;
+    out->compile_ok          = s_lua_jit_stats.compile_ok;
+    out->compile_fail        = s_lua_jit_stats.compile_fail;
+    out->run_ok              = s_lua_jit_stats.run_ok;
+    out->run_fail            = s_lua_jit_stats.run_fail;
+    out->cache_hits          = s_lua_jit_stats.cache_hits;
+    out->invalidations       = s_lua_jit_stats.invalidations;
+    out->post_entry_decline  = s_lua_jit_stats.post_entry_decline;
 }
 
 void jit_lua_reset_stats(void) {
@@ -366,6 +371,23 @@ public:
         bool ok = run_cached_program(&it->second, executor, caller, enactor,
             pResult, nResultMax, pArgs, nArgs,
             EV_FCHECK | EV_EVAL, pLuaState);
+
+        // Phase 0: post-entry decline already wrote the loud error into
+        // pResult and returned handled=true.  Count it, do not treat as
+        // run_ok, and return S_OK so CLuaMod::TryJIT does not re-run the
+        // interpreter (#1751).  Detect by the committed error prefix.
+        //
+        if (ok && nullptr != pResult
+            && 0 == strncmp(reinterpret_cast<const char *>(pResult),
+                            "#-1 LUA JIT POST-ENTRY DECLINE", 30)) {
+            s_lua_jit_stats.post_entry_decline++;
+            s_lua_jit_stats.run_fail++;
+            if (pnResultLen) {
+                *pnResultLen = strlen(reinterpret_cast<const char *>(pResult));
+            }
+            return MUX_S_OK;
+        }
+
         if (!ok) {
             s_lua_jit_stats.run_fail++;
             return MUX_E_FAIL;

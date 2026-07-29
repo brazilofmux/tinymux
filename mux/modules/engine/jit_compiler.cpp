@@ -2720,6 +2720,23 @@ void jit_flush_pending_caches(void)
     jit_drain_pending_flush();
 }
 
+// eval_ecall status for Lua post-entry refusal (#1423 / #1751 Phase 0).
+// dbt_run continues on a negative return and stops on a non-negative one;
+// 0 is success.  Positive ECALL_DECLINE means the Lua compiled path could
+// not finish honestly.  After post-entry that is a *committed* loud failure
+// (run_cached_program writes the error; TryJIT must not re-run the
+// interpreter).  Pre-entry fallback is unchanged.
+//
+static constexpr int ECALL_DECLINE = 1;
+
+static thread_local const char *s_lua_decline_site = nullptr;
+
+static int lua_ecall_decline(const char *site)
+{
+    s_lua_decline_site = (nullptr != site) ? site : "UNKNOWN";
+    return ECALL_DECLINE;
+}
+
 bool run_cached_program(compiled_program *prog,
                         dbref executor, dbref caller_db,
                         dbref enactor,
@@ -2942,7 +2959,32 @@ bool run_cached_program(compiled_program *prog,
 
     ec.dbt = dbt;
 
+    // Clear Phase 0 post-entry bookkeeping for this run.
+    //
+    s_lua_decline_site = nullptr;
+
     int rc = dbt_run(dbt, prog->entry_pc, rv_compiler::STACK_TOP);
+
+    // #1751 Phase 0: post-entry ECALL_DECLINE is a committed loud failure.
+    // Do not return false (that re-runs the whole chunk in the Lua VM).
+    //
+    if (rc == ECALL_DECLINE && nullptr != lua_state) {
+        const char *site = (nullptr != s_lua_decline_site)
+            ? s_lua_decline_site : "UNKNOWN";
+        if (nullptr != out && 0 < out_size) {
+            mux_snprintf(out, out_size,
+                T("#-1 LUA JIT POST-ENTRY DECLINE (%s)"),
+                reinterpret_cast<const UTF8 *>(site));
+        }
+        // Visible debt: site name is the bin Phases 1–3 empty.
+        //
+        STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
+        log_text(T("Lua post-entry decline (no re-run): "));
+        log_text(reinterpret_cast<const UTF8 *>(site));
+        ENDLOG;
+        return true;  // handled — caller must not re-run the interpreter
+    }
+
     if (!handle_dbt_run_status(rc, out, out_size, true)) {
         return false;
     }
@@ -3276,17 +3318,6 @@ private:
     static inline std::list<int> s_ack_queue;
 };
 
-// eval_ecall status (#1423).  dbt_run continues on a negative return and
-// stops on a non-negative one, passing that value out; 0 is success, since
-// ECALL_EXIT returns the guest's exit code.  Any positive value therefore
-// reaches handle_dbt_run_status as a plain failure, so run_cached_program
-// returns false without harvesting the guest's output buffer and CLuaMod
-// falls back to the Lua VM.  Declining is always safe: the interpreter
-// produces the same answer, and produces the right error message when the
-// chunk really is at fault.
-//
-static constexpr int ECALL_DECLINE = 1;
-
 // A Lua error raised inside an ECALL has no protected call frame anywhere
 // above it, so luaD_throw() reaches the default panic handler and abort()s
 // the process (#1423).  lua_geti/lua_seti/lua_getfield/lua_setfield can all
@@ -3519,7 +3550,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             if (getenv("TINYMUX_TRACE_LUA_ECALL")) {
                 fprintf(stderr, "LUAECALL: UNHANDLED %s\n", fn);
             }
-            return ECALL_DECLINE;
+            return lua_ecall_decline("UNHANDLED_LUA_BRIDGE");
         }
         size_t nCased;
         UTF8 *pCased = mux_strupr(func_name, nCased);
@@ -4022,7 +4053,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         int tbl_idx = static_cast<int>(ctx->x[10]);
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
         if (!ecall_lua_plain_table(L, tbl_idx)) {
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_GETI_INT");
         }
         lua_rawgeti(L, tbl_idx, key);
         if (lua_isinteger(L, -1)) {
@@ -4044,12 +4075,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[10]);
-        if (nullptr == key) { ctx->x[11] = 0; return ECALL_DECLINE; }
+        if (nullptr == key) { ctx->x[11] = 0; return lua_ecall_decline("ECALL_LUA_GETGLOBAL"); }
         lua_getglobal(L, key);
         if (lua_isnil(L, -1)) {
             lua_pop(L, 1);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_GETGLOBAL");
         }
         ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
         ctx->x[11] = 1;
@@ -4068,13 +4099,13 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (nullptr == key || tbl_idx <= 0 || tbl_idx > lua_gettop(L)
             || !lua_istable(L, tbl_idx)) {
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_GETFIELD_REF");
         }
         lua_getfield(L, tbl_idx, key);
         if (lua_isnil(L, -1)) {
             lua_pop(L, 1);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_GETFIELD_REF");
         }
         ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
         ctx->x[11] = 1;
@@ -4106,7 +4137,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             || 0 == out_size
             || !guest_range_ok(out_addr, out_size, ec->memory_size)) {
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_STR");
         }
 
         int base = lua_gettop(L);
@@ -4114,12 +4145,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_STR");
         }
         if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_STR");
         }
 
         // Only an actual string comes back this way.  lua_tolstring would
@@ -4128,14 +4159,14 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (LUA_TSTRING != lua_type(L, -1)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_STR");
         }
         size_t slen = 0;
         const char *sres = lua_tolstring(L, -1, &slen);
         if (nullptr == sres) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_STR");
         }
         // Decline on overflow rather than truncate: a silently shortened
         // string is a wrong answer, and the interpreter can produce the
@@ -4143,7 +4174,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (slen + 1 > out_size) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_STR");
         }
         memcpy(ec->memory + out_addr, sres, slen);
         ec->memory[out_addr + slen] = '\0';
@@ -4169,7 +4200,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (fn_idx <= 0 || fn_idx > lua_gettop(L)
             || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 3) {
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_INT");
         }
         int base = lua_gettop(L);
         lua_pushvalue(L, fn_idx);
@@ -4180,17 +4211,17 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_INT");
         }
         if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_INT");
         }
         if (!lua_isinteger(L, -1)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_INT");
         }
         ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
         ctx->x[11] = 1;
@@ -4210,19 +4241,19 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         if (fn_idx <= 0 || fn_idx > lua_gettop(L)
             || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 3) {
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_VOID");
         }
         int base = lua_gettop(L);
         lua_pushvalue(L, fn_idx);
         if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_VOID");
         }
         if (LUA_OK != lua_pcall(L, nargs, 0, 0)) {
             lua_settop(L, base);
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_CALL_VOID");
         }
         lua_settop(L, base);
         ctx->x[11] = 1;
@@ -4236,7 +4267,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // and raises its own "instruction limit exceeded" through
         // InsnCountHook, so the player-visible error is the interpreter's
         // verbatim, from one budget.
-        return ECALL_DECLINE;
+        return lua_ecall_decline("ECALL_LUA_LIMITED");
     }
 
     case ECALL_LUA_GETFIELD_INT: {
@@ -4250,7 +4281,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
         if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_GETFIELD_INT");
         }
         lua_pushstring(L, key);
         lua_rawget(L, tbl_idx);
@@ -4262,7 +4293,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             ctx->x[11] = 0;
         }
         lua_pop(L, 1);
-        if (0 == ctx->x[11]) return ECALL_DECLINE;
+        if (0 == ctx->x[11]) return lua_ecall_decline("ECALL_LUA_GETFIELD_INT");
         return -1;
     }
 
@@ -4279,7 +4310,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
         if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_GETFIELD_FLT");
         }
         lua_pushstring(L, key);
         lua_rawget(L, tbl_idx);
@@ -4293,7 +4324,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             ctx->x[11] = 0;
         }
         lua_pop(L, 1);
-        if (0 == ctx->x[11]) return ECALL_DECLINE;
+        if (0 == ctx->x[11]) return lua_ecall_decline("ECALL_LUA_GETFIELD_FLT");
         return -1;
     }
 
@@ -4305,7 +4336,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
         lua_Integer val = static_cast<lua_Integer>(ctx->x[12]);
         if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_SETFIELD_INT");
         }
         lua_pushstring(L, key);
         lua_pushinteger(L, val);
@@ -4341,7 +4372,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         int tbl_idx = static_cast<int>(ctx->x[10]);
         if (!ecall_lua_plain_table(L, tbl_idx)) {
             ctx->x[11] = 0;
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_LEN_INT");
         }
         // rawlen, matching # on a table without a __len metamethod; the
         // plain-table guard above is what makes that equivalence hold.
@@ -4358,7 +4389,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
         lua_Integer val = static_cast<lua_Integer>(ctx->x[12]);
         if (!ecall_lua_plain_table(L, tbl_idx)) {
-            return ECALL_DECLINE;
+            return lua_ecall_decline("ECALL_LUA_SETI_INT");
         }
         lua_pushinteger(L, val);
         lua_rawseti(L, tbl_idx, key);
@@ -4919,13 +4950,15 @@ FUNCTION(fun_jitstats)
             " lua_run_ok=%llu"
             " lua_run_fail=%llu"
             " lua_cache_hits=%llu"
-            " lua_invalidations=%llu"),
+            " lua_invalidations=%llu"
+            " lua_post_entry_decline=%llu"),
             (unsigned long long)lj.compile_ok,
             (unsigned long long)lj.compile_fail,
             (unsigned long long)lj.run_ok,
             (unsigned long long)lj.run_fail,
             (unsigned long long)lj.cache_hits,
-            (unsigned long long)lj.invalidations);
+            (unsigned long long)lj.invalidations,
+            (unsigned long long)lj.post_entry_decline);
     }
 
     // Append NOEVAL breakdown.
