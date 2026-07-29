@@ -704,7 +704,21 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
             return nullptr;
         }
 
-        num_leading_bits = mux_atoi64(mask_txt);
+        // Full-width first: assigning mux_atoi64 into int truncates, so
+        // e.g. 4294967296 becomes 0 and 4294967297 becomes 1 — both pass
+        // the later 0..32/0..128 checks and build a far wider subnet than
+        // the conf string claimed (#1774).  Range-check the int64, then
+        // narrow.
+        //
+        const int64_t i64Leading = mux_atoi64(mask_txt);
+        if (  i64Leading < 0
+           || i64Leading > 128)
+        {
+            cf_log_syntax(player, cmd, T("Mask bits (%lld) in CIDR IP prefix out of range."),
+                static_cast<long long>(i64Leading));
+            return nullptr;
+        }
+        num_leading_bits = static_cast<int>(i64Leading);
     }
 
     n = 0;
@@ -788,6 +802,8 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
         if (fOutOfRange)
         {
             cf_log_syntax(player, cmd, T("Mask bits (%d) in CIDR IP prefix out of range."), num_leading_bits);
+            delete mux_address_mask;
+            delete mux_address_base;
             return nullptr;
         }
         mux_address_mask->makeMask(num_leading_bits);

@@ -323,6 +323,16 @@ int main()
     expect_reject("10.0.0.0/33");
     expect_reject("10.0.0.0/-1");
     expect_reject("2001:db8::/129");
+    // #1774: oversized digit strings must not truncate into int and accept
+    // as /0 or /1 (4294967296 → 0, 4294967297 → 1 on LLP64/LP64 int).
+    expect_reject("10.0.0.0/4294967296");
+    expect_reject("10.0.0.0/4294967297");
+    expect_reject("2001:db8::/4294967296");
+    // Legitimate edges still accepted.
+    expect_accept("10.0.0.0/0");
+    expect_accept("10.0.0.0/32");
+    expect_accept("2001:db8::/0");
+    expect_accept("2001:db8::/128");
     // Missing mask (no '/' and no whitespace-delimited netmask).
     expect_reject("10.0.0.0");
     expect_reject("");
