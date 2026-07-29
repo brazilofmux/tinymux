@@ -87,7 +87,7 @@ These are the open quality / clarity targets after #1751 close:
 | **Anytime items 3–5** | Nested `mux.args`/executor stomp; `lua_checkstack`; int-returning bridge claims | Independent small work; does not wait on typed results |
 | **Seam corpus** | Grow softcode ↔ Lua smoke (TC061+) | Answer + state + effects |
 | **ECALL_DECLINE ABI** | Optional: assert/unreachable in Lua handlers | Phase 4 left a loud safety net; tightening is polish |
-| **Softcode CALL_FUNC sibling** | Same post-entry audit | Out of campaign scope unless filed separately |
+| **Softcode CALL_FUNC sibling** | Same post-entry audit | **Done** — [#1791](https://github.com/brazilofmux/tinymux/issues/1791) / [`plan-softcode-post-entry-contract.md`](plan-softcode-post-entry-contract.md) |
 
 ### Design principles for residuals
 
@@ -116,10 +116,12 @@ of two unrelated designs:
 
 If a softcode ECALL ever gains a post-entry decline, a compiled Lua effect
 beneath it would be delivered again by the AST re-run, and **#1767's premise
-expires silently**. Nothing in the code says so today; this note is the
-record. The durable form is the sibling softcode audit this plan already
-suggests — until then, treat "no post-entry decline on the softcode route"
-as an invariant to check when touching softcode ECALL error paths.
+expires silently**. The sibling softcode audit ([#1791](https://github.com/brazilofmux/tinymux/issues/1791),
+[`plan-softcode-post-entry-contract.md`](plan-softcode-post-entry-contract.md))
+confirmed CALL_FUNC is total (guest error strings, no soft decline) and
+blocked mid-run DBT failure → AST re-run after any host ECALL via
+`eval_ctx::host_ecalls`. Keep that invariant when adding softcode ECALL
+cases.
 
 
 ---

@@ -2623,6 +2623,7 @@ struct shared_heap_t {
         ec.lua_result_base = 0;
         ec.lua_result_count = 0;
         ec.lua_state = nullptr;
+        ec.host_ecalls = 0;
         ec.dbt = &dbt;
         ec.pvm = nullptr;
 
@@ -2948,6 +2949,7 @@ bool run_cached_program(compiled_program *prog,
     ec.ncargs = ncargs;
     ec.qreg_mask = prog->subst_mask;
     ec.lua_state = lua_state;
+    ec.host_ecalls = 0;
     ec.dbt = nullptr;
     ec.pvm = nullptr;
 
@@ -3020,6 +3022,23 @@ bool run_cached_program(compiled_program *prog,
             }
             return true;
         }
+        // Softcode (#1791): CALL_FUNC never soft-declines, but mid-run
+        // DBT infrastructure failure (code buffer full, …) used to
+        // return false → full AST re-run.  After any host ECALL, that
+        // doubles effects.  Commit a loud fail instead.
+        //
+        if (0 < ec.host_ecalls) {
+            if (nullptr != out && 0 < out_size
+                && (out[0] == '\0'
+                    || 0 != strncmp(reinterpret_cast<const char *>(out),
+                                    "#-1", 3))) {
+                mux_snprintf(out, out_size, T("#-1 JIT POST-ENTRY FAIL"));
+            }
+            STARTLOG(LOG_ALWAYS, "JIT", "SOFT");
+            log_text(T("Softcode mid-run DBT fail after host ECALL (no AST re-run)"));
+            ENDLOG;
+            return true;
+        }
         return false;
     }
     if (rc == -3) {
@@ -3032,6 +3051,15 @@ bool run_cached_program(compiled_program *prog,
     size_t n = 0;
     if (!guest_strnlen(vm->buffer.data(), vm->buffer.size(),
                        out_addr, &n)) {
+        // Successful dbt_run then a harvest miss is still post-entry if
+        // host ECALLs ran — do not AST-re-run (#1791).
+        //
+        if (nullptr == lua_state && 0 < ec.host_ecalls) {
+            if (nullptr != out && 0 < out_size) {
+                mux_snprintf(out, out_size, T("#-1 JIT POST-ENTRY FAIL"));
+            }
+            return true;
+        }
         return false;
     }
     if (n >= out_size) n = out_size - 1;
@@ -3063,6 +3091,10 @@ static thread_local eval_ctx *s_current_ecall_ctx = nullptr;
 static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
                              uint64_t fargs_addr, int nfargs,
                              uint64_t out_addr, uint64_t out_size) {
+    // Host softcode work — counts for post-entry no-re-run (#1791).
+    //
+    ++ec->host_ecalls;
+
     // #1079: the out buffer must be a valid guest range before any write.
     //
     if (!guest_range_ok(out_addr, out_size, ec->memory_size) || out_size == 0) {
@@ -3172,6 +3204,12 @@ static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
 static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
                             uint64_t out_addr, uint64_t out_size) {
+    // Host softcode work — counts for post-entry no-re-run (#1791).
+    // Count even on early validation failure: a partial path that later
+    // grows side effects must still be treated as entry.
+    //
+    ++ec->host_ecalls;
+
     // #1079: out buffer must be a valid guest range before any write.
     //
     if (!guest_range_ok(out_addr, out_size, ec->memory_size) || out_size == 0) {
@@ -3766,6 +3804,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // Traditional write-through: a0=reg, a1=addr
         // Writes to both SUBST slot (for JIT %q reads) and
         // mudstate.global_regs (for ECALL reads).
+        ++ec->host_ecalls;
         int regnum = static_cast<int>(ctx->x[10]);
         uint64_t val_addr = ctx->x[11];
         size_t vlen = 0;
@@ -3797,6 +3836,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     case ECALL_SETQ_PACK: {
         // Fast path: a0=reg, a1=addr, a2=len.
         // Packs into a JIT Arena.
+        ++ec->host_ecalls;
         int regnum = static_cast<int>(ctx->x[10]);
         uint64_t val_addr = ctx->x[11];
         size_t vlen = static_cast<size_t>(ctx->x[12]);
@@ -5331,6 +5371,7 @@ static bool run_compiled(compiled_program &prog,
     ec.lua_result_base = 0;
     ec.lua_result_count = 0;
     ec.lua_state = nullptr;
+    ec.host_ecalls = 0;
     ec.dbt = nullptr;
     ec.pvm = nullptr;
 
