@@ -116,11 +116,9 @@ AGREE_CASES=(
     # none may invent a wrong answer.
     'local s=0 for i=1,4 do s=s+i end return s'
     'local i=0 repeat i=i+1 until i>=5 return i'
-    # Budget exhaustion: compiled path hits ECALL_LUA_LIMITED.  Pre-#1751
-    # that declined and the interpreter re-ran into its own instruction
-    # limit (both routes agreed).  Phase 0: post-entry LIMITED is a loud
-    # POST-ENTRY DECLINE instead of re-run (Phase 3 makes the text
-    # interpreter-identical).  Counted as post_entry_loud, not agree.
+    # Budget exhaustion: compiled path hits ECALL_LUA_LIMITED and must
+    # surface the same "#-1 LUA ERROR: instruction limit exceeded" as the
+    # interpreter (Phase 3 / #1732).  No re-run, no POST-ENTRY DECLINE.
     'local s=0 for i=1,100000000 do s=s+1 end return s'
     # ---- #1424's four shapes, whose symptoms #1518 closed (#1557) ----
     #
@@ -185,15 +183,11 @@ AGREE_CASES=(
 # POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
 # Phases 1–3 empty FAIL sites.  Long-term target is 0.
 #
-# After Phase 1 total GET/SET/LEN: os.time no longer declines (raises a
-# real LUA ERROR on both routes).  Remaining loud: select, budget for-loop,
-# string.find, nested while-true (4) + STATE e1/e2 (2) → 6.
-# Phase 2 revision re-baseline: select and os.time moved to PRE-entry
-# ineligibility (general call path deleted; #1751 rule 1), so loud is
-# down to: budget for-loop, nested while-true (both Phase 3), 
-# string.find (numeric-result totalization), the absent-key pin, and
-# STATE e1/e2.
-POST_ENTRY_LOUD_BUDGET=6
+# Phase 3: LIMITED is interpreter-identical (not POST-ENTRY DECLINE).
+# Budget for-loop / while-true match both routes.  Remaining loud under
+# revised Phase 1/2 (restacked 2026-07-29): string.find, absent-key pin,
+# STATE e1/e2 → 4.
+POST_ENTRY_LOUD_BUDGET=4
 
 # How many AGREE chunks are expected to decline rather than execute.
 #

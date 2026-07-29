@@ -3364,6 +3364,20 @@ static int ecall_lua_commit_error(lua_State *L)
     return ECALL_LUA_ERROR;
 }
 
+// Commit a C-string error without a Lua stack message (#1751 Phase 3).
+//
+static int ecall_lua_error_cstr(const char *msg)
+{
+    if (nullptr == msg) {
+        msg = "unknown Lua error";
+    }
+    mux_snprintf(reinterpret_cast<UTF8 *>(s_lua_ecall_error),
+        sizeof(s_lua_ecall_error),
+        T("#-1 LUA ERROR: %s"),
+        reinterpret_cast<const UTF8 *>(msg));
+    return ECALL_LUA_ERROR;
+}
+
 // pcall helpers: stack protocol is (table, key[, value]) via absolute
 // indices copied onto the stack before the call.
 //
@@ -4379,13 +4393,13 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     }
 
     case ECALL_LUA_LIMITED: {
-        // Back-edge budget exhausted (#1732): abort the whole run.  The
-        // decline fails the run over to the Lua interpreter, which re-runs
-        // the chunk -- rerun-safe by the loop-proto eligibility rules --
-        // and raises its own "instruction limit exceeded" through
-        // InsnCountHook, so the player-visible error is the interpreter's
-        // verbatim, from one budget.
-        return lua_ecall_decline("ECALL_LUA_LIMITED");
+        // Back-edge budget exhausted (#1732 / #1751 Phase 3).  Commit the
+        // same text InsnCountHook raises on the interpreter route
+        // (luaL_error "instruction limit exceeded" → softcode framing).
+        // No re-run: the compiled path already spent the budget, and a
+        // silent interpreter replay would double side effects.
+        //
+        return ecall_lua_error_cstr("instruction limit exceeded");
     }
 
     case ECALL_LUA_GETFIELD_INT: {
