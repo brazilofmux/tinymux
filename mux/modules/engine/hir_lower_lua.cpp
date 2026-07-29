@@ -690,6 +690,55 @@ static void lua_truth_set(lua_truth_map &m, int v, lua_truth t) {
     }
 }
 
+// Tag a HIR value produced from a Lua pool constant.  TNIL/TFALSE/TTRUE
+// share HIR representations with "" / 0 / 1; without the tag, EQK and
+// TEST invent softcode semantics (nil == "" was true compiled).
+//
+static void lua_truth_tag_constant(lua_truth_map &truth,
+                                   const lua_bc_constant &k, int v) {
+    if (v < 0) {
+        return;
+    }
+    switch (k.type) {
+    case LUA_BC_TNIL:
+        lua_truth_set(truth, v, LUA_TRUTH_NIL);
+        break;
+    case LUA_BC_TFALSE:
+    case LUA_BC_TTRUE:
+        lua_truth_set(truth, v, LUA_TRUTH_BOOL);
+        break;
+    default:
+        break;
+    }
+}
+
+// Lua TYPE classes, for equality.  Lua's == is false across types --
+// 0 ~= false, "5" ~= 5, nil ~= "" -- but HIR represents false and 0 as
+// the same ICONST, nil and "" as the same empty SCONST, and coerces
+// strings to numbers when comparing.  Equality must therefore compare
+// types before representations.
+//
+enum lua_type_class {
+    LUA_TC_NIL,
+    LUA_TC_BOOL,
+    LUA_TC_NUMBER,
+    LUA_TC_STRING,
+    LUA_TC_OTHER,     // handles etc. -- refused before this matters
+};
+
+static lua_type_class lua_type_class_of_const(const lua_bc_constant &k) {
+    switch (k.type) {
+    case LUA_BC_TNIL:      return LUA_TC_NIL;
+    case LUA_BC_TFALSE:
+    case LUA_BC_TTRUE:     return LUA_TC_BOOL;
+    case LUA_BC_TINT:
+    case LUA_BC_TFLOAT:    return LUA_TC_NUMBER;
+    case LUA_BC_TSHRSTR:
+    case LUA_BC_TLNGSTR:   return LUA_TC_STRING;
+    default:               return LUA_TC_OTHER;
+    }
+}
+
 static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
                               int v) {
     if (v < 0) {
@@ -732,6 +781,25 @@ static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
 static inline bool lua_is_nil(const hir_program &h, const lua_truth_map &m,
                               int v) {
     return lua_truth_of(h, m, v) == LUA_TRUTH_NIL;
+}
+
+// Lua type class of a lowered VALUE.  The truth tag carries exactly the
+// distinctions HIR erases; everything else follows the HIR type.
+//
+static lua_type_class lua_type_class_of_value(const hir_program &h,
+                                              const lua_truth_map &m,
+                                              int v) {
+    if (v < 0) return LUA_TC_OTHER;
+    const lua_truth t = lua_truth_of(h, m, v);
+    if (t == LUA_TRUTH_NIL)     return LUA_TC_NIL;
+    if (t == LUA_TRUTH_BOOL)    return LUA_TC_BOOL;
+    if (t == LUA_TRUTH_UNKNOWN) return LUA_TC_OTHER;   // caller declines
+    switch (h.ty[v]) {
+    case TY_INT:
+    case TY_FLOAT:  return LUA_TC_NUMBER;
+    case TY_STRING: return LUA_TC_STRING;
+    default:        return LUA_TC_OTHER;
+    }
 }
 
 static int promote_to_float(hir_program &h, const lua_truth_map &truth, int v) {
@@ -1321,8 +1389,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int kidx = insn.Bx();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
-            lua_reg[A] = emit_lua_constant(h, rc, proto->constants[kidx]);
+            const lua_bc_constant &kc = proto->constants[kidx];
+            lua_reg[A] = emit_lua_constant(h, rc, kc);
             if (lua_reg[A] < 0) return -1;
+            lua_truth_tag_constant(truth_tag, kc, lua_reg[A]);
             break;
         }
 
@@ -1332,8 +1402,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int kidx = proto->code[pc + 1].Ax();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
-            lua_reg[A] = emit_lua_constant(h, rc, proto->constants[kidx]);
+            const lua_bc_constant &kc = proto->constants[kidx];
+            lua_reg[A] = emit_lua_constant(h, rc, kc);
             if (lua_reg[A] < 0) return -1;
+            lua_truth_tag_constant(truth_tag, kc, lua_reg[A]);
             pc++;  // skip EXTRAARG
             break;
         }
@@ -2385,8 +2457,53 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int kidx = insn.B();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
-            int kval = emit_lua_constant(h, rc, proto->constants[kidx]);
+            const lua_bc_constant &kconst = proto->constants[kidx];
+            // nil is the empty SCONST in HIR, which is also a real "".
+            // EQK's string path would make nil == "" true.  Resolve against
+            // the pool type (and the lhs tag) before emitting STRCMP:
+            //   nil == nil  → true
+            //   nil == anything else (incl. "") → false
+            // Same for false vs integer 0 once BOOL is tagged on constants.
+            // Lua == is false across TYPES, and HIR erases the ones that
+            // matter: false and 0 are the same ICONST, nil and "" the same
+            // empty SCONST, and the numeric path would coerce "5" to 5.
+            // So compare type classes first; a mismatch is constant false
+            // whatever the representations say.  (The nil-only version of
+            // this check still let `0 == false`, `1 == true` and
+            // `"5" == 5` answer true -- measured.)
+            const lua_type_class lhs_tc =
+                lua_type_class_of_value(h, truth_tag, rb);
+            const lua_type_class rhs_tc = lua_type_class_of_const(kconst);
+            if (lhs_tc == LUA_TC_OTHER || rhs_tc == LUA_TC_OTHER) {
+                return -1;
+            }
+            const bool lhs_nil = (lhs_tc == LUA_TC_NIL);
+            const bool rhs_nil = (rhs_tc == LUA_TC_NIL);
+            if (lhs_tc != rhs_tc || lhs_nil) {
+                // Different types -> false.  Same type and both nil ->
+                // true (nil has exactly one value).
+                int cmp = h.emit_iconst((lhs_nil && rhs_nil) ? 1 : 0);
+                if (cmp < 0) return -1;
+                if (insn.k()) {
+                    cmp = h.emit(HIR_NOT, TY_INT, cmp);
+                    if (cmp < 0) return -1;
+                }
+                if (pc + 1 >= n) return -1;
+                if (!multi_block) return -1;
+                int true_target = pc + 2;
+                int false_target = pc + 1;
+                int true_blk = (true_target < n) ? pc_to_block[true_target] : -1;
+                int false_blk = pc_to_block[false_target];
+                if (true_blk < 0 || false_blk < 0) return -1;
+                h.emit(HIR_BRC, TY_VOID, cmp, false_blk, true_blk);
+                h.add_edge(cur_hir_block, true_blk);
+                h.add_edge(cur_hir_block, false_blk);
+                h.native_ops++;
+                break;
+            }
+            int kval = emit_lua_constant(h, rc, kconst);
             if (kval < 0) return -1;
+            lua_truth_tag_constant(truth_tag, kconst, kval);
             int cmp;
             if (either_float(h, rb, kval)) {
                 rb = promote_to_float(h, truth_tag, rb);
@@ -2425,7 +2542,33 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             break;
         }
 
-        case OP_LUA_EQI: CMP_RI(HIR_EQ, HIR_FEQ)
+        // EQI is equality against a small integer immediate -- a NUMBER.
+        // Lua == is false across types, so a non-number lhs answers false
+        // rather than coercing (`local a=false if a==0` answered true;
+        // `local a="5" if a==5` likewise).  Order comparisons (LTI/LEI/
+        // GTI/GEI) are different: Lua RAISES on mismatched types, so they
+        // keep declining via CMP_RI's guards.
+        case OP_LUA_EQI: {
+            int rb = lua_reg[A];
+            if (rb < 0) return -1;
+            if (lua_is_handle(h, rb)) return -1;
+            if (lua_is_marshalled_str(h, rb)) return -1;
+            const lua_type_class lhs_tc =
+                lua_type_class_of_value(h, truth_tag, rb);
+            if (lhs_tc == LUA_TC_OTHER) return -1;
+            if (lhs_tc != LUA_TC_NUMBER) {
+                int cmp = h.emit_iconst(0);
+                if (cmp < 0) return -1;
+                if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
+                                    cur_hir_block, n, nullptr,
+                                    multi_block) < 0) {
+                    return -1;
+                }
+                pc++;
+                break;
+            }
+            CMP_RI(HIR_EQ, HIR_FEQ)
+        }
         case OP_LUA_LTI: CMP_RI(HIR_LT, HIR_FLT)
         case OP_LUA_LEI: CMP_RI(HIR_LE, HIR_FLE)
 
@@ -2434,6 +2577,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_GTI: {
             int rb = lua_reg[A];
             if (rb < 0) return -1;
+            // nil has no order; empty SCONST would promote to 0.
+            if (lua_is_nil(h, truth_tag, rb)) return -1;
             int cmp;
             if (h.ty[rb] == TY_FLOAT) {
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB()));
@@ -2462,6 +2607,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_GEI: {
             int rb = lua_reg[A];
             if (rb < 0) return -1;
+            if (lua_is_nil(h, truth_tag, rb)) return -1;
             int cmp;
             if (h.ty[rb] == TY_FLOAT) {
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB()));

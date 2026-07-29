@@ -191,6 +191,26 @@ AGREE_CASES=(
     'local t={} t[1]=5 local x=t[2] return tostring(x)'
     'local t={} t[1]=5 return t[2] == ""'
     'local t={} t[1]=5 local x=t[2] return x .. "z"'
+    # EQK path (if ... == K): CMP_RR had the nil check; EQK did not, so
+    # `if t[2] == ""` executed and answered "y" (empty SCONST == "").
+    # nil == nil stays true via the pool-type branch.
+    'local t={} t[1]=5 if t[2] == "" then return "y" else return "n" end'
+    'local t={} t[1]=5 if t[2] ~= "" then return "y" else return "n" end'
+    'local t={} t[1]=5 if t[2] == nil then return "y" else return "n" end'
+
+    # ---- #1770 review: Lua == is false ACROSS TYPES ----
+    #
+    # HIR erases the distinctions equality depends on: false and 0 are the
+    # same ICONST, nil and "" the same empty SCONST, and the numeric path
+    # coerces "5" to 5.  The nil-only check let all of these answer true.
+    # Both immediate (EQI) and pool-constant (EQK) forms are pinned --
+    # `a == 0` takes EQI, `a == ""` takes EQK, and fixing one leaves the
+    # other wrong.  These EXECUTE and answer "n" like the interpreter.
+    'local a=0 if a == false then return "y" else return "n" end'
+    'local a=1 if a == true then return "y" else return "n" end'
+    'local a=false if a == 0 then return "y" else return "n" end'
+    'local a="5" if a == 5 then return "y" else return "n" end'
+    'local a=5 if a == "5" then return "y" else return "n" end'
 
     # ---- #1768: truth-class tag loss must decline, not invent VALUE ----
     #
