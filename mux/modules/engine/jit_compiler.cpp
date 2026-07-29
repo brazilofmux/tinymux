@@ -3396,6 +3396,43 @@ static int ecall_lua_error_cstr(const char *msg)
     return ECALL_LUA_ERROR;
 }
 
+// Marshal one Lua value into a guest buffer the way fun_lua does for a
+// chunk result (nil→"", bool→"0"/"1", else lua_tolstring).  Truncates to
+// out_size rather than declining.  #1751 follow-up: CALL_STR result path
+// must not soft-decline after the callee has run (string.find returns an
+// integer as the first multi-value; both routes must keep it).
+//
+static size_t ecall_lua_marshal_to_guest(lua_State *L, int idx,
+                                         uint8_t *out, size_t out_size)
+{
+    if (0 == out_size) {
+        return 0;
+    }
+    size_t len = 0;
+    const char *result = nullptr;
+    if (lua_isnil(L, idx) || lua_isnone(L, idx)) {
+        result = "";
+        len = 0;
+    } else if (lua_isboolean(L, idx)) {
+        result = lua_toboolean(L, idx) ? "1" : "0";
+        len = 1;
+    } else {
+        result = lua_tolstring(L, idx, &len);
+        if (nullptr == result) {
+            result = "";
+            len = 0;
+        }
+    }
+    if (len >= out_size) {
+        len = out_size - 1;
+    }
+    if (len > 0) {
+        memcpy(out, result, len);
+    }
+    out[len] = '\0';
+    return len;
+}
+
 // pcall helpers: stack protocol is (table, key[, value]) via absolute
 // indices copied onto the stack before the call.
 //
@@ -4265,17 +4302,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     }
 
     case ECALL_LUA_CALL_STR: {
-        // a0=fn stack idx, a1 = nargs | (argkind bits << 8), a2=arg0,
-        // a3=arg1, a4 = guest output address, a5 = its SIZE.
-        // -> a0 = bytes written, a1 = ok.
+        // a0=fn stack idx, a1 = nargs | (argkind bits << 8), a2..args,
+        // out addr/size in a5/a6.  #1751: after the callee may have run,
+        // never soft-decline.  Marshal the first result like fun_lua
+        // (numbers become decimal text — string.find's first value is an
+        // integer; the chunk pcall keeps one result on both routes).
         //
-        // The size is passed rather than assumed.  ECALL_ORD (#1679) had a
-        // bound that read like one and was not -- 64 bytes of headroom
-        // against a loop that wrote per codepoint -- so a string-producing
-        // ECALL states its buffer size explicitly and clamps to it.
-        //
-        // Argument kinds are two bits each; see ecall_lua_push_call_args.
-        // Three arguments is the ceiling, matching CALL_INT and CALL_VOID.
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int fn_idx  = static_cast<int>(ctx->x[10]);
@@ -4284,52 +4316,30 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         uint64_t out_addr = ctx->x[15];
         uint64_t out_size = ctx->x[16];
 
-        if (fn_idx <= 0 || fn_idx > lua_gettop(L)
-            || !lua_isfunction(L, fn_idx) || nargs < 0 || nargs > 3
+        if (nargs < 0 || nargs > 3
             || 0 == out_size
             || !guest_range_ok(out_addr, out_size, ec->memory_size)) {
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_STR");
+            return ecall_lua_error_cstr("invalid call encoding");
+        }
+        if (fn_idx <= 0 || fn_idx > lua_gettop(L)
+            || !lua_isfunction(L, fn_idx)) {
+            return ecall_lua_error_cstr("attempt to call a non-function value");
         }
 
         int base = lua_gettop(L);
         lua_pushvalue(L, fn_idx);
         if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
             lua_settop(L, base);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_STR");
+            return ecall_lua_error_cstr("invalid call argument");
         }
         if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
+            int er = ecall_lua_commit_error(L);
             lua_settop(L, base);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_STR");
+            return er;
         }
 
-        // Only an actual string comes back this way.  lua_tolstring would
-        // coerce a number and mutate the stack slot; taking strings only
-        // keeps the conversion rules the interpreter's, not ours.
-        if (LUA_TSTRING != lua_type(L, -1)) {
-            lua_settop(L, base);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_STR");
-        }
-        size_t slen = 0;
-        const char *sres = lua_tolstring(L, -1, &slen);
-        if (nullptr == sres) {
-            lua_settop(L, base);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_STR");
-        }
-        // Decline on overflow rather than truncate: a silently shortened
-        // string is a wrong answer, and the interpreter can produce the
-        // whole thing.
-        if (slen + 1 > out_size) {
-            lua_settop(L, base);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_STR");
-        }
-        memcpy(ec->memory + out_addr, sres, slen);
-        ec->memory[out_addr + slen] = '\0';
+        size_t slen = ecall_lua_marshal_to_guest(L, -1,
+            ec->memory + out_addr, static_cast<size_t>(out_size));
         lua_settop(L, base);
         ctx->x[10] = static_cast<uint64_t>(slen);
         ctx->x[11] = 1;
