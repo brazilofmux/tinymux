@@ -571,6 +571,10 @@ static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
             uint64_t addr = rc.pool_str(buf, strlen(buf));
             return h.emit_sconst(addr, buf);
         }
+        // Runtime ITOA has no sval.  Without needs_jit the folded path
+        // would return that empty string -- `return not a` answered ""
+        // while the interpreter answered "0"/"1".
+        h.needs_jit = true;
         return h.emit(HIR_ITOA, TY_STRING, rv);
     }
     if (h.ty[rv] == TY_FLOAT) {
@@ -583,6 +587,7 @@ static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
         // Lua float, so Lua's rendering -- not HIR_FTOA, which formats the
         // MUX way and would drop the ".0" at run time just as the fold used
         // to at compile time (#1488).
+        h.needs_jit = true;
         return h.emit(HIR_LUA_FTOA, TY_STRING, rv);
     }
     return rv;
@@ -653,6 +658,50 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
 //
 static inline bool lua_is_marshalled_str(const hir_program &h, int v) {
     return v >= 0 && h.kind[v] == HIR_LUA_CALL_STR;
+}
+
+// Lua truthiness provenance.  HIR collapses false and integer 0 to the
+// same ICONST 0, and nil and "" to the same empty SCONST.  HIR_BOOL is
+// integer SNEZ (softcode truthiness), so `local a=0 if a` answered falsy
+// while Lua requires truthy.  Tags restore the distinction at TEST/NOT:
+//
+//   VALUE — numbers, real strings, floats: always truthy in Lua
+//   BOOL  — 0/1 with boolean semantics (LOADTRUE/FALSE, comparisons)
+//   NIL   — always falsy (LOADNIL only; not the empty-string literal)
+//
+enum lua_truth : uint8_t {
+    LUA_TRUTH_VALUE = 0,
+    LUA_TRUTH_BOOL  = 1,
+    LUA_TRUTH_NIL   = 2,
+};
+
+typedef std::map<int, lua_truth> lua_truth_map;
+
+static void lua_truth_set(lua_truth_map &m, int v, lua_truth t) {
+    if (v >= 0) {
+        m[v] = t;
+    }
+}
+
+static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
+                              int v) {
+    if (v < 0) {
+        return LUA_TRUTH_VALUE;
+    }
+    lua_truth_map::const_iterator it = m.find(v);
+    if (it != m.end()) {
+        return it->second;
+    }
+    // Comparison / NOT / BOOL results are 0/1 booleans even without a mark.
+    switch (h.kind[v]) {
+    case HIR_EQ: case HIR_NE: case HIR_LT: case HIR_LE:
+    case HIR_GT: case HIR_GE:
+    case HIR_FEQ: case HIR_FLT: case HIR_FLE:
+    case HIR_BOOL: case HIR_NOT:
+        return LUA_TRUTH_BOOL;
+    default:
+        return LUA_TRUTH_VALUE;
+    }
 }
 
 static int promote_to_float(hir_program &h, int v) {
@@ -948,6 +997,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     // fields are values, calls decline.
     lua_ref_map lua_ref;
 
+    // HIR value → Lua truth class (see lua_truth).  Distinguishes false
+    // from integer 0 and nil from "" so TEST/NOT follow Lua, not HIR_BOOL.
+    lua_truth_map truth_tag;
+
     // Loop-carried value routing (#1732).  A plain HIR value crosses a
     // block boundary only under dominance, and the transition below drops
     // everything else -- which is correct for diamonds and fatal for
@@ -1222,6 +1275,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_LOADFALSE:
             lua_reg[A] = h.emit_iconst(0);
             if (lua_reg[A] < 0) return -1;
+            // Boolean false, not integer 0 — same ICONST, different TEST.
+            lua_truth_set(truth_tag, lua_reg[A], LUA_TRUTH_BOOL);
             break;
 
         // "R[A] := false; pc++".  When this pairs with LOADTRUE purely to
@@ -1235,6 +1290,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_LFALSESKIP: {
             lua_reg[A] = h.emit_iconst(0);
             if (lua_reg[A] < 0) return -1;
+            lua_truth_set(truth_tag, lua_reg[A], LUA_TRUTH_BOOL);
             if (!multi_block) return -1;
             int target = pc + 2;
             int target_blk = (target > 0 && target < n) ? pc_to_block[target] : -1;
@@ -1247,13 +1303,17 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_LOADTRUE:
             lua_reg[A] = h.emit_iconst(1);
             if (lua_reg[A] < 0) return -1;
+            lua_truth_set(truth_tag, lua_reg[A], LUA_TRUTH_BOOL);
             break;
 
         case OP_LUA_LOADNIL:
             for (int i = A; i <= A + insn.B(); i++) {
                 if (!lua_reg_in_range(i)) return -1;
+                // Empty SCONST is also the representation of "": only the
+                // NIL tag makes TEST falsy here and leaves literal "" truthy.
                 lua_reg[i] = h.emit_sconst(rc.pool_str("", 0), "");
                 if (lua_reg[i] < 0) return -1;
+                lua_truth_set(truth_tag, lua_reg[i], LUA_TRUTH_NIL);
             }
             break;
 
@@ -1469,19 +1529,27 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // not(false→"0") disagree, and the type is gone (#1764).
             if (lua_is_marshalled_str(h, rb)) return -1;
             // NOT in Lua: false and nil → true (1), everything else → false (0).
-            // For TY_INT: 0 → 1, nonzero → 0 (same as HIR_NOT).
-            // For TY_FLOAT: can't be nil/false, so always 0.
-            if (h.ty[rb] == TY_INT) {
-                lua_reg[A] = h.emit(HIR_NOT, TY_INT, rb);
-            } else if (h.ty[rb] == TY_FLOAT) {
-                // Float is always truthy (never nil/false), so NOT = 0.
-                // But 0.0 should be truthy in Lua (only nil/false are falsy).
+            // HIR_NOT is integer zero-test — correct only for BOOL tags.
+            // VALUE (including integer 0 and "") is always truthy → NOT 0.
+            // NIL → NOT 1.  Result is itself a boolean.
+            const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+            if (tr == LUA_TRUTH_NIL) {
+                lua_reg[A] = h.emit_iconst(1);
+            } else if (tr == LUA_TRUTH_VALUE) {
                 lua_reg[A] = h.emit_iconst(0);
+            } else if (h.ty[rb] == TY_INT) {
+                // BOOL: 0 → 1, nonzero → 0.
+                if (h.kind[rb] == HIR_ICONST) {
+                    lua_reg[A] = h.emit_iconst(h.val[rb] == 0 ? 1 : 0);
+                } else {
+                    lua_reg[A] = h.emit(HIR_NOT, TY_INT, rb);
+                    h.native_ops++;
+                }
             } else {
-                // TY_STRING: non-nil, always truthy → 0.
-                lua_reg[A] = h.emit_iconst(0);
+                return -1;
             }
             if (lua_reg[A] < 0) return -1;
+            lua_truth_set(truth_tag, lua_reg[A], LUA_TRUTH_BOOL);
             break;
         }
 
@@ -2314,7 +2382,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // all truthy in Lua and falsy under that test (#1764).  Decline
             // rather than lie; a later typed result keeps the Lua value.
             if (lua_is_marshalled_str(h, rb)) return -1;
-            int cmp = h.emit(HIR_BOOL, TY_INT, rb);
+            // Lua: only nil and false are falsy.  VALUE (0, 0.0, "") is
+            // always truthy; BOOL uses HIR_BOOL; NIL is always falsy.
+            int cmp;
+            const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+            if (tr == LUA_TRUTH_NIL) {
+                cmp = h.emit_iconst(0);
+            } else if (tr == LUA_TRUTH_VALUE) {
+                cmp = h.emit_iconst(1);
+            } else if (h.ty[rb] == TY_INT) {
+                if (h.kind[rb] == HIR_ICONST) {
+                    cmp = h.emit_iconst(h.val[rb] != 0 ? 1 : 0);
+                } else {
+                    cmp = h.emit(HIR_BOOL, TY_INT, rb);
+                    h.native_ops++;
+                }
+            } else {
+                return -1;
+            }
+            if (cmp < 0) return -1;
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
                                 cur_hir_block, n, nullptr, multi_block) < 0)
                 return -1;
@@ -2326,7 +2412,23 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
             if (lua_is_marshalled_str(h, rb)) return -1;
-            int cmp = h.emit(HIR_BOOL, TY_INT, rb);
+            int cmp;
+            const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+            if (tr == LUA_TRUTH_NIL) {
+                cmp = h.emit_iconst(0);
+            } else if (tr == LUA_TRUTH_VALUE) {
+                cmp = h.emit_iconst(1);
+            } else if (h.ty[rb] == TY_INT) {
+                if (h.kind[rb] == HIR_ICONST) {
+                    cmp = h.emit_iconst(h.val[rb] != 0 ? 1 : 0);
+                } else {
+                    cmp = h.emit(HIR_BOOL, TY_INT, rb);
+                    h.native_ops++;
+                }
+            } else {
+                return -1;
+            }
+            if (cmp < 0) return -1;
             lua_reg[A] = rb;  // Simplified: always copy.
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
                                 cur_hir_block, n, nullptr, multi_block) < 0)
