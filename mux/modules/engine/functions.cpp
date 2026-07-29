@@ -565,7 +565,7 @@ static FUNCTION(fun_rand)
     case 1:
         if (is_integer(fargs[0], &nDigits))
         {
-            int num = mux_atoi64(fargs[0]);
+            int64_t num = mux_atoi64(fargs[0]);
             if (num < 1)
             {
                 safe_chr('0', buff, bufc);
@@ -585,8 +585,8 @@ static FUNCTION(fun_rand)
         if (  is_integer(fargs[0], &nDigits)
            && is_integer(fargs[1], &nDigits))
         {
-            int lower = mux_atoi64(fargs[0]);
-            int higher = mux_atoi64(fargs[1]);
+            int64_t lower = mux_atoi64(fargs[0]);
+            int64_t higher = mux_atoi64(fargs[1]);
             if (  lower <= higher
                && static_cast<unsigned int>(higher-lower) <= INT32_MAX)
             {
@@ -2166,7 +2166,7 @@ FUNCTION(fun_successes)
         ver = mux_atoi64(fargs[2]);
     }
 
-    int num_dice   = mux_atoi64(fargs[0]);
+    int64_t num_dice = mux_atoi64(fargs[0]);
 
     if (0 == num_dice)
     {
@@ -2182,7 +2182,7 @@ FUNCTION(fun_successes)
     }
     else
     {
-        int difficulty = mux_atoi64(fargs[1]);
+        int64_t difficulty = mux_atoi64(fargs[1]);
         int successes = 0;
         if (1 == ver)
         {
@@ -2681,8 +2681,8 @@ static FUNCTION(fun_mid)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atoi64(fargs[1]);
-    int nMid   = mux_atoi64(fargs[2]);
+    int64_t iStart = mux_atoi64(fargs[1]);
+    int64_t nMid = mux_atoi64(fargs[2]);
 
     if (nMid < 0)
     {
@@ -2741,7 +2741,7 @@ static FUNCTION(fun_right)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int nRight = mux_atoi64(fargs[1]);
+    int64_t nRight = mux_atoi64(fargs[1]);
     if (nRight < 0)
     {
         safe_range(buff, bufc);
@@ -3004,7 +3004,7 @@ static FUNCTION(fun_v)
 
     // Leading digit, process as argument number.
     //
-    int i = mux_atoi64(fargs[0]);
+    int64_t i = mux_atoi64(fargs[0]);
     if (  0 <= i
        && i < ncargs
        && nullptr != cargs[i])
@@ -3246,7 +3246,7 @@ static FUNCTION(fun_rloc)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int levels = mux_atoi64(fargs[1]);
+    int64_t levels = mux_atoi64(fargs[1]);
     if (levels > mudconf.ntfy_nest_lim)
     {
         levels = mudconf.ntfy_nest_lim;
@@ -3569,8 +3569,8 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    int iFirstWord = mux_atoi64(fargs[1]);
-    int nWordsToCopy = mux_atoi64(fargs[2]);
+    int64_t iFirstWord = mux_atoi64(fargs[1]);
+    int64_t nWordsToCopy = mux_atoi64(fargs[2]);
 
     if (  iFirstWord < 1
        || nWordsToCopy < 1)
@@ -4707,7 +4707,7 @@ static FUNCTION(fun_posn)
     const unsigned char *pStr = reinterpret_cast<const unsigned char *>(fargs[1]);
     size_t nStr = strlen(reinterpret_cast<const char *>(pStr));
 
-    int iN = mux_atoi64(fargs[2]);
+    int64_t iN = mux_atoi64(fargs[2]);
     if (iN < 1)
     {
         safe_nothing(buff, bufc);
@@ -5234,7 +5234,7 @@ static FUNCTION(fun_wordpos)
 
     size_t nBytes;
     UTF8 *cp = strip_color(fargs[0], &nBytes, nullptr);
-    unsigned int charpos = mux_atoi64(fargs[1]);
+    uint64_t charpos = mux_atoi64(fargs[1]);
 
     // charpos is a 1-based grapheme (character) position, matching this
     // function's documentation and the grapheme-correct wordstart()/wordend().
@@ -5291,7 +5291,7 @@ static FUNCTION(fun_wordstart)
         return;
     }
 
-    int iWord = mux_atoi64(fargs[1]);
+    int64_t iWord = mux_atoi64(fargs[1]);
     if (iWord < 1)
     {
         safe_nothing(buff, bufc);
@@ -5342,7 +5342,7 @@ static FUNCTION(fun_wordend)
         return;
     }
 
-    int iWord = mux_atoi64(fargs[1]);
+    int64_t iWord = mux_atoi64(fargs[1]);
     if (iWord < 1)
     {
         safe_nothing(buff, bufc);
@@ -5750,8 +5750,8 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atoi64(fargs[1]);
-    int nDelete = mux_atoi64(fargs[2]);
+    int64_t iStart = mux_atoi64(fargs[1]);
+    int64_t nDelete = mux_atoi64(fargs[2]);
 
     if (nDelete < 0)
     {
@@ -7364,7 +7364,7 @@ static FUNCTION(fun_repeat)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int times = mux_atoi64(fargs[1]);
+    int64_t times = mux_atoi64(fargs[1]);
     if (times < 1 || *fargs[0] == '\0')
     {
         // Legal but no work to do.
@@ -7891,7 +7891,7 @@ static FUNCTION(fun_choose)
     int ip[LBUF_SIZE/2];
     for (i = 0; i < n_weights; i++)
     {
-        int num = mux_atoi64(weights[i]);
+        int64_t num = mux_atoi64(weights[i]);
         if (num < 0)
         {
             num = 0;
@@ -7960,8 +7960,8 @@ FUNCTION(fun_distribute)
 
     const int points_limit = 1000000;
     const int bins_limit   = 2000;
-    int points = mux_atoi64(fargs[0]);
-    int bins   = mux_atoi64(fargs[1]);
+    int64_t points = mux_atoi64(fargs[0]);
+    int64_t bins = mux_atoi64(fargs[1]);
     if (  points < 0
        || points_limit < points
        || bins <= 0
@@ -11894,7 +11894,7 @@ static FUNCTION(fun_digittime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atoi64(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(digit_format(tt), buff, bufc);
 }
 
@@ -11911,7 +11911,7 @@ static FUNCTION(fun_singletime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atoi64(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(time_format_2(tt), buff, bufc);
 }
 
@@ -11928,7 +11928,7 @@ static FUNCTION(fun_exptime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atoi64(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(expand_time(tt), buff, bufc);
 }
 
@@ -11945,7 +11945,7 @@ static FUNCTION(fun_writetime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atoi64(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(write_time(tt), buff, bufc);
 }
 
@@ -14127,7 +14127,7 @@ static FUNCTION(fun_linsert)
 
     UTF8 *arr[LBUF_SIZE / 2];
     int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
-    int pos = mux_atoi64(fargs[1]);
+    int64_t pos = mux_atoi64(fargs[1]);
 
     if (pos < 0)
     {
@@ -14177,8 +14177,8 @@ static FUNCTION(fun_strdelete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atoi64(fargs[1]);
-    int nDelete = mux_atoi64(fargs[2]);
+    int64_t iStart = mux_atoi64(fargs[1]);
+    int64_t nDelete = mux_atoi64(fargs[2]);
 
     if (iStart < 0)
     {
@@ -14224,7 +14224,7 @@ static FUNCTION(fun_strinsert)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iPos = mux_atoi64(fargs[1]);
+    int64_t iPos = mux_atoi64(fargs[1]);
     if (iPos < 0)
     {
         iPos = 0;
@@ -14284,8 +14284,8 @@ static FUNCTION(fun_strreplace)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int iStart = mux_atoi64(fargs[1]);
-    int nCount = mux_atoi64(fargs[2]);
+    int64_t iStart = mux_atoi64(fargs[1]);
+    int64_t nCount = mux_atoi64(fargs[2]);
 
     if (iStart < 0)
     {
@@ -14710,7 +14710,7 @@ static FUNCTION(fun_lreplace)
 
     UTF8 *arr[LBUF_SIZE / 2];
     int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
-    int pos = mux_atoi64(fargs[1]);
+    int64_t pos = mux_atoi64(fargs[1]);
 
     if (pos < 0 || pos >= nWords)
     {
@@ -14745,7 +14745,7 @@ static FUNCTION(fun_benchmark)
     UNUSED_PARAMETER(fp);
     UNUSED_PARAMETER(caller);
 
-    int iterations = mux_atoi64(fargs[1]);
+    int64_t iterations = mux_atoi64(fargs[1]);
     if (iterations < 1)
     {
         safe_str(S_("#-1 ITERATIONS MUST BE POSITIVE"), buff, bufc);
@@ -14816,7 +14816,7 @@ static FUNCTION(fun__check_u_perm)
     }
 
     dbref thing = mux_atoi64(fargs[0]);
-    int attr_num = mux_atoi64(fargs[1]);
+    int64_t attr_num = mux_atoi64(fargs[1]);
 
     if (!Good_obj(thing))
     {
@@ -14910,7 +14910,7 @@ static FUNCTION(fun__restore_qregs)
 
     if (nfargs < 1) return;
 
-    int idx = mux_atoi64(fargs[0]);
+    int64_t idx = mux_atoi64(fargs[0]);
     if (idx >= 0 && idx < MAX_QREG_SAVE_DEPTH
         && s_qreg_save_stack[idx].in_use)
     {

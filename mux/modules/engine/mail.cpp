@@ -692,7 +692,7 @@ static int get_folder_number(dbref player, UTF8 *name)
                 p++;
             }
 
-            int iFolderNumber = mux_atoi64(p);
+            int64_t iFolderNumber = mux_atoi64(p);
             free_lbuf(aFolders);
             return iFolderNumber;
         }
@@ -712,7 +712,7 @@ static int parse_folder(dbref player, UTF8 *folder_string)
     }
     if (mux_isdigit(*folder_string))
     {
-        int fnum = mux_atoi64(folder_string);
+        int64_t fnum = mux_atoi64(folder_string);
         if (  fnum < 0
            || fnum > MAX_FOLDERS)
         {
@@ -1134,7 +1134,7 @@ static int player_folder(dbref player)
         set_player_folder(player, 0);
         return 0;
     }
-    int number = mux_atoi64(atrstr);
+    int64_t number = mux_atoi64(atrstr);
     free_lbuf(atrstr);
     return number;
 }
@@ -1499,7 +1499,7 @@ static malias_t *get_malias(dbref player, UTF8 *alias, int *pnResult)
     {
         if (ExpMail(player))
         {
-            int x = mux_atoi64(alias + 1);
+            int64_t x = mux_atoi64(alias + 1);
             if (x < 0 || x >= static_cast<int>(malias.size()))
             {
                 *pnResult = GMA_NOTFOUND;
@@ -2481,7 +2481,7 @@ static void do_mail_fwd(dbref player, UTF8 *msg, UTF8 *tolist)
         raw_notify(player, M_("MAIL: Too much @mail sent recently."));
         return;
     }
-    int num = mux_atoi64(msg);
+    int64_t num = mux_atoi64(msg);
     if (!num)
     {
         raw_notify(player, M_("MAIL: I don’t understand that message number."));
@@ -2522,7 +2522,7 @@ static void do_mail_reply(dbref player, UTF8 *msg, bool all, int key)
         raw_notify(player, M_("MAIL: Too much @mail sent recently."));
         return;
     }
-    int num = mux_atoi64(msg);
+    int64_t num = mux_atoi64(msg);
     if (!num)
     {
         raw_notify(player, M_("MAIL: I don’t understand that message number."));
@@ -3675,7 +3675,7 @@ static void load_mail_V6(FILE *fp)
     while (  nullptr != p
           && strncmp(reinterpret_cast<char *>(nbuf1), "+++", 3) != 0)
     {
-        int number = mux_atoi64(nbuf1);
+        int64_t number = mux_atoi64(nbuf1);
         pBuffer = reinterpret_cast<UTF8 *>(getstring_noalloc(fp, true, &nBuffer));
         new_mail_message(pBuffer, number);
         p = reinterpret_cast<UTF8 *>(fgets(reinterpret_cast<char *>(nbuf1), sizeof(nbuf1), fp));
@@ -3744,7 +3744,7 @@ static void load_mail_V5(FILE *fp)
           && strncmp(nbuf1, "+++", 3) != 0)
     {
         pBufferUnicode = reinterpret_cast<UTF8 *>(nbuf1);
-        int number = mux_atoi64(pBufferUnicode);
+        int64_t number = mux_atoi64(pBufferUnicode);
         pBufferLatin1 = reinterpret_cast<char *>(getstring_noalloc(fp, true, &nBufferLatin1));
         pBufferUnicode = ConvertToUTF8(pBufferLatin1, &nBufferUnicode);
         new_mail_message(pBufferUnicode, number);

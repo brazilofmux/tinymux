@@ -374,7 +374,7 @@ static int u_comp(ucomp_context *pctx, const void *s1, const void *s2)
     ast_exec(tbuf, LBUF_SIZE-1, result, &bp, pctx->executor, pctx->caller, pctx->enactor,
              AttrTrace(pctx->aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), elems, 2);
     *bp = '\0';
-    int n = mux_atoi64(result);
+    int64_t n = mux_atoi64(result);
     return n;
 }
 
@@ -881,7 +881,7 @@ FUNCTION(fun_step)
         return;
     }
 
-    int step_size = mux_atoi64(fargs[2]);
+    int64_t step_size = mux_atoi64(fargs[2]);
     if (  step_size < 1
        || NUM_ENV_VARS < step_size)
     {
@@ -1218,8 +1218,8 @@ FUNCTION(fun_die)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int n   = mux_atoi64(fargs[0]);
-    int die = mux_atoi64(fargs[1]);
+    int64_t n = mux_atoi64(fargs[0]);
+    int64_t die = mux_atoi64(fargs[1]);
 
     if (  n == 0
        || die <= 0)
@@ -1268,7 +1268,7 @@ FUNCTION(fun_lrand)
         return;
     }
 
-    int n_times = mux_atoi64(fargs[2]);
+    int64_t n_times = mux_atoi64(fargs[2]);
     if (n_times < 1)
     {
         return;
@@ -1635,14 +1635,14 @@ FUNCTION(fun_baseconv)
         return;
     }
 
-    int iRadixFrom = mux_atoi64(fargs[1]);
+    int64_t iRadixFrom = mux_atoi64(fargs[1]);
     if (  iRadixFrom < 2
        || 64 < iRadixFrom)
     {
         safe_str(S_("#-1 INPUT RADIX MUST BE A NUMBER BETWEEN 2 and 64"), buff, bufc);
         return;
     }
-    int iRadixTo = mux_atoi64(fargs[2]);
+    int64_t iRadixTo = mux_atoi64(fargs[2]);
     if (  iRadixTo < 2
        || 64 < iRadixTo)
     {

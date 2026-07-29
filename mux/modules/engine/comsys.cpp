@@ -2434,7 +2434,7 @@ static ChanLogResult do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     dbref aowner;
     int aflags;
     LBuf oldvalue = LBuf_Adopt(atr_get("do_chanlog.1477", ch->chan_obj, atr, &aowner, &aflags));
-    const int oldnum = mux_atoi64(oldvalue);
+    const int64_t oldnum = mux_atoi64(oldvalue);
     if (value < oldnum)
     {
         for (int count = 0; count <= oldnum; count++)
@@ -3651,11 +3651,11 @@ void do_editchannel
 
     case EDIT_CHANNEL_CCHARGE:
         {
-            const int c_charge = mux_atoi64(arg2);
+            const int64_t c_charge = mux_atoi64(arg2);
             if (0 <= c_charge
                 && c_charge <= MAX_COST)
             {
-                ch->charge = c_charge;
+                ch->charge = static_cast<int>(c_charge);
                 raw_notify(executor, M_("Set."));
             }
             else

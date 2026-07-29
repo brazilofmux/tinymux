@@ -3140,16 +3140,22 @@ dbref parse_dbref(const UTF8 *s)
 
             if ('\0' == *p)
             {
-                int x = mux_atoi64(s);
-                return ((x >= 0) ? x : NOTHING);
+                // Full-width parse; dbref is int-ranged (#1402).
+                //
+                int64_t x = mux_atoi64(s);
+                if (x < 0 || x > INT_MAX)
+                {
+                    return NOTHING;
+                }
+                return static_cast<dbref>(x);
             }
         }
         else if (':' == *p)
         {
             // Parse objid format: dbref:timestamp
             //
-            int x = mux_atoi64(s);
-            if (x < 0)
+            int64_t x = mux_atoi64(s);
+            if (x < 0 || x > INT_MAX)
             {
                 return NOTHING;
             }

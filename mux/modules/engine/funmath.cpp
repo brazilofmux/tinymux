@@ -1817,7 +1817,7 @@ FUNCTION(fun_round)
             r = 0.0;
         }
 #endif // HAVE_IEEE_FP_FORMAT
-        int frac = mux_atoi64(fargs[1]);
+        int64_t frac = mux_atoi64(fargs[1]);
         safe_str(mux_ftoa(r, true, frac), buff, bufc);
 #ifdef HAVE_IEEE_FP_FORMAT
     }
@@ -2240,7 +2240,7 @@ FUNCTION(fun_log)
         if (  is_integer(fargs[1], &nDigits)
            && nDigits <= 2)
         {
-            int iBase = mux_atoi64(fargs[1]);
+            int64_t iBase = mux_atoi64(fargs[1]);
             if (10 == iBase)
             {
                 kBase = kCommon;

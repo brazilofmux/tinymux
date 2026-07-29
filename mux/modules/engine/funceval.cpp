@@ -1939,7 +1939,7 @@ FUNCTION(fun_columns)
         return;
     }
 
-    int nWidth = mux_atoi64(fargs[1]);
+    int64_t nWidth = mux_atoi64(fargs[1]);
     int nIndent = 0;
     if (nfargs == 4)
     {
@@ -2435,7 +2435,7 @@ FUNCTION(fun_left)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int nLeft = mux_atoi64(fargs[1]);
+    int64_t nLeft = mux_atoi64(fargs[1]);
     if (nLeft < 0)
     {
         safe_range(buff, bufc);
@@ -2813,7 +2813,7 @@ FUNCTION(fun_mailreview)
             return;
         }
 
-        int num = mux_atoi64(fargs[1]);
+        int64_t num = mux_atoi64(fargs[1]);
         if (num < 1)
         {
             safe_str(S_("#-1 NO SUCH MESSAGE"), buff, bufc);
@@ -3005,7 +3005,7 @@ FUNCTION(fun_mailinfo)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int num = mux_atoi64(fargs[0]);
+    int64_t num = mux_atoi64(fargs[0]);
     const UTF8 *field = fargs[1];
 
     dbref playerask;
@@ -3141,7 +3141,7 @@ FUNCTION(fun_mailflags)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int num = mux_atoi64(fargs[0]);
+    int64_t num = mux_atoi64(fargs[0]);
 
     dbref playerask;
     if (nfargs >= 2 && fargs[1][0] != '\0')
@@ -3561,7 +3561,7 @@ FUNCTION(fun_elements)
         do
         {
             UTF8 *r = split_token(&s, sepSpace);
-            int cur = mux_atoi64(r) - 1;
+            int64_t cur = mux_atoi64(r) - 1;
             if (  0 <= cur
                && static_cast<size_t>(cur) < nWords)
             {
@@ -3603,7 +3603,7 @@ FUNCTION(fun_elements)
         do
         {
             UTF8 *r = split_token(&s, sepSpace);
-            int cur = mux_atoi64(r) - 1;
+            int64_t cur = mux_atoi64(r) - 1;
             if (  0 <= cur
                && cur < static_cast<int>(nWords))
             {
@@ -3676,8 +3676,8 @@ FUNCTION(fun_delextract)
         return;
     }
 
-    int iFirst = mux_atoi64(fargs[1]);
-    int nCount = mux_atoi64(fargs[2]);
+    int64_t iFirst = mux_atoi64(fargs[1]);
+    int64_t nCount = mux_atoi64(fargs[2]);
     if (iFirst < 1) iFirst = 1;
     if (nCount < 1)
     {
@@ -3726,7 +3726,7 @@ FUNCTION(fun_garble)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int pct = mux_atoi64(fargs[1]);
+    int64_t pct = mux_atoi64(fargs[1]);
     if (pct < 0)   pct = 0;
     if (pct > 100)  pct = 100;
 
@@ -4255,7 +4255,7 @@ FUNCTION(fun_subnetmatch)
             safe_str(S_("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
             return;
         }
-        int bits = mux_atoi64(slash + 1);
+        int64_t bits = mux_atoi64(slash + 1);
         if (bits < 0 || bits > 32)
         {
             safe_str(S_("#-1 INVALID PREFIX LENGTH"), buff, bufc);
@@ -4307,8 +4307,8 @@ FUNCTION(fun_wrapcolumns)
     UNUSED_PARAMETER(ncargs);
     UNUSED_PARAMETER(executor);
 
-    int colWidth = mux_atoi64(fargs[1]);
-    int nCols    = mux_atoi64(fargs[2]);
+    int64_t colWidth = mux_atoi64(fargs[1]);
+    int64_t nCols = mux_atoi64(fargs[2]);
     if (colWidth < 1) colWidth = 1;
     if (nCols < 1)    nCols = 1;
     // #1111: upper-bound width/cols — unbounded pad loops are CPU DoS.
@@ -4333,7 +4333,7 @@ FUNCTION(fun_wrapcolumns)
     const UTF8 *lBorder = (nfargs >= 5) ? fargs[4] : T("");
     const UTF8 *mBorder = (nfargs >= 6) ? fargs[5] : T("");
     const UTF8 *rBorder = (nfargs >= 7) ? fargs[6] : T("");
-    int order = (nfargs >= 8) ? mux_atoi64(fargs[7]) : 0;
+    int64_t order = (nfargs >= 8) ? mux_atoi64(fargs[7]) : 0;
 
     // Word-wrap the input text into lines of at most colWidth chars.
     //
