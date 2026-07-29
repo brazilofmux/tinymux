@@ -77,8 +77,8 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
-| D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1258/#1259 closed; check #1260 state before re-queue |
-| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs closed; residual #1292 family — verify before re-queue |
+| D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1258–#1260 closed |
+| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs closed; #1292 closed |
 | D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1751 campaign 2026-07-29 | deep | Post-entry contract shipped; residual typed fidelity + mixed softcode/Lua corpus |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
