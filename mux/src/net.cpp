@@ -666,10 +666,20 @@ void desc_reload(dbref player)
         UTF8* buf = atr_pget(player, A_TIMEOUT, &aowner, &aflags);
         if (buf)
         {
-            d->timeout = mux_atoi64(buf);
-            if (d->timeout <= 0)
+            // Full-width parse then clamp into DESC::timeout (int) (#1402).
+            //
+            int64_t to = mux_atoi64(buf);
+            if (to <= 0)
             {
                 d->timeout = g_dc.idle_timeout;
+            }
+            else if (to > INT_MAX)
+            {
+                d->timeout = INT_MAX;
+            }
+            else
+            {
+                d->timeout = static_cast<int>(to);
             }
             free_lbuf(buf);
             buf = nullptr;

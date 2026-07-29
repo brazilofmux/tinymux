@@ -129,7 +129,7 @@ void shutdownsock(DESC *d, int reason)
 
         // Update the A_CONNINFO attribute.
         //
-        long anFields[4];
+        int64_t anFields[4];
         fetch_ConnectionInfoFields(d->player, anFields);
 
         // One of the active sessions is going away. It doesn't matter which

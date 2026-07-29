@@ -2402,7 +2402,9 @@ static ChanLogResult do_chanlog(dbref player, UTF8* channel, UTF8* arg)
 {
     UNUSED_PARAMETER(player);
 
-    int value;
+    // int64_t, not int (#1402): MAX_LOG is an attribute integer.
+    //
+    int64_t value;
     if (!*arg
         || !is_integer(arg, nullptr)
         || (value = mux_atoi64(arg)) > MAX_RECALL_REQUEST)
@@ -2434,19 +2436,20 @@ static ChanLogResult do_chanlog(dbref player, UTF8* channel, UTF8* arg)
     dbref aowner;
     int aflags;
     LBuf oldvalue = LBuf_Adopt(atr_get("do_chanlog.1477", ch->chan_obj, atr, &aowner, &aflags));
-    const int oldnum = mux_atoi64(oldvalue);
+    const int64_t oldnum = mux_atoi64(oldvalue);
     if (value < oldnum)
     {
-        for (int count = 0; count <= oldnum; count++)
+        for (int64_t count = 0; count <= oldnum; count++)
         {
-            ATTR* hist = atr_str(tprintf(T("HISTORY_%d"), count));
+            ATTR* hist = atr_str(tprintf(T("HISTORY_%lld"),
+                static_cast<long long>(count)));
             if (hist)
             {
                 atr_clr(ch->chan_obj, hist->number);
             }
         }
     }
-    atr_add(ch->chan_obj, atr, mux_ltoa_t(value), GOD,
+    atr_add(ch->chan_obj, atr, mux_i64toa_t(value), GOD,
             AF_CONST | AF_NOPROG | AF_NOPARSE);
     return CHANLOG_OK;
 }
@@ -3651,11 +3654,11 @@ void do_editchannel
 
     case EDIT_CHANNEL_CCHARGE:
         {
-            const int c_charge = mux_atoi64(arg2);
+            const int64_t c_charge = mux_atoi64(arg2);
             if (0 <= c_charge
                 && c_charge <= MAX_COST)
             {
-                ch->charge = c_charge;
+                ch->charge = static_cast<int>(c_charge);
                 raw_notify(executor, M_("Set."));
             }
             else

@@ -879,9 +879,9 @@ public:
     virtual MUX_RESULT LookupPlayer(dbref executor, const UTF8 *pName,
         bool bConnected, dbref *pResult);
     virtual MUX_RESULT FetchConnectionInfoFields(dbref player,
-        long anFields[4]);
+        int64_t anFields[4]);
     virtual MUX_RESULT PutConnectionInfoFields(dbref player,
-        long anFields[4], CLinearTimeAbsolute &ltaNow);
+        int64_t anFields[4], CLinearTimeAbsolute &ltaNow);
 
     CObjectInfo(void);
     virtual ~CObjectInfo();
@@ -1371,7 +1371,7 @@ MUX_RESULT CObjectInfo::LookupPlayer(dbref executor, const UTF8 *pName,
 }
 
 MUX_RESULT CObjectInfo::FetchConnectionInfoFields(dbref player,
-    long anFields[4])
+    int64_t anFields[4])
 {
     if (!Good_obj(player))
     {
@@ -1382,7 +1382,7 @@ MUX_RESULT CObjectInfo::FetchConnectionInfoFields(dbref player,
 }
 
 MUX_RESULT CObjectInfo::PutConnectionInfoFields(dbref player,
-    long anFields[4], CLinearTimeAbsolute &ltaNow)
+    int64_t anFields[4], CLinearTimeAbsolute &ltaNow)
 {
     if (!Good_obj(player))
     {

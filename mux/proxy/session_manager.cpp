@@ -2578,8 +2578,8 @@ void SessionManager::resumeSavedSession(FrontDoorState& fd,
     session.accountId = accountId;
     session.username = fd.pendingUsername;
     // Preserve original timestamps from saved data
-    session.created = static_cast<time_t>(std::atol(saved.created.c_str()));
-    session.lastActivity = static_cast<time_t>(std::atol(saved.lastActive.c_str()));
+    session.created = static_cast<time_t>(std::atoll(saved.created.c_str()));
+    session.lastActivity = static_cast<time_t>(std::atoll(saved.lastActive.c_str()));
     if (session.created == 0) session.created = time(nullptr);
     if (session.lastActivity == 0) session.lastActivity = time(nullptr);
     session.scrollbackKey = sbKey;
@@ -3690,8 +3690,8 @@ void SessionManager::restoreAllSessions() {
         session.internalId = nextSessionId_++;
         session.accountId = s.accountId;
         // Preserve original timestamps from saved data
-        session.created = static_cast<time_t>(std::atol(s.created.c_str()));
-        session.lastActivity = static_cast<time_t>(std::atol(s.lastActive.c_str()));
+        session.created = static_cast<time_t>(std::atoll(s.created.c_str()));
+        session.lastActivity = static_cast<time_t>(std::atoll(s.lastActive.c_str()));
         if (session.created == 0) session.created = time(nullptr);
         if (session.lastActivity == 0) session.lastActivity = session.created;
         session.persistId = s.persistId;

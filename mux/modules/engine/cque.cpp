@@ -52,27 +52,43 @@ static bool add_to(const dbref executor, const int am, int attrnum, int *pnum)
     dbref aowner;
 
     LBuf atr_gotten = LBuf_Adopt(atr_get("add_to.68", executor, attrnum, &aowner, &aflags));
-    int num = mux_atoi64(atr_gotten);
+    // int64_t, not int (#1402): semaphore counts are attribute integers.
+    //
+    int64_t num = mux_atoi64(atr_gotten);
     num += am;
 
-    UTF8 buff[I32BUF_SIZE];
+    UTF8 buff[I64BUF_SIZE];
     size_t nlen = 0;
     *buff = '\0';
     if (num)
     {
-        nlen = mux_ltoa(num, buff);
+        nlen = mux_i64toa(num, buff);
     }
     if (!atr_add_raw_LEN(executor, attrnum, buff, nlen))
     {
         STARTLOG(LOG_PROBLEMS, "QUE", "SEMAPH");
-        log_printf(T("add_to(#%d/%d): failed to persist semaphore count %d."), executor, attrnum, num);
+        log_printf(T("add_to(#%d/%d): failed to persist semaphore count %lld."),
+            executor, attrnum, static_cast<long long>(num));
         ENDLOG;
         return false;
     }
 
     if (pnum)
     {
-        *pnum = num;
+        // Caller still takes int; clamp after full-width arithmetic.
+        //
+        if (num > INT_MAX)
+        {
+            *pnum = INT_MAX;
+        }
+        else if (num < INT_MIN)
+        {
+            *pnum = INT_MIN;
+        }
+        else
+        {
+            *pnum = static_cast<int>(num);
+        }
     }
     return true;
 }
@@ -2101,7 +2117,22 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
 
     if (key == QUEUE_KICK)
     {
-        const int i = mux_atoi64(arg);
+        // Parse full width, then clamp for RunTasks(int) (#1402).
+        //
+        int64_t wanted = mux_atoi64(arg);
+        int i;
+        if (wanted > INT_MAX)
+        {
+            i = INT_MAX;
+        }
+        else if (wanted < 0)
+        {
+            i = 0;
+        }
+        else
+        {
+            i = static_cast<int>(wanted);
+        }
         const int save_minPriority = scheduler.GetMinPriority();
         if (save_minPriority <= PRIORITY_CF_DEQUEUE_DISABLED)
         {
@@ -2121,7 +2152,9 @@ void do_queue(const dbref executor, const dbref caller, const dbref enactor, con
     }
     else if (key == QUEUE_WARP)
     {
-        const int iWarp = mux_atoi64(arg);
+        // SetSeconds takes int64_t (UnderlyingTickType) (#1402).
+        //
+        const int64_t iWarp = mux_atoi64(arg);
         ltdWarp.SetSeconds(iWarp);
         if (scheduler.GetMinPriority() <= PRIORITY_CF_DEQUEUE_DISABLED)
         {

@@ -269,7 +269,7 @@ dbref lookup_player(dbref executor, UTF8 *pName, bool bConnected)
     return result;
 }
 
-void fetch_ConnectionInfoFields(dbref player, long anFields[4])
+void fetch_ConnectionInfoFields(dbref player, int64_t anFields[4])
 {
     if (g_pIObjectInfo)
     {
@@ -277,7 +277,7 @@ void fetch_ConnectionInfoFields(dbref player, long anFields[4])
     }
 }
 
-void put_ConnectionInfoFields(dbref player, long anFields[4],
+void put_ConnectionInfoFields(dbref player, int64_t anFields[4],
     CLinearTimeAbsolute &ltaNow)
 {
     if (g_pIObjectInfo)

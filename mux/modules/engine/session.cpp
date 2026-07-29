@@ -468,7 +468,7 @@ static void ParseConnectionInfoString(UTF8 *pConnInfo, UTF8 *pFields[5])
     }
 }
 
-void fetch_ConnectionInfoFields(dbref target, long anFields[4])
+void fetch_ConnectionInfoFields(dbref target, int64_t anFields[4])
 {
     dbref aowner;
     int   aflags;
@@ -478,7 +478,7 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
 
     for (int i = 0; i < 4; i++)
     {
-        long result;
+        int64_t result;
         if (  !aFields[i]
            || (result = mux_atoi64(aFields[i])) < 0)
         {
@@ -491,7 +491,7 @@ void fetch_ConnectionInfoFields(dbref target, long anFields[4])
 void put_ConnectionInfoFields
 (
     dbref target,
-    long anFields[4],
+    int64_t anFields[4],
     CLinearTimeAbsolute &ltaLogout
 )
 {
@@ -499,7 +499,7 @@ void put_ConnectionInfoFields
     UTF8 *p = pConnInfo.get();
     for (int i = 0; i < 4; i++)
     {
-        p += mux_ltoa(anFields[i], p);
+        p += mux_i64toa(anFields[i], p);
         *p++ = ' ';
     }
     p += mux_i64toa(ltaLogout.ReturnSeconds(), p);
@@ -508,7 +508,7 @@ void put_ConnectionInfoFields
     atr_add_raw_LEN(target, A_CONNINFO, pConnInfo, p - pConnInfo.get());
 }
 
-long fetch_ConnectionInfoField(dbref target, int iField)
+int64_t fetch_ConnectionInfoField(dbref target, int iField)
 {
     dbref aowner;
     int   aflags;
@@ -516,7 +516,7 @@ long fetch_ConnectionInfoField(dbref target, int iField)
     UTF8 *aFields[5];
     ParseConnectionInfoString(pConnInfo, aFields);
 
-    long result;
+    int64_t result;
     if (  !aFields[iField]
        || (result = mux_atoi64(aFields[iField])) < 0)
     {

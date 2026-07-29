@@ -315,7 +315,7 @@ static bool try_fold(const std::string &func_name,
             r = 0.0;
         }
 #endif
-        int frac = mux_atoi64(u8(args[1]));
+        int64_t frac = mux_atoi64(u8(args[1]));
         result = reinterpret_cast<const char *>(mux_ftoa(r, true, frac));
         return true;
     }
@@ -615,8 +615,8 @@ static bool try_fold(const std::string &func_name,
     // --- MID(string, start, count) ---
     // Uses co_mid_cluster (grapheme clusters) to match fun_mid.
     if (upper == "MID" && nargs == 3) {
-        int iStart = static_cast<int>(mux_atoi64(u8(args[1])));
-        int nMid   = static_cast<int>(mux_atoi64(u8(args[2])));
+        int64_t iStart = mux_atoi64(u8(args[1]));
+        int64_t nMid = mux_atoi64(u8(args[2]));
         if (nMid < 0) {
             iStart += 1 + nMid;
             nMid = -nMid;
@@ -672,8 +672,8 @@ static bool try_fold(const std::string &func_name,
     if (upper == "EXTRACT" && nargs >= 3 && nargs <= 5
         && (nargs < 4 || args[3].size() <= 1)
         && (nargs < 5 || args[4].size() <= 1)) {
-        int iFirst = static_cast<int>(mux_atoi64(u8(args[1])));
-        int nWords = static_cast<int>(mux_atoi64(u8(args[2])));
+        int64_t iFirst = mux_atoi64(u8(args[1]));
+        int64_t nWords = mux_atoi64(u8(args[2]));
         if (iFirst < 1 || nWords < 1) {
             result = "";
             return true;
@@ -697,7 +697,7 @@ static bool try_fold(const std::string &func_name,
 
     // --- REPEAT(string, count) ---
     if (upper == "REPEAT" && nargs == 2) {
-        int count = static_cast<int>(mux_atoi64(u8(args[1])));
+        int64_t count = mux_atoi64(u8(args[1]));
         if (count <= 0) {
             result = "";
             return true;
@@ -777,8 +777,8 @@ static bool try_fold(const std::string &func_name,
     // --- DELETE(string, start, count) ---
     // Uses co_delete_cluster (grapheme clusters) to match fun_delete.
     if (upper == "DELETE" && nargs == 3) {
-        int iStart = static_cast<int>(mux_atoi64(u8(args[1])));
-        int nDel   = static_cast<int>(mux_atoi64(u8(args[2])));
+        int64_t iStart = mux_atoi64(u8(args[1]));
+        int64_t nDel = mux_atoi64(u8(args[2]));
         if (nDel < 0) {
             iStart += 1 + nDel;
             nDel = -nDel;
@@ -803,7 +803,7 @@ static bool try_fold(const std::string &func_name,
     // --- RIGHT(string, count) ---
     // Uses co_cluster_count + co_mid_cluster to match fun_right.
     if (upper == "RIGHT" && nargs == 2) {
-        int nRight = static_cast<int>(mux_atoi64(u8(args[1])));
+        int64_t nRight = mux_atoi64(u8(args[1]));
         if (nRight < 0) {
             result = "#-1 OUT OF RANGE";
             return true;

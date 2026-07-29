@@ -22,6 +22,7 @@
 #include "unicode_tables_c.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 
 /* ---- Grapheme Cluster Break (GCB) DFA tables from utf8tables ----
@@ -3015,21 +3016,23 @@ static int cmp_ascii_ci(const void *a, const void *b)
     return (sa->plain_len > sb->plain_len) - (sa->plain_len < sb->plain_len);
 }
 
-static long parse_long(const unsigned char *p, size_t len)
+/* Full-width integer parse for sort keys (#1402).  Avoid atol() — long is
+ * 32-bit on LLP64 and truncates large softcode-ish numeric prefixes. */
+static int64_t parse_i64(const unsigned char *p, size_t len)
 {
     char buf[64];
     size_t n = len < 63 ? len : 63;
     memcpy(buf, p, n);
     buf[n] = '\0';
-    return atol(buf);
+    return (int64_t)strtoll(buf, NULL, 10);
 }
 
 static int cmp_numeric(const void *a, const void *b)
 {
     const sort_elem_t *sa = (const sort_elem_t *)a;
     const sort_elem_t *sb = (const sort_elem_t *)b;
-    long la = parse_long(sa->plain, sa->plain_len);
-    long lb = parse_long(sb->plain, sb->plain_len);
+    int64_t la = parse_i64(sa->plain, sa->plain_len);
+    int64_t lb = parse_i64(sb->plain, sb->plain_len);
     return (la > lb) - (la < lb);
 }
 
@@ -3044,8 +3047,8 @@ static int cmp_dbref(const void *a, const void *b)
     size_t lb = sb->plain_len;
     if (la > 0 && *pa == '#') { pa++; la--; }
     if (lb > 0 && *pb == '#') { pb++; lb--; }
-    long da = parse_long(pa, la);
-    long db = parse_long(pb, lb);
+    int64_t da = parse_i64(pa, la);
+    int64_t db = parse_i64(pb, lb);
     return (da > db) - (da < db);
 }
 
