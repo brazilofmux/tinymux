@@ -1428,30 +1428,31 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
                 ENDLOG;
                 return true;
             }
-            if (MUX_E_NOTFOUND != mr) {
-                // S_OK: success or committed post-entry decline (pResult set).
-                // E_FAIL: other run failure — pre-Phase-0 used to re-run the
-                // interpreter; still do for non-decline failures until bins
-                // are emptied.  Post-entry decline returns S_OK above.
+            if (MUX_E_NOTFOUND == mr) {
+                // Program gone from cache (e.g. jitstats flush).  Clear the
+                // latch and compile again below — pre-entry: nothing ran.
                 //
-                return MUX_SUCCEEDED(mr);
+                entry.jit_key = 0;
+                entry.jit_eligible = false;
+            } else {
+                // #1751 Phase 4: after RunCompiled, never re-run the
+                // interpreter.  Success, committed LUA ERROR / POST-ENTRY /
+                // RUN FAIL / CPU LIMITED all leave pResult set.  If E_FAIL
+                // arrived empty, commit a generic fail text.
+                //
+                if (MUX_FAILED(mr)
+                    && nullptr != pResult
+                    && pResult[0] == '\0') {
+                    size_t n = mux_snprintf(pResult, nResultMax,
+                        T("#-1 LUA JIT RUN FAIL"));
+                    if (nullptr != pnResultLen) {
+                        *pnResultLen = n;
+                    }
+                }
+                return true;
             }
-
-            // The compiled program is gone.  jitstats(flush) clears the
-            // JIT-side program cache (jit_lua_clear_cache) but cannot reach
-            // this Lua-side latch, so jit_key still names a key that no
-            // longer resolves.  Left alone, every later call takes this
-            // branch, misses again, and falls back to the Lua interpreter
-            // for the life of the process: correct answers with a dead JIT,
-            // which is exactly the failure #1309 is about and which no
-            // result-equality test can see.  It also inverts the purpose of
-            // flush, whose whole job is to force a recompile against new
-            // codegen (#1316).  Clear the latch and compile again below.
-            //
-            entry.jit_key = 0;
-            entry.jit_eligible = false;
         } else {
-            return false;  // Previously failed to compile.
+            return false;  // Previously failed to compile (pre-entry).
         }
     }
 
@@ -1508,7 +1509,19 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
         ENDLOG;
         return true;
     }
-    return MUX_SUCCEEDED(mr);
+    // Phase 4: first-run after successful compile is post-entry for the
+    // re-run rule.  Never fall through to lua_pcall on E_FAIL.
+    //
+    if (MUX_FAILED(mr)
+        && nullptr != pResult
+        && pResult[0] == '\0') {
+        size_t n = mux_snprintf(pResult, nResultMax,
+            T("#-1 LUA JIT RUN FAIL"));
+        if (nullptr != pnResultLen) {
+            *pnResultLen = n;
+        }
+    }
+    return true;
 }
 
 // =========================================================================

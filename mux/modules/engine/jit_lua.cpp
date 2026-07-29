@@ -371,23 +371,15 @@ public:
 
         s_lua_jit_stats.cache_hits++;
 
-        // On a wall-clock alarm mid-run, run_cached_program writes
-        // "#-1 CPU LIMITED" into pResult and returns true (handled) rather
-        // than false.  That is deliberate: a false here returns MUX_E_FAIL,
-        // and the Lua caller responds by re-running the whole chunk in the
-        // Lua VM -- expensive work we must NOT do once the command is already
-        // over its CPU budget.  So an alarm surfaces as a successful
-        // CPU-LIMITED result, not a failover.
+        // #1751 Phase 4: run_cached_program with a Lua state never returns
+        // false after entry (CPU LIMITED, LUA ERROR, residual POST-ENTRY,
+        // and generic RUN FAIL are all committed handled=true).  A false
+        // here is only a pre-entry/setup failure.
         //
         bool ok = run_cached_program(&it->second, executor, caller, enactor,
             pResult, nResultMax, pArgs, nArgs,
             EV_FCHECK | EV_EVAL, pLuaState);
 
-        // Phase 0: post-entry decline already wrote the loud error into
-        // pResult and returned handled=true.  Count it, do not treat as
-        // run_ok, and return S_OK so CLuaMod::TryJIT does not re-run the
-        // interpreter (#1751).  Detect by the committed error prefix.
-        //
         if (ok && nullptr != pResult
             && 0 == strncmp(reinterpret_cast<const char *>(pResult),
                             "#-1 LUA JIT POST-ENTRY DECLINE", 30)) {
@@ -401,12 +393,23 @@ public:
 
         if (!ok) {
             s_lua_jit_stats.run_fail++;
-            return MUX_E_FAIL;
+            // Phase 4: still must not re-run.  Commit if empty.
+            //
+            if (nullptr != pResult && nResultMax > 0 && pResult[0] == '\0') {
+                mux_snprintf(pResult, nResultMax, T("#-1 LUA JIT RUN FAIL"));
+            }
+            if (pnResultLen && nullptr != pResult) {
+                *pnResultLen = strlen(reinterpret_cast<const char *>(pResult));
+            }
+            return MUX_S_OK;
         }
 
         if (pnResultLen) {
             *pnResultLen = strlen(reinterpret_cast<const char *>(pResult));
         }
+        // Handled run (success or committed LUA ERROR / CPU LIMITED).
+        // POST-ENTRY arm above already counted run_fail.
+        //
         s_lua_jit_stats.run_ok++;
         return MUX_S_OK;
     }
