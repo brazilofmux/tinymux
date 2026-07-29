@@ -12,8 +12,11 @@ in [`plan-lua-jit-bringup.md`](plan-lua-jit-bringup.md) and
 **What shipped.** Nested execution under softcode JIT (#1326), engage
 coverage, and default-on (#1745). Games that `./configure --enable-jit` and
 run with conf defaults get both softcode and Lua JIT without special knobs.
-Remaining work is optional coverage and polish (see §5 Phase D), not a
-product gate.
+
+**Active architecture campaign:** post-entry decline/rerun is not the end
+state — see [`plan-lua-post-entry-contract.md`](plan-lua-post-entry-contract.md)
+and #1751. Enablement knobs are on; the softcode contract for compiled Lua
+runs is the remaining re-development path (not “optional polish” alone).
 
 ---
 
