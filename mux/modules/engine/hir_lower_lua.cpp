@@ -402,6 +402,17 @@ static int insn_leaders(const lua_bc_proto *proto, int pc, int n, int out[2]) {
         out[cnt++] = pc + 1;
         out[cnt++] = pc + 2;
         break;
+    case OP_LUA_EQK:
+        // #1761: EQK is "if ((R[A]==K[B]) ~= k) then pc++" -- one-instruction
+        // skip, NOT the EQ+JMP fuse.  pc+1 is the skipped insn (often JMP),
+        // pc+2 is the fall-through after the skip.  Omitting these leaders
+        // left false_target in the SAME block as the EQK, so BRC's false
+        // edge was a self-loop (dispatch-limit hang) and the fall-through
+        // return was unreachable.  Masked by interpreter re-run until
+        // Phase 4 removed it.
+        out[cnt++] = pc + 1;
+        out[cnt++] = pc + 2;
+        break;
     case OP_LUA_LFALSESKIP:
         // "R[A] := false; pc++".  The skip is control flow, not a linear
         // step: the instruction it jumps over belongs to the other path.
