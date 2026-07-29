@@ -1216,7 +1216,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
         if (q)
         {
             q++;
-            ms->low = atol(reinterpret_cast<const char *>(p));
+            ms->low = mux_atoi64(p);
             if (ms->low <= 0)
             {
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
@@ -1228,7 +1228,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
             }
             else
             {
-                ms->high = atol(q);
+                ms->high = mux_atoi64(reinterpret_cast<const UTF8 *>(q));
                 if (ms->low > ms->high)
                 {
                     m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
@@ -1238,7 +1238,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
         }
         else
         {
-            ms->low = ms->high = atol(reinterpret_cast<const char *>(p));
+            ms->low = ms->high = mux_atoi64(p);
             if (ms->low <= 0)
             {
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_NUMBER]);
@@ -1257,7 +1257,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
                 return false;
             }
-            ms->high = atol(reinterpret_cast<const char *>(p));
+            ms->high = mux_atoi64(p);
             if (ms->high <= 0)
             {
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_RANGE]);
@@ -1273,7 +1273,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
                 return false;
             }
             ms->day_comp = 0;
-            ms->days = atol(reinterpret_cast<const char *>(p));
+            ms->days = mux_atoi64(p);
             if (ms->days < 0)
             {
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
@@ -1289,7 +1289,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
                 return false;
             }
             ms->day_comp = -1;
-            ms->days = atol(reinterpret_cast<const char *>(p));
+            ms->days = mux_atoi64(p);
             if (ms->days < 0)
             {
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
@@ -1305,7 +1305,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
                 return false;
             }
             ms->day_comp = 1;
-            ms->days = atol(reinterpret_cast<const char *>(p));
+            ms->days = mux_atoi64(p);
             if (ms->days < 0)
             {
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_AGE]);
@@ -1320,7 +1320,7 @@ bool CMailMod::parse_msglist(const UTF8 *msglist, struct mail_selector *ms,
                 m_pINotify->RawNotify(player, mailmsg[MAIL_INVALID_DBREF]);
                 return false;
             }
-            ms->player = atol(reinterpret_cast<const char *>(p));
+            ms->player = static_cast<dbref>(mux_atoi64(p));
             break;
 
         case '*':

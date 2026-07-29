@@ -64,11 +64,13 @@ struct mail
 
 struct mail_selector
 {
-    int       low;
-    int       high;
+    // Message index / age filters: full-width integers (#1402).
+    //
+    int64_t   low;
+    int64_t   high;
     mail_flag flags;
     dbref     player;
-    int       days;
+    int64_t   days;
     int       day_comp;
 };
 

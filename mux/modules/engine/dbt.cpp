@@ -278,7 +278,9 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
             static int pad = -1;
             if (pad < 0) {
                 const char *env = getenv("TINYMUX_DBT_PAD");
-                pad = env ? atoi(env) : 0;
+                // Full-width env parse; pad is a NOP count (#1402).
+                //
+                pad = env ? static_cast<int>(strtoll(env, nullptr, 10)) : 0;
             }
             uint32_t p = static_cast<uint32_t>(pad);
 #if defined(__aarch64__)
