@@ -142,15 +142,12 @@ AGREE_CASES=(
     'return math.type(2^3)'
 
     # mux.* bridge semantics under default-on (#1745, TC013/TC014's
-    # shape).  mux.name is PURE and executes compiled, pcalling the same
-    # bridge C function the interpreter calls.  mux.eval is EFFECTFUL --
-    # arbitrary softcode -- and must DECLINE in every form: the chunk is
-    # the rerun unit, so an effect delivered compiled plus any later
-    # runtime decline would be delivered again by the interpreter re-run
-    # (proved empirically in #1750's adversarial review, statement-form
-    # pemit + declining read).  Assert the ANSWER here; if an eval case
-    # ever starts executing, the exactly-once argument must be re-made,
-    # not waved through.
+    # shape).  Both routes pcall the same bridge C functions.  mux.eval
+    # is arbitrary softcode and WAS compile-ineligible under #1750's
+    # effect-free corridor (re-run would double effects).  Phase 4 deleted
+    # re-run; effects on the compiled path are exactly-once, so eval
+    # executes and must agree.  EXEC would also pin execution; AGREE is
+    # enough to catch a wrong answer if the path declines again.
     'local x=mux.eval("add(2,3)") return x'
     'return mux.eval("add(10,20)")'
 
@@ -215,9 +212,11 @@ AGREE_CASES=(
 # POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
 # Phases 1–3 empty FAIL sites.  Long-term target is 0.
 #
-# Closed key-set nil for known-absent plain GETI (no GETI_INT miss):
-# only STATE e2 EFFECT_REFUSED remains loud.
-POST_ENTRY_LOUD_BUDGET=1
+# Compiled-path effectors restored (Phase 4 made re-run impossible, so
+# #1750's effect-free corridor is gone): STATE e2 delivers PING once on
+# both legs.  Long-term target of zero post-entry loud is met under the
+# current suite; keep the ratchet at 0 so any new loud site fails CI.
+POST_ENTRY_LOUD_BUDGET=0
 
 # How many AGREE chunks are expected to decline rather than execute.
 #
@@ -231,9 +230,7 @@ POST_ENTRY_LOUD_BUDGET=1
 # tests/format/check_formats.py (#1631/#1653).
 #
 # After Phase 0, silent decline is only pre-entry (compile refuse / never
-# entered).  Remaining: the two mux.eval pins -- effectful members are
-# compile-ineligible (#1750), so the interpreter answers honestly.
-# Post-entry sites that used to silent-decline now count under
+# entered).  Post-entry sites that used to silent-decline now count under
 # POST_ENTRY_LOUD_BUDGET instead.
 # Phase 2 revision re-baseline: +2 for select (arity above the typed
 # encoding) and os.time (zero-arg unclaimed call), both pre-entry
@@ -245,8 +242,10 @@ POST_ENTRY_LOUD_BUDGET=1
 # false, TESTSET/or) — must agree by decline until tags are carried.
 # #1766 review: +5 nil-consumer pins (concat, len, tostring, ==,
 # concat-via-local) -- all decline; nil has no compiled consumer yet.
-AGREE_DECLINE_BUDGET=18
-
+# #1767: -2, the two mux.eval pins now EXECUTE (effectors are allowed on
+# the compiled path again: Phase 4 removed re-run, so an effect cannot be
+# doubled and the #1750 corridor was pure pessimism).
+AGREE_DECLINE_BUDGET=16
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
