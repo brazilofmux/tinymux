@@ -263,6 +263,7 @@ POST_ENTRY_LOUD_BUDGET=0
 # #1767: -2, the two mux.eval pins now EXECUTE (effectors are allowed on
 # the compiled path again: Phase 4 removed re-run, so an effect cannot be
 # doubled and the #1750 corridor was pure pessimism).
+# #1772: -4, CALL_VAL + TOBOOL made the #1764 if/not pins execute (16→12).
 AGREE_DECLINE_BUDGET=12
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -575,28 +576,27 @@ NESTED_CASES=(
     # the one input in 2^64 that fails -- multiply into the overflow instead.
     # 2 * 2^62 wraps to INT64_MIN, and rendering it is what exercises itoa.
     'local a=mux.args[1]+0 return a*4611686018427387904'
+
+    # `#mux.args` is the call's ncargs (SUBST_NCARGS), not strlen of the
+    # "mux.args" sentinel.  Used to answer 8 compiled / correct only by
+    # declining; now executes under production brackets too.
+    'return #mux.args'
 )
 
 # NESTED_AGREE — brackets ON, must match the interpreter, decline allowed.
 #
-# The two shapes that regressed when nesting was first enabled and which are
-# now DECLINED rather than compiled.  They cannot go in NESTED_CASES: that
-# tier requires lua_run_ok > 0, and a decline is exactly what makes these
-# correct.  Asserting the answer is the point -- a decline that still returns
-# the wrong thing would be a real failure, and only a comparison sees it.
-#
-# Both produced WRONG ANSWERS, not crashes, and both were invisible to a
-# tier that only ran chunks it happened to get right (#1326 review).
+# Shapes that regressed when nesting was first enabled and which are still
+# DECLINED rather than compiled.  They cannot go in NESTED_CASES: that tier
+# requires lua_run_ok > 0, and a decline is exactly what makes these correct.
+# Asserting the answer is the point -- a decline that still returns the wrong
+# thing would be a real failure, and only a comparison sees it.
 #
 NESTED_AGREE_CASES=(
-    # `#mux.args`: the table is carried as an SCONST holding its own name, so
-    # OP_LUA_LEN measured the sentinel -- 8, being strlen("mux.args"), where
-    # the interpreter answers the argument count.
-    'return #mux.args'
-
     # Unbounded loop: instruction limits live in the Lua VM hook, which the
     # compiled path does not have.  Answered an empty string instead of
-    # "#-1 LUA ERROR: instruction limit exceeded".
+    # "#-1 LUA ERROR: instruction limit exceeded".  CPU LIMITED path now
+    # executes and raises; still kept here so a future decline that lies
+    # cannot go green.
     'while true do end'
 )
 

@@ -1738,15 +1738,32 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // A mux.* table is carried through lowering as an SCONST holding
             // its NAME -- "mux.args" is a sentinel, not text the program can
             // see.  It is not a handle, and it IS TY_STRING, so both guards
-            // above wave it through and the STRLEN below measures the
+            // above wave it through and a naive STRLEN would measure the
             // sentinel: `#mux.args` answered 8 (strlen "mux.args") where the
-            // interpreter answers the argument count.
+            // interpreter answers the argument count (TC020 under #1326).
             //
-            // Harmless while #1326's reentrancy refusal sent every nested
-            // lua() to the interpreter; live the moment nesting is allowed
-            // under production brackets, which is what made TC020 regress.
-            // Decline and let the interpreter answer -- lowering it properly
-            // means resolving to the call's ncargs, which is #1519's work.
+            // `#mux.args` is the call's ncargs.  Softcode already parks that
+            // count in SUBST_NCARGS for `%+`; reuse it so nested production
+            // brackets can compile this shape instead of declining forever.
+            //
+            if (  h.kind[rb] == HIR_SCONST
+               && h.sval[rb] == "mux.args") {
+                uint64_t addr = rv_compiler::SUBST_BASE
+                    + static_cast<uint64_t>(rv_compiler::SUBST_NCARGS)
+                      * rv_compiler::SUBST_SLOT;
+                h.needs_jit = true;
+                int sref = h.emit_sref(addr);
+                if (sref < 0) {
+                    return -1;
+                }
+                lua_reg[A] = h.emit(HIR_ATOI, TY_INT, sref);
+                if (lua_reg[A] < 0) {
+                    return -1;
+                }
+                h.known_int[lua_reg[A]] = true;
+                break;
+            }
+            // Other mux.* sentinels still have no length semantics here.
             //
             if (  h.kind[rb] == HIR_SCONST
                && h.sval[rb].rfind("mux.", 0) == 0) {
