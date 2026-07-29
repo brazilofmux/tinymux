@@ -121,6 +121,9 @@ enum hir_kind {
     HIR_LUA_CALL_INT, // call fn(args): ECALL → TY_INT
     HIR_LUA_CALL_STR, // call fn(args): ECALL → TY_STRING into an out slot
     HIR_LUA_CALL_VOID, // call fn(args) for effect: ECALL → TY_VOID, result dropped
+    HIR_LUA_CALL_VAL, // call fn(args): ECALL → TY_LUA_HANDLE (value on VM stack)
+    HIR_LUA_MARSHAL,  // marshal stack value → TY_STRING (fun_lua rules, out slot)
+    HIR_LUA_TOBOOL,   // Lua truthiness of stack value → TY_INT 0/1
     HIR_LUA_GETFIELD, // getfield(tbl_idx, key_addr): ECALL → TY_INT
     HIR_LUA_GETFIELD_FLT, // getfield(tbl_idx, key_addr): ECALL → TY_FLOAT (bits over FMV lane)
     HIR_LUA_SETFIELD, // setfield(tbl_idx, key_addr, val): ECALL
@@ -790,7 +793,7 @@ inline void hir_operand_set(hir_program &h, int i, int slot, int r);
 //
 inline bool hir_is_lua_call(hir_kind k) {
     return k == HIR_LUA_CALL_INT || k == HIR_LUA_CALL_STR
-        || k == HIR_LUA_CALL_VOID;
+        || k == HIR_LUA_CALL_VOID || k == HIR_LUA_CALL_VAL;
 }
 
 inline int hir_val_operand(const hir_program &h, int i) {

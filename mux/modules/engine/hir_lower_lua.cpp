@@ -558,9 +558,16 @@ void lua_format_double(double d, char *buf, size_t sz) {
 
 static int return_as_string(hir_program &h, rv_compiler &rc, int rv) {
     if (rv < 0) return -1;
-    // Returning a handle would hand the caller a stack index as though it
-    // were the value it points at (#1579).
-    if (h.ty[rv] == TY_LUA_HANDLE) return -1;
+    // A CALL_VAL result is a live Lua value on the stack: marshal with
+    // fun_lua rules at the softcode boundary (#1764 shape 2).  Other
+    // handles (tables, callables) still must not escape as decimal indices.
+    if (h.ty[rv] == TY_LUA_HANDLE) {
+        if (h.kind[rv] == HIR_LUA_CALL_VAL) {
+            h.needs_jit = true;
+            return h.emit(HIR_LUA_MARSHAL, TY_STRING, rv);
+        }
+        return -1;
+    }
     if (h.ty[rv] == TY_STRING) {
         return rv;
     }
@@ -1666,6 +1673,18 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // Marshalled CALL_STR text is not a Lua value: not("0") and
             // not(false→"0") disagree, and the type is gone (#1764).
             if (lua_is_marshalled_str(h, rb)) return -1;
+            // CALL_VAL handle: ask the VM (only nil/false are falsy).
+            if (lua_is_handle(h, rb) && h.kind[rb] == HIR_LUA_CALL_VAL) {
+                int tb = h.emit(HIR_LUA_TOBOOL, TY_INT, rb);
+                if (tb < 0) return -1;
+                lua_reg[A] = h.emit(HIR_NOT, TY_INT, tb);
+                if (lua_reg[A] < 0) return -1;
+                lua_truth_set(truth_tag, lua_reg[A], LUA_TRUTH_BOOL);
+                h.ecalls++;
+                h.native_ops++;
+                break;
+            }
+            if (lua_is_handle(h, rb)) return -1;
             // NOT in Lua: false and nil → true (1), everything else → false (0).
             // HIR_NOT is integer zero-test — correct only for BOOL tags.
             // VALUE (including integer 0 and "") is always truthy → NOT 0.
@@ -2642,29 +2661,37 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // HIR_BOOL is integer SNEZ / softcode truthiness.  A CALL_STR
             // result is type-erased text: "0", "" and integer-0-as-text are
             // all truthy in Lua and falsy under that test (#1764).  Decline
-            // rather than lie; a later typed result keeps the Lua value.
+            // rather than lie; CALL_VAL uses the VM's truthiness instead.
             if (lua_is_marshalled_str(h, rb)) return -1;
-            // Lua: only nil and false are falsy.  VALUE (0, 0.0, "") is
-            // always truthy; BOOL uses HIR_BOOL; NIL is always falsy.
-            // UNKNOWN declines — do not invent VALUE (#1768).
             int cmp;
-            const lua_truth tr = lua_truth_of(h, truth_tag, rb);
-            if (tr == LUA_TRUTH_UNKNOWN) {
+            if (lua_is_handle(h, rb) && h.kind[rb] == HIR_LUA_CALL_VAL) {
+                cmp = h.emit(HIR_LUA_TOBOOL, TY_INT, rb);
+                if (cmp < 0) return -1;
+                h.ecalls++;
+            } else if (lua_is_handle(h, rb)) {
                 return -1;
-            }
-            if (tr == LUA_TRUTH_NIL) {
-                cmp = h.emit_iconst(0);
-            } else if (tr == LUA_TRUTH_VALUE) {
-                cmp = h.emit_iconst(1);
-            } else if (h.ty[rb] == TY_INT) {
-                if (h.kind[rb] == HIR_ICONST) {
-                    cmp = h.emit_iconst(h.val[rb] != 0 ? 1 : 0);
-                } else {
-                    cmp = h.emit(HIR_BOOL, TY_INT, rb);
-                    h.native_ops++;
-                }
             } else {
-                return -1;
+                // Lua: only nil and false are falsy.  VALUE (0, 0.0, "") is
+                // always truthy; BOOL uses HIR_BOOL; NIL is always falsy.
+                // UNKNOWN declines — do not invent VALUE (#1768).
+                const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+                if (tr == LUA_TRUTH_UNKNOWN) {
+                    return -1;
+                }
+                if (tr == LUA_TRUTH_NIL) {
+                    cmp = h.emit_iconst(0);
+                } else if (tr == LUA_TRUTH_VALUE) {
+                    cmp = h.emit_iconst(1);
+                } else if (h.ty[rb] == TY_INT) {
+                    if (h.kind[rb] == HIR_ICONST) {
+                        cmp = h.emit_iconst(h.val[rb] != 0 ? 1 : 0);
+                    } else {
+                        cmp = h.emit(HIR_BOOL, TY_INT, rb);
+                        h.native_ops++;
+                    }
+                } else {
+                    return -1;
+                }
             }
             if (cmp < 0) return -1;
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
@@ -2679,23 +2706,31 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (rb < 0) return -1;
             if (lua_is_marshalled_str(h, rb)) return -1;
             int cmp;
-            const lua_truth tr = lua_truth_of(h, truth_tag, rb);
-            if (tr == LUA_TRUTH_UNKNOWN) {
+            if (lua_is_handle(h, rb) && h.kind[rb] == HIR_LUA_CALL_VAL) {
+                cmp = h.emit(HIR_LUA_TOBOOL, TY_INT, rb);
+                if (cmp < 0) return -1;
+                h.ecalls++;
+            } else if (lua_is_handle(h, rb)) {
                 return -1;
-            }
-            if (tr == LUA_TRUTH_NIL) {
-                cmp = h.emit_iconst(0);
-            } else if (tr == LUA_TRUTH_VALUE) {
-                cmp = h.emit_iconst(1);
-            } else if (h.ty[rb] == TY_INT) {
-                if (h.kind[rb] == HIR_ICONST) {
-                    cmp = h.emit_iconst(h.val[rb] != 0 ? 1 : 0);
-                } else {
-                    cmp = h.emit(HIR_BOOL, TY_INT, rb);
-                    h.native_ops++;
-                }
             } else {
-                return -1;
+                const lua_truth tr = lua_truth_of(h, truth_tag, rb);
+                if (tr == LUA_TRUTH_UNKNOWN) {
+                    return -1;
+                }
+                if (tr == LUA_TRUTH_NIL) {
+                    cmp = h.emit_iconst(0);
+                } else if (tr == LUA_TRUTH_VALUE) {
+                    cmp = h.emit_iconst(1);
+                } else if (h.ty[rb] == TY_INT) {
+                    if (h.kind[rb] == HIR_ICONST) {
+                        cmp = h.emit_iconst(h.val[rb] != 0 ? 1 : 0);
+                    } else {
+                        cmp = h.emit(HIR_BOOL, TY_INT, rb);
+                        h.native_ops++;
+                    }
+                } else {
+                    return -1;
+                }
             }
             if (cmp < 0) return -1;
             lua_reg[A] = rb;  // Simplified: always copy.
@@ -3213,8 +3248,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         if (lua_reg[A] < 0) return -1;
                         h.known_int[lua_reg[A]] = true;
                     } else {
-                        lua_reg[A] = h.emit_lua_call(HIR_LUA_CALL_STR,
-                            TY_STRING, func_reg, cargs, nargs, kinds);
+                        // Default claim: keep the Lua value on the VM stack
+                        // as a handle.  Marshal only at chunk return
+                        // (HIR_LUA_MARSHAL).  Consumers use Lua semantics
+                        // (TOBOOL, pushvalue args) instead of softcode text.
+                        lua_reg[A] = h.emit_lua_call(HIR_LUA_CALL_VAL,
+                            TY_LUA_HANDLE, func_reg, cargs, nargs, kinds);
                         if (lua_reg[A] < 0) return -1;
                     }
                     h.ecalls++;

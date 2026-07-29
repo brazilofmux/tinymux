@@ -89,6 +89,12 @@ static constexpr uint64_t ECALL_LUA_GETFIELD_FLT = 0x311; // a0=tbl_idx, a1=key 
 static constexpr uint64_t ECALL_LUA_CALL_VOID = 0x312; // a0=fn_idx, a1=nargs|argkinds, a2..a4=args; result discarded → a1=ok
 static constexpr uint64_t ECALL_LUA_LIMITED  = 0x313; // back-edge budget exhausted: aborts the run (declines to the interpreter)
 static constexpr uint64_t ECALL_LUA_INSN_BUDGET = 0x314; // () -> a0 = current lua_instruction_limit (#1745 runtime rebinding)
+// Typed call result: leave the first pcall result on the Lua stack and
+// return its stack index (TY_LUA_HANDLE).  Marshal only at the softcode
+// boundary (#1764 shape 2).
+static constexpr uint64_t ECALL_LUA_CALL_VAL = 0x315; // a0=fn, a1=nargs|kinds, a2..a4=args → a0=stack_idx, a1=ok
+static constexpr uint64_t ECALL_LUA_MARSHAL  = 0x316; // a0=stack_idx, a1=out addr, a2=out size → a0=len (fun_lua rules)
+static constexpr uint64_t ECALL_LUA_TOBOOL   = 0x317; // a0=stack_idx → a0=0/1 (Lua truthiness: only nil/false falsy)
 
 // Lua bridge ECALLs — reserved range for mux.* function dispatch.
 static constexpr uint64_t ECALL_LUA_BRIDGE    = 0x380; // base for Lua bridge calls

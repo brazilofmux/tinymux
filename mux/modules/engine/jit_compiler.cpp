@@ -4346,6 +4346,73 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_CALL_VAL: {
+        // Typed call result (#1764 shape 2): leave the first pcall value
+        // on the Lua stack and return its absolute index as a handle.
+        // Marshal only at the softcode boundary (HIR_LUA_MARSHAL / RET).
+        //
+        if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int fn_idx  = static_cast<int>(ctx->x[10]);
+        int nargs   = static_cast<int>(ctx->x[11] & 0xFF);
+        int kinds   = static_cast<int>((ctx->x[11] >> 8) & 0xFF);
+
+        if (nargs < 0 || nargs > 3) {
+            return ecall_lua_error_cstr("invalid call encoding");
+        }
+        if (fn_idx <= 0 || fn_idx > lua_gettop(L)
+            || !lua_isfunction(L, fn_idx)) {
+            return ecall_lua_error_cstr("attempt to call a non-function value");
+        }
+
+        int base = lua_gettop(L);
+        lua_pushvalue(L, fn_idx);
+        if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
+            lua_settop(L, base);
+            return ecall_lua_error_cstr("invalid call argument");
+        }
+        if (LUA_OK != lua_pcall(L, nargs, 1, 0)) {
+            int er = ecall_lua_commit_error(L);
+            lua_settop(L, base);
+            return er;
+        }
+        // Result remains at top; do not pop.
+        ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
+        ctx->x[11] = 1;
+        return -1;
+    }
+
+    case ECALL_LUA_MARSHAL: {
+        // a0=stack idx, a1=out addr, a2=out size → a0=len.  fun_lua rules.
+        if (!ec->lua_state) { ctx->x[10] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int idx = static_cast<int>(ctx->x[10]);
+        uint64_t out_addr = ctx->x[11];
+        uint64_t out_size = ctx->x[12];
+        if (0 == out_size
+            || !guest_range_ok(out_addr, out_size, ec->memory_size)
+            || !ecall_lua_stack_index_ok(L, idx)) {
+            return ecall_lua_error_cstr("invalid marshal encoding");
+        }
+        size_t slen = ecall_lua_marshal_to_guest(L, idx,
+            ec->memory + out_addr, static_cast<size_t>(out_size));
+        ctx->x[10] = static_cast<uint64_t>(slen);
+        return -1;
+    }
+
+    case ECALL_LUA_TOBOOL: {
+        // a0=stack idx → a0 = 0/1 under Lua truthiness (only nil/false falsy).
+        if (!ec->lua_state) { ctx->x[10] = 0; return -1; }
+        lua_State *L = static_cast<lua_State *>(ec->lua_state);
+        int idx = static_cast<int>(ctx->x[10]);
+        if (!ecall_lua_stack_index_ok(L, idx)) {
+            ctx->x[10] = 0;
+            return -1;
+        }
+        ctx->x[10] = lua_toboolean(L, idx) ? 1 : 0;
+        return -1;
+    }
+
     case ECALL_LUA_CALL_INT: {
         // a0=fn stack idx, a1=nargs (0..2), a2=arg0, a3=arg1, integers.
         // -> a0 = integer result, a1 = ok.
