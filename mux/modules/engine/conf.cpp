@@ -228,9 +228,16 @@ void cf_init(void)
 
     mudconf.autozone        = true;
     mudconf.jit_eval_brackets = true;
-    // Default OFF: Lua JIT lowering has never been production-correct
-    // (#1278/#1309).  Set lua_jit=1 only when testing the compiled path.
-    mudconf.lua_jit         = false;
+    // Default ON (#1325, 2026-07-28).  The gates: the differential
+    // harness executes every supported shape (140 chunks, declines all
+    // deliberate), loops run under an aborting instruction budget with
+    // the interpreter's error surface, the compiled path wins or ties
+    // every benched shape (#1741), and the intermittent interpreter
+    // crash (#1433) closed unreproduced on three machines including at
+    // its original commit.  A chunk the compiler cannot honestly run
+    // declines to the interpreter, so OFF buys nothing but the slower
+    // path; set lua_jit=0 to diagnose a suspected compiled-path bug.
+    mudconf.lua_jit         = true;
     mudconf.use_hostname    = true;
     mudconf.clone_copy_cost = false;
     mudconf.dark_sleepers   = true;
