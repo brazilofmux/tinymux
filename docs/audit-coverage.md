@@ -65,7 +65,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 14 scout 2026-07-29 | partial | Spot-check LBUF/mux_sprintf; full matrix still open |
+| C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 14 2026-07-29 | deep | Survey `docs/survey-eval-parser.md` held: parse_to stack[32] bounded; #840 AST_PARSE_MAX_DEPTH; AST_EVAL_MAX_DEPTH=400; func_nest/invk lim; nest-- on all exits; no new High/Medium |
 | C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1124 closed; re-rotate by family later |
 | C3 | Commands / hooks | `command.cpp`, `predicates.cpp`, `set.cpp` (@include) | large | Pass 12 2026-07-26 | deep | #1279 @include as includer; #1280 NOEVAL footgun |
 | C4 | Match / wild | `match.cpp`, `wild.cpp` | med | Pass 14 2026-07-29 | deep | Survey + #835–#837 held; invk limit; scenario wild_capture |
@@ -146,7 +146,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | K1 | Smoke suite | `testcases/` | large | every fix PR | deep | Grow when behavior changes; Lua seam corpus in flight |
-| K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | opt-in | partial | wild-capture, site-threshold, jit-perms; make more routine |
+| K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | Pass 14 2026-07-29 | partial | run.sh: 9 drivers + trap cleanup (not just wild_capture); still opt-in via `make test-scenario`; stress/ separate |
 | K3 | Unit islands | `tests/alarm`, `netaddr`, `db`, `libmux` | small | on change | partial | |
 | K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | — | thin | |
 | K5 | Parser research | `parser/` | small | — | deferred | Not production runtime |
@@ -176,16 +176,16 @@ Also useful historical surveys:
 ## Recommended rotation (next ~N passes)
 
 **Dice loop (2026-07-29):** start **A7**.  
-Done this pass: A7 → A8 → B5 → C4 → B1/B2 → G3 → B3/B4 → I6 → A1/H4 scout.  
-**Next: C1 deep** (or K2, H2, K4 thin) — then wrap toward A2…A6 if still hot.
+Done: A7 → A8 → B5 → C4 → B1/B2 → G3 → B3/B4 → I6 → A1/H4 → **C1** → **K2**.  
+**Next: A2** residual re-deep (or C2 family re-rotate / H2 / K4).
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
 | **Now** | Dual-review open Pass 14 PRs (#1776, #1779, map PRs) | Land Mediums |
-| **Then** | **C1** full softcode matrix / **K2** scenario defaults | Partial slices with product surface |
+| **Then** | **A2** DESC/adapter residual re-deep; or **C2** function family re-rotate | Standing loop |
 | **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
 | **Later** | **J\*** clients by platform | After server/proxy confidence |
-| **Anytime** | **D5** jit_diff soak | Continuous |
+| **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -223,6 +223,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Initial map after Passes 1–3 |
 | 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
-| 2026-07-29 | **Pass 14 dice loop:** A7 #1774; G3 #1778; B1–B5/B3/B4/A8/C4 residual re-deep; I6 deep (#1270 residual covered); H4 partial (signal wiring incomplete); stale “open” notes cleaned on C5/I2/I6; next C1/K2 |
+| 2026-07-29 | **Pass 14 dice loop:** A7 #1774; G3 #1778; B1–B5/B3/B4/A8/C4 residual re-deep; I6 deep; H4 partial; **C1 deep** (eval survey held); **K2** scenario suite noted; A3 #1141 residual note cleared; next A2/C2 |
 
 Update this table when the map structure changes.
