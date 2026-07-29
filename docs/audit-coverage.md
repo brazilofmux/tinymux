@@ -148,7 +148,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | K1 | Smoke suite | `testcases/` | large | every fix PR | deep | Grow when behavior changes; Lua seam corpus in flight |
 | K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | Pass 14 2026-07-29 | partial | run.sh: 9 drivers + trap cleanup (not just wild_capture); still opt-in via `make test-scenario`; stress/ separate |
 | K3 | Unit islands | `tests/alarm`, `netaddr`, `db`, `libmux` | small | on change | partial | |
-| K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | — | thin | |
+| K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | Pass 14 stamp 2026-07-29 | thin | Present; no packaging defect filed this pass |
 | K5 | Parser research | `parser/` | small | — | deferred | Not production runtime |
 | K6 | Worldbuilder / tools | `tools/worldbuilder/` | — | — | deferred | |
 | K7 | Generated-file discipline | see `docs/generated-files.md` | — | standing | process | Never hand-edit outputs |
@@ -176,16 +176,16 @@ Also useful historical surveys:
 ## Recommended rotation (next ~N passes)
 
 **Dice loop (2026-07-29):** start **A7**.  
-Done: A…E… → **F1/F2/F4** → **H1** → G2 stamp.  
-**Server residual re-deep largely complete** for this pass (A–H core). **Next: H2/H4 thin polish**, **K3/K4**, or begin **J\*** clients (J5 partial first).
+Done: server A–H residual → **J1/J5** first client pass (**#1788**) → H2/K4 thin stamps.  
+**Next: J3 web / J6 TF / J2 Win32 GUI**, or **J4 Android**, or residual **H4** signal wiring.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Merge Pass 14 map PR stack if still open | Hygiene |
-| **Then** | **J5** iOS / **J1** console — first client slices | Prefs: after server depth |
+| **Now** | Dual-review **#1788** client buffer caps | Medium |
+| **Then** | **J3** web client or **J6** TinyFugue | Client portfolio |
 | **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
 | **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
-| **Thin** | H2 color (edit .rl only), K4 packaging | Low urgency |
+| **Later** | H4 RegisterSignalHandler complete | Incomplete API, non-blocking |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -223,6 +223,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-24 | Initial map after Passes 1–3 |
 | 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
-| 2026-07-29 | **Pass 14 dice loop:** A–E residual; **F1/F2/F4** modules + **H1** libmux re-deep (locks, MAIL_DB_LIMIT, #1295, freelist #1290 held, no new H/M); G2 stamp; server core residual pass largely complete; next J* or thin H2/K4 |
+| 2026-07-29 | **Pass 14 dice loop:** server A–H residual complete; **J1/J5** client pass filed **#1788** (unbounded line/SB buffers) + caps; H2/K4 thin stamps; next J3/J6 or H4 |
 
 Update this table when the map structure changes.
