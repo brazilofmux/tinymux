@@ -12037,12 +12037,12 @@ static FUNCTION(fun_conntotal)
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
-        long TotalTime = fetch_totaltime(target);
+        int64_t TotalTime = fetch_totaltime(target);
         if (Connected(target))
         {
             TotalTime += fetch_connect(target);
         }
-        safe_ltoa(TotalTime, buff, bufc);
+        safe_i64toa(TotalTime, buff, bufc);
     }
     else
     {
@@ -12065,13 +12065,13 @@ static FUNCTION(fun_connmax)
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
-        long Longest = fetch_longestconnect(target);
-        long Current = fetch_connect(target);
+        int64_t Longest = fetch_longestconnect(target);
+        int64_t Current = fetch_connect(target);
         if (Longest < Current)
         {
             Longest = Current;
         }
-        safe_ltoa(Longest, buff, bufc);
+        safe_i64toa(Longest, buff, bufc);
     }
     else
     {
@@ -12094,7 +12094,7 @@ static FUNCTION(fun_connlast)
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
-        safe_ltoa(fetch_lastconnect(target), buff, bufc);
+        safe_i64toa(fetch_lastconnect(target), buff, bufc);
     }
     else
     {
@@ -12117,12 +12117,12 @@ static FUNCTION(fun_connnum)
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
-        long NumConnections = fetch_numconnections(target);
+        int64_t NumConnections = fetch_numconnections(target);
         if (Connected(target))
         {
             NumConnections += fetch_session(target);
         }
-        safe_ltoa(NumConnections, buff, bufc);
+        safe_i64toa(NumConnections, buff, bufc);
     }
     else
     {

@@ -75,7 +75,7 @@ const MUX_IID IID_INotify                = UINT64_C(0x00000002621F4385);
 const MUX_CID CID_ObjectInfo             = UINT64_C(0x00000002251565F1);
 // IID bumped ..6C49 -> ..6C4A when PayFor/GiveTo were added (#1194).
 // IID bumped ..6C4A -> ..6C4B when UnparseObject was added (#1640).
-const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C4B);
+const MUX_IID IID_IObjectInfo            = UINT64_C(0x00000002722A6C4C);
 const MUX_CID CID_AttributeAccess       = UINT64_C(0x000000024A3E71B5);
 const MUX_IID IID_IAttributeAccess      = UINT64_C(0x00000002D89F42C3);
 const MUX_CID CID_Evaluator             = UINT64_C(0x00000002E7B3A51D);
@@ -349,9 +349,9 @@ public:
     // ConnectionInfo fields (A_CONNINFO attribute).
     //
     virtual MUX_RESULT FetchConnectionInfoFields(dbref player,
-        long anFields[4]) = 0;
+        int64_t anFields[4]) = 0;
     virtual MUX_RESULT PutConnectionInfoFields(dbref player,
-        long anFields[4], CLinearTimeAbsolute &ltaNow) = 0;
+        int64_t anFields[4], CLinearTimeAbsolute &ltaNow) = 0;
 };
 
 // Softcode evaluator.

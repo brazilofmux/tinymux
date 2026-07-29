@@ -1627,12 +1627,12 @@ public:
 extern CScheduler scheduler;
 
 int fetch_cmds(dbref target);
-void fetch_ConnectionInfoFields(dbref target, long anFields[4]);
-long fetch_ConnectionInfoField(dbref target, int iField);
+void fetch_ConnectionInfoFields(dbref target, int64_t anFields[4]);
+int64_t fetch_ConnectionInfoField(dbref target, int iField);
 void put_ConnectionInfoFields
 (
     dbref target,
-    long anFields[4],
+    int64_t anFields[4],
     CLinearTimeAbsolute &ltaLogout
 );
 

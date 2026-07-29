@@ -334,7 +334,7 @@ namespace
 
         atr_add_raw(d->player, A_REASON, disc_messages[mux_reason]);
 
-        long anFields[4] = {0, 0, 0, 0};
+        int64_t anFields[4] = {0, 0, 0, 0};
         fetch_ConnectionInfoFields(d->player, anFields);
         anFields[CIF_NUMCONNECTS]++;
 
