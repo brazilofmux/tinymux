@@ -71,6 +71,7 @@ DEFINE_ENGINE_FACTORY(CObjectInfoFactory)
 DEFINE_ENGINE_FACTORY(CAttributeAccessFactory)
 DEFINE_ENGINE_FACTORY(CEvaluatorFactory)
 DEFINE_ENGINE_FACTORY(CPermissionsFactory)
+DEFINE_ENGINE_FACTORY(CGameConfigFactory)
 DEFINE_ENGINE_FACTORY(CMailDeliveryFactory)
 DEFINE_ENGINE_FACTORY(CHelpSystemFactory)
 DEFINE_ENGINE_FACTORY(CGameEngineFactory)
@@ -2103,6 +2104,171 @@ MUX_RESULT CPermissions::CouldDoit(dbref who, dbref what, int atr, bool *pResult
 }
 
 // ---------------------------------------------------------------------------
+// CGameConfig -- mux_IGameConfig (#1654).
+//
+// Game-policy values a module may need, snapshotted from mudconf at call
+// time.  See the GAME_CONFIG comment in modules.h for the cbSize contract
+// and why callers must not cache the result (#1613).
+// ---------------------------------------------------------------------------
+
+class CGameConfig : public mux_IGameConfig
+{
+public:
+    virtual MUX_RESULT QueryInterface(MUX_IID iid, void **ppv);
+    virtual uint32_t   AddRef(void);
+    virtual uint32_t   Release(void);
+
+    virtual MUX_RESULT GetGameConfig(GAME_CONFIG *pConfig);
+
+    CGameConfig(void);
+    virtual ~CGameConfig();
+
+private:
+    uint32_t m_cRef;
+};
+
+CGameConfig::CGameConfig(void) : m_cRef(1)
+{
+}
+
+CGameConfig::~CGameConfig()
+{
+}
+
+MUX_RESULT CGameConfig::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IGameConfig *>(this);
+    }
+    else if (IID_IGameConfig == iid)
+    {
+        *ppv = static_cast<mux_IGameConfig *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CGameConfig::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CGameConfig::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CGameConfig::GetGameConfig(GAME_CONFIG *pConfig)
+{
+    if (  nullptr == pConfig
+       || pConfig->cbSize < sizeof(GAME_CONFIG))
+    {
+        // A larger cbSize is fine -- a newer module against this engine gets
+        // the fields we know and keeps its zeros for the rest.  A smaller
+        // one means a struct from before v1, which cannot exist.
+        //
+        return MUX_E_INVALIDARG;
+    }
+
+    pConfig->searchcost    = mudconf.searchcost;
+    pConfig->eval_comtitle = mudconf.eval_comtitle;
+    mux_strncpy(pConfig->one_coin, mudconf.one_coin,
+        sizeof(pConfig->one_coin) - 1);
+    mux_strncpy(pConfig->many_coins, mudconf.many_coins,
+        sizeof(pConfig->many_coins) - 1);
+    return MUX_S_OK;
+}
+
+// CGameConfigFactory
+// ---------------------------------------------------------------------------
+
+CGameConfigFactory::CGameConfigFactory(void) : m_cRef(1)
+{
+}
+
+CGameConfigFactory::~CGameConfigFactory()
+{
+}
+
+MUX_RESULT CGameConfigFactory::QueryInterface(MUX_IID iid, void **ppv)
+{
+    if (mux_IID_IUnknown == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else if (mux_IID_IClassFactory == iid)
+    {
+        *ppv = static_cast<mux_IClassFactory *>(this);
+    }
+    else
+    {
+        *ppv = nullptr;
+        return MUX_E_NOINTERFACE;
+    }
+    reinterpret_cast<mux_IUnknown *>(*ppv)->AddRef();
+    return MUX_S_OK;
+}
+
+uint32_t CGameConfigFactory::AddRef(void)
+{
+    m_cRef++;
+    return m_cRef;
+}
+
+uint32_t CGameConfigFactory::Release(void)
+{
+    m_cRef--;
+    if (0 == m_cRef)
+    {
+        delete this;
+        return 0;
+    }
+    return m_cRef;
+}
+
+MUX_RESULT CGameConfigFactory::CreateInstance(mux_IUnknown *pUnknownOuter, MUX_IID iid, void **ppv)
+{
+    UNUSED_PARAMETER(pUnknownOuter);
+
+    CGameConfig *pGameConfig = nullptr;
+    try
+    {
+        pGameConfig = new CGameConfig;
+    }
+    catch (...)
+    {
+        ; // Nothing.
+    }
+
+    if (nullptr == pGameConfig)
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
+
+    MUX_RESULT mr = pGameConfig->QueryInterface(iid, ppv);
+    pGameConfig->Release();
+    return mr;
+}
+
+MUX_RESULT CGameConfigFactory::LockServer(bool bLock)
+{
+    UNUSED_PARAMETER(bLock);
+    return MUX_S_OK;
+}
+
 // CPermissionsFactory
 // ---------------------------------------------------------------------------
 
@@ -5856,6 +6022,7 @@ static MUX_CLASS_INFO engine_classes[] =
     { CID_AttributeAccess    },
     { CID_Evaluator          },
     { CID_Permissions        },
+    { CID_GameConfig         },
     { CID_MailDelivery       },
     { CID_HelpSystem         },
     { CID_GameEngine         },
@@ -5894,6 +6061,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetClassObject(MUX_CID cid_arg, MUX
     MAKE_FACTORY(CAttributeAccessFactory,    CID_AttributeAccess)
     MAKE_FACTORY(CEvaluatorFactory,          CID_Evaluator)
     MAKE_FACTORY(CPermissionsFactory,        CID_Permissions)
+    MAKE_FACTORY(CGameConfigFactory,         CID_GameConfig)
     MAKE_FACTORY(CMailDeliveryFactory,       CID_MailDelivery)
     MAKE_FACTORY(CHelpSystemFactory,         CID_HelpSystem)
     MAKE_FACTORY(CGameEngineFactory,         CID_GameEngine)

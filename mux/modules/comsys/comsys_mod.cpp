@@ -130,6 +130,7 @@ CComsysMod::CComsysMod(void) : m_cRef(1),
     m_pIAttributeAccess(nullptr),
     m_pIEvaluator(nullptr),
     m_pIPermissions(nullptr),
+    m_pIGameConfig(nullptr),
     m_pIStorage(nullptr),
     m_revision(0)
 {
@@ -207,6 +208,19 @@ MUX_RESULT CComsysMod::FinalConstruct(void)
     if (MUX_FAILED(mr))
     {
         return mr;
+    }
+
+    // Optional (#1654): an engine older than CID_GameConfig simply lacks the
+    // class, and every consumer defaults to the engine's compiled-in
+    // behaviour.  Hard-failing here would make the module unloadable against
+    // a binary it otherwise works with.
+    //
+    mr = mux_CreateInstance(CID_GameConfig, nullptr, UseSameProcess,
+                            IID_IGameConfig,
+                            reinterpret_cast<void **>(&m_pIGameConfig));
+    if (MUX_FAILED(mr))
+    {
+        m_pIGameConfig = nullptr;
     }
 
     // Log that we are alive.
@@ -289,6 +303,10 @@ CComsysMod::~CComsysMod()
     {
         m_pIPermissions->Release();
         m_pIPermissions = nullptr;
+    }
+    if (nullptr != m_pIGameConfig)
+    {
+        m_pIGameConfig->Release();
     }
 
     g_cComponents--;
@@ -1212,15 +1230,29 @@ void CComsysMod::BuildSpeakerPrefix(struct channel *ch,
     }
 
     // The engine evaluates the comtitle as softcode unless `eval_comtitle 0`
-    // (mudconf.eval_comtitle, default on).  No interface carries config into
-    // a module, so this matches the default and diverges when it is off --
-    // narrower than the divergence it replaces, and recorded rather than
-    // papered over.
+    // (mudconf.eval_comtitle, default on).  Since #1654 the flag reaches the
+    // module through mux_IGameConfig, queried per call rather than cached --
+    // a boot-time snapshot is #1613's bug.  Against an engine without the
+    // interface, fall back to the default (evaluate), which is the old
+    // behaviour.
     //
+    bool bEvalComtitle = true;
+    if (nullptr != m_pIGameConfig)
+    {
+        GAME_CONFIG gc;
+        memset(&gc, 0, sizeof(gc));
+        gc.cbSize = sizeof(gc);
+        if (MUX_SUCCEEDED(m_pIGameConfig->GetGameConfig(&gc)))
+        {
+            bEvalComtitle = gc.eval_comtitle;
+        }
+    }
+
     UTF8 title[MOD_LBUF_SIZE];
     mux_sprintf(title, sizeof(title), T("%s"),
              user->title.c_str());
-    if (nullptr != m_pIEvaluator)
+    if (  bEvalComtitle
+       && nullptr != m_pIEvaluator)
     {
         UTF8 evaled[MOD_LBUF_SIZE];
         size_t nOut = 0;

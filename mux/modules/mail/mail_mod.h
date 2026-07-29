@@ -188,6 +188,9 @@ private:
     mux_IObjectInfo           *m_pIObjectInfo;
     mux_IAttributeAccess      *m_pIAttributeAccess;
     mux_IPermissions          *m_pIPermissions;
+    // Game-policy config (#1654).  May be nullptr against an older engine;
+    // consumers default to not charging.
+    mux_IGameConfig           *m_pIGameConfig;
     mux_IMailDelivery         *m_pIMailDelivery;
 
     // Storage interface — provided by the engine via Initialize().

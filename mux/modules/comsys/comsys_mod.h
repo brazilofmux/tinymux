@@ -159,6 +159,9 @@ private:
     mux_IAttributeAccess      *m_pIAttributeAccess;
     mux_IEvaluator            *m_pIEvaluator;
     mux_IPermissions          *m_pIPermissions;
+    // Game-policy config (#1654).  May be nullptr against an engine older
+    // than CID_GameConfig; every use must default sensibly.
+    mux_IGameConfig           *m_pIGameConfig;
 
     // Storage interface — routes SQLite access through the engine.
     //

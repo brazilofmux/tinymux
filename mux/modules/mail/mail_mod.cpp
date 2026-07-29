@@ -294,6 +294,7 @@ CMailMod::CMailMod(void) : m_cRef(1),
     m_pIObjectInfo(nullptr),
     m_pIAttributeAccess(nullptr),
     m_pIPermissions(nullptr),
+    m_pIGameConfig(nullptr),
     m_pIMailDelivery(nullptr),
     m_pIStorage(nullptr),
     m_revision(0),
@@ -367,6 +368,19 @@ MUX_RESULT CMailMod::FinalConstruct(void)
     if (MUX_FAILED(mr))
     {
         return mr;
+    }
+
+    // Optional (#1654): an engine without CID_GameConfig lacks the class,
+    // and the one consumer (the @mail/stats charge) then keeps the old
+    // behaviour of not charging.  Hard-failing would make the module
+    // unloadable against a binary it otherwise works with.
+    //
+    mr = mux_CreateInstance(CID_GameConfig, nullptr, UseSameProcess,
+                            IID_IGameConfig,
+                            reinterpret_cast<void **>(&m_pIGameConfig));
+    if (MUX_FAILED(mr))
+    {
+        m_pIGameConfig = nullptr;
     }
 
     mr = mux_CreateInstance(CID_MailDelivery, nullptr, UseSameProcess,
@@ -450,6 +464,10 @@ CMailMod::~CMailMod()
     {
         m_pIPermissions->Release();
         m_pIPermissions = nullptr;
+    }
+    if (nullptr != m_pIGameConfig)
+    {
+        m_pIGameConfig->Release();
     }
 
     if (nullptr != m_pIMailDelivery)
@@ -5350,13 +5368,11 @@ void CMailMod::do_mail_file(dbref player, const UTF8 *msglist,
 // cumulative detail levels, an optional target, and "no target from a wizard"
 // meaning the whole spool rather than the caller.  Mirror it.
 //
-// One deliberate divergence remains: the engine charges mudconf.searchcost via
-// payfor() before doing the work, and no module-visible interface exposes that
-// value (DRIVER_CONFIG is driver/network config only).  payfor() exempts
-// wizards outright, and every cross-player query is wizard-gated, so this is
-// only reachable by a non-wizard running stats on themselves on a game with a
-// nonzero searchcost.  Tracked separately rather than bent into an ABI change
-// here.
+// The engine charges mudconf.searchcost via payfor() before doing the work;
+// since #1654 the module does too, reading the cost and coin names through
+// mux_IGameConfig at call time and charging via IObjectInfo::PayFor (which,
+// like payfor(), exempts wizards).  Against an engine without the interface
+// the module keeps the old behaviour of not charging.
 // ---------------------------------------------------------------------------
 
 void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
@@ -5429,6 +5445,33 @@ void CMailMod::do_mail_stats(dbref player, const UTF8 *name, int full)
     {
         m_pINotify->RawNotify(player, M_("The post office protects privacy!"));
         return;
+    }
+
+    // This command walks the whole database; the engine charges for it, and
+    // so do we (#1654).  Query the cost per call -- caching at Initialize is
+    // #1613's bug.  PayFor mirrors payfor(): wizards and Free_Money pass.
+    //
+    if (  nullptr != m_pIGameConfig
+       && nullptr != m_pIObjectInfo)
+    {
+        GAME_CONFIG gc;
+        memset(&gc, 0, sizeof(gc));
+        gc.cbSize = sizeof(gc);
+        if (MUX_SUCCEEDED(m_pIGameConfig->GetGameConfig(&gc)))
+        {
+            bool bPaid = false;
+            m_pIObjectInfo->PayFor(player, gc.searchcost, &bPaid);
+            if (!bPaid)
+            {
+                UTF8 msg[MOD_LBUF_SIZE];
+                mux_sprintf(msg, sizeof(msg),
+                    M_("Finding mail stats costs %d %s."),
+                    gc.searchcost,
+                    (1 == gc.searchcost) ? gc.one_coin : gc.many_coins);
+                m_pINotify->RawNotify(player, msg);
+                return;
+            }
+        }
     }
 
     if (bAll)
