@@ -191,6 +191,12 @@ AGREE_CASES=(
     'local t={} t[1]=5 local x=t[2] return tostring(x)'
     'local t={} t[1]=5 return t[2] == ""'
     'local t={} t[1]=5 local x=t[2] return x .. "z"'
+    # EQK path (if ... == K): CMP_RR had the nil check; EQK did not, so
+    # `if t[2] == ""` executed and answered "y" (empty SCONST == "").
+    # nil == nil stays true via the pool-type branch.
+    'local t={} t[1]=5 if t[2] == "" then return "y" else return "n" end'
+    'local t={} t[1]=5 if t[2] ~= "" then return "y" else return "n" end'
+    'local t={} t[1]=5 if t[2] == nil then return "y" else return "n" end'
 
     # ---- #1768: truth-class tag loss must decline, not invent VALUE ----
     #

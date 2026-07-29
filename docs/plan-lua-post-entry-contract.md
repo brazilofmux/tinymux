@@ -95,6 +95,7 @@ These are the open quality / clarity targets after #1751 close:
 2. **Provenance over coercion.** When HIR erases a Lua type, refuse consumers or keep a handle — do not invent softcode truthiness.
 3. **Proof enables typed fast paths** (`plain_proven`, `keys_closed`, call claims). Loss of proof → ineligible or total ECALL, not silent 0.
 4. **Effects are allowed** on the compiled path under the same permissions as the interpreter, because re-run cannot double them.
+5. **New value class ⇒ consumer audit.** Producers are easy; consumers are easy to miss. Emptying a loud bin has repeatedly introduced silent wrongs (#1755, #1756, #1763, #1766 first cut) when a new HIR representation (type-erased string, nil-as-empty-SCONST, …) was not checked at every Lua-semantic use site — including opcodes that look like twins of ones already fixed (EQ vs EQK).
 
 ---
 

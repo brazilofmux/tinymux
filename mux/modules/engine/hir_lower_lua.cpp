@@ -690,6 +690,28 @@ static void lua_truth_set(lua_truth_map &m, int v, lua_truth t) {
     }
 }
 
+// Tag a HIR value produced from a Lua pool constant.  TNIL/TFALSE/TTRUE
+// share HIR representations with "" / 0 / 1; without the tag, EQK and
+// TEST invent softcode semantics (nil == "" was true compiled).
+//
+static void lua_truth_tag_constant(lua_truth_map &truth,
+                                   const lua_bc_constant &k, int v) {
+    if (v < 0) {
+        return;
+    }
+    switch (k.type) {
+    case LUA_BC_TNIL:
+        lua_truth_set(truth, v, LUA_TRUTH_NIL);
+        break;
+    case LUA_BC_TFALSE:
+    case LUA_BC_TTRUE:
+        lua_truth_set(truth, v, LUA_TRUTH_BOOL);
+        break;
+    default:
+        break;
+    }
+}
+
 static lua_truth lua_truth_of(const hir_program &h, const lua_truth_map &m,
                               int v) {
     if (v < 0) {
@@ -1321,8 +1343,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int kidx = insn.Bx();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
-            lua_reg[A] = emit_lua_constant(h, rc, proto->constants[kidx]);
+            const lua_bc_constant &kc = proto->constants[kidx];
+            lua_reg[A] = emit_lua_constant(h, rc, kc);
             if (lua_reg[A] < 0) return -1;
+            lua_truth_tag_constant(truth_tag, kc, lua_reg[A]);
             break;
         }
 
@@ -1332,8 +1356,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int kidx = proto->code[pc + 1].Ax();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
-            lua_reg[A] = emit_lua_constant(h, rc, proto->constants[kidx]);
+            const lua_bc_constant &kc = proto->constants[kidx];
+            lua_reg[A] = emit_lua_constant(h, rc, kc);
             if (lua_reg[A] < 0) return -1;
+            lua_truth_tag_constant(truth_tag, kc, lua_reg[A]);
             pc++;  // skip EXTRAARG
             break;
         }
@@ -2385,8 +2411,38 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int kidx = insn.B();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
-            int kval = emit_lua_constant(h, rc, proto->constants[kidx]);
+            const lua_bc_constant &kconst = proto->constants[kidx];
+            // nil is the empty SCONST in HIR, which is also a real "".
+            // EQK's string path would make nil == "" true.  Resolve against
+            // the pool type (and the lhs tag) before emitting STRCMP:
+            //   nil == nil  → true
+            //   nil == anything else (incl. "") → false
+            // Same for false vs integer 0 once BOOL is tagged on constants.
+            const bool lhs_nil = lua_is_nil(h, truth_tag, rb);
+            const bool rhs_nil = (kconst.type == LUA_BC_TNIL);
+            if (lhs_nil || rhs_nil) {
+                int cmp = h.emit_iconst((lhs_nil && rhs_nil) ? 1 : 0);
+                if (cmp < 0) return -1;
+                if (insn.k()) {
+                    cmp = h.emit(HIR_NOT, TY_INT, cmp);
+                    if (cmp < 0) return -1;
+                }
+                if (pc + 1 >= n) return -1;
+                if (!multi_block) return -1;
+                int true_target = pc + 2;
+                int false_target = pc + 1;
+                int true_blk = (true_target < n) ? pc_to_block[true_target] : -1;
+                int false_blk = pc_to_block[false_target];
+                if (true_blk < 0 || false_blk < 0) return -1;
+                h.emit(HIR_BRC, TY_VOID, cmp, false_blk, true_blk);
+                h.add_edge(cur_hir_block, true_blk);
+                h.add_edge(cur_hir_block, false_blk);
+                h.native_ops++;
+                break;
+            }
+            int kval = emit_lua_constant(h, rc, kconst);
             if (kval < 0) return -1;
+            lua_truth_tag_constant(truth_tag, kconst, kval);
             int cmp;
             if (either_float(h, rb, kval)) {
                 rb = promote_to_float(h, truth_tag, rb);
@@ -2434,6 +2490,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_GTI: {
             int rb = lua_reg[A];
             if (rb < 0) return -1;
+            // nil has no order; empty SCONST would promote to 0.
+            if (lua_is_nil(h, truth_tag, rb)) return -1;
             int cmp;
             if (h.ty[rb] == TY_FLOAT) {
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB()));
@@ -2462,6 +2520,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_GEI: {
             int rb = lua_reg[A];
             if (rb < 0) return -1;
+            if (lua_is_nil(h, truth_tag, rb)) return -1;
             int cmp;
             if (h.ty[rb] == TY_FLOAT) {
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB()));
