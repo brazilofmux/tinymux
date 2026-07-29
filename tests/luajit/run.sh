@@ -167,12 +167,25 @@ AGREE_CASES=(
     'local t={} t[1]=5 return t[2]'
 
     # Multi-value truncation at the chunk boundary: string.find returns TWO
-    # values and the interpreter's own chunk call is lua_pcall(L, 0, 1, 0),
-    # so both routes must keep exactly the first.  Declines today (a number
-    # comes back where CALL_STR demands a string), but if a numeric call
-    # result ever compiles, this is the case that catches a route that asks
-    # for a different result count than the interpreter does.
+    # values and the chunk pcall keeps one.  CALL_STR now marshals the first
+    # result like fun_lua (integer → "2"), so both routes execute and agree.
     'return string.find("ab","b")'
+
+    # ---- #1764: marshalled CALL_STR results must not use MUSH truthiness ----
+    #
+    # CALL_STR erases the Lua type into text.  Consuming that text with
+    # if / not / == / arithmetic is a string lie: "0", "" and integer 0 are
+    # all truthy in Lua and MUSH-falsy as softcode.  Lowering makes those
+    # ops ineligible; the interpreter answers.  Chunk RETURN of the same
+    # value (string.find above) is fine -- that is the softcode boundary.
+    #
+    # Pins the three issue shapes plus not/== so a silent wrong answer
+    # cannot regress while still allowing decline.
+    'local x=tostring(0) if x then return "truthy" else return "falsy" end'
+    'local x=tostring("") if x then return "truthy" else return "falsy" end'
+    'local x=string.find("ab","b") if x then return "truthy" else return "falsy" end'
+    'local x=tostring(0) return not x'
+    'local x=tostring(0) return x == "0"'
 )
 
 # #1751 Phase 0: post-entry decline is loud (error string), not silent re-run.
@@ -183,10 +196,9 @@ AGREE_CASES=(
 # POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
 # Phases 1–3 empty FAIL sites.  Long-term target is 0.
 #
-# Phase 3: LIMITED is interpreter-identical.  Phase 4: residual declines
-# still count as loud (POST-ENTRY or "residual decline" text).  Restacked
-# on revised 1/2 (2026-07-29): re-measure — provisional ceiling 4.
-POST_ENTRY_LOUD_BUDGET=4
+# After CALL_STR result marshal (string.find executes): absent-key pin
+# + STATE e2 EFFECT_REFUSED → 2.  e1 is matched pure under current bins.
+POST_ENTRY_LOUD_BUDGET=2
 
 # How many AGREE chunks are expected to decline rather than execute.
 #
@@ -208,7 +220,9 @@ POST_ENTRY_LOUD_BUDGET=4
 # encoding) and os.time (zero-arg unclaimed call), both pre-entry
 # ineligible now that the general call path is gone -- the interpreter
 # answers each, including its own error for os.time, on both legs.
-AGREE_DECLINE_BUDGET=5
+# #1764: +5 for CALL_STR result consumed by if/not/== (type-erased;
+# ineligible at lowering, interpreter answers).
+AGREE_DECLINE_BUDGET=10
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).

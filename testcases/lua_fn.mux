@@ -1007,11 +1007,107 @@
     setr(0,lua(me/LUA_NEG_MININT)),
     -9223372036854775808)=
   {
-    @log smoke=TC060: lua fold NEG of mininteger. Succeeded.;
+    @log smoke=TC060: lua fold NEG of mininteger. Succeeded.
+  },
+  {
+    @log smoke=TC060: lua fold NEG of mininteger. Failed (%q0).
+  }
+-
+#
+# ---- Softcode ↔ Lua seam (#1751 follow-up corpus) ----
+# Softcode drives lua(); Lua reaches back via mux.* into softcode/attrs.
+# These pin the seam, not just pure Lua arithmetic.
+#
+# Test 61: softcode → lua() → mux.eval softcode → answer back to softcode.
+#
+&LUA_SEAM_EVAL test_lua_fn=return mux.eval("mul(6,7)")
+-
+&tr.tc061 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_EVAL)),
+    42)=
+  {
+    @log smoke=TC061: seam softcode→lua→mux.eval. Succeeded.
+  },
+  {
+    @log smoke=TC061: seam softcode→lua→mux.eval. Failed (%q0).
+  }
+-
+#
+# Test 62: softcode writes an attr; lua mux.get reads it (object seam).
+#
+&SEAM_PAYLOAD test_lua_fn=payload-from-softcode
+-
+# Softcode may pass dbref as "2" or "#2"; bridge_get wants an integer.
+&LUA_SEAM_GET test_lua_fn= \
+  local s = tostring(mux.args[1]) \
+  if s:sub(1,1) == "#" then s = s:sub(2) end \
+  return mux.get(tonumber(s), "SEAM_PAYLOAD")
+-
+&tr.tc062 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_GET,num(me))),
+    payload-from-softcode)=
+  {
+    @log smoke=TC062: seam softcode attr→lua mux.get. Succeeded.
+  },
+  {
+    @log smoke=TC062: seam softcode attr→lua mux.get. Failed (%q0).
+  }
+-
+#
+# Test 63: lua mux.set writes; softcode get() reads it back.
+# set is effectful → compile-ineligible; interpreter delivers the write.
+#
+&LUA_SEAM_SET test_lua_fn= \
+  local s = tostring(mux.args[1]) \
+  if s:sub(1,1) == "#" then s = s:sub(2) end \
+  mux.set(tonumber(s), "SEAM_FROM_LUA", mux.args[2]) \
+  return "ok"
+-
+&tr.tc063 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,lua(me/LUA_SEAM_SET,num(me),hello-from-lua)),ok), \
+      strmatch(setr(1,get(me/SEAM_FROM_LUA)),hello-from-lua))=1,
+  {
+    @log smoke=TC063: seam lua mux.set→softcode get. Succeeded.
+  },
+  {
+    @log smoke=TC063: seam lua mux.set→softcode get. Failed (lua=%q0 get=%q1).
+  }
+-
+#
+# Test 64: softcode nests [lua(...)] inside softcode (eval seam).
+#
+&LUA_SEAM_NEST test_lua_fn=return mux.args[1] + mux.args[2]
+-
+&tr.tc064 test_lua_fn=
+  @if strmatch(
+    setr(0,add(lua(me/LUA_SEAM_NEST,10,5),1)),
+    16)=
+  {
+    @log smoke=TC064: seam softcode nest [lua]+add. Succeeded.
+  },
+  {
+    @log smoke=TC064: seam softcode nest [lua]+add. Failed (%q0).
+  }
+-
+#
+# Test 65: string.find multi-value first result through CALL_STR marshal.
+#
+&LUA_SEAM_FIND test_lua_fn=return string.find("ab","b")
+-
+&tr.tc065 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_FIND)),
+    2)=
+  {
+    @log smoke=TC065: seam string.find first result. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC060: lua fold NEG of mininteger. Failed (%q0).;
+    @log smoke=TC065: seam string.find first result. Failed (%q0).;
     @trig me/tr.done
   }
 -

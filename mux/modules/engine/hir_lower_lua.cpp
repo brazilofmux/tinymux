@@ -642,8 +642,22 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
 // Returns the (possibly new) HIR value index, or -1 on error.
 // ---------------------------------------------------------------
 
+// A CALL_STR result is a Lua value marshalled to text the way fun_lua
+// renders a chunk return (nil→"", bool→"0"/"1", else tolstring).  That is
+// correct only where the value leaves Lua.  Inside the chunk the Lua type
+// is gone: truthiness, ==, and arithmetic then run under softcode / string
+// rules and answer wrongly for values that are truthy in Lua but MUSH-falsy
+// as text ("0", "", integer 0), or for bool/nil that only look right by
+// coincidence of the marshal.  #1764: treat the producer as provenance and
+// refuse to consume it under Lua semantics -- the interpreter answers.
+//
+static inline bool lua_is_marshalled_str(const hir_program &h, int v) {
+    return v >= 0 && h.kind[v] == HIR_LUA_CALL_STR;
+}
+
 static int promote_to_float(hir_program &h, int v) {
     if (v < 0) return -1;
+    if (lua_is_marshalled_str(h, v)) return -1;
     if (h.ty[v] == TY_FLOAT) return v;
     if (h.ty[v] == TY_INT) {
         return h.emit(HIR_ITOF, TY_FLOAT, v);
@@ -664,6 +678,7 @@ static int promote_to_float(hir_program &h, int v) {
 
 static int promote_to_int(hir_program &h, int v) {
     if (v < 0) return -1;
+    if (lua_is_marshalled_str(h, v)) return -1;
     if (h.ty[v] == TY_INT) return v;
     if (h.ty[v] == TY_STRING) return h.emit(HIR_ATOI, TY_INT, v);
     return -1;
@@ -1450,6 +1465,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_NOT: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            // Marshalled CALL_STR text is not a Lua value: not("0") and
+            // not(false→"0") disagree, and the type is gone (#1764).
+            if (lua_is_marshalled_str(h, rb)) return -1;
             // NOT in Lua: false and nil → true (1), everything else → false (0).
             // For TY_INT: 0 → 1, nonzero → 0 (same as HIR_NOT).
             // For TY_FLOAT: can't be nil/false, so always 0.
@@ -1994,6 +2012,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_ADDI: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            // promote_to_int already refuses CALL_STR; guard the float/int
+            // arms too so a marshalled result cannot fall into ITOF/ADD.
+            if (lua_is_marshalled_str(h, rb)) return -1;
             if (h.ty[rb] == TY_FLOAT) {
                 int imm_val = h.emit_fconst(static_cast<double>(insn.sC()));
                 if (imm_val < 0) return -1;
@@ -2099,12 +2120,16 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         // ---- Comparisons ----
         // All share: compare → optional negate → JMP → BRC
 
+// CMP_RR: == / order on a marshalled CALL_STR result compares text, not
+// the Lua value (0 == "0", false == "0", ...).  Refuse those (#1764).
 #define CMP_RR(HIR_INT_OP, HIR_FP_OP) \
         { \
             int rb = lua_reg[A]; \
             int rc_val = lua_reg[insn.B()]; \
             if (rb < 0 || rc_val < 0) return -1; \
             if (lua_is_handle(h, rb) || lua_is_handle(h, rc_val)) return -1; \
+            if (lua_is_marshalled_str(h, rb) || lua_is_marshalled_str(h, rc_val)) \
+                return -1; \
             int cmp; \
             if (either_float(h, rb, rc_val)) { \
                 rb = promote_to_float(h, rb); \
@@ -2171,6 +2196,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_EQK: {
             int rb = lua_reg[A];
             if (rb < 0) return -1;
+            // See CMP_RR: marshalled CALL_STR is text, not a Lua value (#1764).
+            if (lua_is_marshalled_str(h, rb)) return -1;
             int kidx = insn.B();
             if (kidx < 0 || kidx >= static_cast<int>(proto->constants.size()))
                 return -1;
@@ -2282,6 +2309,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_TEST: {
             int rb = lua_reg[A];
             if (rb < 0) return -1;
+            // HIR_BOOL is integer SNEZ / softcode truthiness.  A CALL_STR
+            // result is type-erased text: "0", "" and integer-0-as-text are
+            // all truthy in Lua and falsy under that test (#1764).  Decline
+            // rather than lie; a later typed result keeps the Lua value.
+            if (lua_is_marshalled_str(h, rb)) return -1;
             int cmp = h.emit(HIR_BOOL, TY_INT, rb);
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
                                 cur_hir_block, n, nullptr, multi_block) < 0)
@@ -2293,6 +2325,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_TESTSET: {
             int rb = lua_reg[insn.B()];
             if (rb < 0) return -1;
+            if (lua_is_marshalled_str(h, rb)) return -1;
             int cmp = h.emit(HIR_BOOL, TY_INT, rb);
             lua_reg[A] = rb;  // Simplified: always copy.
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block,
