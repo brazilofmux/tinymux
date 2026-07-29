@@ -156,6 +156,18 @@ AGREE_CASES=(
     'local x=mux.eval("add(2,3)") return x'
     'return mux.eval("add(10,20)")'
 
+    # Escape voids the plain proof (#1751 Phase 1): after t passes as a
+    # call argument the callee may have installed a metatable, so a typed
+    # read of t[2] is no longer provable and the chunk is ineligible --
+    # the interpreter answers.  The EXEC pin for CALL_VOID+proven reads
+    # is the pre-escape spelling above.
+    'local t={5} table.insert(t,6) return t[2]'
+    # ABSENT-KEY read on a proven table: the value is nil, which a typed
+    # integer slot cannot carry.  Continuing with 0 was a measured silent
+    # wrong answer (jit "0" vs interp ""); loud until nil is
+    # representable.  Counted post_entry_loud.
+    'local t={} t[1]=5 return t[2]'
+
     # Multi-value truncation at the chunk boundary: string.find returns TWO
     # values and the interpreter's own chunk call is lua_pcall(L, 0, 1, 0),
     # so both routes must keep exactly the first.  Declines today (a number
@@ -176,7 +188,9 @@ AGREE_CASES=(
 # After Phase 1 total GET/SET/LEN: os.time no longer declines (raises a
 # real LUA ERROR on both routes).  Remaining loud: select, budget for-loop,
 # string.find, nested while-true (4) + STATE e1/e2 (2) → 6.
-POST_ENTRY_LOUD_BUDGET=6
+# Phase 1 revision re-baseline: +1 for the ABSENT-KEY read pin (loud by
+# design until nil is representable; it replaces a measured silent "0").
+POST_ENTRY_LOUD_BUDGET=7
 
 # How many AGREE chunks are expected to decline rather than execute.
 #
@@ -194,7 +208,9 @@ POST_ENTRY_LOUD_BUDGET=6
 # compile-ineligible (#1750), so the interpreter answers honestly.
 # Post-entry sites that used to silent-decline now count under
 # POST_ENTRY_LOUD_BUDGET instead.
-AGREE_DECLINE_BUDGET=2
+# Phase 1 revision re-baseline: +1 for the escaped-table read pin
+# (plain proof voided by the call argument; interpreter answers).
+AGREE_DECLINE_BUDGET=3
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -327,7 +343,7 @@ EXEC_CASES=(
     # #t plausible-looking, but t[2] answers nil.
     'local x=string.sub("world",2,4) return x'
     'local x=table.concat({10,20},"-") return x'
-    'local t={5} table.insert(t,6) return t[2]'
+    'local t={5} local x=t[1] table.insert(t,6) return x'
 
     # Numeric FOR loops under the back-edge budget (#1732).  The
     # accumulator is the loop-carried q-reg routing's whole reason to
@@ -519,18 +535,22 @@ NESTED_AGREE_CASES=(
 STATE_NAMES=(
     e1_double_mutation
     e2_coroutine_effect
+    e3_metatable_typed_read
 )
 STATE_SETUP=(
     'N=0 function bump() N=N+1 end return "set"'
     'CO=coroutine.create(function() mux.pemit(1,"PING") end) return "set"'
+    'T=setmetatable({},{__index=function() return "s" end}) return "set"'
 )
 STATE_ACTION=(
     'bump() local y=mux.get(4000,"Q") return tostring(N)'
     'coroutine.resume(CO) return "r"'
+    'return T[1]'
 )
 STATE_PROBE=(
     'return tostring(N)'
     'return "ok"'
+    'return T[2]'
 )
 
 keep_work() {

@@ -4155,31 +4155,36 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
 
     case ECALL_LUA_GETI_INT: {
-        // Integer-keyed table get via real lua_gettable (#1751 Phase 1).
-        // Typed claim: integer result.  Non-integer leaves ok=0 (codegen
-        // currently ignores ok and takes a0; same as pre-Phase-1 GETI).
-        // Never ECALL_DECLINE.
+        // Integer-keyed table get (#1751 Phase 1, revised).  The lowering
+        // only emits this against a PLAIN-PROVEN table (built by this
+        // chunk's NEWTABLE, never escaped), so no metamethod can fire and
+        // every stored value is an integer by construction.  The one
+        // honest miss left is an ABSENT key: the value is Lua nil, which
+        // a typed integer slot cannot carry.  Continuing with 0 was the
+        // pre-#1751 behavior and a measured silent wrong answer
+        // (`return t[2]` gave "0" where the interpreter gave "") -- so an
+        // absent key is a loud post-entry fail until nil is
+        // representable.  The stack-index and integer checks are belts:
+        // the proof should make them unreachable, and their firing means
+        // a compiler bug, which is exactly what loud is for.
         //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
         if (!ecall_lua_stack_index_ok(L, tbl_idx)) {
-            ctx->x[10] = 0;
-            ctx->x[11] = 0;
-            return -1;
+            return lua_ecall_decline("ECALL_LUA_GETI_INT_BADIDX");
         }
         int pr = ecall_lua_pget_intkey(L, tbl_idx, key);
         if (0 != pr) {
             return pr;
         }
-        if (lua_isinteger(L, -1)) {
-            ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
-            ctx->x[11] = 1;
-        } else {
-            ctx->x[10] = 0;
-            ctx->x[11] = 0;
+        if (!lua_isinteger(L, -1)) {
+            lua_pop(L, 1);
+            return lua_ecall_decline("ECALL_LUA_GETI_INT_NONINT");
         }
+        ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
+        ctx->x[11] = 1;
         lua_pop(L, 1);
         return -1;
     }
