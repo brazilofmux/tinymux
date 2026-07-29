@@ -277,28 +277,32 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         }
     }
 
-    // Backward branch -- reject (#1326).
+    // Backward branches (#1326, partially lifted by #1732).
     //
     // Instruction and memory limits are enforced by CLuaMod::InsnCountHook,
-    // which is a Lua VM hook: it does not exist on the compiled path.  There
-    // RunCompiled has only max_dispatch and the wall-clock alarm, and a loop
-    // that spins inside a single translated block issues no dispatches at
-    // all, so neither necessarily bounds it.
+    // which is a Lua VM hook: it does not exist on the compiled path, so an
+    // unbudgeted compiled loop runs unbounded (TC009's original symptom).
     //
-    // That was harmless while the reentrancy refusal sent every nested lua()
-    // to the interpreter.  Once nesting is allowed under production brackets
-    // `while true do end` compiles and runs, and TC009 -- which asserts
-    // "#-1 LUA ERROR: ... instruction limit" -- got an empty string instead:
-    // the configured limit silently stopped applying.
+    // Numeric for loops (OP_FORLOOP) now compile under a back-edge budget
+    // whose exhaustion ABORTS the run via ECALL_LUA_LIMITED -- the runner
+    // fails over to the interpreter, which re-runs the chunk and raises its
+    // own "instruction limit exceeded" through the hook, so the error
+    // surface is the interpreter's verbatim.  The re-run is what shapes the
+    // restrictions below: a loop proto must be RERUN-SAFE, so anything that
+    // could reach outside the chunk is rejected -- calls (a rebound global
+    // is arbitrary effectful code), SETTABUP (global writes), SELF (method
+    // dispatch).  Chunk-local table stores are fine: TryJIT's stack
+    // save/restore discards them with the chunk.  TESTSET is rejected
+    // because it writes a register from inside a terminator, which the
+    // store-at-write q-register routing in the lowering cannot see.  The
+    // stack cap is the q-register file: loop-carried Lua registers map onto
+    // q-regs 0..9.
     //
-    // Reject rather than bound it here.  A compiled-path budget mapped onto
-    // the same error surface is the better answer and is a design question
-    // (#1571 covers the equivalent gap for softcode); declining costs only
-    // the acceleration of looping chunks, and the interpreter keeps both the
-    // correct answer and the limit.  Bounded loops are rejected too: trip
-    // counts are not known here, and guessing on the unsafe side is how this
-    // was reachable in the first place.
+    // while/repeat (backward OP_JMP) and generic for (TFORLOOP) still
+    // reject: the JMP shape needs the same budget wiring on a less regular
+    // structure, and TFOR's iterator call is the dead named bridge.
     //
+    bool has_forloop = false;
     for (int pc = 0; pc < n; pc++) {
         const lua_bc_instruction &insn = proto->code[pc];
         switch (insn.opcode()) {
@@ -306,13 +310,32 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
             if (pc + 1 + insn.sJ() <= pc) return LUA_BC_HAS_LOOP;
             break;
 
-        // These branch backwards by construction -- they are the loop edge.
         case OP_LUA_FORLOOP:
+            has_forloop = true;
+            break;
+
+        // Backward by construction; the iterator protocol is unsupported.
         case OP_LUA_TFORLOOP:
             return LUA_BC_HAS_LOOP;
 
         default:
             break;
+        }
+    }
+
+    if (has_forloop) {
+        if (proto->maxstacksize > 10) return LUA_BC_HAS_LOOP;
+        for (int pc = 0; pc < n; pc++) {
+            switch (proto->code[pc].opcode()) {
+            case OP_LUA_CALL:
+            case OP_LUA_TAILCALL:
+            case OP_LUA_SELF:
+            case OP_LUA_SETTABUP:
+            case OP_LUA_TESTSET:
+                return LUA_BC_HAS_LOOP;
+            default:
+                break;
+            }
         }
     }
 
@@ -336,10 +359,24 @@ static int insn_leaders(const lua_bc_proto *proto, int pc, int n, int out[2]) {
         out[cnt++] = pc + 1 + insn.sJ();
         out[cnt++] = pc + 1;
         break;
-    case OP_LUA_FORLOOP:
+    // Lua 5.4 numeric for: both operands are UNSIGNED Bx with an implicit
+    // direction -- FORPREP skips FORWARD past the whole loop (Bx+1) when
+    // the trip count is zero and otherwise falls into the body; FORLOOP
+    // jumps BACK by Bx to the body.  The 5.3-era sBx read produced targets
+    // tens of thousands of instructions away, which is why the (then
+    // unreachable) lowering declined the moment the eligibility reject was
+    // lifted (#1732).
     case OP_LUA_FORPREP:
+        out[cnt++] = pc + 1 + insn.Bx() + 1;   // zero-trip skip target
+        out[cnt++] = pc + 1;                   // body
+        break;
+    case OP_LUA_FORLOOP:
+        out[cnt++] = pc + 1 - insn.Bx();       // body (back edge)
+        out[cnt++] = pc + 1;                   // exit
+        break;
     case OP_LUA_TFORPREP:
     case OP_LUA_TFORLOOP:
+        // Rejected by eligibility; offsets kept only for the leader map.
         out[cnt++] = pc + 1 + insn.sBx();
         out[cnt++] = pc + 1;
         break;
@@ -840,6 +877,56 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     // fields are values, calls decline.
     lua_ref_map lua_ref;
 
+    // Loop-carried value routing (#1732).  A plain HIR value crosses a
+    // block boundary only under dominance, and the transition below drops
+    // everything else -- which is correct for diamonds and fatal for
+    // loops: the accumulator in `for i=1,4 do s=s+i end` is written in the
+    // body and read by the next iteration.  Loop protos therefore route
+    // Lua registers through q-registers (reg r → qreg r), the one kind of
+    // traffic hir_ssa_construct PHI-converts -- the same road the numeric
+    // for's own index already takes via QREG_LUA_IDX.
+    //
+    // Backing rule: a register joins the backed set only when the ENTRY
+    // block stores it (every path executes the entry block, so every later
+    // LOAD_Q is dominated by a store), or when FORLOOP itself stores the
+    // loop variable (every reader is dominated by the latch).  A register
+    // first written elsewhere stays plain and keeps today's drop-then-
+    // decline behavior: reloading it would read whatever the surrounding
+    // command left in the MUSH %q register on paths that never stored it.
+    // Backed stores are integers only; a backed register going non-int
+    // declines the chunk rather than leaving a stale int in the qreg.
+    // The loop VARIABLE needs its backing declared up front: the body is
+    // lowered BEFORE the FORLOOP that writes R(A)/R(A+3) (linear pc
+    // order), so without the pre-scan the body's read of the loop var
+    // found -1 and declined.  Sound because every path into the body --
+    // and into the exit block -- passes the latch, whose STORE_Qs
+    // dominate every reload.
+    bool proto_has_loop = false;
+    bool forloop_backed[10] = { false, false, false, false, false,
+                                false, false, false, false, false };
+    for (int i = 0; i < n; i++) {
+        if (proto->code[i].opcode() == OP_LUA_FORLOOP) {
+            proto_has_loop = true;
+            int fa = proto->code[i].A();
+            // Only the VISIBLE index (A+3) is materialized; R(A) is 5.4's
+            // internal counter and nothing here ever produces it.
+            if (fa + 3 < 10) {
+                forloop_backed[fa + 3] = true;
+            }
+        }
+    }
+    bool qreg_backed[10] = { false, false, false, false, false,
+                             false, false, false, false, false };
+    bool entry_backing_sealed = false;
+    int limited_blk = -1;
+    // Register state at the moment the entry block was left.  An entry
+    // value still equal to this is valid in EVERY block (the entry block
+    // dominates all of them) and skips the qreg round-trip -- which is
+    // not just cheaper: FORLOOP's static-bounds test needs to SEE the
+    // ICONSTs, and a reload would bury them under a LOAD_Q.
+    int entry_final[MAX_LUA_REGS];
+    memset(entry_final, -1, sizeof(entry_final));
+
     // Snapshot of lua_reg as it stood on entry to the current block, so a
     // block transition can tell which registers this block wrote.  See the
     // dominance note at the transition below (#1422).
@@ -900,15 +987,59 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                         }
                     }
                 }
-                memcpy(blk_entry_reg, lua_reg, sizeof(blk_entry_reg));
-                cur_hir_block = new_block;
-                h.cur_block = new_block;
+                if (proto_has_loop) {
+                    // Leaving the entry block for the first time: seal the
+                    // backed set.  A register whose FINAL entry value is
+                    // not an integer is unbacked -- its qreg may hold a
+                    // stale int from an earlier write, and a reload would
+                    // resurrect it.
+                    if (!entry_backing_sealed) {
+                        for (int r = 0; r < 10 && r < MAX_LUA_REGS; r++) {
+                            if (qreg_backed[r]
+                                && (lua_reg[r] < 0
+                                    || h.ty[lua_reg[r]] != TY_INT)) {
+                                qreg_backed[r] = false;
+                            }
+                        }
+                        memcpy(entry_final, lua_reg, sizeof(entry_final));
+                        entry_backing_sealed = true;
+                    }
+                    // Every backed register enters the new block through
+                    // its qreg; SSA turns the loads into PHIs over the
+                    // stores on each incoming path.  ALWAYS -- an entry
+                    // value dominates every block, but dominance is
+                    // availability, not currency: inside the loop the
+                    // entry constant is one iteration stale, which made
+                    // `s=s+i` compute 0+i forever.  FORLOOP gets the
+                    // ICONSTs its static-bounds test needs from
+                    // entry_final[], not from these reloads.
+                    cur_hir_block = new_block;
+                    h.cur_block = new_block;
+                    for (int r = 0; r < 10 && r < MAX_LUA_REGS; r++) {
+                        if (!qreg_backed[r] && !forloop_backed[r]) continue;
+                        int lv = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, r);
+                        if (lv < 0) return -1;
+                        h.known_int[lv] = true;
+                        lua_reg[r] = lv;
+                    }
+                    memcpy(blk_entry_reg, lua_reg, sizeof(blk_entry_reg));
+                } else {
+                    memcpy(blk_entry_reg, lua_reg, sizeof(blk_entry_reg));
+                    cur_hir_block = new_block;
+                    h.cur_block = new_block;
+                }
             }
         }
 
         const lua_bc_instruction &insn = proto->code[pc];
         int op = insn.opcode();
         int A = insn.A();
+
+        // Snapshot for the store-at-write hook below (loop protos only).
+        int pre_reg[MAX_LUA_REGS];
+        if (proto_has_loop) {
+            memcpy(pre_reg, lua_reg, sizeof(pre_reg));
+        }
 
         switch (op) {
 
@@ -1426,6 +1557,14 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int key = h.emit_iconst(insn.B());
             if (key < 0) return -1;
 
+            // In a loop proto the run may be re-run on the interpreter
+            // after budget exhaustion, so stores must be chunk-local: a
+            // store into a global-shaped table would happen twice (#1732).
+            if (proto_has_loop
+                && lua_referent_of(lua_ref, tbl).fields_are_refs) {
+                return -1;
+            }
+
             // Third operand rides in val[]; see hir_val_operand() in hir.h,
             // which the liveness walker consults so the register holding the
             // stored value is not recycled before the ECALL reads it.
@@ -1439,6 +1578,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // Values are in R(A+1)..R(A+B).
             int tbl = lua_reg[A];
             if (tbl < 0) return -1;
+            // Same rerun-safety rule as SETTABI (#1732).
+            if (proto_has_loop
+                && lua_referent_of(lua_ref, tbl).fields_are_refs) {
+                return -1;
+            }
             int nvals = insn.B();
             int offset = insn.C();
             // k flag indicates extra offset from following EXTRAARG.
@@ -1652,6 +1796,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (h.ty[val] != TY_INT) return -1;
             if (lua_is_handle(h, val)) return -1;
             if (!lua_is_handle(h, tbl)) return -1;
+
+            // Same rerun-safety rule as SETTABI (#1732).
+            if (proto_has_loop
+                && lua_referent_of(lua_ref, tbl).fields_are_refs) {
+                return -1;
+            }
 
             uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
             int key_val = h.emit_sconst(key_addr, k.sval);
@@ -2013,84 +2163,62 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         // ---- Numeric for loop ----
         //
         // Lua 5.4 for-loop registers:
-        //   R(A)   = internal counter
+        //   R(A)   = internal counter (never materialized here)
         //   R(A+1) = limit
         //   R(A+2) = step
         //   R(A+3) = exposed index (visible in body)
         //
-        // FORPREP subtracts step from init, then jumps to FORLOOP.
-        // FORLOOP adds step, checks idx <= limit, branches back.
+        // 5.4 semantics, not 5.3's: FORPREP sets R(A+3)=init and FALLS
+        // INTO the body (jumping forward past FORLOOP only when the trip
+        // count is zero); FORLOOP steps the index and jumps BACK on
+        // continue.  The 5.3-shaped lowering this replaces (init-step
+        // pre-subtraction, sBx offsets) was written against the wrong VM
+        // and had never executed behind the #1326 reject.
         //
-        // We use STORE_Q/LOAD_Q for the loop index so that
-        // hir_ssa_construct() inserts proper PHI nodes at the
-        // loop header.  This matches the iter() pattern.
-        //
+        // STATIC BOUNDS ONLY in this first cut: init, limit and step must
+        // all be integer constants, so the trip direction, the zero-trip
+        // decision, and freedom from wraparound are compile-time facts --
+        // 5.4's own counter model exists precisely because a naive
+        // idx<=limit test misbehaves at the integer edge, and declining
+        // the edge is cheaper than reproducing the counter.  The index
+        // rides QREG_LUA_IDX so hir_ssa_construct() gives it a real PHI.
 
         case OP_LUA_FORPREP: {
             if (!multi_block) return -1;
             if (!lua_reg_in_range(A + 3)) return -1;
-            if (lua_reg[A] < 0 || lua_reg[A + 1] < 0 || lua_reg[A + 2] < 0)
+            int init = lua_reg[A];
+            int limit = lua_reg[A + 1];
+            int step = lua_reg[A + 2];
+            if (init < 0 || limit < 0 || step < 0) return -1;
+            if (h.kind[init] != HIR_ICONST || h.kind[limit] != HIR_ICONST
+                || h.kind[step] != HIR_ICONST) {
                 return -1;
-
-            // Pre-scan loop body for t[i] pattern where i = loop variable
-            // (register A+3).  If found, pin the table array before the loop.
-            int forloop_pc = pc + 1 + insn.sBx();
-            pinned_tbl_reg = -1;
-            pinned_count_val = -1;
-            for (int scan = pc + 1; scan < forloop_pc && scan < n; scan++) {
-                int scan_op = proto->code[scan].opcode();
-                if (scan_op == OP_LUA_GETTABLE) {
-                    int key_reg = proto->code[scan].C();
-                    int tbl_reg = proto->code[scan].B();
-                    // Key must be the loop external variable (A+3).
-                    if (key_reg == A + 3 && lua_reg[tbl_reg] >= 0) {
-                        pinned_tbl_reg = tbl_reg;
-                        break;
-                    }
-                }
+            }
+            const int64_t vi = h.val[init];
+            const int64_t vl = h.val[limit];
+            const int64_t vs = h.val[step];
+            // step 0 is a runtime error; the interpreter raises it.
+            if (0 == vs) return -1;
+            // Stay far from the int64 edge so idx+step cannot wrap.
+            const int64_t kEdge = INT64_C(1) << 62;
+            if (vi > kEdge || vi < -kEdge || vl > kEdge || vl < -kEdge
+                || vs > kEdge || vs < -kEdge) {
+                return -1;
             }
 
-            // If a pinnable table was found, emit PIN_ARRAY ECALL.
-            if (pinned_tbl_reg >= 0 && lua_reg[pinned_tbl_reg] >= 0) {
-                int tbl_val = lua_reg[pinned_tbl_reg];
-                int base_addr = h.emit_iconst(
-                    static_cast<int64_t>(rv_compiler::LUA_ARRAY_BASE));
-                int max_val = h.emit_iconst(rv_compiler::LUA_ARRAY_MAX);
-                if (base_addr < 0 || max_val < 0) {
-                    pinned_tbl_reg = -1;
-                } else {
-                    // ECALL: a0=tbl_idx, a1=base_addr, a2=max → a0=count
-                    // We use the general __lua_pin_array via dedicated ECALL.
-                    // Encode as HIR_LUA_GETI-style dedicated ECALL.
-                    // Actually, emit raw RV64 for the pin ECALL since
-                    // HIR_LUA_GETI only handles 2 args.  Use HIR_CALL to
-                    // a helper function instead.
-                    std::string name("__lua_pin_array");
-                    int args[] = { tbl_val, base_addr, max_val };
-                    pinned_count_val = h.emit_call(TY_STRING, 0, args, 3,
-                                                    &name);
-                    if (pinned_count_val < 0) {
-                        pinned_tbl_reg = -1;
-                    } else {
-                        h.known_int[pinned_count_val] = true;
-                        h.ecalls++;
-                    }
-                }
-            }
+            // The body's first pass reads the index before any FORLOOP
+            // runs, so it must be stored here, on the entry side.
+            if (A + 3 >= 10) return -1;
+            h.emit(HIR_STORE_Q, TY_VOID, init, -1, QREG_LUA_IDX);
+            h.emit(HIR_STORE_Q, TY_VOID, init, -1, A + 3);
 
-            // Lua 5.4 FORPREP: R(A) -= step, then jump to FORLOOP.
-            // The first FORLOOP iteration will add step back, giving
-            // the original init value.  We store init - step so the
-            // first ADD in FORLOOP produces init.
-            int init_sub = h.emit(HIR_SUB, TY_INT, lua_reg[A], lua_reg[A + 2]);
-            if (init_sub < 0) return -1;
-
-            // Store the initial index into a q-register.
-            h.emit(HIR_STORE_Q, TY_VOID, init_sub, -1, QREG_LUA_IDX);
-
-            int target = pc + 1 + insn.sBx();
-            int target_blk = (target >= 0 && target < n) ? pc_to_block[target] : -1;
-            if (target_blk < 0) return -1;
+            const bool zero_trip = (vs > 0) ? (vi > vl) : (vi < vl);
+            int body_target = pc + 1;
+            int skip_target = pc + 1 + insn.Bx() + 1;
+            int body_blk = (body_target < n) ? pc_to_block[body_target] : -1;
+            int skip_blk = (skip_target < n) ? pc_to_block[skip_target] : -1;
+            if (body_blk < 0 || skip_blk < 0) return -1;
+            int target_blk = zero_trip ? skip_blk : body_blk;
             h.emit(HIR_BR, TY_VOID, -1, -1, target_blk);
             h.add_edge(cur_hir_block, target_blk);
             break;
@@ -2099,8 +2227,12 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         case OP_LUA_FORLOOP: {
             if (!multi_block) return -1;
             if (!lua_reg_in_range(A + 3)) return -1;
-            int step = lua_reg[A + 2];
-            int limit = lua_reg[A + 1];
+            // Bounds come from entry_final[], the register state frozen
+            // at the entry block's exit: lua_reg[] holds LOAD_Q reloads
+            // by now, and the static-bounds test below needs to SEE the
+            // ICONSTs FORPREP already vetted.
+            int step = entry_final[A + 2];
+            int limit = entry_final[A + 1];
             if (step < 0 || limit < 0) return -1;
 
             // Load current index from q-register (becomes PHI after SSA).
@@ -2115,22 +2247,57 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // Store updated index back to q-register.
             h.emit(HIR_STORE_Q, TY_VOID, new_idx, -1, QREG_LUA_IDX);
 
-            // Expose the new index to subsequent instructions.
+            // Expose the new index to subsequent instructions and back it
+            // in the visible register's own qreg.  FORLOOP is the only
+            // terminator that writes a register, so the store-at-write
+            // hook cannot see this; every reader -- the body, the exit
+            // block -- is dominated by this latch, and the first pass
+            // reads the STORE_Q FORPREP emitted, so the backing the
+            // pre-scan declared is stored on every path (#1732).
             lua_reg[A + 3] = new_idx;
-            lua_reg[A] = new_idx;
+            if (A + 3 >= 10) return -1;
+            h.emit(HIR_STORE_Q, TY_VOID, new_idx, -1, A + 3);
 
-            // Compare: index <= limit.
-            int cmp = h.emit(HIR_LE, TY_INT, new_idx, limit);
+            // Continue test.  The step is an ICONST -- FORPREP declined
+            // anything else -- so the direction is static; FORPREP's edge
+            // bound is what keeps new_idx from wrapping first.
+            if (h.kind[step] != HIR_ICONST) return -1;
+            int cmp = h.emit((h.val[step] > 0) ? HIR_LE : HIR_GE,
+                             TY_INT, new_idx, limit);
             if (cmp < 0) return -1;
             h.native_ops++;
 
-            // Back-edge budget: decrement counter, combine with
-            // loop condition.  When budget hits zero, forces exit
-            // so the queue runner can check alarm_clock.alarmed.
-            cmp = emit_budget_check(h, cmp);
+            // Back-edge budget (#1732).  Exhaustion must ABORT the run --
+            // the old fold-into-the-condition shape exited the loop early
+            // and returned a wrong partial result, which is exactly what
+            // #1326 refused to ship.  The limited block's ECALL declines
+            // the whole run; the caller fails over to the interpreter,
+            // which re-runs the (rerun-safe, per eligibility) chunk and
+            // raises its own "instruction limit exceeded".
+            int budget_ok = emit_budget_check(h, -1);
+            if (budget_ok < 0) return -1;
+            if (limited_blk < 0) {
+                limited_blk = h.new_block();
+                if (limited_blk < 0) return -1;
+                int save_blk = h.cur_block;
+                h.cur_block = limited_blk;
+                h.emit(HIR_LUA_LIMITED, TY_VOID);
+                int dead = h.emit_sconst(rc.pool_str("", 0), "");
+                if (dead < 0) return -1;
+                h.emit(HIR_RET, TY_VOID, dead);
+                h.cur_block = save_blk;
+            }
+            int cont_blk = h.new_block();
+            if (cont_blk < 0) return -1;
+            h.emit(HIR_BRC, TY_VOID, budget_ok, limited_blk, cont_blk);
+            h.add_edge(cur_hir_block, limited_blk);
+            h.add_edge(cur_hir_block, cont_blk);
+            h.cur_block = cont_blk;
+            cur_hir_block = cont_blk;
 
-            // Branch: if true, loop back; else fall through.
-            int loop_target = pc + 1 + insn.sBx();
+            // Branch: if true, loop back; else fall through.  5.4 encodes
+            // the back edge as an unsigned Bx: pc -= Bx.
+            int loop_target = pc + 1 - insn.Bx();
             int exit_target = pc + 1;
             int loop_blk = (loop_target >= 0 && loop_target < n) ? pc_to_block[loop_target] : -1;
             int exit_blk = (exit_target >= 0 && exit_target < n) ? pc_to_block[exit_target] : -1;
@@ -2666,6 +2833,57 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
         // ---- Unsupported opcodes ----
         default:
             return -1;
+        }
+
+        // Store-at-write (#1732): mirror this instruction's register
+        // writes into the q-registers, so the value crosses the next
+        // block boundary as PHI-convertible q-reg traffic.  Terminator
+        // opcodes are skipped -- their block is already closed, and the
+        // only terminator that writes a register, FORLOOP, stores its own
+        // writes inside its case.  Comparisons that FUSE (lua_bool_fuse)
+        // also skip; their write stays plain and declines on a later
+        // cross-block read rather than answering wrongly.
+        if (proto_has_loop) {
+            bool is_terminator;
+            switch (op) {
+            case OP_LUA_JMP: case OP_LUA_FORPREP: case OP_LUA_FORLOOP:
+            case OP_LUA_RETURN: case OP_LUA_RETURN0: case OP_LUA_RETURN1:
+            case OP_LUA_EQ: case OP_LUA_EQK: case OP_LUA_EQI:
+            case OP_LUA_LT: case OP_LUA_LE: case OP_LUA_LTI:
+            case OP_LUA_LEI: case OP_LUA_GTI: case OP_LUA_GEI:
+            case OP_LUA_TEST:
+                is_terminator = true;
+                break;
+            default:
+                is_terminator = false;
+                break;
+            }
+            if (!is_terminator) {
+                for (int r = 0; r < 10 && r < MAX_LUA_REGS; r++) {
+                    if (lua_reg[r] == pre_reg[r] || lua_reg[r] < 0) {
+                        continue;
+                    }
+                    const bool is_int =
+                        (h.ty[lua_reg[r]] == TY_INT)
+                        && !lua_is_handle(h, lua_reg[r]);
+                    if (0 == cur_hir_block && !entry_backing_sealed) {
+                        if (is_int) {
+                            h.emit(HIR_STORE_Q, TY_VOID, lua_reg[r], -1, r);
+                            qreg_backed[r] = true;
+                        } else if (forloop_backed[r]) {
+                            // The loop variable's register holding a
+                            // non-int before the loop would leave the
+                            // reload machinery a stale value; decline.
+                            return -1;
+                        }
+                    } else if (qreg_backed[r] || forloop_backed[r]) {
+                        // A backed register going non-int would leave a
+                        // stale integer for the next reload to resurrect.
+                        if (!is_int) return -1;
+                        h.emit(HIR_STORE_Q, TY_VOID, lua_reg[r], -1, r);
+                    }
+                }
+            }
         }
     }
 

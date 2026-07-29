@@ -4229,6 +4229,16 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         return -1;
     }
 
+    case ECALL_LUA_LIMITED: {
+        // Back-edge budget exhausted (#1732): abort the whole run.  The
+        // decline fails the run over to the Lua interpreter, which re-runs
+        // the chunk -- rerun-safe by the loop-proto eligibility rules --
+        // and raises its own "instruction limit exceeded" through
+        // InsnCountHook, so the player-visible error is the interpreter's
+        // verbatim, from one budget.
+        return ECALL_DECLINE;
+    }
+
     case ECALL_LUA_GETFIELD_INT: {
         // String-keyed read: a0=tbl_idx, a1=guest addr of a NUL-terminated
         // key -> a0=value, a1=ok.  The key travels as an address into the
