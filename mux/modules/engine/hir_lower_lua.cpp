@@ -801,6 +801,19 @@ static hir_type lua_call_claim(const std::string &name) {
     for (const char *n : kIntReturning) {
         if (name == n) return TY_INT;
     }
+    // FLOAT-returning stdlib names.  No CALL_FLT marshalling exists, so
+    // a FLOAT claim makes the call ineligible at lowering and the
+    // interpreter answers -- silently, with the right subtype.  Before
+    // this list, sqrt claimed the STRING default and its miss was a
+    // post-entry fail (smoke TC046 under Phase 0).
+    static const char *kFloatReturning[] = {
+        "sqrt", "exp", "log", "sin", "cos", "tan",
+        "asin", "acos", "atan", "fmod", "rad", "deg",
+        "random",   // float in the no-argument form
+    };
+    for (const char *n : kFloatReturning) {
+        if (name == n) return TY_FLOAT;
+    }
     return TY_STRING;
 }
 
@@ -1770,10 +1783,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     key = h.emit(HIR_FTOA, TY_STRING, key);
                     if (key < 0) return -1;
                 }
-                std::string name("__lua_geti");
-                int args[] = { tbl, key };
-                lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
-                if (lua_reg[A] < 0) return -1;
+                // No handler exists for a general (string/float key)
+                // table read; emitting the named ECALL could only fail
+                // loudly post-entry.  Ineligible at lowering instead
+                // (#1751 rule 1): the interpreter answers.
+                return -1;
             }
             h.ecalls++;
             break;
@@ -1908,11 +1922,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 val = h.emit(HIR_FTOA, TY_STRING, val);
                 if (val < 0) return -1;
             }
-            std::string name("__lua_seti");
-            int args[] = { tbl, key, val };
-            h.emit_call(TY_STRING, 0, args, 3, &name);
-            h.ecalls++;
-            break;
+            // No handler exists for a runtime-keyed store; the named
+            // ECALL could only fail loudly post-entry -- which is what
+            // turned the plain `t[i]=v` loop into a loud diverge under
+            // Phase 0.  Ineligible at lowering instead (#1751 rule 1).
+            return -1;
         }
 
         // SETFIELD: A = table register, B = key constant index, C = value register.
@@ -2642,11 +2656,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
             int key_val = h.emit_sconst(key_addr, k.sval);
             if (key_val < 0) return -1;
-            std::string name("__lua_setglobal");
-            int args[] = { key_val, val };
-            h.emit_call(TY_STRING, 0, args, 2, &name);
-            h.ecalls++;
-            break;
+            // Global writes have no handler; ineligible at lowering
+            // (#1751 rule 1) rather than a guaranteed post-entry fail.
+            return -1;
         }
 
         // SELF: A = dest, B = table register, C = method key constant.
@@ -2667,12 +2679,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             uint64_t key_addr = rc.pool_str(k.sval.c_str(), k.sval.size());
             int key_val = h.emit_sconst(key_addr, k.sval);
             if (key_val < 0) return -1;
-            std::string name("__lua_getfield");
-            int args[] = { tbl, key_val };
-            lua_reg[A] = h.emit_call(TY_LUA_HANDLE, 0, args, 2, &name);
-            if (lua_reg[A] < 0) return -1;
-            h.ecalls++;
-            break;
+            // Method dispatch has no handler; ineligible at lowering
+            // (#1751 rule 1).
+            return -1;
         }
 
         case OP_LUA_TAILCALL:
@@ -2726,6 +2735,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // claim to check, and the destination Lua registers become
             // dead exactly as the VM's would.
             const lua_referent fref = lua_referent_of(lua_ref, func_reg);
+            // A FLOAT-returning claim has no marshalling; ineligible at
+            // lowering, interpreter answers with the right subtype.
+            if (fref.callable && TY_FLOAT == fref.returns) {
+                return -1;
+            }
             // An effectful callee declines the whole chunk at COMPILE
             // time, in every form.  The chunk is the rerun unit: even a
             // statement-form effect followed by any LATER runtime decline
@@ -2796,75 +2810,19 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 }
             }
 
-            // Convert arguments to strings.
-            std::vector<int> args;
-            for (int i = 0; i < nargs; i++) {
-                if (!lua_reg_in_range(A + 1 + i)) return -1;
-                int areg = lua_reg[A + 1 + i];
-                if (areg < 0) return -1;
-                if (h.ty[areg] == TY_INT) {
-                    areg = h.emit(HIR_ITOA, TY_STRING, areg);
-                    if (areg < 0) return -1;
-                } else if (h.ty[areg] == TY_FLOAT) {
-                    areg = h.emit(HIR_FTOA, TY_STRING, areg);
-                    if (areg < 0) return -1;
-                }
-                args.push_back(areg);
-            }
-
-            // General Lua function call via __lua_call ECALL.
-            // func_reg holds the function reference (Lua stack index
-            // as string, from __lua_getglobal/__lua_getfield).
-            //
-            // It must actually be one.  Now that a call result is a
-            // TY_STRING value rather than a handle, `f()()` would
-            // otherwise hand the marshalled text of the inner result to
-            // the ECALL as though it were a stack index.
-            //
-            // (The mux.* name-mapped branch that used to sit here --
-            // engine_api_lookup on the UPPERCASED member name -- is gone:
-            // it called the SOFTCODE function that happened to share the
-            // name, with different argument conventions than the bridge C
-            // function the interpreter calls (mux.eval -> softcode
-            // eval(obj,attr); mux.name(1) -> name() wanting "#1").  mux
-            // members now arrive as real handles via GETGLOBAL, take the
-            // direct-call path above, and pcall the same C function the
-            // interpreter does.)
-            if (!lua_is_handle(h, func_reg)) return -1;
-            std::vector<int> call_args;
-            call_args.push_back(func_reg);
-            for (auto &a : args) call_args.push_back(a);
-            std::string name("__lua_call");
-            // __LUA_CALL returns the *value*, not a reference to it: it
-            // marshals result 1 into the output buffer exactly as the
-            // bridge path above does, then pops the Lua stack, leaving
-            // nothing behind.  Typing it TY_LUA_HANDLE described the
-            // wrong thing and cost every chunk that consumed a call
-            // result, since return_as_string declines a handle (#1579).
-            // `return f()` had the answer already marshalled in hand and
-            // declined anyway.
-            int call_val = h.emit_call(TY_STRING, 0,
-                call_args.data(),
-                static_cast<int>(call_args.size()),
-                &name);
-            if (call_val < 0) return -1;
-            h.ecalls++;
-
-            if (nresults >= 1) {
-                lua_reg[A] = call_val;
-            }
-
-            // Multi-return: results 2..n do not exist to be fetched.
-            //
-            // __LUA_CALL runs lua_pcall(L, nargs, 1, 0) -- one result, always,
-            // regardless of nresults -- and then pops it.  The old code here
-            // emitted __lua_get_result for r >= 2 against a stack that held
-            // nothing of the call's, and the handler read the top of stack
-            // unconditionally, so `local a,b = f()` gave b whatever unrelated
-            // value happened to be there.  Declining is the honest answer
-            // until pcall is told how many results the caller wants and stops
-            // popping them (#1519).
-            if (nresults > 1) return -1;
+            // A call the typed CALL_INT/STR/VOID path cannot encode --
+            // arity above three, argument shapes outside the kind
+            // encoding, an unclaimed callee -- has no honest compiled
+            // form.  The original Phase 2 draft resurrected the named
+            // __lua_call here with the handle ITOA'd through guest
+            // memory and every argument STRINGIFIED; review measured a
+            // table argument arriving in string.format as its stack
+            // index rendered in decimal (#1424's exact resurrection) and
+            // the plan itself names string lies a non-goal.  Until a
+            // TYPED general-call encoding exists, these shapes are
+            // ineligible at lowering (#1751 rule 1): the interpreter
+            // answers, silently and correctly.
+            return -1;
             if (OP_LUA_TAILCALL == op
                 && lua_tailcall_ret(h, rc, lua_reg[A], result_val) < 0) {
                 return -1;
@@ -2911,36 +2869,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (iter_control < 0) return -1;
             }
 
-            // Call via __lua_tfor_call: func, state, control → results.
-            int nresults_c = insn.C();
-            std::string name("__lua_tfor_call");
-            std::vector<int> call_args;
-            call_args.push_back(iter_func);
-            call_args.push_back(iter_state);
-            call_args.push_back(iter_control);
-            int nr_val = h.emit_iconst(nresults_c);
-            call_args.push_back(nr_val);
-
-            // First result goes in R(A+4).
-            lua_reg[A + 4] = h.emit_call(TY_STRING, 0,
-                call_args.data(), static_cast<int>(call_args.size()),
-                &name);
-            if (lua_reg[A + 4] < 0) return -1;
-            h.ecalls++;
-
-            // Fetch additional results.
-            for (int r = 1; r < nresults_c; r++) {
-                if (!lua_reg_in_range(A + 4 + r)) return -1;
-                int ridx = h.emit_iconst(r + 1);
-                if (ridx < 0) return -1;
-                std::string rname("__lua_get_result");
-                int rargs[] = { ridx };
-                lua_reg[A + 4 + r] = h.emit_call(TY_LUA_HANDLE, 0,
-                    rargs, 1, &rname);
-                if (lua_reg[A + 4 + r] < 0) return -1;
-                h.ecalls++;
-            }
-            break;
+            // TFOR is rejected at eligibility; if that ever lifts, the
+            // iterator call needs a real typed encoding, not the dead
+            // named bridge.  Ineligible (#1751 rule 1).
+            return -1;
         }
 
         case OP_LUA_TFORLOOP: {
