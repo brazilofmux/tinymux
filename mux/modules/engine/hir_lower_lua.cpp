@@ -68,11 +68,16 @@ static constexpr int MAX_LUA_PARAMS = 8;
 // Returns: combined condition value.
 // ---------------------------------------------------------------
 
-static int emit_budget_check(hir_program &h, int cond) {
+static int emit_budget_check(hir_program &h, int cond, int amount) {
     int budget = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_LUA_BUDGET);
     if (budget < 0) return cond;
-    int one = h.emit(HIR_ICONST, TY_INT, -1, -1, 1);
-    int new_budget = h.emit(HIR_SUB, TY_INT, budget, one);
+    // Decrement by the loop body's bytecode length, not by 1: the
+    // interpreter's hook counts INSTRUCTIONS, and a per-edge tick would
+    // let a compiled loop run body-length times longer than the VM
+    // before tripping the same limit.
+    if (amount < 1) amount = 1;
+    int amt = h.emit(HIR_ICONST, TY_INT, -1, -1, amount);
+    int new_budget = h.emit(HIR_SUB, TY_INT, budget, amt);
     h.emit(HIR_STORE_Q, TY_VOID, new_budget, -1, QREG_LUA_BUDGET);
 
     int zero_val = h.emit(HIR_ICONST, TY_INT, -1, -1, 0);
@@ -302,16 +307,18 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
     // reject: the JMP shape needs the same budget wiring on a less regular
     // structure, and TFOR's iterator call is the dead named bridge.
     //
-    bool has_forloop = false;
+    bool has_back_edge = false;
     for (int pc = 0; pc < n; pc++) {
         const lua_bc_instruction &insn = proto->code[pc];
         switch (insn.opcode()) {
+        // while/repeat loop back through a backward JMP; same budget,
+        // same rerun-safety restrictions below as the numeric for.
         case OP_LUA_JMP:
-            if (pc + 1 + insn.sJ() <= pc) return LUA_BC_HAS_LOOP;
+            if (pc + 1 + insn.sJ() <= pc) has_back_edge = true;
             break;
 
         case OP_LUA_FORLOOP:
-            has_forloop = true;
+            has_back_edge = true;
             break;
 
         // Backward by construction; the iterator protocol is unsupported.
@@ -323,7 +330,7 @@ lua_bc_reject lua_bc_eligible(const lua_bc_proto *proto) {
         }
     }
 
-    if (has_forloop) {
+    if (has_back_edge) {
         if (proto->maxstacksize > 10) return LUA_BC_HAS_LOOP;
         for (int pc = 0; pc < n; pc++) {
             switch (proto->code[pc].opcode()) {
@@ -905,7 +912,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     bool forloop_backed[10] = { false, false, false, false, false,
                                 false, false, false, false, false };
     for (int i = 0; i < n; i++) {
-        if (proto->code[i].opcode() == OP_LUA_FORLOOP) {
+        const int sop = proto->code[i].opcode();
+        if (sop == OP_LUA_FORLOOP) {
             proto_has_loop = true;
             int fa = proto->code[i].A();
             // Only the VISIBLE index (A+3) is materialized; R(A) is 5.4's
@@ -913,19 +921,23 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (fa + 3 < 10) {
                 forloop_backed[fa + 3] = true;
             }
+        } else if (sop == OP_LUA_JMP
+                   && i + 1 + proto->code[i].sJ() <= i) {
+            // while/repeat: a backward JMP makes this a loop proto too.
+            proto_has_loop = true;
         }
     }
     bool qreg_backed[10] = { false, false, false, false, false,
                              false, false, false, false, false };
     bool entry_backing_sealed = false;
     int limited_blk = -1;
-    // Register state at the moment the entry block was left.  An entry
-    // value still equal to this is valid in EVERY block (the entry block
-    // dominates all of them) and skips the qreg round-trip -- which is
-    // not just cheaper: FORLOOP's static-bounds test needs to SEE the
-    // ICONSTs, and a reload would bury them under a LOAD_Q.
+    // Register state at the moment the entry block was left.  FORLOOP's
+    // static-bounds test reads its ICONSTs from here: by the latch,
+    // lua_reg[] holds LOAD_Q reloads, and a reload is one iteration
+    // fresher than an entry constant but buries the constness.
     int entry_final[MAX_LUA_REGS];
     memset(entry_final, -1, sizeof(entry_final));
+
 
     // Snapshot of lua_reg as it stood on entry to the current block, so a
     // block transition can tell which registers this block wrote.  See the
@@ -936,6 +948,37 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
     int cur_hir_block = 0;
     h.cur_block = 0;
     int result_val = -1;
+
+    // Back-edge budget guard, shared by FORLOOP and backward JMP so the
+    // two cannot drift (#1457's lesson): decrement by the loop body's
+    // instruction count, and branch to the shared limited block on
+    // exhaustion -- whose ECALL aborts the whole run to the interpreter
+    // rather than exiting the loop with a wrong partial result (#1732).
+    // Leaves the current block set to a fresh continuation block for the
+    // caller's own terminator.  Returns false on emission failure.
+    auto emit_backedge_guard = [&](int body_len) -> bool {
+        int budget_ok = emit_budget_check(h, -1, body_len);
+        if (budget_ok < 0) return false;
+        if (limited_blk < 0) {
+            limited_blk = h.new_block();
+            if (limited_blk < 0) return false;
+            int save_blk = h.cur_block;
+            h.cur_block = limited_blk;
+            h.emit(HIR_LUA_LIMITED, TY_VOID);
+            int dead = h.emit_sconst(rc.pool_str("", 0), "");
+            if (dead < 0) return false;
+            h.emit(HIR_RET, TY_VOID, dead);
+            h.cur_block = save_blk;
+        }
+        int cont_blk = h.new_block();
+        if (cont_blk < 0) return false;
+        h.emit(HIR_BRC, TY_VOID, budget_ok, limited_blk, cont_blk);
+        h.add_edge(cur_hir_block, limited_blk);
+        h.add_edge(cur_hir_block, cont_blk);
+        h.cur_block = cont_blk;
+        cur_hir_block = cont_blk;
+        return true;
+    };
 
     // Initialize back-edge budget counter for loop DoS protection.
     // Uses the same limit as the Lua interpreter's instruction hook.
@@ -2136,23 +2179,14 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int target_blk = (target >= 0 && target < n) ? pc_to_block[target] : -1;
             if (target_blk < 0) return -1;
 
-            // If this is a back-edge (jumping to an earlier PC), insert
-            // a budget check to prevent infinite-loop DoS.
+            // Back edge (while/repeat): the budget guard, then the jump.
+            // The shape this replaces folded exhaustion into an exit to
+            // the fall-through -- leaving the loop early and CONTINUING
+            // with a wrong partial result, the exact defect the FORLOOP
+            // budget had (#1732).  The guard aborts to the interpreter
+            // instead.
             if (target <= pc) {
-                int exit_target = pc + 1;
-                int exit_blk = (exit_target >= 0 && exit_target < n)
-                    ? pc_to_block[exit_target] : -1;
-                if (exit_blk >= 0) {
-                    int budget_ok = emit_budget_check(h, -1);
-                    if (budget_ok >= 0) {
-                        // Convert unconditional branch to conditional:
-                        // if budget ok, loop back; else exit.
-                        h.emit(HIR_BRC, TY_VOID, budget_ok, exit_blk, target_blk);
-                        h.add_edge(cur_hir_block, target_blk);
-                        h.add_edge(cur_hir_block, exit_blk);
-                        break;
-                    }
-                }
+                if (!emit_backedge_guard(pc - target + 1)) return -1;
             }
 
             h.emit(HIR_BR, TY_VOID, -1, -1, target_blk);
@@ -2267,33 +2301,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (cmp < 0) return -1;
             h.native_ops++;
 
-            // Back-edge budget (#1732).  Exhaustion must ABORT the run --
-            // the old fold-into-the-condition shape exited the loop early
-            // and returned a wrong partial result, which is exactly what
-            // #1326 refused to ship.  The limited block's ECALL declines
-            // the whole run; the caller fails over to the interpreter,
-            // which re-runs the (rerun-safe, per eligibility) chunk and
-            // raises its own "instruction limit exceeded".
-            int budget_ok = emit_budget_check(h, -1);
-            if (budget_ok < 0) return -1;
-            if (limited_blk < 0) {
-                limited_blk = h.new_block();
-                if (limited_blk < 0) return -1;
-                int save_blk = h.cur_block;
-                h.cur_block = limited_blk;
-                h.emit(HIR_LUA_LIMITED, TY_VOID);
-                int dead = h.emit_sconst(rc.pool_str("", 0), "");
-                if (dead < 0) return -1;
-                h.emit(HIR_RET, TY_VOID, dead);
-                h.cur_block = save_blk;
-            }
-            int cont_blk = h.new_block();
-            if (cont_blk < 0) return -1;
-            h.emit(HIR_BRC, TY_VOID, budget_ok, limited_blk, cont_blk);
-            h.add_edge(cur_hir_block, limited_blk);
-            h.add_edge(cur_hir_block, cont_blk);
-            h.cur_block = cont_blk;
-            cur_hir_block = cont_blk;
+            // Back-edge budget (#1732); see emit_backedge_guard.  The
+            // body is Bx instructions plus this FORLOOP.
+            if (!emit_backedge_guard(insn.Bx() + 1)) return -1;
 
             // Branch: if true, loop back; else fall through.  5.4 encodes
             // the back edge as an unsigned Bx: pc -= Bx.
@@ -2802,8 +2812,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             int cmp = h.emit(HIR_GT, TY_INT, len_int, zero);
             if (cmp < 0) return -1;
 
-            // Back-edge budget check.
-            cmp = emit_budget_check(h, cmp);
+            // Back-edge budget check.  (TFOR protos are rejected at
+            // eligibility; this fold-into-the-condition shape is the one
+            // #1732 replaced elsewhere and must be reworked like FORLOOP
+            // if TFOR is ever lifted.)
+            cmp = emit_budget_check(h, cmp, 1);
 
             // If non-nil: set control = first_result, loop back.
             int loop_target = pc + 1 + insn.sBx();
