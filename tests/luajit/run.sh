@@ -116,11 +116,11 @@ AGREE_CASES=(
     # none may invent a wrong answer.
     'local s=0 for i=1,4 do s=s+i end return s'
     'local i=0 repeat i=i+1 until i>=5 return i'
-    # Budget exhaustion must be the interpreter's error, not a partial
-    # sum: the compiled run aborts via ECALL_LUA_LIMITED, fails over,
-    # and the interpreter re-runs into its own instruction limit.  The
-    # old fold-into-the-condition shape exited the loop early and would
-    # have ANSWERED here -- with the wrong number (#1732).
+    # Budget exhaustion: compiled path hits ECALL_LUA_LIMITED.  Pre-#1751
+    # that declined and the interpreter re-ran into its own instruction
+    # limit (both routes agreed).  Phase 0: post-entry LIMITED is a loud
+    # POST-ENTRY DECLINE instead of re-run (Phase 3 makes the text
+    # interpreter-identical).  Counted as post_entry_loud, not agree.
     'local s=0 for i=1,100000000 do s=s+1 end return s'
     # ---- #1424's four shapes, whose symptoms #1518 closed (#1557) ----
     #
@@ -165,6 +165,18 @@ AGREE_CASES=(
     'return string.find("ab","b")'
 )
 
+# #1751 Phase 0: post-entry decline is loud (error string), not silent re-run.
+# AGREE may count those as post_entry_loud rather than diverge, with a budget
+# that may only fall as Phases 1–3 empty the FAIL sites.
+#
+# Count of AGREE + NESTED_AGREE chunks that commit a loud
+# POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
+# Phases 1–3 empty FAIL sites.  Long-term target is 0.
+#
+# Baseline after Phase 0 wiring (2026-07-29): select, os.time,
+# budget for-loop, string.find, nested while-true → 5.
+POST_ENTRY_LOUD_BUDGET=5
+
 # How many AGREE chunks are expected to decline rather than execute.
 #
 # A decline is safe (the interpreter answers) and so cannot be a hard error
@@ -176,12 +188,12 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
-# Of the 6: os.time (errors on the interpreter too), string.find
-# (result-count pin), select (four arguments), the budget-exhaustion
-# pin (both routes end in the instruction-limit error), and the two
-# mux.eval pins -- effectful members may NEVER execute compiled
-# (exactly-once, #1750), so these four+two are permanent by design.
-AGREE_DECLINE_BUDGET=6
+# After Phase 0, silent decline is only pre-entry (compile refuse / never
+# entered).  Remaining: the two mux.eval pins -- effectful members are
+# compile-ineligible (#1750), so the interpreter answers honestly.
+# Post-entry sites that used to silent-decline now count under
+# POST_ENTRY_LOUD_BUDGET instead.
+AGREE_DECLINE_BUDGET=2
 
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
@@ -581,8 +593,10 @@ surv_div=0
 agree_wrong=0
 agree_declined=0
 agree_executed=0
+post_entry_loud=0
 exec_wrong=0
 exec_no_run=0
+exec_post_entry=0
 nested_wrong=0
 nested_no_run=0
 n=0
@@ -623,6 +637,10 @@ for chunk in "${AGREE_CASES[@]}"; do
     elif [ "$irc" != "0" ]; then
         verdict="FAIL: interp died rc=$irc"
         crashes=$((crashes+1))
+    elif printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
+        # Phase 0: committed loud fail on the compiled path (#1751).
+        verdict="ok (post-entry decline loud; Phase 0)"
+        post_entry_loud=$((post_entry_loud+1))
     elif [ "$ires" != "$jres" ]; then
         verdict="FAIL: diverges interp=$ires jit=$jres"
         agree_wrong=$((agree_wrong+1))
@@ -650,6 +668,11 @@ for chunk in "${EXEC_CASES[@]}"; do
     elif [ "$irc" != "0" ]; then
         verdict="FAIL: interp died rc=$irc"
         crashes=$((crashes+1))
+    elif printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
+        # Phase 0: compiled path entered then failed loud — not a silent
+        # re-run.  Still fails EXEC (must execute and match) until bins empty.
+        verdict="FAIL: post-entry decline loud (Phase 0; #1751)"
+        exec_post_entry=$((exec_post_entry+1))
     elif [ "$ires" != "$jres" ]; then
         verdict="FAIL: diverges interp=$ires jit=$jres"
         exec_wrong=$((exec_wrong+1))
@@ -701,6 +724,10 @@ for chunk in "${NESTED_AGREE_CASES[@]}"; do
     elif [ "$irc" != "0" ]; then
         verdict="FAIL: interp died rc=$irc"
         crashes=$((crashes+1))
+    elif printf '%s' "$jres" | grep -q 'LUA JIT POST-ENTRY DECLINE'; then
+        # Phase 0: loud post-entry decline is honest; not silent re-run (#1751).
+        verdict="ok (post-entry decline loud; Phase 0)"
+        post_entry_loud=$((post_entry_loud+1))
     elif [ "$ires" != "$jres" ]; then
         verdict="FAIL: diverges interp=$ires jit=$jres"
         nested_wrong=$((nested_wrong+1))
@@ -717,7 +744,7 @@ rm -rf "$WORK"
 total=$((${#SURVIVE_CASES[@]} + ${#AGREE_CASES[@]} + ${#EXEC_CASES[@]} + ${#NESTED_CASES[@]} + ${#NESTED_AGREE_CASES[@]}))
 echo
 echo "chunks: $total   crashes: $crashes   survive_diverges: $surv_div"
-echo "agree_wrong: $agree_wrong   exec_wrong: $exec_wrong   exec_no_run: $exec_no_run"
+echo "agree_wrong: $agree_wrong   exec_wrong: $exec_wrong   exec_no_run: $exec_no_run   exec_post_entry: $exec_post_entry"
 echo "nested_wrong: $nested_wrong   nested_no_run: $nested_no_run   (of ${#NESTED_CASES[@]} NESTED chunks, brackets ON)"
 
 # Executed vs declined, separately (#1426).
@@ -727,7 +754,7 @@ echo "nested_wrong: $nested_wrong   nested_no_run: $nested_no_run   (of ${#NESTE
 # pass/fail count.  Reporting them apart stops "38/38 agree" standing in for
 # "the compiler saw 38 chunks", which it does not: it saw the executed ones.
 #
-echo "agree_executed: $agree_executed   agree_declined: $agree_declined   (of ${#AGREE_CASES[@]} AGREE chunks)"
+echo "agree_executed: $agree_executed   agree_declined: $agree_declined   post_entry_loud: $post_entry_loud   (of ${#AGREE_CASES[@]} AGREE chunks)"
 
 decline_budget_fail=0
 if [ "$agree_declined" -gt "$AGREE_DECLINE_BUDGET" ]; then
@@ -742,10 +769,22 @@ elif [ "$agree_declined" -lt "$AGREE_DECLINE_BUDGET" ]; then
     decline_budget_fail=1
 fi
 
+post_entry_budget_fail=0
+if [ "$post_entry_loud" -gt "$POST_ENTRY_LOUD_BUDGET" ]; then
+    echo "  POST-ENTRY LOUD BUDGET: $post_entry_loud > $POST_ENTRY_LOUD_BUDGET (#1751 Phase 0)."
+    post_entry_budget_fail=1
+elif [ "$post_entry_loud" -lt "$POST_ENTRY_LOUD_BUDGET" ] && [ "$post_entry_loud" -gt 0 ]; then
+    echo "  POST-ENTRY LOUD BUDGET: down to $post_entry_loud from $POST_ENTRY_LOUD_BUDGET -- good."
+    echo "  Lower POST_ENTRY_LOUD_BUDGET in this file to $post_entry_loud."
+    post_entry_budget_fail=1
+fi
+
 if [ "$crashes" -ne 0 ] || [ "$agree_wrong" -ne 0 ] \
    || [ "$exec_wrong" -ne 0 ] || [ "$exec_no_run" -ne 0 ] \
+   || [ "$exec_post_entry" -ne 0 ] \
    || [ "$nested_wrong" -ne 0 ] || [ "$nested_no_run" -ne 0 ] \
-   || [ "$decline_budget_fail" -ne 0 ]; then
+   || [ "$decline_budget_fail" -ne 0 ] \
+   || [ "$post_entry_budget_fail" -ne 0 ]; then
     echo "=== tests/luajit: FAILED ==="
     if [ "$crashes" -ne 0 ]; then
         echo "  process deaths: preserved work.fail.* dirs next to this script"

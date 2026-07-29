@@ -167,6 +167,7 @@ struct lua_jit_counters {
     uint64_t run_fail;
     uint64_t cache_hits;
     uint64_t invalidations;
+    uint64_t post_entry_decline;  // #1751 Phase 0; long-term target 0
 };
 void jit_lua_get_stats(lua_jit_counters *out);
 void jit_lua_reset_stats(void);
