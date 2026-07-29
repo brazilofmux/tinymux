@@ -173,9 +173,10 @@ AGREE_CASES=(
 # POST-ENTRY DECLINE (not silent re-run).  MAY FALL, MUST NOT RISE as
 # Phases 1–3 empty FAIL sites.  Long-term target is 0.
 #
-# Baseline after Phase 0 + 0.5 (2026-07-29): select, os.time,
-# budget for-loop, string.find, nested while-true (5) + STATE e1/e2 (2) → 7.
-POST_ENTRY_LOUD_BUDGET=7
+# After Phase 1 total GET/SET/LEN: os.time no longer declines (raises a
+# real LUA ERROR on both routes).  Remaining loud: select, budget for-loop,
+# string.find, nested while-true (4) + STATE e1/e2 (2) → 6.
+POST_ENTRY_LOUD_BUDGET=6
 
 # How many AGREE chunks are expected to decline rather than execute.
 #
@@ -697,6 +698,37 @@ if [ "$R_OK" = "0" ]; then
     exit 1
 fi
 
+# True if results agree for differential purposes.
+# Exact match, or both are LUA ERROR with the same core message after
+# stripping the interpreter's `#dbref/ATTR:line:` prefix and a trailing
+# parenthetical (e.g. `(global 'os')`) that the JIT ECALL path does not
+# always reconstruct (#1751 Phase 1 total GETGLOBAL/GETFIELD).
+#
+results_match() {
+    local a="$1" b="$2"
+    if [ "$a" = "$b" ]; then
+        return 0
+    fi
+    case "$a" in
+        '#-1 LUA ERROR:'*) ;;
+        *) return 1 ;;
+    esac
+    case "$b" in
+        '#-1 LUA ERROR:'*) ;;
+        *) return 1 ;;
+    esac
+    local na nb
+    na=$(printf '%s' "$a" | sed -E \
+        -e 's/^#-1 LUA ERROR: //' \
+        -e 's/^#[0-9]+\/[^:]+:[0-9]+: //' \
+        -e 's/ \([^)]*\)$//')
+    nb=$(printf '%s' "$b" | sed -E \
+        -e 's/^#-1 LUA ERROR: //' \
+        -e 's/^#[0-9]+\/[^:]+:[0-9]+: //' \
+        -e 's/ \([^)]*\)$//')
+    [ "$na" = "$nb" ]
+}
+
 crashes=0
 surv_div=0
 agree_wrong=0
@@ -750,7 +782,7 @@ for chunk in "${AGREE_CASES[@]}"; do
         # Phase 0: committed loud fail on the compiled path (#1751).
         verdict="ok (post-entry decline loud; Phase 0)"
         post_entry_loud=$((post_entry_loud+1))
-    elif [ "$ires" != "$jres" ]; then
+    elif ! results_match "$ires" "$jres"; then
         verdict="FAIL: diverges interp=$ires jit=$jres"
         agree_wrong=$((agree_wrong+1))
     elif [ "$jok" = "0" ]; then
