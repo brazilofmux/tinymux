@@ -1591,6 +1591,16 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
+            case HIR_LUA_LIMITED: {
+                // Back-edge budget exhausted (#1732).  The handler declines
+                // the whole run; nothing after this executes, so there are
+                // no operands and no result.
+                rc.code.push_back(rv_ADDI(17, 0,
+                    static_cast<int32_t>(ECALL_LUA_LIMITED)));
+                rc.code.push_back(rv_ECALL());
+                break;
+            }
+
             case HIR_LUA_SETFIELD: {
                 // a0=tbl_idx, a1=key addr, a2=value (third operand in val[]).
                 int s1 = h.src1[i], s2 = h.src2[i];
@@ -2514,6 +2524,7 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LUA_CALL_INT: return "LUA_CALL_INT";
     case HIR_LUA_CALL_STR: return "LUA_CALL_STR";
     case HIR_LUA_CALL_VOID: return "LUA_CALL_VOID";
+    case HIR_LUA_LIMITED: return "LUA_LIMITED";
     case HIR_LUA_GETFIELD: return "LUA_GETFIELD";
     case HIR_LUA_GETFIELD_FLT: return "LUA_GETFIELD_FLT";
     case HIR_LUA_SETFIELD: return "LUA_SETFIELD";

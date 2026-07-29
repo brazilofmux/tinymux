@@ -112,9 +112,17 @@ AGREE_CASES=(
     # weaker than what EXEC already pins.
     'local a=mux.args[1]+0 return (a ^ 2) == 4'
     'local a=mux.args[1]+0 local b=mux.args[2]+0 return (a ^ b) == 8'
-    # Loops: currently decline; still must not invent a wrong answer.
+    # Numeric for EXECUTES under the back-edge budget (#1732); the
+    # repeat/until backward JMP still declines.  Neither may invent a
+    # wrong answer.
     'local s=0 for i=1,4 do s=s+i end return s'
     'local i=0 repeat i=i+1 until i>=5 return i'
+    # Budget exhaustion must be the interpreter's error, not a partial
+    # sum: the compiled run aborts via ECALL_LUA_LIMITED, fails over,
+    # and the interpreter re-runs into its own instruction limit.  The
+    # old fold-into-the-condition shape exited the loop early and would
+    # have ANSWERED here -- with the wrong number (#1732).
+    'local s=0 for i=1,100000000 do s=s+1 end return s'
     # ---- #1424's four shapes, whose symptoms #1518 closed (#1557) ----
     #
     # Used to return stack-index garbage (22) or abort.  Now agree by
@@ -156,6 +164,11 @@ AGREE_CASES=(
 # MAY FALL, MUST NOT RISE.  Same ratchet as BAN_LEGACY in
 # tests/format/check_formats.py (#1631/#1653).
 #
+# Of the 5: repeat/until (backward JMP, #1732's next step), os.time
+# (errors on the interpreter too), string.find (result-count pin),
+# select (four arguments), and the budget-exhaustion pin -- which can
+# NEVER execute: both routes end in the instruction-limit error, which
+# is the assertion.
 AGREE_DECLINE_BUDGET=5
 
 # ---------------------------------------------------------------------------
@@ -290,6 +303,17 @@ EXEC_CASES=(
     'local x=string.sub("world",2,4) return x'
     'local x=table.concat({10,20},"-") return x'
     'local t={5} table.insert(t,6) return t[2]'
+
+    # Numeric FOR loops under the back-edge budget (#1732).  The
+    # accumulator is the loop-carried q-reg routing's whole reason to
+    # exist; a*10+i is ORDER-sensitive, so swapped or repeated iterations
+    # cannot pass; and the zero-iteration case pins the entry->latch->exit
+    # path where the body never runs -- the shape where a reload of a
+    # never-stored q-register would resurrect whatever the surrounding
+    # command left in %q.
+    'local s=0 for i=1,4 do s=s+i end return s'
+    'local a=0 for i=1,3 do a=a*10+i end return a'
+    'local s=7 for i=1,0 do s=99 end return s'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

@@ -122,6 +122,7 @@ enum hir_kind {
     HIR_LUA_GETI,   // geti(tbl_idx, key): ECALL → TY_INT (no string marshal)
     HIR_LUA_SETI,   // seti(tbl_idx, key, val): ECALL (no string marshal)
     HIR_LUA_ALOAD,  // native array load: val[key] from pinned array (no ECALL)
+    HIR_LUA_LIMITED, // back-edge budget exhausted: ECALL aborts the run (#1732)
 
     // Function calls
     HIR_CALL,       // ECALL to engine function
