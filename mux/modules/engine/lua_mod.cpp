@@ -823,6 +823,92 @@ void CLuaMod::DestroyLuaState(void)
 // nil, which #1750's adversarial review measured as a route-dependent
 // divergence.  Restore with lua_restore_exec_context.
 //
+// Nesting also used to leave the OUTER mux.args / executor fields destroyed:
+// setup always overwrote the global mux table, and restore only put back the
+// registry pointer.  An outer chunk that did mux.eval("lua(...)") then
+// re-read mux.args[k] saw the inner args (or nil) — plan residual "anytime
+// item 3", pinned by smoke TC071.  When nesting, the previous mux table
+// fields are stacked in the registry and restored with the ctx pointer.
+//
+#define LUA_MUX_FIELDS_STACK "mux_fields_stack"
+
+// Save mux.executor/caller/enactor/args onto a registry stack (nesting).
+//
+static void lua_save_mux_fields(lua_State *L)
+{
+    lua_getglobal(L, "mux");
+    if (!lua_istable(L, -1))
+    {
+        lua_pop(L, 1);
+        return;
+    }
+
+    lua_createtable(L, 4, 0);
+    lua_getfield(L, -2, "executor");
+    lua_rawseti(L, -2, 1);
+    lua_getfield(L, -2, "caller");
+    lua_rawseti(L, -2, 2);
+    lua_getfield(L, -2, "enactor");
+    lua_rawseti(L, -2, 3);
+    lua_getfield(L, -2, "args");
+    lua_rawseti(L, -2, 4);
+    // stack: mux, saved
+
+    lua_getfield(L, LUA_REGISTRYINDEX, LUA_MUX_FIELDS_STACK);
+    if (!lua_istable(L, -1))
+    {
+        lua_pop(L, 1);
+        lua_newtable(L);
+        lua_pushvalue(L, -1);
+        lua_setfield(L, LUA_REGISTRYINDEX, LUA_MUX_FIELDS_STACK);
+    }
+    // stack: mux, saved, stack
+    const int n = static_cast<int>(lua_rawlen(L, -1));
+    lua_pushvalue(L, -2);
+    lua_rawseti(L, -2, n + 1);
+    lua_pop(L, 3);  // stack, saved, mux
+}
+
+// Pop the most recently saved mux fields back onto the global mux table.
+//
+static void lua_restore_mux_fields(lua_State *L)
+{
+    lua_getfield(L, LUA_REGISTRYINDEX, LUA_MUX_FIELDS_STACK);
+    if (!lua_istable(L, -1))
+    {
+        lua_pop(L, 1);
+        return;
+    }
+    const int n = static_cast<int>(lua_rawlen(L, -1));
+    if (n < 1)
+    {
+        lua_pop(L, 1);
+        return;
+    }
+
+    lua_rawgeti(L, -1, n);
+    // stack: stack, saved
+    lua_pushnil(L);
+    lua_rawseti(L, -3, n);
+
+    lua_getglobal(L, "mux");
+    if (!lua_istable(L, -1))
+    {
+        lua_pop(L, 3);
+        return;
+    }
+    // stack: stack, saved, mux
+    lua_rawgeti(L, -2, 1);
+    lua_setfield(L, -2, "executor");
+    lua_rawgeti(L, -2, 2);
+    lua_setfield(L, -2, "caller");
+    lua_rawgeti(L, -2, 3);
+    lua_setfield(L, -2, "enactor");
+    lua_rawgeti(L, -2, 4);
+    lua_setfield(L, -2, "args");
+    lua_pop(L, 3);  // mux, saved, stack
+}
+
 static lua_exec_ctx *lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
     dbref executor, dbref caller, dbref enactor,
     const UTF8 *pArgs[], int nArgs, bool compiled_route)
@@ -831,6 +917,14 @@ static lua_exec_ctx *lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
     lua_exec_ctx *prev =
         static_cast<lua_exec_ctx *>(lua_touserdata(L, -1));
     lua_pop(L, 1);
+
+    // Nesting: keep the outer mux.* per-run fields so the outer chunk still
+    // sees its own args after the inner run returns (#1773 TC071).
+    //
+    if (nullptr != prev)
+    {
+        lua_save_mux_fields(L);
+    }
 
     ctx.compiled_route = compiled_route;
     ctx.executor = executor;
@@ -879,6 +973,15 @@ static lua_exec_ctx *lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
 
 static void lua_restore_exec_context(lua_State *L, lua_exec_ctx *prev)
 {
+    // Restore mux table fields before swapping the registry pointer back,
+    // so any bridge that peeks at mux.args during teardown (none today)
+    // still sees a coherent pair.
+    //
+    if (nullptr != prev)
+    {
+        lua_restore_mux_fields(L);
+    }
+
     if (prev != nullptr)
     {
         lua_pushlightuserdata(L, prev);
