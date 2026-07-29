@@ -2728,8 +2728,12 @@ void jit_flush_pending_caches(void)
 // interpreter).  Pre-entry fallback is unchanged.
 //
 static constexpr int ECALL_DECLINE = 1;
+// Phase 1: total table/len op raised under pcall — commit LUA ERROR text.
+//
+static constexpr int ECALL_LUA_ERROR = 2;
 
 static thread_local const char *s_lua_decline_site = nullptr;
+static thread_local char s_lua_ecall_error[256];
 
 static int lua_ecall_decline(const char *site)
 {
@@ -2983,6 +2987,18 @@ bool run_cached_program(compiled_program *prog,
         log_text(reinterpret_cast<const UTF8 *>(site));
         ENDLOG;
         return true;  // handled — caller must not re-run the interpreter
+    }
+
+    // #1751 Phase 1: total GET/SET/LEN raised a real Lua error under pcall.
+    // Commit the interpreter-class message; no re-run.
+    //
+    if (rc == ECALL_LUA_ERROR && nullptr != lua_state) {
+        if (nullptr != out && 0 < out_size) {
+            mux_strncpy(out,
+                reinterpret_cast<const UTF8 *>(s_lua_ecall_error),
+                out_size - 1);
+        }
+        return true;
     }
 
     if (!handle_dbt_run_status(rc, out, out_size, true)) {
@@ -3320,31 +3336,123 @@ private:
 
 // A Lua error raised inside an ECALL has no protected call frame anywhere
 // above it, so luaD_throw() reaches the default panic handler and abort()s
-// the process (#1423).  lua_geti/lua_seti/lua_getfield/lua_setfield can all
-// raise: on a stack index that is out of range or holds a non-table, and
-// through an __index/__newindex metamethod.  None of the inputs are
-// trustworthy -- the stack index arrives in a guest register, and on the
-// string bridge it is atoi() of guest-supplied text.
+// the process (#1423).  Full table ops (lua_geti / lua_settable / luaL_len)
+// can raise through metamethods or type errors.
 //
-// So every table op checks its target first and then uses the raw accessors,
-// which cannot raise.  A target carrying a metatable is declined rather than
-// guessed at: raw access would silently skip __index/__newindex, and the
-// interpreter fallback runs them correctly.  Nothing in the engine module
-// installs a metatable today, so this declines no path that works now.
+// #1751 Phase 1: GET/SET/LEN are *total* — never ECALL_DECLINE for policy
+// (metatable / type surprise / missing global).  Use the real VM ops under
+// pcall; on error commit an interpreter-class LUA ERROR (not a silent
+// re-run, not a POST-ENTRY DECLINE).  Typed result claims that fail after
+// a successful get return ok=0 and continue (same as GETI_INT already did
+// for non-integers) so the guest can take a typed alternate path.
 //
-static bool ecall_lua_plain_table(lua_State *L, int idx)
+// ECALL_LUA_ERROR and s_lua_ecall_error live next to ECALL_DECLINE above.
+//
+static int ecall_lua_commit_error(lua_State *L)
 {
-    if (idx <= 0 || idx > lua_gettop(L)) {
-        return false;
+    const char *msg = lua_tostring(L, -1);
+    if (nullptr == msg) {
+        msg = "unknown Lua error";
     }
-    if (!lua_istable(L, idx)) {
-        return false;
+    // Match the interpreter's softcode framing for raised Lua errors.
+    //
+    mux_snprintf(reinterpret_cast<UTF8 *>(s_lua_ecall_error),
+        sizeof(s_lua_ecall_error),
+        T("#-1 LUA ERROR: %s"),
+        reinterpret_cast<const UTF8 *>(msg));
+    lua_pop(L, 1);
+    return ECALL_LUA_ERROR;
+}
+
+// pcall helpers: stack protocol is (table, key[, value]) via absolute
+// indices copied onto the stack before the call.
+//
+static int ecall_aux_gettable(lua_State *L)
+{
+    lua_gettable(L, 1);
+    return 1;
+}
+
+static int ecall_aux_settable(lua_State *L)
+{
+    lua_settable(L, 1);
+    return 0;
+}
+
+static int ecall_aux_len(lua_State *L)
+{
+    lua_pushinteger(L, static_cast<lua_Integer>(luaL_len(L, 1)));
+    return 1;
+}
+
+// Absolute stack index must refer to a table (or something indexable via
+// metamethods).  Out-of-range is a soft miss (ok=0), not a decline.
+//
+static bool ecall_lua_stack_index_ok(lua_State *L, int idx)
+{
+    return idx > 0 && idx <= lua_gettop(L);
+}
+
+// Protected get: pushes the value at table[key].  Returns 0 on success
+// (value on stack), ECALL_LUA_ERROR on raise.  key_is_str: key is a C
+// string pushed by the caller as... actually we push inside.
+//
+static int ecall_lua_pget_intkey(lua_State *L, int tbl_idx, lua_Integer key)
+{
+    lua_pushcfunction(L, ecall_aux_gettable);
+    lua_pushvalue(L, tbl_idx);
+    lua_pushinteger(L, key);
+    if (LUA_OK != lua_pcall(L, 2, 1, 0)) {
+        return ecall_lua_commit_error(L);
     }
-    if (lua_getmetatable(L, idx)) {
-        lua_pop(L, 1);
-        return false;
+    return 0;
+}
+
+static int ecall_lua_pget_strkey(lua_State *L, int tbl_idx, const char *key)
+{
+    lua_pushcfunction(L, ecall_aux_gettable);
+    lua_pushvalue(L, tbl_idx);
+    lua_pushstring(L, key);
+    if (LUA_OK != lua_pcall(L, 2, 1, 0)) {
+        return ecall_lua_commit_error(L);
     }
-    return true;
+    return 0;
+}
+
+static int ecall_lua_pset_intkey(lua_State *L, int tbl_idx, lua_Integer key,
+                                 lua_Integer val)
+{
+    lua_pushcfunction(L, ecall_aux_settable);
+    lua_pushvalue(L, tbl_idx);
+    lua_pushinteger(L, key);
+    lua_pushinteger(L, val);
+    if (LUA_OK != lua_pcall(L, 3, 0, 0)) {
+        return ecall_lua_commit_error(L);
+    }
+    return 0;
+}
+
+static int ecall_lua_pset_strkey(lua_State *L, int tbl_idx, const char *key,
+                                 lua_Integer val)
+{
+    lua_pushcfunction(L, ecall_aux_settable);
+    lua_pushvalue(L, tbl_idx);
+    lua_pushstring(L, key);
+    lua_pushinteger(L, val);
+    if (LUA_OK != lua_pcall(L, 3, 0, 0)) {
+        return ecall_lua_commit_error(L);
+    }
+    return 0;
+}
+
+static int ecall_lua_plen(lua_State *L, int tbl_idx)
+{
+    lua_pushcfunction(L, ecall_aux_len);
+    lua_pushvalue(L, tbl_idx);
+    if (LUA_OK != lua_pcall(L, 1, 1, 0)) {
+        return ecall_lua_commit_error(L);
+    }
+    return 0;
 }
 
 // Push the arguments of a compiled Lua call (ECALL_LUA_CALL_INT/_STR).
@@ -4047,65 +4155,75 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
 
     case ECALL_LUA_GETI_INT: {
-        // Integer-optimized table get: returns value as int64, no string.
+        // Integer-keyed table get (#1751 Phase 1, revised).  The lowering
+        // only emits this against a PLAIN-PROVEN table (built by this
+        // chunk's NEWTABLE, never escaped), so no metamethod can fire and
+        // every stored value is an integer by construction.  The one
+        // honest miss left is an ABSENT key: the value is Lua nil, which
+        // a typed integer slot cannot carry.  Continuing with 0 was the
+        // pre-#1751 behavior and a measured silent wrong answer
+        // (`return t[2]` gave "0" where the interpreter gave "") -- so an
+        // absent key is a loud post-entry fail until nil is
+        // representable.  The stack-index and integer checks are belts:
+        // the proof should make them unreachable, and their firing means
+        // a compiler bug, which is exactly what loud is for.
+        //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
-        if (!ecall_lua_plain_table(L, tbl_idx)) {
-            return lua_ecall_decline("ECALL_LUA_GETI_INT");
+        if (!ecall_lua_stack_index_ok(L, tbl_idx)) {
+            return lua_ecall_decline("ECALL_LUA_GETI_INT_BADIDX");
         }
-        lua_rawgeti(L, tbl_idx, key);
-        if (lua_isinteger(L, -1)) {
-            ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
-            ctx->x[11] = 1;  // ok
-        } else {
-            ctx->x[10] = 0;
-            ctx->x[11] = 0;  // not integer
+        int pr = ecall_lua_pget_intkey(L, tbl_idx, key);
+        if (0 != pr) {
+            return pr;
         }
+        if (!lua_isinteger(L, -1)) {
+            lua_pop(L, 1);
+            return lua_ecall_decline("ECALL_LUA_GETI_INT_NONINT");
+        }
+        ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
+        ctx->x[11] = 1;
         lua_pop(L, 1);
         return -1;
     }
 
     case ECALL_LUA_GETGLOBAL: {
-        // a0 = guest addr of a NUL-terminated name -> a0 = stack index of
-        // the global, a1 = ok.  Returns a HANDLE: a library table or a
-        // function has no value form, which is the same reason NEWTABLE
-        // returns one.  It rides in a register, typed, never as text.
+        // a0 = guest addr of name -> a0 = stack index of the global (handle).
+        // Nil globals stay on the stack like the interpreter (#1751 Phase 1);
+        // never decline for missing names.
+        //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[10]);
-        if (nullptr == key) { ctx->x[11] = 0; return lua_ecall_decline("ECALL_LUA_GETGLOBAL"); }
-        lua_getglobal(L, key);
-        if (lua_isnil(L, -1)) {
-            lua_pop(L, 1);
+        if (nullptr == key) {
+            ctx->x[10] = 0;
             ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_GETGLOBAL");
+            return -1;
         }
+        lua_getglobal(L, key);
         ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
         ctx->x[11] = 1;
         return -1;
     }
 
     case ECALL_LUA_GETFIELD_REF: {
-        // a0=tbl_idx, a1=key addr -> a0=stack index of the field, a1=ok.
-        // The value-returning GETFIELD_INT declines a non-integer field;
-        // this is the variant for when the field IS the thing you want a
-        // reference to, which is what a library member is.
+        // a0=tbl_idx, a1=key addr -> a0=stack index of the field (handle).
+        // Total: real gettable under pcall; nil fields stay as handles.
+        //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
-        if (nullptr == key || tbl_idx <= 0 || tbl_idx > lua_gettop(L)
-            || !lua_istable(L, tbl_idx)) {
+        if (nullptr == key || !ecall_lua_stack_index_ok(L, tbl_idx)) {
+            ctx->x[10] = 0;
             ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_GETFIELD_REF");
+            return -1;
         }
-        lua_getfield(L, tbl_idx, key);
-        if (lua_isnil(L, -1)) {
-            lua_pop(L, 1);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_GETFIELD_REF");
+        int pr = ecall_lua_pget_strkey(L, tbl_idx, key);
+        if (0 != pr) {
+            return pr;
         }
         ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
         ctx->x[11] = 1;
@@ -4271,49 +4389,50 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     }
 
     case ECALL_LUA_GETFIELD_INT: {
-        // String-keyed read: a0=tbl_idx, a1=guest addr of a NUL-terminated
-        // key -> a0=value, a1=ok.  The key travels as an address into the
-        // program's own string pool, not as marshalled text, so nothing
-        // downstream can mistake it for a value.
+        // String-keyed int read via real gettable (#1751 Phase 1).
+        // Typed claim: integer.  Non-integer → ok=0, no decline.
+        //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
-        if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
+        if (nullptr == key || !ecall_lua_stack_index_ok(L, tbl_idx)) {
+            ctx->x[10] = 0;
             ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_GETFIELD_INT");
+            return -1;
         }
-        lua_pushstring(L, key);
-        lua_rawget(L, tbl_idx);
+        int pr = ecall_lua_pget_strkey(L, tbl_idx, key);
+        if (0 != pr) {
+            return pr;
+        }
         if (lua_isinteger(L, -1)) {
             ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
             ctx->x[11] = 1;
         } else {
-            // Non-integer field: decline rather than guess a marshalling.
+            ctx->x[10] = 0;
             ctx->x[11] = 0;
         }
         lua_pop(L, 1);
-        if (0 == ctx->x[11]) return lua_ecall_decline("ECALL_LUA_GETFIELD_INT");
         return -1;
     }
 
     case ECALL_LUA_GETFIELD_FLT: {
-        // The float twin of GETFIELD_INT: a0=tbl_idx, a1=guest key addr
-        // -> a0=double as raw bits, a1=ok.  The bits ride the integer
-        // register (the FMV.X.D lane); codegen stores them straight into
-        // the value's FP slot.  Only a genuine float comes back --
-        // lua_isnumber alone would coerce "3.7" and integers, and each of
-        // those already has its own honest route.
+        // String-keyed float read via real gettable (#1751 Phase 1).
+        // Only a genuine non-integer number fills the FP slot; else ok=0.
+        //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
-        if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
+        if (nullptr == key || !ecall_lua_stack_index_ok(L, tbl_idx)) {
+            ctx->x[10] = 0;
             ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_GETFIELD_FLT");
+            return -1;
         }
-        lua_pushstring(L, key);
-        lua_rawget(L, tbl_idx);
+        int pr = ecall_lua_pget_strkey(L, tbl_idx, key);
+        if (0 != pr) {
+            return pr;
+        }
         if (LUA_TNUMBER == lua_type(L, -1) && !lua_isinteger(L, -1)) {
             double d = lua_tonumber(L, -1);
             uint64_t bits;
@@ -4321,26 +4440,28 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             ctx->x[10] = bits;
             ctx->x[11] = 1;
         } else {
+            ctx->x[10] = 0;
             ctx->x[11] = 0;
         }
         lua_pop(L, 1);
-        if (0 == ctx->x[11]) return lua_ecall_decline("ECALL_LUA_GETFIELD_FLT");
         return -1;
     }
 
     case ECALL_LUA_SETFIELD_INT: {
-        // a0=tbl_idx, a1=guest key addr, a2=integer value.
+        // a0=tbl_idx, a1=guest key addr, a2=integer value.  Total settable.
+        //
         if (!ec->lua_state) return -1;
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[11]);
         lua_Integer val = static_cast<lua_Integer>(ctx->x[12]);
-        if (nullptr == key || !ecall_lua_plain_table(L, tbl_idx)) {
-            return lua_ecall_decline("ECALL_LUA_SETFIELD_INT");
+        if (nullptr == key || !ecall_lua_stack_index_ok(L, tbl_idx)) {
+            return -1;
         }
-        lua_pushstring(L, key);
-        lua_pushinteger(L, val);
-        lua_rawset(L, tbl_idx);
+        int pr = ecall_lua_pset_strkey(L, tbl_idx, key, val);
+        if (0 != pr) {
+            return pr;
+        }
         return -1;
     }
 
@@ -4360,39 +4481,42 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
     }
 
     case ECALL_LUA_LEN_INT: {
-        // Lua's # on a table: a0=tbl_idx -> a0=length, a1=ok.
+        // Lua's # via luaL_len under pcall (#1751 Phase 1 / #1424 root).
+        // Honours __len; raises as the interpreter would (committed error).
         //
-        // This is #1424's original symptom fixed at the root.  `#t` answered
-        // 22 because the lowering measured a stack INDEX that had been
-        // marshalled out as a decimal string -- strlen of the text, not the
-        // length of the table.  Asking the VM is the only correct answer,
-        // and the index never leaves a register to be mistaken for one.
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
-        if (!ecall_lua_plain_table(L, tbl_idx)) {
+        if (!ecall_lua_stack_index_ok(L, tbl_idx)) {
+            ctx->x[10] = 0;
             ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_LEN_INT");
+            return -1;
         }
-        // rawlen, matching # on a table without a __len metamethod; the
-        // plain-table guard above is what makes that equivalence hold.
-        ctx->x[10] = static_cast<uint64_t>(lua_rawlen(L, tbl_idx));
+        int pr = ecall_lua_plen(L, tbl_idx);
+        if (0 != pr) {
+            return pr;
+        }
+        ctx->x[10] = static_cast<uint64_t>(lua_tointeger(L, -1));
         ctx->x[11] = 1;
+        lua_pop(L, 1);
         return -1;
     }
 
     case ECALL_LUA_SETI_INT: {
-        // Integer-optimized table set: writes int64 directly.
+        // Integer-keyed table set via real settable (#1751 Phase 1).
+        //
         if (!ec->lua_state) return -1;
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int tbl_idx = static_cast<int>(ctx->x[10]);
         lua_Integer key = static_cast<lua_Integer>(ctx->x[11]);
         lua_Integer val = static_cast<lua_Integer>(ctx->x[12]);
-        if (!ecall_lua_plain_table(L, tbl_idx)) {
-            return lua_ecall_decline("ECALL_LUA_SETI_INT");
+        if (!ecall_lua_stack_index_ok(L, tbl_idx)) {
+            return -1;
         }
-        lua_pushinteger(L, val);
-        lua_rawseti(L, tbl_idx, key);
+        int pr = ecall_lua_pset_intkey(L, tbl_idx, key, val);
+        if (0 != pr) {
+            return pr;
+        }
         return -1;
     }
 

@@ -753,6 +753,19 @@ struct lua_referent {
     // a game that rebinds math.pi to a string declines at the runtime
     // check, not answers wrongly.
     const lua_lib_value *values = nullptr;
+
+    // PROVEN plain: created by NEWTABLE in this chunk and never passed as
+    // a call argument since.  Only such a table may take the typed
+    // integer-keyed fast reads (GETI / GETFIELD_INT / GETFIELD_FLT):
+    // their ok=0 claim-miss path continues with 0, which is sound only
+    // when no metamethod can fire and no non-integer value can have been
+    // stored -- both guaranteed by construction here (compiled stores are
+    // integer-only, plain tables have no __index) and by NOTHING for a
+    // handle from anywhere else.  #1751's Phase 1 review proved the miss:
+    // an interpreter-installed __index on a global made compiled `T[1]`
+    // answer 0 where the interpreter answered "s", silently.  Escaping
+    // as a call argument clears the proof: the callee can setmetatable.
+    bool plain_proven = false;
 };
 
 static hir_type lua_lib_value_type(const lua_referent &t,
@@ -1560,6 +1573,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (lua_reg[A] < 0) return -1;
             // Mark this as known-integer (it's a stack index).
             h.known_int[lua_reg[A]] = true;
+            // A table born here is PROVEN plain until it escapes as a
+            // call argument; see lua_referent::plain_proven.
+            {
+                lua_referent nt;
+                nt.plain_proven = true;
+                lua_ref[lua_reg[A]] = nt;
+            }
             h.ecalls++;
             break;
         }
@@ -1592,6 +1612,17 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (h.sval[tbl].rfind("mux.", 0) == 0) {
                     return -1;
                 }
+            }
+
+            // Typed fast read requires the PLAIN PROOF (#1751 Phase 1):
+            // GETI's integer claim is sound only for a table this chunk
+            // built and never let escape.  Any other handle -- a global,
+            // a member, an escaped local -- may carry a metatable or
+            // non-integer values, and the claim-miss path would continue
+            // with 0: a silent wrong answer, proved in review.  Chunk is
+            // ineligible instead; the interpreter answers.
+            if (!lua_referent_of(lua_ref, tbl).plain_proven) {
+                return -1;
             }
 
             int key = h.emit_iconst(insn.C());
@@ -1827,6 +1858,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     }
                     h.ecalls++;
                     break;
+                }
+                // The typed value read (GETFIELD_INT) needs the PLAIN
+                // PROOF exactly as GETI does; a reference read does not
+                // (a handle result carries no value claim to miss).
+                if (!tref.fields_are_refs
+                    && !tref.plain_proven) {
+                    return -1;
                 }
                 lua_reg[A] = h.emit(
                     tref.fields_are_refs ? HIR_LUA_GETFIELD_REF
@@ -2712,6 +2750,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     if (areg < 0) { ok = false; break; }
                     if (lua_is_handle(h, areg)) {
                         kinds |= (3 << (2 * i));   // stack reference
+                        // The callee may setmetatable the table: the
+                        // plain proof does not survive an escape.
+                        lua_ref[areg].plain_proven = false;
                     } else if (h.ty[areg] == TY_INT) {
                         // integer: kind 0
                     } else if (h.kind[areg] == HIR_SCONST) {
