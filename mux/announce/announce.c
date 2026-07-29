@@ -67,18 +67,29 @@ void child(int s)
         int ns = accept(s, (struct sockaddr *)&sai, &bar);
         if (ns < 0)
         {
+            // Transient pressure (EINTR, fd exhaustion, etc.) must not kill
+            // the listener child — sleep and retry instead of _exit (#1778).
             perror("announce: accept");
-            _exit(1);
+            sleep(1);
+            continue;
         }
 
-        if (0 == getnameinfo((struct sockaddr *)&sai, bar, host_address, sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV))
+        int gni = getnameinfo((struct sockaddr *)&sai, bar, host_address,
+            sizeof(host_address), NULL, 0, NI_NUMERICHOST|NI_NUMERICSERV);
+        if (0 == gni)
         {
             time_t ct = time(0L);
             fprintf(stderr, "CONNECTION made from %s at %s", host_address, ctime(&ct));
             write(ns, msg, nmsg);
             sleep(5);
-            close(ns);
         }
+        else
+        {
+            // Still close the client fd; leaving it open leaks descriptors
+            // until the process cannot accept again (#1778).
+            fprintf(stderr, "announce: getnameinfo: %s\n", gai_strerror(gni));
+        }
+        close(ns);
     }
 }
 
