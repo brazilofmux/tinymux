@@ -1057,7 +1057,8 @@
 -
 #
 # Test 63: lua mux.set writes; softcode get() reads it back.
-# set is effectful → compile-ineligible; interpreter delivers the write.
+# set is effectful; both routes share the bridge (compiled path allowed
+# after #1751 Phase 4 removed re-run, so effects are exactly-once).
 #
 &LUA_SEAM_SET test_lua_fn= \
   local s = tostring(mux.args[1]) \

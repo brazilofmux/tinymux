@@ -13,10 +13,11 @@ in [`plan-lua-jit-bringup.md`](plan-lua-jit-bringup.md) and
 coverage, and default-on (#1745). Games that `./configure --enable-jit` and
 run with conf defaults get both softcode and Lua JIT without special knobs.
 
-**Active architecture campaign:** post-entry decline/rerun is not the end
-state — see [`plan-lua-post-entry-contract.md`](plan-lua-post-entry-contract.md)
-and #1751. Enablement knobs are on; the softcode contract for compiled Lua
-runs is the remaining re-development path (not “optional polish” alone).
+**Post-entry contract:** #1751 campaign complete (Phases 0–4). Post-entry
+re-run is gone; effects use the same bridge on both routes. Residual quality
+(typed CALL results, runtime absent-key nil, seam corpus, anytime items 3–5)
+lives in [`plan-lua-post-entry-contract.md`](plan-lua-post-entry-contract.md)
+§3 — not a second enablement campaign.
 
 ---
 

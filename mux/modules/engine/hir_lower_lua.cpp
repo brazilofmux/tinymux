@@ -844,16 +844,13 @@ struct lua_referent {
     bool callable = false;
     hir_type returns = TY_VOID;
 
-    // The callee has side effects the player can observe (mux.notify,
-    // mux.set, and mux.eval, which is arbitrary softcode).  Such a call
-    // never compiles, in ANY form: the CHUNK is the rerun unit, so an
-    // effect delivered by a compiled run followed by any later runtime
-    // decline -- a bad dbref, a result-type miss -- would be delivered
-    // again by the interpreter re-run.  The adversarial review of the
-    // first version proved this empirically with statement-form pemit
-    // followed by a declining read (PR #1750): exactly-once demands the
-    // whole chunk run interpreted.  Compile-time decline costs nothing
-    // real -- ECALL-bound shapes bench at parity anyway (#1741).
+    // The callee may have side effects the player can observe
+    // (mux.notify/pemit/set/eval).  Recorded for diagnostics and for
+    // any future purity analysis; it is NOT a compile-time refuse.
+    // #1751 Phase 4 deleted post-entry re-run, so an effect delivered
+    // compiled is not re-delivered by a silent interpreter retry — the
+    // reason #1750 made these ineligible.  Both routes share the same
+    // bridge C functions under the same permissions now.
     bool effectful = false;
 
     // Known VALUE members, for a recognized standard-library table; null
@@ -3018,14 +3015,10 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (fref.callable && TY_FLOAT == fref.returns) {
                 return -1;
             }
-            // An effectful callee declines the whole chunk at COMPILE
-            // time, in every form.  The chunk is the rerun unit: even a
-            // statement-form effect followed by any LATER runtime decline
-            // in the same chunk would be re-delivered by the interpreter
-            // re-run (proved empirically in #1750's adversarial review).
-            if (fref.callable && fref.effectful) {
-                return -1;
-            }
+            // Effectful callees (mux.pemit/set/eval/…) are eligible: the
+            // compiled path runs the same bridge C functions as the
+            // interpreter.  Pre-Phase-4 they were ineligible because a
+            // later runtime decline re-ran the chunk and doubled effects.
             // The string form keeps its historical one-argument floor; the
             // integer form and the effect-only form allow zero.
             const int min_args =

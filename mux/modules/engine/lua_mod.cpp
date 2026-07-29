@@ -39,29 +39,17 @@ struct lua_exec_ctx
     const UTF8 *pArgs[10];
     int nArgs;
 
-    // The compiled route is EFFECT-FREE by construction (#1750, round 2).
-    // The lowering's compile-time decline of effectful mux members is only
-    // a fast path: the binding is mutable (mux.tell = mux.pemit, wrapper
-    // functions, plain globals), so any pcall of user code can reach an
-    // effector.  The authoritative guard is here: when compiled_route is
-    // set, the effector bridge functions refuse -- setting effect_refused
-    // and raising -- and TryJIT treats effect_refused as run failure EVEN
-    // IF the chunk caught the error with pcall and "completed", so the
-    // interpreter re-runs from scratch and delivers every effect exactly
-    // once.  The interpreter is the only effector.
+    // compiled_route distinguishes the JIT leg for diagnostics and any
+    // future route-specific policy.  It no longer forbids world effects:
+    // #1751 Phase 4 deleted post-entry interpreter re-run, so the #1750
+    // "compiled path is effect-free" medicine is obsolete.  Effects on the
+    // compiled path are delivered exactly once under the same permission
+    // checks as the interpreter (softcode contract).
     bool compiled_route;
-    bool effect_refused;
 };
 
-// The refusal every effector bridge function makes on the compiled route.
-// Marks the run failed FIRST (pcall in the chunk can swallow the error,
-// but cannot unmark the flag), then raises to unwind fast.
-//
-static int lua_refuse_compiled_effect(lua_State *L, lua_exec_ctx *ctx)
-{
-    ctx->effect_refused = true;
-    return luaL_error(L, "side effect refused on compiled route");
-}
+// effect_refused / lua_refuse_compiled_effect removed with the effect-free
+// corridor.  Bridge functions below run on both routes.
 
 #define LUA_EXEC_CTX_KEY "mux_exec_ctx"
 #define LUA_MOD_KEY      "mux_lua_mod"
@@ -98,7 +86,6 @@ static int bridge_notify(lua_State *L)
 
     lua_exec_ctx *ctx = get_exec_ctx(L);
     if (nullptr == ctx) return 0;
-    if (ctx->compiled_route) return lua_refuse_compiled_effect(L, ctx);
 
     dbref target = static_cast<dbref>(luaL_checkinteger(L, 1));
     const char *msg = luaL_checkstring(L, 2);
@@ -301,7 +288,6 @@ static int bridge_set(lua_State *L)
 {
     lua_exec_ctx *ctx = get_exec_ctx(L);
     if (nullptr == ctx) return luaL_error(L, "no execution context");
-    if (ctx->compiled_route) return lua_refuse_compiled_effect(L, ctx);
 
     int obj = static_cast<int>(luaL_checkinteger(L, 1));
     const char *attrname = luaL_checkstring(L, 2);
@@ -331,9 +317,6 @@ static int bridge_eval(lua_State *L)
 {
     lua_exec_ctx *ctx = get_exec_ctx(L);
     if (nullptr == ctx) { lua_pushnil(L); return 1; }
-    // eval runs arbitrary softcode, which can effect; on the compiled
-    // route that makes it an effector.
-    if (ctx->compiled_route) return lua_refuse_compiled_effect(L, ctx);
 
     const char *expr = luaL_checkstring(L, 1);
 
@@ -850,7 +833,6 @@ static lua_exec_ctx *lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
     lua_pop(L, 1);
 
     ctx.compiled_route = compiled_route;
-    ctx.effect_refused = false;
     ctx.executor = executor;
     ctx.caller = caller;
     ctx.enactor = enactor;
@@ -1413,21 +1395,6 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
                 pResult, nResultMax, pnResultLen, m_L);
             lua_restore_exec_context(m_L, prev_ctx);
             lua_settop(m_L, saved_top);  // restore stack
-            // #1751 Phase 0: post-entry failures commit loud — no interpreter
-            // re-run.  effect_refused is post-entry (effect was attempted).
-            //
-            if (jit_ctx.effect_refused) {
-                size_t n = mux_snprintf(pResult, nResultMax,
-                    T("#-1 LUA JIT POST-ENTRY DECLINE (EFFECT_REFUSED)"));
-                if (nullptr != pnResultLen) {
-                    *pnResultLen = n;
-                }
-                jit_lua_note_post_entry_decline();
-                STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
-                log_text(T("Lua post-entry decline (no re-run): EFFECT_REFUSED"));
-                ENDLOG;
-                return true;
-            }
             if (MUX_E_NOTFOUND == mr) {
                 // Program gone from cache (e.g. jitstats flush).  Clear the
                 // latch and compile again below — pre-entry: nothing ran.
@@ -1495,20 +1462,6 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
         pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
     lua_restore_exec_context(m_L, prev_ctx);
     lua_settop(m_L, saved_top);  // restore stack
-    // Same Phase 0 rule as the cached-key site.
-    //
-    if (jit_ctx.effect_refused) {
-        size_t n = mux_snprintf(pResult, nResultMax,
-            T("#-1 LUA JIT POST-ENTRY DECLINE (EFFECT_REFUSED)"));
-        if (nullptr != pnResultLen) {
-            *pnResultLen = n;
-        }
-        jit_lua_note_post_entry_decline();
-        STARTLOG(LOG_ALWAYS, "JIT", "RETRY");
-        log_text(T("Lua post-entry decline (no re-run): EFFECT_REFUSED"));
-        ENDLOG;
-        return true;
-    }
     // Phase 4: first-run after successful compile is post-entry for the
     // re-run rule.  Never fall through to lua_pcall on E_FAIL.
     //
