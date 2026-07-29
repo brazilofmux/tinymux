@@ -664,6 +664,29 @@ static int emit_lua_constant(hir_program &h, rv_compiler &rc,
 // coincidence of the marshal.  #1764: treat the producer as provenance and
 // refuse to consume it under Lua semantics -- the interpreter answers.
 //
+// The mux.* SENTINEL: `mux` and `mux.args` are lowered as SCONSTs holding
+// their own NAMES, not as Lua values.  That fiction is what buys the
+// native CARGS fast path -- GETTABI on the "mux.args" sentinel becomes an
+// ALOAD with no ECALL -- and it is sound only while the sentinel is
+// consumed AS a sentinel.  The moment one reaches an operation that treats
+// it as a value, the program is working with the string "mux.args".
+//
+// It had leaked into five of them (#1795), every one executing and silent:
+// type() said "string", tostring() said "mux.args", concat spliced the
+// name in where Lua raises, == compared it to the literal text, and #mux
+// answered 3 -- #1424's shape (a length taken over the NAME of a thing)
+// on a different value class.
+//
+// Same rule as lua_is_marshalled_str and lua_is_nil below: a
+// representation that lies about its type must be refused by every
+// consumer that would believe it.
+//
+static inline bool lua_is_mux_sentinel(const hir_program &h, int v) {
+    if (v < 0 || h.kind[v] != HIR_SCONST) return false;
+    const std::string &s = h.sval[v];
+    return s == "mux" || s.rfind("mux.", 0) == 0;
+}
+
 static inline bool lua_is_marshalled_str(const hir_program &h, int v) {
     return v >= 0 && h.kind[v] == HIR_LUA_CALL_STR;
 }
@@ -797,6 +820,9 @@ static lua_type_class lua_type_class_of_value(const hir_program &h,
                                               const lua_truth_map &m,
                                               int v) {
     if (v < 0) return LUA_TC_OTHER;
+    // A mux.* sentinel is really a TABLE; classifying it by its SCONST
+    // representation would compare it against the literal "mux.args".
+    if (lua_is_mux_sentinel(h, v)) return LUA_TC_OTHER;
     const lua_truth t = lua_truth_of(h, m, v);
     if (t == LUA_TRUTH_NIL)     return LUA_TC_NIL;
     if (t == LUA_TRUTH_BOOL)    return LUA_TC_BOOL;
@@ -1722,6 +1748,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             // Lua raises "attempt to get length of a nil value"; the
             // empty SCONST would measure 0 instead.
             if (lua_is_nil(h, truth_tag, rb)) return -1;
+            // #mux answered 3 -- strlen of the sentinel's NAME.  #1424's
+            // shape on a different value class (#1795).  The mux.args
+            // sentinel has its own arity path further down; this refuses
+            // the rest.
+            if (lua_is_mux_sentinel(h, rb) && h.sval[rb] != "mux.args") {
+                return -1;
+            }
             // `#` on a VM reference is what returned 22 for a three-element
             // table: the stack index, measured as though it were the value
             // (#1424, #1579).  Declining kept it correct; asking the VM
@@ -1802,6 +1835,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             for (int ci = 0; ci < nvals; ci++) {
                 if (!lua_reg_in_range(A + ci)) return -1;
                 if (lua_is_handle(h, lua_reg[A + ci])) return -1;
+                // A sentinel is a table in Lua; concatenating it raises,
+                // and splicing its NAME in would answer "xmux.args".
+                if (lua_is_mux_sentinel(h, lua_reg[A + ci])) return -1;
                 // Lua raises "attempt to concatenate a nil value"; the
                 // empty SCONST would splice in as "".
                 if (lua_is_nil(h, truth_tag, lua_reg[A + ci])) return -1;
@@ -2421,6 +2457,8 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             /* it would compare equal to a real "" (#1766 review). */ \
             if (lua_is_nil(h, truth_tag, rb) || lua_is_nil(h, truth_tag, rc_val)) \
                 return -1; \
+            if (lua_is_mux_sentinel(h, rb) || lua_is_mux_sentinel(h, rc_val)) \
+                return -1; \
             int cmp; \
             if (either_float(h, rb, rc_val)) { \
                 rb = promote_to_float(h, truth_tag, rb); \
@@ -2454,6 +2492,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             if (rb < 0) return -1; \
             if (lua_is_handle(h, rb)) return -1; \
             if (lua_is_nil(h, truth_tag, rb)) return -1; \
+            if (lua_is_mux_sentinel(h, rb)) return -1; \
             int cmp; \
             if (h.ty[rb] == TY_FLOAT) { \
                 int fimm = h.emit_fconst(static_cast<double>(insn.sB())); \
@@ -3234,6 +3273,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     // nil as an argument would arrive as "" -- tostring(nil)
                     // is "nil", not "".  No kind encodes nil, so decline.
                     if (lua_is_nil(h, truth_tag, areg)) { ok = false; break; }
+                    // A sentinel would travel as the string "mux.args";
+                    // type() answered "string", tostring() the name.
+                    if (lua_is_mux_sentinel(h, areg)) { ok = false; break; }
                     if (lua_is_handle(h, areg)) {
                         kinds |= (3 << (2 * i));   // stack reference
                         // The callee may setmetatable the table: the
