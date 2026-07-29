@@ -41,103 +41,103 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| A1 | Driver bootstrap / COM | `mux/src/driver.cpp`, `driver_bridge.cpp`, `modules.cpp`, `muxcli.cpp` | med | — | thin | Config basket pull; module load order |
-| A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 1–2, #1074 | deep | Restart DESC, `DS_NEED_PROTO`, IOCP cap, accept path |
-| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 6 | deep | #1133–#1135 closed (#1139); residual: `@restart` getpeername fail-open |
-| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 6 | deep | #1126/#1128/#1131/#1132 closed (#1139; SB overflow via sbOverflow) |
-| A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 3 | deep | Mask, handshake close, backpressure (#1081–#1083) |
-| A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 6 | deep | #1127/#1129 → #1138; #1130/#1136 → #1139 (cores + dump reaps) |
-| A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | Pass 14 2026-07-29 | deep | #799/#800 held; **#1774** CIDR prefix int truncation → /0;/1; out-of-range free path; units expanded |
-| A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp`, DNS channel in `ganl_adapter` | small | #1220 + residual 2026-07-26 | deep | Framing #1220; residual stubslave write remainder + Win32 DNS queue caps |
+| A1 | Driver bootstrap / COM | `mux/src/driver.cpp`, `driver_bridge.cpp`, `modules.cpp`, `muxcli.cpp` | med | Pass 14 scout 2026-07-29 | thin | engine.so via mux_AddModule; IPlatform CreateInstance; no new High this hop |
+| A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 14 2026-07-29 | deep | #1074 DS_NEED_PROTO grace+poll cap; #1135 fail-closed noaddr; #1126 gmcp zero; #790 SOCKET range; InvalidSessionId closes; free_desc2 before list insert; #794 send_data; no new High/Medium |
+| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 14 hygiene 2026-07-29 | deep | #1133–#1135/#1139; **#1141** getpeername fail-closed on @restart (map residual cleared) |
+| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 14 2026-07-29 | deep | #1126/#1128/#1131/#1132 held: sbOverflow stay-in-SB; enable_us uses us_state; TELNET_OPTION_SIZE 4096; no new High/Medium |
+| A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 14 2026-07-29 | deep | #1081 mask; #1083 output_limit; control FIN/len; WS_MAX_PAYLOAD + frag cap; handshake 4k; zero-payload dispatch (#822); no new High/Medium |
+| A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 14 2026-07-29 | deep | #1127 g_bCanRestart armed from adapter path; panic-restart + dump reaps held; no new High/Medium |
+| A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | Pass 14 2026-07-29 | deep | #799/#800 held; **#1774** CIDR prefix int truncation (PR #1776) |
+| A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp`, DNS channel in `ganl_adapter` | small | Pass 14 2026-07-29 | deep | #1220/#801/#1274/#1275 held; re-read no new High/Medium |
 
 ### B — GANL library
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| B1 | Epoll / select / kqueue / wselect / IOCP | `mux/ganl/src/*_network_engine.cpp` | med | Pass 1–2 + residual 2026-07-26 | deep | #942–#947 held; #1290 dual-stack V6ONLY warn on kqueue/IOCP/wselect |
-| B2 | IOCP / wselect | `iocp_*`, `wselect_*` | med | Pass 2 Windows | deep | FD_SETSIZE accept leak, IOCP desc cap |
-| B3 | OpenSSL transport | `openssl_transport.cpp` | med | Pass 11 2026-07-26 | deep | #948/#949 held; #1282 read-BIO cap + cipher list pin |
-| B4 | Schannel transport | `schannel_transport.cpp` | med | Pass 2 + Pass 11 | deep | #1067–#1068/#950–#952 held; #1282 handshake/incomplete buffer caps |
-| B5 | Connection / buffers | `connection.cpp`, `io_buffer`, types | med | Pass 2 context | partial | Backlog, write posts |
-| B6 | GANL tests | `mux/ganl/tests/` | small | ongoing | partial | Expand wselect/IOCP cases over time |
+| B1 | Epoll / select / kqueue / wselect / IOCP | `mux/ganl/src/*_network_engine.cpp` | med | Pass 14 2026-07-29 | deep | #942–#947/#946/#943/#1290 V6ONLY held; maxEvents write-disarm guards held |
+| B2 | IOCP / wselect | `iocp_*`, `wselect_*` | med | Pass 14 2026-07-29 | deep | #1070 accept+FD_SETSIZE close; re-read with B1 |
+| B3 | OpenSSL transport | `openssl_transport.cpp` | med | Pass 14 2026-07-29 | deep | #948/#949/#1282 read-BIO cap + cipher pin held; TLS 1.2+; renegotiation disabled; no new High/Medium |
+| B4 | Schannel transport | `schannel_transport.cpp` | med | Pass 14 2026-07-29 | deep | #1067/#1068/#950–#952/#1282 handshake+incomplete caps held; no new High/Medium |
+| B5 | Connection / buffers | `connection.cpp`, `io_buffer`, types | med | Pass 14 2026-07-29 | deep | #794 high-water + try/catch in send_data; #953 kMaxBufferSize |
+| B6 | GANL tests | `mux/ganl/tests/` | small | Pass 14 2026-07-29 | partial | Locks #942–#947/#953/EMFILE + Win accept path; expand kqueue-only / soak |
 
 ### C — Engine softcode & evaluation
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 2 softcode | partial | elock/lastcreate fixed; full matrix not exhausted |
-| C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 5 | deep | #1106–#1124 closed (#1121 Highs, #1123 Mediums, #1125 JIT perms); re-rotate by family later |
-| C3 | Commands / hooks | `command.cpp`, `predicates.cpp`, `set.cpp` (@include) | large | Pass 12 2026-07-26 | deep | #1279 @include as includer; #1280 NOEVAL permit/ignore footgun; process_cmdent access-before-handler held |
-| C4 | Match / wild | `match.cpp`, `wild.cpp` | med | scenario tests | partial | Live `$` capture has scenario; re-read matching |
-| C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | Pass 8 | deep | #1181, #1186–#1188 open (clone/preserve, moniker HTML, pagecost order, @open HOME) |
-| C6 | Boolexp / locks | `boolexp.cpp` | med | residual C6/G2/F4 | deep | #839 parse depth; oversize-key NUL (#1294); empty=open by design; AF_IS_LOCK blocks `&` set |
+| C1 | Classic eval / AST | `eval.cpp`, `ast.cpp`, `ast_scan.rl` | large | Pass 14 2026-07-29 | deep | Survey `docs/survey-eval-parser.md` held: parse_to stack[32] bounded; #840 AST_PARSE_MAX_DEPTH; AST_EVAL_MAX_DEPTH=400; func_nest/invk lim; nest-- on all exits; no new High/Medium |
+| C2 | Function builtins | `mux/modules/engine/functions.cpp`, `funceval*.cpp`, `funmath.cpp`, `funcweb.cpp` | huge | Pass 14 2026-07-29 | deep | #1106–#1124 closed; Pass 14: no raw sprintf/strcpy residual (mux_sprintf + BAN_LEGACY); family re-rotate still useful for logic |
+| C3 | Commands / hooks | `command.cpp`, `predicates.cpp`, `set.cpp` (@include) | large | Pass 12 2026-07-26 | deep | #1279 @include as includer; #1280 NOEVAL footgun |
+| C4 | Match / wild | `match.cpp`, `wild.cpp` | med | Pass 14 2026-07-29 | deep | Survey + #835–#837 held; invk limit; scenario wild_capture |
+| C5 | Speech / look / move | `speech.cpp`, `look.cpp`, `move.cpp`, `create.cpp`, … | large | Pass 8 | deep | #1181, #1186–#1188 **closed** (map stale fixed Pass 14) |
+| C6 | Boolexp / locks | `boolexp.cpp` | med | residual C6/G2/F4 | deep | #839 parse depth; oversize-key NUL (#1294); empty=open by design |
 
 ### D — JIT / DBT / Lua
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | D1 | JIT compiler / ECALL | `jit_compiler.cpp` | huge | Pass 1–3 | deep | Guest bounds, setq, watermarks, PIN_ARRAY, fargs |
-| D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1149–#1150 closed; re-scout filed #1258–#1260 (NEG missing codegen, INC/DEC fold UB, max/min/sign/bound int path) — #1258/#1259 closed, **#1260** open; #1255/#1256 abs INT64_MIN follow-ups closed |
-| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1147–#1148/#1152/#1154 closed; Mediums #1151/#1153 closed since the re-scout; no new D3 High. Residual: **#1292** interpreter `mem_check` wrap |
-| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1751 campaign 2026-07-29 | deep | Post-entry contract shipped (`plan-lua-post-entry-contract.md`); residual = typed fidelity + mixed softcode/Lua corpus, not re-run |
+| D2 | HIR lower / codegen | `hir_*.cpp` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs #1143–#1146 → #1156; #1258–#1260 closed |
+| D3 | DBT backends | `dbt*.cpp`, `dbt_rt/` | large | Pass 7 + re-scout 2026-07-26 | deep | Highs closed; #1292 closed |
+| D4 | Lua module / bytecode | `lua_mod.cpp`, `lua_bytecode.*`, `hir_lower_lua.*` | med | #1751 campaign 2026-07-29 | deep | Post-entry contract shipped; residual typed fidelity + mixed softcode/Lua corpus |
 | D5 | JIT oracles / fuzzer | `testcases/tools/jit_diff/`, q-reg oracle | — | standing | deep tooling | Re-run soak regularly, not just on changes |
 
 ### E — Persistence & queue
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| E1 | SQLite / sqlitedb | `sqlitedb.cpp`, `sqlite_backend.cpp` | large | Pass 1, #1073 | deep | Schema gate, prepare, load paths |
-| E2 | Attr cache / write queue | `attrcache.cpp` | med | Pass 1 + residual 2026-07-26 | deep | Flush-on-fail leaves queue; #1284 code-cache coalesce + preloaded-miss Get |
-| E3 | Flatfile R/W | `db.cpp`, `db_rw.cpp` | large | Pass 1 + Pass 13 residual 2026-07-26 | deep | #806 dbref/lock gates held; color migrate fail-closed; no new High/Medium |
-| E4 | Command queue | `cque.cpp`, `timer.cpp`, `cron.cpp` | large | Pass 1, #1080 | deep | OOM refund, depth, runaway money |
-| E5 | Object / player / flags | `object.cpp`, `player*.cpp`, `flags.cpp`, `powers.cpp` | large | Pass 8 | deep | #1179–#1180 High; #1182–#1185 Medium open |
+| E1 | SQLite / sqlitedb | `sqlitedb.cpp`, `sqlite_backend.cpp` | large | Pass 14 scout 2026-07-29 | deep | Schema gate; blob OOM/oversize guards; ROLLBACK fail logged; re-deep residual held, no new High this hop |
+| E2 | Attr cache / write queue | `attrcache.cpp` | med | Pass 14 2026-07-29 | deep | #1284 code-cache coalesce by source_hash; flush fail leaves queue; threshold 50; no new High/Medium |
+| E3 | Flatfile R/W | `db.cpp`, `db_rw.cpp` | large | Pass 13 residual + Pass 14 stamp | deep | #806 gates; color migrate fail-closed; no new High this hop |
+| E4 | Command queue | `cque.cpp`, `timer.cpp`, `cron.cpp` | large | Pass 14 2026-07-29 | deep | #1080/#1048/#1049/#1050 refund paths held; wait_que reverse-on-false; no new High/Medium |
+| E5 | Object / player / flags | `object.cpp`, `player*.cpp`, `flags.cpp`, `powers.cpp` | large | Pass 14 2026-07-29 | deep | #1185 powers clear + IS_CLEAN powers; #1180 pcache_delete on destroy; decode_flags Hidden/CONNECTED; no new High/Medium |
 
 ### F — Modules (loadable)
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| F1 | comsys_mod | `mux/modules/comsys/` | small | Pass 3, 9 | deep | #1084 locks; Pass 9 dual-path Highs/Mediums with F3 |
-| F2 | mail_mod | `mux/modules/mail/` | med | Pass 2, 9 | deep | MAIL_DB_LIMIT; Pass 9 body WT #1192 + dual-store #1191 |
-| F3 | Engine-in-tree comsys/mail | `engine/comsys.cpp`, `engine/mail.cpp` | large | Pass 9 | deep | Dual path vs modules; Highs #1189–#1193, Mediums #1194–#1199 open |
-| F4 | Module ABI / COM | `engine_com.cpp`, `modules.h` | large | residual C6/G2/F4 | deep | IAttributeAccess/IPermissions gated; AtrAddRaw privileged by design; out-param/nValueMax (#1295) |
+| F1 | comsys_mod | `mux/modules/comsys/` | small | Pass 14 2026-07-29 | deep | Channel locks via IPermissions (#1084 path); storage failures logged (#1630); dual-path with F3; no new High/Medium |
+| F2 | mail_mod | `mux/modules/mail/` | med | Pass 14 2026-07-29 | deep | MAIL_DB_LIMIT; #1192 body persist; storage AddRef; no new High/Medium |
+| F3 | Engine-in-tree comsys/mail | `engine/comsys.cpp`, `engine/mail.cpp` | large | Pass 14 scout 2026-07-29 | deep | #1189–#1191 closed; SQLite reload when module owns state |
+| F4 | Module ABI / COM | `engine_com.cpp`, `modules.h` | large | Pass 14 2026-07-29 | deep | #1295 nValueMax/out-param guards; AtrAddRaw privileged; IAttributeAccess/IPermissions in-process |
 
 ### G — Convert / offline tools
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | G1 | Omega / format convert | `mux/convert/*` | huge | Pass 1, 3, #1087 | deep | sprintf class largely closed; re-scan new paths |
-| G2 | muxescape / script | `mux/muxescape/`, `mux/script/` | med | residual C6/G2/F4 | deep | #1296 muxescape 16MiB cap; muxscript -p MarkConnected gate |
-| G3 | announce | `mux/announce/` | small | — | thin | |
+| G2 | muxescape / script | `mux/muxescape/`, `mux/script/` | med | Pass 14 stamp 2026-07-29 | deep | #1296 input size limit; muxscript -p MarkConnected; generated muxescape.cpp |
+| G3 | announce | `mux/announce/` | small | Pass 14 2026-07-29 | deep | **#1778** accept fd leak on getnameinfo fail; accept errors no longer `_exit` |
 
 ### H — libmux / platform / unicode
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| H1 | Alloc / string / time | `mux/lib/alloc.*`, `stringutil.*`, `timeutil.*`, `alarm.*` | med | residual 2026-07-26 | deep | #1290 freelist drop-one not wipe-all; alarm/sleep int64 ms clamp |
-| H2 | Color / Ragel | `color_ops.rl`, color path | med | generated-file discipline | thin | Edit `.rl` only |
+| H1 | Alloc / string / time | `mux/lib/alloc.*`, `stringutil.*`, `timeutil.*`, `alarm.*` | med | Pass 14 2026-07-29 | deep | #1290 freelist drop-one-not-wipe; alarm ms int64 clamp; i64FloorDivision INT64_MIN/-1 guard (#805); no new High/Medium |
+| H2 | Color / Ragel | `color_ops.rl`, color path | med | Pass 14 stamp 2026-07-29 | thin | Edit `.rl` only; BAN_LEGACY / generated-files discipline; no deep re-audit this pass |
 | H3 | UTF-8 / collation | `utf/`, `utf8tables.*`, `unicode_*` | large | — | deferred | Generated tables; deep Unicode later |
-| H4 | Platform abstraction | `platform.cpp`, design-platform-interface | small | — | thin | |
+| H4 | Platform abstraction | `platform.cpp`, design-platform-interface | small | Pass 14 scout 2026-07-29 | partial | BootHelper/Reap/Maximize used; RegisterSignalHandler incomplete (stored, never invoked; Win SetConsoleCtrl TODO); not product-breaking today — signals still in signals.cpp |
 
 ### I — Hydra proxy
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| I1 | Session / process manager | `session_manager.*`, `process_manager.*` | med | Pass 4 | deep | #1091–#1102 closed (#1103 Highs, #1105 Mediums) |
-| I2 | gRPC / gRPC-web | `grpc_server.*`, `grpc_web.*` | med | Pass 4 + Pass 10 | deep | Pass 4: lockout + ListGames/GetGameStatus auth (#1105). Pass 10 residual: #1265 work-queue flood (closed), #1266 unbounded subscribers, #1267 grpc-web SendInput encoding, #1268 uncapped input lines, #1269 GetGameStatus PIDs non-admin |
-| I3 | Telnet bridge / stream | `telnet_bridge.*`, `telnet_stream.*` | med | Pass 4 | deep | SB reassembly cap + disconnect (#1101 via #1105) |
-| I4 | Proxy WebSocket | `mux/proxy/websocket.*` | small | Pass 4 | deep | #1093–#1095 closed (#1103 mask/CLOSE; #1105 RSV/control limits) |
-| I5 | Accounts / crypto / scrollback | `account_manager.*`, `crypto.*`, `scrollback.*` | med | Pass 4 | deep | #1091–#1092, #1098, #1100 closed (#1103/#1105) |
-| I6 | Proxy regression | `proxy_regression.cpp` | small | Pass 4 + Pass 10 | partial | Telnet/WS frame cases deep; gRPC/auth/work-queue still absent → #1270 |
+| I1 | Session / process manager | `session_manager.*`, `process_manager.*` | med | Pass 4 | deep | #1091–#1102 closed |
+| I2 | gRPC / gRPC-web | `grpc_server.*`, `grpc_web.*` | med | Pass 4 + Pass 10 | deep | #1265–#1269 closed |
+| I3 | Telnet bridge / stream | `telnet_bridge.*`, `telnet_stream.*` | med | Pass 4 | deep | SB reassembly cap + disconnect |
+| I4 | Proxy WebSocket | `mux/proxy/websocket.*` | small | Pass 4 | deep | #1093–#1095 closed |
+| I5 | Accounts / crypto / scrollback | `account_manager.*`, `crypto.*`, `scrollback.*` | med | Pass 4 | deep | #1091–#1092, #1098, #1100 closed |
+| I6 | Proxy regression | `proxy_regression.cpp` | small | Pass 14 2026-07-29 | deep | #1270 residual closed in-tree: #1265/#1266 subscriber+work-queue caps; convertInput helper for #1267-class |
 
 ### J — Clients (Hydra family)
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| J1 | Console client | `client/console/` | med | — | deferred | |
+| J1 | Console client | `client/console/` | med | Pass 14 2026-07-29 | partial | IOCP+Schannel+Hydra; **#1788** line buffer caps; hydra passwords in worlds.txt (chmod 600 Unix; residual Windows ACL); no unit tests in make test |
 | J2 | Win32 GUI | `client/win32gui/` | med | — | deferred | |
 | J3 | Web client | `client/web/` | med | — | deferred | |
 | J4 | Android Titan | `client/android/` | large | build-only notes | deferred | Resume path untested (status-2.14) |
-| J5 | iOS Titan | `client/ios/` | large | unit tests in make test | partial | Parser units only |
+| J5 | iOS Titan | `client/ios/` | large | Pass 14 2026-07-29 | partial | Keychain worlds/TOFU; `swift test` via `make test-ios`; **#1788** TelnetParser/Hydra line+SB caps; parser/model units only (no live socket suite) |
 | J6 | TinyFugue port | `client/tf/` | med | — | deferred | |
 | J7 | Shared client bits | `client/shared/` | small | — | deferred | |
 
@@ -145,10 +145,10 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
-| K1 | Smoke suite | `testcases/` | large | every fix PR | deep | 1325+ TCs; grow when behavior changes |
-| K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | opt-in | partial | wild-capture, site-threshold, jit-perms; make more routine |
+| K1 | Smoke suite | `testcases/` | large | every fix PR | deep | Grow when behavior changes; Lua seam corpus in flight |
+| K2 | Scenario / stress | `tests/scenario/`, `tests/stress/` | med | Pass 14 2026-07-29 | partial | run.sh: 9 drivers + trap cleanup (not just wild_capture); still opt-in via `make test-scenario`; stress/ separate |
 | K3 | Unit islands | `tests/alarm`, `netaddr`, `db`, `libmux` | small | on change | partial | |
-| K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | — | thin | |
+| K4 | Packaging | `debian/`, `docker/`, `dounix.sh`, `win32/` | med | Pass 14 stamp 2026-07-29 | thin | Present; no packaging defect filed this pass |
 | K5 | Parser research | `parser/` | small | — | deferred | Not production runtime |
 | K6 | Worldbuilder / tools | `tools/worldbuilder/` | — | — | deferred | |
 | K7 | Generated-file discipline | see `docs/generated-files.md` | — | standing | process | Never hand-edit outputs |
@@ -161,46 +161,31 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 
 ---
 
-## Pass history (post feature-complete)
+## Pass log (summary)
 
-| Pass | When (approx) | Focus | Issue / PR trail |
-|------|---------------|--------|------------------|
-| Pass 1 | 2026-07 | Restart DESC, SQLite durability, queue, JIT host edge, conf ints, convert encode | #1039–#1061 → PR #1062 |
-| Pass 2 | 2026-07 | Softcode, mail_mod, Windows IOCP/wselect, Schannel, JIT residual | #1063–#1071 → PR #1072; #1073/#1075 schema; #1074/#1076 banner |
-| Pass 3 | 2026-07 | Convert residual, JIT bounds, queue money, WS, comsys_mod, conf live sync | #1077–#1080 → #1086; #1087/#1088; #1081–#1085 → #1089 |
-| Pass 4 | 2026-07 | Hydra proxy I1–I5 (session, scrollback, WS, auth, process) | #1091–#1102 filed; Highs → #1103; Mediums → #1105 (complete) |
-| Pass 5 | 2026-07 | Softcode C2 function builtins + JIT ECALL perms | Highs #1106–#1110 → #1121; Mediums #1111–#1119/#1122 → #1123; #1124 JIT `check_access` → #1125 |
-| Pass 6 | 2026-07 | A3 net/output + A4 telnet NVT + A6 signals/restart | #1126–#1136 filed; #1127/#1129 → #1138; rest → #1139 (complete) |
-| Pass 7 | 2026-07 | D2 HIR + D3 DBT | Highs #1143–#1148 → #1156; Mediums #1149–#1153 residual; also JIT float/ifelse Highs #1157/#1159 closed separately |
-| Pass 8 | 2026-07 | E5 object/player/flags/powers + C5 speech/look/move/create | Highs #1179–#1181; Mediums #1182–#1188 closed in follow-ups |
-| Pass 9 | 2026-07 | F3 engine comsys/mail vs F1/F2 modules | Highs #1189–#1193; Mediums #1194–#1199 largely fixed in follow-up PRs |
-| Pass 10 | 2026-07-26 | I2 gRPC residual + I6 regression gaps | Filed #1265–#1270 (work-queue flood, subscriber cap, grpc-web encoding, input length, GetGameStatus PIDs, regression gap). No new unauth RCE; Pass 4 auth gates held. |
-| Pass 7 re-scout | 2026-07-26 | D2 HIR + D3 DBT residual | No new D3 Highs; D2 filed #1258 (HIR_NEG no codegen), #1259 (INC/DEC fold UB), #1260 (max/min/sign/bound int path). Left #1151/#1153 to existing owners (both since closed). |
-| Pass B1/H1 residual | 2026-07-26 | engines + alloc/alarm | #1290 freelist, alarm ms, dual-stack warn |
-| Pass D4 residual | 2026-07-26 | lua_mod bridges | #1287 mux.pennies/iswizard/isconnected match softcode perms; string.dump removed |
-| Pass 11 | 2026-07-26 | B3 OpenSSL + B4 Schannel residual | #1282 wire-buffer caps + OpenSSL cipher pin; prior #948–#952/#1067–#1068 still held |
-| Pass E2 residual | 2026-07-26 | attrcache write queue | #1284 code-cache coalesce by source_hash; preloaded miss no longer re-Gets |
-| **Pass 13 residual** | **2026-07-26** | **Anti-cool: E3 re-read, ltoa/quota family, conf path builders** | **#1411** `.sqlite` path overflow on max `input_database`; **#1408** family annotated (pay_quota/money); E3 → deep. See `docs/survey-residual-pass13-2026-07.md`. No D* dive. |
+| Pass | When | Focus | Outcome |
+|------|------|-------|---------|
+| Pass 1–13 | 2026-07 | See historical changelog | Many Highs/Mediums closed |
+| **Pass 14** | **2026-07-29** | Dice loop from A7 | #1774 netaddr CIDR; #1778 announce fd leak; B1–B5/B3/B4/A8/C4/I6 residual re-deep; map hygiene |
 
-Also useful historical surveys (pre-hardening-month):  
+Also useful historical surveys:  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
 
 ---
 
 ## Recommended rotation (next ~N passes)
 
-Revisit is expected. Suggested order balances **new surface** with **re-sweeps**.
-Server-first; **J\*** clients after server/proxy confidence. **L\*** is product backlog, not defect audit.
-
-**Dice loop (2026-07-29):** random start **A7**, then continue in catalog order wrapping to A1…A6 after K4. Skip nothing permanently — deferred/thin still get a stamp. D4 re-stamp only (campaign complete); do not re-open post-entry re-run.
+**Dice loop (2026-07-29):** start **A7**.  
+Done: server A–H residual → **J1/J5** first client pass (**#1788**) → H2/K4 thin stamps.  
+**Next: J3 web / J6 TF / J2 Win32 GUI**, or **J4 Android**, or residual **H4** signal wiring.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
-| **Now** | Finish **#1774** (A7 CIDR width) if still open | Pass 14 Medium |
-| **Then** | **A8** → **B1**… continue dice order | Standing audit loop |
-| **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity PRs | Product soak; not a map restart |
-| **Pass 14+** | **J\*** clients by platform | After server/proxy confidence |
-| **Anytime** | **D5** jit_diff soak | Continuous |
+| **Now** | Dual-review **#1788** client buffer caps | Medium |
+| **Then** | **J3** web client or **J6** TinyFugue | Client portfolio |
+| **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak |
+| **Anytime** | **D5** jit_diff soak; `make test-scenario` | Continuous |
+| **Later** | H4 RegisterSignalHandler complete | Incomplete API, non-blocking |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -225,7 +210,7 @@ Use the same questions so re-audits stay consistent:
 From `docs/status-2.14.md` and practice:
 
 - `make install` (or Windows `netmux.sln` when needed)
-- `make test` (smoke 1319, ganl, netaddr, JIT oracle, iOS units if Darwin)
+- `make test` (smoke, ganl, netaddr, JIT oracle, iOS units if Darwin)
 - Opt-in: `make test-scenario`, `testcases/tools/jit_diff/soak.sh`
 - Windows: Schannel/IOCP/wselect when the slice is Win32-heavy
 
@@ -235,25 +220,9 @@ From `docs/status-2.14.md` and practice:
 
 | Date | Change |
 |------|--------|
-| 2026-07-24 | Initial map after Passes 1–3; open defects cleared except #1027 |
-| 2026-07-24 | Pass 4 Hydra filed #1091–#1102; I* slice status updated |
-| 2026-07-25 | Pass 4 Highs #1091–#1094 merged (#1103); I4/I5/I6 + rotation updated |
-| 2026-07-25 | Pass 4 Mediums #1095–#1102 merged (#1105); Pass 4 complete; rotation → Pass 5 C2 |
-| 2026-07-25 | Pass 5 complete (#1121/#1123/#1125); C2 deep; rotation → Pass 6 A3+A4+A6 |
-| 2026-07-25 | Pass 6 A3+A4+A6 filed #1126–#1136; rotation → Fix Pass 6 |
-| 2026-07-25 | Pass 6 complete (#1138 crash/core, #1139 Highs+Mediums); rotation → Pass 7 D2+D3 |
-| 2026-07-25 | Pass 7 Highs closed (#1156); Mediums #1149–#1153 residual; D2/D3 deep |
-| 2026-07-25 | Pass 8 E5+C5 filed #1179–#1188; E5/C5 deep; rotation → Pass 9 F3 (or Fix Pass 8 Highs) |
-| 2026-07-25 | Pass 9 F3/F1/F2 filed #1189–#1199; dual-path deep; rotation → Fix Highs (Pass 8/9) |
-| 2026-07-25 | Residual scout C6+G2+F4 deep; #1294–#1296 boolexp NUL, COM guards, muxescape/muxscript |
-| 2026-07-26 | Pass A8 residual: stubslave parent write remainder + Win32 DNS queue caps; A8 → deep |
-| 2026-07-26 | Pass 10 I2+I6 residual scout; filed #1265–#1270; I2 deep, I6 still partial (test gap) |
-| 2026-07-26 | Pass 12 C3: @include executor fix #1279; NOEVAL hook issue #1280; C3 → deep |
-| 2026-07-26 | Pass E2 residual: code-cache write coalesce + preloaded-miss path #1284; E2 → deep |
-| 2026-07-26 | Pass B1/H1 residual: freelist + alarm + dual-stack #1290; B1/H1 → deep |
-| 2026-07-26 | Pass D4 residual: Lua bridge Examinable gates + string.dump #1287; D4 → deep |
-| 2026-07-26 | Pass 11 B3/B4: TLS wire-buffer caps + OpenSSL cipher pin #1282; B3 deep |
-| 2026-07-26 | **Pass 13 residual** (anti-cool): E3 re-read deep; #1411 path overflow; #1408 family note; rotation table refreshed (old #126x–#1292 closed) |
-| 2026-07-29 | **Pass 14 A7:** dice-start re-audit; filed **#1774** CIDR prefix int truncation; A7 → deep; D4 stamp post-#1751; rotation = catalog loop from A7 |
+| 2026-07-24 | Initial map after Passes 1–3 |
+| 2026-07-24–26 | Passes 4–13; residual scouts (see git history) |
+| 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
+| 2026-07-29 | **Pass 14 dice loop:** server A–H residual complete; **J1/J5** client pass filed **#1788** (unbounded line/SB buffers) + caps; H2/K4 thin stamps; next J3/J6 or H4 |
 
 Update this table when the map structure changes.

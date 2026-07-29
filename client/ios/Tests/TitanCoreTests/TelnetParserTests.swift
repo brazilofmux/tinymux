@@ -64,4 +64,21 @@ final class TelnetParserTests: XCTestCase {
         // IAC SB NAWS 0 100 0 30 IAC SE
         XCTAssertEqual(sent[1], Data([0xFF, 250, 31, 0, 100, 0, 30, 0xFF, 240]))
     }
+
+    // #1788: oversized IAC SB must not grow without bound; stay in SB and
+    // discard on SE rather than treating payload as typed text.
+    func testOversizedSubnegotiationIsCappedAndDiscarded() {
+        var parser = TelnetParser()
+        var lines: [String] = []
+        parser.onLine = { lines.append($0) }
+
+        // IAC SB GMCP (201) + 5000 payload bytes + IAC SE, then "ok\n"
+        var data = Data([0xFF, 250, 201])
+        data.append(Data(repeating: 0x41, count: 5000))
+        data.append(contentsOf: [0xFF, 240])
+        data.append(contentsOf: "ok\n".utf8)
+        parser.process(data)
+
+        XCTAssertEqual(lines, ["ok"])
+    }
 }

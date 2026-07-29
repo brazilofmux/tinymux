@@ -59,6 +59,11 @@ struct TelnetParser {
     private var lineBuffer = Data()
     private var subOption: UInt8 = 0
     private var subData = Data()
+    // #1788: match server-side discipline — a hostile game can stream
+    // without CR/LF or flood IAC SB; refuse unbounded client heap growth.
+    private static let maxTextBytes = 64 * 1024
+    private static let maxSubBytes = 4096
+    private var subOverflow = false
 
     // MARK: - Process incoming bytes
 
@@ -69,7 +74,9 @@ struct TelnetParser {
                 if byte == TelnetCommand.iac.rawValue {
                     state = .iac
                 } else {
-                    textBuffer.append(byte)
+                    if textBuffer.count < Self.maxTextBytes {
+                        textBuffer.append(byte)
+                    }
                     if byte == 0x0A { // newline
                         flushLine()
                     }
@@ -79,7 +86,9 @@ struct TelnetParser {
                 switch byte {
                 case TelnetCommand.iac.rawValue:
                     // Escaped 0xFF — literal byte
-                    textBuffer.append(byte)
+                    if textBuffer.count < Self.maxTextBytes {
+                        textBuffer.append(byte)
+                    }
                     state = .normal
                 case TelnetCommand.will.rawValue:
                     state = .will
@@ -119,24 +128,39 @@ struct TelnetParser {
             case .sb:
                 subOption = byte
                 subData = Data()
+                subOverflow = false
                 state = .sbData
 
             case .sbData:
                 if byte == TelnetCommand.iac.rawValue {
                     state = .sbIAC
-                } else {
+                } else if subData.count < Self.maxSubBytes {
                     subData.append(byte)
+                } else {
+                    // Stay in SB until SE (server #1131 pattern) — do not
+                    // inject truncated SB payload into the text stream.
+                    subOverflow = true
                 }
 
             case .sbIAC:
                 if byte == TelnetCommand.se.rawValue {
-                    handleSubnegotiation(option: subOption, data: subData)
+                    if !subOverflow {
+                        handleSubnegotiation(option: subOption, data: subData)
+                    }
+                    subData = Data()
+                    subOverflow = false
                     state = .normal
                 } else if byte == TelnetCommand.iac.rawValue {
                     // Escaped 0xFF within subnegotiation
-                    subData.append(byte)
+                    if subData.count < Self.maxSubBytes {
+                        subData.append(byte)
+                    } else {
+                        subOverflow = true
+                    }
                     state = .sbData
                 } else {
+                    subData = Data()
+                    subOverflow = false
                     state = .normal
                 }
             }

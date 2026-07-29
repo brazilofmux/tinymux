@@ -497,6 +497,9 @@ void Connection::process_telnet(const unsigned char* data, size_t len,
 
 size_t Connection::process_data(const unsigned char* buf, size_t len,
                                 std::vector<std::string>& lines_out) {
+    // #1788: a hostile server can stream without CR/LF; do not grow
+    // line_buf_ without bound (matches iOS TelnetParser / Hydra caps).
+    static constexpr size_t kMaxLine = 64 * 1024;
     for (size_t i = 0; i < len; i++) {
         char c = (char)buf[i];
         if (c == '\n') {
@@ -506,9 +509,10 @@ size_t Connection::process_data(const unsigned char* buf, size_t len,
             }
             lines_out.push_back(line_buf_);
             line_buf_.clear();
-        } else {
+        } else if (line_buf_.size() < kMaxLine) {
             line_buf_.push_back(c);
         }
+        // else: drop further bytes until newline resets the line
     }
     return len;
 }
