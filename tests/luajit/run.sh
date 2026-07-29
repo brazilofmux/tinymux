@@ -603,6 +603,24 @@ NESTED_CASES=(
     # "mux.args" sentinel.  Used to answer 8 compiled / correct only by
     # declining; now executes under production brackets too.
     'return #mux.args'
+
+    # ---- Production softcode↔Lua seam under brackets ON (#1326 / #1791) ----
+    # Softcode JIT ECALLs fun_lua; these must *run*, not only agree via the
+    # interpreter.  Keep cheap: lowering coverage lives in EXEC.
+
+    # Branch on CARGS (softcode passed the args into the nested chunk).
+    'local a=mux.args[1]+0 if a < 5 then return 7 else return 8 end'
+    'if mux.args[1] == "2" then return "yes" else return "no" end'
+
+    # Multi-slot arithmetic the softcode side commonly drives.
+    'local a=mux.args[1]+0 local b=mux.args[2]+0 return a+b*2'
+
+    # Softcode evaluator hop from compiled Lua under production brackets.
+    # mux.eval is a host ECALL on the Lua path; softcode may itself JIT.
+    # Must execute (not decline) so the dual nest is real.
+    'local x=mux.eval("add(2,3)") return x'
+    'return mux.eval("mul(6,7)")'
+    'local x=mux.eval("strcat(attrib_set(me/NESTED_EVAL_WROTE,once),ok)") return x'
 )
 
 # NESTED_AGREE — brackets ON, must match the interpreter, decline allowed.
@@ -645,21 +663,34 @@ STATE_NAMES=(
     e1_double_mutation
     e2_coroutine_effect
     e3_metatable_typed_read
+    e4_eval_once
 )
 STATE_SETUP=(
     'N=0 function bump() N=N+1 end return "set"'
     'CO=coroutine.create(function() mux.pemit(1,"PING") end) return "set"'
     'T=setmetatable({},{__index=function() return "s" end}) return "set"'
+    'local x=mux.eval("attrib_set(#2/E4_COUNT,0)") return "set"'
 )
 STATE_ACTION=(
     'bump() local y=mux.get(4000,"Q") return tostring(N)'
     'coroutine.resume(CO) return "r"'
     'return T[1]'
+    # The effect itself increments persistent softcode state.  A whole-chunk
+    # re-run leaves E4_COUNT=2; interpreter fallback leaves the right state
+    # but is rejected separately by STATE_REQUIRE_RUN.
+    'local x=mux.eval("attrib_set(#2/E4_COUNT,add(get(#2/E4_COUNT),1))") return x'
 )
 STATE_PROBE=(
     'return tostring(N)'
     'return "ok"'
     'return T[2]'
+    'return mux.eval("get(#2/E4_COUNT)")'
+)
+STATE_REQUIRE_RUN=(
+    0
+    0
+    0
+    1
 )
 
 keep_work() {
@@ -676,7 +707,7 @@ keep_work() {
 
 # $1 = lua_jit, $2 = setup chunk, $3 = action chunk, $4 = state probe,
 # $5 = tag.  Multi-step purity run (#1751 Phase 0.5).
-# Echoes: rc|setup|action|state|pings|post_decline|kept
+# Echoes: rc|setup|action|state|pings|post_decline|action_runs|kept
 run_state() {
     local mode="$1" setup="$2" action="$3" probe="$4" tag="${5:-state}"
     rm -rf "$WORK"; mkdir -p "$WORK/data" "$WORK/logs" "$WORK/text"
@@ -705,7 +736,9 @@ EOF
         echo "&ACTION probe=$action"
         echo "&PROBE probe=$probe"
         echo "think SETUP|[lua(probe/SETUP)]"
+        echo "think BEFORE|[jitstats()]"
         echo "think RESULT|[lua(probe/ACTION)]"
+        echo "think AFTER|[jitstats()]"
         echo "think STATE|[lua(probe/PROBE)]"
         echo "think STATS|[jitstats()]"
         echo "@shutdown"
@@ -714,6 +747,7 @@ EOF
       echo "$?" > rc.txt
     )
     local rc setup_res action_res state_res pings postd kept stats
+    local before_stats after_stats before_ok after_ok action_runs
     rc=$(cat "$WORK/rc.txt" 2>/dev/null || echo 99)
     setup_res=$(grep -oE "^SETUP\|.*" "$WORK/out.log" 2>/dev/null | head -1)
     setup_res=${setup_res#SETUP|}
@@ -724,6 +758,15 @@ EOF
     state_res=$(grep -oE "^STATE\|.*" "$WORK/out.log" 2>/dev/null | head -1)
     state_res=${state_res#STATE|}
     state_res=$(printf '%s' "$state_res" | tr -d '\r')
+    before_stats=$(grep -oE "^BEFORE\|.*" "$WORK/out.log" 2>/dev/null | head -1)
+    before_stats=${before_stats#BEFORE|}
+    after_stats=$(grep -oE "^AFTER\|.*" "$WORK/out.log" 2>/dev/null | head -1)
+    after_stats=${after_stats#AFTER|}
+    before_ok=$(printf '%s' "$before_stats" | grep -oE 'lua_run_ok=[0-9]+' | head -1 | cut -d= -f2)
+    after_ok=$(printf '%s' "$after_stats" | grep -oE 'lua_run_ok=[0-9]+' | head -1 | cut -d= -f2)
+    : "${before_ok:=0}" "${after_ok:=0}"
+    action_runs=$((after_ok - before_ok))
+    if [ "$action_runs" -lt 0 ]; then action_runs=0; fi
     # Effect marker from exhibit 2: mux.pemit(1,"PING") prints a bare PING
     # line.  muxscript logs are CRLF; match optional CR.  grep -c prints 0
     # even when it exits 1 on no match — do not `|| echo 0` (that doubles).
@@ -734,7 +777,7 @@ EOF
     postd=$(printf '%s' "$stats" | grep -oE 'lua_post_entry_decline=[0-9]+' | head -1 | cut -d= -f2)
     : "${postd:=0}"
     kept=$(keep_work "$rc" "$tag")
-    echo "$rc|$setup_res|$action_res|$state_res|$pings|$postd|$kept"
+    echo "$rc|$setup_res|$action_res|$state_res|$pings|$postd|$action_runs|$kept"
 }
 
 split_state() {
@@ -744,6 +787,7 @@ split_state() {
     R_STATE=${r%%|*}; r=${r#*|}
     R_PINGS=${r%%|*}; r=${r#*|}
     R_POSTD=${r%%|*}; r=${r#*|}
+    R_RUNS=${r%%|*}; r=${r#*|}
     R_KEPT=$r
 }
 
@@ -1019,7 +1063,7 @@ for chunk in "${NESTED_AGREE_CASES[@]}"; do
 done
 
 printf '\n== STATE (purity oracle: persistent state + effects; #1751 Phase 0.5) ==\n'
-printf '%-22s %-4s %-10s %-10s %-8s %-8s %s\n' case rc i_state j_state i_ping j_ping verdict
+printf '%-22s %-4s %-10s %-10s %-8s %-8s %-6s %s\n' case rc i_state j_state i_ping j_ping j_run verdict
 state_wrong=0
 state_loud=0
 si=0
@@ -1032,7 +1076,7 @@ while [ "$si" -lt "${#STATE_NAMES[@]}" ]; do
     split_state "$(run_state 0 "$setup" "$action" "$probe" "st0-$name")"
     irc=$R_RC; ires=$R_RES; istate=$R_STATE; ipings=$R_PINGS
     split_state "$(run_state 1 "$setup" "$action" "$probe" "st1-$name")"
-    jrc=$R_RC; jres=$R_RES; jstate=$R_STATE; jpings=$R_PINGS; jkept=$R_KEPT; jpostd=$R_POSTD
+    jrc=$R_RC; jres=$R_RES; jstate=$R_STATE; jpings=$R_PINGS; jkept=$R_KEPT; jpostd=$R_POSTD; jruns=$R_RUNS
     verdict="ok"
     jloud=0
     if is_post_entry_loud "$jres"; then
@@ -1057,6 +1101,9 @@ while [ "$si" -lt "${#STATE_NAMES[@]}" ]; do
     elif [ "$ires" != "$jres" ]; then
         verdict="FAIL: result diverges interp=$ires jit=$jres"
         state_wrong=$((state_wrong+1))
+    elif [ "${STATE_REQUIRE_RUN[$si]}" = "1" ] && [ "$jruns" -lt 1 ]; then
+        verdict="FAIL: action declined (lua_run_ok delta=$jruns)"
+        state_wrong=$((state_wrong+1))
     elif [ "$ipings" != "$jpings" ]; then
         # Both routes "succeeded" but effects differ (exhibit 2 silent loss).
         verdict="FAIL: effect count interp=$ipings jit=$jpings"
@@ -1072,8 +1119,8 @@ while [ "$si" -lt "${#STATE_NAMES[@]}" ]; do
         verdict="FAIL: loud result but lua_post_entry_decline=0"
         state_wrong=$((state_wrong+1))
     fi
-    printf '%-22s %-4s %-10s %-10s %-8s %-8s %s\n' \
-        "$name" "$jrc" "${istate:0:10}" "${jstate:0:10}" "$ipings" "$jpings" "$verdict"
+    printf '%-22s %-4s %-10s %-10s %-8s %-8s %-6s %s\n' \
+        "$name" "$jrc" "${istate:0:10}" "${jstate:0:10}" "$ipings" "$jpings" "$jruns" "$verdict"
     si=$((si+1))
 done
 
