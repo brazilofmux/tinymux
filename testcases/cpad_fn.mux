@@ -21,7 +21,7 @@
 &tr.tc001 test_cpad_fn=
   @if strmatch([cpad()],*NOT FOUND)=
   {
-    @log smoke=TC001: CPAD() is not supported on this version. Okay.
+    @log smoke=TC001: CPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -42,7 +42,7 @@
 &tr.tc002 test_cpad_fn=
   @if strmatch([cpad()],*NOT FOUND)=
   {
-    @log smoke=TC002: CPAD() is not supported on this version. Okay.
+    @log smoke=TC002: CPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -64,7 +64,7 @@
 &tr.tc003 test_cpad_fn=
   @if strmatch([cpad()],*NOT FOUND)=
   {
-    @log smoke=TC003: CPAD() is not supported on this version. Okay.
+    @log smoke=TC003: CPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -86,7 +86,7 @@
 &tr.tc004 test_cpad_fn=
   @if strmatch([cpad()],*NOT FOUND)=
   {
-    @log smoke=TC004: CPAD() is not supported on this version. Okay.
+    @log smoke=TC004: CPAD() is not supported on this version. Skipped.
   },
   {
     @if cand(
@@ -109,7 +109,7 @@
 &tr.tc005 test_cpad_fn=
   @if strmatch([cpad()],*NOT FOUND)=
   {
-    @log smoke=TC005: CPAD() is not supported on this version. Okay.;
+    @log smoke=TC005: CPAD() is not supported on this version. Skipped.;
     @trig me/tr.done
   },
   {

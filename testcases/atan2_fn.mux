@@ -17,7 +17,7 @@
 &tr.tc001 test_atan2_fn=
   @if strmatch([atan2()],*NOT FOUND)=
   {
-    @log smoke=TC001: ATAN2() is not supported on this version. Okay.
+    @log smoke=TC001: ATAN2() is not supported on this version. Skipped.
   },
   {
     @if cand(

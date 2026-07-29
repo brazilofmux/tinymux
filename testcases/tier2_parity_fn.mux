@@ -129,7 +129,7 @@
     }
   },
   {
-    @log smoke=TC006: Unicode not supported. Okay.
+    @log smoke=TC006: Unicode not supported. Skipped.
   }
 -
 #

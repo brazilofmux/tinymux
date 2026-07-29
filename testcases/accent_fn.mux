@@ -47,7 +47,7 @@
     }
   },
   {
-    @log smoke=TC002: Unicode accents are not supported on this version. Okay.
+    @log smoke=TC002: Unicode accents are not supported on this version. Skipped.
   }
 -
 #

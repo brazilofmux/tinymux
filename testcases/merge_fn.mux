@@ -188,7 +188,7 @@
     }
   },
   {
-    @log smoke=TC008: Unicode is not supported on this version. Okay.
+    @log smoke=TC008: Unicode is not supported on this version. Skipped.
   }
 -
 #
@@ -217,7 +217,7 @@
     }
   },
   {
-    @log smoke=TC009: Unicode is not supported on this version. Okay.
+    @log smoke=TC009: Unicode is not supported on this version. Skipped.
   }
 -
 #
@@ -245,7 +245,7 @@
     }
   },
   {
-    @log smoke=TC010: Unicode is not supported on this version. Okay.
+    @log smoke=TC010: Unicode is not supported on this version. Skipped.
   }
 -
 #
@@ -271,7 +271,7 @@
     }
   },
   {
-    @log smoke=TC011: Unicode is not supported on this version. Okay.
+    @log smoke=TC011: Unicode is not supported on this version. Skipped.
   }
 -
 #
@@ -300,7 +300,7 @@
     }
   },
   {
-    @log smoke=TC012: Unicode is not supported on this version with color. Okay.
+    @log smoke=TC012: Unicode is not supported on this version with color. Skipped.
   }
 -
 #
@@ -328,7 +328,7 @@
     }
   },
   {
-    @log smoke=TC013: Unicode is not supported on this version with color. Okay.
+    @log smoke=TC013: Unicode is not supported on this version with color. Skipped.
   }
 -
 #

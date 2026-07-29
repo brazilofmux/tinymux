@@ -8,6 +8,17 @@
 #
 # Beginning of Test Cases
 #
+# hmac() needs OpenSSL (HAVE_LIBSSL); builds without it -- Windows uses
+# Schannel for TLS and links no OpenSSL at all -- answer every call with
+# #-1 HMAC REQUIRES SSL.  That is the feature being absent, not broken, so
+# these cases skip rather than fail there (#1641), the same shape as the
+# JIT cases' tr.has_jit.  The probe keys on the one specific refusal
+# message: on a build WITH OpenSSL where hmac() returns a wrong hash or a
+# different error, the cases still run and still fail.
+#
+&tr.has_ssl test_hmac_fn=
+  [not(strmatch([hmac(hello,secret)], #-1%bHMAC%bREQUIRES%bSSL))]
+-
 &tr.tc000 test_hmac_fn=
   @log smoke=Beginning hmac() test cases.
 -
@@ -15,43 +26,62 @@
 # Test Case #1 - HMAC-SHA256 basic.
 #
 &tr.tc001 test_hmac_fn=
-  @if cand(
-        strmatch([hmac(hello,secret)], 88AAB3EDE8D3ADF94D26AB90D3BAFD4A2083070C3BCCE9C014EE04A443847C0B)
-      )=
+  @if u(me/tr.has_ssl)=
   {
-    @log smoke=TC001: hmac sha256 basic. Succeeded.;
+    @if cand(
+          strmatch([hmac(hello,secret)], 88AAB3EDE8D3ADF94D26AB90D3BAFD4A2083070C3BCCE9C014EE04A443847C0B)
+        )=
+    {
+      @log smoke=TC001: hmac sha256 basic. Succeeded.;
+    },
+    {
+      @log smoke=TC001: hmac sha256 basic. Failed (h0=.[hmac(hello,secret)].).;
+    }
   },
   {
-    @log smoke=TC001: hmac sha256 basic. Failed (h0=.[hmac(hello,secret)].).;
+    @log smoke=TC001: hmac sha256 basic. Skipped (no OpenSSL in this build).
   }
 -
 #
 # Test Case #2 - HMAC-SHA1 explicit algorithm.
 #
 &tr.tc002 test_hmac_fn=
-  @if cand(
-        strmatch([hmac(hello,secret,sha1)], 5112055C05F944F85755EFC5CD8970E194E9F45B)
-      )=
+  @if u(me/tr.has_ssl)=
   {
-    @log smoke=TC002: hmac sha1 explicit. Succeeded.;
+    @if cand(
+          strmatch([hmac(hello,secret,sha1)], 5112055C05F944F85755EFC5CD8970E194E9F45B)
+        )=
+    {
+      @log smoke=TC002: hmac sha1 explicit. Succeeded.;
+    },
+    {
+      @log smoke=TC002: hmac sha1 explicit. Failed (h0=.[hmac(hello,secret,sha1)].).;
+    }
   },
   {
-    @log smoke=TC002: hmac sha1 explicit. Failed (h0=.[hmac(hello,secret,sha1)].).;
+    @log smoke=TC002: hmac sha1 explicit. Skipped (no OpenSSL in this build).
   }
 -
 #
 # Test Case #3 - HMAC with invalid algorithm.
 #
 &tr.tc003 test_hmac_fn=
-  @if cand(
-        strmatch([hmac(hello,secret,bogus)], #-1%bUNSUPPORTED%bDIGEST%bTYPE)
-      )=
+  @if u(me/tr.has_ssl)=
   {
-    @log smoke=TC003: hmac invalid algo. Succeeded.;
-    @trig me/tr.done
+    @if cand(
+          strmatch([hmac(hello,secret,bogus)], #-1%bUNSUPPORTED%bDIGEST%bTYPE)
+        )=
+    {
+      @log smoke=TC003: hmac invalid algo. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC003: hmac invalid algo. Failed (h0=.[hmac(hello,secret,bogus)].).;
+      @trig me/tr.done
+    }
   },
   {
-    @log smoke=TC003: hmac invalid algo. Failed (h0=.[hmac(hello,secret,bogus)].).;
+    @log smoke=TC003: hmac invalid algo. Skipped (no OpenSSL in this build).;
     @trig me/tr.done
   }
 -
