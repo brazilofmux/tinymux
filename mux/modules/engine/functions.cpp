@@ -10524,9 +10524,18 @@ static FUNCTION(fun_printf)
                 {
                     places = 20;
                 }
-
-                snprintf(reinterpret_cast<char *>(valBuf.get()),
-                         LBUF_SIZE, "%.*f", places, v);
+                // mux_vsnprintf has no %.*f (#1429 / #1653); pick a fixed
+                // precision format so the float path stays on mux_sprintf.
+                //
+                static const UTF8 *const afmt[] =
+                {
+                    T("%.0f"),  T("%.1f"),  T("%.2f"),  T("%.3f"),  T("%.4f"),
+                    T("%.5f"),  T("%.6f"),  T("%.7f"),  T("%.8f"),  T("%.9f"),
+                    T("%.10f"), T("%.11f"), T("%.12f"), T("%.13f"), T("%.14f"),
+                    T("%.15f"), T("%.16f"), T("%.17f"), T("%.18f"), T("%.19f"),
+                    T("%.20f"),
+                };
+                mux_sprintf(valBuf.get(), LBUF_SIZE, afmt[places], v);
                 nPrec = -1; // consumed by %f
             }
             break;

@@ -92,12 +92,6 @@ BAN_GENERATED = ("mux/lib/color_ops.c",)
 # and cannot desync the way a whole-file comment/string stripper does.
 #
 BAN_LEGACY = {
-    "mux/lib/mux_nls.cpp": 1,
-    # comsys_mod: 0 after #1640/#1656 — columns via co_copy_field, plain
-    # assembly via mux_sprintf (mux_format.h).
-    #
-    "mux/modules/engine/ast.cpp": 3,
-    "mux/modules/engine/attrcache.cpp": 4,
     # dbt_test and the div harness are standalone binaries: tests/dbt builds
     # them with "$(COMPILE) -o $@ $(SRCS)" and links no libmux, so mux_snprintf
     # is not reachable and these cannot reach zero without changing that build.
@@ -106,15 +100,6 @@ BAN_LEGACY = {
     #
     "mux/modules/engine/dbt_test.cpp": 22,
     "mux/modules/engine/dbt_x64_div_harness.c": 1,
-    "mux/modules/engine/functions.cpp": 1,
-    "mux/modules/engine/mail.cpp": 2,
-    "mux/modules/engine/match.cpp": 2,
-    "mux/modules/engine/predicates.cpp": 2,
-    "mux/modules/exp3/exp3.cpp": 1,
-    # mail_mod: 0 after #1653 — player-facing assembly via mux_sprintf /
-    # mail_sprintf (mux_format.h); columns already on co_copy_field.
-    "mux/src/ganl_adapter.cpp": 1,
-    "mux/src/websocket.cpp": 1,
 }
 
 SPEC = re.compile(r"%([-+ #0]*)([0-9*]*)(\.[0-9*]*)?(hh|h|ll|l|z|j|t|L|q)?(.)")
@@ -147,6 +132,9 @@ ALLOWED_NONLITERAL = {
     "pChannelAnnounceFmt",
     "pMonitorAnnounceFmt",
     "tf1_case_table[iCase].specs[iWidth]",
+    # softcode %f precision table in functions.cpp (#1653): places is clamped
+    # to 0..20 and every entry is a literal %.Nf format.
+    "afmt[places]",
 }
 
 

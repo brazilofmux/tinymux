@@ -100,6 +100,7 @@
 #include "config.h"
 #include "libmux.h"
 #include "modules.h"
+#include "mux_format.h"
 #include "exp3.h"
 
 static int32_t g_cComponents  = 0;
@@ -138,8 +139,7 @@ static void safe_copy_str(const UTF8 *src, UTF8 *buff, UTF8 **bufp)
 static void safe_ltoa(int val, UTF8 *buff, UTF8 **bufp)
 {
     UTF8 tbuf[32];
-    size_t n = snprintf(reinterpret_cast<char *>(tbuf), sizeof(tbuf), "%d", val);
-    if (n > sizeof(tbuf) - 1) n = sizeof(tbuf) - 1;
+    size_t n = mux_snprintf(tbuf, sizeof(tbuf), T("%d"), val);
     tbuf[n] = '\0';
     safe_copy_str(tbuf, buff, bufp);
 }

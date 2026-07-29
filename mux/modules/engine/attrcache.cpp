@@ -1131,17 +1131,17 @@ static void format_size(UTF8 *buf, size_t buflen, int64_t bytes)
     }
     else if (bytes >= 1024LL * 1024 * 1024)
     {
-        snprintf(reinterpret_cast<char *>(buf), buflen, "%.1f GB",
+        mux_sprintf(buf, buflen, T("%.1f GB"),
             static_cast<double>(bytes) / (1024.0 * 1024.0 * 1024.0));
     }
     else if (bytes >= 1024 * 1024)
     {
-        snprintf(reinterpret_cast<char *>(buf), buflen, "%.1f MB",
+        mux_sprintf(buf, buflen, T("%.1f MB"),
             static_cast<double>(bytes) / (1024.0 * 1024.0));
     }
     else if (bytes >= 1024)
     {
-        snprintf(reinterpret_cast<char *>(buf), buflen, "%.1f KB",
+        mux_sprintf(buf, buflen, T("%.1f KB"),
             static_cast<double>(bytes) / 1024.0);
     }
     else
@@ -1175,11 +1175,8 @@ void list_cache_stats(dbref player)
         static_cast<unsigned long>(nEntries),
         szSize, szMax,
         mudconf.cache_preload_depth));
-    // Same reason as format_size above: tprintf routes to mux_vsnprintf,
-    // which would abort on %f.
-    //
-    char szHitPct[64];
-    snprintf(szHitPct, sizeof(szHitPct), "%.1f", hit_pct);
+    UTF8 szHitPct[64];
+    mux_sprintf(szHitPct, sizeof(szHitPct), T("%.1f"), hit_pct);
     notify(player, tprintf(T("Hits: %llu   Misses: %llu   Hit rate: %s%%"),
         static_cast<unsigned long long>(cache_hits),
         static_cast<unsigned long long>(cache_misses),

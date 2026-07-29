@@ -3066,26 +3066,19 @@ void do_reference
     }
 
     LBuf tbuf = LBuf_Src("do_name");
-    int tbuf_n;
+    // mux_snprintf returns length written (0..count-1), not "would have".
+    //
+    size_t tbuf_len;
     if ('_' == reference_name[0])
     {
-        tbuf_n = snprintf(reinterpret_cast<char *>(tbuf.get()), LBUF_SIZE,
-                     "%s", reinterpret_cast<const char *>(reference_name));
+        tbuf_len = mux_snprintf(tbuf.get(), LBUF_SIZE, T("%s"),
+            reference_name);
     }
     else
     {
-        tbuf_n = snprintf(reinterpret_cast<char *>(tbuf.get()), LBUF_SIZE,
-                     "%s.%ld", reinterpret_cast<const char *>(reference_name),
-                     static_cast<long>(executor));
+        tbuf_len = mux_snprintf(tbuf.get(), LBUF_SIZE, T("%s.%lld"),
+            reference_name, static_cast<long long>(executor));
     }
-
-    // snprintf returns the length it WOULD have written; on truncation that
-    // exceeds the buffer.  Clamp to the bytes actually written so tbuf_len is
-    // never used to read past tbuf.
-    //
-    size_t tbuf_len = (tbuf_n < 0) ? 0
-        : (static_cast<size_t>(tbuf_n) >= LBUF_SIZE ? LBUF_SIZE - 1
-                                                    : static_cast<size_t>(tbuf_n));
     auto it_ref = mudstate.reference_htab.find(std::vector<UTF8>(tbuf.get(), tbuf.get() + tbuf_len));
     struct reference_entry *result = (it_ref != mudstate.reference_htab.end())
         ? static_cast<reference_entry*>(it_ref->second) : nullptr;

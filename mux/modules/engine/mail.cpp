@@ -508,8 +508,7 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     // the provided folder name.
     //
     UTF8 *aNew = alloc_lbuf("add_folder_name.new");
-    snprintf(reinterpret_cast<char *>(aNew), LBUF_SIZE,
-             "%d:%s:%d", fld, reinterpret_cast<const char *>(name), fld);
+    mux_sprintf(aNew, LBUF_SIZE, T("%d:%s:%d"), fld, name, fld);
     size_t nNew = strlen(reinterpret_cast<char *>(aNew));
     {
         LBuf tmp = LBuf_Src("add_folder_name");
@@ -658,8 +657,7 @@ static int get_folder_number(dbref player, UTF8 *name)
         // Convert the folder name provided into upper-case characters.
         //
         UTF8 *aPattern = alloc_lbuf("add_folder_num_pat");
-        snprintf(reinterpret_cast<char *>(aPattern), LBUF_SIZE,
-                 ":%s:", reinterpret_cast<const char *>(name));
+        mux_sprintf(aPattern, LBUF_SIZE, T(":%s:"), name);
         size_t nPattern = strlen(reinterpret_cast<char *>(aPattern));
         {
             LBuf tmp = LBuf_Src("get_folder_number");
