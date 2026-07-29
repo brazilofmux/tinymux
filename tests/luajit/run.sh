@@ -332,6 +332,17 @@ EXEC_CASES=(
     'local s=0 for i=mux.args[1]+0,4 do s=s+1 end return s'
     'local s=7 for i=mux.args[2]+0,1 do s=99 end return s'
     'local s=0 for i=mux.args[2]+0,1,-1 do s=s+i end return s'
+
+    # mux.* bridge members call the REAL bridge C functions (#1745
+    # follow-up): compiled mux.eval pcalls the same function the
+    # interpreter calls, with the execution context staged for the
+    # compiled run.  The old path name-mapped onto SOFTCODE functions --
+    # mux.eval("add(10,20)") reached softcode eval(obj,attr) and echoed
+    # its argument -- which smoke TC014 caught the first day default-on
+    # ran it compiled.  Both spellings pinned: local-then-return and the
+    # tail call.
+    'local x=mux.eval("add(2,3)") return x'
+    'return mux.eval("add(10,20)")'
     'return mux.args[1] + mux.args[2]'
     'local x=mux.args[1]+0 return x*2'
     'local a=mux.args[1]+0 return a+1'

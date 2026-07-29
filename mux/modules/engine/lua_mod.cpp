@@ -794,16 +794,23 @@ void CLuaMod::DestroyLuaState(void)
 // Chunk execution with sandbox.
 // =========================================================================
 
-bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
-    dbref enactor, const UTF8 *pArgs[], int nArgs,
-    UTF8 *pResult, size_t nResultMax, size_t *pnResultLen)
+// Execution-context setup shared by the interpreter and compiled routes.
+//
+// The bridge C functions (mux.eval, mux.name, ...) read the executor and
+// friends from the registry, and per-run values (mux.executor, mux.args)
+// are injected into the global mux table.  This used to live inline in
+// ExecuteChunk only -- the interpreter leg -- so a bridge function invoked
+// from a COMPILED run found a cleared registry and stale mux fields.  Now
+// that compiled chunks call the real bridge functions through the ordinary
+// Lua call path (#1745 follow-up), both routes must stage the same context.
+//
+// ctx is caller-owned: the registry holds a lightuserdata pointing at it,
+// so it must outlive the run.  Clear with lua_clear_exec_context.
+//
+static void lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
+    dbref executor, dbref caller, dbref enactor,
+    const UTF8 *pArgs[], int nArgs)
 {
-    // The compiled chunk is on top of the Lua stack.  Set up the execution
-    // context and call it.
-
-    // Store execution context in the registry.
-    //
-    lua_exec_ctx ctx;
     ctx.executor = executor;
     ctx.caller = caller;
     ctx.enactor = enactor;
@@ -844,6 +851,23 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     }
     lua_setfield(L, -2, "args");
     lua_pop(L, 1);  // pop mux table
+}
+
+static void lua_clear_exec_context(lua_State *L)
+{
+    lua_pushnil(L);
+    lua_setfield(L, LUA_REGISTRYINDEX, LUA_EXEC_CTX_KEY);
+}
+
+bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
+    dbref enactor, const UTF8 *pArgs[], int nArgs,
+    UTF8 *pResult, size_t nResultMax, size_t *pnResultLen)
+{
+    // The compiled chunk is on top of the Lua stack.  Set up the execution
+    // context and call it.
+
+    lua_exec_ctx ctx;
+    lua_setup_exec_context(L, ctx, executor, caller, enactor, pArgs, nArgs);
 
     // Set instruction count hook.
     //
@@ -877,10 +901,7 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     lua_sethook(L, nullptr, 0, 0);
     lua_match_interrupt = nullptr;
 
-    // Clear execution context.
-    //
-    lua_pushnil(L);
-    lua_setfield(L, LUA_REGISTRYINDEX, LUA_EXEC_CTX_KEY);
+    lua_clear_exec_context(L);
 
     if (status != LUA_OK)
     {
@@ -1328,9 +1349,17 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
         if (entry.jit_key != 0) {
             // Save Lua stack — ECALL handlers may push tables/functions.
             int saved_top = lua_gettop(m_L);
+            // Stage the same execution context the interpreter leg gets:
+            // compiled chunks reach the bridge C functions and the per-run
+            // mux fields through ordinary Lua calls now, and without this
+            // they saw a cleared registry and the PREVIOUS run's mux table.
+            lua_exec_ctx jit_ctx;
+            lua_setup_exec_context(m_L, jit_ctx, executor, caller, enactor,
+                                   pArgs, nArgs);
             MUX_RESULT mr = m_pIJITCompile->RunCompiled(entry.jit_key,
                 executor, caller, enactor, pArgs, nArgs,
                 pResult, nResultMax, pnResultLen, m_L);
+            lua_clear_exec_context(m_L);
             lua_settop(m_L, saved_top);  // restore stack
             if (MUX_E_NOTFOUND != mr) {
                 return MUX_SUCCEEDED(mr);
@@ -1382,10 +1411,15 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
     // Run the compiled program.
     // Save/restore Lua stack — ECALL handlers for table ops, getglobal,
     // and generic calls push values onto the Lua stack that must be
-    // cleaned up after JIT execution completes.
+    // cleaned up after JIT execution completes.  Execution context staged
+    // exactly as on the cached-key path above.
     int saved_top = lua_gettop(m_L);
+    lua_exec_ctx jit_ctx;
+    lua_setup_exec_context(m_L, jit_ctx, executor, caller, enactor,
+                           pArgs, nArgs);
     mr = m_pIJITCompile->RunCompiled(key, executor, caller, enactor,
         pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
+    lua_clear_exec_context(m_L);
     lua_settop(m_L, saved_top);  // restore stack
     return MUX_SUCCEEDED(mr);
 }
