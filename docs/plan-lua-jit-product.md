@@ -1,14 +1,19 @@
 # Lua JIT: product enablement plan
 
-**Status:** living plan (2026-07-27)  
-**Parent epic:** #1309  
-**Critical path:** #1326 (nested execution under softcode JIT)
+**Status:** product path complete (2026-07-29)  
+**Parent epic:** #1309 (closed; residual quality work is optional polish)  
+**Default-on:** #1745 / #1325 (`mudconf.lua_jit = true` on `--enable-jit` builds)
 
-This plan is the source of truth for multi-agent work on making Lua JIT
+This plan was the source of truth for multi-agent work on making Lua JIT
 real for games, not only for laboratory configs. Older bring-up notes live
 in [`plan-lua-jit-bringup.md`](plan-lua-jit-bringup.md) and
 [`design-lua-jit.md`](design-lua-jit.md); they describe how we got here.
-This document describes how we ship.
+
+**What shipped.** Nested execution under softcode JIT (#1326), engage
+coverage, and default-on (#1745). Games that `./configure --enable-jit` and
+run with conf defaults get both softcode and Lua JIT without special knobs.
+Remaining work is optional coverage and polish (see §5 Phase D), not a
+product gate.
 
 ---
 
@@ -28,7 +33,7 @@ make install
 | Surface | Default behaviour |
 |---------|-------------------|
 | Softcode `[…]` / attributes | Compiled when eligible (`jit_eval_brackets` **on**) |
-| `lua()` / Lua attrs | Compiled when eligible (`lua_jit` **on**, once ready) |
+| `lua()` / Lua attrs | Compiled when eligible (`lua_jit` **on**) |
 | Nested softcode → `lua()` | Lua JIT still **runs**, not silent interpreter fallback |
 | Wrong answers | Fail closed (decline → interpreter) or match the interpreter |
 | NLS | Orthogonal; optional |
@@ -38,42 +43,39 @@ That config is a **test laboratory**, not a product mode.
 
 ---
 
-## 2. What is broken today (mechanism)
+## 2. Historical mechanism (resolved)
 
-### 2.1 Two knobs, one trap
+This section records *why* the product path was blocked and what fixed it.
+It is not a current-state bug list.
 
-| Conf | Default | Role |
-|------|---------|------|
+### 2.1 Two knobs, one trap (was)
+
+| Conf | Default (now) | Role |
+|------|---------------|------|
 | `jit_eval_brackets` | **true** | Softcode may JIT-compile `[…]` eval brackets |
-| `lua_jit` | **false** | Lua may attempt bytecode → HIR → DBT |
+| `lua_jit` | **true** (#1745) | Lua may attempt bytecode → HIR → DBT |
 
-Turning `lua_jit` on under default brackets does **not** make Lua JIT
-execute. Almost every real `lua()` call is reached from softcode that is
-itself inside `run_cached_program` (compiled attribute, compiled bracket,
-or bare `lua(...)` compiled as `AST_FUNCCALL`). Nested entry hits:
+Before #1326, turning `lua_jit` on under default brackets did **not** make
+Lua JIT execute. Almost every real `lua()` call was reached from softcode
+inside `run_cached_program`. Nested entry hit:
 
 ```text
-run_cached_program: if (s_run_cached_depth > 0) return false;  // #1326
+run_cached_program: if (s_run_cached_depth > 0) return false;  // pre-#1326
 ```
 
-Lua then falls back to the **interpreter**. Answers stay correct;
-`lua_compile_ok` / `lua_cache_hits` still move; only `lua_run_ok` tells the
+Lua fell back to the **interpreter**. Answers stayed correct;
+`lua_compile_ok` / `lua_cache_hits` still moved; only `lua_run_ok` told the
 truth.
 
-Measured (Win64 and Linux):
+Measured then (Win64 and Linux):
 
 | Config | `lua()` under softcode JIT | `lua_run_ok` |
 |--------|----------------------------|--------------|
-| defaults + `lua_jit 1` | declines nested run | 0 |
-| `jit_eval_brackets 0` + `lua_jit 1` + call shape that avoids outer DBT | executes | >0 |
+| defaults + `lua_jit 1` | declined nested run | 0 |
+| `jit_eval_brackets 0` + `lua_jit 1` + call shape that avoids outer DBT | executed | >0 |
 
-So today you can have:
-
-- full softcode JIT **or**
-- observable Lua JIT (by disabling softcode brackets),
-
-but **not both** in a production-shaped process. That is the product bug,
-not a test inconvenience.
+**Resolved by #1326:** per-depth runtime context (memory + DBT) so nested
+Lua can execute while softcode brackets stay on.
 
 ### 2.2 Why tests lied for a while (#1426)
 
@@ -85,26 +87,22 @@ also stayed green. The correct contract is:
 result == interpreter  AND  lua_run_ok advanced
 ```
 
-That is what `tests/luajit/run.sh` **EXEC** cases do (and they pin
-`jit_eval_brackets 0` so the nested guard is not the whole story). Smoke
-with only `lua_jit 1` still cannot prove execution under default brackets
-until #1326 lands.
+That is what `tests/luajit/run.sh` **EXEC** cases do. Smoke and default-conf
+engage asserts now prove execution under production-shaped brackets.
 
-### 2.3 What the reentrancy guard is protecting
+### 2.3 What the reentrancy guard was protecting
 
 Not a soft preference. Nested `run_cached_program` would otherwise:
 
 1. **`dbt_reset`** the shared persistent DBT → outer softcode translations gone  
 2. **`materialize_program`** into `s_runtime_buffer` → overwrite guest memory the outer program is executing from  
 
-Correct answers on decline are deliberate. The hang risk is real: branch
-`feat/1326-nested-lua-vm` lifts the guard with per-depth contexts and can
-execute nested Lua, but still idle-hangs under `make test-lua-jit` /
-`lua_fn.mux` (see #1326 comments, #1571).
+Correct answers on decline were deliberate. #1326 replaced the blunt guard
+with bounded dual contexts rather than unbounded reentrancy.
 
 ---
 
-## 3. Inventory (2026-07-27)
+## 3. Inventory (2026-07-29)
 
 ### Done (do not re-litigate)
 
@@ -119,33 +117,22 @@ execute nested Lua, but still idle-hangs under `make test-lua-jit` /
 | Runtime `^` → FCALL2 `pow` (not string bridge) | #1538 / #1548 era |
 | String→number coercion half of #1425 | fixed on master |
 | Softcode IEEE/`Ind` vs Lua `pow` docs | #1556 / #1560 |
+| Nested Lua under softcode JIT | #1326 |
+| Engage / EXEC under default conf | #1324 era + suite |
+| Default `lua_jit` on | #1745 / #1325 |
 
-Close or comment **done** on open issues that are stale after the above:
-#1561, #1538, #1425 (both rows), partially #1426 (harness exists; product
-path still blocked).
+### Residual (optional polish, not product gates)
 
-### Open — ordered by critical path
-
-| # | Title | Role in this plan |
-|---|--------|-------------------|
-| **#1326** | Nested Lua under softcode JIT | **Product gate.** Separate runtime context (memory + DBT) per depth; fix hang |
-| **#1571** | Guest loop escapes max_dispatch / alarm | Found while chasing #1326 hang; may be the hang or independent |
-| **#1519** | Named Lua-VM bridge ECALLs never executed | Tables/stdlib; compile declines today (safe) |
-| **#1315** | Win64 tier-2 buffer pressure | Re-measured: 4 MB buffer, less urgent; still watch Win |
-| **#1325** | Default `lua_jit` on | **After** #1326 + engage coverage under default conf |
-| **#1309** | Epic | Keep as umbrella; this plan is the product half |
-| **#1433** | Intermittent `#t` SIGSEGV (interpreter) | Orthogonal but blocks confidence |
-
-### WIP branch
-
-`feat/1326-nested-lua-vm` — per-depth `jit_runtime` / dual context. Nested
-Lua **does** run under default brackets in hand tests; `make test-lua-jit`
-hangs. Do not merge until hang is diagnosed. Prefer finishing that branch
-over a third design.
+| Area | Notes |
+|------|--------|
+| Opcode / surface coverage | Closures still out (see design-lua-jit); optional TFOR / dynamic `for`; grow EXEC corpus |
+| Named Lua-VM bridges | #1519 closed as tech-debt decision; keep decline until intentionally implemented |
+| Win64 soak | #1315 sizing OK; re-measure if tier-2 pressure returns |
+| Softcode dual-impl quality | Separate investment tracker (was #1735); not a Lua default-on dependency |
 
 ---
 
-## 4. Target architecture
+## 4. Target architecture (shipped shape)
 
 ```text
                     softcode JIT (depth 0)
@@ -162,71 +149,52 @@ over a third design.
                     (fold-only / AST) — nesting stays bounded
 ```
 
-Design already agreed on #1326:
+Design agreed on #1326 and landed:
 
 1. Bundle `s_runtime_buffer`, program ids, persistent DBT, ready flags into
-   a **per-depth** context (not “Lua owns a second global forever” unless
-   depth maps that way).
-2. Depth ≥ 2 still refuse (or hard-cap); do not invent unbounded reentrancy.
-3. Allocate the second context **lazily** (installations that never call
+   a **per-depth** context.
+2. Depth ≥ 2 still refuse (or hard-cap); no unbounded reentrancy.
+3. Second context allocated **lazily** (installations that never call
    `lua()` pay nothing).
-4. ECALL handlers already use `ec->memory` — keep it that way; do not re-bind
-   them to file-statics.
-5. Softcode nested under Lua stays on the outer/main instance rules (decline
-   to AST when depth conflict) so we do not need full mutual recursion v1.
+4. ECALL handlers use `ec->memory` — not file-statics.
+5. Softcode nested under Lua stays on outer/main instance rules (decline
+   to AST when depth conflict) so v1 does not need full mutual recursion.
 
-Out of scope for v1: true single-DBT reentrancy, superblock sharing across
-depths, per-player Lua isolation.
+Out of scope for v1 (still): true single-DBT reentrancy, superblock sharing
+across depths, per-player Lua isolation.
 
 ---
 
 ## 5. Phased roadmap
 
-### Phase A — Unblock production-shaped execution (#1326)
+### Phase A — Unblock production-shaped execution (#1326) — **done**
 
 **Goal:** `lua_jit 1` + default `jit_eval_brackets 1` → `lua_run_ok > 0` for
 ordinary `lua()` / `[lua(...)]` / attr forms.
 
-| Work | Notes |
-|------|--------|
-| Finish `feat/1326-nested-lua-vm` | Diagnose hang (ptrace/gdb on a real host, not only Crostini) |
-| Probe #1571 | Confirm whether hang is in-block guest loop vs host deadlock |
-| Regression | Outer softcode integrity across nested `lua()` (string pool, `%0` after call, q-regs, two nesteds, `iter`) — already sketched on the issue |
-| Gate | `tests/luajit` EXEC with **default** brackets (new mode or drop forced `jit_eval_brackets 0` for a second suite) |
-| Gate | `SMOKE_EXTRA_CONF='lua_jit 1' make test` / `make test-lua-jit` completes |
+**Exit met:** Nested Lua JIT executes; softcode still JIT by default.
 
-**Exit:** Nested Lua JIT executes; no hang; softcode still JIT by default.
+### Phase B — Correctness under real execution — **done for known gates**
 
-### Phase B — Correctness under real execution
+Wrong-answer bugs that were invisible behind the nest guard were fixed or
+fail-closed as they surfaced. Grow EXEC further under Phase D as needed.
 
-While the guard was up, wrong-answer bugs were invisible. After Phase A they
-become production bugs. Keep fail-closed where possible.
+### Phase C — Default on (#1325 / #1745) — **done**
 
-| Work | Notes |
-|------|--------|
-| Audit remaining EXEC gaps | Grow `tests/luajit` EXEC under default conf |
-| #1519 bridge | Case-normalize names; then implement or keep decline — tables still AGREE-by-decline |
-| Float/table tostring | Residual `HIR_FTOA` on table marshalling if it surfaces |
-| #1433 | Interpreter SEGV if still reproducible |
+| Prerequisite | Status |
+|--------------|--------|
+| Phase A green | met (#1326) |
+| Engage assert under default conf | met |
+| Win64 / soak gates as required | met for flip |
+| Docs / CHANGES | product behaviour on master; this plan stamped 2026-07-29 |
 
-**Exit:** No known silent wrong answer on EXEC corpus; declines are intentional.
+**Exit met:** `mudconf.lua_jit = true` by default on `--enable-jit` builds.
 
-### Phase C — Default on (#1325)
-
-| Prerequisite | Why |
-|--------------|-----|
-| Phase A green | Otherwise default-on is a no-op that burns compile cache |
-| Engage assert in smoke under **default** conf | `lua_run_ok` after a known chunk |
-| Win64 soak | #1315 sizing OK; still run `lua_jit 1` smoke on hatsuhara |
-| Docs / CHANGES | One paragraph: both JITs on; nested uses second context |
-
-**Exit:** `mudconf.lua_jit = true` by default on `--enable-jit` builds.
-
-### Phase D — Product polish (ongoing)
+### Phase D — Product polish (ongoing, non-blocking)
 
 - `jitstats` / `@list` clarity: compile vs run, nested declines  
-- Optional conf later: never required for “both work”  
 - Opcode coverage growth (closures still out — design-lua-jit)  
+- Optional call-surface / loop-form pins beyond the core EXEC corpus  
 - NLS remains orthogonal  
 
 ---
@@ -237,29 +205,29 @@ become production bugs. Keep fail-closed where possible.
 
 ```text
 jit_eval_brackets  1     # default — softcode JIT fully on
-lua_jit            1     # after Phase C; 0 until then
+lua_jit            1     # default after #1745
 ```
 
 No special conf. Nested softcode → Lua uses the second runtime context.
 
-### Test laboratory (what AIs must use until Phase A lands)
+### Test laboratory (historical / differential)
 
 ```text
 lua_jit 1
-jit_eval_brackets 0      # only so Lua is not nested under softcode DBT
+jit_eval_brackets 0      # lab-only: Lua not nested under softcode DBT
 ```
 
-Used by `tests/luajit/run.sh` today. **Document as temporary.** After
-Phase A, the harness should add (or switch to) a **default-brackets EXEC**
-lane so we never again ship a “Lua JIT” that only runs when softcode is
-handicapped.
+Some `tests/luajit` lanes historically pinned brackets off to isolate
+lowering bugs. Prefer **default-brackets EXEC** for any claim that “the
+product path works.” Lab conf is fine for differential isolation, not as
+the only proof.
 
-### Two suites, clear names
+### Suites
 
 | Target | Purpose |
 |--------|---------|
-| `make test` | English, production defaults, interpreter Lua if `lua_jit` still off |
-| `make test-lua-jit` | `lua_jit 1`, production brackets once Phase A done; until then keep current extra conf but assert `lua_run_ok` |
+| `make test` | English, production defaults (both JITs on when `--enable-jit`) |
+| `make test-lua-jit` | Explicit Lua JIT emphasis / extra conf where needed; assert `lua_run_ok` |
 | `tests/luajit/run.sh` | Differential EXEC/AGREE/SURVIVE; pin run_ok |
 
 **Never** require games to set `jit_eval_brackets 0`.
@@ -274,7 +242,7 @@ handicapped.
 
 - Known EXEC chunks: result + `lua_run_ok`  
 - Nested call integrity (outer softcode result unchanged)  
-- Process does not hang under `lua_fn` / `lua_jit_fn` with `lua_jit 1`  
+- Process does not hang under `lua_fn` / `lua_jit_fn` with defaults or `lua_jit 1`  
 
 ---
 
@@ -285,40 +253,27 @@ handicapped.
 1. **Read this plan** before opening a Lua JIT PR.  
 2. **Do not** “fix” Lua JIT by documenting `jit_eval_brackets 0` as the
    supported game mode.  
-3. **Do not** merge #1326 while `make test-lua-jit` hangs.  
-4. **Do not** flip #1325 default-on until Phase A exit criteria pass.  
-5. Prefer **EXEC** (`lua_run_ok`) over compile counters for any claim that
+3. Prefer **EXEC** (`lua_run_ok`) over compile counters for any claim that
    “the JIT works”.  
-6. Fail closed: wrong native path → decline → interpreter, not a clever
+4. Fail closed: wrong native path → decline → interpreter, not a clever
    wrong answer.  
-7. One concern per PR (runtime split vs bridge case vs opcode).  
-8. If you find a hang with zero counter movement, file/link **#1571**.  
+5. One concern per PR (runtime split vs bridge case vs opcode).  
+6. Default-on already shipped (#1745); do not re-gate polish work on
+   re-flipping the conf default.  
 
-### Suggested claim map
+### Suggested claim map (post product path)
 
 | Agent workstream | Owns | Avoid |
 |------------------|------|--------|
-| **Nesting** | #1326 branch finish, hang bisect, dual-context polish | Default-on, bridge implement |
-| **Hang / DBT safety** | #1571, dispatch/alarm in-block | Lua lowering refactors |
-| **Corpus** | `tests/luajit` EXEC under default conf after A | Engine architecture |
-| **Bridges** | #1519 | Reentrancy |
-| **Default-on** | #1325 after gates | Landing mid-hang |
-| **Windows** | Soak #1326/#1325 on Win64 | Ignoring dual-context cost |
-
-### Issue hygiene (do now)
-
-| Issue | Action |
-|-------|--------|
-| #1561, #1538, #1425 | Close as fixed (refs #1562 / earlier FCALL2) if still open |
-| #1426 | Retitle or comment: harness fixed; **product path** still blocked on #1326 |
-| #1326 | Raise priority (product gate); link this plan; point at WIP branch |
-| #1325 | Explicit blocked-on #1326 |
-| #1309 | Point epic at this plan for product phase |
+| **Corpus** | Grow `tests/luajit` EXEC under default conf | Re-architecting dual context without a hang |
+| **Opcodes / bridges** | New lowering or intentional bridge implement | Silent wrong answers |
+| **Windows** | Soak regressions on Win64 | Ignoring dual-context cost |
+| **Docs** | Keep this plan + audit map current when defaults change | Rewriting bring-up/design as if they were living product truth |
 
 ### PR checklist (Lua JIT)
 
 ```text
-[ ] States which phase (A/B/C/D) and issue
+[ ] States which phase (D polish vs regression fix) and issue if any
 [ ] Under default jit_eval_brackets? If not, why temporary
 [ ] lua_run_ok measured for any “executes” claim
 [ ] make test / tests/luajit / make test-lua-jit as applicable
@@ -329,9 +284,9 @@ handicapped.
 
 ## 8. Success metrics
 
-| Metric | Today | After Phase A | After Phase C |
-|--------|-------|---------------|---------------|
-| Default conf + `lua_jit 1`: `lua_run_ok` for simple `lua()` | 0 | >0 | >0 |
+| Metric | Pre-#1326 | After Phase A | After Phase C (now) |
+|--------|-----------|---------------|---------------------|
+| Default conf + `lua_jit`: `lua_run_ok` for simple `lua()` | 0 | >0 | >0 |
 | Softcode brackets JIT | on | on | on |
 | Games need special conf for both | yes (broken) | no | no |
 | EXEC corpus under default brackets | no | yes | yes |
@@ -349,13 +304,14 @@ handicapped.
 
 ---
 
-## 10. Immediate next steps
+## 10. Immediate next steps (post #1745)
 
-1. Close stale fixed issues (#1561, #1538, #1425).  
-2. Comment on #1326 + #1309 with a link to this plan; bump #1326 priority.  
-3. One agent owns hang diagnosis on `feat/1326-nested-lua-vm` (gdb + #1571).  
-4. After hang fixed: dual-review, merge #1326, add default-brackets EXEC lane.  
-5. Only then #1325 default-on.
+1. Treat product enablement as **done**; do not re-open default-off work.  
+2. Optional: grow EXEC coverage and opcode surfaces under Phase D.  
+3. Keep [`audit-coverage.md`](audit-coverage.md) D4 notes aligned with
+   defaults when behaviour changes.  
+4. Leave [`plan-lua-jit-bringup.md`](plan-lua-jit-bringup.md) and
+   [`design-lua-jit.md`](design-lua-jit.md) as historical path docs.
 
-Until step 4, treat **every** “Lua JIT works” claim that only used
-`jit_eval_brackets 0` as **lab-only**.
+Until a new product gate is filed, treat **every** “Lua JIT works” claim that
+only used `jit_eval_brackets 0` as **lab-only** evidence.
