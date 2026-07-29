@@ -76,6 +76,14 @@ void app_receive_hydra_chunk(App& app, IConnection* conn, const std::string& wor
     }
 
     auto& buffer = app.hydra_line_buffers[world_name];
+    // #1788: cap Hydra stream reassembly (same class as telnet line_buf_).
+    static constexpr size_t kMaxHydraLine = 64 * 1024;
+    if (buffer.size() + text.size() > kMaxHydraLine) {
+        buffer.clear();
+        app_receive_line(app, conn, world_name,
+            "[Hydra] Dropped oversized line (no newline within buffer cap).");
+        return;
+    }
     buffer += text;
 
     size_t nl = 0;

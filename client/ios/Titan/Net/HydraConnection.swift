@@ -257,6 +257,14 @@ class HydraConnection: ObservableObject {
     }
 
     private func dispatchGameOutput(_ output: Hydra_GameOutput) {
+        // #1788: cap reassembly — a stream without newlines must not grow
+        // the client heap without bound.
+        let maxLineBytes = 64 * 1024
+        if outputBuffer.utf8.count + output.text.utf8.count > maxLineBytes {
+            outputBuffer.removeAll(keepingCapacity: true)
+            pushLine("[Hydra] Dropped oversized line (no newline within \(maxLineBytes) bytes).")
+            return
+        }
         outputBuffer += output.text
 
         while let newline = outputBuffer.firstIndex(of: "\n") {
