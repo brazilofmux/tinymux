@@ -11,13 +11,17 @@
 // ---------------------------------------------------------------------------
 // count_quota, mung_quota, show_quota, do_quota: Manage quotas.
 //
-static int count_quota(dbref player)
+// Quota values are softcode-visible attribute integers.  Keep them as
+// int64_t end-to-end (#1402): int sinks after mux_atoi64 wrap on every
+// platform (e.g. @quota/all 4294967296 wrote 0).
+//
+static int64_t count_quota(dbref player)
 {
     if (Owner(player) != player)
     {
         return 0;
     }
-    int q = 0 - mudconf.player_quota;
+    int64_t q = 0 - static_cast<int64_t>(mudconf.player_quota);
 
     dbref i;
     DO_WHOLE_DB(i)
@@ -56,10 +60,11 @@ static int count_quota(dbref player)
     return q;
 }
 
-static void mung_quotas(dbref player, int key, int value)
+static void mung_quotas(dbref player, int key, int64_t value)
 {
     dbref aowner;
-    int aq, rq, xq, aflags;
+    int64_t aq, rq, xq;
+    int aflags;
 
     if (key & QUOTA_FIX)
     {
@@ -70,13 +75,13 @@ static void mung_quotas(dbref player, int key, int value)
         {
             LBuf buff = LBuf_Adopt(atr_get("mung_quotas.79", player, A_RQUOTA, &aowner, &aflags));
             aq = mux_atoi64(buff) + xq;
-            atr_add_raw(player, A_QUOTA, mux_ltoa_t(aq));
+            atr_add_raw(player, A_QUOTA, mux_i64toa_t(aq));
         }
         else
         {
             LBuf buff = LBuf_Adopt(atr_get("mung_quotas.86", player, A_QUOTA, &aowner, &aflags));
             rq = mux_atoi64(buff) - xq;
-            atr_add_raw(player, A_RQUOTA, mux_ltoa_t(rq));
+            atr_add_raw(player, A_RQUOTA, mux_i64toa_t(rq));
         }
     }
     else
@@ -114,8 +119,8 @@ static void mung_quotas(dbref player, int key, int value)
 
         // Set both abs and relative quota.
         //
-        atr_add_raw(player, A_QUOTA, mux_ltoa_t(aq));
-        atr_add_raw(player, A_RQUOTA, mux_ltoa_t(rq));
+        atr_add_raw(player, A_QUOTA, mux_i64toa_t(aq));
+        atr_add_raw(player, A_RQUOTA, mux_i64toa_t(rq));
     }
 }
 
@@ -126,21 +131,23 @@ static void show_quota(dbref player, dbref victim)
     LBuf buff = LBuf_Src("show_quota");
 
     atr_get_str(buff, victim, A_QUOTA, &aowner, &aflags);
-    int aq = mux_atoi64(buff);
+    int64_t aq = mux_atoi64(buff);
     atr_get_str(buff, victim, A_RQUOTA, &aowner, &aflags);
-    int rq = aq - mux_atoi64(buff);
+    int64_t rq = aq - mux_atoi64(buff);
 
     mux_field fldName = StripTabsAndTruncate(Name(victim), buff, LBUF_SIZE-1, 16);
 
     if (!Free_Quota(victim))
     {
         mux_sprintf(buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
-                    M_(" Quota: %9d  Used: %9d"), aq, rq);
+                    M_(" Quota: %9lld  Used: %9lld"),
+                    static_cast<long long>(aq), static_cast<long long>(rq));
     }
     else
     {
         mux_sprintf(buff + fldName.m_byte, LBUF_SIZE - fldName.m_byte,
-                     M_(" Quota: UNLIMITED  Used: %9d"), rq);
+                     M_(" Quota: UNLIMITED  Used: %9lld"),
+                     static_cast<long long>(rq));
     }
     notify_quiet(player, buff);
 }
@@ -178,7 +185,8 @@ void do_quota
     }
 
     dbref who;
-    int value = 0, i;
+    int64_t value = 0;
+    int i;
     bool set = false;
 
     // Show or set all quotas if requested.

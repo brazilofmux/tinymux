@@ -624,7 +624,8 @@ void did_it_rlevel
 
     UTF8 *d, *buff, *act, *charges, *bp;
     dbref aowner;
-    int num, aflags;
+    int64_t num;
+    int aflags;
     int i;
     bool found_a_desc;
 
@@ -842,11 +843,13 @@ void did_it_rlevel
             charges = atr_pget(thing, A_CHARGES, &aowner, &aflags);
             if (*charges)
             {
+                // int64_t, not int (#1402).
+                //
                 num = mux_atoi64(charges);
                 if (num > 0)
                 {
                     buff = alloc_sbuf("did_it.charges");
-                    mux_ltoa(num-1, buff);
+                    mux_i64toa(num - 1, buff);
                     atr_add_raw(thing, A_CHARGES, buff);
                     free_sbuf(buff);
                 }

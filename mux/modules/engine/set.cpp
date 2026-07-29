@@ -2170,11 +2170,14 @@ void do_trigger(dbref executor, dbref caller, dbref enactor, int eval, int key,
             UTF8 *charges = atr_pget(thing, A_CHARGES, &aowner2, &aflags2);
             if (*charges)
             {
-                int num = mux_atoi64(charges);
+                // int64_t, not int (#1402): large charges must not wrap
+                // to a small positive and skip RUNOUT.
+                //
+                int64_t num = mux_atoi64(charges);
                 if (num > 0)
                 {
                     UTF8 *buff = alloc_sbuf("trigger.now.charges");
-                    mux_ltoa(num - 1, buff);
+                    mux_i64toa(num - 1, buff);
                     atr_add_raw(thing, A_CHARGES, buff);
                     free_sbuf(buff);
                 }

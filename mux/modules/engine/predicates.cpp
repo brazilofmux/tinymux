@@ -2472,7 +2472,8 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
 
     UTF8 *d, *buff, *act, *charges, *bp;
     dbref loc, aowner;
-    int num, aflags;
+    int64_t num;
+    int aflags;
 
     // If we need to call exec() from within this function, we first save
     // the state of the global registers, in order to avoid munging them
@@ -2686,11 +2687,13 @@ void did_it(dbref player, dbref thing, int what, const UTF8 *def, int owhat,
             charges = atr_pget(thing, A_CHARGES, &aowner2, &aflags2);
             if (*charges)
             {
+                // int64_t, not int (#1402).
+                //
                 num = mux_atoi64(charges);
                 if (num > 0)
                 {
                     buff = alloc_sbuf("did_it.charges");
-                    mux_ltoa(num-1, buff);
+                    mux_i64toa(num - 1, buff);
                     atr_add_raw(thing, A_CHARGES, buff);
                     free_sbuf(buff);
                 }

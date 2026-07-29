@@ -3577,12 +3577,12 @@ msgstr ""
 
 #: modules/engine/quota.cpp:138
 #, c-format
-msgid " Quota: %9d  Used: %9d"
+msgid " Quota: %9lld  Used: %9lld"
 msgstr ""
 
 #: modules/engine/quota.cpp:143
 #, c-format
-msgid " Quota: UNLIMITED  Used: %9d"
+msgid " Quota: UNLIMITED  Used: %9lld"
 msgstr ""
 
 #: modules/engine/quota.cpp:171

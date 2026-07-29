@@ -3625,13 +3625,13 @@ msgstr "[xx] Reference added."
 
 #: modules/engine/quota.cpp:138
 #, c-format
-msgid " Quota: %9d  Used: %9d"
-msgstr "[xx]  Quota: %9d  Used: %9d"
+msgid " Quota: %9lld  Used: %9lld"
+msgstr "[xx]  Quota: %9lld  Used: %9lld"
 
 #: modules/engine/quota.cpp:143
 #, c-format
-msgid " Quota: UNLIMITED  Used: %9d"
-msgstr "[xx]  Quota: UNLIMITED  Used: %9d"
+msgid " Quota: UNLIMITED  Used: %9lld"
+msgstr "[xx]  Quota: UNLIMITED  Used: %9lld"
 
 #: modules/engine/quota.cpp:171
 msgid "Quotas are not enabled."

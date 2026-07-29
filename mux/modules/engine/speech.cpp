@@ -40,16 +40,17 @@ UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *comm
     return new_message;
 }
 
-static int idle_timeout_val(dbref player)
+static int64_t idle_timeout_val(dbref player)
 {
     // If IDLETIMEOUT attribute is not present, the value
     // returned will be zero.
     //
+    // int64_t, not int (#1402): attribute-sourced seconds stay full width.
+    //
     dbref aowner;
     int aflags;
     LBuf ITbuffer = LBuf_Adopt(atr_get("idle_timeout_val.53", player, A_IDLETMOUT, &aowner, &aflags));
-    int idle_timeout = mux_atoi64(ITbuffer);
-    return idle_timeout;
+    return mux_atoi64(ITbuffer);
 }
 
 static bool sp_ok(dbref player)
@@ -958,7 +959,7 @@ void do_page
         {
             notify_with_cause_ooc(target, executor, omessage, MSG_SRC_PAGE);
             int target_idle = fetch_idle(target);
-            int target_idle_timeout_val = idle_timeout_val(target);
+            int64_t target_idle_timeout_val = idle_timeout_val(target);
             if (target_idle >= target_idle_timeout_val)
             {
                 page_return(executor, target, T("Idle"), A_IDLE, nullptr);
