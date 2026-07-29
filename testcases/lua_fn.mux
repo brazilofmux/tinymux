@@ -1104,11 +1104,175 @@
     setr(0,lua(me/LUA_SEAM_FIND)),
     2)=
   {
-    @log smoke=TC065: seam string.find first result. Succeeded.;
+    @log smoke=TC065: seam string.find first result. Succeeded.
+  },
+  {
+    @log smoke=TC065: seam string.find first result. Failed (%q0).
+  }
+-
+#
+# ---- Seam corpus expansion (residual after #1751 / TC061–065) ----
+# Complementary to in-flight TC066–070 (softcode t()/add/owner/ifelse/error).
+# These pin nest integrity, softcode consumers of marshaled text, and
+# more mux.* bridge returns through the softcode boundary.
+#
+# Test 71: nested lua via mux.eval must not stomp outer mux.args.
+# Residual "anytime item 3" in plan-lua-post-entry-contract.md: nested
+# mux.args / executor stomp.  Outer args must still be visible after
+# the inner lua() returns.
+#
+&LUA_SEAM_INNER test_lua_fn=return mux.args[1]
+-
+&LUA_SEAM_ARGS_NEST test_lua_fn= \
+  local id = tostring(mux.args[1]) \
+  if id:sub(1,1) ~= "#" then id = "#" .. id end \
+  local outer = tostring(mux.args[2]) \
+  local mid = mux.eval("lua(" .. id .. "/LUA_SEAM_INNER,inner-token)") \
+  return outer .. ":" .. tostring(mid) .. ":" .. tostring(mux.args[2])
+-
+&tr.tc071 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_ARGS_NEST,num(me),outer-token)),
+    outer-token:inner-token:outer-token)=
+  {
+    @log smoke=TC071: seam nested mux.args survive mux.eval. Succeeded.
+  },
+  {
+    @log smoke=TC071: seam nested mux.args survive mux.eval. Failed (%q0).
+  }
+-
+#
+# Test 72: softcode string consumers on a lua string return (strlen/mid).
+#
+&LUA_SEAM_STR test_lua_fn=return "abcdef"
+-
+&tr.tc072 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,strlen(lua(me/LUA_SEAM_STR))),6), \
+      strmatch(setr(1,mid(lua(me/LUA_SEAM_STR),2,3)),cde))=1,
+  {
+    @log smoke=TC072: seam softcode strlen/mid on lua string. Succeeded.
+  },
+  {
+    @log smoke=TC072: seam softcode strlen/mid on lua string. Failed (len=%q0 mid=%q1).
+  }
+-
+#
+# Test 73: softcode list extract on a multi-word lua return.
+#
+&LUA_SEAM_WORDS test_lua_fn=return "alpha beta gamma"
+-
+&tr.tc073 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,words(lua(me/LUA_SEAM_WORDS))),3), \
+      strmatch(setr(1,extract(lua(me/LUA_SEAM_WORDS),2,1)),beta))=1,
+  {
+    @log smoke=TC073: seam softcode words/extract on lua list. Succeeded.
+  },
+  {
+    @log smoke=TC073: seam softcode words/extract on lua list. Failed (n=%q0 w=%q1).
+  }
+-
+#
+# Test 74: lua false marshals as "0"; softcode and() treats it as false.
+#
+&LUA_SEAM_FALSE test_lua_fn=return false
+-
+&LUA_SEAM_TRUE test_lua_fn=return true
+-
+&tr.tc074 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,lua(me/LUA_SEAM_FALSE)),0), \
+      strmatch(setr(1,lua(me/LUA_SEAM_TRUE)),1), \
+      strmatch(setr(2,and(lua(me/LUA_SEAM_FALSE),1)),0), \
+      strmatch(setr(3,and(lua(me/LUA_SEAM_TRUE),1)),1))=1,
+  {
+    @log smoke=TC074: seam lua bool → softcode and(). Succeeded.
+  },
+  {
+    @log smoke=TC074: seam lua bool → softcode and(). Failed (f=%q0 t=%q1 af=%q2 at=%q3).
+  }
+-
+#
+# Test 75: mux.location / pennies integer returns through softcode (with
+# owner-style compare).  Location of a room's content is the room.
+#
+&LUA_SEAM_LOC test_lua_fn= \
+  local s = tostring(mux.args[1]) \
+  if s:sub(1,1) == "#" then s = s:sub(2) end \
+  return mux.location(tonumber(s))
+-
+&tr.tc075 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_LOC,num(me))),
+    mid(loc(me),1,99))=
+  {
+    @log smoke=TC075: seam lua mux.location→softcode loc(). Succeeded.
+  },
+  {
+    @log smoke=TC075: seam lua mux.location→softcode loc(). Failed (lua=%q0 soft=mid(loc)=[mid(loc(me),1,99)]).
+  }
+-
+#
+# Test 76: softcode → lua → mux.eval → nested [lua(...)] (double hop).
+# Outer softcode never sees the inner chunk; the hop is entirely in Lua.
+#
+&LUA_SEAM_HOP_INNER test_lua_fn=return mux.args[1] * 3
+-
+&LUA_SEAM_HOP test_lua_fn= \
+  local id = tostring(mux.args[1]) \
+  if id:sub(1,1) ~= "#" then id = "#" .. id end \
+  return mux.eval("lua(" .. id .. "/LUA_SEAM_HOP_INNER,7)")
+-
+&tr.tc076 test_lua_fn=
+  @if strmatch(
+    setr(0,lua(me/LUA_SEAM_HOP,num(me))),
+    21)=
+  {
+    @log smoke=TC076: seam lua→mux.eval→lua double hop. Succeeded.
+  },
+  {
+    @log smoke=TC076: seam lua→mux.eval→lua double hop. Failed (%q0).
+  }
+-
+#
+# Test 77: softcode cat() of two lua returns (marshal + softcode concat).
+#
+&LUA_SEAM_A test_lua_fn=return "left"
+-
+&LUA_SEAM_B test_lua_fn=return "right"
+-
+&tr.tc077 test_lua_fn=
+  @if strmatch(
+    setr(0,cat(lua(me/LUA_SEAM_A),lua(me/LUA_SEAM_B))),
+    left right)=
+  {
+    @log smoke=TC077: seam softcode cat of two lua returns. Succeeded.
+  },
+  {
+    @log smoke=TC077: seam softcode cat of two lua returns. Failed (%q0).
+  }
+-
+#
+# Test 78: empty string return is not an error; softcode strlen is 0.
+# Distinct from nil (TC004) which also marshals empty — pin strlen.
+#
+&LUA_SEAM_EMPTY test_lua_fn=return ""
+-
+&tr.tc078 test_lua_fn=
+  @switch \
+    and( \
+      strmatch(setr(0,lua(me/LUA_SEAM_EMPTY)),), \
+      strmatch(setr(1,strlen(lua(me/LUA_SEAM_EMPTY))),0))=1,
+  {
+    @log smoke=TC078: seam empty string marshal + strlen. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC065: seam string.find first result. Failed (%q0).;
+    @log smoke=TC078: seam empty string marshal + strlen. Failed (s=%q0 len=%q1).;
     @trig me/tr.done
   }
 -
