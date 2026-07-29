@@ -37,7 +37,30 @@ struct lua_exec_ctx
     dbref enactor;
     const UTF8 *pArgs[10];
     int nArgs;
+
+    // The compiled route is EFFECT-FREE by construction (#1750, round 2).
+    // The lowering's compile-time decline of effectful mux members is only
+    // a fast path: the binding is mutable (mux.tell = mux.pemit, wrapper
+    // functions, plain globals), so any pcall of user code can reach an
+    // effector.  The authoritative guard is here: when compiled_route is
+    // set, the effector bridge functions refuse -- setting effect_refused
+    // and raising -- and TryJIT treats effect_refused as run failure EVEN
+    // IF the chunk caught the error with pcall and "completed", so the
+    // interpreter re-runs from scratch and delivers every effect exactly
+    // once.  The interpreter is the only effector.
+    bool compiled_route;
+    bool effect_refused;
 };
+
+// The refusal every effector bridge function makes on the compiled route.
+// Marks the run failed FIRST (pcall in the chunk can swallow the error,
+// but cannot unmark the flag), then raises to unwind fast.
+//
+static int lua_refuse_compiled_effect(lua_State *L, lua_exec_ctx *ctx)
+{
+    ctx->effect_refused = true;
+    return luaL_error(L, "side effect refused on compiled route");
+}
 
 #define LUA_EXEC_CTX_KEY "mux_exec_ctx"
 #define LUA_MOD_KEY      "mux_lua_mod"
@@ -74,6 +97,7 @@ static int bridge_notify(lua_State *L)
 
     lua_exec_ctx *ctx = get_exec_ctx(L);
     if (nullptr == ctx) return 0;
+    if (ctx->compiled_route) return lua_refuse_compiled_effect(L, ctx);
 
     dbref target = static_cast<dbref>(luaL_checkinteger(L, 1));
     const char *msg = luaL_checkstring(L, 2);
@@ -276,6 +300,7 @@ static int bridge_set(lua_State *L)
 {
     lua_exec_ctx *ctx = get_exec_ctx(L);
     if (nullptr == ctx) return luaL_error(L, "no execution context");
+    if (ctx->compiled_route) return lua_refuse_compiled_effect(L, ctx);
 
     int obj = static_cast<int>(luaL_checkinteger(L, 1));
     const char *attrname = luaL_checkstring(L, 2);
@@ -305,6 +330,9 @@ static int bridge_eval(lua_State *L)
 {
     lua_exec_ctx *ctx = get_exec_ctx(L);
     if (nullptr == ctx) { lua_pushnil(L); return 1; }
+    // eval runs arbitrary softcode, which can effect; on the compiled
+    // route that makes it an effector.
+    if (ctx->compiled_route) return lua_refuse_compiled_effect(L, ctx);
 
     const char *expr = luaL_checkstring(L, 1);
 
@@ -813,13 +841,15 @@ void CLuaMod::DestroyLuaState(void)
 //
 static lua_exec_ctx *lua_setup_exec_context(lua_State *L, lua_exec_ctx &ctx,
     dbref executor, dbref caller, dbref enactor,
-    const UTF8 *pArgs[], int nArgs)
+    const UTF8 *pArgs[], int nArgs, bool compiled_route)
 {
     lua_getfield(L, LUA_REGISTRYINDEX, LUA_EXEC_CTX_KEY);
     lua_exec_ctx *prev =
         static_cast<lua_exec_ctx *>(lua_touserdata(L, -1));
     lua_pop(L, 1);
 
+    ctx.compiled_route = compiled_route;
+    ctx.effect_refused = false;
     ctx.executor = executor;
     ctx.caller = caller;
     ctx.enactor = enactor;
@@ -887,7 +917,7 @@ bool CLuaMod::ExecuteChunk(lua_State *L, dbref executor, dbref caller,
     lua_exec_ctx ctx;
     lua_exec_ctx *prev_ctx =
         lua_setup_exec_context(L, ctx, executor, caller, enactor,
-                               pArgs, nArgs);
+                               pArgs, nArgs, false);
 
     // Set instruction count hook.
     //
@@ -1376,12 +1406,19 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
             lua_exec_ctx jit_ctx;
             lua_exec_ctx *prev_ctx =
                 lua_setup_exec_context(m_L, jit_ctx, executor, caller,
-                                       enactor, pArgs, nArgs);
+                                       enactor, pArgs, nArgs, true);
             MUX_RESULT mr = m_pIJITCompile->RunCompiled(entry.jit_key,
                 executor, caller, enactor, pArgs, nArgs,
                 pResult, nResultMax, pnResultLen, m_L);
             lua_restore_exec_context(m_L, prev_ctx);
             lua_settop(m_L, saved_top);  // restore stack
+            // An attempted effect fails the compiled run unconditionally
+            // -- even a "successful" mr, which is what a chunk that
+            // pcall-swallowed the refusal error produces.  The interpreter
+            // re-runs from scratch and is the only effector.
+            if (jit_ctx.effect_refused) {
+                return false;
+            }
             if (MUX_E_NOTFOUND != mr) {
                 return MUX_SUCCEEDED(mr);
             }
@@ -1438,11 +1475,16 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
     lua_exec_ctx jit_ctx;
     lua_exec_ctx *prev_ctx =
         lua_setup_exec_context(m_L, jit_ctx, executor, caller, enactor,
-                               pArgs, nArgs);
+                               pArgs, nArgs, true);
     mr = m_pIJITCompile->RunCompiled(key, executor, caller, enactor,
         pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
     lua_restore_exec_context(m_L, prev_ctx);
     lua_settop(m_L, saved_top);  // restore stack
+    // Same rule as the cached-key site: an attempted effect fails the
+    // compiled run regardless of mr.
+    if (jit_ctx.effect_refused) {
+        return false;
+    }
     return MUX_SUCCEEDED(mr);
 }
 
