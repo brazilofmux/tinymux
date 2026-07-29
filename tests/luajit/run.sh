@@ -220,6 +220,16 @@ AGREE_CASES=(
     'local a=false for i=1,2 do end if a then return "t" else return "f" end'
     'local t={} t[1]=false if t[1] then return "t" else return "f" end'
     'local a=false local b=a or 5 return b'
+
+    # Seam-adjacent mux.* / error pins (#1771).  CALL_VAL keeps typed
+    # results; arith on a handle and type() may execute or decline, but
+    # must match the interpreter.  CALL_VOID totalizes raised errors.
+    'local x=mux.owner(1) return x+1'
+    'local x=mux.pennies(1) return type(x)'
+    # Bad dbref: bridge returns nil → softcode-boundary empty string.
+    'return mux.owner(99999)'
+    'error("boom")'
+    'return error("boom")'
 )
 
 # #1751 Phase 0: post-entry decline is loud (error string), not silent re-run.
@@ -264,7 +274,10 @@ POST_ENTRY_LOUD_BUDGET=0
 # the compiled path again: Phase 4 removed re-run, so an effect cannot be
 # doubled and the #1750 corridor was pure pessimism).
 # #1772: -4, CALL_VAL + TOBOOL made the #1764 if/not pins execute (16→12).
-AGREE_DECLINE_BUDGET=12
+# #1771: +1 net from seam-adjacent AGREE pins (owner+1, type(pennies),
+# bad owner, error forms); error() executes after CALL_VOID totalization.
+# May fall, must not rise.
+AGREE_DECLINE_BUDGET=13
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
@@ -328,6 +341,15 @@ EXEC_CASES=(
     'local x=math.max(3,9) return x'
     'local x=math.min(3,9) return x'
     'local x=math.abs(-7) return x'
+
+    # mux.* integer-returning bridges (push integers; CALL_STR marshals
+    # them to decimal text at the softcode boundary).  EXEC so a silent
+    # decline cannot hide a wrong answer.  In-Lua arith on the result
+    # still declines (#1764 type erase) — return-only is the seam path.
+    'local x=mux.owner(1) return x'
+    'local x=mux.pennies(1) return x'
+    'local x=mux.location(1) return x'
+    'return mux.isplayer(1)'
 
     # String RESULTS.  The result lands in the output slot the allocator
     # gives any TY_STRING value and the ECALL is told that slot's size --

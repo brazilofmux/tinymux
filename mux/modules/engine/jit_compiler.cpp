@@ -4460,8 +4460,11 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
     case ECALL_LUA_CALL_VOID: {
         // Call for effect: same encoding as CALL_INT/CALL_STR, result
-        // discarded.  pcall is asked for zero results, so there is no
-        // result type to check -- the call either completed or declines.
+        // discarded.  pcall is asked for zero results.  After the callee
+        // may have run, do not soft-decline: a raised error is a real Lua
+        // error (same as CALL_STR).  Pre-entry encoding misses still use
+        // residual decline.
+        //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         int fn_idx = static_cast<int>(ctx->x[10]);
@@ -4476,13 +4479,12 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         lua_pushvalue(L, fn_idx);
         if (!ecall_lua_push_call_args(L, ctx, ec, nargs, kinds)) {
             lua_settop(L, base);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_VOID");
+            return ecall_lua_error_cstr("invalid call argument");
         }
         if (LUA_OK != lua_pcall(L, nargs, 0, 0)) {
+            int er = ecall_lua_commit_error(L);
             lua_settop(L, base);
-            ctx->x[11] = 0;
-            return lua_ecall_decline("ECALL_LUA_CALL_VOID");
+            return er;
         }
         lua_settop(L, base);
         ctx->x[11] = 1;
