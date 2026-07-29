@@ -399,6 +399,14 @@ EXEC_CASES=(
     'local a=1 local b=2 return a > b'
     'local a=mux.args[1]+0 if a < 5 then return 7 else return 8 end'
     'local a=mux.args[1]+0 if a > 5 then return 7 else return 8 end'
+    # #1761: EQK multi-block return — taken branch AND fall-through/else
+    # must both run_ok.  Fall-through used to self-loop (dispatch limit)
+    # and the interpreter re-run papered over it until Phase 4.
+    # run_one passes args (2,3); "2" hits the taken path, "hello" the miss.
+    'if mux.args[1] == "2" then return "A" end return "B"'
+    'if mux.args[1] == "hello" then return "A" end return "B"'
+    'if mux.args[1] == "2" then return "yes" else return "no" end'
+    'if mux.args[1] == "hello" then return "yes" else return "no" end'
     'local a=mux.args[1]+0 local t=(a<5) return t'
     'local a=mux.args[1]+0 local t=(a==2) return t'
     'local a=mux.args[1]+0 local t=(a>1) return t'
