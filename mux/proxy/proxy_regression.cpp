@@ -2,6 +2,7 @@
 #include "telnet_stream.h"
 #include "telnet_utils.h"
 #include "websocket.h"
+#include "config.h"
 #include "session_manager.h"  // HydraSession::OutputQueue caps (#1266/#1268)
 #include "work_queue.h"       // WorkQueue::MAX_PENDING (#1265)
 #ifdef GRPC_ENABLED
@@ -11,9 +12,13 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
 #include <future>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 namespace {
@@ -587,6 +592,80 @@ void testTruncatedUtf8CharsetEncode() {
     expect(euro.size() == 1, "complete Euro should encode to one Latin1/approx byte");
 }
 
+// #1895: unknown listen types must fail closed, not become plaintext Telnet.
+void testUnknownListenerTypeRejected() {
+    auto writeConf = [](const std::string& listenLine) -> std::string {
+        char path[] = "/tmp/hydra-cfg-test-XXXXXX";
+        int fd = mkstemp(path);
+        expect(fd >= 0, "mkstemp for config test");
+        std::string body = listenLine + "\n";
+        expect(write(fd, body.data(), body.size())
+                   == static_cast<ssize_t>(body.size()),
+               "write config fixture");
+        close(fd);
+        return path;
+    };
+
+    // Typo: was silently accepted as plaintext Telnet.
+    {
+        std::string path = writeConf("listen websockt 127.0.0.1:4203");
+        HydraConfig cfg;
+        std::string err;
+        expect(!loadConfig(path, cfg, err),
+               "unknown listen type websockt must fail loadConfig");
+        expect(err.find("unknown type") != std::string::npos
+               || err.find("websockt") != std::string::npos,
+               "error should mention unknown type");
+        unlink(path.c_str());
+    }
+
+    // Empty / garbage type token.
+    {
+        std::string path = writeConf("listen not-a-proto 127.0.0.1:1");
+        HydraConfig cfg;
+        std::string err;
+        expect(!loadConfig(path, cfg, err),
+               "garbage listen type must fail loadConfig");
+        unlink(path.c_str());
+    }
+
+    // Known types still load.
+    {
+        std::string path = writeConf("listen websocket 127.0.0.1:4203");
+        HydraConfig cfg;
+        std::string err;
+        expect(loadConfig(path, cfg, err),
+               std::string("valid websocket listen must load: ") + err);
+        expect(cfg.listeners.size() == 1 && cfg.listeners[0].websocket
+               && !cfg.listeners[0].tls && !cfg.listeners[0].grpcWeb,
+               "websocket listen flags");
+        unlink(path.c_str());
+    }
+    {
+        std::string path = writeConf("listen telnet 127.0.0.1:4202");
+        HydraConfig cfg;
+        std::string err;
+        expect(loadConfig(path, cfg, err),
+               std::string("valid telnet listen must load: ") + err);
+        expect(cfg.listeners.size() == 1 && !cfg.listeners[0].websocket
+               && !cfg.listeners[0].tls && !cfg.listeners[0].grpcWeb,
+               "telnet listen is plaintext flags-all-false");
+        unlink(path.c_str());
+    }
+    {
+        std::string path = writeConf(
+            "listen telnet+tls 127.0.0.1:4202 cert=c.pem key=k.pem");
+        HydraConfig cfg;
+        std::string err;
+        expect(loadConfig(path, cfg, err),
+               std::string("valid telnet+tls listen must load: ") + err);
+        expect(cfg.listeners.size() == 1 && cfg.listeners[0].tls
+               && !cfg.listeners[0].websocket,
+               "telnet+tls flags");
+        unlink(path.c_str());
+    }
+}
+
 #ifdef GRPC_ENABLED
 // #1887: truncated / malformed protobuf must not parse as a default request.
 // The grpc-web dispatcher gates every RPC on ParseFromString; these cases
@@ -708,6 +787,7 @@ int main() {
     testWorkQueuePendingCapConstant();
     testConvertInputNonUtf8Target();
     testTruncatedUtf8CharsetEncode();
+    testUnknownListenerTypeRejected();
 #ifdef GRPC_ENABLED
     testMalformedProtobufRejected();
 #endif

@@ -85,11 +85,33 @@ static bool parseListenLine(const std::string& value, ListenConfig& lc,
     std::getline(ss, rest);
     rest = trim(rest);
 
+    // #1895: unknown types used to leave all flags false and become a
+    // silent plaintext Telnet listener (e.g. "websockt" typo).  Fail closed.
+    //
     std::string lt = toLower(type);
-    lc.tls = (lt == "telnet+tls");
-    lc.websocket = (lt == "websocket" || lt == "websocket+tls");
-    lc.grpcWeb = (lt == "grpc-web" || lt == "grpcweb");
-    if (lt == "websocket+tls") lc.tls = true;
+    lc.tls = false;
+    lc.websocket = false;
+    lc.grpcWeb = false;
+    if (lt == "telnet") {
+        // plaintext Telnet — explicit opt-in only
+    } else if (lt == "telnet+tls") {
+        lc.tls = true;
+    } else if (lt == "websocket") {
+        lc.websocket = true;
+    } else if (lt == "websocket+tls") {
+        lc.websocket = true;
+        lc.tls = true;
+    } else if (lt == "grpc-web" || lt == "grpcweb") {
+        lc.grpcWeb = true;
+    } else if (lt == "grpc-web+tls" || lt == "grpcweb+tls") {
+        lc.grpcWeb = true;
+        lc.tls = true;
+    } else {
+        errorMsg = "listen: unknown type '" + type
+            + "' (expected telnet, telnet+tls, websocket, websocket+tls, "
+              "grpc-web[,+tls])";
+        return false;
+    }
 
     // Parse host:port
     size_t colon = hostport.rfind(':');
