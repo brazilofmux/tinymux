@@ -552,17 +552,25 @@ const char *ConvertT5XValue(char *pValue)
 
 const char *ConvertT5XAttrName(char *pName)
 {
-    static char buffer[65536];
-    char *p = buffer;
-    while (  '\0' != *pName
-          && isdigit(*pName))
+    // #1879 residual: was static char[65536] with no end check.  Encoded
+    // names from SetNumFlagsAndName can now exceed 64 KiB (flags + ':' +
+    // lexer-max name).  Build into a heap-backed string; caller StringClones
+    // the result immediately, so a static std::string is fine for the
+    // single-threaded converter.
+    //
+    static std::string out;
+    out.clear();
+    if (nullptr == pName)
     {
-        *p++ = *pName++;
+        return out.c_str();
     }
-    if  (  '\0' != *pName
-        && ':' == *pName)
+    while ('\0' != *pName && isdigit(static_cast<unsigned char>(*pName)))
     {
-        *p++ = *pName++;
+        out.push_back(*pName++);
+    }
+    if ('\0' != *pName && ':' == *pName)
+    {
+        out.push_back(*pName++);
     }
     bool fFirst = true;
     while ('\0' != *pName)
@@ -572,17 +580,16 @@ const char *ConvertT5XAttrName(char *pName)
            || (  !fFirst
               && !t6h_AttrNameSet[(unsigned char)*pName]))
         {
-            *p++ = 'X';
+            out.push_back('X');
         }
         else
         {
-            *p++ = *pName;
+            out.push_back(*pName);
         }
         fFirst = false;
         pName++;
     }
-    *p = '\0';
-    return buffer;
+    return out.c_str();
 }
 
 bool T6H_LOCKEXP::ConvertFromT5X(T5X_LOCKEXP *p)
