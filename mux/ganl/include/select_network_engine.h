@@ -45,6 +45,8 @@ public:
     ListenerHandle createListener(const std::string& host, uint16_t port, ErrorCode& error) override;
     ListenerHandle adoptListener(int fd, ErrorCode& error) override;
     ConnectionHandle adoptConnection(int fd, void* connectionContext, ErrorCode& error) override;
+    ConnectionHandle initiateConnect(const std::string& host, uint16_t port,
+                                     void* connectionContext, ErrorCode& error) override;
     ConnectionHandle spawnSlave(const SlaveSpawnOptions& options, ErrorCode& error) override;
     bool startListening(ListenerHandle listener, void* listenerContext, ErrorCode& error) override;
     void closeListener(ListenerHandle listener) override;
@@ -79,7 +81,7 @@ private:
     const SocketFD INVALID_SOCKET_FD = -1;
 
     // Internal socket types
-    enum class SocketType { Listener, Connection };
+    enum class SocketType { Listener, Connection, OutboundConnecting };
 
     // Information about a socket (listener or connection)
     struct SocketInfo {

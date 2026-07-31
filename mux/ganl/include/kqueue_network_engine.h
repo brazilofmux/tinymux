@@ -26,6 +26,8 @@ public:
     ListenerHandle createListener(const std::string& host, uint16_t port, ErrorCode& error) override;
     ListenerHandle adoptListener(int fd, ErrorCode& error) override;
     ConnectionHandle adoptConnection(int fd, void* connectionContext, ErrorCode& error) override;
+    ConnectionHandle initiateConnect(const std::string& host, uint16_t port,
+                                     void* connectionContext, ErrorCode& error) override;
     ConnectionHandle spawnSlave(const SlaveSpawnOptions& options, ErrorCode& error) override;
     bool startListening(ListenerHandle listener, void* listenerContext, ErrorCode& error) override;
     void closeListener(ListenerHandle listener) override;
@@ -50,7 +52,7 @@ public:
 
 private:
     // Internal state to track socket type and user context
-    enum class SocketType { Listener, Connection };
+    enum class SocketType { Listener, Connection, OutboundConnecting };
     struct SocketInfo {
         SocketType type;
         void* context{nullptr}; // Connection* or listenerContext
