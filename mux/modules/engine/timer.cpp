@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include <new>
 
 CScheduler scheduler;
 
@@ -285,11 +286,18 @@ void do_timewarp(dbref executor, dbref caller, dbref enactor, int eval, int key,
 }
 
 
-void CScheduler::DeferTask(const CLinearTimeAbsolute& ltaWhen, int iPriority,
+bool CScheduler::DeferTask(const CLinearTimeAbsolute& ltaWhen, int iPriority,
                            FTASK *fpTask, void *arg_voidptr, int arg_Integer)
 {
-    PTASK_RECORD pTask = new TASK_RECORD;
-    if (!pTask) return;
+    // #1871: nothrow so OOM is a clean false rather than an exception; the
+    // previous void path treated both OOM and Insert failure as silent success
+    // at wait_que, leaking the BQUE and queue accounting.
+    //
+    PTASK_RECORD pTask = new (std::nothrow) TASK_RECORD;
+    if (!pTask)
+    {
+        return false;
+    }
 
     pTask->ltaWhen = ltaWhen;
     pTask->iPriority = iPriority;
@@ -303,13 +311,18 @@ void CScheduler::DeferTask(const CLinearTimeAbsolute& ltaWhen, int iPriority,
     if (!m_WhenHeap.Insert(pTask))
     {
         delete pTask;
+        return false;
     }
+    return true;
 }
 
-void CScheduler::DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer)
+bool CScheduler::DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer)
 {
-    PTASK_RECORD pTask = new TASK_RECORD;
-    if (!pTask) return;
+    PTASK_RECORD pTask = new (std::nothrow) TASK_RECORD;
+    if (!pTask)
+    {
+        return false;
+    }
 
     //pTask->ltaWhen = ltaWhen;
     pTask->iPriority = iPriority;
@@ -323,7 +336,9 @@ void CScheduler::DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_void
     if (!m_WhenHeap.Insert(pTask))
     {
         delete pTask;
+        return false;
     }
+    return true;
 }
 
 void CScheduler::CancelTask(FTASK *fpTask, void *arg_voidptr, int arg_Integer)

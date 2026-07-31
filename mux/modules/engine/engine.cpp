@@ -1574,10 +1574,21 @@ void dump_database_internal(int dump_type)
             if (bOpen)
             {
                 setvbuf(f, nullptr, _IOFBF, 16384);
-                db_write(f, F_MUX, dp->fType);
+                // #1869: do not publish a partial dump as the live flatfile.
+                //
+                const dbref nWritten = db_write(f, F_MUX, dp->fType);
                 mux_fclose(f);
 
-                if (dp->bUseTemporary)
+                if (nWritten < 0)
+                {
+                    if (dp->bUseTemporary)
+                    {
+                        RemoveFile(tmpfile);
+                    }
+                    log_perror(T("DMP"), T("FAIL"),
+                        T("Flatfile write incomplete"), outfn);
+                }
+                else if (dp->bUseTemporary)
                 {
                     ReplaceFile(tmpfile, outfn);
                 }

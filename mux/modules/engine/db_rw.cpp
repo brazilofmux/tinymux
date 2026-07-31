@@ -1084,6 +1084,17 @@ dbref db_read(FILE *f, int *db_format, int *db_version, int *db_flags)
     }
 }
 
+// #1869: flatfile writer must observe stream errors; putref/putstring/
+// fwrite discard return values, so ferror() after each logical record is
+// the reliable check.  Returns true while the stream is still good.
+//
+static bool db_write_stream_ok(FILE *f)
+{
+    return nullptr != f && 0 == ferror(f);
+}
+
+// Returns true if the object was fully written; false on stream error.
+//
 static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
 {
     UNUSED_PARAMETER(db_format);
@@ -1183,14 +1194,23 @@ static bool db_write_object(FILE *f, dbref i, int db_format, int flags)
                     aowner, aflags, abuf);
                 putstring(f, ebuf);
             }
+            if (!db_write_stream_ok(f))
+            {
+                free_lbuf(abuf);
+                free_lbuf(ebuf);
+                return false;
+            }
         }
         free_lbuf(abuf);
         free_lbuf(ebuf);
         fwrite("<\n", sizeof(UTF8), 2, f);
     }
-    return false;
+    return db_write_stream_ok(f);
 }
 
+// Returns mudstate.db_top on success, -1 on format/I/O failure (#1869).
+// Callers must not treat a negative return as a successful dump.
+//
 dbref db_write(FILE *f, int format, int version)
 {
     dbref i;
@@ -1215,6 +1235,11 @@ dbref db_write(FILE *f, int format, int version)
     i = mudstate.attr_next;
     mux_fprintf(f, T("+X%d\n+S%d\n+N%d\n"), flags, mudstate.db_top, i);
     mux_fprintf(f, T("-R%d\n"), mudstate.record_players);
+    if (!db_write_stream_ok(f))
+    {
+        Log.WriteString(T("Flatfile write failed while writing header." ENDLINE));
+        return -1;
+    }
 
     // Dump user-named attribute info.
     //
@@ -1242,6 +1267,11 @@ dbref db_write(FILE *f, int format, int version)
             *pBuffer++ = '"';
             *pBuffer++ = '\n';
             fwrite(Buffer, sizeof(UTF8), pBuffer-Buffer, f);
+            if (!db_write_stream_ok(f))
+            {
+                Log.WriteString(T("Flatfile write failed while writing vattrs." ENDLINE));
+                return -1;
+            }
         }
     }
 
@@ -1268,10 +1298,48 @@ dbref db_write(FILE *f, int format, int version)
             size_t n = mux_ltoa(i, buf+1) + 1;
             buf[n++] = '\n';
             fwrite(buf, sizeof(UTF8), n, f);
-            db_write_object(f, i, format, flags);
+            if (  !db_write_stream_ok(f)
+               || !db_write_object(f, i, format, flags))
+            {
+                if (mudstate.bStandAlone)
+                {
+                    Log.WriteString(T(ENDLINE "Flatfile write failed." ENDLINE));
+                }
+                else
+                {
+                    STARTLOG(LOG_PROBLEMS, "DMP", "FAIL");
+                    log_printf(T("Flatfile write failed while writing object #%d."), i);
+                    ENDLOG;
+                }
+                return -1;
+            }
         }
     }
-    fputs("***END OF DUMP***\n", f);
+    if (EOF == fputs("***END OF DUMP***\n", f))
+    {
+        if (mudstate.bStandAlone)
+        {
+            Log.WriteString(T(ENDLINE "Flatfile write failed at end marker." ENDLINE));
+        }
+        return -1;
+    }
+    // Ensure buffered data is pushed and re-check the stream before claiming
+    // a complete dump (#1869).
+    //
+    if (0 != fflush(f) || !db_write_stream_ok(f))
+    {
+        if (mudstate.bStandAlone)
+        {
+            Log.WriteString(T(ENDLINE "Flatfile write failed on flush." ENDLINE));
+        }
+        else
+        {
+            STARTLOG(LOG_PROBLEMS, "DMP", "FAIL");
+            log_text(T("Flatfile write failed on flush."));
+            ENDLOG;
+        }
+        return -1;
+    }
     if (mudstate.bStandAlone)
     {
         Log.WriteString(T(ENDLINE));
