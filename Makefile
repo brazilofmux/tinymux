@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-slave test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-slave test-hir test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-slave test-format test-nls test-nls-plural test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity
+test: install test-ganl test-netaddr test-slave test-hir test-format test-nls test-nls-plural test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -310,6 +310,11 @@ test-netaddr:
 test-slave: install
 	@echo "==> Running slave child-cap burst (#1853)"
 	$(MAKE) -C tests/slave test
+
+# #1863: HIR block-table exhaustion must not OOB-write via add_edge(-1,…).
+test-hir:
+	@echo "==> Running HIR CFG capacity tests (#1863)"
+	$(MAKE) -C tests/hir test
 
 # Run the high-coverage suites against a sanitizer build (#1440).
 #
