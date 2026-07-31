@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/un.h> // sockaddr_un (Unix domain outbound #1840 residual)
 #include <sys/time.h> // For timeval
 #include <netinet/in.h>
 #include <netinet/tcp.h> // Optional
@@ -457,6 +458,103 @@ ConnectionHandle SelectNetworkEngine::initiateConnect(const std::string& host, u
     }
 
     GANL_SELECT_DEBUG(fd, "Outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate — write fires next poll")
+        << ").");
+    return static_cast<ConnectionHandle>(fd);
+}
+
+ConnectionHandle SelectNetworkEngine::initiateUnixConnect(const std::string& path,
+                                                          void* connectionContext, ErrorCode& error) {
+    error = 0;
+    GANL_SELECT_DEBUG(-1, "Initiating outbound Unix connect to " << path);
+
+    if (!initialized_) {
+        error = EINVAL;
+        return InvalidConnectionHandle;
+    }
+
+    int sockFlags = SOCK_STREAM;
+#ifdef SOCK_NONBLOCK
+    sockFlags |= SOCK_NONBLOCK;
+#endif
+#ifdef SOCK_CLOEXEC
+    sockFlags |= SOCK_CLOEXEC;
+#endif
+
+    SocketFD fd = ::socket(AF_UNIX, sockFlags, 0);
+    if (fd == INVALID_SOCKET_FD) {
+        error = errno;
+        return InvalidConnectionHandle;
+    }
+
+#ifndef SOCK_NONBLOCK
+    {
+        ErrorCode nbErr = 0;
+        if (!setNonBlocking(fd, nbErr)) {
+            error = nbErr != 0 ? nbErr : errno;
+            ::close(fd);
+            return InvalidConnectionHandle;
+        }
+    }
+#endif
+
+    if (fd >= MAX_SOCKET_FDS) {
+        error = ENOBUFS;
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    if (path.size() >= sizeof(addr.sun_path)) {
+        error = ENAMETOOLONG;
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+    strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
+
+    [[maybe_unused]] bool connectInProgress = false;
+    int rc = ::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr));
+    if (rc == 0) {
+        connectInProgress = false;
+    } else if (errno == EINPROGRESS || errno == EWOULDBLOCK) {
+        connectInProgress = true;
+    } else {
+        error = errno;
+        GANL_SELECT_DEBUG(fd, "Unix connect() failed: " << strerror(error));
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!initialized_) {
+            ::close(fd);
+            error = ESHUTDOWN;
+            return InvalidConnectionHandle;
+        }
+        if (sockets_.find(fd) != sockets_.end()) {
+            ::close(fd);
+            error = EEXIST;
+            return InvalidConnectionHandle;
+        }
+
+        SocketInfo connecting{
+            SocketType::OutboundConnecting,
+            connectionContext,
+            /*wantRead=*/false,
+            /*wantWrite=*/true,
+            /*writeUserContext=*/nullptr
+        };
+        sockets_[fd] = connecting;
+        updateFdSets(fd, connecting);
+        if (fd > maxFd_) {
+            maxFd_ = fd;
+        }
+    }
+
+    GANL_SELECT_DEBUG(fd, "Unix outbound connect initiated ("
         << (connectInProgress ? "in progress" : "immediate — write fires next poll")
         << ").");
     return static_cast<ConnectionHandle>(fd);
