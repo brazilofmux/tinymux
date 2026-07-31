@@ -310,7 +310,15 @@ namespace ganl {
         {
             std::lock_guard<std::mutex> lock(mutex_);
             sockets_[listenSocket] = { SocketType::Listener, nullptr, false, nullptr, "" };
-            listeners_[listenSocket] = { nullptr, false, 0, effectiveBacklog, options, boundFamily };
+            ListenerInfo li{};
+            li.context = nullptr;
+            li.isListening = false;
+            li.pendingAccepts = 0;
+            li.targetAccepts = 2;
+            li.backlog = effectiveBacklog;
+            li.options = options;
+            li.addressFamily = boundFamily;
+            listeners_[listenSocket] = li;
         }
 
         GANL_IOCP_DEBUG(listenSocket, "Listener created successfully");
@@ -389,18 +397,25 @@ namespace ganl {
             }
         }
 
-        // Mark as listening and post initial accept
+        // Mark as listening and post the accept pool (#1830: targetAccepts).
         {
             std::lock_guard<std::mutex> lock(mutex_);
             auto listenerIt = listeners_.find(listenSocket);
             if (listenerIt != listeners_.end()) {
                 listenerIt->second.isListening = true;
+                listenerIt->second.acceptOutage = false;
+                listenerIt->second.nextAcceptRetryMs = 0;
             }
         }
 
-        // Post an initial accept operation
-        if (!postAccept(listener, error)) {
-            GANL_IOCP_DEBUG(listenSocket, "Failed to post initial accept: " << getErrorString(error));
+        if (!ensureAcceptsPosted(listener, error)) {
+            GANL_IOCP_DEBUG(listenSocket, "Failed to post initial AcceptEx pool: "
+                << getErrorString(error));
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto listenerIt = listeners_.find(listenSocket);
+            if (listenerIt != listeners_.end()) {
+                listenerIt->second.isListening = false;
+            }
             return false;
         }
 
@@ -415,6 +430,17 @@ namespace ganl {
         if (!initialized_) {
             GANL_IOCP_DEBUG(listenSocket, "Engine not initialized");
             return;
+        }
+
+        // Stop replenish retries before cancelling I/O (#1830).
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            auto it = listeners_.find(listenSocket);
+            if (it != listeners_.end()) {
+                it->second.isListening = false;
+                it->second.acceptOutage = false;
+                it->second.nextAcceptRetryMs = 0;
+            }
         }
 
         // Cancel all pending I/O operations on this socket
@@ -778,10 +804,10 @@ namespace ganl {
         // Check for timeout or critical IOCP error
         if (overlapped == nullptr) {
             if (lastError == WAIT_TIMEOUT) {
-                // Idle timeout, no completion. GANL passes telnet negotiation
-                // through to netmux's legacy layer, so connections never linger
-                // in TelnetNegotiating and there is nothing to sweep (see #945).
-                return 0; // Timeout, no event
+                // Idle timeout, no completion. Still retry AcceptEx replenish
+                // for listeners left with pendingAccepts == 0 (#1830).
+                //
+                return recoverStarvedListeners(events, maxEvents, 0);
             }
             else {
                 // Critical error with the IOCP itself
@@ -968,12 +994,19 @@ namespace ganl {
                         event.remoteAddress = getRemoteNetworkAddress(newConn); // Set the remote address
                         eventCount++;
 
-                        // --- IMPORTANT: Post the next AcceptEx ---
+                        // Replenish AcceptEx pool toward targetAccepts (#1830).
                         ErrorCode postAcceptError = 0;
-                        GANL_IOCP_DEBUG(listenSocket, "Posting next AcceptEx operation.");
-                        if (!postAccept(listenSocket, postAcceptError)) {
-                            GANL_IOCP_DEBUG(listenSocket, "CRITICAL: Failed to post next AcceptEx: " << getErrorString(postAcceptError) << ". Listener may stop accepting!");
-                            // Consider how to handle this - maybe close the listener?
+                        if (!ensureAcceptsPosted(listenSocket, postAcceptError)) {
+                            noteAcceptReplenishFailure(listenSocket, postAcceptError);
+                            if (eventCount < maxEvents) {
+                                IoEvent& outEv = events[eventCount++];
+                                outEv = IoEvent{};
+                                outEv.type = IoEventType::Error;
+                                outEv.listener = listenSocket;
+                                outEv.connection = InvalidConnectionHandle;
+                                outEv.context = socketContext;
+                                outEv.error = postAcceptError;
+                            }
                         }
 
                     }
@@ -988,45 +1021,56 @@ namespace ganl {
                         event.error = acceptError; // The error from handleAcceptCompletion
                         eventCount++;
 
-                        // --- IMPORTANT: Still post the next AcceptEx ---
-                        // The listener socket itself is likely okay, so try to recover.
                         ErrorCode postAcceptError = 0;
-                        GANL_IOCP_DEBUG(listenSocket, "Posting next AcceptEx operation after handleAcceptCompletion failure.");
-                        if (!postAccept(listenSocket, postAcceptError)) {
-                            GANL_IOCP_DEBUG(listenSocket, "CRITICAL: Failed to post next AcceptEx: " << getErrorString(postAcceptError) << ". Listener may stop accepting!");
+                        if (!ensureAcceptsPosted(listenSocket, postAcceptError)) {
+                            noteAcceptReplenishFailure(listenSocket, postAcceptError);
                         }
                     }
                 }
                 else {
                     // --- AcceptEx FAILED ---
-                    // The initial AcceptEx call itself failed asynchronously.
-                    GANL_IOCP_DEBUG(listenSocket, "AcceptEx failed asynchronously: " << getErrorString(operationError) << ". Reporting Error event for listener.");
-                    event.type = IoEventType::Error;
-                    event.listener = listenSocket;
-                    event.connection = InvalidConnectionHandle;
-                    event.context = socketContext; // Listener's context
-                    event.error = operationError; // The error from AcceptEx completion
-                    eventCount++;
-
-                    // --- IMPORTANT: Post the next AcceptEx ---
-                    // Try to recover and keep listening.
-                    // Avoid error code WSAECONNRESET which might happen if client connects/disconnects quickly.
-                    if (operationError != WSAECONNRESET && operationError != WSAECONNABORTED) {
-                        ErrorCode postAcceptError = 0;
-                        GANL_IOCP_DEBUG(listenSocket, "Posting next AcceptEx operation after AcceptEx failure.");
-                        if (!postAccept(listenSocket, postAcceptError)) {
-                            GANL_IOCP_DEBUG(listenSocket, "CRITICAL: Failed to post next AcceptEx: " << getErrorString(postAcceptError) << ". Listener may stop accepting!");
+                    // The AcceptEx op completed with failure.  pendingAccepts
+                    // still counts this op until we drop it (#1830 accounting).
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto it = listeners_.find(listenSocket);
+                        if (it != listeners_.end() && it->second.pendingAccepts > 0) {
+                            it->second.pendingAccepts--;
                         }
                     }
-                    else {
-                        GANL_IOCP_DEBUG(listenSocket, "AcceptEx failed with WSAECONNRESET/WSAECONNABORTED. Not reporting error, posting next accept.");
-                        // Don't report error for simple resets, just post next accept.
-                        ErrorCode postAcceptError = 0;
-                        if (!postAccept(listenSocket, postAcceptError)) {
-                            GANL_IOCP_DEBUG(listenSocket, "CRITICAL: Failed to post next AcceptEx: " << getErrorString(postAcceptError) << ". Listener may stop accepting!");
+
+                    // WSAECONNRESET/ABORTED on accept is common noise; still
+                    // replenish, but do not surface a listener Error event.
+                    const bool quiet = (operationError == WSAECONNRESET
+                                        || operationError == WSAECONNABORTED);
+                    if (!quiet) {
+                        GANL_IOCP_DEBUG(listenSocket, "AcceptEx failed asynchronously: "
+                            << getErrorString(operationError));
+                        event.type = IoEventType::Error;
+                        event.listener = listenSocket;
+                        event.connection = InvalidConnectionHandle;
+                        event.context = socketContext;
+                        event.error = operationError;
+                        eventCount++;
+                    }
+
+                    ErrorCode postAcceptError = 0;
+                    if (!ensureAcceptsPosted(listenSocket, postAcceptError)) {
+                        noteAcceptReplenishFailure(listenSocket, postAcceptError);
+                        if (!quiet && eventCount < maxEvents) {
+                            // Already emitted AcceptEx error; optional second
+                            // event for replenish failure is skipped to avoid
+                            // event spam — recovery will retry on timeout.
+                        } else if (quiet && eventCount < maxEvents) {
+                            // Quiet accept abort but replenish failed: surface.
+                            IoEvent& outEv = events[eventCount++];
+                            outEv = IoEvent{};
+                            outEv.type = IoEventType::Error;
+                            outEv.listener = listenSocket;
+                            outEv.connection = InvalidConnectionHandle;
+                            outEv.context = socketContext;
+                            outEv.error = postAcceptError;
                         }
-                        // We need to consume the current failed completion without adding an event
-                        eventCount--; // Backtrack count since we are not adding an event
                     }
                 }
             } // End Accept scope
@@ -1114,7 +1158,8 @@ namespace ganl {
 
         } while (true); // Loop continues as long as GQCS returns completions and eventCount < maxEvents
 
-        return eventCount;
+        // Retry AcceptEx for listeners left short after this batch (#1830).
+        return recoverStarvedListeners(events, maxEvents, eventCount);
     }
 
     std::string IocpNetworkEngine::getRemoteAddress(ConnectionHandle conn) {
@@ -1284,6 +1329,14 @@ namespace ganl {
 
         int addressFamily = AF_INET;
 
+        // Test hook: fail before any kernel work (#1830).
+        if (failNextPostAccepts_ > 0) {
+            failNextPostAccepts_--;
+            error = WSAENOBUFS;
+            GANL_IOCP_DEBUG(listenSocket, "postAccept fault-injection fail");
+            return false;
+        }
+
         // Check if listener is still active
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -1303,6 +1356,9 @@ namespace ganl {
         std::unique_ptr<PerIoData> perIoData = std::make_unique<PerIoData>(listener, this, addressFamily);
         if (perIoData->acceptSocket == INVALID_SOCKET) {
             error = WSAGetLastError();
+            if (error == 0) {
+                error = WSAENOBUFS;
+            }
 
             // Decrement pending accepts counter on failure
             std::lock_guard<std::mutex> lock(mutex_);
@@ -1345,8 +1401,145 @@ namespace ganl {
 
         // AcceptEx() operation is pending, release the PerIoData
         perIoData.release();
-
+        error = 0;
         return true;
+    }
+
+    bool IocpNetworkEngine::ensureAcceptsPosted(ListenerHandle listener, ErrorCode& error) {
+        error = 0;
+        SOCKET listenSocket = static_cast<SOCKET>(listener);
+
+        for (;;) {
+            int pending = 0;
+            int target = 1;
+            bool listening = false;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                auto it = listeners_.find(listenSocket);
+                if (it == listeners_.end() || !it->second.isListening) {
+                    error = ERROR_INVALID_HANDLE;
+                    return false;
+                }
+                pending = it->second.pendingAccepts;
+                target = it->second.targetAccepts;
+                listening = it->second.isListening;
+            }
+            if (!listening) {
+                error = ERROR_INVALID_HANDLE;
+                return false;
+            }
+            if (pending >= target) {
+                // Cleared outage if we already have a full pool.
+                std::lock_guard<std::mutex> lock(mutex_);
+                auto it = listeners_.find(listenSocket);
+                if (it != listeners_.end()) {
+                    it->second.acceptOutage = false;
+                    it->second.nextAcceptRetryMs = 0;
+                }
+                return true;
+            }
+
+            ErrorCode postErr = 0;
+            if (!postAccept(listener, postErr)) {
+                error = postErr;
+                return false;
+            }
+        }
+    }
+
+    void IocpNetworkEngine::noteAcceptReplenishFailure(ListenerHandle listener, ErrorCode error) {
+        SOCKET listenSocket = static_cast<SOCKET>(listener);
+        const ULONGLONG now = GetTickCount64();
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = listeners_.find(listenSocket);
+        if (it == listeners_.end() || !it->second.isListening) {
+            return;
+        }
+        it->second.lastAcceptPostError = error;
+        it->second.acceptOutage = (it->second.pendingAccepts == 0);
+        // Bounded backoff: 50ms, 100ms, 200ms… cap 1000ms.
+        ULONGLONG delay = 50;
+        if (it->second.nextAcceptRetryMs > now) {
+            // Already scheduled; leave the later deadline.
+            return;
+        }
+        // Escalate slightly when still in outage.
+        if (it->second.acceptOutage && it->second.nextAcceptRetryMs != 0) {
+            delay = 200;
+        }
+        if (delay > 1000) {
+            delay = 1000;
+        }
+        it->second.nextAcceptRetryMs = now + delay;
+        GANL_IOCP_DEBUG(listenSocket, "AcceptEx replenish failed (pending="
+            << it->second.pendingAccepts << "): " << getErrorString(error)
+            << "; retry after " << delay << "ms");
+    }
+
+    int IocpNetworkEngine::recoverStarvedListeners(IoEvent* events, int maxEvents, int eventCount) {
+        if (!initialized_ || events == nullptr || maxEvents <= 0) {
+            return eventCount;
+        }
+
+        const ULONGLONG now = GetTickCount64();
+        std::vector<SOCKET> candidates;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            for (auto& pair : listeners_) {
+                ListenerInfo& li = pair.second;
+                if (!li.isListening) {
+                    continue;
+                }
+                if (li.pendingAccepts >= li.targetAccepts) {
+                    continue;
+                }
+                // Always retry if completely starved; otherwise wait for backoff.
+                if (li.pendingAccepts == 0
+                    || now >= li.nextAcceptRetryMs
+                    || li.nextAcceptRetryMs == 0) {
+                    candidates.push_back(pair.first);
+                }
+            }
+        }
+
+        for (SOCKET listenSocket : candidates) {
+            ErrorCode err = 0;
+            if (ensureAcceptsPosted(listenSocket, err)) {
+                continue;
+            }
+            noteAcceptReplenishFailure(listenSocket, err);
+            // Emit Error only when fully starved so ops can see permanent risk.
+            bool starved = false;
+            void* ctx = nullptr;
+            {
+                std::lock_guard<std::mutex> lock(mutex_);
+                auto it = listeners_.find(listenSocket);
+                if (it != listeners_.end()) {
+                    starved = (it->second.pendingAccepts == 0 && it->second.isListening);
+                    ctx = it->second.context;
+                }
+            }
+            if (starved && eventCount < maxEvents) {
+                IoEvent& outEv = events[eventCount++];
+                outEv = IoEvent{};
+                outEv.type = IoEventType::Error;
+                outEv.listener = static_cast<ListenerHandle>(listenSocket);
+                outEv.connection = InvalidConnectionHandle;
+                outEv.context = ctx;
+                outEv.error = err;
+            }
+        }
+
+        return eventCount;
+    }
+
+    int IocpNetworkEngine::getPendingAcceptsForTest(ListenerHandle listener) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = listeners_.find(static_cast<SOCKET>(listener));
+        if (it == listeners_.end()) {
+            return -1;
+        }
+        return it->second.pendingAccepts;
     }
 
     ConnectionHandle IocpNetworkEngine::handleAcceptCompletion(PerIoData* perIoData, ErrorCode& error) {
