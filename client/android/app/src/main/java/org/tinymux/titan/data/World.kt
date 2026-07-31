@@ -62,32 +62,86 @@ data class World(
     }
 }
 
-class WorldRepository(context: Context) {
-    private val prefs: SharedPreferences = try {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            "titan_worlds_encrypted",
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
-    } catch (_: Exception) {
-        // Fallback to unencrypted if Keystore unavailable (e.g. emulator)
-        context.getSharedPreferences("titan_worlds", Context.MODE_PRIVATE)
-    }
+/**
+ * #1892: never write hydraPass / hydraSession to an unencrypted preference file.
+ * When EncryptedSharedPreferences cannot be created, world metadata may still
+ * use the plain store, but secrets are stripped on load and save.
+ */
+fun World.withoutSecrets(): World = copy(hydraPass = "", hydraSession = "")
 
+/** Pure helper for tests — what [WorldRepository.save] actually persists. */
+fun worldsForPersistence(worlds: List<World>, secureStorage: Boolean): List<World> =
+    if (secureStorage) worlds else worlds.map { it.withoutSecrets() }
+
+class WorldRepository(context: Context) {
+    /**
+     * True when the backing store is EncryptedSharedPreferences.
+     * UI should warn when false so the user knows Hydra secrets cannot be kept.
+     */
+    val isSecureStorageAvailable: Boolean
+
+    private val prefs: SharedPreferences
     private val key = "worlds_json"
 
-    // Migrate from old unencrypted prefs on first run
     init {
-        val oldPrefs = context.getSharedPreferences("titan_worlds", Context.MODE_PRIVATE)
-        val oldData = oldPrefs.getString(key, null)
-        if (oldData != null && prefs.getString(key, null) == null) {
-            prefs.edit().putString(key, oldData).apply()
-            oldPrefs.edit().remove(key).apply()
+        var secure = false
+        var store: SharedPreferences
+        try {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            store = EncryptedSharedPreferences.create(
+                context,
+                "titan_worlds_encrypted",
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+            )
+            secure = true
+        } catch (e: Exception) {
+            // #1892: do not silently treat this as a full equivalent of encrypted
+            // storage.  Plain prefs may hold non-secret world fields only.
+            android.util.Log.w(
+                "WorldRepository",
+                "EncryptedSharedPreferences unavailable; Hydra secrets will not be persisted",
+                e,
+            )
+            store = context.getSharedPreferences("titan_worlds", Context.MODE_PRIVATE)
+            secure = false
+        }
+        isSecureStorageAvailable = secure
+        prefs = store
+
+        if (secure) {
+            // Migrate from old unencrypted prefs into the encrypted store once.
+            val oldPrefs = context.getSharedPreferences("titan_worlds", Context.MODE_PRIVATE)
+            val oldData = oldPrefs.getString(key, null)
+            if (oldData != null && prefs.getString(key, null) == null) {
+                prefs.edit().putString(key, oldData).apply()
+                oldPrefs.edit().remove(key).apply()
+            }
+        } else {
+            // Scrub any secrets that may already sit in the plain file (prior
+            // silent-fallback builds, or a keystore failure after secrets were
+            // written when encryption briefly worked).
+            scrubPlaintextSecretsOnDisk()
+        }
+    }
+
+    private fun scrubPlaintextSecretsOnDisk() {
+        val raw = prefs.getString(key, null) ?: return
+        try {
+            val arr = JSONArray(raw)
+            val worlds = (0 until arr.length()).map { World.fromJson(arr.getJSONObject(it)) }
+            val cleaned = worldsForPersistence(worlds, secureStorage = false)
+            val hadSecrets = worlds.any { it.hydraPass.isNotEmpty() || it.hydraSession.isNotEmpty() }
+            if (hadSecrets) {
+                val out = JSONArray()
+                cleaned.forEach { out.put(it.toJson()) }
+                prefs.edit().putString(key, out.toString()).apply()
+            }
+        } catch (_: Exception) {
+            // Leave raw alone if unreadable; load() will return empty.
         }
     }
 
@@ -95,15 +149,18 @@ class WorldRepository(context: Context) {
         val raw = prefs.getString(key, null) ?: return emptyList()
         return try {
             val arr = JSONArray(raw)
-            (0 until arr.length()).map { World.fromJson(arr.getJSONObject(it)) }
+            val worlds = (0 until arr.length()).map { World.fromJson(arr.getJSONObject(it)) }
+            // Never surface secrets from a non-secure store into the app.
+            worldsForPersistence(worlds, isSecureStorageAvailable)
         } catch (_: Exception) {
             emptyList()
         }
     }
 
     fun save(worlds: List<World>) {
+        val toWrite = worldsForPersistence(worlds, isSecureStorageAvailable)
         val arr = JSONArray()
-        worlds.forEach { arr.put(it.toJson()) }
+        toWrite.forEach { arr.put(it.toJson()) }
         prefs.edit().putString(key, arr.toString()).apply()
     }
 
