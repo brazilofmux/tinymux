@@ -508,6 +508,29 @@ static bool ws_utf8_valid(const char *s, size_t n)
     return true;
 }
 
+// Enqueue a completed TEXT/BINARY message as a softcode command.
+// #1818: drop empty messages (telnet does not enqueue empty lines; zero
+// length bypasses input_limit while still allocating queue nodes).
+// #1819: reject messages larger than LBUF_SIZE-1 (command buffer ceiling)
+// with close 1009 rather than overflowing engine paths.
+//
+// Returns false if the connection was failed (caller must return).
+//
+static bool ws_enqueue_command(DESC *d, const UTF8 *cmd, size_t len)
+{
+    if (0 == len)
+    {
+        return true;
+    }
+    if (len > static_cast<size_t>(LBUF_SIZE - 1))
+    {
+        ws_fail(d, WS_CLOSE_MESSAGE_TOO_BIG);
+        return false;
+    }
+    save_command(d, cmd, len);
+    return true;
+}
+
 void ws_process_input(DESC *d, const char *data, size_t len)
 {
     // Charge wire bytes like process_input_helper does for telnet (#1807).
@@ -734,9 +757,12 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                             ws_fail(d, WS_CLOSE_BAD_DATA);
                             return;
                         }
-                        save_command(d,
-                            reinterpret_cast<const UTF8 *>(ws->frame_buf.c_str()),
-                            ws->frame_buf.size());
+                        if (!ws_enqueue_command(d,
+                                reinterpret_cast<const UTF8 *>(ws->frame_buf.c_str()),
+                                ws->frame_buf.size()))
+                        {
+                            return;
+                        }
                     }
                     else
                     {
@@ -780,9 +806,12 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                             ws_fail(d, WS_CLOSE_BAD_DATA);
                             return;
                         }
-                        save_command(d,
-                            reinterpret_cast<const UTF8 *>(ws->frag_buf.c_str()),
-                            ws->frag_buf.size());
+                        if (!ws_enqueue_command(d,
+                                reinterpret_cast<const UTF8 *>(ws->frag_buf.c_str()),
+                                ws->frag_buf.size()))
+                        {
+                            return;
+                        }
                         ws->frag_buf.clear();
                         ws->frag_opcode = 0;
                     }
