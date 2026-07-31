@@ -156,6 +156,20 @@
   {
     @log smoke=TC006: @cron rejects a bad timestring. Failed (heard=%q0).
   };
+  &NEXT me=tr.s006b;
+  @cron qsched/FIRE_ME = * * * * * garbage
+-
+#
+# Test Case #6b - #1870: five valid fields plus trailing tokens must fail.
+#
+&tr.s006b test_cron_fn=
+  @if strmatch(setr(0, get(me/HEARD)), Syntax errors. No cron entry made.)=
+  {
+    @log smoke=TC006b: @cron rejects trailing garbage after five fields. Succeeded.
+  },
+  {
+    @log smoke=TC006b: @cron rejects trailing garbage after five fields. Failed (heard=%q0).
+  };
   &NEXT me=tr.s007;
   @crondel qsched/FIRE_ME
 -
