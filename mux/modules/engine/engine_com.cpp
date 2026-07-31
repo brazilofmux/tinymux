@@ -544,20 +544,37 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
 
                     if (nullptr != m_pRows)
                     {
+                        // #1878: never trust field lengths without an end
+                        // bound.  A truncated or hostile blob used to
+                        // memcpy/advance past m_pBlob + m_nBlob.
+                        //
                         int i, j;
                         UTF8 *p = m_pBlob;
-                        for (i = 0; i < m_nRows && p < m_pBlob + m_nBlob; i++)
+                        UTF8 *const pEnd = m_pBlob + m_nBlob;
+                        bool bRowError = false;
+                        for (i = 0; i < m_nRows && !bRowError; i++)
                         {
                             m_pRows[i] = p;
-                            for (j = 0; j < m_nFields && p < m_pBlob + m_nBlob; j++)
+                            for (j = 0; j < m_nFields; j++)
                             {
+                                if (static_cast<size_t>(pEnd - p) < sizeof(size_t))
+                                {
+                                    bRowError = true;
+                                    break;
+                                }
                                 size_t n;
                                 memcpy(&n, p, sizeof(size_t));
-                                p += sizeof static_cast<size_t>(+ n);
+                                p += sizeof(size_t);
+                                if (static_cast<size_t>(pEnd - p) < n)
+                                {
+                                    bRowError = true;
+                                    break;
+                                }
+                                p += n;
                             }
                         }
 
-                        if (p == m_pBlob + m_nBlob)
+                        if (!bRowError && p == pEnd && i == m_nRows)
                         {
                             m_bLoaded = true;
                         }
@@ -608,19 +625,44 @@ const UTF8 *CResultsSet::FirstField(int iRow)
 
 const UTF8 *CResultsSet::NextField(void)
 {
-    const UTF8 *pField = nullptr;
-    if (  nullptr != m_pCurrentField
-       && 0 < m_nFields
-       && m_iCurrentField < m_nFields)
+    // #1878: validate the current field header and payload fit in the blob
+    // before advancing; return null on a truncated or oversize length.
+    //
+    if (  nullptr == m_pCurrentField
+       || nullptr == m_pBlob
+       || 0 >= m_nFields
+       || m_iCurrentField >= m_nFields)
     {
-        size_t n;
-
-        m_iCurrentField++;
-        memcpy(&n, m_pCurrentField, sizeof(size_t));
-        m_pCurrentField += sizeof static_cast<size_t>(+ n);
-        pField = m_pCurrentField;
+        return nullptr;
     }
-    return pField;
+
+    UTF8 *const pEnd = m_pBlob + m_nBlob;
+    if (m_pCurrentField < m_pBlob
+        || m_pCurrentField >= pEnd
+        || static_cast<size_t>(pEnd - m_pCurrentField) < sizeof(size_t))
+    {
+        m_pCurrentField = nullptr;
+        return nullptr;
+    }
+
+    size_t n;
+    memcpy(&n, m_pCurrentField, sizeof(size_t));
+    const UTF8 *pNext = m_pCurrentField + sizeof(size_t);
+    if (static_cast<size_t>(pEnd - pNext) < n)
+    {
+        m_pCurrentField = nullptr;
+        return nullptr;
+    }
+    pNext += n;
+    if (pNext > pEnd)
+    {
+        m_pCurrentField = nullptr;
+        return nullptr;
+    }
+
+    m_iCurrentField++;
+    m_pCurrentField = pNext;
+    return m_pCurrentField;
 }
 
 CResultsSet::~CResultsSet(void)

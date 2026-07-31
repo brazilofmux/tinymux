@@ -26,6 +26,12 @@ const MUX_CID CID_MailMod = UINT64_C(0x00000002D7A3E1B5);
 
 #define MOD_LBUF_SIZE   8000
 
+// #1875: soft caps for @malias growth (process memory + SQLite rewrite cost).
+// Enforced on create/add and when loading persisted aliases.
+//
+#define MAX_MALIAS_PER_OWNER   50
+#define MAX_MALIAS_MEMBERS     100
+
 // Composition attributes (mirrored from attrs.h).  These carry AF_INTERNAL
 // and/or AF_DARK, so mux_IAttributeAccess Set/Get with the player as
 // executor always fails permission checks.  Use IObjectInfo::AtrAddRaw /

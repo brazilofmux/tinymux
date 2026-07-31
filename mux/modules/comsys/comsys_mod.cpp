@@ -4148,7 +4148,26 @@ MUX_RESULT CComsysMod::CreateChannel(dbref executor, const UTF8 *pName)
         }
     }
 
-    // Check for existing channel.
+    // #1874: reject overlong names before any truncate/duplicate check.
+    // Truncating to MAX_CHANNEL_LEN after select_channel(full name) let
+    // "existing50byte" + "x" collide on the map key and replace the old
+    // channel without SQLite cleanup.
+    //
+    const size_t nName = strlen(reinterpret_cast<const char *>(pName));
+    if (nName > MAX_CHANNEL_LEN)
+    {
+        if (nullptr != m_pINotify)
+        {
+            UTF8 msg[128];
+            mux_sprintf(msg, sizeof(msg),
+                M_("Channel names must be at most %d characters."),
+                MAX_CHANNEL_LEN);
+            m_pINotify->RawNotify(executor, msg);
+        }
+        return MUX_E_INVALIDARG;
+    }
+
+    // Check for existing channel (full name — same length as stored key).
     //
     if (nullptr != select_channel(pName))
     {
