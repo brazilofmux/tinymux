@@ -27,7 +27,14 @@ struct PerIoData {
     IocpNetworkEngine* engine;
     IoBuffer* ioBuffer{nullptr}; // Reference to IoBuffer for memory-managed operations
     void* userContext{nullptr};  // User-provided context for Write operations
-    std::vector<char> ownedBuffer; // Owned copy of outbound bytes for async WSASend (#796)
+    // Owned storage for async WSASend (#796) and WSARecv (#1832).  WSABUF must
+    // not point into ConnectionBase buffers that may be destroyed when
+    // closeConnection cancels the op before the completion packet drains.
+    std::vector<char> ownedBuffer;
+    // Generation of the sockets_ map entry at post time (#1832 ABA).  Stale
+    // completions whose SOCKET value was reused are discarded when this does
+    // not match the live entry.  Accept ops leave this 0 (listener-keyed).
+    uint64_t generation{0};
 
     // --- Accept specific fields ---
     SOCKET acceptSocket;
@@ -94,6 +101,10 @@ private:
         bool pendingRead; // Tracks if a read operation is pending
         IoBuffer* activeReadBuffer{nullptr}; // Tracks the active IoBuffer for reads
         std::string remoteAddress; // Stores the remote address string
+        // Monotonic identity for this map entry.  SOCKET values are reused
+        // after closesocket; completions stamped with an older generation
+        // must not touch the replacement connection (#1832).
+        uint64_t generation{0};
     };
 
     // Structure to store listener information
@@ -139,6 +150,7 @@ private:
     std::mutex mutex_; // Protects access to maps
     std::map<SOCKET, SocketInfo> sockets_; // Map of all socket information
     std::map<SOCKET, ListenerInfo> listeners_; // Map of listener-specific information
+    uint64_t nextGeneration_{1}; // Allocated under mutex_ for SocketInfo.generation
 
     // Function pointers for Microsoft-specific extensions
     LPFN_ACCEPTEX lpfnAcceptEx_;

@@ -383,18 +383,22 @@ namespace ganl {
         if (!sockIt->second.wantRead) {
             GANL_WSELECT_DEBUG(sock, "postRead: Setting wantRead=true and updating FD sets. IoBuffer@" << &buffer);
             sockIt->second.wantRead = true;
-            // Update master FD sets
-            if (masterReadFds_.fd_count < FD_SETSIZE && masterErrorFds_.fd_count < FD_SETSIZE) {
-                FD_SET(sock, &masterReadFds_);
-                FD_SET(sock, &masterErrorFds_); // Monitor for errors if interested in read/write
-            }
-            else {
+            // Membership-aware capacity (#1834 family): a connected socket is
+            // already in masterErrorFds_ from accept; reasserting that membership
+            // needs no new array slot.  Only demand free slots when FD_SET would
+            // grow the counted array.
+            const bool needReadSlot = !FD_ISSET(sock, &masterReadFds_);
+            const bool needErrorSlot = !FD_ISSET(sock, &masterErrorFds_);
+            if ((needReadSlot && masterReadFds_.fd_count >= FD_SETSIZE)
+                || (needErrorSlot && masterErrorFds_.fd_count >= FD_SETSIZE)) {
                 GANL_WSELECT_DEBUG(sock, "Warning: FD_SETSIZE limit reached, cannot add socket to select read set.");
                 sockIt->second.wantRead = false; // Revert interest if cannot add
                 sockIt->second.activeReadBuffer = nullptr; // Reset buffer reference
                 error = ENOBUFS;
                 return false;
             }
+            FD_SET(sock, &masterReadFds_);
+            FD_SET(sock, &masterErrorFds_); // Monitor for errors if interested in read/write
         }
         else {
             GANL_WSELECT_DEBUG(sock, "postRead: wantRead already true. Updating IoBuffer reference to " << &buffer);
@@ -504,18 +508,22 @@ namespace ganl {
         if (!sockIt->second.wantWrite) {
             GANL_WSELECT_DEBUG(sock, "postWrite: Setting wantWrite=true and updating FD sets.");
             sockIt->second.wantWrite = true;
-            // Update master FD sets
-            if (masterWriteFds_.fd_count < FD_SETSIZE && masterErrorFds_.fd_count < FD_SETSIZE) {
-                FD_SET(sock, &masterWriteFds_);
-                FD_SET(sock, &masterErrorFds_); // Monitor for errors if interested in read/write
-            }
-            else {
+            // Membership-aware capacity (#1834): accepted connections already sit
+            // in masterErrorFds_ (and possibly masterWriteFds_).  Requiring a free
+            // error slot when the socket is already a member blocked every
+            // postWrite at the FD_SETSIZE occupancy ceiling.
+            const bool needWriteSlot = !FD_ISSET(sock, &masterWriteFds_);
+            const bool needErrorSlot = !FD_ISSET(sock, &masterErrorFds_);
+            if ((needWriteSlot && masterWriteFds_.fd_count >= FD_SETSIZE)
+                || (needErrorSlot && masterErrorFds_.fd_count >= FD_SETSIZE)) {
                 GANL_WSELECT_DEBUG(sock, "Warning: FD_SETSIZE limit reached, cannot add socket to select write set.");
                 sockIt->second.wantWrite = false; // Revert interest
                 sockIt->second.writeUserContext = nullptr; // Clear user context on failure
                 error = ENOBUFS;
                 return false;
             }
+            FD_SET(sock, &masterWriteFds_);
+            FD_SET(sock, &masterErrorFds_); // Monitor for errors if interested in read/write
         }
         else {
             GANL_WSELECT_DEBUG(sock, "postWrite: wantWrite already true.");

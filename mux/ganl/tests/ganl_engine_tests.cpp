@@ -20,6 +20,8 @@
 //   #947  closeConnection must be idempotent (double-close stays healthy)
 //   #953  IoBuffer::ensureWritable must reject wrapping sizes (shared)
 //   #1801 initiateConnect emits ConnectSuccess / ConnectFail (loopback SMTP)
+//   #1832 IOCP close with pending WSARecv: owned recv buffer + generation ABA
+//   #1834 wselect postWrite at full error fd_set for already-monitored socket
 //
 // Zero dependencies: plain main(), TAP-ish output, nonzero exit on failure.
 // Build/run: POSIX `make -C mux/ganl/tests check`; Windows via ganl_tests.vcxproj.
@@ -382,6 +384,183 @@ void teardownAccepted(NetworkEngine& eng, AcceptedConn& ac) {
 // ---------------------------------------------------------------------------
 // Windows scenarios
 // ---------------------------------------------------------------------------
+
+// #1832: closeConnection with a pending WSARecv must not UAF.  The engine
+// owns the receive storage; draining aborted completions after close must
+// leave the engine healthy for a subsequent accept/read.
+Result scenarioIocpClosePendingRead(const EngineUnderTest& eut) {
+    if (eut.name != "iocp") {
+        return skip("IOCP-only (#1832)");
+    }
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    AcceptedConn ac;
+    std::string setupErr = setupAccepted(*eng, ac);
+    if (!setupErr.empty()) {
+        teardownAccepted(*eng, ac);
+        eng->shutdown();
+        return fail(setupErr);
+    }
+
+    {
+        IoBuffer readBuf(4096);
+        ErrorCode err = 0;
+        if (!eng->postRead(ac.conn, readBuf, err)) {
+            teardownAccepted(*eng, ac);
+            eng->shutdown();
+            return fail("postRead failed (errno " + std::to_string(err) + ")");
+        }
+
+        // Tear down while WSARecv is outstanding.  ConnectionBase would free
+        // encryptedInput_ here; destroying readBuf at scope exit mimics that
+        // lifetime.  Owned storage lives in PerIoData until completion drains.
+        eng->closeConnection(ac.conn);
+        ac.conn = InvalidConnectionHandle;
+    }
+
+    IoEvent events[16];
+    for (int i = 0; i < 40; i++) {
+        eng->processEvents(25, events, 16);
+    }
+
+    // Engine must still accept and deliver a Read with a fresh buffer.
+    const uint16_t port = listenerPort(ac.lh);
+    SOCKET client2 = connectLoopback(port);
+    if (client2 == INVALID_SOCKET) {
+        teardownAccepted(*eng, ac);
+        eng->shutdown();
+        return fail("second client connect failed");
+    }
+    IoEvent aev{};
+    if (!pollFor(*eng, 3000, 16, [&](const IoEvent& e) {
+            return e.type == IoEventType::Accept
+                && e.connection != InvalidConnectionHandle;
+        }, &aev)) {
+        closesocket(client2);
+        teardownAccepted(*eng, ac);
+        eng->shutdown();
+        return fail("Accept after pending-read close never emitted");
+    }
+    ConnectionHandle conn2 = aev.connection;
+
+    IoBuffer readBuf2(4096);
+    ErrorCode err = 0;
+    if (!eng->postRead(conn2, readBuf2, err)) {
+        eng->closeConnection(conn2);
+        closesocket(client2);
+        teardownAccepted(*eng, ac);
+        eng->shutdown();
+        return fail("postRead on second conn failed");
+    }
+    const char msg[] = "after-close";
+    if (::send(client2, msg, static_cast<int>(sizeof(msg) - 1), 0)
+        != static_cast<int>(sizeof(msg) - 1)) {
+        eng->closeConnection(conn2);
+        closesocket(client2);
+        teardownAccepted(*eng, ac);
+        eng->shutdown();
+        return fail("client2 send failed");
+    }
+    bool got = pollFor(*eng, 3000, 16, [&](const IoEvent& e) {
+        return e.type == IoEventType::Read && e.connection == conn2
+            && e.buffer == &readBuf2;
+    });
+
+    eng->closeConnection(conn2);
+    closesocket(client2);
+    teardownAccepted(*eng, ac);
+    eng->shutdown();
+    return got ? pass()
+               : fail("Read on fresh connection after close-pending never emitted");
+}
+
+// #1834: at full error-set occupancy, postWrite on an already-monitored
+// connection must still arm write interest (membership-aware FD_SETSIZE check).
+Result scenarioWselectPostWriteAtCeiling(const EngineUnderTest& eut) {
+    if (eut.name != "wselect") {
+        return skip("wselect-only (#1834)");
+    }
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    ErrorCode err = 0;
+    ListenerHandle lh = eng->createListener("127.0.0.1", 0, err);
+    if (lh == InvalidListenerHandle) {
+        eng->shutdown();
+        return fail("createListener failed");
+    }
+    if (!eng->startListening(lh, nullptr, err)) {
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("startListening failed");
+    }
+    const uint16_t port = listenerPort(lh);
+    if (port == 0) {
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("getsockname failed");
+    }
+
+    // Fill masterErrorFds_ to FD_SETSIZE: 1 listener + (FD_SETSIZE-1) accepted
+    // connections (each accepted with wantRead also joins the error set).
+    std::vector<SOCKET> clients;
+    std::vector<ConnectionHandle> conns;
+    clients.reserve(FD_SETSIZE);
+    conns.reserve(FD_SETSIZE);
+
+    for (int i = 0; i < FD_SETSIZE - 1; i++) {
+        SOCKET c = connectLoopback(port);
+        if (c == INVALID_SOCKET) {
+            for (SOCKET s : clients) closesocket(s);
+            for (ConnectionHandle ch : conns) eng->closeConnection(ch);
+            eng->closeListener(lh);
+            eng->shutdown();
+            return fail("connectLoopback failed at " + std::to_string(i));
+        }
+        clients.push_back(c);
+        IoEvent ev{};
+        if (!pollFor(*eng, 3000, 16, [&](const IoEvent& e) {
+                return e.type == IoEventType::Accept
+                    && e.connection != InvalidConnectionHandle;
+            }, &ev)) {
+            for (SOCKET s : clients) closesocket(s);
+            for (ConnectionHandle ch : conns) eng->closeConnection(ch);
+            eng->closeListener(lh);
+            eng->shutdown();
+            return fail("Accept never emitted at " + std::to_string(i));
+        }
+        conns.push_back(ev.connection);
+    }
+
+    if (conns.empty()) {
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("no connections accepted");
+    }
+
+    // Error set is full.  Connection 0 is already a member; postWrite must
+    // only need a free write slot (error membership is free).
+    if (!eng->postWrite(conns[0], "hello", 5, err)) {
+        for (SOCKET s : clients) closesocket(s);
+        for (ConnectionHandle ch : conns) eng->closeConnection(ch);
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("postWrite at FD_SETSIZE ceiling failed errno "
+                    + std::to_string(err) + " (#1834)");
+    }
+
+    bool got = pollFor(*eng, 3000, 16, [&](const IoEvent& e) {
+        return e.type == IoEventType::Write && e.connection == conns[0];
+    });
+
+    for (SOCKET s : clients) closesocket(s);
+    for (ConnectionHandle ch : conns) eng->closeConnection(ch);
+    eng->closeListener(lh);
+    eng->shutdown();
+    return got ? pass()
+               : fail("Write event never emitted after postWrite at ceiling (#1834)");
+}
 
 // #962: a Read event must carry the exact IoBuffer handed to postRead().
 // wselect saved the buffer, nulled its slot, then tested the nulled slot — so
@@ -997,6 +1176,8 @@ const Scenario kScenarios[] = {
     {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},  // #1801
     {"tcp-connect-refused",      scenarioTcpConnectRefused,    true},  // #1801
     {"iocp-accept-replenish",    scenarioIocpAcceptReplenishRecover, true}, // #1830
+    {"iocp-close-pending-read",  scenarioIocpClosePendingRead,  true},  // #1832
+    {"wselect-postwrite-ceiling", scenarioWselectPostWriteAtCeiling, true}, // #1834
 #else
     {"immediate-unix-connect",   scenarioImmediateUnixConnect, true},
     {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},
