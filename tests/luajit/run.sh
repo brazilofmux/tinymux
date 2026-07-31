@@ -318,7 +318,10 @@ POST_ENTRY_LOUD_BUDGET=0
 # Real sentinels decline outside their dedicated fast paths; literal text
 # remains a value.
 # #1835: +1 mixed-type order pin (raises or declines; either matches).
-AGREE_DECLINE_BUDGET=24
+# #1866: tonumber is CALL_VAL (dynamic int/float); two AGREE pins that
+# do arith on the result (x+1, x*2) no longer lower as CALL_INT and
+# decline to the interpreter (+2).  Results still match.
+AGREE_DECLINE_BUDGET=26
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
@@ -416,10 +419,13 @@ EXEC_CASES=(
     # implementation that inferred the result type from the arguments
     # cannot pass both.
     #
-    # tonumber("17") additionally takes a STRING and returns an INTEGER,
-    # which is why the two call ECALLs share one argument encoding.
+    # #1866: tonumber is CALL_VAL (dynamic int-or-float), not CALL_INT.
+    # tonumber("17") must still execute; tonumber("3.5") must return the
+    # float rather than a post-entry residual decline after the call ran.
     'local x=tostring(42) return x'
     'local x=tonumber("17") return x'
+    'local x=tonumber("3.5") return x'
+    'local x=tonumber("3.0") return x'
     'local x=type(42) return x'
 
     # TAILCALL -- `return f(...)` with no local temporary, the most common
