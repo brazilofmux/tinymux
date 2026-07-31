@@ -1008,6 +1008,7 @@ bool CMailMod::LoadMailAliases(void)
             m->desc_width = desc_width;
 
             // Parse space-separated member list.
+            // #1875: drop excess members beyond MAX_MALIAS_MEMBERS on load.
             //
             m->list.clear();
             const char *pMembers = reinterpret_cast<const char *>(members);
@@ -1021,9 +1022,29 @@ bool CMailMod::LoadMailAliases(void)
                 {
                     while (*p == ' ') p++;
                     if (*p == '\0') break;
-                    m->list.push_back(mux_atoi64(reinterpret_cast<const UTF8 *>(p)));
+                    if (m->list.size() < MAX_MALIAS_MEMBERS)
+                    {
+                        m->list.push_back(mux_atoi64(reinterpret_cast<const UTF8 *>(p)));
+                    }
                     while (*p && *p != ' ') p++;
                 }
+            }
+
+            // #1875: skip aliases past the per-owner cap so a hostile DB
+            // cannot re-inflate unbounded growth at LoadMailAliases.
+            //
+            size_t nOwned = 0;
+            for (size_t i = 0; i < pThis->m_malias.size(); i++)
+            {
+                if (  pThis->m_malias[i]
+                   && pThis->m_malias[i]->owner == owner)
+                {
+                    nOwned++;
+                }
+            }
+            if (nOwned >= MAX_MALIAS_PER_OWNER)
+            {
+                return;
             }
 
             pThis->m_malias.push_back(std::move(m));
@@ -4194,6 +4215,26 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
         return;
     }
 
+    // #1875: per-owner alias count cap.
+    //
+    size_t nOwned = 0;
+    for (size_t i = 0; i < m_malias.size(); i++)
+    {
+        if (m_malias[i] && m_malias[i]->owner == player)
+        {
+            nOwned++;
+        }
+    }
+    if (nOwned >= MAX_MALIAS_PER_OWNER)
+    {
+        UTF8 msg[256];
+        mux_sprintf(msg, sizeof(msg),
+            M_("MAIL: You may only own %d mail aliases."),
+            MAX_MALIAS_PER_OWNER);
+        m_pINotify->RawNotify(player, msg);
+        return;
+    }
+
     auto pt = std::make_unique<malias_t>();
 
     // Parse the player list.
@@ -4266,6 +4307,18 @@ void CMailMod::do_malias_create(dbref player, const UTF8 *alias,
         if (!bPlayer)
         {
             m_pINotify->RawNotify(player, M_("MAIL: No such player."));
+        }
+        else if (pt->list.size() >= MAX_MALIAS_MEMBERS)
+        {
+            // #1875: stop accepting more members once the list is full.
+            //
+            UTF8 capmsg[256];
+            mux_sprintf(capmsg, sizeof(capmsg),
+                M_("MAIL: Alias member limit (%d) reached; further names ignored."),
+                MAX_MALIAS_MEMBERS);
+            m_pINotify->RawNotify(player, capmsg);
+            *tail = saved;
+            break;
         }
         else
         {
@@ -4635,6 +4688,18 @@ void CMailMod::do_malias_add(dbref player, const UTF8 *alias,
                 M_("MAIL: That person is already on the list."));
             return;
         }
+    }
+
+    // #1875: per-alias member cap.
+    //
+    if (m->list.size() >= MAX_MALIAS_MEMBERS)
+    {
+        UTF8 msg[256];
+        mux_sprintf(msg, sizeof(msg),
+            M_("MAIL: Alias ‘%s’ already has the maximum of %d members."),
+            m->name.c_str(), MAX_MALIAS_MEMBERS);
+        m_pINotify->RawNotify(player, msg);
+        return;
     }
 
     m->list.push_back(thing);
