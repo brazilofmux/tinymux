@@ -2995,60 +2995,71 @@ bool GanlAdapter::process_dns_slave_read_locked() {
         return false;
     }
 
+    // #1826: EPOLLET requires draining until EAGAIN.  A single short
+    // read() consumes the edge while leaving more DNS replies in the
+    // socket; without another edge they can sit until some unrelated
+    // re-arm.  Match ConnectionBase / SMTP: loop until empty or EOF.
+    //
+    constexpr size_t kDnsSlaveReadCap = 64 * 1024;
     char buffer[MBUF_SIZE];
-    ssize_t nbytes = read(dns_slave_->fd, buffer, sizeof(buffer));
-    if (nbytes > 0) {
-        dns_slave_->readBuffer.append(buffer, static_cast<size_t>(nbytes));
 
-        size_t newlinePos = std::string::npos;
-        while ((newlinePos = dns_slave_->readBuffer.find('\n')) != std::string::npos) {
-            std::string line = dns_slave_->readBuffer.substr(0, newlinePos);
-            dns_slave_->readBuffer.erase(0, newlinePos + 1);
+    for (;;) {
+        ssize_t nbytes = read(dns_slave_->fd, buffer, sizeof(buffer));
+        if (nbytes > 0) {
+            dns_slave_->readBuffer.append(buffer, static_cast<size_t>(nbytes));
 
-            if (!line.empty() && line.back() == '\r') {
-                line.pop_back();
+            size_t newlinePos = std::string::npos;
+            while ((newlinePos = dns_slave_->readBuffer.find('\n'))
+                   != std::string::npos) {
+                std::string line = dns_slave_->readBuffer.substr(0, newlinePos);
+                dns_slave_->readBuffer.erase(0, newlinePos + 1);
+
+                if (!line.empty() && line.back() == '\r') {
+                    line.pop_back();
+                }
+
+                if (line.empty()) {
+                    continue;
+                }
+
+                size_t spacePos = line.find(' ');
+                if (spacePos == std::string::npos) {
+                    continue;
+                }
+
+                std::string numeric = line.substr(0, spacePos);
+                std::string hostname = line.substr(spacePos + 1);
+                if (!hostname.empty()) {
+                    apply_reverse_dns_result(numeric, hostname);
+                }
             }
 
-            if (line.empty()) {
-                continue;
+            // Bound reassembly after each append (#801 / #1802 class).
+            //
+            if (dns_slave_->readBuffer.size() > kDnsSlaveReadCap) {
+                g_pILog->WriteString(T(
+                    "GANL: DNS slave response exceeded buffer cap; dropping slave.\n"));
+                return false;
             }
-
-            size_t spacePos = line.find(' ');
-            if (spacePos == std::string::npos) {
-                continue;
-            }
-
-            std::string numeric = line.substr(0, spacePos);
-            std::string hostname = line.substr(spacePos + 1);
-            if (!hostname.empty()) {
-                apply_reverse_dns_result(numeric, hostname);
-            }
+            continue;
         }
 
-        // Bound the reassembly buffer (#801).  A well-behaved slave emits short
-        // newline-terminated records, so after draining every complete line
-        // only a partial line can remain.  If that partial has grown past a
-        // sane cap the slave is stuck or misbehaving (streaming bytes with no
-        // delimiter); drop it rather than let readBuffer grow without limit.
-        constexpr size_t kDnsSlaveReadCap = 64 * 1024;
-        if (dns_slave_->readBuffer.size() > kDnsSlaveReadCap) {
-            g_pILog->WriteString(T("GANL: DNS slave response exceeded buffer cap; dropping slave.\n"));
+        if (nbytes == 0) {
+            g_pILog->WriteString(T("GANL: DNS slave closed its connection.\n"));
             return false;
         }
-        return true;
-    }
 
-    if (nbytes == 0) {
-        g_pILog->WriteString(T("GANL: DNS slave closed its connection.\n"));
+        if (errno == EINTR) {
+            continue;
+        }
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return true;
+        }
+
+        g_pILog->WriteString(tprintf(T("GANL: DNS slave read error: %s\n"),
+            strerror(errno)));
         return false;
     }
-
-    if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        return true;
-    }
-
-    g_pILog->WriteString(tprintf(T("GANL: DNS slave read error: %s\n"), strerror(errno)));
-    return false;
 #endif
 }
 
