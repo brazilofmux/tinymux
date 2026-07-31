@@ -1064,10 +1064,17 @@ static void lua_note_dynamic_int_key_store(lua_ref_map &m, int tbl) {
 // runtime check makes safe.
 //
 static hir_type lua_call_claim(const std::string &name) {
+    // #1866: tonumber is NOT on this list.  Lua 5.4 returns an integer
+    // for integral inputs and a float for non-integral ones; claiming
+    // TY_INT always emitted CALL_INT, and ECALL_LUA_CALL_INT declines
+    // when lua_isinteger is false -- a post-entry residual after the
+    // function has already run.  Leaving it on the default claim routes
+    // CALL_VAL so the typed stack value survives (int or float) and is
+    // marshalled only at the softcode boundary.
+    //
     static const char *kIntReturning[] = {
         "floor", "ceil", "max", "min", "abs", "tointeger",
         "len", "byte", "maxinteger", "mininteger",
-        "tonumber",   // integer when the argument is an integer literal
     };
     for (const char *n : kIntReturning) {
         if (name == n) return TY_INT;
@@ -1077,6 +1084,10 @@ static hir_type lua_call_claim(const std::string &name) {
     // interpreter answers -- silently, with the right subtype.  Before
     // this list, sqrt claimed the STRING default and its miss was a
     // post-entry fail (smoke TC046 under Phase 0).
+    //
+    // tonumber is also not here: a FLOAT claim would decline the whole
+    // call, including the common tonumber("17") integer case that must
+    // keep executing compiled (#1866).
     static const char *kFloatReturning[] = {
         "sqrt", "exp", "log", "sin", "cos", "tan",
         "asin", "acos", "atan", "fmod", "rad", "deg",

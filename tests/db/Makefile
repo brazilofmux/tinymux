@@ -1,6 +1,10 @@
 CXX = g++
 CC = gcc
-CXXFLAGS = -std=c++17 -g -O2 -Wall -Wextra -DTINYMUX_TYPES_DEFINED
+# LBUF_SIZE: sqlitedb.cpp clamps attribute blobs to it.  Production pulls
+# the macro from alloc.h via config/externs; the standalone harness only
+# defines TINYMUX_TYPES_DEFINED and never includes that chain (#1868).
+# Keep this value equal to mux/include/alloc.h.
+CXXFLAGS = -std=c++17 -g -O2 -Wall -Wextra -DTINYMUX_TYPES_DEFINED -DLBUF_SIZE=32768
 CFLAGS = -g -O2 -DSQLITE_THREADSAFE=1
 INCDIR = ../../mux/include
 ENGDIR = ../../mux/modules/engine

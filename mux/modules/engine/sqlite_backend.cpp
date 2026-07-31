@@ -11,6 +11,7 @@
 #endif
 
 #include "sqlite_backend.h"
+#include <cstring>
 
 CSQLiteBackend::CSQLiteBackend()
 {
