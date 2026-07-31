@@ -358,6 +358,10 @@ void Connection::send_naws(uint16_t width, uint16_t height) {
 
 void Connection::process_telnet(const unsigned char* data, size_t len,
                                 std::vector<std::string>& lines_out) {
+    // #1788 class: a hostile server can hold the parser in SB_DATA and
+    // stream without IAC SE; do not grow sb_buf_ without bound (matches
+    // the tf client's kMaxSb).
+    static constexpr size_t kMaxSb = 4096;
     for (size_t i = 0; i < len; i++) {
         unsigned char c = data[i];
         switch (tel_state_) {
@@ -441,7 +445,7 @@ void Connection::process_telnet(const unsigned char* data, size_t len,
         case TelState::SB_DATA:
             if (c == TEL_IAC) {
                 tel_state_ = TelState::SB_IAC;
-            } else {
+            } else if (sb_buf_.size() < kMaxSb) {
                 sb_buf_.push_back((char)c);
             }
             break;
@@ -485,7 +489,9 @@ void Connection::process_telnet(const unsigned char* data, size_t len,
                 }
                 tel_state_ = TelState::DATA;
             } else if (c == TEL_IAC) {
-                sb_buf_.push_back((char)0xFF);
+                if (sb_buf_.size() < kMaxSb) {
+                    sb_buf_.push_back((char)0xFF);
+                }
                 tel_state_ = TelState::SB_DATA;
             } else {
                 tel_state_ = TelState::DATA;
