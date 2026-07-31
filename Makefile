@@ -291,10 +291,11 @@ test-lua-ecall: install
 	@echo "==> Running Lua JIT differential harness (survive/agree/exec)"
 	bash tests/luajit/run.sh
 
-# GANL engine regression harness (epoll/select on Linux, kqueue/select on
-# macOS/BSD).  Scripted engine scenarios locking in the 2026-07 fixes.
+# GANL engine + ConnectionBase harness (epoll/select on Linux, kqueue/select
+# on macOS/BSD).  Windows: mux/ganl/tests/run-msvc.bat (wselect/iocp + same
+# ConnectionBase fakes; #1857/#1858).
 test-ganl:
-	@echo "==> Running GANL engine tests"
+	@echo "==> Running GANL engine + ConnectionBase tests"
 	$(MAKE) -C mux/ganl/tests check
 
 # netaddr unit tests: mux_subnet::compare_to (subnet/address, #799/#800) and
