@@ -1107,8 +1107,9 @@ static hir_type lua_call_claim(const std::string &name) {
 
 // #1866: when is tonumber(arg) guaranteed to return a Lua integer?
 //   - HIR integer (tonumber(3) → integer)
-//   - SCONST of optional '-' + digits only (tonumber("17") → integer;
-//     tonumber("3.0") / "3.5" / "1e2" stay on CALL_VAL)
+//   - SCONST of optional '-' + digits only, small enough to fit int64
+//     (tonumber("17") → integer; tonumber("3.0") / "3.5" / "1e2" stay on
+//     CALL_VAL, and an overflowing literal must too -- see below)
 // Runtime strings and floats take CALL_VAL.
 //
 static bool lua_tonumber_arg_is_integral(const hir_program &h, int areg) {
@@ -1132,10 +1133,24 @@ static bool lua_tonumber_arg_is_integral(const hir_program &h, int areg) {
             return false;
         }
     }
+    const size_t start = i;
     for (; i < s.size(); i++) {
         if (s[i] < '0' || s[i] > '9') {
             return false;
         }
+    }
+    // All digits -- but Lua 5.4 returns a FLOAT when an all-digit literal
+    // overflows int64 (tonumber("9223372036854775808") -> 9.2e18), so
+    // claiming CALL_INT here would post-entry decline where the interpreter
+    // answers a float.  INT64_MAX has 19 digits; <= 18 significant digits
+    // always fits.  Bound conservatively rather than parse (#1866 review).
+    //
+    size_t z = start;
+    while (z < s.size() && s[z] == '0') {
+        z++;
+    }
+    if (s.size() - z > 18) {
+        return false;
     }
     return true;
 }
