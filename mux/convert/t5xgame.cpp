@@ -800,13 +800,17 @@ void T5X_ATTRNAMEINFO::SetNumFlagsAndName(int iNum, int iFlags, char *pName)
     m_iNum = iNum;
     m_iFlags = iFlags;
 
-    char buffer[65536];
-    sprintf(buffer, "%d:", m_iFlags);
-    size_t n = strlen(buffer);
-    sprintf(buffer + n, "%s", pName);
+    // #1879: size from prefix + name — was char[65536] + sprintf.  Lexer
+    // quoted strings accept up to 65535 bytes; the "%d:" prefix is extra,
+    // so a max-length name overflowed the stack buffer.
+    //
+    char flagsbuf[32];
+    sprintf(flagsbuf, "%d:", m_iFlags);
+    const size_t n = strlen(flagsbuf);
+    std::string encoded = std::string(flagsbuf) + (pName ? pName : "");
     free(pName);
 
-    m_pNameEncoded   = StringClone(buffer);
+    m_pNameEncoded   = StringClone(encoded.c_str());
     m_pNameUnencoded = m_pNameEncoded + n;
 }
 
