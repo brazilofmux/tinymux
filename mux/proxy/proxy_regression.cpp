@@ -4,6 +4,9 @@
 #include "websocket.h"
 #include "session_manager.h"  // HydraSession::OutputQueue caps (#1266/#1268)
 #include "work_queue.h"       // WorkQueue::MAX_PENDING (#1265)
+#ifdef GRPC_ENABLED
+#include "hydra.pb.h"
+#endif
 
 #include <algorithm>
 #include <chrono>
@@ -258,6 +261,26 @@ void testAsciiBridgeConversion() {
     expect(isAscii(rendered), "renderForClient should produce pure ASCII for ASCII clients");
 }
 
+// Build a single masked client→server WebSocket frame.
+std::string maskedFrame(uint8_t finOpcode, const std::string& payload,
+                        uint8_t m0 = 0x01, uint8_t m1 = 0x02,
+                        uint8_t m2 = 0x03, uint8_t m3 = 0x04) {
+    expect(payload.size() < 126, "maskedFrame helper is short-payload only");
+    std::string frame;
+    frame.push_back(static_cast<char>(finOpcode));
+    frame.push_back(static_cast<char>(0x80 | payload.size()));  // MASK + len
+    frame.push_back(static_cast<char>(m0));
+    frame.push_back(static_cast<char>(m1));
+    frame.push_back(static_cast<char>(m2));
+    frame.push_back(static_cast<char>(m3));
+    const uint8_t mask[4] = {m0, m1, m2, m3};
+    for (size_t i = 0; i < payload.size(); i++) {
+        frame.push_back(static_cast<char>(
+            static_cast<uint8_t>(payload[i]) ^ mask[i % 4]));
+    }
+    return frame;
+}
+
 void testWebSocketMaskEnforcement() {
     WsState ws;
     std::string responses;
@@ -272,15 +295,106 @@ void testWebSocketMaskEnforcement() {
 
     WsState maskedWs;
     responses.clear();
-    const std::string masked = bytes({0x81, 0x82, 0x01, 0x02, 0x03, 0x04})
-        + std::string(1, static_cast<char>('h' ^ 0x01))
-        + std::string(1, static_cast<char>('i' ^ 0x02));
+    const std::string masked = maskedFrame(0x81, "hi");
     messages = wsDecodeFrames(maskedWs, masked.data(), masked.size(), responses);
 
     expect(responses.empty(), "masked frame should not trigger close");
     expect(messages.size() == 1, "masked frame should decode to one message");
     expect(messages[0].opcode == WS_OP_TEXT, "masked frame opcode mismatch");
     expect(messages[0].payload == "hi", "masked frame payload mismatch");
+}
+
+// #1886: RFC 6455 fragmentation state + TEXT UTF-8 validation.
+void testWebSocketFragmentationAndUtf8() {
+    // Orphan CONTINUATION (no message in progress) → 1002.
+    {
+        WsState ws;
+        std::string responses;
+        const std::string frame = maskedFrame(0x80, "x");  // FIN + CONTINUATION
+        auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+        expect(messages.size() == 1 && messages[0].opcode == WS_OP_CLOSE,
+               "orphan CONTINUATION should deliver CLOSE");
+        expect(responses == wsCloseFrame(1002),
+               "orphan CONTINUATION should close with 1002");
+    }
+
+    // TEXT while fragmented message pending → 1002.
+    {
+        WsState ws;
+        std::string responses;
+        // First fragment: FIN=0 TEXT "he"
+        auto m1 = wsDecodeFrames(ws, maskedFrame(0x01, "he").data(),
+                                 maskedFrame(0x01, "he").size(), responses);
+        expect(m1.empty() && responses.empty(),
+               "first TEXT fragment should not deliver yet");
+        // New TEXT while reassembly pending
+        const std::string second = maskedFrame(0x81, "no");
+        auto m2 = wsDecodeFrames(ws, second.data(), second.size(), responses);
+        expect(m2.size() == 1 && m2[0].opcode == WS_OP_CLOSE,
+               "TEXT during reassembly should deliver CLOSE");
+        expect(responses == wsCloseFrame(1002),
+               "TEXT during reassembly should close with 1002");
+    }
+
+    // Valid fragmented TEXT reassembles.
+    {
+        WsState ws;
+        std::string responses;
+        const std::string f1 = maskedFrame(0x01, "hel");
+        const std::string f2 = maskedFrame(0x80, "lo");
+        auto m1 = wsDecodeFrames(ws, f1.data(), f1.size(), responses);
+        expect(m1.empty(), "partial TEXT fragment holds");
+        auto m2 = wsDecodeFrames(ws, f2.data(), f2.size(), responses);
+        expect(m2.size() == 1 && m2[0].opcode == WS_OP_TEXT
+               && m2[0].payload == "hello",
+               "fragmented TEXT should reassemble to hello");
+        expect(responses.empty(), "valid fragments should not close");
+    }
+
+    // Invalid UTF-8 on complete single-frame TEXT → 1007.
+    {
+        WsState ws;
+        std::string responses;
+        // Lone continuation byte 0x80 is invalid UTF-8.
+        const std::string frame = maskedFrame(0x81, bytes({0x80}));
+        auto messages = wsDecodeFrames(ws, frame.data(), frame.size(), responses);
+        expect(messages.size() == 1 && messages[0].opcode == WS_OP_CLOSE,
+               "invalid UTF-8 TEXT should deliver CLOSE");
+        expect(responses == wsCloseFrame(1007),
+               "invalid UTF-8 TEXT should close with 1007");
+    }
+
+    // Invalid UTF-8 on assembled fragmented TEXT → 1007.
+    // Split multi-byte sequence across fragments: lead C3 in first, missing cont.
+    {
+        WsState ws;
+        std::string responses;
+        // First: FIN=0 TEXT with incomplete lead 0xC3 (would need 0xA9 for é)
+        const std::string f1 = maskedFrame(0x01, bytes({0xC3}));
+        // Second: FIN=1 CONTINUATION with invalid byte 0xFF (not a cont)
+        const std::string f2 = maskedFrame(0x80, bytes({0xFF}));
+        wsDecodeFrames(ws, f1.data(), f1.size(), responses);
+        auto m2 = wsDecodeFrames(ws, f2.data(), f2.size(), responses);
+        expect(m2.size() == 1 && m2[0].opcode == WS_OP_CLOSE,
+               "invalid UTF-8 across fragments should CLOSE");
+        expect(responses == wsCloseFrame(1007),
+               "invalid fragmented UTF-8 should close with 1007");
+    }
+
+    // Valid multi-byte UTF-8 split across fragments assembles.
+    {
+        WsState ws;
+        std::string responses;
+        // U+00E9 é is C3 A9 — split as C3 | A9
+        const std::string f1 = maskedFrame(0x01, bytes({0xC3}));
+        const std::string f2 = maskedFrame(0x80, bytes({0xA9}));
+        wsDecodeFrames(ws, f1.data(), f1.size(), responses);
+        auto m2 = wsDecodeFrames(ws, f2.data(), f2.size(), responses);
+        expect(m2.size() == 1 && m2[0].opcode == WS_OP_TEXT
+               && m2[0].payload == bytes({0xC3, 0xA9}),
+               "valid UTF-8 split across fragments should reassemble");
+        expect(responses.empty(), "valid split UTF-8 should not close");
+    }
 }
 
 // #1093: after a 16-bit extended length, MaskKey must start at index 0.
@@ -473,6 +587,39 @@ void testTruncatedUtf8CharsetEncode() {
     expect(euro.size() == 1, "complete Euro should encode to one Latin1/approx byte");
 }
 
+#ifdef GRPC_ENABLED
+// #1887: truncated / malformed protobuf must not parse as a default request.
+// The grpc-web dispatcher gates every RPC on ParseFromString; these cases
+// pin that contract without spinning up SessionManager.
+void testMalformedProtobufRejected() {
+    const std::string truncated = bytes({0x0A, 0x05, 0x61});  // incomplete string field
+    const std::string garbage = bytes({0xFF, 0xFF, 0xFF, 0xFF, 0x0F});
+
+    hydra::AuthRequest auth;
+    expect(!auth.ParseFromString(truncated),
+           "truncated AuthRequest must fail ParseFromString");
+    expect(!auth.ParseFromString(garbage),
+           "garbage AuthRequest must fail ParseFromString");
+
+    hydra::SessionRequest sess;
+    expect(!sess.ParseFromString(truncated),
+           "truncated SessionRequest must fail ParseFromString");
+    expect(!sess.ParseFromString(garbage),
+           "garbage SessionRequest must fail ParseFromString");
+
+    hydra::ScrollBackRequest scroll;
+    expect(!scroll.ParseFromString(truncated),
+           "truncated ScrollBackRequest must fail ParseFromString");
+    expect(!scroll.ParseFromString(garbage),
+           "garbage ScrollBackRequest must fail ParseFromString");
+
+    // Empty body is a valid empty message for some types — that is OK.
+    hydra::Empty empty;
+    expect(empty.ParseFromString(std::string()),
+           "empty body should parse as Empty");
+}
+#endif
+
 // #1286: a producer blocked on a full queue must be releasable.
 //
 // cv_space_ is only notified by processPending(), so after the main loop's
@@ -549,6 +696,7 @@ int main() {
     testSplitEorAcrossReads();
     testAsciiBridgeConversion();
     testWebSocketMaskEnforcement();
+    testWebSocketFragmentationAndUtf8();
     testWebSocketExtLenMaskKey();
     testWebSocketExtLen64MaskKey();
     testWebSocketCloseDelivered();
@@ -560,6 +708,9 @@ int main() {
     testWorkQueuePendingCapConstant();
     testConvertInputNonUtf8Target();
     testTruncatedUtf8CharsetEncode();
+#ifdef GRPC_ENABLED
+    testMalformedProtobufRejected();
+#endif
     testWorkQueueStopReleasesBlockedProducer();
     std::cout << "proxy_regression: ok\n";
     return 0;

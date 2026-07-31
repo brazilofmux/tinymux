@@ -1,5 +1,6 @@
 #include "websocket.h"
 #include "base64.h"
+#include "utf8_utils.h"
 #include <openssl/sha.h>
 #include <cstring>
 #include <algorithm>
@@ -258,27 +259,62 @@ std::vector<WsMessage> wsDecodeFrames(WsState& ws, const char* data,
                 } else if (op == WS_OP_PONG) {
                     // Ignore
                 } else {
-                    // Data frame
+                    // #1886: RFC 6455 §5.4 fragmentation state + §8.1 TEXT UTF-8.
+                    // fragOpcode != 0 means a fragmented message is in progress
+                    // (engine #792); clear it when reassembly completes or fails.
+                    //
+                    auto protocolClose = [&](uint16_t code) {
+                        responses += wsCloseFrame(code);
+                        messages.push_back({WS_OP_CLOSE, {}});
+                        ws.fragBuf.clear();
+                        ws.fragOpcode = 0;
+                        ws.parseState = WsState::Header1;
+                    };
+                    auto textUtf8Ok = [](const std::string& s) {
+                        return !findFirstUtf8Issue(s).hasIssue();
+                    };
+
                     if (op == WS_OP_CONTINUATION) {
+                        if (ws.fragOpcode == 0) {
+                            // Orphan CONTINUATION — no message in progress.
+                            protocolClose(1002);
+                            return messages;
+                        }
+                        if (ws.fragBuf.size() + ws.frameBuf.size() > WS_MAX_PAYLOAD) {
+                            protocolClose(1009);
+                            return messages;
+                        }
                         ws.fragBuf += ws.frameBuf;
-                        if (ws.fragBuf.size() > WS_MAX_PAYLOAD) {
-                            // Fragment reassembly too large
-                            responses += wsCloseFrame(1009);
-                            messages.push_back({WS_OP_CLOSE, {}});
+                        if (ws.fin) {
+                            if (ws.fragOpcode == WS_OP_TEXT
+                                && !textUtf8Ok(ws.fragBuf)) {
+                                protocolClose(1007);
+                                return messages;
+                            }
+                            messages.push_back({ws.fragOpcode, ws.fragBuf});
                             ws.fragBuf.clear();
+                            ws.fragOpcode = 0;
+                        }
+                    } else if (op == WS_OP_TEXT || op == WS_OP_BINARY) {
+                        if (ws.fragOpcode != 0) {
+                            // New data frame while reassembly is pending.
+                            protocolClose(1002);
                             return messages;
                         }
                         if (ws.fin) {
-                            messages.push_back({ws.fragOpcode, ws.fragBuf});
-                            ws.fragBuf.clear();
-                        }
-                    } else {
-                        if (ws.fin) {
+                            if (op == WS_OP_TEXT && !textUtf8Ok(ws.frameBuf)) {
+                                protocolClose(1007);
+                                return messages;
+                            }
                             messages.push_back({op, ws.frameBuf});
                         } else {
                             ws.fragOpcode = op;
                             ws.fragBuf = ws.frameBuf;
                         }
+                    } else {
+                        // Unknown non-control opcode — protocol error.
+                        protocolClose(1002);
+                        return messages;
                     }
                 }
 
