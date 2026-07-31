@@ -48,7 +48,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-28 16:35-0600\n"
+"POT-Creation-Date: 2026-07-31 06:49-0600\n"
 "PO-Revision-Date: 2026-07-27 00:00+0000\n"
 "Last-Translator: unassigned <tinymux@googlegroups.com>\n"
 "Language-Team: Korean <tinymux@googlegroups.com>\n"
@@ -87,440 +87,440 @@ msgstr ""
 msgid "Lost"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:566
+#: modules/comsys/comsys_mod.cpp:585
 #, c-format
 msgid "%s %s has connected."
 msgstr "%s %s님이 접속했습니다."
 
-#: modules/comsys/comsys_mod.cpp:612
+#: modules/comsys/comsys_mod.cpp:631
 #, c-format
 msgid "%s %s has disconnected."
 msgstr "%s %s님이 접속을 종료했습니다."
 
-#: modules/comsys/comsys_mod.cpp:645 modules/comsys/comsys_mod.cpp:655
-#: modules/comsys/comsys_mod.cpp:2587 modules/engine/comsys.cpp:3206
-#: modules/engine/comsys.cpp:3469 modules/engine/comsys.cpp:3475
+#: modules/comsys/comsys_mod.cpp:664 modules/comsys/comsys_mod.cpp:674
+#: modules/comsys/comsys_mod.cpp:2622 modules/engine/comsys.cpp:3209
+#: modules/engine/comsys.cpp:3472 modules/engine/comsys.cpp:3478
 #, c-format
 msgid "Bad Comsys Alias: %s for Channel: %s"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:1112 modules/comsys/comsys_mod.cpp:1114
-#: modules/comsys/comsys_mod.cpp:1802 modules/comsys/comsys_mod.cpp:1804
-#: modules/engine/comsys.cpp:2156 modules/engine/comsys.cpp:2732
+#: modules/comsys/comsys_mod.cpp:1131 modules/comsys/comsys_mod.cpp:1133
+#: modules/comsys/comsys_mod.cpp:1835 modules/comsys/comsys_mod.cpp:1837
+#: modules/engine/comsys.cpp:2156 modules/engine/comsys.cpp:2735
 #, c-format
 msgid "%s has left this channel."
 msgstr "%s님이 이 채널에서 나갔습니다."
 
-#: modules/comsys/comsys_mod.cpp:1130 modules/comsys/comsys_mod.cpp:1783
-#: modules/engine/comsys.cpp:2148 modules/engine/comsys.cpp:2736
+#: modules/comsys/comsys_mod.cpp:1149 modules/comsys/comsys_mod.cpp:1816
+#: modules/engine/comsys.cpp:2148 modules/engine/comsys.cpp:2739
 #, c-format
 msgid "You have left channel %s."
 msgstr "채널 %s에서 나갔습니다."
 
-#: modules/comsys/comsys_mod.cpp:1708 modules/engine/comsys.cpp:2097
+#: modules/comsys/comsys_mod.cpp:1741 modules/engine/comsys.cpp:2097
 #, c-format
 msgid "Too many people on channel %s already."
 msgstr "채널 %s에 이미 사람이 너무 많습니다."
 
-#: modules/comsys/comsys_mod.cpp:1740 modules/engine/comsys.cpp:2128
+#: modules/comsys/comsys_mod.cpp:1773 modules/engine/comsys.cpp:2128
 #, c-format
 msgid "You are already on channel %s."
 msgstr "이미 채널 %s에 있습니다."
 
-#: modules/comsys/comsys_mod.cpp:1762 modules/comsys/comsys_mod.cpp:1765
+#: modules/comsys/comsys_mod.cpp:1795 modules/comsys/comsys_mod.cpp:1798
 #: modules/engine/comsys.cpp:2136
 #, c-format
 msgid "%s has joined this channel."
 msgstr "%s님이 이 채널에 참여했습니다."
 
-#: modules/comsys/comsys_mod.cpp:1835 modules/engine/comsys.cpp:2220
+#: modules/comsys/comsys_mod.cpp:1868 modules/engine/comsys.cpp:2220
 msgid "-- Players --"
 msgstr "-- 플레이어 --"
 
-#: modules/comsys/comsys_mod.cpp:1871 modules/engine/comsys.cpp:2242
+#: modules/comsys/comsys_mod.cpp:1904 modules/engine/comsys.cpp:2242
 msgid "-- Objects --"
 msgstr "-- 사물 --"
 
-#: modules/comsys/comsys_mod.cpp:1927 modules/engine/comsys.cpp:2268
+#: modules/comsys/comsys_mod.cpp:1960 modules/engine/comsys.cpp:2268
 msgid "Channel does not have an object."
 msgstr "채널에 연결된 사물이 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:1948 modules/engine/comsys.cpp:2289
+#: modules/comsys/comsys_mod.cpp:1981 modules/engine/comsys.cpp:2289
 msgid "Channel does not log."
 msgstr "채널이 기록을 남기지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:1965 modules/engine/comsys.cpp:2305
+#: modules/comsys/comsys_mod.cpp:1998 modules/engine/comsys.cpp:2305
 #, c-format
 msgid "%s -- Begin Comsys Recall --"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:1988 modules/engine/comsys.cpp:2319
+#: modules/comsys/comsys_mod.cpp:2021 modules/engine/comsys.cpp:2319
 #, c-format
 msgid "%s -- End Comsys Recall --"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2003 modules/engine/comsys.cpp:1664
+#: modules/comsys/comsys_mod.cpp:2036 modules/engine/comsys.cpp:1664
 msgid "No message."
 msgstr "메시지가 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:2022 modules/comsys/comsys_mod.cpp:3025
-#: modules/comsys/comsys_mod.cpp:3550 modules/engine/comsys.cpp:1674
-#: modules/engine/comsys.cpp:2715 modules/engine/comsys.cpp:3350
-#: modules/engine/comsys.cpp:3614
+#: modules/comsys/comsys_mod.cpp:2055 modules/comsys/comsys_mod.cpp:3060
+#: modules/comsys/comsys_mod.cpp:3586 modules/engine/comsys.cpp:1674
+#: modules/engine/comsys.cpp:2718 modules/engine/comsys.cpp:3353
+#: modules/engine/comsys.cpp:3617
 #, c-format
 msgid "Unknown channel %s."
 msgstr "알 수 없는 채널 %s입니다."
 
-#: modules/comsys/comsys_mod.cpp:2035 modules/engine/comsys.cpp:1680
+#: modules/comsys/comsys_mod.cpp:2068 modules/engine/comsys.cpp:1680
 msgid "You are not listed as on that channel.  Delete this alias and readd."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2060 modules/engine/comsys.cpp:1701
+#: modules/comsys/comsys_mod.cpp:2093 modules/engine/comsys.cpp:1701
 #, c-format
 msgid "You must be on %s to do that."
 msgstr "그렇게 하려면 %s에 있어야 합니다."
 
-#: modules/comsys/comsys_mod.cpp:2096 modules/engine/comsys.cpp:1687
+#: modules/comsys/comsys_mod.cpp:2131 modules/engine/comsys.cpp:1687
 msgid "GAGGED players may not speak on channels."
 msgstr "재갈이 물린 플레이어는 채널에서 말할 수 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:2108 modules/engine/comsys.cpp:1723
+#: modules/comsys/comsys_mod.cpp:2143 modules/engine/comsys.cpp:1723
 msgid "That channel type cannot be transmitted on."
 msgstr "그 유형의 채널에서는 송신할 수 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:2120
+#: modules/comsys/comsys_mod.cpp:2155
 msgid "You don’t have enough coins."
 msgstr "동전이 충분하지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:2177 modules/engine/speech.cpp:227
-#: modules/engine/speech.cpp:229 modules/engine/speech.cpp:1225
+#: modules/comsys/comsys_mod.cpp:2212 modules/engine/speech.cpp:228
+#: modules/engine/speech.cpp:230 modules/engine/speech.cpp:1226
 #, c-format
 msgid "%s says, “%s”"
 msgstr "%s님이 “%s”(이)라고 말합니다."
 
-#: modules/comsys/comsys_mod.cpp:2478 modules/engine/comsys.cpp:3292
+#: modules/comsys/comsys_mod.cpp:2513 modules/engine/comsys.cpp:3295
 msgid "Only options available are: on, off and who."
 msgstr "사용할 수 있는 옵션은 on, off, who뿐입니다."
 
-#: modules/comsys/comsys_mod.cpp:2524 modules/engine/comsys.cpp:3159
+#: modules/comsys/comsys_mod.cpp:2559 modules/engine/comsys.cpp:3162
 msgid "Alias"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2527 modules/comsys/comsys_mod.cpp:2744
-#: modules/comsys/comsys_mod.cpp:2884 modules/engine/comsys.cpp:2939
-#: modules/engine/comsys.cpp:3162 modules/engine/comsys.cpp:4246
+#: modules/comsys/comsys_mod.cpp:2562 modules/comsys/comsys_mod.cpp:2779
+#: modules/comsys/comsys_mod.cpp:2919 modules/engine/comsys.cpp:2942
+#: modules/engine/comsys.cpp:3165 modules/engine/comsys.cpp:4249
 msgid "Channel"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2530 modules/comsys/comsys_mod.cpp:3064
-#: modules/engine/comsys.cpp:3165 modules/engine/comsys.cpp:3376
-#: modules/engine/mguests.cpp:453 src/net.cpp:3657
+#: modules/comsys/comsys_mod.cpp:2565 modules/comsys/comsys_mod.cpp:3099
+#: modules/engine/comsys.cpp:3168 modules/engine/comsys.cpp:3379
+#: modules/engine/mguests.cpp:453 src/net.cpp:3713
 msgid "Status"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2533 modules/engine/comsys.cpp:3168
+#: modules/comsys/comsys_mod.cpp:2568 modules/engine/comsys.cpp:3171
 msgid "Title"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2540 modules/comsys/comsys_mod.cpp:2594
-#: modules/engine/comsys.cpp:3211
+#: modules/comsys/comsys_mod.cpp:2575 modules/comsys/comsys_mod.cpp:2629
+#: modules/engine/comsys.cpp:3214
 msgid "-- End of comlist --"
 msgstr "-- comlist 끝 --"
 
-#: modules/comsys/comsys_mod.cpp:2610 modules/engine/comsys.cpp:3053
+#: modules/comsys/comsys_mod.cpp:2645 modules/engine/comsys.cpp:3056
 msgid "Need an alias to do comtitle."
 msgstr "comtitle을 사용하려면 별칭이 필요합니다."
 
-#: modules/comsys/comsys_mod.cpp:2620 modules/engine/comsys.cpp:3062
+#: modules/comsys/comsys_mod.cpp:2655 modules/engine/comsys.cpp:3065
 msgid "Unknown alias."
 msgstr "알 수 없는 별칭입니다."
 
-#: modules/comsys/comsys_mod.cpp:2631 modules/engine/comsys.cpp:3108
+#: modules/comsys/comsys_mod.cpp:2666 modules/engine/comsys.cpp:3111
 msgid "Illegal comsys alias, please delete."
 msgstr "잘못된 comsys 별칭입니다. 삭제해 주세요."
 
-#: modules/comsys/comsys_mod.cpp:2651 modules/engine/comsys.cpp:3074
+#: modules/comsys/comsys_mod.cpp:2686 modules/engine/comsys.cpp:3077
 #, c-format
 msgid "Comtitles are now off for channel %s"
 msgstr "채널 %s의 comtitle이 해제되었습니다"
 
-#: modules/comsys/comsys_mod.cpp:2657 modules/engine/comsys.cpp:3079
+#: modules/comsys/comsys_mod.cpp:2692 modules/engine/comsys.cpp:3082
 msgid "You can not turn off comtitles on that channel."
 msgstr "그 채널에서는 comtitle을 해제할 수 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:2665 modules/engine/comsys.cpp:3084
+#: modules/comsys/comsys_mod.cpp:2700 modules/engine/comsys.cpp:3087
 #, c-format
 msgid "Comtitles are now on for channel %s"
 msgstr "채널 %s의 comtitle이 설정되었습니다"
 
-#: modules/comsys/comsys_mod.cpp:2673 modules/engine/comsys.cpp:3089
+#: modules/comsys/comsys_mod.cpp:2708 modules/engine/comsys.cpp:3092
 #, c-format
 msgid "Join/leave messages are now gagged for channel %s"
 msgstr "채널 %s의 참여/퇴장 메시지가 숨겨졌습니다"
 
-#: modules/comsys/comsys_mod.cpp:2681 modules/engine/comsys.cpp:3094
+#: modules/comsys/comsys_mod.cpp:2716 modules/engine/comsys.cpp:3097
 #, c-format
 msgid "Join/leave messages are now ungagged for channel %s"
 msgstr "채널 %s의 참여/퇴장 메시지가 다시 표시됩니다"
 
-#: modules/comsys/comsys_mod.cpp:2699 modules/engine/comsys.cpp:3101
+#: modules/comsys/comsys_mod.cpp:2734 modules/engine/comsys.cpp:3104
 #, c-format
 msgid "Title set to ‘%s’ on channel %s."
 msgstr "채널 %2$s에 칭호 ‘%1$s’을(를) 설정했습니다."
 
-#: modules/comsys/comsys_mod.cpp:2731 modules/engine/comsys.cpp:2910
+#: modules/comsys/comsys_mod.cpp:2766 modules/engine/comsys.cpp:2913
 msgid "Warning: Only public channels and your channels will be shown."
 msgstr "경고: 공개 채널과 본인의 채널만 표시됩니다."
 
-#: modules/comsys/comsys_mod.cpp:2747 modules/comsys/comsys_mod.cpp:2890
-#: modules/engine/comsys.cpp:2942 modules/engine/comsys.cpp:4252
+#: modules/comsys/comsys_mod.cpp:2782 modules/comsys/comsys_mod.cpp:2925
+#: modules/engine/comsys.cpp:2945 modules/engine/comsys.cpp:4255
 msgid "Header"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2750 modules/comsys/comsys_mod.cpp:2887
-#: modules/engine/comsys.cpp:2945 modules/engine/comsys.cpp:4249
-#: modules/engine/mail.cpp:4357 modules/engine/mail.cpp:5195
-#: modules/engine/predicates.cpp:2973 modules/mail/mail_mod.cpp:4383
-#: modules/mail/mail_mod.cpp:4437
+#: modules/comsys/comsys_mod.cpp:2785 modules/comsys/comsys_mod.cpp:2922
+#: modules/engine/comsys.cpp:2948 modules/engine/comsys.cpp:4252
+#: modules/engine/mail.cpp:4355 modules/engine/mail.cpp:5193
+#: modules/engine/predicates.cpp:2976 modules/mail/mail_mod.cpp:4402
+#: modules/mail/mail_mod.cpp:4456
 msgid "Owner"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2753 modules/engine/comsys.cpp:2948
+#: modules/comsys/comsys_mod.cpp:2788 modules/engine/comsys.cpp:2951
 msgid "Access"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2756 modules/engine/comsys.cpp:2953
+#: modules/comsys/comsys_mod.cpp:2791 modules/engine/comsys.cpp:2956
 msgid "Users"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2759 modules/engine/comsys.cpp:2956
+#: modules/comsys/comsys_mod.cpp:2794 modules/engine/comsys.cpp:2959
 msgid "Msgs"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2847 modules/comsys/comsys_mod.cpp:2986
-#: modules/engine/comsys.cpp:3021 modules/engine/comsys.cpp:4362
+#: modules/comsys/comsys_mod.cpp:2882 modules/comsys/comsys_mod.cpp:3021
+#: modules/engine/comsys.cpp:3024 modules/engine/comsys.cpp:4365
 msgid "-- End of list of Channels --"
 msgstr "-- 채널 목록 끝 --"
 
-#: modules/comsys/comsys_mod.cpp:2890 modules/engine/comsys.cpp:4252
-#: modules/engine/mail.cpp:4354 modules/engine/mail.cpp:5192
-#: modules/mail/mail_mod.cpp:4380 modules/mail/mail_mod.cpp:4434
+#: modules/comsys/comsys_mod.cpp:2925 modules/engine/comsys.cpp:4255
+#: modules/engine/mail.cpp:4352 modules/engine/mail.cpp:5190
+#: modules/mail/mail_mod.cpp:4399 modules/mail/mail_mod.cpp:4453
 msgid "Description"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:2955
+#: modules/comsys/comsys_mod.cpp:2990
 msgid "No description."
 msgstr "설명이 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:3003
+#: modules/comsys/comsys_mod.cpp:3038
 msgid "You must specify a channel."
 msgstr "채널을 지정해야 합니다."
 
-#: modules/comsys/comsys_mod.cpp:3044 modules/comsys/comsys_mod.cpp:3178
-#: modules/comsys/comsys_mod.cpp:3234 modules/comsys/comsys_mod.cpp:3564
+#: modules/comsys/comsys_mod.cpp:3079 modules/comsys/comsys_mod.cpp:3213
+#: modules/comsys/comsys_mod.cpp:3269 modules/comsys/comsys_mod.cpp:3600
 #: modules/engine/command.cpp:685 modules/engine/match.cpp:19
 #: modules/engine/match.cpp:36
 msgid "Permission denied."
 msgstr "권한이 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:3061 modules/engine/command.cpp:4028
-#: modules/engine/comsys.cpp:3373 modules/engine/mail.cpp:4351
-#: modules/engine/mail.cpp:5189 modules/engine/mguests.cpp:446
-#: modules/mail/mail_mod.cpp:4377 modules/mail/mail_mod.cpp:4431
+#: modules/comsys/comsys_mod.cpp:3096 modules/engine/command.cpp:4032
+#: modules/engine/comsys.cpp:3376 modules/engine/mail.cpp:4349
+#: modules/engine/mail.cpp:5187 modules/engine/mguests.cpp:446
+#: modules/mail/mail_mod.cpp:4396 modules/mail/mail_mod.cpp:4450
 msgid "Name"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3067 modules/engine/comsys.cpp:3379
+#: modules/comsys/comsys_mod.cpp:3102 modules/engine/comsys.cpp:3382
 msgid "Player"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3156 modules/engine/comsys.cpp:3864
+#: modules/comsys/comsys_mod.cpp:3191 modules/engine/comsys.cpp:3867
 #, c-format
 msgid "Channel %s does not exist."
 msgstr "채널 %s이(가) 존재하지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:3220 modules/engine/comsys.cpp:3920
+#: modules/comsys/comsys_mod.cpp:3255 modules/engine/comsys.cpp:3923
 #, c-format
 msgid "@cset: Channel %s does not exist."
 msgstr "@cset: 채널 %s이(가) 존재하지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:3246 modules/engine/comsys.cpp:3936
+#: modules/comsys/comsys_mod.cpp:3281 modules/engine/comsys.cpp:3939
 #, c-format
 msgid "@cset: Channel %s placed on the public listings."
 msgstr "@cset: 채널 %s을(를) 공개 목록에 올렸습니다."
 
-#: modules/comsys/comsys_mod.cpp:3254 modules/engine/comsys.cpp:3941
+#: modules/comsys/comsys_mod.cpp:3289 modules/engine/comsys.cpp:3944
 #, c-format
 msgid "@cset: Channel %s taken off the public listings."
 msgstr "@cset: 채널 %s을(를) 공개 목록에서 내렸습니다."
 
-#: modules/comsys/comsys_mod.cpp:3262 modules/engine/comsys.cpp:3946
+#: modules/comsys/comsys_mod.cpp:3297 modules/engine/comsys.cpp:3949
 #, c-format
 msgid "@cset: Channel %s now sends connect/disconnect msgs."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3270 modules/engine/comsys.cpp:3951
+#: modules/comsys/comsys_mod.cpp:3305 modules/engine/comsys.cpp:3954
 #, c-format
 msgid "@cset: Channel %s connect/disconnect msgs muted."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3278 modules/engine/comsys.cpp:3956
+#: modules/comsys/comsys_mod.cpp:3313 modules/engine/comsys.cpp:3959
 #, c-format
 msgid "@cset: Channel %s set spoofable."
 msgstr "@cset: 채널 %s에서 위장을 허용합니다."
 
-#: modules/comsys/comsys_mod.cpp:3286 modules/engine/comsys.cpp:3961
+#: modules/comsys/comsys_mod.cpp:3321 modules/engine/comsys.cpp:3964
 #, c-format
 msgid "@cset: Channel %s set unspoofable."
 msgstr "@cset: 채널 %s에서 위장을 허용하지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:3307 modules/engine/comsys.cpp:3972
+#: modules/comsys/comsys_mod.cpp:3342 modules/engine/comsys.cpp:3975
 #, c-format
 msgid "Channel %s is now disassociated from any channel object."
 msgstr "채널 %s이(가) 더 이상 어떤 사물과도 연결되어 있지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:3316
+#: modules/comsys/comsys_mod.cpp:3351
 #, c-format
 msgid "Channel %s is now using %s(#%d) as channel object."
 msgstr "채널 %1$s이(가) 이제 %2$s(#%3$d)을(를) 채널 사물로 사용합니다."
 
-#: modules/comsys/comsys_mod.cpp:3324
+#: modules/comsys/comsys_mod.cpp:3359
 #, c-format
 msgid "%d is not a valid channel object."
 msgstr "%d은(는) 올바른 채널 사물이 아닙니다."
 
-#: modules/comsys/comsys_mod.cpp:3443
+#: modules/comsys/comsys_mod.cpp:3479
 #, c-format
 msgid ""
 "@cset: Failed.  Could not set the maximum for %s (the attribute is not "
 "writable here)."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3449
+#: modules/comsys/comsys_mod.cpp:3485
 #, c-format
 msgid ""
 "@cset: Channel %s maximum history set, but older entries could not be "
 "cleared."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3455 modules/engine/comsys.cpp:3996
+#: modules/comsys/comsys_mod.cpp:3491 modules/engine/comsys.cpp:3999
 #, c-format
 msgid "@cset: Channel %s maximum history set."
 msgstr "@cset: 채널 %s의 최대 기록을 설정했습니다."
 
-#: modules/comsys/comsys_mod.cpp:3484 modules/comsys/comsys_mod.cpp:3500
+#: modules/comsys/comsys_mod.cpp:3520 modules/comsys/comsys_mod.cpp:3536
 #, c-format
 msgid "@cset: Failed.  Is logging enabled for %s?"
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3520
+#: modules/comsys/comsys_mod.cpp:3556
 #, c-format
 msgid ""
 "@cset: Failed.  Timestamp logging for %s could not be changed (the attribute "
 "is not writable here)."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3526 modules/engine/comsys.cpp:4017
+#: modules/comsys/comsys_mod.cpp:3562 modules/engine/comsys.cpp:4020
 #, c-format
 msgid "@cset: Channel %s timestamp logging set."
 msgstr "@cset: 채널 %s의 시각 기록을 설정했습니다."
 
-#: modules/comsys/comsys_mod.cpp:3777 modules/engine/comsys.cpp:4097
+#: modules/comsys/comsys_mod.cpp:3813 modules/engine/comsys.cpp:4100
 #, c-format
 msgid "@cboot: %s is not on the channel."
 msgstr "@cboot: %s님은 채널에 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:3793 modules/engine/comsys.cpp:4102
+#: modules/comsys/comsys_mod.cpp:3829 modules/engine/comsys.cpp:4105
 #, c-format
 msgid "You boot %s off channel %s."
 msgstr "%2$s 채널에서 %1$s님을 내보냈습니다."
 
-#: modules/comsys/comsys_mod.cpp:3800 modules/engine/comsys.cpp:4104
+#: modules/comsys/comsys_mod.cpp:3836 modules/engine/comsys.cpp:4107
 #, c-format
 msgid "%s boots you off channel %s."
 msgstr "%1$s님이 %2$s 채널에서 당신을 내보냈습니다."
 
-#: modules/comsys/comsys_mod.cpp:3811
+#: modules/comsys/comsys_mod.cpp:3847
 #, c-format
 msgid "%s %s boots %s off the channel."
 msgstr ""
 
-#: modules/comsys/comsys_mod.cpp:3886 modules/comsys/comsys_mod.cpp:3908
-#: modules/engine/comsys.cpp:2574 modules/engine/comsys.cpp:2584
+#: modules/comsys/comsys_mod.cpp:3922 modules/comsys/comsys_mod.cpp:3944
+#: modules/engine/comsys.cpp:2577 modules/engine/comsys.cpp:2587
 msgid "You need to specify a valid alias."
 msgstr "올바른 별칭을 지정해야 합니다."
 
-#: modules/comsys/comsys_mod.cpp:3895 modules/engine/comsys.cpp:2589
+#: modules/comsys/comsys_mod.cpp:3931 modules/engine/comsys.cpp:2592
 msgid "You need to specify a channel."
 msgstr "채널을 지정해야 합니다."
 
-#: modules/comsys/comsys_mod.cpp:3920 modules/engine/comsys.cpp:2598
+#: modules/comsys/comsys_mod.cpp:3956 modules/engine/comsys.cpp:2601
 #, c-format
 msgid "Channel %s does not exist yet."
 msgstr "채널 %s이(가) 아직 존재하지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:3932 modules/engine/comsys.cpp:2603
+#: modules/comsys/comsys_mod.cpp:3968 modules/engine/comsys.cpp:2606
 msgid "Sorry, this channel type does not allow you to join."
 msgstr "죄송합니다, 이 유형의 채널에는 참여할 수 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:3944 modules/engine/comsys.cpp:2609
+#: modules/comsys/comsys_mod.cpp:3980 modules/engine/comsys.cpp:2612
 msgid "Sorry, but you have reached the maximum number of aliases allowed."
 msgstr "죄송합니다, 허용된 별칭의 최대 개수에 도달했습니다."
 
-#: modules/comsys/comsys_mod.cpp:3960 modules/engine/comsys.cpp:2620
+#: modules/comsys/comsys_mod.cpp:3996 modules/engine/comsys.cpp:2623
 #, c-format
 msgid "That alias is already in use for channel %s."
 msgstr "그 별칭은 이미 채널 %s에 사용 중입니다."
 
-#: modules/comsys/comsys_mod.cpp:3989 modules/engine/comsys.cpp:2640
+#: modules/comsys/comsys_mod.cpp:4025 modules/engine/comsys.cpp:2643
 #, c-format
 msgid "Channel %s added with alias %s."
 msgstr "채널 %1$s을(를) 별칭 %2$s(으)로 추가했습니다."
 
-#: modules/comsys/comsys_mod.cpp:4005 modules/engine/comsys.cpp:2661
+#: modules/comsys/comsys_mod.cpp:4041 modules/engine/comsys.cpp:2664
 msgid "Need an alias to delete."
 msgstr "삭제할 별칭이 필요합니다."
 
-#: modules/comsys/comsys_mod.cpp:4043 modules/engine/comsys.cpp:2689
-#: modules/engine/comsys.cpp:2695
+#: modules/comsys/comsys_mod.cpp:4079 modules/engine/comsys.cpp:2692
+#: modules/engine/comsys.cpp:2698
 #, c-format
 msgid "Alias %s for channel %s deleted."
 msgstr "채널 %2$s의 별칭 %1$s을(를) 삭제했습니다."
 
-#: modules/comsys/comsys_mod.cpp:4056 modules/engine/comsys.cpp:2705
+#: modules/comsys/comsys_mod.cpp:4092 modules/engine/comsys.cpp:2708
 msgid "Unable to find that alias."
 msgstr "그 별칭을 찾을 수 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:4093 modules/engine/comsys.cpp:2766
+#: modules/comsys/comsys_mod.cpp:4129 modules/engine/comsys.cpp:2769
 msgid "You must specify a channel to create."
 msgstr "만들 채널을 지정해야 합니다."
 
-#: modules/comsys/comsys_mod.cpp:4109
+#: modules/comsys/comsys_mod.cpp:4145
 msgid "You do not have permission to create channels."
 msgstr "채널을 만들 권한이 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:4122
+#: modules/comsys/comsys_mod.cpp:4158
 msgid "That channel already exists."
 msgstr "그 채널은 이미 존재합니다."
 
-#: modules/comsys/comsys_mod.cpp:4154 modules/engine/comsys.cpp:2844
+#: modules/comsys/comsys_mod.cpp:4190 modules/engine/comsys.cpp:2847
 #, c-format
 msgid "Channel %s created."
 msgstr "채널 %s을(를) 만들었습니다."
 
-#: modules/comsys/comsys_mod.cpp:4169
+#: modules/comsys/comsys_mod.cpp:4205
 msgid "You must specify a channel to destroy."
 msgstr "삭제할 채널을 지정해야 합니다."
 
-#: modules/comsys/comsys_mod.cpp:4180 modules/engine/comsys.cpp:4158
+#: modules/comsys/comsys_mod.cpp:4216 modules/engine/comsys.cpp:4161
 msgid "That channel does not exist."
 msgstr "그 채널이 존재하지 않습니다."
 
-#: modules/comsys/comsys_mod.cpp:4200
+#: modules/comsys/comsys_mod.cpp:4236
 msgid "You do not have permission to destroy that channel."
 msgstr "그 채널을 삭제할 권한이 없습니다."
 
-#: modules/comsys/comsys_mod.cpp:4248 modules/engine/comsys.cpp:2901
+#: modules/comsys/comsys_mod.cpp:4284 modules/engine/comsys.cpp:2904
 #, c-format
 msgid "Channel %s destroyed."
 msgstr "채널 %s을(를) 삭제했습니다."
@@ -529,7 +529,7 @@ msgstr "채널 %s을(를) 삭제했습니다."
 msgid "--- Attribute Cache ---"
 msgstr ""
 
-#: modules/engine/attrcache.cpp:1190
+#: modules/engine/attrcache.cpp:1187
 msgid "--- SQLite Storage ---"
 msgstr ""
 
@@ -551,7 +551,7 @@ msgstr ""
 msgid "Unknown lock type."
 msgstr ""
 
-#: modules/engine/command.cpp:662 modules/engine/command.cpp:4446
+#: modules/engine/command.cpp:662 modules/engine/command.cpp:4450
 msgid "Lua module is not loaded."
 msgstr ""
 
@@ -592,8 +592,8 @@ msgstr ""
 msgid "Unrecognized switch ‘%s’ for command ‘%s’."
 msgstr ""
 
-#: modules/engine/command.cpp:1531 modules/engine/cque.cpp:2029
-#: modules/engine/quota.cpp:176 modules/engine/walkdb.cpp:333
+#: modules/engine/command.cpp:1531 modules/engine/cque.cpp:2045
+#: modules/engine/quota.cpp:183 modules/engine/walkdb.cpp:333
 #: modules/engine/wiz.cpp:822 modules/engine/wiz.cpp:910
 msgid "Illegal combination of switches."
 msgstr "스위치 조합이 잘못되었습니다."
@@ -603,56 +603,56 @@ msgstr "스위치 조합이 잘못되었습니다."
 msgid "Command %s does not take switches."
 msgstr ""
 
-#: modules/engine/command.cpp:2981
+#: modules/engine/command.cpp:2985
 msgid "Huh?  (Type “help” for help.)"
 msgstr "네?  (도움말을 보려면 “help”를 입력하세요.)"
 
-#: modules/engine/command.cpp:3645
+#: modules/engine/command.cpp:3649
 #, c-format
 msgid "Digging a room costs %d %s%s."
 msgstr ""
 
-#: modules/engine/command.cpp:3652
+#: modules/engine/command.cpp:3656
 #, c-format
 msgid "Opening a new exit costs %d %s%s."
 msgstr ""
 
-#: modules/engine/command.cpp:3655
+#: modules/engine/command.cpp:3659
 #, c-format
 msgid "Linking an exit, home, or dropto costs %d %s."
 msgstr ""
 
-#: modules/engine/command.cpp:3664
+#: modules/engine/command.cpp:3668
 #, c-format
 msgid "Creating a new thing costs %d %s%s."
 msgstr ""
 
-#: modules/engine/command.cpp:3671
+#: modules/engine/command.cpp:3675
 #, c-format
 msgid "Creating a new thing costs between %d and %d %s%s."
 msgstr ""
 
-#: modules/engine/command.cpp:3680
+#: modules/engine/command.cpp:3684
 #, c-format
 msgid "Creating a robot costs %d %s%s."
 msgstr ""
 
-#: modules/engine/command.cpp:3689
+#: modules/engine/command.cpp:3693
 #, c-format
 msgid "Killing costs %d %s, with a %d%% chance of success."
 msgstr ""
 
-#: modules/engine/command.cpp:3695
+#: modules/engine/command.cpp:3699
 #, c-format
 msgid "Killing costs between %d and %d %s."
 msgstr ""
 
-#: modules/engine/command.cpp:3705
+#: modules/engine/command.cpp:3709
 #, c-format
 msgid "You must spend %d %s to guarantee success."
 msgstr ""
 
-#: modules/engine/command.cpp:3709
+#: modules/engine/command.cpp:3713
 #, c-format
 msgid ""
 "Computationally expensive commands and functions (ie: @entrances, @find, "
@@ -660,384 +660,384 @@ msgid ""
 "%s."
 msgstr ""
 
-#: modules/engine/command.cpp:3713
+#: modules/engine/command.cpp:3717
 #, c-format
 msgid "Each command run from the queue costs 1/%d %s."
 msgstr ""
 
-#: modules/engine/command.cpp:3718
+#: modules/engine/command.cpp:3722
 #, c-format
 msgid "A %d %s deposit is charged for putting a command on the queue."
 msgstr ""
 
-#: modules/engine/command.cpp:3720
+#: modules/engine/command.cpp:3724
 msgid "The deposit is refunded when the command is run or canceled."
-msgstr ""
-
-#: modules/engine/command.cpp:3744
-#, c-format
-msgid "The value of an object is %s."
-msgstr ""
-
-#: modules/engine/command.cpp:3746
-msgid ""
-"The default value of cloned objects is the value of the original object."
 msgstr ""
 
 #: modules/engine/command.cpp:3748
 #, c-format
+msgid "The value of an object is %s."
+msgstr ""
+
+#: modules/engine/command.cpp:3750
+msgid ""
+"The default value of cloned objects is the value of the original object."
+msgstr ""
+
+#: modules/engine/command.cpp:3752
+#, c-format
 msgid "The default value of cloned objects is %d %s."
 msgstr ""
 
-#: modules/engine/command.cpp:3783
+#: modules/engine/command.cpp:3787
 msgid "Building quotas are enforced."
 msgstr ""
 
-#: modules/engine/command.cpp:3785
+#: modules/engine/command.cpp:3789
 msgid "Player names may contain spaces."
 msgstr ""
 
-#: modules/engine/command.cpp:3787
+#: modules/engine/command.cpp:3791
 msgid "Player names may not contain spaces."
 msgstr ""
 
-#: modules/engine/command.cpp:3789
+#: modules/engine/command.cpp:3793
 msgid "Robots are not allowed to speak in public areas."
 msgstr ""
 
-#: modules/engine/command.cpp:3791
+#: modules/engine/command.cpp:3795
 msgid "The @Listen/@Ahear attribute set works on player objects."
 msgstr ""
 
-#: modules/engine/command.cpp:3794
+#: modules/engine/command.cpp:3798
 msgid "The ‘examine’ command lists the flag names for the object’s flags."
 msgstr ""
 
-#: modules/engine/command.cpp:3797
+#: modules/engine/command.cpp:3801
 msgid ""
 "The ‘look’ command shows visible attributes in addition to the description."
 msgstr ""
 
-#: modules/engine/command.cpp:3799
+#: modules/engine/command.cpp:3803
 msgid "The ‘look’ command lists DARK objects owned by you."
 msgstr ""
 
-#: modules/engine/command.cpp:3801
+#: modules/engine/command.cpp:3805
 msgid "The ‘look’ command shows disconnected players."
 msgstr ""
 
-#: modules/engine/command.cpp:3803
+#: modules/engine/command.cpp:3807
 msgid "The ‘look’ command obeys the TERSE flag."
 msgstr ""
 
-#: modules/engine/command.cpp:3806
+#: modules/engine/command.cpp:3810
 msgid ""
 "Trace output is presented top-down (whole expression first, then sub-exprs)."
 msgstr ""
 
-#: modules/engine/command.cpp:3807
+#: modules/engine/command.cpp:3811
 #, c-format
 msgid "Only %d lines of trace output are displayed."
 msgstr ""
 
-#: modules/engine/command.cpp:3811
+#: modules/engine/command.cpp:3815
 msgid "Trace output is presented bottom-up (subexpressions first)."
 msgstr ""
 
-#: modules/engine/command.cpp:3814
+#: modules/engine/command.cpp:3818
 msgid ""
 "The ‘whisper’ command lets others in the room with you know you whispered."
 msgstr ""
 
-#: modules/engine/command.cpp:3816
+#: modules/engine/command.cpp:3820
 msgid "The ‘@pemit’ command may be used to emit to faraway players."
 msgstr ""
 
-#: modules/engine/command.cpp:3818
+#: modules/engine/command.cpp:3822
 msgid "The TERSE flag suppresses listing the contents of a location."
 msgstr ""
 
-#: modules/engine/command.cpp:3820
+#: modules/engine/command.cpp:3824
 msgid "The TERSE flag suppresses listing obvious exits in a location."
 msgstr ""
 
-#: modules/engine/command.cpp:3822
+#: modules/engine/command.cpp:3826
 msgid ""
 "The TERSE flag suppresses enter/leave/succ/drop messages generated by moving."
 msgstr ""
 
-#: modules/engine/command.cpp:3825
+#: modules/engine/command.cpp:3829
 msgid "The ‘flags()’ function will return the flags of any object."
 msgstr ""
 
-#: modules/engine/command.cpp:3828
+#: modules/engine/command.cpp:3832
 msgid "The ‘get()’ function will return the description of faraway objects,"
 msgstr ""
 
-#: modules/engine/command.cpp:3830
+#: modules/engine/command.cpp:3834
 msgid "The ‘name()’ function will return the name of faraway objects."
 msgstr ""
 
-#: modules/engine/command.cpp:3831
+#: modules/engine/command.cpp:3835
 #, c-format
 msgid "The default switch for the ‘@switch’ command is %s."
 msgstr ""
 
-#: modules/engine/command.cpp:3833
+#: modules/engine/command.cpp:3837
 #, c-format
 msgid "The default switch for the ‘examine’ command is %s."
 msgstr ""
 
-#: modules/engine/command.cpp:3835
+#: modules/engine/command.cpp:3839
 msgid "Players may @sweep dark locations."
 msgstr ""
 
-#: modules/engine/command.cpp:3837
+#: modules/engine/command.cpp:3841
 msgid ""
 "You may only @teleport out of locations that are JUMP_OK or that you control."
 msgstr ""
 
-#: modules/engine/command.cpp:3839
+#: modules/engine/command.cpp:3843
 #, c-format
 msgid "Players may have at most %d commands in the queue at one time."
 msgstr ""
 
-#: modules/engine/command.cpp:3844
+#: modules/engine/command.cpp:3848
 msgid "All objects search themselves for $-commands."
 msgstr ""
 
-#: modules/engine/command.cpp:3846
+#: modules/engine/command.cpp:3850
 msgid "Objects other than players search themselves for $-commands."
 msgstr ""
 
-#: modules/engine/command.cpp:3853
+#: modules/engine/command.cpp:3857
 #, c-format
 msgid "%d commands are run from the queue when there is no net activity."
 msgstr ""
 
-#: modules/engine/command.cpp:3856
+#: modules/engine/command.cpp:3860
 #, c-format
 msgid "%d commands are run from the queue when there is net activity."
 msgstr ""
 
-#: modules/engine/command.cpp:3859
+#: modules/engine/command.cpp:3863
 msgid ""
 "Wizards idle for longer than the default timeout are automatically set DARK."
 msgstr ""
 
-#: modules/engine/command.cpp:3861
+#: modules/engine/command.cpp:3865
 msgid "Objects not owned by you are automatically considered SAFE."
 msgstr ""
 
-#: modules/engine/command.cpp:3863
+#: modules/engine/command.cpp:3867
 msgid "The buffer pools are checked for consistency on each allocate or free."
 msgstr ""
 
-#: modules/engine/command.cpp:3865
+#: modules/engine/command.cpp:3869
 msgid "A separate name cache is used."
 msgstr ""
 
-#: modules/engine/command.cpp:3869
+#: modules/engine/command.cpp:3873
 msgid "Database dumps are performed by a fork()ed process."
 msgstr ""
 
-#: modules/engine/command.cpp:3874
+#: modules/engine/command.cpp:3878
 #, c-format
 msgid "There may be at most %d player logged in at once."
 msgid_plural "There may be at most %d players logged in at once."
 msgstr[0] "한 번에 최대 %d명의 플레이어가 접속할 수 있습니다."
 
-#: modules/engine/command.cpp:3883
+#: modules/engine/command.cpp:3887
 #, c-format
 msgid "New players are given %d %s to start with."
 msgstr ""
 
-#: modules/engine/command.cpp:3886
+#: modules/engine/command.cpp:3890
 #, c-format
 msgid "Players are given %d %s each day they connect."
 msgstr ""
 
-#: modules/engine/command.cpp:3889
+#: modules/engine/command.cpp:3893
 #, c-format
 msgid "Earning money is difficult if you have more than %d %s."
 msgstr ""
 
-#: modules/engine/command.cpp:3893
+#: modules/engine/command.cpp:3897
 #, c-format
 msgid "Players have a 1 in %d chance of finding a %s each time they move."
 msgstr ""
 
-#: modules/engine/command.cpp:4031
+#: modules/engine/command.cpp:4035
 msgid "Entries"
 msgstr ""
 
-#: modules/engine/command.cpp:4141
+#: modules/engine/command.cpp:4145
 msgid "Modules:"
 msgstr "모듈:"
 
-#: modules/engine/command.cpp:4216
+#: modules/engine/command.cpp:4220
 msgid "Reality levels:"
 msgstr ""
 
-#: modules/engine/command.cpp:4224
+#: modules/engine/command.cpp:4228
 msgid "Level"
 msgstr ""
 
-#: modules/engine/command.cpp:4230
+#: modules/engine/command.cpp:4234
 msgid "Value"
 msgstr ""
 
-#: modules/engine/command.cpp:4238
+#: modules/engine/command.cpp:4242
 msgid "Desc"
 msgstr ""
 
-#: modules/engine/command.cpp:4244
+#: modules/engine/command.cpp:4248
 msgid "--Completed."
 msgstr "--완료했습니다."
 
-#: modules/engine/command.cpp:4432
+#: modules/engine/command.cpp:4436
 msgid "Lua module loaded (Lua 5.4)."
 msgstr ""
 
-#: modules/engine/command.cpp:4548 modules/engine/command.cpp:4582
+#: modules/engine/command.cpp:4552 modules/engine/command.cpp:4586
 msgid "@icmd: Bad Location."
 msgstr ""
 
-#: modules/engine/command.cpp:4554
+#: modules/engine/command.cpp:4558
 msgid "@icmd: Location - All cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4555 modules/engine/command.cpp:4572
-#: modules/engine/command.cpp:4618 modules/engine/command.cpp:4647
-#: modules/engine/command.cpp:4654 modules/engine/command.cpp:4679
-#: modules/engine/command.cpp:4891
+#: modules/engine/command.cpp:4559 modules/engine/command.cpp:4576
+#: modules/engine/command.cpp:4622 modules/engine/command.cpp:4651
+#: modules/engine/command.cpp:4658 modules/engine/command.cpp:4683
+#: modules/engine/command.cpp:4895
 msgid "@icmd: Done."
 msgstr "@icmd: 완료했습니다."
 
-#: modules/engine/command.cpp:4564
+#: modules/engine/command.cpp:4568
 msgid "Location CmdCheck attribute is:"
 msgstr ""
 
-#: modules/engine/command.cpp:4569
+#: modules/engine/command.cpp:4573
 msgid "Location CmdCheck attribute is empty."
 msgstr ""
 
-#: modules/engine/command.cpp:4585
+#: modules/engine/command.cpp:4589
 msgid "Scanning all locations and zones from your current location:"
 msgstr ""
 
-#: modules/engine/command.cpp:4616
+#: modules/engine/command.cpp:4620
 msgid "@icmd: Location - No icmds found at current location."
 msgstr ""
 
-#: modules/engine/command.cpp:4636
+#: modules/engine/command.cpp:4640
 msgid "@icmd: Bad player."
 msgstr ""
 
-#: modules/engine/command.cpp:4646
+#: modules/engine/command.cpp:4650
 msgid "@icmd: All cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4653
+#: modules/engine/command.cpp:4657
 msgid "@icmd: Activated."
 msgstr ""
 
-#: modules/engine/command.cpp:4661
+#: modules/engine/command.cpp:4665
 msgid "CmdCheck is active."
 msgstr ""
 
-#: modules/engine/command.cpp:4665
+#: modules/engine/command.cpp:4669
 msgid "CmdCheck is not active."
 msgstr ""
 
-#: modules/engine/command.cpp:4671
+#: modules/engine/command.cpp:4675
 msgid "CmdCheck attribute is:"
 msgstr ""
 
-#: modules/engine/command.cpp:4676
+#: modules/engine/command.cpp:4680
 msgid "CmdCheck attribute is empty."
 msgstr ""
 
-#: modules/engine/command.cpp:4905
+#: modules/engine/command.cpp:4909
 msgid "Train cannot be used to teach command, train."
 msgstr ""
 
-#: modules/engine/command.cpp:4912
+#: modules/engine/command.cpp:4916
 msgid "Bad location."
 msgstr "위치가 잘못되었습니다."
 
-#: modules/engine/command.cpp:4919
+#: modules/engine/command.cpp:4923
 msgid "Train requires an argument."
 msgstr ""
 
-#: modules/engine/command.cpp:4956
+#: modules/engine/command.cpp:4960
 msgid "Moniker cleared."
 msgstr ""
 
-#: modules/engine/command.cpp:4965
+#: modules/engine/command.cpp:4969
 msgid "Moniker set."
 msgstr "별명이 설정되었습니다."
 
-#: modules/engine/command.cpp:5096
+#: modules/engine/command.cpp:5100
 msgid "@hook: Non-existent command name given."
 msgstr ""
 
-#: modules/engine/command.cpp:5103
+#: modules/engine/command.cpp:5107
 msgid "@hook: Incompatible switches."
 msgstr ""
 
-#: modules/engine/command.cpp:5168
+#: modules/engine/command.cpp:5172
 msgid "Built-in Command"
 msgstr ""
 
-#: modules/engine/command.cpp:5171 modules/engine/command.cpp:5244
+#: modules/engine/command.cpp:5175 modules/engine/command.cpp:5248
 msgid "Hook Mask Values"
 msgstr ""
 
-#: modules/engine/command.cpp:5241
+#: modules/engine/command.cpp:5245
 msgid "Built-in Attribute"
 msgstr ""
 
 #: modules/engine/comsys.cpp:1729 modules/engine/functions.cpp:4468
 #: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
-#: modules/engine/speech.cpp:565 modules/engine/walkdb.cpp:193
+#: modules/engine/speech.cpp:566 modules/engine/walkdb.cpp:193
 #: modules/engine/walkdb.cpp:231
 #, c-format
 msgid "You don’t have enough %s."
 msgstr "%s이(가) 충분하지 않습니다."
 
-#: modules/engine/comsys.cpp:2259 modules/engine/comsys.cpp:3368
-#: modules/engine/comsys.cpp:3406
+#: modules/engine/comsys.cpp:2259 modules/engine/comsys.cpp:3371
+#: modules/engine/comsys.cpp:3409
 #, c-format
 msgid "-- %s --"
 msgstr ""
 
-#: modules/engine/comsys.cpp:2814
+#: modules/engine/comsys.cpp:2817
 msgid "Channel name is too long."
 msgstr "채널 이름이 너무 깁니다."
 
-#: modules/engine/comsys.cpp:2824
+#: modules/engine/comsys.cpp:2827
 #, c-format
 msgid "Channel %s already exists."
 msgstr "채널 %s이(가) 이미 존재합니다."
 
-#: modules/engine/comsys.cpp:2881
+#: modules/engine/comsys.cpp:2884
 #, c-format
 msgid "Could not find channel %s."
 msgstr "채널 %s을(를) 찾을 수 없습니다."
 
-#: modules/engine/comsys.cpp:3426 modules/engine/engine_com.cpp:4820
+#: modules/engine/comsys.cpp:3429 modules/engine/engine_com.cpp:4986
 #, c-format
 msgid "%s has disconnected."
 msgstr "%s님이 접속을 종료했습니다."
 
-#: modules/engine/comsys.cpp:3448 modules/engine/engine_com.cpp:4632
+#: modules/engine/comsys.cpp:3451 modules/engine/engine_com.cpp:4798
 #, c-format
 msgid "%s has connected."
 msgstr "%s님이 접속했습니다."
 
-#: modules/engine/comsys.cpp:3643 modules/engine/comsys.cpp:3659
-#: modules/engine/comsys.cpp:3989 modules/engine/conf.cpp:2464
+#: modules/engine/comsys.cpp:3646 modules/engine/comsys.cpp:3662
+#: modules/engine/comsys.cpp:3992 modules/engine/conf.cpp:2471
 #: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
@@ -1047,291 +1047,291 @@ msgstr "%s님이 접속했습니다."
 msgid "Set."
 msgstr "설정되었습니다."
 
-#: modules/engine/comsys.cpp:3647
+#: modules/engine/comsys.cpp:3650
 msgid "Invalid player."
 msgstr "플레이어가 잘못되었습니다."
 
-#: modules/engine/comsys.cpp:3663
+#: modules/engine/comsys.cpp:3666
 msgid "That is not a reasonable cost."
 msgstr "적절한 비용이 아닙니다."
 
-#: modules/engine/comsys.cpp:3685
+#: modules/engine/comsys.cpp:3688
 msgid "@cpflags: Unknown Flag."
 msgstr "@cpflags: 알 수 없는 플래그입니다."
 
-#: modules/engine/comsys.cpp:3693
+#: modules/engine/comsys.cpp:3696
 msgid "@cpflags: Set."
 msgstr "@cpflags: 설정되었습니다."
 
-#: modules/engine/comsys.cpp:3698
+#: modules/engine/comsys.cpp:3701
 msgid "@cpflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3721
+#: modules/engine/comsys.cpp:3724
 msgid "@coflags: Unknown Flag."
 msgstr "@coflags: 알 수 없는 플래그입니다."
 
-#: modules/engine/comsys.cpp:3729
+#: modules/engine/comsys.cpp:3732
 msgid "@coflags: Set."
 msgstr "@coflags: 설정되었습니다."
 
-#: modules/engine/comsys.cpp:3734
+#: modules/engine/comsys.cpp:3737
 msgid "@coflags: Cleared."
 msgstr ""
 
-#: modules/engine/comsys.cpp:3978
+#: modules/engine/comsys.cpp:3981
 #, c-format
 msgid "Channel %s is now using %s as channel object."
 msgstr "채널 %1$s이(가) 이제 %2$s을(를) 채널 사물로 사용합니다."
 
-#: modules/engine/comsys.cpp:4000
+#: modules/engine/comsys.cpp:4003
 #, c-format
 msgid ""
 "@cset: Channel %s has no channel object.  Use @cset/object to set one before "
 "setting a history buffer."
 msgstr ""
 
-#: modules/engine/comsys.cpp:4004
+#: modules/engine/comsys.cpp:4007
 #, c-format
 msgid "@cset: Could not set maximum history for channel %s."
 msgstr "@cset: 채널 %s의 최대 기록을 설정할 수 없습니다."
 
-#: modules/engine/comsys.cpp:4008
+#: modules/engine/comsys.cpp:4011
 #, c-format
 msgid "@cset: Maximum history must be a number less than or equal to %d."
 msgstr "@cset: 최대 기록은 %d 이하의 숫자여야 합니다."
 
-#: modules/engine/comsys.cpp:4021
+#: modules/engine/comsys.cpp:4024
 #, c-format
 msgid "@cset: Timestamp logging for channel %s must be 0 or 1."
 msgstr "@cset: 채널 %s의 시각 기록은 0 또는 1이어야 합니다."
 
-#: modules/engine/comsys.cpp:4025
+#: modules/engine/comsys.cpp:4028
 #, c-format
 msgid ""
 "@cset: Channel %s has no channel object.  Use @cset/object to set one before "
 "enabling timestamp logging."
 msgstr ""
 
-#: modules/engine/comsys.cpp:4029
+#: modules/engine/comsys.cpp:4032
 #, c-format
 msgid ""
 "@cset: Channel %s has no history buffer.  Use @cset/log to set one before "
 "enabling timestamp logging."
 msgstr ""
 
-#: modules/engine/comsys.cpp:4033
+#: modules/engine/comsys.cpp:4036
 #, c-format
 msgid "@cset: Could not set timestamp logging for channel %s."
 msgstr "@cset: 채널 %s의 시각 기록을 설정할 수 없습니다."
 
-#: modules/engine/comsys.cpp:4073
+#: modules/engine/comsys.cpp:4076
 msgid "@cboot: Unknown channel."
 msgstr "@cboot: 알 수 없는 채널입니다."
 
-#: modules/engine/comsys.cpp:4079
+#: modules/engine/comsys.cpp:4082
 msgid "@cboot: You are not on that channel."
 msgstr "@cboot: 그 채널에 있지 않습니다."
 
-#: modules/engine/comsys.cpp:4085
+#: modules/engine/comsys.cpp:4088
 msgid "@cboot: You can’t do that!"
 msgstr "@cboot: 그렇게 할 수 없습니다!"
 
-#: modules/engine/conf.cpp:448
+#: modules/engine/conf.cpp:455
 #, c-format
 msgid "%s %s not found"
 msgstr ""
 
-#: modules/engine/conf.cpp:465
+#: modules/engine/conf.cpp:472
 #, c-format
 msgid "%s %s already exists"
 msgstr ""
 
-#: modules/engine/conf.cpp:521
+#: modules/engine/conf.cpp:528
 msgid "Nothing to set"
 msgstr "설정할 것이 없습니다"
 
-#: modules/engine/conf.cpp:943 modules/engine/conf.cpp:1002
+#: modules/engine/conf.cpp:950 modules/engine/conf.cpp:1009
 msgid "String truncated"
 msgstr ""
 
-#: modules/engine/cque.cpp:104
+#: modules/engine/cque.cpp:120
 msgid "Include nesting limit exceeded."
 msgstr ""
 
-#: modules/engine/cque.cpp:314 src/net.cpp:2639
+#: modules/engine/cque.cpp:330 src/net.cpp:2695
 msgid "GAME: Expensive activity abbreviated."
 msgstr ""
 
-#: modules/engine/cque.cpp:742
+#: modules/engine/cque.cpp:758
 msgid "Can’t specify /pid and /all"
 msgstr ""
 
-#: modules/engine/cque.cpp:747
+#: modules/engine/cque.cpp:763
 msgid "You must specify a PID."
 msgstr ""
 
-#: modules/engine/cque.cpp:757 modules/engine/cque.cpp:786
+#: modules/engine/cque.cpp:773 modules/engine/cque.cpp:802
 msgid "PID must be a non-negative integer."
 msgstr ""
 
-#: modules/engine/cque.cpp:773
+#: modules/engine/cque.cpp:789
 msgid "PID is out of range."
 msgstr ""
 
-#: modules/engine/cque.cpp:794
+#: modules/engine/cque.cpp:810
 msgid "No queue entry with that PID was found."
 msgstr ""
 
-#: modules/engine/cque.cpp:800 modules/engine/cque.cpp:862
+#: modules/engine/cque.cpp:816 modules/engine/cque.cpp:878
 #, c-format
 msgid "%d queue entry removed."
 msgid_plural "%d queue entries removed."
 msgstr[0] ""
 
-#: modules/engine/cque.cpp:841 modules/engine/cque.cpp:2002
+#: modules/engine/cque.cpp:857 modules/engine/cque.cpp:2018
 msgid "Can’t specify a target and /all"
 msgstr ""
 
-#: modules/engine/cque.cpp:1116
+#: modules/engine/cque.cpp:1132
 msgid "Drained."
 msgstr "비웠습니다."
 
-#: modules/engine/cque.cpp:1120
+#: modules/engine/cque.cpp:1136
 msgid "Notified."
 msgstr "알렸습니다."
 
-#: modules/engine/cque.cpp:1161
+#: modules/engine/cque.cpp:1177
 msgid "Not enough money to queue command."
 msgstr ""
 
-#: modules/engine/cque.cpp:1660
+#: modules/engine/cque.cpp:1676
 msgid "Invalid attribute."
 msgstr ""
 
-#: modules/engine/cque.cpp:1689
+#: modules/engine/cque.cpp:1705
 msgid "Semaphore update failed."
 msgstr ""
 
-#: modules/engine/cque.cpp:1732
+#: modules/engine/cque.cpp:1748
 msgid "Query server is not available."
 msgstr ""
 
-#: modules/engine/cque.cpp:1746 modules/engine/cron.cpp:744
+#: modules/engine/cque.cpp:1762 modules/engine/cron.cpp:744
 #: modules/engine/cron.cpp:749 modules/engine/cron.cpp:803
 #: modules/engine/cron.cpp:808 modules/engine/cron.cpp:822
 #: modules/engine/cron.cpp:859 modules/engine/set.cpp:1184
 #: modules/engine/set.cpp:1511 modules/engine/set.cpp:1568
 #: modules/engine/set.cpp:2010 modules/engine/set.cpp:2086
-#: modules/engine/set.cpp:2148 modules/engine/set.cpp:2256
+#: modules/engine/set.cpp:2148 modules/engine/set.cpp:2259
 #: modules/engine/wiz.cpp:72
 msgid "No match."
 msgstr "일치하는 것이 없습니다."
 
-#: modules/engine/cque.cpp:1761
+#: modules/engine/cque.cpp:1777
 msgid "QUERY: No Query."
 msgstr ""
 
-#: modules/engine/cque.cpp:1770
+#: modules/engine/cque.cpp:1786
 msgid "At least one query option is required."
-msgstr ""
-
-#: modules/engine/cque.cpp:1795
-#, c-format
-msgid "[%d]auto-@dump"
-msgstr ""
-
-#: modules/engine/cque.cpp:1799
-#, c-format
-msgid "[%d]auto-@dbck"
-msgstr ""
-
-#: modules/engine/cque.cpp:1803
-#, c-format
-msgid "[%d]Check for idle players"
-msgstr ""
-
-#: modules/engine/cque.cpp:1807
-#, c-format
-msgid "[%d]Test for @daily time"
 msgstr ""
 
 #: modules/engine/cque.cpp:1811
 #, c-format
-msgid "[%d]Keep Alive"
+msgid "[%d]auto-@dump"
 msgstr ""
 
 #: modules/engine/cque.cpp:1815
 #, c-format
-msgid "[%d]Database cache tick"
+msgid "[%d]auto-@dbck"
 msgstr ""
 
 #: modules/engine/cque.cpp:1819
 #, c-format
+msgid "[%d]Check for idle players"
+msgstr ""
+
+#: modules/engine/cque.cpp:1823
+#, c-format
+msgid "[%d]Test for @daily time"
+msgstr ""
+
+#: modules/engine/cque.cpp:1827
+#, c-format
+msgid "[%d]Keep Alive"
+msgstr ""
+
+#: modules/engine/cque.cpp:1831
+#, c-format
+msgid "[%d]Database cache tick"
+msgstr ""
+
+#: modules/engine/cque.cpp:1835
+#, c-format
 msgid "[%d]Further command quota"
 msgstr ""
 
-#: modules/engine/cque.cpp:1834
+#: modules/engine/cque.cpp:1850
 #, c-format
 msgid "[PID %llu][#%d/%d]%s:%s"
 msgstr ""
 
-#: modules/engine/cque.cpp:1841
+#: modules/engine/cque.cpp:1857
 #, c-format
 msgid "[PID %llu][%d]%s:%s"
 msgstr ""
 
-#: modules/engine/cque.cpp:1847
+#: modules/engine/cque.cpp:1863
 #, c-format
 msgid "[PID %llu][#%d]%s:%s"
 msgstr ""
 
-#: modules/engine/cque.cpp:1853
+#: modules/engine/cque.cpp:1869
 #, c-format
 msgid "[PID %llu]%s:%s"
 msgstr ""
 
-#: modules/engine/cque.cpp:1872
+#: modules/engine/cque.cpp:1888
 #, c-format
 msgid "   Enactor: %s%s"
 msgstr ""
 
-#: modules/engine/cque.cpp:1896
+#: modules/engine/cque.cpp:1912
 msgid "----- Wait Queue -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:1922
+#: modules/engine/cque.cpp:1938
 msgid "----- Semaphore Queue -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:1948
+#: modules/engine/cque.cpp:1964
 msgid "----- SQL Queries -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:2053
+#: modules/engine/cque.cpp:2069
 msgid "----- System Queue -----"
 msgstr ""
 
-#: modules/engine/cque.cpp:2108 modules/engine/cque.cpp:2128
+#: modules/engine/cque.cpp:2139 modules/engine/cque.cpp:2161
 msgid "Warning: automatic dequeueing is disabled."
 msgstr ""
 
-#: modules/engine/cque.cpp:2119
+#: modules/engine/cque.cpp:2150
 #, c-format
 msgid "%d commands processed."
 msgstr ""
 
-#: modules/engine/cque.cpp:2139
+#: modules/engine/cque.cpp:2172
 #, c-format
 msgid "WaitQ timer advanced %d seconds."
 msgstr ""
 
-#: modules/engine/cque.cpp:2143
+#: modules/engine/cque.cpp:2176
 #, c-format
 msgid "WaitQ timer set back %d seconds."
 msgstr ""
 
-#: modules/engine/cque.cpp:2147
+#: modules/engine/cque.cpp:2180
 msgid "Object queue appended to player queue."
 msgstr ""
 
@@ -1645,100 +1645,100 @@ msgstr ""
 msgid "Name set to %s"
 msgstr ""
 
-#: modules/engine/engine_com.cpp:2296 modules/engine/mail.cpp:2787
+#: modules/engine/engine_com.cpp:2462 modules/engine/mail.cpp:2785
 #, c-format
 msgid "MAIL: Reject message from %s: %s"
 msgstr ""
 
-#: modules/engine/engine_com.cpp:2298 modules/engine/mail.cpp:2789
+#: modules/engine/engine_com.cpp:2464 modules/engine/mail.cpp:2787
 #, c-format
 msgid "[%d:%02d] MAIL: Reject message sent to %s."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:2304 modules/engine/mail.cpp:2796
+#: modules/engine/engine_com.cpp:2470 modules/engine/mail.cpp:2794
 #, c-format
 msgid "Sorry, %s is not accepting mail."
 msgstr "죄송합니다, %s님은 메일을 받지 않습니다."
 
-#: modules/engine/engine_com.cpp:2316 modules/engine/mail.cpp:2811
+#: modules/engine/engine_com.cpp:2482 modules/engine/mail.cpp:2809
 #, c-format
 msgid "Warning: %s can’t return your mail."
 msgstr "경고: %s님은 답장할 수 없습니다."
 
-#: modules/engine/engine_com.cpp:2323 modules/engine/mail.cpp:2816
+#: modules/engine/engine_com.cpp:2489 modules/engine/mail.cpp:2814
 #, c-format
 msgid "Sorry, %s can’t return your mail."
 msgstr "죄송합니다, %s님은 답장할 수 없습니다."
 
-#: modules/engine/engine_com.cpp:2351 modules/engine/mail.cpp:2946
+#: modules/engine/engine_com.cpp:2517 modules/engine/mail.cpp:2944
 #, c-format
 msgid "MAIL: You sent your message to %s."
 msgstr "MAIL: %s님에게 메시지를 보냈습니다."
 
-#: modules/engine/engine_com.cpp:2356 modules/engine/mail.cpp:2950
+#: modules/engine/engine_com.cpp:2522 modules/engine/mail.cpp:2948
 #, c-format
 msgid "MAIL: You have a new message from %s. Subject: %s"
 msgstr "MAIL: %s님에게서 새 메시지가 왔습니다. 제목: %s"
 
-#: modules/engine/engine_com.cpp:4589
+#: modules/engine/engine_com.cpp:4755
 msgid "*** Logins are disabled."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4603
+#: modules/engine/engine_com.cpp:4769
 msgid "Your PAGE LOCK is set.  You may be unable to receive some pages."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4637
+#: modules/engine/engine_com.cpp:4803
 #, c-format
 msgid "GAME: %s has DARK-connected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4641
+#: modules/engine/engine_com.cpp:4807
 #, c-format
 msgid "GAME: %s has connected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4646
+#: modules/engine/engine_com.cpp:4812
 #, c-format
 msgid "[Suspect] %s has connected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4652
+#: modules/engine/engine_com.cpp:4818
 #, c-format
 msgid "%s has reconnected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4653
+#: modules/engine/engine_com.cpp:4819
 #, c-format
 msgid "GAME: %s has reconnected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4657
+#: modules/engine/engine_com.cpp:4823
 #, c-format
 msgid "[Suspect] %s has reconnected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4815
+#: modules/engine/engine_com.cpp:4981
 #, c-format
 msgid "[Suspect] %s has disconnected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4844
+#: modules/engine/engine_com.cpp:5010
 #, c-format
 msgid "GAME: %s has disconnected. <%s>"
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4941
+#: modules/engine/engine_com.cpp:5107
 #, c-format
 msgid "[Suspect] %s has partially disconnected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4945
+#: modules/engine/engine_com.cpp:5111
 #, c-format
 msgid "%s has partially disconnected."
 msgstr ""
 
-#: modules/engine/engine_com.cpp:4966
+#: modules/engine/engine_com.cpp:5132
 #, c-format
 msgid "GAME: %s has partially disconnected."
 msgstr ""
@@ -1849,51 +1849,51 @@ msgstr "단계 크기가 잘못되었습니다."
 msgid "You shouldn’t be rummaging through the garbage."
 msgstr ""
 
-#: modules/engine/functions.cpp:15722
+#: modules/engine/functions.cpp:15731
 msgid "Function Name"
 msgstr ""
 
-#: modules/engine/functions.cpp:15725
+#: modules/engine/functions.cpp:15734
 msgid "DBref#"
 msgstr ""
 
-#: modules/engine/functions.cpp:15728
+#: modules/engine/functions.cpp:15737
 msgid "Attribute"
 msgstr ""
 
-#: modules/engine/functions.cpp:15731
+#: modules/engine/functions.cpp:15740
 msgid "Flgs"
 msgstr ""
 
-#: modules/engine/functions.cpp:15775
+#: modules/engine/functions.cpp:15784
 #, c-format
 msgid "Total User-Defined Functions: %d"
 msgstr ""
 
-#: modules/engine/functions.cpp:15789
+#: modules/engine/functions.cpp:15798
 msgid "Function name is not valid."
 msgstr ""
 
-#: modules/engine/functions.cpp:15799
+#: modules/engine/functions.cpp:15808
 msgid "Function already defined in builtin function table."
 msgstr ""
 
-#: modules/engine/functions.cpp:15813
+#: modules/engine/functions.cpp:15822
 #, c-format
 msgid "Function %s not found."
 msgstr ""
 
-#: modules/engine/functions.cpp:15826
+#: modules/engine/functions.cpp:15835
 #, c-format
 msgid "Function %s deleted."
 msgstr ""
 
-#: modules/engine/functions.cpp:15843 modules/engine/predicates.cpp:1020
+#: modules/engine/functions.cpp:15852 modules/engine/predicates.cpp:1020
 #: modules/engine/predicates.cpp:1254 modules/engine/predicates.cpp:1563
 msgid "No such attribute."
 msgstr "그런 속성이 없습니다."
 
-#: modules/engine/functions.cpp:15884
+#: modules/engine/functions.cpp:15893
 #, c-format
 msgid "Function %s defined."
 msgstr ""
@@ -2264,247 +2264,247 @@ msgid "@wait 0={%c%s %s=%s}"
 msgstr ""
 
 #: modules/engine/mail.cpp:318 modules/engine/mail.cpp:327
-#: modules/mail/mail_mod.cpp:645 modules/mail/mail_mod.cpp:651
+#: modules/mail/mail_mod.cpp:664 modules/mail/mail_mod.cpp:670
 msgid ""
 "MAIL: This mail message does not exist in the database. Please alert your "
 "admin."
 msgstr ""
 "MAIL: 이 메시지는 데이터베이스에 존재하지 않습니다.  관리자에게 알려 주세요."
 
-#: modules/engine/mail.cpp:381 modules/mail/mail_mod.cpp:3182
+#: modules/engine/mail.cpp:381 modules/mail/mail_mod.cpp:3201
 msgid "MAIL: You probably did not intend to send a @mail saying ‘clear’."
 msgstr ""
 
-#: modules/engine/mail.cpp:745 modules/mail/mail_mod.cpp:1151
+#: modules/engine/mail.cpp:743 modules/mail/mail_mod.cpp:1170
 msgid "MAIL: Invalid message range"
 msgstr "MAIL: 메시지 범위가 잘못되었습니다"
 
-#: modules/engine/mail.cpp:746 modules/mail/mail_mod.cpp:1152
+#: modules/engine/mail.cpp:744 modules/mail/mail_mod.cpp:1171
 msgid "MAIL: Invalid message number"
 msgstr "MAIL: 메시지 번호가 잘못되었습니다"
 
-#: modules/engine/mail.cpp:747 modules/mail/mail_mod.cpp:1153
+#: modules/engine/mail.cpp:745 modules/mail/mail_mod.cpp:1172
 msgid "MAIL: Invalid age"
 msgstr "MAIL: 기간이 잘못되었습니다"
 
-#: modules/engine/mail.cpp:748 modules/mail/mail_mod.cpp:1154
+#: modules/engine/mail.cpp:746 modules/mail/mail_mod.cpp:1173
 msgid "MAIL: Invalid dbref #"
 msgstr "MAIL: 사물 번호가 잘못되었습니다"
 
-#: modules/engine/mail.cpp:749 modules/mail/mail_mod.cpp:1155
+#: modules/engine/mail.cpp:747 modules/mail/mail_mod.cpp:1174
 msgid "MAIL: Invalid player"
 msgstr "MAIL: 플레이어가 잘못되었습니다"
 
-#: modules/engine/mail.cpp:750 modules/mail/mail_mod.cpp:1156
+#: modules/engine/mail.cpp:748 modules/mail/mail_mod.cpp:1175
 msgid "MAIL: Invalid message specification"
 msgstr "MAIL: 메시지 지정이 잘못되었습니다"
 
-#: modules/engine/mail.cpp:751 modules/mail/mail_mod.cpp:1157
+#: modules/engine/mail.cpp:749 modules/mail/mail_mod.cpp:1176
 msgid ""
 "MAIL: Invalid player or trying to send @mail to a @malias without a subject"
 msgstr ""
 
-#: modules/engine/mail.cpp:967
+#: modules/engine/mail.cpp:965
 msgid "MAIL: A isn’t enough (all?)"
 msgstr ""
 
-#: modules/engine/mail.cpp:979
+#: modules/engine/mail.cpp:977
 msgid "MAIL: AL isn’t enough (all?)"
 msgstr ""
 
-#: modules/engine/mail.cpp:1025 modules/mail/mail_mod.cpp:1370
+#: modules/engine/mail.cpp:1023 modules/mail/mail_mod.cpp:1389
 msgid "MAIL: U is ambiguous (urgent or unread?)"
 msgstr ""
 
-#: modules/engine/mail.cpp:1088
+#: modules/engine/mail.cpp:1086
 msgid "MAIL: M is ambiguous (mass or me?)"
 msgstr ""
 
-#: modules/engine/mail.cpp:1162 modules/mail/mail_mod.cpp:1968
+#: modules/engine/mail.cpp:1160 modules/mail/mail_mod.cpp:1987
 #, c-format
 msgid "MAIL: 0 messages in folder %d [%s]."
 msgstr "MAIL: 폴더 %d [%s]에 메시지가 없습니다."
 
-#: modules/engine/mail.cpp:1170 modules/mail/mail_mod.cpp:1990
+#: modules/engine/mail.cpp:1168 modules/mail/mail_mod.cpp:2009
 #, c-format
 msgid "MAIL: Current folder is %d [%s]."
 msgstr "MAIL: 현재 폴더는 %d [%s]입니다."
 
-#: modules/engine/mail.cpp:1192 modules/mail/mail_mod.cpp:1890
+#: modules/engine/mail.cpp:1190 modules/mail/mail_mod.cpp:1909
 msgid "MAIL: What folder is that?"
 msgstr "MAIL: 그것은 어떤 폴더입니까?"
 
-#: modules/engine/mail.cpp:1201 modules/mail/mail_mod.cpp:1900
+#: modules/engine/mail.cpp:1199 modules/mail/mail_mod.cpp:1919
 msgid "MAIL: Folder name too long"
 msgstr "MAIL: 폴더 이름이 너무 깁니다"
 
-#: modules/engine/mail.cpp:1208 modules/mail/mail_mod.cpp:1908
+#: modules/engine/mail.cpp:1206 modules/mail/mail_mod.cpp:1927
 msgid "MAIL: Illegal folder name"
 msgstr "MAIL: 폴더 이름이 잘못되었습니다"
 
-#: modules/engine/mail.cpp:1213 modules/mail/mail_mod.cpp:1915
+#: modules/engine/mail.cpp:1211 modules/mail/mail_mod.cpp:1934
 #, c-format
 msgid "MAIL: Folder %d now named ‘%s’"
 msgstr "MAIL: 폴더 %d의 이름을 ‘%s’(으)로 바꿨습니다"
 
-#: modules/engine/mail.cpp:1221 modules/mail/mail_mod.cpp:1926
+#: modules/engine/mail.cpp:1219 modules/mail/mail_mod.cpp:1945
 #, c-format
 msgid "MAIL: Current folder set to %d [%s]."
 msgstr "MAIL: 현재 폴더를 %d [%s](으)로 설정했습니다."
 
-#: modules/engine/mail.cpp:1331 modules/engine/mail.cpp:1342
-#: modules/engine/mail.cpp:1347 modules/mail/mail_mod.cpp:4875
-#: modules/mail/mail_mod.cpp:4887 modules/mail/mail_mod.cpp:4893
+#: modules/engine/mail.cpp:1329 modules/engine/mail.cpp:1340
+#: modules/engine/mail.cpp:1345 modules/mail/mail_mod.cpp:4894
+#: modules/mail/mail_mod.cpp:4906 modules/mail/mail_mod.cpp:4912
 #, c-format
 msgid "MAIL: Msg #%d %s."
 msgstr ""
 
-#: modules/engine/mail.cpp:1338 modules/mail/mail_mod.cpp:4882
+#: modules/engine/mail.cpp:1336 modules/mail/mail_mod.cpp:4901
 #, c-format
 msgid "MAIL: Unread Msg #%d cleared! Use @mail/unclear %d to recover."
 msgstr ""
 "MAIL: 읽지 않은 메시지 #%d을(를) 삭제했습니다! 복구하려면 @mail/unclear %d을"
 "(를) 사용하세요."
 
-#: modules/engine/mail.cpp:1359 modules/engine/mail.cpp:1438
-#: modules/mail/mail_mod.cpp:4914 modules/mail/mail_mod.cpp:5340
+#: modules/engine/mail.cpp:1357 modules/engine/mail.cpp:1436
+#: modules/mail/mail_mod.cpp:4933 modules/mail/mail_mod.cpp:5359
 msgid "MAIL: You don’t have any matching messages!"
 msgstr "MAIL: 일치하는 메시지가 없습니다!"
 
-#: modules/engine/mail.cpp:1405 modules/mail/mail_mod.cpp:5306
+#: modules/engine/mail.cpp:1403 modules/mail/mail_mod.cpp:5325
 msgid "MAIL: Invalid folder specification"
 msgstr "MAIL: 폴더 지정이 잘못되었습니다"
 
-#: modules/engine/mail.cpp:1428 modules/mail/mail_mod.cpp:5330
+#: modules/engine/mail.cpp:1426 modules/mail/mail_mod.cpp:5349
 #, c-format
 msgid "MAIL: Msg %d filed in folder %d"
 msgstr "MAIL: 메시지 %d을(를) 폴더 %d에 보관했습니다"
 
-#: modules/engine/mail.cpp:1540 modules/mail/mail_mod.cpp:4146
+#: modules/engine/mail.cpp:1538 modules/mail/mail_mod.cpp:4165
 msgid "MAIL: Mail aliases must be of the form *<name> or #<num>."
 msgstr "MAIL: 메일 별칭은 *<이름> 또는 #<번호> 형식이어야 합니다."
 
-#: modules/engine/mail.cpp:1544 modules/mail/mail_mod.cpp:4151
+#: modules/engine/mail.cpp:1542 modules/mail/mail_mod.cpp:4170
 msgid "MAIL: Mail aliases must be of the form *<name>."
 msgstr "MAIL: 메일 별칭은 *<이름> 형식이어야 합니다."
 
-#: modules/engine/mail.cpp:1667 modules/engine/mail.cpp:2199
-#: modules/engine/mail.cpp:5775 modules/mail/mail_mod.cpp:2071
+#: modules/engine/mail.cpp:1665 modules/engine/mail.cpp:2197
+#: modules/engine/mail.cpp:5773 modules/mail/mail_mod.cpp:2090
 msgid "MAIL: No such folder."
 msgstr "MAIL: 그런 폴더가 없습니다."
 
-#: modules/engine/mail.cpp:1750 modules/engine/mail.cpp:2037
-#: modules/engine/mail.cpp:2131 modules/mail/mail_mod.cpp:2190
-#: modules/mail/mail_mod.cpp:2323 modules/mail/mail_mod.cpp:5192
+#: modules/engine/mail.cpp:1748 modules/engine/mail.cpp:2035
+#: modules/engine/mail.cpp:2129 modules/mail/mail_mod.cpp:2209
+#: modules/mail/mail_mod.cpp:2342 modules/mail/mail_mod.cpp:5211
 msgid "MAIL: You don’t have that many matching messages!"
 msgstr "MAIL: 일치하는 메시지가 그만큼 많지 않습니다!"
 
-#: modules/engine/mail.cpp:1812 modules/mail/mail_mod.cpp:5252
+#: modules/engine/mail.cpp:1810 modules/mail/mail_mod.cpp:5271
 msgid "MAIL: You have no unread messages in that folder."
 msgstr "MAIL: 그 폴더에는 읽지 않은 메시지가 없습니다."
 
-#: modules/engine/mail.cpp:1981 modules/mail/mail_mod.cpp:2128
+#: modules/engine/mail.cpp:1979 modules/mail/mail_mod.cpp:2147
 msgid "MAIL: You have no matching messages."
 msgstr "MAIL: 일치하는 메시지가 없습니다."
 
-#: modules/engine/mail.cpp:2055 modules/engine/mail.cpp:4219
-#: modules/engine/mail.cpp:5318 modules/mail/mail_mod.cpp:2210
-#: modules/mail/mail_mod.cpp:2226 modules/mail/mail_mod.cpp:2337
-#: modules/mail/mail_mod.cpp:2379 modules/mail/mail_mod.cpp:4249
+#: modules/engine/mail.cpp:2053 modules/engine/mail.cpp:4217
+#: modules/engine/mail.cpp:5316 modules/mail/mail_mod.cpp:2229
+#: modules/mail/mail_mod.cpp:2245 modules/mail/mail_mod.cpp:2356
+#: modules/mail/mail_mod.cpp:2398 modules/mail/mail_mod.cpp:4268
 msgid "MAIL: No such player."
 msgstr "MAIL: 그런 플레이어가 없습니다."
 
-#: modules/engine/mail.cpp:2277 modules/mail/mail_mod.cpp:5276
+#: modules/engine/mail.cpp:2275 modules/mail/mail_mod.cpp:5295
 msgid "MAIL: Mailbox purged."
 msgstr "MAIL: 사서함을 비웠습니다."
 
-#: modules/engine/mail.cpp:2338 modules/mail/mail_mod.cpp:2727
+#: modules/engine/mail.cpp:2336 modules/mail/mail_mod.cpp:2746
 #, c-format
 msgid "MAIL: Alias ‘%s’ does not exist."
 msgstr "MAIL: 별칭 ‘%s’이(가) 존재하지 않습니다."
 
-#: modules/engine/mail.cpp:2344 modules/mail/mail_mod.cpp:2738
+#: modules/engine/mail.cpp:2342 modules/mail/mail_mod.cpp:2757
 #, c-format
 msgid "MAIL: ‘%s’ is a badly-formed alias."
 msgstr "MAIL: ‘%s’은(는) 잘못된 형식의 별칭입니다."
 
-#: modules/engine/mail.cpp:2372 modules/mail/mail_mod.cpp:2782
+#: modules/engine/mail.cpp:2370 modules/mail/mail_mod.cpp:2801
 #, c-format
 msgid "MAIL: ‘%s’ does not exist."
 msgstr "MAIL: ‘%s’이(가) 존재하지 않습니다."
 
-#: modules/engine/mail.cpp:2389 modules/mail/mail_mod.cpp:2660
-#: modules/mail/mail_mod.cpp:2804
+#: modules/engine/mail.cpp:2387 modules/mail/mail_mod.cpp:2679
+#: modules/mail/mail_mod.cpp:2823
 msgid "MAIL: No players specified."
 msgstr "MAIL: 지정된 플레이어가 없습니다."
 
-#: modules/engine/mail.cpp:2425 modules/engine/mail.cpp:4405
-#: modules/mail/mail_mod.cpp:3267 modules/mail/mail_mod.cpp:3465
+#: modules/engine/mail.cpp:2423 modules/engine/mail.cpp:4403
+#: modules/mail/mail_mod.cpp:3286 modules/mail/mail_mod.cpp:3484
 msgid "MAIL: I do not know whom you want to mail."
 msgstr "MAIL: 누구에게 메일을 보내려는지 알 수 없습니다."
 
-#: modules/engine/mail.cpp:2430 modules/engine/mail.cpp:4623
-#: modules/mail/mail_mod.cpp:3275 modules/mail/mail_mod.cpp:3575
+#: modules/engine/mail.cpp:2428 modules/engine/mail.cpp:4621
+#: modules/mail/mail_mod.cpp:3294 modules/mail/mail_mod.cpp:3594
 msgid "MAIL: No subject."
 msgstr "MAIL: 제목이 없습니다."
 
-#: modules/engine/mail.cpp:2435 modules/engine/mail.cpp:2465
-#: modules/engine/mail.cpp:2511 modules/engine/mail.cpp:4606
-#: modules/mail/mail_mod.cpp:3291 modules/mail/mail_mod.cpp:3534
-#: modules/mail/mail_mod.cpp:3616 modules/mail/mail_mod.cpp:3731
+#: modules/engine/mail.cpp:2433 modules/engine/mail.cpp:2463
+#: modules/engine/mail.cpp:2509 modules/engine/mail.cpp:4604
+#: modules/mail/mail_mod.cpp:3310 modules/mail/mail_mod.cpp:3553
+#: modules/mail/mail_mod.cpp:3635 modules/mail/mail_mod.cpp:3750
 msgid "MAIL: Mail message already in progress."
 msgstr "MAIL: 이미 작성 중인 메시지가 있습니다."
 
-#: modules/engine/mail.cpp:2441 modules/engine/mail.cpp:2481
-#: modules/engine/mail.cpp:2522 modules/engine/mail.cpp:4612
-#: modules/mail/mail_mod.cpp:3315 modules/mail/mail_mod.cpp:3555
-#: modules/mail/mail_mod.cpp:3654 modules/mail/mail_mod.cpp:3760
+#: modules/engine/mail.cpp:2439 modules/engine/mail.cpp:2479
+#: modules/engine/mail.cpp:2520 modules/engine/mail.cpp:4610
+#: modules/mail/mail_mod.cpp:3334 modules/mail/mail_mod.cpp:3574
+#: modules/mail/mail_mod.cpp:3673 modules/mail/mail_mod.cpp:3779
 msgid "MAIL: Too much @mail sent recently."
 msgstr "MAIL: 최근에 @mail을 너무 많이 보냈습니다."
 
-#: modules/engine/mail.cpp:2456 modules/engine/mail.cpp:4428
-#: modules/mail/mail_mod.cpp:3354 modules/mail/mail_mod.cpp:3495
+#: modules/engine/mail.cpp:2454 modules/engine/mail.cpp:4426
+#: modules/mail/mail_mod.cpp:3373 modules/mail/mail_mod.cpp:3514
 #, c-format
 msgid "MAIL: You are sending mail to ‘%s’."
 msgstr "MAIL: ‘%s’님에게 메일을 보내는 중입니다."
 
-#: modules/engine/mail.cpp:2470 modules/engine/mail.cpp:2516
-#: modules/mail/mail_mod.cpp:3624 modules/mail/mail_mod.cpp:3739
+#: modules/engine/mail.cpp:2468 modules/engine/mail.cpp:2514
+#: modules/mail/mail_mod.cpp:3643 modules/mail/mail_mod.cpp:3758
 msgid "MAIL: No message list."
 msgstr "MAIL: 메시지 목록이 없습니다."
 
-#: modules/engine/mail.cpp:2475 modules/mail/mail_mod.cpp:3633
+#: modules/engine/mail.cpp:2473 modules/mail/mail_mod.cpp:3652
 msgid "MAIL: To whom should I forward?"
 msgstr "MAIL: 누구에게 전달할까요?"
 
-#: modules/engine/mail.cpp:2487 modules/engine/mail.cpp:2528
-#: modules/mail/mail_mod.cpp:3666 modules/mail/mail_mod.cpp:3772
+#: modules/engine/mail.cpp:2485 modules/engine/mail.cpp:2526
+#: modules/mail/mail_mod.cpp:3685 modules/mail/mail_mod.cpp:3791
 msgid "MAIL: I don’t understand that message number."
 msgstr "MAIL: 그 메시지 번호를 이해할 수 없습니다."
 
-#: modules/engine/mail.cpp:2493 modules/mail/mail_mod.cpp:3677
+#: modules/engine/mail.cpp:2491 modules/mail/mail_mod.cpp:3696
 msgid "MAIL: You can’t forward non-existent messages."
 msgstr "MAIL: 존재하지 않는 메시지는 전달할 수 없습니다."
 
-#: modules/engine/mail.cpp:2496 modules/mail/mail_mod.cpp:3687
+#: modules/engine/mail.cpp:2494 modules/mail/mail_mod.cpp:3706
 #, c-format
 msgid "%s (fwd from %s)"
 msgstr "%s (%s님이 전달함)"
 
-#: modules/engine/mail.cpp:2534 modules/mail/mail_mod.cpp:3783
+#: modules/engine/mail.cpp:2532 modules/mail/mail_mod.cpp:3802
 msgid "MAIL: You can’t reply to non-existent messages."
 msgstr "MAIL: 존재하지 않는 메시지에는 답장할 수 없습니다."
 
-#: modules/engine/mail.cpp:2539 modules/mail/mail_mod.cpp:3793
+#: modules/engine/mail.cpp:2537 modules/mail/mail_mod.cpp:3812
 msgid "MAIL: The original sender no longer exists."
 msgstr "MAIL: 원래 보낸 사람이 더 이상 존재하지 않습니다."
 
-#: modules/engine/mail.cpp:2583 modules/mail/mail_mod.cpp:3858
+#: modules/engine/mail.cpp:2581 modules/mail/mail_mod.cpp:3877
 #, c-format
 msgid "Re: %s"
 msgstr ""
 
-#: modules/engine/mail.cpp:2593 modules/mail/mail_mod.cpp:3880
+#: modules/engine/mail.cpp:2591 modules/mail/mail_mod.cpp:3899
 #, c-format
 msgid ""
 "On %s, %s wrote:\r\n"
@@ -2514,153 +2514,153 @@ msgid ""
 "********** End of included message from %s\r\n"
 msgstr ""
 
-#: modules/engine/mail.cpp:2840 modules/mail/mail_mod.cpp:2523
+#: modules/engine/mail.cpp:2838 modules/mail/mail_mod.cpp:2542
 msgid "MAIL: You cannot send mail to non-existent people."
 msgstr "MAIL: 존재하지 않는 사람에게는 메일을 보낼 수 없습니다."
 
-#: modules/engine/mail.cpp:2924 modules/mail/mail_mod.cpp:2625
+#: modules/engine/mail.cpp:2922 modules/mail/mail_mod.cpp:2644
 #, c-format
 msgid "MAIL: %s’s mailbox is full (%d message)."
 msgid_plural "MAIL: %s’s mailbox is full (%d messages)."
 msgstr[0] "MAIL: %s님의 사서함이 가득 찼습니다 (메시지 %d개)."
 
-#: modules/engine/mail.cpp:2961 modules/mail/mail_mod.cpp:2442
+#: modules/engine/mail.cpp:2959 modules/mail/mail_mod.cpp:2461
 msgid "The postal service issues a warrant for your arrest."
 msgstr "우편 서비스가 당신에 대한 체포 영장을 발부합니다."
 
-#: modules/engine/mail.cpp:2974 modules/mail/mail_mod.cpp:2468
+#: modules/engine/mail.cpp:2972 modules/mail/mail_mod.cpp:2487
 msgid "You annihilate the post office. All messages cleared."
 msgstr "우체국을 파괴했습니다.  모든 메시지가 삭제되었습니다."
 
-#: modules/engine/mail.cpp:3037
+#: modules/engine/mail.cpp:3035
 msgid "Go get some bugspray."
 msgstr ""
 
-#: modules/engine/mail.cpp:3053
+#: modules/engine/mail.cpp:3051
 #, c-format
 msgid "%s: no such player."
 msgstr "%s: 그런 플레이어가 없습니다."
 
-#: modules/engine/mail.cpp:3058
+#: modules/engine/mail.cpp:3056
 #, c-format
 msgid "Let %s clear their own @mail."
 msgstr "%s님이 직접 @mail을 삭제하도록 하세요."
 
-#: modules/engine/mail.cpp:3063
+#: modules/engine/mail.cpp:3061
 #, c-format
 msgid "Mail cleared for %s(#%d)."
 msgstr "%s(#%d)의 메일을 삭제했습니다."
 
-#: modules/engine/mail.cpp:3090
+#: modules/engine/mail.cpp:3088
 #, c-format
 msgid "Bad object #%d has mail."
 msgstr ""
 
-#: modules/engine/mail.cpp:3094
+#: modules/engine/mail.cpp:3092
 #, c-format
 msgid "Bad object #%d has mail which refers to a non-existent mailbag item."
 msgstr ""
 
-#: modules/engine/mail.cpp:3101
+#: modules/engine/mail.cpp:3099
 #, c-format
 msgid "%s(#%d) has mail, but is not a player."
 msgstr ""
 
-#: modules/engine/mail.cpp:3106
+#: modules/engine/mail.cpp:3104
 #, c-format
 msgid ""
 "%s(#%d) is not a player, but has mail which refers to a non-existent mailbag "
 "item."
 msgstr ""
 
-#: modules/engine/mail.cpp:3112
+#: modules/engine/mail.cpp:3110
 #, c-format
 msgid "%s(#%d) has mail which refers to a non-existent mailbag item."
 msgstr ""
 
-#: modules/engine/mail.cpp:3136
+#: modules/engine/mail.cpp:3134
 msgid ""
 "Some mailbag items are referred to more often than the mailbag item "
 "indicates."
 msgstr ""
 
-#: modules/engine/mail.cpp:3140
+#: modules/engine/mail.cpp:3138
 msgid ""
 "Some mailbag items are referred to less often than the mailbag item "
 "indicates."
 msgstr ""
 
-#: modules/engine/mail.cpp:3143
+#: modules/engine/mail.cpp:3141
 msgid "Mail sanity check completed."
 msgstr ""
 
-#: modules/engine/mail.cpp:3150
+#: modules/engine/mail.cpp:3148
 msgid "Re-counting mailbag reference counts."
 msgstr ""
 
-#: modules/engine/mail.cpp:3182
+#: modules/engine/mail.cpp:3180
 msgid "Some reference counts were wrong [FIXED]."
 msgstr ""
 
-#: modules/engine/mail.cpp:3187
+#: modules/engine/mail.cpp:3185
 msgid "Removing @mail that is associated with non-players."
 msgstr ""
 
-#: modules/engine/mail.cpp:3204
+#: modules/engine/mail.cpp:3202
 #, c-format
 msgid "Fixing mail for #%d."
 msgstr ""
 
-#: modules/engine/mail.cpp:3209
+#: modules/engine/mail.cpp:3207
 msgid "Mail sanity fix completed."
 msgstr ""
 
-#: modules/engine/mail.cpp:3213
+#: modules/engine/mail.cpp:3211
 msgid "That is not a debugging option."
 msgstr ""
 
-#: modules/engine/mail.cpp:3266 modules/mail/mail_mod.cpp:5422
+#: modules/engine/mail.cpp:3264 modules/mail/mail_mod.cpp:5439
 #, c-format
 msgid "%s: No such player."
 msgstr ""
 
-#: modules/engine/mail.cpp:3271 modules/mail/mail_mod.cpp:5430
+#: modules/engine/mail.cpp:3269 modules/mail/mail_mod.cpp:5447
 msgid "The post office protects privacy!"
 msgstr ""
 
-#: modules/engine/mail.cpp:3279
+#: modules/engine/mail.cpp:3277 modules/mail/mail_mod.cpp:5469
 #, c-format
 msgid "Finding mail stats costs %d %s."
 msgstr ""
 
-#: modules/engine/mail.cpp:3303 modules/mail/mail_mod.cpp:5445
+#: modules/engine/mail.cpp:3301 modules/mail/mail_mod.cpp:5489
 #, c-format
 msgid "There is %d message in the mail spool."
 msgid_plural "There are %d messages in the mail spool."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3331 modules/mail/mail_mod.cpp:5484
+#: modules/engine/mail.cpp:3329 modules/mail/mail_mod.cpp:5528
 #, c-format
 msgid "MAIL: There is %d msg in the mail spool, %d unread, %d cleared."
 msgid_plural ""
 "MAIL: There are %d msgs in the mail spool, %d unread, %d cleared."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3369 modules/mail/mail_mod.cpp:5493
+#: modules/engine/mail.cpp:3367 modules/mail/mail_mod.cpp:5537
 #, c-format
 msgid "MAIL: There is %d old msg in the mail spool, totalling %d characters."
 msgid_plural ""
 "MAIL: There are %d old msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3372 modules/mail/mail_mod.cpp:5499
+#: modules/engine/mail.cpp:3370 modules/mail/mail_mod.cpp:5543
 #, c-format
 msgid "MAIL: There is %d new msg in the mail spool, totalling %d characters."
 msgid_plural ""
 "MAIL: There are %d new msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3375 modules/mail/mail_mod.cpp:5505
+#: modules/engine/mail.cpp:3373 modules/mail/mail_mod.cpp:5549
 #, c-format
 msgid ""
 "MAIL: There is %d cleared msg in the mail spool, totalling %d characters."
@@ -2668,329 +2668,329 @@ msgid_plural ""
 "MAIL: There are %d cleared msgs in the mail spool, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3404 modules/mail/mail_mod.cpp:5540
+#: modules/engine/mail.cpp:3402 modules/mail/mail_mod.cpp:5584
 #, c-format
 msgid "%s sent %d message."
 msgid_plural "%s sent %d messages."
 msgstr[0] "%1$s님이 메시지 %2$d개를 보냈습니다."
 
-#: modules/engine/mail.cpp:3407 modules/mail/mail_mod.cpp:5544
+#: modules/engine/mail.cpp:3405 modules/mail/mail_mod.cpp:5588
 #, c-format
 msgid "%s has %d message."
 msgid_plural "%s has %d messages."
 msgstr[0] "%1$s님에게 메시지가 %2$d개 있습니다."
 
-#: modules/engine/mail.cpp:3471 modules/mail/mail_mod.cpp:5606
+#: modules/engine/mail.cpp:3469 modules/mail/mail_mod.cpp:5650
 #, c-format
 msgid "Mail statistics for %s:"
 msgstr ""
 
-#: modules/engine/mail.cpp:3475 modules/mail/mail_mod.cpp:5612
+#: modules/engine/mail.cpp:3473 modules/mail/mail_mod.cpp:5656
 #, c-format
 msgid "%d message sent, %d unread, %d cleared."
 msgid_plural "%d messages sent, %d unread, %d cleared."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3479 modules/mail/mail_mod.cpp:5618
+#: modules/engine/mail.cpp:3477 modules/mail/mail_mod.cpp:5662
 #, c-format
 msgid "%d message received, %d unread, %d cleared."
 msgid_plural "%d messages received, %d unread, %d cleared."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3487 modules/mail/mail_mod.cpp:5627
+#: modules/engine/mail.cpp:3485 modules/mail/mail_mod.cpp:5671
 #, c-format
 msgid "%d message sent, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
 "%d messages sent, %d unread, %d cleared, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3492 modules/mail/mail_mod.cpp:5633
+#: modules/engine/mail.cpp:3490 modules/mail/mail_mod.cpp:5677
 #, c-format
 msgid "%d message received, %d unread, %d cleared, totalling %d characters."
 msgid_plural ""
 "%d messages received, %d unread, %d cleared, totalling %d characters."
 msgstr[0] ""
 
-#: modules/engine/mail.cpp:3500 modules/mail/mail_mod.cpp:5642
+#: modules/engine/mail.cpp:3498 modules/mail/mail_mod.cpp:5686
 #, c-format
 msgid "Last is dated %s"
 msgstr "마지막 메시지의 날짜는 %s입니다"
 
-#: modules/engine/mail.cpp:3514 modules/mail/mail_mod.cpp:5660
+#: modules/engine/mail.cpp:3512 modules/mail/mail_mod.cpp:5704
 msgid "MAIL: Invalid mail command."
 msgstr ""
 
-#: modules/engine/mail.cpp:4056 modules/engine/mail.cpp:4067
-#: modules/mail/mail_mod.cpp:1948 modules/mail/mail_mod.cpp:5956
+#: modules/engine/mail.cpp:4054 modules/engine/mail.cpp:4065
+#: modules/mail/mail_mod.cpp:1967 modules/mail/mail_mod.cpp:6000
 #, c-format
 msgid "MAIL: %d message in folder %d [%s]."
 msgid_plural "MAIL: %d messages in folder %d [%s]."
 msgstr[0] "MAIL: 폴더 %2$d [%3$s]에 메시지가 %1$d개 있습니다."
 
-#: modules/engine/mail.cpp:4059 modules/engine/mail.cpp:4070
-#: modules/mail/mail_mod.cpp:1954 modules/mail/mail_mod.cpp:5962
+#: modules/engine/mail.cpp:4057 modules/engine/mail.cpp:4068
+#: modules/mail/mail_mod.cpp:1973 modules/mail/mail_mod.cpp:6006
 #, c-format
 msgid "MAIL: %d unread message."
 msgid_plural "MAIL: %d unread messages."
 msgstr[0] "MAIL: 읽지 않은 메시지가 %d개 있습니다."
 
-#: modules/engine/mail.cpp:4061 modules/engine/mail.cpp:4072
-#: modules/mail/mail_mod.cpp:1958 modules/mail/mail_mod.cpp:5966
+#: modules/engine/mail.cpp:4059 modules/engine/mail.cpp:4070
+#: modules/mail/mail_mod.cpp:1977 modules/mail/mail_mod.cpp:6010
 #, c-format
 msgid "MAIL: %d cleared message."
 msgid_plural "MAIL: %d cleared messages."
 msgstr[0] "MAIL: 삭제된 메시지가 %d개 있습니다."
 
-#: modules/engine/mail.cpp:4080 modules/mail/mail_mod.cpp:5976
+#: modules/engine/mail.cpp:4078 modules/mail/mail_mod.cpp:6020
 msgid "MAIL: You have no mail."
 msgstr ""
 
-#: modules/engine/mail.cpp:4086 modules/mail/mail_mod.cpp:1978
-#: modules/mail/mail_mod.cpp:5983
+#: modules/engine/mail.cpp:4084 modules/mail/mail_mod.cpp:1997
+#: modules/mail/mail_mod.cpp:6027
 #, c-format
 msgid "URGENT MAIL: You have %d urgent message in folder %d [%s]."
 msgid_plural "URGENT MAIL: You have %d urgent messages in folder %d [%s]."
 msgstr[0] "긴급 메일: 폴더 %2$d [%3$s]에 긴급 메시지가 %1$d개 있습니다."
 
-#: modules/engine/mail.cpp:4109
+#: modules/engine/mail.cpp:4107
 #, c-format
 msgid "MAIL: I can’t figure out from ‘%s’ who you want to mail to."
 msgstr ""
 
-#: modules/engine/mail.cpp:4114 modules/engine/mail.cpp:4279
-#: modules/engine/mail.cpp:4914 modules/engine/mail.cpp:4964
-#: modules/engine/mail.cpp:4988 modules/engine/mail.cpp:5042
-#: modules/engine/mail.cpp:5141 modules/engine/mail.cpp:5164
-#: modules/mail/mail_mod.cpp:4300 modules/mail/mail_mod.cpp:4475
-#: modules/mail/mail_mod.cpp:4528 modules/mail/mail_mod.cpp:4563
-#: modules/mail/mail_mod.cpp:4641 modules/mail/mail_mod.cpp:4758
-#: modules/mail/mail_mod.cpp:4786
+#: modules/engine/mail.cpp:4112 modules/engine/mail.cpp:4277
+#: modules/engine/mail.cpp:4912 modules/engine/mail.cpp:4962
+#: modules/engine/mail.cpp:4986 modules/engine/mail.cpp:5040
+#: modules/engine/mail.cpp:5139 modules/engine/mail.cpp:5162
+#: modules/mail/mail_mod.cpp:4319 modules/mail/mail_mod.cpp:4494
+#: modules/mail/mail_mod.cpp:4547 modules/mail/mail_mod.cpp:4582
+#: modules/mail/mail_mod.cpp:4660 modules/mail/mail_mod.cpp:4777
+#: modules/mail/mail_mod.cpp:4805
 #, c-format
 msgid "MAIL: Alias ‘%s’ not found."
 msgstr ""
 
-#: modules/engine/mail.cpp:4134
+#: modules/engine/mail.cpp:4132
 #, c-format
 msgid "Alias Error: Bad Player %d for %s"
 msgstr ""
 
-#: modules/engine/mail.cpp:4152 modules/mail/mail_mod.cpp:4166
+#: modules/engine/mail.cpp:4150 modules/mail/mail_mod.cpp:4185
 msgid "MAIL: What alias do you want to create?."
 msgstr ""
 
-#: modules/engine/mail.cpp:4158 modules/mail/mail_mod.cpp:4172
+#: modules/engine/mail.cpp:4156 modules/mail/mail_mod.cpp:4191
 #, c-format
 msgid "MAIL: Mail Alias ‘%s’ already exists."
 msgstr ""
 
-#: modules/engine/mail.cpp:4225 modules/mail/mail_mod.cpp:4256
+#: modules/engine/mail.cpp:4223 modules/mail/mail_mod.cpp:4275
 #, c-format
 msgid "MAIL: %s added to alias %s"
 msgstr ""
 
-#: modules/engine/mail.cpp:4248 modules/mail/mail_mod.cpp:4276
+#: modules/engine/mail.cpp:4246 modules/mail/mail_mod.cpp:4295
 msgid "MAIL: Invalid mail alias."
 msgstr ""
 
-#: modules/engine/mail.cpp:4270 modules/mail/mail_mod.cpp:4288
+#: modules/engine/mail.cpp:4268 modules/mail/mail_mod.cpp:4307
 #, c-format
 msgid "MAIL: Alias set ‘%s’ defined."
 msgstr ""
 
-#: modules/engine/mail.cpp:4288 modules/engine/mail.cpp:4948
-#: modules/engine/mail.cpp:5019 modules/engine/mail.cpp:5051
-#: modules/engine/mail.cpp:5112 modules/engine/mail.cpp:5227
-#: modules/mail/mail_mod.cpp:4317 modules/mail/mail_mod.cpp:4491
-#: modules/mail/mail_mod.cpp:4580 modules/mail/mail_mod.cpp:4658
-#: modules/mail/mail_mod.cpp:4733 modules/mail/mail_mod.cpp:4800
+#: modules/engine/mail.cpp:4286 modules/engine/mail.cpp:4946
+#: modules/engine/mail.cpp:5017 modules/engine/mail.cpp:5049
+#: modules/engine/mail.cpp:5110 modules/engine/mail.cpp:5225
+#: modules/mail/mail_mod.cpp:4336 modules/mail/mail_mod.cpp:4510
+#: modules/mail/mail_mod.cpp:4599 modules/mail/mail_mod.cpp:4677
+#: modules/mail/mail_mod.cpp:4752 modules/mail/mail_mod.cpp:4819
 msgid "MAIL: Permission denied."
 msgstr ""
 
-#: modules/engine/mail.cpp:4294 modules/mail/mail_mod.cpp:4323
+#: modules/engine/mail.cpp:4292 modules/mail/mail_mod.cpp:4342
 #, c-format
 msgid "MAIL: Alias *%s: "
 msgstr ""
 
-#: modules/engine/mail.cpp:4374 modules/mail/mail_mod.cpp:4406
+#: modules/engine/mail.cpp:4372 modules/mail/mail_mod.cpp:4425
 msgid "*****  End of Mail Aliases *****"
 msgstr ""
 
-#: modules/engine/mail.cpp:4400 modules/mail/mail_mod.cpp:3456
+#: modules/engine/mail.cpp:4398 modules/mail/mail_mod.cpp:3475
 msgid "MAIL: No mail message in progress."
 msgstr ""
 
-#: modules/engine/mail.cpp:4596 modules/mail/mail_mod.cpp:3509
+#: modules/engine/mail.cpp:4594 modules/mail/mail_mod.cpp:3528
 msgid "MAIL: I don’t know who you want to mail."
 msgstr ""
 
-#: modules/engine/mail.cpp:4601 modules/mail/mail_mod.cpp:3517
+#: modules/engine/mail.cpp:4599 modules/mail/mail_mod.cpp:3536
 msgid "MAIL: No message."
 msgstr ""
 
-#: modules/engine/mail.cpp:4701 modules/mail/mail_mod.cpp:3373
-#: modules/mail/mail_mod.cpp:3917
+#: modules/engine/mail.cpp:4699 modules/mail/mail_mod.cpp:3392
+#: modules/mail/mail_mod.cpp:3936
 msgid "MAIL: No message started."
 msgstr ""
 
-#: modules/engine/mail.cpp:4710 modules/mail/mail_mod.cpp:3398
+#: modules/engine/mail.cpp:4708 modules/mail/mail_mod.cpp:3417
 msgid "MAIL: No recipients."
 msgstr ""
 
-#: modules/engine/mail.cpp:4718 modules/mail/mail_mod.cpp:3408
+#: modules/engine/mail.cpp:4716 modules/mail/mail_mod.cpp:3427
 msgid "MAIL: The body of this message is empty.  Use - to add to the message."
 msgstr ""
 
-#: modules/engine/mail.cpp:4738 modules/mail/mail_mod.cpp:3437
+#: modules/engine/mail.cpp:4736 modules/mail/mail_mod.cpp:3456
 msgid "MAIL: Message aborted."
 msgstr ""
 
-#: modules/engine/mail.cpp:4752
+#: modules/engine/mail.cpp:4750
 msgid "No text prepended."
 msgstr ""
 
-#: modules/engine/mail.cpp:4787
+#: modules/engine/mail.cpp:4785
 #, c-format
 msgid "%d/%d characters prepended."
 msgstr ""
 
-#: modules/engine/mail.cpp:4791 modules/engine/mail.cpp:4852
-#: modules/engine/mail.cpp:4871 modules/engine/mail.cpp:4879
-#: modules/mail/mail_mod.cpp:3964
+#: modules/engine/mail.cpp:4789 modules/engine/mail.cpp:4850
+#: modules/engine/mail.cpp:4869 modules/engine/mail.cpp:4877
+#: modules/mail/mail_mod.cpp:3983
 msgid "MAIL: No message in progress."
 msgstr ""
 
-#: modules/engine/mail.cpp:4813
+#: modules/engine/mail.cpp:4811
 msgid "No text added."
 msgstr "추가된 텍스트가 없습니다."
 
-#: modules/engine/mail.cpp:4848
+#: modules/engine/mail.cpp:4846
 #, c-format
 msgid "%d/%d characters added."
 msgstr ""
 
-#: modules/engine/mail.cpp:4865 modules/mail/mail_mod.cpp:4048
+#: modules/engine/mail.cpp:4863 modules/mail/mail_mod.cpp:4067
 msgid "Text edited."
 msgstr "텍스트를 수정했습니다."
 
-#: modules/engine/mail.cpp:4898
+#: modules/engine/mail.cpp:4896
 #, c-format
 msgid ""
 "From:  %s  Subject: %s\n"
 "To: %s"
 msgstr ""
 
-#: modules/engine/mail.cpp:4939 modules/mail/mail_mod.cpp:4511
+#: modules/engine/mail.cpp:4937 modules/mail/mail_mod.cpp:4530
 msgid "MAIL: Description changed."
 msgstr ""
 
-#: modules/engine/mail.cpp:4943 modules/mail/mail_mod.cpp:4497
+#: modules/engine/mail.cpp:4941 modules/mail/mail_mod.cpp:4516
 msgid "MAIL: Description is not valid."
 msgstr ""
 
-#: modules/engine/mail.cpp:4956 modules/mail/mail_mod.cpp:4519
+#: modules/engine/mail.cpp:4954 modules/mail/mail_mod.cpp:4538
 msgid "MAIL: You cannot do that!"
 msgstr ""
 
-#: modules/engine/mail.cpp:4974 modules/mail/mail_mod.cpp:4547
+#: modules/engine/mail.cpp:4972 modules/mail/mail_mod.cpp:4566
 msgid "MAIL: I do not see that here."
 msgstr ""
 
-#: modules/engine/mail.cpp:4979 modules/mail/mail_mod.cpp:4552
+#: modules/engine/mail.cpp:4977 modules/mail/mail_mod.cpp:4571
 msgid "MAIL: Owner changed for alias."
 msgstr ""
 
-#: modules/engine/mail.cpp:5001 modules/mail/mail_mod.cpp:4595
+#: modules/engine/mail.cpp:4999 modules/mail/mail_mod.cpp:4614
 msgid "MAIL: Only players may be added."
 msgstr ""
 
-#: modules/engine/mail.cpp:5013 modules/engine/mail.cpp:5066
-#: modules/mail/mail_mod.cpp:4607 modules/mail/mail_mod.cpp:4675
+#: modules/engine/mail.cpp:5011 modules/engine/mail.cpp:5064
+#: modules/mail/mail_mod.cpp:4626 modules/mail/mail_mod.cpp:4694
 msgid "MAIL: I do not see that person here."
 msgstr ""
 
-#: modules/engine/mail.cpp:5026 modules/mail/mail_mod.cpp:4616
+#: modules/engine/mail.cpp:5024 modules/mail/mail_mod.cpp:4635
 msgid "MAIL: That person is already on the list."
 msgstr ""
 
-#: modules/engine/mail.cpp:5033 modules/mail/mail_mod.cpp:4627
+#: modules/engine/mail.cpp:5031 modules/mail/mail_mod.cpp:4646
 #, c-format
 msgid "MAIL: %s added to %s"
 msgstr ""
 
-#: modules/engine/mail.cpp:5077 modules/mail/mail_mod.cpp:4690
+#: modules/engine/mail.cpp:5075 modules/mail/mail_mod.cpp:4709
 #, c-format
 msgid "MAIL: %s removed from alias %s."
 msgstr ""
 
-#: modules/engine/mail.cpp:5082 modules/mail/mail_mod.cpp:4700
+#: modules/engine/mail.cpp:5080 modules/mail/mail_mod.cpp:4719
 #, c-format
 msgid "MAIL: %s is not a member of alias %s."
 msgstr ""
 
-#: modules/engine/mail.cpp:5093 modules/mail/mail_mod.cpp:4714
+#: modules/engine/mail.cpp:5091 modules/mail/mail_mod.cpp:4733
 msgid "MAIL: That name already exists!"
 msgstr ""
 
-#: modules/engine/mail.cpp:5103 modules/mail/mail_mod.cpp:4724
+#: modules/engine/mail.cpp:5101 modules/mail/mail_mod.cpp:4743
 msgid "MAIL: I cannot find that alias!"
 msgstr ""
 
-#: modules/engine/mail.cpp:5127 modules/mail/mail_mod.cpp:4743
+#: modules/engine/mail.cpp:5125 modules/mail/mail_mod.cpp:4762
 msgid "MAIL: Mailing Alias renamed."
 msgstr ""
 
-#: modules/engine/mail.cpp:5131 modules/mail/mail_mod.cpp:4747
+#: modules/engine/mail.cpp:5129 modules/mail/mail_mod.cpp:4766
 msgid "MAIL: Alias is not valid."
 msgstr ""
 
-#: modules/engine/mail.cpp:5157 modules/mail/mail_mod.cpp:4776
+#: modules/engine/mail.cpp:5155 modules/mail/mail_mod.cpp:4795
 msgid "MAIL: Alias Deleted."
 msgstr ""
 
-#: modules/engine/mail.cpp:5186 modules/mail/mail_mod.cpp:4428
+#: modules/engine/mail.cpp:5184 modules/mail/mail_mod.cpp:4447
 msgid "Num"
 msgstr ""
 
-#: modules/engine/mail.cpp:5220 modules/mail/mail_mod.cpp:4464
+#: modules/engine/mail.cpp:5218 modules/mail/mail_mod.cpp:4483
 msgid "***** End of Mail Aliases *****"
 msgstr ""
 
-#: modules/engine/mail.cpp:5231 modules/mail/mail_mod.cpp:4804
+#: modules/engine/mail.cpp:5229 modules/mail/mail_mod.cpp:4823
 #, c-format
 msgid "MAIL: Number of mail aliases defined: %d"
 msgstr ""
 
-#: modules/engine/mail.cpp:5233
+#: modules/engine/mail.cpp:5231
 #, c-format
 msgid "MAIL: Vector capacity: %d"
 msgstr ""
 
-#: modules/engine/mail.cpp:5341 modules/mail/mail_mod.cpp:2407
+#: modules/engine/mail.cpp:5339 modules/mail/mail_mod.cpp:2426
 msgid "MAIL: Mail retracted."
 msgstr ""
 
-#: modules/engine/mail.cpp:5345 modules/mail/mail_mod.cpp:2413
+#: modules/engine/mail.cpp:5343 modules/mail/mail_mod.cpp:2432
 msgid "MAIL: That message has been read."
 msgstr ""
 
-#: modules/engine/mail.cpp:5355 modules/mail/mail_mod.cpp:2424
+#: modules/engine/mail.cpp:5353 modules/mail/mail_mod.cpp:2443
 msgid "MAIL: No matching messages."
 msgstr ""
 
-#: modules/engine/mail.cpp:5367 modules/mail/mail_mod.cpp:2350
+#: modules/engine/mail.cpp:5365 modules/mail/mail_mod.cpp:2369
 #, c-format
 msgid "MAIL: Mail alias %s not found."
 msgstr ""
 
-#: modules/engine/mail.cpp:5417
+#: modules/engine/mail.cpp:5415
 msgid "MAIL: That @malias command is not available."
 msgstr ""
 
-#: modules/engine/mail.cpp:5489
+#: modules/engine/mail.cpp:5487
 msgid "MAIL: That @mail command is not available."
 msgstr ""
 
-#: modules/engine/mail.cpp:5812
+#: modules/engine/mail.cpp:5810
 msgid "MAIL: That folder command is not available."
 msgstr ""
 
@@ -3252,7 +3252,7 @@ msgid "Last connect was from %s on %s."
 msgstr "마지막 접속은 %s에서 %s에 있었습니다."
 
 #: modules/engine/player.cpp:965 modules/engine/predicates.cpp:1242
-#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1072
+#: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1073
 msgid "Sorry."
 msgstr "죄송합니다."
 
@@ -3293,7 +3293,7 @@ msgstr ""
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1506 modules/engine/predicates.cpp:2924
+#: modules/engine/player.cpp:1506 modules/engine/predicates.cpp:2927
 #: modules/engine/wiz.cpp:507
 msgid "No such player."
 msgstr "그런 플레이어가 없습니다."
@@ -3509,74 +3509,74 @@ msgstr ""
 msgid "GAME: Restart by %s, please wait."
 msgstr ""
 
-#: modules/engine/predicates.cpp:2743 modules/engine/set.cpp:1587
+#: modules/engine/predicates.cpp:2746 modules/engine/set.cpp:1587
 #: modules/engine/set.cpp:1997
 msgid "Nothing to do."
 msgstr "할 일이 없습니다."
 
-#: modules/engine/predicates.cpp:2787
+#: modules/engine/predicates.cpp:2790
 msgid "Permission denied,"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2967
+#: modules/engine/predicates.cpp:2970
 msgid "Reference"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2970
+#: modules/engine/predicates.cpp:2973
 msgid "Target"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2976
+#: modules/engine/predicates.cpp:2979
 msgid "-------------------------------------------------------"
 msgstr ""
 
-#: modules/engine/predicates.cpp:3000
+#: modules/engine/predicates.cpp:3003
 msgid "GAME: No references found."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3005
+#: modules/engine/predicates.cpp:3008
 msgid "---------------- End of Reference List ----------------"
 msgstr ""
 
-#: modules/engine/predicates.cpp:3119
+#: modules/engine/predicates.cpp:3115
 msgid "References requested too quickly."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3164
+#: modules/engine/predicates.cpp:3160
 msgid "Reference cleared."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3168
+#: modules/engine/predicates.cpp:3164
 msgid "Reference updated."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3172
+#: modules/engine/predicates.cpp:3168
 msgid "That reference already exists."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3176
+#: modules/engine/predicates.cpp:3172
 msgid "No such reference to clear."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3180
+#: modules/engine/predicates.cpp:3176
 msgid "Reference added."
-msgstr ""
-
-#: modules/engine/quota.cpp:138
-#, c-format
-msgid " Quota: %9lld  Used: %9lld"
 msgstr ""
 
 #: modules/engine/quota.cpp:143
 #, c-format
+msgid " Quota: %9lld  Used: %9lld"
+msgstr ""
+
+#: modules/engine/quota.cpp:149
+#, c-format
 msgid " Quota: UNLIMITED  Used: %9lld"
 msgstr ""
 
-#: modules/engine/quota.cpp:171
+#: modules/engine/quota.cpp:178
 msgid "Quotas are not enabled."
 msgstr ""
 
-#: modules/engine/quota.cpp:230 modules/engine/walkdb.cpp:326
+#: modules/engine/quota.cpp:238 modules/engine/walkdb.cpp:326
 msgid "Not found."
 msgstr "찾을 수 없습니다."
 
@@ -3585,7 +3585,7 @@ msgid "I don’t see that player here."
 msgstr "여기에는 그 플레이어가 보이지 않습니다."
 
 #: modules/engine/rob.cpp:50 modules/engine/rob.cpp:421
-#: modules/engine/speech.cpp:1078
+#: modules/engine/speech.cpp:1079
 msgid "I don’t know who you mean!"
 msgstr "누구를 말하는지 알 수 없습니다!"
 
@@ -3942,238 +3942,238 @@ msgstr ""
 msgid "Wiped."
 msgstr "지웠습니다."
 
-#: modules/engine/set.cpp:2232
+#: modules/engine/set.cpp:2235
 msgid "Triggered."
 msgstr "실행되었습니다."
 
-#: modules/engine/set.cpp:2415 modules/engine/set.cpp:2445
+#: modules/engine/set.cpp:2418 modules/engine/set.cpp:2448
 msgid "You can’t figure out how to use that."
 msgstr ""
 
-#: modules/engine/set.cpp:2438
+#: modules/engine/set.cpp:2441
 #, c-format
 msgid "You use %s"
 msgstr ""
 
-#: modules/engine/set.cpp:2439
+#: modules/engine/set.cpp:2442
 #, c-format
 msgid "uses %s"
 msgstr ""
 
-#: modules/engine/set.cpp:2501
+#: modules/engine/set.cpp:2504
 msgid "That’s not a good name for an attribute."
 msgstr ""
 
-#: modules/engine/speech.cpp:60
+#: modules/engine/speech.cpp:61
 msgid "Sorry. Gagged players cannot speak."
 msgstr "죄송합니다. 재갈이 물린 플레이어는 말할 수 없습니다."
 
-#: modules/engine/speech.cpp:68
+#: modules/engine/speech.cpp:69
 msgid "Sorry, robots may not speak in public."
 msgstr "죄송합니다, 로봇은 공개적으로 말할 수 없습니다."
 
-#: modules/engine/speech.cpp:76
+#: modules/engine/speech.cpp:77
 msgid "Sorry, you may not speak in this place."
 msgstr "죄송합니다, 이곳에서는 말할 수 없습니다."
 
-#: modules/engine/speech.cpp:214 modules/engine/speech.cpp:217
-#: modules/engine/speech.cpp:219 modules/engine/speech.cpp:1219
+#: modules/engine/speech.cpp:215 modules/engine/speech.cpp:218
+#: modules/engine/speech.cpp:220 modules/engine/speech.cpp:1220
 #, c-format
 msgid "%s %s “%s”"
 msgstr ""
 
-#: modules/engine/speech.cpp:225 modules/engine/speech.cpp:1213
+#: modules/engine/speech.cpp:226 modules/engine/speech.cpp:1214
 #, c-format
 msgid "You say, “%s”"
 msgstr "“%s”(이)라고 말합니다."
 
-#: modules/engine/speech.cpp:236 modules/engine/speech.cpp:238
-#: modules/engine/speech.cpp:1246
+#: modules/engine/speech.cpp:237 modules/engine/speech.cpp:239
+#: modules/engine/speech.cpp:1247
 #, c-format
 msgid "%s %s"
 msgstr ""
 
-#: modules/engine/speech.cpp:244 modules/engine/speech.cpp:246
-#: modules/engine/speech.cpp:1260
+#: modules/engine/speech.cpp:245 modules/engine/speech.cpp:247
+#: modules/engine/speech.cpp:1261
 #, c-format
 msgid "%s%s"
 msgstr ""
 
-#: modules/engine/speech.cpp:433
+#: modules/engine/speech.cpp:434
 #, c-format
 msgid "%s%s%s%s"
 msgstr ""
 
-#: modules/engine/speech.cpp:498
+#: modules/engine/speech.cpp:499
 #, c-format
 msgid "%s message from %s: %s"
 msgstr "%s 메시지, 보낸 사람 %s: %s"
 
-#: modules/engine/speech.cpp:501
+#: modules/engine/speech.cpp:502
 #, c-format
 msgid "[%d:%02d] %s message sent to %s."
 msgstr ""
 
-#: modules/engine/speech.cpp:526 modules/engine/speech.cpp:537
-#: modules/engine/speech.cpp:1151 modules/engine/speech.cpp:1482
+#: modules/engine/speech.cpp:527 modules/engine/speech.cpp:538
+#: modules/engine/speech.cpp:1152 modules/engine/speech.cpp:1483
 #, c-format
 msgid "Sorry, %s is not connected."
 msgstr "죄송합니다, %s님은 접속해 있지 않습니다."
 
-#: modules/engine/speech.cpp:542
+#: modules/engine/speech.cpp:543
 #, c-format
 msgid "Sorry, %s is not accepting pages."
 msgstr "죄송합니다, %s님은 연락을 받지 않습니다."
 
-#: modules/engine/speech.cpp:556
+#: modules/engine/speech.cpp:557
 #, c-format
 msgid "Sorry, %s can’t return your page."
 msgstr ""
 
-#: modules/engine/speech.cpp:571
+#: modules/engine/speech.cpp:572
 #, c-format
 msgid "Warning: %s can’t return your page."
 msgstr ""
 
-#: modules/engine/speech.cpp:643 modules/engine/speech.cpp:666
+#: modules/engine/speech.cpp:644 modules/engine/speech.cpp:667
 #, c-format
 msgid "I don’t recognize “%s”."
 msgstr "“%s”을(를) 알 수 없습니다."
 
-#: modules/engine/speech.cpp:704
+#: modules/engine/speech.cpp:705
 #, c-format
 msgid "I don’t recognize #%d."
 msgstr ""
 
-#: modules/engine/speech.cpp:778
+#: modules/engine/speech.cpp:779
 msgid "You have not paged anyone."
 msgstr "아무에게도 연락하지 않았습니다."
 
-#: modules/engine/speech.cpp:782
+#: modules/engine/speech.cpp:783
 msgid "No one to page."
 msgstr "연락할 상대가 없습니다."
 
-#: modules/engine/speech.cpp:823
+#: modules/engine/speech.cpp:824
 #, c-format
 msgid "You last paged %s."
 msgstr "마지막으로 %s님에게 연락했습니다."
 
-#: modules/engine/speech.cpp:892
+#: modules/engine/speech.cpp:893
 #, c-format
 msgid "From afar, %s pages you."
 msgstr "멀리서 %s님이 연락합니다."
 
-#: modules/engine/speech.cpp:897
+#: modules/engine/speech.cpp:898
 #, c-format
 msgid "From afar, %s pages %s."
 msgstr ""
 
-#: modules/engine/speech.cpp:900
+#: modules/engine/speech.cpp:901
 #, c-format
 msgid "You page %s."
 msgstr "%s님에게 연락합니다."
 
-#: modules/engine/speech.cpp:909
+#: modules/engine/speech.cpp:910
 #, c-format
 msgid "From afar, to %s: %s %s"
 msgstr ""
 
-#: modules/engine/speech.cpp:914
+#: modules/engine/speech.cpp:915
 #, c-format
 msgid "From afar, %s %s"
 msgstr ""
 
-#: modules/engine/speech.cpp:917
+#: modules/engine/speech.cpp:918
 #, c-format
 msgid "Long distance to %s: %s %s"
 msgstr ""
 
-#: modules/engine/speech.cpp:924
+#: modules/engine/speech.cpp:925
 #, c-format
 msgid "From afar, to %s: %s%s"
 msgstr ""
 
-#: modules/engine/speech.cpp:929
+#: modules/engine/speech.cpp:930
 #, c-format
 msgid "From afar, %s%s"
 msgstr ""
 
-#: modules/engine/speech.cpp:932
+#: modules/engine/speech.cpp:933
 #, c-format
 msgid "Long distance to %s: %s%s"
 msgstr ""
 
-#: modules/engine/speech.cpp:939
+#: modules/engine/speech.cpp:940
 #, c-format
 msgid "To %s, %s pages: %s"
 msgstr "%s님에게, %s님의 페이지: %s"
 
-#: modules/engine/speech.cpp:944
+#: modules/engine/speech.cpp:945
 #, c-format
 msgid "%s pages: %s"
 msgstr "%s님의 페이지: %s"
 
-#: modules/engine/speech.cpp:947
+#: modules/engine/speech.cpp:948
 #, c-format
 msgid "You paged %s with ‘%s’"
 msgstr "%s님에게 ‘%s’라고 페이지했습니다."
 
-#: modules/engine/speech.cpp:991
+#: modules/engine/speech.cpp:992
 #, c-format
 msgid "You sense %s%s%s"
 msgstr ""
 
-#: modules/engine/speech.cpp:1060
+#: modules/engine/speech.cpp:1061
 msgid "Whisper to whom?"
 msgstr "누구에게 속삭일까요?"
 
-#: modules/engine/speech.cpp:1064
+#: modules/engine/speech.cpp:1065
 msgid "Emit to whom?"
 msgstr "누구에게 보낼까요?"
 
-#: modules/engine/speech.cpp:1068
+#: modules/engine/speech.cpp:1069
 msgid "Emit except to whom?"
 msgstr ""
 
-#: modules/engine/speech.cpp:1107 modules/engine/speech.cpp:1427
+#: modules/engine/speech.cpp:1108 modules/engine/speech.cpp:1428
 msgid "You are too far away to do that."
 msgstr "너무 멀리 있어서 그렇게 할 수 없습니다."
 
-#: modules/engine/speech.cpp:1184
+#: modules/engine/speech.cpp:1185
 #, c-format
 msgid "%s whispers “%s”"
 msgstr "%s님이 “%s”(이)라고 속삭입니다"
 
-#: modules/engine/speech.cpp:1473
+#: modules/engine/speech.cpp:1474
 #, c-format
 msgid "Sorry, you are too far away to contact %s."
 msgstr ""
 
-#: modules/engine/speech.cpp:1509
+#: modules/engine/speech.cpp:1510
 msgid "No one to whisper to."
 msgstr "속삭일 상대가 없습니다."
 
-#: modules/engine/speech.cpp:1717 modules/engine/speech.cpp:1729
+#: modules/engine/speech.cpp:1718 modules/engine/speech.cpp:1730
 #, c-format
 msgid "%s senses “%s%s”"
 msgstr ""
 
-#: modules/engine/speech.cpp:1724
+#: modules/engine/speech.cpp:1725
 #, c-format
 msgid "%s senses “%s %s”"
 msgstr ""
 
-#: modules/engine/speech.cpp:1735 modules/engine/speech.cpp:1796
+#: modules/engine/speech.cpp:1736 modules/engine/speech.cpp:1797
 #, c-format
 msgid "You whisper “%s” to %s."
 msgstr "%2$s님에게 “%1$s”(이)라고 속삭입니다."
 
-#: modules/engine/speech.cpp:1778 modules/engine/speech.cpp:1790
+#: modules/engine/speech.cpp:1779 modules/engine/speech.cpp:1791
 #, c-format
 msgid "%s sense “%s%s”"
 msgstr ""
 
-#: modules/engine/speech.cpp:1785
+#: modules/engine/speech.cpp:1786
 #, c-format
 msgid "%s sense “%s %s”"
 msgstr ""
@@ -4528,77 +4528,77 @@ msgstr "활성화되었습니다."
 msgid "Disabled."
 msgstr "비활성화되었습니다."
 
-#: modules/mail/mail_mod.cpp:2462
+#: modules/mail/mail_mod.cpp:2481
 #, c-format
 msgid "MAIL: ** MAIL PURGE ** done by #%d."
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:3594
+#: modules/mail/mail_mod.cpp:3613
 msgid "MAIL: Out of memory, message not sent."
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:3939
+#: modules/mail/mail_mod.cpp:3958
 #, c-format
 msgid "MAIL: To: %s"
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:3943
+#: modules/mail/mail_mod.cpp:3962
 #, c-format
 msgid "MAIL: Subject: %s"
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:3986
+#: modules/mail/mail_mod.cpp:4005
 msgid "MAIL: Nothing to edit."
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:4807
+#: modules/mail/mail_mod.cpp:4826
 #, c-format
 msgid "MAIL: Allocated slots %d"
 msgstr ""
 
-#: modules/mail/mail_mod.cpp:5370
+#: modules/mail/mail_mod.cpp:5387
 msgid "MAIL: Mail statistics are unavailable."
 msgstr ""
 
-#: src/ganl_adapter.cpp:2472
+#: src/ganl_adapter.cpp:2606
 #, c-format
 msgid "GAME: Caught signal %s, exiting."
 msgstr ""
 
-#: src/ganl_adapter.cpp:3096
+#: src/ganl_adapter.cpp:3265
 msgid "@email: Another email is already in progress."
 msgstr ""
 
-#: src/ganl_adapter.cpp:3113
-#, c-format
-msgid "@email: Unable to resolve hostname %s!"
+#: src/ganl_adapter.cpp:3271
+msgid "@email: No mail server configured."
 msgstr ""
 
-#: src/ganl_adapter.cpp:3141 src/ganl_adapter.cpp:3186
-#: src/ganl_adapter.cpp:3234
-msgid "@email: Unable to connect to mailserver, aborting!"
-msgstr ""
-
-#: src/ganl_adapter.cpp:3167 src/ganl_adapter.cpp:3195
+#: src/ganl_adapter.cpp:3312 src/ganl_adapter.cpp:3355
+#: src/ganl_adapter.cpp:3383
 msgid "@email: Unable to register socket with network engine."
 msgstr ""
 
-#: src/ganl_adapter.cpp:4160
+#: src/ganl_adapter.cpp:3315 src/ganl_adapter.cpp:3361
+#: src/ganl_adapter.cpp:3378
+msgid "@email: Unable to connect to mailserver, aborting!"
+msgstr ""
+
+#: src/ganl_adapter.cpp:4397
 msgid "DNS slave restarted."
 msgstr ""
 
-#: src/ganl_adapter.cpp:4162
+#: src/ganl_adapter.cpp:4399
 msgid "DNS slave failed to start."
 msgstr ""
 
-#: src/net.cpp:3649
+#: src/net.cpp:3705
 msgid "----- Site Access -----"
 msgstr ""
 
-#: src/net.cpp:3654
+#: src/net.cpp:3710
 msgid "Address"
 msgstr ""
 
-#: src/net.cpp:4315
+#: src/net.cpp:4371
 msgid "GAME: Restart finished."
 msgstr ""
