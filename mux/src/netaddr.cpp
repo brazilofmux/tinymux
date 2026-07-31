@@ -704,6 +704,27 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
             return nullptr;
         }
 
+        // mux_atoi64 wraps mod 2^64 with no overflow report (#1455), so a
+        // 20+-digit prefix like 18446744073709551617 (2^64+1) wraps to 1 and
+        // would slip past the range check below — re-opening #1774 one width
+        // up.  A valid prefix is 0..128: at most three significant digits.
+        // Reject anything longer before it can wrap.  is_integer already
+        // validated the format (optional sign, digits, surrounding spaces).
+        //
+        {
+            const UTF8 *p = mask_txt;
+            while (mux_isspace(*p)) { p++; }
+            if ('-' == *p || '+' == *p) { p++; }
+            while ('0' == *p) { p++; }
+            int nSignificant = 0;
+            while (mux_isdigit(p[nSignificant])) { nSignificant++; }
+            if (3 < nSignificant)
+            {
+                cf_log_syntax(player, cmd, T("Mask bits (%s) in CIDR IP prefix out of range."), mask_txt);
+                return nullptr;
+            }
+        }
+
         // Full-width first: assigning mux_atoi64 into int truncates, so
         // e.g. 4294967296 becomes 0 and 4294967297 becomes 1 — both pass
         // the later 0..32/0..128 checks and build a far wider subnet than
