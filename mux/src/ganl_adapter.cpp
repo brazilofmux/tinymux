@@ -643,6 +643,15 @@ public:
         d->quota = g_dc.cmd_quota_max;
         d->program_data = nullptr;
         d->ws = nullptr;
+        // #1800: pool-reused DESCs may retain a partial-preface length from
+        // a prior connection that was freed mid-detection (sent "G"/"GE"/
+        // "GET", then dropped).  Left stale, those 1-3 bytes are prepended
+        // to this connection's input (cross-connection corruption / WS
+        // misclassification), and a garbage-large value drives an OOB read
+        // in the grace-timeout replay below.  Clear it like the other
+        // residual-negotiation fields (#1126 pattern).
+        //
+        d->proto_detect_len = 0;
         d->ttype = nullptr;
         d->height = 24;
         d->width = 78;
@@ -2773,7 +2782,10 @@ void GanlAdapter::process_tinyMUX_tasks() {
             }
             d->proto_detect_len = 0;
             FinalizeGanlConnection(*this, d, isTls);
-            if (0 < nPartial)
+            // Bound the replay by the same guard as the memcpy above: a
+            // stale/garbage nPartial must never index past partial[4].
+            //
+            if (0 < nPartial && nPartial <= sizeof(partial))
             {
                 process_input_helper(d, partial, static_cast<int>(nPartial));
             }
