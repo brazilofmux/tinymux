@@ -696,6 +696,21 @@ static int cron_add(dbref player, dbref thing, int atr,
         crp->flags |= CRON_DOW_STAR;
     }
 
+    // #1870: require end-of-string after the five fields.  parse_cron_field
+    // returns the first non-whitespace past the field; any further token
+    // (e.g. "* * * * * garbage") used to be ignored and the entry accepted.
+    //
+    while (mux_isspace(*p))
+    {
+        p++;
+    }
+    if ('\0' != *p)
+    {
+        free_sbuf(crp->cronstr);
+        delete crp;
+        return 0;
+    }
+
     // Sunday can be 0 or 7.  Map bit 7 to bit 0.
     //
     if (crp->dow & (1u << 7))
