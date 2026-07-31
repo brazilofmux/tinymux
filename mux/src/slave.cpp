@@ -268,6 +268,8 @@ volatile sig_atomic_t nChildrenStarted = 0;
 volatile sig_atomic_t nChildrenEndedSIGCHLD = 0;
 volatile sig_atomic_t nChildrenEndedMain = 0;
 
+static void install_sigchld_handler(void);
+
 void child_signal(int iSig)
 {
     // Collect the children.
@@ -282,7 +284,42 @@ void child_signal(int iSig)
         }
     }
 
-    signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
+    install_sigchld_handler();
+}
+
+
+// Install the SIGCHLD handler WITHOUT SA_RESTART (#1912).
+//
+// signal() is BSD-flavoured on every platform we build (macOS/BSD by
+// definition, glibc by default), so it installs handlers with SA_RESTART.
+// That silently disabled the cap loop's recovery path:
+//
+//   * at MAX_CHILDREN the reap loop blocks in waitpid(0, ..., 0);
+//   * a child exits, SIGCHLD fires, and child_signal REAPS it itself;
+//   * with SA_RESTART the interrupted waitpid is restarted rather than
+//     returning EINTR -- but the child that would have satisfied it is
+//     already gone, so it blocks for the NEXT exit;
+//   * nChildren is only recomputed at the top of the loop, which is
+//     never reached, so the cap stays engaged even though a slot is free.
+//
+// The `if (EINTR == errno) continue;` arm below is exactly the right
+// recovery -- it recomputes and switches back to WNOHANG -- but it was
+// unreachable.  Without SA_RESTART it fires and the cap releases after
+// one exit, which is what #1827 intended.
+//
+// Measured on macOS/arm64 before this change: the five post-cap fast
+// lookups did not complete ~100 ms apart as designed, but landed after
+// the 3 s slow cohort drained -- i.e. the pre-#1827 behaviour, restored
+// by a signal-installation detail.
+//
+static void install_sigchld_handler(void)
+{
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = CAST_SIGNAL_FUNC child_signal;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;   // deliberately NOT SA_RESTART
+    sigaction(SIGCHLD, &sa, nullptr);
 }
 
 // Fork a child to resolve one address.  Returns false only if fork() failed.
@@ -392,7 +429,7 @@ int main(int argc, char *argv[])
     }
 
     alarm_signal(SIGALRM);
-    signal(SIGCHLD, CAST_SIGNAL_FUNC child_signal);
+    install_sigchld_handler();
     signal(SIGPIPE, SIG_DFL);
 
     for (;;)
