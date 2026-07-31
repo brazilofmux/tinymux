@@ -78,6 +78,11 @@ public:
     NetworkAddress getRemoteNetworkAddress(ConnectionHandle conn) override;
     std::string getErrorString(ErrorCode error) override;
 
+    // Test hook (#1830): next N postAccept attempts fail before any socket work.
+    // Production code never calls this.
+    void setTestFailNextPostAccepts(int n) { failNextPostAccepts_ = n; }
+    int getPendingAcceptsForTest(ListenerHandle listener);
+
 private:
     // Internal socket type enum
     enum class SocketType { Listener, Connection, OutboundConnecting };
@@ -95,10 +100,16 @@ private:
     struct ListenerInfo {
         void* context{nullptr};    // User-provided listener context
         bool isListening{false}; // Whether this listener is active
-        int pendingAccepts{0}; // Number of pending accept operations
+        int pendingAccepts{0}; // Number of pending AcceptEx operations
+        int targetAccepts{2};  // Keep a small pool outstanding (#1830)
         int backlog{SOMAXCONN};       // Backlog used during listen
         ListenerOptions options{}; // Original listener options
         int addressFamily{AF_INET}; // AF_INET / AF_INET6
+        // When replenish fails and pendingAccepts drops below target (esp. 0),
+        // schedule retries in processEvents with bounded backoff (#1830).
+        bool acceptOutage{false};
+        ULONGLONG nextAcceptRetryMs{0};
+        ErrorCode lastAcceptPostError{0};
     };
 
     // Helper methods
@@ -110,6 +121,11 @@ private:
     bool setSocketOptions(SOCKET socket, int addressFamily, const ListenerOptions& options, ErrorCode& error, bool isListener);
     bool associateWithIocp(HANDLE handle, void* completionKey, ErrorCode& error);
     bool postAccept(ListenerHandle listener, ErrorCode& error);
+    // Post AcceptEx until pendingAccepts >= targetAccepts (or fail).
+    bool ensureAcceptsPosted(ListenerHandle listener, ErrorCode& error);
+    // Retry listeners that are active but short of outstanding accepts.
+    int recoverStarvedListeners(IoEvent* events, int maxEvents, int eventCount);
+    void noteAcceptReplenishFailure(ListenerHandle listener, ErrorCode error);
     ConnectionHandle handleAcceptCompletion(PerIoData* perIoData, ErrorCode& error);
     void cancelIoOperations(SOCKET socket);
     bool postWSARecv(ConnectionHandle conn, PerIoData* perIoData, ErrorCode& error);
@@ -128,6 +144,9 @@ private:
     LPFN_ACCEPTEX lpfnAcceptEx_;
     LPFN_GETACCEPTEXSOCKADDRS lpfnGetAcceptExSockaddrs_;
     LPFN_CONNECTEX lpfnConnectEx_;
+
+    // Test-only: fail next N postAccept calls before real work (#1830).
+    int failNextPostAccepts_{0};
 };
 
 } // namespace ganl

@@ -176,6 +176,8 @@ struct TcpListener {
     ~TcpListener() { close(); }
 };
 
+SOCKET connectLoopback(uint16_t port); // defined below with accept-path helpers
+
 // #1801: TCP loopback connect must emit ConnectSuccess.
 Result scenarioTcpLoopbackConnect(const EngineUnderTest& eut) {
     auto eng = eut.make();
@@ -221,6 +223,109 @@ Result scenarioTcpConnectRefused(const EngineUnderTest& eut) {
     }
     eng->shutdown();
     return r;
+}
+
+// #1830: IOCP only — if the replacement AcceptEx post fails once after an
+// accept, the listener must recover and accept a later connection without
+// restart.  Fault-inject one postAccept failure after startListening has
+// filled the pool.
+Result scenarioIocpAcceptReplenishRecover(const EngineUnderTest& eut) {
+    if (eut.name != "iocp") {
+        return skip("IOCP-only (#1830)");
+    }
+    auto eng = eut.make();
+    auto* iocp = dynamic_cast<IocpNetworkEngine*>(eng.get());
+    if (!iocp) return fail("dynamic_cast to IocpNetworkEngine failed");
+    if (!eng->initialize()) return fail("engine init failed");
+
+    ErrorCode err = 0;
+    ListenerHandle lh = eng->createListener("127.0.0.1", 0, err);
+    if (lh == InvalidListenerHandle) return fail("createListener failed");
+    if (!eng->startListening(lh, nullptr, err)) {
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("startListening failed");
+    }
+    const uint16_t port = listenerPort(lh);
+    if (port == 0) {
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("listenerPort failed");
+    }
+
+    // After pool is full, next postAccept fails once (replacement after accept).
+    iocp->setTestFailNextPostAccepts(1);
+
+    SOCKET client1 = connectLoopback(port);
+    if (client1 == INVALID_SOCKET) {
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("client1 connect failed");
+    }
+
+    ConnectionHandle accepted = InvalidConnectionHandle;
+    if (!pollFor(*eng, 3000, 16, [&](const IoEvent& ev) {
+            if (ev.type == IoEventType::Accept && ev.listener == lh) {
+                accepted = ev.connection;
+                return true;
+            }
+            return false;
+        })) {
+        closesocket(client1);
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("first Accept never arrived");
+    }
+
+    // Allow recovery: processEvents timeouts retry starved listeners (#1830).
+    for (int i = 0; i < 20; i++) {
+        IoEvent events[8];
+        eng->processEvents(50, events, 8);
+        if (iocp->getPendingAcceptsForTest(lh) > 0) {
+            break;
+        }
+    }
+    if (iocp->getPendingAcceptsForTest(lh) <= 0) {
+        eng->closeConnection(accepted);
+        closesocket(client1);
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("listener never recovered pending AcceptEx");
+    }
+
+    SOCKET client2 = connectLoopback(port);
+    if (client2 == INVALID_SOCKET) {
+        eng->closeConnection(accepted);
+        closesocket(client1);
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("client2 connect failed after replenish");
+    }
+
+    ConnectionHandle accepted2 = InvalidConnectionHandle;
+    if (!pollFor(*eng, 3000, 16, [&](const IoEvent& ev) {
+            if (ev.type == IoEventType::Accept && ev.listener == lh
+                && ev.connection != accepted) {
+                accepted2 = ev.connection;
+                return true;
+            }
+            return false;
+        })) {
+        eng->closeConnection(accepted);
+        closesocket(client1);
+        closesocket(client2);
+        eng->closeListener(lh);
+        eng->shutdown();
+        return fail("second Accept never arrived after replenish recovery");
+    }
+
+    eng->closeConnection(accepted);
+    eng->closeConnection(accepted2);
+    closesocket(client1);
+    closesocket(client2);
+    eng->closeListener(lh);
+    eng->shutdown();
+    return pass();
 }
 
 SOCKET connectLoopback(uint16_t port) {
@@ -891,6 +996,7 @@ const Scenario kScenarios[] = {
     {"double-close-idempotent",  scenarioDoubleCloseIdempotent, true},
     {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},  // #1801
     {"tcp-connect-refused",      scenarioTcpConnectRefused,    true},  // #1801
+    {"iocp-accept-replenish",    scenarioIocpAcceptReplenishRecover, true}, // #1830
 #else
     {"immediate-unix-connect",   scenarioImmediateUnixConnect, true},
     {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},
