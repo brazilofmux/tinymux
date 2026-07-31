@@ -174,6 +174,25 @@ protected:
     bool processProtocolData();
     void closeNetworkAfterDrain();
 
+    // #1855: fatal socket I/O while Closing with a drain pending must abort
+    // the drain and finish teardown; close()'s Closing guard would no-op.
+    //
+    void forceCloseAfterIoFailure();
+
+    // TLS + protocol pipeline after bytes land in encryptedInput_.
+    // Returns false if the connection closed during processing.
+    //
+    bool processIngressBuffers();
+
+    // #1856: operational encrypted-ingress high-water (not the 1 GiB
+    // IoBuffer arithmetic backstop).  Close a peer that exceeds this.
+    //
+    static constexpr size_t kMaxEncryptedIngress = 256 * 1024;
+    // Cap a single read() so ensureWritable is not handed the entire
+    // remaining capacity of a multi-megabyte buffer.
+    //
+    static constexpr size_t kMaxReadChunk = 16 * 1024;
+
     // Single egress path for protocol/application bytes (#950).  TLS +
     // established → encrypt into encryptedOutput_; non-TLS → plain append;
     // TLS but not established → never cleartext (retain source if
