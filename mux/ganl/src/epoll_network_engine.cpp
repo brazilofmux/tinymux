@@ -141,12 +141,36 @@ ListenerHandle EpollNetworkEngine::createListener(const std::string& host, uint1
 #ifdef SOCK_NONBLOCK
         sockFlags |= SOCK_NONBLOCK;
 #endif
+#ifdef SOCK_CLOEXEC
+        // #1823: steady-state listeners must not survive panic exec.
+        //
+        sockFlags |= SOCK_CLOEXEC;
+#endif
 
         fd = ::socket(ai->ai_family, sockFlags, ai->ai_protocol);
         if (fd == -1) {
             lastErr = errno;
             continue;
         }
+
+#ifndef SOCK_CLOEXEC
+        // Fallback: set FD_CLOEXEC after create.
+        //
+        if (!setNonBlocking(fd, error)) {
+            // setNonBlocking also sets CLOEXEC on POSIX (#1823).
+            lastErr = error;
+            close(fd);
+            fd = -1;
+            continue;
+        }
+#elif !defined(SOCK_NONBLOCK)
+        if (!setNonBlocking(fd, error)) {
+            lastErr = error;
+            close(fd);
+            fd = -1;
+            continue;
+        }
+#endif
 
         int opt = 1;
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
@@ -1194,9 +1218,12 @@ std::string EpollNetworkEngine::getErrorString(ErrorCode error) {
     return strerror(error);
 }
 
-// Helper to set socket non-blocking (using fcntl)
+// Helper to set socket non-blocking and close-on-exec (using fcntl).
+// #1823: CLOEXEC is the steady-state default so panic exec inherits nothing;
+// planned @restart clears CLOEXEC only on the selected survivor set.
+//
 bool EpollNetworkEngine::setNonBlocking(int fd, ErrorCode& error) {
-    // Note: SOCK_NONBLOCK flag during socket() creation is preferred
+    // Note: SOCK_NONBLOCK / SOCK_CLOEXEC during socket()/accept4() preferred
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1) {
         error = errno;
@@ -1209,7 +1236,19 @@ bool EpollNetworkEngine::setNonBlocking(int fd, ErrorCode& error) {
         GANL_EPOLL_DEBUG(fd, "fcntl(F_SETFL, O_NONBLOCK) failed: " << strerror(error));
         return false;
     }
-    GANL_EPOLL_DEBUG(fd, "Set non-blocking successfully.");
+
+    int fdFlags = fcntl(fd, F_GETFD);
+    if (fdFlags == -1) {
+        error = errno;
+        GANL_EPOLL_DEBUG(fd, "fcntl(F_GETFD) failed: " << strerror(error));
+        return false;
+    }
+    if (fcntl(fd, F_SETFD, fdFlags | FD_CLOEXEC) == -1) {
+        error = errno;
+        GANL_EPOLL_DEBUG(fd, "fcntl(F_SETFD, FD_CLOEXEC) failed: " << strerror(error));
+        return false;
+    }
+    GANL_EPOLL_DEBUG(fd, "Set non-blocking + CLOEXEC successfully.");
     return true;
 }
 
@@ -1253,9 +1292,10 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
     NetworkAddress remoteAddr(reinterpret_cast<sockaddr*>(&clientAddr), clientLen);
     GANL_EPOLL_DEBUG(clientFd, "Client address: " << remoteAddr.toString());
 
-    // Set non-blocking for the new socket (unless accept4() already did it).
+    // Set non-blocking + CLOEXEC unless accept4() already applied both.
+    //
     if (!nonBlockingApplied && !setNonBlocking(clientFd, error)) {
-        GANL_EPOLL_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << strerror(error));
+        GANL_EPOLL_DEBUG(clientFd, "Failed to set non-blocking/CLOEXEC on accepted socket: " << strerror(error));
         close(clientFd);
         return InvalidConnectionHandle;
     }

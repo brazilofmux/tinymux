@@ -550,7 +550,11 @@ void set_signals(void)
     signal(SIGILL,  CAST_SIGNAL_FUNC sighandler);
     signal(SIGSEGV, CAST_SIGNAL_FUNC sighandler);
     signal(SIGABRT, CAST_SIGNAL_FUNC sighandler);
-    signal(SIGFPE,  SIG_IGN);
+    // #1824: SIGFPE was SIG_IGN so the fatal branch in sighandler (panic
+    // restart / controlled exit) was unreachable.  Arithmetic faults must
+    // share the same recovery path as SIGSEGV/SIGILL.
+    //
+    signal(SIGFPE,  CAST_SIGNAL_FUNC sighandler);
 
 #if defined(UNIX_SIGNALS)
     signal(SIGCHLD, CAST_SIGNAL_FUNC sighandler);

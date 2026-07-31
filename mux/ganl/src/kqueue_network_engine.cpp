@@ -45,6 +45,14 @@ bool KqueueNetworkEngine::initialize() {
         std::cerr << "[Kqueue:CTL] FATAL: Failed to create kqueue instance: " << strerror(errno) << std::endl;
         return false;
     }
+    // #1823: control fd must not survive panic exec (mirrors EPOLL_CLOEXEC).
+    //
+    {
+        int fdFlags = fcntl(kqueueFd_, F_GETFD);
+        if (fdFlags != -1) {
+            (void)fcntl(kqueueFd_, F_SETFD, fdFlags | FD_CLOEXEC);
+        }
+    }
     GANL_KQUEUE_DEBUG(kqueueFd_, "kqueue() successful.");
     return true;
 }
@@ -922,6 +930,8 @@ std::string KqueueNetworkEngine::getErrorString(ErrorCode error) {
     return strerror(error);
 }
 
+// #1823: also set FD_CLOEXEC so panic exec inherits no networking fds.
+//
 bool KqueueNetworkEngine::setNonBlocking(int fd, ErrorCode& error) {
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1) {
@@ -935,7 +945,19 @@ bool KqueueNetworkEngine::setNonBlocking(int fd, ErrorCode& error) {
         GANL_KQUEUE_DEBUG(fd, "fcntl(F_SETFL, O_NONBLOCK) failed: " << strerror(error));
         return false;
     }
-    GANL_KQUEUE_DEBUG(fd, "Set non-blocking successfully.");
+
+    int fdFlags = fcntl(fd, F_GETFD);
+    if (fdFlags == -1) {
+        error = errno;
+        GANL_KQUEUE_DEBUG(fd, "fcntl(F_GETFD) failed: " << strerror(error));
+        return false;
+    }
+    if (fcntl(fd, F_SETFD, fdFlags | FD_CLOEXEC) == -1) {
+        error = errno;
+        GANL_KQUEUE_DEBUG(fd, "fcntl(F_SETFD, FD_CLOEXEC) failed: " << strerror(error));
+        return false;
+    }
+    GANL_KQUEUE_DEBUG(fd, "Set non-blocking + CLOEXEC successfully.");
     return true;
 }
 

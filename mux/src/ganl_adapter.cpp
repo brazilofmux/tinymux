@@ -2147,6 +2147,51 @@ void GanlAdapter::prepare_for_restart() {
         networkEngine_->detachListener(pair.second);
     }
 
+#if defined(HAVE_WORKING_FORK) && !defined(_WIN32) && !defined(WIN32)
+    // 6b. #1823: Steady-state sockets are CLOEXEC (accept4 / setNonBlocking).
+    // Planned @restart must clear CLOEXEC only on the bounded survivor set
+    // about to be written into restart.db (listeners + remaining plain telnet).
+    // PanicRestart never reaches here, so it still inherits nothing.
+    //
+    auto clear_cloexec = [](SOCKET s) -> bool {
+        const int fd = static_cast<int>(s);
+        const int flags = fcntl(fd, F_GETFD);
+        if (flags < 0) {
+            return false;
+        }
+        if (0 != (flags & FD_CLOEXEC)) {
+            if (fcntl(fd, F_SETFD, flags & ~FD_CLOEXEC) < 0) {
+                return false;
+            }
+        }
+        return true;
+    };
+    bool bCloexecOk = true;
+    for (int i = 0; i < num_main_game_ports; ++i) {
+        if (!clear_cloexec(main_game_ports[i].socket)) {
+            bCloexecOk = false;
+            g_pILog->WriteString(tprintf(
+                T("GANL: WARNING: failed to clear CLOEXEC on listener fd %llu\n"),
+                static_cast<unsigned long long>(main_game_ports[i].socket)));
+        }
+    }
+    for (DESC* d : g_descriptors_list) {
+        if (d && !IS_INVALID_SOCKET(d->socket)) {
+            if (!clear_cloexec(d->socket)) {
+                bCloexecOk = false;
+                g_pILog->WriteString(tprintf(
+                    T("GANL: WARNING: failed to clear CLOEXEC on client fd %llu\n"),
+                    static_cast<unsigned long long>(d->socket)));
+            }
+        }
+    }
+    if (!bCloexecOk) {
+        g_pILog->WriteString(T(
+            "GANL: WARNING: some restart fds keep CLOEXEC; those sessions "
+            "may be dropped across @restart.\n"));
+    }
+#endif
+
     // 7. Clear handle_to_conn_ — Connection objects destruct safely
     //    (closeConnection = no-op since fd already detached,
     //     onConnectionClose = no-op since desc mappings cleared).
