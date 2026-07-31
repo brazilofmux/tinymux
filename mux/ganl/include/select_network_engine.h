@@ -47,6 +47,8 @@ public:
     ConnectionHandle adoptConnection(int fd, void* connectionContext, ErrorCode& error) override;
     ConnectionHandle initiateConnect(const std::string& host, uint16_t port,
                                      void* connectionContext, ErrorCode& error) override;
+    ConnectionHandle initiateUnixConnect(const std::string& path,
+                                     void* connectionContext, ErrorCode& error) override;
     ConnectionHandle spawnSlave(const SlaveSpawnOptions& options, ErrorCode& error) override;
     bool startListening(ListenerHandle listener, void* listenerContext, ErrorCode& error) override;
     void closeListener(ListenerHandle listener) override;

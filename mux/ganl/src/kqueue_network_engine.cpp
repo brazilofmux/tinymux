@@ -3,6 +3,7 @@
 #include "slave_spawn_posix.h"
 #include <iostream>
 #include <sys/socket.h>
+#include <sys/un.h> // For sockaddr_un (Unix domain sockets)
 #include <netinet/in.h>
 #include <netinet/tcp.h> // For TCP_NODELAY potentially
 #include <arpa/inet.h>
@@ -413,6 +414,100 @@ ConnectionHandle KqueueNetworkEngine::initiateConnect(const std::string& host, u
     }
 
     GANL_KQUEUE_DEBUG(fd, "Outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate — write fires next poll")
+        << ").");
+    return static_cast<ConnectionHandle>(fd);
+}
+
+ConnectionHandle KqueueNetworkEngine::initiateUnixConnect(const std::string& path,
+                                                          void* connectionContext, ErrorCode& error) {
+    error = 0;
+    GANL_KQUEUE_DEBUG(0, "Initiating outbound Unix connect to " << path);
+
+    if (kqueueFd_ == -1) {
+        error = EINVAL;
+        return InvalidConnectionHandle;
+    }
+
+    int sockFlags = SOCK_STREAM;
+#ifdef SOCK_NONBLOCK
+    sockFlags |= SOCK_NONBLOCK;
+#endif
+#ifdef SOCK_CLOEXEC
+    sockFlags |= SOCK_CLOEXEC;
+#endif
+
+    int fd = ::socket(AF_UNIX, sockFlags, 0);
+    if (fd == -1) {
+        error = errno;
+        return InvalidConnectionHandle;
+    }
+
+    // macOS/BSD have neither SOCK_NONBLOCK nor SOCK_CLOEXEC, so both are set
+    // here rather than in the socket() call.  setNonBlocking() also sets
+    // FD_CLOEXEC (#1823), which is what keeps an outbound link from leaking
+    // into a re-exec'd child.
+#ifndef SOCK_NONBLOCK
+    if (!setNonBlocking(fd, error)) {
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+#endif
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    if (path.size() >= sizeof(addr.sun_path)) {
+        error = ENAMETOOLONG;
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+    strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
+
+    // Only consumed by the debug log below; see initiateConnect().
+    [[maybe_unused]] bool connectInProgress = false;
+    int rc = ::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr));
+    if (rc == 0) {
+        // AF_UNIX almost always completes immediately.  Still arm
+        // EVFILT_WRITE so processEvents emits ConnectSuccess (#942) -- the
+        // caller's state machine waits for it either way.
+        //
+        connectInProgress = false;
+    } else if (errno == EINPROGRESS || errno == EWOULDBLOCK) {
+        connectInProgress = true;
+    } else {
+        error = errno;
+        GANL_KQUEUE_DEBUG(fd, "Unix connect() failed: " << strerror(error));
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (sockets_.find(fd) != sockets_.end()) {
+            ::close(fd);
+            error = EEXIST;
+            return InvalidConnectionHandle;
+        }
+        sockets_[fd] = SocketInfo{
+            SocketType::OutboundConnecting,
+            context: connectionContext,
+            activeReadBuffer: nullptr,
+            remoteAddress: std::string(),
+            writeUserContext: nullptr
+        };
+    }
+
+    if (!updateKevent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, error)) {
+        GANL_KQUEUE_DEBUG(fd, "Failed to add outbound Unix connect to kqueue: "
+            << strerror(error));
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_.erase(fd);
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    GANL_KQUEUE_DEBUG(fd, "Outbound Unix connect initiated ("
         << (connectInProgress ? "in progress" : "immediate — write fires next poll")
         << ").");
     return static_cast<ConnectionHandle>(fd);

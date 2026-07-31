@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/un.h> // For sockaddr_un (Unix domain sockets)
 #include <sys/time.h> // For timeval
 #include <netinet/in.h>
 #include <netinet/tcp.h> // Optional
@@ -457,6 +458,93 @@ ConnectionHandle SelectNetworkEngine::initiateConnect(const std::string& host, u
     }
 
     GANL_SELECT_DEBUG(fd, "Outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate — write fires next poll")
+        << ").");
+    return static_cast<ConnectionHandle>(fd);
+}
+
+ConnectionHandle SelectNetworkEngine::initiateUnixConnect(const std::string& path,
+                                                          void* connectionContext, ErrorCode& error) {
+    error = 0;
+    GANL_SELECT_DEBUG(0, "Initiating outbound Unix connect to " << path);
+
+    int fd = ::socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd == INVALID_SOCKET_FD) {
+        error = errno;
+        return InvalidConnectionHandle;
+    }
+
+    // select() cannot track fds past FD_SETSIZE (#946).  Check before any
+    // further setup so the socket is closed rather than silently invisible.
+    if (fd >= FD_SETSIZE) {
+        error = ENOBUFS;
+        GANL_SELECT_DEBUG(fd, "Unix connect fd exceeds FD_SETSIZE");
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    if (!setNonBlocking(fd, error)) {
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    if (path.size() >= sizeof(addr.sun_path)) {
+        error = ENAMETOOLONG;
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+    strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
+
+    // Only consumed by the debug log below; see initiateConnect().
+    [[maybe_unused]] bool connectInProgress = false;
+    int rc = ::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr));
+    if (rc == 0) {
+        // AF_UNIX almost always completes immediately.  Still arm write
+        // interest so processEvents emits ConnectSuccess (#942).
+        //
+        connectInProgress = false;
+    } else if (errno == EINPROGRESS || errno == EWOULDBLOCK) {
+        connectInProgress = true;
+    } else {
+        error = errno;
+        GANL_SELECT_DEBUG(fd, "Unix connect() failed: " << strerror(error));
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!initialized_) {
+            ::close(fd);
+            error = ESHUTDOWN;
+            return InvalidConnectionHandle;
+        }
+        if (sockets_.find(fd) != sockets_.end()) {
+            ::close(fd);
+            error = EEXIST;
+            return InvalidConnectionHandle;
+        }
+
+        // OutboundConnecting: wantWrite only until SO_ERROR is checked.
+        //
+        SocketInfo connecting{
+            SocketType::OutboundConnecting,
+            connectionContext,
+            /*wantRead=*/false,
+            /*wantWrite=*/true,
+            /*writeUserContext=*/nullptr
+        };
+        sockets_[fd] = connecting;
+        updateFdSets(fd, connecting);
+        if (fd > maxFd_) {
+            maxFd_ = fd;
+        }
+    }
+
+    GANL_SELECT_DEBUG(fd, "Outbound Unix connect initiated ("
         << (connectInProgress ? "in progress" : "immediate — write fires next poll")
         << ").");
     return static_cast<ConnectionHandle>(fd);
