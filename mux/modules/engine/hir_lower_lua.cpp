@@ -839,6 +839,32 @@ static lua_type_class lua_type_class_of_value(const hir_program &h,
     }
 }
 
+// Encode a non-handle operand for HIR_LUA_EQ (kind in val): 0=int, 1=str,
+// 3=nil, 4=bool.  Returns the rhs HIR value index, or -1 if unencodable.
+// #1835: NIL/BOOL must not collapse to kind 1/0 via empty SCONST / ICONST.
+//
+static int lua_eq_kind_of_value(hir_program &h, const lua_truth_map &m,
+                                int v, int *kind_out) {
+    const lua_truth tr = lua_truth_of(h, m, v);
+    if (tr == LUA_TRUTH_NIL) {
+        *kind_out = 3;
+        return h.emit_iconst(0);
+    }
+    if (tr == LUA_TRUTH_BOOL) {
+        *kind_out = 4;
+        return v;
+    }
+    if (h.kind[v] == HIR_SCONST) {
+        *kind_out = 1;
+        return v;
+    }
+    if (h.ty[v] == TY_INT) {
+        *kind_out = 0;
+        return v;
+    }
+    return -1;
+}
+
 static int promote_to_float(hir_program &h, const lua_truth_map &truth, int v) {
     if (v < 0) return -1;
     if (lua_is_marshalled_str(h, v)) return -1;
@@ -2455,6 +2481,11 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
 // the Lua value (0 == "0", false == "0", ...).  Refuse those (#1764).
 // Stack handles (CALL_VAL and any TY_LUA_HANDLE) use the VM for EQ only
 // (HIR_LUA_EQ); order comparisons still decline.
+//
+// #1835: EQK/EQI already type-class gate and encode NIL/BOOL kinds; the
+// register-register path did neither — mixed types ATOI-coerced to true,
+// and a NIL-tagged empty SCONST was sent as kind 1 (string "").
+//
 #define CMP_RR(HIR_INT_OP, HIR_FP_OP) \
         { \
             int rb = lua_reg[A]; \
@@ -2467,15 +2498,13 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (lua_is_handle(h, rb) && lua_is_handle(h, rc_val)) { \
                     kind = 2; \
                 } else if (lua_is_handle(h, rb)) { \
-                    lhs = rb; rhs = rc_val; \
-                    if (h.kind[rhs] == HIR_SCONST) kind = 1; \
-                    else if (h.ty[rhs] == TY_INT) kind = 0; \
-                    else return -1; \
+                    lhs = rb; \
+                    rhs = lua_eq_kind_of_value(h, truth_tag, rc_val, &kind); \
+                    if (rhs < 0) return -1; \
                 } else if (lua_is_handle(h, rc_val)) { \
-                    lhs = rc_val; rhs = rb; \
-                    if (h.kind[rhs] == HIR_SCONST) kind = 1; \
-                    else if (h.ty[rhs] == TY_INT) kind = 0; \
-                    else return -1; \
+                    lhs = rc_val; \
+                    rhs = lua_eq_kind_of_value(h, truth_tag, rb, &kind); \
+                    if (rhs < 0) return -1; \
                 } else { \
                     return -1; \
                 } \
@@ -2490,12 +2519,36 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
             } \
             if (lua_is_marshalled_str(h, rb) || lua_is_marshalled_str(h, rc_val)) \
                 return -1; \
-            /* nil compares equal to nothing but nil; as the empty SCONST */ \
-            /* it would compare equal to a real "" (#1766 review). */ \
-            if (lua_is_nil(h, truth_tag, rb) || lua_is_nil(h, truth_tag, rc_val)) \
-                return -1; \
             if (lua_is_mux_sentinel(h, rb) || lua_is_mux_sentinel(h, rc_val)) \
                 return -1; \
+            /* Type-class gate (#1835 / #1770): Lua == is false across */ \
+            /* types; order raises on mixed types.  HIR erases BOOL/0 and */ \
+            /* NIL/"" and the old promote_to_int path made "5"==5 true. */ \
+            const lua_type_class ltc = \
+                lua_type_class_of_value(h, truth_tag, rb); \
+            const lua_type_class rtc = \
+                lua_type_class_of_value(h, truth_tag, rc_val); \
+            if (ltc == LUA_TC_OTHER || rtc == LUA_TC_OTHER) { \
+                return -1; \
+            } \
+            if ((HIR_INT_OP) == HIR_EQ) { \
+                if (ltc != rtc || ltc == LUA_TC_NIL) { \
+                    int cmp = h.emit_iconst( \
+                        (ltc == LUA_TC_NIL && rtc == LUA_TC_NIL) ? 1 : 0); \
+                    if (cmp < 0) return -1; \
+                    h.native_ops++; \
+                    if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, \
+                                        pc_to_block, cur_hir_block, n, \
+                                        lua_reg, multi_block) < 0) \
+                        return -1; \
+                    pc++; \
+                    break; \
+                } \
+            } else { \
+                /* Order: interpreter raises on mixed / non-orderable. */ \
+                if (ltc != rtc) return -1; \
+                if (ltc != LUA_TC_NUMBER && ltc != LUA_TC_STRING) return -1; \
+            } \
             int cmp; \
             if (either_float(h, rb, rc_val)) { \
                 rb = promote_to_float(h, truth_tag, rb); \
@@ -2510,10 +2563,9 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 int zero = h.emit_iconst(0); \
                 cmp = h.emit(HIR_INT_OP, TY_INT, sc, zero); \
             } else { \
-                rb = promote_to_int(h, truth_tag, rb); \
-                rc_val = promote_to_int(h, truth_tag, rc_val); \
-                if (rb < 0 || rc_val < 0) return -1; \
-                cmp = h.emit(HIR_INT_OP, TY_INT, rb, rc_val); \
+                /* Same type class but HIR types differ (e.g. int vs float */ \
+                /* already handled).  Decline rather than cross-coerce. */ \
+                return -1; \
             } \
             h.native_ops++; \
             if (emit_cmp_branch(h, cmp, insn.k(), proto, pc, pc_to_block, \

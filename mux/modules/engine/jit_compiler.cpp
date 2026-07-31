@@ -3492,6 +3492,29 @@ static int ecall_aux_len(lua_State *L)
     return 1;
 }
 
+// #1836: GETGLOBAL and lua_compare can raise through metamethods
+// (__index on _ENV, __eq).  Same unprotected-ECALL class as #1423.
+//
+static int ecall_aux_getglobal(lua_State *L)
+{
+    const char *key = lua_tostring(L, 1);
+    if (nullptr == key) {
+        lua_pushnil(L);
+        return 1;
+    }
+    lua_getglobal(L, key);
+    return 1;
+}
+
+static int ecall_aux_compare_eq(lua_State *L)
+{
+    // Stack: lhs, rhs.  Result: boolean.
+    //
+    const int eq = lua_compare(L, 1, 2, LUA_OPEQ);
+    lua_pushboolean(L, eq);
+    return 1;
+}
+
 // Absolute stack index must refer to a table (or something indexable via
 // metamethods).  Out-of-range is a soft miss (ok=0), not a decline.
 //
@@ -3559,6 +3582,32 @@ static int ecall_lua_plen(lua_State *L, int tbl_idx)
     if (LUA_OK != lua_pcall(L, 1, 1, 0)) {
         return ecall_lua_commit_error(L);
     }
+    return 0;
+}
+
+static int ecall_lua_pgetglobal(lua_State *L, const char *key)
+{
+    lua_pushcfunction(L, ecall_aux_getglobal);
+    lua_pushstring(L, key);
+    if (LUA_OK != lua_pcall(L, 1, 1, 0)) {
+        return ecall_lua_commit_error(L);
+    }
+    return 0;
+}
+
+// lhs and rhs must already be on the stack at absolute indices.
+// Pushes nothing; returns 0 with *peq set, or ECALL_LUA_ERROR.
+//
+static int ecall_lua_pcompare_eq(lua_State *L, int lhs, int rhs, int *peq)
+{
+    lua_pushcfunction(L, ecall_aux_compare_eq);
+    lua_pushvalue(L, lhs);
+    lua_pushvalue(L, rhs);
+    if (LUA_OK != lua_pcall(L, 2, 1, 0)) {
+        return ecall_lua_commit_error(L);
+    }
+    *peq = lua_toboolean(L, -1) ? 1 : 0;
+    lua_pop(L, 1);
     return 0;
 }
 
@@ -4305,6 +4354,9 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         // Nil globals stay on the stack like the interpreter (#1751 Phase 1);
         // never decline for missing names.
         //
+        // #1836: unprotected lua_getglobal can abort via a raising
+        // _ENV __index metamethod.  Route through pcall like GET/SET/LEN.
+        //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
         const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[10]);
@@ -4313,7 +4365,10 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             ctx->x[11] = 0;
             return -1;
         }
-        lua_getglobal(L, key);
+        int pr = ecall_lua_pgetglobal(L, key);
+        if (0 != pr) {
+            return pr;
+        }
         ctx->x[10] = static_cast<uint64_t>(lua_gettop(L));
         ctx->x[11] = 1;
         return -1;
@@ -4506,8 +4561,17 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
             ctx->x[10] = 0;
             return -1;
         }
-        const int eq = lua_compare(L, -2, -1, LUA_OPEQ);
+        // Absolute indices: pushvalue after the cfunction would shift
+        // relative slots.  #1836: __eq can raise; protect like GETGLOBAL.
+        //
+        const int lhs_abs = base + 1;
+        const int rhs_abs = base + 2;
+        int eq = 0;
+        int pr = ecall_lua_pcompare_eq(L, lhs_abs, rhs_abs, &eq);
         lua_settop(L, base);
+        if (0 != pr) {
+            return pr;
+        }
         ctx->x[10] = eq ? 1 : 0;
         return -1;
     }
