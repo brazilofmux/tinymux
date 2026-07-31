@@ -630,11 +630,23 @@ static void CanonicalCompose(NFCCodePoint *buf, int &n)
     {
         int ccc = buf[i].ccc;
 
-        // A combining mark is "blocked" from the starter if there is
-        // an intervening combining mark with CCC >= this one's CCC
-        // (and CCC != 0), or if this mark has CCC = 0 (it's a new starter).
+        // UAX #15 D115: B is blocked from starter A if and only if there is
+        // some character C between A and B where CCC(C) = 0 or
+        // CCC(C) >= CCC(B).
         //
-        bool blocked = (lastCCC != -1 && lastCCC >= ccc && ccc != 0);
+        // Note there is no exemption for CCC(B) = 0.  The opposite holds: when
+        // B is itself a starter, CCC(B) = 0, so every intervening mark
+        // satisfies CCC(C) >= 0 and blocks it.  An earlier `&& ccc != 0` here
+        // removed protection from exactly those sequences, so NFC composed
+        // Hangul jamo across an intervening mark -- U+B3C4 U+032B U+11C1
+        // became U+B3DE U+032B, consuming the jongseong and changing the
+        // syllable (#1905).
+        //
+        // lastCCC is only ever assigned from a non-zero ccc, so the
+        // lastCCC != -1 test already means "an intervening mark was seen";
+        // adjacent starters still compose normally.
+        //
+        bool blocked = (lastCCC != -1 && lastCCC >= ccc);
 
         if (!blocked)
         {
