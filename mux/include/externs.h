@@ -1609,8 +1609,10 @@ public:
     void TraverseUnordered(SCHLOOK *pfLook);
     void TraverseOrdered(SCHLOOK *pfLook);
     CScheduler(void) { m_Ticket = 0; m_minPriority = PRIORITY_CF_DEQUEUE_ENABLED; }
-    void DeferTask(const CLinearTimeAbsolute& ltWhen, int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
-    void DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
+    // #1871: return false if the task cannot be allocated or enqueued so
+    // wait_que (and similar) can free the BQUE and refund quota/cost.
+    bool DeferTask(const CLinearTimeAbsolute& ltWhen, int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
+    bool DeferImmediateTask(int iPriority, FTASK *fpTask, void *arg_voidptr, int arg_Integer);
     bool WhenNext(CLinearTimeAbsolute *);
     bool HasPendingUserTasks(void);
     int  RunTasks(int iCount);

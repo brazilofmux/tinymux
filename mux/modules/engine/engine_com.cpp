@@ -3939,7 +3939,12 @@ MUX_RESULT CGameEngine::CancelTask(void (*fpTask)(void *, int),
 MUX_RESULT CGameEngine::DeferImmediateTask(int iPriority,
     void (*fpTask)(void *, int), void *arg_voidptr, int arg_Integer)
 {
-    scheduler.DeferImmediateTask(iPriority, fpTask, arg_voidptr, arg_Integer);
+    // #1871: surface scheduler OOM/insert failure to the driver bridge.
+    //
+    if (!scheduler.DeferImmediateTask(iPriority, fpTask, arg_voidptr, arg_Integer))
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
     return MUX_S_OK;
 }
 
@@ -3947,7 +3952,10 @@ MUX_RESULT CGameEngine::DeferTask(const CLinearTimeAbsolute &ltWhen,
     int iPriority, void (*fpTask)(void *, int), void *arg_voidptr,
     int arg_Integer)
 {
-    scheduler.DeferTask(ltWhen, iPriority, fpTask, arg_voidptr, arg_Integer);
+    if (!scheduler.DeferTask(ltWhen, iPriority, fpTask, arg_voidptr, arg_Integer))
+    {
+        return MUX_E_OUTOFMEMORY;
+    }
     return MUX_S_OK;
 }
 
@@ -4467,8 +4475,20 @@ MUX_RESULT CGameEngine::DbConvert(const UTF8 *infile, const UTF8 *outfile,
         mux_fprintf(stderr, T("Output: "));
         dbconvert_info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, nullptr, _IOFBF, 16384);
-        db_write(fpOut, F_MUX, db_ver | db_flags);
+        // #1869: propagate flatfile I/O failure so dbconvert does not
+        // claim success on a truncated dump.
+        //
+        const dbref nWritten = db_write(fpOut, F_MUX, db_ver | db_flags);
         mux_fclose(fpOut);
+        if (nWritten < 0)
+        {
+            CLOSE;
+#ifdef SELFCHECK
+            db_free();
+#endif
+            mudstate.bStandAlone = false;
+            return MUX_E_FAIL;
+        }
     }
     CLOSE;
 #ifdef SELFCHECK

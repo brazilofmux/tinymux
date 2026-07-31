@@ -1400,6 +1400,7 @@ bool wait_que
     tmp->u.s.sem = sem;
     tmp->u.s.attr = attr;
 
+    bool bDeferred = false;
     if (sem == NOTHING)
     {
         // Not a semaphore, so let it run it immediately or put it on
@@ -1407,11 +1408,13 @@ bool wait_que
         //
         if (tmp->IsTimed)
         {
-            scheduler.DeferTask(tmp->waittime, iPriority, Task_RunQueueEntry, tmp, 0);
+            bDeferred = scheduler.DeferTask(tmp->waittime, iPriority,
+                Task_RunQueueEntry, tmp, 0);
         }
         else
         {
-            scheduler.DeferImmediateTask(iPriority, Task_RunQueueEntry, tmp, 0);
+            bDeferred = scheduler.DeferImmediateTask(iPriority,
+                Task_RunQueueEntry, tmp, 0);
         }
     }
     else
@@ -1424,7 +1427,56 @@ bool wait_que
             //
             iPriority = PRIORITY_SUSPEND;
         }
-        scheduler.DeferTask(tmp->waittime, iPriority, Task_SemaphoreTimeout, tmp, 0);
+        bDeferred = scheduler.DeferTask(tmp->waittime, iPriority,
+            Task_SemaphoreTimeout, tmp, 0);
+    }
+
+    // #1871: if the scheduler could not hold a TASK_RECORD, the command is
+    // not queued — free the BQUE and reverse payfor/quota so a silent OOM
+    // does not strand accounting until restart.
+    //
+    if (!bDeferred)
+    {
+        STARTLOG(LOG_PROBLEMS, "QUE", "MEM");
+        log_printf(T("wait_que: scheduler refused task; dropping queue entry."));
+        ENDLOG;
+
+        giveto(executor, mudconf.waitcost);
+        a_Queue(Owner(executor), -1);
+
+        for (auto& i : tmp->scr)
+        {
+            if (i)
+            {
+                RegRelease(i);
+                i = nullptr;
+            }
+        }
+        NamedRegsClear(tmp->named_scr);
+
+#if defined(STUB_SLAVE)
+        if (nullptr != tmp->pResultsSet)
+        {
+            tmp->pResultsSet->Release();
+            tmp->pResultsSet = nullptr;
+        }
+#endif // STUB_SLAVE
+
+        if (tmp->switch_token)
+        {
+            MEMFREE(tmp->switch_token);
+            tmp->switch_token = nullptr;
+        }
+        if (tmp->iter_token)
+        {
+            MEMFREE(tmp->iter_token);
+            tmp->iter_token = nullptr;
+        }
+
+        MEMFREE(tmp->text);
+        tmp->text = nullptr;
+        free_qentry(tmp);
+        return false;
     }
     return true;
 }
@@ -1537,7 +1589,51 @@ void sql_que
     // but must be initialized before DeferTask.
     //
     tmp->waittime.GetUTC();
-    scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0);
+    if (!scheduler.DeferTask(tmp->waittime, PRIORITY_SUSPEND, Task_SQLTimeout, tmp, 0))
+    {
+        // #1871: same rollback as wait_que / Query-reject path.
+        //
+        STARTLOG(LOG_PROBLEMS, "QUE", "MEM");
+        log_printf(T("sql_que: scheduler refused task; dropping queue entry."));
+        ENDLOG;
+
+        giveto(executor, mudconf.waitcost);
+        a_Queue(Owner(executor), -1);
+
+        for (auto& i : tmp->scr)
+        {
+            if (i)
+            {
+                RegRelease(i);
+                i = nullptr;
+            }
+        }
+        NamedRegsClear(tmp->named_scr);
+
+#if defined(STUB_SLAVE)
+        if (nullptr != tmp->pResultsSet)
+        {
+            tmp->pResultsSet->Release();
+            tmp->pResultsSet = nullptr;
+        }
+#endif // STUB_SLAVE
+
+        if (tmp->switch_token)
+        {
+            MEMFREE(tmp->switch_token);
+            tmp->switch_token = nullptr;
+        }
+        if (tmp->iter_token)
+        {
+            MEMFREE(tmp->iter_token);
+            tmp->iter_token = nullptr;
+        }
+
+        MEMFREE(tmp->text);
+        tmp->text = nullptr;
+        free_qentry(tmp);
+        return;
+    }
     const MUX_RESULT mr = mudstate.pIQueryControl->Query(hQuery, dbname, query);
     if (MUX_FAILED(mr))
     {
