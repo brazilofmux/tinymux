@@ -1504,21 +1504,17 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
                 //
                 entry.jit_key = 0;
                 entry.jit_eligible = false;
-            } else {
-                // #1751 Phase 4: after RunCompiled, never re-run the
-                // interpreter.  Success, committed LUA ERROR / POST-ENTRY /
-                // RUN FAIL / CPU LIMITED all leave pResult set.  If E_FAIL
-                // arrived empty, commit a generic fail text.
+            } else if (MUX_FAILED(mr)) {
+                // Pre-entry setup failure from RunCompiled (depth,
+                // watermarks, oversize carg, get_dbt).  Nothing ran;
+                // interpreter fallback is correct (#1837).  Post-entry
+                // failures return MUX_S_OK with pResult already committed.
                 //
-                if (MUX_FAILED(mr)
-                    && nullptr != pResult
-                    && pResult[0] == '\0') {
-                    size_t n = mux_snprintf(pResult, nResultMax,
-                        T("#-1 LUA JIT RUN FAIL"));
-                    if (nullptr != pnResultLen) {
-                        *pnResultLen = n;
-                    }
-                }
+                return false;
+            } else {
+                // #1751 Phase 4: handled run — success or committed
+                // LUA ERROR / POST-ENTRY / CPU LIMITED.  Do not re-run.
+                //
                 return true;
             }
         } else {
@@ -1565,17 +1561,13 @@ bool CLuaMod::TryJIT(cache_entry &entry, dbref executor, dbref caller,
         pArgs, nArgs, pResult, nResultMax, pnResultLen, m_L);
     lua_restore_exec_context(m_L, prev_ctx);
     lua_settop(m_L, saved_top);  // restore stack
-    // Phase 4: first-run after successful compile is post-entry for the
-    // re-run rule.  Never fall through to lua_pcall on E_FAIL.
+    // Post-entry failures return MUX_S_OK with a committed error string.
+    // Pre-entry setup failure (MUX_E_FAIL, empty result) falls through to
+    // the interpreter — nothing ran (#1837).  Keep the compiled key so a
+    // later invocation with short cargs can still take the compiled path.
     //
-    if (MUX_FAILED(mr)
-        && nullptr != pResult
-        && pResult[0] == '\0') {
-        size_t n = mux_snprintf(pResult, nResultMax,
-            T("#-1 LUA JIT RUN FAIL"));
-        if (nullptr != pnResultLen) {
-            *pnResultLen = n;
-        }
+    if (MUX_FAILED(mr)) {
+        return false;
     }
     return true;
 }

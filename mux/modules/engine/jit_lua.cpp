@@ -374,7 +374,9 @@ public:
         // #1751 Phase 4: run_cached_program with a Lua state never returns
         // false after entry (CPU LIMITED, LUA ERROR, residual POST-ENTRY,
         // and generic RUN FAIL are all committed handled=true).  A false
-        // here is only a pre-entry/setup failure.
+        // here is only a pre-entry/setup failure — depth/watermarks,
+        // oversize carg (#1055), get_dbt.  Nothing ran; the interpreter
+        // must answer (#1837).  Do not commit #-1 LUA JIT RUN FAIL.
         //
         bool ok = run_cached_program(&it->second, executor, caller, enactor,
             pResult, nResultMax, pArgs, nArgs,
@@ -392,16 +394,9 @@ public:
         }
 
         if (!ok) {
-            s_lua_jit_stats.run_fail++;
-            // Phase 4: still must not re-run.  Commit if empty.
+            // Pre-entry only.  Leave pResult empty; caller falls back.
             //
-            if (nullptr != pResult && nResultMax > 0 && pResult[0] == '\0') {
-                mux_snprintf(pResult, nResultMax, T("#-1 LUA JIT RUN FAIL"));
-            }
-            if (pnResultLen && nullptr != pResult) {
-                *pnResultLen = strlen(reinterpret_cast<const char *>(pResult));
-            }
-            return MUX_S_OK;
+            return MUX_E_FAIL;
         }
 
         if (pnResultLen) {

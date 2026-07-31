@@ -211,6 +211,11 @@ AGREE_CASES=(
     'local a="5" if a == 5 then return "y" else return "n" end'
     'local a=5 if a == "5" then return "y" else return "n" end'
 
+    # #1835 order twin: mixed-type order raises in the interpreter; the
+    # compiled path used to promote and answer.  AGREE so decline-or-raise
+    # both match; must not silently answer "y".
+    'local a="5" local b=6 if a<b then return "y" else return "n" end'
+
     # ---- #1795: the mux.* SCONST sentinel must not escape as a value ----
     #
     # `mux` and `mux.args` are lowered as SCONSTs holding their own NAMES,
@@ -312,7 +317,8 @@ POST_ENTRY_LOUD_BUDGET=0
 # #1795: sentinel-escape and provenance-collision pins add 12 declines.
 # Real sentinels decline outside their dedicated fast paths; literal text
 # remains a value.
-AGREE_DECLINE_BUDGET=23
+# #1835: +1 mixed-type order pin (raises or declines; either matches).
+AGREE_DECLINE_BUDGET=24
 # ---------------------------------------------------------------------------
 # EXEC — must match AND lua_run_ok must advance (#1426).
 # No globals/stdlib: pure arithmetic / compare / branch on mux.args.
@@ -602,6 +608,17 @@ EXEC_CASES=(
     'local a=false return not a'
     'local a=nil return not a'
     'local a="" return not a'
+
+    # ---- #1835: CMP_RR equality (register-register), not just EQK/EQI ----
+    #
+    # Type-class gate and NIL/BOOL kinds were applied only to the immediate
+    # forms; CMP_RR coerced mixed types and treated NIL-tagged "" as string
+    # "" / BOOL-tagged 0 as integer 0.  These must EXECUTE and answer "n".
+    'local a="5" local b=5 if a==b then return "y" else return "n" end'
+    'local a=0 local b=false if a==b then return "y" else return "n" end'
+    'local a=1 local b=true if a==b then return "y" else return "n" end'
+    'local x=tostring("") local n=nil if x==n then return "y" else return "n" end'
+    'local x=select("#") local b=false if x==b then return "y" else return "n" end'
 )
 
 # ---------------------------------------------------------------------------
