@@ -724,14 +724,18 @@ void T6H_ATTRNAMEINFO::SetNumFlagsAndName(int iNum, int iFlags, char *pName)
     m_iNum = iNum;
     m_iFlags = iFlags;
 
-    char buffer[65536];
-    sprintf(buffer, "%d:", m_iFlags);
-    size_t n = strlen(buffer);
-    sprintf(buffer + n, "%s", pName);
+    // #1879: size from prefix + name length — was char[65536] + sprintf, which
+    // overflowed when pName approached the 64 KiB lexer limit (same family as
+    // #1087).
+    //
+    char prefix[32];
+    sprintf(prefix, "%d:", m_iFlags);
+    const size_t nPrefix = strlen(prefix);
+    std::string encoded = std::string(prefix) + (pName ? pName : "");
     free(pName);
 
-    m_pNameEncoded   = StringClone(buffer);
-    m_pNameUnencoded = m_pNameEncoded + n;
+    m_pNameEncoded   = StringClone(encoded.c_str());
+    m_pNameUnencoded = m_pNameEncoded + nPrefix;
 }
 
 void T6H_ATTRNAMEINFO::SetNumAndName(int iNum, char *pName)
