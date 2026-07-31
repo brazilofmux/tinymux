@@ -676,7 +676,16 @@ struct hir_program {
     }
 
     // Add a CFG edge from block src to block dst.
+    // #1863: new_block() returns -1 and sets overflowed when HIR_MAX_BLOCKS
+    // is exhausted, but callers still feed that -1 into add_edge.  Reject
+    // invalid indices before indexing block_nsucc/block_succ so the OOB
+    // write cannot race the overflowed check that abandons the compile.
+    //
     void add_edge(int src, int dst) {
+        if (src < 0 || src >= n_blocks || dst < 0 || dst >= n_blocks) {
+            overflowed = true;
+            return;
+        }
         if (block_nsucc[src] < 2) {
             block_succ[src][block_nsucc[src]++] = dst;
         }
