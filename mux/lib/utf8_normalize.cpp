@@ -675,20 +675,45 @@ static void CanonicalCompose(NFCCodePoint *buf, int &n)
     }
 }
 
-void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax, size_t *pnDst)
+// The NFD working buffer below is NFC_MAX_CODEPOINTS * sizeof(NFCCodePoint),
+// which is 512 KB.  A frame that large makes GCC's -fstack-clash-protection
+// (enabled by default on Debian/Ubuntu, so it appears in no CFLAGS listing)
+// emit a prologue loop that touches all 128 of its 4 KB pages on entry:
+//
+//     lea  -0x80000(%rsp),%r11
+//   loop:
+//     sub  $0x1000,%rsp
+//     orq  $0x0,(%rsp)          ; probe the page
+//     cmp  %r11,%rsp
+//     jne  loop                 ; 128 iterations
+//
+// A prologue runs before any early-out in the body, so folding this buffer
+// into utf8_normalize_nfc() would charge those 128 probes to every caller --
+// including the already-NFC fast path, which is the common case and touches
+// the buffer not at all.  Measured at ~51% of the total CPU of a single
+// softcode command that calls chr() in a loop, with 93% of the function's
+// samples landing on the `cmp` above.
+//
+// Keep this split.  Do not move the array back into utf8_normalize_nfc(),
+// and do not shrink NFC_MAX_CODEPOINTS -- LBUF_SIZE * 2 is the worst-case
+// decomposition bound and lowering it is a correctness regression, not an
+// optimization.
+//
+// Correctness note: this helper is not reentrant-sensitive.  It does not
+// recurse, and DecomposeOne/CanonicalOrder/CanonicalCompose/utf8_Encode are
+// all pure, so the buffer cannot be observed across calls.
+//
+#if defined(_MSC_VER)
+#define NFC_NOINLINE __declspec(noinline)
+#elif defined(__GNUC__) || defined(__clang__)
+#define NFC_NOINLINE __attribute__((noinline))
+#else
+#define NFC_NOINLINE
+#endif
+
+static NFC_NOINLINE void utf8_normalize_nfc_slow(const UTF8 *src, size_t nSrc,
+    UTF8 *dst, size_t nDstMax, size_t *pnDst)
 {
-    *pnDst = 0;
-
-    // Quick check: if already NFC, just copy.
-    //
-    if (utf8_is_nfc(src, nSrc))
-    {
-        size_t nCopy = (nSrc < nDstMax) ? nSrc : nDstMax;
-        memcpy(dst, src, nCopy);
-        *pnDst = nCopy;
-        return;
-    }
-
     // Step 1: Decompose all code points to NFD.
     //
     NFCCodePoint cps[NFC_MAX_CODEPOINTS];
@@ -728,4 +753,22 @@ void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax,
         }
     }
     *pnDst = nOut;
+}
+
+void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax, size_t *pnDst)
+{
+    *pnDst = 0;
+
+    // Quick check: if already NFC, just copy.  This path must stay free of
+    // any large local, or it inherits the probe loop described above.
+    //
+    if (utf8_is_nfc(src, nSrc))
+    {
+        size_t nCopy = (nSrc < nDstMax) ? nSrc : nDstMax;
+        memcpy(dst, src, nCopy);
+        *pnDst = nCopy;
+        return;
+    }
+
+    utf8_normalize_nfc_slow(src, nSrc, dst, nDstMax, pnDst);
 }
