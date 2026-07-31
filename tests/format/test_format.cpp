@@ -177,6 +177,29 @@ static void test_i_and_o(void)
         report("int-llu", "%llu", mux_fmt("%llu", v), libc_fmt_ull("%llu", v));
         report("int-llx", "%llx", mux_fmt("%llx", v), libc_fmt_ull("%llx", v));
     }
+
+    // #1809: size_t / SOCKET-width counters must not truncate at 32 bits.
+    // SESSION and log prefixes use %zu / %llu for full-width values.
+    //
+    {
+        const size_t zbig = static_cast<size_t>(0x100000000ull); // 2^32
+        char libc_buf[64];
+        std::snprintf(libc_buf, sizeof(libc_buf), "%zu", zbig);
+        report("size_t-zu-above-u32", "%zu", mux_fmt("%zu", zbig), libc_buf);
+
+        const unsigned long long sockish = 0x100000001ull;
+        report("socket-llu-above-u32", "%llu",
+               mux_fmt("%llu", sockish), libc_fmt_ull("%llu", sockish));
+
+        // Shape used by dump_users SESSION after #1809.
+        std::string got = mux_fmt(
+            "%5llu%5zu%6zu%10zu",
+            sockish, zbig, zbig + 1, zbig + 2);
+        char want_buf[128];
+        std::snprintf(want_buf, sizeof(want_buf), "%5llu%5zu%6zu%10zu",
+                      sockish, zbig, zbig + 1, zbig + 2);
+        report("session-row-widths", "mix", got, want_buf);
+    }
 }
 
 // ---------------------------------------------------------------------------

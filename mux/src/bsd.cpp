@@ -181,7 +181,7 @@ void shutdownsock(DESC *d, int reason)
         {
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
             buff = alloc_mbuf("shutdownsock.LOG.logout");
-            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Logout by "), static_cast<unsigned long long>(d->socket), d->addr);
             g_pILog->log_text(buff);
             g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[reason]);
@@ -194,7 +194,7 @@ void shutdownsock(DESC *d, int reason)
             fcache_dump(d, FC_QUIT);
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
             buff = alloc_mbuf("shutdownsock.LOG.disconn");
-            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Logout by "), static_cast<unsigned long long>(d->socket), d->addr);
             g_pILog->log_text(buff);
             g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[reason]);
@@ -232,8 +232,8 @@ void shutdownsock(DESC *d, int reason)
         }
         STARTLOG(LOG_SECURITY | LOG_NET, "NET", "DISC");
         buff = alloc_mbuf("shutdownsock.LOG.neverconn");
-        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connection closed, never connected. <Reason: %s>"),
-            d->socket, d->addr, disc_reasons[reason]);
+        mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Connection closed, never connected. <Reason: %s>"),
+            static_cast<unsigned long long>(d->socket), d->addr, disc_reasons[reason]);
         g_pILog->log_text(buff);
         free_mbuf(buff);
         ENDLOG;

@@ -163,8 +163,8 @@ void queue_write_LEN(DESC *d, const UTF8 *b, size_t n)
 
             STARTLOG(LOG_NET, "NET", "WRITE");
             UTF8 *buf = alloc_lbuf("queue_write.LOG");
-            mux_sprintf(buf, LBUF_SIZE, T("[%u/%s] Output buffer overflow, %zu chars discarded by "),
-                d->socket, d->addr, nchars);
+            mux_sprintf(buf, LBUF_SIZE, T("[%llu/%s] Output buffer overflow, %zu chars discarded by "),
+                static_cast<unsigned long long>(d->socket), d->addr, nchars);
             g_pILog->log_text(buf);
             free_lbuf(buf);
             if (d->flags & DS_CONNECTED)
@@ -445,8 +445,8 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
             STARTLOG(LOG_NET, "NET", "READ");
             UTF8 *buf = alloc_lbuf("save_command.LOG");
             mux_sprintf(buf, LBUF_SIZE,
-                T("[%u/%s] Input backlog limit (%d) reached; dropping input from "),
-                d->socket, d->addr, g_dc.input_limit);
+                T("[%llu/%s] Input backlog limit (%d) reached; dropping input from "),
+                static_cast<unsigned long long>(d->socket), d->addr, g_dc.input_limit);
             g_pILog->log_text(buf);
             free_lbuf(buf);
             if (d->flags & DS_CONNECTED)
@@ -752,25 +752,33 @@ int fetch_idle(dbref target)
 }
 
 // ---------------------------------------------------------------------------
-// find_oldest: Return descriptor with the oldest connected_at (or nullptr if
-// not logged in).
+// find_oldest: Return the two earliest-connected descriptors for target
+// (dOldest[0] oldest, dOldest[1] second-oldest or nullptr).
+//
+// Used by disconnect accounting to add only the non-overlapping interval when
+// the oldest session ends while a newer one is still up (#1808).  Must update
+// both minima: a later descriptor that is not a new absolute minimum can still
+// be second-oldest.
 //
 void find_oldest(const dbref target, DESC *dOldest[2])
 {
     dOldest[0] = nullptr;
     dOldest[1] = nullptr;
 
-    bool bFound = false;
     const auto range = g_dbref_to_descriptors_map.equal_range(target);
     for (auto it = range.first; it != range.second; ++it)
     {
         DESC* d = it->second;
-        if (  !bFound
+        if (  nullptr == dOldest[0]
            || d->connected_at < dOldest[0]->connected_at)
         {
-            bFound = true;
             dOldest[1] = dOldest[0];
             dOldest[0] = d;
+        }
+        else if (  nullptr == dOldest[1]
+                || d->connected_at < dOldest[1]->connected_at)
+        {
+            dOldest[1] = d;
         }
     }
 }
@@ -1550,11 +1558,15 @@ static void dump_users(DESC *e, const UTF8 *match, int key)
             }
             else if (key == CMD_SESSION)
             {
-                mux_sprintf(buf, MBUF_SIZE, T("%s%s %4s%5u%5d%6d%10d%6d%6d%10d\r\n"),
+                // size_t counters need %zu; SOCKET is pointer-width on Win64
+                // so cast to unsigned long long with %llu (#1809).
+                //
+                mux_sprintf(buf, MBUF_SIZE,
+                    T("%s%s %4s%5llu%5zu%6zu%10zu%6zu%6zu%10zu\r\n"),
                     NameField,
                     pTimeStamp1,
                     pTimeStamp2,
-                    d->socket,
+                    static_cast<unsigned long long>(d->socket),
                     d->input_size, d->input_lost,
                     d->input_tot,
                     d->output_size, d->output_lost,
@@ -2107,7 +2119,7 @@ static void failconn(const UTF8 *logcode, const UTF8 *logtype, const UTF8 *logre
 {
     STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, "RJCT");
     UTF8 *buff = alloc_mbuf("failconn.LOG");
-    mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->socket, d->addr, logtype);
+    mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] %s rejected to "), static_cast<unsigned long long>(d->socket), d->addr, logtype);
     g_pILog->log_text(buff);
     free_mbuf(buff);
     if (player != NOTHING)
@@ -2275,8 +2287,8 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "THR");
                 buff = alloc_lbuf("check_conn.LOG.throttle");
                 mux_sprintf(buff, LBUF_SIZE,
-                    T("[%u/%s] Throttled connect to ‘%s’: failure budget spent, %ds remaining."),
-                    d->socket, d->addr, user, nWait);
+                    T("[%llu/%s] Throttled connect to ‘%s’: failure budget spent, %ds remaining."),
+                    static_cast<unsigned long long>(d->socket), d->addr, user, nWait);
                 g_pILog->log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
@@ -2320,7 +2332,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             buff = alloc_lbuf("check_conn.LOG.bad");
-            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to ‘%s’"), d->socket, d->addr, user);
+            mux_sprintf(buff, LBUF_SIZE, T("[%llu/%s] Failed connect to ‘%s’"), static_cast<unsigned long long>(d->socket), d->addr, user);
             g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;
@@ -2374,7 +2386,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             //
             STARTLOG(LOG_LOGIN, "CON", "LOGIN");
             buff = alloc_mbuf("check_conn.LOG.login");
-            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connected to "), d->socket, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Connected to "), static_cast<unsigned long long>(d->socket), d->addr);
             g_pILog->log_text(buff);
             g_pILog->log_name_and_loc(player);
             free_mbuf(buff);
@@ -2514,7 +2526,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 queue_write(d, T("\r\n"));
                 STARTLOG(LOG_SECURITY | LOG_PCREATES, "CON", "BAD");
                 buff = alloc_lbuf("check_conn.LOG.badcrea");
-                mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Create of ‘%s’ failed"), d->socket, d->addr, user);
+                mux_sprintf(buff, LBUF_SIZE, T("[%llu/%s] Create of ‘%s’ failed"), static_cast<unsigned long long>(d->socket), d->addr, user);
                 g_pILog->log_text(buff);
                 free_lbuf(buff);
                 ENDLOG;
@@ -2525,7 +2537,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 g_pIPlayerSession->AddToPlayerChannels(player);
                 STARTLOG(LOG_LOGIN | LOG_PCREATES, "CON", "CREA");
                 buff = alloc_mbuf("check_conn.LOG.create");
-                mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Created "), d->socket, d->addr);
+                mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Created "), static_cast<unsigned long long>(d->socket), d->addr);
                 g_pILog->log_text(buff);
                 g_pILog->log_name(player);
                 free_mbuf(buff);
@@ -2558,7 +2570,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
         STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
         buff = alloc_mbuf("check_conn.LOG.bad");
         msg[150] = '\0';
-        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Failed connect: ‘%s’"), d->socket, d->addr, msg);
+        mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Failed connect: ‘%s’"), static_cast<unsigned long long>(d->socket), d->addr, msg);
         g_pILog->log_text(buff);
         free_mbuf(buff);
         ENDLOG;

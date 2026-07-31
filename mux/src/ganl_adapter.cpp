@@ -373,7 +373,7 @@ namespace
         {
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "LOGO")
             UTF8* buff = alloc_mbuf("ganl_close.LOG.logout");
-            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Logout by "), static_cast<unsigned long long>(d->socket), d->addr);
             g_pILog->log_text(buff);
             g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[mux_reason]);
@@ -386,7 +386,7 @@ namespace
             fcache_dump(d, FC_QUIT);
             STARTLOG(LOG_NET | LOG_LOGIN, "NET", "DISC")
             UTF8* buff = alloc_mbuf("ganl_close.LOG.disconn");
-            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Logout by "), d->socket, d->addr);
+            mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Logout by "), static_cast<unsigned long long>(d->socket), d->addr);
             g_pILog->log_text(buff);
             g_pILog->log_name(d->player);
             mux_sprintf(buff, MBUF_SIZE, T(" <Reason: %s>"), disc_reasons[mux_reason]);
@@ -422,8 +422,8 @@ namespace
 
         STARTLOG(LOG_SECURITY | LOG_NET, "NET", "DISC");
         UTF8* buff = alloc_mbuf("ganl_close.LOG.neverconn");
-        mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] Connection closed, never connected."),
-            d->socket, d->addr);
+        mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] Connection closed, never connected."),
+            static_cast<unsigned long long>(d->socket), d->addr);
         g_pILog->log_text(buff);
         free_mbuf(buff);
         ENDLOG;
@@ -732,8 +732,8 @@ public:
             {
                 STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
                 UTF8* logBuf = alloc_mbuf("ganl_connection.LOG.badsite");
-                mux_sprintf(logBuf, MBUF_SIZE, T("[%u/%s] Connection refused.  (Remote port %d)"),
-                    d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"), d->address.port());
+                mux_sprintf(logBuf, MBUF_SIZE, T("[%llu/%s] Connection refused.  (Remote port %d)"),
+                    static_cast<unsigned long long>(d->socket), addrText[0] != '\0' ? addrText : T("UNKNOWN"), d->address.port());
                 g_pILog->log_text(logBuf);
                 free_mbuf(logBuf);
                 ENDLOG;
@@ -790,9 +790,10 @@ public:
                     STARTLOG(LOG_NET | LOG_SECURITY, "NET", "RATE");
                     UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.rate");
                     mux_sprintf(logBuf, MBUF_SIZE,
-                        T("[%u/%s] Refused: connection rate exceeded "
+                        T("[%llu/%s] Refused: connection rate exceeded "
                           "(max_lastsite_cnt %d per %ds); %ds remaining."),
-                        d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"),
+                        static_cast<unsigned long long>(d->socket),
+                        addrText[0] != '\0' ? addrText : T("UNKNOWN"),
                         g_dc.max_lastsite_cnt, g_dc.min_con_attempt, nWait);
                     g_pILog->log_text(logBuf);
                     free_mbuf(logBuf);
@@ -878,9 +879,10 @@ public:
                     STARTLOG(LOG_NET | LOG_SECURITY, "NET", "SITE");
                     UTF8 *logBuf = alloc_mbuf("ganl_connection.LOG.preauth");
                     mux_sprintf(logBuf, MBUF_SIZE,
-                        T("[%u/%s] Refused: %d unauthenticated connections already "
+                        T("[%llu/%s] Refused: %d unauthenticated connections already "
                           "pending from this address (max_preauth_sitecons %d)."),
-                        d->socket, addrText[0] != '\0' ? addrText : T("UNKNOWN"),
+                        static_cast<unsigned long long>(d->socket),
+                        addrText[0] != '\0' ? addrText : T("UNKNOWN"),
                         nPreauth, g_dc.max_preauth_sitecons);
                     g_pILog->log_text(logBuf);
                     free_mbuf(logBuf);
@@ -1313,7 +1315,7 @@ public:
         auto logReject = [&](const UTF8* logcode, const UTF8* logtype, const UTF8* logreason, dbref playerRef) {
             STARTLOG(LOG_LOGIN | LOG_SECURITY, logcode, T("RJCT"));
             UTF8* buff = alloc_mbuf("ganl_auth.reject");
-            mux_sprintf(buff, MBUF_SIZE, T("[%u/%s] %s rejected to "), d->socket, d->addr, logtype);
+            mux_sprintf(buff, MBUF_SIZE, T("[%llu/%s] %s rejected to "), static_cast<unsigned long long>(d->socket), d->addr, logtype);
             g_pILog->log_text(buff);
             free_mbuf(buff);
             if (playerRef != NOTHING) {
@@ -1401,7 +1403,7 @@ public:
             queue_write(d, connect_fail);
             STARTLOG(LOG_LOGIN | LOG_SECURITY, "CON", "BAD");
             UTF8* buff = alloc_lbuf("ganl_auth.badconnect");
-            mux_sprintf(buff, LBUF_SIZE, T("[%u/%s] Failed connect to ‘%s’"), d->socket, d->addr, user);
+            mux_sprintf(buff, LBUF_SIZE, T("[%llu/%s] Failed connect to ‘%s’"), static_cast<unsigned long long>(d->socket), d->addr, user);
             g_pILog->log_text(buff);
             free_lbuf(buff);
             ENDLOG;
@@ -1435,7 +1437,7 @@ public:
 
         STARTLOG(LOG_LOGIN, "CON", "LOGIN");
         UTF8* loginBuff = alloc_mbuf("ganl_auth.login");
-        mux_sprintf(loginBuff, MBUF_SIZE, T("[%u/%s] Connected to "), d->socket, d->addr);
+        mux_sprintf(loginBuff, MBUF_SIZE, T("[%llu/%s] Connected to "), static_cast<unsigned long long>(d->socket), d->addr);
         g_pILog->log_text(loginBuff);
         g_pILog->log_name_and_loc(player);
         free_mbuf(loginBuff);

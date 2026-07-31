@@ -38,7 +38,7 @@ void site_mon_send(const SOCKET port, const UTF8 *address, DESC *d, const UTF8 *
     }
     else
     {
-        send_msg = tprintf(T("SITEMON: [%d] %s from %s.%s"), port, msg,
+        send_msg = tprintf(T("SITEMON: [%llu] %s from %s.%s"), static_cast<unsigned long long>(port), msg,
             address, suspect ? T(" (SUSPECT)"): T(""));
     }
 
