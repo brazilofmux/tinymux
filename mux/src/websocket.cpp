@@ -16,9 +16,13 @@
 #include "websocket.h"
 #include "ganl_adapter.h"  // ganl_close_connection (RFC 6455 close handling)
 #include "sha1.h"
+#include "alloc.h"  // LBUF_SIZE — lockstep with WS_MAX_PAYLOAD
 
 #include <cstring>
 #include <algorithm>
+
+static_assert(WS_MAX_PAYLOAD == static_cast<size_t>(LBUF_SIZE) - 1,
+    "WS_MAX_PAYLOAD must stay LBUF_SIZE-1 (telnet line cap / process_command)");
 
 // RFC 6455 Section 4.2.2: the WebSocket GUID appended to client key.
 //
@@ -617,6 +621,15 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     (static_cast<size_t>(static_cast<uint8_t>(ws->frame_buf[0])) << 8) |
                      static_cast<size_t>(static_cast<uint8_t>(ws->frame_buf[1]));
                 ws->frame_buf.clear();
+                // 16-bit length can be 0..65535; WS_MAX_PAYLOAD is LBUF_SIZE-1
+                // so values above the engine line cap must fail here (64-bit
+                // path already bound-checks).
+                //
+                if (ws->frame_expected > WS_MAX_PAYLOAD)
+                {
+                    ws_fail(d, WS_CLOSE_MESSAGE_TOO_BIG);
+                    return;
+                }
                 ws->parse_state = ws->frame_masked ? WS_PARSE_MASK : WS_PARSE_PAYLOAD;
             }
             break;
@@ -645,7 +658,7 @@ void ws_process_input(DESC *d, const char *data, size_t len)
 
                 if (len64 > WS_MAX_PAYLOAD)
                 {
-                    ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
+                    ws_fail(d, WS_CLOSE_MESSAGE_TOO_BIG);
                     return;
                 }
                 ws->frame_expected = static_cast<size_t>(len64);
@@ -734,9 +747,17 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                             ws_fail(d, WS_CLOSE_BAD_DATA);
                             return;
                         }
-                        save_command(d,
-                            reinterpret_cast<const UTF8 *>(ws->frame_buf.c_str()),
-                            ws->frame_buf.size());
+                        // Empty TEXT is valid RFC 6455 but not a MUX line:
+                        // telnet never enqueues zero-length Accept Line.
+                        // Calling save_command with len 0 used to grow the
+                        // input deque without charging input_size.
+                        //
+                        if (!ws->frame_buf.empty())
+                        {
+                            save_command(d,
+                                reinterpret_cast<const UTF8 *>(ws->frame_buf.c_str()),
+                                ws->frame_buf.size());
+                        }
                     }
                     else
                     {
@@ -780,9 +801,12 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                             ws_fail(d, WS_CLOSE_BAD_DATA);
                             return;
                         }
-                        save_command(d,
-                            reinterpret_cast<const UTF8 *>(ws->frag_buf.c_str()),
-                            ws->frag_buf.size());
+                        if (!ws->frag_buf.empty())
+                        {
+                            save_command(d,
+                                reinterpret_cast<const UTF8 *>(ws->frag_buf.c_str()),
+                                ws->frag_buf.size());
+                        }
                         ws->frag_buf.clear();
                         ws->frag_opcode = 0;
                     }

@@ -2096,18 +2096,25 @@ UTF8 *process_command
 
     if (mudconf.space_compress)
     {
-        // Compress out the spaces and use that as the command
+        // Compress out the spaces and use that as the command.
+        //
+        // Leave one byte for the trailing NUL: q may only advance while
+        // q < end (index 0..LBUF_SIZE-2).  The old bound allowed a full
+        // LBUF_SIZE of payload to set q == base+LBUF_SIZE and then write
+        // *q = '\0' one past the array (reachable via oversized WebSocket
+        // TEXT before the LBUF cap; telnet already stopped at LBUF_SIZE-1).
         //
         pCommand = SpaceCompressCommand;
 
         p = pOriginalCommand;
         q = SpaceCompressCommand;
+        UTF8 *const qend = SpaceCompressCommand + (LBUF_SIZE - 1);
         while (  *p
-              && q < SpaceCompressCommand + LBUF_SIZE)
+              && q < qend)
         {
             while (  *p
                   && !mux_isspace(*p)
-                  && q < SpaceCompressCommand + LBUF_SIZE)
+                  && q < qend)
             {
                 *q++ = *p++;
             }
@@ -2118,7 +2125,7 @@ UTF8 *process_command
             }
 
             if (  *p
-               && q < SpaceCompressCommand + LBUF_SIZE)
+               && q < qend)
             {
                 *q++ = ' ';
             }

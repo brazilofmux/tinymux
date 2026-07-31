@@ -118,12 +118,15 @@ int main() {
     CHECK("TEXT hi byte-split: one message", g_messages.size() == 1);
     CHECK("TEXT hi byte-split: payload", g_messages.size() == 1 && g_messages[0] == "hi");
 
-    // 6. Empty TEXT message at boundary -> dispatch an empty command.
+    // 6. Empty TEXT message at boundary: do not enqueue.  Telnet never
+    //    queues a zero-length line; empty TEXT used to push a free
+    //    deque node without charging input_size, so input_limit could
+    //    never throttle an empty-frame flood.
+    //
     reset(d, ws);
     feed(d, {0x81, 0x80, M0, M1, M2, M3});
-    CHECK("empty TEXT at boundary: one message", g_messages.size() == 1);
-    CHECK("empty TEXT at boundary: empty payload",
-          g_messages.size() == 1 && g_messages[0].empty());
+    CHECK("empty TEXT at boundary: no message", g_messages.empty());
+    CHECK("empty TEXT at boundary: not closed", g_closed == 0);
 
     // 7. #1081: unmasked client frames must fail the connection (RFC 6455 §5.1).
     //    b1 without 0x80 mask bit: empty TEXT, unmasked.
@@ -149,6 +152,51 @@ int main() {
         feed(d, frame, 1);
         CHECK("TEXT hi byte-split: input_tot charged",
               d.input_tot == frame.size());
+    }
+
+    // 9. Payload larger than WS_MAX_PAYLOAD (== LBUF_SIZE-1) is a protocol
+    //    error: do not feed process_command a line that cannot fit its
+    //    SpaceCompressCommand[LBUF_SIZE] buffer.
+    //
+    reset(d, ws);
+    {
+        // 16-bit extended length = LBUF_SIZE (one over the cap).
+        const size_t over = static_cast<size_t>(LBUF_SIZE);
+        std::vector<uint8_t> frame;
+        frame.push_back(0x81);  // FIN+TEXT
+        frame.push_back(0x80 | 126);  // masked, 16-bit length
+        frame.push_back(static_cast<uint8_t>((over >> 8) & 0xFF));
+        frame.push_back(static_cast<uint8_t>(over & 0xFF));
+        frame.push_back(M0); frame.push_back(M1);
+        frame.push_back(M2); frame.push_back(M3);
+        // No payload body required: the length check fails on the header.
+        feed(d, frame);
+        CHECK("TEXT over LBUF-1: closed", g_closed == 1);
+        CHECK("TEXT over LBUF-1: no message", g_messages.empty());
+    }
+
+    // 10. Exactly LBUF_SIZE-1 payload bytes is accepted (telnet parity).
+    //
+    reset(d, ws);
+    {
+        const size_t maxp = WS_MAX_PAYLOAD;
+        std::vector<uint8_t> frame;
+        frame.reserve(8 + maxp);
+        frame.push_back(0x81);
+        frame.push_back(0x80 | 126);
+        frame.push_back(static_cast<uint8_t>((maxp >> 8) & 0xFF));
+        frame.push_back(static_cast<uint8_t>(maxp & 0xFF));
+        frame.push_back(M0); frame.push_back(M1);
+        frame.push_back(M2); frame.push_back(M3);
+        for (size_t i = 0; i < maxp; i++)
+        {
+            frame.push_back(static_cast<uint8_t>('A'));
+        }
+        feed(d, frame);
+        CHECK("TEXT max LBUF-1: one message", g_messages.size() == 1);
+        CHECK("TEXT max LBUF-1: length",
+              g_messages.size() == 1 && g_messages[0].size() == maxp);
+        CHECK("TEXT max LBUF-1: not closed", g_closed == 0);
     }
 
     printf("\nws parser: %d passed, %d failed\n", g_pass, g_fail);

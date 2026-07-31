@@ -412,6 +412,26 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
 {
     bool was_empty = d->input_queue.empty();
 
+    // Telnet never enqueues a zero-length line (Accept Line requires at least
+    // one buffered byte).  WebSocket empty TEXT frames used to call us with
+    // len==0: each entry is a free deque node, input_size stays 0, and the
+    // byte-based input_limit never fires — unbounded queue growth from empty
+    // frames alone.  Drop empties for every path.
+    //
+    if (0 == len || nullptr == cmd)
+    {
+        return;
+    }
+
+    // Hard line cap: process_command / SpaceCompressCommand are LBUF-sized.
+    // Telnet cannot exceed LBUF_SIZE-1; WebSocket used to allow up to
+    // WS_MAX_PAYLOAD which is now the same, but clamp here as the choke point.
+    //
+    if (len > static_cast<size_t>(LBUF_SIZE - 1))
+    {
+        len = static_cast<size_t>(LBUF_SIZE - 1);
+    }
+
     // Normalize to NFC before queuing (never expands the string), so the
     // enqueued length below matches what net.cpp decrements on dequeue.
     const UTF8 *qtext = cmd;
@@ -425,6 +445,10 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
         nfc_buf[nNfc] = '\0';
         qtext = nfc_buf.get();
         qlen = nNfc;
+        if (0 == qlen)
+        {
+            return;
+        }
     }
 
     // Input backlog cap (per connection): pending input commands hold memory
