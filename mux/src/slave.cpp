@@ -27,7 +27,11 @@
 #include <sys/ioctl.h>
 #endif // HAVE_SYS_IOCTL_H
 
+#include <errno.h>
 #include <signal.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #ifdef HAVE_ARPA_INET_H
 #include <arpa/inet.h>
 #endif // HAVE_ARPA_INET_H
@@ -39,6 +43,48 @@
 #endif
 
 pid_t parent_pid;
+
+// #1853 / #1827: when SLAVE_TEST_HARNESS is set in the environment, accept
+// a leading "<milliseconds>@" prefix on the request line.  The child sleeps
+// that long before resolving the rest of the line as the address.  Production
+// netmux never sets the env, so this path is dead outside the harness.
+// Format uses '@' (not ':') so IPv6 literals stay unambiguous.
+//
+static void maybe_test_delay(char **parg)
+{
+    if (nullptr == getenv("SLAVE_TEST_HARNESS") || nullptr == parg
+        || nullptr == *parg)
+    {
+        return;
+    }
+    char *arg = *parg;
+    char *at = strchr(arg, '@');
+    if (nullptr == at || at == arg)
+    {
+        return;
+    }
+    for (char *p = arg; p < at; p++)
+    {
+        if (*p < '0' || *p > '9')
+        {
+            return;
+        }
+    }
+    *at = '\0';
+    long ms = strtol(arg, nullptr, 10);
+    *parg = at + 1;
+    if (ms <= 0 || ms > 60000)
+    {
+        return;
+    }
+    struct timespec ts;
+    ts.tv_sec = static_cast<time_t>(ms / 1000);
+    ts.tv_nsec = static_cast<long>((ms % 1000) * 1000000L);
+    while (nanosleep(&ts, &ts) != 0 && EINTR == errno)
+    {
+        // retry remainder
+    }
+}
 
 #define MAX_STRING 1000
 
@@ -263,6 +309,10 @@ static bool spawn_query(char *arg)
         signal(SIGALRM, CAST_SIGNAL_FUNC child_timeout_signal);
         setitimer(ITIMER_REAL, &itime, 0);
 
+        // Optional harness delay before DNS (#1853).  Must run in the
+        // child so the parent can still count concurrent children.
+        //
+        maybe_test_delay(&arg);
         _exit(query(arg) != 0);
     }
 
