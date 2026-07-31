@@ -1379,7 +1379,7 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         int used[32] = {0};        // sources read early — preload candidates
         int referenced[32] = {0};  // sources + destinations — slot pressure
         bool past_first_branch = false;
-        for (int i = 0; i < MAX_BLOCK_INSNS && scan_pc + 4 <= dbt->memory_size; i++) {
+        for (int i = 0; i < MAX_BLOCK_INSNS && dbt_guest_range_ok(scan_pc, 4, dbt->memory_size); i++) {
             uint32_t w;
             memcpy(&w, dbt->memory + scan_pc, 4);
             rv64_insn_t si;
@@ -1425,7 +1425,7 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
                 }
                 if (si.imm < 0) break;  // backward jump elsewhere
                 // Forward unconditional jump: follow target.
-                if (si.imm > 0 && target + 4 <= dbt->memory_size) {
+                if (si.imm > 0 && dbt_guest_range_ok(target, 4, dbt->memory_size)) {
                     past_first_branch = true;
                     scan_pc = target;
                     continue;
@@ -1509,7 +1509,9 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
     uint64_t inline_calls_before = dbt->inline_calls;
 
     while (count < MAX_BLOCK_INSNS) {
-        if (pc + 4 > dbt->memory_size) {
+        // #1864: overflow-safe fetch bound (not `pc + 4 > memory_size`).
+        //
+        if (!dbt_guest_range_ok(pc, 4, dbt->memory_size)) {
             rc_flush(&e, &rc); fc_flush(&e, &fc);
             emit_exit_chained(&e, dbt, pc);
             break;
@@ -1529,7 +1531,7 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         //
         rv64_insn_t next;
         bool have_next = false;
-        if (pc + 8 <= dbt->memory_size) {
+        if (dbt_guest_range_ok(pc, 8, dbt->memory_size)) {
             uint32_t next_word;
             memcpy(&next_word, dbt->memory + pc + 4, 4);
             rv64_decode(next_word, &next);
@@ -1593,7 +1595,7 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
 
             // Diamond merge: fuse the following branch-over-one pattern
             // into a conditional move while preserving the SLT result in rd.
-            if (next.imm == 8 && pc + 12 <= dbt->memory_size) {
+            if (next.imm == 8 && dbt_guest_range_ok(pc, 12, dbt->memory_size)) {
                 uint32_t skip_word;
                 memcpy(&skip_word, dbt->memory + pc + 8, 4);
                 rv64_insn_t skip;
@@ -2128,7 +2130,7 @@ no_addr_fusion:
             // If the branch skips exactly 1 instruction (+8) and that
             // instruction is a simple ALU op, convert to CMOVcc.
             //
-            if (insn.imm == 8 && pc + 8 <= dbt->memory_size) {
+            if (insn.imm == 8 && dbt_guest_range_ok(pc, 8, dbt->memory_size)) {
                 uint32_t skip_word;
                 memcpy(&skip_word, dbt->memory + pc + 4, 4);
                 rv64_insn_t skip;

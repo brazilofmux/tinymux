@@ -445,7 +445,7 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
         // call target is in the cache when translate_block runs, so the
         // inline CALL optimization fires.
         uint64_t scan_pc = pc;
-        for (int i = 0; i < MAX_BLOCK_INSNS && scan_pc + 4 <= dbt->memory_size; i++) {
+        for (int i = 0; i < MAX_BLOCK_INSNS && dbt_guest_range_ok(scan_pc, 4, dbt->memory_size); i++) {
             uint32_t w;
             memcpy(&w, dbt->memory + scan_pc, 4);
             rv64_insn_t si;
@@ -453,7 +453,7 @@ void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc) {
 
             rv64_insn_t next_si;
             bool have_next = false;
-            if (scan_pc + 8 <= dbt->memory_size) {
+            if (dbt_guest_range_ok(scan_pc, 8, dbt->memory_size)) {
                 uint32_t next_w;
                 memcpy(&next_w, dbt->memory + scan_pc + 4, 4);
                 rv64_decode(next_w, &next_si);
@@ -671,6 +671,18 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
             return -1;
         }
 
+        // #1864: refuse a guest-controlled next_pc that cannot hold a 4-byte
+        // instruction (including wrap cases near UINT64_MAX).  Backends also
+        // guard before each fetch; the dispatch path must not treat a wild
+        // PC as a normal cache miss / translate entry.
+        //
+        if (!dbt_guest_range_ok(pc, 4, dbt->memory_size)) {
+            dbt->dispatch_count = dispatch_count;
+            fprintf(stderr, "dbt: fetch out of bounds at PC=0x%llX\n",
+                    static_cast<unsigned long long>(pc));
+            return -1;
+        }
+
         // Look up or translate block.
         block_entry_t *be = dbt_cache_lookup(dbt, pc);
         uint8_t *code;
@@ -800,6 +812,18 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
             dbt->dispatch_count = dispatch_count;
             fprintf(stderr, "dbt: EBREAK at 0x%llX\n",
                     static_cast<unsigned long long>(pc & ~3ULL));
+            return -1;
+        }
+
+        // #1864: refuse a guest-controlled next_pc that cannot hold a 4-byte
+        // instruction (including wrap cases near UINT64_MAX).  Backends also
+        // guard before each fetch; the dispatch path must not treat a wild
+        // PC as a normal cache miss / translate entry.
+        //
+        if (!dbt_guest_range_ok(pc, 4, dbt->memory_size)) {
+            dbt->dispatch_count = dispatch_count;
+            fprintf(stderr, "dbt: fetch out of bounds at PC=0x%llX\n",
+                    static_cast<unsigned long long>(pc));
             return -1;
         }
 

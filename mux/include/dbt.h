@@ -119,6 +119,18 @@ struct block_entry_t {
 
 static_assert(sizeof(block_entry_t) == 16, "block_entry_t must be 16 bytes");
 
+// Guest instruction-fetch / look-ahead range check (#1864, same class as
+// #1292 mem_check).  `pc + n` wraps for a guest-controlled PC near
+// UINT64_MAX, so the old `pc + n > memory_size` / `pc + n <= memory_size`
+// tests then pass and the subsequent memcpy indexes past the guest
+// allocation.  Subtracting cannot wrap once the first term has established
+// pc <= memory_size.
+//
+inline bool dbt_guest_range_ok(uint64_t pc, uint64_t n, uint64_t memory_size)
+{
+    return pc <= memory_size && n <= memory_size - pc;
+}
+
 static constexpr size_t BLOCK_CACHE_SETS = 1024;       // must be power of 2
 static constexpr size_t BLOCK_CACHE_WAYS = 4;
 static constexpr size_t BLOCK_CACHE_SIZE = BLOCK_CACHE_SETS * BLOCK_CACHE_WAYS;
