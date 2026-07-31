@@ -592,6 +592,83 @@ void testTruncatedUtf8CharsetEncode() {
     expect(euro.size() == 1, "complete Euro should encode to one Latin1/approx byte");
 }
 
+// #1897: ports must not wrap via uint16_t cast of out-of-range stoi values.
+void testPortRangeRejected() {
+    auto writeConf = [](const std::string& body) -> std::string {
+        char path[] = "/tmp/hydra-cfg-port-XXXXXX";
+        int fd = mkstemp(path);
+        expect(fd >= 0, "mkstemp for port test");
+        expect(write(fd, body.data(), body.size())
+                   == static_cast<ssize_t>(body.size()),
+               "write port fixture");
+        close(fd);
+        return path;
+    };
+
+    const char* badListen[] = {
+        "listen telnet 127.0.0.1:0\n",
+        "listen telnet 127.0.0.1:-1\n",
+        "listen telnet 127.0.0.1:65536\n",
+        "listen telnet 127.0.0.1:99999\n",
+    };
+    for (const char* body : badListen) {
+        std::string path = writeConf(body);
+        HydraConfig cfg;
+        std::string err;
+        expect(!loadConfig(path, cfg, err),
+               std::string("OOR listen port must fail: ") + body);
+        expect(err.find("port") != std::string::npos,
+               std::string("error should mention port: ") + err);
+        unlink(path.c_str());
+    }
+
+    // Valid boundaries.
+    for (const char* port : {"1", "65535", "4202"}) {
+        std::string body = std::string("listen telnet 127.0.0.1:") + port + "\n";
+        std::string path = writeConf(body);
+        HydraConfig cfg;
+        std::string err;
+        expect(loadConfig(path, cfg, err),
+               std::string("valid port must load: ") + port + " err=" + err);
+        expect(cfg.listeners.size() == 1
+               && cfg.listeners[0].port == static_cast<uint16_t>(std::stoi(port)),
+               std::string("port value stored: ") + port);
+        unlink(path.c_str());
+    }
+
+    // Game backend port.
+    {
+        std::string body =
+            "listen telnet 127.0.0.1:4202\n"
+            "game \"t\" {\n"
+            "  host 127.0.0.1\n"
+            "  port 65536\n"
+            "}\n";
+        std::string path = writeConf(body);
+        HydraConfig cfg;
+        std::string err;
+        expect(!loadConfig(path, cfg, err),
+               "OOR game port must fail loadConfig");
+        unlink(path.c_str());
+    }
+    {
+        std::string body =
+            "listen telnet 127.0.0.1:4202\n"
+            "game \"t\" {\n"
+            "  host 127.0.0.1\n"
+            "  port 2860\n"
+            "}\n";
+        std::string path = writeConf(body);
+        HydraConfig cfg;
+        std::string err;
+        expect(loadConfig(path, cfg, err),
+               std::string("valid game port must load: ") + err);
+        expect(cfg.games.size() == 1 && cfg.games[0].port == 2860,
+               "game port 2860 stored");
+        unlink(path.c_str());
+    }
+}
+
 // #1895: unknown listen types must fail closed, not become plaintext Telnet.
 void testUnknownListenerTypeRejected() {
     auto writeConf = [](const std::string& listenLine) -> std::string {
@@ -788,6 +865,7 @@ int main() {
     testConvertInputNonUtf8Target();
     testTruncatedUtf8CharsetEncode();
     testUnknownListenerTypeRejected();
+    testPortRangeRejected();
 #ifdef GRPC_ENABLED
     testMalformedProtobufRejected();
 #endif

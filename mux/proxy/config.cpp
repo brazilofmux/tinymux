@@ -76,6 +76,27 @@ static std::string extractParam(const std::string& params,
     return params.substr(start, end - start);
 }
 
+// #1897: parse a TCP port; reject wrap-prone OOR values (stoi → uint16_t).
+// Valid range is 1..65535 (port 0 is never a useful bind/connect target here).
+//
+static bool parseTcpPort(const std::string& text, uint16_t& out,
+                         std::string& errorMsg, const char* what) {
+    try {
+        size_t consumed = 0;
+        const long port = std::stol(text, &consumed, 10);
+        if (consumed != text.size() || port < 1 || port > 65535) {
+            errorMsg = std::string(what) + ": port out of range (1-65535): '"
+                + text + "'";
+            return false;
+        }
+        out = static_cast<uint16_t>(port);
+        return true;
+    } catch (...) {
+        errorMsg = std::string(what) + ": invalid port '" + text + "'";
+        return false;
+    }
+}
+
 // Parse a listen directive: "listen <type> <host:port> [cert=... key=...]"
 static bool parseListenLine(const std::string& value, ListenConfig& lc,
                             std::string& errorMsg) {
@@ -120,10 +141,7 @@ static bool parseListenLine(const std::string& value, ListenConfig& lc,
         return false;
     }
     lc.host = hostport.substr(0, colon);
-    try {
-        lc.port = static_cast<uint16_t>(std::stoi(hostport.substr(colon + 1)));
-    } catch (...) {
-        errorMsg = "listen: invalid port in '" + hostport + "'";
+    if (!parseTcpPort(hostport.substr(colon + 1), lc.port, errorMsg, "listen")) {
         return false;
     }
 
@@ -190,9 +208,7 @@ static bool parseGameBlock(std::ifstream& file, GameConfig& game,
         if (key == "host") {
             game.host = value;
         } else if (key == "port") {
-            try { game.port = static_cast<uint16_t>(std::stoi(value)); }
-            catch (...) {
-                errorMsg = "game: invalid port '" + value + "'";
+            if (!parseTcpPort(value, game.port, errorMsg, "game")) {
                 return false;
             }
         } else if (key == "socket") {
