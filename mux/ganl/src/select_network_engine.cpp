@@ -340,6 +340,128 @@ ConnectionHandle SelectNetworkEngine::adoptConnection(int fd, void* connectionCo
     return static_cast<ConnectionHandle>(fd);
 }
 
+ConnectionHandle SelectNetworkEngine::initiateConnect(const std::string& host, uint16_t port,
+                                                      void* connectionContext, ErrorCode& error) {
+    error = 0;
+    GANL_SELECT_DEBUG(-1, "Initiating outbound connect to " << host << ":" << port);
+
+    if (!initialized_) {
+        error = EINVAL;
+        return InvalidConnectionHandle;
+    }
+
+    addrinfo hints{};
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    std::string portStr = std::to_string(port);
+    addrinfo* results = nullptr;
+    int gaiResult = ::getaddrinfo(host.c_str(), portStr.c_str(), &hints, &results);
+    if (gaiResult != 0) {
+        error = (gaiResult == EAI_SYSTEM) ? errno : EINVAL;
+        GANL_SELECT_DEBUG(-1, "initiateConnect: getaddrinfo failed: "
+            << ::gai_strerror(gaiResult));
+        return InvalidConnectionHandle;
+    }
+
+    SocketFD fd = INVALID_SOCKET_FD;
+    int lastErr = 0;
+    [[maybe_unused]] bool connectInProgress = false;
+
+    for (addrinfo* ai = results; ai != nullptr; ai = ai->ai_next) {
+        int sockFlags = ai->ai_socktype;
+#ifdef SOCK_NONBLOCK
+        sockFlags |= SOCK_NONBLOCK;
+#endif
+#ifdef SOCK_CLOEXEC
+        sockFlags |= SOCK_CLOEXEC;
+#endif
+
+        fd = ::socket(ai->ai_family, sockFlags, ai->ai_protocol);
+        if (fd == INVALID_SOCKET_FD) {
+            lastErr = errno;
+            continue;
+        }
+
+#ifndef SOCK_NONBLOCK
+        if (!setNonBlocking(fd, lastErr)) {
+            ::close(fd);
+            fd = INVALID_SOCKET_FD;
+            continue;
+        }
+#endif
+
+        // select() cannot track fds past FD_SETSIZE (#946).
+        //
+        if (fd >= MAX_SOCKET_FDS) {
+            lastErr = ENOBUFS;
+            ::close(fd);
+            fd = INVALID_SOCKET_FD;
+            continue;
+        }
+
+        int rc = ::connect(fd, ai->ai_addr, static_cast<socklen_t>(ai->ai_addrlen));
+        if (rc == 0) {
+            // Immediate connect (common for localhost).  Still arm write
+            // interest so processEvents emits ConnectSuccess (#942).
+            //
+            connectInProgress = false;
+            break;
+        } else if (errno == EINPROGRESS || errno == EWOULDBLOCK) {
+            connectInProgress = true;
+            break;
+        } else {
+            lastErr = errno;
+            GANL_SELECT_DEBUG(fd, "connect() failed: " << strerror(lastErr));
+            ::close(fd);
+            fd = INVALID_SOCKET_FD;
+            continue;
+        }
+    }
+
+    ::freeaddrinfo(results);
+
+    if (fd == INVALID_SOCKET_FD) {
+        error = lastErr != 0 ? lastErr : ECONNREFUSED;
+        return InvalidConnectionHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (!initialized_) {
+            ::close(fd);
+            error = ESHUTDOWN;
+            return InvalidConnectionHandle;
+        }
+        if (sockets_.find(fd) != sockets_.end()) {
+            ::close(fd);
+            error = EEXIST;
+            return InvalidConnectionHandle;
+        }
+
+        // OutboundConnecting: wantWrite only until SO_ERROR is checked.
+        //
+        SocketInfo connecting{
+            SocketType::OutboundConnecting,
+            connectionContext,
+            /*wantRead=*/false,
+            /*wantWrite=*/true,
+            /*writeUserContext=*/nullptr
+        };
+        sockets_[fd] = connecting;
+        updateFdSets(fd, connecting);
+        if (fd > maxFd_) {
+            maxFd_ = fd;
+        }
+    }
+
+    GANL_SELECT_DEBUG(fd, "Outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate — write fires next poll")
+        << ").");
+    return static_cast<ConnectionHandle>(fd);
+}
+
 ConnectionHandle SelectNetworkEngine::spawnSlave(const SlaveSpawnOptions& options, ErrorCode& error) {
 #ifndef _WIN32
     return spawnSlavePosix(*this, options, error);
@@ -658,6 +780,71 @@ int SelectNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
         }
 
         void* contextPtr = infoCopy.context; // Use copied context
+
+        // --- Outbound connect completion (#1840 / #1801) ---
+        // Writable or exceptional: check SO_ERROR, emit ConnectSuccess or
+        // ConnectFail, and either transition to Connection (read-armed) or
+        // close the fd (match epoll's OutboundConnecting handler).
+        //
+        if (infoCopy.type == SocketType::OutboundConnecting
+            && (isReadyWrite || hasError)) {
+            int sockerr = 0;
+            socklen_t errLen = sizeof(sockerr);
+            if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &sockerr, &errLen) == -1) {
+                sockerr = getLastError();
+            }
+            if (sockerr == 0 && hasError && !isReadyWrite) {
+                // Exceptional without SO_ERROR: treat as failure.
+                //
+                sockerr = ECONNREFUSED;
+            }
+
+            if (sockerr == 0) {
+                GANL_SELECT_DEBUG(fd, "Outbound connect succeeded.");
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    auto sockIt = sockets_.find(fd);
+                    if (sockIt != sockets_.end()) {
+                        sockIt->second.type = SocketType::Connection;
+                        sockIt->second.wantWrite = false;
+                        sockIt->second.wantRead = true;
+                        updateFdSets(fd, sockIt->second);
+                    }
+                }
+                if (eventCount < maxEvents) {
+                    IoEvent& ev = events[eventCount++];
+                    ev = IoEvent{};
+                    ev.type = IoEventType::ConnectSuccess;
+                    ev.connection = fd;
+                    ev.context = contextPtr;
+                    ev.bytesTransferred = 0;
+                    ev.error = 0;
+                    ev.buffer = nullptr;
+                }
+            } else {
+                GANL_SELECT_DEBUG(fd, "Outbound connect failed: "
+                    << getErrorString(sockerr));
+                if (eventCount < maxEvents) {
+                    IoEvent& ev = events[eventCount++];
+                    ev = IoEvent{};
+                    ev.type = IoEventType::ConnectFail;
+                    ev.connection = fd;
+                    ev.context = contextPtr;
+                    ev.bytesTransferred = 0;
+                    ev.error = sockerr;
+                    ev.buffer = nullptr;
+                }
+                // Own the fd until ConnectFail is delivered; then close
+                // like epoll (application does not own a failed connect).
+                //
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    removeFd(fd);
+                }
+                closeSocket(fd);
+            }
+            continue;
+        }
 
         // --- Handle Errors First ---
         if (hasError) {

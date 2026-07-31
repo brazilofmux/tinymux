@@ -307,6 +307,117 @@ ConnectionHandle KqueueNetworkEngine::adoptConnection(int fd, void* connectionCo
     return static_cast<ConnectionHandle>(fd);
 }
 
+ConnectionHandle KqueueNetworkEngine::initiateConnect(const std::string& host, uint16_t port,
+                                                      void* connectionContext, ErrorCode& error) {
+    error = 0;
+    GANL_KQUEUE_DEBUG(0, "Initiating outbound connect to " << host << ":" << port);
+
+    if (kqueueFd_ == -1) {
+        error = EINVAL;
+        return InvalidConnectionHandle;
+    }
+
+    addrinfo hints{};
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+
+    std::string portStr = std::to_string(port);
+    addrinfo* results = nullptr;
+    int gaiResult = ::getaddrinfo(host.c_str(), portStr.c_str(), &hints, &results);
+    if (gaiResult != 0) {
+        error = (gaiResult == EAI_SYSTEM) ? errno : EINVAL;
+        GANL_KQUEUE_DEBUG(0, "initiateConnect: getaddrinfo failed: "
+            << ::gai_strerror(gaiResult));
+        return InvalidConnectionHandle;
+    }
+
+    int fd = -1;
+    int lastErr = 0;
+    [[maybe_unused]] bool connectInProgress = false;
+
+    for (addrinfo* ai = results; ai != nullptr; ai = ai->ai_next) {
+        int sockFlags = ai->ai_socktype;
+#ifdef SOCK_NONBLOCK
+        sockFlags |= SOCK_NONBLOCK;
+#endif
+#ifdef SOCK_CLOEXEC
+        sockFlags |= SOCK_CLOEXEC;
+#endif
+
+        fd = ::socket(ai->ai_family, sockFlags, ai->ai_protocol);
+        if (fd == -1) {
+            lastErr = errno;
+            continue;
+        }
+
+#ifndef SOCK_NONBLOCK
+        if (!setNonBlocking(fd, lastErr)) {
+            ::close(fd);
+            fd = -1;
+            continue;
+        }
+#endif
+
+        int rc = ::connect(fd, ai->ai_addr, static_cast<socklen_t>(ai->ai_addrlen));
+        if (rc == 0) {
+            // Immediate connect: still arm EVFILT_WRITE so processEvents
+            // emits ConnectSuccess (#942).
+            //
+            connectInProgress = false;
+            break;
+        } else if (errno == EINPROGRESS || errno == EWOULDBLOCK) {
+            connectInProgress = true;
+            break;
+        } else {
+            lastErr = errno;
+            GANL_KQUEUE_DEBUG(fd, "connect() failed: " << strerror(lastErr));
+            ::close(fd);
+            fd = -1;
+            continue;
+        }
+    }
+
+    ::freeaddrinfo(results);
+
+    if (fd == -1) {
+        error = lastErr != 0 ? lastErr : ECONNREFUSED;
+        return InvalidConnectionHandle;
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (sockets_.find(fd) != sockets_.end()) {
+            ::close(fd);
+            error = EEXIST;
+            return InvalidConnectionHandle;
+        }
+        sockets_[fd] = SocketInfo{
+            SocketType::OutboundConnecting,
+            context: connectionContext,
+            activeReadBuffer: nullptr,
+            remoteAddress: std::string(),
+            writeUserContext: nullptr
+        };
+    }
+
+    // EVFILT_WRITE reports connect completion (or immediate success).
+    //
+    if (!updateKevent(fd, EVFILT_WRITE, EV_ADD | EV_ENABLE, error)) {
+        GANL_KQUEUE_DEBUG(fd, "Failed to add outbound connect to kqueue: "
+            << strerror(error));
+        std::lock_guard<std::mutex> lock(mutex_);
+        sockets_.erase(fd);
+        ::close(fd);
+        return InvalidConnectionHandle;
+    }
+
+    GANL_KQUEUE_DEBUG(fd, "Outbound connect initiated ("
+        << (connectInProgress ? "in progress" : "immediate — write fires next poll")
+        << ").");
+    return static_cast<ConnectionHandle>(fd);
+}
+
 ConnectionHandle KqueueNetworkEngine::spawnSlave(const SlaveSpawnOptions& options, ErrorCode& error) {
 #ifndef _WIN32
     return spawnSlavePosix(*this, options, error);
@@ -633,6 +744,7 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
         // Retrieve socket info and context under lock
         bool isListener = false;
         bool isConnection = false;
+        bool isOutboundConnecting = false;
         {
             std::lock_guard<std::mutex> lock(mutex_);
             auto sockIt = sockets_.find(fd);
@@ -644,6 +756,8 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
             currentContext = sockIt->second.context;
             if (sockIt->second.type == SocketType::Listener) {
                 isListener = true;
+            } else if (sockIt->second.type == SocketType::OutboundConnecting) {
+                isOutboundConnecting = true;
             } else {
                 isConnection = true;
             }
@@ -651,6 +765,78 @@ int KqueueNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEv
 
         GANL_KQUEUE_DEBUG(fd, "Processing kevent: filter=" << kev.filter << ", flags=0x" << std::hex << kev.flags << std::dec << ", data=" << kev.data);
 
+
+        // --- Outbound connect completion (#1840 / #1801) ---
+        if (isOutboundConnecting
+            && (kev.filter == EVFILT_WRITE || (kev.flags & EV_EOF)
+                || (kev.flags & EV_ERROR))) {
+            ConnectionHandle connHandle = static_cast<ConnectionHandle>(fd);
+            int sockerr = 0;
+            if (kev.flags & EV_ERROR) {
+                sockerr = static_cast<int>(kev.data);
+            } else {
+                socklen_t errlen = sizeof(sockerr);
+                if (::getsockopt(fd, SOL_SOCKET, SO_ERROR,
+                                 reinterpret_cast<char*>(&sockerr), &errlen) == -1) {
+                    sockerr = errno;
+                }
+            }
+            if (sockerr == 0 && (kev.flags & EV_EOF)) {
+                sockerr = ECONNREFUSED;
+            }
+
+            if (sockerr == 0) {
+                GANL_KQUEUE_DEBUG(fd, "Outbound connect succeeded.");
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    auto sockIt = sockets_.find(fd);
+                    if (sockIt != sockets_.end()) {
+                        sockIt->second.type = SocketType::Connection;
+                    }
+                }
+                // Drop write interest; arm read for normal connection mode.
+                //
+                ErrorCode keErr = 0;
+                updateKevent(fd, EVFILT_WRITE, EV_DELETE, keErr);
+                if (!updateKevent(fd, EVFILT_READ, EV_ADD | EV_ENABLE, keErr)) {
+                    GANL_KQUEUE_DEBUG(fd, "Failed to arm EVFILT_READ after connect: "
+                        << strerror(keErr));
+                }
+
+                if (eventCount < maxEvents) {
+                    IoEvent& ev = events[eventCount++];
+                    ev = IoEvent{};
+                    ev.type = IoEventType::ConnectSuccess;
+                    ev.connection = connHandle;
+                    ev.context = currentContext;
+                    ev.bytesTransferred = 0;
+                    ev.error = 0;
+                    ev.buffer = nullptr;
+                }
+            } else {
+                GANL_KQUEUE_DEBUG(fd, "Outbound connect failed: " << strerror(sockerr));
+                if (eventCount < maxEvents) {
+                    IoEvent& ev = events[eventCount++];
+                    ev = IoEvent{};
+                    ev.type = IoEventType::ConnectFail;
+                    ev.connection = connHandle;
+                    ev.context = currentContext;
+                    ev.bytesTransferred = 0;
+                    ev.error = sockerr;
+                    ev.buffer = nullptr;
+                }
+                if (kqueueFd_ != -1) {
+                    ErrorCode ignored = 0;
+                    updateKevent(fd, EVFILT_WRITE, EV_DELETE, ignored);
+                }
+                ::close(fd);
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    sockets_.erase(fd);
+                }
+            }
+            continue;
+        }
 
         // --- Handle Listener Events ---
         if (isListener && kev.filter == EVFILT_READ) {
