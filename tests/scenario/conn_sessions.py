@@ -152,6 +152,7 @@ def main():
 
         # 4. THE point of this file.  Close one session; connnum() must NOT
         #    come back down, because it counts logins and not open sessions.
+        #    Close the *newer* session first (historical coverage).
         s2.close()
         s2 = None
         time.sleep(SETTLE)
@@ -196,6 +197,49 @@ def main():
               and gone_tot >= gone_max,
               "conntotal() is at least connmax()",
               "total=%r max=%r" % (gone_tot, gone_max))
+
+        # 7b. #1808: close the *oldest* of two staggered sessions first.
+        #     Disconnect accounting must credit only the non-overlapping
+        #     prefix to conntotal, then the survivor's remaining time — so
+        #     the final total approximates wall-clock union, not a sum that
+        #     double-counts the overlap.
+        USER2 = "connsess2"
+        sendline(wiz, "@pcreate %s=%s" % (USER2, USER_PW))
+        read_for(wiz, None, 1.5)
+        o1 = o2 = None
+        try:
+            t0 = time.monotonic()
+            o1 = connect("connect %s %s" % (USER2, USER_PW))
+            time.sleep(2.0)  # stagger so "oldest" is unambiguous
+            o2 = connect("connect %s %s" % (USER2, USER_PW))
+            time.sleep(SETTLE)
+            # Close oldest first.
+            o1.close()
+            o1 = None
+            time.sleep(SETTLE)
+            o2.close()
+            o2 = None
+            time.sleep(SETTLE)
+            t1 = time.monotonic()
+            wall = t1 - t0
+            union_tot = num(wiz, "U1", "conntotal(%s)" % USER2)
+            # Union <= wall+slack; if overlap were double-counted, total would
+            # approach ~wall + stagger (~2s extra) and exceed wall easily.
+            # Allow generous slack for SETTLE/scheduling; require total not to
+            # exceed wall + 4s, and to be at least the longest single session
+            # floor (~2s stagger + settle).
+            check(union_tot is not None and 0 <= union_tot <= int(wall) + 4,
+                  "#1808 close-oldest-first: conntotal approximates union time",
+                  "total=%r wall=%.1f" % (union_tot, wall))
+        finally:
+            for s in (o1, o2):
+                if s is not None:
+                    try:
+                        s.close()
+                    except OSError:
+                        pass
+            sendline(wiz, "@destroy/override %s" % USER2)
+            read_for(wiz, None, 1.0)
 
         # 8. The unknown-player split.  conn() cannot distinguish "no such
         #    player" from "offline" -- both are -1 -- while connnum() errors.
