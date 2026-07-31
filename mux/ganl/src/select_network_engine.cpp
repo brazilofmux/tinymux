@@ -875,6 +875,8 @@ std::string SelectNetworkEngine::getErrorString(ErrorCode error) {
 // --- Private Helper Methods ---
 
 // Assumes called WITHOUT lock held
+// #1823: O_NONBLOCK + FD_CLOEXEC (steady-state; planned restart clears CLOEXEC).
+//
 bool SelectNetworkEngine::setNonBlocking(SocketFD fd, ErrorCode& error) {
     int flags = fcntl(fd, F_GETFL, 0);
     if (flags == -1) {
@@ -882,6 +884,15 @@ bool SelectNetworkEngine::setNonBlocking(SocketFD fd, ErrorCode& error) {
         return false;
     }
     if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        error = getLastError();
+        return false;
+    }
+    int fdFlags = fcntl(fd, F_GETFD);
+    if (fdFlags == -1) {
+        error = getLastError();
+        return false;
+    }
+    if (fcntl(fd, F_SETFD, fdFlags | FD_CLOEXEC) == -1) {
         error = getLastError();
         return false;
     }
