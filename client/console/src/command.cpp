@@ -113,11 +113,8 @@ static void cmd_connect(App& app, const std::vector<std::string>& args) {
             app.connections.erase(name);
             return;
         }
-        // Persist the session_id so the next launch can try to resume
-        // without re-entering the password. This is written alongside
-        // the existing plaintext password in worlds.txt; the file is
-        // already chmod 600 on Unix and guarded by the same trust
-        // boundary as the password itself.
+        // Persist the session_id so the next launch can try to resume.
+        // Password stays in CredStore (#1891); worlds.txt never holds it.
         //
         const std::string& sid =
             static_cast<HydraConnection*>(raw)->session_id();

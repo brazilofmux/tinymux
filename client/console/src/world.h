@@ -17,7 +17,9 @@ struct World {
     // Hydra proxy fields
     bool        use_hydra = false;
     std::string hydra_user;     // Hydra account username
-    std::string hydra_pass;     // Hydra account password
+    // Password lives in CredStore (Windows Credential Manager / worlds.cred);
+    // loaded into memory for connect only — never written to worlds.txt (#1891).
+    std::string hydra_pass;
     std::string hydra_game;     // game name to /connect on Hydra
     std::string hydra_session;  // last-known session_id for resume-on-restart
 };
