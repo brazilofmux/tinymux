@@ -328,6 +328,17 @@ int main()
     expect_reject("10.0.0.0/4294967296");
     expect_reject("10.0.0.0/4294967297");
     expect_reject("2001:db8::/4294967296");
+    // #1774 residual: mux_atoi64 wraps mod 2^64, so a 20+-digit prefix
+    // wraps back into [0,128] (2^64+1 -> 1, 2^64 -> 0) and would pass the
+    // int64 range check.  The significant-digit guard rejects these.
+    expect_reject("10.0.0.0/18446744073709551617");   // 2^64 + 1 -> 1
+    expect_reject("10.0.0.0/18446744073709551616");    // 2^64     -> 0
+    expect_reject("2001:db8::/18446744073709551744");   // 2^64+128 -> 128
+    expect_reject("10.0.0.0/999999999999999999999999"); // way over, -> wraps
+    // Leading zeros on a legitimate prefix must still be accepted (the guard
+    // counts significant digits, not raw length).
+    expect_accept("10.0.0.0/024");
+    expect_accept("2001:db8::/00128");
     // Legitimate edges still accepted.
     expect_accept("10.0.0.0/0");
     expect_accept("10.0.0.0/32");
