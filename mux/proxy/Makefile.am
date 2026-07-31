@@ -38,6 +38,8 @@ proxy_regression_LDADD = $(hydra_LDADD)
 # gRPC support (optional, requires --enable-grpc at configure time)
 if GRPC_ENABLED
 hydra_SOURCES += grpc_server.cpp grpc_web.cpp
+# #1887: regression pins ParseFromString fail-closed contract.
+proxy_regression_SOURCES += hydra.pb.cc
 
 BUILT_SOURCES = hydra.grpc.pb.cc hydra.grpc.pb.h hydra.pb.cc hydra.pb.h
 

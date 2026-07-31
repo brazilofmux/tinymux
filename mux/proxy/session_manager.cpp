@@ -3266,6 +3266,16 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
         safeWrite(fd.handle, http);
     };
 
+    // #1887: never treat a failed ParseFromString as a default-valued request.
+    // INVALID_ARGUMENT is gRPC status code 3.
+    auto parseRpc = [&](google::protobuf::MessageLite& rpcReq) -> bool {
+        if (!rpcReq.ParseFromString(protoBody)) {
+            sendUnaryResponse("", 3, "invalid request");
+            return false;
+        }
+        return true;
+    };
+
     // ---- Dispatch RPCs ----
 
     if (method == "ListGames") {
@@ -3288,260 +3298,271 @@ void SessionManager::handleGrpcWebRequest(FrontDoorState& fd) {
 
     } else if (method == "Authenticate") {
         hydra::AuthRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
+        if (parseRpc(rpcReq)) {
+            // #1097: lockout applies on grpc-web too (peer IP on front-door).
+            std::string pid = authenticateAndGetSession(
+                rpcReq.username(), rpcReq.password(), fd.clientIp);
 
-        // #1097: lockout applies on grpc-web too (peer IP on front-door).
-        std::string pid = authenticateAndGetSession(
-            rpcReq.username(), rpcReq.password(), fd.clientIp);
-
-        hydra::AuthResponse resp;
-        if (pid.empty()) {
-            resp.set_success(false);
-            resp.set_error("authentication failed");
-        } else {
-            resp.set_success(true);
-            resp.set_session_id(pid);
+            hydra::AuthResponse resp;
+            if (pid.empty()) {
+                resp.set_success(false);
+                resp.set_error("authentication failed");
+            } else {
+                resp.set_success(true);
+                resp.set_session_id(pid);
+            }
+            sendUnaryResponse(resp.SerializeAsString(), 0);
         }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
 
     } else if (method == "CreateAccount") {
         hydra::CreateAccountRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
+        if (parseRpc(rpcReq)) {
+            std::string errorMsg;
+            std::string pid = createAccountAndGetSession(
+                rpcReq.username(), rpcReq.password(), fd.clientIp, errorMsg);
 
-        std::string errorMsg;
-        std::string pid = createAccountAndGetSession(
-            rpcReq.username(), rpcReq.password(), fd.clientIp, errorMsg);
-
-        hydra::CreateAccountResponse resp;
-        if (pid.empty()) {
-            resp.set_success(false);
-            resp.set_error(errorMsg.empty() ? "failed" : errorMsg);
-        } else {
-            resp.set_success(true);
-            resp.set_session_id(pid);
+            hydra::CreateAccountResponse resp;
+            if (pid.empty()) {
+                resp.set_success(false);
+                resp.set_error(errorMsg.empty() ? "failed" : errorMsg);
+            } else {
+                resp.set_success(true);
+                resp.set_session_id(pid);
+            }
+            sendUnaryResponse(resp.SerializeAsString(), 0);
         }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
 
     } else if (method == "GetSession") {
         hydra::SessionRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
 
-        HydraSession* s = findByPersistId(sid);
-        if (!s) {
-            sendUnaryResponse("", 5, "session not found");  // NOT_FOUND
-        } else {
-            hydra::SessionInfo resp;
-            resp.set_session_id(s->persistId);
-            resp.set_username(s->username);
-            resp.set_active_link(s->links.empty() ? 0
-                : static_cast<int>(s->activeLink) + 1);
-            resp.set_scrollback_lines(static_cast<int>(s->scrollback.count()));
-            resp.set_state(s->state == SessionState::Active
-                ? hydra::SESSION_ACTIVE : hydra::SESSION_DETACHED);
-            resp.set_created(static_cast<int64_t>(s->created));
-            resp.set_last_activity(static_cast<int64_t>(s->lastActivity));
-            sendUnaryResponse(resp.SerializeAsString(), 0);
+            HydraSession* s = findByPersistId(sid);
+            if (!s) {
+                sendUnaryResponse("", 5, "session not found");  // NOT_FOUND
+            } else {
+                hydra::SessionInfo resp;
+                resp.set_session_id(s->persistId);
+                resp.set_username(s->username);
+                resp.set_active_link(s->links.empty() ? 0
+                    : static_cast<int>(s->activeLink) + 1);
+                resp.set_scrollback_lines(static_cast<int>(s->scrollback.count()));
+                resp.set_state(s->state == SessionState::Active
+                    ? hydra::SESSION_ACTIVE : hydra::SESSION_DETACHED);
+                resp.set_created(static_cast<int64_t>(s->created));
+                resp.set_last_activity(static_cast<int64_t>(s->lastActivity));
+                sendUnaryResponse(resp.SerializeAsString(), 0);
+            }
         }
 
     } else if (method == "SendInput") {
         hydra::InputRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
 
-        HydraSession* s = findByPersistId(sid);
-        hydra::InputResponse resp;
-        if (!s) {
-            resp.set_error("session not found");
-        } else if (rpcReq.line().size() > HydraSession::MAX_INPUT_LINE_LENGTH) {
-            // #1268
-            resp.set_error("line too long");
-        } else {
-            BackDoorLink* active = s->getActiveLink();
-            if (active && active->state == LinkState::Active) {
-                // #1267: same charset conversion as native gRPC / WS GameSession.
-                std::string data = bridge_.convertInput(
-                    ganl::EncodingType::Utf8,
-                    active->protoState.encoding,
-                    rpcReq.line());
-                data += "\r\n";
-                safeWrite(active->handle, data);
-                resp.set_success(true);
+            HydraSession* s = findByPersistId(sid);
+            hydra::InputResponse resp;
+            if (!s) {
+                resp.set_error("session not found");
+            } else if (rpcReq.line().size() > HydraSession::MAX_INPUT_LINE_LENGTH) {
+                // #1268
+                resp.set_error("line too long");
             } else {
-                resp.set_error("no active link");
-            }
-        }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
-
-    } else if (method == "Connect") {
-        hydra::ConnectRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
-
-        HydraSession* s = findByPersistId(sid);
-        hydra::ConnectResponse resp;
-        if (!s) {
-            resp.set_error("session not found");
-        } else {
-            size_t before = s->links.size();
-            connectToGame(*s, rpcReq.game_name());
-            if (s->links.size() > before) {
-                resp.set_success(true);
-                resp.set_link_number(static_cast<int>(s->links.size()));
-            } else {
-                resp.set_error("connect failed");
-            }
-        }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
-
-    } else if (method == "ListLinks") {
-        hydra::SessionRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
-
-        HydraSession* s = findByPersistId(sid);
-        if (!s) {
-            sendUnaryResponse("", 5, "session not found");
-        } else {
-            hydra::LinkList resp;
-            for (size_t i = 0; i < s->links.size(); i++) {
-                auto* li = resp.add_links();
-                li->set_number(static_cast<int>(i) + 1);
-                li->set_game_name(s->links[i].gameName);
-                li->set_character(s->links[i].character);
-                li->set_active(i == s->activeLink);
-                li->set_gmcp_enabled(s->links[i].gmcpEnabled);
+                BackDoorLink* active = s->getActiveLink();
+                if (active && active->state == LinkState::Active) {
+                    // #1267: same charset conversion as native gRPC / WS GameSession.
+                    std::string data = bridge_.convertInput(
+                        ganl::EncodingType::Utf8,
+                        active->protoState.encoding,
+                        rpcReq.line());
+                    data += "\r\n";
+                    safeWrite(active->handle, data);
+                    resp.set_success(true);
+                } else {
+                    resp.set_error("no active link");
+                }
             }
             sendUnaryResponse(resp.SerializeAsString(), 0);
         }
 
+    } else if (method == "Connect") {
+        hydra::ConnectRequest rpcReq;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+
+            HydraSession* s = findByPersistId(sid);
+            hydra::ConnectResponse resp;
+            if (!s) {
+                resp.set_error("session not found");
+            } else {
+                size_t before = s->links.size();
+                connectToGame(*s, rpcReq.game_name());
+                if (s->links.size() > before) {
+                    resp.set_success(true);
+                    resp.set_link_number(static_cast<int>(s->links.size()));
+                } else {
+                    resp.set_error("connect failed");
+                }
+            }
+            sendUnaryResponse(resp.SerializeAsString(), 0);
+        }
+
+    } else if (method == "ListLinks") {
+        hydra::SessionRequest rpcReq;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+
+            HydraSession* s = findByPersistId(sid);
+            if (!s) {
+                sendUnaryResponse("", 5, "session not found");
+            } else {
+                hydra::LinkList resp;
+                for (size_t i = 0; i < s->links.size(); i++) {
+                    auto* li = resp.add_links();
+                    li->set_number(static_cast<int>(i) + 1);
+                    li->set_game_name(s->links[i].gameName);
+                    li->set_character(s->links[i].character);
+                    li->set_active(i == s->activeLink);
+                    li->set_gmcp_enabled(s->links[i].gmcpEnabled);
+                }
+                sendUnaryResponse(resp.SerializeAsString(), 0);
+            }
+        }
+
     } else if (method == "Ping") {
         hydra::SessionRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
 
-        HydraSession* s = findByPersistId(sid);
-        if (s) s->lastActivity = time(nullptr);
-        hydra::Empty resp;
-        sendUnaryResponse(resp.SerializeAsString(), s ? 0 : 5);
+            HydraSession* s = findByPersistId(sid);
+            if (s) s->lastActivity = time(nullptr);
+            hydra::Empty resp;
+            sendUnaryResponse(resp.SerializeAsString(), s ? 0 : 5);
+        }
 
     } else if (method == "Subscribe") {
         // Server-streaming: register this connection as a live subscriber.
         // It stays open and receives chunked grpc-web data frames as
         // game output arrives in onBackDoorData().
         hydra::SessionRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
-
-        HydraSession* s = findByPersistId(sid);
-        if (!s) {
-            sendUnaryResponse("", 5, "session not found");
+        if (!parseRpc(rpcReq)) {
+            // INVALID_ARGUMENT already sent
         } else {
-            // Send HTTP headers for chunked streaming
-            std::string httpHdr = "HTTP/1.1 200 OK\r\n"
-                "Content-Type: " + respContentType + "\r\n"
-                + corsHeaders(requestOrigin, config_.corsOrigins)
-                + "Transfer-Encoding: chunked\r\n"
-                "\r\n";
-            safeWrite(fd.handle, httpHdr);
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
 
-            // Mark this FrontDoorState as a live grpc-web subscriber.
-            // onBackDoorData() will send output to it as chunked frames.
-            fd.grpcWebSubscribed = true;
-            fd.grpcWebSessionId = s->persistId;
-            fd.grpcWebTextMode = isText;
-            fd.internalSessionId = s->internalId;
+            HydraSession* s = findByPersistId(sid);
+            if (!s) {
+                sendUnaryResponse("", 5, "session not found");
+            } else {
+                // Send HTTP headers for chunked streaming
+                std::string httpHdr = "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: " + respContentType + "\r\n"
+                    + corsHeaders(requestOrigin, config_.corsOrigins)
+                    + "Transfer-Encoding: chunked\r\n"
+                    "\r\n";
+                safeWrite(fd.handle, httpHdr);
 
-            // Add to session's front-door list so it receives output
-            s->frontDoors.push_back(fd.handle);
-            s->state = SessionState::Active;
+                // Mark this FrontDoorState as a live grpc-web subscriber.
+                // onBackDoorData() will send output to it as chunked frames.
+                fd.grpcWebSubscribed = true;
+                fd.grpcWebSessionId = s->persistId;
+                fd.grpcWebTextMode = isText;
+                fd.internalSessionId = s->internalId;
 
-            // Forward terminal size to the active game link if provided
-            if (rpcReq.terminal_width() > 0 || rpcReq.terminal_height() > 0) {
-                BackDoorLink* active = s->getActiveLink();
-                if (active && active->handle != ganl::InvalidConnectionHandle) {
-                    uint16_t w = rpcReq.terminal_width() ? static_cast<uint16_t>(rpcReq.terminal_width()) : 80;
-                    uint16_t h = rpcReq.terminal_height() ? static_cast<uint16_t>(rpcReq.terminal_height()) : 24;
-                    safeWrite(active->handle, buildNawsFrame(w, h));
+                // Add to session's front-door list so it receives output
+                s->frontDoors.push_back(fd.handle);
+                s->state = SessionState::Active;
+
+                // Forward terminal size to the active game link if provided
+                if (rpcReq.terminal_width() > 0 || rpcReq.terminal_height() > 0) {
+                    BackDoorLink* active = s->getActiveLink();
+                    if (active && active->handle != ganl::InvalidConnectionHandle) {
+                        uint16_t w = rpcReq.terminal_width() ? static_cast<uint16_t>(rpcReq.terminal_width()) : 80;
+                        uint16_t h = rpcReq.terminal_height() ? static_cast<uint16_t>(rpcReq.terminal_height()) : 24;
+                        safeWrite(active->handle, buildNawsFrame(w, h));
+                    }
                 }
+
+                LOG_INFO("grpc-web Subscribe: fd %lu subscribed to session %s",
+                         (unsigned long)fd.handle, s->persistId.c_str());
+
+                // Don't clear httpBuf — we won't process further HTTP
+                // requests on this fd (it's now a streaming connection)
+                return;
             }
-
-            LOG_INFO("grpc-web Subscribe: fd %lu subscribed to session %s",
-                     (unsigned long)fd.handle, s->persistId.c_str());
-
-            // Don't clear httpBuf — we won't process further HTTP
-            // requests on this fd (it's now a streaming connection)
-            return;
         }
 
     } else if (method == "GetScrollBack") {
         hydra::ScrollBackRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
 
-        HydraSession* s = findByPersistId(sid);
-        if (!s) {
-            sendUnaryResponse("", 5, "session not found");
-        } else {
-            hydra::ScrollBackResponse resp;
-            size_t n = rpcReq.max_lines() > 0
-                ? static_cast<size_t>(rpcReq.max_lines())
-                : s->scrollback.count();
-            struct Ctx { hydra::ScrollBackResponse* resp; };
-            Ctx ctx{&resp};
-            s->scrollback.replay(n,
-                [](const std::string& text, const std::string& source,
-                   time_t timestamp, void* c) {
-                    auto* rc = static_cast<Ctx*>(c);
-                    auto* line = rc->resp->add_lines();
-                    line->set_text(sanitizeProtoTextForLog(
-                        text, "grpc-web scrollback", source, 0));
-                    line->set_source(source);
-                    line->set_timestamp(static_cast<int64_t>(timestamp));
-                },
-                &ctx);
-            sendUnaryResponse(resp.SerializeAsString(), 0);
+            HydraSession* s = findByPersistId(sid);
+            if (!s) {
+                sendUnaryResponse("", 5, "session not found");
+            } else {
+                hydra::ScrollBackResponse resp;
+                size_t n = rpcReq.max_lines() > 0
+                    ? static_cast<size_t>(rpcReq.max_lines())
+                    : s->scrollback.count();
+                struct Ctx { hydra::ScrollBackResponse* resp; };
+                Ctx ctx{&resp};
+                s->scrollback.replay(n,
+                    [](const std::string& text, const std::string& source,
+                       time_t timestamp, void* c) {
+                        auto* rc = static_cast<Ctx*>(c);
+                        auto* line = rc->resp->add_lines();
+                        line->set_text(sanitizeProtoTextForLog(
+                            text, "grpc-web scrollback", source, 0));
+                        line->set_source(source);
+                        line->set_timestamp(static_cast<int64_t>(timestamp));
+                    },
+                    &ctx);
+                sendUnaryResponse(resp.SerializeAsString(), 0);
+            }
         }
 
     } else if (method == "SwitchLink") {
         hydra::SwitchRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
 
-        HydraSession* s = findByPersistId(sid);
-        hydra::SwitchResponse resp;
-        if (!s) {
-            resp.set_error("session not found");
-        } else {
-            size_t idx = static_cast<size_t>(rpcReq.link_number() - 1);
-            if (idx >= s->links.size()) {
-                resp.set_error("invalid link number");
+            HydraSession* s = findByPersistId(sid);
+            hydra::SwitchResponse resp;
+            if (!s) {
+                resp.set_error("session not found");
             } else {
-                s->activeLink = idx;
-                resp.set_success(true);
+                size_t idx = static_cast<size_t>(rpcReq.link_number() - 1);
+                if (idx >= s->links.size()) {
+                    resp.set_error("invalid link number");
+                } else {
+                    s->activeLink = idx;
+                    resp.set_success(true);
+                }
             }
+            sendUnaryResponse(resp.SerializeAsString(), 0);
         }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
 
     } else if (method == "DisconnectLink") {
         hydra::DisconnectRequest rpcReq;
-        rpcReq.ParseFromString(protoBody);
-        std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
+        if (parseRpc(rpcReq)) {
+            std::string sid = authToken.empty() ? rpcReq.session_id() : authToken;
 
-        HydraSession* s = findByPersistId(sid);
-        hydra::DisconnectResponse resp;
-        if (!s) {
-            resp.set_error("session not found");
-        } else {
-            size_t idx = static_cast<size_t>(rpcReq.link_number() - 1);
-            if (idx >= s->links.size()) {
-                resp.set_error("invalid link number");
+            HydraSession* s = findByPersistId(sid);
+            hydra::DisconnectResponse resp;
+            if (!s) {
+                resp.set_error("session not found");
             } else {
-                closeLink(*s, idx);
-                resp.set_success(true);
+                size_t idx = static_cast<size_t>(rpcReq.link_number() - 1);
+                if (idx >= s->links.size()) {
+                    resp.set_error("invalid link number");
+                } else {
+                    closeLink(*s, idx);
+                    resp.set_success(true);
+                }
             }
+            sendUnaryResponse(resp.SerializeAsString(), 0);
         }
-        sendUnaryResponse(resp.SerializeAsString(), 0);
 
     } else {
         // Unimplemented method
