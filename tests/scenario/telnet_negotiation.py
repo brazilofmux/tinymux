@@ -45,13 +45,13 @@ IAC, SE, SB = 0xFF, 0xF0, 0xFA
 WILL, WONT, DO, DONT = 0xFB, 0xFC, 0xFD, 0xFE
 
 OPT_BINARY, OPT_SGA, OPT_TTYPE = 0x00, 0x03, 0x18
-OPT_EOR, OPT_NAWS, OPT_CHARSET, OPT_GMCP = 0x19, 0x1F, 0x2A, 0xC9
+OPT_EOR, OPT_NAWS, OPT_CHARSET, OPT_MSSP, OPT_GMCP = 0x19, 0x1F, 0x2A, 0x46, 0xC9
 
 SB_REQUEST, SB_ACCEPT, SB_REJECT = 1, 2, 3
 
 OPT_NAMES = {OPT_BINARY: "BINARY", OPT_SGA: "SGA", OPT_TTYPE: "TTYPE",
              OPT_EOR: "EOR", OPT_NAWS: "NAWS", OPT_CHARSET: "CHARSET",
-             OPT_GMCP: "GMCP"}
+             OPT_MSSP: "MSSP", OPT_GMCP: "GMCP"}
 CMD_NAMES = {WILL: "WILL", WONT: "WONT", DO: "DO", DONT: "DONT"}
 
 
@@ -264,6 +264,39 @@ def main():
     check(b"DIM2<80x25>" in out,
           "#1131 overflowed NAWS discarded, not applied as a truncated prefix",
           " (got %r)" % out[-80:])
+    s.close()
+
+    # ---- #1811: duplicate DO MSSP must not replay the status frame ------
+    # After the first DO, us_state(MSSP) is YES; a second DO must be
+    # ignored (RFC 1143) and must not call set_us_state side effects again.
+    #
+    s, opening = connect()
+    s.sendall(bytes([IAC, DO, OPT_MSSP]))
+    first = read_for(s, lambda b: subnegotiations(b, OPT_MSSP) != [], 4.0)
+    n_first = len(subnegotiations(first, OPT_MSSP))
+    check(n_first >= 1, "#1811 first DO MSSP yields an MSSP subnegotiation",
+          " (got %d)" % n_first)
+    s.sendall(bytes([IAC, DO, OPT_MSSP]))
+    second = read_for(s, None, 1.5)
+    n_second = len(subnegotiations(second, OPT_MSSP))
+    check(n_second == 0,
+          "#1811 duplicate DO MSSP does not replay MSSP status",
+          " (got %d extra SB(s))" % n_second)
+    s.close()
+
+    # ---- #1811: duplicate WILL TTYPE must not re-request TTYPE ----------
+    s, _ = connect()
+    s.sendall(bytes([IAC, WILL, OPT_TTYPE]))
+    first = read_for(s, lambda b: subnegotiations(b, OPT_TTYPE) != [], 4.0)
+    n_first = len(subnegotiations(first, OPT_TTYPE))
+    check(n_first >= 1, "#1811 first WILL TTYPE yields TTYPE SEND",
+          " (got %d)" % n_first)
+    s.sendall(bytes([IAC, WILL, OPT_TTYPE]))
+    second = read_for(s, None, 1.5)
+    n_second = len(subnegotiations(second, OPT_TTYPE))
+    check(n_second == 0,
+          "#1811 duplicate WILL TTYPE does not re-SEND",
+          " (got %d extra SB(s))" % n_second)
     s.close()
 
     print("=== telnet-negotiation scenario: %d passed, %d failed ==="
