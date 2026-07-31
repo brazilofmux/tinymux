@@ -9,6 +9,7 @@
 #include <string>
 #include <algorithm>
 #include <atomic>
+#include <exception>
 #include <mutex>
 #include <set>
 
@@ -562,6 +563,73 @@ void ConnectionBase::closeNetworkAfterDrain() {
     }
 }
 
+void ConnectionBase::forceCloseAfterIoFailure() {
+    // #1855: a write/error while close() deferred teardown for a drain
+    // must not re-enter close() — isClosingOrClosed() would return and
+    // leave closeAfterWriteDrain_ armed with a dead socket.
+    //
+    if (getState() == ConnectionState::Closed) {
+        GANL_CONN_DEBUG(handle_, "forceCloseAfterIoFailure: already Closed.");
+        return;
+    }
+
+    if (getState() == ConnectionState::Closing) {
+        GANL_CONN_DEBUG(handle_,
+            "forceCloseAfterIoFailure: aborting write drain after I/O failure.");
+        closeAfterWriteDrain_ = false;
+        pendingWrite_ = false;
+        encryptedOutput_.clear();
+        // Keep disconnectReason_ from the original close() (e.g. UserQuit).
+        //
+        if (!socketClosed_) {
+            networkEngine_.closeConnection(handle_);
+            socketClosed_ = true;
+        }
+        if (!resourcesCleanedUp_) {
+            cleanupResources(disconnectReason_);
+        }
+        return;
+    }
+
+    close(DisconnectReason::NetworkError);
+}
+
+bool ConnectionBase::processIngressBuffers() {
+    IoBuffer& encryptedInput = encryptedInput_;
+    IoBuffer& decryptedInput = decryptedInput_;
+
+    if (encryptedInput.readableBytes() == 0) {
+        return true;
+    }
+
+    bool continueProcessing = true;
+
+    if (useTls_) {
+        size_t decryptedBefore = decryptedInput.readableBytes();
+        processSecureData();
+        if (isClosingOrClosed()) {
+            return false;
+        }
+        continueProcessing =
+            (decryptedInput.readableBytes() > decryptedBefore);
+    } else {
+        size_t copied = encryptedInput.readableBytes();
+        decryptedInput.append(encryptedInput.readPtr(), copied);
+        encryptedInput.consumeRead(copied);
+        continueProcessing = true;
+    }
+
+    if (continueProcessing) {
+        if (!processProtocolData()) {
+            return false;
+        }
+        if (isClosingOrClosed()) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // In connection.cpp
 void ConnectionBase::handleClose() {
     GANL_CONN_DEBUG(handle_, "handleClose event received. Current State: " << static_cast<int>(getState()));
@@ -621,8 +689,9 @@ void ConnectionBase::handleError(ErrorCode error) {
         return;
     }
 
-    // Treat any network error as fatal for the connection
-    close(DisconnectReason::NetworkError);
+    // #1855: may be Closing with a drain pending — abort rather than no-op.
+    //
+    forceCloseAfterIoFailure();
 }
 
 // --- Connection Lifecycle & State Machine ---
@@ -1062,15 +1131,44 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
     SocketReturnType totalBytesReadInCall = 0;
     std::string lastErrorString;
 
-    // Get reference to input buffer
     IoBuffer& encryptedInput = getEncryptedInputBuffer();
-    IoBuffer& decryptedInput = getDecryptedInputBuffer();
     IoBuffer& encryptedOutput = getEncryptedOutputBuffer();
 
-    // Loop: read until EAGAIN/EWOULDBLOCK or real error/EOF
+    // #1856: still drain to EAGAIN (required for EPOLLET), but never stage
+    // an unbounded socket drain before processing.  Cap read chunks, feed
+    // TLS/protocol after each chunk, and close if encrypted ingress exceeds
+    // kMaxEncryptedIngress.
+    //
     while (true) {
-        encryptedInput.ensureWritable(4096);
+        if (encryptedInput.readableBytes() >= kMaxEncryptedIngress) {
+            lastErrorString = "Encrypted ingress high-water exceeded";
+            GANL_CONN_DEBUG(handle_, "Error: " << lastErrorString
+                << " (" << encryptedInput.readableBytes() << " bytes)");
+            readError = true;
+            break;
+        }
+
+        const size_t room = kMaxEncryptedIngress - encryptedInput.readableBytes();
+        const size_t want = (room < kMaxReadChunk) ? room : kMaxReadChunk;
+        if (want == 0) {
+            lastErrorString = "Encrypted ingress high-water exceeded";
+            readError = true;
+            break;
+        }
+
+        try {
+            encryptedInput.ensureWritable(want);
+        } catch (const std::exception& ex) {
+            lastErrorString = std::string("ensureWritable failed: ") + ex.what();
+            GANL_CONN_DEBUG(handle_, "Error: " << lastErrorString);
+            readError = true;
+            break;
+        }
+
         size_t readSize = encryptedInput.writableBytes();
+        if (readSize > want) {
+            readSize = want;
+        }
         char* bufferPtr = encryptedInput.writePtr();
 #ifdef _WIN32
         SOCKET fd = static_cast<SOCKET>(handle_);
@@ -1090,6 +1188,12 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
         if (bytesReadThisOp > 0) {
             encryptedInput.commitWrite(bytesReadThisOp);
             totalBytesReadInCall += bytesReadThisOp;
+            // Process inside the drain loop so the buffer cannot grow to the
+            // IoBuffer 1 GiB backstop before TLS/protocol see anything.
+            //
+            if (!processIngressBuffers()) {
+                return;
+            }
         }
         else if (bytesReadThisOp == 0) {
             // read()/recv() returning 0 is EOF (peer closed), distinct from
@@ -1134,50 +1238,27 @@ void ReadinessConnection::handleRead(size_t bytesTransferred)
         success = true; // Read attempts finished normally (hit EAGAIN or read some data)
     }
 
-    // --- Common Processing After Read Attempt ---
     if (needsClose) {
-        close(closeReason); // Close the connection
-        return;             // Stop processing
+        // Prefer force path if we were already Closing (unusual on read).
+        //
+        if (getState() == ConnectionState::Closing) {
+            forceCloseAfterIoFailure();
+        } else {
+            close(closeReason);
+        }
+        return;
     }
 
-    // Only proceed if the read operation itself was okay (success=true) AND we have data
+    // Residual incomplete TLS record may remain after the per-chunk process.
+    //
     if (success && encryptedInput.readableBytes() > 0) {
-        // Data processing pipeline (TLS -> Protocol -> Application)
-        bool continueProcessing = true;
-        bool tlsProducedData = false;
-
-        // 1. TLS Layer
-        if (isTlsEnabled()) {
-            size_t decryptedBefore = decryptedInput.readableBytes();
-            processSecureData(); // Process data now in encryptedInput_
-            // The buffers are the API: continue to the protocol layer exactly
-            // when TLS produced plaintext.  On WantRead/WantWrite there is
-            // nothing to process; on fatal results processSecureData already
-            // closed the connection.
-            tlsProducedData = (decryptedInput.readableBytes() > decryptedBefore);
-            continueProcessing = tlsProducedData;
-        }
-        else {
-            // Non-TLS: Copy data directly
-            size_t copied = encryptedInput.readableBytes();
-            if (copied > 0) {
-                decryptedInput.append(encryptedInput.readPtr(), copied);
-                encryptedInput.consumeRead(copied);
-                tlsProducedData = true;
-                continueProcessing = true;
-            }
-        }
-
-        // 2. Protocol Layer
-        if (continueProcessing) {
-            bool protocolOk = processProtocolData();
-            // If protocolOk is false, processProtocolData should have called close()
+        if (!processIngressBuffers()) {
+            return;
         }
     }
     else if (success) {
-        GANL_CONN_DEBUG(handle_, "Read successful but no new data in buffer (or IOCP reported data but commit failed?).");
+        GANL_CONN_DEBUG(handle_, "Read successful but no residual data in buffer.");
     }
-    // Note: If success is false, we already returned after calling close().
 
     // Final check: If processing generated output, trigger a write
     if (!isClosingOrClosed()) {
@@ -1230,7 +1311,7 @@ void ReadinessConnection::handleWrite(size_t bytesTransferred)
         else if (bytesWrittenThisOp == 0) {
             lastErrorString = "::write returned 0";
             GANL_CONN_DEBUG(handle_, "Error: " << lastErrorString);
-            close(DisconnectReason::NetworkError);
+            forceCloseAfterIoFailure();
             return;
         }
         else { // < 0
@@ -1238,11 +1319,20 @@ void ReadinessConnection::handleWrite(size_t bytesTransferred)
             ErrorCode error = GANL_LAST_ERROR();
             if (error == GANL_WOULDBLOCK) { socketBufferFull = true; break; }
             else if (error == GANL_INTR) { continue; }
-            else { lastErrorString = "Socket Write failed: " + networkEngine_.getErrorString(error); close(DisconnectReason::NetworkError); return; }
+            else {
+                lastErrorString = "Socket Write failed: "
+                    + networkEngine_.getErrorString(error);
+                forceCloseAfterIoFailure();
+                return;
+            }
 #else
             if (errno == EAGAIN || errno == EWOULDBLOCK) { socketBufferFull = true; break; }
             else if (errno == EINTR) { continue; }
-            else { lastErrorString = "::write failed: " + std::string(strerror(errno)); close(DisconnectReason::NetworkError); return; }
+            else {
+                lastErrorString = "::write failed: " + std::string(strerror(errno));
+                forceCloseAfterIoFailure();
+                return;
+            }
 #endif
         }
     } // end while readiness write loop
@@ -1424,9 +1514,9 @@ void CompletionConnection::handleWrite(size_t bytesTransferred)
         GANL_CONN_DEBUG(handle_, "IOCP: More data to send. Posting next write.");
         if (!postWrite()) {
             GANL_CONN_DEBUG(handle_, "IOCP: Failed to post subsequent write. Closing.");
-            close(DisconnectReason::NetworkError);
-            // Return after close() so nothing added later runs post-teardown
-            // on this connection (#798).
+            // #1855: may be mid-drain Closing.
+            //
+            forceCloseAfterIoFailure();
             return;
         }
     }

@@ -129,7 +129,10 @@ void IoBuffer::ensureWritable(size_t required) {
     // real requests are LBUF-scale writes and socket-read chunks), so a huge
     // `required` is a caller bug or corrupted length.  Rejecting here also
     // makes the growth arithmetic below (writePos_ + required, size * 3 / 2)
-    // provably non-wrapping (issue #953).
+    // provably non-wrapping (issue #953).  #1856: geometric growth must also
+    // clamp *to* this cap so resize never allocates past it before the next
+    // call rejects.
+    //
     static constexpr size_t kMaxBufferSize = static_cast<size_t>(1) << 30; // 1 GiB
     if (required > kMaxBufferSize || writePos_ > kMaxBufferSize - required) {
         GANL_BUFFER_DEBUG("ERROR: ensureWritable(" << required << ") exceeds kMaxBufferSize with writePos=" << writePos_);
@@ -141,12 +144,26 @@ void IoBuffer::ensureWritable(size_t required) {
         return;  // Already have enough space
     }
 
+    auto growCapacity = [&](size_t needAtLeast) -> size_t {
+        size_t newCapacity = std::max(buffer_.size() * 3 / 2, needAtLeast);
+        if (newCapacity > kMaxBufferSize) {
+            newCapacity = kMaxBufferSize;
+        }
+        if (newCapacity < needAtLeast) {
+            // Cannot satisfy within the hard cap.
+            //
+            throw std::length_error(
+                "IoBuffer::ensureWritable: growth would exceed maximum buffer size");
+        }
+        return newCapacity;
+    };
+
     // Check if compaction + existing capacity is enough, *without* actually resizing yet
     // Available space = space before readPos + space after writePos
     size_t availableTotal = readPos_ + writableBytes();
     if (availableTotal < required) {
         // Need to resize the buffer
-        size_t newCapacity = std::max(buffer_.size() * 3 / 2, writePos_ + required);
+        size_t newCapacity = growCapacity(writePos_ + required);
         GANL_BUFFER_DEBUG("Not enough space even after potential compact (" << availableTotal << " < " << required
             << "). Resizing buffer from " << capacity() << " to " << newCapacity);
         buffer_.resize(newCapacity); // Resize vector, preserving existing content up to writePos_
@@ -166,7 +183,7 @@ void IoBuffer::ensureWritable(size_t required) {
         } else {
             // This case should ideally not be hit if the 'availableTotal' check above was correct,
             // but handle defensively. It implies we need to resize *after* compacting.
-            size_t newCapacity = std::max(buffer_.size() * 3 / 2, writePos_ + required);
+            size_t newCapacity = growCapacity(writePos_ + required);
             GANL_BUFFER_DEBUG("Compaction wasn't enough (" << writableBytes() << " < " << required
                 << "). Resizing buffer from " << capacity() << " to " << newCapacity << " after compact.");
              buffer_.resize(newCapacity);
@@ -174,7 +191,7 @@ void IoBuffer::ensureWritable(size_t required) {
         }
     } else {
          // readPos_ == 0 but writableBytes < required. This means we must resize.
-         size_t newCapacity = std::max(buffer_.size() * 3 / 2, writePos_ + required);
+         size_t newCapacity = growCapacity(writePos_ + required);
          GANL_BUFFER_DEBUG("Buffer already compact (readPos=0), but need more space (" << writableBytes() << " < " << required
                 << "). Resizing buffer from " << capacity() << " to " << newCapacity);
         buffer_.resize(newCapacity);
