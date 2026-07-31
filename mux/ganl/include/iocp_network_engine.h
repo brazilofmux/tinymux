@@ -19,8 +19,8 @@ class IocpNetworkEngine;
 // Structure to track overlapped I/O operations
 struct PerIoData {
     OVERLAPPED overlapped;
-    enum class OpType { Read, Write, Accept } opType;
-    ConnectionHandle connection; // For Read/Write ops
+    enum class OpType { Read, Write, Accept, Connect } opType;
+    ConnectionHandle connection; // For Read/Write/Connect ops
     WSABUF wsaBuf;
     char* buffer;
     size_t bufferSize;
@@ -42,6 +42,8 @@ struct PerIoData {
     PerIoData(OpType type, ConnectionHandle conn, char* buf, size_t size, void* context, IocpNetworkEngine* eng);
     // Constructor for Accept operations
     PerIoData(ListenerHandle listener, IocpNetworkEngine* eng, int addressFamily);
+    // Constructor for ConnectEx operations (#1801)
+    explicit PerIoData(ConnectionHandle conn, IocpNetworkEngine* eng);
 
     ~PerIoData();
 };
@@ -63,6 +65,9 @@ public:
     bool associateContext(ConnectionHandle conn, void* context, ErrorCode& error) override;
     void closeConnection(ConnectionHandle conn) override;
 
+    ConnectionHandle initiateConnect(const std::string& host, uint16_t port,
+                                     void* connectionContext, ErrorCode& error) override;
+
     bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
     bool postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) override;
     // The non-contextual version is inherited from the base class
@@ -75,7 +80,7 @@ public:
 
 private:
     // Internal socket type enum
-    enum class SocketType { Listener, Connection };
+    enum class SocketType { Listener, Connection, OutboundConnecting };
 
     // Structure to store socket information
     struct SocketInfo {
@@ -122,6 +127,7 @@ private:
     // Function pointers for Microsoft-specific extensions
     LPFN_ACCEPTEX lpfnAcceptEx_;
     LPFN_GETACCEPTEXSOCKADDRS lpfnGetAcceptExSockaddrs_;
+    LPFN_CONNECTEX lpfnConnectEx_;
 };
 
 } // namespace ganl

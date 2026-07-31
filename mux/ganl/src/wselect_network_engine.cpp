@@ -402,6 +402,83 @@ namespace ganl {
         return true;
     }
 
+    ConnectionHandle WSelectNetworkEngine::initiateConnect(const std::string& host, uint16_t port,
+                                                           void* connectionContext, ErrorCode& error) {
+        error = 0;
+        GANL_WSELECT_DEBUG(0, "Initiating outbound connect to " << host << ":" << port);
+        if (!initialized_) {
+            error = ENXIO;
+            return InvalidConnectionHandle;
+        }
+
+        ADDRINFOA hints{};
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = IPPROTO_TCP;
+
+        std::string portStr = std::to_string(port);
+        ADDRINFOA* results = nullptr;
+        int gai = ::GetAddrInfoA(host.c_str(), portStr.c_str(), &hints, &results);
+        if (gai != 0) {
+            error = translateError(gai);
+            GANL_WSELECT_DEBUG(0, "initiateConnect GetAddrInfo failed: " << getErrorString(error));
+            return InvalidConnectionHandle;
+        }
+
+        SocketFD sock = INVALID_SOCKET_FD;
+        int lastWsa = 0;
+        for (ADDRINFOA* ai = results; ai != nullptr; ai = ai->ai_next) {
+            sock = ::socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
+            if (sock == INVALID_SOCKET_FD) {
+                lastWsa = WSAGetLastError();
+                continue;
+            }
+            if (!setNonBlocking(sock, error)) {
+                lastWsa = static_cast<int>(error);
+                closeSocket(sock);
+                sock = INVALID_SOCKET_FD;
+                continue;
+            }
+            int rc = ::connect(sock, ai->ai_addr, static_cast<int>(ai->ai_addrlen));
+            if (rc == 0) {
+                // Immediate connect (localhost).
+                lastWsa = 0;
+                break;
+            }
+            lastWsa = WSAGetLastError();
+            if (lastWsa == WSAEWOULDBLOCK || lastWsa == WSAEINPROGRESS) {
+                // Normal non-blocking connect-in-progress.
+                lastWsa = 0;
+                break;
+            }
+            GANL_WSELECT_DEBUG(sock, "connect() failed: " << getErrorString(translateError(lastWsa)));
+            closeSocket(sock);
+            sock = INVALID_SOCKET_FD;
+        }
+        ::FreeAddrInfoA(results);
+
+        if (sock == INVALID_SOCKET_FD) {
+            error = lastWsa ? translateError(lastWsa) : ECONNREFUSED;
+            return InvalidConnectionHandle;
+        }
+
+        // Wait for writability (immediate or in-progress) — same pattern as epoll #942.
+        SocketInfo info{SocketType::OutboundConnecting, connectionContext,
+                        /*wantRead=*/false, /*wantWrite=*/true,
+                        /*activeReadBuffer=*/nullptr, /*remoteAddress=*/"",
+                        /*writeUserContext=*/nullptr};
+        addSocketInternal(sock, info);
+        if (sockets_.find(sock) == sockets_.end()) {
+            // FD_SETSIZE or map failure — ownership not transferred.
+            closeSocket(sock);
+            error = WSAENOBUFS;
+            return InvalidConnectionHandle;
+        }
+
+        GANL_WSELECT_DEBUG(sock, "Outbound connect initiated.");
+        return static_cast<ConnectionHandle>(sock);
+    }
+
     bool WSelectNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) {
         SocketFD sock = static_cast<SocketFD>(conn);
         error = 0;
@@ -409,7 +486,9 @@ namespace ganl {
         GANL_WSELECT_DEBUG(sock, "Posting write interest" << (userContext ? " with user context" : "") << " (data/length ignored by engine).");
 
         auto sockIt = sockets_.find(sock);
-        if (sockIt == sockets_.end() || sockIt->second.type != SocketType::Connection) {
+        if (sockIt == sockets_.end()
+            || (sockIt->second.type != SocketType::Connection
+                && sockIt->second.type != SocketType::OutboundConnecting)) {
             GANL_WSELECT_DEBUG(sock, "Error: postWrite on invalid/non-connection handle.");
             error = EINVAL;
             return false;
@@ -530,6 +609,67 @@ namespace ganl {
 
             if (!isReadyRead && !isReadyWrite && !hasError) continue; // Not ready
 
+            // --- Handle Outbound Connecting (connect completion) first ---
+            //
+            // Non-blocking connect becomes writable (or exceptfds) when done.
+            // Mirror epoll OutboundConnecting (#942 / #1801): SO_ERROR then
+            // ConnectSuccess/ConnectFail, and re-arm as a normal Connection.
+            // Must run before the generic Error path so exceptfds still report
+            // ConnectFail with a valid connection handle.
+            //
+            if (info.type == SocketType::OutboundConnecting
+                && (isReadyWrite || hasError)) {
+                int socketError = 0;
+                int optLen = sizeof(socketError);
+                if (::getsockopt(sock, SOL_SOCKET, SO_ERROR,
+                                 reinterpret_cast<char*>(&socketError),
+                                 &optLen) == SOCKET_ERROR) {
+                    socketError = getLastError();
+                }
+
+                ConnectionHandle connHandle = static_cast<ConnectionHandle>(sock);
+                if (socketError == 0 && !hasError) {
+                    GANL_WSELECT_DEBUG(sock, "Outbound connect succeeded.");
+                    info.type = SocketType::Connection;
+                    info.wantWrite = false;
+                    info.wantRead = true; // SMTP / clients expect data next
+                    FD_CLR(sock, &masterWriteFds_);
+                    if (masterReadFds_.fd_count < FD_SETSIZE) {
+                        FD_SET(sock, &masterReadFds_);
+                    }
+                    if (masterErrorFds_.fd_count < FD_SETSIZE) {
+                        FD_SET(sock, &masterErrorFds_);
+                    }
+                    if (eventCount < maxEvents) {
+                        IoEvent& ev = events[eventCount++];
+                        ev = IoEvent{};
+                        ev.type = IoEventType::ConnectSuccess;
+                        ev.connection = connHandle;
+                        ev.context = contextPtr;
+                        ev.bytesTransferred = 0;
+                        ev.error = 0;
+                    }
+                } else {
+                    if (socketError == 0) {
+                        socketError = WSAECONNREFUSED;
+                    }
+                    GANL_WSELECT_DEBUG(sock, "Outbound connect failed: "
+                        << getErrorString(translateError(socketError)));
+                    if (eventCount < maxEvents) {
+                        IoEvent& ev = events[eventCount++];
+                        ev = IoEvent{};
+                        ev.type = IoEventType::ConnectFail;
+                        ev.connection = connHandle;
+                        ev.context = contextPtr;
+                        ev.bytesTransferred = 0;
+                        ev.error = translateError(socketError);
+                    }
+                    // Close after emitting; map removal via closeConnection.
+                    fdsToCloseOnError.push_back(sock);
+                }
+                continue;
+            }
+
             // --- Handle Errors First ---
             if (hasError) {
                 int socketError = 0;
@@ -549,7 +689,10 @@ namespace ganl {
                 if (eventCount < maxEvents) {
                     IoEvent& ev = events[eventCount++];
                     ev.type = IoEventType::Error;
-                    ev.connection = (info.type == SocketType::Connection) ? sock : InvalidConnectionHandle;
+                    ev.connection = (info.type == SocketType::Connection
+                                     || info.type == SocketType::OutboundConnecting)
+                                        ? sock
+                                        : InvalidConnectionHandle;
                     ev.listener = (info.type == SocketType::Listener) ? sock : InvalidListenerHandle;
                     ev.bytesTransferred = 0;
                     ev.error = finalError;
@@ -692,10 +835,11 @@ namespace ganl {
             if (sockIt != sockets_.end()) {
                  GANL_WSELECT_DEBUG(sock, "Closing socket " << sock << " due to earlier error.");
                  // Decide whether to call closeConnection or closeListener based on type
-                 if (sockIt->second.type == SocketType::Connection) {
-                    closeConnection(sock); // Removes from maps and sets
-                 } else {
+                 if (sockIt->second.type == SocketType::Listener) {
                     closeListener(sock); // Removes from maps and sets
+                 } else {
+                    // Connection or OutboundConnecting
+                    closeConnection(sock); // Removes from maps and sets
                  }
                 // Note: The Error event was already generated above.
                 // We could optionally generate a Close event here too, but it might be redundant.

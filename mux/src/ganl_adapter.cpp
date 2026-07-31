@@ -3198,53 +3198,13 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
         return false;
     }
 
-    // DNS resolution (blocking — acceptable for same-box SMTP).
-    MUX_ADDRINFO hints;
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family   = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags    = AI_ADDRCONFIG;
-
     UTF8* pMailServer = ConvertCRLFtoSpace(g_dc.mail_server);
-
-    MUX_ADDRINFO* servinfo = nullptr;
-    if (0 != mux_getaddrinfo(pMailServer, reinterpret_cast<const UTF8*>("25"),
-                             &hints, &servinfo)) {
-        notify(executor, tprintf(M_("@email: Unable to resolve hostname %s!"),
-            pMailServer));
-        return false;
-    }
-
-    // Try each address until we find a socket we can connect on.
-    // We create the socket, adopt it into GANL (which sets non-blocking),
-    // then call connect().  A non-blocking connect returns EINPROGRESS
-    // (Unix) or WSAEWOULDBLOCK (Windows) when it cannot complete
-    // immediately, which is normal for async operation.
-    //
-    SOCKET sockFd = INVALID_SOCKET;
-    struct sockaddr_storage connectAddr;
-    socklen_t connectAddrLen = 0;
-
-    for (MUX_ADDRINFO* p = servinfo; nullptr != p; p = p->ai_next) {
-        SOCKET s = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (IS_INVALID_SOCKET(s)) {
-            continue;
-        }
-        sockFd = s;
-        memcpy(&connectAddr, p->ai_addr, p->ai_addrlen);
-        connectAddrLen = p->ai_addrlen;
-        break;
-    }
-    mux_freeaddrinfo(servinfo);
-
-    if (IS_INVALID_SOCKET(sockFd)) {
-        notify(executor, M_("@email: Unable to connect to mailserver, aborting!"));
+    if (nullptr == pMailServer || '\0' == pMailServer[0]) {
+        notify(executor, M_("@email: Unable to resolve hostname !"));
         return false;
     }
 
     auto channel = std::make_unique<EmailChannel>();
-    channel->fd       = static_cast<int>(sockFd);
     channel->executor = executor;
     channel->state    = EmailChannel::State::Connecting;
 
@@ -3269,46 +3229,31 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
         channel->deadline = now + budget;
     }
 
-    // adoptConnection sets non-blocking and registers with the I/O engine.
+    // #1801: use the platform-neutral outbound-connect path.  POSIX engines
+    // already implement initiateConnect; Windows wselect/IOCP now do too.
+    // Do not adopt a raw SOCKET through int — Win64 SOCKET is pointer-width.
+    //
     ganl::ErrorCode error = 0;
-    ganl::ConnectionHandle handle = networkEngine_->adoptConnection(
-        static_cast<int>(sockFd), channel.get(), error);
+    ganl::ConnectionHandle handle = networkEngine_->initiateConnect(
+        reinterpret_cast<const char*>(pMailServer), 25, channel.get(), error);
     if (handle == ganl::InvalidConnectionHandle) {
-        SOCKET_CLOSE(sockFd);
-        notify(executor, M_("@email: Unable to register socket with network engine."));
+        // ENOTSUP: engine lacks outbound connect (should not happen once
+        // #1801 is complete).  Other errors: DNS/socket/connect failure.
+        if (error == ENOTSUP) {
+            notify(executor,
+                M_("@email: Unable to register socket with network engine."));
+        } else {
+            notify(executor,
+                M_("@email: Unable to connect to mailserver, aborting!"));
+        }
         return false;
     }
 
     channel->handle = handle;
-
-    // Now that the fd is non-blocking (via adoptConnection), initiate
-    // the connect.  Expect EINPROGRESS / EWOULDBLOCK for async.
-    int rc = connect(static_cast<int>(sockFd),
-                     reinterpret_cast<struct sockaddr*>(&connectAddr),
-                     connectAddrLen);
-    if (rc != 0) {
-        int err = SOCKET_LAST_ERROR;
-        if (err != SOCKET_EWOULDBLOCK
-#if !defined(_WIN32)
-            && err != EINPROGRESS
-#endif
-           ) {
-            networkEngine_->closeConnection(handle);
-            notify(executor, M_("@email: Unable to connect to mailserver, aborting!"));
-            return false;
-        }
-    }
-
-    // Register write interest so we get notified when connect() completes
-    // (socket becomes writable = connected).
-    if (!networkEngine_->postWrite(handle, nullptr, 0, channel.get(), error)) {
-        networkEngine_->closeConnection(handle);
-        notify(executor, M_("@email: Unable to register socket with network engine."));
-        return false;
-    }
+    // ConnectionHandle is the native SOCKET/fd on every current engine.
+    channel->fd = static_cast<SOCKET>(handle);
 
     email_channel_ = std::move(channel);
-
     return true;
 }
 
@@ -3335,17 +3280,41 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
     const UTF8* errorMsg = nullptr;
 
     switch (event.type) {
+        case ganl::IoEventType::ConnectSuccess:
+            // #1801: common outbound-connect success path (all engines).
+            email_channel_->state = EmailChannel::State::WaitGreeting;
+            if (!email_arm_read_locked()) {
+                errorMsg = M_("@email: Unable to register socket with network engine.");
+                needCleanup = true;
+            }
+            break;
+
+        case ganl::IoEventType::ConnectFail:
+            errorMsg = M_("@email: Unable to connect to mailserver, aborting!");
+            needCleanup = true;
+            break;
+
         case ganl::IoEventType::Write:
+            // Legacy path: readiness engines that still signal connect via
+            // Write (pre-initiateConnect).  Keep SO_ERROR check for safety.
             if (email_channel_->state == EmailChannel::State::Connecting) {
-                // Check if non-blocking connect() succeeded.
                 int sockerr = 0;
+#if defined(WIN32)
+                int errlen = sizeof(sockerr);
+#else
                 socklen_t errlen = sizeof(sockerr);
+#endif
                 if (getsockopt(email_channel_->fd, SOL_SOCKET, SO_ERROR,
-                               reinterpret_cast<char*>(&sockerr), &errlen) < 0 || sockerr != 0) {
+                               reinterpret_cast<char*>(&sockerr), &errlen) < 0
+                    || sockerr != 0) {
                     errorMsg = M_("@email: Unable to connect to mailserver, aborting!");
                     needCleanup = true;
                 } else {
                     email_channel_->state = EmailChannel::State::WaitGreeting;
+                    if (!email_arm_read_locked()) {
+                        errorMsg = M_("@email: Unable to register socket with network engine.");
+                        needCleanup = true;
+                    }
                 }
             } else {
                 if (!flush_email_writes_locked()) {
@@ -3356,7 +3325,7 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
             break;
 
         case ganl::IoEventType::Read:
-            if (!process_email_read_locked()) {
+            if (!process_email_read_event_locked(event)) {
                 // Done: clean success path.  Error: cap/write/protocol.
                 // Other false: transport read failure.
                 //
@@ -3396,7 +3365,65 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
     }
 }
 
-bool GanlAdapter::process_email_read_locked() {
+bool GanlAdapter::email_arm_read_locked() {
+    if (!email_channel_ || !networkEngine_) {
+        return false;
+    }
+    if (networkEngine_->getIoModelType() != ganl::IoModel::Completion) {
+        // Readiness engines re-arm EPOLLIN / wantRead on connect success.
+        return true;
+    }
+    if (email_channel_->readPosted) {
+        return true;
+    }
+    ganl::ErrorCode error = 0;
+    if (!networkEngine_->postRead(email_channel_->handle,
+                                  email_channel_->ioReadBuf, error)) {
+        return false;
+    }
+    email_channel_->readPosted = true;
+    return true;
+}
+
+bool GanlAdapter::process_email_read_event_locked(const ganl::IoEvent& event) {
+    if (!email_channel_) {
+        return false;
+    }
+
+    if (networkEngine_
+        && networkEngine_->getIoModelType() == ganl::IoModel::Completion
+        && event.buffer
+        && event.bytesTransferred > 0) {
+        // IOCP: data is already in the posted IoBuffer.
+        event.buffer->commitWrite(event.bytesTransferred);
+        email_channel_->readBuffer.append(
+            event.buffer->readPtr(), event.buffer->readableBytes());
+        event.buffer->consumeRead(event.buffer->readableBytes());
+        email_channel_->readPosted = false;
+        if (email_channel_->readBuffer.size() > 64 * 1024) {
+            email_channel_->state = EmailChannel::State::Error;
+            return false;
+        }
+        // Drain lines; re-arm for the next completion read.
+        // Re-use process_email_read_locked's line parser by not calling
+        // SOCKET_READ when buffer already fed (see flag below).
+        //
+        // Fall through: parse lines from readBuffer only.
+        bool ok = process_email_read_locked(/*already_filled=*/true);
+        if (ok && email_channel_
+            && email_channel_->state != EmailChannel::State::Done
+            && email_channel_->state != EmailChannel::State::Error) {
+            if (!email_arm_read_locked()) {
+                return false;
+            }
+        }
+        return ok;
+    }
+
+    return process_email_read_locked(/*already_filled=*/false);
+}
+
+bool GanlAdapter::process_email_read_locked(bool already_filled) {
     if (!email_channel_) {
         return false;
     }
@@ -3406,30 +3433,34 @@ bool GanlAdapter::process_email_read_locked() {
     //
     constexpr size_t kEmailReadCap = 64 * 1024;
 
-    // Loop reads until EAGAIN (edge-triggered epoll).
-    for (;;) {
-        char buffer[MBUF_SIZE];
-        int nbytes = mux_read(email_channel_->fd, buffer, sizeof(buffer));
-        if (nbytes > 0) {
-            email_channel_->readBuffer.append(buffer,
-                static_cast<size_t>(nbytes));
-            if (email_channel_->readBuffer.size() > kEmailReadCap) {
-                email_channel_->state = EmailChannel::State::Error;
+    if (!already_filled) {
+        // Readiness engines: drain the socket until EAGAIN.
+        // Use SOCKET_READ — on Windows mux_read is CRT _read, not recv (#1801).
+        //
+        for (;;) {
+            char buffer[MBUF_SIZE];
+            int nbytes = SOCKET_READ(email_channel_->fd, buffer, sizeof(buffer), 0);
+            if (nbytes > 0) {
+                email_channel_->readBuffer.append(buffer,
+                    static_cast<size_t>(nbytes));
+                if (email_channel_->readBuffer.size() > kEmailReadCap) {
+                    email_channel_->state = EmailChannel::State::Error;
+                    return false;
+                }
+            } else if (nbytes == 0) {
+                // Connection closed by remote.
+                if (email_channel_->state == EmailChannel::State::SentQuit ||
+                    email_channel_->state == EmailChannel::State::Done) {
+                    email_channel_->state = EmailChannel::State::Done;
+                    return false; // Signal cleanup (not an error)
+                }
+                return false;
+            } else {
+                if (SOCKET_LAST_ERROR == SOCKET_EWOULDBLOCK) {
+                    break;
+                }
                 return false;
             }
-        } else if (nbytes == 0) {
-            // Connection closed by remote.
-            if (email_channel_->state == EmailChannel::State::SentQuit ||
-                email_channel_->state == EmailChannel::State::Done) {
-                email_channel_->state = EmailChannel::State::Done;
-                return false; // Signal cleanup (not an error)
-            }
-            return false;
-        } else {
-            if (SOCKET_LAST_ERROR == SOCKET_EWOULDBLOCK) {
-                break;
-            }
-            return false;
         }
     }
 
@@ -3507,14 +3538,16 @@ bool GanlAdapter::flush_email_writes_locked() {
 
         const char* data = email_channel_->currentWrite.data();
         size_t remaining = email_channel_->currentWrite.size();
-        int written = mux_write(email_channel_->fd, data, remaining);
+        // SOCKET_WRITE: send() on Windows, mux_write on POSIX (#1801).
+        int written = SOCKET_WRITE(email_channel_->fd, data, remaining, 0);
         if (written > 0) {
             email_channel_->currentWrite.erase(
                 0, static_cast<size_t>(written));
             continue;
         }
 
-        if (written == -1 && SOCKET_LAST_ERROR == SOCKET_EWOULDBLOCK) {
+        if (IS_SOCKET_ERROR(written)
+            && SOCKET_LAST_ERROR == SOCKET_EWOULDBLOCK) {
             if (!email_channel_->writeInterest) {
                 ganl::ErrorCode error = 0;
                 if (networkEngine_->postWrite(email_channel_->handle,

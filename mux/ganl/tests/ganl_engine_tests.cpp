@@ -13,13 +13,13 @@
 //   #953  IoBuffer::ensureWritable must reject wrapping sizes (length_error)
 //   EMFILE accept failure must emit a listener Error event (NET/LERR path)
 //
-// Windows (wselect + iocp) — these engines do NOT support adoptConnection or
-// initiateConnect (base-class ENOTSUP), so scenarios obtain a connection via
-// the accept path (loopback listener + client connect + Accept event):
+// Windows (wselect + iocp) — accept-path scenarios for inbound connections
+// (socketpair/adopt is still ENOTSUP).  Outbound TCP uses initiateConnect:
 //
 //   #962  Read event must carry the exact IoBuffer handed to postRead()
 //   #947  closeConnection must be idempotent (double-close stays healthy)
 //   #953  IoBuffer::ensureWritable must reject wrapping sizes (shared)
+//   #1801 initiateConnect emits ConnectSuccess / ConnectFail (loopback SMTP)
 //
 // Zero dependencies: plain main(), TAP-ish output, nonzero exit on failure.
 // Build/run: POSIX `make -C mux/ganl/tests check`; Windows via ganl_tests.vcxproj.
@@ -128,12 +128,8 @@ bool pollFor(NetworkEngine& eng, int totalMs, int budget,
 // ---------------------------------------------------------------------------
 // Windows helpers (accept path)
 //
-// wselect and iocp do not support adoptConnection()/initiateConnect() — those
-// return ENOTSUP on the base class — so connections cannot be injected via a
-// socketpair as the POSIX scenarios do. Instead we obtain a real connection by
-// listening on loopback, connecting a client, and pumping the engine until the
-// accepted ConnectionHandle arrives. Both engines return the underlying SOCKET
-// as the Listener/Connection handle.
+// adoptConnection is still ENOTSUP on wselect/iocp, so inbound scenarios use
+// the accept path.  initiateConnect is implemented (#1801).
 // ---------------------------------------------------------------------------
 
 uint16_t listenerPort(ListenerHandle lh) {
@@ -144,6 +140,87 @@ uint16_t listenerPort(ListenerHandle lh) {
         return 0;
     }
     return ntohs(addr.sin_port);
+}
+
+// Loopback listen socket for outbound-connect tests (#1801).
+struct TcpListener {
+    SOCKET fd = INVALID_SOCKET;
+    uint16_t port = 0;
+    bool open() {
+        fd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (fd == INVALID_SOCKET) return false;
+        BOOL one = TRUE;
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
+                   reinterpret_cast<const char*>(&one), sizeof(one));
+        sockaddr_in addr{};
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        addr.sin_port = 0;
+        if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) != 0 ||
+            listen(fd, 8) != 0) {
+            closesocket(fd);
+            fd = INVALID_SOCKET;
+            return false;
+        }
+        int alen = sizeof(addr);
+        getsockname(fd, reinterpret_cast<sockaddr*>(&addr), &alen);
+        port = ntohs(addr.sin_port);
+        return true;
+    }
+    void close() {
+        if (fd != INVALID_SOCKET) {
+            closesocket(fd);
+            fd = INVALID_SOCKET;
+        }
+    }
+    ~TcpListener() { close(); }
+};
+
+// #1801: TCP loopback connect must emit ConnectSuccess.
+Result scenarioTcpLoopbackConnect(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+    TcpListener l;
+    if (!l.open()) return fail("listener setup failed");
+
+    ErrorCode err = 0;
+    ConnectionHandle ch = eng->initiateConnect("127.0.0.1", l.port, nullptr, err);
+    Result r = pass();
+    if (ch == InvalidConnectionHandle) {
+        r = fail("initiateConnect errno " + std::to_string(err));
+    } else if (!pollFor(*eng, 3000, 16, [&](const IoEvent& ev) {
+                   return ev.type == IoEventType::ConnectSuccess && ev.connection == ch;
+               })) {
+        r = fail("ConnectSuccess never emitted");
+    }
+    eng->shutdown();
+    return r;
+}
+
+// #1801: connect to a just-closed port must emit ConnectFail (or fail immediately).
+Result scenarioTcpConnectRefused(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    TcpListener l;
+    if (!l.open()) return fail("listener setup failed");
+    const uint16_t closedPort = l.port;
+    l.close();
+
+    ErrorCode err = 0;
+    ConnectionHandle ch = eng->initiateConnect("127.0.0.1", closedPort, nullptr, err);
+    Result r = pass();
+    if (ch == InvalidConnectionHandle) {
+        // Immediate refuse is fine.
+    } else if (!pollFor(*eng, 3000, 16, [&](const IoEvent& ev) {
+                   return (ev.type == IoEventType::ConnectFail
+                           || ev.type == IoEventType::Error)
+                       && ev.connection == ch;
+               })) {
+        r = fail("ConnectFail never emitted for refused port");
+    }
+    eng->shutdown();
+    return r;
 }
 
 SOCKET connectLoopback(uint16_t port) {
@@ -812,6 +889,8 @@ const Scenario kScenarios[] = {
     {"accept-read-ev-buffer",    scenarioAcceptReadEvBuffer,    true},
     {"write-arms-and-fires",     scenarioWriteArmsAndFires,     true},
     {"double-close-idempotent",  scenarioDoubleCloseIdempotent, true},
+    {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},  // #1801
+    {"tcp-connect-refused",      scenarioTcpConnectRefused,    true},  // #1801
 #else
     {"immediate-unix-connect",   scenarioImmediateUnixConnect, true},
     {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},
