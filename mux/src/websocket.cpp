@@ -510,6 +510,11 @@ static bool ws_utf8_valid(const char *s, size_t n)
 
 void ws_process_input(DESC *d, const char *data, size_t len)
 {
+    // Charge wire bytes like process_input_helper does for telnet (#1807).
+    // Decoded TEXT payload still goes through save_command for input_size.
+    //
+    d->input_tot += len;
+
     ws_state *ws = d->ws;
     const uint8_t *p = reinterpret_cast<const uint8_t *>(data);
     const uint8_t *end = p + len;

@@ -2149,9 +2149,21 @@ static bool check_connect(DESC *d, UTF8 *msg)
     const UTF8 *cmdsave = g_debug_cmd;
     g_debug_cmd = T("< check_connect >");
 
-    // Hide the password length from SESSION.
+    // Hide the password length from SESSION.  Saturating: WebSocket input
+    // historically never charged input_tot before this subtract, so a
+    // bare `-=` underflowed size_t to ~SIZE_MAX (#1807).
     //
-    d->input_tot -= (strlen(reinterpret_cast<char*>(msg)) + 1);
+    {
+        const size_t nHide = strlen(reinterpret_cast<char*>(msg)) + 1;
+        if (d->input_tot >= nHide)
+        {
+            d->input_tot -= nHide;
+        }
+        else
+        {
+            d->input_tot = 0;
+        }
+    }
 
     // Crack the command apart.
     //
@@ -2456,11 +2468,14 @@ static bool check_connect(DESC *d, UTF8 *msg)
             return false;
         }
 
-        // Enforce max #players.
+        // Enforce max #players.  Match the CONNECT path: admit only when
+        // nplayers < max_players.  The old `>` allowed CREATE at the exact
+        // cap (nplayers == max_players), so the new account connected at
+        // cap+1 (#1806).  Negative max_players remains unlimited.
         //
         if (g_dc.max_players < 0)
         {
-            nplayers = g_dc.max_players;
+            nplayers = g_dc.max_players - 1;
         }
         else
         {
@@ -2474,9 +2489,9 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 }
             }
         }
-        if (nplayers > g_dc.max_players)
+        if (nplayers >= g_dc.max_players)
         {
-            // Too many players on, reject the attempt.
+            // At or over capacity — reject (same ceiling as CONNECT).
             //
             failconn(T("CRE"), T("Create"), T("Game Full"), d,
                 R_GAMEFULL, NOTHING, FC_CONN_FULL,

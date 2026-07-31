@@ -57,6 +57,7 @@ static int g_pass = 0, g_fail = 0;
 static void reset(descriptor_data &d, ws_state &ws) {
     g_messages.clear(); g_closed = 0;
     d.output_queue.clear(); d.output_size = 0;
+    d.input_tot = 0;
     ws = ws_state();
     d.ws = &ws;
 }
@@ -130,6 +131,25 @@ int main() {
     feed(d, {0x81, 0x00});  // FIN+TEXT, unmasked, len 0
     CHECK("unmasked TEXT: closed", g_closed == 1);
     CHECK("unmasked TEXT: no message", g_messages.empty());
+
+    // 8. #1807: wire bytes must charge input_tot (telnet parity) so a later
+    //    check_connect password-length subtract does not underflow size_t.
+    //
+    reset(d, ws);
+    {
+        const std::vector<uint8_t> frame =
+            {0x81, 0x82, M0, M1, M2, M3, 'h', 'i'};
+        feed(d, frame);
+        CHECK("TEXT hi: input_tot charged", d.input_tot == frame.size());
+    }
+    reset(d, ws);
+    {
+        const std::vector<uint8_t> frame =
+            {0x81, 0x82, M0, M1, M2, M3, 'h', 'i'};
+        feed(d, frame, 1);
+        CHECK("TEXT hi byte-split: input_tot charged",
+              d.input_tot == frame.size());
+    }
 
     printf("\nws parser: %d passed, %d failed\n", g_pass, g_fail);
     return g_fail ? 1 : 0;
