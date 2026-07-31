@@ -399,8 +399,8 @@ void ws_queue_frame(DESC *d, const uint8_t *data, size_t len, uint8_t opcode)
             STARTLOG(LOG_NET, "NET", "WRITE");
             UTF8 *buf = alloc_lbuf("ws_queue_frame.LOG");
             mux_sprintf(buf, LBUF_SIZE,
-                T("[%u/%s] Output buffer overflow, %zu chars discarded by "),
-                d->socket, d->addr, nchars);
+                T("[%llu/%s] Output buffer overflow, %zu chars discarded by "),
+                static_cast<unsigned long long>(d->socket), d->addr, nchars);
             g_pILog->log_text(buf);
             free_lbuf(buf);
             if (d->flags & DS_CONNECTED)

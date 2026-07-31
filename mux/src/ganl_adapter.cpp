@@ -1747,8 +1747,10 @@ bool GanlAdapter::initialize() {
                 port_listeners_[port] = handle;
             }
 
-            g_pILog->WriteString(tprintf(T("GANL: Adopted listener fd %d for %sport %d\n"),
-                fd, isSsl ? "SSL " : "", port));
+            g_pILog->WriteString(tprintf(
+                T("GANL: Adopted listener fd %llu for %sport %d\n"),
+                static_cast<unsigned long long>(main_game_ports[i].socket),
+                isSsl ? "SSL " : "", port));
         }
 
         // Adopt surviving connection fds from the descriptor list
@@ -1756,15 +1758,20 @@ bool GanlAdapter::initialize() {
         // Collect failures first so we can fully tear down zombies (#1042).
         std::vector<DESC*> adopt_failed;
         for (DESC* d : g_descriptors_list) {
-            if (!d || d->socket < 0) {
+            // IS_INVALID_SOCKET: SOCKET is unsigned on Win64, so `socket < 0`
+            // is always false there and would not skip INVALID_SOCKET.
+            //
+            if (!d || IS_INVALID_SOCKET(d->socket)) {
                 continue;
             }
 
             ganl::ConnectionHandle connHandle = networkEngine_->adoptConnection(
                 d->socket, nullptr, error);
             if (connHandle == ganl::InvalidConnectionHandle) {
-                g_pILog->WriteString(tprintf(T("GANL: Failed to adopt connection fd %d: %s\n"),
-                    d->socket, networkEngine_->getErrorString(error).c_str()));
+                g_pILog->WriteString(tprintf(
+                    T("GANL: Failed to adopt connection fd %llu: %s\n"),
+                    static_cast<unsigned long long>(d->socket),
+                    networkEngine_->getErrorString(error).c_str()));
                 adopt_failed.push_back(d);
                 continue;
             }
@@ -1777,8 +1784,9 @@ bool GanlAdapter::initialize() {
                 *sessionManager_);
 
             if (!conn) {
-                g_pILog->WriteString(tprintf(T("GANL: Failed to create ConnectionBase for adopted fd %d\n"),
-                    d->socket));
+                g_pILog->WriteString(tprintf(
+                    T("GANL: Failed to create ConnectionBase for adopted fd %llu\n"),
+                    static_cast<unsigned long long>(d->socket)));
                 networkEngine_->closeConnection(connHandle);
                 // closeConnection() already closed this fd (handle == fd);
                 // mark it gone so the teardown below does not double-close.
@@ -1793,15 +1801,17 @@ bool GanlAdapter::initialize() {
 
             // initialize(false) triggers onConnectionOpen via the restart path
             if (!conn->initialize(false)) {
-                g_pILog->WriteString(tprintf(T("GANL: Connection initialize failed for adopted fd %d\n"),
-                    d->socket));
+                g_pILog->WriteString(tprintf(
+                    T("GANL: Connection initialize failed for adopted fd %llu\n"),
+                    static_cast<unsigned long long>(d->socket)));
                 handle_to_conn_.erase(connHandle);
                 adopt_failed.push_back(d);
                 continue;
             }
 
-            g_pILog->WriteString(tprintf(T("GANL: Adopted connection fd %d (player %d)\n"),
-                d->socket, d->player));
+            g_pILog->WriteString(tprintf(
+                T("GANL: Adopted connection fd %llu (player %d)\n"),
+                static_cast<unsigned long long>(d->socket), d->player));
         }
         // Tear down DESCs that never got a live GANL mapping: close the fd
         // and free the DESC so they are not zombie CONNECTED sessions.

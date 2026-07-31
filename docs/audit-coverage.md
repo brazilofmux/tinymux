@@ -42,10 +42,10 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | A1 | Driver bootstrap / COM | `mux/src/driver.cpp`, `driver_bridge.cpp`, `modules.cpp`, `muxcli.cpp` | med | Pass 15 2026-07-31 | deep | engine.so via mux_AddModule; **#1798** required COM iface fail-closed (Log/Platform/GameEngine/Notify/ObjectInfo/PlayerSession) before main loop |
-| A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 15 2026-07-31 | deep | #1074 grace; **#1800** WS GET preface split; **#1802** SMTP buffer+deadline; **#1803** zero-listener fail-closed; **#1801** Win32 @email adopt still open |
-| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 14 hygiene 2026-07-29 | deep | #1133–#1135/#1139; **#1141** getpeername fail-closed on @restart (map residual cleared) |
-| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 14 2026-07-29 | deep | #1126/#1128/#1131/#1132 held: sbOverflow stay-in-SB; enable_us uses us_state; TELNET_OPTION_SIZE 4096; no new High/Medium |
-| A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 14 2026-07-29 | deep | #1081 mask; #1083 output_limit; control FIN/len; WS_MAX_PAYLOAD + frag cap; handshake 4k; zero-payload dispatch (#822); no new High/Medium |
+| A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 15 2026-07-31 | deep | #1074 grace; **#1800** WS GET preface split; **#1802** SMTP buffer+deadline; **#1803** zero-listener fail-closed; **#1801** Win32 `initiateConnect` / `@email` (#1805) |
+| A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 15 2026-07-31 | deep | #1133–#1135/#1139; **#1141** getpeername; **#1806** CREATE max_players; **#1808** find_oldest second session; **#1809** SESSION/`SOCKET` full-width formats |
+| A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 15 2026-07-31 | deep | #1126/#1128/#1131/#1132 held; **#1811–#1814** dup option acks, NEW-ENVIRON next-var, USER sanitize, charset UTF-8 reset (#1816) |
+| A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 15 2026-07-31 | deep | #1081 mask; #1083 output_limit; **#1800** GET preface; **#1807** login input_tot; WS overflow log uses full-width SOCKET (#1809 residual) |
 | A6 | Signals / restart helpers | `mux/src/signals.cpp`, restart bits in adapter/net | med | Pass 14 2026-07-29 | deep | #1127 g_bCanRestart armed from adapter path; panic-restart + dump reaps held; no new High/Medium |
 | A7 | Netaddr / site keys | `mux/src/netaddr.cpp`, `tests/netaddr/` | small | Pass 14 2026-07-29 | deep | #799/#800 held; **#1774** CIDR prefix int truncation (PR #1776) |
 | A8 | Slave / stubslave | `mux/src/slave.cpp`, `stubslave.cpp`, DNS channel in `ganl_adapter` | small | Pass 14 2026-07-29 | deep | #1220/#801/#1274/#1275 held; re-read no new High/Medium |
@@ -167,6 +167,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 |------|------|-------|---------|
 | Pass 1–13 | 2026-07 | See historical changelog | Many Highs/Mediums closed |
 | **Pass 14** | **2026-07-29** | Dice loop A7 → full catalog + clients | #1774 CIDR; #1778 announce; **#1788** client buffer caps (all J*); **#1791** softcode post-entry; residual re-deep A–I/F/H; no open product issues at closeout |
+| **Pass 15** | **2026-07-31** | A1–A5 network / telnet / Win32 email | **#1798** COM fail-closed; **#1800–#1803** WS/SMTP/listeners; **#1801/#1805** Win32 `initiateConnect`; **#1806–#1809** max_players, WS input_tot, find_oldest, SOCKET widths; **#1811–#1814** NVT batch; board empty at closeout |
 
 Also useful historical surveys:  
 `docs/survey-*-pass-2026-06.md`, `docs/survey-ganl-networking.md`, `docs/survey-queue.md`, etc.
@@ -175,14 +176,14 @@ Also useful historical surveys:
 
 ## Recommended rotation (next ~N passes)
 
-**Pass 14 closed (2026-07-29).** Dice-start A7 completed a full residual re-deep of the server map plus the client portfolio (#1788) and the softcode post-entry sibling (#1791). Parallel Pass 14 docs PRs (#1777, #1781–#1786) are superseded by master map state + this closeout.
+**Pass 15 closed (2026-07-31).** Driver/network High/Mediums from the audit pass are filed and merged. Open product-bug board is empty; next High/Medium comes from a new audit dice or product goal.
 
 | Next | Slice(s) | Why |
 |------|----------|-----|
 | **Anytime** | **D5** jit_diff soak; `make test` / `make test-scenario` | Continuous confidence |
 | **Anytime** | Mixed softcode/Lua corpus + residual D* fidelity | Product soak, not map restart |
 | **Later** | H4 RegisterSignalHandler; client password storage (J*) | Non-blocking tech debt |
-| **Pass 15+** | New dice start or product-driven slice | Empty board — invent only with a goal |
+| **Pass 16+** | New dice start or product-driven slice | Empty board — invent only with a goal |
 
 When a pass is “empty” (no High/Medium), still **record the pass** and Status=`deep` with date — that prevents false “never looked” later.
 
@@ -222,5 +223,6 @@ From `docs/status-2.14.md` and practice:
 | 2026-07-26 | **Pass 13 residual** (anti-cool): E3; #1411; #1408 family |
 | 2026-07-29 | **Pass 14 dice loop:** server residual complete; **J1–J7** client portfolio — **#1788** buffer caps across clients; H2/K4 thin stamps |
 | 2026-07-29 | **Pass 14 closeout:** #1790 remaining clients; #1791 softcode post-entry; D1/D4 stamps; rotation table closed; supersede docs PRs #1777/#1781–#1786 |
+| 2026-07-31 | **Pass 15 closeout:** A1–A5 network/telnet/Win32 email; #1798–#1815 range; #1801 Win32 initiateConnect; board empty |
 
 Update this table when the map structure changes.
