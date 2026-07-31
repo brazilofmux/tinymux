@@ -103,6 +103,7 @@ for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do c
     <ClCompile Include="src\terminal.cpp" />
     <ClCompile Include="src\command.cpp" />
     <ClCompile Include="src\world.cpp" />
+    <ClCompile Include="src\credential_store.cpp" />
     <ClCompile Include="src\schannel_tls.cpp" />
     <ClCompile Include="src\macro.cpp" />
     <ClCompile Include="..\..\ragel\trigger_match.c">
@@ -132,6 +133,7 @@ for %%f in ("$(ProjectDir)..\..\mux\vcpkg_installed\x64-windows\bin\*.dll") do c
     <ClInclude Include="src\telnet.h" />
     <ClInclude Include="src\command.h" />
     <ClInclude Include="src\world.h" />
+    <ClInclude Include="src\credential_store.h" />
     <ClInclude Include="src\hook.h" />
     <ClInclude Include="src\spawn.h" />
     <ClInclude Include="src\secure_util.h" />
