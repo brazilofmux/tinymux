@@ -268,17 +268,42 @@ static bool spawn_query(char *arg)
 
     nChildrenStarted++;
 
-    int nChildren = nChildrenStarted - nChildrenEndedSIGCHLD
-        - nChildrenEndedMain;
-
-    // Collect the children.
+    // Collect children.  When at the cap, block until *one* exit, then
+    // recompute and switch back to WNOHANG.  The old loop fixed the
+    // blocking flag from a stale nChildren, so after the first reap it
+    // kept waiting until every outstanding lookup finished — up to the
+    // 5-minute child alarm for a burst of MAX_CHILDREN (#1827).
     //
-    while (waitpid(0, nullptr, (nChildren < MAX_CHILDREN) ? WNOHANG : 0) > 0)
+    for (;;)
     {
-        if (0 < nChildren)
+        int nChildren = nChildrenStarted - nChildrenEndedSIGCHLD
+            - nChildrenEndedMain;
+        if (nChildren < 0)
+        {
+            nChildren = 0;
+        }
+
+        const int flags = (nChildren < MAX_CHILDREN) ? WNOHANG : 0;
+        const pid_t w = waitpid(0, nullptr, flags);
+        if (w > 0)
         {
             nChildrenEndedMain++;
+            continue;
         }
+        if (w == 0)
+        {
+            // WNOHANG, none ready.
+            //
+            break;
+        }
+        // w < 0
+        if (EINTR == errno)
+        {
+            continue;
+        }
+        // ECHILD or other — nothing left to reap.
+        //
+        break;
     }
     return true;
 }
