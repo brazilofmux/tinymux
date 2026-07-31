@@ -91,4 +91,7 @@ dependencies {
     implementation("io.grpc:grpc-kotlin-stub:1.4.3")
     implementation("io.grpc:grpc-protobuf-lite:1.71.0")
     implementation("com.google.protobuf:protobuf-kotlin-lite:4.29.3")
+
+    // Unit tests (McpParser caps, etc.) — pure JVM, no instrumented runner.
+    testImplementation("junit:junit:4.13.2")
 }

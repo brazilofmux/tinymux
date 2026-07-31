@@ -1,5 +1,12 @@
 import Foundation
 
+// #1893 / #1889: bound multiline reassembly so a hostile game cannot grow
+// the client heap without bound via unterminated #$#* / unique _data-tag floods.
+// Limits match the web client (client/web/js/mcp.js).
+let MCP_MAX_PENDING_MESSAGES = 32
+let MCP_MAX_MESSAGE_BYTES = 256 * 1024       // per reassembled message
+let MCP_MAX_TOTAL_PENDING_BYTES = 1024 * 1024
+
 // MARK: - MCP Message
 
 class McpMessage {
@@ -9,6 +16,8 @@ class McpMessage {
     var multilineKeys: Set<String> = []
     var dataTag: String?
     var finished = false
+    /// Approximate attribute payload size for pending caps.
+    var byteSize = 0
 
     init(messageName: String, authKey: String) {
         self.messageName = messageName
@@ -45,11 +54,22 @@ class McpParser {
         "dns-org-mud-moo-simpleedit": (1.0, 1.0),
     ]
 
+    // Dictionary is unordered; pendingOrder tracks insertion for oldest-first eviction.
     private var pending: [String: McpMessage] = [:]
+    private var pendingOrder: [String] = []
+    private var pendingBytes = 0
+
     var serverPackages: [String: (Double, Double)] = [:]
 
     var onEditRequest: ((String, String, String, String) -> Void)?
     var sendRaw: ((String) -> Void)?
+    /// Optional diagnostic sink for capacity / drop events (#1893).
+    var onDiagnostic: ((String) -> Void)?
+
+    /// Number of unfinished multiline messages — exposed for tests.
+    var pendingCount: Int { pending.count }
+
+    func isPending(_ tag: String) -> Bool { pending[tag] != nil }
 
     // MARK: - Process line; returns true if MCP (should be hidden)
 
@@ -64,6 +84,35 @@ class McpParser {
             handleMessage(line)
         }
         return true
+    }
+
+    // MARK: - Capacity helpers
+
+    private func diag(_ msg: String) {
+        onDiagnostic?(msg)
+    }
+
+    private func attrBytes(_ msg: McpMessage) -> Int {
+        msg.attributes.reduce(0) { $0 + $1.key.count + $1.value.count }
+    }
+
+    private func dropPending(_ tag: String, reason: String) {
+        guard let msg = pending.removeValue(forKey: tag) else { return }
+        pendingOrder.removeAll { $0 == tag }
+        pendingBytes -= msg.byteSize
+        if pendingBytes < 0 { pendingBytes = 0 }
+        diag("MCP: dropped pending multiline tag=\(tag) (\(reason))")
+    }
+
+    /// Evict oldest pending entries until under caps.
+    private func evictForRoom(needBytes: Int) {
+        while !pendingOrder.isEmpty
+            && (pending.count >= MCP_MAX_PENDING_MESSAGES
+                || pendingBytes + needBytes > MCP_MAX_TOTAL_PENDING_BYTES)
+        {
+            // dropPending owns pendingOrder; do not removeFirst here.
+            dropPending(pendingOrder[0], reason: "evicted for capacity")
+        }
     }
 
     // MARK: - Parse regular message
@@ -99,8 +148,25 @@ class McpParser {
             }
         }
 
-        if msg.dataTag != nil && !msg.multilineKeys.isEmpty {
-            pending[msg.dataTag!] = msg
+        if let tag = msg.dataTag, !msg.multilineKeys.isEmpty {
+            if pending[tag] != nil {
+                dropPending(tag, reason: "replaced")
+            }
+            msg.byteSize = attrBytes(msg)
+            if msg.byteSize > MCP_MAX_MESSAGE_BYTES {
+                diag("MCP: multiline start exceeds per-message limit, ignored tag=\(tag)")
+                return
+            }
+            evictForRoom(needBytes: msg.byteSize)
+            if pending.count >= MCP_MAX_PENDING_MESSAGES
+                || pendingBytes + msg.byteSize > MCP_MAX_TOTAL_PENDING_BYTES
+            {
+                diag("MCP: pending capacity full, ignored tag=\(tag)")
+                return
+            }
+            pending[tag] = msg
+            pendingOrder.append(tag)
+            pendingBytes += msg.byteSize
         } else {
             msg.finished = true
             dispatch(msg)
@@ -117,12 +183,28 @@ class McpParser {
         guard let colonIdx = rest.range(of: ": ") else { return }
         let key = String(rest[rest.startIndex..<colonIdx.lowerBound])
         let value = String(rest[colonIdx.upperBound...])
-        msg.addLine(key: key, value: value)
+        let prev = msg.attributes[key] ?? ""
+        let next = prev.isEmpty ? value : "\(prev)\n\(value)"
+        let delta = next.count - prev.count
+        if msg.byteSize + delta > MCP_MAX_MESSAGE_BYTES {
+            dropPending(tag, reason: "per-message size limit")
+            return
+        }
+        if pendingBytes + delta > MCP_MAX_TOTAL_PENDING_BYTES {
+            dropPending(tag, reason: "total pending size limit")
+            return
+        }
+        msg.attributes[key] = next
+        msg.byteSize += delta
+        pendingBytes += delta
     }
 
     private func handleMultilineEnd(_ line: String) {
         let tag = String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
         guard let msg = pending.removeValue(forKey: tag) else { return }
+        pendingOrder.removeAll { $0 == tag }
+        pendingBytes -= msg.byteSize
+        if pendingBytes < 0 { pendingBytes = 0 }
         msg.finished = true
         dispatch(msg)
     }

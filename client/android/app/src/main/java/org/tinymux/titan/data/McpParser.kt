@@ -1,5 +1,12 @@
 package org.tinymux.titan.data
 
+// #1893 / #1889: bound multiline reassembly so a hostile game cannot grow
+// the client heap without bound via unterminated #$#* / unique _data-tag floods.
+// Limits match the web client (client/web/js/mcp.js).
+const val MCP_MAX_PENDING_MESSAGES = 32
+const val MCP_MAX_MESSAGE_BYTES = 256 * 1024   // per reassembled message
+const val MCP_MAX_TOTAL_PENDING_BYTES = 1024 * 1024
+
 // MARK: - MCP Message
 
 data class McpMessage(
@@ -9,6 +16,8 @@ data class McpMessage(
     val multilineKeys: MutableSet<String> = mutableSetOf(),
     var dataTag: String? = null,
     var finished: Boolean = false,
+    /** Approximate attribute payload size for pending caps. */
+    var byteSize: Int = 0,
 ) {
     fun addLine(key: String, value: String) {
         val existing = attributes[key]
@@ -27,8 +36,9 @@ class McpParser {
         "dns-org-mud-moo-simpleedit" to (1.0 to 1.0),
     )
 
-    // Pending multiline messages by data tag
-    private val pending = mutableMapOf<String, McpMessage>()
+    // Pending multiline messages by data tag (LinkedHashMap: insertion order).
+    private val pending = linkedMapOf<String, McpMessage>()
+    private var pendingBytes = 0
 
     // Server's advertised packages
     val serverPackages = mutableMapOf<String, Pair<Double, Double>>()
@@ -36,6 +46,13 @@ class McpParser {
     // Callbacks
     var onEditRequest: ((reference: String, name: String, type: String, content: String) -> Unit)? = null
     var sendRaw: ((String) -> Unit)? = null
+    /** Optional diagnostic sink for capacity / drop events (#1893). */
+    var onDiagnostic: ((String) -> Unit)? = null
+
+    /** Number of unfinished multiline messages — exposed for tests. */
+    val pendingCount: Int get() = pending.size
+
+    fun isPending(tag: String): Boolean = pending.containsKey(tag)
 
     // MARK: - Process a line; returns true if it was an MCP line (should be hidden)
 
@@ -55,6 +72,33 @@ class McpParser {
             return true
         }
         return false
+    }
+
+    // MARK: - Capacity helpers
+
+    private fun diag(msg: String) {
+        onDiagnostic?.invoke(msg)
+    }
+
+    private fun attrBytes(msg: McpMessage): Int =
+        msg.attributes.entries.sumOf { it.key.length + it.value.length }
+
+    private fun dropPending(tag: String, reason: String) {
+        val msg = pending.remove(tag) ?: return
+        pendingBytes -= msg.byteSize
+        if (pendingBytes < 0) pendingBytes = 0
+        diag("MCP: dropped pending multiline tag=$tag ($reason)")
+    }
+
+    // Evict oldest pending entries until under caps.
+    private fun evictForRoom(needBytes: Int) {
+        while (pending.isNotEmpty()
+            && (pending.size >= MCP_MAX_PENDING_MESSAGES
+                || pendingBytes + needBytes > MCP_MAX_TOTAL_PENDING_BYTES)
+        ) {
+            val oldest = pending.keys.first()
+            dropPending(oldest, "evicted for capacity")
+        }
     }
 
     // MARK: - Parse regular message
@@ -93,9 +137,26 @@ class McpParser {
             }
         }
 
-        if (msg.dataTag != null && msg.multilineKeys.isNotEmpty()) {
-            // Multiline message — store as pending
-            pending[msg.dataTag!!] = msg
+        val tag = msg.dataTag
+        if (tag != null && msg.multilineKeys.isNotEmpty()) {
+            // Replacing an existing tag: free prior size first.
+            if (pending.containsKey(tag)) {
+                dropPending(tag, "replaced")
+            }
+            msg.byteSize = attrBytes(msg)
+            if (msg.byteSize > MCP_MAX_MESSAGE_BYTES) {
+                diag("MCP: multiline start exceeds per-message limit, ignored tag=$tag")
+                return
+            }
+            evictForRoom(msg.byteSize)
+            if (pending.size >= MCP_MAX_PENDING_MESSAGES
+                || pendingBytes + msg.byteSize > MCP_MAX_TOTAL_PENDING_BYTES
+            ) {
+                diag("MCP: pending capacity full, ignored tag=$tag")
+                return
+            }
+            pending[tag] = msg
+            pendingBytes += msg.byteSize
         } else {
             // Single-line message — process immediately
             msg.finished = true
@@ -118,7 +179,20 @@ class McpParser {
         if (colonIdx < 0) return
         val key = rest.substring(0, colonIdx)
         val value = rest.substring(colonIdx + 2)
-        msg.addLine(key, value)
+        val prev = msg.attributes[key] ?: ""
+        val next = if (prev.isNotEmpty()) "$prev\n$value" else value
+        val delta = next.length - prev.length
+        if (msg.byteSize + delta > MCP_MAX_MESSAGE_BYTES) {
+            dropPending(tag, "per-message size limit")
+            return
+        }
+        if (pendingBytes + delta > MCP_MAX_TOTAL_PENDING_BYTES) {
+            dropPending(tag, "total pending size limit")
+            return
+        }
+        msg.attributes[key] = next
+        msg.byteSize += delta
+        pendingBytes += delta
     }
 
     // MARK: - Multiline end
@@ -126,6 +200,8 @@ class McpParser {
     private fun handleMultilineEnd(line: String) {
         val tag = line.removePrefix("#\$#: ").trim()
         val msg = pending.remove(tag) ?: return
+        pendingBytes -= msg.byteSize
+        if (pendingBytes < 0) pendingBytes = 0
         msg.finished = true
         dispatch(msg)
     }
