@@ -977,6 +977,12 @@ struct lua_referent {
     bool callable = false;
     hir_type returns = TY_VOID;
 
+    // Callee name when known at the GETGLOBAL/GETFIELD site (e.g. "tonumber").
+    // Used for call-site result specialisation (#1866 fast path): a fixed
+    // returns claim cannot express "int or float depending on the arg".
+    //
+    std::string call_name;
+
     // The callee may have side effects the player can observe
     // (mux.notify/pemit/set/eval).  Recorded for diagnostics and for
     // any future purity analysis; it is NOT a compile-time refuse.
@@ -1068,9 +1074,10 @@ static hir_type lua_call_claim(const std::string &name) {
     // for integral inputs and a float for non-integral ones; claiming
     // TY_INT always emitted CALL_INT, and ECALL_LUA_CALL_INT declines
     // when lua_isinteger is false -- a post-entry residual after the
-    // function has already run.  Leaving it on the default claim routes
-    // CALL_VAL so the typed stack value survives (int or float) and is
-    // marshalled only at the softcode boundary.
+    // function has already run.  Default claim routes CALL_VAL; the
+    // call site upgrades to CALL_INT when the argument is a proven
+    // integer (HIR INT or integral string constant) so the hot path
+    // stays native.
     //
     static const char *kIntReturning[] = {
         "floor", "ceil", "max", "min", "abs", "tointeger",
@@ -1086,8 +1093,7 @@ static hir_type lua_call_claim(const std::string &name) {
     // post-entry fail (smoke TC046 under Phase 0).
     //
     // tonumber is also not here: a FLOAT claim would decline the whole
-    // call, including the common tonumber("17") integer case that must
-    // keep executing compiled (#1866).
+    // call, including the common tonumber("17") integer case.
     static const char *kFloatReturning[] = {
         "sqrt", "exp", "log", "sin", "cos", "tan",
         "asin", "acos", "atan", "fmod", "rad", "deg",
@@ -1097,6 +1103,41 @@ static hir_type lua_call_claim(const std::string &name) {
         if (name == n) return TY_FLOAT;
     }
     return TY_STRING;
+}
+
+// #1866: when is tonumber(arg) guaranteed to return a Lua integer?
+//   - HIR integer (tonumber(3) → integer)
+//   - SCONST of optional '-' + digits only (tonumber("17") → integer;
+//     tonumber("3.0") / "3.5" / "1e2" stay on CALL_VAL)
+// Runtime strings and floats take CALL_VAL.
+//
+static bool lua_tonumber_arg_is_integral(const hir_program &h, int areg) {
+    if (areg < 0) {
+        return false;
+    }
+    if (h.ty[areg] == TY_INT) {
+        return true;
+    }
+    if (h.kind[areg] != HIR_SCONST) {
+        return false;
+    }
+    const std::string &s = h.sval[areg];
+    if (s.empty()) {
+        return false;
+    }
+    size_t i = 0;
+    if (s[0] == '-' || s[0] == '+') {
+        i = 1;
+        if (i >= s.size()) {
+            return false;
+        }
+    }
+    for (; i < s.size(); i++) {
+        if (s[i] < '0' || s[i] > '9') {
+            return false;
+        }
+    }
+    return true;
 }
 
 static inline bool lua_is_handle(const hir_program &h, int v) {
@@ -2287,6 +2328,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                     lua_referent m;
                     m.callable = true;
                     m.returns = lua_call_claim(k.sval);
+                    m.call_name = k.sval;
                     // Bridge members that act on the world; see the
                     // effectful field's comment.  eval is on the list
                     // because it runs arbitrary softcode -- pemit inside
@@ -3269,6 +3311,7 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 g.fields_are_refs = true;
                 g.callable = true;
                 g.returns = lua_call_claim(k.sval);
+                g.call_name = k.sval;
                 if (k.sval == "math") {
                     g.values = k_lua_math_values;
                 }
@@ -3427,13 +3470,25 @@ int hir_lower_lua_proto(hir_program &h, rv_compiler &rc,
                 if (ok) {
                     // Arguments ride the carg[] list; val[] carries only
                     // the kind bits.
+                    //
+                    // #1866: tonumber is dynamic int|float.  Upgrade to
+                    // CALL_INT only when the arg proves integral so the
+                    // common tonumber("17") / tonumber(n) path stays
+                    // native; non-integral and runtime strings keep
+                    // CALL_VAL (no post-entry residual on floats).
+                    //
+                    hir_type result_ty = fref.returns;
+                    if (fref.call_name == "tonumber" && 1 == nargs
+                        && lua_tonumber_arg_is_integral(h, cargs[0])) {
+                        result_ty = TY_INT;
+                    }
                     if (0 == nresults) {
                         if (h.emit_lua_call(HIR_LUA_CALL_VOID, TY_VOID,
                                 func_reg, cargs, nargs, kinds) < 0) {
                             return -1;
                         }
                         lua_reg[A] = -1;
-                    } else if (TY_INT == fref.returns) {
+                    } else if (TY_INT == result_ty) {
                         lua_reg[A] = h.emit_lua_call(HIR_LUA_CALL_INT,
                             TY_INT, func_reg, cargs, nargs, kinds);
                         if (lua_reg[A] < 0) return -1;
