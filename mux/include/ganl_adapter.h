@@ -172,6 +172,11 @@ public:
         std::string readBuffer;
         bool writeInterest{false};
 
+        // #1802: overall SMTP deadline (wall clock); silent peer must not
+        // wedge the singleton email_channel_ forever.
+        //
+        CLinearTimeAbsolute deadline;
+
         // SMTP conversation data (captured at launch)
         dbref executor{NOTHING};
         std::string recipientAddr;
