@@ -13960,6 +13960,24 @@ static void gc_extract_pair(
     p2 = strip_color(farg1, &nBytes2, nullptr);
 }
 
+// The three set functions below (strunion/strdiff/strinter) each need ~1.5 MB
+// of cluster-index scratch: a strip buffer plus three StrGC[LBUF_SIZE] arrays
+// (16 bytes each).  As unconditional stack locals that made GCC's
+// -fstack-clash-protection (on by default on Debian/Ubuntu) emit a 392-page
+// probe loop in every prologue -- ~1.8 us paid on every call, even though the
+// useful work on a typical short list is a few hundred ns (#1903 / #1910).
+//
+// Hoisted to shared thread_local scratch so the prologues stay small.  This is
+// safe as shared, non-reentrant storage: softcode fully evaluates a function's
+// arguments before calling it, and none of these three evaluate softcode
+// internally (gc_extract*, gc_in_set, safe_copy_buf and strip_color are all
+// pure), so no two activations are ever live on one thread at the same time.
+//
+static thread_local UTF8  set_buf1[LBUF_SIZE];
+static thread_local StrGC set_gc1[LBUF_SIZE];
+static thread_local StrGC set_gc2[LBUF_SIZE];
+static thread_local StrGC set_seen[LBUF_SIZE];
+
 static FUNCTION(fun_strunion)
 {
     UNUSED_PARAMETER(executor);
@@ -13970,12 +13988,12 @@ static FUNCTION(fun_strunion)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 buf1[LBUF_SIZE];
+    UTF8 *buf1 = set_buf1;
     size_t nBytes1 = 0, nBytes2 = 0;
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC gc1[LBUF_SIZE], gc2[LBUF_SIZE];
+    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -13991,7 +14009,7 @@ static FUNCTION(fun_strunion)
 
     // Emit unique clusters from s1, then unique clusters from s2 not in s1.
     //
-    StrGC seen[LBUF_SIZE];
+    StrGC *seen = set_seen;
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
@@ -14028,12 +14046,12 @@ static FUNCTION(fun_strdiff)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 buf1[LBUF_SIZE];
+    UTF8 *buf1 = set_buf1;
     size_t nBytes1 = 0, nBytes2 = 0;
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC gc1[LBUF_SIZE], gc2[LBUF_SIZE];
+    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14049,7 +14067,7 @@ static FUNCTION(fun_strdiff)
 
     // Emit unique clusters from s1 that do not appear in s2.
     //
-    StrGC seen[LBUF_SIZE];
+    StrGC *seen = set_seen;
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
@@ -14076,12 +14094,12 @@ static FUNCTION(fun_strinter)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 buf1[LBUF_SIZE];
+    UTF8 *buf1 = set_buf1;
     size_t nBytes1 = 0, nBytes2 = 0;
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC gc1[LBUF_SIZE], gc2[LBUF_SIZE];
+    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14097,7 +14115,7 @@ static FUNCTION(fun_strinter)
 
     // Emit unique clusters from s1 that also appear in s2.
     //
-    StrGC seen[LBUF_SIZE];
+    StrGC *seen = set_seen;
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
