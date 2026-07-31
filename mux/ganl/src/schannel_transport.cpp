@@ -936,22 +936,31 @@ namespace ganl {
         shutdownDesc.cBuffers = 1;
         shutdownDesc.pBuffers = shutdownBuffers;
 
-        DWORD dwSSPIFlags = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT |
-            ISC_REQ_CONFIDENTIALITY | ISC_RET_EXTENDED_ERROR |
+        // #1850: AcceptSecurityContext takes ASC_REQ_*; InitializeSecurityContext
+        // takes ISC_REQ_*.  The families are not interchangeable (stream /
+        // extended-error bits diverge).  Always pass a non-null phNewContext
+        // to ASC — MS documents it must never be null.
+        const DWORD ascFlags =
+            ASC_REQ_SEQUENCE_DETECT | ASC_REQ_REPLAY_DETECT |
+            ASC_REQ_CONFIDENTIALITY | ASC_REQ_EXTENDED_ERROR |
+            ASC_REQ_ALLOCATE_MEMORY | ASC_REQ_STREAM;
+        const DWORD iscFlags =
+            ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT |
+            ISC_REQ_CONFIDENTIALITY | ISC_REQ_EXTENDED_ERROR |
             ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_STREAM;
 
         DWORD dwSSPIOutFlags = 0;
         TimeStamp expiry;
 
-        // Generate shutdown message
+        // Generate shutdown message (close_notify)
         status = context.isServer ?
             AcceptSecurityContext(
                 &context.credHandle,
                 &context.contextHandle,
                 NULL,
-                dwSSPIFlags,
+                ascFlags,
                 SECURITY_NATIVE_DREP,
-                NULL,
+                &context.contextHandle,
                 &shutdownDesc,
                 &dwSSPIOutFlags,
                 &expiry) :
@@ -959,7 +968,7 @@ namespace ganl {
                 &context.credHandle,
                 &context.contextHandle,
                 NULL,
-                dwSSPIFlags,
+                iscFlags,
                 0,
                 SECURITY_NATIVE_DREP,
                 NULL,
@@ -1108,29 +1117,25 @@ namespace ganl {
             outBuffers[0].BufferType = SECBUFFER_TOKEN;
             SecBufferDesc outBufferDesc = { SECBUFFER_VERSION, 1, outBuffers };
 
-            DWORD dwSSPIFlags = ISC_REQ_SEQUENCE_DETECT | ISC_REQ_REPLAY_DETECT |
-                ISC_REQ_CONFIDENTIALITY | ISC_RET_EXTENDED_ERROR |
-                ISC_REQ_ALLOCATE_MEMORY | ISC_REQ_STREAM;
+            // #1850: server path must use ASC_REQ_* (not ISC_REQ_*, and not
+            // ISC_RET_EXTENDED_ERROR which is a return bit, not a request).
+            // Always pass &contextHandle as phNewContext — later legs may reuse
+            // the same handle, but the pointer itself must never be null.
+            const DWORD ascFlags =
+                ASC_REQ_SEQUENCE_DETECT | ASC_REQ_REPLAY_DETECT |
+                ASC_REQ_CONFIDENTIALITY | ASC_REQ_EXTENDED_ERROR |
+                ASC_REQ_ALLOCATE_MEMORY | ASC_REQ_STREAM;
             DWORD dwSSPIOutFlags = 0;
             TimeStamp expiry;
 
             GANL_SCHANNEL_DEBUG(conn, "Calling AcceptSecurityContext with " << inBuffers[0].cbBuffer << " bytes.");
-            // --- Dump buffer content before call ---
-            // You can wrap the vector temporarily if needed for dumpIoBufferHex
-            // or modify dumpIoBufferHex to take raw pointers/size
-            // Example temporary wrap:
-            IoBuffer tempInputView;
-            if (inBuffers[0].cbBuffer > 0) {
-                tempInputView.append(inBuffers[0].pvBuffer, inBuffers[0].cbBuffer);
-            }
-            GANL_SCHANNEL_DEBUG(conn, "Buffer content BEFORE AcceptSecurityContext call:");
 
             // --- Call AcceptSecurityContext ---
             SECURITY_STATUS status = AcceptSecurityContext(
                 &context.credHandle,
                 context.contextHandleInitialized ? &context.contextHandle : NULL,
-                &inBufferDesc, dwSSPIFlags, SECURITY_NATIVE_DREP,
-                context.contextHandleInitialized ? NULL : &context.contextHandle,
+                &inBufferDesc, ascFlags, SECURITY_NATIVE_DREP,
+                &context.contextHandle,
                 &outBufferDesc, &dwSSPIOutFlags, &expiry
             );
 
@@ -1147,11 +1152,36 @@ namespace ganl {
                 }
             }
 
-            // Handle output token
+            // #1850: SEC_I_COMPLETE_* require CompleteAuthToken *before* the
+            // output token is sent/freed.  Normalize to OK / CONTINUE_NEEDED
+            // so the existing status dispatch below stays single-path.
+            if (status == SEC_I_COMPLETE_NEEDED
+                || status == SEC_I_COMPLETE_AND_CONTINUE) {
+                const bool needContinue = (status == SEC_I_COMPLETE_AND_CONTINUE);
+                SECURITY_STATUS completeStatus = CompleteAuthToken(
+                    &context.contextHandle, &outBufferDesc);
+                if (FAILED(completeStatus)) {
+                    context.lastError = "CompleteAuthToken failed: "
+                        + getSchannelErrorString(completeStatus);
+                    GANL_SCHANNEL_DEBUG(conn, "Error: " << context.lastError);
+                    if (outBuffers[0].pvBuffer != NULL) {
+                        FreeContextBuffer(outBuffers[0].pvBuffer);
+                        outBuffers[0].pvBuffer = NULL;
+                    }
+                    context.handshakeBuffer.clear();
+                    return TlsResult::Error;
+                }
+                status = needContinue ? SEC_I_CONTINUE_NEEDED : SEC_E_OK;
+                GANL_SCHANNEL_DEBUG(conn, "CompleteAuthToken succeeded; normalized to "
+                    << (needContinue ? "CONTINUE_NEEDED" : "OK"));
+            }
+
+            // Handle output token (after CompleteAuthToken so the token is final)
             if (outBuffers[0].pvBuffer != NULL && outBuffers[0].cbBuffer > 0) {
                 GANL_SCHANNEL_DEBUG(conn, "AcceptSecurityContext generated output token (" << outBuffers[0].cbBuffer << " bytes).");
                 encrypted_out.append(outBuffers[0].pvBuffer, outBuffers[0].cbBuffer);
                 FreeContextBuffer(outBuffers[0].pvBuffer);
+                outBuffers[0].pvBuffer = NULL;
             }
             else {
                 GANL_SCHANNEL_DEBUG(conn, "AcceptSecurityContext did not generate output token this call.");
@@ -1185,27 +1215,32 @@ namespace ganl {
                 }
                 else if (inBuffers[1].BufferType == SECBUFFER_EXTRA && inBuffers[1].cbBuffer > 0) {
                     // Leftover application data — hold for decrypt after establish.
-                    context.incompleteBuffer.assign(
-                        context.handshakeBuffer.begin() + bytesConsumed,
-                        context.handshakeBuffer.end());
-                    GANL_SCHANNEL_DEBUG(conn, "Copied " << context.incompleteBuffer.size()
-                        << " extra bytes to incompleteBuffer.");
+                    // #1851: move (not leave a duplicate tail) into incompleteBuffer;
+                    // handshakeBuffer is cleared below so the EXTRA is not pinned
+                    // for the life of the session after performHandshake stops.
+                    if (bytesConsumed <= context.handshakeBuffer.size()) {
+                        context.incompleteBuffer.assign(
+                            context.handshakeBuffer.begin() + static_cast<std::ptrdiff_t>(bytesConsumed),
+                            context.handshakeBuffer.end());
+                        GANL_SCHANNEL_DEBUG(conn, "Moved " << context.incompleteBuffer.size()
+                            << " extra bytes to incompleteBuffer.");
+                    }
+                    else {
+                        GANL_SCHANNEL_DEBUG(conn, "Error: bytesConsumed > handshakeBuffer size on EXTRA!");
+                        context.incompleteBuffer.clear();
+                        status = SEC_E_INTERNAL_ERROR;
+                    }
                 }
                 else {
                     context.incompleteBuffer.clear();
                 }
 
-                // Erase consumed data from the *start* of the handshakeBuffer
-                if (bytesConsumed > 0 && bytesConsumed <= context.handshakeBuffer.size()) {
-                    GANL_SCHANNEL_DEBUG(conn, "Erasing " << bytesConsumed << " consumed bytes from handshakeBuffer.");
-                    context.handshakeBuffer.erase(context.handshakeBuffer.begin(), context.handshakeBuffer.begin() + bytesConsumed);
-                }
-                else if (bytesConsumed > context.handshakeBuffer.size()) {
-                    GANL_SCHANNEL_DEBUG(conn, "Error: bytesConsumed > handshakeBuffer size!");
-                    context.handshakeBuffer.clear(); // Clear buffer on error
-                    status = SEC_E_INTERNAL_ERROR; // Treat as error
-                }
-
+                // #1851: handshake is done — drop the entire handshake buffer.
+                // Prior code only erased the consumed prefix, leaving the EXTRA
+                // tail (already copied to incompleteBuffer) stranded until
+                // destroySessionContext.
+                context.handshakeBuffer.clear();
+                context.handshakeBuffer.shrink_to_fit();
 
                 if (status == SEC_E_OK) {
                     context.established = true;
