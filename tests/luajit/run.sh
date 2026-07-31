@@ -428,6 +428,12 @@ EXEC_CASES=(
     'local x=tonumber("17") return x+1'
     'local x=tonumber("3.5") return x'
     'local x=tonumber("3.0") return x'
+    # #1866 review: an all-digit literal that overflows int64 is a Lua FLOAT
+    # (tonumber("9223372036854775808") -> 9.2e18), so the integral fast path
+    # must NOT claim CALL_INT here -- it would post-entry decline where the
+    # interpreter answers a float.  Pins the significant-digit bound.
+    'local x=tonumber("9223372036854775808") return x'
+    'local x=tonumber("99999999999999999999999999") return x'
     'local x=type(42) return x'
 
     # TAILCALL -- `return f(...)` with no local temporary, the most common
