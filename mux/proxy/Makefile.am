@@ -28,7 +28,8 @@ proxy_regression_SOURCES = \
     telnet_bridge.cpp \
     telnet_stream.cpp \
     websocket.cpp \
-    base64.cpp
+    base64.cpp \
+    config.cpp
 
 proxy_regression_CXXFLAGS = $(hydra_CXXFLAGS)
 proxy_regression_CPPFLAGS = $(hydra_CPPFLAGS)

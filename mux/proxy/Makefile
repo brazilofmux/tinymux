@@ -92,7 +92,7 @@ endif
 
 OBJS = $(SRCS:.cpp=.o)
 TARGET = hydra
-TEST_SRCS = proxy_regression.cpp telnet_bridge.cpp telnet_stream.cpp websocket.cpp base64.cpp
+TEST_SRCS = proxy_regression.cpp telnet_bridge.cpp telnet_stream.cpp websocket.cpp base64.cpp config.cpp
 ifeq ($(GRPC),1)
 # #1887: proxy_regression exercises ParseFromString fail-closed contract.
 TEST_SRCS += hydra.pb.cpp
