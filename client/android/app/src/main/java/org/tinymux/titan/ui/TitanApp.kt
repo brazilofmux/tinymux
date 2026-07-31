@@ -1394,6 +1394,15 @@ fun WorldManagerDialog(
         title = { Text("Worlds") },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
+                // #1892: Keystore failure used to write hydraPass into plain prefs.
+                if (!worldRepo.isSecureStorageAvailable) {
+                    Text(
+                        "Secure storage unavailable. Hydra passwords and session " +
+                            "tokens will not be saved on this device.",
+                        color = Color(0xFFFFAA00),
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
                 if (worlds.isEmpty()) {
                     Text(
                         "No saved worlds yet.",
