@@ -394,8 +394,12 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
         case TelState::DATA:
             if (b == TEL_IAC) {
                 tel_state_ = TelState::IAC;
-            } else if (line_buf_.size() < kMaxLine) {
-                // #1788: drop further bytes until newline resets the line
+            } else if (b == '\n' || line_buf_.size() < kMaxLine) {
+                // #1788: drop further bytes until newline resets the line.
+                // The '\n' itself must always be admitted: extract_lines
+                // only fires on a newline inside line_buf_, so gating it
+                // out here would wedge the buffer at the cap for the rest
+                // of the connection.
                 line_buf_ += (char)b;
             }
             break;
