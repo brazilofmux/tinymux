@@ -1026,31 +1026,68 @@ public:
             return;
         }
 
-        // Protocol detection on first data.  We deferred telnet
-        // initialization so IAC bytes don't corrupt a potential
-        // WebSocket HTTP upgrade handshake (ws:// or wss://).
+        // Protocol detection.  We deferred telnet initialization so IAC
+        // bytes don't corrupt a potential WebSocket HTTP upgrade (ws://
+        // or wss://).  TCP may split the "GET " preface across reads
+        // (#1800): keep DS_NEED_PROTO while the accumulated bytes are a
+        // proper prefix of "GET ", then classify once decided.
         //
         if (d->flags & DS_NEED_PROTO)
         {
             const bool isTls = (d->flags & DS_TLS) != 0;
-            d->flags &= ~DS_NEED_PROTO;
+            static const char kGetPref[] = "GET ";
 
-            if (ws_is_upgrade_request(data.data(), data.size()))
+            // Accumulate prior partial preface + this read.
+            //
+            std::string acc;
+            acc.reserve(d->proto_detect_len + data.size());
+            if (0 < d->proto_detect_len)
+            {
+                acc.append(d->proto_detect_buf, d->proto_detect_len);
+            }
+            acc.append(data);
+
+            bool matchesPrefix = true;
+            const size_t nCheck = (acc.size() < 4) ? acc.size() : 4;
+            for (size_t i = 0; i < nCheck; ++i)
+            {
+                if (acc[i] != kGetPref[i])
+                {
+                    matchesPrefix = false;
+                    break;
+                }
+            }
+
+            if (matchesPrefix && acc.size() < 4)
+            {
+                // Still ambiguous ("G" / "GE" / "GET") — wait for more
+                // bytes or the #1074 grace timeout.
+                //
+                d->proto_detect_len = acc.size();
+                memcpy(d->proto_detect_buf, acc.data(), d->proto_detect_len);
+                return;
+            }
+
+            d->flags &= ~DS_NEED_PROTO;
+            d->proto_detect_len = 0;
+
+            if (matchesPrefix)
             {
                 d->ws = new ws_state();
-                // Set the handshake flag only on a false (need more
-                // data) return — same d-freed-after-true hazard as
-                // the in-progress branch above.
-                if (!ws_process_handshake(d, data.data(), data.size()))
+                if (!ws_process_handshake(d, acc.data(), acc.size()))
                 {
                     d->flags |= DS_WEBSOCKET_HS;
                 }
                 return;
             }
 
-            // Not WebSocket — finalize as a telnet connection.
+            // Not WebSocket — finalize as telnet and replay every byte
+            // (including any previously buffered prefix).
             //
             FinalizeGanlConnection(adapter_, d, isTls);
+            process_input_helper(d, const_cast<char*>(acc.data()),
+                                 static_cast<int>(acc.size()));
+            return;
         }
 
         // Feed raw bytes through TinyMUX's existing NVT parser.
@@ -1843,8 +1880,46 @@ bool GanlAdapter::initialize() {
         }
     }
 
+    // #1803: if any listener was requested but none became active, fail
+    // closed so supervisors do not see a "running" process with no accept
+    // path.  Partial success (some ports up) remains OK.
+    //
+    const int nRequestedPlain = g_dc.nPorts;
+    const int nRequestedSsl = g_dc.nSslPorts;
+    const int nRequested = nRequestedPlain + nRequestedSsl;
     if (port_listeners_.empty() && ssl_port_listeners_.empty()) {
-        g_pILog->WriteString(T("Warning: No GANL listeners successfully started.\n"));
+        if (0 < nRequested) {
+            if (0 < nRequestedSsl && !secureTransport_ && 0 == nRequestedPlain) {
+                g_pILog->WriteString(T(
+                    "FATAL: TLS-only ports configured but secure transport "
+                    "failed to initialize; no listeners started.\n"));
+            } else {
+                g_pILog->WriteString(T(
+                    "FATAL: No GANL listeners successfully started "
+                    "(all configured ports failed to bind/listen).\n"));
+            }
+            // Tear down the partially-built engine so a second init attempt
+            // (if any) and process exit are coherent.
+            //
+            if (sessionManager_) {
+                sessionManager_->shutdown();
+                sessionManager_.reset();
+            }
+            protocolHandler_.reset();
+            if (secureTransport_) {
+                secureTransport_->shutdown();
+                secureTransport_.reset();
+            }
+            if (networkEngine_) {
+                networkEngine_->shutdown();
+                networkEngine_.reset();
+            }
+            listener_contexts_.clear();
+            return false;
+        }
+        // No ports configured (e.g. some offline tools) — not a failure.
+        //
+        g_pILog->WriteString(T("GANL: no listen ports configured.\n"));
     }
 
     initialized_ = true;
@@ -2631,7 +2706,31 @@ void GanlAdapter::process_tinyMUX_tasks() {
             }
             d->flags &= ~DS_NEED_PROTO;
             const bool isTls = (d->flags & DS_TLS) != 0;
+            // Replay any #1800 partial preface into telnet after finalize.
+            //
+            char partial[4];
+            const size_t nPartial = d->proto_detect_len;
+            if (0 < nPartial && nPartial <= sizeof(partial))
+            {
+                memcpy(partial, d->proto_detect_buf, nPartial);
+            }
+            d->proto_detect_len = 0;
             FinalizeGanlConnection(*this, d, isTls);
+            if (0 < nPartial)
+            {
+                process_input_helper(d, partial, static_cast<int>(nPartial));
+            }
+        }
+    }
+
+    // #1802: SMTP overall deadline — silent peer must not hold the
+    // singleton channel forever ("Another email is already in progress").
+    //
+    if (email_channel_)
+    {
+        if (ltaNow >= email_channel_->deadline)
+        {
+            email_notify_and_cleanup(T("@email: Timed out waiting for mailserver."));
         }
     }
 
@@ -3160,6 +3259,16 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
     channel->ehloHost      = reinterpret_cast<const char*>(
         ConvertCRLFtoSpace(g_dc.mail_ehlo));
 
+    // #1802: overall wall-clock budget for the SMTP dialog.
+    //
+    {
+        CLinearTimeAbsolute now;
+        now.GetUTC();
+        CLinearTimeDelta budget;
+        budget.SetSeconds(120);
+        channel->deadline = now + budget;
+    }
+
     // adoptConnection sets non-blocking and registers with the I/O engine.
     ganl::ErrorCode error = 0;
     ganl::ConnectionHandle handle = networkEngine_->adoptConnection(
@@ -3248,13 +3357,18 @@ void GanlAdapter::handle_email_channel_event(const ganl::IoEvent& event) {
 
         case ganl::IoEventType::Read:
             if (!process_email_read_locked()) {
-                // process_email_read_locked handles its own notifications
-                // for protocol errors.  A false return with no state
-                // transition means a read error.
-                if (email_channel_ &&
-                    email_channel_->state != EmailChannel::State::Done &&
-                    email_channel_->state != EmailChannel::State::Error) {
-                    errorMsg = T("@email: Connection to mailserver lost.");
+                // Done: clean success path.  Error: cap/write/protocol.
+                // Other false: transport read failure.
+                //
+                if (email_channel_
+                    && email_channel_->state != EmailChannel::State::Done) {
+                    if (email_channel_->state == EmailChannel::State::Error) {
+                        errorMsg = T(
+                            "@email: Mailserver protocol or buffer error.");
+                    } else {
+                        errorMsg = T(
+                            "@email: Connection to mailserver lost.");
+                    }
                 }
                 needCleanup = true;
             }
@@ -3287,6 +3401,11 @@ bool GanlAdapter::process_email_read_locked() {
         return false;
     }
 
+    // #1802: match DNS slave discipline — bound reassembly so a peer
+    // streaming without newlines cannot grow the process heap unboundedly.
+    //
+    constexpr size_t kEmailReadCap = 64 * 1024;
+
     // Loop reads until EAGAIN (edge-triggered epoll).
     for (;;) {
         char buffer[MBUF_SIZE];
@@ -3294,6 +3413,10 @@ bool GanlAdapter::process_email_read_locked() {
         if (nbytes > 0) {
             email_channel_->readBuffer.append(buffer,
                 static_cast<size_t>(nbytes));
+            if (email_channel_->readBuffer.size() > kEmailReadCap) {
+                email_channel_->state = EmailChannel::State::Error;
+                return false;
+            }
         } else if (nbytes == 0) {
             // Connection closed by remote.
             if (email_channel_->state == EmailChannel::State::SentQuit ||
@@ -3342,6 +3465,13 @@ bool GanlAdapter::process_email_read_locked() {
         }
     }
 
+    // Cap residual partial line as well (#1802).
+    //
+    if (email_channel_->readBuffer.size() > kEmailReadCap) {
+        email_channel_->state = EmailChannel::State::Error;
+        return false;
+    }
+
     return true;
 }
 
@@ -3351,8 +3481,12 @@ void GanlAdapter::email_queue_write_locked(const std::string& data) {
     }
 
     email_channel_->pendingWrites.push_back(data);
-    // Try to flush immediately; if EAGAIN, postWrite will be called.
-    flush_email_writes_locked();
+    // #1802: a false flush (EPIPE / postWrite fail) must surface — the
+    // prior code discarded it and left the channel wedged.
+    //
+    if (!flush_email_writes_locked()) {
+        email_channel_->state = EmailChannel::State::Error;
+    }
 }
 
 bool GanlAdapter::flush_email_writes_locked() {

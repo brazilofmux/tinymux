@@ -82,6 +82,13 @@ struct descriptor_data
   ws_state *ws;                            // WebSocket state (nullptr if telnet)
   int64_t connlog_id;                      // SQLite connlog row (0 if not logged)
 
+  // #1800: partial WebSocket "GET " preface across TCP read boundaries.
+  // While DS_NEED_PROTO and len < 4 with a matching prefix of "GET ",
+  // bytes accumulate here so a split preface is not forced to telnet.
+  //
+  char   proto_detect_buf[4];
+  size_t proto_detect_len;
+
   mux_sockaddr address;
 
   UTF8 addr[51];

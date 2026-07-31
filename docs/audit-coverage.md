@@ -42,7 +42,7 @@ Rough line counts are order-of-magnitude (`.c`/`.cpp`/`.h`); they change.
 | ID | Slice | Paths | ~Size | Last pass | Status | Notes |
 |----|--------|-------|------:|-----------|--------|-------|
 | A1 | Driver bootstrap / COM | `mux/src/driver.cpp`, `driver_bridge.cpp`, `modules.cpp`, `muxcli.cpp` | med | Pass 15 2026-07-31 | deep | engine.so via mux_AddModule; **#1798** required COM iface fail-closed (Log/Platform/GameEngine/Notify/ObjectInfo/PlayerSession) before main loop |
-| A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 14 2026-07-29 | deep | #1074 DS_NEED_PROTO grace+poll cap; #1135 fail-closed noaddr; #1126 gmcp zero; #790 SOCKET range; InvalidSessionId closes; free_desc2 before list insert; #794 send_data; no new High/Medium |
+| A2 | GANL adapter / DESC | `mux/src/ganl_adapter.cpp`, `interface.h` | large | Pass 15 2026-07-31 | deep | #1074 grace; **#1800** WS GET preface split; **#1802** SMTP buffer+deadline; **#1803** zero-listener fail-closed; **#1801** Win32 @email adopt still open |
 | A3 | Net / output / idle | `mux/src/net.cpp`, `sitemon.cpp`, `bsd.cpp` | large | Pass 14 hygiene 2026-07-29 | deep | #1133–#1135/#1139; **#1141** getpeername fail-closed on @restart (map residual cleared) |
 | A4 | Telnet NVT | `mux/src/telnet.cpp` | med | Pass 14 2026-07-29 | deep | #1126/#1128/#1131/#1132 held: sbOverflow stay-in-SB; enable_us uses us_state; TELNET_OPTION_SIZE 4096; no new High/Medium |
 | A5 | WebSocket (netmux) | `mux/src/websocket.cpp`, `websocket_test.*` | med | Pass 14 2026-07-29 | deep | #1081 mask; #1083 output_limit; control FIN/len; WS_MAX_PAYLOAD + frag cap; handshake 4k; zero-payload dispatch (#822); no new High/Medium |
