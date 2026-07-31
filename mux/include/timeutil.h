@@ -319,6 +319,27 @@ inline int iFloorDivisionMod(int x, int y, int *piMod) \
 }
 #endif // SMALLEST_INT_GTE_NEG_QUOTIENT
 
+// #1861 / #1472: signed int64 add/sub/mul is undefined on overflow.  Softcode
+// historically wraps (inc/dec already do so via uint64_t).  Perform the
+// operation in unsigned modular arithmetic and convert back so optimizers
+// and sanitizers cannot invent crash or reordering UB.
+//
+inline int64_t i64Add(int64_t a, int64_t b)
+{
+    return static_cast<int64_t>(
+        static_cast<uint64_t>(a) + static_cast<uint64_t>(b));
+}
+inline int64_t i64Sub(int64_t a, int64_t b)
+{
+    return static_cast<int64_t>(
+        static_cast<uint64_t>(a) - static_cast<uint64_t>(b));
+}
+inline int64_t i64Mul(int64_t a, int64_t b)
+{
+    return static_cast<int64_t>(
+        static_cast<uint64_t>(a) * static_cast<uint64_t>(b));
+}
+
 LIBMUX_API int iMod(int x, int y);
 LIBMUX_API int iFloorDivision(int x, int y);
 LIBMUX_API int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t *piMod);

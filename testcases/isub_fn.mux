@@ -37,11 +37,26 @@
         eq(isub(),0)
       )=
   {
-    @log smoke=TC002: isub() sign and coercion cases. Succeeded.;
+    @log smoke=TC002: isub() sign and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: isub() sign and coercion cases. Failed (isub(-5%,-2)=[isub(-5,-2)] isub(5.9%,2.1)=[isub(5.9,2.1)] isub(foo%,2)=[isub(foo,2)] isub()=[isub()]).
+  }
+-
+#
+# Test Case #3 - INT64 wrap (#1861).  INT64_MIN-1 -> INT64_MAX.
+#
+&tr.tc003 test_isub_fn=
+  @if eq(
+        isub(-9223372036854775808,1),
+        9223372036854775807
+      )=
+  {
+    @log smoke=TC003: isub() INT64_MIN-1 wraps. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: isub() sign and coercion cases. Failed (isub(-5%,-2)=[isub(-5,-2)] isub(5.9%,2.1)=[isub(5.9,2.1)] isub(foo%,2)=[isub(foo,2)] isub()=[isub()]).;
+    @log smoke=TC003: isub() INT64_MIN-1 wraps. Failed ([isub(-9223372036854775808,1)]).;
     @trig me/tr.done
   }
 -

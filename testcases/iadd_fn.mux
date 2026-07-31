@@ -38,11 +38,27 @@
         eq(iadd(-1.9,1),0)
       )=
   {
-    @log smoke=TC002: iadd() sign and coercion cases. Succeeded.;
+    @log smoke=TC002: iadd() sign and coercion cases. Succeeded.
+  },
+  {
+    @log smoke=TC002: iadd() sign and coercion cases. Failed (iadd(-5%,2%,1)=[iadd(-5,2,1)] iadd(1.9%,2.1)=[iadd(1.9,2.1)] iadd(foo%,2)=[iadd(foo,2)] iadd(-1.9%,1)=[iadd(-1.9,1)]).
+  }
+-
+#
+# Test Case #3 - INT64 wrap (#1861).  Signed overflow is UB; softcode wraps
+# like inc()/dec() (#1472).  INT64_MAX+1 -> INT64_MIN.
+#
+&tr.tc003 test_iadd_fn=
+  @if eq(
+        iadd(9223372036854775807,1),
+        -9223372036854775808
+      )=
+  {
+    @log smoke=TC003: iadd() INT64_MAX+1 wraps. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: iadd() sign and coercion cases. Failed (iadd(-5%,2%,1)=[iadd(-5,2,1)] iadd(1.9%,2.1)=[iadd(1.9,2.1)] iadd(foo%,2)=[iadd(foo,2)] iadd(-1.9%,1)=[iadd(-1.9,1)]).;
+    @log smoke=TC003: iadd() INT64_MAX+1 wraps. Failed ([iadd(9223372036854775807,1)]).;
     @trig me/tr.done
   }
 -
