@@ -407,6 +407,62 @@ async function testTelnetOversizedSubnegotiationDiscarded() {
     assert.deepStrictEqual(lines, ['ok']);
 }
 
+// #1889: MCP multiline reassembly is bounded (pending count + bytes).
+async function testMcpMultilinePendingCaps() {
+    const { McpParser } = loadScript('js/mcp.js', ['McpParser']).exports;
+    const diags = [];
+    const p = new McpParser();
+    p.onDiagnostic = m => diags.push(m);
+    p.sessionKey = 'key';
+
+    // Flood unique unterminated multiline starts past MCP_MAX_PENDING_MESSAGES.
+    const N = 40;
+    for (let i = 0; i < N; i++) {
+        p.processLine(
+            `#$#dns-org-mud-moo-simpleedit-content key reference: r content*: "" _data-tag: t${i}`);
+    }
+    const pendingCount = Object.keys(p.pending).length;
+    assert.ok(pendingCount <= 32,
+        'pending multiline count must be capped, got ' + pendingCount);
+    assert.ok(diags.some(d => /evict|capacity|pending/i.test(d)),
+        'should diagnose pending eviction');
+
+    // Per-message growth: one tag, keep appending until dropped.
+    const p2 = new McpParser();
+    const diags2 = [];
+    p2.onDiagnostic = m => diags2.push(m);
+    p2.sessionKey = 'key';
+    p2.processLine(
+        '#$#dns-org-mud-moo-simpleedit-content key reference: r content*: "" _data-tag: fat');
+    assert.ok(p2.pending.fat, 'fat tag should start pending');
+    // 256 KiB limit; each continuation ~1 KiB.
+    const chunk = 'x'.repeat(1024);
+    for (let i = 0; i < 300; i++) {
+        p2.processLine(`#$#* fat content: ${chunk}`);
+        if (!p2.pending.fat) break;
+    }
+    assert.strictEqual(p2.pending.fat, undefined,
+        'oversized multiline must be dropped');
+    assert.ok(diags2.some(d => /size limit|dropped/i.test(d)),
+        'should diagnose per-message size drop');
+
+    // Happy path still reassembles.
+    const p3 = new McpParser();
+    let edit = null;
+    p3.sessionKey = 'key';
+    p3.onEditRequest = (ref, name, type, content) => {
+        edit = { ref, name, type, content };
+    };
+    p3.processLine(
+        '#$#dns-org-mud-moo-simpleedit-content key reference: R name: N type: string-list content*: "" _data-tag: ok');
+    p3.processLine('#$#* ok content: line1');
+    p3.processLine('#$#* ok content: line2');
+    p3.processLine('#$#: ok');
+    assert.ok(edit, 'complete multiline should dispatch edit');
+    assert.strictEqual(edit.content, 'line1\nline2');
+    assert.strictEqual(Object.keys(p3.pending).length, 0);
+}
+
 async function main() {
     const tests = [
         testSettingsPasswordMigration,
@@ -415,6 +471,7 @@ async function main() {
         testHydraFallbackSubscribePath,
         testHydraReconnectCreatesNewWebSocket,
         testTelnetOversizedSubnegotiationDiscarded,
+        testMcpMultilinePendingCaps,
     ];
 
     for (const fn of tests) {
