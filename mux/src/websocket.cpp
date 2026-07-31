@@ -16,9 +16,13 @@
 #include "websocket.h"
 #include "ganl_adapter.h"  // ganl_close_connection (RFC 6455 close handling)
 #include "sha1.h"
+#include "alloc.h"  // LBUF_SIZE — lockstep with WS_MAX_PAYLOAD
 
 #include <cstring>
 #include <algorithm>
+
+static_assert(WS_MAX_PAYLOAD == static_cast<size_t>(LBUF_SIZE) - 1,
+    "WS_MAX_PAYLOAD must stay LBUF_SIZE-1 (telnet line / process_command cap)");
 
 // RFC 6455 Section 4.2.2: the WebSocket GUID appended to client key.
 //
@@ -640,6 +644,15 @@ void ws_process_input(DESC *d, const char *data, size_t len)
                     (static_cast<size_t>(static_cast<uint8_t>(ws->frame_buf[0])) << 8) |
                      static_cast<size_t>(static_cast<uint8_t>(ws->frame_buf[1]));
                 ws->frame_buf.clear();
+                // 16-bit lengths are 0..65535; WS_MAX_PAYLOAD is LBUF_SIZE-1.
+                // Without this check, a 32–64 KiB frame still reassembly-
+                // buffers before ws_enqueue_command rejects it (#1819).
+                //
+                if (ws->frame_expected > WS_MAX_PAYLOAD)
+                {
+                    ws_fail(d, WS_CLOSE_MESSAGE_TOO_BIG);
+                    return;
+                }
                 ws->parse_state = ws->frame_masked ? WS_PARSE_MASK : WS_PARSE_PAYLOAD;
             }
             break;
@@ -668,7 +681,7 @@ void ws_process_input(DESC *d, const char *data, size_t len)
 
                 if (len64 > WS_MAX_PAYLOAD)
                 {
-                    ws_fail(d, WS_CLOSE_PROTOCOL_ERR);
+                    ws_fail(d, WS_CLOSE_MESSAGE_TOO_BIG);
                     return;
                 }
                 ws->frame_expected = static_cast<size_t>(len64);

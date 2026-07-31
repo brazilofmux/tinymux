@@ -23,9 +23,13 @@ cxx=${CXX:-g++}
 out=$(mktemp -d)
 trap 'rm -rf "$out"' EXIT
 
+libdir=$(cd "$here/../lib" && pwd)
 "$cxx" -std=c++17 -DHAVE_CONFIG_H -I. -I../include -I../modules -I../announce \
     -I../ganl/include -I../sqlite -DTINYMUX_JIT -DSSL_ENABLED \
     -o "$out/websocket_test" websocket_test.cpp "$obj" \
-    -L../lib -Wl,-rpath,"$here/../lib" -lmux -lcrypto -lssl -lm -lcrypt -lpcre2-8
+    -L"$libdir" -Wl,-rpath,"$libdir" -lmux -lcrypto -lssl -lm -lcrypt -lpcre2-8
 
-"$out/websocket_test"
+# Prefer the tree we linked — ambient LD_LIBRARY_PATH to another libmux
+# (common on multi-tree developer machines) yields missing mux_snprintf.
+LD_LIBRARY_PATH="$libdir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+    "$out/websocket_test"
