@@ -274,6 +274,33 @@ int main(void) {
     delete dbt;
     delete scratch;
 
+    // --- 7. dbt_guest_range_ok is overflow-safe (#1864 / #1292 class) ---
+    // Discriminator: `pc + n > size` / `pc + n <= size` wrap for a PC near
+    // UINT64_MAX and pass; the subtract form must refuse those.
+    {
+        const uint64_t SIZE = 1u << 20;
+        check(dbt_guest_range_ok(0, 4, SIZE),
+              "fetch at 0 is allowed");
+        check(dbt_guest_range_ok(SIZE - 4, 4, SIZE),
+              "fetch ending exactly at the limit is allowed");
+        check(!dbt_guest_range_ok(SIZE - 3, 4, SIZE),
+              "fetch past the limit is refused");
+        check(!dbt_guest_range_ok(SIZE, 4, SIZE),
+              "fetch at the limit is refused");
+        check(!dbt_guest_range_ok(0xFFFFFFFFFFFFFFFFull, 4, SIZE),
+              "WRAP pc=2^64-1 len=4 must be refused");
+        check(!dbt_guest_range_ok(0xFFFFFFFFFFFFFFFCull, 4, SIZE),
+              "WRAP pc=2^64-4 len=4 must be refused");
+        check(!dbt_guest_range_ok(0xFFFFFFFFFFFFFFF8ull, 8, SIZE),
+              "WRAP look-ahead pc near 2^64 len=8 must be refused");
+        // Against the broken form: if this ever passes under the old
+        // `pc + 4 > size` test for size=1MB, the suite would still green
+        // until ASan.  Pin the truth values instead.
+        //
+        check(!dbt_guest_range_ok(0xFFFFFFFFFFFFFFFDull, 4, SIZE),
+              "WRAP pc=2^64-3 len=4 must be refused");
+    }
+
     printf("\n=== dbt cache: %d passed, %d failed ===\n", g_pass, g_fail);
     return (g_fail > 0) ? 1 : 0;
 }
