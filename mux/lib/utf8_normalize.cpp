@@ -406,6 +406,28 @@ bool utf8_is_nfc(const UTF8 *src, size_t nSrc)
 
     while (p < pEnd)
     {
+        // ASCII fast path.  Every code point U+0000..U+007F has CCC = 0 and
+        // NFC_QC = Yes, so neither the quick-check verdict nor the canonical
+        // ordering test below can be changed by one.  Verified exhaustively
+        // against this file's own tables: all 128 return ccc = 0, qc = 0,
+        // while 114 of U+0080..U+03FF do not, so the property is specific to
+        // ASCII rather than vacuous.
+        //
+        // This is worth a branch because net.cpp normalizes every command
+        // line from every player and those lines are overwhelmingly ASCII.
+        // Without it each byte pays a full DFA traversal in GetCCCandNFCQC:
+        // measured 5.2 ns/char before, 0.5 ns/char after (#1907).
+        //
+        // lastCCC = 0 is what the general path below would store for a
+        // CCC = 0 code point, so the ordering test is unaffected.
+        //
+        if (*p < 0x80)
+        {
+            lastCCC = 0;
+            p++;
+            continue;
+        }
+
         const UTF8 *pStart = p;
         int n = utf8_FirstByte[*p];
         if (n <= 0 || n >= UTF8_CONTINUE)
