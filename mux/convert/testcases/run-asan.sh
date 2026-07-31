@@ -68,6 +68,35 @@ check "stress -> rhostmush" -o rhostmush "$fix/t5x-v5-stress.flat"
 check "stress -> tinymux v2" -o tinymux -v 2 "$fix/t5x-v5-stress.flat"
 check "stress extract #1"   -x 1 "$fix/t5x-v5-stress.flat"
 
+# #1879: SetNumFlagsAndName used a fixed 64 KiB stack buffer; the lexer
+# accepts names of up to 65535 bytes, so "1:" + name + NUL overflowed.
+# Inject a max-length attribute name into a TinyMUX fixture and run the
+# conversion paths that re-encode names (Latin-1 / cross-family).
+echo "# long attribute name re-encode (#1879)"
+python3 - "$fix/t5x-v5.flat" "$tmp/longname-t5x.flat" <<'PY'
+import sys
+src, dst = sys.argv[1], sys.argv[2]
+# 65534 + "1:" + NUL would overflow char[65536]; stay under lexer 65535.
+name = "A" * 65534
+with open(src, "r", encoding="latin-1") as f:
+    lines = f.readlines()
+out = []
+for line in lines:
+    if line.startswith("+N"):
+        out.append("+N452\n")
+        continue
+    if line.startswith("!0"):
+        out.append("+A451\n")
+        out.append('"%s"\n' % ("1:" + name))
+    out.append(line)
+with open(dst, "w", encoding="latin-1") as f:
+    f.writelines(out)
+PY
+check "long attr name t5x -> tinymush" -o tinymush "$tmp/longname-t5x.flat"
+check "long attr name t5x -> pennmush"  -o pennmush  "$tmp/longname-t5x.flat"
+check "long attr name t5x -> rhostmush" -o rhostmush "$tmp/longname-t5x.flat"
+check "long attr name t5x -> tinymux v2" -o tinymux -v 2 "$tmp/longname-t5x.flat"
+
 echo "# ---"
 echo "# $pass passed, $fail failed"
 [ "$fail" -eq 0 ]
