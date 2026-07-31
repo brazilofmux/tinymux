@@ -419,11 +419,13 @@ EXEC_CASES=(
     # implementation that inferred the result type from the arguments
     # cannot pass both.
     #
-    # #1866: tonumber is CALL_VAL (dynamic int-or-float), not CALL_INT.
-    # tonumber("17") must still execute; tonumber("3.5") must return the
-    # float rather than a post-entry residual decline after the call ran.
+    # #1866: tonumber is CALL_INT when the arg is a proven integral
+    # constant (or HIR int), else CALL_VAL.  tonumber("17") executes
+    # native; tonumber("3.5") must return the float without a post-entry
+    # residual; arith on the integer fast path must stay compiled.
     'local x=tostring(42) return x'
     'local x=tonumber("17") return x'
+    'local x=tonumber("17") return x+1'
     'local x=tonumber("3.5") return x'
     'local x=tonumber("3.0") return x'
     'local x=type(42) return x'
