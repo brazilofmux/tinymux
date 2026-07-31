@@ -327,8 +327,63 @@ static void send_mssp(DESC *d)
  * \param chOption  Telnet Option
  * \param iHimState One of the six option negotiation states.
  */
+// #1814: rewind an incomplete UTF-8 code point without forming a pointer
+// before raw_input_buf.  Resets raw_codepoint_* on return.
+//
+static UTF8 *rewind_partial_utf8(DESC *d, UTF8 *p)
+{
+    if (  nullptr == d->raw_input_buf
+       || nullptr == p
+       || 0 == d->raw_codepoint_length)
+    {
+        d->raw_codepoint_length = 0;
+        d->raw_codepoint_state = CL_PRINT_START_STATE;
+        return p;
+    }
+    const size_t nPartial = d->raw_codepoint_length;
+    const size_t nHave = static_cast<size_t>(p - d->raw_input_buf);
+    if (nPartial <= nHave)
+    {
+        p -= nPartial;
+    }
+    else
+    {
+        p = d->raw_input_buf;
+    }
+    d->raw_codepoint_length = 0;
+    d->raw_codepoint_state = CL_PRINT_START_STATE;
+    return p;
+}
+
+// #1814: apply a negotiated encoding change.  Leaving UTF-8 discards any
+// partial code point from the current line buffer.
+//
+static void apply_desc_encoding(DESC *d, UTF8 *&p, int enc)
+{
+    if (  CHARSET_UTF8 == d->encoding
+       && CHARSET_UTF8 != enc)
+    {
+        p = rewind_partial_utf8(d, p);
+    }
+    d->encoding = enc;
+    d->negotiated_encoding = enc;
+    if (CHARSET_UTF8 == enc)
+    {
+        d->raw_codepoint_length = 0;
+        d->raw_codepoint_state = CL_PRINT_START_STATE;
+    }
+}
+
 static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
 {
+    // Side effects (TTYPE/ENV requests, BINARY, charset) only on a real
+    // transition (#1811 / RFC 1143: duplicate WILL while YES is ignored).
+    //
+    const int iPrev = d->nvt_him_state[chOption];
+    if (iPrev == iHimState)
+    {
+        return;
+    }
     d->nvt_him_state[chOption] = iHimState;
 
     if (OPTION_YES == iHimState)
@@ -370,6 +425,14 @@ static void set_him_state(DESC *d, unsigned char chOption, int iHimState)
  */
 static void set_us_state(DESC *d, unsigned char chOption, int iUsState)
 {
+    // Side effects (MSSP, CHARSET request, GMCP, SGA) only on a real
+    // transition (#1811 / RFC 1143: duplicate DO while YES is ignored).
+    //
+    const int iPrev = d->nvt_us_state[chOption];
+    if (iPrev == iUsState)
+    {
+        return;
+    }
     d->nvt_us_state[chOption] = iUsState;
 
     if (OPTION_YES == iUsState)
@@ -707,13 +770,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                         nLostBytes += d->raw_codepoint_length + 1;
                     }
 
-                    p -= d->raw_codepoint_length;
-                    if (p < d->raw_input_buf)
-                    {
-                        p = d->raw_input_buf;
-                    }
-                    d->raw_codepoint_length = 0;
-                    d->raw_codepoint_state = CL_PRINT_START_STATE;
+                    p = rewind_partial_utf8(d, p);
                 }
             }
             else if (CHARSET_LATIN1 == d->encoding)
@@ -822,13 +879,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             if (  CHARSET_UTF8 == d->encoding
                && 0 < d->raw_codepoint_length)
             {
-                p -= d->raw_codepoint_length;
-                if (p < d->raw_input_buf)
-                {
-                    p = d->raw_input_buf;
-                }
-                d->raw_codepoint_length = 0;
-                d->raw_codepoint_state = CL_PRINT_START_STATE;
+                p = rewind_partial_utf8(d, p);
             }
 
             if (NVT_DEL == ch)
@@ -860,13 +911,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             if (  CHARSET_UTF8 == d->encoding
                && 0 < d->raw_codepoint_length)
             {
-                p -= d->raw_codepoint_length;
-                if (p < d->raw_input_buf)
-                {
-                    p = d->raw_input_buf;
-                }
-                d->raw_codepoint_length = 0;
-                d->raw_codepoint_state = CL_PRINT_START_STATE;
+                p = rewind_partial_utf8(d, p);
             }
 
             *p = '\0';
@@ -935,7 +980,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             break;
 
         case 13:
-            // Action 13 - Respond to IAC WILL X
+            // Action 13 - Respond to IAC WILL X (RFC 1143 him-side).
             //
             switch (him_state(d, ch))
             {
@@ -949,6 +994,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 {
                     send_dont(d, ch);
                 }
+                break;
+
+            case OPTION_YES:
+                // Already YES — ignore duplicate WILL (#1811 / RFC 1143).
+                //
                 break;
 
             case OPTION_WANTNO_EMPTY:
@@ -968,13 +1018,18 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             break;
 
         case 14:
-            // Action 14 - Respond to IAC DONT X
+            // Action 14 - Respond to IAC DONT X (RFC 1143 us-side).
             //
             switch (us_state(d, ch))
             {
             case OPTION_YES:
                 set_us_state(d, ch, OPTION_NO);
                 send_wont(d, ch);
+                break;
+
+            case OPTION_NO:
+                // Already NO — ignore duplicate DONT (#1811 / RFC 1143).
+                //
                 break;
 
             case OPTION_WANTNO_OPPOSITE:
@@ -990,7 +1045,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
             break;
 
         case 15:
-            // Action 15 - Respond to IAC DO X
+            // Action 15 - Respond to IAC DO X (RFC 1143 us-side).
             //
             switch (us_state(d, ch))
             {
@@ -1004,6 +1059,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 {
                     send_wont(d, ch);
                 }
+                break;
+
+            case OPTION_YES:
+                // Already YES — ignore duplicate DO (#1811 / RFC 1143).
+                //
                 break;
 
             case OPTION_WANTNO_EMPTY:
@@ -1171,12 +1231,19 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             if (  TELNETSB_USERVAR == ch2
                                                || TELNETSB_VAR == ch2)
                                             {
+                                                // #1812: value ends before this
+                                                // type marker — leave the marker
+                                                // for the outer loop so the next
+                                                // variable is not skipped.
+                                                //
                                                 pVarvalEnd = envPtr - 1;
+                                                envPtr--;
                                                 break;
                                             }
                                         }
 
-                                        if (envPtr == &d->aOption[m])
+                                        if (  envPtr == &d->aOption[m]
+                                           && nullptr == pVarvalEnd)
                                         {
                                             pVarvalEnd = envPtr;
                                         }
@@ -1241,27 +1308,36 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                         if (  mux_stricmp(pEncoding, T("utf-8")) == 0
                                            && CHARSET_UTF8 != d->encoding)
                                         {
-                                            // Since we are changing to the
-                                            // UTF-8 character set, the
-                                            // printable state machine needs
-                                            // to be initialized.
-                                            //
-                                            d->encoding = CHARSET_UTF8;
-                                            d->negotiated_encoding = CHARSET_UTF8;
-                                            d->raw_codepoint_state = CL_PRINT_START_STATE;
-
+                                            apply_desc_encoding(d, p, CHARSET_UTF8);
                                             enable_us(d, TELNET_BINARY);
                                             enable_him(d, TELNET_BINARY);
                                         }
                                     }
                                     else if (mux_stricmp(varname, T("USER")) == 0)
                                     {
-                                        if (nVarval >= sizeof(d->username))
+                                        // #1813: USER is client-supplied
+                                        // (RFC 1572).  Constrain to printable
+                                        // ASCII like TTYPE — no CR/LF/ESC/NUL
+                                        // into WHO / A_LASTSITE.
+                                        //
+                                        bool fASCII = true;
+                                        for (size_t i = 0; i < nVarval; i++)
                                         {
-                                            nVarval = sizeof(d->username) - 1;
-                                            varval[nVarval] = '\0';
+                                            if (!mux_isprint_ascii(varval[i]))
+                                            {
+                                                fASCII = false;
+                                                break;
+                                            }
                                         }
-                                        memcpy(d->username, varval, nVarval + 1);
+                                        if (fASCII)
+                                        {
+                                            if (nVarval >= sizeof(d->username))
+                                            {
+                                                nVarval = sizeof(d->username) - 1;
+                                                varval[nVarval] = '\0';
+                                            }
+                                            memcpy(d->username, varval, nVarval + 1);
+                                        }
                                     }
 
                                     // We can also get 'DISPLAY' here if we were
@@ -1286,14 +1362,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             {
                                 if (CHARSET_UTF8 != d->encoding)
                                 {
-                                    // Since we are changing to the UTF-8
-                                    // character set, the printable state machine
-                                    // needs to be initialized.
-                                    //
-                                    d->encoding = CHARSET_UTF8;
-                                    d->negotiated_encoding = CHARSET_UTF8;
-                                    d->raw_codepoint_state = CL_PRINT_START_STATE;
-
+                                    apply_desc_encoding(d, p, CHARSET_UTF8);
                                     enable_us(d, TELNET_BINARY);
                                     enable_him(d, TELNET_BINARY);
                                 }
@@ -1301,36 +1370,28 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             else if (  nISO8859_1 == m - 2
                                     && memcmp(reinterpret_cast<char *>(pCharset), szISO8859_1, nISO8859_1) == 0)
                             {
-                                d->encoding = CHARSET_LATIN1;
-                                d->negotiated_encoding = CHARSET_LATIN1;
-
+                                apply_desc_encoding(d, p, CHARSET_LATIN1);
                                 enable_us(d, TELNET_BINARY);
                                 enable_him(d, TELNET_BINARY);
                             }
                             else if (  nISO8859_2 == m - 2
                                     && memcmp(reinterpret_cast<char *>(pCharset), szISO8859_2, nISO8859_2) == 0)
                             {
-                                d->encoding = CHARSET_LATIN2;
-                                d->negotiated_encoding = CHARSET_LATIN2;
-
+                                apply_desc_encoding(d, p, CHARSET_LATIN2);
                                 enable_us(d, TELNET_BINARY);
                                 enable_him(d, TELNET_BINARY);
                             }
                             else if (  nCp437 == m - 2
                                     && memcmp(reinterpret_cast<char *>(pCharset), szCp437, nCp437) == 0)
                             {
-                                d->encoding = CHARSET_CP437;
-                                d->negotiated_encoding = CHARSET_CP437;
-
+                                apply_desc_encoding(d, p, CHARSET_CP437);
                                 enable_us(d, TELNET_BINARY);
                                 enable_him(d, TELNET_BINARY);
                             }
                             else if (  nUSASCII == m - 2
                                     && memcmp(reinterpret_cast<char *>(pCharset), szUSASCII, nUSASCII) == 0)
                             {
-                                d->encoding = CHARSET_ASCII;
-                                d->negotiated_encoding = CHARSET_ASCII;
-
+                                apply_desc_encoding(d, p, CHARSET_ASCII);
                                 disable_us(d, TELNET_BINARY);
                                 disable_him(d, TELNET_BINARY);
                             }
@@ -1344,9 +1405,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                             // should probably record this to strip out any
                             // accents.
                             //
-                            d->encoding = CHARSET_ASCII;
-                            d->negotiated_encoding = CHARSET_ASCII;
-
+                            apply_desc_encoding(d, p, CHARSET_ASCII);
                             disable_us(d, TELNET_BINARY);
                             disable_him(d, TELNET_BINARY);
                         }
@@ -1401,14 +1460,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                                 fRequestAcknowledged = true;
                                                 if (CHARSET_UTF8 != d->encoding)
                                                 {
-                                                    // Since we are changing to the UTF-8
-                                                    // character set, the printable state machine
-                                                    // needs to be initialized.
-                                                    //
-                                                    d->encoding = CHARSET_UTF8;
-                                                    d->negotiated_encoding = CHARSET_UTF8;
-                                                    d->raw_codepoint_state = CL_PRINT_START_STATE;
-
+                                                    apply_desc_encoding(d, p, CHARSET_UTF8);
                                                     enable_us(d, TELNET_BINARY);
                                                     enable_him(d, TELNET_BINARY);
                                                 }
@@ -1419,9 +1471,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             {
                                                 send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
-                                                d->encoding = CHARSET_LATIN1;
-                                                d->negotiated_encoding = CHARSET_LATIN1;
-
+                                                apply_desc_encoding(d, p, CHARSET_LATIN1);
                                                 enable_us(d, TELNET_BINARY);
                                                 enable_him(d, TELNET_BINARY);
                                                 break;
@@ -1431,9 +1481,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             {
                                                 send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
-                                                d->encoding = CHARSET_LATIN2;
-                                                d->negotiated_encoding = CHARSET_LATIN2;
-
+                                                apply_desc_encoding(d, p, CHARSET_LATIN2);
                                                 enable_us(d, TELNET_BINARY);
                                                 enable_him(d, TELNET_BINARY);
                                                 break;
@@ -1443,9 +1491,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             {
                                                 send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
                                                 fRequestAcknowledged = true;
-                                                d->encoding = CHARSET_CP437;
-                                                d->negotiated_encoding = CHARSET_CP437;
-
+                                                apply_desc_encoding(d, p, CHARSET_CP437);
                                                 enable_us(d, TELNET_BINARY);
                                                 enable_him(d, TELNET_BINARY);
                                                 break;
@@ -1455,9 +1501,7 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                                             {
                                                 fRequestAcknowledged = true;
                                                 send_sb(d, TELNET_CHARSET, TELNETSB_ACCEPT, pTermStart, nTerm);
-                                                d->encoding = CHARSET_ASCII;
-                                                d->negotiated_encoding = CHARSET_ASCII;
-
+                                                apply_desc_encoding(d, p, CHARSET_ASCII);
                                                 disable_us(d, TELNET_BINARY);
                                                 disable_him(d, TELNET_BINARY);
                                                 break;
