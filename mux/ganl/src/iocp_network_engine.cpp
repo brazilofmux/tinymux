@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <cstring>
 #include <memory>
 #include <cassert>
 #include <locale>
@@ -32,10 +33,21 @@ namespace ganl {
 
     // Constructor for IoBuffer-based Read operations
     PerIoData::PerIoData(OpType type, ConnectionHandle conn, IoBuffer& buffer, IocpNetworkEngine* eng)
-        : opType(type), connection(conn), buffer(buffer.writePtr()),
-          bufferSize(buffer.writableBytes()), engine(eng), acceptSocket(INVALID_SOCKET),
+        : opType(type), connection(conn), buffer(nullptr),
+          bufferSize(0), engine(eng), acceptSocket(INVALID_SOCKET),
           ioBuffer(&buffer) {
         ZeroMemory(&overlapped, sizeof(OVERLAPPED));
+        // Own receive storage for the lifetime of the overlapped WSARecv
+        // (#1832).  closeConnection may CancelIoEx + closesocket and then
+        // ConnectionBase destroys encryptedInput_ while this completion is
+        // still outstanding; WSABUF must not point into that IoBuffer.
+        // On a validated completion, processEvents copies into ioBuffer.
+        const size_t n = buffer.writableBytes();
+        if (n > 0) {
+            ownedBuffer.resize(n);
+            this->buffer = ownedBuffer.data();
+            bufferSize = n;
+        }
         wsaBuf.buf = this->buffer;
         wsaBuf.len = static_cast<ULONG>(bufferSize);
         GANL_IOCP_DEBUG(conn, "PerIoData created for IoBuffer-based Read operation, buffer="
@@ -309,7 +321,14 @@ namespace ganl {
 
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            sockets_[listenSocket] = { SocketType::Listener, nullptr, false, nullptr, "" };
+            SocketInfo info{};
+            info.type = SocketType::Listener;
+            info.context = nullptr;
+            info.pendingRead = false;
+            info.activeReadBuffer = nullptr;
+            info.remoteAddress = "";
+            info.generation = nextGeneration_++;
+            sockets_[listenSocket] = info;
             ListenerInfo li{};
             li.context = nullptr;
             li.isListening = false;
@@ -634,19 +653,23 @@ namespace ganl {
             return InvalidConnectionHandle;
         }
 
+        uint64_t gen = 0;
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            sockets_[sock] = SocketInfo{
-                SocketType::OutboundConnecting,
-                connectionContext,
-                /*pendingRead=*/false,
-                /*activeReadBuffer=*/nullptr,
-                /*remoteAddress=*/""
-            };
+            SocketInfo info{};
+            info.type = SocketType::OutboundConnecting;
+            info.context = connectionContext;
+            info.pendingRead = false;
+            info.activeReadBuffer = nullptr;
+            info.remoteAddress = "";
+            info.generation = nextGeneration_++;
+            gen = info.generation;
+            sockets_[sock] = info;
         }
 
         ConnectionHandle handle = static_cast<ConnectionHandle>(sock);
         PerIoData* perIo = new PerIoData(handle, this);
+        perIo->generation = gen;
 
         BOOL ok = lpfnConnectEx_(
             sock,
@@ -688,6 +711,7 @@ namespace ganl {
             return false;
         }
 
+        uint64_t gen = 0;
         // Check if it's a valid connection
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -708,18 +732,20 @@ namespace ganl {
             // Store the buffer reference and mark as having a pending read
             it->second.activeReadBuffer = &buffer;
             it->second.pendingRead = true;
+            gen = it->second.generation;
         }
 
-        // Create per-I/O data structure for IoBuffer-based read
+        // Create per-I/O data structure for IoBuffer-based read (owns recv storage)
         std::unique_ptr<PerIoData> perIoData = std::make_unique<PerIoData>(
             PerIoData::OpType::Read, conn, buffer, this);
+        perIoData->generation = gen;
 
         // Post WSARecv
         if (!postWSARecv(conn, perIoData.get(), error)) {
             // Reset pendingRead flag and buffer reference on failure
             std::lock_guard<std::mutex> lock(mutex_);
             auto it = sockets_.find(socket);
-            if (it != sockets_.end()) {
+            if (it != sockets_.end() && it->second.generation == gen) {
                 it->second.pendingRead = false;
                 it->second.activeReadBuffer = nullptr;
             }
@@ -744,6 +770,7 @@ namespace ganl {
             return false;
         }
 
+        uint64_t gen = 0;
         // Check if it's a valid connection
         {
             std::lock_guard<std::mutex> lock(mutex_);
@@ -753,13 +780,16 @@ namespace ganl {
                 error = ERROR_INVALID_HANDLE;
                 return false;
             }
+            gen = it->second.generation;
         }
 
         // Create per-I/O data structure with user context
         // Note: For write operations, we use const_cast because WSASend takes non-const buffer
         // This is safe because WSASend won't modify the buffer, but the API requires non-const
+        // Owned copy of outbound bytes is taken inside the PerIoData write ctor (#796).
         std::unique_ptr<PerIoData> perIoData = std::make_unique<PerIoData>(
             PerIoData::OpType::Write, conn, const_cast<char*>(data), length, userContext, this);
+        perIoData->generation = gen;
 
         // Post WSASend
         if (!postWSASend(conn, perIoData.get(), error)) {
@@ -848,33 +878,46 @@ namespace ganl {
             event.bytesTransferred = bytesTransferred;
             event.error = operationError;
 
-            // Get the context associated with this socket (Listener or Connection)
+            // Get the context associated with this socket (Listener or Connection).
+            // SOCKET values are reused after closesocket (#1832 ABA): a completion
+            // stamped with an older generation must not mutate the new entry or
+            // deliver events with the new ConnectionBase context.
             void* socketContext = nullptr;
             bool isConnection = false;
+            bool discardCompletion = false;
             {
                 std::lock_guard<std::mutex> lock(mutex_);
                 auto it = sockets_.find(socket);
-                if (it != sockets_.end()) {
+                if (it == sockets_.end()) {
+                    GANL_IOCP_DEBUG(socket, "Warning: Completion received for unknown socket handle!");
+                    discardCompletion = true;
+                } else if (perIoData->opType != PerIoData::OpType::Accept
+                           && perIoData->generation != 0
+                           && perIoData->generation != it->second.generation) {
+                    GANL_IOCP_DEBUG(socket, "Stale completion generation "
+                        << perIoData->generation << " != live "
+                        << it->second.generation << "; discarding.");
+                    discardCompletion = true;
+                } else {
                     socketContext = it->second.context;
                     if (it->second.type == SocketType::Connection) {
                         isConnection = true;
                         // Reset pendingRead flag only for completed read operations on connections
                         if (perIoData->opType == PerIoData::OpType::Read) {
                             it->second.pendingRead = false;
+                            it->second.activeReadBuffer = nullptr;
                             GANL_IOCP_DEBUG(socket, "Reset pendingRead flag");
                         }
                     }
                 }
-                else {
-                    GANL_IOCP_DEBUG(socket, "Warning: Completion received for unknown socket handle!");
-                    // Socket might have been closed concurrently. Skip processing, clean up PerIoData below.
-                    delete perIoData; // Clean up the orphaned PerIoData
-                    // Try to dequeue the next completion without incrementing eventCount
-                    result = GetQueuedCompletionStatus(iocp_, &bytesTransferred, &completionKey, &overlapped, 0);
-                    lastError = GetLastError();
-                    if (overlapped == nullptr) break; // No more events ready now
-                    continue; // Process the next completion
-                }
+            }
+            if (discardCompletion) {
+                // PerIoData owns any WSARecv/WSASend storage; safe to free now.
+                delete perIoData;
+                result = GetQueuedCompletionStatus(iocp_, &bytesTransferred, &completionKey, &overlapped, 0);
+                lastError = GetLastError();
+                if (overlapped == nullptr) break;
+                continue;
             }
 
             // Process based on operation type
@@ -891,17 +934,19 @@ namespace ganl {
                 if (!readBuffer) {
                     GANL_IOCP_DEBUG(socket, "No IoBuffer associated with this read operation");
                 } else {
-                    // Set the buffer in the event so handleRead can commit the bytes.
-                    // Do NOT commitWrite here — CompletionConnection::handleRead
-                    // commits exactly bytesTransferred bytes to avoid double-counting.
-                    event.buffer = readBuffer;
-
-                    // Reset the active buffer reference in SocketInfo
-                    std::lock_guard<std::mutex> lock(mutex_);
-                    auto it = sockets_.find(socket);
-                    if (it != sockets_.end()) {
-                        it->second.activeReadBuffer = nullptr;
+                    // WSARecv wrote into PerIoData-owned storage (#1832).  Copy
+                    // into the caller's IoBuffer so CompletionConnection::handleRead
+                    // can commitWrite(bytesTransferred) as before.
+                    // Do NOT commitWrite here.
+                    if (result && bytesTransferred > 0 && !perIoData->ownedBuffer.empty()) {
+                        const size_t n = bytesTransferred;
+                        if (n <= readBuffer->writableBytes()
+                            && n <= perIoData->ownedBuffer.size()) {
+                            std::memcpy(readBuffer->writePtr(),
+                                        perIoData->ownedBuffer.data(), n);
+                        }
                     }
+                    event.buffer = readBuffer;
                 }
 
                 if (!result) { // Read failed
@@ -1632,7 +1677,14 @@ namespace ganl {
         // --- Add socket to internal maps ---
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            sockets_[acceptSocket] = { SocketType::Connection, nullptr, false, nullptr, remoteAddress }; // Context starts as null
+            SocketInfo info{};
+            info.type = SocketType::Connection;
+            info.context = nullptr; // Associated later by caller
+            info.pendingRead = false;
+            info.activeReadBuffer = nullptr;
+            info.remoteAddress = remoteAddress;
+            info.generation = nextGeneration_++;
+            sockets_[acceptSocket] = info;
         }
 
         GANL_IOCP_DEBUG(acceptSocket, "Connection accepted successfully from " << remoteAddress);
@@ -1706,4 +1758,4 @@ namespace ganl {
         return true;
     }
 
-} // namespace ganl Return an Accept event
+} // namespace ganl
