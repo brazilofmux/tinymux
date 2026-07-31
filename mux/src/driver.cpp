@@ -84,6 +84,60 @@ static void write_pidfile(const UTF8 *pFilename)
     }
 }
 
+// #1798: required driver→engine COM interfaces must fail closed before
+// listeners/main loop.  Partial acquisition is released so module
+// shutdown stays coherent.
+//
+static void driver_release_interfaces(void)
+{
+    if (nullptr != g_pIPlayerSession)
+    {
+        g_pIPlayerSession->Release();
+        g_pIPlayerSession = nullptr;
+    }
+    if (nullptr != g_pIObjectInfo)
+    {
+        g_pIObjectInfo->Release();
+        g_pIObjectInfo = nullptr;
+    }
+    if (nullptr != g_pINotify)
+    {
+        g_pINotify->Release();
+        g_pINotify = nullptr;
+    }
+    if (nullptr != g_pIGameEngine)
+    {
+        g_pIGameEngine->Release();
+        g_pIGameEngine = nullptr;
+    }
+    if (nullptr != g_pIPlatform)
+    {
+        g_pIPlatform->Release();
+        g_pIPlatform = nullptr;
+    }
+    if (nullptr != g_pILog)
+    {
+        g_pILog->Release();
+        g_pILog = nullptr;
+    }
+}
+
+static void driver_fatal_iface(const char *name, MUX_RESULT mr)
+{
+    // Always name the interface and result on stderr — even when CID_Log
+    // itself is the failure (no logger yet).
+    //
+    fprintf(stderr, "FATAL: Failed to create %s interface (%d).\n",
+        name, static_cast<int>(mr));
+    if (nullptr != g_pILog)
+    {
+        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
+        g_pILog->log_text(tprintf(T("Failed to create %s interface (%d)."),
+            reinterpret_cast<const UTF8 *>(name), mr));
+        ENDLOG;
+    }
+}
+
 #ifdef INLINESQL
 void init_sql(void)
 {
@@ -384,38 +438,46 @@ int DCL_CDECL main(int argc, char *argv[])
     // Initialize Modules very, very early.
     //
     MUX_RESULT mr = init_modules();
+    if (MUX_FAILED(mr))
+    {
+        fprintf(stderr, "FATAL: Failed to initialize module subsystem (%d).\n",
+            static_cast<int>(mr));
+        return 2;
+    }
 
-    // Acquire the logging interface from engine.so immediately after
-    // module registration so all driver code can log through COM.
+    // Acquire required driver→engine COM interfaces.  Fail closed before
+    // pidfile/signals/listeners so a missing interface is not a later
+    // null-deref or silent drop (#1798).  Each CreateInstance result is
+    // checked on its own — do not overwrite mr and ignore it.
     //
     mr = mux_CreateInstance(CID_Log, nullptr, UseSameProcess,
                             IID_ILog,
                             reinterpret_cast<void **>(&g_pILog));
+    if (MUX_FAILED(mr) || nullptr == g_pILog)
+    {
+        driver_fatal_iface("Log (CID_Log)", mr);
+        final_modules();
+        return 2;
+    }
+    g_pILog->SetBasename(pErrorBasename);
+    g_pILog->StartLogging();
 
-    // Create platform interface for OS-specific operations.
-    //
     mr = mux_CreateInstance(CID_Platform, nullptr, UseSameProcess,
                             IID_IPlatform,
                             reinterpret_cast<void **>(&g_pIPlatform));
+    if (MUX_FAILED(mr) || nullptr == g_pIPlatform)
+    {
+        driver_fatal_iface("Platform (CID_Platform)", mr);
+        driver_release_interfaces();
+        final_modules();
+        return 2;
+    }
 
     TimezoneCache::initialize();
     SeedRandomNumberGenerator();
 
-    if (g_pILog)
-    {
-        g_pILog->SetBasename(pErrorBasename);
-        g_pILog->StartLogging();
-    }
-
     STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-    if (MUX_SUCCEEDED(mr))
-    {
-        g_pILog->log_text(T("Registered netmux modules."));
-    }
-    else
-    {
-        g_pILog->log_text(tprintf(T("Failed either to initialize module subsystem or register netmux modules (%d)."), mr));
-    }
+    g_pILog->log_text(T("Registered netmux modules."));
     ENDLOG;
 
     game_pid = mux_getpid();
@@ -479,10 +541,9 @@ int DCL_CDECL main(int argc, char *argv[])
     mux_IGameEngine *pGameEngine = g_pIGameEngine;
     if (MUX_FAILED(mr) || nullptr == pGameEngine)
     {
-        fprintf(stderr, "FATAL: Failed to create game engine interface (%d).\n", mr);
-        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        g_pILog->log_text(tprintf(T("Failed to create game engine interface (%d)."), mr));
-        ENDLOG;
+        driver_fatal_iface("GameEngine (CID_GameEngine)", mr);
+        driver_release_interfaces();
+        final_modules();
         return 2;
     }
 
@@ -511,7 +572,8 @@ int DCL_CDECL main(int argc, char *argv[])
         STARTLOG(LOG_ALWAYS, "INI", "LOAD");
         g_pILog->log_text(tprintf(T("Game engine LoadGame failed (%d)."), mr));
         ENDLOG;
-        pGameEngine->Release();
+        driver_release_interfaces();
+        final_modules();
         return 2;
     }
 
@@ -524,7 +586,8 @@ int DCL_CDECL main(int argc, char *argv[])
         STARTLOG(LOG_ALWAYS, "INI", "CONF");
         g_pILog->log_text(tprintf(T("Failed to get driver config basket (%d)."), mr));
         ENDLOG;
-        pGameEngine->Release();
+        driver_release_interfaces();
+        final_modules();
         return 2;
     }
 
@@ -547,36 +610,40 @@ int DCL_CDECL main(int argc, char *argv[])
     pGameEngine->SetRestartCount(0);
     pGameEngine->SetCpuCountFrom(ltaStartup);
 
-    // Acquire the notification interface (driver→engine).
+    // Required driver→engine bridges.  Null here used to mean silent
+    // drop (Notify/ObjectInfo) or a later login-path crash (PlayerSession).
     //
     mr = mux_CreateInstance(CID_Notify, nullptr, UseSameProcess,
                             IID_INotify,
                             reinterpret_cast<void **>(&g_pINotify));
-    if (MUX_FAILED(mr))
+    if (MUX_FAILED(mr) || nullptr == g_pINotify)
     {
-        g_pINotify = nullptr;
+        driver_fatal_iface("Notify (CID_Notify)", mr);
+        driver_release_interfaces();
+        final_modules();
+        return 2;
     }
 
-    // Acquire the object-info interface (driver→engine).
-    //
     mr = mux_CreateInstance(CID_ObjectInfo, nullptr, UseSameProcess,
                             IID_IObjectInfo,
                             reinterpret_cast<void **>(&g_pIObjectInfo));
-    if (MUX_FAILED(mr))
+    if (MUX_FAILED(mr) || nullptr == g_pIObjectInfo)
     {
-        g_pIObjectInfo = nullptr;
+        driver_fatal_iface("ObjectInfo (CID_ObjectInfo)", mr);
+        driver_release_interfaces();
+        final_modules();
+        return 2;
     }
 
-    // Create the player session interface (driver-owned).
-    //
     mr = mux_CreateInstance(CID_PlayerSession, nullptr, UseSameProcess,
                             IID_IPlayerSession,
                             reinterpret_cast<void **>(&g_pIPlayerSession));
-    if (MUX_FAILED(mr))
+    if (MUX_FAILED(mr) || nullptr == g_pIPlayerSession)
     {
-        STARTLOG(LOG_ALWAYS, "INI", "LOAD");
-        g_pILog->log_text(tprintf(T("Failed to create PlayerSession interface (%d)."), mr));
-        ENDLOG;
+        driver_fatal_iface("PlayerSession (CID_PlayerSession)", mr);
+        driver_release_interfaces();
+        final_modules();
+        return 2;
     }
 
     set_signals();
@@ -617,9 +684,8 @@ int DCL_CDECL main(int argc, char *argv[])
     //
     pGameEngine->Shutdown();
     drv_CacheClose();
-    pGameEngine->Release();
-    pGameEngine = nullptr;
-    g_pIGameEngine = nullptr;
+    pGameEngine = nullptr;  // released inside driver_release_interfaces
+    driver_release_interfaces();
 #if defined(STUB_SLAVE)
     final_stubslave();
 #endif // STUB_SLAVE
