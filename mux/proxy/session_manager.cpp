@@ -16,7 +16,9 @@
 #include <cstring>
 #include <algorithm>
 #include <cctype>
+#include <new>
 #include <sstream>
+#include <stdexcept>
 
 #ifndef MSG_NOSIGNAL
 #define MSG_NOSIGNAL 0
@@ -250,12 +252,76 @@ void SessionManager::safeWrite(ganl::ConnectionHandle handle,
 
     auto fdIt = frontDoors_.find(handle);
     if (fdIt != frontDoors_.end() && fdIt->second.tlsTransport) {
+        // #1847: TLS branch used to append unbounded to tlsPlainOut and
+        // bypass #1096's MAX_WRITE_BUFFER.  A peer that stops reading can
+        // grow plain + ciphertext until OOM / IoBuffer throw, and hydra
+        // has no top-level exception barrier.
+        //
         FrontDoorState& fd = fdIt->second;
-        if (!fd.tlsPlainOut) {
-            fd.tlsPlainOut = std::make_unique<ganl::IoBuffer>(4096);
+        auto tlsPending = [](const FrontDoorState& f) -> size_t {
+            size_t n = 0;
+            if (f.tlsPlainOut) {
+                n += f.tlsPlainOut->readableBytes();
+            }
+            if (f.tlsEncryptedOut) {
+                n += f.tlsEncryptedOut->readableBytes();
+            }
+            return n;
+        };
+        auto closeSlowTls = [&]() {
+            LOG_WARN("safeWrite: TLS write buffer cap (%zu) exceeded on fd %lu — closing",
+                     MAX_WRITE_BUFFER, (unsigned long)handle);
+            if (fd.tlsPlainOut) {
+                fd.tlsPlainOut->clear();
+            }
+            if (fd.tlsEncryptedOut) {
+                fd.tlsEncryptedOut->clear();
+            }
+            engine_.closeConnection(handle);
+        };
+
+        // Small headroom for TLS record framing beyond plaintext length.
+        //
+        constexpr size_t kTlsRecordOverhead = 64;
+        if (tlsPending(fd) + len + kTlsRecordOverhead > MAX_WRITE_BUFFER) {
+            closeSlowTls();
+            return;
         }
-        fd.tlsPlainOut->append(data, len);
-        flushFrontDoorTlsOutgoing(fd);
+
+        try {
+            if (!fd.tlsPlainOut) {
+                fd.tlsPlainOut = std::make_unique<ganl::IoBuffer>(4096);
+            }
+            fd.tlsPlainOut->append(data, len);
+            if (!flushFrontDoorTlsOutgoing(fd)) {
+                return;
+            }
+            // Encrypt can grow ciphertext past the pre-append estimate.
+            //
+            if (tlsPending(fd) > MAX_WRITE_BUFFER) {
+                closeSlowTls();
+            }
+        } catch (const std::bad_alloc&) {
+            LOG_WARN("safeWrite: TLS allocation failure on fd %lu — closing",
+                     (unsigned long)handle);
+            if (fd.tlsPlainOut) {
+                fd.tlsPlainOut->clear();
+            }
+            if (fd.tlsEncryptedOut) {
+                fd.tlsEncryptedOut->clear();
+            }
+            engine_.closeConnection(handle);
+        } catch (const std::length_error&) {
+            LOG_WARN("safeWrite: TLS IoBuffer ceiling on fd %lu — closing",
+                     (unsigned long)handle);
+            if (fd.tlsPlainOut) {
+                fd.tlsPlainOut->clear();
+            }
+            if (fd.tlsEncryptedOut) {
+                fd.tlsEncryptedOut->clear();
+            }
+            engine_.closeConnection(handle);
+        }
         return;
     }
 
@@ -499,8 +565,13 @@ void SessionManager::onAccept(ganl::ConnectionHandle handle,
 
     LOG_INFO("Session manager: new front-door %lu (telnet) from %s",
              (unsigned long)handle, clientIp.c_str());
-    safeWrite(handle, buildTelnetCommandFrame(telnet::WILL, telnet::EOR_OPT));
+    // #1846: deferPrompt means TLS transport is not attached yet
+    // (setFrontDoorTls runs after onAccept).  Any safeWrite here is
+    // plaintext on the wire — including WILL EOR.  Defer negotiation and
+    // banner until the handshake is established (onFrontDoorData).
+    //
     if (!deferPrompt) {
+        safeWrite(handle, buildTelnetCommandFrame(telnet::WILL, telnet::EOR_OPT));
         showBanner(handle);
         frontDoors_[handle].initialPromptSent = true;
     }
@@ -787,7 +858,12 @@ void SessionManager::onFrontDoorData(ganl::ConnectionHandle handle,
 
         if (fd.tlsTransport->isEstablished(handle) && !fd.tlsEstablished) {
             fd.tlsEstablished = true;
+            // #1846: first post-handshake output — WILL EOR was deferred
+            // from onAccept so it is not cleartext before TLS attachment.
+            //
             if (!fd.initialPromptSent && fd.proto == FrontDoorProto::Telnet) {
+                safeWrite(handle,
+                    buildTelnetCommandFrame(telnet::WILL, telnet::EOR_OPT));
                 showBanner(handle);
                 fd.initialPromptSent = true;
             }
