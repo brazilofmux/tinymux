@@ -62,15 +62,30 @@ static std::string charsetEncodeFromUtf8(const std::string& utf8Str,
             // ASCII byte — pass through
             out.push_back(static_cast<char>(*p));
             p++;
-        } else {
-            // Multi-byte UTF-8 — approximate to ASCII
+            continue;
+        }
+
+        // #1885: never advance by the lead-byte width without an end bound.
+        // A truncated sequence at the end of the buffer used to walk past pe;
+        // co_dfa_ascii also reads without a length, so incomplete/invalid
+        // lead bytes fall back to a single-byte replacement.
+        //
+        size_t need = 1;
+        if ((*p & 0xE0) == 0xC0) {
+            need = 2;
+        } else if ((*p & 0xF0) == 0xE0) {
+            need = 3;
+        } else if ((*p & 0xF8) == 0xF0) {
+            need = 4;
+        }
+
+        if (need > 1 && static_cast<size_t>(pe - p) >= need) {
             unsigned char approx = co_dfa_ascii(p);
             out.push_back(static_cast<char>(approx));
-            // Advance past this code point
-            if ((*p & 0xE0) == 0xC0)      p += 2;
-            else if ((*p & 0xF0) == 0xE0)  p += 3;
-            else if ((*p & 0xF8) == 0xF0)  p += 4;
-            else                            p++;  // invalid — skip byte
+            p += need;
+        } else {
+            out.push_back('?');
+            p++;
         }
     }
     return out;

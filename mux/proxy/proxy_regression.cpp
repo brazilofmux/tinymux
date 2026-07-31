@@ -427,6 +427,52 @@ void testConvertInputNonUtf8Target() {
     expect(!out.empty(), "convertInput should produce a fallback for Euro");
 }
 
+// #1885: truncated multi-byte UTF-8 must not advance the charset encoder
+// past the end of the input.  Lead-only / partial sequences fall back one
+// byte at a time; convertInput and renderForClient both take this path.
+void testTruncatedUtf8CharsetEncode() {
+    TelnetBridge bridge;
+
+    const struct {
+        const char* label;
+        std::string input;
+    } cases[] = {
+        {"trailing C2 (2-byte lead)", bytes({0xC2})},
+        {"trailing E2 82 (3-byte partial)", bytes({0xE2, 0x82})},
+        {"trailing F0 9F 92 (4-byte partial)", bytes({0xF0, 0x9F, 0x92})},
+        {"ascii + trailing C2", bytes({'o', 'k', 0xC2})},
+    };
+
+    for (const auto& c : cases) {
+        std::string toLatin1 = bridge.convertInput(
+            ganl::EncodingType::Utf8,
+            ganl::EncodingType::Latin1,
+            c.input);
+        expect(isAscii(toLatin1) || toLatin1.size() <= c.input.size() + 4,
+               std::string("convertInput Latin1 truncated UTF-8 must not OOB: ")
+                   + c.label);
+        // One replacement per remaining truncated byte, no runaway growth.
+        expect(toLatin1.size() <= c.input.size(),
+               std::string("convertInput Latin1 should not expand truncated: ")
+                   + c.label);
+
+        std::string rendered = bridge.renderForClient(
+            ganl::EncodingType::Latin1,
+            ColorDepth::None,
+            c.input);
+        expect(rendered.size() <= c.input.size() + 16,
+               std::string("renderForClient truncated UTF-8 must not OOB: ")
+                   + c.label);
+    }
+
+    // Complete multi-byte still approximates (does not crash / hang).
+    std::string euro = bridge.convertInput(
+        ganl::EncodingType::Utf8,
+        ganl::EncodingType::Latin1,
+        bytes({0xE2, 0x82, 0xAC}));
+    expect(euro.size() == 1, "complete Euro should encode to one Latin1/approx byte");
+}
+
 // #1286: a producer blocked on a full queue must be releasable.
 //
 // cv_space_ is only notified by processPending(), so after the main loop's
@@ -513,6 +559,7 @@ int main() {
     testInputLineLimitShared();
     testWorkQueuePendingCapConstant();
     testConvertInputNonUtf8Target();
+    testTruncatedUtf8CharsetEncode();
     testWorkQueueStopReleasesBlockedProducer();
     std::cout << "proxy_regression: ok\n";
     return 0;
