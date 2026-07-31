@@ -28,10 +28,15 @@ constexpr uint16_t WS_CLOSE_PROTOCOL_ERR   = 1002;
 constexpr uint16_t WS_CLOSE_BAD_DATA       = 1007; // RFC 6455 §7.4.1: inconsistent data (e.g. invalid UTF-8 in a TEXT message)
 constexpr uint16_t WS_CLOSE_MESSAGE_TOO_BIG = 1009;
 
-// Maximum WebSocket frame payload we accept (64 KB).
-// MUX commands are limited to LBUF_SIZE anyway.
+// Maximum WebSocket frame / assembled-message payload we accept.
 //
-constexpr size_t WS_MAX_PAYLOAD = 65536;
+// Must equal LBUF_SIZE-1 (telnet process_input line cap).  #1819 already
+// rejects oversize at enqueue; keeping the wire cap higher still reassembly-
+// buffers up to 64 KiB before close 1009.  Align the parser cap so large
+// frames fail on the length field and never touch frag_buf / frame_buf.
+// Keep in lockstep with LBUF_SIZE (static_assert in websocket.cpp).
+//
+constexpr size_t WS_MAX_PAYLOAD = 32767;
 
 // WebSocket frame reassembly state.
 //

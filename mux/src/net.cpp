@@ -412,6 +412,21 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
 {
     bool was_empty = d->input_queue.empty();
 
+    // Choke-point defense for #1818/#1819: telnet never Accept-Lines empty
+    // buffers, and WebSocket already drops empties / oversize in
+    // ws_enqueue_command.  Keep the same rules here so any future caller
+    // cannot reintroduce free queue nodes (qlen==0) or LBUF-overflowing
+    // command strings.
+    //
+    if (0 == len || nullptr == cmd)
+    {
+        return;
+    }
+    if (len > static_cast<size_t>(LBUF_SIZE - 1))
+    {
+        len = static_cast<size_t>(LBUF_SIZE - 1);
+    }
+
     // Normalize to NFC before queuing (never expands the string), so the
     // enqueued length below matches what net.cpp decrements on dequeue.
     const UTF8 *qtext = cmd;
@@ -425,6 +440,10 @@ void save_command(DESC *d, const UTF8 *cmd, size_t len)
         nfc_buf[nNfc] = '\0';
         qtext = nfc_buf.get();
         qlen = nNfc;
+        if (0 == qlen)
+        {
+            return;
+        }
     }
 
     // Input backlog cap (per connection): pending input commands hold memory
