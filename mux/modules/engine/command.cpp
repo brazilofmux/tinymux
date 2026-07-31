@@ -2096,18 +2096,22 @@ UTF8 *process_command
 
     if (mudconf.space_compress)
     {
-        // Compress out the spaces and use that as the command
+        // Compress out the spaces and use that as the command.
+        // Leave room for the trailing NUL: writing up to LBUF_SIZE
+        // then `*q = 0` was one past the end for a full LBUF of
+        // non-space (WebSocket can deliver LBUF-sized text; #1819).
         //
         pCommand = SpaceCompressCommand;
 
         p = pOriginalCommand;
         q = SpaceCompressCommand;
+        UTF8 *const qend = SpaceCompressCommand + (LBUF_SIZE - 1);
         while (  *p
-              && q < SpaceCompressCommand + LBUF_SIZE)
+              && q < qend)
         {
             while (  *p
                   && !mux_isspace(*p)
-                  && q < SpaceCompressCommand + LBUF_SIZE)
+                  && q < qend)
             {
                 *q++ = *p++;
             }
@@ -2118,7 +2122,7 @@ UTF8 *process_command
             }
 
             if (  *p
-               && q < SpaceCompressCommand + LBUF_SIZE)
+               && q < qend)
             {
                 *q++ = ' ';
             }

@@ -118,12 +118,17 @@ int main() {
     CHECK("TEXT hi byte-split: one message", g_messages.size() == 1);
     CHECK("TEXT hi byte-split: payload", g_messages.size() == 1 && g_messages[0] == "hi");
 
-    // 6. Empty TEXT message at boundary -> dispatch an empty command.
+    // 6. #1818: empty TEXT must not enqueue a command (input_limit bypass).
     reset(d, ws);
     feed(d, {0x81, 0x80, M0, M1, M2, M3});
-    CHECK("empty TEXT at boundary: one message", g_messages.size() == 1);
-    CHECK("empty TEXT at boundary: empty payload",
-          g_messages.size() == 1 && g_messages[0].empty());
+    CHECK("empty TEXT at boundary: no message", g_messages.empty());
+    CHECK("empty TEXT at boundary: not closed", g_closed == 0);
+    // Flood of empty frames still enqueues nothing.
+    for (int i = 0; i < 100; i++)
+    {
+        feed(d, {0x81, 0x80, M0, M1, M2, M3});
+    }
+    CHECK("empty TEXT flood: still no messages", g_messages.empty());
 
     // 7. #1081: unmasked client frames must fail the connection (RFC 6455 §5.1).
     //    b1 without 0x80 mask bit: empty TEXT, unmasked.
@@ -149,6 +154,50 @@ int main() {
         feed(d, frame, 1);
         CHECK("TEXT hi byte-split: input_tot charged",
               d.input_tot == frame.size());
+    }
+
+    // 9. #1819: payload of LBUF_SIZE bytes must fail with close 1009, not
+    //    enqueue a command that overflows engine command buffers.
+    //    Frame: FIN+TEXT, mask, 2-byte length (126 + hi/lo), mask, payload.
+    //
+    reset(d, ws);
+    {
+        const size_t nPayload = 32768; // LBUF_SIZE
+        std::vector<uint8_t> frame;
+        frame.push_back(0x81); // FIN+TEXT
+        frame.push_back(0xFE); // masked + 126 (16-bit length follows)
+        frame.push_back(static_cast<uint8_t>((nPayload >> 8) & 0xFF));
+        frame.push_back(static_cast<uint8_t>(nPayload & 0xFF));
+        frame.push_back(M0);
+        frame.push_back(M1);
+        frame.push_back(M2);
+        frame.push_back(M3);
+        frame.insert(frame.end(), nPayload, static_cast<uint8_t>('A'));
+        feed(d, frame);
+        CHECK("#1819 LBUF TEXT: closed 1009 path", g_closed == 1);
+        CHECK("#1819 LBUF TEXT: no command enqueued", g_messages.empty());
+    }
+
+    // 10. #1819: LBUF_SIZE-1 still accepted.
+    //
+    reset(d, ws);
+    {
+        const size_t nPayload = 32767; // LBUF_SIZE - 1
+        std::vector<uint8_t> frame;
+        frame.push_back(0x81);
+        frame.push_back(0xFE);
+        frame.push_back(static_cast<uint8_t>((nPayload >> 8) & 0xFF));
+        frame.push_back(static_cast<uint8_t>(nPayload & 0xFF));
+        frame.push_back(M0);
+        frame.push_back(M1);
+        frame.push_back(M2);
+        frame.push_back(M3);
+        frame.insert(frame.end(), nPayload, static_cast<uint8_t>('B'));
+        feed(d, frame);
+        CHECK("#1819 LBUF-1 TEXT: not closed", g_closed == 0);
+        CHECK("#1819 LBUF-1 TEXT: one command", g_messages.size() == 1);
+        CHECK("#1819 LBUF-1 TEXT: length",
+              g_messages.size() == 1 && g_messages[0].size() == nPayload);
     }
 
     printf("\nws parser: %d passed, %d failed\n", g_pass, g_fail);
