@@ -61,6 +61,9 @@ namespace ganl {
         bool associateContext(ConnectionHandle conn, void* context, ErrorCode& error) override;
         void closeConnection(ConnectionHandle conn) override;
 
+        ConnectionHandle initiateConnect(const std::string& host, uint16_t port,
+                                         void* connectionContext, ErrorCode& error) override;
+
         bool postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) override;
         bool postWrite(ConnectionHandle conn, const char* data, size_t length, void* userContext, ErrorCode& error) override;
         bool postWrite(ConnectionHandle conn, const char* data, size_t length, ErrorCode& error) override;
@@ -77,7 +80,7 @@ namespace ganl {
         const SocketFD INVALID_SOCKET_FD = INVALID_SOCKET;
 
         // Internal socket types
-        enum class SocketType { Listener, Connection };
+        enum class SocketType { Listener, Connection, OutboundConnecting };
 
         // Information about a socket
         struct SocketInfo {

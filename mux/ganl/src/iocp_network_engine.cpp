@@ -98,6 +98,21 @@ namespace ganl {
         wsaBuf.len = static_cast<ULONG>(bufferSize);
     }
 
+    // Constructor for ConnectEx operations (#1801)
+    PerIoData::PerIoData(ConnectionHandle conn, IocpNetworkEngine* eng)
+        : opType(OpType::Connect),
+          connection(conn),
+          buffer(nullptr),
+          bufferSize(0),
+          engine(eng),
+          acceptSocket(INVALID_SOCKET),
+          listenerHandle(InvalidListenerHandle) {
+        ZeroMemory(&overlapped, sizeof(OVERLAPPED));
+        wsaBuf.buf = nullptr;
+        wsaBuf.len = 0;
+        GANL_IOCP_DEBUG(conn, "PerIoData created for ConnectEx");
+    }
+
     PerIoData::~PerIoData() {
         // For accept operations, we need to close the socket if it wasn't successfully accepted
         if (opType == OpType::Accept && acceptSocket != INVALID_SOCKET) {
@@ -115,7 +130,8 @@ namespace ganl {
         wsaInitialized_(false),
         initialized_(false),
         lpfnAcceptEx_(nullptr),
-        lpfnGetAcceptExSockaddrs_(nullptr) {
+        lpfnGetAcceptExSockaddrs_(nullptr),
+        lpfnConnectEx_(nullptr) {
         GANL_IOCP_DEBUG(0, "Engine Created");
     }
 
@@ -179,7 +195,8 @@ namespace ganl {
         {
             std::lock_guard<std::mutex> lock(mutex_);
             for (const auto& pair : sockets_) {
-                if (pair.second.type == SocketType::Connection) {
+                if (pair.second.type == SocketType::Connection
+                    || pair.second.type == SocketType::OutboundConnecting) {
                     connectionSockets.push_back(pair.first);
                 }
             }
@@ -494,6 +511,144 @@ namespace ganl {
         }
 
         GANL_IOCP_DEBUG(socket, "Connection closed");
+    }
+
+    ConnectionHandle IocpNetworkEngine::initiateConnect(const std::string& host, uint16_t port,
+                                                        void* connectionContext, ErrorCode& error) {
+        error = 0;
+        GANL_IOCP_DEBUG(0, "Initiating outbound ConnectEx to " << host << ":" << port);
+
+        if (!initialized_ || iocp_ == INVALID_HANDLE_VALUE) {
+            error = ERROR_NOT_READY;
+            return InvalidConnectionHandle;
+        }
+
+        ADDRINFOA hints{};
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_protocol = IPPROTO_TCP;
+
+        std::string portStr = std::to_string(port);
+        ADDRINFOA* results = nullptr;
+        int gai = ::GetAddrInfoA(host.c_str(), portStr.c_str(), &hints, &results);
+        if (gai != 0) {
+            error = gai;
+            GANL_IOCP_DEBUG(0, "GetAddrInfo failed: " << gai);
+            return InvalidConnectionHandle;
+        }
+
+        SOCKET sock = INVALID_SOCKET;
+        ADDRINFOA* chosen = nullptr;
+        for (ADDRINFOA* ai = results; ai != nullptr; ai = ai->ai_next) {
+            sock = ::WSASocket(ai->ai_family, ai->ai_socktype, ai->ai_protocol,
+                               nullptr, 0, WSA_FLAG_OVERLAPPED);
+            if (sock == INVALID_SOCKET) {
+                error = WSAGetLastError();
+                continue;
+            }
+            chosen = ai;
+            break;
+        }
+        if (sock == INVALID_SOCKET || chosen == nullptr) {
+            ::FreeAddrInfoA(results);
+            if (error == 0) {
+                error = WSAEAFNOSUPPORT;
+            }
+            return InvalidConnectionHandle;
+        }
+
+        // ConnectEx requires the socket to be bound first.
+        sockaddr_storage local{};
+        int localLen = 0;
+        if (chosen->ai_family == AF_INET) {
+            auto* in = reinterpret_cast<sockaddr_in*>(&local);
+            in->sin_family = AF_INET;
+            in->sin_addr.s_addr = htonl(INADDR_ANY);
+            in->sin_port = 0;
+            localLen = sizeof(sockaddr_in);
+        } else if (chosen->ai_family == AF_INET6) {
+            auto* in6 = reinterpret_cast<sockaddr_in6*>(&local);
+            in6->sin6_family = AF_INET6;
+            in6->sin6_addr = in6addr_any;
+            in6->sin6_port = 0;
+            localLen = sizeof(sockaddr_in6);
+        } else {
+            closesocket(sock);
+            ::FreeAddrInfoA(results);
+            error = WSAEAFNOSUPPORT;
+            return InvalidConnectionHandle;
+        }
+
+        if (::bind(sock, reinterpret_cast<sockaddr*>(&local), localLen) == SOCKET_ERROR) {
+            error = WSAGetLastError();
+            closesocket(sock);
+            ::FreeAddrInfoA(results);
+            return InvalidConnectionHandle;
+        }
+
+        // Load ConnectEx if needed (any connected socket works for the ioctl).
+        if (lpfnConnectEx_ == nullptr) {
+            GUID guidConnectEx = WSAID_CONNECTEX;
+            DWORD bytes = 0;
+            if (WSAIoctl(sock, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                         &guidConnectEx, sizeof(guidConnectEx),
+                         &lpfnConnectEx_, sizeof(lpfnConnectEx_),
+                         &bytes, nullptr, nullptr) == SOCKET_ERROR) {
+                error = WSAGetLastError();
+                closesocket(sock);
+                ::FreeAddrInfoA(results);
+                return InvalidConnectionHandle;
+            }
+        }
+
+        if (!associateWithIocp(reinterpret_cast<HANDLE>(sock),
+                               reinterpret_cast<void*>(sock), error)) {
+            closesocket(sock);
+            ::FreeAddrInfoA(results);
+            return InvalidConnectionHandle;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            sockets_[sock] = SocketInfo{
+                SocketType::OutboundConnecting,
+                connectionContext,
+                /*pendingRead=*/false,
+                /*activeReadBuffer=*/nullptr,
+                /*remoteAddress=*/""
+            };
+        }
+
+        ConnectionHandle handle = static_cast<ConnectionHandle>(sock);
+        PerIoData* perIo = new PerIoData(handle, this);
+
+        BOOL ok = lpfnConnectEx_(
+            sock,
+            chosen->ai_addr,
+            static_cast<int>(chosen->ai_addrlen),
+            nullptr, // no send buffer
+            0,
+            nullptr,
+            &perIo->overlapped);
+
+        ::FreeAddrInfoA(results);
+
+        if (!ok) {
+            int wsaErr = WSAGetLastError();
+            if (wsaErr != ERROR_IO_PENDING) {
+                error = wsaErr;
+                {
+                    std::lock_guard<std::mutex> lock(mutex_);
+                    sockets_.erase(sock);
+                }
+                delete perIo;
+                closesocket(sock);
+                return InvalidConnectionHandle;
+            }
+        }
+
+        GANL_IOCP_DEBUG(sock, "ConnectEx posted.");
+        return handle;
     }
 
     bool IocpNetworkEngine::postRead(ConnectionHandle conn, IoBuffer& buffer, ErrorCode& error) {
@@ -876,6 +1031,43 @@ namespace ganl {
                 }
             } // End Accept scope
             break;
+
+            case PerIoData::OpType::Connect: {
+                // #1801: ConnectEx completion.
+                event.connection = perIoData->connection;
+                event.context = socketContext;
+                event.listener = InvalidListenerHandle;
+                event.bytesTransferred = 0;
+
+                if (result) {
+                    // Required so getsockname/getpeername work after ConnectEx.
+                    ::setsockopt(socket, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT,
+                                 nullptr, 0);
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        auto it = sockets_.find(socket);
+                        if (it != sockets_.end()) {
+                            it->second.type = SocketType::Connection;
+                        }
+                    }
+                    event.type = IoEventType::ConnectSuccess;
+                    event.error = 0;
+                    eventCount++;
+                    GANL_IOCP_DEBUG(socket, "ConnectEx succeeded.");
+                } else {
+                    event.type = IoEventType::ConnectFail;
+                    event.error = operationError;
+                    eventCount++;
+                    GANL_IOCP_DEBUG(socket, "ConnectEx failed: "
+                        << getErrorString(operationError));
+                    // Drop the failed socket from the map; close after event.
+                    {
+                        std::lock_guard<std::mutex> lock(mutex_);
+                        sockets_.erase(socket);
+                    }
+                    closesocket(socket);
+                }
+            } break;
 
             default:
                 GANL_IOCP_DEBUG(socket, "Warning: Unknown operation type (" << static_cast<int>(perIoData->opType) << ") in completion packet!");

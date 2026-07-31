@@ -16,6 +16,7 @@
 #include "protocol_handler.h"
 #include "session_manager.h"
 #include "connection.h"
+#include "io_buffer.h"
 
 #include <condition_variable>
 #include <memory>
@@ -150,10 +151,12 @@ public:
 
     struct EmailChannel {
         ganl::ConnectionHandle handle{ganl::InvalidConnectionHandle};
-        int fd{-1};
+        // Native socket handle (SOCKET on Windows, int on POSIX).  Do not
+        // narrow through int on Win64 — SOCKET is pointer-width (#1801).
+        SOCKET fd{INVALID_SOCKET};
 
         enum class State {
-            Connecting,      // Waiting for non-blocking connect() to complete
+            Connecting,      // Waiting for ConnectSuccess / connect completion
             WaitGreeting,    // Waiting for 220 greeting
             SentEhlo,        // Sent EHLO, waiting for 250
             SentMailFrom,    // Sent MAIL FROM, waiting for 250
@@ -171,6 +174,10 @@ public:
         std::string currentWrite;
         std::string readBuffer;
         bool writeInterest{false};
+        // Completion engines (IOCP) need a postRead buffer; readiness engines
+        // ignore it and use SOCKET_READ after a Read event.
+        ganl::IoBuffer ioReadBuf{8192};
+        bool readPosted{false};
 
         // #1802: overall SMTP deadline (wall clock); silent peer must not
         // wedge the singleton email_channel_ forever.
@@ -192,7 +199,9 @@ public:
                           const UTF8* subject, const UTF8* encodedBody);
     void shutdown_email_channel();
     void handle_email_channel_event(const ganl::IoEvent& event);
-    bool process_email_read_locked();
+    bool process_email_read_locked(bool already_filled = false);
+    bool process_email_read_event_locked(const ganl::IoEvent& event);
+    bool email_arm_read_locked();
     bool flush_email_writes_locked();
     void email_queue_write_locked(const std::string& data);
     void email_advance_state_locked(const std::string& responseLine);
