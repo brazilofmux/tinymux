@@ -110,10 +110,12 @@ FUNCTION(fun_iadd)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    // #1861: signed overflow is UB; wrap via i64Add (see #1472 / timeutil.h).
+    //
     int64_t sum = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        sum += mux_atoi64(fargs[i]);
+        sum = i64Add(sum, mux_atoi64(fargs[i]));
     }
     safe_i64toa(sum, buff, bufc);
 }
@@ -162,10 +164,11 @@ FUNCTION(fun_isub)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    // #1861: wrap via i64Sub rather than signed a - b.
+    //
     int64_t a = mux_atoi64(fargs[0]);
     int64_t b = mux_atoi64(fargs[1]);
-    int64_t diff = a - b;
-    safe_i64toa(diff, buff, bufc);
+    safe_i64toa(i64Sub(a, b), buff, bufc);
 }
 
 FUNCTION(fun_mul)
@@ -200,10 +203,12 @@ FUNCTION(fun_imul)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
+    // #1861: wrap via i64Mul rather than signed *=.
+    //
     int64_t prod = 1;
     for (int i = 0; i < nfargs; i++)
     {
-        prod *= mux_atoi64(fargs[i]);
+        prod = i64Mul(prod, mux_atoi64(fargs[i]));
     }
     safe_i64toa(prod, buff, bufc);
 }
@@ -721,10 +726,12 @@ FUNCTION(fun_limath)
     if (  mux_stricmp(op, T("add")) == 0
        || mux_stricmp(op, T("sum")) == 0)
     {
+        // #1861: wrap via i64Add (see timeutil.h / #1472).
+        //
         int64_t sum = 0;
         for (int i = 0; i < n; i++)
         {
-            sum += vals[i];
+            sum = i64Add(sum, vals[i]);
         }
         safe_i64toa(sum, buff, bufc);
     }
@@ -733,7 +740,7 @@ FUNCTION(fun_limath)
         int64_t prod = 1;
         for (int i = 0; i < n; i++)
         {
-            prod *= vals[i];
+            prod = i64Mul(prod, vals[i]);
         }
         safe_i64toa(prod, buff, bufc);
     }
@@ -742,7 +749,7 @@ FUNCTION(fun_limath)
         int64_t result = vals[0];
         for (int i = 1; i < n; i++)
         {
-            result -= vals[i];
+            result = i64Sub(result, vals[i]);
         }
         safe_i64toa(result, buff, bufc);
     }
@@ -815,11 +822,12 @@ FUNCTION(fun_limath)
         else
         {
             // Integer median of even-length list: floor of average.
-            // Use a + (b - a) / 2 to avoid overflow (a <= b after sort).
+            // a + (b - a) / 2 with defined wrap (#1861) so INT64_MIN/MAX
+            // pairs cannot invoke signed overflow.
             //
             int64_t a = vals[n / 2 - 1];
             int64_t b = vals[n / 2];
-            safe_i64toa(a + i64Division(b - a, 2), buff, bufc);
+            safe_i64toa(i64Add(a, i64Division(i64Sub(b, a), 2)), buff, bufc);
         }
     }
     else

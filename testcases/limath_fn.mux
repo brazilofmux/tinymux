@@ -215,11 +215,27 @@
         #-1*
       )=
   {
-    @log smoke=TC014: limath unknown operation. Succeeded.;
+    @log smoke=TC014: limath unknown operation. Succeeded.
+  },
+  {
+    @log smoke=TC014: limath unknown operation. Failed ([limath(foo, 1 2 3)]).
+  }
+-
+#
+# Test Case #15 - INT64 wrap on add/mul/sub (#1861).
+#
+&tr.tc015 test_limath_fn=
+  @if cand(
+        eq(limath(add, 9223372036854775807 1), -9223372036854775808),
+        eq(limath(mul, 9223372036854775807 2), -2),
+        eq(limath(sub, -9223372036854775808 1), 9223372036854775807)
+      )=
+  {
+    @log smoke=TC015: limath INT64 wrap. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC014: limath unknown operation. Failed ([limath(foo, 1 2 3)]).;
+    @log smoke=TC015: limath INT64 wrap. Failed (add=[limath(add, 9223372036854775807 1)] mul=[limath(mul, 9223372036854775807 2)] sub=[limath(sub, -9223372036854775808 1)]).;
     @trig me/tr.done
   }
 -
