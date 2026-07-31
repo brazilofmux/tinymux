@@ -119,4 +119,58 @@ final class McpParserTests: XCTestCase {
         XCTAssertTrue(sent[2].hasSuffix("content: beta"))
         XCTAssertTrue(sent[3].hasPrefix("#$#: "))
     }
+
+    // #1893: multiline reassembly is bounded (mirrors web #1889).
+
+    func testPendingMultilineCountIsCapped() {
+        let parser = McpParser()
+        parser.sessionKey = "key"
+        var diags: [String] = []
+        parser.onDiagnostic = { diags.append($0) }
+
+        for i in 0..<40 {
+            _ = parser.processLine(
+                "#$#dns-org-mud-moo-simpleedit-content key reference: r content*: \"\" _data-tag: t\(i)")
+        }
+        XCTAssertLessThanOrEqual(parser.pendingCount, MCP_MAX_PENDING_MESSAGES)
+        XCTAssertTrue(diags.contains { $0.range(of: "evict|capacity|pending", options: .regularExpression) != nil })
+    }
+
+    func testOversizedContinuationDropsTag() {
+        let parser = McpParser()
+        parser.sessionKey = "key"
+        var diags: [String] = []
+        parser.onDiagnostic = { diags.append($0) }
+
+        _ = parser.processLine(
+            "#$#dns-org-mud-moo-simpleedit-content key reference: r content*: \"\" _data-tag: fat")
+        XCTAssertTrue(parser.isPending("fat"))
+
+        let chunk = String(repeating: "x", count: 1024)
+        for _ in 0..<300 {
+            _ = parser.processLine("#$#* fat content: \(chunk)")
+            if !parser.isPending("fat") { break }
+        }
+        XCTAssertFalse(parser.isPending("fat"))
+        XCTAssertTrue(diags.contains { $0.range(of: "size limit|dropped", options: .regularExpression) != nil })
+    }
+
+    func testCompleteMultilineStillDispatches() {
+        let parser = McpParser()
+        parser.sessionKey = "key"
+        var edit: (String, String, String, String)?
+        parser.onEditRequest = { ref, name, type, content in
+            edit = (ref, name, type, content)
+        }
+
+        _ = parser.processLine(
+            "#$#dns-org-mud-moo-simpleedit-content key reference: R name: N type: string-list content*: \"\" _data-tag: ok")
+        _ = parser.processLine("#$#* ok content: line1")
+        _ = parser.processLine("#$#* ok content: line2")
+        _ = parser.processLine("#$#: ok")
+
+        XCTAssertNotNil(edit)
+        XCTAssertEqual(edit?.3, "line1\nline2")
+        XCTAssertEqual(parser.pendingCount, 0)
+    }
 }
