@@ -3268,7 +3268,7 @@ bool GanlAdapter::start_email_send(dbref executor, const UTF8* recipient,
 
     UTF8* pMailServer = ConvertCRLFtoSpace(g_dc.mail_server);
     if (nullptr == pMailServer || '\0' == pMailServer[0]) {
-        notify(executor, M_("@email: Unable to resolve hostname !"));
+        notify(executor, M_("@email: No mail server configured."));
         return false;
     }
 
