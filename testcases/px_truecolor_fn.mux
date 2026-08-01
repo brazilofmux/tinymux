@@ -1,0 +1,104 @@
+#
+# px_truecolor_fn.mux - %x/%X extended color matches ansi() (#1933).
+#
+# Non-palette-exact truecolor used to emit the retired v4 PUA delta scheme
+# from %x while ansi() used v5; rendered channels were wrong.
+#
+# ansi() runs TruncateToBuffer, which always terminates with a transition to
+# normal (NOBLEED).  Bare %x does not, so comparisons append %xn to the
+# percent form so both sides have the same trailing reset.
+#
+@create test_px_truecolor_fn
+-
+@set test_px_truecolor_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_px_truecolor_fn=
+  @log smoke=Beginning percent-x truecolor (issue 1933) test cases.
+-
+#
+# Test Case #1 - Sanity: simple palette color already matched ansi().
+#
+&tr.tc001 test_px_truecolor_fn=
+  @if eq(comp(%xrx%xn,ansi(r,x)),0)=
+  {
+    @log smoke=TC001: simple percent-xr matches ansi(). Succeeded.
+  },
+  {
+    @log smoke=TC001: simple percent-xr matches ansi(). Failed.
+  }
+-
+#
+# Test Case #2 - Non-palette-exact FG decimal vector.
+# RGB 18 52 86 is #123456, not an exact xterm-256 entry (v4 corrupted this).
+#
+&tr.tc002 test_px_truecolor_fn=
+  @if eq(comp(%x<18 52 86>x%xn,ansi(<18 52 86>,x)),0)=
+  {
+    @log smoke=TC002: percent-x R G B matches ansi(). Succeeded.
+  },
+  {
+    @log smoke=TC002: percent-x R G B matches ansi(). Failed.
+  }
+-
+#
+# Test Case #3 - Same RGB via hex form.
+#
+&tr.tc003 test_px_truecolor_fn=
+  @if eq(comp(%x<#123456>x%xn,ansi(<#123456>,x)),0)=
+  {
+    @log smoke=TC003: percent-x hex FG matches ansi(). Succeeded.
+  },
+  {
+    @log smoke=TC003: percent-x hex FG matches ansi(). Failed.
+  }
+-
+#
+# Test Case #4 - Background %X truecolor matches ansi(/...).
+#
+&tr.tc004 test_px_truecolor_fn=
+  @if eq(comp(%X<#123456>x%xn,ansi(/<#123456>,x)),0)=
+  {
+    @log smoke=TC004: percent-X background matches ansi(). Succeeded.
+  },
+  {
+    @log smoke=TC004: percent-X background matches ansi(). Failed.
+  }
+-
+#
+# Test Case #5 - Palette-exact still works (hex FF0000 -> xterm 196).
+#
+&tr.tc005 test_px_truecolor_fn=
+  @if eq(comp(%x<#FF0000>x%xn,ansi(<#FF0000>,x)),0)=
+  {
+    @log smoke=TC005: palette-exact percent-x matches ansi(). Succeeded.
+  },
+  {
+    @log smoke=TC005: palette-exact percent-x matches ansi(). Failed.
+  }
+-
+#
+# Test Case #6 - stripansi of truecolor percent-x yields plain text.
+#
+&tr.tc006 test_px_truecolor_fn=
+  @if eq(comp(stripansi(%x<18 52 86>Hello%xn),Hello),0)=
+  {
+    @log smoke=TC006: stripansi truecolor percent-x. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC006: stripansi truecolor percent-x. Failed (got=[stripansi(%x<18 52 86>Hello%xn)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_px_truecolor_fn=
+  @log smoke=End percent-x truecolor (issue 1933) test cases.;
+  @notify smoke
+-
+drop test_px_truecolor_fn
+-
+#
+# End of Test Cases
+#

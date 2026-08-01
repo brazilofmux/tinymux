@@ -4134,17 +4134,29 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                                 node->text.c_str() + 3);
                             RGB rgb;
                             if (parse_rgb(nColor, pColor, rgb)) {
-                                int iColor = FindNearestPaletteEntry(rgb, true);
-                                int ci = bBackground ? (iColor + COLOR_INDEX_BG)
-                                                     : (iColor + COLOR_INDEX_FG);
-                                const UTF8 *pUTF = aColors[ci].pUTF;
-                                // For exact palette match, just emit the color.
-                                // PUA refinement for non-exact matches is complex;
-                                // fall through to ECALL for those.
-                                if (pUTF && pUTF[0]) {
-                                    std::string cs(reinterpret_cast<const char *>(pUTF));
-                                    uint64_t addr = rc.pool_str(cs);
-                                    return h.emit_sconst(addr, cs);
+                                // Match the interpreter / ansi() path:
+                                // LettersToBinary → v5 SMP two-codepoint
+                                // encoding (#1933).  Previously this only
+                                // emitted the nearest palette entry and
+                                // dropped truecolor refinement ("complex").
+                                UTF8 letters[32];
+                                size_t li = 0;
+                                if (bBackground) {
+                                    letters[li++] = '/';
+                                }
+                                letters[li++] = '<';
+                                if (li + nColor + 1 < sizeof(letters)) {
+                                    memcpy(letters + li, pColor, nColor);
+                                    li += nColor;
+                                    letters[li++] = '>';
+                                    letters[li] = '\0';
+                                    const UTF8 *pUTF = LettersToBinary(letters);
+                                    if (pUTF && pUTF[0]) {
+                                        std::string cs(
+                                            reinterpret_cast<const char *>(pUTF));
+                                        uint64_t addr = rc.pool_str(cs);
+                                        return h.emit_sconst(addr, cs);
+                                    }
                                 }
                             }
                         }
