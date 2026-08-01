@@ -17,6 +17,10 @@
 #include <string.h>
 #include <stdarg.h>
 #include <time.h>
+#ifndef _WIN32
+#include <unistd.h>
+#include <signal.h>
+#endif
 
 /* ---- Test infrastructure ---- */
 
@@ -248,10 +252,17 @@ static void test_visible_length(void) {
     check_size(name, "ascii 'hello'",
         co_visible_length((const unsigned char *)"hello", 5), 5);
 
-    /* Pure color, no visible chars. */
+    /* Pure color, no visible chars.
+     *
+     * The bg write used to land on buf rather than buf+n, overwriting the
+     * fg sequence and leaving buf[3..5] never written -- so this case fed
+     * co_visible_length three bytes of uninitialized stack and passed only
+     * because that garbage happened to parse as non-visible.  Adding an
+     * unrelated suite ahead of this one in the table was enough to change
+     * the stack contents and turn it red (#1930). */
     size_t n = 0;
     n += (size_t)pua_fg(buf, 1);
-    n += (size_t)pua_bg(buf, 2);
+    n += (size_t)pua_bg(buf + n, 2);
     n += (size_t)pua_reset(buf + n);
     check_size(name, "pure color", co_visible_length(buf, n), 0);
 
@@ -3946,6 +3957,81 @@ static void test_render_html(void) {
     g_seed = save_seed;
 }
 
+/* ---- oversize input must terminate (#1930) ----------------------
+ *
+ * WP_SAFE evaluated its byte argument only INSIDE the bounds check:
+ *
+ *     do { if ((wp) < (wp_end)) *(wp)++ = (byte); } while (0)
+ *
+ * so `while (s <= p) WP_SAFE(wp, wp_end, *s++);` stopped advancing s the
+ * moment the output buffer filled, and spun forever.  Twelve loops in
+ * color_ops.rl pass a side-effecting argument that way; #1930 reached one
+ * of them from softcode, which made it a server-wide hang any player
+ * could trigger with a single think.
+ *
+ * co_cluster_count strips into an LBUF_SIZE stack buffer, so any input at
+ * or past LBUF_SIZE fills it and exercises the guard.
+ *
+ * A regression here would WEDGE `make test` rather than fail it, so the
+ * watchdog turns the hang back into a fast, loud failure.  That matters
+ * more than the assertion: a test that hangs teaches people to kill the
+ * suite, and a suite people kill reports nothing at all.
+ */
+#ifndef _WIN32
+/* Report the hang instead of dying anonymously: a bare exit 142 tells the
+ * next person nothing, and this is the one failure whose whole point is to
+ * name itself. */
+static void oversize_alarm(int sig) {
+    (void)sig;
+    static const char msg[] =
+        "\n  FAIL oversize_termination: co_cluster_count did not return "
+        "(SIGALRM) -- #1930 WP_SAFE spin has regressed\n";
+    ssize_t rc = write(2, msg, sizeof(msg) - 1);
+    (void)rc;
+    _exit(1);
+}
+#endif
+
+static void test_oversize_termination(void) {
+    const char *name = "oversize_termination";
+#ifndef _WIN32
+    signal(SIGALRM, oversize_alarm);
+#endif
+    static const size_t sizes[] = { LBUF_SIZE - 1, LBUF_SIZE, LBUF_SIZE + 1,
+                                    LBUF_SIZE * 2 };
+
+    for (size_t si = 0; si < sizeof(sizes)/sizeof(sizes[0]); si++) {
+        size_t n = sizes[si];
+        unsigned char *big = (unsigned char *)malloc(n);
+        if (!big) {
+            g_skip++;
+            if (g_verbose) printf(YELLOW "  SKIP" RESET " %s: malloc(%zu) failed\n",
+                                  name, n);
+            continue;
+        }
+        memset(big, 'x', n);
+
+#ifndef _WIN32
+        alarm(20);   /* a hang becomes SIGALRM, not an unkillable suite */
+#endif
+        size_t got = co_cluster_count(big, n);
+#ifndef _WIN32
+        alarm(0);
+#endif
+
+        /* Stripping never grows output and the buffer holds LBUF_SIZE-1
+         * visible bytes, so the count saturates there. */
+        size_t expect = n < LBUF_SIZE ? n : (size_t)(LBUF_SIZE - 1);
+        if (got != expect) {
+            test_fail(name, "len %zu: co_cluster_count returned %zu, expected %zu",
+                      n, got, expect);
+        } else {
+            test_ok(name, "len %zu -> %zu (terminated)", n, got);
+        }
+        free(big);
+    }
+}
+
 /* ================================================================
  * Main
  * ================================================================ */
@@ -3956,6 +4042,7 @@ typedef struct {
 } test_suite_t;
 
 static const test_suite_t suites[] = {
+    { "oversize_term",    test_oversize_termination },
     { "visible_length",   test_visible_length },
     { "strip_color",      test_strip_color },
     { "words_count",      test_words_count },

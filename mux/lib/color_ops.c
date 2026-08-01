@@ -222,7 +222,7 @@ static size_t next_grapheme_plain(const unsigned char *src, size_t nSrc)
  * These macros silently truncate when the buffer is full. */
 
 #define WP_SAFE(wp, wp_end, byte) \
-    do { if ((wp) < (wp_end)) *(wp)++ = (byte); } while (0)
+    do { unsigned char wps_b_ = (unsigned char)(byte); if ((wp) < (wp_end)) *(wp)++ = wps_b_; } while (0)
 
 static inline size_t wp_safe_copy(unsigned char *wp, const unsigned char *wp_end,
                                   const unsigned char *src, size_t n)
