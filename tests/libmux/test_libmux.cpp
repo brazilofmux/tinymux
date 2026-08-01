@@ -709,11 +709,22 @@ static void test_copy_columns_color_inside_cluster()
     ASSERT_TRUE(memcmp(out, s, len) == 0);
 
     // At 1 column the 2-wide cluster does not fit: nothing visible is
-    // emitted, only the leading color code passes through.
+    // emitted, so the leading color code passes through AND is closed.
+    //
+    // The close is #1649's doing (co_copy_field: "color close on
+    // truncate").  This expectation used to be the bare 3-byte C_GREEN,
+    // which left the client green with nothing visible after it -- the
+    // colour leaked past a field that rendered empty.  Emitting the
+    // reset is the better contract and the test now pins it.
+    //
+    // What this case exists to guard is unchanged: the 2-wide cluster is
+    // still dropped ATOMICALLY rather than split between base and
+    // modifier (#787).  Only the colour state around the drop moved.
     n = co_copy_columns(out, (const unsigned char *)s,
                         (const unsigned char *)s + len, 1);
-    ASSERT_EQ(n, (size_t)3);
+    ASSERT_EQ(n, (size_t)6);
     ASSERT_TRUE(memcmp(out, C_GREEN, 3) == 0);
+    ASSERT_TRUE(memcmp(out + 3, C_RESET, 3) == 0);
 
     // GB11 family with a color flip inside the ZWJ sequence: still one
     // cluster, charged 2 columns once.  At 3 columns the family and the
