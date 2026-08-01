@@ -22,8 +22,15 @@
 #   start until the 3s slow cohort finishes — so an early snapshot of
 #   fast responses is the discriminator, not the final total.
 #
-#   Also samples peak concurrent children of the slave process; a green
-#   without peak >= 20 is the vacuous pass this repo keeps re-learning.
+#   Peak concurrency is asserted from the slave's own report, not sampled:
+#   in harness mode the slave prints PEAK_CHILDREN=<n> on stderr at exit,
+#   computed by the cap's own accounting at each fork (#1912).  Sampling
+#   ppid from outside is structurally racy — the parent exits as soon as
+#   stdin drains, reparenting the children, and on a busy box one sampling
+#   sweep can outlast that window entirely (observed: peak_children=0 with
+#   20 live children).  A green without peak >= 20 is the vacuous pass this
+#   repo keeps re-learning, so the assertion stays — only its evidence
+#   changed from sampled to reported.
 #
 set -u
 
@@ -48,7 +55,8 @@ fi
 
 REQ_FILE=$(mktemp)
 OUT_FILE=$(mktemp)
-trap 'rm -f "$REQ_FILE" "$OUT_FILE"; kill $SLAVE_PID 2>/dev/null; wait $SLAVE_PID 2>/dev/null' EXIT
+ERR_FILE=$(mktemp)
+trap 'rm -f "$REQ_FILE" "$OUT_FILE" "$ERR_FILE"; kill $SLAVE_PID 2>/dev/null; wait $SLAVE_PID 2>/dev/null' EXIT
 
 {
     for i in $(seq 1 19); do
@@ -63,62 +71,34 @@ trap 'rm -f "$REQ_FILE" "$OUT_FILE"; kill $SLAVE_PID 2>/dev/null; wait $SLAVE_PI
 export SLAVE_TEST_HARNESS=1
 
 : >"$OUT_FILE"
-"$SLAVE" <"$REQ_FILE" >"$OUT_FILE" 2>/dev/null &
+"$SLAVE" <"$REQ_FILE" >"$OUT_FILE" 2>"$ERR_FILE" &
 SLAVE_PID=$!
-
-count_children() {
-    local n=0
-    if [ -d /proc ]; then
-        for d in /proc/[0-9]*; do
-            if [ -r "$d/stat" ]; then
-                ppid=$(awk '{print $4}' "$d/stat" 2>/dev/null || true)
-                if [ "$ppid" = "$SLAVE_PID" ]; then
-                    n=$((n + 1))
-                fi
-            fi
-        done
-    elif command -v pgrep >/dev/null 2>&1; then
-        n=$(pgrep -P "$SLAVE_PID" 2>/dev/null | wc -l | tr -d ' ')
-    fi
-    echo "$n"
-}
 
 count_fast() {
     # Fast cohort: 10.0.0.20 .. 10.0.0.25 (6 addresses).
     grep -E '^10\.0\.0\.(2[0-5]) ' "$OUT_FILE" 2>/dev/null | wc -l | tr -d ' '
 }
 
-# Sample for ~1.2s: long enough for the post-cap fast wave (100ms each)
-# under the fix, short of the 3s slow cohort.
-peak=0
-early_fast=0
-for step in $(seq 1 24); do
-    if ! kill -0 "$SLAVE_PID" 2>/dev/null; then
-        break
-    fi
-    n=$(count_children)
-    if [ "$n" -gt "$peak" ]; then
-        peak=$n
-    fi
-    early_fast=$(count_fast)
-    sleep 0.05
+# Wait for the slave parent to exit (it does so once stdin is drained and
+# every request is forked — under the fixed cap that is well under 2s, the
+# serialized post-cap fast wave).  Bound the wait at ~2.5s: under the old
+# sticky-waitpid bug the parent is still blocked on the 3s slow cohort at
+# that point, and the early snapshot below then correctly reads ~1.
+waited=0
+while [ "$waited" -lt 25 ] && kill -0 "$SLAVE_PID" 2>/dev/null; do
+    sleep 0.1
+    waited=$((waited + 1))
 done
 
-# Final early snapshot at ~1.2s (or earlier if slave already exited).
+# Early snapshot: taken at most ~2.5s in, strictly before the 3s slow
+# cohort can have answered.  Post-cap fast work completing this early is
+# the deterministic evidence that the cap released one slot per exit.
 early_fast=$(count_fast)
 
-# The slave *parent* can exit as soon as stdin is drained and the cap
-# loop has forked every request — the slow children still run and write
-# to the inherited stdout.  Wait for the process *and* for 25 response
-# lines (or a 10s ceiling).
+# The slow children still run and write to the inherited stdout after the
+# parent exits.  Wait for all 25 response lines (10s ceiling).
 wait_s=0
 while [ "$wait_s" -lt 40 ]; do
-    if kill -0 "$SLAVE_PID" 2>/dev/null; then
-        n=$(count_children)
-        if [ "$n" -gt "$peak" ]; then
-            peak=$n
-        fi
-    fi
     total_now=$(grep -c . "$OUT_FILE" 2>/dev/null || true)
     if [ "$total_now" -ge 25 ]; then
         break
@@ -137,24 +117,27 @@ fi
 wait "$SLAVE_PID" 2>/dev/null || true
 SLAVE_PID=""
 
-# Orphaned slow children may still be writing; give them a moment.
-for _ in $(seq 1 20); do
-    total_now=$(grep -c . "$OUT_FILE" 2>/dev/null || true)
-    if [ "$total_now" -ge 25 ]; then
-        break
-    fi
-    sleep 0.25
-done
-
 total_lines=$(grep -c . "$OUT_FILE" || true)
 final_fast=$(count_fast)
+peak=$(sed -n 's/^PEAK_CHILDREN=\([0-9][0-9]*\)$/\1/p' "$ERR_FILE" | tail -1)
 
-echo "slave child-cap burst: peak_children=$peak  early_fast=$early_fast  final_fast=$final_fast  total=$total_lines"
+echo "slave child-cap burst: peak_children=${peak:-unreported}  early_fast=$early_fast  final_fast=$final_fast  total=$total_lines"
 
 fail=0
-if [ "$peak" -lt 20 ]; then
-    echo "FAIL: peak concurrent children $peak < MAX_CHILDREN (20) — vacuous burst"
+if [ -z "$peak" ]; then
+    echo "FAIL: slave did not report PEAK_CHILDREN (stale binary, or report lost)"
     fail=1
+else
+    if [ "$peak" -lt 20 ]; then
+        echo "FAIL: peak concurrent children $peak < MAX_CHILDREN (20) — vacuous burst"
+        fail=1
+    fi
+    # The cap must also hold: more than MAX_CHILDREN live at once means the
+    # gate itself is broken.
+    if [ "$peak" -gt 20 ]; then
+        echo "FAIL: peak concurrent children $peak > MAX_CHILDREN (20) — cap overrun"
+        fail=1
+    fi
 fi
 # Discriminator: post-cap fast work must complete while slow children still
 # hold slots.  Need >=5 of the 6 fast-cohort lines within the early window.
@@ -171,8 +154,10 @@ fi
 if [ "$fail" -ne 0 ]; then
     echo "--- stdout ---"
     cat "$OUT_FILE" || true
+    echo "--- stderr ---"
+    cat "$ERR_FILE" || true
     exit 1
 fi
 
-echo "PASS: peak $peak >= 20, early_fast $early_fast, total $total_lines"
+echo "PASS: peak $peak == 20 (slave-reported), early_fast $early_fast, total $total_lines"
 exit 0
