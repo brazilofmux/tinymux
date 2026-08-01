@@ -1,0 +1,254 @@
+#!/bin/bash
+#
+#   PerfSmokeWin — Run smoke tests under ETW CPU sampling (Windows).
+#
+#   The Windows analog of PerfSmoke: same workload, but the profiler is
+#   xperf (Windows Performance Toolkit) instead of perf.  Produces
+#   perfsmoke.etl for interactive analysis in WPA, plus a headless
+#   hot-function table (perfsmoke-profile.txt) and A/B-able timing.
+#
+#   Run from Git Bash in an ELEVATED shell — ETW kernel sessions need
+#   administrator rights.  Needs xperf on PATH (Windows Performance
+#   Toolkit, part of the Windows ADK).
+#
+#   Two things this script must get right that a naive wrapper around
+#   ./tools/Smoke cannot:
+#
+#     * The trace must be merged (xperf -d) BEFORE the smoke environment
+#       is cleaned up.  Merge-time image identification re-reads every
+#       loaded DLL from its recorded load path to collect PDB GUIDs;
+#       engine.dll loads through the transient bin/ link, so merging
+#       after cleanup silently loses its symbols and 15+% of the profile
+#       becomes engine.dll!"Unknown".
+#     * Symbol decoding needs _NT_SYMBOL_PATH pointed at the PDBs from
+#       the same link as the deployed DLLs (mux/bin_release).
+#
+#   Usage: cd testcases && ./tools/PerfSmokeWin
+#          Analysis: perfsmoke-profile.txt (flat, per-function, sorted)
+#                    wpa perfsmoke.etl     (stacks; ETL keeps full stacks)
+#
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+TC=$(cd "$SCRIPT_DIR/.." && pwd)
+cd "$TC"
+
+GAMENAME=smoke
+BIN=../mux/game/bin
+PDBDIR=$(cygpath -m "$TC/../mux/bin_release")
+TCWIN=$(cygpath -m "$TC")
+DATA=./$GAMENAME.d
+LOGFILE=logs/M-smoke.log
+
+# ETW buffer/merge files must live OUTSIDE the smoke workspace.  A capture
+# whose -f file sat in testcases/ while the workload churned the same
+# directory produced an ETL that xperf itself could not process
+# (ISession::ProcessEvents 0xd000003e) despite intact event counts; the
+# identical capture with its files in a quiet directory decodes fine.
+ETWDIR=$(cygpath -m "${TEMP:-/tmp}")/perfsmokewin.$$
+mkdir -p "$ETWDIR"
+
+# ---------------------------------------------------------------------------
+# Preflight.
+# ---------------------------------------------------------------------------
+
+if [ ! -r smoke.flat ]; then
+    echo "ERROR: smoke.flat not found. Run Makesmoke first."
+    exit 1
+fi
+
+for bin in muxscript.exe dbconvert.exe; do
+    if [ ! -x "$BIN/$bin" ]; then
+        echo "ERROR: $BIN/$bin not found. Build and deploy first."
+        exit 1
+    fi
+done
+
+if ! command -v xperf >/dev/null 2>&1; then
+    echo "ERROR: xperf not found (install Windows Performance Toolkit)."
+    exit 1
+fi
+
+if ! net session >/dev/null 2>&1; then
+    echo "ERROR: not elevated. ETW kernel sessions need an administrator shell."
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Clean prior state.
+# ---------------------------------------------------------------------------
+
+xperf -stop >/dev/null 2>&1 || true
+rm -rf "$DATA" logs text bin
+rm -f smoke.conf alias.conf compat.conf shutdown.status
+rm -f smoke.log netmux.log
+rm -f perfsmoke.etl perfsmoke-profile.txt
+
+# ---------------------------------------------------------------------------
+# Create fresh environment (same as Smoke).
+# ---------------------------------------------------------------------------
+
+mkdir "$DATA"
+mkdir -p logs text
+
+[ ! -e bin ] && ln -s "$BIN" bin
+cp ../mux/game/alias.conf .
+cp ../mux/game/compat.conf .
+touch "$LOGFILE"
+
+cat > text/smokehelp.txt <<'_HELPEOF'
+& help
+This is the smoke test help system.
+& test topic
+This is a test topic for mhelp().
+& another topic
+Another test topic.
+_HELPEOF
+
+cat > smoke.conf <<'_EOF'
+input_database	smoke.d/smoke.db
+output_database	smoke.d/smoke.db.new
+crash_database	smoke.d/smoke.db.CRASH
+mail_database   smoke.d/mail.db
+comsys_database smoke.d/comsys.db
+port 2860
+mud_name SmokeMUX
+command_quota_increment 10000
+command_quota_max 10000
+player_queue_limit 100000
+include alias.conf
+include compat.conf
+raw_helpfile help text/smokehelp
+module exp3
+module comsys_mod
+module mail_mod
+_EOF
+
+# ---------------------------------------------------------------------------
+# Import.
+# ---------------------------------------------------------------------------
+
+echo "Importing smoke.flat into SQLite..."
+
+if ! "$BIN/dbconvert" -d "$DATA/$GAMENAME" -i smoke.flat -l > netmux.log 2>&1; then
+    echo "ERROR: dbconvert import failed."
+    cat netmux.log
+    exit 1
+fi
+
+# ---------------------------------------------------------------------------
+# Run muxscript under ETW CPU sampling.
+# 1 kHz sampling with stacks; PROC_THREAD+LOADER so samples attribute to
+# processes and modules.
+# ---------------------------------------------------------------------------
+
+echo "Starting ETW kernel session (1 kHz CPU sampling, stacks)..."
+xperf -on PROC_THREAD+LOADER+PROFILE -stackwalk Profile \
+      -f "$ETWDIR/perfsmoke-kernel.etl"
+
+echo "Starting smoke tests..."
+WALL_START=$SECONDS
+"$BIN/muxscript" -g . -c smoke.conf --readonly < /dev/null >> netmux.log 2>&1 || true
+ELAPSED=$((SECONDS - WALL_START))
+echo "muxscript ran for ${ELAPSED}s."
+
+# Merge BEFORE cleanup -- see header comment.
+echo "Stopping and merging trace..."
+xperf -d "$ETWDIR/perfsmoke.etl" >/dev/null
+
+# ---------------------------------------------------------------------------
+# Collect smoke log.
+# ---------------------------------------------------------------------------
+
+if [ -r "$LOGFILE" ] && [ -s "$LOGFILE" ]; then
+    mv "$LOGFILE" smoke.log
+else
+    touch smoke.log
+fi
+
+SUCCEEDED=$(grep -c 'Succeeded' smoke.log || true)
+FAILED=$(grep -c 'Failed' smoke.log || true)
+: "${SUCCEEDED:=0}" "${FAILED:=0}"
+
+# ---------------------------------------------------------------------------
+# Headless symbol decode: flat per-function table for the muxscript process,
+# sorted by sample weight.  The ETL keeps full stacks for WPA.
+# ---------------------------------------------------------------------------
+
+# Decode via the DUMPER, not "-a profile".  The profile action refuses any
+# trace whose achieved sampling interval re-quantized mid-capture
+# (ProfileFreq DCStart != DCEnd -> ISession::ProcessEvents 0xd000003e), and
+# on a busy box other processes toggling timer resolution make that a coin
+# flip.  The dumper emits every SampledProfile with a symbolized
+# Image!Function and does not care; we aggregate ourselves.
+echo "Decoding symbols (this is the slow part)..."
+export _NT_SYMBOL_PATH="$PDBDIR"
+export _NT_SYMCACHE_PATH="$ETWDIR/symcache"
+xperf -i "$ETWDIR/perfsmoke.etl" -symbols -quiet -tle -tti \
+      -o "$ETWDIR/perfsmoke-raw.txt" || true
+
+python3 - "$ETWDIR/perfsmoke-raw.txt" > perfsmoke-profile.txt <<'_PYEOF'
+import sys
+from collections import Counter
+
+# SampledProfile, TimeStamp, Proc (PID), TID, PrgrmCtr, CPU,
+#   ThreadStartImage!Function, Image!Function, Count, Batched/Unbatched
+# C++ symbol names may contain ", " so split off the leading fixed columns,
+# then peel the two trailing fixed columns from the right.
+hits = Counter()
+total = 0
+for line in open(sys.argv[1], errors="replace"):
+    if not line.startswith("         SampledProfile,"):
+        continue
+    parts = line.rstrip("\n").split(", ", 7)
+    if len(parts) < 8 or "muxscript" not in parts[2]:
+        continue
+    sym = parts[7].rsplit(", ", 2)[0].strip()
+    hits[sym] += 1
+    total += 1
+if total == 0:
+    print("no muxscript samples found -- decode failed?")
+    sys.exit(0)
+print(f"muxscript CPU samples: {total} (~{total/1000.0:.1f}s at 1 kHz)")
+print(f"{'samples':>10} {'%':>7}  location")
+for sym, n in hits.most_common():
+    if 100.0 * n / total < 0.05:
+        break
+    print(f"{n:>10} {100.0*n/total:>7.2f}  {sym}")
+_PYEOF
+
+# Bring the merged trace home for WPA use; drop the raw buffer + scratch.
+mv "$ETWDIR/perfsmoke.etl" perfsmoke.etl
+rm -rf "$ETWDIR"
+
+# ---------------------------------------------------------------------------
+# Report.
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "=== PerfSmokeWin Results ==="
+echo "  Succeeded: $SUCCEEDED"
+echo "  Failed:    $FAILED"
+echo "  Wall time: ${ELAPSED}s"
+grep -m1 'CPU samples' perfsmoke-profile.txt | sed 's/^/  /' || true
+echo ""
+echo "perfsmoke.etl written ($(du -h perfsmoke.etl | cut -f1))."
+echo ""
+echo "Analysis:"
+echo "  head -40 perfsmoke-profile.txt   # flat hot-function table"
+echo "  wpa perfsmoke.etl                # stacks (set symbol path to mux/bin_release)"
+echo ""
+
+# ---------------------------------------------------------------------------
+# Clean up runtime state (keep perfsmoke.etl, perfsmoke-profile.txt, smoke.log).
+# ---------------------------------------------------------------------------
+
+rm -f smoke.conf alias.conf compat.conf shutdown.status
+rm -rf "$DATA" logs text bin
+rm -f netmux.log
+
+if [ "$FAILED" -gt 0 ]; then
+    echo "WARNING: $FAILED tests failed."
+    exit 1
+fi
+echo "=== PerfSmokeWin: $SUCCEEDED tests passed ==="

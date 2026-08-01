@@ -1,5 +1,8 @@
 # Shell scripts must have LF endings to work in Git Bash and Cygwin.
 *.sh text eol=lf
+# The extensionless test drivers are shell scripts too; PerfSmokeWin was
+# developed and tested LF-on-disk under Git Bash.
+testcases/tools/PerfSmokeWin text eol=lf
 
 # TOC files are read by shell scripts and must also have LF endings.
 win32/TOC.* text eol=lf

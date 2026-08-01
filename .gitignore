@@ -135,6 +135,12 @@ testcases/logs/
 testcases/SmokeMUX-*.log
 testcases/tools/smoke.conf
 testcases/*.bak
+# PerfSmoke / PerfSmokeWin profiler output
+testcases/perf.data
+testcases/perf.data.old
+testcases/perfsmoke*.etl
+testcases/perfsmoke-profile.txt
+testcases/symcache/
 
 # Hydra proxy build artifacts
 mux/proxy/hydra
