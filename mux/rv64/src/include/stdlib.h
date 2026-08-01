@@ -8,6 +8,11 @@ void qsort(void *base, size_t nmemb, size_t size,
 
 long atol(const char *s);
 double strtod(const char *s, char **endptr);
+/* color_ops' parse_i64 uses strtoll (#1402).  The freestanding build had
+ * no declaration, so regenerating softlib.rv64 has failed since that
+ * change -- silently, because nothing in the normal build rebuilds the
+ * blob.  See softlib.c for the implementation. */
+long long strtoll(const char *s, char **endptr, int base);
 
 void *malloc(size_t size);
 void  free(void *ptr);
