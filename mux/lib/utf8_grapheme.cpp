@@ -100,7 +100,7 @@ static int RunIntegerDFA_GCB(
     return default_val;
 }
 
-static int GetGCB(const UTF8 *p, const UTF8 *pEnd)
+static int GetGCBSlow(const UTF8 *p, const UTF8 *pEnd)
 {
     return RunIntegerDFA_GCB(
         tr_gcb_itt, tr_gcb_sot, tr_gcb_sbt,
@@ -112,7 +112,7 @@ static int GetGCB(const UTF8 *p, const UTF8 *pEnd)
 // DFA wrapper: check Extended_Pictographic property.
 // ---------------------------------------------------------------------------
 
-static bool IsExtPict(const UTF8 *p, const UTF8 *pEnd)
+static bool IsExtPictSlow(const UTF8 *p, const UTF8 *pEnd)
 {
     unsigned short iState = CL_EXTPICT_START_STATE;
     // Stop at the first accepting state: the pruned table can accept before
@@ -160,6 +160,58 @@ static bool IsExtPict(const UTF8 *p, const UTF8 *pEnd)
 }
 
 // ---------------------------------------------------------------------------
+// ASCII fast path for the property lookups.
+//
+// Segmentation runs both DFAs once per code point, so plain ASCII text pays
+// two table walks per byte.  ASCII is NOT uniform for GCB — it spans four
+// classes (Other, CR, LF, Control) — so a bare "< 0x80 means Other" skip
+// would be a correctness bug; a 128-entry table is the correct shape.  The
+// table is filled from the DFAs themselves at load time, so it cannot drift
+// from a regenerated utf8tables.cpp.
+// ---------------------------------------------------------------------------
+
+namespace
+{
+    struct AsciiGCBTable
+    {
+        unsigned char gcb[128];
+        bool extpict[128];
+
+        AsciiGCBTable()
+        {
+            for (int ch = 0; ch < 128; ch++)
+            {
+                const UTF8 b = static_cast<UTF8>(ch);
+                gcb[ch] = static_cast<unsigned char>(GetGCBSlow(&b, &b + 1));
+                extpict[ch] = IsExtPictSlow(&b, &b + 1);
+            }
+        }
+    };
+
+    const AsciiGCBTable s_ascii;
+}
+
+static int GetGCB(const UTF8 *p, const UTF8 *pEnd)
+{
+    if (  p < pEnd
+       && *p < 0x80)
+    {
+        return s_ascii.gcb[*p];
+    }
+    return GetGCBSlow(p, pEnd);
+}
+
+static bool IsExtPict(const UTF8 *p, const UTF8 *pEnd)
+{
+    if (  p < pEnd
+       && *p < 0x80)
+    {
+        return s_ascii.extpict[*p];
+    }
+    return IsExtPictSlow(p, pEnd);
+}
+
+// ---------------------------------------------------------------------------
 // Advance one UTF-8 code point.  Returns pointer past the code point.
 // ---------------------------------------------------------------------------
 
@@ -168,6 +220,12 @@ static const UTF8 *utf8_advance(const UTF8 *p, const UTF8 *pEnd)
     if (p >= pEnd)
     {
         return p;
+    }
+    if (*p < 0x80)
+    {
+        // utf8_FirstByte is 1 for every ASCII byte, so the general path
+        // below reduces to exactly this.
+        return p + 1;
     }
     int n = utf8_FirstByte[*p];
     if (n < 1 || n >= UTF8_CONTINUE)
