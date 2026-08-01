@@ -458,19 +458,32 @@ static bool try_fold(const std::string &func_name,
         return true;
     }
 
+    // CAT/STRCAT fold to a buffer the runtime would have truncated.
+    //
+    // safe_str stops at LBUF_SIZE-1, and #1915 bounded the blob's
+    // rv64_strcat to match, so a fold that concatenates past that limit
+    // disagrees with both routes it is supposed to be replacing.  It also
+    // hands an over-LBUF string to the co_* folders below, which strip
+    // into an LBUF_SIZE stack buffer -- that is how #1930 reached the
+    // WP_SAFE spin.  Cap while appending rather than after: the result is
+    // identical and the intermediate stays bounded.
     if (upper == "CAT") {
         std::string merged;
-        for (int i = 0; i < nargs; i++) {
+        for (int i = 0; i < nargs && merged.size() < LBUF_SIZE - 1; i++) {
             if (i > 0) merged += ' ';
             merged += args[i];
         }
+        if (merged.size() > LBUF_SIZE - 1) merged.resize(LBUF_SIZE - 1);
         result = merged;
         return true;
     }
 
     if (upper == "STRCAT") {
         std::string merged;
-        for (int i = 0; i < nargs; i++) merged += args[i];
+        for (int i = 0; i < nargs && merged.size() < LBUF_SIZE - 1; i++) {
+            merged += args[i];
+        }
+        if (merged.size() > LBUF_SIZE - 1) merged.resize(LBUF_SIZE - 1);
         result = merged;
         return true;
     }
