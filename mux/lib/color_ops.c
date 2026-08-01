@@ -4596,10 +4596,10 @@ static size_t emit_sorted(unsigned char *out,
  * scratch arrays are megabytes at LBUF_SIZE 32768 — far too large for
  * stack frames (they overflowed the thread stack once LBUF_SIZE grew
  * past the old 8000).  Allocate them from the heap on hosted builds.
- * The freestanding RV64 blob has no malloc, but never executes these
- * functions — its tier2 wrappers ECALL straight to the host
- * implementations — so returning empty on a NULL allocation is safe
- * there.
+ * In the freestanding RV64 blob these fold to return-empty stubs; only
+ * co_sort_words_wrap ECALLs the host, the set-op wrappers `jal` the
+ * stub.  Safe because all four are registered DBT intrinsics: a host
+ * call is substituted before the stub body is translated (#1927).
  */
 #if defined(__STDC_HOSTED__) && __STDC_HOSTED__
 #define CO_BIG_ALLOC(n) malloc(n)
