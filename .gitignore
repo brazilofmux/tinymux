@@ -19,6 +19,9 @@ mux/modules/*/x64/
 # PCRE2 local build
 mux/src/pcre2/
 
+# Per-target logs written by `make test`
+test-logs/
+
 # Game runtime files
 mux/game/bin/*.exe
 mux/game/bin/*.dll

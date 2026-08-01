@@ -35,7 +35,74 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-hir test-format test-nls test-nls-plural test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity
+# The suite `make test` runs.  Kept as a variable so the runner below and
+# anyone wanting a subset both work from one list.
+#
+# Adding a suite means adding it here.  test-libmux / test-color-ops /
+# test-table are #1919's three formerly-orphan suites (460 assertions that
+# only ran if someone remembered to).
+#
+TEST_TARGETS = \
+    test-ganl test-netaddr test-libmux test-color-ops test-table \
+    test-slave test-hir test-format \
+    test-nls test-nls-plural test-nls-runtime test-nls-ko \
+    test-vacuous test-narrowing test-config test-dbt test-alarm \
+    test-jit-qreg test-jit-ifelse test-lua-ecall test-ios \
+    test-smoke test-smoke-ast test-smoke-builtin \
+    test-comsys-handoff test-comsys-mogrify test-comsys-conformance \
+    test-comsys-cmdparity
+
+TEST_LOG_DIR = test-logs
+
+# Run every target, then report.  Deliberately NOT a prerequisite list.
+#
+# As prerequisites, make stops at the first failure.  test-slave was 3rd of
+# 25, so one fragile guard hid smoke and 21 other targets — and a suite that
+# reports nothing about 22 targets trains people to ignore red (#1912).
+#
+# `install` stays a real prerequisite: there is no point testing a tree that
+# did not build, and that failure *should* stop everything.
+#
+# SKIP is reported separately from PASS.  Several harnesses here exit 0 when
+# their binary is missing, so "green" could mean "never ran" — that is
+# exactly how a vacuous control got produced against this very target.
+# `make test STRICT=1` turns any skip into a failure, for CI or a release
+# gate where a silently-unrun suite is not acceptable.
+#
+test: install
+	@rm -rf $(TEST_LOG_DIR) && mkdir -p $(TEST_LOG_DIR); \
+	pass=0; fail=0; skip=0; failed=""; skipped=""; \
+	for t in $(TEST_TARGETS); do \
+	    log="$(TEST_LOG_DIR)/$$t.log"; \
+	    printf '==> %-26s ' "$$t"; \
+	    if $(MAKE) --no-print-directory "$$t" >"$$log" 2>&1; then \
+	        if grep -qE '^[[:space:]]*SKIP:' "$$log"; then \
+	            skip=$$((skip + 1)); skipped="$$skipped $$t"; \
+	            printf 'SKIP\n'; \
+	            sed -n 's/^[[:space:]]*\(SKIP:.*\)/      \1/p' "$$log" | head -3; \
+	        else \
+	            pass=$$((pass + 1)); printf 'PASS\n'; \
+	        fi; \
+	    else \
+	        fail=$$((fail + 1)); failed="$$failed $$t"; \
+	        printf 'FAIL\n'; \
+	        sed -n 's/^/      | /p' "$$log" | tail -12; \
+	    fi; \
+	done; \
+	total=$$((pass + skip + fail)); \
+	echo; \
+	echo "======================================================================"; \
+	printf '  make test: %d targets — %d passed, %d skipped, %d failed\n' \
+	    "$$total" "$$pass" "$$skip" "$$fail"; \
+	echo "======================================================================"; \
+	if [ -n "$$skipped" ]; then echo "  skipped:$$skipped"; fi; \
+	if [ -n "$$failed" ]; then echo "  FAILED: $$failed"; fi; \
+	echo "  logs: $(TEST_LOG_DIR)/"; \
+	if [ "$$fail" -ne 0 ]; then exit 1; fi; \
+	if [ -n "$$skipped" ] && [ -n "$(STRICT)" ]; then \
+	    echo "  STRICT=1: skipped targets are failures."; exit 1; \
+	fi; \
+	exit 0
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
