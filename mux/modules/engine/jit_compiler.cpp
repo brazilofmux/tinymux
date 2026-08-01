@@ -189,9 +189,13 @@ static bool tier2_allowed(const std::string &mux_name) {
         "CENTER",
         "EDIT",
         "SPLICE",
-        "SETUNION",
-        "SETDIFF",
-        "SETINTER",
+        // SETUNION/SETDIFF/SETINTER are deliberately absent (#1927): the
+        // blob's co_setunion/co_setdiff/co_setinter compile to 12-byte
+        // return-empty stubs (CO_BIG_ALLOC is a compile-time NULL in the
+        // freestanding build), and unlike co_sort_words_wrap their
+        // wrappers call those local stubs instead of ECALLing the host.
+        // Restore them only together with an ecall-based wrapper and a
+        // regenerated blob.
 
         // rv64_* hand-written: only trivial ops where the blob
         // implementation is demonstrably equivalent to the server.
