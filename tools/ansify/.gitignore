@@ -1,0 +1,4 @@
+ansify
+*.o
+*.dSYM/
+# ansify.c is generated from ansify.rl but checked in — do not ignore it.

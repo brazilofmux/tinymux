@@ -1,0 +1,10 @@
+%xh%xc========================================%xn
+%xh%xw  Welcome to %xgExampleMUX%xw%xn
+%xh%xc========================================%xn
+
+%xyType %xw'connect <name> <password>'%xy to enter.%xn
+%xrAdmins only beyond this point.%xn
+
+Legacy black: %xkdark%xn  Modern black: %xxdark%xn
+Hex: %x<#FF8800>orange%xn  256: %x<208>xterm orange%xn
+Literal percent: 100%% complete.
