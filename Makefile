@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-hir test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -40,13 +40,16 @@ realclean:
 #
 # Adding a suite means adding it here.  test-libmux / test-color-ops /
 # test-table are #1919's three formerly-orphan suites (460 assertions that
-# only ran if someone remembered to).
+# only ran if someone remembered to).  test-blob is the same shape one
+# level down: softlib.rv64 is a checked-in binary nothing regenerates,
+# so its source can drift with the suite staying green (#1924).
 #
 TEST_TARGETS = \
     test-ganl test-netaddr test-libmux test-color-ops test-table \
     test-slave test-hir test-format \
     test-nls test-nls-plural test-nls-runtime test-nls-ko \
     test-vacuous test-narrowing test-config test-dbt test-alarm \
+    test-blob \
     test-jit-qreg test-jit-ifelse test-lua-ecall test-ios \
     test-smoke test-smoke-ast test-smoke-builtin \
     test-comsys-handoff test-comsys-mogrify test-comsys-conformance \
@@ -530,6 +533,16 @@ test-dbt:
 test-alarm:
 	@echo "==> Running mux_alarm tests"
 	$(MAKE) -C tests/alarm test
+
+# softlib.rv64 is a checked-in binary the JIT loads at run time, and nothing
+# in the normal build regenerates it — so an edit to mux/rv64/src/ is inert
+# until someone rebuilds by hand, while the suite stays green.  #1915's first
+# fix shipped exactly that way, and the blob build had been broken since #1402
+# with no way to notice.  Rebuild and compare when a cross-toolchain is here;
+# skip cleanly when it is not.
+test-blob:
+	@echo "==> Checking softlib.rv64 against its source"
+	@tests/blob/run.sh
 
 # Live scenario test: the wildcard capture path ($-command %0..%9), which
 # muxscript cannot drive.  Opt-in (NOT part of `make test`) because it spins a
