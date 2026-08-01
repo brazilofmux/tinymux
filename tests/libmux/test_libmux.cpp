@@ -747,6 +747,222 @@ static void test_grapheme_baselines()
     ASSERT_EQ(vwidth(E_MAN),   (size_t)2);
 }
 
+// ---------------------------------------------------------------------------
+// ASCII fast path in utf8_grapheme.cpp (#1910 lead A)
+//
+// The fast path is a 128-entry table filled from the GCB/ExtPict DFAs at
+// load time, so it cannot disagree with the tables by construction.  What
+// these tests pin is the *premise* and the *boundary*: the class layout of
+// ASCII that the fast path's existence relies on (verified against the
+// exported DFA tables, not against Unicode knowledge), and segmentation
+// behavior across the fast/slow seam.
+// ---------------------------------------------------------------------------
+
+// The GCB / ExtPict DFA tables are LIBMUX_API exports.
+extern const unsigned char  tr_gcb_itt[];
+extern const unsigned short tr_gcb_sot[];
+extern const unsigned char  tr_gcb_sbt[];
+#define TR_GCB_START_STATE (0)
+#define TR_GCB_ACCEPTING_STATES_START (207)
+
+extern const unsigned char  cl_extpict_itt[];
+extern const unsigned short cl_extpict_sot[];
+extern const unsigned char  cl_extpict_sbt[];
+#define CL_EXTPICT_START_STATE (0)
+#define CL_EXTPICT_ACCEPTING_STATES_START (44)
+
+// Same reader as utf8_grapheme.cpp's RunIntegerDFA_GCB: stop at the first
+// accepting state (the pruned table can accept before the last byte).
+static int run_property_dfa(const unsigned char *itt, const unsigned short *sot,
+                            const unsigned char *sbt, int start, int accepting,
+                            int defval, const UTF8 *p, const UTF8 *pEnd)
+{
+    int iState = start;
+    while (p < pEnd && iState < accepting)
+    {
+        unsigned char ch = *p++;
+        int iColumn = itt[ch];
+        int iOffset = sot[iState];
+        for (;;)
+        {
+            int y = static_cast<signed char>(sbt[iOffset]);
+            if (0 < y)
+            {
+                if (iColumn < y) { iState = sbt[iOffset + 1]; break; }
+                iColumn -= y; iOffset += 2;
+            }
+            else
+            {
+                y = -y;
+                if (iColumn < y) { iState = sbt[iOffset + iColumn + 1]; break; }
+                iColumn -= y; iOffset += y + 1;
+            }
+        }
+    }
+    return (iState >= accepting) ? (iState - accepting) : defval;
+}
+
+static int gcb_of(const UTF8 *p, size_t n)
+{
+    return run_property_dfa(tr_gcb_itt, tr_gcb_sot, tr_gcb_sbt,
+                            TR_GCB_START_STATE, TR_GCB_ACCEPTING_STATES_START,
+                            0, p, p + n);
+}
+
+static bool extpict_of(const UTF8 *p, size_t n)
+{
+    return 1 == run_property_dfa(cl_extpict_itt, cl_extpict_sot, cl_extpict_sbt,
+                                 CL_EXTPICT_START_STATE,
+                                 CL_EXTPICT_ACCEPTING_STATES_START, 0, p, p + n);
+}
+
+// GCB values as gen_gcb.pl maps them (mirrors utf8_grapheme.cpp).
+#define T_GCB_OTHER   0
+#define T_GCB_CR      1
+#define T_GCB_LF      2
+#define T_GCB_CONTROL 3
+#define T_GCB_EXTEND  4
+
+static void test_gcb_ascii_class_layout()
+{
+    // ASCII is NOT uniform for GCB: it spans exactly four classes.  This is
+    // the fact that makes a bare "< 0x80 means Other" skip a correctness bug
+    // and a 128-entry table the required shape.  Verified against the
+    // exported DFA tables themselves.
+    int count[4] = {0, 0, 0, 0};
+    for (int c = 0; c < 128; c++)
+    {
+        UTF8 b = static_cast<UTF8>(c);
+        int g = gcb_of(&b, 1);
+        int expected;
+        if (0x0D == c)                  expected = T_GCB_CR;
+        else if (0x0A == c)             expected = T_GCB_LF;
+        else if (c < 0x20 || 0x7F == c) expected = T_GCB_CONTROL;
+        else                            expected = T_GCB_OTHER;
+        ASSERT_EQ(g, expected);
+        count[g]++;
+
+        // ...and none of ASCII is Extended_Pictographic.  The GB11 pair
+        // test below is what makes a wrong 'true' here observable.
+        ASSERT_TRUE(!extpict_of(&b, 1));
+    }
+    ASSERT_EQ(count[T_GCB_OTHER],   95);
+    ASSERT_EQ(count[T_GCB_CR],       1);
+    ASSERT_EQ(count[T_GCB_LF],       1);
+    ASSERT_EQ(count[T_GCB_CONTROL], 31);
+}
+
+static void test_gcb_nonascii_negative_control()
+{
+    // The claim above is specific to ASCII, not vacuously true of low code
+    // points in general: just past ASCII the classes diverge (145 of
+    // U+0080..U+03FF are not Other on current tables).  Without this the
+    // layout test could pass against a DFA that answered Other for
+    // everything.
+    int nonother = 0;
+    for (unsigned int cp = 0x80; cp <= 0x3FF; cp++)
+    {
+        UTF8 b[2];
+        b[0] = static_cast<UTF8>(0xC0 | (cp >> 6));
+        b[1] = static_cast<UTF8>(0x80 | (cp & 0x3F));
+        if (T_GCB_OTHER != gcb_of(b, 2))
+        {
+            nonother++;
+        }
+    }
+    ASSERT_TRUE(nonother > 100);
+
+    // One concrete pin: U+0301 combining acute is Extend.
+    ASSERT_EQ(gcb_of(U(E_ACUTE), 2), T_GCB_EXTEND);
+}
+
+static void test_grapheme_ascii_pairs_exhaustive()
+{
+    // Differential over every ASCII pair: with only Other/CR/LF/Control in
+    // play, UAX #29 joins exactly one pair — GB3's CR x LF.  Everything else
+    // breaks (GB4/GB5 around controls, GB999 otherwise).  Expectation is
+    // derived from the DFA-read classes, so this exercises the fast path
+    // against the tables for all 16384 combinations.
+    for (int c1 = 0; c1 < 128; c1++)
+    {
+        for (int c2 = 0; c2 < 128; c2++)
+        {
+            UTF8 s[2] = { static_cast<UTF8>(c1), static_cast<UTF8>(c2) };
+            int g1 = gcb_of(s, 1);
+            int g2 = gcb_of(s + 1, 1);
+            size_t expected =
+                (T_GCB_CR == g1 && T_GCB_LF == g2) ? 1 : 2;
+            size_t got = utf8_cluster_count(s, 2);
+            if (got != expected)
+            {
+                // Report the failing pair, then let the assert count it.
+                printf("    pair U+%04X U+%04X: got %zu, expected %zu\n",
+                       c1, c2, got, expected);
+            }
+            ASSERT_EQ(got, expected);
+        }
+    }
+    // Every single ASCII byte on its own is one cluster.
+    for (int c = 0; c < 128; c++)
+    {
+        UTF8 b = static_cast<UTF8>(c);
+        ASSERT_EQ(utf8_cluster_count(&b, 1), (size_t)1);
+    }
+}
+
+static void test_grapheme_ascii_seam()
+{
+    // Boundaries between a fast-path (ASCII) code point and a slow-path
+    // (non-ASCII) one, in both directions.
+
+    // GB9: ASCII base + combining mark joins; controls/CR/LF break instead
+    // (GB4 wins over GB9).
+    ASSERT_EQ(clusters("ab" E_ACUTE),  (size_t)2);   // "a", "b+acute"
+    ASSERT_EQ(clusters("\r" E_ACUTE),  (size_t)2);
+    ASSERT_EQ(clusters("\n" E_ACUTE),  (size_t)2);
+    ASSERT_EQ(clusters("\t" E_ACUTE),  (size_t)2);
+    // Degenerate leading mark is its own cluster (GB999 start).
+    ASSERT_EQ(clusters(E_ACUTE "a"),   (size_t)2);
+
+    // GB9 joins 'a'+ZWJ, but GB11 must NOT then glue a following ExtPict:
+    // 'a' is not Extended_Pictographic.  If the fast path ever answered
+    // ExtPict=true for ASCII this collapses to 1 and fails.
+    ASSERT_EQ(clusters("a" E_ZWJ E_MAN), (size_t)2); // "a+ZWJ", man
+    // Control for the pin above: with a real ExtPict base GB11 does glue.
+    ASSERT_EQ(clusters(E_MAN E_ZWJ E_MAN), (size_t)1);
+
+    // CR x LF still joins when flanked by slow-path neighbors.
+    ASSERT_EQ(clusters(E_MAN "\r\n" E_MAN), (size_t)3);
+}
+
+#define E_VS16  "\xEF\xB8\x8F"          // U+FE0F variation selector-16 (Extend)
+#define E_UMLAUT "\xCC\x88"             // U+0308 combining diaeresis (Extend)
+
+static void test_grapheme_gb12_ri_run_ends_at_nonri()
+{
+    // GB12/13 pair only adjacent RIs.  Once anything else joins the cluster
+    // (VS16 or a combining mark via GB9), the RI run is over and the next RI
+    // starts a new flag instead of gluing on.  ICU-differential caught the
+    // old behavior joining all of these into one cluster.
+    ASSERT_EQ(clusters(E_RI_U E_UMLAUT E_RI_S), (size_t)2); // [RI+mark] [RI]
+    ASSERT_EQ(clusters(E_RI_U E_VS16 E_RI_S),  (size_t)2); // [RI+VS16] [RI]
+    // Baselines around it: a plain pair still joins, a third RI still breaks.
+    ASSERT_EQ(clusters(E_RI_U E_RI_S),         (size_t)1);
+    ASSERT_EQ(clusters(E_RI_U E_RI_S E_RI_U),  (size_t)2);
+}
+
+static void test_grapheme_gb11_double_zwj_breaks()
+{
+    // GB11 is "ExtPict Extend* ZWJ x ExtPict" — exactly one ZWJ adjacent to
+    // the joining ExtPict.  A doubled ZWJ is outside the rule, so the final
+    // emoji starts its own cluster (matches ICU).
+    ASSERT_EQ(clusters(E_MAN E_ZWJ E_ZWJ E_MAN), (size_t)2);
+    // Chained single-ZWJ joins still form one cluster...
+    ASSERT_EQ(clusters(E_MAN E_ZWJ E_MAN E_ZWJ E_MAN), (size_t)1);
+    // ...including with Extend between the ExtPict and its ZWJ.
+    ASSERT_EQ(clusters(E_THUMB E_TONE E_ZWJ E_MAN), (size_t)1);
+}
+
 
 // ---------------------------------------------------------------------------
 // Module transport used before mux_InitModuleLibraryPump (#1340)
@@ -871,6 +1087,12 @@ int main()
     RUN_TEST(test_grapheme_regional_indicator_flag);
     RUN_TEST(test_copy_columns_color_inside_cluster);
     RUN_TEST(test_grapheme_baselines);
+    RUN_TEST(test_gcb_ascii_class_layout);
+    RUN_TEST(test_gcb_nonascii_negative_control);
+    RUN_TEST(test_grapheme_ascii_pairs_exhaustive);
+    RUN_TEST(test_grapheme_ascii_seam);
+    RUN_TEST(test_grapheme_gb12_ri_run_ends_at_nonri);
+    RUN_TEST(test_grapheme_gb11_double_zwj_breaks);
 
     printf("\n--- module transport before init (#1340) ---\n");
     RUN_TEST(test_pipe_send_without_pump_is_not_ready);
