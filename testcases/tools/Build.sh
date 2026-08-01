@@ -69,15 +69,22 @@ make -C "$MUX" install
 # Step 3: Build softlib.rv64.
 # ---------------------------------------------------------------------------
 
-if command -v riscv64-unknown-elf-gcc >/dev/null 2>&1 || \
+if command -v riscv-none-elf-gcc >/dev/null 2>&1 || \
+   command -v riscv64-unknown-elf-gcc >/dev/null 2>&1 || \
    command -v riscv64-linux-gnu-gcc >/dev/null 2>&1; then
     echo "Building softlib.rv64..."
-    if make -C "$MUX/rv64" && make -C "$MUX/rv64" install; then
-        echo "  softlib.rv64 built and installed."
-    else
-        echo "  WARNING: rv64 build failed; copying checked-in blob."
-        cp "$MUX/rv64/softlib.rv64" "$MUX/game/bin/softlib.rv64"
+    # A failure here used to be a warning, and the stale checked-in blob was
+    # copied in its place.  That is how #1402 broke the blob build and nobody
+    # noticed for days: the only thing that rebuilds the artifact swallowed
+    # the error, so every subsequent edit to mux/rv64/src/ silently shipped
+    # the old binary.  A box that CAN build the blob must not ship a stale
+    # one -- fail here instead.
+    if ! make -C "$MUX/rv64" || ! make -C "$MUX/rv64" install; then
+        echo "  ERROR: rv64 build failed on a box that has a cross-compiler."
+        echo "  Refusing to ship the stale checked-in blob; fix the build."
+        exit 1
     fi
+    echo "  softlib.rv64 built and installed."
 else
     echo "No RISC-V cross-compiler; copying checked-in softlib.rv64."
     cp "$MUX/rv64/softlib.rv64" "$MUX/game/bin/softlib.rv64"
