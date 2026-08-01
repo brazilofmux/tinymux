@@ -2190,11 +2190,32 @@ char *rv64_cat(char *out, const char **fargs, int nfargs) {
 /* rv64_strlen removed — superseded by co_strlen_wrap. */
 
 char *rv64_strcat(char *out, const char **fargs, int nfargs) {
+    /* Bound at LBUF like every other writer here (#1915).
+     *
+     * This had no bound at all: it scopy'd each farg in turn and ran off
+     * the end of the 32 KB output slot.  The JIT lowers iter()'s
+     * accumulator to STRCAT, so a chunk whose concatenated result crosses
+     * LBUF -- `think iter(lnum(1,4700),abcdef)` is enough -- wrote past
+     * the buffer and took SIGSEGV.  Reachable by any player on an
+     * --enable-jit build.
+     *
+     * The interpreter truncates at LBUF (safe_str), and the two emission
+     * paths for HIR_STRCAT disagreed about it: the rv_emit_call fallback
+     * passes OUT_SLOT as an explicit bound, while the tier2 path has no
+     * size in its ABI and trusted the callee.  Bounding here is what makes
+     * the tier2 path match both the fallback and the interpreter; the
+     * sibling functions in this file (rv64_repeat and friends) already
+     * clamp the same way.
+     */
     char *p = out;
-    for (int i = 0; i < nfargs; i++) {
-        p = rv64_scopy(p, fargs[i]);
+    char *end = out + LBUF_SIZE - 1;   /* reserve the NUL */
+    for (int i = 0; i < nfargs && p < end; i++) {
+        const char *s = fargs[i];
+        while ('\0' != *s && p < end) {
+            *p++ = *s++;
+        }
     }
-    if (nfargs == 0) *p = '\0';
+    *p = '\0';
     return out;
 }
 
