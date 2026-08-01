@@ -44,9 +44,19 @@ src/unicode_tables.o: src/unicode_tables.c ../include/unicode_tables_c.h
 src/softlib.elf: $(OBJS) src/softlib.ld
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 
-# Strip ELF to .rv64 blob.
+# Strip ELF to .rv64 blob, and record which toolchain produced it.
+#
+# The build is byte-reproducible for a GIVEN compiler, not across compiler
+# versions, so a hash comparison is only meaningful on a box running the
+# same toolchain that produced the committed artifact.  The fleet is not
+# uniform -- this box has GCC 15.2.0, the Linux boxes are a release or two
+# behind, and Windows cannot cross-compile at all -- so record the builder
+# here and let tests/blob/run.sh decide which check it is entitled to make.
 softlib.rv64: src/softlib.elf $(STRIP)
 	$(STRIP) src/softlib.elf softlib.rv64
+	@printf 'toolchain: %s\n' "$$($(CC) -dumpmachine) $$($(CC) -dumpversion)" \
+	    > softlib.rv64.toolchain
+	@echo "  recorded toolchain: $$($(CC) -dumpmachine) $$($(CC) -dumpversion)"
 
 clean:
 	rm -f src/*.o src/softlib.elf softlib.rv64 $(STRIP)

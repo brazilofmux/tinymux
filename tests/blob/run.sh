@@ -12,13 +12,24 @@
 #   that rebuilds it (testcases/tools/Build.sh) downgraded the failure
 #   to a warning and copied the stale artifact.
 #
-#   So: if this box can build the blob, it must match what is committed.
-#   Two failures are caught by one check -- a blob that cannot be built,
-#   and a blob that is stale relative to its source.
+#   Two checks, because they have different portability:
 #
-#   Skips cleanly without a cross-toolchain, which is the normal case for
-#   end users and most developers.  The build is byte-reproducible with a
-#   given toolchain, which is what makes the comparison meaningful.
+#   1. DOES IT BUILD.  Runs anywhere a cross-compiler exists, whatever
+#      its version.  This is the check that would have caught #1402.
+#
+#   2. DOES IT MATCH THE COMMITTED ARTIFACT.  The build is byte-repro-
+#      ducible for a GIVEN compiler, but NOT across compiler versions,
+#      so this one is only meaningful on a box running the toolchain
+#      that produced the artifact.  The fleet is deliberately not
+#      uniform -- newest GCC on macOS, a release or two behind on the
+#      Linux boxes, and Windows cannot cross-compile at all -- so a
+#      blind hash comparison would report staleness on every box except
+#      the one that last regenerated the blob.  softlib.rv64.toolchain
+#      records the builder; compare hashes only when it matches, and say
+#      plainly when it does not.
+#
+#   Whoever regenerates the blob owns the hash check, since `make -C
+#   mux/rv64` rewrites the stamp as a side effect of building.
 #
 set -u
 
@@ -26,6 +37,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/../.." && pwd)
 RV64="$REPO_ROOT/mux/rv64"
 SHIPPED="$RV64/softlib.rv64"
+STAMP="$RV64/softlib.rv64.toolchain"
 
 hash_of() {
     if command -v shasum >/dev/null 2>&1; then
@@ -44,7 +56,8 @@ for cand in riscv-none-elf-gcc riscv64-unknown-elf-gcc riscv64-linux-gnu-gcc; do
 done
 
 if [ -z "$CC_RV" ]; then
-    echo "SKIP: no RISC-V cross-compiler; cannot verify softlib.rv64 against its source."
+    echo "SKIP: no RISC-V cross-compiler on this box (the normal case for"
+    echo "      end users, and for Windows, which cannot build the blob)."
     exit 0
 fi
 
@@ -53,12 +66,27 @@ if [ ! -f "$SHIPPED" ]; then
     exit 1
 fi
 
+HERE="$($CC_RV -dumpmachine) $($CC_RV -dumpversion)"
 before=$(hash_of "$SHIPPED")
+
 cp "$SHIPPED" "$SHIPPED.staleguard.bak"
-restore() { mv -f "$SHIPPED.staleguard.bak" "$SHIPPED" 2>/dev/null || true; }
+if [ -f "$STAMP" ]; then
+    cp "$STAMP" "$STAMP.staleguard.bak"
+fi
+restore() {
+    mv -f "$SHIPPED.staleguard.bak" "$SHIPPED" 2>/dev/null
+    if [ -f "$STAMP.staleguard.bak" ]; then
+        mv -f "$STAMP.staleguard.bak" "$STAMP" 2>/dev/null
+    else
+        rm -f "$STAMP" 2>/dev/null
+    fi
+    return 0
+}
 trap restore EXIT
 
-echo "==> Rebuilding softlib.rv64 with $CC_RV to compare against the committed artifact"
+# ---- Check 1: does the blob build at all?  Portable across toolchains. ----
+
+echo "==> Rebuilding softlib.rv64 with $CC_RV ($HERE)"
 if ! make -C "$RV64" clean >/dev/null 2>&1 \
    || ! make -C "$RV64" CC="$CC_RV" >/dev/null 2>&1; then
     echo "FAIL: the blob build is broken on this box."
@@ -69,19 +97,46 @@ if ! make -C "$RV64" clean >/dev/null 2>&1 \
     exit 1
 fi
 
+# ---- Check 2: does it match?  Only where the toolchain agrees. ----
+
+if [ ! -f "$STAMP.staleguard.bak" ]; then
+    echo "ok: blob builds cleanly."
+    echo "    Staleness not checked: no committed toolchain stamp, so the"
+    echo "    artifact cannot be attributed to a compiler.  Regenerating"
+    echo "    the blob writes mux/rv64/softlib.rv64.toolchain; commit it"
+    echo "    to enable the comparison."
+    exit 0
+fi
+
+BUILT_BY=$(sed -n 's/^toolchain: //p' "$STAMP.staleguard.bak")
+
+if [ "$BUILT_BY" != "$HERE" ]; then
+    echo "ok: blob builds cleanly."
+    echo "    Staleness NOT checked -- the committed artifact was built by"
+    echo "      $BUILT_BY"
+    echo "    and this box has"
+    echo "      $HERE"
+    echo "    The build is byte-reproducible only within one toolchain, so"
+    echo "    comparing across versions would report staleness that isn't"
+    echo "    there.  A box running the recorded toolchain covers that."
+    exit 0
+fi
+
 after=$(hash_of "$SHIPPED")
 
 if [ "$before" != "$after" ]; then
     echo "FAIL: softlib.rv64 is STALE relative to mux/rv64/src/."
     echo "  committed: $before"
     echo "  rebuilt:   $after"
+    echo "  toolchain: $HERE (the same one that built the artifact)"
     echo
     echo "  The JIT loads the committed artifact, so whatever changed in"
     echo "  the source is inert at run time while this suite stays green."
-    echo "  Regenerate and commit it:"
+    echo "  Regenerate and commit it (the stamp updates automatically):"
     echo "      make -C mux/rv64 && make -C mux/rv64 install"
     exit 1
 fi
 
 echo "ok: softlib.rv64 matches its source ($before)"
+echo "    verified against $HERE"
 exit 0
