@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-slave test-hir test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-hir test-format test-dbt test-alarm test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -35,7 +35,7 @@ clean:
 realclean:
 	$(MAKE) -C mux distclean
 
-test: install test-ganl test-netaddr test-slave test-hir test-format test-nls test-nls-plural test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity
+test: install test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-hir test-format test-nls test-nls-plural test-nls-runtime test-nls-ko test-vacuous test-narrowing test-config test-dbt test-alarm test-jit-qreg test-jit-ifelse test-lua-ecall test-ios test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:
@@ -304,6 +304,26 @@ test-ganl:
 test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
+
+# #1917: libmux/color_ops unit suite.  It existed and was RED for four
+# days (a #1649 behaviour change vs a stale expectation) purely because
+# nothing ran it -- `make -C tests/libmux test` by hand was the only
+# path.  A suite outside `make test` is a suite that pins nothing.
+test-libmux:
+	@echo "==> Running libmux / color_ops unit tests (#1917)"
+	$(MAKE) -C tests/libmux test
+
+# #1917 sweep: two more suites that existed outside `make test`.  Both
+# were green when wired in (392 and 16 assertions) -- but so was libmux
+# until #1649 moved a behaviour under it, and nothing noticed for four
+# days.  Coverage that nothing runs is coverage that pins nothing.
+test-color-ops:
+	@echo "==> Running color_ops unit tests"
+	$(MAKE) -C tests/color_ops test
+
+test-table:
+	@echo "==> Running table formatting tests"
+	$(MAKE) -C tests/table test
 
 # #1853 / #1827: DNS slave child-cap burst with a forced stall.  Not a
 # platform item — plain waitpid + spawnSlavePosix on every POSIX engine.
