@@ -240,7 +240,12 @@ mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc)
 
     // Track state for GB11 and GB12/13.
     //
-    bool bSeenExtPictExtendZWJ = bPrevExtPict;  // For GB11
+    // GB11 progress through "ExtPict Extend* ZWJ x ExtPict":
+    //   0 — no live ExtPict sequence
+    //   1 — ExtPict Extend* seen
+    //   2 — ExtPict Extend* ZWJ seen; an ExtPict may join now
+    //
+    int gb11State = bPrevExtPict ? 1 : 0;
     int nRI = (GCB_Regional_Indicator == prevGCB) ? 1 : 0;  // For GB12/13
 
     while (pCur < pEnd)
@@ -258,7 +263,16 @@ mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc)
             return mux_cursor(pCur - src, nPoints);
         }
 
-        // GB4: (Control|CR|LF) ÷  — already handled for first cp.
+        // GB4: (Control|CR|LF) ÷ — Control|LF were handled for the first
+        // code point; CR was deferred so GB3 above could see CR x LF.  Any
+        // other successor breaks here, before GB9 can absorb an Extend/ZWJ
+        // into the CR's cluster ("\r" + U+0301 is two clusters, not one).
+        //
+        if (GCB_CR == prevGCB)
+        {
+            break;
+        }
+
         // GB5: ÷ (Control|CR|LF)
         //
         if (GCB_Control == curGCB || GCB_CR == curGCB || GCB_LF == curGCB)
@@ -297,18 +311,6 @@ mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc)
         //
         if (GCB_Extend == curGCB || GCB_ZWJ == curGCB)
         {
-            // GB11: ExtPict Extend* ZWJ x ExtPict
-            // Track whether we've seen ExtPict followed by Extend*/ZWJ.
-            //
-            if (GCB_ZWJ == curGCB)
-            {
-                // ZWJ after ExtPict Extend* — the flag stays set.
-                // It will be checked when we see the next code point.
-            }
-            else  // Extend
-            {
-                // Extend does not reset the ExtPict tracking.
-            }
             goto extend;
         }
 
@@ -327,9 +329,10 @@ mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc)
         }
 
         // GB11: ExtPict Extend* ZWJ x ExtPict
+        // State 2 means the ZWJ that just joined was preceded by
+        // ExtPict Extend*, which is exactly the rule's left side.
         //
-        if (  bSeenExtPictExtendZWJ
-           && GCB_ZWJ == prevGCB
+        if (  2 == gb11State
            && bCurExtPict)
         {
             goto extend;
@@ -354,18 +357,37 @@ mux_cursor utf8_next_grapheme(const UTF8 *src, size_t nSrc)
         {
             nRI++;
         }
+        else
+        {
+            // GB12/13 pair RIs only when the preceding character is itself
+            // an RI with an odd run.  Anything else joining the cluster
+            // (e.g. VS16 or a combining mark via GB9/GB9a) ends the RI run,
+            // so a following RI starts a new flag rather than gluing on.
+            //
+            nRI = 0;
+        }
 
         // Update GB11 tracking.
         //
         if (bCurExtPict)
         {
-            bSeenExtPictExtendZWJ = true;
+            gb11State = 1;
         }
-        else if (  !bSeenExtPictExtendZWJ
-                || (  GCB_Extend != curGCB
-                   && GCB_ZWJ != curGCB))
+        else if (1 == gb11State && GCB_Extend == curGCB)
         {
-            bSeenExtPictExtendZWJ = false;
+            // Extend keeps the sequence alive; still "ExtPict Extend*".
+        }
+        else if (1 == gb11State && GCB_ZWJ == curGCB)
+        {
+            gb11State = 2;
+        }
+        else
+        {
+            // Includes a second ZWJ arriving in state 2:
+            // "ExtPict ZWJ ZWJ" is not "ExtPict Extend* ZWJ", so a
+            // following ExtPict must not join.
+            //
+            gb11State = 0;
         }
 
         prevGCB = curGCB;
