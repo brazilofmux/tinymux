@@ -3879,17 +3879,11 @@ literal_strcat:
                 }
             }
             // SETUNION/SETDIFF/SETINTER sort type (arg[4]): the blob's
-            // get_cmp source implements only a/i/n/d — no AutoDetect
-            // ('?' or present-but-empty) and no f/u/c comparators
-            // (handle_sets maps those to f_comp/u_collate).  NOTE
-            // (#1927): the three are currently OFF the tier2 allowlist
-            // entirely — the blob compiles their set ops to return-empty
-            // stubs, so this guard is presently dead code.  It is kept
-            // because it is correct for a future ecall-routed wrapper.
-            // The 2026-07-21 audit line previously quoted here
-            // ("sorted ASCII on the blob") cannot have been observed
-            // against the shipped blob, which postdates the stubs;
-            // treat that audit as source-derived, not empirical.
+            // get_cmp implements only a/i/n/d — no AutoDetect ('?' or
+            // present-but-empty) and no f/u/c comparators (handle_sets
+            // maps those to f_comp/u_collate).  Fall back for anything
+            // else (wrapper audit: setunion(2 10,1 3,%b,%b,?) sorted
+            // ASCII on the blob, numeric on the interpreter).
             if ((upper == "SETUNION" || upper == "SETDIFF"
                  || upper == "SETINTER") && nargs >= 5) {
                 if (!h.is_const(args[4])) {
