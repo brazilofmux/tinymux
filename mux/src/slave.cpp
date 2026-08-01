@@ -29,6 +29,7 @@
 
 #include <errno.h>
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -268,6 +269,15 @@ volatile sig_atomic_t nChildrenStarted = 0;
 volatile sig_atomic_t nChildrenEndedSIGCHLD = 0;
 volatile sig_atomic_t nChildrenEndedMain = 0;
 
+// High-water mark of the live-child count, by the same accounting the cap
+// uses.  It can only rise immediately after a fork, so spawn_query records
+// it there.  Reported at exit in harness mode (#1912): an outside sampler
+// cannot observe this reliably -- children reparent the instant the parent
+// exits, and the parent exits as soon as stdin drains, so the window in
+// which ppid attributes a child to us can be shorter than one sample sweep.
+//
+volatile sig_atomic_t nChildrenPeak = 0;
+
 static void install_sigchld_handler(void);
 
 void child_signal(int iSig)
@@ -354,6 +364,15 @@ static bool spawn_query(char *arg)
     }
 
     nChildrenStarted++;
+
+    {
+        int live = nChildrenStarted - nChildrenEndedSIGCHLD
+            - nChildrenEndedMain;
+        if (live > nChildrenPeak)
+        {
+            nChildrenPeak = live;
+        }
+    }
 
     // Collect children.  When at the cap, block until *one* exit, then
     // recompute and switch back to WNOHANG.  The old loop fixed the
@@ -510,6 +529,15 @@ int main(int argc, char *argv[])
             nBuf = 0;
             bDiscard = true;
         }
+    }
+
+    // Harness mode only (#1912): report the high-water mark on stderr, which
+    // production netmux never reads from us and the harness captures to a
+    // file.  Deterministic where sampling ppid from outside is not.
+    //
+    if (nullptr != getenv("SLAVE_TEST_HARNESS"))
+    {
+        fprintf(stderr, "PEAK_CHILDREN=%d\n", static_cast<int>(nChildrenPeak));
     }
     exit(0);
 }
