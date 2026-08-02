@@ -2493,13 +2493,22 @@ struct shared_heap_t {
               UTF8 *out, size_t out_size,
               dbref executor, dbref caller, dbref enactor,
               int eval_flags,
-              const UTF8 *cargs[], int ncargs) {
+              const UTF8 *cargs[], int ncargs,
+              int *out_ecalls  = nullptr,
+              int *out_tier2   = nullptr,
+              bool *out_folded = nullptr) {
 
         const entry *e = lookup(expr, nLen, eval_flags);
         if (!e) return false;
 
+        // Copy stat fields before dbt_run() — a re-entrant eval() call
+        // during execution can trigger cache eviction and invalidate e.
+        const int entry_ecalls     = e->ecalls;
+        const int entry_tier2      = e->tier2_calls;
+        const bool entry_needs_jit = e->needs_jit;
+
         // Constant-folded: result is in shared memory.
-        if (!e->needs_jit) {
+        if (!entry_needs_jit) {
             uint64_t out_addr = resolve_runtime_out_addr(
                 e->out_addr, rv_compiler::STACK_TOP);
             size_t n = 0;
@@ -2509,6 +2518,9 @@ struct shared_heap_t {
             if (n >= out_size) n = out_size - 1;
             memcpy(out, memory.data() + out_addr, n);
             out[n] = '\0';
+            if (out_ecalls)  *out_ecalls  = entry_ecalls;
+            if (out_tier2)   *out_tier2   = entry_tier2;
+            if (out_folded)  *out_folded  = true;
             return true;
         }
 
@@ -2658,6 +2670,9 @@ struct shared_heap_t {
         if (n >= out_size) n = out_size - 1;
         memcpy(out, memory.data() + out_addr, n);
         out[n] = '\0';
+        if (out_ecalls)  *out_ecalls  = entry_ecalls;
+        if (out_tier2)   *out_tier2   = entry_tier2;
+        if (out_folded)  *out_folded  = false;
         return true;
     }
 };
@@ -5190,10 +5205,17 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
     // own DBT context, so this is safe during an outer ECALL.
     if (s_jit_depth > 1) {
         LBuf shresult = LBuf_Src("jit_eval.shared");
+        int  sh_ecalls = 0;
+        int  sh_tier2  = 0;
+        bool sh_folded = false;
         if (s_shared_heap.eval(expr, nLen, shresult, LBUF_SIZE,
                                executor, caller, enactor, eval,
-                               cargs, ncargs)) {
+                               cargs, ncargs,
+                               &sh_ecalls, &sh_tier2, &sh_folded)) {
             s_jit_stats.eval_handled++;
+            s_jit_stats.ecall_total  += sh_ecalls;
+            s_jit_stats.tier2_total  += sh_tier2;
+            if (sh_folded) s_jit_stats.folded_total++;
             safe_str(shresult, buff, bufc);
             return true;
         }
