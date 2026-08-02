@@ -85,16 +85,47 @@
 &tr.tc006 test_px_truecolor_fn=
   @if eq(comp(stripansi(%x<18 52 86>Hello%xn),Hello),0)=
   {
-    @log smoke=TC006: stripansi truecolor percent-x. Succeeded.;
+    @log smoke=TC006: stripansi truecolor percent-x. Succeeded.
+  },
+  {
+    @log smoke=TC006: stripansi truecolor percent-x. Failed (got=[stripansi(%x<18 52 86>Hello%xn)]).
+  }
+-
+#
+# Test Case #7 - Unparseable %x<body> is consumed silently (#1934).
+# parse_rgb rejects xterm indices, names, and bg# forms; with a closing
+# '>' the token vanishes (same as the interpreter).  Bracket-free so the
+# JIT route is exercised under default jit_eval_brackets.
+#
+&tr.tc007 test_px_truecolor_fn=
+  @if cand(
+        strmatch(%x<196>x,x),
+        strmatch(%x<red>hello,hello),
+        strmatch(%x<bg#00FF00>x,x)
+      )=
+  {
+    @log smoke=TC007: unparseable percent-x body consumed. Succeeded.
+  },
+  {
+    @log smoke=TC007: unparseable percent-x body consumed. Failed (i=[%x<196>x] n=[%x<red>hello] b=[%x<bg#00FF00>x]).
+  }
+-
+#
+# Test Case #8 - Unknown single-letter color still emits the letter.
+#
+&tr.tc008 test_px_truecolor_fn=
+  @if strmatch(%xqx,qx)=
+  {
+    @log smoke=TC008: unknown color letter emitted. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC006: stripansi truecolor percent-x. Failed (got=[stripansi(%x<18 52 86>Hello%xn)]).;
+    @log smoke=TC008: unknown color letter emitted. Failed (got=[%xqx]).;
     @trig me/tr.done
   }
 -
 &tr.done test_px_truecolor_fn=
-  @log smoke=End percent-x truecolor (issue 1933) test cases.;
+  @log smoke=End percent-x truecolor/unparseable (1933/1934) test cases.;
   @notify smoke
 -
 drop test_px_truecolor_fn

@@ -4159,8 +4159,17 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                                     }
                                 }
                             }
+                            // parse_rgb failed (or emit produced nothing) with a
+                            // closing '>' — consume silently.  The interpreter
+                            // has no else on the parse_rgb success path, so
+                            // %x<196> / %x<red> vanish rather than appearing
+                            // as literal text.  Emitting the raw token here
+                            // was the JIT/interp divergence (#1934).
+                            uint64_t empty = rc.pool_str("");
+                            return h.emit_sconst(empty, "");
                         }
-                        // Extended parse failed — emit raw text literally.
+                        // Malformed %x<... with no closing > — emit literally
+                        // (same as the interpreter).
                         uint64_t addr = rc.pool_str(node->text);
                         return h.emit_sconst(addr, node->text);
                     } else {
