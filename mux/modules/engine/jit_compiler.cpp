@@ -2501,16 +2501,21 @@ struct shared_heap_t {
         const entry *e = lookup(expr, nLen, eval_flags);
         if (!e) return false;
 
-        // Copy stat fields before dbt_run() — a re-entrant eval() call
-        // during execution can trigger cache eviction and invalidate e.
+        // Copy fields we need after guest execution before dbt_run() —
+        // a re-entrant eval() during guest code can call lookup() and
+        // erase this entry if the same key goes stale (recursive
+        // self-modifying softcode), leaving e dangling (#1940).  Stats
+        // were already snapshotted for #1938; out_addr is the remaining
+        // post-run read.
         const int entry_ecalls     = e->ecalls;
         const int entry_tier2      = e->tier2_calls;
         const bool entry_needs_jit = e->needs_jit;
+        const uint64_t entry_out_addr = e->out_addr;
 
         // Constant-folded: result is in shared memory.
         if (!entry_needs_jit) {
             uint64_t out_addr = resolve_runtime_out_addr(
-                e->out_addr, rv_compiler::STACK_TOP);
+                entry_out_addr, rv_compiler::STACK_TOP);
             size_t n = 0;
             if (!guest_strnlen(memory.data(), memory.size(), out_addr, &n)) {
                 return false;
@@ -2660,9 +2665,11 @@ struct shared_heap_t {
             return true;
         }
 
-        // Extract result (#1057: bound guest NUL scan).
+        // Extract result (#1057: bound guest NUL scan).  Use the
+        // snapshotted out_addr — not e->out_addr — so a mid-run
+        // eviction cannot UAF here (#1940).
         uint64_t out_addr = resolve_runtime_out_addr(
-            e->out_addr, rv_compiler::STACK_TOP);
+            entry_out_addr, rv_compiler::STACK_TOP);
         size_t n = 0;
         if (!guest_strnlen(memory.data(), memory.size(), out_addr, &n)) {
             return false;
