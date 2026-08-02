@@ -118,12 +118,14 @@ not a commitment. Soak time, not feature count, is the gating factor.
     Leave `ALPHA` defined (see above); it is what `netmux -v` prints.
 - **`git status` must be clean before packaging.** `dounix.sh` copies from
   the working tree (`cp "$CHANGES_DIR/$file"`), not from a git export, so
-  anything dirty ships. In particular a `make clean` + rebuild leaves
-  `mux/lib/color_ops.c` modified with ~81 lines of `#line`-only churn
-  (#1950, toolchain-dependent Ragel output) — harmless to the build, but it
-  would land in the tarball *and* in the generated `.patch.gz`. Restore it
-  first: `chmod u+w mux/lib/color_ops.c && git checkout -- mux/lib/color_ops.c
-  && chmod a-w mux/lib/color_ops.c`.
+  anything dirty ships — into the tarball *and* into the generated
+  `.patch.gz`. The Ragel outputs are the ones to watch: regenerating any of
+  them rewrites `#line` directives in a toolchain-dependent way (#1950), so
+  a diff of ~81 `#line`-only lines in `mux/lib/color_ops.c` is churn, not
+  content. Restore before packaging:
+  `chmod u+w <file> && git checkout -- <file> && chmod a-w <file>`.
+  `make clean` no longer triggers this — #1959 took `color_ops.c` out of
+  `CLEANFILES`, so it is no longer deleted and regenerated on every rebuild.
 - Building release packages:
   - Unix/Linux/FreeBSD: Run `./dounix.sh` from repository root
   - Windows: Run `./dowin32.sh` from repository root

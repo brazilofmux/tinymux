@@ -9,8 +9,8 @@ Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
 # Changes in 2.14.0.10 (2026-AUG-02):
 
-By a wide margin the largest cycle in the 2.14 series: 526 pull requests
-merged over nineteen days, touching 558 files for roughly 92,000 added and
+By a wide margin the largest cycle in the 2.14 series: 531 pull requests
+merged over nineteen days, touching 559 files for roughly 92,000 added and
 24,000 removed lines.  For comparison, 2.14.0.9 collected 27 merged changes
 over a month.
 
@@ -314,6 +314,15 @@ break on color, on wide characters and on any translated label.
    is bounded (#1653).
  - An unparseable `%x<body>` is consumed silently, matching the
    interpreter (#1934).
+ - **`repeat()` no longer constant-folds to an empty string when the result
+   would exceed LBUF** (#1954).  The compiled route folded an oversized
+   `repeat()` to nothing while the interpreter returned the truncated string
+   or `#-1 STRING TOO LONG`.  The guard now declines the fold on exactly
+   `co_repeat`'s own refusal condition, so folding happens if and only if
+   `co_repeat` would succeed.  The defect survived because the *wrong*
+   answer was 0 bytes — small enough to pass the slot-pressure check that
+   would have caught the correct 32767-byte one, so it hid behind its own
+   smallness.
 
 ## Networking and the GANL Engine Layer
 
@@ -579,6 +588,10 @@ symptom was the visible one, but most of these are wrong everywhere.
  - `--enable-nls` added (#1419); NLS probes deferred until after C++17
    setup (#1477).
  - `--enable-stubslave` compiles under clang (#1293).
+ - `make clean` no longer deletes the tracked Ragel output `color_ops.c`
+   (#1958).  It was in `CLEANFILES`, so every clean rebuild regenerated it
+   and left the tree dirty with `#line` churn that varies by Ragel build
+   (#1950).
 
 ## Audit Sweep
 
@@ -673,13 +686,17 @@ at and what remains.
    of absorbing it into PASSED.  Absent features skip rather than fail, so
    Windows is green (#1641), without holding a red build over a platform
    that cannot comply (#1594).
- - Three orphan suites were wired into `make test` (#1917) — harnesses that
-   built and passed but that nothing ran.
+ - Four orphan suites were wired into `make test` (#1917, #1953) — harnesses
+   that built and passed but that nothing ran.  The last of them, the SQLite
+   storage backend, hid longer than the others because `test-dbt` contains
+   `test-db` as a substring, so a grep for the shorter name matches the
+   longer target and stops looking.
  - A blob staleness guard fails when `softlib.rv64` is stale or unbuildable
    (#1924), comparing hashes only where the toolchain matches.
- - `tests/libmux` tracks its header dependencies (#1952), after a negative
-   control came back green only because the binary was never rebuilt — the
-   suite could not have failed, and said so in the shape of a pass.
+ - The nine standalone harnesses track their header dependencies (#1952),
+   after a negative control came back green only because the binary was
+   never rebuilt — the suite could not have failed, and said so in the shape
+   of a pass.
  - NLS test infrastructure: a static guard on marking and catalogues
    (#1505), a runtime oracle for the `xx` pseudo-locale (#1523) and for
    Korean, a build-time format-string guard that accepts `S_()` and `N_()`
@@ -719,6 +736,11 @@ at and what remains.
    are tracked in the design note.
  - Spanish and Korean catalogues cover the player loop, comsys and mail
    tranches; the remaining server surface is marked but untranslated.
+ - Ragel outputs still regenerate with different `#line` directives
+   depending on the Ragel build, so regenerating one dirties the tree with
+   churn that is not content (#1950).  #1958 removed the most frequent
+   trigger by keeping `make clean` from deleting `color_ops.c`, but the
+   underlying nondeterminism remains.
 
 # Changes in 2.14.0.9 (2026-JUL-14):
 
