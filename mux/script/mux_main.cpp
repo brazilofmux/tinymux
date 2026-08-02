@@ -1217,6 +1217,22 @@ static void reap_stubslave_bounded(pid_t pid)
 
 static void shutdown_stubslave_parent(void)
 {
+    // Re-entrancy guard (#1939).  ShutdownSlave() below drives a call packet
+    // through Pipe_SendReceive, which spins the pump (script_pipepump).  When
+    // the slave is already gone, that pump write/read fails and script_pipepump
+    // calls back into this function to tear the transport down -- while a
+    // ShutdownSlave() round-trip is still on the stack and g_pISlaveControl is
+    // still non-null.  Without this guard each pump failure launches a fresh
+    // ShutdownSlave(), and the mutual recursion overflows the stack (SIGSEGV in
+    // script_pipepump's prologue).  The pump's own MUX_E_FAIL return already
+    // unwinds the in-flight send; the outermost call finishes teardown once.
+    static bool bInShutdown = false;
+    if (bInShutdown)
+    {
+        return;
+    }
+    bInShutdown = true;
+
     if (nullptr != g_pISlaveControl)
     {
         (void)g_pISlaveControl->ShutdownSlave();
@@ -1235,6 +1251,8 @@ static void shutdown_stubslave_parent(void)
         reap_stubslave_bounded(g_stub_pid);
         g_stub_pid = 0;
     }
+
+    bInShutdown = false;
 }
 
 extern "C" MUX_RESULT DCL_API script_pipepump(void)
