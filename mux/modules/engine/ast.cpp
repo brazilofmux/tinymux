@@ -1392,38 +1392,31 @@ static void ast_eval_subst(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                     RGB rgb;
                     if (parse_rgb(nColor, pColor, rgb))
                     {
-                        unsigned int iColor = FindNearestPaletteEntry(rgb, true);
+                        // Emit via LettersToBinary — the same
+                        // ColorTransitionBinary / EmitSMPColor (v5 two-
+                        // codepoint) path ansi() uses.  The previous
+                        // hand-rolled 0xF0x00+channel scheme was the
+                        // retired v4 three-codepoint delta encoding;
+                        // the live decoder is v5, so non-palette-exact
+                        // truecolor was corrupted (#1933).
+                        //
+                        // Letter form: "<body>" FG, "/<body>" BG.
+                        // Body length is tiny (#RRGGBB or "R G B").
+                        //
+                        UTF8 letters[32];
+                        size_t li = 0;
                         if (bBackground)
                         {
-                            safe_str(aColors[iColor + COLOR_INDEX_BG].pUTF, buff, bufc);
-                            if (palette[iColor].rgb.r != rgb.r)
-                            {
-                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.r + 0xF0300)), buff, bufc);
-                            }
-                            if (palette[iColor].rgb.g != rgb.g)
-                            {
-                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.g + 0xF0400)), buff, bufc);
-                            }
-                            if (palette[iColor].rgb.b != rgb.b)
-                            {
-                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.b + 0xF0500)), buff, bufc);
-                            }
+                            letters[li++] = '/';
                         }
-                        else
+                        letters[li++] = '<';
+                        if (li + nColor + 1 < sizeof(letters))
                         {
-                            safe_str(aColors[iColor + COLOR_INDEX_FG].pUTF, buff, bufc);
-                            if (palette[iColor].rgb.r != rgb.r)
-                            {
-                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.r + 0xF0000)), buff, bufc);
-                            }
-                            if (palette[iColor].rgb.g != rgb.g)
-                            {
-                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.g + 0xF0100)), buff, bufc);
-                            }
-                            if (palette[iColor].rgb.b != rgb.b)
-                            {
-                                safe_str(ConvertToUTF8(static_cast<UTF32>(rgb.b + 0xF0200)), buff, bufc);
-                            }
+                            memcpy(letters + li, pColor, nColor);
+                            li += nColor;
+                            letters[li++] = '>';
+                            letters[li] = '\0';
+                            safe_str(LettersToBinary(letters), buff, bufc);
                         }
                     }
                 }
