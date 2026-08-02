@@ -54,6 +54,6 @@ libmux.so: $(LIBMUX_OBJS)
 
 BUILT_SOURCES = color_ops.c date_scan.cpp
 
-CLEANFILES = libmux.so *.lo *.d color_ops.c
+CLEANFILES = libmux.so *.lo *.d
 
 EXTRA_DIST = $(LIBMUX_SRC) $(LIBMUX_C_SRC) color_ops.rl
