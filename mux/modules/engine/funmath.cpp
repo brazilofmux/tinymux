@@ -3546,9 +3546,25 @@ FUNCTION(fun_digest)
 #error Need EVP_MD_CTX_new() or EVP_MD_CTX_create().
 #endif
 
+    // Resolve the (user-supplied) digest name.  On OpenSSL 3.0+ use the
+    // provider-native EVP_MD_fetch(): unlike the legacy EVP_get_digestbyname(),
+    // it resolves algorithm aliases such as "sha-1" deterministically from a
+    // cold process, with no dependence on an earlier digest call having lazily
+    // loaded the default provider (#1961).  A fetched EVP_MD is a reference that
+    // must be freed; the legacy pointer is a static const that must not be.
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    EVP_MD *mp = EVP_MD_fetch(nullptr, reinterpret_cast<const char *>(fargs[0]), nullptr);
+#else
     const EVP_MD *mp = EVP_get_digestbyname(reinterpret_cast<const char *>(fargs[0]));
+#endif
     if (nullptr == mp)
     {
+        // Release the context allocated above before bailing (#1961 leak fix).
+#if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_free(ctx);
+#elif HAVE_EVP_MD_CTX_CREATE
+        EVP_MD_CTX_destroy(ctx);
+#endif
         safe_str(S_("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
         return;
     }
@@ -3564,6 +3580,9 @@ FUNCTION(fun_digest)
     unsigned int len = 0;
     uint8_t md[EVP_MAX_MD_SIZE];
     EVP_DigestFinal(ctx, md, &len);
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    EVP_MD_free(mp);
+#endif
 #if HAVE_EVP_MD_CTX_NEW
     EVP_MD_CTX_free(ctx);
 #elif HAVE_EVP_MD_CTX_CREATE

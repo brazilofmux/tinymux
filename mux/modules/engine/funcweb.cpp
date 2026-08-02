@@ -223,7 +223,13 @@ FUNCTION(fun_hmac)
         pAlgo = reinterpret_cast<const char *>(fargs[2]);
     }
 
+    // Provider-native fetch on OpenSSL 3.0+ so aliases resolve from a cold
+    // process; see fun_digest (#1961).  Fetched EVP_MD is a ref to free below.
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    EVP_MD *md = EVP_MD_fetch(nullptr, pAlgo, nullptr);
+#else
     const EVP_MD *md = EVP_get_digestbyname(pAlgo);
+#endif
     if (nullptr == md)
     {
         safe_str(S_("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
@@ -238,10 +244,14 @@ FUNCTION(fun_hmac)
     uint8_t result[EVP_MAX_MD_SIZE];
     unsigned int result_len = 0;
 
-    if (nullptr == HMAC(md,
+    const unsigned char *pHmac = HMAC(md,
                         pKey, static_cast<int>(nKey),
                         reinterpret_cast<const unsigned char *>(pMsg), nMsg,
-                        result, &result_len))
+                        result, &result_len);
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    EVP_MD_free(md);
+#endif
+    if (nullptr == pHmac)
     {
         safe_str(S_("#-1 HMAC FAILED"), buff, bufc);
         return;
