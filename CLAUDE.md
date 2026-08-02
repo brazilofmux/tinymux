@@ -91,6 +91,20 @@ version churns whole files (#1477). Prefer expressing build changes in
   socket (`tests/scenario/`) — the path muxscript can't reach
 
 ## Release Process
+
+**What a 2.14.0.x build is.** 2.14 is ALPHA and stays ALPHA. The released
+version — what live games and players actually run — is **2.13**, out March
+2026. A 2.14.0.x tag is a checkpoint in a long alpha, not something anyone
+is asked to deploy. **There is no planned Beta stage**, so do not propose
+clearing `ALPHA` in `_build.h`, and do not write CHANGES entries or issue
+comments that address a 2.14 site operator as if one exists.
+
+Historically the minor number encoded the year the work finished: 2.0 in
+2000, 2.1 in 2001, and so on through roughly 2.9, after which the scheme
+lapsed. 2.14 is loosely aimed at finishing around March 2027, or possibly
+December 2026 if it is worth re-syncing to a year boundary — flexible, and
+not a commitment. Soak time, not feature count, is the gating factor.
+
 - **Before tagging, `make test` must pass under more than one configuration**
   (#1946). The default test build omits `--enable-stubslave`, which is a
   *release* build flag — so the shipped stubslave path is the one the test
@@ -100,7 +114,18 @@ version churns whole files (#1477). Prefer expressing build changes in
   - `make clean` between them; configure flags do not take effect otherwise
 - Update version numbers in:
   - `dounix.sh` and `dowin32.sh`: Update OLD_BUILD and NEW_BUILD
-  - `mux/src/_build.h`: Update MUX_VERSION and MUX_RELEASE_DATE
+  - `mux/include/_build.h`: Update MUX_VERSION and MUX_RELEASE_DATE.
+    Leave `ALPHA` defined (see above); it is what `netmux -v` prints.
+- **`git status` must be clean before packaging.** `dounix.sh` copies from
+  the working tree (`cp "$CHANGES_DIR/$file"`), not from a git export, so
+  anything dirty ships — into the tarball *and* into the generated
+  `.patch.gz`. The Ragel outputs are the ones to watch: regenerating any of
+  them rewrites `#line` directives in a toolchain-dependent way (#1950), so
+  a diff of ~81 `#line`-only lines in `mux/lib/color_ops.c` is churn, not
+  content. Restore before packaging:
+  `chmod u+w <file> && git checkout -- <file> && chmod a-w <file>`.
+  `make clean` no longer triggers this — #1959 took `color_ops.c` out of
+  `CLEANFILES`, so it is no longer deleted and regenerated on every rebuild.
 - Building release packages:
   - Unix/Linux/FreeBSD: Run `./dounix.sh` from repository root
   - Windows: Run `./dowin32.sh` from repository root

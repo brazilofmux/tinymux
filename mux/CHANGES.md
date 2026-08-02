@@ -1,25 +1,43 @@
 ---
 title: TinyMUX 2.14 CHANGES
-date: July 2026
+date: August 2026
 author:
  - Brazil
 ---
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
-# Changes in 2.14.0.10 (UNRELEASED — draft, finalize date at release):
+# Changes in 2.14.0.10 (2026-AUG-02):
 
-By far the largest cycle since the 2.14 branch point: where 2.14.0.9
-collected 27 merged changes over a month, this one has passed 155 in under
-two weeks.  Five threads dominate it.  The GANL networking survey is
-carried to completion, including the TLS paths on both OpenSSL and
-Schannel.  The JIT's eval-bracket guard is lifted and the compiled route
-becomes the default for bracketed expressions.  A systematic audit sweep
-runs the codebase in numbered passes, closing well over a hundred filed
-defects.  A new set of front-door defenses bounds what an unauthenticated
-connection can cost the server.  And a 2.13/2.14 parser parity harness is
-built, then used to find and fix real divergences in expression
-evaluation.
+By a wide margin the largest cycle in the 2.14 series: 534 pull requests
+merged over nineteen days, touching 567 files for roughly 93,000 added and
+25,000 removed lines.  For comparison, 2.14.0.9 collected 27 merged changes
+over a month.
+
+That volume has a cost, and it is worth stating plainly.  A TinyMUX alpha
+has historically been closer to a late beta in practice — the qualifier
+understated the tree.  2.14 is not that.  A great deal has been packed in,
+and the result carries the churn to match; it may take through 2.15 or 2.16
+for the code to settle back into this project's usual register.  The
+`ALPHA` on this build is meant literally.
+
+Eight threads dominate it.  Server messages become translatable, with
+Spanish and Korean catalogues and a `language` directive.  Lua gains a
+compiled execution path and is turned on by default.  The softcode JIT's
+eval-bracket guard is lifted and the compiled route becomes the default for
+bracketed expressions.  A systematic audit sweep runs the codebase in
+numbered passes 1 through 15, closing several hundred filed defects.  A new
+set of front-door defenses bounds what an unauthenticated connection can
+cost the server.  Multi-column output moves onto a shared table layer that
+is safe for color and non-Latin scripts.  A 2.13/2.14 parser parity
+harness is built, then used to find and fix real divergences in expression
+evaluation.  And password storage moves to a standard, key-stretched
+format that is the same on every platform.
+
+Two configuration defaults change in this release — `jit_eval_brackets` and
+`lua_jit` are both on now — one user-visible parser behaviour is restored
+to 2.13's, and newly written passwords change format.  Those are called out
+in their sections below.
 
 ## Parser and Expression Evaluation
 
@@ -54,64 +72,162 @@ evaluation.
    answer and the better one: `[x add(1,2) y]` returns `x add(1,2) y`.
    Also resolves the same divergence for inline `subeval()` (#1162) and
    restores 2.13's verbatim echo for `[strcat(x (add(1,2) y)]`.
- - **The two evaluation routes now agree on every shape in the parity
-   corpus** — 128 of 128, with no unadjudicated divergences left.  The
-   only remaining disagreements with 2.13 are deliberate: nine pinned
-   `name (args)` shapes and two where 2.13 reports an error and 2.14
-   prints plausible text, which is an open design question rather than
-   a defect.
+ - A failed function lookup now ends its eval-bracket region, matching
+   2.13, which had been recorded as a known divergence in the draft of
+   this release (#1247).  The failure family was mapped with a dedicated
+   corpus before the change, so the blast radius was known rather than
+   guessed.
+ - **The parity corpus grew to 163 shapes** over the cycle, probing call
+   position, arming and nesting rather than trying to describe a grammar.
+   The two 2.14 routes are driven over it identically, and the remaining
+   known disagreements with 2.13 are deliberate: pinned `name (args)`
+   shapes, and cases where 2.13 reports an error and 2.14 prints plausible
+   text, which is an open design question rather than a defect.  The 2.13
+   leg is added when a built reference tree is pointed at by
+   `MUX213_ROOT`, so a full three-engine adjudication is opt-in.
  - Nested parentheses are balanced when scanning function arguments
-   (#1219).
+   (#1219).  Measurement later showed the depth counter and 2.13's closer
+   stack agree on the crossed-nesting corpus, so the remaining `XN_*`
+   divergences have a different cause (#1248).
  - `ifelse()`/`if()` conditions are decided with `xlate()` rather than
    `atol()`, matching the interpreter (#1157).
 
-## Networking and the GANL Engine Layer
+## Internationalization
 
- - The GANL survey filings (#942–#953) are resolved across every engine.
-   Highlights: the `epoll` engine registers `EPOLLOUT` for immediate
-   connects (#942) and no longer disarms write interest without emitting
-   a `Write` event (#943); the `select` engine rejects descriptors at or
-   above `FD_SETSIZE` before `FD_SET` writes out of bounds (#946) and
-   makes `closeConnection` idempotent (#947); `wselect` assigns
-   `ev.buffer` from the saved buffer reference on `Read`, and `kqueue`
-   fully populates the accept `IoEvent` (#947).
- - Engine close-ownership and `IoEvent` population are harmonized across
-   engines, and the contract is written down in
-   `docs/ganl-engine-contract.md` (#947).
- - `epoll` now emits a listener `Error` event on a real `accept()`
-   failure rather than treating it as routine.
- - Connection-core hygiene: TLS return handling, overflow diagnostics and
-   a buffer cap (#953).  A dead telnet-negotiation-timeout sweep is
-   removed (#945).
- - The DNS slave protocol frames requests on newlines (#1220).
+New this release, and the single largest thread in it.  Server messages can
+now be translated, with the machinery, the catalogues and the guards that
+keep them honest all landing together.  NLS is opt-in at build time via
+`--enable-nls`; a tree built without it behaves exactly as before.
 
-## TLS
+ - Optional gettext plumbing for server messages (#1419).  Prose is marked
+   with `M_()`, which is opt-in per string, while `T()` keeps its existing
+   meaning as a UTF-8 cast — so marking is deliberate and reviewable rather
+   than a blanket sweep (#1444).  Literal `#-1` softcode tokens route
+   through `S_()` instead, because they are protocol, not prose (#1475).
+ - **A `language` directive in `netmux.conf`**, and one catalogue reader
+   used everywhere (#1702).  Catalogue names reject path separators.  An
+   unrecognised catalogue policy used to take the lenient path silently;
+   it now says so (#1419).
+ - **Spanish and Korean catalogues** (#1419).  Korean was chosen as the
+   second locale deliberately, for what a non-Latin, non-European language
+   can disprove that a second Romance language cannot — and it earned its
+   place immediately by exposing both of the following.
+ - **`%N$` positional arguments implemented in `mux_vsnprintf`** (#1623).
+   Translations frequently need to reorder a sentence's arguments, and
+   `msgfmt` accepts `%N$` happily — but the runtime did not, so a valid
+   catalogue could compile and then misformat at the point of use.
+   Catalogues now reject non-fuzzy `%N$` until the runtime supports it,
+   and then the runtime learned to.
+ - **Plural forms via `ngettext`** (#1622, #1661), replacing hand-rolled
+   English suffix logic that no other language can follow.  Count-bearing
+   messages were split so each count can be pluralised independently —
+   the `@mail` folder summary is the clearest case (#1717) — and plural
+   morphology baked into a msgid is now a defect rather than a style
+   choice.
+ - Whole sentences are the translation unit.  Mixed `T()`/`M_()` fragments,
+   pre-spaced multi-column headers, and one-word msgids assembled at the
+   call site were converted to whole-sentence formats across speech, look,
+   page, home/dropto, channel join/leave and connect/disconnect (#1723),
+   and per-label header extraction replaced the old blob msgids.
+ - `@decompile`'s `@set`/`@power` command templates are deliberately *not*
+   translatable (#1674) — they are commands to be pasted back, not prose.
+ - Catalogues are built with `msgfmt -c`, so a bad translation cannot
+   compile.  Empty msgids are never passed to gettext, which would return
+   the catalog header (#1443).
+ - Windows gets NLS too, via a built-in catalogue reader, since MSVC ships
+   no gettext (#1419), with the macros mirrored into `autoconf-win32.h`.
+   NLS probes were also moved after C++17 setup in `configure`, where they
+   had been silently failing (#1477).
 
- - OpenSSL write path hardened: renegotiation disabled and plaintext
-   retained across retries (#948, #949).
- - Schannel hardening: a cleartext-downgrade gap closed, large writes
-   chunked, and TLS 1.3 support (#950, #951, #952); Schannel also accepts
-   PEM certificate/key pairs (#975).
+## Lua Scripting and the Lua JIT
 
-## Front-Door Defenses
+Also new, and the second-largest thread.  Lua chunks now compile through
+the same bytecode → HIR → DBT pipeline the softcode JIT uses.
 
-New, and off by default where behaviour could surprise an existing site.
-These bound what an unauthenticated or abusive source can consume.
+ - **`lua_jit` defaults on** (#1325).  Set `lua_jit=0` to diagnose a
+   suspected compiled-path bug.
+ - The compiled path was brought up in stages behind a default-off gate
+   (#1309) and only flipped after the tests could see it actually execute
+   — which took three attempts to get right, described under Tests below.
+ - Nesting is supported: Lua runs under the softcode JIT via per-depth run
+   contexts (#1326), and the shapes that only nesting makes reachable are
+   covered.
+ - **The named bridge was deleted rather than repaired** (#1519).  All
+   twelve `__lua_*` bridge ECALLs had never once executed, due to a name
+   mismatch that no test could see.  Making them work was measurably worse
+   than failing closed, so the dead path was removed and the bridge
+   rebuilt around dedicated opcodes.
+ - On the new opcode path: table constructors, integer-keyed and
+   string-keyed stores, `#t` on a table (which fixes #1424 at the root),
+   library calls with integer and string results, bare-global calls,
+   `OP_TAILCALL` as call-then-return, float arguments over the `FMV.X.D`
+   lane, library value members such as `math.pi` and `math.maxinteger`, and
+   a `carg[]` argument list supporting three arguments, handle arguments
+   and void calls.
+ - Values gained types.  A handle type stops VM references passing as
+   values (#1579); handles carry their referent so decision sites can read
+   it; `CALL_VAL` keeps call results as typed stack values; equality
+   compares Lua *types*, not representations; and an `UNKNOWN` truth class
+   covers tag loss (#1768).  A Lua float that stopped being a float on the
+   compiled path is fixed (#1488), as are `EQK` treating `nil` as the empty
+   string, and Lua truthiness for `0`, `""`, `nil` and `false`.
+ - **Loops**: numeric `for`, `while` and `repeat`, under an aborting
+   back-edge budget scaled to body size (#1732), with runtime bounds.
+   Back edges chain through the loop-budget countdown (#1741).
+ - **The compiled route is effect-free by construction** (#1751), reached
+   in five phases: a post-entry decline becomes a loud failure rather than
+   a silent interpreter re-run, `GET`/`SET`/`LEN` ECALLs are totalized so
+   no policy decline can occur mid-run, unencodable calls are ineligible
+   rather than string-coerced, `LIMITED` commits an interpreter-identical
+   limit error, and a final ratchet forbids post-entry interpreter re-runs
+   outright.  A purity oracle and a softcode↔Lua seam corpus (TC071–TC090)
+   back it.
+ - An unimplemented bridge ECALL fails closed instead of guessing (#1512),
+   and a Lua error inside an ECALL no longer aborts the process (#1423).
+ - Limits are real: `lua_instruction_limit` and `lua_memory_limit` apply at
+   runtime (#1613), the instruction budget is read at run time rather than
+   compile time (#1745), the pattern matcher is bounded on wall time
+   (#1591), and Lua honours the same wall-clock alarm as the rest of the
+   server.
+ - `^` lowers to a native `FCALL2` pow rather than a string ECALL (#1538),
+   and is documented as *not* mirroring softcode's IEEE domain guard
+   (#1556).
+ - `tonumber` gained a `CALL_INT` fast path for proven integers, which then
+   had to learn to reject int64-overflowing literals (#1866).
+ - Correctness fixes found by the differential corpus: a condition used as
+   a value swallowed a block leader (#1421), chunks whose values cross a
+   control-flow join are declined (#1422), signed operand fields used the
+   wrong excess-K bias (#1422), the branch value must follow the branch
+   taken (#1486), `EQK` must mark skip and fall-through as block leaders
+   (#1761), the `mux.*` sentinel must not escape as a value (#1795),
+   `#mux.args` compiles as `SUBST_NCARGS` rather than the sentinel's
+   length, and outer `mux.args` is restored after a nested `lua()` runs.
+ - After a code-cache flush the Lua JIT recompiles instead of dying
+   silently for the life of the process (#1417) — the flush had cleared one
+   side of a two-sided cache and left a stale latch, and every fallback
+   returned the right answer, so nothing but a counter could see it.
+   `jitstats()` reports Lua JIT counters (#1316) for exactly that reason.
 
- - Per-source cap on pre-authenticated connections (#1013).
- - Per-source failed-login throttle, with refusal-log damping informed by
-   Rhost's approach (#1014).
- - Per-source connection-rate limit covering connect/disconnect churn
-   (#1017).
- - Graduated site rules with a per-entry connection threshold (#1015),
-   stored per control group (#1034).
- - Anti-runaway input backlog cap, with `save_command` owning
-   `input_size` (#1010).
- - Pool memory footprint budget, defense-in-depth and off by default
-   (#1012).
- - The per-command wall-clock alarm is honored on the DBT path (#1011).
- - New refusal types are broadcast to SiteMon (#1018).
- - Wizard players are exempt from the CPU guard's collateral HALT (#920).
+## Tabular Output
+
+Multi-column player-facing output moved off hand-counted spaces, which
+break on color, on wide characters and on any translated label.
+
+ - **`co_copy_field`** — cluster-safe column layout with color close
+   (#1649).  It is the first primitive to hold four constraints together:
+   a hard byte cap, a display-column count measured per cluster, PUA color
+   preserved with budget reserved for a RESET so a cut mid-run never leaves
+   the client in a colored state, and cuts that never land inside a
+   grapheme cluster.
+ - **`mux_table`**, a layout helper in libmux for multi-column notifies
+   (#1667), rolled out in phases across `@clist` and `@clist/full`,
+   `comlist`, `@cwho`, mail alias lists, mail folder/review list lines, and
+   the staff-list family.
+ - Per-label header msgids replace the old pre-formatted blob msgids
+   throughout, and a test bans pre-spaced multi-column table headers so
+   they cannot come back (#1667 Phase 5).
+ - Channel and mail columns were relaid on `co_copy_field` (#1653), and
+   `%*` width specifiers are not used with `mux_sprintf`.
 
 ## JIT / DBT Engine
 
@@ -149,8 +265,9 @@ These bound what an unauthenticated or abusive source can consume.
  - Softcode `abs()` lowers through the float path rather than integer
    `HIR_ABS` (#1150).  `abs()` is a float function (`mux_atof`), so the
    native integer form modelled the wrong function; `iabs()` keeps its
-   integer semantics and its range check.  Constant folding of `HIR_ABS`
-   also skips `INT64_MIN`, where negation is undefined behaviour.
+   integer semantics and its range check.  `abs(INT64_MIN)` is now
+   `#-1 OUT OF RANGE` rather than a wrapped negative (#1255, #1256), and
+   `fval` compares against 2^63 rather than `INT64_MAX`.
  - Chain patch sites are decoded per backend rather than as x86-64
    `rel32` unconditionally (#1152).  On AArch64 the site is a `B imm26`
    word — displacement in words, measured from the instruction — so the
@@ -158,6 +275,230 @@ These bound what an unauthenticated or abusive source can consume.
    `dbt_resolve_chains` classified every site as already resolved.  The
    x86-64 decode is unchanged; the entire behavioural effect is on
    AArch64.
+ - **The `-1` refused-lowering sentinel is safe at the subscript rather
+   than per site** (#1501).  A refused lowering returning `-1` was being
+   used directly as an array index; four more such sites were found by
+   UBSan after the first three were guarded (#1440, #1457).  Making the
+   subscript itself safe closes the class instead of the instances.
+ - `HIR_NEG` is emitted and its `INT64_MIN` fold guarded (#1258);
+   `INC`/`DEC` folds wrap defined (#1259, #1260); native `max()`/`min()`
+   are restored via `fmax`/`fmin` (#1273); `add_edge` rejects invalid
+   block IDs (#1863).
+ - **RISC-V floating-point conformance**, a family of related defects that
+   a JIT-versus-interpreter differential is structurally blind to because
+   both routes were wrong identically.  `FCVT.{W,WU,L,LU}.D` NaN and range
+   semantics on all three backends (#1313, #1314); the float→int rounding
+   mode was ignored and always truncated, on the interpreter, x86-64 and
+   AArch64 alike (#1320); canonical NaN is returned rather than propagating
+   operand payloads (#1337, #1353); `FMIN.D`/`FMAX.D` sNaN and signed-zero
+   semantics (#1344, #1357); `FLE.D` inverted and `FEQ.D`/`FLT.D` true for
+   NaN (#1359); `FSGNJ.D`/`FSGNJN.D` destroyed `rs2`'s sign when `rd`
+   aliased it.  Golden values came from qemu, not from either
+   implementation here.
+ - Other DBT correctness: `MULH`/`MULHSU`/`MULHU` squared `rs1` when `rs2`
+   was `x0` (#1361); block cache inserts are deduped by `guest_pc` (#1153);
+   guest pointers handed to intrinsic stubs are bounds-checked (#1151);
+   `mem_check` does not wrap for a large guest address (#1292); guest
+   instruction-fetch bounds are overflow-safe (#1864); CSR `funct3` guard
+   plus `fflags`/`frm`/`fcsr` support (#1333); guest loops that never reach
+   the dispatcher are bounded (#1571); the FP cache is flushed before
+   superblock side exits (#1338); the superblock pressure guard counts the
+   whole loop body.
+ - A full code buffer is recovered from rather than killing the process
+   (#1315), `CODE_BUF_SIZE` is sized from the measured blob and raised from
+   1 MB to 4 MB (#1388), reclamation happens only on `XLATE_FULL` rather
+   than refusing (#1331), and blocks with unhandled instructions are
+   refused rather than skipped (#1323).
+ - `jitstats()` counters accumulate on the shared-heap path (#1929), and
+   the shared-heap `out_addr` is snapshotted before `dbt_run` (#1940).
+ - The stubbed set operations are dropped from the tier-2 allowlist
+   (#1927); `rv64_strcat` is bounded at LBUF (#1915); `ECALL_ORD`'s write
+   is bounded (#1653).
+ - An unparseable `%x<body>` is consumed silently, matching the
+   interpreter (#1934).
+ - **`repeat()` no longer constant-folds to an empty string when the result
+   would exceed LBUF** (#1954).  The compiled route folded an oversized
+   `repeat()` to nothing while the interpreter returned the truncated string
+   or `#-1 STRING TOO LONG`.  The guard now declines the fold on exactly
+   `co_repeat`'s own refusal condition, so folding happens if and only if
+   `co_repeat` would succeed.  The defect survived because the *wrong*
+   answer was 0 bytes — small enough to pass the slot-pressure check that
+   would have caught the correct 32767-byte one, so it hid behind its own
+   smallness.
+
+## Networking and the GANL Engine Layer
+
+ - The GANL survey filings (#942–#953) are resolved across every engine.
+   Highlights: the `epoll` engine registers `EPOLLOUT` for immediate
+   connects (#942) and no longer disarms write interest without emitting
+   a `Write` event (#943); the `select` engine rejects descriptors at or
+   above `FD_SETSIZE` before `FD_SET` writes out of bounds (#946) and
+   makes `closeConnection` idempotent (#947); `wselect` assigns
+   `ev.buffer` from the saved buffer reference on `Read`, and `kqueue`
+   fully populates the accept `IoEvent` (#947).
+ - Engine close-ownership and `IoEvent` population are harmonized across
+   engines, and the contract is written down in
+   `docs/ganl-engine-contract.md` (#947).
+ - `epoll` now emits a listener `Error` event on a real `accept()`
+   failure rather than treating it as routine.
+ - Connection-core hygiene: TLS return handling, overflow diagnostics and
+   a buffer cap (#953).  A dead telnet-negotiation-timeout sweep is
+   removed (#945).
+ - The DNS slave protocol frames requests on newlines (#1220), drains
+   under `EPOLLET`, and the slave child cap releases correctly (#1826,
+   #1827) — the last of which needed `SIGCHLD` installed *without*
+   `SA_RESTART`, or the cap never released at all (#1912).
+ - `initiateConnect` was missing for the `kqueue` and `select` engines,
+   and `initiateUnixConnect` with it (#1840); on Win32 the same gap broke
+   outbound `@email` (#1801).
+ - IOCP: a pending-read use-after-free and ABA (#1832), `wselect`'s
+   `postWrite` ceiling (#1834), and `AcceptEx` replenishment after a
+   transient post failure (#1830).
+ - Close drain aborts on write failure and readiness ingress is bounded
+   (#1855, #1856); an `announce` file-descriptor leak on `getnameinfo`
+   failure and on accept exit is closed (#1778).
+ - Telnet: duplicate option acknowledgements are ignored, NEW-ENVIRON
+   next-var handling corrected, `USER` sanitized, and the CHARSET UTF-8
+   reset fixed (#1811–#1814, #1816).
+ - WebSocket: empty frames are dropped and commands capped at LBUF-1
+   (#1818, #1819), with a wire-level payload cap and a `save_command`
+   defense; the login path charges `input_tot` (#1807); the GET preface
+   split is handled (#1800).
+ - `CREATE` respects the `max_players` cap (#1806); `find_oldest` sees a
+   second session and `SESSION`/`SOCKET` formats are full-width (#1808,
+   #1809); `proto_detect_len` is initialized and grace-timeout preface
+   replay is bounded (#1800).
+ - `CLOEXEC` restart policy, and `SIGFPE` routed to the fatal handler
+   (#1823, #1824).
+
+## TLS
+
+ - OpenSSL write path hardened: renegotiation disabled and plaintext
+   retained across retries (#948, #949).
+ - Schannel hardening: a cleartext-downgrade gap closed, large writes
+   chunked, and TLS 1.3 support (#950, #951, #952); Schannel also accepts
+   PEM certificate/key pairs (#975).
+ - The Schannel `AcceptSecurityContext` contract is honoured and handshake
+   `EXTRA` data cleared (#1850, #1851).
+ - TLS reassembly buffers are capped and the OpenSSL cipher list pinned
+   (#1282); Hydra defers `WILL EOR` until the handshake completes and caps
+   TLS egress (#1846, #1847).
+
+## Front-Door Defenses
+
+New, and off by default where behaviour could surprise an existing site.
+These bound what an unauthenticated or abusive source can consume.
+
+ - Per-source cap on pre-authenticated connections (#1013).
+ - Per-source failed-login throttle, with refusal-log damping informed by
+   Rhost's approach (#1014).
+ - Per-source connection-rate limit covering connect/disconnect churn
+   (#1017).
+ - Graduated site rules with a per-entry connection threshold (#1015),
+   stored per control group (#1034).
+ - Anti-runaway input backlog cap, with `save_command` owning
+   `input_size` (#1010).
+ - Pool memory footprint budget, defense-in-depth and off by default
+   (#1012).
+ - The per-command wall-clock alarm is honored on the DBT path (#1011).
+ - New refusal types are broadcast to SiteMon (#1018).
+ - Wizard players are exempt from the CPU guard's collateral HALT (#920).
+
+## Passwords and Digests
+
+Password storage was salted SHA-1 at **one round** on both platforms.  Per
+password random salt already defeated the naive "equal hashes mean equal
+passwords" comparison, so the weakness was never SHA-1's deprecation —
+it was speed.  The realistic adversary is someone holding a backup, and
+against that adversary a single round is cheap to attack offline.  Rounds
+are the fix, not the hash.
+
+ - **New passwords are written as sha-crypt `$6$` with an explicit
+   `rounds=`** (#1962).  `mux_sha_crypt` implements the standard
+   construction — the same one glibc, musl and `openssl passwd` produce —
+   over OS crypto primitives: OpenSSL EVP on Unix, Windows CNG elsewhere.
+   Because the construction is in-tree rather than delegated to libc,
+   **a password database written on Unix verifies on Windows and the
+   reverse**, and `$5$`/`$6$` no longer depend on whether the host libc
+   understands those formats.  macOS's `crypt(3)` does not.
+ - The work factor is `password_hash_rounds`, a new configuration
+   directive, **defaulting to 50000**.  It was first set to 220000 on
+   OWASP guidance and then deliberately lowered (#1962): verification
+   recomputes at the stored cost, so in a single-threaded server a
+   hundred-reconnect burst serialized about 22 seconds of hashing and
+   stalled the game for everyone.  50000 measures near 50 ms per hash on
+   2.5 GHz server hardware — ten times the sha-crypt spec default of 5000,
+   and about five seconds for that same burst rather than twenty-two.  The
+   rounds value rides inside each hash and re-hash-on-login propagates the
+   change, so existing `rounds=220000` hashes settle down to policy as
+   players log in; this is a policy knob, not a format change.
+ - **Re-hash on login became parameter-aware.**  A `$5$`/`$6$` hash whose
+   stored rounds differ from current policy is re-encoded on the next
+   successful login, so changing the directive migrates the database as
+   players return rather than requiring a sweep.  Legacy conversion is
+   preserved, and formats are ranked so an upgrade can never run
+   backwards — with `password_methods` unset, the old code re-hashed on
+   every login and would **silently downgrade a `$6$` hash to `$SHA1$`**
+   after a configuration reset.
+ - Every legacy format still verifies: `$SHA1$`, `$P6H$`, DES, extended
+   DES, and `$1$`.  Nobody is locked out by the change.
+ - **The homegrown SHA-1 is deleted** (#1963).  The non-OpenSSL backend is
+   now CNG with cached algorithm handles, so the tree ships no
+   cryptographic source at all — the posture already taken for TLS by
+   using Schannel rather than bundling an implementation.  A generalized
+   `mux_digest` entry point serves sha1/sha256/sha384/sha512/md5, which is
+   why `digest(sha256,...)` and friends **now work on Windows**, where
+   only literal `sha1` was supported before; two smoke cases flip from
+   Skipped to Succeeded there.  Byte-for-byte output equality across the
+   swap was the gating requirement, since `$SHA1$` verification, the JIT
+   cache key, and the RFC 6455 `Sec-WebSocket-Accept` handshake all depend
+   on those exact bytes.
+ - **`digest()` and `hmac()` resolved algorithm aliases order-dependently
+   on some OpenSSL 3.0 builds** (#1961).  Both used the legacy
+   `EVP_get_digestbyname()`, whose name table is populated lazily when the
+   default provider is first pulled in by a successful operation.  Until
+   that happened, hyphenated aliases did not resolve, so
+   `digest(sha-1,abc)` returned `#-1 UNSUPPORTED DIGEST TYPE` cold and the
+   correct hash after any other digest had run — a different answer for
+   the same input depending only on what preceded it.  Observed on
+   3.0.13-era distributions (Debian 12, Ubuntu 22.04, RHEL 9), where it
+   also made `make test` red; not reproducible on 3.0.20 or 3.6.2, so the
+   affected range sits inside 3.0.x rather than covering it.  Resolution
+   now goes through the provider-native `EVP_MD_fetch()` on 3.0 and later,
+   which is deterministic from a cold process regardless of which build is
+   underneath.  An `EVP_MD_CTX` leak on the unsupported-name path is fixed
+   with it.
+ - Both new surfaces ship known-answer suites — `make test-digest` and
+   `make test-shacrypt`, also in `test-asan` — whose golden values come
+   from `openssl(1)` as an external oracle rather than from the code under
+   test.  That distinction has caught real bugs in this tree before: a
+   round-trip test passes when encoder and decoder are wrong in the same
+   way.
+
+## Integer Width and Overflow Safety
+
+A sweep prompted by LLP64, where `long` is 32 bits and every `mux_atoi64`
+result narrowed silently on the way to its destination.  The Windows
+symptom was the visible one, but most of these are wrong everywhere.
+
+ - Softcode truthiness, `cf_size`, and the remaining `mux_atol` callers
+   migrate to `mux_atoi64` (#1373); results stop being narrowed into `long`
+   (#1402, #1404), with the reason the truncation stayed invisible recorded
+   in `docs/` (#1406).
+ - Quota, charges, queue counts, `ConnectionInfo` fields and the `conn*`
+   softcode family, comsys `MAX_LOG` and timeouts, `mail_selector`, sort
+   keys and the remaining product `atoi` calls all keep full width (#1402).
+ - `@poor`'s limit is clamped and `hasquota`'s stored quota widened
+   (#1402); `A_RQUOTA` is clamped rather than narrowed through `mux_ltoa`
+   (#1408); `parse_justify_width` narrowed before its own range check;
+   bench iteration counts are clamped in 64-bit before narrowing.
+ - Softcode-reachable signed overflow removed from `shl`/`inc`/`dec`
+   (#1472) and defined wrap given to `iadd`/`isub`/`imul`/`limath` (#1861).
+ - `mux_atoi64` accumulates and negates without undefined behaviour
+   (#1459); two shift-UB sites removed (#1456); `svdhash` reads its 32-bit
+   words with `memcpy` rather than an unaligned cast (#1454).
+ - CIDR prefixes are rejected before int truncation and before 64-bit wrap
+   (#1774); the `.sqlite` path derivation is bounded (#1411).
 
 ## Comsys, @mail, and Module Storage
 
@@ -172,6 +513,28 @@ These bound what an unauthenticated or abusive source can consume.
    (#1227); write-through module bodies and `mail_db_top` (#1192); raw
    attributes used for composition so `@mail/proof` works; `MailList`
    iterators cleared before map erase.
+ - **The module never wrote channel history, so `crecall` was always
+   empty** (#1564).
+ - **A whole-output conformance diff between the module and built-in
+   implementations** (#1614) found six divergences, then drove them to
+   zero: the module's command surface (#1640), all five `MOGRIFY` hooks
+   and `CHATFORMAT` (#1572), ``MOGRIFY`NOBUFFER`` with engine
+   `EvalWithArgs` identity, `LOG_TIMESTAMPS` in the history writer (#1570)
+   read by value so the module can turn it off (#1585), and `@cwho`
+   `UnparseObject` parity.
+ - `@mail/fstats` counted a NUL that was never there, and the module
+   carried a phantom `+1` (#1639, #1652); the module's three stats levels
+   are correct (#1631); a mail body was freed on send and every message
+   carried a trailing byte (#1587).
+ - The nine discarded `SetAttribute` results in comsys and mail are checked
+   (#1620), as are the storage writes both modules were discarding (#1630);
+   the module may write engine-owned channel attributes (#1585).
+ - `@cset/log` reports why it failed instead of blaming the value (#1555);
+   `@cboot`'s victim notify names the executor.
+ - `CResultsSet` fields, channel names and `malias` caps are bounded
+   (#1874, #1875, #1878).
+ - Raw `snprintf` is banned in player-facing paths across comsys, mail and
+   the JIT, converted to `mux_sprintf` with a build-time ratchet (#1653).
 
 ## Database, Objects, and Players
 
@@ -182,6 +545,15 @@ These bound what an unauthenticated or abusive source can consume.
  - `@clone/preserve` re-links without stealing ownership (#1181).
  - The pcache entry is dropped on player destroy, avoiding a recycle leak
    (#1180).
+ - Scheduler enqueue success and flatfile write failures are checked
+   (#1871, #1869).
+ - `@cron` rejects trailing tokens after a five-field schedule (#1870).
+ - `@include` runs as the includer, not the source object (#1279); NOEVAL
+   boolean hooks read their content (#1280).
+ - The `@list` cache aborted the server on `%f` (#1382, #1400).
+ - `GAME_CONFIG` — game-policy configuration now reaches modules (#1654).
+ - A configuration file that cannot be opened or read is fatal rather than
+   ignored (#1601).
 
 ## Reliability and Restart
 
@@ -195,6 +567,21 @@ These bound what an unauthenticated or abusive source can consume.
  - Driver basket values are re-pulled from `cf_seconds` and `cf_dbref`
    (#1222).
  - `DS_NEED_PROTO` timeout fallback for server-first clients (#1074).
+ - The driver fails closed when required COM interfaces are missing
+   (#1798), rather than reaching the main loop without them.
+ - `muxscript` unwinds the module library when startup fails (#1598),
+   turns logging on so server diagnostics stop being discarded (#1633),
+   and breaks a stubslave shutdown recursion that had been misread as a
+   teardown use-after-free (#1939).
+ - `libmux`'s `CanUnloadNow` returns `MUX_S_FALSE`, not `MUX_S_OK` (#1535);
+   the module transport fails cleanly when used before init (#1362);
+   `@list modules` says so when it cannot reach the slave (#1535).
+ - Hydra's `WorkQueue` gained a cancellation path so shutdown cannot hang,
+   and completes cancelled work items rather than queueing them (#1286).
+ - `safe_copy_buf` never hands `memcpy` a null source (#1458), and
+   `safe_chr` evaluates its argument exactly once (#1930 class) — the
+   latter found by writing the test against the real `alloc.h` instead of
+   a replicated copy (#1948).
 
 ## Softcode Functions
 
@@ -208,19 +595,91 @@ These bound what an unauthenticated or abusive source can consume.
  - New: `lcat()`, a list-consuming string joiner with grapheme
    round-trip.
  - Help entries added for 15 public builtins that had none (#1167).
+ - `%i`, `%o` and floating point implemented in `mux_vsnprintf` (#1416);
+   an unimplemented conversion is echoed rather than aborting (#1429), and
+   formatting stops there rather than continuing (#1445).
+
+## Unicode
+
+ - **Composition no longer crosses an intervening combining mark** (#1905),
+   a correctness bug in NFC normalization.
+ - Three UAX #29 conformance gaps closed in `utf8_next_grapheme`,
+   including GB11 and GB12.
+ - Performance: the 512 KB NFD buffer is kept off the `utf8_normalize_nfc`
+   fast path, `utf8_is_nfc` skips the DFA traversal for ASCII (#1907), and
+   GCB/ExtPict lookups gain an ASCII fast path (#1910).  The 1.5 MB set-op
+   scratch buffer moves off the stack (#1903).
+ - `%x<>` emits v5 SMP truecolor (#1933); `no_flash` is honoured on the
+   live `co_render_*` paths (#1935); `WP_SAFE` no longer spins when the
+   output buffer fills (#1930).
+
+## Clients, Proxy, and Mobile
+
+ - Line and telnet SB reassembly buffers are capped in the console client
+   and extended to web, tf, Android and the Win32 GUI (#1788, #1787).
+ - Proxy: the charset UTF-8 encode walk is bounded past input end (#1885);
+   WebSocket fragmentation/UTF-8 and grpc-web parsing fail closed (#1886,
+   #1887); unknown listen types are rejected instead of silently defaulting
+   to Telnet (#1895); out-of-range listen and game ports are rejected
+   (#1897).
+ - Web and mobile MCP multiline reassembly is capped (#1889, #1893).
+ - **Hydra passwords are kept out of `worlds.txt`** (#1891), and Android
+   never persists Hydra secrets without `EncryptedSharedPreferences`
+   (#1892).
+ - Hydra gRPC residuals: caps, encoding and PID (#1265–#1269).
 
 ## Converters
 
  - P6H/T6H to t5x forces the mandatory LINK/ZONE fields.
  - Attribute-name encoding is sized from `strlen` (#1087).
+ - `SetNumFlagsAndName` encodes attributes from the heap, and
+   `ConvertT5XAttrName` uses a heap string (#1879) — found with ASan on a
+   long attribute name.
+
+## Windows and MSVC
+
+ - The `tests/` harnesses build with MSVC (#1441), which found real
+   defects; the DBT/RV64 tests now run on Windows, **executing the
+   `x64_win64` backend for the first time**.
+ - `/utf-8` added to the MSVC projects, the 11 UTF-8 BOMs removed, and
+   editors stopped from re-adding them (#1499).
+ - `db_load.bat`/`db_unload.bat` made to work at all (#1336); the Unix
+   `db_load`/`db_unload`/`db_check` scripts run from the game directory.
+ - No module could load under `muxscript`, for two reasons (#1594).
+ - Windows smoke builds its tools without `make` (#1347, #1414), and a
+   stale `bin/` cannot survive into the next run.
+ - `PerfSmokeWin`, an ETW CPU-sampling analog of `PerfSmoke` (#1920).
+ - Hashing moves onto CNG, which retires the last bundled crypto source
+   and gives Windows the full `digest()` algorithm set and the same
+   password format as Unix (#1962, #1963) — see Passwords and Digests.
+
+## Build System
+
+ - **PCRE2 and OpenSSL are found via `pkg-config`**, and OpenSSL is probed
+   before use — no `CPPFLAGS`/`LDFLAGS` are needed on any supported
+   platform now, with `--enable-nls` on macOS the sole exception.
+ - `--enable-sanitizers` added, and `configure` regenerated with autoconf
+   2.73.  `make test-asan` reaches the suites it was missing (#1467), and
+   `tests/netaddr` honours the tree's sanitizer flags (#1522).
+ - `--enable-nls` added (#1419); NLS probes deferred until after C++17
+   setup (#1477).
+ - `--enable-stubslave` compiles under clang (#1293).
+ - `make clean` no longer deletes the tracked Ragel output `color_ops.c`
+   (#1958).  It was in `CLEANFILES`, so every clean rebuild regenerated it
+   and left the tree dirty with `#line` churn that varies by Ragel build
+   (#1950).
 
 ## Audit Sweep
 
-A systematic pass-by-pass audit ran through the cycle, filing and closing
-defects in numbered batches (Passes 1 through 9 landed here; the coverage
-map in `docs/audit-coverage.md` tracks the remainder).  Roughly #1039
-through #1200 originate from it, spanning both High and Medium severities
-across the engine, networking, JIT and module surfaces.
+The systematic pass-by-pass audit continued through the cycle, reaching
+**Pass 15**.  Passes 1 through 9 landed the #1039–#1200 band; Passes 10
+through 15 added the Hydra gRPC residual (#1265–#1269), TLS buffer caps
+(#1282), the `@include` executor (#1279), attribute-cache coalescing
+(#1284), the Lua bridge permission gates (#1287), and the networking batch
+in the #1800s that dominates the GANL and TLS sections above.  Two residual
+re-scouts and a closeout are recorded in `docs/` alongside the coverage map
+in `docs/audit-coverage.md`, which tracks where each slice was last looked
+at and what remains.
 
 ## Tests, Tooling, and Documentation
 
@@ -235,49 +694,133 @@ across the engine, networking, JIT and module surfaces.
  - The parity probe reader was itself desynchronizing under load and
    attributing output to the wrong shape; it now frames a line at a time
    and ships a deterministic reader selftest that runs before any
-   measurement is trusted (#1233).
+   measurement is trusted (#1233).  A dropped probe row can no longer
+   become a verdict (#1368).
  - A GANL engine regression harness (`mux/ganl/tests`, `make test-ganl`),
-   including wselect and iocp coverage on Windows.
+   including wselect and iocp coverage on Windows, plus a `ConnectionBase`
+   harness and a Windows MSBuild runner (#1857, #1858).
  - A live network+queue stress harness, and live scenario coverage for
    wildcard capture and for telnet negotiation/CHARSET/SB overflow.
  - `netaddr` subnet unit tests wired into `make test`.
+ - Known-answer suites for the digest backend and for sha-crypt
+   (`make test-digest`, `make test-shacrypt`), pinning the surfaces whose
+   bytes may never change — `Sec-WebSocket-Accept`, the `$SHA1$` and
+   `$P6H$` password shapes, and the sha-crypt spec vectors.
  - Large smoke-suite expansion: error-path coverage across dozens of
    functions, the eval-composition family, the regexp family, type and
    flag predicates, pronouns/art/time formats, and jit_diff corpus shapes
    for float, branch and nested evaluation.
  - `testcases/smoke.flat` is no longer tracked (#1205); it is generated.
- - **A DBT chain-patch harness** (`tests/dbt_chain`, `make test-dbt-chain`,
-   part of `make test`) asserts that the branch decode is the exact
-   inverse of the encode.  It builds *all three* backends — a64_sysv,
-   x64_sysv, x64_win64 — into one binary on every host, because #1152
-   survived precisely by living in a backend nobody exercised, and it has
-   no skip path that could quietly degrade into testing nothing.  Round
-   trips alone are not enough: they still pass when encoder and decoder
-   are wrong in the same way, so the anchors are golden byte patterns
-   taken from a disassembler rather than from the code under test.
- - Error-path assertions no longer embed parenthesised error text
-   (#1249).  `#-1 FUNCTION (RIGHT) EXPECTS 2 ARGUMENTS` written inside
+ - **The DBT test islands were consolidated into `tests/dbt`** and the
+   RV64 execution harness wired into `make test` — `mux/modules/engine/`
+   `dbt_test.cpp` had never been part of any build.  The suite now builds
+   five binaries: chain, cache, interp, exec and a new instruction-level
+   **differential fuzzer** that runs random RV64 sequences through both the
+   interpreter and the DBT, comparing all 64 registers and delta-debug
+   shrinking any mismatch.
+ - The chain harness builds *all three* backends — a64_sysv, x64_sysv,
+   x64_win64 — into one binary on every host, because #1152 survived
+   precisely by living in a backend nobody exercised, and it has no skip
+   path that could quietly degrade into testing nothing.  Round trips alone
+   are not enough: they still pass when encoder and decoder are wrong in
+   the same way, so the anchors are golden byte patterns taken from a
+   disassembler rather than from the code under test.
+ - **A differential test cannot see a bug both routes share.**  The FCVT
+   family (#1319, #1320) was exactly that — interpreter and DBT truncated
+   identically, so the fuzzer called it clean.  The conformance tables now
+   carry golden values taken from qemu.
+ - **Coverage sweeps closed the unreferenced-builtin gap** (#1160): 11
+   builtins with no coverage at all, then object-topology, list-by-type,
+   dice, grep, server-info, zone lists, power and visibility matchers,
+   server and descriptor meta, softcode mutators, command helpers, emit,
+   pose, `conn*`, reality offline paths, the ten channel query functions,
+   `ctime()`, and finally `verb()` — the last uncovered mutator (#1380).
+   A coverage audit tool ships with them, and it had to be taught not to
+   count builtins this build does not have.
+ - **Several assertions could not fail, and were fixed rather than
+   trusted** (#1413, #1433, #1434 families): TC005 needed the shape that
+   fails everywhere, cron asserted its actual state instead of logging
+   `Succeeded`, the upload no-match check became fatal once its baseline
+   was zero (#1391), and a general guard now rejects smoke cases that
+   cannot fail.  Error-path assertions no longer embed parenthesised error
+   text (#1249): `#-1 FUNCTION (RIGHT) EXPECTS 2 ARGUMENTS` written inside
    another function argument truncated at the first `)`, and the leaked
-   tail closed the enclosing `cand()` early — so the failing condition
-   was dropped and arity cases passed *vacuously*, on exactly the tests
-   written to catch those bugs.  Rewritten with a wildcard in place of
-   the name, with the convention recorded in `testcases/tools/README.md`.
- - Surveys and design docs added for the queue, per-resource defenses, and
-   the JIT eval-bracket lift plan.
+   tail closed the enclosing `cand()` early — so arity cases passed
+   *vacuously*, on exactly the tests written to catch those bugs.
+ - **Asserting the Lua JIT actually executes** took three passes (#1324,
+   #1426): first that it was asked, then that it ran, then that it ran the
+   case in question and reported what declined.  A probe written in tail
+   position compiles to `OP_TAILCALL` and declines before lowering, so a
+   survey of such probes reads as uniformly healthy.  An AGREE decline
+   ratchet keeps 32/34 from regressing.
+ - `make test` runs smoke on **both** evaluation routes (#1243), since a
+   defect present only on the interpreted route otherwise passes silently.
+ - **`make test` reports a build-configuration banner** (#1946) and repeats
+   it in the summary, because most optional features default to NO and
+   their tests skip cleanly when absent — so a green run means different
+   things on different boxes.  `EXPECT_CONFIG="jit=yes"` lets a box assert
+   the job it exists to do.  The banner aborts if the tree was reconfigured
+   without a rebuild.
+ - The summary runner runs every target and reports, instead of aborting at
+   the first failure (#1912), and reports the skip count separately instead
+   of absorbing it into PASSED.  Absent features skip rather than fail, so
+   Windows is green (#1641), without holding a red build over a platform
+   that cannot comply (#1594).
+ - Four orphan suites were wired into `make test` (#1917, #1953) — harnesses
+   that built and passed but that nothing ran.  The last of them, the SQLite
+   storage backend, hid longer than the others because `test-dbt` contains
+   `test-db` as a substring, so a grep for the shorter name matches the
+   longer target and stops looking.
+ - A blob staleness guard fails when `softlib.rv64` is stale or unbuildable
+   (#1924), comparing hashes only where the toolchain matches.
+ - The nine standalone harnesses track their header dependencies (#1952),
+   after a negative control came back green only because the binary was
+   never rebuilt — the suite could not have failed, and said so in the shape
+   of a pass.
+ - NLS test infrastructure: a static guard on marking and catalogues
+   (#1505), a runtime oracle for the `xx` pseudo-locale (#1523) and for
+   Korean, a build-time format-string guard that accepts `S_()` and `N_()`
+   but never `M_()` (#1480), and a check that finds a real non-C locale
+   before asserting translation.
+ - Comsys/mail conformance, cross-implementation handoff (#1589) and
+   command-parity harnesses; `make test` fails when a configured module did
+   not load (#1572) and pins which implementation answered (#1581).
+ - Live scenario coverage for the wall-clock budget (#1597) and for the Lua
+   half of it (#1591).  One scenario driver was retracted outright because
+   its premise was wrong (#1602) — `muxscript` never arms the alarm clock,
+   so no wall-clock path is testable under smoke.
+ - `tests/slave` asserts the peak child count from the slave's own report
+   rather than a sampled `/proc` scan (#1912): a poll cannot see a maximum
+   it did not sample, so the assertion was measuring the sampler.  A
+   hermetic child-cap burst with stalled children backs it (#1853).
+ - Smoke no longer deletes the previous failure's artifacts on the next run
+   (#1544), signals its completion semaphore exactly once per file (#1495),
+   and no longer leaves the runner standing in a test room (#1386).
+ - `tools/ansify` — a new Ragel-generated converter from MUX percent-color
+   to ANSI.
+ - Documentation: a server-i18n feasibility study and surface measurement,
+   the Lua JIT product plan and its journey article, tabular-notify design
+   notes, the post-entry contract for #1751, DBT portability notes, and the
+   LLP64 commentary explaining why the width truncation stayed invisible.
 
 ## Known Follow-ups
 
- - AST-route-only parser defects cannot fail CI: `make test` exercises the
-   compiled route, so a defect present only on the interpreted route
-   passes silently.  Three fixes this cycle were guarded only by a
-   `jit_eval_brackets 0` run (#1243).
- - 2.13 aborts the rest of an eval-bracket region when a function lookup
-   fails there; 2.14 continues (#1247).
  - Function-argument parenthesis matching is a depth counter rather than
    2.13's closer stack, which differ on unbalanced input (#1248).
- - `abs(-9223372036854775808)` returns a negative value on both routes:
-   the magnitude exceeds `INT64_MAX` by one and formatting wraps.
-   Pre-existing, and `iabs()` already rejects the same domain (#1255).
+   Measurement showed the counter matches 2.13 on the crossed-nesting
+   corpus, so the remaining `XN_*` divergences have another cause.
+ - `abs(-9223372036854775808)` is now `#-1 OUT OF RANGE` on both routes
+   (#1255, #1256), matching `iabs()`.
+ - The `#1667` tabular migration covers the channel, mail and staff-list
+   families; other multi-column notifies remain on hand-counted spaces and
+   are tracked in the design note.
+ - Spanish and Korean catalogues cover the player loop, comsys and mail
+   tranches; the remaining server surface is marked but untranslated.
+ - Ragel outputs still regenerate with different `#line` directives
+   depending on the Ragel build, so regenerating one dirties the tree with
+   churn that is not content (#1950).  #1958 removed the most frequent
+   trigger by keeping `make clean` from deleting `color_ops.c`, but the
+   underlying nondeterminism remains.
 
 # Changes in 2.14.0.9 (2026-JUL-14):
 
