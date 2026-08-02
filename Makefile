@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-digest test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -47,7 +47,7 @@ realclean:
 # so its source can drift with the suite staying green (#1924).
 #
 TEST_TARGETS = \
-    test-ganl test-netaddr test-libmux test-color-ops test-table \
+    test-ganl test-netaddr test-digest test-libmux test-color-ops test-table \
     test-db \
     test-slave test-stubslave-teardown test-hir test-format \
     test-nls test-nls-plural test-nls-runtime test-nls-ko \
@@ -396,6 +396,16 @@ test-netaddr:
 	@echo "==> Running netaddr subnet tests"
 	$(MAKE) -C tests/netaddr test
 
+# #1963: known-answer vectors for the OS-backed digest entry points.
+# Pins byte-identical SHA-1 across backends (OpenSSL EVP / Windows CNG)
+# for the surfaces whose output may never change: RFC 6455
+# Sec-WebSocket-Accept, $SHA1$/$P6H$ password verification, sha1()
+# softcode.  The same vectors build and run manually on Windows against
+# the CNG backend (see tests/digest/test_digest.cpp header).
+test-digest:
+	@echo "==> Running digest known-answer tests (#1963)"
+	$(MAKE) -C tests/digest test
+
 # #1917: libmux/color_ops unit suite.  It existed and was RED for four
 # days (a #1649 behaviour change vs a stale expectation) purely because
 # nothing ran it -- `make -C tests/libmux test` by hand was the only
@@ -521,6 +531,7 @@ test-asan:
 	@echo "==> Running the suites under sanitizers"
 	$(ASAN_ISLAND_ENV) $(MAKE) test-format
 	$(ASAN_ISLAND_ENV) $(MAKE) test-netaddr
+	$(ASAN_ISLAND_ENV) $(MAKE) test-digest
 	$(ASAN_ISLAND_ENV) $(MAKE) test-alarm
 	$(ASAN_ISLAND_ENV) $(MAKE) test-dbt
 	$(ASAN_ISLAND_ENV) $(MAKE) test-ganl

@@ -3592,9 +3592,19 @@ FUNCTION(fun_digest)
 #endif
     safe_hex(md, len, true, buff, bufc);
 #else
-    if (mux_stricmp(fargs[0], T("sha1")) == 0)
+    // CNG backend (#1963): sha1/sha256/sha384/sha512/md5, resolved by
+    // mux_digest.  Same #-1 on unknown names as the OpenSSL side.
+    uint8_t md[MUX_MAX_DIGEST_LENGTH];
+    unsigned int len = 0;
+    std::vector<size_t> lens(nfargs > 1 ? nfargs - 1 : 0);
+    for (int i = 1; i < nfargs; i++)
     {
-        sha1_helper(nfargs-1, fargs+1, buff, bufc);
+        lens[i-1] = strlen(reinterpret_cast<const char *>(fargs[i]));
+    }
+    if (mux_digest(fargs[0], const_cast<const UTF8 **>(fargs + 1), lens.data(),
+                   nfargs - 1, md, &len))
+    {
+        safe_hex(md, len, true, buff, bufc);
     }
     else
     {
