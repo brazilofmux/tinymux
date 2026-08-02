@@ -7,6 +7,7 @@
 - `testcases/` stores smoke-test `.mux` scripts plus automation in `testcases/tools/`.
 - `docs/` and `specs/` hold design notes and historical architecture docs.
 - `client/` contains the Hydra client family (console, Android, iOS, TinyFugue, Web, Win32 GUI).
+- `tools/ansify/` converts MUX `%x`/`%c` color codes to ANSI escapes (Ragel `ansify.rl` → `ansify.c`); `cd tools/ansify && make test`.
 
 ## Build, Test, and Development Commands
 - Main server build (2.14):
