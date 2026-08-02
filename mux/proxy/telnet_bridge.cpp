@@ -159,13 +159,13 @@ std::string TelnetBridge::renderForClient(
 
     switch (colorDepth) {
     case ColorDepth::TrueColor:
-        ansiLen = co_render_truecolor(ansiBuf.data(), src, srcLen, 0);
+        ansiLen = co_render_truecolor(ansiBuf.data(), src, srcLen, 0, 0);
         break;
     case ColorDepth::Ansi256:
-        ansiLen = co_render_ansi256(ansiBuf.data(), src, srcLen, 0);
+        ansiLen = co_render_ansi256(ansiBuf.data(), src, srcLen, 0, 0);
         break;
     case ColorDepth::Ansi16:
-        ansiLen = co_render_ansi16(ansiBuf.data(), src, srcLen, 0);
+        ansiLen = co_render_ansi16(ansiBuf.data(), src, srcLen, 0, 0);
         break;
     case ColorDepth::None:
         ansiLen = co_strip_color(ansiBuf.data(), src, srcLen);

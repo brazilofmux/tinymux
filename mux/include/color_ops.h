@@ -806,7 +806,7 @@ LIBMUX_API size_t co_render_ascii(unsigned char *out,
  */
 LIBMUX_API size_t co_render_ansi16(unsigned char *out,
                         const unsigned char *data, size_t len,
-                        int bNoBleed);
+                        int bNoBleed, int bNoFlash);
 
 /*
  * co_render_ansi256 — Render PUA-colored UTF-8 to ANSI 256-color output.
@@ -820,7 +820,7 @@ LIBMUX_API size_t co_render_ansi16(unsigned char *out,
  */
 LIBMUX_API size_t co_render_ansi256(unsigned char *out,
                          const unsigned char *data, size_t len,
-                         int bNoBleed);
+                         int bNoBleed, int bNoFlash);
 
 /*
  * co_render_truecolor — Render PUA-colored UTF-8 to TrueColor (24-bit) output.
@@ -831,10 +831,13 @@ LIBMUX_API size_t co_render_ansi256(unsigned char *out,
  * Visible UTF-8 text passes through unchanged.
  *
  * Returns bytes written to out.
+ *
+ * bNoFlash (mudconf.no_flash / g_no_flash): suppress SGR 5 (blink) so
+ * %xf / ansi(f,...) does not flash the terminal (#1935).
  */
 LIBMUX_API size_t co_render_truecolor(unsigned char *out,
                            const unsigned char *data, size_t len,
-                           int bNoBleed);
+                           int bNoBleed, int bNoFlash);
 
 /*
  * co_render_html — Render PUA-colored UTF-8 to HTML.

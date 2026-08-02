@@ -2952,13 +2952,13 @@ std::string HydraSession::OutputItem::render(RenderFormat fmt) const {
     switch (fmt) {
     case RenderFormat::Unspecified:  // fall through to TrueColor default
     case RenderFormat::TrueColor:
-        n = co_render_truecolor(buf.data(), src, srcLen, 0);
+        n = co_render_truecolor(buf.data(), src, srcLen, 0, 0);
         break;
     case RenderFormat::Ansi256:
-        n = co_render_ansi256(buf.data(), src, srcLen, 0);
+        n = co_render_ansi256(buf.data(), src, srcLen, 0, 0);
         break;
     case RenderFormat::Ansi16:
-        n = co_render_ansi16(buf.data(), src, srcLen, 0);
+        n = co_render_ansi16(buf.data(), src, srcLen, 0, 0);
         break;
     case RenderFormat::PuaUtf8:
         return puaText;  // unreachable, handled above

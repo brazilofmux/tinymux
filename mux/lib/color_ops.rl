@@ -4156,7 +4156,7 @@ static int resolve_bg16(const co_ColorState *cs)
 static size_t emit_ansi16(unsigned char *wp, const unsigned char *wp_end,
                           const co_ColorState *old_cs,
                           const co_ColorState *new_cs,
-                          int bNoBleed)
+                          int bNoBleed, int bNoFlash)
 {
     co_ColorState adjusted = *new_cs;
     if (bNoBleed && adjusted.fg == -1) {
@@ -4198,7 +4198,8 @@ static size_t emit_ansi16(unsigned char *wp, const unsigned char *wp_end,
         plen += snprintf(params + plen, (size_t)(64 - plen), "%s1", plen ? ";" : "");
     if (new_cs->underline && (need_reset || !old_cs->underline))
         plen += snprintf(params + plen, (size_t)(64 - plen), "%s4", plen ? ";" : "");
-    if (new_cs->blink && (need_reset || !old_cs->blink))
+    /* bNoFlash: mudconf.no_flash / g_no_flash — suppress SGR 5 (#1935). */
+    if (new_cs->blink && (need_reset || !old_cs->blink) && !bNoFlash)
         plen += snprintf(params + plen, (size_t)(64 - plen), "%s5", plen ? ";" : "");
     if (new_cs->inverse && (need_reset || !old_cs->inverse))
         plen += snprintf(params + plen, (size_t)(64 - plen), "%s7", plen ? ";" : "");
@@ -4235,7 +4236,7 @@ static size_t emit_ansi16(unsigned char *wp, const unsigned char *wp_end,
 
 size_t co_render_ansi16(unsigned char *out,
                         const unsigned char *data, size_t len,
-                        int bNoBleed)
+                        int bNoBleed, int bNoFlash)
 {
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -4270,7 +4271,7 @@ size_t co_render_ansi16(unsigned char *out,
         }
 
         /* Visible code point — emit ANSI transition if needed. */
-        wp += emit_ansi16(wp, wp_end, &emitted, &cs, bNoBleed);
+        wp += emit_ansi16(wp, wp_end, &emitted, &cs, bNoBleed, bNoFlash);
         emitted = cs;
         if (bNoBleed && emitted.fg == -1) {
             emitted = client_normal;
@@ -4335,7 +4336,7 @@ static int resolve_bg256(const co_ColorState *cs)
 static size_t emit_ansi256(unsigned char *wp, const unsigned char *wp_end,
                            const co_ColorState *old_cs,
                            const co_ColorState *new_cs,
-                           int bNoBleed)
+                           int bNoBleed, int bNoFlash)
 {
     co_ColorState adjusted = *new_cs;
     if (bNoBleed && adjusted.fg == -1) {
@@ -4376,7 +4377,7 @@ static size_t emit_ansi256(unsigned char *wp, const unsigned char *wp_end,
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s1", plen ? ";" : "");
     if (new_cs->underline && (need_reset || !old_cs->underline))
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s4", plen ? ";" : "");
-    if (new_cs->blink && (need_reset || !old_cs->blink))
+    if (new_cs->blink && (need_reset || !old_cs->blink) && !bNoFlash)
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s5", plen ? ";" : "");
     if (new_cs->inverse && (need_reset || !old_cs->inverse))
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s7", plen ? ";" : "");
@@ -4404,7 +4405,7 @@ static size_t emit_ansi256(unsigned char *wp, const unsigned char *wp_end,
 
 size_t co_render_ansi256(unsigned char *out,
                          const unsigned char *data, size_t len,
-                         int bNoBleed)
+                         int bNoBleed, int bNoFlash)
 {
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -4437,7 +4438,7 @@ size_t co_render_ansi256(unsigned char *out,
             continue;
         }
 
-        wp += emit_ansi256(wp, wp_end, &emitted, &cs, bNoBleed);
+        wp += emit_ansi256(wp, wp_end, &emitted, &cs, bNoBleed, bNoFlash);
         emitted = cs;
         if (bNoBleed && emitted.fg == -1) {
             emitted = client_normal;
@@ -4479,7 +4480,7 @@ size_t co_render_ansi256(unsigned char *out,
 static size_t emit_truecolor(unsigned char *wp, const unsigned char *wp_end,
                               const co_ColorState *old_cs,
                               const co_ColorState *new_cs,
-                              int bNoBleed)
+                              int bNoBleed, int bNoFlash)
 {
     co_ColorState adjusted = *new_cs;
     if (bNoBleed && adjusted.fg == -1) {
@@ -4514,7 +4515,7 @@ static size_t emit_truecolor(unsigned char *wp, const unsigned char *wp_end,
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s1", plen ? ";" : "");
     if (new_cs->underline && (need_reset || !old_cs->underline))
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s4", plen ? ";" : "");
-    if (new_cs->blink && (need_reset || !old_cs->blink))
+    if (new_cs->blink && (need_reset || !old_cs->blink) && !bNoFlash)
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s5", plen ? ";" : "");
     if (new_cs->inverse && (need_reset || !old_cs->inverse))
         plen += snprintf(params + plen, (size_t)(128 - plen), "%s7", plen ? ";" : "");
@@ -4574,7 +4575,7 @@ static size_t emit_truecolor(unsigned char *wp, const unsigned char *wp_end,
 
 size_t co_render_truecolor(unsigned char *out,
                            const unsigned char *data, size_t len,
-                           int bNoBleed)
+                           int bNoBleed, int bNoFlash)
 {
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -4607,7 +4608,7 @@ size_t co_render_truecolor(unsigned char *out,
             continue;
         }
 
-        wp += emit_truecolor(wp, wp_end, &emitted, &cs, bNoBleed);
+        wp += emit_truecolor(wp, wp_end, &emitted, &cs, bNoBleed, bNoFlash);
         emitted = cs;
         if (bNoBleed && emitted.fg == -1) {
             emitted = client_normal;

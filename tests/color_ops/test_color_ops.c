@@ -3428,11 +3428,11 @@ static void test_render_ansi16(void) {
     size_t r, n;
 
     /* Empty input. */
-    r = co_render_ansi16(out, (const unsigned char *)"", 0, 0);
+    r = co_render_ansi16(out, (const unsigned char *)"", 0, 0, 0);
     check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
 
     /* Pure ASCII, no color. */
-    r = co_render_ansi16(out, (const unsigned char *)"Hello", 5, 0);
+    r = co_render_ansi16(out, (const unsigned char *)"Hello", 5, 0, 0);
     check_buf(name, "no color", out, r, (const unsigned char *)"Hello", 5);
 
     /* FG red (index 1) + text + reset. */
@@ -3441,7 +3441,7 @@ static void test_render_ansi16(void) {
     buf[n++] = 'X';
     n += (size_t)pua_reset(buf + n);
     buf[n++] = 'Y';
-    r = co_render_ansi16(out, buf, n, 0);
+    r = co_render_ansi16(out, buf, n, 0, 0);
     /* Expect: ESC[31mX ESC[0mY ESC[0m — but trailing reset is only if non-normal at end.
      * After pua_reset, state is normal, so Y is emitted with reset before it,
      * and no trailing reset. */
@@ -3476,7 +3476,7 @@ static void test_render_ansi16(void) {
     n += (size_t)pua_fg(buf, 4);  /* blue */
     buf[n++] = 0xC3; buf[n++] = 0xA9;  /* e-acute */
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi16(out, buf, n, 0);
+    r = co_render_ansi16(out, buf, n, 0, 0);
     /* e-acute should be present in output (bytes C3 A9). */
     {
         int found = 0;
@@ -3495,7 +3495,7 @@ static void test_render_ansi16(void) {
     n += (size_t)pua_fg(buf, 1);
     n += (size_t)pua_bg(buf + n, 2);
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi16(out, buf, n, 0);
+    r = co_render_ansi16(out, buf, n, 0, 0);
     check_buf(name, "all color no text", out, r, (const unsigned char *)"", 0);
 
     /* Bright FG (index 9 = bright red) uses bold + base color. */
@@ -3503,7 +3503,7 @@ static void test_render_ansi16(void) {
     n += (size_t)pua_fg(buf, 9);  /* bright red */
     buf[n++] = 'Z';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi16(out, buf, n, 0);
+    r = co_render_ansi16(out, buf, n, 0, 0);
     /* Should contain ESC[1;31m or ESC[1mESC[31m — bold for bright. */
     {
         int has_bold = 0;
@@ -3524,7 +3524,7 @@ static void test_render_ansi16(void) {
     n += (size_t)pua_fg_rgb(buf, 255, 0, 0);  /* pure red */
     buf[n++] = 'R';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi16(out, buf, n, 0);
+    r = co_render_ansi16(out, buf, n, 0, 0);
 
     /* NOBLEED: default fg resets to white, not plain normal. */
     n = 0;
@@ -3532,7 +3532,7 @@ static void test_render_ansi16(void) {
     buf[n++] = 'X';
     n += (size_t)pua_reset(buf + n);
     buf[n++] = 'Y';
-    r = co_render_ansi16(out, buf, n, 1);
+    r = co_render_ansi16(out, buf, n, 1, 0);
     {
         char *s = strstr((char *)out, "\x1B[37mY");
         if (s) test_ok(name, "nobleed reset returns to white");
@@ -3542,7 +3542,7 @@ static void test_render_ansi16(void) {
     n = 0;
     n += (size_t)pua_fg(buf, 1);
     buf[n++] = 'Z';
-    r = co_render_ansi16(out, buf, n, 1);
+    r = co_render_ansi16(out, buf, n, 1, 0);
     {
         char *s = strstr((char *)out, "\x1B[0m\x1B[37m");
         if (s) test_ok(name, "nobleed trailing restore to white");
@@ -3554,11 +3554,43 @@ static void test_render_ansi16(void) {
         test_fail(name, "RGB red: expected ESC at start");
     }
 
+    /* no_flash (#1935): blink PUA must not emit SGR 5. */
+    n = 0;
+    n += (size_t)pua_blink(buf);
+    buf[n++] = 'B';
+    n += (size_t)pua_reset(buf + n);
+    r = co_render_ansi16(out, buf, n, 0, 0);
+    {
+        int has_5 = 0;
+        for (size_t i = 0; i + 1 < r; i++) {
+            if (out[i] == '5' && (out[i+1] == ';' || out[i+1] == 'm')
+                && i > 0 && (out[i-1] == '[' || out[i-1] == ';')) {
+                has_5 = 1;
+                break;
+            }
+        }
+        if (has_5) test_ok(name, "blink emits SGR 5 when flash allowed");
+        else test_fail(name, "blink: expected SGR 5 with bNoFlash=0");
+    }
+    r = co_render_ansi16(out, buf, n, 0, 1);
+    {
+        int has_5 = 0;
+        for (size_t i = 0; i + 1 < r; i++) {
+            if (out[i] == '5' && (out[i+1] == ';' || out[i+1] == 'm')
+                && i > 0 && (out[i-1] == '[' || out[i-1] == ';')) {
+                has_5 = 1;
+                break;
+            }
+        }
+        if (!has_5) test_ok(name, "no_flash suppresses SGR 5");
+        else test_fail(name, "no_flash: SGR 5 still present");
+    }
+
     /* Fuzz: output should never contain PUA bytes. */
     unsigned int save_seed = g_seed;
     for (int i = 0; i < 5000; i++) {
         size_t len = gen_random_colored(buf, 1 + (xrand() % 200));
-        r = co_render_ansi16(out, buf, len, 0);
+        r = co_render_ansi16(out, buf, len, 0, 0);
         int has_pua = 0;
         for (size_t j = 0; j + 2 < r; j++) {
             if (out[j] == 0xEF && out[j+1] >= 0x94 && out[j+1] <= 0x9F) {
@@ -3586,11 +3618,11 @@ static void test_render_ansi256(void) {
     size_t r, n;
 
     /* Empty. */
-    r = co_render_ansi256(out, (const unsigned char *)"", 0, 0);
+    r = co_render_ansi256(out, (const unsigned char *)"", 0, 0, 0);
     check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
 
     /* No color. */
-    r = co_render_ansi256(out, (const unsigned char *)"Hello", 5, 0);
+    r = co_render_ansi256(out, (const unsigned char *)"Hello", 5, 0, 0);
     check_buf(name, "no color", out, r, (const unsigned char *)"Hello", 5);
 
     /* FG index 196 (bright red in 256 palette). */
@@ -3598,7 +3630,7 @@ static void test_render_ansi256(void) {
     n += (size_t)pua_fg(buf, 196);
     buf[n++] = 'R';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi256(out, buf, n, 0);
+    r = co_render_ansi256(out, buf, n, 0, 0);
     /* Should contain "38;5;196" in the SGR. */
     {
         char *s = strstr((char *)out, "38;5;196");
@@ -3614,7 +3646,7 @@ static void test_render_ansi256(void) {
     n += (size_t)pua_bg(buf, 21);
     buf[n++] = 'B';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi256(out, buf, n, 0);
+    r = co_render_ansi256(out, buf, n, 0, 0);
     {
         char *s = strstr((char *)out, "48;5;21");
         if (s) {
@@ -3629,7 +3661,7 @@ static void test_render_ansi256(void) {
     n += (size_t)pua_fg(buf, 82);
     buf[n++] = 'A'; buf[n++] = 'B';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi256(out, buf, n, 0);
+    r = co_render_ansi256(out, buf, n, 0, 0);
     {
         char text[LBUF_SIZE];
         int ti = 0;
@@ -3648,7 +3680,7 @@ static void test_render_ansi256(void) {
     /* Unicode passes through. */
     n = 0;
     buf[n++] = 0xC3; buf[n++] = 0xA9;  /* e-acute */
-    r = co_render_ansi256(out, buf, n, 0);
+    r = co_render_ansi256(out, buf, n, 0, 0);
     if (r >= 2 && out[0] == 0xC3 && out[1] == 0xA9) {
         test_ok(name, "unicode passthrough");
     } else {
@@ -3660,14 +3692,14 @@ static void test_render_ansi256(void) {
     n += (size_t)pua_fg_rgb(buf, 0, 255, 0);  /* pure green */
     buf[n++] = 'G';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi256(out, buf, n, 0);
+    r = co_render_ansi256(out, buf, n, 0, 0);
 
     n = 0;
     n += (size_t)pua_fg(buf, 196);
     buf[n++] = 'X';
     n += (size_t)pua_reset(buf + n);
     buf[n++] = 'Y';
-    r = co_render_ansi256(out, buf, n, 1);
+    r = co_render_ansi256(out, buf, n, 1, 0);
     {
         char *s = strstr((char *)out, "\x1B[38;5;7mY");
         if (s) test_ok(name, "nobleed reset returns to 38;5;7");
@@ -3686,14 +3718,14 @@ static void test_render_ansi256(void) {
     n = 0;
     n += (size_t)pua_fg(buf, 100);
     n += (size_t)pua_reset(buf + n);
-    r = co_render_ansi256(out, buf, n, 0);
+    r = co_render_ansi256(out, buf, n, 0, 0);
     check_buf(name, "all color", out, r, (const unsigned char *)"", 0);
 
     /* Fuzz: no PUA leaks. */
     unsigned int save_seed = g_seed;
     for (int i = 0; i < 5000; i++) {
         size_t len = gen_random_colored(buf, 1 + (xrand() % 200));
-        r = co_render_ansi256(out, buf, len, 0);
+        r = co_render_ansi256(out, buf, len, 0, 0);
         int has_pua = 0;
         for (size_t j = 0; j + 2 < r; j++) {
             if (out[j] == 0xEF && out[j+1] >= 0x94 && out[j+1] <= 0x9F) { has_pua = 1; break; }
@@ -3717,11 +3749,11 @@ static void test_render_truecolor(void) {
     size_t r, n;
 
     /* Empty. */
-    r = co_render_truecolor(out, (const unsigned char *)"", 0, 0);
+    r = co_render_truecolor(out, (const unsigned char *)"", 0, 0, 0);
     check_buf(name, "empty", out, r, (const unsigned char *)"", 0);
 
     /* No color. */
-    r = co_render_truecolor(out, (const unsigned char *)"Hi", 2, 0);
+    r = co_render_truecolor(out, (const unsigned char *)"Hi", 2, 0, 0);
     check_buf(name, "no color", out, r, (const unsigned char *)"Hi", 2);
 
     /* Indexed FG 196 → 38;5;196 (same as 256-color). */
@@ -3729,7 +3761,7 @@ static void test_render_truecolor(void) {
     n += (size_t)pua_fg(buf, 196);
     buf[n++] = 'X';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_truecolor(out, buf, n, 0);
+    r = co_render_truecolor(out, buf, n, 0, 0);
     {
         char *s = strstr((char *)out, "38;5;196");
         if (s) test_ok(name, "indexed FG → 38;5;196");
@@ -3741,7 +3773,7 @@ static void test_render_truecolor(void) {
     n += (size_t)pua_fg_rgb(buf, 171, 205, 239);
     buf[n++] = 'T';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_truecolor(out, buf, n, 0);
+    r = co_render_truecolor(out, buf, n, 0, 0);
     {
         char *s = strstr((char *)out, "38;2;171;205;239");
         if (s) test_ok(name, "RGB FG → 38;2;171;205;239");
@@ -3753,7 +3785,7 @@ static void test_render_truecolor(void) {
     n += (size_t)pua_bg_rgb(buf, 10, 20, 30);
     buf[n++] = 'B';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_truecolor(out, buf, n, 0);
+    r = co_render_truecolor(out, buf, n, 0, 0);
     {
         char *s = strstr((char *)out, "48;2;10;20;30");
         if (s) test_ok(name, "RGB BG → 48;2;10;20;30");
@@ -3765,7 +3797,7 @@ static void test_render_truecolor(void) {
     n += (size_t)pua_fg_rgb(buf, 255, 255, 255);
     buf[n++] = 'A'; buf[n++] = 'B'; buf[n++] = 'C';
     n += (size_t)pua_reset(buf + n);
-    r = co_render_truecolor(out, buf, n, 0);
+    r = co_render_truecolor(out, buf, n, 0, 0);
     {
         char text[LBUF_SIZE];
         int ti = 0;
@@ -3781,7 +3813,7 @@ static void test_render_truecolor(void) {
     /* Unicode passes through. */
     n = 0;
     buf[n++] = 0xC3; buf[n++] = 0xA9;
-    r = co_render_truecolor(out, buf, n, 0);
+    r = co_render_truecolor(out, buf, n, 0, 0);
     if (r >= 2 && out[0] == 0xC3 && out[1] == 0xA9)
         test_ok(name, "unicode passthrough");
     else
@@ -3792,7 +3824,7 @@ static void test_render_truecolor(void) {
     buf[n++] = 'X';
     n += (size_t)pua_reset(buf + n);
     buf[n++] = 'Y';
-    r = co_render_truecolor(out, buf, n, 1);
+    r = co_render_truecolor(out, buf, n, 1, 0);
     {
         char *s = strstr((char *)out, "\x1B[38;5;7mY");
         if (s) test_ok(name, "nobleed reset returns to white on truecolor path");
@@ -3803,14 +3835,14 @@ static void test_render_truecolor(void) {
     n = 0;
     n += (size_t)pua_fg_rgb(buf, 1, 2, 3);
     n += (size_t)pua_reset(buf + n);
-    r = co_render_truecolor(out, buf, n, 0);
+    r = co_render_truecolor(out, buf, n, 0, 0);
     check_buf(name, "all color", out, r, (const unsigned char *)"", 0);
 
     /* Fuzz: no PUA leaks. */
     unsigned int save_seed = g_seed;
     for (int i = 0; i < 5000; i++) {
         size_t len = gen_random_colored(buf, 1 + (xrand() % 200));
-        r = co_render_truecolor(out, buf, len, 0);
+        r = co_render_truecolor(out, buf, len, 0, 0);
         int has_pua = 0;
         for (size_t j = 0; j + 2 < r; j++) {
             if (out[j] == 0xEF && out[j+1] >= 0x94 && out[j+1] <= 0x9F) { has_pua = 1; break; }
