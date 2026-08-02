@@ -423,9 +423,18 @@ SUCCEEDED=$(grep -c 'Succeeded' smoke.log || true)
 # Case-insensitive: a TC whose failure message says "failed" must not
 # slip through the classifier (nested_depth TC001 did exactly that).
 FAILED=$(grep -ci 'failed' smoke.log || true)
+# Skips are a first-class outcome, not a rounding error.  Eleven cases (twelve
+# with jitstats TC007) report Skipped instead of a verdict on builds without
+# the JIT or Lua, and until now that count was computed solely to feed the
+# verdict-loss gate below and never shown.  A build that quietly lost
+# --enable-jit therefore printed ALL N TESTS PASSED with a dozen guards inert
+# -- the same "SKIP is indistinguishable from PASS" defect #1923 fixed one
+# level up, at the make-target level, and missed inside smoke.
+SKIPPED=$(grep -c 'Skipped' smoke.log || true)
 CRASH_SMOKE=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' smoke.log || true)
 CRASH_NETMUX=$(grep -cE 'SIGABRT|SIGSEGV|SIGBUS' netmux.log 2>/dev/null || true)
-: "${SUCCEEDED:=0}" "${FAILED:=0}" "${CRASH_SMOKE:=0}" "${CRASH_NETMUX:=0}"
+: "${SUCCEEDED:=0}" "${FAILED:=0}" "${SKIPPED:=0}"
+: "${CRASH_SMOKE:=0}" "${CRASH_NETMUX:=0}"
 CRASHES=$((CRASH_SMOKE + CRASH_NETMUX))
 if [ -n "$MUX_CRASH" ]; then
     CRASHES=$((CRASHES + 1))
@@ -433,6 +442,7 @@ fi
 
 echo "  Succeeded: $SUCCEEDED"
 echo "  Failed:    $FAILED"
+echo "  Skipped:   $SKIPPED"
 echo "  Crashes:   $CRASHES"
 if [ -n "$MUX_CRASH" ]; then
     echo "  Crash:     $MUX_CRASH"
@@ -484,8 +494,7 @@ fi
 # Skipped counts as conclusive.  Eleven cases report it instead of a verdict
 # on builds without the JIT or Lua, and those builds must not read as a loss.
 # The test is a deficit only -- reporting more than expected is not a fault.
-SKIPPED=$(grep -c 'Skipped' smoke.log || true)
-: "${SKIPPED:=0}"
+# (SKIPPED itself is counted up with the other outcomes, and printed.)
 VERDICTS=$((SUCCEEDED + FAILED + SKIPPED))
 
 if [ "$GENERATED" -gt 0 ]; then
@@ -594,7 +603,13 @@ rm -rf bin
 # ---------------------------------------------------------------------------
 
 if $ALL_PASS; then
-    echo "=== Smoke: ALL $SUCCEEDED TESTS PASSED ==="
+    if [ "$SKIPPED" -gt 0 ]; then
+        echo "=== Smoke: ALL $SUCCEEDED TESTS PASSED ($SKIPPED SKIPPED) ==="
+        echo "    $SKIPPED cases reported no verdict -- typically a build"
+        echo "    without --enable-jit or Lua.  Those guards did not run."
+    else
+        echo "=== Smoke: ALL $SUCCEEDED TESTS PASSED ==="
+    fi
     exit 0
 else
     echo "=== Smoke: FAILED ==="
