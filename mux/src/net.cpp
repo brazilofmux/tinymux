@@ -252,19 +252,22 @@ void queue_string(DESC *d, const UTF8 *s)
         else if (drv_Flags(d->player, FLAG_WORD2) & TRUECOLOR)
         {
             co_render_truecolor(co_buf, s, strlen(reinterpret_cast<const char *>(s)),
-                (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0);
+                (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0,
+                g_no_flash ? 1 : 0);
             p = co_buf;
         }
         else if (drv_Flags(d->player, FLAG_WORD2) & COLOR256)
         {
             co_render_ansi256(co_buf, s, strlen(reinterpret_cast<const char *>(s)),
-                (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0);
+                (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0,
+                g_no_flash ? 1 : 0);
             p = co_buf;
         }
         else
         {
             co_render_ansi16(co_buf, s, strlen(reinterpret_cast<const char *>(s)),
-                (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0);
+                (drv_Flags(d->player, FLAG_WORD2) & NOBLEED) != 0,
+                g_no_flash ? 1 : 0);
             p = co_buf;
         }
     }
