@@ -715,6 +715,28 @@ static bool try_fold(const std::string &func_name,
             result = "";
             return true;
         }
+        // Decline to fold a result that would not fit (#1954).
+        //
+        // co_repeat refuses an over-long repeat by returning empty.
+        // fun_repeat does neither of those things: a single character goes
+        // through safe_fill and TRUNCATES to LBUF_SIZE-1, and anything longer
+        // returns #-1 STRING TOO LONG.  Folding here therefore substituted an
+        // empty string for both, silently, on the default-on JIT path.
+        //
+        // Declining rather than reproducing those two behaviours is
+        // deliberate.  Reimplementing fun_repeat's truncate-vs-error split
+        // here would put it in a second place that can drift from the first
+        // -- which is exactly how #1948's duplicated safe_chr hid a defect
+        // for as long as the copy existed.  A fold that declines cannot
+        // disagree with the interpreter, because the interpreter answers.
+        //
+        // Costs nothing for real softcode: this only fires where the result
+        // already cannot fit in an LBUF, so repeat(-,78) still folds.
+        const size_t nRepeatLen = args[0].size();
+        if (0 != nRepeatLen
+            && static_cast<uint64_t>(count) > (LBUF_SIZE - 1) / nRepeatLen) {
+            return false;
+        }
         LBuf out = LBuf_Src("hir_repeat");
         size_t n = co_repeat(reinterpret_cast<unsigned char *>(out.get()),
             reinterpret_cast<const unsigned char *>(args[0].data()),
