@@ -16,6 +16,10 @@
 #include <cstdint>
 #include <cfloat>
 #include <cmath>
+#ifndef _WIN32
+#include <unistd.h>
+#include <csignal>
+#endif
 
 // ---------------------------------------------------------------------------
 // Minimal type/function declarations from libmux — just enough to test.
@@ -69,22 +73,24 @@ void   safe_i64toa(int64_t val, UTF8 *buff, UTF8 **bufc);
 #endif
 #include "timeutil.h"
 
-// alloc.h
 #define MEMALLOC(n)  malloc((n))
 #define MEMFREE(p)   free((p))
 
-// safe_str / safe_chr macros (replicate from alloc.h)
-#define safe_str(s,b,p)  safe_copy_str_lbuf(s,b,p)
-
-static inline void safe_chr_impl(UTF8 c, UTF8 *buff, UTF8 **bufp)
-{
-    if (static_cast<size_t>(*bufp - buff) < (LBUF_SIZE - 1))
-    {
-        **bufp = c;
-        (*bufp)++;
-    }
-}
-#define safe_chr(c,b,p)  safe_chr_impl(static_cast<UTF8>(c),b,p)
+// The REAL alloc.h, not a stand-in (#1948).
+//
+// safe_chr used to be replicated here as an inline function.  A function
+// evaluates its argument exactly once by definition, so the stand-in was
+// immune to the defect the shipped MACRO actually had -- src evaluated only
+// inside the bounds test, which makes `safe_chr(*p++, ...)` spin forever on a
+// full buffer instead of truncating (#1930's shape, hardened in #1947).
+// test_safe_chr was therefore green against a version of safe_chr that was
+// not the one anybody ships.
+//
+// LIBMUX_API, UTF8 and LBUF_SIZE are already established above; dbref is the
+// only other thing this header wants (three notify/list-bufstats prototypes),
+// and it is a plain int -- config.h:228.
+typedef int dbref;
+#include "alloc.h"
 
 // ---------------------------------------------------------------------------
 // Test infrastructure
@@ -284,6 +290,69 @@ static void test_safe_chr()
     safe_chr('C', buff, &bufc);
     *bufc = '\0';
     ASSERT_STREQ(buff, "ABC");
+}
+
+#ifndef _WIN32
+static void safe_chr_alarm(int sig)
+{
+    (void)sig;
+    static const char msg[] =
+        "\n  FAILED: safe_chr did not terminate on a full buffer (SIGALRM) -- "
+        "the #1930/#1947 single-evaluation property has regressed\n";
+    ssize_t rc = write(2, msg, sizeof(msg) - 1);
+    (void)rc;
+    _exit(1);
+}
+#endif
+
+// safe_chr must evaluate its argument EXACTLY ONCE, including when the
+// buffer is full (#1947, the #1930 class).
+//
+// This is the case the old replica in this file could not express.  It stood
+// in for safe_chr with an inline FUNCTION, and a function evaluates its
+// argument once by definition -- so the stand-in was immune to the defect the
+// shipped macro actually had, and test_safe_chr above passed against a
+// version of safe_chr nobody ships (#1948).
+//
+// Against the unhardened macro this loop never terminates: once the buffer is
+// full the argument stops being evaluated, so p stops advancing exactly when
+// the copy stops happening.  The watchdog turns that hang into a named
+// failure, because a hang wedges `make test` rather than failing it.
+static void test_safe_chr_argument_evaluated_once()
+{
+    UTF8 *buff = static_cast<UTF8 *>(malloc(LBUF_SIZE));
+    ASSERT_TRUE(buff != nullptr);
+    UTF8 *bufc = buff;
+
+    // Fill to the macro's own cap (LBUF_SIZE-1), so further writes are refused.
+    for (int i = 0; i < LBUF_SIZE - 1; i++)
+    {
+        safe_chr('x', buff, &bufc);
+    }
+    ASSERT_EQ(static_cast<size_t>(bufc - buff),
+              static_cast<size_t>(LBUF_SIZE - 1));
+
+    static const UTF8 src[] = "abc";
+    const UTF8 *p = src;
+    const UTF8 *end = src + 3;
+
+#ifndef _WIN32
+    signal(SIGALRM, safe_chr_alarm);
+    alarm(20);
+#endif
+    while (p < end)
+    {
+        safe_chr(*p++, buff, &bufc);   // must advance p even when refused
+    }
+#ifndef _WIN32
+    alarm(0);
+#endif
+
+    // Terminated, consumed the whole source, and truncated rather than grew.
+    ASSERT_EQ(p, end);
+    ASSERT_EQ(static_cast<size_t>(bufc - buff),
+              static_cast<size_t>(LBUF_SIZE - 1));
+    free(buff);
 }
 
 static void test_safe_str_null()
@@ -1042,6 +1111,7 @@ int main()
     RUN_TEST(test_safe_str_basic);
     RUN_TEST(test_safe_str_concatenation);
     RUN_TEST(test_safe_chr);
+    RUN_TEST(test_safe_chr_argument_evaluated_once);
     RUN_TEST(test_safe_str_null);
 
     printf("\n--- StringClone ---\n");
