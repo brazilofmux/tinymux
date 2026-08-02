@@ -309,6 +309,97 @@
     @log smoke=TC006: lua JIT executes compiled code. Skipped (JIT or Lua not available).
   }
 -
+&t7.kv test_jitstats_fn=
+  [after(grab(%0,%1=*),=)]
+-
+&t7.probe test_jitstats_fn=
+  [strlen(get(me/t7.in))]
+-
+#
+# Test Case #7 - jitstats sees Tier 2 and ECALL activity in NESTED evals
+# (#1929, fixed in #1938).
+#
+# The counters are the only instrument we have for asking whether Tier 2
+# engages, and #1929 opened on the reading they gave: strlen(), lcstr(),
+# words(), setunion() all reported tier2=0, which looked like the generic
+# lowering path being dead or gated off under muxscript.  It was neither.
+# Two separate measurement artifacts produced those zeros.
+#
+# The first was constant folding: strlen(abcdef) is folded by try_fold in
+# hir_lower.cpp and returns before tier2_lookup is ever consulted, so a
+# probe written with literal arguments can never show Tier 2 no matter what
+# the blob does.  That half needs no regression test -- it is the folder
+# working, and folded= already reports it.
+#
+# The second is what this case guards.  jit_eval returns from the
+# s_jit_depth > 1 shared-heap branch before ecall_total and tier2_total
+# accumulate, so every nested evaluation was invisible to jitstats.  Field
+# softcode reaches almost everything through u(), which means the blind spot
+# covered the normal path, not an edge case -- the probe table that opened
+# #1929 ran through u() and was therefore measuring nesting rather than
+# dispatch.  Confirmed independently on x64/MSVC and arm64/Apple clang before
+# the cause was agreed.
+#
+# Both levels are asserted, so neither half is vacuous.  The top-level pair
+# is the control: if it does not move, the probe is wrong (folded, bailed,
+# or the blob is absent) and the nested assertion below would be measuring
+# nothing.  The nested pair is the guard.
+#
+# The probe is strlen(get(...)), one expression exercising both counters:
+# GET is not on the Tier 2 allowlist so it lowers to an ECALL, STRLEN is on
+# it so it takes the blob.  The argument arrives through get() rather than
+# as a literal, which is what keeps try_fold out of the way.
+#
+# On the ECALL delta, note the threshold is 2 and not 0.  Two ECALLs in the
+# window are sampling overhead, always counted even against the unfixed
+# engine: the depth-1 region [u(me/t7.probe)] contains the u() call itself,
+# and the PREVIOUS sample's own [jitstats()] region accumulates its one
+# ECALL only after that sample's value was captured, so it lands in this
+# window instead.  Anything above those two can only have come from inside
+# the nested region.  Measured on both sides of the #1938 fix: the fixed
+# engine's delta is 3 (overhead + the nested GET), the unfixed engine's is
+# exactly 2, so gt(delta,2) discriminates.  The tier2 delta needs no such
+# allowance -- jitstats() and u() contribute none -- so it is +1 fixed and
+# flat unfixed.
+#
+# Counters are sampled into attributes first and parsed afterwards, as in
+# TC005: grab/after are themselves evaluated, so parsing between the samples
+# would fold the measurement apparatus into the measurement.
+#
+# Skipped when jit_eval_brackets is 0.  With brackets off the inner region is
+# not a compiled eval region and never reaches depth 2 through the JIT at
+# all, so the deltas would be zero against a correct engine -- the #1437
+# shape, where a case written under one epoch's configuration goes red on the
+# pass that runs under another.
+#
+&tr.tc007 test_jitstats_fn=
+  @if cand(u(me/tr.has_jit),strmatch(config(jit_eval_brackets),1))=
+  {
+    &t7.in me=abcdefghij;
+    &t7.s0 me=[jitstats()];
+    &t7.top me=[strlen(get(me/t7.in))];
+    &t7.s1 me=[jitstats()];
+    &t7.nst me=[u(me/t7.probe)];
+    &t7.s2 me=[jitstats()];
+    @if cand(
+          strmatch(v(t7.top),10),
+          strmatch(v(t7.nst),10),
+          gt(u(me/t7.kv,v(t7.s1),tier2),u(me/t7.kv,v(t7.s0),tier2)),
+          gt(u(me/t7.kv,v(t7.s1),ecalls),u(me/t7.kv,v(t7.s0),ecalls)),
+          gt(u(me/t7.kv,v(t7.s2),tier2),u(me/t7.kv,v(t7.s1),tier2)),
+          gt(sub(u(me/t7.kv,v(t7.s2),ecalls),u(me/t7.kv,v(t7.s1),ecalls)),2)
+        )=
+    {
+      @log smoke=TC007: jitstats counts nested Tier 2 and ECALLs. Succeeded (top tier2 [u(me/t7.kv,v(t7.s0),tier2)] to [u(me/t7.kv,v(t7.s1),tier2)], nested tier2 to [u(me/t7.kv,v(t7.s2),tier2)], nested ecalls [u(me/t7.kv,v(t7.s1),ecalls)] to [u(me/t7.kv,v(t7.s2),ecalls)]).
+    },
+    {
+      @log smoke=TC007: jitstats counts nested Tier 2 and ECALLs. Failed (top=[v(t7.top)] nested=[v(t7.nst)] tier2 [u(me/t7.kv,v(t7.s0),tier2)]/[u(me/t7.kv,v(t7.s1),tier2)]/[u(me/t7.kv,v(t7.s2),tier2)] ecalls [u(me/t7.kv,v(t7.s0),ecalls)]/[u(me/t7.kv,v(t7.s1),ecalls)]/[u(me/t7.kv,v(t7.s2),ecalls)]).
+    }
+  },
+  {
+    @log smoke=TC007: jitstats counts nested Tier 2 and ECALLs. Skipped (JIT not enabled or jit_eval_brackets 0).
+  }
+-
 &tr.done test_jitstats_fn=
   @log smoke=End jitstats() test cases.;
   @notify smoke
