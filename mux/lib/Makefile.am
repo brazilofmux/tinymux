@@ -11,7 +11,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/ganl/include -I$(top_srcdi
 AM_CFLAGS = -O2 -Wall -Wextra -Wno-implicit-fallthrough -std=c11
 
 LIBMUX_SRC = libmux.cpp \
-    sha1.cpp svdrand.cpp svdhash.cpp \
+    sha1.cpp shacrypt.cpp svdrand.cpp svdhash.cpp \
     timeutil.cpp timeabsolute.cpp timedelta.cpp date_scan.cpp timezone.cpp \
     utf8_collate.cpp utf8_grapheme.cpp utf8_normalize.cpp utf8tables.cpp \
     strtod.cpp alarm.cpp mathutil.cpp stringutil.cpp alloc.cpp dbutil.cpp \

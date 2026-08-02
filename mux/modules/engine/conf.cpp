@@ -359,6 +359,33 @@ void cf_init(void)
     mudconf.room_name_charset = 0;
     mudconf.thing_name_charset = 0;
     mudconf.password_methods = CRYPT_DEFAULT;
+
+    // Work factor for newly generated $5$/$6$ password hashes (sha-crypt
+    // rounds=; clamped to [1000, 999999999] at use).  The default tracks
+    // the OWASP Password Storage guidance for the SHA-512 PRF (220,000
+    // iterations as of 2026), the closest published analog for
+    // sha512-crypt, and measures ~190 ms per hash on 2022-era server
+    // hardware -- inside the recommended 100-500 ms window.  Changing this
+    // propagates automatically: the stored rounds ride in each hash, and a
+    // hash whose rounds differ from this policy is re-encoded on the
+    // player's next successful login.
+    //
+    // What password hashing here does and does not buy: it protects the
+    // passwords themselves in at-rest copies of the database (backups,
+    // flatfiles, decommissioned disks) against offline guessing -- players
+    // reuse passwords elsewhere, and a hash must not leak them to whoever
+    // can read a copy of the file, operators included.  It does not and
+    // cannot protect against a hostile operator of the RUNNING game, who
+    // sits in the authentication path and sees cleartext at every connect.
+    //
+    // Verification recomputes at the STORED rounds, so every login costs
+    // that work in the single-threaded server: at the default, a burst of
+    // 100 reconnects after a restart serializes ~19 s of hashing.  Lower it
+    // (the spec default is 5000, ~5 ms) if login latency matters more to
+    // you than the offline-guessing margin; any standard value is equally
+    // portable across platforms.
+    //
+    mudconf.password_hash_rounds = 220000;
     mudconf.default_charset = CHARSET_LATIN1;
 
     mudstate.events_flag = 0;
@@ -2159,6 +2186,7 @@ static CONFPARM conftable[] =
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},
     {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.paranoid_alloc),  nullptr,            0},
     {T("parent_recursion_limit"),    cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.parent_nest_lim,        nullptr,            0},
+    {T("password_hash_rounds"),      cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.password_hash_rounds,   nullptr,            0},
     {T("password_methods"),          cf_modify_bits, CA_GOD,    CA_PUBLIC,   &mudconf.password_methods,       method_nametab,     0},
     {T("paycheck"),                  cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.paycheck,               nullptr,            0},
     {T("pemit_any_object"),          cf_bool,        CA_GOD,    CA_PUBLIC,   reinterpret_cast<int *>(&mudconf.pemit_any),       nullptr,            0},

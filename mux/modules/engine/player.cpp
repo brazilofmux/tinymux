@@ -11,6 +11,7 @@
 #include "externs.h"
 #include "functions.h"
 #include "sha1.h"
+#include "shacrypt.h"
 
 #define NUM_GOOD    4   // # of successful logins to save data for.
 #define NUM_BAD     3   // # of failed logins to save data for.
@@ -347,16 +348,34 @@ const UTF8 szP6HPrefix1SHA1[] = "$P6H$$1:sha1:";
 //
 // Blowfish   $2a$
 
+// The rounds= value for newly generated $5$/$6$ hashes, clamped to the
+// sha-crypt spec range.  Kept explicit in every hash we generate so the
+// stored string carries its own work factor.
+//
+static unsigned long hash_rounds(void)
+{
+    long n = mudconf.password_hash_rounds;
+    if (n < 1000)
+    {
+        n = 1000;
+    }
+    else if (999999999 < n)
+    {
+        n = 999999999;
+    }
+    return static_cast<unsigned long>(n);
+}
+
 static const UTF8 *GenerateSalt(int iType)
 {
     // Must be large enough for any supported format: prefix + salt + NUL.
     //   DES:    0 + 2  + 1 =  3
     //   MD5:    3 + 16 + 1 = 20
     //   SHA1:   6 + 12 + 1 = 19
-    //   SHA256: 3 + 16 + 1 = 20
-    //   SHA512: 3 + 16 + 1 = 20
+    //   SHA256: 3 + rounds=999999999$ (18) + 16 + 1 = 38
+    //   SHA512: 3 + rounds=999999999$ (18) + 16 + 1 = 38
     //
-    static constexpr size_t MAX_SALT_SIZE = 32;
+    static constexpr size_t MAX_SALT_SIZE = 48;
     thread_local UTF8 szSalt[MAX_SALT_SIZE];
 
     szSalt[0] = '\0';
@@ -420,6 +439,16 @@ static const UTF8 *GenerateSalt(int iType)
         }
 
         mux_strncpy(szSalt, pPrefix, nPrefix);
+
+        // sha-crypt settings carry an explicit work factor (#1962).
+        //
+        if (  CRYPT_SHA256 == iType
+           || CRYPT_SHA512 == iType)
+        {
+            nPrefix += mux_snprintf(szSalt + nPrefix, MAX_SALT_SIZE - nPrefix,
+                                    T("rounds=%lu$"), hash_rounds());
+        }
+
         for (size_t i = nPrefix; i < nPrefix + nSalt; i++)
         {
             // Map random number to set 'a-zA-Z0-9./'.
@@ -662,13 +691,22 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
     case CRYPT_P6H_VAHT:
         return p6h_vaht_crypt(szPassword, szSetting);
 
+    case CRYPT_SHA256:
+    case CRYPT_SHA512:
+        // Standard sha-crypt, computed by the portable in-tree construction
+        // over OS crypto primitives on BOTH platforms (#1962).  A $6$ hash
+        // written on a Unix box verifies on Windows and vice versa, and
+        // rounds= handling no longer depends on which libc is present
+        // (macOS crypt(3) lacks $5$/$6$ entirely).
+        //
+        return mux_sha_crypt(szPassword, szSetting);
+
     case CRYPT_OTHER:
     case CRYPT_DES_EXT:
     case CRYPT_MD5:
-    case CRYPT_SHA256:
-    case CRYPT_SHA512:
 #if defined(WINDOWS_CRYPT)
-        // The Windows release of TinyMUX only supports SHA1 and clear-text.
+        // Beyond the formats above, the Windows release of TinyMUX only
+        // supports SHA1 and clear-text.
         //
         return szFail;
 #endif // WINDOWS_CRYPT
@@ -713,6 +751,77 @@ const UTF8 *mux_crypt(const UTF8 *szPassword, const UTF8 *szSetting, int *piType
  * check_pass: Test a password to see if it is correct.
  */
 
+// Strength order for the never-downgrade-by-accident rule below.  Formats
+// not listed (P6H imports, cleartext, unrecognized) rank lowest and always
+// upgrade on a successful login.
+//
+static int method_rank(int iType)
+{
+    switch (iType)
+    {
+    case CRYPT_SHA512:  return 6;
+    case CRYPT_SHA256:  return 5;
+    case CRYPT_SHA1:    return 4;
+    case CRYPT_MD5:     return 3;
+    case CRYPT_DES:
+    case CRYPT_DES_EXT: return 2;
+    default:            return 0;
+    }
+}
+
+// rounds= of a stored $5$/$6$ setting; the sha-crypt default when absent.
+//
+static unsigned long stored_sha_rounds(const UTF8 *szSetting)
+{
+    const char *p = reinterpret_cast<const char *>(szSetting);
+    if (  '$' == p[0]
+       && ('5' == p[1] || '6' == p[1])
+       && '$' == p[2]
+       && 0 == strncmp(p + 3, "rounds=", 7))
+    {
+        return strtoul(p + 10, nullptr, 10);
+    }
+    return 5000UL;
+}
+
+// Decide whether a successfully verified password should be re-encoded.
+//
+// This is the auto-upgrade path: P6H imports and legacy formats convert to
+// the configured method the first time the player logs in.  Two rules
+// sharpen the historical "type not in password_methods" trigger:
+//
+//  - Same-type rounds refresh: a $5$/$6$ hash whose stored rounds differ
+//    from the current password_hash_rounds policy re-encodes even though
+//    its type is configured, so a rounds change propagates on login.
+//
+//  - The IMPLICIT default never downgrades: with password_methods unset,
+//    the effective target is SHA1, and the old unconditional trigger both
+//    re-hashed every SHA1 login (churn) and would silently rewrite a
+//    $5$/$6$ hash down to $SHA1$ after a config reset.  An explicitly
+//    configured method set may still downgrade -- that is the operator's
+//    stated intent.
+//
+static bool password_needs_rehash(int iType, const UTF8 *szSetting)
+{
+    if (0 != (iType & mudconf.password_methods))
+    {
+        if (  (  CRYPT_SHA512 == iType
+              || CRYPT_SHA256 == iType)
+           && stored_sha_rounds(szSetting) != hash_rounds())
+        {
+            return true;
+        }
+        return false;
+    }
+
+    if (  0 == mudconf.password_methods
+       && method_rank(CRYPT_SHA1) <= method_rank(iType))
+    {
+        return false;
+    }
+    return true;
+}
+
 static bool check_pass(dbref player, const UTF8 *pPassword)
 {
     bool bValidPass  = false;
@@ -735,7 +844,7 @@ static bool check_pass(dbref player, const UTF8 *pPassword)
            && strcmp(reinterpret_cast<const char *>(pHashed), reinterpret_cast<const char *>(pTarget.get())) == 0)
         {
             bValidPass = true;
-            if (0 == (iType & mudconf.password_methods))
+            if (password_needs_rehash(iType, pTarget))
             {
                 ChangePassword(player, pPassword);
             }
