@@ -72,11 +72,30 @@ LIBMUX_API void pool_reset(void);
 #define alloc_pcache(s)  reinterpret_cast<PCACHE *>(pool_alloc(POOL_PCACHE, T(s), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__))
 #define free_pcache(b)   pool_free(POOL_PCACHE, reinterpret_cast<UTF8 *>(b), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
 
+// src is evaluated exactly once, and BEFORE the bounds test.
+//
+// It used to be evaluated only inside the test, which makes the macro
+// unsafe for any argument with a side effect: once the buffer is full the
+// argument stops being evaluated at all.  A caller writing the natural
+//
+//     while (p < end) safe_chr(*p++, buff, bufp);
+//
+// would then spin forever rather than truncate, because p stops advancing
+// exactly when the copy stops happening.  That is not hypothetical -- it is
+// #1930, where color_ops' WP_SAFE had this shape and one softcode
+// expression could hang the whole (single-threaded) server.  Twelve loops
+// there passed *s++ to it.
+//
+// No caller here passes a side-effecting argument today; every call site of
+// safe_chr / safe_sb_chr / safe_mb_chr / safe_bool was checked.  This is a
+// trap with nobody standing on it, and the point of the temporary is that
+// stepping on it later is harmless.
 #define safe_copy_chr_ascii(src, buff, bufp, nSizeOfBuffer) \
 { \
+    const UTF8 scca_chr_ = static_cast<UTF8>(src); \
     if (static_cast<size_t>(*bufp - buff) < nSizeOfBuffer) \
     { \
-        **bufp = src; \
+        **bufp = scca_chr_; \
         (*bufp)++; \
     } \
 }
