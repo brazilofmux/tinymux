@@ -167,6 +167,7 @@ struct confdata
     int     room_name_charset;  // Charset restrictions for room names.
     int     thing_name_charset; // Charset restrictions for thing names.
     int     password_methods;   // Password encryption methods.
+    int     password_hash_rounds; // rounds= for new $5$/$6$ password hashes.
     int     default_charset;    // Default client charset mapping.
 #ifdef REALITY_LVLS
     int     no_levels;          /* Number of reality levels */
