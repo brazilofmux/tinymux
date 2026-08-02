@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -46,7 +46,7 @@ realclean:
 #
 TEST_TARGETS = \
     test-ganl test-netaddr test-libmux test-color-ops test-table \
-    test-slave test-hir test-format \
+    test-slave test-stubslave-teardown test-hir test-format \
     test-nls test-nls-plural test-nls-runtime test-nls-ko \
     test-vacuous test-narrowing test-config test-dbt test-alarm \
     test-blob \
@@ -400,6 +400,14 @@ test-table:
 test-slave: install
 	@echo "==> Running slave child-cap burst (#1853)"
 	$(MAKE) -C tests/slave test
+
+# #1939: muxscript stubslave-teardown recursion.  Kills the stubslave child
+# and drives @shutdown so ShutdownSlave's pump write fails -- pre-fix that
+# recursed to a stack-overflow SIGSEGV.  Skips green on builds without
+# --enable-stubslave (nothing to exercise there).
+test-stubslave-teardown: install
+	@echo "==> Running muxscript stubslave-teardown regression (#1939)"
+	$(MAKE) -C tests/stubslave test
 
 # #1863: HIR block-table exhaustion must not OOB-write via add_edge(-1,…).
 test-hir:
