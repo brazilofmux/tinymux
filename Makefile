@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -72,7 +72,17 @@ TEST_LOG_DIR = test-logs
 # `make test STRICT=1` turns any skip into a failure, for CI or a release
 # gate where a silently-unrun suite is not acceptable.
 #
+# The build-configuration banner runs first and can abort the whole run
+# (#1946).  Several features default to NO and their tests skip cleanly when
+# absent, so "green" means different things on different boxes and nothing
+# used to say which.  It aborts rather than counting as one target among 31
+# because a tree that was reconfigured without a rebuild misattributes
+# *every* result below it -- better to learn that in two seconds than after
+# fifteen minutes.  `EXPECT_CONFIG="jit=yes"` makes a box assert the job it
+# was set up to do.
+#
 test: install
+	@./tests/buildconfig/report.sh
 	@rm -rf $(TEST_LOG_DIR) && mkdir -p $(TEST_LOG_DIR); \
 	pass=0; fail=0; skip=0; failed=""; skipped=""; \
 	for t in $(TEST_TARGETS); do \
@@ -97,6 +107,7 @@ test: install
 	echo "======================================================================"; \
 	printf '  make test: %d targets — %d passed, %d skipped, %d failed\n' \
 	    "$$total" "$$pass" "$$skip" "$$fail"; \
+	echo "  config: $$(./tests/buildconfig/report.sh --oneline)"; \
 	echo "======================================================================"; \
 	if [ -n "$$skipped" ]; then echo "  skipped:$$skipped"; fi; \
 	if [ -n "$$failed" ]; then echo "  FAILED: $$failed"; fi; \
@@ -106,6 +117,13 @@ test: install
 	    echo "  STRICT=1: skipped targets are failures."; exit 1; \
 	fi; \
 	exit 0
+
+# The banner on its own -- no build, no tests, answers "what would a green
+# run here actually mean?" in about a second.  Deliberately NOT in
+# TEST_TARGETS: `test` runs it up front and aborts on it, and a second run
+# as target 31 of 31 would report the same thing after the fact.
+test-buildconfig:
+	@./tests/buildconfig/report.sh
 
 # Smoke on the compiled route (jit_eval_brackets defaults on).
 test-smoke:

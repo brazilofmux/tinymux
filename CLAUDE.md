@@ -33,6 +33,17 @@ version churns whole files (#1477). Prefer expressing build changes in
 - Run smoke tests: `make test` (from repo root — builds, installs, then tests)
 - Or manually: `cd testcases && ./tools/Makesmoke && ./tools/Smoke`
 - Test output in: `testcases/smoke.log`
+- **A green run only covers what the tree was configured with** (#1946).
+  `make test` prints a build-configuration banner first and repeats it in the
+  summary, because most optional features default to NO and their tests skip
+  cleanly when absent — so "29 passed" means different things on different
+  boxes. `make test-buildconfig` prints it alone in about a second.
+  - The banner aborts the run if the tree was reconfigured without a rebuild:
+    the binaries would not be the configuration the banner names.
+  - `make test EXPECT_CONFIG="jit=yes"` makes a box assert the job it exists
+    to do, so a machine meant to cover the JIT fails loudly on a non-JIT
+    build instead of skipping politely. Known keys: `jit stubslave nls
+    realitylvls wodrealms`.
 - GANL engine regression harness: `make test-ganl` (also part of `make test`);
   scripted engine scenarios in `mux/ganl/tests/`, TAP output
   - On Windows (no make): build `mux/ganl/tests/ganl_tests.vcxproj` with MSBuild
@@ -73,6 +84,13 @@ version churns whole files (#1477). Prefer expressing build changes in
   socket (`tests/scenario/`) — the path muxscript can't reach
 
 ## Release Process
+- **Before tagging, `make test` must pass under more than one configuration**
+  (#1946). The default test build omits `--enable-stubslave`, which is a
+  *release* build flag — so the shipped stubslave path is the one the test
+  build never exercises, and #1939's crash lived exactly there. At minimum:
+  - `--enable-jit ... --enable-stubslave` → `make test EXPECT_CONFIG="jit=yes stubslave=yes"`
+  - a build with neither, to confirm the guards skip rather than fail
+  - `make clean` between them; configure flags do not take effect otherwise
 - Update version numbers in:
   - `dounix.sh` and `dowin32.sh`: Update OLD_BUILD and NEW_BUILD
   - `mux/src/_build.h`: Update MUX_VERSION and MUX_RELEASE_DATE
