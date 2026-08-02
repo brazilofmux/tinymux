@@ -1,6 +1,12 @@
 /*! \file sha1.cpp
- * \brief Implementation of SHA1 hash.
+ * \brief OS-backed message digests.
  *
+ * Two backends, both platform crypto (#1963): OpenSSL EVP under UNIX_DIGEST,
+ * Windows CNG (BCrypt) otherwise.  The homegrown FIPS-180 SHA-1 that used to
+ * live here is retired; this tree ships no cryptographic source.  Output is
+ * byte-identical across backends — mux_sha1_digest() feeds surfaces whose
+ * bytes may never change (RFC 6455 Sec-WebSocket-Accept, $SHA1$/$P6H$
+ * password verification, sha1() softcode) — pinned by tests/digest.
  */
 
 #include "copyright.h"
@@ -10,13 +16,12 @@
 #include "sha1.h"
 
 #ifdef UNIX_DIGEST
-#include <openssl/evp.h>
-#endif
 
-bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
-                     uint8_t *out_digest, unsigned int *out_len)
+#include <openssl/evp.h>
+
+static bool evp_digest(const EVP_MD *md, const UTF8 *data[], const size_t lens[],
+                       int count, uint8_t *out_digest, unsigned int *out_len)
 {
-#ifdef UNIX_DIGEST
     EVP_MD_CTX *ctx =
     #if HAVE_EVP_MD_CTX_NEW
         EVP_MD_CTX_new();
@@ -29,211 +34,156 @@ bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
         return false;
     }
 
-    if (!EVP_DigestInit_ex(ctx, EVP_sha1(), NULL))
+    bool ok = (0 != EVP_DigestInit_ex(ctx, md, nullptr));
+    for (int i = 0; ok && i < count; ++i)
     {
+        ok = (0 != EVP_DigestUpdate(ctx, data[i], lens[i]));
+    }
+    if (ok)
+    {
+        ok = (0 != EVP_DigestFinal_ex(ctx, out_digest, out_len));
+    }
+
     #if HAVE_EVP_MD_CTX_NEW
         EVP_MD_CTX_free(ctx);
     #else
         EVP_MD_CTX_destroy(ctx);
     #endif
+
+    return ok;
+}
+
+bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+                     uint8_t *out_digest, unsigned int *out_len)
+{
+    return evp_digest(EVP_sha1(), data, lens, count, out_digest, out_len);
+}
+
+bool mux_digest(const UTF8 *alg, const UTF8 *data[], const size_t lens[],
+                int count, uint8_t *out_digest, unsigned int *out_len)
+{
+    // Provider-native fetch on OpenSSL 3.0+ so aliases resolve from a cold
+    // process; see fun_digest (#1961).  Fetched EVP_MD is a ref to free.
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    EVP_MD *md = EVP_MD_fetch(nullptr, reinterpret_cast<const char *>(alg), nullptr);
+    if (nullptr == md)
+    {
         return false;
     }
-
-    for (int i = 0; i < count; ++i)
-    {
-        if (!EVP_DigestUpdate(ctx, data[i], lens[i]))
-        {
-        #if HAVE_EVP_MD_CTX_NEW
-            EVP_MD_CTX_free(ctx);
-        #else
-            EVP_MD_CTX_destroy(ctx);
-        #endif
-            return false;
-        }
-    }
-
-    if (!EVP_DigestFinal_ex(ctx, out_digest, out_len))
-    {
-    #if HAVE_EVP_MD_CTX_NEW
-        EVP_MD_CTX_free(ctx);
-    #else
-        EVP_MD_CTX_destroy(ctx);
-    #endif
-        return false;
-    }
-
-    #if HAVE_EVP_MD_CTX_NEW
-        EVP_MD_CTX_free(ctx);
-    #else
-        EVP_MD_CTX_destroy(ctx);
-    #endif
-
+    bool ok = evp_digest(md, data, lens, count, out_digest, out_len);
+    EVP_MD_free(md);
+    return ok;
 #else
-    MUX_SHA_CTX shac;
-    MUX_SHA1_Init(&shac);
-    for (int i = 0; i < count; ++i)
+    const EVP_MD *md = EVP_get_digestbyname(reinterpret_cast<const char *>(alg));
+    if (nullptr == md)
     {
-        MUX_SHA1_Update(&shac, data[i], lens[i]);
+        return false;
     }
-    MUX_SHA1_Final(out_digest, &shac);
-    *out_len = MUX_SHA1_DIGEST_LENGTH;
+    return evp_digest(md, data, lens, count, out_digest, out_len);
+#endif
+}
+
+#elif defined(WIN32)
+
+// Windows CNG backend.  <windows.h> arrives via config.h.
+#include <bcrypt.h>
+#include <mutex>
+
+#ifndef NT_SUCCESS
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 #endif
 
-    return true;
-}
-
-#ifndef UNIX_DIGEST
-
-void MUX_SHA1_Init(MUX_SHA_CTX *p)
+typedef struct
 {
-    p->H[0] = 0x67452301;
-    p->H[1] = 0xEFCDAB89;
-    p->H[2] = 0x98BADCFE;
-    p->H[3] = 0x10325476;
-    p->H[4] = 0xC3D2E1F0;
-    p->nTotal = 0;
-    p->nblock = 0;
-}
+    const wchar_t     *bcrypt_id;   // BCRYPT_*_ALGORITHM
+    const char        *name;        // canonical lowercase
+    const char        *alias;       // hyphenated form, or nullptr
+    ULONG              digest_len;
+    BCRYPT_ALG_HANDLE  handle;      // opened once, cached for process life
+    std::once_flag     opened;
+} cng_alg;
 
-#ifdef WINDOWS_INTRINSICS
-#define ROTL(d,n) _lrotl(d,n)
-#else // WINDOWS_INTRINSICS
-#define ROTL(d,n) (((d) << (n)) | ((d) >> (32-(n))))
-#endif // WINDOWS_INTRINSICS
-
-#define Ch(x,y,z)      (((x) & (y)) ^ (~(x) & (z)))
-#define Parity(x,y,z)  ((x) ^ (y) ^ (z))
-#define Maj(x,y,z)     (((x) & (y)) ^ ((x) & (z)) ^ ((y) & (z)))
-
-static void MUX_SHA1_HashBlock(MUX_SHA_CTX *p)
+static cng_alg s_cng_algs[] =
 {
-    int t;
-    uint32_t W[80];
+    { BCRYPT_SHA1_ALGORITHM,   "sha1",   "sha-1",   20, nullptr, {} },
+    { BCRYPT_SHA256_ALGORITHM, "sha256", "sha-256", 32, nullptr, {} },
+    { BCRYPT_SHA384_ALGORITHM, "sha384", "sha-384", 48, nullptr, {} },
+    { BCRYPT_SHA512_ALGORITHM, "sha512", "sha-512", 64, nullptr, {} },
+    { BCRYPT_MD5_ALGORITHM,    "md5",    nullptr,   16, nullptr, {} },
+};
 
-    // Prepare Message Schedule, {W sub t}.
-    //
-    int j;
-    for (t = 0, j = 0; t <= 15; t++, j += 4)
-    {
-        W[t] = (p->block[j  ] << 24)
-             | (p->block[j+1] << 16)
-             | (p->block[j+2] <<  8)
-             | (p->block[j+3]      );
-    }
-    for (t = 16; t <= 79; t++)
-    {
-        W[t] = ROTL(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
-    }
-
-    uint32_t a = p->H[0];
-    uint32_t b = p->H[1];
-    uint32_t c = p->H[2];
-    uint32_t d = p->H[3];
-    uint32_t e = p->H[4];
-
-    uint32_t T;
-    for (t =  0; t <= 19; t++)
-    {
-        T = ROTL(a,5) + Ch(b,c,d) + e + 0x5A827999 + W[t];
-        e = d;
-        d = c;
-        c = ROTL(b,30);
-        b = a;
-        a = T;
-    }
-    for (t = 20; t <= 39; t++)
-    {
-        T = ROTL(a,5) + Parity(b,c,d) + e + 0x6ED9EBA1 + W[t];
-        e = d;
-        d = c;
-        c = ROTL(b,30);
-        b = a;
-        a = T;
-    }
-    for (t = 40; t <= 59; t++)
-    {
-        T = ROTL(a,5) + Maj(b,c,d) + e + 0x8F1BBCDC + W[t];
-        e = d;
-        d = c;
-        c = ROTL(b,30);
-        b = a;
-        a = T;
-    }
-    for (t = 60; t <= 79; t++)
-    {
-        T = ROTL(a,5) + Parity(b,c,d) + e + 0xCA62C1D6 + W[t];
-        e = d;
-        d = c;
-        c = ROTL(b,30);
-        b = a;
-        a = T;
-    }
-
-    p->H[0] += a;
-    p->H[1] += b;
-    p->H[2] += c;
-    p->H[3] += d;
-    p->H[4] += e;
-}
-
-void MUX_SHA1_Update(MUX_SHA_CTX *p, const UTF8 *buf, size_t n)
+static bool cng_digest(cng_alg &alg, const UTF8 *data[], const size_t lens[],
+                       int count, uint8_t *out_digest, unsigned int *out_len)
 {
-    while (n)
+    // The provider handle is opened once and kept for the life of the
+    // process: BCryptOpenAlgorithmProvider is the expensive call, and CNG
+    // documents provider handles as safe for concurrent use.
+    std::call_once(alg.opened, [&alg]
     {
-        size_t m = sizeof(p->block) - p->nblock;
-        if (n < m)
+        BCRYPT_ALG_HANDLE h = nullptr;
+        if (NT_SUCCESS(BCryptOpenAlgorithmProvider(&h, alg.bcrypt_id, nullptr, 0)))
         {
-            m = n;
+            alg.handle = h;
         }
-        memcpy(p->block + p->nblock, buf, m);
-        buf += m;
-        n -= m;
-        p->nblock += m;
-        p->nTotal += m;
+    });
+    if (nullptr == alg.handle)
+    {
+        return false;
+    }
 
-        if (p->nblock == sizeof(p->block))
+    BCRYPT_HASH_HANDLE hash = nullptr;
+    if (!NT_SUCCESS(BCryptCreateHash(alg.handle, &hash, nullptr, 0, nullptr, 0, 0)))
+    {
+        return false;
+    }
+
+    bool ok = true;
+    for (int i = 0; ok && i < count; ++i)
+    {
+        ok = NT_SUCCESS(BCryptHashData(hash,
+                 reinterpret_cast<PUCHAR>(const_cast<UTF8 *>(data[i])),
+                 static_cast<ULONG>(lens[i]), 0));
+    }
+    if (ok)
+    {
+        ok = NT_SUCCESS(BCryptFinishHash(hash, out_digest, alg.digest_len, 0));
+    }
+    BCryptDestroyHash(hash);
+
+    if (ok)
+    {
+        *out_len = alg.digest_len;
+    }
+    return ok;
+}
+
+bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+                     uint8_t *out_digest, unsigned int *out_len)
+{
+    return cng_digest(s_cng_algs[0], data, lens, count, out_digest, out_len);
+}
+
+bool mux_digest(const UTF8 *alg, const UTF8 *data[], const size_t lens[],
+                int count, uint8_t *out_digest, unsigned int *out_len)
+{
+    for (cng_alg &entry : s_cng_algs)
+    {
+        if (  mux_stricmp(alg, reinterpret_cast<const UTF8 *>(entry.name)) == 0
+           || (  entry.alias
+              && mux_stricmp(alg, reinterpret_cast<const UTF8 *>(entry.alias)) == 0))
         {
-            MUX_SHA1_HashBlock(p);
-            p->nblock = 0;
+            return cng_digest(entry, data, lens, count, out_digest, out_len);
         }
     }
+    return false;
 }
 
-void MUX_SHA1_Final(uint8_t md[MUX_SHA1_DIGEST_LENGTH], MUX_SHA_CTX *p)
-{
-    p->block[p->nblock++] = 0x80;
-    if (sizeof(p->block) - sizeof(uint64_t) < p->nblock)
-    {
-        memset(p->block + p->nblock, 0, sizeof(p->block) - p->nblock);
-        MUX_SHA1_HashBlock(p);
-        memset(p->block, 0, sizeof(p->block) - sizeof(uint64_t));
-    }
-    else
-    {
-        memset(p->block + p->nblock, 0, sizeof(p->block) - p->nblock - sizeof(uint64_t));
-    }
-    p->nTotal *= 8;
+#else
 
-    p->block[sizeof(p->block) - 8] = static_cast<uint8_t>((p->nTotal >> 56) & 0xFF);
-    p->block[sizeof(p->block) - 7] = static_cast<uint8_t>((p->nTotal >> 48) & 0xFF);
-    p->block[sizeof(p->block) - 6] = static_cast<uint8_t>((p->nTotal >> 40) & 0xFF);
-    p->block[sizeof(p->block) - 5] = static_cast<uint8_t>((p->nTotal >> 32) & 0xFF);
-    p->block[sizeof(p->block) - 4] = static_cast<uint8_t>((p->nTotal >> 24) & 0xFF);
-    p->block[sizeof(p->block) - 3] = static_cast<uint8_t>((p->nTotal >> 16) & 0xFF);
-    p->block[sizeof(p->block) - 2] = static_cast<uint8_t>((p->nTotal >>  8) & 0xFF);
-    p->block[sizeof(p->block) - 1] = static_cast<uint8_t>((p->nTotal      ) & 0xFF);
-    MUX_SHA1_HashBlock(p);
-
-    // Serialize 5 uint32_t to 20 uint8_t in big-endian order.
-    //
-    for (int i = 0, j = 0; i <= 4; i++, j += sizeof(uint32_t))
-    {
-        uint32_t h = p->H[i];
-        md[j + 0] = static_cast<uint8_t>(h >> 24);
-        md[j + 1] = static_cast<uint8_t>(h >> 16);
-        md[j + 2] = static_cast<uint8_t>(h >>  8);
-        md[j + 3] = static_cast<uint8_t>(h      );
-    }
-}
+// configure.ac hard-errors without OpenSSL, so a Unix build always has
+// UNIX_DIGEST; Windows always has CNG.  If a new platform lands here, it
+// needs a digest backend decision — the homegrown SHA-1 that used to be the
+// fallback was retired by #1963 and must not come back.
+#error "No digest backend: need OpenSSL (UNIX_DIGEST) or Windows CNG (#1963)."
 
 #endif
