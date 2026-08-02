@@ -361,14 +361,14 @@ void cf_init(void)
     mudconf.password_methods = CRYPT_DEFAULT;
 
     // Work factor for newly generated $5$/$6$ password hashes (sha-crypt
-    // rounds=; clamped to [1000, 999999999] at use).  The default tracks
-    // the OWASP Password Storage guidance for the SHA-512 PRF (220,000
-    // iterations as of 2026), the closest published analog for
-    // sha512-crypt, and measures ~190 ms per hash on 2022-era server
-    // hardware -- inside the recommended 100-500 ms window.  Changing this
-    // propagates automatically: the stored rounds ride in each hash, and a
-    // hash whose rounds differ from this policy is re-encoded on the
-    // player's next successful login.
+    // rounds=; clamped to [1000, 999999999] at use).  The default targets a
+    // ~50 ms per-hash budget on server-class hardware (measured ~50 ms at
+    // 50,000 rounds on a 2.5 GHz Xeon) -- chosen against the single-threaded
+    // login-path DoS surface described below rather than to match a raw
+    // OWASP iteration count, and still 10x the sha-crypt spec default.
+    // Changing this propagates automatically: the stored rounds ride in each
+    // hash, and a hash whose rounds differ from this policy is re-encoded on
+    // the player's next successful login.
     //
     // What password hashing here does and does not buy: it protects the
     // passwords themselves in at-rest copies of the database (backups,
@@ -380,12 +380,12 @@ void cf_init(void)
     //
     // Verification recomputes at the STORED rounds, so every login costs
     // that work in the single-threaded server: at the default, a burst of
-    // 100 reconnects after a restart serializes ~19 s of hashing.  Lower it
-    // (the spec default is 5000, ~5 ms) if login latency matters more to
-    // you than the offline-guessing margin; any standard value is equally
-    // portable across platforms.
+    // 100 reconnects after a restart serializes ~5 s of hashing.  Raising it
+    // buys offline-guessing margin at the cost of that latency (~50 ms per
+    // 50,000 rounds); the spec default 5000 (~5 ms) is the low end.  Any
+    // standard value is equally portable across platforms.
     //
-    mudconf.password_hash_rounds = 220000;
+    mudconf.password_hash_rounds = 50000;
     mudconf.default_charset = CHARSET_LATIN1;
 
     mudstate.events_flag = 0;
