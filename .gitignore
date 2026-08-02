@@ -176,6 +176,8 @@ tests/color_ops/test_color_ops
 # rpath equivalent.
 tests/*/*.exe
 tests/*/*.obj
+# Header-dependency files from -MMD (#1952).
+tests/*/*.d
 tests/*/*.pdb
 tests/*/*.ilk
 tests/*/libmux.dll
