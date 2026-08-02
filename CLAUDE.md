@@ -51,6 +51,13 @@ version churns whole files (#1477). Prefer expressing build changes in
     via the accept path (nonzero exit on failure)
 - netaddr subnet unit tests: `make test-netaddr` (also part of `make test`);
   `mux_subnet::compare_to` + `parse_subnet` in `tests/netaddr/` (#799/#800)
+- SQLite storage backend: `make test-db` (also part of `make test`);
+  `tests/db/` drives `sqlitedb.cpp` and `sqlite_backend.cpp` through
+  `storage_backend.h` — the persistence layer's only coverage outside smoke.
+  **`test-db` is not `test-dbt`.** The latter is the RV64 DBT suite and
+  contains the former's name as a substring, which is why `tests/db` sat
+  unwired long enough to need its own issue (#1953). Cold build ~23s
+  (it compiles `sqlite3.c` itself); warm ~1s.
 - DBT and RV64 tests: `make test-dbt` (also part of `make test`); `tests/dbt/`
   builds five binaries, each needing a different link:
   - **chain** — `dbt_backend_decode_jmp_target` must invert

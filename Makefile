@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -40,12 +40,15 @@ realclean:
 #
 # Adding a suite means adding it here.  test-libmux / test-color-ops /
 # test-table are #1919's three formerly-orphan suites (460 assertions that
-# only ran if someone remembered to).  test-blob is the same shape one
+# only ran if someone remembered to).  test-db is the fourth (#1953), and it
+# stayed hidden longest because `test-dbt` contains its name as a substring,
+# so a grep for it appears to succeed.  test-blob is the same shape one
 # level down: softlib.rv64 is a checked-in binary nothing regenerates,
 # so its source can drift with the suite staying green (#1924).
 #
 TEST_TARGETS = \
     test-ganl test-netaddr test-libmux test-color-ops test-table \
+    test-db \
     test-slave test-stubslave-teardown test-hir test-format \
     test-nls test-nls-plural test-nls-runtime test-nls-ko \
     test-vacuous test-narrowing test-config test-dbt test-alarm \
@@ -412,6 +415,20 @@ test-color-ops:
 test-table:
 	@echo "==> Running table formatting tests"
 	$(MAKE) -C tests/table test
+
+# SQLite storage backend (#1953).  The fourth orphan suite after #1917's
+# three: it built, passed 11 assertions, and nothing ran it.
+#
+# NOTE FOR GREPPERS: this is test-db (tests/db), NOT test-dbt (tests/dbt).
+# `test-dbt` contains `test-db` as a substring, which is exactly why this
+# suite read as wired for as long as it did -- a grep for the shorter name
+# matches the longer target and stops looking.
+#
+# Compiles sqlite3.c itself, so a cold build is ~23s; warm it is ~1s and the
+# suite is the only coverage the persistence layer has outside smoke.
+test-db:
+	@echo "==> Running SQLite storage-backend tests (#1953)"
+	$(MAKE) -C tests/db test
 
 # #1853 / #1827: DNS slave child-cap burst with a forced stall.  Not a
 # platform item — plain waitpid + spawnSlavePosix on every POSIX engine.
