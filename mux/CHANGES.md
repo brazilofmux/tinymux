@@ -9,9 +9,9 @@ Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
 # Changes in 2.14.0.10 (2026-AUG-02):
 
-By a wide margin the largest cycle in the 2.14 series: 531 pull requests
-merged over nineteen days, touching 559 files for roughly 92,000 added and
-24,000 removed lines.  For comparison, 2.14.0.9 collected 27 merged changes
+By a wide margin the largest cycle in the 2.14 series: 534 pull requests
+merged over nineteen days, touching 567 files for roughly 93,000 added and
+25,000 removed lines.  For comparison, 2.14.0.9 collected 27 merged changes
 over a month.
 
 That volume has a cost, and it is worth stating plainly.  A TinyMUX alpha
@@ -21,7 +21,7 @@ and the result carries the churn to match; it may take through 2.15 or 2.16
 for the code to settle back into this project's usual register.  The
 `ALPHA` on this build is meant literally.
 
-Seven threads dominate it.  Server messages become translatable, with
+Eight threads dominate it.  Server messages become translatable, with
 Spanish and Korean catalogues and a `language` directive.  Lua gains a
 compiled execution path and is turned on by default.  The softcode JIT's
 eval-bracket guard is lifted and the compiled route becomes the default for
@@ -29,13 +29,15 @@ bracketed expressions.  A systematic audit sweep runs the codebase in
 numbered passes 1 through 15, closing several hundred filed defects.  A new
 set of front-door defenses bounds what an unauthenticated connection can
 cost the server.  Multi-column output moves onto a shared table layer that
-is safe for color and non-Latin scripts.  And a 2.13/2.14 parser parity
+is safe for color and non-Latin scripts.  A 2.13/2.14 parser parity
 harness is built, then used to find and fix real divergences in expression
-evaluation.
+evaluation.  And password storage moves to a standard, key-stretched
+format that is the same on every platform.
 
 Two configuration defaults change in this release — `jit_eval_brackets` and
-`lua_jit` are both on now — and one user-visible parser behaviour is
-restored to 2.13's.  Those are called out in their sections below.
+`lua_jit` are both on now — one user-visible parser behaviour is restored
+to 2.13's, and newly written passwords change format.  Those are called out
+in their sections below.
 
 ## Parser and Expression Evaluation
 
@@ -402,6 +404,77 @@ These bound what an unauthenticated or abusive source can consume.
  - New refusal types are broadcast to SiteMon (#1018).
  - Wizard players are exempt from the CPU guard's collateral HALT (#920).
 
+## Passwords and Digests
+
+Password storage was salted SHA-1 at **one round** on both platforms.  Per
+password random salt already defeated the naive "equal hashes mean equal
+passwords" comparison, so the weakness was never SHA-1's deprecation —
+it was speed.  The realistic adversary is someone holding a backup, and
+against that adversary a single round is cheap to attack offline.  Rounds
+are the fix, not the hash.
+
+ - **New passwords are written as sha-crypt `$6$` with an explicit
+   `rounds=`** (#1962).  `mux_sha_crypt` implements the standard
+   construction — the same one glibc, musl and `openssl passwd` produce —
+   over OS crypto primitives: OpenSSL EVP on Unix, Windows CNG elsewhere.
+   Because the construction is in-tree rather than delegated to libc,
+   **a password database written on Unix verifies on Windows and the
+   reverse**, and `$5$`/`$6$` no longer depend on whether the host libc
+   understands those formats.  macOS's `crypt(3)` does not.
+ - The work factor is `password_hash_rounds`, a new configuration
+   directive, **defaulting to 50000**.  It was first set to 220000 on
+   OWASP guidance and then deliberately lowered (#1962): verification
+   recomputes at the stored cost, so in a single-threaded server a
+   hundred-reconnect burst serialized about 22 seconds of hashing and
+   stalled the game for everyone.  50000 measures near 50 ms per hash on
+   2.5 GHz server hardware — ten times the sha-crypt spec default of 5000,
+   and about five seconds for that same burst rather than twenty-two.  The
+   rounds value rides inside each hash and re-hash-on-login propagates the
+   change, so existing `rounds=220000` hashes settle down to policy as
+   players log in; this is a policy knob, not a format change.
+ - **Re-hash on login became parameter-aware.**  A `$5$`/`$6$` hash whose
+   stored rounds differ from current policy is re-encoded on the next
+   successful login, so changing the directive migrates the database as
+   players return rather than requiring a sweep.  Legacy conversion is
+   preserved, and formats are ranked so an upgrade can never run
+   backwards — with `password_methods` unset, the old code re-hashed on
+   every login and would **silently downgrade a `$6$` hash to `$SHA1$`**
+   after a configuration reset.
+ - Every legacy format still verifies: `$SHA1$`, `$P6H$`, DES, extended
+   DES, and `$1$`.  Nobody is locked out by the change.
+ - **The homegrown SHA-1 is deleted** (#1963).  The non-OpenSSL backend is
+   now CNG with cached algorithm handles, so the tree ships no
+   cryptographic source at all — the posture already taken for TLS by
+   using Schannel rather than bundling an implementation.  A generalized
+   `mux_digest` entry point serves sha1/sha256/sha384/sha512/md5, which is
+   why `digest(sha256,...)` and friends **now work on Windows**, where
+   only literal `sha1` was supported before; two smoke cases flip from
+   Skipped to Succeeded there.  Byte-for-byte output equality across the
+   swap was the gating requirement, since `$SHA1$` verification, the JIT
+   cache key, and the RFC 6455 `Sec-WebSocket-Accept` handshake all depend
+   on those exact bytes.
+ - **`digest()` and `hmac()` resolved algorithm aliases order-dependently
+   on some OpenSSL 3.0 builds** (#1961).  Both used the legacy
+   `EVP_get_digestbyname()`, whose name table is populated lazily when the
+   default provider is first pulled in by a successful operation.  Until
+   that happened, hyphenated aliases did not resolve, so
+   `digest(sha-1,abc)` returned `#-1 UNSUPPORTED DIGEST TYPE` cold and the
+   correct hash after any other digest had run — a different answer for
+   the same input depending only on what preceded it.  Observed on
+   3.0.13-era distributions (Debian 12, Ubuntu 22.04, RHEL 9), where it
+   also made `make test` red; not reproducible on 3.0.20 or 3.6.2, so the
+   affected range sits inside 3.0.x rather than covering it.  Resolution
+   now goes through the provider-native `EVP_MD_fetch()` on 3.0 and later,
+   which is deterministic from a cold process regardless of which build is
+   underneath.  An `EVP_MD_CTX` leak on the unsupported-name path is fixed
+   with it.
+ - Both new surfaces ship known-answer suites — `make test-digest` and
+   `make test-shacrypt`, also in `test-asan` — whose golden values come
+   from `openssl(1)` as an external oracle rather than from the code under
+   test.  That distinction has caught real bugs in this tree before: a
+   round-trip test passes when encoder and decoder are wrong in the same
+   way.
+
 ## Integer Width and Overflow Safety
 
 A sweep prompted by LLP64, where `long` is 32 bits and every `mux_atoi64`
@@ -576,6 +649,9 @@ symptom was the visible one, but most of these are wrong everywhere.
  - Windows smoke builds its tools without `make` (#1347, #1414), and a
    stale `bin/` cannot survive into the next run.
  - `PerfSmokeWin`, an ETW CPU-sampling analog of `PerfSmoke` (#1920).
+ - Hashing moves onto CNG, which retires the last bundled crypto source
+   and gives Windows the full `digest()` algorithm set and the same
+   password format as Unix (#1962, #1963) — see Passwords and Digests.
 
 ## Build System
 
@@ -626,6 +702,10 @@ at and what remains.
  - A live network+queue stress harness, and live scenario coverage for
    wildcard capture and for telnet negotiation/CHARSET/SB overflow.
  - `netaddr` subnet unit tests wired into `make test`.
+ - Known-answer suites for the digest backend and for sha-crypt
+   (`make test-digest`, `make test-shacrypt`), pinning the surfaces whose
+   bytes may never change — `Sec-WebSocket-Accept`, the `$SHA1$` and
+   `$P6H$` password shapes, and the sha-crypt spec vectors.
  - Large smoke-suite expansion: error-path coverage across dozens of
    functions, the eval-composition family, the regexp family, type and
    flag predicates, pronouns/art/time formats, and jit_diff corpus shapes
