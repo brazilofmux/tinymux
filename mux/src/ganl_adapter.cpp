@@ -722,7 +722,26 @@ public:
         // (ServerShutdown) — the socket is already closed, and calling
         // send_data here acquires a shared_ptr to the connection being
         // destroyed, causing a re-entrant destructor → pure virtual call.
-        if (reason != ganl::DisconnectReason::ServerShutdown) {
+        //
+        // The reason check alone is not sufficient (2.14 #802): it infers
+        // destructor-driven teardown from the disconnect reason, but
+        // ~ConnectionBase calls cleanupResources(disconnectReason_) with
+        // whatever reason the connection happens to carry, so a teardown with
+        // any other reason walks straight past it into the hazard described
+        // above.
+        //
+        // Add a liveness check.  handle_to_conn_ owns the shared_ptr, so while
+        // the handle is still mapped the map itself holds a reference and the
+        // object cannot be mid-destruction; conversely, once the entry is gone
+        // the reference that ran ~ConnectionBase was the last one.  Presence in
+        // that map is therefore a sound "not tearing down" test, and it needs
+        // no new state to be kept in sync.  2.14 added an inTeardown_ flag for
+        // this; the map already answers the question here.
+        auto itConn = adapter_.handle_to_conn_.find(handle);
+        const bool bStillOwned =
+            (itConn != adapter_.handle_to_conn_.end() && nullptr != itConn->second);
+
+        if (reason != ganl::DisconnectReason::ServerShutdown && bStillOwned) {
             process_output(d, false);
         }
         clearstrings(d);
