@@ -2233,7 +2233,15 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
                         tprintf(T("MAIL: \xE2\x80\x98%s\xE2\x80\x99 is a badly-formed alias."), head));
                 return nullptr;
             }
-            for (size_t i = 0; i < m->list.size(); i++)
+            // An alias expands to its entire membership, and the same alias
+            // may appear more than once in a recipient list, so the total is
+            // not bounded by the length of the list itself.  Stop at the
+            // capacity of aRecip rather than writing past it.
+            //
+            for (size_t i = 0;
+                 i < m->list.size()
+                 && nRecip < static_cast<int>(sizeof(aRecip)/sizeof(aRecip[0]));
+                 i++)
             {
                  aRecip[nRecip++] = m->list[i];
             }
@@ -2243,7 +2251,12 @@ static UTF8 *make_numlist(dbref player, UTF8 *arg, bool bBlind)
             target = lookup_player(player, head, true);
             if (Good_obj(target))
             {
-                aRecip[nRecip++] = target;
+                // Bounded for the same reason as the alias loop above.
+                //
+                if (nRecip < static_cast<int>(sizeof(aRecip)/sizeof(aRecip[0])))
+                {
+                    aRecip[nRecip++] = target;
+                }
             }
             else
             {
