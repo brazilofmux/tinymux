@@ -14,6 +14,12 @@
 
 namespace ganl {
 
+// Cap ciphertext pending in the mem read BIO.  A TLS record is at most
+// ~16 KiB; handshake cert chains can be larger.  Past this, a peer that
+// never lets the record layer drain is treated as abusive and the session
+// fails, rather than the BIO growing without bound (2.14 #1282).
+static constexpr size_t kMaxTlsPendingWire = 256 * 1024;
+
 // --- Constructor / Destructor ---
 
 OpenSSLTransport::OpenSSLTransport() {
@@ -295,6 +301,17 @@ TlsResult OpenSSLTransport::processIncoming(ConnectionHandle conn, IoBuffer& enc
 
     // 1. Feed data to BIO (outside lock)
     if (encrypted_in.readableBytes() > 0) {
+        // Refuse to grow the read BIO past the cap (2.14 #1282).  This uses
+        // the BIO_write-failure path immediately below, which already exists
+        // and is already exercised, so no new control flow is introduced.
+        const size_t pendingBefore =
+            static_cast<size_t>(BIO_ctrl_pending(context.readBio));
+        if (pendingBefore + encrypted_in.readableBytes() > kMaxTlsPendingWire) {
+            context.lastError = "TLS read BIO pending exceeds cap";
+            GANL_SSL_DEBUG(conn, "Error: " << context.lastError);
+            return TlsResult::Error;
+        }
+
         int written = BIO_write(context.readBio, encrypted_in.readPtr(), encrypted_in.readableBytes());
         GANL_SSL_DEBUG(conn, "BIO_write(" << encrypted_in.readableBytes() << ") returned " << written);
         if (written > 0) {
