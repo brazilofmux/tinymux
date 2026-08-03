@@ -292,6 +292,23 @@ static const char *parsebuf;
 static char parsestore[LBUF_SIZE];
 static dbref parse_player;
 
+// parse_boolexp_E/T/F/L are mutually recursive on lock text supplied by the
+// player, and that text reaches them from @lock as well as from the lock()
+// and elock() functions.  mudconf.lock_nest_lim bounds the evaluator's
+// indirect-lock recursion, not the parser, so the parser needs a bound of
+// its own.  Exceeding it yields TRUE_BOOLEXP, which is what the parser
+// already returns for lock text it cannot parse.
+//
+#define LOCK_PARSE_MAX_DEPTH 1024
+static int s_parse_depth = 0;
+
+class CParseDepthGuard
+{
+public:
+    CParseDepthGuard(void)  { s_parse_depth++; }
+    ~CParseDepthGuard(void) { s_parse_depth--; }
+};
+
 static void skip_whitespace(void)
 {
     while (mux_isspace(*parsebuf))
@@ -511,6 +528,16 @@ static BOOLEXP *parse_boolexp_F(void)
 {
     BOOLEXP *b2;
 
+    // Bound the mutual recursion.  See LOCK_PARSE_MAX_DEPTH above.  Every
+    // cycle through the grammar passes through here, so guarding this one
+    // function bounds all of it.
+    //
+    CParseDepthGuard depth_guard;
+    if (s_parse_depth > LOCK_PARSE_MAX_DEPTH)
+    {
+        return TRUE_BOOLEXP;
+    }
+
     skip_whitespace();
     switch (*parsebuf)
     {
@@ -578,23 +605,31 @@ static BOOLEXP *parse_boolexp_F(void)
 
             if (slash)
             {
-                // Copy the object-ref portion into a local buffer and
+                // Copy the object-ref portion into a scratch buffer and
                 // parse it separately, then extract and look up the lock
                 // name that follows the '/'.
                 //
+                // The buffer comes from the lbuf pool rather than the
+                // stack.  This function is mutually recursive on lock text
+                // supplied by the player, and an LBUF_SIZE array here put
+                // LBUF_SIZE on every frame whether or not this branch was
+                // taken, which is what made the recursion able to exhaust
+                // the stack.  parse_boolexp_L above allocates the same way.
+                //
                 size_t objlen = static_cast<size_t>(slash - parsebuf);
-                char objbuf[LBUF_SIZE];
-                if (objlen >= sizeof(objbuf))
+                UTF8 *objbuf = alloc_lbuf("parse_boolexp_F.objbuf");
+                if (objlen >= LBUF_SIZE)
                 {
-                    objlen = sizeof(objbuf) - 1;
+                    objlen = LBUF_SIZE - 1;
                 }
                 memcpy(objbuf, parsebuf, objlen);
                 objbuf[objlen] = '\0';
 
                 const char *saved = parsebuf;
-                parsebuf = objbuf;
+                parsebuf = reinterpret_cast<const char *>(objbuf);
                 b2->sub1 = parse_boolexp_L();
                 parsebuf = saved;
+                free_lbuf(objbuf);
 
                 // Advance past the object ref and the '/'.
                 //
