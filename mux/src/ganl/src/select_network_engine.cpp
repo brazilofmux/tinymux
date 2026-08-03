@@ -904,6 +904,15 @@ void SelectNetworkEngine::updateMaxFd() {
     } else {
         // std::map keys are sorted, last element has the highest key
         maxFd_ = sockets_.rbegin()->first;
+        // #946: a descriptor >= FD_SETSIZE is admitted to sockets_, but the
+        // guard in updateFdSets keeps it out of the master fd sets.  Clamp so
+        // maxFd_ can never drive select()'s nfds, the FD_ISSET scan loop, or
+        // the concurrent-removal FD_CLR past the fd_set bounds.  Such a socket
+        // is left unserviced rather than corrupting adjacent memory -- the same
+        // "sufficient, not complete" trade as the updateFdSets guard.
+        if (maxFd_ >= MAX_SOCKET_FDS) {
+            maxFd_ = MAX_SOCKET_FDS - 1;
+        }
     }
 }
 
