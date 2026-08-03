@@ -66,6 +66,46 @@ patchable_files=$(cat unix/TOC.patchable)
 unpatched_files=$(cat unix/TOC.unpatched)
 remove_files=$(cat unix/TOC.removed)
 
+# Validate the lists before touching anything.  See the longer note in
+# dowin32.sh: a self-contradicting or stale list yields a wrong tarball
+# silently, because the archive is still intact and every checksum and
+# signature over it still verifies.  Two invariants:
+#   1. removed n (patchable u unpatched) = 0
+#   2. everything listed to ship exists in the tree
+#
+# Note this leg is more forgiving than the Windows one by accident:
+# clean_files() below iterates an unquoted $remove_files, so word splitting
+# drops a blank line.  dowin32.sh reads its lists with mapfile -t, which
+# preserves the empty element, and "$dir/" exists -- so the same stray blank
+# line is harmless here and aborts the release there.
+#
+echo "Validating table-of-contents lists..."
+toc_errors=0
+toc_ship=$(printf '%s\n%s\n' "$patchable_files" "$unpatched_files" \
+           | sed 's/\r$//' | grep -v '^[[:space:]]*$' | sort -u)
+toc_conflict=$(comm -12 <(echo "$toc_ship") \
+                        <(printf '%s\n' "$remove_files" | sed 's/\r$//' \
+                          | grep -v '^[[:space:]]*$' | sort -u))
+if [ -n "$toc_conflict" ]; then
+    echo "ERROR: unix/TOC.* lists both ship and delete these files:"
+    echo "$toc_conflict" | sed 's/^/    /'
+    echo "  A file on the removed list is deleted after it is copied, so it"
+    echo "  never ships.  Remove it from one list or the other."
+    toc_errors=$((toc_errors + 1))
+fi
+while IFS= read -r toc_f; do
+    [ -z "$toc_f" ] && continue
+    if [ ! -e "$CHANGES_DIR/$toc_f" ]; then
+        echo "ERROR: unix/TOC.* lists '$toc_f', which is not in $CHANGES_DIR/."
+        toc_errors=$((toc_errors + 1))
+    fi
+done <<< "$toc_ship"
+if [ "$toc_errors" -ne 0 ]; then
+    echo "Refusing to build a distribution from inconsistent file lists."
+    exit 1
+fi
+echo "  TOC lists consistent."
+
 # --- Helpers --------------------------------------------------------------
 
 # Remove the files listed in TOC.removed from the given directory.

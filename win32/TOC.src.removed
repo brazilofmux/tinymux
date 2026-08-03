@@ -82,7 +82,6 @@ src/ganl/src/secure_transport_factory.cpp
 src/ganl/src/telnet_protocol_handler.cpp
 ganl/src/telnet_protocol_handler.cpp
 src/ganl/src/wselect_network_engine.cpp
-src/ganl_adapter.cpp
 src/ganl_adapter.h
 src/help.cpp
 src/help.h
@@ -130,7 +129,6 @@ src/modules.h
 src/move.cpp
 src/mudconf.h
 src/muxcli.h
-src/netaddr.cpp
 src/netcommon.cpp
 src/netmux.sln
 src/netmux.vcxproj
@@ -147,8 +145,6 @@ src/rob.cpp
 src/set.cpp
 src/sha1.cpp
 src/sha1.h
-src/signals.cpp
-src/sitemon.cpp
 src/slave.cpp
 src/speech.cpp
 src/sqlite/sqlite3.c
@@ -166,7 +162,6 @@ src/svdhash.cpp
 src/svdhash.h
 src/svdrand.cpp
 src/svdrand.h
-src/telnet.cpp
 src/timeabsolute.cpp
 src/timedelta.cpp
 src/timeparser.cpp
@@ -181,9 +176,7 @@ src/utf8tables.cpp
 src/utf8tables.h
 src/vattr.cpp
 src/vattr.h
-src/version.cpp
 src/walkdb.cpp
 src/wild.cpp
 src/wiz.cpp
-
 lib/timeparser.cpp
