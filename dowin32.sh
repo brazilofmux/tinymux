@@ -26,12 +26,83 @@ if ! command -v xdelta3 &> /dev/null; then
     exit 1
 fi
 
+# Validate the table-of-contents lists before touching anything.
+#
+# The lists are the whole packaging model: a distribution is the PREVIOUS
+# release plus whatever these name.  A list that contradicts itself or names
+# a file that no longer exists produces a wrong tarball SILENTLY -- every
+# checksum and every signature over the result still verifies, because the
+# archive is intact.  It is just incomplete.  That is how 2.14.0.9 and
+# 2.14.0.10 shipped a win32 source zip missing six sources netmux.vcxproj
+# requires: they were on the copy list AND the delete list, and the delete
+# runs second.
+#
+# Two invariants, both cheap, both failing loudly:
+#   1. removed n (patchable u unpatched) = 0 -- a file cannot both ship and
+#      be deleted; whichever the script does last wins by accident.
+#   2. everything listed to ship exists in the tree -- catches paths left
+#      behind by a move.
+#
+# The stronger check (every source the BUILD SYSTEM names is present in the
+# output) cannot run here: it needs the packaged tree, and it is
+# platform-specific -- Makefile.am on Unix, netmux.vcxproj on Windows.  That
+# seam is exactly where the six hid, so run it against the built artifact.
+#
+validate_toc_lists() {
+    local dist_type=$1
+    local errors=0
+    local ship_list conflict f
+
+    ship_list=$(cat "win32/TOC.$dist_type.patchable" "win32/TOC.$dist_type.unpatched" \
+                | sed 's/\r$//' | grep -v '^[[:space:]]*$' | sort -u)
+
+    conflict=$(comm -12 <(echo "$ship_list") \
+                        <(sed 's/\r$//' "win32/TOC.$dist_type.removed" \
+                          | grep -v '^[[:space:]]*$' | sort -u))
+    if [ -n "$conflict" ]; then
+        echo "ERROR: win32/TOC.$dist_type.* lists both ship and delete these files:"
+        echo "$conflict" | sed 's/^/    /'
+        echo "  A file on the removed list is deleted after it is copied, so it"
+        echo "  never ships.  Remove it from one list or the other."
+        errors=$((errors + 1))
+    fi
+
+    while IFS= read -r f; do
+        [ -z "$f" ] && continue
+        if [ ! -e "$CHANGES_DIR/$f" ]; then
+            echo "ERROR: win32/TOC.$dist_type.* lists '$f', which is not in $CHANGES_DIR/."
+            errors=$((errors + 1))
+        fi
+    done <<< "$ship_list"
+
+    return $errors
+}
+
+echo "Validating table-of-contents lists..."
+toc_errors=0
+for dist_type in src bin; do
+    validate_toc_lists "$dist_type" || toc_errors=$((toc_errors + $?))
+done
+if [ "$toc_errors" -ne 0 ]; then
+    echo "Refusing to build a distribution from inconsistent file lists."
+    exit 1
+fi
+echo "  TOC lists consistent."
+
 # Function to clean files
 clean_files() {
     local dir=$1
     shift
 
     for file in "$@"; do
+        # A blank line in a TOC.removed list arrives here as an empty
+        # element (mapfile -t preserves it; dounix.sh's unquoted word
+        # splitting silently drops it, which is why the same blank line
+        # is harmless there and fatal here).  "$dir/" exists, so without
+        # this guard the loop runs rm on the distribution root itself:
+        # plain rm refuses with "Is a directory" and set -e aborts the
+        # release mid-build.  The rm -rf variant of this would not refuse.
+        [ -z "$file" ] && continue
         if [ -e "$dir/$file" ]; then
             echo "Removing: $dir/$file"
             rm "$dir/$file"
