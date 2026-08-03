@@ -1390,20 +1390,42 @@ CResultsSet::CResultsSet(QUEUE_INFO *pqi) : m_cRef(1), m_nFields(0),
 
                     if (nullptr != m_pRows)
                     {
+                        // Each field is a size_t length header followed by
+                        // that many payload bytes, so advancing past a field
+                        // costs sizeof(size_t) + n.  Verify the header and
+                        // the payload both fit before stepping over them: a
+                        // truncated blob would otherwise read past
+                        // m_pBlob + m_nBlob.
+                        //
                         int i, j;
                         UTF8 *p = m_pBlob;
-                        for (i = 0; i < m_nRows && p < m_pBlob + m_nBlob; i++)
+                        UTF8 *const pEnd = m_pBlob + m_nBlob;
+                        bool bRowError = false;
+                        for (i = 0; i < m_nRows && !bRowError; i++)
                         {
                             m_pRows[i] = p;
-                            for (j = 0; j < m_nFields && p < m_pBlob + m_nBlob; j++)
+                            for (j = 0; j < m_nFields; j++)
                             {
+                                if (static_cast<size_t>(pEnd - p) < sizeof(size_t))
+                                {
+                                    bRowError = true;
+                                    break;
+                                }
                                 size_t n;
                                 memcpy(&n, p, sizeof(size_t));
-                                p += sizeof static_cast<size_t>(+ n);
+                                p += sizeof(size_t);
+                                if (static_cast<size_t>(pEnd - p) < n)
+                                {
+                                    bRowError = true;
+                                    break;
+                                }
+                                p += n;
                             }
                         }
 
-                        if (p == m_pBlob + m_nBlob)
+                        if (  !bRowError
+                           && p == pEnd
+                           && i == m_nRows)
                         {
                             m_bLoaded = true;
                         }
@@ -1456,15 +1478,38 @@ const UTF8 *CResultsSet::NextField(void)
 {
     const UTF8 *pField = nullptr;
     if (  nullptr != m_pCurrentField
+       && nullptr != m_pBlob
        && 0 < m_nFields
        && m_iCurrentField < m_nFields)
     {
-        size_t n;
-
-        m_iCurrentField++;
-        memcpy(&n, m_pCurrentField, sizeof(size_t));
-        m_pCurrentField += sizeof static_cast<size_t>(+ n);
-        pField = m_pCurrentField;
+        // Step over the current field's length header and its payload.  As
+        // in the constructor, the step is sizeof(size_t) + n.  Verify both
+        // parts fit rather than walking off the end of the blob; callers
+        // read the returned pointer as a header followed by a string.
+        //
+        const UTF8 *const pEnd = m_pBlob + m_nBlob;
+        if (  m_pBlob <= m_pCurrentField
+           && m_pCurrentField < pEnd
+           && sizeof(size_t) <= static_cast<size_t>(pEnd - m_pCurrentField))
+        {
+            size_t n;
+            memcpy(&n, m_pCurrentField, sizeof(size_t));
+            const UTF8 *pNext = m_pCurrentField + sizeof(size_t);
+            if (n <= static_cast<size_t>(pEnd - pNext))
+            {
+                m_iCurrentField++;
+                m_pCurrentField = pNext + n;
+                pField = m_pCurrentField;
+            }
+            else
+            {
+                m_pCurrentField = nullptr;
+            }
+        }
+        else
+        {
+            m_pCurrentField = nullptr;
+        }
     }
     return pField;
 }
