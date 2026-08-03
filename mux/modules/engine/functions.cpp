@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "word_scratch.h"
 #include "ast.h"
 #include "art_scan.h"
 #include "sqlite_backend.h"
@@ -19,6 +20,14 @@ extern "C" {
 #include "color_ops.h"
 }
 using namespace std;
+
+// Storage for the shared co_split_words() scratch declared in word_scratch.h.
+// Defined once here so every user shares one copy; see that header for why it
+// is shared and how the single-live-user invariant is enforced.
+//
+thread_local size_t g_word_starts[LBUF_SIZE];
+thread_local size_t g_word_ends[LBUF_SIZE];
+thread_local bool   g_word_scratch_busy = false;
 
 // Factory class declaration — internal to engine.so (no DCL_EXPORT).
 //
@@ -3606,7 +3615,9 @@ static FUNCTION(fun_extract)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(bp);
         size_t nLen = strlen(reinterpret_cast<const char *>(bp));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        CWordScratch ws;
+        size_t *wstarts = ws.starts();
+        size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts, wends, LBUF_SIZE);
@@ -4810,7 +4821,9 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc,
 
     // Parse list into words using co_split_words.
     //
-    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    CWordScratch ws;
+    size_t *wstarts = ws.starts();
+    size_t *wends = ws.ends();
     size_t nWords = co_split_words(pList, nListLen,
                         reinterpret_cast<const unsigned char *>(sep.str),
                         sep.n, wstarts, wends, LBUF_SIZE);
@@ -5062,7 +5075,9 @@ static FUNCTION(fun_remove)
     const unsigned char *pList = reinterpret_cast<const unsigned char *>(fargs[0]);
     size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
 
-    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    CWordScratch ws;
+    size_t *wstarts = ws.starts();
+    size_t *wends = ws.ends();
     size_t nWords = co_split_words(pList, nListLen,
                         reinterpret_cast<const unsigned char *>(sep.str),
                         sep.n, wstarts, wends, LBUF_SIZE);
@@ -7012,7 +7027,9 @@ static FUNCTION(fun_revwords)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        CWordScratch ws;
+        size_t *wstarts = ws.starts();
+        size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts, wends, LBUF_SIZE);
