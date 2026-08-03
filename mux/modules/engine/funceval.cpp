@@ -13,6 +13,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "word_scratch.h"
 #include "list_scratch.h"
 #include "ast.h"
 
@@ -1970,7 +1971,9 @@ FUNCTION(fun_columns)
     const unsigned char *pData = reinterpret_cast<const unsigned char *>(cp);
     size_t nLen_d = strlen(reinterpret_cast<const char *>(cp));
 
-    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    CWordScratch ws;
+    size_t *wstarts = ws.starts();
+    size_t *wends = ws.ends();
     size_t nWords = co_split_words(pData, nLen_d,
                         reinterpret_cast<const unsigned char *>(sep.str),
                         sep.n, wstarts, wends, LBUF_SIZE);
@@ -3593,7 +3596,9 @@ FUNCTION(fun_elements)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        CWordScratch ws;
+        size_t *wstarts = ws.starts();
+        size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts, wends, LBUF_SIZE);

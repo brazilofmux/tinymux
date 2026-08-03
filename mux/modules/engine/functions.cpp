@@ -7,6 +7,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "word_scratch.h"
 #include "list_scratch.h"
 #include "ast.h"
 #include "art_scan.h"
@@ -20,6 +21,14 @@ extern "C" {
 #include "color_ops.h"
 }
 using namespace std;
+
+// Storage for the shared co_split_words() scratch declared in word_scratch.h.
+// Defined once here so every user shares one copy; see that header for why it
+// is shared and how the single-live-user invariant is enforced.
+//
+thread_local size_t g_word_starts[LBUF_SIZE];
+thread_local size_t g_word_ends[LBUF_SIZE];
+thread_local bool   g_word_scratch_busy = false;
 
 // Storage for the shared list2arr() scratch declared in list_scratch.h.
 //
@@ -3613,7 +3622,9 @@ static FUNCTION(fun_extract)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(bp);
         size_t nLen = strlen(reinterpret_cast<const char *>(bp));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        CWordScratch ws;
+        size_t *wstarts = ws.starts();
+        size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts, wends, LBUF_SIZE);
@@ -4817,7 +4828,9 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc,
 
     // Parse list into words using co_split_words.
     //
-    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    CWordScratch ws;
+    size_t *wstarts = ws.starts();
+    size_t *wends = ws.ends();
     size_t nWords = co_split_words(pList, nListLen,
                         reinterpret_cast<const unsigned char *>(sep.str),
                         sep.n, wstarts, wends, LBUF_SIZE);
@@ -5069,7 +5082,9 @@ static FUNCTION(fun_remove)
     const unsigned char *pList = reinterpret_cast<const unsigned char *>(fargs[0]);
     size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
 
-    size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+    CWordScratch ws;
+    size_t *wstarts = ws.starts();
+    size_t *wends = ws.ends();
     size_t nWords = co_split_words(pList, nListLen,
                         reinterpret_cast<const unsigned char *>(sep.str),
                         sep.n, wstarts, wends, LBUF_SIZE);
@@ -7019,7 +7034,9 @@ static FUNCTION(fun_revwords)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        size_t wstarts[LBUF_SIZE], wends[LBUF_SIZE];
+        CWordScratch ws;
+        size_t *wstarts = ws.starts();
+        size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts, wends, LBUF_SIZE);
@@ -9631,12 +9648,28 @@ static FUNCTION(fun_sortkey)
     //
     UTF8 *list = alloc_lbuf("fun_sortkey.list");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
-    UTF8 *ptrs[LBUF_SIZE / 2];
-    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+
+    // These arrays live on the heap, and deliberately not in the shared
+    // thread_local scratch the set functions above use.  fun_sortkey
+    // evaluates softcode once per element (the ast_exec below), so it can
+    // re-enter itself: shared storage would be clobbered by the nested call,
+    // and as stack locals at LBUF_SIZE/2 they made this frame ~656 KB, which
+    // each nesting level would pay again.
+    //
+    // Sized to what the list can actually hold rather than the worst case:
+    // n items need n-1 separator characters, so n <= strlen(list) + 1.
+    //
+    size_t nMax = strlen(reinterpret_cast<const char *>(list)) + 1;
+    if (LBUF_SIZE / 2 < nMax)
+    {
+        nMax = LBUF_SIZE / 2;
+    }
+    std::vector<UTF8 *> ptrs(nMax);
+    int nitems = list2arr(ptrs.data(), static_cast<int>(nMax), list, sep);
 
     if (nitems <= 1)
     {
-        arr2list(ptrs, nitems, buff, bufc, osep);
+        arr2list(ptrs.data(), nitems, buff, bufc, osep);
         free_lbuf(list);
         free_lbuf(atext);
         return;
@@ -9644,7 +9677,7 @@ static FUNCTION(fun_sortkey)
 
     // Compute a sort key for each element.
     //
-    UTF8 *keys[LBUF_SIZE / 2];
+    std::vector<UTF8 *> keys(nitems);
     int nkeys = 0;
     for (int i = 0; i < nitems; i++)
     {
@@ -9694,7 +9727,7 @@ static FUNCTION(fun_sortkey)
         case '\0':
             {
                 AutoDetect ad;
-                ad.ExamineList(nitems, keys);
+                ad.ExamineList(nitems, keys.data());
                 sort_type = ad.GetType();
             }
             break;
@@ -9703,7 +9736,7 @@ static FUNCTION(fun_sortkey)
     else
     {
         AutoDetect ad;
-        ad.ExamineList(nitems, keys);
+        ad.ExamineList(nitems, keys.data());
         sort_type = ad.GetType();
     }
 
@@ -9714,7 +9747,7 @@ static FUNCTION(fun_sortkey)
     // Build parallel arrays: save original (key, element) pairs.
     //
     struct sk_pair { UTF8 *key; UTF8 *elem; };
-    sk_pair pairs[LBUF_SIZE / 2];
+    std::vector<sk_pair> pairs(nitems);
     for (int i = 0; i < nitems; i++)
     {
         pairs[i].key  = keys[i];
@@ -9731,7 +9764,7 @@ static FUNCTION(fun_sortkey)
         switch (sort_type)
         {
         case NUMERIC_LIST:
-            std::sort(pairs, pairs + nitems,
+            std::sort(pairs.begin(), pairs.begin() + nitems,
                 [](const sk_pair &a, const sk_pair &b) {
                     return mux_atoi64(strip_color(a.key))
                          < mux_atoi64(strip_color(b.key));
@@ -9739,7 +9772,7 @@ static FUNCTION(fun_sortkey)
             break;
 
         case DBREF_LIST:
-            std::sort(pairs, pairs + nitems,
+            std::sort(pairs.begin(), pairs.begin() + nitems,
                 [](const sk_pair &a, const sk_pair &b) {
                     return dbnum(strip_color(a.key))
                          < dbnum(strip_color(b.key));
@@ -9747,7 +9780,7 @@ static FUNCTION(fun_sortkey)
             break;
 
         case FLOAT_LIST:
-            std::sort(pairs, pairs + nitems,
+            std::sort(pairs.begin(), pairs.begin() + nitems,
                 [](const sk_pair &a, const sk_pair &b) {
                     return mux_atof(strip_color(a.key), false)
                          < mux_atof(strip_color(b.key), false);
@@ -9755,13 +9788,13 @@ static FUNCTION(fun_sortkey)
             break;
         }
 
-        UTF8 *sorted[LBUF_SIZE / 2];
+        std::vector<UTF8 *> sorted(nitems);
         for (int i = 0; i < nitems; i++)
         {
             sorted[i] = pairs[i].elem;
         }
 
-        arr2list(sorted, nitems, buff, bufc, osep);
+        arr2list(sorted.data(), nitems, buff, bufc, osep);
 
         for (int i = 0; i < nitems; i++)
         {
@@ -9773,7 +9806,7 @@ static FUNCTION(fun_sortkey)
     }
 
     SortContext sc;
-    if (do_asort_start(&sc, nitems, keys, sort_type))
+    if (do_asort_start(&sc, nitems, keys.data(), sort_type))
     {
         do_asort_finish(&sc);
     }
@@ -9781,9 +9814,8 @@ static FUNCTION(fun_sortkey)
     // keys[] is now sorted.  For each sorted position, find the original
     // pair by pointer identity and emit the corresponding element.
     //
-    UTF8 *sorted[LBUF_SIZE / 2];
-    bool used[LBUF_SIZE / 2];
-    memset(used, 0, sizeof(bool) * nitems);
+    std::vector<UTF8 *> sorted(nitems);
+    std::vector<char> used(nitems, 0);
 
     for (int i = 0; i < nitems; i++)
     {
@@ -9798,7 +9830,7 @@ static FUNCTION(fun_sortkey)
         }
     }
 
-    arr2list(sorted, nitems, buff, bufc, osep);
+    arr2list(sorted.data(), nitems, buff, bufc, osep);
 
     for (int i = 0; i < nitems; i++)
     {
@@ -13762,6 +13794,55 @@ static FUNCTION(fun_unique)
 // Grapheme clusters are compared by raw UTF-8 byte order (same collation
 // as sort(,a)).  Color codes are stripped.
 //
+// Shared grapheme-cluster scratch.
+//
+// gc_extract() and the strsort/strunique cluster walks each report one entry
+// per grapheme cluster, so these tables must be dimensioned LBUF_SIZE.  At
+// LBUF_SIZE 32768 that is 512 KB apiece -- far too much to carry on the stack
+// of an ordinary string function.  8165820f2 introduced them for the three set
+// functions; fun_strsort and fun_strunique need the same table and each kept a
+// private copy on the stack, so they share these instead.
+//
+// Shared because no two users are ever live at the same time: all five are
+// leaves with respect to softcode -- none evaluate (no ast_exec/mux_exec/
+// jit_eval) and none call each other -- so a second activation cannot come
+// into existence while a first holds the scratch.
+//
+// CGraphemeScratch enforces that rather than trusting it.  Two live users
+// would interleave their cluster tables and produce silently wrong output,
+// which is a worse failure than the stack pressure this removes, so claiming
+// the scratch twice trips the assertion instead.
+//
+struct StrGC { const UTF8 *p; size_t n; };
+
+static thread_local StrGC s_gc_a[LBUF_SIZE];
+static thread_local StrGC s_gc_b[LBUF_SIZE];
+static thread_local StrGC s_gc_c[LBUF_SIZE];
+static thread_local bool  s_gc_busy = false;
+
+class CGraphemeScratch
+{
+public:
+    CGraphemeScratch(void)
+    {
+        mux_assert(!s_gc_busy);
+        s_gc_busy = true;
+    }
+
+    ~CGraphemeScratch()
+    {
+        s_gc_busy = false;
+    }
+
+    StrGC *a(void) const { return s_gc_a; }
+    StrGC *b(void) const { return s_gc_b; }
+    StrGC *c(void) const { return s_gc_c; }
+
+private:
+    CGraphemeScratch(const CGraphemeScratch &);
+    CGraphemeScratch &operator=(const CGraphemeScratch &);
+};
+
 static FUNCTION(fun_strsort)
 {
     UNUSED_PARAMETER(executor);
@@ -13781,8 +13862,8 @@ static FUNCTION(fun_strsort)
 
     // Collect grapheme clusters as (pointer, length) pairs.
     //
-    struct GC { const UTF8 *p; size_t n; };
-    GC clusters[LBUF_SIZE];
+    CGraphemeScratch gs;
+    StrGC *clusters = gs.a();
     int nClusters = 0;
 
     size_t nRemaining = nBytes;
@@ -13809,11 +13890,11 @@ static FUNCTION(fun_strsort)
 
     // Sort by UTF-8 byte comparison.
     //
-    qsort(clusters, nClusters, sizeof(GC),
+    qsort(clusters, nClusters, sizeof(StrGC),
         [](const void *a, const void *b) -> int
         {
-            const GC *ga = static_cast<const GC *>(a);
-            const GC *gb = static_cast<const GC *>(b);
+            const StrGC *ga = static_cast<const StrGC *>(a);
+            const StrGC *gb = static_cast<const StrGC *>(b);
             size_t nMin = (ga->n < gb->n) ? ga->n : gb->n;
             int cmp = memcmp(ga->p, gb->p, nMin);
             if (0 != cmp) return cmp;
@@ -13851,8 +13932,8 @@ static FUNCTION(fun_strunique)
 
     // Collect grapheme clusters.
     //
-    struct GC { const UTF8 *p; size_t n; };
-    GC seen[LBUF_SIZE];
+    CGraphemeScratch gs;
+    StrGC *seen = gs.a();
     int nSeen = 0;
 
     size_t nRemaining = nBytes;
@@ -13908,8 +13989,6 @@ static FUNCTION(fun_strunique)
 // strdiff(s1, s2)   -- clusters in s1 not in s2
 // strinter(s1, s2)  -- clusters in both s1 and s2, in s1 order
 // ---------------------------------------------------------------------------
-
-struct StrGC { const UTF8 *p; size_t n; };
 
 static bool gc_equal(const StrGC &a, const StrGC &b)
 {
@@ -13984,9 +14063,6 @@ static void gc_extract_pair(
 // pure), so no two activations are ever live on one thread at the same time.
 //
 static thread_local UTF8  set_buf1[LBUF_SIZE];
-static thread_local StrGC set_gc1[LBUF_SIZE];
-static thread_local StrGC set_gc2[LBUF_SIZE];
-static thread_local StrGC set_seen[LBUF_SIZE];
 
 static FUNCTION(fun_strunion)
 {
@@ -14003,7 +14079,8 @@ static FUNCTION(fun_strunion)
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
+    CGraphemeScratch gs;
+    StrGC *gc1 = gs.a(), *gc2 = gs.b();
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14019,7 +14096,7 @@ static FUNCTION(fun_strunion)
 
     // Emit unique clusters from s1, then unique clusters from s2 not in s1.
     //
-    StrGC *seen = set_seen;
+    StrGC *seen = gs.c();
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
@@ -14061,7 +14138,8 @@ static FUNCTION(fun_strdiff)
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
+    CGraphemeScratch gs;
+    StrGC *gc1 = gs.a(), *gc2 = gs.b();
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14077,7 +14155,7 @@ static FUNCTION(fun_strdiff)
 
     // Emit unique clusters from s1 that do not appear in s2.
     //
-    StrGC *seen = set_seen;
+    StrGC *seen = gs.c();
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
@@ -14109,7 +14187,8 @@ static FUNCTION(fun_strinter)
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
+    CGraphemeScratch gs;
+    StrGC *gc1 = gs.a(), *gc2 = gs.b();
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14125,7 +14204,7 @@ static FUNCTION(fun_strinter)
 
     // Emit unique clusters from s1 that also appear in s2.
     //
-    StrGC *seen = set_seen;
+    StrGC *seen = gs.c();
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
