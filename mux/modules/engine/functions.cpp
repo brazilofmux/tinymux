@@ -8,6 +8,7 @@
 #include "config.h"
 #include "externs.h"
 #include "word_scratch.h"
+#include "list_scratch.h"
 #include "ast.h"
 #include "art_scan.h"
 #include "sqlite_backend.h"
@@ -28,6 +29,12 @@ using namespace std;
 thread_local size_t g_word_starts[LBUF_SIZE];
 thread_local size_t g_word_ends[LBUF_SIZE];
 thread_local bool   g_word_scratch_busy = false;
+
+// Storage for the shared list2arr() scratch declared in list_scratch.h.
+//
+thread_local UTF8 *g_list_ptrs_a[LBUF_SIZE / 2];
+thread_local UTF8 *g_list_ptrs_b[LBUF_SIZE / 2];
+thread_local bool  g_list_scratch_busy = false;
 
 // Factory class declaration — internal to engine.so (no DCL_EXPORT).
 //
@@ -9465,7 +9472,8 @@ static FUNCTION(fun_sort)
         return;
     }
 
-    UTF8 *ptrs[LBUF_SIZE / 2];
+    CListScratch ls;
+    UTF8 **ptrs = ls.a();
 
     // Convert the list to an array.
     //
@@ -9557,7 +9565,8 @@ size_t sort_to_buffer(const UTF8 *list_in, char sort_type_char,
     sep.str[0] = delim;
     sep.str[1] = '\0';
 
-    UTF8 *ptrs[LBUF_SIZE / 2];
+    CListScratch ls;
+    UTF8 **ptrs = ls.a();
     int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
 
     int sort_type = ASCII_LIST;
@@ -13743,13 +13752,14 @@ static FUNCTION(fun_unique)
         return;
     }
 
-    UTF8 *arr[LBUF_SIZE / 2];
+    CListScratch ls;
+    UTF8 **arr = ls.a();
     int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
 
     // Track seen words with a simple linear scan (adequate for MUX lists).
     //
     bool bFirst = true;
-    UTF8 *seen[LBUF_SIZE / 2];
+    UTF8 **seen = ls.b();
     int nSeen = 0;
 
     for (int i = 0; i < nWords; i++)
@@ -14231,7 +14241,8 @@ static FUNCTION(fun_linsert)
         return;
     }
 
-    UTF8 *arr[LBUF_SIZE / 2];
+    CListScratch ls;
+    UTF8 **arr = ls.a();
     int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
     int64_t pos = mux_atoi64(fargs[1]);
 
@@ -14814,7 +14825,8 @@ static FUNCTION(fun_lreplace)
         return;
     }
 
-    UTF8 *arr[LBUF_SIZE / 2];
+    CListScratch ls;
+    UTF8 **arr = ls.a();
     int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
     int64_t pos = mux_atoi64(fargs[1]);
 

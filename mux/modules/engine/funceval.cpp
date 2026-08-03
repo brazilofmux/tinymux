@@ -14,6 +14,7 @@
 #include "config.h"
 #include "externs.h"
 #include "word_scratch.h"
+#include "list_scratch.h"
 #include "ast.h"
 
 extern "C" {
@@ -3983,13 +3984,14 @@ FUNCTION(fun_caplist)
 
     // First pass: collect words to determine first/last.
     //
-    UTF8 *words[LBUF_SIZE / 2];
+    CListScratch ls;
+    UTF8 **words = ls.a();
     int nWords = 0;
     UTF8 *bp = trim_space_sep(fargs[0], sep);
     while (bp)
     {
         words[nWords++] = split_token(&bp, sep);
-        if (nWords >= static_cast<int>(sizeof(words)/sizeof(words[0])))
+        if (nWords >= static_cast<int>(LBUF_SIZE / 2))
         {
             break;
         }
@@ -4348,7 +4350,8 @@ FUNCTION(fun_wrapcolumns)
     // overwritten in place, which previously dropped one character per
     // hard break.
     //
-    UTF8 *lines[LBUF_SIZE / 2];
+    CListScratch ls;
+    UTF8 **lines = ls.a();
     int nLines = 0;
 
     UTF8 wrapbuf[LBUF_SIZE];
@@ -4357,7 +4360,7 @@ FUNCTION(fun_wrapcolumns)
 
     UTF8 *src = fargs[0];
     while (  *src
-          && nLines < static_cast<int>(sizeof(lines)/sizeof(lines[0]))
+          && nLines < static_cast<int>(LBUF_SIZE / 2)
           && wp < wpEnd)
     {
         int len = strlen(reinterpret_cast<const char*>(src));
