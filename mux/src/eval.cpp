@@ -1452,9 +1452,14 @@ void mux_exec( const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref exe
                     nFun = LBUF_SIZE - 1;
                 }
 
-                // Uppercase the function name (Unicode-aware).
+                // Uppercase the function name (Unicode-aware).  static, like
+                // mux_scratch, keeps this 8000-byte scratch off mux_exec's
+                // stack frame -- mux_exec recurses, so on the stack it added
+                // ~8K per nesting level and let a deep u() overflow the stack
+                // before func_nest_lim could stop it.  Safe as static: written
+                // and consumed here with no re-entry between.
                 //
-                UTF8 TempFun[LBUF_SIZE];
+                static UTF8 TempFun[LBUF_SIZE];
                 memcpy(TempFun, oldp, nFun);
                 TempFun[nFun] = '\0';
                 size_t nUpper;
