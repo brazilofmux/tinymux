@@ -10,6 +10,13 @@
 
 namespace ganl {
 
+// Largest inbound telnet subnegotiation accepted before it is treated as a
+// protocol error.  Real client subnegotiations -- TTYPE, NAWS, CHARSET,
+// NEW-ENVIRON, MNES -- are a handful of bytes to a few hundred; this is
+// generous by an order of magnitude and exists only to stop an unterminated
+// "IAC SB" from growing without bound.
+static constexpr size_t kMaxSubnegotiationBytes = 4096;
+
     // Helper to safely check map value (returns false if key not found)
     inline bool checkMapFlag(const std::map<TelnetOption, bool>& map, TelnetOption key) {
         auto it = map.find(key);
@@ -494,6 +501,28 @@ namespace ganl {
             case ParserState::Subnegotiation:
                 if (uc == static_cast<unsigned char>(TelnetCommand::IAC)) {
                     context.parserState = ParserState::Subnegotiation_IAC;
+                }
+                else if (context.subnegotiationBuffer.size() >= kMaxSubnegotiationBytes) {
+                    // A client that sends "IAC SB <opt>" and never "IAC SE"
+                    // otherwise pins the parser here for the life of the
+                    // connection: every later byte is appended to this buffer
+                    // instead of being parsed, so the buffer grows without
+                    // bound AND all subsequent input is swallowed.  Remote and
+                    // unauthenticated.  The negotiation timeout does not cover
+                    // it -- that only runs while currentNegotiationStatus is
+                    // InProgress, and a subnegotiation opened after negotiation
+                    // completes is never revisited.
+                    //
+                    // Treated as a protocol error using this parser's existing
+                    // idiom (see the invalid-byte case below), so the caller
+                    // closes the connection as it already does for malformed
+                    // telnet.
+                    GANL_TELNET_DEBUG(conn, "Sub: Error! subnegotiation exceeded "
+                        << kMaxSubnegotiationBytes << " bytes without IAC SE.");
+                    context.subnegotiationBuffer.clear();
+                    context.parserState = ParserState::Normal;
+                    context.lastError = "Telnet subnegotiation too long";
+                    processedOk = false;
                 }
                 else {
                     context.subnegotiationBuffer.push_back(static_cast<char>(uc));
