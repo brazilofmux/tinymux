@@ -157,7 +157,16 @@ ListenerHandle EpollNetworkEngine::createListener(const std::string& host, uint1
 
         if (ai->ai_family == AF_INET6) {
             int disable = 0;
-            setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
+            // Dual-stack is requested by clearing IPV6_V6ONLY, but a kernel may
+            // refuse it (e.g. FreeBSD with net.inet6.ip6.v6only=1).  The result
+            // was discarded, so the listener silently bound IPv6-only and IPv4
+            // clients simply could not connect, with nothing said (2.14 #739).
+            // Warn and carry on: degraded, not fatal.
+            if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable)) != 0) {
+                std::cerr << "[Epoll:CTL] WARNING: could not clear IPV6_V6ONLY ("
+                          << strerror(errno) << "); this listener is IPv6-only "
+                             "and will not accept IPv4 clients." << std::endl;
+            }
         }
 
         if (bind(fd, ai->ai_addr, static_cast<socklen_t>(ai->ai_addrlen)) == -1) {
