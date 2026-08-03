@@ -444,7 +444,16 @@ void SelectNetworkEngine::closeConnection(ConnectionHandle conn) {
     // Remove from tracking under lock
     {
         std::lock_guard<std::mutex> lock(mutex_);
-         if (!initialized_ && sockets_.find(fd) == sockets_.end()) {
+         // A not-found fd must ALWAYS no-op, running or not (2.14 #947).  The
+         // caller's ConnectionBase::handleClose re-closes defensively after the
+         // engine has already released the fd, so with the old !initialized_
+         // conjunct a running engine fell through to closeSocket() on a raw fd
+         // number that may since have been reused -- tearing down an unrelated
+         // descriptor.  epoll and kqueue in this same release already no-op on
+         // a not-found fd; this makes select match them.  Engine-shutdown
+         // closes still proceed, because shutdown() keeps fds mapped while it
+         // closes them.
+         if (sockets_.find(fd) == sockets_.end()) {
              GANL_SELECT_DEBUG(fd, "Connection already removed or engine shutdown.");
              return; // Avoid closing FD twice
         }
