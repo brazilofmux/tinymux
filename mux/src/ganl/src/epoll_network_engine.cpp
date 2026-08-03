@@ -584,9 +584,23 @@ bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size
 // --- Event Processing ---
 
 int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEvents) {
-    // ... (epoll_wait call as before) ...
     int nfds = epoll_wait(epollFd_, epollEvents_.data(), epollEvents_.size(), timeoutMs);
-    // ... (error handling for nfds == -1 as before) ...
+
+    // 2.14 #791.  This was a `// ... error handling as before ...` placeholder:
+    // on -1 the nfds==0 branch was skipped, the loop below never ran (nfds is
+    // negative) and the function returned 0.  The caller then read "no events,
+    // returned immediately" and re-polled with no delay -- a silent 100% CPU
+    // spin on a real error, and EINTR was indistinguishable from a timeout.
+    // Contract copied verbatim from the select and kqueue engines in this same
+    // release, which both already do exactly this.
+    if (nfds == -1) {
+        if (errno == EINTR) {
+            GANL_EPOLL_DEBUG(epollFd_, "epoll_wait interrupted by signal (EINTR).");
+            return 0; // Interrupted, no events processed
+        }
+        std::cerr << "[Epoll:CTL] CRITICAL: epoll_wait failed: " << strerror(errno) << std::endl;
+        return -1; // Indicate critical error
+    }
 
     int eventCount = 0; // Number of IoEvent entries filled
 
