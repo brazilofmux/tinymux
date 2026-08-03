@@ -145,10 +145,14 @@ include/mguests.h
 include/misc.h
 include/modules.h
 include/mudconf.h
+include/mux_format.h
+include/mux_nls.h
+include/mux_table.h
 include/muxcli.h
 include/powers.h
 include/routing.h
 include/sha1.h
+include/shacrypt.h
 include/walk.h
 include/sql.h
 include/sqlite_backend.h
@@ -174,7 +178,10 @@ lib/libmux.cpp
 lib/Makefile.am
 lib/Makefile.in
 lib/mathutil.cpp
+lib/mux_nls.cpp
+lib/mux_table.c
 lib/sha1.cpp
+lib/shacrypt.cpp
 lib/stringutil.cpp
 lib/strtod.cpp
 lib/svdhash.cpp
