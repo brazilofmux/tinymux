@@ -190,3 +190,6 @@ src/wild.cpp
 src/wiz.cpp
 src/.depend
 src/modules/.depend
+
+lib/timeparser.cpp
+src/modules/Makefile

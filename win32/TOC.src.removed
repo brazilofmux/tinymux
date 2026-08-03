@@ -185,3 +185,5 @@ src/version.cpp
 src/walkdb.cpp
 src/wild.cpp
 src/wiz.cpp
+
+lib/timeparser.cpp
