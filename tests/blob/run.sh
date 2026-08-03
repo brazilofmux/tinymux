@@ -12,7 +12,11 @@
 #   that rebuilds it (testcases/tools/Build.sh) downgraded the failure
 #   to a warning and copied the stale artifact.
 #
-#   Two checks, because they have different portability:
+#   Three checks, because they have different portability:
+#
+#   0. DO THE TWO COMMITTED COPIES AGREE.  mux/rv64/ and
+#      mux/game/bin/ are both committed and can drift apart.
+#      Needs no compiler, so it runs everywhere.
 #
 #   1. DOES IT BUILD.  Runs anywhere a cross-compiler exists, whatever
 #      its version.  This is the check that would have caught #1402.
@@ -47,6 +51,52 @@ hash_of() {
     fi
 }
 
+# ---- Check 0: do the two committed copies agree?  Portable everywhere. ----
+#
+#   `make -C mux/rv64 install` copies the artifact to mux/game/bin/, and BOTH
+#   copies are committed.  They can therefore drift independently, and did:
+#   241c89bd8 regenerated mux/rv64/softlib.rv64 and left game/bin/ holding the
+#   previous binary, so master carried two different blobs at once for several
+#   hours.  Nothing noticed, because each copy is self-consistent on its own
+#   and the checks below only ever looked at mux/rv64/.
+#
+#   game/bin/ is the copy a fresh checkout has without running the rv64 install
+#   step, so it is the one an unsuspecting build actually loads.
+#
+#   This is a plain file comparison with no cross-compiler involved, so unlike
+#   everything below it runs on every box -- including Windows and end-user
+#   machines, which cannot build the blob at all.
+
+INSTALLED="$REPO_ROOT/mux/game/bin/softlib.rv64"
+
+if [ ! -f "$SHIPPED" ]; then
+    echo "FAIL: $SHIPPED is missing."
+    exit 1
+fi
+
+if [ ! -f "$INSTALLED" ]; then
+    echo "FAIL: $INSTALLED is missing."
+    echo "  Both copies are committed artifacts.  Restore it with:"
+    echo "      make -C mux/rv64 install"
+    exit 1
+fi
+
+if [ "$(hash_of "$SHIPPED")" != "$(hash_of "$INSTALLED")" ]; then
+    echo "FAIL: the two committed copies of softlib.rv64 disagree."
+    echo "  mux/rv64/softlib.rv64:     $(hash_of "$SHIPPED")"
+    echo "  mux/game/bin/softlib.rv64: $(hash_of "$INSTALLED")"
+    echo
+    echo "  Regenerating the blob updates mux/rv64/; only 'install' copies it"
+    echo "  to game/bin/.  A regeneration commit that forgets the second file"
+    echo "  leaves the tree with two different blobs, each looking correct in"
+    echo "  isolation.  Fix with:"
+    echo "      make -C mux/rv64 install"
+    echo "  and commit BOTH paths."
+    exit 1
+fi
+
+echo "ok: both committed copies of softlib.rv64 agree."
+
 CC_RV=""
 for cand in riscv-none-elf-gcc riscv64-unknown-elf-gcc riscv64-linux-gnu-gcc; do
     if command -v "$cand" >/dev/null 2>&1; then
@@ -59,11 +109,6 @@ if [ -z "$CC_RV" ]; then
     echo "SKIP: no RISC-V cross-compiler on this box (the normal case for"
     echo "      end users, and for Windows, which cannot build the blob)."
     exit 0
-fi
-
-if [ ! -f "$SHIPPED" ]; then
-    echo "FAIL: $SHIPPED is missing."
-    exit 1
 fi
 
 HERE="$($CC_RV -dumpmachine) $($CC_RV -dumpversion)"
