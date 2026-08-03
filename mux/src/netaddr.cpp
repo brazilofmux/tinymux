@@ -558,7 +558,22 @@ mux_subnet *parse_subnet(UTF8 *str, const dbref player, UTF8 *cmd)
             return nullptr;
         }
 
-        num_leading_bits = mux_atol(mask_txt);
+        // Range-check the prefix before narrowing it.  num_leading_bits is
+        // an int, so a value such as /4294967296 truncates to 0 on
+        // assignment, passes the family checks below, and builds a mask of
+        // 0.0.0.0 -- one that matches every address.  mux_atol returns long,
+        // which is 32 bits on Windows and would truncate the same way, so
+        // read the value as int64_t.  128 is the widest prefix any family
+        // accepts; the family-specific checks below still apply.
+        //
+        const int64_t nMaskBits = mux_atoi64(mask_txt);
+        if (  nMaskBits < 0
+           || 128 < nMaskBits)
+        {
+            cf_log_syntax(player, cmd, T("Mask bits (%s) in CIDR IP prefix out of range."), mask_txt);
+            return nullptr;
+        }
+        num_leading_bits = static_cast<int>(nMaskBits);
     }
 
     n = 0;
