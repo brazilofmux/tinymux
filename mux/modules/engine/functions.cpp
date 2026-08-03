@@ -9622,12 +9622,28 @@ static FUNCTION(fun_sortkey)
     //
     UTF8 *list = alloc_lbuf("fun_sortkey.list");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
-    UTF8 *ptrs[LBUF_SIZE / 2];
-    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+
+    // These arrays live on the heap, and deliberately not in the shared
+    // thread_local scratch the set functions above use.  fun_sortkey
+    // evaluates softcode once per element (the ast_exec below), so it can
+    // re-enter itself: shared storage would be clobbered by the nested call,
+    // and as stack locals at LBUF_SIZE/2 they made this frame ~656 KB, which
+    // each nesting level would pay again.
+    //
+    // Sized to what the list can actually hold rather than the worst case:
+    // n items need n-1 separator characters, so n <= strlen(list) + 1.
+    //
+    size_t nMax = strlen(reinterpret_cast<const char *>(list)) + 1;
+    if (LBUF_SIZE / 2 < nMax)
+    {
+        nMax = LBUF_SIZE / 2;
+    }
+    std::vector<UTF8 *> ptrs(nMax);
+    int nitems = list2arr(ptrs.data(), static_cast<int>(nMax), list, sep);
 
     if (nitems <= 1)
     {
-        arr2list(ptrs, nitems, buff, bufc, osep);
+        arr2list(ptrs.data(), nitems, buff, bufc, osep);
         free_lbuf(list);
         free_lbuf(atext);
         return;
@@ -9635,7 +9651,7 @@ static FUNCTION(fun_sortkey)
 
     // Compute a sort key for each element.
     //
-    UTF8 *keys[LBUF_SIZE / 2];
+    std::vector<UTF8 *> keys(nitems);
     int nkeys = 0;
     for (int i = 0; i < nitems; i++)
     {
@@ -9685,7 +9701,7 @@ static FUNCTION(fun_sortkey)
         case '\0':
             {
                 AutoDetect ad;
-                ad.ExamineList(nitems, keys);
+                ad.ExamineList(nitems, keys.data());
                 sort_type = ad.GetType();
             }
             break;
@@ -9694,7 +9710,7 @@ static FUNCTION(fun_sortkey)
     else
     {
         AutoDetect ad;
-        ad.ExamineList(nitems, keys);
+        ad.ExamineList(nitems, keys.data());
         sort_type = ad.GetType();
     }
 
@@ -9705,7 +9721,7 @@ static FUNCTION(fun_sortkey)
     // Build parallel arrays: save original (key, element) pairs.
     //
     struct sk_pair { UTF8 *key; UTF8 *elem; };
-    sk_pair pairs[LBUF_SIZE / 2];
+    std::vector<sk_pair> pairs(nitems);
     for (int i = 0; i < nitems; i++)
     {
         pairs[i].key  = keys[i];
@@ -9722,7 +9738,7 @@ static FUNCTION(fun_sortkey)
         switch (sort_type)
         {
         case NUMERIC_LIST:
-            std::sort(pairs, pairs + nitems,
+            std::sort(pairs.begin(), pairs.begin() + nitems,
                 [](const sk_pair &a, const sk_pair &b) {
                     return mux_atoi64(strip_color(a.key))
                          < mux_atoi64(strip_color(b.key));
@@ -9730,7 +9746,7 @@ static FUNCTION(fun_sortkey)
             break;
 
         case DBREF_LIST:
-            std::sort(pairs, pairs + nitems,
+            std::sort(pairs.begin(), pairs.begin() + nitems,
                 [](const sk_pair &a, const sk_pair &b) {
                     return dbnum(strip_color(a.key))
                          < dbnum(strip_color(b.key));
@@ -9738,7 +9754,7 @@ static FUNCTION(fun_sortkey)
             break;
 
         case FLOAT_LIST:
-            std::sort(pairs, pairs + nitems,
+            std::sort(pairs.begin(), pairs.begin() + nitems,
                 [](const sk_pair &a, const sk_pair &b) {
                     return mux_atof(strip_color(a.key), false)
                          < mux_atof(strip_color(b.key), false);
@@ -9746,13 +9762,13 @@ static FUNCTION(fun_sortkey)
             break;
         }
 
-        UTF8 *sorted[LBUF_SIZE / 2];
+        std::vector<UTF8 *> sorted(nitems);
         for (int i = 0; i < nitems; i++)
         {
             sorted[i] = pairs[i].elem;
         }
 
-        arr2list(sorted, nitems, buff, bufc, osep);
+        arr2list(sorted.data(), nitems, buff, bufc, osep);
 
         for (int i = 0; i < nitems; i++)
         {
@@ -9764,7 +9780,7 @@ static FUNCTION(fun_sortkey)
     }
 
     SortContext sc;
-    if (do_asort_start(&sc, nitems, keys, sort_type))
+    if (do_asort_start(&sc, nitems, keys.data(), sort_type))
     {
         do_asort_finish(&sc);
     }
@@ -9772,9 +9788,8 @@ static FUNCTION(fun_sortkey)
     // keys[] is now sorted.  For each sorted position, find the original
     // pair by pointer identity and emit the corresponding element.
     //
-    UTF8 *sorted[LBUF_SIZE / 2];
-    bool used[LBUF_SIZE / 2];
-    memset(used, 0, sizeof(bool) * nitems);
+    std::vector<UTF8 *> sorted(nitems);
+    std::vector<char> used(nitems, 0);
 
     for (int i = 0; i < nitems; i++)
     {
@@ -9789,7 +9804,7 @@ static FUNCTION(fun_sortkey)
         }
     }
 
-    arr2list(sorted, nitems, buff, bufc, osep);
+    arr2list(sorted.data(), nitems, buff, bufc, osep);
 
     for (int i = 0; i < nitems; i++)
     {
