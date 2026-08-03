@@ -4,6 +4,7 @@
 #include "network_types.h"
 
 #include <chrono>
+#include <exception>
 #include <cstring>
 #include <cstdlib>
 #include <cstdio>
@@ -1806,7 +1807,40 @@ void GanlAdapter::run_main_loop() {
                 if (conn) {
                     // Event context should be the ConnectionBase* itself
                     if (events[i].context == conn.get()) {
-                        conn->handleNetworkEvent(events[i]);
+                        // Exception barrier (#2006).  A throw from the per-
+                        // connection I/O path (IoBuffer accounting throws
+                        // out_of_range, ensureWritable's resize throws
+                        // bad_alloc, ...) reaches no catch site between here
+                        // and main(), so it becomes std::terminate ->
+                        // abort() -> SIGABRT, which signals.cpp exits
+                        // without dump_restart_db() -- strictly worse than a
+                        // segfault on the same line, which self-heals.
+                        // Contain it to this connection instead.  Unlike
+                        // send_data, it IS safe to close here: conn is a
+                        // local shared_ptr that outlives close(), and we
+                        // touch neither conn nor events[i] afterward.
+                        //
+                        // The close() below is itself wrapped.  2.14 calls it
+                        // bare, but the demonstrated trigger for this issue
+                        // was a throw from close(), which would then escape
+                        // the handler and abort anyway.  A connection left
+                        // half-closed is reaped by the idle path; a barrier
+                        // that can abort is not a barrier.
+                        try {
+                            conn->handleNetworkEvent(events[i]);
+                        } catch (const std::exception& e) {
+                            Log.tinyprintf(T("GANL: exception in event handler for handle %llu (%s); closing.\n"),
+                                static_cast<unsigned long long>(events[i].connection), e.what());
+                            try {
+                                conn->close(ganl::DisconnectReason::NetworkError);
+                            } catch (...) { }
+                        } catch (...) {
+                            Log.tinyprintf(T("GANL: unknown exception in event handler for handle %llu; closing.\n"),
+                                static_cast<unsigned long long>(events[i].connection));
+                            try {
+                                conn->close(ganl::DisconnectReason::NetworkError);
+                            } catch (...) { }
+                        }
                     }
                     else {
                         Log.tinyprintf(T("GANL: Mismatched context for event on handle %llu\n"),
@@ -1934,7 +1968,36 @@ void GanlAdapter::process_tinyMUX_tasks() {
     }
 
     // Run scheduled tasks (timers, idle checks, @daily, DB checkpoints).
-    scheduler.RunTasks(ltaNow);
+    //
+    // Exception barrier (#2006).  This is the larger of the two unguarded
+    // surfaces, and the one the issue's own fault injection actually
+    // travels: a failed login reaches close_connection from
+    // Task_ProcessCommand -> do_command -> check_connect ->
+    // ganl_close_connection, i.e. from a queued command under this call,
+    // never through the handleNetworkEvent dispatch in run_main_loop.
+    // Everything softcode does -- command parsing, function evaluation,
+    // mail, @dump -- runs here, and all of it allocates.  With no catch
+    // site between this frame and main(), a throw becomes std::terminate
+    // -> abort() -> SIGABRT, and signals.cpp handles SIGABRT by exiting
+    // WITHOUT dump_restart_db(), so the game loses everything since the
+    // last dump.  A segfault on the same line would have forked, dumped
+    // and re-exec'd.
+    //
+    // What abandoning a tick costs: the tasks that did not run are still
+    // queued and run on the next tick, and process_command() resets
+    // func_nest_lev / func_invk_ctr / ntfy_nest_lev / lock_nest_lev at the
+    // top of every command, so a half-finished command cannot poison the
+    // next one's limits.  What it does leak is whatever lbufs the aborted
+    // command held -- bounded, once per occurrence, and a far better
+    // trade than losing the database.
+    try {
+        scheduler.RunTasks(ltaNow);
+    } catch (const std::exception& e) {
+        Log.tinyprintf(T("GANL: exception escaped a scheduled task (%s); tick abandoned.\n"),
+            e.what());
+    } catch (...) {
+        Log.tinyprintf(T("GANL: unknown exception escaped a scheduled task; tick abandoned.\n"));
+    }
 
 #if defined(_WIN32)
     // Collect completed reverse DNS lookups from worker threads.
@@ -3052,8 +3115,25 @@ void GanlAdapter::send_data(DESC* d, const char* data, size_t len) {
     if (!d) return;
     std::shared_ptr<ganl::ConnectionBase> conn = get_connection(d);
     if (conn) {
-        // Convert char* to std::string for ConnectionBase interface
-        conn->sendDataToClient(std::string(data, len));
+        // Last-resort barrier (#2006).  A throw from the send path (the
+        // std::string temporary below, or a bad_alloc from the queue it is
+        // appended to) must never propagate to the main loop: there is no
+        // catch site above it, so it aborts the server without dumping.
+        // We cannot safely close d from here -- send_data runs inside
+        // process_output's drain loop and close() synchronously frees d --
+        // so drop the write and let the idle/write-error paths reap the
+        // connection.
+        try {
+            // Convert char* to std::string for ConnectionBase interface
+            conn->sendDataToClient(std::string(data, len));
+        } catch (const std::exception& e) {
+            d->output_lost += len;
+            Log.tinyprintf(T("GANL: send dropped on handle %llu (%s)\n"),
+                static_cast<unsigned long long>(get_handle(d)), e.what());
+        } catch (...) {
+            d->output_lost += len;
+            Log.tinyprintf(T("GANL: send dropped (unknown exception)\n"));
+        }
     }
     else {
         //GANL_CONN_DEBUG(d->socket, "Attempted send on unmapped/closed connection.");
