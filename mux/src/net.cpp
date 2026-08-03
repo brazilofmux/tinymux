@@ -2658,7 +2658,14 @@ static void do_logged_out_internal(DESC *d, int key, const UTF8 *arg)
     default:
 
         {
-            UTF8 buf[LBUF_SIZE * 2];
+            // 64 KB to format one log line, in the branch that is not
+            // supposed to be reachable -- but the frame is reserved on entry,
+            // so every logged-out command (QUIT, WHO, each connect attempt)
+            // paid it.  static keeps it an array, so the sizeof() below is
+            // unaffected; safe as static because this path neither recurses
+            // nor evaluates, so no two activations are ever live at once.
+            //
+            static thread_local UTF8 buf[LBUF_SIZE * 2];
             STARTLOG(LOG_BUGS, "BUG", "PARSE");
             mux_sprintf(buf, sizeof(buf), T("Logged-out command with no handler: ‘%s’"), g_debug_cmd);
             g_pILog->log_text(buf);
