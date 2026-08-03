@@ -657,8 +657,8 @@ void CQueryServer::ConnectionHelper()
 #endif
         mysql_options(m_database, MYSQL_SET_CHARSET_NAME, "utf8");
 
-        if (mysql_real_connect(m_database, reinterpret_cast<char *>(m_pServer), reinterpret_cast<char *>(m_pUser),
-             reinterpret_cast<char *>(m_pPassword), reinterpret_cast<char *>(m_pDatabase), 0, NULL, 0) != 0)
+        if (mysql_real_connect(m_database, reinterpret_cast<const char *>(m_pServer), reinterpret_cast<const char *>(m_pUser),
+             reinterpret_cast<const char *>(m_pPassword), reinterpret_cast<const char *>(m_pDatabase), 0, NULL, 0) != 0)
         {
 #ifdef MYSQL_OPT_RECONNECT
             // Before MySQL 5.0.19, mysql_real_connect sets the option
@@ -732,7 +732,7 @@ MUX_RESULT CQueryServer::Query(uint32_t iQueryHandle, const UTF8 *pDatabaseName,
     }
 
     if (  QS_SUCCESS == iError
-       && mysql_real_query(m_database, reinterpret_cast<char *>(pQuery), strlen(reinterpret_cast<char *>(pQuery))) != 0)
+       && mysql_real_query(m_database, reinterpret_cast<const char *>(pQuery), strlen(reinterpret_cast<const char *>(pQuery))) != 0)
     {
         iError = QS_QUERY_ERROR;
     }
