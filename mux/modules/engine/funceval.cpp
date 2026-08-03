@@ -1976,7 +1976,7 @@ FUNCTION(fun_columns)
     size_t *wends = ws.ends();
     size_t nWords = co_split_words(pData, nLen_d,
                         reinterpret_cast<const unsigned char *>(sep.str),
-                        sep.n, wstarts, wends, LBUF_SIZE);
+                        sep.n, wstarts, wends, ws.capacity());
 
     if (0 == nWords)
     {
@@ -3601,7 +3601,7 @@ FUNCTION(fun_elements)
         size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts, wends, LBUF_SIZE);
+                            sep.n, wstarts, wends, ws.capacity());
 
         bool bFirst = true;
         UTF8 *s = trim_space_sep(fargs[1], sepSpace);
@@ -3991,7 +3991,7 @@ FUNCTION(fun_caplist)
     while (bp)
     {
         words[nWords++] = split_token(&bp, sep);
-        if (nWords >= static_cast<int>(LBUF_SIZE / 2))
+        if (nWords >= ls.capacity())
         {
             break;
         }
@@ -4360,7 +4360,7 @@ FUNCTION(fun_wrapcolumns)
 
     UTF8 *src = fargs[0];
     while (  *src
-          && nLines < static_cast<int>(LBUF_SIZE / 2)
+          && nLines < ls.capacity()
           && wp < wpEnd)
     {
         int len = strlen(reinterpret_cast<const char*>(src));

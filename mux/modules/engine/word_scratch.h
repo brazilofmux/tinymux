@@ -13,12 +13,16 @@
  * a second activation cannot come into existence while a first one holds the
  * scratch.
  *
- * That invariant is enforced, not merely documented.  Two live users would
- * interleave their word tables and produce silently wrong output -- a worse
- * failure than the stack exhaustion this replaces -- so CWordScratch asserts on
- * a double claim.  If a future change gives one of these functions a way to
- * evaluate softcode, the assertion fires during testing instead of the game
- * quietly mangling lists.
+ * That invariant is not merely documented.  Two live users would interleave
+ * their word tables and produce silently wrong output -- a worse failure than
+ * the stack exhaustion this replaces -- so a second claim is served from its
+ * own private tables instead of the shared ones.  If a future change gives one
+ * of these functions a way to evaluate softcode, it gets correct output rather
+ * than either corruption or a dead game.
+ *
+ * Callers must take their bound from capacity() rather than LBUF_SIZE: when a
+ * nested claim cannot allocate, capacity() is 0, and the caller reports an
+ * empty or "too long" result the way it already does for an over-long list.
  */
 
 #ifndef WORD_SCRATCH_H
@@ -37,21 +41,66 @@ class CWordScratch
 public:
     CWordScratch(void)
     {
-        mux_assert(!g_word_scratch_busy);
-        g_word_scratch_busy = true;
+        if (!g_word_scratch_busy)
+        {
+            g_word_scratch_busy = true;
+            m_bShared   = true;
+            m_pStarts   = g_word_starts;
+            m_pEnds     = g_word_ends;
+            m_nCapacity = LBUF_SIZE;
+            return;
+        }
+
+        // Already claimed.  Hand out private tables: sharing them would
+        // interleave two word lists and quietly corrupt both.
+        //
+        m_bShared = false;
+        m_pStarts = static_cast<size_t *>(MEMALLOC(sizeof(size_t) * LBUF_SIZE));
+        m_pEnds   = static_cast<size_t *>(MEMALLOC(sizeof(size_t) * LBUF_SIZE));
+        if (  nullptr != m_pStarts
+           && nullptr != m_pEnds)
+        {
+            m_nCapacity = LBUF_SIZE;
+        }
+        else
+        {
+            // No memory for a private copy.  Report room for no words rather
+            // than writing into someone else's table; co_split_words() returns
+            // 0 for a zero bound, so the caller yields an empty result.
+            //
+            MEMFREE(m_pStarts);
+            MEMFREE(m_pEnds);
+            m_pStarts   = nullptr;
+            m_pEnds     = nullptr;
+            m_nCapacity = 0;
+        }
     }
 
     ~CWordScratch()
     {
-        g_word_scratch_busy = false;
+        if (m_bShared)
+        {
+            g_word_scratch_busy = false;
+        }
+        else
+        {
+            MEMFREE(m_pStarts);
+            MEMFREE(m_pEnds);
+        }
     }
 
-    size_t *starts(void) const { return g_word_starts; }
-    size_t *ends(void) const   { return g_word_ends; }
+    size_t *starts(void) const   { return m_pStarts; }
+    size_t *ends(void) const     { return m_pEnds; }
+    size_t  capacity(void) const { return m_nCapacity; }
 
 private:
     CWordScratch(const CWordScratch &);
     CWordScratch &operator=(const CWordScratch &);
+
+    bool    m_bShared;
+    size_t *m_pStarts;
+    size_t *m_pEnds;
+    size_t  m_nCapacity;
 };
 
 #endif // WORD_SCRATCH_H

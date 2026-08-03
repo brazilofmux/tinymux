@@ -3627,7 +3627,7 @@ static FUNCTION(fun_extract)
         size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts, wends, LBUF_SIZE);
+                            sep.n, wstarts, wends, ws.capacity());
 
         iFirstWord--;
         if (iFirstWord < static_cast<int>(nWords))
@@ -4833,7 +4833,7 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc,
     size_t *wends = ws.ends();
     size_t nWords = co_split_words(pList, nListLen,
                         reinterpret_cast<const unsigned char *>(sep.str),
-                        sep.n, wstarts, wends, LBUF_SIZE);
+                        sep.n, wstarts, wends, ws.capacity());
 
     // Remove positions which are out of bounds.
     //
@@ -4968,9 +4968,12 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc,
 // and none calls another.  DecodeListOfIntegers fills the caller's array
 // rather than owning one, so it adds no second live user.
 //
-// CIntListScratch enforces that rather than describing it.  Two live users
-// would interleave their position lists and silently edit the wrong elements
-// of a list, which is a worse failure than the stack pressure being removed.
+// Two live users would interleave their position lists and silently edit the
+// wrong elements of a list, which is a worse failure than the stack pressure
+// being removed, so a second claim is served from its own private table
+// instead of the shared one.  Callers take their bound from capacity(): when
+// a nested claim cannot allocate it is 0, and DecodeListOfIntegers stores
+// nothing, which the callers already treat as an empty position list.
 //
 static thread_local int  g_int_list[MAX_WORDS];
 static thread_local bool g_int_list_busy = false;
@@ -4980,28 +4983,59 @@ class CIntListScratch
 public:
     CIntListScratch(void)
     {
-        mux_assert(!g_int_list_busy);
-        g_int_list_busy = true;
+        if (!g_int_list_busy)
+        {
+            g_int_list_busy = true;
+            m_bShared   = true;
+            m_pInts     = g_int_list;
+            m_nCapacity = MAX_WORDS;
+            return;
+        }
+
+        // Already claimed.  Hand out a private table rather than sharing.
+        //
+        m_bShared = false;
+        m_pInts   = static_cast<int *>(MEMALLOC(sizeof(int) * MAX_WORDS));
+        if (nullptr != m_pInts)
+        {
+            m_nCapacity = MAX_WORDS;
+        }
+        else
+        {
+            m_nCapacity = 0;
+        }
     }
 
     ~CIntListScratch()
     {
-        g_int_list_busy = false;
+        if (m_bShared)
+        {
+            g_int_list_busy = false;
+        }
+        else
+        {
+            MEMFREE(m_pInts);
+        }
     }
 
-    int *get(void) const { return g_int_list; }
+    int *get(void) const      { return m_pInts; }
+    int  capacity(void) const { return m_nCapacity; }
 
 private:
     CIntListScratch(const CIntListScratch &);
     CIntListScratch &operator=(const CIntListScratch &);
+
+    bool m_bShared;
+    int *m_pInts;
+    int  m_nCapacity;
 };
 
-int DecodeListOfIntegers(UTF8 *pIntegerList, int ai[])
+int DecodeListOfIntegers(UTF8 *pIntegerList, int ai[], int nMax)
 {
     int n = 0;
     UTF8 *cp = trim_space_sep(pIntegerList, sepSpace);
     while (  cp
-          && n < MAX_WORDS)
+          && n < nMax)
     {
         UTF8 *curr = split_token(&cp, sepSpace);
         ai[n++] = mux_atoi64(curr);
@@ -5027,7 +5061,7 @@ static FUNCTION(fun_ldelete)
     size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
     CIntListScratch is;
     int *ai = is.get();
-    int nai = DecodeListOfIntegers(fargs[1], ai);
+    int nai = DecodeListOfIntegers(fargs[1], ai, is.capacity());
 
     // Delete a word at position X of a list.
     //
@@ -5058,7 +5092,7 @@ static FUNCTION(fun_replace)
     //
     CIntListScratch is;
     int *ai = is.get();
-    int nai = DecodeListOfIntegers(fargs[1], ai);
+    int nai = DecodeListOfIntegers(fargs[1], ai, is.capacity());
     do_itemfuns(buff, bufc, pList, nListLen, nai, ai,
                 pWord, nWordLen, sep, osep, IF_REPLACE);
 }
@@ -5084,7 +5118,7 @@ static FUNCTION(fun_insert)
 
     CIntListScratch is;
     int *ai = is.get();
-    int nai = DecodeListOfIntegers(fargs[1], ai);
+    int nai = DecodeListOfIntegers(fargs[1], ai, is.capacity());
 
     // Insert a word at position X of a list.
     //
@@ -5144,7 +5178,7 @@ static FUNCTION(fun_remove)
     size_t *wends = ws.ends();
     size_t nWords = co_split_words(pList, nListLen,
                         reinterpret_cast<const unsigned char *>(sep.str),
-                        sep.n, wstarts, wends, LBUF_SIZE);
+                        sep.n, wstarts, wends, ws.capacity());
 
     // Strip color from the word for comparison.
     //
@@ -7096,7 +7130,7 @@ static FUNCTION(fun_revwords)
         size_t *wends = ws.ends();
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts, wends, LBUF_SIZE);
+                            sep.n, wstarts, wends, ws.capacity());
 
         bool bFirst = true;
         for (size_t i = 0; i < nWords; i++)
@@ -7971,6 +8005,10 @@ static FUNCTION(fun_choose)
     int sum = 0;
     CIntListScratch is;
     int *ip = is.get();
+    if (n_weights > is.capacity())
+    {
+        n_weights = is.capacity();
+    }
     for (i = 0; i < n_weights; i++)
     {
         int64_t num = mux_atoi64(weights[i]);
@@ -9537,7 +9575,7 @@ static FUNCTION(fun_sort)
     //
     UTF8 *list = alloc_lbuf("fun_sort");
     mux_strncpy(list, fargs[0], LBUF_SIZE-1);
-    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+    int nitems = list2arr(ptrs, ls.capacity(), list, sep);
 
     int sort_type = ASCII_LIST;
     if (2 <= nfargs)
@@ -9625,7 +9663,7 @@ size_t sort_to_buffer(const UTF8 *list_in, char sort_type_char,
 
     CListScratch ls;
     UTF8 **ptrs = ls.a();
-    int nitems = list2arr(ptrs, LBUF_SIZE / 2, list, sep);
+    int nitems = list2arr(ptrs, ls.capacity(), list, sep);
 
     int sort_type = ASCII_LIST;
     switch (sort_type_char)
@@ -13812,7 +13850,7 @@ static FUNCTION(fun_unique)
 
     CListScratch ls;
     UTF8 **arr = ls.a();
-    int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
+    int nWords = list2arr(arr, ls.capacity(), fargs[0], sep);
 
     // Track seen words with a simple linear scan (adequate for MUX lists).
     //
@@ -13866,13 +13904,16 @@ static FUNCTION(fun_unique)
 // jit_eval) and none call each other -- so a second activation cannot come
 // into existence while a first holds the scratch.
 //
-// CGraphemeScratch enforces that rather than trusting it.  Two live users
-// would interleave their cluster tables and produce silently wrong output,
-// which is a worse failure than the stack pressure this removes, so claiming
-// the scratch twice trips the assertion instead.
+// Two live users would interleave their cluster tables and produce silently
+// wrong output, which is a worse failure than the stack pressure this removes,
+// so a second claim is served from its own private tables instead of the
+// shared ones.  Callers take their bound from capacity() rather than
+// LBUF_SIZE: when a nested claim cannot allocate, capacity() is 0 and
+// gc_extract() reports the "#-1 STRING TOO LONG" the caller already handles.
 //
 struct StrGC { const UTF8 *p; size_t n; };
 
+static thread_local UTF8  s_gc_strip[LBUF_SIZE];
 static thread_local StrGC s_gc_a[LBUF_SIZE];
 static thread_local StrGC s_gc_b[LBUF_SIZE];
 static thread_local StrGC s_gc_c[LBUF_SIZE];
@@ -13883,22 +13924,83 @@ class CGraphemeScratch
 public:
     CGraphemeScratch(void)
     {
-        mux_assert(!s_gc_busy);
-        s_gc_busy = true;
+        if (!s_gc_busy)
+        {
+            s_gc_busy   = true;
+            m_bShared   = true;
+            m_pA        = s_gc_a;
+            m_pB        = s_gc_b;
+            m_pC        = s_gc_c;
+            m_pStrip    = s_gc_strip;
+            m_nCapacity = LBUF_SIZE;
+            return;
+        }
+
+        // Already claimed.  Hand out private tables rather than sharing.
+        // The strip buffer comes too: the StrGC entries point into it, so
+        // sharing it would corrupt the text private tables refer to.
+        //
+        m_bShared = false;
+        m_pA = static_cast<StrGC *>(MEMALLOC(sizeof(StrGC) * LBUF_SIZE));
+        m_pB = static_cast<StrGC *>(MEMALLOC(sizeof(StrGC) * LBUF_SIZE));
+        m_pC = static_cast<StrGC *>(MEMALLOC(sizeof(StrGC) * LBUF_SIZE));
+        m_pStrip = static_cast<UTF8 *>(MEMALLOC(sizeof(UTF8) * LBUF_SIZE));
+        if (  nullptr != m_pA
+           && nullptr != m_pB
+           && nullptr != m_pC
+           && nullptr != m_pStrip)
+        {
+            m_nCapacity = LBUF_SIZE;
+        }
+        else
+        {
+            // No memory for a private copy.  Report room for no clusters;
+            // gc_extract() then returns -2 and the caller emits the same
+            // "#-1 STRING TOO LONG" it gives an over-long string.
+            //
+            MEMFREE(m_pA);
+            MEMFREE(m_pB);
+            MEMFREE(m_pC);
+            MEMFREE(m_pStrip);
+            m_pA        = nullptr;
+            m_pB        = nullptr;
+            m_pC        = nullptr;
+            m_pStrip    = nullptr;
+            m_nCapacity = 0;
+        }
     }
 
     ~CGraphemeScratch()
     {
-        s_gc_busy = false;
+        if (m_bShared)
+        {
+            s_gc_busy = false;
+        }
+        else
+        {
+            MEMFREE(m_pA);
+            MEMFREE(m_pB);
+            MEMFREE(m_pC);
+            MEMFREE(m_pStrip);
+        }
     }
 
-    StrGC *a(void) const { return s_gc_a; }
-    StrGC *b(void) const { return s_gc_b; }
-    StrGC *c(void) const { return s_gc_c; }
+    StrGC *a(void) const        { return m_pA; }
+    StrGC *b(void) const        { return m_pB; }
+    StrGC *c(void) const        { return m_pC; }
+    UTF8  *strip(void) const    { return m_pStrip; }
+    int    capacity(void) const { return m_nCapacity; }
 
 private:
     CGraphemeScratch(const CGraphemeScratch &);
     CGraphemeScratch &operator=(const CGraphemeScratch &);
+
+    bool   m_bShared;
+    StrGC *m_pA;
+    StrGC *m_pB;
+    StrGC *m_pC;
+    UTF8  *m_pStrip;
+    int    m_nCapacity;
 };
 
 static FUNCTION(fun_strsort)
@@ -13934,7 +14036,7 @@ static FUNCTION(fun_strsort)
             safe_str(S_("#-1 STRING IS INVALID"), buff, bufc);
             return;
         }
-        if (nClusters >= LBUF_SIZE)
+        if (nClusters >= gs.capacity())
         {
             safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
             return;
@@ -14020,7 +14122,7 @@ static FUNCTION(fun_strunique)
 
         if (!bDup)
         {
-            if (nSeen >= LBUF_SIZE)
+            if (nSeen >= gs.capacity())
             {
                 safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
                 return;
@@ -14120,7 +14222,6 @@ static void gc_extract_pair(
 // internally (gc_extract*, gc_in_set, safe_copy_buf and strip_color are all
 // pure), so no two activations are ever live on one thread at the same time.
 //
-static thread_local UTF8  set_buf1[LBUF_SIZE];
 
 static FUNCTION(fun_strunion)
 {
@@ -14132,20 +14233,25 @@ static FUNCTION(fun_strunion)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *buf1 = set_buf1;
+    CGraphemeScratch gs;
+    if (0 == gs.capacity())
+    {
+        safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+    UTF8 *buf1 = gs.strip();
     size_t nBytes1 = 0, nBytes2 = 0;
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    CGraphemeScratch gs;
     StrGC *gc1 = gs.a(), *gc2 = gs.b();
-    int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
+    int n1 = gc_extract(buf1, nBytes1, gc1, gs.capacity());
     if (n1 < 0)
     {
         safe_str(n1 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
-    int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
+    int n2 = gc_extract(p2, nBytes2, gc2, gs.capacity());
     if (n2 < 0)
     {
         safe_str(n2 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
@@ -14162,7 +14268,7 @@ static FUNCTION(fun_strunion)
         if (!gc_in_set(gc1[i], seen, nSeen))
         {
             safe_copy_buf(gc1[i].p, gc1[i].n, buff, bufc);
-            if (nSeen < LBUF_SIZE)
+            if (nSeen < gs.capacity())
             {
                 seen[nSeen++] = gc1[i];
             }
@@ -14173,7 +14279,7 @@ static FUNCTION(fun_strunion)
         if (!gc_in_set(gc2[i], seen, nSeen))
         {
             safe_copy_buf(gc2[i].p, gc2[i].n, buff, bufc);
-            if (nSeen < LBUF_SIZE)
+            if (nSeen < gs.capacity())
             {
                 seen[nSeen++] = gc2[i];
             }
@@ -14191,20 +14297,25 @@ static FUNCTION(fun_strdiff)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *buf1 = set_buf1;
+    CGraphemeScratch gs;
+    if (0 == gs.capacity())
+    {
+        safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+    UTF8 *buf1 = gs.strip();
     size_t nBytes1 = 0, nBytes2 = 0;
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    CGraphemeScratch gs;
     StrGC *gc1 = gs.a(), *gc2 = gs.b();
-    int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
+    int n1 = gc_extract(buf1, nBytes1, gc1, gs.capacity());
     if (n1 < 0)
     {
         safe_str(n1 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
-    int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
+    int n2 = gc_extract(p2, nBytes2, gc2, gs.capacity());
     if (n2 < 0)
     {
         safe_str(n2 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
@@ -14222,7 +14333,7 @@ static FUNCTION(fun_strdiff)
            && !gc_in_set(gc1[i], seen, nSeen))
         {
             safe_copy_buf(gc1[i].p, gc1[i].n, buff, bufc);
-            if (nSeen < LBUF_SIZE)
+            if (nSeen < gs.capacity())
             {
                 seen[nSeen++] = gc1[i];
             }
@@ -14240,20 +14351,25 @@ static FUNCTION(fun_strinter)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *buf1 = set_buf1;
+    CGraphemeScratch gs;
+    if (0 == gs.capacity())
+    {
+        safe_str(S_("#-1 STRING TOO LONG"), buff, bufc);
+        return;
+    }
+    UTF8 *buf1 = gs.strip();
     size_t nBytes1 = 0, nBytes2 = 0;
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    CGraphemeScratch gs;
     StrGC *gc1 = gs.a(), *gc2 = gs.b();
-    int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
+    int n1 = gc_extract(buf1, nBytes1, gc1, gs.capacity());
     if (n1 < 0)
     {
         safe_str(n1 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
         return;
     }
-    int n2 = gc_extract(p2, nBytes2, gc2, LBUF_SIZE);
+    int n2 = gc_extract(p2, nBytes2, gc2, gs.capacity());
     if (n2 < 0)
     {
         safe_str(n2 == -1 ? S_("#-1 STRING IS INVALID") : S_("#-1 STRING TOO LONG"), buff, bufc);
@@ -14271,7 +14387,7 @@ static FUNCTION(fun_strinter)
            && !gc_in_set(gc1[i], seen, nSeen))
         {
             safe_copy_buf(gc1[i].p, gc1[i].n, buff, bufc);
-            if (nSeen < LBUF_SIZE)
+            if (nSeen < gs.capacity())
             {
                 seen[nSeen++] = gc1[i];
             }
@@ -14301,7 +14417,7 @@ static FUNCTION(fun_linsert)
 
     CListScratch ls;
     UTF8 **arr = ls.a();
-    int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
+    int nWords = list2arr(arr, ls.capacity(), fargs[0], sep);
     int64_t pos = mux_atoi64(fargs[1]);
 
     if (pos < 0)
@@ -14885,7 +15001,7 @@ static FUNCTION(fun_lreplace)
 
     CListScratch ls;
     UTF8 **arr = ls.a();
-    int nWords = list2arr(arr, LBUF_SIZE / 2, fargs[0], sep);
+    int nWords = list2arr(arr, ls.capacity(), fargs[0], sep);
     int64_t pos = mux_atoi64(fargs[1]);
 
     if (pos < 0 || pos >= nWords)

@@ -39,21 +39,67 @@ class CListScratch
 public:
     CListScratch(void)
     {
-        mux_assert(!g_list_scratch_busy);
-        g_list_scratch_busy = true;
+        if (!g_list_scratch_busy)
+        {
+            g_list_scratch_busy = true;
+            m_bShared   = true;
+            m_pA        = g_list_ptrs_a;
+            m_pB        = g_list_ptrs_b;
+            m_nCapacity = LBUF_SIZE / 2;
+            return;
+        }
+
+        // Already claimed.  Hand out private tables: sharing them would
+        // interleave two element lists and quietly corrupt both.
+        //
+        m_bShared = false;
+        m_pA = static_cast<UTF8 **>(MEMALLOC(sizeof(UTF8 *) * (LBUF_SIZE / 2)));
+        m_pB = static_cast<UTF8 **>(MEMALLOC(sizeof(UTF8 *) * (LBUF_SIZE / 2)));
+        if (  nullptr != m_pA
+           && nullptr != m_pB)
+        {
+            m_nCapacity = LBUF_SIZE / 2;
+        }
+        else
+        {
+            // No memory for a private copy.  Report room for no elements
+            // rather than writing into someone else's table; list2arr()
+            // returns 0 for a zero bound, so the caller yields an empty
+            // result instead of a wrong one.
+            //
+            MEMFREE(m_pA);
+            MEMFREE(m_pB);
+            m_pA        = nullptr;
+            m_pB        = nullptr;
+            m_nCapacity = 0;
+        }
     }
 
     ~CListScratch()
     {
-        g_list_scratch_busy = false;
+        if (m_bShared)
+        {
+            g_list_scratch_busy = false;
+        }
+        else
+        {
+            MEMFREE(m_pA);
+            MEMFREE(m_pB);
+        }
     }
 
-    UTF8 **a(void) const { return g_list_ptrs_a; }
-    UTF8 **b(void) const { return g_list_ptrs_b; }
+    UTF8 **a(void) const      { return m_pA; }
+    UTF8 **b(void) const      { return m_pB; }
+    int    capacity(void) const { return m_nCapacity; }
 
 private:
     CListScratch(const CListScratch &);
     CListScratch &operator=(const CListScratch &);
+
+    bool    m_bShared;
+    UTF8  **m_pA;
+    UTF8  **m_pB;
+    int     m_nCapacity;
 };
 
 #endif // LIST_SCRATCH_H
