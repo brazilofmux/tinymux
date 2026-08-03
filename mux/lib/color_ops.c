@@ -2836,63 +2836,77 @@ size_t co_reverse(unsigned char *out, const unsigned char *data, size_t len)
 {
     const unsigned char *pe = data + len;
 
-    /* First, collect an array of (start, end) pointers for each
-     * "element" — where an element is [optional color] + visible_codepoint.
-     * We reverse the order of elements. */
-
-    /* Maximum elements: one per byte (ASCII). */
-    typedef struct { const unsigned char *start; const unsigned char *end; } elem_t;
-    elem_t elems[LBUF_SIZE];
-    size_t nElems = 0;
+    /* An "element" is [optional color] + one visible codepoint, and the
+     * reversal is of element order.
+     *
+     * #2002: elements exactly TILE [leading_end, pe) -- each one begins
+     * where the previous ended -- so where an element lands in the
+     * reversed output is a function of where it ENDS in the input:
+     *
+     *     out_offset = leading_len + (len - end_offset)
+     *
+     * That is known during the same forward pass that finds the element,
+     * so nothing has to be remembered and each element can be written
+     * straight to its final position.  The old code built an
+     * elem_t[LBUF_SIZE] index purely to walk it backwards afterwards,
+     * which cost 524,288 bytes of stack -- and in the freestanding rv64
+     * blob, where color_ops.c is also compiled, that was about a sixth of
+     * the entire guest stack for a single call.
+     *
+     * The index was also unbounded: nElems had no check against
+     * LBUF_SIZE, so a caller passing len > LBUF_SIZE would have run off
+     * the end of elems[].  With no array there is nothing to overrun.
+     */
+    unsigned char *const wp_end = out + LBUF_SIZE - 1;
+    const size_t out_cap = (size_t)(wp_end - out);
 
     /* Leading color (before any visible char) is emitted first, unreversed. */
-    const unsigned char *p = data;
-    const unsigned char *leading_end = co_skip_color(p, pe);
+    const unsigned char *leading_end = co_skip_color(data, pe);
+    const size_t leading_len = (size_t)(leading_end - data);
 
-    p = leading_end;
+    if (leading_len > 0) {
+        wp_safe_copy(out, wp_end, data, leading_len);
+    }
+
+    const unsigned char *p = leading_end;
     while (p < pe) {
         const unsigned char *elem_start = p;
+        const unsigned char *elem_end;
 
         /* Skip color preceding this visible char. */
         p = co_skip_color(p, pe);
         if (p >= pe) {
             /* Trailing color after last visible char. */
-            if (p > elem_start) {
-                elems[nElems].start = elem_start;
-                elems[nElems].end = p;
-                nElems++;
+            if (p == elem_start) {
+                break;
             }
-            break;
+            elem_end = p;
+        } else {
+            /* Advance past the visible code point. */
+            elem_end = co_visible_advance(p, pe, 1, NULL);
         }
 
-        /* Advance past the visible code point. */
-        const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
+        /* Place this element directly.  Truncation matches the sequential
+         * form byte for byte: the same bytes land at the same offsets, and
+         * anything at or past wp_end is dropped rather than written. */
+        const size_t dst = leading_len + (size_t)(pe - elem_end);
+        if (dst < out_cap) {
+            wp_safe_copy(out + dst, wp_end, elem_start,
+                         (size_t)(elem_end - elem_start));
+        }
 
-        elems[nElems].start = elem_start;
-        elems[nElems].end = after;
-        nElems++;
-
-        p = after;
+        if (p >= pe) {
+            break;
+        }
+        p = elem_end;
     }
 
-    /* Build output: leading color + reversed elements. */
-    unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
-
-    /* Emit leading color. */
-    if (leading_end > data) {
-        size_t cb = (size_t)(leading_end - data);
-        wp += wp_safe_copy(wp, wp_end, data, cb);
-    }
-
-    /* Emit elements in reverse order. */
-    for (size_t i = nElems; i > 0 && wp < wp_end; i--) {
-        size_t cb = (size_t)(elems[i-1].end - elems[i-1].start);
-        wp += wp_safe_copy(wp, wp_end, elems[i-1].start, cb);
-    }
-
-    *wp = '\0';
-    return (size_t)(wp - out);
+    /* Leading color plus every element covers exactly len bytes, so the
+     * reversed output is the same length as the input, clamped to the
+     * buffer -- which is what the sequential form ended up returning. */
+    size_t total = (len > out_cap) ? out_cap : len;
+    out[total] = '\0';
+    return total;
 }
 
 /* ---- co_edit ---- */
@@ -5654,13 +5668,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5447 "color_ops.c"
+#line 5461 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 4187 "color_ops.rl"
+#line 4201 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5674,21 +5688,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5463 "color_ops.c"
+#line 5477 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 4200 "color_ops.rl"
+#line 4214 "color_ops.rl"
     
-#line 5466 "color_ops.c"
+#line 5480 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 4172 "color_ops.rl"
+#line 4186 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5702,9 +5716,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
-#line 4172 "color_ops.rl"
+#line 4186 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5721,7 +5735,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5502 "color_ops.c"
+#line 5516 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5750,62 +5764,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5536 "color_ops.c"
+#line 5550 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5546 "color_ops.c"
+#line 5560 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5556 "color_ops.c"
+#line 5570 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5566 "color_ops.c"
+#line 5580 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5576 "color_ops.c"
+#line 5590 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5823,38 +5837,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5599 "color_ops.c"
+#line 5613 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5609 "color_ops.c"
+#line 5623 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5619 "color_ops.c"
+#line 5633 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5872,14 +5886,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 4171 "color_ops.rl"
+#line 4185 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5642 "color_ops.c"
+#line 5656 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5901,7 +5915,7 @@ case 11:
 	_out: {}
 	}
 
-#line 4201 "color_ops.rl"
+#line 4215 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
