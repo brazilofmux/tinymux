@@ -3102,6 +3102,34 @@ bool run_cached_program(compiled_program *prog,
 //
 static thread_local eval_ctx *s_current_ecall_ctx = nullptr;
 
+// #1989: keeps the softcode call counters correct across an ECALL.
+// func_invk_ctr is monotonic for the evaluation and is not given back,
+// matching ast.cpp, which decrements only func_nest_lev when the call
+// returns.  RAII so the early returns for a tripped limit, a bad argument
+// count, or a guest-memory rejection all unwind the nesting level.
+//
+class CallCounter
+{
+public:
+    explicit CallCounter(bool bCount) : m_bCount(bCount)
+    {
+        if (m_bCount)
+        {
+            mudstate.func_nest_lev++;
+            mudstate.func_invk_ctr++;
+        }
+    }
+    ~CallCounter()
+    {
+        if (m_bCount)
+        {
+            mudstate.func_nest_lev--;
+        }
+    }
+private:
+    const bool m_bCount;
+};
+
 // Invoke a global user function (@function) from an ECALL.
 //
 // A global is an attribute reference rather than a C entry point, so it
@@ -3138,6 +3166,26 @@ static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
             out_size, T("%s"), FUNC_NOPERM_MESSAGE);
         ctx->x[10] = static_cast<uint64_t>(n);
         return -1;
+    }
+
+    // #1989: count this call, as ast.cpp's ufun arm does.  A global whose
+    // body reaches itself needs the live counters to stop it; nothing in
+    // the compiled route maintained them.
+    //
+    CallCounter call_counter(true);
+    {
+        const UTF8 *pLimit = nullptr;
+        if (mudconf.func_nest_lim <= mudstate.func_nest_lev) {
+            pLimit = T("#-1 FUNCTION RECURSION LIMIT EXCEEDED");
+        } else if (mudconf.func_invk_lim <= mudstate.func_invk_ctr) {
+            pLimit = T("#-1 FUNCTION INVOCATION LIMIT EXCEEDED");
+        }
+        if (nullptr != pLimit) {
+            size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(ec->memory + out_addr),
+                out_size, T("%s"), pLimit);
+            ctx->x[10] = static_cast<uint64_t>(n);
+            return -1;
+        }
     }
 
     if (nfargs > MAX_ARG) nfargs = MAX_ARG;
@@ -3258,6 +3306,37 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
             out_size, T("%s"), FUNC_NOPERM_MESSAGE);
         ctx->x[10] = static_cast<uint64_t>(n);
         return -1;
+    }
+
+    // #1989: mirror AST's call accounting (ast.cpp) the same way the perms
+    // gate above mirrors its check_access.  ast.cpp bumps func_nest_lev /
+    // func_invk_ctr and tests both limits immediately before its own
+    // fp->fun dispatch; the compiled route reaches the builtin without
+    // passing through that branch, so nothing counted a u() that calls
+    // itself -- it recursed until the stack was gone, at any limit.  The
+    // static max_func_depth watermark cannot catch this: it is a
+    // compile-time property that does not grow with runtime recursion.
+    //
+    // Underscore-prefixed names are JIT internal helpers, not softcode
+    // calls, and must not spend the player's budget -- the same exemption
+    // check_access uses above.
+    //
+    const bool bCount = (fp->name[0] != '_');
+    CallCounter call_counter(bCount);
+    if (bCount)
+    {
+        const UTF8 *pLimit = nullptr;
+        if (mudconf.func_nest_lim <= mudstate.func_nest_lev) {
+            pLimit = T("#-1 FUNCTION RECURSION LIMIT EXCEEDED");
+        } else if (mudconf.func_invk_lim <= mudstate.func_invk_ctr) {
+            pLimit = T("#-1 FUNCTION INVOCATION LIMIT EXCEEDED");
+        }
+        if (nullptr != pLimit) {
+            size_t n = mux_snprintf(reinterpret_cast<UTF8 *>(ec->memory + out_addr),
+                out_size, T("%s"), pLimit);
+            ctx->x[10] = static_cast<uint64_t>(n);
+            return -1;
+        }
     }
 
     // Validate argument count against function's declared limits.
