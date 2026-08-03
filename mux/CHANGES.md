@@ -5,6 +5,108 @@ author:
  - Brazil
 ---
 
+# Changes in 2.13.0.16 (UNRELEASED — draft, finalize date at release)
+
+Everything below this heading landed after the 2.13.0.15 release and is
+maintained as the cycle proceeds. Finalize the heading and the frontmatter
+`date:` at release, along with `MUX_VERSION`/`MUX_RELEASE_DATE` in
+`mux/src/_build.h` and OLD_BUILD/NEW_BUILD in `dounix.sh`/`dowin32.sh`.
+
+## Crash and denial-of-service fixes:
+
+ - The evaluator's recursion limit is now reachable before the stack
+   runs out. `mux_exec()` uppercased function names into an automatic
+   `UTF8 TempFun[LBUF_SIZE]` — 8000 bytes, essentially its whole frame —
+   and it recurses on both the `[` bracket path and the ufun body path,
+   so each nesting level cost roughly 17 KB of stack. On a stock Linux
+   server (8 MB stack) that put the physical ceiling at 490 levels,
+   *below* the shipped `function_recursion_limit` default of 500: a
+   player nesting `u()` about 491 deep crashed the server with SIGSEGV
+   before `#-1 FUNCTION RECURSION LIMIT EXCEEDED` could fire. The buffer
+   is now static, matching `mux_scratch` a few lines above it, dropping
+   the frame from 8344 to 328 bytes and raising the ceiling to roughly
+   8500. The default limit now has about 17x headroom. (#1990)
+ - Windows: the EXE stack reserve is raised to 16 MB. `netmux.vcxproj`
+   set none, so the build took the MSBuild default of 1 MB, and the
+   recursion limit is calibrated against a Linux-sized stack. Measured
+   on MSVC x64, stock 1 MB crashed at 58-60 levels and 8 MB still left
+   the ceiling near 482 — below the configured 500 — so 8 MB was
+   insufficient and 16 MB is used instead. The reserve is address space,
+   not committed memory: private working set at boot is 4.2 MB versus
+   4.6 MB stock, commit unchanged. (#1984)
+ - `@lock` parser recursion is now depth-bounded. A deeply nested lock
+   key (roughly 400 leading `!` characters) overflowed the stack and
+   crashed the server. (#839)
+ - `@mail` to a repeated mail alias no longer smashes the stack.
+   `make_numlist()` collected recipients into a fixed 4000-entry
+   automatic array with neither write bounded; alias expansion is not
+   self-limiting the way direct recipients are, so a recipient list
+   repeating one `*alias` — reachable by any non-guest player — could
+   run past the end of it. Both writes now stop at capacity. No
+   legitimate recipient list approaches 4000 entries.
+ - An uncaught C++ exception no longer costs the database. `SIGABRT` is
+   handled by logging and `exit(1)`, with no `dump_restart_db()` and no
+   re-exec, while SIGSEGV and the other fatal signals fork, dump and
+   `execl()` a fresh netmux — so an escaping exception was strictly more
+   expensive than a segfault on the same line. There were no catch sites
+   anywhere in `ganl/`, `ganl_adapter.cpp`, `netcommon.cpp` or
+   `bsd.cpp`, and allocation on those paths is routine. Barriers are now
+   in place at the connection event dispatch, at `send_data` (which
+   drops the write and accounts it to `output_lost`), and around the
+   task scheduler, which is where command parsing, function evaluation,
+   mail and `@dump` actually run. (#2006)
+ - The legacy `getstring_noalloc()` read path is bounded. Its escaped
+   branch capped each `fgets()` to the space remaining; the legacy
+   branch did not, so three `\r`-continued lines walked the write
+   pointer past the end of a static buffer and corrupted whatever
+   followed it. This is not confined to old databases — the `*`
+   EOF-marker read runs on every flatfile load — so a corrupt or crafted
+   file could overflow on the ordinary load path.
+
+## Networking (GANL) fixes:
+
+ - Fix a connection teardown re-entrancy: the final `process_output()`
+   is now gated on connection liveness. (#802)
+ - Read events arriving on a connection that is already closing are
+   ignored rather than processed. (#798)
+ - `epoll`: a failed `epoll_wait()` is handled instead of spinning the
+   main loop. (#791)
+ - `epoll`: never fetch more events than the caller's array will
+   accept. (#943)
+ - `select`: `maxFd_` is clamped below `FD_SETSIZE` so the loop stays in
+   bounds, and `FD_SET`/`FD_CLR` are guarded against descriptors at or
+   above `FD_SETSIZE`. (#946)
+ - `select`: a descriptor that is not found is no longer closed. (#947)
+ - TLS: queued plaintext is no longer discarded when a write must be
+   retried. (#948, #949)
+ - TLS: ciphertext pending in the OpenSSL read BIO is capped, so a peer
+   cannot grow it without bound. (#1282)
+ - A dual-stack listener that silently binds IPv6-only now warns instead
+   of appearing to have bound both families. (#739)
+
+## Other fixes:
+
+ - Reject an oversized CIDR prefix instead of silently truncating it. A
+   sitelock prefix such as `/4294967296` did not fit in an `int` and
+   truncated to 0, which passed the family range checks and produced a
+   `0.0.0.0` mask matching every address — a mistyped prefix became a
+   rule covering the entire address space. The value is now read as
+   64-bit and range-checked before narrowing. Every prefix valid today
+   parses identically.
+ - Restore the `CResultsSet` field walk. An earlier C-style-cast sweep
+   rewrote `p += sizeof(size_t) + n` as
+   `p += sizeof static_cast<size_t>(+ n)` — a constant 8 — so
+   `NextField` stepped over the length header but never
+   the payload. Any result set with two or more columns returned
+   pointers into the middle of field data, and a read could run past the
+   end of the blob. Both walks are restored and each step is now
+   bounded. Reachable through the `rsrec`/`rsnext` softcode functions;
+   a game with no configured SQL slave cannot reach it.
+ - Release the `EVP_MD_CTX` when a digest algorithm name is unknown,
+   instead of leaking it.
+ - `sqlslave`: const-correct the `reinterpret_cast`s so the module
+   compiles with modern g++.
+
 # Major changes that may affect performance and require softcode tweaks:
 
  - SQLite is now the always-on storage backend. All object metadata,
