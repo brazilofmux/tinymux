@@ -512,6 +512,47 @@ static void DCL_CDECL sighandler(int sig)
         // it satisfies the constraint documented above.  This mirrors what
         // PanicRestart's fork-child already does (platform.cpp).
         //
+        // #2009 follow-up: also attempt recovery, not just a core.  SIGSEGV
+        // and friends fork (the child dumps core) and exec a fresh netmux;
+        // SIGABRT produced a core and then stayed dead.  Every mux_assert
+        // (AssertionFailed) and OutOfMemory funnels through abort(), so an
+        // assertion failure or an allocation failure took the game down
+        // permanently while a null dereference on the same line self-healed.
+        // There is no reason for those to be the less recoverable faults.
+        //
+        // This adds the restart rather than trading the core for it:
+        // PanicRestart's forked child still calls abort() with the default
+        // disposition, so the artifact #1129 restored is still written, and
+        // it is a fork of this same image so it remains representative.
+        //
+        // Recursion is bounded.  check_panicking() latches g_panicking, so a
+        // second fatal signal raised while handling this one unsets the
+        // handlers and re-signals with the default disposition instead of
+        // re-entering the handler.  And g_bCanRestart stays false for the
+        // first 15 seconds after startup (dispatch_CanRestart), so a fault
+        // that reproduces immediately on the restarted process cannot spin:
+        // the successor dies without restarting again.
+        //
+        check_panicking(sig);
+
+        if (  g_dc.sig_action != SA_EXIT
+           && g_bCanRestart)
+        {
+            if (g_pIPlatform)
+            {
+                const UTF8 *argv[] = {
+                    T("netmux"),
+                    T("-c"), g_dc.config_file,
+                    T("-p"), g_dc.pid_file,
+                    T("-e"), g_dc.log_dir,
+                    nullptr
+                };
+                g_pIPlatform->PanicRestart(T("bin/netmux"), argv, 7);
+            }
+            // PanicRestart returned — exec failed.  Fall through and at
+            // least leave a core behind.
+        }
+
         unset_signals();
         signal(SIGABRT, SIG_DFL);
         abort();
