@@ -3085,6 +3085,28 @@ FUNCTION(fun_digest)
 #endif
 
     const EVP_MD *mp = EVP_get_digestbyname(reinterpret_cast<const char *>(fargs[0]));
+
+    // On OpenSSL 3.0 the legacy name table EVP_get_digestbyname() consults is
+    // populated only once the default provider has been loaded, which happens
+    // lazily on the first successful digest.  Until then an alias such as
+    // "sha-1" does not resolve, so digest(sha-1,...) succeeds or fails
+    // depending on what ran before it (2.14 #1961).
+    //
+    // Deliberately a FALLBACK rather than 2.14's unconditional EVP_MD_fetch():
+    // a name the legacy lookup already resolves takes exactly the path it
+    // takes today, with no fetch and no reference to release.  Only a lookup
+    // that currently FAILS reaches the provider, so this can turn a present
+    // failure into a success and cannot alter any call that works now.
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    EVP_MD *fetched_md = nullptr;
+    if (nullptr == mp)
+    {
+        fetched_md = EVP_MD_fetch(nullptr,
+            reinterpret_cast<const char *>(fargs[0]), nullptr);
+        mp = fetched_md;
+    }
+#endif
+
     if (nullptr == mp)
     {
         // Release the context allocated above before bailing.  Without this
@@ -3111,6 +3133,13 @@ FUNCTION(fun_digest)
     unsigned int len = 0;
     uint8_t md[EVP_MAX_MD_SIZE];
     EVP_DigestFinal(ctx, md, &len);
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L && !defined(LIBRESSL_VERSION_NUMBER)
+    // Only non-null when the fallback above actually fetched.
+    if (nullptr != fetched_md)
+    {
+        EVP_MD_free(fetched_md);
+    }
+#endif
 #if HAVE_EVP_MD_CTX_NEW
     EVP_MD_CTX_free(ctx);
 #elif HAVE_EVP_MD_CTX_CREATE
