@@ -13752,6 +13752,55 @@ static FUNCTION(fun_unique)
 // Grapheme clusters are compared by raw UTF-8 byte order (same collation
 // as sort(,a)).  Color codes are stripped.
 //
+// Shared grapheme-cluster scratch.
+//
+// gc_extract() and the strsort/strunique cluster walks each report one entry
+// per grapheme cluster, so these tables must be dimensioned LBUF_SIZE.  At
+// LBUF_SIZE 32768 that is 512 KB apiece -- far too much to carry on the stack
+// of an ordinary string function.  8165820f2 introduced them for the three set
+// functions; fun_strsort and fun_strunique need the same table and each kept a
+// private copy on the stack, so they share these instead.
+//
+// Shared because no two users are ever live at the same time: all five are
+// leaves with respect to softcode -- none evaluate (no ast_exec/mux_exec/
+// jit_eval) and none call each other -- so a second activation cannot come
+// into existence while a first holds the scratch.
+//
+// CGraphemeScratch enforces that rather than trusting it.  Two live users
+// would interleave their cluster tables and produce silently wrong output,
+// which is a worse failure than the stack pressure this removes, so claiming
+// the scratch twice trips the assertion instead.
+//
+struct StrGC { const UTF8 *p; size_t n; };
+
+static thread_local StrGC s_gc_a[LBUF_SIZE];
+static thread_local StrGC s_gc_b[LBUF_SIZE];
+static thread_local StrGC s_gc_c[LBUF_SIZE];
+static thread_local bool  s_gc_busy = false;
+
+class CGraphemeScratch
+{
+public:
+    CGraphemeScratch(void)
+    {
+        mux_assert(!s_gc_busy);
+        s_gc_busy = true;
+    }
+
+    ~CGraphemeScratch()
+    {
+        s_gc_busy = false;
+    }
+
+    StrGC *a(void) const { return s_gc_a; }
+    StrGC *b(void) const { return s_gc_b; }
+    StrGC *c(void) const { return s_gc_c; }
+
+private:
+    CGraphemeScratch(const CGraphemeScratch &);
+    CGraphemeScratch &operator=(const CGraphemeScratch &);
+};
+
 static FUNCTION(fun_strsort)
 {
     UNUSED_PARAMETER(executor);
@@ -13771,8 +13820,8 @@ static FUNCTION(fun_strsort)
 
     // Collect grapheme clusters as (pointer, length) pairs.
     //
-    struct GC { const UTF8 *p; size_t n; };
-    GC clusters[LBUF_SIZE];
+    CGraphemeScratch gs;
+    StrGC *clusters = gs.a();
     int nClusters = 0;
 
     size_t nRemaining = nBytes;
@@ -13799,11 +13848,11 @@ static FUNCTION(fun_strsort)
 
     // Sort by UTF-8 byte comparison.
     //
-    qsort(clusters, nClusters, sizeof(GC),
+    qsort(clusters, nClusters, sizeof(StrGC),
         [](const void *a, const void *b) -> int
         {
-            const GC *ga = static_cast<const GC *>(a);
-            const GC *gb = static_cast<const GC *>(b);
+            const StrGC *ga = static_cast<const StrGC *>(a);
+            const StrGC *gb = static_cast<const StrGC *>(b);
             size_t nMin = (ga->n < gb->n) ? ga->n : gb->n;
             int cmp = memcmp(ga->p, gb->p, nMin);
             if (0 != cmp) return cmp;
@@ -13841,8 +13890,8 @@ static FUNCTION(fun_strunique)
 
     // Collect grapheme clusters.
     //
-    struct GC { const UTF8 *p; size_t n; };
-    GC seen[LBUF_SIZE];
+    CGraphemeScratch gs;
+    StrGC *seen = gs.a();
     int nSeen = 0;
 
     size_t nRemaining = nBytes;
@@ -13898,8 +13947,6 @@ static FUNCTION(fun_strunique)
 // strdiff(s1, s2)   -- clusters in s1 not in s2
 // strinter(s1, s2)  -- clusters in both s1 and s2, in s1 order
 // ---------------------------------------------------------------------------
-
-struct StrGC { const UTF8 *p; size_t n; };
 
 static bool gc_equal(const StrGC &a, const StrGC &b)
 {
@@ -13974,9 +14021,6 @@ static void gc_extract_pair(
 // pure), so no two activations are ever live on one thread at the same time.
 //
 static thread_local UTF8  set_buf1[LBUF_SIZE];
-static thread_local StrGC set_gc1[LBUF_SIZE];
-static thread_local StrGC set_gc2[LBUF_SIZE];
-static thread_local StrGC set_seen[LBUF_SIZE];
 
 static FUNCTION(fun_strunion)
 {
@@ -13993,7 +14037,8 @@ static FUNCTION(fun_strunion)
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
+    CGraphemeScratch gs;
+    StrGC *gc1 = gs.a(), *gc2 = gs.b();
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14009,7 +14054,7 @@ static FUNCTION(fun_strunion)
 
     // Emit unique clusters from s1, then unique clusters from s2 not in s1.
     //
-    StrGC *seen = set_seen;
+    StrGC *seen = gs.c();
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
@@ -14051,7 +14096,8 @@ static FUNCTION(fun_strdiff)
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
+    CGraphemeScratch gs;
+    StrGC *gc1 = gs.a(), *gc2 = gs.b();
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14067,7 +14113,7 @@ static FUNCTION(fun_strdiff)
 
     // Emit unique clusters from s1 that do not appear in s2.
     //
-    StrGC *seen = set_seen;
+    StrGC *seen = gs.c();
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
@@ -14099,7 +14145,8 @@ static FUNCTION(fun_strinter)
     UTF8 *p2 = nullptr;
     gc_extract_pair(fargs[0], fargs[1], buf1, nBytes1, p2, nBytes2);
 
-    StrGC *gc1 = set_gc1, *gc2 = set_gc2;
+    CGraphemeScratch gs;
+    StrGC *gc1 = gs.a(), *gc2 = gs.b();
     int n1 = gc_extract(buf1, nBytes1, gc1, LBUF_SIZE);
     if (n1 < 0)
     {
@@ -14115,7 +14162,7 @@ static FUNCTION(fun_strinter)
 
     // Emit unique clusters from s1 that also appear in s2.
     //
-    StrGC *seen = set_seen;
+    StrGC *seen = gs.c();
     int nSeen = 0;
 
     for (int i = 0; i < n1; i++)
