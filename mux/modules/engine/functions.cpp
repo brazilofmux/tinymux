@@ -5097,6 +5097,20 @@ static FUNCTION(fun_insert)
  * * fun_remove: Remove a word from a string
  */
 
+// The rest of fun_remove's frame after the shared word table moved to
+// CWordScratch: two LBUF_SIZE plain-text buffers, 64 KB, holding the
+// colour-stripped forms being compared.  Both are live at once -- the target
+// word against the current word -- so they stay two buffers.
+//
+// Private to fun_remove rather than shared, so the single-live-user argument
+// reduces to fun_remove not re-entering itself, which it cannot: it evaluates
+// no softcode.  co_search, co_split_words, co_strip_color and print_sep (a
+// macro for safe_copy_buf) are pure, and neither delim_check call passes
+// DELIM_EVAL, the only path in delim_check that runs mux_exec.
+//
+static thread_local unsigned char rm_word_plain[LBUF_SIZE];
+static thread_local unsigned char rm_w_plain[LBUF_SIZE];
+
 static FUNCTION(fun_remove)
 {
     SEP sep;
@@ -5134,7 +5148,7 @@ static FUNCTION(fun_remove)
 
     // Strip color from the word for comparison.
     //
-    unsigned char wordPlain[LBUF_SIZE];
+    unsigned char *wordPlain = rm_word_plain;
     size_t nWordPlain = co_strip_color(wordPlain, pWord, nWordLen);
 
     // Walk through the string copying words until (if ever) we get to
@@ -5147,7 +5161,7 @@ static FUNCTION(fun_remove)
         {
             // Strip color from this word for comparison.
             //
-            unsigned char wPlain[LBUF_SIZE];
+            unsigned char *wPlain = rm_w_plain;
             size_t nwp = co_strip_color(wPlain,
                              pList + wstarts[i],
                              wends[i] - wstarts[i]);
