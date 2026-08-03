@@ -3087,6 +3087,15 @@ FUNCTION(fun_digest)
     const EVP_MD *mp = EVP_get_digestbyname(reinterpret_cast<const char *>(fargs[0]));
     if (nullptr == mp)
     {
+        // Release the context allocated above before bailing.  Without this
+        // every digest() call naming an unknown algorithm leaks an
+        // EVP_MD_CTX, and digest() is CA_PUBLIC -- any connected player can
+        // repeat it in a loop.  (2.14 #1964.)
+#if HAVE_EVP_MD_CTX_NEW
+        EVP_MD_CTX_free(ctx);
+#elif HAVE_EVP_MD_CTX_CREATE
+        EVP_MD_CTX_destroy(ctx);
+#endif
         safe_str(T("#-1 UNSUPPORTED DIGEST TYPE"), buff, bufc);
         return;
     }
