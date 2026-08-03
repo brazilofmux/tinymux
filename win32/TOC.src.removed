@@ -180,3 +180,7 @@ src/walkdb.cpp
 src/wild.cpp
 src/wiz.cpp
 lib/timeparser.cpp
+game/startmux.wsf
+src/timer.cpp
+src/tools/announce.c
+src/modules/sqlproxy.vcproj
