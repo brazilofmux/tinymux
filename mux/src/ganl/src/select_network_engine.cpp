@@ -904,11 +904,32 @@ void SelectNetworkEngine::updateMaxFd() {
     } else {
         // std::map keys are sorted, last element has the highest key
         maxFd_ = sockets_.rbegin()->first;
+        // #946: a descriptor >= FD_SETSIZE is admitted to sockets_, but the
+        // guard in updateFdSets keeps it out of the master fd sets.  Clamp so
+        // maxFd_ can never drive select()'s nfds, the FD_ISSET scan loop, or
+        // the concurrent-removal FD_CLR past the fd_set bounds.  Such a socket
+        // is left unserviced rather than corrupting adjacent memory -- the same
+        // "sufficient, not complete" trade as the updateFdSets guard.
+        if (maxFd_ >= MAX_SOCKET_FDS) {
+            maxFd_ = MAX_SOCKET_FDS - 1;
+        }
     }
 }
 
 // MUST be called with mutex_ HELD
 void SelectNetworkEngine::updateFdSets(SocketFD fd, const SocketInfo& info) {
+     // glibc's FD_SET writes out of bounds for fd >= FD_SETSIZE (#946).  Every
+     // path that puts a descriptor into the master sets funnels through here,
+     // so one guard removes the out-of-bounds write regardless of how the fd
+     // was obtained.  Deliberately minimal for 2.13: an fd this engine cannot
+     // select() on is simply never added, which leaves it unserviced rather
+     // than corrupting adjacent memory.  2.14 rejects such fds at each entry
+     // point with ENOBUFS instead; that is the complete fix, this is the safe
+     // one.
+     if (fd < 0 || fd >= MAX_SOCKET_FDS) {
+         return;
+     }
+
      // Read set
      if (info.wantRead) FD_SET(fd, &masterReadFds_);
      else FD_CLR(fd, &masterReadFds_);
@@ -930,10 +951,15 @@ void SelectNetworkEngine::updateFdSets(SocketFD fd, const SocketInfo& info) {
 
 // MUST be called with mutex_ HELD
 void SelectNetworkEngine::removeFd(SocketFD fd) {
-     // Clear from FD sets
-     FD_CLR(fd, &masterReadFds_);
-     FD_CLR(fd, &masterWriteFds_);
-     FD_CLR(fd, &masterErrorFds_);
+     // FD_CLR is out of bounds for the same range FD_SET is (#946).  Such an
+     // fd was never added by updateFdSets above, so there is nothing to clear;
+     // fall through to the map erase and maxFd_ recompute below.
+     if (0 <= fd && fd < MAX_SOCKET_FDS) {
+         // Clear from FD sets
+         FD_CLR(fd, &masterReadFds_);
+         FD_CLR(fd, &masterWriteFds_);
+         FD_CLR(fd, &masterErrorFds_);
+     }
 
      // Remove from maps
      sockets_.erase(fd);
