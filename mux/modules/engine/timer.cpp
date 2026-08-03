@@ -8,6 +8,7 @@
 #include "config.h"
 #include "externs.h"
 #include <new>
+#include <exception>
 
 CScheduler scheduler;
 
@@ -402,7 +403,46 @@ int CScheduler::RunTasks(int iCount)
         {
             if (pTask->fpTask)
             {
-                pTask->fpTask(pTask->arg_voidptr, pTask->arg_Integer);
+                // #2009: exception barrier.  Everything softcode does runs
+                // under here -- command parsing, function evaluation, mail,
+                // comsys, @dump -- and all of it allocates.  There is no catch
+                // between this frame and main(), so a throw becomes
+                // std::terminate -> abort -> SIGABRT, and signals.cpp handles
+                // SIGABRT by logging and exit(1): no dump_restart_db(), no
+                // re-exec.  A SIGSEGV on the same line forks, dumps and
+                // execl()s a fresh netmux, so an exception costs the database
+                // where a null dereference would have self-healed.
+                //
+                // Contained per task rather than per tick so that one bad
+                // command dies without dropping the rest of the tick.  It also
+                // keeps the delete below reachable: pTask is already off the
+                // heap by this point, so an escaping throw would leak the
+                // record in addition to losing the task.
+                //
+                // Abandoning one task is survivable.  process_command() resets
+                // func_nest_lev, func_invk_ctr, ntfy_nest_lev and lock_nest_lev
+                // at the top of every command, so a half-finished command
+                // cannot poison the next one's limits.  It does leak that
+                // command's lbufs -- bounded, and far cheaper than losing the
+                // database.
+                //
+                try
+                {
+                    pTask->fpTask(pTask->arg_voidptr, pTask->arg_Integer);
+                }
+                catch (const std::exception &e)
+                {
+                    STARTLOG(LOG_BUGS, T("BUG"), T("TASK"));
+                    log_printf(T("Exception escaped a scheduled task (%s); task abandoned."),
+                        reinterpret_cast<const UTF8 *>(e.what()));
+                    ENDLOG;
+                }
+                catch (...)
+                {
+                    STARTLOG(LOG_BUGS, T("BUG"), T("TASK"));
+                    log_printf(T("Unknown exception escaped a scheduled task; task abandoned."));
+                    ENDLOG;
+                }
                 nTasks++;
             }
             delete pTask;
