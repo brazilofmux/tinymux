@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -53,7 +53,7 @@ TEST_TARGETS = \
     test-nls test-nls-plural test-nls-runtime test-nls-ko \
     test-vacuous test-narrowing test-config test-dbt test-alarm \
     test-blob \
-    test-jit-qreg test-jit-ifelse test-lua-ecall test-ios \
+    test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-ecall test-ios \
     test-smoke test-smoke-ast test-smoke-builtin \
     test-comsys-handoff test-comsys-mogrify test-comsys-conformance \
     test-comsys-cmdparity
@@ -358,6 +358,23 @@ test-jit-ifelse:
 	    exit $$rc; \
 	fi
 
+# Runaway-recursion termination cost oracle (#1994).
+# Terminating a runaway self-recursive ufun on the compiled route was
+# exponential in function_recursion_limit: the shared heap's single DBT
+# context was reset by a nested eval(), the outer run then failed, and
+# jit_eval handed the whole subtree back to the AST to redo.  Asserts
+# eval_attempts stays linear, because the ANSWER is correct either way --
+# a result-equality check cannot see this defect.
+# Skips cleanly on builds without --enable-jit (the script exits 2).
+test-jit-recursion:
+	@echo "==> Running JIT runaway-recursion cost oracle"
+	@sh testcases/tools/jit_recursion/oracle.sh; rc=$$?; \
+	if [ $$rc -eq 2 ]; then \
+	    echo "==> Skipping (build has no JIT)"; \
+	else \
+	    exit $$rc; \
+	fi
+
 # Full smoke with mudconf.lua_jit forced on (#1309).  Default `make test`
 # keeps lua_jit off so production configs stay safe until Phase 4 default-on.
 # Requires --enable-jit (same as the rest of the Lua JIT path).
@@ -546,6 +563,7 @@ test-asan:
 	$(ASAN_ISLAND_ENV) $(MAKE) test-ganl
 	$(ASAN_ISLAND_ENV) $(MAKE) test-jit-qreg
 	$(ASAN_ISLAND_ENV) $(MAKE) test-jit-ifelse
+	$(ASAN_ISLAND_ENV) $(MAKE) test-jit-recursion
 	$(ASAN_ISLAND_ENV) $(MAKE) test-lua-ecall
 	$(ASAN_ISLAND_ENV) $(MAKE) test-scenario
 	cd testcases && $(ASAN_ENV) SMOKE_EXCLUDE="$(ASAN_SMOKE_EXCLUDE)" ./tools/Makesmoke \
