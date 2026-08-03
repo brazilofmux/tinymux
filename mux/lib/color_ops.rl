@@ -1347,63 +1347,77 @@ size_t co_reverse(unsigned char *out, const unsigned char *data, size_t len)
 {
     const unsigned char *pe = data + len;
 
-    /* First, collect an array of (start, end) pointers for each
-     * "element" — where an element is [optional color] + visible_codepoint.
-     * We reverse the order of elements. */
-
-    /* Maximum elements: one per byte (ASCII). */
-    typedef struct { const unsigned char *start; const unsigned char *end; } elem_t;
-    elem_t elems[LBUF_SIZE];
-    size_t nElems = 0;
+    /* An "element" is [optional color] + one visible codepoint, and the
+     * reversal is of element order.
+     *
+     * #2002: elements exactly TILE [leading_end, pe) -- each one begins
+     * where the previous ended -- so where an element lands in the
+     * reversed output is a function of where it ENDS in the input:
+     *
+     *     out_offset = leading_len + (len - end_offset)
+     *
+     * That is known during the same forward pass that finds the element,
+     * so nothing has to be remembered and each element can be written
+     * straight to its final position.  The old code built an
+     * elem_t[LBUF_SIZE] index purely to walk it backwards afterwards,
+     * which cost 524,288 bytes of stack -- and in the freestanding rv64
+     * blob, where color_ops.c is also compiled, that was about a sixth of
+     * the entire guest stack for a single call.
+     *
+     * The index was also unbounded: nElems had no check against
+     * LBUF_SIZE, so a caller passing len > LBUF_SIZE would have run off
+     * the end of elems[].  With no array there is nothing to overrun.
+     */
+    unsigned char *const wp_end = out + LBUF_SIZE - 1;
+    const size_t out_cap = (size_t)(wp_end - out);
 
     /* Leading color (before any visible char) is emitted first, unreversed. */
-    const unsigned char *p = data;
-    const unsigned char *leading_end = co_skip_color(p, pe);
+    const unsigned char *leading_end = co_skip_color(data, pe);
+    const size_t leading_len = (size_t)(leading_end - data);
 
-    p = leading_end;
+    if (leading_len > 0) {
+        wp_safe_copy(out, wp_end, data, leading_len);
+    }
+
+    const unsigned char *p = leading_end;
     while (p < pe) {
         const unsigned char *elem_start = p;
+        const unsigned char *elem_end;
 
         /* Skip color preceding this visible char. */
         p = co_skip_color(p, pe);
         if (p >= pe) {
             /* Trailing color after last visible char. */
-            if (p > elem_start) {
-                elems[nElems].start = elem_start;
-                elems[nElems].end = p;
-                nElems++;
+            if (p == elem_start) {
+                break;
             }
-            break;
+            elem_end = p;
+        } else {
+            /* Advance past the visible code point. */
+            elem_end = co_visible_advance(p, pe, 1, NULL);
         }
 
-        /* Advance past the visible code point. */
-        const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
+        /* Place this element directly.  Truncation matches the sequential
+         * form byte for byte: the same bytes land at the same offsets, and
+         * anything at or past wp_end is dropped rather than written. */
+        const size_t dst = leading_len + (size_t)(pe - elem_end);
+        if (dst < out_cap) {
+            wp_safe_copy(out + dst, wp_end, elem_start,
+                         (size_t)(elem_end - elem_start));
+        }
 
-        elems[nElems].start = elem_start;
-        elems[nElems].end = after;
-        nElems++;
-
-        p = after;
+        if (p >= pe) {
+            break;
+        }
+        p = elem_end;
     }
 
-    /* Build output: leading color + reversed elements. */
-    unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
-
-    /* Emit leading color. */
-    if (leading_end > data) {
-        size_t cb = (size_t)(leading_end - data);
-        wp += wp_safe_copy(wp, wp_end, data, cb);
-    }
-
-    /* Emit elements in reverse order. */
-    for (size_t i = nElems; i > 0 && wp < wp_end; i--) {
-        size_t cb = (size_t)(elems[i-1].end - elems[i-1].start);
-        wp += wp_safe_copy(wp, wp_end, elems[i-1].start, cb);
-    }
-
-    *wp = '\0';
-    return (size_t)(wp - out);
+    /* Leading color plus every element covers exactly len bytes, so the
+     * reversed output is the same length as the input, clamped to the
+     * buffer -- which is what the sequential form ended up returning. */
+    size_t total = (len > out_cap) ? out_cap : len;
+    out[total] = '\0';
+    return total;
 }
 
 /* ---- co_edit ---- */
