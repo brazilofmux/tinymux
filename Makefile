@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-nfc test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -49,7 +49,7 @@ realclean:
 TEST_TARGETS = \
     test-ganl test-netaddr test-digest test-shacrypt test-libmux test-color-ops test-table \
     test-db \
-    test-slave test-stubslave-teardown test-hir test-format \
+    test-slave test-stubslave-teardown test-hir test-format test-nfc \
     test-nls test-nls-plural test-nls-runtime test-nls-ko \
     test-vacuous test-narrowing test-config test-dbt test-alarm \
     test-blob \
@@ -538,6 +538,7 @@ test-asan:
 	fi
 	@echo "==> Running the suites under sanitizers"
 	$(ASAN_ISLAND_ENV) $(MAKE) test-format
+	$(ASAN_ISLAND_ENV) $(MAKE) test-nfc
 	$(ASAN_ISLAND_ENV) $(MAKE) test-netaddr
 	$(ASAN_ISLAND_ENV) $(MAKE) test-digest
 	$(ASAN_ISLAND_ENV) $(MAKE) test-shacrypt
@@ -564,6 +565,14 @@ test-asan:
 test-format:
 	@echo "==> Running mux_vsnprintf format tests"
 	$(MAKE) -C tests/format test
+
+# NFC normalization (tests/nfc): composition, canonical ordering by combining
+# class, and idempotence of the normal form.  Nothing covered normalization
+# before this -- the combining-character smoke cases reach the code but assert
+# nothing about it, which is the coverage #1998 had to be reviewed against.
+test-nfc:
+	@echo "==> Running NFC normalization tests"
+	$(MAKE) -C tests/nfc test
 
 # NLS marking and catalogue guard (tests/nls): softcode ABI tokens and printf
 # conversions must never become translatable, a literal must not be M_() in one
