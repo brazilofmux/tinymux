@@ -750,7 +750,19 @@ static NFC_NOINLINE void utf8_normalize_nfc_slow(const UTF8 *src, size_t nSrc,
 {
     // Step 1: Decompose all code points to NFD.
     //
-    NFCCodePoint cps[NFC_MAX_CODEPOINTS];
+    // NFC_MAX_CODEPOINTS is LBUF_SIZE * 2, so at LBUF_SIZE 32768 this table is
+    // 512 KB -- the whole of this function's stack frame.  It is the slow path
+    // of a routine every piece of string handling reaches, so it should not be
+    // costing half a megabyte of stack to enter.
+    //
+    // Safe as static: utf8_normalize_nfc_slow neither recurses nor evaluates
+    // softcode.  It calls only utf8_Decode, utf8_Encode, DecomposeOne,
+    // CanonicalOrder, CanonicalCompose and memcpy, none of which call back into
+    // it, so no two activations are ever live on one thread at the same time.
+    // (utf8_normalize.cpp is not one of the three sources compiled into the
+    // freestanding rv64 blob, so unlike color_ops.c it may use .bss.)
+    //
+    static thread_local NFCCodePoint cps[NFC_MAX_CODEPOINTS];
     int nCps = 0;
 
     const UTF8 *p = src;
