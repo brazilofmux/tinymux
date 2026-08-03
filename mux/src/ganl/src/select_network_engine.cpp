@@ -198,7 +198,15 @@ ListenerHandle SelectNetworkEngine::createListener(const std::string& host, uint
 
         if (ai->ai_family == AF_INET6) {
             int disable = 0;
-            ::setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable));
+            // See the note in the epoll engine (2.14 #739): a kernel may refuse
+            // to clear IPV6_V6ONLY, and discarding the result meant the
+            // listener silently bound IPv6-only.  Warn; binding still proceeds.
+            if (::setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &disable, sizeof(disable)) != 0) {
+                std::cerr << "[Select:CTL] WARNING: could not clear IPV6_V6ONLY ("
+                          << getErrorString(getLastError()) << "); this listener "
+                             "is IPv6-only and will not accept IPv4 clients."
+                          << std::endl;
+            }
         }
 
         if (!setNonBlocking(fd, error)) {
