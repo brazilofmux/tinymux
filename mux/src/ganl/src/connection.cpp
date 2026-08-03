@@ -268,7 +268,13 @@ void ConnectionBase::sendDataToClient(const std::string& data) {
     if (getState() == ConnectionState::Running || getState() == ConnectionState::TelnetNegotiating) { // Allow during negotiation too? Check ProtocolHandler contract.
         // 2. Format the data (Telnet commands, colors, encoding etc.)
         // Note: formatOutput reads from applicationOutput_ and writes to formattedOutput_
-        formattedOutput_.clear(); // Ensure target is empty
+        // 2.14 #949: do NOT clear formattedOutput_ here.  processOutgoing()
+        // consumes only what it manages to encrypt, so a WANT_READ/WANT_WRITE
+        // leaves un-encrypted plaintext behind; clearing discarded it on the
+        // next send, silently losing output already queued for the player.
+        // formatOutput() appends, so leftover bytes are preserved in order and
+        // flushed once TLS makes progress.  The non-TLS branch below still
+        // clears the buffer explicitly after copying it out.
         if (!protocolHandler_.formatOutput(handle_, applicationOutput_, formattedOutput_, true)) {
             GANL_CONN_DEBUG(handle_, "Error formatting output data: " << protocolHandler_.getLastProtocolErrorString(handle_) << ". Closing.");
             close(DisconnectReason::ProtocolError);

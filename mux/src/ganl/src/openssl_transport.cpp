@@ -66,6 +66,21 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
 
     // Prefer server cipher order
     SSL_CTX_set_options(ctx_, SSL_OP_CIPHER_SERVER_PREFERENCE);
+
+    // 2.14 #948.  Client-initiated TLS 1.2 renegotiation is a CPU-asymmetric
+    // DoS, and it is the only thing that makes SSL_write() return WANT_READ
+    // mid-stream -- which is what strands formatted plaintext in the write
+    // path (see #949 in connection.cpp).  TLS 1.3 has no renegotiation, and
+    // no MUSH client renegotiates, so refusing it costs nothing here.
+#ifdef SSL_OP_NO_RENEGOTIATION
+    SSL_CTX_set_options(ctx_, SSL_OP_NO_RENEGOTIATION);
+#endif
+
+    // The formatted plaintext buffer can be reallocated between a WANT_WRITE
+    // and its retry.  Without this mode OpenSSL rejects the retry with
+    // SSL_R_BAD_WRITE_RETRY and the client is dropped.  Purely permissive:
+    // it makes OpenSSL tolerate something it would otherwise refuse.
+    SSL_CTX_set_mode(ctx_, SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
     // Consider setting cipher list: SSL_CTX_set_cipher_list(ctx_, "HIGH:!aNULL:!MD5:!RC4");
 
     // Load certificate and key
