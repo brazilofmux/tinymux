@@ -584,7 +584,25 @@ bool EpollNetworkEngine::postWrite(ConnectionHandle conn, const char* data, size
 // --- Event Processing ---
 
 int EpollNetworkEngine::processEvents(int timeoutMs, IoEvent* events, int maxEvents) {
-    int nfds = epoll_wait(epollFd_, epollEvents_.data(), epollEvents_.size(), timeoutMs);
+    // Never fetch more events than the caller will accept (2.14 #943).
+    // epoll_wait would otherwise return up to epollEvents_.size() (128) while
+    // the loop below stops at maxEvents (the adapter passes 64), and every
+    // surplus event would be consumed from the kernel and silently discarded.
+    // These registrations are EPOLLET: a consumed edge never re-fires, so the
+    // affected connections stall until some unrelated event happens to arm
+    // them again.  Fetching only what we will deliver leaves the remainder
+    // pending in the kernel, ready for the next poll.
+    if (maxEvents <= 0)
+    {
+        return 0; // Caller has no room; take nothing from the kernel.
+    }
+    int fetchMax = static_cast<int>(epollEvents_.size());
+    if (maxEvents < fetchMax)
+    {
+        fetchMax = maxEvents;
+    }
+
+    int nfds = epoll_wait(epollFd_, epollEvents_.data(), fetchMax, timeoutMs);
 
     // 2.14 #791.  This was a `// ... error handling as before ...` placeholder:
     // on -1 the nfds==0 branch was skipped, the loop below never ran (nfds is
