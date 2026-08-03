@@ -4956,6 +4956,46 @@ static void do_itemfuns(UTF8 *buff, UTF8 **bufc,
     **bufc = '\0';
 }
 
+// Shared scratch for decoded integer position lists.
+//
+// int ai[MAX_WORDS] is MAX_WORDS == LBUF_SIZE == 32768 entries of four bytes
+// -- 128 KB, and effectively the entire stack frame of fun_insert, fun_ldelete
+// and fun_replace.  fun_choose's ip[LBUF_SIZE/2] is the same kind of table at
+// half the size and fits here as well.
+//
+// Shared because no two are ever live at the same time: all four are leaves
+// with respect to softcode -- none evaluates (no ast_exec/mux_exec/jit_eval)
+// and none calls another.  DecodeListOfIntegers fills the caller's array
+// rather than owning one, so it adds no second live user.
+//
+// CIntListScratch enforces that rather than describing it.  Two live users
+// would interleave their position lists and silently edit the wrong elements
+// of a list, which is a worse failure than the stack pressure being removed.
+//
+static thread_local int  g_int_list[MAX_WORDS];
+static thread_local bool g_int_list_busy = false;
+
+class CIntListScratch
+{
+public:
+    CIntListScratch(void)
+    {
+        mux_assert(!g_int_list_busy);
+        g_int_list_busy = true;
+    }
+
+    ~CIntListScratch()
+    {
+        g_int_list_busy = false;
+    }
+
+    int *get(void) const { return g_int_list; }
+
+private:
+    CIntListScratch(const CIntListScratch &);
+    CIntListScratch &operator=(const CIntListScratch &);
+};
+
 int DecodeListOfIntegers(UTF8 *pIntegerList, int ai[])
 {
     int n = 0;
@@ -4985,7 +5025,8 @@ static FUNCTION(fun_ldelete)
 
     const unsigned char *pList = reinterpret_cast<const unsigned char *>(fargs[0]);
     size_t nListLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-    int ai[MAX_WORDS];
+    CIntListScratch is;
+    int *ai = is.get();
     int nai = DecodeListOfIntegers(fargs[1], ai);
 
     // Delete a word at position X of a list.
@@ -5015,7 +5056,8 @@ static FUNCTION(fun_replace)
 
     // Replace a word at position X of a list.
     //
-    int ai[MAX_WORDS];
+    CIntListScratch is;
+    int *ai = is.get();
     int nai = DecodeListOfIntegers(fargs[1], ai);
     do_itemfuns(buff, bufc, pList, nListLen, nai, ai,
                 pWord, nWordLen, sep, osep, IF_REPLACE);
@@ -5040,7 +5082,8 @@ static FUNCTION(fun_insert)
     const unsigned char *pWord = reinterpret_cast<const unsigned char *>(fargs[2]);
     size_t nWordLen = strlen(reinterpret_cast<const char *>(fargs[2]));
 
-    int ai[MAX_WORDS];
+    CIntListScratch is;
+    int *ai = is.get();
     int nai = DecodeListOfIntegers(fargs[1], ai);
 
     // Insert a word at position X of a list.
@@ -7912,7 +7955,8 @@ static FUNCTION(fun_choose)
     //
     int i;
     int sum = 0;
-    int ip[LBUF_SIZE/2];
+    CIntListScratch is;
+    int *ip = is.get();
     for (i = 0; i < n_weights; i++)
     {
         int64_t num = mux_atoi64(weights[i]);
