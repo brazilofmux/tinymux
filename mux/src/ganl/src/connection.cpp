@@ -196,6 +196,21 @@ void ConnectionBase::handleNetworkEvent(const IoEvent& event) {
          return;
     }
 
+    // A Read still queued when close() ran must not be processed (2.14 #798).
+    // close() calls cleanupResources() synchronously -- which destroys the TLS
+    // and protocol contexts -- and deliberately does NOT transition to Closed
+    // ("We intentionally don't transition to Closed state here"), so the guard
+    // above does not catch it.  handleRead would then drive processSecureData()
+    // and processProtocolData() over torn-down state.
+    //
+    // Read only.  handleWrite touches encryptedOutput_ and postWrite and never
+    // reaches secureTransport_ or protocolHandler_, so it is unaffected by the
+    // teardown; Close and Error still need to run to finish it.
+    if (IoEventType::Read == event.type && isClosingOrClosed()) {
+         GANL_CONN_DEBUG(handle_, "Ignoring Read on a closing connection; contexts are torn down.");
+         return;
+    }
+
     switch (event.type) {
         case IoEventType::Read:
             // Verify buffer handling - for IoBuffer integration
