@@ -1534,9 +1534,33 @@ void GanlAdapter::shutdown() {
     Log.WriteString(T("GANL Adapter shut down.\n"));
 }
 
-void GanlAdapter::prepare_for_restart() {
-    Log.WriteString(T("GANL: Preparing for @restart...\n"));
-
+// Steps 1-2 of prepare_for_restart(), and nothing else (#2028).
+//
+// The panic path in signals.cpp needs main_game_ports[] populated before
+// dump_restart_db() serialises it, and it needs TLS sessions dropped -- an
+// in-process SSL* cannot survive exec, so a TLS descriptor recorded in
+// restart.db would leave the successor resuming a session with nothing
+// behind it.  Everything after that in the full version is either useless
+// on this path or actively unwise there:
+//
+//   step 3  process_output() for every descriptor, then a 100 ms
+//           processEvents() with up to 64 handleNetworkEvent dispatches --
+//           output flushing and full protocol handling, allocating, from a
+//           handler entered on SIGSEGV.  Skipped.  The cost is that output
+//           queued by the step-2 closes is never flushed, so a TLS client
+//           may lose the goodbye text; on a panic those bytes may have been
+//           built from corrupt state anyway.
+//   steps 4-8  clearing maps, detaching fds and shutting the engine down.
+//           execl() replaces the process image, so no destructor these
+//           guard against ever runs.  Detaching does not affect fd
+//           inheritance either: the epoll engine never sets FD_CLOEXEC on
+//           connection or listener fds (detach is "fd left open"), so they
+//           cross exec regardless.  The DNS slave is not leaked by skipping
+//           step 8 either -- the parent end of its socketpair is created
+//           FD_CLOEXEC (slave_spawn_posix.cpp), so exec closes it and the
+//           slave sees EOF.
+//
+void GanlAdapter::prepare_for_restart_panic() {
     // 1. Populate main_game_ports[] from listener handles so dump_restart_db()
     //    can serialize them.  Listener handles ARE the file descriptors.
     num_main_game_ports = 0;
@@ -1591,7 +1615,13 @@ void GanlAdapter::prepare_for_restart() {
         }
     }
 #endif
+}
 
+void GanlAdapter::prepare_for_restart() {
+    Log.WriteString(T("GANL: Preparing for @restart...\n"));
+
+    // Steps 1-2 are shared with the panic path (#2028).
+    prepare_for_restart_panic();
 
     // 3. Flush output for remaining non-TLS connections.
     for (DESC* d : mudstate.descriptors_list) {
