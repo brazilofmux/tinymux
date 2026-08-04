@@ -17,6 +17,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "ganl_adapter.h"
 
 #include "sqlite_backend.h"
 
@@ -3556,6 +3557,35 @@ void dump_restart_db(void)
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
     {
         d = *it;
+
+#ifdef UNIX_SSL
+        // Never carry a TLS descriptor across the exec (#2032).  Its
+        // in-process SSL* cannot survive one, and restart.db records fSSL
+        // for listeners only -- never per descriptor -- so the successor
+        // adopts it as an ordinary connection and speaks cleartext at a
+        // peer still framing TLS records.
+        //
+        // 2.12 kept them out by construction: do_restart() called
+        // CleanUpSSLConnections(), whose shutdownsock() freed the
+        // descriptor synchronously before this loop ran.  Its GANL
+        // replacement asks the engine to close instead, which completes on
+        // a later trip through the event loop that neither @restart nor the
+        // panic path takes before dumping -- and it selected on d->ss,
+        // which stops saying SSL* the moment the handshake finishes.  So
+        // nothing was being dropped at all.
+        //
+        // Enforced here because this is the boundary the invariant is
+        // actually about, it covers the graceful and panic paths alike, and
+        // it adds no work to a crash handler.  The list is sentinel-
+        // terminated (the putref(f, 0) below) rather than counted, so
+        // skipping an entry needs no other bookkeeping.
+        //
+        if (g_GanlAdapter.is_tls_connection(d))
+        {
+            continue;
+        }
+#endif // UNIX_SSL
+
         putref(f, d->socket);
         putref(f, d->flags);
         putref64(f, d->connected_at.ReturnSeconds());

@@ -75,6 +75,15 @@ public:
     std::shared_ptr<ganl::ConnectionBase> get_connection(DESC* d);
     ganl::ConnectionHandle get_handle(DESC* d);
 
+    // Is this descriptor's connection TLS?  (#2032)  DESC carries no TLS
+    // marker -- port_info::fSSL describes listeners, not connections -- and
+    // d->ss only says SSL* while the handshake is in flight, returning to
+    // Accepted once welcome_user() runs.  Only the GANL connection still
+    // knows, via ConnectionBase::usesTls(); connection_listener_map_
+    // is erased as soon as the connection opens.
+    //
+    bool is_tls_connection(DESC* d);
+
     // --- Accessors for Callbacks ---
     ganl::NetworkEngine* get_engine() { return networkEngine_.get(); }
     DESC* allocate_desc();

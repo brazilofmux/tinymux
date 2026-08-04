@@ -55,6 +55,17 @@ public:
     bool initialize(bool useTls = true);
 
     /**
+     * Is this connection using TLS?
+     *
+     * Public because the adapter must be able to ask (#2032): DESC carries
+     * no TLS marker, and the listener context it arrived on is discarded
+     * once the connection opens, so this object is the only remaining
+     * record of it.  The protected isTlsEnabled() below stays for derived
+     * classes; this is the same value, exposed.
+     */
+    bool usesTls() const { return useTls_; }
+
+    /**
      * Handle a network event for this connection
      *
      * @param event Network event to handle
