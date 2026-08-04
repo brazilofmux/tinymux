@@ -1534,6 +1534,37 @@ void GanlAdapter::shutdown() {
     Log.WriteString(T("GANL Adapter shut down.\n"));
 }
 
+bool GanlAdapter::is_tls_connection(DESC* d)
+{
+    if (nullptr == d)
+    {
+        return false;
+    }
+
+#ifdef UNIX_SSL
+    // Still handshaking: ss has not yet been reset to Accepted.
+    //
+    if (SocketState::Accepted != d->ss)
+    {
+        return true;
+    }
+
+    // Established: ask the connection itself.  This is the only thing that
+    // still knows -- connection_listener_map_ is erased the moment the
+    // connection opens (onConnectionOpen), so the listener it arrived on is
+    // no longer available to consult.
+    //
+    const auto conn = get_connection(d);
+    if (  conn
+       && conn->usesTls())
+    {
+        return true;
+    }
+#endif // UNIX_SSL
+
+    return false;
+}
+
 // Steps 1-2 of prepare_for_restart(), and nothing else (#2028).
 //
 // The panic path in signals.cpp needs main_game_ports[] populated before
@@ -1606,7 +1637,9 @@ void GanlAdapter::prepare_for_restart_panic() {
     {
         std::vector<DESC*> tls_descs;
         for (DESC* d : mudstate.descriptors_list) {
-            if (d && d->ss != SocketState::Accepted) {
+            // #2032: d->ss only says SSL* mid-handshake, so this used to
+            // select nothing once a TLS session was established.
+            if (is_tls_connection(d)) {
                 tls_descs.push_back(d);
             }
         }
