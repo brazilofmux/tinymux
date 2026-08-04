@@ -90,7 +90,18 @@ cleanup() {
         rm -rf "$WORK"
     fi
 }
+# EXIT alone is not enough.  Under `timeout`, or any wrapper that signals the
+# script rather than letting it finish, bash runs no EXIT trap -- and this run
+# leaves a netmux plus its slave and stubslave behind, holding a port.  Four
+# such sets accumulated during development before this was noticed.  Trap the
+# signals too, and re-raise so the exit status still says we were killed.
+cleanup_and_die() {
+    cleanup
+    trap - EXIT
+    exit 143
+}
 trap cleanup EXIT
+trap cleanup_and_die INT TERM HUP
 
 # --- Build a throwaway game instance ----------------------------------------
 mkdir -p "$WORK/data"
