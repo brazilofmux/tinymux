@@ -1637,6 +1637,34 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
     log_name(executor);
     ENDLOG;
 
+    // Write restart.db BEFORE the teardown, and decline the restart if it
+    // cannot be written (#2043).
+    //
+    // This used to happen after prepare_for_restart(), final_modules() and
+    // CLOSE, i.e. after the point of no return -- so a failed write was
+    // discovered when there was nothing left to return to, and the successor
+    // exec'd into a game it could not serve: prepare_for_restart() detaches
+    // the listener fds but leaves them open for the successor to adopt, so
+    // without restart.db the successor collides with its own inheritance and
+    // dies on "bind() failed: Address already in use".
+    //
+    // DumpRestartDb() records the listeners and closes the TLS/WebSocket
+    // sessions itself, because the dump needs both done first.  Those are the
+    // only destructive steps that precede the decision, which is why the
+    // decline below is not free and says so.
+    //
+#if defined(HAVE_WORKING_FORK)
+    if (!dump_restart_db())
+    {
+        raw_broadcast(0, M_("GAME: Restart could not be prepared and has been cancelled.  The game is still running."));
+        STARTLOG(LOG_ALWAYS, "WIZ", "RSTRT");
+        log_text(T("Restart CANCELLED: restart.db could not be written.  Requested by "));
+        log_name(executor);
+        ENDLOG;
+        return;
+    }
+#endif // HAVE_WORKING_FORK
+
     g_GanlAdapter.prepare_for_restart();
 
     local_presync_database();
@@ -1659,9 +1687,9 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 #if defined(WINDOWS_PROCESSES)
     exit(12345678);
 #elif defined(UNIX_PROCESSES)
-#if defined(HAVE_WORKING_FORK)
-    dump_restart_db();
-#endif // HAVE_WORKING_FORK
+    // restart.db was written above, before the teardown, and the restart was
+    // declined if it could not be (#2043).  Dumping here as well would
+    // re-serialise descriptors the teardown has since closed.
 
     Log.StopLogging();
 

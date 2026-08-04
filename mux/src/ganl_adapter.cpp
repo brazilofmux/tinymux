@@ -2043,9 +2043,18 @@ void GanlAdapter::shutdown() {
     g_pILog->WriteString(T("GANL Adapter shut down.\n"));
 }
 
-void GanlAdapter::prepare_for_restart() {
-    g_pILog->WriteString(T("GANL: Preparing for @restart...\n"));
-
+// Step 1 of the restart sequence, callable on its own (#2043).
+//
+// dump_restart_db() needs main_game_ports[] populated, and until now the only
+// thing that filled it was prepare_for_restart() -- which also detaches the
+// listeners (step 6).  That forced the dump to happen after the point of no
+// return, so a failed write was discovered when there was no game left to
+// return to.  Split out so do_restart() can record the listeners, dump, and
+// still decline if the dump failed.
+//
+// Non-destructive and idempotent: it resets num_main_game_ports and rebuilds,
+// so prepare_for_restart() calling it again is harmless.
+void GanlAdapter::record_listeners_for_restart() {
     // 1. Populate main_game_ports[] from listener handles so dump_restart_db()
     //    can serialize them.  Listener handles ARE the file descriptors.
     num_main_game_ports = 0;
@@ -2084,6 +2093,16 @@ void GanlAdapter::prepare_for_restart() {
                      main_game_ports[idx].msa.sa(), &n);
     }
 
+}
+
+// Step 2, likewise callable on its own (#2043).
+//
+// This must run BEFORE dump_restart_db(), not after: a TLS descriptor written
+// into restart.db is restored by a successor that has no TLS state for it
+// (#2032).  It is also the reason an aborted restart is not free -- these
+// connections are already gone by the time the dump can fail.  Idempotent:
+// a second pass finds nothing left to drop.
+void GanlAdapter::close_tls_for_restart() {
     // 2. Close connections whose in-process protocol state cannot survive
     //    exec: established TLS (DS_TLS — not "ss != Accepted", which misses
     //    post-handshake sessions that are ss=Accepted), mid-handshake TLS
@@ -2110,6 +2129,17 @@ void GanlAdapter::prepare_for_restart() {
             close_connection(d, ganl::DisconnectReason::ServerShutdown);
         }
     }
+
+}
+
+void GanlAdapter::prepare_for_restart() {
+    g_pILog->WriteString(T("GANL: Preparing for @restart...\n"));
+
+    // Steps 1 and 2 live in their own methods so do_restart() can run them
+    // ahead of the dump (#2043).  Calling them again here is harmless and
+    // keeps this the single full sequence for any other caller.
+    record_listeners_for_restart();
+    close_tls_for_restart();
 
     // 3. Flush output for remaining plain-telnet connections.
     for (DESC* d : g_descriptors_list) {
