@@ -10,6 +10,12 @@
 #   a regression beyond the per-leg tolerance exit non-zero.  PERF_TOLERANCE
 #   overrides all three legs with a single number if you want one.
 #
+#   VALIDATE PERF_GATE=1 ON YOUR OWN BOX BEFORE TRUSTING IT.  Record a
+#   baseline, run it again against the SAME build, and see whether it comes
+#   back clean.  The per-leg tolerances in compare.py were calibrated on
+#   Darwin/arm64; on Linux/x86_64 the `compile` leg -- the only gateable one --
+#   is about 5x noisier and fires three times on an unchanged build.
+#
 #   Baselines are PER-MACHINE and are not comparable across boxes: absolute ns
 #   depend on the hardware.  Ratios are no better -- native and cached are timed
 #   in separate loops, so their noise is independent and dividing them compounds

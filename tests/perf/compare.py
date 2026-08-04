@@ -33,6 +33,28 @@ import sys
 # ignored.  Making it useful needs per-leg iteration counts inside rvbench()
 # -- many for the cheap leg, few for the expensive one -- which is tracked on
 # #2046 rather than bodged here.
+#
+# THESE NUMBERS DO NOT TRANSFER BETWEEN MACHINES.  The table above is
+# Darwin/arm64.  The same measurement on Kagura (Linux/x86_64, a shared 4-vCPU
+# VM), same build, two smoke runs, 55 benchmarks:
+#
+#   leg       median   p90     max     over tolerance
+#   native      2.5%  16.9%   71.2%    1 of 55
+#   compile     3.6%   8.5%   15.1%    3 of 55
+#   cached      1.0%  18.2%   84.8%    0 of 55
+#
+# native and cached are comparable or better there; compile -- the only leg
+# PERF_GATE is allowed to fail on -- is roughly 5x noisier, and exceeds its
+# 10% tolerance THREE TIMES comparing a build against itself.  Note that this
+# inverts the reasoning below: compile-each runs even longer on that box
+# (11-65us/call), so "the loop dwarfs a scheduler excursion" does not by
+# itself predict which leg is stable.
+#
+# So the leg tolerances are calibrated on one machine, exactly like the
+# baselines are, and PERF_GATE=1 needs to be validated locally -- run it twice
+# against the same build first -- before anyone wires it into anything.
+# Making tolerances per-machine alongside the baseline is the obvious fix and
+# is tracked on #2046.
 LEG_TOLERANCE = {
     "native": 60.0,
     "compile": 10.0,
