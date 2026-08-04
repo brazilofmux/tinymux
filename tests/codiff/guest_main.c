@@ -39,6 +39,10 @@ extern size_t_ co_splice(unsigned char *out,
                          const unsigned char *list2, size_t_ len2,
                          const unsigned char *search, size_t_ slen,
                          unsigned char delim, unsigned char osep);
+extern size_t_ co_transform(unsigned char *out,
+                            const unsigned char *str, size_t_ slen,
+                            const unsigned char *from_set, size_t_ flen,
+                            const unsigned char *to_set, size_t_ tlen);
 extern size_t_ co_center(unsigned char *out,
                          const unsigned char *p, size_t_ len,
                          size_t_ width,
