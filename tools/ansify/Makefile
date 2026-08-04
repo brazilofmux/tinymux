@@ -26,6 +26,7 @@ ansify: ansify.c
 regen: ansify.rl
 	chmod u+w ansify.c 2>/dev/null || true
 	$(RAGEL) $(RFLAGS) -o ansify.c ansify.rl
+	sed '/^#line /d' ansify.c > ansify.c.tmp && mv -f ansify.c.tmp ansify.c
 	chmod a-w ansify.c 2>/dev/null || true
 
 clean:

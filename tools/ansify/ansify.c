@@ -1,5 +1,4 @@
 
-#line 1 "ansify.rl"
 /*! \file ansify.rl
  * \brief Convert TinyMUX percent-color substitutions to ANSI escapes.
  *
@@ -199,11 +198,9 @@ static int try_emit_extended(const unsigned char *body, const unsigned char *bod
 }
 
 
-#line 246 "ansify.rl"
 
 
 
-#line 207 "ansify.c"
 static const int ansify_start = 2;
 static const int ansify_first_final = 2;
 static const int ansify_error = -1;
@@ -211,7 +208,6 @@ static const int ansify_error = -1;
 static const int ansify_en_main = 2;
 
 
-#line 249 "ansify.rl"
 
 static void process_buffer(const unsigned char *data, size_t len)
 {
@@ -234,7 +230,6 @@ static void process_buffer(const unsigned char *data, size_t len)
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
     
-#line 238 "ansify.c"
 	{
 	cs = ansify_start;
 	ts = 0;
@@ -242,22 +237,18 @@ static void process_buffer(const unsigned char *data, size_t len)
 	act = 0;
 	}
 
-#line 271 "ansify.rl"
     
-#line 248 "ansify.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 229 "ansify.rl"
 	{{p = ((te))-1;}{
         emit_bytes(ts, te);
     }}
 	goto st2;
 tr2:
-#line 210 "ansify.rl"
 	{te = p+1;{
         /* Match is three bytes: % x|c letter */
         const char *esc = letter_escape((int)ts[2]);
@@ -268,7 +259,6 @@ tr2:
     }}
 	goto st2;
 tr3:
-#line 219 "ansify.rl"
 	{te = p+1;{
         /* % x|c < body >   body is ts+3 .. te-1 */
         if (te - ts >= 4
@@ -280,44 +270,36 @@ tr3:
     }}
 	goto st2;
 tr4:
-#line 229 "ansify.rl"
 	{te = p+1;{
         emit_bytes(ts, te);
     }}
 	goto st2;
 tr6:
-#line 229 "ansify.rl"
 	{te = p;p--;{
         emit_bytes(ts, te);
     }}
 	goto st2;
 tr7:
-#line 206 "ansify.rl"
 	{te = p+1;{
         putchar('%');
     }}
 	goto st2;
 st2:
-#line 1 "NONE"
 	{ts = 0;}
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 1 "NONE"
 	{ts = p;}
-#line 309 "ansify.c"
 	if ( (*p) == 37u )
 		goto tr5;
 	goto tr4;
 tr5:
-#line 1 "NONE"
 	{te = p+1;}
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 321 "ansify.c"
 	switch( (*p) ) {
 		case 37u: goto tr7;
 		case 67u: goto st0;
@@ -383,7 +365,6 @@ case 1:
 
 	}
 
-#line 272 "ansify.rl"
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif

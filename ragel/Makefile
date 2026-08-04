@@ -21,9 +21,11 @@ all: test_harness test_trigger_bin
 # Ragel .rl -> .c
 color_ops.c: $(COLOR_OPS_RL) ../mux/include/color_ops.h ../mux/include/unicode_tables_c.h
 	$(RAGEL) $(RFLAGS) -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 
 trigger_match.c: trigger_match.rl
 	$(RAGEL) $(RFLAGS) -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 
 test_harness: $(COLOR_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(COLOR_OBJS)

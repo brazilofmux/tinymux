@@ -1,5 +1,4 @@
 
-#line 1 "unformat.rl"
 /*
  * unformat.rl -- Ragel -G2 replacement for unformat.pl
  *
@@ -153,11 +152,9 @@ static void join_check(char first_char)
  */
 
 
-#line 295 "unformat.rl"
 
 
 
-#line 156 "unformat.c"
 static const int unformat_start = 16;
 static const int unformat_first_final = 16;
 static const int unformat_error = -1;
@@ -165,7 +162,6 @@ static const int unformat_error = -1;
 static const int unformat_en_main = 16;
 
 
-#line 298 "unformat.rl"
 
 /*
  * Emit a captured line segment.  Detects trailing ' \' and handles
@@ -212,21 +208,17 @@ static void process_buffer(const char *buf, size_t len)
     (void)unformat_error;
 
     
-#line 207 "unformat.c"
 	{
 	cs = unformat_start;
 	}
 
-#line 344 "unformat.rl"
     
-#line 210 "unformat.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr1:
-#line 254 "unformat.rl"
 	{
         flush_command();
         in_command = 1;
@@ -235,38 +227,29 @@ tr1:
         cmd_start_file = current_file;
         emit_segment(mark, (size_t)(p - mark), 0);
     }
-#line 156 "unformat.rl"
 	{ line_number++; }
 	goto st16;
 tr4:
-#line 156 "unformat.rl"
 	{ line_number++; }
 	goto st16;
 tr6:
-#line 262 "unformat.rl"
 	{
         emit_segment(mark, (size_t)(p - mark), 1);
     }
-#line 156 "unformat.rl"
 	{ line_number++; }
 	goto st16;
 tr19:
-#line 158 "unformat.rl"
 	{ do_include(inc_start, p); }
-#line 156 "unformat.rl"
 	{ line_number++; }
 	goto st16;
 tr20:
-#line 171 "unformat.rl"
 	{ flush_command_ex(1); }
-#line 156 "unformat.rl"
 	{ line_number++; }
 	goto st16;
 st16:
 	if ( ++p == pe )
 		goto _test_eof16;
 case 16:
-#line 247 "unformat.c"
 	switch( (*p) ) {
 		case 9: goto st1;
 		case 10: goto tr4;
@@ -276,14 +259,12 @@ case 16:
 	}
 	goto tr21;
 tr21:
-#line 253 "unformat.rl"
 	{ mark = p; }
 	goto st0;
 st0:
 	if ( ++p == pe )
 		goto _test_eof0;
 case 0:
-#line 262 "unformat.c"
 	if ( (*p) == 10 )
 		goto tr1;
 	goto st0;
@@ -298,14 +279,12 @@ case 1:
 	}
 	goto tr2;
 tr2:
-#line 253 "unformat.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 282 "unformat.c"
 	if ( (*p) == 10 )
 		goto tr6;
 	goto st2;
@@ -400,26 +379,22 @@ case 12:
 	}
 	goto tr16;
 tr16:
-#line 157 "unformat.rl"
 	{ inc_start = p; }
 	goto st13;
 st13:
 	if ( ++p == pe )
 		goto _test_eof13;
 case 13:
-#line 382 "unformat.c"
 	if ( (*p) == 10 )
 		goto tr19;
 	goto st13;
 tr17:
-#line 157 "unformat.rl"
 	{ inc_start = p; }
 	goto st14;
 st14:
 	if ( ++p == pe )
 		goto _test_eof14;
 case 14:
-#line 392 "unformat.c"
 	switch( (*p) ) {
 		case 9: goto tr17;
 		case 10: goto tr19;
@@ -427,14 +402,12 @@ case 14:
 	}
 	goto tr16;
 tr23:
-#line 253 "unformat.rl"
 	{ mark = p; }
 	goto st15;
 st15:
 	if ( ++p == pe )
 		goto _test_eof15;
 case 15:
-#line 405 "unformat.c"
 	if ( (*p) == 10 )
 		goto tr20;
 	goto st0;
@@ -460,7 +433,6 @@ case 15:
 	_test_eof: {}
 	}
 
-#line 345 "unformat.rl"
 
     if (cs < 16) {
         fprintf(stderr, "%s:%d: parse error at offset %ld\n",

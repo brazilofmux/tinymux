@@ -1,5 +1,4 @@
 
-#line 1 "trigger_match.rl"
 /*
  * trigger_match.rl — Multi-pattern trigger matching engine.
  *
@@ -48,13 +47,11 @@ typedef struct {
 /* ------------------------------------------------------------------ */
 
 
-#line 49 "trigger_match.c"
 static const int trigger_parse_start = 1;
 
 static const int trigger_parse_en_main = 1;
 
 
-#line 137 "trigger_match.rl"
 
 
 /*
@@ -77,22 +74,18 @@ static int trigger_parse_pattern(const char *pattern, size_t plen,
     *is_regex = 0;
 
     
-#line 74 "trigger_match.c"
 	{
 	cs = trigger_parse_start;
 	}
 
-#line 159 "trigger_match.rl"
     (void)trigger_parse_en_main;  /* Suppress unused-variable warning. */
     
-#line 78 "trigger_match.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 103 "trigger_match.rl"
 	{
         if (nsegs < max_segs) {
             segs[nsegs].type = SEG_LITERAL;
@@ -102,7 +95,6 @@ tr0:
     }
 	goto st1;
 tr1:
-#line 52 "trigger_match.rl"
 	{
         if (nsegs < max_segs) {
             segs[nsegs].type = SEG_LITERAL;
@@ -112,7 +104,6 @@ tr1:
     }
 	goto st1;
 tr2:
-#line 97 "trigger_match.rl"
 	{
         /* $ at end of pattern = EOL anchor; elsewhere = regex. */
         eol_pending = 1;
@@ -120,13 +111,11 @@ tr2:
     }
 	goto st1;
 tr3:
-#line 111 "trigger_match.rl"
 	{
         *is_regex = 1;
     }
 	goto st1;
 tr4:
-#line 60 "trigger_match.rl"
 	{
         if (nsegs < max_segs) {
             /* Collapse consecutive stars. */
@@ -139,7 +128,6 @@ tr4:
     }
 	goto st1;
 tr5:
-#line 79 "trigger_match.rl"
 	{
         if (nsegs < max_segs) {
             segs[nsegs].type = SEG_QUESTION;
@@ -149,7 +137,6 @@ tr5:
     }
 	goto st1;
 tr6:
-#line 71 "trigger_match.rl"
 	{
         if (nsegs < max_segs) {
             segs[nsegs].type = SEG_QUESTION;
@@ -159,7 +146,6 @@ tr6:
     }
 	goto st1;
 tr8:
-#line 87 "trigger_match.rl"
 	{
         if (nsegs == 0 && nsegs < max_segs) {
             segs[nsegs].type = SEG_BOL;
@@ -174,7 +160,6 @@ st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 158 "trigger_match.c"
 	switch( (*p) ) {
 		case 36u: goto tr2;
 		case 42u: goto tr4;
@@ -204,7 +189,6 @@ case 0:
 	_test_eof: {}
 	}
 
-#line 161 "trigger_match.rl"
 
     /* If $ was the last character, it's a valid EOL anchor. */
     if (eol_pending) {

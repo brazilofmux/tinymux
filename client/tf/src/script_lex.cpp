@@ -1,5 +1,4 @@
 
-#line 1 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 // script_lex.rl — Ragel -G2 expression tokenizer.
 //
 // Tokenizes TF expression language: numeric/string literals, identifiers,
@@ -13,14 +12,12 @@
 #include <cstring>
 
 
-#line 14 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 static const int script_lex_start = 7;
 static const int script_lex_error = -1;
 
 static const int script_lex_en_main = 7;
 
 
-#line 102 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 
 
 void ScriptLexer::emit(Tok t) {
@@ -94,7 +91,6 @@ void ScriptLexer::tokenize(const char* data, size_t len) {
     (void)script_lex_en_main;  // suppress unused warning
 
     
-#line 91 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	{
 	cs = script_lex_start;
 	ts = 0;
@@ -102,28 +98,22 @@ void ScriptLexer::tokenize(const char* data, size_t len) {
 	act = 0;
 	}
 
-#line 175 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
     
-#line 97 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 99 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{{p = ((te))-1;}{ emit(Tok::ERROR); }}
 	goto st7;
 tr2:
-#line 52 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit_string(ts, te); }}
 	goto st7;
 tr5:
-#line 53 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit_string(ts, te); }}
 	goto st7;
 tr7:
-#line 1 "NONE"
 	{	switch( act ) {
 	case 2:
 	{{p = ((te))-1;} emit_float(ts, te); }
@@ -135,174 +125,131 @@ tr7:
 	}
 	goto st7;
 tr10:
-#line 49 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{{p = ((te))-1;}{ emit_int(ts, te); }}
 	goto st7;
 tr12:
-#line 99 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::ERROR); }}
 	goto st7;
 tr17:
-#line 82 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::AND); }}
 	goto st7;
 tr19:
-#line 85 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::LPAREN); }}
 	goto st7;
 tr20:
-#line 86 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::RPAREN); }}
 	goto st7;
 tr23:
-#line 88 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::COMMA); }}
 	goto st7;
 tr33:
-#line 89 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::QUESTION); }}
 	goto st7;
 tr35:
-#line 83 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::OR); }}
 	goto st7;
 tr36:
-#line 87 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::RBRACE); }}
 	goto st7;
 tr37:
-#line 44 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ /* skip */ }}
 	goto st7;
 tr38:
-#line 84 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::NOT); }}
 	goto st7;
 tr39:
-#line 68 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::NMATCH); }}
 	goto st7;
 tr40:
-#line 62 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::NE); }}
 	goto st7;
 tr41:
-#line 66 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::STRNE); }}
 	goto st7;
 tr42:
-#line 99 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::ERROR); }}
 	goto st7;
 tr43:
-#line 73 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::PERCENT_LBRACE); }}
 	goto st7;
 tr44:
-#line 78 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::STAR); }}
 	goto st7;
 tr45:
-#line 59 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::STAR_ASSIGN); }}
 	goto st7;
 tr46:
-#line 76 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::PLUS); }}
 	goto st7;
 tr47:
-#line 69 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::INC); }}
 	goto st7;
 tr48:
-#line 57 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::PLUS_ASSIGN); }}
 	goto st7;
 tr49:
-#line 77 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::MINUS); }}
 	goto st7;
 tr50:
-#line 70 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::DEC); }}
 	goto st7;
 tr51:
-#line 58 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::MINUS_ASSIGN); }}
 	goto st7;
 tr53:
-#line 47 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit_float(ts, te); }}
 	goto st7;
 tr55:
-#line 79 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::SLASH); }}
 	goto st7;
 tr56:
-#line 60 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::SLASH_ASSIGN); }}
 	goto st7;
 tr57:
-#line 49 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit_int(ts, te); }}
 	goto st7;
 tr59:
-#line 48 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit_int(ts, te); }}
 	goto st7;
 tr60:
-#line 90 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::COLON); }}
 	goto st7;
 tr61:
-#line 56 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::ASSIGN); }}
 	goto st7;
 tr62:
-#line 80 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::LT); }}
 	goto st7;
 tr63:
-#line 63 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::LE); }}
 	goto st7;
 tr64:
-#line 93 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::EQ); }}
 	goto st7;
 tr65:
-#line 67 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::MATCH); }}
 	goto st7;
 tr66:
-#line 61 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::EQ); }}
 	goto st7;
 tr67:
-#line 65 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::STREQ); }}
 	goto st7;
 tr68:
-#line 81 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit(Tok::GT); }}
 	goto st7;
 tr69:
-#line 64 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p+1;{ emit(Tok::GE); }}
 	goto st7;
 tr70:
-#line 96 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{te = p;p--;{ emit_ident(ts, te); }}
 	goto st7;
 st7:
-#line 1 "NONE"
 	{ts = 0;}
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 1 "NONE"
 	{ts = p;}
-#line 248 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	switch( (*p) ) {
 		case 13: goto st8;
 		case 32: goto st8;
@@ -363,14 +310,12 @@ case 9:
 	}
 	goto tr38;
 tr15:
-#line 1 "NONE"
 	{te = p+1;}
 	goto st10;
 st10:
 	if ( ++p == pe )
 		goto _test_eof10;
 case 10:
-#line 314 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	switch( (*p) ) {
 		case 34: goto tr2;
 		case 92: goto st1;
@@ -398,14 +343,12 @@ case 11:
 		goto tr43;
 	goto tr42;
 tr18:
-#line 1 "NONE"
 	{te = p+1;}
 	goto st12;
 st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 347 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	switch( (*p) ) {
 		case 39: goto tr5;
 		case 92: goto st3;
@@ -458,16 +401,13 @@ case 16:
 		goto tr52;
 	goto tr42;
 tr52:
-#line 1 "NONE"
 	{te = p+1;}
-#line 47 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{act = 2;}
 	goto st17;
 st17:
 	if ( ++p == pe )
 		goto _test_eof17;
 case 17:
-#line 406 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	switch( (*p) ) {
 		case 69: goto st4;
 		case 101: goto st4;
@@ -508,16 +448,13 @@ case 19:
 		goto tr56;
 	goto tr55;
 tr27:
-#line 1 "NONE"
 	{te = p+1;}
-#line 49 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{act = 4;}
 	goto st20;
 st20:
 	if ( ++p == pe )
 		goto _test_eof20;
 case 20:
-#line 453 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	switch( (*p) ) {
 		case 46: goto tr52;
 		case 69: goto st4;
@@ -529,16 +466,13 @@ case 20:
 		goto tr28;
 	goto tr57;
 tr28:
-#line 1 "NONE"
 	{te = p+1;}
-#line 49 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 	{act = 4;}
 	goto st21;
 st21:
 	if ( ++p == pe )
 		goto _test_eof21;
 case 21:
-#line 471 "/home/sdennis/tinymux/client/tf/src/script_lex.cpp"
 	switch( (*p) ) {
 		case 46: goto tr52;
 		case 69: goto st4;
@@ -685,7 +619,6 @@ case 27:
 
 	}
 
-#line 176 "/home/sdennis/tinymux/client/tf/src/script_lex.rl"
 
     // Append END sentinel
     tokens_.push_back({Tok::END, {}, 0, 0.0});

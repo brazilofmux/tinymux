@@ -60,6 +60,8 @@ foreach(RL_NAME input_lex script_lex)
     add_custom_command(
         OUTPUT  ${RL_OUTPUT}
         COMMAND ${RAGEL} -G2 -o ${RL_OUTPUT} ${RL_INPUT}
+        COMMAND ${CMAKE_COMMAND} -E env sh -c
+                "sed '/^#line /d' '${RL_OUTPUT}' > '${RL_OUTPUT}.tmp' && mv -f '${RL_OUTPUT}.tmp' '${RL_OUTPUT}'"
         DEPENDS ${RL_INPUT}
         COMMENT "Ragel -G2: ${RL_NAME}.rl -> ${RL_NAME}.cpp"
         VERBATIM)
