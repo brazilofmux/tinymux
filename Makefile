@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-codiff test-codiff-2019 test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -52,7 +52,7 @@ TEST_TARGETS = \
     test-slave test-stubslave-teardown test-hir test-format \
     test-nls test-nls-plural test-nls-runtime test-nls-ko \
     test-vacuous test-narrowing test-config test-dbt test-alarm \
-    test-blob \
+    test-blob test-codiff \
     test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-ecall test-ios \
     test-smoke test-smoke-ast test-smoke-builtin \
     test-comsys-handoff test-comsys-mogrify test-comsys-conformance \
@@ -624,6 +624,23 @@ test-alarm:
 test-blob:
 	@echo "==> Checking softlib.rv64 against its source"
 	@tests/blob/run.sh
+
+# Does color_ops.c mean the same thing on every route that executes it?
+# color_ops.c is compiled twice (host libmux, rv64 blob) and the blob is then
+# run by two engines of our own, so there are four implementations of one
+# source.  #2019 is what happens when they disagree: correct C, correct RV64,
+# wrong in the artifact production runs.  qemu-riscv64 is the external oracle
+# -- the only route here neither we nor the tree wrote.  Skips loudly without
+# a RISC-V cross-compiler.
+test-codiff:
+	@echo "==> Differential: color_ops across host/qemu/interp/DBT"
+	@tests/codiff/run.sh
+
+# Reproducer for the open DBT defect #2019.  NOT part of `make test`: it is
+# expected to fail, that being the point, and it is intermittent so it loops.
+test-codiff-2019:
+	@echo "==> Reproducing #2019 (DBT block chaining)"
+	@tests/codiff/repro/run-2019.sh
 
 # Live scenario test: the wildcard capture path ($-command %0..%9), which
 # muxscript cannot drive.  Opt-in (NOT part of `make test`) because it spins a
