@@ -1,0 +1,67 @@
+--- a/mux/modules/engine/dbt.cpp
++++ b/mux/modules/engine/dbt.cpp
+@@ -18,6 +18,7 @@
+ #include <cstdarg>
+ #include <cstdio>
+ #include <cstdlib>
++#include <set>
+ #include <cstring>
+ #include <new>
+ 
+@@ -181,7 +182,14 @@
+ // Translate one block, publishing its entry PC for the duration so the
+ // backend can tell a back-edge from a forward exit (#1571).
+ //
++static std::set<uint64_t> g_heads;
++extern "C" void dbt_dump_heads(void) {
++    if (!getenv("DBT_HEAD_DUMP")) return;
++    for (uint64_t pc : g_heads)
++        fprintf(stderr, "HEADPC %llx\n", (unsigned long long)pc);
++}
+ static uint8_t *dbt_translate_block_at(dbt_state_t *dbt, uint64_t pc) {
++    g_heads.insert(pc);
+     dbt->translating_pc = pc;
+     uint8_t *code = dbt_backend_translate_block(dbt, pc);
+     dbt->translating_pc = DBT_NO_TRANSLATION;
+@@ -190,12 +198,41 @@
+ 
+ // Backpatch all pending exits that target the given guest PC.
+ //
++/* --- #2019 bisection instrumentation (scratch build only) ---
++ * DBT_CHAIN_DUMP=1        list every guest PC that gets chained
++ * DBT_CHAIN_SKIP=a,b,c    skip backpatching for those target PCs (hex)
++ */
++#include <set>
++static std::set<uint64_t> g_chained;
++static bool g_chain_skip(uint64_t pc) {
++    static const char *env = getenv("DBT_CHAIN_SKIP");
++    if (!env || !*env) return false;
++    char buf[32];
++    snprintf(buf, sizeof buf, "%llx", (unsigned long long)pc);
++    const char *p = env;
++    size_t n = strlen(buf);
++    while ((p = strstr(p, buf)) != nullptr) {
++        bool lb = (p == env) || (p[-1] == ',');
++        bool rb = (p[n] == '\0') || (p[n] == ',');
++        if (lb && rb) return true;
++        p += n;
++    }
++    return false;
++}
++extern "C" void dbt_dump_chained(void) {
++    if (!getenv("DBT_CHAIN_DUMP")) return;
++    for (uint64_t pc : g_chained)
++        fprintf(stderr, "CHAINPC %llx\n", (unsigned long long)pc);
++}
++
+ void dbt_backpatch_chains(dbt_state_t *dbt, uint64_t guest_pc,
+                            uint8_t *native_code) {
+     const auto it = dbt->pending_patch_targets.find(guest_pc);
+     if (it == dbt->pending_patch_targets.end()) {
+         return;
+     }
++    g_chained.insert(guest_pc);
++    if (g_chain_skip(guest_pc)) { return; }
+ 
+     for (size_t patch_index : it->second) {
+         dbt_backend_backpatch_jmp(dbt->code_buf,
