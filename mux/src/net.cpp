@@ -3771,7 +3771,7 @@ bool mux_subnets::isSuspect(MUX_SOCKADDR *msa)
 /* ---------------------------------------------------------------------------
  * dump_restart_db: Writes out socket information.
  */
-void dump_restart_db(void)
+bool dump_restart_db(void)
 {
     FILE *f;
     DESC *d;
@@ -3866,13 +3866,15 @@ void dump_restart_db(void)
         STARTLOG(LOG_ALWAYS, "RST", "DUMP");
         UTF8 *buf = alloc_lbuf("dump_restart_db.LOG");
         mux_sprintf(buf, LBUF_SIZE,
-            T("Could not write restart.db (%s); no session state was saved. The restart will continue, but the successor has no listeners to adopt and will likely fail to bind — restart the game from Startmux."),
+            T("Could not write restart.db (%s); no session state was saved and the restart will be declined. The game keeps running; TLS and WebSocket sessions were already dropped in preparation and will not come back."),
             bWritten ? T("rename failed") : T("write failed"));
         g_pILog->log_text(buf);
         free_lbuf(buf);
         ENDLOG;
         remove("restart.db.tmp");
+        return false;
     }
+    return true;
 }
 
 void load_restart_db(void)

@@ -527,12 +527,17 @@ void Task_ProcessCommand(void *arg_voidptr, int arg_iInteger)
 // Restart / dump helpers.
 // ---------------------------------------------------------------------------
 
-void dump_restart_db(void)
+// Returns false when nothing was published, so do_restart() can decline the
+// restart rather than exec into a successor with no listeners to adopt
+// (#2043).  No driver control is a "cannot dump" answer, not a silent success:
+// proceeding would be the exact failure this reports.
+bool dump_restart_db(void)
 {
-    if (g_pDriverCtl)
+    if (nullptr == g_pDriverCtl)
     {
-        g_pDriverCtl->DumpRestartDb();
+        return false;
     }
+    return MUX_SUCCEEDED(g_pDriverCtl->DumpRestartDb());
 }
 
 // ---------------------------------------------------------------------------

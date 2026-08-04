@@ -1,0 +1,84 @@
+[Select:CTL] Engine Created. Max FDs supported: 1024
+[Select:CTL] Initializing...
+[Select:CTL] Initialization successful.
+[Select:3] Adopted external connection successfully.
+[Select:3] Associating context=0x100b06f68
+[Select:3] Context associated successfully.
+[Select:3] postRead(IoBuffer) called.
+[Select:3] Registered read interest for connection 3 using caller-owned IoBuffer 0x100b07040
+[Select:3] wantRead already true.
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Connection readable.
+[Select:3] Generated Read event. Buffer=0
+[Select:3] Closing connection...
+[Select:3] Recalculated maxFd_ to -1 after removing 3
+[Select:3] close(fd) successful.
+[Select:3] Connection closed and removed.
+[Select:CTL] Shutdown requested.
+[Select:CTL] Closing 0 listeners...
+[Select:CTL] Closing 0 connections...
+[Select:CTL] Shutdown complete.
+[Select:CTL] Engine Destroyed.
+[Select:CTL] Shutdown requested.
+[Select:CTL] Already shut down or not initialized.

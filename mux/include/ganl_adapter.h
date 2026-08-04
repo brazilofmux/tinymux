@@ -51,6 +51,12 @@ public:
     bool initialize();
     void shutdown();
     void prepare_for_restart();
+
+    // The first two steps of prepare_for_restart(), callable on their own so
+    // do_restart() can dump restart.db while the game is still whole (#2043).
+    // Both are idempotent, so prepare_for_restart() re-running them is safe.
+    void record_listeners_for_restart();
+    void close_tls_for_restart();
     void run_main_loop();
 
     // Undo a partially-completed accept after a throw (#2018).  Cannot

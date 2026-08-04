@@ -1086,7 +1086,21 @@ MUX_RESULT CDriverControl::GetTaskProcessCommand(
 MUX_RESULT CDriverControl::DumpRestartDb(void)
 {
 #if defined(HAVE_WORKING_FORK)
-    dump_restart_db();
+    // Everything the dump needs, in one call, so do_restart() can run this
+    // while the game is still whole and decline the restart if it fails
+    // (#2043).  Listeners must be recorded first because that is what fills
+    // main_game_ports[]; TLS must be closed first because a TLS descriptor in
+    // restart.db is restored by a successor with no TLS state for it (#2032).
+    //
+    // Both are steps of prepare_for_restart() and both are idempotent, so the
+    // full sequence re-running them afterwards costs nothing.
+    //
+    g_GanlAdapter.record_listeners_for_restart();
+    g_GanlAdapter.close_tls_for_restart();
+    if (!dump_restart_db())
+    {
+        return MUX_E_FAIL;
+    }
 #endif
     return MUX_S_OK;
 }

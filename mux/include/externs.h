@@ -248,7 +248,7 @@ extern void shutdownsock(DESC *, int);
 void process_output(DESC *, int);
 void process_input_helper(DESC *d, char *pBytes, int nBytes);
 #if defined(HAVE_WORKING_FORK)
-extern void dump_restart_db(void);
+extern bool dump_restart_db(void);   // false if nothing was published (#2043)
 #endif // HAVE_WORKING_FORK
 
 extern void build_signal_names_table();

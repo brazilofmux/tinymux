@@ -38,7 +38,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TinyMUX 2.14\n"
 "Report-Msgid-Bugs-To: tinymux@googlegroups.com\n"
-"POT-Creation-Date: 2026-07-31 15:52-0600\n"
+"POT-Creation-Date: 2026-08-04 09:32-0600\n"
 "PO-Revision-Date: 2026-07-28 18:11+0000\n"
 "Last-Translator: unattributed -- see header\n"
 "Language-Team: none\n"
@@ -204,7 +204,7 @@ msgstr ""
 
 #: modules/comsys/comsys_mod.cpp:2565 modules/comsys/comsys_mod.cpp:3099
 #: modules/engine/comsys.cpp:3168 modules/engine/comsys.cpp:3379
-#: modules/engine/mguests.cpp:453 src/net.cpp:3713
+#: modules/engine/mguests.cpp:453 src/net.cpp:3723
 msgid "Status"
 msgstr ""
 
@@ -271,7 +271,7 @@ msgstr ""
 #: modules/comsys/comsys_mod.cpp:2785 modules/comsys/comsys_mod.cpp:2922
 #: modules/engine/comsys.cpp:2948 modules/engine/comsys.cpp:4252
 #: modules/engine/mail.cpp:4355 modules/engine/mail.cpp:5193
-#: modules/engine/predicates.cpp:2976 modules/mail/mail_mod.cpp:4455
+#: modules/engine/predicates.cpp:3004 modules/mail/mail_mod.cpp:4455
 #: modules/mail/mail_mod.cpp:4509
 msgid "Owner"
 msgstr ""
@@ -995,7 +995,7 @@ msgstr ""
 msgid "Built-in Attribute"
 msgstr ""
 
-#: modules/engine/comsys.cpp:1729 modules/engine/functions.cpp:4468
+#: modules/engine/comsys.cpp:1729 modules/engine/functions.cpp:4486
 #: modules/engine/look.cpp:2271 modules/engine/rob.cpp:89
 #: modules/engine/speech.cpp:566 modules/engine/walkdb.cpp:193
 #: modules/engine/walkdb.cpp:231
@@ -1034,8 +1034,8 @@ msgid "%s has connected."
 msgstr "%s se ha conectado."
 
 #: modules/engine/comsys.cpp:3646 modules/engine/comsys.cpp:3662
-#: modules/engine/comsys.cpp:3992 modules/engine/conf.cpp:2471
-#: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1116
+#: modules/engine/comsys.cpp:3992 modules/engine/conf.cpp:2499
+#: modules/engine/flags.cpp:825 modules/engine/funceval.cpp:1118
 #: modules/engine/levels.cpp:348 modules/engine/levels.cpp:449
 #: modules/engine/powers.cpp:276 modules/engine/session.cpp:285
 #: modules/engine/session.cpp:300 modules/engine/session.cpp:328
@@ -1134,21 +1134,21 @@ msgstr "@cboot: No estás en ese canal."
 msgid "@cboot: You can’t do that!"
 msgstr ""
 
-#: modules/engine/conf.cpp:455
+#: modules/engine/conf.cpp:482
 #, c-format
 msgid "%s %s not found"
 msgstr ""
 
-#: modules/engine/conf.cpp:472
+#: modules/engine/conf.cpp:499
 #, c-format
 msgid "%s %s already exists"
 msgstr ""
 
-#: modules/engine/conf.cpp:528
+#: modules/engine/conf.cpp:555
 msgid "Nothing to set"
 msgstr ""
 
-#: modules/engine/conf.cpp:950 modules/engine/conf.cpp:1009
+#: modules/engine/conf.cpp:977 modules/engine/conf.cpp:1036
 msgid "String truncated"
 msgstr ""
 
@@ -1156,7 +1156,7 @@ msgstr ""
 msgid "Include nesting limit exceeded."
 msgstr ""
 
-#: modules/engine/cque.cpp:330 src/net.cpp:2695
+#: modules/engine/cque.cpp:330 src/net.cpp:2705
 msgid "GAME: Expensive activity abbreviated."
 msgstr ""
 
@@ -1840,59 +1840,59 @@ msgstr ""
 msgid "Flag name changed."
 msgstr ""
 
+#: modules/engine/funceval.cpp:1100 modules/engine/set.cpp:1061
+msgid "You shouldn’t be rummaging through the garbage."
+msgstr ""
+
 #: modules/engine/funceval2.cpp:888
 msgid "Illegal step size."
 msgstr ""
 
-#: modules/engine/funceval.cpp:1098 modules/engine/set.cpp:1061
-msgid "You shouldn’t be rummaging through the garbage."
-msgstr ""
-
-#: modules/engine/functions.cpp:15731
+#: modules/engine/functions.cpp:16014
 msgid "Function Name"
 msgstr ""
 
-#: modules/engine/functions.cpp:15734
+#: modules/engine/functions.cpp:16017
 msgid "DBref#"
 msgstr ""
 
-#: modules/engine/functions.cpp:15737
+#: modules/engine/functions.cpp:16020
 msgid "Attribute"
 msgstr ""
 
-#: modules/engine/functions.cpp:15740
+#: modules/engine/functions.cpp:16023
 msgid "Flgs"
 msgstr ""
 
-#: modules/engine/functions.cpp:15784
+#: modules/engine/functions.cpp:16067
 #, c-format
 msgid "Total User-Defined Functions: %d"
 msgstr ""
 
-#: modules/engine/functions.cpp:15798
+#: modules/engine/functions.cpp:16081
 msgid "Function name is not valid."
 msgstr ""
 
-#: modules/engine/functions.cpp:15808
+#: modules/engine/functions.cpp:16091
 msgid "Function already defined in builtin function table."
 msgstr ""
 
-#: modules/engine/functions.cpp:15822
+#: modules/engine/functions.cpp:16105
 #, c-format
 msgid "Function %s not found."
 msgstr ""
 
-#: modules/engine/functions.cpp:15835
+#: modules/engine/functions.cpp:16118
 #, c-format
 msgid "Function %s deleted."
 msgstr ""
 
-#: modules/engine/functions.cpp:15852 modules/engine/predicates.cpp:1020
+#: modules/engine/functions.cpp:16135 modules/engine/predicates.cpp:1020
 #: modules/engine/predicates.cpp:1254 modules/engine/predicates.cpp:1563
 msgid "No such attribute."
 msgstr "No existe ese atributo."
 
-#: modules/engine/functions.cpp:15893
+#: modules/engine/functions.cpp:16176
 #, c-format
 msgid "Function %s defined."
 msgstr ""
@@ -3187,7 +3187,7 @@ msgstr "No puedes entrar en eso."
 msgid "You can’t leave."
 msgstr "No puedes salir."
 
-#: modules/engine/object.cpp:628 modules/engine/player.cpp:1685
+#: modules/engine/object.cpp:628 modules/engine/player.cpp:1794
 msgid "That name is not allowed."
 msgstr ""
 
@@ -3252,142 +3252,142 @@ msgstr ""
 msgid "Done."
 msgstr ""
 
-#: modules/engine/player.cpp:194
+#: modules/engine/player.cpp:195
 #, c-format
 msgid "**** %d failed connect since your last successful connect. ****"
 msgid_plural "**** %d failed connects since your last successful connect. ****"
 msgstr[0] ""
 msgstr[1] ""
 
-#: modules/engine/player.cpp:197
+#: modules/engine/player.cpp:198
 #, c-format
 msgid "Most recent attempt was from %s on %s."
 msgstr ""
 
-#: modules/engine/player.cpp:207
+#: modules/engine/player.cpp:208
 #, c-format
 msgid "Last connect was from %s on %s."
 msgstr ""
 
-#: modules/engine/player.cpp:965 modules/engine/predicates.cpp:1242
+#: modules/engine/player.cpp:1074 modules/engine/predicates.cpp:1242
 #: modules/engine/rob.cpp:66 modules/engine/speech.cpp:1073
 msgid "Sorry."
 msgstr "Lo siento."
 
-#: modules/engine/player.cpp:970 modules/engine/wiz.cpp:553
+#: modules/engine/player.cpp:1079 modules/engine/wiz.cpp:553
 msgid "Password changed."
 msgstr ""
 
-#: modules/engine/player.cpp:987
+#: modules/engine/player.cpp:1096
 #, c-format
 msgid "     From: %s   On: %s"
 msgstr ""
 
-#: modules/engine/player.cpp:1019 modules/engine/set.cpp:923
+#: modules/engine/player.cpp:1128 modules/engine/set.cpp:923
 #: modules/engine/set.cpp:1065
 msgid "I couldn’t find that player."
 msgstr ""
 
-#: modules/engine/player.cpp:1032
+#: modules/engine/player.cpp:1141
 #, c-format
 msgid "Total successful connects: %d"
 msgstr ""
 
-#: modules/engine/player.cpp:1037
+#: modules/engine/player.cpp:1146
 #, c-format
 msgid "Total failed connects: %d"
 msgstr ""
 
-#: modules/engine/player.cpp:1440
+#: modules/engine/player.cpp:1549
 msgid "Only players may use @protect."
 msgstr ""
 
-#: modules/engine/player.cpp:1485
+#: modules/engine/player.cpp:1594
 #, c-format
 msgid "%s: %s"
 msgstr ""
 
-#: modules/engine/player.cpp:1491
+#: modules/engine/player.cpp:1600
 msgid "No protected names in the database."
 msgstr ""
 
-#: modules/engine/player.cpp:1506 modules/engine/predicates.cpp:2927
+#: modules/engine/player.cpp:1615 modules/engine/predicates.cpp:2955
 #: modules/engine/wiz.cpp:507
 msgid "No such player."
 msgstr "No existe ese jugador."
 
-#: modules/engine/player.cpp:1514
+#: modules/engine/player.cpp:1623
 msgid "No protected names."
 msgstr ""
 
-#: modules/engine/player.cpp:1533
+#: modules/engine/player.cpp:1642
 #, c-format
 msgid "Protected names for %s: %s"
 msgstr ""
 
-#: modules/engine/player.cpp:1541
+#: modules/engine/player.cpp:1650
 msgid "Protect what name?"
 msgstr ""
 
-#: modules/engine/player.cpp:1568 modules/engine/player.cpp:1665
+#: modules/engine/player.cpp:1677 modules/engine/player.cpp:1774
 msgid "That name is not in your protected list."
 msgstr ""
 
-#: modules/engine/player.cpp:1580 modules/engine/set.cpp:246
+#: modules/engine/player.cpp:1689 modules/engine/set.cpp:246
 #: modules/engine/set.cpp:383
 msgid "That name is already in use."
 msgstr ""
 
-#: modules/engine/player.cpp:1597
+#: modules/engine/player.cpp:1706
 #, c-format
 msgid "Alias set to ‘%s’."
 msgstr ""
 
-#: modules/engine/player.cpp:1601
+#: modules/engine/player.cpp:1710
 msgid "That name is already in use or is illegal, alias cleared."
 msgstr ""
 
-#: modules/engine/player.cpp:1614
+#: modules/engine/player.cpp:1723
 msgid "You have no alias set."
 msgstr ""
 
-#: modules/engine/player.cpp:1620
+#: modules/engine/player.cpp:1729
 #, c-format
 msgid "Your alias is ‘%s’, not ‘%s’."
 msgstr ""
 
-#: modules/engine/player.cpp:1627
+#: modules/engine/player.cpp:1736
 #, c-format
 msgid "Alias ‘%s’ removed."
 msgstr ""
 
-#: modules/engine/player.cpp:1638
+#: modules/engine/player.cpp:1747
 msgid "You have no protected names."
 msgstr ""
 
-#: modules/engine/player.cpp:1670
+#: modules/engine/player.cpp:1779
 #, c-format
 msgid "Name ‘%s’ removed from protected list."
 msgstr ""
 
-#: modules/engine/player.cpp:1679
+#: modules/engine/player.cpp:1788
 msgid "That is not a valid player name."
 msgstr ""
 
-#: modules/engine/player.cpp:1701
+#: modules/engine/player.cpp:1810
 msgid "That name is already in your protected list."
 msgstr ""
 
-#: modules/engine/player.cpp:1710
+#: modules/engine/player.cpp:1819
 #, c-format
 msgid "You may only protect %d names."
 msgstr ""
 
-#: modules/engine/player.cpp:1718
+#: modules/engine/player.cpp:1827
 msgid "That name is already protected by another player."
 msgstr ""
 
-#: modules/engine/player.cpp:1735
+#: modules/engine/player.cpp:1844
 #, c-format
 msgid "Name ‘%s’ added to protected list."
 msgstr ""
@@ -3527,56 +3527,62 @@ msgstr ""
 msgid "GAME: Restart by %s, please wait."
 msgstr ""
 
-#: modules/engine/predicates.cpp:2746 modules/engine/set.cpp:1587
+#: modules/engine/predicates.cpp:1659
+msgid ""
+"GAME: Restart could not be prepared and has been cancelled.  The game is "
+"still running."
+msgstr ""
+
+#: modules/engine/predicates.cpp:2774 modules/engine/set.cpp:1587
 #: modules/engine/set.cpp:1997
 msgid "Nothing to do."
 msgstr "No hay nada que hacer."
 
-#: modules/engine/predicates.cpp:2790
+#: modules/engine/predicates.cpp:2818
 msgid "Permission denied,"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2970
+#: modules/engine/predicates.cpp:2998
 msgid "Reference"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2973
+#: modules/engine/predicates.cpp:3001
 msgid "Target"
 msgstr ""
 
-#: modules/engine/predicates.cpp:2979
+#: modules/engine/predicates.cpp:3007
 msgid "-------------------------------------------------------"
 msgstr ""
 
-#: modules/engine/predicates.cpp:3003
+#: modules/engine/predicates.cpp:3031
 msgid "GAME: No references found."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3008
+#: modules/engine/predicates.cpp:3036
 msgid "---------------- End of Reference List ----------------"
 msgstr ""
 
-#: modules/engine/predicates.cpp:3115
+#: modules/engine/predicates.cpp:3143
 msgid "References requested too quickly."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3160
+#: modules/engine/predicates.cpp:3188
 msgid "Reference cleared."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3164
+#: modules/engine/predicates.cpp:3192
 msgid "Reference updated."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3168
+#: modules/engine/predicates.cpp:3196
 msgid "That reference already exists."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3172
+#: modules/engine/predicates.cpp:3200
 msgid "No such reference to clear."
 msgstr ""
 
-#: modules/engine/predicates.cpp:3176
+#: modules/engine/predicates.cpp:3204
 msgid "Reference added."
 msgstr ""
 
@@ -4600,45 +4606,45 @@ msgstr ""
 msgid "MAIL: Mail statistics are unavailable."
 msgstr ""
 
-#: src/ganl_adapter.cpp:2615
+#: src/ganl_adapter.cpp:2780
 #, c-format
 msgid "GAME: Caught signal %s, exiting."
 msgstr ""
 
-#: src/ganl_adapter.cpp:3277
+#: src/ganl_adapter.cpp:3505
 msgid "@email: Another email is already in progress."
 msgstr ""
 
-#: src/ganl_adapter.cpp:3283
+#: src/ganl_adapter.cpp:3511
 msgid "@email: No mail server configured."
 msgstr ""
 
-#: src/ganl_adapter.cpp:3324 src/ganl_adapter.cpp:3367
-#: src/ganl_adapter.cpp:3395
+#: src/ganl_adapter.cpp:3552 src/ganl_adapter.cpp:3595
+#: src/ganl_adapter.cpp:3623
 msgid "@email: Unable to register socket with network engine."
 msgstr ""
 
-#: src/ganl_adapter.cpp:3327 src/ganl_adapter.cpp:3373
-#: src/ganl_adapter.cpp:3390
+#: src/ganl_adapter.cpp:3555 src/ganl_adapter.cpp:3601
+#: src/ganl_adapter.cpp:3618
 msgid "@email: Unable to connect to mailserver, aborting!"
 msgstr ""
 
-#: src/ganl_adapter.cpp:4409
+#: src/ganl_adapter.cpp:4637
 msgid "DNS slave restarted."
 msgstr ""
 
-#: src/ganl_adapter.cpp:4411
+#: src/ganl_adapter.cpp:4639
 msgid "DNS slave failed to start."
 msgstr ""
 
-#: src/net.cpp:3705
+#: src/net.cpp:3715
 msgid "----- Site Access -----"
 msgstr ""
 
-#: src/net.cpp:3710
+#: src/net.cpp:3720
 msgid "Address"
 msgstr ""
 
-#: src/net.cpp:4371
+#: src/net.cpp:4420
 msgid "GAME: Restart finished."
 msgstr ""
