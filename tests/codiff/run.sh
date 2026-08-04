@@ -75,13 +75,28 @@ case "$ARCH" in
         ;;
 esac
 
+# A file named libmux.so is not necessarily a libmux this test can link
+# against.  mux/game/bin/libmux.so is a symlink created by `make install`,
+# and on a box that has also built another line (release/2.13, say) it can
+# be left pointing at that build -- which has no co_insert_at, so the host
+# leg dies with an undefined reference and the run reads as a FAILURE of
+# the code under test rather than "cannot test here".  That is the exact
+# inversion this script exists to avoid, so probe for a symbol we use
+# rather than for a filename.
 LIBMUX=""
 for cand in "$ROOT/mux/lib/libmux.so" "$ROOT/mux/game/bin/libmux.so"; do
-    [ -f "$cand" ] && { LIBMUX=$(dirname "$cand"); break; }
+    [ -f "$cand" ] || continue
+    if nm -D --defined-only "$cand" 2>/dev/null | grep -q ' co_insert_at$'; then
+        LIBMUX=$(dirname "$(readlink -f "$cand" 2>/dev/null || echo "$cand")")
+        break
+    fi
+    note "NOTE: $cand exists but does not export co_insert_at -- ignoring."
+    note "      (a stale symlink to another line's build looks exactly like this)"
 done
 if [ -z "$LIBMUX" ]; then
-    note "SKIP: libmux not built (run 'make install' from the repo root)."
-    note "      Without it there is no host leg to compare against."
+    note "SKIP: no libmux exporting the co_* entry points was found."
+    note "      Run 'make install' from the repo root.  Without it there is"
+    note "      no host leg to compare against, so nothing was tested."
     exit 0
 fi
 
