@@ -75,31 +75,76 @@ case "$ARCH" in
         ;;
 esac
 
+mkdir -p "$BUILD"
+strip_marker() { grep -v '^DONE$'; }
+
 # A file named libmux.so is not necessarily a libmux this test can link
 # against.  mux/game/bin/libmux.so is a symlink created by `make install`,
 # and on a box that has also built another line (release/2.13, say) it can
-# be left pointing at that build -- which has no co_insert_at, so the host
-# leg dies with an undefined reference and the run reads as a FAILURE of
-# the code under test rather than "cannot test here".  That is the exact
-# inversion this script exists to avoid, so probe for a symbol we use
-# rather than for a filename.
+# be left pointing at that build -- so the host leg dies with an undefined
+# reference and the run reads as a FAILURE of the code under test rather
+# than "cannot test here".  That is the exact inversion this script exists
+# to avoid.
+#
+# Probing for a hardcoded symbol did not settle it, and failed twice over
+# (#2055):
+#
+#   * The canary decays.  The probe was co_insert_at, which a months-old
+#     libmux in ~/lib still exported; the symbol that actually failed to
+#     resolve was co_delete_at.  Any fixed name stops discriminating as
+#     the library grows past it, silently and without a build error.
+#   * Choosing the right directory does not mean the right library LOADS.
+#     -Wl,-rpath emits RUNPATH under the default --enable-new-dtags, and
+#     the loader searches LD_LIBRARY_PATH BEFORE RUNPATH.  A developer
+#     with any libmux.so on their library path gets that one regardless
+#     of what was chosen here.
+#
+# So do not ask what a candidate exports.  Link against it, RUN it with
+# the path pinned, and keep the first one that actually produces a
+# transcript.  "Does this work" cannot decay.
+host_build() {
+    gcc -O2 -DFUZZ_ITERS=$ITERS -I"$SCRIPT_DIR" -I"$ROOT/mux/include" \
+        -o "$BUILD/host.bin" "$SCRIPT_DIR/host_main.c" \
+        -L"$1" -lmux -Wl,-rpath,"$1"
+}
+host_exec() {
+    # Prepend rather than replace: the caller may need their own path for
+    # unrelated libraries.  Ours going first is the whole point.
+    LD_LIBRARY_PATH="$1${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" "$BUILD/host.bin"
+}
+
 LIBMUX=""
 for cand in "$ROOT/mux/lib/libmux.so" "$ROOT/mux/game/bin/libmux.so"; do
     [ -f "$cand" ] || continue
-    # `nm -g` is the portable spelling: macOS nm rejects -D and has no
-    # --defined-only, and Mach-O prefixes C symbols with an underscore, so
-    # the GNU-only form matches nothing here and 2>/dev/null hides the
-    # reason.  Allow the optional underscore and accept any symbol type
-    # rather than filtering to T -- the point is only "this build has it".
-    if nm -g "$cand" 2>/dev/null | grep -qE '(^| )_?co_insert_at$'; then
-        LIBMUX=$(dirname "$(readlink -f "$cand" 2>/dev/null || echo "$cand")")
-        break
+    dir=$(dirname "$(readlink -f "$cand" 2>/dev/null || echo "$cand")")
+
+    if ! host_build "$dir" 2> "$BUILD/host.err"; then
+        note "NOTE: $cand does not link -- ignoring."
+        sed 's/^/      /' "$BUILD/host.err" | head -3
+        continue
     fi
-    note "NOTE: $cand exists but does not export co_insert_at -- ignoring."
-    note "      (a stale symlink to another line's build looks exactly like this)"
+    # Not a pipeline: `!` on `a | b` tests b's status, and strip_marker is a
+    # grep that exits 1 when it selects nothing -- which would report a
+    # perfectly good host leg as broken and an empty one as fine.
+    host_exec "$dir" > "$BUILD/host.raw" 2> "$BUILD/host.err"
+    if [ $? -ne 0 ]; then
+        note "NOTE: $cand links but the host leg does not run -- ignoring."
+        sed 's/^/      /' "$BUILD/host.err" | head -3
+        note "      (a stale symlink to another line's build looks exactly like this)"
+        continue
+    fi
+    strip_marker < "$BUILD/host.raw" > "$BUILD/host.txt"
+    if [ ! -s "$BUILD/host.txt" ]; then
+        note "NOTE: $cand ran but produced no transcript -- ignoring."
+        sed 's/^/      /' "$BUILD/host.err" | head -3
+        continue
+    fi
+
+    LIBMUX=$dir
+    break
 done
 if [ -z "$LIBMUX" ]; then
-    note "SKIP: no libmux exporting the co_* entry points was found."
+    note "SKIP: no libmux produced a working host leg."
     note "      Run 'make install' from the repo root.  Without it there is"
     note "      no host leg to compare against, so nothing was tested."
     exit 0
@@ -112,8 +157,6 @@ if [ "$have_qemu" = 0 ]; then
     note "      interp and dbt will be compared to the host leg only, so a"
     note "      fault shared by both of our engines would go unseen."
 fi
-
-mkdir -p "$BUILD"
 
 RVFLAGS="-march=rv64imd -mabi=lp64d -O2 -fno-builtin -ffreestanding -nostdlib
          -ffunction-sections -fdata-sections -DLBUF_SIZE=32768
@@ -131,10 +174,8 @@ $RVCC -nostdlib -Wl,-melf64lriscv -Wl,-e,_start -Wl,--gc-sections \
       -o "$BUILD/guest.elf" \
       "$BUILD/gmain.o" "$BUILD/co.o" "$BUILD/uni.o" "$BUILD/soft.o"
 
-# --- build the host leg ------------------------------------------------
-gcc -O2 -DFUZZ_ITERS=$ITERS -I"$SCRIPT_DIR" -I"$ROOT/mux/include" \
-    -o "$BUILD/host.bin" "$SCRIPT_DIR/host_main.c" \
-    -L"$LIBMUX" -lmux -Wl,-rpath,"$LIBMUX"
+# The host leg was already built AND run while choosing $LIBMUX -- that run
+# is what proved the choice, so its transcript is the one compared below.
 
 # --- build the two-engine runner ---------------------------------------
 case "$ARCH" in
@@ -148,9 +189,6 @@ g++ -std=c++17 -O2 -DHAVE_CONFIG_H -DTINYMUX_JIT -I"$ROOT/mux/include" \
 set +e
 
 # --- run ---------------------------------------------------------------
-strip_marker() { grep -v '^DONE$'; }
-
-"$BUILD/host.bin" 2>/dev/null | strip_marker > "$BUILD/host.txt"
 if [ "$have_qemu" = 1 ]; then
     "$QEMU" "$BUILD/guest.elf" 2>/dev/null | strip_marker > "$BUILD/qemu.txt"
 fi
