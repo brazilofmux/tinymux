@@ -6,11 +6,23 @@ Performance (not correctness) pass over the *whole server*, prompted by
 covers the paths that only a live netmux reaches, and it reaches a different
 conclusion about where the time goes.
 
-**Headline: for a live game, none of the top costs are in the JIT.** The JIT is
-2.4–9.5× faster than the interpreter on the expressions it compiles, and
-compilation amortises to nothing in a running game. What a live game actually
-spends its time on, in order, is `$`-command dispatch, name resolution, and
-(until #2054) debug logging.
+**Headline: for a live game, none of the top costs are in the JIT.** Whatever
+the JIT is worth, it is worth it on microseconds while `$`-command dispatch is
+spending milliseconds. What a live game actually spends its time on, in order,
+is `$`-command dispatch, name resolution, and (until #2054) debug logging.
+
+**How much the JIT is worth is not settled here, and an earlier draft of this
+survey overstated it.** The "2.4–9.5×" first written above came from
+`rvbench`'s `native=` divided by its `cached=`, and `native=` is not the
+interpreter — it calls `mux_exec`, which dispatches to the JIT (see the
+`iter()` section). Against a real interpreter measurement the same expressions
+give 6.1× (`add(1,2)`), 1.26× (`add(rand(100),1)`) and 1.42×
+(`bound(rand(100),10,90)`).
+
+Neither ratio answers the question a live game asks, which is `mux_exec` *with*
+the JIT against `mux_exec` *without* it — dispatch overhead is paid either way,
+and no instrument here reports that. It needs a build configured without
+`--enable-jit`. Listed under "what this pass did not measure".
 
 ## Method
 
@@ -67,6 +79,16 @@ unwinder could not reach the caller.
 8. **A stale `libmux.so` on the library path silently replaces the build.**
    `-Wl,-rpath` emits RUNPATH, which the loader searches *after*
    `LD_LIBRARY_PATH` (unlike RPATH). See #2055.
+9. **Two benchmark fields are mislabelled, and one of them reversed a
+   conclusion in this very document.** `rvbench`'s `native=` calls `mux_exec`,
+   which dispatches to the JIT for any JIT-eligible expression, so it is not
+   the interpreter — it beat the interpreter outright on
+   `iter(lnum(50),mul(##,2))` (18.9 µs against 31.9 µs), which is the tell.
+   And `astbench`'s `jit=` times `jit_eval` even when it bails instantly for
+   want of a lowering, so `citer()` reads a flat 2.7 µs at every N — absence,
+   not speed — while its `result=` comes from a third interpreter call and
+   never notices. Use `astbench`'s `ast=` for the interpreter and `rvbench`'s
+   `cached=` for the JIT. `tests/growth/README.md` carries the long form.
 
 ## The live server: where a game's time goes
 
@@ -206,14 +228,60 @@ libc symbol, not by reading code.
 | `shuffle()` (#2057) | open | ~3.4s at LBUF |
 | `iter()` (#2052) | open | O(n²) in element count |
 
-`iter()` is the interesting one: it is quadratic on **both** the interpreter and
-the JIT, so the JIT's advantage decays from 2.6× at 10 elements to 1.006× at
-100. A differential test cannot see it — `jit_diff` compares the two routes,
-they agree, and they are both quadratic. Only an absolute scaling measurement
-finds it. Same lesson as #1319/#1320 one layer up.
+`iter()` is the interesting one, and this survey originally got it wrong in a
+way worth preserving, because the mistake is reusable.
+
+**Only the JIT is quadratic.** Measured with the growth harness (#2059),
+Darwin/arm64, fitted exponent over N=500..4000:
+
+| route | instrument | b | per doubling |
+|---|---|---:|---|
+| interpreter | `astbench` `ast=` | **0.99** | 2.06× 1.96× 1.96× |
+| JIT | `rvbench` `cached=` | **1.99** | 3.96× 3.95× 4.01× |
+
+`fun_iter` advances a real cursor with `split_token` and is linear. The JIT's
+lowering calls `EXTRACT(list, i, 1, delim)` per element — a fresh walk from the
+head — because the cursor-based `SPLIT_TOKEN` fast path `hir_lower.cpp:2310`
+tests for was never registered in `s_tier2_map` and has never executed. At
+N=4000 the JIT is 134× *slower* than the interpreter it exists to beat.
+
+**How "both routes" happened: `rvbench`'s `native=` is not the interpreter.**
+It calls `mux_exec`, which dispatches to the JIT for any JIT-eligible
+expression — and `iter()` is eligible. So `native=` and `cached=` were two
+measurements of the JIT, differing by `mux_exec`'s per-call dispatch overhead
+(`strlen`, AST-cache lookup, the `jit_can_handle` tree walk). They converge at
+large N because they are the same route, and the "flat 26–35 µs saving" that
+looked like a decaying JIT benefit is that dispatch overhead, which does not
+depend on N.
+
+The tell, once you look for it:
+
+| expr | interpreter (`ast=`) | `native=` | `cached=` |
+|---|---:|---:|---:|
+| `add(1,2)` | 110 ns | 452 ns | 18 ns |
+| `iter(lnum(50),mul(##,2))` | 31 880 ns | **18 885 ns** | 18 746 ns |
+
+A leg labelled "native `mux_exec`" that runs *faster than the interpreter* is
+running compiled code.
+
+**So the differential-testing lesson is the opposite of what was written here.**
+The routes do not agree — they differ by a whole complexity class, which a
+differential *scaling* test would find immediately. What `jit_diff` cannot see
+is anything about cost at all: it compares outputs, and both routes produce the
+same list. The #1319/#1320 parallel does not apply; that was a fault genuinely
+shared by two implementations. Use `astbench`'s `ast=` for the interpreter and
+`rvbench`'s `cached=` for the JIT, and see `tests/growth/README.md` for the two
+benchmark fields that lie and why.
 
 ## What this pass did not measure
 
+- **What the JIT is actually worth in a live game.** The honest comparison is
+  `mux_exec` with the JIT against `mux_exec` without it, on the same
+  expressions. Every instrument here reports something else: `rvbench`'s
+  `cached=` skips `mux_exec` entirely, its `native=` dispatches *to* the JIT,
+  and `astbench`'s `ast=` calls `ast_eval_node` directly. Answering it needs a
+  tree configured without `--enable-jit`, which is a `make clean` and a rebuild,
+  not a new harness.
 - **2.13 vs 2.14 end to end.** The release-justifying number — *does 2.14 beat
   2.13 on realistic softcode* — is still not measured. `tests/parity213` can
   stand both lines up side by side; nobody has pointed it at speed.
