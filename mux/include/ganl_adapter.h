@@ -53,6 +53,11 @@ public:
     void prepare_for_restart();
     void run_main_loop();
 
+    // Undo a partially-completed accept after a throw (#2018).  Cannot
+    // itself throw: it runs from inside a catch, and a barrier whose
+    // recovery can abort is not a barrier.
+    void accept_cleanup_contained(ganl::ConnectionHandle handle);
+
     bool restarting_{false};
 
     // --- TinyMUX Interface ---
