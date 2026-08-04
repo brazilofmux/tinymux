@@ -84,6 +84,12 @@ public:
     //
     bool is_tls_connection(DESC* d);
 
+    // Undo a partially-completed accept after a throw (#2006).  Cannot
+    // itself throw: it runs from inside a catch, and a barrier whose
+    // recovery can abort is not a barrier.
+    //
+    void accept_cleanup_contained(ganl::ConnectionHandle handle);
+
     // --- Accessors for Callbacks ---
     ganl::NetworkEngine* get_engine() { return networkEngine_.get(); }
     DESC* allocate_desc();
