@@ -34,6 +34,13 @@ static int io_ecall(rv64_state_t *state, void *user)
     }
 }
 
+/* Hooks supplied only by repro/2019-chain-bisect.patch, a scratch patch to
+ * dbt.cpp used to bisect chained edges.  Declared weak so a normal build --
+ * which links the unpatched dbt.cpp and therefore defines neither -- still
+ * links; they resolve to null and are skipped. */
+extern "C" void dbt_dump_chained(void) __attribute__((weak));
+extern "C" void dbt_dump_heads(void) __attribute__((weak));
+
 struct dctx { uint8_t *memory; size_t size; };
 
 static int dbt_io_ecall(rv64_ctx_t *ctx, void *user)
@@ -105,6 +112,8 @@ int main(int argc, char **argv)
                (unsigned long long)dbt.code_full,
                dbt.reclaims_this_run,
                dbt.code_used, dbt.blob_code_end);
+        if (dbt_dump_chained) dbt_dump_chained();
+        if (dbt_dump_heads) dbt_dump_heads();
         dbt_cleanup(&dbt);
         rv64_free_binary(&bin);
     }
