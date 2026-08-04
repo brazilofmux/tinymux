@@ -28,7 +28,8 @@
   @log smoke=Beginning astbench function test cases.;
   &r.add me=[astbench(add(1,2),10)];
   &r.str me=[astbench(strcat(ab,cd),10)];
-  &r.zero me=[astbench(add(1,2),0)]
+  &r.zero me=[astbench(add(1,2),0)];
+  &r.pre me=KEEPME[astbench(add(1,2),10)]
 -
 #
 # Test Case #1 - astbench returns its report instead of aborting.
@@ -86,11 +87,35 @@
 &tr.tc003 test_astbench_fn=
   @if eq(strlen(v(r.zero)), 0)=
   {
-    @log smoke=TC003: astbench with zero iterations returns empty. Succeeded.;
+    @log smoke=TC003: astbench with zero iterations returns empty. Succeeded.
+  },
+  {
+    @log smoke=TC003: astbench with zero iterations returns empty. Failed ([v(r.zero)]).
+  }
+-
+#
+# Test Case #4 - Text written before astbench in the same expression survives.
+#
+# fun_astbench warms the compile cache with a throwaway jit_eval and then
+# discards what it emitted.  It used to do that by rewinding to the BASE of
+# the caller's buffer, which is not where astbench started writing -- so
+# everything already in the buffer went with it, and
+# `think TAG [astbench(add(1,2),50)]` printed the report with TAG missing
+# (#2060).
+#
+# Nothing in the server composes output around astbench, which is why this
+# went unnoticed; a harness tagging each measurement with the case it belongs
+# to is what tripped over it.  Cheap to pin, and the failure is silent
+# otherwise: the report still looks perfectly well-formed.
+#
+&tr.tc004 test_astbench_fn=
+  @if strmatch(v(r.pre), KEEPMEast=*us jit=*us ratio=*x result=3)=
+  {
+    @log smoke=TC004: astbench preserves preceding output. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: astbench with zero iterations returns empty. Failed ([v(r.zero)]).;
+    @log smoke=TC004: astbench preserves preceding output. Failed ([v(r.pre)]).;
     @trig me/tr.done
   }
 -
