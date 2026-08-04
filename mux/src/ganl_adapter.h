@@ -50,6 +50,14 @@ public:
     bool initialize();
     void shutdown();
     void prepare_for_restart();
+
+    // The part of prepare_for_restart() a crash-signal handler can afford
+    // (#2028): record the listener fds and drop TLS sessions, and stop.
+    // The full version flushes output and dispatches protocol events, which
+    // is not something to do in an address space already known to be bad.
+    //
+    void prepare_for_restart_panic();
+
     void run_main_loop();
 
     bool restarting_{false};

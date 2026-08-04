@@ -630,7 +630,12 @@ static void DCL_CDECL sighandler(int sig)
             // masked it, because load_restart_db() leaves the array
             // populated from the previous generation.
             //
-            g_GanlAdapter.prepare_for_restart();
+            // The panic variant only (#2028): the full prepare_for_restart()
+            // also flushes output and runs a 100 ms processEvents() with up
+            // to 64 protocol dispatches, which is not work to do in an
+            // address space this handler was entered on.
+            //
+            g_GanlAdapter.prepare_for_restart_panic();
 
             dump_restart_db();
 #endif // HAVE_WORKING_FORK
