@@ -23,6 +23,7 @@ all: $(TOOLS)
 	@if command -v $(RAGEL) >/dev/null 2>&1; then \
 	    echo "$(RAGEL) $(RFLAGS) -o $@ $<"; \
 	    $(RAGEL) $(RFLAGS) -o $@ $<; \
+	    sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@; \
 	else \
 	    echo "ragel not found, using checked-in $@"; \
 	fi

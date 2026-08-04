@@ -1,5 +1,4 @@
 
-#line 1 "reformat.rl"
 /*
  * reformat.rl -- Ragel -G2 MUX softcode reformatter
  *
@@ -70,11 +69,9 @@ static void emit_break_now(int d)
 }
 
 
-#line 144 "reformat.rl"
 
 
 
-#line 73 "reformat.c"
 static const int reformat_start = 1;
 static const int reformat_first_final = 1;
 static const int reformat_error = -1;
@@ -82,7 +79,6 @@ static const int reformat_error = -1;
 static const int reformat_en_main = 1;
 
 
-#line 147 "reformat.rl"
 
 static void reformat_line(const char *line, size_t len)
 {
@@ -105,7 +101,6 @@ static void reformat_line(const char *line, size_t len)
     (void)act;
 
     
-#line 100 "reformat.c"
 	{
 	cs = reformat_start;
 	ts = 0;
@@ -113,16 +108,13 @@ static void reformat_line(const char *line, size_t len)
 	act = 0;
 	}
 
-#line 169 "reformat.rl"
     
-#line 106 "reformat.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 106 "reformat.rl"
 	{{p = ((te))-1;}{
             if (pdepth == 0 && bdepth == 0 && depth > 0) {
                 depth--;
@@ -141,7 +133,6 @@ tr0:
         }}
 	goto st1;
 tr1:
-#line 77 "reformat.rl"
 	{te = p+1;{
             if (pdepth == 0 && bdepth == 0 && depth > 0) {
                 depth--;
@@ -161,19 +152,15 @@ tr1:
         }}
 	goto st1;
 tr2:
-#line 141 "reformat.rl"
 	{te = p+1;{ emit_pending(); putchar(*ts); }}
 	goto st1;
 tr3:
-#line 133 "reformat.rl"
 	{te = p+1;{ emit_pending(); pdepth++; putchar('('); }}
 	goto st1;
 tr4:
-#line 134 "reformat.rl"
 	{te = p+1;{ emit_pending(); if (pdepth > 0) pdepth--; putchar(')'); }}
 	goto st1;
 tr5:
-#line 124 "reformat.rl"
 	{te = p+1;{
             emit_pending();
             putchar(';');
@@ -183,15 +170,12 @@ tr5:
         }}
 	goto st1;
 tr6:
-#line 137 "reformat.rl"
 	{te = p+1;{ emit_pending(); bdepth++; putchar('['); }}
 	goto st1;
 tr7:
-#line 138 "reformat.rl"
 	{te = p+1;{ emit_pending(); if (bdepth > 0) bdepth--; putchar(']'); }}
 	goto st1;
 tr8:
-#line 96 "reformat.rl"
 	{te = p+1;{
             emit_pending();
             putchar('{');
@@ -202,7 +186,6 @@ tr8:
         }}
 	goto st1;
 tr10:
-#line 106 "reformat.rl"
 	{te = p;p--;{
             if (pdepth == 0 && bdepth == 0 && depth > 0) {
                 depth--;
@@ -221,14 +204,11 @@ tr10:
         }}
 	goto st1;
 st1:
-#line 1 "NONE"
 	{ts = 0;}
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 1 "NONE"
 	{ts = p;}
-#line 206 "reformat.c"
 	switch( (*p) ) {
 		case 40: goto tr3;
 		case 41: goto tr4;
@@ -240,14 +220,12 @@ case 1:
 	}
 	goto tr2;
 tr9:
-#line 1 "NONE"
 	{te = p+1;}
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 223 "reformat.c"
 	if ( (*p) == 44 )
 		goto st0;
 	goto tr10;
@@ -274,7 +252,6 @@ case 0:
 
 	}
 
-#line 170 "reformat.rl"
 
     /* Discard any trailing pending break (e.g., line ends with ;). */
     pending_break = 0;

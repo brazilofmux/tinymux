@@ -21,6 +21,7 @@ GENERATED_GENS=(
     "mux/modules/engine/art_scan.cpp"
     "mux/modules/engine/ast_scan.cpp"
     "mux/lib/color_ops.c"
+    "mux/lib/date_scan.cpp"
     "mux/muxescape/muxescape.cpp"
 
     # Unicode tables (source is the utf/ pipeline, not a single file)
@@ -57,6 +58,7 @@ GENERATED_SRCS=(
     "mux/modules/engine/art_scan.rl"
     "mux/modules/engine/ast_scan.rl"
     "mux/lib/color_ops.rl"
+    "mux/lib/date_scan.rl"
     "mux/muxescape/muxescape.rl"
 
     "utf/"
@@ -90,6 +92,7 @@ GENERATED_SRCS=(
 GENERATED_RULES=(
     "mux/modules/engine/Makefile.am"
     "mux/modules/engine/Makefile.am"
+    "mux/lib/Makefile.am"
     "mux/lib/Makefile.am"
     "mux/muxescape/Makefile.am"
 
