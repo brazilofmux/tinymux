@@ -39,6 +39,21 @@ extern size_t_ co_splice(unsigned char *out,
                          const unsigned char *list2, size_t_ len2,
                          const unsigned char *search, size_t_ slen,
                          unsigned char delim, unsigned char osep);
+extern size_t_ co_center(unsigned char *out,
+                         const unsigned char *p, size_t_ len,
+                         size_t_ width,
+                         const unsigned char *fill, size_t_ fill_len,
+                         int bTrunc);
+extern size_t_ co_ljust(unsigned char *out,
+                        const unsigned char *p, size_t_ len,
+                        size_t_ width,
+                        const unsigned char *fill, size_t_ fill_len,
+                        int bTrunc);
+extern size_t_ co_rjust(unsigned char *out,
+                        const unsigned char *p, size_t_ len,
+                        size_t_ width,
+                        const unsigned char *fill, size_t_ fill_len,
+                        int bTrunc);
 
 /* ---- syscalls ---- */
 

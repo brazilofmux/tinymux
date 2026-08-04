@@ -146,6 +146,33 @@ made read-only on disk (`chmod a-w`) by their Makefile generation rules. A pre-c
 hook (`hooks/pre-commit`) blocks commits that include generated output without its source.
 Edit the `.rl`/`.ac`/`.proto` source and regenerate — never hand-edit the output.
 
+## String Encoding — Validate at the Boundary, Not Internally
+Incoming bytes are validated at the **network boundary** for their encoding
+(ascii, latin-1, latin-2, cp437, utf-8 Unicode 16), and Unicode is additionally
+**required to be NFC** — `save_command` (`mux/src/net.cpp`) checks `utf8_is_nfc`
+and normalises before queueing. From there the server maintains NFC through the
+database and back out to the network.
+
+**So internal code must not re-validate.** A string reaching a function inside
+the server is already well-formed NFC. The exceptions are local and temporary —
+a function that decomposes and recomposes must mind its own intermediate state.
+If the invariant is worth testing, test it in a sanitising/debug build, not on
+release code paths.
+
+Two consequences that are easy to get backwards:
+- **"Preserves existing behaviour" is not automatically safer.** Behaviour
+  preserved on input the boundary excludes is cost, not safety. A refactor whose
+  results change *only* for malformed input is not a regression.
+- **Do not write tests that pin out-of-contract behaviour.** A fuzz battery
+  emitting bare PUA lead bytes (`0xEF`/`0xF3` without their continuations) is
+  generating input that cannot arrive, and freezing whatever the code happens to
+  do with it — which makes legitimate refactors read as regressions. Generate
+  complete sequences. This is not hypothetical: it cost a full cycle in #2002.
+
+Worth stating because the failure mode is contagious. Defensive validation and
+behaviour-pinning tests both *look* like diligence, so the next session copies
+them, and the pattern spreads without anyone deciding to adopt it.
+
 ## Code Style Guidelines
 - Indentation: 4 spaces, no tabs
 - Bracing: Opening braces on same line: `if (condition) {`
