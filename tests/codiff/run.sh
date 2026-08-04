@@ -86,7 +86,12 @@ esac
 LIBMUX=""
 for cand in "$ROOT/mux/lib/libmux.so" "$ROOT/mux/game/bin/libmux.so"; do
     [ -f "$cand" ] || continue
-    if nm -D --defined-only "$cand" 2>/dev/null | grep -q ' co_insert_at$'; then
+    # `nm -g` is the portable spelling: macOS nm rejects -D and has no
+    # --defined-only, and Mach-O prefixes C symbols with an underscore, so
+    # the GNU-only form matches nothing here and 2>/dev/null hides the
+    # reason.  Allow the optional underscore and accept any symbol type
+    # rather than filtering to T -- the point is only "this build has it".
+    if nm -g "$cand" 2>/dev/null | grep -qE '(^| )_?co_insert_at$'; then
         LIBMUX=$(dirname "$(readlink -f "$cand" 2>/dev/null || echo "$cand")")
         break
     fi

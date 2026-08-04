@@ -35,11 +35,13 @@ static int io_ecall(rv64_state_t *state, void *user)
 }
 
 /* Hooks supplied only by repro/2019-chain-bisect.patch, a scratch patch to
- * dbt.cpp used to bisect chained edges.  Declared weak so a normal build --
- * which links the unpatched dbt.cpp and therefore defines neither -- still
- * links; they resolve to null and are skipped. */
-extern "C" void dbt_dump_chained(void) __attribute__((weak));
-extern "C" void dbt_dump_heads(void) __attribute__((weak));
+ * dbt.cpp used to bisect chained edges.  Weak *definitions*, not weak
+ * declarations: an undefined weak symbol resolves to null only on ELF, while
+ * the Mach-O linker rejects it outright, so the declaration form makes a
+ * normal build fail to link on macOS.  An empty weak definition links
+ * everywhere and is overridden by the patch's strong one when applied. */
+extern "C" __attribute__((weak)) void dbt_dump_chained(void) { }
+extern "C" __attribute__((weak)) void dbt_dump_heads(void) { }
 
 struct dctx { uint8_t *memory; size_t size; };
 
@@ -112,8 +114,11 @@ int main(int argc, char **argv)
                (unsigned long long)dbt.code_full,
                dbt.reclaims_this_run,
                dbt.code_used, dbt.blob_code_end);
-        if (dbt_dump_chained) dbt_dump_chained();
-        if (dbt_dump_heads) dbt_dump_heads();
+        /* No null test: the weak definitions above make these no-ops in a
+         * normal build, and a weak symbol that is always defined would make
+         * the test vacuously true anyway. */
+        dbt_dump_chained();
+        dbt_dump_heads();
         dbt_cleanup(&dbt);
         rv64_free_binary(&bin);
     }
