@@ -2266,6 +2266,40 @@ static void close_contained(const std::shared_ptr<ganl::ConnectionBase> &conn,
     }
 }
 
+// Same rule as close_contained, for the other recovery action.  A DESC in
+// protocol detect has never logged in, so shutdownsock takes its
+// never-connected branch and evaluates no softcode -- but it still calls
+// alloc_mbuf, site_mon_send, and unconditionally process_output, which
+// drains a std::deque<std::string> and calls send_data per entry.  Under
+// the memory pressure that produced the bad_alloc we are recovering from,
+// any of those can throw again, and from inside a catch block that throw
+// leaves process_tinyMUX_tasks -> run_main_loop -> ganl_main_loop ->
+// driver.cpp, which has no handler.  That is the very failure the barrier
+// exists to prevent, so the recovery must not be able to cause it.
+//
+// Abandoning the teardown leaks the descriptor until the idle path reaps
+// it, which is survivable; letting the throw escape is not.
+//
+static void shutdown_contained(DESC *d, unsigned long long handle)
+{
+    try
+    {
+        shutdownsock(d, R_SOCKDIED);
+    }
+    catch (const std::exception &e)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: exception while closing handle %llu (%s); close abandoned.\n"),
+            handle, e.what()));
+    }
+    catch (...)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: unknown exception while closing handle %llu; close abandoned.\n"),
+            handle));
+    }
+}
+
 void GanlAdapter::run_main_loop() {
     g_pILog->WriteString(T("GANL: Entering main loop.\n"));
     g_pILog->Flush();
@@ -2848,14 +2882,14 @@ void GanlAdapter::process_tinyMUX_tasks() {
                 g_pILog->WriteString(tprintf(
                     T("GANL: exception finalizing protocol for handle %llu (%s); closing.\n"),
                     static_cast<unsigned long long>(get_handle(d)), e.what()));
-                shutdownsock(d, R_SOCKDIED);
+                shutdown_contained(d, static_cast<unsigned long long>(get_handle(d)));
             }
             catch (...)
             {
                 g_pILog->WriteString(tprintf(
                     T("GANL: unknown exception finalizing protocol for handle %llu; closing.\n"),
                     static_cast<unsigned long long>(get_handle(d))));
-                shutdownsock(d, R_SOCKDIED);
+                shutdown_contained(d, static_cast<unsigned long long>(get_handle(d)));
             }
         }
     }
