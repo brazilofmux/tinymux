@@ -43,6 +43,10 @@ extern size_t_ co_transform(unsigned char *out,
                             const unsigned char *str, size_t_ slen,
                             const unsigned char *from_set, size_t_ flen,
                             const unsigned char *to_set, size_t_ tlen);
+extern size_t_ co_cluster_count(const unsigned char *data, size_t_ len);
+extern size_t_ co_mid_cluster(unsigned char *out,
+                              const unsigned char *data, size_t_ len,
+                              size_t_ iStart, size_t_ nCount);
 extern size_t_ co_center(unsigned char *out,
                          const unsigned char *p, size_t_ len,
                          size_t_ width,
