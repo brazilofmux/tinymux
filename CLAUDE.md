@@ -89,6 +89,25 @@ version churns whole files (#1477). Prefer expressing build changes in
 - Wildcard-capture scenario: `make test-scenario` (opt-in, NOT in `make test`);
   spins a throwaway netmux and drives `$`-command `%0..%9` captures over a
   socket (`tests/scenario/`) — the path muxscript can't reach
+- Algorithmic growth: `make test-growth` (opt-in, NOT in `make test`);
+  `tests/growth/` asserts the **complexity class** of evaluation, not its
+  speed. Doubling N costs 2.0x if an implementation is linear and 4.0x if it is
+  quadratic **on every machine** — the hardware cancels out of the ratio — so
+  unlike `test-perf` this needs no per-machine baseline and no calibrated
+  tolerance. It cannot see a 10% regression; it can see O(n) become O(n²).
+  - The verdict is a least-squares exponent over all points, not consecutive
+    ratios: one cold-cache measurement must not decide it.
+  - Known defects are `xfail`'d against an issue number in `driver.py`'s
+    `CASES`. An xfail that starts **passing** fails the run — a stale xfail
+    list is how a fixed bug gets un-fixed later.
+  - **Two benchmark fields lie and are deliberately unused.** `astbench`'s
+    `jit=` times `jit_eval` even when it bails instantly for want of a lowering
+    (`citer()` reads a flat 2.7us at every N — that is absence, not speed), and
+    its `result=` comes from a third AST call so it never notices. `rvbench`'s
+    `native=` calls `mux_exec`, which *dispatches to the JIT* for anything
+    JIT-eligible — reading it as "the interpreter" is what made #2052 look like
+    a defect shared by both routes when only one route has it. Use `astbench`'s
+    `ast=` for the interpreter and `rvbench`'s `cached=` for the JIT.
 
 ## Release Process
 

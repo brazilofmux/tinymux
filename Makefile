@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-nfc test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-codiff test-codiff-2019 test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-perf test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-nfc test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-codiff test-codiff-2019 test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-perf test-growth test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -662,6 +662,20 @@ test-codiff-2019:
 test-perf:
 	@echo "==> Performance battery (rvbench)"
 	@tests/perf/run.sh
+
+# Algorithmic growth battery: asserts the COMPLEXITY CLASS of evaluation, not
+# its speed.  Doubling N costs 2.0x if an implementation is linear and 4.0x if
+# it is quadratic, on every machine -- the hardware cancels out of the ratio --
+# so unlike test-perf this needs no per-machine baseline and no calibrated
+# tolerance.  It cannot see a 10% regression; it can see O(n) become O(n^2),
+# which is the failure that actually ruins a live game.
+#
+# Opt-in, NOT part of `make test`: it takes minutes, and timings are timings.
+# Known defects are xfail'd against their issue number in tests/growth/
+# driver.py, and an xfail that starts PASSING fails the run.
+test-growth: install
+	@echo "==> Running algorithmic growth battery"
+	bash tests/growth/run.sh
 
 # Live scenario test: the wildcard capture path ($-command %0..%9), which
 # muxscript cannot drive.  Opt-in (NOT part of `make test`) because it spins a
