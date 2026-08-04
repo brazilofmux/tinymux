@@ -853,6 +853,7 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         int used[32] = {0};        // sources read early — preload candidates
         int referenced[32] = {0};  // sources + destinations — slot pressure
         bool past_first_branch = false;
+        bool body_has_call = false;  // a call evicts the whole cache (#2019)
         for (int i = 0; i < MAX_BLOCK_INSNS && dbt_guest_range_ok(scan_pc, 4, dbt->memory_size); i++) {
             uint32_t w;
             memcpy(&w, dbt->memory + scan_pc, 4);
@@ -883,6 +884,9 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
             }
             if (si.opcode == OP_JAL) {
                 if (si.rd != 0) {
+                    // Function call: the callee's register usage is not
+                    // scanned, so slot pressure cannot see it (#2019).
+                    body_has_call = true;
                     past_first_branch = true;
                     scan_pc += 4;
                     continue;
@@ -910,6 +914,14 @@ uint8_t *dbt_backend_translate_block(dbt_state_t *dbt, uint64_t guest_pc) {
         // If the loop over-commits the register cache, fall back to ordinary
         // per-iteration dispatch (see rc_loop_overcommits in dbt_internal.h).
         if (self_loop && rc_loop_overcommits(referenced, rc_pinned_guest, RC_NUM_PINNED)) {
+            self_loop = false;
+        }
+        // A call in the body is an eviction of everything (#2019).  The
+        // back edge re-enters at warm_entry, past the preload, so the
+        // second iteration reads host registers the callee has since
+        // reused.  Refuse the warm superblock; take per-iteration
+        // dispatch instead.
+        if (self_loop && body_has_call) {
             self_loop = false;
         }
         if (self_loop) {
