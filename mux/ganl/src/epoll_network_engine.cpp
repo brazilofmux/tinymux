@@ -16,8 +16,26 @@
 #include <mutex>
 #include <netdb.h> // For getaddrinfo
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
+// Debug logging is OFF unless the build defines GANL_DEBUG (#2049).
+//
+// This gate was previously keyed on NDEBUG, which NOTHING in this project ever
+// defines -- not configure.ac, not any Makefile.am, not the generated
+// makefiles; CXXFLAGS is `-g -O2`.  So the #else arm was dead code and every
+// site here was live in every build, including release tarballs.
+//
+// Each site is a formatted std::cerr insertion terminated by std::endl, which
+// flushes -- a synchronous write(2) per line on the network event path.  It
+// cost 40-90% of command throughput.
+//
+// It is also wrong on Windows for a reason unrelated to speed: io_buffer.cpp,
+// iocp_network_engine.cpp and connection.cpp already hardcode their equivalent
+// macros to no-ops, noting that stdout/stderr are not valid on a detached
+// Windows process.  The same applies here.
+//
+// Gating on a GANL-specific symbol rather than defining NDEBUG globally: that
+// also disables assert() and anything else keyed on it, a far wider blast
+// radius than this file needs.
+#ifdef GANL_DEBUG
 #define GANL_EPOLL_DEBUG(fd, x) \
     do { std::cerr << "[Epoll:" << (fd == epollFd_ ? "CTL" : std::to_string(fd)) << "] " << x << std::endl; } while (0)
 #else
@@ -348,7 +366,7 @@ ConnectionHandle EpollNetworkEngine::initiateConnect(const std::string& host, ui
 
     int fd = -1;
     int lastErr = 0;
-    // Only consumed by the debug log below (a no-op under NDEBUG); the epoll
+    // Only consumed by the debug log below (a no-op unless GANL_DEBUG); the epoll
     // registration is identical for both outcomes, so guard against
     // unused-variable warnings in release builds.
     [[maybe_unused]] bool connectInProgress = false;
@@ -486,7 +504,7 @@ ConnectionHandle EpollNetworkEngine::initiateUnixConnect(const std::string& path
     }
     strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
 
-    // Only consumed by the debug log below (a no-op under NDEBUG); see the note
+    // Only consumed by the debug log below (a no-op unless GANL_DEBUG); see the note
     // in initiateConnect().
     [[maybe_unused]] bool connectInProgress = false;
     int rc = ::connect(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr));

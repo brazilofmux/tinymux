@@ -6,8 +6,26 @@
 #include <algorithm>
 #include <cstring>
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
+// Debug logging is OFF unless the build defines GANL_DEBUG (#2049).
+//
+// This gate was previously keyed on NDEBUG, which NOTHING in this project ever
+// defines -- not configure.ac, not any Makefile.am, not the generated
+// makefiles; CXXFLAGS is `-g -O2`.  So the #else arm was dead code and every
+// site here was live in every build, including release tarballs.
+//
+// Each site is a formatted std::cerr insertion terminated by std::endl, which
+// flushes -- a synchronous write(2) per line on the network event path.  It
+// cost 40-90% of command throughput.
+//
+// It is also wrong on Windows for a reason unrelated to speed: io_buffer.cpp,
+// iocp_network_engine.cpp and connection.cpp already hardcode their equivalent
+// macros to no-ops, noting that stdout/stderr are not valid on a detached
+// Windows process.  The same applies here.
+//
+// Gating on a GANL-specific symbol rather than defining NDEBUG globally: that
+// also disables assert() and anything else keyed on it, a far wider blast
+// radius than this file needs.
+#ifdef GANL_DEBUG
 #define GANL_SSL_DEBUG(conn, x) \
     do { std::cerr << "[OpenSSL:" << (conn == 0 ? "Global" : std::to_string(conn)) << "] " << x << std::endl; } while (0)
 #else
