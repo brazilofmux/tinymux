@@ -2825,8 +2825,15 @@ size_t co_insert_word(unsigned char *out,
                       size_t iPos,
                       unsigned char delim, unsigned char osep)
 {
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    /* #2002: the word list is consumed strictly in order, one entry per
+     * iteration, so a cursor does the same job as the LBUF_SIZE/2 array
+     * without the 256 KB of stack.  count_words() shares wc_next() with
+     * split_words(), so the cap semantics are the same by construction. */
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -2846,8 +2853,10 @@ size_t co_insert_word(unsigned char *out,
         }
         if (i < nWords) {
             if (emitted > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted++;
         }
     }
@@ -2882,8 +2891,16 @@ size_t co_replace_at(unsigned char *out,
         return 0;
     }
 
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    /* #2002: cursor instead of a materialised array.  The invariant that
+     * makes this safe is that the cursor has yielded exactly min(i, nWords)
+     * words at every point -- so EVERY i++ in the index version must be
+     * paired with one wc_next() here, including the bare i++ that steps
+     * over the word being replaced. */
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     /* Convert positions: negative wraps, positive 1-based to 0-based. */
     int j;
@@ -2901,13 +2918,16 @@ size_t co_replace_at(unsigned char *out,
         }
     }
 
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
     if (nPositions == 0) {
-        unsigned char *wp = out;
-        const unsigned char *wp_end = out + LBUF_SIZE - 1;
         for (size_t i = 0; i < nWords && wp < wp_end; i++) {
             if (i > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
         }
         *wp = '\0';
         return (size_t)(wp - out);
@@ -2915,30 +2935,33 @@ size_t co_replace_at(unsigned char *out,
 
     sort_ints(positions, nPositions);
 
-    unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t i = 0;
     int emitted = 0;
 
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted = 1;
             i++;
         }
         if (emitted) WP_SAFE(wp, wp_end, osep);
         wp += wp_safe_copy(wp, wp_end, word, wlen);
         emitted = 1;
+        (void)wc_next(&c, &cw);   /* step over the replaced word */
         i++;
         while (j < nPositions - 1 && positions[j] == positions[j + 1]) j++;
     }
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        if (wc_next(&c, &cw)) {
+            size_t cb = (size_t)(cw.end - cw.start);
+            wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+        }
         emitted = 1;
         i++;
     }
@@ -2957,8 +2980,11 @@ size_t co_delete_at(unsigned char *out,
         return 0;
     }
 
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     /* Convert positions: negative wraps, positive 1-based to 0-based.
      * Out-of-range positions are dropped (swap-with-last). */
@@ -2987,12 +3013,16 @@ size_t co_delete_at(unsigned char *out,
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted = 1;
             i++;
         }
-        /* Skip the word at this position (delete it). */
+        /* Skip the word at this position (delete it) -- the cursor has to
+         * step over it too, or the invariant breaks. */
+        (void)wc_next(&c, &cw);
         i++;
         /* Collapse duplicate positions: a word deleted once is not
          * revisited. */
@@ -3001,8 +3031,10 @@ size_t co_delete_at(unsigned char *out,
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        if (wc_next(&c, &cw)) {
+            size_t cb = (size_t)(cw.end - cw.start);
+            wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+        }
         emitted = 1;
         i++;
     }
@@ -3017,8 +3049,11 @@ size_t co_insert_at(unsigned char *out,
                     const unsigned char *word, size_t wlen,
                     unsigned char delim, unsigned char osep)
 {
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     /* For empty lists, validate that at least one position is 1 or -1
      * before proceeding.  This matches do_itemfuns IF_INSERT. */
@@ -3048,13 +3083,16 @@ size_t co_insert_at(unsigned char *out,
         }
     }
 
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
     if (nPositions == 0) {
-        unsigned char *wp = out;
-        const unsigned char *wp_end = out + LBUF_SIZE - 1;
         for (size_t i = 0; i < nWords && wp < wp_end; i++) {
             if (i > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
         }
         *wp = '\0';
         return (size_t)(wp - out);
@@ -3062,19 +3100,21 @@ size_t co_insert_at(unsigned char *out,
 
     sort_ints(positions, nPositions);
 
-    unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     int emitted = 0;
     size_t i = 0;
 
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted = 1;
             i++;
         }
+        /* Insertion does not consume a source word, so the cursor does
+         * not advance here -- unlike co_replace_at/co_delete_at. */
         if (emitted) WP_SAFE(wp, wp_end, osep);
         wp += wp_safe_copy(wp, wp_end, word, wlen);
         emitted = 1;
@@ -3082,8 +3122,10 @@ size_t co_insert_at(unsigned char *out,
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        if (wc_next(&c, &cw)) {
+            size_t cb = (size_t)(cw.end - cw.start);
+            wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+        }
         emitted = 1;
         i++;
     }
