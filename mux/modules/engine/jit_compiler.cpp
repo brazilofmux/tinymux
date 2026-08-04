@@ -5790,20 +5790,30 @@ FUNCTION(fun_rvbench)
     uint64_t ce_expected = s_vm[0].dbt.cold_exit_expected;
     uint64_t ce_from = s_vm[0].dbt.last_exit_from;
 
+    // Timings report ns/call, not us (#2046).  The cached path runs at
+    // 10-50ns/call, which %.2fus rendered as "0.01" or "0.02" -- one or two
+    // significant digits, so consecutive identical runs looked like 100%
+    // swings and any regression under about 2x was invisible.  A number that
+    // cannot be resolved cannot be gated on.
+    //
+    // Keep the format one unbroken literal: check_formats.py reads the source
+    // and requires mux_snprintf()'s format to be a constant, so a comment
+    // interleaved with the concatenation trips the guard.
+    //
     LBuf report = LBuf_Src("rvbench");
     mux_snprintf(report.get(), LBUF_SIZE,
         T("expr=%s iters=%d folds=%d ecalls=%d tier2=%d nativ=%d disp=%llu sb=%llu/%llu ic=%llu ih=%llu ce=%llu(a=0x%llX,e=0x%llX,from=0x%llX) | "
-        "native=%.2fus/call | "
-        "compile-each=%.2fus/call (%.1fx) | "
-        "cached=%.2fus/call (%.1fx)"),
+        "native=%.1fns/call | "
+        "compile-each=%.1fns/call (%.1fx) | "
+        "cached=%.1fns/call (%.1fx)"),
         reinterpret_cast<const char *>(expr),
         iterations, prog.folds, prog.ecalls, prog.tier2_calls, prog.native_ops,
         (unsigned long long)disp,
         (unsigned long long)sb, (unsigned long long)se, (unsigned long long)ic,
         (unsigned long long)ih, (unsigned long long)ce, (unsigned long long)ce_actual, (unsigned long long)ce_expected, (unsigned long long)ce_from,
-        per_native,
-        per_compile, per_compile / per_native,
-        per_cached, per_cached / per_native);
+        per_native * 1000.0,
+        per_compile * 1000.0, per_compile / per_native,
+        per_cached * 1000.0, per_cached / per_native);
 
     safe_str(report, buff, bufc);
 }
