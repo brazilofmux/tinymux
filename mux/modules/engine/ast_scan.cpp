@@ -1,5 +1,4 @@
 
-#line 1 "ast_scan.rl"
 /*! \file ast_scan.rl
  * \brief Ragel-generated scanner for MUX expression tokenizer.
  *
@@ -39,20 +38,17 @@ static inline ASTTokenType ast_pct_token_type(ASTLexMode mode)
                                     static_cast<size_t>(te - ts))
 
 
-#line 190 "ast_scan.rl"
 
 
 // Ragel state table data.
 //
 
-#line 44 "ast_scan.cpp"
 static const int ast_scanner_start = 2;
 static const int ast_scanner_error = 0;
 
 static const int ast_scanner_en_main = 2;
 
 
-#line 195 "ast_scan.rl"
 
 std::vector<ASTToken> ast_tokenize_mode(const UTF8 *input, size_t nLen,
                                         ASTLexMode mode)
@@ -84,7 +80,6 @@ std::vector<ASTToken> ast_tokenize_mode(const UTF8 *input, size_t nLen,
     int act;
 
     
-#line 79 "ast_scan.cpp"
 	{
 	cs = ast_scanner_start;
 	ts = 0;
@@ -92,22 +87,18 @@ std::vector<ASTToken> ast_tokenize_mode(const UTF8 *input, size_t nLen,
 	act = 0;
 	}
 
-#line 226 "ast_scan.rl"
     
-#line 85 "ast_scan.cpp"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 177 "ast_scan.rl"
 	{{p = ((te))-1;}{
             tokens.push_back({ASTTOK_LIT, TOK_TEXT()});
         }}
 	goto st2;
 tr6:
-#line 151 "ast_scan.rl"
 	{te = p+1;{
             if (  !tokens.empty()
                && tokens.back().type == ASTTOK_LIT)
@@ -118,182 +109,151 @@ tr6:
         }}
 	goto st2;
 tr7:
-#line 159 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_RPAREN, TOK_TEXT()});
         }}
 	goto st2;
 tr8:
-#line 162 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_COMMA, TOK_TEXT()});
         }}
 	goto st2;
 tr9:
-#line 165 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_SEMI, TOK_TEXT()});
         }}
 	goto st2;
 tr10:
-#line 139 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_LBRACK, TOK_TEXT()});
         }}
 	goto st2;
 tr12:
-#line 142 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_RBRACK, TOK_TEXT()});
         }}
 	goto st2;
 tr13:
-#line 145 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_LBRACE, TOK_TEXT()});
         }}
 	goto st2;
 tr14:
-#line 148 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_RBRACE, TOK_TEXT()});
         }}
 	goto st2;
 tr15:
-#line 177 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ASTTOK_LIT, TOK_TEXT()});
         }}
 	goto st2;
 tr17:
-#line 171 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ASTTOK_SPACE, TOK_TEXT()});
         }}
 	goto st2;
 tr18:
-#line 185 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ASTTOK_LIT, TOK_TEXT()});
         }}
 	goto st2;
 tr19:
-#line 124 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr20:
-#line 118 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr21:
-#line 115 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr22:
-#line 97 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr28:
-#line 112 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr30:
-#line 91 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr31:
-#line 88 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr32:
-#line 115 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr33:
-#line 106 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr35:
-#line 85 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr36:
-#line 82 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr37:
-#line 109 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr38:
-#line 100 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr40:
-#line 79 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr41:
-#line 76 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr42:
-#line 103 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ast_pct_token_type(mode), TOK_TEXT()});
         }}
 	goto st2;
 tr43:
-#line 133 "ast_scan.rl"
 	{te = p;p--;{
             tokens.push_back({ASTTOK_ESC, TOK_TEXT()});
         }}
 	goto st2;
 tr44:
-#line 130 "ast_scan.rl"
 	{te = p+1;{
             tokens.push_back({ASTTOK_ESC, TOK_TEXT()});
         }}
 	goto st2;
 st2:
-#line 1 "NONE"
 	{ts = 0;}
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 1 "NONE"
 	{ts = p;}
-#line 251 "ast_scan.cpp"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 32u: goto st4;
@@ -314,14 +274,12 @@ st0:
 cs = 0;
 	goto _out;
 tr1:
-#line 1 "NONE"
 	{te = p+1;}
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 277 "ast_scan.cpp"
 	switch( (*p) ) {
 		case 0u: goto tr15;
 		case 32u: goto tr15;
@@ -539,7 +497,6 @@ case 15:
 	_out: {}
 	}
 
-#line 227 "ast_scan.rl"
 
     tokens.push_back({ASTTOK_EOF, ""});
     return tokens;

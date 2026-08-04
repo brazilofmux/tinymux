@@ -54,14 +54,17 @@ engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir
 	    $(LIBS) $(PCRE2_LIBS) $(OPENSSL_LIBS)
 
 # Ragel scanner generation — output is read-only to prevent accidental edits.
+# #line directives are stripped (#1950); see mux/lib/Makefile.am for why.
 art_scan.cpp: art_scan.rl art_scan.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 ast_scan.cpp: ast_scan.rl $(top_srcdir)/include/ast.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 BUILT_SOURCES = art_scan.cpp ast_scan.cpp

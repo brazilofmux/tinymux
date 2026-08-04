@@ -514,11 +514,13 @@ engine.so: $(ENGINE_CXX_OBJS) $(top_builddir)/sqlite/libsqlite3.a $(top_builddir
 art_scan.cpp: art_scan.rl art_scan.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 ast_scan.cpp: ast_scan.rl $(top_srcdir)/include/ast.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -1,5 +1,4 @@
 
-#line 1 "muxescape.rl"
 /*! \file muxescape.rl
  * \brief Escape plain text for use in TinyMUX/MUSH command arguments.
  *
@@ -120,11 +119,9 @@ static bool read_all(FILE *fp, std::vector<char> &buf)
 }
 
 
-#line 155 "muxescape.rl"
 
 
 
-#line 128 "muxescape.cpp"
 static const int muxescape_start = 0;
 static const int muxescape_first_final = 0;
 static const int muxescape_error = -1;
@@ -132,7 +129,6 @@ static const int muxescape_error = -1;
 static const int muxescape_en_main = 0;
 
 
-#line 158 "muxescape.rl"
 
 static void process_buffer(const unsigned char *data, size_t len)
 {
@@ -152,7 +148,6 @@ static void process_buffer(const unsigned char *data, size_t len)
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
     
-#line 156 "muxescape.cpp"
 	{
 	cs = muxescape_start;
 	ts = 0;
@@ -160,53 +155,43 @@ static void process_buffer(const unsigned char *data, size_t len)
 	act = 0;
 	}
 
-#line 177 "muxescape.rl"
     
-#line 166 "muxescape.cpp"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr5:
-#line 144 "muxescape.rl"
 	{te = p;p--;{
         emit_literal_segment(ts, te);
     }}
 	goto st0;
 tr6:
-#line 132 "muxescape.rl"
 	{te = p;p--;{
         emit_repeat_run("%t", static_cast<size_t>(te - ts));
     }}
 	goto st0;
 tr7:
-#line 136 "muxescape.rl"
 	{te = p;p--;{
         emit_repeat_run("%r", logical_newlines(ts, te));
     }}
 	goto st0;
 tr8:
-#line 128 "muxescape.rl"
 	{te = p;p--;{
         emit_spaces_run(ts, te);
     }}
 	goto st0;
 tr9:
-#line 140 "muxescape.rl"
 	{te = p;p--;{
         emit_escaped_segment(ts, te);
     }}
 	goto st0;
 st0:
-#line 1 "NONE"
 	{ts = 0;}
 	if ( ++p == pe )
 		goto _test_eof0;
 case 0:
-#line 1 "NONE"
 	{ts = p;}
-#line 210 "muxescape.cpp"
 	switch( (*p) ) {
 		case 9u: goto st2;
 		case 10u: goto st3;
@@ -311,7 +296,6 @@ case 5:
 
 	}
 
-#line 178 "muxescape.rl"
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif

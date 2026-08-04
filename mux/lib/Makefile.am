@@ -39,14 +39,26 @@ all-local: libmux.so
 -include $(LIBMUX_C_OBJS:.lo=.d)
 
 # Ragel .rl -> .c — output is read-only to prevent accidental edits.
+#
+# The #line directives are stripped (#1950).  Their values depend on the Ragel
+# build, not on our source, so regenerating with a different Ragel rewrites
+# dozens of #line-only lines and dirties the tree after any pull that touches
+# the .rl -- which matters because dounix.sh packages from the working tree.
+# Stripping makes the output a function of the .rl alone, so identical input
+# gives an identical file on every box.  The cost is that a debugger reports
+# positions in the generated .c rather than the .rl; that is the accepted
+# trade for a canonical artifact.  Deleting whole lines is safe: every
+# directive Ragel emits is anchored at column 0 and carries no trailing code.
 color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -C -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 date_scan.cpp: date_scan.rl $(top_srcdir)/include/timeutil.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 libmux.so: $(LIBMUX_OBJS)

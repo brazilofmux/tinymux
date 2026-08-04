@@ -1,5 +1,4 @@
 
-#line 1 "art_scan.rl"
 /*! \file art_scan.rl
  * \brief Ragel-generated scanner for English article selection (a/an).
  *
@@ -21,13 +20,11 @@
 #include "art_scan.h"
 
 
-#line 22 "art_scan.cpp"
 static const int art_scan_start = 0;
 
 static const int art_scan_en_main = 0;
 
 
-#line 118 "art_scan.rl"
 
 
 // art_should_use_an — returns true when the article should be "an".
@@ -52,7 +49,6 @@ bool art_should_use_an(const UTF8 *data, size_t len)
     int cs, act;
 
     
-#line 49 "art_scan.cpp"
 	{
 	cs = art_scan_start;
 	ts = 0;
@@ -60,79 +56,60 @@ bool art_should_use_an(const UTF8 *data, size_t len)
 	act = 0;
 	}
 
-#line 142 "art_scan.rl"
     
-#line 55 "art_scan.cpp"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr9:
-#line 113 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
 	goto st0;
 tr12:
-#line 82 "art_scan.rl"
 	{te = p;p--;{ use_an = true; }}
 	goto st0;
 tr16:
-#line 83 "art_scan.rl"
 	{te = p;p--;{ use_an = true; }}
 	goto st0;
 tr20:
-#line 61 "art_scan.rl"
 	{te = p;p--;{ use_an = true; }}
 	goto st0;
 tr21:
-#line 109 "art_scan.rl"
 	{te = p;p--;{ use_an = true; }}
 	goto st0;
 tr24:
-#line 88 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
 	goto st0;
 tr26:
-#line 91 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
 	goto st0;
 tr32:
-#line 47 "art_scan.rl"
 	{te = p;p--;{ use_an = true; }}
 	goto st0;
 tr38:
-#line 50 "art_scan.rl"
 	{te = p;p--;{ use_an = true; }}
 	goto st0;
 tr44:
-#line 94 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
 	goto st0;
 tr48:
-#line 104 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
 	goto st0;
 tr58:
-#line 97 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
 	goto st0;
 tr63:
-#line 101 "art_scan.rl"
 	{te = p;p--;{ use_an = false; }}
 	goto st0;
 tr68:
-#line 53 "art_scan.rl"
 	{te = p;p--;{ use_an = true; }}
 	goto st0;
 st0:
-#line 1 "NONE"
 	{ts = 0;}
 	if ( ++p == pe )
 		goto _test_eof0;
 case 0:
-#line 1 "NONE"
 	{ts = p;}
-#line 108 "art_scan.cpp"
 	switch( (*p) ) {
 		case 49u: goto st2;
 		case 56u: goto st11;
@@ -683,7 +660,6 @@ case 55:
 
 	}
 
-#line 143 "art_scan.rl"
 
     return use_an;
 }

@@ -632,6 +632,7 @@ uninstall-am: uninstall-binPROGRAMS
 muxescape.cpp: muxescape.rl
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
