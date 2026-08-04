@@ -533,6 +533,31 @@ static void DCL_CDECL sighandler(int sig)
     case SIGILL:
     case SIGFPE:
     case SIGSEGV:
+#if defined(SIGABRT)
+    // #2006: SIGABRT gets the same panic-save-and-restart treatment as its
+    // siblings.  It was the one fatal arm that did not, so an abort() took
+    // the game down permanently while a null dereference on the same line
+    // self-healed -- and an uncaught C++ exception reaches std::terminate
+    // -> abort() -> here, which is the fault #2006 demonstrated.
+    //
+    // In 2.13 this is narrower than it looks.  AssertionFailed() and
+    // OutOfMemory() (predicates.cpp) call do_restart() while the game is up
+    // and mudstate.bCanRestart is set; they only abort() when standalone,
+    // when re-entrant, or before the 15s gate -- and in that last case this
+    // arm declines to restart on the same gate, exactly as today.  So the
+    // assertion machinery's behaviour is unchanged.  What changes is the
+    // treatment of aborts it does not own: uncaught exceptions, the C
+    // library's own heap and fortify aborts, and re-entrant assertions.
+    //
+    // Recursion is bounded by check_panicking() below, which latches
+    // mudstate.panicking: a second fatal signal raised while handling this
+    // one unsets the handlers and re-signals with the default disposition
+    // instead of re-entering.  That matters more here than for the other
+    // arms, because this arm's own failure path -- a failed execl() falling
+    // into mux_assert(false) -- raises SIGABRT.
+    //
+    case SIGABRT:
+#endif // SIGABRT
 #if defined(UNIX_SIGNALS)
     case SIGTRAP:
 #ifdef SIGXFSZ
@@ -657,14 +682,6 @@ static void DCL_CDECL sighandler(int sig)
         }
         break;
 
-    case SIGABRT:
-
-        // Coredump.
-        //
-        log_signal(sig);
-        report();
-
-        exit(1);
     }
     signal(sig, CAST_SIGNAL_FUNC sighandler);
     mudstate.panicking = false;
