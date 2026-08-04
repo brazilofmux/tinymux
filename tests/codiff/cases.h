@@ -261,11 +261,193 @@ static void run_fuzz(unsigned int iters)
     }
 }
 
+/*
+ * Justification cases: co_center / co_ljust / co_rjust.
+ *
+ * These three hold the largest surviving frames in color_ops.c (~43 KB each,
+ * #2002), and the bulk of that is fill_buf[LBUF_SIZE] -- a copy of the fill
+ * pattern that exists only so strip_crnltab() can mutate it in place before
+ * parse_fill_chars() reads it.  Any attempt to remove that copy changes when
+ * CR/NL/TAB are removed relative to when PUA colour codes are consumed, so
+ * the battery leans on exactly that seam:
+ *
+ *   - CR/NL/TAB alone, and interleaved with visible characters
+ *   - CR/NL/TAB immediately before, inside and after a PUA colour sequence,
+ *     which is where stripping-before and skipping-during could disagree
+ *   - fills longer than CO_FILL_CHARS_MAX (256) visible chars, where the
+ *     pattern wraps -- a shorter fill buffer would silently change the wrap
+ *   - multi-byte UTF-8 fills, where a byte-length bound is not a char bound
+ *   - the empty fill (defaults to space) and the width<=str_width paths
+ *
+ * PUA colour codes are spelled as raw bytes rather than via a helper: the
+ * guest has no libc, and the encoding is what is under test.
+ */
+
+/* BMP colour code: EF 94-9F xx.  SMP colour code: F3 B0-B3 xx xx. */
+#define PUA_BMP "\xEF\x94\x81"
+#define PUA_SMP "\xF3\xB0\x80\x81"
+
+static unsigned char g_fill[OUTCAP];
+
+static void justify_triple(const char *tag,
+                           const unsigned char *data, unsigned long dlen,
+                           unsigned long width,
+                           const unsigned char *fill, unsigned long flen,
+                           int bTrunc)
+{
+    unsigned long r;
+    o_str(tag);
+    o_str("/ctr ");
+    r = co_center(g_out, data, dlen, width, fill, flen, bTrunc);
+    o_case("", r, g_out, r);
+    o_str(tag);
+    o_str("/ljs ");
+    r = co_ljust(g_out, data, dlen, width, fill, flen, bTrunc);
+    o_case("", r, g_out, r);
+    o_str(tag);
+    o_str("/rjs ");
+    r = co_rjust(g_out, data, dlen, width, fill, flen, bTrunc);
+    o_case("", r, g_out, r);
+}
+
+static void run_justify(void)
+{
+    unsigned long i, n;
+    const unsigned char *AB = (const unsigned char *)"ab";
+
+    /* Plain fill, and the empty fill that defaults to space. */
+    justify_triple("jx/plain", AB, 2, 10, (const unsigned char *)"-", 1, 0);
+    justify_triple("jx/empty", AB, 2, 10, (const unsigned char *)"", 0, 0);
+    justify_triple("jx/multi", AB, 2, 11, (const unsigned char *)".oO", 3, 0);
+
+    /* Width at and below the string width, both truncation modes. */
+    justify_triple("jx/exact", AB, 2, 2, (const unsigned char *)"-", 1, 0);
+    justify_triple("jx/narrow0", (const unsigned char *)"abcdef", 6, 3,
+                   (const unsigned char *)"-", 1, 0);
+    justify_triple("jx/narrow1", (const unsigned char *)"abcdef", 6, 3,
+                   (const unsigned char *)"-", 1, 1);
+
+    /* CR/NL/TAB in the fill -- the strip_crnltab path. */
+    justify_triple("jx/crlf", AB, 2, 12,
+                   (const unsigned char *)"\r\n\t", 3, 0);
+    justify_triple("jx/crlfmix", AB, 2, 12,
+                   (const unsigned char *)"-\r=\n+\t", 6, 0);
+
+    /* CR/NL/TAB against PUA boundaries: before, between and after a colour
+     * sequence.  If a rewrite skipped these during the parse rather than
+     * stripping them first, this is where the two would part company. */
+    justify_triple("jx/pua_pre", AB, 2, 12,
+                   (const unsigned char *)"\r" PUA_BMP "x", 5, 0);
+    justify_triple("jx/pua_post", AB, 2, 12,
+                   (const unsigned char *)PUA_BMP "\rx", 5, 0);
+    /* 3 (BMP) + 3 ("x\ry") + 4 (SMP) + 1 ("z") = 11. */
+    justify_triple("jx/pua_mid", AB, 2, 12,
+                   (const unsigned char *)PUA_BMP "x\ry" PUA_SMP "z", 11, 0);
+    /* A NUL inside the fill, deliberately rather than by miscounting: it is
+     * not strippable and not a PUA lead, so it must survive as a visible
+     * byte wherever the fill is parsed. */
+    justify_triple("jx/pua_nul", AB, 2, 12,
+                   (const unsigned char *)PUA_BMP "x\0y", 6, 0);
+    justify_triple("jx/pua_smp", AB, 2, 12,
+                   (const unsigned char *)PUA_SMP "\t" PUA_BMP "q", 9, 0);
+
+    /* Coloured data as well as coloured fill, so the emitted transitions and
+     * the final reset to NORMAL are exercised, not just the padding. */
+    justify_triple("jx/pua_data", (const unsigned char *)PUA_BMP "ab", 5, 12,
+                   (const unsigned char *)PUA_SMP "-", 5, 0);
+
+    /* Multi-byte UTF-8 fill: a byte bound is not a character bound. */
+    justify_triple("jx/utf8", AB, 2, 12,
+                   (const unsigned char *)"\xC3\xA9\xE2\x98\x85", 5, 0);
+
+    /* Fill longer than CO_FILL_CHARS_MAX (256) visible characters, so the
+     * pattern wraps at the cap.  A smaller fill buffer would move this. */
+    n = 0;
+    for (i = 0; i < 400 && n < OUTCAP - 8; i++) {
+        g_fill[n++] = (unsigned char)('a' + (i % 26));
+    }
+    justify_triple("jx/wrap", AB, 2, 300, g_fill, n, 0);
+
+    /* The same, with CR/NL/TAB sprinkled through, so the cap is reached
+     * only if the strip happens -- the two effects interacting. */
+    n = 0;
+    for (i = 0; i < 400 && n < OUTCAP - 8; i++) {
+        g_fill[n++] = (unsigned char)('a' + (i % 26));
+        if ((i % 7) == 0) g_fill[n++] = '\n';
+        if ((i % 11) == 0) g_fill[n++] = '\t';
+    }
+    justify_triple("jx/wrapstrip", AB, 2, 300, g_fill, n, 0);
+
+    /* A fill that is nothing but strippable bytes: after the strip the fill
+     * is empty and the space default must kick in. */
+    n = 0;
+    for (i = 0; i < 40; i++) {
+        g_fill[n++] = "\r\n\t"[i % 3];
+    }
+    justify_triple("jx/allstrip", AB, 2, 10, g_fill, n, 0);
+}
+
+/*
+ * Randomised justification.  Fill bytes are drawn from a small alphabet that
+ * includes the strippable characters and PUA lead bytes, so sequences land in
+ * combinations the fixed cases do not spell out.
+ */
+static void run_justify_fuzz(unsigned int iters)
+{
+    unsigned int it;
+    unsigned long i, flen, dlen, width;
+    unsigned char data[64];
+
+    for (it = 0; it < iters; it++) {
+        flen = rnd(24);
+        for (i = 0; i < flen; i++) {
+            unsigned int k = rnd(10);
+            if (k == 0)      g_fill[i] = '\r';
+            else if (k == 1) g_fill[i] = '\n';
+            else if (k == 2) g_fill[i] = '\t';
+            else if (k == 3) g_fill[i] = 0xEF;
+            else if (k == 4) g_fill[i] = 0x94;
+            else if (k == 5) g_fill[i] = 0xF3;
+            else             g_fill[i] = (unsigned char)('a' + rnd(26));
+        }
+        dlen = rnd(12);
+        for (i = 0; i < dlen; i++) {
+            data[i] = (unsigned char)('A' + rnd(26));
+        }
+        width = rnd(40);
+
+        {
+            /* Draw the truncation flags first: evaluating rnd() inside the
+             * call arguments would make the RNG sequence depend on argument
+             * evaluation order, which is unspecified and need not match
+             * between the host compiler and the RV64 one.  That would
+             * desynchronise the routes and report a divergence that is an
+             * artefact of this file rather than of color_ops.c. */
+            int t0 = (int)rnd(2);
+            int t1 = (int)rnd(2);
+            int t2 = (int)rnd(2);
+            unsigned long r;
+
+            o_str("jf/ctr ");
+            r = co_center(g_out, data, dlen, width, g_fill, flen, t0);
+            o_case("", r, g_out, r);
+            o_str("jf/ljs ");
+            r = co_ljust(g_out, data, dlen, width, g_fill, flen, t1);
+            o_case("", r, g_out, r);
+            o_str("jf/rjs ");
+            r = co_rjust(g_out, data, dlen, width, g_fill, flen, t2);
+            o_case("", r, g_out, r);
+        }
+    }
+}
+
 static void run_all(unsigned int fuzz_iters)
 {
     run_fixed();
     run_cap();
     run_fuzz(fuzz_iters);
+    run_justify();
+    run_justify_fuzz(fuzz_iters);
     o_str("DONE\n");
 }
 
