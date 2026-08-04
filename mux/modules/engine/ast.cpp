@@ -3061,10 +3061,17 @@ FUNCTION(fun_astbench)
 
     // --- JIT benchmark ---
 #if defined(TINYMUX_JIT)
-    // Warm the compile cache.
+    // Warm the compile cache, then discard what the warm-up emitted.
+    //
+    // Rewind to where THIS call started writing, not to the base of the
+    // buffer.  `buff` belongs to the caller, and whatever is already in it is
+    // not ours to throw away: `think TAG [astbench(add(1,2),50)]` silently
+    // lost TAG, because the rewind landed in front of it (#2060).
+    //
+    UTF8 *entry = *bufc;
     jit_eval(expr, nLen, buff, bufc, executor, caller, enactor,
              eval | EV_FMAND | EV_EVAL, nullptr, 0);
-    *bufc = buff;  // reset output
+    *bufc = entry;
 
 #ifdef WIN32
     QueryPerformanceCounter(&pc0);
