@@ -3055,6 +3055,124 @@ static void test_split_words(void) {
     check_size(name, "colored 'A B' count", nw, 2);
 }
 
+/* ---- co_extract vs co_split_words parity ---- */
+
+/*
+ * Addressing word i by re-walking from the start is O(len) per word, so a
+ * caller that wants every word in turn is O(len^2).  fun_shuffle did exactly
+ * that (#2057), as fun_scramble did with co_mid_cluster before it (#2045).
+ * The repair is to build the word table once with co_split_words and index it
+ * -- which is only correct if the two functions agree about what a word IS.
+ *
+ * They were written independently and their delimiter handling is described
+ * in different words in different places, so this suite settles it by
+ * comparison rather than by reading: for every input, the i'th word according
+ * to co_extract must be byte-identical to the i'th range according to
+ * co_split_words, and both must agree with co_words_count.
+ *
+ * This exists so the substitution in fun_shuffle is a proved equivalence and
+ * not a plausible one.  If the two ever diverge, this fails here rather than
+ * silently reordering somebody's list contents.
+ */
+static void split_extract_pair(const char *name, const char *label,
+                               const unsigned char *data, size_t len,
+                               unsigned char delim)
+{
+    size_t starts[512], ends[512];
+    size_t nw = co_split_words(data, len, &delim, 1, starts, ends, 512);
+    size_t nc = co_words_count(data, len, delim);
+
+    if (nw != nc) {
+        test_fail(name, "%s: co_split_words=%zu but co_words_count=%zu",
+                  label, nw, nc);
+        return;
+    }
+
+    for (size_t i = 0; i < nw; i++) {
+        unsigned char got[LBUF_SIZE];
+        size_t ngot = co_extract(got, data, len, i + 1, 1, delim, delim);
+        size_t nexp = ends[i] - starts[i];
+        if (ngot != nexp || (nexp && memcmp(got, data + starts[i], nexp) != 0)) {
+            test_fail(name,
+                "%s: word %zu differs -- co_extract %zu bytes, co_split_words %zu",
+                label, i + 1, ngot, nexp);
+            return;
+        }
+    }
+    test_ok(name, "%s: %zu words agree", label, nw);
+}
+
+static void test_split_extract_parity(void) {
+    const char *name = "split_extract_parity";
+    unsigned char buf[LBUF_SIZE];
+
+    split_extract_pair(name, "plain spaces",
+        (const unsigned char *)"one two three", 13, ' ');
+    split_extract_pair(name, "leading/trailing/runs",
+        (const unsigned char *)"  a  b  ", 8, ' ');
+    split_extract_pair(name, "single word",
+        (const unsigned char *)"single", 6, ' ');
+    split_extract_pair(name, "empty",
+        (const unsigned char *)"", 0, ' ');
+    split_extract_pair(name, "pipe delim",
+        (const unsigned char *)"a|b|c", 5, '|');
+    /* Non-space delimiters do NOT compress, so these empty words are real
+     * words and both functions have to produce the same number of them. */
+    split_extract_pair(name, "pipe empties",
+        (const unsigned char *)"|a||b|", 6, '|');
+    split_extract_pair(name, "only delims",
+        (const unsigned char *)"|||", 3, '|');
+    split_extract_pair(name, "utf8 words",
+        (const unsigned char *)"\xC3\xA9 \xE4\xB8\x96 \xF0\x9F\x98\x80", 11, ' ');
+
+    /* Colored input: co_extract preserves the colour attached to a word, and
+     * co_split_words returns ranges that must carry the same bytes.  Colour
+     * codes ahead of the first visible character belong to the first word. */
+    {
+        size_t n = 0;
+        n += (size_t)pua_fg(buf, 9);
+        memcpy(buf + n, "red", 3); n += 3;
+        buf[n++] = ' ';
+        n += (size_t)pua_fg(buf + n, 2);
+        memcpy(buf + n, "grn", 3); n += 3;
+        n += (size_t)pua_reset(buf + n);
+        split_extract_pair(name, "colored words", buf, n, ' ');
+    }
+
+    /* Fuzz.  gen_random_colored emits COMPLETE colour sequences -- a battery
+     * that emits bare PUA lead bytes generates input the network boundary
+     * cannot deliver and pins whatever the code happens to do with it, which
+     * cost a full cycle in #2002. */
+    unsigned int save_seed = g_seed;
+    for (int i = 0; i < 4000; i++) {
+        size_t len = gen_random_colored(buf, 1 + (xrand() % 120));
+        unsigned char delim = (xrand() & 1) ? ' ' : '|';
+
+        size_t starts[512], ends[512];
+        size_t nw = co_split_words(buf, len, &delim, 1, starts, ends, 512);
+        size_t nc = co_words_count(buf, len, delim);
+        if (nw != nc) {
+            test_fail(name, "fuzz[%d]: split=%zu count=%zu (len=%zu delim='%c')",
+                      i, nw, nc, len, delim);
+            g_seed = save_seed;
+            return;
+        }
+        for (size_t w = 0; w < nw; w++) {
+            unsigned char got[LBUF_SIZE];
+            size_t ngot = co_extract(got, buf, len, w + 1, 1, delim, delim);
+            size_t nexp = ends[w] - starts[w];
+            if (ngot != nexp || (nexp && memcmp(got, buf + starts[w], nexp) != 0)) {
+                test_fail(name,
+                    "fuzz[%d]: word %zu differs (extract %zu, split %zu, len=%zu delim='%c')",
+                    i, w + 1, ngot, nexp, len, delim);
+                g_seed = save_seed;
+                return;
+            }
+        }
+    }
+    test_ok(name, "4000 fuzz iterations agree");
+}
+
 /* ---- co_trim_pattern ---- */
 
 static void test_trim_pattern(void) {
@@ -4095,6 +4213,7 @@ static const test_suite_t suites[] = {
     { "collapse_color",   test_collapse_color },
     { "member",           test_member },
     { "lpos",             test_lpos },
+    { "split_extract_parity", test_split_extract_parity },
     { "splice",           test_splice },
     { "splice_color",     test_splice_color },
     { "insert_word",      test_insert_word },

@@ -218,11 +218,35 @@ FUNCTION(fun_shuffle)
             indices[j] = tmp;
         }
 
-        // Output shuffled words using co_extract.
+        // Locate every word ONCE, then emit by index (#2057).
         //
-        std::vector<unsigned char> word(LBUF_SIZE);
+        // This used to call co_extract(p, slen, indices[i] + 1, 1, ...) per
+        // word.  co_extract addresses word i by scanning forward from the
+        // start of the string counting delimiters, so it is O(slen) whichever
+        // word is wanted -- and asking for every word in turn is O(slen^2).
+        // At LBUF length one shuffle() occupied the single-threaded server for
+        // ~3.4s, and shuffle() is CA_PUBLIC.
+        //
+        // Same defect and same repair as fun_scramble (#2045), which was
+        // re-walking with co_mid_cluster; the multi-char branch below already
+        // worked this way.  co_split_words agrees with co_extract about what a
+        // word is -- delimiter compression for space, exact for everything
+        // else, colour codes staying with the word they precede -- and
+        // tests/color_ops' split_extract_parity suite is what proves it rather
+        // than assuming it.
+        //
+        std::vector<size_t> wstarts(n), wends(n);
+        size_t nFound = co_split_words(p, slen, &delim, 1,
+                            wstarts.data(), wends.data(), n);
+
+        // indices[] was built from co_words_count and is about to index a
+        // table built by co_split_words.  The parity suite says the two agree,
+        // so this clamp should never bite; it is here because the cost of
+        // being wrong is reading past the table.
+        const size_t nEmit = (nFound < n) ? nFound : n;
+
         bool bFirst = true;
-        for (size_t i = 0; i < n; i++)
+        for (size_t i = 0; i < nEmit; i++)
         {
             if (!bFirst)
             {
@@ -233,12 +257,12 @@ FUNCTION(fun_shuffle)
                 bFirst = false;
             }
 
-            size_t nWord = co_extract(word.data(), p, slen,
-                indices[i] + 1, 1, delim, delim);
+            const size_t w = indices[i];
+            size_t nWord = wends[w] - wstarts[w];
 
             size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
             if (nWord > nMax) nWord = nMax;
-            memcpy(*bufc, word.data(), nWord);
+            memcpy(*bufc, p + wstarts[w], nWord);
             *bufc += nWord;
         }
         **bufc = '\0';
