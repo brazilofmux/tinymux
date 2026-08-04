@@ -468,6 +468,106 @@ static void run_justify_fuzz(unsigned int iters)
     }
 }
 
+/*
+ * co_transform (tr) cases.  It holds the largest surviving frame in
+ * color_ops.c at ~131 KB (#2002): fplain/tplain/splain at LBUF_SIZE each
+ * plus fspans/tspans at MAX_TR_CLUSTERS spans each.  Any reduction has to
+ * choose between its two paths, so the battery must exercise both:
+ *
+ *   fast path  -- every cluster in BOTH sets is one ASCII byte, so a
+ *                 256-byte table is built and splain is never touched
+ *   slow path  -- anything else: clusters are matched by linear scan
+ *                 through a colour-stripped copy of the input
+ *
+ * The seam between them is is_all_single_byte_ascii(), so cases sit either
+ * side of it deliberately -- a set that is ASCII except for one cluster
+ * must take the slow path, and that is easy to get wrong when restructuring.
+ */
+static void run_transform(void)
+{
+    unsigned long i, n, r;
+    const unsigned char *S = (const unsigned char *)"hello world";
+
+    /* Fast path: pure ASCII sets. */
+    r = co_transform(g_out, S, 11, (const unsigned char *)"lo",  2,
+                     (const unsigned char *)"01", 2);
+    o_case("tr/ascii", r, g_out, r);
+
+    /* Sets of unequal length: the shorter one bounds the mapping. */
+    r = co_transform(g_out, S, 11, (const unsigned char *)"abcde", 5,
+                     (const unsigned char *)"xy", 2);
+    o_case("tr/short_to", r, g_out, r);
+    r = co_transform(g_out, S, 11, (const unsigned char *)"lo", 2,
+                     (const unsigned char *)"0123", 4);
+    o_case("tr/short_from", r, g_out, r);
+
+    /* Empty sets, both ways -- nothing should map. */
+    r = co_transform(g_out, S, 11, (const unsigned char *)"", 0,
+                     (const unsigned char *)"", 0);
+    o_case("tr/empty_both", r, g_out, r);
+    r = co_transform(g_out, S, 11, (const unsigned char *)"lo", 2,
+                     (const unsigned char *)"", 0);
+    o_case("tr/empty_to", r, g_out, r);
+
+    /* Empty subject. */
+    r = co_transform(g_out, (const unsigned char *)"", 0,
+                     (const unsigned char *)"a", 1,
+                     (const unsigned char *)"b", 1);
+    o_case("tr/empty_str", r, g_out, r);
+
+    /* Colour in the SETS must be stripped before cluster parsing, so this
+     * must behave exactly like tr/ascii above. */
+    r = co_transform(g_out, S, 11,
+                     (const unsigned char *)PUA_BMP "lo", 5,
+                     (const unsigned char *)"01", 2);
+    o_case("tr/colour_set", r, g_out, r);
+
+    /* Colour in the SUBJECT must be preserved through the mapping. */
+    r = co_transform(g_out, (const unsigned char *)PUA_BMP "hello", 8,
+                     (const unsigned char *)"lo", 2,
+                     (const unsigned char *)"01", 2);
+    o_case("tr/colour_str", r, g_out, r);
+
+    /* Slow path: one non-ASCII cluster is enough to leave the fast path.
+     * e-acute (C3 A9) and a star (E2 98 85). */
+    r = co_transform(g_out, (const unsigned char *)"caf\xC3\xA9", 5,
+                     (const unsigned char *)"\xC3\xA9", 2,
+                     (const unsigned char *)"\xE2\x98\x85", 3);
+    o_case("tr/utf8_cluster", r, g_out, r);
+
+    /* Mixed: ASCII and non-ASCII in the same set -- still slow path. */
+    r = co_transform(g_out, (const unsigned char *)"abc\xC3\xA9", 5,
+                     (const unsigned char *)"a\xC3\xA9", 3,
+                     (const unsigned char *)"X\xE2\x98\x85", 4);
+    o_case("tr/mixed_set", r, g_out, r);
+
+    /* Combining mark: base + U+0301 is ONE grapheme cluster, so this
+     * exercises next_grapheme_plain rather than a bare codepoint walk. */
+    r = co_transform(g_out, (const unsigned char *)"e\xCC\x81x", 4,
+                     (const unsigned char *)"e\xCC\x81", 3,
+                     (const unsigned char *)"Z", 1);
+    o_case("tr/combining", r, g_out, r);
+
+    /* Subject longer than the sets, repeated matches. */
+    n = 0;
+    for (i = 0; i < 200 && n < OUTCAP - 4; i++) {
+        g_big[n++] = (unsigned char)('a' + (i % 5));
+    }
+    r = co_transform(g_out, g_big, n, (const unsigned char *)"abc", 3,
+                     (const unsigned char *)"XYZ", 3);
+    o_case("tr/repeat", r, g_out, r);
+
+    /* Past MAX_TR_CLUSTERS (1024): the set is truncated at the cap, so
+     * clusters beyond it must not map.  A narrower fplain/tplain would
+     * move exactly this. */
+    n = 0;
+    for (i = 0; i < 1200 && n < OUTCAP - 4; i++) {
+        g_fill[n++] = (unsigned char)(0x20 + (i % 90));
+    }
+    r = co_transform(g_out, S, 11, g_fill, n, g_fill, n);
+    o_case("tr/cap_identity", r, g_out, r);
+}
+
 static void run_all(unsigned int fuzz_iters)
 {
     run_fixed();
@@ -475,6 +575,7 @@ static void run_all(unsigned int fuzz_iters)
     run_fuzz(fuzz_iters);
     run_justify();
     run_justify_fuzz(fuzz_iters);
+    run_transform();
     o_str("DONE\n");
 }
 
