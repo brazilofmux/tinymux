@@ -1,0 +1,281 @@
+{
+  "iters": 10000,
+  "results": {
+    "abs(sign(sub(rand(100),50)))": {
+      "cached": 143.9,
+      "compile": 12897.6,
+      "native": 438.6
+    },
+    "abs(sub(rand(100),50))": {
+      "cached": 115.7,
+      "compile": 9006.9,
+      "native": 335.8
+    },
+    "add(1,2)": {
+      "cached": 34.6,
+      "compile": 2834.9,
+      "native": 329.3
+    },
+    "add(1,2)add(3,4)": {
+      "cached": 14.2,
+      "compile": 3352.3,
+      "native": 100.6
+    },
+    "add(add(add(rand(1),rand(1)),add(rand(1),rand(1))),add(rand(1),rand(1)))": {
+      "cached": 31.9,
+      "compile": 21589.6,
+      "native": 522.8
+    },
+    "add(mul(2,3),add(mul(4,5),sub(100,90)))": {
+      "cached": 45.7,
+      "compile": 4506.0,
+      "native": 218.1
+    },
+    "add(mul(3,4),sub(100,58))": {
+      "cached": 28.6,
+      "compile": 3794.4,
+      "native": 146.5
+    },
+    "add(rand(100),1)": {
+      "cached": 97.6,
+      "compile": 10181.3,
+      "native": 233.1
+    },
+    "add(setr(0,rand(100)),r(0))": {
+      "cached": 114.9,
+      "compile": 11080.9,
+      "native": 800.4
+    },
+    "after(cat(rand(10),|,rand(10)),|)": {
+      "cached": 24.5,
+      "compile": 8801.6,
+      "native": 405.1
+    },
+    "before(cat(rand(10),|,rand(10)),|)": {
+      "cached": 24.0,
+      "compile": 8841.1,
+      "native": 378.7
+    },
+    "bound(rand(100),10,90)": {
+      "cached": 27.9,
+      "compile": 6394.9,
+      "native": 305.0
+    },
+    "cand(1,1,1)": {
+      "cached": 14.0,
+      "compile": 3060.6,
+      "native": 451.8
+    },
+    "cand(gt(rand(100),0),1)": {
+      "cached": 104.4,
+      "compile": 12156.8,
+      "native": 304.6
+    },
+    "cat(rand(10),rand(10),rand(10),rand(10))": {
+      "cached": 24.5,
+      "compile": 9882.9,
+      "native": 381.2
+    },
+    "cat(rand(100),rand(100))": {
+      "cached": 22.1,
+      "compile": 7290.7,
+      "native": 301.7
+    },
+    "comp(abc,def)": {
+      "cached": 14.2,
+      "compile": 2957.8,
+      "native": 307.6
+    },
+    "cor(gt(rand(100),99),0)": {
+      "cached": 99.5,
+      "compile": 11930.9,
+      "native": 299.7
+    },
+    "eq(1,1)": {
+      "cached": 15.7,
+      "compile": 2945.3,
+      "native": 312.4
+    },
+    "first(cat(rand(10),rand(10),rand(10)))": {
+      "cached": 41.2,
+      "compile": 9451.8,
+      "native": 415.6
+    },
+    "first(rest(cat(rand(10),rand(10),rand(10),rand(10))))": {
+      "cached": 46.6,
+      "compile": 11311.4,
+      "native": 474.9
+    },
+    "gt(add(1,2),0)": {
+      "cached": 16.6,
+      "compile": 3274.8,
+      "native": 505.6
+    },
+    "idiv(rand(100),add(rand(10),1))": {
+      "cached": 37.5,
+      "compile": 11054.9,
+      "native": 384.7
+    },
+    "if(gt(5,3),yes)": {
+      "cached": 16.7,
+      "compile": 3272.8,
+      "native": 543.8
+    },
+    "ifelse(gt(rand(100),50),big,small)": {
+      "cached": 98.4,
+      "compile": 10671.2,
+      "native": 319.5
+    },
+    "insert(cat(rand(10),rand(10),rand(10)),2,ZZZ)": {
+      "cached": 39.7,
+      "compile": 10338.3,
+      "native": 514.2
+    },
+    "iter(1 2 3 4 5, add(##\\,1))": {
+      "cached": 1055.8,
+      "compile": 23752.2,
+      "native": 1034.3
+    },
+    "iter(a b c d e f g h i j k l m n o p q r s t, X)": {
+      "cached": 2873.1,
+      "compile": 30069.8,
+      "native": 3169.7
+    },
+    "iter(a b c d e f g h i j k l m n o, X)": {
+      "cached": 1889.9,
+      "compile": 27200.4,
+      "native": 2317.3
+    },
+    "iter(a b c d e f g h i j, X)": {
+      "cached": 915.0,
+      "compile": 24433.0,
+      "native": 1501.2
+    },
+    "iter(a b c d e f g, X)": {
+      "cached": 824.9,
+      "compile": 22528.8,
+      "native": 1371.3
+    },
+    "iter(a b c d e, X)": {
+      "cached": 559.0,
+      "compile": 21810.4,
+      "native": 616.1
+    },
+    "iter(a b c, X)": {
+      "cached": 406.7,
+      "compile": 21015.3,
+      "native": 812.1
+    },
+    "iter(aa bb cc dd ee ff gg hh ii jj, X)": {
+      "cached": 1196.9,
+      "compile": 24580.0,
+      "native": 1271.6
+    },
+    "iter(a|1 b|2 c|3 d|4 e|5, before(##\\,|))": {
+      "cached": 1268.9,
+      "compile": 24053.1,
+      "native": 1656.5
+    },
+    "last(cat(rand(10),rand(10),rand(10)))": {
+      "cached": 41.5,
+      "compile": 9629.3,
+      "native": 416.5
+    },
+    "ldelete(cat(rand(10),rand(10),rand(10),rand(10)),2)": {
+      "cached": 24.1,
+      "compile": 11529.0,
+      "native": 518.0
+    },
+    "lnum(add(2,3))": {
+      "cached": 96.5,
+      "compile": 5530.3,
+      "native": 560.5
+    },
+    "max(rand(100),rand(100))": {
+      "cached": 23.1,
+      "compile": 8084.2,
+      "native": 378.3
+    },
+    "member(alpha beta gamma delta,gamma)": {
+      "cached": 25.8,
+      "compile": 3617.2,
+      "native": 133.3
+    },
+    "min(rand(100),rand(100))": {
+      "cached": 23.7,
+      "compile": 7718.5,
+      "native": 352.9
+    },
+    "mul(rand(100),rand(100))": {
+      "cached": 21.8,
+      "compile": 7256.4,
+      "native": 326.5
+    },
+    "not(eq(mod(42,5),0))": {
+      "cached": 33.4,
+      "compile": 3624.9,
+      "native": 139.3
+    },
+    "not(eq(mod(add(rand(1),42),5),0))": {
+      "cached": 144.3,
+      "compile": 15710.7,
+      "native": 445.5
+    },
+    "repeat(cat(rand(10),x),5)": {
+      "cached": 85.3,
+      "compile": 7082.2,
+      "native": 261.4
+    },
+    "replace(cat(rand(10),rand(10),rand(10)),2,ZZZ)": {
+      "cached": 49.3,
+      "compile": 11750.5,
+      "native": 576.8
+    },
+    "rest(cat(rand(10),rand(10),rand(10)))": {
+      "cached": 41.1,
+      "compile": 9458.0,
+      "native": 408.3
+    },
+    "sign(sub(rand(100),50))": {
+      "cached": 138.0,
+      "compile": 11682.2,
+      "native": 356.9
+    },
+    "strcat(rand(100),rand(100))": {
+      "cached": 25.7,
+      "compile": 7363.1,
+      "native": 293.1
+    },
+    "strlen(cat(hello,world))": {
+      "cached": 23.1,
+      "compile": 3350.3,
+      "native": 117.4
+    },
+    "strlen(cat(rand(100),rand(100)))": {
+      "cached": 23.3,
+      "compile": 8465.3,
+      "native": 370.7
+    },
+    "strlen(strcat(rand(100),rand(100),rand(100)))": {
+      "cached": 45.8,
+      "compile": 10190.5,
+      "native": 490.1
+    },
+    "t(rand(100))": {
+      "cached": 78.1,
+      "compile": 9125.6,
+      "native": 523.2
+    },
+    "trim(cat(%b,rand(100),%b))": {
+      "cached": 99.6,
+      "compile": 7812.2,
+      "native": 319.1
+    },
+    "words(the quick brown fox)": {
+      "cached": 24.7,
+      "compile": 3410.6,
+      "native": 127.6
+    }
+  },
+  "source": "/Users/sdennis/tinymux/testcases/smoke.log"
+}

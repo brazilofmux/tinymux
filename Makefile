@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-nfc test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-codiff test-codiff-2019 test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-nfc test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-codiff test-codiff-2019 test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-perf test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -650,6 +650,18 @@ test-codiff:
 test-codiff-2019:
 	@echo "==> Reproducing #2019 (DBT block chaining)"
 	@tests/codiff/repro/run-2019.sh
+
+# Performance battery (#2046).  Opt-in, NOT part of `make test`: it reads the
+# rvbench timings from a previous smoke run, so it needs `make test-smoke`
+# first, and its comparison is against a PER-MACHINE baseline that only exists
+# on boxes where someone recorded one.
+#
+# Report-only by default.  PERF_GATE=1 fails on a regression, but only on the
+# `compile` leg -- see tests/perf/compare.py for why the other two are not
+# trustworthy to gate on yet.
+test-perf:
+	@echo "==> Performance battery (rvbench)"
+	@tests/perf/run.sh
 
 # Live scenario test: the wildcard capture path ($-command %0..%9), which
 # muxscript cannot drive.  Opt-in (NOT part of `make test`) because it spins a
