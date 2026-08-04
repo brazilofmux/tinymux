@@ -568,6 +568,103 @@ static void run_transform(void)
     o_case("tr/cap_identity", r, g_out, r);
 }
 
+/*
+ * Grapheme-cluster addressing: co_cluster_count / co_mid_cluster (#2045).
+ *
+ * scramble() emits clusters in shuffled order by calling co_mid_cluster()
+ * once per cluster, and each call re-walks the whole string -- so it is
+ * O(n^2) and a CA_PUBLIC call occupies the server for ~19s at LBUF length.
+ * The fix is a single pass recording every cluster's byte range, so these
+ * cases pin what "the cluster at index i" currently means before that
+ * changes: the answer must be identical whether it is reached by re-walking
+ * or from a precomputed table.
+ *
+ * Colour is the part that makes it interesting.  co_mid_cluster copies the
+ * byte range VERBATIM including interleaved PUA codes, so where a colour run
+ * sits relative to a cluster boundary decides which bytes come out.
+ */
+static void run_clusters(void)
+{
+    unsigned long i, n, r;
+    const unsigned char *PLAIN = (const unsigned char *)"abcde";
+    /* e + U+0301 is one cluster; the string is 3 clusters, 6 bytes. */
+    const unsigned char *COMB  = (const unsigned char *)"xe\xCC\x81y";
+
+    o_str("cl/count/plain ");
+    o_uint(co_cluster_count(PLAIN, 5)); o_str("\n");
+    o_str("cl/count/comb ");
+    o_uint(co_cluster_count(COMB, 5)); o_str("\n");
+    o_str("cl/count/empty ");
+    o_uint(co_cluster_count((const unsigned char *)"", 0)); o_str("\n");
+    o_str("cl/count/colour ");
+    o_uint(co_cluster_count((const unsigned char *)PUA_BMP "ab", 5)); o_str("\n");
+
+    /* Every index of a plain string, plus one past the end. */
+    for (i = 0; i < 6; i++) {
+        r = co_mid_cluster(g_out, PLAIN, 5, i, 1);
+        o_str("cl/mid/plain/"); o_uint(i); o_str(" ");
+        o_case("", r, g_out, r);
+    }
+
+    /* Every index of the combining-mark string: index 1 must yield BOTH
+     * bytes of the cluster, not just the base. */
+    for (i = 0; i < 4; i++) {
+        r = co_mid_cluster(g_out, COMB, 5, i, 1);
+        o_str("cl/mid/comb/"); o_uint(i); o_str(" ");
+        o_case("", r, g_out, r);
+    }
+
+    /* Multi-cluster spans, including one that runs off the end. */
+    r = co_mid_cluster(g_out, PLAIN, 5, 1, 3);
+    o_case("cl/mid/span/1,3", r, g_out, r);
+    r = co_mid_cluster(g_out, PLAIN, 5, 3, 9);
+    o_case("cl/mid/span/3,9", r, g_out, r);
+    r = co_mid_cluster(g_out, PLAIN, 5, 0, 0);
+    o_case("cl/mid/span/0,0", r, g_out, r);
+
+    /* Colour interleaved with clusters.  Where the PUA run sits relative to
+     * the boundary decides which bytes the range carries. */
+    {
+        const unsigned char *C1 = (const unsigned char *)"a" PUA_BMP "bc";
+        for (i = 0; i < 3; i++) {
+            r = co_mid_cluster(g_out, C1, 6, i, 1);
+            o_str("cl/mid/colour/"); o_uint(i); o_str(" ");
+            o_case("", r, g_out, r);
+        }
+        r = co_mid_cluster(g_out, C1, 6, 0, 3);
+        o_case("cl/mid/colour/all", r, g_out, r);
+    }
+
+    /* Colour immediately before a combining mark -- the boundary case a
+     * single-pass rewrite is most likely to move. */
+    {
+        const unsigned char *C2 = (const unsigned char *)"e" PUA_BMP "\xCC\x81z";
+        o_str("cl/count/colcomb ");
+        o_uint(co_cluster_count(C2, 7)); o_str("\n");
+        for (i = 0; i < 3; i++) {
+            r = co_mid_cluster(g_out, C2, 7, i, 1);
+            o_str("cl/mid/colcomb/"); o_uint(i); o_str(" ");
+            o_case("", r, g_out, r);
+        }
+    }
+
+    /* Long input: scramble's actual shape, walked end to end one cluster at
+     * a time.  This is the loop whose cost #2045 is about, so the transcript
+     * must be identical after it is made linear. */
+    n = 0;
+    for (i = 0; i < 300; i++) {
+        g_big[n++] = (unsigned char)('a' + (i % 26));
+    }
+    {
+        unsigned long total = 0;
+        for (i = 0; i < 300; i++) {
+            r = co_mid_cluster(g_out, g_big, n, i, 1);
+            total += r;
+        }
+        o_str("cl/walk/300 total="); o_uint(total); o_str("\n");
+    }
+}
+
 static void run_all(unsigned int fuzz_iters)
 {
     run_fixed();
@@ -576,6 +673,7 @@ static void run_all(unsigned int fuzz_iters)
     run_justify();
     run_justify_fuzz(fuzz_iters);
     run_transform();
+    run_clusters();
     o_str("DONE\n");
 }
 
