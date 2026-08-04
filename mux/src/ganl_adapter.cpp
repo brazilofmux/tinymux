@@ -2237,6 +2237,35 @@ void GanlAdapter::prepare_for_restart() {
     g_pILog->WriteString(T("GANL: Ready for exec.\n"));
 }
 
+// #2009: close() is the very call that #2006 demonstrated throwing, so
+// invoking it bare from inside an exception handler reintroduces the abort
+// that handler exists to prevent.  A barrier that can abort is not a barrier.
+//
+// Abandoning the close is the right failure: the connection stays in the maps
+// and is reaped by the ordinary idle/timeout path, which is survivable, where
+// letting the throw escape is not.
+//
+static void close_contained(const std::shared_ptr<ganl::ConnectionBase> &conn,
+                            unsigned long long handle)
+{
+    try
+    {
+        conn->close(ganl::DisconnectReason::NetworkError);
+    }
+    catch (const std::exception &e)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: exception while closing handle %llu (%s); close abandoned.\n"),
+            handle, e.what()));
+    }
+    catch (...)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: unknown exception while closing handle %llu; close abandoned.\n"),
+            handle));
+    }
+}
+
 void GanlAdapter::run_main_loop() {
     g_pILog->WriteString(T("GANL: Entering main loop.\n"));
     g_pILog->Flush();
@@ -2468,12 +2497,12 @@ void GanlAdapter::run_main_loop() {
                             g_pILog->WriteString(tprintf(
                                 T("GANL: exception in event handler for handle %llu (%s); closing.\n"),
                                 static_cast<unsigned long long>(events[i].connection), e.what()));
-                            conn->close(ganl::DisconnectReason::NetworkError);
+                            close_contained(conn, static_cast<unsigned long long>(events[i].connection));
                         } catch (...) {
                             g_pILog->WriteString(tprintf(
                                 T("GANL: unknown exception in event handler for handle %llu; closing.\n"),
                                 static_cast<unsigned long long>(events[i].connection)));
-                            conn->close(ganl::DisconnectReason::NetworkError);
+                            close_contained(conn, static_cast<unsigned long long>(events[i].connection));
                         }
                     }
                     else {
@@ -2804,7 +2833,31 @@ void GanlAdapter::process_tinyMUX_tasks() {
     }
 
     // Run scheduled tasks (timers, idle checks, @daily, DB checkpoints).
-    g_pIGameEngine->RunTasks(ltaNow);
+    //
+    // #2009: backstop.  CScheduler::RunTasks contains each task individually,
+    // and that is the containment that matters -- one bad command dies without
+    // dropping the rest of the tick.  But that barrier lives in engine.so
+    // while this frame is in netmux, so it cannot cover a throw from the
+    // scheduler's own frame (the heap operations around the task record), nor
+    // anything crossing the module boundary whose type the per-task arms did
+    // not match.  engine.so is built -fvisibility=hidden, so an engine-local
+    // exception type has no exported typeinfo here and lands in catch (...).
+    //
+    try
+    {
+        g_pIGameEngine->RunTasks(ltaNow);
+    }
+    catch (const std::exception& e)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: exception escaped the task scheduler (%s); tick abandoned.\n"),
+            e.what()));
+    }
+    catch (...)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: unknown exception escaped the task scheduler; tick abandoned.\n")));
+    }
 
 #if defined(_WIN32)
     // Collect completed reverse DNS lookups from worker threads.

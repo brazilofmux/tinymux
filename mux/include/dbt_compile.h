@@ -79,6 +79,12 @@ struct jit_stats_t {
                                   // (an ECALL into another compiled program)
                                   // can bump it more than once for a single
                                   // command as each run on the stack unwinds.
+    uint64_t bail_shared_busy;    // shared-heap eval declined because an
+                                  // outer shared-heap run is suspended in a
+                                  // host ECALL (#1994).  The heap has one
+                                  // DBT context; re-entering it would reset
+                                  // the outer run's registers, stack pointer
+                                  // and heap arena underneath it.
 
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime

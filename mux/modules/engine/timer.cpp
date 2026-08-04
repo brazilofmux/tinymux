@@ -8,8 +8,51 @@
 #include "config.h"
 #include "externs.h"
 #include <new>
+#include <exception>
 
 CScheduler scheduler;
+
+// Run one recurring system task's body, containing any exception (#2011).
+//
+// #2009 stopped a throwing task from killing the game.  It did not stop a
+// throwing task from killing ITSELF: every dispatcher below re-defers its
+// next run on its LAST line, and the #2009 barrier unwinds straight past
+// that line, so the task is never scheduled again and silently stops
+// forever.
+//
+// Measured with a one-shot throw on the third cache tick at
+// cache_tick_period 1: three ticks in thirty seconds, then nothing.  With
+// the body wrapped, twenty-nine.
+//
+// For dispatch_DatabaseDump that difference is the whole point -- a game
+// that survives the exception and then quietly stops dumping is losing the
+// database slowly instead of all at once, which is not the trade #2009 was
+// meant to buy.
+//
+// Wrapping only the body leaves each reschedule tail unconditional.
+//
+template<typename F>
+static void run_task_body(F body, const UTF8 *pWhich)
+{
+    try
+    {
+        body();
+    }
+    catch (const std::exception &e)
+    {
+        STARTLOG(LOG_BUGS, T("BUG"), T("TASK"));
+        log_printf(T("Exception in system task %s (%s); rescheduled anyway."),
+            pWhich, reinterpret_cast<const UTF8 *>(e.what()));
+        ENDLOG;
+    }
+    catch (...)
+    {
+        STARTLOG(LOG_BUGS, T("BUG"), T("TASK"));
+        log_printf(T("Unknown exception in system task %s; rescheduled anyway."),
+            pWhich);
+        ENDLOG;
+    }
+}
 
 // Free List Reconstruction Task routine.
 //
@@ -18,16 +61,19 @@ void dispatch_FreeListReconstruction(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    if (mudconf.control_flags & CF_DBCHECK)
+    run_task_body([]()
     {
-        const UTF8 *cmdsave = g_debug_cmd;
-        g_debug_cmd = T("< dbck >");
-        do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
-        Guest.CleanUp();
-        pcache_trim();
-        pool_reset();
-        g_debug_cmd = cmdsave;
-    }
+        if (mudconf.control_flags & CF_DBCHECK)
+        {
+            const UTF8 *cmdsave = g_debug_cmd;
+            g_debug_cmd = T("< dbck >");
+            do_dbck(NOTHING, NOTHING, NOTHING, 0, 0);
+            Guest.CleanUp();
+            pcache_trim();
+            pool_reset();
+            g_debug_cmd = cmdsave;
+        }
+    }, T("dbck"));
 
     // Schedule ourselves again.
     //
@@ -49,27 +95,31 @@ void dispatch_DatabaseDump(void *pUnused, int iUnused)
 
     int nNextTimeInSeconds = mudconf.dump_interval;
 
-    if (mudconf.control_flags & CF_CHECKPOINT)
+    run_task_body([&nNextTimeInSeconds]()
     {
-        const UTF8 *cmdsave = g_debug_cmd;
-        g_debug_cmd = T("< dump >");
+        if (mudconf.control_flags & CF_CHECKPOINT)
+        {
+            const UTF8 *cmdsave = g_debug_cmd;
+            g_debug_cmd = T("< dump >");
 #if defined(HAVE_WORKING_FORK)
-        if (mudstate.dumping)
-        {
-            // There is a dump in progress. These usually happen very quickly.
-            // We will reschedule ourselves to try again in 20 seconds.
-            // Ordinarily, you would think "...a dump is a dump...", but some
-            // dumps might not be the type of dump we're going to do.
-            //
-            nNextTimeInSeconds = 20;
-        }
-        else
+            if (mudstate.dumping)
+            {
+                // There is a dump in progress. These usually happen very
+                // quickly.  We will reschedule ourselves to try again in 20
+                // seconds.  Ordinarily, you would think "...a dump is a
+                // dump...", but some dumps might not be the type of dump
+                // we're going to do.
+                //
+                nNextTimeInSeconds = 20;
+            }
+            else
 #endif // HAVE_WORKING_FORK
-        {
-            fork_and_dump(0);
+            {
+                fork_and_dump(0);
+            }
+            g_debug_cmd = cmdsave;
         }
-        g_debug_cmd = cmdsave;
-    }
+    }, T("dump"));
 
     // Schedule ourselves again.
     //
@@ -88,13 +138,16 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    if (mudconf.control_flags & CF_IDLECHECK)
+    run_task_body([]()
     {
-        const UTF8 *cmdsave = g_debug_cmd;
-        g_debug_cmd = T("< idlecheck >");
-        check_idle();
-        g_debug_cmd = cmdsave;
-    }
+        if (mudconf.control_flags & CF_IDLECHECK)
+        {
+            const UTF8 *cmdsave = g_debug_cmd;
+            g_debug_cmd = T("< idlecheck >");
+            check_idle();
+            g_debug_cmd = cmdsave;
+        }
+    }, T("idlecheck"));
 
     // Schedule ourselves again.
     //
@@ -111,7 +164,7 @@ void dispatch_KeepAlive(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    send_keepalive_nops();
+    run_task_body([]() { send_keepalive_nops(); }, T("keepalive"));
 
     // Schedule ourselves again.
     //
@@ -130,13 +183,16 @@ void dispatch_CheckEvents(void *pUnused, int iUnused)
     UNUSED_PARAMETER(pUnused);
     UNUSED_PARAMETER(iUnused);
 
-    if (mudconf.control_flags & CF_EVENTCHECK)
+    run_task_body([]()
     {
-        const UTF8 *cmdsave = g_debug_cmd;
-        g_debug_cmd = T("< eventcheck >");
-        check_events();
-        g_debug_cmd = cmdsave;
-    }
+        if (mudconf.control_flags & CF_EVENTCHECK)
+        {
+            const UTF8 *cmdsave = g_debug_cmd;
+            g_debug_cmd = T("< eventcheck >");
+            check_events();
+            g_debug_cmd = cmdsave;
+        }
+    }, T("eventcheck"));
 
     // Schedule ourselves again.
     //
@@ -161,7 +217,7 @@ void dispatch_CacheTick(void *pUnused, int iUnused)
         mudconf.cache_tick_period.SetSeconds(1);
     }
 
-    cache_tick();
+    run_task_body([]() { cache_tick(); }, T("cachetick"));
 
     // Schedule ourselves again.
     //
@@ -402,7 +458,46 @@ int CScheduler::RunTasks(int iCount)
         {
             if (pTask->fpTask)
             {
-                pTask->fpTask(pTask->arg_voidptr, pTask->arg_Integer);
+                // #2009: exception barrier.  Everything softcode does runs
+                // under here -- command parsing, function evaluation, mail,
+                // comsys, @dump -- and all of it allocates.  There is no catch
+                // between this frame and main(), so a throw becomes
+                // std::terminate -> abort -> SIGABRT, and signals.cpp handles
+                // SIGABRT by logging and exit(1): no dump_restart_db(), no
+                // re-exec.  A SIGSEGV on the same line forks, dumps and
+                // execl()s a fresh netmux, so an exception costs the database
+                // where a null dereference would have self-healed.
+                //
+                // Contained per task rather than per tick so that one bad
+                // command dies without dropping the rest of the tick.  It also
+                // keeps the delete below reachable: pTask is already off the
+                // heap by this point, so an escaping throw would leak the
+                // record in addition to losing the task.
+                //
+                // Abandoning one task is survivable.  process_command() resets
+                // func_nest_lev, func_invk_ctr, ntfy_nest_lev and lock_nest_lev
+                // at the top of every command, so a half-finished command
+                // cannot poison the next one's limits.  It does leak that
+                // command's lbufs -- bounded, and far cheaper than losing the
+                // database.
+                //
+                try
+                {
+                    pTask->fpTask(pTask->arg_voidptr, pTask->arg_Integer);
+                }
+                catch (const std::exception &e)
+                {
+                    STARTLOG(LOG_BUGS, T("BUG"), T("TASK"));
+                    log_printf(T("Exception escaped a scheduled task (%s); task abandoned."),
+                        reinterpret_cast<const UTF8 *>(e.what()));
+                    ENDLOG;
+                }
+                catch (...)
+                {
+                    STARTLOG(LOG_BUGS, T("BUG"), T("TASK"));
+                    log_printf(T("Unknown exception escaped a scheduled task; task abandoned."));
+                    ENDLOG;
+                }
                 nTasks++;
             }
             delete pTask;

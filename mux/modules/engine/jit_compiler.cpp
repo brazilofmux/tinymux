@@ -2483,11 +2483,17 @@ struct shared_heap_t {
     //
     // The shared heap DBT is independent of the outer expression's
     // DBT, so this is safe to call from within an ECALL handler.
+    //
+    // It is NOT independent of *itself* (#1994).  There is one dbt and
+    // one guest register context here, so a second eval() entered from a
+    // host ECALL of a suspended eval() reuses both.  run_depth declines
+    // that case; see the guard in eval().
     // ---------------------------------------------------------------
 
     dbt_state_t dbt;
     bool dbt_ready = false;
     uint32_t run_count = 0;
+    int run_depth = 0;         // >0 while a run is live (#1994)
 
     bool eval(const UTF8 *expr, size_t nLen,
               UTF8 *out, size_t out_size,
@@ -2529,7 +2535,38 @@ struct shared_heap_t {
             return true;
         }
 
-        // Runtime execution: initialize DBT on first use.
+        // Runtime execution.  Everything from here on touches state that
+        // is shared across every eval() on this heap: the DBT's register
+        // context and stack pointer, the writable blob region, and the
+        // per-eval heap arena.  A nested eval() -- reached when this
+        // heap's own program ECALLs into u(), whose body evaluates
+        // another bracket -- would reset all three underneath the
+        // suspended outer run, which then resumes at a program counter
+        // that is not its own.  The backend refuses to translate there,
+        // dbt_resume returns -1, and jit_eval hands the whole subtree
+        // back to mux_exec to redo through the AST.  Since that subtree
+        // contains the next recursion level, each level costs two
+        // evaluations and terminating a runaway recursion becomes
+        // 2^depth (#1994).
+        //
+        // Declining up front costs nothing measurable: instrumented over
+        // a runaway recursion, every re-entrant run failed this way
+        // (511 of 511 at function_recursion_limit 12) and not one ever
+        // produced a result.  The AST handles the nested bracket instead,
+        // exactly as it does for the #1002 depth watermark above -- one
+        // evaluation per level rather than two.
+        //
+        if (0 < run_depth) {
+            s_jit_stats.bail_shared_busy++;
+            return false;
+        }
+        struct run_depth_guard {
+            int &d;
+            explicit run_depth_guard(int &r) : d(r) { d++; }
+            ~run_depth_guard() { d--; }
+        } depth_guard(run_depth);
+
+        // Initialize DBT on first use.
         if (!dbt_ready) {
             if (dbt_init(&dbt, memory.data(), memory.size(),
                          eval_ecall, nullptr) != 0) {
@@ -5421,7 +5458,8 @@ FUNCTION(fun_jitstats)
         "bail_longreg=%llu "
         "bail_depth=%llu "
         "bail_invk=%llu "
-        "bail_alarm=%llu"),
+        "bail_alarm=%llu "
+        "bail_shared_busy=%llu"),
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -5444,7 +5482,8 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.bail_longreg,
         (unsigned long long)s_jit_stats.bail_depth,
         (unsigned long long)s_jit_stats.bail_invk,
-        (unsigned long long)s_jit_stats.bail_alarm);
+        (unsigned long long)s_jit_stats.bail_alarm,
+        (unsigned long long)s_jit_stats.bail_shared_busy);
 
     // Append Lua JIT counters (#1316).  lua_run_fail incrementing while
     // softcode still returns correct answers is the signature of a Lua JIT

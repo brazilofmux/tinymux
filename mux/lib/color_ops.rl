@@ -1347,63 +1347,77 @@ size_t co_reverse(unsigned char *out, const unsigned char *data, size_t len)
 {
     const unsigned char *pe = data + len;
 
-    /* First, collect an array of (start, end) pointers for each
-     * "element" — where an element is [optional color] + visible_codepoint.
-     * We reverse the order of elements. */
-
-    /* Maximum elements: one per byte (ASCII). */
-    typedef struct { const unsigned char *start; const unsigned char *end; } elem_t;
-    elem_t elems[LBUF_SIZE];
-    size_t nElems = 0;
+    /* An "element" is [optional color] + one visible codepoint, and the
+     * reversal is of element order.
+     *
+     * #2002: elements exactly TILE [leading_end, pe) -- each one begins
+     * where the previous ended -- so where an element lands in the
+     * reversed output is a function of where it ENDS in the input:
+     *
+     *     out_offset = leading_len + (len - end_offset)
+     *
+     * That is known during the same forward pass that finds the element,
+     * so nothing has to be remembered and each element can be written
+     * straight to its final position.  The old code built an
+     * elem_t[LBUF_SIZE] index purely to walk it backwards afterwards,
+     * which cost 524,288 bytes of stack -- and in the freestanding rv64
+     * blob, where color_ops.c is also compiled, that was about a sixth of
+     * the entire guest stack for a single call.
+     *
+     * The index was also unbounded: nElems had no check against
+     * LBUF_SIZE, so a caller passing len > LBUF_SIZE would have run off
+     * the end of elems[].  With no array there is nothing to overrun.
+     */
+    unsigned char *const wp_end = out + LBUF_SIZE - 1;
+    const size_t out_cap = (size_t)(wp_end - out);
 
     /* Leading color (before any visible char) is emitted first, unreversed. */
-    const unsigned char *p = data;
-    const unsigned char *leading_end = co_skip_color(p, pe);
+    const unsigned char *leading_end = co_skip_color(data, pe);
+    const size_t leading_len = (size_t)(leading_end - data);
 
-    p = leading_end;
+    if (leading_len > 0) {
+        wp_safe_copy(out, wp_end, data, leading_len);
+    }
+
+    const unsigned char *p = leading_end;
     while (p < pe) {
         const unsigned char *elem_start = p;
+        const unsigned char *elem_end;
 
         /* Skip color preceding this visible char. */
         p = co_skip_color(p, pe);
         if (p >= pe) {
             /* Trailing color after last visible char. */
-            if (p > elem_start) {
-                elems[nElems].start = elem_start;
-                elems[nElems].end = p;
-                nElems++;
+            if (p == elem_start) {
+                break;
             }
-            break;
+            elem_end = p;
+        } else {
+            /* Advance past the visible code point. */
+            elem_end = co_visible_advance(p, pe, 1, NULL);
         }
 
-        /* Advance past the visible code point. */
-        const unsigned char *after = co_visible_advance(p, pe, 1, NULL);
+        /* Place this element directly.  Truncation matches the sequential
+         * form byte for byte: the same bytes land at the same offsets, and
+         * anything at or past wp_end is dropped rather than written. */
+        const size_t dst = leading_len + (size_t)(pe - elem_end);
+        if (dst < out_cap) {
+            wp_safe_copy(out + dst, wp_end, elem_start,
+                         (size_t)(elem_end - elem_start));
+        }
 
-        elems[nElems].start = elem_start;
-        elems[nElems].end = after;
-        nElems++;
-
-        p = after;
+        if (p >= pe) {
+            break;
+        }
+        p = elem_end;
     }
 
-    /* Build output: leading color + reversed elements. */
-    unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
-
-    /* Emit leading color. */
-    if (leading_end > data) {
-        size_t cb = (size_t)(leading_end - data);
-        wp += wp_safe_copy(wp, wp_end, data, cb);
-    }
-
-    /* Emit elements in reverse order. */
-    for (size_t i = nElems; i > 0 && wp < wp_end; i--) {
-        size_t cb = (size_t)(elems[i-1].end - elems[i-1].start);
-        wp += wp_safe_copy(wp, wp_end, elems[i-1].start, cb);
-    }
-
-    *wp = '\0';
-    return (size_t)(wp - out);
+    /* Leading color plus every element covers exactly len bytes, so the
+     * reversed output is the same length as the input, clamped to the
+     * buffer -- which is what the sequential form ended up returning. */
+    size_t total = (len > out_cap) ? out_cap : len;
+    out[total] = '\0';
+    return total;
 }
 
 /* ---- co_edit ---- */
@@ -2605,52 +2619,130 @@ size_t co_delete(unsigned char *out,
  */
 typedef struct { const unsigned char *start; const unsigned char *end; } word_range_t;
 
+/*
+ * Forward word cursor (#2002).
+ *
+ * The stepping logic lives here once, and split_words() below is written
+ * in terms of it, so a caller that walks words without materialising them
+ * cannot drift from one that does.  That matters more than it looks: the
+ * max_words cap is not a "stop after N" filter.  In the non-space branch
+ * it changes the CONTENT of the final word, which becomes the whole
+ * remainder of the input including any delimiters still in it.  A
+ * separately written counting loop would get that wrong.
+ *
+ * Why a cursor at all: co_splice() consumed two LBUF_SIZE/2 arrays of
+ * word_range_t purely to walk them in order, which is 512 KB of stack for
+ * a single forward pass.  color_ops.c is compiled into the freestanding
+ * rv64 blob, where the .bss reset is per-evaluation and the heap is a 1 MB
+ * per-eval bump arena, so neither of the sweep's techniques (#1992/#1995/
+ * #1996) applies -- but a cursor needs no storage at all.
+ */
+typedef struct {
+    const unsigned char *p;
+    const unsigned char *pe;
+    unsigned char        delim;
+    int                  is_space;
+    int                  is_empty;    /* len == 0: yields no words */
+    int                  finished;
+    size_t               count;       /* words yielded so far */
+    size_t               max_words;
+} word_cursor_t;
+
+static void wc_init(word_cursor_t *c, const unsigned char *data, size_t len,
+                    unsigned char delim, size_t max_words)
+{
+    c->p         = data;
+    c->pe        = data + len;
+    c->delim     = delim;
+    c->is_space  = (delim == ' ');
+    c->is_empty  = (len == 0);
+    c->finished  = 0;
+    c->count     = 0;
+    c->max_words = max_words;
+}
+
+/* Yield the next word.  Returns 1 and fills *w, or 0 when exhausted. */
+static int wc_next(word_cursor_t *c, word_range_t *w)
+{
+    if (c->finished) return 0;
+
+    if (c->is_space) {
+        /* Space-compress mode: skip leading spaces/color, then split. */
+        while (c->p < c->pe && c->count < c->max_words) {
+            const unsigned char *q = co_skip_color(c->p, c->pe);
+            if (q >= c->pe) break;
+            if (*q == ' ') { c->p = q + 1; continue; }
+
+            const unsigned char *word_start = c->p;
+            const unsigned char *d = co_find_delim(q, c->pe, ' ');
+
+            w->start = word_start;
+            w->end   = d ? d : c->pe;
+            c->count++;
+
+            if (!d) c->finished = 1;
+            else    c->p = d + 1;
+            return 1;
+        }
+        c->finished = 1;
+        return 0;
+    }
+
+    /* Non-space delimiter: each occurrence is significant, empty words
+     * are possible.  Empty input yields 0 words. */
+    if (c->is_empty) {
+        c->finished = 1;
+        return 0;
+    }
+    if (c->count + 1 < c->max_words) {
+        const unsigned char *d = co_find_delim(c->p, c->pe, c->delim);
+        if (d) {
+            w->start = c->p;
+            w->end   = d;
+            c->count++;
+            c->p = d + 1;
+            return 1;
+        }
+    }
+    /* Last word: everything after the final delimiter.  Reached either
+     * because no delimiter remains or because the cap was hit -- in the
+     * latter case this deliberately swallows the rest of the input, which
+     * is what the array form has always done. */
+    w->start = c->p;
+    w->end   = c->pe;
+    c->count++;
+    c->finished = 1;
+    return 1;
+}
+
+/* Count words without storing them.  Same cap semantics as split_words()
+ * by construction: it is the same cursor. */
+static size_t count_words(const unsigned char *data, size_t len,
+                          unsigned char delim, size_t max_words)
+{
+    word_cursor_t c;
+    word_range_t  w;
+    size_t        n = 0;
+
+    wc_init(&c, data, len, delim, max_words);
+    while (wc_next(&c, &w)) n++;
+    return n;
+}
+
+/*
+ * Split a delimited string into an array of (start, end) byte ranges.
+ * Consecutive delimiters are compressed (empty words skipped).
+ * Returns the number of words found.
+ */
 static size_t split_words(const unsigned char *data, size_t len,
                           unsigned char delim,
                           word_range_t *words, size_t max_words)
 {
-    const unsigned char *pe = data + len;
-    const unsigned char *p = data;
-    size_t count = 0;
-    int is_space = (delim == ' ');
+    word_cursor_t c;
+    size_t        count = 0;
 
-    if (is_space) {
-        /* Space-compress mode: skip leading spaces/color, then split. */
-        while (p < pe && count < max_words) {
-            const unsigned char *q = co_skip_color(p, pe);
-            if (q >= pe) break;
-            if (*q == ' ') { p = q + 1; continue; }
-
-            const unsigned char *word_start = p;
-            const unsigned char *d = co_find_delim(q, pe, ' ');
-            const unsigned char *word_end = d ? d : pe;
-
-            words[count].start = word_start;
-            words[count].end = word_end;
-            count++;
-
-            if (!d) break;
-            p = d + 1;
-        }
-    } else {
-        /* Non-space delimiter: each occurrence is significant,
-         * empty words are possible.  Empty input yields 0 words. */
-        if (len > 0) {
-            while (count + 1 < max_words) {
-                const unsigned char *d = co_find_delim(p, pe, delim);
-                if (!d) break;
-
-                words[count].start = p;
-                words[count].end = d;
-                count++;
-                p = d + 1;
-            }
-            /* Last word: everything after the final delimiter. */
-            words[count].start = p;
-            words[count].end = pe;
-            count++;
-        }
-    }
+    wc_init(&c, data, len, delim, max_words);
+    while (wc_next(&c, &words[count])) count++;
     return count;
 }
 
@@ -2662,14 +2754,26 @@ size_t co_splice(unsigned char *out,
                  const unsigned char *search, size_t slen,
                  unsigned char delim, unsigned char osep)
 {
-    word_range_t w1[LBUF_SIZE / 2], w2[LBUF_SIZE / 2];
-    size_t n1 = split_words(list1, len1, delim, w1, LBUF_SIZE / 2);
-    size_t n2 = split_words(list2, len2, delim, w2, LBUF_SIZE / 2);
+    /* #2002: both word lists are consumed strictly in order, one entry
+     * per iteration, so they never needed materialising -- two cursors
+     * do the same job without the 512 KB of stack the two arrays cost.
+     * The counts still have to be known up front for the mismatch check
+     * below, which is why each list is walked twice (count, then emit).
+     * count_words() shares the cursor with split_words(), so the cap
+     * semantics are identical to the array form by construction. */
+    const size_t max_words = LBUF_SIZE / 2;
+    size_t n1 = count_words(list1, len1, delim, max_words);
+    size_t n2 = count_words(list2, len2, delim, max_words);
 
     if (n1 != n2) {
         out[0] = '\0';
         return 0;  /* mismatched word counts */
     }
+
+    word_cursor_t c1, c2;
+    word_range_t  r1, r2;
+    wc_init(&c1, list1, len1, delim, max_words);
+    wc_init(&c2, list2, len2, delim, max_words);
 
     /* Strip color from search word. */
     unsigned char splain[LBUF_SIZE];
@@ -2680,23 +2784,29 @@ size_t co_splice(unsigned char *out,
     unsigned char wplain[LBUF_SIZE];
 
     for (size_t i = 0; i < n1 && wp < wp_end; i++) {
+        /* Cursors are driven in lockstep with i.  n1 == n2 was checked
+         * above and the cursors are freshly initialised over the same
+         * inputs, so both yield here; the guard is belt-and-braces
+         * against a future change to either count or step. */
+        if (!wc_next(&c1, &r1) || !wc_next(&c2, &r2)) break;
+
         if (i > 0) WP_SAFE(wp, wp_end, osep);
 
         /* Strip color from word in list1 and compare. */
-        size_t wlen = co_strip_color(wplain, w1[i].start,
-                                      (size_t)(w1[i].end - w1[i].start));
+        size_t wlen = co_strip_color(wplain, r1.start,
+                                      (size_t)(r1.end - r1.start));
 
         const unsigned char *src_start;
         const unsigned char *src_end;
 
         if (wlen == sp_len && memcmp(wplain, splain, sp_len) == 0) {
             /* Match: use word from list2. */
-            src_start = w2[i].start;
-            src_end = w2[i].end;
+            src_start = r2.start;
+            src_end = r2.end;
         } else {
             /* No match: use word from list1. */
-            src_start = w1[i].start;
-            src_end = w1[i].end;
+            src_start = r1.start;
+            src_end = r1.end;
         }
 
         size_t cb = (size_t)(src_end - src_start);
