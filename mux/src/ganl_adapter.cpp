@@ -2300,6 +2300,37 @@ static void shutdown_contained(DESC *d, unsigned long long handle)
     }
 }
 
+// Undo a partially-completed accept (#2018).  Runs from inside a catch, so
+// it must not throw -- same rule as close_contained above.
+//
+// Erasing a key that was never inserted is a no-op, so this is correct
+// wherever in the accept sequence the throw landed, without having to know.
+// The fd close matters: onConnectionClose only runs for a connection that
+// opened, so a throw part-way through leaks the descriptor otherwise.
+void GanlAdapter::accept_cleanup_contained(ganl::ConnectionHandle handle)
+{
+    try
+    {
+        handle_to_conn_.erase(handle);
+        connection_listener_map_.erase(handle);
+        pending_remote_addresses_.erase(handle);
+        pending_tls_flags_.erase(handle);
+        networkEngine_->closeConnection(handle);
+    }
+    catch (const std::exception &e)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: exception cleaning up handle %llu (%s); cleanup abandoned.\n"),
+            static_cast<unsigned long long>(handle), e.what()));
+    }
+    catch (...)
+    {
+        g_pILog->WriteString(tprintf(
+            T("GANL: unknown exception cleaning up handle %llu; cleanup abandoned.\n"),
+            static_cast<unsigned long long>(handle)));
+    }
+}
+
 void GanlAdapter::run_main_loop() {
     g_pILog->WriteString(T("GANL: Entering main loop.\n"));
     g_pILog->Flush();
@@ -2474,36 +2505,77 @@ void GanlAdapter::run_main_loop() {
                         useTls = ctx->is_ssl;
                     }
 
-                    std::shared_ptr<ganl::ConnectionBase> conn = ganl::ConnectionFactory::createConnection(
-                        connHandle,
-                        *networkEngine_,
-                        secureTransport_.get(),
-                        *protocolHandler_,
-                        *sessionManager_);
+                    // Exception barrier (#2018).  Everything from here to the
+                    // end of the accept allocates: createConnection is a
+                    // make_shared, the four map insertions allocate nodes (one
+                    // copying a std::string), and initialize() reaches
+                    // onConnectionOpen -> allocate_desc -> init_desc.  This is
+                    // the accept branch of run_main_loop, and unlike the
+                    // established-connection branch below it had no handler --
+                    // nor does anything above it, since run_main_loop <-
+                    // ganl_main_loop <- driver.cpp has no catch.  A throw here
+                    // reached std::terminate.
+                    //
+                    // Demonstrated by injecting a one-shot bad_alloc in
+                    // init_desc: inside the first 15s the game died and stayed
+                    // dead, and past that window it took the #2012 SIGABRT arm
+                    // and re-execed -- surviving, but dropping every session
+                    // for one bad accept.  Contain it to the one connection.
+                    //
+                    // Cleanup mirrors the initialize()-failed path below: erase
+                    // whichever of the four maps got populated (erase of an
+                    // absent key is a no-op, so this is correct wherever the
+                    // throw landed) and close the fd, which is otherwise leaked
+                    // because onConnectionClose never runs for a connection
+                    // that never opened.
+                    //
+                    try
+                    {
+                        std::shared_ptr<ganl::ConnectionBase> conn = ganl::ConnectionFactory::createConnection(
+                            connHandle,
+                            *networkEngine_,
+                            secureTransport_.get(),
+                            *protocolHandler_,
+                            *sessionManager_);
 
-                    if (!conn) {
-                        g_pILog->WriteString(tprintf(T("GANL: Failed to allocate ConnectionBase for handle %llu\n"),
-                            static_cast<unsigned long long>(connHandle)));
-                        networkEngine_->closeConnection(connHandle);
-                        continue;
+                        if (!conn) {
+                            g_pILog->WriteString(tprintf(T("GANL: Failed to allocate ConnectionBase for handle %llu\n"),
+                                static_cast<unsigned long long>(connHandle)));
+                            networkEngine_->closeConnection(connHandle);
+                            continue;
+                        }
+
+                        connection_listener_map_[connHandle] = listenerCtx;
+                        pending_remote_addresses_[connHandle] = events[i].remoteAddress;
+                        pending_tls_flags_[connHandle] = useTls;
+                        handle_to_conn_[connHandle] = conn;
+
+                        // Count only connections that fully initialize.  Failed
+                        // init closes the fd itself and never reaches
+                        // onConnectionClose, so accepting first would permanently
+                        // inflate NET/STAT live = accepted - closed.
+                        if (!conn->initialize(useTls)) {
+                            handle_to_conn_.erase(connHandle);
+                            connection_listener_map_.erase(connHandle);
+                            pending_remote_addresses_.erase(connHandle);
+                            pending_tls_flags_.erase(connHandle);
+                        } else {
+                            connections_accepted_++;
+                        }
                     }
-
-                    connection_listener_map_[connHandle] = listenerCtx;
-                    pending_remote_addresses_[connHandle] = events[i].remoteAddress;
-                    pending_tls_flags_[connHandle] = useTls;
-                    handle_to_conn_[connHandle] = conn;
-
-                    // Count only connections that fully initialize.  Failed
-                    // init closes the fd itself and never reaches
-                    // onConnectionClose, so accepting first would permanently
-                    // inflate NET/STAT live = accepted - closed.
-                    if (!conn->initialize(useTls)) {
-                        handle_to_conn_.erase(connHandle);
-                        connection_listener_map_.erase(connHandle);
-                        pending_remote_addresses_.erase(connHandle);
-                        pending_tls_flags_.erase(connHandle);
-                    } else {
-                        connections_accepted_++;
+                    catch (const std::exception &e)
+                    {
+                        g_pILog->WriteString(tprintf(
+                            T("GANL: exception accepting handle %llu (%s); dropping the connection.\n"),
+                            static_cast<unsigned long long>(connHandle), e.what()));
+                        accept_cleanup_contained(connHandle);
+                    }
+                    catch (...)
+                    {
+                        g_pILog->WriteString(tprintf(
+                            T("GANL: unknown exception accepting handle %llu; dropping the connection.\n"),
+                            static_cast<unsigned long long>(connHandle)));
+                        accept_cleanup_contained(connHandle);
                     }
                 }
                 continue;
