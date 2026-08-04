@@ -2810,13 +2810,52 @@ void GanlAdapter::process_tinyMUX_tasks() {
                 memcpy(partial, d->proto_detect_buf, nPartial);
             }
             d->proto_detect_len = 0;
-            FinalizeGanlConnection(*this, d, isTls);
-            // Bound the replay by the same guard as the memcpy above: a
-            // stale/garbage nPartial must never index past partial[4].
+
+            // Exception barrier (#2018).  This is the OTHER route into
+            // FinalizeGanlConnection -> welcome_user -> queue_write_LEN,
+            // and until now it was the unprotected one.  The route through
+            // onDataReceived runs inside handleNetworkEvent, which #2010
+            // wrapped; this one runs straight out of run_main_loop, whose
+            // only caller is driver.cpp with no handler above it, so a
+            // std::bad_alloc from the output queue reached std::terminate.
             //
-            if (0 < nPartial && nPartial <= sizeof(partial))
+            // It is the likelier of the two routes, not the exotic one: a
+            // classic MUD client waits for the server to speak first and
+            // never sends the byte that would take the onDataReceived
+            // path, so this is how an ordinary telnet connection is
+            // finalized.  Demonstrated by injecting a one-shot bad_alloc
+            // in add_to_output_queue -- silent client killed the server,
+            // talking client was contained by the #2010 barrier.
+            //
+            // Contain per connection, as #2010 does: log and drop this
+            // descriptor, and let the loop finish the rest.
+            //
+            try
             {
-                process_input_helper(d, partial, static_cast<int>(nPartial));
+                FinalizeGanlConnection(*this, d, isTls);
+                // Bound the replay by the same guard as the memcpy above:
+                // a stale/garbage nPartial must never index past
+                // partial[4].
+                //
+                if (0 < nPartial && nPartial <= sizeof(partial))
+                {
+                    process_input_helper(d, partial,
+                                         static_cast<int>(nPartial));
+                }
+            }
+            catch (const std::exception &e)
+            {
+                g_pILog->WriteString(tprintf(
+                    T("GANL: exception finalizing protocol for handle %llu (%s); closing.\n"),
+                    static_cast<unsigned long long>(get_handle(d)), e.what()));
+                shutdownsock(d, R_SOCKDIED);
+            }
+            catch (...)
+            {
+                g_pILog->WriteString(tprintf(
+                    T("GANL: unknown exception finalizing protocol for handle %llu; closing.\n"),
+                    static_cast<unsigned long long>(get_handle(d))));
+                shutdownsock(d, R_SOCKDIED);
             }
         }
     }
