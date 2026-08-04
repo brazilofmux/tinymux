@@ -213,7 +213,29 @@ mux/script/x64/
 mux/ganl/tests/ganl_engine_tests
 mux/ganl/tests/ganl_engine_tests.dSYM/
 mux/ganl/tests/ganl_tests.err
+# ...and the connection harness, whose absence here is how a 150KB Mach-O
+# binary and its log reached master in 3ab297f0c.
+mux/ganl/tests/ganl_connection_tests
+mux/ganl/tests/ganl_connection_tests.dSYM/
+mux/ganl/tests/ganl_connection_tests.err
 testcases/soak.log
+
+# Stray symlink left by a harness that does `ln -s "$BIN" "$WORK/bin"` with
+# WORK set to the bin directory itself, producing mux/game/bin/bin -> its own
+# parent.  A symlink loop in the source tree confuses recursive tools.
+mux/game/bin/bin
+
+# Unit-test binaries built in place by tests/*/Makefile.  `git status` has to
+# be clean before packaging (dounix.sh copies from the working tree), so these
+# must not sit there as untracked noise.
+tests/digest/test_digest
+tests/hir/test_blocks
+tests/shacrypt/test_shacrypt
+tests/table/test_table
+tests/*/*.o
+
+# macOS Finder metadata.  Never wanted, anywhere.
+.DS_Store
 
 # tools/ build products. The Unix build makes extensionless binaries; the
 # MSVC fallback in build-msvc.sh makes .exe plus an .obj alongside them.
