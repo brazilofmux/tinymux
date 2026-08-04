@@ -498,11 +498,13 @@ all-local: libmux.so
 color_ops.c: color_ops.rl $(top_srcdir)/include/color_ops.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -C -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 date_scan.cpp: date_scan.rl $(top_srcdir)/include/timeutil.h
 	chmod u+w $@ 2>/dev/null || true
 	ragel -G2 -o $@ $<
+	sed '/^#line /d' $@ > $@.tmp && mv -f $@.tmp $@
 	chmod a-w $@
 
 libmux.so: $(LIBMUX_OBJS)

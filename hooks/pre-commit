@@ -7,8 +7,15 @@
 # Uses parallel arrays (not associative arrays) for bash 3.2 compatibility,
 # since macOS still ships /bin/bash as 3.2.
 
-# Generated file (index N) maps to source file at GENERATED_SRCS[N].
+# Generated file (index N) maps to source file at GENERATED_SRCS[N], and
+# optionally to the build rule that produces it at GENERATED_RULES[N].
 # Use "NEVER_EDIT" for third-party vendored files that should not be edited.
+#
+# The rule counts as a source (#1950).  Changing how a file is generated --
+# a ragel flag, the #line strip -- legitimately rewrites the output while the
+# .rl is untouched, and without this the hook rejects exactly the commits it
+# should be happiest about.  Leave the entry empty where there is no single
+# rule file.
 GENERATED_GENS=(
     # Ragel scanners
     "mux/modules/engine/art_scan.cpp"
@@ -78,6 +85,22 @@ GENERATED_SRCS=(
     "NEVER_EDIT"
     "NEVER_EDIT"
 )
+# Build rule that generates GENERATED_GENS[N], where there is a single one.
+# Same index; "" means none, and the source check stands alone.
+GENERATED_RULES=(
+    "mux/modules/engine/Makefile.am"
+    "mux/modules/engine/Makefile.am"
+    "mux/lib/Makefile.am"
+    "mux/muxescape/Makefile.am"
+
+    "" "" "" "" "" ""
+
+    "" ""
+
+    "" "" "" "" "" "" "" "" "" "" "" ""
+
+    "" ""
+)
 
 staged=$(git diff --cached --name-only)
 warnings=""
@@ -90,8 +113,13 @@ for i in "${!GENERATED_GENS[@]}"; do
             # Third-party vendored file — should never be hand-edited
             warnings="${warnings}  ${gen}  (third-party vendored file — replace, don't edit)\n"
         elif ! echo "$staged" | grep -q "^${src}"; then
-            # Check if the source is also staged
-            warnings="${warnings}  ${gen}  (source: ${src})\n"
+            # Source is not staged.  The build rule counts too: a change to
+            # how the file is generated rewrites the output without touching
+            # the source, and that is a legitimate commit (#1950).
+            rule="${GENERATED_RULES[$i]}"
+            if [ -z "$rule" ] || ! echo "$staged" | grep -qx "$rule"; then
+                warnings="${warnings}  ${gen}  (source: ${src})\n"
+            fi
         fi
     fi
 done
