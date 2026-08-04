@@ -1,0 +1,293 @@
+# Survey: performance pass (2026-08)
+
+Performance (not correctness) pass over the *whole server*, prompted by
+"we did a lot of JIT/DBT work — did it buy anything?". Companion to
+`docs/survey-jit-perf.md`, which covers the softcode eval path alone; this one
+covers the paths that only a live netmux reaches, and it reaches a different
+conclusion about where the time goes.
+
+**Headline: for a live game, none of the top costs are in the JIT.** Whatever
+the JIT is worth, it is worth it on microseconds while `$`-command dispatch is
+spending milliseconds. What a live game actually spends its time on, in order,
+is `$`-command dispatch, name resolution, and (until #2054) debug logging.
+
+**How much the JIT is worth is not settled here, and an earlier draft of this
+survey overstated it.** The "2.4–9.5×" first written above came from
+`rvbench`'s `native=` divided by its `cached=`, and `native=` is not the
+interpreter — it calls `mux_exec`, which dispatches to the JIT (see the
+`iter()` section). Against a real interpreter measurement the same expressions
+give 6.1× (`add(1,2)`), 1.26× (`add(rand(100),1)`) and 1.42×
+(`bound(rand(100),10,90)`).
+
+Neither ratio answers the question a live game asks, which is `mux_exec` *with*
+the JIT against `mux_exec` *without* it — dispatch overhead is paid either way,
+and no instrument here reports that. It needs a build configured without
+`--enable-jit`. Listed under "what this pass did not measure".
+
+## Method
+
+Two workloads, deliberately kept apart. **A single blended percentage answers a
+question nobody asked**, and the two disagree about almost everything.
+
+- **The suite** (`testcases/tools/PerfSmoke`) — `muxscript` running the smoke
+  battery under `perf record`. No network, no descriptors, no DB writes, no
+  dump. It is a fine *compiler* benchmark and a misleading *game* benchmark:
+  1605 expressions each compiled once and run once, which is the opposite of
+  what a game does.
+- **The live server** (`tests/profile/`, added this pass) — a throwaway netmux
+  on a kernel-assigned free port, driven through phases that each do one kind
+  of work, with `perf` attached and per-phase CPU read exactly from
+  `/proc/<pid>/stat`.
+
+Ad-hoc probes for specific questions used `rvbench(<expr>,<iters>)` and
+`jitstats()`, and a `LD_PRELOAD` interposer for call attribution when perf's
+unwinder could not reach the caller.
+
+## ⚠️ Methodology gotchas (each cost real time)
+
+1. **`perf record -p $!` attaches to the wrong process.** `( cd X && cmd ) &`
+   leaves the subshell as `cmd`'s parent, and perf's inherit only follows
+   children created *after* the attach. The result is a `perf.data` with a
+   valid header and **zero samples**, which slices into "no samples in window"
+   for every phase — indistinguishable from an idle server. Resolve the real
+   pid, and fail loudly on an empty recording rather than reporting emptiness
+   as a result.
+2. **Kernel time cannot be sampled on most of the fleet.** `kptr_restrict`
+   blocks `/proc/kallsyms`, so kernel samples land in one unsymbolised
+   `[unknown]` bucket — 72–100% of every phase, which drowns everything
+   actionable. Sample `task-clock:u` and count kernel time exactly from
+   `/proc/<pid>/stat` instead.
+3. **`@dump` forks.** `do_dump()` → `fork_and_dump()` returns as soon as the
+   child exists, so a dump phase times a `fork` (0.016s regardless of database
+   size). Set `fork_dump no` to measure the work.
+4. **Bursts measure buffering, not command cost.** 20 000 commands sent without
+   draining wedges where 1 000 worked: replies back up faster than an
+   opportunistic drain clears them. Send a sentinel per chunk.
+5. **Attribute writes need the object resolvable *by name*.** `&CMD0 obj=...`
+   fails silently-ish if `obj` was already `@tel`'d to the master room and the
+   writer is elsewhere. Two rounds of `$`-command measurement were invalid this
+   way, and the failure looked like a *result* ("patterns are free!"). Write by
+   dbref, verify by reading back, and **always run a positive control** that
+   the mechanism under test actually fires.
+6. **A positive control that does not read the socket is not a control.**
+   `time.sleep()` then checking a buffer nothing filled reports "never fired"
+   for a mechanism that fired fine.
+7. **Wall-clock throughput saturates before the server does.** With the debug
+   logging gone, every phase in `tests/profile/` lands at ~6000 cmd/s — the
+   *same* rate — which means the driver is the limit. The `usr=`/`sys=` columns
+   keep discriminating after the rates stop.
+8. **A stale `libmux.so` on the library path silently replaces the build.**
+   `-Wl,-rpath` emits RUNPATH, which the loader searches *after*
+   `LD_LIBRARY_PATH` (unlike RPATH). See #2055.
+9. **Two benchmark fields are mislabelled, and one of them reversed a
+   conclusion in this very document.** `rvbench`'s `native=` calls `mux_exec`,
+   which dispatches to the JIT for any JIT-eligible expression, so it is not
+   the interpreter — it beat the interpreter outright on
+   `iter(lnum(50),mul(##,2))` (18.9 µs against 31.9 µs), which is the tell.
+   And `astbench`'s `jit=` times `jit_eval` even when it bails instantly for
+   want of a lowering, so `citer()` reads a flat 2.7 µs at every N — absence,
+   not speed — while its `result=` comes from a third interpreter call and
+   never notices. Use `astbench`'s `ast=` for the interpreter and `rvbench`'s
+   `cached=` for the JIT. `tests/growth/README.md` carries the long form.
+
+## The live server: where a game's time goes
+
+Per-command server CPU (user+sys), `tests/profile/`, 1500 objects,
+Linux/x86-64, `--enable-jit --enable-stubslave`:
+
+| phase | before #2054 | after #2054 |
+|---|---:|---:|
+| `dispatch` (`look`) | 256 µs | **30 µs** |
+| `softcode_arith` | 244 µs | **25 µs** |
+| `softcode_list` (`iter(lnum(50))`) | — | 82 µs |
+| `attrwrite` | 311 µs | **142 µs** |
+| `attrread` | 338 µs | **152 µs** |
+
+The GANL debug logging (#2049) was a **flat tax that hid the shape**: before it
+was removed every phase sat inside a 1.4× band and looked alike. Afterwards the
+spread is 6×.
+
+### 1. `$`-command dispatch — the largest cost in the server
+
+Cost of a typed command that matches nothing (the common case, and the worst
+case, since a miss tests every pattern), against objects in the master room —
+which is in scope for every player:
+
+| config | µs/cmd | over baseline | per object |
+|---|---:|---:|---:|
+| empty master room | 140 | — | — |
+| 400 objects, **no** `$`-commands | 425 | +285 | 0.7 |
+| 25 objects × 1 pattern | 390 | 250 | 10.0 |
+| 50 × 1 | 660 | 520 | 10.4 |
+| 100 × 1 | 1 380 | 1 240 | 12.4 |
+| 200 × 1 | **3 380** | 3 240 | 16.2 |
+| 400 × 1 | **9 440** | 9 305 | 23.3 |
+
+It is the **patterns**, not the objects: 400 objects carrying no `$`-commands
+cost +285 µs; the same 400 carrying one each cost +9 305 µs, 32× more. And it
+is superlinear — per-object cost climbs 10.0 → 23.3 µs as the population grows,
+roughly O(n^1.4).
+
+Two hundred global commands make **every line every player types** cost 3.4 ms
+of single-threaded server time. A `look` is 30 µs.
+
+#### Root cause: the attribute cache is scanned in full, per object
+
+`perf`, 15s of steady-state misses at 200 objects × 1 pattern:
+
+| | share of user time |
+|---|---:|
+| `cache_collect_pending_attrnums` | **58.8%** |
+| (`hashtable_policy.h` beneath it) | 43.3% |
+| `sqlite3.c` | 16.3% |
+| `pthread_mutex_lock`/`unlock` | 6.6% |
+
+`cache_collect_pending_attrnums` (`attrcache.cpp:307`) does this:
+
+```cpp
+for (const auto &kv : mudstate.attribute_lru_cache_map)
+{
+    if (kv.first.object != static_cast<unsigned int>(thing)) continue;
+    ...
+}
+```
+
+It **iterates the entire attribute LRU cache** — every cached attribute of
+every object in the game — and filters for the one object it was asked about.
+Then it does the same over the whole write queue. Its caller,
+`collect_attrnums_from_storage` (`db.cpp:1901`), runs once per object whose
+attribute list is needed, which for `$`-matching is once per object in scope,
+per typed command.
+
+So the per-command cost is *(objects in scope)* × *O(total cached attributes)*,
+which is exactly the observed superlinearity: touching more objects grows the
+cache, so each scan costs more *and* there are more scans.
+
+**This inverts the obvious fix.** Enlarging the attribute cache makes
+`$`-dispatch **slower**, because the scan is over the whole cache. The fix
+shape is an index — a secondary map from object → cached attrnums, or per-object
+dirty lists — turning O(cache) into O(attrs on this object).
+
+It also means a combined pattern automaton (a DFA over all `$`-patterns) would
+optimise a term that is not the bottleneck: at 16–23 µs per pattern tested, the
+wildcard match itself is a rounding error next to the cache scan.
+
+### 2. Name resolution — ~66% of the attribute path
+
+`attrread`, by symbol: `string_match` 23.4%, `string_compare` 20.8%,
+`match_list` 18.5%, `PureName` 3.7% — **66.4%**. `sqlite3.c` + `db.cpp`: 8.0%.
+
+`match_list` (`match.cpp:354`) walks a contents list comparing names one at a
+time. Measured slope: **~59 µs fixed + ~62 ns per object in scope**, per lookup;
+control phases that resolve no names stay flat across a 4× change in object
+count. `#123` short-circuits at `CON_DBREF` and pays none of it. Tracked on
+#2058.
+
+### 3. Storage is not the big number, and the SQLite backend is why
+
+`sqlite3.c` is 4–8% of user time even in the attribute phases, and `@dump`
+measured *inline* is 0.027s against 18 000 attributes — writes are already
+persisted by the time it runs. The historical "the database is the big number"
+was about the periodic flatfile dump, which no longer exists in that form.
+
+**But the persisted `code_cache` buys nothing** (#2061): it is written, looked
+up, and hit — and a warm run costs the same wall time and produces the same
+profile as a cold one. Mechanism not established; the two candidates are that
+hits are a small share of total compilations, or that
+`reconstruct_from_cache()` costs what compiling costs.
+
+## The suite: a compiler benchmark
+
+27s (was 33.6s before #2053). By DSO: `engine.so` 51.2%, `libc` 35.8%,
+**JIT-generated code 5.5%**, `libmux` 4.8%.
+
+| | share |
+|---|---:|
+| DBT (`dbt_x64_sysv`, `dbt.cpp`, `dbt_emit_x64.h`, `dbt_decoder.h`) | 21.5% |
+| **`tier2_install` memcpy** — largest single line item | **13.4%** |
+| HIR (`hir.h`, `hir_opt`, `hir_codegen`, `hir_ssa`, `hir_lower`) | 14.4% |
+| `memset` from `hir_codegen` + `allocate_output_buffers` | 6.1% |
+| **≈ compilation** | **≈ 57%** |
+| **executing the compiled result** | **5.5%** |
+
+`tier2_install` copies the whole 138 KB blob image into guest memory on *every*
+`compile_expression()`. It is the biggest number here and worth **approximately
+nothing to a live game**, which compiles each expression once — its value is
+developer cycle time. Filing suite percentages next to live percentages without
+that label is how a 13.4% outranks a 66%.
+
+## Complexity defects found this pass
+
+All three are the same shape — address element *i* by re-walking from the
+start, in a loop over every element — and all three were found by attributing a
+libc symbol, not by reading code.
+
+| | status | worst case |
+|---|---|---|
+| `scramble()` (#2045) | fixed, #2053 | 19.3s → 0.145s |
+| `shuffle()` (#2057) | open | ~3.4s at LBUF |
+| `iter()` (#2052) | open | O(n²) in element count |
+
+`iter()` is the interesting one, and this survey originally got it wrong in a
+way worth preserving, because the mistake is reusable.
+
+**Only the JIT is quadratic.** Measured with the growth harness (#2059),
+Darwin/arm64, fitted exponent over N=500..4000:
+
+| route | instrument | b | per doubling |
+|---|---|---:|---|
+| interpreter | `astbench` `ast=` | **0.99** | 2.06× 1.96× 1.96× |
+| JIT | `rvbench` `cached=` | **1.99** | 3.96× 3.95× 4.01× |
+
+`fun_iter` advances a real cursor with `split_token` and is linear. The JIT's
+lowering calls `EXTRACT(list, i, 1, delim)` per element — a fresh walk from the
+head — because the cursor-based `SPLIT_TOKEN` fast path `hir_lower.cpp:2310`
+tests for was never registered in `s_tier2_map` and has never executed. At
+N=4000 the JIT is 134× *slower* than the interpreter it exists to beat.
+
+**How "both routes" happened: `rvbench`'s `native=` is not the interpreter.**
+It calls `mux_exec`, which dispatches to the JIT for any JIT-eligible
+expression — and `iter()` is eligible. So `native=` and `cached=` were two
+measurements of the JIT, differing by `mux_exec`'s per-call dispatch overhead
+(`strlen`, AST-cache lookup, the `jit_can_handle` tree walk). They converge at
+large N because they are the same route, and the "flat 26–35 µs saving" that
+looked like a decaying JIT benefit is that dispatch overhead, which does not
+depend on N.
+
+The tell, once you look for it:
+
+| expr | interpreter (`ast=`) | `native=` | `cached=` |
+|---|---:|---:|---:|
+| `add(1,2)` | 110 ns | 452 ns | 18 ns |
+| `iter(lnum(50),mul(##,2))` | 31 880 ns | **18 885 ns** | 18 746 ns |
+
+A leg labelled "native `mux_exec`" that runs *faster than the interpreter* is
+running compiled code.
+
+**So the differential-testing lesson is the opposite of what was written here.**
+The routes do not agree — they differ by a whole complexity class, which a
+differential *scaling* test would find immediately. What `jit_diff` cannot see
+is anything about cost at all: it compares outputs, and both routes produce the
+same list. The #1319/#1320 parallel does not apply; that was a fault genuinely
+shared by two implementations. Use `astbench`'s `ast=` for the interpreter and
+`rvbench`'s `cached=` for the JIT, and see `tests/growth/README.md` for the two
+benchmark fields that lie and why.
+
+## What this pass did not measure
+
+- **What the JIT is actually worth in a live game.** The honest comparison is
+  `mux_exec` with the JIT against `mux_exec` without it, on the same
+  expressions. Every instrument here reports something else: `rvbench`'s
+  `cached=` skips `mux_exec` entirely, its `native=` dispatches *to* the JIT,
+  and `astbench`'s `ast=` calls `ast_eval_node` directly. Answering it needs a
+  tree configured without `--enable-jit`, which is a `make clean` and a rebuild,
+  not a new harness.
+- **2.13 vs 2.14 end to end.** The release-justifying number — *does 2.14 beat
+  2.13 on realistic softcode* — is still not measured. `tests/parity213` can
+  stand both lines up side by side; nobody has pointed it at speed.
+- **A real game's database.** Everything here uses the starter DB plus
+  synthesised objects. The `$`-command and name-resolution constants are
+  therefore harness-shaped; the *slopes* are not, which is why the slopes are
+  what this survey reports.
+- **Windows/IOCP and macOS/kqueue.** Linux/epoll only. #1920 tracks the Windows
+  side.
