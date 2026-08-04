@@ -1534,6 +1534,36 @@ void GanlAdapter::shutdown() {
     Log.WriteString(T("GANL Adapter shut down.\n"));
 }
 
+// Undo a partially-completed accept (#2006).  Runs from inside a catch, so
+// it must not throw.
+//
+// Erasing a key that was never inserted is a no-op, so this is correct
+// wherever in the accept sequence the throw landed, without having to know.
+// The fd close matters: onConnectionClose only runs for a connection that
+// opened, so a throw part-way through leaks the descriptor otherwise.
+//
+void GanlAdapter::accept_cleanup_contained(ganl::ConnectionHandle handle)
+{
+    try
+    {
+        handle_to_conn_.erase(handle);
+        connection_listener_map_.erase(handle);
+        pending_remote_addresses_.erase(handle);
+        pending_tls_flags_.erase(handle);
+        networkEngine_->closeConnection(handle);
+    }
+    catch (const std::exception &e)
+    {
+        Log.tinyprintf(T("GANL: exception cleaning up handle %llu (%s); cleanup abandoned.\n"),
+            static_cast<unsigned long long>(handle), e.what());
+    }
+    catch (...)
+    {
+        Log.tinyprintf(T("GANL: unknown exception cleaning up handle %llu; cleanup abandoned.\n"),
+            static_cast<unsigned long long>(handle));
+    }
+}
+
 bool GanlAdapter::is_tls_connection(DESC* d)
 {
     if (nullptr == d)
@@ -1832,31 +1862,70 @@ void GanlAdapter::run_main_loop() {
                         useTls = ctx->is_ssl;
                     }
 
-                    std::shared_ptr<ganl::ConnectionBase> conn = ganl::ConnectionFactory::createConnection(
-                        connHandle,
-                        *networkEngine_,
-                        secureTransport_.get(),
-                        *protocolHandler_,
-                        *sessionManager_);
+                    // Exception barrier (#2006).  Everything from here to
+                    // the end of the accept allocates: createConnection is a
+                    // make_shared, the four map insertions allocate nodes
+                    // (one copying a std::string), and initialize() reaches
+                    // onConnectionOpen -> allocate_desc -> init_desc, whose
+                    // std::deque<std::string> construction is not nothrow on
+                    // libstdc++.  This is the accept branch of run_main_loop;
+                    // #2008's barrier covers the established-connection
+                    // branch below and starts after this point, and nothing
+                    // above catches either -- so a throw here reached
+                    // std::terminate -> abort() -> SIGABRT, which exits
+                    // without writing restart.db.
+                    //
+                    // Demonstrated with a one-shot bad_alloc in init_desc:
+                    // the server died on the first connection and stayed
+                    // down, no restart.db.  Contain it to the one connection.
+                    //
+                    // Cleanup mirrors the initialize()-failed path below:
+                    // erase whichever of the four maps got populated (erase
+                    // of an absent key is a no-op, so it is correct wherever
+                    // the throw landed) and close the fd, which is otherwise
+                    // leaked because onConnectionClose never runs for a
+                    // connection that never opened.
+                    //
+                    try
+                    {
+                        std::shared_ptr<ganl::ConnectionBase> conn = ganl::ConnectionFactory::createConnection(
+                            connHandle,
+                            *networkEngine_,
+                            secureTransport_.get(),
+                            *protocolHandler_,
+                            *sessionManager_);
 
-                    if (!conn) {
-                        Log.tinyprintf(T("GANL: Failed to allocate ConnectionBase for handle %llu\n"),
-                            static_cast<unsigned long long>(connHandle));
-                        networkEngine_->closeConnection(connHandle);
-                        continue;
+                        if (!conn) {
+                            Log.tinyprintf(T("GANL: Failed to allocate ConnectionBase for handle %llu\n"),
+                                static_cast<unsigned long long>(connHandle));
+                            networkEngine_->closeConnection(connHandle);
+                            continue;
+                        }
+
+                        connection_listener_map_[connHandle] = listenerCtx;
+                        pending_remote_addresses_[connHandle] = events[i].remoteAddress;
+                        pending_tls_flags_[connHandle] = useTls;
+                        handle_to_conn_[connHandle] = conn;
+                        connections_accepted_++;
+
+                        if (!conn->initialize(useTls)) {
+                            handle_to_conn_.erase(connHandle);
+                            connection_listener_map_.erase(connHandle);
+                            pending_remote_addresses_.erase(connHandle);
+                            pending_tls_flags_.erase(connHandle);
+                        }
                     }
-
-                    connection_listener_map_[connHandle] = listenerCtx;
-                    pending_remote_addresses_[connHandle] = events[i].remoteAddress;
-                    pending_tls_flags_[connHandle] = useTls;
-                    handle_to_conn_[connHandle] = conn;
-                    connections_accepted_++;
-
-                    if (!conn->initialize(useTls)) {
-                        handle_to_conn_.erase(connHandle);
-                        connection_listener_map_.erase(connHandle);
-                        pending_remote_addresses_.erase(connHandle);
-                        pending_tls_flags_.erase(connHandle);
+                    catch (const std::exception &e)
+                    {
+                        Log.tinyprintf(T("GANL: exception accepting handle %llu (%s); dropping the connection.\n"),
+                            static_cast<unsigned long long>(connHandle), e.what());
+                        accept_cleanup_contained(connHandle);
+                    }
+                    catch (...)
+                    {
+                        Log.tinyprintf(T("GANL: unknown exception accepting handle %llu; dropping the connection.\n"),
+                            static_cast<unsigned long long>(connHandle));
+                        accept_cleanup_contained(connHandle);
                     }
                 }
                 continue;
