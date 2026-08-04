@@ -9,6 +9,7 @@
 #include "autoconf.h"
 #include "config.h"
 #include "externs.h"
+#include "ganl_adapter.h"
 
 #ifdef SOLARIS
 extern const int _sys_nsig;
@@ -600,14 +601,37 @@ static void DCL_CDECL sighandler(int sig)
             //
             if (!fork())
             {
-                // We are the broken parent. Die.
+                // We are the broken parent. Die and leave a core.
+                //
+                // abort(), not exit(1).  exit() runs static destructors,
+                // and GANL's tear down the engine -- which shuts down the
+                // very sockets the surviving process is about to hand to
+                // its successor, so the players it was trying to preserve
+                // were dropped by the core-dumping twin.  exit(1) also
+                // never produced the core this branch exists for; it just
+                // exits 1, which a supervisor sees as WIFEXITED.  2.14
+                // does the same thing here (platform.cpp, PanicRestart).
                 //
                 unset_signals();
-                exit(1);
+                signal(sig, SIG_DFL);
+                abort();
             }
 
             // We are the reproduced child with a slightly better chance.
             //
+            // Record the listening sockets before serialising them.  Under
+            // GANL the listeners live in the adapter, and main_game_ports[]
+            // -- which is what dump_restart_db() writes -- is populated
+            // only by prepare_for_restart().  do_restart() calls it; this
+            // path did not, so the successor restored zero listeners and
+            // came up unable to accept a connection while still holding
+            // the inherited listening fd: alive to a supervisor, silent to
+            // players.  A game that had already done one graceful @restart
+            // masked it, because load_restart_db() leaves the array
+            // populated from the previous generation.
+            //
+            g_GanlAdapter.prepare_for_restart();
+
             dump_restart_db();
 #endif // HAVE_WORKING_FORK
 
