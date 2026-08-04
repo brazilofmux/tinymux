@@ -736,6 +736,20 @@ LIBMUX_API size_t co_escape(unsigned char *out,
 LIBMUX_API size_t co_cluster_count(const unsigned char *data, size_t len);
 
 /*
+ * co_cluster_offsets — byte offset of every grapheme cluster boundary.
+ *
+ * Fills offsets[0..n] with the start of each cluster plus a final sentinel
+ * at the end of the last, so cluster i is data[offsets[i] .. offsets[i+1]).
+ * That range is byte-identical to co_mid_cluster(out, data, len, i, 1),
+ * colour included.  Returns the cluster count (at most max_offsets - 1).
+ *
+ * One pass over the string, where addressing clusters individually costs
+ * O(len) each (#2045).
+ */
+LIBMUX_API size_t co_cluster_offsets(const unsigned char *data, size_t len,
+                                     size_t *offsets, size_t max_offsets);
+
+/*
  * co_cluster_advance — Advance past n grapheme clusters in PUA-encoded string.
  *
  * Returns pointer past the nth cluster (including any trailing color).

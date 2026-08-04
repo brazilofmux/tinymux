@@ -5407,6 +5407,61 @@ static const unsigned char *advance_pua_by_plain_bytes(
     return p;
 }
 
+size_t co_cluster_offsets(const unsigned char *data, size_t len,
+                          size_t *offsets, size_t max_offsets)
+{
+    /* Byte offset of every grapheme cluster boundary, in ONE pass (#2045).
+     *
+     * The per-cluster route -- co_mid_cluster(), which calls
+     * co_cluster_advance() twice, each stripping colour into a 32 KB buffer
+     * and re-walking from the start -- costs O(len) whichever cluster is
+     * wanted, so addressing every cluster in turn is O(len^2).  scramble()
+     * does exactly that, and at LBUF length one CA_PUBLIC call occupied the
+     * single-threaded server for ~19s.
+     *
+     * The saving is that advance_pua_by_plain_bytes() walks FORWARD from
+     * wherever it is told to start.  So the colour-stripped copy is taken
+     * once and the PUA pointer is carried across iterations, advanced by
+     * just the current cluster's plain byte count, instead of being
+     * recomputed from the beginning each time.
+     *
+     * Fills offsets[0..n]: the start of each cluster plus a final sentinel
+     * at the end of the last one, so cluster i is data[offsets[i] ..
+     * offsets[i+1]).  That range is byte-identical to what
+     * co_mid_cluster(out, data, len, i, 1) copies, INCLUDING any colour run
+     * interleaved inside the cluster -- advance_pua_by_plain_bytes() skips
+     * colour while consuming visible bytes, so a PUA sequence sitting
+     * between a base character and its combining mark lands inside the
+     * range, exactly as before.  Trailing colour after the last cluster
+     * stays outside, also as before.
+     *
+     * Returns the number of clusters, which is at most max_offsets - 1
+     * because of the sentinel.
+     */
+    if (NULL == offsets || 0 == max_offsets) {
+        return 0;
+    }
+
+    unsigned char plain[LBUF_SIZE];
+    size_t plen = co_strip_color(plain, data, len);
+
+    const unsigned char *pe = data + len;
+    const unsigned char *p = data;
+    size_t n = 0;
+    size_t nConsumed = 0;
+
+    while (n + 1 < max_offsets && nConsumed < plen) {
+        size_t cb = next_grapheme_plain(plain + nConsumed, plen - nConsumed);
+        if (0 == cb) break;
+        offsets[n] = (size_t)(p - data);
+        p = advance_pua_by_plain_bytes(p, pe, cb);
+        nConsumed += cb;
+        n++;
+    }
+    offsets[n] = (size_t)(p - data);
+    return n;
+}
+
 size_t co_cluster_count(const unsigned char *data, size_t len)
 {
     /* Strip color to get plain text. */

@@ -128,16 +128,38 @@ FUNCTION(fun_scramble)
         indices[j] = tmp;
     }
 
-    // Output clusters in shuffled order using co_mid_cluster.
+    // Output clusters in shuffled order (#2045).
     //
-    std::vector<unsigned char> cluster(LBUF_SIZE);
-    for (size_t i = 0; i < nClusters; i++)
+    // This used to call co_mid_cluster() once per cluster.  Each of those
+    // walks the whole string to find the requested index -- two
+    // co_cluster_advance() calls, each stripping colour into a 32 KB buffer
+    // and re-walking from the start -- so the cost was O(slen) per cluster
+    // and O(slen^2) for the loop.  scramble() is CA_PUBLIC, so at LBUF
+    // length any player could occupy the single-threaded server for ~19s,
+    // and max_cmdsecs/lag_limit cannot preempt a call already running.
+    //
+    // One pass builds the whole boundary table instead; emitting is then a
+    // memcpy per cluster.  co_cluster_offsets() reproduces co_mid_cluster()'s
+    // ranges exactly, colour included, so the output is unchanged.
+    //
+    std::vector<size_t> offsets(nClusters + 1);
+    const size_t nFound = co_cluster_offsets(p, slen, offsets.data(),
+                                             offsets.size());
+
+    // co_cluster_count() and co_cluster_offsets() walk the same way, so this
+    // should not fire; clamp rather than trust it, since indices[] was built
+    // from the first and is about to index the second.
+    const size_t nEmit = (nFound < nClusters) ? nFound : nClusters;
+
+    for (size_t i = 0; i < nEmit; i++)
     {
-        size_t cb = co_mid_cluster(cluster.data(), p, slen, indices[i], 1);
+        const size_t iCluster = indices[i];
+        const size_t off = offsets[iCluster];
+        size_t cb = offsets[iCluster + 1] - off;
 
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         if (cb > nMax) cb = nMax;
-        memcpy(*bufc, cluster.data(), cb);
+        memcpy(*bufc, p + off, cb);
         *bufc += cb;
     }
     **bufc = '\0';
