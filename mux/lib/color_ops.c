@@ -4314,8 +4314,15 @@ size_t co_insert_word(unsigned char *out,
                       size_t iPos,
                       unsigned char delim, unsigned char osep)
 {
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    /* #2002: the word list is consumed strictly in order, one entry per
+     * iteration, so a cursor does the same job as the LBUF_SIZE/2 array
+     * without the 256 KB of stack.  count_words() shares wc_next() with
+     * split_words(), so the cap semantics are the same by construction. */
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     unsigned char *wp = out;
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
@@ -4335,8 +4342,10 @@ size_t co_insert_word(unsigned char *out,
         }
         if (i < nWords) {
             if (emitted > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted++;
         }
     }
@@ -4371,8 +4380,16 @@ size_t co_replace_at(unsigned char *out,
         return 0;
     }
 
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    /* #2002: cursor instead of a materialised array.  The invariant that
+     * makes this safe is that the cursor has yielded exactly min(i, nWords)
+     * words at every point -- so EVERY i++ in the index version must be
+     * paired with one wc_next() here, including the bare i++ that steps
+     * over the word being replaced. */
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     /* Convert positions: negative wraps, positive 1-based to 0-based. */
     int j;
@@ -4390,13 +4407,16 @@ size_t co_replace_at(unsigned char *out,
         }
     }
 
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
     if (nPositions == 0) {
-        unsigned char *wp = out;
-        const unsigned char *wp_end = out + LBUF_SIZE - 1;
         for (size_t i = 0; i < nWords && wp < wp_end; i++) {
             if (i > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
         }
         *wp = '\0';
         return (size_t)(wp - out);
@@ -4404,30 +4424,33 @@ size_t co_replace_at(unsigned char *out,
 
     sort_ints(positions, nPositions);
 
-    unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     size_t i = 0;
     int emitted = 0;
 
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted = 1;
             i++;
         }
         if (emitted) WP_SAFE(wp, wp_end, osep);
         wp += wp_safe_copy(wp, wp_end, word, wlen);
         emitted = 1;
+        (void)wc_next(&c, &cw);   /* step over the replaced word */
         i++;
         while (j < nPositions - 1 && positions[j] == positions[j + 1]) j++;
     }
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        if (wc_next(&c, &cw)) {
+            size_t cb = (size_t)(cw.end - cw.start);
+            wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+        }
         emitted = 1;
         i++;
     }
@@ -4446,8 +4469,11 @@ size_t co_delete_at(unsigned char *out,
         return 0;
     }
 
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     /* Convert positions: negative wraps, positive 1-based to 0-based.
      * Out-of-range positions are dropped (swap-with-last). */
@@ -4476,12 +4502,16 @@ size_t co_delete_at(unsigned char *out,
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted = 1;
             i++;
         }
-        /* Skip the word at this position (delete it). */
+        /* Skip the word at this position (delete it) -- the cursor has to
+         * step over it too, or the invariant breaks. */
+        (void)wc_next(&c, &cw);
         i++;
         /* Collapse duplicate positions: a word deleted once is not
          * revisited. */
@@ -4490,8 +4520,10 @@ size_t co_delete_at(unsigned char *out,
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        if (wc_next(&c, &cw)) {
+            size_t cb = (size_t)(cw.end - cw.start);
+            wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+        }
         emitted = 1;
         i++;
     }
@@ -4506,8 +4538,11 @@ size_t co_insert_at(unsigned char *out,
                     const unsigned char *word, size_t wlen,
                     unsigned char delim, unsigned char osep)
 {
-    word_range_t words[LBUF_SIZE / 2];
-    size_t nWords = split_words(list, llen, delim, words, LBUF_SIZE / 2);
+    size_t nWords = count_words(list, llen, delim, LBUF_SIZE / 2);
+    word_cursor_t c;
+    word_range_t  cw;
+
+    wc_init(&c, list, llen, delim, LBUF_SIZE / 2);
 
     /* For empty lists, validate that at least one position is 1 or -1
      * before proceeding.  This matches do_itemfuns IF_INSERT. */
@@ -4537,13 +4572,16 @@ size_t co_insert_at(unsigned char *out,
         }
     }
 
+    unsigned char *wp = out;
+    const unsigned char *wp_end = out + LBUF_SIZE - 1;
+
     if (nPositions == 0) {
-        unsigned char *wp = out;
-        const unsigned char *wp_end = out + LBUF_SIZE - 1;
         for (size_t i = 0; i < nWords && wp < wp_end; i++) {
             if (i > 0) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
         }
         *wp = '\0';
         return (size_t)(wp - out);
@@ -4551,19 +4589,21 @@ size_t co_insert_at(unsigned char *out,
 
     sort_ints(positions, nPositions);
 
-    unsigned char *wp = out;
-    const unsigned char *wp_end = out + LBUF_SIZE - 1;
     int emitted = 0;
     size_t i = 0;
 
     for (j = 0; j < nPositions; j++) {
         while (i < (size_t)positions[j] && wp < wp_end) {
             if (emitted) WP_SAFE(wp, wp_end, osep);
-            size_t cb = (size_t)(words[i].end - words[i].start);
-            wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+            if (wc_next(&c, &cw)) {
+                size_t cb = (size_t)(cw.end - cw.start);
+                wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+            }
             emitted = 1;
             i++;
         }
+        /* Insertion does not consume a source word, so the cursor does
+         * not advance here -- unlike co_replace_at/co_delete_at. */
         if (emitted) WP_SAFE(wp, wp_end, osep);
         wp += wp_safe_copy(wp, wp_end, word, wlen);
         emitted = 1;
@@ -4571,8 +4611,10 @@ size_t co_insert_at(unsigned char *out,
 
     while (i < nWords && wp < wp_end) {
         if (emitted) WP_SAFE(wp, wp_end, osep);
-        size_t cb = (size_t)(words[i].end - words[i].start);
-        wp += wp_safe_copy(wp, wp_end, words[i].start, cb);
+        if (wc_next(&c, &cw)) {
+            size_t cb = (size_t)(cw.end - cw.start);
+            wp += wp_safe_copy(wp, wp_end, cw.start, cb);
+        }
         emitted = 1;
         i++;
     }
@@ -5668,13 +5710,13 @@ unsigned char co_dfa_ascii(const unsigned char *p)
 /* ---- co_render_ascii ---- */
 
 
-#line 5461 "color_ops.c"
+#line 5503 "color_ops.c"
 static const int render_ascii_start = 12;
 
 static const int render_ascii_en_main = 12;
 
 
-#line 4201 "color_ops.rl"
+#line 4243 "color_ops.rl"
 
 
 size_t co_render_ascii(unsigned char *out,
@@ -5688,21 +5730,21 @@ size_t co_render_ascii(unsigned char *out,
     const unsigned char *wp_end = out + LBUF_SIZE - 1;
 
     
-#line 5477 "color_ops.c"
+#line 5519 "color_ops.c"
 	{
 	cs = render_ascii_start;
 	}
 
-#line 4214 "color_ops.rl"
+#line 4256 "color_ops.rl"
     
-#line 5480 "color_ops.c"
+#line 5522 "color_ops.c"
 	{
 	if ( p == pe )
 		goto _test_eof;
 	switch ( cs )
 	{
 tr0:
-#line 4186 "color_ops.rl"
+#line 4228 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5716,9 +5758,9 @@ tr0:
     }
 	goto st12;
 tr7:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
-#line 4186 "color_ops.rl"
+#line 4228 "color_ops.rl"
 	{
         /* Run visible code point through tr_ascii DFA for approximation. */
         if (*mark < 0x80) {
@@ -5735,7 +5777,7 @@ st12:
 	if ( ++p == pe )
 		goto _test_eof12;
 case 12:
-#line 5516 "color_ops.c"
+#line 5558 "color_ops.c"
 	switch( (*p) ) {
 		case 0u: goto st0;
 		case 224u: goto tr9;
@@ -5764,62 +5806,62 @@ st0:
 cs = 0;
 	goto _out;
 tr8:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st1;
 st1:
 	if ( ++p == pe )
 		goto _test_eof1;
 case 1:
-#line 5550 "color_ops.c"
+#line 5592 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto tr0;
 	goto st0;
 tr9:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st2;
 st2:
 	if ( ++p == pe )
 		goto _test_eof2;
 case 2:
-#line 5560 "color_ops.c"
+#line 5602 "color_ops.c"
 	if ( 160u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr10:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st3;
 st3:
 	if ( ++p == pe )
 		goto _test_eof3;
 case 3:
-#line 5570 "color_ops.c"
+#line 5612 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st1;
 	goto st0;
 tr11:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st4;
 st4:
 	if ( ++p == pe )
 		goto _test_eof4;
 case 4:
-#line 5580 "color_ops.c"
+#line 5622 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 159u )
 		goto st1;
 	goto st0;
 tr12:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st5;
 st5:
 	if ( ++p == pe )
 		goto _test_eof5;
 case 5:
-#line 5590 "color_ops.c"
+#line 5632 "color_ops.c"
 	if ( (*p) < 148u ) {
 		if ( 128u <= (*p) && (*p) <= 147u )
 			goto st1;
@@ -5837,38 +5879,38 @@ case 6:
 		goto st12;
 	goto st0;
 tr13:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st7;
 st7:
 	if ( ++p == pe )
 		goto _test_eof7;
 case 7:
-#line 5613 "color_ops.c"
+#line 5655 "color_ops.c"
 	if ( 144u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr14:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st8;
 st8:
 	if ( ++p == pe )
 		goto _test_eof8;
 case 8:
-#line 5623 "color_ops.c"
+#line 5665 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 191u )
 		goto st3;
 	goto st0;
 tr15:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st9;
 st9:
 	if ( ++p == pe )
 		goto _test_eof9;
 case 9:
-#line 5633 "color_ops.c"
+#line 5675 "color_ops.c"
 	if ( (*p) < 176u ) {
 		if ( 128u <= (*p) && (*p) <= 175u )
 			goto st3;
@@ -5886,14 +5928,14 @@ case 10:
 		goto st6;
 	goto st0;
 tr16:
-#line 4185 "color_ops.rl"
+#line 4227 "color_ops.rl"
 	{ mark = p; }
 	goto st11;
 st11:
 	if ( ++p == pe )
 		goto _test_eof11;
 case 11:
-#line 5656 "color_ops.c"
+#line 5698 "color_ops.c"
 	if ( 128u <= (*p) && (*p) <= 143u )
 		goto st3;
 	goto st0;
@@ -5915,7 +5957,7 @@ case 11:
 	_out: {}
 	}
 
-#line 4215 "color_ops.rl"
+#line 4257 "color_ops.rl"
 
     *wp = '\0';
     return (size_t)(wp - out);
