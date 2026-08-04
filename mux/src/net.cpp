@@ -3777,7 +3777,25 @@ void dump_restart_db(void)
     DESC *d;
     int version = 5;
 
-    mux_assert(mux_fopen(&f, T("restart.db"), T("wb")));
+    // Publish only a file that was written completely (#2041).
+    //
+    // stdio surfaces a failed write at flush time, not at the putref() that
+    // filled the buffer, and nothing here used to look.  So a dump that ran
+    // out of disk left a file with a valid header and a truncated body and
+    // returned normally.  getref() reads EOF as 0 rather than failing, so the
+    // successor restored num_main_game_ports == 0, bound no listener, and
+    // exited with "No GANL listeners successfully started" -- @restart on a
+    // full disk made the game disappear.
+    //
+    // Written under a temporary name and renamed only once the writes are
+    // confirmed.  rename() is atomic within a filesystem, so no reader can
+    // observe a partial file.  On failure nothing is published: load_restart_db()
+    // removes restart.db once it has consumed it, so there is no stale
+    // generation to fall back onto and the successor cold starts -- sessions
+    // are lost, which is the honest outcome when their state could not be
+    // written, but the game comes up.
+    //
+    mux_assert(mux_fopen(&f, T("restart.db.tmp"), T("wb")));
     mux_fprintf(f, T("+V%d\n"), version);
     putref(f, num_main_game_ports);
     for (int i = 0; i < num_main_game_ports; i++)
@@ -3835,7 +3853,26 @@ void dump_restart_db(void)
     }
     putref(f, 0);
 
+    // fflush first: mux_fclose() returns void, so a flush failure inside it
+    // would be invisible.  Checking ferror() as well catches an error that
+    // was already latched by an earlier buffer flush.
+    //
+    const bool bWritten = (0 == fflush(f)) && (0 == ferror(f));
     mux_fclose(f);
+
+    if (  !bWritten
+       || 0 != rename("restart.db.tmp", "restart.db"))
+    {
+        STARTLOG(LOG_ALWAYS, "RST", "DUMP");
+        UTF8 *buf = alloc_lbuf("dump_restart_db.LOG");
+        mux_sprintf(buf, LBUF_SIZE,
+            T("Could not write restart.db (%s); no session state was saved. The restart will continue, but the successor has no listeners to adopt and will likely fail to bind — restart the game from Startmux."),
+            bWritten ? T("rename failed") : T("write failed"));
+        g_pILog->log_text(buf);
+        free_lbuf(buf);
+        ENDLOG;
+        remove("restart.db.tmp");
+    }
 }
 
 void load_restart_db(void)

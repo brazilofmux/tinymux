@@ -21,8 +21,15 @@ fi
 #
 #	Remove the restart db if there is one.
 #
+#	restart.db.tmp is where dump_restart_db builds the file before renaming
+#	it into place (#2041).  It should never survive a successful dump, but a
+#	process killed mid-dump leaves one, and nothing else removes it.
+#
 if [ -r restart.db ]; then
 	rm restart.db
+fi
+if [ -r restart.db.tmp ]; then
+	rm restart.db.tmp
 fi
 #
 #       Check if the log directory is defined and is valid. If not, use
