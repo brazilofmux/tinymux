@@ -2127,21 +2127,6 @@ size_t co_copy_columns(unsigned char *out, const unsigned char *p,
 }
 
 /*
- * strip_crnltab — Remove \r, \n, \t from fill pattern in-place.
- * Returns new length.
- */
-static size_t strip_crnltab(unsigned char *buf, size_t len)
-{
-    size_t j = 0;
-    for (size_t i = 0; i < len; i++) {
-        if (buf[i] != '\r' && buf[i] != '\n' && buf[i] != '\t')
-            buf[j++] = buf[i];
-    }
-    buf[j] = '\0';
-    return j;
-}
-
-/*
  * Parsed fill character: visible bytes + color state at that position.
  */
 typedef struct {
@@ -2195,6 +2180,26 @@ static size_t parse_fill_chars(fill_char_t *chars, size_t max_chars,
             && p[1] >= 0xB0 && p[1] <= 0xB3) {
             parse_smp_color(p, &cs);
             p += 4;
+            continue;
+        }
+
+        /* CR/NL/TAB are not fill characters.  Skipping them here rather
+         * than pre-stripping the pattern is what lets the callers read the
+         * caller's buffer directly, instead of copying it into an
+         * LBUF_SIZE stack array so strip_crnltab() could mutate it -- that
+         * copy was the bulk of a 43 KB frame in each of center/ljust/rjust
+         * (#2002).
+         *
+         * Equivalent to stripping first because these bytes can never fall
+         * inside a PUA colour sequence: the leads are 0xEF and 0xF3 and
+         * every continuation byte is 0x80-0xBF, none of which is 0x09,
+         * 0x0A or 0x0D.  So removing them earlier or later cannot change
+         * which sequences are recognised.
+         */
+        if (  '\r' == *p
+           || '\n' == *p
+           || '\t' == *p) {
+            p++;
             continue;
         }
 
@@ -2346,18 +2351,23 @@ size_t co_center(unsigned char *out,
     }
 
     /* Prepare fill pattern. */
-    unsigned char fill_buf[LBUF_SIZE];
+    /* Read the pattern straight from the caller's buffer.
+     * parse_fill_chars() skips CR/NL/TAB itself, so the LBUF_SIZE copy
+     * this used to make purely so strip_crnltab() had something to
+     * mutate is gone -- it was the bulk of a 43 KB frame (#2002).  The
+     * length cap stays: it bounded how much of an oversized pattern was
+     * considered, which is behaviour, not only buffer safety.
+     */
+    const unsigned char *fill_p = fill ? fill : (const unsigned char *)"";
     size_t flen = 0;
     if (fill && fill_len > 0) {
-        if (fill_len > LBUF_SIZE - 1) fill_len = LBUF_SIZE - 1;
-        memcpy(fill_buf, fill, fill_len);
-        flen = strip_crnltab(fill_buf, fill_len);
+        flen = (fill_len > LBUF_SIZE - 1) ? (size_t)(LBUF_SIZE - 1) : fill_len;
     }
 
     /* Parse fill into per-character colors. */
     fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_p, flen,
                                       &fill_width);
     if (fill_width == 0) {
         /* Default to space fill. */
@@ -2421,18 +2431,23 @@ size_t co_ljust(unsigned char *out,
     }
 
     /* Prepare fill. */
-    unsigned char fill_buf[LBUF_SIZE];
+    /* Read the pattern straight from the caller's buffer.
+     * parse_fill_chars() skips CR/NL/TAB itself, so the LBUF_SIZE copy
+     * this used to make purely so strip_crnltab() had something to
+     * mutate is gone -- it was the bulk of a 43 KB frame (#2002).  The
+     * length cap stays: it bounded how much of an oversized pattern was
+     * considered, which is behaviour, not only buffer safety.
+     */
+    const unsigned char *fill_p = fill ? fill : (const unsigned char *)"";
     size_t flen = 0;
     if (fill && fill_len > 0) {
-        if (fill_len > LBUF_SIZE - 1) fill_len = LBUF_SIZE - 1;
-        memcpy(fill_buf, fill, fill_len);
-        flen = strip_crnltab(fill_buf, fill_len);
+        flen = (fill_len > LBUF_SIZE - 1) ? (size_t)(LBUF_SIZE - 1) : fill_len;
     }
 
     /* Parse fill into per-character colors. */
     fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_p, flen,
                                       &fill_width);
     if (fill_width == 0) {
         fchars[0].bytes[0] = ' ';
@@ -2487,18 +2502,23 @@ size_t co_rjust(unsigned char *out,
     }
 
     /* Prepare fill. */
-    unsigned char fill_buf[LBUF_SIZE];
+    /* Read the pattern straight from the caller's buffer.
+     * parse_fill_chars() skips CR/NL/TAB itself, so the LBUF_SIZE copy
+     * this used to make purely so strip_crnltab() had something to
+     * mutate is gone -- it was the bulk of a 43 KB frame (#2002).  The
+     * length cap stays: it bounded how much of an oversized pattern was
+     * considered, which is behaviour, not only buffer safety.
+     */
+    const unsigned char *fill_p = fill ? fill : (const unsigned char *)"";
     size_t flen = 0;
     if (fill && fill_len > 0) {
-        if (fill_len > LBUF_SIZE - 1) fill_len = LBUF_SIZE - 1;
-        memcpy(fill_buf, fill, fill_len);
-        flen = strip_crnltab(fill_buf, fill_len);
+        flen = (fill_len > LBUF_SIZE - 1) ? (size_t)(LBUF_SIZE - 1) : fill_len;
     }
 
     /* Parse fill into per-character colors. */
     fill_char_t fchars[CO_FILL_CHARS_MAX];
     size_t fill_width = 0;
-    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_buf, flen,
+    size_t nfchars = parse_fill_chars(fchars, CO_FILL_CHARS_MAX, fill_p, flen,
                                       &fill_width);
     if (fill_width == 0) {
         fchars[0].bytes[0] = ' ';

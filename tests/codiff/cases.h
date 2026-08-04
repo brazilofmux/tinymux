@@ -399,16 +399,43 @@ static void run_justify_fuzz(unsigned int iters)
     unsigned char data[64];
 
     for (it = 0; it < iters; it++) {
-        flen = rnd(24);
-        for (i = 0; i < flen; i++) {
-            unsigned int k = rnd(10);
-            if (k == 0)      g_fill[i] = '\r';
-            else if (k == 1) g_fill[i] = '\n';
-            else if (k == 2) g_fill[i] = '\t';
-            else if (k == 3) g_fill[i] = 0xEF;
-            else if (k == 4) g_fill[i] = 0x94;
-            else if (k == 5) g_fill[i] = 0xF3;
-            else             g_fill[i] = (unsigned char)('a' + rnd(26));
+        /* Emit only WELL-FORMED sequences.  An earlier version drew bare
+         * 0xEF/0x94/0xF3 lead bytes, which produces malformed UTF-8 -- and
+         * the server does not admit that: net.cpp validates the incoming
+         * encoding and normalises Unicode to NFC at the boundary, and the
+         * database and the outbound path are maintained in NFC from there.
+         *
+         * Pinning behaviour on input the boundary excludes is worse than
+         * useless: it makes a legitimate refactor read as a regression.
+         * This battery is meant to hold color_ops to its contract, not to
+         * freeze whatever it happens to do with bytes it can never see.
+         */
+        flen = 0;
+        {
+            unsigned long want = rnd(24);
+            /* +4 of headroom so a multi-byte sequence started near the
+             * limit always completes -- a truncated one would be exactly
+             * the malformed input this is avoiding. */
+            while (flen < want && flen + 4 < sizeof(g_fill)) {
+                unsigned int k = rnd(10);
+                if (k == 0)      g_fill[flen++] = '\r';
+                else if (k == 1) g_fill[flen++] = '\n';
+                else if (k == 2) g_fill[flen++] = '\t';
+                else if (k == 3) {
+                    /* Complete 3-byte BMP colour code. */
+                    g_fill[flen++] = 0xEF;
+                    g_fill[flen++] = (unsigned char)(0x94 + rnd(12));
+                    g_fill[flen++] = (unsigned char)(0x80 + rnd(64));
+                } else if (k == 4) {
+                    /* Complete 4-byte SMP colour code. */
+                    g_fill[flen++] = 0xF3;
+                    g_fill[flen++] = (unsigned char)(0xB0 + rnd(4));
+                    g_fill[flen++] = (unsigned char)(0x80 + rnd(64));
+                    g_fill[flen++] = (unsigned char)(0x80 + rnd(64));
+                } else {
+                    g_fill[flen++] = (unsigned char)('a' + rnd(26));
+                }
+            }
         }
         dlen = rnd(12);
         for (i = 0; i < dlen; i++) {
