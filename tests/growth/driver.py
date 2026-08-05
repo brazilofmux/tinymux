@@ -172,6 +172,15 @@ CASES = [
     # hir_lower.cpp, so it is interpreter-only.  It covers the loop shape
     # iter() shares without iter()'s element extraction.
     ("citer(repeat(a,{N}),1)", "interp", [500, 1000, 2000, 4000], "linear", None),
+
+    # map() with a computation body, ahead of its lowering (#2080).  Both
+    # routes are linear TODAY (~610ns/element interp, ~1.1us/element on the
+    # jit route via the ECALL back into fun_map); these guard the class so
+    # the lowering -- whose promise is a smaller constant, which this
+    # harness deliberately does not measure -- cannot regress the exponent.
+    # The attribute comes from SETUP.
+    ("map(me/GROWTH.MAPB,lnum({N}))", "interp", [250, 500, 1000, 2000], "linear", None),
+    ("map(me/GROWTH.MAPB,lnum({N}))", "jit",    [250, 500, 1000, 2000], "linear", None),
 ]
 
 AST_RE = re.compile(r"ast=([0-9.]+)us")
@@ -205,9 +214,17 @@ def probes_for(cases):
     return out
 
 
+# Commands emitted once at the top of the muxscript stream, before probes.
+# Direct stdin lines are NOT %-substituted, so attribute bodies here keep
+# their %0 verbatim.
+SETUP = [
+    "&GROWTH.MAPB me=[add(%0,1)]",
+]
+
+
 def build_script(pairs, probes):
     """One muxscript command stream covering every probe and (tag, expr) pair."""
-    lines = []
+    lines = list(SETUP)
     for tag, expr, _want in probes:
         lines.append("think [%s] @@%s.P" % (expr, tag))
     # Warm-up, discarded.  The first measurement in a muxscript process pays
