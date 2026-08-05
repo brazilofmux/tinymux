@@ -186,14 +186,30 @@
     @wait 0={
       @if strmatch(map(me/B.EDIT,3 4),NEW NEW)=
       {
-        @log smoke=TC011: map tracks attribute edits. Succeeded.;
-        @trig me/tr.done
+        @log smoke=TC011: map tracks attribute edits. Succeeded.
       },
       {
-        @log smoke=TC011: map tracks attribute edits. Failed ([map(me/B.EDIT,3 4)] wanted NEW NEW).;
-        @trig me/tr.done
+        @log smoke=TC011: map tracks attribute edits. Failed ([map(me/B.EDIT,3 4)] wanted NEW NEW).
       }
     }
+  }
+-
+#
+# Test Case #12 - An element longer than 255 bytes.  The compiled CARGS
+# slots are 256 bytes and _WRITE_CARG REJECTS oversized values rather than
+# truncate, so a lowering must route long elements through a fallback arm
+# -- this case is what catches a stale or truncated %0.  The 300-char
+# element is built at runtime so no source line is oversized.
+#
+&tr.tc012 test_map_fn=
+  @if strmatch(map(me/B.LEN,[repeat(x,300)] y),300x 1x)=
+  {
+    @log smoke=TC012: map long element. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC012: map long element. Failed ([map(me/B.LEN,[repeat(x,300)] y)] wanted 300x 1x).;
+    @trig me/tr.done
   }
 -
 &tr.done test_map_fn=
