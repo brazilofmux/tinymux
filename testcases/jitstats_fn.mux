@@ -492,6 +492,51 @@
     @log smoke=TC008: gate memo tracks @function. Skipped (JIT not enabled).
   }
 -
+#
+# Test Case #9 - a whole-attribute compile fits the code region (#2074).
+#
+# do_ufun() calls mux_exec() on the ENTIRE attribute body, so u()/ulocal()
+# and every @function global hand the compiler an attribute rather than one
+# bracketed group.  Real attribute bodies in this corpus run median 217 bytes
+# and p99 1734; at the measured ~5x expansion ratio the old 4 KB code region
+# bound at roughly 800 source bytes and declined 2.85 percent of them.
+#
+# THIS CANNOT BE ASSERTED ON THE VALUE.  A program that exceeds the code
+# region is declined and evaluated by the AST interpreter, which returns the
+# same string -- so the answer is right either way and only a counter can see
+# the difference.  bail_code (#2075) is that counter.
+#
+# t9.big is 1360 source bytes of a deliberately non-foldable unit (v() is an
+# ECALL, so the compiler cannot collapse it).  That is ~6800 bytes of RV64:
+# over the old 4096 ceiling, comfortably inside the new 16384.  If the code
+# region is ever shrunk below ~7 KB this case goes red rather than silently
+# reverting to the interpreter.
+#
+&A9 test_jitstats_fn=q
+-
+&t9.big test_jitstats_fn=[strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)][strcat(v(A9),x)]
+-
+&tr.tc009 test_jitstats_fn=
+  @if u(me/tr.has_jit)=
+  {
+    &t9.s0 me=[jitstats()];
+    &t9.val me=[u(me/t9.big)];
+    &t9.s1 me=[jitstats()];
+    @if cand(
+          strmatch(get(me/t9.val),[repeat(qx,80)]),
+          eq(sub(u(me/t7.kv,get(me/t9.s1),bail_code),u(me/t7.kv,get(me/t9.s0),bail_code)),0)
+        )=
+    {
+      @log smoke=TC009: whole-attribute compile fits the code region. Succeeded (code_max [u(me/t7.kv,get(me/t9.s1),code_max)]).
+    },
+    {
+      @log smoke=TC009: whole-attribute compile fits the code region. Failed (bail_code [u(me/t7.kv,get(me/t9.s0),bail_code)] to [u(me/t7.kv,get(me/t9.s1),bail_code)], want_code_max [u(me/t7.kv,get(me/t9.s1),want_code_max)], val=[left(get(me/t9.val),20)]).
+    }
+  },
+  {
+    @log smoke=TC009: whole-attribute compile fits the code region. Skipped (JIT not enabled).
+  }
+-
 &tr.done test_jitstats_fn=
   @log smoke=End jitstats() test cases.;
   @notify smoke
