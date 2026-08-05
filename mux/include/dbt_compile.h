@@ -96,6 +96,12 @@ struct jit_stats_t {
     // which one a decline came from.  Kept and still incremented exactly as
     // before for dashboard compatibility; these are the ones to read.
     //
+    uint64_t bail_noop;           // compiled program does no work: a single
+                                  // ECALL with no native ops, folds or tier 2
+                                  // calls, so running it performs the same
+                                  // host call the AST evaluator would make,
+                                  // plus guest entry, marshalling and exit
+                                  // (#2086).  Declined rather than run.
     uint64_t bail_code;           // code region overflow (CODE_LIMIT)
     uint64_t bail_strpool;        // string pool exhausted (STR_LIMIT)
     uint64_t bail_fargs;          // fargs pool exhausted (FARGS_LIMIT)

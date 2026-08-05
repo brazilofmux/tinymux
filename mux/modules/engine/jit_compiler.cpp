@@ -5400,6 +5400,40 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         return true;
     }
 
+    // Decline a program that does no work (#2086).
+    //
+    // When a lowering is a single host ECALL with nothing computed around it
+    // -- no native arithmetic, no constant folding, no tier 2 call -- running
+    // it performs exactly the host call the AST evaluator would have made,
+    // and adds guest entry, argument marshalling and exit on top.  There is no
+    // arrangement of those costs that comes out ahead; the compiled path can
+    // only be the interpreter's cost plus a constant.
+    //
+    // Measured for get(perfobj/perf0): 108 bytes of RV64, one ECALL per
+    // evaluation, zero tier2/folds, and 1.35x the no-JIT path on
+    // Linux/aarch64 (1.36x on Windows/MSVC via #2083's attrread phase).
+    // The shape covers get/v/u and most attribute and database accessors,
+    // which is what live games actually call (#2064).
+    //
+    // Correctness is identical either way -- both routes call the same host
+    // function -- so this only chooses the cheaper route to it.
+    //
+    // Deliberately conservative: ONE ecall and nothing else.  A program with
+    // two ECALLs has already saved one AST dispatch, and anything with
+    // native_ops, folds or tier2_calls is doing work the interpreter would
+    // otherwise repeat.  Widening this predicate would start declining
+    // programs the JIT genuinely wins on, and that failure mode looks like a
+    // speedup on every benchmark that is not measuring the thing it broke.
+    //
+    if (   0 == prog->native_ops
+        && 0 == prog->folds
+        && 0 == prog->tier2_calls
+        && 1 >= prog->ecalls) {
+        s_jit_stats.bail_noop++;
+        s_jit_stats.eval_bailout++;
+        return false;
+    }
+
     // Depth > 1: try executing via the shared heap's independent DBT.
     // The shared heap compiles into persistent memory and runs in its
     // own DBT context, so this is safe during an outer ECALL.
@@ -5537,6 +5571,7 @@ FUNCTION(fun_jitstats)
         "bail_invk=%llu "
         "bail_alarm=%llu "
         "bail_shared_busy=%llu "
+        "bail_noop=%llu "
         "bail_code=%llu "
         "bail_strpool=%llu "
         "bail_fargs=%llu "
@@ -5569,6 +5604,7 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.bail_invk,
         (unsigned long long)s_jit_stats.bail_alarm,
         (unsigned long long)s_jit_stats.bail_shared_busy,
+        (unsigned long long)s_jit_stats.bail_noop,
         (unsigned long long)s_jit_stats.bail_code,
         (unsigned long long)s_jit_stats.bail_strpool,
         (unsigned long long)s_jit_stats.bail_fargs,
