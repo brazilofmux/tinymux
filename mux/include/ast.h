@@ -74,10 +74,28 @@ struct ASTNode {
     bool has_close_bracket; // EVALBRACKET: true if ']' was found
     bool has_close_brace;   // BRACEGROUP: true if '}' was found
 
+    // Memoized jit_can_handle() verdict for the tree rooted here (#2068).
+    //
+    // The gate walked this whole tree on EVERY evaluation -- allocating a
+    // worklist, and per call node a std::string and a std::vector<UTF8> plus
+    // two hash lookups -- for an answer that is fixed for a given (tree,
+    // function tables, jit_eval_brackets) triple.  ASTs are cached and
+    // re-evaluated many times, so this made a once-per-parse question into a
+    // once-per-evaluation cost.
+    //
+    // Only meaningful on the root, which is what mux_exec() gates on.
+    // Stamp 0 means "not computed"; see jit_gate_stamp_now() in ast.cpp for
+    // what the stamp covers and jit_gate_note_function_table_change() for
+    // who invalidates it.  Mutable because the gate runs on a const tree.
+    //
+    mutable uint32_t jit_gate_stamp;
+    mutable bool     jit_gate_verdict;
+
     ASTNode(ASTNodeType t, std::string_view s = "")
         : type(t), text(s), noeval_kind(ASTNOEVAL_NONE),
           parser_known_noeval(false), has_close_paren(true),
-          has_close_bracket(true), has_close_brace(true) {}
+          has_close_bracket(true), has_close_brace(true),
+          jit_gate_stamp(0), jit_gate_verdict(false) {}
 
     void addChild(std::unique_ptr<ASTNode> child) {
         children.push_back(std::move(child));

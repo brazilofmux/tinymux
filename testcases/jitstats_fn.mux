@@ -422,6 +422,76 @@
     @log smoke=TC007: jitstats counts nested Tier 2 and ECALLs. Skipped (JIT not enabled or jit_eval_brackets 0).
   }
 -
+#
+# Test Case #8 - the dispatch-gate memo tracks @function (#2068).
+#
+# mux_exec() memoizes whether the JIT can handle a cached AST.  Part of that
+# verdict is whether each call node's name resolves in builtin_functions or
+# ufunc_htab, so @function and @function/delete must invalidate it.
+#
+# THIS CANNOT BE ASSERTED ON VALUES.  A stale verdict picks the wrong
+# EVALUATOR, not a wrong answer: if it staled at "decline" the AST route
+# still resolves the global, and if it staled at "accept" the compile bails
+# and falls back.  Both give the same string.  The only observable is
+# whether jit_eval() was entered at all, which is eval_attempts.
+#
+# The exercise runs at UPLOAD time rather than in tr.tc008 for two reasons,
+# both already learned in this file:
+#   * @function is CA_GOD and a tr.tc* body runs as the test object, where
+#     it is silently refused (see ufunction_fn.mux's header).  Upload-time
+#     commands run as the uploading God.
+#   * @admin/@function in a triggered attribute body does not take effect
+#     before later evaluations in the same command list -- the same reason
+#     the lua_jit block above had to stay at upload time.
+#
+# The probe is 28 bytes because AST_CACHE_MIN_LEN is 16: below that the tree
+# is reparsed every evaluation, there is nothing to go stale, and the case
+# would pass vacuously.
+#
+&GM_BODY test_jitstats_fn=[add(%0,%1)]
+-
+@switch [jitstats()]=*,
+  {
+    &GM_S0 test_jitstats_fn=[jitstats()];
+    &GM_V0 test_jitstats_fn=[gm_probe(1,2)][gm_probe(3,4)];
+    &GM_S1 test_jitstats_fn=[jitstats()];
+    @function gm_probe=test_jitstats_fn/GM_BODY;
+    &GM_S2 test_jitstats_fn=[jitstats()];
+    &GM_V1 test_jitstats_fn=[gm_probe(1,2)][gm_probe(3,4)];
+    &GM_S3 test_jitstats_fn=[jitstats()];
+    @function/delete gm_probe;
+    &GM_S4 test_jitstats_fn=[jitstats()];
+    &GM_V2 test_jitstats_fn=[gm_probe(1,2)][gm_probe(3,4)];
+    &GM_S5 test_jitstats_fn=[jitstats()]
+  }
+-
+&tr.tc008 test_jitstats_fn=
+  @if u(me/tr.has_jit)=
+  {
+    @if cand(
+          strmatch(get(me/GM_V0),*#-1*),
+          strmatch(get(me/GM_V1),37),
+          strmatch(get(me/GM_V2),*#-1*),
+          gt(
+            sub(u(me/t7.kv,get(me/GM_S3),eval_attempts),u(me/t7.kv,get(me/GM_S2),eval_attempts)),
+            sub(u(me/t7.kv,get(me/GM_S1),eval_attempts),u(me/t7.kv,get(me/GM_S0),eval_attempts))
+          ),
+          gt(
+            sub(u(me/t7.kv,get(me/GM_S3),eval_attempts),u(me/t7.kv,get(me/GM_S2),eval_attempts)),
+            sub(u(me/t7.kv,get(me/GM_S5),eval_attempts),u(me/t7.kv,get(me/GM_S4),eval_attempts))
+          )
+        )=
+    {
+      @log smoke=TC008: gate memo tracks @function. Succeeded (values [get(me/GM_V0)]/[get(me/GM_V1)]/[get(me/GM_V2)]).
+    },
+    {
+      @log smoke=TC008: gate memo tracks @function. Failed (values [get(me/GM_V0)]/[get(me/GM_V1)]/[get(me/GM_V2)] attempts [u(me/t7.kv,get(me/GM_S0),eval_attempts)]/[u(me/t7.kv,get(me/GM_S1),eval_attempts)]/[u(me/t7.kv,get(me/GM_S2),eval_attempts)]/[u(me/t7.kv,get(me/GM_S3),eval_attempts)]/[u(me/t7.kv,get(me/GM_S4),eval_attempts)]/[u(me/t7.kv,get(me/GM_S5),eval_attempts)]).
+    }
+  },
+  {
+    @log smoke=TC008: gate memo tracks @function. Skipped (JIT not enabled).
+  }
+-
 &tr.done test_jitstats_fn=
   @log smoke=End jitstats() test cases.;
   @notify smoke

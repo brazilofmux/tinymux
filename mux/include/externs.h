@@ -460,6 +460,16 @@ const PRONOUN_SET *get_pronoun_set(dbref);
 void mux_exec(const UTF8 *pStr, size_t nStr, UTF8 *buff, UTF8 **bufc, dbref executor,
                dbref caller, dbref enactor, int eval, const UTF8 *cargs[], int ncargs);
 
+// Call after ANY mutation of mudstate.builtin_functions or
+// mudstate.ufunc_htab.  mux_exec() memoizes whether the JIT can handle a
+// cached AST, and part of that answer is whether each call node's name
+// resolves in one of those two tables (#2068).  A missed call here leaves a
+// stale verdict, which fails silently -- the wrong evaluator is chosen, not
+// a wrong answer, so nothing reports it.  Defined in ast.cpp; a no-op cost
+// of one increment in non-JIT builds.
+//
+void jit_gate_note_function_table_change(void);
+
 inline void RegAddRef(reg_ref *regref)
 {
     if (nullptr != regref)
