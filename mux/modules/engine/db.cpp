@@ -2926,6 +2926,13 @@ void db_grow(dbref newtop)
 
 void db_free(void)
 {
+    // Every container the index was built from is about to cease to exist.
+    // This is the one point all eight teardown paths share, and it is the
+    // only invalidation that does not depend on a particular load path
+    // running db_validate_refs() afterwards (#2058).
+    //
+    name_index_invalidate_all();
+
 #ifdef SELFCHECK
     delete_all_player_names();
     for (dbref thing = 0; thing < mudstate.db_top; thing++)
@@ -3823,6 +3830,11 @@ int sqlite_load_game(void)
     //
     db_grow(expected_top);
 
+    // The loop below writes location/contents/next directly, bypassing the
+    // setters' index hooks (#2058).
+    //
+    name_index_invalidate_all();
+
     for (const auto& rec : objects)
     {
         dbref i = rec.dbref_val;
@@ -3833,8 +3845,6 @@ int sqlite_load_game(void)
             return -1;
         }
 
-        // Direct field writes, bypassing the setters' index hooks (#2058).
-        name_index_invalidate_all();
         db[i].location = rec.location;
         db[i].contents = rec.contents;
         db[i].exits    = rec.exits;
