@@ -15090,8 +15090,13 @@ static FUNCTION(fun_benchmark)
 //
 // _CHECK_U_PERM(thing_dbref_str, attr_num_str)
 //   Runtime permission guard for inlined u() bodies.
-//   Returns "0" if the executor can read the attr and it's not NOEVAL.
-//   Returns "1" if denied (visibility, object NOEVAL, or AF_NOEVAL).
+//   Returns "0" if the executor can read the attr and inlining is safe.
+//   Returns "1" if the call must take the fun_u ECALL fallback:
+//     visibility denied, object NOEVAL, AF_NOEVAL, or AF_TRACE (#2098).
+//   AF_TRACE is not a permission failure: fun_u still evaluates, but it
+//   propagates AttrTrace so the interpreter can emit trace lines.  The
+//   inline arm has no channel for that side-channel, so "denied" here
+//   means "do not inline" rather than "do not run".
 //
 static FUNCTION(fun__check_u_perm)
 {
@@ -15137,14 +15142,16 @@ static FUNCTION(fun__check_u_perm)
         return;
     }
 
-    // AF_NOEVAL check (attr flag).
+    // Attr-flag checks.  AF_NOEVAL: fun_u returns the literal.
+    // AF_TRACE: fun_u evaluates with EV_TRACE; the inline arm cannot
+    // emit those lines (#2098).  Both need the ECALL fallback.
     dbref aowner;
     int aflags;
     size_t nLen = 0;
     UTF8 *atext = atr_pget_LEN(thing, attr_num, &aowner, &aflags, &nLen);
     free_lbuf(atext);
 
-    if (aflags & AF_NOEVAL)
+    if (aflags & (AF_NOEVAL | AF_TRACE))
     {
         safe_chr('1', buff, bufc);
         return;
