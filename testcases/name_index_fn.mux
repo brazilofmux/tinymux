@@ -1,0 +1,127 @@
+#
+# name_index_fn.mux - #2058 exact-name index for match_list.
+#
+# Exact match, ambiguity, partial (word-prefix) match, rename invalidation,
+# and move invalidation.  Exercises match_neighbor / match_possession via
+# get() and num().
+#
+# Objects are created mid-case by the test object so they land in its
+# inventory (match_possession).  Load-time creates would sit on the wizard
+# and be invisible to the suite runner.
+#
+@create test_name_index_fn
+-
+@set test_name_index_fn=INHERIT QUIET
+-
+&tr.tc000 test_name_index_fn=
+  @log smoke=Beginning name-index (#2058) test cases.
+-
+#
+# Exact name lookup is case-insensitive and finds distinct PureNames.
+#
+&tr.tc001 test_name_index_fn=
+  @create ni_a; @set ni_a=INHERIT QUIET; &FOO ni_a=alpha-val;
+  @create ni_b; @set ni_b=INHERIT QUIET; &FOO ni_b=beta-val;
+  @if cand(
+        strmatch(get(ni_a/FOO),alpha-val),
+        strmatch(get(ni_b/FOO),beta-val),
+        strmatch(get(NI_A/FOO),alpha-val)
+      )=
+  {
+    @log smoke=TC001: exact name get() case-insensitive. Succeeded.
+  },
+  {
+    @log smoke=TC001: exact name get() case-insensitive. Failed (a=[get(ni_a/FOO)] b=[get(ni_b/FOO)] A=[get(NI_A/FOO)]).
+  }
+-
+#
+# Two objects, same PureName: match_result returns AMBIGUOUS (-2).
+# get() collapses that to #-1 NO MATCH via parse_thing_slash; num() keeps
+# the raw dbref, so the ambiguity is visible as #-2.
+#
+&tr.tc002 test_name_index_fn=
+  @create ni_t1; @set ni_t1=INHERIT QUIET; &FOO ni_t1=one;
+  @create ni_t2; @set ni_t2=INHERIT QUIET; &FOO ni_t2=two;
+  @name ni_t2=ni_t1;
+  @if strmatch(num(ni_t1),#-2)=
+  {
+    @log smoke=TC002: ambiguous exact name yields #-2. Succeeded.
+  },
+  {
+    @log smoke=TC002: ambiguous exact name yields #-2. Failed (got=[num(ni_t1)]).
+  }
+-
+#
+# Partial word-prefix still matches when no exact name exists.
+#
+&tr.tc003 test_name_index_fn=
+  @create ni_longsword; @set ni_longsword=INHERIT QUIET; &FOO ni_longsword=blade;
+  @if strmatch(get(long/FOO),blade)=
+  {
+    @log smoke=TC003: partial word-prefix match. Succeeded.
+  },
+  {
+    @log smoke=TC003: partial word-prefix match. Failed (got=[get(long/FOO)]).
+  }
+-
+#
+# Rename invalidates the index: old name misses, new name hits.
+# Names are deliberately non-prefixing so a partial match cannot
+# resurrect the old spelling (ni_ren would still hit ni_renamed).
+#
+&tr.tc004 test_name_index_fn=
+  @create ni_oldname; @set ni_oldname=INHERIT QUIET; &FOO ni_oldname=before;
+  think [get(ni_oldname/FOO)];
+  @name ni_oldname=ni_newname;
+  &FOO ni_newname=after;
+  @if cand(
+        strmatch(get(ni_newname/FOO),after),
+        strmatch(get(ni_oldname/FOO),#-1*)
+      )=
+  {
+    @log smoke=TC004: rename invalidates name index. Succeeded.
+  },
+  {
+    @log smoke=TC004: rename invalidates name index. Failed (new=[get(ni_newname/FOO)] old=[get(ni_oldname/FOO)]).
+  }
+-
+#
+# Move out of inventory: object leaves the player's contents list and lands
+# in the room.  loc() should flip from me to here, and get() should still
+# resolve the name (via match_neighbor after match_possession rebuilds).
+#
+&tr.tc005 test_name_index_fn=
+  @create ni_mov; @set ni_mov=INHERIT QUIET; &FOO ni_mov=carried;
+  @if cand(
+        strmatch(get(ni_mov/FOO),carried),
+        strmatch(loc(ni_mov),num(me))
+      )=
+  {
+    drop ni_mov;
+    @if cand(
+          strmatch(get(ni_mov/FOO),carried),
+          strmatch(loc(ni_mov),loc(me))
+        )=
+    {
+      @log smoke=TC005: move updates container indexes. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC005: move updates container indexes. Failed after drop (val=[get(ni_mov/FOO)] loc=[loc(ni_mov)] here=[loc(me)]).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC005: move updates container indexes. Failed before drop (val=[get(ni_mov/FOO)] loc=[loc(ni_mov)] me=[num(me)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_name_index_fn=
+  @log smoke=End name-index (#2058) test cases.;
+  @notify smoke
+-
+drop test_name_index_fn
+-
+#
+# End of Test Cases
+#
