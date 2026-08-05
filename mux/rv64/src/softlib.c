@@ -495,6 +495,78 @@ char *co_words_wrap(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* ---------------------------------------------------------------
+ * rv64_split_token — cursor-based list walk (#2052).
+ *
+ * The JIT's ITER lowering used to address element i with
+ * EXTRACT(list, i+1, 1, delim), and co_extract reaches element i by
+ * scanning from the head of the list counting delimiters.  That is O(len)
+ * per element, so iterating a whole list was O(len^2) -- while fun_iter,
+ * which keeps a cursor and calls split_token, is linear.  At 2000 elements
+ * the compiled route was 65x SLOWER than not having a JIT at all.
+ *
+ * This is the primitive that makes the compiled loop carry a cursor too.
+ * It deliberately mirrors split_token (functions.cpp) for a single-byte
+ * delimiter, because the two must agree on where every element begins and
+ * ends:
+ *
+ *   - the element runs from the cursor to the next delimiter, or to the
+ *     end of the string when there is no next delimiter;
+ *   - the cursor then advances PAST that delimiter;
+ *   - for a space delimiter only, a run of spaces counts as one separator,
+ *     so the cursor skips the whole run.
+ *
+ * Two modes rather than an out-parameter.  The caller needs both the
+ * element and the next cursor, and every other wrapper here is a pure
+ * function of (out, fargs) -- having this one reach back and write through
+ * fargs[3] would make it the only mutating callee in the blob, for no gain
+ * that two O(element) calls do not already give.  Both calls are O(element
+ * length), so the loop stays linear either way.
+ *
+ *   fargs[0]  list
+ *   fargs[1]  byte offset to start from (decimal)
+ *   fargs[2]  delimiter; first byte, default ' '
+ *   fargs[3]  mode: 0 = the element, 1 = the next offset
+ */
+char *rv64_split_token(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 2) { out[0] = '\0'; return out; }
+
+    const char *s = fargs[0];
+    int len  = rv64_slen(s);
+    int off  = satoi(fargs[1]);
+    unsigned char delim = get_delim(fargs, nfargs, 2);
+    int mode = (nfargs >= 4) ? satoi(fargs[3]) : 0;
+
+    /* Past the end: no element, and the cursor stays put.  The loop is
+     * bounded by WORDS() so this should not be reached, but a cursor that
+     * ran away must not read outside the string. */
+    if (off < 0 || off >= len) {
+        if (mode) sitoa(out, len);
+        else      out[0] = '\0';
+        return out;
+    }
+
+    int e = off;
+    while (e < len && (unsigned char)s[e] != delim) e++;
+
+    if (mode == 0) {
+        int n = e - off;
+        for (int i = 0; i < n; i++) out[i] = s[off + i];
+        out[n] = '\0';
+        return out;
+    }
+
+    int nx = e;
+    if (nx < len) {
+        nx++;                                   /* past the delimiter */
+        if (delim == ' ') {                     /* ...and its run */
+            while (nx < len && s[nx] == ' ') nx++;
+        }
+    }
+    sitoa(out, nx);
+    return out;
+}
+
 char *co_extract_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
     int pos = satoi(fargs[1]);
