@@ -31,13 +31,33 @@ STARTER_DB="$REPO_ROOT/mux/game/data/netmux.db"
 
 SCALE=1
 KEEP=0
+LABEL=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --scale) SCALE=$2; shift 2 ;;
         --keep)  KEEP=1; shift ;;
+        # Measure a netmux that is not this tree's.  Everything here is driven
+        # from OUTSIDE the server -- commands over a socket, CPU from
+        # /proc/<pid>/stat -- so nothing depends on rvbench(), benchmark(),
+        # jitstats() or any other 2.14-only instrumentation.  That is what
+        # makes a cross-version comparison possible at all; jitbase.sh cannot
+        # do this, because benchmark() does not exist in 2.13.
+        --bin)   BIN=$2; STARTER_DB=""; shift 2 ;;
+        --db)    STARTER_DB=$2; shift 2 ;;
+        --label) LABEL=$2; shift 2 ;;
         *) echo "unknown option: $1"; exit 2 ;;
     esac
 done
+
+# --bin without --db: look for the starter database beside it, the way a
+# built tree lays it out.
+if [ -z "${STARTER_DB:-}" ]; then
+    for cand in "$BIN/../data/netmux.db" "$REPO_ROOT/mux/game/data/netmux.db"; do
+        if [ -r "$cand" ]; then STARTER_DB=$(cd "$(dirname "$cand")" && pwd)/$(basename "$cand"); break; fi
+    done
+fi
+BIN=$(cd "$BIN" 2>/dev/null && pwd) || { echo "SKIP: --bin directory not found."; exit 0; }
+[ -n "$LABEL" ] && echo "==> label: $LABEL"
 
 # --- Preflight (skip, don't fail, when prerequisites are absent) ------------
 if [ ! -x "$BIN/netmux" ]; then
@@ -105,7 +125,17 @@ trap cleanup_and_die INT TERM HUP
 
 # --- Build a throwaway game instance ----------------------------------------
 mkdir -p "$WORK/data"
-cp "$REPO_ROOT/mux/game/alias.conf" "$REPO_ROOT/mux/game/compat.conf" "$WORK/"
+# Prefer the conf files that ship beside the binary under test: 2.13 and 2.14
+# do not necessarily accept the same directives, and feeding one line's
+# alias/compat files to the other is how a cross-version run turns into a
+# comparison of config parsing.
+for f in alias.conf compat.conf; do
+    if [ -r "$BIN/../$f" ]; then
+        cp "$BIN/../$f" "$WORK/"
+    else
+        cp "$REPO_ROOT/mux/game/$f" "$WORK/"
+    fi
+done
 ln -s "$BIN" "$WORK/bin"
 ln -s "$REPO_ROOT/mux/game/text" "$WORK/text"
 cp "$STARTER_DB" "$WORK/data/netmux.db"
