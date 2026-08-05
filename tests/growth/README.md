@@ -47,6 +47,14 @@ The class bands in `driver.py` are wide and **do not touch**. A genuinely noisy
 measurement lands in a gap and is reported `unclassified`, which fails, rather
 than being quietly promoted into the neighbouring class.
 
+One asymmetry, deliberate: the expected class is a **ceiling**, not an exact
+match. A case that grows *slower* than expected passes — a large fixed cost
+amortizing across N reads as sub-linear (the MAP inline path fits
+t ≈ 73 µs + 236 ns·N, b=0.68), and failing success would train people to
+delete guards. Wrong *output* at a suspiciously low cost is the correctness
+batteries' and shape probes' job; this harness only guards against cost-class
+regressions, and regressions only point up.
+
 Nothing is classified unless its smallest-N time clears `FLOOR_US`. Below that
 the measurement is dominated by fixed per-call overhead and *everything* reads
 as constant — which is precisely how a quadratic loop passes a growth test. A

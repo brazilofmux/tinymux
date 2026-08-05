@@ -646,6 +646,21 @@ char *rv64_append(char *out, const char **fargs, int nfargs) {
     return out;
 }
 
+/* ---------------------------------------------------------------
+ * rv64_bytelen — byte length of fargs[0], decimal (#2080).
+ *
+ * co_strlen counts visible graphemes; the MAP lowering needs BYTES,
+ * because the guest CARGS slots are 256 bytes and _WRITE_CARG rejects
+ * oversized values rather than truncate.  The per-element guard
+ * (bytelen < 256 ? inlined body : ECALL u() fallback) is what keeps a
+ * long element from silently reusing the previous element's %0.
+ */
+char *rv64_bytelen(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 1) { out[0] = '0'; out[1] = '\0'; return out; }
+    sitoa(out, rv64_slen(fargs[0]));
+    return out;
+}
+
 char *co_extract_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
     int pos = satoi(fargs[1]);
