@@ -4,8 +4,8 @@
 # A JIT-compiled expression that evaluates another expression (u(), ulocal(),
 # or any outer construct wrapping one) runs the inner compile on the shared
 # heap, whose string pool lives at 0x40000..0x60000 rather than the one-shot
-# compiler's 0x1000..0x4000.  hir_codegen's FP slot allocator bounded itself
-# against the static rv_compiler::STR_LIMIT (0x4000) instead of this compile's
+# compiler's 0x8000..0x10000 (#2066/#2107).  hir_codegen's FP slot allocator
+# bounded itself against the static rv_compiler::STR_LIMIT instead of this
 # own str_pool_limit, so every FP slot address stayed 0 and all float
 # temporaries aliased guest address 0 (#1159).
 #

@@ -284,13 +284,40 @@ struct rv_compiler {
     static constexpr size_t MEM_SIZE     = 0x540000;  // 4 MB map + 1 MB heap + 256 KB doubles scratch
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
-    static constexpr uint64_t STR_BASE   = 0x1000;
-    static constexpr uint64_t STR_LIMIT  = 0x4000;
+    // Guest one-shot layout (#2066, #2107):
+    //
+    //   CODE   0x0000 .. 0x1000   (4 KB)
+    //   (gap)  0x1000 .. 0x4000   (was the 12 KB string pool; unused)
+    //   FARGS  0x4000 .. 0x8000   (16 KB) — UNMOVED from pre-#2066
+    //   STR    0x8000 .. 0x10000  (32 KB = LBUF_SIZE)
+    //   BLOB   0x10000 ..
+    //
+    // #2066 first grew STR by sliding FARGS up (STR 0x1000-0x9000, FARGS
+    // 0x9000-0xD000).  That was enough to make nested Lua-in-softcode JIT
+    // SIGSEGV on at least one host (#2107) while this box stayed green —
+    // so FARGS stays at its historical window and the enlarged string
+    // pool takes the free gap that used to sit under the legacy OUT_BASE
+    // and before the blob.  0x1000-0x4000 is left empty on purpose: a
+    // contiguous STR bump allocator cannot share it with a fixed FARGS.
+    //
+    // Cached programs from any prior layout fail the range checks on
+    // load (and the blob_version now includes these constants, #2107).
     static constexpr uint64_t FARGS_BASE = 0x4000;
     static constexpr uint64_t FARGS_LIMIT= 0x8000;
+    static constexpr uint64_t STR_BASE   = 0x8000;
+    static constexpr uint64_t STR_LIMIT  = 0x10000;  // STR_BASE + 0x8000 (= LBUF_SIZE)
 
     static constexpr uint64_t BLOB_BASE  = 0x10000;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;
+
+    static_assert(CODE_LIMIT <= FARGS_BASE,
+                  "code region must not overlap the fargs pool");
+    static_assert(FARGS_LIMIT == STR_BASE,
+                  "fargs pool must abut the string pool");
+    static_assert(STR_LIMIT == BLOB_BASE,
+                  "string pool must abut the blob region");
+    static_assert(STR_LIMIT - STR_BASE >= 32768,
+                  "string pool must hold one LBUF of constants (#2066)");
 
     // Output slots — sized to match LBUF_SIZE (32768).
     // Stack-allocated: output buffers grow downward from STACK_TOP.
@@ -298,10 +325,9 @@ struct rv_compiler {
     // frame size.  Each slot is STACK_TOP - 8 - (N+1)*OUT_SLOT.
     // Addresses are compile-time constants (STACK_TOP is fixed).
     //
-    // Legacy OUT_BASE retained for backward compatibility with
-    // cached programs and output clearing.
+    // OUT_BASE was a legacy fixed output base at 0x8000; the stack
+    // allocator superseded it and nothing reads the constant (#2107).
     //
-    static constexpr uint64_t OUT_BASE       = 0x8000;   // legacy (unused by new alloc)
     static constexpr int      OUT_SLOT       = 32768;    // = LBUF_SIZE
     static constexpr uint64_t OUT_STACK_LIMIT = 0x81000; // lowest valid output addr
     // Bit 30, not bit 31: RV64 LUI sign-extends bit 31 to 64 bits,
