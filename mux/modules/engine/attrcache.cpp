@@ -308,23 +308,38 @@ void cache_collect_pending_attrnums(dbref thing, vector<int> &attrnums)
 {
     unordered_set<int> present(attrnums.begin(), attrnums.end());
 
-    for (const auto &kv : mudstate.attribute_lru_cache_map)
+    // Only dirty and tombstoned entries can contribute, and those are exactly
+    // the ones on the pinned list -- attribute_lru_cache_list holds the clean,
+    // evictable entries (mudconf.h).  Walking the whole cache map instead made
+    // this O(total cached attributes) per call, and collect_attrnums_from_storage
+    // calls it once per object whose attribute list is needed -- which for
+    // $-command matching is once per object in scope, on every typed command.
+    // That was the entire superlinear term in $-dispatch: 3.4ms per command
+    // with 200 global commands in the master room, and worsening per object as
+    // the cache grew (#2046).
+    //
+    for (const Aname &nam : mudstate.attribute_pinned_list)
     {
-        if (kv.first.object != static_cast<unsigned int>(thing))
+        if (nam.object != static_cast<unsigned int>(thing))
         {
             continue;
         }
-        const unsigned int an = kv.first.attrnum;
+        const unsigned int an = nam.attrnum;
         if (  an == 0U
            || an == static_cast<unsigned int>(A_LIST))
         {
             continue;
         }
-        if (kv.second.tombstone)
+        const auto it = mudstate.attribute_lru_cache_map.find(nam);
+        if (it == mudstate.attribute_lru_cache_map.end())
+        {
+            continue;
+        }
+        if (it->second.tombstone)
         {
             present.erase(static_cast<int>(an));
         }
-        else if (kv.second.dirty)
+        else if (it->second.dirty)
         {
             present.insert(static_cast<int>(an));
         }
