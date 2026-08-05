@@ -1110,9 +1110,26 @@ static reg_alloc_result linear_scan(rv_compiler &rc,
     return result;
 }
 
-// Spill slot stack offset: -8*(slot+1) from SP.
+// Spill slot stack offset: +8*slot from the post-prologue SP.
+//
+// These MUST be at non-negative offsets — i.e. inside the frame the
+// prologue reserves — not below SP.  They used to live at -8*(slot+1),
+// which kept them clear of the output buffers but put them in the one
+// region of the stack that belongs to nobody: RV64 has no red zone, so
+// the first JAL into a blob function let gcc-compiled callee code build
+// its frame right on top of them.  A spilled value reloaded after any
+// tier2 call read the callee's dead locals.
+//
+// Nothing ever noticed because nothing ever both spilled AND called:
+// the ITER cursor rework (#2052) was the first program with more than
+// 10 live ints around a tier2 call, and the symptom was an is_first
+// comparison whose spilled operand read garbage — while the same SSA
+// value, read from a register two instructions earlier, was correct
+// (iter(a,%i0) twice in one expression: second loop lost its
+// accumulator).  The prologue backpatch sizes the frame to cover
+// these slots; see "spill_area" below.
 static int32_t spill_offset(int slot) {
-    return -8 * (slot + 1);
+    return 8 * slot;
 }
 
 // Emit SD reg, off(sp) — store integer register to spill slot.
@@ -2575,13 +2592,23 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
         }
     }
 
-    // Backpatch prologue: set SP to accommodate output frame.
-    if (rc.n_output_slots > 0) {
+    // Backpatch prologue: set SP to accommodate output frame + spill area.
+    //
+    // The spill area sits at [SP, SP + spill_area) AFTER the SUB — inside
+    // the frame, so callee frames (which start below SP) cannot touch it.
+    // See spill_offset() for the failure this replaces.  Rounded to 16 so
+    // the SP alignment the callees see is unchanged from before.
+    //
+    // The SUB must be emitted when there are spills EVEN IF there are no
+    // output slots: positive spill offsets address the frame the SUB
+    // creates, and without it they would read the caller's stack.
+    uint64_t spill_area = (static_cast<uint64_t>(rc.spills) * 8 + 15)
+                        & ~static_cast<uint64_t>(15);
+    if (rc.n_output_slots > 0 || spill_area > 0) {
         // Frame includes 8-byte alignment pad + all output slots.
-        // SP must end up BELOW the lowest output address so spill
-        // slots (at SP-8, SP-16, ...) don't alias output buffers.
         uint64_t frame_size = 8 + static_cast<uint64_t>(rc.n_output_slots)
-                            * rv_compiler::OUT_SLOT;
+                            * rv_compiler::OUT_SLOT
+                            + spill_area;
         // LUI t0, upper20
         uint32_t hi = static_cast<uint32_t>(frame_size) & 0xFFFFF000;
         int32_t lo = static_cast<int32_t>(frame_size & 0xFFF);
