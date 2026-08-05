@@ -205,14 +205,17 @@ CASES = [
     # sizes.  The predicate keeps all but three elements, so the append path
     # is exercised at nearly every iteration.
     ("filter(me/GROWTH.FILP,lnum({N}))", "interp", [500, 1000, 2000, 4000], "linear", None),
-    # NOTE: filter(#1/...) on the jit route is deliberately ABSENT until
-    # #2106 is fixed.  rvbench()ing an inlined program and then a
-    # fun_map/fun_filter-ECALL program in the same process is a SIGSEGV, and
-    # this harness runs every case in ONE muxscript.  Adding the inline case
-    # here kills the run and reports UNMEASURED for everything after it --
-    # which is how #2106 was found.  The map(#1/...) case above survives only
-    # because no fallback-shape jit case follows it; adding filter's pair
-    # crossed that line.  Restore this line with #2106.
+    # Restored with #2106.  This case was held out because rvbench()ing an
+    # inlined program and then a fun_map/fun_filter-ECALL program in the same
+    # process crashed (or, on glibc, silently ran the outer program against
+    # the wrong guest buffer): run_compiled took s_vm[0] without claiming it,
+    # so the nested per-element mux_exec re-entered run_cached_program, read a
+    # depth still at 0, picked the same context and reset the DBT under the
+    # outer run's live frames.  Its presence here is a regression test for
+    # that -- the harness runs every case in ONE muxscript, so a recurrence
+    # reports UNMEASURED for everything after this line, which is how #2106
+    # was found in the first place.
+    ("filter(#1/GROWTH.FILP,lnum({N}))", "jit", [500, 1000, 2000, 4000], "linear", None),
 ]
 
 AST_RE = re.compile(r"ast=([0-9.]+)us")
