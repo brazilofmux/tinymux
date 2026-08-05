@@ -88,6 +88,9 @@ PORT=$(python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1",0)); pr
 
 WORK=$(mktemp -d)
 NETMUX_PID=""
+# Resolved after the port answers; declared here so cleanup() can run under
+# `set -u` before that point.
+NETMUX_REAL=""
 PERF_PID=""
 
 cleanup() {
@@ -95,14 +98,28 @@ cleanup() {
         kill -INT "$PERF_PID" 2>/dev/null
         wait "$PERF_PID" 2>/dev/null
     fi
-    if [ -n "$NETMUX_PID" ] && kill -0 "$NETMUX_PID" 2>/dev/null; then
-        # SIGTERM, never SIGKILL: -9 orphans the slave and stubslave to init.
-        kill -TERM "$NETMUX_PID" 2>/dev/null
+
+    # Signal netmux ITSELF first, then the launcher subshell.
+    #
+    # The old order was the other way round, and it leaked a server every time
+    # the script was interrupted: killing the launcher makes netmux an orphan
+    # (reparented to init) before the `pkill -P <launcher>` runs, so that sweep
+    # finds no children and netmux survives holding its port.  Six of them
+    # accumulated in one session before this was noticed -- and because the
+    # port is kernel-assigned, each one is invisible until you go looking.
+    #
+    # SIGTERM, never SIGKILL: -9 orphans the slave and stubslave to init.
+    for _pid in "$NETMUX_REAL" "$NETMUX_PID"; do
+        [ -n "$_pid" ] || continue
+        kill -TERM "$_pid" 2>/dev/null
+    done
+    if [ -n "$NETMUX_REAL" ]; then
         for _ in $(seq 1 20); do
-            kill -0 "$NETMUX_PID" 2>/dev/null || break
+            kill -0 "$NETMUX_REAL" 2>/dev/null || break
             sleep 0.5
         done
-        pkill -TERM -P "$NETMUX_PID" 2>/dev/null
+        # Backstop for a slave/stubslave that outlived its parent.
+        pkill -TERM -P "$NETMUX_REAL" 2>/dev/null
     fi
     if [ "$KEEP" -eq 1 ]; then
         echo "kept: $WORK"
