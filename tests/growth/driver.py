@@ -99,10 +99,18 @@ CLASSES = {
 # measurement over input that is not the size it claims is worse than no
 # measurement, because it looks like a result.
 #
+# Keys are matched as literal substrings of the case template, so they must
+# name the generator precisely enough to tell two uses of the same function
+# apart: `repeat(a,N)` builds an N-BYTE string with no words in it, while
+# `repeat(a%b,N)` builds an N-WORD list.  Keying on "repeat" alone would check
+# the wrong one and still pass, which is the failure mode this whole section
+# exists to prevent.
+#
 # probe expression -> expected value, evaluated at every N the case uses.
 PROBES = {
-    "lnum":   ("words(lnum({N}))",     "{N}"),
-    "repeat": ("strlen(repeat(a,{N}))", "{N}"),
+    "lnum(":       ("words(lnum({N}))",         "{N}"),
+    "repeat(a,":   ("strlen(repeat(a,{N}))",    "{N}"),
+    "repeat(a%b,": ("words(repeat(a%b,{N}))",   "{N}"),
 }
 
 # (expression template, route, sizes, expected class, xfail issue or None)
@@ -136,6 +144,27 @@ CASES = [
     ("ladd(lnum({N}))",    "interp", [1000, 2000, 4000], "linear", None),
     ("ladd(lnum({N}))",    "jit",    [1000, 2000, 4000], "linear", None),
 
+    # --- regression guard for a fixed defect ----------------------------
+    # shuffle() was O(n^2) in word count (#2057): its single-char-delimiter
+    # branch called co_extract per word, and co_extract addresses word i by
+    # re-walking from the head.  Fixed by building the word table once with
+    # co_split_words.  1.92 -> 0.92; at N=16000, 731 822us -> 384us.
+    #
+    # Interpreter route only, and both reasons are worth recording rather than
+    # discovering again:
+    #   * rvbench returns "#-1 COMPILATION FAILED" for this expression at
+    #     N>=8000 while compiling it fine at 4000, so the jit route cannot
+    #     reach the sizes that clear FLOOR_US.  (Not chased here; it is a
+    #     property of the compiler, not of shuffle.)
+    #   * below 8000 the jit numbers track the interpreter's within ~5%,
+    #     because the lowerer has no SHUFFLE case and ecalls straight back
+    #     into fun_shuffle.  It would be the same code measured twice.
+    #
+    # 16000 words is 32000 bytes, which fits one LBUF with ~700 to spare --
+    # the probe is what proves that rather than this comment.
+    ("shuffle(repeat(a%b,{N}))", "interp", [2000, 4000, 8000, 16000],
+     "linear", None),
+
     # citer() splits on code points instead of a delimiter and has no case in
     # hir_lower.cpp, so it is interpreter-only.  It covers the loop shape
     # iter() shares without iter()'s element extraction.
@@ -153,17 +182,22 @@ def iters_for(n, base):
 
 def probes_for(cases):
     """(tag, probe expr, expected) for every generator/N actually used."""
+    # Tags are built from the generator's INDEX, not its name: a key like
+    # "repeat(a%b," is not usable as a tag, and hash() is per-process
+    # randomised.
+    order = list(PROBES.keys())
     out, seen = [], set()
     for tmpl, _route, sizes, _exp, _xf in cases:
-        for gen, (pexpr, pwant) in PROBES.items():
-            if gen + "(" not in tmpl:
+        for gi, gen in enumerate(order):
+            if gen not in tmpl:
                 continue
+            pexpr, pwant = PROBES[gen]
             for n in sizes:
-                key = (gen, n)
+                key = (gi, n)
                 if key in seen:
                     continue
                 seen.add(key)
-                out.append(("p%d_%s" % (n, gen),
+                out.append(("p%dg%d" % (n, gi),
                             pexpr.format(N=n), pwant.format(N=n)))
     return out
 

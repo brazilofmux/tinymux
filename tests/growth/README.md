@@ -102,6 +102,26 @@ both routes — the same expression over the same list. The interpreter line mus
 read linear while the JIT line reads quadratic. A harness that could not read
 linear would fail on that first line.
 
+## Regression guards for fixed defects
+
+A case with no `xfail` and an expected class of `linear` is a guard: it asserts
+that something which *was* quadratic has stayed fixed. `shuffle()` (#2057) is
+the first.
+
+These are worth more than the xfails, because a complexity regression is
+exactly the kind that survives review — the code still returns the right answer,
+the smoke suite still passes, and the only symptom is that a list of 16 000
+takes 700 ms instead of 250 µs. Nothing else in the tree would notice.
+
+Each guard should be validated by reverting the fix and confirming the case
+goes red. For `shuffle()` that reads:
+
+```
+shuffle(repeat(a%b,N))  interp  FAIL  N=2000..16000  11321.7->715483.3 us b=1.99 ... quadratic, want linear
+```
+
+versus `b=1.05` with the fix in place.
+
 ## xfail
 
 `CASES` records known-wrong growth classes with an issue number. An xfail does
