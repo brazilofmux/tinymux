@@ -1,0 +1,175 @@
+#
+# filter_fn.mux - Test Cases for filter().
+#
+# filter() had no dedicated coverage (filterbool_fn covers only
+# filterbool's truth semantics and delimiters).  #2080 gives filter() a
+# JIT lowering next; the smoke suite runs this file on BOTH routes, so
+# every case is a route-parity assertion, written against the INTERPRETER
+# before the lowering exists.
+#
+# filter_handler semantics pinned here (functions.cpp):
+#   - filter() keeps an element iff the body result is EXACTLY the string
+#     "1" -- result[0]=='1' && result[1]=='\0'.  NOT xlate truth: a body
+#     returning 2, 01, 1x or "1 " drops the element.  filterbool() is the
+#     xlate variant; TC003 is the case that tells them apart.
+#   - What is emitted is the ELEMENT, not the body result.
+#   - osep prints between KEPT elements only (bFirst tracks keeps, not
+#     iterations) -- so a kept EMPTY element still claims its osep slot.
+#   - Same walk (trim_space_sep + split_token), executor (thing), extras
+#     (%1..%9) and AttrTrace behavior as map().
+#
+@create test_filter_fn
+-
+@set test_filter_fn=INHERIT QUIET
+-
+&F.GT2 test_filter_fn=[gt(%0,2)]
+-
+&F.RAW test_filter_fn=%0
+-
+&F.ONE test_filter_fn=1
+-
+&F.XTRA test_filter_fn=[gt(%0,%1)]
+-
+&tr.tc000 test_filter_fn=
+  @log smoke=Beginning filter function test cases.
+-
+#
+# Test Case #1 - Basic predicate: gt() returns exactly 1 or 0.
+#
+&tr.tc001 test_filter_fn=
+  @if strmatch(filter(me/F.GT2,1 2 3 4 5),3 4 5)=
+  {
+    @log smoke=TC001: filter basic predicate. Succeeded.
+  },
+  {
+    @log smoke=TC001: filter basic predicate. Failed ([filter(me/F.GT2,1 2 3 4 5)]).
+  }
+-
+#
+# Test Case #2 - The element is emitted, not the body result: F.ONE
+# returns 1 for everything, so the whole list survives verbatim.
+#
+&tr.tc002 test_filter_fn=
+  @if strmatch(filter(me/F.ONE,alpha beta gamma),alpha beta gamma)=
+  {
+    @log smoke=TC002: filter emits elements not results. Succeeded.
+  },
+  {
+    @log smoke=TC002: filter emits elements not results. Failed ([filter(me/F.ONE,alpha beta gamma)]).
+  }
+-
+#
+# Test Case #3 - Exact-"1" semantics, the filter/filterbool divider.
+# F.RAW echoes the element: filter keeps only the literal element 1;
+# filterbool keeps every xlate-true element (2 and 01 as well).
+#
+&tr.tc003 test_filter_fn=
+  @if cand(
+        strmatch(filter(me/F.RAW,1 2 0 01 1),1 1),
+        strmatch(filterbool(me/F.RAW,1 2 0 01 1),1 2 01 1)
+      )=
+  {
+    @log smoke=TC003: filter exact-1 vs filterbool xlate. Succeeded.
+  },
+  {
+    @log smoke=TC003: filter exact-1 vs filterbool xlate. Failed (f=[filter(me/F.RAW,1 2 0 01 1)] fb=[filterbool(me/F.RAW,1 2 0 01 1)]).
+  }
+-
+#
+# Test Case #4 - Custom delimiter and distinct osep.
+#
+&tr.tc004 test_filter_fn=
+  @if strmatch(filter(me/F.GT2,1|2|3|4,|,-),3-4)=
+  {
+    @log smoke=TC004: filter delim and osep. Succeeded.
+  },
+  {
+    @log smoke=TC004: filter delim and osep. Failed ([filter(me/F.GT2,1|2|3|4,|,-)]).
+  }
+-
+#
+# Test Case #5 - Nothing survives: empty output, markers to expose a
+# stray separator or stale buffer.
+#
+&tr.tc005 test_filter_fn=
+  @if strmatch(<[filter(me/F.GT2,0 1 2)]>,<>)=
+  {
+    @log smoke=TC005: filter empty result. Succeeded.
+  },
+  {
+    @log smoke=TC005: filter empty result. Failed (<[filter(me/F.GT2,0 1 2)]>).
+  }
+-
+#
+# Test Case #6 - Extra arguments reach the predicate as %1: threshold 3
+# passed at call time.
+#
+&tr.tc006 test_filter_fn=
+  @if strmatch(filter(me/F.XTRA,1 2 3 4 5,%b,%b,3),4 5)=
+  {
+    @log smoke=TC006: filter extra args as %1. Succeeded.
+  },
+  {
+    @log smoke=TC006: filter extra args as %1. Failed ([filter(me/F.XTRA,1 2 3 4 5,%b,%b,3)]).
+  }
+-
+#
+# Test Case #7 - A kept EMPTY element claims its osep slot: with a pipe
+# delimiter the list |a| has elements "", "a", "" and F.ONE keeps all
+# three, so the output is exactly two pipes around an a.  This is the
+# case that catches a lowering keying "first" on the accumulator length
+# instead of a kept-count.
+#
+&tr.tc007 test_filter_fn=
+  @if strmatch(<[filter(me/F.ONE,|a|,|)]>,<|a|>)=
+  {
+    @log smoke=TC007: filter kept empty elements. Succeeded.
+  },
+  {
+    @log smoke=TC007: filter kept empty elements. Failed (<[filter(me/F.ONE,|a|,|)]>).
+  }
+-
+#
+# Test Case #8 - filter nested in iter: %0 belongs to the predicate,
+# ## to the loop.
+#
+&tr.tc008 test_filter_fn=
+  @if strmatch(iter(2 4,[filter(me/F.GT2,##%b3)]),3 4 3)=
+  {
+    @log smoke=TC008: filter nested in iter. Succeeded.
+  },
+  {
+    @log smoke=TC008: filter nested in iter. Failed ([iter(2 4,[filter(me/F.GT2,##%b3)])]).
+  }
+-
+#
+# Test Case #9 - Predicate tracks attribute edits (the stale-inline
+# case).  Constant predicates -- %-escape depth differs per @wait level.
+#
+&tr.tc009 test_filter_fn=
+  &F.EDIT me=0;
+  @wait 0={
+    think [null(filter(me/F.EDIT,a b))];
+    &F.EDIT me=1;
+    @wait 0={
+      @if strmatch(filter(me/F.EDIT,a b),a b)=
+      {
+        @log smoke=TC009: filter tracks attribute edits. Succeeded.;
+        @trig me/tr.done
+      },
+      {
+        @log smoke=TC009: filter tracks attribute edits. Failed ([filter(me/F.EDIT,a b)] wanted a b).;
+        @trig me/tr.done
+      }
+    }
+  }
+-
+&tr.done test_filter_fn=
+  @log smoke=End filter function test cases.;
+  @notify smoke
+-
+drop test_filter_fn
+-
+#
+# End of Test Cases
+#
