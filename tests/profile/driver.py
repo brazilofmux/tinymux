@@ -26,6 +26,7 @@
 # Usage: driver.py <host> <port> <phases.json out> [--scale N]
 
 import json
+import os
 import socket
 import sys
 import time
@@ -52,9 +53,17 @@ def cpu_times():
     server that spends its life in epoll_wait/read/write that makes the
     profile unreadable and every user-space number look trivially small.
     /proc/<pid>/stat gives the split exactly and for free, so the harness
-    accounts for kernel time here and profiles only user space."""
+    accounts for kernel time here and profiles only user space.
+
+    Windows has no /proc; GetProcessTimes is the exact equivalent and is
+    reachable through ctypes, so the phase numbers mean the same thing on
+    both platforms.  Without this the Windows leg silently reports 0.0/0.0
+    for every phase -- the except-clause below would swallow the missing
+    /proc and the harness would look like it worked."""
     if SERVER_PID is None:
         return (0.0, 0.0)
+    if os.name == "nt":
+        return _cpu_times_windows()
     try:
         with open("/proc/%d/stat" % SERVER_PID) as f:
             data = f.read()
@@ -63,6 +72,38 @@ def cpu_times():
         return (int(fields[11]) * TICK, int(fields[12]) * TICK)
     except (OSError, ValueError, IndexError):
         return (0.0, 0.0)
+
+
+def _cpu_times_windows():
+    """(user, sys) seconds for SERVER_PID via GetProcessTimes.
+
+    FILETIME counts 100-nanosecond intervals.  PROCESS_QUERY_LIMITED_INFORMATION
+    (0x1000) is enough for timing and, unlike PROCESS_QUERY_INFORMATION, is
+    granted for a process running at a different integrity level."""
+    import ctypes
+    from ctypes import wintypes
+
+    PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    h = k32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, SERVER_PID)
+    if not h:
+        return (0.0, 0.0)
+    try:
+        creation = wintypes.FILETIME()
+        exit_ = wintypes.FILETIME()
+        kernel = wintypes.FILETIME()
+        user = wintypes.FILETIME()
+        ok = k32.GetProcessTimes(h, ctypes.byref(creation), ctypes.byref(exit_),
+                                 ctypes.byref(kernel), ctypes.byref(user))
+        if not ok:
+            return (0.0, 0.0)
+
+        def secs(ft):
+            return ((ft.dwHighDateTime << 32) | ft.dwLowDateTime) / 1e7
+
+        return (secs(user), secs(kernel))
+    finally:
+        k32.CloseHandle(h)
 
 LOGIN = "connect Wizard potrzebie"
 
