@@ -283,25 +283,38 @@ struct rv_compiler {
 
     static constexpr size_t MEM_SIZE     = 0x540000;  // 4 MB map + 1 MB heap + 256 KB doubles scratch
     static constexpr uint64_t CODE_BASE  = 0x0000;
-    static constexpr uint64_t CODE_LIMIT = 0x1000;
-    // Guest one-shot layout (#2066, #2107):
+    static constexpr uint64_t CODE_LIMIT = 0x4000;
+    // Guest one-shot layout (#2066, #2074):
     //
-    //   CODE   0x0000 .. 0x1000   (4 KB)
-    //   (gap)  0x1000 .. 0x4000   (was the 12 KB string pool; unused)
-    //   FARGS  0x4000 .. 0x8000   (16 KB) — UNMOVED from pre-#2066
+    //   CODE   0x0000 .. 0x4000   (16 KB)
+    //   FARGS  0x4000 .. 0x8000   (16 KB) — unmoved since before #2066
     //   STR    0x8000 .. 0x10000  (32 KB = LBUF_SIZE)
     //   BLOB   0x10000 ..
     //
-    // #2066 first grew STR by sliding FARGS up (STR 0x1000-0x9000, FARGS
-    // 0x9000-0xD000).  That was enough to make nested Lua-in-softcode JIT
-    // SIGSEGV on at least one host (#2107) while this box stayed green —
-    // so FARGS stays at its historical window and the enlarged string
-    // pool takes the free gap that used to sit under the legacy OUT_BASE
-    // and before the blob.  0x1000-0x4000 is left empty on purpose: a
-    // contiguous STR bump allocator cannot share it with a fixed FARGS.
+    // #2066 grew STR to one LBUF.  It first did so by sliding FARGS up
+    // (STR 0x1000-0x9000, FARGS 0x9000-0xD000); that was reverted and
+    // re-landed in the arrangement above, which keeps FARGS at its
+    // historical window and puts the enlarged string pool in the space
+    // that used to sit under the legacy OUT_BASE and before the blob.
+    //
+    // #2074 then took the 12 KB that vacated at 0x1000-0x4000 for the
+    // code region, which had been 4 KB (1024 instructions) since the JIT
+    // compiled single expressions.  It no longer does: do_ufun() calls
+    // mux_exec() on a WHOLE attribute body, so u()/ulocal() and every
+    // @function global hand the compiler an entire attribute rather than
+    // one bracketed group.  Measured against real attribute bodies in
+    // testcases/ (median 217 B, p90 474 B, p99 1734 B) at the measured
+    // ~5x expansion ratio, a 4 KB region bound at roughly 800 source
+    // bytes and declined 2.85% of them; 16 KB declines 0.38%.
+    //
+    // Note the history here is easy to misread: an earlier revision of
+    // this comment attributed a nested Lua-in-softcode SIGSEGV to the
+    // #2066 layout.  That was a partially-rebuilt tree, not a layout
+    // fault (#2107, closed invalid; the mechanism is #2118).  No layout
+    // in this file has been shown to cause it.
     //
     // Cached programs from any prior layout fail the range checks on
-    // load (and the blob_version now includes these constants, #2107).
+    // load, and blob_version includes these constants.
     static constexpr uint64_t FARGS_BASE = 0x4000;
     static constexpr uint64_t FARGS_LIMIT= 0x8000;
     static constexpr uint64_t STR_BASE   = 0x8000;
