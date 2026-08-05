@@ -1136,10 +1136,34 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // Phase 4: Codegen HIR → RV64.
     hir_codegen(h, rc);
 
+    // Record what this compile WANTED, before any ceiling can reject it.
+    //
+    // code_bytes_max below is taken after the checks and so is censored at
+    // CODE_LIMIT: it cannot report a program that did not fit, which is
+    // precisely the program a resize decision needs to see (#2074).
+    //
+    {
+        const uint64_t want_code =
+            static_cast<uint64_t>(rc.code.size()) * 4;
+        if (want_code > s_jit_stats.want_code_max) {
+            s_jit_stats.want_code_max = want_code;
+        }
+        if (rc.str_want > s_jit_stats.want_strpool_max) {
+            s_jit_stats.want_strpool_max = rc.str_want;
+        }
+        if (rc.fargs_want > s_jit_stats.want_fargs_max) {
+            s_jit_stats.want_fargs_max = rc.fargs_want;
+        }
+        if (rc.out_want > s_jit_stats.want_outslots_max) {
+            s_jit_stats.want_outslots_max = rc.out_want;
+        }
+    }
+
     // Check for code overflow before copying.
     if (rc.code.size() * 4 > rv_compiler::CODE_LIMIT) {
         s_jit_stats.compile_fail++;
-        s_jit_stats.bail_slots++;
+        s_jit_stats.bail_code++;
+        s_jit_stats.bail_slots++;   // imprecise; kept for compatibility
         return prog;  // prog.ok is still false
     }
 
@@ -1153,8 +1177,15 @@ static compiled_program compile_expression(const UTF8 *expr, size_t nLen,
     // Bail out — the AST evaluator will handle this expression.
     if (rc.out_exhausted || rc.pool_exhausted) {
         s_jit_stats.compile_fail++;
+        // Attribute to the ceiling that actually ran out.  More than one
+        // can be set in a single compile, so these are counted
+        // independently rather than as an if/else chain -- the totals are
+        // per-ceiling occurrences, not a partition of compile_fail.
+        if (rc.str_exhausted)   { s_jit_stats.bail_strpool++; }
+        if (rc.fargs_exhausted) { s_jit_stats.bail_fargs++; }
+        if (rc.out_exhausted)   { s_jit_stats.bail_outslots++; }
         if (!rc.bail_was_noeval) {
-            s_jit_stats.bail_slots++;
+            s_jit_stats.bail_slots++;   // imprecise; kept for compatibility
         }
         return prog;  // prog.ok is still false
     }
@@ -5459,7 +5490,15 @@ FUNCTION(fun_jitstats)
         "bail_depth=%llu "
         "bail_invk=%llu "
         "bail_alarm=%llu "
-        "bail_shared_busy=%llu"),
+        "bail_shared_busy=%llu "
+        "bail_code=%llu "
+        "bail_strpool=%llu "
+        "bail_fargs=%llu "
+        "bail_outslots=%llu "
+        "want_code_max=%llu "
+        "want_strpool_max=%llu "
+        "want_fargs_max=%llu "
+        "want_outslots_max=%llu"),
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -5483,7 +5522,15 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.bail_depth,
         (unsigned long long)s_jit_stats.bail_invk,
         (unsigned long long)s_jit_stats.bail_alarm,
-        (unsigned long long)s_jit_stats.bail_shared_busy);
+        (unsigned long long)s_jit_stats.bail_shared_busy,
+        (unsigned long long)s_jit_stats.bail_code,
+        (unsigned long long)s_jit_stats.bail_strpool,
+        (unsigned long long)s_jit_stats.bail_fargs,
+        (unsigned long long)s_jit_stats.bail_outslots,
+        (unsigned long long)s_jit_stats.want_code_max,
+        (unsigned long long)s_jit_stats.want_strpool_max,
+        (unsigned long long)s_jit_stats.want_fargs_max,
+        (unsigned long long)s_jit_stats.want_outslots_max);
 
     // Append Lua JIT counters (#1316).  lua_run_fail incrementing while
     // softcode still returns correct answers is the signature of a Lua JIT

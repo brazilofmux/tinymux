@@ -86,6 +86,38 @@ struct jit_stats_t {
                                   // the outer run's registers, stack pointer
                                   // and heap arena underneath it.
 
+    // Per-ceiling bail attribution (#2070, #2074).
+    //
+    // bail_slots predates these and is imprecise in two directions: it is
+    // incremented for a CODE region overflow as well as for output slot
+    // exhaustion, and the flag it keys off (pool_exhausted) is set by both
+    // the string pool and the fargs pool.  So four distinct budgets were
+    // reported through two counters, and production data could not say
+    // which one a decline came from.  Kept and still incremented exactly as
+    // before for dashboard compatibility; these are the ones to read.
+    //
+    uint64_t bail_code;           // code region overflow (CODE_LIMIT)
+    uint64_t bail_strpool;        // string pool exhausted (STR_LIMIT)
+    uint64_t bail_fargs;          // fargs pool exhausted (FARGS_LIMIT)
+    uint64_t bail_outslots;       // output slots exhausted (OUT_STACK_LIMIT)
+
+    // High-water marks over ATTEMPTED compiles, including those that bailed.
+    //
+    // code_bytes_max below cannot answer "how much bigger would it have to
+    // be": it is recorded only after the ceiling checks pass, so it is
+    // censored at CODE_LIMIT by construction.  A server whose attributes
+    // routinely need twice the region reports a comfortable maximum just
+    // under it, because every over-budget compile is excluded from the
+    // statistic that would have revealed it.
+    //
+    // These record what each compile WANTED, so the distance over a ceiling
+    // is visible.  That distance is what any resize decision rests on.
+    //
+    uint64_t want_code_max;       // largest code generated, bytes
+    uint64_t want_strpool_max;    // most string pool requested, bytes
+    uint64_t want_fargs_max;      // most fargs pool requested, bytes
+    uint64_t want_outslots_max;   // most output slots requested
+
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime
     uint64_t tier2_total;         // Tier 2 blob calls at runtime
@@ -384,8 +416,14 @@ struct rv_compiler {
 
     uint64_t pool_str(const char *s, size_t len) {
         uint64_t addr = str_pool;
+        // Count what was ASKED for, not what fit.  A request that does not
+        // fit leaves str_pool where it was, so a high-water mark taken from
+        // str_pool alone reports the pool as comfortably under its limit in
+        // exactly the runs that overran it (#2070).
+        str_want += (len + 1 + 7) & ~7ULL;
         if (addr + len + 1 > str_pool_limit) {
             pool_exhausted = true;
+            str_exhausted = true;
             return 0;
         }
         memcpy(memory.data() + addr, s, len);
@@ -401,8 +439,10 @@ struct rv_compiler {
     uint64_t alloc_fargs(const std::vector<uint64_t> &ptrs) {
         uint64_t addr = fargs_pool;
         size_t sz = ptrs.size() * 8;
+        fargs_want += (sz + 7) & ~7ULL;   // asked for, not what fit
         if (addr + sz > fargs_pool_limit) {
             pool_exhausted = true;
+            fargs_exhausted = true;
             return 0;
         }
         for (size_t i = 0; i < ptrs.size(); i++) {
@@ -414,6 +454,17 @@ struct rv_compiler {
 
     bool out_exhausted = false;
     bool pool_exhausted = false;
+
+    // Which ceiling actually ran out.  pool_exhausted is set by BOTH the
+    // string pool and the fargs pool, so on its own it cannot attribute a
+    // bail; these split it (#2070, #2074).  The *_want counters accumulate
+    // what was requested including requests that did not fit, so the amount
+    // by which a compile overran is recoverable rather than clipped.
+    bool str_exhausted   = false;
+    bool fargs_exhausted = false;
+    uint64_t str_want    = 0;   // bytes requested from the string pool
+    uint64_t fargs_want  = 0;   // bytes requested from the fargs pool
+    uint64_t out_want    = 0;   // output slots requested
     bool bail_was_noeval = false;
 
     static bool is_output_frame_ref(uint64_t addr) {
@@ -438,6 +489,7 @@ struct rv_compiler {
     uint64_t alloc_output() {
         // Stack-allocated: grow downward from STACK_TOP.
         uint64_t addr = out_pool - OUT_SLOT;
+        out_want++;                       // asked for, not what fit
         if (addr < OUT_STACK_LIMIT) {
             out_exhausted = true;
             return 0;
