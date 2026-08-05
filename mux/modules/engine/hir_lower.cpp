@@ -2991,6 +2991,16 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     //   - CARGS writing: _WRITE_CARG + _SET_NCARGS
     //   - ULOCAL qregs: _SAVE_QREGS / _RESTORE_QREGS
     //   - Cache staleness: per-attr mod_count deps
+    //
+    // AF_TRACE is a compile-time decline (#2098).  fun_u propagates
+    // AttrTrace into EV_TRACE so the interpreter emits trace lines;
+    // an inlined body has no channel for that side-channel, so a
+    // TRACE'd attr would evaluate silently on the compiled route.
+    // Flag changes go through atr_set_flags → atr_add → mod_count,
+    // so setting TRACE after a prior compile already invalidates the
+    // cache; the gate then declines the recompile.  _CHECK_U_PERM
+    // also returns denied on AF_TRACE as belt-and-braces, forcing the
+    // fun_u ECALL if a program ever ran against a post-compile TRACE.
     // ---------------------------------------------------------------
 
     if ((fname == "U" || fname == "ULOCAL")
@@ -3048,13 +3058,22 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 UTF8 *body = atr_pget_LEN(thing, pattr->number,
                                            &aowner, &aflags, &nBodyLen);
 
-                if (body && nBodyLen > 0)
+                // Decline AF_TRACE at compile time (#2098): same gate
+                // MAP carries.  Parsing only when the body is eligible
+                // keeps free_lbuf outside the success path so TRACE and
+                // empty bodies free cleanly.
+                std::unique_ptr<ASTNode> body_ast;
+                if (body && nBodyLen > 0 && !(aflags & AF_TRACE))
                 {
-                    auto body_ast = ast_parse_string(body, nBodyLen);
+                    body_ast = ast_parse_string(body, nBodyLen);
+                }
+                if (body)
+                {
                     free_lbuf(body);
+                }
 
-                    if (body_ast)
-                    {
+                if (body_ast)
+                {
                         bool is_local = (fname == "ULOCAL");
                         int nExtra = static_cast<int>(
                             node->children.size()) - 1;
@@ -3297,11 +3316,6 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                             qreg_clobber();
                         }
                         return phi;
-                    }
-                }
-                else
-                {
-                    free_lbuf(body);
                 }
             }
         }

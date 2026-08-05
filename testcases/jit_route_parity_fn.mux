@@ -255,11 +255,48 @@
         strmatch(u(#1/fn.plain,2,3), 5)
       )=
   {
-    @log smoke=TC010: denied u() parity across routes. Succeeded.;
+    @log smoke=TC010: denied u() parity across routes. Succeeded.
+  },
+  {
+    @log smoke=TC010: denied u() parity across routes. Failed (lit=[u(#1/fn.noev,2,3)] ind=[u([num(#1)]/fn.noev,2,3)] plain=[u(#1/fn.plain,2,3)]).
+  }
+-
+#
+# Test Case #11 - a TRACE'd attribute stays correct on every route (#2098).
+#
+# The u()-inline has no channel for AttrTrace/EV_TRACE side-channel
+# lines, so AF_TRACE is a compile-time decline (same gate MAP carries)
+# and a runtime decline in _CHECK_U_PERM.  Both force the fun_u ECALL,
+# which is the path that can emit traces.
+#
+# Smoke cannot cleanly assert that the trace LINES appear (they go to
+# the executor's notify path, not the smoke log), so this case pins
+# the result: TRACE must not change the value, and the literal-dbref
+# form (inline-eligible spelling) must agree with the indirect form
+# (never inlined).  A regression that silently inlined and then
+# mishandled the body would fail the agreement or the value.
+#
+# fn.plain is the untraced control: if TRACE somehow broke all
+# literal-dbref u() calls, plain would fail with them and the case
+# would still name the wrong cause.
+#
+&fn.traced #1=add(%0,%1)
+-
+@set #1/fn.traced=trace
+-
+&tr.tc011 test_jit_route_parity_fn=
+  @if cand(
+        strmatch(u(#1/fn.traced,2,3), 5),
+        strmatch(u([num(#1)]/fn.traced,2,3), 5),
+        strmatch(u(#1/fn.traced,2,3), u([num(#1)]/fn.traced,2,3)),
+        strmatch(u(#1/fn.plain,2,3), 5)
+      )=
+  {
+    @log smoke=TC011: TRACE'd u() parity across routes. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC010: denied u() parity across routes. Failed (lit=[u(#1/fn.noev,2,3)] ind=[u([num(#1)]/fn.noev,2,3)] plain=[u(#1/fn.plain,2,3)]).;
+    @log smoke=TC011: TRACE'd u() parity across routes. Failed (lit=[u(#1/fn.traced,2,3)] ind=[u([num(#1)]/fn.traced,2,3)] plain=[u(#1/fn.plain,2,3)]).;
     @trig me/tr.done
   }
 -
