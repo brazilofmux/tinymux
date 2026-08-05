@@ -216,6 +216,14 @@ CASES = [
     # reports UNMEASURED for everything after this line, which is how #2106
     # was found in the first place.
     ("filter(#1/GROWTH.FILP,lnum({N}))", "jit", [500, 1000, 2000, 4000], "linear", None),
+
+    # fold() (#2080).  A numeric reduction, so the accumulator stays short
+    # and the inline arm runs at every element -- the string-building case
+    # that crosses the 256-byte CARGS limit is covered for CORRECTNESS by
+    # fold_fn TC007, not here, because its per-element ECALL fallback is a
+    # constant-factor story rather than a complexity one.
+    ("fold(me/GROWTH.FOLDB,lnum({N}),0)", "interp", [500, 1000, 2000, 4000], "linear", None),
+    ("fold(#1/GROWTH.FOLDB,lnum({N}),0)", "jit", [500, 1000, 2000, 4000], "linear", None),
 ]
 
 AST_RE = re.compile(r"ast=([0-9.]+)us")
@@ -255,6 +263,7 @@ def probes_for(cases):
 SETUP = [
     "&GROWTH.MAPB me=[add(%0,1)]",
     "&GROWTH.FILP me=[gt(%0,3)]",
+    "&GROWTH.FOLDB me=[add(%0,%1)]",
 ]
 
 

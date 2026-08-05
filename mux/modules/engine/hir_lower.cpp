@@ -3367,6 +3367,404 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // fold(#dbref/attr, list[, base[, delim]]) — the loop again, with a
+    // reduction instead of an accumulation (#2080).
+    //
+    // Three things fold_fn.mux pins that this had to be built around:
+    //
+    //   - THE DELIMITER IS ARGUMENT 4.  iter/map/filter all take it at 3;
+    //     fold cannot, because argument 3 is the base.  Reading it at 3
+    //     would treat the delimiter as the base and split on spaces.
+    //   - The accumulator is REPLACED each iteration, not appended, so
+    //     the pinned buffer is written at offset 0 every time -- which is
+    //     exactly rv64_append at len=0, first=1.  No new blob primitive.
+    //   - Seeding differs: WITH a base the loop starts at element 0 with
+    //     acc = base; WITHOUT one it starts at element 1 with acc =
+    //     element 0.  Both are handled by seeding before the loop and
+    //     entering with the right cursor, so the loop body itself is
+    //     uniform.
+    //
+    // The accumulator is %0 and the element is %1.  %0 therefore carries
+    // a value that GROWS for a string-building fold, and the guest CARGS
+    // slots are 256 bytes -- so unlike map/filter, where an oversized
+    // element is the exception, here the fallback arm becomes the steady
+    // state partway through (fold_fn TC007).  The per-element size
+    // diamond tests the ACCUMULATOR as well as the element for that
+    // reason.
+    //
+    // No new q-register: INUM and CURSOR are reused, and the accumulator
+    // needs no length carried across iterations because every write is at
+    // offset 0.  HIR_NUM_QREGS stays at 14.
+    // ---------------------------------------------------------------
+
+    if (fname == "FOLD"
+        && node->children.size() >= 2
+        && s_compile_deps != nullptr
+        && s_inline_depth < MAX_INLINE_DEPTH)
+    {
+        const ASTNode *arg0 = node->children[0].get();
+        std::string arg0_str;
+        bool arg0_const = false;
+        if (arg0->type == AST_LITERAL) {
+            arg0_str = arg0->text;
+            arg0_const = true;
+        } else if (arg0->type == AST_SEQUENCE
+                   && arg0->children.size() == 1
+                   && arg0->children[0]->type == AST_LITERAL) {
+            arg0_str = arg0->children[0]->text;
+            arg0_const = true;
+        }
+
+        const bool has_base = (node->children.size() >= 3);
+
+        uint64_t t2split_d  = tier2_lookup("SPLIT_TOKEN");
+        uint64_t t2append_d = tier2_lookup("APPEND");
+        uint64_t t2blen_d   = tier2_lookup("BYTELEN");
+
+        dbref thing = NOTHING;
+        ATTR *pattr = nullptr;
+        if (arg0_const && !arg0_str.empty() && arg0_str[0] == '#'
+            && t2split_d && t2append_d && t2blen_d
+            && parse_attrib(GOD,
+                   reinterpret_cast<const UTF8 *>(arg0_str.c_str()),
+                   &thing, &pattr)
+            && pattr && Good_obj(thing))
+        {
+            dbref aowner;
+            int aflags;
+            size_t nBodyLen = 0;
+            UTF8 *body = atr_pget_LEN(thing, pattr->number,
+                                       &aowner, &aflags, &nBodyLen);
+            std::unique_ptr<ASTNode> body_ast;
+            if (body && nBodyLen > 0 && !(aflags & AF_TRACE)) {
+                body_ast = ast_parse_string(body, nBodyLen);
+            }
+            if (body) free_lbuf(body);
+
+            if (body_ast) {
+                h.inline_extra_depth +=
+                    hir_ast_max_funccall_depth(body_ast.get());
+                h.inline_extra_calls +=
+                    hir_ast_funccall_count(body_ast.get());
+
+                uint32_t mc = attr_mod_count_get(thing, pattr->number);
+                s_compile_deps->push_back({
+                    static_cast<int32_t>(thing),
+                    static_cast<int32_t>(pattr->number),
+                    mc
+                });
+
+                std::vector<int> m_args;
+                for (size_t ci = 0; ci < node->children.size(); ci++) {
+                    int v = (ci == 1)
+                        ? hir_lower_trimmed(h, rc,
+                              node->children[ci].get())
+                        : hir_lower_argument(h, rc,
+                              node->children[ci].get());
+                    if (v < 0) return -1;
+                    if (h.ty[v] == TY_INT) {
+                        v = h.emit(HIR_ITOA, TY_STRING, v);
+                    } else if (h.ty[v] == TY_FLOAT) {
+                        v = h.emit(HIR_FTOA, TY_STRING, v);
+                    }
+                    m_args.push_back(v);
+                }
+                int list_val = m_args[1];
+                // ARGUMENT 4 -- see the note above.
+                int delim_val;
+                if (node->children.size() >= 4) {
+                    delim_val = m_args[3];
+                } else {
+                    uint64_t da = rc.pool_str(" ");
+                    delim_val = h.emit_sconst(da, " ");
+                }
+
+                // ---- runtime gate (identical to MAP/FILTER) ----
+                int perm_idx = engine_api_lookup("_CHECK_U_PERM");
+                std::string thing_s = std::to_string(thing);
+                std::string attr_s = std::to_string(pattr->number);
+                uint64_t ta = rc.pool_str(thing_s);
+                uint64_t aa = rc.pool_str(attr_s);
+                int thing_c = h.emit_sconst(ta, thing_s);
+                int attr_c = h.emit_sconst(aa, attr_s);
+                int perm_args[2] = { thing_c, attr_c };
+                int perm_res = h.emit_call(TY_STRING, perm_idx,
+                                           perm_args, 2);
+                h.ecalls++;
+                h.known_int[perm_res] = true;
+                int perm_int = h.emit(HIR_ATOI, TY_INT, perm_res);
+                int zero_i = h.emit_iconst(0);
+                int perm_ok = h.emit(HIR_EQ, TY_INT, perm_int, zero_i);
+                h.native_ops++;
+
+                uint64_t ex_addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
+                int ex_ref = h.emit_sref(ex_addr);
+                std::string hash_thing = "#" + thing_s;
+                uint64_t ha = rc.pool_str(hash_thing);
+                int hash_c = h.emit_sconst(ha, hash_thing);
+                int ex_cmp = h.emit(HIR_STRCMP, TY_INT, ex_ref, hash_c);
+                int ex_ok = h.emit(HIR_EQ, TY_INT, ex_cmp, zero_i);
+                h.native_ops += 2;
+                int gate = h.emit(HIR_BAND, TY_INT, perm_ok, ex_ok);
+                h.native_ops++;
+
+                int c256 = h.emit_iconst(256);
+
+                int entry_blk = h.cur_block;
+                int fallback_blk = h.new_block();
+                int inline_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, gate, fallback_blk, inline_blk);
+                h.add_edge(entry_blk, fallback_blk);
+                h.add_edge(entry_blk, inline_blk);
+
+                // ---- fallback: ECALL fun_fold ----
+                h.cur_block = fallback_blk;
+                int fidx_fold = engine_api_lookup("FOLD");
+                int fb_res = h.emit_call(TY_STRING, fidx_fold,
+                    m_args.data(), static_cast<int>(m_args.size()));
+                h.ecalls++;
+                int fb_exit = h.cur_block;
+                int fb_br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+
+                // ---- inline path ----
+                h.cur_block = inline_blk;
+                int save_idx = engine_api_lookup("_SAVE_CARGS");
+                int cargs_handle = h.emit_call(TY_STRING, save_idx,
+                                               nullptr, 0);
+                h.ecalls++;
+                int ncargs_idx = engine_api_lookup("_SET_NCARGS");
+                uint64_t two_a = rc.pool_str("2");
+                int two_c = h.emit_sconst(two_a, "2");
+                int nc_arg[1] = { two_c };
+                h.emit_call(TY_STRING, ncargs_idx, nc_arg, 1);
+                h.ecalls++;
+                int write_idx = engine_api_lookup("_WRITE_CARG");
+
+                int words_idx = engine_api_lookup("WORDS");
+                int wargs2[2] = { list_val, delim_val };
+                int nwords_str = h.emit_call(TY_STRING, words_idx,
+                                             wargs2, 2);
+                h.known_int[nwords_str] = true;
+                uint64_t t2words = tier2_lookup("WORDS");
+                if (t2words) {
+                    h.tier2_addr[nwords_str] = t2words;
+                    h.tier2_calls++;
+                } else {
+                    h.ecalls++;
+                }
+                int nwords_int = h.emit(HIR_ATOI, TY_INT, nwords_str);
+
+                // The pinned accumulator, written at offset 0 always.
+                uint64_t acc_addr = rc.alloc_output();
+                uint64_t e_addr = rc.pool_str("");
+                uint64_t z_addr = rc.pool_str("0");
+                int z_str = h.emit_sconst(z_addr, "0");
+                int e_str = h.emit_sconst(e_addr, "");
+
+                uint64_t m0a = rc.pool_str("0");
+                int m0 = h.emit_sconst(m0a, "0");
+                uint64_t m1a = rc.pool_str("1");
+                int m1 = h.emit_sconst(m1a, "1");
+
+                // ---- seed ----
+                //
+                // With a base:    acc = base,        cursor = 0, inum = 0
+                // Without a base: acc = element 0,   cursor = next, inum = 1
+                //
+                // Seeding before the loop keeps the body uniform; the only
+                // difference is what lands in the accumulator and where the
+                // cursor starts.
+                int seed_val;
+                int seed_cursor;
+                int seed_inum;
+                if (has_base) {
+                    seed_val = m_args[2];
+                    seed_cursor = h.emit_iconst(0);
+                    seed_inum = h.emit_iconst(0);
+                } else {
+                    int c0_str = h.emit(HIR_ITOA, TY_STRING,
+                                        h.emit_iconst(0));
+                    int s0[4] = { list_val, c0_str, delim_val, m0 };
+                    seed_val = h.emit_call(TY_STRING, 0, s0, 4);
+                    h.tier2_addr[seed_val] = t2split_d;
+                    h.tier2_calls++;
+                    int s1[4] = { list_val, c0_str, delim_val, m1 };
+                    int nx0 = h.emit_call(TY_STRING, 0, s1, 4);
+                    h.tier2_addr[nx0] = t2split_d;
+                    h.tier2_calls++;
+                    seed_cursor = h.emit(HIR_ATOI, TY_INT, nx0);
+                    seed_inum = h.emit_iconst(1);
+                }
+                int acc_seed_ref = h.emit_sref(acc_addr);
+                int sd_args[5] = { acc_seed_ref, z_str, z_str,
+                                   e_str, seed_val };
+                int sd = h.emit_call(TY_STRING, 0, sd_args, 5);
+                h.tier2_addr[sd] = t2append_d;
+                h.tier2_calls++;
+
+                h.emit(HIR_STORE_Q, TY_VOID, seed_inum, -1,
+                       QREG_ITER_INUM);
+                h.emit(HIR_STORE_Q, TY_VOID, seed_cursor, -1,
+                       QREG_ITER_CURSOR);
+
+                int pre_hdr = h.cur_block;
+                int hdr_blk = h.new_block();
+                h.emit(HIR_BR, TY_VOID, -1, -1, hdr_blk);
+                h.add_edge(pre_hdr, hdr_blk);
+
+                // Header: loop-carried loads live HERE (TC020's lesson).
+                h.cur_block = hdr_blk;
+                int inum = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_INUM);
+                int dcur = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_CURSOR);
+                int cond = h.emit(HIR_LT, TY_INT, inum, nwords_int);
+                h.native_ops++;
+                int body_blk = h.new_block();
+                int exit_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, cond, exit_blk, body_blk);
+                h.add_edge(hdr_blk, body_blk);
+                h.add_edge(hdr_blk, exit_blk);
+
+                // Body: cursor walk for the element.
+                h.cur_block = body_blk;
+                int one_i = h.emit_iconst(1);
+                int inum1 = h.emit(HIR_ADD, TY_INT, inum, one_i);
+                h.native_ops++;
+                int cur_str = h.emit(HIR_ITOA, TY_STRING, dcur);
+                int st0[4] = { list_val, cur_str, delim_val, m0 };
+                int elem = h.emit_call(TY_STRING, 0, st0, 4);
+                h.tier2_addr[elem] = t2split_d;
+                h.tier2_calls++;
+                int st1[4] = { list_val, cur_str, delim_val, m1 };
+                int nxt_str = h.emit_call(TY_STRING, 0, st1, 4);
+                h.tier2_addr[nxt_str] = t2split_d;
+                h.tier2_calls++;
+                int nxt_cur = h.emit(HIR_ATOI, TY_INT, nxt_str);
+
+                // Size diamond.  BOTH the accumulator and the element must
+                // fit their CARGS slots -- the accumulator is the one that
+                // grows, and for a string-building fold it is what crosses
+                // the line (fold_fn TC007).
+                int acc_ref_r = h.emit_sref(acc_addr);
+                int ab_args[1] = { acc_ref_r };
+                int ab = h.emit_call(TY_STRING, 0, ab_args, 1);
+                h.tier2_addr[ab] = t2blen_d;
+                h.tier2_calls++;
+                int ab_i = h.emit(HIR_ATOI, TY_INT, ab);
+                int a_fits = h.emit(HIR_LT, TY_INT, ab_i, c256);
+                int eb_args[1] = { elem };
+                int eb = h.emit_call(TY_STRING, 0, eb_args, 1);
+                h.tier2_addr[eb] = t2blen_d;
+                h.tier2_calls++;
+                int eb_i = h.emit(HIR_ATOI, TY_INT, eb);
+                int e_fits = h.emit(HIR_LT, TY_INT, eb_i, c256);
+                int both_fit = h.emit(HIR_BAND, TY_INT, a_fits, e_fits);
+                h.native_ops += 3;
+
+                int uarm_blk = h.new_block();
+                int ibody_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, both_fit, uarm_blk, ibody_blk);
+                h.add_edge(h.cur_block, uarm_blk);
+                h.add_edge(h.cur_block, ibody_blk);
+
+                // Inlined body: %0 = accumulator, %1 = element.
+                h.cur_block = ibody_blk;
+                uint64_t i0a = rc.pool_str("0");
+                int i0c = h.emit_sconst(i0a, "0");
+                int acc_ref_w = h.emit_sref(acc_addr);
+                int w0[2] = { i0c, acc_ref_w };
+                h.emit_call(TY_STRING, write_idx, w0, 2);
+                h.ecalls++;
+                uint64_t i1a = rc.pool_str("1");
+                int i1c = h.emit_sconst(i1a, "1");
+                int w1[2] = { i1c, elem };
+                h.emit_call(TY_STRING, write_idx, w1, 2);
+                h.ecalls++;
+                bool saved_fcheck = s_fcheck_available;
+                s_fcheck_available = true;
+                s_inline_depth++;
+                int ib_val = hir_lower_node(h, rc, body_ast.get());
+                s_inline_depth--;
+                s_fcheck_available = saved_fcheck;
+                if (ib_val < 0) return -1;
+                if (h.ty[ib_val] == TY_INT) {
+                    ib_val = h.emit(HIR_ITOA, TY_STRING, ib_val);
+                } else if (h.ty[ib_val] == TY_FLOAT) {
+                    ib_val = h.emit(HIR_FTOA, TY_STRING, ib_val);
+                }
+                int ib_exit = h.cur_block;
+                int ib_br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+
+                // Oversized arm: ECALL fold(#thing/attr, elem, acc) --
+                // a one-element fold with the accumulator as the base is
+                // exactly one application of the body, and it routes
+                // through fun_fold's own LBUF-sized handling.
+                h.cur_block = uarm_blk;
+                int fidx_fold2 = engine_api_lookup("FOLD");
+                uint64_t ua = rc.pool_str(arg0_str);
+                int uref_c = h.emit_sconst(ua, arg0_str);
+                int acc_ref_u = h.emit_sref(acc_addr);
+                int uargs[3] = { uref_c, elem, acc_ref_u };
+                int ua_val = h.emit_call(TY_STRING, fidx_fold2, uargs, 3);
+                h.ecalls++;
+                int ua_exit = h.cur_block;
+
+                int emerge_blk = h.new_block();
+                h.val[ib_br] = emerge_blk;
+                h.add_edge(ib_exit, emerge_blk);
+                h.emit(HIR_BR, TY_VOID, -1, -1, emerge_blk);
+                h.add_edge(ua_exit, emerge_blk);
+
+                h.cur_block = emerge_blk;
+                int eblocks[2] = { ib_exit, ua_exit };
+                int evals[2] = { ib_val, ua_val };
+                int new_acc = h.emit_phi(TY_STRING, -1,
+                                         eblocks, evals, 2);
+
+                // Replace the accumulator: write at offset 0, no osep.
+                int acc_ref_s = h.emit_sref(acc_addr);
+                int sa[5] = { acc_ref_s, z_str, z_str, e_str, new_acc };
+                int st = h.emit_call(TY_STRING, 0, sa, 5);
+                h.tier2_addr[st] = t2append_d;
+                h.tier2_calls++;
+
+                h.emit(HIR_STORE_Q, TY_VOID, inum1, -1, QREG_ITER_INUM);
+                h.emit(HIR_STORE_Q, TY_VOID, nxt_cur, -1,
+                       QREG_ITER_CURSOR);
+                h.emit(HIR_BR, TY_VOID, -1, -1, hdr_blk);
+                h.add_edge(h.cur_block, hdr_blk);
+
+                h.cur_block = exit_blk;
+                int restore_idx = engine_api_lookup("_RESTORE_CARGS");
+                int rc_args[1] = { cargs_handle };
+                h.emit_call(TY_STRING, restore_idx, rc_args, 1);
+                h.ecalls++;
+                int in_res = h.emit_sref(acc_addr);
+                int in_exit = h.cur_block;
+
+                int merge_blk = h.new_block();
+                h.val[fb_br] = merge_blk;
+                h.add_edge(fb_exit, merge_blk);
+                h.cur_block = in_exit;
+                h.emit(HIR_BR, TY_VOID, -1, -1, merge_blk);
+                h.add_edge(in_exit, merge_blk);
+
+                h.cur_block = merge_blk;
+                int mblocks[2] = { fb_exit, in_exit };
+                int mvals[2] = { fb_res, in_res };
+                int phi = h.emit_phi(TY_STRING, -1, mblocks, mvals, 2);
+
+                qreg_clobber();
+                h.needs_jit = true;
+                return phi;
+            }
+        }
+        // Fall through: ECALL fun_fold, exactly as before.
+    }
+
+    // ---------------------------------------------------------------
     // @@(expr) — null function.  Discard argument, return empty.
     // ---------------------------------------------------------------
 
