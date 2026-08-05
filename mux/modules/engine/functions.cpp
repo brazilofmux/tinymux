@@ -15857,6 +15857,7 @@ void function_add(FUN *fp)
     if (it == mudstate.builtin_functions.end())
     {
         mudstate.builtin_functions.insert(make_pair(name, fp));
+        jit_gate_note_function_table_change();   // (#2068)
     }
 }
 
@@ -15869,6 +15870,7 @@ void function_remove(FUN *fp)
     if (it != mudstate.builtin_functions.end())
     {
         mudstate.builtin_functions.erase(it);
+        jit_gate_note_function_table_change();   // (#2068)
     }
 }
 
@@ -16114,6 +16116,7 @@ void do_function
         else
         {
             mudstate.ufunc_htab.erase(std::vector<UTF8>(pName, pName + nLen));
+            jit_gate_note_function_table_change();   // (#2068)
             for (auto it = ufun_list.begin(); it != ufun_list.end(); ++it)
             {
                 if (&*it == ufp)
@@ -16174,6 +16177,7 @@ void do_function
         ufun_list.push_back(std::move(newufun));
         ufp = &ufun_list.back();
         mudstate.ufunc_htab.emplace(std::vector<UTF8>(pName, pName + nLen), ufp);
+        jit_gate_note_function_table_change();   // (#2068)
     }
     ufp->obj = obj;
     ufp->atr = pattr->number;

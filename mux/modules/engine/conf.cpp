@@ -1231,6 +1231,7 @@ static int function_name_helper(const dbref player, const UTF8* cmd, const UTF8*
     {
         mudstate.builtin_functions.erase(it_existing);
     }
+    jit_gate_note_function_table_change();   // (#2068)
     return 0;
 }
 

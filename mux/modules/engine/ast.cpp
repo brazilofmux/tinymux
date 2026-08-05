@@ -2706,6 +2706,47 @@ static const size_t AST_CACHE_MAX = 1024;
 static const size_t AST_CACHE_MIN_LEN = 16;
 
 // ---------------------------------------------------------------
+// Stamp for the memoized jit_can_handle() verdict (#2068).
+//
+// The verdict is NOT a pure function of the AST, which is the trap in
+// "the tree is cached, so cache the answer".  It also depends on:
+//
+//   1. mudconf.jit_eval_brackets -- a runtime toggle, and one the smoke
+//      suite deliberately runs both ways.  Carried in the low bit rather
+//      than hooked, since it is a plain read.
+//   2. mudstate.ufunc_htab      -- @function and @function/delete.
+//   3. mudstate.builtin_functions -- module (de)registration, and the
+//      function_alias config directive.
+//
+// (2) and (3) bump the epoch.  Getting this wrong would fail silently and
+// in the dangerous direction: a name that did not resolve when the verdict
+// was taken, and does now, would leave a cached "decline" -- or worse, a
+// cached "accept" for a name that has since gone away.
+//
+// The epoch moves in steps of two so the low bit stays the toggle's.  A
+// stamp of 0 means "never computed", which the epoch never produces.
+//
+static uint32_t s_jit_gate_epoch = 2;
+
+void jit_gate_note_function_table_change(void)
+{
+    s_jit_gate_epoch += 2;
+    if (0 == s_jit_gate_epoch)
+    {
+        // Wrapped.  Skip the reserved "never computed" value; every live
+        // stamp simply misses once and recomputes.
+        //
+        s_jit_gate_epoch = 2;
+    }
+}
+
+static inline uint32_t jit_gate_stamp_now(void)
+{
+    return s_jit_gate_epoch | (mudconf.jit_eval_brackets ? 1u : 0u);
+}
+
+
+// ---------------------------------------------------------------
 // mux_exec — drop-in replacement for mux_exec
 // ---------------------------------------------------------------
 //
@@ -2816,7 +2857,7 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
     //   function calls. NOT mixed literal+command text.
     // - No unsupported %-substitutions.
     //
-    auto jit_can_handle = [&]() -> bool {
+    auto jit_can_handle_compute = [&]() -> bool {
         if (!ast_ptr) return false;
 
         // The AST root must be a function call, eval bracket, or
@@ -2913,6 +2954,28 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
             return false;
         }
         return true;
+    };
+
+    // Memoized gate (#2068).  The walk above is the flat tax this removes:
+    // a worklist allocation per evaluation, plus a std::string, a
+    // std::vector<UTF8> and two hash lookups per call node -- paid on every
+    // evaluation, including ones the JIT declines and ones where it wins.
+    //
+    // The stamp covers everything the verdict depends on beyond the tree
+    // itself; see jit_gate_stamp_now().
+    //
+    auto jit_can_handle = [&]() -> bool {
+        if (!ast_ptr) {
+            return false;
+        }
+        const uint32_t stamp = jit_gate_stamp_now();
+        if (ast_ptr->jit_gate_stamp == stamp) {
+            return ast_ptr->jit_gate_verdict;
+        }
+        const bool bVerdict = jit_can_handle_compute();
+        ast_ptr->jit_gate_stamp = stamp;
+        ast_ptr->jit_gate_verdict = bVerdict;
+        return bVerdict;
     };
 
     if (nLen >= 8
