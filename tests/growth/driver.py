@@ -187,7 +187,18 @@ CASES = [
     # stable in every database, and muxscript runs as #1, so this exercises
     # the inlined body + pinned accumulator rather than the ECALL fallback
     # the me/ spelling takes (name references never inline).
-    ("map(#1/GROWTH.MAPB,lnum({N}))", "jit", [250, 500, 1000, 2000], "linear", None),
+    #
+    # Sizes start at 500 and run to 4000 (the lnum()-in-one-LBUF ceiling)
+    # because this path carries ~73us of per-call fixed cost -- gate ECALL,
+    # CARGS save/restore, WORDS -- which drags the log-log exponent below
+    # the linear band when small sizes dominate the fit (b=0.68 over
+    # 250..2000, ~13% fixed share at the top size; b~0.95 over 500..4000,
+    # ~7%).  Size cases so fixed costs amortize; do NOT loosen the class
+    # bands instead -- a guard that accepts sub-linear cannot tell a fixed
+    # cost amortizing from the case silently ceasing to do the work, which
+    # is one of the two failures this harness exists to catch (#2094
+    # review).
+    ("map(#1/GROWTH.MAPB,lnum({N}))", "jit", [500, 1000, 2000, 4000], "linear", None),
 ]
 
 AST_RE = re.compile(r"ast=([0-9.]+)us")
@@ -300,19 +311,6 @@ def classify(b):
     return None
 
 
-def within_ceiling(b, expected):
-    """The expected class is a CEILING, not an exact match.
-
-    A guard exists to catch cost-class REGRESSIONS.  Growing slower than
-    expected is success -- a large fixed cost amortizing across N reads as
-    sub-linear (the MAP inline path fits t = 73us + 236ns*N, b=0.68), and
-    failing that would train people to delete guards.  Wrong OUTPUT at a
-    too-cheap cost is the correctness batteries' and shape probes' job,
-    not this harness's.
-    """
-    return b <= CLASSES[expected][1]
-
-
 def run_muxscript(repo, binary, script):
     work = tempfile.mkdtemp(prefix="growth.")
     try:
@@ -417,8 +415,6 @@ def main():
         ratios = [times[i + 1] / times[i] for i in range(len(times) - 1)]
         b = exponent(sizes, times)
         actual = classify(b)
-        if actual != expected and within_ceiling(b, expected):
-            actual = expected   # under the ceiling: sub-linear passes
         detail = "N=%d..%d %8.1f->%-9.1fus b=%.2f [%s]" % (
             sizes[0], sizes[-1], times[0], times[-1], b,
             " ".join("%.2fx" % r for r in ratios))
