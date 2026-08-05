@@ -20,6 +20,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Always `make clean` after changing configure flags.** A partially-built
   tree (stale `muxscript`, fresh `engine.so`) produces failures that describe
   nothing real — ASan's "Interceptors are not working" is the usual tell.
+- **Header edits can under-rebuild the same way (#2118).** Engine/libmux use
+  `-MMD` side-car `.d` files for header deps. An object without its `.d` is
+  invisible to make: a layout or struct-size header change then rebuilds only
+  some TUs and the binary lies coherently (that was the whole of #2107). The
+  Makefiles drop orphan objects automatically; if another host is green on the
+  same commit, treat that as a build-hygiene signal first.
 
 Platform prerequisites (Debian/Ubuntu and Homebrew package lists), autotools
 version constraints for regenerating `configure`, and a symptom→cause table

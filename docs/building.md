@@ -129,12 +129,17 @@ that look like bugs and are not:
 | `#error Need EVP_MD_CTX_new() or EVP_MD_CTX_create()` | configure's OpenSSL function probes answered "no". They probe by linking, so this means OpenSSL was not in scope *at configure time* — re-run configure and check `checking for EVP_MD_CTX_new... yes`. |
 | `--enable-nls requires libintl.h` | macOS without the Homebrew prefix passed in. See above. |
 | ASan reports "Interceptors are not working" | A partially-built tree: some objects instrumented, some not. `make clean` and rebuild the whole thing. Do not debug the report itself. |
+| Coherent wrong behaviour after a header edit; same commit green on another box | Objects present without sibling `.d` files — make has no header edges for them and under-rebuilds. `#2118`. Engine and libmux drop such orphans automatically; if the smell remains, `make clean`. |
 
-That last one deserves emphasis, because it wastes an afternoon every time.
+That first partial-tree row deserves emphasis, because it wastes an afternoon every time.
 **A partially-built tree lies.** After changing configure flags — sanitizers,
 `--enable-nls`, JIT — run `make clean` before `make install`. A stale
 `muxscript` against a fresh `engine.so` produces failures that describe nothing
-real.
+real. The same class of lie is a **header edit that rebuilds only some of its
+dependents** when `.d` files are missing (#2118, closed the false #2107 chase):
+the binary is internally inconsistent but fails in a way that looks like a
+real defect. Prefer treating same-commit green on another host as a build-hygiene
+signal before inventing a platform bug.
 
 ## Verifying a build
 

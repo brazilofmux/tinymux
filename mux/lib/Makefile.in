@@ -491,6 +491,17 @@ all-local: libmux.so
 %.lo: %.c
 	$(CC) $(AM_CFLAGS) -I$(top_srcdir)/include $(DYNAMICLIB_CXXFLAGS) -fvisibility=hidden -MMD -MF $(@:.lo=.d) -c -o $@ $<
 
+# An object without a sibling .d is invisible to header tracking (#2118).
+# Drop it so the next compile regenerates both; otherwise a header edit
+# under-rebuilds and the binary lies coherently.
+# strip: foreach leaves spaces for non-orphans; unstripped whitespace
+# would make ifneq always true and spam the warning on every make.
+ORPHAN_LOS := $(strip $(foreach o,$(LIBMUX_OBJS),$(if $(wildcard $(o)),$(if $(wildcard $(o:.lo=.d)),,$(o)))))
+ifneq ($(ORPHAN_LOS),)
+$(warning libmux: dropping objects with no .d (header deps unknown, #2118): $(ORPHAN_LOS))
+$(shell rm -f $(ORPHAN_LOS))
+endif
+
 -include $(LIBMUX_CXX_OBJS:.lo=.d)
 -include $(LIBMUX_C_OBJS:.lo=.d)
 
