@@ -1,0 +1,12 @@
+  shape(100/500/2000): 100/500/2000
+  add(1,2)                           0.39 us/call
+  add(rand(100),1)                   0.27 us/call
+  bound(rand(100),10,90)             0.33 us/call
+  strcat(abc,def)                    0.37 us/call
+  ladd(lnum(100))                    3.59 us/call
+  iter(lnum(10),1)                   1.18 us/call
+  iter(lnum(50),1)                  15.46 us/call
+  iter(lnum(200),1)                210.45 us/call
+  iter(lnum(500),1)               1297.73 us/call
+  iter(lnum(1000),1)              5102.50 us/call
+  iter(lnum(2000),1)             20339.05 us/call
