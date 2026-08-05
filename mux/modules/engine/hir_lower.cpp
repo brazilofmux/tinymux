@@ -2704,9 +2704,24 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         // This prevents the inline→merge BR from being
                         // a backward edge that triggers loop detection.
 
-                        // BRC: if nonzero → fallback, else → inline.
+                        // BRC: nonzero (denied) → fallback, 0 (ok) → inline.
+                        //
+                        // emit()'s 4th argument is src2 = the FALSE target
+                        // and the 5th is val = the TRUE target (codegen:
+                        // true_blk = val[i]).  This call had them REVERSED
+                        // from the day the inline was written: denied went
+                        // to the inline arm -- so a NOEVAL'd or unreadable
+                        // attr had its body evaluated anyway on the
+                        // compiled route (u(#2/FN,9) after @set NOEVAL
+                        // returned 11, where fun_u returns the literal) --
+                        // and permitted calls took the ECALL fallback,
+                        // meaning the Tier 3 inline had never executed for
+                        // an allowed call at all.  Nothing caught it
+                        // because both arms produce identical output for
+                        // the permitted case, and no corpus case exercised
+                        // a denied one (#2080 review).
                         h.emit(HIR_BRC, TY_VOID, perm_int,
-                               fallback_block, inline_block);
+                               inline_block, fallback_block);
                         h.add_edge(entry_block, fallback_block);
                         h.add_edge(entry_block, inline_block);
 
