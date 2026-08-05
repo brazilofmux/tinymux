@@ -284,13 +284,29 @@ struct rv_compiler {
     static constexpr size_t MEM_SIZE     = 0x540000;  // 4 MB map + 1 MB heap + 256 KB doubles scratch
     static constexpr uint64_t CODE_BASE  = 0x0000;
     static constexpr uint64_t CODE_LIMIT = 0x1000;
+    // String pool sized to hold one full LBUF (32768) of constants (#2066).
+    // Previously STR_LIMIT was 0x4000 (12 KB) while OUT_SLOT tracked LBUF at
+    // 32 KB, so any expression whose pooled constants exceeded ~12 KB fell
+    // back to the AST evaluator with COMPILATION FAILED.  FARGS moved up to
+    // keep the same 16 KB capacity without overlapping the string region.
+    // Cached programs from the old layout fail the fargs-range check on load
+    // and recompile cleanly.
     static constexpr uint64_t STR_BASE   = 0x1000;
-    static constexpr uint64_t STR_LIMIT  = 0x4000;
-    static constexpr uint64_t FARGS_BASE = 0x4000;
-    static constexpr uint64_t FARGS_LIMIT= 0x8000;
+    static constexpr uint64_t STR_LIMIT  = 0x9000;   // STR_BASE + 0x8000 (= LBUF_SIZE)
+    static constexpr uint64_t FARGS_BASE = 0x9000;
+    static constexpr uint64_t FARGS_LIMIT= 0xD000;   // FARGS_BASE + 0x4000
 
     static constexpr uint64_t BLOB_BASE  = 0x10000;
     static constexpr uint64_t BLOB_LIMIT = 0x40000;
+
+    static_assert(CODE_LIMIT == STR_BASE,
+                  "code region must abut the string pool");
+    static_assert(STR_LIMIT == FARGS_BASE,
+                  "string pool must abut the fargs pool");
+    static_assert(FARGS_LIMIT <= BLOB_BASE,
+                  "fargs pool must not overlap the blob region");
+    static_assert(STR_LIMIT - STR_BASE >= 32768,
+                  "string pool must hold one LBUF of constants (#2066)");
 
     // Output slots — sized to match LBUF_SIZE (32768).
     // Stack-allocated: output buffers grow downward from STACK_TOP.
