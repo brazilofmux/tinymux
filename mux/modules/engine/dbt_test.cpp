@@ -459,6 +459,43 @@ static void test_lui_sign_extend() {
     CHECK_EQ("LUI sign-extend", r.state.x[1], 0xFFFFFFFF80000000ULL);
 }
 
+static void test_lui_str_base_ecall_flush() {
+    printf("test_lui_str_base_ecall_flush...\n");
+
+    // Materialize 0x8000 with LUI+ADDI, offset into it, and hand a0 to an
+    // ECALL -- so the value has to survive the pinned-register flush an ECALL
+    // performs.  Asserted on BOTH routes: the interpreter and the host DBT.
+    //
+    // 0x8000 is not an arbitrary constant.  On the current guest layout it is
+    // rv_compiler::STR_BASE exactly, and simultaneously FARGS_LIMIT -- the
+    // boundary the two regions share (dbt_compile.h asserts
+    // FARGS_LIMIT == STR_BASE).  Compiled code materializes addresses in that
+    // band constantly, because every string constant a program references
+    // lives there.
+    //
+    // Salvaged from #2116.  That PR built it while #2107 was believed to be a
+    // backend fault at this address; #2107 turned out to be a mixed build and
+    // was closed invalid, so the motivating theory is gone.  The property is
+    // worth pinning regardless, and it is cheap: a backend that mis-sign-
+    // extends LUI here, or drops a0 across an ECALL flush, would corrupt every
+    // string reference in every compiled program, and this is the smallest
+    // possible case that would catch it.
+    //
+    const std::vector<uint32_t> code = {
+        LUI(10, 0x8000),     // a0 = 0x8000  (STR_BASE)
+        ADDI(10, 10, 8),     // a0 = 0x8008
+        ADDI(17, 0, 93),     // a7 = exit
+        ECALL()
+    };
+
+    auto r = run_code(code);
+    CHECK_EQ("LUI STR_BASE+8 a0 (interp)", r.state.x[10], 0x8008ULL);
+    CHECK_EQ("LUI STR_BASE+8 exit (interp)",
+             static_cast<uint64_t>(static_cast<unsigned>(r.exit_code)),
+             0x8008ULL);
+    CHECK_EQ("LUI STR_BASE+8 a0 (DBT)", run_code_dbt(code, 10), 0x8008ULL);
+}
+
 static void test_shifts_64bit() {
     printf("test_shifts_64bit...\n");
 
@@ -3061,6 +3098,7 @@ int main(int argc, char *argv[]) {
     test_add_sub();
     test_lui_addi();
     test_lui_sign_extend();
+    test_lui_str_base_ecall_flush();
     test_shifts_64bit();
     test_mul_div_rem();
     test_div_by_zero();
