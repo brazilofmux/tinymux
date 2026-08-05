@@ -2547,6 +2547,414 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     }
 
     // ---------------------------------------------------------------
+    // map(#dbref/attr, list[, delim[, osep[, extras...]]]) — the ITER
+    // loop machinery composed with the Tier 3 u()-inline (#2080).
+    //
+    // fun_map evaluates the attribute body through mux_exec once per
+    // element; inside a compiled program that was an ECALL back into
+    // fun_map with the body interpreted per element — measured at
+    // ~1.1us/element against ~610ns interpreted, the worst of the
+    // three routes.  This lowers the loop to the #2072 shape (cursor
+    // walk, pinned-buffer accumulator) and the body to inlined HIR.
+    //
+    // Gates, compile time: literal #dbref/attr (same constraint as the
+    // u()-inline), the attr resolves and parses, not AF_TRACE (fun_map
+    // propagates AttrTrace, which only the interpreter can honor), at
+    // most 9 extras (CARGS slots 1..9), and the blob provides
+    // SPLIT_TOKEN/APPEND/BYTELEN.  Anything else falls through to the
+    // ECALL exactly as today.
+    //
+    // Gates, runtime (one diamond around the whole loop):
+    //   - _CHECK_U_PERM(thing, attr) == 0
+    //   - executor == thing: fun_map runs the body with THING as
+    //     executor, but an inlined body runs as the program's executor
+    //     -- and a cached program can be re-run by anyone, so this
+    //     cannot be settled at compile time.  %! is compared against
+    //     the compile-time "#thing" by native STRCMP.  (The u()-inline
+    //     lives with this hole; MAP does not add another copy of it.)
+    //   - every extra fits its 256-byte CARGS slot (BYTELEN < 256):
+    //     _WRITE_CARG rejects oversized values, leaving the slot
+    //     stale, so an unchecked long extra would silently feed the
+    //     body a previous value.
+    //
+    // Per element, a second diamond for the same slot limit: elements
+    // that fit take the inlined body; oversized ones ECALL u() with the
+    // element as %0 -- semantically identical since the gate already
+    // pinned executor == thing (map_fn TC012 is the case that catches
+    // a stale or truncated %0 here).
+    // ---------------------------------------------------------------
+
+    if (fname == "MAP"
+        && node->children.size() >= 2
+        && s_compile_deps != nullptr
+        && s_inline_depth < MAX_INLINE_DEPTH)
+    {
+        // arg0 must be a compile-time literal #dbref/attr.
+        const ASTNode *arg0 = node->children[0].get();
+        std::string arg0_str;
+        bool arg0_const = false;
+        if (arg0->type == AST_LITERAL) {
+            arg0_str = arg0->text;
+            arg0_const = true;
+        } else if (arg0->type == AST_SEQUENCE
+                   && arg0->children.size() == 1
+                   && arg0->children[0]->type == AST_LITERAL) {
+            arg0_str = arg0->children[0]->text;
+            arg0_const = true;
+        }
+
+        int nExtra = static_cast<int>(node->children.size()) - 4;
+        if (nExtra < 0) nExtra = 0;
+
+        uint64_t t2split_m  = tier2_lookup("SPLIT_TOKEN");
+        uint64_t t2append_m = tier2_lookup("APPEND");
+        uint64_t t2blen_m   = tier2_lookup("BYTELEN");
+
+        dbref thing = NOTHING;
+        ATTR *pattr = nullptr;
+        if (arg0_const && !arg0_str.empty() && arg0_str[0] == '#'
+            && nExtra <= 9 && t2split_m && t2append_m && t2blen_m
+            && parse_attrib(GOD,
+                   reinterpret_cast<const UTF8 *>(arg0_str.c_str()),
+                   &thing, &pattr)
+            && pattr && Good_obj(thing))
+        {
+            dbref aowner;
+            int aflags;
+            size_t nBodyLen = 0;
+            UTF8 *body = atr_pget_LEN(thing, pattr->number,
+                                       &aowner, &aflags, &nBodyLen);
+            std::unique_ptr<ASTNode> body_ast;
+            if (body && nBodyLen > 0 && !(aflags & AF_TRACE)) {
+                body_ast = ast_parse_string(body, nBodyLen);
+            }
+            if (body) free_lbuf(body);
+
+            if (body_ast) {
+                // Watermarks: the inlined body's call depth/count are
+                // invisible to the outer AST watermark (#1056).
+                h.inline_extra_depth +=
+                    hir_ast_max_funccall_depth(body_ast.get());
+                h.inline_extra_calls +=
+                    hir_ast_funccall_count(body_ast.get());
+
+                // Cache staleness: recompile when the attr changes.
+                uint32_t mc = attr_mod_count_get(thing, pattr->number);
+                s_compile_deps->push_back({
+                    static_cast<int32_t>(thing),
+                    static_cast<int32_t>(pattr->number),
+                    mc
+                });
+
+                // Lower the original arguments once: the fallback ECALL
+                // uses all of them; the inline path reuses the list,
+                // delim, osep and extras.  The list is AST-trimmed to
+                // match the ITER lowering's existing choice.
+                std::vector<int> m_args;
+                for (size_t ci = 0; ci < node->children.size(); ci++) {
+                    int v = (ci == 1)
+                        ? hir_lower_trimmed(h, rc,
+                              node->children[ci].get())
+                        : hir_lower_argument(h, rc,
+                              node->children[ci].get());
+                    if (v < 0) return -1;
+                    if (h.ty[v] == TY_INT) {
+                        v = h.emit(HIR_ITOA, TY_STRING, v);
+                    } else if (h.ty[v] == TY_FLOAT) {
+                        v = h.emit(HIR_FTOA, TY_STRING, v);
+                    }
+                    m_args.push_back(v);
+                }
+                int list_val = m_args[1];
+                int delim_val;
+                if (node->children.size() >= 3) {
+                    delim_val = m_args[2];
+                } else {
+                    uint64_t da = rc.pool_str(" ");
+                    delim_val = h.emit_sconst(da, " ");
+                }
+                // fun_map's osep DEFAULTS TO THE DELIMITER (DELIM_INIT),
+                // unlike iter()'s space.
+                int osep_val = (node->children.size() >= 4)
+                    ? m_args[3] : delim_val;
+
+                // ---- runtime gate ----
+                int perm_idx = engine_api_lookup("_CHECK_U_PERM");
+                std::string thing_s = std::to_string(thing);
+                std::string attr_s = std::to_string(pattr->number);
+                uint64_t ta = rc.pool_str(thing_s);
+                uint64_t aa = rc.pool_str(attr_s);
+                int thing_c = h.emit_sconst(ta, thing_s);
+                int attr_c = h.emit_sconst(aa, attr_s);
+                int perm_args[2] = { thing_c, attr_c };
+                int perm_res = h.emit_call(TY_STRING, perm_idx,
+                                           perm_args, 2);
+                h.ecalls++;
+                h.known_int[perm_res] = true;
+                int perm_int = h.emit(HIR_ATOI, TY_INT, perm_res);
+                int zero_i = h.emit_iconst(0);
+                int perm_ok = h.emit(HIR_EQ, TY_INT, perm_int, zero_i);
+                h.native_ops++;
+
+                // executor == thing: %! vs "#<thing>".
+                uint64_t ex_addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
+                int ex_ref = h.emit_sref(ex_addr);
+                std::string hash_thing = "#" + thing_s;
+                uint64_t ha = rc.pool_str(hash_thing);
+                int hash_c = h.emit_sconst(ha, hash_thing);
+                int ex_cmp = h.emit(HIR_STRCMP, TY_INT, ex_ref, hash_c);
+                int ex_ok = h.emit(HIR_EQ, TY_INT, ex_cmp, zero_i);
+                h.native_ops += 2;
+                int gate = h.emit(HIR_BAND, TY_INT, perm_ok, ex_ok);
+                h.native_ops++;
+
+                // Every extra must fit its CARGS slot.
+                int c256 = h.emit_iconst(256);
+                for (int ei = 0; ei < nExtra; ei++) {
+                    int bargs[1] = { m_args[4 + ei] };
+                    int bl = h.emit_call(TY_STRING, 0, bargs, 1);
+                    h.tier2_addr[bl] = t2blen_m;
+                    h.tier2_calls++;
+                    int bl_i = h.emit(HIR_ATOI, TY_INT, bl);
+                    int fits = h.emit(HIR_LT, TY_INT, bl_i, c256);
+                    gate = h.emit(HIR_BAND, TY_INT, gate, fits);
+                    h.native_ops += 2;
+                }
+
+                int entry_blk = h.cur_block;
+                int fallback_blk = h.new_block();
+                int inline_blk = h.new_block();
+                // emit(BRC, cond, FALSE_target, TRUE_target) -- the
+                // argument order that was inverted in the u()-inline
+                // for its whole life.  gate true → inline.
+                h.emit(HIR_BRC, TY_VOID, gate, fallback_blk, inline_blk);
+                h.add_edge(entry_blk, fallback_blk);
+                h.add_edge(entry_blk, inline_blk);
+
+                // ---- fallback: ECALL fun_map with the original args --
+                h.cur_block = fallback_blk;
+                int fidx_map = engine_api_lookup("MAP");
+                int fb_res = h.emit_call(TY_STRING, fidx_map,
+                    m_args.data(), static_cast<int>(m_args.size()));
+                h.ecalls++;
+                int fb_exit = h.cur_block;
+                int fb_br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+
+                // ---- inline path ----
+                h.cur_block = inline_blk;
+
+                // CARGS save; extras into slots 1..; %+ count.
+                int save_idx = engine_api_lookup("_SAVE_CARGS");
+                int cargs_handle = h.emit_call(TY_STRING, save_idx,
+                                               nullptr, 0);
+                h.ecalls++;
+                int write_idx = engine_api_lookup("_WRITE_CARG");
+                for (int ei = 0; ei < nExtra; ei++) {
+                    std::string is = std::to_string(ei + 1);
+                    uint64_t ia = rc.pool_str(is);
+                    int idx_c = h.emit_sconst(ia, is);
+                    int wargs[2] = { idx_c, m_args[4 + ei] };
+                    h.emit_call(TY_STRING, write_idx, wargs, 2);
+                    h.ecalls++;
+                }
+                int ncargs_idx = engine_api_lookup("_SET_NCARGS");
+                std::string nc_s = std::to_string(nExtra + 1);
+                uint64_t na = rc.pool_str(nc_s);
+                int nc_c = h.emit_sconst(na, nc_s);
+                int ncarg_arg[1] = { nc_c };
+                h.emit_call(TY_STRING, ncargs_idx, ncarg_arg, 1);
+                h.ecalls++;
+
+                // WORDS(list, delim) — loop bound.
+                int words_idx = engine_api_lookup("WORDS");
+                int wargs2[2] = { list_val, delim_val };
+                int nwords_str = h.emit_call(TY_STRING, words_idx,
+                                             wargs2, 2);
+                h.known_int[nwords_str] = true;
+                uint64_t t2words = tier2_lookup("WORDS");
+                if (t2words) {
+                    h.tier2_addr[nwords_str] = t2words;
+                    h.tier2_calls++;
+                } else {
+                    h.ecalls++;
+                }
+                int nwords_int = h.emit(HIR_ATOI, TY_INT, nwords_str);
+
+                // Loop state: counter, cursor, pinned accumulator.
+                int inum_init = h.emit_iconst(0);
+                h.emit(HIR_STORE_Q, TY_VOID, inum_init, -1,
+                       QREG_ITER_INUM);
+                int cur_init = h.emit_iconst(0);
+                h.emit(HIR_STORE_Q, TY_VOID, cur_init, -1,
+                       QREG_ITER_CURSOR);
+                uint64_t acc_addr = rc.alloc_output();
+                int len_init = h.emit_iconst(0);
+                h.emit(HIR_STORE_Q, TY_VOID, len_init, -1,
+                       QREG_ITER_ACC);
+                uint64_t e_addr = rc.pool_str("");
+                uint64_t z_addr = rc.pool_str("0");
+                int z_str = h.emit_sconst(z_addr, "0");
+                int e_str = h.emit_sconst(e_addr, "");
+                int acc_r0 = h.emit_sref(acc_addr);
+                int rst_args[5] = { acc_r0, z_str, z_str, e_str, e_str };
+                int rst = h.emit_call(TY_STRING, 0, rst_args, 5);
+                h.tier2_addr[rst] = t2append_m;
+                h.tier2_calls++;
+
+                int pre_hdr = h.cur_block;
+                int hdr_blk = h.new_block();
+                h.emit(HIR_BR, TY_VOID, -1, -1, hdr_blk);
+                h.add_edge(pre_hdr, hdr_blk);
+
+                // Header: loop-carried loads live here (TC020's lesson).
+                h.cur_block = hdr_blk;
+                int inum = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_INUM);
+                int mlen = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_ACC);
+                int mcur = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_CURSOR);
+                int cond = h.emit(HIR_LT, TY_INT, inum, nwords_int);
+                h.native_ops++;
+                int body_blk = h.new_block();
+                int exit_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, cond, exit_blk, body_blk);
+                h.add_edge(hdr_blk, body_blk);
+                h.add_edge(hdr_blk, exit_blk);
+
+                // Body: cursor walk.
+                h.cur_block = body_blk;
+                int one_i = h.emit_iconst(1);
+                int inum1 = h.emit(HIR_ADD, TY_INT, inum, one_i);
+                h.native_ops++;
+                int cur_str = h.emit(HIR_ITOA, TY_STRING, mcur);
+                uint64_t m0a = rc.pool_str("0");
+                int m0 = h.emit_sconst(m0a, "0");
+                int st0[4] = { list_val, cur_str, delim_val, m0 };
+                int elem = h.emit_call(TY_STRING, 0, st0, 4);
+                h.tier2_addr[elem] = t2split_m;
+                h.tier2_calls++;
+                uint64_t m1a = rc.pool_str("1");
+                int m1 = h.emit_sconst(m1a, "1");
+                int st1[4] = { list_val, cur_str, delim_val, m1 };
+                int nxt_str = h.emit_call(TY_STRING, 0, st1, 4);
+                h.tier2_addr[nxt_str] = t2split_m;
+                h.tier2_calls++;
+                int nxt_cur = h.emit(HIR_ATOI, TY_INT, nxt_str);
+
+                // Element-size diamond: fits → inlined body,
+                // oversized → ECALL u(#thing/attr, elem).
+                int eb_args[1] = { elem };
+                int eb = h.emit_call(TY_STRING, 0, eb_args, 1);
+                h.tier2_addr[eb] = t2blen_m;
+                h.tier2_calls++;
+                int eb_i = h.emit(HIR_ATOI, TY_INT, eb);
+                int e_fits = h.emit(HIR_LT, TY_INT, eb_i, c256);
+                h.native_ops++;
+                int uarm_blk = h.new_block();
+                int ibody_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, e_fits, uarm_blk, ibody_blk);
+                h.add_edge(h.cur_block, uarm_blk);
+                h.add_edge(h.cur_block, ibody_blk);
+
+                // Inlined body arm.
+                h.cur_block = ibody_blk;
+                uint64_t i0a = rc.pool_str("0");
+                int i0c = h.emit_sconst(i0a, "0");
+                int w0[2] = { i0c, elem };
+                h.emit_call(TY_STRING, write_idx, w0, 2);
+                h.ecalls++;
+                bool saved_fcheck = s_fcheck_available;
+                s_fcheck_available = true;
+                s_inline_depth++;
+                int ib_val = hir_lower_node(h, rc, body_ast.get());
+                s_inline_depth--;
+                s_fcheck_available = saved_fcheck;
+                if (ib_val < 0) return -1;
+                if (h.ty[ib_val] == TY_INT) {
+                    ib_val = h.emit(HIR_ITOA, TY_STRING, ib_val);
+                } else if (h.ty[ib_val] == TY_FLOAT) {
+                    ib_val = h.emit(HIR_FTOA, TY_STRING, ib_val);
+                }
+                int ib_exit = h.cur_block;
+                int ib_br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+
+                // Oversized-element arm: ECALL u().
+                h.cur_block = uarm_blk;
+                int fidx_u2 = engine_api_lookup("U");
+                std::string uref = arg0_str;
+                uint64_t ua = rc.pool_str(uref);
+                int uref_c = h.emit_sconst(ua, uref);
+                int uargs[2] = { uref_c, elem };
+                int ua_val = h.emit_call(TY_STRING, fidx_u2, uargs, 2);
+                h.ecalls++;
+                int ua_exit = h.cur_block;
+
+                // Element merge — allocated after both arms.
+                int emerge_blk = h.new_block();
+                h.val[ib_br] = emerge_blk;
+                h.add_edge(ib_exit, emerge_blk);
+                h.emit(HIR_BR, TY_VOID, -1, -1, emerge_blk);
+                h.add_edge(ua_exit, emerge_blk);
+
+                h.cur_block = emerge_blk;
+                int eblocks[2] = { ib_exit, ua_exit };
+                int evals[2] = { ib_val, ua_val };
+                int body_val = h.emit_phi(TY_STRING, -1,
+                                          eblocks, evals, 2);
+
+                // Append and latch stores.
+                int len_str = h.emit(HIR_ITOA, TY_STRING, mlen);
+                int inum_str = h.emit(HIR_ITOA, TY_STRING, inum);
+                int acc_r = h.emit_sref(acc_addr);
+                int ap_args[5] = { acc_r, len_str, inum_str,
+                                   osep_val, body_val };
+                int nl_str = h.emit_call(TY_STRING, 0, ap_args, 5);
+                h.tier2_addr[nl_str] = t2append_m;
+                h.tier2_calls++;
+                int nl = h.emit(HIR_ATOI, TY_INT, nl_str);
+                h.emit(HIR_STORE_Q, TY_VOID, nl, -1, QREG_ITER_ACC);
+                h.emit(HIR_STORE_Q, TY_VOID, inum1, -1, QREG_ITER_INUM);
+                h.emit(HIR_STORE_Q, TY_VOID, nxt_cur, -1,
+                       QREG_ITER_CURSOR);
+                h.emit(HIR_BR, TY_VOID, -1, -1, hdr_blk);
+                h.add_edge(h.cur_block, hdr_blk);
+
+                // Exit: restore CARGS, read the pinned buffer.
+                h.cur_block = exit_blk;
+                int restore_idx = engine_api_lookup("_RESTORE_CARGS");
+                int rc_args[1] = { cargs_handle };
+                h.emit_call(TY_STRING, restore_idx, rc_args, 1);
+                h.ecalls++;
+                int in_res = h.emit_sref(acc_addr);
+                int in_exit = h.cur_block;
+
+                // Merge with the fallback — allocated last, all edges
+                // forward.
+                int merge_blk = h.new_block();
+                h.val[fb_br] = merge_blk;
+                h.add_edge(fb_exit, merge_blk);
+                h.cur_block = in_exit;
+                h.emit(HIR_BR, TY_VOID, -1, -1, merge_blk);
+                h.add_edge(in_exit, merge_blk);
+
+                h.cur_block = merge_blk;
+                int mblocks[2] = { fb_exit, in_exit };
+                int mvals[2] = { fb_res, in_res };
+                int phi = h.emit_phi(TY_STRING, -1, mblocks, mvals, 2);
+
+                // The body may setq; like non-local u(), mutations leak
+                // by design and which path ran is a runtime fact.
+                qreg_clobber();
+                h.needs_jit = true;
+                return phi;
+            }
+        }
+        // Fall through: ECALL fun_map, exactly as before.
+    }
+
+    // ---------------------------------------------------------------
     // @@(expr) — null function.  Discard argument, return empty.
     // ---------------------------------------------------------------
 

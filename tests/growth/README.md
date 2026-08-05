@@ -47,6 +47,21 @@ The class bands in `driver.py` are wide and **do not touch**. A genuinely noisy
 measurement lands in a gap and is reported `unclassified`, which fails, rather
 than being quietly promoted into the neighbouring class.
 
+The match is **exact** — deliberately, in both directions. A first version of
+the MAP inline guard tried treating the expected class as a ceiling so that
+sub-linear (a large fixed cost amortizing) would pass; review killed it with
+the right counterexample: a case whose cost stops varying with N — erroring
+early, constant-folded, serving a cached result — also reads sub-linear, and
+"this stopped growing at all" is one of the two failures the harness exists to
+catch. The two are indistinguishable to a ceiling.
+
+The correct tool is **case sizing**: fixed cost falls out of the exponent as N
+grows, so size cases until it is a small share of the top measurement. The MAP
+inline path carries ~73 µs fixed; over 250..2000 that is ~13% at the top and
+b=0.68 (fails), over 500..4000 it is ~7% and b≈1.0 (passes). If a future case
+cannot amortize its fixed cost inside one LBUF, fit the affine model
+t = a + b·N and classify the slope — do not loosen the bands.
+
 Nothing is classified unless its smallest-N time clears `FLOOR_US`. Below that
 the measurement is dominated by fixed per-call overhead and *everything* reads
 as constant — which is precisely how a quadratic loop passes a growth test. A

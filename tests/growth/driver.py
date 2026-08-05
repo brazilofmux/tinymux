@@ -181,6 +181,24 @@ CASES = [
     # The attribute comes from SETUP.
     ("map(me/GROWTH.MAPB,lnum({N}))", "interp", [250, 500, 1000, 2000], "linear", None),
     ("map(me/GROWTH.MAPB,lnum({N}))", "jit",    [250, 500, 1000, 2000], "linear", None),
+
+    # The INLINE path (#2080): a literal #dbref/attr with executor == thing
+    # is the one shape the MAP lowering compiles.  #1 is the Wizard and is
+    # stable in every database, and muxscript runs as #1, so this exercises
+    # the inlined body + pinned accumulator rather than the ECALL fallback
+    # the me/ spelling takes (name references never inline).
+    #
+    # Sizes start at 500 and run to 4000 (the lnum()-in-one-LBUF ceiling)
+    # because this path carries ~73us of per-call fixed cost -- gate ECALL,
+    # CARGS save/restore, WORDS -- which drags the log-log exponent below
+    # the linear band when small sizes dominate the fit (b=0.68 over
+    # 250..2000, ~13% fixed share at the top size; b~0.95 over 500..4000,
+    # ~7%).  Size cases so fixed costs amortize; do NOT loosen the class
+    # bands instead -- a guard that accepts sub-linear cannot tell a fixed
+    # cost amortizing from the case silently ceasing to do the work, which
+    # is one of the two failures this harness exists to catch (#2094
+    # review).
+    ("map(#1/GROWTH.MAPB,lnum({N}))", "jit", [500, 1000, 2000, 4000], "linear", None),
 ]
 
 AST_RE = re.compile(r"ast=([0-9.]+)us")
