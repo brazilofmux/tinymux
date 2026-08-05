@@ -6,6 +6,7 @@
  * points: jit_eval(), fun_jitstats(), fun_rveval(), fun_rvbench().
  */
 
+#include "jit_tier1_stamp.h"
 #include "copyright.h"
 #include "autoconf.h"
 #include "config.h"
@@ -513,9 +514,21 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     }
 
     s_tier2.loaded = true;
+    // Tier 1 leg: every unit that can emit different RV64 for the same
+    // softcode, each carrying its own __DATE__/__TIME__ (#2061).  JIT_BUILD_STAMP
+    // alone covered only this file, so a codegen change in any other unit left
+    // the key unmoved and the cache served the previous build's output.
+    // Deliberately excludes the dbt_* units: they execute the stored RV64
+    // rather than produce it, so invalidating on their account would discard
+    // the cache for no gain.  See jit_tier1_stamp.h.
     const void *parts[] = {
         JIT_COMPILER_VERSION,
         JIT_BUILD_STAMP,
+        TIER1_STAMP_AST,
+        TIER1_STAMP_HIR_LOWER,
+        TIER1_STAMP_HIR_SSA,
+        TIER1_STAMP_HIR_OPT,
+        TIER1_STAMP_HIR_CODEGEN,
         &hdr,
         s_tier2.image.data(),
         entries.empty() ? nullptr : entries.data(),
@@ -523,11 +536,17 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     const size_t sizes[] = {
         sizeof(JIT_COMPILER_VERSION) - 1,
         sizeof(JIT_BUILD_STAMP) - 1,
+        // strlen, not sizeof: these are extern arrays of unknown bound here.
+        strlen(TIER1_STAMP_AST),
+        strlen(TIER1_STAMP_HIR_LOWER),
+        strlen(TIER1_STAMP_HIR_SSA),
+        strlen(TIER1_STAMP_HIR_OPT),
+        strlen(TIER1_STAMP_HIR_CODEGEN),
         sizeof(hdr),
         s_tier2.code_size,
         entries.size() * sizeof(rv64_blob_entry),
     };
-    s_blob_version = sha1_hex_parts(parts, sizes, 5);
+    s_blob_version = sha1_hex_parts(parts, sizes, 10);
     return true;
 }
 
@@ -862,13 +881,28 @@ static void tier2_lazy_init() {
     // not a silent mode of normal operation (#875).
     fprintf(stderr, "tier2: softlib.rv64 missing or unloadable -- "
             "JIT disabled, falling back to the interpreter\n");
-    // Still hash the compiler version so tier 1 upgrades invalidate.
-    const void *parts[] = { JIT_COMPILER_VERSION, JIT_BUILD_STAMP };
+    // Still hash the compiler version so tier 1 upgrades invalidate.  Same
+    // per-unit stamps as the loaded path (#2061) -- without them this leg has
+    // the identical hole, and it is the leg a blob-less build runs on.
+    const void *parts[] = {
+        JIT_COMPILER_VERSION,
+        JIT_BUILD_STAMP,
+        TIER1_STAMP_AST,
+        TIER1_STAMP_HIR_LOWER,
+        TIER1_STAMP_HIR_SSA,
+        TIER1_STAMP_HIR_OPT,
+        TIER1_STAMP_HIR_CODEGEN,
+    };
     const size_t sizes[] = {
         sizeof(JIT_COMPILER_VERSION) - 1,
         sizeof(JIT_BUILD_STAMP) - 1,
+        strlen(TIER1_STAMP_AST),
+        strlen(TIER1_STAMP_HIR_LOWER),
+        strlen(TIER1_STAMP_HIR_SSA),
+        strlen(TIER1_STAMP_HIR_OPT),
+        strlen(TIER1_STAMP_HIR_CODEGEN),
     };
-    s_blob_version = sha1_hex_parts(parts, sizes, 2);
+    s_blob_version = sha1_hex_parts(parts, sizes, 7);
 }
 
 void tier2_ensure(void) {

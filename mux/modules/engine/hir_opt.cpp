@@ -33,6 +33,14 @@
 #include <unordered_map>
 #include <vector>
 
+#include "jit_tier1_stamp.h"
+
+// Tier 1 build stamp for this unit (#2061).  Folded into the persisted
+// code_cache's staleness key so a codegen change here invalidates entries
+// compiled by the previous build.  Updates when THIS unit is recompiled,
+// which is what makes it work under incremental make.
+TIER1_STAMP_DEFINE(TIER1_STAMP_HIR_OPT);
+
 // ---------------------------------------------------------------
 // Value Numbering Key for CSE
 // ---------------------------------------------------------------
