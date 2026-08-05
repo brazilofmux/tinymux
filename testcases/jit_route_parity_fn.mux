@@ -212,11 +212,54 @@
         strmatch(u(me/fn.mul,2.5,4),10)
       )=
   {
-    @log smoke=TC009: u()/cargs float math via blob. Succeeded.;
+    @log smoke=TC009: u()/cargs float math via blob. Succeeded.
+  },
+  {
+    @log smoke=TC009: u()/cargs float math via blob. Failed (mul=[u(me/fn.mul,6,7)] fdiv=[u(me/fn.fdiv,20,8)] sub=[u(me/fn.sub,3.5,1.25)] sqrt=[u(me/fn.sqrt,16)] mulf=[u(me/fn.mul,2.5,4)]).
+  }
+-
+#
+# Test Case #10 - a denied u() stays denied on EVERY route (#2092).
+#
+# The JIT inlines u() only when the first argument is a LITERAL #dbref.
+# The spelling is therefore the whole test: u(me/attr) and u([num(#1)]/attr)
+# never reach the inline gate, u(#1/attr) does.
+#
+# #2092 was a reversed branch that sent DENIED calls into the inline arm, so
+# a no_eval attribute had its body evaluated anyway on the compiled route
+# while the interpreter route correctly returned the text.  The corpus missed
+# it for one reason: its only denial coverage (lambda_fn TC012) spells its
+# target me/attr, the one form the gate ignores.
+#
+# #1 is the target because the gate needs a literal dbref and the test
+# object's number is not known when this file is written.  Verified to have
+# teeth: with #2092 reverted, the literal leg returns 5 while the indirect
+# leg returns the text, so both the shape assertions and the agreement
+# assertion fail.
+#
+# The fn.plain leg is a positive control.  Without it this case would still
+# pass if the inline were disabled outright, which would make it blind to
+# exactly the path it exists to cover.
+#
+&fn.noev #1=add(%0,%1)
+-
+&fn.plain #1=add(%0,%1)
+-
+@set #1/fn.noev=no_eval
+-
+&tr.tc010 test_jit_route_parity_fn=
+  @if cand(
+        strmatch(u(#1/fn.noev,2,3), add\(*\)),
+        strmatch(u([num(#1)]/fn.noev,2,3), add\(*\)),
+        strmatch(u(#1/fn.noev,2,3), u([num(#1)]/fn.noev,2,3)),
+        strmatch(u(#1/fn.plain,2,3), 5)
+      )=
+  {
+    @log smoke=TC010: denied u() parity across routes. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC009: u()/cargs float math via blob. Failed (mul=[u(me/fn.mul,6,7)] fdiv=[u(me/fn.fdiv,20,8)] sub=[u(me/fn.sub,3.5,1.25)] sqrt=[u(me/fn.sqrt,16)] mulf=[u(me/fn.mul,2.5,4)]).;
+    @log smoke=TC010: denied u() parity across routes. Failed (lit=[u(#1/fn.noev,2,3)] ind=[u([num(#1)]/fn.noev,2,3)] plain=[u(#1/fn.plain,2,3)]).;
     @trig me/tr.done
   }
 -
