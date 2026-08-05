@@ -1,0 +1,181 @@
+#
+# fold_fn.mux - Test Cases for fold().
+#
+# fold() had no dedicated coverage.  #2080 gives it a JIT lowering; the
+# smoke suite runs this file on BOTH routes, so every case is a
+# route-parity assertion, written against the INTERPRETER first.
+#
+# fun_fold semantics pinned here (functions.cpp), and two of them are
+# traps a lowering will walk into:
+#
+#   fold(<obj>/<attr>, <list>[, <base>[, <delim>]])
+#
+#   - The DELIMITER IS ARGUMENT 4, not 3.  OPTIONAL_DELIM(4,...).  map(),
+#     filter() and iter() all take it at 3; fold() does not, because
+#     argument 3 is the base value.  TC004 is what catches a lowering
+#     that copies map()'s argument order.
+#   - WITH a base: clist = (base, first element), and the loop starts at
+#     the SECOND element.  WITHOUT a base: clist = (first, second) and the
+#     loop starts at the THIRD.  A no-base fold therefore consumes TWO
+#     elements before iterating.  TC002/TC003 pin both.
+#   - The accumulator is %0 and the element is %1.
+#   - There is no osep: fold returns ONE value, not a list.
+#   - The accumulator is REPLACED each iteration (mux_strncpy), not
+#     appended to -- so a lowering reusing the pinned-buffer accumulator
+#     must write at offset 0 rather than append.
+#
+@create test_fold_fn
+-
+@set test_fold_fn=INHERIT QUIET
+-
+&F.ADD test_fold_fn=[add(%0,%1)]
+-
+&F.CAT test_fold_fn=%0%1
+-
+&F.MAX test_fold_fn=[if(gt(%1,%0),%1,%0)]
+-
+&tr.tc000 test_fold_fn=
+  @log smoke=Beginning fold function test cases.
+-
+#
+# Test Case #1 - Sum with an explicit base.
+#
+&tr.tc001 test_fold_fn=
+  @if strmatch(fold(me/F.ADD,1 2 3 4,0),10)=
+  {
+    @log smoke=TC001: fold sum with base. Succeeded.
+  },
+  {
+    @log smoke=TC001: fold sum with base. Failed ([fold(me/F.ADD,1 2 3 4,0)]).
+  }
+-
+#
+# Test Case #2 - No base: the first TWO elements seed the fold, so the
+# body runs one fewer time than with a base.  Same list, same answer
+# here, but the element consumption differs and TC003 makes that visible.
+#
+&tr.tc002 test_fold_fn=
+  @if strmatch(fold(me/F.ADD,1 2 3 4),10)=
+  {
+    @log smoke=TC002: fold sum without base. Succeeded.
+  },
+  {
+    @log smoke=TC002: fold sum without base. Failed ([fold(me/F.ADD,1 2 3 4)]).
+  }
+-
+#
+# Test Case #3 - The base/no-base difference made visible with a
+# non-commutative body: concatenation records the order and the seed.
+#
+&tr.tc003 test_fold_fn=
+  @if cand(
+        strmatch(fold(me/F.CAT,a b c,Z), Zabc),
+        strmatch(fold(me/F.CAT,a b c), abc)
+      )=
+  {
+    @log smoke=TC003: fold base seeds the accumulator. Succeeded.
+  },
+  {
+    @log smoke=TC003: fold base seeds the accumulator. Failed (base=[fold(me/F.CAT,a b c,Z)] nobase=[fold(me/F.CAT,a b c)]).
+  }
+-
+#
+# Test Case #4 - The delimiter is ARGUMENT 4.  A lowering that reads it
+# at position 3 (map/filter/iter order) would treat "|" as the BASE and
+# split on spaces, giving a different answer entirely.
+#
+&tr.tc004 test_fold_fn=
+  @if strmatch(fold(me/F.ADD,1|2|3,0,|),6)=
+  {
+    @log smoke=TC004: fold delimiter is argument 4. Succeeded.
+  },
+  {
+    @log smoke=TC004: fold delimiter is argument 4. Failed ([fold(me/F.ADD,1|2|3,0,|)]).
+  }
+-
+#
+# Test Case #5 - Single-element list with a base: the body runs exactly
+# once and the loop never iterates.
+#
+&tr.tc005 test_fold_fn=
+  @if strmatch(fold(me/F.CAT,x,S),Sx)=
+  {
+    @log smoke=TC005: fold single element with base. Succeeded.
+  },
+  {
+    @log smoke=TC005: fold single element with base. Failed ([fold(me/F.CAT,x,S)]).
+  }
+-
+#
+# Test Case #6 - A body that is not a fold-style reduction still works:
+# running max over a list.
+#
+&tr.tc006 test_fold_fn=
+  @if strmatch(fold(me/F.MAX,3 9 2 7,0),9)=
+  {
+    @log smoke=TC006: fold running max. Succeeded.
+  },
+  {
+    @log smoke=TC006: fold running max. Failed ([fold(me/F.MAX,3 9 2 7,0)]).
+  }
+-
+#
+# Test Case #7 - An accumulator longer than a compiled CARGS slot (256
+# bytes).  %0 carries the accumulator, so a lowering that writes it into
+# a guest CARGS slot must fall back per element once it no longer fits
+# rather than truncate or reuse the previous value.  Built at runtime so
+# no source line is oversized; 40 elements of 10 bytes = 400.
+#
+&tr.tc007 test_fold_fn=
+  @if strmatch(strlen(fold(me/F.CAT,[repeat(0123456789%b,40)],)),400)=
+  {
+    @log smoke=TC007: fold accumulator past a CARGS slot. Succeeded.
+  },
+  {
+    @log smoke=TC007: fold accumulator past a CARGS slot. Failed ([strlen(fold(me/F.CAT,[repeat(0123456789%b,40)],))]).
+  }
+-
+#
+# Test Case #8 - fold nested in iter: %0/%1 belong to the fold body,
+# ## to the loop.
+#
+&tr.tc008 test_fold_fn=
+  @if strmatch(iter(1 2,[fold(me/F.ADD,##%b10,0)]),11 12)=
+  {
+    @log smoke=TC008: fold nested in iter. Succeeded.
+  },
+  {
+    @log smoke=TC008: fold nested in iter. Failed ([iter(1 2,[fold(me/F.ADD,##%b10,0)])]).
+  }
+-
+#
+# Test Case #9 - Body tracks attribute edits (the stale-inline case).
+# Constant bodies: %-escape depth differs per @wait level.
+#
+&tr.tc009 test_fold_fn=
+  &F.EDIT me=OLD;
+  @wait 0={
+    think [null(fold(me/F.EDIT,a b,S))];
+    &F.EDIT me=NEW;
+    @wait 0={
+      @if strmatch(fold(me/F.EDIT,a b,S),NEW)=
+      {
+        @log smoke=TC009: fold tracks attribute edits. Succeeded.;
+        @trig me/tr.done
+      },
+      {
+        @log smoke=TC009: fold tracks attribute edits. Failed ([fold(me/F.EDIT,a b,S)] wanted NEW).;
+        @trig me/tr.done
+      }
+    }
+  }
+-
+&tr.done test_fold_fn=
+  @log smoke=End fold function test cases.;
+  @notify smoke
+-
+drop test_fold_fn
+-
+#
+# End of Test Cases
+#
