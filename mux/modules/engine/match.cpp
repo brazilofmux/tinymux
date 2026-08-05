@@ -490,7 +490,19 @@ static void match_list(dbref container, dbref first, int local)
                 {
                     // Confirm with the real comparison before promoting: the
                     // bucket is a filter, not the decision.
-                    bool bAny = false;
+                    //
+                    // Snapshot the match state so the short-circuit below can
+                    // tell whether a promote LANDED, rather than whether the
+                    // name compared equal (#2110).  promote_match() returns
+                    // without promoting when REALITY_LVLS hides the candidate
+                    // from the looker, and skipping the rest of the container
+                    // on a declined exact match loses the partial match the
+                    // walk would have gone on to find.  Three fields, not just
+                    // md.count: a higher-confidence promote replaces md.match
+                    // while leaving the count at 1.
+                    const int   nBefore = md.count;
+                    const int   cBefore = md.confidence;
+                    const dbref mBefore = md.match;
                     for (const dbref cand : hit->second)
                     {
                         if (cand == md.absolute_form)
@@ -501,12 +513,14 @@ static void match_list(dbref container, dbref first, int local)
                         if (!string_compare(PureName(cand), md.string))
                         {
                             promote_match(cand, CON_COMPLETE | local);
-                            bAny = true;
                         }
                     }
                     // An exact match outranks every partial one, so the rest
-                    // of the list cannot change the answer.
-                    if (bAny)
+                    // of the list cannot change the answer -- but only if one
+                    // actually took.
+                    if (  md.count      != nBefore
+                       || md.confidence != cBefore
+                       || md.match      != mBefore)
                     {
                         return;
                     }
