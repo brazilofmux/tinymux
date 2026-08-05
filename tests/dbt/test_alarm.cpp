@@ -258,7 +258,21 @@ static bool run_case(const alarm_case &c)
 // max_dispatch is the other guard the issue names.  It is a count, not a
 // deadline, so it needs its own case: a loop that never reaches the dispatcher
 // cannot exceed a dispatch limit either.
-static bool run_max_dispatch_case()
+//
+// The property under test does not depend on the value of max_dispatch: only
+// that dbt_run returns -2 once dispatch_count exceeds it.  10000 cost ~1.2s
+// on a fast host and left only a 4x margin against GRACE_MS, so a throttled
+// laptop or busy CI runner timed out and the message blamed #1571 (#2101).
+// 1000 proves the same bound with ~40x margin and ~1s less wall clock.
+//
+static constexpr uint64_t MAX_DISPATCH_BOUND = 1000;
+static constexpr uint64_t MAX_DISPATCH_PROBE = 100;
+
+// Run the counted loop under max_dispatch and wait up to grace_ms for -2.
+// On timeout the worker is detached (still spinning) and true is returned
+// in *timed_out.  Caller owns the heap state either way.
+static int run_max_dispatch_once(
+    uint64_t max_dispatch, int grace_ms, bool *timed_out)
 {
     auto *mem  = new std::vector<uint8_t>(MEM_SIZE, 0);
     auto *dbt  = new dbt_state_t();
@@ -269,9 +283,11 @@ static bool run_max_dispatch_case()
 
     if (dbt_init(dbt, mem->data(), MEM_SIZE, alarm_test_ecall, nullptr) != 0) {
         fprintf(stderr, "  FAIL: max_dispatch: dbt_init\n");
-        return false;
+        delete done; delete rc; delete dbt; delete mem;
+        *timed_out = false;
+        return 1;  // non-zero, not -2
     }
-    dbt->max_dispatch = 10000;
+    dbt->max_dispatch = max_dispatch;
 
     std::thread worker([dbt, entry, rc, done] {
         rc->store(dbt_run(dbt, entry, MEM_SIZE - 16));
@@ -279,35 +295,72 @@ static bool run_max_dispatch_case()
     });
 
     auto deadline = std::chrono::steady_clock::now()
-                  + std::chrono::milliseconds(GRACE_MS);
+                  + std::chrono::milliseconds(grace_ms);
     while (!done->load() && std::chrono::steady_clock::now() < deadline) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     if (!done->load()) {
-        fprintf(stderr,
-                "  FAIL: max_dispatch: dbt_run did not return within %d ms\n",
-                GRACE_MS);
-        fprintf(stderr,
-                "        max_dispatch=%llu was never reached because the loop\n"
-                "        never returns to the dispatcher to be counted (#1571).\n",
-                static_cast<unsigned long long>(dbt->max_dispatch));
         worker.detach();
-        return false;
+        // State deliberately leaked: the worker still owns it.
+        *timed_out = true;
+        return 0;
     }
 
     worker.join();
-    if (rc->load() != -2) {
+    int result = rc->load();
+    dbt_cleanup(dbt);
+    delete done; delete rc; delete dbt; delete mem;
+    *timed_out = false;
+    return result;
+}
+
+static bool run_max_dispatch_case()
+{
+    bool timed_out = false;
+    int rc = run_max_dispatch_once(MAX_DISPATCH_BOUND, GRACE_MS, &timed_out);
+
+    if (timed_out) {
+        // Discriminate "dispatcher never reached" (#1571) from "host is
+        // slower than the budget assumes" (#2101).  A tiny bound on a
+        // fresh state: if that returns -2, the dispatcher is fine and
+        // only the wall clock was wrong.
+        bool probe_timed_out = false;
+        int probe_rc = run_max_dispatch_once(
+            MAX_DISPATCH_PROBE, GRACE_MS, &probe_timed_out);
+
+        fprintf(stderr,
+                "  FAIL: max_dispatch: dbt_run did not return within %d ms\n"
+                "        (max_dispatch=%llu).\n",
+                GRACE_MS,
+                static_cast<unsigned long long>(MAX_DISPATCH_BOUND));
+        if (!probe_timed_out && probe_rc == -2) {
+            fprintf(stderr,
+                    "        Probe with max_dispatch=%llu returned -2, so the\n"
+                    "        dispatcher IS being reached — this host is more\n"
+                    "        than ~4x slower than the budget assumes, not a\n"
+                    "        #1571 regression.  Re-run on an idle box, or lower\n"
+                    "        MAX_DISPATCH_BOUND further (#2101).\n",
+                    static_cast<unsigned long long>(MAX_DISPATCH_PROBE));
+        } else {
+            fprintf(stderr,
+                    "        Probe with max_dispatch=%llu also failed to return\n"
+                    "        -2 in time (timed_out=%d rc=%d).  The loop may never\n"
+                    "        return to the dispatcher to be counted (#1571).\n",
+                    static_cast<unsigned long long>(MAX_DISPATCH_PROBE),
+                    probe_timed_out ? 1 : 0, probe_rc);
+        }
+        return false;
+    }
+
+    if (rc != -2) {
         fprintf(stderr,
                 "  FAIL: max_dispatch: dbt_run returned %d, expected -2\n",
-                rc->load());
-        dbt_cleanup(dbt);
+                rc);
         return false;
     }
 
     printf("  ok: max_dispatch bound (dbt_run returned -2)\n");
-    dbt_cleanup(dbt);
-    delete done; delete rc; delete dbt; delete mem;
     return true;
 }
 
