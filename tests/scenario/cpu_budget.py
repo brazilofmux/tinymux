@@ -27,8 +27,12 @@
 #
 # Timing was measured with a probe either side of drv_ProcessCommand: with
 # lag_limit 1 the alarm fires at 1.001s, so these cases are fast and cannot
-# hang the harness.  The same expression completes in ~4.8s under a high
-# budget, which is what the control asserts.
+# hang the harness.
+#
+# The expensive expression's SIZE is measured on the running box rather than
+# baked in -- see the note on CAL_SIZES (#2112).  A hardcoded size is a claim
+# about how fast this tree evaluates softcode, and that claim goes stale every
+# time someone lands a lowering.
 #
 # Driven by tests/scenario/run.sh.  Usage: cpu_budget.py [host] [port]
 
@@ -41,13 +45,39 @@ PORT = int(sys.argv[2]) if len(sys.argv) > 2 else 6250
 
 WIZ_LOGIN = "connect Wizard potrzebie"
 
-# Costs ~1.4s of evaluation, every intermediate well inside LBUF, and it
-# terminates on its own -- so the "completes under a high budget" control is
-# a real completion rather than a second abort.  Deliberately NOT sized to
-# need function_invocation_limit raised: doing that removes the guard that
-# normally bounds runaway softcode, and expressions large enough to need it
-# were measured running unbounded.
-EXPENSIVE = "[strlen(iter(lnum(1,600),[strlen(iter(lnum(1,600),##))]))]"
+# The expensive expression is SIZED AT RUNTIME, not baked in (#2112).
+#
+# It used to be a literal with N=600 and a comment saying "costs ~1.4s of
+# evaluation" against a 1s budget.  The nested-iter work in #2072/#2076/#2078
+# then made that shape ~13x cheaper -- measured at 0.09s -- so it completed in
+# a twelfth of the budget, no abort was ever emitted, and the case sat failing
+# for days.  `test-scenario` is opt-in and outside `make test`, so nothing
+# noticed.
+#
+# Picking a bigger constant only moves the trap: the next iter() improvement
+# stales it again, and a size that measures near the budget is flaky the day it
+# lands.  So measure on the box we are actually running on, and choose a size
+# whose real cost clears the budget by a wide margin.
+#
+# Every intermediate stays well inside LBUF and the expression terminates on
+# its own, so the "completes under a high budget" control is a real completion
+# rather than a second abort.  Deliberately NOT sized to need
+# function_invocation_limit raised: doing that removes the guard that normally
+# bounds runaway softcode, and expressions large enough to need it were
+# measured running unbounded.
+def expensive(n):
+    return "[strlen(iter(lnum(1,%d),[strlen(iter(lnum(1,%d),##))]))]" % (n, n)
+
+
+# Ladder of candidate sizes, cheapest first.  The top is bounded by LBUF, not
+# by taste: the outer iter emits N copies of a 5-digit length plus separators,
+# so N=5000 already produces ~30KB against a 32768-byte LBUF and N=6000 cannot
+# fit.  Cost grows ~N^2 here.
+CAL_SIZES = [600, 1200, 2000, 3000, 4000, 5000]
+
+# How far over the budget the chosen size must measure.  3x keeps the abort
+# unambiguous on a box that is merely busy, without needing a size near LBUF.
+CAL_FACTOR = 3.0
 
 ABORT_NOTICE = "Expensive activity abbreviated"
 
@@ -150,31 +180,75 @@ def main():
         check(got == "5", "a cheap command is unaffected by a 1s budget",
               "got=%r" % (got,))
 
-        # 3. THE case.  An expensive command is cut short, and the player is
+        # 3. Size the expensive expression against THIS box (#2112), with the
+        #    budget out of the way so we are timing completion and not an
+        #    abort.  This doubles as the control that cases 4-5 need: the
+        #    chosen size is one we watched finish and return a number.
+        sendline(wiz, "@admin lag_limit=%d" % HIGH_BUDGET)
+        read_for(wiz, None, 1.0)
+
+        chosen = chosen_cost = chosen_val = None
+        for n in CAL_SIZES:
+            t0 = time.monotonic()
+            val = probe(wiz, "K%d" % n, expensive(n), COMPLETE_WAIT)
+            dt = time.monotonic() - t0
+            if val is None or not val.isdigit() or int(val) <= 0:
+                # Ran out of LBUF (or the shape stopped working); the ladder
+                # cannot go higher, so stop with what we have.
+                print("# calibrate: N=%d returned %r — stopping the ladder"
+                      % (n, val))
+                break
+            print("# calibrate: N=%-5d %6.3fs  result=%s" % (n, dt, val))
+            chosen, chosen_cost, chosen_val = n, dt, val
+            if dt >= CAL_FACTOR * 1.0:
+                break
+
+        if chosen is None or chosen_cost < CAL_FACTOR * 1.0:
+            # SKIP rather than pass.  A silent pass here is exactly how this
+            # case spent days not testing the budget: if nothing in range
+            # costs more than the budget, we cannot make the alarm fire and
+            # must say so instead of asserting on a completion.
+            print("SKIP: no size in %r costs %.0fx a 1s budget on this box "
+                  "(best: N=%s at %.3fs) — cannot exercise the abort."
+                  % (CAL_SIZES, CAL_FACTOR, chosen, chosen_cost or 0.0))
+            print("=== cpu-budget scenario: %d passed, %d failed, rest skipped ==="
+                  % (npass, nfail))
+            return 1 if nfail else 0
+
+        EXPENSIVE = expensive(chosen)
+        check(True, "calibrated: N=%d costs %.2fs, %.1fx a 1s budget"
+                    % (chosen, chosen_cost, chosen_cost))
+
+        # 4. THE case.  An expensive command is cut short, and the player is
         #    told so.  Wait on ABORT_NOTICE, not on a TAG< marker: the abort
         #    still delivers "#-1 CPU LIMITED", but the TAG wrapping is lost.
+        sendline(wiz, "@admin lag_limit=1")
+        read_for(wiz, None, 1.0)
         t0 = time.monotonic()
         sendline(wiz, "@pemit me=X<%s>" % EXPENSIVE)
         buf = read_for(wiz, ABORT_NOTICE, ABORT_WAIT)
         elapsed = time.monotonic() - t0
         check(ABORT_NOTICE in buf,
               "an expensive command is stopped by the 1s budget",
-              "no notice within %.1fs" % elapsed)
+              "no notice within %.1fs; unbudgeted this size costs %.2fs"
+              % (elapsed, chosen_cost))
 
-        # 4. And it was stopped promptly rather than merely finishing.  The
-        #    budget is 1s; anything past a few seconds means the abort is not
-        #    tied to it.  Loose on purpose -- this is wall clock on a shared
-        #    box, so it pins the order of magnitude, not the millisecond.
-        check(elapsed < 6.0,
+        # 5. And it was stopped promptly rather than merely finishing.  The
+        #    bar is the measured unbudgeted cost, not a constant: the abort
+        #    has to beat the expression finishing on its own, which is the
+        #    only thing that distinguishes "stopped" from "was quick".
+        check(elapsed < chosen_cost,
               "the stop happens on the budget, not on completion",
-              "took %.1fs with a 1s budget" % elapsed)
+              "took %.1fs with a 1s budget, but the expression only costs "
+              "%.2fs unbudgeted" % (elapsed, chosen_cost))
 
-        # 5. Control: the identical expression completes under a high budget
-        #    and returns a number.  Without this, cases 3-4 would also pass
-        #    if the expression were simply broken or unsupported.
+        # 6. Control: the identical expression completes under a high budget
+        #    and returns a number.  Without this, cases 4-5 would also pass
+        #    if the expression were simply broken or unsupported.  Taken from
+        #    the calibration run rather than paying for it twice.
         sendline(wiz, "@admin lag_limit=%d" % HIGH_BUDGET)
         read_for(wiz, None, 1.0)
-        got = probe(wiz, "H", EXPENSIVE, COMPLETE_WAIT)
+        got = chosen_val
         check(got is not None and got.isdigit() and int(got) > 0,
               "the same command completes under a %ds budget" % HIGH_BUDGET,
               "got=%r" % (got,))
