@@ -6,10 +6,19 @@ Performance (not correctness) pass over the *whole server*, prompted by
 covers the paths that only a live netmux reaches, and it reaches a different
 conclusion about where the time goes.
 
-**Headline: for a live game, none of the top costs are in the JIT.** Whatever
-the JIT is worth, it is worth it on microseconds while `$`-command dispatch is
-spending milliseconds. What a live game actually spends its time on, in order,
-is `$`-command dispatch, name resolution, and (until #2054) debug logging.
+**Headline: for a live game *as games are written today*, none of the top costs
+are in the JIT.** Whatever the JIT is worth, it is worth it on microseconds
+while `$`-command dispatch is spending milliseconds. What a live game actually
+spends its time on, in order, is `$`-command dispatch, name resolution, and
+(until #2054) debug logging.
+
+**That qualifier is load-bearing, and this headline should not be quoted
+without it.** The JIT/DBT is not aimed at the database, the network or command
+dispatch — it is aimed at large softcode and Lua bodies, which do not exist in
+any corpus measured here and largely do not exist in existing games, written as
+they were against an interpreter. See "the target workload is not represented
+here at all", below, before drawing a conclusion about whether the JIT earns
+its keep.
 
 **How much the JIT is worth is not settled here, and an earlier draft of this
 survey overstated it.** The "2.4–9.5×" first written above came from
@@ -410,6 +419,71 @@ shared by two implementations. Use `astbench`'s `ast=` for the interpreter and
 `rvbench`'s `cached=` for the JIT, and see `tests/growth/README.md` for the two
 benchmark fields that lie and why.
 
+## 2.13 vs 2.14, end to end
+
+Both lines driven by `tests/profile/` — which works cross-version precisely
+because it measures from *outside* the server: commands over a socket, CPU from
+`/proc/<pid>/stat`, no dependency on `rvbench()`, `benchmark()` or `jitstats()`,
+none of which exist in 2.13. `run.sh --bin <dir>` points it at any build.
+
+Same box, same harness, 375 objects, two runs each, **both lines
+logging-gated**:
+
+| phase | 2.13 | 2.14 | 2.14 is |
+|---|---|---|---:|
+| `create` | 507 / 507 µs | 373 / 427 µs | 1.27× |
+| `attrwrite` | 227 / 211 µs | 71 / 69 µs | **3.13×** |
+| `attrread` | 142 / 138 µs | 80 / 84 µs | 1.71× |
+| `dispatch` (`look`) | 100 / 92 µs | 34 / 42 µs | 2.53× |
+| `softcode_arith` | 30 / 26 µs | 28 / 28 µs | **1.00×** |
+| `softcode_list` | 90 / 95 µs | 65 / 55 µs | 1.54× |
+
+**2.14 is faster on every phase, 1.3–3.1×**, and the gains are concentrated in
+storage and the command path rather than in softcode evaluation.
+
+### Equalising the logging first, which was not optional
+
+2.13 has the identical ungated `#ifndef NDEBUG` gate in the same four GANL
+files — 375 sites (#2089, backported as PR #2090). Before equalising, a
+scale-0.25 run wrote **158,660** engine debug lines on 2.13 against **14** on
+2.14. Comparing the lines as they ship would have reported 2.14 as 2–3× faster
+for a reason having nothing to do with any 2.14 work. The table above is with
+the gate applied to both.
+
+### Do not read `softcode_arith` as a verdict on the JIT
+
+That row is dead level, and the obvious reading is wrong. The phase evaluates
+`add(mul(strlen(name(me)),7),3)` **once per command**, and 2.14's per-command
+floor is 34–42 µs (`dispatch`). A few microseconds of arithmetic sit on top of
+~28 µs of command overhead, so a 10× win on the expression would move the row
+by single-digit percent — inside the run-to-run spread. **The phase cannot
+resolve the JIT's contribution in either direction.**
+
+`softcode_list` carries 50 evaluations per command and shows 1.54×, which is
+the direction the instrument can actually see.
+
+### And the target workload is not represented here at all
+
+Worth stating plainly, because every JIT number in this document invites the
+wrong conclusion without it. **The JIT/DBT is not intended to make the
+database, the network or command dispatch faster** — those are what this
+survey mostly measures, and they are where 2.14's wins came from.
+
+It is intended to make *large chunks of Lua and softcode* fast to the point of
+being nearly free. **Code of that shape does not exist yet** — not in the smoke
+corpus, not in `tests/profile/`, not in the starter database, and largely not
+in existing games, which were written against an interpreter and are shaped by
+what was affordable under one. It is a build-it-and-they-will-come move, and
+measuring it against workloads written for the old cost model measures the old
+cost model.
+
+So: #2068's "net loss" and the flat `softcode_arith` row are statements about
+*today's* corpora, not verdicts on the design. If the JIT ever demonstrably
+fails to earn its keep on the workload it was built for, that is worth an issue
+and a removal plan — but nothing in this survey is that measurement, and the
+optimisation work on it has barely started (#2066, #2074, #2080, #2086 are all
+open and all found in the last day).
+
 ## What this pass did not measure
 
 - **What the JIT is actually worth in a live game.** The honest comparison is
@@ -419,9 +493,10 @@ benchmark fields that lie and why.
   and `astbench`'s `ast=` calls `ast_eval_node` directly. Answering it needs a
   tree configured without `--enable-jit`, which is a `make clean` and a rebuild,
   not a new harness.
-- **2.13 vs 2.14 end to end.** The release-justifying number — *does 2.14 beat
-  2.13 on realistic softcode* — is still not measured. `tests/parity213` can
-  stand both lines up side by side; nobody has pointed it at speed.
+- **What the JIT is worth on the workload it was built for.** See above: large
+  softcode and Lua bodies do not exist in any corpus here, so nothing in this
+  document measures the case the JIT exists to serve. Measuring that needs the
+  workload to be written first.
 - **A real game's database.** Everything here uses the starter DB plus
   synthesised objects. The `$`-command and name-resolution constants are
   therefore harness-shaped; the *slopes* are not, which is why the slopes are
