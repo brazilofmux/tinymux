@@ -372,6 +372,28 @@
 # shape, where a case written under one epoch's configuration goes red on the
 # pass that runs under another.
 #
+# The nested probe is wrapped in add(...,0) deliberately (#2086).
+#
+# A bare [u(me/t7.probe)] no longer reaches depth 2: u() lowers to a single
+# ECALL with nothing computed around it, so the compiled program does no work
+# and #2086 declines it rather than paying guest entry to make the same host
+# call.  The AST evaluator then calls fun_u, which re-enters mux_exec at depth
+# 1 -- measurably faster (0.637 -> 0.607 us/call), but it means the wrapper
+# never exercises the depth-2 shared-heap path this case exists to cover.
+#
+# add(u(...),0) gives the OUTER expression real work, so it compiles, and its
+# ECALL to u() re-enters at depth 2 exactly as before.  Confirmed by the tier 2
+# delta, which the rewrap restored from 1 back to 2.
+#
+# The ecalls threshold also drops from >2 to >1, and that half IS a
+# recalibration rather than restored coverage, so it is worth being explicit:
+# the chain used to contain three counted ECALLs and now contains two, because
+# one of them was the no-work wrapper #2086 stopped running.  >1 still requires
+# BOTH the u() ECALL and the depth-2 inner ECALL, so the case still fails if
+# nested activity stops being counted -- which is the property it exists for.
+# It is not lowered to >0, which would pass on the outer call alone and be
+# vacuous for a case about NESTED evals.
+#
 &tr.tc007 test_jitstats_fn=
   @if cand(u(me/tr.has_jit),strmatch(config(jit_eval_brackets),1))=
   {
@@ -379,7 +401,7 @@
     &t7.s0 me=[jitstats()];
     &t7.top me=[strlen(get(me/t7.in))];
     &t7.s1 me=[jitstats()];
-    &t7.nst me=[u(me/t7.probe)];
+    &t7.nst me=[add(u(me/t7.probe),0)];
     &t7.s2 me=[jitstats()];
     @if cand(
           strmatch(v(t7.top),10),
@@ -387,7 +409,7 @@
           gt(u(me/t7.kv,v(t7.s1),tier2),u(me/t7.kv,v(t7.s0),tier2)),
           gt(u(me/t7.kv,v(t7.s1),ecalls),u(me/t7.kv,v(t7.s0),ecalls)),
           gt(u(me/t7.kv,v(t7.s2),tier2),u(me/t7.kv,v(t7.s1),tier2)),
-          gt(sub(u(me/t7.kv,v(t7.s2),ecalls),u(me/t7.kv,v(t7.s1),ecalls)),2)
+          gt(sub(u(me/t7.kv,v(t7.s2),ecalls),u(me/t7.kv,v(t7.s1),ecalls)),1)
         )=
     {
       @log smoke=TC007: jitstats counts nested Tier 2 and ECALLs. Succeeded (top tier2 [u(me/t7.kv,v(t7.s0),tier2)] to [u(me/t7.kv,v(t7.s1),tier2)], nested tier2 to [u(me/t7.kv,v(t7.s2),tier2)], nested ecalls [u(me/t7.kv,v(t7.s1),ecalls)] to [u(me/t7.kv,v(t7.s2),ecalls)]).
