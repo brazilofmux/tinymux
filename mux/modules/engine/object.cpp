@@ -149,6 +149,10 @@ static void force_reclaim_failed_create_slot(dbref obj)
         }
     }
 
+    // This clears location/contents/next directly rather than through the
+    // setters, so it bypasses their index hooks (#2058).
+    name_index_invalidate(db[obj].location);
+
     db[obj].fs.word[FLAG_WORD1] = TYPE_GARBAGE | GOING;
     db[obj].fs.word[FLAG_WORD2] = 0;
     db[obj].fs.word[FLAG_WORD3] = 0;

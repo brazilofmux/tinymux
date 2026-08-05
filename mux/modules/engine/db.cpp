@@ -856,6 +856,9 @@ void s_Name(dbref thing, const UTF8 *s)
         return;
     }
 
+    // The object's name is what the index buckets on (#2058).
+    name_index_invalidate(db[thing].location);
+
     free_Names(&db[thing]);
     if (nullptr != s)
     {
@@ -3394,6 +3397,10 @@ static void sqlite_log_object_update_failure(const UTF8 *field, dbref obj, int v
 
 void s_Location(dbref t, dbref n)
 {
+    // Both containers' exact-name indices are now stale (#2058).  Read the
+    // old one before overwriting it.
+    name_index_invalidate(db[t].location);
+    name_index_invalidate(n);
     db[t].location = n;
     if (SQLITE_WRITABLE())
     {
@@ -3418,6 +3425,7 @@ void s_Zone(dbref t, dbref n)
 
 void s_Contents(dbref t, dbref n)
 {
+    name_index_invalidate(t);        // (#2058)
     db[t].contents = n;
     if (SQLITE_WRITABLE())
     {
@@ -3442,6 +3450,9 @@ void s_Exits(dbref t, dbref n)
 
 void s_Next(dbref t, dbref n)
 {
+    // t's successor changed, so the list t sits in has been re-ordered or
+    // spliced; that container's index is stale (#2058).
+    name_index_invalidate(db[t].location);
     db[t].next = n;
     if (SQLITE_WRITABLE())
     {
@@ -3635,6 +3646,9 @@ void db_validate_refs(void)
         return (NOTHING == r || (0 <= r && r < top)) ? r : NOTHING;
     };
     int nFixed = 0;
+    // The loop below rewrites location/contents/next directly rather than
+    // through the setters, so it bypasses their index hooks (#2058).
+    name_index_invalidate_all();
     for (dbref i = 0; i < top; i++)
     {
         dbref b;
@@ -3819,6 +3833,8 @@ int sqlite_load_game(void)
             return -1;
         }
 
+        // Direct field writes, bypassing the setters' index hooks (#2058).
+        name_index_invalidate_all();
         db[i].location = rec.location;
         db[i].contents = rec.contents;
         db[i].exits    = rec.exits;

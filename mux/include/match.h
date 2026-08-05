@@ -39,6 +39,13 @@ extern void match_absolute(void);
 extern void match_me(void);
 extern void match_here(void);
 extern void match_possession(void);
+
+// Exact-name index (#2058).  match.cpp keeps a per-container bucket of
+// object names so a full-name lookup does not have to compare against every
+// object in scope.  db.cpp's setters call these when the thing the index was
+// built from changes: contents membership/order, or a name.
+extern void name_index_invalidate(dbref container);
+extern void name_index_invalidate_all(void);
 extern void match_neighbor(void);
 extern void match_exit(void);
 extern void match_exit_with_parents(void);

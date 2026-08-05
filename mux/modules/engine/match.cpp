@@ -46,6 +46,120 @@ void mux_nls_refresh_messages(void)
 
 static MSTATE md;
 
+// ---------------------------------------------------------------------------
+// Exact-name index (#2058).
+//
+// match_list() compares the query against every object in a contents list,
+// and cannot stop at the first hit because ambiguity has to be detected.  At
+// 1000 objects in scope that is ~27-40us per lookup on top of a ~26us dbref
+// floor, and name resolution is 66-75% of the attribute phases once storage
+// is out of the way.
+//
+// THE INDEX IS A FILTER, NOT THE DECIDER.  string_compare() folds Unicode
+// case through mux_tolower(), whose results are not a byte-for-byte map, and
+// reimplementing that to build a hash key would be an approximation that
+// silently disagrees with the walk on some name.  So the bucket key is only
+// an ASCII normalisation, every candidate it produces is still confirmed with
+// the real string_compare(), and any name containing a byte >= 0x80 is not
+// bucketed at all -- it goes on a must-scan list.  A wrong key can therefore
+// cost a fallback, never a wrong answer.
+//
+// Skipping the rest of the walk on a hit is sound because an exact match
+// scores CON_COMPLETE|CON_LOCAL (0x09 minimum) and a partial match tops out
+// at CON_LOCAL|CON_TYPE|CON_LOCK (0x07): exact always outranks partial.
+//
+// Only used when md.check_keys is false.  With it set, promote_match()
+// evaluates could_doit() per candidate -- softcode -- and skipping the walk
+// would skip those evaluations.  Exit and movement matching (the only
+// check_keys users) therefore keep the existing behaviour exactly.
+//
+struct NameIndex
+{
+    std::unordered_map<std::string, std::vector<dbref>> exact;
+    std::vector<dbref> unbucketed;   // names with any byte >= 0x80
+};
+static std::unordered_map<dbref, NameIndex> s_name_index;
+
+// ASCII normalisation mirroring what string_compare() ignores: leading space,
+// runs of space, and ASCII case.  Returns false if the string carries any
+// byte >= 0x80, in which case the caller must not bucket it.
+static bool name_bucket_key(const UTF8 *s, std::string &out)
+{
+    out.clear();
+    if (nullptr == s)
+    {
+        return false;
+    }
+    if (g_space_compress)
+    {
+        while (mux_isspace(*s))
+        {
+            s++;
+        }
+    }
+    bool bPendingSpace = false;
+    for (; *s; s++)
+    {
+        if (*s >= 0x80)
+        {
+            return false;
+        }
+        if (g_space_compress && mux_isspace(*s))
+        {
+            bPendingSpace = true;
+            continue;
+        }
+        if (bPendingSpace)
+        {
+            out.push_back(' ');
+            bPendingSpace = false;
+        }
+        out.push_back(static_cast<char>(mux_tolower_ascii[*s]));
+    }
+    // A trailing space run is dropped, matching string_compare()'s tail
+    // handling of one side running out while the other holds only spaces.
+    return true;
+}
+
+void name_index_invalidate(dbref container)
+{
+    if (  !s_name_index.empty()
+       && Good_obj(container))
+    {
+        s_name_index.erase(container);
+    }
+}
+
+void name_index_invalidate_all(void)
+{
+    s_name_index.clear();
+}
+
+static const NameIndex *name_index_get(dbref container, dbref first)
+{
+    const auto it = s_name_index.find(container);
+    if (it != s_name_index.end())
+    {
+        return &it->second;
+    }
+
+    NameIndex idx;
+    std::string key;
+    dbref t;
+    DOLIST(t, first)
+    {
+        if (name_bucket_key(PureName(t), key))
+        {
+            idx.exact[key].push_back(t);
+        }
+        else
+        {
+            idx.unbucketed.push_back(t);
+        }
+    }
+    return &(s_name_index[container] = std::move(idx));
+}
+
 static void promote_match(dbref what, int confidence)
 {
 #ifdef REALITY_LVLS
@@ -351,11 +465,54 @@ void match_here(void)
     }
 }
 
-static void match_list(dbref first, int local)
+static void match_list(dbref container, dbref first, int local)
 {
     if (md.confidence >= CON_DBREF)
     {
         return;
+    }
+
+    // Exact-name index (#2058).  Only when check_keys is off -- see the note
+    // on s_name_index -- and only when nothing in this container has a name
+    // the bucket key cannot represent, since a Unicode fold could bring such
+    // a name into equality with an ASCII query.
+    if (  !md.check_keys
+       && Good_obj(container))
+    {
+        std::string key;
+        if (name_bucket_key(md.string, key))
+        {
+            const NameIndex *pIdx = name_index_get(container, first);
+            if (pIdx->unbucketed.empty())
+            {
+                const auto hit = pIdx->exact.find(key);
+                if (hit != pIdx->exact.end())
+                {
+                    // Confirm with the real comparison before promoting: the
+                    // bucket is a filter, not the decision.
+                    bool bAny = false;
+                    for (const dbref cand : hit->second)
+                    {
+                        if (cand == md.absolute_form)
+                        {
+                            promote_match(cand, CON_DBREF | local);
+                            return;
+                        }
+                        if (!string_compare(PureName(cand), md.string))
+                        {
+                            promote_match(cand, CON_COMPLETE | local);
+                            bAny = true;
+                        }
+                    }
+                    // An exact match outranks every partial one, so the rest
+                    // of the list cannot change the answer.
+                    if (bAny)
+                    {
+                        return;
+                    }
+                }
+            }
+        }
     }
 
     const bool ascii_query = (*md.string != '\0' && *md.string < 0x80);
@@ -414,7 +571,7 @@ void match_possession(void)
     }
     if (Good_obj(md.player) && Has_contents(md.player))
     {
-        match_list(Contents(md.player), CON_LOCAL);
+        match_list(md.player, Contents(md.player), CON_LOCAL);
     }
 }
 
@@ -430,7 +587,7 @@ void match_neighbor(void)
         dbref loc = Location(md.player);
         if (Good_obj(loc))
         {
-            match_list(Contents(loc), CON_LOCAL);
+            match_list(loc, Contents(loc), CON_LOCAL);
         }
     }
 }
