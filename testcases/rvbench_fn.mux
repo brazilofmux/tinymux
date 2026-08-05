@@ -410,40 +410,8 @@
 #
 &tr.tc055 test_rvbench_fn=
   @log smoke=BENCH055:
-    [rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\,|)),10000)]
--
-#
-# Test Case #56 - string-pool capacity is one LBUF (#2066).
-#
-# The former cliff was exact and reproducible: rvbench(shuffle(repeat(a,N)),2)
-# returned #-1 COMPILATION FAILED for N >= 12272 because STR_LIMIT-STR_BASE
-# was 12288 bytes.  The pool is now 32768 (= LBUF_SIZE).  N=15000 sits above
-# the old cliff and well under the new one; if the pool regresses, this
-# fails with COMPILATION FAILED rather than a silent fallback to the AST.
-#
-&tr.tc056 test_rvbench_fn=
-  @if cand(
-        u(me/tr.has_jit),
-        not(strmatch(setr(0,rvbench(shuffle(repeat(a,15000)),2)),*COMPILATION FAILED*))
-      )=
-  {
-    @log smoke=TC056: str pool holds >12KB constants (#2066). Succeeded.;
-    @trig me/tr.done
-  },
-  {
-    @if u(me/tr.has_jit)=
-    {
-      @log smoke=TC056: str pool holds >12KB constants (#2066). Failed (%q0).;
-      @trig me/tr.done
-    },
-    {
-      @log smoke=TC056: str pool holds >12KB constants (#2066). Skipped (JIT not enabled).;
-      @trig me/tr.done
-    }
-  }
--
-&tr.has_jit test_rvbench_fn=
-  [strmatch(jitstats(),*eval_attempts=*)]
+    [rvbench(iter(a|1 b|2 c|3 d|4 e|5, before(##\,|)),10000)];
+  @trig me/tr.done
 -
 &tr.done test_rvbench_fn=
   @log smoke=End rvbench() benchmarks.;

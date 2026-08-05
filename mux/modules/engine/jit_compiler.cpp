@@ -528,16 +528,6 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
     // Deliberately excludes the dbt_* units: they execute the stored RV64
     // rather than produce it, so invalidating on their account would discard
     // the cache for no gain.  See jit_tier1_stamp.h.
-    // Layout constants are part of the key (#2107): a guest-address
-    // map change (STR/FARGS bases) rewrites every baked pointer in the
-    // code and pool blobs, and must not reuse a row written under the
-    // previous map even when __DATE__/__TIME__ happened not to move.
-    static const uint64_t layout[] = {
-        rv_compiler::CODE_BASE, rv_compiler::CODE_LIMIT,
-        rv_compiler::STR_BASE,  rv_compiler::STR_LIMIT,
-        rv_compiler::FARGS_BASE, rv_compiler::FARGS_LIMIT,
-        rv_compiler::BLOB_BASE, rv_compiler::MEM_SIZE,
-    };
     const void *parts[] = {
         JIT_COMPILER_VERSION,
         JIT_BUILD_STAMP,
@@ -549,7 +539,6 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
         &hdr,
         s_tier2.image.data(),
         entries.empty() ? nullptr : entries.data(),
-        layout,
     };
     const size_t sizes[] = {
         sizeof(JIT_COMPILER_VERSION) - 1,
@@ -563,9 +552,8 @@ static bool tier2_load(const char *path, uint64_t guest_base) {
         sizeof(hdr),
         s_tier2.code_size,
         entries.size() * sizeof(rv64_blob_entry),
-        sizeof(layout),
     };
-    s_blob_version = sha1_hex_parts(parts, sizes, 11);
+    s_blob_version = sha1_hex_parts(parts, sizes, 10);
     return true;
 }
 
@@ -903,13 +891,6 @@ static void tier2_lazy_init() {
     // Still hash the compiler version so tier 1 upgrades invalidate.  Same
     // per-unit stamps as the loaded path (#2061) -- without them this leg has
     // the identical hole, and it is the leg a blob-less build runs on.
-    // Layout is in the key for the same reason as the blob-loaded path (#2107).
-    static const uint64_t layout[] = {
-        rv_compiler::CODE_BASE, rv_compiler::CODE_LIMIT,
-        rv_compiler::STR_BASE,  rv_compiler::STR_LIMIT,
-        rv_compiler::FARGS_BASE, rv_compiler::FARGS_LIMIT,
-        rv_compiler::BLOB_BASE, rv_compiler::MEM_SIZE,
-    };
     const void *parts[] = {
         JIT_COMPILER_VERSION,
         JIT_BUILD_STAMP,
@@ -918,7 +899,6 @@ static void tier2_lazy_init() {
         TIER1_STAMP_HIR_SSA,
         TIER1_STAMP_HIR_OPT,
         TIER1_STAMP_HIR_CODEGEN,
-        layout,
     };
     const size_t sizes[] = {
         sizeof(JIT_COMPILER_VERSION) - 1,
@@ -928,9 +908,8 @@ static void tier2_lazy_init() {
         strlen(TIER1_STAMP_HIR_SSA),
         strlen(TIER1_STAMP_HIR_OPT),
         strlen(TIER1_STAMP_HIR_CODEGEN),
-        sizeof(layout),
     };
-    s_blob_version = sha1_hex_parts(parts, sizes, 8);
+    s_blob_version = sha1_hex_parts(parts, sizes, 7);
 }
 
 void tier2_ensure(void) {
@@ -2007,13 +1986,9 @@ static compiled_program reconstruct_from_cache(
     } else if (rec.memory_blob && rec.memory_len > 0) {
         // Legacy format: single memory blob covering code+str+fargs.
         // Extract the occupied regions into compact vectors.
-        // Cap at the highest of the three pool ends (#2107: STR now sits
-        // above FARGS, so FARGS_LIMIT is no longer the image high water).
         int copy_len = rec.memory_len;
-        const int layout_end = static_cast<int>(
-            (std::max)(rv_compiler::STR_LIMIT, rv_compiler::FARGS_LIMIT));
-        if (copy_len > layout_end) {
-            copy_len = layout_end;
+        if (copy_len > static_cast<int>(rv_compiler::FARGS_LIMIT)) {
+            copy_len = static_cast<int>(rv_compiler::FARGS_LIMIT);
         }
         const auto *base = static_cast<const uint8_t *>(rec.memory_blob);
 
