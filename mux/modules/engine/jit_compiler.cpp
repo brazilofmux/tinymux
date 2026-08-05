@@ -181,6 +181,9 @@ static bool tier2_allowed(const std::string &mux_name) {
         // softcode function -- there is no SPLIT_TOKEN() builtin -- so this
         // entry exists only so hir_lower can resolve it.
         "SPLIT_TOKEN",
+        // Same story: ITER's in-place accumulator (#2072), unreachable
+        // from softcode.
+        "APPEND",
         "LEFT",
         "RIGHT",
         "LPOS",
@@ -311,6 +314,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "WORDS",       "co_words_wrap" },
     { "EXTRACT",     "co_extract_wrap" },
     { "SPLIT_TOKEN", "rv64_split_token" },  // cursor walk for ITER (#2052)
+    { "APPEND",      "rv64_append" },       // in-place accumulator for ITER (#2072)
     { "MEMBER",      "co_member_wrap" },
     { "TRIM",        "co_trim_wrap" },
     { "REPEAT",      "co_repeat_wrap" },

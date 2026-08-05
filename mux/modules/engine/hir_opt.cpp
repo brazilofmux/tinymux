@@ -837,14 +837,38 @@ void hir_licm(hir_program &h) {
             }
             if (preheader < 0) continue;
 
-            // Mark which blocks are in this loop (RPO between header
-            // and latch inclusive).
+            // Mark which blocks are in this loop.
+            //
+            // This is the NATURAL loop: header, plus every block that can
+            // reach the latch without passing through the header --
+            // computed by walking predecessors backwards from the latch.
+            //
+            // It used to be "RPO position between header and latch", which
+            // over-approximates: with two nested iter() loops, the inner
+            // loop's EXIT block sat between the inner header and latch in
+            // RPO without being part of the loop.  Instructions in it
+            // whose operands were outer-loop values then looked
+            // loop-invariant and were "hoisted" -- see below for why any
+            // hoist that actually fires is fatal (#2072).
             bool in_loop[HIR_MAX_BLOCKS];
             memset(in_loop, 0, sizeof(in_loop));
-            for (int b = 0; b < h.n_blocks; b++) {
-                if (h.rpo_pos[b] >= h.rpo_pos[header] &&
-                    h.rpo_pos[b] <= h.rpo_pos[latch]) {
-                    in_loop[b] = true;
+            in_loop[header] = true;
+            {
+                int work[HIR_MAX_BLOCKS];
+                int n_work = 0;
+                if (!in_loop[latch]) {
+                    in_loop[latch] = true;
+                    work[n_work++] = latch;
+                }
+                while (n_work > 0) {
+                    int b = work[--n_work];
+                    for (int p = 0; p < h.n_pred[b]; p++) {
+                        int pred = h.pred_list[h.pred_base[b] + p];
+                        if (pred < 0 || pred >= h.n_blocks) continue;
+                        if (in_loop[pred]) continue;
+                        in_loop[pred] = true;
+                        work[n_work++] = pred;
+                    }
                 }
             }
 
@@ -870,6 +894,44 @@ void hir_licm(hir_program &h) {
                     if (!is_invariant(h.src1[i])) continue;
                     if (h.kind[i] != HIR_BRC && !is_invariant(h.src2[i]))
                         continue;
+
+                    // Structural safety: a "hoist" here is only a blk[]
+                    // retag, and everything downstream -- block ranges,
+                    // program points, live intervals, and the codegen walk
+                    // itself -- iterates block_first[b]..block_last[b] in
+                    // INDEX order.  An instruction whose index falls after
+                    // the preheader's terminator can never be emitted at
+                    // its new home: either it vanishes from codegen (the
+                    // ranges exclude it -- loc stays 0 and its consumers
+                    // read guest address 0), or with recomputed ranges it
+                    // lands after the preheader's BR as dead bytes.  Both
+                    // corrupt silently.  So only move an instruction that
+                    // already sits inside the preheader's index range,
+                    // before its terminator -- which a loop-body
+                    // instruction, emitted after the preheader by
+                    // construction, never does.
+                    //
+                    // In practice this makes LICM inert until the IR can
+                    // express instruction motion.  Inert is strictly
+                    // better: the one program shape that ever made this
+                    // fire -- nested iter() with the accumulator rework
+                    // (#2072) -- got its append-length ITOA silently
+                    // dropped from codegen, and every outer iteration
+                    // appended at offset 0.
+                    int pre_term = -1;
+                    for (int t = h.block_first[preheader];
+                         t <= h.block_last[preheader]; t++) {
+                        if (h.blk[t] != preheader) continue;
+                        if (h.kind[t] == HIR_BR || h.kind[t] == HIR_BRC) {
+                            pre_term = t;
+                            break;
+                        }
+                    }
+                    if (pre_term < 0
+                        || i < h.block_first[preheader]
+                        || i >= pre_term) {
+                        continue;
+                    }
 
                     // Hoist: move to preheader.
                     h.blk[i] = preheader;

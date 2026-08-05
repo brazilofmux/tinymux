@@ -532,22 +532,41 @@ char *rv64_split_token(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
 
     const char *s = fargs[0];
-    int len  = rv64_slen(s);
     int off  = satoi(fargs[1]);
     unsigned char delim = get_delim(fargs, nfargs, 2);
     int mode = (nfargs >= 4) ? satoi(fargs[3]) : 0;
 
-    /* Past the end: no element, and the cursor stays put.  The loop is
-     * bounded by WORDS() so this should not be reached, but a cursor that
-     * ran away must not read outside the string. */
-    if (off < 0 || off >= len) {
-        if (mode) sitoa(out, len);
-        else      out[0] = '\0';
+    /* NUL is the end sentinel -- deliberately NOT rv64_slen(s).  Guest
+     * strings here are NUL-terminated by construction (pool_str and every
+     * wrapper write the terminator), and a strlen of the whole list per
+     * element turns the caller's loop quadratic all by itself: with the
+     * accumulator fixed (#2072) this one call was the entire residual
+     * superlinearity, measured at b=1.40 against b=1.0 with it gone.
+     *
+     * A negative cursor cannot be trusted; a cursor past the NUL cannot
+     * arise from this function's own mode-1 results, which never advance
+     * beyond the terminator. */
+    if (off < 0) {
+        out[0] = '\0';
         return out;
     }
 
+    /* The interpreter trims the EVALUATED list (trim_space_sep) before its
+     * split_token walk, but the compiled route cannot: hir_lower_trimmed
+     * trims AST_SPACE nodes at compile time, and leading spaces produced at
+     * runtime (%b, nested evaluation) sail through.  co_extract absorbed
+     * them by compressing leading delimiters; a cursor walk must do it
+     * explicitly or the first "element" is the empty string before the
+     * spaces -- iter(%b%ba b,##) returned " a" instead of "a b".  Only at
+     * cursor 0, and only for the space delimiter: mid-list cursors always
+     * sit past a delimiter run, and non-space delimiters do not trim (an
+     * empty first element is real there). */
+    if (off == 0 && delim == ' ') {
+        while (s[off] == ' ') off++;
+    }
+
     int e = off;
-    while (e < len && (unsigned char)s[e] != delim) e++;
+    while (s[e] != '\0' && (unsigned char)s[e] != delim) e++;
 
     if (mode == 0) {
         int n = e - off;
@@ -557,13 +576,73 @@ char *rv64_split_token(char *out, const char **fargs, int nfargs) {
     }
 
     int nx = e;
-    if (nx < len) {
+    if (s[nx] != '\0') {
         nx++;                                   /* past the delimiter */
         if (delim == ' ') {                     /* ...and its run */
-            while (nx < len && s[nx] == ' ') nx++;
+            while (s[nx] == ' ') nx++;
         }
     }
     sitoa(out, nx);
+    return out;
+}
+
+/* ---------------------------------------------------------------
+ * rv64_append — in-place accumulator append for ITER (#2072).
+ *
+ * The ITER lowering used to accumulate with acc = STRCAT(acc, osep, body),
+ * which copies the whole accumulated string into a fresh buffer every
+ * iteration -- O(n) per element, O(n^2) per loop -- and then the string PHI
+ * carrying acc around the loop copied it AGAIN.  This primitive is what
+ * replaces both: the accumulator lives in ONE pinned guest buffer for the
+ * whole loop, its length rides in a q-register, and each iteration appends
+ * at buf+len instead of rebuilding.
+ *
+ * This callee MUTATES fargs[0]'s buffer -- deliberately, and alone among
+ * the wrappers here.  The accumulator is the one value in the loop whose
+ * whole point is identity across iterations; a pure function of it is
+ * exactly the copy this exists to remove.  The compile-time hazards of a
+ * buffer whose runtime content differs from its compile-time "" were
+ * checked before this was written, not after (#2072): the liveness
+ * allocator never recycles a slot the lowerer took directly, hir_opt
+ * parses sval only to fold ARITHMETIC (so the buffer's SCONST must never
+ * feed ATOI/arithmetic -- the lowering keeps it to string consumers), and
+ * CALLs are side-effectful in DCE/CSE terms.
+ *
+ *   fargs[0]  accumulator buffer (mutated in place)
+ *   fargs[1]  current length, decimal
+ *   fargs[2]  0-based iteration number, decimal ("0" = first: no osep)
+ *   fargs[3]  output separator (byte string, may be empty or multi-byte)
+ *   fargs[4]  element to append
+ *
+ * Writes the NEW length, decimal, to out -- the caller stores it back to
+ * the length q-register.  Appends are clamped to CAP so a loop that
+ * accumulates past an LBUF truncates instead of running off the slot;
+ * the returned length is the clamped one, so later appends stay clamped.
+ */
+#define RV64_APPEND_CAP (LBUF_SIZE - 1)
+char *rv64_append(char *out, const char **fargs, int nfargs) {
+    if (nfargs < 5) { out[0] = '0'; out[1] = '\0'; return out; }
+
+    char *acc = (char *)fargs[0];
+    int len = satoi(fargs[1]);
+    int first = (fargs[2][0] == '0' && fargs[2][1] == '\0');
+    const char *osep = fargs[3];
+    const char *elem = fargs[4];
+
+    if (len < 0) len = 0;
+    if (len > RV64_APPEND_CAP) len = RV64_APPEND_CAP;
+
+    if (!first) {
+        for (int i = 0; osep[i] != '\0' && len < RV64_APPEND_CAP; i++) {
+            acc[len++] = osep[i];
+        }
+    }
+    for (int i = 0; elem[i] != '\0' && len < RV64_APPEND_CAP; i++) {
+        acc[len++] = elem[i];
+    }
+    acc[len] = '\0';
+
+    sitoa(out, len);
     return out;
 }
 

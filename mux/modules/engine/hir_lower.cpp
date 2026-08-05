@@ -2274,9 +2274,47 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int cursor_init = h.emit_iconst(0);
         h.emit(HIR_STORE_Q, TY_VOID, cursor_init, -1, QREG_ITER_CURSOR);
 
+        // The accumulator (#2072).  It used to be an SSA string carried in
+        // QREG_ITER_ACC: rebuilt by STRCAT every iteration -- O(len) per
+        // element, O(len^2) per loop -- and then copied AGAIN by the string
+        // PHI's per-iteration strcpy.  Both costs go away together: the
+        // accumulated text lives in ONE pinned buffer for the whole loop,
+        // and what rides in QREG_ITER_ACC is its LENGTH, as an int.
+        //
+        // The pinned slot comes straight from rc.alloc_output(), which the
+        // liveness allocator never recycles (it reuses only slots it freed
+        // itself), so no temporary can alias it.  References to it are
+        // emit_sref, not emit_sconst: the buffer's compile-time contents
+        // ("") are a lie at runtime, and emit_sref is the existing #1309
+        // machinery that keeps such a reference out of ATOI constant
+        // folding.  APPEND is registered but unreachable from softcode,
+        // like SPLIT_TOKEN.
+        uint64_t t2append = tier2_lookup("APPEND");
+        uint64_t acc_addr = 0;
         uint64_t empty_addr = rc.pool_str("");
-        int acc_init = h.emit_sconst(empty_addr, "");
-        h.emit(HIR_STORE_Q, TY_VOID, acc_init, -1, QREG_ITER_ACC);
+        int len_init = -1;
+        if (t2append) {
+            acc_addr = rc.alloc_output();
+            len_init = h.emit_iconst(0);
+            h.emit(HIR_STORE_Q, TY_VOID, len_init, -1, QREG_ITER_ACC);
+
+            // Reset: an append of "" with first=1 writes acc[0]='\0' and
+            // returns "0".  Without it a zero-iteration loop would read
+            // whatever the previous program left in the frame slot.
+            uint64_t zero_addr = rc.pool_str("0");
+            int zero_str = h.emit_sconst(zero_addr, "0");
+            int empty_str = h.emit_sconst(empty_addr, "");
+            int acc_ref0 = h.emit_sref(acc_addr);
+            int rargs[5] = { acc_ref0, zero_str, zero_str,
+                             empty_str, empty_str };
+            int reset = h.emit_call(TY_STRING, 0, rargs, 5);
+            h.tier2_addr[reset] = t2append;
+            h.tier2_calls++;
+        } else {
+            // Blob predates APPEND: keep the SSA-string accumulator.
+            int acc_init = h.emit_sconst(empty_addr, "");
+            h.emit(HIR_STORE_Q, TY_VOID, acc_init, -1, QREG_ITER_ACC);
+        }
 
         // entry → header.
         int entry_block = h.cur_block;
@@ -2287,7 +2325,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // Header: load inum, check < nwords, branch.
         h.cur_block = header_block;
         int inum = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_ITER_INUM);
-        int acc = h.emit(HIR_LOAD_Q, TY_STRING, -1, -1, QREG_ITER_ACC);
+        // With APPEND, QREG_ITER_ACC holds the accumulator LENGTH (int);
+        // without it, the legacy SSA accumulator string.
+        int acc = h.emit(HIR_LOAD_Q, t2append ? TY_INT : TY_STRING,
+                         -1, -1, QREG_ITER_ACC);
         // The cursor is loop-carried and must be loaded HERE, in the header,
         // for the same reason inum is: that is where the loop's PHI lives.
         // Loading it in the body instead compiled and produced correct output
@@ -2392,50 +2433,86 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         iter_itext_val = saved_itext;
         iter_inum1_val = saved_inum1;
 
-        // Accumulate: first iteration → body_val,
-        //             otherwise → strcat(acc, osep, body_val).
-        int zero = h.emit_iconst(0);
-        int is_first = h.emit(HIR_EQ, TY_INT, inum, zero);
-        h.native_ops++;
-
-        int first_block = h.new_block();
-        int cat_block = h.new_block();
-        h.emit(HIR_BRC, TY_VOID, is_first, cat_block, first_block);
-        h.add_edge(h.cur_block, first_block);
-        h.add_edge(h.cur_block, cat_block);
-
-        // First iteration: acc = body_val.
-        h.cur_block = first_block;
-        h.emit(HIR_STORE_Q, TY_VOID, body_val, -1, QREG_ITER_ACC);
-        int latch_block = h.new_block();
-        h.emit(HIR_BR, TY_VOID, -1, -1, latch_block);
-        h.add_edge(first_block, latch_block);
-
-        // Subsequent: acc = strcat(acc, osep, body_val).
-        h.cur_block = cat_block;
-        int strcat_idx = engine_api_lookup("STRCAT");
-        int cargs[3] = { acc, osep_val, body_val };
-        int new_acc = h.emit_strcat(cargs, 3);
-        if (new_acc >= 0) h.func_idx[new_acc] = strcat_idx;
-        if (tier2_lookup("STRCAT")) {
+        // Accumulate (#2072).
+        if (t2append) {
+            // One in-place append: writes body_val (osep-prefixed unless
+            // this is iteration 0 -- the callee tests the iteration number,
+            // which removes the old first/cat block diamond entirely) at
+            // acc+len, and returns the new length.  O(append), not O(acc).
+            //
+            // `acc` here is the LENGTH loaded in the header.  A fresh
+            // emit_sref per use: sref values are runtime references and
+            // must not be shared where CSE could not prove them equal
+            // anyway.
+            int len_str = h.emit(HIR_ITOA, TY_STRING, acc);
+            int inum_str = h.emit(HIR_ITOA, TY_STRING, inum);
+            int acc_ref = h.emit_sref(acc_addr);
+            int aargs[5] = { acc_ref, len_str, inum_str, osep_val, body_val };
+            int newlen_str = h.emit_call(TY_STRING, 0, aargs, 5);
+            h.tier2_addr[newlen_str] = t2append;
             h.tier2_calls++;
-        } else {
-            h.ecalls++;
-        }
-        h.emit(HIR_STORE_Q, TY_VOID, new_acc, -1, QREG_ITER_ACC);
-        h.emit(HIR_BR, TY_VOID, -1, -1, latch_block);
-        h.add_edge(cat_block, latch_block);
+            int newlen = h.emit(HIR_ATOI, TY_INT, newlen_str);
+            h.emit(HIR_STORE_Q, TY_VOID, newlen, -1, QREG_ITER_ACC);
 
-        // Latch: increment inum, branch back to header.
-        h.cur_block = latch_block;
-        int inum_next = h.emit(HIR_ADD, TY_INT, inum, one_int);
-        h.native_ops++;
-        h.emit(HIR_STORE_Q, TY_VOID, inum_next, -1, QREG_ITER_INUM);
-        if (next_cursor >= 0) {
-            h.emit(HIR_STORE_Q, TY_VOID, next_cursor, -1, QREG_ITER_CURSOR);
+            // Latch stores, at the end of the (now diamond-free) body.
+            int inum_next = h.emit(HIR_ADD, TY_INT, inum, one_int);
+            h.native_ops++;
+            h.emit(HIR_STORE_Q, TY_VOID, inum_next, -1, QREG_ITER_INUM);
+            if (next_cursor >= 0) {
+                h.emit(HIR_STORE_Q, TY_VOID, next_cursor, -1,
+                       QREG_ITER_CURSOR);
+            }
+            h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
+            h.add_edge(h.cur_block, header_block);
+        } else {
+            // Legacy accumulate: first iteration → body_val,
+            //                    otherwise → strcat(acc, osep, body_val).
+            // O(n^2) both in the STRCAT rebuild and in the string PHI's
+            // per-iteration copy; kept only for a blob without APPEND.
+            int zero = h.emit_iconst(0);
+            int is_first = h.emit(HIR_EQ, TY_INT, inum, zero);
+            h.native_ops++;
+
+            int first_block = h.new_block();
+            int cat_block = h.new_block();
+            h.emit(HIR_BRC, TY_VOID, is_first, cat_block, first_block);
+            h.add_edge(h.cur_block, first_block);
+            h.add_edge(h.cur_block, cat_block);
+
+            // First iteration: acc = body_val.
+            h.cur_block = first_block;
+            h.emit(HIR_STORE_Q, TY_VOID, body_val, -1, QREG_ITER_ACC);
+            int latch_block = h.new_block();
+            h.emit(HIR_BR, TY_VOID, -1, -1, latch_block);
+            h.add_edge(first_block, latch_block);
+
+            // Subsequent: acc = strcat(acc, osep, body_val).
+            h.cur_block = cat_block;
+            int strcat_idx = engine_api_lookup("STRCAT");
+            int cargs[3] = { acc, osep_val, body_val };
+            int new_acc = h.emit_strcat(cargs, 3);
+            if (new_acc >= 0) h.func_idx[new_acc] = strcat_idx;
+            if (tier2_lookup("STRCAT")) {
+                h.tier2_calls++;
+            } else {
+                h.ecalls++;
+            }
+            h.emit(HIR_STORE_Q, TY_VOID, new_acc, -1, QREG_ITER_ACC);
+            h.emit(HIR_BR, TY_VOID, -1, -1, latch_block);
+            h.add_edge(cat_block, latch_block);
+
+            // Latch: increment inum, branch back to header.
+            h.cur_block = latch_block;
+            int inum_next = h.emit(HIR_ADD, TY_INT, inum, one_int);
+            h.native_ops++;
+            h.emit(HIR_STORE_Q, TY_VOID, inum_next, -1, QREG_ITER_INUM);
+            if (next_cursor >= 0) {
+                h.emit(HIR_STORE_Q, TY_VOID, next_cursor, -1,
+                       QREG_ITER_CURSOR);
+            }
+            h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
+            h.add_edge(latch_block, header_block);
         }
-        h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
-        h.add_edge(latch_block, header_block);
 
         // Exit → continuation block.
         // The continuation block is allocated AFTER all loop-interior
@@ -2448,7 +2525,14 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.add_edge(exit_block, cont_block);
 
         h.cur_block = cont_block;
-        int result = h.emit(HIR_LOAD_Q, TY_STRING, -1, -1, QREG_ITER_ACC);
+        // With APPEND the result is the pinned buffer itself, read through
+        // a runtime reference (emit_sref -- never plain emit_sconst, whose
+        // compile-time "" would fold to 0 under ATOI if the caller wraps
+        // iter() in arithmetic, #1309).  Without APPEND, the legacy path's
+        // SSA accumulator comes back out of the q-register.
+        int result = t2append
+            ? h.emit_sref(acc_addr)
+            : h.emit(HIR_LOAD_Q, TY_STRING, -1, -1, QREG_ITER_ACC);
 
         h.needs_jit = true;
         return result;

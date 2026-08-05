@@ -119,19 +119,17 @@ PROBES = {
 # does not silence the case: an xfail that starts PASSING fails the run, because
 # that means the fix landed and this table is now lying.
 CASES = [
-    # --- the defect -----------------------------------------------------
-    # fun_iter keeps a cursor and calls split_token, so the interpreter is
-    # linear.  The JIT's lowering calls EXTRACT(list, i, 1, delim) for element
-    # i -- a fresh walk from the head of the list every time -- because the
-    # cursor-based SPLIT_TOKEN fast path that hir_lower.cpp:2310 tests for was
-    # never registered in s_tier2_map and has therefore never executed.
-    #
-    # These two lines are the same expression over the same list on two
-    # routes, which makes the interp line the tightest possible control for
-    # the jit line: if the harness could not read linear it would fail here
-    # first.
+    # --- regression guards for #2052 (fixed) ----------------------------
+    # iter() on the JIT was quadratic three times over: element i was
+    # re-extracted from the head of the list (EXTRACT per element), the
+    # accumulator was rebuilt by STRCAT every iteration (and copied again
+    # by the string PHI), and split_token strlen'd the whole list per
+    # element.  Fixed by the cursor walk + the pinned-buffer APPEND
+    # accumulator (#2072).  Both routes must now read linear; the two lines
+    # are the same expression over the same list, so each is the other's
+    # tightest control.
     ("iter(lnum({N}),1)",  "interp", [500, 1000, 2000, 4000], "linear", None),
-    ("iter(lnum({N}),1)",  "jit",    [500, 1000, 2000, 4000], "linear", 2052),
+    ("iter(lnum({N}),1)",  "jit",    [500, 1000, 2000, 4000], "linear", None),
 
     # --- controls -------------------------------------------------------
     # A list walk with no per-element evaluation.  Present so that a change
