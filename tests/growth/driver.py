@@ -199,6 +199,20 @@ CASES = [
     # is one of the two failures this harness exists to catch (#2094
     # review).
     ("map(#1/GROWTH.MAPB,lnum({N}))", "jit", [500, 1000, 2000, 4000], "linear", None),
+
+    # filter() (#2080): same inline shape as MAP plus the keep diamond and
+    # the kept-count register; same fixed-cost amortization argument for the
+    # sizes.  The predicate keeps all but three elements, so the append path
+    # is exercised at nearly every iteration.
+    ("filter(me/GROWTH.FILP,lnum({N}))", "interp", [500, 1000, 2000, 4000], "linear", None),
+    # NOTE: filter(#1/...) on the jit route is deliberately ABSENT until
+    # #2106 is fixed.  rvbench()ing an inlined program and then a
+    # fun_map/fun_filter-ECALL program in the same process is a SIGSEGV, and
+    # this harness runs every case in ONE muxscript.  Adding the inline case
+    # here kills the run and reports UNMEASURED for everything after it --
+    # which is how #2106 was found.  The map(#1/...) case above survives only
+    # because no fallback-shape jit case follows it; adding filter's pair
+    # crossed that line.  Restore this line with #2106.
 ]
 
 AST_RE = re.compile(r"ast=([0-9.]+)us")
@@ -237,6 +251,7 @@ def probes_for(cases):
 # their %0 verbatim.
 SETUP = [
     "&GROWTH.MAPB me=[add(%0,1)]",
+    "&GROWTH.FILP me=[gt(%0,3)]",
 ]
 
 
