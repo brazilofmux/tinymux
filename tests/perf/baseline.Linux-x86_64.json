@@ -1,0 +1,280 @@
+{
+  "iters": 10000,
+  "results": {
+    "abs(sign(sub(rand(100),50)))": {
+      "cached": 803.5,
+      "compile": 164894.6,
+      "native": 3818.6
+    },
+    "abs(sub(rand(100),50))": {
+      "cached": 638.7,
+      "compile": 111195.3,
+      "native": 3337.2
+    },
+    "add(1,2)": {
+      "cached": 90.2,
+      "compile": 42042.8,
+      "native": 2748.2
+    },
+    "add(1,2)add(3,4)": {
+      "cached": 411.2,
+      "compile": 42165.4,
+      "native": 904.1
+    },
+    "add(add(add(rand(1),rand(1)),add(rand(1),rand(1))),add(rand(1),rand(1)))": {
+      "cached": 286.7,
+      "compile": 188117.5,
+      "native": 4872.2
+    },
+    "add(mul(2,3),add(mul(4,5),sub(100,90)))": {
+      "cached": 212.3,
+      "compile": 62676.9,
+      "native": 1743.7
+    },
+    "add(mul(3,4),sub(100,58))": {
+      "cached": 268.9,
+      "compile": 51975.3,
+      "native": 1113.1
+    },
+    "add(rand(100),1)": {
+      "cached": 586.3,
+      "compile": 110575.3,
+      "native": 2042.1
+    },
+    "add(setr(0,rand(100)),r(0))": {
+      "cached": 715.3,
+      "compile": 117422.2,
+      "native": 6117.0
+    },
+    "after(cat(rand(10),|,rand(10)),|)": {
+      "cached": 302.9,
+      "compile": 127267.3,
+      "native": 5335.0
+    },
+    "before(cat(rand(10),|,rand(10)),|)": {
+      "cached": 290.5,
+      "compile": 124109.0,
+      "native": 5014.9
+    },
+    "bound(rand(100),10,90)": {
+      "cached": 515.0,
+      "compile": 71907.0,
+      "native": 2795.0
+    },
+    "cand(1,1,1)": {
+      "cached": 132.6,
+      "compile": 41397.6,
+      "native": 3182.0
+    },
+    "cand(gt(rand(100),0),1)": {
+      "cached": 575.0,
+      "compile": 132748.9,
+      "native": 2302.2
+    },
+    "cat(rand(10),rand(10),rand(10),rand(10))": {
+      "cached": 294.8,
+      "compile": 130799.4,
+      "native": 3793.8
+    },
+    "cat(rand(100),rand(100))": {
+      "cached": 282.5,
+      "compile": 92499.8,
+      "native": 2772.7
+    },
+    "comp(abc,def)": {
+      "cached": 160.2,
+      "compile": 33690.5,
+      "native": 3414.0
+    },
+    "cor(gt(rand(100),99),0)": {
+      "cached": 663.4,
+      "compile": 140316.4,
+      "native": 2184.2
+    },
+    "eq(1,1)": {
+      "cached": 136.4,
+      "compile": 39788.2,
+      "native": 4119.2
+    },
+    "first(cat(rand(10),rand(10),rand(10)))": {
+      "cached": 265.8,
+      "compile": 126972.7,
+      "native": 4289.3
+    },
+    "first(rest(cat(rand(10),rand(10),rand(10),rand(10))))": {
+      "cached": 295.6,
+      "compile": 163338.5,
+      "native": 5086.4
+    },
+    "gt(add(1,2),0)": {
+      "cached": 167.9,
+      "compile": 38212.2,
+      "native": 3614.0
+    },
+    "idiv(rand(100),add(rand(10),1))": {
+      "cached": 240.9,
+      "compile": 113342.6,
+      "native": 2959.4
+    },
+    "if(gt(5,3),yes)": {
+      "cached": 227.2,
+      "compile": 44523.0,
+      "native": 3967.1
+    },
+    "ifelse(gt(rand(100),50),big,small)": {
+      "cached": 643.0,
+      "compile": 121923.2,
+      "native": 2898.3
+    },
+    "insert(cat(rand(10),rand(10),rand(10)),2,ZZZ)": {
+      "cached": 295.3,
+      "compile": 139518.3,
+      "native": 6988.6
+    },
+    "iter(1 2 3 4 5, add(##\\,1))": {
+      "cached": 7556.3,
+      "compile": 392407.6,
+      "native": 11718.6
+    },
+    "iter(a b c d e f g h i j k l m n o p q r s t, X)": {
+      "cached": 17754.4,
+      "compile": 406930.9,
+      "native": 22307.0
+    },
+    "iter(a b c d e f g h i j k l m n o, X)": {
+      "cached": 13604.8,
+      "compile": 399541.3,
+      "native": 17347.4
+    },
+    "iter(a b c d e f g h i j, X)": {
+      "cached": 8965.6,
+      "compile": 378275.0,
+      "native": 12349.8
+    },
+    "iter(a b c d e f g, X)": {
+      "cached": 6570.0,
+      "compile": 365717.4,
+      "native": 9113.5
+    },
+    "iter(a b c d e, X)": {
+      "cached": 4682.7,
+      "compile": 344412.6,
+      "native": 6974.5
+    },
+    "iter(a b c, X)": {
+      "cached": 3103.1,
+      "compile": 337276.5,
+      "native": 12446.7
+    },
+    "iter(aa bb cc dd ee ff gg hh ii jj, X)": {
+      "cached": 9377.9,
+      "compile": 374365.9,
+      "native": 12703.7
+    },
+    "iter(a|1 b|2 c|3 d|4 e|5, before(##\\,|))": {
+      "cached": 10324.8,
+      "compile": 416576.3,
+      "native": 15913.6
+    },
+    "last(cat(rand(10),rand(10),rand(10)))": {
+      "cached": 297.5,
+      "compile": 131580.6,
+      "native": 4356.0
+    },
+    "ldelete(cat(rand(10),rand(10),rand(10),rand(10)),2)": {
+      "cached": 306.7,
+      "compile": 152479.2,
+      "native": 6333.0
+    },
+    "lnum(add(2,3))": {
+      "cached": 767.6,
+      "compile": 63594.4,
+      "native": 5061.5
+    },
+    "max(rand(100),rand(100))": {
+      "cached": 237.8,
+      "compile": 85169.8,
+      "native": 2947.5
+    },
+    "member(alpha beta gamma delta,gamma)": {
+      "cached": 305.0,
+      "compile": 54862.2,
+      "native": 1299.2
+    },
+    "min(rand(100),rand(100))": {
+      "cached": 235.3,
+      "compile": 87273.4,
+      "native": 2964.1
+    },
+    "mul(rand(100),rand(100))": {
+      "cached": 233.4,
+      "compile": 83290.8,
+      "native": 4853.3
+    },
+    "not(eq(mod(42,5),0))": {
+      "cached": 248.2,
+      "compile": 45301.6,
+      "native": 1128.7
+    },
+    "not(eq(mod(add(rand(1),42),5),0))": {
+      "cached": 1002.4,
+      "compile": 177414.1,
+      "native": 3580.1
+    },
+    "repeat(cat(rand(10),x),5)": {
+      "cached": 869.7,
+      "compile": 122790.6,
+      "native": 3641.8
+    },
+    "replace(cat(rand(10),rand(10),rand(10)),2,ZZZ)": {
+      "cached": 301.8,
+      "compile": 156302.0,
+      "native": 7119.5
+    },
+    "rest(cat(rand(10),rand(10),rand(10)))": {
+      "cached": 289.5,
+      "compile": 135121.4,
+      "native": 4419.5
+    },
+    "sign(sub(rand(100),50))": {
+      "cached": 666.6,
+      "compile": 128113.5,
+      "native": 2527.2
+    },
+    "strcat(rand(100),rand(100))": {
+      "cached": 272.9,
+      "compile": 103953.6,
+      "native": 3342.7
+    },
+    "strlen(cat(hello,world))": {
+      "cached": 315.9,
+      "compile": 50462.7,
+      "native": 895.3
+    },
+    "strlen(cat(rand(100),rand(100)))": {
+      "cached": 312.1,
+      "compile": 132755.5,
+      "native": 5513.1
+    },
+    "strlen(strcat(rand(100),rand(100),rand(100)))": {
+      "cached": 296.9,
+      "compile": 150237.9,
+      "native": 5512.3
+    },
+    "t(rand(100))": {
+      "cached": 427.8,
+      "compile": 93093.3,
+      "native": 4037.1
+    },
+    "trim(cat(%b,rand(100),%b))": {
+      "cached": 990.2,
+      "compile": 112886.1,
+      "native": 3961.7
+    },
+    "words(the quick brown fox)": {
+      "cached": 242.8,
+      "compile": 48011.4,
+      "native": 1008.1
+    }
+  }
+}
