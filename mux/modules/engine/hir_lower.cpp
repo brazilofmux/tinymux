@@ -1200,7 +1200,7 @@ static bool is_known_function(const char *upper_name) {
 //
 static constexpr int QREG_ITER_INUM   = 10;  // iteration counter (0-based, TY_INT)
 static constexpr int QREG_ITER_ACC    = 11;  // accumulated result string
-static constexpr int QREG_ITER_CURSOR = 12;  // byte offset into list (TY_STRING)
+static constexpr int QREG_ITER_CURSOR = 12;  // byte offset into list (TY_INT, #2052)
 
 // Iter context: set during body lowering so AST_SUBST nodes (## / #@)
 // resolve to the current element and 1-based index.
@@ -2265,14 +2265,14 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         }
         int nwords_int = h.emit(HIR_ATOI, TY_INT, nwords_str);
 
-        // Allocate a fixed cursor buffer in the output region.
-        // Cleared to 0x00 before each run; satoi("") returns 0
-        // which is the correct initial offset.
-        uint64_t cursor_addr = rc.alloc_output();
-
         // Initialize loop state.
         int inum_init = h.emit_iconst(0);
         h.emit(HIR_STORE_Q, TY_VOID, inum_init, -1, QREG_ITER_INUM);
+
+        // The cursor is a byte offset into the list, carried in a q-register
+        // exactly like the counter above (#2052).  It starts at 0.
+        int cursor_init = h.emit_iconst(0);
+        h.emit(HIR_STORE_Q, TY_VOID, cursor_init, -1, QREG_ITER_CURSOR);
 
         uint64_t empty_addr = rc.pool_str("");
         int acc_init = h.emit_sconst(empty_addr, "");
@@ -2288,6 +2288,12 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         h.cur_block = header_block;
         int inum = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_ITER_INUM);
         int acc = h.emit(HIR_LOAD_Q, TY_STRING, -1, -1, QREG_ITER_ACC);
+        // The cursor is loop-carried and must be loaded HERE, in the header,
+        // for the same reason inum is: that is where the loop's PHI lives.
+        // Loading it in the body instead compiled and produced correct output
+        // for a lone iter(), then dropped all but the last element once two
+        // iter() loops shared one compiled program (parser_fn TC020).
+        int cursor = h.emit(HIR_LOAD_Q, TY_INT, -1, -1, QREG_ITER_CURSOR);
         int cond = h.emit(HIR_LT, TY_INT, inum, nwords_int);
         h.native_ops++;
 
@@ -2305,21 +2311,54 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int inum_1based = h.emit(HIR_ADD, TY_INT, inum, one_int);
         h.native_ops++;
 
-        // Element extraction: use SPLIT_TOKEN (O(n) cursor) if available,
-        // else fall back to EXTRACT (O(n²) re-scan).
+        // Element extraction.
+        //
+        // This used to be EXTRACT(list, inum+1, 1, delim), and co_extract
+        // reaches element i by scanning from the head of the list counting
+        // delimiters -- O(len) per element, so the loop was O(len^2).  The
+        // interpreter's fun_iter has never done that: it keeps a cursor and
+        // calls split_token.  Measured, the compiled route was 65x slower
+        // than a build with no JIT at all at 2000 elements (#2068).
+        //
+        // A SPLIT_TOKEN fast path was written here but never wired: nothing
+        // registered it in s_tier2_map, so tier2_lookup always returned 0 and
+        // the branch never once executed.  It is replaced rather than enabled
+        // -- it passed the cursor as an emit_sconst whose storage the callee
+        // was expected to mutate, and called emit_call with a hardcoded
+        // func_idx of 0.  Neither had ever run.
+        //
+        // The cursor now lives in QREG_ITER_CURSOR as a plain integer, which
+        // is the same machinery the loop counter already uses.  Two calls per
+        // element: one for the element, one for the next offset.  Both are
+        // O(element length), so the loop is linear; see rv64_split_token in
+        // mux/rv64/src/softlib.c for why that beats one mutating callee.
         uint64_t t2split = tier2_lookup("SPLIT_TOKEN");
         int elem;
+        int next_cursor = -1;
         if (t2split) {
-            // SPLIT_TOKEN(list, cursor, delim, cursor) — reads cursor,
-            // writes new cursor back to same buffer.  cursor_addr is a
-            // fixed output slot cleared to 0x00 before each run.
-            int cursor_val = h.emit_sconst(cursor_addr, "");
-            int stargs[4] = { list_val, cursor_val, delim_val, cursor_val };
+            int cursor_str = h.emit(HIR_ITOA, TY_STRING, cursor);
+
+            uint64_t m_elem_addr = rc.pool_str("0");
+            int mode_elem = h.emit_sconst(m_elem_addr, "0");
+            int stargs[4] = { list_val, cursor_str, delim_val, mode_elem };
             elem = h.emit_call(TY_STRING, 0, stargs, 4);
             h.tier2_addr[elem] = t2split;
             h.tier2_calls++;
+
+            uint64_t m_next_addr = rc.pool_str("1");
+            int mode_next = h.emit_sconst(m_next_addr, "1");
+            int nxargs[4] = { list_val, cursor_str, delim_val, mode_next };
+            int next_str = h.emit_call(TY_STRING, 0, nxargs, 4);
+            h.tier2_addr[next_str] = t2split;
+            h.tier2_calls++;
+
+            // Computed here, stored in the LATCH alongside inum_next -- the
+            // loop-carried registers are all updated in one place.
+            next_cursor = h.emit(HIR_ATOI, TY_INT, next_str);
         } else {
-            // Fallback: EXTRACT(list, inum+1, 1, delim).
+            // Kept as a fallback for a blob that predates SPLIT_TOKEN, and
+            // it is the O(n^2) shape -- if this branch is running, that is
+            // the reason iter() is slow.
             int inum_1str = h.emit(HIR_ITOA, TY_STRING, inum_1based);
             int extract_idx = engine_api_lookup("EXTRACT");
             uint64_t one_addr = rc.pool_str("1");
@@ -2392,6 +2431,9 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int inum_next = h.emit(HIR_ADD, TY_INT, inum, one_int);
         h.native_ops++;
         h.emit(HIR_STORE_Q, TY_VOID, inum_next, -1, QREG_ITER_INUM);
+        if (next_cursor >= 0) {
+            h.emit(HIR_STORE_Q, TY_VOID, next_cursor, -1, QREG_ITER_CURSOR);
+        }
         h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
         h.add_edge(latch_block, header_block);
 
