@@ -86,7 +86,7 @@ unwinder could not reach the caller.
    which a profile cannot. Revert the knob and rebuild before measuring
    anything else; an experimental artifact left installed poisons every later
    number.
-9. **Two benchmark fields are mislabelled, and one of them reversed a
+10. **Two benchmark fields are mislabelled, and one of them reversed a
    conclusion in this very document.** `rvbench`'s `native=` calls `mux_exec`,
    which dispatches to the JIT for any JIT-eligible expression, so it is not
    the interpreter — it beat the interpreter outright on
@@ -102,17 +102,35 @@ unwinder could not reach the caller.
 Per-command server CPU (user+sys), `tests/profile/`, 1500 objects,
 Linux/x86-64, `--enable-jit --enable-stubslave`:
 
-| phase | before #2054 | after #2054 |
-|---|---:|---:|
-| `dispatch` (`look`) | 256 µs | **30 µs** |
-| `softcode_arith` | 244 µs | **25 µs** |
-| `softcode_list` (`iter(lnum(50))`) | — | 82 µs |
-| `attrwrite` | 311 µs | **142 µs** |
-| `attrread` | 338 µs | **152 µs** |
+| phase | before #2054 | after #2054 | **current** |
+|---|---:|---:|---:|
+| `dispatch` (`look`) | 256 µs | 30 µs | **31 µs** |
+| `softcode_arith` | 244 µs | 25 µs | **27 µs** |
+| `softcode_list` (`iter(lnum(50))`) | — | 82 µs | **61 µs** |
+| `attrwrite` | 311 µs | 142 µs | **143 µs** |
+| `attrread` | 338 µs | 152 µs | **160 µs** |
 
 The GANL debug logging (#2049) was a **flat tax that hid the shape**: before it
 was removed every phase sat inside a 1.4× band and looked alike. Afterwards the
 spread is 6×.
+
+The **current** column is master after #2073, #2076, #2077/#2084 and #2078.
+Only `softcode_list` moved (−26%, the `iter()` work); the rest are unchanged
+within noise. That is not a disappointment — those merges targeted
+`$`-dispatch and `iter`, and `$`-dispatch is not one of these phases. See
+below for what it did to that path.
+
+**Note what did *not* move.** #2084 caches the per-object attribute-number
+list, and `attrread` did not improve at all, correctly: `get()` fetches one
+attribute directly and never enumerates, so that cache serves `$`-matching and
+`lattr()` rather than value fetches. The win shows up in the `$`-dispatch
+numbers, not here.
+
+**The ranking has therefore inverted.** With storage costs removed from the
+attribute path, the two attribute phases are now the most expensive in the
+harness by 5×, and both are dominated by name resolution — 66.8% of `attrread`
+and 74.8% of `attrwrite` (§2). Storage no longer appears near the top of
+either.
 
 ### 1. `$`-command dispatch — the largest cost in the server
 
@@ -214,6 +232,71 @@ matching work (attribute fetch, permission check, wildcard match). That residual
 is worth attacking — it is still 1.4 ms at 200 objects — but it is linear, and
 it is not what made the curve bend.
 
+#### The residual was profiled, and it was not the matching either (#2077)
+
+Both halves of `collect_attrnums_from_storage` turned out to be the cost. #2073
+fixed the pending-merge half; the storage half then called `GetAll()` on every
+`atr_head`, i.e. one SQLite round trip per object in scope per typed command.
+Profiling the residual put **`sqlite3.c` at 40.6%**, `fcntl` file locking at
+10.5% and mutexes at 15.7% — against `wild()` + `wild_lit_eq()` at **0.48%**
+with 200 patterns being tested per command.
+
+So the automaton would optimise half a percent. Fixed by caching the
+attribute-number list (#2084):
+
+| objects | before #2073 | after #2073 | after #2084 |
+|---:|---:|---:|---:|
+| 25 | 380 µs | 270 µs | **90 µs** |
+| 100 | 1380 µs | 750 µs | **170 µs** |
+| 200 | **3430 µs** | 1580 µs | **290 µs** |
+| per object | 16.5 µs | 7.3 µs | **1.1 µs** |
+
+**The DFA idea is retired.** Twice in this pass the "obvious" fix for
+`$`-dispatch was named before it was profiled, and twice the profile pointed
+somewhere else — first at a whole-cache scan, then at a per-object database
+query. Neither was the pattern matching, which has never risen above half a
+percent of the path.
+
+### 2. Name resolution — now the largest cost in the attribute path
+
+**Current numbers** (master after #2073/#2076/#2084/#2078), self time by symbol:
+
+| | `attrread` | `attrwrite` |
+|---|---:|---:|
+| `string_match` | 24.0% | 28.5% |
+| `string_compare` | 21.2% | 23.4% |
+| `match_list` | 18.5% | 18.9% |
+| `PureName` | 3.0% | 4.0% |
+| **name resolution** | **66.8%** | **74.8%** |
+
+With storage out of the attribute path, these two phases are the most expensive
+in the harness by 5×, and this is what they are made of.
+
+`match_list` (`match.cpp:354`) walks a contents list comparing names one at a
+time, and **returns early only on `md.absolute_form`** — a dbref. A name hit at
+`CON_COMPLETE` does not stop the loop, so the full list is walked every time.
+That is deliberate: ambiguity (two objects sharing a name) cannot be detected by
+stopping at the first match.
+
+Consequently position barely matters, which is itself the measurement worth
+recording — 1000 objects, same set:
+
+| lookup | µs/cmd | tax over dbref |
+|---|---:|---:|
+| by dbref (no walk) | 26.7 | — |
+| name at head | 53.3 | 26.6 |
+| name at middle | 60.0 | 33.3 |
+| name at tail | 66.7 | 40.0 |
+
+1.5× across the whole list. An earlier hypothesis here — that the first
+measurement of this was best-case because it looked up a name sitting at the
+head — was tested and **did not hold**.
+
+There is no cheap early-exit to add; the walk is load-bearing. An index is the
+only fix, and ambiguity does not block it (name → `vector<dbref>` is ambiguous
+iff the list holds more than one), but the invalidation surface is
+create/destroy/move/rename. Tracked on #2058.
+
 ### 2. Name resolution — ~66% of the attribute path
 
 `attrread`, by symbol: `string_match` 23.4%, `string_compare` 20.8%,
@@ -232,11 +315,23 @@ measured *inline* is 0.027s against 18 000 attributes — writes are already
 persisted by the time it runs. The historical "the database is the big number"
 was about the periodic flatfile dump, which no longer exists in that form.
 
-**But the persisted `code_cache` buys nothing** (#2061): it is written, looked
+That claim is narrower than it was when first written. Storage *was* invisible
+in the attribute path because the value cache absorbed it — but the attribute
+**list** was going to SQLite on every enumeration, which is what made
+`$`-dispatch 40.6% `sqlite3.c` until #2084. "Storage is cheap" held for
+`cache_get`; it did not hold for `atr_head`.
+
+**And the persisted `code_cache` buys nothing** (#2061): it is written, looked
 up, and hit — and a warm run costs the same wall time and produces the same
-profile as a cold one. Mechanism not established; the two candidates are that
-hits are a small share of total compilations, or that
-`reconstruct_from_cache()` costs what compiling costs.
+profile as a cold one. The *correctness* half of that issue is fixed by #2079:
+`blob_hash`'s tier 1 leg was a single `__DATE__`/`__TIME__` in
+`jit_compiler.cpp`, so under incremental `make` a codegen change in any other
+translation unit left the key unmoved and the cache served the previous build's
+output. Verified by measurement — on master, touching `hir_lower.cpp` and
+rebuilding left `blob_hash` identical. The *performance* half remains open:
+mechanism not established, the candidates being that hits are a small share of
+total compilations, or that `reconstruct_from_cache()` costs what compiling
+costs.
 
 ## The suite: a compiler benchmark
 
