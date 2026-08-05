@@ -1431,6 +1431,21 @@ static jit_run_vm s_vm[JIT_MAX_RUN_DEPTH];
 // executing out of (#1326).
 static int s_run_cached_depth = 0;
 
+// Claims the current context for the duration of a run, so anything the run
+// re-enters picks the next one instead.  Hoisted to file scope because BOTH
+// entry points into the DBT need it: run_cached_program (jit_eval's route)
+// and run_compiled (rvbench's).  run_compiled owning s_vm[0] without
+// claiming it was #2106 -- a nested run then reset the very DBT the outer
+// run's frames were executing from.
+//
+struct RunDepthGuard {
+    int &depth;
+    explicit RunDepthGuard(int &d) : depth(d) { ++depth; }
+    ~RunDepthGuard() { --depth; }
+    RunDepthGuard(const RunDepthGuard &) = delete;
+    RunDepthGuard &operator=(const RunDepthGuard &) = delete;
+};
+
 // Release the persistent DBT state on shutdown.
 //
 void dbt_compile_cleanup(void) {
@@ -2963,11 +2978,7 @@ bool run_cached_program(compiled_program *prog,
     // Hold the reentrancy lock for the whole DBT path (including early
     // declines that still touch shared runtime state).
     //
-    struct RunDepthGuard {
-        int &depth;
-        explicit RunDepthGuard(int &d) : depth(d) { ++depth; }
-        ~RunDepthGuard() { --depth; }
-    } run_depth_guard(s_run_cached_depth);
+    RunDepthGuard run_depth_guard(s_run_cached_depth);
 
     // Materialize compact blobs into the shared runtime buffer — unless the
     // buffer already holds this exact program (consecutive re-run, the common
@@ -5799,15 +5810,35 @@ static bool run_compiled(compiled_program &prog,
     ec.dbt = nullptr;
     ec.pvm = nullptr;
 
+    // This path runs out of prog.memory rather than the context's own buffer
+    // (dbt_reset rebinds it), so it must CLAIM the context for the duration
+    // of the run (#2106).  The old code took s_vm[0] unconditionally without
+    // touching s_run_cached_depth, on the reasoning that run_compiled is
+    // never reached FROM a nested run -- true, and beside the point.  It
+    // makes one: a program whose ECALL re-enters mux_exec per element
+    // (fun_map, fun_filter) lands in run_cached_program, which reads a depth
+    // still at 0, picks this same s_vm[0], and calls get_dbt on it --
+    // rebinding the DBT from prog.memory to the context's own buffer while
+    // the outer run's frames are executing out of it.  That is precisely the
+    // hazard the depth check above run_cached_program's slot pick describes.
+    //
+    // Both buffers are live and the same size, so on glibc the outer run
+    // simply continues against the wrong memory and returns a wrong answer;
+    // it took a platform whose allocator left the region unmapped to turn it
+    // into the SIGSEGV that got it noticed.
+    //
+    if (s_run_cached_depth >= JIT_MAX_RUN_DEPTH) {
+        return false;
+    }
+    jit_run_vm *vm = &s_vm[s_run_cached_depth];
+    RunDepthGuard run_depth_guard(s_run_cached_depth);
+
     dbt_state_t *dbt;
-    // Depth-0 context.  This path runs out of prog.memory rather than the
-    // context's own buffer (dbt_reset rebinds it), and is not reached from a
-    // nested run, so it keeps using the outer context's DBT as it always has.
-    if (reuse_dbt && s_vm[0].dbt_ready) {
-        dbt = &s_vm[0].dbt;
+    if (reuse_dbt && vm->dbt_ready) {
+        dbt = &vm->dbt;
         dbt_rerun(dbt, eval_ecall, &ec);
     } else {
-        dbt = get_dbt(&s_vm[0], prog.memory.data(), prog.memory_size,
+        dbt = get_dbt(vm, prog.memory.data(), prog.memory_size,
                        eval_ecall, &ec);
         if (!dbt) return false;
         if (dbt->blob_code_end == 0) {
