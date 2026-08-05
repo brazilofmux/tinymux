@@ -152,10 +152,15 @@ CASES = [
     #
     # Interpreter route only, and both reasons are worth recording rather than
     # discovering again:
-    #   * rvbench returns "#-1 COMPILATION FAILED" for this expression at
-    #     N>=8000 while compiling it fine at 4000, so the jit route cannot
-    #     reach the sizes that clear FLOOR_US.  (Not chased here; it is a
-    #     property of the compiler, not of shuffle.)
+    #   * rvbench returns "#-1 COMPILATION FAILED" here, so the jit route
+    #     cannot reach the sizes that clear FLOOR_US.  The cause is #2070:
+    #     any expression containing a repeat() whose OUTPUT reaches 12256
+    #     bytes hard-fails to compile.  Nothing to do with shuffle -- bare
+    #     repeat(a%b,8000) fails identically, and shuffle() over the same
+    #     8000 words supplied from an attribute compiles fine.  The boundary
+    #     is a byte count, not a word count: it moves with the unit width
+    #     (6127 ok / 6128 fail at 2 bytes per word, 4085 / 4090 at 3), which
+    #     is why N=8000 looked like the threshold and is not.
     #   * below 8000 the jit numbers track the interpreter's within ~5%,
     #     because the lowerer has no SHUFFLE case and ecalls straight back
     #     into fun_shuffle.  It would be the same code measured twice.
