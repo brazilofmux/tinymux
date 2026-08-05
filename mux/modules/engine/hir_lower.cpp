@@ -1209,6 +1209,13 @@ static bool is_known_function(const char *upper_name) {
 static constexpr int QREG_ITER_INUM   = 10;  // iteration counter (0-based, TY_INT)
 static constexpr int QREG_ITER_ACC    = 11;  // accumulated result string
 static constexpr int QREG_ITER_CURSOR = 12;  // byte offset into list (TY_INT, #2052)
+static constexpr int QREG_FILTER_KEPT = 13;  // kept-element count (TY_INT, #2080).
+                                             // filter()'s osep prints between
+                                             // KEPT elements, and a kept empty
+                                             // element claims its slot, so
+                                             // "first" cannot be keyed on the
+                                             // accumulator length -- it needs
+                                             // its own counter.
 
 // Iter context: set during body lowering so AST_SUBST nodes (## / #@)
 // resolve to the current element and 1-based index.
@@ -2952,6 +2959,411 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             }
         }
         // Fall through: ECALL fun_map, exactly as before.
+    }
+
+    // ---------------------------------------------------------------
+    // filter(#dbref/attr, list[, delim[, osep[, extras...]]]) — MAP's
+    // shape with a keep test (#2080).
+    //
+    // Two facts filter_fn.mux pins that shape this lowering:
+    //   - filter() keeps an element iff the predicate result is EXACTLY
+    //     the string "1" (result[0]=='1' && result[1]=='\0') -- a native
+    //     STRCMP, deliberately NOT xlate truth.  filterbool() IS xlate
+    //     truth, and there is no HIR shape that reproduces xlate() for
+    //     runtime strings (floats, NaN -- see the ifelse note, #1157),
+    //     so filterbool stays on the ECALL and is not handled here.
+    //   - osep prints between KEPT elements, and a kept EMPTY element
+    //     claims its slot, so "first" is keyed on QREG_FILTER_KEPT --
+    //     its own counter -- never on the accumulator length.
+    //
+    // What is appended is the ELEMENT, which is a guest string of any
+    // length; the 256-byte CARGS limit applies only to the predicate's
+    // %0, so the per-element size diamond routes oversized elements
+    // through ECALL u() for the TEST while the append stays native.
+    //
+    // Gates and structure otherwise identical to MAP above; the two
+    // (plus FOLD, next) will be factored over a shared loop skeleton
+    // once all three consumers exist and the shape is fully known.
+    // ---------------------------------------------------------------
+
+    if (fname == "FILTER"
+        && node->children.size() >= 2
+        && s_compile_deps != nullptr
+        && s_inline_depth < MAX_INLINE_DEPTH)
+    {
+        const ASTNode *arg0 = node->children[0].get();
+        std::string arg0_str;
+        bool arg0_const = false;
+        if (arg0->type == AST_LITERAL) {
+            arg0_str = arg0->text;
+            arg0_const = true;
+        } else if (arg0->type == AST_SEQUENCE
+                   && arg0->children.size() == 1
+                   && arg0->children[0]->type == AST_LITERAL) {
+            arg0_str = arg0->children[0]->text;
+            arg0_const = true;
+        }
+
+        int nExtra = static_cast<int>(node->children.size()) - 4;
+        if (nExtra < 0) nExtra = 0;
+
+        uint64_t t2split_f  = tier2_lookup("SPLIT_TOKEN");
+        uint64_t t2append_f = tier2_lookup("APPEND");
+        uint64_t t2blen_f   = tier2_lookup("BYTELEN");
+
+        dbref thing = NOTHING;
+        ATTR *pattr = nullptr;
+        if (arg0_const && !arg0_str.empty() && arg0_str[0] == '#'
+            && nExtra <= 9 && t2split_f && t2append_f && t2blen_f
+            && parse_attrib(GOD,
+                   reinterpret_cast<const UTF8 *>(arg0_str.c_str()),
+                   &thing, &pattr)
+            && pattr && Good_obj(thing))
+        {
+            dbref aowner;
+            int aflags;
+            size_t nBodyLen = 0;
+            UTF8 *body = atr_pget_LEN(thing, pattr->number,
+                                       &aowner, &aflags, &nBodyLen);
+            std::unique_ptr<ASTNode> body_ast;
+            if (body && nBodyLen > 0 && !(aflags & AF_TRACE)) {
+                body_ast = ast_parse_string(body, nBodyLen);
+            }
+            if (body) free_lbuf(body);
+
+            if (body_ast) {
+                h.inline_extra_depth +=
+                    hir_ast_max_funccall_depth(body_ast.get());
+                h.inline_extra_calls +=
+                    hir_ast_funccall_count(body_ast.get());
+
+                uint32_t mc = attr_mod_count_get(thing, pattr->number);
+                s_compile_deps->push_back({
+                    static_cast<int32_t>(thing),
+                    static_cast<int32_t>(pattr->number),
+                    mc
+                });
+
+                std::vector<int> m_args;
+                for (size_t ci = 0; ci < node->children.size(); ci++) {
+                    int v = (ci == 1)
+                        ? hir_lower_trimmed(h, rc,
+                              node->children[ci].get())
+                        : hir_lower_argument(h, rc,
+                              node->children[ci].get());
+                    if (v < 0) return -1;
+                    if (h.ty[v] == TY_INT) {
+                        v = h.emit(HIR_ITOA, TY_STRING, v);
+                    } else if (h.ty[v] == TY_FLOAT) {
+                        v = h.emit(HIR_FTOA, TY_STRING, v);
+                    }
+                    m_args.push_back(v);
+                }
+                int list_val = m_args[1];
+                int delim_val;
+                if (node->children.size() >= 3) {
+                    delim_val = m_args[2];
+                } else {
+                    uint64_t da = rc.pool_str(" ");
+                    delim_val = h.emit_sconst(da, " ");
+                }
+                int osep_val = (node->children.size() >= 4)
+                    ? m_args[3] : delim_val;
+
+                // ---- runtime gate (same as MAP) ----
+                int perm_idx = engine_api_lookup("_CHECK_U_PERM");
+                std::string thing_s = std::to_string(thing);
+                std::string attr_s = std::to_string(pattr->number);
+                uint64_t ta = rc.pool_str(thing_s);
+                uint64_t aa = rc.pool_str(attr_s);
+                int thing_c = h.emit_sconst(ta, thing_s);
+                int attr_c = h.emit_sconst(aa, attr_s);
+                int perm_args[2] = { thing_c, attr_c };
+                int perm_res = h.emit_call(TY_STRING, perm_idx,
+                                           perm_args, 2);
+                h.ecalls++;
+                h.known_int[perm_res] = true;
+                int perm_int = h.emit(HIR_ATOI, TY_INT, perm_res);
+                int zero_i = h.emit_iconst(0);
+                int perm_ok = h.emit(HIR_EQ, TY_INT, perm_int, zero_i);
+                h.native_ops++;
+
+                uint64_t ex_addr = rv_compiler::SUBST_BASE
+                    + rv_compiler::SUBST_EXECUTOR * rv_compiler::SUBST_SLOT;
+                int ex_ref = h.emit_sref(ex_addr);
+                std::string hash_thing = "#" + thing_s;
+                uint64_t ha = rc.pool_str(hash_thing);
+                int hash_c = h.emit_sconst(ha, hash_thing);
+                int ex_cmp = h.emit(HIR_STRCMP, TY_INT, ex_ref, hash_c);
+                int ex_ok = h.emit(HIR_EQ, TY_INT, ex_cmp, zero_i);
+                h.native_ops += 2;
+                int gate = h.emit(HIR_BAND, TY_INT, perm_ok, ex_ok);
+                h.native_ops++;
+
+                int c256 = h.emit_iconst(256);
+                for (int ei = 0; ei < nExtra; ei++) {
+                    int bargs[1] = { m_args[4 + ei] };
+                    int bl = h.emit_call(TY_STRING, 0, bargs, 1);
+                    h.tier2_addr[bl] = t2blen_f;
+                    h.tier2_calls++;
+                    int bl_i = h.emit(HIR_ATOI, TY_INT, bl);
+                    int fits = h.emit(HIR_LT, TY_INT, bl_i, c256);
+                    gate = h.emit(HIR_BAND, TY_INT, gate, fits);
+                    h.native_ops += 2;
+                }
+
+                int entry_blk = h.cur_block;
+                int fallback_blk = h.new_block();
+                int inline_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, gate, fallback_blk, inline_blk);
+                h.add_edge(entry_blk, fallback_blk);
+                h.add_edge(entry_blk, inline_blk);
+
+                // ---- fallback: ECALL fun_filter ----
+                h.cur_block = fallback_blk;
+                int fidx_filter = engine_api_lookup("FILTER");
+                int fb_res = h.emit_call(TY_STRING, fidx_filter,
+                    m_args.data(), static_cast<int>(m_args.size()));
+                h.ecalls++;
+                int fb_exit = h.cur_block;
+                int fb_br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+
+                // ---- inline path ----
+                h.cur_block = inline_blk;
+                int save_idx = engine_api_lookup("_SAVE_CARGS");
+                int cargs_handle = h.emit_call(TY_STRING, save_idx,
+                                               nullptr, 0);
+                h.ecalls++;
+                int write_idx = engine_api_lookup("_WRITE_CARG");
+                for (int ei = 0; ei < nExtra; ei++) {
+                    std::string is = std::to_string(ei + 1);
+                    uint64_t ia = rc.pool_str(is);
+                    int idx_c = h.emit_sconst(ia, is);
+                    int wargs[2] = { idx_c, m_args[4 + ei] };
+                    h.emit_call(TY_STRING, write_idx, wargs, 2);
+                    h.ecalls++;
+                }
+                int ncargs_idx = engine_api_lookup("_SET_NCARGS");
+                std::string nc_s = std::to_string(nExtra + 1);
+                uint64_t na = rc.pool_str(nc_s);
+                int nc_c = h.emit_sconst(na, nc_s);
+                int ncarg_arg[1] = { nc_c };
+                h.emit_call(TY_STRING, ncargs_idx, ncarg_arg, 1);
+                h.ecalls++;
+
+                int words_idx = engine_api_lookup("WORDS");
+                int wargs2[2] = { list_val, delim_val };
+                int nwords_str = h.emit_call(TY_STRING, words_idx,
+                                             wargs2, 2);
+                h.known_int[nwords_str] = true;
+                uint64_t t2words = tier2_lookup("WORDS");
+                if (t2words) {
+                    h.tier2_addr[nwords_str] = t2words;
+                    h.tier2_calls++;
+                } else {
+                    h.ecalls++;
+                }
+                int nwords_int = h.emit(HIR_ATOI, TY_INT, nwords_str);
+
+                int inum_init = h.emit_iconst(0);
+                h.emit(HIR_STORE_Q, TY_VOID, inum_init, -1,
+                       QREG_ITER_INUM);
+                int cur_init = h.emit_iconst(0);
+                h.emit(HIR_STORE_Q, TY_VOID, cur_init, -1,
+                       QREG_ITER_CURSOR);
+                uint64_t acc_addr = rc.alloc_output();
+                int len_init = h.emit_iconst(0);
+                h.emit(HIR_STORE_Q, TY_VOID, len_init, -1,
+                       QREG_ITER_ACC);
+                int kept_init = h.emit_iconst(0);
+                h.emit(HIR_STORE_Q, TY_VOID, kept_init, -1,
+                       QREG_FILTER_KEPT);
+                uint64_t e_addr = rc.pool_str("");
+                uint64_t z_addr = rc.pool_str("0");
+                int z_str = h.emit_sconst(z_addr, "0");
+                int e_str = h.emit_sconst(e_addr, "");
+                int acc_r0 = h.emit_sref(acc_addr);
+                int rst_args[5] = { acc_r0, z_str, z_str, e_str, e_str };
+                int rst = h.emit_call(TY_STRING, 0, rst_args, 5);
+                h.tier2_addr[rst] = t2append_f;
+                h.tier2_calls++;
+
+                int pre_hdr = h.cur_block;
+                int hdr_blk = h.new_block();
+                h.emit(HIR_BR, TY_VOID, -1, -1, hdr_blk);
+                h.add_edge(pre_hdr, hdr_blk);
+
+                // Header: every loop-carried q-reg loads HERE.
+                h.cur_block = hdr_blk;
+                int inum = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_INUM);
+                int flen = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_ACC);
+                int fcur = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_ITER_CURSOR);
+                int kept = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
+                                  QREG_FILTER_KEPT);
+                int cond = h.emit(HIR_LT, TY_INT, inum, nwords_int);
+                h.native_ops++;
+                int body_blk = h.new_block();
+                int exit_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, cond, exit_blk, body_blk);
+                h.add_edge(hdr_blk, body_blk);
+                h.add_edge(hdr_blk, exit_blk);
+
+                // Body: cursor walk.
+                h.cur_block = body_blk;
+                int one_i = h.emit_iconst(1);
+                int inum1 = h.emit(HIR_ADD, TY_INT, inum, one_i);
+                h.native_ops++;
+                int cur_str = h.emit(HIR_ITOA, TY_STRING, fcur);
+                uint64_t m0a = rc.pool_str("0");
+                int m0 = h.emit_sconst(m0a, "0");
+                int st0[4] = { list_val, cur_str, delim_val, m0 };
+                int elem = h.emit_call(TY_STRING, 0, st0, 4);
+                h.tier2_addr[elem] = t2split_f;
+                h.tier2_calls++;
+                uint64_t m1a = rc.pool_str("1");
+                int m1 = h.emit_sconst(m1a, "1");
+                int st1[4] = { list_val, cur_str, delim_val, m1 };
+                int nxt_str = h.emit_call(TY_STRING, 0, st1, 4);
+                h.tier2_addr[nxt_str] = t2split_f;
+                h.tier2_calls++;
+                int nxt_cur = h.emit(HIR_ATOI, TY_INT, nxt_str);
+
+                // Element-size diamond for the PREDICATE's %0 only.
+                int eb_args[1] = { elem };
+                int eb = h.emit_call(TY_STRING, 0, eb_args, 1);
+                h.tier2_addr[eb] = t2blen_f;
+                h.tier2_calls++;
+                int eb_i = h.emit(HIR_ATOI, TY_INT, eb);
+                int e_fits = h.emit(HIR_LT, TY_INT, eb_i, c256);
+                h.native_ops++;
+                int uarm_blk = h.new_block();
+                int ibody_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, e_fits, uarm_blk, ibody_blk);
+                h.add_edge(h.cur_block, uarm_blk);
+                h.add_edge(h.cur_block, ibody_blk);
+
+                h.cur_block = ibody_blk;
+                uint64_t i0a = rc.pool_str("0");
+                int i0c = h.emit_sconst(i0a, "0");
+                int w0[2] = { i0c, elem };
+                h.emit_call(TY_STRING, write_idx, w0, 2);
+                h.ecalls++;
+                bool saved_fcheck = s_fcheck_available;
+                s_fcheck_available = true;
+                s_inline_depth++;
+                int ib_val = hir_lower_node(h, rc, body_ast.get());
+                s_inline_depth--;
+                s_fcheck_available = saved_fcheck;
+                if (ib_val < 0) return -1;
+                if (h.ty[ib_val] == TY_INT) {
+                    ib_val = h.emit(HIR_ITOA, TY_STRING, ib_val);
+                } else if (h.ty[ib_val] == TY_FLOAT) {
+                    ib_val = h.emit(HIR_FTOA, TY_STRING, ib_val);
+                }
+                int ib_exit = h.cur_block;
+                int ib_br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
+
+                h.cur_block = uarm_blk;
+                int fidx_u2 = engine_api_lookup("U");
+                uint64_t ua = rc.pool_str(arg0_str);
+                int uref_c = h.emit_sconst(ua, arg0_str);
+                int uargs[2] = { uref_c, elem };
+                int ua_val = h.emit_call(TY_STRING, fidx_u2, uargs, 2);
+                h.ecalls++;
+                int ua_exit = h.cur_block;
+
+                int emerge_blk = h.new_block();
+                h.val[ib_br] = emerge_blk;
+                h.add_edge(ib_exit, emerge_blk);
+                h.emit(HIR_BR, TY_VOID, -1, -1, emerge_blk);
+                h.add_edge(ua_exit, emerge_blk);
+
+                h.cur_block = emerge_blk;
+                int eblocks[2] = { ib_exit, ua_exit };
+                int evals[2] = { ib_val, ua_val };
+                int pred_val = h.emit_phi(TY_STRING, -1,
+                                          eblocks, evals, 2);
+
+                // Keep test: predicate result EXACTLY "1".
+                uint64_t one_s_addr = rc.pool_str("1");
+                int one_s = h.emit_sconst(one_s_addr, "1");
+                int keep_cmp = h.emit(HIR_STRCMP, TY_INT,
+                                      pred_val, one_s);
+                int keep = h.emit(HIR_EQ, TY_INT, keep_cmp, zero_i);
+                h.native_ops += 2;
+
+                int skip_blk = h.new_block();
+                int keep_blk = h.new_block();
+                h.emit(HIR_BRC, TY_VOID, keep, skip_blk, keep_blk);
+                h.add_edge(h.cur_block, skip_blk);
+                h.add_edge(h.cur_block, keep_blk);
+
+                // Keep: append the ELEMENT; osep gating and the "first"
+                // decision come from the kept-count, not the iteration
+                // number and not the accumulator length -- filter_fn
+                // TC007 (kept empty elements) is the case that fails
+                // anything else.
+                h.cur_block = keep_blk;
+                int len_str = h.emit(HIR_ITOA, TY_STRING, flen);
+                int kept_str = h.emit(HIR_ITOA, TY_STRING, kept);
+                int acc_r = h.emit_sref(acc_addr);
+                int ap_args[5] = { acc_r, len_str, kept_str,
+                                   osep_val, elem };
+                int nl_str = h.emit_call(TY_STRING, 0, ap_args, 5);
+                h.tier2_addr[nl_str] = t2append_f;
+                h.tier2_calls++;
+                int nl = h.emit(HIR_ATOI, TY_INT, nl_str);
+                h.emit(HIR_STORE_Q, TY_VOID, nl, -1, QREG_ITER_ACC);
+                int kept1 = h.emit(HIR_ADD, TY_INT, kept, one_i);
+                h.native_ops++;
+                h.emit(HIR_STORE_Q, TY_VOID, kept1, -1,
+                       QREG_FILTER_KEPT);
+                int latch_blk = h.new_block();
+                h.emit(HIR_BR, TY_VOID, -1, -1, latch_blk);
+                h.add_edge(keep_blk, latch_blk);
+
+                // Skip: no stores -- the header's values reach the latch
+                // unchanged and SSA merges them at the header PHIs.
+                h.cur_block = skip_blk;
+                h.emit(HIR_BR, TY_VOID, -1, -1, latch_blk);
+                h.add_edge(skip_blk, latch_blk);
+
+                h.cur_block = latch_blk;
+                h.emit(HIR_STORE_Q, TY_VOID, inum1, -1, QREG_ITER_INUM);
+                h.emit(HIR_STORE_Q, TY_VOID, nxt_cur, -1,
+                       QREG_ITER_CURSOR);
+                h.emit(HIR_BR, TY_VOID, -1, -1, hdr_blk);
+                h.add_edge(latch_blk, hdr_blk);
+
+                h.cur_block = exit_blk;
+                int restore_idx = engine_api_lookup("_RESTORE_CARGS");
+                int rc_args[1] = { cargs_handle };
+                h.emit_call(TY_STRING, restore_idx, rc_args, 1);
+                h.ecalls++;
+                int in_res = h.emit_sref(acc_addr);
+                int in_exit = h.cur_block;
+
+                int merge_blk = h.new_block();
+                h.val[fb_br] = merge_blk;
+                h.add_edge(fb_exit, merge_blk);
+                h.cur_block = in_exit;
+                h.emit(HIR_BR, TY_VOID, -1, -1, merge_blk);
+                h.add_edge(in_exit, merge_blk);
+
+                h.cur_block = merge_blk;
+                int mblocks[2] = { fb_exit, in_exit };
+                int mvals[2] = { fb_res, in_res };
+                int phi = h.emit_phi(TY_STRING, -1, mblocks, mvals, 2);
+
+                qreg_clobber();
+                h.needs_jit = true;
+                return phi;
+            }
+        }
+        // Fall through: ECALL fun_filter, exactly as before.
     }
 
     // ---------------------------------------------------------------
