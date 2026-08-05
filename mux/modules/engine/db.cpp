@@ -1907,6 +1907,20 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
         return;
     }
 
+    // atr_head/atr_next land here, and $-command matching reaches it once per
+    // object in scope on every typed command.  Answering with a GetAll() query
+    // every time made that one SQLite round trip per object per command --
+    // ~67% of $-dispatch was inside SQLite and its file locking (#2077).
+    //
+    // Only the storage half is cached; the pending overlay below still runs on
+    // every lookup, because it changes as the write queue drains.
+    //
+    if (cache_lookup_attrnum_list(thing, attrnums))
+    {
+        cache_collect_pending_attrnums(thing, attrnums);
+        return;
+    }
+
     if (!g_pSQLiteBackend->GetAll(
         static_cast<unsigned int>(thing),
         [&attrnums](unsigned int attrnum, const UTF8 *, size_t, int, int)
@@ -1925,6 +1939,11 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
         attrnums.clear();
         return;
     }
+
+    // Store the storage half BEFORE the overlay is applied -- the overlay is
+    // transient and must not be cached with it (#2077).
+    //
+    cache_store_attrnum_list(thing, attrnums);
 
     // Include dirty non-tombstone cache / write-queue puts, and drop
     // tombstoned attrs that SQLite has not yet seen deleted (#1045).

@@ -32,6 +32,13 @@ void cache_discard_writes(void);
 //
 void cache_discard_code_cache_writes(void);
 void cache_collect_pending_attrnums(dbref thing, std::vector<int> &attrnums);
+
+// Per-object attribute-number list, as SQLite sees it (#2077).  Caches only
+// the storage half; callers must still apply cache_collect_pending_attrnums
+// on top, because the pending overlay changes as the write queue drains.
+bool cache_lookup_attrnum_list(dbref thing, std::vector<int> &attrnums);
+void cache_store_attrnum_list(dbref thing, const std::vector<int> &attrnums);
+void cache_invalidate_attrnum_list(dbref thing);
 void cache_queue_code_cache_put(
     const char *source_hash, int source_hash_len,
     const char *blob_hash, int blob_hash_len,

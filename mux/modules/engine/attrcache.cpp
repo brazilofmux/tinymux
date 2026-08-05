@@ -74,6 +74,62 @@ struct CacheWriteOp
 
 static vector<CacheWriteOp> s_write_queue;
 static unordered_map<Aname, size_t, AnameHasher> s_attr_write_index;
+
+// Which attribute numbers an object has, as SQLite sees them (#2077).
+//
+// atr_head/atr_next need this list, and collect_attrnums_from_storage() used
+// to answer with a GetAll() query every time.  For $-command matching that is
+// one database round trip per object in scope on every line a player types --
+// 200 objects in a master room cost ~1.4ms per command, ~67% of it inside
+// SQLite and its file locking.
+//
+// This caches the STORAGE half only.  The pending overlay stays live on every
+// lookup (cache_collect_pending_attrnums), because it changes as the write
+// queue drains and must not be baked in.
+//
+// Invalidation is narrow: an object's list changes only when an attribute
+// appears or disappears, never when a value changes.  Entries are dropped
+// when a write is queued (which also covers the bStandAlone paths that write
+// through to SQLite directly) AND again when the queue flushes -- the second
+// is not redundant.  A list cached between queue and flush is correct only
+// while the overlay still reports the pending attribute; once the flush
+// clears the dirty flag the overlay goes quiet, and a stale cached list would
+// silently lose the attribute.
+static unordered_map<dbref, vector<int>> s_attrnum_list_cache;
+
+// Crude but predictable bound.  These are small (a vector<int> per object
+// ever enumerated), so this is generous; clearing wholesale on overflow costs
+// one repopulation rather than adding an eviction policy nothing has asked
+// for yet.
+static const size_t ATTRNUM_LIST_CACHE_MAX = 65536;
+
+void cache_invalidate_attrnum_list(dbref thing)
+{
+    if (!s_attrnum_list_cache.empty())
+    {
+        s_attrnum_list_cache.erase(thing);
+    }
+}
+
+bool cache_lookup_attrnum_list(dbref thing, vector<int> &attrnums)
+{
+    const auto it = s_attrnum_list_cache.find(thing);
+    if (it == s_attrnum_list_cache.end())
+    {
+        return false;
+    }
+    attrnums = it->second;
+    return true;
+}
+
+void cache_store_attrnum_list(dbref thing, const vector<int> &attrnums)
+{
+    if (s_attrnum_list_cache.size() >= ATTRNUM_LIST_CACHE_MAX)
+    {
+        s_attrnum_list_cache.clear();
+    }
+    s_attrnum_list_cache[thing] = attrnums;
+}
 // OP_CODE_CACHE_PUT is keyed by source_hash, not Aname (#1284 residual).
 static unordered_map<string, size_t> s_code_cache_write_index;
 static bool s_flush_scheduled = false;
@@ -248,6 +304,22 @@ bool cache_flush_writes(void)
         }
         trim_attribute_cache();
     }
+
+    // The queue has landed in SQLite, so any cached attribute-number list for
+    // a touched object is now stale (#2077).  Unconditional: the writes above
+    // happen in bStandAlone too, unlike the unpin loop.
+    //
+    if (!s_attrnum_list_cache.empty())
+    {
+        for (const auto &op : s_write_queue)
+        {
+            if (op.op == CacheWriteOp::OP_PUT || op.op == CacheWriteOp::OP_DEL)
+            {
+                s_attrnum_list_cache.erase(static_cast<dbref>(op.object));
+            }
+        }
+    }
+
     s_write_queue.clear();
     s_attr_write_index.clear();
     s_code_cache_write_index.clear();
@@ -540,6 +612,7 @@ void cache_close(void)
     }
     mudstate.attribute_preloaded_builtin_objects.clear();
     mudstate.attribute_preloaded_all_objects.clear();
+    s_attrnum_list_cache.clear();
     cache_initted = false;
 }
 
@@ -754,6 +827,12 @@ bool cache_put(Aname *nam, const UTF8 *value, size_t len, dbref owner, int flags
     }
 #endif // HAVE_WORKING_FORK
 
+    // The object may be gaining an attribute it did not have (#2077).  Done
+    // here rather than only at flush so the bStandAlone path below, which
+    // writes straight through to SQLite, is covered too.
+    //
+    cache_invalidate_attrnum_list(static_cast<dbref>(nam->object));
+
     if (len > LBUF_SIZE)
     {
         len = LBUF_SIZE;
@@ -863,6 +942,11 @@ bool cache_del(Aname *nam)
         return false;
     }
 #endif // HAVE_WORKING_FORK
+
+    // The object is losing an attribute (#2077).  Before the bStandAlone
+    // branch, which writes straight through to SQLite.
+    //
+    cache_invalidate_attrnum_list(static_cast<dbref>(nam->object));
 
     if (mudstate.bStandAlone)
     {
