@@ -240,9 +240,23 @@ FUNCTION(fun_shuffle)
                             wstarts.data(), wends.data(), n);
 
         // indices[] was built from co_words_count and is about to index a
-        // table built by co_split_words.  The parity suite says the two agree,
-        // so this clamp should never bite; it is here because the cost of
-        // being wrong is reading past the table.
+        // table built by co_split_words.  tests/color_ops' split_extract_parity
+        // suite asserts the two agree, so nFound == n and this clamp never
+        // bites.
+        //
+        // Note what it does and does not do, because the two are easy to swap.
+        // It bounds the LOOP COUNT, not the index.  indices[] is a shuffled
+        // permutation over [0, n), so its first nEmit entries are nEmit
+        // DISTINCT indices -- not the indices [0, nFound).  If the two
+        // functions ever did disagree, w >= nFound would still be reached.
+        //
+        // What keeps that in bounds is the ALLOCATION: the tables are sized n
+        // rather than nFound and are value-initialised, so an entry
+        // co_split_words never wrote reads 0 - 0 and emits an empty word.
+        // Size them to nFound -- the obvious tightening once someone notices
+        // they are oversized in exactly the case this clamp is for -- and this
+        // becomes an out-of-bounds read with the clamp still apparently in
+        // place.
         const size_t nEmit = (nFound < n) ? nFound : n;
 
         bool bFirst = true;
