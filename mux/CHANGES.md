@@ -7,6 +7,106 @@ author:
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
+# Changes in 2.14.0.11 (UNRELEASED):
+
+A performance cycle, and a narrow one on purpose: seventy-odd changes since
+2.14.0.10, almost all of them either measuring the server or making a measured
+thing faster.  Very little new surface.
+
+The shape of the cycle was set by a decision to measure before optimising.
+A live-server profile harness was built first, and it repeatedly contradicted
+what the work would otherwise have targeted — a `$`-command automaton was
+scoped and then dropped when the profile put dispatch at 0.48% of a real
+workload, and two of the JIT's headline improvements turned out to be
+recovering costs the JIT itself introduced rather than beating the
+interpreter.  Several entries below exist because a measurement disagreed
+with an assumption.
+
+Worth stating plainly: this cycle also contains a revert and a reapply of the
+same two commits.  A tree with most of its dependency records missing
+under-rebuilt a layout header, producing a nested-Lua crash that looked like a
+real defect, was diagnosed as one across a full day, and was reverted from
+master before a clean build showed master had been healthy throughout.  The
+mechanism is filed, along with the observation that finally broke it — a
+second box reporting green on the same commit and the same architecture.  No
+release carried the bad state.
+
+## Algorithmic Complexity
+
+ - **`scramble()` was O(n^2)**, occupying the server for roughly 19s at LBUF
+   length from a single `CA_PUBLIC` call.  Now linear.
+ - **`shuffle()` was O(n^2) in word count**, ~3.4s of occupancy at LBUF
+   length; the sibling of the above, found by the same sweep.  A
+   complexity-class guard in `tests/growth` now covers both, and the clamp
+   that bounds it has a comment saying what it actually guards.
+ - **`iter()` accumulated output quadratically.**  The compiled route paid a
+   fresh walk from the head of the list per element, so the JIT was 65x
+   *slower* than no JIT at 2000 elements.  With a pinned accumulation buffer
+   and cursor-based extraction, the compiled route now beats the
+   interpreter at every size measured.
+ - **`$`-command dispatch scanned the whole attribute cache** to collect
+   pending attribute numbers; it now walks the pinned list, which holds
+   exactly the dirty and tombstoned entries.
+ - **The per-object attribute-number list is cached**, removing a SQLite
+   query from the attribute path.
+ - **Name resolution is indexed per container.**  `match_list()` compared
+   against every object in scope and could not stop early, which put name
+   resolution at 66-75% of the attribute phases.  An exact-name index makes
+   lookup-by-name meet lookup-by-dbref.  The index is a filter, not the
+   decider: every candidate is still confirmed by the real comparison.
+
+## JIT / DBT Engine
+
+ - **`map()` and `filter()` have JIT lowerings**, composed from the `iter()`
+   loop and the `u()` inline rather than written fresh.
+ - **The `u()`-inline permission branch had its arms reversed since it was
+   written**, so permitted calls took the ECALL fallback and the inline arm
+   only ever ran for denied ones.  Corrected; corpus coverage for the denied
+   path on every route was absent and is now present.
+ - **A traced attribute no longer inlines.**  `AF_TRACE` is honoured at the
+   compile-time gate, so a trace cannot silently vanish on the compiled route.
+ - **The JIT declines to run a compiled program that does no work.**  When a
+   lowering is a single host ECALL with nothing computed around it, running it
+   makes the same host call the interpreter would, plus guest entry and exit.
+   `get`, `v`, `u` and most attribute accessors have that shape.
+ - **The string pool holds one LBUF of constants** (was 12KB against a 32KB
+   LBUF), so an expression with large pooled constants no longer falls back.
+ - **The persisted code cache invalidates on any tier 1 change.**  The version
+   stamp covered only one translation unit, so a codegen change elsewhere left
+   the key unmoved and the cache served the previous build's output.
+ - **Integer spill slots moved inside the stack frame**, and LICM no longer
+   uses reverse-postorder intervals for loop membership.
+ - **Compile bails now name the ceiling that caused them**, with high-water
+   marks for what was wanted, so "the JIT declined" can be read as "declined
+   because it ran out of X, and the largest thing it compiled was Y."
+
+## Measurement and Test Infrastructure
+
+ - **A live-server profile harness** (`tests/profile`) measures phases from
+   outside the server, which is what makes 2.13-vs-2.14 comparison possible.
+   It runs on Windows as well.
+ - **A committed Linux-x86_64 `rvbench` baseline**, and growth guards for the
+   new lowerings.
+ - **The CPU-budget scenario sizes its expensive expression at runtime.**  It
+   had a constant tuned to a tree that has since become ~13x faster, so it
+   completed inside the budget, no abort was emitted, and the case sat failing
+   unnoticed — `test-scenario` is opt-in.  It now calibrates against the box
+   it is running on, reports the size it chose, and skips loudly rather than
+   passing when no size in range can exercise the abort.
+ - **The exact-name index has live-server coverage** for the one branch smoke
+   cannot reach: with reality levels configured to hide an object, a query
+   that exactly names the hidden one must still find a visible partial match.
+   That branch is invisible at the shipped defaults, where `IsReal` is always
+   true and the fast path and the walk cannot disagree.
+ - Corpus coverage added ahead of the lowerings for `map()` and `filter()`,
+   both of which had none.
+
+## Notes
+
+ - `docs/survey-perf-pass-2026-08.md` records the pass, including the
+   measurements that contradicted the plan and the instrument fields that are
+   deliberately unused because they do not measure what their names suggest.
+
 # Changes in 2.14.0.10 (2026-AUG-02):
 
 By a wide margin the largest cycle in the 2.14 series: 534 pull requests
