@@ -79,6 +79,13 @@ unwinder could not reach the caller.
 8. **A stale `libmux.so` on the library path silently replaces the build.**
    `-Wl,-rpath` emits RUNPATH, which the loader searches *after*
    `LD_LIBRARY_PATH` (unlike RPATH). See #2055.
+9. **To attribute a cost, remove it.** A profile plus a code read gives
+   correlation. Bypassing the suspect code behind a throwaway env knob — even
+   an incorrect bypass, since it is never going to ship — gives causation, and
+   it distinguishes "large constant" from "this is the superlinear term",
+   which a profile cannot. Revert the knob and rebuild before measuring
+   anything else; an experimental artifact left installed poisons every later
+   number.
 9. **Two benchmark fields are mislabelled, and one of them reversed a
    conclusion in this very document.** `rvbench`'s `native=` calls `mux_exec`,
    which dispatches to the JIT for any JIT-eligible expression, so it is not
@@ -163,14 +170,49 @@ So the per-command cost is *(objects in scope)* × *O(total cached attributes)*,
 which is exactly the observed superlinearity: touching more objects grows the
 cache, so each scan costs more *and* there are more scans.
 
+#### Causation, verified by removing it
+
+A profile plus a code read establishes correlation. To establish causation the
+scan was bypassed behind a throwaway env knob — deliberately **incorrect**, since
+it drops dirty and tombstoned entries SQLite has not seen, and existing only to
+attribute the cost. Same build, same probe, one variable:
+
+| objects | scan active | scan bypassed | saved | µs/object active | µs/object bypassed |
+|---:|---:|---:|---:|---:|---:|
+| 25 | 380 µs | 290 µs | 24% | 10.0 | **6.8** |
+| 50 | 680 µs | 470 µs | 31% | 11.0 | **7.0** |
+| 100 | 1380 µs | 810 µs | 41% | 12.5 | **6.9** |
+| 200 | **3430 µs** | **1510 µs** | **56%** | 16.5 | **6.9** |
+
+**The result is the last column, not the 56%.** With the scan gone, per-object
+cost is *flat* at 6.8–7.0 µs. With it, the cost per object climbs 10.0 → 16.5
+and keeps climbing.
+
+`$`-command dispatch is therefore **inherently linear** in objects-in-scope, and
+`cache_collect_pending_attrnums` is the *entire* superlinear term — not a large
+constant on top of it. That is why cost per object worsened as the master room
+grew: the cache grew with it, so each of the n scans got more expensive. Two
+compounding factors that are really one bug.
+
+56% is an upper bound on what a correct fix recovers. It should recover nearly
+all of it: the loop only ever acts on entries with `dirty` or `tombstone` set,
+`dirty` means "pending write in the queue", and the queue flushes at
+`WRITE_QUEUE_THRESHOLD = 50`. The set the loop cares about is small and bounded;
+the structure it searches is the whole cache. That mismatch is the bug in one
+sentence.
+
+#### Two consequences
+
 **This inverts the obvious fix.** Enlarging the attribute cache makes
 `$`-dispatch **slower**, because the scan is over the whole cache. The fix
-shape is an index — a secondary map from object → cached attrnums, or per-object
-dirty lists — turning O(cache) into O(attrs on this object).
+shape is an index — a secondary map from object → pending attrnums — turning
+O(cache) into O(pending for this object).
 
-It also means a combined pattern automaton (a DFA over all `$`-patterns) would
-optimise a term that is not the bottleneck: at 16–23 µs per pattern tested, the
-wildcard match itself is a rounding error next to the cache scan.
+**A combined pattern automaton would optimise the wrong term.** A DFA over all
+`$`-patterns addresses the residual ~6.9 µs per object, which is the real
+matching work (attribute fetch, permission check, wildcard match). That residual
+is worth attacking — it is still 1.4 ms at 200 objects — but it is linear, and
+it is not what made the curve bend.
 
 ### 2. Name resolution — ~66% of the attribute path
 
