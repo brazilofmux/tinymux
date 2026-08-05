@@ -1,0 +1,207 @@
+#
+# map_fn.mux - Test Cases for map().
+#
+# map() had NO dedicated coverage anywhere in the corpus -- only incidental
+# uses inside filterbool_fn and lambda_fn.  That gap matters now because
+# #2080 gives map() a JIT lowering: the smoke suite runs this file on BOTH
+# routes (test-smoke compiled, test-smoke-ast interpreted), so every case
+# here is a route-parity assertion, and a lowering that drifts from
+# fun_map's semantics fails the compiled pass.  These cases were written
+# against the INTERPRETER before any lowering existed, which is what makes
+# them a specification rather than a snapshot (#2002's lesson).
+#
+# fun_map semantics pinned here (functions.cpp):
+#   - map(<obj>/<attr>, <list>[, <delim>[, <osep>[, %1..%9 extras]]])
+#   - the body evaluates with THING (the attr holder) as executor
+#   - the list walk is trim_space_sep + split_token (space compresses,
+#     non-space delimiters keep empty elements)
+#   - osep defaults to the input delimiter; an explicit empty osep joins
+#     with nothing
+#
+# NOT covered here: TRACE-flagged attributes (AttrTrace propagates
+# EV_TRACE, which any lowering must treat as a bail to the interpreter --
+# asserted at the lowering layer, not reachable cleanly from smoke).
+#
+@create test_map_fn
+-
+@set test_map_fn=INHERIT QUIET
+-
+&B.ECHO test_map_fn=%0
+-
+&B.INC test_map_fn=[add(%0,1)]
+-
+&B.LEN test_map_fn=[strlen(%0)]x
+-
+&B.XTRA test_map_fn=%0%1
+-
+&tr.tc000 test_map_fn=
+  @log smoke=Beginning map function test cases.
+-
+#
+# Test Case #1 - Basic map with an echo body.
+#
+&tr.tc001 test_map_fn=
+  @if strmatch(map(me/B.ECHO,a b c),a b c)=
+  {
+    @log smoke=TC001: map echo body. Succeeded.
+  },
+  {
+    @log smoke=TC001: map echo body. Failed ([map(me/B.ECHO,a b c)]).
+  }
+-
+#
+# Test Case #2 - Computation body: the case a lowering actually changes.
+#
+&tr.tc002 test_map_fn=
+  @if strmatch(map(me/B.INC,1 2 3),2 3 4)=
+  {
+    @log smoke=TC002: map computation body. Succeeded.
+  },
+  {
+    @log smoke=TC002: map computation body. Failed ([map(me/B.INC,1 2 3)]).
+  }
+-
+#
+# Test Case #3 - Custom input delimiter; osep defaults to it.
+#
+&tr.tc003 test_map_fn=
+  @if strmatch(map(me/B.INC,1|2|3,|),2|3|4)=
+  {
+    @log smoke=TC003: map custom delimiter. Succeeded.
+  },
+  {
+    @log smoke=TC003: map custom delimiter. Failed ([map(me/B.INC,1|2|3,|)]).
+  }
+-
+#
+# Test Case #4 - Distinct output separator.
+#
+&tr.tc004 test_map_fn=
+  @if strmatch(map(me/B.INC,1|2|3,|,-),2-3-4)=
+  {
+    @log smoke=TC004: map osep. Succeeded.
+  },
+  {
+    @log smoke=TC004: map osep. Failed ([map(me/B.INC,1|2|3,|,-)]).
+  }
+-
+#
+# Test Case #5 - Space runs compress; leading/trailing spaces trim.
+# This is the exact shape #2080's cursor walk had to learn for iter():
+# runtime spaces survive the compile-time AST trim.
+#
+&tr.tc005 test_map_fn=
+  @if strmatch(map(me/B.ECHO,%b%ba%b%bb%b%b),a b)=
+  {
+    @log smoke=TC005: map trims and compresses spaces. Succeeded.
+  },
+  {
+    @log smoke=TC005: map trims and compresses spaces. Failed ([map(me/B.ECHO,%b%ba%b%bb%b%b)]).
+  }
+-
+#
+# Test Case #6 - Extra arguments reach the body as %1.
+#
+&tr.tc006 test_map_fn=
+  @if strmatch(map(me/B.XTRA,a b,%b,-,Z),aZ-bZ)=
+  {
+    @log smoke=TC006: map extra args as %1. Succeeded.
+  },
+  {
+    @log smoke=TC006: map extra args as %1. Failed ([map(me/B.XTRA,a b,%b,-,Z)]).
+  }
+-
+#
+# Test Case #7 - Empty list evaluates to empty, bracketed by markers so
+# an accidental separator or stale-buffer read is visible.
+#
+&tr.tc007 test_map_fn=
+  @if strmatch(<[map(me/B.ECHO,)]>,<>)=
+  {
+    @log smoke=TC007: map empty list. Succeeded.
+  },
+  {
+    @log smoke=TC007: map empty list. Failed (<[map(me/B.ECHO,)]>).
+  }
+-
+#
+# Test Case #8 - Non-space delimiters keep empty elements; the body sees
+# an empty %0.  Captured from the interpreter: |a| yields three elements
+# ("", "a", ""), so B.LEN gives 0x|1x|0x.
+#
+&tr.tc008 test_map_fn=
+  @if strmatch(map(me/B.LEN,|a|,|),0x|1x|0x)=
+  {
+    @log smoke=TC008: map empty elements with pipe delim. Succeeded.
+  },
+  {
+    @log smoke=TC008: map empty elements with pipe delim. Failed ([map(me/B.LEN,|a|,|)]).
+  }
+-
+#
+# Test Case #9 - map inside iter: %0 belongs to the map body while ## and
+# the iter machinery stay the loop's.  Pins the q-register/CARGS nesting
+# any lowering must preserve.
+#
+&tr.tc009 test_map_fn=
+  @if strmatch(iter(1 2,[map(me/B.INC,##%b9)]),2 10 3 10)=
+  {
+    @log smoke=TC009: map nested in iter. Succeeded.
+  },
+  {
+    @log smoke=TC009: map nested in iter. Failed ([iter(1 2,[map(me/B.INC,##%b9)])]).
+  }
+-
+#
+# Test Case #10 - Missing attribute yields EMPTY output (captured from the
+# interpreter -- parse_and_get_attrib fails without writing an error), and
+# does not crash.  Markers make an accidental separator visible.
+#
+&tr.tc010 test_map_fn=
+  @if strmatch(<[map(me/B.NOSUCH,a b)]>,<>)=
+  {
+    @log smoke=TC010: map missing attribute. Succeeded.
+  },
+  {
+    @log smoke=TC010: map missing attribute. Failed (<[map(me/B.NOSUCH,a b)]>).
+  }
+-
+#
+# Test Case #11 - The body tracks attribute EDITS.  A lowering that
+# inlines the body at compile time must invalidate on attr change
+# (per-attr mod_count deps, the Tier 3 u() machinery) -- this is the case
+# that catches a stale inline.  Evaluate, edit, evaluate again.
+#
+#
+# The bodies are deliberately constant (no %-substitutions): each @wait
+# nesting level re-substitutes %, so a %0 body would need a different
+# escape depth at each level -- and a constant body catches a stale
+# inline exactly as well (the old inline would keep producing OLD OLD).
+#
+&tr.tc011 test_map_fn=
+  &B.EDIT me=OLD;
+  @wait 0={
+    think [null(map(me/B.EDIT,3 4))];
+    &B.EDIT me=NEW;
+    @wait 0={
+      @if strmatch(map(me/B.EDIT,3 4),NEW NEW)=
+      {
+        @log smoke=TC011: map tracks attribute edits. Succeeded.;
+        @trig me/tr.done
+      },
+      {
+        @log smoke=TC011: map tracks attribute edits. Failed ([map(me/B.EDIT,3 4)] wanted NEW NEW).;
+        @trig me/tr.done
+      }
+    }
+  }
+-
+&tr.done test_map_fn=
+  @log smoke=End map function test cases.;
+  @notify smoke
+-
+drop test_map_fn
+-
+#
+# End of Test Cases
+#
