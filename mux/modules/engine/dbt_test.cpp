@@ -459,6 +459,32 @@ static void test_lui_sign_extend() {
     CHECK_EQ("LUI sign-extend", r.state.x[1], 0xFFFFFFFF80000000ULL);
 }
 
+static void test_lui_8000_ecall_flush() {
+    printf("test_lui_8000_ecall_flush...\n");
+
+    // #2107: materialize the historical OUT-band base (0x8000) via LUI+ADDI
+    // and hand a0 to ECALL.  That is the address band that breaks Lua on the
+    // red host when STR lives there; Codex showed the *narrow* path is clean
+    // on x86-64 (interpreter and DBT both deliver 0x8008, including the
+    // pinned-register flush Lua ECALLs use).  Pin it so a future backend
+    // regression cannot re-introduce a materialization/flush fault under
+    // that address while the full-program bug is still open.
+    //
+    const std::vector<uint32_t> code = {
+        LUI(10, 0x8000),     // a0 = 0x8000
+        ADDI(10, 10, 8),     // a0 = 0x8008
+        ADDI(17, 0, 93),     // a7 = exit
+        ECALL()
+    };
+
+    auto r = run_code(code);
+    CHECK_EQ("LUI 0x8000+ADDI8 a0 (interp)", r.state.x[10], 0x8008ULL);
+    CHECK_EQ("LUI 0x8000+ADDI8 exit (interp)",
+             static_cast<uint64_t>(static_cast<unsigned>(r.exit_code)),
+             0x8008ULL);
+    CHECK_EQ("LUI 0x8000+ADDI8 a0 (DBT)", run_code_dbt(code, 10), 0x8008ULL);
+}
+
 static void test_shifts_64bit() {
     printf("test_shifts_64bit...\n");
 
@@ -3061,6 +3087,7 @@ int main(int argc, char *argv[]) {
     test_add_sub();
     test_lui_addi();
     test_lui_sign_extend();
+    test_lui_8000_ecall_flush();
     test_shifts_64bit();
     test_mul_div_rem();
     test_div_by_zero();

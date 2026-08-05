@@ -4574,7 +4574,40 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         //
         if (!ec->lua_state) { ctx->x[11] = 0; return -1; }
         lua_State *L = static_cast<lua_State *>(ec->lua_state);
-        const char *key = guest_cstr(ec->memory, ec->memory_size, ctx->x[10]);
+        const uint64_t raw_a0 = ctx->x[10];
+        const char *key = guest_cstr(ec->memory, ec->memory_size, raw_a0);
+        // #2107: on the red host, STR above 0x8000 turns mux.owner into nil
+        // while counters still report success.  TINYMUX_TRACE_LUA_GETGLOBAL=1
+        // prints the three things that split wrong-register / wrong-memory /
+        // wrong-Lua without a debugger:
+        //   raw a0, four bytes at a0, four bytes at 0x8000, guest_cstr result.
+        // Two-line repro:  &SEAM_OWNER lo=return mux.owner(1)
+        //                  think [lua(lo/SEAM_OWNER)]
+        //
+        if (getenv("TINYMUX_TRACE_LUA_GETGLOBAL")) {
+            auto dump4 = [&](uint64_t addr) {
+                if (addr > ec->memory_size
+                    || ec->memory_size - addr < 4u) {
+                    fprintf(stderr, "oob");
+                    return;
+                }
+                fprintf(stderr, "%02x %02x %02x %02x",
+                        ec->memory[addr],
+                        ec->memory[addr + 1],
+                        ec->memory[addr + 2],
+                        ec->memory[addr + 3]);
+            };
+            fprintf(stderr,
+                    "LUA_GETGLOBAL: a0=0x%llx mem_size=0x%zx key=%s"
+                    " bytes@a0=[",
+                    static_cast<unsigned long long>(raw_a0),
+                    ec->memory_size,
+                    key ? key : "(null)");
+            dump4(raw_a0);
+            fprintf(stderr, "] bytes@0x8000=[");
+            dump4(0x8000);
+            fprintf(stderr, "]\n");
+        }
         if (nullptr == key) {
             ctx->x[10] = 0;
             ctx->x[11] = 0;
