@@ -86,7 +86,7 @@ unwinder could not reach the caller.
    which a profile cannot. Revert the knob and rebuild before measuring
    anything else; an experimental artifact left installed poisons every later
    number.
-9. **Two benchmark fields are mislabelled, and one of them reversed a
+10. **Two benchmark fields are mislabelled, and one of them reversed a
    conclusion in this very document.** `rvbench`'s `native=` calls `mux_exec`,
    which dispatches to the JIT for any JIT-eligible expression, so it is not
    the interpreter — it beat the interpreter outright on
