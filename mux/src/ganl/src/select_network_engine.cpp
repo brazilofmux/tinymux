@@ -16,8 +16,28 @@
 #include <mutex>     // Include mutex header
 #include <netdb.h>   // getaddrinfo
 
-// Define a macro for debug logging
-#ifndef NDEBUG // Only compile debug messages if NDEBUG is not defined
+// Debug logging is OFF unless the build defines GANL_DEBUG.
+//
+// This gate was keyed on NDEBUG, which NOTHING in this project ever defines --
+// not configure.ac, not any Makefile.am, not the generated makefiles.  So the
+// #else arm was dead code and every site below was live in every build,
+// including release tarballs.  Each site is a formatted std::cerr insertion
+// terminated by std::endl, which flushes: a synchronous write(2) per line on
+// the network event path.
+//
+// Measured on this branch, driving a live netmux: a short profiling run wrote
+// 158,660 engine debug lines.  The same fix on 2.14 (#2049) cost 40-90% of
+// command throughput and 4-9x the server CPU per command.
+//
+// It is also wrong on Windows for a reason unrelated to speed: io_buffer.cpp,
+// iocp_network_engine.cpp and connection.cpp already hardcode their equivalent
+// macros to no-ops, noting that stdout/stderr are not valid on a detached
+// Windows process.  The same applies here.
+//
+// Gating on a GANL-specific symbol rather than defining NDEBUG globally: that
+// would also disable assert(), a far wider blast radius than this needs, and
+// this codebase relies on mux_assert aborting in release builds.
+#ifdef GANL_DEBUG
 #define GANL_SELECT_DEBUG(fd, x) \
     do { std::cerr << "[Select:" << ((fd == -1) ? "CTL" : std::to_string(fd)) << "] " << x << std::endl; } while (0)
 #else
