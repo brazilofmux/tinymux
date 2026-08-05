@@ -11,8 +11,16 @@
 # Usage: jitbase.sh <label>
 set -u
 LABEL=${1:?need a label}
-R=/Users/sdennis/tinymux
+# Derive the tree from the script's own location, as tests/profile/run.sh and
+# tests/scenario/run.sh do.  This was a hardcoded /Users/... path, which meant
+# the instrument ran on exactly one machine in the fleet -- and this script is
+# meant to outlive the branch that added it.
+R=$(cd "$(dirname "$0")/../.." && pwd)
 B="$R/mux/game/bin"
+if [ ! -x "$B/muxscript" ]; then
+    echo "SKIP: $B/muxscript not found — run 'make install' first."
+    exit 0
+fi
 W=$(mktemp -d)
 trap 'rm -rf "$W"' EXIT
 mkdir -p "$W/g.d"; ln -s "$B" "$W/bin"
