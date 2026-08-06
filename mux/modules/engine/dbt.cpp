@@ -394,6 +394,53 @@ static bool dbt_reclaim_program_code(dbt_state_t *dbt) {
     return true;
 }
 
+// Evict every translation whose block STARTS in [lo, hi), plus any pending
+// chain patches waiting on a target in that range.  For reusing a guest code
+// range for different code while keeping everything translated outside it —
+// the per-program code slots (#2129) reassign a 16 KB slot this way.
+//
+// What this deliberately does NOT do, and why that is sound for slots:
+//
+//  - It does not touch already-applied chains.  An applied chain jumps from
+//    one translated block to another; the only blocks that ever direct-jump
+//    to a program-slot PC are blocks of the same slot (program code reaches
+//    other code only via PC-relative branches/JALs within its own slot, or
+//    JALs into the blob — never into another slot).  Evicting the slot's
+//    cache entries makes its whole translated subgraph unreachable: entry
+//    is only ever via a cache lookup, and every intra-subgraph chain source
+//    dies with the subgraph.  This is the same reachability argument
+//    dbt_reset's preserve-blob branch relies on.
+//
+//  - It does not reclaim code_buf bytes.  Dead translations accumulate
+//    until the buffer fills; dbt_reclaim_program_code already handles that
+//    wholesale, and cache misses re-translate lazily afterwards.
+//
+//  - It does not clear ctx/RAS.  dbt_run wipes the whole guest context at
+//    entry, so stale predictions cannot cross runs.
+//
+// Blocks that start below `lo` cannot extend into the range and cover a
+// reused PC: a translated block's guest span is contiguous from its entry,
+// and slot ranges are aligned regions that program code never straddles
+// (a program's code lives entirely inside its own slot).
+//
+void dbt_invalidate_guest_range(dbt_state_t *dbt, uint64_t lo, uint64_t hi) {
+    for (size_t i = 0; i < BLOCK_CACHE_SIZE; i++) {
+        uint64_t pc = dbt->cache[i].guest_pc;
+        if (pc >= lo && pc < hi) {
+            dbt->cache[i].guest_pc = 0;
+            dbt->cache[i].native_code = nullptr;
+        }
+    }
+    for (auto it = dbt->pending_patch_targets.begin();
+         it != dbt->pending_patch_targets.end(); ) {
+        if (it->first >= lo && it->first < hi) {
+            it = dbt->pending_patch_targets.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+
 // Lightweight re-run: update only the ECALL callback and clear the CPU
 // context.  Keeps the block cache and translated code intact — safe when
 // the guest code region is unchanged between runs.

@@ -1397,23 +1397,96 @@ static void dbt_configure_trace_from_env(dbt_state_t *dbt) {
 // use -- vector::resize and dbt_init respectively -- so an installation whose
 // softcode never calls lua() never pays for the second context.
 //
+// Guest code slots (#2129).
+//
+// Every cached program is compiled at the same canonical base, so two
+// programs collide at the same guest PCs and the DBT had to reset (throw
+// away all translated blocks) on every program switch.  One uint64_t of
+// "which program was last" made the translated-block cache hold exactly ONE
+// program: two expressions alternating re-translated on every evaluation,
+// a fixed +22..76 µs per command that no single-expression benchmark could
+// see.
+//
+// The fix is to make the guest PC itself the disambiguator, the same model
+// the shared heap and persistent_vm already use: materialize each program's
+// CODE at its own 16 KB slot, so the PC-keyed block cache (and the inline
+// lookup emitted into host code, which must not grow a tag) holds all
+// resident programs at once.  Only the code moves — str/fargs DATA keeps
+// swapping at its canonical addresses, because data does not affect
+// translation validity, only the code bytes at translate time do.
+//
+// Slot addresses live in the two spans this arena leaves unallocated, both
+// within JAL range (±1 MB) of the blob so the relocated Tier 2 calls still
+// encode:
+//
+//   slot 0            0x00000            canonical (delta 0, no relocation;
+//                                        the only slot PINNED programs use)
+//   slots 1-4         0x40000..0x50000   between BLOB_LIMIT and LUA_ARRAY
+//   slots 5-6         0x60000..0x68000   between LUA_ARRAY_LIMIT and CARGS
+//
+// (persistent_vm places its pools at 0x40000 too, but in its OWN arena —
+// reusing addresses across arenas is free; only overlap within one image
+// matters.)
+//
+static constexpr int JIT_CODE_SLOTS = 7;
+static constexpr uint64_t JIT_SLOT_BASE[JIT_CODE_SLOTS] = {
+    rv_compiler::CODE_BASE,
+    0x40000, 0x44000, 0x48000, 0x4C000,
+    0x60000, 0x64000,
+};
+
+static_assert(rv_compiler::CODE_LIMIT == 0x4000,
+              "slot stride below assumes 16 KB code regions");
+static_assert(0x40000 >= rv_compiler::BLOB_LIMIT
+              && 0x4C000 + 0x4000 <= rv_compiler::LUA_ARRAY_BASE,
+              "slots 1-4 must fit between the blob and the Lua array");
+static_assert(0x60000 >= rv_compiler::LUA_ARRAY_LIMIT
+              && 0x64000 + 0x4000 <= rv_compiler::CARGS_BASE,
+              "slots 5-6 must fit between the Lua array and CARGS");
+static_assert(0x64000 + 0x4000 <= rv_compiler::BLOB_BASE + (1 << 20),
+              "every slot PC must keep the blob within JAL range");
+
 struct jit_run_vm {
     // Guest memory a program is materialized into.  Tier 2 is installed once,
     // when the buffer is first sized.
     guest_memory_t buffer;
     bool           buffer_ready = false;
 
-    // program_id whose compact blobs (code/str/fargs) currently occupy
-    // `buffer`.  materialize_program sets it; run_cached_program skips the
-    // blob memcpy when the buffer already holds the program being run.
+    // program_id whose str/fargs DATA blobs currently occupy the canonical
+    // pool addresses.  materialize_data sets it; run_cached_program skips
+    // the data memcpy when the pools already hold the program being run.
     // 0 = unknown/none (program_ids start at 1).
     uint64_t       buffer_program_id = 0;
 
-    // The DBT translating out of `buffer`, and the program its blocks were
-    // translated for.  Matching program_id means dbt_rerun can keep them.
+    // The DBT translating out of `buffer`.  Translated blocks for every
+    // slot-resident program coexist in it, keyed by their slotted PCs.
     dbt_state_t    dbt;
     bool           dbt_ready = false;
-    uint64_t       dbt_last_program_id = 0;
+
+    // True while the DBT is bound to some other guest image entirely
+    // (run_compiled points it at a program's own uncompacted memory).
+    // The next run_cached_program must dbt_reset back to `buffer` and
+    // forget every slot rather than trust translations made against
+    // foreign bytes.
+    bool           dbt_foreign = false;
+
+    // Which program's code occupies each slot.  Residency means only that
+    // the code BYTES are materialized in the guest slot; translations are
+    // rebuilt lazily via block-cache misses, so DBT-level reclaims need no
+    // bookkeeping here.
+    struct code_slot {
+        uint64_t program_id = 0;   // 0 = free
+        uint64_t stamp = 0;        // LRU tick of last use
+    };
+    code_slot      slots[JIT_CODE_SLOTS];
+    uint64_t       slot_stamp = 0;
+
+    void release_all_slots() {
+        for (int i = 0; i < JIT_CODE_SLOTS; i++) {
+            slots[i] = code_slot{};
+        }
+        buffer_program_id = 0;
+    }
 };
 
 // Deepest nesting level that has its own context.  run_cached_program refuses
@@ -1423,6 +1496,26 @@ struct jit_run_vm {
 static constexpr int JIT_MAX_RUN_DEPTH = 2;
 
 static jit_run_vm s_vm[JIT_MAX_RUN_DEPTH];
+
+// Forget a program in every context that has it slot-resident — called when
+// its compiled_program is dropped (compile-cache eviction, staleness).  The
+// slot's stale block-cache entries need no eviction here: program_ids are
+// unique for the life of the process, so nothing can claim the residency,
+// and reassigning the slot to any other program invalidates its PC range
+// before trusting it (pick_code_slot).
+//
+static void release_program_slots(uint64_t program_id) {
+    for (int vi = 0; vi < JIT_MAX_RUN_DEPTH; vi++) {
+        for (int si = 0; si < JIT_CODE_SLOTS; si++) {
+            if (s_vm[vi].slots[si].program_id == program_id) {
+                s_vm[vi].slots[si] = jit_run_vm::code_slot{};
+            }
+        }
+        if (s_vm[vi].buffer_program_id == program_id) {
+            s_vm[vi].buffer_program_id = 0;
+        }
+    }
+}
 
 // Current nesting depth of run_cached_program, and therefore the index of the
 // first context NOT in use by a live run.  Declared here rather than beside
@@ -1457,14 +1550,21 @@ void dbt_compile_cleanup(void) {
     }
 }
 
-// Get a reset DBT state, initializing on first use.
-// Returns nullptr on allocation failure.
+// Get a reset DBT state bound to an arbitrary guest image, initializing on
+// first use.  Returns nullptr on allocation failure.
+//
+// This is run_compiled's binding (rvbench runs straight out of a program's
+// own uncompacted memory).  It marks the context FOREIGN: every slot claim
+// and translation now refers to someone else's bytes, so the next slotted
+// run must reset back to the vm's own buffer and forget the slots.
 //
 static dbt_state_t *get_dbt(jit_run_vm *vm,
                              uint8_t *memory, size_t memory_size,
                              int (*ecall_fn)(rv64_ctx_t *, void *),
                              void *ecall_user) {
     dbt_state_t *dbt = &vm->dbt;
+    vm->dbt_foreign = true;
+    vm->release_all_slots();
     if (!vm->dbt_ready) {
         if (dbt_init(dbt, memory, memory_size, ecall_fn, ecall_user) != 0) {
             return nullptr;
@@ -1491,6 +1591,44 @@ static dbt_state_t *get_dbt(jit_run_vm *vm,
 
 static int eval_ecall(rv64_ctx_t *ctx, void *user_data);
 static int poc_ecall(rv64_ctx_t *ctx, void *user_data);
+
+// Bind the vm's DBT to its own runtime buffer for a slotted run (#2129).
+// Unlike get_dbt this does NOT reset on every program switch — that reset
+// is exactly what made the block cache one-program-deep.  It initializes
+// on first use, resets only to recover from a foreign binding, and
+// otherwise leaves every resident program's translations alone; the caller
+// sets the per-run ECALL context via dbt_rerun.
+//
+// The caller must have runtime_buffer_init'd the vm first: the blob bytes
+// have to be in the buffer before anything is translated out of it.
+//
+static dbt_state_t *bind_run_dbt(jit_run_vm *vm) {
+    dbt_state_t *dbt = &vm->dbt;
+    if (!vm->dbt_ready) {
+        if (dbt_init(dbt, vm->buffer.data(), rv_compiler::MEM_SIZE,
+                     eval_ecall, nullptr) != 0) {
+            return nullptr;
+        }
+        dbt_configure_trace_from_env(dbt);
+
+        const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
+        dbt->max_dispatch = md_env ? strtoull(md_env, nullptr, 0) : 10000000;
+        dbt->alarm_flag = &alarm_clock.alarmed;  // wall-clock abort (#JIT-alarm)
+
+        vm->dbt_ready = true;
+        vm->dbt_foreign = false;
+        vm->release_all_slots();
+        return dbt;
+    }
+    if (vm->dbt_foreign) {
+        dbt_reset(dbt, vm->buffer.data(), rv_compiler::MEM_SIZE,
+                  eval_ecall, nullptr);
+        dbt_configure_trace_from_env(dbt);
+        vm->dbt_foreign = false;
+        vm->release_all_slots();
+    }
+    return dbt;
+}
 
 struct persistent_vm_t {
     // Pool layout within THIS arena's image (#2124).
@@ -1976,21 +2114,18 @@ static void compact_program(compiled_program &prog) {
     prog.memory.shrink_to_fit();
 }
 
-// Materialize a compact program into the shared runtime buffer.
-// Copies code, string pool, and fargs blobs into the buffer.
-// Tier 2 is already installed permanently.
+// Materialize a compact program's DATA — string pool and fargs blobs — at
+// their canonical addresses.  Data placement is independent of which code
+// slot the program occupies: compiled code references the pools absolutely,
+// the pools never move, and swapping their CONTENT does not invalidate any
+// translation (only code bytes matter at translate time).
 //
-static void materialize_program(jit_run_vm *vm, const compiled_program &prog) {
+static void materialize_data(jit_run_vm *vm, const compiled_program &prog) {
     runtime_buffer_init(vm);
 
-    // Record which program now occupies the shared buffer so a subsequent
+    // Record which program's data now occupies the pools so a consecutive
     // re-run of the same program can skip this copy (see run_cached_program).
     vm->buffer_program_id = prog.program_id;
-
-    if (!prog.code_blob.empty()) {
-        memcpy(vm->buffer.data() + prog.entry_pc,
-               prog.code_blob.data(), prog.code_blob.size());
-    }
 
     if (!prog.str_blob.empty()) {
         memcpy(vm->buffer.data() + rv_compiler::STR_BASE,
@@ -2001,6 +2136,157 @@ static void materialize_program(jit_run_vm *vm, const compiled_program &prog) {
         memcpy(vm->buffer.data() + rv_compiler::FARGS_BASE,
                prog.fargs_blob.data(), prog.fargs_blob.size());
     }
+}
+
+// Materialize a compact program's CODE at `slot_base` (#2129), re-aiming
+// its blob-call JALs by the placement delta.  Classifies the program on
+// first use; a PINNED program only ever materializes at the canonical base.
+// Returns false if the program cannot be placed at this base.
+//
+static void classify_reloc(compiled_program &prog) {
+    if (RV_RELOC_UNSCANNED != prog.reloc_class) {
+        return;
+    }
+    prog.reloc_class = rv_scan_extern_jals(
+        prog.code_blob.data(), prog.code_blob.size(),
+        prog.entry_pc, rv_compiler::CODE_LIMIT,
+        rv_compiler::BLOB_BASE, rv_compiler::BLOB_LIMIT,
+        prog.extern_jals);
+    if (RV_RELOC_OK != prog.reloc_class) {
+        s_jit_stats.slot_pinned++;
+    }
+}
+
+static bool materialize_code_slot(jit_run_vm *vm, compiled_program &prog,
+                                  uint64_t slot_base) {
+    runtime_buffer_init(vm);
+    classify_reloc(prog);
+
+    const int64_t delta = static_cast<int64_t>(slot_base)
+                        - static_cast<int64_t>(rv_compiler::CODE_BASE);
+    if (0 != delta && RV_RELOC_OK != prog.reloc_class) {
+        return false;
+    }
+
+    if (prog.code_blob.empty()) {
+        return true;
+    }
+    uint8_t *dst = vm->buffer.data() + slot_base + prog.entry_pc;
+    memcpy(dst, prog.code_blob.data(), prog.code_blob.size());
+
+    if (0 == delta) {
+        return true;
+    }
+    for (uint32_t off : prog.extern_jals) {
+        if (off + 4 > prog.code_blob.size()) {
+            return false;   // corrupt metadata; caller pins
+        }
+        uint32_t w;
+        memcpy(&w, dst + off, 4);
+        if (!rv_jal_relocate(&w, delta)) {
+            return false;   // displacement not encodable at this base
+        }
+        memcpy(dst + off, &w, 4);
+    }
+    return true;
+}
+
+// Materialize a compact program into the shared runtime buffer at its
+// canonical addresses — code and data.  Used by the fold-result reader
+// (s_fold_vm), which only needs somewhere to read a string back out of.
+//
+static void materialize_program(jit_run_vm *vm, const compiled_program &prog) {
+    runtime_buffer_init(vm);
+    materialize_data(vm, prog);
+
+    if (!prog.code_blob.empty()) {
+        memcpy(vm->buffer.data() + prog.entry_pc,
+               prog.code_blob.data(), prog.code_blob.size());
+    }
+}
+
+// Pick (or keep) a guest code slot for `prog` (#2129).
+//
+// A hit means the program's code is already materialized at *slot_base and
+// every translation the DBT made for it is still keyed under those PCs —
+// the program switch costs a str/fargs memcpy instead of a re-translation.
+// A miss claims a slot (free first, else LRU), invalidates any stale
+// translations at that slot's PCs, and places the code with its blob-call
+// JALs re-aimed.
+//
+// PINNED programs (relocation scan refused) contend for the canonical
+// slot only, which reproduces the pre-#2129 behaviour for exactly those
+// programs and no others.  jit_code_slots clamps the working set at
+// runtime; 1 reproduces the old single-program behaviour for everything,
+// which is the A/B lever.
+//
+static bool pick_code_slot(jit_run_vm *vm, dbt_state_t *dbt,
+                           compiled_program &prog, uint64_t *slot_base) {
+    classify_reloc(prog);
+
+    int nslots = mudconf.jit_code_slots;
+    if (nslots < 1) {
+        nslots = 1;
+    } else if (nslots > JIT_CODE_SLOTS) {
+        nslots = JIT_CODE_SLOTS;
+    }
+    if (RV_RELOC_OK != prog.reloc_class) {
+        nslots = 1;
+    }
+
+    for (int i = 0; i < nslots; i++) {
+        if (vm->slots[i].program_id == prog.program_id) {
+            vm->slots[i].stamp = ++vm->slot_stamp;
+            s_jit_stats.slot_hit++;
+            *slot_base = JIT_SLOT_BASE[i];
+            return true;
+        }
+    }
+
+    int victim = 0;
+    for (int i = 0; i < nslots; i++) {
+        if (0 == vm->slots[i].program_id) {
+            victim = i;
+            break;
+        }
+        if (vm->slots[i].stamp < vm->slots[victim].stamp) {
+            victim = i;
+        }
+    }
+    if (0 != vm->slots[victim].program_id) {
+        s_jit_stats.slot_evict++;
+    }
+
+    // Stale translations at this slot's PCs must be gone before new code
+    // claims them — this is the range-scoped version of what dbt_reset did
+    // for the whole program region on every switch.
+    dbt_invalidate_guest_range(dbt, JIT_SLOT_BASE[victim],
+                               JIT_SLOT_BASE[victim] + rv_compiler::CODE_LIMIT);
+    vm->slots[victim] = jit_run_vm::code_slot{};
+
+    if (!materialize_code_slot(vm, prog, JIT_SLOT_BASE[victim])) {
+        // Placement refused (relocation not encodable).  Retry once at the
+        // canonical base, where no relocation is needed.
+        if (0 == victim) {
+            return false;
+        }
+        if (0 != vm->slots[0].program_id) {
+            s_jit_stats.slot_evict++;
+        }
+        dbt_invalidate_guest_range(dbt, JIT_SLOT_BASE[0],
+                                   JIT_SLOT_BASE[0] + rv_compiler::CODE_LIMIT);
+        vm->slots[0] = jit_run_vm::code_slot{};
+        if (!materialize_code_slot(vm, prog, JIT_SLOT_BASE[0])) {
+            return false;
+        }
+        victim = 0;
+    }
+
+    vm->slots[victim].program_id = prog.program_id;
+    vm->slots[victim].stamp = ++vm->slot_stamp;
+    s_jit_stats.slot_miss++;
+    *slot_base = JIT_SLOT_BASE[victim];
+    return true;
 }
 
 // Reconstruct a compiled_program from a SQLite code cache record.
@@ -2412,12 +2698,7 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         if (!it->second.prog.deps.empty()
             && !deps_are_fresh(it->second.prog))
         {
-            for (int vi = 0; vi < JIT_MAX_RUN_DEPTH; vi++) {
-                if (s_vm[vi].dbt_last_program_id
-                    == it->second.prog.program_id) {
-                    s_vm[vi].dbt_last_program_id = 0;
-                }
-            }
+            release_program_slots(it->second.prog.program_id);
             s_compile_lru.erase(it->second.lru_it);
             s_compile_cache.erase(it);
             // Fall through to recompile below.
@@ -2479,15 +2760,9 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
         auto &victim_key = s_compile_lru.back();
         auto vit = s_compile_cache.find(victim_key);
         if (vit != s_compile_cache.end()) {
-            // Evicting a program must clear it from every context that has
-            // translated blocks for it, or a later program reusing the id
-            // would be run against stale translations (#1326).
-            for (int vi = 0; vi < JIT_MAX_RUN_DEPTH; vi++) {
-                if (s_vm[vi].dbt_last_program_id
-                    == vit->second.prog.program_id) {
-                    s_vm[vi].dbt_last_program_id = 0;
-                }
-            }
+            // Evicting a program must release its slot residency in every
+            // context (#1326, adapted for #2129's slots).
+            release_program_slots(vit->second.prog.program_id);
         }
         s_compile_cache.erase(victim_key);
         s_compile_lru.pop_back();
@@ -2925,8 +3200,7 @@ static void jit_flush_memory_caches(void)
     s_compile_cache.clear();
     s_compile_lru.clear();
     for (int i = 0; i < JIT_MAX_RUN_DEPTH; i++) {
-        s_vm[i].dbt_last_program_id = 0;
-        s_vm[i].buffer_program_id = 0;
+        s_vm[i].release_all_slots();
     }
     jit_lua_clear_cache();
 }
@@ -3032,17 +3306,35 @@ bool run_cached_program(compiled_program *prog,
     //
     RunDepthGuard run_depth_guard(s_run_cached_depth);
 
-    // Materialize compact blobs into the shared runtime buffer — unless the
-    // buffer already holds this exact program (consecutive re-run, the common
-    // hot path for repeatedly-called functions/commands).  Execution does not
-    // dirty these regions: the guest code is not self-modified (and on a
-    // dbt_rerun the x64 translation is cached, so the guest code isn't even
-    // re-read), the string pool is read-only, and frame-relative fargs entries
-    // are re-patched by the program's own code on every run.  program_id is a
-    // unique monotonic counter; the tracker is reset whenever any other program
-    // is materialized into the buffer (materialize_program sets it).
+    // Bind the DBT and place the program (#2129).  Binding comes first —
+    // slot eviction must be able to invalidate stale translations before
+    // new code claims their PCs — and a fresh binding pretranslates the
+    // blob exactly once for the life of the context, not once per program.
+    runtime_buffer_init(vm);
+    dbt_state_t *dbt = bind_run_dbt(vm);
+    if (nullptr == dbt) {
+        return false;
+    }
+    if (0 == dbt->blob_code_end) {
+        pretranslate_tier2(dbt);
+        dbt->blob_code_end = dbt->code_used;
+    }
+
+    // Code: keep the slot the program already occupies (its translations
+    // are still live under those PCs), or claim one.
+    uint64_t slot_base = 0;
+    if (!pick_code_slot(vm, dbt, *prog, &slot_base)) {
+        return false;
+    }
+
+    // Data: str/fargs pools are shared across slots at canonical addresses,
+    // so they need refreshing whenever any other program ran since — unless
+    // the pools already hold this exact program (consecutive re-run, the
+    // common hot path).  Execution does not dirty these regions: the string
+    // pool is read-only and frame-relative fargs entries are re-patched by
+    // the program's own code on every run.
     if (vm->buffer_program_id != prog->program_id) {
-        materialize_program(vm, *prog);
+        materialize_data(vm, *prog);
     }
 
     // Reset writable blob state (data + BSS) for clean re-run.
@@ -3177,23 +3469,10 @@ bool run_cached_program(compiled_program *prog,
     ec.dbt = nullptr;
     ec.pvm = nullptr;
 
-    dbt_state_t *dbt;
-    if (vm->dbt_ready && vm->dbt_last_program_id == prog->program_id) {
-        // Same program as last time — keep translated blocks.
-        dbt = &vm->dbt;
-        dbt_rerun(dbt, eval_ecall, &ec);
-    } else {
-        // Different program — reset and re-translate program blocks.
-        // Blob translations persist via blob_code_end.
-        dbt = get_dbt(vm, vm->buffer.data(), rv_compiler::MEM_SIZE,
-                       eval_ecall, &ec);
-        if (!dbt) return false;
-        vm->dbt_last_program_id = prog->program_id;
-        if (dbt->blob_code_end == 0) {
-            pretranslate_tier2(dbt);
-            dbt->blob_code_end = dbt->code_used;
-        }
-    }
+    // The DBT was bound (and the program placed) before marshalling; only
+    // the per-run ECALL context remains to be set.  No reset on program
+    // switch — that reset was #2129, the one-program translated-block cache.
+    dbt_rerun(dbt, eval_ecall, &ec);
 
     ec.dbt = dbt;
 
@@ -3201,7 +3480,7 @@ bool run_cached_program(compiled_program *prog,
     //
     s_lua_decline_site = nullptr;
 
-    int rc = dbt_run(dbt, prog->entry_pc, rv_compiler::STACK_TOP);
+    int rc = dbt_run(dbt, slot_base + prog->entry_pc, rv_compiler::STACK_TOP);
 
     // #1751 Phase 0–4: after dbt_run for a Lua program, never return false
     // (that re-runs the whole chunk in the Lua VM).  Commit an error text.
@@ -5764,7 +6043,11 @@ FUNCTION(fun_jitstats)
         "want_code_max=%llu "
         "want_strpool_max=%llu "
         "want_fargs_max=%llu "
-        "want_outslots_max=%llu"),
+        "want_outslots_max=%llu "
+        "slot_hit=%llu "
+        "slot_miss=%llu "
+        "slot_evict=%llu "
+        "slot_pinned=%llu"),
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -5797,7 +6080,11 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.want_code_max,
         (unsigned long long)s_jit_stats.want_strpool_max,
         (unsigned long long)s_jit_stats.want_fargs_max,
-        (unsigned long long)s_jit_stats.want_outslots_max);
+        (unsigned long long)s_jit_stats.want_outslots_max,
+        (unsigned long long)s_jit_stats.slot_hit,
+        (unsigned long long)s_jit_stats.slot_miss,
+        (unsigned long long)s_jit_stats.slot_evict,
+        (unsigned long long)s_jit_stats.slot_pinned);
 
     // Append Lua JIT counters (#1316).  lua_run_fail incrementing while
     // softcode still returns correct answers is the signature of a Lua JIT
@@ -6091,9 +6378,7 @@ FUNCTION(fun_rvbench)
         std::string key = compile_cache_key(expr, nLen, EV_FMAND | EV_EVAL);
         auto cit = s_compile_cache.find(key);
         if (cit != s_compile_cache.end()) {
-            if (s_vm[0].dbt_last_program_id == cit->second.prog.program_id) {
-                s_vm[0].dbt_last_program_id = 0;
-            }
+            release_program_slots(cit->second.prog.program_id);
             s_compile_lru.erase(cit->second.lru_it);
             s_compile_cache.erase(cit);
         }

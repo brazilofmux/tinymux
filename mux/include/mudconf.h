@@ -61,6 +61,13 @@ struct confdata
                                 // Default ON since the Phase 5 flip;
                                 // set 0 to force brackets to the AST.
                                 // docs/plan-jit-evalbracket-lift.md.
+    int     jit_code_slots;     // guest code slots the JIT keeps warm
+                                // (#2129): how many distinct programs
+                                // retain their translated blocks at once.
+                                // Clamped to [1, 7] at use; 1 reproduces
+                                // the old one-program behaviour (the A/B
+                                // lever).  Read per run — runtime @admin
+                                // takes effect immediately.
     bool    lua_jit;            // Lua chunks may use the bytecode→HIR→DBT
                                 // path (TINYMUX_JIT builds).  Default OFF
                                 // until #1309 correctness work lands;

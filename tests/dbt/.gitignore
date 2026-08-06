@@ -4,3 +4,6 @@ test_cache
 test_chain
 test_interp
 fuzz_diff
+test_reloc
+test_alarm
+*.d

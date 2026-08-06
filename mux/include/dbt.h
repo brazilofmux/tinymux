@@ -324,6 +324,7 @@ void dbt_reset(dbt_state_t *dbt, uint8_t *memory, size_t memory_size,
                int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user);
 void dbt_rerun(dbt_state_t *dbt,
                int (*ecall_fn)(rv64_ctx_t *, void *), void *ecall_user);
+void dbt_invalidate_guest_range(dbt_state_t *dbt, uint64_t lo, uint64_t hi);
 void dbt_pretranslate(dbt_state_t *dbt, uint64_t guest_pc);
 void dbt_resolve_chains(dbt_state_t *dbt);
 int  dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top);

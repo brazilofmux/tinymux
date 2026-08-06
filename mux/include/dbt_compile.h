@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "hir.h"
+#include "dbt_reloc.h"
 
 // ---------------------------------------------------------------
 // No-init allocator for std::vector<uint8_t>.
@@ -123,6 +124,20 @@ struct jit_stats_t {
     uint64_t want_strpool_max;    // most string pool requested, bytes
     uint64_t want_fargs_max;      // most fargs pool requested, bytes
     uint64_t want_outslots_max;   // most output slots requested
+
+    // Guest code slots (#2129): translated-block retention across program
+    // switches.  A slot_hit is a program switch that would have been a full
+    // dbt_reset + re-translation before slots existed; slot_evict counts
+    // the LRU displacing a resident program (working set exceeded the slot
+    // count); slot_pinned counts programs the relocation scan refused to
+    // move (they contend for the canonical slot only — expected to be zero
+    // with the current codegen, so a nonzero value means a new lowering
+    // emitted JALR/AUIPC or an unexpected JAL and quietly lost slotting).
+    //
+    uint64_t slot_hit;            // program switch, translations retained
+    uint64_t slot_miss;           // program entered a slot fresh
+    uint64_t slot_evict;          // slot_miss that displaced a resident
+    uint64_t slot_pinned;         // programs classified RV_RELOC_PINNED
 
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime
@@ -607,6 +622,13 @@ struct compiled_program {
     std::vector<uint8_t> fargs_blob;    // FARGS: FARGS_BASE .. fargs_pool_end
     std::string folded_result;          // pre-extracted result for !needs_jit
     uint64_t program_id;                // unique ID for DBT cache invalidation
+
+    // Relocation classification (#2129).  Derived lazily from code_blob on
+    // first slotted materialization — deliberately NOT persisted to SQLite,
+    // since it is a pure function of the code bytes and re-deriving costs
+    // one linear scan of at most CODE_LIMIT bytes.
+    int8_t reloc_class = RV_RELOC_UNSCANNED;
+    std::vector<uint32_t> extern_jals;  // byte offsets of blob-call JALs
 
     // Tier 3 u()-inlining dependency tracking.
     // Each entry records an attr whose body was inlined at compile
