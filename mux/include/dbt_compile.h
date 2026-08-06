@@ -136,8 +136,18 @@ struct jit_stats_t {
     //
     uint64_t slot_hit;            // program switch, translations retained
     uint64_t slot_miss;           // program entered a slot fresh
-    uint64_t slot_evict;          // slot_miss that displaced a resident
+    uint64_t slot_evict;          // miss that displaced a PROTECTED resident
+                                  // — the raise-the-slot-count signal
+    uint64_t slot_churn0;         // miss served by the probation lane,
+                                  // displacing whatever transient was there
+                                  // — expected under large cold sets, NOT a
+                                  // capacity signal
     uint64_t slot_pinned;         // programs classified RV_RELOC_PINNED
+
+    // Decline memo (#2130).
+    uint64_t noop_memo;           // bail_noop refused from the memo, before
+                                  // any cache fetch — also counted in
+                                  // bail_noop for dashboard continuity
 
     uint64_t folded_total;        // constant-folded results (no JIT needed)
     uint64_t ecall_total;         // ECALL invocations at runtime

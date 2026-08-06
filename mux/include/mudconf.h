@@ -68,6 +68,12 @@ struct confdata
                                 // the old one-program behaviour (the A/B
                                 // lever).  Read per run — runtime @admin
                                 // takes effect immediately.
+    int     jit_compile_cache_max; // in-memory compiled-program LRU
+                                // capacity (#2130).  Clamped to
+                                // [8, 65536] at use; read at insert time
+                                // so runtime @admin applies on the next
+                                // compile.  Past this, lookups fall to
+                                // the SQLite code cache.
     bool    lua_jit;            // Lua chunks may use the bytecode→HIR→DBT
                                 // path (TINYMUX_JIT builds).  Default OFF
                                 // until #1309 correctness work lands;

@@ -154,9 +154,25 @@ def main():
         return 1
     print("# jit: active (slots enabled)")
 
-    # Make the A/B knob state explicit rather than trusting the default.
+    # Make the knob state explicit rather than trusting the default — an
+    # earlier run dying mid-phase must not leak its settings into this one.
+    # The quota raise matters for phase 5: it sends a burst of 12 commands,
+    # and under default pacing the jitstats probe behind them times out and
+    # empty stats read as +0 deltas (found the hard way — the probe-per-
+    # command phases self-pace, a burst does not).
     sendline(wiz, "@admin jit_code_slots=7")
+    sendline(wiz, "@admin jit_compile_cache_max=2048")
+    sendline(wiz, "@admin command_quota_increment=100000")
+    sendline(wiz, "@admin command_quota_max=100000")
     read_for(wiz, None, 0.5)
+
+    # Clean slate: flush drops the compile caches, the decline memo AND all
+    # slot residency, so this driver is deterministic on an aged server —
+    # without it, hot squatters from a previous run hold the protected
+    # slots for up to a sweep period and the phase-2 assertions race them.
+    got = probe(wiz, "[jitstats(flush)]")
+    check(got == "OK", "jitstats(flush) gives a clean slate",
+          " (got %r)" % got)
 
     # --- Phase 1+2: retention within the slot count -----------------------
     # 4 distinct programs, working set < 7 slots.
@@ -210,10 +226,14 @@ def main():
           "no slot evictions with a working set inside the slot count",
           " (slot_evict +%d)" % evicts)
 
-    # --- Phase 3: working set larger than the slot count ------------------
-    # 10 round-robin programs over 7 slots is the LRU's worst case: every
-    # evaluation misses, every miss relocates into a reused slot.  The
-    # assertion is correctness — the counters just prove the path ran.
+    # --- Phase 3: cold storm larger than the slot count -------------------
+    # 10 round-robin programs over 7 slots.  Under the original strict LRU
+    # this was 100% miss with a protected eviction per evaluation — the
+    # cliff Kagura measured on #2139.  Under admission, first-touch
+    # programs run in the probation lane (slot 0) and cannot displace hot
+    # residents: the storm churns slot 0 while the phase-2 working set
+    # keeps its translations.
+    storm_before = jitstats(wiz)
     big = [500 + 7 * i for i in range(10)]
     ok_all = True
     for _ in range(3):
@@ -221,15 +241,37 @@ def main():
             got = probe(wiz, expr_for(c))
             if got != expected_for(c):
                 ok_all = False
-                check(False, "oversized set C=%d" % c,
+                check(False, "cold storm C=%d" % c,
                       " (wanted %r, got %r)" % (expected_for(c), got))
     if ok_all:
-        check(True, "oversized working set stays exact under eviction")
-    evicted = jitstats(wiz)
-    check(evicted.get("slot_evict", 0) > after.get("slot_evict", 0),
-          "oversized working set exercised the eviction path",
-          " (slot_evict %d -> %d)"
-          % (after.get("slot_evict", 0), evicted.get("slot_evict", 0)))
+        check(True, "cold storm stays exact through the probation lane")
+    storm_after = jitstats(wiz)
+    churn = storm_after.get("slot_churn0", 0) - storm_before.get("slot_churn0", 0)
+    check(churn > 0,
+          "storm churned the probation lane",
+          " (slot_churn0 +%d)" % churn)
+    evicts = storm_after.get("slot_evict", 0) - storm_before.get("slot_evict", 0)
+    check(evicts == 0,
+          "storm displaced no protected resident",
+          " (slot_evict +%d)" % evicts)
+
+    # The storm survivors: the phase-2 working set must still be resident —
+    # re-running it costs zero slot misses.
+    sr_before = jitstats(wiz)
+    ok_all = True
+    for c in consts:
+        got = probe(wiz, expr_for(c))
+        if got != expected_for(c):
+            ok_all = False
+            check(False, "post-storm C=%d" % c,
+                  " (wanted %r, got %r)" % (expected_for(c), got))
+    if ok_all:
+        check(True, "hot working set still exact after the storm")
+    sr_after = jitstats(wiz)
+    sr_miss = sr_after.get("slot_miss", 0) - sr_before.get("slot_miss", 0)
+    check(sr_miss == 0,
+          "hot working set kept its slots through the storm",
+          " (slot_miss +%d)" % sr_miss)
 
     # --- Phase 4: the runtime knob restores the old behaviour -------------
     sendline(wiz, "@admin jit_code_slots=1")
@@ -253,6 +295,39 @@ def main():
           " (dbt_code_used grew %d bytes)" % k_growth)
 
     sendline(wiz, "@admin jit_code_slots=7")
+    read_for(wiz, None, 0.5)
+
+    # --- Phase 5: the decline memo (#2130) --------------------------------
+    # A bail_noop shape (single ECALL, nothing computed around it) used to
+    # pay a SQLite fetch + full deserialization per evaluation once it fell
+    # out of the memory cache — just to read four integers and not run.
+    # Squeeze the memory cache to 8 so these 12 shapes cannot all fit, then
+    # evaluate them twice: the second round must be answered entirely from
+    # the decline memo — no compiles, no SQLite fetches, no mem hits.
+    sendline(wiz, "@admin jit_compile_cache_max=8")
+    read_for(wiz, None, 0.5)
+
+    noops = ["[get(me/NOOPMEMO%d)]" % i for i in range(12)]
+    for e in noops:                          # round 1: decline + memoize
+        sendline(wiz, "think %s" % e)
+    m_before = jitstats(wiz)                 # also syncs the stream
+    for e in noops:                          # round 2: memo only
+        sendline(wiz, "think %s" % e)
+    m_after = jitstats(wiz)
+
+    d = lambda k: m_after.get(k, 0) - m_before.get(k, 0)
+    check(d("noop_memo") == 12,
+          "second round of declined shapes answered from the memo",
+          " (noop_memo +%d, wanted +12)" % d("noop_memo"))
+    # Not asserted on cache_hit_mem: the closing jitstats probe is itself a
+    # mem-cache hit inside the window.  The claim is about the tiers that
+    # cost — no SQLite fetch, no compile.
+    check(d("cache_hit_sqlite") == 0 and d("cache_miss") == 0,
+          "memoized declines never reach SQLite or the compiler",
+          " (sqlite +%d, miss +%d)"
+          % (d("cache_hit_sqlite"), d("cache_miss")))
+
+    sendline(wiz, "@admin jit_compile_cache_max=2048")
     read_for(wiz, None, 0.5)
 
     # Programs must never be pinned by the relocation scan with current
