@@ -516,7 +516,7 @@ FUNCTION(fun_sortby)
     ctx.aflags   = aflags;
 
     LBuf list = LBuf_Src("fun_sortby");
-    mux_strncpy(list, fargs[1], LBUF_SIZE-1);
+    list_copy_for_split(list, fargs[1]);
     std::unique_ptr<UTF8*[]> ptrs(new UTF8*[LBUF_SIZE / 2]);   // uninit (#2145): past-count reads are UB now, not nullptr
     const int nptrs = list2arr(ptrs.get(), LBUF_SIZE / 2, list, sep);
 
@@ -1159,10 +1159,10 @@ FUNCTION(fun_munge)
         return;
     }
 
-    // Copy list1 for later evaluation of the attribute.
+    // Copy list1 for later evaluation of the attribute (#2157).
     //
     LBuf list1 = LBuf_Src("fun_munge.list1");
-    mux_strncpy(list1, fargs[1], LBUF_SIZE-1);
+    list_copy_for_split(list1, fargs[1]);
 
     // Prepare data structures for a hash table that will map
     // elements of list1 to corresponding elements of list2.

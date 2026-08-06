@@ -341,13 +341,23 @@ int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, const SEP &sep)
 //
 // Copy a borrowed list into an LBUF-sized scratch ahead of destructive
 // tokenization (#2157): strlen-bounded memcpy, truncating at LBUF_SIZE-1.
-// The ONE way this file copies a list — list2arr_nd, fun_ledit's walk and
-// handle_sets all route through here, so there is a single answer to "how
-// does a borrowed list get copied" instead of a memcpy in one function
-// and a byte-at-a-time mux_strncpy three lines away.
+// The ONE way engine code copies a list before splitting — list2arr_nd,
+// ledit, handle_sets, sort, sortby, munge, and sortkey route through
+// here, so there is a single answer to "how does a borrowed list get
+// copied".  list may be null (empty result, matching mux_strncpy's old
+// tolerance); scratch must be non-null.
 //
 UTF8 *list_copy_for_split(UTF8 *scratch, const UTF8 *list)
 {
+    if (nullptr == scratch)
+    {
+        return nullptr;
+    }
+    if (nullptr == list)
+    {
+        scratch[0] = '\0';
+        return scratch;
+    }
     size_t n = strlen(reinterpret_cast<const char *>(list));
     if (LBUF_SIZE - 1 < n)
     {
@@ -9632,8 +9642,8 @@ static FUNCTION(fun_sort)
     // Convert the list to an array.
     //
     UTF8 *list = alloc_lbuf("fun_sort");
-    mux_strncpy(list, fargs[0], LBUF_SIZE-1);
-    int nitems = list2arr(ptrs, ls.capacity(), list, sep);
+    int nitems = list2arr(ptrs, ls.capacity(),
+                          list_copy_for_split(list, fargs[0]), sep);
 
     int sort_type = ASCII_LIST;
     if (2 <= nfargs)
@@ -9801,7 +9811,7 @@ static FUNCTION(fun_sortkey)
     // Split the list into an array.
     //
     UTF8 *list = alloc_lbuf("fun_sortkey.list");
-    mux_strncpy(list, fargs[1], LBUF_SIZE-1);
+    list_copy_for_split(list, fargs[1]);
 
     // These arrays live on the heap, and deliberately not in the shared
     // thread_local scratch the set functions above use.  fun_sortkey

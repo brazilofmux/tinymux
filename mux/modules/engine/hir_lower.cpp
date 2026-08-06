@@ -2434,9 +2434,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         //
         // The observable consequence of "new engine, old blob" (a state the
         // two-copy checked-in softlib.rv64 makes reachable by accident):
-        // ITER looks normal while MAP/FILTER/FOLD run correct but ~4x
-        // slower with ecalls up and tier2 near zero in rvbench's counters.
-        // That signature means a stale blob, not a broken lowering.
+        // ITER looks normal while MAP/FILTER/FOLD run correct but ~3-4x
+        // slower with ecalls and tier2 both collapsed to 1 (one generic
+        // ECALL, no guest loop) in rvbench's counters.  That signature —
+        // not elevated ecalls — means a stale blob, not a broken lowering.
         //
         // (If you arrived here from `grep SPLIT_TOKEN`: the else-if below
         // is the only live string-ABI call site in this file; the other
@@ -2714,11 +2715,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         // Integer-ABI trio (#2152, mechanics from #2132).  Required in the
         // entry gate: with an older blob the arm simply does not fire and
-        // MAP takes its generic ECALL fallback — correct but ~4x slower,
-        // and DELIBERATELY without a string-ABI middle rung; see the
-        // fallback-ladder comment at ITER's arm (#2155) for the asymmetry
-        // and the stale-blob signature that distinguishes this state from
-        // a broken lowering.
+        // MAP takes its generic ECALL fallback — correct but ~3-4x slower
+        // with ecalls/tier2 both 1; DELIBERATELY without a string-ABI
+        // middle rung; see the fallback-ladder comment at ITER's arm
+        // (#2155) for the asymmetry and the stale-blob signature.
         uint64_t t2split_m  = tier2_lookup("SPLIT_STEP");
         uint64_t t2append_m = tier2_lookup("APPEND_I");
         uint64_t t2blen_m   = tier2_lookup("BYTELEN_I");
@@ -3119,8 +3119,9 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         if (nExtra < 0) nExtra = 0;
 
         // Integer-ABI trio (#2152); entry-gated — old blob means this arm
-        // declines to the generic ECALL fallback (correct, ~4x slower; see
-        // the fallback-ladder comment at ITER.s arm, #2155).
+        // declines to the generic ECALL fallback (correct, ~3-4x slower,
+        // ecalls/tier2 both 1; see the fallback-ladder comment at ITER's
+        // arm, #2155).
         uint64_t t2split_f  = tier2_lookup("SPLIT_STEP");
         uint64_t t2append_f = tier2_lookup("APPEND_I");
         uint64_t t2blen_f   = tier2_lookup("BYTELEN_I");
@@ -3540,8 +3541,9 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         const bool has_base = (node->children.size() >= 3);
 
         // Integer-ABI trio (#2153); entry-gated — old blob means this arm
-        // declines to the generic ECALL fallback (correct, ~4x slower; see
-        // the fallback-ladder comment at ITER.s arm, #2155).
+        // declines to the generic ECALL fallback (correct, ~3-4x slower,
+        // ecalls/tier2 both 1; see the fallback-ladder comment at ITER's
+        // arm, #2155).
         uint64_t t2split_d  = tier2_lookup("SPLIT_STEP");
         uint64_t t2append_d = tier2_lookup("APPEND_I");
         uint64_t t2blen_d   = tier2_lookup("BYTELEN_I");
