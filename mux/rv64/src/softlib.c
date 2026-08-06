@@ -647,6 +647,84 @@ char *rv64_append(char *out, const char **fargs, int nfargs) {
 }
 
 /* ---------------------------------------------------------------
+ * rv64_split_step — integer-ABI cursor walk, one call per element (#2132).
+ *
+ * Profiling the compiled ITER loop showed the largest single component of
+ * per-element time was integer<->string conversion at the tier-2 boundary:
+ * the caller ITOA'd the cursor into a decimal string, rv64_split_token
+ * satoi'd it back, twice per element (elem mode + next mode), and the next
+ * offset went back out through sitoa/ATOI.  The numbers being converted
+ * (byte offsets, accumulated lengths) grow with the list, so their digit
+ * counts made per-element cost climb with N — the residual superlinearity
+ * of #2132.
+ *
+ * This variant uses the RV64 C ABI the machine already has: the cursor
+ * arrives in a2 as an integer, the element is written to out, and the next
+ * cursor returns in a0 as an integer.  One call per element, zero
+ * conversions.  The walk itself deliberately mirrors rv64_split_token
+ * (and therefore split_token in functions.cpp) byte for byte — see the
+ * commentary there for the trim-at-zero and space-run rules; the two
+ * routes must agree on where every element begins and ends.
+ */
+long rv64_split_step(char *out, const char *list, long off,
+                     const char *delim_str) {
+    const char *s = list;
+    unsigned char delim = (delim_str && delim_str[0] != '\0')
+                        ? (unsigned char)delim_str[0] : ' ';
+
+    if (off < 0) {                  /* cannot arise from own results */
+        out[0] = '\0';
+        return 0;
+    }
+
+    if (off == 0 && delim == ' ') {
+        while (s[off] == ' ') off++;
+    }
+
+    long e = off;
+    while (s[e] != '\0' && (unsigned char)s[e] != delim) e++;
+
+    long n = e - off;
+    for (long i = 0; i < n; i++) out[i] = s[off + i];
+    out[n] = '\0';
+
+    long nx = e;
+    if (s[nx] != '\0') {
+        nx++;                                   /* past the delimiter */
+        if (delim == ' ') {                     /* ...and its run */
+            while (s[nx] == ' ') nx++;
+        }
+    }
+    return nx;
+}
+
+/* ---------------------------------------------------------------
+ * rv64_append_i — integer-ABI accumulator append (#2132).
+ *
+ * rv64_append with the decimal plumbing removed: length and iteration
+ * number arrive in registers, the new length returns in a0.  Mutates
+ * acc in place exactly as rv64_append does; see its commentary for why
+ * that is deliberate and what the compile-time hazards were.
+ */
+long rv64_append_i(char *acc, long len, long inum,
+                   const char *osep, const char *elem) {
+    if (len < 0) len = 0;
+    if (len > RV64_APPEND_CAP) len = RV64_APPEND_CAP;
+
+    if (inum != 0) {
+        for (int i = 0; osep[i] != '\0' && len < RV64_APPEND_CAP; i++) {
+            acc[len++] = osep[i];
+        }
+    }
+    for (int i = 0; elem[i] != '\0' && len < RV64_APPEND_CAP; i++) {
+        acc[len++] = elem[i];
+    }
+    acc[len] = '\0';
+
+    return len;
+}
+
+/* ---------------------------------------------------------------
  * rv64_bytelen — byte length of fargs[0], decimal (#2080).
  *
  * co_strlen counts visible graphemes; the MAP lowering needs BYTES,

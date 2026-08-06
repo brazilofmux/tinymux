@@ -731,6 +731,12 @@ struct reg_alloc_result {
 };
 
 static bool needs_output_buffer(hir_program &h, int i) {
+    // CALL_T2I is TY_INT (the callee's return) but SPLIT_STEP-shaped calls
+    // still write their string result into an output slot passed as a0 —
+    // val[i] carries that flag (#2132).  HIR_T2I_STR deliberately does NOT
+    // allocate: it aliases its call's slot.
+    if (h.kind[i] == HIR_CALL_T2I) return h.val[i] != 0;
+
     // A Lua handle is represented as a string buffer (#1579); only its
     // semantics differ, and those are enforced in the Lua lowerer.
     if (h.ty[i] != TY_STRING && h.ty[i] != TY_LUA_HANDLE) return false;
@@ -824,6 +830,7 @@ static bool needs_int_reg(hir_program &h, int i) {
     case HIR_ICONST:
     case HIR_ATOI:
     case HIR_STRCMP:
+    case HIR_CALL_T2I:   // the callee's long return, in a0 (#2132)
     // NEWTABLE's result is a Lua stack index -- an integer as far as the
     // machine is concerned, and it must live in a register for SETI/GETI to
     // consume.  Omitting it here does not fail loudly: the codegen's
@@ -2391,6 +2398,57 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
+            case HIR_CALL_T2I: {
+                // Integer-ABI tier-2 call (#2132): args straight into
+                // a0.., JAL, result back from a0.  No fargs array, no
+                // decimal marshalling.  RA values live in s-regs, so the
+                // moves below cannot clobber their sources, and the JAL
+                // clobbers only a*/t* — the same contract every string
+                // tier-2 call already relies on.
+                int na = h.cnargs[i];
+                int base = h.cbase[i];
+                uint8_t areg = 10;                          // a0
+                if (h.val[i]) {
+                    // Output slot rides ahead of the declared args.
+                    rv_load_guest_addr(rc.code, areg++, loc[i].addr);
+                }
+                for (int j = 0; j < na; j++) {
+                    int ai = h.carg[base + j];
+                    if (h.ty[ai] == TY_INT) {
+                        // From its register (reloading a spill into the
+                        // scratch is fine: the value is moved into its
+                        // a-reg before the next argument touches it).
+                        uint8_t r = ra_get_reg(rc, loc, ai, RA_SCRATCH);
+                        rc.code.push_back(rv_ADD(areg, r, 0));
+                    } else {
+                        rv_load_guest_addr(rc.code, areg, loc[ai].addr);
+                    }
+                    areg++;
+                }
+                uint64_t cur_pc = rc.current_pc();
+                int32_t offset =
+                    static_cast<int32_t>(h.tier2_addr[i] - cur_pc);
+                rv_push_jal(rc, 1, offset);                 // JAL ra, blob
+                uint8_t reg = int_alloc.reg[i];
+                bool spilled = (reg == 0 && int_alloc.spill_slot[i] >= 0);
+                uint8_t dest = spilled ? RA_SCRATCH : reg;
+                if (dest) {
+                    rc.code.push_back(rv_ADD(dest, 10, 0)); // mv dest, a0
+                    ra_set_loc(rc, loc, int_alloc, i, dest);
+                }
+                break;
+            }
+
+            case HIR_T2I_STR: {
+                // Alias of the call's output slot; no code.
+                int s1 = h.src1[i];
+                if (s1 >= 0) {
+                    loc[i].addr = loc[s1].addr;
+                    loc[i].in_reg = false;
+                }
+                break;
+            }
+
             case HIR_STRCAT: {
                 uint64_t out_addr = loc[i].addr;
                 int na = h.cnargs[i];
@@ -2700,6 +2758,8 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_FLT:        return "FLT";
     case HIR_FLE:        return "FLE";
     case HIR_CALL:       return "CALL";
+    case HIR_CALL_T2I:   return "CALL_T2I";
+    case HIR_T2I_STR:    return "T2I_STR";
     case HIR_STRCAT:     return "STRCAT";
     case HIR_FCALL1:     return "FCALL1";
     case HIR_FCALL2:     return "FCALL2";

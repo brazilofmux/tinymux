@@ -138,6 +138,24 @@ enum hir_kind {
     HIR_CALL,       // ECALL to engine function
     HIR_STRCAT,     // concatenate N strings via ECALL
 
+    // Tier-2 blob call with the integer register ABI (#2132).  The string
+    // convention (rv_emit_tier2_call) marshals every argument through the
+    // fargs array as a decimal string, so an integer crossing the boundary
+    // pays an ITOA on the caller side and an satoi on the callee side —
+    // per element, in translated code, on numbers whose digit counts grow
+    // with the list.  Profiled as the largest single component of ITER's
+    // per-element cost and the whole of its residual N-climb.
+    //
+    // This kind instead loads arguments directly into a0..: TY_INT values
+    // from their registers, TY_STRING values as guest addresses, then JALs
+    // to tier2_addr[i]; the callee's long return in a0 is the TY_INT
+    // result.  val[i] == 1 allocates an output slot and passes it as a0
+    // ahead of the declared args (SPLIT_STEP writes the element there;
+    // reach it via HIR_T2I_STR); val[i] == 0 passes args from a0.
+    // Arguments ride carg[] so liveness/DCE/copy-prop see them.
+    HIR_CALL_T2I,
+    HIR_T2I_STR,    // TY_STRING alias of src1's (a CALL_T2I) output slot
+
     // Direct FP calls to blob intrinsics (type-propagated path).
     // Bypass string marshalling — args and result are TY_FLOAT.
     // val = blob guest address of the target function.
@@ -613,6 +631,24 @@ struct hir_program {
         return i;
     }
 
+    // Emit a Tier-2 call with the integer register ABI (#2132).  Arguments
+    // ride carg[] like every call's; with_out=1 allocates an output slot
+    // passed as a0 ahead of them (see HIR_CALL_T2I's commentary).
+    int emit_call_t2i(uint64_t t2addr, int with_out,
+                      const int *args, int nargs) {
+        int i = emit(HIR_CALL_T2I, TY_INT);
+        if (i < 0) return -1;
+        if (n_cargs + nargs > HIR_MAX_CARGS) { overflowed = true; return -1; }
+        tier2_addr[i] = t2addr;
+        val[i] = with_out;
+        cbase[i] = n_cargs;
+        cnargs[i] = nargs;
+        for (int j = 0; j < nargs; j++) {
+            carg[n_cargs++] = args[j];
+        }
+        return i;
+    }
+
     // Emit a compiled Lua call (HIR_LUA_CALL_INT / _STR / _VOID).  fn is
     // src1 and the arguments ride the carg[] list exactly as HIR_CALL's
     // do, so liveness, DCE and copy propagation see them through the ARG
@@ -815,6 +851,15 @@ inline bool hir_is_lua_call(hir_kind k) {
         || k == HIR_LUA_CALL_VOID || k == HIR_LUA_CALL_VAL;
 }
 
+// True for every kind whose arguments ride the carg[] list.  The operand
+// accessors below key on this, which is what makes a new call-like kind
+// visible to liveness, DCE and copy propagation by construction.
+//
+inline bool hir_is_carg_call(hir_kind k) {
+    return k == HIR_CALL || k == HIR_STRCAT || k == HIR_CALL_T2I
+        || hir_is_lua_call(k);
+}
+
 inline int hir_val_operand(const hir_program &h, int i) {
     if (i < 0 || i >= h.n_insns) return -1;
     if (h.kind[i] == HIR_LUA_SETI || h.kind[i] == HIR_LUA_SETFIELD) {
@@ -830,8 +875,7 @@ inline int hir_val_operand(const hir_program &h, int i) {
 inline int hir_operand_count(const hir_program &h, int i) {
     if (i < 0 || i >= h.n_insns) return 0;
     int n = HIR_SLOT_ARG;
-    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT
-        || hir_is_lua_call(h.kind[i])) {
+    if (hir_is_carg_call(h.kind[i])) {
         n += h.cnargs[i];
     } else if (h.kind[i] == HIR_PHI) {
         n += h.pnargs[i];
@@ -854,8 +898,7 @@ inline int hir_operand_get(const hir_program &h, int i, int slot) {
     default: break;
     }
     const int j = slot - HIR_SLOT_ARG;
-    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT
-        || hir_is_lua_call(h.kind[i])) {
+    if (hir_is_carg_call(h.kind[i])) {
         if (j < 0 || j >= h.cnargs[i]) return -1;
         return h.carg[h.cbase[i] + j];
     }
@@ -892,8 +935,7 @@ inline void hir_operand_set(hir_program &h, int i, int slot, int r) {
     default: break;
     }
     const int j = slot - HIR_SLOT_ARG;
-    if (h.kind[i] == HIR_CALL || h.kind[i] == HIR_STRCAT
-        || hir_is_lua_call(h.kind[i])) {
+    if (hir_is_carg_call(h.kind[i])) {
         if (j >= 0 && j < h.cnargs[i]) h.carg[h.cbase[i] + j] = r;
         return;
     }
