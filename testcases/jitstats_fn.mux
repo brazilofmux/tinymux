@@ -537,6 +537,24 @@
     @log smoke=TC009: whole-attribute compile fits the code region. Skipped (JIT not enabled).
   }
 -
+&tr.tc010 test_jitstats_fn=
+  @if u(me/tr.has_jit)=
+  {
+    @if cand(
+          strmatch(setr(0,astbench(add(1,2),50)),ast=*us jit=*us ratio=*x result=3),
+          strmatch(setr(1,astbench(citer(a b c,1),50)),ast=*us jit=declined ratio=n/a result=*)
+        )=
+    {
+      @log smoke=TC010: astbench reports declined rather than timing the decline. Succeeded.
+    },
+    {
+      @log smoke=TC010: astbench reports declined rather than timing the decline. Failed (handled=%q0 declined=%q1).
+    }
+  },
+  {
+    @log smoke=TC010: astbench reports declined rather than timing the decline. Skipped (JIT not enabled).
+  }
+-
 &tr.done test_jitstats_fn=
   @log smoke=End jitstats() test cases.;
   @notify smoke

@@ -15037,13 +15037,34 @@ static FUNCTION(fun_benchmark)
     UNUSED_PARAMETER(fp);
     UNUSED_PARAMETER(caller);
 
+    // The cap REFUSES rather than clamps (#2133).
+    //
+    // benchmark() returns raw elapsed seconds, so the caller has to divide by
+    // the iteration count -- and the only count it knows is the one it asked
+    // for.  Silently substituting a smaller one therefore does not shrink the
+    // experiment, it corrupts every derived figure by the clamp ratio: ask for
+    // 200000, get 10000 run, divide by 200000, and every us/call published is
+    // 20x optimistic with nothing in the output to say so.
+    //
+    // astbench() and rvbench() clamp too, and are deliberately left alone:
+    // both divide by the clamped count internally and report per-call figures,
+    // so their cap costs samples, never correctness.  This one is the only
+    // instrument whose contract puts the divisor in the caller's hands.
+    //
+    static const int64_t BENCHMARK_MAX_ITERATIONS = 10000;
+
     int64_t iterations = mux_atoi64(fargs[1]);
     if (iterations < 1)
     {
         safe_str(S_("#-1 ITERATIONS MUST BE POSITIVE"), buff, bufc);
         return;
     }
-    if (iterations > 10000) iterations = 10000;
+    if (iterations > BENCHMARK_MAX_ITERATIONS)
+    {
+        safe_tprintf_str(buff, bufc, T("#-1 ITERATIONS EXCEEDS %d"),
+                         static_cast<int>(BENCHMARK_MAX_ITERATIONS));
+        return;
+    }
 
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
