@@ -103,8 +103,13 @@ release carried the bad state.
    Measured (macOS arm64 / Linux x86-64): per-element cost drops ~4-6x
    on the compiled path, from losing to the interpreter at large N to
    **0.17-0.21x** of interp cost — and the digit-proportional climb is
-   largely closed (a smaller residual slope remains).  MAP/FILTER still
-   use the string route pending the same conversion.
+   largely closed (a smaller residual slope remains).  MAP, FILTER and
+   FOLD followed in the same cycle (#2152/#2153): each arm gates on the
+   integer trio (`SPLIT_STEP`/`APPEND_I`/`BYTELEN_I` — the last kills the
+   CARGS-fit guard's per-element decimal round-trip) and declines to its
+   generic ECALL fallback on an older blob.  Measured against the
+   interpreter with live u-inlined bodies: map 1.7x, filter up to 1.9x,
+   fold 3.5-3.7x faster.
  - **`map()` and `filter()` have JIT lowerings**, composed from the `iter()`
    loop and the `u()` inline rather than written fresh.
  - **The `u()`-inline permission branch had its arms reversed since it was

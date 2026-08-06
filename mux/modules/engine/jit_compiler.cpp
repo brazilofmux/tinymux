@@ -192,6 +192,7 @@ static bool tier2_allowed(const std::string &mux_name) {
         // lowering keeps the string route, and every test still passes.
         "SPLIT_STEP",
         "APPEND_I",
+        "BYTELEN_I",
         // And MAP's element-size guard (#2080).
         "BYTELEN",
         "LEFT",
@@ -327,6 +328,7 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "APPEND",      "rv64_append" },       // in-place accumulator for ITER (#2072)
     { "SPLIT_STEP",  "rv64_split_step" },   // integer-ABI cursor walk (#2132)
     { "APPEND_I",    "rv64_append_i" },     // integer-ABI accumulator (#2132)
+    { "BYTELEN_I",   "rv64_bytelen_i" },    // integer-ABI CARGS guard (#2152)
     { "BYTELEN",     "rv64_bytelen" },      // CARGS-slot fit guard for MAP (#2080)
     { "MEMBER",      "co_member_wrap" },
     { "TRIM",        "co_trim_wrap" },
