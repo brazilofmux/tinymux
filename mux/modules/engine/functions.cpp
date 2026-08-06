@@ -325,6 +325,36 @@ int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, const SEP &sep)
     return i;
 }
 
+// Non-destructive list2arr (#2136): tokenizes a PRIVATE copy of `list`, so
+// the caller's buffer is never written.  list2arr() proper NULs every
+// separator in place, which is fine when the callee owns the buffer and
+// silent corruption when it does not — on the compiled route an argument
+// can be a cached program's resident constant (#2128), which is why the
+// ECALL boundary currently copies defensively (#2135).  Builtins that
+// tokenize through this instead of list2arr() are safe to hand borrowed
+// memory directly, which is the incremental path to retiring that copy.
+//
+// arr[] points into `scratch`, which must be at least LBUF_SIZE bytes and
+// must outlive every use of arr[].  Tokens are NUL-terminated and remain
+// writable, so consumers that scribble on individual tokens stay legal.
+//
+int list2arr_nd(UTF8 *arr[], int maxlen, const UTF8 *list, const SEP &sep,
+                UTF8 *scratch)
+{
+    if (nullptr == scratch)
+    {
+        return 0;
+    }
+    size_t n = strlen(reinterpret_cast<const char *>(list));
+    if (LBUF_SIZE - 1 < n)
+    {
+        n = LBUF_SIZE - 1;
+    }
+    memcpy(scratch, list, n);
+    scratch[n] = '\0';
+    return list2arr(arr, maxlen, scratch, sep);
+}
+
 void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, const SEP &sep)
 {
     int i;
@@ -7991,8 +8021,14 @@ static FUNCTION(fun_choose)
     std::vector<PUTF8> elems(LBUF_SIZE/2);
     std::vector<PUTF8> weights(LBUF_SIZE/2);
 
-    int n_elems   = list2arr(elems.data(), LBUF_SIZE/2, fargs[0], isep);
-    int n_weights = list2arr(weights.data(), LBUF_SIZE/2, fargs[1], sepSpace);
+    // Non-destructive (#2136): both lists are borrowed fargs.
+    //
+    LBuf scElems   = LBuf_Src("fun_choose.elems");
+    LBuf scWeights = LBuf_Src("fun_choose.weights");
+    int n_elems   = list2arr_nd(elems.data(), LBUF_SIZE/2, fargs[0], isep,
+                                scElems);
+    int n_weights = list2arr_nd(weights.data(), LBUF_SIZE/2, fargs[1],
+                                sepSpace, scWeights);
 
     if (n_elems != n_weights)
     {
@@ -8559,16 +8595,24 @@ static FUNCTION(fun_ledit)
         return;
     }
 
-    // Split find and replace lists into arrays.
+    // Split find and replace lists into arrays.  Non-destructive (#2136):
+    // all three lists are borrowed fargs; the walk over the original list
+    // below tokenizes a private copy too.
     //
     std::vector<UTF8*> findArr(LBUF_SIZE/2);
     std::vector<UTF8*> replArr(LBUF_SIZE/2);
-    int nFind = list2arr(findArr.data(), LBUF_SIZE/2, fargs[1], sep);
-    int nRepl = list2arr(replArr.data(), LBUF_SIZE/2, fargs[2], sep);
+    LBuf scFind = LBuf_Src("fun_ledit.find");
+    LBuf scRepl = LBuf_Src("fun_ledit.repl");
+    int nFind = list2arr_nd(findArr.data(), LBUF_SIZE/2, fargs[1], sep,
+                            scFind);
+    int nRepl = list2arr_nd(replArr.data(), LBUF_SIZE/2, fargs[2], sep,
+                            scRepl);
 
     // Iterate the original list.
     //
-    UTF8 *cp = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_ledit.list");
+    mux_strncpy(scList, fargs[0], LBUF_SIZE-1);
+    UTF8 *cp = trim_space_sep(scList, sep);
     bool first = true;
     while (cp)
     {

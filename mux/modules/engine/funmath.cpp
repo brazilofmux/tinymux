@@ -1355,10 +1355,13 @@ static void handle_vectors
     std::vector<UTF8*> v1((LBUF_SIZE+1)/2);
     std::vector<UTF8*> v2((LBUF_SIZE+1)/2);
 
-    // Split the list up, or return if the list is empty.
+    // Split the lists up, or return if a list is empty.  Non-destructive
+    // (#2136): vecarg1/vecarg2 are the caller's fargs, borrowed memory.
     //
-    int n = list2arr(v1.data(), (LBUF_SIZE+1)/2, vecarg1, sep);
-    int m = list2arr(v2.data(), (LBUF_SIZE+1)/2, vecarg2, sep);
+    LBuf sc1 = LBuf_Src("handle_vectors.1");
+    LBuf sc2 = LBuf_Src("handle_vectors.2");
+    int n = list2arr_nd(v1.data(), (LBUF_SIZE+1)/2, vecarg1, sep, sc1);
+    int m = list2arr_nd(v2.data(), (LBUF_SIZE+1)/2, vecarg2, sep, sc2);
 
     // vmul() and vadd() accepts a scalar in the first or second arg,
     // but everything else has to be same-dimensional.
@@ -1671,7 +1674,8 @@ FUNCTION(fun_vmag)
     }
 
     std::vector<UTF8*> v1(LBUF_SIZE/2);
-    int n = list2arr(v1.data(), LBUF_SIZE/2, fargs[0], sep);
+    LBuf sc = LBuf_Src("fun_vmag.nd");
+    int n = list2arr_nd(v1.data(), LBUF_SIZE/2, fargs[0], sep, sc);
 
     // Calculate the magnitude.
     //
@@ -1712,7 +1716,8 @@ FUNCTION(fun_vunit)
     }
 
     std::vector<UTF8*> v1(LBUF_SIZE/2);
-    int n = list2arr(v1.data(), LBUF_SIZE/2, fargs[0], sep);
+    LBuf sc = LBuf_Src("fun_vunit.nd");
+    int n = list2arr_nd(v1.data(), LBUF_SIZE/2, fargs[0], sep, sc);
 
     // Calculate the magnitude.
     //

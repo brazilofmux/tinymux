@@ -175,6 +175,19 @@ in their sections below.
 
 ## Parser and Expression Evaluation
 
+ - **The builtin argument contract is becoming non-destructive** (#2136,
+   incremental).  Builtins have always been allowed to tokenize their
+   arguments in place — `split_token` NULs every separator in the caller's
+   buffer — which is invisible when the interpreter hands out fresh
+   buffers and silent corruption when the compiled route hands out cached
+   memory (#2128), forcing a defensive copy at the ECALL boundary (#2135).
+   `list2arr_nd()` tokenizes a private copy instead; the borrowed-input
+   call sites (`vadd`/`vsub`/`vmul`/`vdot` and the vector family, `vmag`,
+   `vunit`, `choose`, `ledit`, `regmatch`/`regmatchi`) now use it.  The
+   endgame is a `const`-qualified argument contract and the removal of the
+   #2135 copy; remaining direct-tokenizing builtins convert in later
+   passes.
+
  - **Semicolons inside expressions are no longer dropped.**  The HIR
    lowering had no case for `AST_SEMICOLON`, so it fell to a default arm
    that lowers unhandled nodes to an empty string.  Every `;` inside a
