@@ -106,14 +106,48 @@ version churns whole files (#1477). Prefer expressing build changes in
   - Known defects are `xfail`'d against an issue number in `driver.py`'s
     `CASES`. An xfail that starts **passing** fails the run — a stale xfail
     list is how a fixed bug gets un-fixed later.
-  - **Two benchmark fields lie and are deliberately unused.** `astbench`'s
-    `jit=` times `jit_eval` even when it bails instantly for want of a lowering
-    (`citer()` reads a flat 2.7us at every N — that is absence, not speed), and
-    its `result=` comes from a third AST call so it never notices. `rvbench`'s
-    `native=` calls `mux_exec`, which *dispatches to the JIT* for anything
-    JIT-eligible — reading it as "the interpreter" is what made #2052 look like
-    a defect shared by both routes when only one route has it. Use `astbench`'s
-    `ast=` for the interpreter and `rvbench`'s `cached=` for the JIT.
+  - **`rvbench`'s `native=` still lies and is deliberately unused.** It calls
+    `mux_exec`, which *dispatches to the JIT* for anything JIT-eligible —
+    reading it as "the interpreter" is what made #2052 look like a defect
+    shared by both routes when only one route has it. Use `astbench`'s `ast=`
+    for the interpreter and `rvbench`'s `cached=` for the JIT.
+    - `astbench`'s `jit=` used to lie the same way — timing `jit_eval` even
+      when it bailed instantly. Since #2133 it prints `declined` or
+      `mixed(N/iters)` instead of a number, so it can now be trusted. Its
+      `result=` still comes from a third AST call.
+
+## Measuring performance
+
+**State the estimator and the spread, or the number means nothing.** On this
+tree, invocation-to-invocation spread is **10–19%**, and up to **30%** on
+list-heavy workloads — same binary, same box, same command. Most changes worth
+making are smaller than that. One run per arm gave `iter(lnum(2000),1)` a
+JIT-vs-no-JIT ratio anywhere between **1.2x and 1.6x**, and either reads as
+authoritative in a comment.
+
+- Report **min of N separate invocations** (not N in-process rounds — the
+  variance is between processes), and say what N and the spread were.
+  "min of 5, spread 12%" can be checked; "I measured 1.4x" cannot.
+- **Prefer a deterministic proxy to a clock** where one exists. `TINYMUX_DUMP_HIR=1`
+  gives the exact per-element work of a compiled loop with no timing at all;
+  #2132's whole diagnosis came from it after the timing attempt was abandoned
+  as unusable.
+- **Assert the accelerator actually ran.** Every JIT fallback returns the RIGHT
+  answer, so a comparison can silently be interpreter-vs-interpreter and look
+  like a clean result. `benchmark(<expr>,<n>,1)` reports `jit_handled=H/N`
+  beside the time (#2133); use it, or sample `jitstats()` either side. #1417
+  and #1519 are this failure going unnoticed for months.
+- **`benchmark()` refuses above 10000 iterations** rather than clamping, because
+  it returns raw seconds and the caller supplies the divisor. `astbench` and
+  `rvbench` clamp silently but divide internally, so their caps cost samples,
+  never correctness.
+- **Rebuild clean before believing a bisect** that lands on a JIT, layout or ABI
+  commit, and say that you did. #2107 cost a day: a mixed build produced a
+  coherent, specific, reproducible wrong behaviour that three agents chased
+  through eight hypotheses. A green result from another box on the same commit
+  is a build difference until proven otherwise — that is far likelier than a
+  platform difference, and reading it the other way is what sent everyone after
+  a backend bug that did not exist.
 
 ## Release Process
 
