@@ -23,11 +23,55 @@
         eq(strlen(switch(bar,f*,found)),0)
       )=
   {
-    @log smoke=TC001: switch basic operations. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC001: switch basic operations. Succeeded.
   },
   {
-    @log smoke=TC001: switch basic operations. Failed (s1=[switch(foo,f*,found,default)] s2=[switch(bar,f*,found,default)] s3=[switch(bar,f*,found)]).;
+    @log smoke=TC001: switch basic operations. Failed (s1=[switch(foo,f*,found,default)] s2=[switch(bar,f*,found,default)] s3=[switch(bar,f*,found)]).
+  }
+-
+#
+# Test Case #2 - 2-argument switch()/case() compiles and returns the
+# default (#2165).
+#
+# The table allows min 2 (target + default, zero pattern/result pairs) but
+# the HIR lowering guarded children >= 3, so the degenerate form fell
+# through to general_lowering and its FN_NOEVAL check declined the WHOLE
+# surrounding expression — #2162's class, second instance.  Guarded by the
+# same iter+3-arg-switch differential as ifelse_fn TC006: any route that
+# compiles the 3-argument form must compile the 2-argument form equally;
+# routes that never attempt iter-shaped programs skip.  Value parity is
+# asserted unconditionally.
+#
+&tr.tc002 test_switch_fn=
+  @if cand(
+        strmatch(switch(x,fallback), fallback),
+        strmatch(case(x,fallback), fallback),
+        strmatch(switch(1,1), 1),
+        strmatch(iter(lnum(3),[switch(##,d-##)]), d-0 d-1 d-2)
+      )=
+  {
+    @if strmatch(setr(0,benchmark(iter(lnum(4),[switch(##,2,two,other)]),10,1)),* jit_handled=10/10 *)=
+    {
+      @if cand(
+            strmatch(setr(1,benchmark(iter(lnum(4),[switch(##,other)]),10,1)),* jit_handled=10/10 *),
+            strmatch(setr(2,benchmark(iter(lnum(4),[case(##,other)]),10,1)),* jit_handled=10/10 *)
+          )=
+      {
+        @log smoke=TC002: 2-argument switch/case compiles. Succeeded.;
+        @trig me/tr.done
+      },
+      {
+        @log smoke=TC002: 2-argument switch/case compiles. Failed (switch=%q1 case=%q2).;
+        @trig me/tr.done
+      }
+    },
+    {
+      @log smoke=TC002: 2-argument switch/case compiles. Skipped (iter/switch not compiled on this route: %q0).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC002: 2-argument switch/case compiles. Failed (sw=[switch(x,fallback)] ca=[case(x,fallback)] deg=[switch(1,1)]).;
     @trig me/tr.done
   }
 -
