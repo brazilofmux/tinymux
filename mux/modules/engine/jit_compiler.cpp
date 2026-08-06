@@ -40,6 +40,7 @@ extern "C" {
 #include <string_view>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 #include <list>
 
 jit_stats_t s_jit_stats = {};
@@ -1474,17 +1475,34 @@ struct jit_run_vm {
     // the code BYTES are materialized in the guest slot; translations are
     // rebuilt lazily via block-cache misses, so DBT-level reclaims need no
     // bookkeeping here.
+    //
+    // Admission policy (#2130 campaign, from Kagura's #2139 review): slot 0
+    // is the PROBATION lane — always claimable, where first-touch and
+    // pinned programs run — while slots 1+ are PROTECTED: evictable only
+    // when cold (their `hot` bit was not set since the last sweep).  A
+    // strict LRU admitted every first-touch program straight into a
+    // protected slot, so round-robin one past capacity evicted the entry
+    // needed next on every single evaluation — 100% miss, ~8% WORSE than
+    // the old unconditional reset.  With probation, a cold storm thrashes
+    // only slot 0 (the old per-switch cost, no worse) and the hot working
+    // set keeps its translations through it.  The sweep runs every
+    // JIT_SLOT_SWEEP_PERIOD misses, so "hot" means "used within the last
+    // couple of windows" and a program that went idle becomes evictable
+    // instead of squatting.
     struct code_slot {
         uint64_t program_id = 0;   // 0 = free
         uint64_t stamp = 0;        // LRU tick of last use
+        bool     hot = false;      // used since the last sweep
     };
     code_slot      slots[JIT_CODE_SLOTS];
     uint64_t       slot_stamp = 0;
+    uint32_t       misses_since_sweep = 0;
 
     void release_all_slots() {
         for (int i = 0; i < JIT_CODE_SLOTS; i++) {
             slots[i] = code_slot{};
         }
+        misses_since_sweep = 0;
         buffer_program_id = 0;
     }
 };
@@ -2054,8 +2072,54 @@ struct compile_cache_entry {
 
 static std::unordered_map<std::string, compile_cache_entry> s_compile_cache;
 static std::list<std::string> s_compile_lru;
-static constexpr size_t COMPILE_CACHE_MAX = 256;
+
+// Capacity is a config knob (jit_compile_cache_max), read at insert time so
+// runtime @admin takes effect on the next compile.  The old fixed 256 was a
+// cliff, not a slope (#2130): round-robin over an LRU is its worst case, so
+// ONE expression past capacity took the hit rate from 99.9% to 0.16% and
+// every lookup became a SQLite fetch + full program deserialization
+// (~19.4us on the issue's box).  The default covers the ~1500 distinct
+// programs a live-workload profile actually showed (#2129 measurement) —
+// entries are compact blobs, typically a few KB each.
+//
+static constexpr int COMPILE_CACHE_DEFAULT = 2048;
 static constexpr size_t COMPILE_CACHE_MIN_LEN = 8;
+
+static size_t compile_cache_max(void) {
+    int n = mudconf.jit_compile_cache_max;
+    if (n < 8) {
+        n = 8;
+    } else if (n > 65536) {
+        n = 65536;
+    }
+    return static_cast<size_t>(n);
+}
+
+// Decline memo (#2130): bail_noop is a pure function of the compiled code,
+// so once a shape has been declined there is no reason to ever fetch or
+// reconstruct its program again just to look at four integers and not run
+// it.  Keyed by the same compile-cache key; checked in jit_eval BEFORE
+// compile_cached, so a memoized decline touches neither the memory LRU nor
+// SQLite.  Only dep-free programs are memoized — a program with inline
+// deps can recompile into a different shape when an attribute changes.
+//
+// Bounded by wholesale clear rather than an LRU: an entry is ~the
+// expression text, a false eviction costs exactly one fetch+decline to
+// re-memoize, and the flush hook clears it with the other caches.
+//
+static std::unordered_set<std::string> s_decline_memo;
+static constexpr size_t DECLINE_MEMO_MAX = 8192;
+
+// Drop memoized declines when the function table changes (#2140 review).
+// A shape that was bail_noop can recompile into a different shape once a
+// softcode @function or builtin registration moves; leaving the memo
+// would refuse forever without re-fetching.  Same invalidation trigger as
+// the #2068 gate epoch.
+//
+void jit_decline_memo_invalidate(void)
+{
+    s_decline_memo.clear();
+}
 
 // Track which program the DBT was last set up for, so we can
 // use dbt_rerun (fast) instead of dbt_reset (slow) on cache hits.
@@ -2205,20 +2269,36 @@ static void materialize_program(jit_run_vm *vm, const compiled_program &prog) {
     }
 }
 
-// Pick (or keep) a guest code slot for `prog` (#2129).
+// How many misses between hot-bit sweeps.  A protected slot whose owner
+// did not run within a full window becomes evictable at the sweep; a
+// program hitting at least once per window keeps its slot indefinitely.
+// Counted in misses, not runs, so a stable all-hits workload never pays a
+// sweep and never loses a slot.
+//
+static constexpr uint32_t JIT_SLOT_SWEEP_PERIOD = 64;
+
+// Pick (or keep) a guest code slot for `prog` (#2129, admission #2130).
 //
 // A hit means the program's code is already materialized at *slot_base and
 // every translation the DBT made for it is still keyed under those PCs —
 // the program switch costs a str/fargs memcpy instead of a re-translation.
-// A miss claims a slot (free first, else LRU), invalidates any stale
-// translations at that slot's PCs, and places the code with its blob-call
-// JALs re-aimed.
 //
-// PINNED programs (relocation scan refused) contend for the canonical
-// slot only, which reproduces the pre-#2129 behaviour for exactly those
-// programs and no others.  jit_code_slots clamps the working set at
-// runtime; 1 reproduces the old single-program behaviour for everything,
-// which is the A/B lever.
+// A miss claims a victim in strict preference order:
+//
+//   1. a FREE protected slot (1..n-1) — a small working set gets protection
+//      immediately, no probation served;
+//   2. the free probation slot (0);
+//   3. the coldest protected slot that is EVICTABLE — its hot bit not set
+//      since the last sweep, i.e. its owner has gone idle;
+//   4. slot 0, the probation lane, unconditionally.
+//
+// Rule 4 is what removes the cliff Kagura measured at working sets one
+// past the slot count: a first-touch program cannot displace a hot
+// resident, so a round-robin storm over any number of cold programs
+// churns only slot 0 (the old per-switch cost) while the hot set keeps
+// its translations.  PINNED programs (relocation scan refused) contend
+// for slot 0 only — the pre-#2129 behaviour for exactly those programs.
+// jit_code_slots=1 collapses everything onto slot 0, the A/B lever.
 //
 static bool pick_code_slot(jit_run_vm *vm, dbt_state_t *dbt,
                            compiled_program &prog, uint64_t *slot_base) {
@@ -2237,24 +2317,52 @@ static bool pick_code_slot(jit_run_vm *vm, dbt_state_t *dbt,
     for (int i = 0; i < nslots; i++) {
         if (vm->slots[i].program_id == prog.program_id) {
             vm->slots[i].stamp = ++vm->slot_stamp;
+            vm->slots[i].hot = true;
             s_jit_stats.slot_hit++;
             *slot_base = JIT_SLOT_BASE[i];
             return true;
         }
     }
 
-    int victim = 0;
-    for (int i = 0; i < nslots; i++) {
+    // Sweep: age the protection.  Runs on miss traffic only — misses are
+    // when eviction decisions happen, and a workload with no misses has
+    // no reason to decay anything.
+    if (++vm->misses_since_sweep >= JIT_SLOT_SWEEP_PERIOD) {
+        vm->misses_since_sweep = 0;
+        for (int i = 1; i < nslots; i++) {
+            vm->slots[i].hot = false;
+        }
+    }
+
+    int victim = -1;
+    for (int i = 1; i < nslots; i++) {          // 1: free protected
         if (0 == vm->slots[i].program_id) {
             victim = i;
             break;
         }
-        if (vm->slots[i].stamp < vm->slots[victim].stamp) {
-            victim = i;
+    }
+    if (victim < 0 && 0 == vm->slots[0].program_id) {
+        victim = 0;                              // 2: free probation
+    }
+    if (victim < 0) {
+        for (int i = 1; i < nslots; i++) {      // 3: coldest evictable
+            if (!vm->slots[i].hot
+                && (victim < 0
+                    || vm->slots[i].stamp < vm->slots[victim].stamp)) {
+                victim = i;
+            }
         }
     }
+    if (victim < 0) {
+        victim = 0;                              // 4: probation lane
+    }
+
     if (0 != vm->slots[victim].program_id) {
-        s_jit_stats.slot_evict++;
+        if (0 == victim) {
+            s_jit_stats.slot_churn0++;
+        } else {
+            s_jit_stats.slot_evict++;
+        }
     }
 
     // Stale translations at this slot's PCs must be gone before new code
@@ -2271,7 +2379,7 @@ static bool pick_code_slot(jit_run_vm *vm, dbt_state_t *dbt,
             return false;
         }
         if (0 != vm->slots[0].program_id) {
-            s_jit_stats.slot_evict++;
+            s_jit_stats.slot_churn0++;
         }
         dbt_invalidate_guest_range(dbt, JIT_SLOT_BASE[0],
                                    JIT_SLOT_BASE[0] + rv_compiler::CODE_LIMIT);
@@ -2284,6 +2392,7 @@ static bool pick_code_slot(jit_run_vm *vm, dbt_state_t *dbt,
 
     vm->slots[victim].program_id = prog.program_id;
     vm->slots[victim].stamp = ++vm->slot_stamp;
+    vm->slots[victim].hot = true;
     s_jit_stats.slot_miss++;
     *slot_base = JIT_SLOT_BASE[victim];
     return true;
@@ -2756,7 +2865,7 @@ static compiled_program *compile_cached(const UTF8 *expr, size_t nLen,
     }
 
     // Insert into memory LRU cache.
-    while (s_compile_cache.size() >= COMPILE_CACHE_MAX) {
+    while (s_compile_cache.size() >= compile_cache_max()) {
         auto &victim_key = s_compile_lru.back();
         auto vit = s_compile_cache.find(victim_key);
         if (vit != s_compile_cache.end()) {
@@ -3199,6 +3308,7 @@ static void jit_flush_memory_caches(void)
 {
     s_compile_cache.clear();
     s_compile_lru.clear();
+    s_decline_memo.clear();
     for (int i = 0; i < JIT_MAX_RUN_DEPTH; i++) {
         s_vm[i].release_all_slots();
     }
@@ -3333,6 +3443,14 @@ bool run_cached_program(compiled_program *prog,
     // common hot path).  Execution does not dirty these regions: the string
     // pool is read-only and frame-relative fargs entries are re-patched by
     // the program's own code on every run.
+    //
+    // "Read-only" here RESTS ON #2135 (Kagura's #2139 review): destructive
+    // callees used to tokenize fargs pointers in place, writing straight
+    // into the pools (#2128), and this very skip is what made that
+    // corruption permanent instead of one-run.  #2135's ECALL argument
+    // copy (its `ptr < CARGS_BASE` predicate covers every slot range) is
+    // the invariant this optimization depends on; narrowing that predicate
+    // reintroduces silent corruption here.
     if (vm->buffer_program_id != prog->program_id) {
         materialize_data(vm, *prog);
     }
@@ -5811,6 +5929,20 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
 
     s_jit_stats.eval_attempts++;
 
+    // Memoized decline (#2130): a shape already known to be bail_noop is
+    // refused here, before the compile cache and before any SQLite fetch.
+    // The server used to do a SELECT plus a full program deserialization
+    // per evaluation in order to read four integers and not run the result.
+    {
+        std::string memo_key = compile_cache_key(expr, nLen, eval);
+        if (s_decline_memo.count(memo_key)) {
+            s_jit_stats.bail_noop++;
+            s_jit_stats.noop_memo++;
+            s_jit_stats.eval_bailout++;
+            return false;
+        }
+    }
+
     compiled_program *prog = compile_cached(expr, nLen, eval);
     if (!prog) {
         s_jit_stats.eval_bailout++;
@@ -5880,6 +6012,17 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
         && 0 == prog->folds
         && 0 == prog->tier2_calls
         && 1 >= prog->ecalls) {
+        // Memoize the verdict (#2130) so later evaluations refuse before
+        // any cache machinery runs.  Dep-free only: a program with inline
+        // deps can recompile into a different shape when an attr changes,
+        // and noop shapes are dep-free in practice (deps come from
+        // u()-inlining, which emits code).
+        if (prog->deps.empty()) {
+            if (s_decline_memo.size() >= DECLINE_MEMO_MAX) {
+                s_decline_memo.clear();
+            }
+            s_decline_memo.insert(compile_cache_key(expr, nLen, eval));
+        }
         s_jit_stats.bail_noop++;
         s_jit_stats.eval_bailout++;
         return false;
@@ -6047,7 +6190,9 @@ FUNCTION(fun_jitstats)
         "slot_hit=%llu "
         "slot_miss=%llu "
         "slot_evict=%llu "
-        "slot_pinned=%llu"),
+        "slot_churn0=%llu "
+        "slot_pinned=%llu "
+        "noop_memo=%llu"),
         (unsigned long long)s_jit_stats.eval_attempts,
         (unsigned long long)s_jit_stats.eval_handled,
         (unsigned long long)s_jit_stats.eval_bailout,
@@ -6084,7 +6229,9 @@ FUNCTION(fun_jitstats)
         (unsigned long long)s_jit_stats.slot_hit,
         (unsigned long long)s_jit_stats.slot_miss,
         (unsigned long long)s_jit_stats.slot_evict,
-        (unsigned long long)s_jit_stats.slot_pinned);
+        (unsigned long long)s_jit_stats.slot_churn0,
+        (unsigned long long)s_jit_stats.slot_pinned,
+        (unsigned long long)s_jit_stats.noop_memo);
 
     // Append Lua JIT counters (#1316).  lua_run_fail incrementing while
     // softcode still returns correct answers is the signature of a Lua JIT

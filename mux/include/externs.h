@@ -1736,6 +1736,11 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
 // JIT fallback returns the RIGHT answer, so a run that never reached the JIT is
 // otherwise indistinguishable from one that did.
 void jit_eval_counters(uint64_t *pAttempts, uint64_t *pHandled);
+
+// Clear the #2130 bail_noop memo.  Called from
+// jit_gate_note_function_table_change so a registration change cannot leave
+// a stale "do not even fetch" verdict.
+void jit_decline_memo_invalidate(void);
 #endif // TINYMUX_JIT
 
 #endif // EXTERNS_H

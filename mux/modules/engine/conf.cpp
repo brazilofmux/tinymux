@@ -228,6 +228,8 @@ void cf_init(void)
 
     mudconf.autozone        = true;
     mudconf.jit_code_slots  = 7;    // all slots (#2129); 1 = old behaviour
+    mudconf.jit_compile_cache_max = 2048;  // #2130: cover the measured
+                                           // ~1500-program live working set
     mudconf.jit_eval_brackets = true;
     // Default ON (#1325, 2026-07-28).  The gates: the differential
     // harness executes every supported shape (140 chunks, declines all
@@ -2137,6 +2139,7 @@ static CONFPARM conftable[] =
     {T("input_database"),            cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.indb),            nullptr, SIZEOF_PATHNAME},
     {T("ip_address"),                cf_string_dyn,  CA_STATIC, CA_GOD,      reinterpret_cast<int *>(&mudconf.ip_address),      nullptr,    LBUF_SIZE},
     {T("jit_code_slots"),            cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.jit_code_slots,         nullptr,            0},
+    {T("jit_compile_cache_max"),     cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.jit_compile_cache_max,  nullptr,            0},
     {T("jit_eval_brackets"),         cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.jit_eval_brackets), nullptr,        0},
     {T("lua_jit"),                   cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.lua_jit),         nullptr,            0},
     {T("keepalive_interval"),        cf_int,         CA_GOD,    CA_WIZARD,   &mudconf.keepalive_interval,     nullptr,            0},

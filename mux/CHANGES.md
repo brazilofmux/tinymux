@@ -67,6 +67,30 @@ release carried the bad state.
    retains all resident programs at once.  Alternating workloads run
    2-2.8x faster on the measured box; `jit_code_slots 1` restores the old
    behaviour for A/B measurement.
+ - **Slot admission resists cold storms** (from the #2139 review).  The
+   initial strict-LRU claim helped working sets up to the slot count and
+   then cliffed: round-robin one past it evicted the entry needed next on
+   every evaluation, measured ~8% WORSE than the old reset.  Slot 0 is now
+   a probation lane — first-touch programs run there and cannot displace a
+   hot resident — so an oversized set is never worse than the old reset at
+   any size measured (1.6x faster at one past capacity, converging to the
+   old cost from below at 32) and the hot working set keeps its
+   translations through a cold storm (measured 2x on an 80/20 skew).
+   `slot_evict` counts protected displacements (the raise-the-slot-count
+   signal); `slot_churn0` counts probation churn (expected, not actionable).
+ - **A declined shape never touches SQLite again** (#2130).  `jit_eval`
+   fetched and fully deserialized a compiled program in order to read four
+   integers and decline it (`bail_noop`) — ~19.4us per evaluation of pure
+   waste for `get`/`v`/`u`-shaped expressions once they fell out of the
+   memory cache.  The verdict is a pure function of the code, so it is now
+   memoized by cache key and refused before any cache machinery runs
+   (`noop_memo` counts these).
+ - **The in-memory compiled-program cache no longer cliffs at 256**
+   (#2130).  One expression past the old fixed capacity took the hit rate
+   from 99.9% to 0.16% and wall +56%, because round-robin is an LRU's worst
+   case.  Capacity is now `jit_compile_cache_max` (default 2048, covering
+   the ~1500 distinct programs a live-workload profile measured), runtime
+   `@admin`-settable.
  - **`map()` and `filter()` have JIT lowerings**, composed from the `iter()`
    loop and the `u()` inline rather than written fresh.
  - **The `u()`-inline permission branch had its arms reversed since it was
