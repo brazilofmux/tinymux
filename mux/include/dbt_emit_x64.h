@@ -1025,7 +1025,18 @@ static inline void emit_loop_budget_check(emit_t *e, uint64_t loop_pc) {
     emit_exit_with_pc(e, loop_pc);
     emit_byte(e, 0xC3);               // ret
 
-    e->buf[jnz_disp] = static_cast<uint8_t>(emit_pos(e) - jnz_disp - 1);
+    // Bounds-guard, like emit_patch_rel32 (#830): when a block overflows the
+    // remaining code buffer, emit_byte drops the store but `offset` keeps
+    // advancing, so this patch site can sit past capacity and the raw store
+    // below would write out of bounds.  translate_block's offset>capacity
+    // bail discards the overflowed block anyway, so skipping the patch is
+    // correct.  This was the one raw backpatch in the x64 emitter without
+    // the guard -- the a64 emitter routes its equivalent through the guarded
+    // emit_patch_b19, which is why only x86-64 hosts could crash.  Reachable
+    // once #2129's code slots let translations accumulate toward the buffer
+    // cap; latent before that.
+    if (jnz_disp < e->capacity)
+        e->buf[jnz_disp] = static_cast<uint8_t>(emit_pos(e) - jnz_disp - 1);
 }
 
 // Store r64 as next_pc and return (for indirect jumps).
