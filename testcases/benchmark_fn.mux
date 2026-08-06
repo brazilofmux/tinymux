@@ -73,11 +73,40 @@
         strmatch(setr(2,benchmark(add(1,2), 200000)), #-1 ITERATIONS EXCEEDS 10000)
       )=
   {
-    @log smoke=TC004: benchmark() refuses above the cap. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC004: benchmark() refuses above the cap. Succeeded.
   },
   {
-    @log smoke=TC004: benchmark() refuses above the cap. Failed (atcap=%q0 over=%q1 wayover=%q2).;
+    @log smoke=TC004: benchmark() refuses above the cap. Failed (atcap=%q0 over=%q1 wayover=%q2).
+  }
+-
+#
+# Test Case #5 - The optional third argument reports whether the JIT RAN.
+#
+# Every JIT fallback returns the right answer, so a timing that never reached
+# the JIT is indistinguishable from one that did -- which is how a "JIT vs no
+# JIT" comparison can silently be interpreter-vs-interpreter (#2133 item 5).
+# The evidence has to come back WITH the number.  Assert both directions: a
+# shape the JIT handles reports handled==attempts, and one it declines reports
+# handled=0 while still returning a time.
+#
+&tr.tc005 test_benchmark_fn=
+  @if strmatch(setr(0,benchmark(add(1,2),10,1)),* jit_handled=*/10 jit_attempts=*)=
+  {
+    @if cand(
+          strmatch(setr(1,benchmark(add(1,2),10,1)),* jit_handled=10/10 *),
+          strmatch(setr(2,benchmark(citer(a b c,1),10,1)),* jit_handled=0/10 *)
+        )=
+    {
+      @log smoke=TC005: benchmark() reports JIT liveness with the timing. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC005: benchmark() reports JIT liveness with the timing. Failed (handled=%q1 declined=%q2).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC005: benchmark() reports JIT liveness with the timing. Skipped (JIT not enabled: %q0).;
     @trig me/tr.done
   }
 -

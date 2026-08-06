@@ -1730,6 +1730,12 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
               dbref executor, dbref caller, dbref enactor,
               int eval,
               const UTF8 *cargs[], int ncargs);
+
+// Sample jit_eval()'s attempt/handled counters (#2133 item 5).  Exposed so a
+// measurement can carry proof the JIT actually ran alongside its timing: every
+// JIT fallback returns the RIGHT answer, so a run that never reached the JIT is
+// otherwise indistinguishable from one that did.
+void jit_eval_counters(uint64_t *pAttempts, uint64_t *pHandled);
 #endif // TINYMUX_JIT
 
 #endif // EXTERNS_H

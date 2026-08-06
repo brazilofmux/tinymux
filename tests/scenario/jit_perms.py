@@ -165,6 +165,20 @@ def main():
           "mortal may still call public builtins",
           " (wanted '5', got %r)" % got)
 
+    # 4. benchmark()'s optional JIT-liveness argument is Wizard-gated (#2133).
+    #    benchmark() itself is CA_PUBLIC, but jitstats()/astbench()/rvbench()
+    #    are all CA_WIZARD and the third argument reports the same internals --
+    #    so the two-argument form must stay the only thing a mortal reaches.
+    got = probe(mortal, "MBP", "[benchmark(add(1,2),10)]")
+    check(got is not None and NOPERM not in got and got.replace(".", "").isdigit(),
+          "mortal may still use plain benchmark()",
+          " (got %r)" % got)
+
+    got = probe(mortal, "MBJ", "[benchmark(add(1,2),10,1)]")
+    check(got is not None and NOPERM in got,
+          "mortal denied benchmark()'s JIT-liveness argument",
+          " (wanted %r, got %r)" % (NOPERM, got))
+
     sendline(mortal, "QUIT")
     try:
         mortal.close()

@@ -15,6 +15,7 @@
 #include "engine_api.h"
 #include "mux_table.h"
 
+
 #include <unordered_map>
 
 extern "C" {
@@ -15066,8 +15067,43 @@ static FUNCTION(fun_benchmark)
         return;
     }
 
+    // Optional third argument: also report whether the JIT actually RAN
+    // during the timed loop (#2133 item 5).
+    //
+    // Every JIT fallback returns the right answer, so a measurement that
+    // silently never reached the JIT is indistinguishable from one that did --
+    // and this is the instrument used to compare a --enable-jit build against
+    // one without, because it times mux_exec itself and is not JIT-gated.  A
+    // "JIT arm" that declined everything would report a uniform tax and look
+    // exactly like a real result.  #2068's re-measurement was only known not to
+    // be that because the counters were checked BY HAND alongside it; this
+    // makes the evidence come back with the number instead of depending on
+    // someone remembering.  See #1417 and #1519 for the same shape going
+    // unnoticed.
+    //
+    // Wizard-gated even though benchmark() itself is CA_PUBLIC: jitstats(),
+    // astbench() and rvbench() are all CA_WIZARD, and this reports the same
+    // internals, so the plain two-argument form must stay the only thing a
+    // mortal can reach.
+    //
+    bool bWantJit = false;
+    if (nfargs >= 3 && '\0' != fargs[2][0] && 0 != mux_atol(fargs[2]))
+    {
+        if (!Wizard(executor))
+        {
+            safe_noperm(buff, bufc);
+            return;
+        }
+        bWantJit = true;
+    }
+
     const UTF8 *expr = fargs[0];
     size_t nLen = strlen(reinterpret_cast<const char *>(expr));
+
+#if defined(TINYMUX_JIT)
+    uint64_t jit_attempts0 = 0, jit_handled0 = 0;
+    jit_eval_counters(&jit_attempts0, &jit_handled0);
+#endif
 
 #ifdef WIN32
     LARGE_INTEGER freq, pc0, pc1;
@@ -15098,7 +15134,24 @@ static FUNCTION(fun_benchmark)
                    + (t1.tv_nsec - t0.tv_nsec) / 1e9;
 #endif
 
+    // Seconds stay FIRST and unchanged, so the two-argument contract holds and
+    // anything doing arithmetic on the leading token keeps working.
     fval(buff, bufc, elapsed);
+    if (bWantJit)
+    {
+#if defined(TINYMUX_JIT)
+        uint64_t jit_attempts1 = 0, jit_handled1 = 0;
+        jit_eval_counters(&jit_attempts1, &jit_handled1);
+        safe_tprintf_str(buff, bufc, T(" jit_handled=%d/%d jit_attempts=%d"),
+            static_cast<int>(jit_handled1 - jit_handled0),
+            static_cast<int>(iterations),
+            static_cast<int>(jit_attempts1 - jit_attempts0));
+#else
+        // Not "0 handled" -- that would read as a live JIT declining, which is
+        // a different finding from a build that has no JIT to decline.
+        safe_str(T(" jit_handled=n/a jit_attempts=n/a"), buff, bufc);
+#endif
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -15367,7 +15420,7 @@ static FUN builtin_function_list[] =
     {T("BASECONV"),    fun_baseconv,   MAX_ARG, 3,       3,         0, CA_PUBLIC},
     {T("BEEP"),        fun_beep,       MAX_ARG, 0,       0,         0, CA_WIZARD},
     {T("BEFORE"),      fun_before,     MAX_ARG, 1,       2,         0, CA_PUBLIC},
-    {T("BENCHMARK"),   fun_benchmark,  MAX_ARG, 2,       2, FN_NOEVAL, CA_PUBLIC},
+    {T("BENCHMARK"),   fun_benchmark,  MAX_ARG, 2,       3, FN_NOEVAL, CA_PUBLIC},
     {T("BETWEEN"),     fun_between,    MAX_ARG, 3,       4,         0, CA_PUBLIC},
     {T("BITTYPE"),     fun_bittype,    MAX_ARG, 0,       1,         0, CA_PUBLIC},
     {T("BNAND"),       fun_bnand,      MAX_ARG, 2,       2,         0, CA_PUBLIC},
