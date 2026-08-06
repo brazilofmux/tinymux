@@ -438,7 +438,7 @@ bool delim_check
     UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    UTF8 *fargs[], int nfargs,
+    const UTF8 * const fargs[], int nfargs,
     const UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 )
@@ -448,22 +448,24 @@ bool delim_check
     {
         // First, we decide whether to evalute fargs[sep_arg-1] or not.
         //
-        UTF8 *tstr = fargs[sep_arg-1];
-        size_t tlen = strlen(reinterpret_cast<char *>(tstr));
+        const UTF8 *tstr = fargs[sep_arg-1];
+        size_t tlen = strlen(reinterpret_cast<const char *>(tstr));
 
         if (tlen <= 1)
         {
             dflags &= ~DELIM_EVAL;
         }
 
+        UTF8 *tEval = nullptr;
         if (dflags & DELIM_EVAL)
         {
-            UTF8 *str = tstr;
-            UTF8 *bp = tstr = alloc_lbuf("delim_check");
-            mux_exec(str, tlen, tstr, &bp, executor, caller, enactor,
+            const UTF8 *str = tstr;
+            UTF8 *bp = tEval = alloc_lbuf("delim_check");
+            mux_exec(str, tlen, tEval, &bp, executor, caller, enactor,
                      eval|EV_EVAL|EV_FCHECK, cargs, ncargs);
             *bp = '\0';
-            tlen = bp - tstr;
+            tstr = tEval;
+            tlen = bp - tEval;
         }
 
         // Regardless of evaulation or no, tstr contains what we need to
@@ -515,9 +517,9 @@ bool delim_check
 
         // Clean up the evaluation buffer.
         //
-        if (dflags & DELIM_EVAL)
+        if (nullptr != tEval)
         {
-            free_lbuf(tstr);
+            free_lbuf(tEval);
         }
     }
     else if (!(dflags & DELIM_INIT))
@@ -533,18 +535,80 @@ bool delim_check
  * Added 1/28/91 Philip D. Wasson
  */
 
-int countwords(UTF8 *str, const SEP &sep)
+const UTF8 *trim_space_sep_n(const UTF8 *str, const SEP &sep, size_t *nLen)
 {
-    int n;
+    if (  sep.n != 1
+       || sep.str[0] != ' ')
+    {
+        *nLen = strlen(reinterpret_cast<const char *>(str));
+        return str;
+    }
+    while (*str == ' ')
+    {
+        str++;
+    }
+    size_t n = strlen(reinterpret_cast<const char *>(str));
+    while (0 < n && ' ' == str[n-1])
+    {
+        n--;
+    }
+    *nLen = n;
+    return str;
+}
 
-    str = trim_space_sep(str, sep);
+// Counts exactly what a trim_space_sep + next_token walk counts, without
+// the walk's trailing-NUL trim (#2136): space-separated lists ignore
+// leading/trailing/repeated spaces; every other separator yields one more
+// token than it has separator occurrences, except that the empty string
+// has zero tokens.
+//
+int countwords(const UTF8 *str, const SEP &sep)
+{
+    if (  1 == sep.n
+       && ' ' == sep.str[0])
+    {
+        while (' ' == *str)
+        {
+            str++;
+        }
+        int n = 0;
+        while (*str)
+        {
+            n++;
+            while (  *str
+                  && ' ' != *str)
+            {
+                str++;
+            }
+            while (' ' == *str)
+            {
+                str++;
+            }
+        }
+        return n;
+    }
+
     if (!*str)
     {
         return 0;
     }
-    for (n = 0; str; str = next_token(str, sep), n++)
+    int n = 1;
+    if (1 == sep.n)
     {
-        ; // Nothing.
+        for (; *str; str++)
+        {
+            if (sep.str[0] == *str)
+            {
+                n++;
+            }
+        }
+        return n;
+    }
+    const char *p = reinterpret_cast<const char *>(str);
+    while (nullptr != (p = strstr(p, reinterpret_cast<const char *>(sep.str))))
+    {
+        n++;
+        p += sep.n;
     }
     return n;
 }
@@ -1070,9 +1134,9 @@ static FUNCTION(fun_timefmt)
         pValidShortDayOfWeek = T("");
     }
 
-    UTF8 *q;
-    UTF8 *p = fargs[0];
-    while ((q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '$'))) != nullptr)
+    const UTF8 *q;
+    const UTF8 *p = fargs[0];
+    while ((q = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(p), '$'))) != nullptr)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -1326,9 +1390,9 @@ static FUNCTION(fun_etimefmt)
     long days    = hours/24;
     hours -= 24*days;
 
-    UTF8 *q;
-    UTF8 *p = fargs[0];
-    while ((q = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), '$'))) != nullptr)
+    const UTF8 *q;
+    const UTF8 *p = fargs[0];
+    while ((q = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(p), '$'))) != nullptr)
     {
         size_t nLen = q - p;
         safe_copy_buf(p, nLen, buff, bufc);
@@ -2323,25 +2387,26 @@ FUNCTION(fun_successes)
 #define GET_EVAL    4
 #define GET_GEVAL   8
 
-static void get_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[], int key)
+static void get_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
+                        const UTF8 * const fargs[], int key)
 {
-    bool bFreeBuffer = false;
-    UTF8 *pRefAttrib = fargs[0];
+    UTF8 *pXGet = nullptr;
+    const UTF8 *pRefAttrib = fargs[0];
 
     if (  key == GET_XGET
        || key == GET_EVAL)
     {
-        pRefAttrib = alloc_lbuf("get_handler");
-        UTF8 *bufp = pRefAttrib;
-        safe_tprintf_str(pRefAttrib, &bufp, T("%s/%s"), fargs[0], fargs[1]);
-        bFreeBuffer = true;
+        pXGet = alloc_lbuf("get_handler");
+        UTF8 *bufp = pXGet;
+        safe_tprintf_str(pXGet, &bufp, T("%s/%s"), fargs[0], fargs[1]);
+        pRefAttrib = pXGet;
     }
     dbref thing;
     ATTR *pattr;
     bool bNoMatch = !parse_attrib(executor, pRefAttrib, &thing, &pattr);
-    if (bFreeBuffer)
+    if (pXGet)
     {
-        free_lbuf(pRefAttrib);
+        free_lbuf(pXGet);
     }
 
     if (bNoMatch)
@@ -2472,7 +2537,7 @@ static FUNCTION(fun_eval)
 
 static void do_ufun(UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,
             dbref enactor,
-            UTF8 *fargs[], int nfargs,
+            const UTF8 * const fargs[], int nfargs,
             const UTF8 *cargs[], int ncargs,
             bool is_local)
 {
@@ -2554,8 +2619,8 @@ static FUNCTION(fun_parent)
         {
             return;
         }
-        do_parent(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1],
-                nullptr, 0);
+        do_parent(executor, caller, enactor, eval, 0, 2, FargCopy(fargs[0]),
+                FargCopy(fargs[1]), nullptr, 0);
     }
     else
     {
@@ -2866,7 +2931,8 @@ static FUNCTION(fun_first)
         return;
     }
 
-    UTF8 *s = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_first.list");
+    UTF8 *s = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     UTF8 *first = split_token(&s, sep);
     if (first)
     {
@@ -2895,7 +2961,8 @@ static FUNCTION(fun_rest)
         return;
     }
 
-    UTF8 *s = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_rest.list");
+    UTF8 *s = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     split_token(&s, sep);
     if (s)
     {
@@ -2931,7 +2998,8 @@ static FUNCTION(fun_butlast)
         return;
     }
 
-    UTF8 *cp = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_butlast.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     bool first = true;
     for (int i = 0; i < nWords - 1; i++)
     {
@@ -2967,8 +3035,10 @@ static FUNCTION(fun_zip)
         return;
     }
 
-    UTF8 *cp1 = trim_space_sep(fargs[0], isep);
-    UTF8 *cp2 = trim_space_sep(fargs[1], isep);
+    LBuf scList1 = LBuf_Src("fun_zip.list1");
+    UTF8 *cp1 = trim_space_sep(list_copy_for_split(scList1, fargs[0]), isep);
+    LBuf scList2 = LBuf_Src("fun_zip.list2");
+    UTF8 *cp2 = trim_space_sep(list_copy_for_split(scList2, fargs[1]), isep);
     if (cp1 && '\0' == *cp1) cp1 = nullptr;
     if (cp2 && '\0' == *cp2) cp2 = nullptr;
 
@@ -3013,7 +3083,7 @@ static FUNCTION(fun_v)
     UTF8 *sbuf, *sbufc;
     ATTR *ap;
 
-    UTF8 *tbuf = fargs[0];
+    const UTF8 *tbuf = fargs[0];
     if (mux_isattrnameinitial(tbuf))
     {
         size_t nAdvance = utf8_FirstByte[static_cast<unsigned char>(*tbuf)];
@@ -3050,12 +3120,12 @@ static FUNCTION(fun_v)
             // string.
             //
             size_t nLen;
-            tbuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
+            UTF8 *abuf = atr_pget_LEN(executor, ap->number, &aowner, &aflags, &nLen);
             if (See_attr(executor, executor, ap))
             {
-                safe_copy_buf(tbuf, nLen, buff, bufc);
+                safe_copy_buf(abuf, nLen, buff, bufc);
             }
-            free_lbuf(tbuf);
+            free_lbuf(abuf);
         }
         else
         {
@@ -3527,8 +3597,8 @@ static FUNCTION(fun_name)
         {
             return;
         }
-        do_name(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1],
-                nullptr, 0);
+        do_name(executor, caller, enactor, eval, 0, 2, FargCopy(fargs[0]),
+                FargCopy(fargs[1]), nullptr, 0);
     }
     else
     {
@@ -3585,7 +3655,8 @@ static FUNCTION(fun_match)
     // one that matches.  If none match, return 0.
     //
     int wcount = 1;
-    UTF8 *s = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_match.list");
+    UTF8 *s = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     do {
         UTF8 *r = split_token(&s, sep);
         mudstate.wild_invk_ctr = 0;
@@ -3649,14 +3720,14 @@ static FUNCTION(fun_extract)
         return;
     }
 
-    UTF8 *bp = trim_space_sep(fargs[0], sep);
+    size_t slen;
+    const UTF8 *bp = trim_space_sep_n(fargs[0], sep, &slen);
 
     if (1 == sep.n && 1 == osep.n)
     {
         // Single-char delimiter: use co_extract.
         // Space compresses consecutive delimiters; non-space treats each as significant.
         //
-        size_t slen = strlen(reinterpret_cast<const char *>(bp));
         unsigned char out[LBUF_SIZE];
         size_t nOut = co_extract(out,
             reinterpret_cast<const unsigned char *>(bp), slen,
@@ -3676,7 +3747,7 @@ static FUNCTION(fun_extract)
         // Multi-char delimiter: use co_split_words.
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(bp);
-        size_t nLen = strlen(reinterpret_cast<const char *>(bp));
+        size_t nLen = slen;
         CWordScratch ws;
         size_t *wstarts = ws.starts();
         size_t *wends = ws.ends();
@@ -3717,7 +3788,7 @@ static FUNCTION(fun_extract)
 
 // xlate() controls the subtle definition of a softcode boolean.
 //
-bool xlate(UTF8 *arg)
+bool xlate(const UTF8 *arg)
 {
     const UTF8 *p = arg;
     if (p[0] == '#')
@@ -3796,7 +3867,8 @@ static FUNCTION(fun_index)
     UNUSED_PARAMETER(ncargs);
 
     int start, end;
-    UTF8 c, *s, *p;
+    UTF8 c;
+    const UTF8 *s, *p;
 
     s = fargs[0];
     c = *fargs[1];
@@ -3817,7 +3889,7 @@ static FUNCTION(fun_index)
     start--;
     while (start && s && *s)
     {
-        if ((s = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(s), c))) != nullptr)
+        if ((s = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(s), c))) != nullptr)
         {
             s++;
         }
@@ -3840,7 +3912,7 @@ static FUNCTION(fun_index)
     p = s;
     while (end && p && *p)
     {
-        if ((p = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(p), c))) != nullptr)
+        if ((p = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(p), c))) != nullptr)
         {
             if (--end == 0)
             {
@@ -3851,8 +3923,7 @@ static FUNCTION(fun_index)
                 {
                     p--;
                 }
-                *p = '\0';
-                safe_str(s, buff, bufc);
+                safe_copy_buf(s, p - s, buff, bufc);
                 return;
             }
             else
@@ -3939,7 +4010,7 @@ static FUNCTION(fun_vwidth)
     if (nfargs >= 1)
     {
         n = co_visual_width(reinterpret_cast<const unsigned char *>(fargs[0]),
-                            strlen(reinterpret_cast<char *>(fargs[0])));
+                            strlen(reinterpret_cast<const char *>(fargs[0])));
     }
     safe_ltoa(static_cast<long>(n), buff, bufc);
 }
@@ -3956,7 +4027,7 @@ static FUNCTION(fun_strmem)
     size_t n = 0;
     if (nfargs >= 1)
     {
-        n = strlen(reinterpret_cast<char *>(fargs[0]));
+        n = strlen(reinterpret_cast<const char *>(fargs[0]));
     }
     safe_ltoa(static_cast<long>(n), buff, bufc);
 }
@@ -4007,7 +4078,7 @@ static void internalPlayerFind
     UTF8  *buff,
     UTF8 **bufc,
     dbref  player,
-    UTF8  *name,
+    const UTF8 *name,
     int    bVerifyPlayer
 )
 {
@@ -4031,7 +4102,7 @@ static void internalPlayerFind
     }
     else
     {
-        UTF8 *nptr = name;
+        const UTF8 *nptr = name;
         if (*nptr == '*')
         {
             // Start with the second character in the name string.
@@ -4101,8 +4172,8 @@ static FUNCTION(fun_comp)
         case 'A':
             // Legacy ASCII comparison.
             //
-            x = strcmp(reinterpret_cast<char *>(fargs[0]),
-                       reinterpret_cast<char *>(fargs[1]));
+            x = strcmp(reinterpret_cast<const char *>(fargs[0]),
+                       reinterpret_cast<const char *>(fargs[1]));
             break;
 
         case 'c':
@@ -4110,8 +4181,8 @@ static FUNCTION(fun_comp)
             {
                 // Case-insensitive Unicode collation.
                 //
-                size_t nA = strlen(reinterpret_cast<char *>(fargs[0]));
-                size_t nB = strlen(reinterpret_cast<char *>(fargs[1]));
+                size_t nA = strlen(reinterpret_cast<const char *>(fargs[0]));
+                size_t nB = strlen(reinterpret_cast<const char *>(fargs[1]));
                 x = mux_collate_cmp_ci(fargs[0], nA, fargs[1], nB);
             }
             break;
@@ -4120,8 +4191,8 @@ static FUNCTION(fun_comp)
             {
                 // Default: Unicode collation comparison.
                 //
-                size_t nA = strlen(reinterpret_cast<char *>(fargs[0]));
-                size_t nB = strlen(reinterpret_cast<char *>(fargs[1]));
+                size_t nA = strlen(reinterpret_cast<const char *>(fargs[0]));
+                size_t nB = strlen(reinterpret_cast<const char *>(fargs[1]));
                 x = mux_collate_cmp(fargs[0], nA, fargs[1], nB);
             }
             break;
@@ -4131,8 +4202,8 @@ static FUNCTION(fun_comp)
     {
         // Default: Unicode collation comparison.
         //
-        size_t nA = strlen(reinterpret_cast<char *>(fargs[0]));
-        size_t nB = strlen(reinterpret_cast<char *>(fargs[1]));
+        size_t nA = strlen(reinterpret_cast<const char *>(fargs[0]));
+        size_t nB = strlen(reinterpret_cast<const char *>(fargs[1]));
         x = mux_collate_cmp(fargs[0], nA, fargs[1], nB);
     }
 
@@ -4425,7 +4496,7 @@ FUNCTION(fun_entrances)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *p;
+    const UTF8 *p;
     dbref i;
 
     dbref low_bound = 0;
@@ -5085,15 +5156,30 @@ private:
     int  m_nCapacity;
 };
 
-int DecodeListOfIntegers(UTF8 *pIntegerList, int ai[], int nMax)
+int DecodeListOfIntegers(const UTF8 *pIntegerList, int ai[], int nMax)
 {
+    // Non-destructive walk (#2136): mux_atoi64 stops at the first
+    // non-numeric byte, so each space-separated token parses in place.
+    //
     int n = 0;
-    UTF8 *cp = trim_space_sep(pIntegerList, sepSpace);
-    while (  cp
+    const UTF8 *cp = pIntegerList;
+    while (' ' == *cp)
+    {
+        cp++;
+    }
+    while (  *cp
           && n < nMax)
     {
-        UTF8 *curr = split_token(&cp, sepSpace);
-        ai[n++] = mux_atoi64(curr);
+        ai[n++] = mux_atoi64(cp);
+        while (  *cp
+              && ' ' != *cp)
+        {
+            cp++;
+        }
+        while (' ' == *cp)
+        {
+            cp++;
+        }
     }
     return n;
 }
@@ -5306,7 +5392,8 @@ static FUNCTION(fun_member)
     UTF8 *r, *s;
 
     wcount = 1;
-    s = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_member.list");
+    s = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     do
     {
         r = split_token(&s, sep);
@@ -6194,13 +6281,11 @@ static FUNCTION(fun_mailsend)
         return;
     }
 
-    // make_numlist modifies its input, so copy recipients.
+    // The mail layer owns and mutates its text (make_numlist tokenizes the
+    // recipient list); hand it copies.
     //
-    UTF8 *recipients = alloc_lbuf("fun_mailsend.recip");
-    mux_strncpy(recipients, fargs[0], LBUF_SIZE-1);
-
-    const UTF8 *err = do_mail_send_softcode(executor, recipients, fargs[1], fargs[2]);
-    free_lbuf(recipients);
+    const UTF8 *err = do_mail_send_softcode(executor, FargCopy(fargs[0]),
+        FargCopy(fargs[1]), FargCopy(fargs[2]));
 
     if (err)
     {
@@ -6293,7 +6378,7 @@ static FUNCTION(fun_nearby)
  * * fun_obj, fun_poss, and fun_subj: perform pronoun sub for object.
  */
 
-static void process_sex(dbref player, UTF8 *what, UTF8 *token, UTF8 *buff, UTF8 **bufc)
+static void process_sex(dbref player, const UTF8 *what, const UTF8 *token, UTF8 *buff, UTF8 **bufc)
 {
     dbref it = match_thing_quiet(player, strip_color(what));
     if (!Good_obj(it))
@@ -6321,7 +6406,7 @@ static FUNCTION(fun_obj)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%o")), buff, bufc);
+    process_sex(executor, fargs[0], T("%o"), buff, bufc);
 }
 
 static FUNCTION(fun_poss)
@@ -6333,7 +6418,7 @@ static FUNCTION(fun_poss)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%p")), buff, bufc);
+    process_sex(executor, fargs[0], T("%p"), buff, bufc);
 }
 
 static FUNCTION(fun_subj)
@@ -6345,7 +6430,7 @@ static FUNCTION(fun_subj)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%s")), buff, bufc);
+    process_sex(executor, fargs[0], T("%s"), buff, bufc);
 }
 
 static FUNCTION(fun_aposs)
@@ -6357,7 +6442,7 @@ static FUNCTION(fun_aposs)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    process_sex(executor, fargs[0], const_cast<UTF8 *>(T("%a")), buff, bufc);
+    process_sex(executor, fargs[0], T("%a"), buff, bufc);
 }
 
 /*
@@ -6693,8 +6778,8 @@ static FUNCTION(fun_lnum)
  * fun_lattr, fun_lattrp: Return list of attributes I can see on the object.
  */
 
-static void lattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[],
-                   bool bCheckParent)
+static void lattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
+                   const UTF8 * const fargs[], bool bCheckParent)
 {
     dbref thing;
     int ca;
@@ -6944,7 +7029,7 @@ static FUNCTION(fun_dynhelp)
 // ---------------------------------------------------------------------------
 
 static void reglattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
-    UTF8 *fargs[], bool bCount, bool bCaseInsens)
+    const UTF8 * const fargs[], bool bCount, bool bCaseInsens)
 {
     dbref thing = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(thing))
@@ -7144,9 +7229,9 @@ static FUNCTION(fun_revwords)
     {
         // Single-char delimiter: use co_words_count + co_extract in reverse.
         //
-        UTF8 *bp = trim_space_sep(fargs[0], sep);
-        const unsigned char *p = reinterpret_cast<const unsigned char *>(bp);
-        size_t slen = strlen(reinterpret_cast<const char *>(p));
+        size_t slen;
+        const unsigned char *p = reinterpret_cast<const unsigned char *>(
+            trim_space_sep_n(fargs[0], sep, &slen));
         unsigned char delim = static_cast<unsigned char>(sep.str[0]);
         unsigned char out_delim = static_cast<unsigned char>(osep.str[0]);
 
@@ -7228,15 +7313,15 @@ static FUNCTION(fun_after)
     const unsigned char *pat = reinterpret_cast<const unsigned char *>(fargs[1]);
     size_t plen = (1 < nfargs) ? strlen(reinterpret_cast<const char *>(fargs[1])) : 0;
 
-    UTF8 *bp = fargs[0];
+    const UTF8 *bp = fargs[0];
+    size_t slen = strlen(reinterpret_cast<const char *>(bp));
     if (0 == plen)
     {
         pat = reinterpret_cast<const unsigned char *>(" ");
         plen = 1;
-        bp = trim_space_sep(bp, sepSpace);
+        bp = trim_space_sep_n(bp, sepSpace, &slen);
     }
 
-    size_t slen = strlen(reinterpret_cast<const char *>(bp));
     const unsigned char *str = reinterpret_cast<const unsigned char *>(bp);
 
     const unsigned char *match = co_search(str, slen, pat, plen);
@@ -7271,15 +7356,15 @@ static FUNCTION(fun_before)
     const unsigned char *pat = reinterpret_cast<const unsigned char *>(fargs[1]);
     size_t plen = (1 < nfargs) ? strlen(reinterpret_cast<const char *>(fargs[1])) : 0;
 
-    UTF8 *bp = fargs[0];
+    const UTF8 *bp = fargs[0];
+    size_t slen = strlen(reinterpret_cast<const char *>(bp));
     if (0 == plen)
     {
         pat = reinterpret_cast<const unsigned char *>(" ");
         plen = 1;
-        bp = trim_space_sep(bp, sepSpace);
+        bp = trim_space_sep_n(bp, sepSpace, &slen);
     }
 
-    size_t slen = strlen(reinterpret_cast<const char *>(bp));
     const unsigned char *str = reinterpret_cast<const unsigned char *>(bp);
 
     const unsigned char *match = co_search(str, slen, pat, plen);
@@ -7317,16 +7402,16 @@ static FUNCTION(fun_search)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *pArg = nullptr;
-    if (nfargs != 0)
-    {
-        pArg = fargs[0];
-    }
+    // search_setup parses its argument destructively; hand it a copy.
+    // FargCopy turns the no-argument case into an empty string, which
+    // search_setup treats the same as no argument.
+    //
+    FargCopy arg0(nfargs != 0 ? fargs[0] : nullptr);
 
     // Set up for the search.  If any errors, abort.
     //
     SEARCH searchparm;
-    if (!search_setup(executor, pArg, &searchparm))
+    if (!search_setup(executor, arg0, &searchparm))
     {
         safe_str(S_("#-1 ERROR DURING SEARCH"), buff, bufc);
         return;
@@ -7485,8 +7570,10 @@ static FUNCTION(fun_splice)
 
     // Loop through the two lists.
     //
-    UTF8 *p1 = trim_space_sep(fargs[0], sep);
-    UTF8 *q1 = trim_space_sep(fargs[1], sep);
+    LBuf scList1 = LBuf_Src("fun_lreplace.list1");
+    UTF8 *p1 = trim_space_sep(list_copy_for_split(scList1, fargs[0]), sep);
+    LBuf scList2 = LBuf_Src("fun_lreplace.list2");
+    UTF8 *q1 = trim_space_sep(list_copy_for_split(scList2, fargs[1]), sep);
     UTF8 *p2, *q2;
     bool first = true;
     int i;
@@ -7549,7 +7636,7 @@ static FUNCTION(fun_repeat)
     }
     else
     {
-        size_t len = strlen(reinterpret_cast<char *>(fargs[0]));
+        size_t len = strlen(reinterpret_cast<const char *>(fargs[0]));
         if (len == 1)
         {
             // It turns into a memset.
@@ -7761,7 +7848,7 @@ static FUNCTION(fun_citer)
     free_lbuf(curr);
 }
 
-static void iter_value(UTF8 *buff, UTF8 **bufc, UTF8 *fargs[], int nfargs, bool bWhich)
+static void iter_value(UTF8 *buff, UTF8 **bufc, const UTF8 * const fargs[], int nfargs, bool bWhich)
 {
     int number = 0;
     if (nfargs > 0)
@@ -7918,10 +8005,11 @@ static FUNCTION(fun_fold)
         return;
     }
 
-    // Evaluate it using the rest of the passed function args.
+    // Evaluate it using the rest of the passed function args.  The list
+    // walk tokenizes a private copy (#2136).
     //
-    UTF8 *curr = fargs[1];
-    UTF8 *cp = curr;
+    LBuf scList = LBuf_Src("fun_fold.list");
+    UTF8 *cp = list_copy_for_split(scList, fargs[1]);
     UTF8 *result, *bp;
     const UTF8 *clist[2];
 
@@ -8000,7 +8088,8 @@ static FUNCTION(fun_itemize)
     }
 
     int pos = 1;
-    UTF8 *cp = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_itemize.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     UTF8 *word = split_token(&cp, sep);
     while (cp && *cp)
     {
@@ -8220,7 +8309,8 @@ FUNCTION(fun_sql)
     // #1115: args are already evaluated by the dispatcher — do not re-eval
     // fargs[0] (double EV_EVAL lets user-influenced fragments run as wizard).
     //
-    UTF8 *cp = trim_space_sep(fargs[0], sepSpace);
+    LBuf scQuery = LBuf_Src("fun_sql.query");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scQuery, fargs[0]), sepSpace);
     if (!*cp)
     {
         return;
@@ -8336,7 +8426,8 @@ FUNCTION(fun_mapsql)
 
     // #1115: query arg already evaluated by dispatcher — do not re-eval.
     //
-    UTF8 *cp = trim_space_sep(fargs[1], sepSpace);
+    LBuf scQuery = LBuf_Src("fun_mapsql.query");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scQuery, fargs[1]), sepSpace);
     if (!*cp)
     {
         free_lbuf(atext);
@@ -8438,7 +8529,7 @@ FUNCTION(fun_mapsql)
  */
 
 static void filter_handler(UTF8 *buff, UTF8 **bufc, dbref executor, dbref enactor,
-                    UTF8 *fargs[], int nfargs, const SEP &sep, const SEP &osep, bool bBool)
+                    const UTF8 * const fargs[], int nfargs, const SEP &sep, const SEP &osep, bool bBool)
 {
     UTF8 *atext;
     dbref thing;
@@ -8460,7 +8551,8 @@ static void filter_handler(UTF8 *buff, UTF8 **bufc, dbref executor, dbref enacto
 
     // Now iteratively eval the attrib with the argument list.
     //
-    UTF8 *cp = trim_space_sep(fargs[1], sep);
+    LBuf scList = LBuf_Src("fun_filter.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[1]), sep);
     if ('\0' != cp[0])
     {
         UTF8 *result = alloc_lbuf("fun_filter");
@@ -8570,7 +8662,8 @@ static FUNCTION(fun_map)
 
     // Now process the list one element at a time.
     //
-    UTF8 *cp = trim_space_sep(fargs[1], sep);
+    LBuf scList = LBuf_Src("fun_map.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[1]), sep);
     if ('\0' != cp[0])
     {
         bool first = true;
@@ -8768,7 +8861,7 @@ static FUNCTION(fun_locate)
 
     bool check_locks, verbose, multiple, check_possessed;
     dbref thing, what;
-    UTF8 *cp;
+    const UTF8 *cp;
 
     int pref_type = NOTYPE;
     check_locks = verbose = multiple = check_possessed = false;
@@ -8898,7 +8991,7 @@ static void switch_handler
     UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    UTF8 *fargs[], int nfargs,
+    const UTF8 * const fargs[], int nfargs,
     const UTF8 *cargs[], int ncargs,
     bool bSwitch
 )
@@ -8988,7 +9081,7 @@ static void switchall_handler
     UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    UTF8 *fargs[], int nfargs,
+    const UTF8 * const fargs[], int nfargs,
     const UTF8 *cargs[], int ncargs,
     bool bSwitch
 )
@@ -9134,7 +9227,7 @@ static FUNCTION(fun_height)
     }
     else
     {
-        UTF8 *pTargetName = fargs[0];
+        const UTF8 *pTargetName = fargs[0];
         if ('*' == *pTargetName)
         {
             pTargetName++;
@@ -9170,7 +9263,7 @@ static FUNCTION(fun_width)
     }
     else
     {
-        UTF8 *pTargetName = fargs[0];
+        const UTF8 *pTargetName = fargs[0];
         if ('*' == *pTargetName)
         {
             pTargetName++;
@@ -9206,7 +9299,7 @@ static FUNCTION(fun_colordepth)
     }
     else
     {
-        UTF8 *pTargetName = fargs[0];
+        const UTF8 *pTargetName = fargs[0];
         if ('*' == *pTargetName)
         {
             pTargetName++;
@@ -9270,7 +9363,7 @@ static FUNCTION(fun_idle)
     }
     else
     {
-        UTF8 *pTargetName = fargs[0];
+        const UTF8 *pTargetName = fargs[0];
         if (*pTargetName == '*')
         {
             pTargetName++;
@@ -9312,7 +9405,7 @@ static FUNCTION(fun_conn)
     }
     else
     {
-        UTF8 *pTargetName = fargs[0];
+        const UTF8 *pTargetName = fargs[0];
         if (*pTargetName == '*')
         {
             pTargetName++;
@@ -9353,7 +9446,7 @@ static FUNCTION(fun_terminfo)
     }
     else
     {
-        UTF8 *pTargetName = fargs[0];
+        const UTF8 *pTargetName = fargs[0];
         if (*pTargetName == '*')
         {
             pTargetName++;
@@ -10015,7 +10108,7 @@ static FUNCTION(fun_sortkey)
 static void handle_sets
 (
     int             nfargs,
-    UTF8           *fargs[],
+    const UTF8 * const fargs[],
     UTF8           *buff,
     UTF8 **bufc,
     int             oper,
@@ -10426,7 +10519,7 @@ static void centerjustcombo
     int iType,
     UTF8 *buff,
     UTF8 **bufc,
-    UTF8 *fargs[],
+    const UTF8 * const fargs[],
     int nfargs,
     bool bTrunc
 )
@@ -10922,15 +11015,15 @@ static FUNCTION(fun_setq)
         int regnum;
         if (IsSingleCharReg(fargs[i], regnum))
         {
-            size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+            size_t n = strlen(reinterpret_cast<const char *>(fargs[i + 1]));
             RegAssign(&mudstate.global_regs[regnum], n, fargs[i + 1]);
         }
         else
         {
-            size_t nName = strlen(reinterpret_cast<char *>(fargs[i]));
+            size_t nName = strlen(reinterpret_cast<const char *>(fargs[i]));
             if (IsValidNamedReg(fargs[i], nName))
             {
-                size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+                size_t n = strlen(reinterpret_cast<const char *>(fargs[i + 1]));
                 NamedRegAssign(mudstate.named_regs, fargs[i], nName, n, fargs[i + 1]);
             }
             else
@@ -10962,7 +11055,7 @@ static FUNCTION(fun_setr)
         int regnum;
         if (IsSingleCharReg(fargs[i], regnum))
         {
-            size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+            size_t n = strlen(reinterpret_cast<const char *>(fargs[i + 1]));
             RegAssign(&mudstate.global_regs[regnum], n, fargs[i + 1]);
             if (i + 2 >= nfargs)
             {
@@ -10971,10 +11064,10 @@ static FUNCTION(fun_setr)
         }
         else
         {
-            size_t nName = strlen(reinterpret_cast<char *>(fargs[i]));
+            size_t nName = strlen(reinterpret_cast<const char *>(fargs[i]));
             if (IsValidNamedReg(fargs[i], nName))
             {
-                size_t n = strlen(reinterpret_cast<char *>(fargs[i + 1]));
+                size_t n = strlen(reinterpret_cast<const char *>(fargs[i + 1]));
                 NamedRegAssign(mudstate.named_regs, fargs[i], nName, n, fargs[i + 1]);
                 if (i + 2 >= nfargs)
                 {
@@ -11011,7 +11104,7 @@ static FUNCTION(fun_r)
     }
     else
     {
-        size_t nName = strlen(reinterpret_cast<char *>(fargs[0]));
+        size_t nName = strlen(reinterpret_cast<const char *>(fargs[0]));
         if (IsValidNamedReg(fargs[0], nName))
         {
             reg_ref *rr = NamedRegRead(mudstate.named_regs, fargs[0], nName);
@@ -11348,7 +11441,7 @@ static FUNCTION(fun_isdbref)
     bool bResult = false;
     if (nfargs >= 1)
     {
-        UTF8 *p = fargs[0];
+        const UTF8 *p = fargs[0];
         while (mux_isspace(*p))
         {
             p++;
@@ -11375,7 +11468,7 @@ static FUNCTION(fun_isobjid)
     bool bResult = false;
     if (nfargs >= 1)
     {
-        UTF8 *p = fargs[0];
+        const UTF8 *p = fargs[0];
         while (mux_isspace(*p))
         {
             p++;
@@ -11743,7 +11836,7 @@ static FUNCTION(fun_wrap)
 
     // ARG 4: Left padding. Default: blank.
     //
-    UTF8 *pLeft = nullptr;
+    const UTF8 *pLeft = nullptr;
     size_t nLeft = 0;
     if (  4 <= nfargs
        && '\0' != fargs[3][0])
@@ -11754,7 +11847,7 @@ static FUNCTION(fun_wrap)
 
     // ARG 5: Right padding. Default: blank.
     //
-    UTF8 *pRight = nullptr;
+    const UTF8 *pRight = nullptr;
     size_t nRight = 0;
     if (  5 <= nfargs
        && '\0' != fargs[4][0])
@@ -11779,7 +11872,7 @@ static FUNCTION(fun_wrap)
     if (  7 <= nfargs
        && '\0' != fargs[6][0])
     {
-        if (!strcmp(reinterpret_cast<char *>(fargs[6]), "@@"))
+        if (!strcmp(reinterpret_cast<const char *>(fargs[6]), "@@"))
         {
             pOSep = T("");
             nOSepBytes = 0;
@@ -12781,7 +12874,8 @@ static FUNCTION(fun_lcat)
         return;
     }
 
-    UTF8 *cp = trim_space_sep(fargs[0], isep);
+    LBuf scList = LBuf_Src("fun_lcat.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), isep);
     if ('\0' == *cp)
     {
         return;
@@ -13918,7 +14012,8 @@ static FUNCTION(fun_unique)
 
     CListScratch ls;
     UTF8 **arr = ls.a();
-    int nWords = list2arr(arr, ls.capacity(), fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_unique.list");
+    int nWords = list2arr_nd(arr, ls.capacity(), fargs[0], sep, scList);
 
     // Track seen words with a simple linear scan (adequate for MUX lists).
     //
@@ -14268,7 +14363,7 @@ static bool gc_in_set(const StrGC &needle, const StrGC *haystack, int nHay)
 // need stripping, the first must be copied before stripping the second.
 //
 static void gc_extract_pair(
-    UTF8 *farg0, UTF8 *farg1,
+    const UTF8 *farg0, const UTF8 *farg1,
     UTF8 *buf1, size_t &nBytes1, UTF8 *&p2, size_t &nBytes2)
 {
     UTF8 *p1 = strip_color(farg0, &nBytes1, nullptr);
@@ -14485,7 +14580,8 @@ static FUNCTION(fun_linsert)
 
     CListScratch ls;
     UTF8 **arr = ls.a();
-    int nWords = list2arr(arr, ls.capacity(), fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_linsert.list");
+    int nWords = list2arr_nd(arr, ls.capacity(), fargs[0], sep, scList);
     int64_t pos = mux_atoi64(fargs[1]);
 
     if (pos < 0)
@@ -15069,7 +15165,8 @@ static FUNCTION(fun_lreplace)
 
     CListScratch ls;
     UTF8 **arr = ls.a();
-    int nWords = list2arr(arr, ls.capacity(), fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_lreplace.list");
+    int nWords = list2arr_nd(arr, ls.capacity(), fargs[0], sep, scList);
     int64_t pos = mux_atoi64(fargs[1]);
 
     if (pos < 0 || pos >= nWords)

@@ -56,7 +56,7 @@ mux_subnets::~mux_subnets() {}
 bool delim_check(UTF8 *buff, UTF8 **bufc,
                  dbref executor, dbref caller, dbref enactor,
                  int eval,
-                 UTF8 *fargs[], int nfargs,
+                 const UTF8 * const fargs[], int nfargs,
                  const UTF8 *cargs[], int ncargs,
                  int sep_arg, SEP *sep, int dflags) {
     return false;

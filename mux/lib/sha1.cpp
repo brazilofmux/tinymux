@@ -19,7 +19,7 @@
 
 #include <openssl/evp.h>
 
-static bool evp_digest(const EVP_MD *md, const UTF8 *data[], const size_t lens[],
+static bool evp_digest(const EVP_MD *md, const UTF8 * const data[], const size_t lens[],
                        int count, uint8_t *out_digest, unsigned int *out_len)
 {
     EVP_MD_CTX *ctx =
@@ -53,7 +53,7 @@ static bool evp_digest(const EVP_MD *md, const UTF8 *data[], const size_t lens[]
     return ok;
 }
 
-bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+bool mux_sha1_digest(const UTF8 * const data[], const size_t lens[], int count,
                      uint8_t *out_digest, unsigned int *out_len)
 {
     return evp_digest(EVP_sha1(), data, lens, count, out_digest, out_len);
@@ -157,7 +157,7 @@ static bool cng_digest(cng_alg &alg, const UTF8 *data[], const size_t lens[],
     return ok;
 }
 
-bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+bool mux_sha1_digest(const UTF8 * const data[], const size_t lens[], int count,
                      uint8_t *out_digest, unsigned int *out_len)
 {
     return cng_digest(s_cng_algs[0], data, lens, count, out_digest, out_len);

@@ -22,7 +22,7 @@ void     notify_except2_rlevel2(dbref, dbref, dbref, dbref, const UTF8 *);
 UTF8 *   rxlevel_description(dbref, dbref);
 UTF8 *   txlevel_description(dbref, dbref);
 void     decompile_rlevels(dbref, dbref, UTF8 *);
-RLEVEL   find_rlevel(UTF8 *);
+RLEVEL   find_rlevel(const UTF8 *);
 
 UTF8 *get_rlevel_desc
 (

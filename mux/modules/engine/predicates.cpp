@@ -1739,7 +1739,7 @@ static dbref promote_dflt(dbref old, dbref new0)
     return NOTHING;
 }
 
-dbref match_possessed(dbref player, dbref thing, UTF8 *target, dbref dflt, bool check_enter)
+dbref match_possessed(dbref player, dbref thing, const UTF8 *target, dbref dflt, bool check_enter)
 {
     // First, check normally.
     //
@@ -1751,14 +1751,15 @@ dbref match_possessed(dbref player, dbref thing, UTF8 *target, dbref dflt, bool 
     // Didn't find it directly.  Recursively do a contents check.
     //
     dbref result, result1;
-    UTF8 *place, *s1, *d1, *temp;
-    UTF8 *start = target;
+    UTF8 *d1;
+    const UTF8 *place, *s1, *temp;
+    const UTF8 *start = target;
     while (*target)
     {
         // Fail if no ' characters.
         //
         place = target;
-        target = reinterpret_cast<UTF8 *>(strchr(reinterpret_cast<char *>(place), '\''));
+        target = reinterpret_cast<const UTF8 *>(strchr(reinterpret_cast<const char *>(place), '\''));
         if (  target == nullptr
            || !*target)
         {

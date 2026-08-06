@@ -31,7 +31,7 @@
 typedef unsigned char UTF8;
 
 // sha1.h exports (declared locally; see file comment)
-bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+bool mux_sha1_digest(const UTF8 * const data[], const size_t lens[], int count,
                      uint8_t *out_digest, unsigned int *out_len);
 bool mux_digest(const UTF8 *alg, const UTF8 *data[], const size_t lens[],
                 int count, uint8_t *out_digest, unsigned int *out_len);

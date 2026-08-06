@@ -225,7 +225,7 @@ void CLinearTimeAbsolute::GetLocal()
     UTC2Local();
 }
 
-bool CLinearTimeAbsolute::SetSecondsString(UTF8* arg_szSeconds)
+bool CLinearTimeAbsolute::SetSecondsString(const UTF8* arg_szSeconds)
 {
     UnderlyingTickType t;
     const UnderlyingTickType tEarliest = EARLIEST_VALID_DATE;

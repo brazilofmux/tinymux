@@ -259,7 +259,7 @@ UTF8 *atr_pget_real(dbref obj, int attrnum, dbref *pOwner, int *pFlags,
     return buf;
 }
 
-dbref lookup_player(dbref executor, UTF8 *pName, bool bConnected)
+dbref lookup_player(dbref executor, const UTF8 *pName, bool bConnected)
 {
     dbref result = NOTHING;
     if (g_pIObjectInfo)

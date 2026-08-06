@@ -44,8 +44,9 @@ public:
     // mux_IFunction
     //
     MUX_RESULT Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc, dbref executor,
-                    dbref caller, dbref enactor, int eval, UTF8 *fargs[],
-                    int nfargs, const UTF8 *cargs[], int ncargs) override;
+                    dbref caller, dbref enactor, int eval,
+                    const UTF8 * const fargs[], int nfargs,
+                    const UTF8 *cargs[], int ncargs) override;
 
     CExp3(void);
     MUX_RESULT FinalConstruct(void);

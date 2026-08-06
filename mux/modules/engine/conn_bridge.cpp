@@ -608,7 +608,7 @@ void for_each_player_desc(dbref target,
 // Softcode function bridges — same signature as the net.cpp originals.
 //
 void fun_host(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
-    dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+    dbref caller, dbref enactor, int eval, const UTF8 * const fargs[], int nfargs,
     const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(fp);
@@ -622,7 +622,7 @@ void fun_host(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
 }
 
 void fun_doing(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
-    dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+    dbref caller, dbref enactor, int eval, const UTF8 * const fargs[], int nfargs,
     const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(fp);
@@ -636,7 +636,7 @@ void fun_doing(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
 }
 
 void fun_siteinfo(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor,
-    dbref caller, dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+    dbref caller, dbref enactor, int eval, const UTF8 * const fargs[], int nfargs,
     const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(fp);

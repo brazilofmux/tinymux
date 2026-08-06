@@ -1660,7 +1660,7 @@ extern LIBMUX_API const unsigned int ColorTable[256];
 LIBMUX_API bool parse_rgb(size_t n, const UTF8 *p, RGB &rgb);
 
 LIBMUX_API int FindNearestPaletteEntry(RGB &rgb, bool fColor256);
-LIBMUX_API UTF8 *LettersToBinary(UTF8 *pLetters);
+LIBMUX_API UTF8 *LettersToBinary(const UTF8 *pLetters);
 
 LIBMUX_API UTF8 *convert_to_html(const UTF8 *pString);
 LIBMUX_API UTF8 *convert_color(const UTF8 *pString, bool fNoBleed, bool fColor256);

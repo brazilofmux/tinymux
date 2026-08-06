@@ -1310,7 +1310,7 @@ dbref lookup_player_name(const UTF8 *name, bool &bAlias)
     return thing;
 }
 
-dbref lookup_player(dbref doer, UTF8 *name, bool check_who)
+dbref lookup_player(dbref doer, const UTF8 *name, bool check_who)
 {
     if (string_compare(name, T("me")) == 0)
     {

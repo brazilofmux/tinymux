@@ -31,7 +31,7 @@ extern "C" {
 bool parse_and_get_attrib
 (
     dbref   executor,
-    UTF8   *fargs[],
+    const UTF8 * const fargs[],
     UTF8  **atext,
     dbref  *thing,
     dbref  *paowner,
@@ -341,7 +341,7 @@ FUNCTION(fun_link)
     {
         return;
     }
-    do_link(executor, caller, enactor, eval, 0, 2, fargs[0], fargs[1], nullptr, 0);
+    do_link(executor, caller, enactor, eval, 0, 2, FargCopy(fargs[0]), FargCopy(fargs[1]), nullptr, 0);
 }
 
 FUNCTION(fun_trigger)
@@ -354,7 +354,8 @@ FUNCTION(fun_trigger)
     {
         return;
     }
-    do_trigger(executor, caller, enactor, eval, TRIG_QUIET, fargs[0], fargs+1, nfargs-1, nullptr, 0);
+    FargVec xargs(fargs + 1, nfargs - 1);
+    do_trigger(executor, caller, enactor, eval, TRIG_QUIET, FargCopy(fargs[0]), xargs, xargs.count(), nullptr, 0);
 }
 
 FUNCTION(fun_wipe)
@@ -367,7 +368,7 @@ FUNCTION(fun_wipe)
     {
         return;
     }
-    do_wipe(executor, caller, enactor, eval, 0, fargs[0], nullptr, 0);
+    do_wipe(executor, caller, enactor, eval, 0, FargCopy(fargs[0]), nullptr, 0);
 }
 
 FUNCTION(fun_tel)
@@ -401,7 +402,7 @@ FUNCTION(fun_tel)
         }
     }
 
-    do_teleport(executor, caller, enactor, eval, key, 2, fargs[0], fargs[1], nullptr, 0);
+    do_teleport(executor, caller, enactor, eval, key, 2, FargCopy(fargs[0]), FargCopy(fargs[1]), nullptr, 0);
 }
 
 FUNCTION(fun_prompt)
@@ -449,7 +450,7 @@ FUNCTION(fun_pemit)
     {
         return;
     }
-    do_pemit_list(executor, PEMIT_PEMIT, false, 0, fargs[0], 0, fargs[1]);
+    do_pemit_list(executor, PEMIT_PEMIT, false, 0, FargCopy(fargs[0]), 0, FargCopy(fargs[1]));
 }
 
 FUNCTION(fun_oemit)
@@ -465,7 +466,7 @@ FUNCTION(fun_oemit)
     {
         return;
     }
-    do_pemit_list(executor, PEMIT_OEMIT, false, 0, fargs[0], 0, fargs[1]);
+    do_pemit_list(executor, PEMIT_OEMIT, false, 0, FargCopy(fargs[0]), 0, FargCopy(fargs[1]));
 }
 
 FUNCTION(fun_emit)
@@ -479,7 +480,7 @@ FUNCTION(fun_emit)
     {
         return;
     }
-    do_say(executor, caller, enactor, 0, SAY_EMIT, fargs[0], nullptr, 0);
+    do_say(executor, caller, enactor, 0, SAY_EMIT, FargCopy(fargs[0]), nullptr, 0);
 }
 
 // ------------------------------------------------------------------------
@@ -503,7 +504,7 @@ FUNCTION(fun_pose)
         return;
     }
 
-    UTF8 *message = fargs[1];
+    const UTF8 *message = fargs[1];
     int key;
 
     // Parse the prefix character the same way do_say handles SAY_PREFIX.
@@ -570,7 +571,7 @@ FUNCTION(fun_pose)
         command = T("pose");
     }
 
-    UTF8 *messageOrig = message;
+    const UTF8 *messageOrig = message;
     UTF8 *messageNew = nullptr;
     if (Controls(executor, target))
     {
@@ -641,7 +642,7 @@ FUNCTION(fun_remit)
     {
         return;
     }
-    do_pemit_single(executor, PEMIT_PEMIT, true, 0, fargs[0], 0, fargs[1]);
+    do_pemit_single(executor, PEMIT_PEMIT, true, 0, FargCopy(fargs[0]), 0, FargCopy(fargs[1]));
 }
 
 FUNCTION(fun_cemit)
@@ -653,7 +654,7 @@ FUNCTION(fun_cemit)
     {
         return;
     }
-    do_cemit(executor, caller, enactor, eval, 0, nfargs, fargs[0], fargs[1], nullptr, 0);
+    do_cemit(executor, caller, enactor, eval, 0, nfargs, FargCopy(fargs[0]), FargCopy(fargs[1]), nullptr, 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -680,7 +681,7 @@ FUNCTION(fun_nspemit)
     if (check_command(executor, T("@pemit"), buff, bufc)) return;
     LBuf nsbuf = LBuf_Src("fun_nspemit");
     build_nospoof_msg(executor, fargs[1], nsbuf, LBUF_SIZE);
-    do_pemit_list(executor, PEMIT_PEMIT, false, 0, fargs[0], 0, nsbuf);
+    do_pemit_list(executor, PEMIT_PEMIT, false, 0, FargCopy(fargs[0]), 0, nsbuf);
 }
 
 FUNCTION(fun_nsemit)
@@ -708,7 +709,7 @@ FUNCTION(fun_nsoemit)
     if (check_command(executor, T("@oemit"), buff, bufc)) return;
     LBuf nsbuf = LBuf_Src("fun_nsoemit");
     build_nospoof_msg(executor, fargs[1], nsbuf, LBUF_SIZE);
-    do_pemit_list(executor, PEMIT_OEMIT, false, 0, fargs[0], 0, nsbuf);
+    do_pemit_list(executor, PEMIT_OEMIT, false, 0, FargCopy(fargs[0]), 0, nsbuf);
 }
 
 FUNCTION(fun_nsremit)
@@ -723,7 +724,7 @@ FUNCTION(fun_nsremit)
     if (check_command(executor, T("@pemit"), buff, bufc)) return;
     LBuf nsbuf = LBuf_Src("fun_nsremit");
     build_nospoof_msg(executor, fargs[1], nsbuf, LBUF_SIZE);
-    do_pemit_single(executor, PEMIT_PEMIT, true, 0, fargs[0], 0, nsbuf);
+    do_pemit_single(executor, PEMIT_PEMIT, true, 0, FargCopy(fargs[0]), 0, nsbuf);
 }
 
 FUNCTION(fun_verb)
@@ -735,8 +736,9 @@ FUNCTION(fun_verb)
     {
         return;
     }
+    FargVec xargs(fargs + 1, nfargs - 1);
     do_verb(executor, caller, enactor, eval, 0,
-        fargs[0], fargs + 1, nfargs - 1, nullptr, 0);
+        FargCopy(fargs[0]), xargs, xargs.count(), nullptr, 0);
 }
 
 // ------------------------------------------------------------------------
@@ -750,7 +752,7 @@ FUNCTION(fun_create)
         return;
     }
 
-    UTF8 *name = fargs[0];
+    const UTF8 *name = fargs[0];
 
     if (!name || !*name)
     {
@@ -935,7 +937,7 @@ FUNCTION(fun_clone)
     bool bValid = false;
     size_t nValidName;
     const UTF8 *pValidName = nullptr;
-    UTF8 *arg2 = (nfargs >= 2) ? fargs[1] : nullptr;
+    const UTF8 *arg2 = (nfargs >= 2) ? fargs[1] : nullptr;
     switch (Typeof(thing))
     {
     case TYPE_THING:
@@ -1055,7 +1057,7 @@ FUNCTION(fun_destroy)
     {
         return;
     }
-    do_destroy(executor, caller, enactor, 0, DEST_ONE, fargs[0], nullptr, 0);
+    do_destroy(executor, caller, enactor, 0, DEST_ONE, FargCopy(fargs[0]), nullptr, 0);
 }
 
 FUNCTION(fun_textfile)
@@ -1092,7 +1094,7 @@ FUNCTION(fun_textfile)
  * fun_set: sets an attribute on an object
  */
 
-static void set_attr_internal(dbref player, dbref thing, int attrnum, UTF8 *attrtext, int key, UTF8 *buff, UTF8 **bufc)
+static void set_attr_internal(dbref player, dbref thing, int attrnum, const UTF8 *attrtext, int key, UTF8 *buff, UTF8 **bufc)
 {
     if (!Good_obj(thing))
     {
@@ -1150,7 +1152,7 @@ FUNCTION(fun_set)
         if (  pattr
            && See_attr(executor, thing, pattr))
         {
-            UTF8 *flagname = fargs[1];
+            const UTF8 *flagname = fargs[1];
 
             // You must specify a flag name.
             //
@@ -1218,10 +1220,12 @@ FUNCTION(fun_set)
         return;
     }
 
-    // Check for attr set first.
+    // Check for attr set first.  The ':' split scribbles, so work on a
+    // copy of the farg.
     //
+    FargCopy arg1(fargs[1]);
     UTF8 *p;
-    for (p = fargs[1]; *p && *p != ':'; p++)
+    for (p = arg1; *p && *p != ':'; p++)
     {
         ; // Nothing
     }
@@ -1229,7 +1233,7 @@ FUNCTION(fun_set)
     if (*p)
     {
         *p++ = 0;
-        int atr = mkattr(executor, fargs[1]);
+        int atr = mkattr(executor, arg1);
         if (atr <= 0)
         {
             safe_str(S_("#-1 UNABLE TO CREATE ATTRIBUTE"), buff, bufc);
@@ -1281,9 +1285,10 @@ FUNCTION(fun_set)
         return;
     }
 
-    // Set/clear a flag.
+    // Set/clear a flag.  flag_set tokenizes its argument in place, so hand
+    // it the copy (no ':' was found, so arg1 is still the whole farg).
     //
-    flag_set(thing, executor, fargs[1], 0);
+    flag_set(thing, executor, arg1, 0);
 }
 
 FUNCTION(fun_attrib_set)
@@ -1373,7 +1378,7 @@ static size_t GenCode(UTF8 *pCode, size_t nCode, const UTF8 *pCodeASCII)
     return j;
 }
 
-static const UTF8 *crypt_code(UTF8 *code, UTF8 *text, bool type)
+static const UTF8 *crypt_code(const UTF8 *code, const UTF8 *text, bool type)
 {
     if (  !text
        || text[0] == '\0')
@@ -1476,7 +1481,7 @@ FUNCTION(fun_decrypt)
 static void scan_zone
 (
     dbref executor,
-    UTF8 *szZone,
+    const UTF8 *szZone,
     int   ObjectType,
     UTF8 *buff,
     UTF8 **bufc
@@ -1962,7 +1967,8 @@ FUNCTION(fun_columns)
         return;
     }
 
-    UTF8 *cp = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_columns.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     if (!*cp)
     {
         return;
@@ -2124,7 +2130,8 @@ FUNCTION(fun_table)
     SEP sep;
     sep.n = 1;
     sep.str[0] = cDelimiter;
-    UTF8 *pNext = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_table.list");
+    UTF8 *pNext = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     if (!*pNext)
     {
         return;
@@ -2292,7 +2299,7 @@ FUNCTION(fun_playmem)
 // Code for andflags() and orflags() borrowed from PennMUSH 1.50
 // false for orflags, true for andflags
 //
-static bool handle_flaglists(dbref player, UTF8 *name, UTF8 *fstr, bool type)
+static bool handle_flaglists(dbref player, const UTF8 *name, const UTF8 *fstr, bool type)
 {
     dbref it = match_thing_quiet(player, name);
     if (!Good_obj(it))
@@ -2300,7 +2307,7 @@ static bool handle_flaglists(dbref player, UTF8 *name, UTF8 *fstr, bool type)
         return false;
     }
 
-    UTF8 *s;
+    const UTF8 *s;
     UTF8 flagletter[2];
     FLAGSET fset;
     FLAG p_type;
@@ -3194,8 +3201,8 @@ FUNCTION(fun_mailflags)
 // Hasattr (and hasattrp, which is derived from hasattr) borrowed from
 // TinyMUSH 2.2.
 
-static void hasattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[],
-                   bool bCheckParent)
+static void hasattr_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
+                   const UTF8 * const fargs[], bool bCheckParent)
 {
     dbref thing = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(thing))
@@ -3274,8 +3281,8 @@ FUNCTION(fun_hasattrp)
 
 static void default_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
                             dbref caller, dbref enactor, int eval,
-                            UTF8 *fargs[], int nfargs, const UTF8 *cargs[],
-                            int ncargs, int key)
+                            const UTF8 * const fargs[], int nfargs,
+                            const UTF8 *cargs[], int ncargs, int key)
 {
     // Evaluating the first argument.
     //
@@ -3454,7 +3461,7 @@ FUNCTION(fun_isword)
     UNUSED_PARAMETER(ncargs);
 
     bool result;
-    UTF8 *p = fargs[0];
+    const UTF8 *p = fargs[0];
     if ('\0' == p[0])
     {
         result = false;
@@ -3551,7 +3558,8 @@ FUNCTION(fun_elements)
     {
         // Single-char delimiter: use co_words_count + co_extract.
         //
-        UTF8 *bp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_elements.list");
+        UTF8 *bp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         const unsigned char *p = reinterpret_cast<const unsigned char *>(bp);
         size_t slen = strlen(reinterpret_cast<const char *>(p));
         unsigned char delim = static_cast<unsigned char>(sep.str[0]);
@@ -3560,7 +3568,8 @@ FUNCTION(fun_elements)
         size_t nWords = co_words_count(p, slen, delim);
 
         bool bFirst = true;
-        UTF8 *s = trim_space_sep(fargs[1], sepSpace);
+        LBuf scIdx = LBuf_Src("fun_elements.idx");
+        UTF8 *s = trim_space_sep(list_copy_for_split(scIdx, fargs[1]), sepSpace);
 
         do
         {
@@ -3604,7 +3613,8 @@ FUNCTION(fun_elements)
                             sep.n, wstarts, wends, ws.capacity());
 
         bool bFirst = true;
-        UTF8 *s = trim_space_sep(fargs[1], sepSpace);
+        LBuf scIdx = LBuf_Src("fun_elements.idx");
+        UTF8 *s = trim_space_sep(list_copy_for_split(scIdx, fargs[1]), sepSpace);
 
         do
         {
@@ -3694,7 +3704,8 @@ FUNCTION(fun_delextract)
     }
     int iLast = iFirst + nCount - 1;
 
-    UTF8 *bp = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_delextract.list");
+    UTF8 *bp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     bool bFirst = true;
     int pos = 1;
     while (bp)
@@ -3987,7 +3998,8 @@ FUNCTION(fun_caplist)
     CListScratch ls;
     UTF8 **words = ls.a();
     int nWords = 0;
-    UTF8 *bp = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_caplist.list");
+    UTF8 *bp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     while (bp)
     {
         words[nWords++] = split_token(&bp, sep);
@@ -4075,18 +4087,16 @@ FUNCTION(fun_while)
         return;
     }
 
-    // Get the cond attribute (fargs[1]).  Temporarily swap fargs[0].
+    // Get the cond attribute (fargs[1]) via a shifted view of the args.
     //
-    UTF8 *save_farg0 = fargs[0];
-    fargs[0] = fargs[1];
+    const UTF8 *cond_fargs[1] = { fargs[1] };
 
     UTF8 *cond_atext;
     dbref cond_thing;
     dbref cond_aowner;
     int   cond_aflags;
-    bool  bHaveCond = parse_and_get_attrib(executor, fargs, &cond_atext,
+    bool  bHaveCond = parse_and_get_attrib(executor, cond_fargs, &cond_atext,
             &cond_thing, &cond_aowner, &cond_aflags, buff, bufc);
-    fargs[0] = save_farg0;
 
     if (!bHaveCond)
     {
@@ -4101,7 +4111,8 @@ FUNCTION(fun_while)
 
     // Iterate over the list.
     //
-    UTF8 *cp = trim_space_sep(fargs[2], sep);
+    LBuf scList = LBuf_Src("fun_while.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[2]), sep);
     bool bFirst = true;
     while (  cp
           && mudstate.func_invk_ctr < mudconf.func_invk_lim
@@ -4248,21 +4259,30 @@ FUNCTION(fun_subnetmatch)
 
     if (nfargs == 2)
     {
-        // CIDR form: network/bits
+        // CIDR form: network/bits.  Copy the network part out rather than
+        // truncating the farg in place; a valid dotted quad fits easily.
         //
-        UTF8 *slash = (UTF8*)strchr(reinterpret_cast<char*>(fargs[1]), '/');
+        const char *slash = strchr(reinterpret_cast<const char*>(fargs[1]), '/');
         if (!slash)
         {
             safe_str(S_("#-1 INVALID CIDR NOTATION"), buff, bufc);
             return;
         }
-        *slash = '\0';
-        if (inet_pton(AF_INET, reinterpret_cast<const char*>(fargs[1]), &net) != 1)
+        char netpart[INET_ADDRSTRLEN];
+        size_t nNet = slash - reinterpret_cast<const char*>(fargs[1]);
+        if (sizeof(netpart) <= nNet)
         {
             safe_str(S_("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
             return;
         }
-        int64_t bits = mux_atoi64(slash + 1);
+        memcpy(netpart, fargs[1], nNet);
+        netpart[nNet] = '\0';
+        if (inet_pton(AF_INET, netpart, &net) != 1)
+        {
+            safe_str(S_("#-1 INVALID NETWORK ADDRESS"), buff, bufc);
+            return;
+        }
+        int64_t bits = mux_atoi64(reinterpret_cast<const UTF8*>(slash + 1));
         if (bits < 0 || bits > 32)
         {
             safe_str(S_("#-1 INVALID PREFIX LENGTH"), buff, bufc);
@@ -4358,7 +4378,7 @@ FUNCTION(fun_wrapcolumns)
     UTF8 *wp = wrapbuf;
     UTF8 *const wpEnd = wrapbuf + LBUF_SIZE - 1;
 
-    UTF8 *src = fargs[0];
+    const UTF8 *src = fargs[0];
     while (  *src
           && nLines < ls.capacity()
           && wp < wpEnd)

@@ -153,13 +153,13 @@ public:
     virtual MUX_RESULT ForEachPlayerDesc(dbref target,
         void (*callback)(DESC *d, void *context), void *context);
     virtual MUX_RESULT FunHost(dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
         UTF8 **bufc);
     virtual MUX_RESULT FunDoing(dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
         UTF8 **bufc);
     virtual MUX_RESULT FunSiteinfo(dbref executor, dbref caller,
-        dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+        dbref enactor, int eval, const UTF8 * const fargs[], int nfargs,
         UTF8 *buff, UTF8 **bufc);
 
     CScriptConnectionManager(void);
@@ -598,7 +598,7 @@ MUX_RESULT CScriptConnectionManager::ForEachPlayerDesc(dbref target,
 }
 
 MUX_RESULT CScriptConnectionManager::FunHost(dbref executor, dbref caller,
-    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    dbref enactor, int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
     UTF8 **bufc)
 {
     UNUSED_PARAMETER(executor);
@@ -613,7 +613,7 @@ MUX_RESULT CScriptConnectionManager::FunHost(dbref executor, dbref caller,
 }
 
 MUX_RESULT CScriptConnectionManager::FunDoing(dbref executor, dbref caller,
-    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    dbref enactor, int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
     UTF8 **bufc)
 {
     UNUSED_PARAMETER(executor);
@@ -628,7 +628,7 @@ MUX_RESULT CScriptConnectionManager::FunDoing(dbref executor, dbref caller,
 }
 
 MUX_RESULT CScriptConnectionManager::FunSiteinfo(dbref executor, dbref caller,
-    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    dbref enactor, int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
     UTF8 **bufc)
 {
     UNUSED_PARAMETER(executor);

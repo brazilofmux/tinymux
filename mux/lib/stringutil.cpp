@@ -2911,7 +2911,7 @@ static UTF8 *ColorTransitionANSI
     return Buffer;
 }
 
-void LettersToColorState(ColorState &cs, UTF8 *pIn)
+void LettersToColorState(ColorState &cs, const UTF8 *pIn)
 {
     cs = CS_NORMAL;
     bool fBackground = false;
@@ -2969,7 +2969,7 @@ void LettersToColorState(ColorState &cs, UTF8 *pIn)
     }
 }
 
-UTF8 *LettersToBinary(UTF8 *pLetters)
+UTF8 *LettersToBinary(const UTF8 *pLetters)
 {
     size_t n;
     ColorState cs = CS_NORMAL;

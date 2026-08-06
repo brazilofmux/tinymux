@@ -1443,7 +1443,7 @@ static void do_mail_file(dbref player, UTF8 *msglist, UTF8 *folder)
 //
 UTF8 *MakeCanonicalMailAlias
 (
-    UTF8   *pMailAlias,
+    const UTF8 *pMailAlias,
     size_t *pnValidMailAlias,
     bool   *pbValidMailAlias
 )
@@ -1451,7 +1451,7 @@ UTF8 *MakeCanonicalMailAlias
     thread_local UTF8 Buffer[SIZEOF_MALIAS];
     size_t nLeft = sizeof(Buffer)-1;
     UTF8 *q = Buffer;
-    UTF8 *p = pMailAlias;
+    const UTF8 *p = pMailAlias;
 
     if (  !p
        || !mux_isalpha(*p))
@@ -3768,7 +3768,7 @@ static void load_mail_V5(FILE *fp)
 //
 UTF8 *MakeCanonicalMailAliasDesc
 (
-    UTF8   *pMailAliasDesc,
+    const UTF8 *pMailAliasDesc,
     size_t *pnValidMailAliasDesc,
     bool   *pbValidMailAliasDesc,
     size_t *pnVisualWidth
