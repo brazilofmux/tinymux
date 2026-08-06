@@ -2416,6 +2416,32 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // element: one for the element, one for the next offset.  Both are
         // O(element length), so the loop is linear; see rv64_split_token in
         // mux/rv64/src/softlib.c for why that beats one mutating callee.
+        // THE FALLBACK LADDER, and why ITER's differs from MAP/FILTER/FOLD's
+        // (#2155).  This is a deliberate asymmetry, not an oversight:
+        //
+        //   ITER (here):   SPLIT_STEP (int ABI, #2132)
+        //                  -> SPLIT_TOKEN (string ABI — LIVE, blob-compat)
+        //                  -> EXTRACT (the O(n^2) shape)
+        //   MAP/FILTER/    integer trio in the ENTRY GATE
+        //   FOLD:          -> arm does not fire; generic ECALL fallback
+        //
+        // ITER is the core loop every list expression reaches, so it keeps
+        // a graceful middle rung for a blob predating the integer trio.
+        // The M/F/F arms are inline optimizations over an ECALL path that
+        // already exists and stays exercised, so they decline wholesale
+        // rather than carry a second, unexercised emission path per arm —
+        // which is exactly the kind of code that rots.
+        //
+        // The observable consequence of "new engine, old blob" (a state the
+        // two-copy checked-in softlib.rv64 makes reachable by accident):
+        // ITER looks normal while MAP/FILTER/FOLD run correct but ~3-4x
+        // slower with ecalls and tier2 both collapsed to 1 (one generic
+        // ECALL, no guest loop) in rvbench's counters.  That signature —
+        // not elevated ecalls — means a stale blob, not a broken lowering.
+        //
+        // (If you arrived here from `grep SPLIT_TOKEN`: the else-if below
+        // is the only live string-ABI call site in this file; the other
+        // hits are commentary.)
         uint64_t t2step  = tier2_lookup("SPLIT_STEP");
         uint64_t t2split = tier2_lookup("SPLIT_TOKEN");
         int elem;
@@ -2689,8 +2715,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         // Integer-ABI trio (#2152, mechanics from #2132).  Required in the
         // entry gate: with an older blob the arm simply does not fire and
-        // MAP takes its generic ECALL fallback, which is correct — cleaner
-        // than carrying a dual string/int emission path in the arm.
+        // MAP takes its generic ECALL fallback — correct but ~3-4x slower
+        // with ecalls/tier2 both 1; DELIBERATELY without a string-ABI
+        // middle rung; see the fallback-ladder comment at ITER's arm
+        // (#2155) for the asymmetry and the stale-blob signature.
         uint64_t t2split_m  = tier2_lookup("SPLIT_STEP");
         uint64_t t2append_m = tier2_lookup("APPEND_I");
         uint64_t t2blen_m   = tier2_lookup("BYTELEN_I");
@@ -3090,8 +3118,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int nExtra = static_cast<int>(node->children.size()) - 4;
         if (nExtra < 0) nExtra = 0;
 
-        // Integer-ABI trio (#2152); required in the entry gate, same
-        // old-blob degradation story as MAP's arm above.
+        // Integer-ABI trio (#2152); entry-gated — old blob means this arm
+        // declines to the generic ECALL fallback (correct, ~3-4x slower,
+        // ecalls/tier2 both 1; see the fallback-ladder comment at ITER's
+        // arm, #2155).
         uint64_t t2split_f  = tier2_lookup("SPLIT_STEP");
         uint64_t t2append_f = tier2_lookup("APPEND_I");
         uint64_t t2blen_f   = tier2_lookup("BYTELEN_I");
@@ -3510,8 +3540,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         const bool has_base = (node->children.size() >= 3);
 
-        // Integer-ABI trio (#2153); required in the entry gate, same
-        // old-blob degradation story as MAP's arm above.
+        // Integer-ABI trio (#2153); entry-gated — old blob means this arm
+        // declines to the generic ECALL fallback (correct, ~3-4x slower,
+        // ecalls/tier2 both 1; see the fallback-ladder comment at ITER's
+        // arm, #2155).
         uint64_t t2split_d  = tier2_lookup("SPLIT_STEP");
         uint64_t t2append_d = tier2_lookup("APPEND_I");
         uint64_t t2blen_d   = tier2_lookup("BYTELEN_I");
