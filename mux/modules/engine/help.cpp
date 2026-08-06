@@ -229,7 +229,7 @@ void helpindex_init(void)
     helpindex_load(NOTHING);
 }
 
-static const UTF8 *MakeCanonicalTopicName(UTF8 *topic_arg, size_t &nTopic)
+static const UTF8 *MakeCanonicalTopicName(const UTF8 *topic_arg, size_t &nTopic)
 {
     thread_local UTF8 Buffer[LBUF_SIZE];
 
@@ -443,7 +443,7 @@ void do_help(dbref executor, dbref caller, dbref enactor, int eval, int key, UTF
     help_write(executor, message, iHelpfile);
 }
 
-void help_helper(dbref executor, int iHelpfile, UTF8 *topic_arg,
+void help_helper(dbref executor, int iHelpfile, const UTF8 *topic_arg,
     UTF8 *buff, UTF8 **bufc)
 {
     if (!ValidateHelpFileIndex(iHelpfile))

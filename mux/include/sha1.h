@@ -16,7 +16,7 @@
 //
 #define MUX_MAX_DIGEST_LENGTH 64
 
-LIBMUX_API bool mux_sha1_digest(const UTF8 *data[], const size_t lens[], int count,
+LIBMUX_API bool mux_sha1_digest(const UTF8 * const data[], const size_t lens[], int count,
                                 uint8_t *out_digest, unsigned int *out_len);
 
 // Gather-style one-shot digest by algorithm name ("sha1", "sha256", "sha384",

@@ -2580,7 +2580,7 @@ void list_cf_access(dbref player)
 // cf_display: Given a config parameter by name, return its value in some
 // sane fashion.
 //
-void cf_display(dbref player, UTF8 *param_name, UTF8 *buff, UTF8 **bufc)
+void cf_display(dbref player, const UTF8 *param_name, UTF8 *buff, UTF8 **bufc)
 {
     CONFPARM *tp;
 

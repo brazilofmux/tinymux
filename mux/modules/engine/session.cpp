@@ -224,7 +224,7 @@ void check_events(void)
 
 }
 
-UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
+UTF8 *MakeCanonicalDoing(const UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing)
 {
     *pnValidDoing = 0;
     *pbValidDoing = false;

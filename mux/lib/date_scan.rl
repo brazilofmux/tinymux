@@ -1120,7 +1120,7 @@ static bool ConvertWeekDateToLinearTime(CLinearTimeAbsolute &lta, int iYear,
 bool ParseDate
 (
     CLinearTimeAbsolute &lt,
-    UTF8 *pDateString,
+    const UTF8 *pDateString,
     bool *pbZoneSpecified
 )
 {

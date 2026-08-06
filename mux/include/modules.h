@@ -248,7 +248,7 @@ interface mux_IFunction : public mux_IUnknown
 {
 public:
     virtual MUX_RESULT Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, const UTF8 *cargs[], int ncargs) = 0;
+        int eval, const UTF8 * const fargs[], int nfargs, const UTF8 *cargs[], int ncargs) = 0;
 };
 
 interface mux_IFunctionsControl : public mux_IUnknown
@@ -1388,13 +1388,13 @@ public:
     // These write results into buff/bufc in the standard MUX way.
     //
     virtual MUX_RESULT FunHost(dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
         UTF8 **bufc) = 0;
     virtual MUX_RESULT FunDoing(dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
         UTF8 **bufc) = 0;
     virtual MUX_RESULT FunSiteinfo(dbref executor, dbref caller,
-        dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+        dbref enactor, int eval, const UTF8 * const fargs[], int nfargs,
         UTF8 *buff, UTF8 **bufc) = 0;
 };
 

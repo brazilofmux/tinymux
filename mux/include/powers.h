@@ -73,7 +73,7 @@ extern void init_powertab(void);
 extern void display_powertab(dbref);
 extern void power_set(dbref, dbref, UTF8 *, int);
 extern UTF8 *powers_list(dbref executor, dbref thing);
-extern bool has_power(dbref, dbref, UTF8 *);
+extern bool has_power(dbref, dbref, const UTF8 *);
 extern void decompile_powers(dbref, dbref, UTF8 *);
 extern bool decode_power(dbref player, UTF8 *powername, POWERSET *pset);
 

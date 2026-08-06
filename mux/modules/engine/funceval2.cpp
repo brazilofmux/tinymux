@@ -43,7 +43,8 @@ FUNCTION(fun_grab)
 
     // Walk the wordstring, until we find the word we want.
     //
-    UTF8 *s = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_grab.list");
+    UTF8 *s = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     do
     {
         UTF8 *r = split_token(&s, sep);
@@ -70,7 +71,8 @@ FUNCTION(fun_graball)
     }
 
     bool bFirst = true;
-    UTF8 *s = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_graball.list");
+    UTF8 *s = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     do
     {
         UTF8 *r = split_token(&s, sep);
@@ -188,13 +190,9 @@ FUNCTION(fun_shuffle)
     {
         // Single-char delimiter: use co_words_count + co_extract.
         //
-        UTF8 *s = fargs[0];
-        if (' ' == sep.str[0])
-        {
-            s = trim_space_sep(s, sep);
-        }
-        const unsigned char *p = reinterpret_cast<const unsigned char *>(s);
-        size_t slen = strlen(reinterpret_cast<const char *>(p));
+        size_t slen;
+        const unsigned char *p = reinterpret_cast<const unsigned char *>(
+            trim_space_sep_n(fargs[0], sep, &slen));
         unsigned char delim = static_cast<unsigned char>(sep.str[0]);
         unsigned char out_delim = static_cast<unsigned char>(osep.str[0]);
 
@@ -343,8 +341,9 @@ FUNCTION(fun_pickrand)
         return;
     }
 
-    UTF8 *s = trim_space_sep(fargs[0], sep);
-    if (s[0] == '\0')
+    size_t slen;
+    const UTF8 *s = trim_space_sep_n(fargs[0], sep, &slen);
+    if (0 == slen)
     {
         return;
     }
@@ -354,7 +353,6 @@ FUNCTION(fun_pickrand)
         // Single-char delimiter: use co_words_count + co_extract.
         //
         const unsigned char *p = reinterpret_cast<const unsigned char *>(s);
-        size_t slen = strlen(reinterpret_cast<const char *>(s));
         unsigned char delim = static_cast<unsigned char>(sep.str[0]);
 
         size_t n = co_words_count(p, slen, delim);
@@ -378,7 +376,7 @@ FUNCTION(fun_pickrand)
         // #1110: heap-allocate word-boundary tables (was ~512 KiB stack).
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(s);
-        size_t nLen = strlen(reinterpret_cast<const char *>(s));
+        size_t nLen = slen;
         std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145): past-count reads are UB now, not nullptr
         std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145): past-count reads are UB now, not nullptr
         size_t nWords = co_split_words(pData, nLen,
@@ -552,9 +550,8 @@ FUNCTION(fun_last)
         // Single-char delimiter: use co_last.
         // Trim leading/trailing delimiters for space (MUX compresses spaces).
         //
-        UTF8 *bp = (' ' == sep.str[0])
-            ? trim_space_sep(fargs[0], sep) : fargs[0];
-        size_t slen = strlen(reinterpret_cast<const char *>(bp));
+        size_t slen;
+        const UTF8 *bp = trim_space_sep_n(fargs[0], sep, &slen);
         std::vector<unsigned char> out(LBUF_SIZE);
         size_t nOut = co_last(out.data(),
             reinterpret_cast<const unsigned char *>(bp), slen,
@@ -614,9 +611,9 @@ FUNCTION(fun_lrest)
     {
         // Single-char delimiter: use co_extract for words 1..N-1.
         //
-        UTF8 *bp = trim_space_sep(fargs[0], sep);
-        const unsigned char *p = reinterpret_cast<const unsigned char *>(bp);
-        size_t slen = strlen(reinterpret_cast<const char *>(p));
+        size_t slen;
+        const unsigned char *p = reinterpret_cast<const unsigned char *>(
+            trim_space_sep_n(fargs[0], sep, &slen));
         unsigned char delim = static_cast<unsigned char>(sep.str[0]);
 
         size_t nWords = co_words_count(p, slen, delim);
@@ -779,7 +776,8 @@ FUNCTION(fun_matchall)
     // match. If none match, return 0.
     //
     wcount = 1;
-    s = trim_space_sep(fargs[0], sep);
+    LBuf scList = LBuf_Src("fun_matchall.list");
+    s = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
     do
     {
         r = split_token(&s, sep);
@@ -882,9 +880,10 @@ FUNCTION(fun_mix)
     int i;
     int nwords = 0;
     UTF8 *cp[NUM_ENV_VARS];
+    FargVec lists(fargs + 1, lastn);
     for (i = 0; i < lastn; i++)
     {
-        cp[i] = trim_space_sep(fargs[i+1], sep);
+        cp[i] = trim_space_sep(lists[i], sep);
         int twords = countwords(cp[i], sep);
         if (nwords < twords)
         {
@@ -965,7 +964,8 @@ FUNCTION(fun_step)
         return;
     }
 
-    UTF8 *cp = trim_space_sep(fargs[1], isep);
+    LBuf scList = LBuf_Src("fun_step.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[1]), isep);
 
     const UTF8 *os[NUM_ENV_VARS];
     bool bFirst = true;
@@ -1159,11 +1159,6 @@ FUNCTION(fun_munge)
         return;
     }
 
-    // Copy list1 for later evaluation of the attribute (#2157).
-    //
-    LBuf list1 = LBuf_Src("fun_munge.list1");
-    list_copy_for_split(list1, fargs[1]);
-
     // Prepare data structures for a hash table that will map
     // elements of list1 to corresponding elements of list2.
     //
@@ -1181,9 +1176,13 @@ FUNCTION(fun_munge)
 
     // Chop up the lists, converting them into a hash table that
     // maps elements of list1 to corresponding elements of list2.
+    // The tokenizing walks and the offset-based lookups below both use
+    // private copies of the two lists (#2136).
     //
-    UTF8 *p1 = trim_space_sep(fargs[1], sep);
-    UTF8 *p2 = trim_space_sep(fargs[2], sep);
+    LBuf keys = LBuf_Src("fun_munge.keys");
+    UTF8 *p1 = trim_space_sep(list_copy_for_split(keys, fargs[1]), sep);
+    LBuf vals = LBuf_Src("fun_munge.vals");
+    UTF8 *p2 = trim_space_sep(list_copy_for_split(vals, fargs[2]), sep);
     UTF8 *pKey, *pValue;
     for (pKey = split_token(&p1, sep), pValue = split_token(&p2, sep);
          nullptr != pKey && nullptr != pValue;
@@ -1206,8 +1205,8 @@ FUNCTION(fun_munge)
         }
 
         htab[nHashSlot].nHash = static_cast<NHASH>(nHash);
-        htab[nHashSlot].nKeyOffset = static_cast<LBUF_OFFSET>(1 + pKey - fargs[1]);
-        htab[nHashSlot].nValueOffset = static_cast<LBUF_OFFSET>(pValue - fargs[2]);
+        htab[nHashSlot].nKeyOffset = static_cast<LBUF_OFFSET>(1 + (pKey - keys.get()));
+        htab[nHashSlot].nValueOffset = static_cast<LBUF_OFFSET>(pValue - vals.get());
     }
     if (  nullptr != pKey
        || nullptr != pValue)
@@ -1223,8 +1222,11 @@ FUNCTION(fun_munge)
     UTF8 *bp;
     const UTF8 *uargs[2];
 
+    // The walks above tokenized private copies, so fargs[1] is still
+    // pristine and can be %0 directly (this replaces #2157's copy).
+    //
     bp = rlist;
-    uargs[0] = list1;
+    uargs[0] = fargs[1];
     uargs[1] = sep.str;
     mux_exec(atext, LBUF_SIZE-1, rlist, &bp, executor, caller, enactor,
              AttrTrace(aflags, EV_STRIP_CURLY|EV_FCHECK|EV_EVAL), uargs, 2);
@@ -1250,7 +1252,7 @@ FUNCTION(fun_munge)
             while (  0 != htab[nHashSlot].nKeyOffset
                   && (  nHash != htab[nHashSlot].nHash
                      || 0 != strcmp(reinterpret_cast<char *>(result),
-                                    reinterpret_cast<char *>(fargs[1] +
+                                    reinterpret_cast<char *>(keys.get() +
                                      htab[nHashSlot].nKeyOffset - 1))))
             {
                 nHashSlot = htab[nHashSlot].iNext;
@@ -1265,7 +1267,7 @@ FUNCTION(fun_munge)
                 {
                     bFirst = false;
                 }
-                safe_str(fargs[2] + htab[nHashSlot].nValueOffset, buff, bufc);
+                safe_str(vals.get() + htab[nHashSlot].nValueOffset, buff, bufc);
                 // delete from the hash table
                 memcpy(&htab[nHashSlot], &htab[htab[nHashSlot].iNext],
                        sizeof(munge_htab_rec));
@@ -1457,7 +1459,7 @@ static UTF8 aRadixPenn36[] =
 static UTF8 aRadixPenn64[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-static bool mux_Unpack(UTF8 *p, int64_t &val, int iRadixFrom, int iRadixTo, bool fPennBehavior)
+static bool mux_Unpack(const UTF8 *p, int64_t &val, int iRadixFrom, int iRadixTo, bool fPennBehavior)
 {
     if (10 == iRadixFrom)
     {
@@ -1524,7 +1526,7 @@ static bool mux_Unpack(UTF8 *p, int64_t &val, int iRadixFrom, int iRadixTo, bool
     // Validate that string contains only characters from the subset of permitted characters.
     //
     int c;
-    UTF8 *q = p;
+    const UTF8 *q = p;
     while (  '\0' != *q
           && !mux_isspace(*q))
     {
@@ -1801,8 +1803,8 @@ static UTF8 *grep_util(dbref player, dbref thing, const UTF8 *pattern, const UTF
     return tbuf1;
 }
 
-static void grep_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[],
-                   bool bCaseInsens)
+static void grep_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
+                   const UTF8 * const fargs[], bool bCaseInsens)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
@@ -1829,7 +1831,7 @@ static void grep_handler(UTF8 *buff, UTF8 **bufc, dbref executor, UTF8 *fargs[],
         safe_str(S_("#-1 INVALID GREP PATTERN"), buff, bufc);
         return;
     }
-    UTF8 *tp = grep_util(executor, it, fargs[1], fargs[2], strlen(reinterpret_cast<char *>(fargs[2])), bCaseInsens);
+    UTF8 *tp = grep_util(executor, it, fargs[1], fargs[2], strlen(reinterpret_cast<const char *>(fargs[2])), bCaseInsens);
     safe_str(tp, buff, bufc);
     free_lbuf(tp);
 }
@@ -1930,7 +1932,7 @@ static UTF8 *regrep_util(dbref player, dbref thing, const UTF8 *pattern,
 }
 
 static void regrep_handler(UTF8 *buff, UTF8 **bufc, dbref executor,
-    UTF8 *fargs[], bool bCaseInsens)
+    const UTF8 * const fargs[], bool bCaseInsens)
 {
     dbref it = match_thing_quiet(executor, fargs[0]);
     if (!Good_obj(it))
@@ -1995,7 +1997,7 @@ FUNCTION(fun_alphamax)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *amax = fargs[0];
+    const UTF8 *amax = fargs[0];
     LBuf buf_max = LBuf_Src("fun_alphamax");
     mux_strncpy(buf_max, strip_color(amax), LBUF_SIZE-1);
     for (int i = 1; i < nfargs; i++)
@@ -2020,7 +2022,7 @@ FUNCTION(fun_alphamin)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    UTF8 *amin = fargs[0];
+    const UTF8 *amin = fargs[0];
     LBuf buf_min = LBuf_Src("fun_alphamin");
     mux_strncpy(buf_min, strip_color(amin), LBUF_SIZE-1);
     for (int i = 1; i < nfargs; i++)
@@ -2412,7 +2414,7 @@ FUNCTION(fun_regmatchi)
  * instead of a wildcard pattern. The versions ending in i are case-insensitive.
  */
 
-static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 *buff,
+static void real_regrab(const UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 *buff,
                  UTF8 **bufc, bool cis, bool all)
 {
     if (alarm_clock.alarmed)
@@ -2460,7 +2462,8 @@ static void real_regrab(UTF8 *search, const UTF8 *pattern, const SEP &sep, UTF8 
     }
 
     bool first = true;
-    UTF8 *s = trim_space_sep(search, sep);
+    LBuf scList = LBuf_Src("real_regrab.list");
+    UTF8 *s = trim_space_sep(list_copy_for_split(scList, search), sep);
     do
     {
         UTF8 *r = split_token(&s, sep);
@@ -2646,7 +2649,7 @@ static void regedit_substitute(const UTF8 *replacement,
     }
 }
 
-static void real_regedit(UTF8 *fargs[], int nfargs, UTF8 *buff,
+static void real_regedit(const UTF8 * const fargs[], int nfargs, UTF8 *buff,
     UTF8 **bufc, bool cis, bool all)
 {
     if (alarm_clock.alarmed)
@@ -3067,7 +3070,8 @@ FUNCTION(fun_route)
     int options = 0;
     if (nfargs >= 3 && fargs[2] && *fargs[2])
     {
-        UTF8 *opts = trim_space_sep(fargs[2], sepSpace);
+        LBuf scOpts = LBuf_Src("fun_route.opts");
+        UTF8 *opts = trim_space_sep(list_copy_for_split(scOpts, fargs[2]), sepSpace);
         UTF8 *token;
         while (opts && *opts)
         {

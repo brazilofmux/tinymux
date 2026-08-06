@@ -2496,13 +2496,13 @@ static void ensure_comsys_softcode_sync(void)
 
 // Find struct channel entry by name with the channel_name hash table.
 //
-struct channel* select_channel(UTF8* channel_name)
+struct channel* select_channel(const UTF8* channel_name)
 {
     ensure_comsys_softcode_sync();
 
     // Try exact match first.
     //
-    const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
+    const auto channel_name_length = strlen(reinterpret_cast<const char*>(channel_name));
     const vector<UTF8> channel_vector(channel_name, channel_name + channel_name_length);
     const auto it = mudstate.channel_names.find(channel_vector);
     if (it != mudstate.channel_names.end())
@@ -2872,7 +2872,7 @@ void do_destroychannel
         return;
     }
 
-    const auto channel_name_length = strlen(reinterpret_cast<char*>(channel_name));
+    const auto channel_name_length = strlen(reinterpret_cast<const char*>(channel_name));
     const vector<UTF8> channel_name_vector(channel_name, channel_name + channel_name_length);
     const auto it = mudstate.channel_names.find(channel_name_vector);
 
@@ -3176,7 +3176,7 @@ void do_comlist
     for (size_t i = 0; i < c->aliases.size(); i++)
     {
         const UTF8 *chanName = reinterpret_cast<const UTF8 *>(c->aliases[i].channel.c_str());
-        struct comuser* user = select_user(select_channel(const_cast<UTF8 *>(chanName)), executor);
+        struct comuser* user = select_user(select_channel(chanName), executor);
         if (user)
         {
             if (!bWild
@@ -4969,8 +4969,8 @@ FUNCTION(fun_crecall)
     sep.str[1] = '\0';
     if (nfargs >= 3)
     {
-        memcpy(sep.str, fargs[2], strlen(reinterpret_cast<char *>(fargs[2])) + 1);
-        sep.n = strlen(reinterpret_cast<char *>(fargs[2]));
+        memcpy(sep.str, fargs[2], strlen(reinterpret_cast<const char *>(fargs[2])) + 1);
+        sep.n = strlen(reinterpret_cast<const char *>(fargs[2]));
     }
 
     int histnum = ch->num_messages - nLines;

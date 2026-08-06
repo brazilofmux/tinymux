@@ -467,6 +467,12 @@ TryAgain:
 // is unterminated, a nullptr is returned.  The original arglist is destructively
 // modified.
 //
+// `UTF8 *fargs[]` here is CORRECT, not a #2136 straggler: this is the
+// PRODUCER side of the contract.  It allocates the lbufs and writes the
+// pointers into the caller's array, so it owns that memory and must not
+// take it const.  The `const UTF8 * const fargs[]` spelling is for
+// callees; a grep sweep for the old spelling should skip this one.
+//
 void parse_arglist( dbref executor, dbref caller, dbref enactor, UTF8 *dstr,
                      int eval, UTF8 *fargs[], int nfargs,
                      const UTF8 *cargs[], int ncargs, int *nArgsParsed )

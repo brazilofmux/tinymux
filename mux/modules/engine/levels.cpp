@@ -243,7 +243,7 @@ UTF8 *txlevel_description(dbref player, dbref target)
     return buff;
 }
 
-RLEVEL find_rlevel(UTF8 *name)
+RLEVEL find_rlevel(const UTF8 *name)
 {
     for (int i = 0; i < mudconf.no_levels; i++)
     {

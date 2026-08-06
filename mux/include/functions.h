@@ -15,7 +15,7 @@ typedef struct tagFun
 {
     const UTF8 *name;     // function name
     void (*fun)(struct tagFun *fp, UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, const UTF8 *cargs[], int ncargs);  // handler
+        int eval, const UTF8 * const fargs[], int nfargs, const UTF8 *cargs[], int ncargs);  // handler
     int maxArgsParsed;// Maximum number of arguments parsed.
     int minArgs;      // Minimum number of args needed or expected
     int maxArgs;      // Maximum number of arguments permitted
@@ -77,7 +77,7 @@ bool delim_check
     UTF8 *buff, UTF8 **bufc,
     dbref executor, dbref caller, dbref enactor,
     int   eval,
-    UTF8 *fargs[], int nfargs,
+    const UTF8 * const fargs[], int nfargs,
     const UTF8 *cargs[], int ncargs,
     int sep_arg, SEP *sep, int dflags
 );
@@ -103,17 +103,97 @@ int list2arr_nd(UTF8 *arr[], int maxlen, const UTF8 *list, const SEP &sep,
 UTF8 *list_copy_for_split(UTF8 *scratch, const UTF8 *list);
 UTF8 *trim_space_sep(UTF8 *str, const SEP &sep);
 UTF8 *trim_space_sep_LEN(UTF8 *str, size_t nStr, const SEP &sep, size_t *nTrim);
+// Non-destructive counterpart of trim_space_sep for (pointer, length)
+// consumers (#2136): same trimming rule, but reports the trimmed extent
+// instead of writing a NUL into the caller's buffer.
+const UTF8 *trim_space_sep_n(const UTF8 *str, const SEP &sep, size_t *nLen);
 UTF8 *next_token(UTF8 *str, const SEP &sep);
 UTF8 *split_token(UTF8 **sp, const SEP &sep);
-int countwords(UTF8 *str, const SEP &sep);
+int countwords(const UTF8 *str, const SEP &sep);
 
 bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc);
+
+// A writable LBUF-backed copy of one const farg (#2136), for handing to
+// callees that legitimately scribble on their argument text — command
+// handlers (do_link, do_pemit_*, ...) own and mutate the command text in
+// normal operation, and const-poisoning that whole layer would trade one
+// honest copy for hundreds of casts.  RAII; the temporary lives to the
+// end of the full expression, which brackets any synchronous handler.
+// Contrast list_copy_for_split (caller supplies the scratch, list-shaped)
+// — this one is for opaque argument text.
+//
+class FargCopy
+{
+public:
+    explicit FargCopy(const UTF8 *s)
+        : m_p(alloc_lbuf("fargcopy"))
+    {
+        size_t n = s ? strlen(reinterpret_cast<const char *>(s)) : 0;
+        if (LBUF_SIZE - 1 < n)
+        {
+            n = LBUF_SIZE - 1;
+        }
+        if (n)
+        {
+            memcpy(m_p, s, n);
+        }
+        m_p[n] = '\0';
+    }
+    ~FargCopy() { free_lbuf(m_p); }
+    FargCopy(const FargCopy &) = delete;
+    FargCopy &operator=(const FargCopy &) = delete;
+    operator UTF8 *() { return m_p; }
+private:
+    UTF8 *m_p;
+};
+
+// The argv counterpart of FargCopy, for CS_ARGV-style handlers
+// (do_trigger, do_verb) whose args[] parameter is handler-owned text.
+//
+class FargVec
+{
+public:
+    FargVec(const UTF8 * const fargs[], int n)
+    {
+        m_n = (n < 0) ? 0 : ((MAX_ARG < n) ? MAX_ARG : n);
+        for (int i = 0; i < m_n; i++)
+        {
+            m_a[i] = alloc_lbuf("fargvec");
+            const UTF8 *s = fargs[i];
+            size_t nLen = s ? strlen(reinterpret_cast<const char *>(s)) : 0;
+            if (LBUF_SIZE - 1 < nLen)
+            {
+                nLen = LBUF_SIZE - 1;
+            }
+            if (nLen)
+            {
+                memcpy(m_a[i], s, nLen);
+            }
+            m_a[i][nLen] = '\0';
+        }
+    }
+    ~FargVec()
+    {
+        for (int i = 0; i < m_n; i++)
+        {
+            free_lbuf(m_a[i]);
+        }
+    }
+    FargVec(const FargVec &) = delete;
+    FargVec &operator=(const FargVec &) = delete;
+    operator UTF8 **() { return m_a; }
+    UTF8 *operator[](int i) { return m_a[i]; }
+    int count() const { return m_n; }
+private:
+    UTF8 *m_a[MAX_ARG];
+    int m_n;
+};
 
 // This is the prototype for functions
 //
 #define FUNCTION(x) \
     void x(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller,  dbref enactor, int eval, \
-         UTF8 *fargs[], int nfargs,  const UTF8 *cargs[], int ncargs)
+         const UTF8 * const fargs[], int nfargs,  const UTF8 *cargs[], int ncargs)
 
 // This is for functions that take an optional delimiter character.
 //
@@ -122,7 +202,7 @@ bool check_command(dbref player, const UTF8 *name, UTF8 *buff, UTF8 **bufc);
         fargs, nfargs, cargs, ncargs, (iSep), &(Sep), (dflags))
 
 #define XFUNCTION(x) void x(FUN *fp, UTF8 *buff, UTF8 **bufc, dbref executor, dbref caller, dbref enactor, \
-    int eval, UTF8 *fargs[], int nfargs, const UTF8 *cargs[], int ncargs)
+    int eval, const UTF8 * const fargs[], int nfargs, const UTF8 *cargs[], int ncargs)
 
 // Interface for adding additional hardcode functions.
 //

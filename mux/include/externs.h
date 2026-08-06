@@ -366,7 +366,7 @@ bool make_canonical_IPv4(const UTF8 *str, in_addr_t *pnIP);
 int  cf_read(void);
 void cf_init(void);
 void cf_list(dbref, UTF8 *, UTF8 **);
-void cf_display(dbref, UTF8 *, UTF8 *, UTF8 **);
+void cf_display(dbref, const UTF8 *, UTF8 *, UTF8 **);
 void list_cf_access(dbref);
 CF_HAND(cf_access);
 CF_HAND(cf_cmd_alias);
@@ -398,14 +398,14 @@ int  dump_mail(FILE *);
 struct mail *mail_fetch(dbref, int);
 UTF8 *MakeCanonicalMailAlias
 (
-    UTF8   *pMailAlias,
+    const UTF8 *pMailAlias,
     size_t *pnValidMailAlias,
     bool   *pbValidMailAlias
 );
 
 UTF8 *MakeCanonicalMailAliasDesc
 (
-    UTF8   *pMailAliasDesc,
+    const UTF8 *pMailAliasDesc,
     size_t *pnValidMailAliasDesc,
     bool   *pbValidMailAliasDesc,
     size_t *pnVisualWidth
@@ -428,7 +428,7 @@ void do_startslave(dbref executor, dbref caller, dbref enactor, int eval, int ke
 void init_logout_cmdtab(void);
 void desc_reload(dbref);
 void make_portlist(dbref, dbref, UTF8 *, UTF8 **);
-UTF8 *MakeCanonicalDoing(UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing);
+UTF8 *MakeCanonicalDoing(const UTF8 *pDoing, size_t *pnValidDoing, bool *pbValidDoing);
 LBUF_OFFSET trimmed_name(dbref player, UTF8 cbuff[MBUF_SIZE], LBUF_OFFSET nMin, LBUF_OFFSET nMax, LBUF_OFFSET nPad);
 
 /* From cque.cpp */
@@ -684,7 +684,7 @@ bool add_player_name(dbref player, const UTF8 *name, bool bAlias);
 bool delete_player_name(dbref player, const UTF8 *name, bool bAlias);
 void delete_all_player_names();
 dbref lookup_player_name(const UTF8 *name, bool &bAlias);
-dbref lookup_player(dbref doer, UTF8 *name, bool check_who);
+dbref lookup_player(dbref doer, const UTF8 *name, bool check_who);
 void load_player_names(void);
 void badname_add(UTF8 *);
 void badname_remove(UTF8 *);
@@ -716,7 +716,7 @@ UTF8 *MakeCanonicalExitName(const UTF8 *pName, size_t *pnName, bool *pbValid);
 bool ValidatePlayerName(const UTF8 *pName);
 bool ok_password(const UTF8 *szPassword, const UTF8 **pmsg);
 void handle_ears(dbref, bool, bool);
-dbref match_possessed(dbref, dbref, UTF8 *, dbref, bool);
+dbref match_possessed(dbref, dbref, const UTF8 *, dbref, bool);
 void parse_range(UTF8 **, dbref *, dbref *);
 bool parse_thing_slash(dbref, const UTF8 *, const UTF8 **, dbref *);
 bool get_obj_and_lock(dbref, const UTF8 *, dbref *, ATTR **, UTF8 *, UTF8 **);
@@ -771,7 +771,7 @@ BOOLEXP *parse_boolexp(dbref, const UTF8 *, bool);
 bool eval_boolexp_atr(dbref, dbref, dbref, UTF8 *);
 
 /* From functions.cpp */
-bool xlate(UTF8 *);
+bool xlate(const UTF8 *);
 
 /* From unparse.cpp */
 UTF8 *unparse_boolexp(dbref, BOOLEXP *);
@@ -1704,7 +1704,7 @@ UTF8 *modSpeech(dbref player, const UTF8 *message, bool bWhich, const UTF8 *comm
 
 // From funceval.cpp
 //
-bool parse_and_get_attrib(dbref, UTF8 *[], UTF8 **, dbref *, dbref *, int *, UTF8 *, UTF8 **);
+bool parse_and_get_attrib(dbref, const UTF8 * const [], UTF8 **, dbref *, dbref *, int *, UTF8 *, UTF8 **);
 
 // Engine-side factory classes are internal to engine.so.  Their
 // declarations live in engine_com.cpp and log.cpp respectively.

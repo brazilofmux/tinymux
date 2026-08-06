@@ -298,13 +298,13 @@ public:
     virtual MUX_RESULT ForEachPlayerDesc(dbref target,
         void (*callback)(DESC *d, void *context), void *context);
     virtual MUX_RESULT FunHost(dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
         UTF8 **bufc);
     virtual MUX_RESULT FunDoing(dbref executor, dbref caller, dbref enactor,
-        int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+        int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
         UTF8 **bufc);
     virtual MUX_RESULT FunSiteinfo(dbref executor, dbref caller,
-        dbref enactor, int eval, UTF8 *fargs[], int nfargs,
+        dbref enactor, int eval, const UTF8 * const fargs[], int nfargs,
         UTF8 *buff, UTF8 **bufc);
 
     CConnectionManager(void);
@@ -731,7 +731,7 @@ MUX_RESULT CConnectionManager::ForEachPlayerDesc(dbref target,
 }
 
 MUX_RESULT CConnectionManager::FunHost(dbref executor, dbref caller,
-    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    dbref enactor, int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
     UTF8 **bufc)
 {
     fun_host(nullptr, buff, bufc, executor, caller, enactor, eval,
@@ -740,7 +740,7 @@ MUX_RESULT CConnectionManager::FunHost(dbref executor, dbref caller,
 }
 
 MUX_RESULT CConnectionManager::FunDoing(dbref executor, dbref caller,
-    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    dbref enactor, int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
     UTF8 **bufc)
 {
     fun_doing(nullptr, buff, bufc, executor, caller, enactor, eval,
@@ -749,7 +749,7 @@ MUX_RESULT CConnectionManager::FunDoing(dbref executor, dbref caller,
 }
 
 MUX_RESULT CConnectionManager::FunSiteinfo(dbref executor, dbref caller,
-    dbref enactor, int eval, UTF8 *fargs[], int nfargs, UTF8 *buff,
+    dbref enactor, int eval, const UTF8 * const fargs[], int nfargs, UTF8 *buff,
     UTF8 **bufc)
 {
     fun_siteinfo(nullptr, buff, bufc, executor, caller, enactor, eval,

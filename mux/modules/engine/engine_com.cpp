@@ -2804,12 +2804,7 @@ MUX_RESULT CHelpSystem::LookupTopic(dbref executor, int iHelpfile,
     LBuf buff = LBuf_Src("CHelpSystem.LookupTopic");
     UTF8 *bufc = buff.get();
 
-    // help_helper expects a mutable topic argument.
-    //
-    LBuf topic_buf = LBuf_Src("LookupTopic");
-    mux_strncpy(topic_buf, pTopic, LBUF_SIZE - 1);
-
-    help_helper(executor, iHelpfile, topic_buf, buff, &bufc);
+    help_helper(executor, iHelpfile, pTopic, buff, &bufc);
     *bufc = '\0';
 
     size_t nLen = bufc - buff;

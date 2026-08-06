@@ -154,7 +154,7 @@ void display_powertab(dbref player)
     notify(player, buf);
 }
 
-static POWERENT *find_power(dbref thing, UTF8 *powername)
+static POWERENT *find_power(dbref thing, const UTF8 *powername)
 {
     UNUSED_PARAMETER(thing);
 
@@ -291,7 +291,7 @@ void power_set(dbref target, dbref player, UTF8 *power, int key)
  * has_power: does object have power visible to player?
  */
 
-bool has_power(dbref player, dbref it, UTF8 *powername)
+bool has_power(dbref player, dbref it, const UTF8 *powername)
 {
     POWERENT *fp = find_power(it, powername);
     if (!fp)

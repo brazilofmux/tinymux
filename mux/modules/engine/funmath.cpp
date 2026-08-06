@@ -85,7 +85,8 @@ FUNCTION(fun_ladd)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_ladd.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (  cp
               && n < MAX_WORDS)
         {
@@ -357,7 +358,7 @@ FUNCTION(fun_eq)
     }
     else
     {
-        if (strcmp(reinterpret_cast<char *>(fargs[0]), reinterpret_cast<char *>(fargs[1])) != 0)
+        if (strcmp(reinterpret_cast<const char *>(fargs[0]), reinterpret_cast<const char *>(fargs[1])) != 0)
         {
             double a = mux_atof(fargs[0]);
             double b = mux_atof(fargs[1]);
@@ -390,7 +391,7 @@ FUNCTION(fun_neq)
     }
     else
     {
-        if (strcmp(reinterpret_cast<char *>(fargs[0]), reinterpret_cast<char *>(fargs[1])) != 0)
+        if (strcmp(reinterpret_cast<const char *>(fargs[0]), reinterpret_cast<const char *>(fargs[1])) != 0)
         {
             double a = mux_atof(fargs[0]);
             double b = mux_atof(fargs[1]);
@@ -446,7 +447,8 @@ FUNCTION(fun_lmax)
         }
 
         int n = 0;
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lmax.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (nullptr != cp)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -502,7 +504,8 @@ FUNCTION(fun_lmin)
         }
 
         int n = 0;
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lmin.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (nullptr != cp)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -535,7 +538,8 @@ FUNCTION(fun_lmath)
     }
 
     int n = 0;
-    UTF8 *cp = trim_space_sep(fargs[1], sep);
+    LBuf scList = LBuf_Src("fun_lmath.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[1]), sep);
     while (  cp
           && n < MAX_WORDS)
     {
@@ -549,7 +553,7 @@ FUNCTION(fun_lmath)
         return;
     }
 
-    UTF8 *op = fargs[0];
+    const UTF8 *op = fargs[0];
 
     if (  mux_stricmp(op, T("add")) == 0
        || mux_stricmp(op, T("sum")) == 0)
@@ -698,7 +702,8 @@ FUNCTION(fun_limath)
     //
     std::vector<int64_t> vals;
     vals.reserve(64);
-    UTF8 *cp = trim_space_sep(fargs[1], sep);
+    LBuf scList = LBuf_Src("fun_limath.list");
+    UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[1]), sep);
     while (cp)
     {
         if (static_cast<int>(vals.size()) >= MAX_WORDS)
@@ -722,7 +727,7 @@ FUNCTION(fun_limath)
         return;
     }
 
-    UTF8 *op = fargs[0];
+    const UTF8 *op = fargs[0];
 
     if (  mux_stricmp(op, T("add")) == 0
        || mux_stricmp(op, T("sum")) == 0)
@@ -1342,7 +1347,7 @@ FUNCTION(fun_dist3d)
 
 static void handle_vectors
 (
-    UTF8 *vecarg1, UTF8 *vecarg2, UTF8 *buff, UTF8 **bufc,
+    const UTF8 *vecarg1, const UTF8 *vecarg2, UTF8 *buff, UTF8 **bufc,
     const SEP &sep, const SEP &osep, int flag
 )
 {
@@ -3207,7 +3212,8 @@ FUNCTION(fun_land)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lbool.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (cp && bValue)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -3235,7 +3241,8 @@ FUNCTION(fun_lor)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lbool.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (cp && !bValue)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -3263,7 +3270,8 @@ FUNCTION(fun_lxor)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lbool.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (cp)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -3292,7 +3300,8 @@ FUNCTION(fun_lband)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lbool.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (cp)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -3325,7 +3334,8 @@ FUNCTION(fun_lbor)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lbool.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (cp)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -3358,7 +3368,8 @@ FUNCTION(fun_lbxor)
             return;
         }
 
-        UTF8 *cp = trim_space_sep(fargs[0], sep);
+        LBuf scList = LBuf_Src("fun_lbool.list");
+        UTF8 *cp = trim_space_sep(list_copy_for_split(scList, fargs[0]), sep);
         while (cp)
         {
             UTF8 *curr = split_token(&cp, sep);
@@ -3483,7 +3494,7 @@ FUNCTION(fun_crc32)
     uint32_t ulCRC32 = 0;
     for (int i = 0; i < nfargs; i++)
     {
-        size_t n = strlen(reinterpret_cast<char *>(fargs[i]));
+        size_t n = strlen(reinterpret_cast<const char *>(fargs[i]));
         ulCRC32 = CRC32_ProcessBuffer(ulCRC32, fargs[i], n);
     }
     safe_i64toa(ulCRC32, buff, bufc);
@@ -3505,7 +3516,7 @@ void safe_hex(uint8_t md[], size_t len, bool bUpper, UTF8 *buff, UTF8 **bufc)
     safe_str(buf.data(), buff, bufc);
 }
 
-void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
+void sha1_helper(int nfargs, const UTF8 * const fargs[], UTF8 *buff, UTF8 **bufc)
 {
 #ifdef UNIX_DIGEST
     uint8_t md[EVP_MAX_MD_SIZE];
@@ -3518,7 +3529,7 @@ void sha1_helper(int nfargs, UTF8 *fargs[], UTF8 *buff, UTF8 **bufc)
     {
         lens[i] = strlen(reinterpret_cast<const char *>(fargs[i]));
     }
-    if (!mux_sha1_digest(const_cast<const UTF8 **>(fargs), lens.data(), nfargs, md, &len))
+    if (!mux_sha1_digest(fargs, lens.data(), nfargs, md, &len))
     {
         safe_str(S_("#-1 UNSUPPORTED"), buff, bufc);
         return;

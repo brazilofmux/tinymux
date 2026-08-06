@@ -3454,13 +3454,13 @@ bool run_cached_program(compiled_program *prog,
     // pool is read-only and frame-relative fargs entries are re-patched by
     // the program's own code on every run.
     //
-    // "Read-only" here RESTS ON #2135 (Kagura's #2139 review): destructive
-    // callees used to tokenize fargs pointers in place, writing straight
-    // into the pools (#2128), and this very skip is what made that
-    // corruption permanent instead of one-run.  #2135's ECALL argument
-    // copy (its `ptr < CARGS_BASE` predicate covers every slot range) is
-    // the invariant this optimization depends on; narrowing that predicate
-    // reintroduces silent corruption here.
+    // "Read-only" here rests on the #2136 const-fargs contract: FUNCTION
+    // bodies take `const UTF8 * const fargs[]`, so an ECALL callee cannot
+    // tokenize the pool constants it is handed (that corruption was #2128,
+    // and this very skip is what made it permanent instead of one-run).
+    // #2135's per-call argument copy used to shield this; the contract
+    // replaced it, and the compiler now enforces what the copy papered
+    // over.
     if (vm->buffer_program_id != prog->program_id) {
         materialize_data(vm, *prog);
     }
@@ -3748,83 +3748,24 @@ private:
 // conventions for arguments and the result.
 //
 
-// Is a guest address in a region that OUTLIVES this ECALL? (#2128)
+// ECALL arguments are guest-memory pointers handed to callees DIRECTLY,
+// including pointers into regions that outlive the call (pooled string
+// constants, blob rodata, code-embedded constants below CARGS_BASE).
 //
-// MUX builtins may destructively tokenize their arguments: split_token()
-// writes terminating NULs in place, and the interpreter relies on that,
-// handing every callee a fresh evaluation buffer it owns outright.  The
-// compiled route passes pointers straight into guest memory, so an argument
-// living in a PERSISTENT region -- a pooled string constant, blob rodata, a
-// constant embedded in program code -- is scribbled on permanently.  The
-// cached program's own constant is destroyed, and every later evaluation of
-// that program reads the truncated value: first run right, all later runs
-// wrong, no error, no counter.
+// That is safe because of the #2136 const-fargs contract: FUNCTION/
+// XFUNCTION bodies take `const UTF8 * const fargs[]`, so a builtin cannot
+// tokenize or otherwise scribble on its argument text — the compiler
+// enforces it, and the campaign's conversion left zero const_casts in
+// function bodies.  Handlers that legitimately mutate text (do_link,
+// do_trigger, ...) receive FargCopy/FargVec copies made by their wrappers.
+// The ufun path hands the pointers to mux_exec as cargs, which have the
+// same const contract.
 //
-// Everything below CARGS_BASE is compile-time data that outlives the call,
-// across BOTH arenas:
-//
-//   0x00000-0x10000  one-shot CODE / FARGS / STR   (materialized per program)
-//   0x10000-0x40000  Tier 2 blob                   (installed once)
-//   0x40000-0x60000  shared-heap string pool       (persistent by design)
-//   0x60000-0x68000  shared-heap fargs pool        (likewise)
-//
-// Everything at or above CARGS_BASE is rebuilt every evaluation --
-// run_cached_program repopulates CARGS/SUBST, clears the output slots, and
-// the heap cursor resets per eval -- so those need no copy and the JIT keeps
-// its advantage of not materializing computed arguments.
-//
-// The shared-heap half is the one that bites: a nested u() runs at depth > 1
-// on the shared heap, whose pools persist across evaluations by design, so
-// its constants are the ones a destructive callee turns into permanent
-// garbage.  Bounding this at BLOB_LIMIT instead misses them by 0x38 bytes.
-//
-// True for the JIT's own ABI helpers, which are registered `_`-prefixed and
-// CA_GOD and take guest pointers rather than string values (#2128).
-//
-static inline bool jit_internal_abi_fn(const FUN *fp)
-{
-    return nullptr != fp && nullptr != fp->name && '_' == fp->name[0];
-}
-
-static inline bool guest_addr_outlives_ecall(uint64_t ptr)
-{
-    return ptr < rv_compiler::CARGS_BASE;
-}
-
-// Copy one ECALL argument out of persistent guest memory so a destructive
-// callee cannot corrupt it (#2128).  Returns the pointer the callee should
-// see.  `copies` owns the scratch for the duration of the call, so nested
-// ECALLs each get their own and cannot invalidate an outer frame's args.
-//
-static UTF8 *ecall_arg_or_copy(eval_ctx *ec, uint64_t ptr, size_t slen,
-                               std::vector<LBuf> &copies, bool wants_guest_ptr)
-{
-    UTF8 *direct = ec->memory + ptr;
-    if (wants_guest_ptr) {
-        // JIT-internal helpers (the `_`-prefixed, CA_GOD entries: _WRITE_CARG,
-        // _SAVE_CARGS, _RESTORE_CARGS) take a guest POINTER by address rather
-        // than a string by value -- fun__write_carg converts fargs[1] back to
-        // a guest address with `fargs[1] - ec->memory` and rejects anything
-        // outside the guest image.  A host-side copy fails that check, the
-        // carg is silently never written, and every %0/%1 arrives empty.
-        // They are the JIT's own ABI, not softcode, and never tokenize.
-        //
-        return direct;
-    }
-    if (!guest_addr_outlives_ecall(ptr)) {
-        return direct;
-    }
-    if (slen >= LBUF_SIZE) {
-        // Cannot honour the contract in one LBUF.  Unreachable for a pooled
-        // constant, whose whole pool is one LBUF; pass through rather than
-        // fail the call.
-        return direct;
-    }
-    copies.emplace_back(LBuf_Src("ecall.argcopy"));
-    UTF8 *dst = copies.back().get();
-    memcpy(dst, direct, slen + 1);
-    return dst;
-}
+// History: before #2136 this file copied every below-CARGS_BASE argument
+// into an LBuf per call (#2135, after #2128's silent pool corruption:
+// first run right, all later runs wrong).  The copy and its
+// `ptr < CARGS_BASE` predicate are gone — deleting them, not the const
+// keywords, was the campaign's payoff.
 
 static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
                              uint64_t fargs_addr, int nfargs,
@@ -3879,10 +3820,8 @@ static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
     if (nfargs > MAX_ARG) nfargs = MAX_ARG;
     if (nfargs < 0) nfargs = 0;
 
-    UTF8 *fargs[MAX_ARG];
+    const UTF8 *fargs[MAX_ARG];
     memset(fargs, 0, sizeof(fargs));
-    std::vector<LBuf> argcopies;                 // (#2128) outlives the call
-    argcopies.reserve(static_cast<size_t>(nfargs));
     uint64_t frame_top = ctx->x[8];  // s0 = frame pointer
     for (int i = 0; i < nfargs; i++) {
         uint64_t ptr = 0;
@@ -3893,12 +3832,14 @@ static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
         if (rv_compiler::is_output_frame_ref(ptr)) {
             ptr = rv_compiler::resolve_output_addr(ptr, frame_top);
         }
+        // Bounds-validate the guest C string even though the length itself
+        // is no longer needed for a copy.
         size_t slen = 0;
         if (!guest_strnlen(ec->memory, ec->memory_size, ptr, &slen)) {
             ctx->x[10] = 0;
             return -1;
         }
-        fargs[i] = ecall_arg_or_copy(ec, ptr, slen, argcopies, false);   // (#2128)
+        fargs[i] = ec->memory + ptr;
     }
 
     dbref aowner;
@@ -3929,7 +3870,7 @@ static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
         int feval = ec->eval & ~(EV_TOP | EV_FMAND);
         mux_exec(tbuf, LBUF_SIZE-1, buff, &bufc, obj, ec->executor, ec->enactor,
                  AttrTrace(aflags, feval),
-                 const_cast<const UTF8 **>(fargs), nfargs);
+                 fargs, nfargs);
 
         if (ufp->flags & FN_PRES) {
             restore_global_regs(preserve);
@@ -4055,10 +3996,8 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
         nfargs = fp->maxArgs;
     }
 
-    UTF8 *fargs[MAX_ARG];
+    const UTF8 *fargs[MAX_ARG];
     if (nfargs > MAX_ARG) nfargs = MAX_ARG;
-    std::vector<LBuf> argcopies;                 // (#2128) outlives the call
-    argcopies.reserve(static_cast<size_t>(nfargs));
     uint64_t frame_top = ctx->x[8];  // s0 = frame pointer
     for (int i = 0; i < nfargs; i++) {
         uint64_t ptr = 0;
@@ -4077,8 +4016,10 @@ static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
             ctx->x[10] = 0;
             return -1;
         }
-        fargs[i] = ecall_arg_or_copy(ec, ptr, slen, argcopies,
-                                     jit_internal_abi_fn(fp));   // (#2128)
+        // Direct guest pointer — safe under the #2136 const contract, and
+        // exactly what the `_`-prefixed ABI helpers need (fun__write_carg
+        // converts fargs[1] back to a guest address).
+        fargs[i] = ec->memory + ptr;
     }
 
     LBuf buff = LBuf_Src("eval_ecall");

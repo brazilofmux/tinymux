@@ -455,7 +455,7 @@ void CExp3::Unregistering(void)
 
 MUX_RESULT CExp3::Call(unsigned int nKey, UTF8 *buff, UTF8 **bufc,
                         dbref executor, dbref caller, dbref enactor,
-                        int eval, UTF8 *fargs[], int nfargs,
+                        int eval, const UTF8 * const fargs[], int nfargs,
                         const UTF8 *cargs[], int ncargs)
 {
     UNUSED_PARAMETER(caller);

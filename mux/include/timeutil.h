@@ -101,7 +101,7 @@ public:
     void SetSeconds(UnderlyingTickType arg_tSeconds) noexcept;
 
     //! Set time from seconds string
-    bool SetSecondsString(UTF8* arg_szSeconds);
+    bool SetSecondsString(const UTF8* arg_szSeconds);
 
     //! Set time from fielded time
     bool SetFields(FIELDEDTIME* arg_tStruct);
@@ -343,7 +343,7 @@ inline int64_t i64Mul(int64_t a, int64_t b)
 LIBMUX_API int iMod(int x, int y);
 LIBMUX_API int iFloorDivision(int x, int y);
 LIBMUX_API int64_t i64FloorDivisionMod(int64_t x, int64_t y, int64_t *piMod);
-LIBMUX_API bool ParseDate(CLinearTimeAbsolute &lta, UTF8 *pDateString, bool *pbZoneSpecified);
+LIBMUX_API bool ParseDate(CLinearTimeAbsolute &lta, const UTF8 *pDateString, bool *pbZoneSpecified);
 LIBMUX_API void ParseDecimalSeconds(size_t n, const UTF8 *p, unsigned short *iMilli,
                          unsigned short *iMicro, unsigned short *iNano);
 LIBMUX_API bool isLeapYear(long iYear);
