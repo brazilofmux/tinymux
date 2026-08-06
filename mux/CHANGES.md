@@ -175,6 +175,16 @@ in their sections below.
 
 ## Parser and Expression Evaluation
 
+ - **List builtins no longer zero 128-256 KB of pointers per call** (#2145).
+   `std::vector<T>(n)` value-initializes, so `vadd(1 2 3,4 5 6)` memset a
+   quarter-megabyte of pointer table to hold six of them — ~85% of the
+   function's cost on x86-64, and 4x worse since #1990 grew LBUF_SIZE.
+   `list2arr` writes only what it returns and callers read only that far,
+   so the tables are now uninitialized RAII allocations.  Covers the
+   vector family, `choose`, `ledit`, `sortby`, `setunion`/`setinter`/
+   `setdiff` (the issue's table said `sortkey`, which was already
+   right-sized), and the multi-char-delimiter word-index tables in
+   `shuffle`/`pickrand`/`last`/`lrest`.
  - **The builtin argument contract is becoming non-destructive** (#2136,
    incremental).  Builtins have always been allowed to tokenize their
    arguments in place — `split_token` NULs every separator in the caller's

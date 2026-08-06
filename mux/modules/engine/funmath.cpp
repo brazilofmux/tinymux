@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <climits>
+#include <memory>
 #include <vector>
 
 static const long nMaximums[10] =
@@ -1352,16 +1353,21 @@ static void handle_vectors
         return;
     }
 
-    std::vector<UTF8*> v1((LBUF_SIZE+1)/2);
-    std::vector<UTF8*> v2((LBUF_SIZE+1)/2);
+    // Uninitialized on purpose (#2145): list2arr writes arr[i] only for
+    // i < its return value and nothing reads past it, so value-initializing
+    // 2x 128 KB of pointers per call bought nothing — and was ~170x the
+    // cost of actually splitting a small vector.
+    //
+    std::unique_ptr<UTF8*[]> v1(new UTF8*[(LBUF_SIZE+1)/2]);
+    std::unique_ptr<UTF8*[]> v2(new UTF8*[(LBUF_SIZE+1)/2]);
 
     // Split the lists up, or return if a list is empty.  Non-destructive
     // (#2136): vecarg1/vecarg2 are the caller's fargs, borrowed memory.
     //
     LBuf sc1 = LBuf_Src("handle_vectors.1");
     LBuf sc2 = LBuf_Src("handle_vectors.2");
-    int n = list2arr_nd(v1.data(), (LBUF_SIZE+1)/2, vecarg1, sep, sc1);
-    int m = list2arr_nd(v2.data(), (LBUF_SIZE+1)/2, vecarg2, sep, sc2);
+    int n = list2arr_nd(v1.get(), (LBUF_SIZE+1)/2, vecarg1, sep, sc1);
+    int m = list2arr_nd(v2.get(), (LBUF_SIZE+1)/2, vecarg2, sep, sc2);
 
     // vmul() and vadd() accepts a scalar in the first or second arg,
     // but everything else has to be same-dimensional.
@@ -1673,9 +1679,9 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    std::vector<UTF8*> v1(LBUF_SIZE/2);
+    std::unique_ptr<UTF8*[]> v1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
     LBuf sc = LBuf_Src("fun_vmag.nd");
-    int n = list2arr_nd(v1.data(), LBUF_SIZE/2, fargs[0], sep, sc);
+    int n = list2arr_nd(v1.get(), LBUF_SIZE/2, fargs[0], sep, sc);
 
     // Calculate the magnitude.
     //
@@ -1715,9 +1721,9 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    std::vector<UTF8*> v1(LBUF_SIZE/2);
+    std::unique_ptr<UTF8*[]> v1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
     LBuf sc = LBuf_Src("fun_vunit.nd");
-    int n = list2arr_nd(v1.data(), LBUF_SIZE/2, fargs[0], sep, sc);
+    int n = list2arr_nd(v1.get(), LBUF_SIZE/2, fargs[0], sep, sc);
 
     // Calculate the magnitude.
     //

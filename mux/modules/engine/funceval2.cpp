@@ -15,6 +15,7 @@
 #include "externs.h"
 #include "ast.h"
 
+#include <memory>
 #include <vector>
 
 extern "C" {
@@ -288,10 +289,11 @@ FUNCTION(fun_shuffle)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        std::vector<size_t> wstarts(LBUF_SIZE), wends(LBUF_SIZE);
+        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145)
+        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145)
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts.data(), wends.data(), LBUF_SIZE);
+                            sep.n, wstarts.get(), wends.get(), LBUF_SIZE);
 
         /* Build index array and shuffle via Fisher-Yates. */
         std::vector<LBUF_OFFSET> indices(nWords);
@@ -377,10 +379,11 @@ FUNCTION(fun_pickrand)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(s);
         size_t nLen = strlen(reinterpret_cast<const char *>(s));
-        std::vector<size_t> wstarts(LBUF_SIZE), wends(LBUF_SIZE);
+        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145)
+        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145)
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts.data(), wends.data(), LBUF_SIZE);
+                            sep.n, wstarts.get(), wends.get(), LBUF_SIZE);
         if (nWords > 0)
         {
             LBUF_OFFSET w = static_cast<LBUF_OFFSET>(
@@ -514,15 +517,15 @@ FUNCTION(fun_sortby)
 
     LBuf list = LBuf_Src("fun_sortby");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
-    std::vector<UTF8*> ptrs(LBUF_SIZE / 2);
-    const int nptrs = list2arr(ptrs.data(), LBUF_SIZE / 2, list, sep);
+    std::unique_ptr<UTF8*[]> ptrs(new UTF8*[LBUF_SIZE / 2]);   // uninit (#2145)
+    const int nptrs = list2arr(ptrs.get(), LBUF_SIZE / 2, list, sep);
 
     if (nptrs > 1)
     {
-        mincomp_sort(&ctx, reinterpret_cast<void**>(ptrs.data()), nptrs);
+        mincomp_sort(&ctx, reinterpret_cast<void**>(ptrs.get()), nptrs);
     }
 
-    arr2list(ptrs.data(), nptrs, buff, bufc, osep);
+    arr2list(ptrs.get(), nptrs, buff, bufc, osep);
     free_lbuf(ctx.buff);
     free_lbuf(atext);
 }
@@ -570,10 +573,11 @@ FUNCTION(fun_last)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        std::vector<size_t> ws(LBUF_SIZE), we(LBUF_SIZE);
+        std::unique_ptr<size_t[]> ws(new size_t[LBUF_SIZE]);   // uninit (#2145)
+        std::unique_ptr<size_t[]> we(new size_t[LBUF_SIZE]);   // uninit (#2145)
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, ws.data(), we.data(), LBUF_SIZE);
+                            sep.n, ws.get(), we.get(), LBUF_SIZE);
         if (nWords > 0)
         {
             size_t nb = we[nWords-1] - ws[nWords-1];
@@ -636,10 +640,11 @@ FUNCTION(fun_lrest)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        std::vector<size_t> wstarts(LBUF_SIZE), wends(LBUF_SIZE);
+        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145)
+        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145)
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
-                            sep.n, wstarts.data(), wends.data(), LBUF_SIZE);
+                            sep.n, wstarts.get(), wends.get(), LBUF_SIZE);
         if (nWords > 1)
         {
             size_t nb = wends[0] - wstarts[0];

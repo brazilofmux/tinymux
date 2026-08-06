@@ -16,6 +16,7 @@
 #include "mux_table.h"
 
 
+#include <memory>
 #include <unordered_map>
 
 extern "C" {
@@ -8018,16 +8019,16 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    std::vector<PUTF8> elems(LBUF_SIZE/2);
-    std::vector<PUTF8> weights(LBUF_SIZE/2);
+    std::unique_ptr<PUTF8[]> elems(new PUTF8[LBUF_SIZE/2]);     // uninit (#2145)
+    std::unique_ptr<PUTF8[]> weights(new PUTF8[LBUF_SIZE/2]);   // uninit (#2145)
 
     // Non-destructive (#2136): both lists are borrowed fargs.
     //
     LBuf scElems   = LBuf_Src("fun_choose.elems");
     LBuf scWeights = LBuf_Src("fun_choose.weights");
-    int n_elems   = list2arr_nd(elems.data(), LBUF_SIZE/2, fargs[0], isep,
+    int n_elems   = list2arr_nd(elems.get(), LBUF_SIZE/2, fargs[0], isep,
                                 scElems);
-    int n_weights = list2arr_nd(weights.data(), LBUF_SIZE/2, fargs[1],
+    int n_weights = list2arr_nd(weights.get(), LBUF_SIZE/2, fargs[1],
                                 sepSpace, scWeights);
 
     if (n_elems != n_weights)
@@ -8599,13 +8600,13 @@ static FUNCTION(fun_ledit)
     // all three lists are borrowed fargs; the walk over the original list
     // below tokenizes a private copy too.
     //
-    std::vector<UTF8*> findArr(LBUF_SIZE/2);
-    std::vector<UTF8*> replArr(LBUF_SIZE/2);
+    std::unique_ptr<UTF8*[]> findArr(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
+    std::unique_ptr<UTF8*[]> replArr(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
     LBuf scFind = LBuf_Src("fun_ledit.find");
     LBuf scRepl = LBuf_Src("fun_ledit.repl");
-    int nFind = list2arr_nd(findArr.data(), LBUF_SIZE/2, fargs[1], sep,
+    int nFind = list2arr_nd(findArr.get(), LBUF_SIZE/2, fargs[1], sep,
                             scFind);
-    int nRepl = list2arr_nd(replArr.data(), LBUF_SIZE/2, fargs[2], sep,
+    int nRepl = list2arr_nd(replArr.get(), LBUF_SIZE/2, fargs[2], sep,
                             scRepl);
 
     // Iterate the original list.
@@ -10000,18 +10001,18 @@ static void handle_sets
     const SEP      &osep
 )
 {
-    std::vector<UTF8*> ptrs1(LBUF_SIZE/2);
-    std::vector<UTF8*> ptrs2(LBUF_SIZE/2);
+    std::unique_ptr<UTF8*[]> ptrs1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
+    std::unique_ptr<UTF8*[]> ptrs2(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
 
     int val;
 
     UTF8 *list1 = alloc_lbuf("fun_setunion.1");
     mux_strncpy(list1, fargs[0], LBUF_SIZE-1);
-    int n1 = list2arr(ptrs1.data(), LBUF_SIZE/2, list1, sep);
+    int n1 = list2arr(ptrs1.get(), LBUF_SIZE/2, list1, sep);
 
     UTF8 *list2 = alloc_lbuf("fun_setunion.2");
     mux_strncpy(list2, fargs[1], LBUF_SIZE-1);
-    int n2 = list2arr(ptrs2.data(), LBUF_SIZE/2, list2, sep);
+    int n2 = list2arr(ptrs2.get(), LBUF_SIZE/2, list2, sep);
 
     int sort_type = ASCII_LIST;
     if (5 <= nfargs)
@@ -10057,8 +10058,8 @@ static void handle_sets
         case '\0':
             {
                 AutoDetect ad;
-                ad.ExamineList(n1, ptrs1.data());
-                ad.ExamineList(n2, ptrs2.data());
+                ad.ExamineList(n1, ptrs1.get());
+                ad.ExamineList(n2, ptrs2.get());
                 sort_type = ad.GetType();
             }
             break;
@@ -10066,7 +10067,7 @@ static void handle_sets
     }
 
     SortContext sc1;
-    if (!do_asort_start(&sc1, n1, ptrs1.data(), sort_type))
+    if (!do_asort_start(&sc1, n1, ptrs1.get(), sort_type))
     {
         free_lbuf(list1);
         free_lbuf(list2);
@@ -10074,7 +10075,7 @@ static void handle_sets
     }
 
     SortContext sc2;
-    if (!do_asort_start(&sc2, n2, ptrs2.data(), sort_type))
+    if (!do_asort_start(&sc2, n2, ptrs2.get(), sort_type))
     {
         do_asort_finish(&sc1);
         free_lbuf(list1);
