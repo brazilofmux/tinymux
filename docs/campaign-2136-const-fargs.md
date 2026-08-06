@@ -103,13 +103,18 @@ now tokenizes private copies, so %0 is the pristine farg), engine_com's
   allocator; this is the suite built for exactly this campaign
   (#2149/#2150).  Phase 4 must not merge without a poisoned green run.
 
-## The endgame (phase 4) — do not skip
+## The endgame (phase 4) — DONE, pending the Linux poison leg
 
-When the flip is green: `jit_compiler.cpp`'s #2135 ECALL argument copy and
-its `ptr < CARGS_BASE` predicate become deletable — builtins provably
-cannot scribble, so the compiled route may hand cached memory to ECALLs
-directly.  Delete it, re-run the #2128 reproduction
-(`[words(map(obj/B.CONST,1 2 3))]` three times — must stay `3/3/3`), and
-re-run the poison suite.  That deletion — not the const keywords — is the
-campaign's payoff, and it also removes the fragile-predicate caveat
-documented in run_cached_program (#2140/#2139 review).
+`jit_compiler.cpp`'s #2135 ECALL argument copy, its `ptr < CARGS_BASE`
+predicate (`guest_addr_outlives_ecall`), `ecall_arg_or_copy`, and
+`jit_internal_abi_fn` are deleted — both ECALL paths hand guest memory to
+callees directly, and the fargs arrays are `const UTF8 *` (which also
+removed the mux_exec cast on the ufun path).  The fragile-predicate caveat
+in run_cached_program now cites the const contract instead of the copy.
+The #2128 reproduction is smoke TC013 (map_fn.mux, asserted 3/3/3 three
+times precisely because twice cannot distinguish stable from
+identically-corrupted).
+
+**Do not merge to master until `make test-poison` is green on a Linux box**
+— that suite (#2149/#2150) is the net built for exactly the bug classes
+this campaign's copies could have introduced or removed.
