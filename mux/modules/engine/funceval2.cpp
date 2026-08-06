@@ -2216,7 +2216,11 @@ FUNCTION(fun_lparent)
  * the regexp $1, $2, and $3 become r(0), r(3), and r(5), respectively.
  */
 
-static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registers,
+// `registers` is const since #2144 routed it through list2arr_nd — the
+// compiler now holds what the comment there only asserted (#2157, a
+// down-payment on #2136's const-fargs contract).
+static void real_regmatch(const UTF8 *search, const UTF8 *pattern,
+                          const UTF8 *registers,
                    int nfargs, UTF8 *buff, UTF8 **bufc, bool cis)
 {
     if (alarm_clock.alarmed)
