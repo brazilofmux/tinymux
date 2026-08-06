@@ -57,6 +57,16 @@ release carried the bad state.
 
 ## JIT / DBT Engine
 
+ - **The translated-block cache holds several programs instead of one**
+   (#2129).  Every program switch used to reset the DBT and re-translate —
+   a fixed +22..76us per command that no single-expression benchmark could
+   see, and real command streams are nothing but switches.  Each cached
+   program now materializes into its own 16KB guest code slot (its
+   blob-call JALs re-aimed by the placement delta; everything else in the
+   generated code is already position-free), so the PC-keyed block cache
+   retains all resident programs at once.  Alternating workloads run
+   2-2.8x faster on the measured box; `jit_code_slots 1` restores the old
+   behaviour for A/B measurement.
  - **`map()` and `filter()` have JIT lowerings**, composed from the `iter()`
    loop and the `u()` inline rather than written fresh.
  - **The `u()`-inline permission branch had its arms reversed since it was
