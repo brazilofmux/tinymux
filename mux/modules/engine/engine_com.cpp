@@ -1408,7 +1408,7 @@ MUX_RESULT CObjectInfo::LookupPlayer(dbref executor, const UTF8 *pName,
         *pResult = NOTHING;
         return MUX_E_INVALIDARG;
     }
-    *pResult = lookup_player(executor, const_cast<UTF8 *>(pName), bConnected);
+    *pResult = lookup_player(executor, pName, bConnected);
     return MUX_S_OK;
 }
 
@@ -5504,7 +5504,7 @@ MUX_RESULT CComsysStorage::SetChannelAttr(const UTF8 *channel_name,
         return MUX_E_INVALIDARG;
     }
 
-    struct channel *ch = select_channel(const_cast<UTF8 *>(channel_name));
+    struct channel *ch = select_channel(channel_name);
     if (nullptr == ch || !Good_obj(ch->chan_obj))
     {
         return MUX_E_NOTFOUND;
