@@ -212,6 +212,43 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #13 - a cached compiled program's constants survive re-evaluation
+# (#2128).
+#
+# MUX builtins may destructively tokenize their arguments -- split_token()
+# writes terminating NULs in place, and the interpreter relies on it, handing
+# each callee a fresh evaluation buffer.  The compiled route passed pointers
+# straight into guest memory, so a literal list living in a PERSISTENT region
+# was scribbled on permanently: the shared heap's string pool (0x40000) keeps
+# compiled expressions resident across evaluations by design, so the
+# program's own constant was destroyed and every later evaluation read the
+# truncated value.
+#
+# Signature was 3/1/1 -- first evaluation right, all later ones wrong, no
+# error and no counter.  The NAME form of u() is required: u(#dbref/attr)
+# inlines the body (#2092) and never creates the separate cached program that
+# gets corrupted, so a literal-dbref probe passes while the bug is present.
+#
+# Asserted three times because twice cannot distinguish "stable" from
+# "corrupted identically each run".
+#
+&B.CONST test_map_fn=%0
+-
+&T13.MAP test_map_fn=[words(map(test_map_fn/B.CONST,1 2 3))]
+-
+&tr.tc013 test_map_fn=
+  @if strmatch(
+        [u(test_map_fn/T13.MAP)]/[u(test_map_fn/T13.MAP)]/[u(test_map_fn/T13.MAP)],
+        3/3/3
+      )=
+  {
+    @log smoke=TC013: map literal list survives re-evaluation. Succeeded.
+  },
+  {
+    @log smoke=TC013: map literal list survives re-evaluation. Failed ([u(test_map_fn/T13.MAP)]/[u(test_map_fn/T13.MAP)]/[u(test_map_fn/T13.MAP)] wanted 3/3/3).
+  }
+-
 &tr.done test_map_fn=
   @log smoke=End map function test cases.;
   @notify smoke
