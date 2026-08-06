@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <new>
+#include <string>
 
 // ---------------------------------------------------------------
 // Instruction cache coherency
