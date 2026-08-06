@@ -1493,6 +1493,43 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data);
 static int poc_ecall(rv64_ctx_t *ctx, void *user_data);
 
 struct persistent_vm_t {
+    // Pool layout within THIS arena's image (#2124).
+    //
+    //   code   0x00004 .. 0x10000   bump-allocated, bounded by BLOB_BASE
+    //   blob   0x10000 .. 0x40000   installed once
+    //   str    0x40000 .. 0x48000   (32 KB)
+    //   fargs  0x48000 .. 0x4C000   (16 KB)
+    //
+    // These are deliberately NOT the rv_compiler one-shot constants, which
+    // is what they used to be.  The code heap here bump-allocates upward
+    // from 0x0004 across many compilations, while STR_BASE/FARGS_BASE sit
+    // at 0x8000/0x4000 -- inside the range the code heap grows through.
+    // Nothing bounded that: install_code() wrote unchecked, and
+    // arena_nearly_full() called the code heap's capacity
+    // BLOB_BASE - 0x0004, which is only true once the pools are elsewhere.
+    //
+    // Each arena owns a separate MEM_SIZE image (persistent_vm_t,
+    // shared_heap_t, and each jit_run_vm::buffer), so reusing addresses
+    // ACROSS arenas is free; only overlap within one image matters.  These
+    // sit in the span left unallocated between the blob and LUA_ARRAY,
+    // which is why they can be disjoint without moving anything else.
+    //
+    static constexpr uint64_t PVM_CODE_START  = 0x0004;   // avoid PC=0
+    static constexpr uint64_t PVM_CODE_LIMIT  = rv_compiler::BLOB_BASE;
+    static constexpr uint64_t PVM_STR_BASE    = 0x40000;
+    static constexpr uint64_t PVM_STR_LIMIT   = 0x48000;
+    static constexpr uint64_t PVM_FARGS_BASE  = 0x48000;
+    static constexpr uint64_t PVM_FARGS_LIMIT = 0x4C000;
+
+    static_assert(PVM_CODE_LIMIT <= rv_compiler::BLOB_BASE,
+                  "pvm code heap must not reach the blob");
+    static_assert(PVM_STR_BASE >= rv_compiler::BLOB_LIMIT,
+                  "pvm string pool must sit above the blob");
+    static_assert(PVM_STR_LIMIT == PVM_FARGS_BASE,
+                  "pvm string pool must abut its fargs pool");
+    static_assert(PVM_FARGS_LIMIT <= rv_compiler::LUA_ARRAY_BASE,
+                  "pvm pools must not reach the pinned Lua array region");
+
     std::vector<uint8_t> memory;
     dbt_state_t dbt;
     bool dbt_ready;
@@ -1537,9 +1574,9 @@ struct persistent_vm_t {
         : memory(rv_compiler::MEM_SIZE, 0),
           dbt_ready(false), run_count(0), dbt_buffer_resets(0),
           exec_depth(0), reset_pending(false),
-          code_heap_next(0x0004),  // avoid PC=0 (cache sentinel)
-          str_pool_next(rv_compiler::STR_BASE),
-          fargs_pool_next(rv_compiler::FARGS_BASE),
+          code_heap_next(PVM_CODE_START),  // avoid PC=0 (cache sentinel)
+          str_pool_next(PVM_STR_BASE),
+          fargs_pool_next(PVM_FARGS_BASE),
           out_pool_next(rv_compiler::STACK_TOP - 8),
           worst_out_pool(rv_compiler::STACK_TOP - 8) {}
 
@@ -1563,7 +1600,7 @@ struct persistent_vm_t {
         }
 
         // Bounds check: code heap must not reach blob region.
-        if (code_heap_next >= rv_compiler::BLOB_BASE) {
+        if (code_heap_next >= PVM_CODE_LIMIT) {
             return {0, 0, false};
         }
 
@@ -1575,8 +1612,8 @@ struct persistent_vm_t {
         compiled_program prog = compile_expression(
             expr, len, eval,
             code_heap_next,
-            str_pool_next, rv_compiler::STR_LIMIT,
-            fargs_pool_next, rv_compiler::FARGS_LIMIT,
+            str_pool_next, PVM_STR_LIMIT,
+            fargs_pool_next, PVM_FARGS_LIMIT,
             out_start);
 
         if (!prog.ok) return {0, 0, false};
@@ -1644,6 +1681,13 @@ struct persistent_vm_t {
     //
     uint64_t install_code(const std::vector<uint32_t> &code) {
         uint64_t entry = code_heap_next;
+        // The memcpy below is otherwise unbounded -- it wrote wherever the
+        // cursor pointed, and the only check on this path lived in
+        // compile(), which install_code() does not go through (#2124).
+        //
+        if (entry + code.size() * 4 > PVM_CODE_LIMIT) {
+            return 0;   // 0 is the caller's "no entry" sentinel
+        }
         for (size_t i = 0; i < code.size(); i++) {
             memcpy(memory.data() + entry + i * 4, &code[i], 4);
         }
@@ -1687,6 +1731,14 @@ struct persistent_vm_t {
     // First call uses dbt_run (zeroes ctx); subsequent use dbt_resume.
     //
     int run(uint64_t entry_pc) {
+        // PC=0 is the reserved "no entry" sentinel -- the code heap starts
+        // at PVM_CODE_START precisely to keep 0 free.  install_code() and
+        // compile() both return it on failure, so running it would execute
+        // whatever happens to sit at guest address 0 (#2124).
+        //
+        if (0 == entry_pc) {
+            return -1;
+        }
         // Track that compiled code from this arena is on the stack so a
         // re-entrant compile_attr() does not reclaim the arena out from under
         // a running program. A reclaim requested mid-run is serviced once the
@@ -1754,12 +1806,12 @@ struct persistent_vm_t {
     // True when any arena pool has crossed a 7/8 high-water mark and should be
     // reclaimed before it exhausts.
     bool arena_nearly_full() const {
-        uint64_t code_used  = code_heap_next - 0x0004;
-        uint64_t code_cap   = rv_compiler::BLOB_BASE - 0x0004;
-        uint64_t str_used   = str_pool_next - rv_compiler::STR_BASE;
-        uint64_t str_cap    = rv_compiler::STR_LIMIT - rv_compiler::STR_BASE;
-        uint64_t fargs_used = fargs_pool_next - rv_compiler::FARGS_BASE;
-        uint64_t fargs_cap  = rv_compiler::FARGS_LIMIT - rv_compiler::FARGS_BASE;
+        uint64_t code_used  = code_heap_next - PVM_CODE_START;
+        uint64_t code_cap   = PVM_CODE_LIMIT - PVM_CODE_START;
+        uint64_t str_used   = str_pool_next - PVM_STR_BASE;
+        uint64_t str_cap    = PVM_STR_LIMIT - PVM_STR_BASE;
+        uint64_t fargs_used = fargs_pool_next - PVM_FARGS_BASE;
+        uint64_t fargs_cap  = PVM_FARGS_LIMIT - PVM_FARGS_BASE;
         return code_used  * 8 >= code_cap  * 7
             || str_used   * 8 >= str_cap   * 7
             || fargs_used * 8 >= fargs_cap * 7;
@@ -1774,9 +1826,9 @@ struct persistent_vm_t {
     // run sequence restarts from dbt_run.
     void reset_arena() {
         attr_cache.clear();
-        code_heap_next  = 0x0004;
-        str_pool_next   = rv_compiler::STR_BASE;
-        fargs_pool_next = rv_compiler::FARGS_BASE;
+        code_heap_next  = PVM_CODE_START;
+        str_pool_next   = PVM_STR_BASE;
+        fargs_pool_next = PVM_FARGS_BASE;
         worst_out_pool  = rv_compiler::STACK_TOP - 8;
         reset_pending   = false;
         if (dbt_ready) {
