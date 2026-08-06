@@ -115,6 +115,10 @@ The #2128 reproduction is smoke TC013 (map_fn.mux, asserted 3/3/3 three
 times precisely because twice cannot distinguish stable from
 identically-corrupted).
 
-**Do not merge to master until `make test-poison` is green on a Linux box**
-— that suite (#2149/#2150) is the net built for exactly the bug classes
-this campaign's copies could have introduced or removed.
+The merge gate is CLOSED: all five gates ran green on Kagura
+(Linux/x86-64, both commits built independently, `make test`,
+`make test-poison` 1660/0, `make test-scenario`, and the 35-shape
+cached-program probe at 0 disagreements — catch-verified sensitive on
+master first), and the campaign merged as PR #2164.  The probe is worth
+landing in-tree as a standing target: it is the regression net for the
+whole "builtin scribbles on cached guest memory" class.
