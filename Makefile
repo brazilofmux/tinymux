@@ -10,7 +10,7 @@
 
 # Keep test-lua-jit (added on master after this branch was cut) alongside
 # the new dual-route smoke targets.
-.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-nfc test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-codiff test-codiff-2019 test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-perf test-growth test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
+.PHONY: all install clean realclean test test-buildconfig test-db test-ios test-ganl test-netaddr test-nfc test-digest test-shacrypt test-libmux test-color-ops test-table test-slave test-stubslave-teardown test-hir test-format test-dbt test-alarm test-blob test-codiff test-codiff-2019 test-smoke test-smoke-ast test-smoke-builtin test-comsys-handoff test-comsys-mogrify test-comsys-conformance test-comsys-cmdparity test-scenario test-poison test-perf test-growth test-parity213 test-stress test-jit-qreg test-jit-ifelse test-jit-recursion test-lua-jit test-lua-ecall test-vacuous test-narrowing test-config test-nls test-nls-plural test-nls-runtime test-nls-ko test-asan hooks
 
 # Install git hooks on first build so all developers get protection
 # against accidentally editing generated files.
@@ -676,6 +676,29 @@ test-perf:
 test-growth: install
 	@echo "==> Running algorithmic growth battery"
 	bash tests/growth/run.sh
+
+# Smoke suite against a hostile allocator: every large malloc comes back
+# filled with 0xAA instead of the fresh zeroed pages the kernel usually
+# supplies.  This exists for one bug class -- a read past the count something
+# wrote into a buffer handed over uninitialized (#2145 made eleven list-builtin
+# tables uninitialized by contract, and the #2136 arc keeps touching those
+# functions).  That read is invisible to every other gate here: large
+# allocations are normally zero-filled, so the stale slot reads as zero and
+# behaves exactly like the value-initialized code it replaced, biting only
+# later once the allocator recycles a dirty block.  Measured, the recycled
+# case yields a stale but VALID pointer 199 times in 200 -- silent wrong
+# output, not a crash.  Poisoning makes it a crash.
+#
+# The shim is verified before it is trusted: an injected past-count read must
+# be invisible unpoisoned and fatal poisoned, or the target fails rather than
+# blessing everything (#2133's genre -- an instrument must not return an
+# answer it cannot stand behind).
+#
+# Opt-in, NOT part of `make test`: Linux/glibc only, and it pays a memset on
+# every large allocation.
+test-poison: install
+	@echo "==> Running the smoke suite under a poisoned allocator"
+	bash tests/poison/run.sh
 
 # Live scenario test: the wildcard capture path ($-command %0..%9), which
 # muxscript cannot drive.  Opt-in (NOT part of `make test`) because it spins a
