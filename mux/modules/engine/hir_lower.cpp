@@ -2239,6 +2239,34 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             list_val = h.emit(HIR_FTOA, TY_STRING, list_val);
         }
 
+        // Tier 2's SPLIT_TOKEN matches only the FIRST BYTE of a delimiter
+        // (get_delim, mux/rv64/src/softlib.c), while the interpreter matches
+        // the whole string via DELIM_STRING/strstr.  So a multi-byte
+        // delimiter splits differently on the two routes: iter(a::b,##,::,+)
+        // gives the interpreter's "a+b" but the inline loop's "a++b", three
+        // elements instead of two (#2127).
+        //
+        // MAP/FILTER/FOLD gate this at RUNTIME, because they have an ECALL
+        // fallback arm to send the bad case to.  ITER cannot: its body is
+        // NOEVAL and cannot be lowered as a value, which is why it has no
+        // fallback block.  So it declines the whole lowering here instead,
+        // and the AST evaluator -- which handles NOEVAL correctly -- answers.
+        //
+        // Conservative on purpose: an explicit delimiter must be a literal we
+        // can measure.  A computed one (e.g. [strcat(:,:)]) is unknowable at
+        // compile time, and declining it costs the lowering while guessing
+        // costs a wrong answer.  The overwhelmingly common cases -- no
+        // delimiter at all, or a one-character literal -- keep the lowering.
+        //
+        if (nfargs >= 3) {
+            const ASTNode *dn = node->children[2].get();
+            if (nullptr == dn
+                || dn->type != AST_LITERAL
+                || dn->text.size() > 1) {
+                return -1;
+            }
+        }
+
         // Evaluate delimiters (child[2] = input, child[3] = output).
         int delim_val;
         if (nfargs >= 3) {
@@ -2716,6 +2744,30 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int gate = h.emit(HIR_BAND, TY_INT, perm_ok, ex_ok);
                 h.native_ops++;
 
+                // Tier 2's SPLIT_TOKEN matches only the FIRST BYTE of a
+                // delimiter (get_delim, softlib.c) while the interpreter
+                // matches the whole string, so a multi-byte delimiter splits
+                // differently on the two routes -- map(o/F,a::b,::) yields
+                // three elements inline against the interpreter's two
+                // (#2127).  The delimiter is usually a runtime value, so this
+                // has to be a runtime test; BYTELEN <= 1 sends the rest down
+                // the ECALL fallback, which is interpreter-correct.
+                //
+                // Only the SPLIT needs gating.  The join is already correct:
+                // the divergent "a::::b" is three elements joined by the full
+                // "::", so osep handling is not implicated.
+                {
+                    int dargs[1] = { delim_val };
+                    int dlen = h.emit_call(TY_STRING, 0, dargs, 1);
+                    h.tier2_addr[dlen] = t2blen_m;
+                    h.tier2_calls++;
+                    int dlen_i = h.emit(HIR_ATOI, TY_INT, dlen);
+                    int c2 = h.emit_iconst(2);
+                    int delim_ok = h.emit(HIR_LT, TY_INT, dlen_i, c2);
+                    gate = h.emit(HIR_BAND, TY_INT, gate, delim_ok);
+                    h.native_ops += 2;
+                }
+
                 // Every extra must fit its CARGS slot.
                 int c256 = h.emit_iconst(256);
                 for (int ei = 0; ei < nExtra; ei++) {
@@ -3099,6 +3151,30 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 h.native_ops += 2;
                 int gate = h.emit(HIR_BAND, TY_INT, perm_ok, ex_ok);
                 h.native_ops++;
+
+                // Tier 2's SPLIT_TOKEN matches only the FIRST BYTE of a
+                // delimiter (get_delim, softlib.c) while the interpreter
+                // matches the whole string, so a multi-byte delimiter splits
+                // differently on the two routes -- map(o/F,a::b,::) yields
+                // three elements inline against the interpreter's two
+                // (#2127).  The delimiter is usually a runtime value, so this
+                // has to be a runtime test; BYTELEN <= 1 sends the rest down
+                // the ECALL fallback, which is interpreter-correct.
+                //
+                // Only the SPLIT needs gating.  The join is already correct:
+                // the divergent "a::::b" is three elements joined by the full
+                // "::", so osep handling is not implicated.
+                {
+                    int dargs[1] = { delim_val };
+                    int dlen = h.emit_call(TY_STRING, 0, dargs, 1);
+                    h.tier2_addr[dlen] = t2blen_f;
+                    h.tier2_calls++;
+                    int dlen_i = h.emit(HIR_ATOI, TY_INT, dlen);
+                    int c2 = h.emit_iconst(2);
+                    int delim_ok = h.emit(HIR_LT, TY_INT, dlen_i, c2);
+                    gate = h.emit(HIR_BAND, TY_INT, gate, delim_ok);
+                    h.native_ops += 2;
+                }
 
                 int c256 = h.emit_iconst(256);
                 for (int ei = 0; ei < nExtra; ei++) {
@@ -3512,6 +3588,30 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 h.native_ops += 2;
                 int gate = h.emit(HIR_BAND, TY_INT, perm_ok, ex_ok);
                 h.native_ops++;
+
+                // Tier 2's SPLIT_TOKEN matches only the FIRST BYTE of a
+                // delimiter (get_delim, softlib.c) while the interpreter
+                // matches the whole string, so a multi-byte delimiter splits
+                // differently on the two routes -- map(o/F,a::b,::) yields
+                // three elements inline against the interpreter's two
+                // (#2127).  The delimiter is usually a runtime value, so this
+                // has to be a runtime test; BYTELEN <= 1 sends the rest down
+                // the ECALL fallback, which is interpreter-correct.
+                //
+                // Only the SPLIT needs gating.  The join is already correct:
+                // the divergent "a::::b" is three elements joined by the full
+                // "::", so osep handling is not implicated.
+                {
+                    int dargs[1] = { delim_val };
+                    int dlen = h.emit_call(TY_STRING, 0, dargs, 1);
+                    h.tier2_addr[dlen] = t2blen_d;
+                    h.tier2_calls++;
+                    int dlen_i = h.emit(HIR_ATOI, TY_INT, dlen);
+                    int c2 = h.emit_iconst(2);
+                    int delim_ok = h.emit(HIR_LT, TY_INT, dlen_i, c2);
+                    gate = h.emit(HIR_BAND, TY_INT, gate, delim_ok);
+                    h.native_ops += 2;
+                }
 
                 int c256 = h.emit_iconst(256);
 

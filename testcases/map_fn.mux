@@ -212,6 +212,48 @@
     @trig me/tr.done
   }
 -
+#
+# Test Case #14 - multi-char delimiters agree on every route (#2127).
+#
+# Tier 2's SPLIT_TOKEN matches only the FIRST BYTE of a delimiter (get_delim,
+# mux/rv64/src/softlib.c) while the interpreter matches the whole string via
+# DELIM_STRING/strstr.  So an inline loop lowering split "a::b" on ":" into
+# three elements ("a","","b") where the interpreter gives two, and the two
+# routes returned different values for identical softcode:
+#
+#   map(me/B.E,a::b,::)  -> a::b      (interpreter)
+#   map(#1/B.E,a::b,::)  -> a::::b    (inline loop)
+#
+# MAP/FILTER/FOLD now gate this at runtime -- BYTELEN(delim) < 2, else the
+# ECALL fallback, which is interpreter-correct.  ITER cannot: its body is
+# NOEVAL and cannot be lowered as a value, so it has no fallback arm and
+# declines the whole lowering at compile time instead.
+#
+# The literal-dbref form is required for the inline gate to open at all;
+# me/ never opens it, so a me/-only probe passes while the bug is present.
+# Asserting BOTH spellings against each other is the point of the case.
+#
+&B.E test_map_fn=%0
+-
+# On #1 so the literal-dbref spelling can open the inline gate.  Upload-time
+# commands run as God, which is how jit_route_parity_fn.mux seeds #1 too.
+&B.E2 #1=%0
+-
+&tr.tc014 test_map_fn=
+  @if cand(
+        strmatch(map(test_map_fn/B.E,a::b,::), map(#1/B.E2,a::b,::)),
+        strmatch(map(test_map_fn/B.E,a::b,::), a::b),
+        strmatch(iter(a::b,##,::,+), a+b),
+        strmatch(map(test_map_fn/B.E,a|b,|), map(#1/B.E2,a|b,|)),
+        strmatch(iter(a|b,##,|,+), a+b)
+      )=
+  {
+    @log smoke=TC014: multi-char delimiter route parity. Succeeded.
+  },
+  {
+    @log smoke=TC014: multi-char delimiter route parity. Failed (map_name=[map(test_map_fn/B.E,a::b,::)] map_lit=[map(#1/B.E2,a::b,::)] iter=[iter(a::b,##,::,+)] one_name=[map(test_map_fn/B.E,a|b,|)] one_lit=[map(#1/B.E2,a|b,|)]).
+  }
+-
 &tr.done test_map_fn=
   @log smoke=End map function test cases.;
   @notify smoke
