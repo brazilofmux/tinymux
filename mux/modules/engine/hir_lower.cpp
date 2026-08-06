@@ -2637,9 +2637,13 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     // Gates, compile time: literal #dbref/attr (same constraint as the
     // u()-inline), the attr resolves and parses, not AF_TRACE (fun_map
     // propagates AttrTrace, which only the interpreter can honor), at
-    // most 9 extras (CARGS slots 1..9), and the blob provides
-    // SPLIT_TOKEN/APPEND/BYTELEN.  Anything else falls through to the
-    // ECALL exactly as today.
+    // most 9 extras (CARGS slots 1..9), and the blob provides the
+    // integer trio SPLIT_STEP/APPEND_I/BYTELEN_I (#2152).  Missing any
+    // of those (older softlib.rv64) means the arm never opens and the
+    // call is one generic ECALL — correct, but unlike ITER's three-rung
+    // ladder (int → string → EXTRACT) there is no moderate string-route
+    // middle: that asymmetry is deliberate (no dual emission paths to
+    // rot).  Anything else falls through to the ECALL exactly as today.
     //
     // Gates, runtime (one diamond around the whole loop):
     //   - _CHECK_U_PERM(thing, attr) == 0
