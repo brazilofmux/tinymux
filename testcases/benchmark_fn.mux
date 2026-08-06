@@ -51,11 +51,62 @@
         strmatch(benchmark(add(1,2), add(0,1)), #-1 ITERATIONS MUST BE POSITIVE)
       )=
   {
-    @log smoke=TC003: benchmark() error paths. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC003: benchmark() error paths. Succeeded.
   },
   {
-    @log smoke=TC003: benchmark() error paths. Failed (zero=[benchmark(add(1,2),0)] neg=[benchmark(add(1,2),-5)] noeval=[benchmark(add(1,2),add(0,1))]).;
+    @log smoke=TC003: benchmark() error paths. Failed (zero=[benchmark(add(1,2),0)] neg=[benchmark(add(1,2),-5)] noeval=[benchmark(add(1,2),add(0,1))]).
+  }
+-
+#
+# Test Case #4 - The iteration cap REFUSES; it must not silently clamp.
+#
+# benchmark() returns raw elapsed seconds, so the caller divides by the count
+# it asked for.  A silent clamp therefore does not shrink the experiment, it
+# scales every derived us/call by the clamp ratio with nothing in the output
+# saying so (#2133).  Pin the boundary on both sides: at the cap must still
+# measure, one over must refuse.
+#
+&tr.tc004 test_benchmark_fn=
+  @if cand(
+        gt(setr(0,benchmark(add(1,2), 10000)), 0),
+        strmatch(setr(1,benchmark(add(1,2), 10001)), #-1 ITERATIONS EXCEEDS 10000),
+        strmatch(setr(2,benchmark(add(1,2), 200000)), #-1 ITERATIONS EXCEEDS 10000)
+      )=
+  {
+    @log smoke=TC004: benchmark() refuses above the cap. Succeeded.
+  },
+  {
+    @log smoke=TC004: benchmark() refuses above the cap. Failed (atcap=%q0 over=%q1 wayover=%q2).
+  }
+-
+#
+# Test Case #5 - The optional third argument reports whether the JIT RAN.
+#
+# Every JIT fallback returns the right answer, so a timing that never reached
+# the JIT is indistinguishable from one that did -- which is how a "JIT vs no
+# JIT" comparison can silently be interpreter-vs-interpreter (#2133 item 5).
+# The evidence has to come back WITH the number.  Assert both directions: a
+# shape the JIT handles reports handled==attempts, and one it declines reports
+# handled=0 while still returning a time.
+#
+&tr.tc005 test_benchmark_fn=
+  @if strmatch(setr(0,benchmark(add(1,2),10,1)),* jit_handled=*/10 jit_attempts=*)=
+  {
+    @if cand(
+          strmatch(setr(1,benchmark(add(1,2),10,1)),* jit_handled=10/10 *),
+          strmatch(setr(2,benchmark(citer(a b c,1),10,1)),* jit_handled=0/10 *)
+        )=
+    {
+      @log smoke=TC005: benchmark() reports JIT liveness with the timing. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC005: benchmark() reports JIT liveness with the timing. Failed (handled=%q1 declined=%q2).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC005: benchmark() reports JIT liveness with the timing. Skipped (JIT not enabled: %q0).;
     @trig me/tr.done
   }
 -

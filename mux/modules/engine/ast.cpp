@@ -3144,6 +3144,18 @@ FUNCTION(fun_astbench)
              eval | EV_FMAND | EV_EVAL, nullptr, 0);
     *bufc = entry;
 
+    // #2133: jit_eval() returns whether it HANDLED the expression, and this
+    // discarded it.  A decline is fast -- the gate walks the tree, finds a
+    // shape it cannot lower, and returns -- so an unhandled expression
+    // reported a spectacular jit= time that was the cost of saying no.
+    // citer() read a flat 2.7us at every N, which is absence rendered as
+    // speed, and the field has a standing warning in CLAUDE.md and
+    // tests/growth/README.md telling people not to trust it.
+    //
+    // Count what actually happened instead.  A field that cannot answer
+    // should say so rather than return a number that will be read as one.
+    int nHandled = 0;
+
 #ifdef WIN32
     QueryPerformanceCounter(&pc0);
 #else
@@ -3152,8 +3164,10 @@ FUNCTION(fun_astbench)
     for (int i = 0; i < iterations; i++) {
         LBuf temp = LBuf_Src("astbench_jit");
         UTF8 *tp = temp;
-        jit_eval(expr, nLen, temp, &tp, executor, caller, enactor,
-                 eval | EV_FMAND | EV_EVAL, nullptr, 0);
+        if (jit_eval(expr, nLen, temp, &tp, executor, caller, enactor,
+                     eval | EV_FMAND | EV_EVAL, nullptr, 0)) {
+            nHandled++;
+        }
     }
 #ifdef WIN32
     QueryPerformanceCounter(&pc1);
@@ -3166,6 +3180,7 @@ FUNCTION(fun_astbench)
 #endif
 #else
     double jit_us = 0.0;
+    int nHandled = 0;
 #endif
 
     // Get the result value.
@@ -3176,7 +3191,19 @@ FUNCTION(fun_astbench)
         eval | EV_FCHECK | EV_EVAL, nullptr, 0);
     *rp = '\0';
 
-    double ratio = (jit_us > 0.001) ? ast_us / jit_us : 0.0;
+    // The JIT leg only reports a time if the JIT actually ran the expression
+    // every time it was asked (#2133).  Three distinct outcomes, three
+    // distinct words -- "declined" and "0.03us" must not look alike:
+    //
+    //   handled == iterations   a real measurement
+    //   handled == 0            declined; jit_us is the cost of the decline
+    //   0 < handled < iters     mixed, which is a finding in itself: the
+    //                           verdict changed mid-run, so neither the time
+    //                           nor the decline describes the whole loop
+    //
+    const bool bAllHandled = (iterations > 0 && nHandled == iterations);
+    const bool bNoneHandled = (nHandled == 0);
+    double ratio = (bAllHandled && jit_us > 0.001) ? ast_us / jit_us : 0.0;
 
     // Format floating-point with libc snprintf.  mux_vsnprintf / safe_tprintf
     // only know integer and string conversions — "%.2f" falls through to
@@ -3188,12 +3215,25 @@ FUNCTION(fun_astbench)
     char ratio_buf[32];
     mux_sprintf(reinterpret_cast<UTF8 *>(ast_buf), sizeof(ast_buf),
         T("%.2f"), ast_us);
-    mux_sprintf(reinterpret_cast<UTF8 *>(jit_buf), sizeof(jit_buf),
-        T("%.2f"), jit_us);
-    mux_sprintf(reinterpret_cast<UTF8 *>(ratio_buf), sizeof(ratio_buf),
-        T("%.1f"), ratio);
+    if (bAllHandled) {
+        mux_sprintf(reinterpret_cast<UTF8 *>(jit_buf), sizeof(jit_buf),
+            T("%.2fus"), jit_us);
+    } else if (bNoneHandled) {
+        mux_strncpy(reinterpret_cast<UTF8 *>(jit_buf), T("declined"),
+                    sizeof(jit_buf) - 1);
+    } else {
+        mux_sprintf(reinterpret_cast<UTF8 *>(jit_buf), sizeof(jit_buf),
+            T("mixed(%d/%d)"), nHandled, iterations);
+    }
+    if (bAllHandled) {
+        mux_sprintf(reinterpret_cast<UTF8 *>(ratio_buf), sizeof(ratio_buf),
+            T("%.1fx"), ratio);
+    } else {
+        mux_strncpy(reinterpret_cast<UTF8 *>(ratio_buf), T("n/a"),
+                    sizeof(ratio_buf) - 1);
+    }
 
     safe_tprintf_str(buff, bufc,
-        T("ast=%sus jit=%sus ratio=%sx result=%s"),
+        T("ast=%sus jit=%s ratio=%s result=%s"),
         ast_buf, jit_buf, ratio_buf, result.get());
 }

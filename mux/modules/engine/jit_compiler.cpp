@@ -5566,6 +5566,19 @@ bool jit_eval(const UTF8 *expr, size_t nLen,
 // With argument "reset", clears all counters.
 // ---------------------------------------------------------------
 
+// Sample jit_eval()'s attempt/handled counters (#2133 item 5).
+//
+// A narrow accessor rather than exporting s_jit_stats: functions.cpp cannot
+// include dbt_compile.h (it collides with color_ops.h's C-linkage
+// declarations), and benchmark() needs exactly these two numbers to report
+// whether the JIT actually ran during a timed loop.
+//
+void jit_eval_counters(uint64_t *pAttempts, uint64_t *pHandled)
+{
+    if (nullptr != pAttempts) *pAttempts = s_jit_stats.eval_attempts;
+    if (nullptr != pHandled)  *pHandled  = s_jit_stats.eval_handled;
+}
+
 FUNCTION(fun_jitstats)
 {
     UNUSED_PARAMETER(fp);
