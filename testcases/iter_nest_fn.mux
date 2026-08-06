@@ -64,11 +64,35 @@
         strmatch(strlen(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])])), 53)
       )=
   {
-    @log smoke=TC002: nested-iter results survive across later loops. Succeeded.;
+    @log smoke=TC002: nested-iter results survive across later loops. Succeeded.
+  },
+  {
+    @log smoke=TC002: nested-iter results survive across later loops. Failed (w3=[words(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])]))] w2=[words(iter(lnum(3),[iter(lnum(3),X)]))] w3lit=[words(iter(1 2,[iter(1 2,[iter(1 2,X)])]))]).
+  }
+-
+#
+# Test Case #3 - %iN and itext()/inum() resolve OUTER levels inside
+# compiled nests (#2170).
+#
+# Compiled loops never push the interpreter's mudstate.itext[]/inum[]
+# stack, so %i1+ (and constant-depth itext()/inum() calls) used to read
+# stale interpreter state and come back empty on the compiled route.
+# They now resolve to the enclosing compiled levels' values at compile
+# time.  The first expression asserts all three levels' elements from
+# the innermost body; the second asserts a middle element and an outer
+# index through the function-call forms.
+#
+&tr.tc003 test_iter_nest_fn=
+  @if cand(
+        strmatch(iter(A B,[iter(C D,[iter(E F,%i0.%i1.%i2)])]), E.C.A F.C.A E.D.A F.D.A E.C.B F.C.B E.D.B F.D.B),
+        strmatch(iter(A B,[iter(C D,[iter(E F,[itext(1)]/[inum(2)])])]), C/1 C/1 D/1 D/1 C/2 C/2 D/2 D/2)
+      )=
+  {
+    @log smoke=TC003: outer-level itext/inum inside compiled nests. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: nested-iter results survive across later loops. Failed (w3=[words(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])]))] w2=[words(iter(lnum(3),[iter(lnum(3),X)]))] w3lit=[words(iter(1 2,[iter(1 2,[iter(1 2,X)])]))]).;
+    @log smoke=TC003: outer-level itext/inum inside compiled nests. Failed (subst=[iter(A B,[iter(C D,[iter(E F,%i0.%i1.%i2)])])] calls=[iter(A B,[iter(C D,[iter(E F,[itext(1)]/[inum(2)])])])]).;
     @trig me/tr.done
   }
 -

@@ -1036,6 +1036,24 @@ static uint64_t fp_intrinsic_addr(const char *blob_sym) {
 //   are emitted and SSA construction promotes them.
 // ===============================================================
 
+// Iter context: set during body lowering so AST_SUBST nodes (## / #@)
+// resolve to the current element and 1-based index.
+//
+// A STACK, not a single slot (#2170): %i1+ names OUTER iter levels, and
+// compiled loops never push the interpreter's mudstate.itext[]/inum[]
+// stack, so ECALLing itext(N) for a level that lives in THIS program read
+// stale interpreter state and came back empty.  Every enclosing compiled
+// level's element/index HIR values are right here at body-lowering time;
+// levels OUTSIDE the program (interpreted iters enclosing the whole
+// compiled expression) are still the interpreter's, reached by ECALL with
+// the depth adjusted down by the compiled levels.
+//
+struct iter_ctx {
+    int itext_val;  // HIR value: current element (TY_STRING)
+    int inum1_val;  // HIR value: 1-based index (TY_INT)
+};
+static std::vector<iter_ctx> iter_ctx_stack;
+
 // Compile-time %q register tracking.
 static int qreg[HIR_NUM_QREGS];
 static bool qreg_used;  // true if any setq/setr/r was seen
@@ -1043,6 +1061,10 @@ static bool qreg_used;  // true if any setq/setr/r was seen
 void qreg_init() {
     for (int i = 0; i < HIR_NUM_QREGS; i++) qreg[i] = -1;
     qreg_used = false;
+    // Defensive per-compile reset (#2170): the iter context is pushed and
+    // popped in balanced pairs during lowering, but a stale entry from an
+    // aborted compile must never leak ## / %iN resolution into the next.
+    iter_ctx_stack.clear();
 }
 
 // Invalidate compile-time %q tracking after emitting an ECALL whose
@@ -1216,13 +1238,6 @@ static constexpr int QREG_FILTER_KEPT = 13;  // kept-element count (TY_INT, #208
                                              // "first" cannot be keyed on the
                                              // accumulator length -- it needs
                                              // its own counter.
-
-// Iter context: set during body lowering so AST_SUBST nodes (## / #@)
-// resolve to the current element and 1-based index.
-//
-static int iter_itext_val = -1;  // HIR value: current element (TY_STRING)
-static int iter_inum1_val = -1;  // HIR value: 1-based index (TY_INT)
-
 
 // Lower a sequence node (string concatenation).
 //
@@ -1585,6 +1600,59 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             }
         }
         // Fall through to ECALL if register number unknown or not set.
+    }
+
+    // itext(K) / inum(K) / ilev() — the interpreter's loop-context stack
+    // (#2170).  Compiled loops never push mudstate.itext[]/inum[]/
+    // in_loop, so inside compiled iter levels the raw ECALL reads stale
+    // interpreter state.  A constant K naming a level in THIS program
+    // resolves to that level's compile-time values; a deeper constant
+    // ECALLs with the depth adjusted down by the compiled levels (the
+    // interpreter's stack is authoritative for iters enclosing the whole
+    // compiled expression); a dynamic depth inside compiled levels, and
+    // ilev() itself (which must count both worlds), bail the compile so
+    // the AST answers — the fdepth()/fcount() precedent.
+    if (fname == "ITEXT" || fname == "INUM" || fname == "ILEV") {
+        int nCompiled = static_cast<int>(iter_ctx_stack.size());
+        if (nCompiled > 0) {
+            bool bConst = false;
+            int depthK = 0;
+            if (fname != "ILEV") {
+                if (node->children.empty()) {
+                    bConst = true;  // itext() == itext(0)
+                } else if (node->children.size() == 1) {
+                    const ASTNode *a0 = node->children[0].get();
+                    if (a0->type == AST_LITERAL && !a0->text.empty()
+                        && a0->text.size() <= 2
+                        && a0->text.find_first_not_of("0123456789")
+                               == std::string::npos) {
+                        bConst = true;
+                        depthK = atoi(a0->text.c_str());
+                    }
+                }
+            }
+            if (bConst && depthK < nCompiled) {
+                return (fname == "ITEXT")
+                    ? iter_ctx_stack[nCompiled - 1 - depthK].itext_val
+                    : iter_ctx_stack[nCompiled - 1 - depthK].inum1_val;
+            }
+            if (bConst) {
+                std::string ds = std::to_string(depthK - nCompiled);
+                uint64_t d_addr = rc.pool_str(ds);
+                int d_val = h.emit_sconst(d_addr, ds);
+                int fn_idx = engine_api_lookup(fname.c_str());
+                int args[1] = { d_val };
+                int result = h.emit_call(TY_STRING, fn_idx, args, 1);
+                h.ecalls++;
+                h.needs_jit = true;
+                return result;
+            }
+            rc.out_exhausted = true;  // force compilation failure
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
+        }
+        // No compiled iter levels: the interpreter's stack is exactly
+        // right — fall through to the normal ECALL.
     }
 
     // setq(n, value) — set %q register, return empty string.
@@ -2531,11 +2599,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
             }
         }
 
-        // Set iter context for ## and #@ resolution in body.
-        int saved_itext = iter_itext_val;
-        int saved_inum1 = iter_inum1_val;
-        iter_itext_val = elem;
-        iter_inum1_val = inum_1based;
+        // Push iter context for ## / #@ / %iN resolution in body (#2170).
+        iter_ctx_stack.push_back({elem, inum_1based});
 
         // Lower the body (child[1], NOEVAL — trimmed).
         int body_val = hir_lower_trimmed(h, rc, node->children[1].get());
@@ -2546,8 +2611,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         }
 
         // Restore iter context.
-        iter_itext_val = saved_itext;
-        iter_inum1_val = saved_inum1;
+        iter_ctx_stack.pop_back();
 
         // Accumulate (#2072).
         uint64_t t2appi = tier2_lookup("APPEND_I");
@@ -5598,8 +5662,8 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
         // Resolved from iter/switch context set during lowering.
         if (node->text.size() >= 2 && node->text[0] == '#') {
             if (node->text[1] == '#') {
-                if (iter_itext_val >= 0) {
-                    return iter_itext_val;
+                if (!iter_ctx_stack.empty()) {
+                    return iter_ctx_stack.back().itext_val;
                 }
                 // Not inside JIT iter — emit ECALL itext(0).
                 uint64_t d_addr = rc.pool_str("0");
@@ -5612,8 +5676,8 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                 return result;
             }
             if (node->text[1] == '@') {
-                if (iter_inum1_val >= 0) {
-                    return iter_inum1_val;
+                if (!iter_ctx_stack.empty()) {
+                    return iter_ctx_stack.back().inum1_val;
                 }
                 // Not inside JIT iter — emit ECALL inum(0).
                 uint64_t d_addr = rc.pool_str("0");
@@ -5973,13 +6037,24 @@ int hir_lower_node(hir_program &h, rv_compiler &rc,
                 char d = node->text[2];
                 if (d >= '0' && d <= '9') {
                     int depth = d - '0';
-                    if (depth == 0 && iter_itext_val >= 0) {
-                        // Innermost iter — use compile-time value.
-                        return iter_itext_val;
+                    // Levels that live in THIS program resolve to their
+                    // compile-time HIR values (#2170): %i0 is the
+                    // innermost enclosing compiled iter, %i1 its parent,
+                    // and so on up the compile-time stack.  ECALLing
+                    // itext(N) for these read mudstate.itext[] — the
+                    // INTERPRETER's stack, which compiled loops never
+                    // push — and came back empty.
+                    int nCompiled = static_cast<int>(iter_ctx_stack.size());
+                    if (depth < nCompiled) {
+                        return iter_ctx_stack[nCompiled - 1 - depth]
+                                   .itext_val;
                     }
-                    // Outer levels or no compile-time iter context:
-                    // emit ECALL itext(depth).
-                    std::string ds(1, d);
+                    // A level OUTSIDE the program: an interpreted iter
+                    // enclosing the whole compiled expression.  The
+                    // interpreter's stack is authoritative for those,
+                    // reached by the ECALL with the depth adjusted down
+                    // by the levels this program owns.
+                    std::string ds = std::to_string(depth - nCompiled);
                     uint64_t d_addr = rc.pool_str(ds);
                     int d_val = h.emit_sconst(d_addr, ds);
                     int itext_idx = engine_api_lookup("ITEXT");
