@@ -284,9 +284,19 @@ void init_timer(void)
     scheduler.DeferTask(ltaNow+mudconf.cache_tick_period, PRIORITY_SYSTEM,
         dispatch_CacheTick, 0, 0);
 
-    // Setup one-shot task to enable restarting 10 seconds after startmux.
+    // Setup one-shot task to enable restarting 15 seconds after startmux.
     //
-    scheduler.DeferTask(ltaNow+time_15s, PRIORITY_OBJECT, dispatch_CanRestart, 0, 0);
+    // PRIORITY_SYSTEM, deliberately (#2131).  This is maintenance — it arms
+    // the @restart throttle — but it sat at PRIORITY_OBJECT, inside the band
+    // CScheduler::HasPendingUserTasks counts as user work.  muxscript's
+    // post-EOF exit predicate therefore saw "pending user tasks" until this
+    // timer expired, and every scripted invocation idled ~15 seconds doing
+    // nothing: five thousand JIT compilations moved muxscript's wall clock
+    // by 22 ms while this task held it for 15.15 s.  SYSTEM also means the
+    // throttle arms even while @disable'd dequeuing blocks the user band,
+    // which is the right behaviour for a safety timer.
+    //
+    scheduler.DeferTask(ltaNow+time_15s, PRIORITY_SYSTEM, dispatch_CanRestart, 0, 0);
 }
 
 /*
