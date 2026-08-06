@@ -2738,6 +2738,14 @@ void jit_gate_note_function_table_change(void)
         //
         s_jit_gate_epoch = 2;
     }
+#if defined(TINYMUX_JIT)
+    // #2130 decline memo: a bail_noop verdict is pure in the compiled
+    // shape, but registration can change what that shape is on the next
+    // compile.  Clear here with the gate epoch so both memos move together
+    // (#2140 review).
+    //
+    jit_decline_memo_invalidate();
+#endif
 }
 
 static inline uint32_t jit_gate_stamp_now(void)

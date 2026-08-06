@@ -2110,6 +2110,17 @@ static size_t compile_cache_max(void) {
 static std::unordered_set<std::string> s_decline_memo;
 static constexpr size_t DECLINE_MEMO_MAX = 8192;
 
+// Drop memoized declines when the function table changes (#2140 review).
+// A shape that was bail_noop can recompile into a different shape once a
+// softcode @function or builtin registration moves; leaving the memo
+// would refuse forever without re-fetching.  Same invalidation trigger as
+// the #2068 gate epoch.
+//
+void jit_decline_memo_invalidate(void)
+{
+    s_decline_memo.clear();
+}
+
 // Track which program the DBT was last set up for, so we can
 // use dbt_rerun (fast) instead of dbt_reset (slow) on cache hits.
 //
