@@ -2273,13 +2273,15 @@ static void real_regmatch(const UTF8 *search, const UTF8 *pattern, UTF8 *registe
         return;
     }
 
-    // We need to parse the list of registers
+    // We need to parse the list of registers.  Non-destructive (#2136):
+    // `registers` is the caller's fargs[2], borrowed memory.
     const int NSUBEXP = 2 * MAX_GLOBAL_REGS;
     UTF8 *qregs[NSUBEXP];
     SEP sep;
     sep.n = 1;
     memcpy(sep.str, " ", 2);
-    int nqregs = list2arr(qregs, NSUBEXP, registers, sep);
+    LBuf scRegs = LBuf_Src("real_regmatch.regs");
+    int nqregs = list2arr_nd(qregs, NSUBEXP, registers, sep, scRegs);
 
     // Get ovector pointer for accessing capture groups
     PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
