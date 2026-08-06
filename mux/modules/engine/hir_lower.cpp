@@ -1658,9 +1658,14 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     // Runtime condition: emit BRC + blocks + PHI.
     // ---------------------------------------------------------------
 
+    // if() takes 2 or 3 arguments (same handler as ifelse); keying has_else
+    // off the NAME instead of the arity is what declined every 3-argument
+    // if() — the shape fell through to general_lowering, whose FN_NOEVAL
+    // check bails the whole compilation (#2162).
     if ((fname == "IFELSE" && node->children.size() == 3)
-        || (fname == "IF" && node->children.size() == 2)) {
-        bool has_else = (fname == "IFELSE");
+        || (fname == "IF" && (node->children.size() == 2
+                           || node->children.size() == 3))) {
+        bool has_else = (node->children.size() == 3);
 
         // Lower the condition (always evaluated).
         int cond = hir_lower_node(h, rc, node->children[0].get());

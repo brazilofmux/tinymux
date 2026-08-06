@@ -122,11 +122,44 @@
         eq(strlen(u(me/fn.if1,0)), 0)
       )=
   {
-    @log smoke=TC005: ifelse nesting and if() form. Succeeded.;
-    @trig me/tr.done
+    @log smoke=TC005: ifelse nesting and if() form. Succeeded.
   },
   {
-    @log smoke=TC005: ifelse nesting and if() form. Failed (11=[u(me/fn.nest,1,1)] 10=[u(me/fn.nest,1,0)] 01=[u(me/fn.nest,0,1)] iflen=[strlen(u(me/fn.if1,0))]).;
+    @log smoke=TC005: ifelse nesting and if() form. Failed (11=[u(me/fn.nest,1,1)] 10=[u(me/fn.nest,1,0)] 01=[u(me/fn.nest,0,1)] iflen=[strlen(u(me/fn.if1,0))]).
+  }
+-
+#
+# Test Case #6 - 3-argument if() compiles (#2162).
+#
+# The HIR lowering keyed has_else off the function NAME, so if(cond,a,b)
+# -- three arguments, same handler and semantics as ifelse() -- matched
+# neither native arm, fell through to general_lowering, and the FN_NOEVAL
+# check there declined the WHOLE surrounding expression.  2-argument if()
+# compiled all along, which is what kept this invisible: every probe that
+# would have caught it used the else arm.  Asserted through benchmark()'s
+# jit_handled (#2133) with the same JIT-enabled guard as benchmark_fn
+# TC005, plus value parity so a compile that picks the wrong arm cannot
+# pass.
+#
+&tr.tc006 test_ifelse_fn=
+  @if strmatch(setr(0,benchmark(iter(lnum(4),[ifelse(gt(##,2),B,s)]),10,1)),* jit_handled=10/10 *)=
+  {
+    @if cand(
+          strmatch(setr(1,benchmark(iter(lnum(4),[if(gt(##,2),B,s)]),10,1)),* jit_handled=10/10 *),
+          strmatch(if(gt(5,3),Y,N), Y),
+          strmatch(if(gt(2,3),Y,N), N)
+        )=
+    {
+      @log smoke=TC006: 3-argument if() compiles. Succeeded.;
+      @trig me/tr.done
+    },
+    {
+      @log smoke=TC006: 3-argument if() compiles. Failed (ifelse=%q0 if=%q1).;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC006: 3-argument if() compiles. Skipped (iter/ifelse not compiled on this route: %q0).;
     @trig me/tr.done
   }
 -
