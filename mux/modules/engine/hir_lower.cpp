@@ -3399,6 +3399,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
     if (fname == "FOLD"
         && node->children.size() >= 2
+        // The function table caps fold at 4 arguments and the checker
+        // rejects more BEFORE fun_fold runs -- an inline path with no
+        // ceiling would compute a value where every other route errors.
+        && node->children.size() <= 4
         && s_compile_deps != nullptr
         && s_inline_depth < MAX_INLINE_DEPTH)
     {
@@ -3575,6 +3579,16 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 // Seeding before the loop keeps the body uniform; the only
                 // difference is what lands in the accumulator and where the
                 // cursor starts.
+                //
+                // fun_fold's FIRST application is unconditional: it fires
+                // even when the list is empty (base form) or has fewer than
+                // two elements (no-base form), with %1 the empty string --
+                // split_token on an exhausted list returns ""/NULL and
+                // mux_exec runs regardless.  The loop below must therefore
+                // always run its first iteration; the header ORs the count
+                // check with inum == seed value.  rv64_split_token at the
+                // end-of-list cursor returns "", which is exactly the %1
+                // the interpreter passes.
                 int seed_val;
                 int seed_cursor;
                 int seed_inum;
@@ -3619,8 +3633,13 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                                   QREG_ITER_INUM);
                 int dcur = h.emit(HIR_LOAD_Q, TY_INT, -1, -1,
                                   QREG_ITER_CURSOR);
-                int cond = h.emit(HIR_LT, TY_INT, inum, nwords_int);
-                h.native_ops++;
+                // inum == seed forces the first iteration: fun_fold applies
+                // the body once even on an empty or one-element list (see
+                // the seed comment above).
+                int lt_n = h.emit(HIR_LT, TY_INT, inum, nwords_int);
+                int at_seed = h.emit(HIR_EQ, TY_INT, inum, seed_inum);
+                int cond = h.emit(HIR_BOR, TY_INT, lt_n, at_seed);
+                h.native_ops += 3;
                 int body_blk = h.new_block();
                 int exit_blk = h.new_block();
                 h.emit(HIR_BRC, TY_VOID, cond, exit_blk, body_blk);
@@ -3697,17 +3716,24 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int ib_exit = h.cur_block;
                 int ib_br = h.emit(HIR_BR, TY_VOID, -1, -1, -1);
 
-                // Oversized arm: ECALL fold(#thing/attr, elem, acc) --
-                // a one-element fold with the accumulator as the base is
-                // exactly one application of the body, and it routes
-                // through fun_fold's own LBUF-sized handling.
+                // Oversized arm: ECALL u(#thing/attr, acc, elem) -- exactly
+                // one application of the body with %0/%1 in place, through
+                // fun_u's LBUF-sized handling, same as MAP's oversized arm.
+                //
+                // NOT fold(#thing/attr, elem, acc): fun_fold re-splits its
+                // list argument with the DEFAULT delimiter, so a custom-
+                // delimiter fold whose element contains spaces would be
+                // folded word-by-word here instead of applied once.  (And
+                // fun_u keeps executor = thing, which the runtime gate has
+                // already pinned to the executor -- same context either
+                // way.)
                 h.cur_block = uarm_blk;
-                int fidx_fold2 = engine_api_lookup("FOLD");
+                int fidx_u2 = engine_api_lookup("U");
                 uint64_t ua = rc.pool_str(arg0_str);
                 int uref_c = h.emit_sconst(ua, arg0_str);
                 int acc_ref_u = h.emit_sref(acc_addr);
-                int uargs[3] = { uref_c, elem, acc_ref_u };
-                int ua_val = h.emit_call(TY_STRING, fidx_fold2, uargs, 3);
+                int uargs[3] = { uref_c, acc_ref_u, elem };
+                int ua_val = h.emit_call(TY_STRING, fidx_u2, uargs, 3);
                 h.ecalls++;
                 int ua_exit = h.cur_block;
 

@@ -226,9 +226,32 @@ CASES = [
     ("fold(#1/GROWTH.FOLDB,lnum({N}),0)", "jit", [500, 1000, 2000, 4000], "linear", None),
 ]
 
+# Route parity (#2122's review).  The exponent comparison below presumes
+# the two routes compute the SAME VALUE for the same expression; when they
+# do not, the case rows are timing two different functions and every
+# verdict is about something else.  This driver is also the only harness
+# whose commands run as #1 on direct stdin -- the ONE context that opens
+# both of the FOLD lowering's gates (compile-time literal #dbref and
+# runtime executor==thing).  The smoke battery's trigger context routes
+# its fold_fn TC014+ wrappers through interpreter semantics, so these five
+# checks are the standing coverage of the compiled loop's edges: the
+# unconditional first application (empty list with base, one element and
+# empty without), the oversized arm's element integrity under a custom
+# delimiter, and the arity ceiling.  {W} is spelled both ways: me/ never
+# opens the compile-time gate and pins fun_fold; #1/ is the compiled loop.
+PARITY = [
+    ("fold({W}/GROWTH.FOLDBANG,,Z)",  "Z!"),
+    ("fold({W}/GROWTH.FOLDBANG,x)",   "x!"),
+    ("fold({W}/GROWTH.FOLDBANG,)",    "!"),
+    ("after(fold({W}/GROWTH.FOLDCAT,a b|c d,[repeat(x,300)],|),[repeat(x,300)])",
+     "a bc d"),
+    ("fold({W}/GROWTH.FOLDB,1 2,0,|,junk)",
+     "#-1 FUNCTION (FOLD) EXPECTS BETWEEN 2 AND 4 ARGUMENTS"),
+]
+
 AST_RE = re.compile(r"ast=([0-9.]+)us")
 CACHED_RE = re.compile(r"cached=([0-9.]+)ns/call")
-TAG_RE = re.compile(r"^(.*)\s+@@(\w+)\.([ARP])\s*$")
+TAG_RE = re.compile(r"^(.*)\s+@@(\w+)\.([ARPV])\s*$")
 
 
 def iters_for(n, base):
@@ -264,6 +287,8 @@ SETUP = [
     "&GROWTH.MAPB me=[add(%0,1)]",
     "&GROWTH.FILP me=[gt(%0,3)]",
     "&GROWTH.FOLDB me=[add(%0,%1)]",
+    "&GROWTH.FOLDBANG me=[strcat(%0,%1,!)]",
+    "&GROWTH.FOLDCAT me=%0%1",
 ]
 
 
@@ -272,6 +297,9 @@ def build_script(pairs, probes):
     lines = list(SETUP)
     for tag, expr, _want in probes:
         lines.append("think [%s] @@%s.P" % (expr, tag))
+    for i, (tmpl, _want) in enumerate(PARITY):
+        for wtag, w in (("m", "me"), ("h", "#1")):
+            lines.append("think [%s] @@v%d%s.V" % (tmpl.format(W=w), i, wtag))
     # Warm-up, discarded.  The first measurement in a muxscript process pays
     # cold compile-cache, block-cache and allocator costs the rest do not, and
     # whichever case happened to be first would carry a depressed smallest-N
@@ -302,6 +330,11 @@ def parse(out):
             continue
         body, tag, kind = m.group(1), m.group(2), m.group(3)
         slot = got.setdefault(tag, {})
+        if kind == "V":
+            # Parity values keep their raw text: a #-1 error can BE the
+            # expected value (the arity case), so no error-swallowing here.
+            slot["parity"] = body.strip()
+            continue
         if "#-1" in body:
             slot["error"] = body.strip()[:60]
             continue
@@ -417,6 +450,23 @@ def main():
         print("  overflows it truncates silently and still looks like a list.")
         return 1
     print("=== input shape: %d probe(s) ok ===" % len(probes))
+    print()
+
+    # Value parity next.  If the routes disagree on WHAT an expression
+    # evaluates to, the case rows below are timing two different functions.
+    bad = []
+    for i, (tmpl, want) in enumerate(PARITY):
+        for wtag, w in (("m", "me"), ("h", "#1")):
+            saw = got.get("v%d%s" % (i, wtag), {}).get("parity")
+            if saw != want:
+                bad.append((tmpl.format(W=w), want, saw))
+    if bad:
+        print("FAIL: route disagrees with fun_fold on a value.")
+        for expr, want, saw in bad:
+            print("  %s" % expr)
+            print("    expected <%s> got <%s>" % (want, saw))
+        return 1
+    print("=== route parity: %d value(s) ok ===" % (2 * len(PARITY)))
     print()
 
     print("=== growth per doubling of N ===")
