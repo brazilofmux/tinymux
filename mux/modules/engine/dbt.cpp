@@ -778,6 +778,24 @@ int dbt_run(dbt_state_t *dbt, uint64_t entry_pc, uint64_t stack_top) {
             }
             dbt_cache_insert(dbt, pc, code);
 
+            // Diagnostic map for profiling anonymous JIT frames (#2132):
+            // TINYMUX_DBT_MAP=<file> appends guest-pc -> host-address lines.
+            // One shared handle, never closed: a per-block fopen/fclose costs
+            // more than the translation it annotates once compile-each style
+            // loops re-translate thousands of times.
+            {
+                static FILE *mf = []() -> FILE * {
+                    const char *p = getenv("TINYMUX_DBT_MAP");
+                    return p ? fopen(p, "a") : nullptr;
+                }();
+                if (mf) {
+                    fprintf(mf, "block pc=0x%llx host=%p end=%p\n",
+                            static_cast<unsigned long long>(pc),
+                            static_cast<void *>(code),
+                            static_cast<void *>(dbt->code_buf + dbt->code_used));
+                }
+            }
+
             // Backpatch any chained exits that were waiting for this block.
             dbt_backpatch_chains(dbt, pc, code);
 
@@ -918,6 +936,24 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
             }
             dbt_cache_insert(dbt, pc, code);
 
+            // Diagnostic map for profiling anonymous JIT frames (#2132):
+            // TINYMUX_DBT_MAP=<file> appends guest-pc -> host-address lines.
+            // One shared handle, never closed: a per-block fopen/fclose costs
+            // more than the translation it annotates once compile-each style
+            // loops re-translate thousands of times.
+            {
+                static FILE *mf = []() -> FILE * {
+                    const char *p = getenv("TINYMUX_DBT_MAP");
+                    return p ? fopen(p, "a") : nullptr;
+                }();
+                if (mf) {
+                    fprintf(mf, "block pc=0x%llx host=%p end=%p\n",
+                            static_cast<unsigned long long>(pc),
+                            static_cast<void *>(code),
+                            static_cast<void *>(dbt->code_buf + dbt->code_used));
+                }
+            }
+
             // Backpatch any chained exits that were waiting for this block.
             dbt_backpatch_chains(dbt, pc, code);
 
@@ -937,7 +973,45 @@ int dbt_resume(dbt_state_t *dbt, uint64_t entry_pc) {
     }
 }
 
+// Diagnostic dump of the translated code for offline disassembly (#2132):
+// TINYMUX_DBT_CODEDUMP=<file> writes code_buf[0..code_used] plus a sidecar
+// <file>.base with the runtime base address, at cleanup.
+static void dbt_maybe_dump_code(dbt_state_t *dbt)
+{
+    const char *dump_path = getenv("TINYMUX_DBT_CODEDUMP");
+    if (!dump_path || !dbt->code_buf) {
+        return;
+    }
+    FILE *df = fopen(dump_path, "wb");
+    if (df) {
+        fwrite(dbt->code_buf, 1, dbt->code_used, df);
+        fclose(df);
+    }
+    const std::string side_base = std::string(dump_path) + ".base";
+    FILE *bf = fopen(side_base.c_str(), "w");
+    if (bf) {
+        fprintf(bf, "%p %u\n", static_cast<void *>(dbt->code_buf),
+                dbt->code_used);
+        fclose(bf);
+    }
+    // Every cached block (covers pretranslated blob blocks the dbt_run map
+    // never sees).
+    const std::string side_cache = std::string(dump_path) + ".cache";
+    FILE *cf = fopen(side_cache.c_str(), "w");
+    if (cf) {
+        for (size_t i = 0; i < BLOCK_CACHE_SIZE; i++) {
+            if (dbt->cache[i].guest_pc) {
+                fprintf(cf, "entry pc=0x%llx host=%p\n",
+                        static_cast<unsigned long long>(dbt->cache[i].guest_pc),
+                        static_cast<void *>(dbt->cache[i].native_code));
+            }
+        }
+        fclose(cf);
+    }
+}
+
 void dbt_cleanup(dbt_state_t *dbt) {
+    dbt_maybe_dump_code(dbt);
     if (dbt->code_buf) {
         jit_free(dbt->code_buf, CODE_BUF_SIZE);
         dbt->code_buf = nullptr;

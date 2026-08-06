@@ -2416,10 +2416,30 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         // element: one for the element, one for the next offset.  Both are
         // O(element length), so the loop is linear; see rv64_split_token in
         // mux/rv64/src/softlib.c for why that beats one mutating callee.
+        uint64_t t2step  = tier2_lookup("SPLIT_STEP");
         uint64_t t2split = tier2_lookup("SPLIT_TOKEN");
         int elem;
         int next_cursor = -1;
-        if (t2split) {
+        if (t2step) {
+            // Integer-ABI walk (#2132): ONE call per element.  The cursor
+            // rides in a register, the element lands in the call's output
+            // slot, and the next cursor comes back in a0 as an integer.
+            // The string route below crossed the boundary twice per
+            // element and converted the cursor to decimal and back at
+            // every crossing — profiled as the largest single component
+            // of per-element cost, and, because offsets grow with the
+            // list, the whole of the residual N-climb.
+            //
+            // next_cursor stays an SSA value stored in the LATCH, exactly
+            // like the string route's: a nested iter in the body clobbers
+            // the shared cursor q-register, and the latch store is what
+            // makes that safe.
+            int sargs[3] = { list_val, cursor, delim_val };
+            int step = h.emit_call_t2i(t2step, 1, sargs, 3);
+            h.tier2_calls++;
+            elem = h.emit(HIR_T2I_STR, TY_STRING, step);
+            next_cursor = step;
+        } else if (t2split) {
             int cursor_str = h.emit(HIR_ITOA, TY_STRING, cursor);
 
             uint64_t m_elem_addr = rc.pool_str("0");
@@ -2477,7 +2497,29 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         iter_inum1_val = saved_inum1;
 
         // Accumulate (#2072).
-        if (t2append) {
+        uint64_t t2appi = tier2_lookup("APPEND_I");
+        if (t2appi) {
+            // Integer-ABI append (#2132): length and iteration number in
+            // registers, new length back in a0.  Same in-place semantics
+            // as the string route below — rv64_append_i mirrors
+            // rv64_append minus the decimal plumbing.
+            int acc_ref = h.emit_sref(acc_addr);
+            int aargs[5] = { acc_ref, acc, inum, osep_val, body_val };
+            int newlen = h.emit_call_t2i(t2appi, 0, aargs, 5);
+            h.tier2_calls++;
+            h.emit(HIR_STORE_Q, TY_VOID, newlen, -1, QREG_ITER_ACC);
+
+            // Latch stores, mirroring the string arm's.
+            int inum_next = h.emit(HIR_ADD, TY_INT, inum, one_int);
+            h.native_ops++;
+            h.emit(HIR_STORE_Q, TY_VOID, inum_next, -1, QREG_ITER_INUM);
+            if (next_cursor >= 0) {
+                h.emit(HIR_STORE_Q, TY_VOID, next_cursor, -1,
+                       QREG_ITER_CURSOR);
+            }
+            h.emit(HIR_BR, TY_VOID, -1, -1, header_block);
+            h.add_edge(h.cur_block, header_block);
+        } else if (t2append) {
             // One in-place append: writes body_val (osep-prefixed unless
             // this is iteration 0 -- the callee tests the iteration number,
             // which removes the old first/cat block diamond entirely) at

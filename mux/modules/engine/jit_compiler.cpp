@@ -186,6 +186,12 @@ static bool tier2_allowed(const std::string &mux_name) {
         // Same story: ITER's in-place accumulator (#2072), unreachable
         // from softcode.
         "APPEND",
+        // Integer-ABI successors of the two above (#2132) -- same
+        // unreachable-from-softcode story.  Forgetting THIS list is the
+        // silent way to ship the fallback: tier2_lookup returns 0, the
+        // lowering keeps the string route, and every test still passes.
+        "SPLIT_STEP",
+        "APPEND_I",
         // And MAP's element-size guard (#2080).
         "BYTELEN",
         "LEFT",
@@ -319,6 +325,8 @@ static const struct { const char *mux_name; const char *blob_name; } s_tier2_map
     { "EXTRACT",     "co_extract_wrap" },
     { "SPLIT_TOKEN", "rv64_split_token" },  // cursor walk for ITER (#2052)
     { "APPEND",      "rv64_append" },       // in-place accumulator for ITER (#2072)
+    { "SPLIT_STEP",  "rv64_split_step" },   // integer-ABI cursor walk (#2132)
+    { "APPEND_I",    "rv64_append_i" },     // integer-ABI accumulator (#2132)
     { "BYTELEN",     "rv64_bytelen" },      // CARGS-slot fit guard for MAP (#2080)
     { "MEMBER",      "co_member_wrap" },
     { "TRIM",        "co_trim_wrap" },

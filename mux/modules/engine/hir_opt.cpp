@@ -587,7 +587,11 @@ static bool has_side_effects(hir_kind k) {
     // the result (if any) is unused (#1145).  HIR_LUA_CALL_VOID exists
     // only for its effect (table.insert): it produces no value at all,
     // so nothing downstream can keep it alive — this line is what does.
-    return k == HIR_CALL || k == HIR_STRCAT || k == HIR_STORE_Q
+    // HIR_CALL_T2I: APPEND_I mutates its accumulator in place and
+    // SPLIT_STEP writes its output slot — both exist for their effects
+    // even when the integer result goes unused (#2132).
+    return k == HIR_CALL || k == HIR_STRCAT || k == HIR_CALL_T2I
+        || k == HIR_STORE_Q
         || k == HIR_SETQ_SYNC
         || k == HIR_LUA_SETI || k == HIR_LUA_SETFIELD
         || k == HIR_LUA_CALL_VOID || k == HIR_LUA_CALL_VAL

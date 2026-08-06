@@ -91,6 +91,19 @@ release carried the bad state.
    case.  Capacity is now `jit_compile_cache_max` (default 2048, covering
    the ~1500 distinct programs a live-workload profile measured), runtime
    `@admin`-settable.
+ - **Integers cross the tier-2 boundary as integers** (#2132).  The string
+   calling convention marshalled every argument as decimal text, so the
+   compiled ITER loop paid six integer<->string conversions per element —
+   digit-proportional loops, executed under DBT expansion, on numbers
+   (byte cursors, accumulated lengths) whose digit counts grow with the
+   list.  That was both the bulk of per-element cost and the whole of the
+   residual superlinearity.  A new integer-register tier-2 call shape
+   (`HIR_CALL_T2I`) and int-native blob entrypoints (`rv64_split_step`,
+   one call per element instead of two; `rv64_append_i`) remove all six.
+   Measured (macOS arm64): per-element cost drops 4x, from a 0.75-0.89x
+   near-parity ratio against the interpreter to **0.19-0.21x** — five
+   times faster than the C loop — and the fixed-width N-climb is gone.
+   MAP/FILTER still use the string route pending the same conversion.
  - **`map()` and `filter()` have JIT lowerings**, composed from the `iter()`
    loop and the `u()` inline rather than written fresh.
  - **The `u()`-inline permission branch had its arms reversed since it was
