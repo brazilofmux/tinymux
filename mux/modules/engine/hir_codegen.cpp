@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <vector>
+#include <bitset>
 #include <string>
 
 #include "jit_tier1_stamp.h"
@@ -902,6 +903,13 @@ static void compute_live_ranges(hir_program &h,
                                  bool (*filter)(hir_program &, int)) {
     // Assign program points in codegen order (blocks in layout order,
     // instructions within each block in order).
+    //
+    // Layout order is NOT execution order: the lowering can allocate an
+    // outer loop's latch block before the blocks of an inner loop it
+    // encloses (nested iter() does), and RPO is no help — a reverse
+    // postorder only topologically orders the acyclic part and may also
+    // place the latch before the loop body.  The natural-loop closure
+    // below is what makes intervals over this order sound.
     int prog_point[HIR_MAX_INSNS];
     int block_end_pp[HIR_MAX_BLOCKS];
     memset(prog_point, -1, sizeof(int) * h.n_insns);
@@ -958,47 +966,85 @@ static void compute_live_ranges(hir_program &h,
         }
     }
 
-    // Loop-aware liveness extension.
+    // Execution-reachability liveness closure (#2161).
     //
-    // A back-edge is (latch → header) where rpo_pos[header] <= rpo_pos[latch].
-    // Any value used inside the loop body must be live through the entire
-    // loop — its last_use must extend to at least the latch's block_end_pp.
-    // Without this, values used at the header (e.g., nwords for the loop
-    // condition) get their registers reused inside the body, corrupting
-    // the value on the next iteration.
+    // Linear scan needs every interval to be a superset of the value's
+    // true live range under the chosen linearization — and BLOCK LAYOUT
+    // ORDER IS NOT EXECUTION ORDER.  The lowering allocates an outer
+    // loop's latch before the blocks of an inner loop it encloses, and
+    // allocates the program's result-assembly block before later loops
+    // (this whole program's final STRCAT sat in block 27 while the last
+    // iter's loop blocks were 28-33).  Two observed corruptions, one
+    // cause:
     //
-    if (h.n_rpo > 0) {
+    //   - a value defined in an outer iter body and used in its latch had
+    //     an interval HOLE where the inner loop's points sit; the
+    //     allocator handed its register to inner-loop values, the latch
+    //     stored inner_final+1, and a triple-nested iter lost a level.
+    //   - a bracket's words() result died at the final STRCAT's layout
+    //     point; loops with HIGHER layout points but EARLIER execution
+    //     recycled its output slot, and the result read a later lnum's
+    //     leftovers.
+    //
+    // (RPO cannot fix the ordering either: a reverse postorder may also
+    // place a latch before the body it follows at runtime.)
+    //
+    // The uniform sound rule: for every use of v, v must be live in every
+    // block that can execute between the def and that use — every B with
+    // def-block -> B reachable and B -> use-block reachable, back edges
+    // included.  Cycles make a loop's blocks mutually reachable, so this
+    // subsumes the loop case; straight-line out-of-order blocks are just
+    // the acyclic instance.  Conservative — some intervals get longer and
+    // some values spill that did not before — and that is the correct
+    // direction.
+    {
+        // reach[b] = blocks reachable from b, reflexive.
+        static thread_local std::bitset<HIR_MAX_BLOCKS> reach[HIR_MAX_BLOCKS];
         for (int b = 0; b < h.n_blocks; b++) {
-            for (int s = 0; s < h.block_nsucc[b]; s++) {
-                int tgt = h.block_succ[b][s];
-                if (tgt < 0) continue;
-                // Back-edge: successor has <= RPO position.
-                if (h.rpo_pos[tgt] <= h.rpo_pos[b]) {
-                    int latch_end = block_end_pp[b];
-                    // Extend every value used inside the loop
-                    // (any block with RPO position between header and latch).
-                    for (int i = 0; i < h.n_insns; i++) {
-                        if (prog_point[i] < 0) continue;
-                        int ib = h.blk[i];
-                        if (h.rpo_pos[ib] < h.rpo_pos[tgt] ||
-                            h.rpo_pos[ib] > h.rpo_pos[b]) continue;
-                        // This instruction is inside the loop.
-                        // Extend any operand defined outside the loop.
-                        auto extend = [&](int v) {
-                            if (v < 0 || v >= h.n_insns) return;
-                            if (prog_point[v] < 0) return;
-                            int vb = h.blk[v];
-                            // Value defined outside loop (or at header).
-                            if (h.rpo_pos[vb] <= h.rpo_pos[tgt]) {
-                                if (latch_end > last_use[v])
-                                    last_use[v] = latch_end;
-                            }
-                        };
-                        for (int sl = 0;
-                             sl < hir_operand_count(h, i); sl++) {
-                            extend(hir_operand_get(h, i, sl));
-                        }
+            reach[b].reset();
+            reach[b].set(b);
+        }
+        bool changed = true;
+        while (changed) {
+            changed = false;
+            for (int b = 0; b < h.n_blocks; b++) {
+                for (int s = 0; s < h.block_nsucc[b]; s++) {
+                    int t = h.block_succ[b][s];
+                    if (t < 0 || t >= h.n_blocks) continue;
+                    std::bitset<HIR_MAX_BLOCKS> merged = reach[b] | reach[t];
+                    if (merged != reach[b]) {
+                        reach[b] = merged;
+                        changed = true;
                     }
+                }
+            }
+        }
+
+        auto extend_use = [&](int v, int use_blk) {
+            if (v < 0 || v >= h.n_insns || prog_point[v] < 0) return;
+            if (use_blk < 0 || use_blk >= h.n_blocks) return;
+            int d = h.blk[v];
+            if (d < 0 || d >= h.n_blocks) return;
+            int m = last_use[v];
+            for (int B = 0; B < h.n_blocks; B++) {
+                if (reach[d][B] && reach[B][use_blk]
+                    && block_end_pp[B] > m) {
+                    m = block_end_pp[B];
+                }
+            }
+            if (m > last_use[v]) last_use[v] = m;
+        };
+
+        for (int i = 0; i < h.n_insns; i++) {
+            if (prog_point[i] < 0) continue;
+            for (int sl = 0; sl < hir_operand_count(h, i); sl++) {
+                extend_use(hir_operand_get(h, i, sl), h.blk[i]);
+            }
+            // PHI operands are uses at the end of their predecessor.
+            if (h.kind[i] == HIR_PHI) {
+                for (int j = 0; j < h.pnargs[i]; j++) {
+                    extend_use(h.pval[h.pbase[i] + j],
+                               h.pblk[h.pbase[i] + j]);
                 }
             }
         }

@@ -1,0 +1,83 @@
+#
+# iter_nest_fn.mux - Test Cases for NESTED iter(), three and four deep.
+#
+# The corpus had no triple-nested iter at all (grep found zero), which is
+# how #2161 shipped: the compiled route lost exactly one level at depth
+# >= 3 — the outer loop stored inner_final+1 into the shared counter
+# q-slot and exited after one trip — and neither smoke route could see it.
+#
+# The cause was linear-scan intervals computed over block LAYOUT order,
+# which is not execution order: the lowering allocates an outer loop's
+# latch before an inner loop's blocks, and the result-assembly block
+# before later loops.  Values died in the layout hole, and their
+# registers/output slots were recycled by code that runs earlier at
+# runtime.  Fixed by the execution-reachability liveness closure in
+# hir_codegen.cpp.
+#
+# TC001 pins the shapes; TC002 pins the mixed-consumer single-program
+# shape whose words() results were recycled by a later loop's lnum().
+# Value parity is the ONLY assertion that can see this class —
+# jit_handled reported success throughout.
+#
+@create test_iter_nest_fn
+-
+@set test_iter_nest_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_iter_nest_fn=
+  @log smoke=Beginning nested iter() test cases.
+-
+#
+# Test Case #1 - depth 3 and 4, full structure and counts (#2161).
+# The marker string asserts every level's element AND position: a lost
+# level, a stale #@, or a broken accumulator all change it.
+#
+&tr.tc001 test_iter_nest_fn=
+  @if cand(
+        strmatch(iter(1 2,o#@ [iter(1 2,m#@ [iter(1 2,i#@)])]), o1 m1 i1 i2 m2 i1 i2 o2 m1 i1 i2 m2 i1 i2),
+        strmatch(words(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])])), 27),
+        strmatch(words(iter(lnum(2),[iter(lnum(2),[iter(lnum(2),[iter(lnum(2),X)])])])), 16),
+        strmatch(words(iter(1 2 3,[iter(a b c,[iter(x y z,##)])])), 27)
+      )=
+  {
+    @log smoke=TC001: triple and quad nested iter. Succeeded.
+  },
+  {
+    @log smoke=TC001: triple and quad nested iter. Failed (mark=[iter(1 2,o#@ [iter(1 2,m#@ [iter(1 2,i#@)])])] w3=[words(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])]))] w4=[words(iter(lnum(2),[iter(lnum(2),[iter(lnum(2),[iter(lnum(2),X)])])]))]).
+  }
+-
+#
+# Test Case #2 - several nested-iter consumers in ONE evaluation (#2161).
+# One compiled program holds all four brackets; the earlier fragments'
+# words() results must survive — as output slots — across the LATER
+# loops, which execute before the final assembly despite higher block
+# numbers.  Before the fix this returned 2 / "0 1 2" / 3 / 53: the first
+# three results were recycled slots holding a later lnum's output.
+#
+&tr.tc002 test_iter_nest_fn=
+  @if cand(
+        strmatch(words(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])])), 27),
+        strmatch(words(iter(lnum(3),[iter(lnum(3),X)])), 9),
+        strmatch(words(iter(1 2,[iter(1 2,[iter(1 2,X)])])), 8),
+        strmatch(strlen(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])])), 53)
+      )=
+  {
+    @log smoke=TC002: nested-iter results survive across later loops. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: nested-iter results survive across later loops. Failed (w3=[words(iter(lnum(3),[iter(lnum(3),[iter(lnum(3),X)])]))] w2=[words(iter(lnum(3),[iter(lnum(3),X)]))] w3lit=[words(iter(1 2,[iter(1 2,[iter(1 2,X)])]))]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_iter_nest_fn=
+  @log smoke=End nested iter() test cases.;
+  @notify smoke
+-
+drop test_iter_nest_fn
+-
+#
+# End of Test Cases
+#
