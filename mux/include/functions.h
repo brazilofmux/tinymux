@@ -83,6 +83,17 @@ bool delim_check
 );
 
 void arr2list(UTF8 *arr[], int alen, UTF8 *list, UTF8 **bufc, const SEP &sep);
+// Both splitters write arr[i] only for i < their return value, and every
+// caller must read no further: the tables are handed over UNINITIALIZED
+// (#2145), so a past-count read is garbage — on a recycled allocation, a
+// faulting pointer — not the nullptr the old zeroed vectors happened to
+// provide.  list2arr tokenizes `list` in place (destructive: separators
+// become NULs in the CALLER's buffer); list2arr_nd tokenizes a private
+// copy in `scratch` (>= LBUF_SIZE bytes, must outlive arr[] use) and
+// leaves `list` untouched — note it therefore also TRUNCATES input beyond
+// LBUF_SIZE-1 bytes, which list2arr does not; unreachable from fargs, but
+// the two are not interchangeable at the extreme (#2136).
+//
 int list2arr(UTF8 *arr[], int maxlen, UTF8 *list, const SEP &sep);
 int list2arr_nd(UTF8 *arr[], int maxlen, const UTF8 *list, const SEP &sep,
                 UTF8 *scratch);

@@ -8019,8 +8019,8 @@ static FUNCTION(fun_choose)
         return;
     }
 
-    std::unique_ptr<PUTF8[]> elems(new PUTF8[LBUF_SIZE/2]);     // uninit (#2145)
-    std::unique_ptr<PUTF8[]> weights(new PUTF8[LBUF_SIZE/2]);   // uninit (#2145)
+    std::unique_ptr<PUTF8[]> elems(new PUTF8[LBUF_SIZE/2]);     // uninit (#2145): past-count reads are UB now, not nullptr
+    std::unique_ptr<PUTF8[]> weights(new PUTF8[LBUF_SIZE/2]);   // uninit (#2145): past-count reads are UB now, not nullptr
 
     // Non-destructive (#2136): both lists are borrowed fargs.
     //
@@ -8600,8 +8600,8 @@ static FUNCTION(fun_ledit)
     // all three lists are borrowed fargs; the walk over the original list
     // below tokenizes a private copy too.
     //
-    std::unique_ptr<UTF8*[]> findArr(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
-    std::unique_ptr<UTF8*[]> replArr(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
+    std::unique_ptr<UTF8*[]> findArr(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145): past-count reads are UB now, not nullptr
+    std::unique_ptr<UTF8*[]> replArr(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145): past-count reads are UB now, not nullptr
     LBuf scFind = LBuf_Src("fun_ledit.find");
     LBuf scRepl = LBuf_Src("fun_ledit.repl");
     int nFind = list2arr_nd(findArr.get(), LBUF_SIZE/2, fargs[1], sep,
@@ -10001,8 +10001,8 @@ static void handle_sets
     const SEP      &osep
 )
 {
-    std::unique_ptr<UTF8*[]> ptrs1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
-    std::unique_ptr<UTF8*[]> ptrs2(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
+    std::unique_ptr<UTF8*[]> ptrs1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145): past-count reads are UB now, not nullptr
+    std::unique_ptr<UTF8*[]> ptrs2(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145): past-count reads are UB now, not nullptr
 
     int val;
 

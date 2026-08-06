@@ -1679,7 +1679,7 @@ FUNCTION(fun_vmag)
         return;
     }
 
-    std::unique_ptr<UTF8*[]> v1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
+    std::unique_ptr<UTF8*[]> v1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145): past-count reads are UB now, not nullptr
     LBuf sc = LBuf_Src("fun_vmag.nd");
     int n = list2arr_nd(v1.get(), LBUF_SIZE/2, fargs[0], sep, sc);
 
@@ -1721,7 +1721,7 @@ FUNCTION(fun_vunit)
         return;
     }
 
-    std::unique_ptr<UTF8*[]> v1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145)
+    std::unique_ptr<UTF8*[]> v1(new UTF8*[LBUF_SIZE/2]);   // uninit (#2145): past-count reads are UB now, not nullptr
     LBuf sc = LBuf_Src("fun_vunit.nd");
     int n = list2arr_nd(v1.get(), LBUF_SIZE/2, fargs[0], sep, sc);
 
