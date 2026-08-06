@@ -2683,9 +2683,13 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int nExtra = static_cast<int>(node->children.size()) - 4;
         if (nExtra < 0) nExtra = 0;
 
-        uint64_t t2split_m  = tier2_lookup("SPLIT_TOKEN");
-        uint64_t t2append_m = tier2_lookup("APPEND");
-        uint64_t t2blen_m   = tier2_lookup("BYTELEN");
+        // Integer-ABI trio (#2152, mechanics from #2132).  Required in the
+        // entry gate: with an older blob the arm simply does not fire and
+        // MAP takes its generic ECALL fallback, which is correct — cleaner
+        // than carrying a dual string/int emission path in the arm.
+        uint64_t t2split_m  = tier2_lookup("SPLIT_STEP");
+        uint64_t t2append_m = tier2_lookup("APPEND_I");
+        uint64_t t2blen_m   = tier2_lookup("BYTELEN_I");
 
         dbref thing = NOTHING;
         ATTR *pattr = nullptr;
@@ -2800,10 +2804,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 // "::", so osep handling is not implicated.
                 {
                     int dargs[1] = { delim_val };
-                    int dlen = h.emit_call(TY_STRING, 0, dargs, 1);
-                    h.tier2_addr[dlen] = t2blen_m;
+                    int dlen_i = h.emit_call_t2i(t2blen_m, 0, dargs, 1);
                     h.tier2_calls++;
-                    int dlen_i = h.emit(HIR_ATOI, TY_INT, dlen);
                     int c2 = h.emit_iconst(2);
                     int delim_ok = h.emit(HIR_LT, TY_INT, dlen_i, c2);
                     gate = h.emit(HIR_BAND, TY_INT, gate, delim_ok);
@@ -2814,10 +2816,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int c256 = h.emit_iconst(256);
                 for (int ei = 0; ei < nExtra; ei++) {
                     int bargs[1] = { m_args[4 + ei] };
-                    int bl = h.emit_call(TY_STRING, 0, bargs, 1);
-                    h.tier2_addr[bl] = t2blen_m;
+                    int bl_i = h.emit_call_t2i(t2blen_m, 0, bargs, 1);
                     h.tier2_calls++;
-                    int bl_i = h.emit(HIR_ATOI, TY_INT, bl);
                     int fits = h.emit(HIR_LT, TY_INT, bl_i, c256);
                     gate = h.emit(HIR_BAND, TY_INT, gate, fits);
                     h.native_ops += 2;
@@ -2894,13 +2894,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 h.emit(HIR_STORE_Q, TY_VOID, len_init, -1,
                        QREG_ITER_ACC);
                 uint64_t e_addr = rc.pool_str("");
-                uint64_t z_addr = rc.pool_str("0");
-                int z_str = h.emit_sconst(z_addr, "0");
                 int e_str = h.emit_sconst(e_addr, "");
                 int acc_r0 = h.emit_sref(acc_addr);
-                int rst_args[5] = { acc_r0, z_str, z_str, e_str, e_str };
-                int rst = h.emit_call(TY_STRING, 0, rst_args, 5);
-                h.tier2_addr[rst] = t2append_m;
+                int rst_args[5] = { acc_r0, zero_i, zero_i, e_str, e_str };
+                int rst = h.emit_call_t2i(t2append_m, 0, rst_args, 5);
+                (void)rst;
                 h.tier2_calls++;
 
                 int pre_hdr = h.cur_block;
@@ -2929,28 +2927,19 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int one_i = h.emit_iconst(1);
                 int inum1 = h.emit(HIR_ADD, TY_INT, inum, one_i);
                 h.native_ops++;
-                int cur_str = h.emit(HIR_ITOA, TY_STRING, mcur);
-                uint64_t m0a = rc.pool_str("0");
-                int m0 = h.emit_sconst(m0a, "0");
-                int st0[4] = { list_val, cur_str, delim_val, m0 };
-                int elem = h.emit_call(TY_STRING, 0, st0, 4);
-                h.tier2_addr[elem] = t2split_m;
+                // Integer-ABI walk (#2152): one call, cursor in a register,
+                // element in the out slot, next cursor back in a0.
+                int st0[3] = { list_val, mcur, delim_val };
+                int step = h.emit_call_t2i(t2split_m, 1, st0, 3);
                 h.tier2_calls++;
-                uint64_t m1a = rc.pool_str("1");
-                int m1 = h.emit_sconst(m1a, "1");
-                int st1[4] = { list_val, cur_str, delim_val, m1 };
-                int nxt_str = h.emit_call(TY_STRING, 0, st1, 4);
-                h.tier2_addr[nxt_str] = t2split_m;
-                h.tier2_calls++;
-                int nxt_cur = h.emit(HIR_ATOI, TY_INT, nxt_str);
+                int elem = h.emit(HIR_T2I_STR, TY_STRING, step);
+                int nxt_cur = step;
 
                 // Element-size diamond: fits → inlined body,
                 // oversized → ECALL u(#thing/attr, elem).
                 int eb_args[1] = { elem };
-                int eb = h.emit_call(TY_STRING, 0, eb_args, 1);
-                h.tier2_addr[eb] = t2blen_m;
+                int eb_i = h.emit_call_t2i(t2blen_m, 0, eb_args, 1);
                 h.tier2_calls++;
-                int eb_i = h.emit(HIR_ATOI, TY_INT, eb);
                 int e_fits = h.emit(HIR_LT, TY_INT, eb_i, c256);
                 h.native_ops++;
                 int uarm_blk = h.new_block();
@@ -3005,16 +2994,12 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int body_val = h.emit_phi(TY_STRING, -1,
                                           eblocks, evals, 2);
 
-                // Append and latch stores.
-                int len_str = h.emit(HIR_ITOA, TY_STRING, mlen);
-                int inum_str = h.emit(HIR_ITOA, TY_STRING, inum);
+                // Append and latch stores — integer ABI (#2152).
                 int acc_r = h.emit_sref(acc_addr);
-                int ap_args[5] = { acc_r, len_str, inum_str,
+                int ap_args[5] = { acc_r, mlen, inum,
                                    osep_val, body_val };
-                int nl_str = h.emit_call(TY_STRING, 0, ap_args, 5);
-                h.tier2_addr[nl_str] = t2append_m;
+                int nl = h.emit_call_t2i(t2append_m, 0, ap_args, 5);
                 h.tier2_calls++;
-                int nl = h.emit(HIR_ATOI, TY_INT, nl_str);
                 h.emit(HIR_STORE_Q, TY_VOID, nl, -1, QREG_ITER_ACC);
                 h.emit(HIR_STORE_Q, TY_VOID, inum1, -1, QREG_ITER_INUM);
                 h.emit(HIR_STORE_Q, TY_VOID, nxt_cur, -1,
@@ -3101,9 +3086,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int nExtra = static_cast<int>(node->children.size()) - 4;
         if (nExtra < 0) nExtra = 0;
 
-        uint64_t t2split_f  = tier2_lookup("SPLIT_TOKEN");
-        uint64_t t2append_f = tier2_lookup("APPEND");
-        uint64_t t2blen_f   = tier2_lookup("BYTELEN");
+        // Integer-ABI trio (#2152); required in the entry gate, same
+        // old-blob degradation story as MAP's arm above.
+        uint64_t t2split_f  = tier2_lookup("SPLIT_STEP");
+        uint64_t t2append_f = tier2_lookup("APPEND_I");
+        uint64_t t2blen_f   = tier2_lookup("BYTELEN_I");
 
         dbref thing = NOTHING;
         ATTR *pattr = nullptr;
@@ -3165,6 +3152,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                     ? m_args[3] : delim_val;
 
                 // ---- runtime gate (same as MAP) ----
+                int zero_i = h.emit_iconst(0);
                 int perm_idx = engine_api_lookup("_CHECK_U_PERM");
                 std::string thing_s = std::to_string(thing);
                 std::string attr_s = std::to_string(pattr->number);
@@ -3178,7 +3166,6 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 h.ecalls++;
                 h.known_int[perm_res] = true;
                 int perm_int = h.emit(HIR_ATOI, TY_INT, perm_res);
-                int zero_i = h.emit_iconst(0);
                 int perm_ok = h.emit(HIR_EQ, TY_INT, perm_int, zero_i);
                 h.native_ops++;
 
@@ -3208,10 +3195,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 // "::", so osep handling is not implicated.
                 {
                     int dargs[1] = { delim_val };
-                    int dlen = h.emit_call(TY_STRING, 0, dargs, 1);
-                    h.tier2_addr[dlen] = t2blen_f;
+                    int dlen_i = h.emit_call_t2i(t2blen_f, 0, dargs, 1);
                     h.tier2_calls++;
-                    int dlen_i = h.emit(HIR_ATOI, TY_INT, dlen);
                     int c2 = h.emit_iconst(2);
                     int delim_ok = h.emit(HIR_LT, TY_INT, dlen_i, c2);
                     gate = h.emit(HIR_BAND, TY_INT, gate, delim_ok);
@@ -3221,10 +3206,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int c256 = h.emit_iconst(256);
                 for (int ei = 0; ei < nExtra; ei++) {
                     int bargs[1] = { m_args[4 + ei] };
-                    int bl = h.emit_call(TY_STRING, 0, bargs, 1);
-                    h.tier2_addr[bl] = t2blen_f;
+                    int bl_i = h.emit_call_t2i(t2blen_f, 0, bargs, 1);
                     h.tier2_calls++;
-                    int bl_i = h.emit(HIR_ATOI, TY_INT, bl);
                     int fits = h.emit(HIR_LT, TY_INT, bl_i, c256);
                     gate = h.emit(HIR_BAND, TY_INT, gate, fits);
                     h.native_ops += 2;
@@ -3297,13 +3280,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 h.emit(HIR_STORE_Q, TY_VOID, kept_init, -1,
                        QREG_FILTER_KEPT);
                 uint64_t e_addr = rc.pool_str("");
-                uint64_t z_addr = rc.pool_str("0");
-                int z_str = h.emit_sconst(z_addr, "0");
                 int e_str = h.emit_sconst(e_addr, "");
                 int acc_r0 = h.emit_sref(acc_addr);
-                int rst_args[5] = { acc_r0, z_str, z_str, e_str, e_str };
-                int rst = h.emit_call(TY_STRING, 0, rst_args, 5);
-                h.tier2_addr[rst] = t2append_f;
+                int rst_args[5] = { acc_r0, zero_i, zero_i, e_str, e_str };
+                int rst = h.emit_call_t2i(t2append_f, 0, rst_args, 5);
+                (void)rst;
                 h.tier2_calls++;
 
                 int pre_hdr = h.cur_block;
@@ -3334,27 +3315,17 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int one_i = h.emit_iconst(1);
                 int inum1 = h.emit(HIR_ADD, TY_INT, inum, one_i);
                 h.native_ops++;
-                int cur_str = h.emit(HIR_ITOA, TY_STRING, fcur);
-                uint64_t m0a = rc.pool_str("0");
-                int m0 = h.emit_sconst(m0a, "0");
-                int st0[4] = { list_val, cur_str, delim_val, m0 };
-                int elem = h.emit_call(TY_STRING, 0, st0, 4);
-                h.tier2_addr[elem] = t2split_f;
+                // Integer-ABI walk (#2152): one call per element.
+                int st0[3] = { list_val, fcur, delim_val };
+                int step = h.emit_call_t2i(t2split_f, 1, st0, 3);
                 h.tier2_calls++;
-                uint64_t m1a = rc.pool_str("1");
-                int m1 = h.emit_sconst(m1a, "1");
-                int st1[4] = { list_val, cur_str, delim_val, m1 };
-                int nxt_str = h.emit_call(TY_STRING, 0, st1, 4);
-                h.tier2_addr[nxt_str] = t2split_f;
-                h.tier2_calls++;
-                int nxt_cur = h.emit(HIR_ATOI, TY_INT, nxt_str);
+                int elem = h.emit(HIR_T2I_STR, TY_STRING, step);
+                int nxt_cur = step;
 
                 // Element-size diamond for the PREDICATE's %0 only.
                 int eb_args[1] = { elem };
-                int eb = h.emit_call(TY_STRING, 0, eb_args, 1);
-                h.tier2_addr[eb] = t2blen_f;
+                int eb_i = h.emit_call_t2i(t2blen_f, 0, eb_args, 1);
                 h.tier2_calls++;
-                int eb_i = h.emit(HIR_ATOI, TY_INT, eb);
                 int e_fits = h.emit(HIR_LT, TY_INT, eb_i, c256);
                 h.native_ops++;
                 int uarm_blk = h.new_block();
@@ -3425,15 +3396,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 // TC007 (kept empty elements) is the case that fails
                 // anything else.
                 h.cur_block = keep_blk;
-                int len_str = h.emit(HIR_ITOA, TY_STRING, flen);
-                int kept_str = h.emit(HIR_ITOA, TY_STRING, kept);
                 int acc_r = h.emit_sref(acc_addr);
-                int ap_args[5] = { acc_r, len_str, kept_str,
+                int ap_args[5] = { acc_r, flen, kept,
                                    osep_val, elem };
-                int nl_str = h.emit_call(TY_STRING, 0, ap_args, 5);
-                h.tier2_addr[nl_str] = t2append_f;
+                int nl = h.emit_call_t2i(t2append_f, 0, ap_args, 5);
                 h.tier2_calls++;
-                int nl = h.emit(HIR_ATOI, TY_INT, nl_str);
                 h.emit(HIR_STORE_Q, TY_VOID, nl, -1, QREG_ITER_ACC);
                 int kept1 = h.emit(HIR_ADD, TY_INT, kept, one_i);
                 h.native_ops++;
@@ -3539,9 +3506,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         const bool has_base = (node->children.size() >= 3);
 
-        uint64_t t2split_d  = tier2_lookup("SPLIT_TOKEN");
-        uint64_t t2append_d = tier2_lookup("APPEND");
-        uint64_t t2blen_d   = tier2_lookup("BYTELEN");
+        // Integer-ABI trio (#2153); required in the entry gate, same
+        // old-blob degradation story as MAP's arm above.
+        uint64_t t2split_d  = tier2_lookup("SPLIT_STEP");
+        uint64_t t2append_d = tier2_lookup("APPEND_I");
+        uint64_t t2blen_d   = tier2_lookup("BYTELEN_I");
 
         dbref thing = NOTHING;
         ATTR *pattr = nullptr;
@@ -3602,6 +3571,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 }
 
                 // ---- runtime gate (identical to MAP/FILTER) ----
+                int zero_i = h.emit_iconst(0);
                 int perm_idx = engine_api_lookup("_CHECK_U_PERM");
                 std::string thing_s = std::to_string(thing);
                 std::string attr_s = std::to_string(pattr->number);
@@ -3615,7 +3585,6 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 h.ecalls++;
                 h.known_int[perm_res] = true;
                 int perm_int = h.emit(HIR_ATOI, TY_INT, perm_res);
-                int zero_i = h.emit_iconst(0);
                 int perm_ok = h.emit(HIR_EQ, TY_INT, perm_int, zero_i);
                 h.native_ops++;
 
@@ -3645,10 +3614,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 // "::", so osep handling is not implicated.
                 {
                     int dargs[1] = { delim_val };
-                    int dlen = h.emit_call(TY_STRING, 0, dargs, 1);
-                    h.tier2_addr[dlen] = t2blen_d;
+                    int dlen_i = h.emit_call_t2i(t2blen_d, 0, dargs, 1);
                     h.tier2_calls++;
-                    int dlen_i = h.emit(HIR_ATOI, TY_INT, dlen);
                     int c2 = h.emit_iconst(2);
                     int delim_ok = h.emit(HIR_LT, TY_INT, dlen_i, c2);
                     gate = h.emit(HIR_BAND, TY_INT, gate, delim_ok);
@@ -3704,14 +3671,7 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 // The pinned accumulator, written at offset 0 always.
                 uint64_t acc_addr = rc.alloc_output();
                 uint64_t e_addr = rc.pool_str("");
-                uint64_t z_addr = rc.pool_str("0");
-                int z_str = h.emit_sconst(z_addr, "0");
                 int e_str = h.emit_sconst(e_addr, "");
-
-                uint64_t m0a = rc.pool_str("0");
-                int m0 = h.emit_sconst(m0a, "0");
-                uint64_t m1a = rc.pool_str("1");
-                int m1 = h.emit_sconst(m1a, "1");
 
                 // ---- seed ----
                 //
@@ -3739,24 +3699,20 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                     seed_cursor = h.emit_iconst(0);
                     seed_inum = h.emit_iconst(0);
                 } else {
-                    int c0_str = h.emit(HIR_ITOA, TY_STRING,
-                                        h.emit_iconst(0));
-                    int s0[4] = { list_val, c0_str, delim_val, m0 };
-                    seed_val = h.emit_call(TY_STRING, 0, s0, 4);
-                    h.tier2_addr[seed_val] = t2split_d;
+                    // Integer-ABI seed walk (#2153): one call at cursor 0.
+                    int c0_i = h.emit_iconst(0);
+                    int s0[3] = { list_val, c0_i, delim_val };
+                    int sstep = h.emit_call_t2i(t2split_d, 1, s0, 3);
                     h.tier2_calls++;
-                    int s1[4] = { list_val, c0_str, delim_val, m1 };
-                    int nx0 = h.emit_call(TY_STRING, 0, s1, 4);
-                    h.tier2_addr[nx0] = t2split_d;
-                    h.tier2_calls++;
-                    seed_cursor = h.emit(HIR_ATOI, TY_INT, nx0);
+                    seed_val = h.emit(HIR_T2I_STR, TY_STRING, sstep);
+                    seed_cursor = sstep;
                     seed_inum = h.emit_iconst(1);
                 }
                 int acc_seed_ref = h.emit_sref(acc_addr);
-                int sd_args[5] = { acc_seed_ref, z_str, z_str,
+                int sd_args[5] = { acc_seed_ref, zero_i, zero_i,
                                    e_str, seed_val };
-                int sd = h.emit_call(TY_STRING, 0, sd_args, 5);
-                h.tier2_addr[sd] = t2append_d;
+                int sd = h.emit_call_t2i(t2append_d, 0, sd_args, 5);
+                (void)sd;
                 h.tier2_calls++;
 
                 h.emit(HIR_STORE_Q, TY_VOID, seed_inum, -1,
@@ -3793,16 +3749,12 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 int one_i = h.emit_iconst(1);
                 int inum1 = h.emit(HIR_ADD, TY_INT, inum, one_i);
                 h.native_ops++;
-                int cur_str = h.emit(HIR_ITOA, TY_STRING, dcur);
-                int st0[4] = { list_val, cur_str, delim_val, m0 };
-                int elem = h.emit_call(TY_STRING, 0, st0, 4);
-                h.tier2_addr[elem] = t2split_d;
+                // Integer-ABI walk (#2153): one call per element.
+                int st0[3] = { list_val, dcur, delim_val };
+                int step = h.emit_call_t2i(t2split_d, 1, st0, 3);
                 h.tier2_calls++;
-                int st1[4] = { list_val, cur_str, delim_val, m1 };
-                int nxt_str = h.emit_call(TY_STRING, 0, st1, 4);
-                h.tier2_addr[nxt_str] = t2split_d;
-                h.tier2_calls++;
-                int nxt_cur = h.emit(HIR_ATOI, TY_INT, nxt_str);
+                int elem = h.emit(HIR_T2I_STR, TY_STRING, step);
+                int nxt_cur = step;
 
                 // Size diamond.  BOTH the accumulator and the element must
                 // fit their CARGS slots -- the accumulator is the one that
@@ -3810,16 +3762,12 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                 // the line (fold_fn TC007).
                 int acc_ref_r = h.emit_sref(acc_addr);
                 int ab_args[1] = { acc_ref_r };
-                int ab = h.emit_call(TY_STRING, 0, ab_args, 1);
-                h.tier2_addr[ab] = t2blen_d;
+                int ab_i = h.emit_call_t2i(t2blen_d, 0, ab_args, 1);
                 h.tier2_calls++;
-                int ab_i = h.emit(HIR_ATOI, TY_INT, ab);
                 int a_fits = h.emit(HIR_LT, TY_INT, ab_i, c256);
                 int eb_args[1] = { elem };
-                int eb = h.emit_call(TY_STRING, 0, eb_args, 1);
-                h.tier2_addr[eb] = t2blen_d;
+                int eb_i = h.emit_call_t2i(t2blen_d, 0, eb_args, 1);
                 h.tier2_calls++;
-                int eb_i = h.emit(HIR_ATOI, TY_INT, eb);
                 int e_fits = h.emit(HIR_LT, TY_INT, eb_i, c256);
                 int both_fit = h.emit(HIR_BAND, TY_INT, a_fits, e_fits);
                 h.native_ops += 3;
@@ -3893,9 +3841,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
                 // Replace the accumulator: write at offset 0, no osep.
                 int acc_ref_s = h.emit_sref(acc_addr);
-                int sa[5] = { acc_ref_s, z_str, z_str, e_str, new_acc };
-                int st = h.emit_call(TY_STRING, 0, sa, 5);
-                h.tier2_addr[st] = t2append_d;
+                int zero_r = h.emit_iconst(0);
+                int sa[5] = { acc_ref_s, zero_r, zero_r, e_str, new_acc };
+                int st = h.emit_call_t2i(t2append_d, 0, sa, 5);
+                (void)st;
                 h.tier2_calls++;
 
                 h.emit(HIR_STORE_Q, TY_VOID, inum1, -1, QREG_ITER_INUM);

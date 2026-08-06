@@ -725,6 +725,17 @@ long rv64_append_i(char *acc, long len, long inum,
 }
 
 /* ---------------------------------------------------------------
+ * rv64_bytelen_i — byte length, integer ABI (#2152).
+ *
+ * rv64_bytelen returns its answer as decimal text, so the MAP/FILTER/FOLD
+ * CARGS-fit guards paid an sitoa here and an ATOI in the caller — per
+ * element — to compare an integer against 256.  Same walk, length in a0.
+ */
+long rv64_bytelen_i(const char *s) {
+    return (long)rv64_slen((const char *)s);
+}
+
+/* ---------------------------------------------------------------
  * rv64_bytelen — byte length of fargs[0], decimal (#2080).
  *
  * co_strlen counts visible graphemes; the MAP lowering needs BYTES,
