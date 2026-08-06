@@ -289,8 +289,8 @@ FUNCTION(fun_shuffle)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145)
-        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145)
+        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145): past-count reads are UB now, not nullptr
+        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145): past-count reads are UB now, not nullptr
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts.get(), wends.get(), LBUF_SIZE);
@@ -379,8 +379,8 @@ FUNCTION(fun_pickrand)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(s);
         size_t nLen = strlen(reinterpret_cast<const char *>(s));
-        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145)
-        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145)
+        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145): past-count reads are UB now, not nullptr
+        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145): past-count reads are UB now, not nullptr
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts.get(), wends.get(), LBUF_SIZE);
@@ -517,7 +517,7 @@ FUNCTION(fun_sortby)
 
     LBuf list = LBuf_Src("fun_sortby");
     mux_strncpy(list, fargs[1], LBUF_SIZE-1);
-    std::unique_ptr<UTF8*[]> ptrs(new UTF8*[LBUF_SIZE / 2]);   // uninit (#2145)
+    std::unique_ptr<UTF8*[]> ptrs(new UTF8*[LBUF_SIZE / 2]);   // uninit (#2145): past-count reads are UB now, not nullptr
     const int nptrs = list2arr(ptrs.get(), LBUF_SIZE / 2, list, sep);
 
     if (nptrs > 1)
@@ -573,8 +573,8 @@ FUNCTION(fun_last)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        std::unique_ptr<size_t[]> ws(new size_t[LBUF_SIZE]);   // uninit (#2145)
-        std::unique_ptr<size_t[]> we(new size_t[LBUF_SIZE]);   // uninit (#2145)
+        std::unique_ptr<size_t[]> ws(new size_t[LBUF_SIZE]);   // uninit (#2145): past-count reads are UB now, not nullptr
+        std::unique_ptr<size_t[]> we(new size_t[LBUF_SIZE]);   // uninit (#2145): past-count reads are UB now, not nullptr
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, ws.get(), we.get(), LBUF_SIZE);
@@ -640,8 +640,8 @@ FUNCTION(fun_lrest)
         //
         const unsigned char *pData = reinterpret_cast<const unsigned char *>(fargs[0]);
         size_t nLen = strlen(reinterpret_cast<const char *>(fargs[0]));
-        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145)
-        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145)
+        std::unique_ptr<size_t[]> wstarts(new size_t[LBUF_SIZE]);   // uninit (#2145): past-count reads are UB now, not nullptr
+        std::unique_ptr<size_t[]> wends(new size_t[LBUF_SIZE]);     // uninit (#2145): past-count reads are UB now, not nullptr
         size_t nWords = co_split_words(pData, nLen,
                             reinterpret_cast<const unsigned char *>(sep.str),
                             sep.n, wstarts.get(), wends.get(), LBUF_SIZE);
