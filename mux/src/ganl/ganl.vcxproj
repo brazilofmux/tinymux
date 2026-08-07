@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClInclude Include="include\connection.h" />
     <ClInclude Include="include\epoll_network_engine.h" />
+    <ClInclude Include="include\ganl_debug.h" />
     <ClInclude Include="include\io_buffer.h" />
     <ClInclude Include="include\iocp_network_engine.h" />
     <ClInclude Include="include\kqueue_network_engine.h" />
