@@ -700,8 +700,21 @@ struct hir_program {
     }
 
     // Emit a PHI node with arguments.
+    //
+    // A PHI with exactly ONE input IS its input — return the value
+    // instead of building a node (#2166).  A real single-input PHI is a
+    // latent wrong-value bug: its home block has one predecessor, so
+    // superblock formation merges the edge away and leaves a PHI with
+    // no incoming edges, whose slot no copy ever fills — empty output
+    // while jit_handled reports success.  Callers coerce operands to t
+    // before the call, so returning the value directly is type-safe.
+    // (nargs == 0 stays a real node: SSA construction reserves empty
+    // PHIs and fills their arguments during renaming.)
     int emit_phi(hir_type t, int qreg,
                  const int *blocks, const int *vals, int nargs) {
+        if (1 == nargs) {
+            return vals[0];
+        }
         int i = emit(HIR_PHI, t, -1, -1, qreg);
         if (i < 0) return -1;
         if (n_pargs + nargs > HIR_MAX_PARGS) { overflowed = true; return -1; }

@@ -2114,20 +2114,15 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         bool has_default = ((nfargs - 1) % 2) == 1;
 
         // Zero pairs — switch(target, default), reachable because the
-        // table minimum is 2 (#2165).  The target was already lowered
-        // above (evaluation order and side effects match the
-        // interpreter); the default is the value.  Return it as
-        // straight-line code: routing the one-armed case through the
-        // block machinery below builds a single-input PHI, which came
-        // back EMPTY on the compiled route while benchmark() reported
-        // jit_handled=10/10 — the value was wrong and the liveness
-        // counter had no way to say so.
-        if (0 == npairs) {
-            int dv = hir_lower_trimmed(h, rc,
-                node->children[nfargs - 1].get());
-            h.needs_jit = true;
-            return dv;
-        }
+        // table minimum is 2 (#2165) — flows through the machinery
+        // below unchanged: the loop body runs zero times and the merge
+        // "PHI" has one input, which emit_phi resolves to the default's
+        // value directly (#2166).  #2165 originally special-cased this
+        // as straight-line code because the single-input PHI came back
+        // EMPTY while jit_handled reported success; with emit_phi fixed
+        // the one-armed flow is DELIBERATELY kept as the standing
+        // regression shape for that machinery (switch_fn TC002 asserts
+        // its value parity).
 
         // We need: npairs test blocks, npairs result blocks,
         // optionally a default block, and a merge block.
