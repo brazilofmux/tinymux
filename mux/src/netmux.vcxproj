@@ -37,18 +37,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
+    <!-- PCRE2 is an out-of-tree prerequisite (gitignored), so unlike ganl its
+         location is not implied by this file's own position.  Default it
+         beside the project, which is where a checkout at the canonical path
+         already has it: $(MSBuildProjectDirectory) is the tree's mux\src, so
+         this resolves to exactly what the previous hardcoded
+         C:\tinymux\mux\src\pcre2 named.  Override to share one staged copy
+         across several trees with -p:Pcre2Dir=C:\path\to\pcre2 (the layout
+         expected is include\pcre2.h plus Release\ and Debug\ lib dirs). -->
+    <Pcre2Dir Condition="'$(Pcre2Dir)' == ''">$(MSBuildProjectDirectory)\pcre2</Pcre2Dir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\src\ganl\include;C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\tinymux\mux\src\pcre2\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(MSBuildProjectDirectory)\ganl\include;$(Pcre2Dir)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(Pcre2Dir)\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>.\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\src\ganl\include;C:\tinymux\mux\src\pcre2\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\tinymux\mux\src\pcre2\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(MSBuildProjectDirectory)\ganl\include;$(Pcre2Dir)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(Pcre2Dir)\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
