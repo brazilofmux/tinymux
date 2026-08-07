@@ -103,7 +103,11 @@ release carried the bad state.
    Measured (macOS arm64 / Linux x86-64): per-element cost drops ~4-6x
    on the compiled path, from losing to the interpreter at large N to
    **0.17-0.21x** of interp cost — and the digit-proportional climb is
-   largely closed (a smaller residual slope remains).  MAP, FILTER and
+   largely closed.  A smaller residual slope remains and belongs to the
+   source generator, not the loop: `lnum` renders each number through
+   `sitoa`, so its cost per element is affine in digit count (#2156,
+   measured directly on the bare generator).  The interpreter pays the
+   same term but hides it under ~6x more per-element overhead.  MAP, FILTER and
    FOLD followed in the same cycle (#2152/#2153): each arm gates on the
    integer trio (`SPLIT_STEP`/`APPEND_I`/`BYTELEN_I` — the last kills the
    CARGS-fit guard's per-element decimal round-trip) and declines to its
