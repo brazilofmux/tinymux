@@ -1,6 +1,8 @@
 #include "connection.h"
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>   // TCP_NODELAY (#2196)
 #include <netdb.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -142,6 +144,28 @@ bool Connection::connect() {
     freeaddrinfo(res);
 
     if (fd_ < 0) return false;
+
+    // #2196: disable Nagle on the session socket.
+    //
+    // A single typed command is immune either way -- send_line() assembles
+    // command + CRLF into one buffer and issues one write().  But anything
+    // that sends several lines in one event-loop pass (a trigger firing off a
+    // match, a macro or keybinding bound to multiple commands, a scripted
+    // burst, a speedwalk) produces back-to-back small writes, and with Nagle
+    // each one after the first waits for the ACK of its predecessor -- which
+    // the peer's delayed-ACK timer can hold for up to ~40ms.  The burst then
+    // leaves the client at ACK cadence instead of departing together.
+    //
+    // Invisible on loopback, which is why local testing never shows it.
+    //
+    // Set here rather than at either `break` so both connect paths (immediate
+    // and EINPROGRESS + poll) are covered by one call.  Non-fatal: a latency
+    // hint failing is no reason to refuse a working connection.
+    //
+    {
+        int one = 1;
+        (void)setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
+    }
 
     if (use_ssl_) {
         if (!ssl_connect()) {
