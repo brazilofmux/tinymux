@@ -15,6 +15,12 @@ namespace CredStore {
 
     // Remove stored credentials for a world.
     void Remove(const std::string& world_name);
+
+    // No-op on this backend.  The shared world.cpp calls this unconditionally
+    // (#1891) to aim the console client's file store at worlds.cred.  This
+    // client keeps credentials in Windows Credential Manager, keyed by target
+    // name, so there is no adjacent file whose path could be set.
+    void SetFilePath(const std::string& path);
 }
 
 #endif // CREDENTIAL_STORE_H
