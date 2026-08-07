@@ -86,3 +86,10 @@ void CredStore::Remove(const std::string& world_name) {
     std::wstring target = make_target(world_name);
     CredDeleteW(target.c_str(), CRED_TYPE_GENERIC, 0);
 }
+
+void CredStore::SetFilePath(const std::string& /*path*/) {
+    // Intentionally empty -- see credential_store.h.  Credential Manager is
+    // keyed by target name ("Titan:<world>"), not backed by a file, so there
+    // is nothing to point at.  Defined so the shared world.cpp links against
+    // this backend as well as the console one.
+}
