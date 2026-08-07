@@ -100,6 +100,10 @@ private:
     std::string line_buf_;
     std::chrono::steady_clock::time_point line_buf_time_;  // when data last arrived
     std::string last_prompt_;  // last flushed prompt (to avoid re-displaying)
+    // #2195: set when the server sends IAC GA / IAC EOR, i.e. states outright
+    // that the prompt ends here.  check_prompt() consumes it and delivers the
+    // partial line immediately instead of waiting out the 250ms guess.
+    bool prompt_ready_ = false;
 
     // Scrollback
     std::deque<std::string> scrollback_;
