@@ -213,6 +213,38 @@ release carried the bad state.
    from the driver basket, so a runtime `@admin` that failed to re-pull it
    would report success and change nothing until restart.
 
+## Reliability and Restart
+
+ - **Every `@restart` leaked a whole helper generation** (#2192).  The old
+   stubslave survived *alive forever*, the old slave became a permanent
+   zombie, and the parent's end of the old socketpair was carried into the new
+   process image.  It accumulated: a deployment restarted three times ran
+   three live orphan stubslaves, three zombie slaves and three dead fds,
+   indefinitely.  Observed on a long-running 2.14 deployment with an orphan
+   5.5 days and two execs old.
+ - The cause is that `do_restart()` runs inside engine.so, where
+   `final_stubslave()` is a deliberate no-op whose contract is "the driver
+   handles this after engine shutdown" — but `do_restart()` never returns to
+   the driver, it `execl()`s in place, so the teardown it defers to is
+   unreachable on the restart path.  A `strace` of the stubslave across a full
+   `@restart` shows **zero syscalls**: it is never told anything.
+ - Two independent defects had to be fixed, and each one alone still leaks.
+   The parent's channel fd is now `FD_CLOEXEC`, so the exec itself closes it
+   and the old stubslave exits through the EOF path it already had — this is
+   what GANL's own helper spawn has always done, and the stubslave path was
+   simply never brought under the same rule.  And helpers that exit during
+   teardown are now reaped at startup: they are inherited across `execve`, the
+   reap is SIGCHLD-driven, and in steady state no child ever exits — so with
+   nothing to trigger it, the zombie was permanent.
+ - Measured across three restarts: before, 3 live orphans + 3 zombies + 3
+   leaked fds; with `FD_CLOEXEC` alone, 6 zombies; with both, one stubslave
+   and one slave, no zombies, flat fd count.
+ - Introduced by the 2026-03 component split that created engine.so; **2.13 is
+   unaffected**.  #386 reported the identical symptom in 2007 and was fixed
+   then — the modular split reintroduced it, which is why
+   `tests/scenario/restart_helpers.py` now asserts it rather than leaving it
+   to the next person to rediscover.
+
 ## Notes
 
  - `docs/survey-perf-pass-2026-08.md` records the pass, including the

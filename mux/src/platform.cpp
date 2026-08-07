@@ -200,6 +200,36 @@ MUX_RESULT CPlatform::BootHelperProcess(
         }
     }
 
+    // #2192: the parent's end must not survive an exec.
+    //
+    // do_restart() execl()s in place and never returns to the driver, so the
+    // driver-side teardown that final_stubslave()'s engine-side no-op defers
+    // to is unreachable on the restart path -- no shutdown request is ever
+    // sent.  Without CLOEXEC the exec then carries this fd into the new image,
+    // which knows nothing about it and reconstructs stubslave_channel_ fresh.
+    // The old stubslave's EOF backstop therefore never fires: it parks in
+    // poll(fd 0) forever, one immortal orphan per @restart.
+    //
+    // CLOEXEC makes the exec itself close the channel, which delivers the EOF
+    // and lets the old stubslave exit through the clean path it already has.
+    // That covers every exec, not just do_restart's -- panic restart included.
+    //
+    // This is what GANL's own helper spawn already does; see the "Parent
+    // endpoint should not leak into child exec" block in
+    // mux/ganl/src/slave_spawn_posix.cpp.  This path was simply never brought
+    // under the same rule, nor under #1823's restart-fd regime, where fds that
+    // are MEANT to survive are CLOEXEC by default and prepare_for_restart()
+    // clears the flag only on the intended survivor set.
+    //
+    {
+        int fdflags = fcntl(sv[0], F_GETFD, 0);
+        if (fdflags < 0 || fcntl(sv[0], F_SETFD, fdflags | FD_CLOEXEC) < 0)
+        {
+            pFailedFunc = "fcntl(FD_CLOEXEC) error: ";
+            goto failure;
+        }
+    }
+
     childPid = fork();
     switch (childPid)
     {

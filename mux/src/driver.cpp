@@ -19,6 +19,10 @@
 #include "driver_log.h"
 #include "driver_bridge.h"
 
+#if defined(HAVE_WORKING_FORK)
+#include <sys/wait.h>
+#endif
+
 mux_ILog *g_pILog = nullptr;
 mux_IPlatform *g_pIPlatform = nullptr;
 DRIVER_CONFIG g_dc;
@@ -512,6 +516,41 @@ int DCL_CDECL main(int argc, char *argv[])
     // much until they get a notification that the part of loading they depend
     // on is complete.
     //
+    // #2192: collect zombies inherited across an exec-restart.
+    //
+    // Children survive execve() and the new image is still their parent, so
+    // a helper that exited during do_restart()'s teardown arrives here as an
+    // inherited zombie.  The DNS slave is exactly that case: GANL closes its
+    // pipe during prepare_for_restart(), it exits on EOF milliseconds later
+    // while do_restart() is still dumping, and the SIGCHLD that would have
+    // reaped it sets a flag in a main loop that never runs again.
+    //
+    // Nothing else would ever collect it.  The steady-state reap is driven
+    // by SIGCHLD (ganl_adapter.cpp), and in steady state no child exits --
+    // so with no trigger the zombie is permanent, one more per restart.
+    //
+    // Deliberately before any helper of our own is booted: anything reaped
+    // here is by construction inherited, never something this image spawned.
+    // WNOHANG means only already-exited children are taken, so a live
+    // inherited child (none expected) is left alone.
+    //
+#if defined(HAVE_WORKING_FORK)
+    {
+        int nReaped = 0;
+        int status = 0;
+        while (waitpid(-1, &status, WNOHANG) > 0)
+        {
+            nReaped++;
+        }
+        if (0 < nReaped && g_pILog)
+        {
+            g_pILog->WriteString(tprintf(
+                T("Reaped %d inherited zombie helper(s) from a previous image.\n"),
+                nReaped));
+        }
+    }
+#endif // HAVE_WORKING_FORK
+
     // Boot stubslave helper process via platform interface.
     // On Unix: fork+exec creates a child process with IPC pipe.
     // On Windows: returns MUX_E_NOTIMPLEMENTED (runs in-process).
