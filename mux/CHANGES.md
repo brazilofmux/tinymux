@@ -109,13 +109,13 @@ release carried the bad state.
    measured on the bare generator — subtracting it leaves the loop flat
    to within noise).  The compiled generator's digit term is ~10x the
    interpreter's, so the slope is visible on the JIT route and invisible
-   on the AST one.  MAP, FILTER and
-   FOLD followed in the same cycle (#2152/#2153): each arm gates on the
-   integer trio (`SPLIT_STEP`/`APPEND_I`/`BYTELEN_I` — the last kills the
-   CARGS-fit guard's per-element decimal round-trip) and declines to its
-   generic ECALL fallback on an older blob.  Measured against the
-   interpreter with live u-inlined bodies: map 1.7x, filter up to 1.9x,
-   fold 3.5-3.7x faster.
+   on the AST one.  MAP, FILTER and FOLD followed in the same cycle
+   (#2152/#2153): each arm gates on the integer trio
+   (`SPLIT_STEP`/`APPEND_I`/`BYTELEN_I` — the last kills the CARGS-fit
+   guard's per-element decimal round-trip) and declines to its generic
+   ECALL fallback on an older blob.  Measured against the interpreter
+   with live u-inlined bodies: map 1.7x, filter up to 1.9x, fold
+   3.5-3.7x faster.
  - **`map()` and `filter()` have JIT lowerings**, composed from the `iter()`
    loop and the `u()` inline rather than written fresh.
  - **The `u()`-inline permission branch had its arms reversed since it was
