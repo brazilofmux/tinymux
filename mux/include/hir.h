@@ -177,6 +177,23 @@ enum hir_kind {
     // Q-register sync: write to both SUBST slot and mudstate.
     HIR_SETQ_SYNC,  // val = register number (0-9), src1 = value (string addr)
 
+    // Loop-context table maintenance (#2171): keep the guest-side table at
+    // rv_compiler::LOOPCTX_BASE current so the ECALL dispatch can push the
+    // compiled iter levels onto the interpreter's itext/inum stack around
+    // any callee.  All table addresses are compile-time constants.
+    HIR_LCTX_DEPTH, // val = new depth (immediate); no operands
+    HIR_LCTX_ELEM,  // val = level, src1 = element value — stores the
+                    //   CONSTANT slot address of src1, and the operand
+                    //   reference is load-bearing: it keeps the element's
+                    //   buffer live for callees that read it mid-loop
+    HIR_LCTX_INUM,  // val = level, src1 = 1-based iteration number (int)
+    HIR_LCTX_KEEP,  // val = level, src1 = element value — emits NO code;
+                    //   its operand use extends the element's live
+                    //   interval to the END of the level's body, so the
+                    //   buffer the table points at cannot be recycled
+                    //   (by an inner loop's element or a body temporary)
+                    //   while an ECALL callee could still read it
+
     // Control flow (M2+)
     HIR_BR,         // unconditional branch: val = target block
     HIR_BRC,        // conditional branch: src1 = cond, val = true block, src2 = false block

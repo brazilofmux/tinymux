@@ -89,10 +89,46 @@
       )=
   {
     @log smoke=TC003: outer-level itext/inum inside compiled nests. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc004
   },
   {
     @log smoke=TC003: outer-level itext/inum inside compiled nests. Failed (subst=[iter(A B,[iter(C D,[iter(E F,%i0.%i1.%i2)])])] calls=[iter(A B,[iter(C D,[iter(E F,[itext(1)]/[inum(2)])])])]).;
+    @trig me/tr.tc004
+  }
+-
+#
+# Test Case #4 - loop context crosses the program boundary (#2171).
+#
+# A u() callee is a SEPARATE compiled program; before #2171 it saw an
+# empty interpreter itext/inum stack because compiled loops never push
+# one, so %i0 inside u() called from a compiled iter came back blank.
+# The ECALL dispatch now publishes the calling program's live levels
+# around every callee.  The same marshal makes ilev() and dynamic-depth
+# itext()/inum() correct without bailing the compile, so those no
+# longer fall to the AST — the last two assertions pin them ON the
+# compiled route.  add(0,K) keeps the depth argument out of the
+# constant-resolution path.
+#
+&fn.2171a test_iter_nest_fn=%i0:[itext(0)]
+-
+&fn.2171b test_iter_nest_fn=%i0.%i1:[itext(1)]/[inum(1)]
+-
+&tr.tc004 test_iter_nest_fn=
+  @if cand(
+        strmatch(iter(A B,[u(me/fn.2171a)]), A:A B:B),
+        strmatch(iter(A B,[iter(C D,[u(me/fn.2171b)])]), C.A:A/1 D.A:A/1 C.B:B/2 D.B:B/2),
+        strmatch(iter(A B,[ilev()]), 0 0),
+        strmatch(iter(A B,[iter(C D,[ilev()])]), 1 1 1 1),
+        strmatch(iter(A B,[iter(C D,[itext(add(0,1))])]), A A B B),
+        strmatch(iter(A B,[iter(C D,[inum(add(0,1))])]), 1 1 2 2),
+        strmatch(iter(A B,[iter(C D,[iter(E F,[itext(add(0,2))])])]), A A A A B B B B)
+      )=
+  {
+    @log smoke=TC004: loop context crosses the ECALL program boundary. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: loop context crosses the ECALL program boundary. Failed (u=[iter(A B,[u(me/fn.2171a)])] u2=[iter(A B,[iter(C D,[u(me/fn.2171b)])])] ilev=[iter(A B,[iter(C D,[ilev()])])] dyn=[iter(A B,[iter(C D,[itext(add(0,1))])])]).;
     @trig me/tr.done
   }
 -
