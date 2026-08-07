@@ -1,16 +1,16 @@
 ---
 title: TinyMUX 2.13 CHANGES
-date: July 15, 2026
+date: August 7, 2026
 author:
  - Brazil
 ---
 
-# Changes in 2.13.0.16 (UNRELEASED — draft, finalize date at release)
+# Changes in 2.13.0.16 (2026-AUG-07):
 
-Everything below this heading landed after the 2.13.0.15 release and is
-maintained as the cycle proceeds. Finalize the heading and the frontmatter
-`date:` at release, along with `MUX_VERSION`/`MUX_RELEASE_DATE` in
-`mux/src/_build.h` and OLD_BUILD/NEW_BUILD in `dounix.sh`/`dowin32.sh`.
+Everything below the first three section headings (Crash and
+denial-of-service, Networking, Other fixes) landed after the 2.13.0.15
+release. Sections after that document the longer 2.13 cycle relative to
+earlier 2.12-era material.
 
 ## Crash and denial-of-service fixes:
 
@@ -44,17 +44,23 @@ maintained as the cycle proceeds. Finalize the heading and the frontmatter
    repeating one `*alias` — reachable by any non-guest player — could
    run past the end of it. Both writes now stop at capacity. No
    legitimate recipient list approaches 4000 entries.
- - An uncaught C++ exception no longer costs the database. `SIGABRT` is
-   handled by logging and `exit(1)`, with no `dump_restart_db()` and no
-   re-exec, while SIGSEGV and the other fatal signals fork, dump and
-   `execl()` a fresh netmux — so an escaping exception was strictly more
-   expensive than a segfault on the same line. There were no catch sites
-   anywhere in `ganl/`, `ganl_adapter.cpp`, `netcommon.cpp` or
-   `bsd.cpp`, and allocation on those paths is routine. Barriers are now
-   in place at the connection event dispatch, at `send_data` (which
-   drops the write and accounts it to `output_lost`), and around the
-   task scheduler, which is where command parsing, function evaluation,
-   mail and `@dump` actually run. (#2006)
+ - Uncaught C++ exceptions on the network and task paths no longer take
+   the process down. Barriers wrap connection event dispatch, `send_data`
+   (drop the write and account `output_lost`), the task scheduler, and
+   the accept branch of `run_main_loop` — the last of which sat outside
+   the original try and could still reach `std::terminate`. (#2006)
+ - `SIGABRT` now takes the same panic-restart arm as `SIGSEGV` and
+   friends (fork, dump, re-exec) instead of logging and `exit(1)`, so an
+   abort no longer costs more sessions than a null dereference on the
+   same line. Uncaught exceptions that end in `abort()` therefore get a
+   successor process as well. (#2006)
+ - Panic restart under GANL works again. The signal path now records
+   listener fds for `dump_restart_db()` (previously only graceful
+   `@restart` did), and the core-dumping twin no longer runs full
+   `exit()` destructors that tore down sockets the parent still needed.
+   The panic path also runs a narrowed prepare that drops TLS without
+   running a 100 ms event pump from a damaged address space. (#2027,
+   #2028)
  - The legacy `getstring_noalloc()` read path is bounded. Its escaped
    branch capped each `fgets()` to the space remaining; the legacy
    branch did not, so three `\r`-continued lines walked the write
@@ -83,6 +89,24 @@ maintained as the cycle proceeds. Finalize the heading and the frontmatter
    cannot grow it without bound. (#1282)
  - A dual-stack listener that silently binds IPv6-only now warns instead
    of appearing to have bound both families. (#739)
+ - TLS descriptors are no longer carried across `@restart` or panic
+   re-exec. An established TLS session was selected only while the
+   handshake was in flight, and close was asynchronous — so
+   `restart.db` could hand the successor a cleartext-adopted fd while
+   the peer still framed TLS records. Selection and teardown are
+   synchronous on both restart paths. (#2032)
+ - Engine debug logging is off unless `GANL_DEBUG` is defined. Nothing
+   in the build defined `NDEBUG`, so the old `#ifndef NDEBUG` gate was
+   dead and every formatted `std::cerr` site (hundreds of flushes on the
+   event path) was live in release tarballs. (#2089 / #2049)
+ - Windows: the same `GANL_DEBUG` contract applies to IOCP, wselect,
+   Schannel, and connection debug macros that had been hardcoded off
+   (or unreachable) rather than controllable. (#2180)
+ - Windows: `netmux.vcxproj` include and library paths are relative to
+   the project file (`$(MSBuildProjectDirectory)` / `Pcre2Dir`) instead
+   of hardcoded `C:\tinymux\...`, so a checkout outside that path builds,
+   and a 2.13 tree cannot silently pull PCRE2 headers from another line
+   still sitting at `C:\tinymux`. (#2185)
 
 ## Other fixes:
 
