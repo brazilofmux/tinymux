@@ -164,6 +164,21 @@ std::vector<std::string> Connection::on_completion(IoContext* ctx, DWORD bytes, 
         }
         // Enable SO_UPDATE_CONNECT_CONTEXT so getpeername works
         setsockopt(socket_, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, nullptr, 0);
+
+        // #2204: disable Nagle.  Output is coalesced per send, so this does
+        // not raise packet count for normal traffic; it stops the kernel
+        // holding a send the client has already decided to make until the
+        // peer ACKs the previous one.  Placed after
+        // SO_UPDATE_CONNECT_CONTEXT — a ConnectEx socket is not fully
+        // associated before it, and option calls do not behave.  Non-fatal
+        // by design: a latency hint failing is no reason to drop a
+        // connection that otherwise works.
+        {
+            int one = 1;
+            setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY,
+                       reinterpret_cast<const char*>(&one), sizeof(one));
+        }
+
         connected_ = true;
 
         // Perform TLS handshake if SSL requested
