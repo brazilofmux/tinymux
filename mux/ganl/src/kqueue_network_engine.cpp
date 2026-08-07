@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <sys/un.h> // sockaddr_un (Unix domain outbound #1840 residual)
 #include <netinet/in.h>
-#include <netinet/tcp.h> // For TCP_NODELAY potentially
+#include <netinet/tcp.h> // For TCP_NODELAY
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -1281,6 +1281,19 @@ ConnectionHandle KqueueNetworkEngine::acceptConnection(ListenerHandle listener, 
         GANL_KQUEUE_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << strerror(error));
         close(clientFd);
         return InvalidConnectionHandle;
+    }
+
+    // #2194: Disable Nagle on accepted client sockets, matching IOCP.  Output
+    // is already coalesced per flush, so this does not increase packet count
+    // for normal traffic; it stops the kernel from holding a flush the server
+    // has already decided to send until the peer ACKs the previous one.
+    // Non-fatal: a latency hint failing is no reason to drop the connection.
+    //
+    {
+        int opt = 1;
+        if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
+            GANL_KQUEUE_DEBUG(clientFd, "setsockopt(TCP_NODELAY) failed: " << strerror(errno));
+        }
     }
 
     // Add the new connection socket to kqueue for reading
