@@ -44,6 +44,17 @@ class MudConnection: ObservableObject {
     }
 
     func connect() {
+        // #2204: disable Nagle.  NWProtocolTCP.Options defaults noDelay to
+        // false, so without this every send after the first in a burst (a
+        // trigger, a macro, a scripted sequence) waits on the ACK of its
+        // predecessor — up to ~40ms of the peer's delayed-ACK timer, on
+        // exactly the high-RTT links an iOS client lives on.  Built once
+        // here because BOTH parameter arms below must carry it: the TLS
+        // arm otherwise sets no TCP options at all, and the plain arm
+        // otherwise takes bare defaults.
+        let tcpOptions = NWProtocolTCP.Options()
+        tcpOptions.noDelay = true
+
         let tlsParams: NWParameters
         if useSsl {
             let host = self.host
@@ -96,9 +107,9 @@ class MudConnection: ObservableObject {
                     DispatchQueue.global()
                 )
                 return options
-            }())
+            }(), tcp: tcpOptions)
         } else {
-            tlsParams = NWParameters.tcp
+            tlsParams = NWParameters(tls: nil, tcp: tcpOptions)
         }
 
         let endpoint = NWEndpoint.hostPort(
