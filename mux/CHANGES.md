@@ -9,7 +9,7 @@ Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
 # Changes in 2.14.0.11 (2026-AUG-07):
 
-A performance cycle, and a narrow one on purpose: seventy-odd changes since
+A performance cycle, and a narrow one on purpose: ninety-odd changes since
 2.14.0.10, almost all of them either measuring the server or making a measured
 thing faster.  Very little new surface.
 
