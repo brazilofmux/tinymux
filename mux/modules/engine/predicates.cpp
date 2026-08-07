@@ -1693,8 +1693,39 @@ void do_restart(dbref executor, dbref caller, dbref enactor, int eval, int key)
 
     Log.StopLogging();
 
-    execl("bin/netmux", "netmux", "-c", mudconf.config_file, "-p",
-        mudconf.pid_file, "-e", mudconf.log_dir, static_cast<char *>(nullptr));
+    // #2199: build argv, omitting any option whose value is empty.
+    //
+    // -c, -p and -e are all CLI_REQUIRED, so passing a bare flag makes the
+    // successor log "Option 'x' requires an argument, but none was found."
+    // That is what a restarted server used to do for BOTH -p and -e, every
+    // time, because mudconf.pid_file and mudconf.log_dir were read here and
+    // written nowhere.  They are populated now, but a site that supplies
+    // only one of the two would still collect a warning for the other on
+    // every restart -- so skip what we do not have rather than pass "".
+    //
+    const char *argvRestart[9];
+    int argcRestart = 0;
+    argvRestart[argcRestart++] = "netmux";
+    argvRestart[argcRestart++] = "-c";
+    argvRestart[argcRestart++] =
+        reinterpret_cast<const char *>(mudconf.config_file);
+    if (  nullptr != mudconf.pid_file
+       && '\0' != mudconf.pid_file[0])
+    {
+        argvRestart[argcRestart++] = "-p";
+        argvRestart[argcRestart++] =
+            reinterpret_cast<const char *>(mudconf.pid_file);
+    }
+    if (  nullptr != mudconf.log_dir
+       && '\0' != mudconf.log_dir[0])
+    {
+        argvRestart[argcRestart++] = "-e";
+        argvRestart[argcRestart++] =
+            reinterpret_cast<const char *>(mudconf.log_dir);
+    }
+    argvRestart[argcRestart] = nullptr;
+
+    execv("bin/netmux", const_cast<char *const *>(argvRestart));
     mux_assert(false);
 #endif // UNIX_PROCESSES
 }

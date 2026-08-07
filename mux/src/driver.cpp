@@ -223,9 +223,16 @@ static bool bMinDB = false;
 static bool bSyntaxError = false;
 static const UTF8 *conffile = nullptr;
 static bool bVersion = false;
-static const UTF8 *pErrorBasename = T("");
 static bool bServerOption = false;
-static const UTF8 *driver_pid_file = T("netmux.pid");
+
+// #2199: driver-owned invocation paths.  These come from the command line
+// (-e and -p) and have no config-file directive, so the engine cannot learn
+// them any other way -- and do_restart() needs them to rebuild its argv.
+// Globals rather than statics for the same reason g_version is one: the
+// CDriverControl bridge in modules.cpp is a different translation unit.
+//
+const UTF8 *g_driver_log_dir  = T("");
+const UTF8 *g_driver_pid_file = T("netmux.pid");
 
 #define NUM_CLI_OPTIONS (sizeof(OptionTable)/sizeof(OptionTable[0]))
 static CLI_OptionEntry OptionTable[] =
@@ -255,7 +262,7 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
         {
         case CLI_DO_PID_FILE:
             bServerOption = true;
-            driver_pid_file = reinterpret_cast<const UTF8 *>(pValue);
+            g_driver_pid_file = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_CONFIG_FILE:
@@ -275,7 +282,7 @@ static void CLI_CallBack(CLI_OptionEntry *p, const char *pValue)
 
         case CLI_DO_ERRORPATH:
             bServerOption = true;
-            pErrorBasename = reinterpret_cast<const UTF8 *>(pValue);
+            g_driver_log_dir = reinterpret_cast<const UTF8 *>(pValue);
             break;
 
         case CLI_DO_INFILE:
@@ -463,7 +470,7 @@ int DCL_CDECL main(int argc, char *argv[])
         final_modules();
         return 2;
     }
-    g_pILog->SetBasename(pErrorBasename);
+    g_pILog->SetBasename(g_driver_log_dir);
     g_pILog->StartLogging();
 
     mr = mux_CreateInstance(CID_Platform, nullptr, UseSameProcess,
@@ -485,7 +492,7 @@ int DCL_CDECL main(int argc, char *argv[])
     ENDLOG;
 
     game_pid = mux_getpid();
-    write_pidfile(driver_pid_file);
+    write_pidfile(g_driver_pid_file);
 
     build_signal_names_table();
 
@@ -568,7 +575,7 @@ int DCL_CDECL main(int argc, char *argv[])
     }
 
     // log_dir was previously written to mudconf here; it's now
-    // passed via pErrorBasename to SetBasename above.
+    // passed via g_driver_log_dir to SetBasename above.
 
     // Create the game engine interface.  In the current in-process build
     // this is a thin wrapper; when engine.so is split out, the driver

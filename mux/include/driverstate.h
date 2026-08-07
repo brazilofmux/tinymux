@@ -124,6 +124,13 @@ extern volatile sig_atomic_t g_bCanRestart;
 //
 extern mux_subnets g_access_list;
 
+// #2199: invocation paths from the command line (-p and -e).  There is no
+// config-file directive for either, so these are the only copy that exists.
+// do_restart() rebuilds its execl argv from them, via GetInvocationPaths.
+//
+extern const UTF8 *g_driver_pid_file;
+extern const UTF8 *g_driver_log_dir;
+
 // Logged-out command table — built and used only by driver.
 // StringPtrMap is defined in mudconf.h (included via externs.h).
 //
