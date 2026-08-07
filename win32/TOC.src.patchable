@@ -71,6 +71,7 @@ src/ganl/ganl.vcxproj
 src/ganl/ganl.vcxproj.filters
 src/ganl/include/connection.h
 src/ganl/include/epoll_network_engine.h
+src/ganl/include/ganl_debug.h
 src/ganl/include/io_buffer.h
 src/ganl/include/iocp_network_engine.h
 src/ganl/include/kqueue_network_engine.h
