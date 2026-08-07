@@ -2779,7 +2779,11 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     //     -- and a cached program can be re-run by anyone, so this
     //     cannot be settled at compile time.  %! is compared against
     //     the compile-time "#thing" by native STRCMP.  (The u()-inline
-    //     lives with this hole; MAP does not add another copy of it.)
+    //     used to live with this hole — #2179 closed it with the
+    //     _PUSH_UEXEC/_POP_UEXEC context swap.  This gate could adopt
+    //     the same pair and open the inline to executor != thing, a
+    //     perf follow-up; until then the STRCMP fallback stays correct,
+    //     merely conservative.)
     //   - every extra fits its 256-byte CARGS slot (BYTELEN < 256):
     //     _WRITE_CARG rejects oversized values, leaving the slot
     //     stale, so an unchecked long extra would silently feed the
@@ -4051,6 +4055,8 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
     // resolve the attr at compile time and inline the body.  All
     // correctness requirements handled via registered helpers:
     //   - Permission guard: _CHECK_U_PERM → BRC fallback
+    //   - Executor context: _PUSH_UEXEC / _POP_UEXEC (#2179) — the body
+    //     runs with executor = the attr's holder, caller = old executor
     //   - CARGS save/restore: _SAVE_CARGS / _RESTORE_CARGS
     //   - CARGS writing: _WRITE_CARG + _SET_NCARGS
     //   - ULOCAL qregs: _SAVE_QREGS / _RESTORE_QREGS
@@ -4232,6 +4238,40 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         // --- Inline block ---
                         h.cur_block = inline_block;
 
+                        // Enter the callee's executor context (#2179).
+                        // fun_u evaluates the body with executor = thing
+                        // and caller = the old executor; the inlined body
+                        // runs inside the CALLER's program, so without
+                        // this swap %!, %va-%vz, %=<name>, v(), bare-name
+                        // u(), name(me) and every ECALL permission check
+                        // resolved against the caller.  _PUSH_UEXEC swaps
+                        // ec->executor/caller AND rewrites the guest %!
+                        // slot; a failed push (stack exhausted) returns
+                        // -1 and branches to the fun_u ECALL fallback,
+                        // which establishes its own context — exhaustion
+                        // costs the inline, never correctness.  Emitted
+                        // FIRST in the arm so the failure branch has
+                        // nothing to unwind.
+                        int push_idx = engine_api_lookup("_PUSH_UEXEC");
+                        int push_args[1] = { thing_c };
+                        int uexec_handle = h.emit_call(TY_STRING,
+                            push_idx, push_args, 1);
+                        h.ecalls++;
+                        h.known_int[uexec_handle] = true;
+                        int handle_int = h.emit(HIR_ATOI, TY_INT,
+                            uexec_handle);
+                        int zero_c = h.emit_iconst(0);
+                        int push_fail = h.emit(HIR_LT, TY_INT,
+                            handle_int, zero_c);
+                        h.native_ops++;
+                        int body_block = h.new_block();
+                        // BRC: nonzero (failed) → fallback, 0 → body.
+                        h.emit(HIR_BRC, TY_VOID, push_fail,
+                               body_block, fallback_block);
+                        h.add_edge(inline_block, body_block);
+                        h.add_edge(inline_block, fallback_block);
+                        h.cur_block = body_block;
+
                         // Save CARGS if there are extra args.
                         int cargs_handle = -1;
                         if (nExtra > 0)
@@ -4317,6 +4357,17 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                                 "_RESTORE_CARGS");
                             int rcargs[1] = { cargs_handle };
                             h.emit_call(TY_STRING, restore_c, rcargs, 1);
+                            h.ecalls++;
+                        }
+
+                        // Leave the callee's executor context (#2179).
+                        // Last in the arm, mirroring the push being
+                        // first, so the swap brackets everything the
+                        // body emitted.
+                        {
+                            int pop_idx = engine_api_lookup("_POP_UEXEC");
+                            int pop_args[1] = { uexec_handle };
+                            h.emit_call(TY_STRING, pop_idx, pop_args, 1);
                             h.ecalls++;
                         }
 
