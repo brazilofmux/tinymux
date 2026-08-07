@@ -112,7 +112,7 @@ static cng_alg s_cng_algs[] =
     { BCRYPT_MD5_ALGORITHM,    "md5",    nullptr,   16, nullptr, {} },
 };
 
-static bool cng_digest(cng_alg &alg, const UTF8 *data[], const size_t lens[],
+static bool cng_digest(cng_alg &alg, const UTF8 * const data[], const size_t lens[],
                        int count, uint8_t *out_digest, unsigned int *out_len)
 {
     // The provider handle is opened once and kept for the life of the
