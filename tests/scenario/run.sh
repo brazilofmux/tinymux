@@ -120,7 +120,7 @@ fi
 # not skip the others, and any failure fails the run.
 RC=0
 
-for DRIVER in wild_capture.py site_threshold.py jit_perms.py jit_alternation.py telnet_negotiation.py page_cost.py driver_config_sync.py hook_noeval.py conn_sessions.py cpu_budget.py sidefx_fargs.py; do
+for DRIVER in wild_capture.py site_threshold.py jit_perms.py jit_alternation.py telnet_negotiation.py page_cost.py driver_config_sync.py hook_noeval.py conn_sessions.py cpu_budget.py sidefx_fargs.py proto_detect.py; do
     echo "==> $DRIVER"
     $TIMEOUT python3 "$SCRIPT_DIR/$DRIVER" 127.0.0.1 "$PORT" || RC=1
 done

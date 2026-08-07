@@ -258,6 +258,34 @@ namespace
         return mux_reason;
     }
 
+    // #2193: the protocol-detect grace window, from the driver basket.
+    //
+    // This was a 500ms literal in two places -- the age-out sweep and the
+    // main-loop timeout clamp -- with nothing tying them together, so they
+    // could drift apart and the second one would silently stop bounding the
+    // first.  One accessor now, one config value behind it.
+    //
+    // 0 means the window is disabled: `age >= 0` is true on the very first
+    // sweep, and the clamp drives processEvents to a 0ms timeout, so the
+    // connection is finalized in the same main-loop iteration it was
+    // accepted in and the banner goes out at accept, as it does in 2.13.
+    // Deliberately expressed as arithmetic rather than a second finalize
+    // call site: the age-out path already carries the #2018 exception
+    // barrier and the #1800 partial-preface replay, and a shortcut around
+    // it would have to duplicate both.
+    //
+    CLinearTimeDelta ProtoDetectGrace()
+    {
+        int ms = g_dc.proto_detect_window;
+        if (ms < 0)
+        {
+            ms = 0;
+        }
+        CLinearTimeDelta ltd;
+        ltd.SetMilliseconds(static_cast<long>(ms));
+        return ltd;
+    }
+
     void InitializeTelnetOptions(DESC* d, bool connectionIsTls)
     {
         if (!d)
@@ -2462,8 +2490,7 @@ void GanlAdapter::run_main_loop() {
         // process_tinyMUX_tasks never runs for a silent client.
         //
         {
-            CLinearTimeDelta protoGrace;
-            protoGrace.SetMilliseconds(500);
+            const CLinearTimeDelta protoGrace = ProtoDetectGrace();
             CLinearTimeAbsolute ltaNow;
             ltaNow.GetUTC();
             for (DESC* d : g_descriptors_list)
@@ -2910,8 +2937,7 @@ void GanlAdapter::process_tinyMUX_tasks() {
     // HTTP upgrade promptly; the window is intentionally short.
     //
     {
-        CLinearTimeDelta protoGrace;
-        protoGrace.SetMilliseconds(500);
+        const CLinearTimeDelta protoGrace = ProtoDetectGrace();
         // Collect first — Finalize may enqueue output; avoid iterator
         // invalidation if a close path ever runs from welcome_user.
         std::vector<DESC*> aged;

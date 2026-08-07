@@ -834,6 +834,7 @@ struct DRIVER_CONFIG
     int     output_limit;
     int     input_limit;
     int     max_preauth_sitecons;
+    int     proto_detect_window;   // ms; 0 = no telnet/WebSocket detection
     int     default_charset;
     int     max_players;
     int     control_flags;
@@ -916,8 +917,13 @@ extern LIBMUX_API const UTF8 *g_debug_cmd;
 const MUX_CID CID_GameEngine           = UINT64_C(0x00000002D4E5F6A7);
 // IID history: ...C9D1 was the original; bumped to ...C9D2 when DbConvert()
 // gained bForce (a vtable signature change), so a stale engine.so and a new
-// driver fail QueryInterface instead of silently mismatching.
-const MUX_IID IID_IGameEngine          = UINT64_C(0x0000000247B8C9D2);
+// driver fail QueryInterface instead of silently mismatching.  Bumped to
+// ...C9D3 when DRIVER_CONFIG gained proto_detect_window (#2193): the vtable
+// is unchanged, but GetConfig() memsets and fills sizeof(DRIVER_CONFIG) as
+// the ENGINE sees it into storage the DRIVER sized, so a size disagreement
+// here is an out-of-bounds write, not a wrong answer.  Any change to
+// DRIVER_CONFIG's layout must bump this for the same reason.
+const MUX_IID IID_IGameEngine          = UINT64_C(0x0000000247B8C9D3);
 
 interface mux_IGameEngine : public mux_IUnknown
 {

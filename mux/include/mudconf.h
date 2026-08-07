@@ -214,6 +214,27 @@ struct confdata
                                  * limiting authenticated sessions (dorms,
                                  * households, and one player on several
                                  * alts are all normal).  0 = unlimited. */
+    int     proto_detect_window; /* Milliseconds a plain (or post-TLS)
+                                 * connection stays silent while we wait to
+                                 * see whether the client is telnet or
+                                 * WebSocket (#1074, #2193).  A WebSocket
+                                 * client sends its HTTP GET right behind the
+                                 * handshake's final ACK, so in the healthy
+                                 * case this needs ~0ms; the window exists for
+                                 * the tail, where that first packet is lost
+                                 * and arrives on a retransmit (Linux floors
+                                 * RTO at 200ms).  It is NOT covering an RTT
+                                 * -- the RTT is already spent by the time the
+                                 * window opens.  Hence 500: one retransmit
+                                 * with headroom, and no more.
+                                 *
+                                 * Classic MUD clients wait for the server to
+                                 * speak, so THEY pay this window in full on
+                                 * every connect while the clients it exists
+                                 * for pay none of it.  A port that never
+                                 * serves WebSocket has nothing to detect: set
+                                 * 0 and the banner goes out at accept, as it
+                                 * does in 2.13.  0 = disabled. */
     int     input_limit;        /* Anti-runaway backstop on per-connection
                                  * pending-input bytes.  High by design:
                                  * input drop corrupts legit pastes; <=0
