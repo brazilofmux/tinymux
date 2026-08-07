@@ -55,6 +55,7 @@ ganl/ganl.vcxproj
 ganl/ganl.vcxproj.filters
 ganl/include/connection.h
 ganl/include/epoll_network_engine.h
+ganl/include/ganl_debug.h
 ganl/include/io_buffer.h
 ganl/include/iocp_network_engine.h
 ganl/include/kqueue_network_engine.h
@@ -108,6 +109,7 @@ include/dbt_host.h
 include/dbt_internal.h
 include/dbt_interp.h
 include/dbt_jit_mem.h
+include/dbt_reloc.h
 include/ducet_cetable.h
 include/engine_api.h
 include/externs.h
@@ -302,7 +304,9 @@ modules/engine/hir_ssa.cpp
 modules/engine/htab.cpp
 modules/engine/jit_compiler.cpp
 modules/engine/jit_lua.cpp
+modules/engine/jit_tier1_stamp.h
 modules/engine/levels.cpp
+modules/engine/list_scratch.h
 modules/engine/local.cpp
 modules/engine/log.cpp
 modules/engine/look.cpp
@@ -338,6 +342,7 @@ modules/engine/wild.cpp
 modules/engine/wiz.cpp
 modules/engine/engine.vcxproj
 modules/engine/engine.vcxproj.filters
+modules/engine/word_scratch.h
 modules/exp3/exp3.cpp
 modules/exp3/exp3.h
 modules/exp3/exp3.vcxproj
