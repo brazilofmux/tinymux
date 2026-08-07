@@ -106,8 +106,10 @@ release carried the bad state.
    largely closed.  A smaller residual slope remains and belongs to the
    source generator, not the loop: `lnum` renders each number through
    `sitoa`, so its cost per element is affine in digit count (#2156,
-   measured directly on the bare generator).  The interpreter pays the
-   same term but hides it under ~6x more per-element overhead.  MAP, FILTER and
+   measured on the bare generator — subtracting it leaves the loop flat
+   to within noise).  The compiled generator's digit term is ~10x the
+   interpreter's, so the slope is visible on the JIT route and invisible
+   on the AST one.  MAP, FILTER and
    FOLD followed in the same cycle (#2152/#2153): each arm gates on the
    integer trio (`SPLIT_STEP`/`APPEND_I`/`BYTELEN_I` — the last kills the
    CARGS-fit guard's per-element decimal round-trip) and declines to its
