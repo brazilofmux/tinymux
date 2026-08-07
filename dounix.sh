@@ -21,9 +21,9 @@ set -u            # Error on unset variables
 set -o pipefail   # A failure anywhere in a pipe fails the pipe
 
 # Version information
-OLD_BUILD=9
+OLD_BUILD=10
 OLD_VERSION="2.14.0.$OLD_BUILD"
-NEW_BUILD=10
+NEW_BUILD=11
 NEW_VERSION="2.14.0.$NEW_BUILD"
 
 # Directory structure

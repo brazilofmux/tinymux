@@ -7,7 +7,7 @@ author:
 
 Changes in TinyMUX 2.14 (relative to the 2.13 branch point).
 
-# Changes in 2.14.0.11 (UNRELEASED):
+# Changes in 2.14.0.11 (2026-AUG-07):
 
 A performance cycle, and a narrow one on purpose: seventy-odd changes since
 2.14.0.10, almost all of them either measuring the server or making a measured
@@ -284,6 +284,23 @@ release carried the bad state.
    one command is one `write()` — but a trigger, a multi-command macro or a
    scripted burst issues several small writes in one pass, and Nagle made
    each wait on the ACK of the one before it.
+ - **The remaining four native clients now set it as well** (#2204 — #2205
+   console and win32gui, #2206 Titan Android, #2207 Titan iOS).  A survey
+   after #2196 found `TCP_NODELAY` mentioned in exactly one file across all
+   of `client/`, so every other client still ran its session socket with
+   Nagle enabled.  The two mobile clients are simultaneously the ones it
+   costs most — high-RTT, lossy, radio-scheduled links — and the ones whose
+   platforms make it worst: Java's `Socket` and Network.framework's
+   `NWProtocolTCP.Options` both default the option to *false*, so nothing
+   was overriding it.
+ - This one was verified on the wire rather than by inspection.  Five small
+   writes issued in one pass, captured against a remote server: before the
+   fix the client put **two** segments on the link — the first 2 bytes, then
+   the remaining 8 coalesced and withheld until the ACK — and after it,
+   **five**, all departing within 0.1ms.  The identical burst over loopback
+   shows no difference whatsoever, which is precisely why it had to be
+   measured against a real link: there the ACK returns faster than the next
+   write is issued, so Nagle never engages and the bug is invisible.
 
 ## Notes
 
