@@ -91,7 +91,7 @@ include compat.conf
 EOF
 
 echo "==> Starting throwaway netmux on port $PORT"
-( cd "$WORK" && LD_LIBRARY_PATH="$BIN" ./bin/netmux -c netmux.conf > netmux.log 2>&1 ) &
+( cd "$WORK" && LD_LIBRARY_PATH="$BIN" ./bin/netmux -c netmux.conf -p netmux.pid > netmux.log 2>&1 ) &
 NETMUX_PID=$!
 
 # Wait for the listener to accept connections (up to ~15s).
@@ -124,6 +124,15 @@ for DRIVER in wild_capture.py site_threshold.py jit_perms.py jit_alternation.py 
     echo "==> $DRIVER"
     $TIMEOUT python3 "$SCRIPT_DIR/$DRIVER" 127.0.0.1 "$PORT" || RC=1
 done
+
+# --- Restart-path helper leaks (#2192) --------------------------------------
+#
+# Runs last against this server on purpose: it @restarts it, so nothing above
+# may follow.  Needs netmux's own pid (not the subshell's) to inspect its
+# children, and the pid survives the exec.
+echo "==> restart_helpers.py"
+MUX_PID=$(cat "$WORK/netmux.pid" 2>/dev/null || echo 0)
+$TIMEOUT python3 "$SCRIPT_DIR/restart_helpers.py" 127.0.0.1 "$PORT" "$MUX_PID" || RC=1
 
 # --- A second server, with reality levels that actually hide something ------
 #
