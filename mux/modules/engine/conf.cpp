@@ -167,6 +167,17 @@ void cf_init(void)
     // half-open ones.  Refusal is transient and self-healing (a slot frees
     // the moment a peer authenticates or conn_timeout reaps it).
     mudconf.max_preauth_sitecons = 2;
+    // Protocol-detect grace (#1074, #2193).  500ms is not a guess at an RTT
+    // -- a WebSocket client's GET rides right behind the handshake's final
+    // ACK, so the healthy case needs ~0ms regardless of distance.  What the
+    // window has to survive is that first packet being LOST: the retransmit
+    // comes back on an RTO that Linux floors at 200ms.  500 covers one such
+    // retransmit with headroom.  100 would sit in the dead zone -- past every
+    // healthy client, short of every retransmit -- and would break real
+    // WebSocket handshakes intermittently on a lossy link, which is a far
+    // worse failure than a slow banner.  Set 0 on a port that never serves
+    // WebSocket: nothing to detect, banner at accept.
+    mudconf.proto_detect_window = 500;
     // Pool memory budget: 0 = unlimited (off) by default.  No non-zero
     // default is safe across deployments (a 256MB VPS and a 32GB host want
     // very different ceilings), so the admin sizes it per host; enabling it
@@ -2188,6 +2199,7 @@ static CONFPARM conftable[] =
     {T("input_limit"),               cf_live_driver_int, CA_GOD, CA_WIZARD,  reinterpret_cast<int *>(&mudconf.input_limit),     nullptr,            0},
     {T("max_preauth_sitecons"),      cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.max_preauth_sitecons,   nullptr,            0},
     {T("pool_memory_limit"),         cf_pool_limit,  CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.pool_memory_limit), nullptr,          0},
+    {T("proto_detect_window"),       cf_live_driver_int, CA_GOD, CA_WIZARD,  &mudconf.proto_detect_window,    nullptr,            0},
     {T("output_limit"),              cf_live_driver_int, CA_GOD, CA_WIZARD,  reinterpret_cast<int *>(&mudconf.output_limit),    nullptr,            0},
     {T("page_cost"),                 cf_int,         CA_GOD,    CA_PUBLIC,   &mudconf.pagecost,               nullptr,            0},
     {T("paranoid_allocate"),         cf_bool,        CA_GOD,    CA_WIZARD,   reinterpret_cast<int *>(&mudconf.paranoid_alloc),  nullptr,            0},

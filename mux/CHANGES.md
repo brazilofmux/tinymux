@@ -178,6 +178,40 @@ release carried the bad state.
  - The engine harness asserts it per engine on the **real accept path**.
    `adoptConnection` bypasses accept, which is exactly why every existing
    POSIX scenario was blind to the difference.
+ - **Every classic telnet connect waited a hardcoded 500ms in total silence**
+   before the server sent its first byte (#2193).  Measured over 30 connects
+   to an idle server: min 500.6ms, p50 501.0ms, max 504.5ms — the
+   distribution is the grace window itself.  Base command latency on the same
+   setup is ~51µs, so the connect wait was four orders of magnitude above
+   every other latency in the server.
+ - The window exists so telnet negotiation bytes cannot corrupt a WebSocket
+   handshake (#1074), and the incentives are inverted: a WebSocket or TLS
+   client speaks first and is served immediately, while the classic MUD
+   client — which waits for the server to speak, and is the primary audience
+   — is the only kind that always pays the full window.
+ - It is now `proto_detect_window`, in milliseconds, **default 500**, so
+   nothing changes for a site that does not touch it.  **0 disables
+   detection**: the banner goes out at accept, as it does in 2.13.  That is
+   the right setting for a port that never serves WebSocket, which has
+   nothing to detect and no reason to wait.
+ - On why the default stays at 500 rather than being shaved: the window is
+   **not** covering a round trip.  A WebSocket client's `GET` rides directly
+   behind the handshake's final ACK, so the healthy case needs ~0ms no matter
+   how distant the client.  What the window has to survive is that first
+   packet being *lost*, where the retransmit arrives on an RTO that Linux
+   floors at 200ms.  500 covers one such retransmit with headroom.  100 would
+   sit in the dead zone — past every healthy client, short of every
+   retransmit — and would break real WebSocket handshakes intermittently on a
+   lossy link.  A slow banner is a much better failure than that.
+ - The value was a literal in two places (the age-out sweep and the main-loop
+   timeout clamp) with nothing tying them together, so they could drift and
+   the clamp would silently stop bounding the sweep.  One accessor now.
+ - `tests/scenario/proto_detect.py` asserts all of it against a live server:
+   that a silent client waits, that a talking client does not, that 0 serves
+   a silent client at accept, and that setting it back restores the wait.
+   The last two also cover the #1222 hazard — `proto_detect_window` is read
+   from the driver basket, so a runtime `@admin` that failed to re-pull it
+   would report success and change nothing until restart.
 
 ## Notes
 

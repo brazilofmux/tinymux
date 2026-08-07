@@ -3749,6 +3749,7 @@ MUX_RESULT CGameEngine::GetConfig(DRIVER_CONFIG *pConfig)
     pConfig->output_limit       = mudconf.output_limit;
     pConfig->input_limit        = mudconf.input_limit;
     pConfig->max_preauth_sitecons = mudconf.max_preauth_sitecons;
+    pConfig->proto_detect_window = mudconf.proto_detect_window;
     pConfig->default_charset    = mudconf.default_charset;
     pConfig->max_players        = mudconf.max_players;
     pConfig->control_flags      = mudconf.control_flags;
