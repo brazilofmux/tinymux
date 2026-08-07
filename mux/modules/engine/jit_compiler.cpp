@@ -1552,6 +1552,10 @@ static void release_program_slots(uint64_t program_id) {
 // executing out of (#1326).
 static int s_run_cached_depth = 0;
 
+// Defined with the Tier 3 helper save stacks below; called from
+// run_cached_program at top-level entry.
+static void jit_helper_stacks_reset();
+
 // Claims the current context for the duration of a run, so anything the run
 // re-enters picks the next one instead.  Hoisted to file scope because BOTH
 // entry points into the DBT need it: run_cached_program (jit_eval's route)
@@ -3419,6 +3423,13 @@ bool run_cached_program(compiled_program *prog,
         memcpy(out, prog->folded_result.data(), n);
         out[n] = '\0';
         return true;
+    }
+
+    // A top-level entry proves no outer program holds a live handle into
+    // the Tier 3 helper save stacks — reclaim slots leaked by abandoned
+    // runs (see jit_helper_stacks_reset).
+    if (0 == s_run_cached_depth) {
+        jit_helper_stacks_reset();
     }
 
     // Hold the reentrancy lock for the whole DBT path (including early
@@ -5723,6 +5734,126 @@ static struct {
     int ncargs;
     bool in_use;
 } s_carg_save_stack[MAX_CARG_SAVE_DEPTH];
+
+// Executor-context stack for inlined u()/ulocal() bodies (#2179).
+// fun_u evaluates the attribute body with executor = the object holding
+// the attribute (and caller = the previous executor); an inlined body
+// runs inside the CALLER's program, so without this swap every
+// executor-derived thing inside it was the caller's: %! (SUBST slot),
+// %va-%vz / %=<name> (xget against the SUBST slot), and every ECALL's
+// ec->executor (v(), bare-name u(), name(me), permission checks).
+//
+static constexpr int MAX_UEXEC_SAVE_DEPTH = 16;
+static struct {
+    dbref executor;
+    dbref caller;
+    bool  in_use;
+} s_uexec_save_stack[MAX_UEXEC_SAVE_DEPTH];
+
+// Both save stacks leak their slot if a program is abandoned between a
+// save/push and its restore/pop (DBT decline, error unwind): nothing
+// runs the paired helper, in_use stays set, and the stack eventually
+// fills — after which _SAVE_CARGS returns -1 (restore skipped, CARGS
+// clobbered for the caller) and _PUSH_UEXEC falls back to the fun_u
+// ECALL.  A top-level entry proves no outer program holds a live
+// handle, so everything still marked in-use is leaked garbage.
+// run_cached_program calls this when s_run_cached_depth == 0.
+//
+static void jit_helper_stacks_reset()
+{
+    for (int i = 0; i < MAX_CARG_SAVE_DEPTH; i++) {
+        s_carg_save_stack[i].in_use = false;
+    }
+    for (int i = 0; i < MAX_UEXEC_SAVE_DEPTH; i++) {
+        s_uexec_save_stack[i].in_use = false;
+    }
+}
+
+// Render "#<dbref>" into the guest %! substitution slot so inlined-body
+// reads of %! / %va-%vz / %=<name> see the swapped executor.  Writing
+// when the program never reads the slot is harmless.
+//
+static void uexec_write_subst(eval_ctx *ec, dbref executor)
+{
+    uint64_t slot = rv_compiler::SUBST_BASE
+        + static_cast<uint64_t>(rv_compiler::SUBST_EXECUTOR)
+        * rv_compiler::SUBST_SLOT;
+    if (slot + rv_compiler::SUBST_SLOT <= ec->memory_size)
+    {
+        mux_sprintf(ec->memory + slot, rv_compiler::SUBST_SLOT,
+                    T("#%d"), executor);
+    }
+}
+
+// _PUSH_UEXEC(thing_dbref_str): enter an inlined u() body's executor
+// context (#2179) — save executor/caller, set caller = old executor and
+// executor = thing (mirroring fun_u's mux_exec call), refresh the guest
+// %! slot.  Returns a handle for _POP_UEXEC, or "-1" on failure — the
+// lowering branches a failed push to the fun_u ECALL fallback, which
+// establishes its own context, so exhaustion costs the inline, never
+// correctness.
+//
+FUNCTION(fun__push_uexec)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+
+    eval_ctx *ec = s_current_ecall_ctx;
+    dbref thing = (nfargs >= 1) ? mux_atoi64(fargs[0]) : NOTHING;
+    if (!ec || !Good_obj(thing))
+    {
+        safe_str(T("-1"), buff, bufc);
+        return;
+    }
+
+    for (int i = 0; i < MAX_UEXEC_SAVE_DEPTH; i++)
+    {
+        if (!s_uexec_save_stack[i].in_use)
+        {
+            s_uexec_save_stack[i].executor = ec->executor;
+            s_uexec_save_stack[i].caller = ec->caller;
+            s_uexec_save_stack[i].in_use = true;
+            ec->caller = ec->executor;
+            ec->executor = thing;
+            uexec_write_subst(ec, thing);
+            safe_ltoa(i, buff, bufc);
+            return;
+        }
+    }
+    safe_str(T("-1"), buff, bufc);
+}
+
+// _POP_UEXEC(handle_str): restore the pre-inline executor context and
+// the guest %! slot.
+//
+FUNCTION(fun__pop_uexec)
+{
+    UNUSED_PARAMETER(executor);
+    UNUSED_PARAMETER(caller);
+    UNUSED_PARAMETER(enactor);
+    UNUSED_PARAMETER(eval);
+    UNUSED_PARAMETER(cargs);
+    UNUSED_PARAMETER(ncargs);
+    UNUSED_PARAMETER(buff);
+    UNUSED_PARAMETER(bufc);
+
+    eval_ctx *ec = s_current_ecall_ctx;
+    if (!ec || nfargs < 1) return;
+
+    int64_t idx = mux_atoi64(fargs[0]);
+    if (idx >= 0 && idx < MAX_UEXEC_SAVE_DEPTH
+        && s_uexec_save_stack[idx].in_use)
+    {
+        ec->executor = s_uexec_save_stack[idx].executor;
+        ec->caller = s_uexec_save_stack[idx].caller;
+        s_uexec_save_stack[idx].in_use = false;
+        uexec_write_subst(ec, ec->executor);
+    }
+}
 
 // _SAVE_CARGS(): save the CARGS region of guest memory.
 // Returns a handle string (index into save stack).

@@ -293,10 +293,49 @@
       )=
   {
     @log smoke=TC011: TRACE'd u() parity across routes. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc012
   },
   {
     @log smoke=TC011: TRACE'd u() parity across routes. Failed (lit=[u(#1/fn.traced,2,3)] ind=[u([num(#1)]/fn.traced,2,3)] plain=[u(#1/fn.plain,2,3)]).;
+    @trig me/tr.tc012
+  }
+-
+#
+# Test Case #12 - an inlined u() body runs in the TARGET's executor
+# context (#2179).
+#
+# fun_u evaluates the attribute body with executor = the object holding
+# the attribute; the Tier 3 inline compiled the body into the CALLER's
+# program without that swap, so %!, v(), bare-name u(), and name(me)
+# inside u(#obj/attr) all resolved against the caller.  This trigger
+# runs as the test object, so caller != target (#1) and the
+# discrimination is live: the broken inline returned the test object's
+# dbref for %! and empty for v()/bare-u() (the attrs live on #1, not
+# here).  The last leg asserts %! is RESTORED after the call — a push
+# without its pop would leave the whole rest of the evaluation running
+# as #1.
+#
+# The [num(#1)] spelling never reaches the inline gate (TC010's
+# convention) and is the interpreter oracle for the same body.
+#
+&fn.exec #1=%!:[v(fn.execdata)]:[u(fn.execbare)]:[name(me)]
+-
+&fn.execdata #1=DATA
+-
+&fn.execbare #1=BARE
+-
+&tr.tc012 test_jit_route_parity_fn=
+  @if cand(
+        strmatch(u(#1/fn.exec), u([num(#1)]/fn.exec)),
+        strmatch(u(#1/fn.exec), #1:DATA:BARE:*),
+        strmatch(strcat(u(#1/fn.exec),|,%!), #1:DATA:BARE:*|[num(me)])
+      )=
+  {
+    @log smoke=TC012: inlined u() executor context. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC012: inlined u() executor context. Failed (lit=[u(#1/fn.exec)] ind=[u([num(#1)]/fn.exec)] after=%!).;
     @trig me/tr.done
   }
 -

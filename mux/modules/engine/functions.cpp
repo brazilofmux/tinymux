@@ -15539,6 +15539,8 @@ extern "C++" {
     FUNCTION(fun__restore_cargs);
     FUNCTION(fun__write_carg);
     FUNCTION(fun__set_ncargs);
+    FUNCTION(fun__push_uexec);
+    FUNCTION(fun__pop_uexec);
 }
 
 // flist: List of existing functions in alphabetical order.
@@ -15552,6 +15554,8 @@ static FUN builtin_function_list[] =
     {T("_CHECK_U_PERM"),  fun__check_u_perm,  MAX_ARG, 2, 2, 0, CA_GOD},
     {T("_DEFAULT_GET"),   fun__default_get,   MAX_ARG, 1, 1, 0, CA_GOD},
     {T("_EDEFAULT_GET"),  fun__edefault_get,  MAX_ARG, 1, 1, 0, CA_GOD},
+    {T("_POP_UEXEC"),     fun__pop_uexec,     MAX_ARG, 1, 1, 0, CA_GOD},
+    {T("_PUSH_UEXEC"),    fun__push_uexec,    MAX_ARG, 1, 1, 0, CA_GOD},
     {T("_RESTORE_CARGS"), fun__restore_cargs, MAX_ARG, 1, 1, 0, CA_GOD},
     {T("_RESTORE_QREGS"), fun__restore_qregs, MAX_ARG, 1, 1, 0, CA_GOD},
     {T("_SAVE_CARGS"),    fun__save_cargs,    MAX_ARG, 0, 0, 0, CA_GOD},
