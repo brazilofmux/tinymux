@@ -1342,6 +1342,25 @@ void hir_superblock(hir_program &h) {
 
         // Rebuild CFG one final time with the new RET instructions.
         hir_build_cfg(h);
+
+        // A PHI is only meaningful with incoming edges: codegen resolves
+        // PHIs by placing copies on each predecessor's branch, so a PHI
+        // whose home block has NO predecessors is never filled and its
+        // slot reads back empty — wrong value, jit_handled green
+        // (#2166).  emit_phi refusing single-input PHIs makes this
+        // unreachable from every current lowering; this guard is the
+        // last-resort backstop for the next pass that collapses an edge
+        // out from under a PHI.  overflowed is the established decline
+        // path (#859): the compile bails and the AST evaluator answers,
+        // visibly (jit_handled=0/N), instead of silently corrupting.
+        for (int i = 0; i < h.n_insns; i++) {
+            if (h.kind[i] != HIR_PHI) continue;
+            int b = h.blk[i];
+            if (b < 0 || b >= h.n_blocks || h.n_pred[b] == 0) {
+                h.overflowed = true;
+                return;
+            }
+        }
     }
 }
 

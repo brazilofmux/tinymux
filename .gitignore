@@ -230,6 +230,7 @@ mux/game/bin/bin
 # must not sit there as untracked noise.
 tests/digest/test_digest
 tests/hir/test_blocks
+tests/hir/test_phi
 tests/shacrypt/test_shacrypt
 tests/table/test_table
 tests/*/*.o
