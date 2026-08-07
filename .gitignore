@@ -123,6 +123,10 @@ testcases/alias.conf
 testcases/compat.conf
 testcases/netmux.pid
 testcases/netmux.log
+# A scratch netmux run from the repo root drops its log here; mux/game/*.log
+# and testcases/ were already covered, the root was not (one slipped into a
+# PR tree).
+/netmux.log
 testcases/netmux.sqlite
 testcases/netmux.sqlite-shm
 testcases/netmux.sqlite-wal
