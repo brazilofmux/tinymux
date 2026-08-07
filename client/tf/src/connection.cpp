@@ -47,6 +47,8 @@ static constexpr uint8_t TEL_WONT = 252;
 static constexpr uint8_t TEL_WILL = 251;
 static constexpr uint8_t TEL_SB   = 250;
 static constexpr uint8_t TEL_SE   = 240;
+static constexpr uint8_t TEL_GA   = 249;   // Go Ahead: "prompt ends here"
+static constexpr uint8_t TEL_EOR  = 239;   // End Of Record (RFC 885), same role
 
 // Telnet options
 static constexpr uint8_t TELOPT_ECHO    = 1;
@@ -441,6 +443,22 @@ size_t Connection::process_data(const unsigned char* buf, size_t len) {
                 }
                 tel_state_ = TelState::DATA;
                 break;
+            case TEL_GA:
+            case TEL_EOR:
+                // #2195: the server is telling us the prompt ends here.  Both
+                // of these used to fall into `default` and be discarded, so a
+                // GA-terminated prompt -- TinyMUX's @program prompt is
+                // ">" IAC GA with no newline -- sat in line_buf_ until the
+                // 250ms timer in check_prompt() guessed at it.  GA exists
+                // precisely so a client does not have to guess.
+                //
+                // The flag is consumed by check_prompt(), so the prompt still
+                // reaches its one consumer (Terminal::set_prompt + the PROMPT
+                // hook) by the same path as the timed fallback -- just without
+                // the quarter second.
+                prompt_ready_ = true;
+                tel_state_ = TelState::DATA;
+                break;
             default:       tel_state_ = TelState::DATA; break;
             }
             break;
@@ -698,12 +716,23 @@ bool Connection::mccp_inflate(const unsigned char* in, size_t inlen,
 }
 
 std::string Connection::check_prompt(std::chrono::milliseconds timeout) {
+    // #2195: consume the GA/EOR signal unconditionally, even when there is
+    // nothing to deliver below.  A flag left set would make some later,
+    // unrelated partial line fire instantly and attribute a prompt boundary
+    // to a server that never claimed one.
+    const bool signalled = prompt_ready_;
+    prompt_ready_ = false;
+
     if (line_buf_.empty() || fd_ < 0) return {};
 
-    auto elapsed = std::chrono::steady_clock::now() - line_buf_time_;
-    if (elapsed < timeout) return {};
+    if (!signalled) {
+        // No protocol signal, so fall back to guessing: a partial line that
+        // has sat untouched for `timeout` is probably a prompt.  This is the
+        // right net for servers that terminate prompts with nothing at all.
+        auto elapsed = std::chrono::steady_clock::now() - line_buf_time_;
+        if (elapsed < timeout) return {};
+    }
 
-    // Partial line has been sitting long enough — treat it as a prompt.
     // Strip trailing \r if present, then convert to UTF-8.
     std::string prompt = line_buf_;
     if (!prompt.empty() && prompt.back() == '\r') prompt.pop_back();
@@ -711,8 +740,12 @@ std::string Connection::check_prompt(std::chrono::milliseconds timeout) {
         prompt = charset_to_utf8(prompt, charset_);
     }
 
-    // Only return if it's different from what we last displayed.
-    if (prompt == last_prompt_) return {};
+    // The timed path must dedup: it is re-evaluated every main-loop pass while
+    // the same partial line sits in the buffer, so without this the prompt
+    // would be re-delivered continuously.  A GA does not need it and must not
+    // have it -- it arrives once per prompt, and a server that sends the same
+    // prompt text twice has genuinely prompted twice.
+    if (!signalled && prompt == last_prompt_) return {};
 
     last_prompt_ = prompt;
     return prompt;

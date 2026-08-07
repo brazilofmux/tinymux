@@ -245,6 +245,28 @@ release carried the bad state.
    `tests/scenario/restart_helpers.py` now asserts it rather than leaving it
    to the next person to rediscover.
 
+## Clients
+
+ - **`client/tf` displayed every GA-terminated prompt about 250ms late**
+   (#2195).  The telnet FSM had no handling for `IAC GA` or `IAC EOR` — both
+   fell into the state machine's `default` arm and were discarded — so a
+   prompt with no trailing newline sat in the partial-line buffer until a
+   timer guessed at it.  TinyMUX's `@program` prompt is exactly that shape:
+   `">"` followed by `IAC GA`.  `GA` exists precisely so a client does not
+   have to guess; the prompt now goes up the moment it arrives, by the same
+   path as before.  Measured against a server sending `IAC GA`: **251ms
+   before, 0ms after**.  The timer stays as the fallback for servers that
+   terminate prompts with nothing at all.
+ - Worth its own line because of the scale: end-to-end client latency is
+   otherwise 0.50ms median keystroke-to-render, so this one quarter-second
+   was by far the largest client-side delay, and it landed on the
+   interactive `@program` flow where prompt responsiveness matters most.
+ - **`client/tf` now sets `TCP_NODELAY`** (#2196), the client companion to
+   the server-side fix above.  A single typed command was never affected —
+   one command is one `write()` — but a trigger, a multi-command macro or a
+   scripted burst issues several small writes in one pass, and Nagle made
+   each wait on the ACK of the one before it.
+
 ## Notes
 
  - `docs/survey-perf-pass-2026-08.md` records the pass, including the
