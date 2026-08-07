@@ -874,6 +874,8 @@ public:
     virtual MUX_RESULT ListSiteInfo(dbref player);
     virtual MUX_RESULT GetVersionStrings(const UTF8 **ppVersion,
         const UTF8 **ppShortVer);
+    virtual MUX_RESULT GetInvocationPaths(const UTF8 **ppPidFile,
+        const UTF8 **ppLogDir);
 
     CDriverControl(void);
     virtual ~CDriverControl();
@@ -1136,6 +1138,18 @@ MUX_RESULT CDriverControl::GetVersionStrings(const UTF8 **ppVersion,
     }
     *ppVersion = g_version;
     *ppShortVer = g_short_ver;
+    return MUX_S_OK;
+}
+
+MUX_RESULT CDriverControl::GetInvocationPaths(const UTF8 **ppPidFile,
+    const UTF8 **ppLogDir)
+{
+    if (nullptr == ppPidFile || nullptr == ppLogDir)
+    {
+        return MUX_E_INVALIDARG;
+    }
+    *ppPidFile = g_driver_pid_file;
+    *ppLogDir = g_driver_log_dir;
     return MUX_S_OK;
 }
 

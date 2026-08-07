@@ -26,6 +26,7 @@
 #
 # Usage: restart_helpers.py [host] [port] [netmux_pid]
 
+import re
 import socket
 import subprocess
 import sys
@@ -39,6 +40,19 @@ WIZ_LOGIN = "connect Wizard potrzebie"
 
 # Helper process names as they appear in ps(1).
 HELPERS = ("stubslave", "slave")
+
+
+def cmdline_of(pid):
+    """Full argv of `pid` as a string, or "" if it cannot be read.
+
+    `ps -o args=` rather than /proc so this also means something on macOS.
+    """
+    try:
+        out = subprocess.run(["ps", "-o", "args=", "-p", str(pid)],
+                             capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return out.strip()
 
 
 def children_of(pid):
@@ -121,6 +135,7 @@ def main():
         return 0
 
     before_pids = sorted(k[0] for k in before_helpers)
+    before_cmdline = cmdline_of(NETMUX_PID)
 
     try:
         s = socket.socket()
@@ -192,6 +207,23 @@ def main():
     check(not zs,
           "#2192 no zombie helpers inherited across @restart",
           "zombies=%s" % ([k[0] for k in zs],))
+
+    # #2199, checked here because this driver already pays for a restart.
+    # do_restart() rebuilds its execl argv from mudconf.pid_file and
+    # mudconf.log_dir; those were read in three places and written in none,
+    # so every restart exec'd with an empty -p and dropped whatever pidfile
+    # path the operator gave.  run.sh starts this server with -p, so the
+    # successor's argv is the direct evidence.
+    after_cmdline = cmdline_of(NETMUX_PID)
+    if "-p" not in before_cmdline:
+        print("ok - #2199 pidfile argument preserved  # SKIP server not started with -p")
+    else:
+        m = re.search(r"-p\s+(\S+)", before_cmdline)
+        want = m.group(1) if m else None
+        got = re.search(r"-p\s+(\S+)", after_cmdline)
+        check(want is not None and got is not None and got.group(1) == want,
+              "#2199 -p value survives the restart exec",
+              "before=%r after=%r" % (before_cmdline, after_cmdline))
 
     print("=== restart-helpers scenario: %d passed, %d failed ==="
           % (npass, nfail))

@@ -244,6 +244,24 @@ release carried the bad state.
    then — the modular split reintroduced it, which is why
    `tests/scenario/restart_helpers.py` now asserts it rather than leaving it
    to the next person to rediscover.
+ - **`@restart` also discarded the `-p` and `-e` command-line values**
+   (#2199).  `do_restart()` rebuilds its `execl` argv from
+   `mudconf.pid_file` and `mudconf.log_dir`, and those two fields were read
+   in three places and **written in none** — there is no config directive for
+   either, and both are set only from the command line, which the driver
+   owns.  So a site running `netmux -p /var/run/mux/netmux.pid` had its
+   pidfile silently revert to the default in the working directory after the
+   first restart, and the log directory went the same way.  The pid inside
+   the stale file stays correct — `execve` preserves it — so this failed
+   quietly until something else moved.
+ - The driver now hands both paths to the engine at bridge init, the same way
+   the version strings have been handed over since #817.  The restart argv is
+   also built dynamically now and omits an option it has no value for: `-p`
+   and `-e` are both `CLI_REQUIRED`, so a bare flag made the successor log
+   "Option 'x' requires an argument" on every restart.
+ - Found while reproducing the helper leak above; the two failure modes
+   stacked, so a restart both leaked helpers and forgot where its pidfile
+   went.
 
 ## Clients
 

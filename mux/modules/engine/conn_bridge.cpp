@@ -71,6 +71,38 @@ void conn_bridge_init(void)
                         sizeof(mudstate.short_ver) - 1);
                 }
             }
+
+            // #2199: cache the driver's invocation paths.  do_restart()
+            // rebuilds its execl argv from mudconf.pid_file and
+            // mudconf.log_dir, and until now NOTHING ever wrote either
+            // field -- there is no config directive for them and they are
+            // set only from the command line, which the driver owns.  So
+            // every @restart exec'd with an empty -p and -e, silently
+            // discarding whatever the operator passed.
+            //
+            // Both are pointers into driver-owned storage that lives for
+            // the process (a string literal or an argv element), so this
+            // stores the pointer rather than copying; nothing in the engine
+            // frees or reassigns either field.
+            //
+            // Safe to do here: Startup() runs after LoadGame(), so cf_init()
+            // has already cleared and repopulated mudconf and cannot wipe
+            // this afterwards.
+            //
+            const UTF8 *pPidFile = nullptr;
+            const UTF8 *pLogDir = nullptr;
+            if (MUX_SUCCEEDED(g_pDriverCtl->GetInvocationPaths(&pPidFile,
+                    &pLogDir)))
+            {
+                if (nullptr != pPidFile)
+                {
+                    mudconf.pid_file = pPidFile;
+                }
+                if (nullptr != pLogDir)
+                {
+                    mudconf.log_dir = const_cast<UTF8 *>(pLogDir);
+                }
+            }
         }
     }
 }

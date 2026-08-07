@@ -1132,8 +1132,11 @@ public:
 // the engine acquires it via mux_CreateInstance(CID_DriverControl).
 //
 const MUX_CID CID_DriverControl        = UINT64_C(0x00000002E4A5B6C7);
-// IID bumped from ...F2E3D4C5 when GetVersionStrings was added (#817).
-const MUX_IID IID_IDriverControl       = UINT64_C(0x00000002F2E3D4D6);
+// IID bumped from ...F2E3D4C5 when GetVersionStrings was added (#817), and
+// again to ...D4D7 when GetInvocationPaths was added (#2199) — both are
+// vtable changes, so a stale driver and a new engine must fail
+// QueryInterface rather than call through a shifted slot.
+const MUX_IID IID_IDriverControl       = UINT64_C(0x00000002F2E3D4D7);
 
 interface mux_IDriverControl : public mux_IUnknown
 {
@@ -1206,6 +1209,20 @@ public:
     //
     virtual MUX_RESULT GetVersionStrings(const UTF8 **ppVersion,
         const UTF8 **ppShortVer) = 0;
+
+    // Invocation paths the driver was given on the command line: -p (pidfile)
+    // and -e (log directory).  Neither has a config-file directive, so the
+    // driver's copy is the only one that exists (#2199).
+    //
+    // do_restart() rebuilds its execl argv from mudconf.pid_file and
+    // mudconf.log_dir; before this, nothing ever wrote those two fields, so
+    // every restart exec'd with an empty -p and -e and silently discarded
+    // whatever the operator passed.  The engine caches them at bridge init.
+    // The returned pointers are stable for the process lifetime (a literal
+    // or an argv element).
+    //
+    virtual MUX_RESULT GetInvocationPaths(const UTF8 **ppPidFile,
+        const UTF8 **ppLogDir) = 0;
 };
 
 // Connection manager — the interface the engine uses to interact with

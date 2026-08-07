@@ -760,6 +760,8 @@ public:
     virtual MUX_RESULT ListSiteInfo(dbref player);
     virtual MUX_RESULT GetVersionStrings(const UTF8 **ppVersion,
         const UTF8 **ppShortVer);
+    virtual MUX_RESULT GetInvocationPaths(const UTF8 **ppPidFile,
+        const UTF8 **ppLogDir);
 
     CScriptDriverControl(void);
     virtual ~CScriptDriverControl();
@@ -954,6 +956,24 @@ MUX_RESULT CScriptDriverControl::ListSiteInfo(dbref player)
 {
     UNUSED_PARAMETER(player);
     return MUX_E_NOTIMPLEMENTED;
+}
+
+MUX_RESULT CScriptDriverControl::GetInvocationPaths(const UTF8 **ppPidFile,
+    const UTF8 **ppLogDir)
+{
+    if (nullptr == ppPidFile || nullptr == ppLogDir)
+    {
+        return MUX_E_INVALIDARG;
+    }
+
+    // Script mode writes no pidfile and has no @restart, so there is nothing
+    // meaningful to report (#2199).  Empty rather than a plausible-looking
+    // default: muxscript never execs itself, and a made-up path here would
+    // only be wrong somewhere later.
+    //
+    *ppPidFile = T("");
+    *ppLogDir = T("");
+    return MUX_S_OK;
 }
 
 MUX_RESULT CScriptDriverControl::GetVersionStrings(const UTF8 **ppVersion,
