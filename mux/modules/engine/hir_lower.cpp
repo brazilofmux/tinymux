@@ -1170,6 +1170,46 @@ std::vector<compiled_program::inline_dep> *s_compile_deps = nullptr;
 int s_inline_depth = 0;
 static constexpr int MAX_INLINE_DEPTH = 3;
 
+// Materialize a scope-body result that is a raw reference into
+// RESTORABLE guest state (#2183).  A body of exactly one substitution
+// (%!, %0, %+, cold-tracked %q0) lowers to an emit_sref — a lazy
+// address whose bytes are only read when a consumer copies them, and
+// for a scope's result value that consumer is the merge PHI's edge
+// copy or the caller's STRCAT, both of which execute AFTER the scope's
+// restore helpers (_POP_UEXEC, _RESTORE_CARGS, _RESTORE_QREGS) have
+// rewritten the slot.  Any second token in the body hides the bug by
+// forcing a STRCAT inside the scope — which is exactly the copy this
+// helper emits for the bare case.  Only the CARGS+SUBST region is
+// restorable; references elsewhere (a loop's pinned accumulator) pass
+// through untouched, so common list-formatter bodies pay nothing.
+//
+static int hir_materialize_restorable_ref(hir_program &h, int val)
+{
+    if (val < 0 || h.kind[val] != HIR_SCONST || !h.runtime_ref[val]) {
+        return val;
+    }
+    uint64_t a = static_cast<uint64_t>(h.val[val]);
+    uint64_t lo = rv_compiler::CARGS_BASE;
+    uint64_t hi = rv_compiler::SUBST_BASE
+        + static_cast<uint64_t>(rv_compiler::SUBST_COUNT)
+        * rv_compiler::SUBST_SLOT;
+    if (a < lo || a >= hi) {
+        return val;
+    }
+    int cp[1] = { val };
+    int out = h.emit_strcat(cp, 1);
+    if (out < 0) {
+        return val;
+    }
+    h.func_idx[out] = engine_api_lookup("STRCAT");
+    if (tier2_lookup("STRCAT")) {
+        h.tier2_calls++;
+    } else {
+        h.ecalls++;
+    }
+    return out;
+}
+
 // Static FUNCCALL watermarks for inlined attribute bodies (#1056).
 // Mirrors jit_compiler's ast_max_funccall_depth / ast_funccall_count.
 //
@@ -4336,6 +4376,12 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
                         s_inline_depth--;
                         s_fcheck_available = saved_fcheck;
 
+                        // A bare-substitution body (%!, %0, %+) is a raw
+                        // slot reference; copy it before ANY restore
+                        // below rewrites the slot (#2183).
+                        body_result =
+                            hir_materialize_restorable_ref(h, body_result);
+
                         // ULOCAL: restore qregs.
                         if (is_local && qreg_handle >= 0)
                         {
@@ -4520,6 +4566,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
         int body_result = hir_lower_trimmed(h, rc,
             node->children[nfargs - 1].get());
 
+        // A bare-substitution body is a raw slot reference; copy it
+        // before the restore rewrites the slot (#2183).
+        body_result = hir_materialize_restorable_ref(h, body_result);
+
         // Restore q-registers via ECALL.
         int restore_idx = engine_api_lookup("_RESTORE_QREGS");
         int rqargs[1] = { save_handle };
@@ -4631,6 +4681,10 @@ static int hir_lower_funccall(hir_program &h, rv_compiler &rc,
 
         int body_result = hir_lower_trimmed(h, rc,
             node->children[0].get());
+
+        // A bare-substitution body is a raw slot reference; copy it
+        // before the restore rewrites the slot (#2183).
+        body_result = hir_materialize_restorable_ref(h, body_result);
 
         int restore_idx = engine_api_lookup("_RESTORE_QREGS");
         int rqargs[1] = { save_handle };

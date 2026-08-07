@@ -324,11 +324,26 @@
 -
 &fn.execbare #1=BARE
 -
+# Bodies of EXACTLY one substitution (#2183).  Every probe above has
+# surrounding text, which forces a STRCAT inside the inline bracket and
+# materializes the value before the context restores run.  A bare
+# substitution lowers to a raw slot reference whose bytes are only
+# copied at the merge PHI's edge — AFTER _POP_UEXEC/_RESTORE_CARGS
+# rewrote the slot.  %! is the filed shape; %0 is the older sibling
+# (the callee's own argument read back post-restore) that predates
+# #2179's fix entirely.
+#
+&fn.execbang #1=%!
+-
+&fn.execarg #1=%0
+-
 &tr.tc012 test_jit_route_parity_fn=
   @if cand(
         strmatch(u(#1/fn.exec), u([num(#1)]/fn.exec)),
         strmatch(u(#1/fn.exec), #1:DATA:BARE:*),
-        strmatch(strcat(u(#1/fn.exec),|,%!), #1:DATA:BARE:*|[num(me)])
+        strmatch(strcat(u(#1/fn.exec),|,%!), #1:DATA:BARE:*|[num(me)]),
+        strmatch(u(#1/fn.execbang), #1),
+        strmatch(u(#1/fn.execarg,zz), zz)
       )=
   {
     @log smoke=TC012: inlined u() executor context. Succeeded.;
