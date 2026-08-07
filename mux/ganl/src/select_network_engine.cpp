@@ -8,7 +8,7 @@
 #include <sys/un.h> // sockaddr_un (Unix domain outbound #1840 residual)
 #include <sys/time.h> // For timeval
 #include <netinet/in.h>
-#include <netinet/tcp.h> // Optional
+#include <netinet/tcp.h> // For TCP_NODELAY
 #include <arpa/inet.h>
 #include <string.h> // For memset
 #include <cerrno> // Use <cerrno>
@@ -1254,6 +1254,19 @@ ConnectionHandle SelectNetworkEngine::acceptConnection(ListenerHandle listener, 
         GANL_SELECT_DEBUG(clientFd, "Failed to set non-blocking on accepted socket: " << getErrorString(error));
         closeSocket(clientFd);
         return InvalidConnectionHandle;
+    }
+
+    // #2194: Disable Nagle on accepted client sockets, matching IOCP.  Output
+    // is already coalesced per flush, so this does not increase packet count
+    // for normal traffic; it stops the kernel from holding a flush the server
+    // has already decided to send until the peer ACKs the previous one.
+    // Non-fatal: a latency hint failing is no reason to drop the connection.
+    //
+    {
+        int opt = 1;
+        if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
+            GANL_SELECT_DEBUG(clientFd, "setsockopt(TCP_NODELAY) failed: " << getErrorString(errno));
+        }
     }
 
     // Add to maps and FD sets under lock

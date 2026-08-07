@@ -5,7 +5,7 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h> // For TCP_NODELAY potentially
+#include <netinet/tcp.h> // For TCP_NODELAY
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -1318,9 +1318,18 @@ ConnectionHandle EpollNetworkEngine::acceptConnection(ListenerHandle listener, E
         return InvalidConnectionHandle;
     }
 
-    // Optional: Set TCP_NODELAY?
-    // int opt = 1;
-    // setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+    // #2194: Disable Nagle on accepted client sockets, matching IOCP.  Output
+    // is already coalesced per flush, so this does not increase packet count
+    // for normal traffic; it stops the kernel from holding a flush the server
+    // has already decided to send until the peer ACKs the previous one.
+    // Non-fatal: a latency hint failing is no reason to drop the connection.
+    //
+    {
+        int opt = 1;
+        if (setsockopt(clientFd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) == -1) {
+            GANL_EPOLL_DEBUG(clientFd, "setsockopt(TCP_NODELAY) failed: " << strerror(errno));
+        }
+    }
 
     // --- Add to map under lock ---
     uint32_t initialEvents = EPOLLIN | EPOLLET;

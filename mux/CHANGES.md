@@ -162,6 +162,22 @@ release carried the bad state.
 
 ## Networking
 
+ - **`TCP_NODELAY` is now set on accepted client sockets in every engine**
+   (#2194).  The IOCP engine set it; epoll, kqueue, select and wselect did
+   not, so the same server ran client sockets with Nagle enabled on POSIX and
+   disabled on Windows.  Output is already coalesced per flush, so this does
+   not meaningfully change packet count for request/response traffic — it
+   stops the kernel from holding a flush the server has already decided to
+   send until the peer ACKs the previous one.  That is what made a burst of
+   separate flushes — trigger spam, `@dolist` output, channel traffic —
+   dribble in at delayed-ACK cadence on a remote link instead of arriving
+   together.  For the record this is not a regression: pre-GANL `bsd.cpp`
+   never set it either, back through 2.13.  It is a decision the epoll
+   engine's commented-out `// Optional: Set TCP_NODELAY?` shows was raised
+   and then never made.
+ - The engine harness asserts it per engine on the **real accept path**.
+   `adoptConnection` bypasses accept, which is exactly why every existing
+   POSIX scenario was blind to the difference.
  - **Every classic telnet connect waited a hardcoded 500ms in total silence**
    before the server sent its first byte (#2193).  Measured over 30 connects
    to an idle server: min 500.6ms, p50 501.0ms, max 504.5ms — the
