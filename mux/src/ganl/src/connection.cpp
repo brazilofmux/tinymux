@@ -66,8 +66,11 @@ using SocketReturnType = int; // recv/send return int
 using SocketReturnType = ssize_t; // read/write return ssize_t
 #endif
 
-// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
-#define GANL_CONN_DEBUG(handle, x) do {} while (0)
+// Debug logging is OFF unless the build defines GANL_DEBUG (#2049, #2054).
+// ganl_debug.h picks a sink that is valid on a detached Windows service, which
+// is what the hardcoded no-op here used to be working around.
+#include "ganl_debug.h"
+#define GANL_CONN_DEBUG(handle, x) GANL_DEBUG_EMIT("Conn", handle, x)
 
 namespace ganl {
 
