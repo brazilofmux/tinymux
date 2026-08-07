@@ -952,6 +952,23 @@ namespace ganl {
             return InvalidConnectionHandle;
         }
 
+        // #2194: Disable Nagle on accepted client sockets, matching IOCP.
+        // Output is already coalesced per flush, so this does not increase
+        // packet count for normal traffic; it stops the kernel from holding a
+        // flush the server has already decided to send until the peer ACKs the
+        // previous one.  Non-fatal (unlike IOCP's setSocketOptions, which is
+        // also configuring the listener): a latency hint failing is no reason
+        // to drop an accepted connection.  Do not disturb the caller's `error`.
+        //
+        {
+            int opt = 1;
+            if (setsockopt(clientSock, IPPROTO_TCP, TCP_NODELAY,
+                    reinterpret_cast<const char*>(&opt), sizeof(opt)) == SOCKET_ERROR) {
+                GANL_WSELECT_DEBUG(clientSock, "setsockopt(TCP_NODELAY) failed: "
+                    << getErrorString(translateError(getLastError())));
+            }
+        }
+
         // Store socket info and add to master sets
         // New connections initially want read, context is null until associateContext
         SocketInfo newInfo{ SocketType::Connection, nullptr, true, false, nullptr, remoteAddr.toString(), nullptr };

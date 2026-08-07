@@ -12,6 +12,8 @@
 //   #947  closeConnection must no-op on a not-found fd (fd-reuse safety)
 //   #953  IoBuffer::ensureWritable must reject wrapping sizes (length_error)
 //   EMFILE accept failure must emit a listener Error event (NET/LERR path)
+//   #2194 accepted client sockets must have TCP_NODELAY set (accept path, so
+//         adoptConnection cannot stand in for it)
 //
 // Windows (wselect + iocp) — accept-path scenarios for inbound connections
 // (socketpair/adopt is still ENOTSUP).  Outbound TCP uses initiateConnect:
@@ -22,6 +24,7 @@
 //   #1801 initiateConnect emits ConnectSuccess / ConnectFail (loopback SMTP)
 //   #1832 IOCP close with pending WSARecv: owned recv buffer + generation ABA
 //   #1834 wselect postWrite at full error fd_set for already-monitored socket
+//   #2194 accepted client sockets must have TCP_NODELAY set (all engines)
 //
 // Zero dependencies: plain main(), TAP-ish output, nonzero exit on failure.
 // Build/run: POSIX `make -C mux/ganl/tests check`; Windows via ganl_tests.vcxproj.
@@ -57,6 +60,7 @@
 #include <sys/resource.h>
 #include <sys/un.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -655,6 +659,37 @@ Result scenarioDoubleCloseIdempotent(const EngineUnderTest& eut) {
     return pass();
 }
 
+// #2194: an accepted client socket must have TCP_NODELAY set.  IOCP already
+// did (via setSocketOptions); wselect did not, and neither did any POSIX
+// engine.  Asserted on every engine so the platforms cannot drift apart
+// again — for IOCP this is a regression guard, not a new behaviour.
+//
+Result scenarioAcceptTcpNodelay(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    AcceptedConn ac;
+    std::string setupErr = setupAccepted(*eng, ac);
+    if (!setupErr.empty()) { teardownAccepted(*eng, ac); eng->shutdown(); return fail(setupErr); }
+
+    int nodelay = 0;
+    int nlen = sizeof(nodelay);
+    const int rc = getsockopt(static_cast<SOCKET>(ac.conn), IPPROTO_TCP, TCP_NODELAY,
+                              reinterpret_cast<char*>(&nodelay), &nlen);
+    const int saved = WSAGetLastError();
+
+    Result r = pass();
+    if (rc == SOCKET_ERROR) {
+        r = fail("getsockopt(TCP_NODELAY) failed: " + std::to_string(saved));
+    } else if (nodelay == 0) {
+        r = fail("accepted socket has Nagle enabled (TCP_NODELAY unset, #2194)");
+    }
+
+    teardownAccepted(*eng, ac);
+    eng->shutdown();
+    return r;
+}
+
 #else // !defined(_WIN32)
 
 struct TcpListener {
@@ -1138,6 +1173,72 @@ Result scenarioConnErrorDeferClose(const EngineUnderTest& eut) {
     return r;
 }
 
+// #2194: an accepted client socket must have TCP_NODELAY set.  IOCP set it
+// and the POSIX engines did not, so the same server dribbled multi-flush
+// output bursts at ACK cadence on Linux/BSD and not on Windows.  This has to
+// run per-engine on the real accept path: adoptConnection bypasses it, which
+// is exactly why every existing POSIX scenario was blind to the difference.
+//
+Result scenarioAcceptTcpNodelay(const EngineUnderTest& eut) {
+    (void)eut;
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    ErrorCode err = 0;
+    ListenerHandle lh = eng->createListener("127.0.0.1", 0, err);
+    if (lh == InvalidListenerHandle) return fail("createListener failed");
+    if (!eng->startListening(lh, nullptr, err)) return fail("startListening failed");
+
+    sockaddr_in addr{};
+    socklen_t alen = sizeof(addr);
+    if (getsockname(static_cast<int>(lh), reinterpret_cast<sockaddr*>(&addr), &alen) != 0) {
+        eng->shutdown();
+        return fail("getsockname failed");
+    }
+
+    int client = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (client < 0) { eng->shutdown(); return fail("client socket failed"); }
+    sockaddr_in dst{};
+    dst.sin_family = AF_INET;
+    dst.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    dst.sin_port = addr.sin_port;
+    if (::connect(client, reinterpret_cast<sockaddr*>(&dst), sizeof(dst)) != 0) {
+        ::close(client);
+        eng->shutdown();
+        return fail("client connect failed");
+    }
+
+    IoEvent got{};
+    bool accepted = pollFor(*eng, 3000, 8, [&](const IoEvent& e) {
+        return e.type == IoEventType::Accept &&
+               e.connection != InvalidConnectionHandle;
+    }, &got);
+    if (!accepted) {
+        ::close(client);
+        eng->shutdown();
+        return fail("Accept event never emitted");
+    }
+
+    int nodelay = 0;
+    socklen_t nlen = sizeof(nodelay);
+    const int rc = getsockopt(static_cast<int>(got.connection), IPPROTO_TCP,
+                              TCP_NODELAY, &nodelay, &nlen);
+    const int saved = errno;
+
+    Result r = pass();
+    if (rc != 0) {
+        r = fail("getsockopt(TCP_NODELAY) failed: " + std::string(strerror(saved)));
+    } else if (nodelay == 0) {
+        r = fail("accepted socket has Nagle enabled (TCP_NODELAY unset, #2194)");
+    }
+
+    eng->closeConnection(got.connection);
+    eng->closeListener(lh);
+    ::close(client);
+    eng->shutdown();
+    return r;
+}
+
 #endif // !defined(_WIN32)
 
 // #953: IoBuffer::ensureWritable must reject a size that wraps
@@ -1178,6 +1279,7 @@ const Scenario kScenarios[] = {
     {"iocp-accept-replenish",    scenarioIocpAcceptReplenishRecover, true}, // #1830
     {"iocp-close-pending-read",  scenarioIocpClosePendingRead,  true},  // #1832
     {"wselect-postwrite-ceiling", scenarioWselectPostWriteAtCeiling, true}, // #1834
+    {"accept-tcp-nodelay",       scenarioAcceptTcpNodelay,      true},  // #2194
 #else
     {"immediate-unix-connect",   scenarioImmediateUnixConnect, true},
     {"tcp-loopback-connect",     scenarioTcpLoopbackConnect,   true},
@@ -1188,6 +1290,7 @@ const Scenario kScenarios[] = {
     {"fd-setsize-reject",        scenarioFdSetsizeReject,      true},
     {"hup-with-data",            scenarioHupWithData,          true},
     {"conn-error-defer-close",   scenarioConnErrorDeferClose,  true},
+    {"accept-tcp-nodelay",       scenarioAcceptTcpNodelay,     true},  // #2194
 #endif
     {"ensure-writable-cap",      scenarioEnsureWritableCap,    false},
 };
