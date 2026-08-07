@@ -233,7 +233,6 @@ public:
     };
     std::unique_ptr<StubSlaveChannel> stubslave_channel_;
 
-    bool boot_stubslave();
     void shutdown_stubslave();
     MUX_RESULT pump_stubslave();
 #endif // HAVE_WORKING_FORK && STUB_SLAVE
