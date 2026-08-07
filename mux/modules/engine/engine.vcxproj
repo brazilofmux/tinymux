@@ -37,16 +37,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
+    <!-- #2185: this file is mux\modules\engine\; MuxDir is mux\. -->
+    <MuxDir Condition="'$(MuxDir)' == ''">$(MSBuildProjectDirectory)\..\..</MuxDir>
+    <Pcre2Dir Condition="'$(Pcre2Dir)' == ''">$(MuxDir)\src\pcre2</Pcre2Dir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\include;C:\tinymux\mux\sqlite;C:\tinymux\mux\lua54;C:\tinymux\mux\src\pcre2\include;C:\tinymux\mux\ganl\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(MuxDir)\lua54;$(Pcre2Dir)\include;$(MuxDir)\ganl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>C:\tinymux\mux\include;C:\tinymux\mux\sqlite;C:\tinymux\mux\lua54;C:\tinymux\mux\src\pcre2\include;C:\tinymux\mux\ganl\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(MuxDir)\lua54;$(Pcre2Dir)\include;$(MuxDir)\ganl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>

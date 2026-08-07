@@ -44,13 +44,16 @@
     <!-- modules/Makefile.am builds comsys_mod.so; `module comsys_mod` has to
          name the same thing on both platforms (#1594). -->
     <TargetName>comsys_mod</TargetName>
-    <IncludePath>C:\tinymux\mux\include;C:\tinymux\mux\sqlite;$(IncludePath)</IncludePath>
+    <!-- #2185: relative to mux\modules\comsys\ -->
+    <MuxDir Condition="'$(MuxDir)' == ''">$(MSBuildProjectDirectory)\..\..</MuxDir>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
     <TargetName>comsys_mod</TargetName>
-    <IncludePath>C:\tinymux\mux\include;C:\tinymux\mux\sqlite;$(IncludePath)</IncludePath>
+    <MuxDir Condition="'$(MuxDir)' == ''">$(MSBuildProjectDirectory)\..\..</MuxDir>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
