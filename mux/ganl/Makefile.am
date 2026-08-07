@@ -30,6 +30,7 @@ endif
 noinst_HEADERS = \
     include/connection.h \
     include/epoll_network_engine.h \
+    include/ganl_debug.h \
     include/io_buffer.h \
     include/kqueue_network_engine.h \
     include/network_engine_factory.h \

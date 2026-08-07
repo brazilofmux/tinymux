@@ -14,8 +14,11 @@
 // Need to link with Mswsock.lib for AcceptEx and related functions
 #pragma comment(lib, "mswsock.lib")
 
-// Define a macro for debug logging (disabled — stdout/stderr not valid on Windows detached process)
-#define GANL_IOCP_DEBUG(sock, x) do {} while (0)
+// Debug logging is OFF unless the build defines GANL_DEBUG (#2049, #2054).
+// ganl_debug.h picks a sink that is valid on a detached Windows service, which
+// is what the hardcoded no-op here used to be working around.
+#include "ganl_debug.h"
+#define GANL_IOCP_DEBUG(sock, x) GANL_DEBUG_EMIT("IOCP", sock, x)
 
 namespace ganl {
 
