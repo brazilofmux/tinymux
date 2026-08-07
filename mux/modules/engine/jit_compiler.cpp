@@ -3479,6 +3479,11 @@ bool run_cached_program(compiled_program *prog,
         }
     }
 
+    // Zero the loop-context depth (#2171): the VM buffer is shared
+    // across programs, so a program that never runs its loop prologue
+    // must publish no levels instead of whatever the last program left.
+    memset(vm->buffer.data() + rv_compiler::LOOPCTX_BASE, 0, 8);
+
     // Populate CARGS: copy each arg, NUL-terminate unused slots.  Only the
     // slots this program actually reads (%0..%N) need populating; functions
     // reached via ECALL receive cargs through the host pointer array, not
@@ -3901,6 +3906,60 @@ static int ecall_invoke_ufun(UFUN *ufp, eval_ctx *ec, rv64_ctx_t *ctx,
     ctx->x[10] = static_cast<uint64_t>(result_len);
     return -1;
 }
+
+// Push the calling program's live compiled iter levels onto the
+// interpreter's itext/inum stack for the duration of a host callee
+// (#2171).  Compiled loops keep the guest loop-context table at
+// LOOPCTX_BASE current (HIR_LCTX_* stores); without this push, any
+// callee that evaluates softcode — fun_u's mux_exec, fun_itext, ilev()
+// — saw an EMPTY stack and %i0 inside u() called from a compiled iter
+// came back blank.  The pushed itext pointers point into guest memory,
+// which outlives the ECALL (the arena is stable for the eval), and
+// every consumer copies out.  RAII so all the invoke paths' returns
+// unwind it.
+//
+class GuestLoopContext
+{
+public:
+    explicit GuestLoopContext(eval_ctx *ec) : m_pushed(0)
+    {
+        const uint64_t base = rv_compiler::LOOPCTX_BASE;
+        if (base + 8 > ec->memory_size) {
+            return;
+        }
+        uint64_t depth;
+        memcpy(&depth, ec->memory + base, 8);
+        if (0 == depth || depth > rv_compiler::LOOPCTX_MAX_LEVELS
+            || base + (1 + 2 * depth) * 8 > ec->memory_size) {
+            return;
+        }
+        for (uint64_t k = 0; k < depth; k++) {
+            if (mudstate.in_loop < 0 || mudstate.in_loop >= MAX_ITEXT) {
+                break;
+            }
+            uint64_t eaddr, in1;
+            memcpy(&eaddr, ec->memory + base + (1 + 2 * k) * 8, 8);
+            memcpy(&in1,   ec->memory + base + (2 + 2 * k) * 8, 8);
+            size_t slen = 0;
+            if (!guest_strnlen(ec->memory, ec->memory_size, eaddr, &slen)) {
+                break;
+            }
+            mudstate.itext[mudstate.in_loop] = ec->memory + eaddr;
+            mudstate.inum[mudstate.in_loop] =
+                static_cast<int>(in1);
+            mudstate.in_loop++;
+            m_pushed++;
+        }
+    }
+    ~GuestLoopContext()
+    {
+        mudstate.in_loop -= m_pushed;
+    }
+    GuestLoopContext(const GuestLoopContext &) = delete;
+    GuestLoopContext &operator=(const GuestLoopContext &) = delete;
+private:
+    int m_pushed;
+};
 
 static int ecall_invoke_fun(FUN *fp, eval_ctx *ec, rv64_ctx_t *ctx,
                             uint64_t fargs_addr, int nfargs,
@@ -4447,6 +4506,7 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
 
         FUN *fp = engine_api_table[func_idx];
 
+        GuestLoopContext glc(ec);  // (#2171)
         int rc = ecall_invoke_fun(fp, ec, ctx, fargs_addr, nfargs,
                                 out_addr, out_size);
         return rc;
@@ -4459,6 +4519,8 @@ static int eval_ecall(rv64_ctx_t *ctx, void *user_data) {
         int nfargs = static_cast<int>(ctx->x[12]);
         uint64_t out_addr = ctx->x[13];
         uint64_t out_size = ctx->x[14];
+
+        GuestLoopContext glc(ec);  // (#2171) — covers builtin AND ufun paths
 
         size_t name_len = 0;
         if (  !guest_strnlen(ec->memory, ec->memory_size, name_addr, &name_len)

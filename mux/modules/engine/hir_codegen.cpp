@@ -2625,6 +2625,54 @@ void hir_codegen(hir_program &h, rv_compiler &rc) {
                 break;
             }
 
+            // Loop-context table maintenance (#2171).  All table
+            // addresses are compile-time constants; the DBT maps the
+            // guest addresses at store time like every other SD.
+            case HIR_LCTX_DEPTH: {
+                rv_load_val(rc.code, RA_SCRATCH2,
+                            static_cast<uint64_t>(h.val[i]));
+                rv_load_guest_addr(rc.code, RA_SCRATCH,
+                                   rv_compiler::LOOPCTX_BASE);
+                rc.code.push_back(rv_SD(RA_SCRATCH, RA_SCRATCH2, 0));
+                break;
+            }
+            case HIR_LCTX_ELEM: {
+                int v = h.src1[i];
+                if (v < 0) break;
+                uint64_t slot = rv_compiler::LOOPCTX_BASE
+                    + (1 + 2 * static_cast<uint64_t>(h.val[i])) * 8;
+                // The element's slot ADDRESS is the payload — the host
+                // dereferences it at ECALL time to read the current
+                // iteration's element.  It can be an output-frame
+                // reference, so resolve it (rv_load_guest_addr) rather
+                // than storing the tagged constant raw: the tag bits
+                // would read as an out-of-range guest address.
+                rv_load_guest_addr(rc.code, RA_SCRATCH2, loc[v].addr);
+                rv_load_guest_addr(rc.code, RA_SCRATCH, slot);
+                rc.code.push_back(rv_SD(RA_SCRATCH, RA_SCRATCH2, 0));
+                break;
+            }
+            case HIR_LCTX_INUM: {
+                int v = h.src1[i];
+                if (v < 0) break;
+                uint64_t slot = rv_compiler::LOOPCTX_BASE
+                    + (2 + 2 * static_cast<uint64_t>(h.val[i])) * 8;
+                uint8_t r;
+                if (loc[v].in_reg) {
+                    r = loc[v].reg;
+                } else if (loc[v].spill_slot >= 0) {
+                    emit_spill_load(rc.code, RA_SCRATCH2,
+                                    loc[v].spill_slot);
+                    r = RA_SCRATCH2;
+                } else {
+                    break;
+                }
+                rv_load_guest_addr(rc.code, RA_SCRATCH, slot);
+                rc.code.push_back(rv_SD(RA_SCRATCH, r, 0));
+                break;
+            }
+
+            case HIR_LCTX_KEEP:  // interval-only: no code (see hir.h)
             case HIR_NOP:
             case HIR_STORE_Q:  // consumed by SSA construction
             case HIR_LOAD_Q:   // should be COPY after SSA; harmless NOP
@@ -2815,6 +2863,10 @@ const char *hir_kind_name(hir_kind k) {
     case HIR_LOAD_Q:     return "LOAD_Q";
     case HIR_STORE_Q:    return "STORE_Q";
     case HIR_SETQ_SYNC:  return "SETQ_SYNC";
+    case HIR_LCTX_DEPTH: return "LCTX_DEPTH";
+    case HIR_LCTX_ELEM:  return "LCTX_ELEM";
+    case HIR_LCTX_INUM:  return "LCTX_INUM";
+    case HIR_LCTX_KEEP:  return "LCTX_KEEP";
     case HIR_BR:         return "BR";
     case HIR_BRC:        return "BRC";
     default:             return "UNKNOWN";

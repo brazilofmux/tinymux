@@ -593,6 +593,8 @@ static bool has_side_effects(hir_kind k) {
     return k == HIR_CALL || k == HIR_STRCAT || k == HIR_CALL_T2I
         || k == HIR_STORE_Q
         || k == HIR_SETQ_SYNC
+        || k == HIR_LCTX_DEPTH || k == HIR_LCTX_ELEM || k == HIR_LCTX_INUM
+        || k == HIR_LCTX_KEEP
         || k == HIR_LUA_SETI || k == HIR_LUA_SETFIELD
         || k == HIR_LUA_CALL_VOID || k == HIR_LUA_CALL_VAL
         || k == HIR_LUA_LIMITED

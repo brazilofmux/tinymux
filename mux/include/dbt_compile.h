@@ -407,11 +407,33 @@ struct rv_compiler {
     static constexpr uint64_t QREG_LONGBITS =
         SUBST_BASE + static_cast<uint64_t>(SUBST_COUNT) * SUBST_SLOT;
 
+    // Loop-context table (#2171): the compiled program's live iter levels,
+    // readable by the host at ECALL time so callees that evaluate softcode
+    // (fun_u's mux_exec, fun_itext, ...) see a composed
+    // mudstate.itext[]/inum[]/in_loop stack instead of an empty one.
+    //
+    //   [0]           u64 depth — number of live compiled iter levels
+    //   [1 + 2k]      u64 guest address of level k's element string
+    //   [2 + 2k]      u64 level k's 1-based iteration number
+    //
+    // Level 0 is the outermost compiled level.  Each level's element
+    // address and iteration number are stored once per iteration; the
+    // element address can be an output-frame slot, resolved at store
+    // time.  The entry marshal zeroes depth every run: the VM buffer
+    // is shared across programs, so a loop-free program would otherwise
+    // inherit whatever depth the previous program left.
+    static constexpr uint64_t LOOPCTX_BASE = QREG_LONGBITS + 8;
+    static constexpr int      LOOPCTX_MAX_LEVELS = 10;   // %i0-%i9
+    static constexpr uint64_t LOOPCTX_END =
+        LOOPCTX_BASE + (1 + 2 * LOOPCTX_MAX_LEVELS) * 8;
+
     // DMA windows (Tier C): zero-copy host interaction.
     // 4 windows of 16KB each at 0x70000-0x7FFFF.
     static constexpr uint64_t DMA_BASE         = 0x70000;
     static_assert(QREG_LONGBITS + sizeof(uint64_t) <= DMA_BASE,
                   "long-register bitmap must stay below the DMA windows");
+    static_assert(LOOPCTX_END <= DMA_BASE,
+                  "loop-context table must stay below the DMA windows");
     static constexpr int      DMA_WINDOW_SIZE  = 16 * 1024;
     static constexpr int      DMA_WINDOW_COUNT = 4;
     static constexpr uint64_t DMA_DESC_BASE    = 0x80000; // descriptor rings (4KB)
