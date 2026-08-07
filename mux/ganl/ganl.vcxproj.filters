@@ -43,6 +43,9 @@
     <ClInclude Include="include\epoll_network_engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\ganl_debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="include\io_buffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
