@@ -61,6 +61,13 @@ class MudConnection(
         scope.launch(Dispatchers.IO) {
             try {
                 val raw = Socket()
+                // #2204: disable Nagle.  Java's Socket defaults TCP_NODELAY
+                // to false, so every send after the first in a burst (a
+                // trigger, a macro) waits on the ACK of its predecessor —
+                // worst on exactly the high-RTT radio links this client
+                // lives on.  Set on the RAW socket before the TLS wrap:
+                // the SSL socket layers over it and inherits its options.
+                raw.tcpNoDelay = true
                 raw.connect(InetSocketAddress(host, port), 10000)
 
                 socket = if (useSsl) {
