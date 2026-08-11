@@ -311,6 +311,8 @@ sha256sum "$TARGZ_FILE"    > "$TARGZ_FILE.sha256"
 sha256sum "$TARBZ2_FILE"   > "$TARBZ2_FILE.sha256"
 if [ "${#changed_blobs[@]}" -gt 0 ]; then
     sha256sum "$BLOBS_FILE" > "$BLOBS_FILE.sha256"
+    # APPLY.txt only exists when there are blobs to explain (#2214).
+    sha256sum "$APPLY_FILE" > "$APPLY_FILE.sha256"
 fi
 
 echo "Unix build process completed successfully!"
@@ -323,5 +325,5 @@ if [ "${#changed_blobs[@]}" -gt 0 ]; then
     echo "  $BLOBS_FILE   (companion binary blobs)"
     echo "  $APPLY_FILE   (upgrade instructions)"
 fi
-echo "  ...plus a .sha256 for each archive. Remember to GPG-sign (.asc) all"
-echo "  artifacts, including the companion blob archive."
+echo "  ...plus a .sha256 for each listed artifact. Remember to GPG-sign"
+echo "  (.asc) all of them as well (archives, patch, blobs, and APPLY.txt)."
