@@ -165,7 +165,11 @@ done
 
 # --- Companion archive for changed binary blobs ---------------------------
 
-rm -f "$BLOBS_FILE" "$APPLY_FILE"
+# Both companions are conditional, so a rerun that produces no changed blobs
+# must clear the *previous* run's artifacts -- checksums included.  Otherwise a
+# release operator globbing *.sha256 signs and uploads checksums for files that
+# are no longer there (#2222).
+rm -f "$BLOBS_FILE" "$BLOBS_FILE.sha256" "$APPLY_FILE" "$APPLY_FILE.sha256"
 if [ "${#changed_blobs[@]}" -gt 0 ]; then
     echo "Packaging ${#changed_blobs[@]} changed binary blob(s) into $BLOBS_FILE..."
     # Stage the blobs under the distribution's on-disk name (DISTRO_DIR) so a
