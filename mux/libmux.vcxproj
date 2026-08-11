@@ -37,19 +37,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
-    <!-- #2185: paths relative to this file (mux\), not C:\tinymux. -->
+    <!-- #2185: paths relative to this file (mux\), not C:\tinymux.
+         #2212: PCRE2 headers come from vcpkg (see mux\vcpkg.json). -->
     <MuxDir Condition="'$(MuxDir)' == ''">$(MSBuildProjectDirectory)</MuxDir>
-    <Pcre2Dir Condition="'$(Pcre2Dir)' == ''">$(MuxDir)\src\pcre2</Pcre2Dir>
+    <VcpkgDir Condition="'$(VcpkgDir)' == ''">$(MuxDir)\vcpkg_installed\x64-windows</VcpkgDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>.\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(MuxDir)\include;$(Pcre2Dir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
+    <IncludePath>$(MuxDir)\include;$(VcpkgDir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(MuxDir)\include;$(Pcre2Dir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
+    <IncludePath>$(MuxDir)\include;$(VcpkgDir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>

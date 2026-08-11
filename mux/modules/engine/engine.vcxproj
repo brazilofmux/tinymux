@@ -37,19 +37,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
-    <!-- #2185: this file is mux\modules\engine\; MuxDir is mux\. -->
+    <!-- #2185: this file is mux\modules\engine\; MuxDir is mux\.
+         #2212: PCRE2 comes from vcpkg (see mux\vcpkg.json).  This project
+         previously took its headers from $(Pcre2Dir) but hardcoded the
+         library directory, so an override applied to one and not the
+         other; both now come from the same place. -->
     <MuxDir Condition="'$(MuxDir)' == ''">$(MSBuildProjectDirectory)\..\..</MuxDir>
-    <Pcre2Dir Condition="'$(Pcre2Dir)' == ''">$(MuxDir)\src\pcre2</Pcre2Dir>
+    <VcpkgDir Condition="'$(VcpkgDir)' == ''">$(MuxDir)\vcpkg_installed\x64-windows</VcpkgDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>..\..\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(MuxDir)\lua54;$(Pcre2Dir)\include;$(MuxDir)\ganl\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(MuxDir)\lua54;$(VcpkgDir)\include;$(MuxDir)\ganl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>..\..\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(MuxDir)\lua54;$(Pcre2Dir)\include;$(MuxDir)\ganl\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\sqlite;$(MuxDir)\lua54;$(VcpkgDir)\include;$(MuxDir)\ganl\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -80,7 +84,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>libmux.lib;ganl.lib;lua54.lib;pcre2-8.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\bin_release;..\..\src\pcre2\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\bin_release;$(VcpkgDir)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile />
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>true</RandomizedBaseAddress>
@@ -110,7 +114,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>libmux.lib;ganl.lib;lua54.lib;pcre2-8d.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\bin_debug;..\..\src\pcre2\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\bin_debug;$(VcpkgDir)\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ModuleDefinitionFile />
       <SubSystem>Windows</SubSystem>
       <DataExecutionPrevention />

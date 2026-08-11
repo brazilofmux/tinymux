@@ -38,23 +38,25 @@
   <PropertyGroup>
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
     <!-- #2185: never hardcode C:\tinymux.  This file lives in mux\, so
-         MSBuildProjectDirectory is the mux root for this tree.  PCRE2 is
-         gitignored out-of-tree; override with -p:Pcre2Dir=... to share one
-         staged copy across checkouts (include\ plus Debug/Release libs). -->
+         MSBuildProjectDirectory is the mux root for this tree.
+         #2212: PCRE2 comes from vcpkg now, the same way grpc does — declared
+         in mux\vcpkg.json, materialised by `vcpkg install` run from mux\.
+         vcpkg's layout puts release libs in lib\ and debug libs in
+         debug\lib\, not Release\ and Debug\. -->
     <MuxDir Condition="'$(MuxDir)' == ''">$(MSBuildProjectDirectory)</MuxDir>
-    <Pcre2Dir Condition="'$(Pcre2Dir)' == ''">$(MuxDir)\src\pcre2</Pcre2Dir>
+    <VcpkgDir Condition="'$(VcpkgDir)' == ''">$(MuxDir)\vcpkg_installed\x64-windows</VcpkgDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\bin_debug\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(MuxDir)\include;$(MuxDir)\ganl\include;$(Pcre2Dir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
-    <LibraryPath>$(Pcre2Dir)\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\ganl\include;$(VcpkgDir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VcpkgDir)\debug\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>.\bin_release\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(MuxDir)\include;$(MuxDir)\ganl\include;$(Pcre2Dir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
-    <LibraryPath>$(Pcre2Dir)\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(MuxDir)\include;$(MuxDir)\ganl\include;$(VcpkgDir)\include;$(MuxDir)\sqlite;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VcpkgDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
