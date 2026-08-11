@@ -1,116 +1,104 @@
-TinyMUX 2.14: README (Win32/64-based)
-Last Update: July 2012
-~~~~~~~~~~~~~~~~~~~~~~
+TinyMUX 2.14: README (Windows)
+Last Update: August 2026
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Herein are extra notes for the Win32/64 distribution.  These notes do not
+Herein are extra notes for the Windows distribution.  These notes do not
 apply well to the Unix distribution.
 
-There are two different Win32/64 distributions (binary and source) using three
-different archive tools (PKZip, JAR from ARJ, and tar/gzip).
+Two Windows distributions are provided, binary and source, each as a .zip
+archive.  Both are x64 only; there is no 32-bit or IA-64 build.
 
-Unless you want to build the server yourself, you should use one of the binary
-distributions.  In the binary distributions, the server has been compiled for
-you using the Intel 9.1 compiler with aggressive, profile-guided
-optimizations, vectorized loops, and CPU-aware dispatching.  You need at least
-a Pentium Pro or above to use these binaries.  The pre-built Win32 binary
-works on everything from Windows 98 through Windows Vista, however it does not
-work with Windows 95 or Windows 95SR2.  The pre-built Win64 binary works on
-the 64-bit editions of Windows 2003 Server, Windows XP, and Windows Vista.
-IA-64 is not supported.
+Unless you want to build the server yourself, use the binary distribution.
 
-A source distribution is provided, and with the right compiler, it should be
-possible to build for Windows 95, Windows 95SR2, and IA-64 platforms (or any
-of the above supported platforms).  The sources have been successfully
-compiled with Visual C 98 (part of Visual Studio 6.0), Visual Studio 2003.NET,
-Visual Studio 2005, as well as the Intel 9.1 C/C++ Compiler.  If you want to
-use Cygwin to compile the source, then don't use any of the Win32
-distributions.  Instead, download one of the Unix distributions of TinyMUX and
+If you would rather build under Cygwin or MSYS, do not use the Windows
+distribution at all.  Download one of the Unix distributions of TinyMUX and
 follow the instructions contained there.
 
-Regarding PKZip, you -must- use version 2.50 or use WinZip (www.winzip.com).
-You cannot use PKZip 2.04g.  PKZip 2.04g does not support long filenames.
-So, while PKZip 2.04g will unpack the distribution, your filenames will be
-named incorrectly.  Use version 2.50 of PKZip or use WinZip.
-
-Regarding tar/gzip on Win32, I'm using the Cygwin version of these tools.
-You can use Cygwin tools to unpack the Win32 distribution.  However, as
-mentioned above, you should not be using the Win32 distribution if you want
-to use Cygwin to compile TinyMUX 2.14.
-
-Regarding JAR from ARJ Software, this archiving tool produces the smallest
-files.  It's available via http://www.arjsoftware.com/jar.htm.
-
-Vista doesn't seem to like cscript //h:cscript, so you will need to use
-cscript directly to launch startmux.wsf.
 
 To use a binary distribution:
 
- 1. Open a Command Prompt window and unpack the distribution using one of the
-    following lines (depending on which archiving program you have chosen to
-    use).
+ 1. Open a Command Prompt window and unpack the distribution.  Windows 10
+    and later include tar, which reads .zip:
 
-        jar32 x mux-2.14.0.1.win32.bin.j
-        tar xzf mux-2.14.0.1.win32.bin.tar.gz
-        pkzip -extract -directories mux-2.14.0.1.win32.bin.zip
+        tar xf mux-2.14.0.11.win32.bin.zip
 
-    -or-
+    Any archiver that preserves long filenames will do as well.
 
-    Unpack the mux-2.14.0.1.win32.bin.zip using WinZip.
+ 2. The prebuilt binaries are already in mux2.14\game\bin and are ready to
+    run.
 
- 2. The pre-built binaries for 32-bit are already placed in mux2.14/game/bin and
-    ready to go.  64-bit binaries are provided in mux2.14/game/bin/win64, but to
-    use those, you need to be using a 64-bit version of Windows, and you need
-    to copy them up one directory level into mux2.14/game/bin.  64-bit versions
-    of Windows can use either.
+ 3. cd mux2.14\game
 
- 3. cd mux2.14/game
-
- 4. Possibly edit netmux.conf and mux.config to tweak the configuration.
+ 4. Possibly edit netmux.conf to tweak the configuration.  Startmux.bat
+    keeps its own settings -- the bin directory, game name, log directory
+    and pid file -- in variables at the top of the file.
 
  5. Start the server with the following:
 
-       cscript startmux.wsf
-
-    -or-
-
-       cscript //h:cscript        (once per system)
-       startmux
+        Startmux.bat
 
 
-To use a source distribution:
+To build from a source distribution:
 
- 1. Open a Command Prompt window and unpack the distribution using one of the
-    following lines (depending on which archiving program you have chosen to
-    use).
+Prerequisites:
 
-        jar32 x mux-2.14.0.1.win32.src.j
-        tar xzf mux-2.14.0.1.win32.src.tar.gz
-        pkzip -extract -directories mux-2.14.0.1.win32.src.zip
+ *  Visual Studio 2022 or later, with the "Desktop development with C++"
+    workload.  The projects build as C++17 and target x64.
 
-    -or-
+ *  vcpkg, which supplies the third-party libraries.  mux2.14\vcpkg.json
+    declares them -- currently grpc, nlohmann-json and pcre2 -- and pins a
+    builtin-baseline commit, so you get the same versions the release was
+    built against:
 
-    Unpack the mux-2.14.0.1.win32.src.zip using WinZip.
+        git clone https://github.com/microsoft/vcpkg C:\vcpkg
+        C:\vcpkg\bootstrap-vcpkg.bat
+        cd mux2.14
+        C:\vcpkg\vcpkg.exe install --triplet x64-windows
 
- 2. Start Visual C++ and open the workspace file (mux2.14/src/netmux.dsw).  Your
-    version of Visual Studio may want to convert this workspace file into a
-    'solution' file and also convert all the project files.  Let it do this,
-    and then remember to work with the solution file thereafter.
+    Do -not- clone with --depth 1.  The pinned baseline commit is not
+    present in a shallow clone, and vcpkg fails with "failed to git show
+    versions/baseline.json".  If you already made a shallow clone, run
+    'git fetch --depth 1 origin <baseline-sha>' against it to repair it.
 
- 3. Within Visual C++, do a batch build in order to produce netmux.exe.  The
-    non-debug version will be placed in mux2.14/src/bin_release and must be
-    copied over to mux2.14/game/bin.  It will also build a libmux.dll file which
-    must also be copied over to mux2.14/game/bin.  It will also build several
-    modules under mux2.14/src/modules/bin_release.  If you intend to use
-    these, they must also be copied into the mux2.14/game/bin directory.
+    Expect the first run to be slow: grpc dominates, and it takes roughly
+    an hour and about 11 GB.  The cost is one-time.  vcpkg caches what it
+    builds under %LOCALAPPDATA%\vcpkg\archives, so any later tree installs
+    in seconds.
 
- 4. Start the server with the following:
+    The install writes mux2.14\vcpkg_installed\x64-windows\, containing
+    include\, lib\ and bin\ for release, and debug\lib\ and debug\bin\ for
+    debug.  Every project locates it through the $(VcpkgDir) property, so
+    no further configuration is needed.  If you keep vcpkg's packages
+    somewhere else, override that one property.
 
-       cscript startmux.wsf
+Building:
 
-    -or-
+ 1. Open mux2.14\netmux.sln in Visual Studio and build the Release|x64
+    configuration, or build it from a Developer Command Prompt:
 
-       cscript //h:cscript        (once per system)
-       startmux
+        cd mux2.14
+        msbuild netmux.sln -p:Configuration=Release -p:Platform=x64 -m
+
+ 2. Output lands in mux2.14\bin_release (Debug builds go to bin_debug).
+    engine.dll imports PCRE2, so the build also copies pcre2-8.dll from
+    vcpkg into that directory; without it, loading engine.dll fails with
+    "The specified module could not be found."
+
+ 3. Copy the built files into mux2.14\game\bin:
+
+        netmux.exe, muxscript.exe
+        libmux.dll, engine.dll, comsys_mod.dll, mail_mod.dll, exp3.dll,
+        sqlslave.dll, sqlproxy.dll
+        pcre2-8.dll
+
+    Also copy mux2.14\rv64\softlib.rv64 into game\bin.
+
+    A machine without the Visual C++ redistributable installed needs
+    msvcp140.dll, vcruntime140.dll and vcruntime140_1.dll beside
+    netmux.exe as well.  The binary distribution ships those three for
+    that reason; a source build does not produce them.
+
+ 4. Start the server as described for the binary distribution above.
 
 
 To load an existing database:
