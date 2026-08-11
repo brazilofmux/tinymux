@@ -70,11 +70,30 @@
         eq(strlen(timefmt($Y)), 4)
       )=
   {
-    @log smoke=TC003: timefmt documented shorthands. Succeeded.;
+    @log smoke=TC003: timefmt documented shorthands. Succeeded.
+  },
+  {
+    @log smoke=TC003: timefmt documented shorthands. Failed (F=[timefmt($F, 946684800)] ymd=[timefmt($Y-$m-$d, 946684800)] R=[timefmt($R, 946684800)] hm=[timefmt($H:$M, 946684800)] r=[timefmt($r, 946684800)]).
+  }
+-
+
+# Test Case #4 - timefmt rejects unparseable <secs> instead of formatting
+# FILETIME zero (1601-01-01 UTC), which surfaces as Dec 31 1600 in western
+# zones.  A failed convtime() result fed into timefmt used to do exactly that.
+# (Last case: @notify via tr.done so the suite can complete.)
+#
+&tr.tc004 test_etimefmt_fn=
+  @if cand(
+        strmatch(timefmt($A\, $B $d\, $Y\, $I:$M $p,#-1 INVALID DATE), #-1 INVALID DATE),
+        strmatch(timefmt($Y, not-a-number), #-1 INVALID DATE),
+        strmatch(timefmt($Y, xyzzy), #-1 INVALID DATE)
+      )=
+  {
+    @log smoke=TC004: timefmt invalid secs. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: timefmt documented shorthands. Failed (F=[timefmt($F, 946684800)] ymd=[timefmt($Y-$m-$d, 946684800)] R=[timefmt($R, 946684800)] hm=[timefmt($H:$M, 946684800)] r=[timefmt($r, 946684800)]).;
+    @log smoke=TC004: timefmt invalid secs. Failed (inv=[timefmt($A\, $B $d\, $Y\, $I:$M $p,#-1 INVALID DATE)] nan=[timefmt($Y, not-a-number)] xyz=[timefmt($Y, xyzzy)]).;
     @trig me/tr.done
   }
 -

@@ -1028,7 +1028,17 @@ static FUNCTION(fun_timefmt)
     CLinearTimeAbsolute lta, ltaUTC;
     if (nfargs == 2)
     {
-        ltaUTC.SetSecondsString(fargs[1]);
+        // SetSecondsString fails closed without changing the absolute; a
+        // default-constructed ltaUTC is FILETIME zero (1601-01-01 UTC).
+        // Ignoring the failure made garbage such as "#-1 INVALID DATE"
+        // format as "Sunday, December 31, 1600, …" in western timezones
+        // instead of rejecting the seconds argument.
+        //
+        if (!ltaUTC.SetSecondsString(fargs[1]))
+        {
+            safe_str(S_("#-1 INVALID DATE"), buff, bufc);
+            return;
+        }
     }
     else
     {
