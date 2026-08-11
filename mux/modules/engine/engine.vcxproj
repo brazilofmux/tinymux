@@ -688,4 +688,24 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <!-- #2221: the x64-windows triplet links PCRE2 dynamically, so engine.dll
+       carries an import on pcre2-8.dll (pcre2-8d.dll in Debug).  Linking
+       against the import library in $(VcpkgDir) does not put that DLL beside
+       the output, and the documented setup does not enable vcpkg's MSBuild
+       integration, so a clean build linked successfully and then failed at
+       LoadLibrary with error 126.  Stage it app-local ourselves.
+
+       The DLL must exist if the link step found the import library, so a
+       miss here means something is wrong with the vcpkg tree rather than
+       with the caller; say so instead of quietly shipping an unloadable
+       bin directory, which is the failure this issue is about. -->
+  <Target Name="StagePcre2Runtime" AfterTargets="Build">
+    <PropertyGroup>
+      <Pcre2RuntimeDll Condition="'$(Configuration)' == 'Debug'">$(VcpkgDir)\debug\bin\pcre2-8d.dll</Pcre2RuntimeDll>
+      <Pcre2RuntimeDll Condition="'$(Pcre2RuntimeDll)' == ''">$(VcpkgDir)\bin\pcre2-8.dll</Pcre2RuntimeDll>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(Pcre2RuntimeDll)')"
+           Text="PCRE2 runtime '$(Pcre2RuntimeDll)' not found.  Run 'vcpkg install --triplet x64-windows' from mux\ to populate vcpkg_installed (see docs\building.md)." />
+    <Copy SourceFiles="$(Pcre2RuntimeDll)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
