@@ -402,3 +402,4 @@ src/websocket.cpp
 src/websocket.h
 SSL.md
 UPGRADING.md
+vcpkg.json

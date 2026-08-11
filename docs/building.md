@@ -60,6 +60,35 @@ without pkg-config metadata has to be pointed at by hand.
 MSVC via the `.vcxproj` files; there is no autotools path. See `CLAUDE.md` for
 the GANL test harness invocation. Note issue #1499 (`/utf-8`).
 
+**Third-party dependencies come from vcpkg** (#2212). `mux/vcpkg.json` declares
+them — currently `grpc`, `nlohmann-json` and `pcre2` — pinned to a
+`builtin-baseline` commit:
+
+```
+git clone https://github.com/microsoft/vcpkg C:\vcpkg
+C:\vcpkg\bootstrap-vcpkg.bat
+cd mux && C:\vcpkg\vcpkg.exe install --triplet x64-windows
+```
+
+That materialises `mux/vcpkg_installed/x64-windows/` (gitignored), which every
+project reads via `$(VcpkgDir)`. Release libraries land in `lib/` and debug in
+`debug/lib/` — not `Release/` and `Debug/`, which is what the old hand-built
+PCRE2 layout used.
+
+Two things that will waste your afternoon otherwise:
+
+- **Do not `git clone --depth 1`.** The pinned baseline commit is not in a
+  shallow clone and resolution fails with `failed to git show
+  versions/baseline.json`. Recover with
+  `git fetch --depth 1 origin <baseline-sha>`.
+- **First run is slow** — grpc dominates, roughly an hour and ~11 GB. It is a
+  one-time cost: vcpkg's binary cache (`%LOCALAPPDATA%\vcpkg\archives`) makes
+  any later tree a few seconds.
+
+PCRE2's JIT is required (`funceval2.cpp` calls `pcre2_jit_compile`) and arrives
+automatically — the port's `platform-default-features` pulls in `jit` on every
+platform except emscripten and iOS, so a plain `"pcre2"` dependency is enough.
+
 ## When you still need flags
 
 **`--enable-nls` on macOS.** GNU gettext ships no `.pc` file, so unlike PCRE2
