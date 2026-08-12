@@ -241,8 +241,8 @@ public:
     virtual MUX_RESULT SumPlayerCommandCount(dbref target, int *pCount);
     virtual MUX_RESULT FetchHeight(dbref target, int *pHeight);
     virtual MUX_RESULT FetchWidth(dbref target, int *pWidth);
-    virtual MUX_RESULT FetchIdle(dbref target, int *pIdle);
-    virtual MUX_RESULT FetchConnect(dbref target, int *pConnect);
+    virtual MUX_RESULT FetchIdle(dbref target, int64_t *pIdle);
+    virtual MUX_RESULT FetchConnect(dbref target, int64_t *pConnect);
 
     // Queries by opaque DESC handle
     virtual MUX_RESULT FindDescBySocket(SOCKET s, DESC **ppDesc);
@@ -472,14 +472,14 @@ MUX_RESULT CConnectionManager::FetchWidth(dbref target, int *pWidth)
     return MUX_S_OK;
 }
 
-MUX_RESULT CConnectionManager::FetchIdle(dbref target, int *pIdle)
+MUX_RESULT CConnectionManager::FetchIdle(dbref target, int64_t *pIdle)
 {
     if (nullptr == pIdle) return MUX_E_INVALIDARG;
     *pIdle = fetch_idle(target);
     return MUX_S_OK;
 }
 
-MUX_RESULT CConnectionManager::FetchConnect(dbref target, int *pConnect)
+MUX_RESULT CConnectionManager::FetchConnect(dbref target, int64_t *pConnect)
 {
     if (nullptr == pConnect) return MUX_E_INVALIDARG;
     *pConnect = fetch_connect(target);

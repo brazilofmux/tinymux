@@ -755,7 +755,7 @@ int fetch_width(dbref target)
 // ---------------------------------------------------------------------------
 // fetch_idle: Return smallest idle time for a player (or -1 if not logged in).
 //
-int fetch_idle(dbref target)
+int64_t fetch_idle(dbref target)
 {
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
@@ -809,7 +809,7 @@ void find_oldest(const dbref target, DESC *dOldest[2])
 // fetch_connect: Return largest connect time for a player (or -1 if not
 // logged in).
 //
-int fetch_connect(dbref target)
+int64_t fetch_connect(dbref target)
 {
     DESC *dOldest[2];
     find_oldest(target, dOldest);

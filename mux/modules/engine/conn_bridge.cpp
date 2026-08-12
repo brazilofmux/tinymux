@@ -230,16 +230,16 @@ int fetch_width(dbref target)
     return n;
 }
 
-int fetch_idle(dbref target)
+int64_t fetch_idle(dbref target)
 {
-    int n = -1;
+    int64_t n = -1;
     if (g_pConnMgr) g_pConnMgr->FetchIdle(target, &n);
     return n;
 }
 
-int fetch_connect(dbref target)
+int64_t fetch_connect(dbref target)
 {
-    int n = -1;
+    int64_t n = -1;
     if (g_pConnMgr) g_pConnMgr->FetchConnect(target, &n);
     return n;
 }
