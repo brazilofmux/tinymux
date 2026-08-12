@@ -1422,6 +1422,54 @@ int fetch_connect(dbref target)
     }
 }
 
+// ---------------------------------------------------------------------------
+// check_connected_at: diagnostic for stray writes into DESC::connected_at.
+//
+// connected_at is written in exactly two ways: GetUTC() (on accept, on login,
+// and on the LOGOUT reset) and SetSeconds() out of load_restart_db.  None of
+// them can produce a value earlier than the server start or later than now, so
+// anything outside that window arrived by some other route.
+//
+// Log the raw 100ns field before repairing it: the intact bytes of a scribbled
+// timestamp still date the write, which is how the offset of the stray store
+// gets identified.  Repairing also stops WHO reporting a nonsense 'On For'.
+//
+static void check_connected_at(const CLinearTimeAbsolute &ltaNow)
+{
+    const auto iNow   = ltaNow.Return100ns();
+    const auto iStart = mudstate.start_time.Return100ns();
+
+    for (DESC *d : mudstate.descriptors_list)
+    {
+        const auto iAt = d->connected_at.Return100ns();
+        if (  iStart <= iAt
+           && iAt <= iNow)
+        {
+            continue;
+        }
+
+        STARTLOG(LOG_ALWAYS, "BUG", "TIME");
+        UTF8 *buff = alloc_lbuf("check_connected_at");
+        mux_sprintf(buff, LBUF_SIZE,
+            T("connected_at out of range on socket %d: raw=0x%016llX now=0x%016llX start=0x%016llX delta=%lld s"),
+            d->socket,
+            static_cast<unsigned long long>(iAt),
+            static_cast<unsigned long long>(iNow),
+            static_cast<unsigned long long>(iStart),
+            static_cast<long long>((iNow - iAt) / FACTOR_100NS_PER_SECOND));
+        log_text(buff);
+        free_lbuf(buff);
+        if (d->flags & DS_CONNECTED)
+        {
+            log_text(T(" player "));
+            log_name(d->player);
+        }
+        ENDLOG;
+
+        d->connected_at = ltaNow;
+    }
+}
+
 // A NOTE about AUTODARK: It only works for wizard players. Wizard players
 // are automatically set DARK if they are not already set DARK and they have
 // no session which is unidle.
@@ -1434,6 +1482,8 @@ void check_idle(void)
 {
     CLinearTimeAbsolute ltaNow;
     ltaNow.GetUTC();
+
+    check_connected_at(ltaNow);
 
     for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); )
     {
