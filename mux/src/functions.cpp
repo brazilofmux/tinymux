@@ -8177,7 +8177,7 @@ static FUNCTION(fun_idle)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long nIdle = -1;
+    int64_t nIdle = -1;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
@@ -8220,7 +8220,7 @@ static FUNCTION(fun_idle)
             nIdle = fetch_idle(target);
         }
     }
-    safe_ltoa(nIdle, buff, bufc);
+    safe_i64toa(nIdle, buff, bufc);
 }
 
 static FUNCTION(fun_conn)
@@ -8232,7 +8232,7 @@ static FUNCTION(fun_conn)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    long nConnected = -1;
+    int64_t nConnected = -1;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
@@ -8275,7 +8275,7 @@ static FUNCTION(fun_conn)
             nConnected = fetch_connect(target);
         }
     }
-    safe_ltoa(nConnected, buff, bufc);
+    safe_i64toa(nConnected, buff, bufc);
 }
 
 static FUNCTION(fun_terminfo)
@@ -10233,7 +10233,7 @@ static const RADIX_ENTRY reTable[N_RADIX_ENTRIES] =
 static void GeneralTimeConversion
 (
     UTF8 *Buffer,
-    long Seconds,
+    int64_t Seconds,
     int iStartBase,
     int iEndBase,
     bool bSingleTerm,
@@ -10246,7 +10246,7 @@ static void GeneralTimeConversion
     }
 
     UTF8 *p = Buffer;
-    int iValue;
+    int64_t iValue;
 
     if (  iStartBase < 0
        || N_RADIX_ENTRIES <= iStartBase
@@ -10272,7 +10272,7 @@ static void GeneralTimeConversion
                 {
                     *p++ = ' ';
                 }
-                p += mux_ltoa(iValue, p);
+                p += mux_i64toa(iValue, p);
                 if (bNames)
                 {
                     // Use the names with the correct pluralization.
@@ -10322,7 +10322,7 @@ static UTF8 TimeBuffer80[80];
 // 2^63/86400 is 1.07E14 which is at most 15 digits.
 // '(15)d (2):(2)\0' is at most 23 characters.
 //
-static const UTF8 *digit_format(int Seconds)
+static const UTF8 *digit_format(int64_t Seconds)
 {
     if (Seconds < 0)
     {
@@ -10332,19 +10332,21 @@ static const UTF8 *digit_format(int Seconds)
     // We are showing the time in minutes. 59s --> 0m
     //
 
-    // Divide the time down into days, hours, and minutes.
+    // Divide the time down into days, hours, and minutes.  Days is the
+    // unbounded field (2^63/86400 is 15 digits); hours and minutes are
+    // remainders and fit int by construction.
     //
-    int Days = Seconds / 86400;
+    int64_t Days = Seconds / 86400;
     Seconds -= Days * 86400;
 
-    int Hours = Seconds / 3600;
-    Seconds -= Hours * 3600;
+    int Hours = static_cast<int>(Seconds / 3600);
+    Seconds -= static_cast<int64_t>(Hours) * 3600;
 
-    int Minutes = Seconds / 60;
+    int Minutes = static_cast<int>(Seconds / 60);
 
     if (Days > 0)
     {
-        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), T("%dd %02d:%02d"), Days, Hours, Minutes);
+        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), T("%lldd %02d:%02d"), Days, Hours, Minutes);
     }
     else
     {
@@ -10378,12 +10380,22 @@ static const UTF8 *digit_format(int Seconds)
 //   ZZZ9d 99:99       86,400 to    863,999,999
 //   ZZZZZ9d 99h  864,000,000 to 86,399,996,459
 //
-static int tf1_width_table[4][3] =
+static int64_t tf1_width_table[4][3] =
 {
-    { 86399,    863999,  86396459, },
-    { 86399,   8639999, 863996459, },
-    { 86399,  86399999,   INT_MAX, },
-    { 86399, 863999999,   INT_MAX, }
+    { 86399,    863999,      86396459, },
+    { 86399,   8639999,     863996459, },
+    { 86399,  86399999,  8639996459LL, },
+    { 86399, 863999999, 86399996459LL, }
+};
+
+// The largest value each width can render, taken from the ranges above.  Widths
+// 8 and 9 end in the weeks case; widths 10 and 11 have no weeks case and end in
+// the days case.  Anything larger overflows the field, so it is reported as
+// unrepresentable rather than wrapped into a plausible-looking number.
+//
+static int64_t tf1_max_table[4] =
+{
+    6047913659LL, 6047913659LL, 8639996459LL, 86399996459LL
 };
 
 static struct
@@ -10410,7 +10422,7 @@ static struct
     }
 };
 
-const UTF8 *time_format_1(int Seconds, size_t maxWidth)
+const UTF8 *time_format_1(int64_t Seconds, size_t maxWidth)
 {
     if (Seconds < 0)
     {
@@ -10425,6 +10437,12 @@ const UTF8 *time_format_1(int Seconds, size_t maxWidth)
     }
     size_t iWidth = maxWidth - 8;
 
+    if (tf1_max_table[iWidth] < Seconds)
+    {
+        mux_strncpy(TimeBuffer80, T("???"), sizeof(TimeBuffer80)-1);
+        return TimeBuffer80;
+    }
+
     int iCase = 0;
     while (  iCase < 3
           && tf1_width_table[iWidth][iCase] < Seconds)
@@ -10432,11 +10450,14 @@ const UTF8 *time_format_1(int Seconds, size_t maxWidth)
         iCase++;
     }
 
+    // Bounded above by tf1_max_table, so each field fits its int format.
+    //
     int i, n[3];
     for (i = 0; i < 3; i++)
     {
-        n[i] = Seconds / tf1_case_table[iCase].div[i];
-        Seconds -= n[i] *tf1_case_table[iCase].div[i];
+        const int64_t q = Seconds / tf1_case_table[iCase].div[i];
+        n[i] = static_cast<int>(q);
+        Seconds -= q * tf1_case_table[iCase].div[i];
     }
     mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), tf1_case_table[iCase].specs[iWidth], n[0], n[1], n[2]);
     return TimeBuffer80;
@@ -10444,7 +10465,7 @@ const UTF8 *time_format_1(int Seconds, size_t maxWidth)
 
 // Show time in days, hours, minutes, or seconds.
 //
-const UTF8 *time_format_2(int Seconds)
+const UTF8 *time_format_2(int64_t Seconds)
 {
     // 2^63/86400 is 1.07E14 which is at most 15 digits.
     // '(15)d\0' is at most 17 characters.
@@ -10459,7 +10480,7 @@ const UTF8 *time_format_2(int Seconds)
 
 // expand_time - Written (short) time format.
 //
-static const UTF8 *expand_time(int Seconds)
+static const UTF8 *expand_time(int64_t Seconds)
 {
     // 2^63/31556926 is 292277265436 which is at most 12 digits.
     // '(12)Y (2)M (1)w (1)d (2)h (2)m (2)s\0' is at most 34 characters.
@@ -10470,7 +10491,7 @@ static const UTF8 *expand_time(int Seconds)
 
 // write_time - Written (long) time format.
 //
-static const UTF8 *write_time(int Seconds)
+static const UTF8 *write_time(int64_t Seconds)
 {
     // 2^63/31556926 is 292277265436 which is at most 12 digits.
     // '(12) years (2) months (1) weeks (1) days (2) hours (2) minutes (2) seconds\0' is
@@ -10493,7 +10514,7 @@ static FUNCTION(fun_digittime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(digit_format(tt), buff, bufc);
 }
 
@@ -10510,7 +10531,7 @@ static FUNCTION(fun_singletime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(time_format_2(tt), buff, bufc);
 }
 
@@ -10527,7 +10548,7 @@ static FUNCTION(fun_exptime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(expand_time(tt), buff, bufc);
 }
 
@@ -10544,7 +10565,7 @@ static FUNCTION(fun_writetime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(write_time(tt), buff, bufc);
 }
 
@@ -10649,12 +10670,12 @@ static FUNCTION(fun_conntotal)
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
-        long TotalTime = fetch_totaltime(target);
+        int64_t TotalTime = fetch_totaltime(target);
         if (Connected(target))
         {
             TotalTime += fetch_connect(target);
         }
-        safe_ltoa(TotalTime, buff, bufc);
+        safe_i64toa(TotalTime, buff, bufc);
     }
     else
     {
@@ -10677,13 +10698,13 @@ static FUNCTION(fun_connmax)
     dbref target = lookup_player(executor, fargs[0], true);
     if (Good_obj(target))
     {
-        long Longest = fetch_longestconnect(target);
-        long Current = fetch_connect(target);
+        int64_t Longest = fetch_longestconnect(target);
+        int64_t Current = fetch_connect(target);
         if (Longest < Current)
         {
             Longest = Current;
         }
-        safe_ltoa(Longest, buff, bufc);
+        safe_i64toa(Longest, buff, bufc);
     }
     else
     {
