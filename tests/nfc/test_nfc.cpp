@@ -81,6 +81,12 @@ static void expect_eq(const char *what, const std::string &got,
     }
 }
 
+static void expect_eq_buf(const char *what, const TestUTF8 *buf, size_t n,
+                          const std::string &want)
+{
+    expect_eq(what, std::string(reinterpret_cast<const char *>(buf), n), want);
+}
+
 static void expect_true(const char *what, bool b)
 {
     if (b)
@@ -230,14 +236,16 @@ static void test_characterization(void)
     expect_eq("control byte passes through", nfc(std::string("a\x01" "b", 3)),
               std::string("a\x01" "b", 3));
 
-    // Output bound.  The two paths differ and both are intentional:
+    // Output bound (#2232).  Both paths guarantee that whatever is returned
+    // is a valid UTF-8 PREFIX of the full normalized string:
     //
-    //   already-NFC input takes the fast path, which is a truncating memcpy
-    //   and can cut mid-character;
+    //   the fast path is a truncating memcpy that backs off to a code-point
+    //   boundary rather than cutting mid-character;
     //
-    //   input needing composition takes the slow path, which emits only whole
-    //   characters that fit and skips the rest, so it never cuts mid-character
-    //   but can drop from the middle.
+    //   the slow path stops at the first code point that does not fit rather
+    //   than skipping it and appending later, narrower ones -- the old
+    //   behaviour produced the correct string with a hole in the middle,
+    //   indistinguishable from text that legitimately composed to that size.
     {
         TestUTF8 buf[8];
         size_t   n = 0;
@@ -252,6 +260,53 @@ static void test_characterization(void)
                            decomposed.size(), buf, 5, &n);
         expect_true("slow path emits only whole characters within the bound",
                     n <= 5 && 0 == (n % 2));
+    }
+
+    // Fast path: a truncating copy of already-NFC input must not cut inside
+    // a multi-byte sequence (#2232).  "a" + U+00E9 is 3 bytes of NFC; a
+    // 2-byte bound lands mid-e-acute and must back off to just "a".
+    {
+        TestUTF8 buf[8];
+        size_t   n = 0;
+        const std::string in = std::string("a") + "\xC3\xA9";
+        utf8_normalize_nfc(reinterpret_cast<const TestUTF8 *>(in.data()),
+                           in.size(), buf, 2, &n);
+        expect_true("fast-path truncation lands on a code-point boundary",
+                    1 == n && 'a' == buf[0]);
+    }
+
+    // Slow path: truncation is a PREFIX, never a hole (#2232's demo vector).
+    // "a" + COMBINING ACUTE composes to U+00E9 (2 bytes); U+1D15E decomposes
+    // to U+1D157 + U+1D165 (composition-excluded, 4 bytes each, stays
+    // decomposed); then "XY".  Full NFC:
+    //     C3 A1  F0 9D 85 97  F0 9D 85 A5  58 59      (12 bytes)
+    // At bound 4 the old loop skipped U+1D157 but still appended "XY",
+    // returning "\xC3\xA1XY" -- a hole.  Correct is the 2-byte prefix.
+    // At bound 8 the same shape dropped U+1D165; correct is the 6-byte
+    // prefix.
+    {
+        const std::string full = std::string("\xC3\xA1") +
+            "\xF0\x9D\x85\x97" "\xF0\x9D\x85\xA5" "XY";
+        const std::string in = std::string("a") + COMB_ACUTE +
+            "\xF0\x9D\x85\x9E" "XY";
+
+        TestUTF8 buf[16];
+        size_t   n = 0;
+        utf8_normalize_nfc(reinterpret_cast<const TestUTF8 *>(in.data()),
+                           in.size(), buf, sizeof(buf), &n);
+        expect_eq_buf("demo vector normalizes fully with room", buf, n, full);
+
+        n = 0;
+        utf8_normalize_nfc(reinterpret_cast<const TestUTF8 *>(in.data()),
+                           in.size(), buf, 4, &n);
+        expect_eq_buf("bound 4 yields the 2-byte prefix, not a hole",
+                      buf, n, full.substr(0, 2));
+
+        n = 0;
+        utf8_normalize_nfc(reinterpret_cast<const TestUTF8 *>(in.data()),
+                           in.size(), buf, 8, &n);
+        expect_eq_buf("bound 8 yields the 6-byte prefix, not a hole",
+                      buf, n, full.substr(0, 6));
     }
 
     // Never writes past the reported length, and never reports more than the
