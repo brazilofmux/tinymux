@@ -10322,7 +10322,7 @@ static UTF8 TimeBuffer80[80];
 // 2^63/86400 is 1.07E14 which is at most 15 digits.
 // '(15)d (2):(2)\0' is at most 23 characters.
 //
-static const UTF8 *digit_format(int Seconds)
+static const UTF8 *digit_format(int64_t Seconds)
 {
     if (Seconds < 0)
     {
@@ -10332,19 +10332,21 @@ static const UTF8 *digit_format(int Seconds)
     // We are showing the time in minutes. 59s --> 0m
     //
 
-    // Divide the time down into days, hours, and minutes.
+    // Divide the time down into days, hours, and minutes.  Days is the
+    // unbounded field (2^63/86400 is 15 digits); hours and minutes are
+    // remainders and fit int by construction.
     //
-    int Days = Seconds / 86400;
+    int64_t Days = Seconds / 86400;
     Seconds -= Days * 86400;
 
-    int Hours = Seconds / 3600;
-    Seconds -= Hours * 3600;
+    int Hours = static_cast<int>(Seconds / 3600);
+    Seconds -= static_cast<int64_t>(Hours) * 3600;
 
-    int Minutes = Seconds / 60;
+    int Minutes = static_cast<int>(Seconds / 60);
 
     if (Days > 0)
     {
-        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), T("%dd %02d:%02d"), Days, Hours, Minutes);
+        mux_sprintf(TimeBuffer80, sizeof(TimeBuffer80), T("%lldd %02d:%02d"), Days, Hours, Minutes);
     }
     else
     {
@@ -10512,7 +10514,7 @@ static FUNCTION(fun_digittime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int64_t tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(digit_format(tt), buff, bufc);
 }
 
@@ -10529,7 +10531,7 @@ static FUNCTION(fun_singletime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int64_t tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(time_format_2(tt), buff, bufc);
 }
 
@@ -10546,7 +10548,7 @@ static FUNCTION(fun_exptime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int64_t tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(expand_time(tt), buff, bufc);
 }
 
@@ -10563,7 +10565,7 @@ static FUNCTION(fun_writetime)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int64_t tt = mux_atol(fargs[0]);
+    int64_t tt = mux_atoi64(fargs[0]);
     safe_str(write_time(tt), buff, bufc);
 }
 
