@@ -923,7 +923,7 @@ const MUX_CID CID_GameEngine           = UINT64_C(0x00000002D4E5F6A7);
 // the ENGINE sees it into storage the DRIVER sized, so a size disagreement
 // here is an out-of-bounds write, not a wrong answer.  Any change to
 // DRIVER_CONFIG's layout must bump this for the same reason.
-const MUX_IID IID_IGameEngine          = UINT64_C(0x0000000247B8C9D3);
+const MUX_IID IID_IGameEngine          = UINT64_C(0x0000000247B8C9D4);
 
 interface mux_IGameEngine : public mux_IUnknown
 {
@@ -1037,9 +1037,9 @@ public:
     // Queries for WHO/INFO display.
     //
     virtual MUX_RESULT WhereRoom(dbref what, dbref *pRoom) = 0;
-    virtual MUX_RESULT TimeFormat1(int seconds, size_t maxWidth,
+    virtual MUX_RESULT TimeFormat1(int64_t seconds, size_t maxWidth,
         const UTF8 **ppResult) = 0;
-    virtual MUX_RESULT TimeFormat2(int seconds,
+    virtual MUX_RESULT TimeFormat2(int64_t seconds,
         const UTF8 **ppResult) = 0;
     virtual MUX_RESULT GetDbTop(int *pDbTop) = 0;
     virtual MUX_RESULT GetInfoTable(const UTF8 ***pppTable) = 0;
@@ -1233,7 +1233,7 @@ public:
 // functions (find_desc_by_socket, send_text_to_player, etc.).
 //
 const MUX_CID CID_ConnectionManager    = UINT64_C(0x00000002E3F4A5B6);
-const MUX_IID IID_IConnectionManager   = UINT64_C(0x00000002F1D2C3E4);
+const MUX_IID IID_IConnectionManager   = UINT64_C(0x00000002F1D2C3E5);
 
 interface mux_IConnectionManager : public mux_IUnknown
 {
@@ -1284,11 +1284,11 @@ public:
 
     // Query smallest idle time for a player (-1 if not connected).
     //
-    virtual MUX_RESULT FetchIdle(dbref target, int *pIdle) = 0;
+    virtual MUX_RESULT FetchIdle(dbref target, int64_t *pIdle) = 0;
 
     // Query largest connect time for a player (-1 if not connected).
     //
-    virtual MUX_RESULT FetchConnect(dbref target, int *pConnect) = 0;
+    virtual MUX_RESULT FetchConnect(dbref target, int64_t *pConnect) = 0;
 
     // --- Queries by opaque connection handle (DESC*) ---
     // Engine code holds DESC* as an opaque pointer and queries fields here.

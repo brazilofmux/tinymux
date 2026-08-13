@@ -466,7 +466,7 @@ dbref drv_WhereRoom(dbref what)
     return room;
 }
 
-const UTF8 *drv_TimeFormat1(int seconds, size_t maxWidth)
+const UTF8 *drv_TimeFormat1(int64_t seconds, size_t maxWidth)
 {
     const UTF8 *pResult = T("");
     if (g_pIGameEngine)
@@ -476,7 +476,7 @@ const UTF8 *drv_TimeFormat1(int seconds, size_t maxWidth)
     return pResult;
 }
 
-const UTF8 *drv_TimeFormat2(int seconds)
+const UTF8 *drv_TimeFormat2(int64_t seconds)
 {
     const UTF8 *pResult = T("");
     if (g_pIGameEngine)

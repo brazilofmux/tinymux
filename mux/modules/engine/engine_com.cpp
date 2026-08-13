@@ -3007,9 +3007,9 @@ public:
         reg_ref *regs[], NamedRegsMap *named);
     virtual MUX_RESULT MoveObject(dbref thing, dbref dest);
     virtual MUX_RESULT WhereRoom(dbref what, dbref *pRoom);
-    virtual MUX_RESULT TimeFormat1(int seconds, size_t maxWidth,
+    virtual MUX_RESULT TimeFormat1(int64_t seconds, size_t maxWidth,
         const UTF8 **ppResult);
-    virtual MUX_RESULT TimeFormat2(int seconds,
+    virtual MUX_RESULT TimeFormat2(int64_t seconds,
         const UTF8 **ppResult);
     virtual MUX_RESULT GetDbTop(int *pDbTop);
     virtual MUX_RESULT GetInfoTable(const UTF8 ***pppTable);
@@ -4075,7 +4075,7 @@ MUX_RESULT CGameEngine::WhereRoom(dbref what, dbref *pRoom)
     return MUX_S_OK;
 }
 
-MUX_RESULT CGameEngine::TimeFormat1(int seconds, size_t maxWidth,
+MUX_RESULT CGameEngine::TimeFormat1(int64_t seconds, size_t maxWidth,
     const UTF8 **ppResult)
 {
     if (nullptr == ppResult)
@@ -4086,7 +4086,7 @@ MUX_RESULT CGameEngine::TimeFormat1(int seconds, size_t maxWidth,
     return MUX_S_OK;
 }
 
-MUX_RESULT CGameEngine::TimeFormat2(int seconds,
+MUX_RESULT CGameEngine::TimeFormat2(int64_t seconds,
     const UTF8 **ppResult)
 {
     if (nullptr == ppResult)

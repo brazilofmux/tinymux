@@ -65,8 +65,8 @@ void drv_MoveObject(dbref thing, dbref dest);
 // Queries for WHO/INFO display.
 //
 dbref       drv_WhereRoom(dbref what);
-const UTF8 *drv_TimeFormat1(int seconds, size_t maxWidth);
-const UTF8 *drv_TimeFormat2(int seconds);
+const UTF8 *drv_TimeFormat1(int64_t seconds, size_t maxWidth);
+const UTF8 *drv_TimeFormat2(int64_t seconds);
 int         drv_GetDbTop(void);
 const UTF8 **drv_GetInfoTable(void);
 

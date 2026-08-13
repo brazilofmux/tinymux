@@ -958,7 +958,7 @@ void do_page
         if (target != NOTHING)
         {
             notify_with_cause_ooc(target, executor, omessage, MSG_SRC_PAGE);
-            int target_idle = fetch_idle(target);
+            int64_t target_idle = fetch_idle(target);
             int64_t target_idle_timeout_val = idle_timeout_val(target);
             if (target_idle >= target_idle_timeout_val)
             {
