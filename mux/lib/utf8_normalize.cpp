@@ -787,16 +787,29 @@ static NFC_NOINLINE void utf8_normalize_nfc_slow(const UTF8 *src, size_t nSrc,
 
     // Step 4: Encode back to UTF-8.
     //
+    // STOP at the first code point that does not fit (#2232).  The old
+    // guard skipped it and kept appending, so a wide code point could be
+    // dropped while a later, narrower one was still written -- the result
+    // was not a truncated prefix but the correct string with a hole in
+    // it, indistinguishable from text that legitimately composed down to
+    // that size.  Truncation now always yields a valid prefix of the
+    // normalized string.
+    //
     size_t nOut = 0;
     for (int i = 0; i < nCps; i++)
     {
         UTF8 enc[4];
         int nb = utf8_Encode(cps[i].cp, enc);
-        if (nb > 0 && nOut + nb <= nDstMax)
+        if (nb <= 0)
         {
-            memcpy(dst + nOut, enc, nb);
-            nOut += nb;
+            continue;
         }
+        if (nOut + nb > nDstMax)
+        {
+            break;
+        }
+        memcpy(dst + nOut, enc, nb);
+        nOut += nb;
     }
     *pnDst = nOut;
 }
@@ -811,6 +824,20 @@ void utf8_normalize_nfc(const UTF8 *src, size_t nSrc, UTF8 *dst, size_t nDstMax,
     if (utf8_is_nfc(src, nSrc))
     {
         size_t nCopy = (nSrc < nDstMax) ? nSrc : nDstMax;
+
+        // A truncating copy must not cut mid-code-point (#2232).  nCopy
+        // is a byte count; if it lands inside a multi-byte sequence, back
+        // off over the continuation bytes and then the lead, so the
+        // prefix stays valid UTF-8.  The input is boundary-validated, so
+        // this walk is over well-formed sequences by contract.
+        //
+        if (nCopy < nSrc)
+        {
+            while (0 < nCopy && 0x80 == (src[nCopy] & 0xC0))
+            {
+                nCopy--;
+            }
+        }
         memcpy(dst, src, nCopy);
         *pnDst = nCopy;
         return;
