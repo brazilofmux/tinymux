@@ -20,6 +20,7 @@ make uninstall         # Remove installed files
 ```
 
 Key configure options:
+
 - `--enable-ssl` / `--disable-ssl` — TLS support (OpenSSL)
 - `--disable-widechar` — disable UTF-8/ICU support
 - `--enable-inet6` — IPv6 support

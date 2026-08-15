@@ -133,6 +133,7 @@ parse_time_part(tokens)
 ```
 
 This covers:
+
 - `Jan 01 00:00:00 2000` (after time, year — legacy order variant)
 - `January 1st, 2026 10:43:00 UTC`
 - `Apr 6 2026 10:43:00 EST`

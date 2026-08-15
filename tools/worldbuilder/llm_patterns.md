@@ -10,6 +10,7 @@ Human intent → LLM generates YAML → DRC validates → Human reviews → Appl
 ```
 
 The LLM never touches the game directly. All output goes through:
+
 1. **YAML spec** — structured, parseable, diffable
 2. **DRC validation** — catches errors before anything executes
 3. **Softcode lint** — validates any code in attributes

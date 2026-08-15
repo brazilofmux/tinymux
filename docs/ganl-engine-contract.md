@@ -84,8 +84,8 @@ error path). Therefore:
     `epoll_wait` fetch at `maxEvents` and re-arms overflowed fds with an
     identical-mask `EPOLL_CTL_MOD` (issue #943). Disarming interest
     without emitting the corresponding event is a contract violation.
-- **Negotiation-timeout sweeps must not depend on idle polls** (issue
-  #945): a busy server never returns zero events, so a sweep gated on
+- **Negotiation-timeout sweeps must not depend on idle polls** (issue #945):
+  a busy server never returns zero events, so a sweep gated on
   `nfds == 0` never runs.
 
 ## Known deviations (open)

@@ -61,11 +61,11 @@ instead of being sampled badly.
 
 ## Not a gate
 
-#2048 measured a socket-driven harness at **82% run-to-run spread** and deleted
-it in favour of parsing the smoke log. That finding is real and it applies
-here too — just at a different scale, because that harness was timing rvbench
-legs at nanoseconds per call while these phases run for seconds and read exact
-CPU counters.
+Issue #2048 measured a socket-driven harness at **82% run-to-run spread**
+and deleted it in favour of parsing the smoke log. That finding is real and
+it applies here too — just at a different scale, because that harness was
+timing rvbench legs at nanoseconds per call while these phases run for
+seconds and read exact CPU counters.
 
 Three consecutive runs, `--scale 0.5`, same build, Linux/x86-64:
 

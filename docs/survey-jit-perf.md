@@ -5,6 +5,7 @@ kernel, the layers into it, and the SQLite bytecode cache. Companion to
 `docs/survey-jit-dbt.md` (which is the *correctness/security* audit).
 
 ## Method
+
 - **Clean measurement tool: `rvbench(<expr>,<iters>)`** — a wizard function that
   benchmarks three paths on the same expression: native AST (`mux_exec`),
   compile-every-time, and the production path (`compile_cached` LRU +
@@ -17,6 +18,7 @@ kernel, the layers into it, and the SQLite bytecode cache. Companion to
   via sudo — restore to 4 afterward.
 
 ## ⚠️ Methodology gotchas (cost real time to discover)
+
 1. **`think [expr]` does NOT exercise the JIT.** `jit_can_handle`
    (`ast.cpp:2678`) bails on any `AST_EVALBRACKET` node — a *deliberate* parity
    guard ("eval brackets have subtle re-evaluation behavior"). So bracket-wrapped
@@ -44,6 +46,7 @@ kernel, the layers into it, and the SQLite bytecode cache. Companion to
 | `iter(lnum(100),mul(%i0,%i0))` | yes | 250 | 250 | **1.0× (none)** |
 
 Takeaways:
+
 - **Constant-folded exprs** are essentially free under JIT (early-return memcpy
   in `run_cached_program`, `jit_compiler.cpp:2291`).
 - **Per-call setup floor ≈ 0.4µs** for any JIT-executed program: the
@@ -74,8 +77,10 @@ Shared by the AST interpreter, HIR, and the Tier-2 blob `mul` (calls host
 `NearestPretty` as an intrinsic, `jit_compiler.cpp:744`), so all paths benefit.
 
 Result (rvbench, before → after):
+
 - `iter(lnum(100),mul(%i0,%i0))`: 250 → **163 µs/call** (−35%), native and cached.
 - `add(mul(3,3),div(100,r(0)))`: cached 1.37 → **0.72 µs** (−47%).
+
 Parity verified (`add(0.1,0.2)=0.3`, `fdiv(10,3)`, `add(1e20,1,-1e20)=1`,
 `mul(123456,789012)`); smoke **1264/1264**, 0 crashes.
 
@@ -138,6 +143,7 @@ BSS/data) changed `r(0)` by nothing measurable (0.17 vs 0.16–0.20µs). Same
 lesson as `materialize_program`: the real floor was SUBST/CARGS, already fixed.
 
 ## Remaining opportunities (not yet done)
+
 - **Bracketed `[...]` softcode bypasses the JIT entirely** (the deliberate
   `AST_EVALBRACKET` guard, `ast.cpp`). Large real-world surface. **Attempted
   and reverted** — confirmed the guard is load-bearing, not just cautious:

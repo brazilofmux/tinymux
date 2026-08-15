@@ -179,6 +179,7 @@ the healthiest possible finding: **the cliff is hard to reach, and that is the
 tradition is making dangerous things hard to reach; this is that.
 
 What the measurement showed:
+
 - `pool_alloc`/`pool_alloc_lbuf` only take memory from the system on the slow
   path (freelist empty); freed buffers return to the freelist, not the system.
   So the process's *pool footprint* equals the **peak concurrent** pool

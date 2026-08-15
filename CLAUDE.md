@@ -3,6 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Build Commands
+
 - Configure (one-time): `cd mux && ./configure --enable-jit --enable-realitylvls --enable-wodrealms`
   - `--enable-jit` defaults to NO. Without it the JIT is never built, and the
     `jit_parity`/`jit_diff` tests silently exercise only the interpreter.
@@ -36,6 +37,7 @@ version churns whole files (#1477). Prefer expressing build changes in
 `configure.ac` over `Makefile.am` for exactly that reason.
 
 ## Testing
+
 - Run smoke tests: `make test` (from repo root — builds, installs, then tests)
 - Or manually: `cd testcases && ./tools/Makesmoke && ./tools/Smoke`
 - Test output in: `testcases/smoke.log`
@@ -82,8 +84,8 @@ version churns whole files (#1477). Prefer expressing build changes in
   - **fuzz** — instruction-level differential fuzzer: random RV64 sequences
     through the interpreter and the DBT, comparing all 32 integer and 32 FP
     registers, with delta-debug shrinking of any mismatch. `jit_diff` fuzzes
-    the softcode layer; this one fuzzes the layer below it, where #1147,
-    #1148, #1151, #1152, #1153, #1311, #1313 and #1320 all lived.
+    the softcode layer; this one fuzzes the layer below it,
+    where #1147, #1148, #1151, #1152, #1153, #1311, #1313 and #1320 all lived.
     Deterministic (`DBT_FUZZ_SEED`, `DBT_FUZZ_ITERS`); soak with
     `DBT_FUZZ_ITERS=20000 make -C tests/dbt fuzz`.
 - **A differential test cannot see a bug both routes share.** #1319 and #1320
@@ -129,9 +131,9 @@ authoritative in a comment.
   variance is between processes), and say what N and the spread were.
   "min of 5, spread 12%" can be checked; "I measured 1.4x" cannot.
 - **Prefer a deterministic proxy to a clock** where one exists. `TINYMUX_DUMP_HIR=1`
-  gives the exact per-element work of a compiled loop with no timing at all;
-  #2132's whole diagnosis came from it after the timing attempt was abandoned
-  as unusable.
+  gives the exact per-element work of a compiled loop with no timing at
+  all; #2132's whole diagnosis came from it after the timing attempt was
+  abandoned as unusable.
 - **Assert the accelerator actually ran.** Every JIT fallback returns the RIGHT
   answer, so a comparison can silently be interpreter-vs-interpreter and look
   like a clean result. `benchmark(<expr>,<n>,1)` reports `jit_handled=H/N`
@@ -152,11 +154,11 @@ authoritative in a comment.
 ## Release Process
 
 **What a 2.14.0.x build is.** 2.14 is ALPHA and stays ALPHA. The released
-version — what live games and players actually run — is **2.13**, out March
-2026. A 2.14.0.x tag is a checkpoint in a long alpha, not something anyone
-is asked to deploy. **There is no planned Beta stage**, so do not propose
-clearing `ALPHA` in `_build.h`, and do not write CHANGES entries or issue
-comments that address a 2.14 site operator as if one exists.
+version — what live games and players actually run — is **2.13**, out
+March 2026. A 2.14.0.x tag is a checkpoint in a long alpha, not something
+anyone is asked to deploy. **There is no planned Beta stage**, so do not
+propose clearing `ALPHA` in `_build.h`, and do not write CHANGES entries or
+issue comments that address a 2.14 site operator as if one exists.
 
 Historically the minor number encoded the year the work finished: 2.0 in
 2000, 2.1 in 2001, and so on through roughly 2.9, after which the scheme
@@ -219,6 +221,7 @@ If the invariant is worth testing, test it in a sanitising/debug build, not on
 release code paths.
 
 Two consequences that are easy to get backwards:
+
 - **"Preserves existing behaviour" is not automatically safer.** Behaviour
   preserved on input the boundary excludes is cost, not safety. A refactor whose
   results change *only* for malformed input is not a regression.
@@ -233,6 +236,7 @@ behaviour-pinning tests both *look* like diligence, so the next session copies
 them, and the pattern spreads without anyone deciding to adopt it.
 
 ## Code Style Guidelines
+
 - Indentation: 4 spaces, no tabs
 - Bracing: Opening braces on same line: `if (condition) {`
 - Constants/Macros: UPPERCASE_WITH_UNDERSCORES

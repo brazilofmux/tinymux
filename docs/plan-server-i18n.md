@@ -272,8 +272,8 @@ a few headers shipped as **one msgid with column spacing baked into English**
 (e.g. `*** Channel       Header          Owner …`), while rows used independent
 `PadField` / `co_copy_field` stops in C — see #1648.
 
-**Status (2026-07-28):** **implemented** for known player/staff grids under
-#1667 (Phases 0–5 + B3 mail list lines). Layout is libmux `mux_table_*` on
+**Status (2026-07-28):** **implemented** for known player/staff grids
+under #1667 (Phases 0–5 + B3 mail list lines). Layout is libmux `mux_table_*` on
 `co_copy_field`; Phase 5 (`check_nls.py`) bans new pre-spaced multi-column
 header msgids. Mail multi-line **forms** (inventory B4) remain a separate
 form-layout concern.

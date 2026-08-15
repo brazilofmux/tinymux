@@ -28,6 +28,7 @@ using OS-native mechanisms, or returns `MUX_E_NOTIMPLEMENTED` when the
 operation doesn't apply.
 
 Two implementations ship:
+
 - `platform_unix.cpp` — compiled into the Unix build, uses fork/exec,
   POSIX signals, setrlimit
 - `platform_win32.cpp` — compiled into the Windows build, returns

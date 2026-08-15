@@ -3,6 +3,7 @@
 Do not hand-edit generated files in this repository. Edit the source input and regenerate the derived output instead.
 
 ## Review Rule
+
 - If a generated file changes, the diff should also include the source input or the regeneration step that justifies that output change.
 - If only the generated output changed, treat that as suspicious until proven otherwise.
 
@@ -36,5 +37,6 @@ Do not hand-edit generated files in this repository. Edit the source input and r
 | `mux/sqlite/sqlite3.h` | SQLite upstream source | replace generated amalgamation |
 
 ## Notes
+
 - Generated files may also be marked read-only on disk or checked by hooks, but those safeguards do not replace review discipline.
 - When in doubt, search for the generator before editing the output.

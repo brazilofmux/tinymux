@@ -315,21 +315,22 @@ bisecting, mirroring how `sandbox()`/`asteval()` force the AST path
   - **#988** — maxArgsParsed comma-catenation missing: `sha1(abc,def)`
     computes `sha1("abc")` (JIT drops `,def`; `ecall_invoke_fun` silently
     clamps).
-  - **#989** — tier2 `wordpos()` miscounts UTF-8 positions (byte-vs-cluster,
-    #980 family). The sweep corpus is ASCII-only — blind here; UTF-8 corpus
-    mode added to the Phase 5 list.
+  - **#989** — tier2 `wordpos()` miscounts UTF-8 positions
+    (byte-vs-cluster, #980 family). The sweep corpus is ASCII-only — blind
+    here; UTF-8 corpus mode added to the Phase 5 list.
 
 **Toggle OFF (default):** oracle 7/7, smoke 1310/1310, standard sweep 0
 LOGIC — byte-identical behavior, cleanly gated.
 
 **Correction (post-#990):** the Phase 4 PR claimed the toggle-on smoke was
 "green except exactly the two filed bugs" — that read only the tail of the
-log. The full failure set was 11 lines / 9 distinct TCs: the three fixed by
-#988/#989 (sha1 parser-tests ×2 files + wordpos) plus **six more
+log. The full failure set was 11 lines / 9 distinct TCs: the three fixed
+by #988/#989 (sha1 parser-tests ×2 files + wordpos) plus **six more
 pre-existing divergences**, confirmed pre-existing by a stash-bisect and
 tracked as **#991**.
 
 **#988 and #989 — FIXED (2026-07-20):**
+
 - #988: the general call lowering now mirrors `ast_eval_node`'s
   maxArgsParsed comma-catenation (constant pieces join at compile time so
   folding still sees an SCONST; runtime pieces STRCAT with `,` literals).
