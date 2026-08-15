@@ -40,8 +40,8 @@ returned `1`. Fixed to `bool tval = isTRUE(mux_atol(...))`, matching
 
 ### #851 — `wrapcolumns()` drops a character on a hard break (funceval.cpp)
 
-On a hard (no-space) line break the wrap loop did `src[brk] = '\0'; src += brk
-+ 1;` with `brk == colWidth`, overwriting a *content* character (not a
+On a hard (no-space) line break the wrap loop did `src[brk] = '\0'; src +=
+brk + 1;` with `brk == colWidth`, overwriting a *content* character (not a
 delimiter) and then skipping it. `wrapcolumns(abcdefghij,4,1)` lost the `e` and
 `j`. Because the wrapped segments are emitted as NUL-terminated strings sharing
 the input buffer, the in-place approach cannot preserve the break-column

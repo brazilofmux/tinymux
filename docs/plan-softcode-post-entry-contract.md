@@ -116,4 +116,3 @@ Lua path unchanged (already Phase 4).
 - [x] Harden with `host_ecalls`
 - [x] Plan doc + issue #1791
 - [ ] CI soak under artificial code-full (optional)
-)

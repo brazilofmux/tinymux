@@ -23,6 +23,7 @@ TinyMUX 2.14 is a high-performance MUSH/MUD server written in C++17. It is a con
 
 ### Build Prerequisites
 Install development libraries for OpenSSL and PCRE2.
+
 - **Debian/Ubuntu:** `sudo apt install build-essential libssl-dev libpcre2-dev pkg-config sqlite3`
 - **RHEL/Fedora:** `sudo dnf install gcc-c++ openssl-devel pcre2-devel pkgconf-pkg-config make sqlite`
 
@@ -80,6 +81,7 @@ make
 - **Self-Checking:** For intensive debugging, use `./configure --enable-selfcheck`.
 
 ## Database Management
+
 - `dbconvert` (symlinked to `netmux`) is the primary tool for data migration.
 - Use `game/data/db_load` to import flatfiles into SQLite.
 - Use `game/data/db_unload` to export SQLite to flatfiles.

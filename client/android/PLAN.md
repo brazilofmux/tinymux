@@ -13,6 +13,7 @@ each session.
 - "Worlds" toolbar button
 
 ### Auto-Login (added later)
+
 - [x] `loginCommands` field on World — one command per line, sent after connect
 - [x] Edit World dialog has multi-line "Login commands" field
 - [x] WorldRepository uses EncryptedSharedPreferences (AES-256-GCM via Android Keystore)

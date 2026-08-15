@@ -10,6 +10,7 @@ truncation, version skew). A malformed/malicious DB reaching the load path
 should fail cleanly, not corrupt memory or crash.
 
 ## Files
+
 - `mux/modules/engine/db.cpp` (3774) — object store, `db_grow`, `s_*` accessors,
   `sqlite_load_game`.
 - `mux/modules/engine/db_rw.cpp` (1174) — flatfile `db_read` / `db_write`,
@@ -20,6 +21,7 @@ should fail cleanly, not corrupt memory or crash.
 - `mux/modules/engine/attrcache.cpp` (1006) — attribute cache.
 
 ## Load paths
+
 - `LoadGame` (`engine_com.cpp:2719`) → `sqlite_load_game()` (`db.cpp:3596`) for
   the SQLite DB, OR `load_game(pagefile)` → `db_read` (`db_rw.cpp:501`) for the
   flatfile. `db_read` is also reached from `engine.cpp:1925` (dbconvert/standalone).
@@ -35,6 +37,7 @@ flatfile still imports; smoke 1115/1115.
 **Reproduced live** via the standard flatfile import (`dbconvert -l -i <flat>`,
 i.e. `db_load`): taking the stock `netmux.db` and changing one object header
 `!2` →
+
 - `!999999999` (huge): `db.cpp(2864): Assertion failed` (the `mux_assert(newdb)`
   in `db_grow` — the ~1e9-entry `MEMALLOC` fails) → **SIGABRT** (exit 134). DoS.
 - `!-5` (negative): OOB write at `db[-5]` → **SIGSEGV** (exit 139). Memory
@@ -50,6 +53,7 @@ case '!':   // MUX entry
     s_Location(i, getref(f));// db[i].location = ... (unchecked)
     s_Zone(i, ...); s_Contents(i,...); s_Exits(i,...); s_Link(i,...); s_Next(i,...)
 ```
+
 - `getref` (`dbutil.cpp:27`) returns any `mux_atol` result — no range check.
 - `s_Name`/`s_Location` (`db.cpp:3368`, etc.) do `db[i].field = …` / `db[i].name`
   with **no bounds check**. `SIZE_HACK = 1` (`db.cpp:2770`) so only `db[-1]` is
@@ -79,15 +83,17 @@ set) recursed with no depth bound, and every error path was `mux_assert(0)`.
 **Live bug-catch:** a lock of `(`×500000 → stack overflow / SIGSEGV; a truncated
 lock → SIGABRT — both on the old build; cleanly rejected (exit 1) on the fixed
 build. Root cause: the runtime `@lock` parser caps nesting at `lock_nest_lim`
-(20), but this import path was unguarded (incomplete hardening, sibling of
-#806). Fix: thread a `depth` arg, bound at `BOOLEXP_LOAD_NEST_MAX = 1024`, and
-convert the asserts to a `s_boolexp_corrupt` flag → clean `return -1` rollback.
+(20), but this import path was unguarded (incomplete hardening, sibling
+of #806). Fix: thread a `depth` arg, bound at `BOOLEXP_LOAD_NEST_MAX = 1024`,
+and convert the asserts to a `s_boolexp_corrupt` flag → clean `return -1`
+rollback.
 Smoke 1115/1115.
 
 ### ✅ FIXED (7e3da01e3) — unvalidated user-attribute number → anum_table OOB / OOM (#808)
 The attribute number from a `+A` flatfile record (`getref`) or a SQLite
-attr-name row indexes `anum_table` via `anum_set` (bare `anum_table[x]=v` macro)
-+ `anum_extend` (dense `(x+1)` alloc) with no validation. **Live bug-catch:**
+attr-name row indexes `anum_table` via `anum_set` (bare `anum_table[x]=v`
+macro) + `anum_extend` (dense `(x+1)` alloc) with no validation. **Live
+bug-catch:**
 `+A-10000000` → `anum_table[-10000000]` write → SIGSEGV; `+A-5` (novel name) →
 silent heap corruption; `+A999999999` → ~8 GB alloc → OOM kill. The *read* path
 `atr_num` validates `anum<0||>top`; the *write* path (`vattr_define_LEN`) didn't
@@ -121,6 +127,7 @@ were verified safe: `attrcache` (hashtable + length-clamped vectors, no fixed
 index), attribute storage (keyed by `makekey`, sparse-safe), `getstring_noalloc`
 (invariant-bounded), `db_write` durability (SQLite-backed transactions). The
 JIT-side a64 **#804** was fixed upstream by the maintainer.
+
 - [ ] The `getref`-derived field values (location/contents/exits/owner/parent) —
       validated by `db_check` before use as indices during gameplay?
 - [ ] `attrcache.cpp` — attribute load/evict bounds.

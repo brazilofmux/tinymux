@@ -3,14 +3,16 @@
 Audit of the command parser in `mux/modules/engine/command.cpp` — the second of
 the three parsers the boolexp header names (functions = eval.cpp, commands =
 command.cpp, locks = boolexp.cpp). It processes every line of player input:
-`process_command` (decompose → match → dispatch) and `process_cmdent` (permission
-+ argument parsing + handler call). Methodology matches the boolexp/wild/JIT
-campaign. **Result: CLEAN — no memory-safety or unbounded-recursion bug found.**
+`process_command` (decompose → match → dispatch) and `process_cmdent`
+(permission + argument parsing + handler call). Methodology matches the
+boolexp/wild/JIT campaign. **Result: CLEAN — no memory-safety or
+unbounded-recursion bug found.**
 
 ## Why it's well-hardened (unlike boolexp's parser)
 
 **Recursion is structurally bounded.** The boolexp DoS (#839) was unbounded
 parser recursion reachable by any player. command.cpp has no equivalent:
+
 - Regular commands in action lists are **queued** (`wait_que` → bounded by the
   command-queue cycle limits), not run on the C stack.
 - The only direct stack-recursion paths — `@assert/inline`, `@break/inline`,
@@ -25,6 +27,7 @@ parser recursion reachable by any player. command.cpp has no equivalent:
   `nStackNest`/`bStackLimitReached` spam guard (incremented in ast.cpp).
 
 **Buffers are bounded.**
+
 - `process_command`'s working buffers (`preserve_cmd`, `SpaceCompressCommand`,
   `LowerCaseCommand`) are `thread_local UTF8[LBUF_SIZE]` — not stack arrays, so
   deep call chains don't balloon the stack.

@@ -144,6 +144,7 @@ enum class FrontDoorProto {
 ### websocket.h/cpp
 
 Extend `wsProcessHandshake()` to:
+
 - Parse `Sec-WebSocket-Protocol` header during handshake.
 - If it contains `hydra-gamesession`, set a flag on `WsState` and include
   `Sec-WebSocket-Protocol: hydra-gamesession` in the 101 response.
@@ -218,6 +219,7 @@ iterate `session.frontDoors` for `sendToClient()` control messages
 (`session_manager.cpp:1067, 1075, 1088, 1111, 1133, 1150`).
 
 By staying out of `session.frontDoors`, the WsGameSession connection:
+
 - Is invisible to all `sendToClient()` loops — no text-mode control
   messages leak through.
 - Receives game output through its subscriber queue on the OutputQueue,
@@ -279,6 +281,7 @@ closes that latent bug too.
 ### session_manager.cpp — onFrontDoorClose
 
 When a `WsGameSession` front-door closes:
+
 1. Remove its subscriber from the OutputQueue.
 2. Remove the entry from `frontDoors_`.
 3. If the connection was authenticated, re-evaluate the detach condition

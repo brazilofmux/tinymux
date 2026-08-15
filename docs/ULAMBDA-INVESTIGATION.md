@@ -39,10 +39,12 @@ lambda/mul → ASTTOK_LIT → promoted to ASTTOK_FUNC by the next (
 ```
 
 The parser creates TWO nested function calls:
+
 - Outer: `u(args...)`
 - Inner: `lambda/mul(\%0, \%1)` as AST_FUNCCALL
 
 At evaluation time:
+
 1. `lambda/mul` is not a known function
 2. In EV_FMAND context: `#-1 FUNCTION (LAMBDA/MUL) NOT FOUND`
 3. Combined with the standalone `#` literal: `"##-1 FUNCTION (LAMBDA/MUL) NOT FOUND"`
@@ -98,6 +100,7 @@ call. We need `ulambda()` with NOEVAL semantics for the first argument.
 ### Implementation — WORKING (TC004 passes)
 
 Files modified:
+
 - `mux/include/ast.h`: Added `ASTNOEVAL_ULAMBDA` to enum
 - `mux/modules/engine/ast.cpp`:
   - `ast_noeval_kind`: returns ASTNOEVAL_ULAMBDA for "ULAMBDA"
@@ -128,6 +131,7 @@ with `has_close_paren = true`. The AST structure was never the problem.
 The earlier observation that `ast_eval_funccall` was "NEVER reached"
 was from testing done before the current code was in place. With the
 current implementation, instrumentation confirms:
+
 - `ast_eval_funccall` IS called for `ulambda`
 - `ast_try_native_noeval` dispatches to `ast_noeval_ulambda`
 - Raw text capture works: `#lambda/mul(\%0,\%1)`

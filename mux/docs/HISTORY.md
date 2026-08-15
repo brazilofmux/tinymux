@@ -104,9 +104,9 @@ Several variants emerged from TinyMUSH 1.0:
 ## PernMUSH / PennMUSH (1991–1995)
 
 JT Traub (Moonchilde) released PernMUSH in January 1991, derived from
-MicroMUSE. Lydia Leong (Amberyl) released PernMUSH 1.16 in January
-1992. PernMUSH was renamed to PennMUSH by Amberyl and reached version
-1.50 patch 10 in June 1994, after which Alan Schwartz (Javelin) assumed
+MicroMUSE. Lydia Leong (Amberyl) released PernMUSH 1.16 in
+January 1992. PernMUSH was renamed to PennMUSH by Amberyl and reached
+version 1.50 patch 10 in June 1994, after which Alan Schwartz (Javelin) assumed
 maintenance in early 1995. Javelin maintained PennMUSH until July 2006
 when Raevnos (Alex) took over. PennMUSH remains actively maintained
 today — the longest-running MUSH codebase.

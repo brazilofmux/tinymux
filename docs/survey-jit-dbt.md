@@ -6,6 +6,7 @@ softcode reaches native codegen** (AST → HIR → SSA → optimize → RV64 →
 and the precompiled `softlib.rv64` Tier-2 blob run via the DBT.
 
 ## Architecture (from design docs)
+
 - Pipeline: Softcode/Lua → AST → HIR → SSA → optimize → RV64 codegen → host DBT
   (RV64→x64/a64). RV64 is the stable guest ISA; the DBT translates it to the host.
 - Backends: `dbt_x64_sysv.cpp` (**Production**, selected via `@DBT_BACKEND@` on
@@ -46,6 +47,7 @@ JIT blob `rv64_delete` — the earlier `a c d` vs `a  c d` "bug" was an asteval
 artifact.
 
 ### ✅ Verified — production x64 path is well-hardened (NOT bugs)
+
 - Instruction fetch in the production translator is bounded against
   `memory_size` at every site (`dbt_x64_sysv.cpp:1279,1316,1394,1414,1478,2010`).
   No OOB read in block translation.
@@ -105,6 +107,7 @@ build; the static gap and parity divergence are certain. See #811 for the fix
 plan (mirror the a64 guards in both x86 backends across all 8 div/rem forms).
 
 ### (historical) original report — LIVE player-reachable DoS (SIGFPE server crash)
+
 - **`idiv(-9223372036854775808,-1)` crashed the whole server** (and
   `remainder(-9223372036854775808,-1)`). `INT64_MIN / -1` overflows; on x86 the
   `idiv` instruction traps (`#DE` → SIGFPE). **Reproduced live**: a single
@@ -135,6 +138,7 @@ plan (mirror the a64 guards in both x86 backends across all 8 div/rem forms).
   folds; the x86 DBT emit remains unguarded for runtime divisors.]**
 
 ### 🐛 Verified bug — latent, non-production backend
+
 - **a64 LOAD/STORE with `rs1==x0` and nonzero `imm` computes `2*imm`**
   (`dbt_a64_sysv.cpp:1420-1423` LOAD, `1449-1452` STORE). `rc_read(x0)` returns
   `A64_X0` (`:200-202`); the address calc `emit_mov_r64_imm64(X0,imm);
@@ -144,6 +148,7 @@ plan (mirror the a64 guards in both x86 backends across all 8 div/rem forms).
   latent and not compile/live-testable here. Fix is by-construction.
 
 ### 📝 Defense-in-depth (not a confirmed bug; consistent across backends)
+
 - Guest data LOAD/STORE emit unmasked `[base+addr]` in all three backends
   (`dbt_x64_sysv.cpp:~2160`, win64 `~2172`, a64 `~1429`). No bounds mask against
   the 4MB guest region. Relies on JIT codegen correctness (the guest addresses
@@ -152,6 +157,7 @@ plan (mirror the a64 guards in both x86 backends across all 8 div/rem forms).
   OOB host access — cheap hardening, but a design change with perf implications.
 
 ### ✅ Verified-safe — additional production x64 paths (this pass)
+
 - **Code-buffer overflow is guarded.** Emit primitives bounds-check every write
   (`dbt_emit_x64.h:33-44`: `emit_byte`/`emit_bytes` only write when
   `offset (+len) <= capacity`, but `offset` always advances). `translate_block`
@@ -179,6 +185,7 @@ Net verified yield: #805 (high-severity DoS), #804 (latent a64 miscompile),
 plus a defense-in-depth note (unmasked guest LOAD/STORE).
 
 ## Areas still to audit (next passes)
+
 - [x] SSA + linear-scan register allocation — AUDITED, CLEAN (no bug).
       hir_codegen.cpp: textbook Poletto-Sarkar linear scan (RA_NUM_REGS=10,
       expire-old / spill-furthest-end; reg 0 == spilled, distinct from RA_REGS).

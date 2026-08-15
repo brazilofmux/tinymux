@@ -1,11 +1,13 @@
 # Titan for iOS — Design Plan
 
 SwiftUI client for iOS (and macOS via multiplatform). Informed by:
+
 - The Titan Android client (feature-complete through 12 phases)
 - The Atlantis source survey (`docs/atlantis-survey/`)
 - The Console, TF, and Web client implementations
 
 ## Naming & Identity
+
 - **App name**: Titan
 - **Bundle ID**: org.tinymux.titan
 - **Targets**: iOS 17+, macOS 14+ (multiplatform SwiftUI)
@@ -61,15 +63,18 @@ client/ios/
 ### Architectural Patterns
 
 **MVVM with ObservableObject:**
+
 - `WorldTab` — ObservableObject per connection tab
 - `AppState` — @Observable singleton holding tabs, active tab, settings
 - Views observe state and re-render
 
 **Actor-based networking:**
+
 - `MudConnection` as an actor — safe concurrent access
 - Telnet/ANSI parsers are value types (structs)
 
 **Protocol-oriented models:**
+
 - `Persistable` protocol for JSON encode/decode
 - `Filterable` protocol for the text processing pipeline
 
@@ -117,6 +122,7 @@ All features from Android Phases 1-12 ported in one pass.
 - [x] Keep screen on (isIdleTimerDisabled)
 
 ### TOFU Certificate Verification — DONE
+
 - [x] `TofuCertStore` — Keychain-backed SHA-256 fingerprint storage
 - [x] `MudConnection` — TOFU verify block in sec_protocol_options
 - [x] `CertVerifySheet` — shows subject, fingerprint, warns on changes
@@ -124,6 +130,7 @@ All features from Android Phases 1-12 ported in one pass.
 - [x] Changed cert: warning banner with previous fingerprint
 
 ### Phase 6: Background + Notifications — DONE
+
 - [x] `BackgroundService` — singleton for lifecycle management
 - [x] BGAppRefreshTask registration for periodic wake
 - [x] Schedule refresh on app background
@@ -170,12 +177,14 @@ Remote text editing from the MUD server. Would need an editor view.
 | Keep screen on | FLAG_KEEP_SCREEN_ON | isIdleTimerDisabled |
 
 ### iPad Optimizations
+
 - Split view: world list + output side by side
 - Keyboard shortcuts via `.keyboardShortcut()` modifier
 - Pointer/trackpad support for text selection
 - Stage Manager compatibility
 
 ### macOS (via Catalyst/multiplatform)
+
 - Menu bar integration
 - Multiple windows
 - Native keyboard shortcuts (Cmd+C, Cmd+F, etc.)
@@ -184,6 +193,7 @@ Remote text editing from the MUD server. Would need an editor view.
 ## Development Workflow
 
 Since we develop blind (no Mac):
+
 1. Write Swift/SwiftUI code in `client/ios/`
 2. Push to brazil branch
 3. Rachel (or any Mac user) opens in Xcode, builds, tests

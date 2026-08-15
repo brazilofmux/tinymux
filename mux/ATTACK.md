@@ -113,7 +113,7 @@ There are a few things you should do on a regular basis:
 -   Keep an eye on attribute names (Vattr names) with the command below.
     The column you care about is the 'entries' column. This number will
     always increase; however, stale names can be removed by `#1` using the
-	`@dbclean` command. Run `@dbclean` every 3 months.
+    `@dbclean` command. Run `@dbclean` every 3 months.
 
 ```
         @list hashstats

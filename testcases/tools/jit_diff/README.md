@@ -1,8 +1,8 @@
 # JIT differential fuzzer
 
-Finds correctness divergences between the softcode **JIT** (tier2/rv64 wrappers
-+ HIR lowering) and the **interpreter** (`ast_eval`), by generating random
-nested softcode and evaluating each expression both ways.
+Finds correctness divergences between the softcode **JIT** (tier2/rv64
+wrappers + HIR lowering) and the **interpreter** (`ast_eval`), by generating
+random nested softcode and evaluating each expression both ways.
 
 It catches *compositional* bugs the per-function audit can't — e.g. `ljust`
 not truncating only shows up when `width < content`, which arises naturally

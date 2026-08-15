@@ -144,6 +144,7 @@ world anyway, so a spirit character will have:
 Let's assume 3 players:
 
 **John** is a Mundane.  He won't see spirits.
+
 - Rx: `Real`
 - Tx: `Real`
 - `@desc`: This is John.
@@ -153,6 +154,7 @@ Let's assume 3 players:
 
 **Jack** is a Gifted.  He will sense spirits, but is still made from flesh
 and blood so visible to mundanes.
+
 - Rx: `Real Ghost`
 - Tx: `Real`
 - `@desc`: This is Jack.
@@ -161,6 +163,7 @@ and blood so visible to mundanes.
 
 **Frank** is a ghost.  He will see other spirits as well as mundanes, but
 won't be visible to mundanes.  He can also become visible to everybody.
+
 - Rx: `Real Ghost`
 - Tx: `Ghost`
 - `@desc`: This is Frank, looking human.

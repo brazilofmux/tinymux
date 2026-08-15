@@ -1,6 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
+
 - `mux/` is the main server distribution. Core code is in `mux/src`, runtime assets/config in `mux/game`, and primary docs in `mux/*.md`.
 - `parser/` contains standalone parser research tools (`tokenize`, `parse`, `eval`) and a focused corpus.
 - `db/` contains SQLite backend unit-style test binaries (`test_sqlitedb`, `test_backend`).
@@ -10,6 +11,7 @@
 - `tools/ansify/` converts MUX `%x`/`%c` color codes to ANSI escapes (Ragel `ansify.rl` → `ansify.c`); `cd tools/ansify && make test`.
 
 ## Build, Test, and Development Commands
+
 - Main server build (2.14):
   - Configure once from `mux/`: `cd mux && ./configure --enable-realitylvls --enable-wodrealms` (add `--enable-jit` for the JIT/DBT path).
   - Build everything from the repo **root**: `make install` (required; builds `netmux`, `engine.so`, and modules, and creates `game/bin` symlinks).
@@ -26,6 +28,7 @@
   - `./tools/Smoke` (results in `smoke.log`)
 
 ## Coding Style & Naming Conventions
+
 - Languages are C/C++ (C++17 in active test/tooling Makefiles).
 - Match existing file style; no repo-wide formatter config is enforced.
 - Keep warnings clean under `-Wall -Wextra`.
@@ -33,6 +36,7 @@
 - Testcase files use lowercase snake case with suffixes like `_fn.mux`.
 
 ## Generated Files
+
 - Do not hand-edit generated files. Edit the source input, then regenerate the output.
 - Treat generated outputs as derived artifacts during review: if one changes, check that the corresponding source/regeneration change is present in the same diff.
 - Follow [docs/generated-files.md](docs/generated-files.md) for the current generated-file map and regeneration guidance.
@@ -43,11 +47,13 @@
   - Protobuf output: edit `mux/proxy/hydra.proto`, then rerun `protoc`.
 
 ## Testing Guidelines
+
 - Run targeted tests for changed areas first (`db/`, `parser/`), then run smoke tests for behavioral changes.
 - Add/update `.mux` coverage in `testcases/` when changing parser/evaluator behavior.
 - Name new smoke cases consistently with existing patterns (for example, `newfeature_fn.mux`).
 
 ## Commit & Pull Request Guidelines
+
 - Recent history favors concise, imperative subjects (for example, `Fix ...`, `Add ...`, `Remove ...`).
 - Keep commit titles specific to one behavior or subsystem.
 - PRs should include:

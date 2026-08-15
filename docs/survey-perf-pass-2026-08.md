@@ -314,8 +314,8 @@ create/destroy/move/rename. Tracked on #2058.
 `match_list` (`match.cpp:354`) walks a contents list comparing names one at a
 time. Measured slope: **~59 µs fixed + ~62 ns per object in scope**, per lookup;
 control phases that resolve no names stay flat across a 4× change in object
-count. `#123` short-circuits at `CON_DBREF` and pays none of it. Tracked on
-#2058.
+count. `#123` short-circuits at `CON_DBREF` and pays none of it. Tracked
+on #2058.
 
 ### 3. Storage is not the big number, and the SQLite backend is why
 

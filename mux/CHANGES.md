@@ -363,8 +363,8 @@ in their sections below.
    `list2arr_nd()` tokenizes a private copy instead; the borrowed-input
    call sites (`vadd`/`vsub`/`vmul`/`vdot` and the vector family, `vmag`,
    `vunit`, `choose`, `ledit`, `regmatch`/`regmatchi`) now use it.  The
-   endgame is a `const`-qualified argument contract and the removal of the
-   #2135 copy; remaining direct-tokenizing builtins convert in later
+   endgame is a `const`-qualified argument contract and the removal of the #2135
+   copy; remaining direct-tokenizing builtins convert in later
    passes.
 
  - **Semicolons inside expressions are no longer dropped.**  The HIR
@@ -671,8 +671,8 @@ break on color, on wide characters and on any translated label.
    a buffer cap (#953).  A dead telnet-negotiation-timeout sweep is
    removed (#945).
  - The DNS slave protocol frames requests on newlines (#1220), drains
-   under `EPOLLET`, and the slave child cap releases correctly (#1826,
-   #1827) — the last of which needed `SIGCHLD` installed *without*
+   under `EPOLLET`, and the slave child cap releases correctly (#1826, #1827)
+   — the last of which needed `SIGCHLD` installed *without*
    `SA_RESTART`, or the cap never released at all (#1912).
  - `initiateConnect` was missing for the `kqueue` and `select` engines,
    and `initiateUnixConnect` with it (#1840); on Win32 the same gap broke
@@ -691,8 +691,8 @@ break on color, on wide characters and on any translated label.
    defense; the login path charges `input_tot` (#1807); the GET preface
    split is handled (#1800).
  - `CREATE` respects the `max_players` cap (#1806); `find_oldest` sees a
-   second session and `SESSION`/`SOCKET` formats are full-width (#1808,
-   #1809); `proto_detect_len` is initialized and grace-timeout preface
+   second session and `SESSION`/`SOCKET` formats are full-width (#1808, #1809);
+   `proto_detect_len` is initialized and grace-timeout preface
    replay is bounded (#1800).
  - `CLOEXEC` restart policy, and `SIGFPE` routed to the fatal handler
    (#1823, #1824).
@@ -883,8 +883,8 @@ symptom was the visible one, but most of these are wrong everywhere.
 
 ## Reliability and Restart
 
- - Core dumps and panic-restart are restored on fatal signals (#1127,
-   #1129).
+ - Core dumps and panic-restart are restored on fatal signals (#1127, #1129).
+   
  - The `#1141` restart fail-open is closed.
  - The alarm worker thread starts lazily rather than in a static
    constructor, and is constructed before being marked started.
@@ -944,10 +944,10 @@ symptom was the visible one, but most of these are wrong everywhere.
  - Line and telnet SB reassembly buffers are capped in the console client
    and extended to web, tf, Android and the Win32 GUI (#1788, #1787).
  - Proxy: the charset UTF-8 encode walk is bounded past input end (#1885);
-   WebSocket fragmentation/UTF-8 and grpc-web parsing fail closed (#1886,
-   #1887); unknown listen types are rejected instead of silently defaulting
-   to Telnet (#1895); out-of-range listen and game ports are rejected
-   (#1897).
+   WebSocket fragmentation/UTF-8 and grpc-web parsing fail closed
+   (#1886, #1887); unknown listen types are rejected instead of silently
+   defaulting to Telnet (#1895); out-of-range listen and game ports are
+   rejected (#1897).
  - Web and mobile MCP multiline reassembly is capped (#1889, #1893).
  - **Hydra passwords are kept out of `worlds.txt`** (#1891), and Android
    never persists Hydra secrets without `EncryptedSharedPreferences`
@@ -1015,8 +1015,8 @@ at and what remains.
    the specification is what 2.13 actually does.  The harness drives up to
    three engines — 2.14 compiled, 2.14 interpreted, and a real 2.13
    reference — identically over a socket, and carries a verdict column
-   recording which engine is right per shape.  It found #1214, #1237 and
-   #1238.
+   recording which engine is right per shape.  It found #1214, #1237 and #1238.
+   
  - The parity probe reader was itself desynchronizing under load and
    attributing output to the wrong shape; it now frames a line at a time
    and ships a deterministic reader selftest that runs before any
@@ -1073,8 +1073,8 @@ at and what remains.
    another function argument truncated at the first `)`, and the leaked
    tail closed the enclosing `cand()` early — so arity cases passed
    *vacuously*, on exactly the tests written to catch those bugs.
- - **Asserting the Lua JIT actually executes** took three passes (#1324,
-   #1426): first that it was asked, then that it ran, then that it ran the
+ - **Asserting the Lua JIT actually executes** took three passes (#1324, #1426):
+   first that it was asked, then that it ran, then that it ran the
    case in question and reported what declined.  A probe written in tail
    position compiles to `OP_TAILCALL` and declines before lowering, so a
    survey of such probes reads as uniformly healthy.  An AGREE decline
@@ -1424,8 +1424,8 @@ tracked in docs/survey-*.md.
  - The just-in-time translator's instruction-emit, code-cache
    reconstruction, and Lua-bytecode paths now bound every buffer write and
    index, closing several out-of-bounds writes/reads reachable under code-
-   buffer pressure or from a malformed compiled-code cache entry. (#830,
-   #831, #832, #833)
+   buffer pressure or from a malformed compiled-code cache entry.
+   (#830, #831, #832, #833)
  - The softcode expression (`[...]`) parser now caps its recursion depth,
    matching the evaluator, so pathologically nested input cannot overflow
    the stack on platforms with a small default stack size. (#840)
@@ -1530,8 +1530,8 @@ docs/survey-cmd-correctness-pass-2026-06.md):
    error-compensated summation as the interpreter (#829).
  - Tier-2 "blob" math now matches the interpreter for list reductions,
    `lnum()`/`space()` edge cases, and `ladd()`; `isdbref()` is handled by
-   the engine; and `ladd()` is re-enabled with full parity. (#812, #813,
-   #814, #815)
+   the engine; and `ladd()` is re-enabled with full parity.
+   (#812, #813, #814, #815)
  - The RV64 Tier-2 environment gained a real `.bss`, static `.data`, and a
    guest heap, enabling more functions to run in compiled code.
  - The DBT now reclaims its x86-64 translation buffer when it nears full,
@@ -2135,8 +2135,8 @@ and the telnet / WebSocket / DNS protocol surface.
    descriptor when a player has multiple connections.
  - Fixed a string ownership bug in updated muxcli.cpp (introduced in
    2.13.0.5). Neither side persisted the value. Serious.
- - Fix Reality Levels for exits, @descformat, and lcon() (#644, #645,
-   #646).
+ - Fix Reality Levels for exits, @descformat, and lcon() (#644, #645, #646).
+   
  - Fix double-evaluation of reality level descriptions in @descformat
    (#610).
  - Always fire action attributes during quiet teleport (#674).

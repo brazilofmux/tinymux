@@ -825,9 +825,9 @@ EXTRACT and WORDS are wired directly into iter()'s internal element
 extraction and word counting, eliminating all ECALL overhead from
 pure-Tier-2 iter loops (ecalls=0 for literal body).
 
-**The two-path strategy:** A Tier 2 function exists in two forms:
-(1) as cross-compiled RV64 code in the blob, callable via JAL from
-any compiled softcode, and (2) as a native intrinsic that the DBT
+**The two-path strategy:** A Tier 2 function exists in two forms: (1) as
+cross-compiled RV64 code in the blob, callable via JAL from any compiled
+softcode, and (2) as a native intrinsic that the DBT
 substitutes when it recognizes the target address. The RV64 path
 provides correctness (any RV64 host runs it natively). The intrinsic
 path provides performance (host Ragel code runs at native speed).

@@ -40,6 +40,7 @@ sub-survey, pending a verification pass.
 Two paths freed a `DESC` without dropping its handle→DESC mapping — the exact
 shape of `e876ffe9f`, where a later GANL event on the same handle resolves
 `get_desc()` to the freed pointer:
+
 - `shutdownsock` (`bsd.cpp`) closed the fd and delisted the DESC but never
   called `remove_mapping`. Safe today only because its sole caller
   (`load_restart_db`'s post-restart cull, `net.cpp:3484`) runs with the maps
@@ -49,6 +50,7 @@ shape of `e876ffe9f`, where a later GANL event on the same handle resolves
   `g_dbref_to_descriptors_map` and never unmapped it. Now mirrors
   `onConnectionClose`'s full delist+unmap. Reached only for an unmapped DESC;
   the common mapped path goes through `conn->close()`.
+
 Both changes are no-ops on the common path. Verified live (clean QUIT, abrupt
 RST, concurrent connections — no crash/pure-virtual/double-free).
 
@@ -89,6 +91,7 @@ game-log path. Driver-verified with a clamped `RLIMIT_NOFILE`: pre-fix silent,
 post-fix `Error` event with `error == EMFILE`.
 
 ✅ **Candidates — verified against current source and filed 2026-07-20:**
+
 - **ISSUE #942 — FIXED (PR #959, 2026-07-20):** epoll immediate-connect armed
   `EPOLLIN` but the map/handler expect `EPOLLOUT`, and no `epoll_ctl(MOD)` was
   issued → `ConnectSuccess` never fired. `initiateUnixConnect` had the same
@@ -188,6 +191,7 @@ post-fix `Error` event with `error == EMFILE`.
 From a sub-survey; **verified against current source 2026-07-20** and filed.
 
 ✅ **OpenSSL (Linux/BSD):**
+
 - **REFUTED — `SSL_read() == 0` truncation ambiguity.** The transport uses memory
   BIOs with `BIO_set_mem_eof_return(readBio, -1)` (`openssl_transport.cpp:232`),
   so a socket FIN never surfaces as `SSL_read()==0` (the mem BIO returns
@@ -204,6 +208,7 @@ From a sub-survey; **verified against current source 2026-07-20** and filed.
   outbound TLS client path is added.
 
 ✅ **Schannel (Windows) — verified by source reading (not compiled on the survey host):**
+
 - **ISSUE #950:** on `SEC_I_RENEGOTIATE`, `context.established` flips false while
   the connection stays `Running`, so `sendData`'s `isEstablished()`-gated branch
   routes application replies to the **plaintext** else-path (`connection.cpp:
@@ -245,6 +250,7 @@ default :1682; loose CHARSET `[TTABLE]` framing :66-77, bounds-guarded).
 (length bounds, mask XOR, partial frames, `ws_state` lifetime all correct;
 control-frame cap :449 and 64-bit bound :501 already hardened). Remaining gaps,
 all bounded/low-severity:
+
 - F1 CLOSE echoed but connection never terminated (:646 — keeps parsing frames).
 - F2 fragmentation state unvalidated — 2nd non-FIN TEXT overwrites `frag_buf`
   (:609); CONTINUATION with no fragmentation in progress is delivered (:613).
@@ -313,6 +319,7 @@ destructor re-entrancy workaround (ganl_adapter.cpp:799) and the missing
 `return` after `close()` in IOCP `handleWrite` (:1351).
 
 ✅ **Candidates from the connection survey — verified 2026-07-20:**
+
 - **ISSUE #949 (F2):** TLS-path partial write loses plaintext. Verified that
   OpenSSL does **not** retain the unconsumed plaintext (mem write-BIO holds only
   encrypted records); `processOutgoing` consumes input only on `bytesWritten>0`,
@@ -376,6 +383,7 @@ emits an unescaped newline (modern glibc escapes them; not guaranteed). Plus
 uncapped `readBuffer`/`pendingWrites` (low DoS).
 
 ✅ **VERIFIED SAFE / FIXED (recorded so they aren't re-audited):**
+
 - Access control uses the binary sockaddr (`isForbid(&d->address)`,
   ganl_adapter.cpp:615 / net.cpp:3011), NOT the reverse-DNS hostname — a spoofed
   PTR cannot bypass bans.
@@ -406,14 +414,15 @@ sub-part 3 (TLS), and sub-part 5 (connection core) candidates were independently
 re-verified against current source and filed as **#942–#953**: #942 (epoll
 immediate-connect), #943 (maxEvents write-stall), #944 (EOF-before-payload), #945
 (negotiation-timeout-on-idle), #946 (select FD_SETSIZE), #947 (cross-engine
-contract + wselect/select point bugs), #948 (OpenSSL renegotiation/write-mode),
-#949 (TLS partial-write plaintext loss), #950/#951/#952 (Schannel downgrade /
-chunking / TLS 1.3), #953 (connection-core hygiene). Two candidates were
-**refuted** on verification and are recorded inline: OpenSSL `SSL_read()==0`
-truncation (mem-BIO decouples EOF) and connection F9 (epoll ET stall — read loop
-drains to EAGAIN).
+contract + wselect/select point bugs), #948 (OpenSSL
+renegotiation/write-mode), #949 (TLS partial-write plaintext loss), #950/#951/#952
+(Schannel downgrade / chunking / TLS 1.3), #953 (connection-core hygiene). Two
+candidates were **refuted** on verification and are recorded inline: OpenSSL
+`SSL_read()==0` truncation (mem-BIO decouples EOF) and connection F9 (epoll ET
+stall — read loop drains to EAGAIN).
 
 **Fix pass:**
+
 - **#794 — FIXED (df9f5de02):** per-connection output high-water mark in
   `GanlAdapter::send_data` (drop whole writes past 16× output_limit / ≥1 MB,
   charged to `output_lost`; no synchronous close — send_data runs inside
@@ -515,9 +524,9 @@ drains to EAGAIN).
   into it, freed by `~PerIoData` after the completion. Fixed by construction —
   `_WIN32`-only, not in the POSIX build, so not compiled/live-tested here; Linux
   build clean, smoke 1115/1115.
-- **GANL filed-issue backlog CLEARED this pass: #790, #791, #792, #793, #796,
-  #801, #802.** Remaining follow-ups are not filed issues: the engine/TLS
-  candidates listed above (epoll immediate-connect EPOLLOUT, lost write-wakeup
+- **GANL filed-issue backlog CLEARED this pass: #790, #791, #792, #793, #796, #801, #802.**
+  Remaining follow-ups are not filed issues: the engine/TLS candidates
+  listed above (epoll immediate-connect EPOLLOUT, lost write-wakeup
   at maxEvents, HUP-before-payload, FD_SETSIZE bound, cross-engine close
   divergences, negotiation-timeout-only-on-idle), and the socket-buffer-edge
   fixes (#794/#795/#798) which want the stress/unit harness follow-up (not

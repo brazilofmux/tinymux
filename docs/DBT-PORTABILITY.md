@@ -149,6 +149,7 @@ invalidated after writing code.  On AArch64 Apple, the W^X model adds
 write-protect toggling around every code emission.
 
 `jit_write_begin()`/`jit_write_end()` are called in:
+
 - `emit_trampoline()` (once at init)
 - `translate_block()` (each translation)
 - `backpatch_jmp()` (each chain resolution)
