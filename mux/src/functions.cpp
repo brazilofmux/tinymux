@@ -8288,11 +8288,16 @@ static FUNCTION(fun_terminfo)
     UNUSED_PARAMETER(ncargs);
 
     DESC *d = nullptr;
+
+    // A match must be reported by a flag, not by 'd' being non-nullptr.  The
+    // DESC_ITER_CONN macro these loops replaced left 'd' nullptr once the list
+    // was exhausted; an iterator loop leaves it pointing at the last entry,
+    // which would answer for the wrong descriptor.
+    //
+    bool bFound = false;
     if (is_rational(fargs[0]))
     {
         SOCKET s = mux_atol(fargs[0]);
-        CLinearTimeAbsolute ltaNow;
-        ltaNow.GetUTC();
         for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
             d = *it;
@@ -8300,12 +8305,13 @@ static FUNCTION(fun_terminfo)
             {
                 if (d->socket == s)
                 {
+                    bFound = true;
                     break;
                 }
             }
         }
 
-        if (  nullptr != d
+        if (  bFound
            && (  d->player != executor
               && !Wizard_Who(executor)))
         {
@@ -8333,18 +8339,23 @@ static FUNCTION(fun_terminfo)
 
         for (auto it = mudstate.descriptors_list.begin(); it != mudstate.descriptors_list.end(); ++it)
         {
-            DESC* d = *it;
+            // Assign the enclosing 'd'.  Declaring one here instead shadowed
+            // it, so the match died with the loop body and every
+            // terminfo(<player>) answered #-1 NOT CONNECTED.
+            //
+            d = *it;
             if (d->flags & DS_CONNECTED)
             {
                 if (d->player == target)
                 {
+                    bFound = true;
                     break;
                 }
             }
         }
     }
 
-    if (nullptr == d)
+    if (!bFound)
     {
         safe_notconnected(buff, bufc);
         return;
