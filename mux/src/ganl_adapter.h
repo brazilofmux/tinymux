@@ -219,6 +219,16 @@ public:
 #if defined(HAVE_WORKING_FORK) && defined(STUB_SLAVE)
     struct StubSlaveChannel {
         int fd{-1};
+        // Bytes already dequeued from Queue_Out but not yet written to the
+        // socketpair.  Pipe_GetBytes removes data from the queue, so without
+        // this a short write or EAGAIN silently DROPPED module-IPC bytes and
+        // desynced the channel (#2238; 2.14 fixed this in 5e3674681).
+        std::string writeRemainder;
+        // Milliseconds spent in pump_stubslave making no progress at all.
+        // A synchronous COM call parks the WHOLE server in that pump, so an
+        // unbounded wait on a quiet channel is a total, silent, permanent
+        // hang -- one such wedge ran 22 days on 2.14 (#2238).
+        int64_t stallMs{0};
     };
     std::unique_ptr<StubSlaveChannel> stubslave_channel_;
 
