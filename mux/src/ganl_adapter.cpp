@@ -3146,13 +3146,66 @@ MUX_RESULT GanlAdapter::pump_stubslave()
     struct pollfd pfd;
     pfd.fd = fd;
     pfd.events = POLLIN;
-    if (0 < Pipe_QueueLength(&Queue_Out))
+    // POLLOUT when the COM queue has bytes *or* a prior short write left a
+    // remainder (remainder alone would otherwise block forever on POLLIN).
+    if (  0 < Pipe_QueueLength(&Queue_Out)
+       || !stubslave_channel_->writeRemainder.empty())
     {
         pfd.events |= POLLOUT;
     }
     pfd.revents = 0;
 
-    int found = poll(&pfd, 1, -1);
+    // #2238: NEVER poll here without a deadline.  A synchronous stubslave COM
+    // call (do_dbck runs one every check_interval, default 600s) parks the
+    // entire server in this pump -- no network events, no timers, no dumps,
+    // no signal processing, not even @shutdown.  On 2.14 a single desynced
+    // frame left a deployment wedged, silent and at zero CPU, for 22 days.
+    // Poll in slices so the wait is interruptible and can be given up on.
+    //
+    static const int STUB_POLL_SLICE_MS = 1000;
+
+    // 60s default: far longer than any healthy COM round-trip, short enough
+    // that a wedged channel costs a hiccup rather than the deployment.
+    // TINYMUX_STUB_STALL_MS overrides it, as an operator escape hatch on a
+    // genuinely slow module and for testing.
+    //
+    static int64_t nStallLimitMs = -1;
+    if (nStallLimitMs < 0)
+    {
+        nStallLimitMs = 60000;
+        const char *pEnv = getenv("TINYMUX_STUB_STALL_MS");
+        if (nullptr != pEnv)
+        {
+            long v = strtol(pEnv, nullptr, 10);
+            if (0 < v)
+            {
+                nStallLimitMs = static_cast<int64_t>(v);
+            }
+        }
+    }
+
+    int found = poll(&pfd, 1, STUB_POLL_SLICE_MS);
+
+    if (0 == found)
+    {
+        // Nothing happened in this slice.  Only a total absence of progress
+        // counts toward the limit; any byte moved below resets it.
+        //
+        stubslave_channel_->stallMs += STUB_POLL_SLICE_MS;
+        if (nStallLimitMs <= stubslave_channel_->stallMs)
+        {
+            STARTLOG(LOG_ALWAYS, "NET", "STUB");
+            log_text(T("Stubslave channel stalled for "));
+            log_number(static_cast<int>(nStallLimitMs / 1000));
+            log_text(T(" seconds with no progress. Assuming a desynced pipe;"
+                       " stopping the stubslave so the game continues without it."));
+            ENDLOG;
+
+            shutdown_stubslave();
+            return MUX_E_FAIL;
+        }
+        return MUX_S_OK;
+    }
 
     if (found < 0)
     {
@@ -3208,33 +3261,62 @@ MUX_RESULT GanlAdapter::pump_stubslave()
                 return MUX_E_FAIL;
             }
             Pipe_AppendBytes(&Queue_In, len, buf);
+            stubslave_channel_->stallMs = 0;   // progress (#2238)
         }
     }
 
+    // Drain Queue_Out to the socketpair.  Pipe_GetBytes dequeues immediately,
+    // so any short write or EAGAIN must keep the unwritten tail in
+    // writeRemainder -- otherwise module IPC frames are silently dropped and
+    // the peer desyncs on a truncated frame (#2238).
+    //
     if (  stubslave_channel_
        && stubslave_channel_->fd >= 0
-       && (pfd.revents & POLLOUT))
+       && (  !stubslave_channel_->writeRemainder.empty()
+          || (pfd.revents & POLLOUT)
+          || 0 < Pipe_QueueLength(&Queue_Out)))
     {
-        char buf[LBUF_SIZE];
-        size_t nWanted = sizeof(buf);
-        if (  Pipe_GetBytes(&Queue_Out, &nWanted, buf)
-           && 0 < nWanted)
+        // Refill remainder from the COM queue when empty.
+        if (stubslave_channel_->writeRemainder.empty())
         {
-            int len = mux_write(stubslave_channel_->fd, buf, nWanted);
+            char buf[LBUF_SIZE];
+            size_t nWanted = sizeof(buf);
+            if (  Pipe_GetBytes(&Queue_Out, &nWanted, buf)
+               && 0 < nWanted)
+            {
+                stubslave_channel_->writeRemainder.assign(buf, nWanted);
+            }
+        }
+
+        while (!stubslave_channel_->writeRemainder.empty())
+        {
+            const char *p = stubslave_channel_->writeRemainder.data();
+            size_t n = stubslave_channel_->writeRemainder.size();
+            int len = mux_write(stubslave_channel_->fd, p, n);
+            if (len > 0)
+            {
+                stubslave_channel_->writeRemainder.erase(0, static_cast<size_t>(len));
+                stubslave_channel_->stallMs = 0;   // progress (#2238)
+                continue;
+            }
             if (len < 0)
             {
                 int iSocketError = errno;
-                if (EAGAIN != iSocketError && EWOULDBLOCK != iSocketError)
+                if (EAGAIN == iSocketError || EWOULDBLOCK == iSocketError)
                 {
-                    shutdown_stubslave();
-
-                    STARTLOG(LOG_ALWAYS, "NET", "STUB");
-                    log_text(T("write() of stubslave failed. Stubslave stopped."));
-                    ENDLOG;
-
-                    return MUX_E_FAIL;
+                    // Keep remainder; next pump / POLLOUT will retry.
+                    break;
                 }
+                shutdown_stubslave();
+
+                STARTLOG(LOG_ALWAYS, "NET", "STUB");
+                log_text(T("write() of stubslave failed. Stubslave stopped."));
+                ENDLOG;
+
+                return MUX_E_FAIL;
             }
+            // len == 0 -- treat as transient; retry later.
+            break;
         }
     }
     return MUX_S_OK;

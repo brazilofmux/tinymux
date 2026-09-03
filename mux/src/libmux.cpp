@@ -1224,6 +1224,15 @@ extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, c
     {
         // Continue copying data to the end of the queue until it is all consumed.
         //
+        // pSrc walks the caller's buffer.  It has to: an append that spans a
+        // QUEUE_BLOCK boundary fills the tail block, allocates another, and
+        // copies again -- and copying from `p` a second time wrote the first
+        // chunk twice and dropped the tail (#2238).  nBytes was still advanced
+        // by the right amount, so the queue reported the correct LENGTH with
+        // corrupted CONTENT, which downstream is a mis-framed module-IPC
+        // packet rather than a visible short write.
+        //
+        const char *pSrc = reinterpret_cast<const char *>(p);
         QUEUE_BLOCK *pBlock = nullptr;
         while (0 < n)
         {
@@ -1286,7 +1295,8 @@ extern "C" void DCL_EXPORT DCL_API Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, c
                 nCopy = n;
             }
 
-            memcpy(pFree, p, nCopy);
+            memcpy(pFree, pSrc, nCopy);
+            pSrc += nCopy;
             n -= nCopy;
             pBlock->nBuffer += nCopy;
             pqi->nBytes += nCopy;
