@@ -147,7 +147,7 @@ extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChanne
 // the transport down.
 //
 extern "C" bool          DCL_EXPORT DCL_API Pipe_IsBroken(void);
-extern "C" const char   *DCL_EXPORT DCL_API Pipe_BrokenReason(void);
+extern "C" DCL_EXPORT const char *DCL_API Pipe_BrokenReason(void);
 
 // Marshaling helpers for proxy/stub implementations.
 //
