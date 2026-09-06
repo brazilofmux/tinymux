@@ -5418,64 +5418,30 @@ general_lowering:
             return h.emit_sconst(addr, err);
         }
 
-        // Non-mandatory context: reconstruct as literal text.
-        // name(arg1,arg2,...) — arguments are still evaluated.
+        // Non-mandatory context: an unknown name reconstructs as literal
+        // text -- and the JIT must NOT be the one to do it (#2240).
         //
-        // If has_close_paren is false (unterminated call), omit ')'.
+        // The AST's ast_emit_literal_funccall strips EV_FCHECK for the
+        // children, so nested calls come out as their SOURCE text:
+        // nosuchfn(add(1,2)) -> "nosuchfn(add(1,2))".  This branch used
+        // to rebuild from the already-lowered arguments instead, so the
+        // same input became "nosuchfn(3)" -- a route divergence.  Nothing
+        // ordinary could see it: jit_can_handle refuses any expression
+        // with an unresolved name before compiling, so it was reachable
+        // only through rvbench(), which bypasses that gate.  Two
+        // implementations of one reconstruction rule is the "dual
+        // emission paths" pattern this tree avoids -- decline here, so
+        // the interpreter's is the only one.  jit_route_parity_fn TC013
+        // pins the shape on both routes.
         //
-        std::string lit = node->text;
-        lit += '(';
-        for (int ai = 0; ai < nargs; ai++) {
-            if (ai > 0) lit += ',';
-            if (h.is_const(ai < static_cast<int>(args.size()) ? args[ai] : -1)) {
-                lit += h.const_str(args[ai]);
-            } else {
-                // Non-constant arg: must build at runtime via STRCAT.
-                goto literal_strcat;
-            }
-        }
-        if (node->has_close_paren) lit += ')';
+        // The mandatory-context arm above stays: it emits the NOT FOUND
+        // error and ends the region (#1247), the same string either
+        // route produces.
+        //
+        rc.out_exhausted = true;  // force compilation failure
         {
-            uint64_t addr = rc.pool_str(lit);
-            return h.emit_sconst(addr, lit);
-        }
-
-literal_strcat:
-        {
-            // Build literal reconstruction with runtime-evaluated args.
-            std::vector<int> parts;
-
-            std::string prefix = node->text;
-            prefix += '(';
-            uint64_t paddr = rc.pool_str(prefix);
-            parts.push_back(h.emit_sconst(paddr, prefix));
-
-            for (int ai = 0; ai < nargs; ai++) {
-                if (ai > 0) {
-                    uint64_t caddr = rc.pool_str(",");
-                    parts.push_back(h.emit_sconst(caddr, ","));
-                }
-                int arg = args[ai];
-                if (h.ty[arg] == TY_INT) {
-                    arg = h.emit(HIR_ITOA, TY_STRING, arg);
-                } else if (h.ty[arg] == TY_FLOAT) {
-                    arg = h.emit(HIR_FTOA, TY_STRING, arg);
-                }
-                parts.push_back(arg);
-            }
-
-            if (node->has_close_paren) {
-                uint64_t raddr = rc.pool_str(")");
-                parts.push_back(h.emit_sconst(raddr, ")"));
-            }
-
-            int strcat_idx = engine_api_lookup("STRCAT");
-            int r = h.emit_strcat(parts.data(),
-                                   static_cast<int>(parts.size()));
-            if (r >= 0) h.func_idx[r] = strcat_idx;
-            h.ecalls++;
-            h.needs_jit = true;
-            return r;
+            uint64_t addr = rc.pool_str("");
+            return h.emit_sconst(addr, "");
         }
     }
 

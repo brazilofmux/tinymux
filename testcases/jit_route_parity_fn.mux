@@ -347,10 +347,65 @@
       )=
   {
     @log smoke=TC012: inlined u() executor context. Succeeded.;
-    @trig me/tr.done
+    @trig me/tr.tc013
   },
   {
     @log smoke=TC012: inlined u() executor context. Failed (lit=[u(#1/fn.exec)] ind=[u([num(#1)]/fn.exec)] after=%!).;
+    @trig me/tr.tc013
+  }
+-
+#
+# Test Case #13 - an unknown function name reconstructs as literal text
+# (#2240).
+#
+# Both arms of the rule, on every route:
+#   - argument context: the call comes back as its SOURCE text, nested
+#     calls unevaluated (the AST strips EV_FCHECK for the children), while
+#     brackets inside the arguments still evaluate;
+#   - bracket context: EV_FMAND, so #-1 FUNCTION (X) NOT FOUND (#1247).
+#
+# The first arm is what every Skipped-probe guard in the corpus relies on
+# (emitconn_fn TC004, powersee_fn TC003): they detect a feature-gated
+# builtin by matching the literal it leaves behind.  Nothing pinned that
+# shape before, and a guard built on it cannot fail if it changes -- it
+# reports Skipped forever, which the accounting treats as conclusive.
+# This case turns that silent outcome into a loud one.
+#
+# The JIT does not reconstruct: jit_can_handle refuses an unresolved name
+# before compiling.  hir_lower's own reconstruction arm used to rebuild
+# from lowered arguments -- nosuchfn(add(1,2)) became nosuchfn(3), a
+# route divergence reachable only through rvbench() -- and now declines.
+# The last leg pins that: a compiled attempt at this shape must report
+# jit_handled=0.  Guarded on jitstats(), which exists only with the JIT.
+#
+&tr.tc013 test_jit_route_parity_fn=
+  @if cand(
+        strmatch(strcat(nosuchfn(add(1,2))), nosuchfn%(add%(1\,2%)%)),
+        strmatch(nosuchfn(add(1,2)), nosuchfn%(add%(1\,2%)%)),
+        strmatch(strcat(nosuchfn(x,[add(3,4)])), nosuchfn%(x\,7%)),
+        strmatch(strcat(nosuchfn(me, get(me/fn.plain))), nosuchfn%(me\,get%(me/fn.plain%)%)),
+        strmatch(strcat([nosuchfn(1)]), #-1 FUNCTION %(NOSUCHFN%) NOT FOUND)
+      )=
+  {
+    @if strmatch(setr(8, jitstats()), *eval_attempts=*)=
+    {
+      @if strmatch(setr(9, benchmark(strcat(nosuchfn(add(1,2))),10,1)), * jit_handled=0/10 *)=
+      {
+        @log smoke=TC013: unknown function reconstructs as literal text. Succeeded.;
+        @trig me/tr.done
+      },
+      {
+        @log smoke=TC013: unknown function reconstructs as literal text. Failed (JIT compiled an unresolved name: %q9).;
+        @trig me/tr.done
+      }
+    },
+    {
+      @log smoke=TC013: unknown function reconstructs as literal text. Succeeded.;
+      @trig me/tr.done
+    }
+  },
+  {
+    @log smoke=TC013: unknown function reconstructs as literal text. Failed (arg=[strcat(nosuchfn(add(1,2)))] brk=[strcat([nosuchfn(1)])] nest=[strcat(nosuchfn(x,[add(3,4)]))]).;
     @trig me/tr.done
   }
 -
