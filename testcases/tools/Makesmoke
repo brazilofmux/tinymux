@@ -73,7 +73,7 @@ if [ -r "$PIDFILE" ]; then
         fi
     fi
 fi
-perl ./tools/unformat.pl *.mux > $TMP
+perl ./tools/unformat.pl $(LC_ALL=C ls *.mux) > $TMP
 #
 #	Create necessary environment.
 #
