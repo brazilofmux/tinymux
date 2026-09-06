@@ -1,10 +1,13 @@
 #!/usr/bin/expect
 
-if { 1 != $argc } {
-    puts "This upload.tcl script requires a filename"
+if { 1 != $argc && 2 != $argc } {
+    puts "usage: upload.tcl <filename> \[port\]"
 } else {
     set remote_server    localhost
     set remote_port      2860
+    if { 2 == $argc } {
+        set remote_port [lindex $argv 1]
+    }
     set username         #1
     set password         potrzebie
 

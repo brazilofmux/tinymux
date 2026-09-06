@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Dependency tracking is handled automatically by automake
 
 ## Testing
-- Run smoke tests: `cd testcases/tools && ./Makesmoke && ./Smoke`
+- Run smoke tests: `cd testcases && ./tools/Makesmoke && ./tools/Smoke`
 - Test output in: `testcases/smoke.log`
 
 ## Release Process

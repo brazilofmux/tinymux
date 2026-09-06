@@ -2,13 +2,14 @@
 #
 #	MakeSmoke - Kick off the automated build of smoke database.
 #
-PATH=/usr/ucb:/bin:/usr/bin:.; export PATH
+PATH=/usr/ucb:/bin:/usr/bin:.:$PATH; export PATH
 #
 #	Verify that file dependencies are in a pristine state.
 #
 GAMENAME=smoke
 PIDFILE=$GAMENAME.pid
 BIN=../mux/game/bin
+PORT=${SMOKE_PORT:-2860}
 TEXT=./text
 DATA=./$GAMENAME.d
 LOGDIR=$DATA
@@ -25,8 +26,38 @@ if [ -r $DATA ]; then
 	echo "$DATA directory already exists."
 	exit 1
 fi
-if [ -r $BIN/NETMUX ]; then
+#
+#	This script's paths are all relative to the testcases directory, so
+#	refuse to run from anywhere else rather than silently resolving BIN,
+#	unformat.pl, upload.tcl and scrubflat.sed against the wrong place.
+#
+if [ ! -r ./tools/unformat.pl ]; then
+	echo "Run this from the testcases directory:  ./tools/Makesmoke"
+	exit 1
+fi
+if [ ! -r $BIN/netmux ]; then
 	echo "Build the server first."
+	exit 1
+fi
+#
+#	Name the missing dependency.  Every one of these used to surface as
+#	"Upload failed." several steps later, if it surfaced at all.
+#
+for tool in perl expect telnet sed; do
+	if ! command -v $tool >/dev/null 2>&1; then
+		echo "Required tool '$tool' was not found in PATH."
+		echo "The smoke harness needs Perl, Expect, Telnet, and Sed; see ./README."
+		exit 1
+	fi
+done
+#
+#	upload.tcl connects to localhost:$PORT and pastes an installer that
+#	ends in @shutdown.  If someone else is already on that port we would
+#	be pasting it into their game, so refuse to guess.
+#
+if perl -MIO::Socket::INET -e 'exit(IO::Socket::INET->new(PeerAddr => "127.0.0.1", PeerPort => $ARGV[0], Proto => "tcp", Timeout => 2) ? 0 : 1)' $PORT; then
+	echo "Something is already listening on port $PORT."
+	echo "Set SMOKE_PORT to a free port, or stop the other server."
 	exit 1
 fi
 #
@@ -51,9 +82,12 @@ if [ ! -r text ]; then
     echo "Creating text directory."
     mkdir text
 fi
+if [ ! -r bin ]; then
+    ln -s $BIN bin
+fi
 cp ../mux/game/alias.conf .
 cp ../mux/game/compat.conf .
-cat > smoke.conf <<\_EOF
+cat > smoke.conf <<_EOF
 # smoke.conf - TinyMUX configuration file for smoke testing.
 #
 input_database	smoke.d/smoke.db
@@ -65,7 +99,7 @@ crash_database	smoke.d/smoke.db.CRASH
 mail_database   smoke.d/mail.db
 comsys_database smoke.d/comsys.db
 #
-port 2860
+port $PORT
 mud_name SmokeMUX
 #
 command_quota_increment 1000
@@ -97,8 +131,17 @@ export SHLIB_PATH
 
 (nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1 &)
 
-sleep 1
-expect ./tools/upload.tcl $TMP
+waited=0
+until perl -MIO::Socket::INET -e 'exit(IO::Socket::INET->new(PeerAddr => "127.0.0.1", PeerPort => $ARGV[0], Proto => "tcp", Timeout => 2) ? 0 : 1)' $PORT; do
+    sleep 1
+    waited=`expr $waited + 1`
+    if [ "$waited" -ge 15 ]; then
+        echo "Server never started listening on port $PORT (waited ${waited}s)."
+        echo "See $LOGDIR for the reason."
+        exit 1
+    fi
+done
+expect ./tools/upload.tcl $TMP $PORT
 if [ $? -ne 0 ]; then
     echo "Upload failed."
     exit 1
@@ -150,4 +193,5 @@ mv $TMP smoke.flat
 #	Grab resulting log file and clean up.
 #
 rm smoke.conf $PIDFILE shutdown.status alias.conf compat.conf
+rm -f bin
 rm -rf $DATA text
