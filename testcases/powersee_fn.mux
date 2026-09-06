@@ -67,13 +67,28 @@ think [setq(0, create(Powersee_Thing, 10))][attrib_set(test_powersee_fn/thing, %
 #
 # Test Case #3 - cansee() is true for a carried thing.
 #
+# cansee() exists only on WOD_REALMS / REALITY_LVLS builds; on any other it
+# is an unknown name, which argument context reconstructs as literal text
+# (#2240).  The probe matches that literal -- "cansee(me,get(me/thing))",
+# nested call unevaluated, formatting space dropped -- and reports Skipped,
+# the emitconn_fn TC004 convention.  On a realms build cansee() evaluates
+# to 0, 1 or a #-1 match error, none of which the wildcard can match, so
+# the real assertion runs.  The reconstruction shape this depends on is
+# pinned by jit_route_parity_fn TC013.
+#
 &tr.tc003 test_powersee_fn=
-  @if eq(cansee(me, get(me/thing)), 1)=
+  @if strmatch(setr(0, cansee(me, get(me/thing))), cansee%(*%))=
   {
-    @log smoke=TC003: cansee carried thing. Succeeded.
+    @log smoke=TC003: cansee carried thing. Skipped (realms not compiled in; cansee%(%) is not a function).
   },
   {
-    @log smoke=TC003: cansee carried thing. Failed ([cansee(me, get(me/thing))]).
+    @if eq(%q0, 1)=
+    {
+      @log smoke=TC003: cansee carried thing. Succeeded.
+    },
+    {
+      @log smoke=TC003: cansee carried thing. Failed (%q0).
+    }
   }
 -
 #
