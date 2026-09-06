@@ -105,6 +105,30 @@ void dispatch_IdleCheck(void *pUnused, int iUnused)
     scheduler.DeferTask(mudstate.idle_counter, PRIORITY_SYSTEM, dispatch_IdleCheck, 0, 0);
 }
 
+// #2227 sweep.  Deliberately its own task rather than a line in an existing
+// one: check_idle() is gated on CF_IDLECHECK and runs every idle_interval
+// (60 s by default), and dispatch_CacheTick's period defaults to 30 s, so
+// neither gives the resolution this needs.  The stray store lands within
+// about a second of login, and mudstate.debug_cmd only names the work that
+// did it while that work is still current.
+//
+void dispatch_ConnectedAtCheck(void *pUnused, int iUnused)
+{
+    UNUSED_PARAMETER(pUnused);
+    UNUSED_PARAMETER(iUnused);
+
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    check_connected_at(ltaNow);
+
+    // Schedule ourselves again.
+    //
+    CLinearTimeDelta ltd;
+    ltd.SetSeconds(1);
+    scheduler.DeferTask(ltaNow + ltd, PRIORITY_SYSTEM,
+        dispatch_ConnectedAtCheck, 0, 0);
+}
+
 void dispatch_KeepAlive(void *pUnused, int iUnused)
 {
     UNUSED_PARAMETER(pUnused);
@@ -238,6 +262,12 @@ void init_timer(void)
     }
     scheduler.DeferTask(ltaNow+mudconf.cache_tick_period, PRIORITY_SYSTEM,
         dispatch_CacheTick, 0, 0);
+
+    // Setup re-occuring connected_at sweep (#2227).
+    //
+    ltd.SetSeconds(1);
+    scheduler.DeferTask(ltaNow + ltd, PRIORITY_SYSTEM,
+        dispatch_ConnectedAtCheck, 0, 0);
 
     // Setup one-shot task to enable restarting 10 seconds after startmux.
     //

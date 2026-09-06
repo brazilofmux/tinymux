@@ -245,6 +245,7 @@ void shutdownsock(DESC *d, int reason)
     if (reason == R_LOGOUT)
     {
         d->connected_at.GetUTC();
+        note_connected_at(d);
         d->retries_left = mudconf.retry_limit;
         d->command_count = 0;
         d->timeout = mudconf.idle_timeout;
