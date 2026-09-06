@@ -219,21 +219,32 @@ LIBS=$LIBS_SAVE
 case "$host" in
 *darwin*) DYNAMICLIB_EXT="so"
           DYNAMICLIB_TARGET="libmux.so"
-          DYNAMICLIB_CXXFLAGS="-bundle -fPIC"
+          # -dynamiclib, not -bundle: netmux links against libmux.so, and
+          # macOS cannot link against an MH_BUNDLE.  The install name is
+          # @rpath so that netmux finds the library beside itself with no
+          # DYLD_LIBRARY_PATH -- which SIP strips when exec'ing through any
+          # protected binary such as nohup or /bin/sh (#2255).  Same shape
+          # as 2.14.
+          DYNAMICLIB_CXXFLAGS="-dynamiclib -fPIC -undefined dynamic_lookup"
+          LIBMUX_SONAME_FLAG="-Wl,-install_name,@rpath/libmux.so"
+          LDFLAGS="$LDFLAGS -Wl,-rpath,@loader_path"
           ;;
 *cygwin*) DYNAMICLIB_EXT="dll"
           DYNAMICLIB_TARGET="libmux.dll"
           DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          LIBMUX_SONAME_FLAG=""
           ;;
 *)        DYNAMICLIB_EXT="so"
           DYNAMICLIB_TARGET="libmux.so"
           DYNAMICLIB_CXXFLAGS="-shared -fPIC"
+          LIBMUX_SONAME_FLAG=""
           ;;
 esac
 MUX_LIBS="-lmux"
 AC_SUBST(DYNAMICLIB_EXT)
 AC_SUBST(DYNAMICLIB_CXXFLAGS)
 AC_SUBST(DYNAMICLIB_TARGET)
+AC_SUBST(LIBMUX_SONAME_FLAG)
 AC_SUBST(MUX_LIBS)
 AC_SUBST(SQL_LIBS)
 AC_SUBST(DL_LIB)
