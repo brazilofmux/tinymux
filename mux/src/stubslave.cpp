@@ -50,6 +50,15 @@ extern "C" MUX_RESULT DCL_API Stub_PipePump(void)
         {
             return MUX_E_FAIL;
         }
+        else
+        {
+            // EOF: the parent closed its end of the pipe, or died.  This
+            // used to fall through as success, and poll() reports a
+            // closed pipe readable immediately, so an orphaned stubslave
+            // spun at 100% CPU for as long as the box stayed up.
+            //
+            return MUX_E_FAIL;
+        }
     }
     return MUX_S_OK;
 }
