@@ -38,8 +38,11 @@ endif
 # Dynamic library (for modules) — must be built before netmux
 all-local: libmux.so
 
+# $(LDFLAGS) so that a configured -L reaches this link too (it never did,
+# so -lcrypto had no search path on a Homebrew box), and the install-name
+# flag that lets netmux find the library beside itself on macOS (#2255).
 libmux.so: libmux.cpp
-	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(DYNAMICLIB_CXXFLAGS) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
+	$(CXX) $(CXXFLAGS) $(AM_CPPFLAGS) $(CPPFLAGS) $(LDFLAGS) $(DYNAMICLIB_CXXFLAGS) $(LIBMUX_SONAME_FLAG) -o $@ $< $(LIBS) $(DL_LIB) $(SQL_LIBS)
 
 # netmux main program
 netmux_SOURCES = $(NETMUX_SRC) version.cpp
