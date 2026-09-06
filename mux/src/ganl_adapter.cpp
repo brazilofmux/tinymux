@@ -4120,6 +4120,24 @@ MUX_RESULT GanlAdapter::pump_stubslave()
         return MUX_E_FAIL;
     }
 
+    if (Pipe_IsBroken())
+    {
+        // #2244: the decoder hit a protocol fault -- a corrupt frame header;
+        // see Pipe_DecodeFrames.  A desynced stream never recovers, so name
+        // the fault (the line the #2238 farm wedge never got) and stop the
+        // stubslave.  Pipe_SendReceive calls here once after the fault
+        // precisely so this can run.
+        //
+        STARTLOG(LOG_ALWAYS, "NET", "STUB");
+        g_pILog->log_text(T("Stubslave "));
+        g_pILog->log_text(reinterpret_cast<const UTF8 *>(Pipe_BrokenReason()));
+        g_pILog->log_text(T(". Stopping the stubslave so the game continues without it."));
+        ENDLOG;
+
+        shutdown_stubslave();
+        return MUX_E_PROTOCOL;
+    }
+
     int fd = stubslave_channel_->fd;
 
     struct pollfd pfd;

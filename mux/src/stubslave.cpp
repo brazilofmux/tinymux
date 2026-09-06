@@ -12,6 +12,7 @@
 
 #include <poll.h>
 #include <cerrno>
+#include <cstdio>
 #include <fcntl.h>
 
 QUEUE_INFO    Queue_In;
@@ -133,6 +134,15 @@ void Stub_ShoveChars(void)
 
         mr = Stub_PipePump();
         Pipe_DecodeFrames(CHANNEL_INVALID, &Queue_Frame);
+        if (Pipe_IsBroken())
+        {
+            // #2244: a corrupt frame header.  The stream cannot be
+            // re-synchronised, so say why -- stderr is inherited from
+            // netmux -- and exit; the parent sees EOF and logs that too.
+            //
+            fprintf(stderr, "stubslave: %s; exiting.\n", Pipe_BrokenReason());
+            mr = MUX_E_PROTOCOL;
+        }
     }
     Stub_PipePump();
 }

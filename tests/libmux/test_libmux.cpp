@@ -18,6 +18,8 @@
 #include <cmath>
 #ifndef _WIN32
 #include <unistd.h>
+#include <sys/wait.h>
+#include <cerrno>
 #include <csignal>
 #endif
 
@@ -112,7 +114,13 @@ typedef struct QueueBlock {
 } QUEUE_BLOCK;
 typedef struct { QUEUE_BLOCK *pHead; QUEUE_BLOCK *pTail; size_t nBytes; } QUEUE_INFO;
 typedef int MUX_RESULT;
+#define MUX_E_INVALIDARG (-6)
 #define MUX_E_NOTREADY (-8)
+#define MUX_E_PROTOCOL (-12)
+#define MUX_FAILED(x)    (static_cast<MUX_RESULT>(x) < 0)
+#define MUX_SUCCEEDED(x) (0 <= static_cast<MUX_RESULT>(x))
+typedef enum { IsUninitialized = 0, IsMainProcess = 1, IsSlaveProcess = 2 } process_context;
+typedef MUX_RESULT PipePump(void);
 
 extern "C" void Pipe_InitializeQueueInfo(QUEUE_INFO *pqi);
 extern "C" void Pipe_AppendBytes(QUEUE_INFO *pqi, size_t n, const void *p);
@@ -126,6 +134,12 @@ size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyM
 extern "C" MUX_RESULT Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqi);
+extern "C" bool Pipe_DecodeFrames(uint32_t nReturnChannel, QUEUE_INFO *pqiFrame);
+extern "C" bool Pipe_IsBroken(void);
+extern "C" const char *Pipe_BrokenReason(void);
+extern "C" MUX_RESULT mux_InitModuleLibrary(process_context ctx);
+extern "C" MUX_RESULT mux_FinalizeModuleLibrary(void);
+extern "C" MUX_RESULT mux_InitModuleLibraryPump(PipePump *fpPipePump, QUEUE_INFO *pQueue_In, QUEUE_INFO *pQueue_Out);
 
 static int g_pass = 0;
 static int g_fail = 0;
@@ -1196,6 +1210,193 @@ static void test_collate_nfc_tiebreak_equivalence()
     ASSERT_EQ(memcmp(keyA, keyB, nA), 0);
 }
 
+
+// ---------------------------------------------------------------------------
+// Module transport protocol fault (#2244 -- the branch that ran in #2238)
+// ---------------------------------------------------------------------------
+//
+// These install a real transport, the only tests here that do, so they run
+// after test_pipe_send_without_pump_is_not_ready, which depends on none being
+// installed.  The fake pump plays the peer: it delivers whatever the test
+// queued, and otherwise reports "still connected, nothing new" -- exactly the
+// peer the farm's stubslave was for 22 days.
+//
+// A transport can be installed once per process (mux_FinalizeModuleLibrary
+// leaves libmux's own module record behind, so a re-init is refused), and a
+// broken one stays broken -- that is the point.  So there is one transport,
+// and the case that must break a *fresh* decoder without spoiling it for the
+// case after runs in a forked child.
+//
+static QUEUE_INFO g_fault_in;
+static QUEUE_INFO g_fault_out;
+static int g_fault_pumps = 0;          // pump calls in total
+static int g_fault_pumps_broken = 0;   // ...of which found Pipe_IsBroken()
+static const uint8_t *g_fault_inject = nullptr;   // delivered on the next pump
+static size_t g_fault_inject_n = 0;
+static const uint32_t FAULT_CHANNEL_INVALID = 0xFFFFFFFFu;
+
+static MUX_RESULT fault_pump(void)
+{
+    g_fault_pumps++;
+    if (Pipe_IsBroken())
+    {
+        // What a host pump does here: log the reason, tear down, fail.
+        //
+        g_fault_pumps_broken++;
+        return -1;
+    }
+    if (nullptr != g_fault_inject)
+    {
+        Pipe_AppendBytes(&g_fault_in, g_fault_inject_n, g_fault_inject);
+        g_fault_inject = nullptr;
+        return 0;
+    }
+    // A peer that stays connected and sends nothing.  The pre-#2244 decoder
+    // spun here forever -- it swallowed the fault and asked for more bytes --
+    // so cut the peer off eventually: that turns the old behaviour into a
+    // wrong return code rather than a hung test binary.
+    //
+    return (g_fault_pumps < 16) ? 0 : -1;
+}
+
+static bool fault_transport_installed(void)
+{
+    static bool bInstalled = false;
+    if (bInstalled)
+    {
+        return true;
+    }
+    Pipe_InitializeQueueInfo(&g_fault_in);
+    Pipe_InitializeQueueInfo(&g_fault_out);
+    MUX_RESULT mr = mux_InitModuleLibrary(IsMainProcess);
+    if (MUX_FAILED(mr))
+    {
+        fprintf(stderr, "  mux_InitModuleLibrary -> %d\n", mr);
+        return false;
+    }
+    mr = mux_InitModuleLibraryPump(fault_pump, &g_fault_in, &g_fault_out);
+    if (MUX_FAILED(mr))
+    {
+        fprintf(stderr, "  mux_InitModuleLibraryPump -> %d\n", mr);
+        return false;
+    }
+    bInstalled = true;
+    return true;
+}
+
+// Runs in a forked child: it breaks the decoder it inherited.
+//
+static void fault_child_channel_invalid_header(void)
+{
+    static QUEUE_INFO frame;
+    Pipe_InitializeQueueInfo(&frame);
+
+    // The stub's pump waits on CHANNEL_INVALID, so a corrupt frame that
+    // parses as a RETURN on 0xFFFFFFFF used to be taken as the reply it was
+    // waiting for.  Now it is the fault it actually is.
+    //
+    static const uint8_t bogus_return[9] =
+        { 0x01, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00 };
+    Pipe_AppendBytes(&g_fault_in, sizeof(bogus_return), bogus_return);
+    ASSERT_TRUE(!Pipe_DecodeFrames(FAULT_CHANNEL_INVALID, &frame));
+    ASSERT_TRUE(Pipe_IsBroken());
+    ASSERT_TRUE(nullptr != strstr(Pipe_BrokenReason(), "frame type 1,"));
+    ASSERT_TRUE(nullptr != strstr(Pipe_BrokenReason(), "channel 4294967295,"));
+}
+
+static void test_pipe_channel_invalid_rejected_at_both_ends()
+{
+    ASSERT_TRUE(fault_transport_installed());
+    ASSERT_TRUE(!Pipe_IsBroken());
+
+    static QUEUE_INFO frame;
+    Pipe_InitializeQueueInfo(&frame);
+    const uint8_t payload[1] = { 1 };
+
+    // Sender side: a caller that never got a channel is stopped before it
+    // writes anything, so a peer built from this tree never emits one.
+    //
+    Pipe_AppendBytes(&frame, sizeof(payload), payload);
+    ASSERT_EQ(Pipe_SendCallPacketAndWait(FAULT_CHANNEL_INVALID, &frame), MUX_E_INVALIDARG);
+    ASSERT_EQ(Pipe_SendMsgPacket(FAULT_CHANNEL_INVALID, &frame), MUX_E_INVALIDARG);
+    ASSERT_EQ(Pipe_SendDiscPacket(FAULT_CHANNEL_INVALID, &frame), MUX_E_INVALIDARG);
+    ASSERT_EQ(Pipe_QueueLength(&g_fault_out), (size_t)0);
+    ASSERT_EQ(g_fault_pumps, 0);
+    ASSERT_TRUE(!Pipe_IsBroken());
+    Pipe_EmptyQueue(&frame);
+
+    // Receiver side, in a child, so this process's decoder stays clean for
+    // the farm-header case that follows.
+    //
+    fflush(stdout);
+    fflush(stderr);
+    pid_t pid = fork();
+    ASSERT_TRUE(0 <= pid);
+    if (0 == pid)
+    {
+        int before = g_fail;
+        fault_child_channel_invalid_header();
+        _exit(g_fail == before ? 0 : 1);
+    }
+    int status = 0;
+    while (waitpid(pid, &status, 0) < 0 && EINTR == errno)
+    {
+    }
+    ASSERT_TRUE(WIFEXITED(status) && 0 == WEXITSTATUS(status));
+    ASSERT_TRUE(!Pipe_IsBroken());
+}
+
+static void test_pipe_protocol_fault_fails_fast_and_names_itself()
+{
+    ASSERT_TRUE(fault_transport_installed());
+    ASSERT_TRUE(!Pipe_IsBroken());
+    g_fault_pumps = 0;
+    g_fault_pumps_broken = 0;
+
+    // The header recovered verbatim from the farm stubslave's dead stack:
+    // type CALL, channel 0, length 0x02b90310 -- a decoder six bytes behind
+    // true framing, reading the middle of a DISC as a length field.
+    //
+    static const uint8_t farm_header[9] =
+        { 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x03, 0xb9, 0x02 };
+    g_fault_inject = farm_header;
+    g_fault_inject_n = sizeof(farm_header);
+
+    static QUEUE_INFO frame;
+    Pipe_InitializeQueueInfo(&frame);
+    const uint8_t payload[2] = { 7, 7 };
+    Pipe_AppendBytes(&frame, sizeof(payload), payload);
+
+    ASSERT_EQ(Pipe_SendCallPacketAndWait(1, &frame), MUX_E_PROTOCOL);
+
+    // Exactly two pump calls: one delivered the header, and the one after
+    // the fault is the host's chance to observe it -- which it took.
+    //
+    ASSERT_EQ(g_fault_pumps, 2);
+    ASSERT_EQ(g_fault_pumps_broken, 1);
+    ASSERT_TRUE(Pipe_IsBroken());
+    ASSERT_TRUE(nullptr != strstr(Pipe_BrokenReason(), "frame type 0,"));
+    ASSERT_TRUE(nullptr != strstr(Pipe_BrokenReason(), "channel 0,"));
+    ASSERT_TRUE(nullptr != strstr(Pipe_BrokenReason(), "length 45679376"));
+
+    // Broken is sticky: nothing more is sent, the pump is not spun, and the
+    // decoder consumes nothing further even when bytes do arrive.
+    //
+    size_t nOut = Pipe_QueueLength(&g_fault_out);
+    Pipe_AppendBytes(&frame, sizeof(payload), payload);
+    ASSERT_EQ(Pipe_SendCallPacketAndWait(1, &frame), MUX_E_PROTOCOL);
+    ASSERT_EQ(Pipe_SendMsgPacket(1, &frame), MUX_E_PROTOCOL);
+    ASSERT_EQ(Pipe_SendDiscPacket(1, &frame), MUX_E_PROTOCOL);
+    ASSERT_EQ(Pipe_QueueLength(&g_fault_out), nOut);
+    ASSERT_EQ(g_fault_pumps, 2);
+
+    Pipe_AppendBytes(&g_fault_in, sizeof(farm_header), farm_header);
+    ASSERT_TRUE(!Pipe_DecodeFrames(1, &frame));
+    ASSERT_EQ(Pipe_QueueLength(&g_fault_in), sizeof(farm_header));
+
+    Pipe_EmptyQueue(&frame);
+}
+
 int main()
 {
     printf("libmux Unit Tests\n");
@@ -1291,6 +1492,10 @@ int main()
 
     printf("\n--- collation NFC tiebreak (libutf d19d65e) ---\n");
     RUN_TEST(test_collate_nfc_tiebreak_equivalence);
+
+    printf("\n--- module transport protocol fault (#2244) ---\n");
+    RUN_TEST(test_pipe_channel_invalid_rejected_at_both_ends);
+    RUN_TEST(test_pipe_protocol_fault_fails_fast_and_names_itself);
 
     printf("\n=================\n");
     printf("Results: %d passed, %d failed\n", g_pass, g_fail);
