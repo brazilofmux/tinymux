@@ -1666,7 +1666,7 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_IsBroken(void)
     return g_bPipeBroken;
 }
 
-extern "C" const char *DCL_EXPORT DCL_API Pipe_BrokenReason(void)
+extern "C" DCL_EXPORT const char *DCL_API Pipe_BrokenReason(void)
 {
     return g_bPipeBroken ? g_aPipeBrokenReason : "";
 }
