@@ -1287,6 +1287,16 @@ extern "C" MUX_RESULT DCL_API script_pipepump(void)
         return MUX_E_FAIL;
     }
 
+    if (Pipe_IsBroken())
+    {
+        // #2244: the twin of the check in GanlAdapter::pump_stubslave.
+        //
+        fprintf(stderr, "muxscript: stubslave %s; stopping the stubslave.\n",
+            Pipe_BrokenReason());
+        shutdown_stubslave_parent();
+        return MUX_E_PROTOCOL;
+    }
+
     struct pollfd pfd;
     pfd.fd = g_stub_fd;
     pfd.events = POLLIN;

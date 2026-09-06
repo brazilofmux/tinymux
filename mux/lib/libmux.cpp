@@ -15,6 +15,7 @@
 
 #include "libmux.h"
 #include "modules.h"
+#include "mux_format.h"
 
 extern "C"
 {
@@ -97,6 +98,7 @@ static std::map<MUX_IID, MUX_INTERFACE_INFO *> g_Interfaces;
 static PipePump   *g_fpPipePump = nullptr;
 static QUEUE_INFO *g_pQueue_In  = nullptr;
 static QUEUE_INFO *g_pQueue_Out = nullptr;
+static void Pipe_ResetDecoder(void);
 
 static std::map<uint32_t, CHANNEL_INFO *> g_Channels;
 static uint32_t nNextChannel;
@@ -1050,6 +1052,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_InitModuleLibraryPump(PipePump *fpP
             // clean disconnections.  The main program (stubslave or netmux)
             // can handle file descriptors, process spawning, and errors.
             //
+            // A new transport starts at a frame boundary, with no fault
+            // carried over from whatever the last stream left (#2244).
+            //
+            Pipe_ResetDecoder();
             g_fpPipePump = fpPipePump;
             g_pQueue_In  = pQueue_In;
             g_pQueue_Out = pQueue_Out;
@@ -1610,6 +1616,61 @@ static uint32_t g_nChannel = 0;
 static uint32_t g_nPayloadLength = 0;
 static size_t   g_nPayloadRemaining = 0;
 
+// Sticky protocol-fault state (#2244).
+//
+// A frame header that fails validation means the decoder is no longer at a
+// frame boundary, and nothing can put it back there: the stream carries no
+// resync marker, so every byte after the fault is misread too.  The farm
+// wedge in #2238 was exactly this branch running silently -- a six-byte
+// framing slip produced a 45 MB length field, the decoder returned false as
+// if it were merely waiting for more bytes, and both processes then waited
+// on each other for 22 days.
+//
+// So the fault is recorded once, with a reason the host can log, and from
+// then on the decoder consumes nothing and every send fails with
+// MUX_E_PROTOCOL.  The host sees it through Pipe_IsBroken() in its pump --
+// Pipe_SendReceive guarantees one pump call after the fault -- and tears
+// the transport down.
+//
+static bool g_bPipeBroken = false;
+static char g_aPipeBrokenReason[192];
+
+static void Pipe_MarkBroken(uint8_t type, uint32_t nChannel, uint32_t nLength)
+{
+    if (!g_bPipeBroken)
+    {
+        g_bPipeBroken = true;
+        mux_sprintf(reinterpret_cast<UTF8 *>(g_aPipeBrokenReason),
+            sizeof(g_aPipeBrokenReason),
+            T("module transport protocol error: frame type %u, channel %u, "
+              "length %u (max %u); the stream is desynced and cannot recover"),
+            static_cast<unsigned>(type), static_cast<unsigned>(nChannel),
+            static_cast<unsigned>(nLength),
+            static_cast<unsigned>(MAX_FRAME_PAYLOAD));
+    }
+}
+
+static void Pipe_ResetDecoder(void)
+{
+    g_bHaveHeader = false;
+    g_FrameType = 0;
+    g_nChannel = 0;
+    g_nPayloadLength = 0;
+    g_nPayloadRemaining = 0;
+    g_bPipeBroken = false;
+    g_aPipeBrokenReason[0] = '\0';
+}
+
+extern "C" bool DCL_EXPORT DCL_API Pipe_IsBroken(void)
+{
+    return g_bPipeBroken;
+}
+
+extern "C" const char *DCL_EXPORT DCL_API Pipe_BrokenReason(void)
+{
+    return g_bPipeBroken ? g_aPipeBrokenReason : "";
+}
+
 // Try to read exactly n bytes from the queue.  Returns true only if all
 // n bytes were available.  On false, no bytes are consumed.
 //
@@ -1633,6 +1694,14 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QU
 {
     for (;;)
     {
+        // Checked every iteration, not just on entry: a dispatched CALL can
+        // fault the stream from inside its handler (#2244).
+        //
+        if (g_bPipeBroken)
+        {
+            return false;
+        }
+
         // Resume reading payload if we were interrupted mid-frame.
         //
         if (g_bHaveHeader && g_nPayloadRemaining > 0)
@@ -1673,10 +1742,19 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QU
 
             // Validate.
             //
-            if (g_FrameType > FRAME_DISC || g_nPayloadLength > MAX_FRAME_PAYLOAD)
+            // CHANNEL_INVALID is what the stub's pump waits on, so a corrupt
+            // frame that parsed as a RETURN on 0xFFFFFFFF would be taken as
+            // the awaited reply.  No sender emits it: Pipe_SendPrecheck
+            // refuses it before a header is written.
+            //
+            if (  g_FrameType > FRAME_DISC
+               || g_nPayloadLength > MAX_FRAME_PAYLOAD
+               || CHANNEL_INVALID == g_nChannel)
             {
-                // Protocol error.  The pipe is broken.
+                // Protocol error.  The pipe is broken, and stays broken;
+                // see g_bPipeBroken.
                 //
+                Pipe_MarkBroken(g_FrameType, g_nChannel, g_nPayloadLength);
                 g_bHaveHeader = false;
                 return false;
             }
@@ -1804,8 +1882,47 @@ static MUX_RESULT Pipe_SendReceive(uint32_t iReturnChannel, QUEUE_INFO *pqi)
         {
             break;
         }
+
+        if (g_bPipeBroken)
+        {
+            // The decoder just hit a protocol fault (#2244).  One more pump
+            // call lets the host see it (Pipe_IsBroken) and tear the
+            // transport down; then fail regardless of what the pump says.
+            // Looping back would never terminate on its own: the decoder
+            // consumes nothing now, and a peer that keeps sending defeats
+            // the pump's stall detection -- the #2238 shape again.
+            //
+            (void)g_fpPipePump();
+            mr = MUX_E_PROTOCOL;
+            break;
+        }
     }
     return mr;
+}
+
+// Common gate for the three Pipe_Send* entry points.
+//
+static MUX_RESULT Pipe_SendPrecheck(uint32_t nChannel)
+{
+    if (!Pipe_PumpReady())
+    {
+        return MUX_E_NOTREADY;
+    }
+    if (g_bPipeBroken)
+    {
+        // Nothing more goes onto a dead stream (#2244).
+        //
+        return MUX_E_PROTOCOL;
+    }
+    if (CHANNEL_INVALID == nChannel)
+    {
+        // The receiver rejects this in a header (#2244), so a caller that
+        // never got a channel is stopped here, before its own mistake can
+        // become the peer's transport fault.
+        //
+        return MUX_E_INVALIDARG;
+    }
+    return MUX_S_OK;
 }
 
 static void Pipe_WriteHeader(uint8_t type, uint32_t nChannel, uint32_t nPayload)
@@ -1817,9 +1934,10 @@ static void Pipe_WriteHeader(uint8_t type, uint32_t nChannel, uint32_t nPayload)
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
-    if (!Pipe_PumpReady())
+    MUX_RESULT mrPre = Pipe_SendPrecheck(nChannel);
+    if (MUX_FAILED(mrPre))
     {
-        return MUX_E_NOTREADY;
+        return mrPre;
     }
     uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
     Pipe_WriteHeader(FRAME_CALL, nChannel, nPayload);
@@ -1829,9 +1947,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t nCh
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
-    if (!Pipe_PumpReady())
+    MUX_RESULT mrPre = Pipe_SendPrecheck(nChannel);
+    if (MUX_FAILED(mrPre))
     {
-        return MUX_E_NOTREADY;
+        return mrPre;
     }
     uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
     Pipe_WriteHeader(FRAME_MSG, nChannel, nPayload);
@@ -1841,9 +1960,10 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, Q
 
 extern "C" MUX_RESULT DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqiFrame)
 {
-    if (!Pipe_PumpReady())
+    MUX_RESULT mrPre = Pipe_SendPrecheck(nChannel);
+    if (MUX_FAILED(mrPre))
     {
-        return MUX_E_NOTREADY;
+        return mrPre;
     }
     uint32_t nPayload = static_cast<uint32_t>(Pipe_QueueLength(pqiFrame));
     Pipe_WriteHeader(FRAME_DISC, nChannel, nPayload);

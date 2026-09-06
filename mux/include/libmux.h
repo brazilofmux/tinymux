@@ -39,6 +39,7 @@ typedef uint64_t MUX_IID;
 #define MUX_E_NOTFOUND          (-9)
 #define MUX_E_NOAGGREGATION     (-10)
 #define MUX_E_PERMISSION        (-11)
+#define MUX_E_PROTOCOL          (-12)  // Module transport desynced (#2244).
 
 #define MUX_FAILED(x)    (static_cast<MUX_RESULT>(x) < 0)
 #define MUX_SUCCEEDED(x) (0 <= static_cast<MUX_RESULT>(x))
@@ -138,6 +139,15 @@ extern "C" size_t        DCL_EXPORT DCL_API Pipe_QueueLength(QUEUE_INFO *pqi);
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT    DCL_EXPORT DCL_API Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqi);
+
+// Sticky protocol-fault state (#2244).  Once a frame header fails
+// validation the stream cannot be re-synchronised: the decoder consumes
+// nothing further and every Pipe_Send* fails with MUX_E_PROTOCOL.  A host
+// pump checks Pipe_IsBroken() at entry, logs Pipe_BrokenReason(), and tears
+// the transport down.
+//
+extern "C" bool          DCL_EXPORT DCL_API Pipe_IsBroken(void);
+extern "C" const char   *DCL_EXPORT DCL_API Pipe_BrokenReason(void);
 
 // Marshaling helpers for proxy/stub implementations.
 //
