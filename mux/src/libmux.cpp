@@ -1470,6 +1470,12 @@ union LENGTH
 uint32_t        g_nChannel = 0;
 size_t        g_nLengthRemaining = 0;
 
+// No frame this build produces comes close to this: frames are assembled from
+// LBUF_SIZE (8 KB) pieces and the largest legitimate one is orders of
+// magnitude smaller.  Matches 2.14's MAX_FRAME_PAYLOAD.
+//
+#define MAX_FRAME_PAYLOAD  (1024 * 1024)  // 1 MB limit per frame.
+
 const uint8_t CallMagic[4]   = { 0xC3, 0x9B, 0x71, 0xF9 };  // 17, 14,  9, 20
 const uint8_t ReturnMagic[4] = { 0x35, 0x97, 0x2D, 0xD0 };  //  7, 13,  6, 18
 const uint8_t MsgMagic[4]    = { 0xF6, 0x9E, 0x18, 0x36 };  // 19, 15,  3,  8
@@ -1592,6 +1598,37 @@ extern "C" bool DCL_EXPORT DCL_API Pipe_DecodeFrames(uint32_t iReturnChannel, QU
 
         case 8: // Length3
             Length.ch[3] = ch;
+
+            // #2244: bound the length before committing to consume it.
+            //
+            // Every other corruption shape resynchronizes on its own: a byte
+            // that does not match what the state machine expects routes to
+            // Cleanup, which resets and re-hunts for a magic.  Length3 is the
+            // one state that cannot do that, because the decoder promises to
+            // swallow Length.n bytes before it will look at EndMagic again.
+            // A corrupt length therefore consumes every following frame --
+            // valid ones included -- accumulating them into the current frame
+            // and never returning true, so Pipe_SendReceive loops forever.
+            // The farm wedge (#2238) read a 45,679,376-byte length this way.
+            //
+            // The stall watchdog added by #2241 does not cover this: it
+            // resets on bytes read from the socket, not on decoder progress,
+            // so a peer that keeps talking holds it off indefinitely.
+            //
+            // Route an impossible length into Cleanup, the resynchronization
+            // path the state machine already has.
+            //
+            if (MAX_FRAME_PAYLOAD < Length.n)
+            {
+                g_iState           = 12; // Cleanup
+                g_eType            = eUnknown;
+                Length.n           = 0;
+                g_nChannel         = 0;
+                g_nLengthRemaining = 0;
+                Pipe_EmptyQueue(pqiFrame);
+                break;
+            }
+
             g_nLengthRemaining = Length.n;
 
             // We've been told how long to expect the packet to be.
