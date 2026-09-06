@@ -92,11 +92,33 @@
           ,10,-)),7)
       )=
   {
-    @log smoke=TC004: rjust CJK visual width. Succeeded.;
+    @log smoke=TC004: rjust CJK visual width. Succeeded.
+  },
+  {
+    @log smoke=TC004: rjust CJK visual width. Failed.
+  }
+-
+#
+# Test Case #5 - a literal UTF-8 character survives the upload byte for byte.
+#
+# Every other case builds its CJK with chr(), so until this one nothing in
+# the suite ever put a non-ASCII byte on the wire between unformat.pl and
+# the server -- which is how the upload transport could double-encode
+# exactly that and the suite stay green (#2260).  中 is U+4E2D, bytes
+# E4 B8 AD; re-encoded, its first byte arrives as U+00C3 and ord() says 195.
+#
+&tr.tc005 test_visual_width_fn=
+  @if cand(
+        eq(ord(中),20013),
+        eq(strlen(中),1),
+        eq(strlen(é中),2)
+      )=
+  {
+    @log smoke=TC005: literal UTF-8 survives the upload. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC004: rjust CJK visual width. Failed.;
+    @log smoke=TC005: literal UTF-8 survives the upload. Failed ([ord(中)]).;
     @trig me/tr.done
   }
 -
