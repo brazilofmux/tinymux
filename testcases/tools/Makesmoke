@@ -43,10 +43,10 @@ fi
 #	Name the missing dependency.  Every one of these used to surface as
 #	"Upload failed." several steps later, if it surfaced at all.
 #
-for tool in perl expect telnet sed; do
+for tool in perl expect sed; do
 	if ! command -v $tool >/dev/null 2>&1; then
 		echo "Required tool '$tool' was not found in PATH."
-		echo "The smoke harness needs Perl, Expect, Telnet, and Sed; see ./README."
+		echo "The smoke harness needs Perl, Expect, and Sed; see ./README."
 		exit 1
 	fi
 done
@@ -129,7 +129,7 @@ export LIBPATH
 SHLIB_PATH=$BIN
 export SHLIB_PATH
 
-(nohup $BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1 &)
+($BIN/netmux -c $GAMENAME.conf -p $PIDFILE -e $LOGDIR >/dev/null 2>&1 &)
 
 waited=0
 until perl -MIO::Socket::INET -e 'exit(IO::Socket::INET->new(PeerAddr => "127.0.0.1", PeerPort => $ARGV[0], Proto => "tcp", Timeout => 2) ? 0 : 1)' $PORT; do
