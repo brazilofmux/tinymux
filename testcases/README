@@ -6,7 +6,7 @@ built with:
 
     ./tools/Makesmoke
 
-This above script depends on Sed, Perl, Telnet, and Expect.  It also starts
+This above script depends on Sed, Perl, and Expect.  It also starts
 and stops a server instance on port 2860.  The test cases are unformated with
 unformat.pl, a Perl script.  The resulting quotable installer is uploaded into
 a running server running on port 2860 using upload.tcl, a Expect script.
