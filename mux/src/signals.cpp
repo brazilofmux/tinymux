@@ -274,9 +274,9 @@ void build_signal_names_table(void)
 #ifdef SysSigNames
                 if (  tsn->pLongName == nullptr
                    && SysSigNames[sig]
-                   && strcmp(reinterpret_cast<char *>(tsn->pShortName), reinterpret_cast<char *>(SysSigNames[sig])) != 0)
+                   && strcmp(reinterpret_cast<const char *>(tsn->pShortName), reinterpret_cast<const char *>(SysSigNames[sig])) != 0)
                 {
-                    tsn->pLongName = reinterpret_cast<UTF8 *>(SysSigNames[sig]);
+                    tsn->pLongName = const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(SysSigNames[sig]));
                 }
 #endif // SysSigNames
             }
@@ -291,7 +291,7 @@ void build_signal_names_table(void)
 #ifdef SysSigNames
             if (SysSigNames[i])
             {
-                tsn->pLongName = reinterpret_cast<UTF8 *>(SysSigNames[i]);
+                tsn->pLongName = const_cast<UTF8 *>(reinterpret_cast<const UTF8 *>(SysSigNames[i]));
             }
 #endif // SysSigNames
 

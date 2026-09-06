@@ -460,11 +460,11 @@ static void add_folder_name(dbref player, int fld, UTF8 *name)
     // the provided folder name.
     //
     mux_string *sRecord = new mux_string;
-    sRecord->append(static_cast<long>(fld));
+    sRecord->append(static_cast<int64_t>(fld));
     sRecord->append(T(":"));
     sRecord->append(name);
     sRecord->append(T(":"));
-    sRecord->append(static_cast<long>(fld));
+    sRecord->append(static_cast<int64_t>(fld));
     sRecord->UpperCase();
 
     UTF8 *aNew = alloc_lbuf("add_folder_name.new");
