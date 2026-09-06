@@ -35,10 +35,13 @@ if { [catch {open "$filename" r} fp] } {
     puts stderr "upload.tcl: $fp"
     exit 2
 }
-# Bytes, not text.  The socket below is binary, and a file read as text
-# would be re-encoded on the way out -- every non-Latin-1 character in the
-# installer (the CJK width and grapheme tests) would arrive as '?'.
-fconfigure $fp -translation binary
+# Text, decoded as UTF-8, and explicitly so: expect's send encodes what it
+# is given as UTF-8 no matter how the channel is configured, so a file
+# read as bytes (-translation binary) is re-encoded on the way out and
+# every byte >= 0x80 goes on the wire as two (#2260).  Read as real code
+# points, the same send reproduces the original bytes exactly.  Naming
+# the encoding keeps that true under a C or Latin-1 locale as well.
+fconfigure $fp -encoding utf-8
 set file_data [read $fp]
 close $fp
 
@@ -46,15 +49,60 @@ if { [catch {socket $remote_server $remote_port} sock] } {
     puts stderr "upload.tcl: cannot connect to $remote_server:$remote_port: $sock"
     exit 1
 }
-# Raw bytes both ways: the server gets exactly the line endings in the
-# file, and its telnet option negotiation arrives as data we ignore.
+# No newline translation on the socket, so the server gets exactly the
+# line endings in the file.  Output encoding is expect's affair, not the
+# channel's (see the file read above).
 fconfigure $sock -translation binary -buffering none
+
+# Telnet charset negotiation (RFC 2066), in plain Tcl before expect takes
+# the socket, where the bytes are exact.  A client that never negotiates
+# is read as Latin-1 -- default_charset has no UTF-8 value -- so without
+# this every non-ASCII byte in the installer is reinterpreted on arrival
+# no matter how faithfully it was sent (#2260).  The old telnet client
+# never negotiated either; literal UTF-8 in a test source simply never
+# worked on this path.  The server offers DO CHARSET and WILL CHARSET on
+# connect, then sends a REQUEST list once both sides agree; we answer
+# ACCEPTED UTF-8, the exact spelling telnet.cpp compares against.
+#
+set IAC "\xff"; set DO "\xfd"; set WILL "\xfb"; set SB "\xfa"; set SE "\xf0"
+set CHARSET "\x2a"; set REQUEST "\x01"; set ACCEPTED "\x02"
+fconfigure $sock -blocking 0
+set deadline [expr {[clock milliseconds] + 3000}]
+set buf ""
+set negotiated 0
+set answered_do 0
+set answered_will 0
+while {[clock milliseconds] < $deadline && !$negotiated} {
+    append buf [read $sock]
+    if {!$answered_do && [string first "$IAC$DO$CHARSET" $buf] >= 0} {
+        puts -nonewline $sock "$IAC$WILL$CHARSET"
+        set answered_do 1
+    }
+    if {!$answered_will && [string first "$IAC$WILL$CHARSET" $buf] >= 0} {
+        puts -nonewline $sock "$IAC$DO$CHARSET"
+        set answered_will 1
+    }
+    if {[string first "$IAC$SB$CHARSET$REQUEST" $buf] >= 0} {
+        puts -nonewline $sock "$IAC$SB$CHARSET${ACCEPTED}UTF-8$IAC$SE"
+        set negotiated 1
+    }
+    flush $sock
+    after 50
+}
+fconfigure $sock -blocking 1
+if {!$negotiated} {
+    puts stderr "upload.tcl: charset negotiation did not complete; the server will read non-ASCII test text as Latin-1"
+}
 spawn -open $sock
 
 send "connect $username $password\n"
 
-set send_slow {100 .001}
-send -s "$file_data\n"
+# A plain send, not the old `send -s` pacing: that was telnet-era
+# throttling, and expect's slow send counts characters while advancing
+# bytes, so it padded every non-ASCII chunk with NULs on the wire
+# (three of them for one "é中").  The server's input buffering and
+# the command_quota_increment in smoke.conf are what absorb the paste.
+send "$file_data\n"
 
 # 300s is generous for the installer; SMOKE_UPLOAD_TIMEOUT overrides it,
 # which is how the timeout path itself gets tested.
