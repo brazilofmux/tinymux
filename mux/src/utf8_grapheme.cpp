@@ -49,7 +49,17 @@ static int RunIntegerDFA_GCB(
     const UTF8 *pEnd)
 {
     int iState = start_state;
-    while (p < pEnd)
+    // Stop at the first accepting state.  The table builder (utf/integers)
+    // prunes any state whose paths all lead to a single accepting value into
+    // that accepting state directly, so an accepting state can be reached
+    // before the final byte of a code point.  Reading the remaining bytes
+    // indexes sot[] past its end -- undefined behaviour whose result depends
+    // on what the linker placed after the table, which is why this was
+    // invisible on GCC and classified CJK ideographs as Extend on clang
+    // (#2257).  This mirrors ConsoleWidth(), which consumes the same table
+    // correctly, and 2.14's 665ac71c6.
+    //
+    while (p < pEnd && iState < accepting_start)
     {
         unsigned char ch = *p++;
         int iColumn = itt[ch];
@@ -106,7 +116,11 @@ static int GetGCB(const UTF8 *p, const UTF8 *pEnd)
 static bool IsExtPict(const UTF8 *p, const UTF8 *pEnd)
 {
     unsigned short iState = CL_EXTPICT_START_STATE;
-    while (p < pEnd)
+    // Stop at the first accepting state: the pruned table can accept before
+    // the final byte of a code point, and reading on would transition into an
+    // unrelated state.  See the note in RunIntegerDFA_GCB above (#2257).
+    //
+    while (p < pEnd && iState < CL_EXTPICT_ACCEPTING_STATES_START)
     {
         unsigned char ch = *p++;
         int iColumn = cl_extpict_itt[ch];
