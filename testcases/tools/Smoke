@@ -120,6 +120,10 @@ sleep 1
 #
 #	Grab resulting log file and clean up.
 #
+if [ ! -r logs/M-smoke.log ]; then
+    echo "The server produced no log; the suite did not run."
+    exit 1
+fi
 mv logs/M-smoke.log smoke.log
 rm smoke.conf
 rm $PIDFILE
@@ -129,3 +133,29 @@ rm -rf $DATA ./logs ./text
 rm alias.conf
 rm compat.conf
 rm -f bin
+
+#
+#	Report the outcome and exit accordingly.
+#
+#	The result used to live only inside smoke.log, and reading it was left
+#	to whoever thought to grep.  A standing failure then looks exactly like
+#	a clean run: the stale hash in #2261 failed every Unicode build for six
+#	months and everybody read 347/1 as normal.
+#
+#	No results at all is a failure too, not a pass -- that is the shape of
+#	#2247 and #2270, where the harness reported success for work it never
+#	did.  Comparing against an expected total would catch more of that, but
+#	there is no manifest to compare against yet.
+#
+nSucceeded=`grep -c 'Succeeded\.' smoke.log 2>/dev/null`
+nFailed=`grep -c 'Failed' smoke.log 2>/dev/null`
+echo "$nSucceeded Succeeded, $nFailed Failed."
+if [ "$nFailed" -ne 0 ]; then
+    grep 'Failed' smoke.log | sed 's/^/    /'
+    exit 1
+fi
+if [ "$nSucceeded" -eq 0 ]; then
+    echo "No test results in smoke.log; the database produced nothing to run."
+    exit 1
+fi
+exit 0
