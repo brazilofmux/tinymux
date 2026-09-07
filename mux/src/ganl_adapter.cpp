@@ -429,6 +429,7 @@ namespace
         }
 
         d->connected_at.GetUTC();
+        note_connected_at(d);
         d->retries_left = mudconf.retry_limit;
         d->command_count = 0;
         d->timeout = mudconf.idle_timeout;
@@ -518,6 +519,7 @@ public:
         d->socket = static_cast<int>(handle);
         d->flags = 0;
         d->connected_at.GetUTC();
+        note_connected_at(d);
         d->last_time = d->connected_at;
         d->retries_left = mudconf.retry_limit;
         d->command_count = 0;
@@ -1024,6 +1026,7 @@ public:
 
         d->flags |= DS_CONNECTED;
         d->connected_at.GetUTC();
+        note_connected_at(d);
         d->player = player;
 
         const auto range = mudstate.dbref_to_descriptors_map.equal_range(player);

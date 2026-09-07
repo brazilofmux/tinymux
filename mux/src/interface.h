@@ -253,6 +253,8 @@ extern void welcome_user(DESC *);
 extern void save_command(DESC *, const UTF8 *, size_t);
 extern void init_desc(DESC *d);
 extern void destroy_desc(DESC *d);
+extern void note_connected_at(DESC *d);
+extern void check_connected_at(const CLinearTimeAbsolute &ltaNow);
 extern void announce_disconnect(dbref, DESC *, const UTF8 *);
 extern int boot_by_port(SOCKET port, bool bGod, const UTF8 *message);
 extern void find_oldest(dbref target, DESC *dOldest[2]);

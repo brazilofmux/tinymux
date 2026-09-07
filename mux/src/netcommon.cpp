@@ -12,6 +12,8 @@
 #include "externs.h"
 #include "sqlite_backend.h"
 #include "ganl_adapter.h"
+
+#include <unordered_map>
 using namespace std;
 
 NAMETAB default_charset_nametab[] =
@@ -526,8 +528,80 @@ void init_desc(DESC *d)
     new (&d->input_queue) std::deque<std::string>();
 }
 
+// The connected_at witness table (#2227).
+//
+// #2228 could only report a connected_at that fell outside
+// [start_time, now].  That catches the signature seen live -- byte 6 zeroed,
+// throwing the date back sixty years -- and nothing else.  The same stray
+// store landing on a low-order byte, or on a descriptor whose byte 6 is
+// already zero, leaves a perfectly plausible timestamp and passes unnoticed.
+//
+// So record what each writer actually wrote and compare against that instead.
+// connected_at has exactly seven writers -- GetUTC() on accept, on login (in
+// three places), and on the LOGOUT reset (in two), plus SetSeconds() out of
+// load_restart_db -- and every one of them calls note_connected_at().  Any
+// other change to the field is a stray store, whatever value it leaves.
+//
+// Keyed by socket rather than by DESC*, since #2228 rightly noted that a
+// recycled DESC* would answer for a descriptor it no longer belongs to.
+// Socket numbers are recycled too, so the witness carries its owning DESC*
+// as well: an entry whose owner no longer matches is re-seeded rather than
+// reported, which makes both kinds of reuse self-correcting.
+//
+// Deliberately not a new DESC member: changing the layout could move or mask
+// the very write being hunted.
+//
+struct ConnectedAtWitness
+{
+    const DESC        *pOwner;
+    UnderlyingTickType iValue;
+};
+
+static std::unordered_map<SOCKET, ConnectedAtWitness> g_ConnectedAtWitness;
+
+static bool report_connected_at(DESC *d, const CLinearTimeAbsolute &ltaNow,
+    bool bRepair);
+
+// Record the value a legitimate writer just stored.
+//
+void note_connected_at(DESC *d)
+{
+    if (nullptr == d)
+    {
+        return;
+    }
+    g_ConnectedAtWitness[d->socket] =
+        ConnectedAtWitness{ d, d->connected_at.Return100ns() };
+}
+
+// Drop the witness for a descriptor being torn down.  A leftover entry would
+// be harmless -- the owner check re-seeds it -- but the table should not grow
+// without bound on a long-lived server.
+//
+static void forget_connected_at(const DESC *d)
+{
+    if (nullptr == d)
+    {
+        return;
+    }
+    const auto it = g_ConnectedAtWitness.find(d->socket);
+    if (  it != g_ConnectedAtWitness.end()
+       && it->second.pOwner == d)
+    {
+        g_ConnectedAtWitness.erase(it);
+    }
+}
+
 void destroy_desc(DESC *d)
 {
+    // Last chance to notice a stray write on this descriptor: the periodic
+    // sweep runs every second, so a session that connects and dies inside one
+    // tick would otherwise never be examined at all.
+    //
+    CLinearTimeAbsolute ltaNow;
+    ltaNow.GetUTC();
+    report_connected_at(d, ltaNow, false);
+    forget_connected_at(d);
     d->output_queue.~deque();
     d->input_queue.~deque();
 }
@@ -1423,50 +1497,115 @@ int64_t fetch_connect(dbref target)
 }
 
 // ---------------------------------------------------------------------------
-// check_connected_at: diagnostic for stray writes into DESC::connected_at.
+// report_connected_at: examine one descriptor.  Returns true if it reported.
 //
-// connected_at is written in exactly two ways: GetUTC() (on accept, on login,
-// and on the LOGOUT reset) and SetSeconds() out of load_restart_db.  None of
-// them can produce a value earlier than the server start or later than now, so
-// anything outside that window arrived by some other route.
+// Compares the field against what its last legitimate writer actually stored,
+// so any change that did not come through one of those writers is reported --
+// not only one that lands outside [start_time, now], which is all #2228 could
+// see.
 //
-// Log the raw 100ns field before repairing it: the intact bytes of a scribbled
-// timestamp still date the write, which is how the offset of the stray store
-// gets identified.  Repairing also stops WHO reporting a nonsense 'On For'.
+// A descriptor with no witness is one that predates the table or whose socket
+// number has been recycled.  Adopt it when the value is at least plausible,
+// and report it when it is not, which preserves #2228's behaviour exactly for
+// the case it was written for.
 //
-static void check_connected_at(const CLinearTimeAbsolute &ltaNow)
+// Log the raw 100ns field before repairing it: the intact bytes of a
+// scribbled timestamp still date the write, which is how the byte offset in
+// #2227 was identified in the first place.
+//
+// mudstate.debug_cmd is the most recently labelled activity, not proof of the
+// culprit -- this sweep deliberately does not set it, so whatever last did
+// survives to be reported.  At a one-second cadence that is a useful hint;
+// at check_idle()'s sixty it would be noise.
+//
+static bool report_connected_at(DESC *d, const CLinearTimeAbsolute &ltaNow,
+    bool bRepair)
 {
+    if (nullptr == d)
+    {
+        return false;
+    }
+
     const auto iNow   = ltaNow.Return100ns();
     const auto iStart = mudstate.start_time.Return100ns();
+    const auto iAt    = d->connected_at.Return100ns();
 
-    for (DESC *d : mudstate.descriptors_list)
+    const auto it = g_ConnectedAtWitness.find(d->socket);
+    const bool bWitnessed = (  it != g_ConnectedAtWitness.end()
+                            && it->second.pOwner == d);
+    UnderlyingTickType iExpected = 0;
+
+    if (bWitnessed)
     {
-        const auto iAt = d->connected_at.Return100ns();
-        if (  iStart <= iAt
-           && iAt <= iNow)
+        if (it->second.iValue == iAt)
         {
-            continue;
+            return false;
         }
+        iExpected = it->second.iValue;
+    }
+    else if (  iStart <= iAt
+            && iAt <= iNow)
+    {
+        // Plausible, and nothing to compare it against yet.  Adopt it.
+        //
+        g_ConnectedAtWitness[d->socket] = ConnectedAtWitness{ d, iAt };
+        return false;
+    }
 
-        STARTLOG(LOG_ALWAYS, "BUG", "TIME");
-        UTF8 *buff = alloc_lbuf("check_connected_at");
+    const UTF8 *pWhen = (nullptr != mudstate.debug_cmd)
+                      ? mudstate.debug_cmd : T("?");
+
+    STARTLOG(LOG_ALWAYS, "BUG", "TIME");
+    UTF8 *buff = alloc_lbuf("report_connected_at");
+    if (bWitnessed)
+    {
         mux_sprintf(buff, LBUF_SIZE,
-            T("connected_at out of range on socket %d: raw=0x%016llX now=0x%016llX start=0x%016llX delta=%lld s"),
+            T("connected_at changed behind its writers on socket %d: raw=0x%016llX expected=0x%016llX now=0x%016llX start=0x%016llX delta=%lld s during \'%s\'"),
+            d->socket,
+            static_cast<unsigned long long>(iAt),
+            static_cast<unsigned long long>(iExpected),
+            static_cast<unsigned long long>(iNow),
+            static_cast<unsigned long long>(iStart),
+            static_cast<long long>((iNow - iAt) / FACTOR_100NS_PER_SECOND),
+            pWhen);
+    }
+    else
+    {
+        mux_sprintf(buff, LBUF_SIZE,
+            T("connected_at out of range on socket %d (unwitnessed): raw=0x%016llX now=0x%016llX start=0x%016llX delta=%lld s during \'%s\'"),
             d->socket,
             static_cast<unsigned long long>(iAt),
             static_cast<unsigned long long>(iNow),
             static_cast<unsigned long long>(iStart),
-            static_cast<long long>((iNow - iAt) / FACTOR_100NS_PER_SECOND));
-        log_text(buff);
-        free_lbuf(buff);
-        if (d->flags & DS_CONNECTED)
-        {
-            log_text(T(" player "));
-            log_name(d->player);
-        }
-        ENDLOG;
+            static_cast<long long>((iNow - iAt) / FACTOR_100NS_PER_SECOND),
+            pWhen);
+    }
+    log_text(buff);
+    free_lbuf(buff);
+    if (d->flags & DS_CONNECTED)
+    {
+        log_text(T(" player "));
+        log_name(d->player);
+    }
+    ENDLOG;
 
+    if (bRepair)
+    {
+        // Stops WHO reporting a nonsense 'On For' for the rest of the session.
+        //
         d->connected_at = ltaNow;
+        note_connected_at(d);
+    }
+    return true;
+}
+
+// check_connected_at: sweep every live descriptor.
+//
+void check_connected_at(const CLinearTimeAbsolute &ltaNow)
+{
+    for (DESC *d : mudstate.descriptors_list)
+    {
+        report_connected_at(d, ltaNow, true);
     }
 }
 
@@ -2373,6 +2512,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
             ENDLOG;
             d->flags |= DS_CONNECTED;
             d->connected_at.GetUTC();
+            note_connected_at(d);
             d->player = player;
 
             // Check to see if the player is currently running an
@@ -2525,6 +2665,7 @@ static bool check_connect(DESC *d, UTF8 *msg)
                 move_object(player, mudconf.start_room);
                 d->flags |= DS_CONNECTED;
                 d->connected_at.GetUTC();
+                note_connected_at(d);
                 d->player = player;
                 fcache_dump(d, FC_CREA_NEW);
                 announce_connect(player, d);

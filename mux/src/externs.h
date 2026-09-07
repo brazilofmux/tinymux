@@ -1125,6 +1125,7 @@ void dispatch_IdleCheck(void *pUnused, int iUnused);
 void dispatch_CheckEvents(void *pUnused, int iUnused);
 void dispatch_KeepAlive(void *pUnused, int iUnused);
 void dispatch_CacheTick(void *pUnused, int iUnused);
+void dispatch_ConnectedAtCheck(void *pUnused, int iUnused);
 
 // Using a heap as the data structure for representing this priority
 // has some attributes which we depend on:

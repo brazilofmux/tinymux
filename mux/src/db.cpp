@@ -3711,6 +3711,7 @@ void load_restart_db(void)
         d->socket = val;
         d->flags = getref(f);
         d->connected_at.SetSeconds(5 <= version ? getref64(f) : getref(f));
+        note_connected_at(d);
         d->command_count = getref(f);
         d->timeout = getref(f);
         getref(f); // Eat host_info
