@@ -122,5 +122,15 @@ expect {
     }
 }
 send "@shutdown\n"
-expect eof
+# The same guard as the wait above: a peer that takes the installer and
+# then holds the connection open is a stall, not a success, and
+# Makesmoke would otherwise only find out ten seconds later from its
+# own pidfile wait, as a symptom rather than the cause (#2269).
+expect {
+    eof { }
+    timeout {
+        puts stderr "upload.tcl: timed out after ${timeout}s waiting for the server to close after @shutdown"
+        exit 1
+    }
+}
 exit 0
