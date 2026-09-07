@@ -5065,7 +5065,9 @@
 >260
 "@if cand(eq(strlen(ljust(chr(20013),6,-)),5),eq(strlen(ljust([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC003: ljust CJK visual width. Succeeded.},{@log smoke=TC003: ljust CJK visual width. Failed.}"
 >261
-"@if cand(eq(strlen(rjust(chr(20013),6,-)),5),eq(strlen(rjust([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC004: rjust CJK visual width. Succeeded.;@trig me/tr.done},{@log smoke=TC004: rjust CJK visual width. Failed.;@trig me/tr.done}"
+"@if cand(eq(strlen(rjust(chr(20013),6,-)),5),eq(strlen(rjust([chr(20013)][chr(19990)][chr(30028)],10,-)),7))={@log smoke=TC004: rjust CJK visual width. Succeeded.},{@log smoke=TC004: rjust CJK visual width. Failed.}"
+>262
+"@if cand(eq(ord(中),20013),eq(strlen(中),1),eq(strlen(é中),2))={@log smoke=TC005: literal UTF-8 survives the upload. Succeeded.;@trig me/tr.done},{@log smoke=TC005: literal UTF-8 survives the upload. Failed ([ord(中)]).;@trig me/tr.done}"
 <
 !173
 "test_vmag_fn"
