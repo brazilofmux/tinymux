@@ -930,6 +930,13 @@ static void destroy_bad_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
+    // #2279: drop the player cache entry before the object becomes
+    // TYPE_GARBAGE.  s_Pennies() below routes by type, so once the object is
+    // garbage the zero lands in the *MONEY attribute while the still-live
+    // cache entry keeps the old balance and flushes it back onto the
+    // recycled dbref.  Deleting it here also stops QueueMax/queue leaking
+    // across a freelist recycle (2.13 backport of #1180).
+    pcache_delete(obj);
     s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
@@ -1047,6 +1054,13 @@ void destroy_obj(dbref obj)
         ReleaseAllResources(obj);
     }
     atr_free(obj);
+    // #2279: drop the player cache entry before the object becomes
+    // TYPE_GARBAGE.  s_Pennies() below routes by type, so once the object is
+    // garbage the zero lands in the *MONEY attribute while the still-live
+    // cache entry keeps the old balance and flushes it back onto the
+    // recycled dbref.  Deleting it here also stops QueueMax/queue leaking
+    // across a freelist recycle (2.13 backport of #1180).
+    pcache_delete(obj);
     s_Name(obj, nullptr);
     s_Flags(obj, FLAG_WORD1, (TYPE_GARBAGE | GOING));
     s_Flags(obj, FLAG_WORD2, 0);
