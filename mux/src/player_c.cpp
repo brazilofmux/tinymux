@@ -228,6 +228,54 @@ void pcache_sync(void)
     }
 }
 
+/*! \brief Drop a player cache entry when the object is destroyed.
+ *
+ * Entries are keyed only by dbref.  Without an explicit delete, freelist
+ * recycle of a former player inherits the stale entry: its Money flushes
+ * back over the recycled dbref (so a new thing shows a dead player's
+ * credits) and its QueueMax / queue depth carry across too (#2279, the
+ * 2.13 half of #1180).  Do not write dirty Money back -- destroy_obj has
+ * already freed the attributes.
+ *
+ * \param player   object dbref being destroyed.
+ * \return         None.
+ */
+
+void pcache_delete(dbref player)
+{
+    if (mudstate.bStandAlone)
+    {
+        return;
+    }
+
+    auto it = pcache_htab.find(player);
+    if (it == pcache_htab.end())
+    {
+        return;
+    }
+
+    PCACHE *pp = static_cast<PCACHE *>(it->second);
+    PCACHE *prev = nullptr;
+    for (PCACHE *cur = pcache_head; cur; prev = cur, cur = cur->next)
+    {
+        if (cur == pp)
+        {
+            if (prev)
+            {
+                prev->next = cur->next;
+            }
+            else
+            {
+                pcache_head = cur->next;
+            }
+            break;
+        }
+    }
+
+    pcache_htab.erase(it);
+    free_pcache(pp);
+}
+
 /*! \brief Adjusts the count of queued commands up or down.
  *
  * cque.cpp uses this as it schedules and performs queued commands.

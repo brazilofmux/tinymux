@@ -430,6 +430,13 @@ void do_toad
         s_Owner(victim, recipient);
         s_Zone(victim, NOTHING);
     }
+    // #2279: drop the player cache entry before the type flip below.  Money
+    // routes through the cache for a player and through the *MONEY attribute
+    // for a thing, so the s_Pennies() call after the flip writes the
+    // attribute while the still-live cache entry keeps the old balance and
+    // flushes it back -- the toaded thing then shows the ex-player's credits
+    // (and leaks QueueMax/queue too).  Same root cause as destroy_obj.
+    pcache_delete(victim);
     s_Flags(victim, FLAG_WORD1, TYPE_THING | HALT);
     s_Flags(victim, FLAG_WORD2, 0);
     s_Flags(victim, FLAG_WORD3, 0);
