@@ -148,7 +148,14 @@ static size_t next_grapheme_plain(const unsigned char *src, size_t nSrc)
     if (GCB_Control == prevGCB || GCB_LF == prevGCB)
         return (size_t)(pCur - src);
 
-    int bSeenEPEZ = bPrevExtPict;  /* GB11 */
+    /* GB11 progress through "ExtPict Extend* ZWJ x ExtPict", as in
+     * utf8_next_grapheme (c3fafc153):
+     *   0 -- no live ExtPict sequence
+     *   1 -- ExtPict Extend* seen
+     *   2 -- ExtPict Extend* ZWJ seen; an ExtPict may join now
+     * A boolean cannot tell "ExtPict Extend*" from a completed ZWJ link,
+     * so ExtPict ZWJ ZWJ ExtPict used to join. */
+    int gb11State = bPrevExtPict ? 1 : 0;
     int nRI = (GCB_Regional_Indicator == prevGCB) ? 1 : 0;  /* GB12/13 */
 
     while (pCur < pEnd) {
@@ -159,6 +166,14 @@ static size_t next_grapheme_plain(const unsigned char *src, size_t nSrc)
         /* GB3: CR × LF */
         if (GCB_CR == prevGCB && GCB_LF == curGCB)
             return (size_t)(pNextEnd - src);
+
+        /* GB4: CR ÷ -- anything but LF after a CR starts a new cluster
+         * (the check above only covers a first code point of Control or LF).
+         * Without it GB9 joined a following Extend/ZWJ/SpacingMark to the
+         * CR: "\r" U+0308 was one cluster.  utf8_next_grapheme has had this
+         * since c3fafc153; libutf e46427a found this copy still lacked it. */
+        if (GCB_CR == prevGCB)
+            break;
 
         /* GB5: ÷ (Control|CR|LF) */
         if (GCB_Control == curGCB || GCB_CR == curGCB || GCB_LF == curGCB)
@@ -195,20 +210,27 @@ static size_t next_grapheme_plain(const unsigned char *src, size_t nSrc)
             extend = 1;
 
         /* GB11: ExtPict Extend* ZWJ × ExtPict */
-        if (!extend && bSeenEPEZ && GCB_ZWJ == prevGCB && bCurExtPict)
+        if (!extend && 2 == gb11State && bCurExtPict)
             extend = 1;
 
-        /* GB12/13: RI × RI (pairs only) */
-        if (!extend && GCB_Regional_Indicator == curGCB && (nRI % 2) == 1)
+        /* GB12/13: RI × RI (pairs only), and only of adjacent RIs: an RI
+         * after Extend or ZWJ begins a new cluster even when the count
+         * so far is odd -- RI U+0308 RI is two clusters, not one. */
+        if (!extend && GCB_Regional_Indicator == curGCB &&
+            GCB_Regional_Indicator == prevGCB && (nRI % 2) == 1)
             extend = 1;
 
         if (!extend) break;  /* GB999: ÷ */
 
         /* Continue cluster. */
         if (GCB_Regional_Indicator == curGCB) nRI++;
-        if (bCurExtPict) bSeenEPEZ = 1;
-        else if (!bSeenEPEZ || (GCB_Extend != curGCB && GCB_ZWJ != curGCB))
-            bSeenEPEZ = 0;
+        if (bCurExtPict) gb11State = 1;
+        else if (1 == gb11State && GCB_Extend == curGCB)
+            ;  /* still "ExtPict Extend*" */
+        else if (1 == gb11State && GCB_ZWJ == curGCB)
+            gb11State = 2;
+        else
+            gb11State = 0;  /* includes a second ZWJ arriving in state 2 */
 
         prevGCB = curGCB;
         pCur = pNextEnd;
