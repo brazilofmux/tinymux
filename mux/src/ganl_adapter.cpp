@@ -2072,8 +2072,19 @@ void GanlAdapter::process_tinyMUX_tasks() {
     ltaNow.GetUTC();
 
     // Update command quotas (same as shovechars timeslice logic).
+    //
+    // update_quotas() owns ltaLastSlice_: it grants quota only once a whole
+    // timeslice has elapsed, and advances ltaLastSlice_ by whole slices so
+    // the partial remainder carries into the next call.  This caller used to
+    // overwrite it with ltaNow on every pass, discarding that remainder, so
+    // a loop that woke more often than once per timeslice never accumulated
+    // a full slice and never refilled anyone's quota.  A connection that
+    // spent its quota then waited forever, at zero CPU, with its input
+    // queued -- the Makesmoke upload stall of #2285, which the one-second
+    // connected_at sweep (#2271) made reachable by adding exactly such a
+    // wakeup.
+    //
     update_quotas(ltaLastSlice_, ltaNow);
-    ltaLastSlice_ = ltaNow;
 
     // Finalize TLS connections that have completed their handshake.
     // We deferred welcome_user() until the connection reaches Running state
