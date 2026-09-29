@@ -66,11 +66,40 @@
         BD307A3EC329E10A2CFF8FB87480823DA114F8F4
       )=
   {
-    @log smoke=TC003: strlen combining cluster. Succeeded.;
+    @log smoke=TC003: strlen combining cluster. Succeeded.
+  },
+  {
+    @log smoke=TC003: strlen combining cluster. Failed (%q0).
+  }
+-
+#
+# Test Case #4 - UAX #29 GB12/13: regional indicators pair only when adjacent.
+#
+# A flag letter, a combining mark, and a second flag letter are two
+# clusters: the mark joins the first letter (GB9), and the second may not
+# pair with the first through it.  2.13's stepper used to count the whole
+# run as one and mid() could not reach the second cluster.  The last two
+# lines are positive controls: adjacent letters pair, and three adjacent
+# letters are a pair plus one.
+#
+# Only this case is reachable over the network.  The same fix also covers
+# GB4 (a mark after a CR) and GB11 (a doubled ZWJ), but a player cannot
+# type a bare CR, and the input boundary strips U+200D as non-printable;
+# those rules are verified against Unicode's GraphemeBreakTest instead.
+#
+&tr.tc004 test_strlen_fn=
+  @if cand(
+        eq(strlen([chr(127462)][chr(776)][chr(127462)]), 2),
+        eq(strlen(mid([chr(127462)][chr(776)][chr(127462)],1,1)), 1),
+        eq(strlen([chr(127462)][chr(127463)]), 1),
+        eq(strlen([chr(127462)][chr(127463)][chr(127462)]), 2)
+      )=
+  {
+    @log smoke=TC004: strlen GB12/13 through a mark. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: strlen combining cluster. Failed (%q0).;
+    @log smoke=TC004: strlen GB12/13 through a mark. Failed ([strlen([chr(127462)][chr(776)][chr(127462)])] [strlen(mid([chr(127462)][chr(776)][chr(127462)],1,1))] [strlen([chr(127462)][chr(127463)])] [strlen([chr(127462)][chr(127463)][chr(127462)])]).;
     @trig me/tr.done
   }
 -

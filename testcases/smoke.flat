@@ -4596,7 +4596,9 @@
 >259
 "@if strmatch(setr(0,sha1([strlen(chr(233))][strlen(chr(65296))][strlen(A[chr(233)]B[chr(65296)]C)])),EFA6E44DFA0145249BE273ECD84A97F534B04920)={@log smoke=TC002: strlen multi-byte Unicode. Succeeded.},{@log smoke=TC002: strlen multi-byte Unicode. Failed (%q0).}"
 >260
-"@if strmatch(setr(0,sha1([strlen(chr(101 769))][strlen(A[chr(101 769)]B)])),BD307A3EC329E10A2CFF8FB87480823DA114F8F4)={@log smoke=TC003: strlen combining cluster. Succeeded.;@trig me/tr.done},{@log smoke=TC003: strlen combining cluster. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([strlen(chr(101 769))][strlen(A[chr(101 769)]B)])),BD307A3EC329E10A2CFF8FB87480823DA114F8F4)={@log smoke=TC003: strlen combining cluster. Succeeded.},{@log smoke=TC003: strlen combining cluster. Failed (%q0).}"
+>261
+"@if cand(eq(strlen([chr(127462)][chr(776)][chr(127462)]), 2),eq(strlen(mid([chr(127462)][chr(776)][chr(127462)],1,1)), 1),eq(strlen([chr(127462)][chr(127463)]), 1),eq(strlen([chr(127462)][chr(127463)][chr(127462)]), 2))={@log smoke=TC004: strlen GB12/13 through a mark. Succeeded.;@trig me/tr.done},{@log smoke=TC004: strlen GB12/13 through a mark. Failed ([strlen([chr(127462)][chr(776)][chr(127462)])] [strlen(mid([chr(127462)][chr(776)][chr(127462)],1,1))] [strlen([chr(127462)][chr(127463)])] [strlen([chr(127462)][chr(127463)][chr(127462)])]).;@trig me/tr.done}"
 <
 !156
 "test_strmatch_fn"
