@@ -1589,6 +1589,52 @@ static void test_grapheme_clusters(void) {
     check_size("co_cluster_count", "🇺🇸 flag",
         co_cluster_count(flag_us, sizeof(flag_us)), 1);
 
+    /* UAX #29 conformance for the color_ops stepper (libutf e46427a), which
+     * had drifted from utf8_next_grapheme after c3fafc153 fixed only that
+     * copy.  Both now agree with GraphemeBreakTest-16.0.0 on every line but
+     * the 7 GB9c ones, and with each other on every sequence of up to five
+     * code points drawn from one representative per GCB class. */
+
+    /* GB4: CR ÷ -- a mark after a CR does not join it; CR LF is one (GB3). */
+    const unsigned char cr_mark[] = { 0x0D, 0xCC, 0x88 };
+    check_size("co_cluster_count", "CR + combining diaeresis",
+        co_cluster_count(cr_mark, sizeof(cr_mark)), 2);
+    check_size("co_cluster_count", "CR LF",
+        co_cluster_count((const unsigned char *)"\r\n", 2), 1);
+
+    /* GB12/13: RIs pair only when adjacent (÷ 1F1E6 × 0308 ÷ 1F1E6 ÷). */
+    const unsigned char ri_mark_ri[] = {
+        0xF0, 0x9F, 0x87, 0xA6,       /* U+1F1E6 */
+        0xCC, 0x88,                   /* U+0308 */
+        0xF0, 0x9F, 0x87, 0xA6        /* U+1F1E6 */
+    };
+    check_size("co_cluster_count", "RI Extend RI",
+        co_cluster_count(ri_mark_ri, sizeof(ri_mark_ri)), 2);
+    const unsigned char ri_zwj_ri[] = {
+        0xF0, 0x9F, 0x87, 0xA6,       /* U+1F1E6 */
+        0xE2, 0x80, 0x8D,             /* U+200D ZWJ */
+        0xF0, 0x9F, 0x87, 0xA6        /* U+1F1E6 */
+    };
+    check_size("co_cluster_count", "RI ZWJ RI",
+        co_cluster_count(ri_zwj_ri, sizeof(ri_zwj_ri)), 2);
+
+    /* GB11: "ExtPict Extend* ZWJ x ExtPict" allows exactly one ZWJ, so
+     * ExtPict ZWJ ZWJ ExtPict is two clusters, while ExtPict ZWJ ExtPict
+     * (the positive control) stays one. */
+    const unsigned char ep_zwj_zwj_ep[] = {
+        0xF0, 0x9F, 0x98, 0x80,       /* U+1F600 */
+        0xE2, 0x80, 0x8D,             /* ZWJ */
+        0xE2, 0x80, 0x8D,             /* ZWJ */
+        0xF0, 0x9F, 0x98, 0x80        /* U+1F600 */
+    };
+    check_size("co_cluster_count", "ExtPict ZWJ ZWJ ExtPict",
+        co_cluster_count(ep_zwj_zwj_ep, sizeof(ep_zwj_zwj_ep)), 2);
+    const unsigned char ep_zwj_ep[] = {
+        0xF0, 0x9F, 0x98, 0x80, 0xE2, 0x80, 0x8D, 0xF0, 0x9F, 0x98, 0x80
+    };
+    check_size("co_cluster_count", "ExtPict ZWJ ExtPict",
+        co_cluster_count(ep_zwj_ep, sizeof(ep_zwj_ep)), 1);
+
     /* co_mid_cluster: extract second cluster from "AëB" where ë = e+combining. */
     /* "A" + "e" + combining_diaeresis + "B" = 3 clusters. */
     const unsigned char aeb[] = { 'A', 0x65, 0xCC, 0x88, 'B' };

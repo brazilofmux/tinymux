@@ -50,6 +50,7 @@ void  mux_strncpy(UTF8 *dest, const UTF8 *src, size_t length_to_copy);
 // unprintable.
 size_t utf8_cluster_count(const UTF8 *src, size_t nSrc);
 extern "C" size_t co_visual_width(const unsigned char *p, size_t len);
+extern "C" size_t co_cluster_count(const unsigned char *p, size_t len);
 extern "C" size_t co_copy_columns(unsigned char *out, const unsigned char *p,
                                   const unsigned char *pe, size_t ncols);
 
@@ -1063,6 +1064,36 @@ static void test_grapheme_gb11_double_zwj_breaks()
     ASSERT_EQ(clusters(E_THUMB E_TONE E_ZWJ E_MAN), (size_t)1);
 }
 
+// TinyMUX has two grapheme steppers: utf8_next_grapheme (utf8_grapheme.cpp),
+// behind strlen(), and next_grapheme_plain (color_ops.rl), behind mid(),
+// left(), right(), delete(), pos(), tr() and the JIT's rv64 wrappers.
+// c3fafc153 fixed GB4, GB12/13 and GB11 in the first and not the second, so
+// for two months strlen() counted clusters that mid() could not address.
+// Pin both, on the inputs where they disagreed, against the same answer.
+//
+static size_t co_clusters(const char *s)
+{
+    return co_cluster_count(reinterpret_cast<const unsigned char *>(s), strlen(s));
+}
+
+static void test_grapheme_steppers_agree()
+{
+    static const struct { const char *s; size_t n; } cases[] = {
+        { "\r" "\xCC\x88",               2 },  // GB4: CR ÷ Extend
+        { "\r\n",                     1 },  // GB3: CR x LF
+        { E_RI_U "\xCC\x88" E_RI_S,     2 },  // GB12/13: RI Extend RI
+        { E_RI_U E_ZWJ E_RI_S,          2 },  // GB12/13: RI ZWJ RI
+        { E_RI_U E_RI_S,                1 },  // flag (positive control)
+        { E_MAN E_ZWJ E_ZWJ E_MAN,      2 },  // GB11: doubled ZWJ breaks
+        { E_MAN E_ZWJ E_MAN,            1 },  // GB11 (positive control)
+    };
+    for (const auto &c : cases)
+    {
+        ASSERT_EQ(clusters(c.s),    c.n);
+        ASSERT_EQ(co_clusters(c.s), c.n);
+    }
+}
+
 
 // ---------------------------------------------------------------------------
 // Module transport used before mux_InitModuleLibraryPump (#1340)
@@ -1485,6 +1516,7 @@ int main()
     RUN_TEST(test_grapheme_ascii_seam);
     RUN_TEST(test_grapheme_gb12_ri_run_ends_at_nonri);
     RUN_TEST(test_grapheme_gb11_double_zwj_breaks);
+    RUN_TEST(test_grapheme_steppers_agree);
 
     printf("\n--- module transport before init (#1340) ---\n");
     RUN_TEST(test_pipe_send_without_pump_is_not_ready);

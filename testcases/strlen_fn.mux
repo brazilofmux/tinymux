@@ -94,11 +94,40 @@
         eq(strlen(A[chr(1488)]B), 3)
       )=
   {
-    @log smoke=TC005: strlen RTL Hebrew and Arabic. Succeeded.;
+    @log smoke=TC005: strlen RTL Hebrew and Arabic. Succeeded.
+  },
+  {
+    @log smoke=TC005: strlen RTL Hebrew and Arabic. Failed (he=[strlen([chr(1488)][chr(1489)][chr(1490)])] ar=[strlen([chr(1587)][chr(1604)][chr(1575)][chr(1605)])] arcomb=[strlen([chr(1605)][chr(1614)])] mixed=[strlen(A[chr(1488)]B)]).
+  }
+-
+#
+# Test Case #6 - the grapheme rules TinyMUX's two steppers disagreed on.
+#
+# The interpreter's strlen() runs utf8_next_grapheme; mid(), left(),
+# right(), delete() and a JIT-compiled strlen() run color_ops' copy.
+# c3fafc153 fixed GB11 and GB12/13 in the first only, so for two months
+# strlen() of these strings gave 2 or 1 depending on route, and mid()
+# could not address the second cluster at all.  Each is two clusters:
+# regional indicators pair only when adjacent, never through a mark or a
+# ZWJ (GB12/13), and GB11 permits exactly one ZWJ between pictographs.
+# The last line is GB11's positive control.  Literal UTF-8 on purpose:
+# chr() refuses the ZWJ.
+#
+&tr.tc006 test_strlen_fn=
+  @if cand(
+        eq(strlen(🇦̈🇦), 2),
+        eq(strlen(🇦‍🇦), 2),
+        eq(strlen(😀‍‍😀), 2),
+        eq(strlen(mid(🇦̈🇦,1,1)), 1),
+        eq(strlen(mid(😀‍‍😀,1,1)), 1),
+        eq(strlen(😀‍😀), 1)
+      )=
+  {
+    @log smoke=TC006: strlen GB11 and GB12/13. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: strlen RTL Hebrew and Arabic. Failed (he=[strlen([chr(1488)][chr(1489)][chr(1490)])] ar=[strlen([chr(1587)][chr(1604)][chr(1575)][chr(1605)])] arcomb=[strlen([chr(1605)][chr(1614)])] mixed=[strlen(A[chr(1488)]B)]).;
+    @log smoke=TC006: strlen GB11 and GB12/13. Failed ([strlen(🇦̈🇦)] [strlen(🇦‍🇦)] [strlen(😀‍‍😀)] [strlen(mid(🇦̈🇦,1,1))] [strlen(mid(😀‍‍😀,1,1))] [strlen(😀‍😀)]).;
     @trig me/tr.done
   }
 -
