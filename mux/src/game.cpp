@@ -2567,8 +2567,45 @@ static void dbconvert(void)
         Log.WriteString(T("Output: "));
         info(F_MUX, db_flags, db_ver);
         setvbuf(fpOut, nullptr, _IOFBF, 16384);
+        atr_enum_failures_reset();
         db_write(fpOut, F_MUX, db_ver | db_flags);
-        fclose(fpOut);
+
+        // #2290: an export that lost data must not exit 0.  Two ways it can,
+        // neither of which db_write() reports: an object whose attributes
+        // could not be enumerated is written as a valid record with none,
+        // and a stream error is only visible through ferror() and fclose().
+        //
+        // The flatfile is kept rather than removed.  It is still the best
+        // available repair -- every other object is intact -- but a backup
+        // script has to be able to tell it apart from a clean one.
+        //
+        bool bIOError = (0 != ferror(fpOut));
+        if (0 != fclose(fpOut))
+        {
+            bIOError = true;
+        }
+
+        const size_t nFailed = atr_enum_failure_count();
+        if (bIOError || 0 < nFailed)
+        {
+            Log.WriteString(T(ENDLINE "Export INCOMPLETE:" ENDLINE));
+            if (bIOError)
+            {
+                Log.tinyprintf(T("  write error on %s; the output is truncated or damaged." ENDLINE),
+                    standalone_outfile);
+            }
+            if (0 < nFailed)
+            {
+                Log.tinyprintf(T("  %u object(s) written with NO attributes because they could not be enumerated:" ENDLINE),
+                    static_cast<unsigned>(nFailed));
+                for (size_t i = 0; i < nFailed; i++)
+                {
+                    Log.tinyprintf(T("    #%d" ENDLINE), atr_enum_failure(i));
+                }
+            }
+            CLOSE;
+            exit(1);
+        }
     }
     CLOSE;
 #ifdef SELFCHECK

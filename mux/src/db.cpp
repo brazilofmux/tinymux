@@ -1773,6 +1773,34 @@ bool Commer(dbref thing)
 
 // Collect attribute numbers for an object from storage.
 //
+// Objects whose attribute enumeration failed (#2290).
+//
+// collect_attrnums_from_storage() hands atr_head() an empty list either way,
+// so to every caller an object it could not read looks exactly like one with
+// no attributes -- and db_write_object() then writes a perfectly valid, empty
+// record.  Keep the distinction here, where it is still known, so an export
+// can report it instead of succeeding.
+//
+// Distinct dbrefs only: on a live game the same damaged object is enumerated
+// again by every @examine, and this must not grow without bound.
+//
+static vector<dbref> g_EnumFailures;
+
+void atr_enum_failures_reset(void)
+{
+    g_EnumFailures.clear();
+}
+
+size_t atr_enum_failure_count(void)
+{
+    return g_EnumFailures.size();
+}
+
+dbref atr_enum_failure(size_t i)
+{
+    return (i < g_EnumFailures.size()) ? g_EnumFailures[i] : NOTHING;
+}
+
 static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
 {
     attrnums.clear();
@@ -1797,6 +1825,10 @@ static void collect_attrnums_from_storage(dbref thing, vector<int>& attrnums)
     {
         Log.tinyprintf(T("collect_attrnums_from_storage: failed to enumerate attrs for #%d" ENDLINE),
             thing);
+        if (find(g_EnumFailures.begin(), g_EnumFailures.end(), thing) == g_EnumFailures.end())
+        {
+            g_EnumFailures.push_back(thing);
+        }
         attrnums.clear();
         return;
     }
