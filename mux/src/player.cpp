@@ -332,10 +332,6 @@ const UTF8 szP6HPrefix[] = "$P6H$";
 #define P6H_PREFIX_LENGTH (sizeof(szP6HPrefix)-1)
 #define P6H_XX_HASH_LENGTH_MAX 40
 
-const UTF8 szP6HPrefix1SHA1[] = "$P6H$$1:sha1:";
-#define P6H_VAHT_1SHA1_PREFIX_LENGTH (sizeof(szP6HPrefix1SHA1)-1)
-#define P6H_VAHT_HASH_LENGTH_MAX (2*SHA1_HASH_LENGTH)
-#define P6H_VAHT_TIMESTAMP_LENGTH_MAX 11
 
 // These are known but passed through as CRYPT_OTHER:
 //
@@ -483,41 +479,159 @@ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
 }
 #endif
 
+// Digest the salt followed by the password with the algorithm PennMUSH named.
+//
+// With OpenSSL, any digest it knows by that name works, which covers a Penn
+// site that compiled a PASSWORD_HASH other than the default sha512.  Without
+// it, only SHA-1 is available, so the Windows build verifies 1:sha1 and
+// 2:sha1 hashes and fails the rest cleanly.
+//
+static bool p6h_vaht_digest(const UTF8 *pAlgo, const UTF8 *pSalt, size_t nSalt,
+    const UTF8 *szPassword, uint8_t *md, unsigned int *pLen)
+{
+    const size_t nPassword = strlen(reinterpret_cast<const char *>(szPassword));
+#ifdef UNIX_DIGEST
+    const EVP_MD *mp = EVP_get_digestbyname(reinterpret_cast<const char *>(pAlgo));
+    if (nullptr == mp)
+    {
+        return false;
+    }
+#if HAVE_EVP_MD_CTX_NEW
+    EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+#else
+    EVP_MD_CTX *ctx = EVP_MD_CTX_create();
+#endif
+    if (nullptr == ctx)
+    {
+        return false;
+    }
+    const bool bOk =  EVP_DigestInit_ex(ctx, mp, nullptr)
+                   && (  0 == nSalt
+                      || EVP_DigestUpdate(ctx, pSalt, nSalt))
+                   && EVP_DigestUpdate(ctx, szPassword, nPassword)
+                   && EVP_DigestFinal_ex(ctx, md, pLen);
+#if HAVE_EVP_MD_CTX_NEW
+    EVP_MD_CTX_free(ctx);
+#else
+    EVP_MD_CTX_destroy(ctx);
+#endif
+    return bOk;
+#else
+    if (mux_stricmp(pAlgo, T("sha1")) != 0)
+    {
+        return false;
+    }
+    const UTF8 *parts[] = { pSalt, szPassword };
+    const size_t lens[] = { nSalt, nPassword };
+    return mux_digest_sha1(parts, lens, 2, md, pLen);
+#endif
+}
+
+// PennMUSH's versioned password format, carried across by Omega as
+//
+//   $P6H$$<version>:<algo>:<field>:<timestamp>
+//
+//   version 1:  field = hex(algo(password))              unsalted
+//   version 2:  field = s1 s2 hex(algo(s1 s2 password))  current; default
+//                                                        algo is sha512
+//
+// See password_hash() and password_comp() in PennMUSH's src/mycrypt.c: the
+// two salt characters are drawn from [a-zA-Z0-9] and stored as the first two
+// characters of the field, and the hex is lowercase.  Before #2292 only
+// 1:sha1 was recognised, so every password from a current Penn database
+// failed whatever the player typed.
+//
+// Like the other types, this returns the setting rebuilt from the candidate
+// password and leaves the decision to check_pass()'s strcmp.  The timestamp
+// is copied, not checked.  A successful login then replaces the Penn hash
+// with a native one, since no CRYPT_P6H_* type is ever in password_methods.
+//
 const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
 {
-    size_t nSetting = strlen(reinterpret_cast<const char *>(szSetting));
-    if (  P6H_VAHT_1SHA1_PREFIX_LENGTH <= nSetting
-       && memcmp(szSetting, szP6HPrefix1SHA1, P6H_VAHT_1SHA1_PREFIX_LENGTH) == 0)
+    // Skip "$P6H$$".
+    //
+    if (szSetting[P6H_PREFIX_LENGTH] != '$')
     {
-        // Calculate SHA-1 Hash.
-        //
-#ifdef UNIX_DIGEST
-        uint8_t md[EVP_MAX_MD_SIZE];
-#else
-        uint8_t md[MUX_SHA1_DIGEST_LENGTH];
-#endif
-        unsigned int len = 0;
-        const UTF8 *parts[] = { szPassword };
-        const size_t lens[] = { strlen(reinterpret_cast<const char *>(szPassword)) };
-        if (mux_digest_sha1(parts, lens, 1, md, &len))
-        {
-            //          1         2         3         4         5         6
-            // 123456789012345678901234567890123456789012345678901234567890123456
-            // $P6H$$1:sha1:hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh:tttttttttttt
-            //
-            static UTF8 buff[LBUF_SIZE];
-            UTF8 *bufc = buff;
-
-            safe_str(szP6HPrefix1SHA1, buff, &bufc);
-            safe_hex(md, len, false, buff, &bufc);
-            safe_chr(':', buff, &bufc);
-            safe_str(szSetting + P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX + 1, buff, &bufc);
-            *bufc = '\0';
-
-            return buff;
-        }
+        return szFail;
     }
-    return szFail;
+    const UTF8 *p = szSetting + P6H_PREFIX_LENGTH + 1;
+
+    // <version>: 1 or 2.
+    //
+    const UTF8 chVersion = *p;
+    if (  ('1' != chVersion && '2' != chVersion)
+       || ':' != p[1])
+    {
+        return szFail;
+    }
+    p += 2;
+
+    // <algo>: word characters, as Penn's own parse requires.
+    //
+    const size_t nAlgoMax = 32;
+    UTF8 aAlgo[nAlgoMax + 1];
+    size_t nAlgo = 0;
+    while (  nAlgo < nAlgoMax
+          && (mux_isalnum(*p) || '_' == *p))
+    {
+        aAlgo[nAlgo++] = *p++;
+    }
+    aAlgo[nAlgo] = '\0';
+    if (  0 == nAlgo
+       || ':' != *p)
+    {
+        return szFail;
+    }
+    p++;
+
+    // <field>: [0-9a-zA-Z]+, then the timestamp.
+    //
+    const UTF8 *pField = p;
+    while (mux_isalnum(*p))
+    {
+        p++;
+    }
+    const size_t nField = p - pField;
+    if (':' != *p)
+    {
+        return szFail;
+    }
+    const UTF8 *pTimestamp = p + 1;
+
+    const size_t nSalt = ('2' == chVersion) ? 2 : 0;
+    if (nField <= nSalt)
+    {
+        return szFail;
+    }
+
+#ifdef UNIX_DIGEST
+    uint8_t md[EVP_MAX_MD_SIZE];
+#else
+    uint8_t md[MUX_SHA1_DIGEST_LENGTH];
+#endif
+    unsigned int len = 0;
+    if (!p6h_vaht_digest(aAlgo, pField, nSalt, szPassword, md, &len))
+    {
+        return szFail;
+    }
+
+    static UTF8 buff[LBUF_SIZE];
+    UTF8 *bufc = buff;
+    safe_str(szP6HPrefix, buff, &bufc);
+    safe_chr('$', buff, &bufc);
+    safe_chr(chVersion, buff, &bufc);
+    safe_chr(':', buff, &bufc);
+    safe_str(aAlgo, buff, &bufc);
+    safe_chr(':', buff, &bufc);
+    if (0 < nSalt)
+    {
+        safe_copy_buf(pField, nSalt, buff, &bufc);
+    }
+    safe_hex(md, len, false, buff, &bufc);
+    safe_chr(':', buff, &bufc);
+    safe_str(pTimestamp, buff, &bufc);
+    *bufc = '\0';
+    return buff;
 }
 
 // There is no longer any support for DES-encrypted passwords on the Windows
