@@ -339,10 +339,6 @@ const UTF8 szP6HPrefix[] = "$P6H$";
 #define P6H_PREFIX_LENGTH (sizeof(szP6HPrefix)-1)
 #define P6H_XX_HASH_LENGTH_MAX 40
 
-const UTF8 szP6HPrefix1SHA1[] = "$P6H$$1:sha1:";
-#define P6H_VAHT_1SHA1_PREFIX_LENGTH (sizeof(szP6HPrefix1SHA1)-1)
-#define P6H_VAHT_HASH_LENGTH_MAX (2*SHA1_HASH_LENGTH)
-#define P6H_VAHT_TIMESTAMP_LENGTH_MAX 11
 
 // These are known but passed through as CRYPT_OTHER:
 //
@@ -522,56 +518,118 @@ const UTF8 *p6h_xx_crypt(const UTF8 *szPassword)
 }
 #endif
 
+// PennMUSH's versioned password format, carried across by Omega as
+//
+//   $P6H$$<version>:<algo>:<field>:<timestamp>
+//
+//   version 1:  field = hex(algo(password))              unsalted
+//   version 2:  field = s1 s2 hex(algo(s1 s2 password))  current; default
+//                                                        algo is sha512
+//
+// See password_hash() and password_comp() in PennMUSH's src/mycrypt.c: the
+// two salt characters are drawn from [a-zA-Z0-9] and stored as the first two
+// characters of the field, and the hex is lowercase.  Before #2292 only
+// 1:sha1 was recognised, so every password from a current Penn database
+// failed whatever the player typed.
+//
+// The value is parsed field by field and every read is bounded by what was
+// actually found, so a truncated or corrupt A_PASS fails closed rather than
+// being read past its end -- the property #1182 added to the fixed-width
+// 1:sha1 parse this replaces.
+//
+// Like the other types, this returns the setting rebuilt from the candidate
+// password and leaves the decision to check_pass()'s strcmp.  The timestamp
+// is copied, not checked.  A successful login then replaces the Penn hash
+// with a native one, since no CRYPT_P6H_* type is ever in password_methods.
+//
+// The digest is looked up by the name Penn stored, through mux_digest(), so
+// a Penn site that compiled a PASSWORD_HASH other than sha512 converts too,
+// on either crypto backend.
+//
 const UTF8 *p6h_vaht_crypt(const UTF8 *szPassword, const UTF8 *szSetting)
 {
-    // Layout is fixed-width up to the timestamp:
+    // Skip "$P6H$$".
     //
-    //   $P6H$$1:sha1:<40 hex digits>:<timestamp>
-    //
-    // The timestamp is copied below from a constant offset past the hash
-    // field, so the entire fixed part must be present before that read is in
-    // bounds.  Checking only the prefix let a truncated or corrupt A_PASS --
-    // anything from "$P6H$$1:sha1:" up to one byte short of the separator --
-    // run safe_str off the end of the attribute value (#1182).  Require the
-    // full layout, including the separator, and fail closed otherwise.
-    //
-    constexpr size_t nP6HVahtFixed =
-        P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX + 1;
-
-    size_t nSetting = strlen(reinterpret_cast<const char *>(szSetting));
-    if (  nP6HVahtFixed <= nSetting
-       && memcmp(szSetting, szP6HPrefix1SHA1, P6H_VAHT_1SHA1_PREFIX_LENGTH) == 0
-       && ':' == szSetting[P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX])
+    if (szSetting[P6H_PREFIX_LENGTH] != '$')
     {
-        // Calculate SHA-1 Hash.
-        //
-#ifdef UNIX_DIGEST
-        uint8_t md[EVP_MAX_MD_SIZE];
-#else
-        uint8_t md[MUX_SHA1_DIGEST_LENGTH];
-#endif
-        unsigned int len = 0;
-        const UTF8 *parts[] = { szPassword };
-        const size_t lens[] = { strlen(reinterpret_cast<const char *>(szPassword)) };
-        if (mux_sha1_digest(parts, lens, 1, md, &len))
-        {
-            //          1         2         3         4         5         6
-            // 123456789012345678901234567890123456789012345678901234567890123456
-            // $P6H$$1:sha1:hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh:tttttttttttt
-            //
-            thread_local UTF8 buff[LBUF_SIZE];
-            UTF8 *bufc = buff;
-
-            safe_str(szP6HPrefix1SHA1, buff, &bufc);
-            safe_hex(md, len, false, buff, &bufc);
-            safe_chr(':', buff, &bufc);
-            safe_str(szSetting + P6H_VAHT_1SHA1_PREFIX_LENGTH + P6H_VAHT_HASH_LENGTH_MAX + 1, buff, &bufc);
-            *bufc = '\0';
-
-            return buff;
-        }
+        return szFail;
     }
-    return szFail;
+    const UTF8 *p = szSetting + P6H_PREFIX_LENGTH + 1;
+
+    // <version>: 1 or 2.
+    //
+    const UTF8 chVersion = *p;
+    if (  ('1' != chVersion && '2' != chVersion)
+       || ':' != p[1])
+    {
+        return szFail;
+    }
+    p += 2;
+
+    // <algo>: word characters, as Penn's own parse requires.
+    //
+    constexpr size_t nAlgoMax = 32;
+    UTF8 aAlgo[nAlgoMax + 1];
+    size_t nAlgo = 0;
+    while (  nAlgo < nAlgoMax
+          && (mux_isalnum(*p) || '_' == *p))
+    {
+        aAlgo[nAlgo++] = *p++;
+    }
+    aAlgo[nAlgo] = '\0';
+    if (  0 == nAlgo
+       || ':' != *p)
+    {
+        return szFail;
+    }
+    p++;
+
+    // <field>: [0-9a-zA-Z]+, then the timestamp.
+    //
+    const UTF8 *pField = p;
+    while (mux_isalnum(*p))
+    {
+        p++;
+    }
+    const size_t nField = static_cast<size_t>(p - pField);
+    if (':' != *p)
+    {
+        return szFail;
+    }
+    const UTF8 *pTimestamp = p + 1;
+
+    const size_t nSalt = ('2' == chVersion) ? 2 : 0;
+    if (nField <= nSalt)
+    {
+        return szFail;
+    }
+
+    uint8_t md[MUX_MAX_DIGEST_LENGTH];
+    unsigned int len = 0;
+    const UTF8 *parts[] = { pField, szPassword };
+    const size_t lens[] = { nSalt, strlen(reinterpret_cast<const char *>(szPassword)) };
+    if (!mux_digest(aAlgo, parts, lens, 2, md, &len))
+    {
+        return szFail;
+    }
+
+    thread_local UTF8 buff[LBUF_SIZE];
+    UTF8 *bufc = buff;
+    safe_str(szP6HPrefix, buff, &bufc);
+    safe_chr('$', buff, &bufc);
+    safe_chr(chVersion, buff, &bufc);
+    safe_chr(':', buff, &bufc);
+    safe_str(aAlgo, buff, &bufc);
+    safe_chr(':', buff, &bufc);
+    if (0 < nSalt)
+    {
+        safe_copy_buf(pField, nSalt, buff, &bufc);
+    }
+    safe_hex(md, len, false, buff, &bufc);
+    safe_chr(':', buff, &bufc);
+    safe_str(pTimestamp, buff, &bufc);
+    *bufc = '\0';
+    return buff;
 }
 
 // There is no longer any support for DES-encrypted passwords on the Windows
