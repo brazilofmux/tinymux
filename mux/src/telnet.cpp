@@ -707,7 +707,11 @@ void process_input_helper(DESC *d, char *pBytes, int nBytes)
                 auto iOffset = cl_print_sot[d->raw_codepoint_state];
                 for (;;)
                 {
-                    int y = static_cast<char>(cl_print_sbt[iOffset]);
+                    // signed char, not char: COPY phrases are negative
+                    // lengths, and char is unsigned on Linux aarch64
+                    // (#2298).
+                    //
+                    int y = static_cast<signed char>(cl_print_sbt[iOffset]);
                     if (0 < y)
                     {
                         // RUN phrase.
