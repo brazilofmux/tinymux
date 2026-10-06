@@ -300,11 +300,39 @@
 &tr.tc020 test_comsys_fn=
   @if strmatch(setr(0, comtitle(Comsys_Outsider,cstest)), #-1 OBJECT NOT ON THAT CHANNEL)=
   {
-    @log smoke=TC020: comtitle rejects a non-member. Succeeded.;
+    @log smoke=TC020: comtitle rejects a non-member. Succeeded.
+  },
+  {
+    @log smoke=TC020: comtitle rejects a non-member. Failed (got=%q0).
+  }
+-
+#
+# Test Case #21 - @cboot drops the victim's alias along with its membership.
+#
+# #2295: @cboot used to remove the victim from the member list but keep its
+# alias, which then pointed at a channel the victim was not on.  addcom saw
+# the alias, refused it as a duplicate and returned before the join, so the
+# victim could not get back on without a delcom first.
+#
+# Asserts all three states: after the boot the victim is neither a member nor
+# holding an alias (%qb), and a plain addcom then puts it back (member and
+# alias).  The stale-alias rejoin itself is covered by test-comsys-handoff,
+# which can build that state directly; @cboot no longer can.
+#
+&tr.tc021 test_comsys_fn=
+  @ccreate csstale;
+  @cset/public csstale=on;
+  addcom cst=csstale;
+  @cboot/quiet csstale=me;
+  think setq(b,[t(member(cwho(csstale,all),num(me)))]:[comalias(me,csstale)]);
+  addcom cst=csstale;
+  @if strmatch(%qb/[t(member(cwho(csstale,all),num(me)))]:[comalias(me,csstale)], 0:#-1 OBJECT NOT ON THAT CHANNEL/1:cst)=
+  {
+    @log smoke=TC021: @cboot drops the alias, addcom re-joins. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC020: comtitle rejects a non-member. Failed (got=%q0).;
+    @log smoke=TC021: @cboot drops the alias, addcom re-joins. Failed (after boot=%qb, after addcom=[t(member(cwho(csstale,all),num(me)))]:[comalias(me,csstale)]).;
     @trig me/tr.done
   }
 -

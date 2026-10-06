@@ -121,6 +121,25 @@ static void sqlite_wt_delete_player_channel(int who, const UTF8 *alias)
 // SQLite DeleteChannel CASCADE clears player_channels rows, but the in-memory
 // comsys_table must be swept or stale aliases survive until restart.
 //
+static void purge_comsys_aliases_for_channel(comsys_t &c, const UTF8 *channel_name)
+{
+    for (auto it = c.aliases.begin(); it != c.aliases.end(); )
+    {
+        if (0 == mux_stricmp(
+                reinterpret_cast<const UTF8 *>(it->channel.c_str()),
+                channel_name))
+        {
+            sqlite_wt_delete_player_channel(c.who,
+                reinterpret_cast<const UTF8 *>(it->alias.c_str()));
+            it = c.aliases.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
 static void purge_aliases_for_channel(const UTF8 *channel_name)
 {
     if (  nullptr == channel_name
@@ -131,22 +150,7 @@ static void purge_aliases_for_channel(const UTF8 *channel_name)
 
     for (auto &kv : comsys_table)
     {
-        comsys_t &c = kv.second;
-        for (auto it = c.aliases.begin(); it != c.aliases.end(); )
-        {
-            if (0 == mux_stricmp(
-                    reinterpret_cast<const UTF8 *>(it->channel.c_str()),
-                    channel_name))
-            {
-                sqlite_wt_delete_player_channel(c.who,
-                    reinterpret_cast<const UTF8 *>(it->alias.c_str()));
-                it = c.aliases.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
-        }
+        purge_comsys_aliases_for_channel(kv.second, channel_name);
     }
 }
 
@@ -2607,24 +2611,39 @@ void do_addcom
         return;
     }
     comsys_t* c = get_comsys(executor);
-    if (static_cast<int>(c->aliases.size()) >= MAX_ALIASES_PER_PLAYER)
-    {
-        raw_notify(executor, M_("Sorry, but you have reached the maximum number of aliases allowed."));
-        return;
-    }
 
-    // Check if alias already exists.
+    // Check if alias already exists.  This runs before the alias cap because
+    // a re-add of an existing alias does not consume a slot.
     //
     string sAlias(reinterpret_cast<const char *>(pValidAlias));
     for (const auto &ca : c->aliases)
     {
         if (ca.alias == sAlias)
         {
+            // #2295: the alias already maps to this channel, but the
+            // executor is not a member (e.g., @cboot, or an alias that went
+            // stale under 2.13's @cdestroy).  Refusing would leave the alias
+            // unrecoverable except by delcom, so finish the join instead.
+            //
+            if (  select_channel(reinterpret_cast<const UTF8 *>(ca.channel.c_str())) == ch
+               && !select_user(ch, executor))
+            {
+                do_joinchannel(executor, ch);
+                raw_notify(executor, tprintf(M_("Channel %s added with alias %s."), channel, pValidAlias));
+                return;
+            }
+
             const UTF8* p = tprintf(M_("That alias is already in use for channel %s."),
                 reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
             raw_notify(executor, p);
             return;
         }
+    }
+
+    if (static_cast<int>(c->aliases.size()) >= MAX_ALIASES_PER_PLAYER)
+    {
+        raw_notify(executor, M_("Sorry, but you have reached the maximum number of aliases allowed."));
+        return;
     }
 
     com_alias newAlias;
@@ -4149,6 +4168,11 @@ void do_chboot
     {
         do_delcomchannel(thing, channel, true);
     }
+
+    // #2295: a boot that kept the victim's aliases left them pointing at a
+    // channel the victim was no longer on.
+    //
+    purge_comsys_aliases_for_channel(*get_comsys(thing), ch->name);
 }
 
 // Process a channel header set request.
