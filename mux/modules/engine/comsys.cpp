@@ -121,6 +121,25 @@ static void sqlite_wt_delete_player_channel(int who, const UTF8 *alias)
 // SQLite DeleteChannel CASCADE clears player_channels rows, but the in-memory
 // comsys_table must be swept or stale aliases survive until restart.
 //
+static void purge_comsys_aliases_for_channel(comsys_t &c, const UTF8 *channel_name)
+{
+    for (auto it = c.aliases.begin(); it != c.aliases.end(); )
+    {
+        if (0 == mux_stricmp(
+                reinterpret_cast<const UTF8 *>(it->channel.c_str()),
+                channel_name))
+        {
+            sqlite_wt_delete_player_channel(c.who,
+                reinterpret_cast<const UTF8 *>(it->alias.c_str()));
+            it = c.aliases.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
 static void purge_aliases_for_channel(const UTF8 *channel_name)
 {
     if (  nullptr == channel_name
@@ -131,22 +150,7 @@ static void purge_aliases_for_channel(const UTF8 *channel_name)
 
     for (auto &kv : comsys_table)
     {
-        comsys_t &c = kv.second;
-        for (auto it = c.aliases.begin(); it != c.aliases.end(); )
-        {
-            if (0 == mux_stricmp(
-                    reinterpret_cast<const UTF8 *>(it->channel.c_str()),
-                    channel_name))
-            {
-                sqlite_wt_delete_player_channel(c.who,
-                    reinterpret_cast<const UTF8 *>(it->alias.c_str()));
-                it = c.aliases.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
-        }
+        purge_comsys_aliases_for_channel(kv.second, channel_name);
     }
 }
 
@@ -4164,6 +4168,11 @@ void do_chboot
     {
         do_delcomchannel(thing, channel, true);
     }
+
+    // #2295: a boot that kept the victim's aliases left them pointing at a
+    // channel the victim was no longer on.
+    //
+    purge_comsys_aliases_for_channel(*get_comsys(thing), ch->name);
 }
 
 // Process a channel header set request.

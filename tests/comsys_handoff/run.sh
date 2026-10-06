@@ -238,6 +238,56 @@ case "$(val H3)" in
 esac
 
 # ---------------------------------------------------------------------------
+# #2295 -- addcom must re-join through an alias that outlived its membership.
+#
+# A 2.13 database can carry that state in: 2.13's @cdestroy left aliases
+# behind, and @cboot dropped the member but kept the alias until #2295.
+# addcom used to see the alias, refuse it as a duplicate and return before
+# the join, so the only way back was delcom then addcom.  Nothing in 2.14 can
+# produce the state any more, so it is built here by deleting the membership
+# row underneath a run -- the shape such a database loads as.
+#
+# PRE is asserted first: if the loader ever starts discarding an alias with
+# no membership, the state is no longer being built and the rejoin case
+# would pass without exercising anything.
+# ---------------------------------------------------------------------------
+for impl in engine module; do
+    # One alias per implementation: the database persists across runs, and
+    # a shared alias would make the second iteration collide with the first.
+    chan="stale_$impl"
+    alias="s${impl:0:1}"
+    run_as "$impl" "@ccreate $chan
+addcom $alias=$chan"
+
+    sqldb=$(ls "$WORK"/data/*.sqlite 2>/dev/null | head -1)
+    if [ -z "$sqldb" ]; then
+        nope "$impl: find the SQLite database to build stale state" \
+             "no *.sqlite under $WORK/data"
+        continue
+    fi
+    python3 - "$sqldb" "$chan" <<'PY'
+import sqlite3, sys
+db = sqlite3.connect(sys.argv[1])
+db.execute("DELETE FROM channel_users WHERE channel_name = ? AND who = 1",
+           (sys.argv[2],))
+db.commit()
+PY
+
+    run_as "$impl" "think PRE=[t(member(cwho($chan,all),#1))]:[comalias(#1,$chan)]
+addcom $alias=$chan
+think POST=[t(member(cwho($chan,all),#1))]:[comalias(#1,$chan)]"
+
+    [ "$(val PRE)" = "0:$alias" ] \
+        && ok "$impl: loads an alias without its membership (#2295 precondition)" \
+        || nope "$impl: loads an alias without its membership (#2295 precondition)" \
+                "PRE=$(val PRE), expected 0:$alias"
+    [ "$(val POST)" = "1:$alias" ] \
+        && ok "$impl: addcom re-joins through the stale alias (#2295)" \
+        || nope "$impl: addcom re-joins through the stale alias (#2295)" \
+                "POST=$(val POST), expected 1:$alias"
+done
+
+# ---------------------------------------------------------------------------
 # NOT COVERED HERE: the MOGRIFY hooks and per-player CHATFORMAT (#1572).
 #
 # The implementation is verified -- tests/comsys_mogrify/run.sh drives both

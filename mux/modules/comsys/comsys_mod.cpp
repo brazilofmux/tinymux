@@ -3856,6 +3856,24 @@ MUX_RESULT CComsysMod::CBoot(dbref executor, const UTF8 *pChannel,
     // Remove victim from channel.
     //
     do_delcomchannel(thing, ch->name, (key & CBOOT_QUIET) != 0);
+
+    // #2295: a boot that kept the victim's aliases left them pointing at a
+    // channel the victim was no longer on.
+    //
+    comsys_t &c = get_comsys(thing);
+    for (auto ait = c.aliases.begin(); ait != c.aliases.end(); )
+    {
+        if (select_channel(reinterpret_cast<const UTF8 *>(ait->channel.c_str())) == ch)
+        {
+            sqlite_wt_delete_player_channel(thing,
+                reinterpret_cast<const UTF8 *>(ait->alias.c_str()));
+            ait = c.aliases.erase(ait);
+        }
+        else
+        {
+            ++ait;
+        }
+    }
     return MUX_S_OK;
 }
 

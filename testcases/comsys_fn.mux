@@ -307,31 +307,32 @@
   }
 -
 #
-# Test Case #21 - addcom re-joins through an alias the member list forgot.
+# Test Case #21 - @cboot drops the victim's alias along with its membership.
 #
-# #2295: @cboot removes the victim from the channel's member list but leaves
-# its alias, and 2.13's @cdestroy left aliases behind the same way.  addcom
-# used to see the alias, refuse it as a duplicate, and return before the
-# join -- so repeating the addcom could never recover.
+# #2295: @cboot used to remove the victim from the member list but keep its
+# alias, which then pointed at a channel the victim was not on.  addcom saw
+# the alias, refused it as a duplicate and returned before the join, so the
+# victim could not get back on without a delcom first.
 #
-# The boot is checked too (%qb): if @cboot ever starts removing the alias or
-# stops removing the member, the stale state is no longer being built and
-# the case would pass without exercising anything.
+# Asserts all three states: after the boot the victim is neither a member nor
+# holding an alias (%qb), and a plain addcom then puts it back (member and
+# alias).  The stale-alias rejoin itself is covered by test-comsys-handoff,
+# which can build that state directly; @cboot no longer can.
 #
 &tr.tc021 test_comsys_fn=
   @ccreate csstale;
   @cset/public csstale=on;
   addcom cst=csstale;
   @cboot/quiet csstale=me;
-  think setq(b,[member(cwho(csstale,all),num(me))]:[comalias(me,csstale)]);
+  think setq(b,[t(member(cwho(csstale,all),num(me)))]:[comalias(me,csstale)]);
   addcom cst=csstale;
-  @if strmatch(%qb:[member(cwho(csstale,all),num(me))], 0:cst:1)=
+  @if strmatch(%qb/[t(member(cwho(csstale,all),num(me)))]:[comalias(me,csstale)], 0:#-1 OBJECT NOT ON THAT CHANNEL/1:cst)=
   {
-    @log smoke=TC021: addcom re-joins through a stale alias. Succeeded.;
+    @log smoke=TC021: @cboot drops the alias, addcom re-joins. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC021: addcom re-joins through a stale alias. Failed (after boot=%qb, after addcom member=[member(cwho(csstale,all),num(me))]).;
+    @log smoke=TC021: @cboot drops the alias, addcom re-joins. Failed (after boot=%qb, after addcom=[t(member(cwho(csstale,all),num(me)))]:[comalias(me,csstale)]).;
     @trig me/tr.done
   }
 -
