@@ -1,0 +1,72 @@
+#
+# comsys_fn.mux - #2295.  addcom must re-join through an alias whose
+# membership is gone, and @cboot must not leave that alias behind.
+#
+@create test_comsys_fn
+-
+@set test_comsys_fn=INHERIT QUIET
+-
+#
+# Beginning of Test Cases
+#
+&tr.tc000 test_comsys_fn=
+  @log smoke=Beginning comsys test cases.
+-
+#
+# Test Case #1 - @cboot drops the victim's alias along with its membership.
+#
+# The next addcom is a fresh join: the alias was removed, so this does not
+# exercise the stale-alias rejoin.  That is TC002.
+#
+&tr.tc001 test_comsys_fn=
+  @ccreate csboot;
+  @cset/public csboot=on;
+  addcom csb=csboot;
+  @cboot/quiet csboot=me;
+  think setq(b,[member(cwho(csboot,all),num(me))]:[comalias(me,csboot)]);
+  addcom csb=csboot;
+  @if strmatch(%qb/[member(cwho(csboot,all),num(me))]:[comalias(me,csboot)], 0:#-1 OBJECT NOT ON THAT CHANNEL/1:csb)=
+  {
+    @log smoke=TC001: @cboot drops the alias, addcom re-joins. Succeeded.
+  },
+  {
+    @log smoke=TC001: @cboot drops the alias, addcom re-joins. Failed (after boot=%qb, after addcom=[member(cwho(csboot,all),num(me))]:[comalias(me,csboot)]).
+  }
+-
+#
+# Test Case #2 - addcom re-joins through an alias that outlived its channel.
+#
+# @destroy of the channel owner runs do_channelnuke, which frees the channel
+# and does not touch anyone else's aliases.  Recreating the name is the
+# shape a 2.13 database carries after that, and after the older @cdestroy.
+#
+&tr.tc002 test_comsys_fn=
+  @create CSOwner;
+  @ccreate csstale;
+  @cset/public csstale=on;
+  @cchown csstale=CSOwner;
+  addcom cst=csstale;
+  @destroy/instant CSOwner;
+  @ccreate csstale;
+  @cset/public csstale=on;
+  think setq(b,[member(cwho(csstale,all),num(me))]:[comalias(me,csstale)]);
+  addcom cst=csstale;
+  @if strmatch(%qb/[member(cwho(csstale,all),num(me))]:[comalias(me,csstale)], 0:cst/1:cst)=
+  {
+    @log smoke=TC002: addcom re-joins through a stale alias. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC002: addcom re-joins through a stale alias. Failed (before=%qb, after=[member(cwho(csstale,all),num(me))]:[comalias(me,csstale)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_comsys_fn=
+  @log smoke=End comsys test cases.;
+  @notify smoke
+-
+drop test_comsys_fn
+-
+#
+# End of Test Cases
+#

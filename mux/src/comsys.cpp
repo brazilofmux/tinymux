@@ -2402,11 +2402,10 @@ void do_addcom
         return;
     }
     comsys_t* c = get_comsys(executor);
-    if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
-    {
-        raw_notify(executor, tprintf(T("Sorry, but you have reached the maximum number of aliases allowed.")));
-        return;
-    }
+
+    // The duplicate check runs before the alias cap.  Re-joining through an
+    // alias the player already holds does not consume a slot.
+    //
     for (j = 0; j < c->numchannels && (strcmp(reinterpret_cast<char*>(pValidAlias),
                                               reinterpret_cast<char*>(c->alias) + j * ALIAS_SIZE) > 0); j++)
     {
@@ -2414,8 +2413,26 @@ void do_addcom
     if (j < c->numchannels && !strcmp(reinterpret_cast<char*>(pValidAlias),
                                       reinterpret_cast<char*>(c->alias) + j * ALIAS_SIZE))
     {
+        // #2295: the alias already names this channel, but the player is not
+        // a member.  Refusing here is how a stale alias became unrecoverable
+        // except by delcom.
+        //
+        if (  nullptr != c->channels[j]
+           && select_channel(c->channels[j]) == ch
+           && !select_user(ch, executor))
+        {
+            do_joinchannel(executor, ch);
+            raw_notify(executor, tprintf(T("Channel %s added with alias %s."), channel, pValidAlias));
+            return;
+        }
+
         const UTF8* p = tprintf(T("That alias is already in use for channel %s."), c->channels[j]);
         raw_notify(executor, p);
+        return;
+    }
+    if (c->numchannels >= MAX_ALIASES_PER_PLAYER)
+    {
+        raw_notify(executor, tprintf(T("Sorry, but you have reached the maximum number of aliases allowed.")));
         return;
     }
     if (c->numchannels >= c->maxchannels)
@@ -3707,6 +3724,40 @@ void do_chopen
     raw_notify(executor, msg);
 }
 
+// #2295: @cboot removes the membership and must drop the aliases that pointed
+// at it.  An alias left behind makes the next addcom refuse to re-join.
+//
+static void purge_comsys_aliases_for_channel(comsys_t *c, struct channel *ch)
+{
+    if (nullptr == c || nullptr == ch)
+    {
+        return;
+    }
+
+    for (int i = 0; i < c->numchannels; )
+    {
+        if (  nullptr != c->channels[i]
+           && select_channel(c->channels[i]) == ch)
+        {
+            sqlite_wt_delete_player_channel(c->who, c->alias + i * ALIAS_SIZE);
+            MEMFREE(c->channels[i]);
+            c->numchannels--;
+            for (int k = i; k < c->numchannels; k++)
+            {
+                mux_strncpy(c->alias + k * ALIAS_SIZE,
+                            c->alias + (k + 1) * ALIAS_SIZE,
+                            ALIAS_SIZE - 1);
+                c->channels[k] = c->channels[k + 1];
+            }
+            c->channels[c->numchannels] = nullptr;
+        }
+        else
+        {
+            i++;
+        }
+    }
+}
+
 void do_chboot
 (
     const dbref executor,
@@ -3809,6 +3860,8 @@ void do_chboot
     {
         do_delcomchannel(thing, channel, true);
     }
+
+    purge_comsys_aliases_for_channel(get_comsys(thing), ch);
 }
 
 // Process a channel header set request.
