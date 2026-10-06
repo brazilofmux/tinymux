@@ -3972,23 +3972,34 @@ MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
 
     comsys_t &c = get_comsys(executor);
 
-    if (static_cast<int>(c.aliases.size()) >= MAX_ALIASES_PER_PLAYER)
-    {
-        if (nullptr != m_pINotify)
-        {
-            m_pINotify->RawNotify(executor,
-                M_("Sorry, but you have reached the maximum number of "
-                  "aliases allowed."));
-        }
-        return MUX_E_FAIL;
-    }
-
-    // Check for duplicate alias.
+    // Check for duplicate alias.  This runs before the alias cap because a
+    // re-add of an existing alias does not consume a slot.
     //
     for (const auto &ca : c.aliases)
     {
         if (ca.alias == reinterpret_cast<const char *>(pAlias))
         {
+            // #2295: the alias already maps to this channel, but the
+            // executor is not a member (e.g., @cboot, or an alias that went
+            // stale under 2.13's @cdestroy).  Refusing would leave the alias
+            // unrecoverable except by delcom, so finish the join instead.
+            //
+            if (  select_channel(reinterpret_cast<const UTF8 *>(ca.channel.c_str())) == ch
+               && nullptr == select_user(ch, executor))
+            {
+                do_joinchannel(executor, ch);
+                if (nullptr != m_pINotify)
+                {
+                    UTF8 msg[256];
+                    mux_sprintf(msg, sizeof(msg),
+                             M_("Channel %s added with alias %s."),
+                             reinterpret_cast<const char *>(ch->name),
+                             reinterpret_cast<const char *>(pAlias));
+                    m_pINotify->RawNotify(executor, msg);
+                }
+                return MUX_S_OK;
+            }
+
             if (nullptr != m_pINotify)
             {
                 UTF8 msg[256];
@@ -3999,6 +4010,17 @@ MUX_RESULT CComsysMod::AddAlias(dbref executor, const UTF8 *pAlias,
             }
             return MUX_E_FAIL;
         }
+    }
+
+    if (static_cast<int>(c.aliases.size()) >= MAX_ALIASES_PER_PLAYER)
+    {
+        if (nullptr != m_pINotify)
+        {
+            m_pINotify->RawNotify(executor,
+                M_("Sorry, but you have reached the maximum number of "
+                  "aliases allowed."));
+        }
+        return MUX_E_FAIL;
     }
 
     // Append and sort.

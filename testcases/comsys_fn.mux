@@ -300,11 +300,38 @@
 &tr.tc020 test_comsys_fn=
   @if strmatch(setr(0, comtitle(Comsys_Outsider,cstest)), #-1 OBJECT NOT ON THAT CHANNEL)=
   {
-    @log smoke=TC020: comtitle rejects a non-member. Succeeded.;
+    @log smoke=TC020: comtitle rejects a non-member. Succeeded.
+  },
+  {
+    @log smoke=TC020: comtitle rejects a non-member. Failed (got=%q0).
+  }
+-
+#
+# Test Case #21 - addcom re-joins through an alias the member list forgot.
+#
+# #2295: @cboot removes the victim from the channel's member list but leaves
+# its alias, and 2.13's @cdestroy left aliases behind the same way.  addcom
+# used to see the alias, refuse it as a duplicate, and return before the
+# join -- so repeating the addcom could never recover.
+#
+# The boot is checked too (%qb): if @cboot ever starts removing the alias or
+# stops removing the member, the stale state is no longer being built and
+# the case would pass without exercising anything.
+#
+&tr.tc021 test_comsys_fn=
+  @ccreate csstale;
+  @cset/public csstale=on;
+  addcom cst=csstale;
+  @cboot/quiet csstale=me;
+  think setq(b,[member(cwho(csstale,all),num(me))]:[comalias(me,csstale)]);
+  addcom cst=csstale;
+  @if strmatch(%qb:[member(cwho(csstale,all),num(me))], 0:cst:1)=
+  {
+    @log smoke=TC021: addcom re-joins through a stale alias. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC020: comtitle rejects a non-member. Failed (got=%q0).;
+    @log smoke=TC021: addcom re-joins through a stale alias. Failed (after boot=%qb, after addcom member=[member(cwho(csstale,all),num(me))]).;
     @trig me/tr.done
   }
 -

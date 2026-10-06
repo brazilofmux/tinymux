@@ -2607,24 +2607,39 @@ void do_addcom
         return;
     }
     comsys_t* c = get_comsys(executor);
-    if (static_cast<int>(c->aliases.size()) >= MAX_ALIASES_PER_PLAYER)
-    {
-        raw_notify(executor, M_("Sorry, but you have reached the maximum number of aliases allowed."));
-        return;
-    }
 
-    // Check if alias already exists.
+    // Check if alias already exists.  This runs before the alias cap because
+    // a re-add of an existing alias does not consume a slot.
     //
     string sAlias(reinterpret_cast<const char *>(pValidAlias));
     for (const auto &ca : c->aliases)
     {
         if (ca.alias == sAlias)
         {
+            // #2295: the alias already maps to this channel, but the
+            // executor is not a member (e.g., @cboot, or an alias that went
+            // stale under 2.13's @cdestroy).  Refusing would leave the alias
+            // unrecoverable except by delcom, so finish the join instead.
+            //
+            if (  select_channel(reinterpret_cast<const UTF8 *>(ca.channel.c_str())) == ch
+               && !select_user(ch, executor))
+            {
+                do_joinchannel(executor, ch);
+                raw_notify(executor, tprintf(M_("Channel %s added with alias %s."), channel, pValidAlias));
+                return;
+            }
+
             const UTF8* p = tprintf(M_("That alias is already in use for channel %s."),
                 reinterpret_cast<const UTF8 *>(ca.channel.c_str()));
             raw_notify(executor, p);
             return;
         }
+    }
+
+    if (static_cast<int>(c->aliases.size()) >= MAX_ALIASES_PER_PLAYER)
+    {
+        raw_notify(executor, M_("Sorry, but you have reached the maximum number of aliases allowed."));
+        return;
     }
 
     com_alias newAlias;
