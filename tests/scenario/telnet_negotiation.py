@@ -30,6 +30,14 @@
 #          Normal -- in Normal the remaining SB payload is accepted as
 #          typed input and an embedded LF submits it as a command.
 #
+#   #2298  Once a connection is in UTF-8, every input byte runs through
+#          the cl_print state machine, which read its COPY phrase lengths
+#          through a plain `char`.  Where char is unsigned (Linux aarch64)
+#          no length was ever negative, the machine never accepted a byte,
+#          and the connection could not even log in.  Every case above
+#          negotiates and disconnects, so none of them typed a line in
+#          UTF-8 mode; on x86-64 and Apple arm64 this passes either way.
+#
 # Driven by tests/scenario/run.sh.  Usage: telnet_negotiation.py [host] [port]
 
 import socket
@@ -298,6 +306,43 @@ def main():
           "#1811 duplicate WILL TTYPE does not re-SEND",
           " (got %d extra SB(s))" % n_second)
     s.close()
+
+    # ---- #2298: input still works after UTF-8 is negotiated -----------
+    # Both routes into UTF-8: the client answering the server's REQUEST
+    # with ACCEPTED (what Mudlet and upload.tcl do), and the client sending
+    # its own REQUEST.  Each then logs in and round-trips a non-ASCII line,
+    # so a decoder that drops bytes, or accepts them as Latin-1, both fail.
+    #
+    probe = "U8<caf\u00e9\u4e2d>"
+    for route in ("server REQUEST, client ACCEPTED", "client REQUEST"):
+        s, opening = connect()
+        if route.startswith("server"):
+            s.sendall(bytes([IAC, DO, OPT_CHARSET, IAC, WILL, OPT_CHARSET]))
+            buf = read_for(s, lambda b: any(
+                body[:1] == bytes([SB_REQUEST])
+                for body in subnegotiations(b, OPT_CHARSET)), 4.0)
+            offered = [body for body in subnegotiations(buf, OPT_CHARSET)
+                       if body[:1] == bytes([SB_REQUEST])]
+            check(offered != [] and b"UTF-8" in offered[0],
+                  "#2298 server sends CHARSET REQUEST offering UTF-8",
+                  " (got %r)" % offered)
+            s.sendall(bytes([IAC, SB, OPT_CHARSET, SB_ACCEPT]) + b"UTF-8"
+                      + bytes([IAC, SE]))
+        else:
+            verb, name = charset_request(s, ";UTF-8")
+            check(verb == "ACCEPT" and name == "UTF-8",
+                  "#2298 client REQUEST UTF-8 accepted",
+                  " (got %r %r)" % (verb, name))
+        read_for(s, None, 0.5)
+
+        sendline(s, LOGIN)
+        sendline(s, "@pemit me=" + probe)
+        want = probe.encode("utf-8")
+        out = read_for(s, lambda b: want in b, 4.0)
+        check(want in out,
+              "#2298 %s: login and a non-ASCII line survive UTF-8 mode"
+              % route, " (got %r)" % out[-120:])
+        s.close()
 
     print("=== telnet-negotiation scenario: %d passed, %d failed ==="
           % (npass, nfail))
