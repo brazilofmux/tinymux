@@ -35,9 +35,16 @@
 //   Bits 30-16: primary weight (15 bits)
 //   Bits 15-5:  secondary weight (11 bits)
 //   Bits 4-0:   tertiary weight (5 bits)
+//
+// Except an implicit weight's trail CE (UCA 10.1.3): BBBB << 16, with
+// BBBB = (cp & 0x7FFF) | 0x8000 and nothing else set.  Masked to 15 bits
+// like a regular primary, the trail 0x8000 of U+8000, U+18000, U+20000,
+// U+28000 and U+30000 became 0 -- an ignorable -- and those ideographs
+// compared against whatever followed them.  A trail is the only CE with a
+// primary but no secondary or tertiary, so it keeps all 16 bits.
 // ---------------------------------------------------------------------------
 
-#define CE_PRIMARY(w)   (((w) >> 16) & 0x7FFF)
+#define CE_PRIMARY(w)   (((w) >> 16) & ((0 != ((w) & 0xFFFF)) ? 0x7FFF : 0xFFFF))
 #define CE_SECONDARY(w) (((w) >> 5) & 0x07FF)
 #define CE_TERTIARY(w)  ((w) & 0x1F)
 #define CE_VARIABLE(w)  (((w) >> 31) & 1)
