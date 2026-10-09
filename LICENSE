@@ -42,6 +42,16 @@ TinyMUX 1.6 are now released under the OSI-standard Artistic License.
 The files src/pcre.* are derived from PCRE and are distributed under the
 3-clause BSD license; see debian/copyright for those terms.
 
+The Unicode data under utf/ -- the Unicode Character Database and
+Collation Algorithm files there, and TinyMUX's subsets and transforms of
+them -- and the tables generated from that data (mux/include/utf8tables.h,
+mux/lib/utf8tables.cpp, mux/include/unicode_tables_c.h,
+mux/lib/unicode_tables.c, mux/include/ducet_cetable.h and
+mux/rv64/src/unicode_tables.c, which the binaries also compile in) are
+derived from data copyright Unicode, Inc. and are distributed under the
+Unicode License V3.  Its notice is in LICENSE-UNICODE, which every release
+package also carries as mux/LICENSE-UNICODE.
+
 
 Revised TinyMUD copyright:
 --------------------------

@@ -183,6 +183,7 @@ lib/unicode_tables.c
 lib/utf8tables.cpp
 libmux.vcxproj
 libmux.vcxproj.filters
+LICENSE-UNICODE
 LOCAL.md
 lua54/lapi.c
 lua54/lapi.h

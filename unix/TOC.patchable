@@ -199,6 +199,7 @@ lib/utf8_grapheme.cpp
 lib/utf8_normalize.cpp
 lib/unicode_tables.c
 lib/utf8tables.cpp
+LICENSE-UNICODE
 LOCAL.md
 lua54/lapi.c
 lua54/lapi.h
