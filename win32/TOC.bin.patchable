@@ -36,6 +36,7 @@ game/text/help.txt
 game/text/wizhelp.txt
 include/copyright.h
 INSTALL.md
+LICENSE-UNICODE
 LOCAL.md
 MODULES.md
 NOTES.md
