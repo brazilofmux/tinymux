@@ -1307,6 +1307,24 @@ static void test_collate_contractions()
                                  reinterpret_cast<const UTF8 *>(au2), strlen(au2)), 0);
 }
 
+// An implicit weight's trail 0x8000 -- U+8000, U+20000, U+28000, U+30000 --
+// was masked to 0, an ignorable, so the ideograph's second primary went
+// missing and the next character's primary was compared in its place.
+// Expectations checked against ICU 72 root.
+//
+static void test_collate_implicit_trail()
+{
+    // U+8000 (trail 0x8000) before U+8001 (0x8001), whatever follows.
+    ASSERT_EQ(collate_sign("\xE8\x80\x80" "b", "\xE8\x80\x81" "a"), -1);
+    ASSERT_EQ(collate_key_sign("\xE8\x80\x80" "b", "\xE8\x80\x81" "a"), -1);
+    // U+20000 before U+20001, and before U+21000.
+    ASSERT_EQ(collate_sign("\xF0\xA0\x80\x80" "z", "\xF0\xA0\x80\x81" "a"), -1);
+    ASSERT_EQ(collate_key_sign("\xF0\xA0\x80\x80" "z", "\xF0\xA0\x80\x81" "a"), -1);
+    ASSERT_EQ(collate_sign("\xF0\xA0\x80\x80" "z", "\xF0\xA1\x80\x80" "a"), -1);
+    // A proper prefix still sorts first.
+    ASSERT_EQ(collate_sign("\xE8\x80\x80", "\xE8\x80\x80" "a"), -1);
+}
+
 
 // ---------------------------------------------------------------------------
 // Module transport protocol fault (#2244 -- the branch that ran in #2238)
@@ -1591,6 +1609,7 @@ int main()
     printf("\n--- collation NFC tiebreak (libutf d19d65e) ---\n");
     RUN_TEST(test_collate_nfc_tiebreak_equivalence);
     RUN_TEST(test_collate_contractions);
+    RUN_TEST(test_collate_implicit_trail);
 
     printf("\n--- module transport protocol fault (#2244) ---\n");
     RUN_TEST(test_pipe_channel_invalid_rejected_at_both_ends);
