@@ -100,11 +100,27 @@
 &tr.tc005 test_sort_fn=
   @if eq(comp(sort(L[chr(183)] L! La),L[chr(183)] L! La,a),0)=
   {
-    @log smoke=TC005: sort DUCET contraction. Succeeded.;
+    @log smoke=TC005: sort DUCET contraction. Succeeded.
+  },
+  {
+    @log smoke=TC005: sort DUCET contraction. Failed ([sort(L[chr(183)] L! La)]).
+  }
+-
+#
+# Test Case #6 - sort keys keep an implicit weight's 0x8000 trail.
+#
+# U+8000 sorts before U+8001 whatever follows it (UCA code-point order for
+# Han).  The old key dropped U+8000's trail and compared "b" against
+# U+8001's trail instead, putting it second.
+#
+&tr.tc006 test_sort_fn=
+  @if eq(comp(sort([chr(32769)]a [chr(32768)]b),[chr(32768)]b [chr(32769)]a,a),0)=
+  {
+    @log smoke=TC006: sort implicit trail. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: sort DUCET contraction. Failed ([sort(L[chr(183)] L! La)]).;
+    @log smoke=TC006: sort implicit trail. Failed ([sort([chr(32769)]a [chr(32768)]b)]).;
     @trig me/tr.done
   }
 -

@@ -71,11 +71,35 @@
         eq(comp([chr(4018)][chr(3953)][chr(3968)],[chr(4018)][chr(3968)]),1)
       )=
   {
-    @log smoke=TC003: comp DUCET contractions. Succeeded.;
+    @log smoke=TC003: comp DUCET contractions. Succeeded.
+  },
+  {
+    @log smoke=TC003: comp DUCET contractions. Failed ([comp(L[chr(183)],L!)] [comp(l[chr(183)]a,la)] [comp(col[chr(183)]lecci[chr(243)],colla)] [comp([chr(4018)][chr(3953)][chr(3968)],[chr(4018)][chr(3968)])]).
+  }
+-
+#
+# Test Case #4 - implicit weights whose trail is 0x8000.
+#
+# An ideograph's second collation element is (cp & 0x7FFF) | 0x8000, and
+# the 15-bit primary mask turned it into 0 -- an ignorable -- for U+8000,
+# U+18000, U+20000, U+28000 and U+30000.  Those then compared against
+# whatever followed them.  Expected values follow UCA's code-point order
+# for Han (DUCET), not ICU, whose root collation orders Han by radical and
+# stroke.  The last line, a proper prefix, guards the fix itself.
+#
+&tr.tc004 test_comp_fn=
+  @if cand(
+        eq(comp([chr(32768)]b,[chr(32769)]a),-1),
+        eq(comp([chr(131072)]z,[chr(131073)]a),-1),
+        eq(comp([chr(131072)]z,[chr(135168)]a),-1),
+        eq(comp([chr(32768)],[chr(32768)]a),-1)
+      )=
+  {
+    @log smoke=TC004: comp implicit trail. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC003: comp DUCET contractions. Failed ([comp(L[chr(183)],L!)] [comp(l[chr(183)]a,la)] [comp(col[chr(183)]lecci[chr(243)],colla)] [comp([chr(4018)][chr(3953)][chr(3968)],[chr(4018)][chr(3968)])]).;
+    @log smoke=TC004: comp implicit trail. Failed ([comp([chr(32768)]b,[chr(32769)]a)] [comp([chr(131072)]z,[chr(131073)]a)] [comp([chr(131072)]z,[chr(135168)]a)] [comp([chr(32768)],[chr(32768)]a)]).;
     @trig me/tr.done
   }
 -
