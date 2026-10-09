@@ -47,11 +47,35 @@
         FB1D36F760525763E048979F5DEDBE0D6F280FF3
       )=
   {
-    @log smoke=TC002: comp Unicode. Succeeded.;
+    @log smoke=TC002: comp Unicode. Succeeded.
+  },
+  {
+    @log smoke=TC002: comp Unicode. Failed (%q0).
+  }
+-
+#
+# Test Case #3 - DUCET contractions: l/L with a middle dot, and three code points.
+#
+# DUCET contracts l and L with U+00B7, so the dot acts as an accent on the
+# l (Catalan "ela geminada", col.lecci\u00f3) rather than as punctuation.
+# The ASCII fast path used to assume nothing contracts with an ASCII
+# letter, so "L." sorted after "L!".  The last line is a three-code-point
+# contraction (Tibetan U+0FB2 U+0F71 U+0F80), whose table was generated but
+# never read.  Expected values are ICU root's.
+#
+&tr.tc003 test_comp_fn=
+  @if cand(
+        eq(comp(L[chr(183)],L!),-1),
+        eq(comp(l[chr(183)]a,la),1),
+        eq(comp(col[chr(183)]lecci[chr(243)],colla),1),
+        eq(comp([chr(4018)][chr(3953)][chr(3968)],[chr(4018)][chr(3968)]),1)
+      )=
+  {
+    @log smoke=TC003: comp DUCET contractions. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC002: comp Unicode. Failed (%q0).;
+    @log smoke=TC003: comp DUCET contractions. Failed ([comp(L[chr(183)],L!)] [comp(l[chr(183)]a,la)] [comp(col[chr(183)]lecci[chr(243)],colla)] [comp([chr(4018)][chr(3953)][chr(3968)],[chr(4018)][chr(3968)])]).;
     @trig me/tr.done
   }
 -
