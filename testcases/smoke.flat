@@ -1072,7 +1072,9 @@
 >258
 "@log smoke=End comp() test cases.;@notify smoke"
 >259
-"@if strmatch(setr(0,sha1([comp(chr(233),chr(101 769))][comp(chr(233),chr(252))][comp(chr(65296),chr(65296))])),FB1D36F760525763E048979F5DEDBE0D6F280FF3)={@log smoke=TC002: comp Unicode. Succeeded.;@trig me/tr.done},{@log smoke=TC002: comp Unicode. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([comp(chr(233),chr(101 769))][comp(chr(233),chr(252))][comp(chr(65296),chr(65296))])),FB1D36F760525763E048979F5DEDBE0D6F280FF3)={@log smoke=TC002: comp Unicode. Succeeded.},{@log smoke=TC002: comp Unicode. Failed (%q0).}"
+>260
+"@if cand(eq(comp(L[chr(183)],L!),-1),eq(comp(l[chr(183)]a,la),1),eq(comp(col[chr(183)]lecci[chr(243)],colla),1),eq(comp([chr(4018)][chr(3953)][chr(3968)],[chr(4018)][chr(3968)]),1))={@log smoke=TC003: comp DUCET contractions. Succeeded.;@trig me/tr.done},{@log smoke=TC003: comp DUCET contractions. Failed ([comp(L[chr(183)],L!)] [comp(l[chr(183)]a,la)] [comp(col[chr(183)]lecci[chr(243)],colla)] [comp([chr(4018)][chr(3953)][chr(3968)],[chr(4018)][chr(3968)])]).;@trig me/tr.done}"
 <
 !36
 "test_comsys_fn"
@@ -4376,7 +4378,9 @@
 >260
 "@if strmatch(setr(0,sha1([sort(f [chr(233)] a d [chr(232)] b)])),9F207825A8D1AC79FE86F43772C4B70952CC53D0)={@log smoke=TC003: sort ASCII and accented mix. Succeeded.},{@log smoke=TC003: sort ASCII and accented mix. Failed (%q0).}"
 >261
-"@if strmatch(setr(0,sha1([sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)])])),73FF5FDF8DAE86FC0DB756FA38C021BC87501FD3)={@log smoke=TC004: sort fullwidth digits. Succeeded.;@trig me/tr.done},{@log smoke=TC004: sort fullwidth digits. Failed (%q0).;@trig me/tr.done}"
+"@if strmatch(setr(0,sha1([sort([chr(65298)] [chr(65296)] [chr(65300)] [chr(65297)] [chr(65299)])])),73FF5FDF8DAE86FC0DB756FA38C021BC87501FD3)={@log smoke=TC004: sort fullwidth digits. Succeeded.},{@log smoke=TC004: sort fullwidth digits. Failed (%q0).}"
+>262
+"@if eq(comp(sort(L[chr(183)] L! La),L[chr(183)] L! La,a),0)={@log smoke=TC005: sort DUCET contraction. Succeeded.;@trig me/tr.done},{@log smoke=TC005: sort DUCET contraction. Failed ([sort(L[chr(183)] L! La)]).;@trig me/tr.done}"
 <
 !148
 "test_space_fn"
