@@ -132,6 +132,7 @@ extern "C" size_t Pipe_QueueLength(QUEUE_INFO *pqi);
 // collation (utf8_collate.cpp)
 int    mux_collate_cmp(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
 size_t mux_collate_sortkey(const UTF8 *src, size_t nSrc, UTF8 *key, size_t nKeyMax);
+int    mux_collate_cmp_ci(const UTF8 *a, size_t nA, const UTF8 *b, size_t nB);
 extern "C" MUX_RESULT Pipe_SendCallPacketAndWait(uint32_t nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT Pipe_SendMsgPacket(uint32_t nChannel, QUEUE_INFO *pqi);
 extern "C" MUX_RESULT Pipe_SendDiscPacket(uint32_t nChannel, QUEUE_INFO *pqi);
@@ -1241,6 +1242,71 @@ static void test_collate_nfc_tiebreak_equivalence()
     ASSERT_EQ(memcmp(keyA, keyB, nA), 0);
 }
 
+// Contractions were skipped two ways.  ExtractCEs and the Latin fast paths
+// assumed ASCII starts no contraction, but DUCET contracts l and L with a
+// middle dot (U+00B7, or U+0387) for Catalan's ela geminada, so the dot
+// weighed in as a punctuation primary instead of an accent on l.  And the
+// three-code-point contractions in ducet_contract3 were never looked up.
+// Expectations were checked against ICU 72 root, except Gurung Khema and
+// Kirat Rai (Unicode 16, newer than ICU 72), which follow allkeys.txt.
+//
+static int collate_sign(const char *a, const char *b)
+{
+    int c = mux_collate_cmp(reinterpret_cast<const UTF8 *>(a), strlen(a),
+                            reinterpret_cast<const UTF8 *>(b), strlen(b));
+    return (c > 0) - (c < 0);
+}
+
+static int collate_key_sign(const char *a, const char *b)
+{
+    UTF8 ka[256], kb[256];
+    size_t na = mux_collate_sortkey(reinterpret_cast<const UTF8 *>(a), strlen(a), ka, sizeof(ka));
+    size_t nb = mux_collate_sortkey(reinterpret_cast<const UTF8 *>(b), strlen(b), kb, sizeof(kb));
+    int c = memcmp(ka, kb, na < nb ? na : nb);
+    if (0 == c)
+    {
+        c = (na > nb) - (na < nb);
+    }
+    return (c > 0) - (c < 0);
+}
+
+static void test_collate_contractions()
+{
+    // "L!" sorts after "L" + U+00B7: the dot is now an accent, not a
+    // primary below '!'.  Fast path, then -- behind a Tibetan letter, which
+    // no Latin path takes -- the full path; comparator and sort key both.
+    ASSERT_EQ(collate_sign("L\xC2\xB7", "L!"), -1);
+    ASSERT_EQ(collate_key_sign("L\xC2\xB7", "L!"), -1);
+    ASSERT_EQ(collate_sign("\xE0\xBD\x80L\xC2\xB7", "\xE0\xBD\x80L!"), -1);
+    ASSERT_EQ(collate_key_sign("\xE0\xBD\x80L\xC2\xB7", "\xE0\xBD\x80L!"), -1);
+    ASSERT_EQ(collate_sign("l\xCE\x87", "l!"), -1);       // U+0387 too
+
+    // l + U+00B7 has exactly l's primary.
+    UTF8 key[64], keyL[64];
+    size_t n  = mux_collate_sortkey(reinterpret_cast<const UTF8 *>("l\xC2\xB7"), 3, key, sizeof(key));
+    size_t nL = mux_collate_sortkey(reinterpret_cast<const UTF8 *>("l"), 1, keyL, sizeof(keyL));
+    ASSERT_TRUE(n >= 4 && nL >= 2);
+    ASSERT_EQ(memcmp(key, keyL, 2), 0);
+    ASSERT_EQ(key[2], 0);
+    ASSERT_EQ(key[3], 0);
+
+    // TIBETAN VOWEL SIGN VOCALIC RR (0FB2 0F71 0F80) sorts after 0FB3.
+    ASSERT_EQ(collate_sign("a\xE0\xBE\xB2\xE0\xBD\xB1\xE0\xBE\x80", "a\xE0\xBE\xB3"), 1);
+    ASSERT_EQ(collate_key_sign("a\xE0\xBE\xB2\xE0\xBD\xB1\xE0\xBE\x80", "a\xE0\xBE\xB3"), 1);
+
+    // GURUNG KHEMA VOWEL SIGN O (1611E 1611E 1611F) after AI (1611E 16120);
+    // split, it was U then I.
+    ASSERT_EQ(collate_sign("\xF0\x96\x84\x9E\xF0\x96\x84\x9E\xF0\x96\x84\x9F",
+                           "\xF0\x96\x84\x9E\xF0\x96\x84\xA0"), 1);
+
+    // KIRAT RAI VOWEL SIGN AU two ways -- 16D63 16D67 16D67 and its
+    // canonical equivalent 16D63 16D68 -- share one CE.
+    const char *au3 = "\xF0\x96\xB5\xA3\xF0\x96\xB5\xA7\xF0\x96\xB5\xA7";
+    const char *au2 = "\xF0\x96\xB5\xA3\xF0\x96\xB5\xA8";
+    ASSERT_EQ(mux_collate_cmp_ci(reinterpret_cast<const UTF8 *>(au3), strlen(au3),
+                                 reinterpret_cast<const UTF8 *>(au2), strlen(au2)), 0);
+}
+
 
 // ---------------------------------------------------------------------------
 // Module transport protocol fault (#2244 -- the branch that ran in #2238)
@@ -1524,6 +1590,7 @@ int main()
 
     printf("\n--- collation NFC tiebreak (libutf d19d65e) ---\n");
     RUN_TEST(test_collate_nfc_tiebreak_equivalence);
+    RUN_TEST(test_collate_contractions);
 
     printf("\n--- module transport protocol fault (#2244) ---\n");
     RUN_TEST(test_pipe_channel_invalid_rejected_at_both_ends);
