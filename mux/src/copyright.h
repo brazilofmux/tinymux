@@ -30,6 +30,11 @@
  *
  * There are also portions of source code derived from PennMUSH 1.50.
  *
+ * The Unicode tables -- src/utf8tables.h, src/utf8tables.cpp and
+ * src/ducet_cetable.h, and the binaries that compile them in -- are
+ * generated from data copyright Unicode, Inc. and are distributed under
+ * the Unicode License V3.  Its notice is in LICENSE-UNICODE.
+ *
  * The TinyMUD copyright follows below.  PennMUSH, TinyMUSH 2.0 and
  * TinyMUX 1.6 are now released under the OSI-standard Artistic License.
  *
