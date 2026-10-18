@@ -906,7 +906,7 @@ static CMDENT_TWO_ARG command_table_two_arg[] =
     {T("comtitle"),     comtitle_sw,CA_NO_SLAVE,                                      0,           CS_TWO_ARG,           0, do_comtitle},
     {T("give"),         give_sw,    CA_LOCATION|CA_NO_GUEST,                          0,           CS_TWO_ARG|CS_INTERP, 0, do_give},
     {T("kill"),         nullptr,    CA_NO_GUEST|CA_NO_SLAVE,                          KILL_KILL,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
-    {T("page"),         page_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP, 0, do_page},
+    {T("page"),         page_sw,    CA_NO_SLAVE,                                      0,           CS_TWO_ARG|CS_INTERP|CS_ARG1_IS_MSG, 0, do_page},
     {T("slay"),         nullptr,    CA_WIZARD,                                        KILL_SLAY,   CS_TWO_ARG|CS_INTERP, 0, do_kill},
     {T("whisper"),      nullptr,    CA_LOCATION|CA_NO_SLAVE,                          PEMIT_WHISPER, CS_TWO_ARG|CS_INTERP, 0, do_pemit},
     {T("&"),            nullptr,    CA_NO_GUEST|CA_NO_SLAVE|CF_DARK,                  0,           CS_TWO_ARG|CS_LEADIN, 0, do_setvattr},
@@ -1798,8 +1798,24 @@ static void process_cmdent(CMDENT *cmdp, UTF8 *switchp, dbref executor, dbref ca
             *arg = '\0';
         }
         buf1 = bp = alloc_lbuf("process_cmdent.2");
-        mux_exec(buf2, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
-            eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL|EV_TOP, cargs, ncargs);
+        if (  1 == nargs2
+           && (cmdp->callseq & CS_ARG1_IS_MSG)
+           && !(interp & EV_EVAL))
+        {
+            // #2310: with no '=', page's lone argument is the message, so
+            // /noeval must leave it as typed -- the same treatment ARG2
+            // gets below.  ARG1 is otherwise always evaluated, because for
+            // most commands it names a target.
+            //
+            UTF8 *pLone = buf2;
+            safe_str(parse_to(&pLone, '\0', eval|interp|EV_STRIP_LS|EV_STRIP_TS|EV_TOP),
+                buf1, &bp);
+        }
+        else
+        {
+            mux_exec(buf2, LBUF_SIZE-1, buf1, &bp, executor, caller, enactor,
+                eval|EV_STRIP_CURLY|EV_FCHECK|EV_EVAL|EV_TOP, cargs, ncargs);
+        }
         *bp = '\0';
 
         if (cmdp->callseq & CS_ARGV)
