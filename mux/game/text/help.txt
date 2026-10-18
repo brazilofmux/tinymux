@@ -13044,10 +13044,10 @@ PACK()
 & PAGE
 PAGE
 
-  COMMAND: page[/noeval] <players>=[<prefix>]<message>
-           page[/noeval] =[<prefix>]<message>
-           page[/noeval] [<prefix>]<message>
-           page <players>=
+  COMMAND: page[/<switches>] <players>=[<prefix>]<message>
+           page[/<switches>] =[<prefix>]<message>
+           page[/blind] [<prefix>]<message>
+           page[/blind] <players>=
            page
 
   This command sends <message> to <players>.  The second and third form sends
@@ -13065,10 +13065,21 @@ PAGE
   who are currently on the WHO list.  Any duplicate players from your list are
   removed.
 
-{ 'help page2' for more }
+{ 'help page2' for switches and more }
 
 & PAGE2
 PAGE (continued)
+
+  Switches:
+    /noeval  - Send <message> exactly as you typed it.  Normally the message
+               is evaluated first, so functions like [add(1,2)] and
+               %-substitutions like %n are replaced by their results.  With
+               /noeval they are sent as-is.  Only the forms with an equal
+               sign honor /noeval; to send an unevaluated page to the same
+               players as last time, use 'page/noeval =<message>'.
+    /blind   - When paging several players, each recipient sees the page as
+               if it had been sent to them alone; the list of the other
+               recipients is not shown to them.
 
   Examples:
 
