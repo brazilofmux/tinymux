@@ -263,6 +263,7 @@ extern NAMETAB allow_charset_nametab[];
 #define CS_STRIP_AROUND 0x0400  /* Strip braces around entire string only */
 #define CS_ADDED      0x0800    /* Command has been added by @addcommand */
 #define CS_LEADIN     0x1000    /* Command is a single-letter lead-in */
+#define CS_ARG1_IS_MSG 0x2000   // With CS_TWO_ARG: a lone ARG1 (no '=') is the message, so /noeval governs it (#2310).
 #define CS_NOSQUISH   0x4000    // Do not space-compress.
 
 /* Command permission flags */
