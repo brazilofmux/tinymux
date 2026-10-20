@@ -64,8 +64,14 @@
 #define PRETEND_DYNALIB
 #endif // HAVE_DLOPEN && !MUX_STATIC_MODULES
 #if defined(SSL_ENABLED)
-#define UNIX_SSL
 #define UNIX_DIGEST
+// TLS needs libssl as well as libcrypto.  configure finds both on every
+// ordinary platform; a platform whose OpenSSL-shaped library is digests
+// only (SLOW-32's, over its host's crypto) has HAVE_LIBCRYPTO and not
+// HAVE_LIBSSL, and gets digests without TLS.
+#if defined(HAVE_LIBSSL) || !defined(HAVE_LIBCRYPTO)
+#define UNIX_SSL
+#endif
 #endif // SSL_ENABLED
 
 #endif // WIN32
