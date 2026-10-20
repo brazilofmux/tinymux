@@ -1,0 +1,118 @@
+#!/bin/bash
+# Build muxscript.s32x and netmux.s32x: TinyMUX's static build
+# (../Makefile) for SLOW-32, the CPU in ~/slow-32 (SLOW32_ROOT).
+#
+# The sources are copied to $OUT/tree first, with autoconf.h (beside this
+# script) in place of configure's: headers in include/ find a quoted
+# "autoconf.h" beside themselves, so the native build's would leak in.
+# Then one object per source, a partial link per module as ../Makefile
+# makes them (s32-ld -r --localize-hidden --redefine-sym), and the two
+# final links.  Needs clang/llc with the SLOW32 backend, libc++ built for
+# it (scripts/build-libcxx.sh) and PCRE2 (slow-32/pcre2/build.sh).
+#
+#   OUT=/some/dir mux/static/slow32/build.sh
+set -u
+HERE=$(cd "$(dirname "$0")" && pwd)
+SRC=$(cd "$HERE/../.." && pwd)                 # mux/
+OUT=${OUT:-$HERE/out}
+B=$OUT
+mkdir -p "$OUT"
+M=$OUT/tree/mux
+rsync -a --delete --exclude '*.o' --exclude '*.so' --exclude '*.a' --exclude '*.eo' --exclude '*.lo' \
+    --exclude 'static/slow32/out' "$SRC/" "$M/"
+cp "$HERE/autoconf.h" "$M/include/autoconf.h"
+O=$B/obj
+R=${SLOW32_ROOT:-$HOME/slow-32}
+LLVM=${LLVM_BIN:-$HOME/llvm-project/build/bin}
+CXXR=${LIBCXX:-$HOME/llvm-project/build-slow32-libcxx/install}
+AS=$R/tools/assembler/slow32asm
+LD=$R/tools/linker/s32-ld
+P2=$R/pcre2/out
+INC="-I$M/include -I$M/modules -I$M/announce -I$M/ganl/include -I$M/sqlite -I$M/lua54 -I$M/src -I$P2"
+RTI="-isystem $R/runtime/include"
+COMMON="-target slow32-unknown-none -O2"
+CXXF="$COMMON -std=c++17 -nostdinc++ -isystem $CXXR/include/c++/v1 $RTI -fexceptions -frtti -funwind-tables"
+CF="$COMMON $RTI"
+FEAT="-DSSL_ENABLED -DMUX_NO_THREADS -DMUX_STATIC_MODULES -DPCRE2_STATIC -DPCRE2_CODE_UNIT_WIDTH=8"
+SQLOPTS="-DSQLITE_OS_OTHER=1 -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_WAL=1 -DSQLITE_OMIT_LOAD_EXTENSION=1
+ -DSQLITE_OMIT_SHARED_CACHE=1 -DSQLITE_OMIT_DEPRECATED=1 -DSQLITE_OMIT_UTF16=1
+ -DSQLITE_OMIT_COMPILEOPTION_DIAGS=1 -DSQLITE_DEFAULT_MEMSTATUS=0
+ -DSQLITE_DQS=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_CORE -DSQLITE_BYTEORDER=0 -DSQLITE_MAX_ATTACHED=125"
+
+mkdir -p $O
+# job: <obj-name> <source> <kind>; kinds pick flags
+compile() {
+    local name=$1 src=$2 kind=$3 cc flags
+    case $kind in
+        lib)     cc=clang++; flags="$CXXF -DHAVE_CONFIG_H $INC $FEAT" ;;
+        libmux)  cc=clang++; flags="$CXXF $INC $FEAT -fvisibility=hidden" ;;
+        libc)    cc=clang;   flags="$CF -std=c11 -DHAVE_CONFIG_H $INC $FEAT" ;;
+        engine)  cc=clang++; flags="$CXXF -DHAVE_CONFIG_H $INC $FEAT -fvisibility=hidden" ;;
+        module)  cc=clang++; flags="$CXXF $INC $FEAT -fvisibility=hidden" ;;
+        main)    cc=clang++; flags="$CXXF -DHAVE_CONFIG_H $INC $FEAT" ;;
+        ganl)    cc=clang++; flags="$CXXF -DHAVE_CONFIG_H -I$M/include -I$M/ganl/include -I$M/ganl $FEAT" ;;
+        sqlite)  cc=clang;   flags="$CF $SQLOPTS -fvisibility=hidden" ;;
+        vfs)     cc=clang;   flags="$CF $SQLOPTS -I$M/sqlite -fvisibility=hidden" ;;
+        lua)     cc=clang;   flags="$CF -std=gnu99 -fvisibility=hidden" ;;
+    esac
+    [ $O/$name.s32o -nt $src ] && return 0
+    if ! $LLVM/$cc $flags -S -emit-llvm $src -o $O/$name.ll 2>$O/$name.err ||
+       ! $LLVM/llc -mtriple=slow32-unknown-none $O/$name.ll -o $O/$name.s 2>>$O/$name.err ||
+       ! $AS $O/$name.s $O/$name.s32o >/dev/null 2>>$O/$name.err; then
+        echo "FAIL $name"; head -5 $O/$name.err; return 1
+    fi
+    rm -f $O/$name.ll
+}
+export -f compile; export O M CXXF CF COMMON INC FEAT SQLOPTS LLVM AS
+
+{
+for f in alarm alloc date_scan dbutil mathutil mux_nls sha1 shacrypt stringutil strtod svdhash svdrand \
+         timeabsolute timedelta timeutil timezone utf8_collate utf8_grapheme utf8_normalize utf8tables; do
+    echo "lib_$f $M/lib/$f.cpp lib"; done
+echo "lib_libmux $M/lib/libmux.cpp libmux"
+for f in color_ops mux_table unicode_tables; do [ -f $M/lib/$f.c ] && echo "lib_$f $M/lib/$f.c libc"; done
+for s in $(sed -n '/^ENGINE_CXX_SRC = /,/[^\\]$/p' $M/modules/engine/Makefile.am | tr -d '\\' | sed 's/ENGINE_CXX_SRC = //'); do
+    # the JIT's files are part of every engine (jit_compiler.cpp also holds
+    # softcode functions the evaluator calls); configure's default backend
+    [ "$s" = "@DBT_BACKEND@.cpp" ] && s=dbt_x64_sysv.cpp
+    echo "eng_${s%.cpp} $M/modules/engine/$s engine"; done
+echo "eng_sqlitedb $M/modules/engine/sqlitedb.cpp engine"
+echo "eng_sqlite_backend $M/modules/engine/sqlite_backend.cpp engine"
+echo "sqlite3 $M/sqlite/sqlite3.c sqlite"
+echo "slow32_vfs $R/sqlite/slow32_vfs.c vfs"
+for f in $M/lua54/*.c; do b=$(basename $f .c); case $b in lua|luac) continue ;; esac; echo "lua_$b $f lua"; done
+echo "mod_comsys $M/modules/comsys/comsys_mod.cpp module"
+echo "mod_mail $M/modules/mail/mail_mod.cpp module"
+echo "mod_exp3 $M/modules/exp3/exp3.cpp module"
+echo "mux_main $M/script/mux_main.cpp main"
+echo "static_modules $M/src/static_modules.cpp main"
+# netmux: the driver, and ganl without its TLS transport (no libssl here)
+# (its slave spawner compiles; fork says ENOSYS when it is asked)
+for f in _build bsd driver driver_bridge ganl_adapter modules muxcli net netaddr platform signals \
+         sitemon telnet websocket version; do echo "drv_$f $M/src/$f.cpp main"; done
+for f in connection io_buffer network_address network_engine_factory secure_transport_factory \
+         select_network_engine slave_spawn_posix; do echo "ganl_$f $M/ganl/src/$f.cpp ganl"; done
+} > $O/jobs.txt
+xargs -P 8 -L 1 bash -c 'compile "$@"' _ < $O/jobs.txt | tee $O/compile.log
+grep -q '^FAIL' $O/compile.log && exit 1
+
+ENTRIES="mux_GetClassObject mux_CanUnloadNow mux_Register mux_Unregister"
+partial() {   # partial <module> <objects...>
+    local m=$1; shift
+    local ren=""; for e in $ENTRIES; do ren="$ren --redefine-sym $e=${m}_$e"; done
+    $LD -r --localize-hidden $ren -o $O/part_$m.s32o "$@"
+}
+partial engine $O/eng_*.s32o $O/sqlite3.s32o $O/slow32_vfs.s32o $O/lua_*.s32o || exit 1
+partial comsys_mod $O/mod_comsys.s32o || exit 1
+partial mail_mod $O/mod_mail.s32o || exit 1
+partial exp3 $O/mod_exp3.s32o || exit 1
+
+$LD --print-map -o $B/muxscript.s32x --mmio 64K --code-size 16M --heap-size 64M --stack-size 8M ${LDOPTS:-} $R/runtime/crt0.s32o $O/mux_main.s32o $O/static_modules.s32o \
+    $O/part_engine.s32o $O/part_comsys_mod.s32o $O/part_mail_mod.s32o $O/part_exp3.s32o $O/lib_*.s32o \
+    $P2/libpcre2-8.s32a $CXXR/lib/libc++.a $CXXR/lib/libc++abi.a \
+    $R/runtime/libc_mmio.s32a $R/runtime/libs32.s32a
+
+$LD -o $B/netmux.s32x --mmio 64K --code-size 16M --heap-size 64M --stack-size 8M ${LDOPTS:-} $R/runtime/crt0.s32o $O/drv_*.s32o $O/static_modules.s32o \
+    $O/part_engine.s32o $O/part_comsys_mod.s32o $O/part_mail_mod.s32o $O/part_exp3.s32o $O/lib_*.s32o $O/ganl_*.s32o \
+    $P2/libpcre2-8.s32a $CXXR/lib/libc++.a $CXXR/lib/libc++abi.a \
+    $R/runtime/libc_mmio.s32a $R/runtime/libs32.s32a
