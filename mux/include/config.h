@@ -55,11 +55,14 @@
 #define UNIX_FILES
 #define UNIX_CRYPT
 #define UNIX_TIME
-#if defined(HAVE_DLOPEN)
+#if defined(HAVE_DLOPEN) && !defined(MUX_STATIC_MODULES)
 #define UNIX_DYNALIB
 #else
+// No dlopen, or modules linked into the program (MUX_STATIC_MODULES):
+// libmux finds them in the table the program registers.
+//
 #define PRETEND_DYNALIB
-#endif // HAVE_DLOPEN
+#endif // HAVE_DLOPEN && !MUX_STATIC_MODULES
 #if defined(SSL_ENABLED)
 #define UNIX_SSL
 #define UNIX_DIGEST
