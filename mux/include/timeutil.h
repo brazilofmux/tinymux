@@ -226,6 +226,74 @@ LIBMUX_API bool operator<(const CLinearTimeDelta& lta, const CLinearTimeDelta& l
 LIBMUX_API bool operator>=(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
 LIBMUX_API bool operator>(const CLinearTimeDelta& lta, const CLinearTimeDelta& ltb) noexcept;
 
+#if defined(MUX_NO_THREADS)
+
+// A platform that cannot start a thread (SLOW-32: one thread, and
+// std::thread throws) gets the alarm without its worker.  set() records a
+// deadline, and reading alarmed -- the evaluator's "is my time up?" -- looks
+// at the clock, though only every kPollStride reads, so a tight loop pays a
+// counter decrement per check and a clock read now and then.  The interface
+// is the threaded one's: alarmed converts to bool and takes store().
+//
+class LIBMUX_API mux_alarm_flag
+{
+    static constexpr int kPollStride = 256;
+    bool fired_{};
+    bool armed_{};
+    int countdown_{};
+    std::chrono::steady_clock::time_point deadline_{};
+
+public:
+    operator bool()
+    {
+        if (fired_ || !armed_)
+        {
+            return fired_;
+        }
+        if (0 < --countdown_)
+        {
+            return false;
+        }
+        countdown_ = kPollStride;
+        if (deadline_ <= std::chrono::steady_clock::now())
+        {
+            fired_ = true;
+            armed_ = false;
+        }
+        return fired_;
+    }
+    void store(bool v, std::memory_order = std::memory_order_seq_cst) { fired_ = v; }
+    bool load(std::memory_order = std::memory_order_seq_cst) { return *this; }
+    void arm(std::chrono::steady_clock::time_point deadline)
+    {
+        fired_ = false;
+        armed_ = true;
+        countdown_ = 1;
+        deadline_ = deadline;
+    }
+    void disarm() { fired_ = false; armed_ = false; }
+};
+
+class LIBMUX_API mux_alarm
+{
+public:
+    mux_alarm_flag alarmed;
+    mux_alarm();
+    ~mux_alarm();
+    static void sleep(CLinearTimeDelta sleep_period);
+    static void surrender_slice();
+    void set(CLinearTimeDelta alarm_period);
+    void clear();
+    bool worker_started() const { return false; }
+
+    // What generated code may poll directly (the DBT's alarm_flag): nothing
+    // here, since no worker sets a word in memory -- it is the reading that
+    // fires the alarm.  The DBT's max_dispatch still bounds it.
+    const std::atomic<bool> *atomic_flag() const { return nullptr; }
+};
+
+#else // MUX_NO_THREADS
+
 class LIBMUX_API mux_alarm
 {
 private:
@@ -258,7 +326,12 @@ public:
     // For unit tests that must lock "lazy start" without relying on an
     // intermittent static-init deadlock.  Thread-safe.
     bool worker_started() const;
+
+    // What generated code may poll directly (the DBT's alarm_flag).
+    const std::atomic<bool> *atomic_flag() const { return &alarmed; }
 };
+
+#endif // MUX_NO_THREADS
 
 extern LIBMUX_API mux_alarm alarm_clock;
 

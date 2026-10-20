@@ -14,6 +14,8 @@
 
 mux_alarm alarm_clock;
 
+#if !defined(MUX_NO_THREADS)
+
 /*! \brief Alarm Clock Thread Procedure.
  *
  * This thread waits on a condition variable. When set() is called, it waits
@@ -117,6 +119,8 @@ mux_alarm::~mux_alarm()
     }
 }
 
+#endif // !MUX_NO_THREADS
+
 /*! \brief Sleep Routine.
  *
  * A sleep request does not prevent the Alarm Clock from firing, so typically,
@@ -151,6 +155,8 @@ void mux_alarm::surrender_slice()
 {
     std::this_thread::yield();
 }
+
+#if !defined(MUX_NO_THREADS)
 
 /*! \brief Set the Alarm Clock.
  *
@@ -208,3 +214,42 @@ bool mux_alarm::worker_started() const
     std::lock_guard<std::mutex> lock(mutex_);
     return thread_started_;
 }
+
+#else // !MUX_NO_THREADS
+
+// No worker: set() records a deadline that reading alarmed checks
+// (mux_alarm_flag in timeutil.h).
+//
+mux_alarm::mux_alarm()
+{
+}
+
+mux_alarm::~mux_alarm()
+{
+}
+
+void mux_alarm::set(CLinearTimeDelta alarm_period)
+{
+    // The same int64_t / clamp as the threaded set() (#1290); a negative
+    // period fires at the first look.
+    //
+    constexpr int64_t k100nsPerMs = 10000;
+    constexpr int64_t kMaxMs = INT64_C(1000000000000);  // ~31 years: no overflow in ns
+    int64_t ms64 = alarm_period.Return100ns() / k100nsPerMs;
+    if (ms64 < 0)
+    {
+        ms64 = 0;
+    }
+    else if (ms64 > kMaxMs)
+    {
+        ms64 = kMaxMs;
+    }
+    alarmed.arm(std::chrono::steady_clock::now() + std::chrono::milliseconds(ms64));
+}
+
+void mux_alarm::clear()
+{
+    alarmed.disarm();
+}
+
+#endif // !MUX_NO_THREADS

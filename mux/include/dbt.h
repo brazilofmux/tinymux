@@ -279,8 +279,9 @@ struct dbt_state_t {
     // Host wall-clock abort flag (#JIT-alarm).  When non-null, the dispatch
     // loop checks it each iteration and returns -3 if set, so a JIT-compiled
     // program honors the per-command wall-clock alarm the interpreter already
-    // obeys.  The engine points this at &alarm_clock.alarmed; the standalone
-    // dbt_test harness leaves it null.  dbt.cpp stays engine-independent — it
+    // obeys.  The engine points this at alarm_clock.atomic_flag() -- the
+    // alarmed flag, or null where no worker thread sets one (MUX_NO_THREADS);
+    // the standalone dbt_test harness leaves it null.  dbt.cpp stays engine-independent — it
     // only reads a pointer it was handed.
     const std::atomic<bool> *alarm_flag = nullptr;
 
