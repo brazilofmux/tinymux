@@ -28,6 +28,7 @@ extern "C" {
 #include <lauxlib.h>
 }
 
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
