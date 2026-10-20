@@ -46,6 +46,11 @@ SQLOPTS="-DSQLITE_OS_OTHER=1 -DSQLITE_THREADSAFE=0 -DSQLITE_DEFAULT_LOCKING_MODE
  -DSQLITE_DQS=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_CORE -DSQLITE_BYTEORDER=0 -DSQLITE_MAX_ATTACHED=125"
 
 mkdir -p $O
+# An object is rebuilt when its source is newer; no header dependencies are
+# tracked, so a header newer than the last build rebuilds everything.
+if [ -f $O/.stamp ] && [ -n "$(find $M $R/runtime/include -name '*.h' -newer $O/.stamp -print -quit)" ]; then
+    find $O -name '*.s32o' -delete
+fi
 # job: <obj-name> <source> <kind>; kinds pick flags
 compile() {
     local name=$1 src=$2 kind=$3 cc flags
@@ -101,6 +106,7 @@ for f in connection io_buffer network_address network_engine_factory secure_tran
 } > $O/jobs.txt
 xargs -P 8 -L 1 bash -c 'compile "$@"' _ < $O/jobs.txt | tee $O/compile.log
 grep -q '^FAIL' $O/compile.log && exit 1
+touch $O/.stamp
 
 ENTRIES="mux_GetClassObject mux_CanUnloadNow mux_Register mux_Unregister"
 partial() {   # partial <module> <objects...>
