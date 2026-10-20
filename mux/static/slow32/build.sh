@@ -34,7 +34,13 @@ COMMON="-target slow32-unknown-none -O2"
 CXXF="$COMMON -std=c++17 -nostdinc++ -isystem $CXXR/include/c++/v1 $RTI -fexceptions -frtti -funwind-tables"
 CF="$COMMON $RTI"
 FEAT="-DSSL_ENABLED -DMUX_NO_THREADS -DMUX_STATIC_MODULES -DPCRE2_STATIC -DPCRE2_CODE_UNIT_WIDTH=8"
-SQLOPTS="-DSQLITE_OS_OTHER=1 -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_WAL=1 -DSQLITE_OMIT_LOAD_EXTENSION=1
+# SQLite as slow-32/sqlite/build.sh builds it, but with WAL: TinyMUX opens
+# its database in WAL mode, and the SLOW-32 VFS has no shared memory, which
+# WAL can do without only in exclusive locking mode -- so that is the
+# default here.  One process owns the database, which is true of a game
+# under the emulator (the native build keeps normal locking, so that a
+# backup can copy the database while the game runs).
+SQLOPTS="-DSQLITE_OS_OTHER=1 -DSQLITE_THREADSAFE=0 -DSQLITE_DEFAULT_LOCKING_MODE=1 -DSQLITE_OMIT_LOAD_EXTENSION=1
  -DSQLITE_OMIT_SHARED_CACHE=1 -DSQLITE_OMIT_DEPRECATED=1 -DSQLITE_OMIT_UTF16=1
  -DSQLITE_OMIT_COMPILEOPTION_DIAGS=1 -DSQLITE_DEFAULT_MEMSTATUS=0
  -DSQLITE_DQS=0 -DSQLITE_LIKE_DOESNT_MATCH_BLOBS -DSQLITE_CORE -DSQLITE_BYTEORDER=0 -DSQLITE_MAX_ATTACHED=125"
