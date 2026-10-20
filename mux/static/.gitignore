@@ -1,0 +1,5 @@
+# static build outputs
+netmux
+muxscript
+*.o
+engine.ar/

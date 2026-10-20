@@ -1179,6 +1179,10 @@ static bool resolve_gamedir(const char *flag_dir)
         return false;
     }
 
+#if !defined(MUX_STATIC_MODULES)
+    // A static build carries the engine inside this program; there is no
+    // file to look for.
+    //
     char engine_path[4096 + 64];
 #if defined(WIN32)
     snprintf(engine_path, sizeof(engine_path), "%s\\bin\\engine.dll", g_gamedir);
@@ -1191,6 +1195,7 @@ static bool resolve_gamedir(const char *flag_dir)
         fprintf(stderr, "muxscript: engine not found at '%s'\n", engine_path);
         return false;
     }
+#endif // !MUX_STATIC_MODULES
 
     return true;
 }
