@@ -2,6 +2,10 @@
 /* include/autoconf.h.  Generated from autoconf.h.in by configure.  */
 /* include/autoconf.h.in.  Generated from configure.ac by autoheader.  */
 
+
+/* SLOW-32 lacks: libssl -- its OpenSSL-shaped library is digests only,
+   so build without the TLS transport (include/config.h). */
+#define MUX_NO_TLS 1
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
