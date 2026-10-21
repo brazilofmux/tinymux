@@ -14,6 +14,7 @@
 #include "dbt_compile.h"
 #include "engine_api.h"
 
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>

@@ -17,13 +17,6 @@
 #include "modules.h"
 #include "mux_format.h"
 
-extern "C"
-{
-    typedef MUX_RESULT FPCANUNLOADNOW(void);
-    typedef MUX_RESULT FPREGISTER(void);
-    typedef MUX_RESULT FPUNREGISTER(void);
-};
-
 #if defined(WINDOWS_DYNALIB)
 typedef HINSTANCE MODULE_HANDLE;
 #define MOD_OPEN(m)  LoadLibrary(m)
@@ -36,7 +29,7 @@ typedef void     *MODULE_HANDLE;
 #define MOD_CLOSE(h) dlclose(h)
 #elif defined(PRETEND_DYNALIB)
 typedef void     *MODULE_HANDLE;
-extern MODULE_HANDLE mux_dlopen(const char *m);
+extern MODULE_HANDLE mux_dlopen(const UTF8 *m);
 extern void *mux_dlsym(MODULE_HANDLE h, const char *s);
 extern void mux_dlclose(MODULE_HANDLE h);
 #define MOD_OPEN(m) mux_dlopen(m)
@@ -2261,22 +2254,83 @@ MUX_RESULT CStandardMarshaler::DisconnectObject(void)
 
 #if defined(PRETEND_DYNALIB)
 
-MODULE_HANDLE mux_dlopen(const char *m)
+// Without dlopen, a module is linked into the program, and the program hands
+// libmux a table of what it linked (mux_RegisterStaticModules), usually from
+// a static initializer.  mux_dlopen finds a module in that table by the file
+// it would have been loaded from, less directory and extension, so a
+// configuration that names ./bin/comsys_mod.so means the same module either
+// way.  Everything past mux_dlsym -- registration, class lookup, unloading --
+// is the dynamic path unchanged.  A name the table does not have fails as a
+// missing file does.
+//
+static const MUX_STATIC_MODULE *g_pStaticModules = nullptr;
+
+extern "C" void DCL_EXPORT DCL_API mux_RegisterStaticModules(const MUX_STATIC_MODULE *pTable)
 {
-    UNUSED_PARAMETER(m);
+    g_pStaticModules = pTable;
+}
+
+MODULE_HANDLE mux_dlopen(const UTF8 *pFileName)
+{
+    const char *m = reinterpret_cast<const char *>(pFileName);
+    if (  nullptr == m
+       || nullptr == g_pStaticModules)
+    {
+        return nullptr;
+    }
+    const char *pBase = strrchr(m, '/');
+    pBase = (nullptr == pBase) ? m : pBase + 1;
+    const size_t nBase = strcspn(pBase, ".");
+    for (const MUX_STATIC_MODULE *p = g_pStaticModules; nullptr != p->pName; p++)
+    {
+        if (  strlen(p->pName) == nBase
+           && 0 == memcmp(p->pName, pBase, nBase))
+        {
+            return const_cast<MUX_STATIC_MODULE *>(p);
+        }
+    }
     return nullptr;
 }
 
 void *mux_dlsym(MODULE_HANDLE h, const char *s)
 {
-    UNUSED_PARAMETER(h);
-    UNUSED_PARAMETER(s);
+    const MUX_STATIC_MODULE *p = static_cast<const MUX_STATIC_MODULE *>(h);
+    if (nullptr == p)
+    {
+        return nullptr;
+    }
+    if (0 == strcmp(s, "mux_GetClassObject"))
+    {
+        return reinterpret_cast<void *>(p->fpGetClassObject);
+    }
+    else if (0 == strcmp(s, "mux_CanUnloadNow"))
+    {
+        return reinterpret_cast<void *>(p->fpCanUnloadNow);
+    }
+    else if (0 == strcmp(s, "mux_Register"))
+    {
+        return reinterpret_cast<void *>(p->fpRegister);
+    }
+    else if (0 == strcmp(s, "mux_Unregister"))
+    {
+        return reinterpret_cast<void *>(p->fpUnregister);
+    }
     return nullptr;
 }
 
 void mux_dlclose(MODULE_HANDLE h)
 {
     UNUSED_PARAMETER(h);
+}
+
+#else // PRETEND_DYNALIB
+
+// Modules load from files here; a table of linked-in modules has nowhere to
+// go, and is ignored.
+//
+extern "C" void DCL_EXPORT DCL_API mux_RegisterStaticModules(const MUX_STATIC_MODULE *pTable)
+{
+    UNUSED_PARAMETER(pTable);
 }
 
 #endif // PRETEND_DYNALIB

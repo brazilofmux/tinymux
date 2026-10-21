@@ -191,8 +191,12 @@ public:
     const UTF8 *get() const { return m_buf; }
     operator UTF8 *() { return m_buf; }
     operator const UTF8 *() const { return m_buf; }
-    UTF8 &operator[](size_t i) { return m_buf[i]; }
-    const UTF8 &operator[](size_t i) const { return m_buf[i]; }
+    // The index is the built-in subscript's own type.  With size_t, an int
+    // index on an ILP32 target (where ptrdiff_t is int) matched the
+    // built-in UTF8 *[ptrdiff_t] through operator UTF8 *() exactly and this
+    // operator only by conversion -- an ambiguous call, in 77 places.
+    UTF8 &operator[](std::ptrdiff_t i) { return m_buf[i]; }
+    const UTF8 &operator[](std::ptrdiff_t i) const { return m_buf[i]; }
 };
 
 #define LBuf_Src(tag) LBuf(T(tag), reinterpret_cast<const UTF8 *>(__FILE__), __LINE__)
@@ -271,8 +275,9 @@ public:
     const UTF8 *get() const { return m_buf; }
     operator UTF8 *() { return m_buf; }
     operator const UTF8 *() const { return m_buf; }
-    UTF8 &operator[](size_t i) { return m_buf[i]; }
-    const UTF8 &operator[](size_t i) const { return m_buf[i]; }
+    // std::ptrdiff_t for the reason LBuf's are.
+    UTF8 &operator[](std::ptrdiff_t i) { return m_buf[i]; }
+    const UTF8 &operator[](std::ptrdiff_t i) const { return m_buf[i]; }
     explicit operator bool() const { return m_buf != nullptr; }
 };
 

@@ -117,7 +117,11 @@ struct block_entry_t {
     uint8_t *native_code;   // pointer into code buffer
 };
 
-static_assert(sizeof(block_entry_t) == 16, "block_entry_t must be 16 bytes");
+// The inline lookup is the 64-bit JIT's.  A 32-bit host builds this header
+// with the rest of the engine and never runs a translated block, and its
+// entry is 12 bytes; the layout matters only where pointers are 8.
+static_assert(sizeof(void *) != 8 || sizeof(block_entry_t) == 16,
+              "block_entry_t must be 16 bytes");
 
 // Guest instruction-fetch / look-ahead range check (#1864, same class as
 // #1292 mem_check).  `pc + n` wraps for a guest-controlled PC near
@@ -279,8 +283,9 @@ struct dbt_state_t {
     // Host wall-clock abort flag (#JIT-alarm).  When non-null, the dispatch
     // loop checks it each iteration and returns -3 if set, so a JIT-compiled
     // program honors the per-command wall-clock alarm the interpreter already
-    // obeys.  The engine points this at &alarm_clock.alarmed; the standalone
-    // dbt_test harness leaves it null.  dbt.cpp stays engine-independent — it
+    // obeys.  The engine points this at alarm_clock.atomic_flag() -- the
+    // alarmed flag, or null where no worker thread sets one (MUX_NO_THREADS);
+    // the standalone dbt_test harness leaves it null.  dbt.cpp stays engine-independent — it
     // only reads a pointer it was handed.
     const std::atomic<bool> *alarm_flag = nullptr;
 

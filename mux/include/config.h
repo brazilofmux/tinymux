@@ -55,14 +55,26 @@
 #define UNIX_FILES
 #define UNIX_CRYPT
 #define UNIX_TIME
-#if defined(HAVE_DLOPEN)
+#if defined(HAVE_DLOPEN) && !defined(MUX_STATIC_MODULES)
 #define UNIX_DYNALIB
 #else
+// No dlopen, or modules linked into the program (MUX_STATIC_MODULES):
+// libmux finds them in the table the program registers.
+//
 #define PRETEND_DYNALIB
-#endif // HAVE_DLOPEN
+#endif // HAVE_DLOPEN && !MUX_STATIC_MODULES
 #if defined(SSL_ENABLED)
-#define UNIX_SSL
 #define UNIX_DIGEST
+// TLS needs libssl as well as libcrypto.  A platform whose OpenSSL-shaped
+// library is digests only (SLOW-32's, over its host's crypto) says so with
+// MUX_NO_TLS and gets digests without the TLS transport.  This is an
+// explicit opt-out rather than an inference from HAVE_LIBSSL: configure's
+// probe for libssl links -lssl alone, which fails against a static-only
+// OpenSSL even though the real link (pkg-config's -lssl -lcrypto) works,
+// and an inferred opt-out would silently drop TLS from such a build.
+#if !defined(MUX_NO_TLS)
+#define UNIX_SSL
+#endif
 #endif // SSL_ENABLED
 
 #endif // WIN32

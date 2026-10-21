@@ -2,6 +2,7 @@
 #define GANL_SESSION_MANAGER_H
 
 #include <network_types.h>
+#include <ctime>
 #include <string>
 
 namespace ganl {

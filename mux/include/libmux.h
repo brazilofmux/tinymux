@@ -199,7 +199,24 @@ public:
 extern "C"
 {
     typedef MUX_RESULT DCL_API FPGETCLASSOBJECT(MUX_CID cid, MUX_IID iid, void **ppv);
+    typedef MUX_RESULT FPCANUNLOADNOW(void);
+    typedef MUX_RESULT FPREGISTER(void);
+    typedef MUX_RESULT FPUNREGISTER(void);
 }
+
+// A module linked into the program instead of loaded from a file: its name
+// (the file name it would have been loaded from, less directory and
+// extension) and the four entry points dlsym would have found.  A table of
+// these, ended by a null pName, is handed to mux_RegisterStaticModules.
+//
+typedef struct
+{
+    const char       *pName;
+    FPGETCLASSOBJECT *fpGetClassObject;
+    FPCANUNLOADNOW   *fpCanUnloadNow;
+    FPREGISTER       *fpRegister;
+    FPUNREGISTER     *fpUnregister;
+} MUX_STATIC_MODULE;
 
 // All components must be registered.  Currently, only the MUX_CID is required.
 //
@@ -224,6 +241,7 @@ extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_CreateInstance(MUX_CID cid, mux_IUn
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterClassObjects(int nci, MUX_CLASS_INFO aci[], FPGETCLASSOBJECT *pfGetClassObject);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeClassObjects(int nci, MUX_CLASS_INFO aci[]);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RegisterInterfaces(int nii, MUX_INTERFACE_INFO aii[]);
+extern "C" void       DCL_EXPORT DCL_API mux_RegisterStaticModules(const MUX_STATIC_MODULE *pTable);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_RevokeInterfaces(int nii, MUX_INTERFACE_INFO aii[]);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_GetStandardMarshal(MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx, mux_IMarshal **ppMarshal);
 extern "C" MUX_RESULT DCL_EXPORT DCL_API mux_MarshalInterface(QUEUE_INFO *pqi, MUX_IID riid, mux_IUnknown *pIUnknown, marshal_context ctx);

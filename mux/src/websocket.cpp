@@ -20,6 +20,7 @@
 
 #include <cstring>
 #include <algorithm>
+#include <cctype>
 
 static_assert(WS_MAX_PAYLOAD == static_cast<size_t>(LBUF_SIZE) - 1,
     "WS_MAX_PAYLOAD must stay LBUF_SIZE-1 (telnet line / process_command cap)");

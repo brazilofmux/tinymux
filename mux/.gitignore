@@ -16,6 +16,8 @@ config.log
 config.status
 autoconf.h
 Makefile
+# ...except the static build's, which is written by hand, not by automake.
+!static/Makefile
 
 # Dependency tracking
 .deps/

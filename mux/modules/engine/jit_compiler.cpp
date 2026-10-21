@@ -28,6 +28,7 @@ extern "C" {
 #include <lauxlib.h>
 }
 
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -1607,7 +1608,7 @@ static dbt_state_t *get_dbt(jit_run_vm *vm,
         // TINYMUX_DBT_MAX_DISPATCH overrides; 0 = unlimited.
         const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
         dbt->max_dispatch = md_env ? strtoull(md_env, nullptr, 0) : 10000000;
-        dbt->alarm_flag = &alarm_clock.alarmed;  // wall-clock abort (#JIT-alarm)
+        dbt->alarm_flag = alarm_clock.atomic_flag();  // wall-clock abort (#JIT-alarm)
 
         vm->dbt_ready = true;
         return dbt;
@@ -1645,7 +1646,7 @@ static dbt_state_t *bind_run_dbt(jit_run_vm *vm) {
 
         const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
         dbt->max_dispatch = md_env ? strtoull(md_env, nullptr, 0) : 10000000;
-        dbt->alarm_flag = &alarm_clock.alarmed;  // wall-clock abort (#JIT-alarm)
+        dbt->alarm_flag = alarm_clock.atomic_flag();  // wall-clock abort (#JIT-alarm)
 
         vm->dbt_ready = true;
         vm->dbt_foreign = false;
@@ -3144,7 +3145,7 @@ struct shared_heap_t {
             const char *md_env = getenv("TINYMUX_DBT_MAX_DISPATCH");
             dbt.max_dispatch = md_env
                 ? strtoull(md_env, nullptr, 0) : 10000000;
-            dbt.alarm_flag = &alarm_clock.alarmed;  // wall-clock (#JIT-alarm)
+            dbt.alarm_flag = alarm_clock.atomic_flag();  // wall-clock (#JIT-alarm)
 
             pretranslate_tier2(&dbt);
             dbt.blob_code_end = dbt.code_used;
