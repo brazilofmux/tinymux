@@ -21,9 +21,14 @@ using ConnectionHandle = uintptr_t;
 using ListenerHandle = uintptr_t;
 using SessionId = uint64_t;
 
-constexpr ConnectionHandle InvalidConnectionHandle = 0;
-constexpr ListenerHandle InvalidListenerHandle = 0;
-constexpr SessionId InvalidSessionId = 0;
+// A handle is the engine's descriptor or socket, and 0 is a descriptor like
+// any other: a server that has closed its standard input gets fd 0 from its
+// next socket() or accept().  So "no handle" is all ones -- never a POSIX
+// descriptor, and Windows' INVALID_SOCKET.  A session id is the handle of
+// its connection, so it has the same sentinel, at its own width.
+constexpr ConnectionHandle InvalidConnectionHandle = ~static_cast<ConnectionHandle>(0);
+constexpr ListenerHandle InvalidListenerHandle = ~static_cast<ListenerHandle>(0);
+constexpr SessionId InvalidSessionId = static_cast<SessionId>(InvalidConnectionHandle);
 
 // Error code type
 using ErrorCode = int;

@@ -27,7 +27,7 @@
 // this codebase relies on mux_assert aborting in release builds.
 #ifdef GANL_DEBUG
 #define GANL_SSL_DEBUG(conn, x) \
-    do { std::cerr << "[OpenSSL:" << (conn == 0 ? "Global" : std::to_string(conn)) << "] " << x << std::endl; } while (0)
+    do { std::cerr << "[OpenSSL:" << (conn == InvalidConnectionHandle ? "Global" : std::to_string(conn)) << "] " << x << std::endl; } while (0)
 #else
 #define GANL_SSL_DEBUG(conn, x) do {} while (0)
 #endif
@@ -43,11 +43,11 @@ static constexpr size_t kMaxTlsPendingWire = 256 * 1024;
 // --- Constructor / Destructor ---
 
 OpenSSLTransport::OpenSSLTransport() {
-    GANL_SSL_DEBUG(0, "Handler Created.");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "Handler Created.");
 }
 
 OpenSSLTransport::~OpenSSLTransport() {
-    GANL_SSL_DEBUG(0, "Handler Destroyed.");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "Handler Destroyed.");
     shutdown(); // Ensure cleanup happens
 }
 
@@ -55,7 +55,7 @@ OpenSSLTransport::~OpenSSLTransport() {
 
 bool OpenSSLTransport::initialize(const TlsConfig& config) {
     std::lock_guard<std::mutex> lock(mutex_);
-    GANL_SSL_DEBUG(0, "Initializing OpenSSL library...");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "Initializing OpenSSL library...");
     // Initialize OpenSSL (thread-safe in modern OpenSSL >= 1.1.0)
     // SSL_library_init(); // Deprecated since 1.1.0, OPENSSL_init_ssl is preferred
     if (OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS | OPENSSL_INIT_LOAD_CRYPTO_STRINGS, nullptr) == 0) {
@@ -65,7 +65,7 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
     }
     // OpenSSL_add_all_algorithms(); // Deprecated since 1.1.0
 
-    GANL_SSL_DEBUG(0, "Creating SSL_CTX...");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "Creating SSL_CTX...");
     // Create SSL context (use TLS_server_method for modern TLS)
     // ctx_ = SSL_CTX_new(SSLv23_server_method()); // Allows negotiation down to TLS 1.0
     ctx_ = SSL_CTX_new(TLS_server_method()); // Prefer modern TLS versions
@@ -105,7 +105,7 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
 
     // Load certificate and key
     if (!config.certificateFile.empty() && !config.keyFile.empty()) {
-         GANL_SSL_DEBUG(0, "Loading cert: " << config.certificateFile << ", key: " << config.keyFile);
+         GANL_SSL_DEBUG(InvalidConnectionHandle, "Loading cert: " << config.certificateFile << ", key: " << config.keyFile);
          if (SSL_CTX_use_certificate_chain_file(ctx_, config.certificateFile.c_str()) != 1) { // Use chain file for intermediates
              lastGlobalError_ = "Failed to load certificate chain file: " + getOpenSSLErrorString(0);
              std::cerr << "[OpenSSL:Global] FATAL: " << lastGlobalError_ << std::endl;
@@ -124,37 +124,37 @@ bool OpenSSLTransport::initialize(const TlsConfig& config) {
              return false;
          }
 
-         GANL_SSL_DEBUG(0, "Checking private key match...");
+         GANL_SSL_DEBUG(InvalidConnectionHandle, "Checking private key match...");
          if (SSL_CTX_check_private_key(ctx_) != 1) {
              lastGlobalError_ = "Private key does not match certificate: " + getOpenSSLErrorString(0);
              std::cerr << "[OpenSSL:Global] FATAL: " << lastGlobalError_ << std::endl;
              SSL_CTX_free(ctx_); ctx_ = nullptr;
              return false;
          }
-         GANL_SSL_DEBUG(0, "Certificate and key loaded successfully.");
+         GANL_SSL_DEBUG(InvalidConnectionHandle, "Certificate and key loaded successfully.");
     } else {
-         GANL_SSL_DEBUG(0, "Warning: No certificate or key file provided. TLS will likely fail.");
+         GANL_SSL_DEBUG(InvalidConnectionHandle, "Warning: No certificate or key file provided. TLS will likely fail.");
          // Allow initialization to succeed, but connections will fail handshake later.
     }
 
-    GANL_SSL_DEBUG(0, "OpenSSLTransport initialized successfully.");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "OpenSSLTransport initialized successfully.");
     return true;
 }
 
 void OpenSSLTransport::shutdown() {
     // Using the revised shutdown logic which avoids re-locking
-    GANL_SSL_DEBUG(0, "Shutting down (Revised)...");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "Shutting down (Revised)...");
     std::vector<SSL*> sslObjectsToFree;
     SSL_CTX* ctxToFree = nullptr; // Renamed from ctxToFreeRevised for clarity
 
     { // --- Lock Scope Start ---
         std::lock_guard<std::mutex> lock(mutex_);
         if (!ctx_) { // Check if already shut down
-             GANL_SSL_DEBUG(0, "Already shut down.");
+             GANL_SSL_DEBUG(InvalidConnectionHandle, "Already shut down.");
              return;
         }
         sslObjectsToFree.reserve(sessions_.size());
-        GANL_SSL_DEBUG(0, "Gathering " << sessions_.size() << " SSL objects to free...");
+        GANL_SSL_DEBUG(InvalidConnectionHandle, "Gathering " << sessions_.size() << " SSL objects to free...");
         // Iterate and move SSL pointers out of the map contexts
         for (auto& pair : sessions_) {
             if (pair.second.ssl) {
@@ -171,18 +171,18 @@ void OpenSSLTransport::shutdown() {
     } // --- Lock Scope End ---
 
     // --- Perform freeing outside the lock ---
-    GANL_SSL_DEBUG(0, "Freeing " << sslObjectsToFree.size() << " SSL objects (outside lock)...");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "Freeing " << sslObjectsToFree.size() << " SSL objects (outside lock)...");
     for (SSL* ssl : sslObjectsToFree) {
         SSL_free(ssl); // This also frees associated BIOs
     }
 
     if (ctxToFree) {
-        GANL_SSL_DEBUG(0, "Freeing SSL_CTX (outside lock).");
+        GANL_SSL_DEBUG(InvalidConnectionHandle, "Freeing SSL_CTX (outside lock).");
         SSL_CTX_free(ctxToFree);
     }
     // --- End freeing ---
 
-    GANL_SSL_DEBUG(0, "Shutdown complete.");
+    GANL_SSL_DEBUG(InvalidConnectionHandle, "Shutdown complete.");
 }
 
 // --- Per-Connection Context Management ---
