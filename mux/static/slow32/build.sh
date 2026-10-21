@@ -76,13 +76,30 @@ compile() {
 }
 export -f compile; export O M CXXF CF COMMON INC FEAT SQLOPTS LLVM AS
 
+# The source lists come from the Makefile.am files, so a file the native
+# build gains is built here too rather than silently left out.
+# am_list <Makefile.am> <VARIABLE>: the words of a (possibly continued)
+# assignment, one per line.  A one-line assignment ends on its own line.
+am_list() {
+    awk -v v="$2" '
+        !f && $0 ~ "^" v " = " { f = 1; sub("^" v " = ", "") }
+        f { c = ($0 ~ /\\$/); sub(/\\$/, ""); print; if (!c) exit }
+    ' "$1" | tr -s ' \t' '\n' | grep -v '^$'
+}
+for v in "$M/lib/Makefile.am LIBMUX_SRC" "$M/lib/Makefile.am LIBMUX_C_SRC" \
+         "$M/src/Makefile.am DRIVER_SRC" "$M/ganl/Makefile.am libganl_a_SOURCES" \
+         "$M/modules/engine/Makefile.am ENGINE_CXX_SRC"; do
+    [ -n "$(am_list $v)" ] || { echo "build.sh: no source list for $v"; exit 1; }
+done
+
 {
-for f in alarm alloc date_scan dbutil mathutil mux_nls sha1 shacrypt stringutil strtod svdhash svdrand \
-         timeabsolute timedelta timeutil timezone utf8_collate utf8_grapheme utf8_normalize utf8tables; do
-    echo "lib_$f $M/lib/$f.cpp lib"; done
-echo "lib_libmux $M/lib/libmux.cpp libmux"
-for f in color_ops mux_table unicode_tables; do [ -f $M/lib/$f.c ] && echo "lib_$f $M/lib/$f.c libc"; done
-for s in $(sed -n '/^ENGINE_CXX_SRC = /,/[^\\]$/p' $M/modules/engine/Makefile.am | tr -d '\\' | sed 's/ENGINE_CXX_SRC = //'); do
+for s in $(am_list $M/lib/Makefile.am LIBMUX_SRC); do
+    f=${s%.cpp}
+    # libmux.cpp is the one built with hidden visibility (kind libmux)
+    if [ "$f" = libmux ]; then echo "lib_libmux $M/lib/libmux.cpp libmux"; continue; fi
+    echo "lib_$f $M/lib/$s lib"; done
+for s in $(am_list $M/lib/Makefile.am LIBMUX_C_SRC); do echo "lib_${s%.c} $M/lib/$s libc"; done
+for s in $(am_list $M/modules/engine/Makefile.am ENGINE_CXX_SRC); do
     # the JIT's files are part of every engine (jit_compiler.cpp also holds
     # softcode functions the evaluator calls); configure's default backend
     [ "$s" = "@DBT_BACKEND@.cpp" ] && s=dbt_x64_sysv.cpp
@@ -99,10 +116,13 @@ echo "mux_main $M/script/mux_main.cpp main"
 echo "static_modules $M/src/static_modules.cpp main"
 # netmux: the driver, and ganl without its TLS transport (no libssl here)
 # (its slave spawner compiles; fork says ENOSYS when it is asked)
-for f in _build bsd driver driver_bridge ganl_adapter modules muxcli net netaddr platform signals \
-         sitemon telnet websocket version; do echo "drv_$f $M/src/$f.cpp main"; done
-for f in connection io_buffer network_address network_engine_factory secure_transport_factory \
-         select_network_engine slave_spawn_posix; do echo "ganl_$f $M/ganl/src/$f.cpp ganl"; done
+for s in $(am_list $M/src/Makefile.am DRIVER_SRC) version.cpp; do echo "drv_${s%.cpp} $M/src/$s main"; done
+# ganl's unconditional sources (epoll and kqueue are added only where
+# configure finds them), less the TLS transport: there is no libssl here.
+for s in $(am_list $M/ganl/Makefile.am libganl_a_SOURCES); do
+    f=$(basename ${s%.cpp})
+    [ "$f" = openssl_transport ] && continue
+    echo "ganl_$f $M/ganl/$s ganl"; done
 } > $O/jobs.txt
 xargs -P 8 -L 1 bash -c 'compile "$@"' _ < $O/jobs.txt | tee $O/compile.log
 grep -q '^FAIL' $O/compile.log && exit 1
