@@ -1263,6 +1263,82 @@ Result scenarioEnsureWritableCap(const EngineUnderTest&) {
 // Runner
 // ---------------------------------------------------------------------------
 
+#if !defined(_WIN32)
+// fd 0 is an ordinary descriptor.  A server that has closed its standard
+// input gets fd 0 from its next socket(), and the select engine, which has
+// no descriptor of its own, hands it straight to the first listener.  With
+// "no handle" spelled 0 that listener read as invalid and the game started
+// with no port ("GANL failed to create listener ...: Success").  The engine
+// is initialised first, so kqueue and epoll take their own descriptors
+// before fd 0 is freed, and every engine's listener gets it.
+Result scenarioListenerOnFdZero(const EngineUnderTest& eut) {
+    auto eng = eut.make();
+    if (!eng->initialize()) return fail("engine init failed");
+
+    const int saved = dup(0);
+    if (saved < 0) {
+        eng->shutdown();
+        return skip("dup(0) failed");
+    }
+    close(0);
+    // Restore standard input only after the engine is shut down: whatever
+    // it thinks it holds -- the fd-0 listener, even one it reported as no
+    // handle -- it closes then, and a dup2 onto fd 0 before that would have
+    // its descriptor closed underneath it.
+    auto finish = [&](const Result& r) {
+        eng->shutdown();
+        dup2(saved, 0);
+        close(saved);
+        return r;
+    };
+
+    ErrorCode err = 0;
+    ListenerHandle lh = eng->createListener("127.0.0.1", 0, err);
+    if (lh == InvalidListenerHandle) {
+        return finish(fail("createListener reported no handle for fd 0"));
+    }
+    if (lh != 0) {
+        eng->closeListener(lh);
+        return finish(skip("listener did not land on fd 0 (got " + std::to_string(lh) + ")"));
+    }
+    if (!eng->startListening(lh, nullptr, err)) {
+        eng->closeListener(lh);
+        return finish(fail("startListening failed on fd 0"));
+    }
+
+    // A real connection must be accepted on it, not merely a handle issued.
+    sockaddr_in addr{};
+    socklen_t alen = sizeof(addr);
+    std::string why;
+    int client = -1;
+    IoEvent got{};
+    if (getsockname(static_cast<int>(lh), reinterpret_cast<sockaddr*>(&addr), &alen) != 0) {
+        why = "getsockname failed on fd 0";
+    } else if ((client = ::socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        why = "client socket failed";
+    } else {
+        sockaddr_in dst{};
+        dst.sin_family = AF_INET;
+        dst.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        dst.sin_port = addr.sin_port;
+        if (::connect(client, reinterpret_cast<sockaddr*>(&dst), sizeof(dst)) != 0) {
+            why = "client connect failed";
+        } else if (!pollFor(*eng, 3000, 16, [&](const IoEvent& e) {
+                       return e.type == IoEventType::Accept && e.listener == lh
+                           && e.connection != InvalidConnectionHandle;
+                   }, &got)) {
+            why = "no Accept on the fd-0 listener";
+        }
+    }
+    if (client >= 0) ::close(client);
+    if (got.connection != InvalidConnectionHandle && got.type == IoEventType::Accept) {
+        eng->closeConnection(got.connection);
+    }
+    eng->closeListener(lh);
+    return finish(why.empty() ? pass() : fail(why));
+}
+#endif // !_WIN32
+
 struct Scenario {
     std::string name;
     Result (*run)(const EngineUnderTest&);
@@ -1291,6 +1367,7 @@ const Scenario kScenarios[] = {
     {"hup-with-data",            scenarioHupWithData,          true},
     {"conn-error-defer-close",   scenarioConnErrorDeferClose,  true},
     {"accept-tcp-nodelay",       scenarioAcceptTcpNodelay,     true},  // #2194
+    {"listener-on-fd-zero",      scenarioListenerOnFdZero,     true},
 #endif
     {"ensure-writable-cap",      scenarioEnsureWritableCap,    false},
 };
