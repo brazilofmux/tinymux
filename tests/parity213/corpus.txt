@@ -67,7 +67,9 @@ SLASH_PREFIX|[strcat(x /add(1,2) y)]
 QUOTE_PREFIX|[strcat(x "add(1,2) y)]
 COLON_PREFIX|[strcat(x :add(1,2) y)]
 SEMI_PREFIX|[strcat(x ;add(1,2) y)]
-OPENPAREN_PREFIX|[strcat(x (add(1,2) y)]
+# Three opens, two closers: the bare '(' takes strcat's ')', so strcat is
+# unterminated -- the PU_EXTRA_OPEN shape.  2.13 echoes; #2323 diagnoses.
+OPENPAREN_PREFIX|[strcat(x (add(1,2) y)]|2.14
 
 # --- top level (no enclosing function argument) ---
 TOPLEVEL_MID|x add(1,2) y
@@ -113,10 +115,10 @@ PNC_TRAIL|[strcat(head (a,b))]|2.13
 PNC_TWOARG|[strcat(x (a,b) y,z)]|2.13
 
 # --- unbalanced parens ---
-PU_EXTRA_OPEN|[strcat(a (b c)]|neither
+PU_EXTRA_OPEN|[strcat(a (b c)]|2.14
 PU_EXTRA_CLOSE|[strcat(a b) c)]
 PU_CLOSE_FIRST|[strcat(a ) b)]
-PU_OPEN_ONLY|[strcat(a ( b)]|neither
+PU_OPEN_ONLY|[strcat(a ( b)]|2.14
 
 # --- brackets inside arguments ---
 BK_LITERAL|[strcat(a [b] c)]
@@ -309,9 +311,9 @@ XN_TOP_SPACE|[strcat(a (b) c)]|both
 # Crossed the other way, and neither engine errors: 2.13 echoes a stray
 # trailing ']' and 2.14 quietly drops it.  Both leave the author guessing,
 # which is the PU_* situation -- "unbalanced bracket" would beat either.
-XN_PAREN_FIRST|[strcat((a [b) c])]|neither
-XN_COMMA_CROSS|[strcat((a, [b), c])]|neither
-XN_FN_CROSS|[strcat((add(1,2) [x) y])]|neither
+XN_PAREN_FIRST|[strcat((a [b) c])]|2.14
+XN_COMMA_CROSS|[strcat((a, [b), c])]|2.14
+XN_FN_CROSS|[strcat((add(1,2) [x) y])]|2.14
 #
 # ---- does the paren *counter* differ from 2.13's closer stack? (#1248) ----
 #
@@ -339,9 +341,9 @@ XN_FN_CROSS|[strcat((add(1,2) [x) y])]|neither
 # an unterminated call, which wants a diagnostic, not the echo both
 # engines give.  XN_CROSS_NUM stays `both`: there add()'s argument list
 # is complete once the region is opaque.
-XN_CROSS_TOP|strcat((a[b)c],d)|neither
-XN_CROSS_TOP3|strcat((a[b)c],d,e)|neither
-XN_BRACE_TOP|strcat((a{b)c},d)|neither
+XN_CROSS_TOP|strcat((a[b)c],d)|2.14
+XN_CROSS_TOP3|strcat((a[b)c],d,e)|2.14
+XN_BRACE_TOP|strcat((a{b)c},d)|2.14
 XN_CROSS_NUM|add(1[2)3],4)|both
 XN_NEST_TOP|strcat((a[b]c),d)|both
 
@@ -365,15 +367,24 @@ XN_NEST_TOP|strcat((a[b]c),d)|both
 #   [add(1,2]      2.13 'add(1,2'                      2.14 'add(1,2'
 #   [nosuchfn(1,2] 2.13 '#-1 FUNCTION (NOSUCHFN) NOT FOUND'  2.14 'nosuchfn(1,2'
 #
-# Settled (#2322, R4): an unterminated call is a diagnostic for known
-# and unknown names alike.  2.13's split -- an error for one, an echo
-# for the other -- is the inconsistency; the echo leaves the author
-# guessing.  All four want new behaviour.
+# Settled (#2322, R4) and built (#2323): an unterminated call is
+# `#-1 FUNCTION (NAME) MISSING CLOSE PARENTHESIS`.  Inside a bracket
+# every name is in call position, known or not.  At top level only a
+# name that resolves is a call -- an unknown one is text, the same line
+# FUNCTION NOT FOUND draws -- so UT_UNKNOWN_TOP is unchanged text.
 #
-UT_KNOWN_UNTERM|[add(1,2]|neither
-UT_UNKNOWN_UNTERM|[a(b]|neither
-UT_KNOWN_TOP|add(1,2|neither
-UT_UNKNOWN_TOP|a(b|neither
+UT_KNOWN_UNTERM|[add(1,2]|2.14
+UT_UNKNOWN_UNTERM|[a(b]|2.14
+UT_KNOWN_TOP|add(1,2|2.14
+UT_UNKNOWN_TOP|a(b|both
+#
+# Text is emitted as typed.  Not in call position, `add(` is text, and
+# the literal emitters used to supply the missing ')' -- a character the
+# author never wrote.  The diagnostic ends its own region only.
+UT_MIDTEXT|[x add(1,2]|2.14
+UT_MIDTEXT_TOP|x add(1,2|2.14
+UT_REGION_ONLY|[add(1,2] tail [mul(2,3)]|2.14
+UT_PROSE_TOP|A room (dark|both
 
 # ===================================================================
 # EV_FMAND failed lookup (#1247).  When a function lookup FAILS at

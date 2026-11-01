@@ -385,10 +385,13 @@
 #
 # Test Case #21 - Edge probe: unterminated function call text.
 #
-# Compatibility probe for malformed input.
+# An unknown name at top level is text, and text comes out as typed: no
+# ')' is supplied (#2323).  The expected strings spell '(' as %( so they
+# are exact -- this pattern once read \( and matched with or without the
+# invented closer, so the case could not fail.
 #
 &tr.tc021 test_parser_fn=
-  @if strmatch(.[setr(9,EDGE)][eval({notafunc(%q9})]., .EDGEnotafunc\(EDGE).)=
+  @if strmatch(.[setr(9,EDGE)][eval({notafunc(%q9})]., .EDGEnotafunc%(EDGE.)=
   {
     @log smoke=TC021: edge unterminated func-call parity. Succeeded.
   },
@@ -460,9 +463,13 @@
 #
 # Test Case #25 - Edge probe: unterminated outer call with inner bracket eval.
 #
+# Cases 25-27 used to expect the closers the literal emitter invented --
+# `notafunc(foo(bar(1)` came out as `notafunc(foo(bar(1)))`.  Text is now
+# emitted exactly as typed (#2323).
+#
 &tr.tc025 test_parser_fn=
   @if cand(
-        strmatch(.[eval({notafunc([add(1,2)]})]., .notafunc(3).)
+        strmatch(.[eval({notafunc([add(1,2)]})]., .notafunc%(3.)
       )=
   {
     @log smoke=TC025: edge unterminated call + bracket eval parity. Succeeded.
@@ -477,7 +484,7 @@
 #
 &tr.tc026 test_parser_fn=
   @if cand(
-        strmatch(.[eval({notafunc(foo(bar(1)})]., .notafunc(foo(bar(1))).)
+        strmatch(.[eval({notafunc(foo(bar(1)})]., .notafunc%(foo%(bar%(1%).)
       )=
   {
     @log smoke=TC026: edge unterminated call + nested parens parity. Succeeded.
@@ -492,7 +499,7 @@
 #
 &tr.tc027 test_parser_fn=
   @if cand(
-        strmatch(.[eval({notafunc(a,b,c})]., .notafunc(a\,b\,c).)
+        strmatch(.[eval({notafunc(a,b,c})]., .notafunc%(a\,b\,c.)
       )=
   {
     @log smoke=TC027: edge unterminated call comma handling parity. Succeeded.

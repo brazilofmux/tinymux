@@ -1,0 +1,136 @@
+#
+# unterminated_fn.mux - Test Cases for the unterminated-call diagnostic.
+#
+# A call whose ')' does not arrive before its enclosing region ends is
+# broken input (#2322 R4, #2323).  Both engines used to echo it back with
+# its inside half-evaluated:
+#
+#   [strcat(a,add(1,mul(2,3)]   was  strcat(a,add(1,6
+#                               now  #-1 FUNCTION (STRCAT) MISSING CLOSE PARENTHESIS
+#
+# Inside an eval bracket every name is in call position, so known and
+# unknown names alike get the diagnostic.  At top level only a name that
+# resolves is a call; an unknown one is text, which is the same line
+# FUNCTION NOT FOUND draws.  Text is never a call, and must come out as
+# typed -- the literal emitters used to append a ')' that was not in the
+# source.
+#
+# The patterns avoid '(' in EXPECTED strings and use '?' instead -- the
+# hazard documented in arity_fn.mux.  qqnofn is Z-free, since the harness
+# marker is ZZ and the diagnostic uppercases the name.
+#
+# ROUTE: the compiled route declines any tree holding an unterminated
+# call, so both toggles run the AST route for the diagnostic itself; the
+# dual-toggle run
+#   SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke
+# covers the literal text cases on the other route.
+#
+@create test_unterminated_fn
+-
+@set test_unterminated_fn=INHERIT QUIET
+-
+&fn.ktop test_unterminated_fn=add(1,2
+-
+&fn.utop test_unterminated_fn=qqnofn(1
+-
+&fn.prose test_unterminated_fn=A room (dark
+-
+&fn.cross test_unterminated_fn=strcat((a[b)c],d)
+-
+&tr.tc000 test_unterminated_fn=
+  @log smoke=Beginning unterminated test cases.;
+  &r.known me=[add(1,2];
+  &r.unknown me=[qqnofn(1];
+  &r.nested me=[strcat(a,add(1,mul(2,3)];
+  &r.after me=[add(1,2] tail [mul(2,3)];
+  &r.side me=[strcat(setq(9,leaked),add(1]%q9;
+  &r.mid me=[x add(1,2];
+  &r.midok me=[x add(1,2)];
+  &r.ok me=[add(1,2)]
+-
+#
+# Test Case #1 - Inside a bracket an unterminated call is a diagnostic,
+# for a known name, an unknown one, and the outer call of a nest.
+#
+&tr.tc001 test_unterminated_fn=
+  @if cand(
+        strmatch(v(r.known), #-1 FUNCTION ?ADD? MISSING CLOSE PARENTHESIS),
+        strmatch(v(r.unknown), #-1 FUNCTION ?QQNOFN? MISSING CLOSE PARENTHESIS),
+        strmatch(v(r.nested), #-1 FUNCTION ?STRCAT? MISSING CLOSE PARENTHESIS)
+      )=
+  {
+    @log smoke=TC001: unterminated call in a bracket is a diagnostic. Succeeded.
+  },
+  {
+    @log smoke=TC001: unterminated call in a bracket is a diagnostic. Failed (known=[v(r.known)] unknown=[v(r.unknown)] nested=[v(r.nested)]).
+  }
+-
+#
+# Test Case #2 - The diagnostic ends its own region only, and the broken
+# call's arguments are not evaluated: setq() inside it must not run.
+#
+&tr.tc002 test_unterminated_fn=
+  @if cand(
+        strmatch(v(r.after), #-1 FUNCTION ?ADD? MISSING CLOSE PARENTHESIS tail 6),
+        strmatch(v(r.side), #-1 FUNCTION ?STRCAT? MISSING CLOSE PARENTHESIS),
+        not(strmatch(v(r.side), *leaked*))
+      )=
+  {
+    @log smoke=TC002: diagnostic is local and has no side effects. Succeeded.
+  },
+  {
+    @log smoke=TC002: diagnostic is local and has no side effects. Failed (after=[v(r.after)] side=[v(r.side)]).
+  }
+-
+#
+# Test Case #3 - At top level a known name is a call and gets the
+# diagnostic, including when a bracket region hides its ')'; an unknown
+# name and plain prose are text and come out as typed.
+#
+&tr.tc003 test_unterminated_fn=
+  @if cand(
+        strmatch(u(fn.ktop), #-1 FUNCTION ?ADD? MISSING CLOSE PARENTHESIS),
+        strmatch(u(fn.cross), #-1 FUNCTION ?STRCAT? MISSING CLOSE PARENTHESIS),
+        strmatch(u(fn.utop), qqnofn?1),
+        eq(strlen(u(fn.utop)), 8),
+        strmatch(u(fn.prose), A room ?dark),
+        eq(strlen(u(fn.prose)), 12)
+      )=
+  {
+    @log smoke=TC003: top level diagnoses calls and keeps text. Succeeded.
+  },
+  {
+    @log smoke=TC003: top level diagnoses calls and keeps text. Failed (ktop=[u(fn.ktop)] cross=[u(fn.cross)] utop=[u(fn.utop)] prose=[u(fn.prose)]).
+  }
+-
+#
+# Test Case #4 - Text is emitted exactly as typed.  `x add(1,2` is not in
+# call position, so it is text, and it must not gain a ')' -- nine
+# characters, not ten.  The closed form keeps its paren, and a
+# well-formed call still evaluates.
+#
+&tr.tc004 test_unterminated_fn=
+  @if cand(
+        strmatch(v(r.mid), x add?1?2),
+        eq(strlen(v(r.mid)), 9),
+        eq(strlen(v(r.midok)), 10),
+        eq(v(r.ok), 3)
+      )=
+  {
+    @log smoke=TC004: text is emitted as typed. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC004: text is emitted as typed. Failed (mid=[v(r.mid)] midok=[v(r.midok)] ok=[v(r.ok)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_unterminated_fn=
+  @log smoke=End unterminated test cases.;
+  @notify smoke
+-
+drop test_unterminated_fn
+-
+#
+# End of Test Cases
+#
