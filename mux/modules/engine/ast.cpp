@@ -102,73 +102,15 @@ static ASTNoevalKind ast_noeval_kind(std::string_view funcName)
     return ASTNOEVAL_NONE;
 }
 
-static bool ast_noeval_arg_is_deferred(ASTNoevalKind kind, int argIndex, int nfargs)
-{
-    switch (kind)
-    {
-    case ASTNOEVAL_IFELSE:
-        return argIndex >= 1;
-
-    case ASTNOEVAL_ITER:
-        return argIndex == 1;
-
-    case ASTNOEVAL_CAND:
-    case ASTNOEVAL_CANDBOOL:
-    case ASTNOEVAL_COR:
-    case ASTNOEVAL_CORBOOL:
-        return true;
-
-    case ASTNOEVAL_SWITCH:
-    case ASTNOEVAL_CASE:
-    case ASTNOEVAL_SWITCHALL:
-    case ASTNOEVAL_CASEALL:
-        if (argIndex == 0)
-        {
-            return false;
-        }
-        if ((nfargs % 2) == 0 && argIndex == nfargs - 1)
-        {
-            return true;
-        }
-        return (argIndex % 2) == 0;
-
-    case ASTNOEVAL_ULAMBDA:
-        return argIndex == 0;  // only the body/reference is deferred
-
-    case ASTNOEVAL_NONE:
-    default:
-        return false;
-    }
-}
-
-static bool ast_call_arg_is_deferred(const ASTNode *call, int argIndex)
-{
-    if (!call || argIndex < 0)
-    {
-        return false;
-    }
-    if (argIndex < static_cast<int>(call->deferred_args.size()))
-    {
-        return call->deferred_args[argIndex].is_deferred;
-    }
-    if (!call->parser_known_noeval)
-    {
-        return false;
-    }
-
-    const int nfargs = static_cast<int>(call->children.size());
-    return ast_noeval_arg_is_deferred(call->noeval_kind, argIndex, nfargs);
-}
-
 static const std::string *ast_call_raw_arg(const ASTNode *call, int argIndex)
 {
     if (!call || argIndex < 0)
     {
         return nullptr;
     }
-    if (argIndex < static_cast<int>(call->deferred_args.size()))
+    if (argIndex < static_cast<int>(call->raw_args.size()))
     {
-        return &call->deferred_args[argIndex].raw_text;
+        return &call->raw_args[argIndex];
     }
     return nullptr;
 }
@@ -180,8 +122,6 @@ static const std::string *ast_call_raw_arg(const ASTNode *call, int argIndex)
 // even maximally nested input ("[[[[...]]]]") from overflowing, but — like the
 // evaluator's cap — this bounds adversarial deep nesting independently of stack
 // size (the evaluator's comment notes platforms with smaller stack defaults).
-// The counter is thread_local so it also bounds the nested re-parse of NOEVAL
-// structural arguments (ast_parse_region in parser_apply_structural_arg_policy).
 //
 // Over the cap, parseSequence returns its (empty) node without recursing; the
 // enclosing parseEvalBracket/etc. still consumed their opening token, so m_pos
@@ -253,51 +193,13 @@ private:
             && (it->second->flags & FN_NOEVAL) != 0;
     }
 
-    static bool parser_should_structuralize_arg(const ASTNode *call, int argIndex)
-    {
-        return ast_call_arg_is_deferred(call, argIndex);
-    }
-
     void parser_capture_raw_arg(ASTNode *call, size_t start, size_t end)
     {
         if (!call || !call->parser_known_noeval)
         {
             return;
         }
-        call->deferred_args.emplace_back(rawTextFromTokens(start, end), false);
-    }
-
-    void parser_apply_structural_arg_policy(ASTNode *call)
-    {
-        if (!call || !call->parser_known_noeval)
-        {
-            return;
-        }
-
-        call->deferred_args.resize(call->children.size());
-        for (int i = 0; i < static_cast<int>(call->children.size()); i++)
-        {
-            if (!parser_should_structuralize_arg(call, i))
-            {
-                continue;
-            }
-
-            call->deferred_args[i].is_deferred = true;
-            const std::string *raw = ast_call_raw_arg(call, i);
-            if (!raw)
-            {
-                continue;
-            }
-
-            auto structural = ast_parse_region(
-                ASTSourceSpan(reinterpret_cast<const UTF8 *>(raw->c_str()),
-                              raw->size()),
-                ASTLEX_STRUCTURAL);
-            if (structural)
-            {
-                call->children[i] = std::move(structural);
-            }
-        }
+        call->raw_args.push_back(rawTextFromTokens(start, end));
     }
 
     std::string rawTextFromTokens(size_t start, size_t end) const
@@ -493,8 +395,6 @@ private:
             advance();
             call->has_close_paren = true;
         }
-
-        parser_apply_structural_arg_policy(call);
     }
 
     std::unique_ptr<ASTNode> parseEvalBracket()
@@ -796,49 +696,30 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
 //   Pass 2: eval -- re-tokenize the result and evaluate it
 //
 static void ast_eval_deferred_region(const ASTNode *node,
-    const ASTNode *noevalNode, const std::string *rawText, UTF8 *buff,
+    const std::string *rawText, UTF8 *buff,
     UTF8 **bufc, dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
-    if (!node)
+    if (  !node
+       || !rawText
+       || rawText->empty())
+    {
+        return;
+    }
+
+    // Pass 1.  iter() arrives here once per element with the same text,
+    // so the tree comes from the parse cache.
+    //
+    std::shared_ptr<ASTNode> noevalAst = ast_parse_cached(
+        reinterpret_cast<const UTF8 *>(rawText->c_str()), rawText->size(),
+        ASTLEX_NOEVAL);
+    if (!noevalAst)
     {
         return;
     }
 
     std::string text;
-
-    if (noevalNode)
     {
-        LBuf temp = LBuf_Src("ast_noeval_region");
-        UTF8 *tp = temp;
-        ast_eval_node(noevalNode, temp, &tp,
-            executor, caller, enactor,
-            ((eval & ~(EV_EVAL | EV_TOP | EV_FMAND | EV_STRIP_CURLY | EV_FCHECK))
-                | EV_NOFCHECK),
-            cargs, ncargs);
-        *tp = '\0';
-        text.assign(reinterpret_cast<const char *>(temp.get()), tp - temp);
-    }
-    else if (rawText)
-    {
-        // No argument is marked deferred today -- the structural policy
-        // asks ast_call_arg_is_deferred, which reads the flag it is about
-        // to set (#2320) -- so every FN_NOEVAL body arrives here, once per
-        // iter() element.  The raw text is the same each time; cache its
-        // tree.
-        //
-        if (rawText->empty())
-        {
-            return;
-        }
-        std::shared_ptr<ASTNode> noevalAst = ast_parse_cached(
-            reinterpret_cast<const UTF8 *>(rawText->c_str()), rawText->size(),
-            ASTLEX_NOEVAL);
-        if (!noevalAst)
-        {
-            return;
-        }
-
         LBuf temp = LBuf_Src("ast_noeval_region");
         UTF8 *tp = temp;
         ast_eval_node(noevalAst.get(), temp, &tp,
@@ -848,10 +729,6 @@ static void ast_eval_deferred_region(const ASTNode *node,
             cargs, ncargs);
         *tp = '\0';
         text.assign(reinterpret_cast<const char *>(temp.get()), tp - temp);
-    }
-    else
-    {
-        return;
     }
 
     // The selected branch/body of a FN_NOEVAL function is evaluated
@@ -1574,21 +1451,20 @@ static void ast_eval_branch(const ASTNode *callNode, int childIndex,
     dbref executor, dbref caller, dbref enactor,
     int eval, const UTF8 *cargs[], int ncargs)
 {
-    const ASTNode *noevalNode = nullptr;
-    const std::string *rawText = nullptr;
+    // The parser keeps the source of every FN_NOEVAL argument; only a call
+    // it did not know to be FN_NOEVAL needs its argument rebuilt from the
+    // tree.
+    //
+    const std::string *rawText = ast_call_raw_arg(callNode, childIndex);
     std::string fallbackRaw;
-    if (ast_call_arg_is_deferred(callNode, childIndex))
-    {
-        noevalNode = child;
-        rawText = ast_call_raw_arg(callNode, childIndex);
-    }
-    else if (child)
+    if (  nullptr == rawText
+       && child)
     {
         fallbackRaw = ast_raw_text(child);
         rawText = &fallbackRaw;
     }
 
-    ast_eval_deferred_region(child, noevalNode, rawText, buff, bufc,
+    ast_eval_deferred_region(child, rawText, buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
 
