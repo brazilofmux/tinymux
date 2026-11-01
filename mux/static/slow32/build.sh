@@ -128,6 +128,9 @@ xargs -P 8 -L 1 bash -c 'compile "$@"' _ < $O/jobs.txt | tee $O/compile.log
 grep -q '^FAIL' $O/compile.log && exit 1
 touch $O/.stamp
 
+# 240M is the largest heap SLOW-32's current 256 MB address space leaves above
+# netmux's image, MMIO window and stack (#2333).  autoconf.h caps the
+# attribute cache at 128 MB to match.
 ENTRIES="mux_GetClassObject mux_CanUnloadNow mux_Register mux_Unregister"
 partial() {   # partial <module> <objects...>
     local m=$1; shift
@@ -139,12 +142,12 @@ partial comsys_mod $O/mod_comsys.s32o || exit 1
 partial mail_mod $O/mod_mail.s32o || exit 1
 partial exp3 $O/mod_exp3.s32o || exit 1
 
-$LD --print-map -o $B/muxscript.s32x --mmio 64K --code-size 16M --heap-size 64M --stack-size 8M ${LDOPTS:-} $R/runtime/crt0.s32o $O/mux_main.s32o $O/static_modules.s32o \
+$LD --print-map -o $B/muxscript.s32x --mmio 64K --code-size 16M --heap-size 240M --stack-size 8M ${LDOPTS:-} $R/runtime/crt0.s32o $O/mux_main.s32o $O/static_modules.s32o \
     $O/part_engine.s32o $O/part_comsys_mod.s32o $O/part_mail_mod.s32o $O/part_exp3.s32o $O/lib_*.s32o \
     $P2/libpcre2-8.s32a $CXXR/lib/libc++.a $CXXR/lib/libc++abi.a \
     $R/runtime/libc_mmio.s32a $R/runtime/libs32.s32a
 
-$LD -o $B/netmux.s32x --mmio 64K --code-size 16M --heap-size 64M --stack-size 8M ${LDOPTS:-} $R/runtime/crt0.s32o $O/drv_*.s32o $O/static_modules.s32o \
+$LD -o $B/netmux.s32x --mmio 64K --code-size 16M --heap-size 240M --stack-size 8M ${LDOPTS:-} $R/runtime/crt0.s32o $O/drv_*.s32o $O/static_modules.s32o \
     $O/part_engine.s32o $O/part_comsys_mod.s32o $O/part_mail_mod.s32o $O/part_exp3.s32o $O/lib_*.s32o $O/ganl_*.s32o \
     $P2/libpcre2-8.s32a $CXXR/lib/libc++.a $CXXR/lib/libc++abi.a \
     $R/runtime/libc_mmio.s32a $R/runtime/libs32.s32a

@@ -14,6 +14,14 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
 
+// The attribute cache's default cap.  A build whose address space is
+// smaller than this overrides it in its autoconf.h -- SLOW-32's address
+// space is currently 256 MB (#2333).
+//
+#ifndef DEFAULT_MAX_CACHE_SIZE
+#define DEFAULT_MAX_CACHE_SIZE (256LL*1024*1024)
+#endif
+
 using namespace std;
 
 // ---------------------------------------------------------------------------
@@ -53,7 +61,7 @@ void cf_init(void)
     mudconf.comsys_db = StringClone(T("comsys.db"));
 
     mudconf.status_file = StringClone(T("shutdown.status"));
-    mudconf.max_cache_size = 256LL*1024*1024;
+    mudconf.max_cache_size = DEFAULT_MAX_CACHE_SIZE;
     mudconf.cache_preload_depth = 1;
 
     mudconf.ip_address = nullptr;
