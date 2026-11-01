@@ -55,19 +55,11 @@ enum ASTNoevalKind {
     ASTNOEVAL_ULAMBDA
 };
 
-struct ASTDeferredArg {
-    std::string raw_text;
-    bool is_deferred;
-
-    ASTDeferredArg(std::string_view raw = "", bool deferred = false)
-        : raw_text(raw), is_deferred(deferred) {}
-};
-
 struct ASTNode {
     ASTNodeType type;
     std::string text;
     std::vector<std::unique_ptr<ASTNode>> children;
-    std::vector<ASTDeferredArg> deferred_args; // FUNCCALL arg metadata
+    std::vector<std::string> raw_args; // FN_NOEVAL FUNCCALL: each arg's source
     ASTNoevalKind noeval_kind;
     bool parser_known_noeval;
     bool has_close_paren;   // FUNCCALL: true if ')' was found
@@ -108,8 +100,7 @@ struct ASTNode {
 
 enum ASTLexMode {
     ASTLEX_EVAL,
-    ASTLEX_NOEVAL,
-    ASTLEX_STRUCTURAL
+    ASTLEX_NOEVAL
 };
 
 struct ASTSourceSpan {

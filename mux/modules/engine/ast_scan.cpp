@@ -23,7 +23,6 @@ static inline ASTTokenType ast_pct_token_type(ASTLexMode mode)
     switch (mode)
     {
     case ASTLEX_NOEVAL:
-    case ASTLEX_STRUCTURAL:
         return ASTTOK_LIT;
     case ASTLEX_EVAL:
     default:

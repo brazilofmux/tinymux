@@ -53,11 +53,10 @@ in the AST architecture.
 
 ## Modes
 
-The scanner needs explicit modes:
+The scanner has two modes:
 
 - `ASTLEX_EVAL`
 - `ASTLEX_NOEVAL`
-- `ASTLEX_STRUCTURAL`
 
 Meaning:
 
@@ -75,14 +74,13 @@ Meaning:
 
 This asymmetry is the important legacy rule.
 
-### `ASTLEX_STRUCTURAL`
-
-- recognizes brackets, braces, commas, parens, semicolons, spaces
-- does only the minimum needed to let the parser find region boundaries
-- does not commit `%` and `\` semantics more than necessary
-
-This mode exists so the parser can discover the shape of function args
-and deferred bodies without prematurely freezing all content semantics.
+A third mode, `ASTLEX_STRUCTURAL`, was meant to reparse `FN_NOEVAL`
+arguments at parse time so that their boundaries could be found without
+committing `%` and `\` semantics.  It never ran: the policy that applied
+it asked whether an argument was deferred by reading the flag it was
+about to set, which was always false.  The parser's ordinary `EVAL`-mode
+boundaries plus the raw text it captures turned out to be sufficient,
+and the mode was removed (#2320).
 
 ## Where The Context Comes From
 
@@ -98,8 +96,8 @@ boundaries:
 That means the parser can drive the scanner:
 
 - normal function args: scan/parse in `ASTLEX_EVAL`
-- `FN_NOEVAL` args: collect region boundaries structurally, but keep raw
-  source for later
+- `FN_NOEVAL` args: find region boundaries with the normal parse, and
+  keep each argument's raw source for later
 - selected deferred arg/body: re-scan in `ASTLEX_EVAL`
 
 ## Concrete Model In This Tree
@@ -126,14 +124,12 @@ That is the decision that must move.
 
 Implemented:
 
-- explicit lexer modes: `ASTLEX_EVAL`, `ASTLEX_NOEVAL`,
-  `ASTLEX_STRUCTURAL`
+- explicit lexer modes: `ASTLEX_EVAL`, `ASTLEX_NOEVAL`
 - region parse entrypoints
 - parser-time `FN_NOEVAL` classification
-- per-arg deferred-region metadata on `AST_FUNCCALL`
-- structural parsing of deferred arg positions
+- per-arg raw source text on `AST_FUNCCALL` (`raw_args`)
 - deferred-region replay as `NOEVAL` parse/eval followed by `EVAL`
-  reparse/eval
+  reparse/eval, both parses served from the AST parse cache
 
 Still optional:
 
@@ -180,8 +176,8 @@ During function-call parsing:
 
 Current implementation note:
 
-- `AST_FUNCCALL` now carries per-arg deferred metadata as
-  `ASTDeferredArg { raw_text, is_deferred }`
+- `AST_FUNCCALL` now carries each `FN_NOEVAL` argument's source text in
+  `raw_args`
 
 This is the key parser/lexer handshake. It is implemented.
 
