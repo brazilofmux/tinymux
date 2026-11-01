@@ -2023,6 +2023,80 @@ static void ast_emit_literal_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bu
     }
 }
 
+// ---------------------------------------------------------------
+// Stamp for the memoized jit_can_handle() verdict (#2068).
+//
+// The verdict is NOT a pure function of the AST, which is the trap in
+// "the tree is cached, so cache the answer".  It also depends on:
+//
+//   1. mudconf.jit_eval_brackets -- a runtime toggle, and one the smoke
+//      suite deliberately runs both ways.  Carried in the low bit rather
+//      than hooked, since it is a plain read.
+//   2. mudstate.ufunc_htab      -- @function and @function/delete.
+//   3. mudstate.builtin_functions -- module (de)registration, and the
+//      function_alias config directive.
+//
+// (2) and (3) bump the epoch.  Getting this wrong would fail silently and
+// in the dangerous direction: a name that did not resolve when the verdict
+// was taken, and does now, would leave a cached "decline" -- or worse, a
+// cached "accept" for a name that has since gone away.
+//
+// The epoch moves in steps of two so the low bit stays the toggle's.  A
+// stamp of 0 means "never computed", which the epoch never produces.
+//
+static uint32_t s_jit_gate_epoch = 2;
+
+// Resolve a FUNCCALL node's name to a builtin or an @function, memoized on
+// the node.  The answer depends only on the name and the two function
+// tables, and every change to either bumps s_jit_gate_epoch, so the stamp
+// is the epoch alone -- without the jit_eval_brackets bit the gate verdict
+// also carries.  A deleted @function is freed only after that bump, so a
+// pointer from an older epoch is never followed.
+//
+static void ast_resolve_funccall(const ASTNode *node, FUN **pfp, UFUN **pufp)
+{
+    if (node->fn_stamp != s_jit_gate_epoch)
+    {
+        size_t nUpper;
+        const UTF8 *pUpper = mux_strupr(
+            reinterpret_cast<const UTF8 *>(node->text.c_str()), nUpper);
+        std::vector<UTF8> name_key(pUpper, pUpper + nUpper);
+
+        FUN *fp = nullptr;
+        UFUN *ufp = nullptr;
+        const auto it = mudstate.builtin_functions.find(name_key);
+        if (it != mudstate.builtin_functions.end())
+        {
+            fp = it->second;
+        }
+        else
+        {
+            auto it_ufunc = mudstate.ufunc_htab.find(name_key);
+            if (it_ufunc != mudstate.ufunc_htab.end())
+            {
+                ufp = static_cast<UFUN *>(it_ufunc->second);
+            }
+        }
+
+        node->fn_fp = fp;
+        node->fn_ufp = ufp;
+        node->fn_stamp = s_jit_gate_epoch;
+    }
+    *pfp = node->fn_fp;
+    *pufp = node->fn_ufp;
+}
+
+// The uppercased name, for a diagnostic.  mux_strupr returns its own
+// buffer, so this is emitted at once rather than kept.
+//
+static void ast_emit_upper_name(const ASTNode *node, UTF8 *buff, UTF8 **bufc)
+{
+    size_t nUpper;
+    const UTF8 *pUpper = mux_strupr(
+        reinterpret_cast<const UTF8 *>(node->text.c_str()), nUpper);
+    safe_copy_buf(pUpper, nUpper, buff, bufc);
+}
+
 // Evaluate a function call node (AST_FUNCCALL).
 //
 static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
@@ -2074,34 +2148,9 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         return;
     }
 
-    LBuf TempFun = LBuf_Src("ast_eval_funccall");
-    memcpy(TempFun, node->text.c_str(), nName);
-    TempFun[nName] = '\0';
-    size_t nUpper;
-    UTF8 *pUpper = mux_strupr(TempFun, nUpper);
-    if (nUpper >= LBUF_SIZE)
-    {
-        nUpper = LBUF_SIZE - 1;
-    }
-    memcpy(TempFun, pUpper, nUpper);
-    TempFun[nUpper] = '\0';
-
-    std::vector<UTF8> name_key(TempFun.get(), TempFun.get() + nUpper);
-    FUN *fp = nullptr;
-    UFUN *ufp = nullptr;
-
-    const auto it = mudstate.builtin_functions.find(name_key);
-    if (it != mudstate.builtin_functions.end())
-    {
-        fp = it->second;
-    }
-
-    if (!fp)
-    {
-        auto it_ufunc = mudstate.ufunc_htab.find(name_key);
-        ufp = (it_ufunc != mudstate.ufunc_htab.end())
-            ? static_cast<UFUN*>(it_ufunc->second) : nullptr;
-    }
+    FUN *fp;
+    UFUN *ufp;
+    ast_resolve_funccall(node, &fp, &ufp);
 
     // A call whose ')' never arrived before its region ended (#2323).
     // Inside an eval bracket every name is in call position; elsewhere
@@ -2116,7 +2165,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
            || ufp)
         {
             safe_str(S_("#-1 FUNCTION ("), buff, bufc);
-            safe_str(TempFun, buff, bufc);
+            ast_emit_upper_name(node, buff, bufc);
             safe_str(T(") MISSING CLOSE PARENTHESIS"), buff, bufc);
             if (eval & EV_FMAND)
             {
@@ -2135,7 +2184,7 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         if (eval & EV_FMAND)
         {
             safe_str(S_("#-1 FUNCTION ("), buff, bufc);
-            safe_str(TempFun, buff, bufc);
+            ast_emit_upper_name(node, buff, bufc);
             safe_str(T(") NOT FOUND"), buff, bufc);
             s_fmand_abort = true;
         }
@@ -2681,29 +2730,6 @@ void ast_exec(const UTF8 *pStr, size_t nStr,
     ast_eval_node(ast.get(), buff, bufc,
         executor, caller, enactor, eval, cargs, ncargs);
 }
-
-// ---------------------------------------------------------------
-// Stamp for the memoized jit_can_handle() verdict (#2068).
-//
-// The verdict is NOT a pure function of the AST, which is the trap in
-// "the tree is cached, so cache the answer".  It also depends on:
-//
-//   1. mudconf.jit_eval_brackets -- a runtime toggle, and one the smoke
-//      suite deliberately runs both ways.  Carried in the low bit rather
-//      than hooked, since it is a plain read.
-//   2. mudstate.ufunc_htab      -- @function and @function/delete.
-//   3. mudstate.builtin_functions -- module (de)registration, and the
-//      function_alias config directive.
-//
-// (2) and (3) bump the epoch.  Getting this wrong would fail silently and
-// in the dangerous direction: a name that did not resolve when the verdict
-// was taken, and does now, would leave a cached "decline" -- or worse, a
-// cached "accept" for a name that has since gone away.
-//
-// The epoch moves in steps of two so the low bit stays the toggle's.  A
-// stamp of 0 means "never computed", which the epoch never produces.
-//
-static uint32_t s_jit_gate_epoch = 2;
 
 void jit_gate_note_function_table_change(void)
 {

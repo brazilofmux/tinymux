@@ -55,6 +55,9 @@ enum ASTNoevalKind {
     ASTNOEVAL_ULAMBDA
 };
 
+struct tagFun;
+struct ufun;
+
 struct ASTNode {
     ASTNodeType type;
     std::string text;
@@ -83,11 +86,23 @@ struct ASTNode {
     mutable uint32_t jit_gate_stamp;
     mutable bool     jit_gate_verdict;
 
+    // Memoized name resolution for a FUNCCALL node: the builtin or
+    // @function the name found, or neither.  Resolving uppercased the name
+    // into a pooled LBuf, built a vector key and hashed it twice on every
+    // call, for an answer that only changes with the function tables.
+    // Stamped with the same epoch as the gate verdict (0 = unresolved);
+    // see ast_resolve_funccall() in ast.cpp.
+    //
+    mutable uint32_t       fn_stamp;
+    mutable struct tagFun *fn_fp;
+    mutable struct ufun   *fn_ufp;
+
     ASTNode(ASTNodeType t, std::string_view s = "")
         : type(t), text(s), noeval_kind(ASTNOEVAL_NONE),
           parser_known_noeval(false), has_close_paren(true),
           has_close_bracket(true), has_close_brace(true),
-          jit_gate_stamp(0), jit_gate_verdict(false) {}
+          jit_gate_stamp(0), jit_gate_verdict(false),
+          fn_stamp(0), fn_fp(nullptr), fn_ufp(nullptr) {}
 
     void addChild(std::unique_ptr<ASTNode> child) {
         children.push_back(std::move(child));

@@ -34,15 +34,34 @@
 -
 &fn.unk test_ufunction_fn=[tf_nosuch(1)]
 -
+&fn.memo test_ufunction_fn=[mul(%0,6)]
+-
+&fn.memo2 test_ufunction_fn=[add(%0,100)]
+-
+&x.memo test_ufunction_fn=[tf_memo(7)] memo probe
+-
 #
 # fn.setq is registered twice, plain and /preserve, so TC004 can tell
 # the two register regimes apart by the flag alone.
+#
+# The tf_memo lines are TC006's: they evaluate one cached expression
+# before tf_memo exists, while it is defined, after it is redefined, and
+# after it is deleted, recording each result.  They run here because
+# only God may issue @function, and the evaluations have to interleave
+# with it.
 #
 @startup me=
   @function tf_add=test_ufunction_fn/fn.add;
   @function tf_none=test_ufunction_fn/fn.none;
   @function tf_setq=test_ufunction_fn/fn.setq;
-  @function/preserve tf_pres=test_ufunction_fn/fn.setq
+  @function/preserve tf_pres=test_ufunction_fn/fn.setq;
+  &r.memo.before test_ufunction_fn=[u(test_ufunction_fn/x.memo)];
+  @function tf_memo=test_ufunction_fn/fn.memo;
+  &r.memo.during test_ufunction_fn=[u(test_ufunction_fn/x.memo)];
+  @function tf_memo=test_ufunction_fn/fn.memo2;
+  &r.memo.redef test_ufunction_fn=[u(test_ufunction_fn/x.memo)];
+  @function/delete tf_memo;
+  &r.memo.after test_ufunction_fn=[u(test_ufunction_fn/x.memo)]
 -
 &tr.tc000 test_ufunction_fn=
   @log smoke=Beginning @function global test cases.
@@ -138,11 +157,38 @@
         strmatch(tf_add(2,3), 5)
       )=
   {
-    @log smoke=TC005: undefined global names itself. Succeeded.;
+    @log smoke=TC005: undefined global names itself. Succeeded.
+  },
+  {
+    @log smoke=TC005: undefined global names itself. Failed (unknown=[u(me/fn.unk)] known=[tf_add(2,3)]).
+  }
+-
+#
+# Test Case #6 - A call node memoizes what its name resolved to, stamped
+# with the epoch every function-table change bumps.  x.memo is long
+# enough (16+ bytes) to live in the parse cache, so all four results in
+# @startup came from one tree.  A stale memo shows as the wrong value at
+# some step; following a deleted @function's old pointer would be a
+# use-after-free.
+#
+# ROUTE: only the AST route consults the memo -- with jit_eval_brackets
+# on, a body whose names resolve is compiled and never reaches it.  So
+# this case can fail only under test-smoke-ast (jit_eval_brackets 0),
+# where a memo that ignored the epoch was measured to fail all four.
+#
+&tr.tc006 test_ufunction_fn=
+  @if cand(
+        strmatch(v(r.memo.before), #-1 FUNCTION ?TF_MEMO? NOT FOUND memo probe),
+        strmatch(v(r.memo.during), 42 memo probe),
+        strmatch(v(r.memo.redef), 107 memo probe),
+        strmatch(v(r.memo.after), #-1 FUNCTION ?TF_MEMO? NOT FOUND memo probe)
+      )=
+  {
+    @log smoke=TC006: function resolution follows table changes. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: undefined global names itself. Failed (unknown=[u(me/fn.unk)] known=[tf_add(2,3)]).;
+    @log smoke=TC006: function resolution follows table changes. Failed (before=[v(r.memo.before)] during=[v(r.memo.during)] redef=[v(r.memo.redef)] after=[v(r.memo.after)]).;
     @trig me/tr.done
   }
 -
