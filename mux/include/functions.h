@@ -11,6 +11,46 @@
 #include <list>
 #include <string>
 
+// Counts and positions parsed from softcode arrive as int64_t (#2329).
+//
+// lbuf_clamp() is for the moment such a value becomes a size_t.  Every
+// string and list fits in an LBUF, so a count or position at or past
+// LBUF_SIZE selects exactly what LBUF_SIZE does, and a negative one
+// selects nothing.  A bare static_cast<size_t> is 32 bits on ILP32
+// (SLOW-32), where 4294967298 silently becomes 2.
+//
+// arith_clamp() is for a value that int64_t arithmetic is about to
+// combine with another (mid()'s start + count, a negated count).  At
+// +/-2^62 two of them cannot overflow, and nothing here can tell 2^62
+// from 2^63 anyway.
+//
+inline size_t lbuf_clamp(int64_t n)
+{
+    if (n <= 0)
+    {
+        return 0;
+    }
+    if (LBUF_SIZE < n)
+    {
+        return LBUF_SIZE;
+    }
+    return static_cast<size_t>(n);
+}
+
+inline int64_t arith_clamp(int64_t n)
+{
+    const int64_t bound = INT64_C(1) << 62;
+    if (n < -bound)
+    {
+        return -bound;
+    }
+    if (bound < n)
+    {
+        return bound;
+    }
+    return n;
+}
+
 typedef struct tagFun
 {
     const UTF8 *name;     // function name
