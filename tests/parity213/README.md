@@ -115,15 +115,39 @@ allowed to be better than 2.13. The ranking that has emerged:
    the author something is wrong
 4. best — a specific diagnostic naming the actual problem
 
-That is why `MX_BP` carries `2.13`: `[strcat(a [b (c,d) e] f)]` is broken
-softcode, 2.13 answers `#-1 FUNCTION (B) NOT FOUND`, and 2.14 silently
-prints text that looks intentional. The error is the better output even
-though it is uglier.
-
-And why the `PU_*` unbalanced-paren shapes carry `neither`: 2.13 echoes
-the whole expression back verbatim and 2.14 quietly drops part of it.
-Both leave the author guessing; *"unbalanced parenthesis"* would beat
+That is why the `PU_*` unbalanced-paren shapes carry `neither`: 2.13
+echoes the whole expression back verbatim and 2.14 quietly drops part of
+it. Both leave the author guessing; *"unbalanced parenthesis"* would beat
 either.
+
+## Grammar policy
+
+Settled 2026-10-31 (#2322). 2.14 has its own scanner and parser producing
+a proper AST, so it defines the grammar rather than reproducing 2.13's
+back-out heuristics or adopting PennMUSH's optional closers. Verdicts
+follow from these rules:
+
+- **R1 — call position.** A call is a name *immediately* followed by
+  `(`, at the head of a region: an eval bracket, a call argument, or top
+  level. Accumulated text is never a name; 2.13's
+  `#-1 FUNCTION (X ADD) NOT FOUND` is not reproduced.
+- **R2 — no space before the paren.** `name (args)` is text. In 2.13 it
+  was a call only while `space_compress` was on (see below), so there was
+  no single behaviour to match, and text fails visibly.
+- **R3 — unknown names.** An unknown name in call position is
+  `#-1 FUNCTION (NAME) NOT FOUND` and ends its region (#1247).
+- **R4 — scoping and broken input.** Each eval bracket, brace group and
+  call argument list keeps its own paren count; an inner region is opaque
+  to the outer one (#1219). A call whose `)` does not arrive before its
+  enclosing region ends is unterminated and wants a diagnostic, for known
+  and unknown names alike. A stray `)` with nothing open is literal, and
+  parens outside any call are always text, so prose is unaffected.
+- **R5 — no auto-close.** Missing closers are never supplied; a typo
+  must not become plausible output.
+
+Under R2, `MX_BP` (`[strcat(a [b (c,d) e] f)]`) changed from `2.13` to
+`2.14`: `[b (c,d) e]` is a well-formed region of text, not broken
+softcode. It had been this README's example of 2.13 being better.
 
 ## space_compress changes what the corpus measures
 
@@ -141,9 +165,8 @@ changes a *parsing* behaviour, not just formatting:
 
 So `name (args)` is not a stable 2.13 behaviour — it exists only when a
 formatting option happens to be on, and the error it produces otherwise
-carries the space inside the function name. That matters when deciding
-whether 2.14 should reproduce it: there is no single 2.13 answer to
-match.
+carries the space inside the function name. That is why R2 settles it as
+text in 2.14, independent of the setting.
 
 The corpus is measured under the default (`space_compress` on). To see
 the other side, add the setting to the generated conf:
