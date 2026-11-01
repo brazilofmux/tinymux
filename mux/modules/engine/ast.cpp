@@ -716,13 +716,18 @@ static std::list<std::string> s_astLru;
 static const size_t AST_CACHE_MAX = 1024;
 static const size_t AST_CACHE_MIN_LEN = 16;
 
-// Look up, or parse and insert, the tree for pStr.  The caller holds the
-// returned pointer for as long as it evaluates the tree, so an eviction
-// during that evaluation cannot free it.
+// Look up, or parse and insert, the tree for pStr lexed in the given mode.
+// The mode leads the key, so the same text parsed two ways is two entries.
+// The caller holds the returned pointer for as long as it evaluates the
+// tree, so an eviction during that evaluation cannot free it.
 //
-static std::shared_ptr<ASTNode> ast_parse_cached(const UTF8 *pStr, size_t nLen)
+static std::shared_ptr<ASTNode> ast_parse_cached(const UTF8 *pStr, size_t nLen,
+    ASTLexMode mode)
 {
-    std::string key(reinterpret_cast<const char *>(pStr), nLen);
+    std::string key;
+    key.reserve(nLen + 1);
+    key.push_back(static_cast<char>(mode));
+    key.append(reinterpret_cast<const char *>(pStr), nLen);
     auto it = s_astCache.find(key);
     if (it != s_astCache.end())
     {
@@ -734,7 +739,8 @@ static std::shared_ptr<ASTNode> ast_parse_cached(const UTF8 *pStr, size_t nLen)
 
     // Cache miss — parse and insert.
     //
-    std::shared_ptr<ASTNode> ast(ast_parse_string(pStr, nLen).release());
+    std::shared_ptr<ASTNode> ast(
+        ast_parse_region(ASTSourceSpan(pStr, nLen), mode).release());
 
     // Evict LRU entries if cache is full.
     //
@@ -815,9 +821,17 @@ static void ast_eval_deferred_region(const ASTNode *node,
     }
     else if (rawText)
     {
-        auto noevalAst = ast_parse_region(
-            ASTSourceSpan(reinterpret_cast<const UTF8 *>(rawText->c_str()),
-                          rawText->size()),
+        // No argument is marked deferred today -- the structural policy
+        // asks ast_call_arg_is_deferred, which reads the flag it is about
+        // to set -- so every FN_NOEVAL body arrives here (#2320), once per iter()
+        // element.  The raw text is the same each time; cache its tree.
+        //
+        if (rawText->empty())
+        {
+            return;
+        }
+        std::shared_ptr<ASTNode> noevalAst = ast_parse_cached(
+            reinterpret_cast<const UTF8 *>(rawText->c_str()), rawText->size(),
             ASTLEX_NOEVAL);
         if (!noevalAst)
         {
@@ -867,7 +881,7 @@ static void ast_eval_deferred_region(const ASTNode *node,
     const ASTNode *reparsed;
     if (0 < text.size())
     {
-        cache_holder = ast_parse_cached(pText, text.size());
+        cache_holder = ast_parse_cached(pText, text.size(), ASTLEX_EVAL);
         reparsed = cache_holder.get();
     }
     else
@@ -2846,7 +2860,7 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
 
     if (nLen >= AST_CACHE_MIN_LEN)
     {
-        cache_holder = ast_parse_cached(pStr, nLen);
+        cache_holder = ast_parse_cached(pStr, nLen, ASTLEX_EVAL);
         ast_ptr = cache_holder.get();
     }
     else
