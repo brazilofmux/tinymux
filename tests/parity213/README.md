@@ -134,14 +134,18 @@ follow from these rules:
 - **R2 — no space before the paren.** `name (args)` is text. In 2.13 it
   was a call only while `space_compress` was on (see below), so there was
   no single behaviour to match, and text fails visibly.
-- **R3 — unknown names.** An unknown name in call position is
-  `#-1 FUNCTION (NAME) NOT FOUND` and ends its region (#1247).
+- **R3 — unknown names.** Inside an eval bracket an unknown name in
+  call position is `#-1 FUNCTION (NAME) NOT FOUND` and ends its region
+  (#1247). At top level an unknown name is text.
 - **R4 — scoping and broken input.** Each eval bracket, brace group and
   call argument list keeps its own paren count; an inner region is opaque
   to the outer one (#1219). A call whose `)` does not arrive before its
-  enclosing region ends is unterminated and wants a diagnostic, for known
-  and unknown names alike. A stray `)` with nothing open is literal, and
-  parens outside any call are always text, so prose is unaffected.
+  enclosing region ends is
+  `#-1 FUNCTION (NAME) MISSING CLOSE PARENTHESIS` (#2323) and is not
+  dispatched -- for any name inside a bracket, and for a name that
+  resolves at top level, where R3 makes an unknown one text. A stray `)`
+  with nothing open is literal, parens outside any call are always text,
+  and text is emitted exactly as typed, so prose is unaffected.
 - **R5 — no auto-close.** Missing closers are never supplied; a typo
   must not become plausible output.
 

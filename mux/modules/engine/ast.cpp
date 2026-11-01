@@ -2017,7 +2017,10 @@ static void ast_emit_literal_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bu
         ast_eval_node(node->children[i].get(), buff, bufc,
             executor, caller, enactor, childEval, cargs, ncargs);
     }
-    safe_chr(')', buff, bufc);
+    if (node->has_close_paren)
+    {
+        safe_chr(')', buff, bufc);
+    }
 }
 
 // Evaluate a function call node (AST_FUNCCALL).
@@ -2039,12 +2042,12 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
     }
 
 
-    // Missing closing ')' — the function is NOT dispatched.  Output
-    // the function name and '(' literally, then evaluate the argument
-    // children (%-substitutions must be resolved, matching the classic
-    // parser which evaluates as it scans).
+    // Missing closing ')' on something that is not a call: output the
+    // name and '(' literally, then evaluate the argument children
+    // (%-substitutions must be resolved, matching the classic parser
+    // which evaluates as it scans).
     //
-    if (!node->has_close_paren)
+    auto emit_unterminated_text = [&]()
     {
         safe_str(reinterpret_cast<const UTF8 *>(node->text.c_str()), buff, bufc);
         safe_chr('(', buff, bufc);
@@ -2054,14 +2057,18 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
             ast_eval_node(node->children[i].get(), buff, bufc,
                 executor, caller, enactor, eval, cargs, ncargs);
         }
-        return;
-    }
+    };
 
     // Uppercase the function name for lookup.
     //
     size_t nName = node->text.size();
     if (nName == 0 || nName > MAX_UFUN_NAME_LEN)
     {
+        if (!node->has_close_paren)
+        {
+            emit_unterminated_text();
+            return;
+        }
         ast_emit_literal_funccall(node, buff, bufc,
             executor, caller, enactor, eval, cargs, ncargs);
         return;
@@ -2094,6 +2101,33 @@ static void ast_eval_funccall(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
         auto it_ufunc = mudstate.ufunc_htab.find(name_key);
         ufp = (it_ufunc != mudstate.ufunc_htab.end())
             ? static_cast<UFUN*>(it_ufunc->second) : nullptr;
+    }
+
+    // A call whose ')' never arrived before its region ended (#2323).
+    // Inside an eval bracket every name is in call position; elsewhere
+    // only one that resolves is, and an unknown one is text -- the same
+    // line FUNCTION NOT FOUND draws below.  The broken call is not
+    // dispatched and its arguments are not evaluated.
+    //
+    if (!node->has_close_paren)
+    {
+        if (  (eval & EV_FMAND)
+           || fp
+           || ufp)
+        {
+            safe_str(S_("#-1 FUNCTION ("), buff, bufc);
+            safe_str(TempFun, buff, bufc);
+            safe_str(T(") MISSING CLOSE PARENTHESIS"), buff, bufc);
+            if (eval & EV_FMAND)
+            {
+                s_fmand_abort = true;
+            }
+        }
+        else
+        {
+            emit_unterminated_text();
+        }
+        return;
     }
 
     if (!fp && !ufp)
@@ -2469,7 +2503,10 @@ static void ast_eval_node(const ASTNode *node, UTF8 *buff, UTF8 **bufc,
                 ast_eval_node(node->children[i].get(), buff, bufc,
                     executor, caller, enactor, eval, cargs, ncargs);
             }
-            safe_chr(')', buff, bufc);
+            if (node->has_close_paren)
+            {
+                safe_chr(')', buff, bufc);
+            }
         }
         break;
 
