@@ -823,8 +823,9 @@ static void ast_eval_deferred_region(const ASTNode *node,
     {
         // No argument is marked deferred today -- the structural policy
         // asks ast_call_arg_is_deferred, which reads the flag it is about
-        // to set -- so every FN_NOEVAL body arrives here (#2320), once per iter()
-        // element.  The raw text is the same each time; cache its tree.
+        // to set (#2320) -- so every FN_NOEVAL body arrives here, once per
+        // iter() element.  The raw text is the same each time; cache its
+        // tree.
         //
         if (rawText->empty())
         {
