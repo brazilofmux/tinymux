@@ -1,0 +1,99 @@
+#
+# narrowing_fn.mux - Test Cases for counts and positions past 2^32 (#2329).
+#
+# Counts and positions are parsed as int64_t.  Several builtins then cast
+# them to size_t or long before any range check, which is 32 bits on
+# ILP32 (SLOW-32) and, for long, on LLP64 Windows -- so 4294967298 became
+# 2 and mid(abcdef,1,4294967298) returned bc.  The JIT's guest library
+# had the same defect on every platform: it parsed with a 32-bit satoi,
+# so the compiled route disagreed with the interpreter on native builds
+# too.
+#
+# Every expected value here is what the interpreter on an LP64 host
+# already returned: a count past the end of the string is the end of
+# the string.
+#
+# ROUTE: r.lit uses literal arguments and r.run feeds the same values
+# through %q0, so the JIT's runtime path cannot fold them away.  On a
+# native LP64 build only the JIT half (and the multi-char extract
+# overflow in TC003) can fail; the interpreter half needs an ILP32 build.
+# The dual-toggle run
+#   SMOKE_EXTRA_CONF="jit_eval_brackets 0" ./tools/Smoke
+# covers the interpreter route.
+#
+@create test_narrowing_fn
+-
+@set test_narrowing_fn=INHERIT QUIET
+-
+&tr.tc000 test_narrowing_fn=
+  @log smoke=Beginning narrowing test cases.;
+  &r.lit me=[mid(abcdef,1,4294967298)]|[left(abcdef,4294967298)]|[right(abcdef,4294967298)]|[strtrunc(abcdef,4294967298)]|[delete(abcdef,1,4294967298)]|[delete(abcdef,4294967298,1)]|[strdelete(abcdef,1,4294967298)]|[strdelete(a b c d,4294967298,1)]|[strinsert(abcdef,4294967298,x)]|[strreplace(abcdef,1,4294967298,X)];
+  &r.run me=[setq(0,4294967298)][mid(abcdef,1,%q0)]|[left(abcdef,%q0)]|[right(abcdef,%q0)]|[strtrunc(abcdef,%q0)]|[delete(abcdef,1,%q0)]|[delete(abcdef,%q0,1)]|[strdelete(abcdef,1,%q0)]|[strdelete(a b c d,%q0,1)]|[strinsert(abcdef,%q0,x)]|[strreplace(abcdef,1,%q0,X)];
+  &r.wlit me=[extract(a b c d,4294967298,1)]|[extract(a b c d,1,4294967298)]|[elements(a b c,4294967298)]|[elements(a b c,4294967297)]|[repeat(ab,4294967298)]|[wordpos(a b c d,4294967298)];
+  &r.wrun me=[setq(0,4294967298)][extract(a b c d,%q0,1)]|[extract(a b c d,1,%q0)]|[elements(a b c,%q0)]|[elements(a b c,setr(1,4294967297))]|[repeat(ab,%q0)]|[wordpos(a b c d,%q0)];
+  &r.ovf me=[extract(a--b--c,2,9223372036854775807,--)]|[setq(0,9223372036854775807)][extract(a--b--c,2,%q0,--)];
+  &r.etime me=[etimefmt($2dd,4294967296)]|[setq(0,4294967296)][etimefmt($2dd $2hh $2mm $2ss,%q0)];
+  &r.ctl me=[mid(abcdef,2,3)]|[delete(abcdef,3,-2)]|[extract(a b c d,2,2)]|[elements(a b c,2 3)]|[repeat(ab,3)]|[wordpos(a b c d,3)]
+-
+#
+# Test Case #1 - Character counts and positions past 2^32 mean "past the
+# end", with literal arguments and with arguments that arrive at runtime.
+#
+&tr.tc001 test_narrowing_fn=
+  @if cand(
+        strmatch(v(r.lit), bcdef|abcdef|abcdef|abcdef|a|abcdef|a|a b c d|abcdefx|aX),
+        strmatch(v(r.run), bcdef|abcdef|abcdef|abcdef|a|abcdef|a|a b c d|abcdefx|aX)
+      )=
+  {
+    @log smoke=TC001: character counts past 2^32. Succeeded.
+  },
+  {
+    @log smoke=TC001: character counts past 2^32. Failed (lit=[v(r.lit)] run=[v(r.run)]).
+  }
+-
+#
+# Test Case #2 - Word positions and counts past 2^32: no word there, and
+# a repeat that cannot fit is an error, not two copies.
+#
+&tr.tc002 test_narrowing_fn=
+  @if cand(
+        strmatch(v(r.wlit), |a b c d|||#-1 STRING TOO LONG|#-1),
+        strmatch(v(r.wrun), |a b c d|||#-1 STRING TOO LONG|#-1)
+      )=
+  {
+    @log smoke=TC002: word positions past 2^32. Succeeded.
+  },
+  {
+    @log smoke=TC002: word positions past 2^32. Failed (wlit=[v(r.wlit)] wrun=[v(r.wrun)]).
+  }
+-
+#
+# Test Case #3 - The multi-char extract branch added first + count in
+# int64 and overflowed at INT64_MAX; etimefmt held seconds in a long.
+# Small controls still behave.  $2h pads to two columns, and '??' stands
+# for that double space, which command parsing would compress.
+#
+&tr.tc003 test_narrowing_fn=
+  @if cand(
+        strmatch(v(r.ovf), b--c|b--c),
+        strmatch(v(r.etime), 49710d|49710d??6h 28m 16s),
+        strmatch(v(r.ctl), cde|abef|b c|b c|ababab|2)
+      )=
+  {
+    @log smoke=TC003: overflow, etimefmt, and controls. Succeeded.;
+    @trig me/tr.done
+  },
+  {
+    @log smoke=TC003: overflow, etimefmt, and controls. Failed (ovf=[v(r.ovf)] etime=[v(r.etime)] ctl=[v(r.ctl)]).;
+    @trig me/tr.done
+  }
+-
+&tr.done test_narrowing_fn=
+  @log smoke=End narrowing test cases.;
+  @notify smoke
+-
+drop test_narrowing_fn
+-
+#
+# End of Test Cases
+#

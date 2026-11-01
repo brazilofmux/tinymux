@@ -349,6 +349,9 @@ static int satoi(const char *s);
 static int sisspace(char c);
 static int sis_integer(const char *s);
 static long long satoll(const char *s);
+static long long satoi64(const char *s);
+static size_t sclamp_lbuf(long long n);
+static long long sclamp_arith(long long n);
 
 /* String<->double intrinsic stubs (defined near the math wrappers;
  * the DBT replaces them with host mux_atof / fval). */
@@ -752,15 +755,15 @@ char *rv64_bytelen(char *out, const char **fargs, int nfargs) {
 
 char *co_extract_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
-    int pos = satoi(fargs[1]);
-    int count = satoi(fargs[2]);
+    long long pos = satoi64(fargs[1]);
+    long long count = satoi64(fargs[2]);
     unsigned char delim = get_delim(fargs, nfargs, 3);
     unsigned char osep = get_osep(fargs, nfargs, 4, delim);
     if (pos < 1 || count < 1) { out[0] = '\0'; return out; }
     size_t n = co_extract((unsigned char *)out,
                           (const unsigned char *)fargs[0],
                           rv64_slen(fargs[0]),
-                          (size_t)pos, (size_t)count, delim, osep);
+                          sclamp_lbuf(pos), sclamp_lbuf(count), delim, osep);
     out[n] = '\0';
     return out;
 }
@@ -797,14 +800,16 @@ char *co_trim_wrap(char *out, const char **fargs, int nfargs) {
 
 char *co_repeat_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 2) { out[0] = '\0'; return out; }
-    int count = satoi(fargs[1]);
+    long long count64 = satoi64(fargs[1]);
     size_t len = rv64_slen(fargs[0]);
-    if (count < 1 || len == 0) { out[0] = '\0'; return out; }
+    if (count64 < 1 || len == 0) { out[0] = '\0'; return out; }
+    /* Clamped: at LBUF_SIZE every branch below already clips or errors. */
+    size_t count = sclamp_lbuf(count64);
     if (count == 1) { rv64_scopy(out, fargs[0]); return out; }
     if (len == 1) {
         /* fun_repeat's single-char branch is a clipped fill with NO
          * overflow error — mirror that. */
-        size_t n = (size_t)count;
+        size_t n = count;
         if (n > LBUF_SIZE - 1) n = LBUF_SIZE - 1;
         memset(out, fargs[0][0], n);
         out[n] = '\0';
@@ -812,23 +817,23 @@ char *co_repeat_wrap(char *out, const char **fargs, int nfargs) {
     }
     /* fun_repeat overflow: the error string, not silent truncation
      * (#991: repeat(ab,16384) returned empty vs #-1 STRING TOO LONG). */
-    if (  (size_t)count > LBUF_SIZE - 1
-       || len * (size_t)count > LBUF_SIZE - 1) {
+    if (  count > LBUF_SIZE - 1
+       || len * count > LBUF_SIZE - 1) {
         rv64_scopy(out, "#-1 STRING TOO LONG");
         return out;
     }
     size_t n = co_repeat((unsigned char *)out,
                          (const unsigned char *)fargs[0],
                          len,
-                         (size_t)count);
+                         count);
     out[n] = '\0';
     return out;
 }
 
 char *co_mid_wrap(char *out, const char **fargs, int nfargs) {
     if (nfargs < 3) { out[0] = '\0'; return out; }
-    int start = satoi(fargs[1]);
-    int count = satoi(fargs[2]);
+    long long start = sclamp_arith(satoi64(fargs[1]));
+    long long count = sclamp_arith(satoi64(fargs[2]));
     /* fun_mid negative normalization (mirrors the interpreter and the
      * host-side MID fold): a negative count selects before the start
      * position; a negative start eats into the count (#782). */
@@ -840,14 +845,14 @@ char *co_mid_wrap(char *out, const char **fargs, int nfargs) {
         count += start;
         start = 0;
     }
-    if (count <= 0) { out[0] = '\0'; return out; }
+    if (count <= 0 || start >= LBUF_SIZE) { out[0] = '\0'; return out; }
     /* co_mid_cluster, not co_mid: fun_mid counts grapheme clusters and
      * excludes color codes trailing the last copied cluster; the
      * code-point-based co_mid included them, a raw-byte divergence. */
     size_t n = co_mid_cluster((unsigned char *)out,
                               (const unsigned char *)fargs[0],
                               rv64_slen(fargs[0]),
-                              (size_t)start, (size_t)count);
+                              (size_t)start, sclamp_lbuf(count));
     out[n] = '\0';
     return out;
 }
@@ -1503,8 +1508,8 @@ char *rv64_delete(char *out, const char **fargs, int nfargs) {
         else out[0] = '\0';
         return out;
     }
-    int first = satoi(fargs[1]);
-    int dlen  = satoi(fargs[2]);
+    long long first = sclamp_arith(satoi64(fargs[1]));
+    long long dlen  = sclamp_arith(satoi64(fargs[2]));
 
     /* Mirror fun_delete exactly: positions and counts are GRAPHEME
      * CLUSTERS, not bytes — the old byte arithmetic split multi-byte
@@ -1526,7 +1531,7 @@ char *rv64_delete(char *out, const char **fargs, int nfargs) {
     size_t n = co_delete_cluster((unsigned char *)out,
                                  (const unsigned char *)fargs[0],
                                  rv64_slen(fargs[0]),
-                                 (size_t)first, (size_t)dlen);
+                                 (size_t)first, sclamp_lbuf(dlen));
     out[n] = '\0';
     return out;
 }
@@ -1571,24 +1576,28 @@ char *rv64_elements(char *out, const char **fargs, int nfargs) {
         int sign = 1;
         if (*pos_list == '+') { pos_list++; }
         else if (*pos_list == '-') { sign = -1; pos_list++; }
-        int pos = 0;
+        /* mux_atoi64 parity: accumulate unsigned and wrap mod 2^64.  An
+         * int accumulator overflowed (UB), and in practice wrapped
+         * 4294967298 to element 2 (#2329). */
+        unsigned long long upos = 0;
         int advanced = 0;
         while (*pos_list >= '0' && *pos_list <= '9') {
-            pos = pos * 10 + (*pos_list - '0');
+            upos = upos * 10 + (unsigned long long)(*pos_list - '0');
             pos_list++;
             advanced = 1;
         }
-        pos *= sign;
+        if (sign < 0) upos = 0 - upos;
+        long long pos = (long long)upos;
         if (!advanced) {
             /* Non-numeric token: skip to next space or end. */
             while (*pos_list && *pos_list != ' ') pos_list++;
         }
         while (*pos_list == ' ') pos_list++;
         /* Extract element at position. */
-        if (pos < 1) continue;
+        if (pos < 1 || pos > LBUF_SIZE) continue;
         const unsigned char *p = data;
         const unsigned char *pe = data + dlen;
-        int cur = 1;
+        long long cur = 1;
         /* Find element #pos.  For space delimiter, skip consecutive
          * spaces (same as split_token in the interpreter). */
         while (cur < pos && p < pe) {
@@ -1979,8 +1988,8 @@ char *rv64_wordpos(char *out, const char **fargs, int nfargs) {
      * for any multi-byte text (#989: wordpos(h..é..llo world,6) gave
      * 1 instead of 2). */
     size_t nclusters = co_cluster_count(stripped, slen);
-    int charpos = satoi(fargs[1]);
-    if (charpos < 1 || (size_t)charpos > nclusters) {
+    long long charpos = satoi64(fargs[1]);
+    if (charpos < 1 || (unsigned long long)charpos > nclusters) {
         rv64_scopy(out, "#-1");
         return out;
     }
@@ -2158,6 +2167,41 @@ static long long satoll(const char *s) {
         s++;
     }
     return neg ? -v : v;
+}
+
+/* satoi64: mux_atoi64 parity for counts and positions (#2329).  The host
+ * accumulates unsigned, so a string past INT64_MAX wraps mod 2^64 rather
+ * than overflowing a signed accumulator; this does the same, bit for bit.
+ * satoi narrowed to 32 bits first, so mid(abcdef,1,4294967298) copied two
+ * characters on the JIT route and five on the interpreter's. */
+static long long satoi64(const char *s) {
+    unsigned long long v = 0;
+    int neg = 0;
+    while (sisspace(*s)) s++;
+    if (*s == '+') { s++; }
+    else if (*s == '-') { neg = 1; s++; }
+    while (*s >= '0' && *s <= '9') {
+        v = v * 10 + (unsigned long long)(*s - '0');
+        s++;
+    }
+    if (neg) v = 0 - v;
+    return (long long)v;
+}
+
+/* The host's lbuf_clamp() and arith_clamp() (functions.h), for the same
+ * two jobs: a value about to become a size_t, and a value about to meet
+ * another in long long arithmetic. */
+static size_t sclamp_lbuf(long long n) {
+    if (n <= 0) return 0;
+    if (n > LBUF_SIZE) return LBUF_SIZE;
+    return (size_t)n;
+}
+
+static long long sclamp_arith(long long n) {
+    const long long bound = 1LL << 62;
+    if (n < -bound) return -bound;
+    if (n > bound) return bound;
+    return n;
 }
 
 /* Tier 2 doubles scratch — fixed guest address mirroring the host's

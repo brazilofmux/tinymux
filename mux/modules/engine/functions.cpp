@@ -1392,12 +1392,15 @@ static FUNCTION(fun_etimefmt)
     CLinearTimeDelta ltd;
     ltd.SetSecondsString(fargs[1]);
 
-    long seconds = ltd.ReturnSeconds();
-    long minutes = seconds/60;
+    // Not ReturnSeconds(): that returns long, which is 32 bits on ILP32 and
+    // LLP64 and wrapped 2^32 seconds to zero (#2329).
+    //
+    int64_t seconds = ltd.Return100ns() / FACTOR_100NS_PER_SECOND;
+    int64_t minutes = seconds/60;
     seconds -= 60*minutes;
-    long hours   = minutes/60;
+    int64_t hours   = minutes/60;
     minutes -= 60*hours;
-    long days    = hours/24;
+    int64_t days    = hours/24;
     hours -= 24*days;
 
     const UTF8 *q;
@@ -1474,7 +1477,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(seconds, buff, bufc);
+                    safe_i64toa(seconds, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -1496,7 +1499,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(seconds, buff, bufc);
+                    safe_i64toa(seconds, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -1518,7 +1521,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(minutes, buff, bufc);
+                    safe_i64toa(minutes, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -1540,7 +1543,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(minutes, buff, bufc);
+                    safe_i64toa(minutes, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -1562,7 +1565,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(hours, buff, bufc);
+                    safe_i64toa(hours, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -1584,7 +1587,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(hours, buff, bufc);
+                    safe_i64toa(hours, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -1606,7 +1609,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(days, buff, bufc);
+                    safe_i64toa(days, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -1628,7 +1631,7 @@ static FUNCTION(fun_etimefmt)
                 }
                 else
                 {
-                    safe_ltoa(days, buff, bufc);
+                    safe_i64toa(days, buff, bufc);
                 }
 
                 if (bDoSuffix)
@@ -2827,8 +2830,8 @@ static FUNCTION(fun_mid)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int64_t iStart = mux_atoi64(fargs[1]);
-    int64_t nMid = mux_atoi64(fargs[2]);
+    int64_t iStart = arith_clamp(mux_atoi64(fargs[1]));
+    int64_t nMid = arith_clamp(mux_atoi64(fargs[2]));
 
     if (nMid < 0)
     {
@@ -2864,7 +2867,7 @@ static FUNCTION(fun_mid)
 
     unsigned char out[LBUF_SIZE];
     size_t n = co_mid_cluster(out, p, slen,
-        static_cast<size_t>(iStart), static_cast<size_t>(nMid));
+        static_cast<size_t>(iStart), lbuf_clamp(nMid));
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     if (n > nMax) n = nMax;
@@ -2902,12 +2905,12 @@ static FUNCTION(fun_right)
     size_t slen = strlen(reinterpret_cast<const char *>(p));
     size_t nClusters = co_cluster_count(p, slen);
 
-    if (static_cast<size_t>(nRight) < nClusters)
+    const size_t nKeep = lbuf_clamp(nRight);
+    if (nKeep < nClusters)
     {
         unsigned char out[LBUF_SIZE];
         size_t n = co_mid_cluster(out, p, slen,
-            nClusters - static_cast<size_t>(nRight),
-            static_cast<size_t>(nRight));
+            nClusters - nKeep, nKeep);
 
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         if (n > nMax) n = nMax;
@@ -3729,6 +3732,13 @@ static FUNCTION(fun_extract)
     {
         return;
     }
+
+    // Neither can usefully exceed LBUF_SIZE, and bounding them here keeps
+    // the size_t casts below from wrapping on ILP32 and the multi-char
+    // branch's iFirstWord + nWordsToCopy from overflowing (#2329).
+    //
+    iFirstWord = static_cast<int64_t>(lbuf_clamp(iFirstWord));
+    nWordsToCopy = static_cast<int64_t>(lbuf_clamp(nWordsToCopy));
 
     size_t slen;
     const UTF8 *bp = trim_space_sep_n(fargs[0], sep, &slen);
@@ -6015,8 +6025,8 @@ static FUNCTION(fun_delete)
     UNUSED_PARAMETER(cargs);
     UNUSED_PARAMETER(ncargs);
 
-    int64_t iStart = mux_atoi64(fargs[1]);
-    int64_t nDelete = mux_atoi64(fargs[2]);
+    int64_t iStart = arith_clamp(mux_atoi64(fargs[1]));
+    int64_t nDelete = arith_clamp(mux_atoi64(fargs[2]));
 
     if (nDelete < 0)
     {
@@ -6053,7 +6063,7 @@ static FUNCTION(fun_delete)
 
     unsigned char out[LBUF_SIZE];
     size_t n = co_delete_cluster(out, p, slen,
-        static_cast<size_t>(iStart), static_cast<size_t>(nDelete));
+        static_cast<size_t>(iStart), lbuf_clamp(nDelete));
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     if (n > nMax) n = nMax;
@@ -14678,7 +14688,7 @@ static FUNCTION(fun_strdelete)
     const unsigned char *p = reinterpret_cast<const unsigned char *>(fargs[0]);
     size_t slen = strlen(reinterpret_cast<const char *>(p));
 
-    if (nDelete == 0 || static_cast<size_t>(iStart) >= slen)
+    if (nDelete == 0 || lbuf_clamp(iStart) >= slen)
     {
         safe_str(fargs[0], buff, bufc);
         return;
@@ -14686,7 +14696,7 @@ static FUNCTION(fun_strdelete)
 
     unsigned char out[LBUF_SIZE];
     size_t n = co_delete_cluster(out, p, slen,
-        static_cast<size_t>(iStart), static_cast<size_t>(nDelete));
+        lbuf_clamp(iStart), lbuf_clamp(nDelete));
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     if (n > nMax) n = nMax;
@@ -14720,7 +14730,8 @@ static FUNCTION(fun_strinsert)
     size_t slen = strlen(reinterpret_cast<const char *>(p));
     size_t nClusters = co_cluster_count(p, slen);
 
-    if (static_cast<size_t>(iPos) >= nClusters)
+    const size_t nPos = lbuf_clamp(iPos);
+    if (nPos >= nClusters)
     {
         // Append.
         //
@@ -14732,11 +14743,11 @@ static FUNCTION(fun_strinsert)
     // Output: mid(str, 0, pos) + insertion + mid(str, pos, rest)
     //
     unsigned char left[LBUF_SIZE];
-    size_t nLeft = co_mid_cluster(left, p, slen, 0, static_cast<size_t>(iPos));
+    size_t nLeft = co_mid_cluster(left, p, slen, 0, nPos);
 
     unsigned char right[LBUF_SIZE];
     size_t nRight = co_mid_cluster(right, p, slen,
-        static_cast<size_t>(iPos), nClusters - static_cast<size_t>(iPos));
+        nPos, nClusters - nPos);
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     size_t n = nLeft;
@@ -14786,7 +14797,9 @@ static FUNCTION(fun_strreplace)
     size_t slen = strlen(reinterpret_cast<const char *>(p));
     size_t nClusters = co_cluster_count(p, slen);
 
-    if (static_cast<size_t>(iStart) >= nClusters)
+    const size_t nStart = lbuf_clamp(iStart);
+    const size_t nReplace = lbuf_clamp(nCount);
+    if (nStart >= nClusters)
     {
         // Start is past end — just append replacement.
         //
@@ -14798,7 +14811,7 @@ static FUNCTION(fun_strreplace)
     // Output: mid(str, 0, start) + replacement + mid(str, start+count, rest)
     //
     unsigned char left[LBUF_SIZE];
-    size_t nLeft = co_mid_cluster(left, p, slen, 0, static_cast<size_t>(iStart));
+    size_t nLeft = co_mid_cluster(left, p, slen, 0, nStart);
 
     size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
     size_t n = nLeft;
@@ -14809,7 +14822,7 @@ static FUNCTION(fun_strreplace)
 
     safe_str(fargs[3], buff, bufc);
 
-    size_t rightStart = static_cast<size_t>(iStart) + static_cast<size_t>(nCount);
+    size_t rightStart = nStart + nReplace;
     if (rightStart < nClusters)
     {
         unsigned char right[LBUF_SIZE];

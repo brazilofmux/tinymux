@@ -2461,10 +2461,11 @@ FUNCTION(fun_left)
     size_t slen = strlen(reinterpret_cast<const char *>(p));
     size_t nClusters = co_cluster_count(p, slen);
 
-    if (static_cast<size_t>(nLeft) < nClusters)
+    const size_t nKeep = lbuf_clamp(nLeft);
+    if (nKeep < nClusters)
     {
         unsigned char out[LBUF_SIZE];
-        size_t n = co_mid_cluster(out, p, slen, 0, static_cast<size_t>(nLeft));
+        size_t n = co_mid_cluster(out, p, slen, 0, nKeep);
 
         size_t nMax = buff + (LBUF_SIZE-1) - *bufc;
         if (n > nMax) n = nMax;
@@ -3576,7 +3577,7 @@ FUNCTION(fun_elements)
             UTF8 *r = split_token(&s, sepSpace);
             int64_t cur = mux_atoi64(r) - 1;
             if (  0 <= cur
-               && static_cast<size_t>(cur) < nWords)
+               && cur < static_cast<int64_t>(nWords))
             {
                 if (!bFirst)
                 {
