@@ -130,10 +130,15 @@ BR_COMMA|[strcat(a {b,c} d)]
 BR_PAREN|[strcat(a {b (c,d) e} f)]
 
 # --- mixed nesting ---
-MX_BP|[strcat(a [b (c,d) e] f)]|2.13
+#
+# MX_BP and MX_ALL were 2.13, on the reading that 2.14's output was
+# plausible-looking corruption.  Under the settled grammar (#2322, R2)
+# `b (` is not a call, so `[b (c,d) e]` is a well-formed bracket of
+# text and 2.14's answer is the right one.
+MX_BP|[strcat(a [b (c,d) e] f)]|2.14
 MX_PB|[strcat(a (b [c] d) e)]|2.13
 MX_PBR|[strcat(a (b {c,d} e) f)]|2.13
-MX_ALL|[strcat(a [b (c {d,e} f) g] h)]|2.13
+MX_ALL|[strcat(a [b (c {d,e} f) g] h)]|2.14
 
 # --- escaped delimiters ---
 ES_PCT_PAREN|[strcat(a %(b,c%) d)]
@@ -154,16 +159,17 @@ RP_STRLEN|[strlen(Hello (world) ok)]|2.13
 RP_NESTED_FN|[strcat(Result: [add(1,2)] (of 3, total))]|2.13
 RP_APOSTROPHE|[strcat(It's a (big, red) ball)]|2.13
 
-# --- space between callee name and '(' — PINNED (see #1219 discussion) ---
+# --- space between callee name and '(' — SETTLED: not a call (#2322) ---
 #
-# 2.13 treats `name (args)` with a space as a call; 2.14 requires the
-# paren to be adjacent.  So [add (1,2)] evaluates on 2.13 and becomes
-# literal text on 2.14 — working softcode silently ceasing to function.
-# Flagged as something to support, decision deferred.
+# 2.13 treats `name (args)` with a space as a call, but only while
+# space_compress is on (see the SC_* block); 2.14 requires the paren to
+# be adjacent.  Settled for 2.14: with a space it is text.  Softcode that
+# relied on the trim fails visibly -- the call is printed -- rather than
+# changing meaning silently.
 #
-SPACE_CALL_KNOWN|[add (1,2)]|pin
-SPACE_CALL_UNKNOWN|[b (c,d)]|pin
-SPACE_CALL_NESTED|[strcat([add (1,2)])]|pin
+SPACE_CALL_KNOWN|[add (1,2)]|2.14
+SPACE_CALL_UNKNOWN|[b (c,d)]|2.14
+SPACE_CALL_NESTED|[strcat([add (1,2)])]|2.14
 
 # ===================================================================
 # Global user functions (@function).  2.13 resolves a global on the same
@@ -182,10 +188,10 @@ UF_IN_ARG|[strcat(ufadd(2,3))]|2.13
 UF_DISARM|[ufadd(2,3) ufadd(4,5)]|2.13
 UF_AFTER_BUILTIN|[add(1,2) ufadd(4,5)]
 UF_MIDTEXT|[strcat(x ufadd(2,3) y)]
-UF_SPACE|[ufadd (2,3)]|pin
-UF_TWOSPACE|[ufadd  (2,3)]|pin
+UF_SPACE|[ufadd (2,3)]|2.14
+UF_TWOSPACE|[ufadd  (2,3)]|2.14
 UF_IN_ARG_SPACE|[strcat(ufadd (2,3))]
-UF_UNKNOWN_SPACE|[nosuchfn (1,2)]|pin
+UF_UNKNOWN_SPACE|[nosuchfn (1,2)]|2.14
 
 # ===================================================================
 # Disarm across nested regions.  After a successful call 2.13 clears
@@ -219,11 +225,12 @@ DA_THREE|[add(1,2) mul(3,4) sub(9,1)]
 #
 # Measured here under the default (space_compress on).  The pure
 # compression shapes are included so the two effects stay separable if
-# one of them changes.
+# one of them changes.  The trim shapes are settled as text (#2322, R2),
+# which makes 2.14 independent of the setting.
 # ===================================================================
-SC_TRIM|[add (1,2)]|pin
-SC_TRIM2|[add  (1,2)]|pin
-SC_LEADSPACE|[ add (1,2)]|pin
+SC_TRIM|[add (1,2)]|2.14
+SC_TRIM2|[add  (1,2)]|2.14
+SC_LEADSPACE|[ add (1,2)]|2.14
 SC_ARG_SP|[strcat(add (1,2))]
 SC_DOUBLESPACE|[strcat(a  b)]
 SC_LEADTRAIL|[strcat(  a  )]
@@ -274,12 +281,14 @@ XN_BAL_NEST|[strcat((a [b] c))]|both
 # paren counter with a stack would leave all three of these exactly as
 # they are (measured 2026-07-26, both 2.14 routes identical).
 #
-# So these are VIOLATED by design, but the work they name is #1247's, and
-# their verdict is worth re-confirming alongside FM_FAIL_NAME rather than
-# inherited from a causal story that did not hold.
-XN_BRACKET_FIRST|[strcat([a (b] c))]|2.13
-XN_COMMA_BRACKET|[strcat([a, (b], c))]|2.13
-XN_DEEP|[strcat((a [b (c] d) e))]|2.13
+# Re-confirmed under the settled grammar (#2322): a space before '(' is
+# not a call (R2), and each bracket region keeps its own paren count
+# (R4), so `[a (b]` is a region of text and the closers after it belong
+# to strcat.  Every character is accounted for in 2.14's output, which
+# is therefore correct, and these are 2.14.
+XN_BRACKET_FIRST|[strcat([a (b] c))]|2.14
+XN_COMMA_BRACKET|[strcat([a, (b], c))]|2.14
+XN_DEEP|[strcat((a [b (c] d) e))]|2.14
 #
 # The controls that separate "crossed" from "inside a bracket region".
 # Both twins are perfectly balanced -- `[a (b)]` closes its paren before
@@ -292,11 +301,9 @@ XN_DEEP|[strcat((a [b (c] d) e))]|2.13
 # bracket region, and there the two engines agree -- which is what pins the
 # trigger to the region, not to the parentheses.
 #
-# Left UNADJUDICATED deliberately: these are the same defect as the three
-# above, so they should take whatever verdict that family settles on once
-# it is re-confirmed, rather than having one copied across now.
-XN_TWIN_NESTED|[strcat([a (b)] c)]
-XN_TWIN_PLAIN|[strcat([a (b)])]
+# They take the family's verdict, now settled as 2.14 (#2322).
+XN_TWIN_NESTED|[strcat([a (b)] c)]|2.14
+XN_TWIN_PLAIN|[strcat([a (b)])]|2.14
 XN_TOP_SPACE|[strcat(a (b) c)]|both
 #
 # Crossed the other way, and neither engine errors: 2.13 echoes a stray
@@ -326,9 +333,15 @@ XN_FN_CROSS|[strcat((add(1,2) [x) y])]|neither
 # surviving in the output means the argument did not split; add() makes the
 # same boundary numeric.
 #
-XN_CROSS_TOP|strcat((a[b)c],d)|both
-XN_CROSS_TOP3|strcat((a[b)c],d,e)|both
-XN_BRACE_TOP|strcat((a{b)c},d)|both
+#
+# Settled (#2322, R4): the bracket region is opaque, so in XN_CROSS_TOP
+# the ')' closes the literal '(' and strcat's own ')' never arrives --
+# an unterminated call, which wants a diagnostic, not the echo both
+# engines give.  XN_CROSS_NUM stays `both`: there add()'s argument list
+# is complete once the region is opaque.
+XN_CROSS_TOP|strcat((a[b)c],d)|neither
+XN_CROSS_TOP3|strcat((a[b)c],d,e)|neither
+XN_BRACE_TOP|strcat((a{b)c},d)|neither
 XN_CROSS_NUM|add(1[2)3],4)|both
 XN_NEST_TOP|strcat((a[b]c),d)|both
 
@@ -352,10 +365,15 @@ XN_NEST_TOP|strcat((a[b]c),d)|both
 #   [add(1,2]      2.13 'add(1,2'                      2.14 'add(1,2'
 #   [nosuchfn(1,2] 2.13 '#-1 FUNCTION (NOSUCHFN) NOT FOUND'  2.14 'nosuchfn(1,2'
 #
-UT_KNOWN_UNTERM|[add(1,2]|both
-UT_UNKNOWN_UNTERM|[a(b]
-UT_KNOWN_TOP|add(1,2|both
-UT_UNKNOWN_TOP|a(b|both
+# Settled (#2322, R4): an unterminated call is a diagnostic for known
+# and unknown names alike.  2.13's split -- an error for one, an echo
+# for the other -- is the inconsistency; the echo leaves the author
+# guessing.  All four want new behaviour.
+#
+UT_KNOWN_UNTERM|[add(1,2]|neither
+UT_UNKNOWN_UNTERM|[a(b]|neither
+UT_KNOWN_TOP|add(1,2|neither
+UT_UNKNOWN_TOP|a(b|neither
 
 # ===================================================================
 # EV_FMAND failed lookup (#1247).  When a function lookup FAILS at
@@ -418,7 +436,11 @@ FM_ABORT_IN_ARG|[strcat(qqnofn(1) x)]|both
 # the text through literally).  An abort rule alone would still not
 # reproduce 2.13 here; matching it needs the accumulated-name model,
 # which is what the tokenizer cannot express.
-FM_FAIL_NAME|[hello qqnofn(1)]
+#
+# Settled as 2.14 (#2322, R1): a name is the token immediately before
+# '(' at the head of a region, never accumulated text, so `hello` heads
+# a region of text and nothing is looked up.
+FM_FAIL_NAME|[hello qqnofn(1)]|2.14
 #
 # Controls -- these agree on all three engines and must keep agreeing.
 # FM_OK_THEN_FAIL and FM_OK_TWICE both show the one-recognition-
