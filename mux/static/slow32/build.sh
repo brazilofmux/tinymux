@@ -128,7 +128,7 @@ xargs -P 8 -L 1 bash -c 'compile "$@"' _ < $O/jobs.txt | tee $O/compile.log
 grep -q '^FAIL' $O/compile.log && exit 1
 touch $O/.stamp
 
-# 240M is the largest heap SLOW-32's 256 MB address space leaves above
+# 240M is the largest heap SLOW-32's current 256 MB address space leaves above
 # netmux's image, MMIO window and stack (#2333).  autoconf.h caps the
 # attribute cache at 128 MB to match.
 ENTRIES="mux_GetClassObject mux_CanUnloadNow mux_Register mux_Unregister"

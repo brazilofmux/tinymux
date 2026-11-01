@@ -15,8 +15,8 @@
 #include <pcre2.h>
 
 // The attribute cache's default cap.  A build whose address space is
-// smaller than this overrides it in its autoconf.h -- SLOW-32's whole
-// address space is 256 MB (#2333).
+// smaller than this overrides it in its autoconf.h -- SLOW-32's address
+// space is currently 256 MB (#2333).
 //
 #ifndef DEFAULT_MAX_CACHE_SIZE
 #define DEFAULT_MAX_CACHE_SIZE (256LL*1024*1024)

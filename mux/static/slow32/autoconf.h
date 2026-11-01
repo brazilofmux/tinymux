@@ -7,7 +7,8 @@
    so build without the TLS transport (include/config.h). */
 #define MUX_NO_TLS 1
 
-/* SLOW-32: the address space is 256 MB, so the heap tops out at 240M
+/* SLOW-32: the address space is currently 256 MB (an emulator choice,
+   not an ISA limit), so the heap tops out at 240M
    (build.sh) and the native 256 MB attribute-cache cap could never be
    reached -- malloc would fail first.  128 MB leaves the cache room to
    evict with ~110 MB of working set to spare (#2333). */
