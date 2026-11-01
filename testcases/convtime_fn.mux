@@ -269,11 +269,32 @@
         strmatch(convtime(not a date,utc), #-1*)
       )=
   {
-    @log smoke=TC009: convtime/convsecs round-trip and invalid date. Succeeded.;
+    @log smoke=TC009: convtime/convsecs round-trip and invalid date. Succeeded.
+  },
+  {
+    @log smoke=TC009: convtime/convsecs round-trip and invalid date. Failed (rt=[convtime(convsecs(946684800,utc),utc)] cs=[convsecs(0,utc)] inv=[convtime(not a date,utc)]).
+  }
+-
+#
+# Test Case #10 - A nonzero fraction whose requested digits are all zero
+# (1.004 at two digits) trims away the '.' as well (#2330).  Both
+# formatters had the bug: convsecs() goes through ReturnDateString and
+# convtime() through ConvertToSecondsString, which secs() and time()
+# share.  Digits that survive keep their '.'.
+#
+&tr.tc010 test_convtime_fn=
+  @if cand(
+        strmatch(convsecs(1.004,utc,2), Thu Jan 01 00:00:01 1970),
+        strmatch(convtime(Thu Jan 01 00:00:01.004 1970,utc,2), 1),
+        strmatch(convsecs(1.5,utc,2), Thu Jan 01 00:00:01.5 1970),
+        strmatch(convtime(Thu Jan 01 00:00:01.004 1970,utc,3), 1.004)
+      )=
+  {
+    @log smoke=TC010: all-zero fraction digits drop the dot. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC009: convtime/convsecs round-trip and invalid date. Failed (rt=[convtime(convsecs(946684800,utc),utc)] cs=[convsecs(0,utc)] inv=[convtime(not a date,utc)]).;
+    @log smoke=TC010: all-zero fraction digits drop the dot. Failed (cs=[convsecs(1.004,utc,2)] ct=[convtime(Thu Jan 01 00:00:01.004 1970,utc,2)] cs5=[convsecs(1.5,utc,2)] ct3=[convtime(Thu Jan 01 00:00:01.004 1970,utc,3)]).;
     @trig me/tr.done
   }
 -
