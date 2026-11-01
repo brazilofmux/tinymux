@@ -624,7 +624,13 @@ void ConvertToSecondsString(UTF8 *buffer, int64_t n64, int nFracDigits)
         {
             p--;
         }
-        p++;
+        // q[-1] is the '.'.  If no requested digit survived, drop it too
+        // (#2330): 1.004 at two digits is "1", not "1.".
+        //
+        if (p != q - 1)
+        {
+            p++;
+        }
         *p = '\0';
     }
 }

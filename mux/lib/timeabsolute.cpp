@@ -191,14 +191,19 @@ const UTF8* CLinearTimeAbsolute::ReturnDateString(int nFracDigits) const
             mux_sprintf(buffer, sizeof(buffer), T(".%03d%03d%03d"),
                 ft.iMillisecond, ft.iMicrosecond, ft.iNanosecond);
 
-            // Remove trailing zeros.
+            // Remove trailing zeros.  If every requested digit is zero
+            // (1.004 at two digits), the walk stops on the '.' itself, and
+            // the '.' goes too (#2330).
             //
             UTF8* p = (buffer + 1) + (nFracDigits - 1);
             while (*p == '0')
             {
                 p--;
             }
-            p++;
+            if (*p != '.')
+            {
+                p++;
+            }
             *p = '\0';
         }
         mux_sprintf(m_Buffer, sizeof(m_Buffer),
