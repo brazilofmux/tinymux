@@ -699,6 +699,63 @@ void ast_dump(const ASTNode *node, int indent)
 }
 
 // ---------------------------------------------------------------
+//
+// LRU cache of parsed AST trees, keyed by expression text.
+// Parsing is pure (no side effects), so cached ASTs are safe
+// to share across evaluations with different contexts.
+//
+
+struct ASTCacheEntry
+{
+    std::shared_ptr<ASTNode> ast;
+    std::list<std::string>::iterator lru_it;
+};
+
+static std::unordered_map<std::string, ASTCacheEntry> s_astCache;
+static std::list<std::string> s_astLru;
+static const size_t AST_CACHE_MAX = 1024;
+static const size_t AST_CACHE_MIN_LEN = 16;
+
+// Look up, or parse and insert, the tree for pStr lexed in the given mode.
+// The mode leads the key, so the same text parsed two ways is two entries.
+// The caller holds the returned pointer for as long as it evaluates the
+// tree, so an eviction during that evaluation cannot free it.
+//
+static std::shared_ptr<ASTNode> ast_parse_cached(const UTF8 *pStr, size_t nLen,
+    ASTLexMode mode)
+{
+    std::string key;
+    key.reserve(nLen + 1);
+    key.push_back(static_cast<char>(mode));
+    key.append(reinterpret_cast<const char *>(pStr), nLen);
+    auto it = s_astCache.find(key);
+    if (it != s_astCache.end())
+    {
+        // Cache hit — move to front of LRU.
+        //
+        s_astLru.splice(s_astLru.begin(), s_astLru, it->second.lru_it);
+        return it->second.ast;
+    }
+
+    // Cache miss — parse and insert.
+    //
+    std::shared_ptr<ASTNode> ast(
+        ast_parse_region(ASTSourceSpan(pStr, nLen), mode).release());
+
+    // Evict LRU entries if cache is full.
+    //
+    while (s_astCache.size() >= AST_CACHE_MAX)
+    {
+        s_astCache.erase(s_astLru.back());
+        s_astLru.pop_back();
+    }
+
+    s_astLru.push_front(key);
+    s_astCache[key] = {ast, s_astLru.begin()};
+    return ast;
+}
+
+// ---------------------------------------------------------------
 // AST Evaluator (Phase 2)
 // ---------------------------------------------------------------
 //
@@ -764,9 +821,18 @@ static void ast_eval_deferred_region(const ASTNode *node,
     }
     else if (rawText)
     {
-        auto noevalAst = ast_parse_region(
-            ASTSourceSpan(reinterpret_cast<const UTF8 *>(rawText->c_str()),
-                          rawText->size()),
+        // No argument is marked deferred today -- the structural policy
+        // asks ast_call_arg_is_deferred, which reads the flag it is about
+        // to set (#2320) -- so every FN_NOEVAL body arrives here, once per
+        // iter() element.  The raw text is the same each time; cache its
+        // tree.
+        //
+        if (rawText->empty())
+        {
+            return;
+        }
+        std::shared_ptr<ASTNode> noevalAst = ast_parse_cached(
+            reinterpret_cast<const UTF8 *>(rawText->c_str()), rawText->size(),
             ASTLEX_NOEVAL);
         if (!noevalAst)
         {
@@ -803,15 +869,33 @@ static void ast_eval_deferred_region(const ASTNode *node,
     // evaluate the resulting subtree directly. This is the first
     // concrete use of the parser-controlled region-parse API.
     //
-    auto reparsed = ast_parse_region(
-        ASTSourceSpan(reinterpret_cast<const UTF8 *>(text.c_str()), text.size()),
-        ASTLEX_EVAL);
+    // The text is the same on every call for a given body -- iter() runs
+    // this once per element -- so the tree comes from the same cache
+    // mux_exec uses rather than being parsed and destroyed each time.
+    // mux_exec's minimum length does not apply: short bodies like
+    // add(##,1) are the common case, and the alternative here is a full
+    // parse and teardown per element, not a cheap one.
+    //
+    const UTF8 *pText = reinterpret_cast<const UTF8 *>(text.c_str());
+    std::shared_ptr<ASTNode> cache_holder;
+    std::unique_ptr<ASTNode> parse_holder;
+    const ASTNode *reparsed;
+    if (0 < text.size())
+    {
+        cache_holder = ast_parse_cached(pText, text.size(), ASTLEX_EVAL);
+        reparsed = cache_holder.get();
+    }
+    else
+    {
+        parse_holder = ast_parse_string(pText, text.size());
+        reparsed = parse_holder.get();
+    }
     if (!reparsed)
     {
         return;
     }
 
-    ast_eval_node(reparsed.get(), buff, bufc,
+    ast_eval_node(reparsed, buff, bufc,
         executor, caller, enactor,
         (eval & ~(EV_TOP | EV_FMAND | EV_STRIP_CURLY))
             | EV_EVAL | EV_FCHECK,
@@ -2686,26 +2770,6 @@ void ast_exec(const UTF8 *pStr, size_t nStr,
 }
 
 // ---------------------------------------------------------------
-// AST parse cache
-// ---------------------------------------------------------------
-//
-// LRU cache of parsed AST trees, keyed by expression text.
-// Parsing is pure (no side effects), so cached ASTs are safe
-// to share across evaluations with different contexts.
-//
-
-struct ASTCacheEntry
-{
-    std::shared_ptr<ASTNode> ast;
-    std::list<std::string>::iterator lru_it;
-};
-
-static std::unordered_map<std::string, ASTCacheEntry> s_astCache;
-static std::list<std::string> s_astLru;
-static const size_t AST_CACHE_MAX = 1024;
-static const size_t AST_CACHE_MIN_LEN = 16;
-
-// ---------------------------------------------------------------
 // Stamp for the memoized jit_can_handle() verdict (#2068).
 //
 // The verdict is NOT a pure function of the AST, which is the trap in
@@ -2797,35 +2861,8 @@ void mux_exec(const UTF8 *pStr, size_t nStr,
 
     if (nLen >= AST_CACHE_MIN_LEN)
     {
-        std::string key(reinterpret_cast<const char *>(pStr), nLen);
-        auto it = s_astCache.find(key);
-        if (it != s_astCache.end())
-        {
-            // Cache hit — move to front of LRU.
-            //
-            cache_holder = it->second.ast;
-            s_astLru.splice(s_astLru.begin(), s_astLru, it->second.lru_it);
-            ast_ptr = cache_holder.get();
-        }
-        else
-        {
-            // Cache miss — parse and insert.
-            //
-            cache_holder = std::shared_ptr<ASTNode>(
-                ast_parse_string(pStr, nLen).release());
-            ast_ptr = cache_holder.get();
-
-            // Evict LRU entries if cache is full.
-            //
-            while (s_astCache.size() >= AST_CACHE_MAX)
-            {
-                s_astCache.erase(s_astLru.back());
-                s_astLru.pop_back();
-            }
-
-            s_astLru.push_front(key);
-            s_astCache[key] = {cache_holder, s_astLru.begin()};
-        }
+        cache_holder = ast_parse_cached(pStr, nLen, ASTLEX_EVAL);
+        ast_ptr = cache_holder.get();
     }
     else
     {
