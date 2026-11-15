@@ -35,8 +35,37 @@ TIER1_STAMP_DEFINE(TIER1_STAMP_AST);
 // Parser
 // ---------------------------------------------------------------
 
+// The uppercased table key for a function name, computed once per call
+// node at parse time (#2335).  Names are nearly always ASCII, and for
+// ASCII mux_strupr is plain toupper, so do that directly rather than pay
+// for a 32 KB scratch copy and a Unicode pass.  Short bodies (under
+// AST_CACHE_MIN_LEN) are reparsed on every evaluation, so this runs per
+// call for them, not once.
+//
 static std::string ast_upper_builtin_name(std::string_view funcName)
 {
+    bool bAscii = true;
+    for (const char ch : funcName)
+    {
+        if (static_cast<unsigned char>(ch) >= 0x80)
+        {
+            bAscii = false;
+            break;
+        }
+    }
+    if (bAscii)
+    {
+        std::string name(funcName);
+        for (char &ch : name)
+        {
+            if ('a' <= ch && ch <= 'z')
+            {
+                ch = static_cast<char>(ch - ('a' - 'A'));
+            }
+        }
+        return name;
+    }
+
     LBuf TempFun = LBuf_Src("ast_upper_builtin");
     size_t nName = funcName.size();
     if (nName >= LBUF_SIZE)
@@ -55,10 +84,8 @@ static std::string ast_upper_builtin_name(std::string_view funcName)
     return std::string(reinterpret_cast<const char *>(pUpper), nUpper);
 }
 
-static ASTNoevalKind ast_noeval_kind(std::string_view funcName)
+static ASTNoevalKind ast_noeval_kind(const std::string &name)
 {
-    const std::string name = ast_upper_builtin_name(funcName);
-
     if (name == "IF" || name == "IFELSE")
     {
         return ASTNOEVAL_IFELSE;
@@ -167,27 +194,10 @@ private:
             || m_tokens[m_pos].type == ASTTOK_EOF;
     }
 
-    static bool parser_lookup_builtin_noeval(std::string_view funcName)
+    static bool parser_lookup_builtin_noeval(const std::string &name)
     {
-        LBuf TempFun = LBuf_Src("lookup_noeval");
-        size_t nName = funcName.size();
-        if (nName >= LBUF_SIZE)
-        {
-            nName = LBUF_SIZE - 1;
-        }
-        memcpy(TempFun, funcName.data(), nName);
-        TempFun[nName] = '\0';
-
-        size_t nUpper;
-        UTF8 *pUpper = mux_strupr(TempFun, nUpper);
-        if (nUpper >= LBUF_SIZE)
-        {
-            nUpper = LBUF_SIZE - 1;
-        }
-        memcpy(TempFun, pUpper, nUpper);
-        TempFun[nUpper] = '\0';
-
-        std::vector<UTF8> name_key(TempFun.get(), TempFun.get() + nUpper);
+        const UTF8 *p = reinterpret_cast<const UTF8 *>(name.data());
+        std::vector<UTF8> name_key(p, p + name.size());
         const auto it = mudstate.builtin_functions.find(name_key);
         return it != mudstate.builtin_functions.end()
             && (it->second->flags & FN_NOEVAL) != 0;
@@ -342,8 +352,9 @@ private:
     {
         ASTToken funcTok = advance();
         auto call = std::make_unique<ASTNode>(AST_FUNCCALL, funcTok.text);
-        call->noeval_kind = ast_noeval_kind(funcTok.text);
-        call->parser_known_noeval = parser_lookup_builtin_noeval(funcTok.text);
+        const std::string upperName = ast_upper_builtin_name(funcTok.text);
+        call->noeval_kind = ast_noeval_kind(upperName);
+        call->parser_known_noeval = parser_lookup_builtin_noeval(upperName);
 
         if (atEnd() || peek().type != ASTTOK_LPAREN)
         {
