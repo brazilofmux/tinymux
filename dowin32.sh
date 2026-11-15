@@ -26,6 +26,29 @@ if ! command -v xdelta3 &> /dev/null; then
     exit 1
 fi
 
+# Optional graft package (#2337), built alongside the xdelta3 patch -- not
+# instead of it.  graft (github.com/brazilofmux/graft) writes one .gfp that
+# updates a whole tree from any of several old releases, all or nothing,
+# with conflicts refused before any change.  The xdelta3 zip stays the
+# shipped patch until a real trial on Windows looks right.
+#
+#   GRAFT_PACKAGE=1         build mux-$NEW_VERSION.win32.{src,bin}.gfp
+#   GRAFT=/path/to/graft    the graft binary (default: graft on PATH)
+#   GRAFT_FROM_BUILDS="9 10"
+#                           old builds the package can update from; each
+#                           needs its mux2.14_<build>_{src,bin} tree here
+#                           (default: just OLD_BUILD)
+#
+# Users apply it with graft.exe, game stopped:
+#   graft update mux-$NEW_VERSION.win32.bin.gfp C:\mux
+#
+GRAFT=${GRAFT:-graft}
+GRAFT_FROM_BUILDS=${GRAFT_FROM_BUILDS:-$OLD_BUILD}
+if [ "${GRAFT_PACKAGE:-0}" = "1" ] && ! command -v "$GRAFT" &> /dev/null; then
+    echo "GRAFT_PACKAGE=1 but '$GRAFT' was not found.  Set GRAFT=/path/to/graft."
+    exit 1
+fi
+
 # Validate the table-of-contents lists before touching anything.
 #
 # The lists are the whole packaging model: a distribution is the PREVIOUS
@@ -129,6 +152,38 @@ write_sorted_list() {
     else
         printf '%s\n' "$@" | sort > "$output_file"
     fi
+}
+
+# Build the graft package for one distribution type from the finished NEW
+# tree and each requested old tree.  TOC.<type>.unpatched goes to graft
+# verbatim as --user-file: those files ship once and then belong to the
+# admin (netmux.conf, the database, the login screens), so an update
+# installs them only where missing and never reads, changes or removes an
+# existing copy.  Everything else in the trees is release-owned -- graft
+# derives changed, added and removed files itself, so none of the per-file
+# lists below are needed for it.
+build_graft_package() {
+    local dist_type=$1
+    local package="mux-$NEW_VERSION.win32.$dist_type.gfp"
+    local -a old_trees=()
+    local b dir
+
+    for b in $GRAFT_FROM_BUILDS; do
+        dir="mux2.14_${b}_$dist_type"
+        if [ ! -d "$dir" ]; then
+            echo "ERROR: GRAFT_FROM_BUILDS names $b, but $dir/ does not exist."
+            exit 1
+        fi
+        old_trees+=("$dir=2.14.0.$b")
+    done
+
+    echo "Building graft package $package (from ${GRAFT_FROM_BUILDS// /, })..."
+    rm -f "$package"
+    "$GRAFT" pack --label "$NEW_VERSION" \
+        --user-file "win32/TOC.$dist_type.unpatched" \
+        -o "$package" "${NEW_DIR}_$dist_type" "${old_trees[@]}"
+    "$GRAFT" list "$package"
+    sha256sum "$package" > "$package.sha256"
 }
 
 # Function to process source and create patches
@@ -364,6 +419,10 @@ EOF
     clean_files "${NEW_DIR}_$dist_type" "${remove_files[@]}"
     
     cp -r "${NEW_DIR}_$dist_type" "$DISTRO_DIR"
+
+    if [ "${GRAFT_PACKAGE:-0}" = "1" ]; then
+        build_graft_package "$dist_type"
+    fi
     
     # Create full distribution archives
     echo "Creating Windows $dist_type full distribution archives..."
@@ -509,5 +568,10 @@ ls -la "mux-$NEW_VERSION.win32.src."*
 echo "Binary distribution files:"
 ls -la "mux-$OLD_VERSION-$NEW_VERSION.win32.bin.patch."*
 ls -la "mux-$NEW_VERSION.win32.bin."*
+
+if [ "${GRAFT_PACKAGE:-0}" = "1" ]; then
+    echo "graft packages (trial; the .patch.zip files above are what ships):"
+    ls -la "mux-$NEW_VERSION.win32."*.gfp*
+fi
 
 echo "All files have been created successfully!"
