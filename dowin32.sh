@@ -178,7 +178,10 @@ build_graft_package() {
     done
 
     echo "Building graft package $package (from ${GRAFT_FROM_BUILDS// /, })..."
-    rm -f "$package"
+    # graft writes $package.graft-tmp and renames it at the end, and refuses
+    # to reuse a temp it did not create -- so an interrupted earlier run would
+    # make this one fail with "left over from an earlier run?".
+    rm -f "$package" "$package.graft-tmp"
     "$GRAFT" pack --label "$NEW_VERSION" \
         --user-file "win32/TOC.$dist_type.unpatched" \
         -o "$package" "${NEW_DIR}_$dist_type" "${old_trees[@]}"
