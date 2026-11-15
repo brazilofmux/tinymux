@@ -6,6 +6,13 @@
 /* SLOW-32 lacks: libssl -- its OpenSSL-shaped library is digests only,
    so build without the TLS transport (include/config.h). */
 #define MUX_NO_TLS 1
+
+/* SLOW-32: the address space is currently 256 MB (an emulator choice,
+   not an ISA limit), so the heap tops out at 240M
+   (build.sh) and the native 256 MB attribute-cache cap could never be
+   reached -- malloc would fail first.  128 MB leaves the cache room to
+   evict with ~110 MB of working set to spare (#2333). */
+#define DEFAULT_MAX_CACHE_SIZE (128LL*1024*1024)
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
