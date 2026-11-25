@@ -35,13 +35,10 @@ if { [catch {open "$filename" r} fp] } {
     puts stderr "upload.tcl: $fp"
     exit 2
 }
-# Text, decoded as UTF-8, and explicitly so: expect's send encodes what it
-# is given as UTF-8 no matter how the channel is configured, so a file
-# read as bytes (-translation binary) is re-encoded on the way out and
-# every byte >= 0x80 goes on the wire as two (#2260).  Read as real code
-# points, the same send reproduces the original bytes exactly.  Naming
-# the encoding keeps that true under a C or Latin-1 locale as well.
-fconfigure $fp -encoding utf-8
+# On Debian 12 with LC_ALL=C, Expect 5.45.4 (Tcl 8.6.13) sent 3f for
+# U+4E2D and 3f 3f for U+1F600 after reading the installer as UTF-8.
+# Keep the file bytes intact until they reach the binary socket.
+fconfigure $fp -translation binary
 set file_data [read $fp]
 close $fp
 
@@ -49,9 +46,8 @@ if { [catch {socket $remote_server $remote_port} sock] } {
     puts stderr "upload.tcl: cannot connect to $remote_server:$remote_port: $sock"
     exit 1
 }
-# No newline translation on the socket, so the server gets exactly the
-# line endings in the file.  Output encoding is expect's affair, not the
-# channel's (see the file read above).
+# No newline translation or character encoding on the socket, so the server
+# gets exactly the line endings and UTF-8 bytes from the file.
 fconfigure $sock -translation binary -buffering none
 
 # Telnet charset negotiation (RFC 2066), in plain Tcl before expect takes
@@ -93,16 +89,20 @@ fconfigure $sock -blocking 1
 if {!$negotiated} {
     puts stderr "upload.tcl: charset negotiation did not complete; the server will read non-ASCII test text as Latin-1"
 }
+
+# Write the login and installer on the binary channel before Expect takes
+# the socket.  The server's input buffer and command_quota_increment in
+# smoke.conf let it handle the paste without client-side pacing.
+if {[catch {
+    puts -nonewline $sock "connect $username $password\n"
+    puts -nonewline $sock $file_data
+    puts -nonewline $sock "\n"
+    flush $sock
+} err]} {
+    puts stderr "upload.tcl: failed to send the installer: $err"
+    exit 1
+}
 spawn -open $sock
-
-send "connect $username $password\n"
-
-# A plain send, not the old `send -s` pacing: that was telnet-era
-# throttling, and expect's slow send counts characters while advancing
-# bytes, so it padded every non-ASCII chunk with NULs on the wire
-# (three of them for one "é中").  The server's input buffering and
-# the command_quota_increment in smoke.conf are what absorb the paste.
-send "$file_data\n"
 
 # 300s is generous for the installer; SMOKE_UPLOAD_TIMEOUT overrides it,
 # which is how the timeout path itself gets tested.
