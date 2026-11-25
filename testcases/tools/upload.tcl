@@ -35,9 +35,10 @@ if { [catch {open "$filename" r} fp] } {
     puts stderr "upload.tcl: $fp"
     exit 2
 }
-# On Debian 12 with LC_ALL=C, Expect 5.45.4 (Tcl 8.6.13) sent 3f for
-# U+4E2D and 3f 3f for U+1F600 after reading the installer as UTF-8.
-# Keep the file bytes intact until they reach the binary socket.
+# Read and write the installer as bytes; it never passes through Tcl's
+# character layer.  expect's send encodes through the system encoding
+# (LC_ALL=C turns non-Latin-1 text into '?'), and Tcl 8.5 cannot decode
+# 4-byte UTF-8 at all (#2289).
 fconfigure $fp -translation binary
 set file_data [read $fp]
 close $fp
