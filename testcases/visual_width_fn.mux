@@ -114,11 +114,31 @@
         eq(strlen(é中),2)
       )=
   {
-    @log smoke=TC005: literal UTF-8 survives the upload. Succeeded.;
+    @log smoke=TC005: literal UTF-8 survives the upload. Succeeded.
+  },
+  {
+    @log smoke=TC005: literal UTF-8 survives the upload. Failed ([ord(中)]).
+  }
+-
+#
+# Test Case #6 - a literal supplementary-plane UTF-8 character survives upload.
+#
+# TC005 covers a literal three-byte UTF-8 character. TC006 checks that
+# U+1F600 (F0 9F 98 80) reaches the server as a single character.
+# The original macOS report passed the first case and failed the second (#2289).
+#
+&tr.tc006 test_visual_width_fn=
+  @if cand(
+        eq(ord(😀),128512),
+        eq(strlen(😀),1),
+        eq(strlen(中😀),2)
+      )=
+  {
+    @log smoke=TC006: literal supplementary UTF-8 survives the upload. Succeeded.;
     @trig me/tr.done
   },
   {
-    @log smoke=TC005: literal UTF-8 survives the upload. Failed ([ord(中)]).;
+    @log smoke=TC006: literal supplementary UTF-8 survives the upload. Failed ([ord(😀)]).;
     @trig me/tr.done
   }
 -
